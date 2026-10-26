@@ -24,8 +24,9 @@ export function CancellationMenuSection({
 			</div>
 			<button
 				type="button"
-				disabled={isQuickStatusUpdating}
-				className="w-full text-left px-2.5 py-1.5 h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer disabled:opacity-40"
+				disabled={false}
+				aria-busy={isQuickStatusUpdating || undefined}
+				className="w-full text-left px-2.5 py-1.5 h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px] rounded-lg text-xs font-medium text-rose-700 dark:text-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 transition-colors flex items-center justify-between cursor-pointer"
 				role="menuitem"
 				onClick={() => setIsRefusalReasonsOpen((prev) => !prev)}
 				title="Отменить приём"

@@ -1,0 +1,42 @@
+/* ═══════════════════════════════════════════════════════════════════
+   THEME SAKURA: HIGH CONTRAST SCHEDULE EMPTY SLOTS
+   ═══════════════════════════════════════════════════════════════════ */
+[data-theme="sakura"] button[data-testid^="btn-slot-"],
+[data-theme="sakura"] [data-testid^="btn-slot-"],
+[data-theme="sakura"] .schedule-empty-slot-btn {
+	background-color: transparent !important;
+	border-color: transparent !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover,
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:focus-visible,
+[data-theme="sakura"] [data-testid^="btn-slot-"]:hover,
+.schedule-empty-slot-btn:hover,
+[data-theme="sakura"] .schedule-empty-slot-btn:focus-visible {
+	color: #70072e !important;
+	background-color: #fce7f3 !important;
+	border-color: #db2777 !important;
+	border-style: dashed !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover span,
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:focus-visible span,
+[data-theme="sakura"] .schedule-empty-slot-btn:hover span,
+[data-theme="sakura"] .schedule-empty-slot-btn:focus-visible span {
+	opacity: 1 !important;
+	color: #9d174d !important;
+	font-weight: 700 !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover svg,
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:focus-visible svg,
+[data-theme="sakura"] .schedule-empty-slot-btn:hover svg,
+[data-theme="sakura"] .schedule-empty-slot-btn:focus-visible svg {
+	opacity: 1 !important;
+	color: #9d174d !important;
+}
+
+[data-theme="sakura"] button[data-testid^="btn-slot-"]:hover span,
+[data-theme="sakura"] [data-testid^="btn-slot-"]:hover span {
+	color: #70072e !important;
+}

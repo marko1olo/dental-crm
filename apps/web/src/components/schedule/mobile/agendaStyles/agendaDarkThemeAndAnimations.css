@@ -1,0 +1,72 @@
+/* Dark Theme Fine-Tuning & QuickBookingDrawer Animations */
+[data-theme="dark"] .schedule-mobile-agenda,
+.dark .schedule-mobile-agenda {
+  background: var(--paper-soft, #0b1120);
+}
+
+[data-theme="dark"] .schedule-mobile-card,
+.dark .schedule-mobile-card {
+  background: var(--paper, #0f172a);
+  border-color: var(--line, #1e293b);
+}
+
+[data-theme="dark"] .schedule-mobile-month-nav,
+.dark .schedule-mobile-month-nav,
+[data-theme="dark"] .schedule-mobile-day-strip,
+.dark .schedule-mobile-day-strip,
+[data-theme="dark"] .schedule-mobile-chips-wrapper,
+.dark .schedule-mobile-chips-wrapper,
+[data-theme="dark"] .schedule-mobile-empty-day,
+.dark .schedule-mobile-empty-day {
+  background: var(--paper, #0f172a);
+  border-color: var(--line, #1e293b);
+}
+
+[data-theme="dark"] .schedule-mobile-nav-btn,
+.dark .schedule-mobile-nav-btn,
+[data-theme="dark"] .schedule-mobile-today-chip,
+.dark .schedule-mobile-today-chip,
+[data-theme="dark"] .schedule-mobile-filter-chip:not(.active),
+.dark .schedule-mobile-filter-chip:not(.active),
+[data-theme="dark"] .schedule-mobile-empty-icon,
+.dark .schedule-mobile-empty-icon {
+  background: var(--paper-soft, #1e293b);
+  border-color: var(--line, #334155);
+  color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-mobile-bottom-bar,
+.dark .schedule-mobile-bottom-bar {
+  background: color-mix(in srgb, var(--paper-strong, #0f172a) 90%, transparent);
+  border-top-color: var(--line, #1e293b);
+}
+
+@keyframes quick-drawer-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes quick-drawer-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-slide-in {
+  animation: quick-drawer-slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-up {
+  animation: quick-drawer-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}

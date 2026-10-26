@@ -1,0 +1,66 @@
+/* Unified Monolithic Progressive-Height Architecture (Studio Clinical HIG) */
+.appointment-card-grid-unified {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	gap: 4px;
+	height: 100%;
+	width: 100%;
+	min-width: 0;
+	flex: 1 1 0%;
+}
+
+.appointment-card-row-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	width: 100%;
+	min-width: 0;
+}
+
+.appointment-card-row-procedure {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	width: 100%;
+	min-width: 0;
+}
+
+.appointment-card-row-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 6px;
+	width: 100%;
+	min-width: 0;
+	margin-top: auto;
+}
+
+/* Quick Actions Ergonomics for multi-chair / compact cards */
+.appointment-card-actions {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	width: auto;
+	max-width: 100%;
+}
+
+.appointment-action-pay,
+.appointment-action-visit,
+.appointment-action-call {
+	width: auto !important;
+	min-width: max-content !important;
+	max-width: none !important;
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	box-sizing: border-box !important;
+}
+
+.appointment-action-pay .appointment-action-label,
+.appointment-action-visit .appointment-action-label,
+.appointment-action-call .appointment-action-label {
+	display: inline !important;
+	white-space: nowrap !important;
+}

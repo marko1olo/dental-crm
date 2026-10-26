@@ -1,0 +1,50 @@
+/* Agenda Timeline Rows */
+.schedule-mobile-timeline {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px 10px calc(56px + 68px + env(safe-area-inset-bottom, 0px)) 10px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Appointment Row */
+.schedule-mobile-appt-row {
+  display: flex;
+  gap: 8px;
+  align-items: stretch;
+  width: 100%;
+  min-height: 56px !important;
+}
+
+.schedule-mobile-time-col {
+  width: 50px;
+  min-width: 50px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  padding-top: 4px;
+}
+
+.schedule-mobile-time-start {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: var(--font-mono, monospace);
+  color: var(--ink, #0f172a);
+  line-height: 1.1;
+}
+
+.schedule-mobile-time-end {
+  font-size: 11px;
+  font-weight: 500;
+  font-family: var(--font-mono, monospace);
+  color: var(--muted, #64748b);
+  margin-top: 2px;
+}
+
+.schedule-mobile-time-duration {
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--muted, #64748b);
+  margin-top: 1px;
+}

@@ -1,0 +1,105 @@
+/* Main Content Area */
+.roster-main-area {
+	position: relative;
+	flex: 1;
+	overflow: auto;
+	padding: 1rem 1.5rem;
+	background: var(--paper);
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+.roster-main-area::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+.roster-main-area::-webkit-scrollbar-track {
+	background: transparent;
+}
+.roster-main-area::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}
+.roster-main-area::-webkit-scrollbar-thumb:hover {
+	background: var(--muted);
+}
+
+/* Grid View Table */
+.roster-grid-table {
+	width: 100%;
+	border-collapse: separate;
+	border-spacing: 0;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	overflow: hidden;
+}
+.roster-grid-table th {
+	background: var(--paper-soft);
+	color: var(--ink);
+	padding: 0.75rem 0.5rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border-bottom: 1px solid var(--line);
+	border-right: 1px solid var(--line);
+	text-align: center;
+}
+.roster-grid-table th:last-child {
+	border-right: none;
+}
+.roster-grid-table th.is-weekend {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+}
+.roster-grid-table td {
+	border-bottom: 1px solid var(--line);
+	border-right: 1px solid var(--line);
+	vertical-align: top;
+	padding: 0.375rem;
+	min-width: 9.5rem;
+	min-height: 5.5rem;
+	background: var(--paper);
+}
+.roster-grid-table td:last-child {
+	border-right: none;
+}
+.roster-grid-table tr:last-child td {
+	border-bottom: none;
+}
+.roster-lane-header {
+	background: var(--paper-soft);
+	color: var(--ink);
+	padding: 0.75rem 0.875rem;
+	font-weight: 700;
+	font-size: 0.8125rem;
+	min-width: 13rem;
+	width: 13rem;
+}
+.roster-cell-add-btn {
+	opacity: 0;
+	width: 100%;
+	border: 1px dashed var(--line);
+	border-radius: 6px;
+	background: transparent;
+	color: var(--muted);
+	font-size: 0.75rem;
+	padding: 0.375rem;
+	cursor: pointer;
+	margin-top: 0.25rem;
+	min-height: 44px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: opacity var(--transition-fast, 0.15s ease), background-color var(--transition-fast, 0.15s ease);
+}
+@media (pointer: coarse) {
+	.roster-cell-add-btn {
+		opacity: 1;
+	}
+}
+.roster-grid-table td:hover .roster-cell-add-btn {
+	opacity: 1;
+}
+.roster-cell-add-btn:hover {
+	background: var(--teal-soft);
+	color: var(--teal);
+	border-color: var(--teal);
+}

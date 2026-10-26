@@ -1,0 +1,62 @@
+/* Grouped List Card */
+.schedule-mobile-card {
+  flex: 1;
+  min-width: 0;
+  background: var(--paper, #ffffff);
+  border: 1px solid var(--line, #e2e8f0);
+  border-radius: 16px;
+  padding: 10px 10px 10px 12px;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  min-height: 56px !important;
+}
+
+.schedule-mobile-card:active {
+  transform: scale(0.98);
+  background: var(--paper-soft, #f8fafc);
+}
+
+.schedule-mobile-status-stripe {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 5px;
+  border-top-left-radius: 16px;
+  border-bottom-left-radius: 16px;
+}
+
+.schedule-mobile-card-content {
+  flex: 1;
+  min-width: 0;
+  padding-left: 6px;
+  display: flex;
+  flex-direction: column;
+}
+
+.schedule-mobile-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.schedule-mobile-header-end {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.schedule-mobile-card-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: 8px;
+  flex-wrap: wrap;
+}

@@ -1,0 +1,106 @@
+/* ========== SMART AI BOOKING BLOCK ========== */
+
+.smart-ai-booking {
+	margin-bottom: 12px;
+	border: none;
+	box-shadow: 0 2px 8px rgba(14, 165, 233, 0.05);
+	border-radius: 12px;
+	padding: 12px;
+	background: var(--paper-soft);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+/* ========== SCHEDULE ENTITY GRID (editor chip selectors) ========== */
+
+.schedule-entity-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 16px;
+	margin-bottom: 16px;
+}
+
+.schedule-entity-label {
+	font-size: 13px;
+	color: var(--slate-500);
+	font-weight: 500;
+	display: block;
+	margin-bottom: 8px;
+}
+
+.schedule-select {
+	width: 100%;
+	padding: 8px;
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.quick-chip--sm {
+	font-size: 11px;
+	padding: 2px 8px;
+	min-height: 24px;
+}
+
+/* --- APPOINTMENT CARD PREMIUM AESTHETICS --- */
+.appointment-card {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 48px;
+	container-type: inline-size;
+	container-name: apptcard;
+	padding: 16px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	margin-bottom: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+	transition:
+		transform 0.2s cubic-bezier(0.4, 0, 0.2, 1),
+		box-shadow 0.2s;
+}
+.appointment-card:hover {
+	transform: translateY(-2px);
+	box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+	border-color: var(--line-strong);
+}
+
+/* 2-Column Balanced Internal Layout for Appointment Cards */
+.appointment-card-grid-2col {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+	min-width: 0;
+	height: 100%;
+	flex: 1 1 0%;
+}
+
+.appointment-card-left-col {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-width: 0;
+	height: 100%;
+}
+
+.appointment-card-right-col {
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+	min-width: 0;
+	height: 100%;
+}
+
+.appointment-card-left-footer {
+	margin-top: auto;
+	padding-top: 4px;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	min-width: 0;
+}

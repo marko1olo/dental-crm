@@ -1,0 +1,11 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SCHEDULE MINI CALENDAR STYLES
+   ═══════════════════════════════════════════════════════════════════ */
+.schedule-mini-calendar button {
+	background: transparent;
+	color: var(--ink);
+}
+
+.schedule-mini-calendar button:hover {
+	background: var(--paper);
+}

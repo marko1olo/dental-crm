@@ -1,0 +1,78 @@
+/**
+ * DENTE Dental CRM — Doctor Shift Roster Modal & Container
+ * 100% Strict Multi-Theme CSS Token Compliance
+ */
+
+.roster-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+	animation: rosterFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rosterFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.98);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+.roster-modal-container {
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: var(--shadow-3);
+	width: 100%;
+	max-width: 92rem;
+	height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+/* Header & KPI Toolbar */
+.roster-header {
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+	display: flex;
+	flex-direction: column;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.roster-header-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.roster-title-block {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.roster-title-badge {
+	background: var(--teal-soft);
+	border: 1px solid var(--teal);
+	color: var(--teal-dark, var(--teal));
+	font-weight: 700;
+	border-radius: 9999px;
+	padding: 0.25rem 0.75rem;
+	font-size: 0.75rem;
+	letter-spacing: 0.05em;
+	text-transform: uppercase;
+}

@@ -155,9 +155,12 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 					{targetMatchSlot ? (
 						<button
 							type="button"
-							disabled={loadingId === item.id}
-							onClick={() => onOneClickBookSlot(item)}
-							className={`h-8 px-3 rounded-lg text-xs font-bold transition-all shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 shrink-0 ${
+							aria-busy={loadingId === item.id || undefined}
+							onClick={() => {
+								if (loadingId === item.id) return;
+								onOneClickBookSlot(item);
+							}}
+							className={`h-8 px-3 rounded-lg text-xs font-bold transition-all shadow-xs inline-flex items-center justify-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] shrink-0 ${
 								isBooked
 									? "bg-emerald-600 text-white"
 									: "bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)]"
@@ -180,14 +183,15 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 					) : fallbackSlot ? (
 						<button
 							type="button"
-							disabled={loadingId === item.id}
-							onClick={() =>
+							aria-busy={loadingId === item.id || undefined}
+							onClick={() => {
+								if (loadingId === item.id) return;
 								onOneClickBookSlot({
 									...item,
 									notes: `Посадка на ${fallbackSlot.dateFormatted} ${fallbackSlot.startTime}`,
-								})
-							}
-							className="h-8 px-2.5 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+								});
+							}}
+							className="h-8 px-2.5 rounded-lg bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] text-xs font-bold transition-all inline-flex items-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px] shrink-0"
 							title={`Записать на ${fallbackSlot.dateFormatted} в ${fallbackSlot.startTime}`}
 						>
 							<Zap size={13} className="shrink-0 text-amber-300" />
@@ -237,11 +241,11 @@ export const WaitlistCandidateCard: React.FC<WaitlistCandidateCardProps> = ({
 				<div className="relative shrink-0 waitlist-item-menu-container">
 					<button
 						type="button"
-						disabled={loadingId === item.id}
+						aria-busy={loadingId === item.id || undefined}
 						onClick={() =>
 							onToggleMenu(openMenuId === item.id ? null : item.id)
 						}
-						className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+						className="h-8 w-8 inline-flex items-center justify-center rounded-lg bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer pointer-coarse:min-h-[44px] pointer-coarse:min-w-[44px]"
 						title="Дополнительные действия"
 						aria-label="Опции"
 						data-testid={`waitlist-more-btn-${item.id}`}

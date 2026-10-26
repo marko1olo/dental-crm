@@ -350,10 +350,13 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 					</strong>
 					<button
 						type="button"
-						className="link-button"
+						className="link-button pointer-coarse:min-h-[44px]"
 						data-testid="waitlist-matches-refresh"
-						onClick={() => void load()}
-						disabled={loading}
+						onClick={() => {
+							if (loading) return;
+							void load();
+						}}
+						aria-busy={loading || undefined}
 						style={{ fontSize: 12 }}
 					>
 						{loading ? "Обновляю…" : "Обновить"}
@@ -369,10 +372,13 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 				>
 					<p>{error}</p>
 					<button
-						className="secondary-button"
+						className="secondary-button pointer-coarse:min-h-[44px]"
 						type="button"
-						onClick={() => void load()}
-						disabled={loading}
+						onClick={() => {
+							if (loading) return;
+							void load();
+						}}
+						aria-busy={loading || undefined}
 					>
 						{loading ? "Загружаю…" : "Попробовать снова"}
 					</button>
@@ -522,9 +528,12 @@ export const WaitlistMatchesBlock: React.FC<WaitlistMatchesBlockProps> = ({
 									{/* Button 1 (Main): 1-Click Booking / Transfer */}
 									<button
 										type="button"
-										disabled={Boolean(bookingId)}
-										onClick={() => void handleTakeSlot(match)}
-										className="h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:brightness-110 active:brightness-95 text-[var(--on-teal,#ffffff)] font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-xs disabled:opacity-50 pointer-coarse:min-h-[44px]"
+										aria-busy={Boolean(bookingId) || undefined}
+										onClick={() => {
+											if (bookingId) return;
+											void handleTakeSlot(match);
+										}}
+										className="h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:brightness-110 active:brightness-95 text-[var(--on-teal,#ffffff)] font-bold text-xs inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-xs pointer-coarse:min-h-[44px]"
 										data-testid={`waitlist-match-take-slot-${match.entryId}`}
 										title={
 											match.alreadyBooked

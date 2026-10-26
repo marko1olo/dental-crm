@@ -3,9 +3,7 @@
  */
 
 import React from "react";
-if (typeof document !== "undefined") {
-	import("./DiagnosticDrawer.css");
-}
+import "./DiagnosticDrawer.css";
 import type { DiagnosticDrawerProps } from "./diagnosticDrawer/diagnosticDrawerTypes";
 import { useDiagnosticDrawerState } from "./diagnosticDrawer/useDiagnosticDrawerState";
 import { DiagnosticTriggerButton } from "./diagnosticDrawer/DiagnosticTriggerButton";

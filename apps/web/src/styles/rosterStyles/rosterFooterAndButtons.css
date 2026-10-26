@@ -1,0 +1,97 @@
+/* Footer / Actions */
+.roster-footer {
+	padding: 0.875rem 1.5rem;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+}
+
+.roster-nav-strip {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 1rem;
+	flex-wrap: wrap;
+}
+
+.roster-week-nav {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.roster-actions-group {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.roster-btn-icon {
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	color: var(--ink);
+	border-radius: 8px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 44px;
+	min-width: 44px;
+	transition: all var(--transition-fast, 0.15s ease);
+}
+
+.roster-btn-icon:hover {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.roster-btn {
+	padding: 0.5rem 1rem;
+	border-radius: 8px;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	min-height: 44px;
+	border: 1px solid transparent;
+	transition: all var(--transition-fast, 0.15s ease);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.roster-btn-primary {
+	background: var(--teal);
+	color: var(--paper-strong);
+}
+
+.roster-btn-primary:hover {
+	background: var(--teal-dark);
+}
+
+.roster-btn-secondary {
+	background: var(--paper);
+	border-color: var(--line-strong);
+	color: var(--ink);
+}
+
+.roster-btn-secondary:hover {
+	background: var(--paper-soft);
+}
+
+.roster-btn-danger {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
+}
+
+.roster-btn-danger:hover {
+	background: var(--bad-fg);
+	color: var(--paper);
+}

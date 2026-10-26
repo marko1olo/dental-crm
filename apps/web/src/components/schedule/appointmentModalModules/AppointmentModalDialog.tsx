@@ -43,8 +43,8 @@ export function AppointmentModalDialog({
         data-testid="appointment-modal-container"
         className="relative w-full max-w-xl sm:max-w-[540px] bg-[var(--paper)] border-t sm:border border-[var(--line-strong)] rounded-t-3xl sm:rounded-2xl shadow-2xl z-10 text-[var(--ink)] flex flex-col max-h-[90dvh] sm:max-h-[90vh] overflow-hidden animate-in slide-in-from-bottom sm:animate-scale-in"
       >
-        {/* Mobile Drag Handle */}
-        <div className="sm:hidden w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto my-2 shrink-0" />
+        {/* Mobile Drag Handle (Apple HIG 36x5px) */}
+        <div className="sm:hidden w-[36px] h-[5px] bg-[var(--line-strong,var(--line))] rounded-full mx-auto my-2.5 shrink-0" aria-hidden="true" />
 
         {/* Header: Strict 1-row clinical toolbar (32-36px, Mandate 8p, 8c) */}
         {appointment && (

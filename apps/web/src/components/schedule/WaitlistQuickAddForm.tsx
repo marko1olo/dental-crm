@@ -484,8 +484,8 @@ export const WaitlistQuickAddForm: React.FC<WaitlistQuickAddFormProps> = ({
 
 			<button
 				type="submit"
-				disabled={isSubmitting}
-				className="w-full h-8 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 pointer-coarse:min-h-[44px]"
+				aria-busy={isSubmitting || undefined}
+				className="w-full h-8 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px]"
 				data-testid="waitlist-quick-submit-btn"
 			>
 				<Check className="w-3.5 h-3.5" />

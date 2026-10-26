@@ -332,10 +332,13 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 						карточке или создайте приём формой выше.
 					</p>
 					<button
-						className="secondary-button"
+						className="secondary-button pointer-coarse:min-h-[44px]"
 						type="button"
-						onClick={() => void load()}
-						disabled={loading}
+						onClick={() => {
+							if (loading) return;
+							void load();
+						}}
+						aria-busy={loading || undefined}
 					>
 						{loading ? "Загружаю…" : "Попробовать снова"}
 					</button>
@@ -423,19 +426,25 @@ export const ScheduleClipboardPanel: React.FC<Props> = ({
 												}}
 											>
 												<button
-													className="primary-button"
+													className="primary-button pointer-coarse:min-h-[44px]"
 													type="button"
-													disabled={busyId === item.id}
-													onClick={() => void pasteItem(item)}
+													aria-busy={busyId === item.id || undefined}
+													onClick={() => {
+														if (busyId === item.id) return;
+														void pasteItem(item);
+													}}
 													aria-label={`Вставить приём: ${item.patientName}`}
 												>
 													{busyId === item.id ? "…" : "Вставить"}
 												</button>
 												<button
-													className="secondary-button"
+													className="secondary-button pointer-coarse:min-h-[44px]"
 													type="button"
-													disabled={busyId === item.id}
-													onClick={() => void clearItem(item)}
+													aria-busy={busyId === item.id || undefined}
+													onClick={() => {
+														if (busyId === item.id) return;
+														void clearItem(item);
+													}}
 													aria-label={`Убрать из буфера: ${item.patientName}`}
 												>
 													Убрать

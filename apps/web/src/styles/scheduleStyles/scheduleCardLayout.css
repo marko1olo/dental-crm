@@ -1,0 +1,119 @@
+/* ========== APPOINTMENT CARD COMPONENT - STRICT CLS-PROOF LAYOUT ========== */
+
+.appointment-card-time {
+	font-weight: 600;
+	font-size: 14px;
+	color: var(--slate-900);
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.appointment-card-time .time-end {
+	font-weight: 400;
+	color: var(--slate-400);
+	font-size: 13px;
+}
+
+.appointment-card-footer {
+	display: flex;
+	justify-content: flex-end;
+	align-items: center;
+	margin-top: 8px;
+	padding-top: 8px;
+	border-top: 1px solid var(--line);
+	gap: 8px;
+}
+
+.appt-readiness-row {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin-top: 6px;
+	font-size: 12px;
+	color: var(--slate-500);
+}
+
+.readiness-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.readiness-dot-ok {
+	background: var(--teal, #14b8a6);
+}
+.readiness-dot-needs_attention {
+	background: var(--amber, #f59e0b);
+}
+.readiness-dot-blocked {
+	background: var(--red, #ef4444);
+}
+
+.appt-next-action {
+	flex: 1;
+	font-size: 12px;
+	color: var(--slate-600);
+}
+
+.appt-readiness-score {
+	font-weight: 600;
+	font-size: 12px;
+	color: var(--slate-700);
+}
+
+.handoff-lock {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--ink);
+	background: var(--warn-bg);
+	border: none;
+	border-radius: 999px;
+	padding: 2px 8px;
+	white-space: nowrap;
+}
+
+.appointment-handoff-note {
+	font-size: 12px;
+	color: var(--ink);
+	background: var(--warn-bg);
+	padding: 6px 8px;
+	border-radius: 4px;
+	margin-top: 4px;
+	border-left: 3px solid var(--warn-fg);
+}
+
+.chip-assistant {
+	background: var(--violet-50, #f5f3ff);
+	color: var(--violet-700, #6d28d9);
+	border-color: var(--violet-200, #ddd6fe);
+}
+
+.chip-suggestion {
+	cursor: pointer;
+	font-size: 12px;
+	transition: opacity 0.15s;
+}
+
+.chip-suggestion:hover {
+	opacity: 0.8;
+}
+
+.chip-suggestion.priority-urgent {
+	background: var(--bad-bg);
+	color: var(--bad-fg);
+	border-color: var(--bad-fg);
+}
+
+.chip-suggestion.priority-important {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
+}
+
+.appointment-edit-button {
+	padding: 4px 12px;
+	min-height: 28px;
+	font-size: 12px;
+}

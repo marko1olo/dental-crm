@@ -1,0 +1,82 @@
+/* Form T-13 Table */
+.t13-table-wrapper {
+	overflow-x: auto;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+.t13-table-wrapper::-webkit-scrollbar {
+	height: 6px;
+}
+
+.t13-table-wrapper::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}
+
+.t13-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.75rem;
+	text-align: center;
+}
+
+.t13-table th, .t13-table td {
+	border: 1px solid var(--line);
+	padding: 0.3125rem 0.25rem;
+}
+
+.t13-table th {
+	background: var(--paper-soft);
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.t13-cell-code {
+	font-weight: 700;
+}
+
+.t13-cell-hours {
+	color: var(--muted);
+	font-size: 0.6875rem;
+}
+
+/* Edit Drawer / Modal */
+.roster-drawer-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	z-index: 10000;
+	display: flex;
+	justify-content: flex-end;
+}
+
+.roster-drawer-panel {
+	background: var(--paper);
+	color: var(--ink);
+	width: 28rem;
+	max-width: 100%;
+	height: 100%;
+	box-shadow: var(--shadow-3);
+	display: flex;
+	flex-direction: column;
+	padding: 1.5rem;
+	overflow-y: auto;
+	gap: 1rem;
+	border-left: 1px solid var(--line);
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+.roster-drawer-panel::-webkit-scrollbar {
+	width: 6px;
+}
+
+.roster-drawer-panel::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}

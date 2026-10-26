@@ -114,18 +114,28 @@ async function run() {
 
     console.log("Navigating to http://127.0.0.1:5173/ ...");
     await pcPage.goto("http://127.0.0.1:5173/", { waitUntil: "commit", timeout: 60000 });
-    await pcPage.waitForSelector("#root", { timeout: 30000 });
-    await sleep(4000);
+    try {
+      await pcPage.waitForSelector(".boot-state", { state: "detached", timeout: 45000 });
+    } catch {
+      console.warn("boot-state detach timeout, proceeding...");
+    }
+    await sleep(2000);
     await loginIfRequired(pcPage);
+    await sleep(3000);
 
     console.log("Navigating to #schedule ...");
     await pcPage.evaluate(() => {
       window.location.hash = "schedule";
       window.dispatchEvent(new HashChangeEvent("hashchange"));
     });
+    // Fallback: click tab if available
+    const schedTab = await pcPage.$('button:has-text("Расписание"), a[href="#schedule"]');
+    if (schedTab) {
+      await schedTab.click().catch(() => null);
+    }
     console.log("Waiting for schedule toolbar to become visible...");
     try {
-      await pcPage.waitForSelector('[data-testid="schedule-toolbar"], .schedule-filter-strip, .schedule-grid-container', { state: "visible", timeout: 45000 });
+      await pcPage.waitForSelector('[data-testid="schedule-toolbar"], .schedule-filter-strip, .schedule-grid-container, [data-testid="chair-schedule-view"]', { state: "visible", timeout: 45000 });
     } catch (e) {
       console.warn("Schedule selector wait timeout, waiting 5s fallback...");
     }

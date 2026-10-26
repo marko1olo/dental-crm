@@ -180,9 +180,12 @@ export const WaitlistBookingCard: React.FC<WaitlistBookingCardProps> = ({
 				{(isMatchMode || (activeTargetSlot && patient.status !== "fulfilled")) && (
 					<button
 						type="button"
-						onClick={() => onBookPatient(patient)}
-						disabled={isBooking}
-						className="h-8 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 pointer-coarse:min-h-[44px]"
+						onClick={() => {
+							if (isBooking) return;
+							onBookPatient(patient);
+						}}
+						aria-busy={isBooking || undefined}
+						className="h-8 px-3 bg-[var(--teal-dark)] hover:brightness-110 active:brightness-95 text-[var(--on-teal)] font-bold rounded-lg text-xs transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer pointer-coarse:min-h-[44px]"
 						data-testid={isMatchMode ? `btn-book-${patient.id}` : `btn-book-list-${patient.id}`}
 						title="Записать пациента из листа ожидания"
 					>

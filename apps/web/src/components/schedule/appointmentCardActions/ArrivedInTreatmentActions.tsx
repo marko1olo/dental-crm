@@ -21,12 +21,14 @@ export function ArrivedInTreatmentActions({
 			<div className="flex items-center gap-1.5 shrink-0" data-testid="card-primary-actions">
 				<button
 					type="button"
-					disabled={isQuickStatusUpdating}
+					disabled={false}
+					aria-busy={isQuickStatusUpdating || undefined}
 					onClick={(e) => {
 						e.stopPropagation();
+						if (isQuickStatusUpdating) return;
 						void handleStartTreatmentAndOpenVisit(appointment, appointmentPatient, handleQuickStatusChange, onOpenVisit);
 					}}
-					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+					className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
 					title="Пациент в кресле (Клавиша 2)"
 					data-testid="appointment-action-in-treatment-btn"
 				>
@@ -35,12 +37,14 @@ export function ArrivedInTreatmentActions({
 				</button>
 				<button
 					type="button"
-					disabled={isQuickStatusUpdating}
+					disabled={false}
+					aria-busy={isQuickStatusUpdating || undefined}
 					onClick={(e) => {
 						e.stopPropagation();
+						if (isQuickStatusUpdating) return;
 						void handleShiftAppointmentTime(15);
 					}}
-					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap pointer-coarse:min-h-[44px]"
 					title="Сдвинуть запись на +15 минут при опоздании"
 					data-testid="appointment-action-delay-btn"
 				>
@@ -55,12 +59,14 @@ export function ArrivedInTreatmentActions({
 		<div className="flex items-center gap-1.5 shrink-0" data-testid="card-primary-actions">
 			<button
 				type="button"
-				disabled={isQuickStatusUpdating}
+				disabled={false}
+				aria-busy={isQuickStatusUpdating || undefined}
 				onClick={(e) => {
 					e.stopPropagation();
+					if (isQuickStatusUpdating) return;
 					void handleQuickStatusChange("completed");
 				}}
-				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
 				title="Завершить приём (Клавиша 3)"
 				data-testid="appointment-action-complete-btn"
 			>

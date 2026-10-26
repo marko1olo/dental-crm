@@ -318,8 +318,16 @@ describe("Wave 117: Appointment Catalogs Export & Blocking Intervals", () => {
 
 		it("3.3 PatientGeneralInfoTab.tsx contains chips and IDS signing rights badge (ст. 20 323-ФЗ)", () => {
 			const tabPath = path.resolve(__dirname, "../../patients/tabs/PatientGeneralInfoTab.tsx");
+			const repSectionPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/PatientRepresentativesSection.tsx");
+			const chipsPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/RepresentativeRelationshipChips.tsx");
+			const bannerPath = path.resolve(__dirname, "../../patients/tabs/generalInfo/RepresentativeAlertBanner.tsx");
 			assert.ok(fs.existsSync(tabPath), "PatientGeneralInfoTab.tsx must exist");
-			const content = fs.readFileSync(tabPath, "utf-8");
+			const content = [
+				fs.readFileSync(tabPath, "utf-8"),
+				fs.existsSync(repSectionPath) ? fs.readFileSync(repSectionPath, "utf-8") : "",
+				fs.existsSync(chipsPath) ? fs.readFileSync(chipsPath, "utf-8") : "",
+				fs.existsSync(bannerPath) ? fs.readFileSync(bannerPath, "utf-8") : "",
+			].join("\n");
 
 			// Renders representative chips
 			assert.ok(content.includes("chip-representative-"), "Must include chip-representative- testids");

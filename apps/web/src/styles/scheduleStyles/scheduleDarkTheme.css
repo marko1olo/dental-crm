@@ -1,0 +1,84 @@
+/* --- Schedule Dark Mode Theme Harmony --- */
+[data-theme="dark"] .schedule-shift-summary,
+[data-theme="night"] .schedule-shift-summary,
+.dark .schedule-shift-summary,
+body.dark-mode .schedule-shift-summary {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-shift-summary-grid article,
+[data-theme="night"] .schedule-shift-summary-grid article,
+.dark .schedule-shift-summary-grid article,
+body.dark-mode .schedule-shift-summary-grid article,
+[data-theme="dark"] .schedule-command-grid article,
+[data-theme="night"] .schedule-command-grid article,
+.dark .schedule-command-grid article,
+body.dark-mode .schedule-command-grid article {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-filter-strip,
+[data-theme="night"] .schedule-filter-strip,
+.dark .schedule-filter-strip,
+body.dark-mode .schedule-filter-strip {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .schedule-secret-collapsible,
+[data-theme="night"] .schedule-secret-collapsible,
+.dark .schedule-secret-collapsible,
+body.dark-mode .schedule-secret-collapsible {
+	background: var(--paper, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .schedule-secret-collapsible .schedule-admin-unlock,
+[data-theme="night"] .schedule-secret-collapsible .schedule-admin-unlock,
+.dark .schedule-secret-collapsible .schedule-admin-unlock,
+body.dark-mode .schedule-secret-collapsible .schedule-admin-unlock {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+	color: var(--ink, #f8fafc);
+}
+
+/* ================================================================
+   macOS HIG HOVER HUD & PROGRESSIVE DISCLOSURE (0.15s DELAY)
+   ================================================================ */
+.appointment-patient-hover-preview {
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #cbd5e1));
+	border-radius: 16px;
+	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.22), 0 0 20px 2px rgba(13, 148, 136, 0.1);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	z-index: 50;
+	transition: opacity 0.15s ease, transform 0.15s ease;
+}
+
+[data-theme="dark"] .appointment-patient-hover-preview {
+	background: var(--paper-strong, #0f172a);
+	border-color: var(--line-strong, #334155);
+	color: var(--ink, #f8fafc);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.65), 0 0 24px 2px rgba(13, 148, 136, 0.15);
+}
+
+[data-theme="night"] .appointment-patient-hover-preview {
+	background: var(--paper-strong, #181512);
+	border-color: var(--line-strong, #2d261e);
+	color: var(--ink, #f5efe6);
+	box-shadow: 0 24px 48px -12px rgba(0, 0, 0, 0.8), 0 0 20px 2px rgba(13, 148, 136, 0.1);
+}
+
+[data-theme="contrast"] .appointment-patient-hover-preview {
+	background: #000000;
+	border: 2px solid #ffffff;
+	color: #ffffff;
+	box-shadow: none;
+}

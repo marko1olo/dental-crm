@@ -1,0 +1,64 @@
+/* Horizontal Doctor & Chair Chips */
+.schedule-mobile-chips-wrapper {
+  background: var(--paper, #ffffff);
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  padding: 6px 0;
+  width: 100%;
+  overflow: hidden;
+}
+
+.schedule-mobile-chips-scroller {
+  display: flex !important;
+  flex-wrap: nowrap !important;
+  align-items: center;
+  gap: 8px !important;
+  overflow-x: auto !important;
+  padding: 4px 12px;
+  min-height: 44px !important;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+
+.schedule-mobile-chips-scroller::-webkit-scrollbar {
+  display: none;
+}
+
+.schedule-mobile-chips-scroller::after {
+  content: "";
+  display: block;
+  flex: 0 0 12px;
+  min-width: 12px;
+  height: 1px;
+}
+
+.schedule-mobile-filter-chip {
+  min-height: 44px !important;
+  height: 44px !important;
+  padding: 0 14px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  white-space: nowrap !important;
+  flex-shrink: 0 !important;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--paper-soft, #f8fafc);
+  color: var(--ink, #0f172a);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.schedule-mobile-filter-chip:active {
+  transform: scale(0.96);
+}
+
+.schedule-mobile-filter-chip.active {
+  background: var(--teal, #0d9488);
+  border-color: var(--teal, #0d9488);
+  color: #ffffff;
+  font-weight: 700;
+  box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}

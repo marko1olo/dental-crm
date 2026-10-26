@@ -72,27 +72,39 @@ export const DayConfirmationsTable: React.FC<DayConfirmationsTableProps> = ({
                   {row.status !== "confirmed" && row.status !== "completed" ? (
                     <button
                       type="button"
-                      disabled={statusUpdatingId === row.appointmentId}
-                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0"
+                      aria-busy={statusUpdatingId === row.appointmentId || undefined}
+                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 hover:bg-emerald-500/25 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 pointer-coarse:min-h-[44px]"
                       title="1-клик: подтвердить явку пациента на приём"
                       aria-label={`Подтвердить приём ${row.patientName}`}
                       data-testid={`btn-confirm-appt-${row.appointmentId}`}
-                      onClick={() => onStatusChange(row, "confirmed")}
+                      onClick={() => {
+                        if (statusUpdatingId === row.appointmentId) return;
+                        onStatusChange(row, "confirmed");
+                      }}
                     >
-                      ✓ Подтверждён
+                      {statusUpdatingId === row.appointmentId ? (
+                        <span className="w-3 h-3 border-2 border-emerald-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                      ) : null}
+                      <span>✓ Подтверждён</span>
                     </button>
                   ) : null}
                   {row.status !== "cancelled" ? (
                     <button
                       type="button"
-                      disabled={statusUpdatingId === row.appointmentId}
-                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0"
+                      aria-busy={statusUpdatingId === row.appointmentId || undefined}
+                      className="px-2 py-1 rounded-lg text-xs font-semibold bg-rose-500/10 text-rose-700 dark:text-rose-300 border border-rose-500/30 hover:bg-rose-500/20 transition-all cursor-pointer inline-flex items-center gap-1 shrink-0 pointer-coarse:min-h-[44px]"
                       title="Отменить приём и сразу открыть лист ожидания для заполнения окна"
                       aria-label={`Отменить приём ${row.patientName} и освободить слот`}
                       data-testid={`btn-cancel-appt-${row.appointmentId}`}
-                      onClick={() => onStatusChange(row, "cancelled")}
+                      onClick={() => {
+                        if (statusUpdatingId === row.appointmentId) return;
+                        onStatusChange(row, "cancelled");
+                      }}
                     >
-                      ✕ В лист ожидания
+                      {statusUpdatingId === row.appointmentId ? (
+                        <span className="w-3 h-3 border-2 border-rose-600 border-t-transparent rounded-full animate-spin shrink-0" />
+                      ) : null}
+                      <span>✕ В лист ожидания</span>
                     </button>
                   ) : null}
                   {row.needsCall ? (

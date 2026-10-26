@@ -1,0 +1,44 @@
+/* Roster KPIs Strip */
+.roster-kpis-strip {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+	gap: 0.75rem;
+}
+
+.roster-kpi-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 0.625rem 0.875rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.2rem;
+	min-width: 0;
+}
+
+.roster-kpi-label {
+	font-size: 0.75rem;
+	color: var(--muted);
+	font-weight: 500;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.roster-kpi-val {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--ink);
+	display: flex;
+	align-items: baseline;
+	gap: 0.25rem;
+	white-space: nowrap;
+}
+
+.roster-kpi-sub {
+	font-size: 0.7rem;
+	color: var(--muted);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}

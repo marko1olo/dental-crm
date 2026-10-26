@@ -1,0 +1,69 @@
+/* Mobile Schedule View: suppress redundant topbar + Запись (already present in ScheduleFilterStrip, Mandates 8p, 8c) */
+@media (max-width: 840px) {
+	.workspace.view-schedule .top-actions {
+		display: none !important;
+	}
+}
+
+/* ═══════════════════════════════════════════════════════════════════
+   HARMONIZED SCHEDULE CONTROLS & TIMELINE STYLIST (BIBLE AUDIT)
+   Native Segmented Controls
+   ═══════════════════════════════════════════════════════════════════ */
+.schedule-view-mode-segmented {
+	display: inline-flex;
+	align-items: center;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 2px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	box-sizing: border-box;
+	gap: 2px;
+	user-select: none;
+}
+
+.schedule-view-mode-btn {
+	border: 0 !important;
+	outline: none;
+	height: 26px;
+	min-height: 26px;
+	max-height: 26px;
+	padding: 0 10px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	background: transparent;
+	color: var(--muted);
+	box-sizing: border-box;
+}
+
+.schedule-view-mode-btn:hover {
+	color: var(--ink);
+	background: rgba(125, 125, 125, 0.08);
+}
+
+.schedule-view-mode-btn.active {
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-weight: 700 !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+	border: 1px solid var(--line) !important;
+}
+
+[data-theme="dark"] .schedule-view-mode-btn.active,
+[data-theme="night"] .schedule-view-mode-btn.active,
+.dark .schedule-view-mode-btn.active {
+	background: var(--paper-strong, var(--paper)) !important;
+	color: var(--ink) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}

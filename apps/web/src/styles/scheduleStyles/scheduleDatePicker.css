@@ -1,0 +1,88 @@
+.schedule-panel {
+	padding: 0 !important;
+}
+.schedule-date-picker-group {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	border-right: 1px solid var(--line);
+	padding-right: 6px;
+	margin-right: 2px;
+	height: 28px;
+	min-height: 28px;
+}
+@media (max-width: 640px) {
+	.schedule-filter-strip {
+		justify-content: flex-start !important;
+		gap: 8px !important;
+		padding: 0 8px !important;
+	}
+	.schedule-date-picker-group {
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+		border-right: none !important;
+		padding-right: 0 !important;
+		margin-right: 0 !important;
+		display: flex !important;
+		align-items: center !important;
+		gap: 4px !important;
+	}
+	.schedule-filter-strip input[type="date"],
+	.schedule-filter-strip input.schedule-date-input {
+		flex: 1 1 auto !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		max-width: none !important;
+	}
+	.schedule-filter-strip > div:last-child {
+		margin-left: auto !important;
+		flex-shrink: 0 !important;
+	}
+}
+.schedule-date-picker-group .secondary-button {
+	height: 28px;
+	min-height: 28px;
+	max-height: 28px;
+	line-height: 1;
+	box-sizing: border-box;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	margin: 0;
+}
+/*
+ * Квадрат 28px — только для стрелок «день назад/вперёд». Прежнее безадресное
+ * width: 28px сплющивало текстовую кнопку «Сегодня» до 26px и срезало слово
+ * («Сегодн…») — срез текста, Грех №1 визуальной инквизиции. Текстовая кнопка
+ * живёт авторазмером с честным паддингом.
+ */
+.schedule-date-picker-group .schedule-day-step-prev,
+.schedule-date-picker-group .schedule-day-step-next {
+	width: 28px;
+	min-width: 28px;
+	padding: 0;
+}
+.schedule-date-picker-group .secondary-button[data-testid="schedule-date-today-btn"] {
+	width: auto;
+	min-width: 0;
+	padding: 0 10px;
+	white-space: nowrap;
+}
+.schedule-date-filter-wrap {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	border-right: 1px solid var(--line-strong);
+	padding-right: 12px;
+	margin-right: 4px;
+}
+.schedule-date-filter-input {
+	border: none;
+	background: transparent;
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink);
+	outline: none;
+	cursor: pointer;
+}

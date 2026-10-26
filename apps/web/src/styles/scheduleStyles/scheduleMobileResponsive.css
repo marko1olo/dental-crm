@@ -1,0 +1,72 @@
+@media (max-width: 640px) {
+	.timeline-node {
+		display: flex;
+		flex-direction: column;
+		gap: 4px;
+		min-height: auto;
+	}
+	.timeline-line {
+		display: none;
+	}
+	.timeline-time {
+		text-align: left;
+		padding-top: 4px;
+		font-size: 13px;
+		display: flex;
+		align-items: center;
+		gap: 4px;
+	}
+	.timeline-content {
+		padding-bottom: 12px;
+		width: 100%;
+	}
+	.appointment-card {
+		width: 100%;
+		max-width: 100%;
+		padding: 10px 12px;
+		gap: 8px;
+		margin-bottom: 8px;
+	}
+	.schedule-panel,
+	.schedule-grid-container,
+	.schedule-timeline {
+		padding-bottom: 128px !important;
+	}
+}
+
+@media (max-width: 390px) {
+	.schedule-filter-strip {
+		overflow-x: hidden;
+		flex-direction: row;
+		align-items: center;
+		justify-content: flex-start !important;
+		gap: 6px !important;
+		padding: 0 6px !important;
+	}
+	.schedule-date-picker-group {
+		flex: 1 1 auto !important;
+		min-width: 0 !important;
+		padding-right: 0 !important;
+		margin-right: 0 !important;
+		border-right: none !important;
+		gap: 3px !important;
+	}
+	.schedule-filter-strip input[type="date"],
+	.schedule-filter-strip input.schedule-date-input {
+		flex: 1 1 auto !important;
+		width: 100% !important;
+		min-width: 0 !important;
+		font-size: 11px !important;
+		padding: 2px 4px !important;
+	}
+	.schedule-filter-strip > div:last-child {
+		margin-left: auto !important;
+		flex-shrink: 0 !important;
+	}
+	.appointment-card-header {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 4px;
+	}
+}

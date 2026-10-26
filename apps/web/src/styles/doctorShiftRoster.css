@@ -1,0 +1,14 @@
+/**
+ * DENTE Dental CRM — Doctor Shift Roster Styles Facade
+ * Mandate 8b: Modular Architecture (all modules in ./rosterStyles/ <= 120 lines)
+ */
+
+@import "./rosterStyles/rosterModalContainer.css";
+@import "./rosterStyles/rosterKpisStrip.css";
+@import "./rosterStyles/rosterNavBar.css";
+@import "./rosterStyles/rosterConflictBanner.css";
+@import "./rosterStyles/rosterGridTable.css";
+@import "./rosterStyles/rosterShiftPillsAndHeatmap.css";
+@import "./rosterStyles/rosterT13AndDrawer.css";
+@import "./rosterStyles/rosterFooterAndButtons.css";
+@import "./rosterStyles/rosterPrintAndMobile.css";

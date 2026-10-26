@@ -171,9 +171,11 @@ export function AppointmentCardVisualBody({
 					) : (displayStatus === "arrived" || displayStatus === "planned" || displayStatus === "confirmed") ? (
 						<button
 							type="button"
-							disabled={isQuickStatusUpdating}
+							disabled={false}
+							aria-busy={isQuickStatusUpdating || undefined}
 							onClick={(e) => {
 								e.stopPropagation();
+								if (isQuickStatusUpdating) return;
 								void handleQuickStatusChange("in_treatment");
 								const pid = appointmentPatient?.id || appointment.patientId;
 								if (pid) {

@@ -1,0 +1,87 @@
+/* A4 Print Layout */
+@media print {
+	.roster-modal-overlay {
+		position: static;
+		inset: auto;
+		background: none;
+		backdrop-filter: none;
+		padding: 0;
+	}
+	.roster-modal-container {
+		border: none;
+		box-shadow: none;
+		width: 100%;
+		max-width: 100%;
+		height: auto;
+	}
+	.roster-header-top button,
+	.roster-nav-bar,
+	.roster-footer,
+	.roster-cell-add-btn {
+		display: none !important;
+	}
+}
+
+@media (max-width: 640px) {
+	.roster-modal-overlay {
+		padding: 0.25rem;
+	}
+
+	.roster-modal-container {
+		max-height: 98vh;
+		height: 98vh;
+		border-radius: 10px;
+	}
+
+	.roster-header {
+		padding: 0.75rem 0.875rem;
+	}
+
+	.roster-kpis-strip {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 0.375rem;
+	}
+
+	.roster-nav-bar {
+		padding: 0.5rem 0.75rem;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.roster-conflict-banner {
+		padding: 0.5rem 0.75rem;
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 0.375rem;
+	}
+
+	.roster-conflict-list {
+		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.25rem;
+	}
+
+	.roster-conflict-tag {
+		width: 100%;
+		box-sizing: border-box;
+	}
+}
+
+/* Zero-Matryoshka Anchored Cell Popover (Depth strictly 1, Mandates 8d, 8e) */
+.roster-cell-popover-anchored {
+	position: absolute;
+	top: 1rem;
+	right: 1.5rem;
+	z-index: 50;
+	background-color: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: var(--shadow-3);
+	width: 100%;
+	max-width: 480px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}

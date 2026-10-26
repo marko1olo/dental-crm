@@ -1,0 +1,48 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SCHEDULE & APPOINTMENT MODULE — THEME TOKENS & COLLAPSIBLE
+   ═══════════════════════════════════════════════════════════════════ */
+
+.schedule-secret-collapsible {
+	border: none;
+	border-radius: 8px;
+	margin: 0.5rem 0;
+	background: var(--paper-soft);
+}
+.schedule-secret-collapsible summary {
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+	padding: 0.7rem 1rem;
+	cursor: pointer;
+	font-size: 0.82rem;
+	color: var(--text-muted, #718096);
+	list-style: none;
+	user-select: none;
+}
+.schedule-secret-collapsible summary::-webkit-details-marker {
+	display: none;
+}
+.schedule-secret-collapsible summary::marker {
+	display: none;
+}
+.schedule-secret-collapsible .schedule-admin-unlock {
+	padding: 0.75rem 1rem 1rem;
+	border-top: none;
+	background: var(--paper-soft);
+	border-radius: 0 0 8px 8px;
+	animation: accordion-open 0.2s ease both;
+}
+
+/* Today's Schedule interactive hover states */
+.today-schedule-item:hover {
+	background: rgba(13, 148, 136, 0.08);
+	border-color: var(--teal);
+	transform: translateY(-1px);
+	box-shadow:
+		0 4px 6px -1px rgba(0, 0, 0, 0.05),
+		0 2px 4px -1px rgba(0, 0, 0, 0.03);
+}
+
+.today-schedule-item:active {
+	transform: translateY(0);
+}

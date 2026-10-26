@@ -48,7 +48,15 @@ export function DayConfirmationsPanel() {
           <label htmlFor="confirmations-date">День</label>
           <input id="confirmations-date" type="date" value={dayConfirmationsShownDay(requestedDate, data)} onChange={(e) => setRequestedDate(e.target.value)} />
         </span>
-        <button className="secondary-button" type="button" onClick={() => void load()} disabled={loading}>
+        <button
+          className="secondary-button"
+          type="button"
+          onClick={() => {
+            if (loading) return;
+            void load();
+          }}
+          aria-busy={loading || undefined}
+        >
           {loading ? "Обновляю…" : "Обновить"}
         </button>
       </div>

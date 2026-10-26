@@ -1,0 +1,34 @@
+/* --- SCHEDULE FILTER CHIPS & OVERFLOW FIXES --- */
+.schedule-filter-chips {
+	scroll-behavior: smooth;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+}
+.schedule-filter-chips::-webkit-scrollbar {
+	display: none;
+}
+.schedule-my-chair-chip,
+.schedule-auto-call-chip,
+.schedule-doctor-chip,
+.schedule-add-chair-chip-btn,
+.schedule-filter-strip .quick-chip,
+.schedule-filter-strip .schedule-filter-chips button {
+	flex: 0 0 auto !important;
+	flex-shrink: 0 !important;
+	min-width: max-content !important;
+	max-width: none !important;
+	white-space: nowrap !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
+}
+.schedule-my-chair-chip *,
+.schedule-auto-call-chip *,
+.schedule-doctor-chip *,
+.schedule-add-chair-chip-btn *,
+.schedule-filter-strip .quick-chip *,
+.schedule-filter-strip .schedule-filter-chips button * {
+	white-space: nowrap !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
+}

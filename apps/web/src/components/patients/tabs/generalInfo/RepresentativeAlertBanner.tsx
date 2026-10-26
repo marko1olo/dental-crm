@@ -24,6 +24,7 @@ export const RepresentativeAlertBanner: React.FC<RepresentativeAlertBannerProps>
 						<ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 						<span>
 							<strong>Родственник / Сопровождающий:</strong> Пациент младше 15 лет. Информированное согласие (ИДС) подписывает законный представитель (родитель / опекун).
+							<span className="sr-only">Основание: ст. 20 323-ФЗ, ст. 64 СК РФ</span>
 						</span>
 					</div>
 					<span className="px-2 py-0.5 rounded text-[10px] font-black uppercase bg-amber-600 text-white shrink-0">

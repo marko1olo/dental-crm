@@ -36,7 +36,7 @@ export const ScheduleMobileSheetHeader: React.FC<
 
 	return (
 		<>
-			<div className="w-12 h-1.5 bg-slate-300 dark:bg-slate-700 rounded-full mx-auto mb-2" />
+			<div className="w-[36px] h-[5px] bg-[var(--line-strong,var(--line))] rounded-full mx-auto mb-2 shrink-0" aria-hidden="true" />
 			<div className="flex items-center justify-between gap-2 border-b border-[var(--line)] pb-3">
 				<div className="min-w-0 flex-1">
 					<div className="text-lg font-black text-[var(--ink)] truncate">

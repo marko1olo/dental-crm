@@ -15,12 +15,14 @@ export function CancelledNoShowActions({
 			<div className="flex items-center gap-1.5 shrink-0" data-testid="card-primary-actions">
 				<button
 					type="button"
-					disabled={isQuickStatusUpdating}
+					disabled={false}
+					aria-busy={isQuickStatusUpdating || undefined}
 					onClick={(e) => {
 						e.stopPropagation();
+						if (isQuickStatusUpdating) return;
 						void handleQuickStatusChange("confirmed");
 					}}
-					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap pointer-coarse:min-h-[44px]"
 					title="Восстановить отменённую запись"
 					data-testid="appointment-action-restore-btn"
 				>
@@ -48,12 +50,14 @@ export function CancelledNoShowActions({
 		<div className="flex items-center gap-1.5 shrink-0" data-testid="card-primary-actions">
 			<button
 				type="button"
-				disabled={isQuickStatusUpdating}
+				disabled={false}
+				aria-busy={isQuickStatusUpdating || undefined}
 				onClick={(e) => {
 					e.stopPropagation();
+					if (isQuickStatusUpdating) return;
 					void handleQuickStatusChange("arrived");
 				}}
-				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap"
+				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
 				title="Отметить пациента прибывшим"
 				data-testid="appointment-action-arrived-btn"
 			>
