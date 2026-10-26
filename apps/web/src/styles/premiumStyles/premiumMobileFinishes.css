@@ -1,0 +1,86 @@
+/* 
+ * premiumStyles/premiumMobileFinishes.css
+ * Apple HIG Mobile Touch Surfaces, Glass Bottom Bars & Viewport Protection
+ * Strict <= 120 lines invariant (Mandate 8b, 8al, HIG)
+ */
+
+/* Mobile Bottom Navigation & Safe Area Insets */
+@media (max-width: 860px) {
+	.sidebar,
+	.app-shell .sidebar {
+		border-right: none;
+		border-top: 1px solid var(--glass-border);
+		border-radius: 20px 20px 0 0;
+		padding-bottom: env(safe-area-inset-bottom);
+		background: var(--glass-panel);
+		backdrop-filter: blur(20px) saturate(180%);
+		-webkit-backdrop-filter: blur(20px) saturate(180%);
+	}
+
+	.nav-item {
+		min-height: 44px;
+		padding: 8px 4px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.nav-item.active {
+		transform: translateY(-2px);
+		border-bottom: 2px solid var(--active-item-border);
+		box-shadow: none;
+	}
+
+	.nav-item .nav-copy {
+		display: none;
+	}
+
+	.nav-label {
+		font-size: 11px;
+		font-weight: 600;
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		max-width: 60px;
+	}
+}
+
+/* Floating Bottom Bar (Natural Thumb Zone) */
+.mobile-glass-bottom-bar,
+.floating-bottom-bar,
+.sticky-touch-footer {
+	position: sticky;
+	bottom: 0;
+	z-index: 40;
+	background: var(--glass-panel);
+	backdrop-filter: blur(20px) saturate(180%);
+	-webkit-backdrop-filter: blur(20px) saturate(180%);
+	border-top: 1px solid var(--glass-border);
+	padding: 12px 16px calc(12px + env(safe-area-inset-bottom)) 16px;
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+/* Zero Horizontal Drift Invariant (Mandates 8ze, Apple HIG) */
+@media (max-width: 860px) {
+	html,
+	body,
+	#root,
+	.app-shell {
+		max-width: 100vw;
+		overflow-x: clip;
+	}
+
+	/* GPU Thrashing Suppression on Mobile Devices */
+	.finance-zone,
+	.patients-zone,
+	.schedule-zone,
+	.documents-zone,
+	.workspace-section,
+	.protocol-settings,
+	.rule-form {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+		transform: none !important;
+		filter: none !important;
+	}
+}

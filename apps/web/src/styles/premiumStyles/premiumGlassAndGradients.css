@@ -1,0 +1,65 @@
+/* 
+ * premiumStyles/premiumGlassAndGradients.css
+ * Apple Glassmorphism (backdrop-filter: blur), Mesh Gradients & Zone Containers
+ * Strict <= 120 lines invariant (Mandate 8b)
+ */
+
+/* Unified Zone Containers (Single surface elevation for primary workspaces) */
+.patients-panel,
+.schedule-panel,
+.documents-panel,
+.settings-zone,
+.visit-zone,
+.imaging-zone,
+.marketing-zone,
+.shift-zone,
+.finance-zone,
+.patients-zone,
+.schedule-zone,
+.documents-zone,
+.workspace-section,
+.protocol-settings,
+.rule-form {
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 16px;
+	color: var(--text-primary);
+}
+
+/* Anti-Matryoshka reset for nested sub-containers (prevent murky stacked blurs) */
+.workspace {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+}
+
+.patient-list,
+.card-body,
+.panel-body {
+	background: transparent;
+	border: none;
+	box-shadow: none;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+}
+
+/* Base Body Background with Mesh Gradients */
+body {
+	background-color: var(--bg-app);
+	background-image: var(--mesh-bg-1), var(--mesh-bg-2), var(--mesh-bg-3);
+	background-attachment: fixed;
+	color: var(--text-primary);
+}
+
+/* Sidebar Redesign - Apple Glassmorphism */
+.sidebar,
+.app-shell .sidebar {
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border-right: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+}

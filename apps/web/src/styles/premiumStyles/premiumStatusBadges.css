@@ -1,0 +1,108 @@
+/* 
+ * premiumStyles/premiumStatusBadges.css
+ * Apple HIG Clinical Status Badges & Muted Pastel Tones
+ * Strict <= 120 lines invariant (Mandate 8b)
+ */
+
+/* Clinical Status Badge Base */
+.clinical-status-badge,
+.clinical-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 2px 8px;
+	font-size: 11px;
+	font-weight: 600;
+	line-height: 1.35;
+	border-radius: 9999px;
+	letter-spacing: 0.01em;
+	transition: background-color 0.2s ease, border-color 0.2s ease, color 0.2s ease;
+	user-select: none;
+	white-space: nowrap;
+}
+
+.clinical-badge-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background-color: currentColor;
+	flex-shrink: 0;
+}
+
+/* 1. Scheduled / Planned (Teal) */
+.clinical-badge--scheduled,
+.badge-scheduled {
+	background: rgba(13, 148, 136, 0.12);
+	color: #0f766e;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark) .clinical-badge--scheduled {
+	background: rgba(45, 212, 191, 0.16);
+	color: #2dd4bf;
+	border-color: rgba(45, 212, 191, 0.35);
+}
+
+/* 2. In Progress / In Chair (Blue) */
+.clinical-badge--in-progress,
+.badge-in-progress {
+	background: rgba(59, 130, 246, 0.12);
+	color: #1d4ed8;
+	border: 1px solid rgba(59, 130, 246, 0.25);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark) .clinical-badge--in-progress {
+	background: rgba(96, 165, 250, 0.18);
+	color: #93c5fd;
+	border-color: rgba(96, 165, 250, 0.35);
+}
+
+/* 3. Completed / Signed / Paid (Emerald) */
+.clinical-badge--completed,
+.badge-completed {
+	background: rgba(16, 185, 129, 0.12);
+	color: #047857;
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark) .clinical-badge--completed {
+	background: rgba(52, 211, 153, 0.16);
+	color: #6ee7b7;
+	border-color: rgba(52, 211, 153, 0.35);
+}
+
+/* 4. Urgent / Acute / Critical (Ruby Red) */
+.clinical-badge--urgent,
+.badge-urgent {
+	background: rgba(239, 68, 68, 0.12);
+	color: #b91c1c;
+	border: 1px solid rgba(239, 68, 68, 0.25);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark) .clinical-badge--urgent {
+	background: rgba(248, 113, 113, 0.18);
+	color: #fca5a5;
+	border-color: rgba(248, 113, 113, 0.35);
+}
+
+/* 5. Warning / Attention / Debt (Amber) */
+.clinical-badge--warning,
+.badge-warning {
+	background: rgba(245, 158, 11, 0.12);
+	color: #b45309;
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark) .clinical-badge--warning {
+	background: rgba(251, 191, 36, 0.18);
+	color: #fde68a;
+	border-color: rgba(251, 191, 36, 0.35);
+}
+
+/* 6. Draft / Neutral / Idle (Slate) */
+.clinical-badge--draft,
+.badge-draft {
+	background: rgba(100, 116, 139, 0.1);
+	color: #475569;
+	border: 1px solid rgba(148, 163, 184, 0.25);
+}
+:is([data-theme="dark"], [data-theme="night"], html.dark) .clinical-badge--draft {
+	background: rgba(148, 163, 184, 0.15);
+	color: #cbd5e1;
+	border-color: rgba(148, 163, 184, 0.3);
+}

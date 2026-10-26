@@ -1,0 +1,65 @@
+/* 
+ * premiumStyles/premiumBordersAndShadows.css
+ * Precision 1px Hairline Borders, iOS Elevation Shadows & Form Integration
+ * Strict <= 120 lines invariant (Mandate 8b)
+ */
+
+/* Form Elements Theme Integration */
+input,
+select,
+textarea {
+	background-color: var(--paper-strong);
+	color: var(--text-primary);
+	border: 1px solid var(--glass-border);
+	border-radius: 10px;
+	transition: border-color 0.2s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+	outline: none;
+	border-color: var(--primary, #0d9488);
+	box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+input::placeholder,
+textarea::placeholder {
+	color: var(--text-secondary);
+	opacity: 0.7;
+}
+
+/* Universal Text & Heading Harmonization (WCAG AAA High Contrast) */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+.panel-heading h2,
+.settings-heading h2 {
+	color: var(--text-primary);
+	letter-spacing: -0.015em;
+}
+
+/* Hairline Surface Separator Utility */
+.hairline-border {
+	border: 1px solid var(--glass-border);
+}
+
+.hairline-border-bottom {
+	border-bottom: 1px solid var(--glass-border);
+}
+
+/* Native Apple Elevation Shadows */
+.elevation-surface-sm {
+	box-shadow: var(--shadow-1);
+}
+
+.elevation-surface-md {
+	box-shadow: var(--shadow-2);
+}
+
+.elevation-surface-lg {
+	box-shadow: var(--shadow-3);
+}

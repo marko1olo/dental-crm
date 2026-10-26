@@ -1,0 +1,72 @@
+/* 
+ * premiumStyles/premiumAnimations.css
+ * Apple HIG Micro-Animations & Accessibility Reduced Motion Support
+ * Strict <= 120 lines invariant (Mandate 8b)
+ */
+
+/* Keyframe Animations */
+@keyframes apple-soft-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes apple-pulse-subtle {
+	0%, 100% {
+		opacity: 1;
+		transform: scale(1);
+	}
+	50% {
+		opacity: 0.85;
+		transform: scale(1.02);
+	}
+}
+
+/* Micro-Interaction Utility Classes */
+.animate-soft-fade-in {
+	animation: apple-soft-fade-in 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.tap-feedback {
+	transition: transform 0.15s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.tap-feedback:active {
+	transform: scale(0.97);
+}
+
+.card-lift {
+	transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.card-lift:hover {
+	transform: translateY(-2px);
+}
+
+/* Mandatory WCAG AAA Reduced Motion Compliance */
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.001ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.001ms !important;
+		scroll-behavior: auto !important;
+	}
+
+	.onboarding-shell:hover,
+	.mode-fit-card:hover,
+	.role-queue-card:hover,
+	.patient-summary-card:hover,
+	.card:hover,
+	.glass-panel:hover,
+	.card-lift:hover,
+	.tap-feedback:active {
+		transform: none !important;
+	}
+}

@@ -1,0 +1,85 @@
+/* 
+ * premiumStyles/premiumCardSurfaces.css
+ * Surface Elevations, Interactive Cards & Toast Overlays
+ * Strict <= 120 lines invariant (Mandate 8b)
+ */
+
+/* Cards, Modals & Surface Panels */
+.onboarding-shell,
+.boot-unlock-form,
+.app-notice,
+.workspace-continuity-strip,
+.mode-fit-card,
+.role-queue-card,
+.patient-summary-card,
+.patient-insight-panel,
+.glass-panel,
+.card {
+	background: var(--glass-panel);
+	backdrop-filter: var(--glass-blur) saturate(180%);
+	-webkit-backdrop-filter: var(--glass-blur) saturate(180%);
+	border: 1px solid var(--glass-border);
+	box-shadow: var(--glass-shadow);
+	border-radius: 16px;
+	color: var(--text-primary);
+	transition:
+		transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1),
+		box-shadow 0.3s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.onboarding-shell:hover,
+.mode-fit-card:hover,
+.role-queue-card:hover,
+.patient-summary-card:hover,
+.card:hover,
+.glass-panel:hover {
+	transform: translateY(-2px);
+	box-shadow:
+		var(--glass-shadow),
+		0 12px 30px rgba(0, 0, 0, 0.15);
+}
+
+[data-theme="light"] .onboarding-shell:hover {
+	box-shadow: 0 16px 48px 0 rgba(31, 38, 135, 0.15);
+}
+
+/* Global Toast Integration (10 Themes & WCAG AAA Harmony, Mandates 8d, 8p) */
+.sa-toast {
+	background: var(--paper-strong, #18181b) !important;
+	color: var(--ink, #f8fafc) !important;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12)) !important;
+	box-shadow: var(--shadow-3, 0 12px 32px rgba(0, 0, 0, 0.35)) !important;
+	border-radius: 12px !important;
+}
+
+.sa-toast span {
+	color: var(--ink, #f8fafc) !important;
+}
+
+.sa-toast button {
+	color: var(--muted, #94a3b8) !important;
+}
+
+.sa-toast button:hover {
+	color: var(--ink, #f8fafc) !important;
+}
+
+.sa-toast--success {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--ok-fg, #10b981) !important;
+}
+
+.sa-toast--error {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--bad-fg, #ef4444) !important;
+}
+
+.sa-toast--warning {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--warning-fg, #f59e0b) !important;
+}
+
+.sa-toast--info {
+	background: var(--paper-strong, #18181b) !important;
+	border-color: var(--teal, #14b8a6) !important;
+}
