@@ -11,7 +11,7 @@ import {
 	fetchDoctorAppointmentsForPeriod,
 	fetchAppointmentsClinicalDetails,
 } from "./doctorEarningsDbQueries.js";
-import { buildSampleDoctorEarningsResponse } from "./sampleEarningsAdapter.js";
+import { buildEmptyDoctorEarningsResponse } from "./emptyEarningsResponse.js";
 import { calculateLiveDoctorEarnings } from "./liveEarningsCalculator.js";
 
 export async function registerDoctorEarningsHandlers(app: FastifyInstance): Promise<void> {
@@ -21,26 +21,24 @@ export async function registerDoctorEarningsHandlers(app: FastifyInstance): Prom
 
 		const { identity, queryData, targetDoctorId, fromDate, toDate, dateParam } = ctx;
 		const effectiveOrgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const doctorSpecialty = "Врач-стоматолог терапевт-ортопед";
 
-		const { doctorName, categoryRates } = await fetchDoctorProfileAndRates(effectiveOrgId, targetDoctorId);
+		const { doctorName, doctorSpecialty, categoryRates } = await fetchDoctorProfileAndRates(effectiveOrgId, targetDoctorId);
 		const rawAppointments = await fetchDoctorAppointmentsForPeriod(effectiveOrgId, targetDoctorId, fromDate, toDate);
 
 		if (rawAppointments.length === 0) {
-			const sampleResponse = buildSampleDoctorEarningsResponse({
+			// Честный пустой период: нули и правдивое пояснение. Никакой синтетики в боевом контуре (Мандат 8wy).
+			return reply.send(buildEmptyDoctorEarningsResponse({
 				targetDoctorId,
 				doctorName,
 				doctorSpecialty,
 				fromDate,
 				toDate,
 				dateParam,
-				categoryRates,
 				payoutModel: queryData.payoutModel,
 				chairRentalRub: queryData.chairRentalRub,
 				advanceRub: queryData.advanceRub,
 				taxRegime: queryData.taxRegime,
-			});
-			return reply.send(sampleResponse);
+			}));
 		}
 
 		const appointmentIds = rawAppointments.map((a) => a.id);

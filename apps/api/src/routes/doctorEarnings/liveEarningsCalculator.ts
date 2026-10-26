@@ -11,8 +11,11 @@ import {
 } from "./types.js";
 import type { LiveCalculationInput, CategoryAccumulatorItem } from "./liveEarningsTypes.js";
 import { processLiveAppointment } from "./calculateLiveAppointmentItem.js";
+import { buildAppointmentLabBudget } from "./appointmentLabBudget.js";
 
 export type { LiveCalculationInput } from "./liveEarningsTypes.js";
+export { buildAppointmentLabBudget } from "./appointmentLabBudget.js";
+export { buildEmptyDoctorEarningsResponse } from "./emptyEarningsResponse.js";
 
 export function calculateLiveDoctorEarnings(input: LiveCalculationInput): DoctorMyEarningsResponse {
 	let totalGrossKop = 0;
@@ -22,9 +25,10 @@ export function calculateLiveDoctorEarnings(input: LiveCalculationInput): Doctor
 	let totalPaidRub = 0;
 	let totalUnpaidRub = 0;
 	const categoryAgg: Record<string, CategoryAccumulatorItem> = {};
+	const appointmentLabBudgetKop = input.appointmentLabBudgetKop ?? buildAppointmentLabBudget(input);
 
 	const appointmentsResult = input.rawAppointments.map((apt) => {
-		const res = processLiveAppointment(apt, input, categoryAgg);
+		const res = processLiveAppointment(apt, { ...input, appointmentLabBudgetKop }, categoryAgg);
 		totalGrossKop += res.grossRevenueKop;
 		totalLabKop += res.labCostKop;
 		totalMatKop += res.materialsCostKop;
@@ -62,7 +66,6 @@ export function calculateLiveDoctorEarnings(input: LiveCalculationInput): Doctor
 	const avgCommission = isChairRental
 		? 100
 		: (totalNetBaseKop > 0 ? Math.round((effectiveDoctorEarnedKop * 100) / totalNetBaseKop) : 25);
-
 	const advanceRub = Math.max(0, input.advanceRub ?? 0);
 	const advanceKop = Math.round(advanceRub * 100);
 	const mainPayoutKop = Math.max(0, effectiveDoctorEarnedKop - advanceKop);

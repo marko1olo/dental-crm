@@ -26,7 +26,7 @@ export function generateDoctorPayrollCsv(results: readonly DoctorPayrollResult[]
 
 export function generateStaffPayrollCsv(summary: ConsolidatedStaffPayrollSummary): string {
 	const headerLines = [
-		`\uFEFFСдельная ведомость начислений персонала клиники (Унифицированная форма № Т-51);Утверждена Постановлением Госкомстата России от 05.01.2004 № 1`,
+		`\uFEFFГонорарная ведомость начислений персонала клиники;Расчет вознаграждения сотрудников`,
 		`Организация:;"${summary.clinicName}";ИНН/КПП:;"${summary.organizationInn} / ${summary.organizationKpp}"`,
 		`Период:;"${summary.periodLabelRu}";Дата составления:;"${summary.generatedAtIso.slice(0, 10)}"`,
 		``,

@@ -87,7 +87,7 @@ export function DoctorPayoutMobileWallet({
 					aria-label="Открыть расчётную ведомость"
 				>
 					<FileSpreadsheet size={18} />
-					<span>Сдельный расчёт и зарплата</span>
+					<span>Гонорарная ведомость</span>
 				</button>
 
 				<button

@@ -50,6 +50,12 @@ export interface LiveCalculationInput {
 		amountRub: unknown;
 		status: string;
 	}>;
+	/**
+	 * Готовый бюджет вычета ЗТЛ на каждый прием (копейки). Счет лаборатории
+	 * распределяется между приемами пациента один раз, поэтому ни один наряд
+	 * не вычитается дважды. Если карта не передана — считается по-старому на приёме.
+	 */
+	readonly appointmentLabBudgetKop?: Map<string, number> | undefined;
 }
 
 export interface CategoryAccumulatorItem {

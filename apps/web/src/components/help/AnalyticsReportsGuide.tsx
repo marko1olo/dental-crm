@@ -6,7 +6,7 @@
  * 1-Page Clinical Cheat Sheet:
  * - Real-time clinic revenue, daily cash totals, average ticket
  * - Chair utilization and appointment show rate metrics
- * - Doctor piece-rate payroll calculation (T-51) with ZTL lab cost deduction
+ * - Doctor piece-rate earnings & fee statement calculation with ZTL lab cost deduction
  * - Exportable financial and administrative summaries
  * - Hotkeys, FAQs, and interactive tour button
  */
@@ -49,7 +49,7 @@ export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTo
 	const avgCheck = Math.round(revenue / receiptsCount);
 	const chairUtilization = selectedPeriod === "today" ? 82 : selectedPeriod === "week" ? 78 : 81;
 
-	// Doctor Barabash T-51 Net Payroll calculations
+	// Doctor Net Revenue fee calculations
 	const doctorGrossRevenue = selectedPeriod === "today" ? 140000 : selectedPeriod === "week" ? 620000 : 2480000;
 	const labDeductionZtl = selectedPeriod === "today" ? 18000 : selectedPeriod === "week" ? 84000 : 320000;
 	const netCommissionBase = Math.max(0, doctorGrossRevenue - labDeductionZtl);
@@ -76,7 +76,7 @@ export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTo
 				</div>
 			</div>
 
-			{/* Interactive Visual Preview: KPI Dashboard & Doctor T-51 Payroll Calculator */}
+			{/* Interactive Visual Preview: KPI Dashboard & Doctor Fee Statement Calculator */}
 			<div className="rounded-lg border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-2xs space-y-0">
 				{/* Mockup Toolbar Header */}
 				<div className="p-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2">
@@ -177,12 +177,12 @@ export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTo
 					</div>
 				</div>
 
-				{/* Doctor T-51 Piece-Rate Net Payroll Calculator Mockup */}
+				{/* Doctor Fee Statement & Net Revenue Calculator */}
 				<div className="p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] space-y-2.5">
 					<div className="flex flex-wrap items-center justify-between gap-2">
 						<div className="flex items-center gap-1.5 font-bold text-xs text-[var(--ink)]">
 							<Calculator size={14} className="text-indigo-600 dark:text-indigo-400" />
-							<span>Расчетная ведомость: Расчёт сдельной зарплаты с вычетом ЗТЛ</span>
+							<span>Гонорарная ведомость: Расчёт вознаграждения врача с вычетом ЗТЛ</span>
 						</div>
 
 						<div className="flex items-center gap-1 text-[11px]">

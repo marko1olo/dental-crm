@@ -10,7 +10,8 @@ import {
 	type DoctorEarningsServiceItem,
 } from "./types.js";
 import type { LiveCalculationInput, CategoryAccumulatorItem } from "./liveEarningsTypes.js";
-import { processAptLabOrders } from "./liveLabOrdersProcessor.js";
+import { LAB_DEDUCTED_CATEGORIES } from "./constants.js";
+import { distributeLabKopAcrossServices, processAptLabOrders } from "./liveLabOrdersProcessor.js";
 
 export function processLiveAppointment(
 	apt: LiveCalculationInput["rawAppointments"][number],
@@ -22,11 +23,26 @@ export function processLiveAppointment(
 	const aptPayments = visitId ? input.dbPayments.filter((p) => p.visitId === visitId) : [];
 	const aptPaidAmount = aptPayments.reduce((sum, p) => sum + (parseFloat(String(p.amountRub)) || 0), 0);
 
-	const { aptLabItems, aptLabKop } = processAptLabOrders(apt.patientId, input.dbLabOrders);
+	const { aptLabItems, aptLabKop: patientLabKop } = processAptLabOrders(apt.patientId, input.dbLabOrders);
+	// Бюджет вычета приема уже распределен между приемами пациента в калькуляторе:
+	// счет ЗТЛ вычитается строго один раз, без задвоения по приёмам и услугам.
+	// Отсутствие записи о приеме в готовой карте означает заведомо нулевую долю.
+	const aptLabKop = input.appointmentLabBudgetKop
+		? (input.appointmentLabBudgetKop.get(apt.id) ?? 0)
+		: patientLabKop;
+	const aptLabItemsForApt = aptLabKop > 0 ? aptLabItems : [];
 
 	let aptGrossKop = 0;
 	let aptMatKop = 0;
 	let aptEarnedKop = 0;
+
+	// Протокол против задвоения вычета: счет ЗТЛ распределяется между услугами
+	// приема строго один раз (пропорционально цене ортопедических услуг).
+	const serviceBaseInfo = aptTreatments.map((t) => {
+		const priceKop = Math.round((parseFloat(String(t.priceRub)) || 0) * 100);
+		return { priceKop, isOrthopedic: LAB_DEDUCTED_CATEGORIES.has(t.category || "therapy") };
+	});
+	const labSharesKop = distributeLabKopAcrossServices(aptLabKop, serviceBaseInfo);
 
 	const aptServices: DoctorEarningsServiceItem[] = aptTreatments.map((t, idx) => {
 		const priceRub = parseFloat(String(t.priceRub)) || 0;
@@ -40,7 +56,7 @@ export function processLiveAppointment(
 			srvMatKop = recipeItems.reduce((acc, item) => acc + item.estimatedUnitCostKopecks, 0);
 		}
 
-		const srvLabKop = category === "orthopedics" && aptLabKop > 0 ? aptLabKop : 0;
+		const srvLabKop = labSharesKop[idx] ?? 0;
 		const dealBase = Math.max(0, priceKop - srvLabKop - srvMatKop);
 		const earnedKop = Math.round((dealBase * catRate) / 100);
 
@@ -103,7 +119,7 @@ export function processLiveAppointment(
 		doctorEarnedRub: aptEarnedKop / 100,
 		doctorEarnedKop: aptEarnedKop,
 		services: aptServices,
-		labOrders: aptLabItems,
+		labOrders: aptLabItemsForApt,
 		paidRub,
 		unpaidRub,
 	};

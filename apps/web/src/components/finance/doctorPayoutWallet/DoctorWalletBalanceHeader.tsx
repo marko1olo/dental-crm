@@ -16,14 +16,8 @@ export interface DoctorWalletBalanceHeaderProps {
 }
 
 export function DoctorWalletBalanceHeader({
-	monthLabel,
-	month,
-	monthInputId,
-	onMonthChange,
-	availableDoctors,
-	currentDoctor,
-	onSelectDoctor,
-	totalWithheld,
+	monthLabel, month, monthInputId, onMonthChange,
+	availableDoctors, currentDoctor, onSelectDoctor, totalWithheld,
 }: DoctorWalletBalanceHeaderProps) {
 	const payoutAmountRub = currentDoctor.payoutRub ?? currentDoctor.accruedRub ?? 0;
 
@@ -33,23 +27,13 @@ export function DoctorWalletBalanceHeader({
 			<header className="doctor-wallet-header">
 				<div className="doctor-wallet-title-wrap">
 					<h2 className="doctor-wallet-title">Выплаты врачам</h2>
-					<span className="doctor-wallet-subtitle">Кресельный расчётный листок</span>
+					<span className="doctor-wallet-subtitle">Отчет о доходах врача</span>
 				</div>
 
-				<label
-					htmlFor={monthInputId}
-					className="doctor-wallet-month-badge"
-					title="Сменить зарплатный месяц"
-				>
+				<label htmlFor={monthInputId} className="doctor-wallet-month-badge" title="Сменить зарплатный месяц">
 					<Calendar size={16} />
 					<span>{monthLabel}</span>
-					<input
-						id={monthInputId}
-						type="month"
-						className="doctor-wallet-month-input"
-						value={month}
-						onChange={(e) => onMonthChange(e.target.value)}
-					/>
+					<input id={monthInputId} type="month" className="doctor-wallet-month-input" value={month} onChange={(e) => onMonthChange(e.target.value)} />
 				</label>
 			</header>
 

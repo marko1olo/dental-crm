@@ -468,7 +468,7 @@ test("parseDashboardPayload: парсинг cardRevenue, services804nCount и la
 	assert.equal(doc.labOrdersCount, 5);
 });
 
-test("computeLocalAnalyticsData: детализация 54-ФЗ (СБП, безнал B2B, ДМС) и списания ЗТЛ со сдельной ставкой Т-51", () => {
+test("computeLocalAnalyticsData: детализация 54-ФЗ (СБП, безнал B2B, ДМС) и списания ЗТЛ со сдельной ставкой Net Revenue", () => {
 	const data = computeLocalAnalyticsData({
 		patients: [{ id: "p-1" }],
 		appointments: [{ id: "a-1", doctorUserId: "doc-1", startsAt: new Date().toISOString(), status: "completed" }],
@@ -498,7 +498,7 @@ test("computeLocalAnalyticsData: детализация 54-ФЗ (СБП, без�
 	assert.equal(doc.revenue, 100_000);
 	assert.equal(doc.labOrdersCount, 2);
 	assert.equal(doc.labOrdersCostRub, 25_000);
-	// База для Т-51 = 100_000 - 25_000 = 75_000; комиссия 25% = 18_750
+	// База Net Revenue = 100_000 - 25_000 = 75_000; комиссия 25% = 18_750
 	assert.equal(doc.doctorPayrollRub, 18_750);
 	// Маржа клиники = 100_000 - 25_000 - 18_750 = 56_250
 	assert.equal(doc.clinicMarginRub, 56_250);

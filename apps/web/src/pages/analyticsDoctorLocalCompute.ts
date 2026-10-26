@@ -413,8 +413,8 @@ function getPaymentDate(p: Record<string, unknown>): Date | null {
 			const services804nCount = doctorServicesMap.get(docId) || 0;
 			const labOrdersCount = doctorLabMap.get(docId) || 0;
 			const labOrdersCostRub = doctorLabCostMap.get(docId) || 0;
-			// Зарплатная комиссия врача Т-51: если по врачу есть списания ЗТЛ,
-			// расчетная база = max(0, выручка - ЗТЛ) * 25% (стандартная сдельная ставка Т-51)
+			// Гонорарная комиссия врача (Net Revenue): если по врачу есть списания ЗТЛ,
+			// расчетная база = max(0, выручка - ЗТЛ) * 25% (стандартная сдельная ставка)
 			const doctorPayrollRub = docRev > 0
 				? Math.round(Math.max(0, docRev - labOrdersCostRub) * 0.25)
 				: 0;

@@ -1,0 +1,105 @@
+/**
+ * payoutMobileCards.css — Нижняя панель действий Natural Thumb Zone и пустое состояние.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.doctor-wallet-bottom-bar {
+  position: fixed;
+  bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background: color-mix(in srgb, var(--paper) 94%, transparent);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--line);
+  padding: 8px 14px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.doctor-wallet-primary-cta {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 18px;
+  border-radius: 14px;
+  background: var(--ink);
+  color: var(--paper);
+  font-size: 15px;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, opacity 0.15s ease;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+.doctor-wallet-primary-cta:active {
+  transform: scale(0.98);
+  opacity: 0.9;
+}
+
+.doctor-wallet-sec-cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  min-width: 48px;
+  padding: 12px;
+  border-radius: 14px;
+  background: var(--paper-soft);
+  color: var(--ink);
+  border: 1px solid var(--line);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: transform 0.1s ease, background 0.15s ease;
+}
+
+.doctor-wallet-sec-cta:active {
+  transform: scale(0.96);
+  background: var(--line-subtle);
+}
+
+.doctor-wallet-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  background: var(--paper-soft);
+  border: 1px dashed var(--line);
+  border-radius: 16px;
+  gap: 8px;
+}
+
+.doctor-wallet-empty-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  background: var(--paper);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.doctor-wallet-empty-title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.doctor-wallet-empty-sub {
+  font-size: 12px;
+  color: var(--muted);
+  margin: 0;
+  max-width: 280px;
+}

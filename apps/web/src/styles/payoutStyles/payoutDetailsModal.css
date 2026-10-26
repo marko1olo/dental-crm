@@ -1,0 +1,113 @@
+/**
+ * payoutDetailsModal.css — Нативная шторка Bottom Sheet для детального аудита смены.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.doctor-wallet-sheet-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: rgba(0, 0, 0, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+}
+.doctor-wallet-sheet-surface {
+  position: relative;
+  width: 100%;
+  max-height: 88dvh;
+  background: var(--paper);
+  border-top: 1px solid var(--line);
+  border-radius: 24px 24px 0 0;
+  box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.25);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  animation: slideUpWalletSheet 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  overflow: hidden;
+}
+@keyframes slideUpWalletSheet {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.doctor-wallet-sheet-handle-wrap {
+  display: flex;
+  justify-content: center;
+  padding: 10px 0 6px 0;
+  cursor: grab;
+}
+.doctor-wallet-sheet-handle {
+  width: 36px;
+  height: 5px;
+  border-radius: 99px;
+  background: var(--line-strong);
+}
+.doctor-wallet-sheet-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 18px 12px 18px;
+  border-bottom: 1px solid var(--line-subtle);
+}
+.doctor-wallet-sheet-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: var(--ink);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+.doctor-wallet-sheet-close {
+  width: 36px;
+  height: 36px;
+  min-width: 44px;
+  min-height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--paper-soft);
+  color: var(--muted);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background 0.15s ease;
+}
+.doctor-wallet-sheet-close:active { background: var(--line-subtle); color: var(--ink); }
+
+.doctor-wallet-sheet-summary-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-around;
+  background: var(--paper-soft);
+  border: 1px solid var(--line-subtle);
+  border-radius: 12px;
+  margin: 12px 16px 4px 16px;
+  padding: 10px 12px;
+  gap: 8px;
+}
+.doctor-wallet-sheet-summary-item { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.doctor-wallet-sheet-summary-lbl { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.doctor-wallet-sheet-summary-val {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--ink);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+}
+
+.doctor-wallet-sheet-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 12px 16px 24px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.doctor-wallet-sheet-footer {
+  padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--paper);
+}

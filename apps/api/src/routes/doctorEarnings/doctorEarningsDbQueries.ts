@@ -16,18 +16,36 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
-import { DEFAULT_CATEGORY_COMMISSION_PERCENT } from "@dental/shared";
+import { DEFAULT_CATEGORY_COMMISSION_PERCENT, DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "@dental/shared";
+
+/** Карта соответствия идентификатора специальности и живого русского названия. */
+const SPECIALTY_TITLE_BY_ID = new Map<string, string>(
+	DOCTOR_SPECIALTY_PAYROLL_PRESETS.map((preset) => [preset.specialtyId, preset.titleRu]),
+);
 
 export async function fetchDoctorProfileAndRates(orgId: string, doctorId: string) {
 	let doctorName = "Врач-стоматолог";
+	let doctorSpecialty = "Врач-стоматолог";
 	try {
 		const docUser = await db
-			.select({ fullName: users.fullName })
+			.select({ fullName: users.fullName, specialties: users.specialties })
 			.from(users)
 			.where(eq(users.id, doctorId))
 			.limit(1);
 		if (docUser[0]?.fullName) doctorName = docUser[0].fullName;
-	} catch {}
+		const specialties = docUser[0]?.specialties;
+		if (Array.isArray(specialties)) {
+			for (const specId of specialties) {
+				const title = typeof specId === "string" ? SPECIALTY_TITLE_BY_ID.get(specId) : undefined;
+				if (title) {
+					doctorSpecialty = title;
+					break;
+				}
+			}
+		}
+	} catch (dbError) {
+		console.warn("Не удалось прочитать профиль врача, используется нейтральное имя:", dbError);
+	}
 
 	const categoryRates: Record<string, number> = { ...DEFAULT_CATEGORY_COMMISSION_PERCENT };
 	try {
@@ -41,8 +59,10 @@ export async function fetchDoctorProfileAndRates(orgId: string, doctorId: string
 				if (!Number.isNaN(num) && num > 0) categoryRates[cr.serviceCategory] = num;
 			}
 		}
-	} catch {}
-	return { doctorName, categoryRates };
+	} catch (dbError) {
+		console.warn("Не удалось прочитать ставки комиссий врача, применяются базовые ставки:", dbError);
+	}
+	return { doctorName, doctorSpecialty, categoryRates };
 }
 
 export async function fetchDoctorAppointmentsForPeriod(orgId: string, doctorId: string, fromDate: Date, toDate: Date) {

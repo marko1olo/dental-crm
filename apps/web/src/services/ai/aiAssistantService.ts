@@ -729,14 +729,14 @@ export class AIAssistantService {
 		}
 
 		// 7. Earnings & Piecework Revenue (Mandate 8ab)
-		if (lower.includes("выручк") || lower.includes("заработ") || lower.includes("сдельщин") || lower.includes("зарплат") || lower.includes("т-51")) {
+		if (lower.includes("выручк") || lower.includes("заработ") || lower.includes("сдельщин") || lower.includes("зарплат") || lower.includes("гонорар") || lower.includes("т-51")) {
 			msg.content = [
 				`💰 Финансовые итоги и заработок врача:`,
 				`• Принято пациентов: 4`,
 				`• Общая выручка за день: 42 500.00 ₽`,
 				`• Сдельная ставка врача: 25% (чистая база Net Revenue)`,
 				`• Начислено по сдельщине (к выплате): 10 625.00 ₽`,
-				`• Ведомость Т-51: сформирована и синхронизирована с бухгалтерией.`,
+				`• Гонорарная ведомость: сформирована и синхронизирована с бухгалтерией.`,
 			].join("\n");
 			this.callbacks.onMessageUpdated?.({ ...msg });
 			return;

@@ -33,7 +33,21 @@ export function validateDoctorEarningsRequest(
 	const identity = getRequestIdentity(request);
 	const requestedDoctorId = parsedQuery.data.doctorId?.trim();
 
-	if (identity.role === "doctor" && identity.userId) {
+	// Тайна зарплат (Мандат 8e): врач и прочий персонал видят строго свои начисления.
+	// Чужие сдельные листки отсекаются бэкендом с 403, а не просто скрыты на фронте.
+	// Просмотр начислений любого врача разрешен только владельцу и администратору.
+	const canViewAnyDoctor = identity.role === "owner" || identity.role === "administrator" || identity.role === "admin";
+
+	if (!canViewAnyDoctor && requestedDoctorId && identity.userId && requestedDoctorId !== identity.userId) {
+		reply.code(403).send({
+			error: "DoctorForbiddenError",
+			message:
+				"Доступ запрещен: просматривать можно исключительно собственные начисления сдельной оплаты",
+		});
+		return null;
+	}
+
+	if (!canViewAnyDoctor && identity.role === "doctor" && identity.userId) {
 		if (requestedDoctorId && requestedDoctorId !== identity.userId) {
 			reply.code(403).send({
 				error: "DoctorForbiddenError",
@@ -45,9 +59,17 @@ export function validateDoctorEarningsRequest(
 	}
 
 	const targetDoctorId =
-		identity.role === "doctor" && identity.userId
+		identity.role === "doctor" && !canViewAnyDoctor && identity.userId
 			? identity.userId
-			: requestedDoctorId || identity.userId || "doc-1";
+			: requestedDoctorId || identity.userId;
+
+	if (!targetDoctorId) {
+		reply.code(401).send({
+			error: "UnauthorizedError",
+			message: "Не удалось определить врача: авторизуйтесь или укажите врача для расчета",
+		});
+		return null;
+	}
 
 	let fromDate: Date;
 	let toDate: Date;

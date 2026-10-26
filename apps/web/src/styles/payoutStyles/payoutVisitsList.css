@@ -1,0 +1,97 @@
+/**
+ * payoutVisitsList.css — Карточки приемов и услуг смены в шторке аудита.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.doctor-wallet-visit-item {
+  border: 1px solid var(--line);
+  background: var(--paper);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+
+.doctor-wallet-visit-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.doctor-wallet-visit-patient {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--ink);
+  margin: 0;
+}
+
+.doctor-wallet-visit-cardno {
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.doctor-wallet-visit-revenue {
+  font-size: 14px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doctor-wallet-visit-earned {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--emerald);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.doctor-wallet-service-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  font-size: 12px;
+  padding: 4px 0;
+  border-top: 1px dashed var(--line-subtle);
+}
+
+.doctor-wallet-service-name {
+  color: var(--ink);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+
+.doctor-wallet-service-code {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: var(--paper-soft);
+  color: var(--muted);
+  border: 1px solid var(--line-subtle);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-tooth-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--teal) 12%, transparent);
+  color: var(--teal);
+  flex-shrink: 0;
+}
+
+.doctor-wallet-service-price {
+  font-weight: 600;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+}

@@ -1,0 +1,100 @@
+/**
+ * payoutLabDeductions.css — Категории начислений и честный вычет заказ-нарядов ЗТЛ.
+ * Mandate 8b: строго <= 120 строк на файл.
+ */
+
+.doctor-wallet-section-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin: 4px 0 8px 0;
+}
+.doctor-wallet-section-title { font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0; }
+.doctor-wallet-section-count { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+.doctor-wallet-categories-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+.doctor-wallet-cat-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 12px 14px;
+  min-height: 58px;
+  transition: transform 0.15s ease, background 0.15s ease;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.02);
+}
+.doctor-wallet-cat-card:active { transform: scale(0.98); background: var(--paper-soft); }
+.doctor-wallet-cat-card--deduction { background: color-mix(in srgb, var(--rose) 4%, var(--paper)); border-color: color-mix(in srgb, var(--rose) 20%, var(--line)); }
+
+.doctor-wallet-cat-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+}
+.doctor-wallet-cat-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  background: var(--paper-soft);
+  color: var(--teal);
+}
+.doctor-wallet-cat-icon--therapy { background: color-mix(in srgb, var(--teal) 14%, transparent); color: var(--teal); }
+.doctor-wallet-cat-icon--ortho { background: color-mix(in srgb, var(--accent) 14%, transparent); color: var(--accent); }
+.doctor-wallet-cat-icon--surgery { background: color-mix(in srgb, var(--amber) 16%, transparent); color: var(--amber); }
+.doctor-wallet-cat-icon--deduction { background: color-mix(in srgb, var(--rose) 16%, transparent); color: var(--rose); }
+
+.doctor-wallet-cat-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  gap: 2px;
+}
+.doctor-wallet-cat-name-row {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-width: 0;
+}
+.doctor-wallet-cat-name { font-size: 14px; font-weight: 600; color: var(--ink); white-space: normal; line-height: 1.25; }
+.doctor-wallet-cat-badge {
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--rose) 12%, transparent);
+  color: var(--rose);
+  flex-shrink: 0;
+}
+.doctor-wallet-cat-rate { font-size: 12px; color: var(--muted); }
+
+.doctor-wallet-cat-right {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  flex-shrink: 0;
+  padding-left: 8px;
+}
+.doctor-wallet-cat-amount {
+  font-size: 15px;
+  font-weight: 700;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.doctor-wallet-cat-amount--plus { color: var(--emerald); }
+.doctor-wallet-cat-amount--minus { color: var(--rose); }
+.doctor-wallet-cat-subrev { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }

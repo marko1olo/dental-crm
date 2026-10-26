@@ -342,7 +342,7 @@ describe("Solo Doctor Payroll Autonomy & Zero-Staff Fallback (Mandates 8e & 8n)"
 
 		// Export CSV and Print buttons must be present
 		expect(html).toContain("Экспорт ведомости (CSV)");
-		expect(html).toContain("распечатать расчетный листок");
+		expect(html).toContain("Печать ведомости");
 	});
 
 	it("9. Handles undefined doctorsList safely without crashing", () => {
