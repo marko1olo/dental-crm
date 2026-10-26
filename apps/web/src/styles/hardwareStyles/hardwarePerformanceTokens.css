@@ -1,0 +1,80 @@
+/* ==========================================================================
+   hardwarePerformanceTokens.css — Design Token Overrides for Low-Spec Profile (Mandate 8b, <= 110L)
+   Target: Guaranteed 60 FPS on integrated GPUs (Intel HD Graphics / UHD / Older APUs)
+   ========================================================================== */
+
+:root[data-hardware-tier="low"],
+html[data-hardware-tier="low"],
+[data-hardware-tier="low"],
+:root[data-hardware-tier="potato"],
+html[data-hardware-tier="potato"],
+[data-hardware-tier="potato"],
+:root[data-perf-tier="low"],
+html[data-perf-tier="low"],
+[data-perf-tier="low"],
+:root[data-perf-tier="potato"],
+html[data-perf-tier="potato"],
+[data-perf-tier="potato"],
+:root[data-perf-state="degraded"],
+html[data-perf-state="degraded"],
+[data-perf-state="degraded"],
+:root[data-ct-active="true"],
+html[data-ct-active="true"],
+[data-ct-active="true"],
+:root[data-low-spec="true"],
+html[data-low-spec="true"],
+[data-low-spec="true"],
+:root[data-perf="low"],
+html[data-perf="low"],
+[data-perf="low"],
+html.low-spec-perf,
+.low-spec-perf,
+html.low-spec-mode,
+.low-spec-mode {
+	--glass-blur: none !important;
+	--glass-panel: var(--paper-strong) !important;
+	--glass-bg: var(--paper-strong) !important;
+	--glass-border: var(--line) !important;
+	--glass-shadow: none !important;
+	--shadow-premium: none !important;
+	--shadow-sm: none !important;
+	--shadow: none !important;
+	--shadow-md: none !important;
+	--shadow-lg: none !important;
+	--shadow-xl: none !important;
+	--shadow-2xl: none !important;
+	--teal-glow: transparent !important;
+	--transition-smooth: 0.05s ease !important;
+	--transition-fast: 0.05s ease !important;
+}
+
+/* Extra optimization for Potato Tier: instant 0s transitions */
+:root[data-hardware-tier="potato"],
+html[data-hardware-tier="potato"],
+[data-hardware-tier="potato"],
+:root[data-perf-tier="potato"],
+html[data-perf-tier="potato"],
+[data-perf-tier="potato"] {
+	--transition-smooth: 0s !important;
+	--transition-fast: 0s !important;
+}
+
+@media (prefers-reduced-motion: reduce) {
+	:root {
+		--glass-blur: none !important;
+		--glass-panel: var(--paper-strong) !important;
+		--glass-bg: var(--paper-strong) !important;
+		--glass-border: var(--line) !important;
+		--glass-shadow: none !important;
+		--shadow-premium: none !important;
+		--shadow-sm: none !important;
+		--shadow: none !important;
+		--shadow-md: none !important;
+		--shadow-lg: none !important;
+		--shadow-xl: none !important;
+		--shadow-2xl: none !important;
+		--teal-glow: transparent !important;
+		--transition-smooth: 0s !important;
+		--transition-fast: 0s !important;
+	}
+}

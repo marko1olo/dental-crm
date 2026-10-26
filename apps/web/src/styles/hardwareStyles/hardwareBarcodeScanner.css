@@ -1,0 +1,58 @@
+/* ==========================================================================
+   hardwareBarcodeScanner.css — 2D DataMatrix Scanner & Honest Sign (Mandates 8b, 8n, <= 110L)
+   Чистый ввод со сканеров 2D DataMatrix / Честный Знак без симуляторов.
+   ========================================================================== */
+
+.barcode-scanner-hud {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 10px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	font-size: 0.8125rem;
+	color: var(--ink);
+}
+
+.barcode-scanner-hud.active {
+	border-color: var(--primary);
+	box-shadow: 0 0 0 1px var(--primary);
+}
+
+.barcode-scan-input {
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-family: monospace;
+	font-size: 0.875rem;
+	letter-spacing: 0.5px;
+	width: 100%;
+}
+
+.barcode-scan-input:focus {
+	outline: none;
+	border-color: var(--primary);
+}
+
+.datamatrix-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 12px;
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+[data-theme="dark"] .datamatrix-indicator {
+	background: rgba(16, 185, 129, 0.18);
+	color: #34d399;
+	border-color: rgba(16, 185, 129, 0.35);
+}

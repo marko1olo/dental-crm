@@ -1,0 +1,32 @@
+/* ==========================================================================
+   hardwareImagingCompositor.css — DICOM, Panoramic & SVG Treatment Chart Isolation (Mandate 8b, <= 110L)
+   ========================================================================== */
+
+html[data-hardware-tier="low"] .dicom-viewport-container,
+html[data-hardware-tier="low"] .dicom-canvas-layer,
+html[data-hardware-tier="low"] .panoramic-canvas-overlay,
+html[data-hardware-tier="low"] .treatment-plan-svg-track,
+[data-hardware-tier="low"] .dicom-viewport-container,
+[data-hardware-tier="low"] .dicom-canvas-layer,
+[data-hardware-tier="low"] .panoramic-canvas-overlay,
+[data-hardware-tier="low"] .treatment-plan-svg-track,
+html[data-low-spec="true"] .dicom-viewport-container,
+html[data-low-spec="true"] .dicom-canvas-layer,
+html[data-low-spec="true"] .panoramic-canvas-overlay,
+html[data-low-spec="true"] .treatment-plan-svg-track,
+[data-low-spec="true"] .dicom-viewport-container,
+[data-low-spec="true"] .dicom-canvas-layer,
+[data-low-spec="true"] .panoramic-canvas-overlay,
+[data-low-spec="true"] .treatment-plan-svg-track,
+html.low-spec-mode .dicom-viewport-container,
+html.low-spec-mode .dicom-canvas-layer,
+html.low-spec-mode .panoramic-canvas-overlay,
+html.low-spec-mode .treatment-plan-svg-track,
+.low-spec-mode .dicom-viewport-container,
+.low-spec-mode .dicom-canvas-layer,
+.low-spec-mode .panoramic-canvas-overlay,
+.low-spec-mode .treatment-plan-svg-track {
+	contain: layout paint !important;
+	transform: translateZ(0) !important;
+	backface-visibility: hidden !important;
+}

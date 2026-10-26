@@ -1,0 +1,100 @@
+/* ==========================================================================
+   hardwareDrawerBackdrops.css — Drawers, Toolbars & Modals Solid Backdrops (Mandate 8b, <= 110L)
+   ========================================================================== */
+
+/* DentalPRO Expo26 Lateral Drawer & Schedule Modal semi-transparent backdrop protection */
+html [data-testid="quick-booking-drawer"],
+html .quick-booking-drawer-overlay,
+html[data-hardware-tier="low"] .quick-booking-drawer-overlay,
+html[data-low-spec="true"] .quick-booking-drawer-overlay,
+html.low-spec-mode .quick-booking-drawer-overlay,
+[data-testid="quick-booking-drawer"],
+.quick-booking-drawer-overlay {
+	background-color: rgba(0, 0, 0, 0.25) !important;
+}
+
+html [data-testid="chair-schedule-date-range-modal"],
+html .chair-range-modal-overlay,
+html[data-hardware-tier="low"] .chair-range-modal-overlay,
+html[data-low-spec="true"] .chair-range-modal-overlay,
+html.low-spec-mode .chair-range-modal-overlay,
+[data-testid="chair-schedule-date-range-modal"],
+.chair-range-modal-overlay {
+	background-color: rgba(0, 0, 0, 0.5) !important;
+}
+
+html [data-testid="doctor-shift-drawer-overlay"],
+html .roster-drawer-overlay,
+html[data-hardware-tier="low"] .roster-drawer-overlay,
+html[data-low-spec="true"] .roster-drawer-overlay,
+html.low-spec-mode .roster-drawer-overlay,
+[data-testid="doctor-shift-drawer-overlay"],
+.roster-drawer-overlay {
+	background-color: rgba(0, 0, 0, 0.45) !important;
+}
+
+html .payment-modal-backdrop,
+html [data-testid="payment-modal-studio"],
+html [data-testid="shift-close-zreport-modal"],
+html[data-hardware-tier="low"] .payment-modal-backdrop,
+html[data-hardware-tier="low"] [data-testid="payment-modal-studio"],
+html[data-hardware-tier="low"] [data-testid="shift-close-zreport-modal"],
+html[data-low-spec="true"] .payment-modal-backdrop,
+html[data-low-spec="true"] [data-testid="payment-modal-studio"],
+html[data-low-spec="true"] [data-testid="shift-close-zreport-modal"],
+html.low-spec-mode .payment-modal-backdrop,
+html.low-spec-mode [data-testid="payment-modal-studio"],
+html.low-spec-mode [data-testid="shift-close-zreport-modal"],
+.payment-modal-backdrop,
+[data-testid="payment-modal-studio"],
+[data-testid="shift-close-zreport-modal"] {
+	background-color: rgba(15, 23, 42, 0.45) !important;
+}
+
+/* Header, topbar, toolbar solid background */
+html[data-hardware-tier="low"] .app-header,
+html[data-hardware-tier="low"] .topbar,
+html[data-hardware-tier="low"] .patients-header,
+html[data-hardware-tier="low"] .schedule-header,
+html[data-hardware-tier="low"] .toolbar,
+[data-hardware-tier="low"] .app-header,
+[data-hardware-tier="low"] .topbar,
+[data-hardware-tier="low"] .patients-header,
+[data-hardware-tier="low"] .schedule-header,
+[data-hardware-tier="low"] .toolbar,
+html[data-low-spec="true"] .app-header,
+html[data-low-spec="true"] .topbar,
+html[data-low-spec="true"] .patients-header,
+html[data-low-spec="true"] .schedule-header,
+html[data-low-spec="true"] .toolbar,
+html.low-spec-mode .app-header,
+html.low-spec-mode .topbar,
+html.low-spec-mode .patients-header,
+html.low-spec-mode .schedule-header,
+html.low-spec-mode .toolbar {
+	background: var(--paper) !important;
+	border-bottom: 1px solid var(--line) !important;
+	box-shadow: none !important;
+}
+
+/* Dropdowns, popovers and hover huds */
+html[data-hardware-tier="low"] .dropdown-menu,
+html[data-hardware-tier="low"] .popover-panel,
+html[data-hardware-tier="low"] .hover-hud,
+html[data-hardware-tier="low"] .context-menu,
+[data-hardware-tier="low"] .dropdown-menu,
+[data-hardware-tier="low"] .popover-panel,
+[data-hardware-tier="low"] .hover-hud,
+[data-hardware-tier="low"] .context-menu,
+html[data-low-spec="true"] .dropdown-menu,
+html[data-low-spec="true"] .popover-panel,
+html[data-low-spec="true"] .hover-hud,
+html[data-low-spec="true"] .context-menu,
+html.low-spec-mode .dropdown-menu,
+html.low-spec-mode .popover-panel,
+html.low-spec-mode .hover-hud,
+html.low-spec-mode .context-menu {
+	background: var(--paper-strong) !important;
+	border: 1px solid var(--line) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12) !important;
+}

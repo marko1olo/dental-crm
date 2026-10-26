@@ -1,0 +1,102 @@
+/* ==========================================================================
+   hardwareTransformFlattening.css — 3D Transforms & Infinite Animations Stripping (Mandate 8b, <= 110L)
+   ========================================================================== */
+
+html[data-hardware-tier="low"] *,
+html[data-hardware-tier="low"] *::before,
+html[data-hardware-tier="low"] *::after,
+[data-hardware-tier="low"] *,
+[data-hardware-tier="low"] *::before,
+[data-hardware-tier="low"] *::after,
+html[data-low-spec="true"] *,
+[data-low-spec="true"] * {
+	perspective: none !important;
+	transform-style: flat !important;
+}
+
+/* Strip GPU-heavy 3D tilts and matrix transforms on hover */
+html[data-hardware-tier="low"] .card:hover,
+html[data-hardware-tier="low"] .panel:hover,
+html[data-hardware-tier="low"] .patient-row:hover,
+html[data-hardware-tier="low"] .finance-row:hover,
+html[data-hardware-tier="low"] .invoice-card:hover,
+[data-hardware-tier="low"] .card:hover,
+[data-hardware-tier="low"] .panel:hover {
+	transform: none !important;
+}
+
+/* Disabling GPU-Draining Infinite Animations and Shimmers */
+html[data-hardware-tier="low"] .animate-pulse,
+html[data-hardware-tier="low"] .animate-shimmer,
+html[data-hardware-tier="low"] .shimmer,
+html[data-hardware-tier="low"] .skeleton,
+html[data-hardware-tier="low"] .skeleton-wave,
+html[data-hardware-tier="low"] .ops-shimmer,
+html[data-hardware-tier="low"] .dntWave,
+html[data-hardware-tier="low"] [class*="shimmer"],
+html[data-hardware-tier="low"] [class*="skeleton"],
+html[data-hardware-tier="low"] [class*="pulse"],
+[data-hardware-tier="low"] .animate-pulse,
+[data-hardware-tier="low"] .animate-shimmer,
+[data-hardware-tier="low"] .shimmer,
+[data-hardware-tier="low"] .skeleton,
+[data-hardware-tier="low"] .skeleton-wave,
+[data-hardware-tier="low"] .ops-shimmer,
+[data-hardware-tier="low"] .dntWave,
+[data-hardware-tier="low"] [class*="shimmer"],
+[data-hardware-tier="low"] [class*="skeleton"],
+[data-hardware-tier="low"] [class*="pulse"],
+html[data-low-spec="true"] .animate-pulse,
+html[data-low-spec="true"] .animate-shimmer,
+html[data-low-spec="true"] .shimmer,
+html[data-low-spec="true"] .skeleton,
+html[data-low-spec="true"] .skeleton-wave,
+html[data-low-spec="true"] .ops-shimmer,
+html[data-low-spec="true"] .dntWave,
+html[data-low-spec="true"] [class*="shimmer"],
+html[data-low-spec="true"] [class*="skeleton"],
+html[data-low-spec="true"] [class*="pulse"],
+html.low-spec-mode .animate-pulse,
+html.low-spec-mode .animate-shimmer,
+html.low-spec-mode .shimmer,
+html.low-spec-mode .skeleton,
+html.low-spec-mode .skeleton-wave,
+html.low-spec-mode .ops-shimmer,
+html.low-spec-mode .dntWave,
+html.low-spec-mode [class*="shimmer"],
+html.low-spec-mode [class*="skeleton"],
+html.low-spec-mode [class*="pulse"] {
+	animation: none !important;
+}
+
+/* Skeleton surfaces flattened to solid paper-soft background */
+html[data-hardware-tier="low"] .skeleton,
+html[data-hardware-tier="low"] .skeleton-wave,
+html[data-hardware-tier="low"] .ops-shimmer,
+html[data-hardware-tier="low"] .dntWave,
+html[data-hardware-tier="low"] [class*="skeleton"],
+[data-hardware-tier="low"] .skeleton,
+[data-hardware-tier="low"] .skeleton-wave,
+[data-hardware-tier="low"] .ops-shimmer,
+[data-hardware-tier="low"] .dntWave,
+[data-hardware-tier="low"] [class*="skeleton"],
+html[data-low-spec="true"] .skeleton,
+html[data-low-spec="true"] .skeleton-wave,
+html[data-low-spec="true"] .ops-shimmer,
+html[data-low-spec="true"] .dntWave,
+html[data-low-spec="true"] [class*="skeleton"],
+html.low-spec-mode .skeleton,
+html.low-spec-mode .skeleton-wave,
+html.low-spec-mode .ops-shimmer,
+html.low-spec-mode .dntWave,
+html.low-spec-mode [class*="skeleton"] {
+	background-image: none !important;
+	background-color: var(--paper-soft) !important;
+}
+
+html[data-hardware-tier="low"] .transition-all,
+[data-hardware-tier="low"] .transition-all,
+html[data-low-spec="true"] .transition-all,
+html.low-spec-mode .transition-all {
+	transition-duration: 0.05s !important;
+}

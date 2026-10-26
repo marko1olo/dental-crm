@@ -1,0 +1,59 @@
+/* ==========================================================================
+   hardwarePosPrinters.css — POS Printers & Thermal Receipt Roll 80mm/58mm (Mandates 8b, 8n, <= 110L)
+   Стили термопечати для фискальных регистраторов Атол и Штрих-М.
+   ========================================================================== */
+
+.pos-receipt-container {
+	font-family: "Courier New", Courier, monospace;
+	color: #000;
+	background: #fff;
+	line-height: 1.25;
+}
+
+.pos-receipt-80mm {
+	width: 72mm;
+	max-width: 72mm;
+	padding: 2mm;
+	font-size: 11px;
+}
+
+.pos-receipt-58mm {
+	width: 48mm;
+	max-width: 48mm;
+	padding: 1.5mm;
+	font-size: 9.5px;
+}
+
+.pos-receipt-header {
+	text-align: center;
+	margin-bottom: 3mm;
+	border-bottom: 1px dashed #000;
+	padding-bottom: 2mm;
+}
+
+.pos-receipt-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: baseline;
+	margin: 1mm 0;
+}
+
+.pos-receipt-total {
+	border-top: 1px dashed #000;
+	margin-top: 2mm;
+	padding-top: 2mm;
+	font-weight: bold;
+	font-size: 1.1em;
+}
+
+@media print {
+	.pos-receipt-container {
+		margin: 0;
+		padding: 0;
+		background: #fff !important;
+		color: #000 !important;
+	}
+	@page {
+		margin: 0;
+	}
+}

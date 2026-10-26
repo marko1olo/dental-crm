@@ -1,0 +1,93 @@
+/* ==========================================================================
+   hardwareCardContainment.css — Content Visibility: Cards & Sections (Mandate 8b, <= 110L)
+   ========================================================================== */
+
+/* Tier B: Medium Cards & Grid Cards (~70px - 100px height) */
+.today-schedule-item, .appointment-card, .appointment-block, .schedule-card,
+.schedule-appointment-card, .schedule-timeline-item, .patient-card, .curator-patient-card,
+.marketing-roi-patient-card, .family-wallet-member-card, .inventory-batch-card,
+.inventory-item-card, .expiration-alert-card, .ztl-order-card, .ztl-kanban-card,
+.lab-order-card, .telephony-call-card, .communication-task, .campaign-card,
+.patient-notification-card, .doctor-payroll-card, .shift-log-card, .access-role-card,
+.egisz-log-card, .egisz-registry-item, .analytics-kpi-card, .kraft-bag-card,
+.quick-package-card, .catalog-item-card, .catalog-item-row, .cd-template-item-card,
+.consent-template-card, .archive-document-card {
+	contain: paint layout;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 84px;
+}
+
+.appointment-card:hover,
+.appointment-card.is-hovered,
+.appointment-card[data-hovered="true"],
+.appointment-block:hover,
+.schedule-card:hover {
+	contain: none !important;
+	content-visibility: visible !important;
+}
+
+/* Tier C: Large Clinical Protocol & Treatment Plan Cards (~120px - 180px height) */
+.visit-history-item,
+.visit-history-card,
+.visit-history-entry,
+.soap-protocol-card,
+.clinical-record-card,
+.visit-stage-card,
+.emk-timeline-card,
+.phased-plan-stage,
+.treatment-plan-stage-card,
+.treatment-plan-phased-card,
+.treatment-plan-card-item,
+.treatment-stage-item,
+.plan-variant-card,
+.photo-protocol-thumb,
+.study-series-item {
+	contain: paint layout;
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 140px;
+}
+
+/* Tier D: Heavy Offscreen Sections, Workspaces, Tabs & Containers (~300px - 500px) */
+.workspace-section,
+.documents-archive-list,
+.patient-admin-panel,
+.patient-list,
+.analytics-chart-container,
+.service-pricelist-table-container,
+.warehouse-table-container,
+.patients-zone,
+.finance-zone,
+.schedule-zone,
+.documents-zone,
+.tab-content,
+.tab-pane,
+.invoices-table-container,
+.invoices-list,
+.billing-history-container,
+.visit-history-list,
+.visits-history-feed,
+.treatment-plan-view,
+.odontogram-module-container,
+.finance-split,
+.finance-list,
+.ztl-kanban-column,
+.cd-template-list,
+.sanpin-table-wrapper {
+	contain: paint layout;
+	content-visibility: auto;
+	contain-intrinsic-size: auto 360px;
+}
+
+/* Chairside VRAM & Memory Shield */
+.dente-vram-shield-inactive,
+[data-vram-shield-state="inactive"] {
+	contain: strict !important;
+	content-visibility: auto !important;
+	contain-intrinsic-size: 1px 1px !important;
+	will-change: auto !important;
+}
+
+[data-vram-shield-state="active"] {
+	contain: none !important;
+	content-visibility: visible !important;
+}

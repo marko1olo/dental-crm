@@ -1,0 +1,86 @@
+/* ==========================================================================
+   hardwareShadowSuppression.css — Reduced Motion & Drop-Shadow Suppression (Mandate 8b, <= 110L)
+   ========================================================================== */
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
+	}
+
+	.card,
+	.panel,
+	.sheet,
+	.drawer,
+	.drawer-content,
+	.sidebar,
+	.today-schedule-item,
+	.appointment-card,
+	.appointment-block,
+	.patient-row,
+	.patient-card,
+	.finance-row,
+	.invoice-card,
+	.modal-window,
+	.modal-content,
+	.dialog-content,
+	.hover-hud,
+	.dropdown-menu,
+	.popover-panel,
+	.context-menu,
+	.call-popup,
+	.auth-card,
+	.menu-popup,
+	.command-palette,
+	.odontogram-hud,
+	.toast-card,
+	.floating-badge,
+	.shadow-sm,
+	.shadow,
+	.shadow-md,
+	.shadow-lg,
+	.shadow-xl,
+	.shadow-2xl,
+	.shadow-premium {
+		box-shadow: none !important;
+		border: 1px solid var(--line) !important;
+	}
+
+	.auth-glow,
+	.glow-orb,
+	.bg-glow,
+	.ambient-glow,
+	.decorative-blur-orb,
+	.ambient-lighting-layer,
+	.dente-theme-background-layer {
+		display: none !important;
+	}
+
+	[class*="blur-"] {
+		filter: none !important;
+	}
+
+	.animate-pulse,
+	.animate-shimmer,
+	.shimmer,
+	.skeleton,
+	.skeleton-wave,
+	.ops-shimmer,
+	.dntWave,
+	[class*="shimmer"],
+	[class*="skeleton"],
+	[class*="pulse"] {
+		animation: none !important;
+	}
+
+	.skeleton,
+	.skeleton-wave,
+	.ops-shimmer,
+	.dntWave,
+	[class*="skeleton"] {
+		background-image: none !important;
+		background-color: var(--paper-soft) !important;
+	}
+}

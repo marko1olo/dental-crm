@@ -1,0 +1,67 @@
+/* ==========================================================================
+   hardwareOdontogramOptimization.css — Odontogram 60 FPS Low-Spec GPU Optimization (Mandates 8e, 8n)
+   Guarantees <16ms frame render budget on Intel HD Graphics / Celeron CPUs. (<= 110L)
+   ========================================================================== */
+
+html[data-hardware-tier="low"] .tooth-chart-arch-container,
+html[data-hardware-tier="low"] .anatomical-odontogram-container,
+html[data-hardware-tier="low"] .odontogram-view-container,
+html[data-hardware-tier="low"] .odontogram-canvas-layer,
+[data-hardware-tier="low"] .tooth-chart-arch-container,
+[data-hardware-tier="low"] .anatomical-odontogram-container,
+[data-hardware-tier="low"] .odontogram-view-container,
+[data-hardware-tier="low"] .odontogram-canvas-layer,
+html[data-low-spec="true"] .tooth-chart-arch-container,
+html[data-low-spec="true"] .anatomical-odontogram-container,
+html[data-low-spec="true"] .odontogram-canvas-layer,
+[data-low-spec="true"] .tooth-chart-arch-container,
+[data-low-spec="true"] .anatomical-odontogram-container,
+[data-low-spec="true"] .odontogram-canvas-layer,
+html.low-spec-mode .tooth-chart-arch-container,
+html.low-spec-mode .anatomical-odontogram-container,
+html.low-spec-mode .odontogram-canvas-layer {
+	contain: layout paint !important;
+	transform: translateZ(0) !important;
+	backface-visibility: hidden !important;
+}
+
+html[data-hardware-tier="low"] .tooth-hover-quick-hud,
+[data-hardware-tier="low"] .tooth-hover-quick-hud,
+html[data-low-spec="true"] .tooth-hover-quick-hud,
+[data-low-spec="true"] .tooth-hover-quick-hud,
+html.low-spec-mode .tooth-hover-quick-hud {
+	backdrop-filter: none !important;
+	-webkit-backdrop-filter: none !important;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+	transition: opacity 0.05s ease !important;
+}
+
+html[data-hardware-tier="low"] .tooth-cell,
+html[data-hardware-tier="low"] .tooth-cell *,
+html[data-hardware-tier="low"] .anatomical-tooth-cell,
+html[data-hardware-tier="low"] .anatomical-tooth-cell *,
+html[data-hardware-tier="low"] .tooth-radial-menu,
+[data-hardware-tier="low"] .tooth-cell,
+[data-hardware-tier="low"] .tooth-cell *,
+[data-hardware-tier="low"] .anatomical-tooth-cell,
+[data-hardware-tier="low"] .anatomical-tooth-cell *,
+[data-hardware-tier="low"] .tooth-radial-menu,
+html[data-low-spec="true"] .tooth-cell,
+html[data-low-spec="true"] .tooth-cell *,
+html[data-low-spec="true"] .anatomical-tooth-cell,
+html[data-low-spec="true"] .anatomical-tooth-cell *,
+html[data-low-spec="true"] .tooth-radial-menu,
+[data-low-spec="true"] .tooth-cell,
+[data-low-spec="true"] .tooth-cell *,
+[data-low-spec="true"] .anatomical-tooth-cell,
+[data-low-spec="true"] .anatomical-tooth-cell *,
+[data-low-spec="true"] .tooth-radial-menu,
+html.low-spec-mode .tooth-cell,
+html.low-spec-mode .tooth-cell *,
+html.low-spec-mode .anatomical-tooth-cell,
+html.low-spec-mode .anatomical-tooth-cell *,
+html.low-spec-mode .tooth-radial-menu {
+	transition: none !important;
+	animation: none !important;
+	filter: none !important;
+}

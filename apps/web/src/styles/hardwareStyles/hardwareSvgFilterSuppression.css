@@ -1,0 +1,74 @@
+/* ==========================================================================
+   hardwareSvgFilterSuppression.css — SVG Heavy Filters Suppression for Teeth (Mandate 8b, <= 110L)
+   ========================================================================== */
+
+html[data-hardware-tier="low"] .tooth-svg-wrapper,
+html[data-hardware-tier="low"] .tooth-group-standard,
+html[data-hardware-tier="low"] .periapical-halo-group,
+html[data-hardware-tier="low"] .anatomical-odontogram-root,
+[data-hardware-tier="low"] .tooth-svg-wrapper,
+[data-hardware-tier="low"] .tooth-group-standard,
+[data-hardware-tier="low"] .periapical-halo-group,
+[data-hardware-tier="low"] .anatomical-odontogram-root,
+html[data-low-spec="true"] .tooth-svg-wrapper,
+html[data-low-spec="true"] .tooth-group-standard,
+html[data-low-spec="true"] .periapical-halo-group,
+html[data-low-spec="true"] .anatomical-odontogram-root,
+[data-low-spec="true"] .tooth-svg-wrapper,
+[data-low-spec="true"] .tooth-group-standard,
+[data-low-spec="true"] .periapical-halo-group,
+[data-low-spec="true"] .anatomical-odontogram-root,
+html.low-spec-mode .tooth-svg-wrapper,
+html.low-spec-mode .tooth-group-standard,
+html.low-spec-mode .periapical-halo-group,
+html.low-spec-mode .anatomical-odontogram-root,
+.low-spec-mode .tooth-svg-wrapper,
+.low-spec-mode .tooth-group-standard,
+.low-spec-mode .periapical-halo-group,
+.low-spec-mode .anatomical-odontogram-root {
+	contain: layout paint !important;
+	will-change: transform !important;
+	transform: translateZ(0) !important;
+}
+
+html[data-hardware-tier="low"] filter,
+html[data-hardware-tier="low"] feGaussianBlur,
+html[data-hardware-tier="low"] feSpecularLighting,
+html[data-hardware-tier="low"] fePointLight,
+html[data-hardware-tier="low"] feDropShadow,
+[data-hardware-tier="low"] filter,
+[data-hardware-tier="low"] feGaussianBlur,
+[data-hardware-tier="low"] feSpecularLighting,
+[data-hardware-tier="low"] fePointLight,
+[data-hardware-tier="low"] feDropShadow,
+html[data-low-spec="true"] filter,
+html[data-low-spec="true"] feGaussianBlur,
+html[data-low-spec="true"] feSpecularLighting,
+html[data-low-spec="true"] fePointLight,
+html[data-low-spec="true"] feDropShadow,
+[data-low-spec="true"] filter,
+[data-low-spec="true"] feGaussianBlur,
+[data-low-spec="true"] feSpecularLighting,
+[data-low-spec="true"] fePointLight,
+[data-low-spec="true"] feDropShadow,
+html.low-spec-mode filter,
+html.low-spec-mode feGaussianBlur,
+html.low-spec-mode feSpecularLighting,
+html.low-spec-mode fePointLight,
+html.low-spec-mode feDropShadow,
+.low-spec-mode filter,
+.low-spec-mode feGaussianBlur,
+.low-spec-mode feSpecularLighting,
+.low-spec-mode fePointLight,
+.low-spec-mode feDropShadow {
+	display: none !important;
+}
+
+html[data-hardware-tier="low"] [filter],
+[data-hardware-tier="low"] [filter],
+html[data-low-spec="true"] [filter],
+[data-low-spec="true"] [filter],
+html.low-spec-mode [filter],
+.low-spec-mode [filter] {
+	filter: none !important;
+}

@@ -1,5 +1,5 @@
 import { useCallback, useState } from "react";
-import { useAppLogicContext } from "../../contexts/AppLogicContext.js";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	type InventoryItem,
@@ -17,7 +17,7 @@ export {
 };
 
 export function useInventoryLogic(organizationId: string) {
-	const appLogic = useAppLogicContext();
+	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 	const dashboard = appLogic?.dashboard;
 	const effectiveOrgId =

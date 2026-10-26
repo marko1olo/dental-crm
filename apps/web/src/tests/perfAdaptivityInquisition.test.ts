@@ -30,6 +30,14 @@ import { isLowSpecHardware as isLowSpecFromDevice } from "../utils/deviceDetecti
 import { useUiSurfaceStore, CT_STUDIO_MODAL_IDS } from "../store/uiSurfaceStore";
 import { RuntimePerformanceMonitor } from "../utils/telemetry/runtimePerformanceMonitor";
 
+function readCssWithImports(filePath: string): string {
+	const dir = path.dirname(filePath);
+	let css = fs.readFileSync(filePath, "utf-8");
+	const importRegex = /@import\s+['"]([^'"]+)['"];/g;
+	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
+	return css;
+}
+
 // Mock minimal DOM document & element
 function createMockDocument() {
 	const attrs = new Map<string, string>();
@@ -241,7 +249,7 @@ describe("Red Team Adaptivity Inquisitor — Comprehensive Verification", () => 
 
 	describe("5. CSS Layer Verification (low-spec-hardware.css)", () => {
 		const cssPath = path.resolve(process.cwd(), "apps/web/src/styles/low-spec-hardware.css");
-		const cssContent = fs.readFileSync(cssPath, "utf8");
+		const cssContent = readCssWithImports(cssPath);
 
 		it("Section 1 defines design tokens for data-perf-tier, data-perf-state, and data-ct-active", () => {
 			assert.ok(cssContent.includes(':root[data-perf-tier="low"]'));
