@@ -37,6 +37,27 @@ export const CORE_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] =
 			drugIds: ["ibuprofen_suspension_100_5ml"],
 		},
 		{
+			id: "full_dental_quad_complex",
+			label: "Комплекс: Антибиотик + Пробиотик + НПВС + Антисептик",
+			desc: "Амоксиклав 875/125 мг + Линекс Форте + Найз 100 мг + Хлоргексидин 0.05% ванночки",
+			drugIds: [
+				"amoxiclav_875_125",
+				"linex_forte",
+				"nimesulide_100",
+				"chlorhexidine_005",
+			],
+		},
+		{
+			id: "amoxicillin_standard_course",
+			label: "Стандартный курс: Амоксициллин 500 мг + Ибупрофен 400 мг",
+			desc: "Амоксициллин 500 мг 3 р/д (7 дн.) + Ибупрофен 400 мг + Хлоргексидин 0.05%",
+			drugIds: [
+				"amoxicillin_500",
+				"ibuprofen_400",
+				"chlorhexidine_005",
+			],
+		},
+		{
 			id: "post_extraction_complex",
 			label: "После сложного удаления (Амоксиклав + Нимесил + Хлоргексидин)",
 			desc: "Амоксиклав 875/125 мг 2 р/д (7 дн.) + Нимесил 100 мг при болях + Хлоргексидин 0.05% ванночки",

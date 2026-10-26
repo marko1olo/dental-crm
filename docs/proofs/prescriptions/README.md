@@ -53,22 +53,22 @@
 ---
 
 ## 📸 4-State & 6-State Visual Proofs (1440×900 PC & 390×844 Mobile)
-Снято на живом стенде DENTE (`http://127.0.0.1:5173/?demo=true#prescriptions`) с реальным монтированием в `AppShell.tsx`.
+Снято на живом стенде DENTE (`http://127.0.0.1:5173/?rx=1`) с реальным монтированием в `AppShell.tsx`.
 
 | Состояние | Разрешение | Скриншот | Описание эргономики |
 |---|---|---|---|
-| ☀️ **PC Light** | 1440×900 | [`01_prescription_modal_pc_light.png`](./01_prescription_modal_pc_light.png) | Каталог препаратов, быстрый выбор в 1 тап, клиника 1 клик, живой предпросмотр бланка с пассивным контролем аллергий |
-| 🌙 **PC Dark** | 1440×900 | [`02_prescription_modal_pc_dark.png`](./02_prescription_modal_pc_dark.png) | Темная тема: высокая контрастность, глубокий фон, четкие штампы и бирюзовые акценты |
-| 📱 **Mobile Light** | 390×844 | [`03_prescription_modal_mobile_light.png`](./03_prescription_modal_mobile_light.png) | Нативный iOS Bottom Sheet, Drag Handle, 1-тап пилюли, 2x2 кнопки в Thumb Zone |
-| 📱 **Mobile Dark** | 390×844 | [`04_prescription_modal_mobile_dark.png`](./04_prescription_modal_mobile_dark.png) | Мобильная темная тема: адаптивный формуляр, touch targets $\ge 44$px |
+| ☀️ **PC Light** | 1440×900 | [`01_prescriptions_pc_light.png`](./01_prescriptions_pc_light.png) | Каталог препаратов, быстрый выбор в 1 тап, клиника 1 клик, живой предпросмотр бланка с пассивным контролем аллергий |
+| 🌙 **PC Dark** | 1440×900 | [`02_prescriptions_pc_dark.png`](./02_prescriptions_pc_dark.png) | Темная тема: высокая контрастность, глубокий фон, четкие штампы и бирюзовые акценты |
+| 📱 **Mobile Light** | 390×844 | [`03_prescriptions_mobile_light.png`](./03_prescriptions_mobile_light.png) | Нативный iOS Bottom Sheet, Drag Handle, 1-тап пилюли, 1 Primary CTA во всю ширину в Thumb Zone |
+| 📱 **Mobile Dark** | 390×844 | [`04_prescriptions_mobile_dark.png`](./04_prescriptions_mobile_dark.png) | Мобильная темная тема: адаптивный формуляр, touch targets $\ge 44$px |
 | 📱 **Mobile Preview Light** | 390×844 | [`05_prescription_modal_mobile_preview_light.png`](./05_prescription_modal_mobile_preview_light.png) | Вкладка «Предпросмотр бланка» на смартфоне (светлая тема) |
 | 📱 **Mobile Preview Dark** | 390×844 | [`06_prescription_modal_mobile_preview_dark.png`](./06_prescription_modal_mobile_preview_dark.png) | Вкладка «Предпросмотр бланка» на смартфоне (темная тема) |
 
 Канонические псевдонимы файлов:
-- [`prescription_pc_light_1440x900.png`](./prescription_pc_light_1440x900.png)
-- [`prescription_pc_dark_1440x900.png`](./prescription_pc_dark_1440x900.png)
-- [`prescription_mobile_light_390x844.png`](./prescription_mobile_light_390x844.png)
-- [`prescription_mobile_dark_390x844.png`](./prescription_mobile_dark_390x844.png)
+- [`01_prescriptions_pc_light.png`](./01_prescriptions_pc_light.png) / [`prescription_pc_light_1440x900.png`](./prescription_pc_light_1440x900.png)
+- [`02_prescriptions_pc_dark.png`](./02_prescriptions_pc_dark.png) / [`prescription_pc_dark_1440x900.png`](./prescription_pc_dark_1440x900.png)
+- [`03_prescriptions_mobile_light.png`](./03_prescriptions_mobile_light.png) / [`prescription_mobile_light_390x844.png`](./prescription_mobile_light_390x844.png)
+- [`04_prescriptions_mobile_dark.png`](./04_prescriptions_mobile_dark.png) / [`prescription_mobile_dark_390x844.png`](./prescription_mobile_dark_390x844.png)
 
 ---
 

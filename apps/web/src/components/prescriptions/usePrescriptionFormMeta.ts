@@ -10,7 +10,7 @@ import type {
 
 export function usePrescriptionFormMeta(props: PrescriptionPrintModalProps) {
 	const { patient } = props;
-	const [activeForm, setActiveForm] = useState<PrescriptionFormType>("107-1u");
+	const [activeForm, setActiveForm] = useState<PrescriptionFormType>("standard");
 	const [customSeriesNumber, setCustomSeriesNumber] = useState<string>(() => {
 		const year = new Date().getFullYear();
 		const patSuffix =
@@ -46,7 +46,7 @@ export function usePrescriptionFormMeta(props: PrescriptionPrintModalProps) {
 	const [withStampAndSignature, setWithStampAndSignature] =
 		useState<boolean>(true);
 
-	const resetFormMeta = (form: PrescriptionFormType = "107-1u") => {
+	const resetFormMeta = (form: PrescriptionFormType = "standard") => {
 		const year = new Date().getFullYear();
 		const patSuffix =
 			(patient?.id ? patient.id.replace(/\D/g, "").slice(-4) : "").padStart(
@@ -55,7 +55,7 @@ export function usePrescriptionFormMeta(props: PrescriptionPrintModalProps) {
 			) || "0001";
 		setPrescriptionDate(new Date().toISOString().slice(0, 10));
 		setCustomSeriesNumber(
-			form === "107-1u"
+			form === "standard" || form === "107-1u"
 				? `РЕЦ-${year}-${patSuffix}`
 				: `ПКУ-${year}-${patSuffix.padStart(6, "0")}`,
 		);

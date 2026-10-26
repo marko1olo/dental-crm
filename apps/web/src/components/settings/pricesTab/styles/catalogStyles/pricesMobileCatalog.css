@@ -1,0 +1,110 @@
+/**
+ * pricesMobileCatalog.css — Apple HIG Touch Ergonomics, Grouped List & Thumb Zone
+ * Мандаты 8b, 8al, 8ze, Apple HIG (390×844). Строго <= 120 строк.
+ */
+
+@media (max-width: 640px) {
+	.pricelist-studio-container {
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+	}
+
+	.pricelist-section-card {
+		padding: 12px;
+		gap: 12px;
+		max-width: 100%;
+		overflow-x: clip;
+		box-sizing: border-box;
+	}
+
+	.pricelist-search-wrapper {
+		width: 100%;
+		max-width: 100%;
+	}
+
+	.pricelist-search-wrapper .dente-search-input {
+		width: 100% !important;
+		box-sizing: border-box;
+	}
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.pricelist-tab-btn,
+	.pricelist-studio-container .icon-button {
+		min-height: 44px !important;
+		min-width: 44px !important;
+	}
+
+	.pricelist-studio-container .primary-button {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 12px;
+		font-size: 14px;
+		padding: 0 16px;
+	}
+
+	.pricelist-studio-container .secondary-button {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 12px;
+		font-size: 13px;
+		padding: 0 14px;
+	}
+
+	.dente-filter-chip {
+		min-height: 36px;
+		padding: 0 14px;
+		font-size: 13px;
+	}
+
+	/* iOS Grouped List Pattern (Apple HIG) */
+	.catalog-items-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 0;
+		background: var(--paper);
+		border: 1px solid var(--line);
+		border-radius: 16px;
+		overflow: hidden;
+		box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	}
+
+	.catalog-item-card {
+		border: none;
+		border-radius: 0;
+		border-bottom: 1px solid var(--line-subtle, var(--line));
+		padding: 14px 16px;
+		min-height: 52px;
+		align-items: center;
+	}
+
+	.catalog-item-card:last-child {
+		border-bottom: none;
+	}
+
+	.catalog-item-price {
+		font-size: 15px;
+	}
+
+	/* Touch-friendly Floating Thumb Zone Helper */
+	.pricelist-mobile-thumb-bar {
+		position: sticky;
+		bottom: 0;
+		z-index: 40;
+		padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px));
+		background: var(--paper-strong);
+		backdrop-filter: blur(12px);
+		border-top: 1px solid var(--line);
+		display: flex;
+		align-items: center;
+		justify-content: stretch;
+	}
+
+	.pricelist-mobile-thumb-bar button {
+		width: 100%;
+		min-height: 48px;
+		font-size: 15px;
+		font-weight: 600;
+	}
+}

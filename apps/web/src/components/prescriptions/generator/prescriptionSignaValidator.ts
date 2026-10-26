@@ -1,12 +1,12 @@
 /**
  * prescriptionSignaValidator.ts — Latin Rx Signa Components & Frequency Validator
- * DENTE Dental CRM (Mandate 8b <= 120 lines).
+ * DENTE Dental CRM (Clean clinical language, Mandate 8x & Mandate 8b <= 120 lines).
  */
 
 import type { LatinRxSignaValidationResult } from "./prescriptionMnnTypes";
 
 /**
- * Валидация способа применения и латинской прописи по Приказу 1094н (Rp, Dtd, Signa).
+ * Валидация способа применения и латинской прописи (Rp, Dtd, Signa).
  */
 export function validateLatinRxSigna(params: {
 	latinRp?: string;
@@ -36,7 +36,7 @@ export function validateLatinRxSigna(params: {
 	const cleanedSignaRu = signa.replace(/^(?:D\.?\s*)?S[.:]?\s*/i, "").trim();
 
 	if (!cleanedSignaRu) {
-		errors.push("Сигнатура (способ применения) не может быть пустой (Приказ Минздрава РФ № 1094н).");
+		errors.push("Сигнатура (способ применения) не может быть пустой. Укажите способ и схему приёма.");
 	}
 
 	if (
@@ -51,7 +51,7 @@ export function validateLatinRxSigna(params: {
 		/^наружное$/i.test(cleanedSignaRu)
 	) {
 		errors.push(
-			"По Приказу № 1094н запрещается ограничиваться неопределенными общими указаниями: «Внутреннее», «Известно», «По схеме», «По назначению врача». Укажите точную дозу, кратность и курс.",
+			"Запрещается ограничиваться неопределенными общими указаниями: «Внутреннее», «Известно», «По схеме», «По назначению врача». Укажите точную дозу, кратность и курс.",
 		);
 	}
 

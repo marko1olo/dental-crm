@@ -1,0 +1,61 @@
+/**
+ * pricesItemActions.css — Кнопки действий, быстрое добавление и контролы
+ * Мандаты 8b, 8c, 8e, 8am, Apple HIG. Строго <= 120 строк.
+ */
+
+.catalog-item-actions { display: flex; align-items: center; gap: 8px; }
+
+.pricelist-studio-container .primary-button {
+	height: 36px; min-height: 36px; padding: 0 16px; border-radius: 10px; font-size: 13px; font-weight: 600;
+	background: var(--teal, #0d9488); color: #ffffff; border: none; display: inline-flex; align-items: center;
+	justify-content: center; gap: 8px; cursor: pointer; transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(13, 148, 136, 0.2);
+}
+.pricelist-studio-container .primary-button:hover:not(:disabled) {
+	background: var(--teal-dark, #0f766e); box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+}
+.pricelist-studio-container .primary-button:active:not(:disabled) { transform: scale(0.98); }
+
+.pricelist-studio-container .secondary-button {
+	height: 36px; min-height: 36px; padding: 0 12px; border-radius: 10px; font-size: 13px; font-weight: 500;
+	background: var(--paper); color: var(--ink); border: 1px solid var(--line); display: inline-flex;
+	align-items: center; justify-content: center; gap: 6px; cursor: pointer;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.pricelist-studio-container .secondary-button:hover:not(:disabled) {
+	background: var(--paper-soft); border-color: var(--line-strong, var(--line));
+}
+.pricelist-studio-container .secondary-button.active {
+	background: var(--teal-soft); border-color: var(--teal); color: var(--teal-dark, var(--teal));
+}
+
+.pricelist-studio-container .icon-button {
+	width: 32px; height: 32px; min-width: 32px; min-height: 32px; border-radius: 8px;
+	border: 1px solid var(--line); background: var(--paper); color: var(--muted);
+	display: inline-flex; align-items: center; justify-content: center; cursor: pointer; transition: all 0.15s ease;
+}
+.pricelist-studio-container .icon-button:hover:not(:disabled) {
+	background: var(--paper-soft); color: var(--teal); border-color: var(--teal);
+}
+.pricelist-studio-container .icon-button.danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.1); color: var(--danger-color, #ef4444); border-color: var(--danger-color, #ef4444);
+}
+
+.pricelist-save-bar {
+	display: flex; justify-content: space-between; align-items: center;
+	margin-top: 16px; padding-top: 16px; border-top: 1px solid var(--line);
+}
+
+.pricelist-actions-row {
+	display: flex; justify-content: space-between; align-items: flex-end;
+	background: var(--background); padding: 16px; border-radius: 12px; border: 1px solid var(--line);
+}
+
+/* Dark Mode Hygiene */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .icon-button {
+	background: var(--paper-soft, #1e293b); color: var(--ink, #f8fafc); border-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-actions-row {
+	background: var(--paper-soft, #1e293b); border-color: var(--line, #334155);
+}

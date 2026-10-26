@@ -1,0 +1,69 @@
+/**
+ * pricesTechnologicalMap.css — Состав расходников, техкарта и сканер импорта
+ * Мандаты 8b, 8c, 8n, Apple HIG. Строго <= 120 строк.
+ */
+
+.pricelist-upload-area { display: flex; flex-direction: column; gap: 20px; }
+
+.pricelist-mode-selector {
+	display: flex; align-items: center; gap: 12px; margin-bottom: 16px; flex-wrap: wrap;
+}
+.pricelist-mode-selector .radio-label {
+	display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 500;
+	color: var(--ink); cursor: pointer; padding: 6px 14px; border-radius: 8px;
+	background: var(--paper-soft); border: 1px solid var(--line); transition: all 0.15s ease;
+}
+.pricelist-mode-selector .radio-label:hover { background: var(--paper-soft); border-color: var(--teal); }
+.pricelist-mode-selector .radio-label:has(input:checked) {
+	border-color: var(--teal); background: rgba(13, 148, 136, 0.08); color: var(--teal); font-weight: 600;
+}
+
+.pricelist-file-dropzone {
+	border: 1.5px solid var(--line); border-radius: 12px; padding: 32px;
+	display: flex; flex-direction: column; align-items: center; gap: 12px;
+	cursor: pointer; transition: all 0.2s ease;
+}
+.pricelist-file-dropzone:hover { border-color: var(--teal); background: rgba(13, 148, 136, 0.04); }
+
+.pricelist-dropzone {
+	border: 2px dashed var(--line); border-radius: 16px; padding: 32px 20px; text-align: center;
+	background: var(--paper-soft); cursor: pointer; transition: all 0.2s ease;
+	display: flex; flex-direction: column; align-items: center; justify-content: center;
+	min-height: 160px; outline: none; box-sizing: border-box;
+}
+.pricelist-dropzone:hover,
+.pricelist-dropzone-active {
+	border-color: var(--teal) !important; background: rgba(13, 148, 136, 0.08) !important;
+}
+
+.dropzone-placeholder {
+	display: flex; flex-direction: column; align-items: center; justify-content: center;
+	max-width: 480px; margin: 0 auto;
+}
+
+.pricelist-vendor-badge {
+	display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px;
+	font-size: 12px; font-weight: 600; background: var(--teal-soft); color: var(--teal); border: 1px solid var(--teal);
+}
+
+.pricelist-preview-container {
+	margin-top: 16px; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; background: var(--paper);
+}
+.pricelist-preview-table-wrapper { max-height: 420px; overflow: auto; }
+.pricelist-preview-table { width: 100%; border-collapse: collapse; font-size: 12.5px; text-align: left; }
+.pricelist-preview-table th,
+.pricelist-preview-table td {
+	padding: 8px 10px; border-bottom: 1px solid var(--line); border-right: 1px solid var(--line); color: var(--ink);
+}
+
+.pricelist-stats-header { display: flex; gap: 16px; }
+.pricelist-stat-box {
+	flex: 1; background: var(--background); padding: 16px; border-radius: 12px;
+	display: flex; flex-direction: column; gap: 8px;
+}
+
+/* Dark Mode Hygiene */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-file-dropzone,
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-stat-box {
+	border-color: var(--line, #334155); background: var(--paper-soft, #1e293b);
+}

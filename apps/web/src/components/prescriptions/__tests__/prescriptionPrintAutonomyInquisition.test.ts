@@ -52,7 +52,7 @@ function hasEmojis(str: string): boolean {
 	return CARTOON_EMOJI_REGEX.test(str);
 }
 
-describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Compliance", () => {
+describe("Red Team Inquisition: Outpatient Prescription Clinical Compliance", () => {
 	it("1.1 Validates canonical dental MNN catalog contains all statutory active substances", () => {
 		const expectedMnn = [
 			"amoxicillin",
@@ -87,7 +87,7 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 		assert.strictEqual(ibu.matchedMnn?.mnnLatin, "Ibuprofenum");
 	});
 
-	it("1.3 Trade names map to official MNN with Order 1094n warning", () => {
+	it("1.3 Trade names map to official MNN with clinical warning", () => {
 		const tradeChecks = [
 			{ trade: "Аугментин", expectedMnn: "amoxicillin_clavulanate" },
 			{ trade: "Ультракаин", expectedMnn: "articaine" },
@@ -111,8 +111,8 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 			);
 			assert.strictEqual(res.matchedMnn?.key, check.expectedMnn);
 			assert.ok(
-				res.warning?.includes("1094н"),
-				`Must cite Order 1094n requirement in trade warning for ${check.trade}`,
+				res.warning?.includes("МНН") || res.warning?.includes("действующему веществу"),
+				`Must cite MNN requirement in trade warning for ${check.trade}`,
 			);
 		}
 	});
@@ -145,7 +145,7 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 		assert.ok(noDtd.errors.some((e) => e.includes("D.t.d.")));
 	});
 
-	it("1.5 Strictly bans vague/indefinite instructions in Signa per Order 1094n", () => {
+	it("1.5 Strictly bans vague/indefinite instructions in Signa", () => {
 		const vagueInstructions = [
 			"Внутреннее",
 			"Известно",
@@ -168,14 +168,14 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 			);
 			assert.ok(
 				res.errors.some(
-					(e) => e.includes("1094н") || e.includes("неопределенные"),
+					(e) => e.includes("неопределенные") || e.includes("Укажите точную дозу"),
 				),
-				`Must cite Order 1094n in error for '${vague}'`,
+				`Must cite vague signa ban in error for '${vague}'`,
 			);
 		}
 	});
 
-	it("1.6 Statutory prescription expiration calculation per Order 1094n", () => {
+	it("1.6 Statutory prescription expiration calculation per standards", () => {
 		const baseDate = "2026-09-25";
 
 		// 15 days (urgent / Form 148-1/u-88)
@@ -195,7 +195,7 @@ describe("Red Team Inquisition: Order of Minzdrav RF No. 1094n Statutory Complia
 		assert.strictEqual(exp365, "2027-09-25");
 	});
 
-	it("1.7 Form 107-1/у document generator generates complete statutory structure", () => {
+	it("1.7 Prescription document generator generates complete clinical structure", () => {
 		const doc = generateForm107Prescription({
 			prescriptionSeriesNumber: "РЕЦ-2026-0042",
 			dateIso: "2026-09-25",

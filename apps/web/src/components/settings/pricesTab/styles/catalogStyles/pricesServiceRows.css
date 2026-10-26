@@ -1,0 +1,63 @@
+/**
+ * pricesServiceRows.css — Строки услуг, карточки и отображение цен в рублях
+ * Мандаты 8b, 8c, 8e, 8am, Apple HIG. Строго <= 120 строк.
+ */
+
+.catalog-items-grid {
+	display: grid; grid-template-columns: repeat(auto-fill, minmax(min(350px, 100%), 1fr)); gap: 16px;
+}
+
+.catalog-item-card {
+	background: var(--paper); border: 1px solid var(--line); border-radius: 10px; padding: 16px;
+	display: flex; justify-content: space-between; align-items: flex-start; gap: 16px;
+	transition: all 0.2s ease; content-visibility: auto; contain-intrinsic-size: 1px 110px; contain: paint layout;
+}
+
+.catalog-item-card:hover { border-color: var(--teal); box-shadow: 0 4px 12px rgba(13, 148, 136, 0.08); }
+
+.catalog-item-info { display: flex; flex-direction: column; gap: 6px; flex: 1; }
+
+.catalog-item-code {
+	font-size: 12px; color: var(--ink-muted, var(--muted)); font-family: monospace;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.04)); border: 1px solid var(--line);
+	padding: 2px 6px; border-radius: 4px; width: fit-content;
+}
+
+.catalog-item-title { font-size: 14px; font-weight: 600; color: var(--ink); line-height: 1.4; }
+
+.catalog-item-badges { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.catalog-item-badges span {
+	font-size: 11px; padding: 2px 8px; border-radius: 12px; background: var(--background);
+	color: var(--muted-dark); font-weight: 500;
+}
+.catalog-item-badges .badge-tax { background: rgba(16, 185, 129, 0.1); color: rgb(5, 150, 105); }
+.catalog-item-badges .badge-inactive { background: rgba(239, 68, 68, 0.1); color: rgb(220, 38, 38); }
+
+.catalog-item-price {
+	display: flex; flex-direction: column; align-items: flex-end; font-weight: 700;
+	color: var(--ink); font-size: 15px; margin-right: 8px; font-variant-numeric: tabular-nums;
+}
+.catalog-item-price small { font-size: 12px; font-weight: 500; color: var(--muted); }
+
+.pricelist-items-list { display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+
+.pricelist-item-row {
+	display: flex; justify-content: space-between; align-items: center; padding: 12px 16px;
+	background: var(--background); border: 1px solid var(--line); border-radius: 8px;
+}
+
+.pricelist-item-info strong { font-size: 14px; color: var(--ink); display: block; }
+.pricelist-item-price span { font-size: 15px; font-weight: 700; color: var(--teal); display: block; text-align: right; }
+
+/* Dark Mode Hygiene */
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .catalog-item-card {
+	background: var(--paper, #0f172a); border-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .catalog-item-code {
+	background: var(--paper-soft, #1e293b); color: var(--ink-2, #cbd5e1); border-color: var(--line, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-item-row {
+	background: var(--paper-soft, #1e293b); border-color: var(--line, #334155);
+}

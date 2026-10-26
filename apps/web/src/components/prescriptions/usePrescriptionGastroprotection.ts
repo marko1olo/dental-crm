@@ -19,7 +19,7 @@ export function usePrescriptionGastroprotection(p: GastroprotectionParams) {
 			showToast("Омепразол 20 мг уже добавлен в назначения", "info", 2500);
 			return;
 		}
-		if (p.selectedDrugIds.length >= 3 && p.activeForm === "107-1u") {
+		if (p.selectedDrugIds.length >= 3 && (p.activeForm === "standard" || p.activeForm === "107-1u")) {
 			showToast(
 				"На одном рецептурном бланке допускается не более 3 препаратов.",
 				"warning",

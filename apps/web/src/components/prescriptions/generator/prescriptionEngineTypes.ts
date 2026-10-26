@@ -40,6 +40,11 @@ export interface Form107RenderedItem {
 	readonly tradeNameRu: string;
 }
 
+/** Canonical semantic aliases per Mandate 8x & 8ap */
+export type PrescriptionDocumentInput = Form107PrescriptionInput;
+export type PrescriptionRenderedItem = Form107RenderedItem;
+export type PrescriptionGeneratedDocument = Form107PrescriptionDocument;
+
 export interface Form107PrescriptionDocument {
 	readonly header: {
 		readonly seriesNumber: string;

@@ -14,7 +14,7 @@ import type {
 } from "./prescriptionEngineTypes";
 import { DENTAL_MEDICATIONS_CATALOG } from "./prescriptionPresets";
 
-export function generateForm107Prescription(
+export function generatePrescriptionDocument(
 	input: Form107PrescriptionInput,
 ): Form107PrescriptionDocument {
 	const items: Form107RenderedItem[] = [];
@@ -82,3 +82,6 @@ export function generateForm107Prescription(
 			: {}),
 	};
 }
+
+/** Canonical alias for backwards compatibility */
+export const generateForm107Prescription = generatePrescriptionDocument;

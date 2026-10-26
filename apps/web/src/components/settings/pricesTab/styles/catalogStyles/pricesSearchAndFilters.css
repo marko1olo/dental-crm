@@ -1,0 +1,59 @@
+/**
+ * pricesSearchAndFilters.css — Быстрый поиск в 1 клик, фильтр-чипсы и тулбар
+ * Мандаты 8b, 8c, 8zf, Apple HIG. Строго <= 120 строк.
+ */
+
+.dente-filter-chips {
+	display: flex; gap: 6px; align-items: center; overflow-x: auto; scrollbar-width: none;
+}
+.dente-filter-chips::-webkit-scrollbar { display: none; }
+
+.dente-filter-chip {
+	height: 30px; padding: 0 14px; border-radius: 9999px; font-size: 13px; font-weight: 500;
+	background-color: var(--paper-soft); border: 1px solid var(--line); color: var(--muted);
+	cursor: pointer; transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1); white-space: nowrap;
+	display: inline-flex; align-items: center; gap: 6px; user-select: none;
+}
+
+.dente-filter-chip:hover {
+	background-color: var(--paper); border-color: var(--line-strong, var(--line)); color: var(--ink);
+}
+
+.dente-filter-chip.active,
+.dente-filter-chip[data-active="true"] {
+	background-color: var(--teal-soft); border-color: var(--teal);
+	color: var(--teal-dark, var(--teal)); font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
+}
+
+.pricelist-monolithic-toolbar { contain: layout; transition: border-color 0.15s ease; }
+
+.pricelist-search-wrapper { position: relative; display: flex; align-items: center; }
+
+.pricelist-search-wrapper .dente-search-icon {
+	position: absolute; left: 12px; color: var(--muted); pointer-events: none;
+}
+
+.pricelist-search-wrapper .dente-search-input {
+	width: 100%; height: 36px; padding-left: 38px; padding-right: 32px;
+	border-radius: 10px; border: 1px solid var(--line); background: var(--paper-soft);
+	color: var(--ink); font-size: 13px; outline: none; transition: all 0.15s ease;
+}
+
+.pricelist-search-wrapper .dente-search-input:focus {
+	border-color: var(--teal); box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.15); background: var(--paper);
+}
+
+.pricelist-search-wrapper .dente-search-clear {
+	position: absolute; right: 8px; background: transparent; border: none; color: var(--muted);
+	cursor: pointer; padding: 4px; display: flex; align-items: center; justify-content: center; border-radius: 6px;
+}
+
+.pricelist-search-wrapper .dente-search-clear:hover { color: var(--ink); background: var(--line); }
+
+.empty-catalog-state {
+	padding: 40px 20px; text-align: center; display: flex; flex-direction: column;
+	align-items: center; justify-content: center; gap: 12px; color: var(--ink);
+}
+
+.empty-catalog-state p { margin: 0; font-size: 15px; font-weight: 600; }

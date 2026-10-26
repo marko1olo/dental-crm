@@ -4,7 +4,7 @@
  */
 
 import { DENTAL_PRESCRIPTION_DRUG_CATALOG } from "@dental/shared";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { showToast } from "../GlobalToast";
 import type {
 	PrescriptionDrugItem,
@@ -12,6 +12,10 @@ import type {
 	PrescriptionPrintModalProps,
 } from "./PrescriptionPrintModal";
 import { buildMergedPrescriptionCatalog } from "./prescriptionDataSets";
+import {
+	loadPrescriptionDraft,
+	savePrescriptionDraft,
+} from "./prescriptionDraftStorage";
 import { resolveActivePrescriptionItems } from "./prescriptionItemResolver";
 import { useCustomDrugState } from "./useCustomDrugState";
 
@@ -20,7 +24,15 @@ export function usePrescriptionItemsState(
 	activeForm: PrescriptionFormType,
 	patientWeightKg?: number | undefined,
 ) {
+	const draft = useMemo(
+		() => loadPrescriptionDraft(props.patient?.id),
+		[props.patient?.id],
+	);
+
 	const [selectedDrugIds, setSelectedDrugIds] = useState<string[]>(() => {
+		if (draft?.selectedDrugIds && draft.selectedDrugIds.length > 0) {
+			return [...draft.selectedDrugIds];
+		}
 		if (props.initialSelectedDrugIds !== undefined)
 			return [...props.initialSelectedDrugIds];
 		const icd = (props.diary?.diagnosisIcd10 || "K02.1").toUpperCase();
@@ -35,9 +47,9 @@ export function usePrescriptionItemsState(
 	const [searchQuery, setSearchQuery] = useState<string>("");
 	const [customDrugsList, setCustomDrugsList] = useState<
 		PrescriptionDrugItem[]
-	>([]);
+	>(() => (draft?.customDrugsList ? [...draft.customDrugsList] : []));
 	const [activePresetId, setActivePresetId] = useState<string | undefined>(
-		undefined,
+		() => draft?.activePresetId,
 	);
 
 	const customDrug = useCustomDrugState((newCustom) => {
@@ -46,6 +58,14 @@ export function usePrescriptionItemsState(
 			prev.length < 3 ? [...prev, newCustom.id] : prev,
 		);
 	});
+
+	useEffect(() => {
+		savePrescriptionDraft(props.patient?.id, {
+			selectedDrugIds,
+			customDrugsList,
+			activePresetId,
+		});
+	}, [props.patient?.id, selectedDrugIds, customDrugsList, activePresetId]);
 
 	const fullCatalog = useMemo(() => buildMergedPrescriptionCatalog(), []);
 
@@ -97,17 +117,7 @@ export function usePrescriptionItemsState(
 		toggleDrug,
 		searchQuery,
 		setSearchQuery,
-		isAddingCustom: customDrug.isAddingCustom,
-		setIsAddingCustom: customDrug.setIsAddingCustom,
-		customTradeName: customDrug.customTradeName,
-		setCustomTradeName: customDrug.setCustomTradeName,
-		customLatinRp: customDrug.customLatinRp,
-		setCustomLatinRp: customDrug.setCustomLatinRp,
-		customDispense: customDrug.customDispense,
-		setCustomDispense: customDrug.setCustomDispense,
-		customSigna: customDrug.customSigna,
-		setCustomSigna: customDrug.setCustomSigna,
-		handleAddCustomDrug: customDrug.handleAddCustomDrug,
+		...customDrug,
 		activePresetId,
 		setActivePresetId,
 		fullCatalog,

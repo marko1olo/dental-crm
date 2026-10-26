@@ -25,7 +25,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = (props) => {
 
 	const content = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 prescription-modal prescription-form-107-modal"
+			className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 prescription-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Рецептурный бланк на лекарства"
@@ -35,11 +35,11 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = (props) => {
 		>
 			<div
 				data-testid="prescription-modal"
-				className="flex flex-col w-full max-w-6xl h-[94vh] sm:h-auto sm:max-h-[94vh] rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden"
+				className="flex flex-col w-full max-w-6xl h-[92dvh] sm:h-auto sm:max-h-[94vh] rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden"
 			>
-				{/* Mobile Drag Handle */}
-				<div className="sm:hidden w-full flex justify-center pt-2.5 pb-1 bg-[var(--paper-soft)] shrink-0">
-					<div className="w-10 h-1 rounded-full bg-[var(--line-strong)] opacity-60" />
+				{/* Apple HIG Tactile Drag Handle */}
+				<div className="sm:hidden w-full flex justify-center pt-3 pb-1.5 bg-[var(--paper-soft)] shrink-0 cursor-grab active:cursor-grabbing">
+					<div className="w-10 h-1 rounded-full bg-[var(--line-strong,rgba(150,150,150,0.5))]" />
 				</div>
 
 				<PrescriptionModalHeader

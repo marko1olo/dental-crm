@@ -27,14 +27,15 @@ export interface PrescriptionExpressPillsProps {
 }
 
 const QUICK_SOLO_DRUGS = [
+	{ id: "amoxicillin_500", label: "Амоксициллин 500 мг" },
+	{ id: "amoxiclav_625", label: "Амоксиклав 625 мг" },
 	{ id: "amoxiclav_875_125", label: "Амоксиклав 1000 мг" },
-	{ id: "cyfran_st", label: "Цифран СТ" },
-	{ id: "azithromycin_500", label: "Азитромицин 500 мг" },
 	{ id: "nimesulide_100", label: "Найз 100 мг" },
-	{ id: "ketorolac_10", label: "Кеторол Экспресс 10 мг" },
 	{ id: "ibuprofen_400", label: "Ибупрофен 400 мг" },
+	{ id: "ketorolac_10", label: "Кеторол 10 мг" },
 	{ id: "chlorhexidine_005", label: "Хлоргексидин 0.05%" },
 	{ id: "miramistin_001", label: "Мирамистин 0.01%" },
+	{ id: "linex_forte", label: "Линекс (Пробиотик)" },
 ] as const;
 
 export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> = ({
@@ -50,14 +51,14 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 }) => {
 	return (
 		<div className="flex flex-col gap-3">
-			{/* Quick 1-Tap Solo Medications */}
+			{/* Quick 1-Tap Solo Medications (Horizontal scroller on mobile) */}
 			{onToggleDrug && (
 				<div className="flex flex-col gap-1.5">
 					<span className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 						<Pill className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 						Быстрый выбор препарата (1 тап):
 					</span>
-					<div className="flex flex-wrap gap-1.5">
+					<div className="flex overflow-x-auto sm:flex-wrap pb-1.5 pt-0.5 gap-1.5 overscroll-x-contain touch-pan-x [scrollbar-width:none] [-webkit-overflow-scrolling:touch] [&::-webkit-scrollbar]:hidden">
 						{QUICK_SOLO_DRUGS.map((drug) => {
 							const isSelected = selectedDrugIds.includes(drug.id);
 							return (
@@ -66,7 +67,7 @@ export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> =
 									type="button"
 									onClick={() => onToggleDrug(drug.id)}
 									data-testid={`quick-drug-pill-${drug.id}`}
-									className={`px-3 py-1.5 min-h-[36px] sm:min-h-[32px] rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 ${
+									className={`px-3 py-1.5 min-h-[36px] sm:min-h-[32px] rounded-xl text-xs font-semibold transition-all cursor-pointer inline-flex items-center gap-1.5 shrink-0 ${
 										isSelected
 											? "bg-[var(--teal)] text-white shadow-xs border border-[var(--teal)]"
 											: "bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)]"
