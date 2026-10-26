@@ -1,0 +1,108 @@
+/**
+ * marketingWorkspace.css
+ * Campaign workspace panel, header, code box and status toggle.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-workspace-col {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 20px;
+	min-width: 0;
+}
+
+.marketing-workspace-header {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 16px;
+	padding-bottom: 14px;
+	border-bottom: 1px solid var(--line);
+}
+
+.marketing-workspace-header__main { flex: 1; min-width: 240px; }
+
+.marketing-badge-category {
+	display: inline-block;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--teal);
+	background: var(--teal-surface);
+	padding: 2px 8px;
+	border-radius: 6px;
+}
+
+.marketing-badge-validity { font-size: 11px; color: var(--muted); }
+
+.marketing-workspace-title {
+	font-size: 1.35rem;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0 0 4px 0;
+	line-height: 1.25;
+}
+
+.marketing-workspace-desc {
+	font-size: 13px;
+	color: var(--muted);
+	margin: 0;
+	line-height: 1.45;
+}
+
+.marketing-workspace-header__actions { display: flex; align-items: center; gap: 12px; }
+
+.marketing-code-box {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-end;
+	gap: 2px;
+}
+
+.marketing-code-label {
+	font-size: 10.5px;
+	font-weight: 600;
+	text-transform: uppercase;
+	color: var(--muted);
+	letter-spacing: 0.04em;
+}
+
+.marketing-code-value-wrap {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line-strong);
+	border-radius: 7px;
+	padding: 4px 8px;
+}
+
+.marketing-code-value {
+	font-size: 13px;
+	font-family: monospace;
+	color: var(--ink);
+	letter-spacing: 0.05em;
+}
+
+.marketing-copy-btn {
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	padding: 2px;
+}
+
+.marketing-copy-btn:hover { color: var(--teal); }
+
+.marketing-toggle-status-btn {
+	font-size: 12px;
+	font-weight: 600;
+	min-height: 34px;
+	padding: 6px 12px;
+}

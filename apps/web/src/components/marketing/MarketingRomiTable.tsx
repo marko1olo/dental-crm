@@ -13,6 +13,7 @@ import { MarketingRomiTableRow } from "./MarketingRomiTableRow.js";
 import { MarketingRomiTableFooter } from "./MarketingRomiTableFooter.js";
 import { MarketingRomiMobileCard } from "./MarketingRomiMobileCard.js";
 import { MarketingRomiTableHeader } from "./MarketingRomiTableHeader.js";
+import { MarketingSourcesCardsGrid } from "./MarketingSourcesCardsGrid.js";
 import { useMarketingRomiChannels } from "./useMarketingRomiChannels.js";
 import "./marketingRomi.css";
 
@@ -86,6 +87,10 @@ export function MarketingRomiTable() {
 						{calculatedMetrics.map((metric) => (
 							<MarketingRomiMobileCard key={metric.id} metric={metric} getInputValue={getInputValue} onInputChange={handleInputChange} onInputBlur={handleInputBlur} onRemoveChannel={handleRemoveChannel} />
 						))}
+					</div>
+
+					<div className="mt-4 pt-4 border-t border-[var(--line)]">
+						<MarketingSourcesCardsGrid metrics={calculatedMetrics} onSyncWithCrm={handleSyncWithCrm} />
 					</div>
 				</>
 			)}

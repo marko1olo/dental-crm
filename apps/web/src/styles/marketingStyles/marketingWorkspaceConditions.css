@@ -1,0 +1,67 @@
+/**
+ * marketingWorkspaceConditions.css
+ * Conditions strip, promo sections and section headers.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-conditions-strip {
+	display: flex;
+	align-items: flex-start;
+	gap: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 8px 12px;
+	font-size: 12px;
+	color: var(--muted);
+}
+
+.marketing-conditions-icon {
+	color: var(--teal);
+	flex-shrink: 0;
+	margin-top: 1px;
+}
+
+.marketing-conditions-list {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px 16px;
+}
+
+.marketing-condition-item {
+	line-height: 1.4;
+}
+
+.marketing-section {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 14px 16px;
+}
+
+.marketing-section-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.marketing-section-title {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.marketing-section-badge {
+	font-size: 11px;
+	color: var(--muted);
+	background: var(--paper);
+	border: 1px solid var(--line);
+	padding: 2px 7px;
+	border-radius: 6px;
+}

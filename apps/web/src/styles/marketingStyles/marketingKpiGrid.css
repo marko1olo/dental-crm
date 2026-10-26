@@ -1,0 +1,90 @@
+/**
+ * marketingKpiGrid.css
+ * 4-column KPI cards grid and conversion funnel stages indicator.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-kpi-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 12px;
+}
+
+@media (max-width: 900px) {
+	.marketing-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+.marketing-kpi-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 9px;
+	padding: 10px 12px;
+}
+
+.marketing-kpi-card__top {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.marketing-kpi-label {
+	font-size: 11.5px;
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.marketing-kpi-value {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+	line-height: 1.2;
+}
+
+.marketing-kpi-sub {
+	font-size: 10.5px;
+	color: var(--muted);
+	line-height: 1.3;
+}
+
+.marketing-funnel-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 8px 14px;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.marketing-funnel-step {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 1px;
+}
+
+.marketing-funnel-num {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	font-variant-numeric: tabular-nums;
+}
+
+.marketing-funnel-name {
+	font-size: 10.5px;
+	color: var(--muted);
+}
+
+.marketing-funnel-arrow {
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 700;
+}

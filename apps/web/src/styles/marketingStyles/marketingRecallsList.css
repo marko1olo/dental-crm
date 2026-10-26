@@ -1,0 +1,108 @@
+/**
+ * marketingRecallsList.css
+ * Clinical recalls container, patient stream cards, human badges & 1-click actions.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-recalls-container {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+}
+.marketing-recalls-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid var(--line);
+}
+.marketing-recalls-stats {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+.marketing-recalls-badge-counter {
+	display: inline-flex;
+	align-items: center;
+	gap: 5px;
+	padding: 4px 10px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 600;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+}
+.marketing-recalls-stream {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	width: 100%;
+}
+.marketing-recall-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 14px 16px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	transition: all 0.15s ease-out;
+}
+.marketing-recall-card:hover {
+	border-color: var(--line-strong);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+.marketing-recall-main {
+	min-width: 0;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+.marketing-recall-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+.marketing-recall-name {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+.marketing-recall-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+}
+.marketing-recall-badge--hygiene { background: var(--teal-surface); color: var(--teal-dark, var(--teal)); border: 1px solid var(--teal); }
+.marketing-recall-badge--ortho { background: rgba(139, 92, 246, 0.1); color: #7c3aed; border: 1px solid rgba(139, 92, 246, 0.3); }
+.marketing-recall-badge--implant { background: var(--ok-bg); color: var(--ok-fg); border: 1px solid rgba(16, 185, 129, 0.3); }
+.marketing-recall-badge--general { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid rgba(245, 158, 11, 0.3); }
+
+.marketing-recall-details {
+	font-size: 12px;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+.marketing-recall-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	flex-shrink: 0;
+}

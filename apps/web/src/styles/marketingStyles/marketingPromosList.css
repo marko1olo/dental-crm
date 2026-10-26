@@ -1,0 +1,79 @@
+/**
+ * marketingPromosList.css
+ * Left column catalog shell, segmented control & add promo button.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-promos-col {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	padding: 14px;
+}
+
+.marketing-col-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.marketing-segmented-control {
+	display: flex;
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 2px;
+	gap: 2px;
+	height: 32px;
+	min-height: 32px;
+	flex: 1;
+	box-sizing: border-box;
+}
+
+.marketing-seg-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	flex: 1;
+	padding: 0 8px;
+	height: 26px;
+	min-height: 26px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-muted, var(--muted));
+	border: none;
+	background: transparent;
+	border-radius: 6px;
+	cursor: pointer;
+	transition: all 0.15s ease-out;
+	white-space: nowrap;
+}
+
+.marketing-seg-btn:hover {
+	color: var(--ink);
+}
+
+.marketing-seg-btn--active {
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
+}
+
+.marketing-add-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 0 12px;
+	font-size: 12.5px;
+	font-weight: 600;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
+	white-space: nowrap;
+}

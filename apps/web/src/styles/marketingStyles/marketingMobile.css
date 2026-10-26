@@ -1,0 +1,116 @@
+/**
+ * marketingMobile.css
+ * Dedicated mobile touch ergonomics (Apple HIG >= 44px, iOS grouped lists).
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+@media (max-width: 768px) {
+	.marketing-zone {
+		padding: 12px;
+		max-width: 100vw;
+		overflow-x: clip;
+		box-sizing: border-box;
+	}
+
+	.marketing-header-row {
+		flex-wrap: wrap;
+		max-height: none;
+		min-height: auto;
+		gap: 8px;
+	}
+
+	.marketing-top-tabs {
+		display: grid;
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+		width: 100%;
+		height: auto;
+		overflow-x: visible;
+		gap: 4px;
+		padding: 4px;
+	}
+
+	.marketing-top-tab {
+		justify-content: center;
+		padding: 10px 8px;
+		font-size: 12px;
+		min-height: 44px;
+		height: auto;
+		border-radius: 8px;
+	}
+
+	.marketing-two-col {
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	.marketing-recall-card {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+		padding: 12px;
+		border-radius: 12px;
+	}
+
+	.marketing-recall-actions {
+		width: 100%;
+		display: grid;
+		grid-template-columns: repeat(2, 1fr);
+		gap: 8px;
+	}
+
+	.marketing-recall-actions button,
+	.marketing-recall-actions a {
+		min-height: 44px;
+		justify-content: center;
+		font-size: 13px;
+		border-radius: 10px;
+	}
+
+	.marketing-action-btn-primary {
+		grid-column: span 2;
+		min-height: 44px;
+	}
+
+	.marketing-promos-col {
+		padding: 12px;
+		border-radius: 12px;
+	}
+
+	.marketing-add-btn {
+		min-height: 44px;
+		height: 44px;
+		padding: 0 16px;
+	}
+
+	.marketing-search-box,
+	.marketing-search-input {
+		min-height: 44px;
+		height: 44px;
+	}
+
+	.marketing-seg-btn {
+		min-height: 36px;
+		font-size: 12.5px;
+	}
+
+	.marketing-source-cards-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.marketing-source-card {
+		padding: 12px;
+	}
+
+	.marketing-modal-content {
+		max-height: 85vh;
+		border-radius: 16px;
+		margin: 8px;
+	}
+
+	.marketing-form-input,
+	.marketing-form-select,
+	.marketing-form-textarea {
+		min-height: 44px;
+		font-size: 14px;
+	}
+}

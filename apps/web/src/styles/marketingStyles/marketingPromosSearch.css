@@ -1,0 +1,82 @@
+/**
+ * marketingPromosSearch.css
+ * Promos search box, input states, scroll area and empty list feedback.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-search-box {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+	height: 36px;
+	min-height: 36px;
+	border-radius: 12px;
+}
+
+.marketing-search-icon {
+	position: absolute;
+	left: 11px;
+	color: var(--ink-muted, var(--muted));
+	pointer-events: none;
+}
+
+.marketing-search-input {
+	width: 100%;
+	padding: 6px 28px 6px 38px !important;
+	font-size: 12.5px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	color: var(--ink);
+	height: 36px;
+	min-height: 36px;
+	transition: border-color 0.15s ease-out;
+}
+
+.marketing-search-input:focus {
+	outline: none;
+	border-color: var(--primary);
+	box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.marketing-search-clear {
+	position: absolute;
+	right: 8px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	font-size: 11px;
+	cursor: pointer;
+	padding: 2px 4px;
+}
+
+.marketing-promos-scroll {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	max-height: calc(85vh - 200px);
+	overflow-y: auto;
+	padding-right: 2px;
+}
+
+.marketing-empty-list {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	padding: 32px 16px;
+	text-align: center;
+	color: var(--muted);
+	gap: 8px;
+}
+
+.marketing-empty-icon {
+	color: var(--muted);
+	opacity: 0.6;
+}
+
+.marketing-empty-text {
+	font-size: 12.5px;
+	margin: 0;
+}

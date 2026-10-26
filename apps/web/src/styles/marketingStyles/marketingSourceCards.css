@@ -1,0 +1,50 @@
+/**
+ * marketingSourceCards.css
+ * Honest source cards grid for acquisition channels and closed 54-FZ revenue.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-source-cards-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
+	width: 100%;
+}
+
+.marketing-source-card {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.marketing-source-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.marketing-source-card-title {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.marketing-source-card-revenue {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--teal-dark, var(--teal));
+	font-variant-numeric: tabular-nums;
+}
+
+.marketing-source-card-metrics {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 6px;
+	font-size: 11px;
+	color: var(--muted);
+}

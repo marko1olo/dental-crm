@@ -1,0 +1,42 @@
+/**
+ * marketingThemeTokens.css
+ * Marketing tokens, luxury dental color definitions & dark mode variables.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+:root {
+	--mkt-accent: var(--teal, #0d9488);
+	--mkt-accent-hover: var(--teal-dark, #0f766e);
+	--mkt-accent-surface: var(--teal-surface, rgba(13, 148, 136, 0.08));
+	--mkt-line-subtle: var(--line, rgba(0, 0, 0, 0.08));
+	--mkt-paper-card: var(--paper, #ffffff);
+	--mkt-paper-soft: var(--paper-soft, #f8fafc);
+	--mkt-badge-ok-bg: var(--ok-bg, rgba(16, 185, 129, 0.12));
+	--mkt-badge-ok-fg: var(--ok-fg, #059669);
+	--mkt-badge-warn-bg: var(--warn-bg, rgba(245, 158, 11, 0.12));
+	--mkt-badge-warn-fg: var(--warn-fg, #d97706);
+	--mkt-badge-danger-bg: var(--bad-bg, rgba(239, 68, 68, 0.12));
+	--mkt-badge-danger-fg: var(--bad-fg, #dc2626);
+}
+
+[data-theme="dark"],
+[data-theme="oled"],
+[data-theme="night"],
+[data-theme="ocean"],
+[data-theme="cyber-xray"],
+[data-theme="emerald"] {
+	--mkt-line-subtle: var(--line, rgba(255, 255, 255, 0.1));
+	--mkt-paper-card: var(--paper, #1e293b);
+	--mkt-paper-soft: var(--paper-soft, rgba(255, 255, 255, 0.04));
+	--mkt-accent-surface: rgba(13, 148, 136, 0.18);
+	--mkt-badge-ok-bg: rgba(16, 185, 129, 0.2);
+	--mkt-badge-ok-fg: #34d399;
+	--mkt-badge-warn-bg: rgba(245, 158, 11, 0.2);
+	--mkt-badge-warn-fg: #fbbf24;
+	--mkt-badge-danger-bg: rgba(239, 68, 68, 0.2);
+	--mkt-badge-danger-fg: #f87171;
+}
+
+.marketing-zone {
+	color-scheme: light dark;
+}

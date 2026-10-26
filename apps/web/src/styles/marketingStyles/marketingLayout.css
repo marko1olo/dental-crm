@@ -1,0 +1,116 @@
+/**
+ * marketingLayout.css
+ * Base zone container, single-row header, tabs and 2-column layout.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-zone {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	min-width: 0;
+}
+
+.marketing-header-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: nowrap;
+	gap: 12px;
+	min-height: 48px;
+	max-height: 52px;
+	padding-bottom: 10px;
+	border-bottom: 1px solid var(--line);
+}
+
+.marketing-header-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex-shrink: 0;
+}
+
+.marketing-header-title {
+	font-size: 1.15rem;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	letter-spacing: -0.01em;
+	white-space: nowrap;
+}
+
+.marketing-top-tabs {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px;
+	height: 32px;
+	min-height: 32px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: none;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.marketing-top-tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.marketing-top-tab {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 0 12px;
+	height: 26px;
+	min-height: 26px;
+	border-radius: 6px;
+	font-size: 12.5px;
+	font-weight: 600;
+	color: var(--ink-muted, var(--muted));
+	border: none;
+	background: transparent;
+	cursor: pointer;
+	transition: all 0.15s ease-out;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.marketing-top-tab:hover {
+	color: var(--ink);
+}
+
+.marketing-top-tab--active {
+	background: var(--paper);
+	color: var(--ink);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.marketing-two-col {
+	display: grid;
+	grid-template-columns: 400px minmax(0, 1fr);
+	gap: 20px;
+	align-items: start;
+	width: 100%;
+	min-width: 0;
+}
+
+@media (max-width: 1024px) {
+	.marketing-two-col {
+		grid-template-columns: 360px minmax(0, 1fr);
+		gap: 16px;
+	}
+}
+
+@media (max-width: 860px) {
+	.marketing-two-col {
+		grid-template-columns: 1fr;
+		gap: 20px;
+	}
+}

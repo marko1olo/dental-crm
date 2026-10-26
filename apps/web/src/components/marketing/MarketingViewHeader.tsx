@@ -15,7 +15,7 @@ export const MARKETING_TABS = [
 	{ id: "romi" as const, label: "Аналитика и ROMI", title: "Окупаемость рекламы и каналов (ROMI)", testId: "tab-nav-romi", Icon: BarChart3 },
 	{ id: "promos" as const, label: "Промокоды", title: "Акции и промокоды", testId: "tab-nav-promos", Icon: Tag },
 	{ id: "analytics" as const, label: "Воронка лидов", title: "Сквозная аналитика и воронка", testId: "tab-nav-analytics", Icon: TrendingUp },
-	{ id: "recalls" as const, label: "Реактивация пациентов", title: "Плановый профосмотр / Возврат пациентов", testId: "tab-nav-recalls", Icon: Users },
+	{ id: "recalls" as const, label: "Журнал напоминаний", title: "Плановый профосмотр / Возврат пациентов", testId: "tab-nav-recalls", Icon: Users },
 ];
 
 interface MarketingViewHeaderProps {

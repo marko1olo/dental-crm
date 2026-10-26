@@ -1,0 +1,112 @@
+/**
+ * marketingMessageDrawer.css
+ * Channel tabs (SMS/WhatsApp/TG), message preview box & template variables.
+ * Governed by Mandate 8b (Strict <= 120 lines).
+ */
+
+.marketing-channel-tabs {
+	display: flex;
+	align-items: center;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 7px;
+	padding: 2px;
+	gap: 2px;
+}
+
+.marketing-channel-btn {
+	padding: 3px 10px;
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--muted);
+	border: none;
+	background: transparent;
+	border-radius: 5px;
+	cursor: pointer;
+	transition: all 0.15s ease-out;
+	min-height: 26px;
+}
+
+.marketing-channel-btn:hover {
+	color: var(--ink);
+}
+
+.marketing-channel-btn--active {
+	background: var(--teal);
+	color: var(--paper);
+}
+
+.marketing-message-box {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 14px;
+	transition: border-color 0.15s ease;
+}
+
+.marketing-message-body {
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--ink);
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.marketing-chat-simulator {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	padding: 12px;
+}
+
+.marketing-chat-bubble {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.marketing-chat-compiled-text {
+	font-size: 13px;
+	line-height: 1.5;
+	color: var(--ink);
+	margin: 0;
+	white-space: pre-wrap;
+}
+
+.marketing-vars-strip {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	font-size: 11.5px;
+}
+
+.marketing-vars-label {
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.marketing-vars-chips {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.marketing-var-chip {
+	display: inline-block;
+	padding: 2px 7px;
+	border-radius: 5px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	font-family: monospace;
+	font-size: 11px;
+	cursor: pointer;
+	user-select: all;
+}
+
+.marketing-var-chip:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}

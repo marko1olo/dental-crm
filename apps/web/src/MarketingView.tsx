@@ -9,7 +9,7 @@ import { MarketingPromosList } from "./components/marketing/MarketingPromosList"
 import { MarketingCampaignDetail } from "./components/marketing/MarketingCampaignDetail";
 import { MarketingNewPromoModal } from "./components/marketing/MarketingNewPromoModal";
 import { useMarketingPromos } from "./components/marketing/useMarketingPromos";
-import { RecallListPanel } from "./components/patients/RecallListPanel";
+import { MarketingRecallsHub } from "./components/marketing/MarketingRecallsHub";
 import { MarketingRomiTable } from "./components/marketing/MarketingRomiTable";
 import { MarketingDashboardView } from "./pages/MarketingDashboardView";
 import { MarketingViewHeader, type MarketingTab } from "./components/marketing/MarketingViewHeader";
@@ -74,7 +74,7 @@ export function MarketingView({
 
 			{activeTab === "recalls" && (
 				<div className="marketing-recalls-container" data-testid="marketing-recalls-container">
-					<RecallListPanel />
+					<MarketingRecallsHub clinicName={clinicName} />
 				</div>
 			)}
 
