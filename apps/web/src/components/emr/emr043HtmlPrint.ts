@@ -59,9 +59,9 @@ export function renderFdiFormulaTableHtml(odontogramTeeth: FdiToothRecord[]): st
 		const borderRight = isRightBoundary ? "border-right: 2px solid #0f172a;" : "border-right: 0.5pt solid #cbd5e1;";
 
 		return `
-      <td style="text-align:center; padding:3px 2px; font-size:7.5pt; background:${bg}; ${borderRight}">
-        <div style="font-weight:bold; color:#0f172a; font-size:8pt;">${num}</div>
-        <div style="font-weight:800; color:${color}; font-size:7.5pt; margin-top:1px;">${escapeHtml(shortCode)}</div>
+      <td data-preserve-white="true" style="text-align:center; padding:3px 2px; font-size:7.5pt; background:${bg} !important; ${borderRight}">
+        <div data-preserve-white="true" style="font-weight:bold; color:#0f172a !important; font-size:8pt;">${num}</div>
+        <div data-preserve-white="true" style="font-weight:800; color:${color} !important; font-size:7.5pt; margin-top:1px;">${escapeHtml(shortCode)}</div>
       </td>
     `;
 	};
@@ -291,7 +291,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
       font-weight: 800;
       text-transform: uppercase;
       letter-spacing: 0.02em;
-      color: #0f172a;
+      color: #0f172a !important;
       margin: 0;
       line-height: 1.2;
     }
@@ -393,7 +393,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
       transform: translate(-50%, -50%) rotate(-32deg);
       font-size: 76pt;
       font-weight: 900;
-      color: rgba(220, 38, 38, 0.06);
+      color: rgba(239, 68, 68, 0.15);
       text-transform: uppercase;
       letter-spacing: 0.1em;
       pointer-events: none;
@@ -417,7 +417,7 @@ export function generatePrintableHtml043(data: MedicalCardForm043uData, config?:
   </style>
 </head>
 <body>
-<div class="doc-container">
+<div class="doc-container print-paper-sheet pro-a4-physical-sheet" data-paper-sheet="true" data-preserve-white="true">
   ${
 		isDocDraft
 			? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'

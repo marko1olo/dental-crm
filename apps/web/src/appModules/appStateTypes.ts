@@ -73,6 +73,8 @@ export interface AppHashRoutingState {
 	setIsWarrantyPassportOpen: Dispatch<SetStateAction<boolean>>;
 	isShiftCloseZReportDirectOpen: boolean;
 	setIsShiftCloseZReportDirectOpen: Dispatch<SetStateAction<boolean>>;
+	isEmrCardDirectModalOpen: boolean;
+	setIsEmrCardDirectModalOpen: Dispatch<SetStateAction<boolean>>;
 }
 
 export interface AppSessionAuthState {

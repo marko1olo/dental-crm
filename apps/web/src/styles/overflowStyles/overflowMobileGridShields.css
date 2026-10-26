@@ -1,0 +1,109 @@
+/* ============================================================
+   overflowMobileGridShields.css — Responsive Multi-Column Shields
+   Collapses desktop multi-column grids into single-column cards on mobile.
+   ============================================================ */
+
+@media (max-width: 840px) {
+	.topbar {
+		margin-left: -14px;
+		margin-right: -14px;
+	}
+
+	.patients-header {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
+		flex-direction: column !important;
+		flex-wrap: nowrap !important;
+		align-items: stretch !important;
+		height: auto !important;
+		min-height: auto !important;
+		max-height: none !important;
+		overflow: visible !important;
+		padding: 0.625rem 0.75rem !important;
+		gap: 0.5rem !important;
+	}
+
+	.patients-search-box {
+		flex: 1 1 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		width: 100% !important;
+	}
+
+	.patients-search-box input {
+		height: 44px !important;
+		min-height: 44px !important;
+		padding: 6px 36px 6px 38px !important;
+		font-size: 0.875rem !important;
+		box-sizing: border-box !important;
+	}
+
+	.patients-header-actions {
+		width: 100% !important;
+		display: flex !important;
+		flex-direction: row !important;
+		flex-wrap: nowrap !important;
+		gap: 8px !important;
+		justify-content: stretch !important;
+	}
+
+	.patients-header-actions > button {
+		flex: 1 1 0 !important;
+		min-width: 0 !important;
+		justify-content: center !important;
+	}
+
+	.patients-main-grid,
+	.patient-list,
+	.patient-row {
+		max-width: 100% !important;
+		min-width: 0 !important;
+		box-sizing: border-box !important;
+	}
+}
+
+@media (max-width: 700px) {
+	.role-focus-strip,
+	.shift-intelligence {
+		grid-template-columns: minmax(0, 1fr);
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.shift-dashboard-grid > * {
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.settings-advanced-toggle {
+		flex-wrap: wrap;
+		min-width: 0;
+	}
+
+	.settings-advanced-hint {
+		max-width: 100%;
+		min-width: 0;
+		white-space: normal;
+		overflow-wrap: anywhere;
+	}
+
+	.work-grid > div > .p-4,
+	.page-grid > div > .p-4 {
+		max-width: 100%;
+		min-width: 0;
+	}
+}
+
+@media (max-width: 640px) {
+	.imaging-patient-strip {
+		display: none !important;
+	}
+
+	.imaging-patient-strip-mobile {
+		display: flex !important;
+		width: 100% !important;
+		min-height: 28px !important;
+		margin-bottom: 6px !important;
+	}
+}

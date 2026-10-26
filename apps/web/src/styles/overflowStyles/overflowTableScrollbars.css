@@ -1,0 +1,106 @@
+/* ============================================================
+   overflowTableScrollbars.css — Table & Odontogram Scroll Containers
+   Isolated horizontal scrollbars with smooth touch scrolling.
+   ============================================================ */
+
+.tooth-chart-container,
+.tooth-arch-wrapper {
+	max-width: 100%;
+	overflow-x: auto;
+	overscroll-behavior-x: contain;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+.tooth-chart-arch-container {
+	max-width: 100%;
+	contain: none !important;
+}
+
+.odontogram-toolbar-row {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	gap: 6px !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	overflow-x: auto !important;
+	overflow-y: hidden !important;
+	flex-wrap: nowrap !important;
+	scrollbar-width: none !important;
+	-webkit-overflow-scrolling: touch !important;
+	touch-action: pan-x !important;
+	overscroll-behavior-x: contain !important;
+}
+
+.odontogram-toolbar-row::-webkit-scrollbar,
+.document-nav-tabs::-webkit-scrollbar {
+	display: none !important;
+}
+
+.odontogram-toolbar-row > *,
+.odontogram-toolbar-row button,
+.odontogram-toolbar-row button[data-testid="quick-trigger-extracted-btn"],
+.odontogram-toolbar-row button[data-testid="quick-trigger-pulpitis-btn"] {
+	flex-shrink: 0 !important;
+	white-space: nowrap !important;
+	min-width: max-content !important;
+}
+
+.document-nav-tabs {
+	display: flex !important;
+	align-items: center !important;
+	gap: 4px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 10px !important;
+	padding: 3px !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	min-width: 0 !important;
+	box-sizing: border-box !important;
+	overflow-x: auto !important;
+	overflow-y: hidden !important;
+	flex-wrap: nowrap !important;
+	scrollbar-width: none !important;
+	-webkit-overflow-scrolling: touch !important;
+	touch-action: pan-x !important;
+	overscroll-behavior-x: contain !important;
+	margin: 8px 0 !important;
+}
+
+.document-nav-tab-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	padding: 0 12px !important;
+	border-radius: 8px !important;
+	font-size: 12.5px !important;
+	font-weight: 500 !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	min-width: max-content !important;
+	box-sizing: border-box !important;
+}
+
+.document-nav-tab-btn span {
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	min-width: max-content !important;
+}
+
+.document-nav-tab-badge {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-width: 18px !important;
+	height: 18px !important;
+	padding: 0 5px !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	border-radius: 999px !important;
+	margin-left: 2px !important;
+}

@@ -1,7 +1,7 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * EMR FORM 043/U MODAL TAB SECTIONS (PASSPORT, ANAMNESIS, ODONTOGRAM, DIARIES, EPICRISIS)
- * Order of the Ministry of Health of the USSR № 1030 / Order № 834n
+ * EMR CLINICAL MEDICAL RECORD TAB SECTIONS (PASSPORT, ANAMNESIS, ODONTOGRAM, DIARIES, EPICRISIS)
+ * Clinical Record & Visit Diaries, Touch-First Ergonomics, Apple HIG
  * ═══════════════════════════════════════════════════════════════════════════
  */
 
@@ -143,7 +143,17 @@ export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.mem
 						</div>
 						<div>
 							<div className="emr043-field-label">Аллергологический статус:</div>
-							<div className="emr043-field-value">{formData.anamnesis.allergologicalHistory}</div>
+							<div className="emr043-field-value">
+								{formData.anamnesis.allergologicalHistory &&
+								!formData.anamnesis.allergologicalHistory.toLowerCase().includes("не отягощен") &&
+								!formData.anamnesis.allergologicalHistory.toLowerCase().includes("нет") ? (
+									<span className="emr043-allergy-warning-inline">
+										⚠️ {formData.anamnesis.allergologicalHistory}
+									</span>
+								) : (
+									formData.anamnesis.allergologicalHistory || "Не отягощен"
+								)}
+							</div>
 						</div>
 						<div>
 							<div className="emr043-field-label">Сопутствующие соматические патологии:</div>

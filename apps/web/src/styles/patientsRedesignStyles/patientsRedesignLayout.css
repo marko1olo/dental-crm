@@ -1,0 +1,89 @@
+/* ==========================================================================
+   PATIENTS REDESIGN LAYOUT (Mandate 8b: <= 120 lines)
+   Desktop Master-Detail grid, panel containers and widget layout.
+   ========================================================================== */
+
+.patients-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	padding: 8px 16px 24px 16px;
+	background: var(--bg);
+	min-height: 100vh;
+	color: var(--ink);
+	scroll-margin-top: 68px;
+}
+
+/* Master-Detail Grid (Patients directory & card workspace) */
+.patients-main-grid {
+	display: grid;
+	grid-template-columns: minmax(300px, 360px) minmax(0, 1fr);
+	gap: 1.25rem;
+	align-items: start;
+	width: 100%;
+	min-width: 0;
+}
+
+@media (min-width: 1440px) {
+	.patients-main-grid {
+		grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+	}
+}
+
+/* Compact Mobile Patient Preview Card */
+.patient-mobile-preview-card {
+	background: var(--paper);
+	border: 1px solid var(--line-strong, var(--line));
+	border-left: 4px solid var(--teal);
+	border-radius: 12px;
+	padding: 10px 14px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	box-shadow: var(--shadow-1);
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+	margin-top: 0.5rem;
+	user-select: none;
+}
+
+.patient-mobile-preview-card:hover {
+	border-color: var(--teal);
+	background: var(--paper-soft);
+	box-shadow: var(--shadow-2);
+}
+
+.patient-mobile-preview-card:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+}
+
+@media (min-width: 768px) {
+	.patient-mobile-preview-card {
+		display: none !important;
+	}
+}
+
+/* Mobile Back Header */
+.patient-mobile-back-header {
+	display: none;
+}
+
+/* Widgets Grid below selected patient details */
+.patients-widgets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(min(30rem, 100%), 1fr));
+	gap: 1rem;
+	margin-top: 1.5rem;
+}
+
+/* Theme overrides for preview card */
+[data-theme="dark"] .patient-mobile-preview-card,
+[data-theme="night"] .patient-mobile-preview-card,
+[data-theme="contrast"] .patient-mobile-preview-card,
+[data-theme="cyber_xray"] .patient-mobile-preview-card {
+	background: var(--paper);
+	border-color: var(--line);
+	border-left-color: var(--teal);
+}

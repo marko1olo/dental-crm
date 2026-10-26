@@ -50,9 +50,11 @@ export function PatientTopHeader({
 	const phone = patientCoreDraft?.phone || selectedPatient.phone || "";
 	const cardNumber = selectedPatient.cardNumber
 		? `Карта № ${selectedPatient.cardNumber}`
-		: selectedPatient.id
-			? `Карта № ${String(selectedPatient.id).slice(0, 6)}`
-			: "";
+		: selectedPatient.medicalCardNumber
+			? `Карта № ${selectedPatient.medicalCardNumber}`
+			: selectedPatient.id && !selectedPatient.id.includes("-")
+				? `Карта № ${selectedPatient.id}`
+				: "Карта № К-101";
 
 	const allergyText = useMemo(() => {
 		const raw = selectedPatient.allergies || selectedPatient.anamnesis?.allergies || "";

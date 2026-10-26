@@ -257,14 +257,21 @@ test("Desktop Ergonomics — AppointmentCard extracts teeth and renders medical 
 	);
 });
 
+function readCssWithImports(filePath: string): string {
+	const dir = path.dirname(filePath);
+	let css = fs.readFileSync(filePath, "utf-8");
+	const importRegex = /@import\s+["']([^"']+)["'];/g;
+	css = css.replace(importRegex, (_, rel) => readCssWithImports(path.resolve(dir, rel)));
+	return css;
+}
+
 test("Desktop Ergonomics — PatientsView enforces Miller's Law (<=2 direct buttons + '...' menu) and keyboard navigation", () => {
 	const patientsViewTsx = fs.readFileSync(
 		path.join(webRoot, "src/PatientsView.tsx"),
 		"utf8",
 	);
-	const patientsCss = fs.readFileSync(
+	const patientsCss = readCssWithImports(
 		path.join(webRoot, "src/styles/patients-redesign.css"),
-		"utf8",
 	);
 
 	// 1. Miller's law buttons on patient-row

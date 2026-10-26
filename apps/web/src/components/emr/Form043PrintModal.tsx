@@ -116,7 +116,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 		const [copiedToast, setCopiedToast] = useState<boolean>(false);
 		const [isMoreMenuOpen, setIsMoreMenuOpen] = useState<boolean>(false);
 
-		// Состояние генератора клинических протоколов 043/у
+		// Состояние генератора клинических дневников приёма (ЭМК)
 		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
 
 		// Валидация полноты формы
@@ -296,7 +296,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 					{/* ── Верхний тулбар действий ── */}
 					<header className="emr043-header-toolbar">
 						<div className="emr043-header-title-group">
-							<span className="emr043-header-badge">
+							<span className="emr043-header-badge hidden sm:inline-flex">
 								<FileText className="w-3.5 h-3.5" />
 								Медицинская карта пациента
 							</span>
@@ -454,8 +454,9 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 								data-testid="btn-print-043-card"
 								title="Печать или экспорт в PDF (A4)"
 							>
-								<Printer className="w-4 h-4" />
-								<span>Печать / PDF (A4)</span>
+								<Printer className="w-4 h-4 shrink-0" />
+								<span className="hidden sm:inline">Печать / PDF (A4)</span>
+								<span className="sm:hidden">Печать / PDF</span>
 							</button>
 
 							{/* Вторичные действия: ЕГИСЗ XML, JSON, Копирование (Закон Миллера, Мандат 8d) */}
@@ -546,7 +547,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							{/* Полноэкранный режим */}
 							<button
 								type="button"
-								className="emr043-btn emr043-btn-secondary emr043-btn-icon-only"
+								className="emr043-btn emr043-btn-secondary emr043-btn-icon-only emr043-btn-fullscreen"
 								onClick={() => setIsFullscreen(!isFullscreen)}
 								title={isFullscreen ? "Свернуть" : "На весь экран"}
 							>
@@ -556,7 +557,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							{/* Закрыть */}
 							<button
 								type="button"
-								className="emr043-btn emr043-btn-secondary emr043-btn-icon-only"
+								className="emr043-btn emr043-btn-secondary emr043-btn-icon-only emr043-btn-close"
 								onClick={onClose}
 								title="Закрыть окно"
 							>
@@ -666,7 +667,9 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 						{activeTab === "overview" && (
 							<div className="emr043-preview-container" style={{ flexDirection: "column", alignItems: "center" }}>
 								<div
-									className="emr043-a4-sheet"
+									className="emr043-a4-sheet print-paper-sheet pro-a4-physical-sheet"
+									data-paper-sheet="true"
+									data-preserve-white="true"
 									style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}
 									dangerouslySetInnerHTML={{
 										__html: generatePrintableHtml043(formData, {
@@ -699,7 +702,7 @@ export const Form043PrintModal: React.FC<Form043PrintModalProps> = React.memo(
 							/>
 						)}
 
-						{/* Вкладка 5: Дневники визитов (Форма 043/у) */}
+						{/* Вкладка 5: Дневники клинических приёмов (Медицинская карта) */}
 						{activeTab === "diaries" && (
 							<Form043DiariesTab
 								formData={formData}

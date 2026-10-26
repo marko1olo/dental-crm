@@ -1,0 +1,116 @@
+/* ==========================================================================
+   PATIENTS REDESIGN TABLE (Mandate 8b: <= 120 lines, Mandate 8e, Mandate 8am)
+   Desktop dense patient list table, debt and balance indicators.
+   ========================================================================== */
+
+.patient-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.patient-row {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 48px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 12px 14px;
+	min-height: 56px;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	cursor: pointer;
+	color: var(--ink);
+}
+
+.patient-row:hover {
+	border-color: var(--teal-ring);
+	background: var(--paper-soft);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
+}
+
+.patient-row.selected {
+	border-color: var(--teal);
+	background: var(--teal-surface);
+	box-shadow: 0 0 0 1px var(--teal);
+}
+
+.patient-row h3 {
+	margin: 0;
+	font-size: 0.92rem;
+	font-weight: 700;
+	color: var(--ink);
+	line-height: 1.25;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	-webkit-box-orient: vertical;
+	overflow: hidden;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.patient-row p {
+	margin: 2px 0 0 0;
+	color: var(--muted);
+	font-size: 0.85rem;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.patient-row-meta .patient-next-action {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.patient-row-meta .patient-row-chip {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	font-family: monospace;
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-ring);
+}
+
+/* Accessible Focus States & Keyboard Navigation (WCAG AAA) */
+.patient-row:focus-visible {
+	outline: 2px solid var(--teal);
+	outline-offset: 2px;
+	border-color: var(--teal);
+}
+
+/* Dark and High Contrast Theme Invariants */
+[data-theme="dark"] .patient-row, [data-theme="night"] .patient-row,
+[data-theme="contrast"] .patient-row, [data-theme="cyber_xray"] .patient-row {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .patient-row:hover, [data-theme="night"] .patient-row:hover,
+[data-theme="contrast"] .patient-row:hover, [data-theme="cyber_xray"] .patient-row:hover {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+}
+
+[data-theme="dark"] .patient-row.selected, [data-theme="night"] .patient-row.selected,
+[data-theme="contrast"] .patient-row.selected, [data-theme="cyber_xray"] .patient-row.selected {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	box-shadow: 0 0 0 1px var(--teal);
+}
+
+[data-theme="dark"] .patient-row-meta .patient-row-chip, [data-theme="night"] .patient-row-meta .patient-row-chip,
+[data-theme="contrast"] .patient-row-meta .patient-row-chip, [data-theme="cyber_xray"] .patient-row-meta .patient-row-chip {
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-ring);
+}

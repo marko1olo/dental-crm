@@ -1,0 +1,100 @@
+/* ==========================================================================
+   PATIENTS REDESIGN BADGES (Mandate 8b: <= 120 lines, Mandate 8y, Mandate 8am)
+   Clinical badges: allergies ⚠️ (passive line), category, insurance status.
+   ========================================================================== */
+
+.patient-row-meta {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 6px;
+	align-items: center;
+}
+
+.patient-row-meta .patient-risk-label {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 12px;
+	font-weight: 700;
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+/* Clinical Allergy Badge (Mandate 8y: Non-blocking passive warning) */
+.patient-allergy-badge,
+.allergy-indicator {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	background: var(--bad-bg, rgba(239, 68, 68, 0.12));
+	color: var(--bad-fg, var(--danger));
+	border: 1px solid var(--bad-border, rgba(239, 68, 68, 0.25));
+}
+
+/* Category & Treatment Badges */
+.patient-badge-primary {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--teal-surface);
+	color: var(--teal);
+	border: 1px solid var(--teal-ring);
+}
+
+.patient-badge-repeat {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+/* Insurance Badges (VHI / CHI / Corporate) */
+.patient-badge-dms,
+.patient-badge-oms {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line-strong);
+}
+
+.patient-badge-archive {
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+}
+
+/* Theme overrides */
+[data-theme="dark"] .patient-row-meta .patient-risk-label,
+[data-theme="night"] .patient-row-meta .patient-risk-label,
+[data-theme="contrast"] .patient-row-meta .patient-risk-label,
+[data-theme="cyber_xray"] .patient-row-meta .patient-risk-label {
+	background: var(--teal-surface);
+	color: var(--teal-light, var(--teal));
+	border: 1px solid var(--teal-ring);
+}
+
+[data-theme="dark"] .patient-badge-primary,
+[data-theme="night"] .patient-badge-primary,
+[data-theme="contrast"] .patient-badge-primary,
+[data-theme="cyber_xray"] .patient-badge-primary {
+	background: var(--teal-surface);
+	color: var(--teal-light, var(--teal));
+}

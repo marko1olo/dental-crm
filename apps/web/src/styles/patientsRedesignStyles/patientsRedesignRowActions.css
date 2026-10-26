@@ -1,0 +1,106 @@
+/* ==========================================================================
+   PATIENTS REDESIGN ROW ACTIONS (Mandate 8b: <= 120 lines, Mandate 8am)
+   Quick patient actions: visit, book, card, telephony & context menu.
+   ========================================================================== */
+
+.patient-row-actions {
+	display: flex; align-items: center; gap: 4px;
+	flex-shrink: 0; user-select: none;
+}
+
+.patient-row-action-btn {
+	height: 32px; min-height: 32px; padding: 0 8px;
+	font-size: 12px; font-weight: 600; border-radius: 8px;
+	display: inline-flex; align-items: center; justify-content: center;
+	gap: 4px; white-space: nowrap; transition: all 0.15s ease;
+	cursor: pointer;
+}
+
+.patient-row-chart-btn {
+	background: var(--paper-soft); color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.patient-row-chart-btn:hover {
+	background: var(--teal-soft); color: var(--teal-dark);
+	border-color: var(--teal-ring);
+}
+
+.patient-row-book-btn {
+	background: var(--teal); color: var(--paper);
+	border: 1px solid var(--teal);
+}
+
+.patient-row-book-btn:hover {
+	background: var(--teal-dark, var(--teal)); opacity: 0.95;
+}
+
+.patient-row-more-btn {
+	height: 32px; width: 32px; min-height: 32px; min-width: 32px;
+	padding: 0; border-radius: 8px; border: 1px solid var(--line);
+	background: var(--paper-soft); color: var(--ink);
+	display: inline-flex; align-items: center; justify-content: center;
+	cursor: pointer; flex-shrink: 0; transition: all 0.15s ease;
+}
+
+.patient-row-more-btn:hover {
+	border-color: var(--teal); background: var(--paper);
+}
+
+.patient-row-chevron-btn {
+	height: 32px; width: 32px; min-height: 32px; min-width: 32px;
+	padding: 0; border-radius: 8px; border: 1px solid var(--line);
+	background: var(--paper-soft); color: var(--muted);
+	display: inline-flex; align-items: center; justify-content: center;
+	cursor: pointer; flex-shrink: 0; transition: all 0.15s ease;
+}
+
+.patient-row-chevron-btn:hover {
+	border-color: var(--teal); background: var(--teal-soft);
+	color: var(--teal-dark);
+}
+
+.patient-row-menu-dropdown {
+	position: absolute; right: 0; top: calc(100% + 4px);
+	z-index: 60; background: var(--paper);
+	border: 1px solid var(--line-strong); border-radius: 12px;
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.25);
+	min-width: 210px; padding: 6px; display: flex;
+	flex-direction: column; gap: 2px;
+}
+
+.patient-row-menu-dropdown button {
+	width: 100%; text-align: left; padding: 6px 10px;
+	border-radius: 8px; font-size: 12px; font-weight: 500;
+	color: var(--ink); background: transparent; border: none;
+	display: flex; align-items: center; gap: 8px; cursor: pointer;
+	transition: background-color 0.12s ease;
+}
+
+.patient-row-menu-dropdown button:hover {
+	background: var(--teal-soft); color: var(--teal-dark);
+}
+
+/* Dark and High Contrast Theme Invariants */
+[data-theme="dark"] .patient-row-chart-btn, [data-theme="night"] .patient-row-chart-btn,
+[data-theme="contrast"] .patient-row-chart-btn, [data-theme="cyber_xray"] .patient-row-chart-btn {
+	background: var(--paper-soft); color: var(--ink);
+	border-color: var(--line);
+}
+
+[data-theme="dark"] .patient-row-chart-btn:hover, [data-theme="night"] .patient-row-chart-btn:hover,
+[data-theme="contrast"] .patient-row-chart-btn:hover, [data-theme="cyber_xray"] .patient-row-chart-btn:hover {
+	background: var(--teal-surface); color: var(--teal-light, var(--teal));
+	border-color: var(--teal);
+}
+
+[data-theme="dark"] .patient-row-menu-dropdown, [data-theme="night"] .patient-row-menu-dropdown,
+[data-theme="contrast"] .patient-row-menu-dropdown, [data-theme="cyber_xray"] .patient-row-menu-dropdown {
+	background: var(--paper); border-color: var(--line-strong);
+	box-shadow: 0 12px 30px -5px rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .patient-row-menu-dropdown button:hover, [data-theme="night"] .patient-row-menu-dropdown button:hover,
+[data-theme="contrast"] .patient-row-menu-dropdown button:hover, [data-theme="cyber_xray"] .patient-row-menu-dropdown button:hover {
+	background: var(--teal-surface); color: var(--teal-light, var(--teal));
+}

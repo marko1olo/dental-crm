@@ -1,0 +1,94 @@
+/* ==========================================================================
+   PATIENTS REDESIGN MOBILE (Mandate 8b: <= 120 lines, Mandate 8al, Mandate 8ze)
+   Touch ergonomics >= 44x44px, 0px horizontal drift, safe area insets.
+   ========================================================================== */
+
+/* Coarse pointer & Mobile Touch Targets (>= 44x44px per Apple HIG) */
+@media (pointer: coarse), (max-width: 840px) {
+	.patients-search-clear-btn {
+		min-width: 44px;
+		min-height: 44px;
+		right: 36px;
+	}
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.patients-new-patient-btn,
+	.patients-header-actions .secondary-button,
+	.patient-row-action-btn,
+	.patient-row-more-btn {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+
+/* Mobile Screen Viewport Protection (< 768px) */
+@media (max-width: 768px) {
+	.patients-panel {
+		padding: 0.75rem;
+		gap: 0.75rem;
+		overflow-x: clip;
+		max-width: 100vw;
+		box-sizing: border-box;
+		padding-bottom: calc(80px + env(safe-area-inset-bottom, 16px));
+	}
+
+	.patients-header {
+		display: none !important;
+	}
+
+	.patients-search-box {
+		max-width: none;
+		flex: 0 0 auto;
+		width: 100%;
+	}
+
+	.patients-search-box input {
+		height: 44px;
+		min-height: 44px;
+		font-size: 0.875rem;
+		padding: 6px 36px 6px 38px !important;
+	}
+
+	.patients-search-clear-btn {
+		right: 8px;
+	}
+
+	.patients-header-actions {
+		width: 100%;
+		justify-content: stretch;
+		display: flex;
+		flex-direction: row;
+		gap: 8px;
+	}
+
+	.patients-header-actions > button {
+		flex: 1 1 0;
+		min-width: 0;
+		justify-content: center;
+	}
+}
+
+/* Tablet & Mobile Layout Stacking (<= 900px) */
+@media (max-width: 900px) {
+	.patients-panel {
+		min-height: auto;
+	}
+
+	.patients-main-grid {
+		display: flex !important;
+		flex-direction: column !important;
+		grid-template-columns: 1fr !important;
+		gap: 0.75rem;
+	}
+
+	.patient-mobile-back-header {
+		display: flex !important;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+		margin-bottom: 0.75rem;
+		width: 100%;
+		flex-wrap: wrap;
+	}
+}

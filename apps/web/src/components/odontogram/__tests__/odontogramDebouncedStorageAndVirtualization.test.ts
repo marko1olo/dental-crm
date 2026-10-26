@@ -175,7 +175,7 @@ describe("Low-Spec Caching & DOM Virtualizer Invariants", () => {
 
 		it("patients-redesign.css defines content-visibility: auto and contain-intrinsic-size: 1px 48px for .patient-row", () => {
 			const cssPath = path.resolve(__dirname, "../../../styles/patients-redesign.css");
-			const css = fs.readFileSync(cssPath, "utf-8");
+			const css = readCssWithImports(cssPath);
 
 			assert.ok(
 				css.includes(".patient-row"),

@@ -1,0 +1,96 @@
+/**
+ * emrSomaticNormQuickBar.css — Completeness Progress Bar & Somatic Norm 1-Click
+ * Mandates 8e, 8y & 8b: Micro-module strictly <= 120 lines. Passive Allergy Warning ⚠️.
+ */
+
+.emr043-completeness-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  background: var(--paper, #f1f5f9);
+  border-radius: 8px;
+  margin-bottom: 14px;
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-completeness-bar {
+  background: var(--paper-strong, #1e293b);
+}
+
+.emr043-progress-track {
+  flex: 1;
+  height: 8px;
+  background: var(--paper-soft, #e2e8f0);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-progress-track {
+  background: var(--paper-soft, #334155);
+}
+
+.emr043-progress-fill {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.emr043-progress-fill.green { background: #10b981; }
+.emr043-progress-fill.yellow { background: #f59e0b; }
+.emr043-progress-fill.red { background: #ef4444; }
+
+/* Passive Non-Blocking Allergy & Stop-Factor Indicators (Mandate 8e, 8y) */
+.emr043-allergy-warning-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--amber, #b45309);
+  background: rgba(245, 158, 11, 0.12);
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  padding: 4px 10px;
+  border-radius: 6px;
+}
+
+:is([data-theme="dark"], .dark) .emr043-allergy-warning-inline {
+  color: #fbbf24;
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.45);
+}
+
+.emr043-norm-active-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 9999px;
+  background: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  border: 1px solid #10b981;
+}
+
+:is([data-theme="dark"], .dark) .emr043-norm-active-pill {
+  background: rgba(16, 185, 129, 0.2);
+  color: #34d399;
+}

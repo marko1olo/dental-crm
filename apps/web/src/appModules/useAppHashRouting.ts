@@ -46,6 +46,7 @@ export function useAppHashRouting(
 	const [isReceiptDirectModalOpen, setIsReceiptDirectModalOpen] = useState(() => hasLocationToken(s, h, ["receipt"]));
 	const [isEmergencyDirectModalOpen, setIsEmergencyDirectModalOpen] = useState(() => hasLocationToken(s, h, ["emergency", "rescue"]));
 	const [isShiftCloseZReportDirectOpen, setIsShiftCloseZReportDirectOpen] = useState(() => hasLocationToken(s, h, ["zreport", "z-report", "shift-close", "shift_close"]));
+	const [isEmrCardDirectModalOpen, setIsEmrCardDirectModalOpen] = useState(() => hasLocationToken(s, h, ["emr", "medical-card", "form043", "card043"]));
 
 	const state: AppHashRoutingState = {
 		isPrescriptionForm107Open, setIsPrescriptionForm107Open,
@@ -78,6 +79,7 @@ export function useAppHashRouting(
 		isEmergencyDirectModalOpen, setIsEmergencyDirectModalOpen,
 		isWarrantyPassportOpen, setIsWarrantyPassportOpen,
 		isShiftCloseZReportDirectOpen, setIsShiftCloseZReportDirectOpen,
+		isEmrCardDirectModalOpen, setIsEmrCardDirectModalOpen,
 	};
 
 	useAppRoutingEvents(state, openDoctorShiftCockpit, setShowStaffPinPad);

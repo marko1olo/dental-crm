@@ -1,0 +1,84 @@
+/**
+ * emrPeriodontalPockets.css — Periodontal Indices (CPITN), DMFT (КПУ) & Hygiene
+ * Mandate 8b: Micro-module strictly <= 120 lines. Touch Target >= 44x44px.
+ */
+
+.emr043-periodontal-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.emr043-index-metric-box {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 14px;
+  background: var(--paper-strong, #ffffff);
+  border: 1px solid var(--glass-border, #e2e8f0);
+  border-radius: 8px;
+}
+
+:is([data-theme="dark"], .dark) .emr043-index-metric-box {
+  background: var(--paper-strong, #1e293b);
+  border-color: var(--line, #334155);
+}
+
+.emr043-index-value-huge {
+  font-size: 20px;
+  font-weight: 800;
+  color: var(--teal, #0d9488);
+  font-variant-numeric: tabular-nums;
+  line-height: 1.2;
+}
+
+:is([data-theme="dark"], .dark) .emr043-index-value-huge {
+  color: #2dd4bf;
+}
+
+.emr043-pocket-depth-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 24px;
+  padding: 2px 6px;
+  font-size: 11px;
+  font-weight: 700;
+  border-radius: 4px;
+  background: var(--paper, #f1f5f9);
+  color: var(--ink, #0f172a);
+  border: 1px solid var(--line, #cbd5e1);
+}
+
+.emr043-pocket-depth-badge.warning {
+  background: rgba(245, 158, 11, 0.15);
+  color: #b45309;
+  border-color: #f59e0b;
+}
+
+.emr043-pocket-depth-badge.danger {
+  background: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  border-color: #ef4444;
+}
+
+.emr043-cpitn-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.emr043-cpitn-sextant {
+  text-align: center;
+  padding: 6px 2px;
+  border-radius: 4px;
+  background: var(--paper, #f8fafc);
+  border: 1px solid var(--glass-border, #e2e8f0);
+  font-size: 11px;
+}
+
+:is([data-theme="dark"], .dark) .emr043-cpitn-sextant {
+  background: var(--paper, #0f172a);
+  border-color: var(--line, #334155);
+}

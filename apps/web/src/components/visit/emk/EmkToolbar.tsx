@@ -29,8 +29,10 @@ export function EmkToolbar({
 	isCopilotOpen = false,
 	onScheduleNextVisit = () => {},
 	onScheduleNext,
-	onOpenConsent,
-	onPrint043,
+	onOpenConsent: propOnOpenConsent,
+	onOpenConsentModal,
+	onPrint043: propOnPrint043,
+	onOpenPrintModal,
 	hasUnsavedChanges = false,
 	voicePilotNode,
 	specialtyFocusNode,
@@ -38,6 +40,8 @@ export function EmkToolbar({
 	onUndo,
 	onRedo,
 }: EmkToolbarProps) {
+	const onPrint043 = propOnPrint043 ?? onOpenPrintModal;
+	const onOpenConsent = propOnOpenConsent ?? onOpenConsentModal;
 	const storeUndoVisit = useVisitStore((s) => s.undoVisit);
 	const storeRedoVisit = useVisitStore((s) => s.redoVisit);
 	const storeCanUndo = useVisitStore((s) => s.canUndo);

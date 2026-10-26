@@ -19,6 +19,9 @@ const OrthodonticVisitProtocolWidget = lazyWithRetry(() =>
 const ToothContextDrawer = lazyWithRetry(() =>
 	import("../components/diagnostics/ToothContextDrawer").then((m) => ({ default: m.ToothContextDrawer })),
 );
+const Form043PrintModal = lazyWithRetry(() =>
+	import("../components/emr/Form043PrintModal").then((m) => ({ default: m.Form043PrintModal })),
+);
 
 interface AppDirectSpecialtyModalsProps {
 	routing: AppHashRoutingState;
@@ -56,6 +59,25 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 							<ClinicalTasksPanel patientId={routing.clinicalTasksPatientId || patient?.id || (typeof window !== "undefined" && window.location.search.includes("demo=1") ? "demo-patient-1" : null)} assignedDoctorId={activeDoctor?.id || staffUser?.id || null} />
 						</div>
 					</div>
+				</Suspense>
+			)}
+			{routing.isEmrCardDirectModalOpen && (
+				<Suspense fallback={null}>
+					<Form043PrintModal
+						isOpen={true}
+						onClose={() => routing.setIsEmrCardDirectModalOpen(false)}
+						initialData={{
+							patient: patient || { fullName: "Смирнова Екатерина Андреевна", birthDate: "1990-05-14", id: "pat-demo-01" },
+							diary: {
+								complaint: "Ноющая боль в области зуба 4.6 при накусывании",
+								objectiveStatus: "Зуб 4.6: глубокая кариозная полость, зондирование болезненно по дну",
+								diagnosis: "K04.0 Пульпит (зуб 4.6)",
+								treatmentPlan: "Анестезия, препарирование кариозной полости, пломбирование каналов",
+							},
+						} as any}
+						isLocked={false}
+						isDraft={true}
+					/>
 				</Suspense>
 			)}
 		</>

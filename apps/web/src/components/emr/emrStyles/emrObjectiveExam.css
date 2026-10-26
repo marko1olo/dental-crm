@@ -1,0 +1,95 @@
+/**
+ * emrObjectiveExam.css — FDI Odontogram Matrix, Tooth Cells & Objective Clinical Exam
+ * Mandate 8b: Micro-module strictly <= 120 lines. Touch Target >= 44x44px.
+ */
+
+.emr043-formula-matrix {
+  display: grid;
+  grid-template-columns: repeat(16, minmax(36px, 1fr));
+  gap: 3px;
+  margin: 10px 0;
+  overflow-x: auto;
+  scrollbar-width: thin;
+  -webkit-overflow-scrolling: touch;
+}
+
+.emr043-tooth-cell {
+  border: 1px solid var(--line, #cbd5e1);
+  background: var(--paper, #ffffff);
+  border-radius: 4px;
+  padding: 4px 2px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--ink);
+  transition: all 0.15s ease;
+  user-select: none;
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-tooth-cell {
+  background: var(--paper, #0f172a);
+  border-color: var(--line, #334155);
+  color: var(--ink, #f8fafc);
+}
+
+.emr043-tooth-cell.pathology {
+  border-color: var(--rust, #ef4444);
+  background: var(--rust-soft, #fef2f2);
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-tooth-cell.pathology {
+  background: var(--rust-soft, #450a0a);
+  border-color: var(--rust, #dc2626);
+  color: var(--ink);
+}
+
+.emr043-tooth-cell.filled {
+  border-color: var(--teal, #10b981);
+  background: var(--teal-soft, #f0fdf4);
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-tooth-cell.filled {
+  background: var(--teal-soft, #064e3b);
+  border-color: var(--teal, #059669);
+  color: var(--ink);
+}
+
+.emr043-objective-status-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: var(--paper, #f8fafc);
+  margin-top: 8px;
+}
+
+:is([data-theme="dark"], .dark) .emr043-objective-status-row {
+  background: var(--paper, #1e293b);
+}

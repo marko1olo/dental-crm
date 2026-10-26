@@ -1,0 +1,100 @@
+/**
+ * emrComplaintsAndAnamnesis.css — Complaints, Medical History & Section Card Grids
+ * Mandate 8b: Micro-module strictly <= 120 lines. Touch Target >= 44x44px.
+ */
+
+.emr043-section-card {
+  background: var(--paper-strong, #ffffff);
+  border: 1px solid var(--glass-border, #e2e8f0);
+  border-radius: 10px;
+  padding: 18px 20px;
+  margin-bottom: 16px;
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-section-card {
+  background: var(--paper-strong, #1e293b);
+  border-color: var(--line, #334155);
+}
+
+.emr043-section-card-title {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--ink, #0f172a);
+  margin-top: 0;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-section-card-title {
+  color: var(--ink, #f8fafc);
+}
+
+.emr043-grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 14px;
+}
+
+.emr043-grid-3 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
+}
+
+.emr043-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--muted, #64748b);
+  margin-bottom: 4px;
+}
+
+.emr043-field-value {
+  font-size: 13.5px;
+  font-weight: 500;
+  color: var(--ink, #0f172a);
+  line-height: 1.4;
+}
+
+:is(
+  [data-theme="dark"],
+  [data-theme="night"],
+  [data-theme="oled"],
+  [data-theme="ocean"],
+  [data-theme="emerald"],
+  [data-theme="cyber_xray"],
+  html.dark,
+  .dark
+) .emr043-field-value {
+  color: var(--ink, #f8fafc);
+}
+
+.emr043-field-value mark,
+.emr043-field-value .emr-highlight-chip {
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--ink, #0f172a);
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+}

@@ -1,0 +1,86 @@
+/* ==========================================================================
+   PATIENTS REDESIGN CARDS (Mandate 8b: <= 120 lines, Apple iOS HIG)
+   Grouped List Cards for smartphones, Apple Health & Settings touch styling.
+   ========================================================================== */
+
+/* Mobile Master-Detail view toggling */
+.patients-main-grid.mobile-view-list .patient-admin-panel {
+	display: none !important;
+}
+
+.patients-main-grid.mobile-view-list .patient-list {
+	display: flex !important; flex-direction: column !important;
+	max-height: none !important; height: auto !important;
+}
+
+.patients-main-grid.mobile-view-card .patient-list {
+	display: none !important;
+}
+
+.patients-main-grid.mobile-view-card .patient-admin-panel {
+	display: block !important; width: 100% !important; min-height: auto !important;
+}
+
+/* Tactile Navigation Back Button */
+.mobile-back-to-list-btn {
+	display: inline-flex; align-items: center; gap: 6px;
+	min-height: 44px; min-width: 44px; padding: 6px 14px;
+	border-radius: 10px; border: 1px solid var(--line-strong);
+	background: var(--paper-soft); color: var(--ink);
+	font-size: 0.85rem; font-weight: 700; cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.mobile-back-to-list-btn:hover {
+	background: var(--teal-surface);
+	border-color: var(--teal);
+	color: var(--teal-dark);
+}
+
+/* Apple iOS Grouped List Cards Touch Standard (>=52px row height) */
+.mobile-grouped-inset-card {
+	background: var(--paper); border: 1px solid var(--line);
+	border-radius: 16px; overflow: hidden;
+	box-shadow: var(--shadow-1); margin: 0 0 1rem 0;
+}
+
+.mobile-patient-item {
+	display: flex; align-items: center; justify-content: space-between;
+	min-height: 52px; padding: 10px 14px;
+	border-bottom: 1px solid var(--line);
+	color: var(--ink); text-decoration: none;
+	transition: background-color 0.15s ease;
+	cursor: pointer; -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-patient-item:last-child {
+	border-bottom: none;
+}
+
+.mobile-patient-item:hover, .mobile-patient-item:active {
+	background: var(--paper-soft);
+}
+
+.mobile-patient-item.selected {
+	background: var(--teal-surface);
+}
+
+.mobile-patient-name {
+	font-size: 15px; font-weight: 600; color: var(--ink);
+	line-height: 1.25;
+}
+
+.mobile-patient-sub {
+	font-size: 13px; color: var(--muted); margin-top: 2px;
+}
+
+/* Theme overrides */
+[data-theme="dark"] .mobile-grouped-inset-card, [data-theme="night"] .mobile-grouped-inset-card,
+[data-theme="contrast"] .mobile-grouped-inset-card, [data-theme="cyber_xray"] .mobile-grouped-inset-card {
+	background: var(--paper); border-color: var(--line);
+}
+
+[data-theme="dark"] .mobile-patient-item, [data-theme="night"] .mobile-patient-item,
+[data-theme="contrast"] .mobile-patient-item, [data-theme="cyber_xray"] .mobile-patient-item {
+	border-bottom-color: var(--line);
+}
