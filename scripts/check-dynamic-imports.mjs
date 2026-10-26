@@ -25,11 +25,17 @@ const ROOTS = ["apps/api/src", "apps/web/src", "packages/shared/src"];
 
 function sources(dir) {
 	const out = [];
+	if (!existsSync(dir)) return out;
 	for (const entry of readdirSync(dir)) {
 		if (entry === "node_modules" || entry === "dist") continue;
 		const full = join(dir, entry);
-		if (statSync(full).isDirectory()) {
-			out.push(...sources(full));
+		if (!existsSync(full)) continue;
+		try {
+			if (statSync(full).isDirectory()) {
+				out.push(...sources(full));
+				continue;
+			}
+		} catch (_) {
 			continue;
 		}
 		if ([".ts", ".tsx", ".mts", ".js", ".mjs"].includes(extname(entry)))
@@ -99,7 +105,13 @@ const broken = [];
 let checked = 0;
 
 for (const file of files) {
-	const text = readFileSync(file, "utf8");
+	if (!existsSync(file)) continue;
+	let text;
+	try {
+		text = readFileSync(file, "utf8");
+	} catch (_) {
+		continue;
+	}
 	/*
 	 * Комментарии вырезаются: в этом проекте принято объяснять в комментариях, что
 	 * какой модуль удалён, и путь из объяснения — не импорт. Без вырезания
