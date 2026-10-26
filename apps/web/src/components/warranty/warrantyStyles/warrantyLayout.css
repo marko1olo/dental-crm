@@ -1,0 +1,99 @@
+/* ============================================================================
+   WARRANTY PASSPORT — LAYOUT & MODAL STRUCTURE
+   Mandate 8b: Micro-module <= 120 lines
+   ============================================================================ */
+
+.warranty-modal-overlay {
+	position: fixed; inset: 0; z-index: 9999;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex; align-items: center; justify-content: center;
+	padding: 16px;
+	animation: warrantyFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	overflow: hidden;
+}
+
+@keyframes warrantyFadeIn {
+	from { opacity: 0; transform: scale(0.98); }
+	to { opacity: 1; transform: scale(1); }
+}
+
+.warranty-modal-window {
+	position: relative; z-index: 10;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line-strong, var(--line, #e2e8f0));
+	border-radius: 12px;
+	box-shadow: var(--shadow-2, 0 20px 25px -5px rgba(0, 0, 0, 0.3));
+	width: 100%; max-width: 1120px;
+	height: 90vh; max-height: 920px;
+	display: flex; flex-direction: column;
+	overflow: hidden;
+}
+
+.dark .warranty-modal-window,
+[data-theme="dark"] .warranty-modal-window {
+	background: var(--paper-strong, var(--paper, #0f172a));
+	color: var(--ink, #f8fafc);
+	border-color: var(--line-strong, var(--line, #334155));
+}
+
+.warranty-tabs-bar {
+	display: flex; align-items: center; gap: 4px;
+	padding: 4px 16px; min-height: 40px;
+	background: var(--paper-soft, var(--paper));
+	border-bottom: 1px solid var(--line);
+	overflow-x: auto;
+}
+
+.warranty-tab-btn {
+	display: flex; align-items: center; gap: 6px;
+	padding: 6px 12px; height: 32px; min-height: 32px; max-height: 34px;
+	border-radius: 6px; border: 1px solid transparent;
+	background: transparent; color: var(--ink-2, var(--ink));
+	font-size: 12.5px; font-weight: 600; cursor: pointer;
+	white-space: nowrap; transition: all 0.15s ease;
+}
+
+.warranty-tab-btn:hover {
+	background: var(--surface-100, var(--paper-soft));
+	color: var(--ink);
+}
+
+.warranty-tab-btn.active {
+	background: var(--paper); color: var(--teal);
+	border-color: var(--line);
+	box-shadow: var(--shadow-1, 0 1px 3px rgba(0, 0, 0, 0.1));
+}
+
+.warranty-modal-body {
+	flex: 1; overflow-y: auto;
+	padding: 16px 20px; background: var(--paper);
+}
+
+.warranty-studio-grid {
+	display: grid; grid-template-columns: 1fr 380px; gap: 20px;
+}
+
+@media (max-width: 900px) {
+	.warranty-studio-grid { grid-template-columns: 1fr; }
+}
+
+.warranty-card-section {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 8px; padding: 12px 14px; margin-bottom: 10px;
+}
+
+.warranty-section-header {
+	display: flex; align-items: center; justify-content: space-between;
+	margin-bottom: 12px;
+}
+
+.warranty-section-header h4 {
+	font-size: 14px; font-weight: 700; color: var(--ink); margin: 0;
+	display: flex; align-items: center; gap: 8px;
+}
+
+.truncate { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.min-w-0 { min-width: 0; }

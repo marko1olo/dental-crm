@@ -1,0 +1,84 @@
+/* ============================================================================
+   WARRANTY PASSPORT — 0 ₽ DEFECT REMEDIATION & REMOVAL STUDIO
+   Mandate 8b: Micro-module <= 120 lines
+   ============================================================================ */
+
+.warranty-quick-remediation-banner,
+.warranty-stages-import-banner {
+	display: flex; align-items: center; justify-content: space-between;
+	gap: 14px; padding: 10px 14px; background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	border: 1px solid var(--ok-fg, #10b981); border-radius: 8px; margin-bottom: 12px;
+}
+
+.warranty-remediation-statutory-box {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--ok-fg, #059669); border-left: 5px solid var(--ok-fg, #059669);
+	border-radius: 8px; padding: 12px 16px; display: flex; flex-direction: column; gap: 8px;
+}
+
+.warranty-tab-remediation { color: var(--ok-fg, #059669); }
+.warranty-tab-remediation.active { border-color: var(--ok-fg, #059669); color: var(--ok-fg, #059669); }
+
+.warranty-remediation-container {
+	max-width: 900px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px;
+}
+
+.warranty-defect-templates-grid {
+	display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 8px;
+}
+
+.warranty-defect-btn {
+	min-height: 46px; padding: 8px 10px; border-radius: 6px;
+	border: 1px solid var(--line); background: var(--paper);
+	cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 2px;
+	transition: all 0.15s ease;
+}
+
+.warranty-defect-btn:hover { border-color: var(--teal); }
+.warranty-defect-btn.active {
+	border-color: var(--ok-fg, #059669); background: var(--ok-bg, rgba(16, 185, 129, 0.12));
+}
+
+.defect-btn-title { font-size: 12px; font-weight: 700; color: var(--ink); }
+.defect-btn-sub { font-size: 10.5px; font-family: monospace; color: var(--ink-2); }
+
+.warranty-textarea {
+	width: 100%; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--line);
+	background: var(--paper); color: var(--ink); font-size: 12.5px; font-family: inherit;
+	resize: vertical; outline: none; transition: border-color 0.15s ease;
+}
+
+.warranty-materials-pills-list { display: flex; flex-wrap: wrap; gap: 6px; }
+
+.warranty-material-chip {
+	display: flex; align-items: center; gap: 6px; padding: 4px 10px;
+	background: var(--paper); border: 1px solid var(--line);
+	border-radius: 6px; font-size: 12px; color: var(--ink);
+}
+
+.warranty-remediation-action-bar {
+	display: flex; align-items: center; justify-content: space-between;
+	gap: 16px; padding-top: 12px; border-top: 1px solid var(--line);
+	margin-top: 10px; flex-wrap: wrap;
+}
+
+.zero-cost-val { font-size: 20px; font-weight: 900; color: var(--ok-fg, #059669); }
+
+.warranty-btn-remediation-submit {
+	height: 36px; min-height: 36px; padding: 0 18px; border-radius: 6px;
+	border: 1px solid var(--ok-fg, #059669); background: var(--ok-fg, #059669);
+	color: #ffffff; font-size: 13px; font-weight: 700; cursor: pointer;
+	display: flex; align-items: center; gap: 6px; box-shadow: 0 2px 4px rgba(5, 150, 105, 0.25);
+}
+
+.rem-card-head { display: flex; align-items: center; justify-content: space-between; }
+.rem-card-tooth {
+	font-size: 12px; font-weight: 700; color: var(--teal);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1)); padding: 2px 6px; border-radius: 4px;
+}
+
+.rem-card-badge-free {
+	font-size: 11.5px; font-weight: 800; color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1)); padding: 2px 8px;
+	border-radius: 4px; border: 1px solid var(--ok-fg, #059669);
+}

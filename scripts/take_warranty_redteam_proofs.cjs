@@ -16,7 +16,7 @@ const crypto = require("node:crypto");
 const API_BASE = "http://127.0.0.1:4100";
 let WEB_BASE = "http://127.0.0.1:5174";
 const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/warranty");
-const BRAIN_DIR = process.env.BRAIN_DIR || path.resolve("C:/Users/Admin/.gemini/antigravity/brain/a4979f39-cf04-44db-9273-1b787eb14bfd");
+const BRAIN_DIR = process.env.BRAIN_DIR || path.resolve("C:/Users/Admin/.gemini/antigravity/brain/4f3b6c6d-6bd4-4e36-83cd-90549934daed");
 
 async function resolveWebBase() {
   for (const port of [5174, 5173, 5175, 5176]) {
@@ -397,17 +397,19 @@ async function main() {
     await openWarrantyPassport(pcPage, false);
 
     // 1. PC Light
-    await takeProof(pcPage, "warranty_pc_light.png", "PC Light 1440x900 Warranty Studio Editor");
+    await takeProof(pcPage, "01_warranty_pc_light.png", "PC Light 1440x900 Warranty Studio Editor");
+    fs.copyFileSync(path.join(PROOFS_DIR, "01_warranty_pc_light.png"), path.join(PROOFS_DIR, "warranty_pc_light.png"));
 
     // 2. PC Dark (Remediation Tab 0 ₽)
     console.log("Switching to Dark mode and Remediation tab...");
     await applyTheme(pcPage, true);
     const remediationTab = pcPage.locator(".warranty-tab-btn", { hasText: "Гарантийная переделка" }).first();
     if (await remediationTab.isVisible().catch(() => false)) {
-      await remediationTab.click();
+      await remediationTab.click({ force: true });
       await pcPage.waitForTimeout(800);
     }
-    await takeProof(pcPage, "warranty_pc_dark.png", "PC Dark 1440x900 Warranty Remediation 0 ₽");
+    await takeProof(pcPage, "02_warranty_pc_dark.png", "PC Dark 1440x900 Warranty Remediation 0 ₽");
+    fs.copyFileSync(path.join(PROOFS_DIR, "02_warranty_pc_dark.png"), path.join(PROOFS_DIR, "warranty_pc_dark.png"));
     await pcContext.close();
 
     // 3. Mobile Context (390x844)
@@ -483,12 +485,14 @@ async function main() {
     await openWarrantyPassport(mobPage, true);
 
     // 3. Mobile Light
-    await takeProof(mobPage, "warranty_mobile_light.png", "Mobile Light 390x844 Apple HIG Bottom Sheet");
+    await takeProof(mobPage, "03_warranty_mobile_light.png", "Mobile Light 390x844 Apple HIG Bottom Sheet");
+    fs.copyFileSync(path.join(PROOFS_DIR, "03_warranty_mobile_light.png"), path.join(PROOFS_DIR, "warranty_mobile_light.png"));
 
     // 4. Mobile Dark
     console.log("Switching to Mobile Dark mode...");
     await applyTheme(mobPage, true);
-    await takeProof(mobPage, "warranty_mobile_dark.png", "Mobile Dark 390x844 Apple HIG Bottom Sheet");
+    await takeProof(mobPage, "04_warranty_mobile_dark.png", "Mobile Dark 390x844 Apple HIG Bottom Sheet");
+    fs.copyFileSync(path.join(PROOFS_DIR, "04_warranty_mobile_dark.png"), path.join(PROOFS_DIR, "warranty_mobile_dark.png"));
     await mobContext.close();
 
     console.log("\n[SUCCESS] All 4 Warranty proof screenshots successfully captured and verified!");

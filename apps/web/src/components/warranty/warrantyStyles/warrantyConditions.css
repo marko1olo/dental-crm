@@ -1,0 +1,69 @@
+/* ============================================================================
+   WARRANTY PASSPORT — CLINICAL RISK FACTORS & CONDITIONS HUD
+   Mandate 8b: Micro-module <= 120 lines
+   ============================================================================ */
+
+.warranty-risk-panel {
+	background: var(--paper-soft, var(--paper));
+	border: 1px solid var(--line); border-radius: 8px; padding: 16px;
+	display: flex; flex-direction: column; gap: 14px;
+}
+
+.warranty-risk-header {
+	display: flex; align-items: center; justify-content: space-between;
+}
+
+.warranty-risk-score-badge {
+	padding: 4px 10px; border-radius: 6px; font-size: 12px; font-weight: 700;
+}
+
+.warranty-risk-score-badge.low { background: var(--ok-bg); color: var(--ok-fg); }
+.warranty-risk-score-badge.moderate { background: var(--warn-bg); color: var(--warn-fg); }
+.warranty-risk-score-badge.high,
+.warranty-risk-score-badge.critical { background: var(--bad-bg); color: var(--bad-fg); }
+
+.warranty-slider-wrap {
+	display: flex; flex-direction: column; gap: 6px;
+}
+
+.warranty-slider-labels {
+	display: flex; justify-content: space-between;
+	font-size: 11px; color: var(--ink-2, var(--ink));
+}
+
+.warranty-toggle-row {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 8px 10px; background: var(--paper);
+	border: 1px solid var(--line); border-radius: 6px;
+	font-size: 12.5px; color: var(--ink);
+}
+
+.warranty-toggle-switch {
+	position: relative; width: 42px; height: 24px; min-height: 24px;
+	padding: 0; background: var(--line); border: none; border-radius: 12px;
+	cursor: pointer; transition: background 0.2s ease;
+}
+
+.warranty-toggle-switch.active { background: var(--teal); }
+
+.warranty-toggle-switch::after {
+	content: ""; position: absolute; top: 3px; left: 3px;
+	width: 18px; height: 18px; background: var(--paper-strong, #ffffff);
+	border-radius: 50%; transition: transform 0.2s ease;
+}
+
+.warranty-toggle-switch.active::after { transform: translateX(18px); }
+
+.warranty-hud-summary {
+	background: var(--paper); border: 1px solid var(--line);
+	border-radius: 8px; padding: 10px 12px;
+	display: flex; flex-direction: column; gap: 6px;
+}
+
+.warranty-hud-row {
+	display: flex; justify-content: space-between; align-items: center; font-size: 12px;
+}
+
+.warranty-hud-row .lbl { color: var(--ink-2, var(--ink)); }
+.warranty-hud-row .val { font-weight: 700; color: var(--ink); }
+.warranty-hud-row .val.highlight { color: var(--teal); font-size: 15px; }

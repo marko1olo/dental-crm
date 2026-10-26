@@ -1,0 +1,77 @@
+/* ============================================================================
+   WARRANTY PASSPORT — ACTION BUTTONS, FOOTER & SHARING POPOVER
+   Mandate 8b: Micro-module <= 120 lines
+   ============================================================================ */
+
+.warranty-modal-footer {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 12px 20px; background: var(--paper-soft, var(--paper));
+	border-top: 1px solid var(--line); flex-shrink: 0;
+}
+
+.warranty-footer-right {
+	display: flex; align-items: center; gap: 10px;
+}
+
+.warranty-btn-secondary {
+	height: 34px; min-height: 34px; padding: 0 14px;
+	border-radius: 6px; border: 1px solid var(--line);
+	background: var(--paper); color: var(--ink);
+	font-size: 12.5px; font-weight: 600; cursor: pointer;
+	display: flex; align-items: center; gap: 6px;
+	transition: all 0.15s ease;
+}
+
+.warranty-btn-secondary:hover {
+	background: var(--surface-100, var(--paper-soft));
+	border-color: var(--line-strong, var(--line));
+}
+
+.warranty-btn-primary {
+	height: 34px; min-height: 34px; padding: 0 16px;
+	border-radius: 6px; border: 1px solid var(--teal);
+	background: var(--teal); color: var(--paper-strong, #ffffff);
+	font-size: 12.5px; font-weight: 700; cursor: pointer;
+	display: flex; align-items: center; gap: 6px;
+	transition: all 0.15s ease;
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+}
+
+.warranty-btn-primary:hover { background: var(--teal-dark, #0f766e); }
+.warranty-btn-primary:active { transform: translateY(1px); }
+
+.warranty-share-dropdown-wrap {
+	position: relative; display: inline-block;
+}
+
+.warranty-share-popover {
+	position: absolute; bottom: calc(100% + 8px); right: 0;
+	z-index: 10000; min-width: 260px;
+	background: var(--paper-strong, var(--paper));
+	border: 1px solid var(--line-strong, var(--line));
+	border-radius: 8px;
+	box-shadow: var(--shadow-2, 0 10px 25px -5px rgba(0, 0, 0, 0.3));
+	padding: 6px; display: flex; flex-direction: column; gap: 4px;
+	animation: warrantyFadeIn 0.15s ease-out;
+}
+
+.warranty-share-menu-item {
+	display: flex; align-items: center; gap: 10px; width: 100%;
+	padding: 8px 10px; border-radius: 6px; border: 1px solid transparent;
+	background: transparent; color: var(--ink); cursor: pointer;
+	text-align: left; font-size: 12px;
+	transition: background 0.15s, border-color 0.15s;
+}
+
+.warranty-share-menu-item:hover {
+	background: var(--surface-100, var(--paper-soft));
+	border-color: var(--line);
+}
+
+.warranty-share-menu-item strong {
+	display: block; font-size: 12px; font-weight: 600; color: var(--ink);
+}
+
+.warranty-share-menu-item .sub {
+	display: block; font-size: 11px; color: var(--ink-2);
+}

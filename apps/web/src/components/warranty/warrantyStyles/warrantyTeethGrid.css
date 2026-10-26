@@ -1,0 +1,96 @@
+/* ============================================================================
+   WARRANTY PASSPORT — FDI TEETH FORMULA & ODONTOGRAM SELECTOR
+   Mandate 8b: Micro-module <= 120 lines
+   ============================================================================ */
+
+.warranty-teeth-formula {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 14px;
+}
+
+.warranty-arch-row {
+	display: flex;
+	justify-content: center;
+	gap: 4px;
+	flex-wrap: wrap;
+}
+
+.warranty-arch-divider {
+	width: 12px;
+}
+
+.warranty-tooth-chip {
+	min-width: 34px;
+	height: 34px;
+	padding: 0 4px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.15s ease;
+}
+
+.warranty-tooth-chip:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.warranty-tooth-chip.selected {
+	background: var(--teal);
+	color: var(--paper-strong, #ffffff);
+	border-color: var(--teal-dark, #0f766e);
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.3);
+}
+
+.warranty-tooth-chip.has-work {
+	border-color: var(--ok-fg);
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+.warranty-remediation-teeth-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.warranty-remediation-tooth-btn {
+	min-height: 44px;
+	padding: 6px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	transition: all 0.15s ease;
+}
+
+.warranty-remediation-tooth-btn strong {
+	font-size: 13px;
+	color: var(--teal);
+}
+
+.warranty-remediation-tooth-btn span {
+	font-size: 11px;
+	color: var(--ink-2);
+}
+
+.warranty-remediation-tooth-btn:hover {
+	border-color: var(--teal);
+}
+
+.warranty-remediation-tooth-btn.active {
+	border-color: var(--ok-fg, #059669);
+	background: var(--ok-bg, rgba(16, 185, 129, 0.1));
+}
