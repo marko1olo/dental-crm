@@ -1,0 +1,73 @@
+/* ========== PREMIUM AUTH & PIN PAD STYLES ========== */
+
+.auth-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 50;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background-color: transparent;
+	backdrop-filter: none;
+	-webkit-backdrop-filter: none;
+	user-select: none;
+	font-family: Inter, system-ui, sans-serif;
+}
+
+.auth-glow {
+	position: absolute;
+	width: 500px;
+	height: 500px;
+	background: rgba(13, 148, 136, 0.08); /* teal-600 */
+	border-radius: 50%;
+	filter: blur(120px);
+	pointer-events: none;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+}
+
+.auth-glow--left {
+	top: 25%;
+	left: 25%;
+}
+
+.auth-glow--right {
+	top: 75%;
+	left: 75%;
+	background: rgba(5, 150, 105, 0.04); /* emerald-600 */
+}
+
+@keyframes animate-shake {
+	0%,
+	100% {
+		transform: translateX(0);
+	}
+	20%,
+	60% {
+		transform: translateX(-6px);
+	}
+	40%,
+	80% {
+		transform: translateX(6px);
+	}
+}
+
+@keyframes fade-in-up {
+	0% {
+		opacity: 0;
+		transform: translateY(20px);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+.animate-shake {
+	animation: animate-shake 0.4s ease-in-out;
+}
+
+.animate-fade-in-up {
+	animation: fade-in-up 0.5s ease-out forwards;
+}

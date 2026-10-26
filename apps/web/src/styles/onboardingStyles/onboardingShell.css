@@ -1,0 +1,52 @@
+/* ============================================================
+   RAPID LAUNCH WIZARD (3-STEP ZERO-FRICTION ONBOARDING)
+   Mandates: 8e (Doctor Autonomy), 8k (Friction Killer), 8n (Solo Doctor)
+   ============================================================ */
+
+.rapid-onboarding-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 99999;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 24px 16px;
+	box-sizing: border-box;
+	background: rgba(10, 18, 17, 0.65);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="light"] .rapid-onboarding-modal-overlay,
+html.light .rapid-onboarding-modal-overlay {
+	background: rgba(240, 253, 250, 0.45);
+}
+
+.onboarding-page-container {
+	min-height: 100vh;
+	width: 100%;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	padding: 32px 16px;
+	box-sizing: border-box;
+	background: var(--paper-soft);
+}
+
+.rapid-launch-wizard-shell {
+	position: relative;
+	background: var(--glass-panel, var(--paper-strong));
+	border: 1px solid var(--line);
+	border-radius: 16px;
+	box-shadow: var(--shadow-2, 0 20px 40px -10px rgba(0, 0, 0, 0.4));
+	backdrop-filter: blur(24px);
+	-webkit-backdrop-filter: blur(24px);
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 980px;
+	box-sizing: border-box;
+	overflow: hidden;
+}

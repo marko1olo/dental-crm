@@ -1,0 +1,107 @@
+/* ---------- Mode Selection Grid ---------- */
+.mode-selection-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+}
+
+.mode-select-card {
+	display: flex;
+	flex-direction: column;
+	padding: 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	position: relative;
+}
+
+.mode-select-card:hover {
+	border-color: var(--teal);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
+}
+
+.mode-select-card.selected {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+	box-shadow: 0 0 0 1.5px var(--teal);
+}
+
+.mode-card-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.mode-icon-wrap {
+	width: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal);
+}
+
+.mode-badge {
+	font-size: 10px;
+	font-weight: 600;
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	border: 1px solid var(--line);
+}
+
+.mode-badge.badge-primary {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+}
+
+.mode-check-mark {
+	position: absolute;
+	top: 10px;
+	right: 10px;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--teal);
+	color: var(--on-teal, #ffffff);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.mode-card-content strong {
+	display: block;
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	margin-bottom: 4px;
+}
+
+.mode-card-content p {
+	margin: 0;
+	font-size: 12px;
+	color: var(--ink-2);
+	line-height: 1.4;
+}
+
+.mode-card-footer {
+	margin-top: 10px;
+	padding-top: 8px;
+	border-top: 1px solid var(--line-subtle, var(--line));
+}
+
+.mode-chairs-hint {
+	font-size: 11px;
+	color: var(--muted);
+	font-weight: 500;
+}

@@ -68,10 +68,6 @@
 	--border-soft: var(--line);
 	--line-subtle: var(--line);
 	--teal-border: var(--teal-line, rgba(13, 148, 136, 0.3));
-	--purple: var(--purple-accent, #8b5cf6);
-	--purple-bg: var(--purple-surface, rgba(139, 92, 246, 0.12));
-	--teal-bg: var(--teal-surface, rgba(13, 148, 136, 0.12));
-	--warning-bg: var(--warn-bg, rgba(245, 158, 11, 0.12));
 
 	/* Тени */
 	--shadow: var(--shadow-1);

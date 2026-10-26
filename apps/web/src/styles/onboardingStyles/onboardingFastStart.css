@@ -1,0 +1,68 @@
+/* ---------- Быстрый старт (Мандат 8n) ---------- */
+.onboarding-shell .onboarding-fast-start {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08));
+	border: 1px solid var(--teal, rgba(13, 148, 136, 0.3));
+	border-radius: 12px;
+	padding: 12px 18px;
+	flex-wrap: wrap;
+}
+
+.onboarding-shell .onboarding-fast-start > div {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	flex: 1 1 240px;
+}
+
+.onboarding-shell .onboarding-fast-start strong {
+	color: var(--ink);
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.onboarding-shell .onboarding-fast-start span {
+	color: var(--ink-2, var(--muted));
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+.onboarding-shell .onboarding-fast-start button {
+	height: 36px;
+	min-height: 36px;
+	box-sizing: border-box;
+	padding: 0 14px;
+	border-radius: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: background-color 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-shell .onboarding-fast-start .primary-button {
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal-dark, #0f766e);
+	box-shadow: var(--shadow-1);
+}
+
+.onboarding-shell .onboarding-fast-start .primary-button:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.onboarding-shell .onboarding-fast-start .secondary-button {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+}
+
+.onboarding-shell .onboarding-fast-start .secondary-button:hover {
+	background: var(--paper);
+	border-color: var(--teal);
+}

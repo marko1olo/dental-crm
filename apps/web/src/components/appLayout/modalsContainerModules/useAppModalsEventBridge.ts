@@ -27,6 +27,9 @@ export function useAppModalsEventBridge() {
 				}
 				setIsEgiszCertificatesOpen(true);
 			}
+			if (searchParams.get("onboarding") === "1" || searchParams.get("rapid-onboarding") === "1") {
+				setIsGlobalOnboardingOpen(true);
+			}
 		} catch {
 			// ignore SSR
 		}

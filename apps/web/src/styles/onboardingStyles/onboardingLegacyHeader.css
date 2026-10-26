@@ -1,0 +1,96 @@
+/* ---------- Шапка мастера ---------- */
+.onboarding-shell .onboarding-head {
+	display: grid;
+	grid-template-columns: minmax(0, 1fr) auto;
+	gap: 20px;
+	align-items: start;
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 16px;
+	margin-bottom: 4px;
+}
+
+.onboarding-head-aside {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+}
+
+.onboarding-head-close-btn {
+	width: 36px;
+	height: 36px;
+	min-width: 36px;
+	border-radius: 10px;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+	background: var(--paper-soft, rgba(255, 255, 255, 0.05));
+	color: var(--muted, #94a3b8);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	padding: 0;
+}
+
+.onboarding-head-close-btn:hover {
+	background: var(--paper, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #ffffff);
+	border-color: var(--line, rgba(255, 255, 255, 0.25));
+}
+
+.onboarding-shell .onboarding-head .eyebrow {
+	color: var(--teal);
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	margin: 0 0 4px 0;
+}
+
+.onboarding-shell .onboarding-head h2 {
+	color: var(--ink);
+	font-size: 20px;
+	font-weight: 700;
+	line-height: 1.25;
+	margin: 0 0 6px 0;
+}
+
+.onboarding-shell .onboarding-head p {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.4;
+	margin: 0;
+}
+
+/* ---------- Индикатор готовности ---------- */
+.onboarding-shell .onboarding-score {
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	justify-content: center;
+	min-width: 120px;
+	padding: 10px 16px;
+	text-align: center;
+}
+
+.onboarding-shell .onboarding-score span {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.onboarding-shell .onboarding-score strong {
+	color: var(--teal);
+	font-size: 24px;
+	font-weight: 800;
+	line-height: 1.1;
+}
+
+.onboarding-shell .onboarding-score small {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 500;
+}

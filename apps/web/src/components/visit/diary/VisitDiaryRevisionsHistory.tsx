@@ -16,13 +16,13 @@ export function VisitDiaryRevisionsHistory({
 
 	return (
 		<details
-			className="clinical-diary__revisions vde-043__revisions no-print"
+			className="vde-043__revisions no-print"
 			data-testid="diary-revisions-history"
 		>
-			<summary className="clinical-diary__revisions-summary vde-043__revisions-summary">
+			<summary className="vde-043__revisions-summary">
 				История правок ({diaryRevisions.length})
 			</summary>
-			<ol className="clinical-diary__revisions-list vde-043__revisions-list">
+			<ol className="vde-043__revisions-list">
 				{(diaryRevisions ?? []).map((rev, idx) => {
 					const when = rev.revisedAt
 						? new Date(rev.revisedAt).toLocaleString("ru-RU")

@@ -1,0 +1,64 @@
+[data-theme="light"] .auth-scale-btn.active,
+html.light:not(.dark):not([data-theme="dark"]) .auth-scale-btn.active {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: #0d9488;
+	color: #0f172a;
+	box-shadow: 0 0 10px rgba(13, 148, 136, 0.18);
+}
+
+[data-theme="light"] .auth-checkbox-label,
+html.light:not(.dark):not([data-theme="dark"]) .auth-checkbox-label {
+	color: #334155;
+}
+
+[data-theme="light"] .auth-demo-tour-title,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-tour-title {
+	color: #0f172a;
+}
+
+[data-theme="light"] .auth-demo-tour-subtitle,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-tour-subtitle {
+	color: #475569;
+}
+
+[data-theme="light"] .auth-demo-role-card,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-card {
+	background: rgba(255, 255, 255, 0.85);
+	border-color: rgba(13, 148, 136, 0.18);
+	box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+}
+
+[data-theme="light"] .auth-demo-role-card:hover,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-card:hover {
+	background: #ffffff;
+	border-color: rgba(13, 148, 136, 0.35);
+	box-shadow: 0 8px 24px rgba(13, 148, 136, 0.12);
+}
+
+[data-theme="light"] .auth-demo-role-card.selected,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-card.selected {
+	background: rgba(13, 148, 136, 0.1);
+	border-color: #0d9488;
+	box-shadow: 0 0 0 1px #0d9488, 0 8px 20px rgba(13, 148, 136, 0.14);
+}
+
+[data-theme="light"] .auth-demo-role-name,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-name {
+	color: #0f172a;
+}
+
+[data-theme="light"] .auth-demo-role-highlight-item,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-highlight-item {
+	color: #475569;
+}
+
+[data-theme="light"] .auth-demo-role-footer,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-footer {
+	border-top-color: rgba(13, 148, 136, 0.12);
+	color: #64748b;
+}
+
+[data-theme="light"] .auth-demo-role-card.selected .auth-demo-role-footer,
+html.light:not(.dark):not([data-theme="dark"]) .auth-demo-role-card.selected .auth-demo-role-footer {
+	color: #0d9488;
+}

@@ -9,32 +9,6 @@
 
 ---
 
-## 2026-10-26 — Clinical Diary & EHR Monolith Decomposition, Soviet Decree Purge & 1-Click Norm (Mandates 8b..8aq, Apple HIG)
-
-- **Gap:** Monolithic cyclopean stylesheet `visit-diary-043.css` (1 088L) and legacy `043/у` bureaucratic bird-language in classes, filenames, and UI strings violated Mandate 8b ($\le 110$ lines) and Mandates 8x & 8ap. Doctors at the chair needed instant 1-click physiological somatic norm without hospital checkboxes, non-blocking buttons (Mandate 8e), and seamless dark theme / mobile touch ergonomics without white holes or clipped words.
-- **Ship:**
-  - `apps/web/src/components/visit/diaryStyles/`: Decomposed into 8 modular CSS stylesheets (all strictly $\le 102$ lines, below the 110-line ceiling):
-    * `clinicalDiaryTokens.css` (62L): Theme variables, paper/ink palette, glow effects, dark mode mapping.
-    * `clinicalDiaryHeader.css` (99L): Clinical diary header, status chips, 1 Primary CTA emerald button.
-    * `clinicalDiarySoapFields.css` (96L): SOAP grid, S, O, A, P colored letters, high-contrast textareas.
-    * `clinicalDiaryPresets.css` (92L): СтАР protocol quick chips, 300ms debounced autosave spinner.
-    * `clinicalDiarySomaticNorm.css` (81L): Dedicated 1-click «✓ Соматически здоров / Норма» button.
-    * `clinicalDiaryIcd10Selector.css` (102L): ICD-10 clinical search, code chips, dropdown, and tooth binding.
-    * `clinicalDiaryPrint.css` (98L): High-contrast print preview modal and paper-white `@media print` rules.
-    * `clinicalDiaryMobile.css` (87L): Apple HIG mobile layout, 44px/48px touch targets, full-width actions.
-    * `index.css` (13L): Canonical stylesheet facade.
-  - Replaced `apps/web/src/styles/visit-diary-043.css` (1 088L) with an ultra-thin 7-line backward-compatible forwarder to `components/visit/diaryStyles/index.css`.
-  - Updated `VisitDiarySection.tsx`, `VisitDiaryHeader.tsx`, `VisitDiaryActionsFooter.tsx`, `VisitDiaryReviseAndLockFooters.tsx`, `VisitDiaryRevisionsHistory.tsx`, and `VisitDiarySoapFields.tsx` to adopt clean `.clinical-diary-*` classes and eliminate raw `043u` data attributes.
-  - Resolved all CSS token fallback debt via `token-aliases.css`, achieving 0 unresolved var() and 0 light fallback issues in `check-css-tokens.mjs` (Exit Code 0).
-  - All 64 clinical diary, visit, and doctor autonomy tests passing (100% green, Exit Code 0).
-  - Red Team 4-State Visual Proofs in `docs/proofs/clinical_diary/`:
-    * `01_clinical_diary_pc_light.png` (1440×900)
-    * `02_clinical_diary_pc_dark.png` (1440×900)
-    * `03_clinical_diary_mobile_light.png` (390×844)
-    * `04_clinical_diary_mobile_dark.png` (390×844)
-    All inspected with `read_file`: verified zero horizontal drift, zero clipped words, pristine dark theme contrast, 1 Primary CTA.
-  - Documentation: `docs/features/clinical_diary_architecture.md`, `docs/README.md`.
-
 ## 2026-10-26 — Tooth Context Drawer, Diagnostic Drawer, Photo Protocol & ICD-10 Modular Architecture (Mandates 8b..8aq, Apple HIG)
 
 - **Gap:** Monolithic cyclopean stylesheets and giant components (`ToothContextDrawer.css` 1602L, `photoProtocol.css` 920L, `icd10Selector.css` 586L, `DiagnosticDrawer.css` 441L, `icd10DentalCatalog.ts` 1400L) severely violated Mandate 8b ($\le 120$ lines per file). On mobile viewports (390×844), 3-column chip grid caused severe text wrap on Russian clinical terms (breaking «Периодонтит» into «Периодонти\nт»). In-app labels contained dev jargon («Мандат 8e») and Soviet decree references.

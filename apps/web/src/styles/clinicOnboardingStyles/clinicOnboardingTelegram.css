@@ -1,0 +1,92 @@
+.onboarding-telegram-status {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-telegram-status span {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 850;
+	gap: 4px;
+	min-height: 58px;
+	padding: 10px;
+}
+
+.onboarding-telegram-status strong {
+	color: var(--ink);
+	font-size: 16px;
+	line-height: 1.15;
+}
+
+.onboarding-feature-list {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.onboarding-feature-list label {
+	align-items: center;
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: flex;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 8px;
+	min-height: 42px;
+	padding: 8px 9px;
+}
+
+.onboarding-feature-list label.active {
+	background: #eef8f5;
+	border-color: rgba(15, 118, 110, 0.28);
+	color: var(--teal-dark);
+}
+
+.onboarding-feature-list input {
+	flex: 0 0 auto;
+}
+
+.onboarding-telegram-visual-cards {
+	display: grid;
+	gap: 8px;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.onboarding-telegram-visual-cards label {
+	background: var(--paper-strong);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: grid;
+	font-size: 12px;
+	font-weight: 900;
+	gap: 6px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.onboarding-telegram-visual-cards input {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font: inherit;
+	min-height: 38px;
+	min-width: 0;
+	padding: 8px 10px;
+}
+
+.onboarding-telegram-visual-cards small {
+	color: var(--muted);
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 1.35;
+}

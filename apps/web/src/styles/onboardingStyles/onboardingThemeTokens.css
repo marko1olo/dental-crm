@@ -1,0 +1,8 @@
+/* ============================================================
+   ONBOARDING THEME TOKENS & ANIMATIONS
+   Decomposed per Mandate 8b
+   ============================================================ */
+
+@keyframes spin {
+	to { transform: rotate(360deg); }
+}
