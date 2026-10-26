@@ -1,13 +1,11 @@
 /**
- * VisiographDropzone.tsx
- *
- * Drag-and-drop file upload zone for 2D radiographic images with
- * clinical shortcut actions (RVG direct capture, DICOM upload, referral).
+ * VisiographDropzone.tsx — Зона перетаскивания и загрузки снимков визиографа
+ * Mandate 8b: строго <= 120 строк.
  */
 
-import { Activity, FileText, FileUp, Loader2, UploadCloud } from "lucide-react";
-import type React from "react";
-import { showToast } from "../GlobalToast";
+import React from "react";
+import { Loader2, UploadCloud } from "lucide-react";
+import { VisiographDropzoneActions } from "./dropzone/VisiographDropzoneActions.js";
 
 export interface VisiographDropzoneProps {
 	dropRef: React.RefObject<HTMLButtonElement | null>;
@@ -76,14 +74,10 @@ export function VisiographDropzone({
 				<div style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: "10px" }}>
 					<div
 						style={{
-							width: "50px",
-							height: "50px",
-							borderRadius: "12px",
+							width: "50px", height: "50px", borderRadius: "12px",
 							background: isDragOver ? "var(--teal-soft)" : "var(--paper)",
-							border: "1px solid var(--line)",
-							display: "flex",
-							alignItems: "center",
-							justifyContent: "center",
+							border: "1px solid var(--line)", display: "flex",
+							alignItems: "center", justifyContent: "center",
 							boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
 						}}
 					>
@@ -97,125 +91,16 @@ export function VisiographDropzone({
 							Прицельный снимок (JPG, PNG, BMP). Мгновенное открытие (&lt;50мс).
 						</p>
 					</div>
-					<div style={{ display: "flex", gap: "8px", alignItems: "center", justifyContent: "center", flexWrap: "wrap", marginTop: "6px" }}>
-						<span
-							role="button"
-							tabIndex={0}
-							data-tour="visiograph-open"
-							data-testid="btn-visiograph-connect-rvg"
-							onClick={(e) => {
-								e.stopPropagation();
-								if (onConnectRvg) onConnectRvg();
-								else {
-									window.dispatchEvent(
-										new CustomEvent("dente-open-rvg-capture", {
-											detail: { toothCode, patientId: effectivePatientId },
-										}),
-									);
-									showToast("Запуск прямого захвата с визиографа RVG...", "info");
-								}
-							}}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								padding: "0 16px",
-								height: "32px",
-								borderRadius: "8px",
-								fontSize: "0.84rem",
-								fontWeight: 600,
-								background: "var(--teal)",
-								color: "var(--on-teal, white)",
-								border: "1px solid var(--teal)",
-								cursor: "pointer",
-							}}
-						>
-							<Activity size={14} /> Подключить визиограф RVG
-						</span>
 
-						<span
-							role="button"
-							tabIndex={0}
-							data-testid="btn-visiograph-upload-dicom"
-							onClick={(e) => {
-								e.stopPropagation();
-								if (onUploadDicom) onUploadDicom();
-								else fileInputRef.current?.click();
-							}}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								padding: "0 14px",
-								height: "32px",
-								borderRadius: "8px",
-								fontSize: "0.82rem",
-								fontWeight: 600,
-								background: "var(--paper-strong, #1e293b)",
-								color: "var(--ink, #f8fafc)",
-								border: "1px solid var(--line, #334155)",
-								cursor: "pointer",
-							}}
-						>
-							<FileUp size={14} /> Загрузить DICOM / КТ-архив
-						</span>
-
-						<span
-							role="button"
-							tabIndex={0}
-							data-testid="btn-visiograph-referral"
-							onClick={(e) => {
-								e.stopPropagation();
-								if (onReferToRadiology) onReferToRadiology();
-								else {
-									window.dispatchEvent(
-										new CustomEvent("dente-open-radiology-referral", {
-											detail: { toothCode, patientId: effectivePatientId },
-										}),
-									);
-									showToast("Открытие формы направления на рентген-диагностику", "info");
-								}
-							}}
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								padding: "0 14px",
-								height: "32px",
-								borderRadius: "8px",
-								fontSize: "0.82rem",
-								fontWeight: 500,
-								background: "var(--paper)",
-								color: "var(--ink)",
-								border: "1px solid var(--line)",
-								cursor: "pointer",
-							}}
-						>
-							<FileText size={14} /> Направить на рентген
-						</span>
-
-						<span
-							className="btn-primary"
-							style={{
-								display: "inline-flex",
-								alignItems: "center",
-								gap: "6px",
-								padding: "0 14px",
-								height: "32px",
-								borderRadius: "8px",
-								fontSize: "0.82rem",
-								fontWeight: 500,
-								background: "transparent",
-								color: "var(--teal)",
-								border: "1px solid var(--teal)",
-								cursor: "pointer",
-							}}
-						>
-							Выбрать файл
-						</span>
-
-						{demoScanButton}
-					</div>
+					<VisiographDropzoneActions
+						fileInputRef={fileInputRef}
+						onConnectRvg={onConnectRvg}
+						onUploadDicom={onUploadDicom}
+						onReferToRadiology={onReferToRadiology}
+						toothCode={toothCode}
+						effectivePatientId={effectivePatientId}
+						demoScanButton={demoScanButton}
+					/>
 				</div>
 			)}
 		</button>

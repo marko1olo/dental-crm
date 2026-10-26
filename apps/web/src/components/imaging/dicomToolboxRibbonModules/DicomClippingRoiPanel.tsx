@@ -1,12 +1,12 @@
 /**
- * DENTE CRM — Clipping Box / ROI Management Panel (Layer 4)
- * Strict invariants: Mandate 8b (<=800 lines), Mandate 8d (Clinical density), Mandate 8e (Doctor Autonomy).
+ * DicomClippingRoiPanel.tsx — Панель обрезки ROI и клиппинг-бокса КЛКТ
+ * Mandate 8b: строго <= 120 строк.
  */
 
 import React from "react";
 import { Check, Scissors, X } from "lucide-react";
-import { selectInputStyle } from "./dicomRibbonConstants.js";
 import type { DicomClippingRoiPanelProps } from "./types.js";
+import { DicomClippingControls } from "./DicomClippingControls.js";
 
 export const DicomClippingRoiPanel: React.FC<DicomClippingRoiPanelProps> = ({
 	panelRef,
@@ -61,76 +61,14 @@ export const DicomClippingRoiPanel: React.FC<DicomClippingRoiPanelProps> = ({
 				</button>
 			</div>
 
-			<div style={{ marginBottom: "6px" }}>
-				<label style={{ display: "block", color: "#94a3b8", marginBottom: "3px" }}>
-					Плоскость:
-				</label>
-				<select
-					value={clippingPlane}
-					onChange={(e) => onChangeClippingPlane(e.target.value as any)}
-					style={selectInputStyle}
-				>
-					<option value="sagittal">Сагиттальная</option>
-					<option value="coronal">Фронтальная (Корональная)</option>
-					<option value="axial">Аксиальная</option>
-					<option value="custom">Пользовательская</option>
-				</select>
-			</div>
-
-			<div style={{ marginBottom: "8px" }}>
-				<label style={{ display: "block", color: "#94a3b8", marginBottom: "3px" }}>
-					Ориентир:
-				</label>
-				<select
-					value={clippingRef}
-					onChange={(e) => onChangeClippingRef(e.target.value as any)}
-					style={selectInputStyle}
-				>
-					<option value="user">Пользователь</option>
-					<option value="arch_center">Центр зубной дуги</option>
-					<option value="symphysis">Симфиз подбородка</option>
-				</select>
-			</div>
-
-			<div style={{ marginBottom: "10px" }}>
-				<span style={{ display: "block", color: "#94a3b8", marginBottom: "4px" }}>
-					Направление:
-				</span>
-				<div style={{ display: "flex", gap: "4px" }}>
-					<button
-						type="button"
-						onClick={() => onChangeClippingDir("right")}
-						style={{
-							flex: 1,
-							height: "24px",
-							borderRadius: "4px",
-							border: clippingDir === "right" ? "1px solid #0d9488" : "1px solid #334155",
-							backgroundColor: clippingDir === "right" ? "#134e4a" : "#1e293b",
-							color: clippingDir === "right" ? "#2dd4bf" : "#cbd5e1",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-					>
-						Справа
-					</button>
-					<button
-						type="button"
-						onClick={() => onChangeClippingDir("left")}
-						style={{
-							flex: 1,
-							height: "24px",
-							borderRadius: "4px",
-							border: clippingDir === "left" ? "1px solid #0d9488" : "1px solid #334155",
-							backgroundColor: clippingDir === "left" ? "#134e4a" : "#1e293b",
-							color: clippingDir === "left" ? "#2dd4bf" : "#cbd5e1",
-							cursor: "pointer",
-							fontWeight: 600,
-						}}
-					>
-						Слева
-					</button>
-				</div>
-			</div>
+			<DicomClippingControls
+				clippingPlane={clippingPlane}
+				onChangeClippingPlane={onChangeClippingPlane}
+				clippingRef={clippingRef}
+				onChangeClippingRef={onChangeClippingRef}
+				clippingDir={clippingDir}
+				onChangeClippingDir={onChangeClippingDir}
+			/>
 
 			<button
 				type="button"

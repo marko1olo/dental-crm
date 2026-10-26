@@ -1,11 +1,14 @@
 /**
- * VisiographScanHelpers.ts
- *
- * Helper types, state labels, and default sample scans for VisiographAnalyzer.
+ * VisiographScanHelpers.ts — Типы, метки состояний и хелперы для анализатора визиографа
+ * Mandate 8b: строго <= 120 строк.
  */
 
-import { countLabel } from "../../AppHelpers";
-import { logger } from "../../utils/logger";
+import { countLabel } from "../../AppHelpers.js";
+
+export {
+	saveVisiographScanToServer,
+	updateVisiographScanMeta,
+} from "./visiographStorageService.js";
 
 export interface XrayScan {
 	id: string;
@@ -39,32 +42,25 @@ export const STATE_LABELS: Record<string, string> = {
 
 export function extractSummary(report: string): string | null {
 	if (!report) return null;
-	const conclusionMatch = report.match(
-		/\*\*Заключение:\*\*\s*\n([\s\S]*?)(?:\n\n|\*\*|$)/i,
-	);
+	const conclusionMatch = report.match(/\*\*Заключение:\*\*\s*\n([\s\S]*?)(?:\n\n|\*\*|$)/i);
 	if (conclusionMatch?.[1]) {
-		return conclusionMatch[1]
-			.replace(/^[-*\s]+/gm, "")
-			.trim()
-			.substring(0, 400);
+		return conclusionMatch[1].replace(/^[-*\s]+/gm, "").trim().substring(0, 400);
 	}
 	return report.replace(/[*#`]/g, "").substring(0, 200).trim() || null;
 }
 
 export function getInitialDefaultScan(toothCode?: string, patientId?: string | null): XrayScan {
 	const fallbackTooth = toothCode || "36";
-	const fallbackUrl =
-		fallbackTooth === "16"
-			? "/radiology/sample_rvg_tooth16.jpg"
-			: fallbackTooth === "46"
-				? "/radiology/sample_rvg_pathology.jpg"
-				: "/radiology/sample_rvg_tooth36_periapical.jpg";
-	const originalFilename =
-		fallbackTooth === "16"
-			? "sample_rvg_tooth16.jpg"
-			: fallbackTooth === "46"
-				? "sample_rvg_pathology.jpg"
-				: "sample_rvg_tooth36_periapical.jpg";
+	const fallbackUrl = fallbackTooth === "16"
+		? "/radiology/sample_rvg_tooth16.jpg"
+		: fallbackTooth === "46"
+			? "/radiology/sample_rvg_pathology.jpg"
+			: "/radiology/sample_rvg_tooth36_periapical.jpg";
+	const originalFilename = fallbackTooth === "16"
+		? "sample_rvg_tooth16.jpg"
+		: fallbackTooth === "46"
+			? "sample_rvg_pathology.jpg"
+			: "sample_rvg_tooth36_periapical.jpg";
 
 	return {
 		id: `sample_periapical_${fallbackTooth}`,
@@ -99,66 +95,4 @@ export function buildFindingsNotice(plan: {
 		);
 	}
 	return notices.length > 0 ? notices.join(" ") : null;
-}
-
-export async function saveVisiographScanToServer(
-	patientId: string,
-	dataUrl: string,
-	file: File,
-	headers: Record<string, string>,
-	toothCode?: string,
-	visitId?: string,
-): Promise<{ saved?: XrayScan; failure?: string }> {
-	try {
-		const isUuid = (str?: string) =>
-			Boolean(str && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(str));
-
-		const payload: Record<string, unknown> = {
-			patientId,
-			imageBase64: dataUrl,
-			originalFilename: file.name,
-			mimeType: file.type || "image/jpeg",
-			kind: "periapical",
-			status: "done",
-		};
-		if (toothCode) {
-			payload.toothCode = toothCode;
-		}
-		if (visitId && isUuid(visitId)) {
-			payload.visitId = visitId;
-		}
-
-		const res = await fetch("/api/xray/scans", {
-			method: "POST",
-			headers,
-			body: JSON.stringify(payload),
-		});
-		if (!res.ok) {
-			logger.error(`[VisiographAnalyzer] снимок не сохранён, ответ ${res.status}`);
-			return {
-				failure:
-					res.status === 413
-						? "Снимок слишком тяжёлый для базы данных."
-						: "Не удалось сохранить снимок в карту пациента на сервере.",
-			};
-		}
-		const saved: XrayScan = await res.json();
-		return { saved };
-	} catch (saveErr) {
-		logger.error("[VisiographAnalyzer] запись снимка в карту не выполнена", saveErr);
-		return { failure: "Сервер не ответил на сохранение снимка в карту." };
-	}
-}
-
-export function updateVisiographScanMeta(
-	scanId: string,
-	payload: Record<string, unknown>,
-	headers: Record<string, string>,
-): void {
-	if (!scanId || scanId.startsWith("local-")) return;
-	fetch(`/api/xray/scans/${encodeURIComponent(scanId)}`, {
-		method: "PUT",
-		headers,
-		body: JSON.stringify(payload),
-	}).catch((e) => logger.warn("[VisiographAnalyzer] Background scan update error:", e));
 }

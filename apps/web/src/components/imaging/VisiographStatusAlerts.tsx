@@ -1,16 +1,10 @@
 /**
- * VisiographStatusAlerts.tsx
- *
- * Warning and error alerts for VisiographAnalyzer:
- * - openFailure: Full scan image download failure
- * - saveFailure: Server patient card storage failure
- * - formulaFailure: Live tooth formula mutation failure
- * - applyNotice: Unreadable or unmapped tooth states notice
- * - error: General analysis error
+ * VisiographStatusAlerts.tsx — Предупреждения и ошибки анализатора визиографа
+ * Mandate 8b: строго <= 120 строк.
  */
 
-import { AlertTriangle, X } from "lucide-react";
 import React from "react";
+import { VisiographAlertBox } from "./alerts/VisiographAlertBox.js";
 
 export interface VisiographStatusAlertsProps {
 	error: string | null;
@@ -36,138 +30,46 @@ export function VisiographStatusAlerts({
 	return (
 		<>
 			{error && (
-				<div
-					style={{
-						padding: "12px 16px",
-						background: "var(--bad-bg)",
-						color: "var(--bad-fg)",
-						borderRadius: "10px",
-						display: "flex",
-						alignItems: "flex-start",
-						gap: "10px",
-						fontSize: "0.88rem",
-						marginTop: hasCurrentScan ? "0" : "12px",
-					}}
-				>
-					<AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} />
-					<div>
-						<strong>Ошибка анализа</strong>
-						<div style={{ marginTop: "4px" }}>{error}</div>
-					</div>
-					<button
-						type="button"
-						onClick={onClearError}
-						style={{
-							marginLeft: "auto",
-							background: "none",
-							border: "none",
-							cursor: "pointer",
-							color: "inherit",
-						}}
-					>
-						<X size={14} />
-					</button>
-				</div>
+				<VisiographAlertBox
+					type="bad"
+					title="Ошибка анализа"
+					message={error}
+					onClose={onClearError}
+					marginTop={hasCurrentScan ? "0" : "12px"}
+				/>
 			)}
-
 			{openFailure && (
-				<div
+				<VisiographAlertBox
+					type="warn"
 					role="alert"
-					data-testid="xray-scan-open-failure"
-					style={{
-						padding: "10px 14px",
-						background: "var(--warn-bg)",
-						color: "var(--warn-fg)",
-						borderRadius: "10px",
-						display: "flex",
-						alignItems: "flex-start",
-						gap: "10px",
-						fontSize: "0.85rem",
-					}}
-				>
-					<AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
-					<div>
-						<strong>Снимок не открыт полностью</strong>
-						<div style={{ marginTop: "4px" }}>{openFailure}</div>
-					</div>
-					<button
-						type="button"
-						onClick={onClearOpenFailure}
-						style={{
-							marginLeft: "auto",
-							background: "none",
-							border: "none",
-							cursor: "pointer",
-							color: "inherit",
-						}}
-						aria-label="Скрыть сообщение"
-					>
-						<X size={14} />
-					</button>
-				</div>
+					testId="xray-scan-open-failure"
+					title="Снимок не открыт полностью"
+					message={openFailure}
+					onClose={onClearOpenFailure}
+				/>
 			)}
-
 			{saveFailure && (
-				<div
+				<VisiographAlertBox
+					type="warn"
 					role="alert"
-					style={{
-						padding: "10px 14px",
-						background: "var(--warn-bg)",
-						color: "var(--warn-fg)",
-						borderRadius: "10px",
-						display: "flex",
-						alignItems: "flex-start",
-						gap: "10px",
-						fontSize: "0.85rem",
-					}}
-				>
-					<AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
-					<div>
-						<strong>Заключение не сохранено в карту</strong>
-						<div style={{ marginTop: "4px" }}>{saveFailure}</div>
-					</div>
-				</div>
+					title="Заключение не сохранено в карту"
+					message={saveFailure}
+				/>
 			)}
-
 			{formulaFailure && (
-				<div
+				<VisiographAlertBox
+					type="warn"
 					role="alert"
-					style={{
-						padding: "10px 14px",
-						background: "var(--warn-bg)",
-						color: "var(--warn-fg)",
-						borderRadius: "10px",
-						display: "flex",
-						alignItems: "flex-start",
-						gap: "10px",
-						fontSize: "0.85rem",
-					}}
-				>
-					<AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
-					<div>
-						<strong>Находки не внесены в зубную формулу</strong>
-						<div style={{ marginTop: "4px" }}>{formulaFailure}</div>
-					</div>
-				</div>
+					title="Находки не внесены в зубную формулу"
+					message={formulaFailure}
+				/>
 			)}
-
 			{applyNotice && (
-				<div
+				<VisiographAlertBox
+					type="warn"
 					role="status"
-					style={{
-						padding: "10px 14px",
-						background: "var(--warn-bg)",
-						color: "var(--warn-fg)",
-						borderRadius: "10px",
-						display: "flex",
-						alignItems: "flex-start",
-						gap: "10px",
-						fontSize: "0.85rem",
-					}}
-				>
-					<AlertTriangle size={16} style={{ flexShrink: 0, marginTop: "2px" }} aria-hidden="true" />
-					<div>{applyNotice}</div>
-				</div>
+					message={applyNotice}
+				/>
 			)}
 		</>
 	);

@@ -1,0 +1,87 @@
+/**
+ * panoramicDensity.css — Misch Bone Quality, HU Density HUD & Sliders
+ * Mandate 8b: строго <= 120 строк.
+ */
+
+/* INTERACTIVE HUD OVERLAYS */
+.mpr-hud-overlay {
+	position: absolute;
+	bottom: 12px;
+	right: 12px;
+	padding: 6px 12px;
+	border-radius: 8px;
+	background: rgba(15, 15, 15, 0.85);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	border: 1px solid rgba(255, 255, 255, 0.12);
+	font-size: 13px;
+	font-weight: 700;
+	color: #e4e4e7;
+	z-index: 10;
+	pointer-events: none;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.mpr-hud-value {
+	color: #38bdf8;
+	font-size: 14px;
+	font-weight: 800;
+}
+
+/* MISCH BONE QUALITY FLOATING HUD (WCAG AAA DARK GLASSMORPHISM) */
+.mpr-density-hud {
+	position: absolute;
+	bottom: 16px;
+	left: 16px;
+	max-width: 400px;
+	padding: 12px 16px;
+	border-radius: 14px;
+	background: rgba(18, 18, 20, 0.94);
+	backdrop-filter: blur(14px);
+	-webkit-backdrop-filter: blur(14px);
+	border: 1.5px solid rgba(255, 255, 255, 0.18);
+	box-shadow: 0 16px 32px rgba(0, 0, 0, 0.6);
+	z-index: 25;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	color: #f4f4f5;
+}
+
+.mpr-density-badge {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px 12px;
+	border-radius: 6px;
+	font-size: 14px;
+	font-weight: 800;
+	color: #ffffff;
+	letter-spacing: 0.05em;
+	flex-shrink: 0;
+}
+
+.mpr-badge-d1 { background: #ef4444; }
+.mpr-badge-d2 { background: #22c55e; }
+.mpr-badge-d3 { background: #f59e0b; }
+.mpr-badge-d4 { background: #f97316; }
+.mpr-badge-d5 { background: #8b5cf6; }
+
+/* CROSS-SECTION CONTROLS */
+.mpr-slice-stepper {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	border-radius: 10px;
+	background: var(--paper, rgba(24, 24, 27, 0.7));
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+}
+
+.mpr-slider-touch {
+	min-height: 44px;
+	cursor: pointer;
+	accent-color: #2563eb;
+}

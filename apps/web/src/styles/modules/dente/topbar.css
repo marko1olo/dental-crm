@@ -321,3 +321,9 @@ html.dark .topbar .eyebrow,
 	font-weight: 600;
 }
 
+/* LAN QR Connection Modal (Apple HIG Overlay, beats z-index: 9999) */
+.lan-qr-modal-overlay,
+[data-testid="lan-qr-connection-modal"] {
+	z-index: 10005 !important;
+}
+

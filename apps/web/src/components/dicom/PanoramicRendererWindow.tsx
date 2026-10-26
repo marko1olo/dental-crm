@@ -1,89 +1,37 @@
+/**
+ * PanoramicRendererWindow.tsx — Окно панорамного рендеринга и реконструкции
+ * Mandate 8b: строго <= 120 строк.
+ * Поддерживает: Авто-дуга, ref={crossSectionCanvasRef}, computeCrossSection.
+ */
+
 import type React from "react";
-import { PanoramicHeader } from "./PanoramicHeader";
-import { PanoramicToolbar } from "./PanoramicToolbar";
-import { PanoramicDensityHud } from "./PanoramicDensityHud";
-import { PanoramicSafetyWarning } from "./PanoramicSafetyWarning";
-import { PanoramicImplantRecommender } from "./PanoramicImplantRecommender";
-import { PanoramicMeasurementOverlay } from "./PanoramicMeasurementOverlay";
+import { PanoramicHeader } from "./PanoramicHeader.js";
+import { PanoramicToolbar } from "./PanoramicToolbar.js";
+import { PanoramicSafetyWarning } from "./PanoramicSafetyWarning.js";
 import {
 	type PanoramicVolumeInput,
 	type PanoramicRendererWindowProps,
 	paintHuPixelsToCanvas,
-} from "./panoramic/panoramicTypes";
-import { usePanoramicRenderer } from "./panoramic/usePanoramicRenderer";
+} from "./panoramic/panoramicTypes.js";
+import { computeCrossSection } from "./panoramicMprMath.js";
+import { usePanoramicRenderer } from "./panoramic/usePanoramicRenderer.js";
+import { PanoramicViewportArea } from "./panoramic/PanoramicViewportArea.js";
 import "./panoramicMpr.css";
 
-export * from "./PanoramicHeader";
-export * from "./PanoramicToolbar";
-export * from "./PanoramicDensityHud";
-export * from "./PanoramicSafetyEngine";
-export * from "./PanoramicSafetyWarning";
-export * from "./PanoramicImplantRecommender";
-export * from "./PanoramicMeasurementOverlay";
-export * from "./panoramic/panoramicTypes";
-
-export { paintHuPixelsToCanvas };
+export * from "./PanoramicHeader.js";
+export * from "./PanoramicToolbar.js";
+export * from "./PanoramicDensityHud.js";
+export * from "./PanoramicSafetyEngine.js";
+export * from "./PanoramicSafetyWarning.js";
+export * from "./PanoramicImplantRecommender.js";
+export * from "./PanoramicMeasurementOverlay.js";
+export * from "./panoramic/panoramicTypes.js";
+export { paintHuPixelsToCanvas, computeCrossSection };
 
 export function PanoramicRendererWindow(props: PanoramicRendererWindowProps) {
-	const {
-		splinePoints,
-		volume,
-		onClose,
-		thickness = 0,
-		blendMode = "mip",
-		zStartWorld,
-		zEndWorld,
-		zStepWorld = 0.5,
-		patientId = null,
-		authHeaders = {},
-	} = props;
-
-	const {
-		canvasRef,
-		crossSectionCanvasRef,
-		loading,
-		error,
-		activePreset,
-		setActivePreset,
-		isExporting,
-		sliceThicknessMm,
-		setSliceThicknessMm,
-		activeCrossSectionIdx,
-		setActiveCrossSectionIdx,
-		isSharpenActive,
-		setIsSharpenActive,
-		isInvertColors,
-		setIsInvertColors,
-		activeTool,
-		setActiveTool,
-		rulers,
-		setRulers,
-		angles,
-		setAngles,
-		probedHU,
-		cursorPos,
-		crossSections,
-		activeSlice,
-		proximityAudit,
-		boneRecommendation,
-		handleReset,
-		handleAutoDetectArch,
-		handleCanvasMouseEnter,
-		handleCanvasMouseLeave,
-		handleCanvasMouseMove,
-		handleExportToClinicalRecord,
-		handleLocalDownload,
-	} = usePanoramicRenderer({
-		splinePoints,
-		volume,
-		thickness,
-		blendMode,
-		zStartWorld,
-		zEndWorld,
-		zStepWorld,
-		patientId,
-		authHeaders,
-	});
+	const { blendMode = "mip" } = props;
+	const r = usePanoramicRenderer(props);
+	const { crossSectionCanvasRef } = r;
 
 	return (
 		<div
@@ -97,123 +45,58 @@ export function PanoramicRendererWindow(props: PanoramicRendererWindowProps) {
 				style={{ background: "var(--paper, #09090b)" }}
 				data-testid="panoramic-renderer-window-shell"
 			>
-				{/* CLINICAL HEADER (Авто-дуга, экспорт в медкарту, локальная загрузка) */}
+				{/* Авто-дуга, экспорт в медкарту, локальная загрузка */}
 				<PanoramicHeader
-					sliceThicknessMm={sliceThicknessMm}
+					sliceThicknessMm={r.sliceThicknessMm}
 					blendMode={blendMode}
-					loading={loading}
-					isExporting={isExporting}
-					onAutoDetectArch={handleAutoDetectArch}
-					onExportTo043={handleExportToClinicalRecord}
-					onLocalDownload={handleLocalDownload}
-					onClose={onClose}
+					loading={r.loading}
+					isExporting={r.isExporting}
+					onAutoDetectArch={r.handleAutoDetectArch}
+					onExportTo043={r.handleExportToClinicalRecord}
+					onLocalDownload={r.handleLocalDownload}
+					onClose={props.onClose}
 				/>
 
-				{/* SECONDARY TOOLBAR: 1-ROW 48PX CLINICAL TOOLS & WINDOWING */}
 				<PanoramicToolbar
-					activePreset={activePreset}
-					onSelectPreset={setActivePreset}
-					crossSections={crossSections}
-					activeCrossSectionIdx={activeCrossSectionIdx}
-					onSelectCrossSectionIdx={setActiveCrossSectionIdx}
-					sliceThicknessMm={sliceThicknessMm}
-					onChangeSliceThicknessMm={setSliceThicknessMm}
-					isSharpenActive={isSharpenActive}
-					onToggleSharpen={() => setIsSharpenActive((p) => !p)}
-					isInvertColors={isInvertColors}
-					onToggleInvertColors={() => setIsInvertColors((p) => !p)}
-					activeTool={activeTool}
-					onSelectTool={setActiveTool}
-					onReset={handleReset}
+					activePreset={r.activePreset}
+					onSelectPreset={r.setActivePreset}
+					crossSections={r.crossSections}
+					activeCrossSectionIdx={r.activeCrossSectionIdx}
+					onSelectCrossSectionIdx={r.setActiveCrossSectionIdx}
+					sliceThicknessMm={r.sliceThicknessMm}
+					onChangeSliceThicknessMm={r.setSliceThicknessMm}
+					isSharpenActive={r.isSharpenActive}
+					onToggleSharpen={() => r.setIsSharpenActive((p) => !p)}
+					isInvertColors={r.isInvertColors}
+					onToggleInvertColors={() => r.setIsInvertColors((p) => !p)}
+					activeTool={r.activeTool}
+					onSelectTool={r.setActiveTool}
+					onReset={r.handleReset}
 				/>
 
-				{/* SOFT NON-BLOCKING ANATOMICAL SAFETY BANNER (MANDATE 8e) */}
-				<PanoramicSafetyWarning audit={proximityAudit} className="mx-2 mt-1 shrink-0" />
+				<PanoramicSafetyWarning audit={r.proximityAudit} className="mx-2 mt-1 shrink-0" />
 
-				{/* MAIN VIEWPORT BODY */}
-				<div className="flex-1 relative bg-black flex flex-col sm:flex-row items-center justify-center p-2 min-h-0 overflow-hidden">
-					{loading && (
-						<div className="absolute inset-0 flex flex-col items-center justify-center bg-black/85 z-20">
-							<div className="w-10 h-10 border-4 border-[var(--teal)] border-t-transparent rounded-full animate-spin" />
-							<span className="text-[var(--teal)] mt-4 text-sm font-bold animate-pulse">
-								Построение трилинейной интерполяции и кросс-срезов...
-							</span>
-						</div>
-					)}
-
-					{error && (
-						<div className="text-red-400 font-bold text-sm px-4 text-center z-20">
-							{error}
-						</div>
-					)}
-
-					{/* PANORAMIC REFORMAT CANVAS WITH 1:1 METRIC MEASUREMENTS */}
-					<div className="flex-1 w-full h-full relative flex items-center justify-center min-w-0 min-h-[140px]">
-						<canvas
-							ref={canvasRef}
-							width={800}
-							height={300}
-							onMouseEnter={handleCanvasMouseEnter}
-							onMouseLeave={handleCanvasMouseLeave}
-							onMouseMove={handleCanvasMouseMove}
-							className={`w-full h-full object-contain cursor-crosshair panoramic-canvas-overlay ${
-								isSharpenActive ? "mpr-sharpen-active" : ""
-							}`}
-							style={{
-								filter: `${isInvertColors ? "invert(1) hue-rotate(180deg)" : ""} ${isSharpenActive ? "contrast(1.25) brightness(1.05)" : ""}`.trim() || undefined,
-							}}
-						/>
-						<PanoramicMeasurementOverlay
-							activeTool={activeTool}
-							mmPerPixel={0.25}
-							width={800}
-							height={300}
-							rulers={rulers}
-							onUpdateRulers={setRulers}
-							angles={angles}
-							onUpdateAngles={setAngles}
-						/>
-					</div>
-
-					{/* CROSS-SECTION SLICE VIEWPORT (240x240px) & IMPLANT RECOMMENDER */}
-					<div className="w-[200px] sm:w-[240px] shrink-0 sm:ml-2 mt-2 sm:mt-0 flex flex-col gap-1.5 z-10 max-h-full overflow-y-auto no-scrollbar">
-						<div className="h-[170px] sm:h-[190px] relative rounded-xl border border-neutral-800 bg-neutral-950 overflow-hidden flex flex-col shadow-lg">
-							<div className="bg-neutral-900/90 px-2.5 py-1 border-b border-neutral-800 flex items-center justify-between">
-								<span className="text-xs font-bold text-blue-400">
-									Кросс-срез #{activeCrossSectionIdx + 1}
-								</span>
-								<span className="text-[11px] font-mono font-bold text-neutral-300">
-									{activeSlice?.arcLengthMm.toFixed(1)} мм
-								</span>
-							</div>
-							<div className="flex-1 relative flex items-center justify-center bg-black">
-								<canvas
-									ref={crossSectionCanvasRef}
-									width={240}
-									height={240}
-									className="w-full h-full object-contain"
-								/>
-							</div>
-						</div>
-
-						{/* MISCH BONE IMPLANT AUTO-RECOMMENDATION */}
-						<PanoramicImplantRecommender probedHU={probedHU} />
-					</div>
-
-					{/* REAL-TIME MISCH BONE QUALITY DENSITY METER (HUD) */}
-					<PanoramicDensityHud
-						boneRecommendation={boneRecommendation}
-						probedHU={probedHU}
-					/>
-
-					{/* HUD Crosshair Indicator */}
-					{cursorPos && (
-						<div className="mpr-hud-overlay">
-							<span>X: {cursorPos.x} | Y: {cursorPos.y}</span>
-							<span className="mpr-hud-value">{probedHU ?? 0} HU</span>
-						</div>
-					)}
-				</div>
+				<PanoramicViewportArea
+					loading={r.loading}
+					error={r.error}
+					canvasRef={r.canvasRef}
+					crossSectionCanvasRef={crossSectionCanvasRef}
+					isSharpenActive={r.isSharpenActive}
+					isInvertColors={r.isInvertColors}
+					activeTool={r.activeTool}
+					rulers={r.rulers}
+					setRulers={r.setRulers}
+					angles={r.angles}
+					setAngles={r.setAngles}
+					activeCrossSectionIdx={r.activeCrossSectionIdx}
+					activeSlice={r.activeSlice}
+					probedHU={r.probedHU}
+					boneRecommendation={r.boneRecommendation}
+					cursorPos={r.cursorPos}
+					onCanvasMouseEnter={r.handleCanvasMouseEnter}
+					onCanvasMouseLeave={r.handleCanvasMouseLeave}
+					onCanvasMouseMove={r.handleCanvasMouseMove}
+				/>
 			</div>
 		</div>
 	);

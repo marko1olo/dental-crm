@@ -1,13 +1,16 @@
+/**
+ * ImagingToolbar.tsx — Панель инструментов просмотра снимка (зум, панорамирование, фильтры, экспорт)
+ * Mandate 8b: строго <= 120 строк.
+ */
+
 import React from "react";
-import { Download, Printer, RefreshCw } from "lucide-react";
 import type { ImagingStudy, ImagingViewerState, ViewerRulerMeasurement } from "./types.js";
 import { ImagingOrientationGroup } from "./imagingToolbar/ImagingOrientationGroup.js";
 import { ImagingZoomPanGroup } from "./imagingToolbar/ImagingZoomPanGroup.js";
 import { ImagingFilterRulerGroup } from "./imagingToolbar/ImagingFilterRulerGroup.js";
-import { ImagingToothVisitGroup } from "./imagingToolbar/ImagingToothVisitGroup.js";
 import { ImagingBrightnessContrastSliders } from "./imagingToolbar/ImagingBrightnessContrastSliders.js";
 import { ImagingSessionNotesSection } from "./imagingToolbar/ImagingSessionNotesSection.js";
-import { downloadStudyImageAsJpg, printStudyForPatient } from "./imagingExportPrintHelper.js";
+import { ImagingToolbarRightActions } from "./imagingToolbar/ImagingToolbarRightActions.js";
 
 export interface ImagingToolbarProps {
 	selectedImagingStudy?: ImagingStudy | null | undefined;
@@ -55,26 +58,6 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 
 	const previewSrc = effectivePreviewUrl || selectedImagingStudy?.previewUrl;
 
-	const handleDownloadJpg = () => {
-		if (!previewSrc) return;
-		downloadStudyImageAsJpg(
-			previewSrc,
-			selectedImagingStudy?.kind === "opg" ? "panoramic_opg" : "dental_rvg",
-			selectedImagingStudy?.toothCode,
-		);
-	};
-
-	const handlePrint = () => {
-		if (!previewSrc) return;
-		printStudyForPatient({
-			imageUrl: previewSrc,
-			studyTitle: selectedImagingStudy?.title,
-			toothCode: selectedImagingStudy?.toothCode,
-			patientName: activePatient?.fullName || activePatient?.name || activeAppointment?.patientName,
-			measurementsCount: rulerMeasurements.length,
-		});
-	};
-
 	return (
 		<div className="imaging-viewer-toolbar flex flex-col gap-1.5 p-2 bg-[var(--paper-soft)] border-b border-[var(--line)]" role="toolbar" aria-label="Настройки снимка">
 			<div className="imaging-viewer-tools flex flex-wrap items-center justify-between gap-1.5 min-h-[36px]">
@@ -84,50 +67,21 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 					<ImagingFilterRulerGroup imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} enhancementOn={enhancementOn} setEnhancementOn={setEnhancementOn as any} isRulerActive={isRulerActive} setIsRulerActive={setIsRulerActive as any} setIsPanActive={setIsPanActive as any} rulerMeasurements={rulerMeasurements} setRulerMeasurements={setRulerMeasurements} />
 				</div>
 
-				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
-					<ImagingToothVisitGroup selectedImagingStudy={selectedImagingStudy} activeAppointment={activeAppointment} onAttachToTooth={onAttachToTooth} onAttachToVisit={onAttachToVisit} />
-					{previewSrc && (
-						<>
-							<button
-								className="h-8 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
-								type="button"
-								data-testid="btn-print-xray"
-								title="Печать снимка с протоколом для пациента"
-								aria-label="Печать снимка"
-								onClick={handlePrint}
-							>
-								<Printer size={13} aria-hidden="true" />
-								<span className="text-xs font-semibold">Печать</span>
-							</button>
-							<button
-								className="h-8 px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
-								type="button"
-								data-testid="btn-download-jpg"
-								title="Скачать снимок в формате JPG"
-								aria-label="Скачать снимок JPG"
-								onClick={handleDownloadJpg}
-							>
-								<Download size={13} aria-hidden="true" />
-								<span className="text-xs font-semibold">JPG</span>
-							</button>
-						</>
-					)}
-					<button
-						className="viewer-tool-button h-8 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 text-xs font-semibold shrink-0 cursor-pointer shadow-2xs"
-						type="button"
-						title="Сбросить все параметры просмотра"
-						aria-label="Сбросить настройки снимка"
-						onClick={onReset}
-					>
-						<RefreshCw size={13} aria-hidden="true" />
-						<span className="text-xs font-semibold">Сброс</span>
-					</button>
-				</div>
+				<ImagingToolbarRightActions
+					selectedImagingStudy={selectedImagingStudy}
+					activeAppointment={activeAppointment}
+					activePatient={activePatient}
+					previewSrc={previewSrc}
+					rulerMeasurementsCount={rulerMeasurements.length}
+					onAttachToTooth={onAttachToTooth}
+					onAttachToVisit={onAttachToVisit}
+					onReset={onReset}
+				/>
 			</div>
 
 			<ImagingBrightnessContrastSliders imagingViewerState={imagingViewerState} setImagingViewerState={setImagingViewerState as any} />
 
-			{showNotes ? (
+			{showNotes && (
 				<>
 					<ImagingSessionNotesSection
 						selectedImagingStudy={selectedImagingStudy} imagingViewerNote={imagingViewerNote}
@@ -137,8 +91,7 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 						canRetryImagingViewerSave={canRetryImagingViewerSave} retryImagingViewerSessionSave={retryImagingViewerSessionSave}
 						addImagingViewerNoteAnnotation={addImagingViewerNoteAnnotation}
 					/>
-
-					{imagingViewerAnnotations && imagingViewerAnnotations.length > 0 ? (
+					{imagingViewerAnnotations && imagingViewerAnnotations.length > 0 && (
 						<section className="viewer-annotation-list" aria-label="Разметки к снимку">
 							{imagingViewerAnnotations.slice(0, 3).map((a) => (
 								<article key={a.id}>
@@ -147,9 +100,9 @@ export function ImagingToolbar(props: ImagingToolbarProps) {
 								</article>
 							))}
 						</section>
-					) : null}
+					)}
 				</>
-			) : null}
+			)}
 		</div>
 	);
 }

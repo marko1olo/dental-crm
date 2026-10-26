@@ -1,11 +1,17 @@
+/**
+ * ImagingAuxiliaryModals.tsx — Дополнительные модальные окна лучевой диагностики
+ * Mandate 8b: строго <= 120 строк.
+ */
+
 import React, { Suspense } from "react";
-import { lazyWithRetry } from "../../lib/lazyWithRetry";
+import { lazyWithRetry } from "../../lib/lazyWithRetry.js";
 import { RadiologyModule } from "../radiology/RadiologyModule.js";
-import { ImagingExportModal } from "./ImagingExportModal";
-import { VisiographComparisonModal } from "../visiograph/VisiographComparisonModal";
+import { ImagingExportModal } from "./ImagingExportModal.js";
+import { VisiographComparisonModal } from "../visiograph/VisiographComparisonModal.js";
+import { getActivePanoramicVolume } from "./panoramicVolumeResolver.js";
 
 const PanoramicRendererWindow = lazyWithRetry(() =>
-	import("../dicom/PanoramicRendererWindow").then((m) => ({
+	import("../dicom/PanoramicRendererWindow.js").then((m) => ({
 		default: m.PanoramicRendererWindow,
 	})),
 );
@@ -28,105 +34,14 @@ export interface ImagingAuxiliaryModalsProps {
 	selectedStudySummary?: string | null | undefined;
 }
 
-function createDemoPanoramicVolume(): any {
-	const width = 128;
-	const height = 128;
-	const depth = 64;
-	const scalarData = new Float32Array(width * height * depth);
-	scalarData.fill(-1000);
-
-	const cx = Math.floor(width / 2);
-	const cy = Math.floor(height / 2);
-	const rx = Math.floor(width * 0.35);
-	const ry = Math.floor(height * 0.28);
-
-	for (let z = 0; z < depth; z++) {
-		const zSlice = z * width * height;
-		const zFactor = 1 - Math.abs(z - depth / 2) / (depth / 2);
-
-		for (let x = 10; x < width - 10; x++) {
-			const normX = (x - cx) / rx;
-			if (Math.abs(normX) > 1) continue;
-			const archY = Math.round(cy - ry * (1 - normX * normX * 0.8));
-
-			for (let y = Math.max(0, archY - 6); y <= Math.min(height - 1, archY + 6); y++) {
-				const idx = zSlice + y * width + x;
-				const distFromArch = Math.abs(y - archY);
-				if (distFromArch <= 2) {
-					scalarData[idx] = z > depth * 0.6 ? 2200 : 750 + Math.round(zFactor * 200);
-				} else if (distFromArch <= 5) {
-					scalarData[idx] = 1400;
-				} else {
-					scalarData[idx] = 400;
-				}
-			}
-		}
-	}
-
-	const identityDirection = new Float32Array([
-		1, 0, 0, 0,
-		0, 1, 0, 0,
-		0, 0, 1, 0,
-		0, 0, 0, 1,
-	]);
-
-	return {
-		scalarData,
-		dimensions: [width, height, depth],
-		origin: [0, 0, 0],
-		direction: identityDirection,
-		spacing: [0.3, 0.3, 0.3],
-	};
-}
-
-function getActivePanoramicVolume(): any {
-	if (typeof window !== "undefined") {
-		const win = window as unknown as {
-			__cbctActiveVolume?: any;
-			__cbctDemoVolume?: any;
-			__panoramicVolume?: any;
-		};
-		if (win.__panoramicVolume) return win.__panoramicVolume;
-		const activeVol = win.__cbctActiveVolume || win.__cbctDemoVolume;
-		if (activeVol && activeVol.data) {
-			const { width, height, depth } = activeVol.dimensions;
-			const scalarData = new Float32Array(activeVol.data.length);
-			for (let i = 0; i < activeVol.data.length; i++) {
-				scalarData[i] = activeVol.data[i];
-			}
-			const identityDirection = new Float32Array([
-				1, 0, 0, 0,
-				0, 1, 0, 0,
-				0, 0, 1, 0,
-				0, 0, 0, 1,
-			]);
-			return {
-				scalarData,
-				dimensions: [width, height, depth],
-				origin: [activeVol.originMm?.x ?? 0, activeVol.originMm?.y ?? 0, activeVol.originMm?.z ?? 0],
-				direction: identityDirection,
-				spacing: [activeVol.spacingMm?.x ?? 0.25, activeVol.spacingMm?.y ?? 0.25, activeVol.spacingMm?.z ?? 0.25],
-			};
-		}
-	}
-	return createDemoPanoramicVolume();
-}
-
 export function ImagingAuxiliaryModals({
-	isPanoramicWindowOpen,
-	setIsPanoramicWindowOpen,
-	isRadiologyModuleOpen,
-	setIsRadiologyModuleOpen,
-	isExportModalOpen,
-	setIsExportModalOpen,
-	isComparisonOpen,
-	setIsComparisonOpen,
-	activeImagingStudies,
-	selectedImagingStudy,
-	activePatient,
-	activeAppointment,
-	authClinicName,
-	effectivePreviewUrl,
+	isPanoramicWindowOpen, setIsPanoramicWindowOpen,
+	isRadiologyModuleOpen, setIsRadiologyModuleOpen,
+	isExportModalOpen, setIsExportModalOpen,
+	isComparisonOpen, setIsComparisonOpen,
+	activeImagingStudies, selectedImagingStudy,
+	activePatient, activeAppointment,
+	authClinicName, effectivePreviewUrl,
 	selectedStudySummary,
 }: ImagingAuxiliaryModalsProps) {
 	return (
@@ -158,18 +73,14 @@ export function ImagingAuxiliaryModals({
 						onClick={(e) => e.stopPropagation()}
 					>
 						<RadiologyModule
-							patient={
-								activePatient
-									? {
-											id: activePatient.id,
-											fullName: activePatient.fullName || activePatient.name,
-											birthDate: activePatient.birthDate,
-											phone: activePatient.phone,
-											cardNumber: activePatient.cardNumber,
-											medicalCardNumber: activePatient.medicalCardNumber,
-										}
-									: null
-							}
+							patient={activePatient ? {
+								id: activePatient.id,
+								fullName: activePatient.fullName || activePatient.name,
+								birthDate: activePatient.birthDate,
+								phone: activePatient.phone,
+								cardNumber: activePatient.cardNumber,
+								medicalCardNumber: activePatient.medicalCardNumber,
+							} : null}
 							doctorName={activeAppointment?.doctorName}
 							clinicName={authClinicName || "ООО «ДЕНТЕ»"}
 							onClose={() => setIsRadiologyModuleOpen(false)}

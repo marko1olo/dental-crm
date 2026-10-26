@@ -1,44 +1,16 @@
+/**
+ * imagingUploadService.ts — Сервис загрузки снимков и интеграции с бэкендом Fastify
+ * Mandate 8b: строго <= 120 строк.
+ */
+
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import { showToast } from "../GlobalToast.js";
+import { inferStudyKind, type InferredImagingKind } from "./upload/inferStudyKind.js";
+import { createLocalFallbackStudy } from "./upload/localFallbackStudy.js";
 
-export type InferredImagingKind =
-	| "periapical"
-	| "bitewing"
-	| "opg"
-	| "cbct"
-	| "photo_intraoral"
-	| "photo_extraoral"
-	| "other";
-
-export function inferStudyKind(filename: string): InferredImagingKind {
-	const lower = filename.toLowerCase();
-	if (lower.includes("pano") || lower.includes("optg") || lower.includes("opg")) {
-		return "opg";
-	}
-	if (
-		lower.endsWith(".dcm") ||
-		lower.endsWith(".dicom") ||
-		lower.includes("cbct") ||
-		lower.includes("ct") ||
-		lower.includes("томограф")
-	) {
-		return "cbct";
-	}
-	if (
-		lower.includes("photo") ||
-		lower.includes("фото") ||
-		lower.includes("intraoral") ||
-		lower.includes("dsc_") ||
-		lower.includes("img_")
-	) {
-		return "photo_intraoral";
-	}
-	if (lower.includes("bite") || lower.includes("прикус")) {
-		return "bitewing";
-	}
-	return "periapical";
-}
+export { inferStudyKind };
+export type { InferredImagingKind };
 
 export interface UploadImagingOptions {
 	patientId?: string | null;
@@ -57,25 +29,12 @@ export interface UploadImagingResult {
 	error?: string;
 }
 
-/**
- * Streaming drag-and-drop & file picker upload for digital radiology (RVG, CBCT, OPG, DICOM, Photo).
- * Connects directly to Fastify `/api/imaging/upload` with Mandate 8e Doctor Autonomy fallback.
- */
 export async function uploadImagingScanFile(
 	file: File,
 	options: UploadImagingOptions,
 ): Promise<UploadImagingResult> {
 	const kind = options.kind || inferStudyKind(file.name);
-	const title =
-		options.title ||
-		file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim() ||
-		"Рентгеновский снимок";
-
-	// Handle DICOM zip archive directly in client-side processor if needed
-	if (file.name.toLowerCase().endsWith(".zip")) {
-		// Handled via DicomArchiveUploader or backend STOW
-	}
-
+	const title = options.title || file.name.replace(/\.[^/.]+$/, "").replace(/[-_]/g, " ").trim() || "Рентгеновский снимок";
 	const effectivePatientId = options.patientId || (isDemoShowcaseMode() ? "demo-patient-active" : null);
 
 	if (!effectivePatientId) {
@@ -94,38 +53,20 @@ export async function uploadImagingScanFile(
 		if (options.toothCode) formData.append("toothCode", options.toothCode);
 		if (options.region) formData.append("region", options.region);
 
-		const headers = denteAdminSecretRequestHeaders();
-
 		const res = await fetch("/api/imaging/upload", {
 			method: "POST",
-			headers,
+			headers: denteAdminSecretRequestHeaders(),
 			body: formData,
 		});
 
 		if (res.ok) {
 			const data = await res.json();
-			const study = data.study;
 			showToast(`Снимок «${title}» успешно загружен`, "success");
-			return { success: true, study };
+			return { success: true, study: data.study };
 		}
 
-		// If server failed (e.g. offline standalone mode / demo), fallback gracefully (Mandate 8e)
 		if (isDemoShowcaseMode() || !navigator.onLine) {
-			const localBlobUrl = URL.createObjectURL(file);
-			const fallbackStudy = {
-				id: `local_scan_${Date.now()}`,
-				patientId: effectivePatientId,
-				visitId: options.visitId || null,
-				kind,
-				title,
-				toothCode: options.toothCode || null,
-				region: options.region || null,
-				previewUrl: localBlobUrl,
-				hasFile: true,
-				capturedAt: new Date().toISOString(),
-				sourceKind: "browser_local_upload",
-				sourceName: file.name,
-			};
+			const fallbackStudy = createLocalFallbackStudy(file, { patientId: effectivePatientId, visitId: options.visitId, kind, title, toothCode: options.toothCode, region: options.region });
 			showToast(`Снимок «${title}» добавлен локально`, "info");
 			return { success: true, study: fallbackStudy };
 		}
@@ -136,21 +77,7 @@ export async function uploadImagingScanFile(
 		return { success: false, error: errorMsg };
 	} catch (err: any) {
 		if (isDemoShowcaseMode() || !navigator.onLine) {
-			const localBlobUrl = URL.createObjectURL(file);
-			const fallbackStudy = {
-				id: `local_scan_${Date.now()}`,
-				patientId: effectivePatientId,
-				visitId: options.visitId || null,
-				kind,
-				title,
-				toothCode: options.toothCode || null,
-				region: options.region || null,
-				previewUrl: localBlobUrl,
-				hasFile: true,
-				capturedAt: new Date().toISOString(),
-				sourceKind: "browser_local_upload",
-				sourceName: file.name,
-			};
+			const fallbackStudy = createLocalFallbackStudy(file, { patientId: effectivePatientId, visitId: options.visitId, kind, title, toothCode: options.toothCode, region: options.region });
 			showToast(`Снимок «${title}» добавлен локально`, "info");
 			return { success: true, study: fallbackStudy };
 		}

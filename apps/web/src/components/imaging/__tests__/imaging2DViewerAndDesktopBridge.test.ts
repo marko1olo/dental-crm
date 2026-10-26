@@ -133,7 +133,7 @@ describe("2D Imaging & External 3D Viewer Bridge Suite (Mandates 8e, 8n, 8x, 8am
 				{ x: 100, y: 100 },
 				{ x: 242.857, y: 100 },
 				5.0,
-				"steel_ball_5mm"
+				"sphere_5mm"
 			);
 			assert.strictEqual(Math.round(calib.scaleMmPerPixel * 1000) / 1000, 0.035);
 		});

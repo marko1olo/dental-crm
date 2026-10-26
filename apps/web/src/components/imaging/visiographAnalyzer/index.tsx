@@ -1,22 +1,15 @@
 import React from "react";
-import { createPortal } from "react-dom";
-import {
-	demoScanButtonStyle,
-	visiographContainerStyle,
-} from "../VisiographAnalyzerStyles.js";
+import { demoScanButtonStyle, visiographContainerStyle } from "../VisiographAnalyzerStyles.js";
 import { VisiographHeaderBar } from "../VisiographHeaderBar.js";
 import { VisiographDropzone } from "../VisiographDropzone.js";
 import { VisiographStatusAlerts } from "../VisiographStatusAlerts.js";
 import { VisiographHistoryDrawer, type XrayHistoryItem } from "../VisiographHistoryDrawer.js";
-import { SensorStudyViewer } from "../../radiology/SensorStudyViewer.js";
 import { printAiScanReport } from "../VisiographPrint.js";
 import type { XrayScan } from "../VisiographScanHelpers.js";
-
 import type { VisiographAnalyzerProps } from "./types.js";
 import { useVisiographAnalyzer } from "./useVisiographAnalyzer.js";
-import { VisiographToolbarControls } from "./VisiographToolbarControls.js";
-import { VisiographCanvasViewport } from "./VisiographCanvasViewport.js";
-import { VisiographMeasurementPanel } from "./VisiographMeasurementPanel.js";
+import { VisiographActiveScanView } from "./VisiographActiveScanView.js";
+import { VisiographSensorModal } from "./VisiographSensorModal.js";
 
 export type { XrayScan };
 export * from "./types.js";
@@ -26,136 +19,52 @@ export * from "./VisiographCanvasViewport.js";
 export * from "./VisiographMeasurementPanel.js";
 
 export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
-	const {
-		onInsertToProtocol,
-		toothCode,
-		onConnectRvg,
-		onUploadDicom,
-		onReferToRadiology,
-	} = props;
-
-	const {
-		fileInputRef,
-		dropRef,
-		effectivePatientId,
-		patientFullName,
-		isSensorViewerOpen,
-		setIsSensorViewerOpen,
-		isDragOver,
-		setIsDragOver,
-		isAnalyzing,
-		isSaving,
-		currentImageUrl,
-		currentScan,
-		saveFailure,
-		appliedToothCodes,
-		applyNotice,
-		formulaFailure,
-		selectedFindingCodes,
-		setSelectedFindingCodes,
-		isApplyingToChart,
-		isHistoryView,
-		error,
-		setError,
-		isStudioMode,
-		setIsStudioMode,
-		quickPreset,
-		setQuickPreset,
-		initialStudioTool,
-		setInitialStudioTool,
-		isNormaApplied,
-		scanHistory,
-		isLoadingHistory,
-		historyFailure,
-		deletingScanId,
-		deleteFailure,
-		openFailure,
-		setOpenFailure,
-		loadHistory,
-		loadHistoryScan,
-		deleteScan,
-		filmstripItems,
-		handleSelectFilmstripStudy,
-		handleDoubleClickFilmstripStudy,
-		handleLoadDemoScan,
-		processFile,
-		handleRunAiAnalysis,
-		handleApplyFindingsToChart,
-		handleApplyNormaTo043,
-		handleInsertReportToProtocol,
-		handleDrop,
-		handleClear,
-		toothStatesArray,
-		criticalCount,
-		historyPhase,
-		calibration,
-		workingLengthMm,
-		handleMeasureWorkingLength,
-		boundToothCode,
-		handleBindTooth,
-	} = useVisiographAnalyzer(props);
+	const { onInsertToProtocol, toothCode, onConnectRvg, onUploadDicom, onReferToRadiology } = props;
+	const a = useVisiographAnalyzer(props);
 
 	return (
-		<div
-			className="visiograph-analyzer-container"
-			data-testid="visiograph-analyzer-container"
-			style={visiographContainerStyle}
-		>
+		<div className="visiograph-analyzer-container" data-testid="visiograph-analyzer-container" style={visiographContainerStyle}>
 			<VisiographHeaderBar
-				scanHistoryCount={scanHistory.length}
-				isLoadingHistory={isLoadingHistory}
-				criticalCount={criticalCount}
-				historyFailure={historyFailure}
-				hasAiReport={Boolean(currentScan?.aiReport)}
-				onUploadClick={() => fileInputRef.current?.click()}
-				onPrintClick={() => currentScan && printAiScanReport(currentScan)}
-				onClearClick={handleClear}
-				currentImage={currentImageUrl}
-				activeScan={currentScan}
-				hasActiveScan={Boolean(currentScan || currentImageUrl)}
+				scanHistoryCount={a.scanHistory.length}
+				isLoadingHistory={a.isLoadingHistory}
+				criticalCount={a.criticalCount}
+				historyFailure={a.historyFailure}
+				hasAiReport={Boolean(a.currentScan?.aiReport)}
+				onUploadClick={() => a.fileInputRef.current?.click()}
+				onPrintClick={() => a.currentScan && printAiScanReport(a.currentScan)}
+				onClearClick={a.handleClear}
+				currentImage={a.currentImageUrl}
+				activeScan={a.currentScan}
+				hasActiveScan={Boolean(a.currentScan || a.currentImageUrl)}
 			/>
-
 			<div style={{ padding: "6px 8px" }}>
 				<input
 					type="file"
 					accept="image/*"
-					ref={fileInputRef}
+					ref={a.fileInputRef}
 					style={{ display: "none" }}
-					onChange={(e) => {
-						const f = e.target.files?.[0];
-						if (f) processFile(f);
-					}}
+					onChange={(e) => { const f = e.target.files?.[0]; if (f) a.processFile(f); }}
 				/>
-
-				{/* Drop Zone */}
-				{!currentScan && (
+				{!a.currentScan && (
 					<VisiographDropzone
-						dropRef={dropRef}
-						fileInputRef={fileInputRef}
-						isDragOver={isDragOver}
-						setIsDragOver={setIsDragOver}
-						isAnalyzing={isAnalyzing}
-						onDrop={handleDrop}
+						dropRef={a.dropRef}
+						fileInputRef={a.fileInputRef}
+						isDragOver={a.isDragOver}
+						setIsDragOver={a.setIsDragOver}
+						isAnalyzing={a.isAnalyzing}
+						onDrop={a.handleDrop}
 						onConnectRvg={onConnectRvg}
 						onUploadDicom={onUploadDicom}
 						onReferToRadiology={onReferToRadiology}
 						toothCode={toothCode}
-						effectivePatientId={effectivePatientId}
+						effectivePatientId={a.effectivePatientId}
 						demoScanButton={
 							<span
 								role="button"
 								tabIndex={0}
 								data-testid="btn-load-demo-scan"
-								onClick={(e) => {
-									e.stopPropagation();
-									handleLoadDemoScan();
-								}}
-								onKeyDown={(e) => {
-									if (e.key === "Enter" || e.key === " ") {
-										e.stopPropagation();
-										handleLoadDemoScan();
-									}
-								}}
+								onClick={(e) => { e.stopPropagation(); a.handleLoadDemoScan(); }}
+								onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.stopPropagation(); a.handleLoadDemoScan(); } }}
 								style={demoScanButtonStyle}
 							>
 								Показать демо-снимок
@@ -163,129 +72,43 @@ export function VisiographAnalyzer(props: VisiographAnalyzerProps = {}) {
 						}
 					/>
 				)}
-
-				{/* Alerts */}
 				<VisiographStatusAlerts
-					error={error}
-					onClearError={() => setError(null)}
-					openFailure={openFailure}
-					onClearOpenFailure={() => setOpenFailure(null)}
-					saveFailure={saveFailure}
-					formulaFailure={formulaFailure}
-					applyNotice={applyNotice}
-					hasCurrentScan={Boolean(currentScan)}
+					error={a.error}
+					onClearError={() => a.setError(null)}
+					openFailure={a.openFailure}
+					onClearOpenFailure={() => a.setOpenFailure(null)}
+					saveFailure={a.saveFailure}
+					formulaFailure={a.formulaFailure}
+					applyNotice={a.applyNotice}
+					hasCurrentScan={Boolean(a.currentScan)}
 				/>
-
-				{/* Result View */}
-				{currentScan && (
-					<div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-						{currentImageUrl && (
-							<div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
-								<VisiographToolbarControls
-									quickPreset={quickPreset}
-									setQuickPreset={setQuickPreset}
-									isStudioMode={isStudioMode}
-									onToggleStudio={() => setIsStudioMode((prev) => !prev)}
-									onOpenApexRuler={() => {
-										setInitialStudioTool("root_canal");
-										setIsStudioMode(true);
-									}}
-									isNormaApplied={isNormaApplied}
-									onApplyNormaTo043={handleApplyNormaTo043}
-									isAnalyzing={isAnalyzing}
-									onRunAiAnalysis={handleRunAiAnalysis}
-									hasAiReport={Boolean(currentScan.aiReport)}
-									onOpenSensorViewer={() => setIsSensorViewerOpen(true)}
-									boundToothCode={boundToothCode}
-									onBindTooth={handleBindTooth}
-								/>
-
-								<VisiographCanvasViewport
-									isStudioMode={isStudioMode}
-									currentImageUrl={currentImageUrl}
-									effectivePatientId={effectivePatientId ?? undefined}
-									currentScan={currentScan}
-									initialStudioTool={initialStudioTool}
-									quickPreset={quickPreset}
-									onCloseStudio={() => setIsStudioMode(false)}
-									filmstripItems={filmstripItems}
-									onSelectStudy={handleSelectFilmstripStudy}
-									onDoubleClickStudy={handleDoubleClickFilmstripStudy}
-									isSaving={isSaving}
-								/>
-							</div>
-						)}
-
-						<VisiographMeasurementPanel
-							toothStatesArray={toothStatesArray}
-							appliedToothCodes={appliedToothCodes}
-							isHistoryView={isHistoryView}
-							selectedFindingCodes={selectedFindingCodes}
-							onToggleFindingCode={(code) => {
-								const next = new Set(selectedFindingCodes);
-								if (next.has(code)) next.delete(code);
-								else next.add(code);
-								setSelectedFindingCodes(next);
-							}}
-							onToggleSelectAll={() => {
-								const allCodes = toothStatesArray.map((t) => t.code);
-								if (selectedFindingCodes.size === allCodes.length) {
-									setSelectedFindingCodes(new Set());
-								} else {
-									setSelectedFindingCodes(new Set(allCodes));
-								}
-							}}
-							isApplyingToChart={isApplyingToChart}
-							onApplyFindingsToChart={handleApplyFindingsToChart}
-							aiReport={currentScan?.aiReport ?? undefined}
-							capturedAt={currentScan?.capturedAt}
-							onInsertReportToProtocol={handleInsertReportToProtocol}
-							currentScan={currentScan}
-							deletingScanId={deletingScanId}
-							onClear={handleClear}
-							onDeleteScan={(s) => void deleteScan(s)}
-							toothCode={toothCode}
-							calibration={calibration}
-							workingLengthMm={workingLengthMm}
-							onMeasureWorkingLength={handleMeasureWorkingLength}
-						/>
-					</div>
+				{a.currentScan && (
+					<VisiographActiveScanView analyzer={a} toothCode={toothCode} onInsertToProtocol={onInsertToProtocol} />
 				)}
-
-				{/* History Drawer */}
 				<VisiographHistoryDrawer
-					scanHistory={scanHistory as XrayHistoryItem[]}
-					isLoadingHistory={isLoadingHistory}
-					historyFailure={historyFailure}
-					historyPhase={historyPhase}
-					effectivePatientId={effectivePatientId}
-					onLoadHistoryScan={(s) => void loadHistoryScan(s as XrayScan)}
-					onDeleteScan={(s) => void deleteScan(s as XrayScan)}
-					deletingScanId={deletingScanId}
-					deleteFailure={deleteFailure}
-					onRetry={() => effectivePatientId && loadHistory(effectivePatientId)}
+					scanHistory={a.scanHistory as XrayHistoryItem[]}
+					isLoadingHistory={a.isLoadingHistory}
+					historyFailure={a.historyFailure}
+					historyPhase={a.historyPhase}
+					effectivePatientId={a.effectivePatientId}
+					onLoadHistoryScan={(s) => void a.loadHistoryScan(s as XrayScan)}
+					onDeleteScan={(s) => void a.deleteScan(s as XrayScan)}
+					deletingScanId={a.deletingScanId}
+					deleteFailure={a.deleteFailure}
+					onRetry={() => a.effectivePatientId && a.loadHistory(a.effectivePatientId)}
 				/>
 			</div>
-
-			{/* EzDent-i 2D Fullscreen Sensor Modal Viewer (Screenshot 24) */}
-			{isSensorViewerOpen && typeof document !== "undefined" && createPortal(
-				<div className="fixed inset-0 z-[99999] bg-[#020617] flex flex-col" data-testid="visiograph-sensor-viewer-portal">
-					<SensorStudyViewer
-						initialImageUrl={currentImageUrl || undefined}
-						studiesHistory={filmstripItems}
-						study={
-							filmstripItems.find((s) => s.id === currentScan?.id) ||
-							filmstripItems[0]
-						}
-						patientName={patientFullName}
-						medicalCardNumber={effectivePatientId || undefined}
-						toothFdiCode={currentScan?.toothCode || toothCode || undefined}
-						onInsertToProtocol={onInsertToProtocol}
-						onClose={() => setIsSensorViewerOpen(false)}
-					/>
-				</div>,
-				document.body
-			)}
+			<VisiographSensorModal
+				isOpen={a.isSensorViewerOpen}
+				onClose={() => a.setIsSensorViewerOpen(false)}
+				currentImageUrl={a.currentImageUrl}
+				filmstripItems={a.filmstripItems}
+				currentScanId={a.currentScan?.id}
+				patientFullName={a.patientFullName}
+				effectivePatientId={a.effectivePatientId}
+				toothFdiCode={a.currentScan?.toothCode || toothCode || undefined}
+				onInsertToProtocol={onInsertToProtocol}
+			/>
 		</div>
 	);
 }

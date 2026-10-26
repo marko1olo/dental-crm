@@ -43,9 +43,7 @@ export function registerFamilyFiscalReceiptRoutes(app: FastifyInstance) {
 				amountRub: payments.amountRub,
 				method: payments.method,
 				fiscalReceiptNumber: payments.fiscalReceiptNumber,
-				fiscalFd: payments.fiscalFd,
-				fiscalFn: payments.fiscalFn,
-				fiscalFpd: payments.fiscalFpd,
+				fiscalReceipt: payments.fiscalReceipt,
 				fiscalReceiptUrl: payments.fiscalReceiptUrl,
 				createdAt: payments.createdAt,
 			})
@@ -60,7 +58,18 @@ export function registerFamilyFiscalReceiptRoutes(app: FastifyInstance) {
 			.orderBy(desc(payments.createdAt))
 			.limit(50);
 
-		return receipts;
+		return receipts.map((r) => ({
+			id: r.id,
+			patientId: r.patientId,
+			amountRub: r.amountRub,
+			method: r.method,
+			fiscalReceiptNumber: r.fiscalReceiptNumber,
+			fiscalFd: r.fiscalReceipt?.fd ?? null,
+			fiscalFn: r.fiscalReceipt?.fn ?? null,
+			fiscalFpd: r.fiscalReceipt?.fpd ?? null,
+			fiscalReceiptUrl: r.fiscalReceiptUrl,
+			createdAt: r.createdAt,
+		}));
 	});
 
 	// POST /api/finance/family/receipt/verify — проверка статуса фискального чека
@@ -92,8 +101,8 @@ export function registerFamilyFiscalReceiptRoutes(app: FastifyInstance) {
 			paymentId: payment.id,
 			status: payment.status,
 			fiscalReceiptNumber: payment.fiscalReceiptNumber,
-			fiscalFd: payment.fiscalFd,
-			fiscalFpd: payment.fiscalFpd,
+			fiscalFd: payment.fiscalReceipt?.fd ?? null,
+			fiscalFpd: payment.fiscalReceipt?.fpd ?? null,
 			amountRub: payment.amountRub,
 			fiscalReceiptUrl: payment.fiscalReceiptUrl,
 		};
