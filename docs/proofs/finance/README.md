@@ -27,6 +27,10 @@
 | 12 | `02_payment_modal_pc_dark.png` | 1440×900 (🌙 PC Dark) | Payment Modal Studio (Dark): тёмная тема `var(--paper-strong)`, контрастные границы, отсутствие паразитных белых рамок. |
 | 13 | `03_payment_modal_mobile_light.png` | 390×844 (📱 Mobile Light) | Payment Modal Mobile (Apple HIG): нативный Bottom Sheet Drawer, tactile drag handle 36×5px, 24px top radius, Hero сумма 38px bold по центру, купюры в 2 колонки, Sticky Bottom Checkout Bar 52px в Thumb Zone без обрезания текста. |
 | 14 | `04_payment_modal_mobile_dark.png` | 390×844 (📱 Mobile Dark) | Payment Modal Mobile (Dark HIG): глубокий контраст, 0px горизонтального скролла, безупречная сенсорная эргономика. |
+| 15 | `finance_pc_light.png` | 1440×900 (☀️ PC Light) | Смена и показатели дня: сводка выручки, статус кассы онлайн, размен и инкассация в сейф, приём в кресле. |
+| 16 | `finance_pc_dark.png` | 1440×900 (🌙 PC Dark) | Смена и кассовый обзор в тёмной теме: контраст `var(--paper-strong)`, чёткие статусы оплат, инкассация. |
+| 17 | `finance_mobile_light.png` | 390×844 (📱 Mobile Light) | Мобильная смена врача (Apple HIG): плавающий таббар, карточки выручки (Наличные, POS карты, СБП, Депозиты), гонорар 30%, пациенты смены. |
+| 18 | `finance_mobile_dark.png` | 390×844 (📱 Mobile Dark) | Мобильная смена врача в тёмной теме: 0px горизонтального скролла, идеальные тач-таргеты, палитра ночной темы. |
 
 ---
 
@@ -45,12 +49,15 @@
 ## 4. Результаты инструментальной верификации
 - **Компиляция TypeScript (`apps/web`)**: 0 ошибок во всем финансовом домене (`apps/web/src/components/finance/`).
 - **Модульные и интеграционные тесты (`vitest`)**:
-  - `npx vitest run apps/web/src/components/finance apps/web/src/components/cashbox`: **62 passed (62 test files), 429 passed (429 tests), Duration: 28.64s, Exit Code 0**.
-- **Проверка CSS токенов (`node scripts/check-css-tokens.mjs`)**: 1347 CSS-файлов проверено, **0 неразрешенных `var()`**, Exit Code 0.
-- **Проверка кодировок (`npm run check:encoding`)**: 21 171 файлов проверено, 100% чистый UTF-8 без BOM, замечаний нет.
-- **Мандат 8b (Архитектурный лимит $\le 120$ строк)**:
-  - `paymentModalStudio.css` схлопнут в фасад из 16 строк ($\le 20$ строк).
-  - Все 12 модулей в `apps/web/src/components/finance/paymentModalStyles/` строго $\le 120$ строк.
+  - `npx vitest run apps/web/src/components/finance/`: **61 passed (61 test files), 423 passed (423 tests), Duration: 20.18s, Exit Code 0**.
+- **Декомпозиция 4 монолитов по Мандату 8b ($\le 120$ строк, фасады $\le 15$ строк)**:
+  - `useFiscalRefundAndAuxTabs.ts` (было 726 строк) -> декомпозирован в оркестратор (111 строк) и 11 модулей в `modal/fiscal/refund/` (все $\le 120$ строк).
+  - `zReportAndDiscounts.ts` (было 679 строк) -> декомпозирован в фасад (12 строк) и 11 модулей в `fiscal/engine54fz/` (все $\le 120$ строк).
+  - `FiscalPaymentDiscountsAndRetail.tsx` (было 661 строка) -> декомпозирован в компактный контейнер (117 строк) и 9 компонентов в `modal/fiscal/discounts/` (все $\le 120$ строк).
+  - `TenderMethodList.tsx` (было 648 строк) -> декомпозирован в компонент (95 строк) и 11 модулей в `modal/fiscal/fiscalTender/` (все $\le 120$ строк).
+  - **ИТОГО: 4 монолита (2 714 строк) распилены на 47 модулей, 100% файлов строго $\le 120$ строк**.
+- **Проверка CSS токенов (`node scripts/check-css-tokens.mjs`)**: 1498 CSS-файлов проверено, **0 неразрешенных `var()`**, Exit Code 0.
+- **Проверка кодировок (`npm run check:encoding`)**: 21 461 файлов проверено, 100% чистый UTF-8 без BOM, замечаний нет.
 - **Бэкенд Fastify API (`npx tsx --test`)**:
   - `apps/api/src/routes/cashbox.test.ts`: **100% green**.
   - `apps/api/src/tests/routes/splitPaymentTreatmentConsumablesE2E.test.ts`: **100% PASS** (E2E сплит-оплата Карта + СБП + Семейный депозит -> Чек 54-ФЗ -> Списание со склада по техкартам).

@@ -1,0 +1,41 @@
+import type React from "react";
+import type { RetailProductItem, CashBoxType, CashReceiptTypeAlias } from "@dental/shared";
+import type { TreatmentPlanItem } from "../../../treatment-plans/types";
+import type { mapTreatmentItemsToFiscalReceipt } from "../../fiscalReceiptEngine";
+import type { LoyaltyDiscountPreset } from "../../fiscal/fiscal54fzEngine";
+
+export interface FiscalPaymentDiscountsAndRetailProps {
+	readonly isOverflowMenuOpen: boolean;
+	readonly setIsOverflowMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly handlePrintSalesSlip: () => Promise<void>;
+	readonly handleManualCardTerminalConfirm: () => Promise<void>;
+	readonly isSubmittingManualCard: boolean;
+	readonly handleRetryFiscalizationWithoutBalanceImpact: () => Promise<void>;
+	readonly isFiscalizing: boolean;
+	readonly showCashFlowSettings?: boolean;
+	readonly setShowCashFlowSettings?: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly handleCopyActData: () => void;
+	readonly handleCopyCertData: () => void;
+	readonly selectedReceiptAlias: CashReceiptTypeAlias;
+	readonly setSelectedReceiptAlias: (v: CashReceiptTypeAlias) => void;
+	readonly selectedCashBoxType: CashBoxType;
+	readonly setSelectedCashBoxType: (v: CashBoxType) => void;
+	readonly setIsRetailModalOpen: (v: boolean) => void;
+	readonly handleAddRetailProduct: (product: RetailProductItem, qty: number) => void;
+	readonly additionalRetailItems: readonly TreatmentPlanItem[];
+	readonly handleRemoveRetailItem: (id: string) => void;
+	readonly availableStages: readonly string[];
+	readonly selectedStageKind: string;
+	readonly handleSelectStage: (stage: string) => void;
+	readonly activeItems: readonly TreatmentPlanItem[];
+	readonly items: readonly TreatmentPlanItem[];
+	readonly fiscalData: ReturnType<typeof mapTreatmentItemsToFiscalReceipt>;
+	readonly mdlpCodes: Record<string, string>;
+	readonly handleUpdateMdlpCode: (itemId: string, code: string) => void;
+	readonly selectedDiscountPreset: LoyaltyDiscountPreset;
+	readonly setSelectedDiscountPreset: (p: LoyaltyDiscountPreset) => void;
+	readonly customDiscountPercent: number;
+	readonly setCustomDiscountPercent: (pct: number) => void;
+	readonly setCustomDiscountRub: (rub: number) => void;
+	readonly totalSumRub: number;
+}
