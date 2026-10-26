@@ -1,0 +1,101 @@
+.tactile-doc-btn--ghost {
+	background: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	border-color: var(--line) !important;
+}
+
+.tactile-doc-btn--ghost:hover:not(:disabled) {
+	background: var(--teal-surface) !important;
+	color: var(--teal-dark) !important;
+	border-color: var(--teal) !important;
+}
+
+.tactile-doc-btn--icon {
+	width: 32px !important;
+	min-width: 32px !important;
+	padding: 0 !important;
+	background: var(--paper) !important;
+	color: var(--muted) !important;
+	border-color: var(--line) !important;
+}
+
+.tactile-doc-btn--icon:hover:not(:disabled) {
+	background: var(--teal-surface) !important;
+	color: var(--ink) !important;
+	border-color: var(--teal) !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PACKAGE MODALS COMMON STYLES
+   ───────────────────────────────────────────────────────────────────────────── */
+.document-package-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(6px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1000;
+	padding: 16px;
+}
+
+.document-package-modal-content {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	box-shadow: var(--shadow-3);
+	max-width: 780px;
+	width: 100%;
+	max-height: 94vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.document-package-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 11px 18px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-soft);
+}
+
+.document-package-modal-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.document-package-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent;
+	border: none;
+	color: var(--muted);
+	border-radius: 8px;
+	cursor: pointer;
+	transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.document-package-close-btn:hover {
+	color: var(--ink);
+	background: var(--teal-surface);
+}
+
+.document-package-modal-body {
+	padding: 12px 18px;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}

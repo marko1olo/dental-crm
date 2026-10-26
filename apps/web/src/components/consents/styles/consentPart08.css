@@ -1,0 +1,56 @@
+.consent-signature-clear-btn:active {
+	transform: scale(0.96);
+}
+
+/* Floating Bottom Bar (Natural Thumb Zone CTA) */
+.consent-floating-bottom-bar {
+	position: sticky;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	width: 100%;
+	background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+	backdrop-filter: blur(20px);
+	-webkit-backdrop-filter: blur(20px);
+	border-top: 1px solid var(--line);
+	padding: 12px 16px max(14px, env(safe-area-inset-bottom));
+	z-index: 30;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.08);
+}
+
+.consent-mobile-primary-cta {
+	width: 100%;
+	min-height: 52px;
+	height: 52px;
+	border-radius: 14px;
+	background: var(--emerald, #059669);
+	color: var(--paper);
+	font-size: 16px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+	transition: all 0.15s ease;
+}
+
+.consent-mobile-primary-cta:active:not(:disabled) {
+	transform: scale(0.98);
+	filter: brightness(0.95);
+}
+
+.consent-mobile-primary-cta:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	box-shadow: none;
+}
+
+/* ==========================================================================
+   MOBILE FULL-SCREEN BOTTOM SHEET (APPLE HIG <= 768px)
+   ========================================================================== */

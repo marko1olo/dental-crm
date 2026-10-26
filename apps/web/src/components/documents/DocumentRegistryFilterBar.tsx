@@ -1,27 +1,18 @@
 import type React from "react";
-import { FileCheck, FileText, Receipt, Search, UserCheck, X } from "lucide-react";
-import type { DocumentCategoryTab } from "./DocumentNavTabs";
+import type {
+	DocumentEdsFilter,
+	DocumentRegistryFilterBarProps,
+	DocumentStatusFilter,
+} from "./filters/filterBarTypes";
+import { FilterDocumentKindChips } from "./filters/FilterDocumentKindChips";
+import { FilterSearchRow } from "./filters/FilterSearchRow";
+import { FilterStatusAndSignatureChips } from "./filters/FilterStatusAndSignatureChips";
 
-export type DocumentStatusFilter = "all" | "draft" | "issued" | "voided";
-export type DocumentEdsFilter = "all" | "signed_eds" | "signed_paper" | "unsigned";
-
-export interface DocumentRegistryFilterBarProps {
-	readonly searchQuery: string;
-	readonly onSearchChange: (query: string) => void;
-	readonly statusFilter: DocumentStatusFilter;
-	readonly onStatusFilterChange: (status: DocumentStatusFilter) => void;
-	readonly edsFilter: DocumentEdsFilter;
-	readonly onEdsFilterChange: (eds: DocumentEdsFilter) => void;
-	readonly kindFilter: string;
-	readonly onKindFilterChange: (kind: string) => void;
-	readonly totalCount: number;
-	readonly filteredCount: number;
-	readonly onResetFilters: () => void;
-	readonly availableKinds?: ReadonlyArray<{ readonly kind: string; readonly label: string }> | undefined;
-	readonly activeCategoryTab?: DocumentCategoryTab | undefined;
-	readonly onSelectCategoryTab?: ((tab: DocumentCategoryTab) => void) | undefined;
-	readonly categoryCounts?: Record<DocumentCategoryTab, number> | undefined;
-}
+export type {
+	DocumentEdsFilter,
+	DocumentRegistryFilterBarProps,
+	DocumentStatusFilter,
+};
 
 export function DocumentRegistryFilterBar({
 	searchQuery,
@@ -53,224 +44,32 @@ export function DocumentRegistryFilterBar({
 			className="document-registry-filter-bar"
 			aria-label="Фильтры и поиск по реестру документов"
 		>
-			{/* SEARCH ROW */}
-			<div className="document-search-row">
-				<div className="document-search-input-wrapper dente-search-wrap">
-					<Search size={15} className="document-search-icon dente-search-icon" aria-hidden="true" />
-					<input
-						type="text"
-						className="document-search-input dente-search-input"
-						style={{ paddingLeft: "38px" }}
-						placeholder="Быстрый поиск (ФИО, № карты, врач, статус ЭЦП, чек, ИНН)..."
-						value={safeQuery}
-						onChange={(e) => onSearchChange(e.target.value)}
-						aria-label="Поиск по документам"
-					/>
-					{safeQuery.length > 0 && (
-						<button
-							type="button"
-							className="document-search-clear-btn dente-search-clear"
-							onClick={() => onSearchChange("")}
-							aria-label="Очистить поисковый запрос"
-						>
-							<X size={14} aria-hidden="true" />
-						</button>
-					)}
-				</div>
+			<FilterSearchRow
+				searchQuery={searchQuery}
+				onSearchChange={onSearchChange}
+				availableKinds={availableKinds}
+				kindFilter={kindFilter}
+				onKindFilterChange={onKindFilterChange}
+				hasActiveFilters={hasActiveFilters}
+				onResetFilters={onResetFilters}
+				filteredCount={filteredCount}
+				totalCount={totalCount}
+			/>
 
-				{availableKinds.length > 0 && (
-					<select
-						value={kindFilter}
-						onChange={(e) => onKindFilterChange(e.target.value)}
-						className="document-registry-kind-select"
-						aria-label="Фильтр по виду документа"
-					>
-						<option value="all">Все виды документов</option>
-						{availableKinds.map((k) => (
-							<option key={k.kind} value={k.kind}>
-								{k.label}
-							</option>
-						))}
-					</select>
-				)}
+			<FilterDocumentKindChips
+				kindFilter={kindFilter}
+				onKindFilterChange={onKindFilterChange}
+			/>
 
-				{hasActiveFilters && (
-					<button
-						type="button"
-						className="secondary-button button-sm document-reset-filters-btn"
-						onClick={onResetFilters}
-					>
-						Сбросить фильтры
-					</button>
-				)}
-
-				<div className="document-results-count" role="status" aria-live="polite">
-					Найдено: <strong>{filteredCount}</strong> из {totalCount}
-				</div>
-			</div>
-
-			{/* QUICK DOCUMENT TYPE CHIPS (Studio HIG - tactile button chips) */}
-			<div className="document-filters-row document-filters-row--kinds">
-				<div className="document-filter-group" role="group" aria-label="Быстрый фильтр по типам документов">
-					<span className="document-filter-label">Документы:</span>
-					<button
-						type="button"
-						className={`document-filter-chip ${kindFilter === "all" ? "active" : ""}`}
-						onClick={() => onKindFilterChange("all")}
-						data-testid="filter-kind-all"
-					>
-						<FileText size={13} className="shrink-0" aria-hidden="true" />
-						<span>Все типы</span>
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${kindFilter === "paid_medical_services_contract" ? "active" : ""}`}
-						onClick={() => onKindFilterChange("paid_medical_services_contract")}
-						data-testid="filter-kind-contracts"
-					>
-						<FileText size={13} className="shrink-0" aria-hidden="true" />
-						<span>Договоры</span>
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${kindFilter === "informed_consent" ? "active" : ""}`}
-						onClick={() => onKindFilterChange("informed_consent")}
-						data-testid="filter-kind-consents"
-					>
-						<UserCheck size={13} className="shrink-0" aria-hidden="true" />
-						<span>Согласия (ИДС)</span>
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${kindFilter === "completed_works_act" ? "active" : ""}`}
-						onClick={() => onKindFilterChange("completed_works_act")}
-						data-testid="filter-kind-acts"
-					>
-						<FileCheck size={13} className="shrink-0" aria-hidden="true" />
-						<span>Акты выполненных работ</span>
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${kindFilter === "tax_deduction_certificate" ? "active" : ""}`}
-						onClick={() => onKindFilterChange("tax_deduction_certificate")}
-						data-testid="filter-kind-fns"
-					>
-						<Receipt size={13} className="shrink-0" aria-hidden="true" />
-						<span>Справки для ФНС</span>
-					</button>
-				</div>
-			</div>
-
-			{/* STATUS AND SIGNATURE FILTER PILLS */}
-			<div className="document-filters-row">
-				{onSelectCategoryTab && (
-					<div className="document-filter-group" role="group" aria-label="Фильтр по разделу документов">
-						<span className="document-filter-label">Раздел:</span>
-						<button
-							type="button"
-							className={`document-filter-chip ${activeCategoryTab === "all" ? "active" : ""}`}
-							onClick={() => onSelectCategoryTab("all")}
-						>
-							Все{categoryCounts?.all !== undefined ? ` (${categoryCounts.all})` : ""}
-						</button>
-						<button
-							type="button"
-							className={`document-filter-chip ${activeCategoryTab === "intake" ? "active" : ""}`}
-							onClick={() => onSelectCategoryTab("intake")}
-						>
-							Первичные{categoryCounts?.intake !== undefined ? ` (${categoryCounts.intake})` : ""}
-						</button>
-						<button
-							type="button"
-							className={`document-filter-chip ${activeCategoryTab === "clinical" ? "active" : ""}`}
-							onClick={() => onSelectCategoryTab("clinical")}
-						>
-							Клинические{categoryCounts?.clinical !== undefined ? ` (${categoryCounts.clinical})` : ""}
-						</button>
-						<button
-							type="button"
-							className={`document-filter-chip ${activeCategoryTab === "finance_tax" ? "active" : ""}`}
-							onClick={() => onSelectCategoryTab("finance_tax")}
-						>
-							Финансы/ФНС{categoryCounts?.finance_tax !== undefined ? ` (${categoryCounts.finance_tax})` : ""}
-						</button>
-						<button
-							type="button"
-							className={`document-filter-chip ${activeCategoryTab === "certificates_sanpin" ? "active" : ""}`}
-							onClick={() => onSelectCategoryTab("certificates_sanpin")}
-						>
-							Стерилизация{categoryCounts?.certificates_sanpin !== undefined ? ` (${categoryCounts.certificates_sanpin})` : ""}
-						</button>
-					</div>
-				)}
-
-				<div className="document-filter-group" role="group" aria-label="Фильтр по статусу документа">
-					<span className="document-filter-label">Статус:</span>
-					<button
-						type="button"
-						className={`document-filter-chip ${statusFilter === "all" ? "active" : ""}`}
-						onClick={() => onStatusFilterChange("all")}
-					>
-						Все
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${statusFilter === "issued" ? "active" : ""}`}
-						onClick={() => onStatusFilterChange("issued")}
-					>
-						Выдано
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${statusFilter === "draft" ? "active" : ""}`}
-						onClick={() => onStatusFilterChange("draft")}
-					>
-						Черновики
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${statusFilter === "voided" ? "active" : ""}`}
-						onClick={() => onStatusFilterChange("voided")}
-					>
-						Аннулировано
-					</button>
-				</div>
-
-				<div className="document-filter-group" role="group" aria-label="Фильтр по статусу подписи">
-					<span className="document-filter-label document-filter-label--eds">Подпись:</span>
-					<button
-						type="button"
-						className={`document-filter-chip ${edsFilter === "all" ? "active" : ""}`}
-						onClick={() => onEdsFilterChange("all")}
-					>
-						Любая
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${edsFilter === "signed_eds" ? "active" : ""}`}
-						onClick={() => onEdsFilterChange("signed_eds")}
-						title="Подписано квалифицированной электронной подписью (УКЭП / КриптоПро)"
-					>
-						ЭЦП / УКЭП
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${edsFilter === "signed_paper" ? "active" : ""}`}
-						onClick={() => onEdsFilterChange("signed_paper")}
-						title="Бумажная собственноручная подпись"
-					>
-						Бумага
-					</button>
-					<button
-						type="button"
-						className={`document-filter-chip ${edsFilter === "unsigned" ? "active" : ""}`}
-						onClick={() => onEdsFilterChange("unsigned")}
-						title="Без подтвержденной подписи"
-					>
-						Без подписи
-					</button>
-				</div>
-			</div>
+			<FilterStatusAndSignatureChips
+				activeCategoryTab={activeCategoryTab}
+				onSelectCategoryTab={onSelectCategoryTab}
+				categoryCounts={categoryCounts}
+				statusFilter={statusFilter}
+				onStatusFilterChange={onStatusFilterChange}
+				edsFilter={edsFilter}
+				onEdsFilterChange={onEdsFilterChange}
+			/>
 		</div>
 	);
 }

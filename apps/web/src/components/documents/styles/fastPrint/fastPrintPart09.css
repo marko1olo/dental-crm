@@ -1,0 +1,109 @@
+@media (max-width: 768px) {
+	.fast-print-modal-backdrop {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	.fast-print-modal-container {
+		border-radius: 20px 20px 0 0;
+		max-width: 100vw;
+		width: 100vw;
+		max-height: 97vh;
+		border-bottom: none;
+	}
+
+	.fast-print-mobile-handle-wrap {
+		display: flex;
+		justify-content: center;
+		padding: 5px 0 1px 0;
+		background: var(--paper-soft, #f8fafc);
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-mobile-handle-wrap {
+		background: #1e293b;
+	}
+
+	/* СТРОКА 1 ШАПКИ НА МОБИЛЬНОМ: Табы документов + кнопка закрытия [×] в 1 компактный ряд */
+	.fast-print-header {
+		flex-wrap: nowrap;
+		padding: 4px 8px 5px 8px;
+		gap: 6px;
+	}
+
+	.fast-print-brand-group {
+		display: none !important;
+	}
+
+	.fast-print-desktop-only {
+		display: none !important;
+	}
+
+	.fast-print-modal-container .fast-print-tabs-strip {
+		flex: 1;
+		min-width: 0;
+		overflow-x: hidden;
+		display: flex;
+		justify-content: space-between;
+		gap: 2px;
+		padding: 3px;
+	}
+
+	.fast-print-modal-container .fast-print-tab-btn {
+		flex: 1 1 auto;
+		justify-content: center;
+		padding: 0 4px !important;
+		font-size: 10px !important;
+		height: 30px !important;
+		min-height: 30px !important;
+		gap: 2.5px !important;
+	}
+
+	.fast-print-modal-container .fast-print-tab-btn svg {
+		flex-shrink: 0;
+		width: 11px;
+		height: 11px;
+	}
+
+	.fast-print-modal-container .fast-print-close-btn {
+		width: 36px !important;
+		height: 36px !important;
+		min-height: 36px !important;
+		flex-shrink: 0;
+	}
+
+	/* СТРОКА 2 ШАПКИ НА МОБИЛЬНОМ: Формат [А4 с отрезом | А5] + [Клиника-арендодатель] */
+	.fast-print-modal-container .fast-print-subbar {
+		padding: 4px 8px;
+		gap: 6px;
+		flex-wrap: nowrap;
+	}
+
+	.fast-print-modal-container .fast-print-subbar-label {
+		display: none;
+	}
+
+	.fast-print-modal-container .fast-print-pill-btn {
+		height: 30px !important;
+		min-height: 30px !important;
+		padding: 0 7px !important;
+		font-size: 10.5px !important;
+		gap: 3.5px !important;
+	}
+
+	.fast-print-modal-container .fast-print-landlord-btn {
+		height: 32px !important;
+		min-height: 32px !important;
+		padding: 0 8px !important;
+		font-size: 10.5px !important;
+		gap: 4px !important;
+	}
+
+	.fast-print-landlord-grid {
+		grid-template-columns: 1fr;
+		gap: 6px;
+	}
+
+	.fast-print-preview-scroll {
+		padding: 5px;
+	}
+}

@@ -1,0 +1,109 @@
+@media screen {
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .fast-print-a4-sheet {
+		background: var(--ink) !important;
+		background-color: var(--ink) !important;
+		color: #f1f5f9 !important;
+		border-color: #334155 !important;
+		box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5);
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-insert-sheet {
+		background: var(--ink) !important;
+		background-color: var(--ink) !important;
+		color: #f1f5f9 !important;
+		border-color: #475569 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-insert-content {
+		background: var(--ink) !important;
+		background-color: var(--ink) !important;
+		color: #f1f5f9 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-glue-margin {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-right-color: #475569 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-glue-label {
+		color: #94a3b8 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-header-row {
+		border-bottom-color: #475569 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-clinic-name,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-badge-minzdrav,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-badge-form,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-document-title,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-role,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-role strong,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table strong {
+		color: #f8fafc !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-clinic-sub,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-badge-order,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-caption {
+		color: #94a3b8 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-section-bar {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-color: #475569 !important;
+		color: #2dd4bf !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table tbody,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table tr,
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table td {
+		background: var(--ink) !important;
+		background-color: var(--ink) !important;
+		color: #f1f5f9 !important;
+		border-color: #334155 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-meta-table td.partisan-cell-label {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		color: #cbd5e1 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-fdi-badge {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-color: #2dd4bf !important;
+		color: #2dd4bf !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-diagnosis-box {
+		background: #1e293b !important;
+		background-color: #1e293b !important;
+		border-left-color: #2dd4bf !important;
+		color: #f8fafc !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .partisan-sign-line {
+		border-bottom-color: #64748b !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .fast-print-cut-line {
+		border-top-color: #475569 !important;
+		color: #94a3b8 !important;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-modal-container .fast-print-cut-line .cut-icon {
+		color: #cbd5e1 !important;
+	}
+}
+
+/* ── Нижняя панель действия для смартфона (скрыта на ПК) ── */
+.fast-print-mobile-bottom-bar {
+	display: none;
+}
+
+/* ── Мобильный адаптив (Apple HIG Bottom Sheet + СТРОГО 2 КОМПАКТНЫЕ СТРОКИ В ШАПКЕ) ── */

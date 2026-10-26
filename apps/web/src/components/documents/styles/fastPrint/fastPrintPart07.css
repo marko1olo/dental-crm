@@ -1,0 +1,20 @@
+
+.fast-print-cut-line .cut-icon {
+	color: var(--ink);
+	flex-shrink: 0;
+}
+
+.fast-print-cut-line .cut-text {
+	text-align: center;
+	letter-spacing: 0.3px;
+	overflow: hidden;
+	text-overflow: clip;
+	white-space: nowrap;
+}
+
+.layout-a5-direct {
+	max-width: 560px;
+	margin: 0 auto;
+}
+
+/* ── ТЁМНАЯ ТЕМА ЭКРАННОГО ПРЕДПРОСМОТРА (0 СЛЕПЯЩИХ БЕЛЫХ ПЯТЕН В DARK MODE) ── */

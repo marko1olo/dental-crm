@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Patient } from "@dental/shared";
-import { showToast } from "../../GlobalToast.js";
+import { showToast } from "../../GlobalToast";
 import {
 	validateRussianInn,
 	aggregatePatientPaymentsForTaxYear,

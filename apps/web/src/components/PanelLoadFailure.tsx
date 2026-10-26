@@ -68,3 +68,5 @@ export const PanelLoadFailure: React.FC<{
 		</div>
 	);
 };
+
+export default PanelLoadFailure;

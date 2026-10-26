@@ -1,0 +1,103 @@
+.doc-nav-action-btn {
+	min-height: 32px;
+	padding: 5px 12px;
+	border-radius: 6px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	transition: all var(--transition-fast);
+	user-select: none;
+	font-family: inherit;
+}
+
+.doc-nav-action-btn:hover:not(:disabled) {
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	background: var(--teal-surface);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
+}
+
+[data-theme="dark"] .doc-nav-action-btn:hover:not(:disabled),
+[data-theme="night"] .doc-nav-action-btn:hover:not(:disabled),
+[data-theme="cyber_xray"] .doc-nav-action-btn:hover:not(:disabled),
+[data-theme="ocean"] .doc-nav-action-btn:hover:not(:disabled),
+[data-theme="emerald"] .doc-nav-action-btn:hover:not(:disabled) {
+	color: var(--teal);
+}
+
+.doc-nav-action-btn:disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+}
+
+.doc-nav-action-btn--fns {
+	border-color: var(--teal-ring);
+	color: var(--teal-dark);
+	background: var(--teal-surface);
+}
+
+[data-theme="dark"] .doc-nav-action-btn--fns,
+[data-theme="night"] .doc-nav-action-btn--fns,
+[data-theme="cyber_xray"] .doc-nav-action-btn--fns,
+[data-theme="ocean"] .doc-nav-action-btn--fns,
+[data-theme="emerald"] .doc-nav-action-btn--fns {
+	color: var(--teal);
+}
+
+.doc-nav-chips-container {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.doc-nav-chips-heading {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	color: var(--ink-muted, var(--muted));
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	margin-top: 2px;
+}
+
+[data-theme="dark"] .doc-nav-chips-heading,
+[data-theme="night"] .doc-nav-chips-heading,
+[data-theme="cyber_xray"] .doc-nav-chips-heading,
+[data-theme="contrast"] .doc-nav-chips-heading {
+	color: var(--ink-2, #94a3b8);
+}
+
+.doc-nav-chips-scroll {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+	align-items: center;
+}
+
+.doc-nav-template-chip {
+	min-height: 28px;
+	padding: 4px 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	transition: all var(--transition-fast);
+	font-family: inherit;
+}

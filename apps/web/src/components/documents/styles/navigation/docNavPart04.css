@@ -1,0 +1,103 @@
+.doc-nav-template-chip:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	background: var(--teal-surface);
+	transform: translateY(-1px);
+	box-shadow: var(--shadow-1);
+}
+
+.doc-nav-template-chip.active {
+	background: var(--teal-soft);
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	font-weight: 750;
+	box-shadow: 0 0 0 1px var(--teal);
+}
+
+[data-theme="dark"] .doc-nav-template-chip.active,
+[data-theme="night"] .doc-nav-template-chip.active,
+[data-theme="cyber_xray"] .doc-nav-template-chip.active,
+[data-theme="ocean"] .doc-nav-template-chip.active,
+[data-theme="emerald"] .doc-nav-template-chip.active {
+	color: var(--teal);
+	background: var(--teal-surface);
+}
+
+.doc-nav-chip-plus {
+	color: var(--teal);
+	flex-shrink: 0;
+}
+
+.doc-nav-chip-label {
+	white-space: nowrap;
+}
+
+.doc-nav-chip-badge {
+	font-size: 12px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 999px;
+	line-height: 1;
+	border: 1px solid transparent;
+}
+
+.doc-nav-empty-hint {
+	font-size: 13px;
+	color: var(--muted);
+	padding: 8px 0;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   PATIENT SUMMARY & ROLE SCENARIOS (ANTI-CARD-IN-CARD)
+   ───────────────────────────────────────────────────────────────────────────── */
+.document-nav-wrapper {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	margin-bottom: 16px;
+}
+
+.document-patient-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 12px;
+	padding: 10px 14px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 10px;
+}
+
+.document-patient-info {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.document-patient-name {
+	font-size: 15px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.document-patient-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 8px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 6px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink-2);
+}
+
+.document-patient-stats {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}

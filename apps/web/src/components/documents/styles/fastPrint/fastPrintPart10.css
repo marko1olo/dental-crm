@@ -1,0 +1,109 @@
+@media (max-width: 768px) {
+
+	.fast-print-a4-sheet {
+		padding: 4px;
+	}
+
+	.partisan-glue-margin {
+		width: 12px;
+		padding: 2px 1px;
+	}
+
+	.partisan-glue-label {
+		font-size: 6.5px;
+	}
+
+	.partisan-insert-content {
+		padding: 4px 6px;
+		font-size: 8px;
+		line-height: 1.13;
+	}
+
+	.partisan-header-row {
+		padding-bottom: 2px;
+		margin-bottom: 3px;
+	}
+
+	.partisan-clinic-name {
+		font-size: 9px;
+	}
+
+	.partisan-clinic-sub {
+		font-size: 7.5px;
+		line-height: 1.1;
+	}
+
+	.partisan-badge-minzdrav {
+		font-size: 7.5px;
+	}
+
+	.partisan-badge-form {
+		font-size: 9px;
+	}
+
+	.partisan-badge-order {
+		font-size: 7px;
+	}
+
+	.partisan-document-title {
+		font-size: 8.5px;
+		margin: 2px 0;
+	}
+
+	.partisan-section-bar {
+		font-size: 7.5px;
+		padding: 1px 4px;
+		margin-top: 3px;
+		margin-bottom: 1px;
+	}
+
+	.partisan-meta-table {
+		font-size: 7.7px;
+		margin: 1px 0 2px 0;
+	}
+
+	.partisan-meta-table td {
+		padding: 1.5px 3px;
+		line-height: 1.13;
+	}
+
+	.partisan-fdi-badge {
+		font-size: 8px;
+		padding: 0 4px;
+	}
+
+	.partisan-cell-label {
+		width: 24%;
+	}
+
+	.partisan-cell-val {
+		width: 26%;
+	}
+
+	.partisan-signature-row {
+		gap: 8px;
+		margin-top: 3px;
+	}
+
+	.partisan-sign-role {
+		font-size: 7.5px;
+		line-height: 1.1;
+	}
+
+	.partisan-sign-line {
+		height: 8px;
+		margin-bottom: 1px;
+	}
+
+	.partisan-sign-caption {
+		font-size: 6.8px;
+	}
+
+	.fast-print-cut-line {
+		font-size: 7.5px;
+		margin-top: 3px;
+		padding: 2px 0;
+		gap: 4px;
+	}
+
+}

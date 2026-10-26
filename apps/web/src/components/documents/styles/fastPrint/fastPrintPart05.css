@@ -1,0 +1,100 @@
+.partisan-insert-sheet {
+	display: flex;
+	border: 1px solid #1e293b;
+	background: var(--paper);
+	color: var(--ink);
+	border-radius: 4px;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.partisan-glue-margin {
+	width: 20px;
+	background: #f1f5f9;
+	border-right: 1px dashed #64748b;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 4px 2px;
+	user-select: none;
+	flex-shrink: 0;
+}
+
+.partisan-glue-label {
+	writing-mode: vertical-rl;
+	transform: rotate(180deg);
+	font-size: 8px;
+	text-transform: uppercase;
+	letter-spacing: 0.4px;
+	color: #475569;
+	font-weight: 700;
+	white-space: nowrap;
+}
+
+.partisan-insert-content {
+	flex: 1;
+	min-width: 0;
+	padding: 10px 14px;
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 10.5px;
+	line-height: 1.25;
+	box-sizing: border-box;
+}
+
+.partisan-header-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	gap: 8px;
+	border-bottom: 1.5px solid var(--ink);
+	padding-bottom: 4px;
+	margin-bottom: 5px;
+}
+
+.partisan-clinic-requisites {
+	flex: 1;
+	min-width: 0;
+}
+
+.partisan-clinic-name {
+	font-size: 11.5px;
+	font-weight: 800;
+	text-transform: uppercase;
+}
+
+.partisan-clinic-sub {
+	font-size: 9px;
+	color: #475569;
+	line-height: 1.2;
+}
+
+.partisan-legal-badge {
+	text-align: right;
+	flex-shrink: 0;
+}
+
+.partisan-badge-minzdrav {
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+}
+
+.partisan-badge-form {
+	font-size: 11px;
+	font-weight: 800;
+}
+
+.partisan-badge-order {
+	font-size: 8.5px;
+	color: #475569;
+}
+
+.partisan-document-title {
+	text-align: center;
+	font-size: 11.5px;
+	font-weight: 800;
+	margin: 4px 0;
+	text-transform: uppercase;
+	letter-spacing: 0.2px;
+}

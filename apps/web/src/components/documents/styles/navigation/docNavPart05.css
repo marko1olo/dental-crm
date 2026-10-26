@@ -1,0 +1,110 @@
+.document-stat-pill {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+}
+
+.document-stat-pill.issued {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border-color: var(--ok-fg);
+}
+
+.document-stat-pill.draft {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--warn-fg);
+}
+
+.document-intake-quick-action-bar {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+@media (min-width: 640px) {
+	.document-intake-quick-action-bar {
+		flex-direction: row;
+		gap: 12px;
+	}
+}
+
+.document-intake-quick-print-btn {
+	width: auto;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	flex-wrap: nowrap;
+	gap: 8px;
+	padding: 0 12px;
+	min-height: 32px;
+	height: 32px;
+	border-radius: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--ink);
+	cursor: pointer;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+	transition: all 0.15s ease;
+	font-family: inherit;
+	box-sizing: border-box;
+}
+
+.document-intake-quick-print-btn:hover {
+	background: var(--teal-surface);
+	border-color: var(--teal, #0d9488);
+	color: var(--ink);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.12);
+}
+
+.document-intake-quick-print-btn:active {
+	transform: translateY(0);
+}
+
+.document-intake-quick-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	background: var(--teal-soft);
+	color: var(--teal-dark, #0d9488);
+	border: 1px solid var(--line);
+	transition: all 0.15s ease;
+}
+
+[data-theme="dark"] .document-intake-quick-badge,
+[data-theme="night"] .document-intake-quick-badge,
+[data-theme="cyber_xray"] .document-intake-quick-badge,
+[data-theme="ocean"] .document-intake-quick-badge,
+[data-theme="emerald"] .document-intake-quick-badge {
+	background: rgba(13, 148, 136, 0.18);
+	color: var(--teal);
+	border-color: rgba(13, 148, 136, 0.3);
+}
+
+.scenario-quick-print-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	min-height: 28px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, var(--paper));
+	border: none;
+	cursor: pointer;
+	transition: opacity var(--transition-fast);
+}

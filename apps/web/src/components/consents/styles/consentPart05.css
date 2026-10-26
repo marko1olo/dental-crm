@@ -1,0 +1,105 @@
+.consent-document-sheet {
+	background: var(--paper, var(--paper));
+	color: var(--ink, var(--ink));
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: var(--radius-lg, 12px);
+	padding: 1.5rem 1.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+	line-height: 1.6;
+	max-width: 72ch;
+	width: 100%;
+	margin: 0 auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	box-sizing: border-box;
+	word-break: break-word;
+	overflow-wrap: break-word;
+	overflow: visible;
+}
+
+.consent-print-signatures-block {
+	page-break-inside: avoid;
+	break-inside: avoid;
+	page-break-before: auto;
+}
+
+[data-theme="dark"] .consent-document-sheet,
+html.dark .consent-document-sheet,
+.dark .consent-document-sheet,
+body.dark-mode .consent-document-sheet {
+	background: var(--paper-strong, #1e293b) !important;
+	color: var(--ink, #f1f5f9) !important;
+	border: 1px solid var(--line-strong, #334155) !important;
+}
+
+[data-theme="dark"] .consent-document-sheet .consent-document-title,
+[data-theme="dark"] .consent-document-sheet .consent-section-title,
+[data-theme="dark"] .consent-document-sheet .consent-section-text,
+[data-theme="dark"] .consent-document-sheet .consent-bullet-list,
+[data-theme="dark"] .consent-document-sheet .consent-bullet-list li,
+html.dark .consent-document-sheet .consent-document-title,
+html.dark .consent-document-sheet .consent-section-title,
+html.dark .consent-document-sheet .consent-section-text,
+html.dark .consent-document-sheet .consent-bullet-list,
+html.dark .consent-document-sheet .consent-bullet-list li {
+	color: var(--ink, #f1f5f9) !important;
+}
+
+[data-theme="dark"] .consent-document-sheet .consent-document-subtitle,
+html.dark .consent-document-sheet .consent-document-subtitle {
+	color: var(--muted, #94a3b8) !important;
+}
+
+.consent-document-title {
+	font-size: 1.1rem;
+	font-weight: 800;
+	text-align: center;
+	text-transform: uppercase;
+	color: var(--ink);
+	margin-bottom: 0.25rem;
+}
+
+.consent-document-subtitle {
+	font-size: 0.875rem;
+	font-weight: 600;
+	text-align: center;
+	color: var(--muted);
+	margin-top: 0;
+}
+
+.consent-section-block {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.consent-section-title {
+	font-size: 0.95rem;
+	font-weight: 700;
+	color: var(--ink);
+	border-bottom: 1px solid var(--line);
+	padding-bottom: 0.35rem;
+}
+
+.consent-section-text {
+	font-size: 0.875rem;
+	color: var(--ink);
+	margin: 0;
+}
+
+.consent-bullet-list {
+	margin: 0.35rem 0 0 0;
+	padding-left: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.4rem;
+	font-size: 0.875rem;
+	color: var(--ink);
+}
+
+.consent-bullet-list li {
+	line-height: 1.45;
+}
+
+/* Risk alert box */

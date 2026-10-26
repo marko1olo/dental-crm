@@ -1,0 +1,106 @@
+@media (max-width: 768px) {
+	.consent-mode-segmented {
+		height: 36px;
+		min-width: max-content;
+		flex-shrink: 0;
+	}
+
+	.consent-mode-btn {
+		min-height: 30px;
+		height: 30px;
+		padding: 0 8px;
+		font-size: 11.5px;
+	}
+
+	.consent-toolbar-row .consent-tabs-scroll {
+		height: 36px;
+		gap: 6px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		flex-shrink: 0;
+	}
+
+	.consent-toolbar-row .consent-tabs-scroll::-webkit-scrollbar {
+		display: none;
+	}
+
+	.consent-tab-btn {
+		min-height: 32px;
+		height: 32px;
+		padding: 0 10px;
+		font-size: 12px;
+		white-space: nowrap;
+		flex-shrink: 0;
+	}
+
+	.consent-package-banner {
+		padding: 8px 12px;
+		margin-bottom: 4px;
+		gap: 6px;
+		border-radius: 12px;
+	}
+
+	.consent-package-banner .flex-wrap {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		gap: 6px;
+		padding-bottom: 2px;
+	}
+
+	.consent-package-banner .flex-wrap::-webkit-scrollbar {
+		display: none;
+	}
+
+	.consent-package-banner-title {
+		gap: 8px;
+	}
+
+	.consent-meta-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		padding: 8px 12px;
+		gap: 6px 12px;
+		border-radius: 12px;
+		margin-bottom: 4px;
+	}
+
+	.consent-meta-label {
+		font-size: 0.65rem;
+	}
+
+	.consent-meta-value {
+		font-size: 0.8rem;
+	}
+
+	.consent-modal-footer {
+		display: none; /* На мобиле заменяется на липкий consent-floating-bottom-bar */
+	}
+}
+
+/* DARK MODE HARMONIZATION */
+.consent-touch-signature-svg {
+	color: var(--ink, var(--ink));
+}
+
+.consent-touch-signature-svg path.consent-signature-stroke-path {
+	stroke: var(--ink, var(--ink));
+}
+
+[data-theme="dark"] .consent-touch-signature-svg,
+html.dark .consent-touch-signature-svg,
+.dark .consent-touch-signature-svg,
+body.dark-mode .consent-touch-signature-svg {
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .consent-touch-signature-svg path.consent-signature-stroke-path,
+html.dark .consent-touch-signature-svg path.consent-signature-stroke-path,
+.dark .consent-touch-signature-svg path.consent-signature-stroke-path,
+body.dark-mode .consent-touch-signature-svg path.consent-signature-stroke-path {
+	stroke: #f8fafc !important;
+}
+

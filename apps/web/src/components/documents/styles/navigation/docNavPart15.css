@@ -1,0 +1,24 @@
+@media (pointer: coarse), (max-width: 768px) {
+	.doc-nav-cat-btn,
+	.doc-nav-search-wrap,
+	.doc-nav-action-btn,
+	.doc-nav-template-chip,
+	.document-anamnesis-quick {
+		min-height: 44px !important;
+	}
+}
+
+/* Heavy Document Registry & Outpatient Archive Containment (Mandate 8c, 8n) */
+.document-row {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 72px;
+	contain: paint layout;
+}
+
+.archive-document-card {
+	content-visibility: auto;
+	contain-intrinsic-size: 1px 64px;
+	contain: paint layout;
+}
+
+

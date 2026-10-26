@@ -1,0 +1,102 @@
+/* ─────────────────────────────────────────────────────────────────────────────
+   АНТИ-МАТРЁШКА (МАНДАТЫ 8c, 8d): РАСПРЯМЛЕНИЕ ФОРМЫ ДО 1-УРОВНЕВОЙ СТРУКТУРЫ
+   ───────────────────────────────────────────────────────────────────────────── */
+.documents-panel .document-payload-card {
+	background: transparent !important;
+	border: none !important;
+	box-shadow: none !important;
+	padding: 4px 0 !important;
+}
+
+.documents-panel .document-manual-override {
+	background: transparent !important;
+	border: none !important;
+	border-top: 1px solid var(--line) !important;
+	border-radius: 0 !important;
+	padding: 8px 0 !important;
+	margin-top: 12px !important;
+	box-shadow: none !important;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   REGISTRY FILTER BAR & SEARCH (ANTI-CARD-IN-CARD)
+   ───────────────────────────────────────────────────────────────────────────── */
+.document-registry-filter-bar {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 6px 12px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
+.document-search-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	justify-content: space-between;
+	min-height: 34px;
+}
+
+.document-search-input-wrapper {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex: 1 1 280px;
+	position: relative;
+	min-height: 34px;
+	height: 34px;
+}
+
+.document-search-icon {
+	position: absolute;
+	left: 12px;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 16px;
+	height: 16px;
+	color: var(--muted);
+	pointer-events: none;
+	z-index: 2;
+}
+
+.document-search-input {
+	width: 100%;
+	min-height: 34px;
+	height: 34px;
+	padding-top: 4px;
+	padding-bottom: 4px;
+	padding-left: 38px !important;
+	padding-right: 36px !important;
+	font-size: 13px;
+	border: 1px solid var(--line-strong, var(--line));
+	border-radius: 8px;
+	background: var(--paper);
+	color: var(--ink);
+	box-sizing: border-box;
+	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+	font-family: inherit;
+}
+
+.dente-tile-card {
+	background: var(--paper-card, var(--paper));
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	box-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.dente-tile-card:hover {
+	border-color: var(--teal);
+	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.1);
+}
+
+.document-search-input:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--focus-ring);
+}

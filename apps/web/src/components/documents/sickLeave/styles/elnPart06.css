@@ -1,0 +1,107 @@
+.sick-leave-memo-preview-wrap::-webkit-scrollbar {
+	width: 6px;
+}
+
+.sick-leave-memo-preview-wrap::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}
+
+/* Journal 036 Table */
+.sick-leave-journal-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+}
+
+.sick-leave-journal-table th {
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	padding: 0.75rem;
+	text-align: left;
+	font-weight: 700;
+}
+
+.sick-leave-journal-table td {
+	border: 1px solid var(--line);
+	padding: 0.75rem;
+	color: var(--ink);
+	vertical-align: top;
+}
+
+/* Footer */
+.sick-leave-footer {
+	padding: 1rem 1.5rem;
+	border-top: 1px solid var(--line);
+	background: var(--paper-soft);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 0.75rem;
+	flex-shrink: 0;
+}
+
+.sick-leave-footer-left {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.8125rem;
+	color: var(--muted);
+}
+
+.sick-leave-footer-right {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.sick-leave-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1.125rem;
+	border-radius: 12px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all var(--transition-fast, 0.15s ease);
+	border: 1px solid transparent;
+	min-height: 44px;
+	min-width: 44px;
+	justify-content: center;
+}
+
+.sick-leave-btn.primary {
+	background: var(--teal-fill, var(--teal));
+	color: var(--on-teal, var(--paper));
+}
+
+.sick-leave-btn.primary:hover {
+	background: var(--teal-dark, var(--teal));
+	transform: translateY(-1px);
+}
+
+.sick-leave-btn.secondary {
+	background: var(--paper);
+	color: var(--ink);
+	border-color: var(--line-strong);
+}
+
+.sick-leave-btn.secondary:hover {
+	background: var(--paper-soft);
+}
+
+.sick-leave-btn.success {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border-color: var(--ok-bg);
+}
+
+.sick-leave-btn.disabled {
+	opacity: 0.5;
+	cursor: not-allowed;
+	pointer-events: none;
+}

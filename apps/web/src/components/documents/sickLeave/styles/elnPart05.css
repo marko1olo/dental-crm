@@ -1,0 +1,109 @@
+.sick-leave-add-period-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.5rem 1rem;
+	border-radius: 10px;
+	border: 1px dashed var(--teal);
+	background: var(--teal-soft);
+	color: var(--teal);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all var(--transition-fast, 0.15s ease);
+	min-height: 44px;
+	align-self: flex-start;
+}
+
+.sick-leave-add-period-btn:hover {
+	background: var(--teal-surface);
+	border-style: solid;
+}
+
+/* Alerts / Warnings */
+.sick-leave-alert {
+	border-radius: 12px;
+	padding: 0.875rem 1rem;
+	display: flex;
+	align-items: flex-start;
+	gap: 0.75rem;
+	font-size: 0.8125rem;
+	line-height: 1.4;
+}
+
+.sick-leave-alert.warning {
+	background: var(--warn-bg);
+	border: 1px solid var(--warn-fg);
+	color: var(--warn-fg);
+}
+
+.sick-leave-alert.error {
+	background: var(--bad-bg);
+	border: 1px solid var(--bad-fg);
+	color: var(--bad-fg);
+}
+
+.sick-leave-alert.info {
+	background: var(--info-bg);
+	border: 1px solid var(--info-fg);
+	color: var(--info-fg);
+}
+
+/* Code / XML Viewer */
+.sick-leave-code-container {
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper-soft);
+	overflow: hidden;
+}
+
+.sick-leave-code-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	background: var(--paper);
+	border-bottom: 1px solid var(--line);
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--muted);
+	gap: 8px;
+}
+
+.sick-leave-code-box {
+	padding: 1rem;
+	margin: 0;
+	font-family: ui-monospace, 'Consolas', 'Courier New', monospace;
+	font-size: 0.8125rem;
+	color: var(--ink);
+	background: var(--paper-soft);
+	max-height: 400px;
+	overflow: auto;
+	white-space: pre-wrap;
+	word-break: break-all;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}
+
+.sick-leave-code-box::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+.sick-leave-code-box::-webkit-scrollbar-thumb {
+	background: var(--line-strong);
+	border-radius: 3px;
+}
+
+/* Patient Memo Preview in Modal */
+.sick-leave-memo-preview-wrap {
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper);
+	color: var(--ink);
+	padding: 1.25rem;
+	overflow: auto;
+	max-height: 520px;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line-strong) transparent;
+}

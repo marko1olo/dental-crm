@@ -1,0 +1,106 @@
+.document-filter-chip {
+	min-height: 28px;
+	height: 28px;
+	padding: 0 10px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 5px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all var(--transition-fast);
+	user-select: none;
+	font-family: inherit;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.02);
+}
+
+.document-filter-chip:hover {
+	border-color: var(--teal);
+	color: var(--teal-dark);
+	background: var(--teal-surface);
+	transform: translateY(-1px);
+}
+
+.document-filter-chip.active {
+	background: var(--teal);
+	color: var(--paper) !important;
+	border-color: var(--teal);
+	font-weight: 700;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+.document-filter-chip.active svg {
+	color: var(--paper) !important;
+}
+
+[data-theme="dark"] .document-filter-chip.active,
+[data-theme="night"] .document-filter-chip.active,
+[data-theme="cyber_xray"] .document-filter-chip.active,
+[data-theme="ocean"] .document-filter-chip.active,
+[data-theme="emerald"] .document-filter-chip.active {
+	color: var(--paper) !important;
+	background: var(--teal);
+	border-color: var(--teal);
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   TACTILE DOCUMENT ACTION BUTTONS (STUDIO HIG)
+   ───────────────────────────────────────────────────────────────────────────── */
+.tactile-doc-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	text-decoration: none !important;
+	white-space: nowrap !important;
+	user-select: none !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03) !important;
+}
+
+.tactile-doc-btn:hover:not(:disabled) {
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+}
+
+.tactile-doc-btn:active:not(:disabled) {
+	transform: translateY(0) !important;
+}
+
+.tactile-doc-btn--primary {
+	background: var(--teal) !important;
+	color: var(--paper) !important;
+	border-color: var(--teal) !important;
+}
+
+.tactile-doc-btn--primary:hover:not(:disabled) {
+	background: var(--teal-dark) !important;
+	border-color: var(--teal-dark) !important;
+}
+
+.tactile-doc-btn--secondary {
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	border-color: var(--line-strong) !important;
+}
+
+.tactile-doc-btn--secondary:hover:not(:disabled) {
+	background: var(--teal-surface) !important;
+	color: var(--teal-dark) !important;
+	border-color: var(--teal) !important;
+}

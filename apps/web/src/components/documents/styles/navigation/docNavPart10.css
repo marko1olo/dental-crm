@@ -1,0 +1,106 @@
+.document-search-clear-btn {
+	position: absolute;
+	right: 6px;
+	top: 50%;
+	transform: translateY(-50%);
+	background: transparent;
+	border: none;
+	padding: 4px;
+	cursor: pointer;
+	color: var(--muted);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-height: 24px;
+	min-width: 24px;
+	border-radius: 4px;
+	transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.document-search-clear-btn:hover {
+	color: var(--ink);
+	background: var(--teal-surface);
+}
+
+.document-registry-kind-select {
+	min-height: 34px;
+	height: 34px;
+	padding: 4px 8px;
+	font-size: 12.5px;
+	border-radius: 6px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper);
+	color: var(--ink);
+	max-width: 240px;
+	box-sizing: border-box;
+	font-family: inherit;
+	font-weight: 600;
+}
+
+.document-reset-filters-btn {
+	min-height: 32px;
+	height: 32px;
+	font-size: 12px;
+	font-weight: 600;
+	white-space: nowrap;
+	color: var(--teal-dark);
+	cursor: pointer;
+	padding: 0 8px;
+}
+
+[data-theme="dark"] .document-reset-filters-btn,
+[data-theme="night"] .document-reset-filters-btn,
+[data-theme="cyber_xray"] .document-reset-filters-btn,
+[data-theme="ocean"] .document-reset-filters-btn,
+[data-theme="emerald"] .document-reset-filters-btn {
+	color: var(--teal);
+}
+
+.document-results-count {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--muted);
+	margin-left: auto;
+}
+
+.document-results-count strong {
+	color: var(--ink);
+}
+
+.document-filters-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+	font-size: 12px;
+	min-height: 32px;
+}
+
+.document-filters-row--kinds {
+	padding-bottom: 6px;
+	border-bottom: 1px solid var(--line);
+	margin-bottom: 2px;
+}
+
+.document-filter-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+	background: var(--paper-soft);
+	padding: 3px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+}
+
+.document-filter-label {
+	font-weight: 700;
+	color: var(--muted);
+	font-size: 11.5px;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+}
+
+.document-filter-label--eds {
+	margin-left: 6px;
+}

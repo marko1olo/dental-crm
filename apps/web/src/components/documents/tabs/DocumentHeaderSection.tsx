@@ -1,32 +1,12 @@
 import React from "react";
-import type { Patient, StaffMember, GeneratedDocument, DocumentKind } from "@dental/shared";
-import type { ClinicProfileDraft } from "../../../AppHelpers";
-import { CheckCircle2, Clock, FileText, Printer, Stethoscope, Zap } from "lucide-react";
-import { formatShortDate } from "../../../AppHelpers";
-import { printBlankMedicalContract } from "../../patients/blankContractPrint";
-import { DocumentQuickRoleScenarios } from "../DocumentQuickRoleScenarios";
+import { FileText, Printer } from "lucide-react";
+import type { DocumentHeaderSectionProps } from "./header/documentHeaderTypes";
+import { DocumentHeadingBar } from "./header/DocumentHeadingBar";
+import { DocumentPatientBanner } from "./header/DocumentPatientBanner";
+import { DocumentScenariosAccordion } from "./header/DocumentScenariosAccordion";
+import { handlePrintBlankContract } from "./header/printBlankHelper";
 
-export interface DocumentHeaderSectionProps {
-	activePatient?: Patient | null;
-	activeDoctor?: StaffMember | null;
-	clinicProfileDraft?: ClinicProfileDraft;
-	typedActiveDocuments: GeneratedDocument[];
-	patientIssuedDocsCount: number;
-	patientDraftDocsCount: number;
-	activeUsableDocuments?: GeneratedDocument[];
-	latestDocumentOpenGuidanceId: string;
-	handleOpenLatestDocument: () => void;
-	setIsAutoclaveLogOpen?: (open: boolean) => void;
-	handleDirectPrintPrimaryIntake: () => void;
-	setIsPrimaryIntakeOpen: (open: boolean) => void;
-	setIsSurgicalPackageOpen: (open: boolean) => void;
-	setIsClinicalVisitOpen: (open: boolean) => void;
-	setIsTaxAccountingOpen: (open: boolean) => void;
-	setIsSanpinRegistryOpen: (open: boolean) => void;
-	setIsSickLeaveElnOpen?: (open: boolean) => void;
-	setIsA4PrintPreviewOpen?: (open: boolean) => void;
-	onSelectDocumentKind?: (kind: DocumentKind) => void;
-}
+export type { DocumentHeaderSectionProps };
 
 export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React.memo(
 	function DocumentHeaderSection(props) {
@@ -53,158 +33,62 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 
 		return (
 			<>
-				<style>{`
-					.documents-panel .panel-heading button,
-					.documents-panel .document-actions .doc-link,
-					.documents-panel .document-actions button {
-						min-height: 36px;
-					}
-					@media (pointer: coarse), (max-width: 768px) {
-						.documents-panel .panel-heading button,
-						.documents-panel .document-actions .doc-link,
-						.documents-panel .document-actions button,
-						.documents-panel .doc-dropdown-item {
-							min-height: 44px;
-						}
-					}
-				`}</style>
-				<div className="panel-heading">
-					<h2>Документы и Реестр</h2>
-					<div className="flex items-center gap-2 flex-wrap">
-						<button
-							className="secondary-button text-xs py-1.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 cursor-pointer transition-colors"
-							type="button"
-							data-testid="open-sick-leave-eln-modal-btn"
-							title="Оформить больничный лист / справку о временной нетрудоспособности"
-							onClick={() => setIsSickLeaveElnOpen?.(true)}
-						>
-							<Stethoscope size={14} className="text-teal-600 dark:text-teal-400" aria-hidden="true" />
-							<span>Больничный (ЭЛН)</span>
-						</button>
-						<button
-							className="secondary-button text-xs py-1.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] min-h-[44px] sm:min-h-[36px] flex items-center gap-1.5 cursor-pointer transition-colors"
-							type="button"
-							data-testid="btn-open-latest-document"
-							aria-describedby={
-								!activeUsableDocuments?.[0]
-									? latestDocumentOpenGuidanceId
-									: undefined
-							}
-							title={
-								!activeUsableDocuments?.[0]
-									? "Открыть первый созданный документ пациента (или подсказка при отсутствии)"
-									: "Открыть последний созданный или выданный документ пациента"
-							}
-							onClick={handleOpenLatestDocument}
-						>
-							Открыть последний
-						</button>
-					</div>
-				</div>
+				<DocumentHeadingBar
+					setIsSickLeaveElnOpen={setIsSickLeaveElnOpen}
+					activeUsableDocuments={activeUsableDocuments}
+					latestDocumentOpenGuidanceId={latestDocumentOpenGuidanceId}
+					handleOpenLatestDocument={handleOpenLatestDocument}
+				/>
 
-				{/* 1. ПАЦИЕНТСКИЙ БАННЕР */}
-				<div className="document-patient-banner">
-					<div className="document-patient-info">
-						<span className="document-patient-name">
-							{activePatient ? activePatient.fullName : "Все пациенты клиники"}
-						</span>
-						{activePatient?.birthDate && (
-							<span className="document-patient-badge">
-								Д/Р: {formatShortDate(activePatient.birthDate)}
-							</span>
-						)}
-						{activePatient?.phone && (
-							<span className="document-patient-badge">
-								Тел: {activePatient.phone}
-							</span>
-						)}
-					</div>
-					<div className="document-patient-stats">
-						<span className="document-stat-pill" title="Выданные и подписанные документы">
-							<CheckCircle2 size={13} className="inline mr-1 text-[var(--primary,#0d9488)]" aria-hidden="true" />
-							Выдано: {patientIssuedDocsCount}
-						</span>
-						<span className="document-stat-pill" title="Черновики в работе">
-							<Clock size={13} className="inline mr-1 text-[var(--muted)]" aria-hidden="true" />
-							Черновиков: {patientDraftDocsCount}
-						</span>
-						<span className="document-stat-pill" title="Всего документов">
-							Всего: {typedActiveDocuments.length}
-						</span>
-					</div>
-				</div>
+				<DocumentPatientBanner
+					activePatient={activePatient}
+					patientIssuedDocsCount={patientIssuedDocsCount}
+					patientDraftDocsCount={patientDraftDocsCount}
+					typedActiveDocuments={typedActiveDocuments}
+				/>
 
-				{/* 1.1 АКЦЕНТНЫЙ БЛОК: ПЕРВИЧНЫЙ ПРИЁМ (Mandate 8am Single Primary CTA) */}
 				<div className="document-primary-intake-banner" data-testid="document-primary-intake-banner">
 					<div className="document-primary-intake-heading">
 						<div className="document-primary-intake-badge-title">
-							<span className="document-primary-intake-pill">
-								Первичный приём (Договор + ИДС + Персданные)
-							</span>
-							<span className="document-primary-intake-hint hidden sm:inline">
-								Комплект бланков для оформления нового пациента на стойке регистрации
-							</span>
+							<span className="document-primary-intake-pill">Первичный приём (Договор + ИДС + Персданные)</span>
+							<span className="document-primary-intake-hint hidden sm:inline">Комплект бланков для оформления нового пациента</span>
 						</div>
 					</div>
-
 					<div className="document-primary-intake-btn-group document-intake-quick-action-bar" data-testid="document-intake-quick-action-bar">
 						<button
 							type="button"
-							className="primary-button document-intake-quick-print-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary,#0d9488)] hover:bg-[var(--primary-dark,#0f766e)] text-white shadow-xs px-3.5 font-semibold text-[13px] flex items-center gap-1.5 cursor-pointer transition-all"
+							className="primary-button document-intake-quick-print-btn h-9 min-h-[36px] rounded-xl bg-[var(--primary,#0d9488)] text-white px-3.5 font-semibold text-[13px] flex items-center gap-1.5 cursor-pointer"
 							data-tour="print-contract-btn"
 							onClick={handleDirectPrintPrimaryIntake}
 							data-testid="btn-quick-print-primary-intake-package"
-							title="Сформировать и напечатать полный пакет первичного приёма (Договор + Согласие ИДС + Персональные данные + Анкета здоровья)"
 						>
 							<Printer size={15} aria-hidden="true" />
 							<span>Печать первичного пакета</span>
 						</button>
 						<button
 							type="button"
-							className="secondary-button document-intake-blank-contract-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+							className="secondary-button document-intake-blank-contract-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer"
 							data-tour="print-blank-contract-btn"
-							onClick={() => {
-								void printBlankMedicalContract(
-									activePatient
-										? {
-												id: activePatient.id,
-												fullName: activePatient.fullName,
-												phone: activePatient.phone,
-												birthDate: activePatient.birthDate,
-												administrativeProfile: (activePatient as any)?.administrativeProfile,
-											}
-										: null,
-									{
-										doctorName: activeDoctor?.fullName || "",
-										clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
-										clinicAddress: clinicProfileDraft?.address,
-										clinicInn: clinicProfileDraft?.inn,
-										clinicOgrn: clinicProfileDraft?.ogrn,
-									},
-								);
-							}}
+							onClick={() => handlePrintBlankContract(activePatient, activeDoctor, clinicProfileDraft)}
 							data-testid="btn-documents-print-blank-contract"
-							title="Распечатать чистый бланк договора для ручного заполнения пациентом до приёма"
 						>
 							<FileText size={15} aria-hidden="true" />
 							<span>Пустой бланк</span>
 						</button>
 						<button
 							type="button"
-							className="secondary-button document-intake-open-modal-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+							className="secondary-button document-intake-open-modal-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer"
 							onClick={() => setIsPrimaryIntakeOpen(true)}
 							data-testid="scenario-primary-intake-btn"
-							title="Открыть модальное окно пакетного формирования и предварительного просмотра"
 						>
 							<span>Состав пакета (4 док.)</span>
 						</button>
 						{setIsA4PrintPreviewOpen && (
 							<button
 								type="button"
-								className="secondary-button document-intake-a4-preview-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer transition-colors"
+								className="secondary-button document-intake-a4-preview-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] px-3 text-[12.5px] font-medium flex items-center gap-1.5 cursor-pointer"
 								onClick={() => setIsA4PrintPreviewOpen(true)}
 								data-testid="btn-open-pro-a4-modal"
-								title="Открыть официальный печатный бланк А4 (Договор, Акт выполненных работ, План лечения, Медкарта)"
 							>
 								<Printer size={14} className="text-[var(--primary,#0d9488)]" aria-hidden="true" />
 								<span>Бланки А4 (Договор / Акт / Карта)</span>
@@ -213,33 +97,16 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 					</div>
 				</div>
 
-				{/* 2. БЫСТРЫЕ РОЛЕВЫЕ СЦЕНАРИИ */}
-				<details className="document-scenarios-accordion group" data-testid="document-scenarios-accordion">
-					<summary className="document-scenarios-summary">
-						<div className="flex items-center gap-2">
-							<Zap size={14} className="text-[var(--primary,#0d9488)] shrink-0" aria-hidden="true" />
-							<span className="font-bold text-xs text-[var(--ink)]">
-								Быстрые сценарии оформления документов
-							</span>
-						</div>
-						<span className="document-scenarios-summary-badge">
-							7 сценариев
-						</span>
-					</summary>
-					<div className="document-scenarios-accordion-content">
-						<DocumentQuickRoleScenarios
-							onOpenPrimaryIntake={() => setIsPrimaryIntakeOpen(true)}
-							onPrintPrimaryIntake={handleDirectPrintPrimaryIntake}
-							onOpenSurgicalPackage={() => setIsSurgicalPackageOpen(true)}
-							onOpenClinicalVisit={() => setIsClinicalVisitOpen(true)}
-							onOpenTaxAccounting={() => setIsTaxAccountingOpen(true)}
-							onOpenSanpinRegistry={() => setIsSanpinRegistryOpen(true)}
-							onOpenSickLeaveEln={() => setIsSickLeaveElnOpen?.(true)}
-							onSelectCompletedAct={() => onSelectDocumentKind?.("completed_works_act")}
-							onSelectAttendanceCert={() => onSelectDocumentKind?.("visit_attendance_certificate")}
-						/>
-					</div>
-				</details>
+				<DocumentScenariosAccordion
+					setIsPrimaryIntakeOpen={setIsPrimaryIntakeOpen}
+					handleDirectPrintPrimaryIntake={handleDirectPrintPrimaryIntake}
+					setIsSurgicalPackageOpen={setIsSurgicalPackageOpen}
+					setIsClinicalVisitOpen={setIsClinicalVisitOpen}
+					setIsTaxAccountingOpen={setIsTaxAccountingOpen}
+					setIsSanpinRegistryOpen={setIsSanpinRegistryOpen}
+					setIsSickLeaveElnOpen={setIsSickLeaveElnOpen}
+					onSelectDocumentKind={onSelectDocumentKind}
+				/>
 			</>
 		);
 	},

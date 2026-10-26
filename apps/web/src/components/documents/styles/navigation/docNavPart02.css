@@ -1,0 +1,107 @@
+.doc-nav-cat-icon {
+	font-size: 14px;
+	line-height: 1;
+}
+
+.doc-nav-cat-count {
+	background: var(--teal-soft);
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 700;
+	padding: 2px 7px;
+	border-radius: 999px;
+	line-height: 1;
+}
+
+[data-theme="dark"] .doc-nav-cat-count,
+[data-theme="night"] .doc-nav-cat-count,
+[data-theme="cyber_xray"] .doc-nav-cat-count,
+[data-theme="ocean"] .doc-nav-cat-count,
+[data-theme="emerald"] .doc-nav-cat-count {
+	color: var(--teal);
+	background: var(--teal-surface);
+}
+
+.doc-nav-search-wrap {
+	min-height: 32px;
+	height: 32px;
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	background: var(--paper);
+	border: 1px solid var(--line-strong);
+	border-radius: 6px;
+	padding: 0 10px;
+	flex: 0 1 280px;
+	transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.doc-nav-search-wrap:focus-within {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px var(--focus-ring);
+}
+
+[data-theme="dark"] .doc-nav-search-wrap,
+[data-theme="night"] .doc-nav-search-wrap,
+[data-theme="cyber_xray"] .doc-nav-search-wrap,
+[data-theme="contrast"] .doc-nav-search-wrap {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.18));
+}
+
+.doc-nav-search-icon {
+	color: var(--muted);
+	flex-shrink: 0;
+}
+
+.doc-nav-search-input {
+	border: none !important;
+	background: transparent !important;
+	padding: 0 !important;
+	color: var(--ink) !important;
+	font: inherit !important;
+	font-size: 13px !important;
+	width: 100% !important;
+	outline: none !important;
+	box-shadow: none !important;
+	min-height: 28px !important;
+}
+
+.doc-nav-search-input::placeholder {
+	color: var(--muted);
+	opacity: 0.8;
+}
+
+.doc-nav-search-clear {
+	background: transparent;
+	border: none;
+	padding: 4px;
+	color: var(--muted);
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 4px;
+	min-height: 28px;
+	min-width: 28px;
+	transition: color var(--transition-fast), background-color var(--transition-fast);
+}
+
+.doc-nav-search-clear:hover {
+	color: var(--ink);
+	background: var(--teal-surface);
+}
+
+.doc-nav-divider {
+	height: 1px;
+	background: var(--line);
+	margin: 2px 0;
+	width: 100%;
+}
+
+.doc-nav-quick-actions {
+	display: flex;
+	gap: 8px;
+	flex-wrap: wrap;
+	align-items: center;
+}

@@ -1,0 +1,106 @@
+/**
+ * Document Navigation, Anti-Card-in-Card Segmented Toolbars, Registry Filters & Packages
+ * Uses 100% canonical design system CSS tokens:
+ *   var(--paper), var(--paper-soft), var(--paper-strong), var(--ink), var(--ink-2),
+ *   var(--muted), var(--line), var(--line-strong), var(--teal), var(--teal-dark),
+ *   var(--teal-soft), var(--teal-surface), var(--teal-ring), var(--focus-ring),
+ *   var(--ok-bg), var(--ok-fg), var(--warn-bg), var(--warn-fg), var(--bad-bg), var(--bad-fg)
+ */
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   ANTI-CARD-IN-CARD SEGMENTED DOCUMENT TOOLBAR
+   ───────────────────────────────────────────────────────────────────────────── */
+.doc-nav-toolbar {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	padding: 10px 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-bottom: 16px;
+	box-shadow: var(--shadow-1);
+}
+
+.doc-nav-top-row {
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+}
+
+.doc-nav-categories {
+	display: flex;
+	gap: 4px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	-webkit-overflow-scrolling: touch;
+	padding: 3px;
+	border-radius: 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	flex: 1 1 auto;
+}
+
+.doc-nav-categories::-webkit-scrollbar {
+	display: none;
+}
+
+.doc-nav-cat-btn {
+	min-height: 32px;
+	padding: 5px 12px;
+	border-radius: 6px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--ink-muted, var(--muted));
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all var(--transition-fast);
+	user-select: none;
+	white-space: nowrap;
+	font-family: inherit;
+}
+
+.doc-nav-cat-btn:hover {
+	background: var(--teal-surface);
+	color: var(--ink);
+}
+
+[data-theme="dark"] .doc-nav-cat-btn,
+[data-theme="night"] .doc-nav-cat-btn,
+[data-theme="cyber_xray"] .doc-nav-cat-btn,
+[data-theme="contrast"] .doc-nav-cat-btn {
+	color: var(--ink-2, #cbd5e1);
+}
+
+[data-theme="dark"] .doc-nav-cat-btn:hover,
+[data-theme="night"] .doc-nav-cat-btn:hover,
+[data-theme="cyber_xray"] .doc-nav-cat-btn:hover,
+[data-theme="contrast"] .doc-nav-cat-btn:hover {
+	color: var(--ink, var(--paper));
+	background: var(--paper-soft);
+}
+
+.doc-nav-cat-btn.active {
+	background: var(--paper-soft);
+	color: var(--teal-dark);
+	border-color: var(--line-strong);
+	box-shadow: var(--shadow-1);
+	font-weight: 700;
+}
+
+[data-theme="dark"] .doc-nav-cat-btn.active,
+[data-theme="night"] .doc-nav-cat-btn.active,
+[data-theme="cyber_xray"] .doc-nav-cat-btn.active,
+[data-theme="ocean"] .doc-nav-cat-btn.active,
+[data-theme="emerald"] .doc-nav-cat-btn.active {
+	color: var(--teal);
+	background: var(--paper-strong);
+	border-color: var(--teal-ring);
+}

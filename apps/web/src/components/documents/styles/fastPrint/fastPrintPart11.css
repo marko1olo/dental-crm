@@ -1,0 +1,33 @@
+@media (max-width: 768px) {
+	.fast-print-mobile-bottom-bar {
+		display: flex;
+		padding: 8px 12px calc(8px + env(safe-area-inset-bottom, 0px)) 12px;
+		background: var(--paper-soft, #f8fafc);
+		border-top: 1px solid var(--line, #e2e8f0);
+		flex-shrink: 0;
+	}
+
+	:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .fast-print-mobile-bottom-bar {
+		background: #1e293b;
+		border-top-color: #334155;
+	}
+
+	.fast-print-mobile-cta-btn {
+		width: 100%;
+		min-height: 44px;
+		border-radius: 12px;
+		border: none;
+		background: var(--teal, #0d9488);
+		color: var(--paper);
+		font-size: 13.5px;
+		font-weight: 700;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		gap: 8px;
+		cursor: pointer;
+		box-shadow: 0 4px 10px rgba(13, 148, 136, 0.25);
+	}
+}
+
+/* ── Нативная печать на физическом принтере (@media print — всегда var(--paper) бумага и #000000 чернила) ── */
