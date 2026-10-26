@@ -14,10 +14,10 @@ export function executeCrossSectionMouseUp(params: UseCbctCurvedViewportHandlers
 		setDraggingMeasurementHandle, setDragImplantPart, setCrossSectionDragStart,
 	} = params;
 
-	setIsDraggingWL(false);
-	setIsPanning(false);
+	setIsDraggingWL(null);
+	setIsPanning(null);
 	if (isDraggingZoom) {
-		setIsDraggingZoom(false);
+		setIsDraggingZoom(null);
 		if (activeTool === "zoom" && !hasDraggedZoomRef.current) {
 			applyZoomClick(1.25, "cross_section", setTransforms);
 		}

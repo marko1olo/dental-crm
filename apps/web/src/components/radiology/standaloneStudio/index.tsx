@@ -261,71 +261,9 @@ export const CbctStandaloneStudioView: React.FC<CbctStandaloneStudioViewProps> =
 				/>
 
 				<StudioSidebarControls
-					isSidebarOpen={studio.isSidebarOpen}
-					setIsSidebarOpen={studio.setIsSidebarOpen}
-					mobileActiveTab={studio.mobileActiveTab}
-					activeCrossSection={studio.activeCrossSection}
-					activeCrossSectionIdx={studio.activeCrossSectionIdx}
-					setActiveCrossSectionIdx={studio.setActiveCrossSectionIdx}
-					crossSections={studio.crossSections}
-					studioMode={studio.studioMode}
-					setStudioMode={studio.setStudioMode}
-					implantAngulationDeg={studio.implantAngulationDeg}
-					setImplantAngulationDeg={studio.setImplantAngulationDeg}
-					volume={studio.volume}
-					handleToggleMaximize={studio.handleToggleMaximize}
-					crossSectionBaseCanvasRef={studio.crossSectionBaseCanvasRef}
-					crossSectionOverlayCanvasRef={studio.crossSectionOverlayCanvasRef}
-					handleCrossSectionMouseDown={studio.interactions.handleCrossSectionMouseDown}
-					handleCrossSectionMouseMove={studio.interactions.handleCrossSectionMouseMove}
-					handleCrossSectionMouseUp={studio.interactions.handleCrossSectionMouseUp}
-					dragImplantPart={studio.dragImplantPart}
-					hoveredImplantPart={studio.hoveredImplantPart}
-					handleFullResetViewport={studio.handleResetAll}
-					maximizedViewport={studio.maximizedViewport}
-					windowWidth={studio.windowWidth}
-					windowLevel={studio.windowLevel}
-					renderViewportOverlays={studio.renderViewportOverlays}
-					sampledVoxelHU={studio.sampledVoxelHU}
-					handleSelectTooth={studio.interactions.handleSelectTooth}
-					implant3DWorld={studio.implant3DWorld}
-					nerveAuditResult={studio.nerveAuditResult}
-					huSamplingResult={studio.huSamplingResult}
-					currentImplantSpec={studio.currentImplantSpec}
-					nervePoints={studio.nervePoints}
-					setNervePoints={studio.setNervePoints}
-					nerveTotalLengthMm={studio.nerveTotalLengthMm}
-					selectedNerveNodeIdx={studio.selectedNerveNodeIdx}
-					setSelectedNerveNodeIdx={studio.setSelectedNerveNodeIdx}
-					activeNerveSide={studio.activeNerveSide}
-					onSwitchNerveSide={studio.setActiveNerveSide}
-					displayBoneClass={studio.displayBoneClass || ""}
-					displayMeanHU={studio.displayMeanHU}
-					displayTorque={studio.displayTorque}
-					displayNerveClearanceMm={studio.displayNerveClearanceMm}
-					displayDrillingProtocol={studio.displayDrillingProtocol}
-					selectedBrand={studio.selectedBrand}
-					setSelectedBrand={studio.setSelectedBrand}
-					selectedDiameterMm={studio.selectedDiameterMm}
-					setSelectedDiameterMm={studio.setSelectedDiameterMm}
-					selectedLengthMm={studio.selectedLengthMm}
-					setSelectedLengthMm={studio.setSelectedLengthMm}
-					implantEntryXOffsetMm={studio.implantEntryXOffsetMm}
-					setImplantEntryXOffsetMm={studio.setImplantEntryXOffsetMm}
-					setImplantEntryDepthMm={studio.setImplantEntryDepthMm}
-					activeCaliper={studio.activeCaliper}
-					handleExportToEmr={studio.handleExportToEmr}
-					handleExportPdfReport={() => {
-						void studio.handleExportPdfReport();
-					}}
-					handleExportToPlan={() => {
-						studio.handleBroadcastImplantPlaced();
-					}}
+					{...(studio as any)}
 					handleExportToSchedule={() => {
 						showToast("Запись на имплантацию отправлена в расписание", "info");
-					}}
-					handleExportToFinance={() => {
-						studio.handleBroadcastImplantPlaced();
 					}}
 				/>
 			</main>

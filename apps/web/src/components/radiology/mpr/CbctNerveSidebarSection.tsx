@@ -16,8 +16,8 @@ import {
 } from "./cbctStudioTypes.js";
 
 export interface CbctNerveSidebarSectionProps {
-	readonly activeSide: NerveCanalSide;
-	readonly onSwitchSide: (side: NerveCanalSide) => void;
+	readonly activeSide?: NerveCanalSide | undefined;
+	readonly onSwitchSide?: ((side: NerveCanalSide) => void) | undefined;
 	readonly nervePoints: readonly Point3D[];
 	readonly setNervePoints: React.Dispatch<React.SetStateAction<Point3D[]>>;
 	readonly nerveTotalLengthMm: number;
@@ -27,8 +27,8 @@ export interface CbctNerveSidebarSectionProps {
 }
 
 export const CbctNerveSidebarSection: React.FC<CbctNerveSidebarSectionProps> = ({
-	activeSide,
-	onSwitchSide,
+	activeSide = "left",
+	onSwitchSide = () => {},
 	nervePoints,
 	setNervePoints,
 	nerveTotalLengthMm,

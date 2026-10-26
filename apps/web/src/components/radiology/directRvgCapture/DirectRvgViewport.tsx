@@ -115,7 +115,7 @@ export const DirectRvgViewport: React.FC<DirectRvgViewportProps> = ({
 							Датчик готов к захвату (Auto-Trigger)
 						</h3>
 						<p className="text-xs max-w-md leading-relaxed text-teal-300 font-medium mb-1">
-							Работает параллельно с Vatech EzDent-i, Carestream, Romexis без конфликта за USB
+							Бесконфликтный режим (без монопольного захвата USB-шины)
 						</p>
 						<p className="text-xs max-w-md leading-relaxed text-slate-300 mb-5">
 							Сделайте экспозицию на рентген-аппарате. Датчик автоматически зафиксирует импульс (&lt;50 мс), либо снимок поступит из папки аппарата. Также можно перетащить файл (Drag &amp; Drop) или вставить из буфера (Ctrl+V).

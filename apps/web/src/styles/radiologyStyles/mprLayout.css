@@ -1,0 +1,79 @@
+/**
+ * DENTE CRM — 3D MPR CROSSHAIRS & AXIS VISUALIZER LAYOUT
+ * Plane Grid, Axis Board, Crosshair Lines & Markers. Mandate 8b (<=120 lines).
+ */
+.dicom-mpr-layout {
+	display: grid; gap: 12px;
+	grid-template-columns: minmax(220px, 0.75fr) minmax(240px, 0.85fr) minmax(280px, 1fr);
+}
+.mpr-plane-grid { display: grid; gap: 8px; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.mpr-plane {
+	background: #123537; border: 1px solid #2a6465; border-radius: 8px; color: #eef8f5;
+	cursor: pointer; min-height: 96px; padding: 12px; text-align: left;
+}
+.mpr-plane.active { border-color: #77d7c7; box-shadow: inset 0 0 0 2px rgba(119, 215, 199, 0.25); }
+.mpr-plane:disabled { cursor: not-allowed; opacity: 0.48; }
+.mpr-plane span, .mpr-plane small { display: block; }
+.mpr-plane span { font-size: 15px; font-weight: 950; }
+.mpr-plane small { color: #b7d5d1; font-size: 12px; font-weight: 800; margin-top: 6px; }
+.mpr-plane .mpr-plane-unavailable { color: #f3b089; font-weight: 950; }
+
+.mpr-axis-visualizer {
+	background: #0f2d2f; border: 1px solid #2a6465; border-radius: 8px; display: grid;
+	gap: 10px; grid-template-columns: minmax(116px, 0.72fr) minmax(0, 1fr);
+	min-height: 176px; min-width: 0; padding: 12px;
+}
+.mpr-axis-visualizer.disabled { opacity: 0.68; }
+
+.mpr-axis-board {
+	align-self: center; aspect-ratio: 1; border: 1px solid rgba(119, 215, 199, 0.26);
+	border-radius: 8px; min-height: 132px; overflow: hidden; position: relative;
+	background:
+		linear-gradient(90deg, transparent calc(50% - 1px), rgba(183, 213, 209, 0.18) 50%, transparent calc(50% + 1px)),
+		linear-gradient(0deg, transparent calc(50% - 1px), rgba(183, 213, 209, 0.18) 50%, transparent calc(50% + 1px)),
+		radial-gradient(circle at center, rgba(119, 215, 199, 0.18), rgba(7, 27, 30, 0.18) 42%, rgba(7, 27, 30, 0.78));
+}
+.mpr-axis-slab, .mpr-axis-line, .mpr-axis-crosshair, .mpr-axis-slice-marker { left: 50%; position: absolute; top: 50%; }
+.mpr-axis-slab {
+	background: rgba(240, 180, 75, 0.18); border: 1px solid rgba(240, 180, 75, 0.44);
+	border-radius: 999px; height: 30%; transform: translate(-50%, -50%) rotate(var(--mpr-axis-deg));
+	width: var(--mpr-slab-width);
+}
+.mpr-axis-line {
+	background: #dff7e5; border-radius: 999px; height: 2px;
+	transform: translate(-50%, -50%) rotate(var(--mpr-axis-deg)); transform-origin: center; width: 78%;
+}
+.mpr-axis-line-secondary {
+	background: rgba(119, 215, 199, 0.72);
+	transform: translate(-50%, -50%) rotate(calc(var(--mpr-axis-deg) + 90deg)); width: 64%;
+}
+.mpr-axis-slice-marker {
+	background: rgba(255, 240, 189, 0.84); border-radius: 999px;
+	box-shadow: 0 0 0 2px rgba(240, 180, 75, 0.16); height: 2px; left: 10%;
+	top: var(--mpr-slice-position); transform: translateY(-50%); width: 80%;
+}
+.mpr-axis-crosshair {
+	background: #f0b44b; border: 2px solid #102727; border-radius: 999px;
+	box-shadow: 0 0 0 3px rgba(240, 180, 75, 0.18); height: 11px; opacity: 0.28;
+	transform: translate(-50%, -50%); width: 11px;
+}
+.mpr-axis-crosshair.active { opacity: 1; }
+.mpr-axis-angle-badge, .mpr-axis-slab-badge, .mpr-axis-slice-badge {
+	background: rgba(16, 39, 39, 0.86); border: 1px solid rgba(240, 180, 75, 0.42);
+	border-radius: 6px; color: #fff0bd; font-size: 11px; font-weight: 950;
+	line-height: 1; padding: 5px 7px; position: absolute;
+}
+.mpr-axis-angle-badge { bottom: 24px; right: 8px; }
+.mpr-axis-slab-badge { right: 8px; top: 24px; }
+.mpr-axis-slice-badge {
+	left: 8px; top: clamp(28px, var(--mpr-slice-position), calc(100% - 28px));
+	transform: translateY(-50%);
+}
+.mpr-axis-label {
+	color: rgba(223, 247, 229, 0.72); font-size: 10px; font-weight: 950;
+	letter-spacing: 0; position: absolute; text-transform: uppercase;
+}
+.mpr-axis-label-top { left: 50%; top: 7px; transform: translateX(-50%); }
+.mpr-axis-label-right { right: 7px; top: 50%; transform: translateY(-50%); }
+.mpr-axis-label-bottom { bottom: 7px; left: 50%; transform: translateX(-50%); }
+.mpr-axis-label-left { left: 7px; top: 50%; transform: translateY(-50%); }

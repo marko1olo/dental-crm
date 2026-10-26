@@ -90,6 +90,8 @@ export interface CbctVoxelVolume {
 	readonly defaultWindowLevel?: number;
 	readonly isDisposed: boolean;
 	readonly isProgressivePreview?: boolean | undefined;
+	readonly lodLevel?: number | undefined;
+	readonly imageOrientationPatient?: readonly number[] | undefined;
 	readonly patientName?: string | undefined;
 }
 

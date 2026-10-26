@@ -1,0 +1,98 @@
+/**
+ * DENTE CRM — DIRECT RVG WORKSTATION LAYOUT
+ * Grid, Modal, Canvas Viewport, HUD, Controls Dock & Footer. Mandate 8b (<=120 lines).
+ */
+.rvg-capture-overlay {
+	position: fixed; inset: 0; z-index: 100; display: flex; align-items: center; justify-content: center;
+	background: rgba(0, 0, 0, 0.82); backdrop-filter: blur(8px); padding: 0.75rem; animation: rvgFadeIn 0.2s ease-out;
+}
+@keyframes rvgFadeIn {
+	from { opacity: 0; transform: scale(0.98); }
+	to { opacity: 1; transform: scale(1); }
+}
+.rvg-capture-modal {
+	position: relative; display: flex; flex-direction: column; width: 98vw; max-width: 1420px;
+	height: 94vh; max-height: 960px; background: var(--paper, #0f172a); color: var(--ink, #f8fafc);
+	border: 1px solid var(--line, #334155); border-radius: 1rem;
+	box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line, rgba(255, 255, 255, 0.08));
+	overflow: hidden; font-family: inherit;
+}
+.rvg-capture-header {
+	display: flex; align-items: center; justify-content: space-between; padding: 0.5rem 1rem;
+	background: var(--paper, #0f172a); border-bottom: 1px solid var(--line, #1e293b);
+	gap: 0.5rem; flex-shrink: 0; min-height: 54px;
+}
+.rvg-header-title-group { display: flex; align-items: center; gap: 0.75rem; flex-shrink: 0; }
+.rvg-sensor-icon-box {
+	display: flex; align-items: center; justify-content: center; width: 36px; height: 36px;
+	border-radius: 0.625rem; background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #14b8a6); border: 1px solid var(--line, rgba(20, 184, 166, 0.3)); flex-shrink: 0;
+}
+.rvg-header-titles { display: flex; flex-direction: column; gap: 0.125rem; }
+.rvg-header-title {
+	font-size: 0.9375rem; font-weight: 700; color: var(--ink, #ffffff) !important;
+	margin: 0; line-height: 1.25; display: flex; align-items: center; gap: 0.5rem; white-space: nowrap;
+}
+.rvg-header-subtitle { font-size: 0.75rem; color: var(--muted, #94a3b8) !important; margin: 0; white-space: nowrap; }
+.rvg-header-actions { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+.rvg-close-btn {
+	display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
+	min-width: 32px; min-height: 32px; border-radius: 0.375rem; background: transparent;
+	border: 1px solid var(--line, #334155) !important; color: var(--muted, #94a3b8) !important;
+	cursor: pointer; transition: all 0.15s ease;
+}
+.rvg-close-btn:hover { background: rgba(239, 68, 68, 0.15); color: #ef4444 !important; border-color: rgba(239, 68, 68, 0.3) !important; }
+.rvg-capture-body { display: flex; flex-direction: row; flex: 1; min-height: 0; overflow: hidden; }
+.rvg-viewport-pane {
+	display: flex; flex-direction: column; flex: 1; background: #090d16; color: #f8fafc;
+	position: relative; overflow: hidden; min-height: 380px;
+}
+.rvg-canvas-container {
+	position: relative; flex: 1; width: 100%; height: 100%; display: flex; align-items: center;
+	justify-content: center; cursor: grab; user-select: none; touch-action: none; overflow: hidden;
+}
+.rvg-canvas-container.grabbing { cursor: grabbing; }
+.rvg-canvas-container.dragover { border: 2px dashed var(--teal, #14b8a6); }
+.rvg-render-canvas {
+	max-width: 100%; max-height: 100%; object-fit: contain;
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.7); border-radius: 0.5rem; transition: filter 0.05s ease-out;
+}
+.rvg-hud-overlay {
+	position: absolute; bottom: 0.75rem; left: 0.75rem; right: 0.75rem; z-index: 10;
+	display: flex; align-items: flex-end; justify-content: space-between; pointer-events: none;
+	font-family: var(--font-mono, monospace); font-size: 0.75rem;
+}
+.rvg-hud-card {
+	padding: 0.375rem 0.625rem; background: rgba(15, 23, 42, 0.85); backdrop-filter: blur(8px);
+	border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 0.375rem; color: #e2e8f0; pointer-events: auto;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+.rvg-controls-dock {
+	display: flex; flex-direction: column; width: 340px; max-width: 360px; flex-shrink: 0;
+	background: var(--paper, #0f172a); border-left: 1px solid var(--line, #1e293b);
+	overflow-y: auto; min-height: 0; color: var(--ink, #f8fafc);
+}
+.rvg-dock-section { padding: 0.75rem 1rem; border-bottom: 1px solid var(--line, #1e293b); display: flex; flex-direction: column; gap: 0.5rem; }
+.rvg-section-header { display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; font-weight: 700; color: var(--ink, #ffffff); text-transform: uppercase; letter-spacing: 0.04em; }
+.rvg-section-header-title { display: flex; align-items: center; gap: 0.375rem; color: var(--teal, #14b8a6); }
+.rvg-capture-footer {
+	display: flex; align-items: center; justify-content: space-between; padding: 0.625rem 1.25rem;
+	background: var(--paper, #0b1120); border-top: 1px solid var(--line, #1e293b);
+	gap: 0.75rem; flex-wrap: wrap; flex-shrink: 0; color: var(--ink, #f8fafc); min-height: 48px;
+}
+.rvg-footer-left-info { display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; color: var(--muted, #94a3b8); }
+.rvg-footer-actions-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+.rvg-action-btn-primary {
+	min-height: 32px; height: 32px; padding: 0.25rem 0.875rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 700;
+	background: var(--teal, #0d9488); color: #ffffff; border: none; cursor: pointer; display: inline-flex; align-items: center;
+	justify-content: center; gap: 0.375rem; transition: all 0.2s ease; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.35);
+}
+.rvg-action-btn-primary:hover { opacity: 0.92; transform: translateY(-1px); }
+.rvg-action-btn-primary:active { transform: translateY(0); }
+.rvg-action-btn-secondary {
+	min-height: 32px; height: 32px; padding: 0.25rem 0.75rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
+	background: var(--paper-strong, rgba(255, 255, 255, 0.06)); border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--ink, #e2e8f0); cursor: pointer; display: inline-flex; align-items: center; justify-content: center;
+	gap: 0.375rem; transition: all 0.15s ease;
+}
+.rvg-action-btn-secondary:hover { background: var(--paper-soft, rgba(255, 255, 255, 0.12)); color: var(--ink, #ffffff); border-color: var(--line, #475569); }

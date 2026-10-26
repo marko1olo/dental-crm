@@ -78,16 +78,22 @@ export function executeCrossSectionMouseDown(
 	}
 
 	if (studioMode === "implant") {
-		if (isImplantResetButtonHit(pointerPx, canvas.width, canvas.height)) {
+		if (isImplantResetButtonHit(pointerPx.x, pointerPx.y, canvas.width)) {
 			setImplantEntryXOffsetMm(0.0);
 			setImplantEntryDepthMm(0.5);
 			setImplantAngulationDeg(0.0);
 			return;
 		}
-		const part = hitTestImplantPart(pointerPx, currentImplantSpec, canvas.width, canvas.height);
+		const part = hitTestImplantPart(canvas, activeCrossSection, currentImplantSpec, params.implantEntryXOffsetMm, params.implantEntryDepthMm, params.implantAngulationDeg, pointerPx);
 		if (part) {
 			setDragImplantPart(part);
-			setCrossSectionDragStart(pointerPx);
+			setCrossSectionDragStart({
+				clientX: e.clientX,
+				clientY: e.clientY,
+				startX: params.implantEntryXOffsetMm,
+				startY: params.implantEntryDepthMm,
+				startAng: params.implantAngulationDeg,
+			});
 		}
 	}
 }

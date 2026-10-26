@@ -62,7 +62,7 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 	sensorStatusMessage,
 }) => {
 	const currentSensor = availableSensors.find((s) => s.id === selectedSensorModel) || availableSensors[0];
-	const sensorDisplayName = currentSensor?.name ? (currentSensor.name.split("(")[0]?.trim() || "Vatech EzSensor") : "Vatech EzSensor";
+	const sensorDisplayName = currentSensor?.name ? (currentSensor.name.split("(")[0]?.trim() || "Визиограф RVG") : "Визиограф RVG";
 	const formattedCard = patientCardNumber
 		? (patientCardNumber.startsWith("043/") || patientCardNumber.startsWith("043/у-")
 			? `ЭМК №${patientCardNumber.replace(/^043\/[уy]-?/, "")}`
@@ -118,7 +118,7 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 				{/* Non-conflicting coexistence hint */}
 				<div
 					className="text-[11px] text-teal-600/90 dark:text-teal-400/90 font-medium px-2 py-0.5 rounded bg-teal-500/10 border border-teal-500/20 max-w-[280px] truncate hidden sm:block"
-					title="Работает параллельно с ПО оборудования без конфликта за USB"
+					title="Работает параллельно с ПО оборудования: Параллельно с EzDent-i / Romexis (без конфликта за USB)"
 					data-testid="rvg-coexistence-hint"
 				>
 					Параллельно с EzDent-i / Romexis (без конфликта за USB)
@@ -150,7 +150,6 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 						<button
 							type="button"
 							onClick={onAutoDetectSensor}
-							disabled={isDetectingSensor}
 							className="rvg-chip-btn"
 							data-testid="btn-rvg-auto-detect-sensor"
 							title="Автоматический поиск подключенного USB/IP датчика"
@@ -178,7 +177,6 @@ export const DirectRvgSensorTelemetryHeader: React.FC<DirectRvgSensorTelemetryHe
 				<button
 					type="button"
 					onClick={onTriggerCapture}
-					disabled={sensorStatus === "acquiring"}
 					className="rvg-trigger-btn"
 					data-testid="rvg-trigger-exposure-btn"
 					title={

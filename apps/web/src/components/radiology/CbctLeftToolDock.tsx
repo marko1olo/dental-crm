@@ -5,6 +5,7 @@
 import React, { useState } from "react";
 import {
 	CbctColormapFlyout,
+	CBCT_COLORMAP_PRESETS,
 	type CbctLeftToolDockProps,
 	getNextSharpenAmount,
 } from "./CbctColormapFlyout";

@@ -1,0 +1,63 @@
+/**
+ * DENTE CRM — DIRECT RVG WORKSTATION TOOTH & REGION SELECTOR
+ * FDI 11-48 Tooth Matrix, Jaw Quadrants, Presets & Projections. Mandate 8b (<=120 lines).
+ */
+.rvg-fdi-selector-panel { display: flex; flex-direction: column; gap: 0.375rem; }
+.rvg-fdi-jaw-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.25rem; }
+.rvg-fdi-quadrant {
+	display: flex; gap: 0.15rem; justify-content: center;
+	background: var(--paper-soft, rgba(255, 255, 255, 0.03)); padding: 0.2rem;
+	border-radius: 0.375rem; border: 1px solid var(--line, rgba(255, 255, 255, 0.05));
+}
+.rvg-tooth-btn {
+	min-width: 18px; height: 28px; min-height: 28px; padding: 0 0.1rem;
+	font-size: 0.6875rem; font-weight: 700; font-family: var(--font-mono, monospace);
+	border-radius: 0.25rem; background: var(--paper-strong, rgba(255, 255, 255, 0.06));
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.1)); color: var(--ink, #e2e8f0);
+	cursor: pointer; transition: all 0.1s ease; display: flex; align-items: center; justify-content: center;
+}
+.rvg-tooth-btn:hover { background: var(--teal-soft, rgba(20, 184, 166, 0.2)); color: var(--ink, #ffffff); border-color: var(--teal, #14b8a6); }
+.rvg-tooth-btn.selected {
+	background: var(--teal, #0d9488) !important; color: #ffffff !important;
+	border-color: var(--teal, #0d9488) !important; box-shadow: 0 0 6px rgba(13, 148, 136, 0.4);
+}
+.rvg-selected-tooth-badge {
+	display: flex; align-items: center; justify-content: space-between; padding: 0.3rem 0.5rem;
+	border-radius: 0.375rem; background: var(--teal-soft, rgba(20, 184, 166, 0.1));
+	border: 1px solid rgba(20, 184, 166, 0.25); font-size: 0.75rem; font-weight: 600; color: var(--teal, #2dd4bf);
+}
+.rvg-category-presets { display: grid; grid-template-columns: 1fr 1fr; gap: 0.375rem; }
+.rvg-category-btn {
+	height: 28px; padding: 0 0.625rem; border-radius: 0.375rem; border: 1px solid var(--line, #334155);
+	background: var(--paper-strong, rgba(255, 255, 255, 0.04)); color: var(--ink, #e2e8f0);
+	font-size: 0.75rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
+	gap: 0.375rem; cursor: pointer; transition: all 0.15s ease;
+}
+.rvg-category-btn:hover { border-color: var(--teal, #14b8a6); color: var(--ink, #ffffff); }
+.rvg-category-btn.active {
+	background: var(--teal, #0d9488) !important; color: #ffffff !important;
+	border-color: var(--teal, #0d9488) !important; box-shadow: 0 1px 4px rgba(13, 148, 136, 0.3);
+}
+.rvg-zone-presets { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.25rem; }
+.rvg-zone-btn {
+	height: 28px; padding: 0 0.375rem; border-radius: 0.375rem; border: 1px solid var(--line, #334155);
+	background: var(--paper-strong, rgba(255, 255, 255, 0.04)); color: var(--ink, #e2e8f0);
+	font-size: 0.6875rem; font-weight: 600; display: flex; align-items: center; justify-content: center;
+	text-align: center; cursor: pointer; transition: all 0.15s ease; white-space: nowrap;
+}
+.rvg-zone-btn:hover { border-color: var(--teal, #14b8a6); color: var(--ink, #ffffff); }
+.rvg-zone-btn.active {
+	background: var(--teal, #0d9488) !important; color: #ffffff !important;
+	border-color: var(--teal, #0d9488) !important; box-shadow: 0 1px 4px rgba(13, 148, 136, 0.3);
+}
+.rvg-projection-chips { display: flex; flex-direction: column; gap: 0.25rem; }
+.rvg-projection-btn {
+	display: flex; align-items: center; justify-content: space-between; min-height: 30px;
+	padding: 0.25rem 0.625rem; border-radius: 0.375rem; font-size: 0.75rem; font-weight: 600;
+	background: var(--paper-strong, rgba(255, 255, 255, 0.04)); border: 1px solid var(--line, rgba(255, 255, 255, 0.08));
+	color: var(--ink, #e2e8f0); cursor: pointer; transition: all 0.15s ease; text-align: left;
+}
+.rvg-projection-btn:hover { background: var(--paper-soft, rgba(255, 255, 255, 0.08)); color: var(--ink, #ffffff); }
+.rvg-projection-btn.active {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.2)); border-color: var(--teal, #0d9488); color: var(--ink, #ffffff);
+}

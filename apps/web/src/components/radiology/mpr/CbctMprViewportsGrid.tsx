@@ -31,7 +31,8 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = (props)
 
 	const renderFourthQuadrantViewport = (extraClassName?: string) => (
 		<CbctVolume3DViewport
-			volume={volume} extraClassName={extraClassName}
+			volume={volume}
+			{...(extraClassName ? { extraClassName } : {})}
 			isMaximized={maximizedViewport === "panoramic"}
 			onToggleMaximize={() => handleToggleMaximize("panoramic")}
 		/>
@@ -53,7 +54,7 @@ export const CbctMprViewportsGrid: React.FC<CbctMprViewportsGridProps> = (props)
 			) : (
 				<div className="flex-1 relative flex overflow-hidden">
 					<CbctMprGridWorkspaceRenderer {...props} />
-					{showEdgeRulers && <CbctViewportsRulerOverlay />}
+					{showEdgeRulers && <CbctViewportsRulerOverlay viewportType="axial" />}
 				</div>
 			)}
 		</div>

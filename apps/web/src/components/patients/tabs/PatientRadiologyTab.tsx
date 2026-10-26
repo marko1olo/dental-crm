@@ -1,7 +1,7 @@
 import React from "react";
 import { AlertCircle, RefreshCw } from "lucide-react";
 import type { ImagingStudy } from "@dental/shared";
-import { DEMO_SHOWCASE_ORG_ID } from "../../../lib/demoConstants";
+import { DEMO_SHOWCASE_ORG_ID } from "@dental/shared";
 import { PatientTimeline } from "../PatientTimeline";
 import { usePatientRadiologyLogic } from "./radiology/usePatientRadiologyLogic";
 import { PatientRadiologyToolbar } from "./radiology/PatientRadiologyToolbar";

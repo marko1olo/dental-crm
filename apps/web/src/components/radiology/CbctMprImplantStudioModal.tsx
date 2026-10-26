@@ -244,9 +244,9 @@ export const CbctMprImplantStudioModal: React.FC<
 						selectedLengthMm={state.selectedLengthMm}
 						onSelectLengthMm={state.setSelectedLengthMm}
 						displayBoneClass={state.displayBoneClass}
-						displayMeanHU={state.displayMeanHU}
+						displayMeanHU={state.displayMeanHU ?? undefined}
 						displayTorque={state.displayTorque}
-						displayNerveClearanceMm={state.displayNerveClearanceMm}
+						displayNerveClearanceMm={state.displayNerveClearanceMm ?? undefined}
 						displayDrillingProtocol={state.displayDrillingProtocol}
 						nerveSafetyStatus={state.nerveAuditResult.safetyStatus === "danger" ? "danger" : state.nerveAuditResult.safetyStatus === "warning" ? "warning" : "safe"}
 						nervePoints={state.nervePoints}
@@ -315,9 +315,9 @@ export const CbctMprImplantStudioModal: React.FC<
 						activeNerveSide={state.activeNerveSide}
 						onSwitchNerveSide={state.setActiveNerveSide}
 						displayBoneClass={state.displayBoneClass}
-						displayMeanHU={state.displayMeanHU}
+						displayMeanHU={state.displayMeanHU ?? undefined}
 						displayTorque={state.displayTorque}
-						displayNerveClearanceMm={state.displayNerveClearanceMm}
+						displayNerveClearanceMm={state.displayNerveClearanceMm ?? undefined}
 						displayDrillingProtocol={state.displayDrillingProtocol}
 						selectedBrand={state.selectedBrand}
 						setSelectedBrand={state.setSelectedBrand}

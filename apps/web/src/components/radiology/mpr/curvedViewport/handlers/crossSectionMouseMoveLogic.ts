@@ -24,9 +24,9 @@ export function executeCrossSectionMouseMove(
 		setImplantEntryDepthMm, setImplantAngulationDeg, setHoveredImplantPart,
 	} = params;
 
-	if (isDraggingWL) { applyWindowLevelDrag(e, windowWidth, windowLevel, setWindowWidth, setWindowLevel); return; }
-	if (isPanning) { applyPanDrag(e, "cross_section", setTransforms); return; }
-	if (isDraggingZoom) { applyZoomDrag(e, "cross_section", hasDraggedZoomRef, setTransforms); return; }
+	if (isDraggingWL) { applyWindowLevelDrag(e.clientX, e.clientY, isDraggingWL, setWindowWidth, setWindowLevel); return; }
+	if (isPanning) { applyPanDrag(e.clientX, e.clientY, isPanning, "cross_section", setTransforms); return; }
+	if (isDraggingZoom) { applyZoomDrag(e.clientY, isDraggingZoom, "cross_section", hasDraggedZoomRef, setTransforms); return; }
 
 	if (!activeCrossSection || !crossSectionCanvasRef.current) return;
 	const canvas = crossSectionCanvasRef.current;
@@ -48,11 +48,17 @@ export function executeCrossSectionMouseMove(
 
 	if (studioMode === "implant") {
 		if (dragImplantPart && crossSectionDragStart) {
-			const deltaPx = { x: pointerPx.x - crossSectionDragStart.x, y: pointerPx.y - crossSectionDragStart.y };
+			const deltaPx = { x: e.clientX - crossSectionDragStart.clientX, y: e.clientY - crossSectionDragStart.clientY };
 			calculateImplantDragDelta(dragImplantPart, deltaPx, currentImplantSpec, setImplantEntryXOffsetMm, setImplantEntryDepthMm, setImplantAngulationDeg);
-			setCrossSectionDragStart(pointerPx);
+			setCrossSectionDragStart({
+				clientX: e.clientX,
+				clientY: e.clientY,
+				startX: params.implantEntryXOffsetMm,
+				startY: params.implantEntryDepthMm,
+				startAng: params.implantAngulationDeg,
+			});
 		} else {
-			const hovered = hitTestImplantPart(pointerPx, currentImplantSpec, canvas.width, canvas.height);
+			const hovered = hitTestImplantPart(canvas, activeCrossSection, currentImplantSpec, params.implantEntryXOffsetMm, params.implantEntryDepthMm, params.implantAngulationDeg, pointerPx);
 			setHoveredImplantPart(hovered);
 		}
 	}

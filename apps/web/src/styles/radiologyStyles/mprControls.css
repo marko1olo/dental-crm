@@ -1,0 +1,99 @@
+/**
+ * DENTE CRM — 3D MPR CONTROLS, SLIDERS & CLINICAL PRESETS
+ * Slice Thickness, Steppers, Memory Strip & Clinical Presets. Mandate 8b (<=120 lines).
+ */
+.mpr-axis-facts { align-content: center; display: grid; gap: 5px; min-width: 0; }
+.mpr-axis-facts strong { color: #eef8f5; font-size: 15px; line-height: 1.2; }
+.mpr-axis-facts span, .mpr-axis-facts small { color: #b7d5d1; font-size: 12px; font-weight: 850; line-height: 1.35; overflow-wrap: anywhere; }
+.mpr-axis-guidance { display: grid; gap: 5px; grid-template-columns: minmax(0, 1fr); }
+.mpr-axis-guidance span { background: rgba(240, 180, 75, 0.1); border: 1px solid rgba(240, 180, 75, 0.2); border-radius: 6px; color: #fff0bd; padding: 5px 7px; }
+.mpr-axis-facts .mpr-preset-fit {
+	background: rgba(215, 255, 246, 0.08); border: 1px solid rgba(215, 255, 246, 0.16);
+	border-radius: 6px; color: #d6f7f0; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto;
+	align-items: center; padding: 6px 8px;
+}
+.mpr-axis-facts .mpr-preset-fit button {
+	background: rgba(238, 248, 245, 0.08); border: 1px solid rgba(238, 248, 245, 0.22);
+	border-radius: 6px; color: #e6fffa; cursor: pointer; font-size: 12px; font-weight: 900; padding: 6px 8px;
+}
+.mpr-axis-facts .mpr-preset-fit button:disabled { cursor: not-allowed; opacity: 0.45; }
+.mpr-axis-facts .mpr-workbench-summary { background: rgba(119, 215, 199, 0.1); border: 1px solid rgba(119, 215, 199, 0.22); border-radius: 6px; color: #e6fffa; padding: 7px 8px; }
+.mpr-axis-facts .mpr-preset-fit.exact { background: rgba(119, 215, 199, 0.12); border-color: rgba(119, 215, 199, 0.32); color: #eafffa; }
+
+.mpr-control-panel { background: #0f2d2f; border: 1px solid #2a6465; border-radius: 8px; display: grid; gap: 10px; padding: 12px; }
+.mpr-control-panel label { color: #d4ebe8; display: grid; font-size: 12px; font-weight: 900; gap: 6px; }
+.mpr-control-panel input[type="range"] { accent-color: #77d7c7; width: 100%; }
+
+.mpr-manual-grid { display: grid; gap: 8px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mpr-manual-grid label { background: rgba(119, 215, 199, 0.08); border: 1px solid rgba(119, 215, 199, 0.18); border-radius: 8px; padding: 8px; }
+.mpr-manual-grid input {
+	background: #071c1e; border: 1px solid #2a6465; border-radius: 6px;
+	color: #e6fffa; font-size: 14px; font-weight: 950; min-height: 34px; padding: 6px 8px; width: 100%;
+}
+.mpr-manual-grid input:disabled { cursor: not-allowed; opacity: 0.5; }
+
+.mpr-toggle-row, .mpr-check-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.mpr-toggle-row button {
+	background: #123537; border: 1px solid #2a6465; border-radius: 999px;
+	color: #d4ebe8; cursor: pointer; font-size: 12px; font-weight: 900; min-height: 32px; padding: 6px 9px;
+}
+.mpr-toggle-row button.active { background: #dff7e5; border-color: #77d7c7; color: #0b3a36; }
+
+.mpr-preset-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.mpr-stepper-row { display: grid; gap: 6px; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.mpr-preset-row button {
+	align-items: center; background: #123537; border: 1px solid #2a6465; border-radius: 8px;
+	color: #d4ebe8; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 900;
+	gap: 5px; justify-content: center; line-height: 1.15; min-height: 31px; min-width: 0;
+	overflow-wrap: anywhere; padding: 5px 8px; text-align: center;
+}
+.mpr-stepper-row button {
+	background: #0f2d30; border: 1px solid #2a6465; border-radius: 8px; color: #d4ebe8;
+	cursor: pointer; font-size: 12px; font-weight: 950; line-height: 1.15; min-height: 32px;
+	min-width: 0; overflow-wrap: anywhere; padding: 6px 8px;
+}
+.mpr-stepper-row button:hover:not(:disabled) { background: #173f42; border-color: #77d7c7; }
+.mpr-preset-row button.active { background: #fff0bd; border-color: #f0b44b; color: #5c3b00; }
+.mpr-reset-button {
+	align-items: center; background: #dff7e5; border: 1px solid #77d7c7; border-radius: 8px;
+	color: #0b3a36; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 950;
+	gap: 6px; justify-content: center; min-height: 34px; padding: 7px 10px; width: fit-content;
+}
+.mpr-reset-button svg, .mpr-preset-row svg, .mpr-memory-strip svg { height: 14px; width: 14px; }
+
+.mpr-memory-strip {
+	align-items: center; background: rgba(14, 58, 62, 0.82); border: 1px solid rgba(119, 215, 199, 0.34);
+	border-radius: 8px; display: grid; gap: 8px; grid-template-columns: minmax(0, 1fr) auto; padding: 9px;
+}
+.mpr-memory-strip div { display: grid; gap: 3px; min-width: 0; }
+.mpr-memory-strip strong, .mpr-memory-strip span { overflow-wrap: anywhere; }
+.mpr-memory-strip strong { color: #dff7e5; font-size: 12px; font-weight: 950; line-height: 1.2; }
+.mpr-memory-strip span { color: #b7d5d1; font-size: 11px; font-weight: 850; line-height: 1.3; }
+.mpr-memory-strip button {
+	align-items: center; background: #fff0bd; border: 1px solid #f0b44b; border-radius: 8px;
+	color: #5c3b00; cursor: pointer; display: inline-flex; font-size: 12px; font-weight: 950;
+	gap: 6px; justify-content: center; min-height: 34px; padding: 7px 10px; white-space: nowrap;
+}
+
+.mpr-clinical-preset-grid { display: grid; gap: 6px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.mpr-clinical-preset {
+	background: #123537; border: 1px solid #2a6465; border-radius: 8px; color: #dff7e5;
+	cursor: pointer; display: grid; gap: 3px; min-height: 58px; min-width: 0; padding: 8px; text-align: left;
+}
+.mpr-clinical-preset strong, .mpr-clinical-preset span, .mpr-clinical-preset small { overflow-wrap: anywhere; }
+.mpr-clinical-preset strong { font-size: 12px; font-weight: 950; line-height: 1.2; }
+.mpr-clinical-preset span { color: #b7d5d1; font-size: 11px; font-weight: 850; line-height: 1.25; }
+.mpr-clinical-preset small { color: #f2d992; font-size: 10px; font-weight: 850; line-height: 1.25; }
+.mpr-clinical-preset.nearest { border-color: #d8b866; box-shadow: inset 0 0 0 1px rgba(216, 184, 102, 0.28); }
+.mpr-clinical-preset.active { background: #dff7e5; border-color: #77d7c7; color: #0b3a36; }
+.mpr-clinical-preset.active span { color: #174946; }
+.mpr-clinical-preset.active small { color: #7b4f00; }
+
+.mpr-preset-row button:disabled, .mpr-stepper-row button:disabled, .mpr-toggle-row button:disabled,
+.mpr-clinical-preset:disabled, .mpr-memory-strip button:disabled, .mpr-reset-button:disabled,
+.mpr-control-panel input:disabled { cursor: not-allowed; opacity: 0.5; }
+.mpr-control-disabled-note {
+	background: rgba(216, 184, 102, 0.12); border: 1px solid rgba(216, 184, 102, 0.34);
+	border-radius: 8px; color: #fff0bd; font-size: 12px; font-weight: 850; line-height: 1.35; margin: 0; padding: 8px 10px;
+}
+.mpr-check-row label { align-items: center; display: flex; gap: 6px; }

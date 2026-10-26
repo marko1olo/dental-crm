@@ -37,9 +37,9 @@ export const CbctHeaderBar: React.FC<CbctHeaderBarProps> = (props) => {
 						windowLevel={windowLevel ?? 300}
 						onChangeWindowWidth={onChangeWindowWidth}
 						onChangeWindowLevel={onChangeWindowLevel}
-						slabThicknessMm={slabThicknessMm}
+						slabThicknessMm={slabThicknessMm ?? 1.0}
 						onChangeSlabThicknessMm={onChangeSlabThicknessMm}
-						slabMode={slabMode}
+						slabMode={slabMode ?? "single"}
 						onChangeSlabMode={onChangeSlabMode}
 						isUnsharpActive={isUnsharpActive}
 						onToggleUnsharp={onToggleUnsharp}
