@@ -1,0 +1,82 @@
+/* ==========================================================================
+   DENTE SANPIN TABLES THEMES & DARK MODE (<= 120 lines, Mandate 8b)
+   ========================================================================== */
+
+[data-theme="dark"] .sanpin-table-wrapper,
+.dark .sanpin-table-wrapper {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .sanpin-table th,
+.dark .sanpin-table th {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .sanpin-table td,
+.dark .sanpin-table td {
+	border-color: var(--line-subtle, #1e293b);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sanpin-table tr:hover td,
+.dark .sanpin-table tr:hover td {
+	background: var(--paper-soft, #1e293b);
+}
+
+[data-theme="dark"] .sanpin-tag-success,
+.dark .sanpin-tag-success {
+	background: rgba(16, 185, 129, 0.2);
+	color: var(--ok-fg, #34d399);
+}
+
+[data-theme="dark"] .sanpin-tag-danger,
+.dark .sanpin-tag-danger {
+	background: rgba(239, 68, 68, 0.2);
+	color: var(--bad-fg, #f87171);
+}
+
+[data-theme="dark"] .sanpin-tag-warning,
+.dark .sanpin-tag-warning {
+	background: rgba(245, 158, 11, 0.2);
+	color: var(--warn-fg, #fbbf24);
+}
+
+[data-theme="dark"] .sanpin-tag-neutral,
+.dark .sanpin-tag-neutral {
+	background: rgba(148, 163, 184, 0.2);
+	color: var(--muted, #94a3b8);
+}
+
+[data-theme="dark"] .sanpin-progress-track,
+.dark .sanpin-progress-track {
+	background: var(--line, #334155);
+}
+
+/* Dark mode for desktop table card in journalModules */
+[data-theme="dark"] .sanpin-desktop-table,
+.dark .sanpin-desktop-table {
+	background: var(--paper, #0f172a) !important;
+	border-color: var(--line, #334155) !important;
+}
+
+[data-theme="dark"] .sanpin-desktop-table th,
+.dark .sanpin-desktop-table th {
+	background: var(--paper-soft, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+	color: var(--muted, #94a3b8) !important;
+}
+
+[data-theme="dark"] .sanpin-desktop-table td,
+.dark .sanpin-desktop-table td {
+	border-color: var(--line-subtle, #1e293b) !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+[data-theme="dark"] .sanpin-journal-toolbar,
+.dark .sanpin-journal-toolbar {
+	background: var(--paper-soft, #1e293b) !important;
+	border-color: var(--line, #334155) !important;
+}

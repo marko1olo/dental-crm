@@ -6,6 +6,7 @@ import {
 } from "../htmlRenderers.js";
 import {
 	DEFAULT_CLINIC_REQUISITES,
+	type AutoclaveCycleRecord,
 	type Form257CycleRecord,
 	type KraftPackageItem,
 	type MonthlySanpinGenerationOptions,

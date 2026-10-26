@@ -19,10 +19,10 @@ export function AutoclaveMobileFloatingBar({
 				aria-busy={isLoggingBatch}
 				className="sanpin-mobile-floating-cta touch-manipulation"
 				data-testid="sanpin-mobile-start-autoclave-cycle-btn"
-				title="Пакетная запись автоклавирования смены в 1 клик (134°C, 2.15 бар, списание расходников)"
+				title="Зафиксировать автоклавирование смены в 1 клик (134°C, 2.15 бар, списание расходников)"
 			>
 				<Plus size={18} className="shrink-0" />
-				<span>{isLoggingBatch ? "Фиксация смены..." : "Пакетная запись автоклавирования за смену"}</span>
+				<span>{isLoggingBatch ? "Фиксация смены..." : "Зафиксировать автоклавирование смены"}</span>
 			</button>
 		</div>
 	);

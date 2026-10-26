@@ -26,7 +26,10 @@ describe("SanPiN 3.3686-21 — Sterilizer Equipment Decomposed Architecture (Man
 	});
 
 	it("verifies facade SterilizerEquipmentModal.tsx line count is strictly <= 120 lines (Mandate 8b)", () => {
-		const facadePath = path.resolve(process.cwd(), "apps/web/src/components/sanpin/SterilizerEquipmentModal.tsx");
+		const sanpinDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
+			? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
+			: path.resolve(process.cwd(), "src/components/sanpin");
+		const facadePath = path.join(sanpinDir, "SterilizerEquipmentModal.tsx");
 		assert.ok(fs.existsSync(facadePath), "Facade file must exist");
 		const content = fs.readFileSync(facadePath, "utf8");
 		const lineCount = content.split(/\r?\n/).length;
@@ -36,7 +39,10 @@ describe("SanPiN 3.3686-21 — Sterilizer Equipment Decomposed Architecture (Man
 	});
 
 	it("verifies all decomposed modules are strictly <= 500 lines", () => {
-		const decomposedDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizerEquipment");
+		const sanpinDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
+			? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
+			: path.resolve(process.cwd(), "src/components/sanpin");
+		const decomposedDir = path.join(sanpinDir, "sterilizerEquipment");
 		assert.ok(fs.existsSync(decomposedDir), "Decomposed directory must exist");
 		const files = fs.readdirSync(decomposedDir);
 		for (const file of files) {
@@ -48,7 +54,10 @@ describe("SanPiN 3.3686-21 — Sterilizer Equipment Decomposed Architecture (Man
 	});
 
 	it("verifies zero disabled button attributes in decomposed sterilizer modules (Mandate 8e)", () => {
-		const decomposedDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizerEquipment");
+		const sanpinDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
+			? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
+			: path.resolve(process.cwd(), "src/components/sanpin");
+		const decomposedDir = path.join(sanpinDir, "sterilizerEquipment");
 		const files = fs.readdirSync(decomposedDir);
 		for (const file of files) {
 			if (!file.endsWith(".tsx")) continue;
@@ -58,7 +67,10 @@ describe("SanPiN 3.3686-21 — Sterilizer Equipment Decomposed Architecture (Man
 	});
 
 	it("verifies zero cartoon emojis across sterilizerEquipment directory (Mandate 8d pt 7)", () => {
-		const decomposedDir = path.resolve(process.cwd(), "apps/web/src/components/sanpin/sterilizerEquipment");
+		const sanpinDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
+			? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
+			: path.resolve(process.cwd(), "src/components/sanpin");
+		const decomposedDir = path.join(sanpinDir, "sterilizerEquipment");
 		const files = fs.readdirSync(decomposedDir);
 		for (const file of files) {
 			if (!file.endsWith(".ts") && !file.endsWith(".tsx")) continue;

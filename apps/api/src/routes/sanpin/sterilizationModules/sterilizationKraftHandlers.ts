@@ -20,6 +20,7 @@ import {
 	computeDiaryHashForTrayLink,
 	evaluateSterilizationLogForLinking,
 } from "./sterilizationHelpers.js";
+import { executeSterilizationConsumablesDeduction } from "./handlers/sterilizationConsumablesDeduction.js";
 import {
 	generateBarcodeBodySchema,
 	linkSchema,
@@ -107,7 +108,11 @@ export async function handleSterilizationLink(req: FastifyRequest, reply: Fastif
 	const barcodeCandidates = [trimmedBarcode];
 	if (trimmedBarcode.includes("|")) {
 		const parts = trimmedBarcode.split("|");
-		const firstPart = parts[0]?.replace(/#\d+$/, "").trim();
+		let firstPart = (parts[0] || "").trim();
+		const hashIdx = firstPart.lastIndexOf("#");
+		if (hashIdx !== -1) {
+			firstPart = firstPart.slice(0, hashIdx).trim();
+		}
 		if (firstPart) barcodeCandidates.push(firstPart);
 	}
 
@@ -432,6 +437,14 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 				);
 		}
 	}
+
+	void executeSterilizationConsumablesDeduction({
+		organizationId,
+		userId: data.operatorId || null,
+		count: 1,
+		cycleNumber: 1,
+		barcode: effectiveBarcode,
+	});
 
 	return reply.send(
 		buildUnsealKraftPackageResponse({

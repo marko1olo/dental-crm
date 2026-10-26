@@ -1,4 +1,4 @@
-import type { Form257CycleRecord, KraftPackageItem, PsoTestRecord } from "./journalRecords";
+import type { AutoclaveCycleRecord, Form257CycleRecord, KraftPackageItem, PsoTestRecord } from "./journalRecords";
 
 export interface ClinicRequisites {
 	readonly clinicName: string;
@@ -37,7 +37,7 @@ export interface MonthlySanpinJournalBundle {
 	readonly totalCyclesCount: number;
 	readonly totalPsoTestsCount: number;
 	readonly totalPacksCount: number;
-	readonly cycles: readonly Form257CycleRecord[];
+	readonly cycles: readonly AutoclaveCycleRecord[];
 	readonly psoRecords: readonly PsoTestRecord[];
 	readonly kraftPackages: readonly KraftPackageItem[];
 	readonly clinicInfo: ClinicRequisites;
@@ -54,7 +54,7 @@ export interface DailyShiftSanpinLogBundle {
 	readonly operatorFullName: string;
 	readonly operatorPosition: string;
 	readonly electronicSignatureHash: string;
-	readonly cycles: readonly Form257CycleRecord[];
+	readonly cycles: readonly AutoclaveCycleRecord[];
 	readonly psoRecords: readonly PsoTestRecord[];
 	readonly kraftPackages: readonly KraftPackageItem[];
 	readonly summaryTextRu: string;

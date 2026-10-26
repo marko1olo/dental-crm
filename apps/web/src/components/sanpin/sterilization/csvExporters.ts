@@ -5,6 +5,7 @@
 import { escapeCsvField } from "./csvEscapeHelper.js";
 import {
 	STATUTORY_PACKAGING_TYPES,
+	type AutoclaveCycleRecord,
 	type Form257CycleRecord,
 } from "./types.js";
 
@@ -12,7 +13,7 @@ export { escapeCsvField } from "./csvEscapeHelper.js";
 export { exportPsoToCsv } from "./psoCsvExporter.js";
 export { exportKraftPackagesToCsv } from "./kraftPackagesCsvExporter.js";
 
-export function exportSterilizationLogToCsv(records: readonly Form257CycleRecord[]): string {
+export function exportSterilizationLogToCsv(records: readonly AutoclaveCycleRecord[]): string {
 	const headers = [
 		"Дата",
 		"Время",

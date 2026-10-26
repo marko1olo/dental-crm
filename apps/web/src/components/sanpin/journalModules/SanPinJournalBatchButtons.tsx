@@ -45,7 +45,7 @@ export function SanPinJournalBatchButtons({
 					) : (
 						<>
 							<CheckCircle2 size={16} className="text-white" />
-							<span>Пакетная запись автоклавирования за смену</span>
+							<span>Зафиксировать автоклавирование смены</span>
 						</>
 					)}
 				</button>

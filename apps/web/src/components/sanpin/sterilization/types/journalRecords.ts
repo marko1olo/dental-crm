@@ -2,7 +2,7 @@ import type { ChamberControlPoint, ChemicalIndicatorClassId } from "./indicators
 import type { KraftPackagingType, SterilityStatus } from "./packagingData";
 import type { SterilizationRegimeCode } from "./regimesData";
 
-export interface Form257CycleRecord {
+export interface AutoclaveCycleRecord {
 	readonly id: string;
 	readonly date: string; // YYYY-MM-DD
 	readonly time: string; // HH:mm
@@ -30,6 +30,9 @@ export interface Form257CycleRecord {
 	readonly notes?: string;
 	readonly createdAt: string;
 }
+
+/** Алиас для обратной совместимости (Мандат 8ap) */
+export type Form257CycleRecord = AutoclaveCycleRecord;
 
 export interface PsoTestRecord {
 	readonly id: string;

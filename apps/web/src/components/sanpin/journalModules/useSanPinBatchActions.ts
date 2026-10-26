@@ -30,13 +30,7 @@ export function useSanPinBatchActions(
 			const shiftAutoclave = devices.find((dv) => dv?.id && dv.id !== "all") ?? devices[0];
 			const body = targetPeriod === "month"
 				? { year: new Date().getFullYear(), month: new Date().getMonth() + 1 }
-				: {
-					cyclesCount: 3,
-					deviceName: shiftAutoclave?.brandModelRu || "",
-					autoclaveId: shiftAutoclave?.id || "",
-					packagingType: "kraft_pouch",
-					itemsDescription: "Инструментарий смены (134°C, 2.15 бар, 5 мин)",
-				};
+				: { cyclesCount: 3, deviceName: shiftAutoclave?.brandModelRu || "", autoclaveId: shiftAutoclave?.id || "", packagingType: "kraft_pouch", itemsDescription: "Инструментарий смены (134°C, 2.15 бар, 5 мин)" };
 
 			const res = await fetch(url, {
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
@@ -72,8 +66,8 @@ export function useSanPinBatchActions(
 			const devName = selectedDevice?.brandModelRu || "";
 			const cycleLabel = cycleName || (new Date().getHours() < 12 ? "Утренний цикл" : new Date().getHours() < 17 ? "Дневной цикл" : "Вечерний цикл");
 			const itemsDesc = isDelicate
-				? "Пакетная стерилизация щадящая: 15 наборов (оптика, полимеры, наконечники)"
-				: `${cycleLabel} автоклавирования: ${targetBatch} наборов (15 смотровых, 8 терапевтических, 4 турбины)`;
+				? "Пакетная стерилизация щадящая: 15 наборов (оптика, наконечники)"
+				: `${cycleLabel} автоклавирования: ${targetBatch} наборов`;
 
 			const payload = {
 				regime: isDelicate ? "delicate_121" : "standard_134", batchSize: targetBatch, cycleName: cycleLabel,
@@ -87,10 +81,10 @@ export function useSanPinBatchActions(
 			}).catch(() => null);
 
 			if (res && res.ok) {
-				showToast(`${cycleLabel} автоклавирования проведён (${autoId}): ${tempC}°C / ${pressBar} бар, расходники списаны`, "success");
+				showToast(`${cycleLabel} проведён (${autoId}): ${tempC}°C / ${pressBar} бар, списано`, "success");
 				await fetchCyclesFromDb(period);
 			} else if (isDemoShowcaseMode()) {
-				showToast(`${cycleLabel} автоклавирования проведён (${autoId}): ${tempC}°C (норма, расходники списаны)`, "success");
+				showToast(`${cycleLabel} проведён (${autoId}): ${tempC}°C (норма)`, "success");
 			}
 		} finally {
 			inFlightRef.current = false;

@@ -1,7 +1,7 @@
 import { createDefaultChamberPoints, generateDigitalStampHash } from "../calculations.js";
-import { STATUTORY_STERILIZERS, type Form257CycleRecord } from "../types.js";
+import { STATUTORY_STERILIZERS, type AutoclaveCycleRecord } from "../types.js";
 
-export function createDailyShiftCycles(dateStr: string, operatorName: string): Form257CycleRecord[] {
+export function createDailyShiftCycles(dateStr: string, operatorName: string): AutoclaveCycleRecord[] {
 	const melag = STATUTORY_STERILIZERS[0]!;
 	const euronda = STATUTORY_STERILIZERS[1]!;
 

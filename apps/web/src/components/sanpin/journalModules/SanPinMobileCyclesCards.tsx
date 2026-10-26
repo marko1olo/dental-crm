@@ -57,7 +57,7 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 						data-testid="sanpin-mobile-quick-batch-cta"
 					>
 						<CheckCircle2 size={16} className="shrink-0 text-white" />
-						<span>{isAutofilling ? "Фиксация смены..." : "Пакетная запись автоклавирования за смену"}</span>
+						<span>{isAutofilling ? "Фиксация смены..." : "Зафиксировать автоклавирование смены"}</span>
 					</button>
 				</div>
 			)}

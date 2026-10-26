@@ -14,6 +14,7 @@ export {
 	DEFAULT_CHAMBER_POINTS_TEMPLATE,
 	DEFAULT_CLINIC_REQUISITES,
 	type DailyShiftSanpinLogBundle,
+	type AutoclaveCycleRecord,
 	type Form257CycleRecord,
 	type KraftPackageItem,
 	type KraftPackagingMeta,

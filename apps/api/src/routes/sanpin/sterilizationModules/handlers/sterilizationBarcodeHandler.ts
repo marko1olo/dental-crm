@@ -13,6 +13,7 @@ import { db } from "../../../../db/client.js";
 import { sterilizationLogs, users } from "../../../../db/schema.js";
 import { wsBroker } from "../../../../services/websocketBroker.js";
 import { scanSchema } from "../sterilizationSchemas.js";
+import { executeSterilizationConsumablesDeduction } from "./sterilizationConsumablesDeduction.js";
 
 export async function handleScanSterilization(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(req, reply, "sterilization scan");
@@ -43,6 +44,8 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 	}
 
 	const now = new Date();
+	const effectiveBarcode = data.barcode?.trim() || `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}-${data.cycleNumber || 1}`;
+	const effectiveAutoclaveId = data.autoclaveId?.trim() || "АК-01";
 	const expiresAt = data.status === "passed"
 		? computePackagingExpirationDate(data.packagingType as SterilizationPackagingType, now)
 		: null;
@@ -53,9 +56,9 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 		.insert(sterilizationLogs)
 		.values({
 			organizationId,
-			barcode: data.barcode,
-			autoclaveId: data.autoclaveId,
-			deviceName: data.deviceName || "Автоклав 1",
+			barcode: effectiveBarcode,
+			autoclaveId: effectiveAutoclaveId,
+			deviceName: data.deviceName || "Автоклав 1 (Класс B)",
 			cycleNumber: data.cycleNumber || 1,
 			temperatureCelsius: data.temperatureCelsius ? String(data.temperatureCelsius) : null,
 			pressureBar: data.pressureBar ? String(data.pressureBar) : null,
@@ -71,6 +74,16 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 			timestamp: now,
 		})
 		.returning();
+
+	void executeSterilizationConsumablesDeduction({
+		organizationId,
+		userId: data.operatorId || (req as any).user?.id || null,
+		count: 20,
+		packagingType: data.packagingType || "kraft_heat_sealed",
+		indicatorType: data.indicatorType || "class5_integrating",
+		cycleNumber: data.cycleNumber || 1,
+		barcode: effectiveBarcode,
+	});
 
 	wsBroker.broadcastToOrganization(organizationId, { type: "STERILIZATION_LOG_ADDED", payload: log });
 

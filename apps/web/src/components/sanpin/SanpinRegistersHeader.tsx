@@ -4,7 +4,6 @@ import { printConsolidatedBinderAction } from "./sanpinConsolidatedExportHelpers
 import { SanpinHeaderTitleKpi } from "./header/SanpinHeaderTitleKpi";
 import { SanpinHeaderOptionsMenu } from "./header/SanpinHeaderOptionsMenu";
 
-// Toast contracts: "Журналы стерилизации в норме", "Журналы за неделю заполнены", "Смена заполнена:"
 export interface SanpinRegistersHeaderProps {
 	readonly summary: any;
 	readonly showExpandedKpi: boolean;
@@ -25,22 +24,10 @@ export interface SanpinRegistersHeaderProps {
 }
 
 export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
-	summary,
-	showExpandedKpi,
-	onToggleExpandedKpi,
-	autofillPeriod,
-	setAutofillPeriod,
-	autoFilling,
-	onAutofillByPeriod,
-	exportContext,
-	isExportMenuOpen,
-	setIsExportMenuOpen,
-	onRefreshSummary,
-	onAutofillShift,
-	onOpenRetroactiveBatchModal,
-	onOpenKraftModal,
-	onOpenSterilizationLogModal,
-	onOpenJournal257Modal,
+	summary, showExpandedKpi, onToggleExpandedKpi, autofillPeriod, setAutofillPeriod,
+	autoFilling, onAutofillByPeriod, exportContext, isExportMenuOpen, setIsExportMenuOpen,
+	onRefreshSummary, onAutofillShift, onOpenRetroactiveBatchModal, onOpenKraftModal,
+	onOpenSterilizationLogModal, onOpenJournal257Modal,
 }) => {
 	const handleOpenLogModal = onOpenSterilizationLogModal || onOpenJournal257Modal || (() => {});
 	const exportMenuRef = useRef<HTMLDivElement>(null);
@@ -51,9 +38,7 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 				setIsExportMenuOpen(false);
 			}
 		};
-		if (isExportMenuOpen) {
-			document.addEventListener("mousedown", handleClickOutside);
-		}
+		if (isExportMenuOpen) document.addEventListener("mousedown", handleClickOutside);
 		return () => document.removeEventListener("mousedown", handleClickOutside);
 	}, [isExportMenuOpen, setIsExportMenuOpen]);
 
@@ -66,14 +51,14 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					type="button"
 					onClick={onAutofillShift}
 					aria-busy={autoFilling}
-					className="primary-button sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:opacity-90 text-white shadow-xs px-3.5 text-[13px] font-semibold inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
+					className="secondary-button sanpin-btn-secondary h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs px-3.5 text-[13px] font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
 					data-testid="sanpin-shift-close-primary-btn"
 					data-action="shift-close"
-					title="Заполнить санитарные журналы за смену в 1 клик (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
+					title="Зафиксировать смену стерилизации в 1 клик (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
 				>
-					<CheckCircle2 size={15} className="shrink-0 text-white" />
-					<span className="hidden sm:inline">{autoFilling ? "Фиксация..." : "Пакетная запись автоклавирования за смену"}</span>
-					<span className="sm:hidden">{autoFilling ? "Фиксация..." : "Автоклавирование смены"}</span>
+					<CheckCircle2 size={15} className="shrink-0 text-[var(--primary,#0d9488)]" />
+					<span className="hidden sm:inline">{autoFilling ? "Фиксация..." : "Зафиксировать смену стерилизации"}</span>
+					<span className="sm:hidden">{autoFilling ? "Фиксация..." : "Зафиксировать смену"}</span>
 				</button>
 
 				<button

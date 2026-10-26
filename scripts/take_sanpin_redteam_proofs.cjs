@@ -20,7 +20,7 @@ const { spawn } = require("node:child_process");
 const path = require("node:path");
 const fs = require("node:fs");
 
-const BRAIN_ID = process.env.CONVERSATION_ID || "893754ff-ccae-4970-9ed3-f86f8cd4dbef";
+const BRAIN_ID = process.env.CONVERSATION_ID || "b858541a-9431-41a4-a78f-92d0fa2db861";
 const DOCS_DIR = path.resolve(__dirname, "../docs/proofs/sanpin");
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${BRAIN_ID}`);
 
@@ -323,10 +323,12 @@ async function main() {
 		console.log("--- [AUTOCLAVE] Capturing Desktop Proofs (1440x900) ---");
 		await setTheme(pcPage, "light");
 		await dismissTourElements(pcPage);
+		await saveProof(pcPage, "01_sanpin_autoclave_pc_light.png");
 		await saveProof(pcPage, "pc_light_sanpin_autoclave_1440x900.png");
 
 		await setTheme(pcPage, "dark");
 		await dismissTourElements(pcPage);
+		await saveProof(pcPage, "02_sanpin_autoclave_pc_dark.png");
 		await saveProof(pcPage, "pc_dark_sanpin_autoclave_1440x900.png");
 
 		// 1.2 PSO PC Light & Dark
@@ -376,10 +378,12 @@ async function main() {
 		console.log("--- [AUTOCLAVE] Capturing Mobile Proofs (390x844) ---");
 		await setTheme(mobPage, "light");
 		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "03_sanpin_autoclave_mobile_light.png");
 		await saveProof(mobPage, "mobile_light_sanpin_autoclave_390x844.png");
 
 		await setTheme(mobPage, "dark");
 		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "04_sanpin_autoclave_mobile_dark.png");
 		await saveProof(mobPage, "mobile_dark_sanpin_autoclave_390x844.png");
 
 		// 2.2 PSO Mobile Light & Dark

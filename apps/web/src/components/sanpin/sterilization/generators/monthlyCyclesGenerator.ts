@@ -2,6 +2,7 @@ import { createDefaultChamberPoints, generateDigitalStampHash } from "../calcula
 import {
 	STATUTORY_REGIMES,
 	STATUTORY_STERILIZERS,
+	type AutoclaveCycleRecord,
 	type Form257CycleRecord,
 } from "../types.js";
 
@@ -13,7 +14,7 @@ export function generateDayCycles(
 	operator: string,
 	loadMultiplier: number,
 	startCycleCounter: number,
-): Form257CycleRecord[] {
+): AutoclaveCycleRecord[] {
 	const pad2 = (n: number) => String(n).padStart(2, "0");
 	const c1Packs = Math.round(16 * loadMultiplier);
 	const c2Packs = Math.round(8 * loadMultiplier);

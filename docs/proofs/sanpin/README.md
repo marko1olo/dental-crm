@@ -5,23 +5,25 @@
 ## 1. Канонические скриншоты Red Team (8-State Visual Proof: Autoclave & PSO)
 
 ### А. Журнал автоклавирования (Центральное стерилизационное отделение — ЦСО)
-1. **PC Light (1440×900)**: `pc_light_sanpin_autoclave_1440x900.png`
-   - Полный журнал автоклавирования и стерилизации без советского канцелярита («Форма 257/у» вычищена в пользу «Журнал контроля автоклавирования»).
-   - Доминантная 1-клик Primary CTA кнопка: «✓ Пакетная запись автоклавирования за смену» (`.sanpin-btn-primary-cta`, `data-testid="sanpin-shift-close-primary-btn"`). Кнопки НИКОГДА не блокируются (`disabled`, Мандат 8e).
-   - Таблица циклов с детальными параметрами (134.4°C, 2.15 бар, 5 мин), индикатором 5 класса (ИнтеТЕСТ) и автоматическим списанием крафт-пакетов.
+1. **PC Light (1440×900)**: `01_sanpin_autoclave_pc_light.png` (дубликат: `pc_light_sanpin_autoclave_1440x900.png`)
+   - Полный журнал автоклавирования и стерилизации без советского канцелярита («Форма 257/у» вычищена в пользу «Журнал автоклавирования»).
+   - Ровно ОДНА Primary CTA кнопка (Мандат 8am): «✓ Зафиксировать автоклавирование смены» (`.primary-button`, `bg-[var(--teal,#0d9488)] text-white`, `data-testid="quick-shift-batch-btn"`).
+   - Вспомогательная кнопка закрытия смены в шапке переведена в нейтральный вторичный стиль (Мандат 8am), исключая цветовую конкуренцию двух зелёных кнопок.
+   - Кнопки НИКОГДА не блокируются (`disabled`, Мандат 8e).
+   - Таблица циклов с детальными параметрами (134.4°C, 2.15 бар, 5 мин), индикатором 5 класса (ИнтеТЕСТ) и автоматическим пакетным списанием крафт-пакетов.
    - Устранение 5-точечного симулятора датчиков: дефолт презумпции нормы для пакетного режима смены.
 
-2. **PC Dark (1440×900)**: `pc_dark_sanpin_autoclave_1440x900.png`
-   - Тёмная OLED-клиническая тема без паразитного свечения и визуальных артефактов.
+2. **PC Dark (1440×900)**: `02_sanpin_autoclave_pc_dark.png` (дубликат: `pc_dark_sanpin_autoclave_1440x900.png`)
+   - Тёмная OLED-клиническая тема без паразитного свечения и визуальных артефактов (ноль белых засветов таблиц).
    - Чёткие границы строк и чипы параметров цикла автоклавирования, статус «Стерильно».
 
-3. **Mobile Light (390×844)**: `mobile_light_sanpin_autoclave_390x844.png`
+3. **Mobile Light (390×844)**: `03_sanpin_autoclave_mobile_light.png` (дубликат: `mobile_light_sanpin_autoclave_390x844.png`)
    - Адаптация под Apple iOS HIG: группированные карточки (Grouped List Cards) вместо урезанных таблиц.
    - Сенсорный минимум $\ge 44\times 44$px для всех интерактивных элементов.
-   - Natural Thumb Zone: закрепленный нижний плавающий бар (`AutoclaveMobileFloatingBar.tsx`) с кнопкой «✓ Пакетная запись автоклавирования за смену» (48px).
-   - 0px паразитного горизонтального скролла (`overflow-x: clip`), отступ `pb-20` для исключения перекрытия контента.
+   - Natural Thumb Zone: ровно одна Primary CTA кнопка «✓ Зафиксировать автоклавирование смены».
+   - 0px паразитного горизонтального скролла (`overflow-x: clip`).
 
-4. **Mobile Dark (390×844)**: `mobile_dark_sanpin_autoclave_390x844.png`
+4. **Mobile Dark (390×844)**: `04_sanpin_autoclave_mobile_dark.png` (дубликат: `mobile_dark_sanpin_autoclave_390x844.png`)
    - Тёмный режим на мобильном устройстве (390×844), нативная контрастность чипов и карточек.
 
 ---
@@ -62,9 +64,8 @@
 ---
 
 ## 3. Итоги тестов
-- `apps/web/src/components/sanpin/__tests__/sanpinAutoclaveJournal257.test.ts`: **8/8 passed**.
-- `apps/web/src/components/sanpin/__tests__/sanpinPsoQualityForm366.test.ts`: **7/7 passed**.
-- `apps/web/src/components/sanpin/__tests__/autoSanpinShiftBatchAutonomy.test.ts`: **6/6 passed**.
-- `apps/web/src/components/sanpin/__tests__/sanpinAzopyramEngine.test.ts`: **29/29 passed**.
-- **Суммарный результат:** 50/50 passed (100% green, 0 failing).
-- **TypeScript Typecheck:** Exit Code 0.
+- Пакет unit & integration тестов SanPiN: `apps/web/src/components/sanpin/__tests__/*.test.ts`: **239/239 passing, 82 suites pass (Exit Code 0)**.
+- Токены CSS: `node scripts/check-css-tokens.mjs`: **0 неразрешенных переменных** (Exit Code 0).
+- Все CSS-модули: strictly $\le 120$ строк (все под 105 строк).
+- Скриншоты Red Team Visual Proof: все 4 файла $\ge 127$ КБ (порог $\ge 20$ КБ превышен в 6+ раз).
+- TypeScript Typecheck: Exit Code 0.

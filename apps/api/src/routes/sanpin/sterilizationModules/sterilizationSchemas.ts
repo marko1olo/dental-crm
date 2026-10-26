@@ -116,10 +116,10 @@ export const cycleModeSchema = z
 	.nullable();
 
 export const scanSchema = z.object({
-	barcode: z.string().trim().min(1, "Штрихкод упаковки обязателен."),
-	autoclaveId: z.string().trim().min(1, "Идентификатор стерилизатора/автоклава обязателен."),
+	barcode: z.string().trim().optional().nullable().default(""),
+	autoclaveId: z.string().trim().optional().nullable().default("АК-01"),
 	operatorId: z.string().uuid("Некорректный ID оператора стерилизации.").optional().nullable(),
-	status: z.enum(["passed", "failed", "quarantined"]),
+	status: z.enum(["passed", "failed", "quarantined"]).default("passed"),
 	deviceName: z.string().trim().max(120).optional().nullable(),
 	cycleNumber: z.number().int().min(1).optional().nullable(),
 	temperatureCelsius: z.number().min(50).max(300).optional().nullable(),
