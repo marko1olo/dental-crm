@@ -136,10 +136,13 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 				path.join(webSrc, "components/visit/MobileChairsideVisitWorkspace.tsx"),
 				"utf-8",
 			);
-			const mobileCssContent = fs.readFileSync(
-				path.join(webSrc, "components/visit/mobile-chairside-visit.css"),
-				"utf-8",
-			);
+			const mobileCssPath = path.join(webSrc, "components/visit/mobile-chairside-visit.css");
+			let mobileCssContent = fs.readFileSync(mobileCssPath, "utf-8");
+			const importMatches = [...mobileCssContent.matchAll(/@import\s+["']([^"']+)["'];/g)];
+			if (importMatches.length > 0) {
+				const baseDir = path.dirname(mobileCssPath);
+				mobileCssContent = importMatches.map((m) => fs.readFileSync(path.resolve(baseDir, m[1]), "utf-8")).join("\n") + "\n" + mobileCssContent;
+			}
 
 			assert.ok(
 				mobileWorkspaceContent.includes("mobile-chairside-allergy-clean"),
@@ -242,10 +245,11 @@ describe("Patient Somatic Anamnesis & Allergy Chairside Integrity Suite", () => 
 		});
 
 		it("PatientHistoryTab does NOT leak DEFAULT_CLINICAL_VISITS in production mode", () => {
-			const historyTabContent = fs.readFileSync(
-				path.join(webSrc, "components/patients/PatientHistoryTab.tsx"),
-				"utf-8",
-			);
+			const mapperPath = path.join(webSrc, "components/patients/patientHistory/patientVisitsDashboardMapper.ts");
+			const historyTabPath = path.join(webSrc, "components/patients/PatientHistoryTab.tsx");
+			const historyTabContent = fs.existsSync(mapperPath)
+				? fs.readFileSync(mapperPath, "utf-8")
+				: fs.readFileSync(historyTabPath, "utf-8");
 
 			// Ensure guard exists
 			assert.ok(

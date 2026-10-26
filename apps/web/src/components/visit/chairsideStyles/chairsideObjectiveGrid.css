@@ -1,0 +1,96 @@
+/**
+ * apps/web/src/components/visit/chairsideStyles/chairsideObjectiveGrid.css
+ * Sovereign Mobile Chairside Visit Workspace — 1-Tap Somatic Norm & Quadrant Teeth
+ * Invariants: 52px 1-Tap Norm CTA, Glove-Friendly Tooth Tiles (Apple iOS HIG)
+ */
+
+.mobile-chairside-norm-btn {
+  width: 100%; min-height: 52px; height: 52px; padding: 0 16px;
+  border-radius: 16px; display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; background: linear-gradient(135deg, #059669 0%, #0d9488 100%);
+  color: #ffffff; font-size: 15px; font-weight: 700;
+  border: 1px solid rgba(255, 255, 255, 0.2); box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
+  cursor: pointer; transition: transform 0.15s ease, filter 0.15s ease; box-sizing: border-box;
+}
+
+.mobile-chairside-norm-btn:active { transform: scale(0.97); filter: brightness(0.95); }
+.mobile-chairside-norm-btn.is-applied {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  box-shadow: 0 2px 8px rgba(16, 185, 129, 0.3);
+}
+
+.mobile-chairside-teeth-norm-action {
+  width: 100%; min-height: 44px; padding: 8px 14px; border-radius: 12px;
+  display: flex; align-items: center; justify-content: space-between; gap: 8px;
+  background: color-mix(in srgb, #10b981 12%, var(--paper, #ffffff));
+  border: 1px solid color-mix(in srgb, #10b981 35%, transparent);
+  color: #047857; font-size: 13.5px; font-weight: 700; cursor: pointer;
+  transition: all 0.15s ease; margin-bottom: 8px;
+}
+.mobile-chairside-teeth-norm-action:active {
+  transform: scale(0.98); background: color-mix(in srgb, #10b981 20%, var(--paper, #ffffff));
+}
+
+.mobile-quadrant-tabs {
+  display: flex; width: 100%; background: var(--paper-soft, #f1f5f9);
+  padding: 4px; border-radius: 14px; gap: 4px; box-sizing: border-box;
+}
+
+.mobile-quadrant-tab {
+  flex: 1; min-height: 40px; padding: 6px 2px; border-radius: 10px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap; letter-spacing: -0.2px;
+  border: none; background: transparent; color: var(--muted, #64748b);
+  cursor: pointer; transition: all 0.15s ease;
+}
+.mobile-quadrant-tab.is-active {
+  background: var(--paper, #ffffff); color: var(--ink, #0f172a);
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08); font-weight: 700;
+}
+
+.mobile-teeth-scroller-wrap {
+  width: 100%; overflow-x: auto; overscroll-behavior-x: contain;
+  -webkit-overflow-scrolling: touch; scrollbar-width: none;
+  padding: 4px 0; margin-top: 8px;
+}
+.mobile-teeth-scroller-wrap::-webkit-scrollbar { display: none; }
+
+.mobile-teeth-horizontal-scroller {
+  display: flex; align-items: center; gap: 8px;
+  scroll-snap-type: x mandatory; padding: 4px 2px; box-sizing: border-box;
+}
+.mobile-teeth-grid-8 { display: flex; gap: 8px; box-sizing: border-box; }
+
+.mobile-tooth-tile {
+  min-width: 52px; min-height: 58px; flex: 0 0 auto; border-radius: 14px;
+  border: 1px solid var(--line, #e2e8f0); background: var(--paper, #ffffff);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: 2px; cursor: pointer; transition: all 0.15s ease; box-sizing: border-box;
+  scroll-snap-align: start;
+}
+.mobile-tooth-tile:active { transform: scale(0.93); }
+.mobile-tooth-tile.is-selected {
+  border-color: var(--teal, #0d9488); box-shadow: 0 0 0 2px var(--teal, #0d9488);
+  background: color-mix(in srgb, var(--teal, #0d9488) 8%, transparent);
+}
+
+.mobile-tooth-number { font-size: 15px; font-weight: 800; color: var(--ink, #0f172a); }
+.mobile-tooth-status-tag {
+  font-size: 10px; font-weight: 700; padding: 1px 5px; border-radius: 4px; text-transform: uppercase;
+}
+
+/* ── Dark Mode Overrides ── */
+[data-theme="dark"] .mobile-chairside-teeth-norm-action,
+.dark .mobile-chairside-teeth-norm-action {
+  background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.35); color: #34d399;
+}
+
+[data-theme="dark"] .mobile-quadrant-tabs,
+.dark .mobile-quadrant-tabs { background: #1e293b; }
+
+[data-theme="dark"] .mobile-quadrant-tab.is-active,
+.dark .mobile-quadrant-tab.is-active { background: #0f172a; color: #f8fafc; }
+
+[data-theme="dark"] .mobile-tooth-tile,
+.dark .mobile-tooth-tile {
+  background: #0f172a; border-color: rgba(255, 255, 255, 0.08); color: #f8fafc;
+}

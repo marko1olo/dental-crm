@@ -1,0 +1,77 @@
+/**
+ * apps/web/src/components/visit/chairsideStyles/chairsideComplaintEditor.css
+ * Sovereign Mobile Chairside Visit Workspace — Complaints, Anamnesis & SmartMic
+ * Invariants: Elastic Clinical Textarea, Voice Dictation Pulse, Tactile Chips
+ */
+
+.mobile-chairside-textarea {
+  width: 100%; min-height: 120px; padding: 14px 16px;
+  font-size: 15px; line-height: 1.45; box-sizing: border-box;
+  border: none; background: transparent; color: var(--ink, #0f172a);
+  resize: none; outline: none; font-family: inherit;
+}
+
+.mobile-chairside-textarea:focus {
+  background: color-mix(in srgb, var(--paper-soft, #f8fafc) 60%, transparent);
+}
+
+.mobile-smart-mic-card {
+  width: 100%; border-radius: 16px; background: var(--paper, #ffffff);
+  border: 1px solid var(--line, #e2e8f0); padding: 12px;
+  box-sizing: border-box; display: flex; flex-direction: column;
+  gap: 10px; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+}
+
+.mobile-smart-mic-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 10px;
+}
+
+.mobile-smart-mic-btn {
+  min-height: 48px; flex: 1; border-radius: 14px;
+  display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+  font-size: 14px; font-weight: 700; cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); border: 1px solid transparent;
+}
+
+.mobile-smart-mic-btn.is-idle {
+  background: color-mix(in srgb, var(--teal, #0d9488) 12%, transparent);
+  color: var(--teal, #0d9488); border-color: color-mix(in srgb, var(--teal, #0d9488) 25%, transparent);
+}
+
+.mobile-smart-mic-btn.is-listening {
+  background: #e11d48; color: #ffffff; border-color: #be123c;
+  animation: mobileMicPulse 1.2s infinite ease-in-out;
+}
+
+@keyframes mobileMicPulse {
+  0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+  50% { transform: scale(1.02); box-shadow: 0 0 0 8px rgba(225, 29, 72, 0.1); }
+}
+
+.mobile-smart-mic-chips {
+  display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 4px 2px; box-sizing: border-box;
+}
+
+.mobile-smart-mic-chip {
+  min-height: 36px; padding: 6px 12px; border-radius: 10px;
+  font-size: 13px; font-weight: 600; background: var(--paper-soft, #f8fafc);
+  color: var(--ink, #0f172a); border: 1px solid var(--line, #e2e8f0);
+  white-space: nowrap; flex-shrink: 0; display: inline-flex;
+  align-items: center; justify-content: center; cursor: pointer;
+  user-select: none; box-sizing: border-box;
+}
+
+.mobile-smart-mic-chip:active {
+  background: var(--line-subtle, #e2e8f0); transform: scale(0.96);
+}
+
+/* ── Dark Mode Overrides ── */
+[data-theme="dark"] .mobile-smart-mic-card,
+.dark .mobile-smart-mic-card {
+  background: #0f172a; border-color: rgba(255, 255, 255, 0.08); color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-smart-mic-chip,
+.dark .mobile-smart-mic-chip {
+  background: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: #f1f5f9;
+}

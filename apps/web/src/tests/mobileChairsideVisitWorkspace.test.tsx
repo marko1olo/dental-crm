@@ -129,7 +129,14 @@ test("Sovereign Mobile Chairside Visit Workspace Suite (Apple HIG)", async (t) =
     const candidate1 = path.resolve(process.cwd(), "src/components/visit/mobile-chairside-visit.css");
     const candidate2 = path.resolve(process.cwd(), "apps/web/src/components/visit/mobile-chairside-visit.css");
     const cssPath = fs.existsSync(candidate1) ? candidate1 : candidate2;
-    const cssContent = fs.readFileSync(cssPath, "utf-8");
+    let cssContent = fs.readFileSync(cssPath, "utf-8");
+
+    // Resolve modular imports if decomposed (Mandate 8b)
+    const importMatches = [...cssContent.matchAll(/@import\s+["']([^"']+)["'];/g)];
+    if (importMatches.length > 0) {
+      const baseDir = path.dirname(cssPath);
+      cssContent = importMatches.map((m) => fs.readFileSync(path.resolve(baseDir, m[1]), "utf-8")).join("\n") + "\n" + cssContent;
+    }
 
     // 0px horizontal drift invariant
     assert.ok(cssContent.includes("overflow-x: clip"), "Must enforce overflow-x: clip");

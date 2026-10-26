@@ -1,0 +1,112 @@
+/**
+ * apps/web/src/components/visit/chairsideStyles/chairsideHeader.css
+ * Sovereign Mobile Chairside Visit Workspace — Top HUD, Patient Info, Allergy Bar
+ * Invariants: 1-Row Compact HUD, Safe Area Inset Top, Pulsing Allergy Alert
+ */
+
+.mobile-chairside-hud {
+  position: sticky; top: 0; z-index: 45;
+  width: 100%; max-width: 100vw; box-sizing: border-box;
+  display: flex; flex-direction: column;
+  background: color-mix(in srgb, var(--paper, #ffffff) 94%, transparent);
+  backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-bottom: 1px solid var(--line, #e2e8f0);
+  padding-top: max(8px, env(safe-area-inset-top, 8px));
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.mobile-chairside-hud-main-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; min-height: 48px; padding: 4px 12px; width: 100%; box-sizing: border-box;
+}
+
+.mobile-chairside-hud-sub-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 8px; min-height: 28px; padding: 0 12px 6px 12px; width: 100%; box-sizing: border-box;
+}
+
+.mobile-chairside-patient-title-box {
+  flex: 1; min-width: 0; text-align: left; padding: 0 6px;
+}
+
+.mobile-chairside-patient-name {
+  font-size: 13.5px; font-weight: 700; line-height: 1.25;
+  color: var(--ink, #0f172a); letter-spacing: -0.015em;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; word-break: break-word;
+}
+
+.mobile-chairside-patient-subtext {
+  display: flex; align-items: center; justify-content: flex-start;
+  gap: 5px; font-size: 11px; color: var(--muted, #64748b);
+  margin-top: 2px; white-space: nowrap;
+}
+
+.mobile-chairside-timer-wrap {
+  display: inline-flex; align-items: center; flex-shrink: 0;
+}
+
+.mobile-chairside-phone-link {
+  color: var(--teal, #0d9488); font-weight: 600; text-decoration: none;
+  display: inline-flex; align-items: center; gap: 3px;
+  min-height: 20px; min-width: 0; overflow: hidden; white-space: nowrap;
+}
+.mobile-chairside-phone-link > span { overflow: hidden; text-overflow: ellipsis; }
+.mobile-chairside-phone-link:active { opacity: 0.7; }
+
+/* Pulsing Red Allergy Badge */
+.mobile-chairside-allergy-pulse {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px;
+  border-radius: 9999px; font-size: 11px; font-weight: 700;
+  background: rgba(225, 29, 72, 0.12); color: #e11d48;
+  border: 1px solid rgba(225, 29, 72, 0.35);
+  animation: mobileAllergyPulse 1.8s infinite cubic-bezier(0.4, 0, 0.6, 1);
+  white-space: normal; line-height: 1.25; text-align: right;
+  word-break: break-word; flex-shrink: 1;
+}
+
+@keyframes mobileAllergyPulse {
+  0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(225, 29, 72, 0.4); }
+  50% { opacity: 0.85; transform: scale(1.02); box-shadow: 0 0 0 4px rgba(225, 29, 72, 0.05); }
+}
+
+/* Calm Green Clean Allergy Badge */
+.mobile-chairside-allergy-clean {
+  display: inline-flex; align-items: center; gap: 4px; padding: 3px 9px;
+  border-radius: 9999px; font-size: 11px; font-weight: 600;
+  background: rgba(16, 185, 129, 0.1); color: #059669;
+  border: 1px solid rgba(16, 185, 129, 0.25);
+  white-space: normal; line-height: 1.25; text-align: right;
+  word-break: break-word; flex-shrink: 1;
+}
+
+.mobile-chairside-hud-actions {
+  display: flex; align-items: center; gap: 4px; flex-shrink: 0;
+}
+
+.mobile-chairside-icon-btn {
+  min-width: 36px; min-height: 36px; width: 36px; height: 36px;
+  display: inline-flex; align-items: center; justify-content: center;
+  border-radius: 10px; background: var(--paper-soft, #f1f5f9); color: var(--ink, #0f172a);
+  border: 1px solid var(--line-subtle, #e2e8f0); cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease; flex-shrink: 0;
+}
+.mobile-chairside-icon-btn:active { transform: scale(0.92); background: var(--line-subtle, #e2e8f0); }
+
+@media (max-width: 639px) {
+  .mobile-chairside-icon-btn-secondary { display: none !important; }
+}
+
+/* ── Dark Mode HUD Overrides ── */
+[data-theme="dark"] .mobile-chairside-hud,
+.dark .mobile-chairside-hud {
+  background: rgba(15, 23, 42, 0.88); border-bottom-color: rgba(255, 255, 255, 0.08);
+}
+[data-theme="dark"] .mobile-chairside-allergy-clean,
+.dark .mobile-chairside-allergy-clean {
+  color: #34d399; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3);
+}
+[data-theme="dark"] .mobile-chairside-icon-btn,
+.dark .mobile-chairside-icon-btn {
+  background: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: #f1f5f9;
+}

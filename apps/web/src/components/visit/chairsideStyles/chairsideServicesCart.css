@@ -1,0 +1,105 @@
+/**
+ * apps/web/src/components/visit/chairsideStyles/chairsideServicesCart.css
+ * Sovereign Mobile Chairside Visit Workspace — Services Cart & Soft Negative Stock
+ * Invariants: Total Due Hero, 2-Col Quick Services, Touch Targets >= 52px
+ */
+
+.mobile-billing-hero-card {
+  width: 100%;
+  border-radius: 20px;
+  background: linear-gradient(180deg, var(--paper, #ffffff) 0%, var(--paper-soft, #f8fafc) 100%);
+  border: 1px solid var(--line, #e2e8f0);
+  padding: 20px 16px;
+  text-align: center;
+  box-sizing: border-box;
+}
+
+.mobile-billing-total-amount {
+  font-size: 36px;
+  font-weight: 800;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--ink, #0f172a);
+  margin-top: 4px;
+  letter-spacing: -0.02em;
+}
+
+.mobile-quick-services-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.mobile-quick-service-btn {
+  min-height: 52px;
+  padding: 8px 12px;
+  border-radius: 12px;
+  border: 1px solid var(--line, #e2e8f0);
+  background: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  cursor: pointer;
+  text-align: left;
+  transition: background-color 0.15s ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.mobile-quick-service-btn:active {
+  background: var(--paper-soft, #f1f5f9);
+}
+
+.mobile-quick-service-title {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--ink, #0f172a);
+  line-height: 1.2;
+  white-space: normal;
+  text-align: left;
+}
+
+.mobile-quick-service-price {
+  font-size: 11px;
+  color: var(--teal, #0d9488);
+  font-weight: 700;
+}
+
+.mobile-chairside-material-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 600;
+  background: color-mix(in srgb, var(--teal, #0d9488) 10%, transparent);
+  color: var(--teal, #0d9488);
+}
+
+/* ── Dark Mode Overrides ── */
+[data-theme="dark"] .mobile-billing-hero-card,
+.dark .mobile-billing-hero-card {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-billing-total-amount,
+.dark .mobile-billing-total-amount {
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-quick-service-btn,
+.dark .mobile-quick-service-btn {
+  background: #0f172a;
+  border-color: rgba(255, 255, 255, 0.08);
+  color: #f8fafc;
+}
+
+[data-theme="dark"] .mobile-quick-service-btn:active,
+.dark .mobile-quick-service-btn:active {
+  background: #1e293b;
+}
