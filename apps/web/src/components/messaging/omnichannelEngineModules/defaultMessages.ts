@@ -1,0 +1,85 @@
+import type { OmnichannelMessage } from "../omnichannelTypes.js";
+
+export const MESSAGES_PAT_101_AND_102: Record<string, OmnichannelMessage[]> = {
+	"pat-101": [
+		{
+			id: "msg-101-1",
+			patientId: "pat-101",
+			channel: "whatsapp",
+			direction: "outbound",
+			senderName: "DENTE Bot",
+			senderType: "automated_bot",
+			timestamp: "2026-08-28T14:10:00.000Z",
+			body: "Здравствуйте, Алексей Викторович!\nНапоминаем о вашем визите в клинику DENTE Dental Clinic:\nДата и время: 29.08.2026 в 15:00 (кабинет 302)\nВрач: Лечащий врач\nАдрес: Адрес клиники\n\nПодтвердите, пожалуйста, визит нажатием кнопки ниже.",
+			status: "read",
+			templateCategory: "visit_reminder",
+			interactivePayload: {
+				buttons: [
+					{ id: "btn-confirm", title: "Подтверждаю", action: "confirm_visit", variant: "primary" },
+					{ id: "btn-reschedule", title: "Перенести", action: "request_reschedule", variant: "secondary" },
+				],
+			},
+		},
+		{
+			id: "msg-101-2",
+			patientId: "pat-101",
+			channel: "whatsapp",
+			direction: "inbound",
+			senderName: "Алексей Викторович",
+			senderType: "patient",
+			timestamp: "2026-08-28T14:32:00.000Z",
+			body: "Здравствуйте! Да, подтверждаю визит на завтра в 15:00. Буду вовремя.",
+			status: "read",
+		},
+	],
+	"pat-102": [
+		{
+			id: "msg-102-1",
+			patientId: "pat-102",
+			channel: "telegram",
+			direction: "outbound",
+			senderName: "Администратор Ольга",
+			senderType: "clinic_staff",
+			timestamp: "2026-08-28T10:45:00.000Z",
+			body: "Мария Сергеевна, добрый день! Направляем согласованный план имплантации и счет на аванс для фиксации времени операции.",
+			status: "read",
+			templateCategory: "treatment_plan",
+			attachments: [
+				{
+					id: "att-1",
+					name: "План_лечения_имплантация_3.6.pdf",
+					type: "pdf",
+					url: "/documents/plan-36.pdf",
+					sizeFormatted: "420 КБ",
+				},
+			],
+		},
+		{
+			id: "msg-102-2",
+			patientId: "pat-102",
+			channel: "telegram",
+			direction: "outbound",
+			senderName: "DENTE Bot",
+			senderType: "automated_bot",
+			timestamp: "2026-08-28T10:46:00.000Z",
+			body: "Счет на предоплату по заказу №ORD-882-01 на сумму 25 000,00 ₽ через СБП:\nhttps://qr.nspk.ru/SBP-ORD-882-01?type=02&bank=100000000111&sum=2500000&cur=RUB",
+			status: "read",
+			templateCategory: "sbp_payment",
+			interactivePayload: {
+				paymentUrl: "https://qr.nspk.ru/SBP-ORD-882-01",
+				paymentAmountRub: 25000,
+			},
+		},
+		{
+			id: "msg-102-3",
+			patientId: "pat-102",
+			channel: "telegram",
+			direction: "inbound",
+			senderName: "Мария Сергеевна",
+			senderType: "patient",
+			timestamp: "2026-08-28T11:15:00.000Z",
+			body: "Спасибо большое, оплату по СБП провела! Чек пришел.",
+			status: "read",
+		},
+	],
+};

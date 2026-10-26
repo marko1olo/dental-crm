@@ -74,3 +74,45 @@
    - Адаптивный мобильный мессенджер с Top Bar (кнопка «Назад», имя пациента, бейдж канала, 1 Primary CTA «Запись»), чистая лента чата, скроллируемые шаблоны и поле ввода.
 4. 📱 **Mobile Dark (390×844)**: `docs/proofs/chat/04_omnichannel_chat_mobile_dark.png`
    - Мобильный интерфейс в темной теме Apple HIG с кнопками $\ge 44\times 44\text{px}$ и защитой области клавиатуры.
+
+---
+
+## 5. Декомпозиция SbpPaymentQrModal и omnichannelEngine (Мандат 8b)
+
+В соответствии с Мандатом 8b (лимит $\le 120$ строк на модуль, $\le 80$ строк на фасад) проведена полная модульная декомпозиция монолитов:
+
+1. **`omnichannelEngine.ts` (фасад 7 строк $\le 80$ строк):**
+   - Декомпозирован в подпапку `apps/web/src/components/messaging/omnichannelEngineModules/`:
+     * `npsCalculator.ts` (107 строк) — чистый расчет метрик лояльности NPS, скоринга и критических статусов;
+     * `templateReplacer.ts` (63 строки) — шаблонные подстановки `{patient_name}`, `{doctor_name}`, `{time}`, `{date}`, `{clinic_phone}`;
+     * `templateShareGenerators.ts` (30 строк) — генерация ссылок расшаривания (wa.me, t.me, sms:);
+     * `phoneAndMessengerFormatters.ts` (41 строка) — форматирование телефонов РФ (+7) и нормализация мессенджеров;
+     * `defaultTemplates.ts` (77 строк) & `defaultMarketingTemplates.ts` (54 строки) — клинические пресеты сообщений;
+     * `defaultContacts.ts` (68 строк) & `defaultSecondaryContacts.ts` (69 строк) — список контактов пациентов;
+     * `defaultMessages.ts` (85 строк) & `defaultSecondaryMessages.ts` (59 строк) — демонстрационные треды переписки;
+     * `defaultReviews.ts` (94 строки) — отзывы и обратная связь;
+     * `index.ts` (11 строк) — реэкспорт SSOT.
+
+2. **`SbpPaymentQrModal.tsx` (фасад 71 строка $\le 80$ строк):**
+   - Декомпозирован в подпапку `apps/web/src/components/messaging/sbpPaymentModal/`:
+     * `types.ts` (28 строк) — типы пропсов и стейта;
+     * `sbpGatewayClient.ts` (66 строк) — отказоустойчивый клиент генерации и сверки динамического QR СБП;
+     * `useSbpPaymentModalState.ts` (117 строк) — хук обратного отсчета TTL (15 мин), авто-опроса статуса и контроля кассира;
+     * `SbpModalHeader.tsx` (44 строки) — шапка с бейджем СБП Банка России и данными пациента;
+     * `SbpSuccessBanner.tsx` (39 строк) & `SbpExpiredBanner.tsx` (23 строки) — баннеры успешного зачисления и истечения срока;
+     * `SbpQrFrame.tsx` (59 строк) — оптический QR-фрейм с логотипом СБП и поддержкой сканирования;
+     * `SbpTimerCard.tsx` (37 строк) — динамический индикатор и прогресс-бар оставшегося времени;
+     * `SbpLiveStatusPill.tsx` (46 строк) — пульсирующий индикатор фаз оплаты;
+     * `SbpInvoiceSummaryCard.tsx` (60 строк) — карточка суммы в рублях и копейках, ФИО и стандарта ГОСТ Р 56042;
+     * `SbpShareActions.tsx` (112 строк) — 1-клик отправка в WhatsApp, Telegram, буфер обмена и печать чека;
+     * `SbpCashierControl.tsx` (93 строки) — панель сверки кассира (ручное подтверждение по выписке/СМС);
+     * `SbpModalFooter.tsx` (35 строк) — безопасный футер с подтверждением фискализации;
+     * `SbpModalBody.tsx` (73 строки) — тело модалки;
+     * `index.ts` (14 строк) — реэкспорт интерфейсов.
+
+### Red Team 4-State Visual Proofs (СБП модалка в живом CRM-контуре):
+- ☀️ `docs/proofs/messaging/01_messaging_sbp_modal_pc_light_1440.png` (116.0 KB)
+- 🌙 `docs/proofs/messaging/02_messaging_sbp_modal_pc_dark_1440.png` (113.7 KB)
+- 📱 `docs/proofs/messaging/03_messaging_sbp_modal_mobile_light_390.png` (45.1 KB)
+- 📱 `docs/proofs/messaging/04_messaging_sbp_modal_mobile_dark_390.png` (46.3 KB)
+
