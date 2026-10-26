@@ -40,16 +40,16 @@ export function AnesthesiaMobileBottomSheet({
 						<Syringe className="w-5 h-5 text-teal-600 shrink-0" />
 						<h3 className="text-sm font-bold text-[var(--ink)]">Обезболивание у кресла</h3>
 					</div>
-					<button type="button" onClick={onClose} aria-label="Закрыть" className="p-2 min-h-[44px] min-w-[44px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer">
+					<button type="button" onClick={onClose} aria-label="Закрыть" className="anesthesia-sheet-close-btn p-2 min-h-[44px] min-w-[44px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer">
 						<X size={20} />
 					</button>
 				</div>
 
 				<div className="flex rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5" role="group">
-					<button type="button" onClick={() => setTechniqueId("infiltration")} className={`flex-1 min-h-[44px] rounded-lg text-xs font-bold transition-all cursor-pointer ${techniqueId === "infiltration" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border border-[var(--teal)]" : "text-[var(--muted)]"}`}>
+					<button type="button" onClick={() => setTechniqueId("infiltration")} className={`flex-1 min-h-[44px] rounded-lg text-xs font-bold transition-all cursor-pointer ${techniqueId === "infiltration" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border border-[var(--teal)]" : "anesthesia-tab-unselected"}`}>
 						Инфильтрационная
 					</button>
-					<button type="button" onClick={() => setTechniqueId("mandibular_torus")} className={`flex-1 min-h-[44px] rounded-lg text-xs font-bold transition-all cursor-pointer ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border border-[var(--teal)]" : "text-[var(--muted)]"}`}>
+					<button type="button" onClick={() => setTechniqueId("mandibular_torus")} className={`flex-1 min-h-[44px] rounded-lg text-xs font-bold transition-all cursor-pointer ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border border-[var(--teal)]" : "anesthesia-tab-unselected"}`}>
 						Проводниковая
 					</button>
 				</div>
@@ -96,8 +96,8 @@ export function AnesthesiaMobileBottomSheet({
 				<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
 					<span className="text-xs font-bold text-[var(--ink)]">Доза: {carpulesCount} карп. ({(carpulesCount * 1.7).toFixed(1)} мл)</span>
 					<div className="flex items-center gap-1">
-						<button type="button" disabled={carpulesCount <= 0.5} onClick={() => setCarpulesCount(Math.max(0.5, carpulesCount - 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-black text-sm flex items-center justify-center cursor-pointer" data-testid="btn-decrease-carpules-mobile">−</button>
-						<button type="button" disabled={carpulesCount >= 10.0} onClick={() => setCarpulesCount(Math.min(10.0, carpulesCount + 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] font-black text-sm flex items-center justify-center cursor-pointer" data-testid="btn-increase-carpules-mobile">+</button>
+						<button type="button" disabled={carpulesCount <= 0.5} onClick={() => setCarpulesCount(Math.max(0.5, carpulesCount - 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-black text-sm flex items-center justify-center cursor-pointer" data-testid="btn-decrease-carpules-mobile">−</button>
+						<button type="button" disabled={carpulesCount >= 10.0} onClick={() => setCarpulesCount(Math.min(10.0, carpulesCount + 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-black text-sm flex items-center justify-center cursor-pointer" data-testid="btn-increase-carpules-mobile">+</button>
 					</div>
 				</div>
 

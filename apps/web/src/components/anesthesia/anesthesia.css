@@ -63,3 +63,23 @@
 	font-weight: 600;
 }
 
+.anesthesia-mobile-sheet .anesthesia-sheet-close-btn {
+	background: transparent;
+	color: var(--muted);
+}
+
+.anesthesia-mobile-sheet .anesthesia-sheet-close-btn:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
+.anesthesia-mobile-sheet .anesthesia-tab-unselected {
+	background: transparent;
+	color: var(--muted);
+}
+
+.anesthesia-mobile-sheet .anesthesia-tab-unselected:hover {
+	background: var(--paper-soft);
+	color: var(--ink);
+}
+
