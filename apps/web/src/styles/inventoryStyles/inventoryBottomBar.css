@@ -18,6 +18,11 @@
 	gap: 10px;
 }
 
+body:has([role="dialog"]) .mobile-inventory-bottom-bar,
+body:has(.shift-batch-deduction-modal) .mobile-inventory-bottom-bar {
+	display: none !important;
+}
+
 .mobile-inventory-primary-fab {
 	flex: 1;
 	min-height: 50px;

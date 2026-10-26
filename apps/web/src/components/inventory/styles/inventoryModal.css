@@ -1,9 +1,3 @@
-/**
- * ============================================================================
- * WAREHOUSE INVENTORY MODAL OVERLAY, HEADER & KPI CARDS
- * ============================================================================
- */
-
 .warehouse-inventory-overlay {
 	position: fixed;
 	inset: 0;
@@ -31,7 +25,6 @@
 	overflow: hidden;
 }
 
-/* 1. Header */
 .warehouse-inventory-header {
 	display: flex;
 	align-items: center;
@@ -82,7 +75,6 @@
 	flex-wrap: wrap;
 }
 
-/* 2. Top Summary KPI Cards */
 .warehouse-inventory-summary-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -116,14 +108,8 @@
 	line-height: 1.2;
 	color: var(--ink, #0f172a);
 }
-
-.warehouse-kpi-value.surplus {
-	color: #059669;
-}
-
-.warehouse-kpi-value.shortage {
-	color: #dc2626;
-}
+.warehouse-kpi-value.surplus { color: #059669; }
+.warehouse-kpi-value.shortage { color: #dc2626; }
 
 .warehouse-kpi-sub {
 	font-size: 0.75rem;

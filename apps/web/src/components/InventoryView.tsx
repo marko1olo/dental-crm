@@ -13,11 +13,12 @@ import { InventoryViewContentRouter } from "./inventory/viewModules/InventoryVie
 import { InventoryViewModalsContainer } from "./inventory/viewModules/InventoryViewModalsContainer.js";
 import { SterilizationBatchCycleModal } from "./inventory/sterilizationCycle/SterilizationBatchCycleModal.js";
 import { InboundWaybillModal } from "./inventory/InboundWaybillModal.js";
+import { BatchWriteoffModal } from "./inventory/BatchWriteoffModal.js";
 import { WarehouseBatchWriteoffModal } from "./inventory/WarehouseBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal.js";
 
 export { INVENTORY_CATEGORIES, type InventoryCategoryFilter };
-export { InboundWaybillModal, WarehouseBatchWriteoffModal, WarehouseInventoryAuditModal };
+export { BatchWriteoffModal, InboundWaybillModal, WarehouseBatchWriteoffModal, WarehouseInventoryAuditModal };
 export * from "./InventoryStockTable.js";
 export * from "./InventoryBatchFefoPanel.js";
 export * from "./InventoryInboundInvoiceModal.js";

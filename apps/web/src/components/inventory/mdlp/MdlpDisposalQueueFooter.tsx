@@ -61,7 +61,7 @@ export const MdlpDisposalQueueFooter: React.FC<
 					className="mdlp-btn mdlp-btn-primary min-h-[44px]"
 					style={{ minHeight: "44px" }}
 					onClick={onConfirmDisposal}
-					disabled={isDisposing}
+					disabled={false}
 					data-testid="confirm-disposal-btn"
 				>
 					{isDisposing ? (

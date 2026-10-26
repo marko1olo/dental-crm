@@ -1,15 +1,8 @@
-/**
- * ============================================================================
- * WAREHOUSE INVENTORY DARK THEME OVERRIDES
- * ============================================================================
- */
-
 [data-theme="dark"] .warehouse-inventory-modal {
 	background: var(--paper, #0f172a);
 	color: var(--ink, #f8fafc);
 	border-color: var(--border, #334155);
 }
-
 [data-theme="dark"] .warehouse-inventory-header,
 [data-theme="dark"] .warehouse-inventory-footer,
 [data-theme="dark"] .warehouse-meta-drawer,
@@ -19,18 +12,15 @@
 	border-color: var(--border, #334155);
 	color: var(--ink, #f8fafc);
 }
-
 [data-theme="dark"] .warehouse-inventory-summary-grid,
 [data-theme="dark"] .warehouse-inventory-toolbar,
 [data-theme="dark"] .warehouse-inventory-table-container {
 	background: var(--paper, #0f172a);
 	border-color: var(--border, #334155);
 }
-
 [data-theme="dark"] .warehouse-inventory-table td {
 	border-color: var(--border, #1e293b);
 }
-
 [data-theme="dark"] .warehouse-qty-stepper,
 [data-theme="dark"] .warehouse-inventory-search-box,
 [data-theme="dark"] .warehouse-meta-input {
@@ -38,83 +28,68 @@
 	border-color: #334155;
 	color: #f8fafc;
 }
-
 [data-theme="dark"] .warehouse-qty-stepper-btn {
 	background: #0f172a;
 	border-color: #334155;
 	color: #f8fafc;
 }
-
 [data-theme="dark"] .warehouse-inventory-tabs {
 	background: #1e293b;
 }
-
 [data-theme="dark"] .warehouse-inventory-tab-btn.active {
 	background: #334155;
 	color: #ffffff;
 }
-
 [data-theme="dark"] .fefo-badge.fresh {
 	background: rgba(16, 185, 129, 0.15);
 	color: #34d399;
 	border-color: rgba(16, 185, 129, 0.3);
 }
-
 [data-theme="dark"] .fefo-badge.warning-60 {
 	background: rgba(234, 179, 8, 0.15);
 	color: #facc15;
 	border-color: rgba(234, 179, 8, 0.3);
 }
-
 [data-theme="dark"] .fefo-badge.warning-30 {
 	background: rgba(249, 115, 22, 0.15);
 	color: #fb923c;
 	border-color: rgba(249, 115, 22, 0.3);
 }
-
 [data-theme="dark"] .fefo-badge.expired {
 	background: rgba(239, 68, 68, 0.15);
 	color: #f87171;
 	border-color: rgba(239, 68, 68, 0.3);
 }
-
 [data-theme="dark"] .discrepancy-pill.match {
 	background: var(--paper-soft);
 	color: var(--muted);
 }
-
 [data-theme="dark"] .discrepancy-pill.surplus {
 	background: rgba(16, 185, 129, 0.15);
 	color: #34d399;
 }
-
 [data-theme="dark"] .discrepancy-pill.shortage {
 	background: rgba(239, 68, 68, 0.15);
 	color: #f87171;
 }
-
 [data-theme="dark"] .warehouse-package-writeoff-bar {
 	background: var(--paper-soft, #1e293b);
 	border-color: var(--line, #334155);
 }
-
 [data-theme="dark"] .nurse-carpule-filter-chip:not(.bg-teal-600) {
 	background: var(--paper, #0f172a);
 	border-color: var(--line, #334155);
 	color: var(--ink, #f8fafc);
 }
-
 [data-theme="dark"] .nurse-carpule-filter-chip:not(.bg-teal-600):hover {
 	border-color: #14b8a6;
 	background: var(--paper-strong, #1e293b);
 }
-
 [data-theme="dark"] .warehouse-soft-overdraft-banner.overdraft {
 	background: rgba(245, 158, 11, 0.15);
 	border-color: rgba(245, 158, 11, 0.4);
 	color: #fde68a;
 }
-
 [data-theme="dark"] .warehouse-soft-overdraft-banner.normal {
 	background: rgba(13, 148, 136, 0.15);
 	border-color: rgba(13, 148, 136, 0.4);

@@ -3,11 +3,13 @@ export function printWriteoffAct(params: {
 	date?: string | undefined;
 	cabinetId?: string | undefined;
 	doctorName?: string | undefined;
+	patientName?: string | undefined;
 }) {
 	const actNum = params.actNumber || `АКТ-СПИС-${new Date().toISOString().slice(2, 10).replace(/-/g, "")}`;
 	const actDate = params.date || new Date().toISOString().slice(0, 10);
 	const cabinetId = params.cabinetId || "Кабинет №1";
 	const doctorName = params.doctorName || "Дежурный врач";
+	const patientInfo = params.patientName ? `Пациент: ${params.patientName}` : "Смена терапевтического отделения";
 
 	const html = `<!DOCTYPE html>
 	<html lang="ru"><head><meta charset="utf-8"><title>Акт списания материалов № ${actNum}</title>
@@ -23,7 +25,7 @@ export function printWriteoffAct(params: {
 	<div style="border-bottom: 2px solid #0d9488; padding-bottom: 10px; display: flex; justify-content: space-between;">
 		<div>
 			<h2 style="margin:0; font-size: 15pt; color: #0f172a;">АКТ СПИСАНИЯ РАСХОДНЫХ МАТЕРИАЛОВ № ${actNum}</h2>
-			<div style="font-size: 10pt; color: #64748b; margin-top: 4px;">Дата списания: ${actDate} г. • Кабинет: ${cabinetId}</div>
+			<div style="font-size: 10pt; color: #64748b; margin-top: 4px;">Дата: ${actDate} г. • ${cabinetId} • ${patientInfo}</div>
 		</div>
 		<div style="text-align: right; font-size: 10pt; color: #64748b;">
 			Основание: <strong>Клинический приём / Смена</strong>
@@ -31,7 +33,7 @@ export function printWriteoffAct(params: {
 	</div>
 
 	<div style="margin-top: 12px; font-size: 10pt; color: #334155;">
-		Настоящий акт составлен об израсходовании стоматологических расходных материалов и медикаментов при оказании медицинской помощи пациентам.
+		Настоящий акт составлен об израсходовании расходных материалов и медикаментов при оказании стоматологической помощи.
 	</div>
 
 	<table><thead><tr>
@@ -44,13 +46,13 @@ export function printWriteoffAct(params: {
 			<td style="text-align: center;">1</td>
 			<td><strong>Перчатки смотровые нитриловые / маски</strong></td>
 			<td style="text-align: center;">1 комплект</td>
-			<td>Расход смены (СанПиН)</td>
+			<td>Расход смены</td>
 		</tr>
 		<tr>
 			<td style="text-align: center;">2</td>
 			<td><strong>Слюноотсосы, нагрудники, валики ватные</strong></td>
 			<td style="text-align: center;">1 комплект</td>
-			<td>Одноразовые медизделия</td>
+			<td>Одноразовые расходники</td>
 		</tr>
 		<tr>
 			<td style="text-align: center;">3</td>
@@ -67,12 +69,12 @@ export function printWriteoffAct(params: {
 	</tbody></table>
 
 	<div style="margin-top: 16px; font-size: 9pt; color: #64748b; background: #f8fafc; padding: 8px; border-radius: 6px;">
-		✓ Списание произведено в фоновом режиме по утвержденным нормам расхода (без бюрократических комиссий и задержек приёма).
+		Списание произведено по фактическим нормам расхода (мягкий овердрафт склада / автосписание по закрытым визитам).
 	</div>
 
 	<table class="signatures"><tr>
-		<td style="width: 50%;"><strong>Ответственный сотрудник (Врач / Ассистент):</strong><br><br>_________________ / ${doctorName} /</td>
-		<td style="width: 50%;"><strong>Заведующий кабинетом:</strong><br><br>_________________ / _________________ /</td>
+		<td style="width: 50%;"><strong>Ответственный врач / персонал:</strong><br><br>_________________ / ${doctorName} /</td>
+		<td style="width: 50%;"><strong>Заведующий отделением:</strong><br><br>_________________ / _________________ /</td>
 	</tr></table></body></html>`;
 
 	const win = window.open("", "_blank");

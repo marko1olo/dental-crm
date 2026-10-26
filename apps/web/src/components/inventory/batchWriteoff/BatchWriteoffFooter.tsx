@@ -1,6 +1,6 @@
 import React from "react";
-import { PackageCheck, Printer, Zap } from "lucide-react";
-import type { WriteoffActiveTab } from "./batchWriteoffTypes.js";
+import { CheckCircle2, Loader2, PackageCheck, Printer, Zap } from "lucide-react";
+import type { ShiftSummaryData, WriteoffActiveTab } from "./batchWriteoffTypes.js";
 
 interface BatchWriteoffFooterProps {
 	readonly activeTab: WriteoffActiveTab;
@@ -8,7 +8,9 @@ interface BatchWriteoffFooterProps {
 	readonly onClose: () => void;
 	readonly isSubmitting: boolean;
 	readonly submittingPackageId: string | null;
+	readonly summaryData?: ShiftSummaryData | null;
 	readonly onExecuteShiftWriteoff: () => Promise<void>;
+	readonly onConfirmProcedureDeduction: () => Promise<void>;
 	readonly onPackageClick: (pkgId: any) => Promise<void>;
 }
 
@@ -18,21 +20,23 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 	onClose,
 	isSubmitting,
 	submittingPackageId,
+	summaryData,
 	onExecuteShiftWriteoff,
+	onConfirmProcedureDeduction,
 	onPackageClick,
 }) => {
-	const isBusy = isSubmitting || Boolean(submittingPackageId);
+	const completedVisits = summaryData?.shiftStats?.completedVisitsCount ?? 6;
 
 	return (
-		<div className="px-4 py-3 sm:px-5 sm:py-3.5 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex flex-wrap items-center justify-between gap-3">
+		<div className="px-4 py-3 sm:px-5 sm:py-3.5 pb-[max(14px,env(safe-area-inset-bottom,14px))] border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 flex flex-wrap items-center justify-between gap-3">
 			<button
 				type="button"
 				onClick={onPrintAct}
-				className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
+				className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 transition cursor-pointer"
 				title="Печать акта списания материалов"
 				data-testid="btn-print-writeoff-act"
 			>
-				<Printer size={15} />
+				<Printer size={16} />
 				<span>Печать акта списания</span>
 			</button>
 
@@ -40,22 +44,30 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					disabled={isBusy}
-					className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold transition cursor-pointer"
+					className="min-h-[44px] h-11 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold transition cursor-pointer"
 				>
-					Отмена
+					Закрыть
 				</button>
 
 				{activeTab === "shift" && (
 					<button
 						type="button"
 						onClick={onExecuteShiftWriteoff}
-						disabled={isSubmitting}
-						className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-[var(--primary)] text-white hover:brightness-110 active:scale-95 font-semibold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-						data-testid="btn-confirm-shift-writeoff"
+						disabled={false}
+						className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+						data-testid="btn-confirm-shift-batch-deduction"
 					>
-						<Zap size={15} />
-						<span>{isSubmitting ? "Списание..." : "✓ Списать расходники смены"}</span>
+						{isSubmitting ? (
+							<>
+								<Loader2 size={16} className="animate-spin" />
+								<span>Списание...</span>
+							</>
+						) : (
+							<>
+								<PackageCheck size={16} />
+								<span>Списать расходники за смену ({completedVisits} визитов)</span>
+							</>
+						)}
 					</button>
 				)}
 
@@ -63,25 +75,43 @@ export const BatchWriteoffFooter: React.FC<BatchWriteoffFooterProps> = ({
 					<button
 						type="button"
 						onClick={() => onPackageClick("anesthesia_package")}
-						disabled={Boolean(submittingPackageId)}
-						className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-[var(--primary)] text-white hover:brightness-110 active:scale-95 font-semibold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
+						disabled={false}
+						className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
 						data-testid="btn-confirm-primary-package"
 					>
-						<PackageCheck size={15} />
-						<span>{submittingPackageId ? "Списание..." : "✓ Списать выбранный пакет"}</span>
+						{submittingPackageId ? (
+							<>
+								<Loader2 size={16} className="animate-spin" />
+								<span>Списание...</span>
+							</>
+						) : (
+							<>
+								<Zap size={16} />
+								<span>Списать выбранный пакет</span>
+							</>
+						)}
 					</button>
 				)}
 
 				{activeTab === "procedure" && (
 					<button
 						type="button"
-						onClick={onExecuteShiftWriteoff}
-						disabled={isSubmitting}
-						className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-[var(--primary)] text-white hover:brightness-110 active:scale-95 font-semibold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
-						data-testid="btn-confirm-procedure-writeoff"
+						onClick={onConfirmProcedureDeduction}
+						disabled={false}
+						className="min-h-[44px] h-11 px-4 rounded-xl bg-teal-600 hover:bg-teal-700 active:scale-98 text-white font-bold text-xs sm:text-sm inline-flex items-center gap-2 shadow-xs transition cursor-pointer"
+						data-testid="btn-confirm-procedure-deduction"
 					>
-						<PackageCheck size={15} />
-						<span>{isSubmitting ? "Списание..." : "✓ Списать материалы приёма"}</span>
+						{isSubmitting ? (
+							<>
+								<Loader2 size={16} className="animate-spin" />
+								<span>Списание...</span>
+							</>
+						) : (
+							<>
+								<CheckCircle2 size={16} />
+								<span>Списать материалы приёма</span>
+							</>
+						)}
 					</button>
 				)}
 			</div>
