@@ -1,0 +1,63 @@
+/**
+ * premiumPrintStyles/premiumTokensAndPalettes.css
+ * DENTE Design System — Premium Document Color Palettes & Typography
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+:root {
+	--doc-primary: #0f766e;
+	--doc-primary-dark: #134e4a;
+	--doc-soft-bg: #f0fdfa;
+	--doc-border: #cbd5e1;
+	--doc-accent-border: #99f6e4;
+	--doc-ink: #0f172a;
+	--doc-muted: #475569;
+	--doc-paper: #ffffff;
+}
+
+.doc-palette-medical_navy {
+	--doc-primary: #1e3a8a;
+	--doc-primary-dark: #172554;
+	--doc-soft-bg: #eff6ff;
+	--doc-accent-border: #93c5fd;
+}
+
+.doc-palette-deep_teal {
+	--doc-primary: #0f766e;
+	--doc-primary-dark: #134e4a;
+	--doc-soft-bg: #f0fdfa;
+	--doc-accent-border: #99f6e4;
+}
+
+.doc-palette-royal_burgundy {
+	--doc-primary: #831843;
+	--doc-primary-dark: #701a75;
+	--doc-soft-bg: #fdf2f8;
+	--doc-accent-border: #fbcfe8;
+}
+
+.doc-palette-pure_slate {
+	--doc-primary: #0f172a;
+	--doc-primary-dark: #020617;
+	--doc-soft-bg: #f8fafc;
+	--doc-accent-border: #cbd5e1;
+}
+
+.doc-palette-gold_luxury {
+	--doc-primary: #b45309;
+	--doc-primary-dark: #78350f;
+	--doc-soft-bg: #fffbeb;
+	--doc-accent-border: #fde68a;
+}
+
+.doc-font-sans {
+	font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", Roboto, sans-serif;
+}
+
+.doc-font-serif {
+	font-family: "PT Serif", "Merriweather", "Georgia", "Times New Roman", serif;
+}
+
+.doc-font-mono {
+	font-family: "JetBrains Mono", "SF Mono", "Consolas", monospace;
+}

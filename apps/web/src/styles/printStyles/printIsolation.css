@@ -1,0 +1,33 @@
+/**
+ * printStyles/printIsolation.css
+ * Absolute Dark Mode Paper Isolation Invariant
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet),
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) * {
+	color-scheme: light !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) {
+	background: #ffffff !important;
+	background-color: #ffffff !important;
+	color: #000000 !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="oled"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], html.dark, .dark) :is(.pro-a4-physical-sheet, .pro-a4-page-sheet) :is(
+	h1, h2, h3, h4, h5, h6,
+	p, span, div, td, th, strong, em, b, u, i, small,
+	.a4-doc-title, .a4-doc-subtitle, .a4-section-heading,
+	.a4-p, .a4-p-noindent, .a4-meta-row, .a4-meta-row *,
+	.a4-clinic-name, .a4-clinic-requisites,
+	.a4-running-header, .a4-running-header *,
+	.a4-running-footer, .a4-running-footer *,
+	.a4-sign-col, .a4-sign-hint, .stamp-box
+) {
+	color: #000000 !important;
+}
+
+.pro-a4-doc-content {
+	color: #000000 !important;
+}

@@ -1,0 +1,60 @@
+/**
+ * documentStyles/documentsScenarioCards.css
+ * Scenario Card Item Presentation, Hover & Badges
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-scenario-card {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 8px !important;
+	height: 38px !important;
+	min-height: 38px !important;
+	padding: 0 10px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	font-family: inherit !important;
+	color: var(--ink) !important;
+	box-sizing: border-box !important;
+	text-decoration: none !important;
+}
+
+.document-scenario-card:hover {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 1px 4px rgba(13, 148, 136, 0.12) !important;
+}
+
+.document-scenario-left {
+	display: flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	min-width: 0 !important;
+}
+
+.document-scenario-title {
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--ink) !important;
+	white-space: nowrap !important;
+	overflow: hidden !important;
+	text-overflow: ellipsis !important;
+}
+
+.document-scenario-badge {
+	font-size: 10.5px !important;
+	font-weight: 600 !important;
+	padding: 1px 6px !important;
+	border-radius: 5px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--muted) !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+}

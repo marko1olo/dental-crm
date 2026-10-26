@@ -1,0 +1,75 @@
+/**
+ * documentStyles/documentsPatientBanner.css
+ * Document Patient Info & Metrics Telemetry Banner
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-patient-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+}
+
+.document-patient-info {
+	display: flex;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.document-patient-name {
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.document-patient-badge {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 7px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 500;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--muted);
+}
+
+.document-patient-stats {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.document-stat-pill {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	color: var(--muted);
+}
+
+.document-stat-pill.issued {
+	background: var(--ok-bg);
+	color: var(--ok-fg);
+	border-color: var(--line);
+}
+
+.document-stat-pill.draft {
+	background: var(--warn-bg);
+	color: var(--warn-fg);
+	border-color: var(--line);
+}

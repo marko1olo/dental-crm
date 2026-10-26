@@ -1,0 +1,75 @@
+/**
+ * ingestionStyles/ingestionWorkbench.css
+ * DENTE Design System — Document Ingestion Workbench & Source Cards
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.import-copy {
+	align-items: start;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.import-copy svg {
+	color: var(--teal);
+	height: 28px;
+	margin-top: 2px;
+	width: 28px;
+}
+
+.import-copy h2 {
+	font-size: clamp(1.1rem, 4vw, 1.35rem);
+	line-height: 1.25;
+	margin: 0;
+	word-break: normal;
+	overflow-wrap: break-word;
+}
+
+.import-copy p {
+	color: var(--muted);
+	margin: 8px 0 0;
+}
+
+.import-workbench {
+	align-content: start;
+	display: grid;
+	gap: 10px;
+	grid-column: 1 / -1;
+	grid-template-columns: minmax(0, 1fr);
+	min-width: 0;
+}
+
+.import-source-grid {
+	display: grid;
+	gap: 8px;
+	grid-column: 1 / -1;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.source-card {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	display: grid;
+	gap: 5px;
+	min-height: 84px;
+	padding: 12px;
+	text-align: left;
+}
+
+.source-card.active {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.11);
+}
+
+.source-card strong {
+	font-size: 14px;
+}
+
+.source-card span {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.35;
+}

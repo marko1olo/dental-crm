@@ -1,0 +1,111 @@
+/**
+ * printStyles/printToolbarActions.css
+ * Toolbar Zoom Controls, Badges & Print Trigger Button
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.pro-a4-zoom-group {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px;
+	height: 28px;
+	background-color: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line-subtle, #e2e8f0);
+	border-radius: 6px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-group {
+	background-color: #0f172a;
+	border-color: #334155;
+}
+
+.pro-a4-zoom-btn {
+	height: 24px;
+	min-height: 24px;
+	padding: 0 8px;
+	font-size: 11px;
+	font-weight: 500;
+	border-radius: 4px;
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	color: var(--ink-muted, #64748b);
+	transition: all 0.15s ease-in-out;
+}
+
+.pro-a4-zoom-btn:hover {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper-hover, rgba(0, 0, 0, 0.04));
+}
+
+.pro-a4-zoom-btn.active {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper, #ffffff);
+	border-color: var(--line-subtle, #cbd5e1);
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-btn {
+	color: #94a3b8;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-btn:hover {
+	color: #f8fafc;
+	background-color: rgba(255, 255, 255, 0.06);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-zoom-btn.active {
+	color: #ffffff;
+	background-color: #1e293b;
+	border-color: #475569;
+}
+
+.pro-a4-format-badge {
+	font-size: 11px;
+	font-weight: 600;
+	height: 26px;
+	display: inline-flex;
+	align-items: center;
+	color: var(--teal, #0f766e);
+	background-color: var(--teal-soft, #ccfbf1);
+	border: 1px solid var(--teal-line, rgba(13, 148, 136, 0.3));
+	padding: 0 8px;
+	border-radius: 6px;
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-format-badge {
+	color: #5eead4;
+	background-color: rgba(13, 148, 136, 0.2);
+	border-color: rgba(13, 148, 136, 0.4);
+}
+
+.pro-a4-print-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 28px;
+	min-height: 28px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 600;
+	background-color: var(--teal, #0f766e);
+	color: #ffffff;
+	border: none;
+	border-radius: 6px;
+	cursor: pointer;
+	box-shadow: 0 1px 3px rgba(15, 118, 110, 0.25);
+	transition: background-color 0.15s ease, transform 0.1s ease;
+	white-space: nowrap;
+}
+
+.pro-a4-print-btn:hover {
+	background-color: var(--teal-dark, #0d655e);
+}
+
+.pro-a4-print-btn:active {
+	transform: scale(0.98);
+}

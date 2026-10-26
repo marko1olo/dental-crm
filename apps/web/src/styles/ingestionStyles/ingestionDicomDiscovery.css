@@ -1,0 +1,106 @@
+/**
+ * ingestionStyles/ingestionDicomDiscovery.css
+ * DICOM Study Discovery & Migration Recovery Fallbacks
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.dicom-discovery-result {
+	background: #102d2b;
+	border: 1px solid rgba(119, 215, 199, 0.22);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.dicom-discovery-head {
+	display: grid;
+	gap: 4px;
+}
+
+.dicom-discovery-head strong,
+.dicom-discovery-grid strong {
+	color: #eef8f5;
+	font-size: 13px;
+	line-height: 1.25;
+}
+
+.dicom-discovery-head span,
+.dicom-discovery-grid span,
+.dicom-discovery-grid small,
+.dicom-discovery-result > small {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 800;
+	line-height: 1.35;
+	overflow-wrap: anywhere;
+}
+
+.dicom-discovery-grid {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.dicom-discovery-grid article {
+	background: rgba(255, 255, 255, 0.06);
+	border: 1px solid rgba(183, 213, 209, 0.2);
+	border-left: 3px solid #77d7c7;
+	border-radius: 8px;
+	display: grid;
+	gap: 6px;
+	min-width: 0;
+	padding: 9px;
+}
+
+.dicom-discovery-grid button {
+	justify-self: start;
+}
+
+.migration-source-card-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.migration-source-card-actions > span {
+	align-items: center;
+	color: #355f58;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 800;
+	gap: 6px;
+	line-height: 1.35;
+}
+
+.migration-empty-recovery {
+	background: rgba(255, 248, 239, 0.95);
+	border: 1px solid rgba(231, 198, 142, 0.85);
+	border-left: 4px solid #d8b866;
+	border-radius: 8px;
+	display: grid;
+	gap: 8px;
+	padding: 10px;
+}
+
+.migration-empty-recovery strong,
+.migration-empty-recovery span {
+	color: #744d18;
+	font-size: 13px;
+	font-weight: 900;
+	line-height: 1.35;
+	min-width: 0;
+	overflow-wrap: anywhere;
+}
+
+.migration-empty-recovery span {
+	color: #85612b;
+	font-size: 12px;
+	font-weight: 850;
+}
+
+.migration-action-hint {
+	color: #78928d;
+	line-height: 1.3;
+}

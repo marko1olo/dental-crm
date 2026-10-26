@@ -1,0 +1,46 @@
+/**
+ * printStyles/printTables.css
+ * Canonical Medical Print Tables
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin: 6px 0;
+	font-size: 8pt;
+	border: 0.75pt solid #000000 !important;
+	background-color: #ffffff !important;
+	page-break-inside: auto;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table thead {
+	display: table-header-group;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table tr {
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table th,
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table td {
+	border: 0.75pt solid #000000 !important;
+	padding: 3px 5px !important;
+	color: #000000 !important;
+	vertical-align: middle;
+	background-color: #ffffff;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table th {
+	background-color: #f0f0f0 !important;
+	font-weight: 700 !important;
+	text-align: center;
+	color: #000000 !important;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-table .total-row td {
+	font-weight: 800 !important;
+	background-color: #f7f7f7 !important;
+	color: #000000 !important;
+}

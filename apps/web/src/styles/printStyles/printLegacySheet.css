@@ -1,0 +1,22 @@
+/**
+ * printStyles/printLegacySheet.css
+ * Fallback Physical A4 Paper Sheet Geometry
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.pro-a4-physical-sheet {
+	width: 210mm;
+	min-height: 297mm;
+	max-width: 100%;
+	background: #ffffff !important;
+	color: #000000 !important;
+	color-scheme: light !important;
+	box-sizing: border-box;
+	margin: 0 auto;
+	padding: 20mm 10mm 20mm 25mm;
+	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.15), 0 0 0 1px rgba(0, 0, 0, 0.08);
+	font-family: "PT Astra Serif", "Times New Roman", Times, Georgia, serif;
+	font-size: 9.5pt;
+	line-height: 1.35;
+	position: relative;
+}

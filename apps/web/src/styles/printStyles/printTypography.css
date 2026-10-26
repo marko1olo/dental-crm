@@ -1,0 +1,84 @@
+/**
+ * printStyles/printTypography.css
+ * Document Typography, Clinic Headers & Paragraphs
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-header {
+	border-bottom: 1.5pt solid #000000;
+	padding-bottom: 6px;
+	margin-bottom: 10px;
+	text-align: center;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-clinic-name {
+	font-size: 11.5pt;
+	font-weight: 800;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+	color: #000000 !important;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-clinic-requisites {
+	font-size: 8pt;
+	color: #222222 !important;
+	margin-top: 3px;
+	line-height: 1.3;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-doc-title {
+	font-size: 13pt;
+	font-weight: 800;
+	text-align: center;
+	text-transform: uppercase;
+	margin: 10px 0 3px 0;
+	color: #000000 !important;
+	letter-spacing: 0.02em;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-doc-subtitle {
+	font-size: 9pt;
+	text-align: center;
+	color: #222222 !important;
+	margin-bottom: 10px;
+	line-height: 1.3;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-meta-row {
+	display: flex;
+	justify-content: space-between;
+	font-size: 9pt;
+	font-weight: 700;
+	margin-bottom: 8px;
+	border-bottom: 0.5pt solid #cccccc;
+	padding-bottom: 3px;
+	color: #000000 !important;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-section-heading {
+	font-size: 10pt;
+	font-weight: 800;
+	margin: 10px 0 5px 0;
+	text-transform: uppercase;
+	border-bottom: 0.75pt solid #000000;
+	padding-bottom: 2px;
+	color: #000000 !important;
+	letter-spacing: 0.01em;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-p {
+	font-size: 8.5pt;
+	text-align: justify;
+	text-indent: 1.25cm;
+	margin: 4px 0;
+	line-height: 1.35;
+	color: #000000 !important;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-p-noindent {
+	font-size: 8.5pt;
+	text-align: justify;
+	margin: 4px 0;
+	line-height: 1.35;
+	color: #000000 !important;
+}

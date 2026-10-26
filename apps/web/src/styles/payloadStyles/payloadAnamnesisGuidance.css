@@ -1,0 +1,49 @@
+/**
+ * payloadStyles/payloadAnamnesisGuidance.css
+ * Clinical Anamnesis Quick Insert & Guidance Tooltips
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-payload-row {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.document-anamnesis-field {
+	display: grid;
+	gap: 6px;
+}
+
+.document-anamnesis-quick {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	cursor: pointer;
+	font-size: 13px;
+	justify-self: start;
+	min-height: 34px;
+	padding: 6px 12px;
+}
+
+.document-anamnesis-quick:hover {
+	border-color: var(--teal);
+}
+
+.document-open-guidance {
+	background: var(--paper-soft, #f4fbf8);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+	margin: -4px 0 10px;
+	padding: 7px 9px;
+}
+
+.document-create-guidance {
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+}

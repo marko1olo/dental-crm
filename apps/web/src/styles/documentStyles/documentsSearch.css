@@ -1,0 +1,111 @@
+/**
+ * documentStyles/documentsSearch.css
+ * Document Registry Search Row, Input & Kind Select
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-search-row {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex-wrap: wrap !important;
+}
+
+.document-search-input-wrapper {
+	position: relative !important;
+	display: flex !important;
+	align-items: center !important;
+	flex: 1 1 240px !important;
+	min-width: 200px !important;
+}
+
+.document-search-icon {
+	position: absolute !important;
+	left: 12px !important;
+	top: 50% !important;
+	transform: translateY(-50%) !important;
+	color: var(--muted) !important;
+	pointer-events: none !important;
+}
+
+.document-search-input {
+	width: 100% !important;
+	height: 32px !important;
+	padding: 0 30px 0 38px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12.5px !important;
+	font-family: inherit !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-search-input:focus {
+	outline: none !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 0 0 2px var(--teal-surface) !important;
+}
+
+.document-search-clear-btn {
+	position: absolute !important;
+	right: 8px !important;
+	height: 20px !important;
+	width: 20px !important;
+	border-radius: 50% !important;
+	border: none !important;
+	background: transparent !important;
+	color: var(--muted) !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	cursor: pointer !important;
+	padding: 0 !important;
+}
+
+.document-search-clear-btn:hover {
+	color: var(--ink) !important;
+	background: var(--line) !important;
+}
+
+.document-registry-kind-select {
+	height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12.5px !important;
+	font-family: inherit !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-registry-kind-select:focus {
+	outline: none !important;
+	border-color: var(--teal) !important;
+}
+
+.document-reset-filters-btn {
+	height: 32px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--teal-dark) !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-reset-filters-btn:hover {
+	background: var(--teal-surface) !important;
+	border-color: var(--line) !important;
+}
+
+.document-results-count {
+	font-size: 12px !important;
+	color: var(--muted) !important;
+	margin-left: auto !important;
+}

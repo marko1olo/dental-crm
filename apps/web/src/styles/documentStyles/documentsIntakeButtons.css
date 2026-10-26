@@ -1,0 +1,63 @@
+/**
+ * documentStyles/documentsIntakeButtons.css
+ * Intake Quick Print & Blank Form Generation Action Buttons
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-intake-quick-print-btn {
+	width: auto !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	padding: 0 12px !important;
+	border-radius: 8px !important;
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	font-size: 12.5px !important;
+	font-weight: 600 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+	user-select: none !important;
+}
+
+.document-intake-quick-print-btn:hover {
+	background: var(--teal-dark) !important;
+	border-color: var(--teal-dark) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3) !important;
+}
+
+.document-intake-blank-contract-btn,
+.document-intake-open-modal-btn,
+.document-intake-a4-preview-btn {
+	height: 32px !important;
+	min-height: 32px !important;
+	padding: 0 12px !important;
+	border-radius: 8px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	color: var(--ink) !important;
+	font-size: 12.5px !important;
+	font-weight: 500 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	user-select: none !important;
+}
+
+.document-intake-blank-contract-btn:hover,
+.document-intake-open-modal-btn:hover,
+.document-intake-a4-preview-btn:hover {
+	border-color: var(--teal) !important;
+	background: var(--teal-surface) !important;
+	color: var(--ink) !important;
+	transform: translateY(-1px) !important;
+}

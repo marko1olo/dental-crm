@@ -1,0 +1,118 @@
+/**
+ * ingestionStyles/ingestionPanel.css
+ * Document Ingestion Panel, Upload Zone & Targets
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-ingestion-panel {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	grid-column: 1 / -1;
+	padding: 12px;
+}
+
+.document-ingestion-head {
+	align-items: start;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: auto minmax(0, 1fr);
+}
+
+.document-ingestion-head svg,
+.document-file-upload svg {
+	color: var(--teal);
+	height: 22px;
+	width: 22px;
+}
+
+.document-ingestion-head strong {
+	color: var(--ink);
+	display: block;
+	line-height: 1.25;
+}
+
+.document-ingestion-head span,
+.document-file-upload small,
+.document-ingestion-result p {
+	color: var(--muted);
+	font-size: 13px;
+	font-weight: 800;
+	line-height: 1.35;
+	margin: 3px 0 0;
+}
+
+.document-ingestion-targets {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 7px;
+}
+
+.document-ingestion-targets button {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 900;
+	min-height: 32px;
+	padding: 6px 10px;
+}
+
+.document-ingestion-targets button.active {
+	background: var(--teal-soft);
+	border-color: rgba(15, 118, 110, 0.35);
+	color: var(--teal-dark);
+}
+
+.document-file-upload {
+	align-items: center;
+	border: 1px dashed rgba(15, 118, 110, 0.42);
+	border-radius: 8px;
+	cursor: pointer;
+	display: grid;
+	gap: 3px 10px;
+	grid-template-columns: auto minmax(0, 1fr);
+	padding: 10px;
+}
+
+.document-file-upload span {
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 900;
+}
+
+.document-file-upload small {
+	grid-column: 2;
+}
+
+.document-file-upload input {
+	height: 1px;
+	opacity: 0;
+	position: absolute;
+	width: 1px;
+}
+
+.document-ingestion-result {
+	display: grid;
+	gap: 8px;
+}
+
+.document-ingestion-stats {
+	display: grid;
+	gap: 7px;
+	grid-template-columns: repeat(auto-fit, minmax(92px, 1fr));
+}
+
+.document-ingestion-stats span {
+	background: #eef8f5;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--teal-dark);
+	font-size: 12px;
+	font-weight: 900;
+	padding: 7px 8px;
+	text-align: center;
+}

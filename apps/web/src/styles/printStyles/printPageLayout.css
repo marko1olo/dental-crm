@@ -1,0 +1,105 @@
+/**
+ * printStyles/printPageLayout.css
+ * Physical Discrete A4 Sheet Geometry, Margins & Running Headers
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.pro-a4-paper-container {
+	flex: 1;
+	display: flex;
+	justify-content: center;
+	align-items: flex-start;
+	padding: 24px 16px 48px;
+	overflow-x: auto;
+	box-sizing: border-box;
+	background-color: var(--slate-100, #f1f5f9);
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-paper-container {
+	background-color: #0b1120 !important;
+}
+
+.pro-a4-sheet-stack {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	width: 100%;
+	transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	transform-origin: top center;
+}
+
+.pro-a4-sheet-stack.zoom-80 {
+	transform: scale(0.8);
+	transform-origin: top center;
+	margin-bottom: -10%;
+}
+
+.pro-a4-sheet-stack.zoom-100 {
+	transform: scale(1);
+	transform-origin: top center;
+}
+
+.pro-a4-sheet-stack.zoom-fit {
+	transform: none;
+	max-width: 100%;
+}
+
+.pro-a4-sheet-stack.zoom-fit .pro-a4-page-sheet {
+	width: min(210mm, 100%);
+	max-width: 100%;
+}
+
+.pro-a4-page-sheet {
+	width: 210mm;
+	min-height: 297mm;
+	height: 297mm;
+	max-width: 100%;
+	background: #ffffff !important;
+	color: #000000 !important;
+	color-scheme: light !important;
+	box-sizing: border-box;
+	margin: 0 auto 28px auto;
+	padding: 18mm 12mm 18mm 20mm;
+	box-shadow: 0 4px 25px rgba(0, 0, 0, 0.16), 0 0 0 1px rgba(0, 0, 0, 0.08);
+	font-family: "PT Astra Serif", "Times New Roman", Times, Georgia, serif;
+	font-size: 9pt;
+	line-height: 1.35;
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.pro-a4-page-sheet:last-child {
+	margin-bottom: 0;
+}
+
+.pro-a4-page-sheet .a4-sheet-body {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+}
+
+.a4-running-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 7.5pt;
+	color: #444444 !important;
+	border-bottom: 0.5pt solid #888888;
+	padding-bottom: 3px;
+	margin-bottom: 10px;
+	line-height: 1.2;
+}
+
+.a4-running-footer {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 7.5pt;
+	color: #444444 !important;
+	border-top: 0.5pt solid #cccccc;
+	padding-top: 3px;
+	margin-top: 12px;
+	line-height: 1.2;
+}

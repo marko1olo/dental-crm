@@ -1,0 +1,89 @@
+/**
+ * payloadStyles/payloadInventoryFields.css
+ * Inventory Material Form Fields, Actions & Expiry Badges
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.inventory-confirm-actions {
+	display: flex;
+	gap: 10px;
+	justify-content: flex-end;
+}
+
+.inventory-confirm-actions button {
+	border-radius: 10px;
+	cursor: pointer;
+	font-size: 14px;
+	font-weight: 600;
+	min-height: 42px;
+	padding: 10px 18px;
+}
+
+.inventory-confirm-cancel {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	color: var(--ink);
+}
+
+.inventory-confirm-danger {
+	background: var(--rust, #b91c1c);
+	border: 1px solid var(--rust, #b91c1c);
+	color: #ffffff;
+}
+
+.inventory-confirm-danger:hover {
+	filter: brightness(1.08);
+}
+
+.inventory-form-row {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.inventory-form-field {
+	color: var(--muted);
+	display: grid;
+	font-size: 13px;
+	font-weight: 500;
+	gap: 6px;
+}
+
+.inventory-form-field input {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--ink);
+	font-size: 14px;
+	outline: none;
+	padding: 10px 14px;
+}
+
+.inventory-form-more summary {
+	color: var(--teal);
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 4px 0;
+	user-select: none;
+}
+
+.inventory-form-more[open] summary {
+	margin-bottom: 10px;
+}
+
+.inventory-expiry-expired {
+	color: var(--rust, #b91c1c);
+	font-weight: 700;
+}
+
+.inventory-expiry-soon {
+	color: var(--amber, #d97706);
+	font-weight: 700;
+}
+
+@media (max-width: 640px) {
+	.inventory-form-row {
+		grid-template-columns: minmax(0, 1fr);
+	}
+}

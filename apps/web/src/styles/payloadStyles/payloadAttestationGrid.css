@@ -1,0 +1,66 @@
+/**
+ * payloadStyles/payloadAttestationGrid.css
+ * Document Attestation Grid & Form Checkboxes
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-issue-attestation-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.document-issue-attestation-grid label,
+.document-issue-checkboxes label {
+	display: grid;
+	gap: 5px;
+	min-width: 0;
+}
+
+.document-issue-attestation-grid input,
+.document-issue-attestation-grid select,
+.document-issue-attestation-grid textarea {
+	background: #fff;
+	border: 1px solid #e0c18a;
+	border-radius: 8px;
+	color: var(--ink);
+	font: inherit;
+	min-width: 0;
+	padding: 9px 10px;
+	width: 100%;
+}
+
+.document-issue-attestation-grid textarea {
+	min-height: 74px;
+	resize: vertical;
+}
+
+.document-issue-attestation-note {
+	grid-column: 1 / -1;
+}
+
+.document-issue-checkboxes {
+	display: grid;
+	gap: 8px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.document-issue-checkboxes label {
+	align-items: center;
+	background: rgba(255, 255, 255, 0.72);
+	border: 1px solid #ead2a1;
+	border-radius: 8px;
+	display: flex;
+	gap: 8px;
+	padding: 8px 10px;
+}
+
+.document-issue-checkboxes input {
+	flex: 0 0 auto;
+}
+
+.document-issue-checkboxes span {
+	color: var(--ink);
+	font-size: 13px;
+	margin: 0;
+}

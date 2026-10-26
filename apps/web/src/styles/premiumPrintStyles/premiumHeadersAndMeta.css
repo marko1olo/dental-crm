@@ -1,0 +1,101 @@
+/**
+ * premiumPrintStyles/premiumHeadersAndMeta.css
+ * Header Layouts, Brand Titles & Patient/Visit Meta Table
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.doc-header-modern-split {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 1.5rem;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid var(--doc-primary);
+	margin-bottom: 1.25rem;
+}
+
+.doc-header-classic-centered {
+	text-align: center;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid var(--doc-primary);
+	margin-bottom: 1.25rem;
+}
+
+.doc-header-minimal-clean {
+	padding-bottom: 0.75rem;
+	border-bottom: 1px solid var(--doc-border);
+	margin-bottom: 1rem;
+}
+
+.doc-brand-title {
+	font-size: 1.25rem;
+	font-weight: 800;
+	color: var(--doc-primary);
+	letter-spacing: -0.01em;
+	line-height: 1.2;
+}
+
+.doc-brand-slogan {
+	font-size: 0.75rem;
+	color: var(--doc-muted);
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	margin-top: 0.2rem;
+}
+
+.doc-clinic-meta {
+	font-size: 0.75rem;
+	color: var(--doc-muted);
+	line-height: 1.4;
+}
+
+.doc-official-title-box {
+	text-align: center;
+	margin: 1rem 0 1.25rem;
+}
+
+.doc-official-title-box h1 {
+	font-size: 1.15rem;
+	font-weight: 900;
+	text-transform: uppercase;
+	color: var(--doc-primary-dark);
+	margin: 0;
+	letter-spacing: 0.02em;
+}
+
+.doc-official-title-box .doc-form-sub {
+	font-size: 0.75rem;
+	font-weight: 600;
+	color: var(--doc-muted);
+	margin-top: 0.25rem;
+}
+
+.doc-meta-table {
+	width: 100%;
+	border-collapse: collapse;
+	margin-bottom: 1.25rem;
+	font-size: 0.825rem;
+	border: 1px solid var(--doc-border);
+	background: var(--doc-soft-bg);
+	border-radius: 6px;
+	overflow: hidden;
+}
+
+.doc-meta-table td {
+	padding: 0.4rem 0.6rem;
+	border: 1px solid var(--doc-border);
+	vertical-align: top;
+}
+
+.doc-meta-table .doc-label {
+	font-weight: 700;
+	color: var(--doc-primary-dark);
+	width: 25%;
+	background: rgba(255, 255, 255, 0.6);
+}
+
+.doc-meta-table .doc-val {
+	color: var(--doc-ink);
+	font-weight: 500;
+}

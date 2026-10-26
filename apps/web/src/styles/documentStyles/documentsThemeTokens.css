@@ -1,0 +1,41 @@
+/**
+ * documentStyles/documentsThemeTokens.css
+ * DENTE Design System — Document Hub Color & Spacing Tokens
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+:root {
+	--doc-radius: 8px;
+	--doc-btn-h: 32px;
+	--doc-btn-h-mobile: 44px;
+	--doc-transition: all 0.15s ease;
+	--doc-border: var(--line, #e2e8f0);
+	--doc-bg-card: var(--paper, #ffffff);
+	--doc-bg-subtle: var(--paper-soft, #f8fafc);
+	--doc-text-main: var(--ink, #0f172a);
+	--doc-text-muted: var(--muted, #64748b);
+	--doc-accent: var(--teal, #0d9488);
+	--doc-accent-hover: var(--teal-dark, #0f766e);
+	--doc-accent-surface: var(--teal-surface, rgba(13, 148, 136, 0.08));
+	--doc-badge-draft-bg: var(--warn-bg, rgba(245, 158, 11, 0.1));
+	--doc-badge-draft-fg: var(--warn-fg, #b45309);
+	--doc-badge-issued-bg: var(--ok-bg, rgba(16, 185, 129, 0.1));
+	--doc-badge-issued-fg: var(--ok-fg, #047857);
+}
+
+[data-theme="dark"],
+[data-theme="night"],
+[data-theme="cyber_xray"],
+[data-theme="ocean"],
+[data-theme="emerald"] {
+	--doc-border: var(--line, rgba(255, 255, 255, 0.1));
+	--doc-bg-card: var(--paper, #1e293b);
+	--doc-bg-subtle: var(--paper-soft, #0f172a);
+	--doc-text-main: var(--ink, #f8fafc);
+	--doc-text-muted: var(--muted, #94a3b8);
+	--doc-accent-surface: rgba(13, 148, 136, 0.2);
+	--doc-badge-draft-bg: rgba(245, 158, 11, 0.18);
+	--doc-badge-draft-fg: #fcd34d;
+	--doc-badge-issued-bg: rgba(16, 185, 129, 0.18);
+	--doc-badge-issued-fg: #6ee7b7;
+}

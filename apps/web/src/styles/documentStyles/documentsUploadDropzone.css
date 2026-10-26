@@ -1,0 +1,90 @@
+/**
+ * documentStyles/documentsUploadDropzone.css
+ * External Scans & PDF Drag & Drop Ingestion Zone
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.documents-upload-dropzone {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 24px 16px;
+	border: 2px dashed var(--line);
+	border-radius: 12px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	text-align: center;
+	cursor: pointer;
+	transition: all 0.2s ease;
+	position: relative;
+	overflow: hidden;
+}
+
+.documents-upload-dropzone:hover,
+.documents-upload-dropzone.drag-active {
+	border-color: var(--teal);
+	background: var(--teal-surface);
+	transform: translateY(-1px);
+}
+
+.documents-upload-dropzone.drag-reject {
+	border-color: var(--danger, #ef4444);
+	background: rgba(239, 68, 68, 0.08);
+}
+
+.documents-upload-icon-wrapper {
+	width: 44px;
+	height: 44px;
+	border-radius: 50%;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	color: var(--teal);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.documents-upload-title {
+	font-size: 13px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.documents-upload-subtitle {
+	font-size: 11.5px;
+	color: var(--muted);
+	margin: 0;
+	line-height: 1.3;
+}
+
+.documents-upload-file-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 10px;
+	border-radius: 6px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.documents-upload-progress-bar {
+	width: 100%;
+	height: 4px;
+	border-radius: 2px;
+	background: var(--line);
+	overflow: hidden;
+	margin-top: 8px;
+}
+
+.documents-upload-progress-fill {
+	height: 100%;
+	background: var(--teal);
+	transition: width 0.3s ease;
+}

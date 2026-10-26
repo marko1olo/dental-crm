@@ -1,0 +1,84 @@
+/**
+ * payloadStyles/payloadActionsAndLinks.css
+ * Document Payload Action Buttons, Factory Links & Navigation
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-payload-actions {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.document-payload-actions small {
+	color: var(--muted);
+	flex: 1 1 240px;
+	font-size: 12px;
+	line-height: 1.35;
+	min-width: 0;
+}
+
+.document-payload-actions .document-action-guidance {
+	background: var(--paper-soft, #eef7f5);
+	border: 1px solid var(--line);
+	border-radius: 6px;
+	color: var(--teal-dark, #0f5f56);
+	padding: 6px 8px;
+}
+
+.document-factory-group h3 {
+	color: var(--muted);
+	font-size: 12px;
+	letter-spacing: 0;
+	margin: 0;
+}
+
+.document-factory-group > div {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.document-factory .secondary-button {
+	font-size: 13px;
+	justify-content: flex-start;
+	min-height: 34px;
+	min-width: 0;
+	padding: 0 9px;
+}
+
+.document-row > svg {
+	color: var(--green);
+	height: 22px;
+	width: 22px;
+}
+
+/* biome-ignore lint/style/noDescendingSpecificity: automated suppression */
+.doc-link {
+	align-items: center;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--teal-dark);
+	display: inline-flex;
+	font-size: 13px;
+	font-weight: 850;
+	min-height: 34px;
+	padding: 0 10px;
+	text-decoration: none;
+}
+
+.document-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	justify-content: flex-end;
+	min-width: 0;
+}
+
+.document-actions .text-button {
+	font-size: 13px;
+	min-height: 34px;
+	padding: 0 10px;
+}

@@ -1,0 +1,99 @@
+/**
+ * documentStyles/documentsNavTabs.css
+ * Segmented Navigation Tabs & Category Badges
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-nav-tabs {
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 2px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line-subtle, var(--line)) !important;
+	border-radius: 10px !important;
+	padding: 3px !important;
+	width: 100% !important;
+	max-width: 100% !important;
+	box-sizing: border-box !important;
+	overflow-x: auto !important;
+	scrollbar-width: none !important;
+	-webkit-overflow-scrolling: touch !important;
+	touch-action: pan-x !important;
+	margin: 8px 0 !important;
+	user-select: none !important;
+}
+
+.document-nav-tabs::-webkit-scrollbar {
+	display: none !important;
+}
+
+.document-nav-tab-btn {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	height: 28px !important;
+	padding: 0 10px !important;
+	border-radius: 7px !important;
+	border: 1px solid transparent !important;
+	background: transparent !important;
+	color: var(--muted) !important;
+	font-size: 12.5px !important;
+	font-weight: 500 !important;
+	font-family: inherit !important;
+	cursor: pointer !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.document-nav-tab-btn:hover:not(.active) {
+	background: rgba(0, 0, 0, 0.04) !important;
+	color: var(--ink) !important;
+}
+
+[data-theme="dark"] .document-nav-tab-btn:hover:not(.active),
+[data-theme="night"] .document-nav-tab-btn:hover:not(.active),
+[data-theme="cyber_xray"] .document-nav-tab-btn:hover:not(.active),
+[data-theme="ocean"] .document-nav-tab-btn:hover:not(.active),
+[data-theme="emerald"] .document-nav-tab-btn:hover:not(.active) {
+	background: rgba(255, 255, 255, 0.06) !important;
+	color: var(--ink) !important;
+}
+
+.document-nav-tab-btn.active {
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	border-color: var(--line-subtle, var(--line)) !important;
+	font-weight: 600 !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08) !important;
+}
+
+.document-nav-tab-btn.active svg {
+	color: var(--teal) !important;
+}
+
+.document-nav-tab-badge {
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	min-width: 18px !important;
+	height: 18px !important;
+	padding: 0 5px !important;
+	font-size: 11px !important;
+	font-weight: 600 !important;
+	border-radius: 999px !important;
+	background: var(--paper-soft) !important;
+	color: var(--muted) !important;
+	border: 1px solid var(--line-subtle, var(--line)) !important;
+	line-height: 1 !important;
+	flex-shrink: 0 !important;
+	margin-left: 2px !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-nav-tab-btn.active .document-nav-tab-badge {
+	background: var(--teal-soft) !important;
+	color: var(--teal-dark) !important;
+	border-color: var(--teal-soft) !important;
+}

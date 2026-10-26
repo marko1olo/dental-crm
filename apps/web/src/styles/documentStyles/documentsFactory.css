@@ -1,0 +1,91 @@
+/**
+ * documentStyles/documentsFactory.css
+ * Document Factory Toolbar & Template Kind Selector
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-factory {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 6px !important;
+	margin: 6px 0 !important;
+}
+
+.document-factory-toolbar,
+.document-factory-selected-kind {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	gap: 10px !important;
+	padding: 6px 12px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+	border-radius: 8px !important;
+	flex-wrap: wrap !important;
+	min-height: 46px !important;
+	height: auto !important;
+	margin: 0 !important;
+}
+
+.document-factory-select-container {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex: 1 1 auto !important;
+	min-width: 260px !important;
+	height: auto !important;
+	max-height: 38px !important;
+}
+
+.document-factory-select-label,
+.document-factory-selected-kind label {
+	display: inline-flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--muted) !important;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
+	margin: 0 !important;
+	width: auto !important;
+	gap: 0 !important;
+}
+
+.document-factory-select,
+.document-factory-selected-kind select {
+	height: 34px !important;
+	min-height: 34px !important;
+	flex: 1 1 auto !important;
+	width: auto !important;
+	max-width: 480px !important;
+	padding: 0 10px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	font-size: 12.5px !important;
+	font-family: inherit !important;
+	font-weight: 500 !important;
+	cursor: pointer !important;
+	transition: all 0.15s ease !important;
+	margin: 0 !important;
+}
+
+.document-factory-select:focus,
+.document-factory-selected-kind select:focus {
+	outline: none !important;
+	border-color: var(--teal) !important;
+	box-shadow: 0 0 0 2px var(--teal-surface) !important;
+}
+
+.document-factory-actions {
+	display: flex !important;
+	flex-direction: row !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex-shrink: 0 !important;
+	margin: 0 !important;
+}

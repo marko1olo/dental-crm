@@ -1,0 +1,70 @@
+/**
+ * payloadStyles/payloadIssueConfirmation.css
+ * Clinical Issue Confirmation Modal & Missing Facts Box
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-issue-confirmation {
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-left: 5px solid var(--amber);
+	border-radius: 8px;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.document-issue-confirmation span {
+	color: #744d18;
+	display: block;
+	font-size: 12px;
+	font-weight: 950;
+	margin-bottom: 3px;
+}
+
+.document-issue-confirmation strong {
+	color: var(--ink);
+	display: block;
+	font-size: 16px;
+	line-height: 1.2;
+}
+
+.document-issue-confirmation p,
+.document-issue-confirmation ul {
+	color: var(--muted);
+	margin: 0;
+}
+
+.document-issue-confirmation ul {
+	display: grid;
+	gap: 5px;
+	padding-left: 18px;
+}
+
+.document-confirmation-missing {
+	background: #fff;
+	border: 1px solid #e5b95d;
+	border-radius: 8px;
+	color: #6f4410;
+	display: grid;
+	gap: 6px;
+	padding: 10px 12px;
+}
+
+.document-confirmation-missing strong {
+	color: #6f4410;
+	font-size: 13px;
+}
+
+.document-confirmation-missing ul {
+	color: #7a4c16;
+	font-size: 13px;
+	margin: 0;
+}
+
+.document-issue-confirmation-actions {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+	justify-content: flex-end;
+}

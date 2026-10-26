@@ -1,0 +1,98 @@
+/**
+ * printStyles/printToolbar.css
+ * Screen Viewport & Utility Toolbar for A4 Print Preview
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.pro-a4-viewport {
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	min-height: 100%;
+	background-color: var(--slate-100, #f1f5f9);
+	color: var(--ink, #0f172a);
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-viewport {
+	background-color: #0b1120 !important;
+	color: #f8fafc;
+}
+
+.pro-a4-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 36px;
+	min-height: 36px;
+	max-height: 36px;
+	padding: 0 12px;
+	gap: 8px;
+	flex-wrap: nowrap;
+	overflow-x: auto;
+	overflow-y: hidden;
+	background-color: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	position: sticky;
+	top: 0;
+	z-index: 20;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark) .pro-a4-toolbar {
+	background-color: #1e293b;
+	border-bottom-color: #334155;
+}
+
+.pro-a4-tab-selector {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	padding: 2px;
+	height: 30px;
+	background-color: var(--paper-soft, #f1f5f9);
+	border: 1px solid var(--line-subtle, #e2e8f0);
+	border-radius: 8px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	flex-shrink: 0;
+}
+
+.pro-a4-tab-btn {
+	height: 26px;
+	min-height: 26px;
+	padding: 0 8px;
+	border-radius: 6px;
+	font-size: 11.5px;
+	font-weight: 500;
+	line-height: 1;
+	color: var(--ink-muted, #64748b);
+	background: transparent;
+	border: 1px solid transparent;
+	cursor: pointer;
+	transition: all 0.15s ease-in-out;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	white-space: nowrap;
+}
+
+.pro-a4-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper-hover, rgba(0, 0, 0, 0.04));
+}
+
+.pro-a4-tab-btn.active {
+	color: var(--ink, #0f172a);
+	background-color: var(--paper, #ffffff);
+	border-color: var(--line-subtle, #cbd5e1);
+	font-weight: 600;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.pro-a4-toolbar-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}

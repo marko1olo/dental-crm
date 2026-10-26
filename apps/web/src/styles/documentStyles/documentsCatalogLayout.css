@@ -1,0 +1,65 @@
+/**
+ * documentStyles/documentsCatalogLayout.css
+ * Documents Panel Container & Responsive Layout Switch
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.documents-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	width: 100%;
+	color: var(--ink);
+}
+
+@media (max-width: 767px) {
+	.documents-panel .mobile-documents-hub-wrapper,
+	.documents-panel > .md\:hidden {
+		display: block !important;
+	}
+	.documents-panel .desktop-documents-experience,
+	.documents-panel > .md\:block,
+	.documents-panel > .hidden.md\:block {
+		display: none !important;
+	}
+}
+
+@media (min-width: 768px) {
+	.documents-panel .mobile-documents-hub-wrapper,
+	.documents-panel > .md\:hidden {
+		display: none !important;
+	}
+	.documents-panel .desktop-documents-experience,
+	.documents-panel > .md\:block,
+	.documents-panel > .hidden.md\:block {
+		display: block !important;
+	}
+}
+
+.documents-panel .panel-heading {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 4px;
+}
+
+.documents-panel .panel-heading h2 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	letter-spacing: -0.01em;
+	color: var(--ink);
+}
+
+.document-registry-filter-bar {
+	display: flex !important;
+	flex-direction: column !important;
+	gap: 8px !important;
+	margin: 8px 0 !important;
+	padding: 10px 12px !important;
+	border-radius: 8px !important;
+	background: var(--paper-soft) !important;
+	border: 1px solid var(--line) !important;
+}

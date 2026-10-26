@@ -1,0 +1,54 @@
+/**
+ * documentStyles/documentsActionsMobile.css
+ * Mobile Touch Ergonomics for Document Actions
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+@media (pointer: coarse), (max-width: 768px) {
+	.doc-dropdown-item {
+		min-height: 44px;
+	}
+
+	.documents-panel .panel-heading button,
+	.documents-panel .panel-heading .secondary-button,
+	.documents-panel .panel-heading .text-button {
+		min-height: 40px !important;
+		height: 40px !important;
+		padding: 0 14px !important;
+	}
+
+	.document-intake-quick-print-btn {
+		min-height: 40px !important;
+		height: 40px !important;
+	}
+
+	.document-nav-tab-btn {
+		height: 38px !important;
+		min-height: 38px !important;
+		padding: 0 10px !important;
+		font-size: 12px !important;
+	}
+
+	.document-filter-chip {
+		height: 34px !important;
+		min-height: 34px !important;
+		padding: 0 12px !important;
+		font-size: 12.5px !important;
+	}
+
+	.document-search-input {
+		height: 38px !important;
+	}
+
+	.document-registry-kind-select {
+		height: 38px !important;
+	}
+}
+
+@media (max-width: 640px) {
+	.document-package-close-btn {
+		min-height: 44px;
+		height: 44px;
+		width: 44px;
+	}
+}

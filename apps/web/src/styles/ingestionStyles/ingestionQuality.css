@@ -1,0 +1,86 @@
+/**
+ * ingestionStyles/ingestionQuality.css
+ * Document Ingestion Quality Indicators & Extracted Signals
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-quality {
+	background: #f7fbfa;
+	border: 1px solid var(--line);
+	border-left: 5px solid var(--teal);
+	border-radius: 8px;
+	display: grid;
+	gap: 7px;
+	padding: 10px;
+}
+
+.document-quality.quality-review {
+	border-left-color: var(--amber);
+}
+
+.document-quality.quality-ocr_required,
+.document-quality.quality-unsupported {
+	border-left-color: var(--rust);
+}
+
+.document-quality > div:first-child {
+	align-items: center;
+	display: flex;
+	gap: 8px;
+	justify-content: space-between;
+}
+
+.document-quality strong {
+	color: var(--ink);
+	line-height: 1.2;
+}
+
+.document-quality span,
+.document-quality p,
+.document-signal-row span {
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.document-quality > div:first-child span {
+	color: var(--teal-dark);
+	text-align: right;
+}
+
+.document-signal-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 5px;
+}
+
+.document-extracted-files {
+	display: grid;
+	gap: 6px;
+}
+
+.document-extracted-files span,
+.document-signal-row span {
+	background: #fff;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	min-width: 0;
+	overflow-wrap: anywhere;
+	padding: 5px 7px;
+}
+
+.document-ingestion-result p {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	max-height: 130px;
+	overflow: auto;
+	padding: 9px;
+	white-space: pre-wrap;
+}

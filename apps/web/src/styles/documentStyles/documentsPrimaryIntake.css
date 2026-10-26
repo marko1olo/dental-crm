@@ -1,0 +1,69 @@
+/**
+ * documentStyles/documentsPrimaryIntake.css
+ * Fast 1-Click Print & Primary Intake Guidance Banner
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-primary-intake-banner {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	flex-wrap: wrap !important;
+	gap: 8px !important;
+	padding: 6px 12px !important;
+	border-radius: 8px !important;
+	background: var(--paper) !important;
+	border: 1px solid var(--line) !important;
+	border-left: 3px solid var(--primary, var(--teal)) !important;
+	margin-bottom: 4px !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.02) !important;
+}
+
+.document-primary-intake-heading {
+	display: flex !important;
+	align-items: center !important;
+	flex-wrap: wrap !important;
+	gap: 6px !important;
+}
+
+.document-primary-intake-badge-title {
+	display: flex !important;
+	align-items: center !important;
+	gap: 8px !important;
+	flex-wrap: wrap !important;
+}
+
+.document-primary-intake-pill {
+	display: inline-flex !important;
+	align-items: center !important;
+	padding: 2px 8px !important;
+	border-radius: 6px !important;
+	font-size: 11.5px !important;
+	font-weight: 700 !important;
+	background: var(--teal-soft) !important;
+	color: var(--teal-dark) !important;
+	border: 1px solid var(--line) !important;
+}
+
+[data-theme="dark"] .document-primary-intake-pill,
+[data-theme="night"] .document-primary-intake-pill,
+[data-theme="cyber_xray"] .document-primary-intake-pill,
+[data-theme="ocean"] .document-primary-intake-pill,
+[data-theme="emerald"] .document-primary-intake-pill {
+	background: rgba(13, 148, 136, 0.18) !important;
+	color: var(--teal) !important;
+	border-color: rgba(13, 148, 136, 0.35) !important;
+}
+
+.document-primary-intake-hint {
+	font-size: 11.5px !important;
+	color: var(--muted) !important;
+	line-height: 1.3 !important;
+}
+
+.document-primary-intake-btn-group {
+	display: flex !important;
+	flex-wrap: wrap !important;
+	align-items: center !important;
+	gap: 8px !important;
+}

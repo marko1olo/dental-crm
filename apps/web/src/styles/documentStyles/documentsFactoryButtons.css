@@ -1,0 +1,62 @@
+/**
+ * documentStyles/documentsFactoryButtons.css
+ * Document Factory Creation Buttons & Action Triggers
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-factory-create-btn {
+	height: 34px !important;
+	min-height: 34px !important;
+	padding: 0 14px !important;
+	border-radius: 8px !important;
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	font-weight: 600 !important;
+	font-size: 12.5px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+	transition: all 0.15s ease !important;
+	white-space: nowrap !important;
+	user-select: none !important;
+}
+
+.document-factory-create-btn:hover:not(:disabled) {
+	background: var(--teal-dark) !important;
+	border-color: var(--teal-dark) !important;
+	transform: translateY(-1px) !important;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3) !important;
+}
+
+.document-factory-create-btn:disabled {
+	opacity: 0.6 !important;
+	cursor: not-allowed !important;
+}
+
+.document-factory .primary-button {
+	height: 34px !important;
+	min-height: 34px !important;
+	border-radius: 8px !important;
+	padding: 0 14px !important;
+	background: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	font-weight: 600 !important;
+	font-size: 12.5px !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	gap: 6px !important;
+	cursor: pointer !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25) !important;
+	transition: all 0.15s ease !important;
+}
+
+.document-factory .primary-button:hover:not(:disabled) {
+	background: var(--teal-dark) !important;
+	border-color: var(--teal-dark) !important;
+	transform: translateY(-1px) !important;
+}

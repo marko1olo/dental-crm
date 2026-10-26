@@ -1,0 +1,43 @@
+/**
+ * printStyles/printSignatures.css
+ * Document Signatures Grid, Lines & Stamp Boxes
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 20px;
+	margin-top: 14px;
+	font-size: 8pt;
+	page-break-inside: avoid;
+	break-inside: avoid;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-col {
+	line-height: 1.35;
+	color: #000000 !important;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-line {
+	border-bottom: 0.75pt solid #000000;
+	height: 26px;
+	margin: 4px 0 2px 0;
+	width: 100%;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .a4-sign-hint {
+	font-size: 7.5pt;
+	color: #333333 !important;
+}
+
+:is(.pro-a4-physical-sheet, .pro-a4-page-sheet) .stamp-box {
+	display: inline-block;
+	border: 0.75pt dashed #555555;
+	padding: 0 4px;
+	font-size: 7pt;
+	font-weight: 700;
+	margin-left: 6px;
+	vertical-align: middle;
+	color: #333333 !important;
+}

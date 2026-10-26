@@ -1,0 +1,79 @@
+/**
+ * documentStyles/documentsScenarios.css
+ * Clinical Scenarios Accordion & Grid Layout
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-scenarios-accordion {
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	overflow: hidden !important;
+	margin-top: 4px !important;
+	margin-bottom: 4px !important;
+	transition: border-color 0.15s ease !important;
+}
+
+.document-scenarios-accordion:hover {
+	border-color: var(--teal) !important;
+}
+
+.document-scenarios-summary {
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
+	padding: 4px 12px !important;
+	min-height: 30px !important;
+	height: 30px !important;
+	cursor: pointer !important;
+	user-select: none !important;
+	font-size: 12px !important;
+	font-weight: 600 !important;
+	color: var(--ink) !important;
+	background: var(--paper-soft) !important;
+	list-style: none !important;
+	transition: background 0.15s ease !important;
+	box-sizing: border-box !important;
+}
+
+.document-scenarios-summary::-webkit-details-marker {
+	display: none !important;
+}
+
+.document-scenarios-summary:hover {
+	background: var(--teal-surface) !important;
+}
+
+.document-scenarios-summary-badge {
+	font-size: 10.5px !important;
+	font-weight: 600 !important;
+	padding: 1px 7px !important;
+	border-radius: 5px !important;
+	background: var(--paper) !important;
+	color: var(--muted) !important;
+	border: 1px solid var(--line) !important;
+}
+
+.document-scenarios-accordion-content {
+	padding: 6px 8px !important;
+	border-top: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+}
+
+.document-scenarios-grid {
+	display: grid !important;
+	grid-template-columns: repeat(3, 1fr) !important;
+	gap: 6px !important;
+}
+
+@media (max-width: 960px) {
+	.document-scenarios-grid {
+		grid-template-columns: repeat(2, 1fr) !important;
+	}
+}
+
+@media (max-width: 600px) {
+	.document-scenarios-grid {
+		grid-template-columns: 1fr !important;
+	}
+}

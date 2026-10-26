@@ -46,8 +46,9 @@ export function renderContractRequisites(contract: PaidContractData): string {
       БИК: ${cl.bik} · К/с: ${cl.correspondentAccount}<br>
       Тел: ${cl.phone} · E-mail: ${cl.email}<br>
       <div class="sign-block">
-        Подпись Исполнителя:<br>
+        ${cl.directorTitle || "Руководитель"}:<br>
         <div class="sign-underline"></div>
+        / ${cl.directorFullName || "________________________"} /<br>
         М.П. / ЭЦП
       </div>
     </div>

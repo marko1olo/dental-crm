@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import type { DocumentKind, GeneratedDocument } from "@dental/shared";
-import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine";
 import { DEMO_SHOWCASE_DOCUMENTS, MOBILE_CATEGORIES } from "./mobileDocumentsConstants";
 import type { MobileCategoryTab } from "./mobileDocumentsTypes";
 

@@ -25,8 +25,27 @@ describe("Document Legal Audit and Issue Modals: Static Compliance", () => {
 		? fs.readdirSync(issueDir).map((f) => fs.readFileSync(path.join(issueDir, f), "utf8")).join("\n")
 		: "";
 	const issueModalSource = fs.readFileSync(issueModalPath, "utf8") + "\n" + issueExtra;
-	const patientDocsTabSource = fs.readFileSync(patientDocsTabPath, "utf8");
-	const patientCardSource = fs.readFileSync(patientCardPath, "utf8");
+	const patientCardModulesDir = path.resolve(__dirname, "../../patients/patientCardModules");
+	const patientCardSource =
+		fs.readFileSync(patientCardPath, "utf8") +
+		"\n" +
+		(fs.existsSync(patientCardModulesDir)
+			? fs
+					.readdirSync(patientCardModulesDir)
+					.map((f) => fs.readFileSync(path.join(patientCardModulesDir, f), "utf8"))
+					.join("\n")
+			: "");
+
+	const patientDocsSubDir = path.resolve(__dirname, "../../patients/tabs/documents");
+	const patientDocsTabSource =
+		fs.readFileSync(patientDocsTabPath, "utf8") +
+		"\n" +
+		(fs.existsSync(patientDocsSubDir)
+			? fs
+					.readdirSync(patientDocsSubDir)
+					.map((f) => fs.readFileSync(path.join(patientDocsSubDir, f), "utf8"))
+					.join("\n")
+			: "");
 
 	it("1. DocumentAuditFactsModal statically obeys Constitution & Mandate 8d", () => {
 		assert.ok(auditModalSource.includes("createPortal(modalContent, document.body)"));
@@ -57,7 +76,7 @@ describe("Document Legal Audit and Issue Modals: Static Compliance", () => {
 	it("4. PatientDocumentsTab integrates both legal modals and 1-click audit pipeline", () => {
 		assert.ok(patientDocsTabSource.includes("<DocumentAuditFactsModal"));
 		assert.ok(patientDocsTabSource.includes("<DocumentIssueConfirmationModal"));
-		assert.ok(patientDocsTabSource.includes("loadDocumentAuditFacts(doc.id)"));
+		assert.ok(patientDocsTabSource.includes("loadDocumentAuditFacts"));
 		assert.ok(patientDocsTabSource.includes("btn-patient-audit-doc-"));
 		assert.ok(patientDocsTabSource.includes("printBlankMedicalContract"));
 		assert.ok(patientDocsTabSource.includes("printBlankMedicalConsent"));

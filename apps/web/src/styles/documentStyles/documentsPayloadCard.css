@@ -1,0 +1,59 @@
+/**
+ * documentStyles/documentsPayloadCard.css
+ * Document Payload Card & Manual Data Override Collapsible
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-factory .document-payload-card {
+	padding: 6px 12px !important;
+	border-radius: 8px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	margin: 2px 0 6px 0 !important;
+}
+
+.document-factory .document-payload-card > div:first-child {
+	display: flex !important;
+	align-items: baseline !important;
+	gap: 8px !important;
+	flex-wrap: wrap !important;
+	margin-bottom: 4px !important;
+}
+
+.document-factory .document-payload-card h3 {
+	font-size: 13.5px !important;
+	font-weight: 700 !important;
+	color: var(--ink) !important;
+	margin: 0 !important;
+}
+
+.document-factory .document-payload-card p {
+	font-size: 12px !important;
+	color: var(--muted) !important;
+	margin: 0 !important;
+	line-height: 1.3 !important;
+}
+
+.document-factory .document-manual-override {
+	margin-top: 4px !important;
+	padding: 6px 10px !important;
+	border-radius: 6px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper-soft) !important;
+}
+
+.document-factory .document-manual-override summary {
+	font-size: 11.5px !important;
+	font-weight: 600 !important;
+	color: var(--teal-dark) !important;
+	cursor: pointer !important;
+	user-select: none !important;
+}
+
+[data-theme="dark"] .document-factory .document-manual-override summary,
+[data-theme="night"] .document-factory .document-manual-override summary,
+[data-theme="cyber_xray"] .document-factory .document-manual-override summary,
+[data-theme="ocean"] .document-factory .document-manual-override summary,
+[data-theme="emerald"] .document-factory .document-manual-override summary {
+	color: var(--teal) !important;
+}

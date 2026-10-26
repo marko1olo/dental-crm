@@ -1,0 +1,80 @@
+/**
+ * ingestionStyles/ingestionBrowserScan.css
+ * Browser Picked Folder Ingestion Progress & Telemetry
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.browser-picked-folder-result {
+	background: #102d2b;
+	border: 1px solid rgba(119, 215, 199, 0.25);
+	border-radius: 8px;
+	color: #e7f5f2;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.browser-imaging-scan-progress {
+	background: #102d2b;
+	border: 1px solid rgba(119, 215, 199, 0.25);
+	border-radius: 8px;
+	color: #e7f5f2;
+	display: grid;
+	gap: 10px;
+	padding: 12px;
+}
+
+.browser-imaging-scan-progress.cancelled {
+	border-color: rgba(245, 158, 11, 0.38);
+}
+
+.browser-scan-stop-button {
+	border-color: rgba(245, 158, 11, 0.48);
+}
+
+.browser-picked-folder-head {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	justify-content: space-between;
+}
+
+.browser-picked-folder-head > div {
+	display: grid;
+	flex: 1 1 230px;
+	gap: 4px;
+	min-width: 0;
+}
+
+.browser-picked-folder-head strong {
+	color: #ffffff;
+	font-size: 14px;
+}
+
+.browser-picked-folder-head span,
+.browser-imaging-scan-progress small,
+.browser-picked-folder-result p,
+.browser-picked-folder-result small {
+	color: #b7d5d1;
+	font-size: 12px;
+	font-weight: 850;
+	line-height: 1.35;
+	margin: 0;
+}
+
+.browser-picked-folder-stats {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+}
+
+.browser-picked-folder-stats span {
+	background: rgba(223, 247, 229, 0.1);
+	border: 1px solid rgba(119, 215, 199, 0.24);
+	border-radius: 999px;
+	color: #dff7e5;
+	font-size: 12px;
+	font-weight: 900;
+	padding: 5px 8px;
+}

@@ -1,0 +1,73 @@
+/**
+ * payloadStyles/payloadAuditFacts.css
+ * Clinical Audit Fact Grid & Legal Fact Cards
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+.document-audit-facts {
+	background: #f7fbff;
+	border: 1px solid #bfdaee;
+	border-left: 5px solid #2f86b7;
+	border-radius: 8px;
+	display: grid;
+	gap: 12px;
+	padding: 12px;
+}
+
+.document-audit-facts-heading {
+	align-items: start;
+	display: flex;
+	gap: 10px;
+	justify-content: space-between;
+	min-width: 0;
+}
+
+.document-audit-facts-heading span:first-child,
+.document-audit-facts-grid span {
+	color: #245a78;
+	display: block;
+	font-size: 12px;
+	font-weight: 950;
+	margin-bottom: 3px;
+}
+
+.document-audit-facts-heading strong,
+.document-audit-facts-grid strong {
+	color: var(--ink);
+	display: block;
+	line-height: 1.2;
+}
+
+.document-audit-facts-heading p,
+.document-audit-facts-grid small {
+	color: var(--muted);
+	margin: 0;
+}
+
+.document-audit-facts-grid {
+	display: grid;
+	gap: 10px;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.document-audit-facts-grid > div {
+	background: #ffffff;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	min-width: 0;
+	padding: 10px;
+}
+
+.document-audit-facts code {
+	color: var(--ink);
+	font-size: 12px;
+	overflow-wrap: anywhere;
+}
+
+.document-audit-facts-notes {
+	color: var(--muted);
+	display: grid;
+	gap: 5px;
+	margin: 0;
+	padding-left: 18px;
+}

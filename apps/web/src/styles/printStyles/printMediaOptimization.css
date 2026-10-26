@@ -1,0 +1,93 @@
+/**
+ * printStyles/printMediaOptimization.css
+ * Print Media Optimization (@media print) & Page Geometry
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 15mm 10mm 15mm 20mm;
+	}
+
+	html,
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		color-scheme: light !important;
+		height: auto !important;
+		overflow: visible !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	body > *:not(.print-layer):not(.pro-a4-viewport) {
+		display: none !important;
+	}
+
+	.no-print,
+	.pro-a4-toolbar {
+		display: none !important;
+	}
+
+	.pro-a4-viewport {
+		background: transparent !important;
+		padding: 0 !important;
+		margin: 0 !important;
+	}
+
+	.pro-a4-paper-container {
+		padding: 0 !important;
+		margin: 0 !important;
+		display: block !important;
+		overflow: visible !important;
+		background: transparent !important;
+	}
+
+	.pro-a4-sheet-stack {
+		display: block !important;
+		transform: none !important;
+		margin-bottom: 0 !important;
+		gap: 0 !important;
+	}
+
+	.pro-a4-physical-sheet,
+	.pro-a4-page-sheet {
+		width: 100% !important;
+		min-height: 297mm !important;
+		height: 297mm !important;
+		max-width: none !important;
+		box-shadow: none !important;
+		margin: 0 !important;
+		margin-bottom: 0 !important;
+		padding: 15mm 10mm 15mm 20mm !important;
+		border: none !important;
+		page-break-after: always !important;
+		break-after: page !important;
+	}
+
+	.pro-a4-page-sheet:last-child,
+	.pro-a4-physical-sheet:last-child {
+		page-break-after: auto !important;
+		break-after: auto !important;
+	}
+
+	.a4-sign-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.a4-table thead {
+		display: table-header-group !important;
+	}
+
+	.a4-table tr {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	* {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+}

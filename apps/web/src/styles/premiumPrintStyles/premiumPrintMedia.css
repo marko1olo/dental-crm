@@ -1,0 +1,88 @@
+/**
+ * premiumPrintStyles/premiumPrintMedia.css
+ * Print Media Optimization (@media print) for Premium Documents
+ * Mandate 8b SSOT <= 120 lines
+ */
+
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 10mm 12mm;
+	}
+
+	body > *:not(.print-layer) {
+		display: none !important;
+	}
+
+	html,
+	body {
+		background: #ffffff !important;
+		color: #000000 !important;
+		color-scheme: light !important;
+		height: auto !important;
+		overflow: visible !important;
+		margin: 0 !important;
+		padding: 0 !important;
+	}
+
+	.print-layer {
+		display: block !important;
+		position: relative !important;
+		left: auto !important;
+		top: auto !important;
+		width: 100% !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+	}
+
+	.premium-doc-sheet {
+		box-shadow: none !important;
+		max-width: none !important;
+		width: 100% !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		min-height: auto !important;
+	}
+
+	.no-print {
+		display: none !important;
+	}
+
+	.doc-sign-zone,
+	.doc-signature-block,
+	.doc-stamp-box,
+	.doc-qr-stamp {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.doc-soap-section,
+	.doc-odontogram-box,
+	.doc-radiology-grid {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	.doc-soap-heading,
+	.doc-official-title-box,
+	.section-title {
+		page-break-after: avoid !important;
+		break-after: avoid !important;
+	}
+
+	table thead {
+		display: table-header-group !important;
+	}
+
+	table tr {
+		page-break-inside: avoid !important;
+		break-inside: avoid !important;
+	}
+
+	* {
+		-webkit-print-color-adjust: exact !important;
+		print-color-adjust: exact !important;
+	}
+}

@@ -5,6 +5,7 @@
 
 import { calculatePaidContractGrandTotalKopecks } from "./money";
 import { DEFAULT_LEGAL_CLAUSES } from "./contractLegalClauses";
+import { isDemoShowcaseMode } from "../../../utils/demoModeEngine";
 import type { PaidContractData, PaidContractServiceItem } from "./contractDataTypes";
 import type { CreateDefaultPaidContractParams } from "./contractDefaultParams";
 import {
@@ -40,6 +41,7 @@ export function createDefaultPaidContract(params: CreateDefaultPaidContractParam
 		? params.totalAmountKopecks
 		: calculatePaidContractGrandTotalKopecks(resolvedServices);
 
+	const isDemo = isDemoShowcaseMode();
 	return {
 		contractNumber: params.contractNumber || `ДПМУ-${year || "2026"}-001`,
 		contractDate: formattedDate,
@@ -63,8 +65,8 @@ export function createDefaultPaidContract(params: CreateDefaultPaidContractParam
 		disputeResolutionTerms: DEFAULT_LEGAL_CLAUSES.disputeResolutionTerms,
 		personalDataConsentRef: DEFAULT_LEGAL_CLAUSES.personalDataConsentRef,
 		informedConsentRef: DEFAULT_LEGAL_CLAUSES.informedConsentRef,
-		doctorFullName: params.doctorFullName || "Петров Петр Петрович",
-		doctorSpecialty: params.doctorSpecialty || "Врач-стоматолог-терапевт",
+		doctorFullName: params.doctorFullName || (isDemo ? "Петров Петр Петрович" : ""),
+		doctorSpecialty: params.doctorSpecialty || (isDemo ? "Врач-стоматолог-терапевт" : ""),
 		signedAt: formattedDate,
 		signMethod: "paper",
 		confirmedDisclosures: {
