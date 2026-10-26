@@ -41,6 +41,7 @@ export function resolveToothStatusBadge(
 	if (layers.caries) {
 		if (layers.cariesDepth === "destructive") return getStatusBadge("caries_destructive");
 		if (layers.cariesDepth === "profunda") return getStatusBadge("caries_profunda");
+		if (layers.cariesDepth === "media") return getStatusBadge("caries_media");
 		if (layers.cariesDepth === "superficial") return getStatusBadge("caries_superficial");
 		if (layers.cariesType === "class4") return getStatusBadge("caries_class4");
 		if (layers.cariesType === "class3") return getStatusBadge("caries_class3");

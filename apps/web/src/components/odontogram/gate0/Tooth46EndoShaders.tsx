@@ -72,9 +72,9 @@ export const Tooth46EndoShaders: React.FC = () => {
 
 			{/* Biological Caries Pathology Zones (Linear organic depth, no circular bullseyes) */}
 			<linearGradient id="dente-caries-demin" x1="0" y1="0" x2="0.3" y2="1">
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.88" />
-				<stop offset="45%" stopColor="#fef3c7" stopOpacity="0.75" />
-				<stop offset="100%" stopColor="#fde68a" stopOpacity="0.60" />
+				<stop offset="0%" stopColor="#d97706" stopOpacity="0.95" />
+				<stop offset="45%" stopColor="#b45309" stopOpacity="0.95" />
+				<stop offset="100%" stopColor="#78350f" stopOpacity="0.92" />
 			</linearGradient>
 			<linearGradient id="dente-caries-lesion" x1="0" y1="0" x2="0.4" y2="1">
 				<stop offset="0%" stopColor="#92400e" stopOpacity="0.95" />
