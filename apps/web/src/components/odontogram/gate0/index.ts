@@ -63,6 +63,7 @@ export * from "./ToothStatusBadge";
 export * from "./ToothStatusBadgeMatrix";
 export * from "./ToothStatusBadgeCariesMatrix";
 export * from "./ToothStatusBadgeResolver";
+export * from "./Tooth46CariesBar";
 export * from "./Tooth46CariesDepthPresets";
 export * from "./Tooth46CariesPresets";
 export * from "./Tooth46SurgeryOverlay";

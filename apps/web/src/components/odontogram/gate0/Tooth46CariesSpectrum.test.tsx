@@ -30,6 +30,15 @@ describe("Gate 0 Caries Spectrum & Bonded Restorations — Tooth 46", () => {
 		}
 	});
 
+	it("renders default Class 1 Media upon bare caries:true (1-click preset) with C1m badge", () => {
+		const html = renderToString(React.createElement(Tooth46Container, { layers: { caries: true } }));
+		assert.ok(html.includes("tooth46-caries-class1"));
+		assert.ok(html.includes("dente-caries-lesion"));
+		assert.ok(html.includes(">C1m<"));
+		assert.ok(html.includes('data-caries-type="class1"'));
+		assert.ok(html.includes('data-caries-depth="media"'));
+	});
+
 	it("renders all 20 Class II combinations (M, D, MO, DO, MOD x 4 depths) with badges and masks", () => {
 		const subClasses = [
 			{ type: "class2_m", prefix: "M" },

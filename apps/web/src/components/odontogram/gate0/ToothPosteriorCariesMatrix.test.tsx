@@ -18,10 +18,21 @@ const TEETH = [
 ];
 
 describe("Gate 0 Posterior Caries Matrix «Black Class x Depth» — Teeth 48, 47, 46, 45, 44", () => {
-	it("renders Class I occlusal spectrum: superficialis, media, profunda, destructiva across all 5 teeth", () => {
+	it("renders default Class 1 Media upon bare caries:true across all 5 teeth", () => {
+		for (const { C, c1 } of TEETH) {
+			const html = renderToString(React.createElement(C, { layers: { caries: true } }));
+			assert.ok(html.includes(c1), `Bare caries:true must render Class 1 default: ${c1}`);
+			assert.ok(html.includes("dente-caries-lesion"), `Bare caries:true must render media depth lesion: ${c1}`);
+			assert.ok(!html.includes('fill="url(#dente-caries-necrotic)"'), `Bare caries:true must not render profunda necrotic path: ${c1}`);
+			assert.ok(html.includes(">C1m<"), `Bare caries:true must render badge C1m`);
+		}
+	});
+
+	it("renders Class I occlusal spectrum: superficialis (no black), media, profunda, destructiva", () => {
 		for (const { C, c1, mask } of TEETH) {
 			const sup = renderToString(React.createElement(C, { layers: { caries: true, cariesType: "class1", cariesDepth: "superficial" } }));
 			assert.ok(sup.includes(c1) && sup.includes("dente-caries-demin"), `Tooth Class 1 superficialis failed: ${c1}`);
+			assert.ok(!sup.includes('stroke="#1c1917"'), `Class 1 superficialis must NOT use black stroke #1c1917: ${c1}`);
 
 			const med = renderToString(React.createElement(C, { layers: { caries: true, cariesType: "class1", cariesDepth: "media" } }));
 			assert.ok(med.includes(c1) && med.includes("dente-caries-lesion"), `Tooth Class 1 media failed: ${c1}`);
@@ -49,6 +60,9 @@ describe("Gate 0 Posterior Caries Matrix «Black Class x Depth» — Teeth 48, 4
 					const hasExpected = d === "destructive" ? (html.includes("caries-destructive") || html.includes(key)) : html.includes(key);
 					assert.ok(hasExpected, `Tooth Class II ${t} ${d} missing key: ${key}`);
 					assert.ok(html.includes(`>${codePrefix}${badgeSfx[d]}<`), `Tooth Class II ${t} ${d} missing badge`);
+					if (d === "superficial") {
+						assert.ok(!html.includes('stroke="#1c1917"'), `Class II superficial must NOT use black stroke: ${t}`);
+					}
 					if (d === "destructive") {
 						assert.ok(html.includes(mask), `Tooth Class II ${t} destructive missing mask: ${mask}`);
 					}
@@ -57,10 +71,11 @@ describe("Gate 0 Posterior Caries Matrix «Black Class x Depth» — Teeth 48, 4
 		}
 	});
 
-	it("renders Class V cervical spectrum at CEJ: superficial, media, profunda, destructive across all 5 teeth", () => {
+	it("renders Class V cervical spectrum at CEJ: superficial (no black), media, profunda, destructive", () => {
 		for (const { C, c5, mask } of TEETH) {
 			const sup = renderToString(React.createElement(C, { layers: { caries: true, cariesType: "class5", cariesDepth: "superficial" } }));
 			assert.ok(sup.includes(c5) && sup.includes("dente-caries-demin"), `Tooth Class 5 superficialis failed: ${c5}`);
+			assert.ok(!sup.includes('stroke="#1c1917"'), `Class 5 superficialis must NOT use black stroke #1c1917: ${c5}`);
 
 			const med = renderToString(React.createElement(C, { layers: { caries: true, cariesType: "class5", cariesDepth: "media" } }));
 			assert.ok(med.includes(c5) && med.includes("dente-caries-lesion"), `Tooth Class 5 media failed: ${c5}`);

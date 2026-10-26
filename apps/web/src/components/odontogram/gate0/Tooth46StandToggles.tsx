@@ -1,8 +1,11 @@
 import type React from "react";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
+import { Tooth46CariesBar } from "./Tooth46CariesBar";
 import { Tooth46ProstheticBar } from "./Tooth46ProstheticBar";
 import { LAYER_ITEMS } from "./tooth46LayerConstants";
 import type {
+	CariesDepth,
+	CariesType,
 	CrownMaterial,
 	Tooth46ClinicalPreset,
 	Tooth46LayerFlags,
@@ -15,6 +18,8 @@ export interface Tooth46StandTogglesProps {
 	onToggle: (key: keyof Tooth46LayerFlags) => void;
 	onChangeCrownMaterial?: ((mat: CrownMaterial) => void) | undefined;
 	onToggleCondition?: ((type: "composite" | "crown") => void) | undefined;
+	onChangeCariesType?: ((type: CariesType) => void) | undefined;
+	onChangeCariesDepth?: ((depth: CariesDepth) => void) | undefined;
 }
 
 export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
@@ -24,6 +29,8 @@ export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
 	onToggle,
 	onChangeCrownMaterial,
 	onToggleCondition,
+	onChangeCariesType,
+	onChangeCariesDepth,
 }) => {
 	return (
 		<div className="w-full max-w-5xl flex flex-col gap-1.5 py-1.5">
@@ -58,6 +65,13 @@ export const Tooth46StandToggles: React.FC<Tooth46StandTogglesProps> = ({
 				layers={layers}
 				onChangeCrownMaterial={onChangeCrownMaterial}
 				onToggleCondition={onToggleCondition}
+			/>
+
+			{/* Sub-toolbar: Caries Class & WHO Depth Stages Quick Picker */}
+			<Tooth46CariesBar
+				layers={layers}
+				onChangeCariesType={onChangeCariesType}
+				onChangeCariesDepth={onChangeCariesDepth}
 			/>
 
 			{/* Granular Architectural Layer Flags (Touch Targets >= 44px on Mobile) */}

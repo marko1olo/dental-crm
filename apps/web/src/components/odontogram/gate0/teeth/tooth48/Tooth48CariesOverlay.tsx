@@ -28,7 +28,7 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
 	const haloStroke = isDark ? "rgba(245, 158, 11, 0.70)" : "rgba(180, 83, 9, 0.85)";
 	const isSuperficial = cariesDepth === "superficial";
-	const isProfunda = cariesDepth === "profunda" || (!cariesDepth && cariesDepth !== "media" && cariesDepth !== "superficial" && cariesDepth !== "destructive");
+	const isProfunda = cariesDepth === "profunda";
 	const isDestructive = cariesDepth === "destructive";
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 
@@ -47,12 +47,12 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 					{!isDestructive ? (
 						<>
 							<path d={g.class1.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
-							{!isSuperficial && <path d={g.class1.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />}
+							{!isSuperficial && <path d={g.class1.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}
 							{isProfunda && <path d={g.class1.profunda} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</>
 					) : (
 						<g id="tooth48-caries-class1-destructive">
-							<path d={g.destructive.fractureMargin} fill="none" stroke="rgba(120, 53, 15, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
+							<path d={g.destructive.fractureMargin} fill="none" stroke="rgba(154, 52, 18, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
 							<path d={g.destructive.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
 							{g.destructive.fractureSteps.map((s, idx) => (
 								<path key={`c1-s-${idx}`} d={s} fill="none" stroke={isDark ? "#f1f5f9" : "#ffffff"} strokeWidth="0.85" strokeLinecap="round" />
@@ -80,12 +80,12 @@ export const Tooth48CariesOverlay: React.FC<Tooth48CariesOverlayProps> = ({
 					{!isDestructive ? (
 						<>
 							<path d={g.class5.halo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.5"} />
-							{!isSuperficial && <path d={g.class5.crater} fill={lesionFill} stroke="rgba(120, 53, 15, 0.9)" strokeWidth="0.6" />}
+							{!isSuperficial && <path d={g.class5.crater} fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.6" />}
 							{isProfunda && <path d={g.class5.profunda} fill={necroticFill} stroke="#0c0a09" strokeWidth="0.5" />}
 						</>
 					) : (
 						<g id="tooth48-caries-c5-destructive">
-							<path d={g.class5.fractureMargin} fill="none" stroke="rgba(120, 53, 15, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
+							<path d={g.class5.fractureMargin} fill="none" stroke="rgba(154, 52, 18, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
 							<path d={g.class5.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
 							{g.class5.fractureSteps.map((s, idx) => (
 								<path key={`c5-s-${idx}`} d={s} fill="none" stroke={isDark ? "#f1f5f9" : "#ffffff"} strokeWidth="0.85" strokeLinecap="round" />

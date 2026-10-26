@@ -25,7 +25,7 @@ export const TOOTH46_BASE_PRESETS: readonly Tooth46PresetDef[] = [
 	{
 		id: "caries",
 		nameRu: "Кариес фиссурный (Class I)",
-		badge: "Кариес Class I",
+		badge: "C1m",
 		description:
 			"Органическая дендритная деструкция в фиссуре Y-5 и слепая ямка",
 		layers: { ...def, caries: true },

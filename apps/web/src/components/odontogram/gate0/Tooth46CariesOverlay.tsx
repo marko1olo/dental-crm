@@ -36,7 +36,7 @@ export const Tooth46CariesOverlay: React.FC<Tooth46CariesOverlayProps> = ({
 		? "rgba(245, 158, 11, 0.70)"
 		: "rgba(180, 83, 9, 0.85)";
 	const isSuperficial = cariesDepth === "superficial";
-	const showNecrotic = cariesDepth === "profunda" || cariesDepth === "destructive" || !cariesDepth;
+	const showNecrotic = cariesDepth === "profunda";
 
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 

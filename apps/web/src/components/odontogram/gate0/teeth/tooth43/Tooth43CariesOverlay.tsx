@@ -3,9 +3,9 @@ import type { CariesChronicity, CariesDepth, CariesType } from "../../tooth46Pre
 import { TOOTH43_CARIES_GEOMETRY } from "./tooth43CariesGeometry";
 
 export interface Tooth43CariesOverlayProps {
-	cariesType?: CariesType; cariesDepth?: CariesDepth;
-	chronicity?: CariesChronicity; cariesSurface?: "mesial" | "distal" | "M" | "D";
-	isDark?: boolean; className?: string;
+	cariesType?: CariesType | undefined; cariesDepth?: CariesDepth | undefined;
+	chronicity?: CariesChronicity | undefined; cariesSurface?: "mesial" | "distal" | "M" | "D" | undefined;
+	isDark?: boolean | undefined; className?: string | undefined;
 }
 
 export const Tooth43CariesOverlay: React.FC<Tooth43CariesOverlayProps> = ({

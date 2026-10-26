@@ -32,7 +32,9 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
-	const isDestruct = Boolean(a.caries && a.cariesDepth === "destructive");
+	const cariesType = a.cariesType ?? "class1";
+	const cariesDepth = a.cariesDepth ?? "media";
+	const isDestruct = Boolean(a.caries && cariesDepth === "destructive");
 	const r = badgeRadius ?? 8.5;
 	const cy = badgeCy ?? (r > 10 ? 194.5 : 160);
 	const baseHeight = r > 10 ? 218 : 170;
@@ -63,7 +65,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 					showAbfraction={Boolean(a.abfraction)}
 					isDark={isDark}
 					destructive={isDestruct}
-					cariesType={a.cariesType}
+					cariesType={cariesType}
 				/>
 			)}
 			{isEndo && !a.implant && (
@@ -76,7 +78,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 				/>
 			)}
 			{a.caries && !a.zirconiaCrown && (
-				<Tooth46CariesOverlay cariesType={a.cariesType} chronicity={a.cariesChronicity} cariesDepth={a.cariesDepth} isDark={isDark} />
+				<Tooth46CariesOverlay cariesType={cariesType} chronicity={a.cariesChronicity} cariesDepth={cariesDepth} isDark={isDark} />
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
 			{(a.composite || a.zirconiaCrown) && (
@@ -97,7 +99,7 @@ export const Tooth46Container: React.FC<Tooth46ContainerProps> = ({
 				rootPerforation={Boolean(a.rootPerforation)} canalLedge={Boolean(a.canalLedge)} rootFracture={Boolean(a.rootFracture)} isDark={isDark}
 			/>
 			{a.missing && <Tooth46SurgeryOverlay showMissing />}
-			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} />}
+			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} toothNumber={46} />}
 		</svg>
 	);
 };

@@ -12,6 +12,7 @@ export interface ToothStatusBadgeProps {
 	cx?: number | undefined;
 	cy?: number | undefined;
 	r?: number | undefined;
+	toothNumber?: number | undefined;
 }
 
 export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
@@ -20,8 +21,9 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 	cx = 50,
 	cy = 160,
 	r = 8.5,
+	toothNumber,
 }) => {
-	const badge = resolveToothStatusBadge(presetId, layers);
+	const badge = resolveToothStatusBadge(presetId, layers, toothNumber);
 	const len = badge.code.length;
 	const fontSize =
 		len === 1

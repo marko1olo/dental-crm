@@ -29,7 +29,10 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
-	const isDestruct = Boolean(a.caries && (a.cariesDepth === "destructive" || a.cariesType === "class4"));
+	const cariesType = layers.cariesType && layers.cariesType !== "class1" ? layers.cariesType : "class3";
+	const cariesDepth = layers.cariesDepth ?? "media";
+	a.cariesType = cariesType; a.cariesDepth = cariesDepth;
+	const isDestruct = Boolean(a.caries && cariesDepth === "destructive");
 	const r = badgeRadius ?? 18.5;
 	const cy = badgeCy ?? (r > 10 ? 194.5 : 172);
 	const baseHeight = r > 10 ? 218 : 190;
@@ -63,8 +66,9 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 					crownOpacity="1.0"
 					isDark={isDark}
 					destructive={isDestruct}
-					cariesType={a.cariesType}
-					cariesDepth={a.cariesDepth}
+					cariesType={cariesType}
+					cariesDepth={cariesDepth}
+					cariesSurface={layers.cariesSurface}
 				/>
 			)}
 			{isEndo && !a.implant && (
@@ -78,9 +82,10 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 			)}
 			{a.caries && !a.zirconiaCrown && (
 				<Tooth43CariesOverlay
-					cariesType={a.cariesType}
+					cariesType={cariesType}
 					chronicity={a.cariesChronicity}
-					cariesDepth={a.cariesDepth}
+					cariesDepth={cariesDepth}
+					cariesSurface={layers.cariesSurface}
 					isDark={isDark}
 				/>
 			)}
@@ -108,7 +113,7 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 				isDark={isDark}
 			/>
 			{a.missing && <Tooth46SurgeryOverlay showMissing />}
-			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} />}
+			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} toothNumber={43} />}
 		</svg>
 	);
 };

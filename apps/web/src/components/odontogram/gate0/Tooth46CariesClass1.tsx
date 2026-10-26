@@ -27,7 +27,7 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	const c1 = TOOTH46_CARIES_GEOMETRY;
 	const isSuperficial = cariesDepth === "superficial";
 	const isDestructive = cariesDepth === "destructive";
-	const isProfunda = cariesDepth === "profunda" || (!cariesDepth && !isSuperficial && !isDestructive);
+	const isProfunda = cariesDepth === "profunda";
 	const destr = TOOTH46_CARIES_DESTRUCTIVE_GEOMETRY.destructive;
 
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";

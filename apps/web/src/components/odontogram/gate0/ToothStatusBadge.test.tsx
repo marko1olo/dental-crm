@@ -76,4 +76,14 @@ describe("Gate 0 ToothStatusBadge — 36 Black x Depth Clinical Matrix", () => {
 		assert.equal(resolveToothStatusBadge("crown").code, "К");
 		assert.equal(resolveToothStatusBadge(undefined, { intact: true } as any).code, "✓");
 	});
+
+	it("resolves baseline 'caries' defaults on 1 click: C1m for posterior, C3m for anterior", () => {
+		assert.equal(resolveToothStatusBadge("caries").code, "C1m");
+		assert.equal(resolveToothStatusBadge("caries", undefined, 46).code, "C1m");
+		assert.equal(resolveToothStatusBadge("caries", undefined, 44).code, "C1m");
+		assert.equal(resolveToothStatusBadge("caries", undefined, 41).code, "C3m");
+		assert.equal(resolveToothStatusBadge("caries", undefined, 43).code, "C3m");
+		assert.equal(resolveToothStatusBadge(undefined, { caries: true } as any, 46).code, "C1m");
+		assert.equal(resolveToothStatusBadge(undefined, { caries: true } as any, 41).code, "C3m");
+	});
 });

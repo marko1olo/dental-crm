@@ -4,8 +4,15 @@ import type { Tooth46LayerFlags } from "./tooth46Types";
 export function resolveToothStatusBadge(
 	presetId?: string | undefined,
 	layers?: Tooth46LayerFlags | undefined,
+	toothNumber?: number | undefined,
 ): ToothStatusBadgeInfo {
-	if (presetId) return getStatusBadge(presetId);
+	const isAnterior = toothNumber !== undefined && [1, 2, 3].includes(toothNumber % 10);
+	if (presetId) {
+		if (presetId === "caries") {
+			return getStatusBadge(isAnterior ? "c3_media" : "c1_media");
+		}
+		return getStatusBadge(presetId);
+	}
 	if (!layers) return getStatusBadge("intact");
 
 	if (layers.missing) return getStatusBadge("missing");
@@ -35,24 +42,15 @@ export function resolveToothStatusBadge(
 	if (layers.inlayOnlay === "onlay" || layers.inlayOnlay === "overlay") return getStatusBadge("restoration_onlay");
 	if (layers.composite) return getStatusBadge(layers.compositeCondition === "defective" ? "composite_defective" : "composite");
 	if (layers.caries) {
-		const type = layers.cariesType ?? "class1";
-		const depth = layers.cariesDepth;
+		const type = layers.cariesType ?? (isAnterior ? "class3" : "class1");
+		const depth = layers.cariesDepth ?? "media";
 		if (type === "white_spot") return getStatusBadge("caries_white_spot");
-		if (layers.cariesChronicity === "chronic" && !depth) return getStatusBadge("caries_chronic");
-		if (depth) {
-			const prefix = type.replace("class", "c");
-			const compositeKey = `${prefix}_${depth}`;
-			const badge = getStatusBadge(compositeKey);
-			if (badge.code !== "✓") return badge;
-		}
-		if (type === "class4") return getStatusBadge("caries_class4");
-		if (type === "class3") return getStatusBadge("caries_class3");
-		if (type === "class2_mo") return getStatusBadge("caries_class2_mo");
-		if (type === "class2_do") return getStatusBadge("caries_class2_do");
-		if (type === "class2_mod") return getStatusBadge("caries_class2_mod");
-		if (type === "class5") return getStatusBadge("caries_class5");
-		if (layers.cariesChronicity === "chronic") return getStatusBadge("caries_chronic");
-		return getStatusBadge("caries");
+		if (layers.cariesChronicity === "chronic" && !layers.cariesDepth) return getStatusBadge("caries_chronic");
+		const prefix = type.replace("class", "c");
+		const compositeKey = `${prefix}_${depth}`;
+		const badge = getStatusBadge(compositeKey);
+		if (badge.code !== "✓") return badge;
+		return getStatusBadge(isAnterior ? "c3_media" : "c1_media");
 	}
 	if (layers.canalCondition === "pulpitis") return getStatusBadge("pulpitis");
 	if (layers.canalCondition === "broken_file") return getStatusBadge("broken_file");

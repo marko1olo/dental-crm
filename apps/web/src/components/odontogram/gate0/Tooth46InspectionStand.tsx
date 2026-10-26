@@ -10,6 +10,8 @@ import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46SingleView } from "./Tooth46SingleView";
 import { Tooth46StandHeader } from "./Tooth46StandHeader";
 import {
+	type CariesDepth,
+	type CariesType,
 	type CrownMaterial,
 	DEFAULT_TOOTH46_LAYERS,
 	type Tooth46ClinicalPreset,
@@ -64,6 +66,16 @@ export const Tooth46InspectionStand: React.FC = () => {
 		setLayers((prev) => ({ ...prev, [k]: prev[k] === "defective" ? "adequate" : "defective" }));
 	};
 
+	const handleChangeCariesType = (type: CariesType) => {
+		setActivePreset(null);
+		setLayers((prev) => ({ ...prev, caries: true, cariesType: type }));
+	};
+
+	const handleChangeCariesDepth = (depth: CariesDepth) => {
+		setActivePreset(null);
+		setLayers((prev) => ({ ...prev, caries: true, cariesDepth: depth }));
+	};
+
 	const bg = "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]";
 
 	return (
@@ -92,6 +104,8 @@ export const Tooth46InspectionStand: React.FC = () => {
 					onToggleLayer={toggleLayer}
 					onChangeCrownMaterial={handleChangeCrownMaterial}
 					onToggleCondition={handleToggleCondition}
+					onChangeCariesType={handleChangeCariesType}
+					onChangeCariesDepth={handleChangeCariesDepth}
 				/>
 			)}
 		</div>

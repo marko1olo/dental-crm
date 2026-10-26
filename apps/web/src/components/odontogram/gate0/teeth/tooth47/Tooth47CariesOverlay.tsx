@@ -28,7 +28,7 @@ export const Tooth47CariesOverlay: React.FC<Tooth47CariesOverlayProps> = ({
 	const necroticFill = isChronic ? "#0c0a09" : "url(#dente-caries-necrotic)";
 	const haloStroke = isDark ? "rgba(245, 158, 11, 0.70)" : "rgba(180, 83, 9, 0.85)";
 	const isSuperficial = cariesDepth === "superficial";
-	const isProfunda = cariesDepth === "profunda" || (!cariesDepth && cariesDepth !== "media" && cariesDepth !== "superficial" && cariesDepth !== "destructive");
+	const isProfunda = cariesDepth === "profunda";
 	const isDestructive = cariesDepth === "destructive";
 	const deminStroke = isDark ? "rgba(253, 224, 71, 0.80)" : "rgba(217, 119, 6, 0.85)";
 

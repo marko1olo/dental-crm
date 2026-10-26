@@ -8,6 +8,8 @@ import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46Container } from "./Tooth46Container";
 import { Tooth46StandToggles } from "./Tooth46StandToggles";
 import type {
+	CariesDepth,
+	CariesType,
 	CrownMaterial,
 	Tooth46ClinicalPreset,
 	Tooth46LayerFlags,
@@ -22,6 +24,8 @@ export interface Tooth46SingleViewProps {
 	readonly onToggleLayer: (key: keyof Tooth46LayerFlags) => void;
 	readonly onChangeCrownMaterial: (mat: CrownMaterial) => void;
 	readonly onToggleCondition: (type: "composite" | "crown") => void;
+	readonly onChangeCariesType?: ((type: CariesType) => void) | undefined;
+	readonly onChangeCariesDepth?: ((depth: CariesDepth) => void) | undefined;
 }
 
 export const Tooth46SingleView: React.FC<Tooth46SingleViewProps> = ({
@@ -33,6 +37,8 @@ export const Tooth46SingleView: React.FC<Tooth46SingleViewProps> = ({
 	onToggleLayer,
 	onChangeCrownMaterial,
 	onToggleCondition,
+	onChangeCariesType,
+	onChangeCariesDepth,
 }) => {
 	const card = "bg-[var(--paper-strong,#f8fafc)] border-[var(--line,#e2e8f0)]";
 
@@ -45,6 +51,8 @@ export const Tooth46SingleView: React.FC<Tooth46SingleViewProps> = ({
 				onToggle={onToggleLayer}
 				onChangeCrownMaterial={onChangeCrownMaterial}
 				onToggleCondition={onToggleCondition}
+				onChangeCariesType={onChangeCariesType}
+				onChangeCariesDepth={onChangeCariesDepth}
 			/>
 			<main
 				className={`flex-1 w-full max-w-5xl rounded-2xl border p-3 sm:p-6 flex flex-col items-center justify-center relative overflow-auto ${card}`}

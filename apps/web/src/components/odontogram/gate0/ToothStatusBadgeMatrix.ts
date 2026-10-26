@@ -20,7 +20,7 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 	missing: { code: "О", title: "Отсутствует (удален / адентия)", bg: "#334155", border: "#475569", text: "#ffffff" },
 
 	// 2. Кариес
-	caries: { code: "C", title: "Кариес I класса (фиссурный)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
+	caries: { code: "C1m", title: "Кариес I класса средний (Cm)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
 	caries_superficial: { code: "Cs", title: "Кариес начальный / поверхностный", bg: "#f87171", border: "#ef4444", text: "#ffffff" },
 	caries_media: { code: "Cm", title: "Кариес средний", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
 	caries_profunda: { code: "Cp", title: "Кариес глубокий", bg: "#dc2626", border: "#991b1b", text: "#ffffff" },
