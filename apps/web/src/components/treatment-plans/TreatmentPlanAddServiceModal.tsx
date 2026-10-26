@@ -29,7 +29,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 		if (Array.isArray(catalog) && catalog.length > 0) return catalog;
 		return Object.values(DENTAL_SERVICES_CATALOG).map((p) => ({
 			id: p.code, title: p.title, category: p.category, basePriceRub: p.defaultPriceRub,
-			code: p.code, order804nCode: p.code, active: true,
+			code: p.code, serviceCode: p.code, order804nCode: p.code, active: true,
 		}));
 	}, [catalog]);
 
@@ -40,7 +40,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 		return effectiveCatalog.filter((item) => {
 			if (categoryFilter !== "all" && !(item.category || "").toLowerCase().includes(categoryFilter.toLowerCase())) return false;
 			if (!q) return true;
-			return (item.title || "").toLowerCase().includes(q) || (item.code || item.order804nCode || "").toLowerCase().includes(q) || (item.category || "").toLowerCase().includes(q);
+			return (item.title || "").toLowerCase().includes(q) || (item.serviceCode || item.code || item.order804nCode || "").toLowerCase().includes(q) || (item.category || "").toLowerCase().includes(q);
 		});
 	}, [effectiveCatalog, searchQuery, categoryFilter]);
 
@@ -57,7 +57,7 @@ export const TreatmentPlanAddServiceModal: React.FC<TreatmentPlanAddServiceModal
 			const basePrice = selectedItem.basePriceRub || 0;
 			const qty = Math.max(1, quantity);
 			const discRub = Math.round((basePrice * qty * Math.max(0, Math.min(100, discountPercent))) / 100);
-			const itemCode = selectedItem.order804nCode || selectedItem.code || selectedItem.id;
+			const itemCode = selectedItem.serviceCode || selectedItem.code || selectedItem.order804nCode || selectedItem.id;
 			onAddService(targetStageNumber, {
 				serviceCode: itemCode,
 				code804n: itemCode,

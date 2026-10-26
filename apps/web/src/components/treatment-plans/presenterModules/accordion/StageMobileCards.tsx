@@ -36,7 +36,7 @@ export const StageMobileCards: React.FC<StageMobileCardsProps> = ({
 					>
 						<div className="flex items-center justify-between gap-2">
 							<div className="flex items-center gap-1.5 min-w-0">
-								<span className="code-804n-badge text-[10px]">{item.code804n}</span>
+								<span className="code-804n-badge text-[10px]">{item.serviceCode || item.code804n}</span>
 								{item.toothNumber && (
 									<span className="tooth-fdi-badge text-[11px] w-6 h-6">{item.toothNumber}</span>
 								)}

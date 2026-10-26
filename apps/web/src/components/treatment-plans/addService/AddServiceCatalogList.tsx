@@ -93,7 +93,7 @@ export const AddServiceCatalogList: React.FC<AddServiceCatalogListProps> = ({
 								<div className="min-w-0 flex-1">
 									<div className="flex items-center gap-1.5 flex-wrap">
 										<span className="font-mono text-[10px] font-bold px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-[var(--teal-dark)] dark:text-teal-300 shrink-0">
-											{item.order804nCode || item.code || item.id}
+											{item.serviceCode || item.code || item.order804nCode || item.id}
 										</span>
 										<span className="text-[10px] text-[var(--muted)] shrink-0">{item.category}</span>
 									</div>

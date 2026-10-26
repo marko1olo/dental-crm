@@ -20,7 +20,7 @@ export const RoadmapStageProceduresTable: React.FC<TableProps> = ({ stage }) => 
 						<div key={proc.id} className="roadmap-proc-row">
 							<div className="flex-1 min-w-0">
 								<div className="roadmap-proc-title flex items-center flex-wrap gap-1">
-									{proc.code804n && <span className="roadmap-proc-code-tag">{proc.code804n}</span>}
+									{(proc.serviceCode || proc.code804n) && <span className="roadmap-proc-code-tag">{proc.serviceCode || proc.code804n}</span>}
 									<span>{proc.patientFriendlyTitleRu}</span>
 									{proc.toothNumber && (
 										<span className="text-[var(--muted,var(--ink-muted))] text-xs ml-1.5">

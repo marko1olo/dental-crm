@@ -62,7 +62,7 @@ export const BundleCompositionList: React.FC<BundleCompositionListProps> = ({
 								<div className="min-w-0">
 									<div className="flex items-center gap-2 flex-wrap">
 										<span className="font-mono text-[11px] font-bold text-[var(--teal)] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded shrink-0">
-											{item.code804n}
+											{item.serviceCode || item.code804n}
 										</span>
 										<span className={`text-xs font-bold break-words leading-snug ${isChecked ? "text-[var(--ink)]" : "text-[var(--muted)] line-through"}`}>
 											{item.name}

@@ -14,7 +14,7 @@ export interface MatchCatalogServiceResult {
 }
 
 /**
- * Поиск услуги в прейскуранте клиники по коду 804н или ключевым словам.
+ * Поиск услуги в прейскуранте клиники по коду услуги или ключевым словам.
  * В PROD-режиме: при отсутствии в каталоге возвращает priceRub: 0, unitPriceRub: 0, isDraft: true, requiresManualPricing: true.
  * В DEMO-режиме: использует демонстрационную цену fallbackPriceRub.
  */
@@ -24,21 +24,23 @@ export function matchCatalogService(
 	keywords: readonly string[],
 	fallbackPriceRub: number,
 	order804nCode?: string,
-	options?: { isDemoMode?: boolean },
+	options?: { isDemoMode?: boolean; serviceCode?: string },
 ): MatchCatalogServiceResult {
 	const isDemo = isDemoShowcaseMode(options?.isDemoMode);
+	const targetCode = options?.serviceCode || order804nCode;
 
 	if (catalog && catalog.length > 0) {
 		const normalizedKeywords = keywords.map((k) => k.toLowerCase().replace(/ё/g, "е"));
 
-		// 1. Точное совпадение по Order 804n коду (если есть в прайсе)
-		if (order804nCode) {
+		// 1. Точное совпадение по коду услуги (если есть в прайсе)
+		if (targetCode) {
 			const byCode = catalog.find(
 				(s) =>
 					s.active !== false &&
-					(s.title.includes(order804nCode) ||
-						s.order804nCode === order804nCode ||
-						s.code === order804nCode),
+					(s.title.includes(targetCode) ||
+						s.serviceCode === targetCode ||
+						s.order804nCode === targetCode ||
+						s.code === targetCode),
 			);
 			if (byCode && typeof byCode.basePriceRub === "number" && byCode.basePriceRub > 0) {
 				return {

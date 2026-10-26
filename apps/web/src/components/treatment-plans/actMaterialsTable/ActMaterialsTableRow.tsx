@@ -19,7 +19,7 @@ export const ActMaterialsTableRow: React.FC<ActMaterialsTableRowProps> = ({ mat,
 			<td className="border border-slate-300 p-2 font-medium text-slate-900 leading-snug">
 				<div>{mat.materialName}</div>
 				<span className="block text-[11px] font-mono text-slate-500 mt-0.5">
-					Код услуги: {mat.order804nCode}
+					Код услуги: {mat.serviceCode || mat.order804nCode}
 				</span>
 			</td>
 			<td className="border border-slate-300 p-2 text-center text-[11px] text-slate-700">

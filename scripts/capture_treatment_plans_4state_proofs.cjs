@@ -111,8 +111,8 @@ async function main() {
     });
 
     const pcPage = await pcCtx.newPage();
-    console.log("Navigating PC to http://127.0.0.1:5173/?demo=true&treatment_plans=1 ...");
-    await pcPage.goto(`${APP_BASE}/?demo=true&treatment_plans=1`, { waitUntil: "domcontentloaded", timeout: 35000 });
+    console.log("Navigating PC to http://127.0.0.1:5173/?demo=true&treatment_plans=1&patientId=pat-1 ...");
+    await pcPage.goto(`${APP_BASE}/?demo=true&treatment_plans=1&patientId=pat-1`, { waitUntil: "domcontentloaded", timeout: 35000 });
     
     for (let i = 0; i < 30; i++) {
       await pcPage.waitForTimeout(400);
@@ -171,8 +171,8 @@ async function main() {
     });
 
     const mobPage = await mobCtx.newPage();
-    console.log("Navigating Mobile to http://127.0.0.1:5173/?demo=true&treatment_plans=1 ...");
-    await mobPage.goto(`${APP_BASE}/?demo=true&treatment_plans=1`, { waitUntil: "domcontentloaded", timeout: 35000 });
+    console.log("Navigating Mobile to http://127.0.0.1:5173/?demo=true&treatment_plans=1&patientId=pat-1 ...");
+    await mobPage.goto(`${APP_BASE}/?demo=true&treatment_plans=1&patientId=pat-1`, { waitUntil: "domcontentloaded", timeout: 35000 });
     
     for (let i = 0; i < 30; i++) {
       await mobPage.waitForTimeout(400);

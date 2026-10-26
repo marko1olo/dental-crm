@@ -50,11 +50,14 @@ export const SplitStagesHeaderBar: React.FC<SplitStagesHeaderBarProps> = ({
 				{onExecuteCopilot && (
 					<button
 						type="button"
-						onClick={onExecuteCopilot}
-						disabled={isCopilotExecuting}
+						onClick={() => {
+							if (isCopilotExecuting) return;
+							onExecuteCopilot();
+						}}
+						aria-busy={isCopilotExecuting}
 						className="split-copilot-btn"
 						data-testid="split-copilot-btn"
-						title="ИИ-ассистент сформирует оптимальные этапы по протоколам СтАР"
+						title="ИИ-ассистент сформирует оптимальные этапы по клиническим протоколам СтАР"
 					>
 						<Bot size={13} className="text-teal-600 dark:text-teal-400" />
 						<span>{isCopilotExecuting ? "Генерация..." : "Заполнить с ИИ"}</span>
@@ -64,13 +67,13 @@ export const SplitStagesHeaderBar: React.FC<SplitStagesHeaderBarProps> = ({
 				{onApplyDoctorDiscount && (
 					<div className="split-discount-group">
 						<Percent size={12} className="split-discount-icon" />
-						{[0, 5, 10, 15, 20].map((pct) => (
+						{[0, 5, 10, 15, 20, 50, 100].map((pct) => (
 							<button
 								key={pct}
 								type="button"
 								onClick={() => onApplyDoctorDiscount(pct)}
 								className="split-discount-chip"
-								title={`Скидка врача ${pct}%`}
+								title={`Скидка врача ${pct}%${pct === 100 ? " (Гарантийный случай)" : ""}`}
 								data-testid={`split-discount-${pct}`}
 							>
 								{pct}%

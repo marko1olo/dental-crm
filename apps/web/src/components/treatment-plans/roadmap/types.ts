@@ -26,6 +26,7 @@ export type RoadmapStageKind =
 
 export interface RoadmapProcedureItem {
 	id: string;
+	serviceCode?: string | undefined;
 	code804n?: string | undefined;
 	title?: string | undefined;
 	titleRu?: string | undefined;

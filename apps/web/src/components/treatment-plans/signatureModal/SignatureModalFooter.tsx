@@ -37,11 +37,15 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 
 			<button
 				type="button"
-				onClick={onPaperConfirm}
+				onClick={() => {
+					if (isSubmitting) return;
+					onPaperConfirm();
+				}}
 				aria-busy={isSubmitting}
-				disabled={isSubmitting}
 				title={conflictTitle}
-				className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+				className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl text-xs font-bold border transition-colors text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 hover:bg-emerald-100 dark:hover:bg-emerald-900/60 cursor-pointer ${
+					isSubmitting ? "opacity-75" : ""
+				}`}
 				data-testid="paper-signature-confirm-btn"
 			>
 				<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
@@ -50,11 +54,15 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 
 			<button
 				type="button"
-				onClick={onConfirmAgreement}
+				onClick={() => {
+					if (isSubmitting) return;
+					onConfirmAgreement();
+				}}
 				aria-busy={isSubmitting}
-				disabled={isSubmitting}
 				title={conflictTitle}
-				className="w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white transition-all bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-emerald-600/20 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+				className={`w-full sm:w-auto min-h-[44px] flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl text-xs font-extrabold text-white transition-all bg-gradient-to-r from-teal-600 to-emerald-600 hover:from-teal-500 hover:to-emerald-500 shadow-md shadow-emerald-600/20 cursor-pointer ${
+					isSubmitting ? "opacity-75" : ""
+				}`}
 				data-testid="confirm-sign-plan-btn"
 			>
 				<Lock size={14} />

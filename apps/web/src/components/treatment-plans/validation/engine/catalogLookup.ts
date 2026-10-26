@@ -15,7 +15,7 @@ export function calculateDaysBetween(
 }
 
 /**
- * Поиск услуги в текущем каталоге клиники: сначала по точному ID, затем по коду Минздрава 804н.
+ * Поиск услуги в текущем каталоге клиники: сначала по точному ID, затем по коду услуги.
  */
 export function findCatalogService(
 	code804n: string,

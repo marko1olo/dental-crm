@@ -13,7 +13,7 @@ export const SplitCatalogServiceRow: React.FC<SplitCatalogServiceRowProps> = ({
 	inStageCount,
 	onAddService,
 }) => {
-	const itemCode = service.order804nCode || service.code || service.id;
+	const itemCode = service.serviceCode || service.code || service.order804nCode || service.id;
 
 	return (
 		<div

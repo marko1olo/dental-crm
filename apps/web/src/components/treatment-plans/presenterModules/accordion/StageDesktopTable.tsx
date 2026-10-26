@@ -49,7 +49,7 @@ export const StageDesktopTable: React.FC<StageDesktopTableProps> = ({
 									{idx + 1}
 								</td>
 								<td>
-									<span className="code-804n-badge">{item.code804n}</span>
+									<span className="code-804n-badge">{item.serviceCode || item.code804n}</span>
 								</td>
 								<td className="text-center">
 									{item.toothNumber ? (

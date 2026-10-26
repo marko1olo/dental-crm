@@ -19,7 +19,7 @@ export const StageServicesTableRow: React.FC<StageServicesTableRowProps> = ({
 		<div className="stage-table-row" data-testid={`stage-row-${item.id}`}>
 			<div className="stage-col-service">
 				<div className="stage-row-service-meta">
-					<span className="stage-row-code font-mono">{item.code804n || item.serviceCode || "A16"}</span>
+					<span className="stage-row-code font-mono">{item.serviceCode || item.code804n || "A16"}</span>
 					<span className="stage-row-category">{item.category || "Общее"}</span>
 				</div>
 				<div className="stage-row-title">{item.name}</div>

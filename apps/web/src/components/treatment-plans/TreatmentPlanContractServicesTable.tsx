@@ -59,7 +59,7 @@ export const TreatmentPlanContractServicesTable: React.FC<TreatmentPlanContractS
 									{displayItems.map((it) => (
 										<tr key={it.id} className="hover:bg-slate-50">
 											<td className="border border-slate-300 p-1 text-center font-mono text-[9px] text-slate-500">{globalItemIndex++}</td>
-											{viewMode === "official_appendix" && <td className="border border-slate-300 p-1 text-center font-mono text-[9px] text-slate-600"><span className="bg-slate-100 px-1 py-0.5 rounded">{it.code804n}</span></td>}
+											{viewMode === "official_appendix" && <td className="border border-slate-300 p-1 text-center font-mono text-[9px] text-slate-600"><span className="bg-slate-100 px-1 py-0.5 rounded">{it.serviceCode || it.code804n}</span></td>}
 											<td className="border border-slate-300 p-1 text-center font-bold">{it.toothNumber ? `№${it.toothNumber}` : <span className="text-slate-400 font-normal">—</span>}</td>
 											<td className="border border-slate-300 p-1 text-slate-800"><div className="font-medium text-slate-900">{it.name}</div>{it.materials && <div className="text-[9px] text-slate-500 mt-0.5">Материал: {it.materials}</div>}</td>
 											<td className="border border-slate-300 p-1 text-center font-mono">{it.quantity}</td>

@@ -47,7 +47,7 @@ export const PrintViewOfficialTable: React.FC<PrintViewOfficialTableProps> = ({
 								return (
 									<tr key={it.id || itemIdx}>
 										<td style={{ textAlign: "center" }}>{itemIdx}</td>
-										<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.code804n}</td>
+										<td style={{ fontFamily: "monospace", fontSize: "8.5pt" }}>{it.serviceCode || it.code804n}</td>
 										<td style={{ textAlign: "center", fontWeight: "bold" }}>{it.toothNumber || "—"}</td>
 										<td>
 											<div>{it.name}</div>

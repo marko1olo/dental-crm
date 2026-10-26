@@ -52,9 +52,14 @@ export const SignatureSmsBlock: React.FC<SignatureSmsBlockProps> = ({
 					</label>
 					<button
 						type="button"
-						onClick={onRequestSmsCode}
-						disabled={countdown > 0 || isRequestingSms}
-						className="w-full h-10 px-4 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 transition-colors cursor-pointer flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+						onClick={() => {
+							if (countdown > 0 || isRequestingSms) return;
+							onRequestSmsCode();
+						}}
+						aria-busy={isRequestingSms}
+						className={`w-full h-10 px-4 rounded-xl text-xs font-bold text-white bg-teal-600 hover:bg-teal-500 transition-colors cursor-pointer flex items-center justify-center gap-2 shadow-2xs ${
+							countdown > 0 || isRequestingSms ? "opacity-75" : ""
+						}`}
 						data-testid="request-sms-btn"
 					>
 						{countdown > 0 ? (

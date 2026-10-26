@@ -62,6 +62,7 @@ export function calculateStageMaterialRequirements(
 			const item: PlanStageMaterialRequirement = {
 				id: `${stage.stageNumber}-${proc.id}-${norm.id}`,
 				materialName: norm.materialName,
+				serviceCode: proc.serviceCode || code,
 				order804nCode: code,
 				procedureName: proc.name,
 				quantityRequired: reqQty,

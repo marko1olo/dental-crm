@@ -32,9 +32,9 @@ export const ActPrintServiceRow: React.FC<ActPrintServiceRowProps> = ({ item, in
 			</td>
 			<td className="border border-slate-300 p-2 font-medium text-slate-900 leading-snug">
 				<div className="flex items-baseline gap-1.5 flex-wrap">
-					{item.code804n && (
+					{(item.serviceCode || item.code804n) && (
 						<span className="font-mono font-bold text-slate-700 shrink-0 text-[11px] bg-slate-100 dark:bg-slate-800 px-1 py-0.5 rounded border border-slate-200 dark:border-slate-700">
-							{item.code804n}
+							{item.serviceCode || item.code804n}
 						</span>
 					)}
 					<span className="font-semibold text-slate-900">{item.name}</span>

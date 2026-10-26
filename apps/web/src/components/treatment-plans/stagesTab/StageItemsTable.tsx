@@ -44,7 +44,7 @@ export const StageItemsTable: React.FC<StageItemsTableProps> = ({
 						displayList.map((it, idx) => (
 							<tr key={it.id || idx}>
 								<td className="text-center font-mono text-[var(--tp-text-muted)]">{idx + 1}</td>
-								<td><span className="code-804n-badge">{it.code804n}</span></td>
+								<td><span className="code-804n-badge">{it.serviceCode || it.code804n}</span></td>
 								<td className="text-center">
 									{it.toothNumber ? (
 										<span className="tooth-fdi-badge">{it.toothNumber}</span>

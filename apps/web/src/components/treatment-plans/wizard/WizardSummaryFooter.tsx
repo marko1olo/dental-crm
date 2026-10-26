@@ -72,9 +72,14 @@ export const WizardSummaryFooter: React.FC<WizardSummaryFooterProps> = ({
 
 				<button
 					type="button"
-					onClick={onSubmit}
-					disabled={isSubmitting}
-					className="h-9 px-4 rounded-xl text-xs font-bold bg-[var(--primary)] text-white hover:opacity-90 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+					onClick={() => {
+						if (isSubmitting) return;
+						onSubmit();
+					}}
+					aria-busy={isSubmitting}
+					className={`h-9 px-4 rounded-xl text-xs font-bold bg-[var(--primary)] text-white hover:opacity-90 active:scale-95 transition-all shadow-sm flex items-center gap-1.5 cursor-pointer ${
+						isSubmitting ? "opacity-75" : ""
+					}`}
 					data-testid="btn-create-treatment-plan"
 				>
 					<Sparkles size={14} />

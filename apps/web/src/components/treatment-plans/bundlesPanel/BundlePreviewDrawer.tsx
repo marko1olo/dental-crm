@@ -42,10 +42,10 @@ export const BundlePreviewDrawer: React.FC<PreviewProps> = ({ bundle, onClose })
 					<tbody>
 						{bundle.items.map((it) => (
 							<tr
-								key={it.code804n}
+								key={it.serviceCode || it.code804n}
 								className="border-b border-[var(--line,var(--border,#cbd5e1))]/50 hover:bg-[var(--paper,#ffffff)]"
 							>
-								<td className="py-1 font-mono font-bold text-[var(--teal,#0d9488)]">{it.code804n}</td>
+								<td className="py-1 font-mono font-bold text-[var(--teal,#0d9488)]">{it.serviceCode || it.code804n}</td>
 								<td className="py-1 pr-2 font-medium">{it.name}</td>
 								<td className="py-1 pr-2 text-[10px] text-[var(--muted,#64748b)]">{it.materials}</td>
 								<td className="py-1 text-right font-mono font-bold whitespace-nowrap">

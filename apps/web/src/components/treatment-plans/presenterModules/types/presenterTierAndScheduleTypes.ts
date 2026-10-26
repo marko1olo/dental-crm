@@ -4,7 +4,7 @@
 
 import type { TreatmentPlanTierId } from "../../types";
 
-/** Категория клинического этапа по номенклатуре СтАР / 804н */
+/** Категория клинического этапа по номенклатуре СтАР / услуг */
 export type PresenterStageCategory =
 	| "hygiene_prevention" // Профгигиена и профилактика
 	| "therapy_sanitation" // Санация кариеса и эндодонтия

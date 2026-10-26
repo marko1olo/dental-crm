@@ -48,8 +48,8 @@ export const BundleCard: React.FC<CardProps> = ({
 					</strong>
 					<ul className="list-disc list-inside space-y-0.5 text-[9.5px]">
 						{bundle.items.map((it) => (
-							<li key={it.code804n} className="truncate">
-								<span className="font-mono text-[var(--muted,#64748b)]">{it.code804n}:</span> {it.name}
+							<li key={it.serviceCode || it.code804n} className="truncate">
+								<span className="font-mono text-[var(--muted,#64748b)]">{it.serviceCode || it.code804n}:</span> {it.name}
 							</li>
 						))}
 					</ul>

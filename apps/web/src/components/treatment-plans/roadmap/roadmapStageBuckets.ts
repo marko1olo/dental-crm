@@ -40,6 +40,7 @@ export function accumulateRoadmapStageBuckets(
 
 		stageBuckets[stageKind].push({
 			id: it.id,
+			serviceCode: it.serviceCode || it.code804n,
 			code804n: it.code804n,
 			medicalTitleRu: it.name,
 			patientFriendlyTitleRu: friendlyTitle,

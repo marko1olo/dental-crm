@@ -33,6 +33,7 @@ export interface ProcedureMaterialNorm {
 export interface PlanStageMaterialRequirement {
 	readonly id: string;
 	readonly materialName: string;
+	readonly serviceCode?: string;
 	readonly order804nCode: string;
 	readonly procedureName: string;
 	readonly toothNumber?: number;
