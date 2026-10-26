@@ -59,7 +59,7 @@
 }
 
 .photo-protocol-badge-icon {
-	color: var(--brand-500, #2563eb);
+	color: var(--teal, #0d9488);
 }
 
 .photo-touch-btn.danger {

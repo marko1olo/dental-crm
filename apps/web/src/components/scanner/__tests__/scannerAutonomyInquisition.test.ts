@@ -74,7 +74,14 @@ describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy',
 		const scannerModalPath = path.join(scannerDir, 'DocumentCameraScannerModal.tsx');
 		assert.ok(fs.existsSync(scannerModalPath), 'DocumentCameraScannerModal.tsx must exist');
 
-		const content = fs.readFileSync(scannerModalPath, 'utf8');
+		const modalFiles = [
+			scannerModalPath,
+			path.join(scannerDir, 'cameraModal', 'useScannerModalState.ts'),
+			path.join(scannerDir, 'cameraModal', 'ScannerCameraViewport.tsx'),
+			path.join(scannerDir, 'cameraModal', 'ScannerDocumentPresets.tsx'),
+			path.join(scannerDir, 'hooks', 'useCameraStream.ts'),
+		];
+		const content = modalFiles.filter((f) => fs.existsSync(f)).map((f) => fs.readFileSync(f, 'utf8')).join('\n');
 
 		// Device Enumeration & Selection
 		assert.ok(
@@ -94,7 +101,7 @@ describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy',
 
 		// Offline / Hardware Failure Fallback
 		assert.ok(
-			content.includes('handleFallbackFileChange') || content.includes('type="file"'),
+			content.includes('handleFallbackFileChange') || content.includes('handleFileChange') || content.includes('type="file"'),
 			'DocumentCameraScannerModal must provide a 1-click fallback file upload when no webcam is present'
 		);
 	});
@@ -136,24 +143,25 @@ describe('Red Team Inquisitor: Clinical Imaging, Scanner & Visiograph Autonomy',
 	});
 
 	it('4. Anti-Matryoshka Law (Mandate 8d pt 6): Modal depth <= 1 (No nested position: fixed overlays)', () => {
-		// Verify clinicalPhotography.css .photo-editor-overlay uses position: absolute
+		// Verify clinicalPhotography.css or modular photoCamera.css .photo-editor-overlay uses position: absolute
 		const photoCssPath = path.join(photographyDir, 'clinicalPhotography.css');
+		const photoCameraCssPath = path.join(photographyDir, 'styles', 'photoCamera.css');
 		assert.ok(fs.existsSync(photoCssPath), 'clinicalPhotography.css must exist');
-		const photoCss = fs.readFileSync(photoCssPath, 'utf8');
+		const photoCss = (fs.existsSync(photoCameraCssPath) ? fs.readFileSync(photoCameraCssPath, 'utf8') : '') + fs.readFileSync(photoCssPath, 'utf8');
 
 		assert.ok(
 			photoCss.includes('.photo-editor-overlay') && photoCss.includes('position: absolute;'),
 			'.photo-editor-overlay must use position: absolute within parent modal to respect Anti-Matryoshka Law'
 		);
 
-		// Verify BeforeAfterComparisonView export overlay uses position: absolute
-		const comparisonViewPath = path.join(photographyDir, 'BeforeAfterComparisonView.tsx');
-		assert.ok(fs.existsSync(comparisonViewPath), 'BeforeAfterComparisonView.tsx must exist');
-		const compView = fs.readFileSync(comparisonViewPath, 'utf8');
+		// Verify BeforeAfterExportModal export overlay uses position: absolute
+		const exportModalPath = path.join(photographyDir, 'BeforeAfterExportModal.tsx');
+		assert.ok(fs.existsSync(exportModalPath), 'BeforeAfterExportModal.tsx must exist');
+		const exportModal = fs.readFileSync(exportModalPath, 'utf8');
 
 		assert.ok(
-			compView.includes("position: 'absolute'") && compView.includes('zIndex: 50'),
-			'BeforeAfterComparisonView export preview must use position: absolute; zIndex: 50 instead of nested fixed overlay'
+			exportModal.includes("position: 'absolute'") && exportModal.includes('zIndex: 50'),
+			'BeforeAfterExportModal export preview must use position: absolute; zIndex: 50 instead of nested fixed overlay'
 		);
 	});
 

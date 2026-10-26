@@ -45,7 +45,6 @@ export function VisiographToolbarActionsCluster({
 				data-testid="btn-open-romexis-ez3d"
 				onClick={handleOpenRomexisEz3d}
 				title="Открыть 3D исследование в нативном томографе (Romexis / Ez3D-i)"
-				disabled={isLaunchingExternal}
 			>
 				<Box size={13} aria-hidden="true" />
 				<span>Romexis / Ez3D</span>
