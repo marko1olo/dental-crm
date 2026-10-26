@@ -68,7 +68,9 @@ test("Round 84: Mobile Adaptability (375px-414px) & Touch-First Ergonomics Suite
 
 	await t.test("4. CSS verification: touch-targets.css & mobile-touch.css enforce 0 horizontal overflow and touch-first targets", () => {
 		const touchTargetsPath = path.resolve(process.cwd(), "src/styles/touch-targets.css");
-		const touchTargetsCss = fs.readFileSync(touchTargetsPath, "utf-8");
+		const rawTouch = fs.readFileSync(touchTargetsPath, "utf-8");
+		const mobileOverridesPath = path.resolve(process.cwd(), "src/styles/touchStyles/touchMobileOverrides.css");
+		const touchTargetsCss = rawTouch + "\n" + (fs.existsSync(mobileOverridesPath) ? fs.readFileSync(mobileOverridesPath, "utf-8") : "");
 
 		assert.ok(touchTargetsCss.includes("overflow-x: hidden"), "Must enforce overflow-x: hidden on root elements");
 		assert.ok(touchTargetsCss.includes("min-height: 48px"), "Must enforce min-height: 48px on touch targets");

@@ -68,7 +68,9 @@ test("Round 85: Patient Portal Mobile Reception QR Suite (375px)", async (t) => 
 		assert.ok(cssSrc.includes(".pc-reception-qr-card"), "CSS must style .pc-reception-qr-card");
 
 		const touchCssPath = path.resolve(srcDir, "styles/touch-targets.css");
-		const touchCssSrc = fs.readFileSync(touchCssPath, "utf-8");
+		const rawTouch = fs.readFileSync(touchCssPath, "utf-8");
+		const mobileOverridesPath = path.resolve(srcDir, "styles/touchStyles/touchMobileOverrides.css");
+		const touchCssSrc = rawTouch + "\n" + (fs.existsSync(mobileOverridesPath) ? fs.readFileSync(mobileOverridesPath, "utf-8") : "");
 
 		assert.ok(touchCssSrc.includes("overflow-x: hidden"), "touch-targets.css must enforce zero horizontal scroll");
 		assert.ok(touchCssSrc.includes("min-height: 48px"), "touch-targets.css must enforce >= 48px touch targets");

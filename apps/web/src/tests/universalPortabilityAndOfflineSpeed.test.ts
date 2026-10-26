@@ -306,10 +306,12 @@ test("Universal Portability & Offline Cold-Start (<500ms) Suite", async (t) => {
 	// ─────────────────────────────────────────────────────────────────────────
 	await t.test("4. Multi-device adaptive grid validates 320px/390px mobile, 768/1024px tablets, and 1920px/4K displays", () => {
 		// 4.1. Mobile Touch Targets & Breakpoint CSS inspection
-		const touchTargetsCss = fs.readFileSync(
+		const rawTouch = fs.readFileSync(
 			path.resolve(process.cwd(), "src/styles/touch-targets.css"),
 			"utf8",
 		);
+		const primitivesPath = path.resolve(process.cwd(), "src/styles/touchStyles/touchTargetPrimitives.css");
+		const touchTargetsCss = rawTouch + "\n" + (fs.existsSync(primitivesPath) ? fs.readFileSync(primitivesPath, "utf8") : "");
 		const mobileTouchCss = fs.readFileSync(
 			path.resolve(process.cwd(), "src/styles/modules/mobile-touch.css"),
 			"utf8",

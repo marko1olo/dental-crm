@@ -1,0 +1,71 @@
+/* ============================================================
+   touchHeaderControls.css — Кнопки шапки, шевроны, профиль, крестики
+   Эргономика верхних панелей управления и модальных окон
+   ============================================================ */
+
+@media (pointer: coarse), (max-width: 840px) {
+	/* 2-строчный компактный хедер приёма 043/у (Мандаты 8c, 8e) */
+	.visit-monolithic-header .primary-button,
+	.visit-monolithic-header .secondary-button {
+		min-height: 28px !important;
+		height: 28px !important;
+	}
+
+	.mobile-back-to-list-btn,
+	.patient-mobile-back-header button,
+	.sidebar .nav-item,
+	.app-shell .sidebar .nav-item {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		touch-action: manipulation;
+	}
+
+	.auth-input-icon-btn,
+	.sa-icon-btn,
+	.profile-input-toggle-btn,
+	.close-btn,
+	.kanban-modal-close,
+	._ccm-close-btn,
+	._ccm-btn,
+	.dnt-actions__sheet-close,
+	.dnt-actions__panel-close,
+	.routing-rule-remove,
+	.cmd-palette-esc {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		box-sizing: border-box;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		touch-action: manipulation;
+	}
+
+	.visit-header-more-actions-dropdown button,
+	.schedule-options-dropdown button,
+	.tour-nav button,
+	.schedule-day-step-prev,
+	.schedule-day-step-next {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		box-sizing: border-box;
+		touch-action: manipulation;
+	}
+
+	.auth-link-btn,
+	.auth-link-btn--muted,
+	.auth-text-btn,
+	.logout-btn {
+		min-height: 44px !important;
+		display: inline-flex;
+		align-items: center;
+		touch-action: manipulation;
+	}
+}
+
+[data-pointer="coarse"] .mobile-back-to-list-btn,
+[data-pointer="coarse"] .close-btn,
+[data-platform="android"] .mobile-back-to-list-btn,
+[data-platform="android"] .close-btn {
+	min-height: 44px !important;
+	min-width: 44px !important;
+}

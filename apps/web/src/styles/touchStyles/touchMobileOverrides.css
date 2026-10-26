@@ -1,0 +1,75 @@
+/* ============================================================
+   touchMobileOverrides.css — Мобильная адаптивность (375–480px)
+   0px паразитного скролла, 2-колоночные сетки, зубная дуга
+   ============================================================ */
+
+@media (max-width: 480px) {
+	html,
+	body,
+	#root,
+	.app-shell,
+	.workspace-shell,
+	.main-content,
+	.visit-note-panel {
+		max-width: 100%;
+		overflow-x: hidden;
+		box-sizing: border-box;
+	}
+
+	/* 2-колоночная сетка быстрых шаблонов на смартфонах */
+	.clinical-quick-presets-bar .grid {
+		grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+		gap: 8px !important;
+	}
+
+	.clinical-quick-presets-bar button,
+	.clinical-action-btn {
+		min-height: 48px !important;
+		touch-action: manipulation;
+	}
+
+	.emk-tab-button,
+	.quick-chip {
+		min-height: 32px !important;
+		touch-action: manipulation;
+	}
+
+	/* Адаптивное сжатие зубной дуги без обрезки крайних моляров 18, 28, 38, 48 */
+	.tooth-chart-arch-container {
+		width: 100% !important;
+		max-width: 100% !important;
+		padding: 6px 2px !important;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.tooth-chart-arch-wrapper {
+		margin: 0 auto !important;
+	}
+
+	.teeth-row {
+		gap: 2px !important;
+	}
+
+	.tooth-quadrant-group {
+		gap: 1px !important;
+	}
+
+	.tooth-svg-wrapper {
+		min-width: 0 !important;
+		padding: 1px 0 !important;
+	}
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	html,
+	body {
+		overscroll-behavior-y: none;
+	}
+
+	.modal-backdrop,
+	.drawer-backdrop {
+		overscroll-behavior: contain;
+		touch-action: pan-y;
+	}
+}

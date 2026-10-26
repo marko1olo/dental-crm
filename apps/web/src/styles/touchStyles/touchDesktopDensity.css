@@ -1,0 +1,101 @@
+/* ============================================================
+   touchDesktopDensity.css — Плотная десктопная сетка (28–36px)
+   Мандаты 8c, 8n: защита эргономики панели пилота с мышью
+   ============================================================ */
+
+[data-pointer="fine"]:not([data-pointer="coarse"]) .desktop-dense-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]) .btn-dense-clinical,
+[data-pointer="fine"]:not([data-pointer="coarse"]) .desktop-toolbar-btn,
+[data-platform="desktop"]:not([data-pointer="coarse"]) .desktop-toolbar-btn {
+	min-height: 32px;
+	height: 32px;
+	font-size: 13px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]) .quick-chip--sm {
+	min-height: 24px;
+	height: 24px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-primary-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-save-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-print-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-pay-action,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-action-btn,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-action-btn,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .action-button-lg {
+	min-height: 34px;
+	height: 34px;
+	font-size: 13px;
+	padding: 4px 12px;
+}
+
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-button,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .secondary-button,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .text-button,
+[data-pointer="fine"]:not([data-pointer="coarse"]):not([data-platform="android"]) .icon-button {
+	min-height: 32px;
+	height: 32px;
+	font-size: 13px;
+}
+
+@media (pointer: fine) {
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .secondary-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .text-button,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .icon-button {
+		min-height: 32px !important;
+		height: 32px;
+		font-size: 13px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .dente-segmented-item,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .dente-filter-chip {
+		min-height: 28px !important;
+		height: 28px !important;
+		max-height: 28px !important;
+		font-size: 12.5px !important;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-primary-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-save-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-print-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .btn-pay-action,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-action-btn,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .primary-action-btn,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .action-button-lg {
+		min-height: 34px !important;
+		height: 34px;
+		font-size: 13px;
+		padding: 4px 12px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .quick-chip--sm {
+		min-height: 24px !important;
+		height: 24px;
+	}
+
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) select,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .select-phase {
+		min-height: 32px !important;
+		height: 32px;
+		font-size: 13px;
+	}
+
+	/* 1-строчный тулбар без переполнения на десктопе */
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .panel-toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .clinical-toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .schedule-toolbar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .filter-bar,
+	:root:not([data-pointer="coarse"]):not([data-platform="android"]) .odontogram-toolbar {
+		display: flex !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto;
+		min-height: 32px;
+		max-height: 38px;
+		height: 36px;
+		align-items: center;
+		gap: 6px;
+	}
+}

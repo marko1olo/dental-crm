@@ -1,0 +1,74 @@
+/* ============================================================
+   touchTableActions.css — Действия в таблицах и реестрах
+   Сенсорные зоны строк, иконок действий и моментум-скролл
+   ============================================================ */
+
+@media (pointer: coarse), (max-width: 840px) {
+	.btn-remove-item,
+	.btn-icon,
+	button[aria-label]:not(.primary-button):not(.secondary-button):not(.nav-item) {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		touch-action: manipulation;
+	}
+
+	.appointment-edit-button,
+	.appointment-repeat-button,
+	.appointment-buffer-button,
+	.history-close-btn {
+		min-height: 44px !important;
+		min-width: 44px;
+		touch-action: manipulation;
+	}
+
+	[role="menuitem"],
+	.patient-dropdown-item,
+	.dnt-actions__trigger,
+	.dnt-actions__control {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		box-sizing: border-box;
+		display: flex;
+		align-items: center;
+		touch-action: manipulation;
+	}
+
+	.timeline-action-btn,
+	.acknowledge-btn,
+	.kanban-new-btn,
+	.routing-add-rule,
+	.chair-equipment-picker button,
+	.equipment-picker button,
+	.viewer-tool-button {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		box-sizing: border-box;
+		touch-action: manipulation;
+	}
+}
+
+/* Моментум-скролл и защита от паразитного закрытия экранов */
+.patient-list-container,
+.patients-list-wrap,
+.patient-timeline-list,
+.patient-timeline-scroll,
+.documents-registry-table-wrap,
+.schedule-day-column-scroll,
+.schedule-grid-viewport,
+.catalog-pricelist-table-wrap,
+.leads-kanban-column-body,
+.timeline-container {
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	scroll-behavior: smooth;
+}
+
+[data-pointer="coarse"] .appointment-edit-button,
+[data-pointer="coarse"] .appointment-repeat-button,
+[data-pointer="coarse"] .appointment-buffer-button,
+[data-platform="android"] .appointment-edit-button,
+[data-platform="android"] .appointment-repeat-button,
+[data-platform="android"] .appointment-buffer-button {
+	min-height: 44px !important;
+	min-width: 44px !important;
+}

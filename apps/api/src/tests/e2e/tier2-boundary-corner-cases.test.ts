@@ -249,29 +249,43 @@ describe("Tier 2: Boundary & Corner Cases (Stress & Edge-Condition Testing)", ()
 			"apps/web/src/styles/touch-targets.css",
 		);
 
+		function getTouchTargetsContent(): string {
+			const raw = readFileSync(touchTargetsCssPath, "utf8");
+			const dir = dirname(touchTargetsCssPath);
+			const imports = Array.from(raw.matchAll(/@import\s+["'](\.[^"']+)["'];/g));
+			let combined = raw;
+			for (const imp of imports) {
+				const full = join(dir, imp[1]);
+				if (existsSync(full)) {
+					combined += "\n" + readFileSync(full, "utf8");
+				}
+			}
+			return combined;
+		}
+
 		it("2.1 handles coarse pointer devices regardless of viewport width", () => {
-			const content = readFileSync(touchTargetsCssPath, "utf8");
+			const content = getTouchTargetsContent();
 			assert.match(content, /pointer:\s*coarse/);
 		});
 
 		it("2.2 enforces minimum 44px on dense chip buttons to avoid tap collision", () => {
-			const content = readFileSync(touchTargetsCssPath, "utf8");
+			const content = getTouchTargetsContent();
 			assert.match(content, /\.quick-chip--sm[\s\S]*?min-height:\s*44px/);
 		});
 
 		it("2.3 covers schedule buffer and repeat buttons with min-height: 44px", () => {
-			const content = readFileSync(touchTargetsCssPath, "utf8");
+			const content = getTouchTargetsContent();
 			assert.match(content, /\.appointment-repeat-button/);
 			assert.match(content, /\.appointment-buffer-button/);
 		});
 
 		it("2.4 verifies settings tab buttons are expanded to 44px with !important override", () => {
-			const content = readFileSync(touchTargetsCssPath, "utf8");
+			const content = getTouchTargetsContent();
 			assert.match(content, /\.settings-tabs\s+button[\s\S]*?min-height:\s*44px/);
 		});
 
 		it("2.5 verifies sub-navigation tab buttons on patient visits have 44px touch targets", () => {
-			const content = readFileSync(touchTargetsCssPath, "utf8");
+			const content = getTouchTargetsContent();
 			assert.match(content, /\.visit-sub-nav-tabs\s+button/);
 		});
 	});

@@ -1,0 +1,111 @@
+/* ============================================================
+   touchTargetPrimitives.css — Базовые хитбоксы и примитивы ввода
+   Apple iOS HIG & Medical Glove Touch Standard (>= 44x44px)
+   ============================================================ */
+
+@media (pointer: coarse), (max-width: 840px) {
+	.primary-button,
+	.secondary-button,
+	.text-button,
+	.icon-button {
+		min-height: 44px !important;
+		min-width: 44px;
+		touch-action: manipulation;
+	}
+
+	select,
+	.select-phase,
+	input[type="date"],
+	input[type="datetime-local"],
+	input[type="time"],
+	input[type="month"] {
+		min-height: 44px;
+	}
+
+	summary {
+		align-items: center;
+		display: flex;
+		min-height: 44px;
+		touch-action: manipulation;
+	}
+
+	input[type="checkbox"],
+	input[type="radio"] {
+		height: 20px;
+		min-height: 20px;
+		min-width: 20px;
+		width: 20px;
+	}
+
+	label:has(> input[type="checkbox"]),
+	label:has(> input[type="radio"]) {
+		align-items: center;
+		display: flex;
+		min-height: 44px;
+		min-width: 44px;
+	}
+
+	/* Ползунки прозрачные для защиты от 44px белых блоков в CBCT */
+	input[type="range"] {
+		min-height: 44px;
+		background: transparent;
+		touch-action: manipulation;
+	}
+
+	.text-button,
+	.smart-ai-booking button,
+	.panel-heading button {
+		min-width: 44px;
+	}
+
+	.smart-ai-booking .relative button,
+	.smart-field button[aria-label] {
+		min-height: 44px;
+		min-width: 44px;
+	}
+}
+
+/* Псевдоэлементы ::after для мелких иконок (16-24px -> 44x44px хитбокс) */
+.touch-hitbox-44,
+.btn-icon-hitbox,
+.compact-touch-icon {
+	position: relative;
+}
+
+.touch-hitbox-44::after,
+.btn-icon-hitbox::after,
+.compact-touch-icon::after {
+	content: "";
+	position: absolute;
+	top: 50%;
+	left: 50%;
+	transform: translate(-50%, -50%);
+	min-width: 44px;
+	min-height: 44px;
+	width: 100%;
+	height: 100%;
+	pointer-events: auto;
+}
+
+[data-pointer="coarse"] .primary-button,
+[data-pointer="coarse"] .secondary-button,
+[data-pointer="coarse"] .text-button,
+[data-pointer="coarse"] .icon-button,
+[data-platform="android"] .primary-button,
+[data-platform="android"] .secondary-button,
+[data-platform="android"] .text-button,
+[data-platform="android"] .icon-button {
+	min-height: 44px !important;
+	min-width: 44px !important;
+}
+
+[data-pointer="coarse"] select,
+[data-pointer="coarse"] .select-phase,
+[data-pointer="coarse"] input[type="date"],
+[data-pointer="coarse"] input[type="time"],
+[data-platform="android"] select,
+[data-platform="android"] .select-phase,
+[data-platform="android"] input[type="date"],
+[data-platform="android"] input[type="time"] {
+	min-height: 44px !important;
+}

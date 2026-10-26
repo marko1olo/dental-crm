@@ -1,0 +1,79 @@
+/* ============================================================
+   touchDrawerPills.css — Табы, переключатели, чипсы и пилюли
+   Эргономика плотных наборов фильтров и навигационных табов
+   ============================================================ */
+
+@media (pointer: coarse), (max-width: 840px) {
+	.dente-segmented-item,
+	.dente-filter-chip {
+		min-height: 44px !important;
+		touch-action: manipulation;
+	}
+
+	.visit-sub-nav-tabs {
+		min-height: 44px !important;
+	}
+
+	.visit-sub-nav-tabs button,
+	.emk-tab-button,
+	.settings-tabs button,
+	.document-nav-tab-btn,
+	.document-form-nav-tabs button {
+		min-height: 44px !important;
+		height: 44px !important;
+		touch-action: manipulation;
+	}
+
+	.dictation-quick-row button {
+		min-height: 44px;
+		touch-action: manipulation;
+	}
+
+	.quick-chip--sm,
+	.quick-chip,
+	.doc-link,
+	.schedule-reassign-pill,
+	.doc-nav-cat-btn,
+	.doc-nav-action-btn,
+	.doc-nav-template-chip,
+	.document-factory-kind-button,
+	.document-filter-chip,
+	.document-scenario-card {
+		min-height: 44px !important;
+		min-width: 44px;
+		touch-action: manipulation;
+	}
+
+	.soap-preset-chip,
+	.clinical-soap-preset,
+	.treatment-stage-chip {
+		min-height: 44px !important;
+		touch-action: manipulation;
+	}
+}
+
+.emk-tabs-container,
+.emk-content-scroll,
+.visit-diary-scroll,
+.visit-sub-nav-tabs,
+.modal-body,
+.modal-content-scroll,
+.drawer-body,
+.sheet-content {
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+	scroll-behavior: smooth;
+}
+
+[data-pointer="coarse"] .quick-chip--sm,
+[data-pointer="coarse"] .quick-chip,
+[data-pointer="coarse"] .settings-tabs button,
+[data-pointer="coarse"] .visit-sub-nav-tabs button,
+[data-platform="android"] .quick-chip--sm,
+[data-platform="android"] .quick-chip,
+[data-platform="android"] .settings-tabs button,
+[data-platform="android"] .visit-sub-nav-tabs button {
+	min-height: 44px !important;
+	min-width: 44px !important;
+	touch-action: manipulation;
+}

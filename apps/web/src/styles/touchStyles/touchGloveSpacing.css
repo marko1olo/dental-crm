@@ -1,0 +1,69 @@
+/* ============================================================
+   touchGloveSpacing.css — Стандарт врача в перчатках (зазор >= 8px)
+   Исключает случайные нажатия соседних кнопок в перчатках
+   ============================================================ */
+
+.quick-chips-row,
+.dictation-quick-row,
+.touch-glove-row,
+.action-bar-group,
+.appointment-actions-group,
+.clinical-button-group {
+	gap: 8px !important;
+}
+
+@media (pointer: coarse), (max-width: 840px) {
+	.quick-chips-row,
+	.dictation-quick-row,
+	.clinical-action-row,
+	.patient-card-actions-row,
+	.form-actions-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px !important;
+		align-items: center;
+	}
+
+	.btn-primary-action,
+	.btn-save-action,
+	.btn-print-action,
+	.btn-pay-action,
+	.btn-scan-action,
+	.btn-remind-action,
+	.action-button-lg,
+	.primary-action-btn,
+	.clinical-action-btn,
+	.btn-sign,
+	.btn-save,
+	.btn-confirm {
+		margin: 0 !important;
+		touch-action: manipulation;
+	}
+
+	/* Предотвращение слипания кнопок в одном ряду без gap */
+	.btn-group > button + button,
+	.button-group > button + button,
+	.actions-inline > button + button {
+		margin-left: 8px !important;
+	}
+
+	.weekday-toggle-row {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px !important;
+	}
+}
+
+[data-pointer="coarse"] .quick-chips-row,
+[data-pointer="coarse"] .dictation-quick-row,
+[data-pointer="coarse"] .clinical-button-group,
+[data-platform="android"] .quick-chips-row,
+[data-platform="android"] .dictation-quick-row,
+[data-platform="android"] .clinical-button-group {
+	gap: 8px !important;
+}
+
+[data-pointer="coarse"] .btn-group > button + button,
+[data-platform="android"] .btn-group > button + button {
+	margin-left: 8px !important;
+}

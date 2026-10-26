@@ -1,0 +1,109 @@
+/* ============================================================
+   touchBottomBarActions.css — Нижние плавающие панели и Natural Thumb Zone
+   Ключевые транзакционные действия в нижней трети экрана (48–52px)
+   ============================================================ */
+
+.btn-primary-action,
+.btn-save-action,
+.btn-print-action,
+.btn-pay-action,
+.btn-scan-action,
+.btn-remind-action,
+.action-button-lg,
+.primary-action-btn,
+.clinical-action-btn,
+.btn-sign,
+.btn-save,
+.btn-confirm {
+	min-height: 36px;
+	font-size: 13px;
+	font-weight: 600;
+	letter-spacing: 0.01em;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 6px 14px;
+	border-radius: 8px;
+	touch-action: manipulation;
+}
+
+@media (pointer: coarse), (max-width: 768px) {
+	.btn-primary-action,
+	.btn-save-action,
+	.btn-print-action,
+	.btn-pay-action,
+	.btn-scan-action,
+	.btn-remind-action,
+	.action-button-lg,
+	.primary-action-btn,
+	.clinical-action-btn,
+	.primary-button,
+	.btn-sign,
+	.btn-save,
+	.btn-confirm {
+		min-height: 48px;
+		min-width: 48px;
+		font-size: 14px;
+		font-weight: 700;
+		padding: 10px 18px;
+	}
+
+	.payment-actions button,
+	.warehouse-ops-menu button,
+	.imaging-actions > button,
+	.btn-finance-action {
+		min-height: 44px !important;
+		min-width: 44px !important;
+		box-sizing: border-box;
+		touch-action: manipulation;
+	}
+
+	.floating-bottom-bar,
+	.mobile-exec-bottom-bar,
+	.chairside-bottom-bar {
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 12px 16px env(safe-area-inset-bottom, 12px);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		z-index: 50;
+		box-sizing: border-box;
+	}
+}
+
+[data-pointer="coarse"] .btn-primary-action,
+[data-pointer="coarse"] .btn-save-action,
+[data-pointer="coarse"] .btn-print-action,
+[data-pointer="coarse"] .btn-pay-action,
+[data-pointer="coarse"] .btn-scan-action,
+[data-pointer="coarse"] .btn-remind-action,
+[data-pointer="coarse"] .clinical-action-btn,
+[data-pointer="coarse"] .primary-action-btn,
+[data-pointer="coarse"] .btn-sign,
+[data-pointer="coarse"] .btn-save,
+[data-pointer="coarse"] .btn-confirm,
+[data-pointer="coarse"] .action-button-lg,
+[data-platform="android"] .btn-primary-action,
+[data-platform="android"] .btn-save-action,
+[data-platform="android"] .btn-print-action,
+[data-platform="android"] .btn-pay-action,
+[data-platform="android"] .btn-scan-action,
+[data-platform="android"] .btn-remind-action,
+[data-platform="android"] .clinical-action-btn,
+[data-platform="android"] .primary-action-btn,
+[data-platform="android"] .btn-sign,
+[data-platform="android"] .btn-save,
+[data-platform="android"] .btn-confirm,
+[data-platform="android"] .action-button-lg {
+	min-height: 48px !important;
+	min-width: 48px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	padding: 10px 18px !important;
+}

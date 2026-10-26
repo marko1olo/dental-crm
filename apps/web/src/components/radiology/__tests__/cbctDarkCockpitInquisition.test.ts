@@ -203,7 +203,9 @@ describe("CBCT Dark Cockpit & Anti-Blinding UI Inquisition", () => {
 	});
 
 	it("6. touch-targets.css enforces transparent background on input[type=range] to eliminate 44px white blocks", () => {
-		const css = fs.readFileSync(touchTargetsPath, "utf-8");
+		const raw = fs.readFileSync(touchTargetsPath, "utf-8");
+		const primitivesPath = path.resolve(__dirname, "../../../styles/touchStyles/touchTargetPrimitives.css");
+		const css = raw + "\n" + (fs.existsSync(primitivesPath) ? fs.readFileSync(primitivesPath, "utf-8") : "");
 		assert.ok(
 			css.includes('input[type="range"]') && css.includes("background: transparent"),
 			"touch-targets.css must ensure input[type=range] has background: transparent",
