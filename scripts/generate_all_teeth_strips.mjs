@@ -112,6 +112,20 @@ const STRIPS_CONFIG = [
 		subtitle: "Фарфоровые шейдеры темной темы · Неоновый контраст статусного кружка XXL",
 		isDark: true,
 	},
+	{
+		id: "11_caries_destructive_fracture",
+		presetId: "caries_destructive",
+		title: "11. РАЗРУШЕНИЕ КОРОНКИ: СКОЛ РЕЖУЩЕГО УГЛА И ОБВАЛ БУГРОВ (CLASS IV & MOD)",
+		subtitle: "Реальный скол угла режущего края резцов (Class IV) · Разрушение бугров и гребней моляров (MOD) · Бейдж «C. destruct.»",
+		isDark: false,
+	},
+	{
+		id: "12_caries_profunda",
+		presetId: "caries_profunda",
+		title: "12. ГЛУБОКИЙ КАРИЕС (CARIES PROFUNDA)",
+		subtitle: "Околопульпарный некротический кратер с нависающими краями · Бейдж «C. profunda»",
+		isDark: false,
+	},
 ];
 
 function getPreset(presetId) {

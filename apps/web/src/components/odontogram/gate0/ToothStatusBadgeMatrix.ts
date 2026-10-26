@@ -19,9 +19,15 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 
 	// 2. Кариес
 	caries: { code: "C", title: "Кариес I класса (фиссурный)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
+	caries_superficial: { code: "Cs", title: "Кариес начальный / поверхностный", bg: "#f87171", border: "#ef4444", text: "#ffffff" },
+	caries_media: { code: "Cm", title: "Кариес средний", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
+	caries_profunda: { code: "Cp", title: "Кариес глубокий", bg: "#dc2626", border: "#991b1b", text: "#ffffff" },
+	caries_destructive: { code: "Cds", title: "Кариес с разрушением коронки", bg: "#991b1b", border: "#7f1d1d", text: "#ffffff" },
 	caries_class2_mo: { code: "MO", title: "Кариес II класса (мезиально-окклюзионный)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
 	caries_class2_do: { code: "DO", title: "Кариес II класса (дистально-окклюзионный)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
 	caries_class2_mod: { code: "MOD", title: "Кариес II класса (сквозной МОД)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
+	caries_class3: { code: "C3", title: "Кариес III класса (контактный)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
+	caries_class4: { code: "C4", title: "Кариес IV класса (со сколом угла)", bg: "#b91c1c", border: "#7f1d1d", text: "#ffffff" },
 	caries_class5: { code: "C5", title: "Кариес V класса (пришеечный)", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
 	caries_white_spot: { code: "Cs", title: "Кариес в стадии пятна (in situ)", bg: "#f87171", border: "#ef4444", text: "#ffffff" },
 	caries_acute: { code: "Ко", title: "Острый глубокий кариес", bg: "#dc2626", border: "#991b1b", text: "#ffffff" },

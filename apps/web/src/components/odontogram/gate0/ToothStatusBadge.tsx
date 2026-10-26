@@ -41,10 +41,13 @@ export function resolveToothStatusBadge(
 	}
 	if (layers.inlayOnlay === "inlay") return getStatusBadge("restoration_inlay");
 	if (layers.inlayOnlay === "onlay" || layers.inlayOnlay === "overlay") return getStatusBadge("restoration_onlay");
-	if (layers.composite) {
-		return getStatusBadge(layers.compositeCondition === "defective" ? "composite_defective" : "composite");
-	}
+	if (layers.composite) return getStatusBadge(layers.compositeCondition === "defective" ? "composite_defective" : "composite");
 	if (layers.caries) {
+		if (layers.cariesDepth === "destructive") return getStatusBadge("caries_destructive");
+		if (layers.cariesDepth === "profunda") return getStatusBadge("caries_profunda");
+		if (layers.cariesDepth === "superficial") return getStatusBadge("caries_superficial");
+		if (layers.cariesType === "class4") return getStatusBadge("caries_class4");
+		if (layers.cariesType === "class3") return getStatusBadge("caries_class3");
 		if (layers.cariesType === "class2_mo") return getStatusBadge("caries_class2_mo");
 		if (layers.cariesType === "class2_do") return getStatusBadge("caries_class2_do");
 		if (layers.cariesType === "class2_mod") return getStatusBadge("caries_class2_mod");
