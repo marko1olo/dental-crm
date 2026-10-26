@@ -8,10 +8,13 @@ import type { OdontogramQuadrantId } from "./toothChartTypes";
 export interface ToothChartToolbarProps {
 	hideExpressActions?: boolean | undefined;
 	hideQuadrantSwitcher?: boolean | undefined;
+	hideDentitionSwitcher?: boolean | undefined;
 	currentQuadrant: OdontogramQuadrantId;
 	isPediatricEffective: boolean;
 	isMixedEffective: boolean;
 	pediatricMode?: boolean | undefined;
+	dentitionMode?: "adult" | "pediatric" | "mixed" | undefined;
+	onDentitionModeChange?: ((mode: "adult" | "pediatric" | "mixed") => void) | undefined;
 	handleMarkIntactDentition: () => void;
 	handleMarkProHygieneDone: () => void;
 	handleApplyFastCariesK021: () => void;

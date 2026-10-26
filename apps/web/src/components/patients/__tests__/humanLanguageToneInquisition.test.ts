@@ -329,7 +329,13 @@ describe("Red Team Inquisition: Human Clinical Language vs Bureaucratic Bloat", 
 
 	it("16. Form043PrintModal.tsx: export options use human language instead of 'ЕГИСЗ СЭМД'", () => {
 		const filePath = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
-		const content = fs.readFileSync(filePath, "utf-8");
+		const recordDir = path.join(webSrcRoot, "components/emr/record");
+		const content = [
+			fs.readFileSync(filePath, "utf-8"),
+			...(fs.existsSync(recordDir)
+				? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
+				: []),
+		].join("\n");
 		assert.ok(!content.includes("<span>ЕГИСЗ СЭМД (XML)</span>"), "Must not use raw 'ЕГИСЗ СЭМД'");
 		assert.ok(!content.includes("HL7 CDA R2 XML для ЕГИСЗ (СЭМД 834н)"), "Must not expose Order 834n in tooltip");
 		assert.ok(content.includes("<span>Электронная медкарта (XML)</span>"));

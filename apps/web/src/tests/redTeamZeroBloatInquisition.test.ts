@@ -184,7 +184,13 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 	describe("3. Мандат 8e и 8n: Автономия персонала без заблокированных кнопок", () => {
 		it("3.1. Печать Карты 043/у всегда доступна (disabled={false}) без бюрократических блокировок", () => {
 			const form043ModalPath = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
-			const modalContent = fs.readFileSync(form043ModalPath, "utf-8");
+			const recordDir = path.join(webSrcRoot, "components/emr/record");
+			const modalContent = [
+				fs.readFileSync(form043ModalPath, "utf-8"),
+				...(fs.existsSync(recordDir)
+					? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
+					: []),
+			].join("\n");
 
 			assert.ok(
 				modalContent.includes('disabled={false}'),

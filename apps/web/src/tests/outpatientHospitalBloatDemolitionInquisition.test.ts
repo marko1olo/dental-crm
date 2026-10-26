@@ -256,10 +256,13 @@ describe("Demolition Mandate: Eradication of Hospital & Inpatient Bloat (Mandate
 		});
 
 		it("3.2. Form043PrintModal.tsx: кнопки печати, сохранения и нормы всегда disabled={false}", () => {
-			const printModalContent = fs.readFileSync(
-				path.join(emrDir, "Form043PrintModal.tsx"),
-				"utf-8",
-			);
+			const recordDir = path.join(emrDir, "record");
+			const printModalContent = [
+				fs.readFileSync(path.join(emrDir, "Form043PrintModal.tsx"), "utf-8"),
+				...(fs.existsSync(recordDir)
+					? fs.readdirSync(recordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(recordDir, f), "utf8"))
+					: []),
+			].join("\n");
 
 			assert.ok(
 				printModalContent.includes('data-testid="btn-print-043-card"'),

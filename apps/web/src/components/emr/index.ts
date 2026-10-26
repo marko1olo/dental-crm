@@ -1,6 +1,7 @@
 export * from "./emr043Types";
 export * from "./emr043Math";
 export * from "./Form043PrintModal";
+export { MedicalRecordPrintModal } from "./record/MedicalRecordPrintModal";
 export * from "./templates";
 export {
 	synthesizeClinicalDiary,

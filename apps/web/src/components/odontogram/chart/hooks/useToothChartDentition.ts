@@ -28,9 +28,13 @@ export function useToothChartDentition(
 		return map;
 	}, [resolvedTeethData]);
 
-	const [localDentitionMode] = useState<DentitionMode>(
+	const [localDentitionMode, setLocalDentitionMode] = useState<DentitionMode>(
 		dentitionMode ?? (pediatricMode ? "pediatric" : mixedDentition ? "mixed" : "adult")
 	);
+	useEffect(() => {
+		if (dentitionMode) setLocalDentitionMode(dentitionMode);
+		else if (pediatricMode !== undefined) setLocalDentitionMode(pediatricMode ? "pediatric" : "adult");
+	}, [dentitionMode, pediatricMode]);
 	const effectiveDentitionMode = dentitionMode ?? localDentitionMode;
 	const isPediatricEffective = effectiveDentitionMode === "pediatric";
 	const isMixedEffective = effectiveDentitionMode === "mixed";

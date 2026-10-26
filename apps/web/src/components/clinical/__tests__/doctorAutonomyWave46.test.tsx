@@ -199,7 +199,13 @@ describe("Wave 46: Doctor Autonomy & Friction-Killer (Feature 226, Mandates 8e, 
 	// ─────────────────────────────────────────────────────────────────────────────
 	describe("2. Form 043/u Print Lifecycle & Zero Disabled Buttons (Mandate 8e item 5)", () => {
 		const form043Path = path.join(webSrcRoot, "components/emr/Form043PrintModal.tsx");
-		const form043Content = fs.readFileSync(form043Path, "utf8");
+		const form043RecordDir = path.join(webSrcRoot, "components/emr/record");
+		const form043Content = [
+			fs.readFileSync(form043Path, "utf8"),
+			...(fs.existsSync(form043RecordDir)
+				? fs.readdirSync(form043RecordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(form043RecordDir, f), "utf8"))
+				: []),
+		].join("\n");
 
 		it("Form043PrintModal defines dual-state stamp: ЧЕРНОВИК if open vs ПОДПИСАНО ВРАЧОМ if closed", () => {
 			assert.ok(

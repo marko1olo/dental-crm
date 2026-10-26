@@ -37,10 +37,22 @@ describe("Mandate 8e & 8n: Doctor EMK & Visit Diary Autonomy Enforcement", () =>
 	].join("\n");
 
 	const form043PrintModalPath = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
-	const form043PrintModalSource = fs.readFileSync(form043PrintModalPath, "utf8");
+	const form043RecordDir = path.resolve(__dirname, "../../emr/record");
+	const form043PrintModalSource = [
+		fs.readFileSync(form043PrintModalPath, "utf8"),
+		...(fs.existsSync(form043RecordDir)
+			? fs.readdirSync(form043RecordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(form043RecordDir, f), "utf8"))
+			: []),
+	].join("\n");
 
 	const emr043MathPath = path.resolve(__dirname, "../../emr/emr043Math.ts");
-	const emr043MathSource = fs.readFileSync(emr043MathPath, "utf8");
+	const emr043MathDir = path.resolve(__dirname, "../../emr/math");
+	const emr043MathSource = [
+		fs.readFileSync(emr043MathPath, "utf8"),
+		...(fs.existsSync(emr043MathDir)
+			? fs.readdirSync(emr043MathDir).filter((f) => f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(emr043MathDir, f), "utf8"))
+			: []),
+	].join("\n");
 
 	it("1. VisitEmkTab buttons: Save and Complete Visit are never blocked by missing fields", () => {
 		// Save button data-testid exists

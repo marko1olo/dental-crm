@@ -57,7 +57,13 @@ export function sanitizeDocumentText(text: string): string {
 
 describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 	const form043Path = path.resolve(__dirname, "../../emr/Form043PrintModal.tsx");
-	const form043Source = fs.readFileSync(form043Path, "utf8");
+	const form043RecordDir = path.resolve(__dirname, "../../emr/record");
+	const form043Source = [
+		fs.readFileSync(form043Path, "utf8"),
+		...(fs.existsSync(form043RecordDir)
+			? fs.readdirSync(form043RecordDir).filter((f) => f.endsWith(".tsx") || f.endsWith(".ts")).map((f) => fs.readFileSync(path.join(form043RecordDir, f), "utf8"))
+			: []),
+	].join("\n");
 
 	const consentPath = path.resolve(__dirname, "../../consents/InformedConsentModal.tsx");
 	const consentSource = fs.readFileSync(consentPath, "utf8");
