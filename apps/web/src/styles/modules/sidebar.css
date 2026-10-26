@@ -6,6 +6,7 @@
  * 2. No 90-degree abrupt clipping against panel borders.
  * 3. Restored informative micro-hints (11px, var(--muted), leading-tight, truncate).
  * 4. Quiet LAN telemetry in bottom-left footer (6px indicator dot + 11px muted label).
+ * 5. Smooth 0px CLS transitions on collapse/expand.
  */
 
 /* 1. Sidebar Container */
@@ -17,7 +18,9 @@
 	width: var(--sidebar-width, 200px) !important;
 	padding: 10px 6px 6px !important;
 	box-sizing: border-box !important;
-	overflow: hidden !important;
+	overflow-x: hidden !important;
+	overflow-y: hidden !important;
+	transition: width 0.18s cubic-bezier(0.4, 0, 0.2, 1) !important;
 }
 
 /* 2. Navigation List */
@@ -149,7 +152,70 @@ html.dark .sidebar .nav-item.active,
 	opacity: 1 !important;
 }
 
-/* 5. Sidebar Footer with 2-Tier Stack: Theme & Collapse (Tier 1) + Clinic Control Pill (Tier 2) */
+/* 5. Quick Tools (Clinical Tasks & Recalls Hub) */
+.sidebar-quick-tools {
+	border-top: 1px solid var(--line-subtle, var(--line)) !important;
+	box-sizing: border-box !important;
+	width: 100% !important;
+}
+
+.sidebar-quick-tool-btn {
+	display: flex !important;
+	align-items: center !important;
+	border-radius: 8px !important;
+	border: 1px solid transparent !important;
+	background: transparent !important;
+	color: var(--ink) !important;
+	box-sizing: border-box !important;
+	text-decoration: none !important;
+	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+}
+
+.sidebar-quick-tool-btn--expanded {
+	width: calc(100% - 4px) !important;
+	margin: 1px 2px !important;
+	padding: 5px 8px !important;
+	min-height: 30px !important;
+	gap: 8px !important;
+	font-size: 12px !important;
+	font-weight: 500 !important;
+}
+
+.sidebar-quick-tool-btn--expanded:hover {
+	background: var(--teal-surface, rgba(45, 212, 191, 0.08)) !important;
+	border-color: var(--line-subtle, var(--line)) !important;
+	color: var(--teal, #0d9488) !important;
+}
+
+.sidebar-quick-tool-btn--collapsed {
+	width: 36px !important;
+	height: 36px !important;
+	min-width: 36px !important;
+	min-height: 36px !important;
+	padding: 0 !important;
+	justify-content: center !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper-soft, rgba(0, 0, 0, 0.03)) !important;
+}
+
+.sidebar-quick-tool-btn--collapsed:hover {
+	background: var(--teal-surface, rgba(45, 212, 191, 0.12)) !important;
+	border-color: var(--teal, #0d9488) !important;
+}
+
+[data-theme="dark"] .sidebar-quick-tool-btn--collapsed,
+.dark .sidebar-quick-tool-btn--collapsed {
+	background: rgba(255, 255, 255, 0.04) !important;
+	border-color: var(--line) !important;
+}
+
+[data-theme="dark"] .sidebar-quick-tool-btn--collapsed:hover,
+.dark .sidebar-quick-tool-btn--collapsed:hover {
+	background: var(--teal-soft, rgba(45, 212, 191, 0.16)) !important;
+	border-color: var(--teal, #2dd4bf) !important;
+}
+
+/* 6. Sidebar Footer with 2-Tier Stack */
 .sidebar-footer {
 	margin-top: auto !important;
 	flex-shrink: 0 !important;
@@ -301,16 +367,6 @@ html.dark .sidebar .nav-item.active,
 	border-color: var(--teal, #0d9488) !important;
 }
 
-/* 6. Quick Tools (Clinical Tasks & Recalls Hub) High-Contrast Palette */
-.sidebar-quick-tools button {
-	color: var(--ink, #111827) !important;
-}
-
-[data-theme="dark"] .sidebar-quick-tools button,
-.dark .sidebar-quick-tools button {
-	color: var(--ink, #f8fafc) !important;
-}
-
 [data-theme="dark"] .sidebar-footer .theme-footer-control,
 [data-theme="night"] .sidebar-footer .theme-footer-control,
 [data-theme="ocean"] .sidebar-footer .theme-footer-control,
@@ -344,15 +400,22 @@ html.dark .sidebar .nav-item.active,
 	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(13, 148, 136, 0.15) !important;
 }
 
-/* 6. Collapsed Mode [data-collapsed="true"] */
+/* 7. Collapsed Mode [data-collapsed="true"] */
 [data-collapsed="true"] .sidebar {
 	width: 76px !important;
 	padding: 14px 6px 8px !important;
 }
 
-[data-collapsed="true"] .sidebar .nav-item {
+/* Both selector variants to guarantee matching whether on parent or aside itself */
+.sidebar[data-collapsed="true"] {
+	width: 76px !important;
+	padding: 14px 6px 8px !important;
+}
+
+[data-collapsed="true"] .sidebar .nav-item,
+.sidebar[data-collapsed="true"] .nav-item {
 	justify-content: center !important;
-	padding: 10px 0 !important;
+	padding: 8px 0 !important;
 	margin: 2px 0 !important;
 	width: 100% !important;
 }
@@ -360,18 +423,24 @@ html.dark .sidebar .nav-item.active,
 [data-collapsed="true"] .sidebar .nav-copy,
 [data-collapsed="true"] .sidebar .nav-hint,
 [data-collapsed="true"] .sidebar .nav-copy small,
-[data-collapsed="true"] .sidebar .brand-mark span {
+[data-collapsed="true"] .sidebar .brand-mark span,
+.sidebar[data-collapsed="true"] .nav-copy,
+.sidebar[data-collapsed="true"] .nav-hint,
+.sidebar[data-collapsed="true"] .nav-copy small,
+.sidebar[data-collapsed="true"] .brand-mark span {
 	display: none !important;
 }
 
-[data-collapsed="true"] .sidebar-footer {
+[data-collapsed="true"] .sidebar-footer,
+.sidebar[data-collapsed="true"] .sidebar-footer {
 	flex-direction: column !important;
 	align-items: center !important;
 	gap: 6px !important;
 	padding: 8px 0 6px !important;
 }
 
-[data-collapsed="true"] .sidebar-footer-tier {
+[data-collapsed="true"] .sidebar-footer-tier,
+.sidebar[data-collapsed="true"] .sidebar-footer-tier {
 	flex-direction: column !important;
 	align-items: center !important;
 	justify-content: center !important;
@@ -379,16 +448,41 @@ html.dark .sidebar .nav-item.active,
 	width: 100% !important;
 }
 
-[data-collapsed="true"] .sidebar-footer-tier--bottom {
+[data-collapsed="true"] .sidebar-footer .theme-footer-control,
+.sidebar[data-collapsed="true"] .sidebar-footer .theme-footer-control {
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	padding: 0 !important;
+	justify-content: center !important;
+	flex: 0 0 32px !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .sidebar-collapse-button,
+.sidebar[data-collapsed="true"] .sidebar-footer .sidebar-collapse-button {
+	width: 32px !important;
+	height: 32px !important;
+	min-width: 32px !important;
+	min-height: 32px !important;
+	padding: 0 !important;
+	justify-content: center !important;
+	flex: 0 0 32px !important;
+}
+
+[data-collapsed="true"] .sidebar-footer-tier--bottom,
+.sidebar[data-collapsed="true"] .sidebar-footer-tier--bottom {
 	padding-top: 0 !important;
 }
 
-[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-wrapper {
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-wrapper,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-wrapper {
 	max-width: 100% !important;
 	justify-content: center !important;
 }
 
-[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill {
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill {
 	padding: 0 4px !important;
 	gap: 4px !important;
 	width: 100% !important;
@@ -398,29 +492,34 @@ html.dark .sidebar .nav-item.active,
 }
 
 [data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-divider,
-[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill > svg:last-child {
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill > svg:last-child,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-divider,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill > svg:last-child {
 	display: none !important;
 }
 
-[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment {
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-segment {
 	gap: 2px !important;
 }
 
-[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-dot {
+[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-dot,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-dot {
 	width: 5px !important;
 	height: 5px !important;
 }
 
-[data-collapsed="true"] .sidebar-footer .dnt-control-center-popover {
+[data-collapsed="true"] .sidebar-footer .dnt-control-center-popover,
+.sidebar[data-collapsed="true"] .sidebar-footer .dnt-control-center-popover {
 	left: 80px !important;
 	bottom: 12px !important;
 }
 
-/* 7. Viewport Adaptations */
+/* 8. Viewport Adaptations */
 @media (max-width: 1280px) {
 	.sidebar {
 		width: var(--sidebar-width, 190px) !important;
-		padding: 12px 6px !important;
+		padding: 10px 6px !important;
 	}
 	.sidebar .nav-item {
 		padding: 5px 6px !important;
@@ -447,7 +546,7 @@ html.dark .sidebar .nav-item.active,
 	}
 	.sidebar .nav-item {
 		padding: 4px 6px !important;
-		min-height: 34px !important;
+		min-height: 32px !important;
 	}
 	.sidebar .nav-label {
 		font-size: 12.5px !important;
@@ -456,8 +555,8 @@ html.dark .sidebar .nav-item.active,
 		font-size: 10px !important;
 	}
 	.sidebar-quick-tools {
-		padding: 4px 4px !important;
-		gap: 3px !important;
+		padding: 4px 2px !important;
+		gap: 2px !important;
 	}
 	.sidebar-footer {
 		padding-top: 4px !important;

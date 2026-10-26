@@ -1,4 +1,4 @@
-import { AlertOctagon, ShieldCheck } from "lucide-react";
+import { AlertTriangle, ShieldCheck } from "lucide-react";
 import { PatientAvatar } from "../../../PatientAvatar";
 import { SoftPresenceIndicator } from "../../../presence/SoftPresenceIndicator";
 import { VisitTimer } from "../../VisitTimer";
@@ -70,12 +70,12 @@ export function PatientAvatarAndInfoSection({
 			/>
 			{activePatientCriticalBadges.length > 0 ? (
 				<span
-					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 whitespace-nowrap animate-pulse"
+					className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 font-medium text-xs shadow-xs shrink-0 whitespace-nowrap"
 					data-testid="visit-focus-allergy-alert"
 					role="alert"
 					title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 				>
-					<AlertOctagon size={13} className="text-rose-600 dark:text-rose-400 shrink-0" />
+					<AlertTriangle size={13} className="text-amber-600 dark:text-amber-400 shrink-0" aria-hidden="true" />
 					<span className="sm:hidden text-[10px] whitespace-nowrap">
 						{consolidatedAllergyChip || activePatientCriticalBadges[0]?.shortLabel}
 					</span>

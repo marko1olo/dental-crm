@@ -9,13 +9,13 @@ html body .visit-monolithic-header .secondary-button:not(#_) {
 }
 
 html body .visit-monolithic-header [data-testid="btn-complete-visit-header"]:not(#_) {
-	background: var(--primary, #0d9488) !important;
+	background: var(--teal, #0d9488) !important;
 	color: #ffffff !important;
 	border-color: transparent !important;
 }
 
 html body .visit-monolithic-header [data-testid="btn-complete-visit-header"]:not(#_):hover {
-	background: var(--primary-strong, var(--primary, #0f766e)) !important;
+	background: var(--teal-strong, #0f766e) !important;
 }
 
 html body .visit-monolithic-header [data-testid="visit-header-more-actions-btn"]:not(#_) {

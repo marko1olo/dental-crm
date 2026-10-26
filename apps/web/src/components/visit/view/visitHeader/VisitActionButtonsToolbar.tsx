@@ -192,7 +192,7 @@ export function VisitActionButtonsToolbar({
 				type="button"
 				onClick={handleFinishVisitAction}
 				data-testid="btn-complete-visit-header"
-				className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-0 text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-xl whitespace-nowrap h-11 shadow-xs transition-all active:scale-[0.98]"
+				className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 py-0 text-xs font-bold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white flex items-center gap-1.5 shrink-0 flex-shrink-0 cursor-pointer rounded-xl whitespace-nowrap h-11 shadow-xs transition-all active:scale-[0.98]"
 				title="Завершить приём и сохранить все изменения"
 			>
 				<CheckCircle2 className="w-4 h-4 shrink-0 text-white" />

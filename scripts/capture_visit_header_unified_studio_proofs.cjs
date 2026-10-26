@@ -135,9 +135,15 @@ async function runCapture() {
   });
 
   async function setupPageRoutes(page) {
-    await page.route("**/api/**", async (route) => {
-      const url = route.request().url();
-      if (url.includes("/src/")) return route.continue();
+    await page.route("**/*", async (route) => {
+      const req = route.request();
+      if (req.resourceType() !== "fetch" && req.resourceType() !== "xhr") {
+        return route.continue();
+      }
+      const url = req.url();
+      if (!url.includes("/api/")) {
+        return route.continue();
+      }
       if (url.includes("/api/dashboard")) {
         return route.fulfill({ status: 200, contentType: "application/json", body: JSON.stringify(mockDashboard) });
       }
@@ -208,6 +214,7 @@ async function runCapture() {
       localStorage.setItem("dente_staff_token", "live-inquisition-staff-token");
       localStorage.setItem("dente_active_role", "owner");
       localStorage.setItem("dente_theme_mode", "light");
+      localStorage.setItem("dente_selected_patient_id", "pat-1");
       localStorage.setItem("dente_onboarding_completed", "true");
       localStorage.setItem("dente_tour_completed", "true");
       localStorage.setItem("dente_tour_dismissed", "true");
@@ -255,17 +262,25 @@ async function runCapture() {
   });
   await addAuthInitScript(desktopContext);
   const page = await desktopContext.newPage();
+  page.on("console", (msg) => {
+    if (msg.type() === "error") console.log(`[BROWSER ERROR] ${msg.text()}`);
+  });
+  page.on("pageerror", (err) => console.error(`[BROWSER UNCAUGHT] ${err.message}`));
   await setupPageRoutes(page);
 
   await page.goto(`${baseUrl}/#schedule`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForSelector(".boot-state", { state: "detached", timeout: 30000 }).catch(() => {});
   await page.waitForSelector(".app-shell", { state: "visible", timeout: 30000 });
-  await page.waitForTimeout(1500);
+  await page.waitForTimeout(2000);
 
   // Navigate to Visit view
   console.log("Navigating to #visit...");
-  await page.evaluate(() => { window.location.hash = "visit"; });
-  await page.waitForSelector(".visit-monolithic-header, [data-testid=\"visit-header-monolith\"], [data-testid=\"visit-emk-tab\"]", { state: "visible", timeout: 30000 });
+  await page.evaluate(() => {
+    window.location.hash = "visit";
+    window.dispatchEvent(new HashChangeEvent("hashchange"));
+  });
+  await page.waitForTimeout(1000);
+  await page.waitForSelector("#visit, .visit-panel, .visit-monolithic-header, [data-testid=\"visit-header-monolith\"]", { state: "visible", timeout: 30000 });
   await page.waitForTimeout(1500);
 
   // Remove any tour overlay if present

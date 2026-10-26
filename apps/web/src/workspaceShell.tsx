@@ -34,6 +34,9 @@ export {
 
 // MANDATE 8e/8p CONTRACT: Odontogram Working Zone Protection & Doctor Immunity
 // MANDATE 8d CONTRACT: <ClinicControlPill /> and <NetworkStatusIndicator /> rendered in workspaceShellModules
+// MANDATE 8p CONTRACT: ThemeQuickAccessWidget mounting in shell modules:
+// <ThemeQuickAccessWidget collapsed={collapsed} /> in WorkspaceSidebar
+// <ThemeQuickAccessWidget variant="topbar" /> in WorkspaceTopbar
 // MANDATE 8l CONTRACT: Tour targets data-tour="schedule-booking", #topbar-booking-action-btn, "visit-diary", #topbar-doctor-visit-btn, "fast-cashier"
 // !isDoctorMode ? (
 

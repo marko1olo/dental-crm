@@ -64,17 +64,18 @@ export function PatientAlertBadgesBar({
 
 	return (
 		<>
-			{/* Единый компактный и яркий чип аллергии (Tier 1) */}
+			{/* Единый компактный чип аллергии (Tier 1) */}
 			{activePatientCriticalBadges && activePatientCriticalBadges.length > 0 ? (
 				<span
-					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-bold text-xs shadow-xs shrink-0 flex-shrink-0 animate-pulse whitespace-nowrap"
+					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-rose-600/15 border border-rose-600 text-rose-950 dark:text-rose-100 font-medium text-xs shadow-xs shrink-0 flex-shrink-0 whitespace-nowrap"
 					data-testid="visit-focus-allergy-alert"
 					role="alert"
 					title={activePatientCriticalBadges.map((b) => b.title).join(" | ")}
 				>
-					<AlertOctagon
+					<AlertTriangle
 						size={13}
 						className="text-rose-600 dark:text-rose-400 shrink-0"
+						aria-hidden="true"
 					/>
 					<span className="sm:hidden text-[10px] whitespace-nowrap">
 						{chipText || activePatientCriticalBadges[0].shortLabel}

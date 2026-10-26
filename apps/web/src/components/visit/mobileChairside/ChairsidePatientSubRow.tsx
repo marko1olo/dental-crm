@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertOctagon } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { VisitTimer } from "../VisitTimer";
 
 export interface ChairsidePatientSubRowProps {
@@ -23,11 +23,11 @@ export const ChairsidePatientSubRow: React.FC<ChairsidePatientSubRowProps> = ({
 
 			{consolidatedAllergyChip ? (
 				<div
-					className="mobile-chairside-allergy-pulse"
+					className="mobile-chairside-allergy-chip inline-flex items-center gap-1 text-xs text-amber-800 dark:text-amber-200"
 					data-testid={`${testId}-allergy-chip`}
 					title={consolidatedAllergyChip}
 				>
-					<AlertOctagon size={13} className="shrink-0 animate-pulse text-rose-500" />
+					<AlertTriangle size={13} className="shrink-0 text-amber-600 dark:text-amber-400" aria-hidden="true" />
 					<span className="mobile-chairside-allergy-text">{consolidatedAllergyChip}</span>
 				</div>
 			) : (

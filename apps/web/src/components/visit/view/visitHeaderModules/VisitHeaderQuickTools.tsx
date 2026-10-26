@@ -23,12 +23,16 @@ export function VisitHeaderQuickTools({
 	};
 
 	return (
-		<>
+		<div
+			className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper)] h-9 min-h-[36px] divide-x divide-[var(--line)] overflow-hidden shadow-xs shrink-0"
+			role="group"
+			aria-label="Быстрые клинические инструменты"
+		>
 			<button
 				type="button"
 				onClick={handleOpenLabOrder}
 				data-testid="btn-visit-lab-order-fast"
-				className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-colors"
+				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
 				title="Оформить заказ-наряд в зуботехническую лабораторию (ЗТЛ)"
 				aria-label="Наряд в ЗТЛ"
 			>
@@ -42,8 +46,9 @@ export function VisitHeaderQuickTools({
 				onClick={() => window.dispatchEvent(new CustomEvent("dente:open-agent-cockpit", { detail: { patientId: activePatient?.id } }))}
 				id="btn-visit-ai-agent-cockpit"
 				data-testid="btn-visit-ai-agent-cockpit"
-				className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-colors"
+				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
 				title="Открыть клинический ассистент у кресла"
+				aria-label="Ассистент у кресла"
 			>
 				<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
 				<span className="hidden 2xl:inline">Ассистент</span>
@@ -54,12 +59,13 @@ export function VisitHeaderQuickTools({
 				onClick={onOpenQueue}
 				id="btn-visit-switch-to-queue"
 				data-testid="btn-visit-switch-to-queue"
-				className="secondary-button h-9 min-h-[36px] px-2.5 py-0 text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] !hidden md:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer rounded-xl whitespace-nowrap shadow-xs transition-colors"
+				className="h-9 min-h-[36px] px-2.5 p-0 text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] !hidden md:!inline-flex items-center gap-1.5 shrink-0 cursor-pointer transition-colors whitespace-nowrap"
 				title="Открыть очередь смены и список пациентов"
+				aria-label="Очередь смены"
 			>
 				<UserCheck className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 				<span className="hidden 2xl:inline">Очередь смены</span>
 			</button>
-		</>
+		</div>
 	);
 }

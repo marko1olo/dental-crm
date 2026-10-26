@@ -1,0 +1,89 @@
+/* ============================================================ */==============
+   Reschedule & Submodal Dialogs (Mobile 375px & Touch First)
+   ========================================================================== */
+.pc-submodal-backdrop {
+	position: fixed;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background: rgba(0, 0, 0, 0.72);
+	backdrop-filter: blur(5px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 1200;
+	padding: 12px;
+	box-sizing: border-box;
+}
+
+.pc-submodal-card {
+	background: var(--pc-bg);
+	border: 1px solid var(--pc-border);
+	border-radius: var(--pc-radius-lg);
+	box-shadow: var(--pc-shadow);
+	width: 100%;
+	max-width: 480px;
+	max-height: 90vh;
+	overflow-y: auto;
+	display: flex;
+	flex-direction: column;
+	box-sizing: border-box;
+}
+
+.pc-submodal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 16px;
+	border-bottom: 1px solid var(--pc-border);
+	background: var(--pc-surface);
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.pc-slot-chips-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+	gap: 6px;
+}
+
+@media (max-width: 400px) {
+	.pc-slot-chips-grid {
+		grid-template-columns: repeat(2, 1fr);
+		gap: 6px;
+	}
+}
+
+.pc-slot-chip-btn {
+	min-height: 44px;
+	border-radius: var(--pc-radius-sm);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: all 0.15s ease;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	text-align: center;
+	padding: 6px 8px;
+	border: 1px solid var(--pc-border);
+	background: var(--pc-bg);
+	color: var(--pc-text-main);
+}
+
+.pc-slot-chip-btn:hover {
+	background: var(--pc-surface-hover);
+	border-color: var(--pc-primary);
+}
+
+.pc-slot-chip-btn.selected {
+	border: 2px solid var(--pc-primary);
+	background: var(--pc-primary-light);
+	color: var(--pc-primary);
+	font-weight: 800;
+}
+
+/* ============================================================ */
