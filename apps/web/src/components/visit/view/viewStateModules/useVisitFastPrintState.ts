@@ -12,6 +12,10 @@ import { showToast } from "../../../GlobalToast";
 import { calculateActivePatientCriticalBadges } from "../visitCriticalBadges";
 import { executeApplySomaticNormAutonomy } from "../visitViewAutonomyActions";
 import {
+	buildConsolidatedAllergyChip,
+	buildConsolidatedSomaticChip,
+} from "./visitCriticalChipsBuilder";
+import {
 	executeFastPrint043u,
 	executeFastPrintInformedConsent,
 	executeFastPrintCompletedAct,
@@ -52,36 +56,15 @@ export function useVisitFastPrintState({
 		return calculateActivePatientCriticalBadges(activePatient, visitNoteForm?.anamnesis);
 	}, [activePatient, visitNoteForm?.anamnesis]);
 
-	// Единая консолидированная плашка аллергии без тройного дублирования
+	// Суверенный чип аллергии (только реальные аллергены)
 	const consolidatedAllergyChip = useMemo(() => {
-		if (!activePatientCriticalBadges || activePatientCriticalBadges.length === 0) return null;
-		const rawAllergies = activePatient?.allergies;
-		const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
-		const parts: string[] = [];
-		if (allergyStr.trim() && !allergyStr.toLowerCase().includes("не выявлен") && !allergyStr.toLowerCase().includes("нет аллерг")) {
-			const cleaned = allergyStr
-				.trim()
-				.replace(/^аллерги[яи][: \t-]*/i, "")
-				.replace(/^на\s+/i, "")
-				.replace(/\s*\([^)]*\)/g, "")
-				.trim();
-			if (cleaned) parts.push(cleaned.charAt(0).toUpperCase() + cleaned.slice(1));
-		}
-		for (const b of activePatientCriticalBadges) {
-			if (b.id !== "allergy") {
-				const short = b.shortLabel ? b.shortLabel.replace(/[\u26a0\ufe0f!]/gu, "").trim() : "";
-				if (short && !parts.some((p) => p.toLowerCase().includes(short.toLowerCase()))) {
-					const isAcronym = /^(АГ|ССЗ|ЭКС|СД|НПВП)/i.test(short);
-					const formatted = isAcronym
-						? short.toUpperCase()
-						: short.charAt(0).toUpperCase() + short.slice(1).toLowerCase();
-					parts.push(formatted);
-				}
-			}
-		}
-		const detail = parts.length > 0 ? parts.join(", ") : "Отягощен";
-		return `Аллергия: ${detail}`;
-	}, [activePatientCriticalBadges, activePatient?.allergies]);
+		return buildConsolidatedAllergyChip(activePatient, activePatientCriticalBadges);
+	}, [activePatient, activePatientCriticalBadges]);
+
+	// Суверенный чип соматического риска (АГ, ССЗ, ЭКС, СД, Бронхиальная астма, Беременность)
+	const consolidatedSomaticChip = useMemo(() => {
+		return buildConsolidatedSomaticChip(activePatientCriticalBadges);
+	}, [activePatientCriticalBadges]);
 
 	const handleApplySomaticNormQuick = useCallback(() => {
 		return executeApplySomaticNormAutonomy({
@@ -184,6 +167,7 @@ export function useVisitFastPrintState({
 		patientAge,
 		activePatientCriticalBadges,
 		consolidatedAllergyChip,
+		consolidatedSomaticChip,
 		handleApplySomaticNormQuick,
 		activePlan,
 		treatmentPlanAgeDays,

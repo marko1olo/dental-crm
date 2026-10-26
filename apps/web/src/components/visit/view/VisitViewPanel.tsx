@@ -24,6 +24,7 @@ export function VisitViewPanel({ s }: VisitViewPanelProps) {
 					activeDoctor={s.activeDoctor}
 					activePatientCriticalBadges={s.activePatientCriticalBadges}
 					consolidatedAllergyChip={s.consolidatedAllergyChip}
+					consolidatedSomaticChip={s.consolidatedSomaticChip}
 					activePeers={s.activePeers}
 					summaryText={s.summaryText}
 					visitNoteForm={s.visitNoteForm}

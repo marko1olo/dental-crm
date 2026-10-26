@@ -11,34 +11,15 @@ import { showToast } from "../../../GlobalToast";
 import { resolveAppointmentLabStatus } from "../../../schedule/appointmentCardHelpers";
 import { getVitaShadeHex } from "@dental/shared";
 import type { PatientAlertBadgesBarProps } from "./types";
+import { buildConsolidatedAllergyChip as buildCleanAllergyChip } from "../viewStateModules/visitCriticalChipsBuilder";
 
 /**
- * Вычисляет единый консолидированный текст аллергоанамнеза без тройного дублирования
+ * Вычисляет единый консолидированный текст аллергоанамнеза без тройного дублирования.
+ * Категорически запрещено включать соматические патологии в аллергоанамнез.
  */
 // biome-ignore lint/suspicious/noExplicitAny: patient & badges
 export function buildConsolidatedAllergyChip(activePatient: any, activePatientCriticalBadges: any[]): string | null {
-	if (!activePatientCriticalBadges || activePatientCriticalBadges.length === 0) return null;
-	const rawAllergies = activePatient?.allergies;
-	const allergyStr = Array.isArray(rawAllergies) ? rawAllergies.join(", ") : String(rawAllergies || "");
-	const parts: string[] = [];
-	if (allergyStr.trim()) {
-		const cleaned = allergyStr.trim().replace(/\s*\([^)]*\)/g, "").trim();
-		if (cleaned) parts.push(cleaned);
-	}
-	for (const b of activePatientCriticalBadges) {
-		if (b.id !== "allergy") {
-			const short = b.shortLabel ? b.shortLabel.replace(/[\u26a0\ufe0f!]/gu, "").trim() : "";
-			if (short && !parts.some((p) => p.toLowerCase().includes(short.toLowerCase()))) {
-				const isAcronym = /^(АГ|ССЗ|ЭКС|СД|НПВП)/i.test(short);
-				const formatted = isAcronym
-					? short.toUpperCase()
-					: short.charAt(0).toUpperCase() + short.slice(1).toLowerCase();
-				parts.push(formatted);
-			}
-		}
-	}
-	const detail = parts.length > 0 ? parts.join(", ") : "Отягощен";
-	return `Аллергия: ${detail}`;
+	return buildCleanAllergyChip(activePatient, activePatientCriticalBadges);
 }
 
 /**

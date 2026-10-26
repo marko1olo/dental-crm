@@ -26,6 +26,7 @@ export function VisitViewHeader(props: VisitViewHeaderProps) {
 				summaryText={props.summaryText}
 				activePatientCriticalBadges={props.activePatientCriticalBadges}
 				consolidatedAllergyChip={props.consolidatedAllergyChip}
+				consolidatedSomaticChip={props.consolidatedSomaticChip}
 			/>
 			<VisitHeaderActionsToolbar {...props} />
 		</div>

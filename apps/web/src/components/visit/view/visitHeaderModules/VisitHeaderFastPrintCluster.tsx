@@ -22,7 +22,7 @@ export function VisitHeaderFastPrintCluster({
 				onClick={handlePrintForm043uFast}
 				data-testid="btn-visit-fast-print-043u"
 				className="h-9 min-h-[36px] min-w-[36px] w-9 p-0 text-xs font-semibold text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
-				title="Печать дневника приёма (Форма 043/у)"
+				title="Печать дневника приёма (Медицинская карта)"
 				aria-label="Печать дневника"
 			>
 				<Printer className="w-4 h-4 shrink-0" aria-hidden="true" />

@@ -41,6 +41,7 @@ export interface VisitViewHeaderProps {
 	activeDoctor?: VisitDoctorEntity | null | undefined;
 	activePatientCriticalBadges: readonly VisitCriticalBadge[];
 	consolidatedAllergyChip: string | null;
+	consolidatedSomaticChip?: string | null;
 	activePeers: readonly SoftPeerPresence[];
 	summaryText: string | null;
 	visitNoteForm?: VisitNoteFormExtended | undefined;
