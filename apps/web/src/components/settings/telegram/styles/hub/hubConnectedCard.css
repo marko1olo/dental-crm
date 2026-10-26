@@ -1,0 +1,88 @@
+/* --- Карточка подключенного бота/аккаунта --- */
+.tg-connected-profile {
+	display: flex;
+	align-items: center;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.tg-avatar-circle {
+	width: 52px;
+	height: 52px;
+	border-radius: 50%;
+	object-fit: cover;
+	border: 2px solid var(--paper, #ffffff);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	background: var(--paper-soft, #f1f5f9);
+}
+
+.tg-profile-meta {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.tg-profile-name {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.tg-profile-sub {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	color: var(--muted, #64748b);
+}
+
+.tg-profile-link {
+	color: var(--teal, #0d9488);
+	text-decoration: none;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-weight: 500;
+}
+
+.tg-profile-link:hover {
+	text-decoration: underline;
+}
+
+/* --- Сетка свойств (Инфо-табличка) --- */
+.tg-info-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+	gap: 12px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 16px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-info-grid {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-info-item {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.tg-info-label {
+	font-size: 11px;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.tg-info-value {
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--ink, #0f172a);
+	word-break: break-all;
+}
+

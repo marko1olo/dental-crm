@@ -1,0 +1,54 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationQuarantine.css
+ *
+ * Стили карантина некорректных записей источника (Мандат 8b: <= 120 строк).
+ */
+
+.mw-quarantine summary {
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 8px 0;
+	color: var(--ink);
+}
+
+.mw-quarantine ul {
+	margin: 4px 0 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+
+.mw-quarantine li {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 9px 12px;
+	border-left: 3px solid var(--warn-fg);
+	border-radius: 0 8px 8px 0;
+	background: var(--paper-soft);
+	font-size: 12.5px;
+	line-height: 1.5;
+}
+
+.mw-quarantine li.is-blocking {
+	border-left-color: var(--bad-fg);
+}
+
+.mw-q-reason {
+	font-weight: 620;
+	color: var(--ink);
+}
+
+.mw-q-row {
+	color: var(--muted);
+	font-size: 11.5px;
+	font-variant-numeric: tabular-nums;
+}
+
+.mw-q-fix {
+	color: var(--teal-dark);
+	font-size: 12px;
+}

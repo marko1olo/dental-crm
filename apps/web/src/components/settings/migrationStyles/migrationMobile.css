@@ -1,0 +1,91 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationMobile.css
+ *
+ * Мобильная сенсорная адаптация и Apple HIG для экранов <= 768px (Мандат 8b: <= 120 строк).
+ */
+
+@media (max-width: 768px) {
+	.migration-wizard,
+	.mw-panel,
+	.mw-head,
+	.mw-head-info,
+	.mw-head-actions,
+	.mw-source-grid,
+	.mw-source-col-left,
+	.mw-source-guides {
+		box-sizing: border-box;
+		width: 100%;
+		max-width: 100%;
+		min-width: 0;
+	}
+
+	.migration-wizard { overflow-x: hidden; gap: 8px; }
+
+	.mw-head { flex-direction: column; align-items: stretch; gap: 8px; }
+	.mw-title { font-size: 15px; line-height: 1.3; overflow-wrap: break-word; }
+	.mw-subtitle { max-width: 100%; font-size: 11.5px; line-height: 1.4; overflow-wrap: break-word; }
+
+	.mw-head-actions {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	/* Нативный степпер: компактная скроллируемая лента */
+	.mw-steps {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding: 2px 0;
+		gap: 6px;
+		width: 100%;
+		scrollbar-width: none;
+	}
+	.mw-steps::-webkit-scrollbar { display: none; }
+	.mw-step { flex: 0 0 auto; min-height: 38px; padding: 4px 10px; font-size: 12px; }
+
+	.mw-btn-discovery {
+		min-height: 44px;
+		width: 100%;
+		font-size: 13px;
+		white-space: normal !important;
+		text-overflow: unset !important;
+		text-align: center;
+		padding: 8px 12px;
+	}
+
+	.mw-panel { padding: 10px; border-radius: 12px; overflow-x: hidden; }
+	.mw-source-grid { grid-template-columns: 1fr; gap: 10px; }
+	.mw-source-guides-title { font-size: 11.5px; line-height: 1.35; overflow-wrap: break-word; }
+
+	.mw-mapping-table { border: 1px solid var(--line); border-radius: 12px; background: var(--paper); }
+	.mw-mapping-head { display: none; }
+
+	.mw-mapping-row {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 5px;
+		min-height: 52px;
+		padding: 10px 12px;
+		border-bottom: 1px solid var(--line);
+	}
+	.mw-mapping-row:last-child { border-bottom: none; }
+
+	.mw-col-source { font-size: 12.5px; font-weight: 600; }
+	.mw-col-target { font-size: 12.5px; color: var(--teal-dark); }
+	.mw-col-shapes { font-size: 11px; }
+
+	/* Сенсорный минимум touch target >= 44x44px */
+	.mw-btn { min-height: 44px; width: 100%; font-size: 13.5px; }
+	.mw-actions { flex-direction: column; align-items: stretch; gap: 8px; width: 100%; }
+
+	.mw-counters { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+	.mw-counter { min-height: 52px; padding: 10px; }
+	.mw-counter-value { font-size: 19px; }
+
+	.mw-projection { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+	.mw-proj-item { min-height: 52px; }
+}

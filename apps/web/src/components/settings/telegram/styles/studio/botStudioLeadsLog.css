@@ -1,0 +1,97 @@
+/* --- Leads & Messages Log --- */
+.bot-leads-log-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	border-radius: 14px;
+	padding: 16px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-leads-log-card {
+	background: #0f172a;
+}
+
+.bot-leads-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.bot-leads-table-wrap {
+	overflow-x: auto;
+	width: 100%;
+}
+
+.bot-leads-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 12px;
+}
+
+.bot-leads-table th {
+	text-align: left;
+	padding: 8px 10px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	white-space: nowrap;
+}
+
+.bot-leads-table td {
+	padding: 10px;
+	border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.15));
+}
+
+.bot-lead-status-pill {
+	display: inline-flex;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	font-size: 10.5px;
+	font-weight: 700;
+}
+
+.bot-lead-status-pill.status-success {
+	background: rgba(16, 185, 129, 0.15);
+	color: #059669;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-lead-status-pill.status-success {
+	color: #34d399;
+}
+
+.bot-lead-status-pill.status-confirmed {
+	background: rgba(14, 165, 233, 0.15);
+	color: #0284c7;
+}
+
+.bot-lead-status-pill.status-review {
+	background: rgba(245, 158, 11, 0.15);
+	color: #d97706;
+}
+
+.bot-lead-status-pill.status-inquiry {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--muted, #64748b);
+}
+
+/* --- Wizard Footer Navigation --- */
+.bot-wizard-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 0 6px 0;
+	border-top: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	position: sticky;
+	bottom: 0;
+	background: var(--paper, #ffffff);
+	z-index: 5;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-wizard-footer {
+	background: #0f172a;
+	border-color: rgba(51, 65, 85, 0.6);
+}
+

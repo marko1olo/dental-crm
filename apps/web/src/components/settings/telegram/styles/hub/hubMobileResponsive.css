@@ -1,0 +1,79 @@
+/* Мобильная адаптация Apple HIG (<= 768px) */
+@media (max-width: 768px) {
+	.telegram-hub-container {
+		overflow-x: clip;
+		max-width: 100%;
+	}
+
+	.tg-tab-text-mobile {
+		display: inline;
+	}
+
+	.tg-tab-text-desktop {
+		display: none;
+	}
+
+	.tg-hub-content-card {
+		padding: 16px;
+		border-radius: 12px;
+		overflow-x: clip;
+		max-width: 100%;
+	}
+
+	/* Горизонтальный скроллируемый Segmented Bar по Apple HIG */
+	.tg-hub-main-tabs {
+		width: 100%;
+		display: flex;
+		gap: 6px;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		padding: 4px;
+		box-sizing: border-box;
+	}
+
+	.tg-hub-main-tabs::-webkit-scrollbar {
+		display: none;
+	}
+
+	.tg-hub-tab-btn {
+		flex: 0 0 auto;
+		min-height: 44px;
+		padding: 8px 10px;
+		font-size: 12px;
+		gap: 4px;
+		justify-content: center;
+		white-space: nowrap;
+	}
+
+	.tg-status-banner {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 12px;
+	}
+
+	.tg-status-banner > div:last-child {
+		width: 100%;
+		display: flex;
+		gap: 8px;
+		flex-wrap: wrap;
+	}
+
+	.tg-status-banner .tg-btn-secondary,
+	.tg-status-banner .tg-btn-danger,
+	.tg-status-banner .tg-btn-primary {
+		flex: 1;
+		min-width: 120px;
+	}
+
+	.tg-qr-layout {
+		grid-template-columns: 1fr;
+		gap: 16px;
+	}
+
+	.tg-qr-box {
+		width: 100%;
+		box-sizing: border-box;
+	}
+}
+

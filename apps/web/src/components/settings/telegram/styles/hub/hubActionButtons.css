@@ -1,0 +1,83 @@
+/* --- Интерактивные кнопки с тач-таргетом >= 44px --- */
+.tg-btn-primary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 20px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 600;
+	border-radius: 10px;
+	border: none;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.25);
+}
+
+.tg-btn-primary:hover:not(:disabled) {
+	background: #0f766e;
+	box-shadow: 0 4px 10px rgba(13, 148, 136, 0.35);
+}
+
+.tg-btn-primary:disabled {
+	opacity: 0.6;
+	cursor: not-allowed;
+}
+
+.tg-btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 18px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 10px;
+	border: 1px solid var(--line, #cbd5e1);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-btn-secondary {
+	background: rgba(30, 41, 59, 0.6);
+	border-color: #334155;
+	color: #f1f5f9;
+}
+
+.tg-btn-secondary:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--muted, #94a3b8);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-btn-secondary:hover:not(:disabled) {
+	background: rgba(51, 65, 85, 0.6);
+}
+
+.tg-btn-danger {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 18px;
+	background: transparent;
+	color: #ef4444;
+	font-size: 14px;
+	font-weight: 500;
+	border-radius: 10px;
+	border: 1px solid rgba(239, 68, 68, 0.3);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.tg-btn-danger:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.08);
+	border-color: #ef4444;
+}
+

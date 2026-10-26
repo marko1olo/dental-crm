@@ -1,0 +1,111 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationWizardLayout.css
+ *
+ * Базовая разметка и степпер мастера переноса базы (Мандат 8b: <= 120 строк).
+ */
+
+.migration-wizard {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	color: var(--ink);
+	width: 100%;
+	min-width: 0;
+}
+
+/* ---- Заголовок мастера ---- */
+.mw-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.mw-head-info { min-width: 0; }
+.mw-head-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.mw-title {
+	margin: 0 0 2px;
+	font-size: 17px;
+	font-weight: 650;
+	letter-spacing: -0.01em;
+}
+
+.mw-subtitle {
+	margin: 0;
+	max-width: 62ch;
+	color: var(--muted);
+	font-size: 12px;
+	line-height: 1.35;
+}
+
+/* ---- Степпер этапов ---- */
+.mw-steps {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	flex-wrap: wrap;
+}
+
+.mw-step {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 4px 11px 4px 5px;
+	border: 1px solid var(--line);
+	border-radius: 999px;
+	background: var(--paper-soft);
+	color: var(--muted);
+	font-size: 12px;
+	transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+
+.mw-step-dot {
+	display: grid;
+	place-items: center;
+	width: 20px;
+	height: 20px;
+	border-radius: 50%;
+	background: var(--line);
+	color: var(--ink-2);
+	font-size: 11px;
+	font-weight: 600;
+}
+
+.mw-step.is-current {
+	border-color: var(--teal);
+	background: var(--teal-surface);
+	color: var(--ink);
+	font-weight: 600;
+}
+.mw-step.is-current .mw-step-dot { background: var(--teal); color: var(--on-teal); }
+.mw-step.is-done .mw-step-dot { background: var(--ok-bg); color: var(--ok-fg); }
+
+.mw-btn-discovery {
+	min-height: 34px;
+	padding: 5px 12px;
+	font-size: 12.5px;
+}
+
+/* ---- Каркас панели шага ---- */
+.mw-panel {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 16px;
+	border: 1px solid var(--line);
+	border-radius: 14px;
+	background: var(--paper);
+	box-shadow: var(--shadow-1);
+	width: 100%;
+	min-width: 0;
+}

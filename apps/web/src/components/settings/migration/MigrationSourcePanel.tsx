@@ -92,17 +92,10 @@ export function MigrationSourcePanel(props: {
 		(VENDOR_GUIDES[0] as (typeof VENDOR_GUIDES)[number]);
 
 	return (
-		<div className="mw-panel" style={{ padding: "10px 14px", gap: "8px" }}>
-			<div
-				style={{
-					display: "grid",
-					gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-					gap: "12px",
-					alignItems: "stretch",
-				}}
-			>
+		<div className="mw-panel mw-source-panel">
+			<div className="mw-source-grid">
 				{/* Левая колонка: Зона перетаскивания и ИИ-переключатель */}
-				<div style={{ display: "flex", flexDirection: "column", gap: "8px" }}>
+				<div className="mw-source-col-left">
 					<section
 						aria-label="Зона загрузки файла"
 						className={`mw-drop ${dragging ? "is-dragging" : ""}`}
@@ -167,31 +160,9 @@ export function MigrationSourcePanel(props: {
 				</div>
 
 				{/* Правая колонка: Инструкции по экспорту из популярных МИС */}
-				<section
-					style={{
-						display: "flex",
-						flexDirection: "column",
-						justifyContent: "space-between",
-						gap: "8px",
-						padding: "10px 12px",
-						borderRadius: "10px",
-						border: "1px solid var(--line)",
-						background: "var(--paper-soft)",
-						fontSize: "11.5px",
-					}}
-					aria-label="Пресеты переноса из популярных систем"
-				>
+				<section className="mw-source-guides" aria-label="Пресеты переноса из популярных систем">
 					<div>
-						<div
-							style={{
-								display: "flex",
-								alignItems: "center",
-								gap: "8px",
-								marginBottom: "10px",
-								fontWeight: 600,
-								color: "var(--ink)",
-							}}
-						>
+						<div className="mw-source-guides-title">
 							<Database size={15} style={{ color: "var(--teal)", flexShrink: 0 }} />
 							<span>Как быстро выгрузить базу из вашей старой программы:</span>
 						</div>

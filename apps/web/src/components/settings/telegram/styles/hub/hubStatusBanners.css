@@ -1,0 +1,93 @@
+/* --- Статусные баннеры --- */
+.tg-status-banner {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 16px 20px;
+	border-radius: 12px;
+	gap: 16px;
+	flex-wrap: wrap;
+}
+
+.tg-status-banner.connected {
+	background: rgba(16, 185, 129, 0.08);
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-banner.connected {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.35);
+}
+
+.tg-status-banner.disconnected {
+	background: rgba(245, 158, 11, 0.08);
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-banner.disconnected {
+	background: rgba(245, 158, 11, 0.15);
+	border-color: rgba(245, 158, 11, 0.35);
+}
+
+.tg-status-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+	font-weight: 600;
+}
+
+.tg-status-badge.online {
+	color: #059669;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-badge.online {
+	color: #34d399;
+}
+
+.tg-status-badge.offline {
+	color: #d97706;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-badge.offline {
+	color: #fbbf24;
+}
+
+/* Пульсирующая точка статуса */
+.tg-pulse-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	display: inline-block;
+	background: currentColor;
+	position: relative;
+}
+
+.tg-pulse-dot.pulse::after {
+	content: "";
+	position: absolute;
+	top: -3px;
+	left: -3px;
+	right: -3px;
+	bottom: -3px;
+	border-radius: 50%;
+	border: 2px solid currentColor;
+	animation: tg-pulse-anim 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+	opacity: 0.6;
+}
+
+@keyframes tg-pulse-anim {
+	0% {
+		transform: scale(0.9);
+		opacity: 0.8;
+	}
+	70% {
+		transform: scale(1.6);
+		opacity: 0;
+	}
+	100% {
+		transform: scale(1.6);
+		opacity: 0;
+	}
+}
+

@@ -1,0 +1,116 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationStepReport.css
+ *
+ * Акт сверки и проверка целостности переноса (Мандат 8b: <= 120 строк).
+ */
+
+.mw-verdict {
+	display: flex;
+	align-items: flex-start;
+	gap: 14px;
+	padding: 16px 18px;
+	border-radius: 12px;
+}
+.mw-verdict.is-ok { background: var(--ok-bg); color: var(--ok-fg); }
+.mw-verdict.is-bad { background: var(--bad-bg); color: var(--bad-fg); }
+
+.mw-verdict-mark {
+	display: grid;
+	place-items: center;
+	flex: 0 0 auto;
+	width: 32px;
+	height: 32px;
+	border-radius: 50%;
+	color: var(--paper-strong);
+	font-size: 18px;
+	font-weight: 700;
+	line-height: 1;
+}
+.mw-verdict.is-ok .mw-verdict-mark { background: var(--ok-fg); }
+.mw-verdict.is-bad .mw-verdict-mark { background: var(--bad-fg); }
+
+.mw-verdict strong {
+	display: block;
+	font-size: 15px;
+	margin-bottom: 2px;
+}
+.mw-verdict p {
+	margin: 0;
+	font-size: 13px;
+	line-height: 1.5;
+	opacity: 0.9;
+}
+
+/* ---- Счётчики итогов ---- */
+.mw-counters {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+	gap: 10px;
+}
+.mw-counter {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 11px 13px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper-soft);
+}
+.mw-counter-value {
+	font-size: 19px;
+	font-weight: 660;
+	font-variant-numeric: tabular-nums;
+}
+.mw-counter-label {
+	color: var(--muted);
+	font-size: 11.5px;
+}
+.mw-counter.is-ok .mw-counter-value { color: var(--ok-fg); }
+.mw-counter.is-warn .mw-counter-value { color: var(--warn-fg); }
+
+/* ---- Проверки сверки ---- */
+.mw-checks {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+.mw-check {
+	display: flex;
+	align-items: flex-start;
+	gap: 11px;
+	padding: 11px 14px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper-soft);
+}
+.mw-check.is-bad {
+	border-color: var(--bad-fg);
+	background: var(--bad-bg);
+}
+.mw-check-mark {
+	flex: 0 0 auto;
+	width: 20px;
+	height: 20px;
+	display: grid;
+	place-items: center;
+	border-radius: 50%;
+	font-size: 12px;
+	font-weight: 700;
+}
+.mw-check.is-ok .mw-check-mark { background: var(--ok-bg); color: var(--ok-fg); }
+.mw-check.is-bad .mw-check-mark { background: var(--bad-fg); color: var(--paper-strong); }
+
+.mw-check-body { min-width: 0; }
+.mw-check-body strong { font-size: 13px; font-weight: 600; }
+.mw-check-numbers {
+	margin-left: 8px;
+	color: var(--muted);
+	font-size: 12px;
+	font-variant-numeric: tabular-nums;
+}
+.mw-check-detail {
+	margin: 3px 0 0;
+	color: var(--ink-2);
+	font-size: 12.5px;
+	line-height: 1.5;
+}

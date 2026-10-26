@@ -1,0 +1,53 @@
+/* --- Step 4: Launch & ZIP & Leads --- */
+.bot-launch-control-card {
+	background: var(--paper-card, #1e293b);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	border-radius: 14px;
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+}
+
+.bot-launch-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.bot-live-pulse-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 6px 12px;
+	border-radius: 9999px;
+	font-size: 12px;
+}
+
+.bot-live-pulse-badge.online {
+	background: rgba(16, 185, 129, 0.15);
+	color: #10b981;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+}
+
+.bot-live-pulse-badge.ready {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--muted, #64748b);
+}
+
+.bot-pulse-dot {
+	width: 8px;
+	height: 8px;
+	border-radius: 50%;
+	background: #10b981;
+	box-shadow: 0 0 8px #10b981;
+	animation: botPulse 1.8s infinite;
+}
+
+@keyframes botPulse {
+	0%, 100% { opacity: 1; transform: scale(1); }
+	50% { opacity: 0.4; transform: scale(0.85); }
+}
+

@@ -1,0 +1,61 @@
+/* --- Форма ввода токена / телефона --- */
+.tg-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+	width: 100%;
+}
+
+.tg-input-wrapper {
+	position: relative;
+	display: flex;
+	align-items: center;
+	width: 100%;
+}
+
+.tg-text-input {
+	width: 100%;
+	min-height: 44px;
+	padding: 10px 44px 10px 14px;
+	font-size: 14px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	color: var(--ink, #0f172a);
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-text-input {
+	background: rgba(15, 23, 42, 0.6);
+	border-color: #334155;
+	color: #f1f5f9;
+}
+
+.tg-text-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.tg-input-icon-btn {
+	position: absolute;
+	right: 10px;
+	background: transparent;
+	border: none;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	padding: 6px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 6px;
+	min-height: 32px;
+	min-width: 32px;
+}
+
+.tg-input-icon-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.05);
+}
+

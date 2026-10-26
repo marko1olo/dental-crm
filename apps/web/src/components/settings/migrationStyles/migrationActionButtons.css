@@ -1,0 +1,89 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationActionButtons.css
+ *
+ * Кнопки действий мастера переноса базы (Мандат 8b: <= 120 строк).
+ */
+
+.mw-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	padding: 9px 18px;
+	min-height: 44px;
+	border: 1px solid transparent;
+	border-radius: 9px;
+	font-size: 13.5px;
+	font-weight: 600;
+	font-family: inherit;
+	cursor: pointer;
+	text-decoration: none;
+	transition:
+		background var(--transition-fast),
+		border-color var(--transition-fast),
+		transform var(--transition-fast);
+}
+
+.mw-btn:disabled {
+	opacity: 0.55;
+	cursor: not-allowed;
+}
+
+.mw-btn:not(:disabled):active {
+	transform: translateY(1px);
+}
+
+.mw-btn:focus-visible {
+	outline: 2px solid var(--focus-ring);
+	outline-offset: 2px;
+}
+
+.mw-btn-primary {
+	background: var(--teal);
+	color: var(--on-teal);
+}
+
+.mw-btn-primary:not(:disabled):hover {
+	background: var(--teal-dark);
+}
+
+.mw-btn-ghost {
+	background: transparent;
+	border-color: var(--line-strong);
+	color: var(--ink-2);
+}
+
+.mw-btn-ghost:not(:disabled):hover {
+	background: var(--paper-soft);
+	border-color: var(--teal);
+}
+
+.mw-btn-danger {
+	background: var(--bad-fg);
+	color: var(--paper-strong);
+}
+
+.mw-btn-danger:not(:disabled):hover {
+	filter: brightness(1.08);
+}
+
+.mw-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	padding-top: 4px;
+}
+
+.mw-actions-note {
+	color: var(--muted);
+	font-size: 12.5px;
+	line-height: 1.5;
+	max-width: 52ch;
+}
+
+.mw-error {
+	color: var(--bad-fg);
+	font-size: 12px;
+	font-weight: 500;
+}

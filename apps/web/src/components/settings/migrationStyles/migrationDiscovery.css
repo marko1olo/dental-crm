@@ -1,0 +1,92 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationDiscovery.css
+ *
+ * Панель автопоиска баз на сервере (Мандат 8b: <= 120 строк).
+ */
+
+.mw-discovery {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	padding: 18px;
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	background: var(--paper);
+	box-shadow: var(--shadow-1);
+}
+
+.mw-discovery header {
+	display: flex;
+	align-items: baseline;
+	gap: 10px;
+}
+
+.mw-discovery-meta {
+	color: var(--muted);
+	font-size: 12px;
+}
+
+.mw-discovery h4 {
+	margin: 0 0 6px;
+	font-size: 13px;
+	font-weight: 620;
+}
+
+.mw-discovery-list {
+	margin: 0;
+	padding: 0;
+	list-style: none;
+	display: flex;
+	flex-direction: column;
+	gap: 7px;
+}
+
+.mw-discovery-list li {
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 9px 12px;
+	border: 1px solid var(--line);
+	border-radius: 9px;
+	background: var(--paper-soft);
+}
+
+.mw-d-name {
+	font-weight: 600;
+	font-size: 13px;
+}
+
+.mw-d-format {
+	color: var(--teal-dark);
+	font-size: 12px;
+}
+
+.mw-d-path {
+	color: var(--muted);
+	font-family: ui-monospace, monospace;
+	font-size: 11px;
+	overflow-wrap: anywhere;
+}
+
+.mw-d-details {
+	color: var(--ink-2);
+	font-size: 12px;
+	white-space: pre-line;
+}
+
+.mw-d-guidance {
+	margin-top: 3px;
+	padding: 7px 10px;
+	border-radius: 7px;
+	background: var(--info-bg);
+	color: var(--info-fg);
+	font-size: 12px;
+	line-height: 1.5;
+}
+
+.mw-discovery-warning {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+}

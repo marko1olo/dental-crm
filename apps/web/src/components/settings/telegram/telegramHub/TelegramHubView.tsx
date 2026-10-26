@@ -1,9 +1,10 @@
 import React, { useState } from "react";
-import { Bell, Bot, Send, UserCheck } from "lucide-react";
+import { Bell, Bot, Send, Sparkles, UserCheck } from "lucide-react";
 import { BotConfigurationCard } from "./BotConfigurationCard";
 import { DeliveryQueueMonitor } from "./DeliveryQueueMonitor";
 import { NotificationTemplatesEditor } from "./NotificationTemplatesEditor";
 import { StaffBindingCard } from "./StaffBindingCard";
+import { TelegramBotStudioSection } from "../TelegramBotStudioSection";
 import type {
 	TelegramAccountStatus,
 	TelegramBotStatus,
@@ -106,7 +107,23 @@ export function TelegramHubView({
 					<span className="tg-tab-text-desktop">Очередь</span>
 					<span className="tg-tab-text-mobile">Очередь</span>
 				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={activeMainTab === "studio"}
+					className={`tg-hub-tab-btn ${activeMainTab === "studio" ? "active" : ""}`}
+					onClick={() => setActiveMainTab("studio")}
+					data-testid="tg-hub-tab-studio"
+				>
+					<Sparkles size={18} />
+					<span className="tg-tab-text-desktop">Конструктор и симулятор</span>
+					<span className="tg-tab-text-mobile">Студия</span>
+				</button>
 			</div>
+
+			{activeMainTab === "studio" && (
+				<TelegramBotStudioSection />
+			)}
 
 			{activeMainTab === "bot" && (
 				<BotConfigurationCard

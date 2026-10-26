@@ -1,0 +1,78 @@
+/* ==========================================================================
+   MULTI-CHANNEL ONBOARDING WIZARD & BOT STUDIO MODAL (macOS / iPad HIG)
+   ========================================================================== */
+
+.tabular-nums {
+	font-variant-numeric: tabular-nums;
+}
+
+/* --- Mode Switch Bar --- */
+.tg-mode-switch-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 4px 8px;
+	background: var(--paper-card, #1e293b);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	border-radius: 12px;
+	margin-bottom: 8px;
+	flex-wrap: wrap;
+}
+
+.tg-mode-switch-group {
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.tg-mode-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	height: 32px;
+	padding: 0 12px;
+	font-size: 12px;
+	font-weight: 600;
+	border-radius: 8px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-mode-btn {
+	color: var(--slate-400, #94a3b8);
+}
+
+.tg-mode-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-mode-btn.active {
+	background: #334155;
+	color: #2dd4bf;
+}
+
+.tg-hero-btn {
+	height: 36px;
+	padding: 0 14px;
+	font-size: 12.5px;
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+}
+
+/* --- Bot Onboarding Wizard Container --- */
+.bot-wizard-container {
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+

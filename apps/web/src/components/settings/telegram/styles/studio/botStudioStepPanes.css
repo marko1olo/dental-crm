@@ -1,0 +1,51 @@
+/* --- Wizard Step Panes --- */
+.bot-wizard-step-pane {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	border-radius: 16px;
+	padding: 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 18px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-wizard-step-pane {
+	background: var(--paper-card, #1e293b);
+	border-color: rgba(51, 65, 85, 0.7);
+}
+
+.bot-pane-header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.bot-step-chip {
+	display: inline-flex;
+	align-items: center;
+	padding: 3px 8px;
+	border-radius: 6px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	width: fit-content;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+}
+
+.bot-pane-title {
+	font-size: 17px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 2px 0 0 0;
+}
+
+.bot-pane-subtitle {
+	font-size: 12.5px;
+	color: var(--muted, #64748b);
+	margin: 0;
+	line-height: 1.5;
+}
+

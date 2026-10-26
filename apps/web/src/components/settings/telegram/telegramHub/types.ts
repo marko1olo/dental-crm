@@ -45,7 +45,7 @@ export interface TelegramQrData {
 	expiresAt: string;
 }
 
-export type TelegramMainTab = "bot" | "account" | "templates" | "queue";
+export type TelegramMainTab = "bot" | "account" | "templates" | "queue" | "studio";
 export type TelegramAccountAuthMode = "phone" | "qr";
 
 export interface TelegramNotificationTemplate {

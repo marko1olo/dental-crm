@@ -1,0 +1,74 @@
+/* --- Token Input & Launch --- */
+.tg-token-input-group {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin-top: 4px;
+}
+
+.tg-token-input-row {
+	display: flex;
+	align-items: center;
+	position: relative;
+	width: 100%;
+	min-width: 0;
+}
+
+.tg-token-field {
+	width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	padding-right: 40px !important;
+	font-family: monospace;
+	font-size: 13px !important;
+	letter-spacing: 0.03em;
+}
+
+.tg-icon-toggle-btn {
+	position: absolute;
+	right: 10px;
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	color: var(--slate-400, #94a3b8);
+	padding: 4px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-icon-toggle-btn:hover {
+	color: var(--slate-600, #475569);
+}
+
+.tg-token-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+	width: 100%;
+}
+
+.tg-launch-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 16px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 8px;
+	cursor: pointer;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+.tg-stop-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 7px 12px;
+	font-size: 12px;
+	border-radius: 8px;
+	cursor: pointer;
+}
+

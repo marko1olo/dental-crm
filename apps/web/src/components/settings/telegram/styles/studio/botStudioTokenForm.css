@@ -1,0 +1,58 @@
+.tg-status-banner {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 500;
+	border: 1px solid transparent;
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.tg-status-text {
+	min-width: 0;
+	flex: 1;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.tg-status-banner.tg-status-online {
+	background: rgba(16, 185, 129, 0.1);
+	border-color: rgba(16, 185, 129, 0.25);
+	color: #047857;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-banner.tg-status-online {
+	background: rgba(16, 185, 129, 0.15);
+	border-color: rgba(16, 185, 129, 0.3);
+	color: #34d399;
+}
+
+.tg-status-banner.tg-status-verifying {
+	background: rgba(245, 158, 11, 0.1);
+	border-color: rgba(245, 158, 11, 0.25);
+	color: #b45309;
+}
+
+.tg-status-banner.tg-status-error {
+	background: rgba(239, 68, 68, 0.1);
+	border-color: rgba(239, 68, 68, 0.25);
+	color: #b91c1c;
+}
+
+.tg-status-banner.tg-status-idle {
+	background: rgba(148, 163, 184, 0.1);
+	border-color: rgba(148, 163, 184, 0.2);
+	color: var(--slate-600, #475569);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-status-banner.tg-status-idle {
+	color: var(--slate-400, #94a3b8);
+}
+

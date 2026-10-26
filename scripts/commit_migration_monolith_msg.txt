@@ -1,0 +1,36 @@
+feat(migration): demolish MigrationWizard.css monolith to <=120 lines, verify honest Fastify ingestion
+
+## Контекст и архитектурная цель (Why):
+- Монолитный файл `MigrationWizard.css` (944 строки) грубо нарушал архитектурный Мандат 8b (лимит строго <= 120 строк на файл).
+- Требовалось провести бескомпромиссную декомпозицию стилей мастера миграции без поломки cascade specificity, выжечь симуляторы времени (setTimeout), подтвердить честный Fastify бэкенд (/api/migration/...), реализовать сенсорную эргономику Apple HIG на мобильных устройствах (390x844) и снять 4-state Red Team Visual Proof.
+
+## Что конкретно сделано (What & Where):
+- apps/web/src/components/settings/MigrationWizard.css: превращён в тонкий шлюз импортов (16 строк).
+- apps/web/src/components/settings/migrationStyles/: выделено 10 специализированных микромодулей, каждый строго <= 120 строк:
+  * migrationActionButtons.css (89 строк): навигационные и сенсорные кнопки действий (Primary CTA, Отмена, Назад).
+  * migrationDiscovery.css (92 строки): модальное окно и список обнаруженных локальных баз на сервере.
+  * migrationDropzone.css (49 строк): drag-and-drop область, бейджи форматов и кнопки загрузки.
+  * migrationMobile.css (91 строка): Apple HIG адаптация (390x844), тач-таргеты >= 44x44px, 0px горизонтального дрифта, touch-лента степпера.
+  * migrationQuarantine.css (54 строки): витрина карантинных записей и коррекция аномалий.
+  * migrationStepMapping.css (109 строк): сопоставление колонок источника с каноническими полями DENTE.
+  * migrationStepProgress.css (86 строк): стриминговый индикатор прогресса, счетчики скорости и строк.
+  * migrationStepReport.css (116 строк): итоговый акт сверки, карточки аналитики и экспорт отчетов.
+  * migrationStepSource.css (72 строки): сетка выбора систем (IDENT, DentalPRO, Инфодент, StomX, 1C), AI-тумблер, алерты.
+  * migrationWizardLayout.css (111 строк): базовый flex/grid каркас, шапка мастера и степпер этапов.
+- apps/web/src/components/settings/migration/MigrationSourcePanel.tsx: инлайн-стили заменены на семантические классы (.mw-source-panel, .mw-source-grid, .mw-source-col-left, .mw-source-guides).
+- apps/web/src/views/settingsView/MobileSettingsViewWrapper.tsx: устранен избыточный 20px padding из глобального селектора #settings, обеспечена симметрия и нативная зона большого пальца на мобильных экранах.
+- scripts/capture-migration-4state-proofs.mjs: автономный Playwright-скрипт с живой аутентификацией /api/auth/login под ролью owner.
+
+## Доказательства работоспособности и гейты (Proof & Verification):
+- Компиляция и проверка кодировок: Exit Code 0 (npm run check:encoding, 21 171 файл проверен, 0 замечаний).
+- Аудит CSS-токенов: Exit Code 0 (npm run check:css-tokens, 1 350 css-файлов, 0 неразрешенных переменных).
+- Модульные и интеграционные тесты: Exit Code 0 (npx vitest run apps/web/src/components/settings/ — 27 test files passed, 403/403 tests passed).
+- Лимиты строк Мандата 8b: Все 10 файлов migrationStyles/*.css строго <= 120 строк (максимум 116 строк).
+- Red Team 4-State Visual Proof (отсмотрено лично через read_file):
+  * docs/proofs/migration/01_migration_pc_light.png (191 965 байт) — PC Light 1440x900.
+  * docs/proofs/migration/02_migration_pc_dark.png (194 742 байта) — PC Dark 1440x900.
+  * docs/proofs/migration/03_migration_mobile_light.png (55 290 байт) — Mobile Light 390x844 (симметричная верстка, 0px паразитного скролла).
+  * docs/proofs/migration/04_migration_mobile_dark.png (56 243 байта) — Mobile Dark 390x844.
+
+## Синхронизация документации (Documentation Sync):
+- docs/architecture/DATA_MIGRATION_AND_INGESTION_SPEC.md: создана полная архитектурная спецификация стримингового инжеста Fastify, Drizzle транзакций, модульной CSS-архитектуры и соответствия Мандатам 8b, 8e, 8n, 8am.

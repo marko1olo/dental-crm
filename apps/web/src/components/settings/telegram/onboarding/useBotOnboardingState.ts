@@ -1,4 +1,5 @@
 import { useState, useEffect, useId, useMemo } from "react";
+import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { CLINICAL_BOT_PRESETS, type BotPreset, type BotTone } from "../telegramBotPresets";
 import { downloadBotSourceZip } from "../botZipGenerator";
 import type { BotChannelType } from "../TelegramPhoneSimulator";
@@ -206,27 +207,44 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 					headers: { "Content-Type": "application/json" },
 					body: JSON.stringify({ token: trimmed }),
 				});
-				if (response.ok) {
-					const data = (await response.json()) as { ok: boolean; username?: string };
-					if (data.ok) {
-						setConnectionStatus("connected");
-						if (data.username) setBotUsername(data.username);
-						setStatusMessage(`Бот @${data.username || "clinic_bot"} успешно подтвержден!`);
-						if (typeof parentProps?.setTelegramBotTokenDraft === "function") {
-							parentProps.setTelegramBotTokenDraft(trimmed);
-						}
-						if (typeof parentProps?.markTelegramSettingsDirty === "function") {
-							parentProps.markTelegramSettingsDirty();
-						}
-						return;
+				const data = (await response.json().catch(() => ({}))) as {
+					ok: boolean;
+					username?: string;
+					bot?: { username?: string };
+					error?: string;
+					message?: string;
+				};
+
+				if (response.ok && data.ok) {
+					const uname = data.bot?.username || data.username || "clinic_bot";
+					setConnectionStatus("connected");
+					setBotUsername(uname);
+					setStatusMessage(`Бот @${uname} успешно подтвержден через Telegram getMe!`);
+					if (typeof parentProps?.setTelegramBotTokenDraft === "function") {
+						parentProps.setTelegramBotTokenDraft(trimmed);
 					}
+					if (typeof parentProps?.markTelegramSettingsDirty === "function") {
+						parentProps.markTelegramSettingsDirty();
+					}
+					return;
+				}
+
+				if (!isDemoShowcaseMode()) {
+					setConnectionStatus("error");
+					setStatusMessage(data.error || data.message || "Ошибка проверки токена бота Telegram. Убедитесь, что токен скопирован верно из @BotFather.");
+					return;
 				}
 			}
-		} catch {
-			// Fallback below
+		} catch (err) {
+			if (!isDemoShowcaseMode()) {
+				setConnectionStatus("error");
+				setStatusMessage(`Сетевая ошибка при проверке токена: ${String(err)}`);
+				return;
+			}
 		}
 
-		setTimeout(() => {
+		// Demo fallback exclusively for presentation showcase mode
+		if (isDemoShowcaseMode()) {
 			setConnectionStatus("connected");
 			const fallbackUser =
 				activeChannel === "telegram"
@@ -235,14 +253,17 @@ export function useBotOnboardingState(props: BotOnboardingWizardProps) {
 						? "vk.com/dente_clinic"
 						: "+7 (999) 000-00-00";
 			setBotUsername(fallbackUser);
-			setStatusMessage(`Канал ${activeChannel.toUpperCase()} успешно подключен и готов к запуску!`);
+			setStatusMessage(`[Демо] Канал ${activeChannel.toUpperCase()} подключен для витрины.`);
 			if (typeof parentProps?.setTelegramBotTokenDraft === "function" && activeChannel === "telegram") {
 				parentProps.setTelegramBotTokenDraft(trimmed);
 			}
 			if (typeof parentProps?.markTelegramSettingsDirty === "function") {
 				parentProps.markTelegramSettingsDirty();
 			}
-		}, 600);
+		} else {
+			setConnectionStatus("error");
+			setStatusMessage("Не удалось подключить канал связи. Проверьте правильность токена.");
+		}
 	};
 
 	const handleLaunchLiveBot = async () => {

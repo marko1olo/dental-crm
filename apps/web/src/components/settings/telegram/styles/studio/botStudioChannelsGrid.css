@@ -1,0 +1,76 @@
+/* --- Step 1: Channels Grid --- */
+.bot-channels-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+	width: 100%;
+}
+
+@media (max-width: 640px) {
+	.bot-channels-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.bot-channel-card {
+	display: flex;
+	flex-direction: column;
+	padding: 14px;
+	border-radius: 12px;
+	border: 1.5px solid var(--line, rgba(148, 163, 184, 0.25));
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-channel-card {
+	background: #0f172a;
+}
+
+.bot-channel-card:hover {
+	transform: translateY(-1px);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.bot-channel-card.selected {
+	background: rgba(13, 148, 136, 0.05);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.12);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-channel-card.selected {
+	background: rgba(13, 148, 136, 0.15);
+}
+
+.bot-channel-card-head {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 6px;
+}
+
+.bot-channel-badge {
+	font-size: 10px;
+	font-weight: 700;
+	padding: 2px 6px;
+	border-radius: 4px;
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--muted, #64748b);
+}
+
+.bot-channel-name {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0 0 4px 0;
+}
+
+.bot-channel-desc {
+	font-size: 11.5px;
+	color: var(--muted, #64748b);
+	margin: 0;
+	line-height: 1.45;
+}
+

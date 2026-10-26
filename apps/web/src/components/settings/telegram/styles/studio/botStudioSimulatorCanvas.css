@@ -1,0 +1,119 @@
+/* Chat Canvas */
+.tg-chat-canvas {
+	flex: 1;
+	overflow-y: auto;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	position: relative;
+}
+
+.tg-phone-toast {
+	position: absolute;
+	top: 10px;
+	left: 12px;
+	right: 12px;
+	background: rgba(15, 23, 42, 0.92);
+	color: #ffffff;
+	padding: 6px 12px;
+	border-radius: 12px;
+	font-size: 11px;
+	font-weight: 500;
+	text-align: center;
+	z-index: 50;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+	animation: tgFadeIn 0.2s ease;
+}
+
+@keyframes tgFadeIn {
+	from { opacity: 0; transform: translateY(-4px); }
+	to { opacity: 1; transform: translateY(0); }
+}
+
+.tg-date-bubble {
+	align-self: center;
+	background: rgba(0, 0, 0, 0.2);
+	color: #ffffff;
+	padding: 2px 10px;
+	border-radius: 12px;
+	font-size: 10px;
+	font-weight: 600;
+}
+
+/* Bot Message Card */
+.tg-message-card {
+	max-width: 92%;
+	border-radius: 14px;
+	overflow: hidden;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+	display: flex;
+	flex-direction: column;
+}
+
+.tg-theme-light .tg-message-card {
+	background: #ffffff;
+	color: #0f172a;
+}
+
+.tg-theme-dark .tg-message-card {
+	background: #1e293b;
+	color: #f8fafc;
+}
+
+.tg-message-banner {
+	width: 100%;
+	height: 120px;
+	position: relative;
+	overflow: hidden;
+}
+
+.tg-message-banner img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.tg-banner-overlay-tag {
+	position: absolute;
+	bottom: 6px;
+	left: 6px;
+	background: rgba(15, 23, 42, 0.75);
+	color: #ffffff;
+	font-size: 10px;
+	font-weight: 600;
+	padding: 2px 6px;
+	border-radius: 6px;
+	display: flex;
+	align-items: center;
+	gap: 4px;
+	backdrop-filter: blur(4px);
+}
+
+.tg-message-body {
+	padding: 10px 12px 6px 12px;
+	position: relative;
+}
+
+.tg-message-text {
+	font-size: 12px;
+	line-height: 1.45;
+	margin: 0;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.tg-message-meta {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 4px;
+	margin-top: 4px;
+	font-size: 10px;
+	color: #94a3b8;
+}
+
+.tg-read-check {
+	color: #38bdf8;
+}
+

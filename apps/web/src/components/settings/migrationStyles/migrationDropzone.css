@@ -1,0 +1,49 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationDropzone.css
+ *
+ * Зона перетаскивания файлов CSV / Excel / DBF (Мандат 8b: <= 120 строк).
+ */
+
+.mw-drop {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 8px;
+	padding: 18px 20px;
+	border: 2px dashed var(--line-strong);
+	border-radius: 12px;
+	background: var(--paper-soft);
+	text-align: center;
+	transition:
+		border-color var(--transition-fast),
+		background var(--transition-fast);
+}
+
+.mw-drop.is-dragging {
+	border-color: var(--teal);
+	background: var(--teal-surface);
+}
+
+.mw-drop-icon {
+	font-size: 32px;
+	line-height: 1;
+	color: var(--teal);
+}
+
+.mw-drop-title {
+	margin: 0;
+	font-size: 15px;
+	font-weight: 600;
+}
+
+.mw-drop-hint {
+	margin: 0 0 8px;
+	max-width: 52ch;
+	color: var(--muted);
+	font-size: 12.5px;
+	line-height: 1.5;
+}
+
+.mw-file-input {
+	display: none;
+}

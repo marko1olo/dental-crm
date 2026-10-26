@@ -1,0 +1,109 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationStepMapping.css
+ *
+ * Таблица сопоставления колонок и проекция данных (Мандат 8b: <= 120 строк).
+ */
+
+.mw-projection {
+	display: flex;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.mw-proj-item {
+	flex: 1 1 130px;
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+	padding: 12px 14px;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	background: var(--paper-soft);
+}
+
+.mw-proj-value {
+	font-size: 22px;
+	font-weight: 680;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.1;
+}
+
+.mw-proj-label { color: var(--muted); font-size: 12px; }
+.mw-proj-ok { border-color: var(--ok-fg); background: var(--ok-bg); }
+.mw-proj-ok .mw-proj-value, .mw-proj-ok .mw-proj-label { color: var(--ok-fg); }
+.mw-proj-warn { border-color: var(--warn-fg); background: var(--warn-bg); }
+.mw-proj-warn .mw-proj-value, .mw-proj-warn .mw-proj-label { color: var(--warn-fg); }
+
+/* ---- Таблица колонок ---- */
+.mw-mapping-table {
+	display: flex;
+	flex-direction: column;
+	border: 1px solid var(--line);
+	border-radius: 10px;
+	overflow: hidden;
+}
+
+.mw-mapping-row {
+	display: grid;
+	grid-template-columns: minmax(120px, 1.1fr) minmax(140px, 1.3fr) minmax(130px, 0.9fr) minmax(140px, 1.4fr);
+	gap: 12px;
+	align-items: center;
+	padding: 9px 14px;
+	border-bottom: 1px solid var(--line);
+	font-size: 13px;
+}
+.mw-mapping-row:last-child { border-bottom: none; }
+
+.mw-mapping-head {
+	background: var(--paper-soft);
+	color: var(--muted);
+	font-size: 11.5px;
+	font-weight: 600;
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+}
+
+.mw-col-source { font-family: ui-monospace, monospace; font-size: 12.5px; overflow-wrap: anywhere; }
+.mw-col-target { font-weight: 560; overflow-wrap: anywhere; }
+.mw-col-shapes { font-family: ui-monospace, monospace; font-size: 11.5px; color: var(--muted); overflow-wrap: anywhere; }
+
+.mw-badge {
+	display: inline-block;
+	padding: 2px 8px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 600;
+}
+.mw-badge-vendor_profile { background: var(--teal-soft); color: var(--teal-dark); }
+.mw-badge-deterministic { background: var(--ok-bg); color: var(--ok-fg); }
+.mw-badge-inferred { background: var(--info-bg); color: var(--info-fg); }
+.mw-badge-llm { background: var(--teal-surface); color: var(--teal); }
+.mw-badge-manual { background: var(--line); color: var(--ink-2); }
+
+.mw-confidence {
+	margin-left: 6px;
+	color: var(--muted);
+	font-size: 11.5px;
+	font-variant-numeric: tabular-nums;
+}
+
+/* ---- Замечания к качеству данных ---- */
+.mw-findings summary {
+	cursor: pointer;
+	font-size: 13px;
+	font-weight: 600;
+	padding: 8px 0;
+}
+.mw-findings-bad { color: var(--bad-fg); }
+.mw-findings ul {
+	margin: 4px 0 0;
+	padding-left: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+}
+.mw-finding { font-size: 12.5px; line-height: 1.5; }
+.mw-finding-blocker { color: var(--bad-fg); }
+.mw-finding-warning { color: var(--warn-fg); }
+.mw-finding-info { color: var(--muted); }
+.mw-finding-rows { color: var(--muted); font-variant-numeric: tabular-nums; }

@@ -1,0 +1,118 @@
+/* --- Progress Stepper Header --- */
+.bot-wizard-stepper {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	border-radius: 14px;
+	padding: 8px;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-wizard-stepper {
+	background: var(--paper-strong, #1e293b);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+@media (max-width: 768px) {
+	.bot-wizard-stepper { grid-template-columns: repeat(2, 1fr); }
+}
+
+.bot-stepper-item {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 8px;
+	border-radius: 10px;
+	background: transparent;
+	border: none;
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	position: relative;
+	min-width: 0;
+}
+
+.bot-stepper-item:hover {
+	background: rgba(148, 163, 184, 0.08);
+}
+
+.bot-stepper-item.current {
+	background: var(--paper, #ffffff);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.08);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-stepper-item.current {
+	background: #334155;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.bot-stepper-item.pending .bot-stepper-label {
+	color: var(--muted, #64748b);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-stepper-item.pending .bot-stepper-label {
+	color: #94a3b8;
+}
+
+.bot-stepper-icon {
+	width: 26px;
+	height: 26px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 12px;
+	font-weight: 700;
+	flex-shrink: 0;
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--muted, #64748b);
+}
+
+.bot-stepper-item.current .bot-stepper-icon {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+.bot-stepper-item.completed .bot-stepper-icon {
+	background: rgba(16, 185, 129, 0.2);
+	color: #10b981;
+}
+
+.bot-stepper-text {
+	display: flex;
+	flex-direction: column;
+	min-width: 0;
+}
+
+.bot-stepper-label {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.2;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bot-stepper-desc {
+	font-size: 10.5px;
+	color: var(--muted, #64748b);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.bot-stepper-arrow {
+	margin-left: auto;
+	color: var(--muted, #94a3b8);
+	opacity: 0.5;
+}
+
+@media (max-width: 1280px) {
+	.bot-stepper-arrow { display: none; }
+}
+

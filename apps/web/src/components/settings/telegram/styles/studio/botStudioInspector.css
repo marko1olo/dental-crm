@@ -1,0 +1,110 @@
+/* --- Tone Options --- */
+.tg-pane-intro {
+	font-size: 13px;
+	color: var(--slate-600, #475569);
+	margin: 0 0 12px 0;
+}
+
+.tg-tone-options {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.tg-tone-card {
+	display: flex;
+	align-items: flex-start;
+	padding: 12px 14px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.tg-tone-card:hover {
+	border-color: var(--teal, #0d9488);
+}
+
+.tg-tone-card.selected {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.04);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-tone-card.selected {
+	background: rgba(13, 148, 136, 0.15);
+}
+
+/* --- Form Groups --- */
+.tg-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin-bottom: 14px;
+}
+
+.tg-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--slate-700, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-label {
+	color: var(--slate-200, #e2e8f0);
+}
+
+.tg-input,
+.tg-textarea {
+	width: 100%;
+	padding: 8px 12px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.3));
+	border-radius: 8px;
+	font-size: 13px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	transition: border-color 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-input,
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-textarea {
+	background: rgba(15, 23, 42, 0.6);
+	border-color: rgba(51, 65, 85, 0.8);
+	color: #f8fafc;
+}
+
+.tg-input:focus,
+.tg-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+}
+
+.tg-help-text {
+	font-size: 11px;
+	color: var(--slate-500, #64748b);
+}
+
+/* --- Features List --- */
+.tg-features-list {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.tg-feature-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 10px 14px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	border-radius: 10px;
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-feature-toggle-row {
+	background: rgba(30, 41, 59, 0.4);
+	border-color: rgba(51, 65, 85, 0.5);
+}
+

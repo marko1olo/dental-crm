@@ -39,6 +39,7 @@ export function MobileSettingsViewWrapper({
 				overflowY: "auto",
 				maxWidth: "100vw",
 				minHeight: "100dvh",
+				padding: 0,
 			}}
 			id="settings"
 			aria-label="Настройки клиники"
@@ -81,7 +82,7 @@ export function MobileSettingsViewWrapper({
 						</h2>
 						<div className="w-11 shrink-0" />
 					</div>
-					<div className="p-4 space-y-4">
+					<div className="p-2.5 sm:p-4 space-y-4">
 						<SettingsTabRenderer
 							settingsTab={mobileSection}
 							settingsProps={settingsProps}

@@ -1,0 +1,97 @@
+/* ==========================================================================
+   TELEGRAM INTEGRATION HUB STYLES
+   Clinic MVP / DENTE Dental CRM
+   Supports both Telegram Bot (BotFather) and Personal Account (MTProto)
+   ========================================================================== */
+
+.telegram-hub-container {
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	width: 100%;
+	max-width: 100%;
+	margin-bottom: 24px;
+	box-sizing: border-box;
+}
+
+/* --- Главный переключатель вкладок Хаба (Бот vs Личный аккаунт) --- */
+.tg-hub-main-tabs {
+	display: flex;
+	gap: 8px;
+	background: var(--paper-soft, #f8fafc);
+	padding: 6px;
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	width: fit-content;
+	max-width: 100%;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-main-tabs {
+	background: rgba(30, 41, 59, 0.7);
+	border-color: rgba(51, 65, 85, 0.8);
+}
+
+.tg-hub-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 10px;
+	padding: 10px 20px;
+	min-height: 44px;
+	border-radius: 10px;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+	white-space: nowrap;
+	user-select: none;
+}
+
+.tg-hub-tab-btn:hover {
+	color: var(--ink, #0f172a);
+	background: rgba(0, 0, 0, 0.03);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-tab-btn:hover {
+	color: #f1f5f9;
+	background: rgba(255, 255, 255, 0.05);
+}
+
+.tg-hub-tab-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	font-weight: 600;
+	border-color: var(--line, #e2e8f0);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-tab-btn.active {
+	background: #1e293b;
+	color: #2dd4bf;
+	border-color: #334155;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+}
+
+/* --- Главная карточка содержимого --- */
+.tg-hub-content-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	gap: 20px;
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.03);
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-hub-content-card {
+	background: rgba(30, 41, 59, 0.5);
+	border-color: rgba(51, 65, 85, 0.8);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+

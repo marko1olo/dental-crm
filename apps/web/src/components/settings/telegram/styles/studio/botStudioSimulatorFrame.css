@@ -1,0 +1,115 @@
+/* Phone Notch Bar */
+.tg-phone-notch-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 16px 4px 16px;
+	font-size: 11px;
+	font-weight: 600;
+	z-index: 20;
+}
+
+.tg-theme-light .tg-phone-notch-bar {
+	color: #0f172a;
+}
+
+.tg-theme-dark .tg-phone-notch-bar {
+	color: #ffffff;
+}
+
+.tg-phone-dynamic-island {
+	width: 80px;
+	height: 18px;
+	background: #000000;
+	border-radius: 12px;
+}
+
+.tg-phone-status-icons {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+/* Chat Header */
+.tg-chat-header {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 8px 12px;
+	z-index: 10;
+	border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.tg-theme-light .tg-chat-header {
+	background: rgba(255, 255, 255, 0.85);
+	backdrop-filter: blur(10px);
+	color: #0f172a;
+}
+
+.tg-theme-dark .tg-chat-header {
+	background: rgba(30, 41, 59, 0.9);
+	backdrop-filter: blur(10px);
+	color: #ffffff;
+	border-bottom-color: rgba(255, 255, 255, 0.06);
+}
+
+.tg-header-back-btn {
+	display: flex;
+	align-items: center;
+	background: transparent;
+	border: none;
+	color: #2481cc;
+	cursor: pointer;
+	padding: 0;
+}
+
+.tg-back-count {
+	font-size: 12px;
+	font-weight: 500;
+}
+
+.tg-header-avatar {
+	width: 34px;
+	height: 34px;
+	border-radius: 50%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	font-size: 16px;
+	color: #ffffff;
+	flex-shrink: 0;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+}
+
+.tg-header-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.tg-header-name {
+	font-size: 13px;
+	font-weight: 700;
+	margin: 0;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.tg-header-status {
+	font-size: 11px;
+	color: #64748b;
+	display: block;
+}
+
+.tg-theme-dark .tg-header-status {
+	color: #94a3b8;
+}
+
+.tg-header-more-btn {
+	background: transparent;
+	border: none;
+	color: #64748b;
+	cursor: pointer;
+	padding: 4px;
+}
+

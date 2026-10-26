@@ -1,0 +1,118 @@
+/* ==========================================================================
+   REALISTIC TELEGRAM PHONE SIMULATOR
+   ========================================================================== */
+.tg-simulator-wrapper {
+	width: 100%;
+	max-width: 380px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.tg-sim-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	padding: 6px 12px;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	border-radius: 10px;
+	font-size: 11px;
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-sim-toolbar {
+	background: var(--card-bg, #1e293b);
+	border-color: rgba(51, 65, 85, 0.7);
+}
+
+.tg-sim-toolbar-title {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+	min-width: 0;
+	font-size: 11px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.tg-sim-live-badge {
+	font-size: 9px;
+	font-weight: 700;
+	text-transform: uppercase;
+	padding: 2px 5px;
+	border-radius: 4px;
+	background: rgba(13, 148, 136, 0.15);
+	color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+.tg-sim-toolbar-actions {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.tg-sim-tool-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 8px;
+	border-radius: 6px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	background: transparent;
+	font-size: 11px;
+	cursor: pointer;
+	color: var(--slate-600, #475569);
+	transition: all 0.15s ease;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-sim-tool-btn {
+	color: var(--slate-300, #cbd5e1);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-sim-tool-btn:hover {
+	background: rgba(148, 163, 184, 0.15);
+	color: var(--ink, #0f172a);
+}
+
+/* Message Bubble Card Preview Container */
+.tg-phone-frame {
+	width: 100%;
+	border-radius: 16px;
+	border: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.04);
+	overflow: hidden;
+	display: flex;
+	flex-direction: column;
+	min-height: 480px;
+	position: relative;
+	transition: all 0.2s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-phone-frame {
+	border-color: rgba(51, 65, 85, 0.8);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
+}
+
+/* Theme styling within Message Bubble Card */
+.tg-phone-frame.tg-theme-light {
+	background-color: var(--paper-soft, #f8fafc);
+	background-image: radial-gradient(rgba(148, 163, 184, 0.25) 1px, transparent 1px);
+	background-size: 16px 16px;
+}
+
+.tg-phone-frame.tg-theme-dark {
+	background-color: #0c1319;
+	background-image: radial-gradient(rgba(51, 65, 85, 0.4) 1px, transparent 1px);
+	background-size: 16px 16px;
+}
+

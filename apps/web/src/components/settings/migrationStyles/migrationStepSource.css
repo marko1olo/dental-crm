@@ -1,0 +1,72 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationStepSource.css
+ * Стили шага выбора источника и служебных сообщений (Мандат 8b: <= 120 строк).
+ */
+
+.mw-source-panel { padding: 10px 14px; gap: 8px; }
+
+.mw-source-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 12px;
+	align-items: stretch;
+	width: 100%;
+	min-width: 0;
+}
+
+.mw-source-col-left { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+
+.mw-source-guides {
+	display: flex; flex-direction: column; justify-content: space-between; gap: 8px;
+	padding: 10px 12px; border-radius: 10px; border: 1px solid var(--line);
+	background: var(--paper-soft); font-size: 11.5px; min-width: 0;
+}
+
+.mw-source-guides-title {
+	display: flex; align-items: center; gap: 8px; margin-bottom: 8px;
+	font-weight: 600; color: var(--ink); flex-wrap: wrap;
+}
+
+.mw-source-card {
+	display: flex; align-items: center; justify-content: space-between; gap: 14px;
+	padding: 13px 16px; border: 1px solid var(--line); border-radius: 10px; background: var(--paper-soft);
+}
+
+.mw-source-main { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.mw-source-name { font-weight: 620; font-size: 14px; overflow-wrap: anywhere; }
+.mw-source-meta { color: var(--muted); font-size: 12.5px; }
+.mw-uncertain { color: var(--warn-fg); font-style: normal; }
+.mw-loading { padding: 24px; text-align: center; color: var(--muted); font-size: 13px; }
+
+/* ---- Переключатель ИИ-распознавания ---- */
+.mw-toggle {
+	display: flex; align-items: flex-start; gap: 10px; padding: 12px 14px;
+	border: 1px solid var(--line); border-radius: 10px; background: var(--paper-soft); font-size: 13px; cursor: pointer;
+}
+.mw-toggle input { margin-top: 2px; accent-color: var(--teal); width: 16px; height: 16px; }
+.mw-toggle-note { display: block; margin-top: 3px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+
+/* ---- Сообщения и алерты ---- */
+.mw-note {
+	padding: 12px 14px; border-left: 3px solid var(--teal); border-radius: 0 8px 8px 0;
+	background: var(--teal-surface); font-size: 12.5px; line-height: 1.55; color: var(--ink-2);
+}
+
+.mw-alert {
+	position: relative; padding: 11px 38px 11px 14px; border-radius: 9px; font-size: 13px; line-height: 1.5;
+}
+.mw-alert-bad { background: var(--bad-bg); color: var(--bad-fg); }
+.mw-alert-warn { background: var(--warn-bg); color: var(--warn-fg); }
+.mw-alert-info { background: var(--info-bg); color: var(--info-fg); }
+
+.mw-alert-code {
+	display: inline-block; margin-left: 8px; padding: 1px 7px; border-radius: 5px;
+	background: rgba(0, 0, 0, 0.08); font-family: ui-monospace, monospace; font-size: 11px; opacity: 0.8;
+}
+
+.mw-alert-close {
+	position: absolute; top: 6px; right: 8px; border: none; background: none;
+	color: inherit; font-size: 20px; cursor: pointer; opacity: 0.6; min-width: 44px; min-height: 44px;
+	display: inline-flex; align-items: center; justify-content: center;
+}
+.mw-alert-close:hover { opacity: 1; }

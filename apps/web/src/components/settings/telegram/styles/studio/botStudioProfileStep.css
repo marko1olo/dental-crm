@@ -1,0 +1,116 @@
+/* --- Step 2: Clinic Profile & Presets --- */
+.bot-presets-selector-bar {
+	background: var(--paper-card, #1e293b);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	border-radius: 12px;
+	padding: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.bot-preset-chips-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.bot-preset-chip {
+	height: 32px;
+	padding: 0 12px;
+	border-radius: 9999px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	background: var(--paper, #ffffff);
+	font-size: 11.5px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-preset-chip {
+	background: #0f172a;
+}
+
+.bot-preset-chip.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.3);
+}
+
+.bot-form-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+}
+
+@media (max-width: 640px) {
+	.bot-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.bot-form-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.bot-tone-radio-row {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 8px;
+}
+
+@media (max-width: 640px) {
+	.bot-tone-radio-row {
+		grid-template-columns: 1fr;
+	}
+}
+
+.bot-tone-choice-card {
+	padding: 10px;
+	border-radius: 10px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	background: var(--paper, #ffffff);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-tone-choice-card {
+	background: #0f172a;
+}
+
+.bot-tone-choice-card.selected {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.08);
+}
+
+.bot-textarea {
+	padding: 10px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.3));
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 12.5px;
+	line-height: 1.5;
+	resize: vertical;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-textarea {
+	background: #0f172a;
+	border-color: rgba(51, 65, 85, 0.8);
+	color: #f1f5f9;
+}
+
+.bot-textarea:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+}
+

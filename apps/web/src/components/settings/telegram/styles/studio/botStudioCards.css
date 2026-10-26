@@ -1,0 +1,67 @@
+/* --- Card Styles --- */
+.tg-studio-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	border-radius: 14px;
+	padding: 20px;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	width: 100%;
+	max-width: 100%;
+	min-width: 0;
+	box-sizing: border-box;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-studio-card {
+	background: var(--card-bg, #1e293b);
+	border-color: rgba(51, 65, 85, 0.7);
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.3);
+}
+
+.tg-card-header {
+	display: flex;
+	align-items: flex-start;
+	gap: 12px;
+	margin-bottom: 20px;
+	width: 100%;
+	min-width: 0;
+}
+
+.tg-card-header-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.12);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-card-header-icon {
+	background: rgba(13, 148, 136, 0.25);
+}
+
+.tg-card-header-body,
+.tg-card-header > div:not(.tg-card-header-icon) {
+	flex: 1;
+	min-width: 0;
+}
+
+.tg-card-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0 0 4px 0;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+
+.tg-card-subtitle {
+	font-size: 12px;
+	color: var(--slate-500, #64748b);
+	margin: 0;
+	line-height: 1.4;
+	word-break: break-word;
+	overflow-wrap: break-word;
+}
+

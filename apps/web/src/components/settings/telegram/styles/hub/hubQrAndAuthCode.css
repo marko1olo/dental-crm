@@ -1,0 +1,105 @@
+/* --- QR Секция (По QR-коду) --- */
+.tg-qr-layout {
+	display: grid;
+	grid-template-columns: auto 1fr;
+	gap: 24px;
+	align-items: center;
+	width: 100%;
+}
+
+.tg-qr-box {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	gap: 14px;
+	padding: 20px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	width: fit-content;
+	margin: 0 auto;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-qr-box {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-qr-white-card {
+	width: 210px;
+	height: 210px;
+	background: #ffffff;
+	padding: 10px;
+	border-radius: 12px;
+	border: 1px solid #cbd5e1;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.tg-qr-white-card svg {
+	width: 100%;
+	height: 100%;
+	display: block;
+}
+
+/* --- Поля ввода 5-значного кода --- */
+.tg-code-input-row {
+	display: flex;
+	gap: 8px;
+	justify-content: center;
+	margin: 10px 0;
+}
+
+.tg-digit-input {
+	width: 44px;
+	height: 52px;
+	text-align: center;
+	font-size: 22px;
+	font-weight: 700;
+	background: var(--paper, #ffffff);
+	border: 1.5px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	color: var(--ink, #0f172a);
+	outline: none;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-digit-input {
+	background: rgba(15, 23, 42, 0.8);
+	border-color: #334155;
+	color: #f1f5f9;
+}
+
+.tg-digit-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.2);
+}
+
+/* Тестовая плашка для автоподстановки кода */
+.tg-testcode-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: rgba(14, 165, 233, 0.1);
+	border: 1px dashed rgba(14, 165, 233, 0.4);
+	color: #0284c7;
+	padding: 4px 10px;
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	margin-top: 4px;
+	width: fit-content;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-testcode-chip {
+	color: #38bdf8;
+	background: rgba(14, 165, 233, 0.2);
+}
+
+.tg-testcode-chip:hover {
+	background: rgba(14, 165, 233, 0.2);
+}
+

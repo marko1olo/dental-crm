@@ -1,0 +1,64 @@
+/* --- BotFather 3-step Guide --- */
+.tg-guide-box {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 18px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-guide-box {
+	background: rgba(15, 23, 42, 0.4);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-guide-step {
+	display: flex;
+	gap: 12px;
+	align-items: flex-start;
+}
+
+.tg-step-badge {
+	width: 24px;
+	height: 24px;
+	border-radius: 50%;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.tg-step-text {
+	font-size: 13px;
+	color: var(--ink, #0f172a);
+	line-height: 1.5;
+}
+
+.tg-code-tag {
+	display: inline-block;
+	background: rgba(0, 0, 0, 0.06);
+	padding: 1px 6px;
+	border-radius: 4px;
+	font-family: monospace;
+	font-size: 12px;
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-code-tag {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.tg-tab-text-mobile {
+	display: none;
+}
+
+.tg-tab-text-desktop {
+	display: inline;
+}
+

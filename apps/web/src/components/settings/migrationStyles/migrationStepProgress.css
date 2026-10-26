@@ -1,0 +1,86 @@
+/**
+ * apps/web/src/components/settings/migrationStyles/migrationStepProgress.css
+ *
+ * Честный прогресс-бар и фазы выполнения импорта (Мандат 8b: <= 120 строк).
+ */
+
+.mw-running {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	text-align: center;
+	gap: 12px;
+	padding: 24px 16px;
+}
+
+.mw-progress {
+	width: 100%;
+	height: 8px;
+	border-radius: 999px;
+	background: var(--line);
+	overflow: hidden;
+	position: relative;
+}
+
+.mw-progress-bar {
+	height: 100%;
+	border-radius: 999px;
+	background: linear-gradient(90deg, var(--teal), var(--teal-dark));
+	transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+	position: relative;
+}
+
+.mw-progress-bar::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(
+		90deg,
+		transparent,
+		rgba(255, 255, 255, 0.25),
+		transparent
+	);
+	animation: mw-shimmer 2s infinite ease-in-out;
+}
+
+@keyframes mw-shimmer {
+	0% { transform: translateX(-100%); }
+	100% { transform: translateX(100%); }
+}
+
+.mw-running-phase {
+	margin: 0;
+	font-size: 14px;
+	font-weight: 560;
+	color: var(--ink);
+}
+
+.mw-running-percent {
+	margin: 0;
+	font-size: 32px;
+	font-weight: 700;
+	font-variant-numeric: tabular-nums;
+	color: var(--teal-dark);
+	line-height: 1.1;
+}
+
+.mw-running-counters {
+	display: flex;
+	gap: 14px;
+	flex-wrap: wrap;
+	justify-content: center;
+	color: var(--muted);
+	font-size: 12.5px;
+	font-variant-numeric: tabular-nums;
+	padding: 6px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+}
+
+.mw-running-note {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12.5px;
+	max-width: 54ch;
+	line-height: 1.5;
+}

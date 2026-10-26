@@ -1,0 +1,108 @@
+/* --- Preset Grid --- */
+.tg-presets-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+	gap: 12px;
+}
+
+.tg-preset-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	border-radius: 12px;
+	padding: 14px;
+	text-align: left;
+	cursor: pointer;
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	transition: all 0.15s ease;
+	position: relative;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-preset-card {
+	background: rgba(30, 41, 59, 0.6);
+	border-color: rgba(51, 65, 85, 0.6);
+}
+
+.tg-preset-card:hover {
+	border-color: var(--teal, #0d9488);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.tg-preset-card.tg-preset-selected {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
+	background: rgba(13, 148, 136, 0.03);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-preset-card.tg-preset-selected {
+	background: rgba(13, 148, 136, 0.12);
+}
+
+.tg-preset-head {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+}
+
+.tg-preset-icon-box {
+	font-size: 24px;
+	line-height: 1;
+}
+
+.tg-preset-badge {
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--teal, #0d9488);
+	text-transform: uppercase;
+	letter-spacing: 0.04em;
+	display: block;
+}
+
+.tg-preset-title {
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+.tg-preset-desc {
+	font-size: 11px;
+	line-height: 1.45;
+	color: var(--slate-600, #475569);
+	margin: 0;
+	flex: 1;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-preset-desc {
+	color: var(--slate-300, #cbd5e1);
+}
+
+.tg-preset-features-list {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.tg-preset-feat-tag {
+	font-size: 11px;
+	color: var(--slate-700, #334155);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .tg-preset-feat-tag {
+	color: var(--slate-300, #cbd5e1);
+}
+
+.tg-preset-footer {
+	margin-top: 4px;
+	border-top: 1px solid var(--line, rgba(148, 163, 184, 0.15));
+	padding-top: 8px;
+}
+
+.tg-preset-cta-hint {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--teal, #0d9488);
+}
+

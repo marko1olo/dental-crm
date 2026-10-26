@@ -325,7 +325,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 						style={{ color: currentChannelConfig.iconColor }}
 						aria-hidden="true"
 					/>
-					<span>Предпросмотр сообщения {currentChannelConfig.badge}</span>
+					<span>Предпросмотр {currentChannelConfig.badge}</span>
 					<span className="tg-sim-live-badge">Live</span>
 				</div>
 				<div className="tg-sim-toolbar-actions">
@@ -466,6 +466,7 @@ export function TelegramPhoneSimulator(props: TelegramPhoneSimulatorProps) {
 										: "var(--ink, #0f172a)",
 								cursor: "pointer",
 								whiteSpace: "nowrap",
+								flexShrink: 0,
 							}}
 						>
 							{tab.label}

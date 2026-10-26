@@ -1,0 +1,116 @@
+/* ==========================================================================
+   MOBILE RESPONSIVE COMPACT RULES (max-width: 640px)
+   ========================================================================== */
+@media (max-width: 640px) {
+	.telegram-studio-root {
+		gap: 16px;
+		margin-bottom: 20px;
+	}
+
+	.tg-studio-hero {
+		padding: 16px 14px;
+		border-radius: 12px;
+	}
+
+	.tg-studio-hero-title {
+		font-size: 18px;
+	}
+
+	.tg-studio-hero-desc {
+		font-size: 12px;
+	}
+
+	.tg-studio-card {
+		padding: 14px 12px;
+		border-radius: 12px;
+	}
+
+	.tg-card-header {
+		gap: 10px;
+		margin-bottom: 14px;
+	}
+
+	.tg-card-header-icon {
+		width: 32px;
+		height: 32px;
+	}
+
+	.tg-card-title {
+		font-size: 15px;
+	}
+
+	.tg-card-subtitle {
+		font-size: 11.5px;
+	}
+
+	.tg-wizard-steps {
+		gap: 14px;
+	}
+
+	.tg-wizard-step {
+		gap: 10px;
+	}
+
+	.tg-step-badge {
+		width: 26px;
+		height: 26px;
+		font-size: 12px;
+	}
+
+	.tg-wizard-step:not(:last-child)::after {
+		left: 12px;
+		top: 28px;
+		bottom: -12px;
+	}
+
+	.tg-step-title {
+		font-size: 13px;
+	}
+
+	.tg-step-desc {
+		font-size: 11.5px;
+	}
+
+	.tg-launch-btn {
+		width: 100%;
+		justify-content: center;
+		padding: 10px 12px;
+		font-size: 12px;
+		text-align: center;
+	}
+
+	.tg-wizard-link-btn {
+		font-size: 11.5px;
+		padding: 6px 10px;
+		max-width: 100%;
+		box-sizing: border-box;
+	}
+
+	.tg-presets-grid {
+		grid-template-columns: 1fr;
+	}
+
+	.tg-config-tabs {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 4px;
+	}
+
+	.tg-tab-btn {
+		padding: 6px 10px;
+		font-size: 11.5px;
+	}
+
+	.tg-simulator-wrapper {
+		max-width: 100%;
+	}
+
+	.tg-phone-frame {
+		height: 560px;
+		border-width: 6px;
+		border-radius: 28px;
+	}
+}
+
+
+

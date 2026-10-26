@@ -1,0 +1,83 @@
+/* --- Step 3: Plugins List --- */
+.bot-plugins-list {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.bot-plugin-card {
+	display: flex;
+	align-items: center;
+	gap: 14px;
+	padding: 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, rgba(148, 163, 184, 0.25));
+	background: var(--paper, #ffffff);
+	transition: all 0.2s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-plugin-card {
+	background: #0f172a;
+}
+
+.bot-plugin-card.enabled {
+	border-color: rgba(13, 148, 136, 0.35);
+	background: rgba(13, 148, 136, 0.03);
+}
+
+:is([data-theme="dark"], [data-theme="night"], html.dark, .dark) .bot-plugin-card.enabled {
+	background: rgba(13, 148, 136, 0.1);
+}
+
+.bot-plugin-icon-wrap {
+	width: 38px;
+	height: 38px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.bot-plugin-info {
+	flex: 1;
+	min-width: 0;
+}
+
+.bot-plugin-title {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+}
+
+.bot-pill-mini {
+	display: inline-flex;
+	align-items: center;
+	padding: 2px 6px;
+	border-radius: 4px;
+	font-size: 10px;
+	font-weight: 700;
+}
+
+.bot-plugin-desc {
+	font-size: 11.5px;
+	color: var(--muted, #64748b);
+	margin: 3px 0 0 0;
+	line-height: 1.45;
+}
+
+.bot-plugin-actions {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-shrink: 0;
+}
+
+.bot-preview-trigger-btn {
+	height: 32px;
+	padding: 0 10px;
+	font-size: 11.5px;
+	font-weight: 600;
+}
+
