@@ -1,0 +1,84 @@
+/* ---------- Step 3: Starter Pricelist ---------- */
+.starter-seed-hero-box {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	border-radius: 12px;
+	border: 1px solid var(--teal, #0d9488);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.08));
+	gap: 16px;
+	margin-bottom: 16px;
+	flex-wrap: wrap;
+}
+
+.hero-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	margin-bottom: 4px;
+}
+
+.hero-sparkle-icon {
+	color: var(--teal);
+}
+
+.hero-title-row strong {
+	font-size: 14px;
+	color: var(--ink);
+}
+
+.hero-text-block p {
+	margin: 0;
+	font-size: 12px;
+	color: var(--ink-2);
+	line-height: 1.4;
+	max-width: 600px;
+}
+
+.hero-seed-action-btn {
+	height: 36px;
+	padding: 0 16px;
+	border-radius: 8px;
+	background: var(--teal, #0d9488);
+	color: var(--on-teal, #ffffff);
+	border: 1px solid var(--teal-dark, #0f766e);
+	font-size: 13px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+	box-shadow: var(--shadow-1);
+	transition: all 0.15s ease;
+	flex-shrink: 0;
+}
+
+.hero-seed-action-btn:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.hero-seed-action-btn.seeded {
+	background: var(--paper-strong);
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.pricelist-toolbar-summary {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 12px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	margin-bottom: 12px;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.pricelist-selection-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}

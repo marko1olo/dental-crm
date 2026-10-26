@@ -1,3 +1,15 @@
+function readCssFileResolved(p: string): string {
+	let c = fs.readFileSync(p, "utf-8");
+	if (c.includes("@import")) {
+		const d = path.dirname(p);
+		for (const m of c.matchAll(/@import\s+["']([^"']+)["'];/g)) {
+			const sub = path.resolve(d, m[1]);
+			if (fs.existsSync(sub)) c += "\n" + readCssFileResolved(sub);
+		}
+	}
+	return c;
+}
+
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
@@ -43,7 +55,7 @@ describe("Unified Button Design Token Matrix (Section 17 frontend.md)", () => {
 
 	it("3. components.css contains all 5 unified button matrix classes", () => {
 		const cssPath = path.resolve(__dirname, "../../styles/components.css");
-		const cssContent = fs.readFileSync(cssPath, "utf-8");
+		const cssContent = readCssFileResolved(cssPath);
 
 		assert.ok(cssContent.includes(".btn-primary"), "components.css must define .btn-primary");
 		assert.ok(cssContent.includes(".btn-secondary"), "components.css must define .btn-secondary");
@@ -75,7 +87,7 @@ describe("Unified Button Design Token Matrix (Section 17 frontend.md)", () => {
 
 	it("5. auth.css defines solid border, height 44px, and nowrap for auth-demo-btn", () => {
 		const authCssPath = path.resolve(__dirname, "../../styles/auth.css");
-		const authCss = fs.readFileSync(authCssPath, "utf-8");
+		const authCss = readCssFileResolved(authCssPath);
 
 		// Height 44px
 		assert.ok(authCss.includes("height: 44px;"), "auth-demo-btn must have height: 44px");

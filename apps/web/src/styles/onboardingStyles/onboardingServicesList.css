@@ -1,0 +1,91 @@
+.link-style-btn {
+	background: transparent;
+	border: none;
+	color: var(--teal);
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	cursor: pointer;
+	padding: 2px 4px;
+}
+
+.link-style-btn:hover:not(:disabled) {
+	text-decoration: underline;
+}
+
+.link-style-btn:disabled {
+	opacity: 0.5;
+	cursor: default;
+}
+
+.toolbar-separator {
+	color: var(--line);
+}
+
+.pricelist-sum-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 8px;
+	font-size: 12px;
+	color: var(--ink);
+}
+
+.sum-divider {
+	color: var(--line);
+}
+
+.sum-total strong {
+	color: var(--teal);
+	font-weight: 700;
+}
+
+/* ---------- Services Compact List ---------- */
+.services-compact-list {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	max-height: 380px;
+	overflow-y: auto;
+	padding-right: 4px;
+}
+
+.service-compact-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	padding: 8px 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	transition: all 0.12s ease;
+	cursor: pointer;
+}
+
+.service-compact-row:hover {
+	border-color: var(--teal);
+	background: var(--paper-strong);
+}
+
+.service-compact-row.inactive {
+	opacity: 0.6;
+}
+
+.service-checkbox-cell input {
+	width: 16px;
+	height: 16px;
+	cursor: pointer;
+}
+
+.service-code-cell code {
+	font-family: var(--font-mono, monospace);
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted);
+	background: var(--paper-soft);
+	padding: 2px 6px;
+	border-radius: 4px;
+	border: 1px solid var(--line);
+	white-space: nowrap;
+}

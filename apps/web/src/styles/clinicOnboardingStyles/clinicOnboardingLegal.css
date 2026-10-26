@@ -1,0 +1,81 @@
+.clinic-legal-form {
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	display: grid;
+	gap: 13px;
+	padding: 14px;
+}
+
+.clinic-legal-summary {
+	align-items: center;
+	display: grid;
+	gap: 12px;
+	grid-template-columns: minmax(0, 1fr) auto minmax(180px, 0.45fr);
+}
+
+.clinic-legal-summary > strong {
+	color: var(--teal-dark);
+	font-size: 28px;
+	line-height: 1;
+}
+
+.clinic-legal-summary > span,
+.save-state {
+	background: var(--surface-muted, #eef8f5);
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.08));
+	border-radius: 8px;
+	color: var(--teal-dark, #0d9488);
+	font-size: 12px;
+	font-weight: 700;
+	padding: 6px 10px;
+}
+
+.dark .save-state,
+[data-theme="dark"] .save-state,
+[data-theme="night"] .save-state,
+[data-theme="oled"] .save-state,
+[data-theme="calm_teal"] .save-state,
+[data-theme="contrast"] .save-state {
+	background: var(--surface, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+	color: var(--teal, #2dd4bf);
+}
+
+.save-state-error {
+	background: var(--bad-bg, #fff1ee);
+	color: var(--red, #8f2f20);
+}
+
+.dark .save-state-error,
+[data-theme="dark"] .save-state-error,
+[data-theme="night"] .save-state-error,
+[data-theme="oled"] .save-state-error {
+	background: rgba(239, 68, 68, 0.15);
+	color: #fca5a5;
+}
+
+.save-state-saved {
+	background: var(--ok-bg, #e5f6ea);
+	color: var(--green, #25683b);
+}
+
+.dark .save-state-saved,
+[data-theme="dark"] .save-state-saved,
+[data-theme="night"] .save-state-saved,
+[data-theme="oled"] .save-state-saved {
+	background: rgba(34, 197, 94, 0.15);
+	color: #86efac;
+}
+
+.admin-unlock-guidance {
+	align-self: stretch;
+	background: #fff8ef;
+	border: 1px solid #e7c68e;
+	border-radius: 8px;
+	color: #744d18;
+	font-size: 13px;
+	font-weight: 850;
+	margin: 0;
+	padding: 9px 10px;
+}

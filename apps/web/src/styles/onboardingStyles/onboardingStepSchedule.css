@@ -1,0 +1,118 @@
+.add-chair-form {
+	display: flex;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+.add-chair-input {
+	flex: 1;
+	height: 34px;
+	border-radius: 8px;
+	border: 1px dashed var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	font-size: 12px;
+	padding: 0 12px;
+}
+
+.add-chair-btn {
+	height: 34px;
+	padding: 0 14px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 600;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	cursor: pointer;
+}
+
+.add-chair-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.schedule-config-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+	gap: 12px;
+	margin-bottom: 14px;
+}
+
+.schedule-config-grid input,
+.schedule-config-grid select {
+	height: 34px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	padding: 0 10px;
+	box-sizing: border-box;
+}
+
+.working-days-container {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.working-days-label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.weekdays-strip {
+	display: flex;
+	gap: 6px;
+	flex-wrap: wrap;
+}
+
+.weekday-pill {
+	height: 32px;
+	min-width: 38px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 4px;
+	transition: all 0.15s ease;
+}
+
+.weekday-pill.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: var(--on-teal, #ffffff);
+}
+
+.step-tip-box {
+	display: flex;
+	align-items: flex-start;
+	gap: 10px;
+	padding: 10px 14px;
+	border-radius: 8px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	font-size: 12px;
+	color: var(--ink-2);
+	line-height: 1.45;
+	margin-top: 16px;
+}
+
+.tip-icon {
+	color: var(--teal);
+	flex-shrink: 0;
+	margin-top: 2px;
+}

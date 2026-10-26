@@ -1,0 +1,61 @@
+/* ---------- Step Body Container ---------- */
+.wizard-step-container {
+	padding: 24px;
+	overflow-y: auto;
+	max-height: calc(85vh - 200px);
+	min-height: 400px;
+}
+
+.step-intro-header {
+	margin-bottom: 20px;
+}
+
+.step-intro-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--teal);
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	margin-bottom: 6px;
+}
+
+.step-intro-header h3 {
+	margin: 0;
+	font-size: 20px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.step-intro-header p {
+	margin: 6px 0 0 0;
+	font-size: 13px;
+	color: var(--muted);
+	line-height: 1.45;
+}
+
+.step-section {
+	margin-bottom: 20px;
+}
+
+.section-label {
+	display: block;
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+	margin-bottom: 10px;
+}
+
+.section-head-with-action {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	margin-bottom: 10px;
+}
+
+.section-subtext {
+	font-size: 12px;
+	color: var(--muted);
+}

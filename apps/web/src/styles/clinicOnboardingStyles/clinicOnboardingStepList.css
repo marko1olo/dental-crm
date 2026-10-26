@@ -1,0 +1,97 @@
+.onboarding-fast-start {
+	align-items: center;
+	background: #0d4f49;
+	border: 1px solid rgba(255, 255, 255, 0.14);
+	border-radius: 8px;
+	color: #ffffff;
+	display: grid;
+	gap: 10px;
+	grid-template-columns: minmax(0, 1fr) auto auto auto;
+	padding: 12px;
+}
+
+.onboarding-fast-start div {
+	display: grid;
+	gap: 3px;
+}
+
+.onboarding-fast-start strong {
+	font-size: 16px;
+	line-height: 1.15;
+}
+
+.onboarding-fast-start span {
+	color: #d8f0ea;
+	font-size: 13px;
+	line-height: 1.35;
+}
+
+.onboarding-fast-start .secondary-button {
+	background: rgba(255, 255, 255, 0.08);
+	border-color: rgba(255, 255, 255, 0.24);
+	color: #ffffff;
+}
+
+.onboarding-fast-start .primary-button {
+	background: #ffffff;
+	border-color: #ffffff;
+	color: var(--teal-dark);
+}
+
+.onboarding-step-list {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.onboarding-step-list button {
+	align-items: flex-start;
+	background: #fbfefd;
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	color: var(--muted);
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	min-height: 96px;
+	padding: 12px;
+	text-align: left;
+	width: 100%;
+}
+
+.onboarding-step-list button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: #ffffff;
+}
+
+.onboarding-step-list button.done {
+	border-color: rgba(15, 118, 110, 0.35);
+}
+
+.onboarding-step-list span {
+	align-items: center;
+	background: rgba(15, 118, 110, 0.12);
+	border-radius: 50%;
+	display: inline-flex;
+	font-size: 12px;
+	font-weight: 900;
+	height: 22px;
+	justify-content: center;
+	width: 22px;
+}
+
+.onboarding-step-list .active span {
+	background: rgba(255, 255, 255, 0.22);
+}
+
+.onboarding-step-list strong {
+	font-size: 13px;
+	line-height: 1.15;
+}
+
+.onboarding-step-list small {
+	font-size: 11px;
+	font-weight: 800;
+	line-height: 1.2;
+}

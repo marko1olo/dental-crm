@@ -1,0 +1,68 @@
+/* ---------- Inputs & Form Grids ---------- */
+.profile-inputs-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 12px;
+}
+
+.form-span-2 {
+	grid-column: span 2;
+}
+
+.form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.form-field label {
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.req-star {
+	color: var(--danger, #ef4444);
+}
+
+.input-with-icon {
+	position: relative;
+	display: flex;
+	align-items: center;
+}
+
+.input-with-icon .field-icon {
+	position: absolute;
+	left: 10px;
+	color: var(--muted);
+	pointer-events: none;
+}
+
+.input-with-icon input,
+.input-with-icon select {
+	width: 100%;
+	height: 36px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	padding: 0 12px 0 34px;
+	box-sizing: border-box;
+	transition: all 0.15s ease;
+}
+
+.input-with-icon input:focus,
+.input-with-icon select:focus {
+	outline: none;
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
+}
+
+.field-hint {
+	font-size: 11px;
+	color: var(--muted);
+}

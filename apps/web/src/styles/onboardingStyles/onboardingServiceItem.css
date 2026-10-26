@@ -1,0 +1,92 @@
+.service-info-cell {
+	flex: 1;
+	min-width: 0;
+}
+
+.service-title-row {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.service-title {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.service-desc {
+	display: block;
+	font-size: 11px;
+	color: var(--muted);
+	margin-top: 2px;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.service-cat-badge {
+	font-size: 10px;
+	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: 4px;
+	border: 1px solid var(--line);
+	white-space: nowrap;
+}
+
+.cat-consultation { background: rgba(59, 130, 246, 0.1); color: #3b82f6; border-color: rgba(59, 130, 246, 0.3); }
+.cat-therapy { background: rgba(16, 185, 129, 0.1); color: #10b981; border-color: rgba(16, 185, 129, 0.3); }
+.cat-surgery { background: rgba(239, 68, 68, 0.1); color: #ef4444; border-color: rgba(239, 68, 68, 0.3); }
+.cat-hygiene { background: rgba(6, 182, 212, 0.1); color: #06b6d4; border-color: rgba(6, 182, 212, 0.3); }
+.cat-imaging { background: rgba(139, 92, 246, 0.1); color: #8b5cf6; border-color: rgba(139, 92, 246, 0.3); }
+.cat-prosthetics { background: rgba(245, 158, 11, 0.1); color: #f59e0b; border-color: rgba(245, 158, 11, 0.3); }
+.cat-orthodontics { background: rgba(236, 72, 153, 0.1); color: #ec4899; border-color: rgba(236, 72, 153, 0.3); }
+.cat-periodont { background: rgba(14, 165, 233, 0.1); color: #0ea5e9; border-color: rgba(14, 165, 233, 0.3); }
+.cat-other { background: var(--paper-soft); color: var(--muted); }
+
+.service-meta-cell {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	flex-shrink: 0;
+}
+
+.service-duration {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	font-size: 11px;
+	color: var(--muted);
+}
+
+.service-tax-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 2px;
+	font-size: 10px;
+	font-weight: 700;
+	color: var(--teal);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	border: 1px solid var(--teal);
+	border-radius: 4px;
+	padding: 1px 4px;
+}
+
+.service-price-cell {
+	text-align: right;
+	flex-shrink: 0;
+	min-width: 90px;
+}
+
+.service-price-amount {
+	display: block;
+	font-size: 14px;
+	font-weight: 700;
+	color: var(--ink);
+}
+
+.service-kopecks-hint {
+	font-size: 10px;
+	color: var(--muted);
+}

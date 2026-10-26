@@ -1,0 +1,73 @@
+/* ========== LIGHT THEME OVERRIDES FOR NEW ELEMENTS ========== */
+
+[data-theme="light"] .auth-glass-surface,
+html.light:not(.dark):not([data-theme="dark"]) .auth-glass-surface {
+	background: rgba(255, 255, 255, 0.86);
+	border: 1px solid rgba(255, 255, 255, 0.95);
+	box-shadow:
+		0 24px 50px -12px rgba(13, 148, 136, 0.18),
+		0 12px 24px -8px rgba(15, 23, 42, 0.1),
+		inset 0 1px 1px 0 rgba(255, 255, 255, 0.95),
+		inset 0 0 0 1px rgba(13, 148, 136, 0.14);
+	backdrop-filter: blur(24px) saturate(180%);
+	-webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+[data-theme="light"] .auth-segmented-nav,
+html.light:not(.dark):not([data-theme="dark"]) .auth-segmented-nav {
+	background: rgba(15, 23, 42, 0.06);
+	border-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .auth-segmented-btn,
+html.light:not(.dark):not([data-theme="dark"]) .auth-segmented-btn {
+	color: #475569;
+}
+
+[data-theme="light"] .auth-segmented-btn:hover,
+html.light:not(.dark):not([data-theme="dark"]) .auth-segmented-btn:hover {
+	color: #0f172a;
+	background: rgba(15, 23, 42, 0.04);
+}
+
+[data-theme="light"] .auth-segmented-btn.active,
+html.light:not(.dark):not([data-theme="dark"]) .auth-segmented-btn.active {
+	color: #ffffff;
+	background: #0d9488;
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.28);
+}
+
+[data-theme="light"] .auth-telemetry-bar,
+html.light:not(.dark):not([data-theme="dark"]) .auth-telemetry-bar {
+	border-bottom-color: rgba(15, 23, 42, 0.08);
+}
+
+[data-theme="light"] .auth-greeting-chip,
+html.light:not(.dark):not([data-theme="dark"]) .auth-greeting-chip {
+	color: #475569;
+}
+
+[data-theme="light"] .auth-quick-resume-card,
+html.light:not(.dark):not([data-theme="dark"]) .auth-quick-resume-card {
+	background: rgba(13, 148, 136, 0.08);
+	border-color: rgba(13, 148, 136, 0.24);
+}
+
+[data-theme="light"] .auth-quick-resume-name,
+html.light:not(.dark):not([data-theme="dark"]) .auth-quick-resume-name {
+	color: #0f172a;
+}
+
+[data-theme="light"] .auth-scale-btn,
+html.light:not(.dark):not([data-theme="dark"]) .auth-scale-btn {
+	background: rgba(255, 255, 255, 0.9);
+	border-color: rgba(13, 148, 136, 0.18);
+	color: #475569;
+}
+
+[data-theme="light"] .auth-scale-btn:hover,
+html.light:not(.dark):not([data-theme="dark"]) .auth-scale-btn:hover {
+	background: #ffffff;
+	border-color: rgba(13, 148, 136, 0.35);
+	color: #0f172a;
+}

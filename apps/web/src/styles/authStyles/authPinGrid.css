@@ -1,0 +1,58 @@
+/* PIN Grid */
+.auth-pin-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	gap: 16px;
+	width: 100%;
+	max-width: 240px;
+}
+
+.auth-pin-btn {
+	width: 64px;
+	height: 64px;
+	border-radius: 50%;
+	background: rgba(255, 255, 255, 0.05);
+	border: 1px solid rgba(255, 255, 255, 0.05);
+	color: #fff;
+	font-size: 20px;
+	font-weight: 600;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.1s ease;
+	padding: 0;
+}
+
+.auth-pin-btn:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.1);
+}
+
+.auth-pin-btn:active:not(:disabled) {
+	transform: scale(0.92);
+}
+
+.auth-pin-btn:disabled {
+	opacity: 0.4;
+	cursor: not-allowed;
+}
+
+.auth-pin-btn--danger {
+	color: #f87171;
+	background: transparent;
+	border-color: transparent;
+}
+.auth-pin-btn--danger:hover:not(:disabled) {
+	background: rgba(248, 113, 113, 0.1);
+}
+
+.auth-pin-btn--secondary {
+	font-size: 14px;
+	font-weight: 500;
+	color: #9ca3af;
+	background: transparent;
+	border-color: transparent;
+}
+.auth-pin-btn--secondary:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.05);
+}

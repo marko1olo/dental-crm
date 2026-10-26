@@ -1,0 +1,102 @@
+/* Quick Resume Card */
+.auth-quick-resume-card {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 14px;
+	background: rgba(13, 148, 136, 0.12);
+	border: 1px solid rgba(13, 148, 136, 0.28);
+	border-radius: 14px;
+	margin-bottom: 20px;
+	box-shadow: 0 4px 16px rgba(13, 148, 136, 0.12);
+}
+
+.auth-quick-resume-left {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.auth-quick-resume-avatar {
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.auth-quick-resume-meta {
+	min-width: 0;
+}
+
+.auth-quick-resume-label {
+	font-size: 10.5px;
+	color: #94a3b8;
+	text-transform: uppercase;
+	letter-spacing: 0.03em;
+}
+
+.auth-quick-resume-name {
+	font-size: 13.5px;
+	font-weight: 700;
+	color: #ffffff;
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.auth-quick-resume-role {
+	font-size: 11px;
+	color: var(--teal-light, #14b8a6);
+}
+
+.auth-quick-resume-btn {
+	height: 32px;
+	padding: 0 12px;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 12px;
+	font-weight: 600;
+	border: 1px solid var(--teal-dark, #0f766e);
+	border-radius: 8px;
+	cursor: pointer;
+	flex-shrink: 0;
+	transition: all 0.2s ease;
+}
+
+.auth-quick-resume-btn:hover {
+	background: var(--teal-dark, #0f766e);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3);
+}
+
+/* Form Helper Elements */
+.auth-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.auth-input-type-tag {
+	font-size: 11px;
+	color: var(--teal-light, #14b8a6);
+	background: rgba(13, 148, 136, 0.1);
+	padding: 1px 7px;
+	border-radius: 6px;
+	border: 1px solid rgba(13, 148, 136, 0.2);
+}
+
+.auth-input-subhint {
+	font-size: 11px;
+	color: #64748b;
+}

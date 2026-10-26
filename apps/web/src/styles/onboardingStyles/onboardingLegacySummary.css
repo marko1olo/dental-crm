@@ -1,0 +1,65 @@
+/* ---------- Дни недели ---------- */
+.onboarding-shell .weekday-toggle-row {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	border: none;
+	padding: 0;
+	margin: 0;
+}
+
+.onboarding-shell .weekday-toggle-row button {
+	height: 32px;
+	min-width: 36px;
+	padding: 0 10px;
+	border-radius: 6px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink-2);
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.onboarding-shell .weekday-toggle-row button.active {
+	background: var(--teal);
+	border-color: var(--teal);
+	color: var(--on-teal, #ffffff);
+	font-weight: 600;
+}
+
+/* ---------- Сводка готовности ---------- */
+.onboarding-shell .onboarding-readiness-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+	gap: 10px;
+	margin-top: 8px;
+}
+
+.onboarding-shell .onboarding-readiness-grid span {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 14px;
+	font-size: 13px;
+	font-weight: 500;
+	color: var(--ink);
+}
+
+/* ---------- Подсказки и блокеры ---------- */
+.onboarding-shell .onboarding-blocker {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-left: 3px solid var(--teal);
+	border-radius: 6px;
+	padding: 10px 14px;
+	font-size: 12px;
+	line-height: 1.45;
+	color: var(--ink-2);
+	margin: 4px 0 0 0;
+}
+
+.onboarding-shell .onboarding-blocker.onboarding-advisory {
+	border-left-color: var(--muted);
+}

@@ -1,0 +1,98 @@
+/* ---------- Панель шага ---------- */
+.onboarding-shell .onboarding-panel {
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 20px 24px;
+}
+
+.onboarding-shell .onboarding-panel h3 {
+	color: var(--ink);
+	font-size: 16px;
+	font-weight: 700;
+	margin: 0 0 4px 0;
+}
+
+.onboarding-shell .onboarding-panel p {
+	color: var(--muted);
+	font-size: 13px;
+	line-height: 1.4;
+	margin: 0;
+}
+
+.onboarding-shell .onboarding-source-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+	gap: 10px;
+}
+
+.onboarding-shell .onboarding-source-grid span {
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 10px 14px;
+	font-size: 13px;
+	color: var(--ink);
+}
+
+.onboarding-shell .onboarding-form-grid {
+	display: grid;
+	gap: 12px;
+	grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+@media (max-width: 640px) {
+	.onboarding-shell .onboarding-head {
+		display: flex;
+		flex-direction: column-reverse;
+		gap: 12px;
+	}
+	.onboarding-head-aside {
+		width: 100%;
+		display: flex;
+		justify-content: space-between;
+		align-items: center;
+	}
+	.onboarding-shell .onboarding-head h2 {
+		font-size: 18px;
+		line-height: 1.3;
+		word-break: normal;
+		overflow-wrap: break-word;
+	}
+	.onboarding-shell .onboarding-form-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+.onboarding-shell .onboarding-form-grid label {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink-2);
+}
+
+.onboarding-shell .onboarding-form-grid input,
+.onboarding-shell .onboarding-form-grid select {
+	height: 36px;
+	min-height: 36px;
+	box-sizing: border-box;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 8px;
+	padding: 0 12px;
+	color: var(--ink);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.onboarding-shell .onboarding-form-grid input:focus,
+.onboarding-shell .onboarding-form-grid select:focus {
+	border-color: var(--teal);
+	box-shadow: 0 0 0 2px var(--teal-surface, rgba(13, 148, 136, 0.2));
+}

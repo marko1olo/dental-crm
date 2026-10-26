@@ -1,0 +1,47 @@
+/* Telemetry & Live Status Bar */
+.auth-telemetry-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+	margin-bottom: 16px;
+	padding-bottom: 12px;
+	border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+	font-size: 11.5px;
+}
+
+.auth-status-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 3px 10px;
+	border-radius: 20px;
+	font-weight: 500;
+	font-size: 11px;
+}
+
+.auth-status-chip--online {
+	background: rgba(16, 185, 129, 0.12);
+	color: #34d399;
+	border: 1px solid rgba(16, 185, 129, 0.25);
+}
+
+.auth-status-chip--offline {
+	background: rgba(245, 158, 11, 0.12);
+	color: #fbbf24;
+	border: 1px solid rgba(245, 158, 11, 0.25);
+}
+
+.auth-status-dot {
+	width: 6px;
+	height: 6px;
+	border-radius: 50%;
+	background: currentColor;
+	box-shadow: 0 0 6px currentColor;
+}
+
+.auth-greeting-chip {
+	color: #94a3b8;
+	font-weight: 500;
+	letter-spacing: 0.01em;
+}

@@ -1,0 +1,68 @@
+/* ============================================================
+   Мастер первого запуска DENTE — премиальное оформление на токенах темы.
+
+   ПОЧЕМУ ЭТОТ ФАЙЛ СУЩЕСТВУЕТ
+   Экран первого запуска ранее страдал от зашитых цветов (#fbfefd, #0d4f49,
+   #eef8f5) в main.css, вызывавших ослепляющие белые плашки в темных темах
+   и жесткую 4-колоночную сетку для 5 шагов.
+   Здесь все оформление приведено к токенам дизайн-системы DENTE:
+   - Высота контролов 36px на десктопе;
+   - Скругления 8px / 10px / 12px без уродливых квадратов 96px;
+   - Сегментные переключатели на единой подложке;
+   - Полная поддержка Светлой и Тёмной тем без белых пятен;
+   - Быстрый старт соло-врача в 1 клик (Мандат 8n).
+   ============================================================ */
+
+/* ---------- Полноэкранный атмосферный оверлей мастера ---------- */
+.onboarding-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 850;
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+	overflow-y: auto;
+	overflow-x: hidden;
+	padding: 36px 20px;
+	box-sizing: border-box;
+	background: rgba(10, 18, 17, 0.52);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+}
+
+[data-theme="light"] .onboarding-overlay,
+html.light .onboarding-overlay {
+	background: rgba(240, 253, 250, 0.38);
+}
+
+/* ---------- Основная стеклянная панель мастера ---------- */
+.onboarding-shell {
+	position: relative;
+	background: var(--glass-panel, rgba(20, 28, 27, 0.85));
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.12));
+	border-radius: 20px;
+	box-shadow:
+		0 24px 48px -12px rgba(0, 0, 0, 0.5),
+		0 0 0 1px rgba(255, 255, 255, 0.05),
+		inset 0 1px 0 rgba(255, 255, 255, 0.12);
+	backdrop-filter: blur(28px);
+	-webkit-backdrop-filter: blur(28px);
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding: 28px 32px;
+	max-width: 1080px;
+	margin: auto;
+	width: 100%;
+	box-sizing: border-box;
+}
+
+[data-theme="light"] .onboarding-shell,
+html.light .onboarding-shell {
+	background: var(--glass-panel, rgba(255, 255, 255, 0.9));
+	border-color: var(--line, rgba(0, 0, 0, 0.1));
+	box-shadow:
+		0 24px 48px -12px rgba(0, 0, 0, 0.12),
+		0 0 0 1px rgba(0, 0, 0, 0.04),
+		inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
