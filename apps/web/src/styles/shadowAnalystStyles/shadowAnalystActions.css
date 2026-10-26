@@ -1,0 +1,89 @@
+/**
+ * shadowAnalystActions.css — Quick Action Buttons, Sliders & Split View Controls
+ * Mandates 8b (<=120 lines), 8e (Doctor Autonomy), 8n (Solo Practice)
+ */
+
+.sa-icon-btn {
+	background: transparent; border: 1px solid transparent; border-radius: 6px;
+	padding: 4px 6px; cursor: pointer; color: var(--muted, #94a3b8);
+	display: flex; align-items: center; justify-content: center; transition: all 0.18s;
+}
+.sa-icon-btn:hover { background: var(--surface-hover, #f1f5f9); color: var(--ink); border-color: var(--border-muted, var(--line)); }
+.sa-icon-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.sa-icon-btn--active { color: var(--ok-fg); background: var(--ok-bg); border-color: var(--ok-fg); }
+
+.sa-action-group { display: flex; align-items: center; gap: 0.5rem; flex-wrap: wrap; }
+
+.sa-action-btn, .sa-action-apply {
+	display: inline-flex; align-items: center; gap: 0.375rem; padding: 0.35rem 0.75rem;
+	border-radius: 6px; font-size: 0.75rem; font-weight: 600;
+	background: var(--primary, #0d9488); color: #ffffff; border: none; cursor: pointer;
+	transition: background 0.15s ease;
+}
+.sa-action-btn:hover, .sa-action-apply:hover { background: var(--primary-strong, #0f766e); }
+
+.sa-action-ignore {
+	display: inline-flex; align-items: center; gap: 0.25rem; padding: 0.35rem 0.65rem;
+	border-radius: 6px; font-size: 0.75rem; font-weight: 500; background: transparent;
+	color: var(--muted, #94a3b8); border: 1px solid var(--line); cursor: pointer;
+}
+.sa-action-ignore:hover { background: var(--surface-hover, #f1f5f9); color: var(--ink); }
+
+.sa-enhance-toggle {
+	display: inline-flex; align-items: center; gap: 0.45rem; cursor: pointer;
+	margin-top: 0.5rem; font-size: 0.8rem; color: var(--muted, #94a3b8); user-select: none;
+}
+.sa-enhance-toggle input { position: absolute; opacity: 0; width: 0; height: 0; }
+.sa-enhance-slider {
+	position: relative; display: inline-block; width: 32px; height: 18px;
+	background: #cbd5e1; border-radius: 9px; transition: background 0.2s; flex-shrink: 0;
+}
+.sa-enhance-slider::before {
+	content: ""; position: absolute; top: 3px; left: 3px; width: 12px; height: 12px;
+	background: var(--paper-strong, #fff); border-radius: 50%; transition: transform 0.2s;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+.sa-enhance-toggle input:checked + .sa-enhance-slider { background: var(--teal, #38bdf8); }
+.sa-enhance-toggle input:checked + .sa-enhance-slider::before { transform: translateX(14px); }
+.sa-enhance-label { font-weight: 500; }
+.sa-enhance-toggle--toolbar { margin-left: 8px; margin-top: 0; align-self: center; color: var(--muted, #94a3b8); }
+
+.sa-image-container {
+	position: relative; width: 100%; height: 100%; min-height: 280px; max-height: 100%;
+	flex: 1; overflow: hidden; user-select: none; display: flex; justify-content: center;
+	align-items: center; background: #0a0e17; cursor: col-resize;
+}
+.sa-img-original {
+	max-width: 100%; max-height: 100%; object-fit: contain; pointer-events: none;
+	display: block; filter: var(--sa-viewer-filter, none); transform: var(--sa-viewer-transform, none);
+}
+.sa-img-enhanced-wrapper {
+	position: absolute; inset: 0; width: 100%; height: 100%; display: flex;
+	justify-content: center; align-items: center; pointer-events: none;
+}
+.sa-img-enhanced {
+	max-width: 100%; max-height: 100%; object-fit: contain; display: block; pointer-events: none;
+	filter: contrast(1.35) brightness(1.05) saturate(0.85) drop-shadow(0 0 2px rgba(255, 255, 255, 0.08)) var(--sa-viewer-filter-chain, );
+	transform: var(--sa-viewer-transform, none);
+}
+
+.sa-slider-handle {
+	position: absolute; top: 0; bottom: 0; width: 3px; background: var(--teal, #38bdf8);
+	cursor: ew-resize; transform: translateX(-50%); z-index: 10; box-shadow: var(--shadow-1);
+}
+.sa-slider-line { width: 100%; height: 100%; background: var(--teal, #38bdf8); }
+.sa-slider-button {
+	position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+	width: 30px; height: 30px; background: #0f172a; border: 2px solid var(--teal, #38bdf8);
+	border-radius: 50%; display: flex; align-items: center; justify-content: center;
+	color: var(--teal, #38bdf8); box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5), 0 0 8px rgba(56, 189, 248, 0.3); pointer-events: none;
+}
+.sa-label {
+	position: absolute; bottom: 10px; padding: 2px 7px; font-size: 0.68rem; font-weight: 700;
+	letter-spacing: 0.5px; text-transform: uppercase; border-radius: 4px; pointer-events: none; z-index: 5;
+}
+.sa-label--left { left: 10px; background: rgba(15, 23, 42, 0.72); color: #94a3b8; }
+.sa-label--right {
+	right: 10px; background: rgba(56, 189, 248, 0.18); color: var(--teal, #38bdf8);
+	border: 1px solid rgba(56, 189, 248, 0.35);
+}

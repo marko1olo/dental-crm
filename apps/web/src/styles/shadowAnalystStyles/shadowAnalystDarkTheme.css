@@ -1,0 +1,93 @@
+/**
+ * shadowAnalystDarkTheme.css — Deep Contrast Dark Theme Styling
+ * Mandates 8b (<=120 lines), 8e (Doctor Autonomy), 8am (WCAG AAA Contrast)
+ */
+
+[data-theme="dark"] .sa-panel,
+[data-theme="night"] .sa-panel,
+[data-theme="cyber_xray"] .sa-panel,
+[data-theme="ocean"] .sa-panel,
+.dark .sa-panel {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sa-panel-header,
+[data-theme="night"] .sa-panel-header,
+.dark .sa-panel-header {
+	background: linear-gradient(90deg, rgba(56, 189, 248, 0.12) 0%, rgba(13, 148, 136, 0.08) 100%);
+	border-bottom-color: var(--line, #334155);
+}
+
+[data-theme="dark"] .sa-toast--success,
+[data-theme="night"] .sa-toast--success,
+.dark .sa-toast--success {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.2));
+	border-color: var(--ok-fg, #10b981);
+	color: var(--ok-fg, #34d399);
+}
+
+[data-theme="dark"] .sa-toast--error,
+[data-theme="night"] .sa-toast--error,
+.dark .sa-toast--error {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
+	border-color: var(--bad-fg, #ef4444);
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .sa-toast,
+[data-theme="night"] .sa-toast,
+[data-theme="cyber_xray"] .sa-toast,
+[data-theme="cyber-xray"] .sa-toast,
+[data-theme="ocean"] .sa-toast,
+.dark .sa-toast,
+.dark .sa-toast span {
+	color: #f8fafc !important;
+}
+
+[data-theme="dark"] .sa-tooth-row,
+[data-theme="night"] .sa-tooth-row,
+.dark .sa-tooth-row {
+	background: var(--paper-soft, #1e293b);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sa-tooth-row--critical,
+[data-theme="night"] .sa-tooth-row--critical,
+.dark .sa-tooth-row--critical {
+	background: var(--bad-bg, rgba(239, 68, 68, 0.2));
+	border-left-color: var(--bad-fg, #ef4444);
+}
+
+[data-theme="dark"] .sa-tooth-row--done,
+[data-theme="night"] .sa-tooth-row--done,
+.dark .sa-tooth-row--done {
+	background: var(--ok-bg, rgba(16, 185, 129, 0.2));
+	border-left-color: var(--ok-fg, #10b981);
+}
+
+[data-theme="dark"] .sa-tooth-num,
+[data-theme="night"] .sa-tooth-num,
+.dark .sa-tooth-num {
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sa-hud-pill,
+.dark .sa-hud-pill {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--teal, #14b8a6);
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sa-icon-btn:hover,
+.dark .sa-icon-btn:hover {
+	background: var(--surface-hover, rgba(255, 255, 255, 0.08));
+	color: var(--ink, #f8fafc);
+}
+
+[data-theme="dark"] .sa-findings-container,
+.dark .sa-findings-container {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, #334155);
+}

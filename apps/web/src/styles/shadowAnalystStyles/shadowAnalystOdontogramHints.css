@@ -1,0 +1,40 @@
+/**
+ * shadowAnalystOdontogramHints.css — FDI Tooth Highlights & Pathology Hints
+ * Mandates 8b (<=120 lines), 8e (Doctor Autonomy), 8n (Solo Practice)
+ */
+
+.sa-tooth-grid { display: flex; flex-direction: column; gap: 4px; }
+
+.sa-tooth-row {
+	display: flex; align-items: flex-start; gap: 0.5rem; padding: 5px 8px; border-radius: 6px;
+	background: var(--surface-muted, #f1f5f9); border-left: 3px solid transparent;
+	font-size: 0.82rem; line-height: 1.4;
+}
+
+.sa-tooth-row--critical { border-left-color: var(--bad-fg); background: var(--bad-bg); }
+.sa-tooth-row--done { border-left-color: var(--ok-fg); background: var(--ok-bg); }
+
+.sa-tooth-num { font-weight: 700; color: var(--ink); min-width: 26px; font-size: 0.82rem; }
+.sa-tooth-text { flex: 1; color: var(--ink); }
+.sa-tooth-icon { color: var(--bad-fg); flex-shrink: 0; margin-top: 2px; }
+.sa-tooth-icon--done { color: var(--ok-fg); }
+
+.sa-odontogram-hint {
+	display: inline-flex; align-items: center; gap: 0.35rem; padding: 2px 8px; border-radius: 6px;
+	font-size: 0.75rem; font-weight: 600; background: var(--paper-soft);
+	border: 1px solid var(--teal, #0d9488); color: var(--ink);
+}
+
+.sa-tooth-highlight { animation: sa-pulse-highlight 2s infinite ease-in-out; }
+
+@keyframes sa-pulse-highlight {
+	0%, 100% { outline: 2px solid transparent; }
+	50% { outline: 2px solid var(--teal, #0d9488); outline-offset: 2px; }
+}
+
+.sa-canal-warning {
+	display: inline-flex; align-items: center; gap: 0.25rem;
+	color: var(--warn-fg, #d97706); font-size: 0.75rem; font-weight: 600;
+}
+
+.sa-perio-pocket-hint { color: var(--bad-fg); font-size: 0.72rem; font-weight: 700; }
