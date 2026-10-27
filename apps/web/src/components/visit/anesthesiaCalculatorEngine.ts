@@ -1,25 +1,13 @@
 /**
  * anesthesiaCalculatorEngine.ts
- * Unified Maximum Recommended Dose (MRD) Engine, Clinical Safety Caliper,
- * Pediatric Weight Scaling & Somatic Cross-Check SSOT for Dental CRM.
- *
- * Consolidates:
- * 1. Weight-based MRD in mg and carpules (1.7 ml, 1.8 ml, 2.0 ml) for all primary dental anesthetics.
- * 2. Cardiac Epinephrine Gate (<= 0.04 mg limit for IHD, Hypertension, Arrhythmia, ASA III/IV).
- * 3. Pediatric dosage scaling: Clark's rule (weight-based), Young's rule (age-based), and direct mg/kg.
- * 4. Safety Speedometer & Zones (Green safe / Yellow caution / Orange warning / Red stop).
- * 5. Limiting Factor diagnosis (Weight, Absolute Cap, Cardiac Gate, Pediatric Scaling).
- * 6. Full re-exports and bridges to @dental/shared/anesthesia and anesthesiaMrdCalculatorEngine.
- *
- * Standards: Минздрав РФ, СтАР, AHA/ADA, Malamed's Handbook of Local Anesthesia.
- * Mandates: 8e (Doctor Autonomy), 8k (Friction-Killer), 8n (Solo Doctor Sovereignty), 8s (Anti-Duplication SSOT).
+ * Clean EBM Local Anesthesia Contract for Dental CRM.
+ * Mandates: 8e (Doctor Autonomy), 8n (Solo Doctor Sovereignty), 8y (Zero Pharma Paranoia).
  */
 
 import {
 	ANESTHESIA_DRUGS,
 	ANESTHESIA_DRUG_CATALOG,
 	ANESTHESIA_METHODS,
-	ANESTHESIA_PKU_PRESETS,
 	CARDIO_LIMIT_BADGE_TEXT,
 	CARDIO_MAX_EPINEPHRINE_MG,
 	EPINEPHRINE_BLOCKED_BADGE_TEXT,
@@ -27,14 +15,10 @@ import {
 	calculatePatientMrd as calculateCanonicalPatientMrd,
 	calculateVisitAnesthesiaSafety,
 	checkAnesthesiaSomaticContraindications,
-	create1ClickAnesthesiaPkuDisposalRecord,
-	createAnesthesiaPkuFromPreset,
 	extractSomaticRiskProfileFromText,
 	formatAnesthesiaSoapText,
-	generateAnesthesiaPkuDisposalAct,
 	resolveAutopilotAnesthesia,
 	resolveClinicalDefaultWeightKg,
-	validateCarpuleExpirationDate,
 	type AnesthesiaDrugDefinition,
 	type AnesthesiaDrugKey,
 	type AnesthesiaMethodKey,
@@ -75,7 +59,6 @@ export {
 	ANESTHESIA_DRUGS,
 	ANESTHESIA_METHODS,
 	ANESTHESIA_DRUG_CATALOG,
-	ANESTHESIA_PKU_PRESETS,
 	extractSomaticRiskProfileFromText,
 	checkAnesthesiaSomaticContraindications,
 	calculateCanonicalPatientMrd,
@@ -83,12 +66,37 @@ export {
 	resolveAutopilotAnesthesia,
 	formatAnesthesiaSoapText,
 	resolveClinicalDefaultWeightKg,
-	createAnesthesiaPkuFromPreset,
-	create1ClickAnesthesiaPkuDisposalRecord,
-	validateCarpuleExpirationDate,
-	generateAnesthesiaPkuDisposalAct,
 	calculateVisitAnesthesiaSafety,
 };
+
+/**
+ * 1-Click Physiological Norm preset (Mandate 8e / 8y)
+ * Standard infiltration/conduction for healthy adult: 1 carpule (1.7 ml) Ultracain D-S
+ */
+export function get1ClickPhysiologicalNorm(drugKey: AnesthesiaDrugKey = "ultracain_ds") {
+	const drug = ANESTHESIA_DRUGS[drugKey] ?? ANESTHESIA_DRUGS.ultracain_ds;
+	return {
+		drugKey,
+		carpulesCount: 1,
+		volumeMl: drug.volumeMlPerCarpule,
+		activeSubstanceMg: drug.mgPerCarpule,
+		adrenalineMg: drug.epinephrineMgPerCarpule,
+		isSafeNorm: true,
+	};
+}
+
+/**
+ * Passive Non-Blocking Allergy & Somatic warning string (Mandate 8y)
+ */
+export function getPassiveAllergyNotice(
+	drugKey: AnesthesiaDrugKey,
+	somaticProfile?: SomaticRiskProfile,
+): string | null {
+	if (!somaticProfile) return null;
+	const check = checkAnesthesiaSomaticContraindications({ drugKey, somaticProfile });
+	if (check.alerts.length === 0) return null;
+	return `⚠️ ${check.alerts.map((a) => a.message).join("; ")}`;
+}
 
 export function calculateAnesthesiaSafety(
 	params: AnesthesiaSafetyParams,

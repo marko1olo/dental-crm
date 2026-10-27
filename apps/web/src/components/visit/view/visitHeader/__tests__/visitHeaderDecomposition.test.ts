@@ -79,10 +79,24 @@ describe("VisitHeaderMonolith Safe Decomposition Health (Wave 28)", () => {
 
 	describe("3. Test Anchor Parity (data-testid, aria-label, data-tour)", () => {
 		it("verifies all test-ids from the original monolith are preserved in visitHeader/", () => {
-			const allContent = fs
-				.readdirSync(visitHeaderDir)
-				.filter((f) => /\.(ts|tsx)$/.test(f))
-				.map((f) => fs.readFileSync(path.join(visitHeaderDir, f), "utf-8"))
+			const getFilesRecursively = (dir: string): string[] => {
+				const entries = fs.readdirSync(dir, { withFileTypes: true });
+				const files: string[] = [];
+				for (const entry of entries) {
+					const fullPath = path.join(dir, entry.name);
+					if (entry.isDirectory()) {
+						if (entry.name !== "__tests__" && entry.name !== "node_modules") {
+							files.push(...getFilesRecursively(fullPath));
+						}
+					} else if (/\.(ts|tsx)$/.test(entry.name)) {
+						files.push(fullPath);
+					}
+				}
+				return files;
+			};
+
+			const allContent = getFilesRecursively(visitHeaderDir)
+				.map((f) => fs.readFileSync(f, "utf-8"))
 				.join("\n");
 
 			const requiredTestIds = [
@@ -137,11 +151,18 @@ describe("VisitHeaderMonolith Safe Decomposition Health (Wave 28)", () => {
 	});
 
 	describe("4. Clinical Ergonomics, Doctor Autonomy & Sanctity of Records (Mandates 8d, 8e)", () => {
-		it("ensures zero disabled buttons on finish visit or save actions", () => {
-			const toolbarCode = fs.readFileSync(
+		const getToolbarCode = () => {
+			const files = [
 				path.join(visitHeaderDir, "VisitActionButtonsToolbar.tsx"),
-				"utf-8",
-			);
+				path.join(visitHeaderDir, "toolbar/VisitToolbarFinishAndSave.tsx"),
+				path.join(visitHeaderDir, "toolbar/VisitToolbarQuickActions.tsx"),
+				path.join(visitHeaderDir, "toolbar/VisitActionButtonsLayout.tsx"),
+			].filter((f) => fs.existsSync(f));
+			return files.map((f) => fs.readFileSync(f, "utf-8")).join("\n");
+		};
+
+		it("ensures zero disabled buttons on finish visit or save actions", () => {
+			const toolbarCode = getToolbarCode();
 			assert.ok(
 				!toolbarCode.includes("disabled={!"),
 				"Toolbar buttons must never be disabled by secondary field validators",
@@ -169,10 +190,7 @@ describe("VisitHeaderMonolith Safe Decomposition Health (Wave 28)", () => {
 		});
 
 		it("ensures quiet mode for emergency rescue button (hidden 2xl:inline-flex)", () => {
-			const toolbarCode = fs.readFileSync(
-				path.join(visitHeaderDir, "VisitActionButtonsToolbar.tsx"),
-				"utf-8",
-			);
+			const toolbarCode = getToolbarCode();
 			assert.ok(
 				toolbarCode.includes("hidden 2xl:inline-flex"),
 				"Emergency rescue button must be demoted to quiet mode on normal desktop screens",

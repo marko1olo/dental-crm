@@ -129,9 +129,17 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 	});
 
 	it("5. Автономия врача (Мандат 8e): 0 заблокированных кнопок «Завершить приём» по второстепенным полям", () => {
-		const headerCode = fs.existsSync(path.join(webSrc, "components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx"))
+		const toolbarDir = path.join(webSrc, "components/visit/view/visitHeader/toolbar");
+		let headerCode = fs.existsSync(path.join(webSrc, "components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx"))
 			? readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx")
 			: readSrcFile("components/visit/view/VisitHeaderMonolith.tsx");
+		if (fs.existsSync(toolbarDir)) {
+			for (const f of fs.readdirSync(toolbarDir)) {
+				if (/\.(ts|tsx)$/.test(f)) {
+					headerCode += "\n" + fs.readFileSync(path.join(toolbarDir, f), "utf-8");
+				}
+			}
+		}
 		// Кнопка Завершить приём в шапке
 		assert.ok(
 			headerCode.includes('data-testid="btn-complete-visit-header"'),
@@ -278,7 +286,15 @@ describe("RED TEAM INQUISITION: ЭМК Форма 043/у, Клинические
 		);
 
 		// VisitActionButtonsToolbar.tsx
-		const toolbarCode = readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx");
+		let toolbarCode = readSrcFile("components/visit/view/visitHeader/VisitActionButtonsToolbar.tsx");
+		const toolbarDir = path.join(webSrc, "components/visit/view/visitHeader/toolbar");
+		if (fs.existsSync(toolbarDir)) {
+			for (const f of fs.readdirSync(toolbarDir)) {
+				if (/\.(ts|tsx)$/.test(f)) {
+					toolbarCode += "\n" + fs.readFileSync(path.join(toolbarDir, f), "utf-8");
+				}
+			}
+		}
 		assert.ok(
 			toolbarCode.includes("handlePrintClinicalDiaryFast"),
 			"VisitActionButtonsToolbar должен поддерживать канонический хендлер handlePrintClinicalDiaryFast",
