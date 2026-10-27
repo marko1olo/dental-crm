@@ -55,8 +55,8 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 	lines.push(`"Главная медсестра";${escapeCsvField(clinic.headNurse)}`);
 	lines.push("");
 
-	// SECTION 1: PSO FORM 366/U
-	lines.push(`"=== РАЗДЕЛ 1: ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/У) ==="`);
+	// SECTION 1: PSO / PRE-STERILIZATION CLEANING
+	lines.push(`"=== РАЗДЕЛ 1: ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ И АЗОПИРАМОВЫХ ПРОБ ==="`);
 	const psoHeaders = [
 		"№ п/п",
 		"ID записи",
@@ -100,8 +100,8 @@ export function exportSanpinConsolidatedArchiveToCsv(data: ConsolidatedSanpinJou
 	}
 	lines.push("");
 
-	// SECTION 2: FORM 257/U & STERILIZER FLEET
-	lines.push(`"=== РАЗДЕЛ 2: ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/У) ==="`);
+	// SECTION 2: AUTOCLAVE & STERILIZER CONTROL
+	lines.push(`"=== РАЗДЕЛ 2: ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ ==="`);
 	if (sterilizerEquipments && sterilizerEquipments.length > 0) {
 		lines.push(`"--- ПАРК АВТОКЛАВОВ И СТЕРИЛИЗАЦИОННОГО ОБОРУДОВАНИЯ ---"`);
 		const sterilizerEquipHeaders = [

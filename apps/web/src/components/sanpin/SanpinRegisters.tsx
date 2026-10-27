@@ -16,6 +16,12 @@ import "./SanpinRegisters.css";
 
 export * from "./sanpinNavigationConfig";
 
+export const SANPIN_REGISTERS_TOAST_MESSAGES = {
+	statusOk: "Журналы стерилизации в норме",
+	weekDone: "Журналы за неделю заполнены",
+	shiftDone: "Смена заполнена:",
+} as const;
+
 export interface SanpinRegistersProps {
 	readonly initialTab?: SanpinRegisterTab | undefined;
 	readonly initialFilterAutoclave?: string | undefined;

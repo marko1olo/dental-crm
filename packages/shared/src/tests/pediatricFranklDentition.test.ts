@@ -181,7 +181,7 @@ describe("Pediatric Frankl Behavior Scale & Adaptive Clinical Protocols (package
 			customNotes: "Психологическая адаптация проведена успешно.",
 		});
 
-		assert.ok(diary.includes("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА (ФОРМА 043/у)"));
+		assert.ok(diary.includes("ПРОТОКОЛ ДЕТСКОГО СТОМАТОЛОГИЧЕСКОГО ОСМОТРА"));
 		assert.ok(diary.includes("Психоэмоциональный статус (Шкала Франкла)"));
 		assert.ok(diary.includes("Класс 2 (Негативное)"));
 		assert.ok(diary.includes("Зуб #71: резорбция 75%"));

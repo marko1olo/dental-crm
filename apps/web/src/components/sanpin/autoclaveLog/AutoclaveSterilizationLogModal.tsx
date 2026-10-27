@@ -6,7 +6,6 @@ import { AutoclaveLogModalHeader } from "./AutoclaveLogModalHeader";
 import { AutoclaveLogModalTabs, type AutoclaveModalTab } from "./AutoclaveLogModalTabs";
 import { useAutoclaveLogModalLogic } from "./useAutoclaveLogModalLogic";
 import { DEFAULT_CLINIC_LEGAL_INFO, type ClinicLegalInfo } from "./autoclaveLogEngine.js";
-import "./autoclaveLog.css";
 
 export interface AutoclaveSterilizationLogModalProps {
 	readonly isOpen: boolean;

@@ -1,7 +1,6 @@
 import type React from "react";
 import { createPortal } from "react-dom";
 import type { MedicalWasteJournalRecord, MedicalWasteTransferAct } from "./medicalWasteEngine.js";
-import "./medicalWaste.css";
 import { MedicalWasteAccumulateTab } from "./MedicalWasteAccumulateTab";
 import { MedicalWasteJournalTableTab } from "./MedicalWasteJournalTableTab";
 import { MedicalWasteTransferActTab } from "./MedicalWasteTransferActTab";

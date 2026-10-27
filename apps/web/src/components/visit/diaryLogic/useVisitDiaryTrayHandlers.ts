@@ -8,7 +8,6 @@ import {
 	requestFailureCause,
 } from "../../../lib/panelStateText";
 import { logger } from "../../../utils/logger";
-import { parseAndValidateKraftBarcode } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 
 export interface UseVisitDiaryTrayHandlersParams {
@@ -213,13 +212,12 @@ export function useVisitDiaryTrayHandlers({
 				return;
 			}
 
-			const parsed = parseAndValidateKraftBarcode(code);
-			let nextTreatment = diary.treatmentDescription;
-			const textToAppend = protocolTextToAppend || parsed.formattedProtocolRecord043;
-			if (textToAppend && !nextTreatment.includes(code)) {
-				nextTreatment = nextTreatment
-					? `${nextTreatment}\n\n${textToAppend}`
-					: textToAppend;
+			// Мандат 8e: ноль навязанной бюрократии и микро-дрочи у кресла врача.
+			// Лоток фиксируется без принудительного засорения описания лечения.
+			if (protocolTextToAppend && !diary.treatmentDescription.includes(code)) {
+				const nextTreatment = diary.treatmentDescription
+					? `${diary.treatmentDescription}\n\n${protocolTextToAppend}`
+					: protocolTextToAppend;
 				setDiary((p) => ({
 					...p,
 					treatmentDescription: nextTreatment,

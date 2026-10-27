@@ -12,7 +12,6 @@ import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
 import type { KraftPackageRecord } from "./kraftPackageTypes";
 import { generateThermalStickerHtml, createStandardTrayKraftPackageRecord } from "./kraftPackageEngine";
-import "./kraftPackage.css";
 
 export const KRAFT_STORAGE_KEY = "dente_sterilization_kraft_packages";
 export function loadStoredKraftPackages(): KraftPackageRecord[] { return []; }

@@ -5,7 +5,6 @@ import { generateThermalStickerHtml, generateKraftBatchRecords } from "./kraftPa
 import { POPULAR_KRAFT_PRESETS, type QuickKraftPreset } from "./kraftPackagePresets";
 import type { KraftPackageRecord } from "./kraftPackageTypes";
 import type { ParsedKraftBarcode } from "@dental/shared";
-import "./kraftPackage.css";
 
 export { POPULAR_KRAFT_PRESETS, type QuickKraftPreset };
 export type StudioActiveTab = "builder" | "scan" | "register" | "print" | "tspl_zpl" | "standards";
@@ -76,30 +75,33 @@ export function KraftPackageBarcodeModal({
 	};
 
 	return (
-		<div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" role="dialog" aria-modal="true">
-			<div className="bg-[var(--paper,#ffffff)] rounded-2xl shadow-2xl border border-[var(--line,#e2e8f0)] w-full max-w-md overflow-hidden animate-in fade-in zoom-in-95">
-				<div className="flex items-center justify-between px-5 py-4 border-b border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+		<div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200" role="dialog" aria-modal="true" onClick={onClose}>
+			<div className="bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] rounded-t-[24px] sm:rounded-2xl shadow-2xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] w-full sm:max-w-md max-h-[90dvh] sm:max-h-[92vh] overflow-hidden flex flex-col" onClick={(e) => e.stopPropagation()}>
+				<div className="flex sm:hidden justify-center pt-2.5 pb-1 shrink-0" aria-hidden="true">
+					<div className="w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)] opacity-70" />
+				</div>
+				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)]">
 					<div className="flex items-center gap-2.5">
-						<ShieldCheck size={20} color="var(--teal,#0d9488)" />
-						<h3 className="font-bold text-[0.95rem] text-[var(--ink,#0f172a)]">Маркировка партии автоклавирования</h3>
+						<ShieldCheck size={20} color="var(--teal,#0d9488)" className="shrink-0" />
+						<h3 className="font-bold text-[0.95rem] text-[var(--ink,#0f172a)] m-0">Маркировка партии автоклавирования</h3>
 					</div>
-					<button type="button" onClick={onClose} className="p-1 rounded-lg hover:bg-slate-200/50 transition-colors" aria-label="Закрыть">
+					<button type="button" onClick={onClose} className="p-2 rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[44px] min-w-[44px] inline-flex items-center justify-center cursor-pointer touch-manipulation" aria-label="Закрыть">
 						<X size={18} />
 					</button>
 				</div>
-				<div className="p-5 space-y-4">
-					<div className="rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] p-3.5 space-y-2 text-xs">
+				<div className="p-5 space-y-4 overflow-y-auto">
+					<div className="rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper-soft,#f8fafc)] dark:bg-[#1e293b]/50 p-3.5 space-y-2 text-xs">
 						<div className="flex justify-between font-medium"><span>Состав партии:</span><strong className="text-[var(--ink,#0f172a)]">27 наборов (15 смотр., 8 терап., 4 турбины)</strong></div>
 						<div className="flex justify-between"><span>Режим автоклава:</span><span>134°C / 2.1 бар / 5 мин (Класс B)</span></div>
-						<div className="flex justify-between"><span>Химический контроль:</span><span className="text-emerald-700 font-semibold">Индикатор 5 класса (100% норма)</span></div>
+						<div className="flex justify-between"><span>Химический контроль:</span><span className="text-emerald-700 dark:text-emerald-400 font-semibold">Индикатор 5 класса (100% норма)</span></div>
 						<div className="flex justify-between"><span>Срок стерильности:</span><span>50 суток (термосварка)</span></div>
 					</div>
-					<p className="text-xs text-[var(--muted,#64748b)]">Пакетный запуск автоматически списывает 27 крафт-пакетов и 1 индикатор 5 класса со склада, внося запись в журнал.</p>
+					<p className="text-xs text-[var(--muted,#64748b)] m-0">Пакетный запуск автоматически списывает 27 крафт-пакетов и 1 индикатор 5 класса со склада, внося запись в журнал.</p>
 				</div>
-				<div className="flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
-					<button type="button" onClick={onClose} className="px-4 py-2 text-xs font-semibold rounded-lg hover:bg-slate-200/60 transition-colors">Отмена</button>
-					<button type="button" onClick={handleRunBatchAndPrint} aria-busy={submitting} className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-sm transition-colors">
-						<Printer size={14} /><span>Запустить цикл и напечатать этикетку</span>
+				<div className="flex items-center justify-end gap-2.5 px-5 py-3.5 border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] pb-[max(14px,env(safe-area-inset-bottom))]">
+					<button type="button" onClick={onClose} className="secondary-button px-4 py-2.5 min-h-[44px] text-xs font-semibold rounded-xl border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-soft)] cursor-pointer touch-manipulation">Отмена</button>
+					<button type="button" onClick={handleRunBatchAndPrint} aria-busy={submitting} className="primary-button inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] text-xs font-bold rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-xs cursor-pointer touch-manipulation">
+						<Printer size={15} /><span>Запустить цикл и напечатать этикетку</span>
 					</button>
 				</div>
 			</div>

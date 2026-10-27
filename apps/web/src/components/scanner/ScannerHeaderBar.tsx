@@ -65,7 +65,7 @@ export function ScannerHeaderBar({ activeSubTab, onSelectSubTab }: ScannerHeader
 					}}
 				>
 					<Sparkles size={16} />
-					<span>Журналы СанПиН</span>
+					<span>Журналы стерилизации</span>
 				</button>
 				<button
 					type="button"

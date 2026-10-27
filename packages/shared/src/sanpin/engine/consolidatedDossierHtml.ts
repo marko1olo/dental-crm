@@ -533,7 +533,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 	<!-- ===================================================================== -->
 	<div class="section-header">
 		<div class="section-number">Раздел 1 • СанПиН 3.3686-21 (п. 3584)</div>
-		<div class="section-title">ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/у)</div>
+		<div class="section-title">ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ И АЗОПИРАМОВЫХ ПРОБ</div>
 		<div class="section-legal-ref">Азопирамовая, фенолфталеиновая и масляная пробы (выборка 1% от партии изделий, не менее 3–5 единиц) • ${clinic.name}</div>
 	</div>
 
@@ -560,11 +560,11 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 	<div class="page-break"></div>
 
 	<!-- ===================================================================== -->
-	<!-- 3. РАЗДЕЛ 2: ЖУРНАЛ РАБОТЫ СТЕРИЛИЗАТОРОВ (ФОРМА № 257/у)             -->
+	<!-- 3. РАЗДЕЛ 2: ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И КОНТРОЛЯ СТЕРИЛИЗАТОРОВ       -->
 	<!-- ===================================================================== -->
 	<div class="section-header">
 		<div class="section-number">Раздел 2 • СанПиН 3.3686-21 (п. 3624, Таблица 3.13)</div>
-		<div class="section-title">ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/у)</div>
+		<div class="section-title">ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ</div>
 		<div class="section-legal-ref">Физический, химический (5 точек камеры КТ 1–5) и бактериологический контроль стерилизации • ${clinic.name}</div>
 	</div>
 
