@@ -21,7 +21,7 @@ import { Syringe, Heart, FileText, CheckCircle2 } from "lucide-react";
 
 function AnesthesiaPreviewApp() {
 	const [activeDiaryText, setActiveDiaryText] = useState<string>(
-		"Проведена местная инфильтрационная анестезия в области зуба 16. Препарат: Ультракаин Д-С (Артикаина гидрохлорид 4% + Эпинефрин 1:200 000) [Серия проверена], объем 1.7 мл (1 карп., 68 мг действующего вещества, вазоконстриктор Эпинефрин (Адреналин) 1:200 000 (0.009 мг)). Игла: Игла карпульная 30G (0.3 x 21 мм). Аспирационная проба отрицательна (кровь в карпуле отсутствует). Анестезия наступила через 2 мин, глубина достаточная, осложнений нет, соматических реакций нет."
+		"Проведена инфильтрационная анестезия в области зуба 16 Sol. Articaini 4% cum Epinephrini 1:200 000 — 1.7 мл (1 карпула). Осложнений нет."
 	);
 
 	useEffect(() => {
@@ -42,7 +42,7 @@ function AnesthesiaPreviewApp() {
 					</div>
 					<div>
 						<h1 className="text-lg font-bold text-[var(--ink)]">Клинический модуль обезболивания у кресла</h1>
-						<p className="text-xs text-[var(--muted)]">Мгновенный выбор пресетов в 1 клик • EBM доказательная стоматология (Мандаты 8e, 8y, 8n)</p>
+						<p className="text-xs text-[var(--muted)]">Мгновенный выбор пресетов в 1 клик • Автономия врача без паранойи (Мандаты 8e, 8y, 8n)</p>
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
@@ -85,14 +85,14 @@ function AnesthesiaPreviewApp() {
 			<footer className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-4 shadow-xs flex flex-col gap-2">
 				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink)]">
 					<FileText size={15} className="text-[var(--teal,#0d9488)]" />
-					<span>Сформированная SOAP-запись дневника приёма (без блокировок, 1 клик):</span>
+					<span>Сформированная запись дневника приёма Формы 043/у (без блокировок, 1 тап):</span>
 				</div>
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] leading-relaxed font-mono">
 					{activeDiaryText}
 				</div>
 				<div className="flex items-center gap-2 pt-1 text-[11px] text-[var(--muted)]">
 					<CheckCircle2 size={13} className="text-emerald-600" />
-					<span>Автоматическое списание карпулы со склада (Soft Negative Overdraft) и фиксация отрицательной аспирационной пробы.</span>
+					<span>Автоматическое списание со склада (Soft Negative Overdraft) и фиксация в карте приёма.</span>
 				</div>
 			</footer>
 		</main>

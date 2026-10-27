@@ -1,6 +1,6 @@
 /**
  * DENTE CRM — Unit Tests for Anesthesia Dosage Calculator & Safety Engine
- * (Минздрав РФ / СтАР / AHA Guidelines / Clinical Diary Compliance)
+ * (Минздрав РФ / СтАР / Clinical Autonomy & Diary Compliance — Mandates 8e, 8y)
  */
 
 import assert from "node:assert/strict";
@@ -192,8 +192,8 @@ describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended D
 		assert.equal(cardioResult.safetyZone, "overdose_danger");
 	});
 
-	// ── 6. Clinical Diary Formatting ───────────────────────────────────────
-	it("7. Generates complete, compliant clinical diary record", () => {
+	// ── 6. Clinical Diary Formatting (Mandates 8e, 8y) ───────────────────────
+	it("7. Generates clean Latin clinical diary record without academic bureaucracy", () => {
 		const result = calculateAnesthesiaSafety({
 			drugId: "articaine_1_100k",
 			carpulesCount: 1.0,
@@ -210,11 +210,12 @@ describe("AnesthesiaDosageCalculator — Clinical Safety & Maximum Recommended D
 			aspirationNegativeConfirmed: true,
 		});
 
-		assert.ok(result.diaryEntryRu.includes("Проведена местная"));
-		assert.ok(result.diaryEntryRu.includes("анестезия"));
-		assert.ok(result.diaryEntryRu.includes("1.7 мл"));
-		assert.ok(result.diaryEntryRu.includes("68 мг"));
-		assert.ok(result.diaryEntryRu.includes("Аспирационная проба"));
+		assert.ok(result.diaryEntryRu.includes("Проведена проводниковая анестезия"));
+		assert.ok(result.diaryEntryRu.includes("в области зуба 46"));
+		assert.ok(result.diaryEntryRu.includes("Sol. Articaini 4% cum Epinephrini 1:100 000"));
+		assert.ok(result.diaryEntryRu.includes("1.7 мл (1 карпула)"));
+		assert.ok(result.diaryEntryRu.includes("Осложнений нет."));
+		assert.equal(result.diaryEntryRu.includes("27G"), false);
 	});
 
 	// ── 7. Mandate 8e / Section VII: Zero Weight-Input Paralysis ───────────────

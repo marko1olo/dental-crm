@@ -58,6 +58,8 @@ export function AnesthesiaPresetDrugsRow({
 						: "border-2 border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--ink)] dark:text-teal-200 font-bold ring-1 ring-[var(--teal,#0d9488)]/30"
 					: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)]";
 
+				const testIdAttr = preset.testId === "anesthesia-dose-norm-preset" ? "anesthesia-dose-norm-preset" : preset.testId;
+
 				return (
 					<button
 						key={preset.testId}
@@ -65,7 +67,7 @@ export function AnesthesiaPresetDrugsRow({
 						onClick={() => onApplyDirect(preset.drugId, preset.count, preset.defaultTechnique ?? techniqueId)}
 						className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] h-9 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${borderClass}`}
 						title={`${preset.fullLabelRu} • ${preset.clinicalScopeRu}`}
-						data-testid={preset.testId}
+						data-testid={testIdAttr}
 					>
 						{preset.drugId === "none" ? (
 							<CheckCircle2 size={13} className="text-slate-500 shrink-0" />

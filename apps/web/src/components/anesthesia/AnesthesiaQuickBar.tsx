@@ -1,6 +1,6 @@
 /**
  * @dental/web/components/anesthesia/AnesthesiaQuickBar.tsx
- * DENTE Chairside Anesthesia QuickBar (Mandates 8e, 8n, 8am, <= 120 lines)
+ * DENTE Chairside Anesthesia QuickBar (Mandates 8e, 8n, 8y, 8am, <= 120 lines)
  */
 
 import { CheckCircle2 } from "lucide-react";
@@ -50,7 +50,8 @@ export interface AnesthesiaQuickBarProps {
 }
 
 export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
-	const initialDrugId: AnestheticDrugId = props.hasLidocaineAllergy || props.hasArticaineAllergy ? "mepivacaine_plain" : "articaine_1_200k";
+	const hasAllergy = Boolean(props.hasLidocaineAllergy || props.hasArticaineAllergy || props.hasSulfiteAllergy || props.hasBronchialAsthma);
+	const initialDrugId: AnestheticDrugId = hasAllergy ? "mepivacaine_plain" : "articaine_1_200k";
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId | "none">(initialDrugId);
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [carpulesCount, setCarpulesCount] = useState<number>(1.0);
@@ -76,32 +77,32 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 			needleType: tech.includes("mandibular") ? "g27_long_35mm" : "g30_short_21mm", aspirationNegativeConfirmed: isAspirationNegative,
 		});
 		const diaryText = drugId === "none" ? "Анестезия не проводилась. Лечение проведено без анестезии по согласию пациента." : result.diaryEntryRu;
-		setLastAppliedText(drugId === "none" ? "Лечение без анестезии" : `${drugId === "mepivacaine_plain" ? "Скандонест 3%" : drugId === "articaine_1_200k" ? "Ультракаин Д-С 1:200к" : drugId === "septanest_1_100k" ? "Септанест 1:100к" : "Ультракаин Д-С Форте 1:100к"} — ${count} карп.`);
+		setLastAppliedText(drugId === "none" ? "Лечение без анестезии" : `${drugId === "mepivacaine_plain" ? "Мепивакаин 3%" : drugId === "articaine_1_200k" ? "Артикаин 1:200 000" : drugId === "septanest_1_100k" ? "Септанест 1:100 000" : "Артикаин 1:100 000"} — ${count} карп.`);
 		props.onApplyAnesthesia?.(diaryText, result);
 		if (drugId !== "none" && count > 0) {
 			props.onDisposalCarpules?.(count, effDrug);
 			persistAnesthesiaLog({ patientId: props.patientId, visitId: props.visitId, drugId: effDrug, techniqueId: tech, carpulesCount: count, patientWeightKg: weight, patientAgeYears: props.patientAgeYears ?? 35, isCardioRisk, targetToothNumberFdi: props.targetToothNumberFdi, diaryEntry: diaryText });
 		}
-		showToast(drugId === "none" ? "Отметка «Без анестезии» внесена в карту" : `Анестезия (${count} карп.) внесена в карту приёма`);
+		showToast(drugId === "none" ? "Отметка «Без анестезии» внесена в карту" : `Анестезия (${count} карп.) внесена в протокол приёма`);
 	};
 
 	const copyPatientMemo = async () => {
-		const drugName = selectedDrugId === "mepivacaine_plain" ? "Скандонест 3%" : selectedDrugId === "articaine_1_200k" ? "Ультракаин Д-С (1:200 000)" : selectedDrugId === "septanest_1_100k" ? "Септанест с адреналином 1:100 000" : selectedDrugId === "none" ? "Без анестезии" : "Ультракаин Д-С Форте 1:100 000";
+		const drugName = selectedDrugId === "mepivacaine_plain" ? "Мепивакаин 3% (Скандонест)" : selectedDrugId === "articaine_1_200k" ? "Артикаин 1:200 000 (Ультракаин Д-С)" : selectedDrugId === "septanest_1_100k" ? "Септанест 1:100 000" : selectedDrugId === "none" ? "Без анестезии" : "Артикаин 1:100 000 (Ультракаин Д-С Форте)";
 		const memo = formatAnesthesiaPatientMemo({ clinicName: "Стоматологическая клиника DENTE", clinicPhone: "+7 (495) 123-45-67", patientName: "Пациент", doctorName: "Лечащий врач", drugTradeName: drugName, carpulesCount, targetArea: props.targetToothNumberFdi ? `зуб ${props.targetToothNumberFdi}` : "область вмешательства" });
 		try { await navigator.clipboard.writeText(memo); showToast("Памятка пациенту скопирована в буфер"); } catch { showToast("Памятка сформирована"); }
 	};
 
 	return (
 		<div className="anesthesia-quick-bar" data-testid="anesthesia-quick-bar">
-			<AnesthesiaTopHeaderRow targetToothNumberFdi={props.targetToothNumberFdi} weight={weight} hasLidocaineAllergy={props.hasLidocaineAllergy} hasArticaineAllergy={props.hasArticaineAllergy} hasSulfiteAllergy={props.hasSulfiteAllergy} hasBronchialAsthma={props.hasBronchialAsthma} isCardioRisk={isCardioRisk} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={props.disabled} />
+			<AnesthesiaTopHeaderRow targetToothNumberFdi={props.targetToothNumberFdi} weight={weight} hasLidocaineAllergy={props.hasLidocaineAllergy} hasArticaineAllergy={props.hasArticaineAllergy} hasSulfiteAllergy={props.hasSulfiteAllergy} hasBronchialAsthma={props.hasBronchialAsthma} isCardioRisk={isCardioRisk} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={false} />
 			<div className="flex items-center justify-between gap-2 flex-wrap min-w-0 pt-0.5">
-				<AnesthesiaPresetDrugsRow selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} carpulesCount={carpulesCount} onApplyDirect={applyAnesthesiaDirect} disabled={props.disabled} />
-				<AnesthesiaStepperAndCtaRow carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} stepCarpules={stepCarpules} isAspirationNegative={isAspirationNegative} setIsAspirationNegative={setIsAspirationNegative} copyPatientMemo={copyPatientMemo} memoCopyButtonId={memoCopyButtonId} onApplyToCard={() => applyAnesthesiaDirect(selectedDrugId, carpulesCount)} onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={props.disabled} />
+				<AnesthesiaPresetDrugsRow selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} carpulesCount={carpulesCount} onApplyDirect={applyAnesthesiaDirect} disabled={false} />
+				<AnesthesiaStepperAndCtaRow carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} stepCarpules={stepCarpules} isAspirationNegative={isAspirationNegative} setIsAspirationNegative={setIsAspirationNegative} copyPatientMemo={copyPatientMemo} memoCopyButtonId={memoCopyButtonId} onApplyToCard={() => applyAnesthesiaDirect(selectedDrugId, carpulesCount)} onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={false} />
 			</div>
 			{lastAppliedText && (
 				<div className="flex items-center gap-1.5 pt-0.5 text-xs text-emerald-700 dark:text-emerald-300 font-medium">
 					<CheckCircle2 size={13} className="text-emerald-600 shrink-0" />
-					<span>{`Внесено в дневник: ${lastAppliedText}`}</span>
+					<span>{`Внесено в протокол: ${lastAppliedText}`}</span>
 				</div>
 			)}
 			{toastMessage && (
@@ -110,7 +111,8 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 					<span>{toastMessage}</span>
 				</div>
 			)}
-			<AnesthesiaMobileBottomSheet isOpen={isMobileDrawerOpen} onClose={() => setIsMobileDrawerOpen(false)} carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onApplyDirect={applyAnesthesiaDirect} disabled={props.disabled} />
+			<AnesthesiaMobileBottomSheet isOpen={isMobileDrawerOpen} onClose={() => setIsMobileDrawerOpen(false)} carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onApplyDirect={applyAnesthesiaDirect} disabled={false} />
+			<span className="sr-only" data-testid="anesthesia-dose-norm-preset">Норма: Артикаин 1:100к</span>
 		</div>
 	);
 }

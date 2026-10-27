@@ -9,12 +9,12 @@ export interface AnesthesiaDiaryParams {
 	drug: AnestheticDrugInfo;
 	carpulesCount: number;
 	injectedVolumeMl: number;
-	injectedActiveMg: number;
-	injectedEpinephrineMg: number;
+	injectedActiveMg?: number | undefined;
+	injectedEpinephrineMg?: number | undefined;
 	techniqueId: InjectionTechniqueId;
-	needleType: NeedleGaugeType;
+	needleType?: NeedleGaugeType | undefined;
 	targetToothNumberFdi?: number | string | undefined;
-	aspirationNegativeConfirmed: boolean;
+	aspirationNegativeConfirmed?: boolean | undefined;
 	carpuleBatch?: { seriesNumber: string; batchNumber: string; expirationDate: string } | undefined;
 	nurseFullName?: string | undefined;
 	bpSystolic?: number | undefined;
@@ -26,26 +26,49 @@ export interface AnesthesiaDiaryParams {
 	isEpinephrineOverdose?: boolean | undefined;
 }
 
+function formatClinicalCarpulesText(count: number): string {
+	if (count === 1) return "1 карпула";
+	if (count === 0.5) return "0.5 карпулы";
+	if (count === 1.5) return "1.5 карпулы";
+	if (count === 2) return "2 карпулы";
+	if (count === 3) return "3 карпулы";
+	if (count === 4) return "4 карпулы";
+	return `${count} карпул`;
+}
+
+function resolveLatinDrugFormula(drug: AnestheticDrugInfo): string {
+	switch (drug.id) {
+		case "articaine_1_200k":
+			return "Sol. Articaini 4% cum Epinephrini 1:200 000";
+		case "articaine_1_100k":
+			return "Sol. Articaini 4% cum Epinephrini 1:100 000";
+		case "mepivacaine_plain":
+			return "Sol. Mepivacaini 3% (sine Epinephrini)";
+		case "septanest_1_100k":
+			return "Sol. Septanest 4% cum Epinephrini 1:100 000";
+		case "lidocaine_1_100k":
+			return "Sol. Lidocaini 2% cum Epinephrini 1:100 000";
+		case "bupivacaine_05":
+			return "Sol. Bupivacaini 0.5%";
+		default:
+			return `Sol. ${drug.activeSubstanceRu}`;
+	}
+}
+
 export function generateAnesthesiaDiaryEntry(params: AnesthesiaDiaryParams): string {
 	const tech = INJECTION_TECHNIQUES[params.techniqueId] || INJECTION_TECHNIQUES.infiltration;
-	const needleNameRu = params.techniqueId?.includes("mandibular") ? "Игла 27G длинная (0.4 x 35 мм)" : "Игла карпульная 30G (0.3 x 21 мм)";
+	const techNameRu = tech.nameRu.includes("Инфильтрационная")
+		? "инфильтрационная"
+		: tech.nameRu.includes("Проводниковая") || tech.nameRu.includes("Торусальная")
+			? "проводниковая"
+			: tech.nameRu.toLowerCase().split(" ")[0] || "местная";
+
 	const toothPart = params.targetToothNumberFdi ? ` в области зуба ${params.targetToothNumberFdi}` : "";
-	const aspText = params.aspirationNegativeConfirmed ? "Аспирационная проба отрицательна (кровь в карпуле отсутствует)." : "Аспирационная проба: без особенностей.";
-	const epiText = !params.drug.isAdrenalineFree ? `, вазоконстриктор ${params.drug.vasoconstrictorNameRu} (${params.injectedEpinephrineMg.toFixed(3)} мг)` : ", без вазоконстриктора";
-	const batchText = params.carpuleBatch?.seriesNumber ? ` [Серия: ${params.carpuleBatch.seriesNumber}, Партия: ${params.carpuleBatch.batchNumber}, Годен до: ${params.carpuleBatch.expirationDate}]` : " [Серия проверена]";
-	const nurseText = params.nurseFullName ? ` Медсестра/ассистент: ${params.nurseFullName}.` : "";
-	const vitalsText = typeof params.bpSystolic === "number" && typeof params.heartRateBpm === "number"
-		? ` Исходные показатели гемодинамики: АД ${params.bpSystolic}/${params.bpDiastolic ?? 80} мм рт. ст., ЧСС ${params.heartRateBpm} уд/мин${typeof params.spo2Percent === "number" ? `, SpO2 ${params.spo2Percent}%` : ""}.`
-		: "";
+	const drugFormula = resolveLatinDrugFormula(params.drug);
+	const carpulesText = formatClinicalCarpulesText(params.carpulesCount);
+	const overrideNote = params.overrideReason ? ` [Клиническое решение врача: ${params.overrideReason}]` : "";
 
-	let autonomyLegalNote = "";
-	if (params.overrideReason) {
-		autonomyLegalNote = ` [Клиническое решение врача: ${params.overrideReason}].`;
-	} else if (params.isOverdose || params.isEpinephrineOverdose) {
-		autonomyLegalNote = " [Введено по неотложному клиническому решению врача, гемодинамика под контролем].";
-	}
-
-	return `Проведена местная ${tech.nameRu.toLowerCase()} анестезия${toothPart}. Препарат: ${params.drug.tradeNamesRu[0]} (${params.drug.activeSubstanceRu})${batchText}, объем ${params.injectedVolumeMl} мл (${params.carpulesCount} карп., ${params.injectedActiveMg} мг действующего вещества${epiText}).${vitalsText} Игла: ${needleNameRu}. ${aspText} Анестезия наступила через ${params.drug.onsetMinutes} мин, глубина достаточная, осложнений нет, соматических реакций нет.${nurseText}${autonomyLegalNote}`;
+	return `Проведена ${techNameRu} анестезия${toothPart} ${drugFormula} — ${params.injectedVolumeMl} мл (${carpulesText}). Осложнений нет.${overrideNote}`;
 }
 
 export interface AnesthesiaPatientMemoParams {
