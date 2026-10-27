@@ -5,6 +5,7 @@
 
 import React from "react";
 import { MdlpScanningModal } from "../../../../mdlp/MdlpScanningModal";
+import { MdlpDisposalQueueModal } from "../../../../inventory/mdlp/MdlpDisposalQueueModal";
 import { InventoryView } from "../../../../InventoryView";
 
 export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
@@ -12,6 +13,12 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
 	const search = new URLSearchParams(s);
+
+	const isMdlpDisposalStandalone =
+		search.get("mdlp_disposal") === "1" ||
+		search.get("disposal_queue") === "1" ||
+		h.includes("mdlp_disposal") ||
+		h.includes("disposal_queue");
 
 	const isInventoryStandalone =
 		search.get("inventory") === "1" ||
@@ -24,6 +31,22 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 		search.get("chestny_znak") === "1" ||
 		h.includes("mdlp") ||
 		h.includes("chestny_znak");
+
+	if (isMdlpDisposalStandalone) {
+		return (
+			<MdlpDisposalQueueModal
+				isOpen={true}
+				patientName="Иванов И.И."
+				doctorName="Д-р Смирнов"
+				onClose={() => {
+					const u = new URL(window.location.href);
+					u.searchParams.delete("mdlp_disposal");
+					u.searchParams.delete("disposal_queue");
+					window.history.replaceState({}, "", u.pathname + (u.search || ""));
+				}}
+			/>
+		);
+	}
 
 	if (isMdlpStandalone) {
 		return (

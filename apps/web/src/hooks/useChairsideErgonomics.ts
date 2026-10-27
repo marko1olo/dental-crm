@@ -114,6 +114,18 @@ export function useChairsideErgonomics(): UseChairsideErgonomicsReturn {
 
 		const handleScannedDetail = (detail: ScannedBarcodeDetail) => {
 			setLastScannedBarcode(detail);
+			// Mandate 8e, 8n, 8v: Chairside doctor isolation.
+			// DataMatrix medication codes must be 100% invisible to the doctor at chairside.
+			// They route automatically in the background to the senior nurse disposal queue without popups.
+			if (detail.type === "datamatrix") {
+				window.dispatchEvent(
+					new CustomEvent("dente:mdlp-background-disposal-queued", {
+						detail,
+						bubbles: true,
+					}),
+				);
+				return;
+			}
 			setIsBarcodeToastOpen(true);
 			if (barcodeToastTimerRef.current) clearTimeout(barcodeToastTimerRef.current);
 			barcodeToastTimerRef.current = setTimeout(() => {

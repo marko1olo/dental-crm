@@ -723,3 +723,10 @@ export function getDefaultBomLinksForService804n(
 	return [];
 }
 
+/**
+ * Mandate 8ap: Canonical clean domain naming aliases for technological maps (BOM).
+ */
+export const getDefaultBomLinksForService = getDefaultBomLinksForService804n;
+export const DEFAULT_SERVICE_CONSUMABLE_LINKS = DEFAULT_804N_CONSUMABLE_LINKS;
+
+

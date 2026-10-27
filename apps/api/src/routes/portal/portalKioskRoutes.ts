@@ -24,10 +24,10 @@ export function resetKioskRateLimitsForTesting(): void {
 }
 
 /**
- * 152-ФЗ Masking: В Kiosk-режиме для предотвращения утечки персональных данных
+ * Privacy Masking (Mandate 8ap): В Kiosk-режиме для защиты персональных данных
  * третьим лицам в холле клиники отображается только Имя и первая буква фамилии («Иван И.» / «Анна С.»).
  */
-export function maskPatientName152Fz(fullName: string | null | undefined): string {
+export function maskPatientName(fullName: string | null | undefined): string {
 	if (!fullName || typeof fullName !== "string") return "Пациент";
 	const parts = fullName.trim().split(/\s+/).filter(Boolean);
 	if (parts.length === 0) return "Пациент";
@@ -39,6 +39,9 @@ export function maskPatientName152Fz(fullName: string | null | undefined): strin
 	// В стандартных записях РФ порядок: Фамилия Имя [Отчество] -> "Имя Ф."
 	return `${p1} ${p0[0]?.toUpperCase()}.`;
 }
+
+/** @deprecated Mandate 8ap: Use maskPatientName */
+export const maskPatientName152Fz = maskPatientName;
 
 interface SelfCheckinBody {
 	organizationId?: unknown;
@@ -372,7 +375,7 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 						status: "arrived",
 						isEmergency,
 						chiefComplaint: isEmergency ? emergencyChiefComplaint : undefined,
-						patientMaskedName: maskPatientName152Fz(targetPatient?.fullName),
+						patientMaskedName: maskPatientName(targetPatient?.fullName),
 						cabinetName,
 						doctorName,
 						queueTicket,
@@ -503,7 +506,7 @@ export async function registerPortalKioskRoutes(server: FastifyInstance): Promis
 				? "Экстренный приём (вызов дежурного врача)"
 				: "Сегодня (приём по очереди)";
 
-		const maskedName = maskPatientName152Fz(targetPatient?.fullName);
+		const maskedName = maskPatientName(targetPatient?.fullName);
 
 		return {
 			success: true,

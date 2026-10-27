@@ -4,10 +4,10 @@
  */
 
 /**
- * Преобразует ФИО пациента в защищенный формат 152-ФЗ: "Иванов И. О." или "Иванов И."
+ * Преобразует ФИО пациента в защищенный формат: "Иванов И. О." или "Иванов И."
  * Никогда не выводит полные имена и отчества на публичные экраны.
  */
-export function maskPatientName152Fz(fullName: string | null | undefined): string {
+export function maskPatientName(fullName: string | null | undefined): string {
 	if (!fullName || typeof fullName !== "string") return "Пациент";
 	const clean = fullName.trim();
 	if (!clean) return "Пациент";
@@ -22,6 +22,9 @@ export function maskPatientName152Fz(fullName: string | null | undefined): strin
 
 	return `${surname} ${firstInitial}${patronymicInitial}`.trim();
 }
+
+/** @deprecated Mandate 8ap: Use maskPatientName */
+export const maskPatientName152Fz = maskPatientName;
 
 /**
  * Преобразует ФИО врача в компактный клинический формат: "Зубов А. В."

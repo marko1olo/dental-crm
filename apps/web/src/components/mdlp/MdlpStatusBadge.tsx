@@ -13,7 +13,7 @@ export const MdlpStatusBadge: React.FC<MdlpStatusBadgeProps> = ({ item }) => {
 		return (
 			<span className="mdlp-status-badge verified">
 				<ShieldCheck className="w-3 h-3" />
-				<span>Проверен</span>
+				<span>Готово к выбытию</span>
 			</span>
 		);
 	}
@@ -22,7 +22,7 @@ export const MdlpStatusBadge: React.FC<MdlpStatusBadgeProps> = ({ item }) => {
 		return (
 			<span className="mdlp-status-badge warning" title={statusReason}>
 				<AlertTriangle className="w-3 h-3" />
-				<span>Внимание</span>
+				<span>Требует внимания</span>
 			</span>
 		);
 	}

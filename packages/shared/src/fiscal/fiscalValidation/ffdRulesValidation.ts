@@ -338,3 +338,11 @@ export function validateRussianTaxpayerInn(inn: string | null | undefined): {
 		errorMessage: isValid ? undefined : "Неверная контрольная сумма 12-значного ИНН ФЛ/ИП",
 	};
 }
+
+/**
+ * Mandate 8ap: Canonical clean domain naming aliases for fiscal operations.
+ */
+export const computeFiscalSign = computeFpd54Fz;
+export const formatFiscalReceiptQrString = format54FzFtsQrString;
+export const parseAndValidateFiscalReceiptQrString = parseAndValidate54FzFtsQrString;
+

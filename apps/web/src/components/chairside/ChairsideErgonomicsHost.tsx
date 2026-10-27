@@ -118,8 +118,8 @@ export function ChairsideErgonomicsHost() {
 				</div>
 			)}
 
-			{/* 2. Hardware Barcode / DataMatrix Sniffer Toast */}
-			{isBarcodeToastOpen && lastScannedBarcode && (
+			{/* 2. Hardware Barcode Sniffer Toast (Non-medication barcodes only) */}
+			{isBarcodeToastOpen && lastScannedBarcode && lastScannedBarcode.type !== "datamatrix" && (
 				<div
 					className="chairside-toast-card"
 					data-testid="chairside-barcode-toast"
@@ -131,12 +131,7 @@ export function ChairsideErgonomicsHost() {
 					</div>
 					<div className="chairside-toast-content">
 						<h4 className="chairside-toast-title">
-							Отсканирован штрихкод (
-							{lastScannedBarcode.type === "datamatrix"
-								? "Маркированный препарат"
-								: lastScannedBarcode.type.toUpperCase()}
-							)
-							<span className="sr-only">Честный Знак / МДЛП</span>
+							Отсканирован штрихкод ({lastScannedBarcode.type.toUpperCase()})
 						</h4>
 						<p className="chairside-toast-subtitle font-mono" title={lastScannedBarcode.code}>
 							{lastScannedBarcode.code}

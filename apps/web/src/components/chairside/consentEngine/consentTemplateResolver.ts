@@ -244,9 +244,9 @@ export function generateIds1051nDocument(
 }
 
 /**
- * Генерация Согласия на обработку персональных данных (152-ФЗ)
+ * Генерация Согласия на обработку персональных данных (Мандат 8ap: Чистый доменный язык)
  */
-export function generatePdn152fzDocument(
+export function generatePersonalDataConsentDocument(
 	patient: ChairsidePatientProfile,
 	clinic: ChairsideClinicProfile,
 ): ChairsideDocument {
@@ -286,6 +286,9 @@ export function generatePdn152fzDocument(
 		],
 	};
 }
+
+/** @deprecated Mandate 8ap: Use generatePersonalDataConsentDocument */
+export const generatePdn152fzDocument = generatePersonalDataConsentDocument;
 
 /**
  * Генерация Документа «Согласованный план лечения и смета»
@@ -392,7 +395,7 @@ export function createChairsideConsentPackage(
 	const totalEstimateWords = kopecksToRussianWords(totalEstimateKopecks);
 
 	const doc1051n = generateIds1051nDocument(params.patient, params.doctor, clinic, clinicalContext);
-	const docPdn = generatePdn152fzDocument(params.patient, clinic);
+	const docPdn = generatePersonalDataConsentDocument(params.patient, clinic);
 	const docEstimate = generateEstimateDocument(
 		params.patient,
 		params.doctor,

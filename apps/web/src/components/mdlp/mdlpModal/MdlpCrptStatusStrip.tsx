@@ -23,11 +23,11 @@ export const MdlpCrptStatusStrip: React.FC<MdlpCrptStatusStripProps> = ({
 			<div className="mdlp-crpt-status-left">
 				<span className={`mdlp-status-dot ${crptStatus}`} />
 				<span className="mdlp-crpt-status-text">
-					{crptStatus === "online" && "Сервер маркировки: онлайн (связь в норме)"}
+					{crptStatus === "online" && "Синхронизировано (связь в норме)"}
 					{crptStatus === "degraded" &&
-						"Сервер маркировки замедлен (активен офлайн-буфер, приём не прерывается)"}
+						"Задержка связи (активен офлайн-буфер, приём не прерывается)"}
 					{crptStatus === "offline" &&
-						"Сервер маркировки недоступен (активен офлайн-буфер, приём продолжается)"}
+						"Ошибка связи (активен офлайн-буфер, приём продолжается)"}
 				</span>
 			</div>
 

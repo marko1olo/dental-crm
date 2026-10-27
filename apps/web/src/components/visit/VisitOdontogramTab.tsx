@@ -2,7 +2,6 @@ import React from "react";
 import { Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
-import { EgiszMonitor } from "../EgiszMonitor";
 import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { VisitDiarySection } from "./VisitDiarySection";
 import type { VisitOdontogramTabProps } from "./odontogramTab/visitOdontogramTabTypes";
@@ -80,21 +79,11 @@ export const VisitOdontogramTab: React.FC<VisitOdontogramTabProps> = React.memo(
 
 				<div className="w-full">
 					{diaryVisitId && diaryPatientId ? (
-						<>
-							<VisitDiarySection
-								key={diaryVisitId}
-								visitId={diaryVisitId}
-								patientId={diaryPatientId}
-							/>
-							{workspaceFlags.hasEngineeringStatus && (
-								<div style={{ marginTop: "16px" }}>
-									<EgiszMonitor
-										visitId={diaryVisitId}
-										patientId={diaryPatientId}
-									/>
-								</div>
-							)}
-						</>
+						<VisitDiarySection
+							key={diaryVisitId}
+							visitId={diaryVisitId}
+							patientId={diaryPatientId}
+						/>
 					) : (
 						<VisitDiaryInitializer
 							appointmentId={appointmentId}

@@ -40,7 +40,7 @@ export const MdlpDisposalSanpinBanner: React.FC<MdlpDisposalSanpinBannerProps> =
 				</div>
 				<div>
 					<div style={{ fontSize: 13, fontWeight: 700, color: "var(--ink)" }}>
-						СанПиН 3.3686-21: Пакетное списание пустых карпул смены (без поштучного сканирования)
+						Пакетное списание пустых карпул смены (без поштучного сканирования)
 					</div>
 					<div style={{ fontSize: 12, color: "var(--muted)" }}>
 						Врачу и администратору не нужно сканировать десятки ампул или ждать старшую медсестру. Быстрое списание типового набора смены единолично.
@@ -50,13 +50,13 @@ export const MdlpDisposalSanpinBanner: React.FC<MdlpDisposalSanpinBannerProps> =
 
 			<button
 				type="button"
-				className="mdlp-btn mdlp-btn-primary min-h-[44px]"
+				className="mdlp-btn mdlp-btn-secondary min-h-[44px]"
 				style={{ minHeight: "44px", height: 44, padding: "0 16px", fontSize: 13, fontWeight: 700 }}
 				onClick={onQuickNurseCarpulesDisposal}
 				data-testid="banner-quick-shift-carpules-btn"
-				title="Списать все пустые карпулы смены: 10 шт. Артикаин + 2 шт. Скандонест"
+				title="Списать пустые карпулы за смену"
 			>
-				<Sparkles size={16} className="text-amber-300" />
+				<Sparkles size={16} className="text-amber-500" />
 				Списать все пустые карпулы смены (10 шт. Артикаин + 2 шт. Скандонест)
 			</button>
 		</div>
