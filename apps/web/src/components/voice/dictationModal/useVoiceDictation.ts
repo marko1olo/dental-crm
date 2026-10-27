@@ -13,16 +13,15 @@ import {
 	parseClinicalVoiceSpeech,
 } from "../voiceClinicalCommands";
 import type { VoiceDictationAssistantModalProps } from "./voiceModalTypes";
+import { createAudioSubscriptionHandlers } from "./voiceDictationAudioHandlers";
 
 export function useVoiceDictation(props: VoiceDictationAssistantModalProps) {
 	const { isOpen, onClose, onApplyCommand, onApplyAllCommands, onApplySoapNote } = props;
 	const [isListening, setIsListening] = useState(false);
 	const [isProcessing, setIsProcessing] = useState(false);
 	const [transcript, setTranscript] = useState("");
-	const [interimText, setInterimText] = useState("");
-	const [finalText, setFinalText] = useState("");
-	const [manualInput, setManualInput] = useState("");
-	const [audioVolume, setAudioVolume] = useState(0);
+	const [interimText, setInterimText] = useState(""); const [finalText, setFinalText] = useState("");
+	const [manualInput, setManualInput] = useState(""); const [audioVolume, setAudioVolume] = useState(0);
 	const [errorMessage, setErrorMessage] = useState<string | null>(null);
 	const [parseResult, setParseResult] = useState<ClinicalVoiceParseResult | null>(null);
 	const [appliedCommandIds, setAppliedCommandIds] = useState<Set<string>>(new Set());
@@ -54,30 +53,17 @@ export function useVoiceDictation(props: VoiceDictationAssistantModalProps) {
 			cleanupAudio();
 			const client = new UnifiedAudioClient({ preferredMode: "gemini_live", specialty: "therapy", autoFallback: true });
 			clientRef.current = client;
-			client.subscribe({
-				onStateChange: (state) => {
-					setIsListening(state === "listening" || state === "connecting");
-					if (state === "idle" || state === "error") setIsProcessing(false);
-				},
-				onInterimText: (interim) => setInterimText(interim),
-				onFinalText: (_final, accumulated) => {
-					const text = (accumulated || _final).trim();
-					setFinalText(text); setTranscript(text); setInterimText("");
-					setParseResult(parseClinicalVoiceSpeech(text));
-				},
-				onTwoLayerTranscript: (data) => {
-					setInterimText(data.interim); setFinalText(data.finalized);
-					const full = (data.fullWithInterim || data.finalized).trim();
-					setTranscript(full); setParseResult(parseClinicalVoiceSpeech(full));
-				},
-				onRmsUpdate: (rms) => setAudioVolume(Math.min(100, Math.round(rms * 250))),
-				onError: (err) => { setErrorMessage(typeof err === "string" ? err : err.message); cleanupAudio(); },
-			});
+			client.subscribe(createAudioSubscriptionHandlers({
+				setIsListening, setIsProcessing, setInterimText, setFinalText, setTranscript,
+				setParseResult, setAudioVolume, setErrorMessage, cleanupAudio,
+			}));
 			await client.start();
-			setIsListening(true); setIsProcessing(false);
+			setIsListening(true);
+			setIsProcessing(false);
 		} catch (err: unknown) {
 			setErrorMessage(voiceDictationErrorText(err));
-			cleanupAudio(); setIsProcessing(false);
+			cleanupAudio();
+			setIsProcessing(false);
 		}
 	};
 
@@ -86,11 +72,14 @@ export function useVoiceDictation(props: VoiceDictationAssistantModalProps) {
 	const handleApplyManualText = (textToApply: string) => {
 		const trimmed = textToApply.trim();
 		if (!trimmed) { showToast("Введите текст клинической команды для распознавания", "warning"); return; }
-		setTranscript(trimmed); setParseResult(parseClinicalVoiceSpeech(trimmed)); setManualInput("");
+		setTranscript(trimmed);
+		setParseResult(parseClinicalVoiceSpeech(trimmed));
+		setManualInput("");
 	};
 
 	const handleApplySingleCommand = (cmd: ParsedClinicalVoiceCommand) => {
-		onApplyCommand?.(cmd); setAppliedCommandIds((prev) => new Set(prev).add(cmd.id));
+		onApplyCommand?.(cmd);
+		setAppliedCommandIds((prev) => new Set(prev).add(cmd.id));
 	};
 
 	const handleDeleteCommand = (cmdId: string) => {

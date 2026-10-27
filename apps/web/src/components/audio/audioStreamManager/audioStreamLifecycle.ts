@@ -106,15 +106,8 @@ export function disposeAudioStreamNodes(nodes: {
 		disconnectNode(nodes.scriptProcessorNode, "scriptProcessorNode");
 	}
 	disconnectNode(nodes.muteGainNode, "muteGainNode");
-	disconnectNode(nodes.highpassFilter, "highpassFilter");
-	disconnectNode(nodes.lowpassFilter, "lowpassFilter");
-	disconnectNode(nodes.notchFilter, "notchFilter");
-	disconnectNode(nodes.notch2Filter, "notch2Filter");
-	disconnectNode(nodes.compressorNode, "compressorNode");
-	disconnectNode(nodes.limiterNode, "limiterNode");
-	disconnectNode(nodes.gainNode, "gainNode");
-	disconnectNode(nodes.analyserNode, "analyserNode");
-	disconnectNode(nodes.sourceNode, "sourceNode");
+	[nodes.highpassFilter, nodes.lowpassFilter, nodes.notchFilter, nodes.notch2Filter].forEach((n) => disconnectNode(n, "filter"));
+	[nodes.compressorNode, nodes.limiterNode, nodes.gainNode, nodes.analyserNode, nodes.sourceNode].forEach((n) => disconnectNode(n, "node"));
 	if (nodes.mediaStream) stopMediaStreamTracks(nodes.mediaStream);
 	if (nodes.audioContext) closeAudioContext(nodes.audioContext);
 }
