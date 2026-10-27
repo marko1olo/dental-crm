@@ -1,7 +1,6 @@
 import React from "react";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { DentalSyringe } from "../../icons/DentalIcons";
-import { calculateAnesthesiaSafety, type AnesthesiaCalculationResult } from "../../anesthesia/anesthesiaEngine";
 import { showToast } from "../../GlobalToast";
 import { ToothSomaticStatusBanner } from "./ToothSomaticStatusBanner";
 import {
@@ -16,7 +15,7 @@ interface ToothDrawerAnesthesiaAccordionProps {
 	activeSection: WarmAccordionSection;
 	toggleSection: (section: WarmAccordionSection) => void;
 	onInsertToProtocol?: ((text: string) => void) | undefined;
-	onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
+	onApplyAnesthesia?: ToothContextDrawerProps["onApplyAnesthesia"];
 }
 
 export const ToothDrawerAnesthesiaAccordion: React.FC<ToothDrawerAnesthesiaAccordionProps> = ({
@@ -32,24 +31,7 @@ export const ToothDrawerAnesthesiaAccordion: React.FC<ToothDrawerAnesthesiaAccor
 	const handleApplyPreset = (preset: (typeof TOOTH_EXPRESS_ANESTHESIA_OPTIONS)[number]) => {
 		const diaryText = preset.buildDiaryText(toothNumber);
 		onInsertToProtocol?.(diaryText);
-		if (onApplyAnesthesia) {
-			const calc = calculateAnesthesiaSafety({
-				drugId: preset.id === "scandonest_cardio" ? "mepivacaine_plain" : "articaine_1_100k",
-				carpulesCount: 1,
-				patientWeightKg: patient?.weightKg ?? 70,
-				patientAgeYears: patient?.ageYears ?? 35,
-				asaStatus: Boolean(patient?.hasCardioRisk) ? "asa_3" : "asa_1",
-				hasCardiovascularRisk: Boolean(patient?.hasCardioRisk),
-				hasSulfiteAllergy: Boolean(patient?.hasSulfiteAllergy),
-				isPregnantOrLactating: Boolean(patient?.isPregnant),
-				hasBronchialAsthma: Boolean(patient?.hasAsthma),
-				techniqueId: "infiltration",
-				needleType: "g30_short_21mm",
-				aspirationNegativeConfirmed: true,
-				targetToothNumberFdi: toothNumber,
-			});
-			onApplyAnesthesia(diaryText, calc);
-		}
+		onApplyAnesthesia?.(diaryText);
 		showToast(`Анестезия (${preset.title}) внесена в протокол`, "success", 2500);
 	};
 

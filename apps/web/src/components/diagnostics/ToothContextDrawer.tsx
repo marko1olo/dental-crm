@@ -43,6 +43,10 @@ export const ToothContextDrawer: React.FC<ToothContextDrawerProps> = (props) => 
 				data-testid="tooth-context-drawer"
 				data-modal-alias="tooth-card-modal"
 			>
+				<div className="dente-drawer-drag-handle-bar" aria-hidden="true">
+					<div className="dente-drawer-drag-handle" />
+				</div>
+
 				<ToothDrawerHeader
 					toothNumber={toothNumber}
 					currentState={state.currentState}

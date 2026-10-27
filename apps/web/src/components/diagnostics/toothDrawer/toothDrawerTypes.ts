@@ -55,7 +55,7 @@ export interface ToothContextDrawerProps {
 	readonly doctorName?: string | undefined;
 	readonly onUpdateTooth?: ((num: number, updates: Partial<ToothData>) => void) | undefined;
 	readonly onUpdateToothStatus?: ((toothNumber: number, state: string) => void) | undefined;
-	readonly onApplyAnesthesia?: ((diaryText: string, result: AnesthesiaCalculationResult) => void) | undefined;
+	readonly onApplyAnesthesia?: ((diaryText: string, result?: AnesthesiaCalculationResult) => void) | undefined;
 	readonly onInsertToProtocol?: ((text: string) => void) | undefined;
 	readonly onOpenFullRadiology?: ((toothNumber: number) => void) | undefined;
 	readonly onOpenFamilyBilling?: (() => void) | undefined;

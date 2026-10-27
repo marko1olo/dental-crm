@@ -14,15 +14,8 @@ import { Tooth41Roots } from "./Tooth41Roots";
 import { TOOTH41_GEOMETRY } from "./tooth41Geometry";
 
 export const Tooth41Container: React.FC<Tooth46ContainerProps> = ({
-	isDark = false,
-	zoom = 1,
-	layers = DEFAULT_TOOTH46_LAYERS,
-	presetId,
-	className,
-	style,
-	badgeRadius = 18.5,
-	badgeCy,
-	showBadge = true,
+	isDark = false, zoom = 1, layers = DEFAULT_TOOTH46_LAYERS,
+	presetId, className, style, badgeRadius = 18.5, badgeCy, showBadge = true,
 }) => {
 	const a = { ...DEFAULT_TOOTH46_LAYERS, ...layers };
 	if (showBadge === false) a.showBadge = false;
@@ -93,9 +86,11 @@ export const Tooth41Container: React.FC<Tooth46ContainerProps> = ({
 				/>
 			)}
 			{a.inlayOnlay && !a.zirconiaCrown && <Tooth46InlayOnlayOverlay type={a.inlayOnlay} isDark={isDark} />}
-			{(a.composite || a.zirconiaCrown) && (
+			{(a.composite || a.fiberPost || a.coreBuildUp || a.postCore || a.zirconiaCrown) && (
 				<Tooth41RestorationOverlay
 					showComposite={Boolean(a.composite)}
+					showPost={Boolean(a.postCore || a.fiberPost)}
+					showCore={Boolean(a.postCore || a.coreBuildUp)}
 					showZirconiaCrown={Boolean(a.zirconiaCrown)}
 					crownMaterial={a.crownMaterial ?? "zirconia"}
 					compositeCondition={a.compositeCondition ?? "adequate"} crownCondition={a.crownCondition ?? "adequate"}
@@ -106,7 +101,7 @@ export const Tooth41Container: React.FC<Tooth46ContainerProps> = ({
 				<Tooth46SurgeryOverlay showImplant implantStage="crown_screw" renderScrewAccessOnly isDark={isDark} />
 			)}
 			<Tooth46PathologyOverlay
-				showAbfraction={Boolean(a.abfraction)} showPostCore={Boolean(a.postCore)} postCoreType={a.postCoreType ?? "fiber"}
+				showAbfraction={Boolean(a.abfraction)}
 				showCalculus={Boolean(a.calculus)} showCrack={Boolean(a.crack)} resorcinolFormalin={Boolean(a.resorcinolFormalin)}
 				calciumHydroxide={Boolean(a.calciumHydroxide)} attrition={Boolean(a.attrition)}
 				rootPerforation={Boolean(a.rootPerforation)} canalLedge={Boolean(a.canalLedge)} rootFracture={Boolean(a.rootFracture)}

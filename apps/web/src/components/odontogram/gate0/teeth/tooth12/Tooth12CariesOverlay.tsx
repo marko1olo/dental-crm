@@ -2,7 +2,7 @@ import React from "react";
 import { TOOTH12_CARIES_GEOMETRY } from "./tooth12CariesGeometry";
 
 export interface Tooth12CariesOverlayProps {
-	cariesType?: "class1" | "class2" | "class5" | undefined;
+	cariesType?: "class1" | "class2" | "class3" | "class5" | undefined;
 	cariesDepth?: "superficialis" | "media" | "profunda" | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
@@ -47,7 +47,7 @@ export const Tooth12CariesOverlay: React.FC<Tooth12CariesOverlayProps> = ({
 			)}
 
 			{/* Class II/III: Proximal Contact Caries (Mesial & Distal) */}
-			{cariesType === "class2" && (
+			{(cariesType === "class2" || cariesType === "class3") && (
 				<g id="tooth12-caries-class2">
 					<path
 						d={g.class2.mesial.halo}

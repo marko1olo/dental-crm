@@ -19,6 +19,7 @@ import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
 import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
+import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderTherapyLaunchers(): React.ReactElement | null {
@@ -87,6 +88,17 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 				isOpen={true}
 				onClose={() => clearUrlTokens(["voice-dictation", "voice-assistant", "voice", "smart-mic"])}
 				activeToothNumber={46}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["tooth-drawer", "tooth-card", "chairside-tooth"])) {
+		return (
+			<ToothContextDrawer
+				isOpen={true}
+				onClose={() => clearUrlTokens(["tooth-drawer", "tooth-card", "chairside-tooth"])}
+				toothNumber={16}
+				toothData={{ toothNumber: 16, state: "Healthy", surfaces: ["O", "M"], mobility: 0 }}
 			/>
 		);
 	}

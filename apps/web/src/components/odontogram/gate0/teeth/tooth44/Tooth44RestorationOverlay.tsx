@@ -6,6 +6,8 @@ import { TOOTH44_GEOMETRY } from "./tooth44Geometry";
 export interface Tooth44RestorationOverlayProps {
 	showComposite?: boolean | undefined;
 	showZirconiaCrown?: boolean | undefined;
+	showPost?: boolean | undefined;
+	showCore?: boolean | undefined;
 	crownMaterial?: CrownMaterial | undefined;
 	compositeCondition?: RestorationCondition | undefined;
 	crownCondition?: RestorationCondition | undefined;
@@ -20,6 +22,8 @@ export const Tooth44RestorationOverlay: React.FC<
 > = ({
 	showComposite = false,
 	showZirconiaCrown = false,
+	showPost = false,
+	showCore = false,
 	crownMaterial = "zirconia",
 	compositeCondition = "adequate",
 	crownCondition = "adequate",
@@ -35,6 +39,41 @@ export const Tooth44RestorationOverlay: React.FC<
 
 	return (
 		<g id="tooth44-restorations" className={className}>
+			{/* Specific Post & Core Assembly */}
+			{(showPost || showCore) && (
+				<g id="tooth44-post-core">
+					<path
+						d={geo.cervicalShoulderPath}
+						fill="url(#dente-root-dentin)"
+						stroke={isDark ? "rgba(203, 213, 225, 0.60)" : "rgba(71, 85, 105, 0.45)"}
+						strokeWidth="0.7"
+						strokeLinejoin="round"
+						vectorEffect="non-scaling-stroke"
+					/>
+					{showPost && (
+						<path
+							d={geo.postShaft}
+							fill="url(#dente-fiber-post)"
+							stroke="rgba(148, 163, 184, 0.85)"
+							strokeWidth="0.6"
+							strokeLinejoin="round"
+							vectorEffect="non-scaling-stroke"
+						/>
+					)}
+					{showCore && (
+						<path
+							d={geo.coreStump}
+							fill="url(#dente-composite-core)"
+							stroke="rgba(2, 132, 199, 0.90)"
+							strokeWidth="0.7"
+							strokeDasharray="2.5 1.5"
+							strokeLinejoin="round"
+							vectorEffect="non-scaling-stroke"
+						/>
+					)}
+				</g>
+			)}
+
 			{/* Specific First Premolar Orthopedic Crown */}
 			{showZirconiaCrown && (
 				<ToothCrownOverlay

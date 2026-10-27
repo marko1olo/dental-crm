@@ -22,9 +22,22 @@ export const ToothDrawerFooter: React.FC<ToothDrawerFooterProps> = ({
 					Зуб #{toothNumber} • {stateLabel}
 				</span>
 			</div>
-			<div className="footer-actions">
-				<button type="button" onClick={onClose} className="dente-drawer-btn-secondary">
+			<div className="footer-actions flex items-center gap-2">
+				<button
+					type="button"
+					onClick={onClose}
+					className="dente-drawer-btn-secondary"
+					data-testid="tooth-drawer-cancel-btn"
+				>
 					Закрыть
+				</button>
+				<button
+					type="button"
+					onClick={onClose}
+					className="dente-drawer-btn-primary"
+					data-testid="tooth-drawer-primary-cta-btn"
+				>
+					Готово
 				</button>
 			</div>
 		</footer>

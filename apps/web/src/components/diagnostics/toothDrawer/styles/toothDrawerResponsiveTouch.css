@@ -30,6 +30,9 @@
 	.dente-resorption-btn,
 	.dente-primary-action-btn,
 	.dente-secondary-btn,
+	.dente-state-quick-chip,
+	.dente-recall-quick-btn,
+	.dente-drawer-btn-primary,
 	.dente-drawer-btn-secondary,
 	.dente-drawer-close-btn {
 		min-height: 44px;

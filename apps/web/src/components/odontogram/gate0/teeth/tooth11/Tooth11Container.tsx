@@ -84,11 +84,11 @@ export const Tooth11Container: React.FC<Tooth11ContainerProps> = ({
 					isDark={isDark}
 				/>
 			)}
-			{(a.composite || a.fiberPost || a.coreBuildUp || a.zirconiaCrown) && (
+			{(a.composite || a.fiberPost || a.coreBuildUp || a.postCore || a.zirconiaCrown) && (
 				<Tooth11RestorationOverlay
 					showComposite={Boolean(a.composite)}
-					showPost={Boolean(a.fiberPost)}
-					showCore={Boolean(a.coreBuildUp)}
+					showPost={Boolean(a.postCore || a.fiberPost)}
+					showCore={Boolean(a.postCore || a.coreBuildUp)}
 					showCrown={Boolean(a.zirconiaCrown)}
 					isDark={isDark}
 				/>
