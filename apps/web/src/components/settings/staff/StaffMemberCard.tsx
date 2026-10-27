@@ -1,8 +1,9 @@
-import React, { useState } from "react";
-import { KeyRound, MoreVertical, Phone, ShieldCheck, UserPlus } from "lucide-react";
+import type React from "react";
+import { useState } from "react";
 import { staffRoleTitle } from "../settingsInviteRoles";
-import { StaffMemberCredentialsForm } from "./StaffMemberCredentialsForm";
 import type { StaffCredentialKind } from "../staffMutationRequest";
+import { StaffMemberCardActions } from "./StaffMemberCardActions";
+import { StaffMemberCredentialsForm } from "./StaffMemberCredentialsForm";
 
 interface StaffMemberCardProps {
 	// biome-ignore lint/suspicious/noExplicitAny: staff row
@@ -22,12 +23,10 @@ export const StaffMemberCard: React.FC<StaffMemberCardProps> = ({
 }) => {
 	const [editMode, setEditMode] = useState<"phone" | "pin" | "password" | null>(null);
 	const [draft, setDraft] = useState("");
-	const [menuOpen, setMenuOpen] = useState(false);
 
 	const handleStartEdit = (mode: "phone" | "pin" | "password", initial = "") => {
 		setEditMode(mode);
 		setDraft(initial);
-		setMenuOpen(false);
 	};
 
 	const handleSubmit = async (e: React.FormEvent) => {
@@ -77,44 +76,15 @@ export const StaffMemberCard: React.FC<StaffMemberCardProps> = ({
 						fullName={member.fullName}
 					/>
 				) : (
-					<div className="flex items-center gap-2">
-						<button
-							type="button"
-							className="flex-1 h-8 px-2.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft)] text-[var(--teal)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer"
-							onClick={() => onOpenProfile(member)}
-						>
-							<UserPlus size={14} /> Карточка
-						</button>
-						<button
-							type="button"
-							className="flex-1 h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-medium flex items-center justify-center gap-1.5 cursor-pointer"
-							onClick={() => handleStartEdit("phone", member.phone || "")}
-						>
-							<Phone size={14} /> Телефон
-						</button>
-						<div className="relative">
-							<button
-								type="button"
-								className="w-8 h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] flex items-center justify-center cursor-pointer"
-								onClick={() => setMenuOpen(!menuOpen)}
-								aria-label="Меню доступов"
-							>
-								<MoreVertical size={14} />
-							</button>
-							{menuOpen && (
-								<div className="absolute right-0 bottom-full mb-1 w-32 py-1 bg-[var(--paper-card)] rounded-xl shadow-lg border border-[var(--line)] z-10 flex flex-col text-xs">
-									<button type="button" className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] cursor-pointer" onClick={() => handleStartEdit("pin")}>
-										<KeyRound size={13} /> <span>PIN-код</span>
-									</button>
-									<button type="button" className="px-3 py-1.5 text-left flex items-center gap-2 hover:bg-[var(--paper-soft)] cursor-pointer" onClick={() => handleStartEdit("password")}>
-										<ShieldCheck size={13} /> <span>Пароль</span>
-									</button>
-								</div>
-							)}
-						</div>
-					</div>
+					<StaffMemberCardActions
+						member={member}
+						onOpenProfile={onOpenProfile}
+						onStartEdit={handleStartEdit}
+					/>
 				)}
 			</div>
 		</div>
 	);
 };
+
+export default StaffMemberCard;
