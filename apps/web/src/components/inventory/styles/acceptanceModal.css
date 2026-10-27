@@ -17,6 +17,14 @@
 	box-sizing: border-box;
 }
 
+.acceptance-drag-handle {
+	display: none;
+}
+
+.acceptance-mobile-cards-wrap {
+	display: none;
+}
+
 .acceptance-modal-window {
 	width: 100%;
 	max-width: 1280px;

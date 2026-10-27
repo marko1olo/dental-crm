@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { showToast } from "../../GlobalToast.js";
 import {
@@ -12,33 +12,41 @@ import {
 	exportWaybillCsv,
 	printWaybillTorg12,
 } from "./useWarehouseWaybillsPrintExport.js";
-import { reconcileOverdraftForWaybill } from "./waybillPostingUtils.js";
+import {
+	fetchWaybillsFromApi,
+	postWaybillToApi,
+	reconcileOverdraftForWaybill,
+} from "./waybillPostingUtils.js";
 
 export function useWarehouseWaybills({
-	inventoryItems = [],
-	onWaybillPosted,
-	onRefreshStock,
+	organizationId, inventoryItems = [], onWaybillPosted, onRefreshStock,
 }: WarehouseWaybillsTabProps) {
-	const [waybillsList, setWaybillsList] = useState<AcceptanceWaybillDocument[]>(
-		() => (isDemoShowcaseMode() ? [createSampleDentalWaybill()] : []),
+	const [waybillsList, setWaybillsList] = useState<AcceptanceWaybillDocument[]>(() =>
+		isDemoShowcaseMode() ? [createSampleDentalWaybill()] : [],
 	);
-	const [selectedWaybill, setSelectedWaybill] =
-		useState<AcceptanceWaybillDocument | null>(() =>
-			isDemoShowcaseMode() ? createSampleDentalWaybill() : null,
-		);
+	const [selectedWaybill, setSelectedWaybill] = useState<AcceptanceWaybillDocument | null>(() =>
+		isDemoShowcaseMode() ? createSampleDentalWaybill() : null,
+	);
 	const [isCreatingNew, setIsCreatingNew] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 
+	useEffect(() => {
+		if (!organizationId) return;
+		let mounted = true;
+		fetchWaybillsFromApi(organizationId).then((wbList) => {
+			if (mounted && wbList.length > 0) {
+				setWaybillsList(wbList);
+				setSelectedWaybill(wbList[0] ?? null);
+			}
+		});
+		return () => { mounted = false; };
+	}, [organizationId]);
+
 	const draftState = useDraftWaybillState();
-	const expressState = useExpressWaybillState(
-		inventoryItems,
-		onWaybillPosted,
-		onRefreshStock,
-		(doc) => {
-			setWaybillsList((prev) => [doc, ...prev]);
-			setSelectedWaybill(doc);
-		},
-	);
+	const expressState = useExpressWaybillState(inventoryItems, onWaybillPosted, onRefreshStock, (doc) => {
+		setWaybillsList((prev) => [doc, ...prev]);
+		setSelectedWaybill(doc);
+	});
 
 	const inFlightRef = useRef(false);
 
@@ -50,6 +58,7 @@ export function useWarehouseWaybills({
 		}
 		inFlightRef.current = true;
 		try {
+			await postWaybillToApi(waybillToPost, organizationId);
 			const postedDoc: AcceptanceWaybillDocument = {
 				...waybillToPost,
 				status: "posted",
@@ -63,7 +72,7 @@ export function useWarehouseWaybills({
 			if (onRefreshStock) onRefreshStock();
 			showToast(
 				resolvedCount > 0
-					? `Накладная №${postedDoc.waybillNumber} успешно проведена. Погашен овердрафт: ${resolvedCount} поз.`
+					? `Накладная №${postedDoc.waybillNumber} проведена. Погашен дефицит: ${resolvedCount} поз.`
 					: `Накладная №${postedDoc.waybillNumber} проведена. Склад пополнен.`,
 				"success",
 			);
@@ -88,26 +97,16 @@ export function useWarehouseWaybills({
 	}, [waybillsList, searchQuery]);
 
 	return {
-		waybillsList,
-		setWaybillsList,
-		selectedWaybill,
-		setSelectedWaybill,
-		isCreatingNew,
-		setIsCreatingNew,
-		searchQuery,
-		setSearchQuery,
-		draftWaybill: draftState.draftWaybill,
-		setDraftWaybill: draftState.setDraftWaybill,
+		waybillsList, setWaybillsList, selectedWaybill, setSelectedWaybill,
+		isCreatingNew, setIsCreatingNew, searchQuery, setSearchQuery,
+		draftWaybill: draftState.draftWaybill, setDraftWaybill: draftState.setDraftWaybill,
 		handleAddTemplateItem: draftState.handleAddTemplateItem,
 		handleRemoveDraftItem: draftState.handleRemoveDraftItem,
 		handleChangeSupplier: draftState.handleChangeSupplier,
 		handleChangeWaybillNumber: draftState.handleChangeWaybillNumber,
 		handleChangeReceiptDate: draftState.handleChangeReceiptDate,
-		...expressState,
-		handlePostWaybill,
-		handlePrintTorg12: printWaybillTorg12,
-		handleExportCsv: exportWaybillCsv,
-		handleStartCreateNew,
-		filteredWaybills,
+		...expressState, handlePostWaybill,
+		handlePrintTorg12: printWaybillTorg12, handleExportCsv: exportWaybillCsv,
+		handleStartCreateNew, filteredWaybills,
 	};
 }

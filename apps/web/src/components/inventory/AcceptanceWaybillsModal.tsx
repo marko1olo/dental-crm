@@ -54,6 +54,7 @@ export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (
 	const modalContent = (
 		<div className="acceptance-modal-overlay" role="dialog" aria-modal="true" data-testid="acceptance-waybills-modal">
 			<div className="acceptance-modal-window">
+				<div className="acceptance-drag-handle" aria-hidden="true" />
 				<AcceptanceWaybillsHeader
 					waybill={state.waybill}
 					setWaybill={state.setWaybill}

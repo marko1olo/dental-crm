@@ -10,6 +10,7 @@ import {
 	exportWaybillCsv,
 	printTorg12Document,
 } from "./acceptanceWaybillsPrintExport.js";
+import { sendWaybillToApi } from "./waybillApiSender.js";
 
 export function useAcceptanceWaybillsApiPoster({
 	waybill, organizationId, inventoryItems, getHeaders, onWaybillPosted, onClose, setIsPosting,
@@ -19,7 +20,7 @@ export function useAcceptanceWaybillsApiPoster({
 	inventoryItems: readonly {
 		readonly id: string;
 		readonly name: string;
-		readonly stockQuantity: number;
+		readonly stockQuantity: number | string;
 	}[];
 	getHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
 	onWaybillPosted?: ((waybill: AcceptanceWaybillDocument) => void | Promise<void>) | undefined;
@@ -43,28 +44,12 @@ export function useAcceptanceWaybillsApiPoster({
 		setIsPosting(true);
 
 		try {
+			const headers = getHeaders
+				? getHeaders({ "Content-Type": "application/json" })
+				: getDenteAuthHeaders({ "Content-Type": "application/json" });
+
 			if (organizationId) {
-				const headers = getHeaders
-					? getHeaders({ "Content-Type": "application/json" })
-					: getDenteAuthHeaders({ "Content-Type": "application/json" });
-				for (const item of waybill.items) {
-					const matchingItem = inventoryItems.find(
-						(inv) => inv.name.toLowerCase().trim() === item.name.toLowerCase().trim(),
-					);
-					if (matchingItem) {
-						await fetch(`/api/inventory/${organizationId}/${matchingItem.id}/stock`, {
-							method: "PATCH",
-							headers,
-							body: JSON.stringify({
-								adjustment: item.quantity,
-								reason: `Оприходование накладной №${waybill.waybillNumber} (${waybill.supplier.name})`,
-								lotNumber: item.batchNumber,
-								expirationDate: item.expirationDate,
-								allowOverdraft: true,
-							}),
-						});
-					}
-				}
+				await sendWaybillToApi(waybill, organizationId, inventoryItems, headers);
 			}
 
 			const postedDoc: AcceptanceWaybillDocument = {
@@ -74,9 +59,7 @@ export function useAcceptanceWaybillsApiPoster({
 				postedBy: "Авторизованный пользователь",
 			};
 
-			if (onWaybillPosted) {
-				await onWaybillPosted(postedDoc);
-			}
+			if (onWaybillPosted) await onWaybillPosted(postedDoc);
 
 			showToast(
 				`Накладная №${waybill.waybillNumber} проведена! Оприходовано ${waybill.totals.totalPositions} позиций (${formatRubCurrency(waybill.totals.totalCostKopecks)})`,

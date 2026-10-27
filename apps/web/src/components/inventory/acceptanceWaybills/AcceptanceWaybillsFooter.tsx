@@ -75,11 +75,12 @@ export const AcceptanceWaybillsFooter: React.FC<AcceptanceWaybillsFooterProps> =
 					type="button"
 					className="acceptance-btn-primary"
 					onClick={onPostWaybill}
-					disabled={isPosting || waybill.items.length === 0}
+					disabled={isPosting}
 					data-testid="btn-post-acceptance-waybill"
+					aria-label="Оприходовать накладную"
 				>
 					<CheckCircle2 size={16} />
-					<span>{isPosting ? "Проведение..." : "Провести накладную"}</span>
+					<span>{isPosting ? "Оприходование..." : "✓ Оприходовать накладную"}</span>
 				</button>
 			</div>
 		</footer>

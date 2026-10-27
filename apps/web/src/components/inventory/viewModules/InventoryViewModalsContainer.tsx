@@ -2,7 +2,7 @@ import React from "react";
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryStockAdjustModal } from "../InventoryStockAdjustModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
-import { InventoryInboundInvoiceModal } from "../../InventoryInboundInvoiceModal.js";
+import { AcceptanceWaybillsModal } from "../AcceptanceWaybillsModal.js";
 import { WarehouseBatchWriteoffModal } from "../WarehouseBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 import { InventoryExternalModals } from "../InventoryExternalModals.js";
@@ -49,10 +49,15 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 			)}
 
 			{isWaybillOpen && (
-				<InventoryInboundInvoiceModal
-					isOpen={isWaybillOpen} onClose={handleCloseWaybill}
-					organizationId={organizationId} inventoryItems={items}
-					onInvoicePosted={fetchItems} getHeaders={getHeaders}
+				<AcceptanceWaybillsModal
+					isOpen={isWaybillOpen}
+					onClose={handleCloseWaybill}
+					organizationId={organizationId}
+					inventoryItems={items}
+					onWaybillPosted={async () => {
+						if (fetchItems) await fetchItems();
+					}}
+					getHeaders={getHeaders}
 				/>
 			)}
 

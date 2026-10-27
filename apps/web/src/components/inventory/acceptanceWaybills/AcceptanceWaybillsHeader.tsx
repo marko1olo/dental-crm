@@ -25,7 +25,7 @@ export const AcceptanceWaybillsHeader: React.FC<AcceptanceWaybillsHeaderProps> =
 			<header className="acceptance-modal-header">
 				<div className="acceptance-modal-title">
 					<FileDown size={20} style={{ color: "var(--teal, #0d9488)" }} />
-					<span>Приходная накладная поставщика</span>
+					<span>Приходная накладная поставщика (ТОРГ-12)</span>
 					<span
 						style={{
 							fontSize: 11,

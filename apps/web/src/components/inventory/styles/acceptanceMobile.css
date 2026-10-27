@@ -4,7 +4,7 @@
  * ============================================================================
  */
 
-@media (max-width: 640px) {
+@media (max-width: 768px) {
 	.acceptance-modal-overlay {
 		padding: 0;
 		align-items: flex-end;
@@ -12,15 +12,26 @@
 
 	.acceptance-modal-window {
 		width: 100%;
-		max-height: 92vh;
-		border-radius: 20px 20px 0 0;
+		max-height: 94vh;
+		border-radius: 24px 24px 0 0;
 		border-bottom: none;
 	}
 
+	.acceptance-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--line, rgba(0, 0, 0, 0.2));
+		margin: 8px auto 4px auto;
+		flex-shrink: 0;
+	}
+
 	.acceptance-modal-header {
-		padding: 10px 14px;
+		padding: 8px 14px;
 		flex-wrap: wrap;
 		gap: 8px;
+		min-height: 48px;
 	}
 
 	.acceptance-modal-title {
@@ -35,6 +46,112 @@
 
 	.acceptance-templates-bar {
 		padding: 8px 14px;
+		overflow-x: auto;
+		scrollbar-width: none;
+	}
+
+	.acceptance-desktop-table-wrap {
+		display: none;
+	}
+
+	.acceptance-mobile-cards-wrap {
+		display: block;
+		padding: 10px 14px;
+		overflow-y: auto;
+		max-height: calc(94vh - 280px);
+	}
+
+	.acceptance-mobile-cards-list {
+		display: flex;
+		flex-direction: column;
+		gap: 10px;
+	}
+
+	.acceptance-mobile-card {
+		padding: 12px;
+		background: var(--paper-soft, rgba(0, 0, 0, 0.03));
+		border: 1px solid var(--line, rgba(0, 0, 0, 0.1));
+		border-radius: 16px;
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.acceptance-card-header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 8px;
+	}
+
+	.acceptance-card-num {
+		font-size: 12px;
+		font-family: monospace;
+		font-weight: 700;
+		color: var(--muted);
+	}
+
+	.acceptance-card-title {
+		font-size: 13px;
+		font-weight: 600;
+		color: var(--ink);
+		flex: 1;
+	}
+
+	.acceptance-card-remove {
+		min-width: 44px;
+		min-height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		background: transparent;
+		border: none;
+		color: var(--muted);
+		border-radius: 10px;
+		cursor: pointer;
+	}
+
+	.acceptance-card-overdraft-badge {
+		font-size: 11px;
+		font-weight: 600;
+		color: #eab308;
+		background: rgba(234, 179, 8, 0.1);
+		padding: 4px 8px;
+		border-radius: 6px;
+	}
+
+	.acceptance-card-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+
+	.acceptance-card-field {
+		display: flex;
+		flex-direction: column;
+		gap: 3px;
+	}
+
+	.acceptance-card-field label {
+		font-size: 10px;
+		font-weight: 600;
+		text-transform: uppercase;
+		color: var(--muted);
+	}
+
+	.acceptance-card-footer {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding-top: 4px;
+		border-top: 1px dashed var(--line);
+	}
+
+	.acceptance-card-sum {
+		font-size: 14px;
+		font-weight: 700;
+		color: var(--teal, #0d9488);
+		font-family: monospace;
 	}
 
 	.acceptance-modal-footer {
@@ -54,6 +171,7 @@
 
 	.acceptance-btn-primary {
 		width: 100%;
+		min-height: 44px;
 		height: 44px;
 		justify-content: center;
 	}
