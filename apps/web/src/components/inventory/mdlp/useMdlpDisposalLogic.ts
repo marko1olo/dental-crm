@@ -85,7 +85,7 @@ export function useMdlpDisposalLogic(props: MdlpDisposalQueueModalProps) {
 	const handleConfirmDisposal = async () => {
 		if (items.length === 0) {
 			handleQuickNurseCarpulesDisposal();
-			showToast("Сформирован и списан пакет карпул за смену (1 клик, мягкий овердрафт)", "success");
+			showToast("Сформирован и списан пакет карпул за смену (мягкий овердрафт)", "success");
 			return;
 		}
 		// Мандат 8e & 8n: Никаких поштучных блокировок врача из-за неполноты 2D-кодов маркировки

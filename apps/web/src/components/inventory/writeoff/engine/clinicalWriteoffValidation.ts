@@ -24,9 +24,12 @@ export function validateWriteoffDocument(
 				errors.push(`Для «${line.nameRu}» обязателен ввод серийного номера (МДЛП).`);
 			}
 			if (line.isExpired) {
-				const isDisposal = doc.statutoryFormType === "TORG16" || line.discrepancyReasonCode === "expired_quarantine";
-				if (!isDisposal) errors.push(`Срок годности «${line.nameRu}» истек! Для утилизации оформите акт ТОРГ-16.`);
-				else warnings.push(`Партия «${line.nameRu}» с истекшим сроком направлена на утилизацию.`);
+				const isDisposal = doc.statutoryFormType === "disposal_act" || doc.statutoryFormType === "TORG16" || line.discrepancyReasonCode === "expired_quarantine";
+				if (isDisposal) {
+					warnings.push(`Партия «${line.nameRu}» с истекшим сроком направлена на списание.`);
+				} else {
+					warnings.push(`Срок годности «${line.nameRu}» истек: оформляется акт списания материалов.`);
+				}
 			} else if (line.isExpiringSoon) {
 				warnings.push(`Партия «${line.nameRu}» истекает в течение 30 дней (${line.expirationDate}).`);
 			}

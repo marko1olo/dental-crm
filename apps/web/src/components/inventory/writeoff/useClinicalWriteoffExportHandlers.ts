@@ -4,6 +4,9 @@ import {
 	type ClinicalWriteoffLine,
 	calculateLineCostKopecks,
 	exportClinicalWriteoffToCsv,
+	generateMaterialWriteoffActHtml,
+	generateMaterialWaybillHtml,
+	generateDisposalActHtml,
 	generateAct0504230Html,
 	generateFormM11Html,
 	generateTorg16Html,
@@ -62,13 +65,13 @@ export function useClinicalWriteoffExportHandlers(
 		showToast(`Черновик заказа поставщику на ${poItems.length} поз. скопирован в буфер!`, "success");
 	};
 
-	const handlePrintAct = (formType: "0504230" | "M11" | "TORG16") => {
+	const handlePrintAct = (formType: "material_writeoff" | "waybill" | "disposal_act" | "0504230" | "M11" | "TORG16") => {
 		const html =
-			formType === "0504230"
-				? generateAct0504230Html(currentDocument)
-				: formType === "M11"
-					? generateFormM11Html(currentDocument)
-					: generateTorg16Html(currentDocument);
+			formType === "material_writeoff" || formType === "0504230"
+				? generateMaterialWriteoffActHtml(currentDocument)
+				: formType === "waybill" || formType === "M11"
+					? generateMaterialWaybillHtml(currentDocument)
+					: generateDisposalActHtml(currentDocument);
 		const printWin = window.open("", "_blank");
 		if (printWin) {
 			printWin.document.write(html);

@@ -3,6 +3,9 @@ import { describe, it } from "node:test";
 import {
 	type ClinicalWriteoffDocument,
 	exportClinicalWriteoffToCsv,
+	generateMaterialWriteoffActHtml,
+	generateMaterialWaybillHtml,
+	generateDisposalActHtml,
 	generateAct0504230Html,
 	generateFormM11Html,
 	generateTorg16Html,
@@ -65,34 +68,42 @@ const sampleDoc: ClinicalWriteoffDocument = {
 		hasExpiringLots: false,
 		hasExpiredLots: false,
 	},
-	statutoryFormType: "0504230",
+	statutoryFormType: "material_writeoff",
 	status: "confirmed",
 	clinicInfo: DEFAULT_CLINIC_LEGAL_INFO,
 };
 
-describe("Statutory Acts Generation (0504230, M-11, TORG-16, CSV)", () => {
-	it("generateAct0504230Html формирует официальный бланк по ОКУД 0504230", () => {
-		const html = generateAct0504230Html(sampleDoc);
-		assert.ok(html.includes("0504230"));
-		assert.ok(html.includes("АКТ О СПИСАНИИ МАТЕРИАЛЬНЫХ ЗАПАСОВ"));
+describe("Commercial Clean Print Forms (Акт списания материалов, Накладная прихода, CSV)", () => {
+	it("generateMaterialWriteoffActHtml формирует понятный Акт списания материалов", () => {
+		const html = generateMaterialWriteoffActHtml(sampleDoc);
+		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Иванов Иван Иванович"));
 		assert.ok(html.includes("Кузнецов М.С."));
 		assert.ok(html.includes("405.00"));
 		assert.ok(html.includes("Filtek Ultimate"));
+		// Проверяем алиас обратной совместимости
+		const aliasHtml = generateAct0504230Html(sampleDoc);
+		assert.equal(aliasHtml, html);
 	});
 
-	it("generateFormM11Html формирует Требование-накладную М-11", () => {
-		const html = generateFormM11Html(sampleDoc);
-		assert.ok(html.includes("0315003"));
-		assert.ok(html.includes("ТРЕБОВАНИЕ-НАКЛАДНАЯ"));
+	it("generateMaterialWaybillHtml формирует понятную Накладную прихода и перемещения", () => {
+		const html = generateMaterialWaybillHtml(sampleDoc);
+		assert.ok(html.includes("НАКЛАДНАЯ ПРИХОДА И ПЕРЕМЕЩЕНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Filtek Ultimate"));
+		assert.ok(html.includes("405.00"));
+		// Проверяем алиас обратной совместимости
+		const aliasHtml = generateFormM11Html(sampleDoc);
+		assert.equal(aliasHtml, html);
 	});
 
-	it("generateTorg16Html формирует Акт о списании товаров ТОРГ-16", () => {
-		const html = generateTorg16Html(sampleDoc);
-		assert.ok(html.includes("0330216"));
-		assert.ok(html.includes("АКТ О СПИСАНИИ ТОВАРОВ"));
+	it("generateDisposalActHtml формирует канонический Акт списания материалов", () => {
+		const html = generateDisposalActHtml(sampleDoc);
+		assert.ok(html.includes("АКТ СПИСАНИЯ МАТЕРИАЛОВ"));
 		assert.ok(html.includes("Filtek Ultimate"));
+		assert.ok(html.includes("405.00"));
+		// Проверяем алиас обратной совместимости
+		const aliasHtml = generateTorg16Html(sampleDoc);
+		assert.equal(aliasHtml, html);
 	});
 
 	it("exportClinicalWriteoffToCsv формирует валидный CSV RFC 4180 с UTF-8 BOM", () => {

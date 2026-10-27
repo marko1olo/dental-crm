@@ -87,7 +87,7 @@ export interface ClinicalWriteoffDocument {
 	readonly completedServices: readonly CompletedClinicalService[];
 	readonly lines: readonly ClinicalWriteoffLine[];
 	readonly totals: ClinicalWriteoffTotals;
-	readonly statutoryFormType: "0504230" | "M11" | "TORG16";
+	readonly statutoryFormType: "material_writeoff" | "waybill" | "disposal_act" | "0504230" | "M11" | "TORG16";
 	readonly status: "draft" | "confirmed" | "cancelled";
 	readonly notes?: string | undefined;
 	readonly confirmedAt?: string | undefined;

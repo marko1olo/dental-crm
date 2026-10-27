@@ -1,0 +1,74 @@
+import {
+	DEFAULT_CLINIC_LEGAL_INFO,
+	type ClinicLegalInfo,
+	getDiscrepancyReason,
+} from "../clinicalWriteoffPresets.js";
+import type { ClinicalWriteoffDocument } from "../clinicalWriteoffEngine.js";
+import { kopecksToRubles } from "../clinicalWriteoffEngine.js";
+
+/**
+ * generateDisposalActHtml — Канонический акт списания материалов клиники.
+ * Мандаты 8e (Врачебная автономия), 8n (Соло-врач), 8x & 8ap (Никаких советских приказов и ТОРГ-16).
+ * Строго <= 120 строк.
+ */
+export function generateDisposalActHtml(
+	doc: ClinicalWriteoffDocument,
+	clinicInfo: ClinicLegalInfo = DEFAULT_CLINIC_LEGAL_INFO,
+): string {
+	const info = doc.clinicInfo || clinicInfo;
+	const totals = doc.totals;
+
+	const rowsHtml = doc.lines.map((line, index) => {
+		const unitRub = kopecksToRubles(line.unitCostKopecks);
+		const totalRub = kopecksToRubles(line.totalCostKopecks);
+		const reasonDef = getDiscrepancyReason(line.discrepancyReasonCode);
+
+		return `<tr>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${index + 1}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px;"><strong>${line.nameRu}</strong></td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center; font-family: monospace;">${line.sku}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${line.lotNumber || "—"}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${line.expirationDate || "—"}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: center;">${line.unit}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right; font-weight: bold;">${line.actualQuantity}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right;">${unitRub.toFixed(2)}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; text-align: right; font-weight: bold;">${totalRub.toFixed(2)}</td>
+			<td style="border: 1px solid #cbd5e1; padding: 6px; font-size: 8.5pt;">${line.discrepancyNotes || reasonDef.labelRu || "Истек срок годности"}</td>
+		</tr>`;
+	}).join("\n");
+
+	return `<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Акт списания материалов № ${doc.actNumber}</title>
+<style>
+	@page { size: A4 landscape; margin: 10mm; }
+	body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 9pt; color: #0f172a; line-height: 1.35; padding: 12px; }
+	.header-flex { display: flex; justify-content: space-between; margin-bottom: 12px; border-bottom: 1.5px solid #0f766e; padding-bottom: 8px; }
+	.act-title { text-align: center; font-weight: 700; font-size: 13pt; margin: 10px 0 4px 0; color: #0f172a; }
+	.act-date { text-align: center; font-size: 10pt; color: #475569; margin-bottom: 10px; }
+	table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 8.5pt; }
+	th { border: 1px solid #94a3b8; padding: 6px; background: #f1f5f9; font-size: 8pt; text-align: center; font-weight: 600; color: #1e293b; }
+	.signatures-row { display: flex; justify-content: space-between; margin-top: 24px; padding-top: 12px; border-top: 1px dashed #cbd5e1; font-size: 9pt; }
+</style></head><body>
+	<div class="header-flex">
+		<div><strong>Организация:</strong> ${info.clinicNameRu}<br><strong>Подразделение:</strong> ${doc.cabinetNameRu}<br><strong>Ответственное лицо:</strong> ${doc.doctorFullName || info.chiefDoctorFullName}</div>
+		<div style="text-align: right; font-size: 8.5pt; color: #475569;">ИНН ${info.inn} / КПП ${info.kpp}<br>ОКПО ${info.okpoCode}<br>Стоматологическая клиника DENTE</div>
+	</div>
+	<div class="act-title">АКТ СПИСАНИЯ МАТЕРИАЛОВ № ${doc.actNumber}</div>
+	<div class="act-date">Дата: <strong>${doc.actDate} г.</strong></div>
+	<p style="margin: 4px 0 8px 0; font-size: 9pt;"><strong>Причина списания:</strong> Списание расходных материалов и медикаментов клинического приема</p>
+	<table>
+		<thead><tr><th>№</th><th>Наименование материала</th><th>Артикул</th><th>Партия</th><th>Срок годн.</th><th>Ед.</th><th>Кол-во</th><th>Цена, ₽</th><th>Сумма, ₽</th><th>Обоснование</th></tr></thead>
+		<tbody>${rowsHtml}
+			<tr style="font-weight: bold; background: #f8fafc;"><td colspan="6" style="border: 1px solid #cbd5e1; text-align: right;">ИТОГО:</td><td style="border: 1px solid #cbd5e1; text-align: right;">${totals.totalMaterialsQuantity}</td><td style="border: 1px solid #cbd5e1;"></td><td style="border: 1px solid #cbd5e1; text-align: right; color: #0f766e;">${totals.totalCostRubles.toFixed(2)} ₽</td><td style="border: 1px solid #cbd5e1;"></td></tr>
+		</tbody>
+	</table>
+	<p style="margin: 8px 0; font-size: 8.5pt; color: #334155;">Всего к списанию ${doc.lines.length} наим. на сумму ${totals.totalCostRubles.toFixed(2)} ₽ (${totals.totalCostFormatted}).</p>
+	<div class="signatures-row">
+		<div><strong>Списание произведено единолично:</strong><br>${doc.writtenOffByRole || doc.doctorSpecialty || "Врач-стоматолог"}<br>________________ / ${doc.assistantFullName || doc.doctorFullName || info.headNurseFullName} /<br>«____» ________________ 2026 г.</div>
+		<div><strong>Согласовано (МОЛ):</strong><br>${doc.doctorSpecialty || info.chiefDoctorPosition || "Заведующий отделением"}<br>________________ / ${doc.doctorFullName || info.chiefDoctorFullName} /</div>
+	</div>
+</body></html>`;
+}
+
+// Алиас для обратной совместимости вызовов
+export const generateTorg16Html = generateDisposalActHtml;

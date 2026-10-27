@@ -2,7 +2,7 @@ import { Download, FileText } from "lucide-react";
 import type React from "react";
 
 export interface ClinicalWriteoffExtraFormsMenuProps {
-	readonly onPrintAct: (formType: "M11" | "TORG16") => void;
+	readonly onPrintAct: (formType: "waybill" | "disposal_act" | "M11" | "TORG16") => void;
 	readonly onExportCsv: () => void;
 }
 
@@ -15,7 +15,7 @@ export const ClinicalWriteoffExtraFormsMenu: React.FC<ClinicalWriteoffExtraForms
 			<button
 				type="button"
 				className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
-				onClick={() => onPrintAct("M11")}
+				onClick={() => onPrintAct("waybill")}
 				title="Печать накладной на списание материалов"
 			>
 				<FileText size={14} className="text-teal-600" />
@@ -26,7 +26,7 @@ export const ClinicalWriteoffExtraFormsMenu: React.FC<ClinicalWriteoffExtraForms
 			<button
 				type="button"
 				className="w-full text-left px-3 py-2 rounded-lg text-xs font-semibold text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] flex items-center gap-2"
-				onClick={() => onPrintAct("TORG16")}
+				onClick={() => onPrintAct("disposal_act")}
 				title="Печать акта о списании материалов"
 			>
 				<FileText size={14} className="text-teal-600" />

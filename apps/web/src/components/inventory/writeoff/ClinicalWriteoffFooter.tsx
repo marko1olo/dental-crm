@@ -10,7 +10,7 @@ export interface ClinicalWriteoffFooterProps {
 	readonly isDeducting: boolean;
 	readonly onClose: () => void;
 	readonly onConfirm: () => void;
-	readonly onPrintAct: (formType: "0504230" | "M11" | "TORG16") => void;
+	readonly onPrintAct: (formType: "material_writeoff" | "waybill" | "disposal_act" | "0504230" | "M11" | "TORG16") => void;
 	readonly onExportCsv: () => void;
 }
 
@@ -32,8 +32,8 @@ export const ClinicalWriteoffFooter: React.FC<ClinicalWriteoffFooterProps> = ({
 				<button
 					type="button"
 					className="cw-btn cw-btn-secondary"
-					onClick={() => onPrintAct("0504230")}
-					title="Печать акта о списании материальных запасов (форма 0504230)"
+					onClick={() => onPrintAct("material_writeoff")}
+					title="Печать акта списания материалов"
 				>
 					<Printer size={16} /> Акт списания материалов
 				</button>
