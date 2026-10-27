@@ -71,7 +71,7 @@ export const TEMPLATE_SHORT_TITLES: Record<ConsentTemplateKey, string> = {
 	CONSENT_SEDATION: "Седация (ЗАКС / в/в)",
 	CONSENT_PHOTOPROTOCOL: "Фотопротокол лечения",
 	CONSENT_HEALTH_QUESTIONNAIRE: "Анкета здоровья (анамнез)",
-	CONSENT_PAID_CONTRACT: "Договор платных услуг (№ 736)",
+	CONSENT_PAID_CONTRACT: "Договор на оказание медицинских услуг",
 	CONSENT_SURGERY_EXTRACTION: "Удаление зуба (хирургия)",
 	CONSENT_IMPLANTOLOGY: "Дентальная имплантация",
 	CONSENT_SINUS_LIFT: "Синус-лифтинг и НКР",

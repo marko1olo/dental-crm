@@ -71,6 +71,7 @@ export interface ConsentSubstitutionContext {
 
 export type ConsentPackageKey =
 	| "PACKAGE_PRIMARY_VISIT"
+	| "PACKAGE_PRIMARY_INTAKE"
 	| "PACKAGE_SURGERY"
 	| "PACKAGE_IMPLANTOLOGY"
 	| "PACKAGE_ORTHODONTICS"

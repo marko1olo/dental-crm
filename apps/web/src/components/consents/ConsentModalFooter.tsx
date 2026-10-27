@@ -1,4 +1,4 @@
-import { Download, Printer, Zap } from "lucide-react";
+import { Download, Printer, ShieldCheck, Zap } from "lucide-react";
 import React, { useState } from "react";
 import { ConsentModalMoreMenu } from "./footer/ConsentModalMoreMenu";
 
@@ -11,7 +11,7 @@ export interface ConsentModalFooterProps {
 	onPrintBlank: () => void;
 	onDownloadPdfA: () => void;
 	onCopyPatientSummary: () => void;
-	onConfirmSign: () => void;
+	onConfirmSign: (forcedMethod?: "tablet_stylus" | "sms_otp" | "paper_physical") => void;
 	onClose: () => void;
 }
 
@@ -69,12 +69,24 @@ export const ConsentModalFooter: React.FC<ConsentModalFooterProps> = ({
 				/>
 			</div>
 
-			<div className="flex items-center gap-3">
+			<div className="flex items-center gap-2">
+				<button
+					type="button"
+					className="secondary-button min-h-[44px] sm:min-h-9 sm:h-9 px-3 text-[13px] font-medium rounded-xl flex items-center gap-1.5"
+					data-testid="btn-confirm-paper-signed"
+					onClick={() => onConfirmSign("paper_physical")}
+					disabled={isSubmitting}
+					title="Сохранить отметку о бумажном оригинале в карте без росписи на экране (1 клик)"
+				>
+					<ShieldCheck size={15} className="text-[var(--teal,#0d9488)]" />
+					<span>Бумажный оригинал в карте</span>
+				</button>
+
 				<button
 					type="button"
 					className="primary-button consent-action-btn primary min-h-[44px] sm:min-h-9 sm:h-9 px-4 text-[13px] font-semibold rounded-xl flex items-center gap-1.5"
 					data-testid="btn-confirm-sign"
-					onClick={onConfirmSign}
+					onClick={() => onConfirmSign()}
 					disabled={isSubmitting}
 					title={
 						activeMode === "packages" ? "Подтвердить пакет согласий" : "Подтвердить согласие"

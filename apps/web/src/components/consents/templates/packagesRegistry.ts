@@ -17,6 +17,19 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 		],
 		description: "Единый первичный комплект при первом визите пациента в клинику (3 документа за 1 подпись)",
 	},
+	PACKAGE_PRIMARY_INTAKE: {
+		key: "PACKAGE_PRIMARY_INTAKE",
+		code: "ПАКЕТ-ПЕРВИЧНЫЙ-ПОЛНЫЙ",
+		title: "Пакет документов первичного приёма",
+		shortTitle: "Первичный (ИДС + Данные + Договор)",
+		subtitle: "Согласие на лечение + Обработка персональных данных + Договор на медицинские услуги",
+		templateKeys: [
+			"CONSENT_THERAPY",
+			"CONSENT_PERSONAL_DATA",
+			"CONSENT_PAID_CONTRACT",
+		],
+		description: "Комплект первичного приёма: согласие на терапию, обработка данных и договор на медицинские услуги в 1 клик",
+	},
 	PACKAGE_SURGERY: {
 		key: "PACKAGE_SURGERY",
 		code: "ПАКЕТ-ХИРУРГИЯ",
@@ -69,7 +82,16 @@ export const CONSENT_PACKAGES: Record<ConsentPackageKey, ConsentPackageDefinitio
 	},
 };
 
-export function getAllConsentPackages(): ConsentPackageDefinition[] {
+export function getAllConsentPackages(includeExtended = false): ConsentPackageDefinition[] {
+	if (!includeExtended) {
+		return [
+			CONSENT_PACKAGES.PACKAGE_PRIMARY_VISIT,
+			CONSENT_PACKAGES.PACKAGE_SURGERY,
+			CONSENT_PACKAGES.PACKAGE_IMPLANTOLOGY,
+			CONSENT_PACKAGES.PACKAGE_ORTHODONTICS,
+			CONSENT_PACKAGES.PACKAGE_ORTHOPEDICS,
+		];
+	}
 	return Object.values(CONSENT_PACKAGES);
 }
 
@@ -83,6 +105,7 @@ export function getConsentPackage(key: ConsentPackageKey): ConsentPackageDefinit
 
 export const PACKAGE_SHORT_TITLES: Record<ConsentPackageKey, string> = {
 	PACKAGE_PRIMARY_VISIT: "Первичный приём",
+	PACKAGE_PRIMARY_INTAKE: "Первичный (ИДС + Данные + Договор)",
 	PACKAGE_SURGERY: "Хирургический пакет",
 	PACKAGE_IMPLANTOLOGY: "Имплантологический пакет",
 	PACKAGE_ORTHODONTICS: "Ортодонтический пакет",

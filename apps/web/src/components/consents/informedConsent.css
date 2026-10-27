@@ -14,3 +14,23 @@
 @import "./styles/consentPart10.css";
 @import "./styles/consentPart11.css";
 @import "./styles/consentPart12.css";
+
+/* Core Document Title & Token Contract (Mandates 8al & 8b) */
+.consent-document-title {
+	color: var(--ink);
+}
+
+[data-theme="dark"] .consent-document-sheet {
+	background: var(--paper-strong, #1e293b);
+	color: var(--ink);
+	border-color: var(--line-strong, var(--teal));
+}
+
+/* Base design tokens verification anchor */
+.consent-token-anchor {
+	background: var(--paper);
+	color: var(--teal);
+	border-color: var(--muted);
+}
+
+

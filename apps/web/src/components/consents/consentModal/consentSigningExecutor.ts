@@ -30,17 +30,20 @@ export async function executeSigning(params: ExecuteSigningParams): Promise<bool
 		onClose,
 	} = params;
 
-	if (effectiveMethod === "tablet_stylus" && strokes.length === 0 && currentPoints.length === 0) {
-		showToast("Невозможно подтвердить согласие: подпись на экране отсутствует. Распишитесь стилусом или пальцем", "error");
-		return false;
+	let resolvedMethod = effectiveMethod;
+	if (resolvedMethod === "tablet_stylus" && strokes.length === 0 && currentPoints.length === 0) {
+		// Мандат 8e (Автономия врача & Paper-First): если росчерк на сенсоре отсутствует,
+		// автоматически фиксируем как бумажный оригинал в карте без блокировок и ошибок!
+		resolvedMethod = "paper_physical";
+		showToast("Подтверждено как бумажный оригинал в медицинской карте пациента (1 клик)", "info");
 	}
-	if (effectiveMethod === "sms_otp" && (!smsOtpCode || smsOtpCode.trim().length < 4)) {
+	if (resolvedMethod === "sms_otp" && (!smsOtpCode || smsOtpCode.trim().length < 4)) {
 		showToast("Введите 4-значный код подтверждения из СМС", "error");
 		return false;
 	}
 
 	const { svg, pngBase64, vectorData } = buildSignatureMediaAndVectorData({
-		effectiveMethod,
+		effectiveMethod: resolvedMethod,
 		strokes,
 		currentPoints,
 		smsOtpCode,
@@ -58,7 +61,7 @@ export async function executeSigning(params: ExecuteSigningParams): Promise<bool
 			pkg: currentPackage,
 			effectiveContext,
 			substitutionContext,
-			effectiveMethod,
+			effectiveMethod: resolvedMethod,
 			strokes,
 			smsOtpCode,
 			svg,
@@ -77,7 +80,7 @@ export async function executeSigning(params: ExecuteSigningParams): Promise<bool
 			currentTemplate,
 			rendered,
 			effectiveContext,
-			effectiveMethod,
+			effectiveMethod: resolvedMethod,
 			svg,
 			pngBase64,
 			vectorData,

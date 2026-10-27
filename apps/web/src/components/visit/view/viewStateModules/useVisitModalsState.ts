@@ -31,6 +31,13 @@ export function useVisitModalsState({
 	const [isWarrantyModalOpen, setIsWarrantyModalOpen] = useState(false);
 	const [isDoctorShiftModalOpen, setIsDoctorShiftModalOpen] = useState(false);
 	const [isInformedConsentModalOpen, setIsInformedConsentModalOpen] = useState(false);
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handler = () => setIsInformedConsentModalOpen(true);
+		window.addEventListener("dente:open-informed-consent-modal", handler);
+		return () => window.removeEventListener("dente:open-informed-consent-modal", handler);
+	}, []);
 	const [isPrescriptionModalOpen, setIsPrescriptionModalOpenState] = useState(false);
 	const setIsPrescriptionModalOpen = useCallback((open: boolean) => {
 		if (open) {

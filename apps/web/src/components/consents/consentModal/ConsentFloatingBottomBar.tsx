@@ -24,11 +24,6 @@ export const ConsentFloatingBottomBar: React.FC<ConsentFloatingBottomBarProps> =
 				data-testid="btn-confirm-sign-mobile"
 				onClick={onConfirmSign}
 				disabled={isSubmitting}
-				style={{
-					background: "var(--teal)",
-					cursor: isSubmitting ? "wait" : "pointer",
-					opacity: isSubmitting ? 0.75 : 1,
-				}}
 			>
 				<Zap size={20} />
 				<span>

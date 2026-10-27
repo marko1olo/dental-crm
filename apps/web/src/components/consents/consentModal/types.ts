@@ -53,6 +53,10 @@ export interface InformedConsentModalProps {
 	isSigned?: boolean | undefined;
 	status?: string | undefined;
 	watermarkText?: string | undefined;
+	/** Пользовательский человеческий заголовок согласия */
+	titleRu?: string | undefined;
+	/** Признак детского согласия законного представителя */
+	isMinorPatient?: boolean | undefined;
 	onConsentSigned?: (payload: SignedConsentPayload) => void;
 	onPackageSigned?: (payloads: SignedConsentPayload[]) => void;
 	onConsentConfirmed?: (payload: {
@@ -92,6 +96,8 @@ export interface ExecuteSigningParams {
 	}) => void) | undefined;
 	onClose: () => void;
 }
+
+export type ConsentModalProps = InformedConsentModalProps;
 
 export type {
 	ConsentPackageKey,
