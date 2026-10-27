@@ -34,7 +34,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 	const modalContent = (
 		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm overflow-y-auto" role="dialog" aria-modal="true" data-testid="dental-lab-work-order-modal">
 			<div className="relative w-full max-w-5xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh]" data-testid="dental-lab-order-drawer">
-				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto mt-2.5 mb-1 shrink-0" aria-hidden="true" />
+				<div className="sm:hidden w-full pt-2.5 pb-1 flex justify-center items-center shrink-0 bg-[var(--paper-soft)] border-b border-[var(--line-subtle,#e2e8f0)]" aria-hidden="true"><div className="w-9 h-[5px] bg-[var(--line-strong,#94a3b8)] rounded-full" /></div>
 				{/* План лечения: Этап {form.stageNumber ?? stageNumber} */}
 				<DentalLabOrderModalHeader
 					patientName={form.formPatientName} patientChartNumber={patientChartNumber} doctorName={form.formDoctorName}

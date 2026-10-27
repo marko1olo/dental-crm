@@ -67,12 +67,12 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 				<button
 					type="button"
 					data-testid="btn-open-create-lab-order"
-					className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-medium text-xs shadow-2xs inline-flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+					className="h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-semibold text-xs shadow-2xs inline-flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 					onClick={onOpenCreateModal}
 					title="Создать новый наряд в лабораторию"
 				>
 					<Plus size={14} />
-					<span>Новый наряд в ЗТЛ</span>
+					<span>Новый наряд ЗТЛ</span>
 				</button>
 
 				<button

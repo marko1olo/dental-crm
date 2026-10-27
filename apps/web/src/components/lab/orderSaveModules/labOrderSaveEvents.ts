@@ -12,9 +12,26 @@ export function dispatchSavedOrderEvents(
 	if (typeof window === "undefined") return;
 
 	window.dispatchEvent(new CustomEvent("dente-lab-order-created", { detail: resultData }));
+	const teethCount = Math.max(1, params.selectedTeeth.length);
+	const unitPrice = Math.round(params.totalLabPriceRub / teethCount);
+	const unitLabCost = Math.round((params.totalLabPriceRub * 0.4) / teethCount);
 	for (const toothNum of params.selectedTeeth) {
 		window.dispatchEvent(new CustomEvent("dente-quick-tooth-apply", {
 			detail: { toothNumber: toothNum, state: "Planned_Crown", patientId: params.effectivePatientId },
+		}));
+		window.dispatchEvent(new CustomEvent("dente-add-billing-item", {
+			detail: {
+				item: {
+					code804n: "A16.07.004",
+					title: `Ортопедическая конструкция (${params.material || "ZrO2"}, зуб ${toothNum})`,
+					toothCode: String(toothNum),
+					quantity: 1,
+					unitPriceRub: unitPrice,
+					discountRub: 0,
+					labCostRub: unitLabCost,
+					labOrderId: resultData.id,
+				},
+			},
 		}));
 	}
 

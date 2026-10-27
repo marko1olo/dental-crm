@@ -3,6 +3,7 @@ import { Calendar, CheckCircle2, FileText, Layers, Truck } from "lucide-react";
 import type { LabWorkflowStatus, DentalLabWorkflowOrder } from "./dentalLabWorkflowEngine";
 import type { CanonicalKanbanStageId } from "./DentalLabKanbanCard";
 import { KanbanColumn } from "./kanbanBoardModules/KanbanColumn";
+import { KanbanMobileStageSelector } from "./kanbanBoardModules/KanbanMobileStageSelector";
 
 export interface DentalLabOrdersKanbanBoardProps {
 	readonly ordersByStage: Record<LabWorkflowStatus, DentalLabWorkflowOrder[]>;
@@ -44,23 +45,29 @@ export const CANONICAL_5_KANBAN_COLUMNS = CANONICAL_4_KANBAN_COLUMNS;
  */
 export const DentalLabOrdersKanbanBoard: React.FC<DentalLabOrdersKanbanBoardProps> = (props) => {
 	const [dragOverCol, setDragOverCol] = useState<CanonicalKanbanStageId | null>(null);
+	const [mobileStage, setMobileStage] = useState<CanonicalKanbanStageId>("sent_to_lab");
 
 	const resolved = useMemo(() => ({
 		draft: [],
-		sent_to_lab: [
-			...(props.ordersByStage.draft || []),
-			...(props.ordersByStage.sent_to_lab || []),
-		],
-		in_progress: [
-			...((props.ordersByStage as any).in_progress || []),
-			...(props.ordersByStage.warranty_rework || []),
-		],
+		sent_to_lab: [...(props.ordersByStage.draft || []), ...(props.ordersByStage.sent_to_lab || [])],
+		in_progress: [...((props.ordersByStage as any).in_progress || []), ...(props.ordersByStage.warranty_rework || [])],
 		fitting_scheduled: props.ordersByStage.fitting_scheduled || [],
 		installed_completed: props.ordersByStage.installed_completed || [],
 	}), [props.ordersByStage]);
 
+	const stageCounts = useMemo(() => ({
+		draft: 0,
+		sent_to_lab: resolved.sent_to_lab.length,
+		in_progress: resolved.in_progress.length,
+		fitting_scheduled: resolved.fitting_scheduled.length,
+		installed_completed: resolved.installed_completed.length,
+	}), [resolved]);
+
 	return (
-		<main className="ztl-kanban-board" data-testid="canonical-4-stage-kanban-board">
+		<main className="ztl-kanban-board" data-testid="canonical-4-stage-kanban-board" data-mobile-active={mobileStage}>
+			<div className="sm:hidden w-full pb-1">
+				<KanbanMobileStageSelector columns={CANONICAL_4_KANBAN_COLUMNS} activeStageId={mobileStage} onSelectStage={setMobileStage} counts={stageCounts} />
+			</div>
 			{CANONICAL_4_KANBAN_COLUMNS.map((col) => {
 				const colOrders = resolved[col.id] || [];
 				return (

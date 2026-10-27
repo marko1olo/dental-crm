@@ -61,7 +61,24 @@
 
 @media (max-width: 768px) {
 	.ztl-kanban-board {
-		grid-template-columns: 1fr;
-		overflow-y: auto;
+		display: flex;
+		flex-direction: column;
+		grid-template-columns: none;
+		padding: 8px 10px;
+		gap: 10px;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.ztl-kanban-board .ztl-kanban-column {
+		width: 100%;
+		min-width: 0;
+	}
+
+	.ztl-kanban-board[data-mobile-active="sent_to_lab"] .ztl-kanban-column:not([data-testid="kanban-column-sent_to_lab"]),
+	.ztl-kanban-board[data-mobile-active="in_progress"] .ztl-kanban-column:not([data-testid="kanban-column-in_progress"]),
+	.ztl-kanban-board[data-mobile-active="fitting_scheduled"] .ztl-kanban-column:not([data-testid="kanban-column-fitting_scheduled"]),
+	.ztl-kanban-board[data-mobile-active="installed_completed"] .ztl-kanban-column:not([data-testid="kanban-column-installed_completed"]) {
+		display: none !important;
 	}
 }

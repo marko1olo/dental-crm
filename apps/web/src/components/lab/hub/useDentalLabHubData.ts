@@ -31,7 +31,7 @@ export function useDentalLabHubData({
 	const loadLabOrders = useCallback(async () => {
 		try {
 			const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
-			const res = await fetch(`/api/dental-lab/orders${query}`, { headers: denteAdminSecretRequestHeaders() });
+			const res = await fetch(`/api/clinical/lab-orders${query}`, { headers: denteAdminSecretRequestHeaders() });
 			if (!res.ok) { setOrders([]); return; }
 			const data = await res.json();
 			const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];

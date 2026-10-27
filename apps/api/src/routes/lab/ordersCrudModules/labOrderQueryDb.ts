@@ -27,6 +27,8 @@ export async function selectLabOrdersQuery(
 			labComments: labOrders.labComments,
 			attachedImageUrl: labOrders.attachedImageUrl,
 			priceRub: labOrders.priceRub,
+			labCostRub: labOrders.labCostRub,
+			isWarranty: labOrders.isWarranty,
 			paidFromCashOperationId: labOrders.paidFromCashOperationId,
 			isLockedInstalled: labOrders.isLockedInstalled,
 			installedAt: labOrders.installedAt,

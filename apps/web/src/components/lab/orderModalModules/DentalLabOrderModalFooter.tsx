@@ -63,7 +63,7 @@ export function DentalLabOrderModalFooter({
 						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98]"
 					>
 						{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-						<span>{isEdit ? "Сохранить наряд в лаборатории" : "Отправить наряд в лабораторию"}</span>
+						<span>{isEdit ? "✓ Сохранить наряд в лабораторию (ЗТЛ)" : "✓ Отправить наряд в лабораторию (ЗТЛ)"}</span>
 					</button>
 				</div>
 			</div>
@@ -103,7 +103,7 @@ export function DentalLabOrderModalFooter({
 					data-testid="submit-lab-order-btn"
 				>
 					{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-					<span>{isEdit ? "Сохранить наряд в лаборатории" : "Отправить наряд в лабораторию"}</span>
+					<span>{isEdit ? "✓ Сохранить наряд в лабораторию (ЗТЛ)" : "✓ Отправить наряд в лабораторию (ЗТЛ)"}</span>
 				</button>
 			</div>
 		</div>

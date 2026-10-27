@@ -8,6 +8,8 @@ import { AppLoadingState } from "../../../../../AppBootState";
 import { isPatientPresentationRoute } from "../../../../photography/presentationSyncProtocol";
 import { OrthopedicsChairsidePanel } from "../../../../orthopedics/OrthopedicsChairsidePanel";
 import { DentalLabOrderModal } from "../../../../lab/DentalLabOrderModal";
+import { DentalLabOrdersHubModal } from "../../../../lab/DentalLabOrdersHubModal";
+import { getSampleDentalLabOrders } from "../../../../lab/hub/dentalLabHubSampleOrders";
 
 const PatientPresentationStandaloneView = lazyWithRetry(() =>
 	import("../../../../photography/PatientPresentationStandaloneView").then((m) => ({
@@ -20,6 +22,23 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 
 	const search = window.location.search || "";
 	const hash = window.location.hash || "";
+
+	if (
+		search.includes("standalone=dental_lab_hub") ||
+		search.includes("standalone=lab_hub") ||
+		hash.includes("dental_lab_hub") ||
+		hash.includes("lab_hub")
+	) {
+		return (
+			<DentalLabOrdersHubModal
+				isOpen={true}
+				initialOrders={getSampleDentalLabOrders()}
+				onClose={() => {
+					window.location.hash = "";
+				}}
+			/>
+		);
+	}
 
 	if (
 		search.includes("standalone=dental_lab") ||

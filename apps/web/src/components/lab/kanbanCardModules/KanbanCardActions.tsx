@@ -61,12 +61,12 @@ export function KanbanCardActions({
 
 			<button
 				type="button"
-				className={`ztl-btn-card-action flex-1 px-1 text-[11px] min-h-[44px] sm:min-h-0 ${columnId === "installed_completed" ? "secondary-button font-bold text-emerald-600" : "primary-button ztl-btn-advance"}`}
+				className={`secondary-button dente-btn-secondary ztl-btn-card-action flex-1 px-1.5 text-[11px] font-semibold min-h-[44px] sm:min-h-[30px] border border-[var(--line)] hover:border-teal-600/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-teal-700 dark:hover:text-teal-300 transition-colors inline-flex items-center justify-center gap-1.5 rounded-lg ${columnId === "installed_completed" ? "font-bold text-emerald-600 dark:text-emerald-400" : ""}`}
 				onClick={(e) => { e.stopPropagation(); columnId === "installed_completed" ? onInspectOrder(order) : onAdvanceStage(order); }}
 				title={advanceTitle}
 				data-testid={`ztl-card-status-${order.id}`}
 			>
-				<AdvanceIcon size={13} className="shrink-0" /><span>{advanceLabel}</span>
+				<AdvanceIcon size={13} className="shrink-0 text-teal-600 dark:text-teal-400" /><span>{advanceLabel}</span>
 			</button>
 
 			<div style={{ position: "relative", flexShrink: 0 }}>

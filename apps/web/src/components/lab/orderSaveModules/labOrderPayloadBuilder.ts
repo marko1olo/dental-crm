@@ -23,22 +23,16 @@ export interface BuildLabOrderPayloadParams {
 	readonly material: string;
 	readonly impressionType: string;
 	readonly finalShade: string;
-	readonly shadeCervical?: string | undefined;
-	readonly shadeBody?: string | undefined;
-	readonly shadeIncisal?: string | undefined;
-	readonly shadeStump?: string | undefined;
-	readonly translucency?: string | undefined;
-	readonly mamelons?: boolean | undefined;
-	readonly currentStage: string;
-	readonly dueDate: string;
-	readonly frameworkTrialDate?: string | undefined;
-	readonly ceramicTrialDate?: string | undefined;
-	readonly clinicalNotes: string;
-	readonly totalLabPriceRub: number;
-	readonly attachedImageUrl: string | null;
-	readonly isWarrantyRework?: boolean | undefined;
-	readonly reworkReason?: string | undefined;
-	readonly originalOrderNumber?: string | undefined;
+	readonly shadeCervical?: string | undefined; readonly shadeBody?: string | undefined;
+	readonly shadeIncisal?: string | undefined; readonly shadeStump?: string | undefined;
+	readonly translucency?: string | undefined; readonly mamelons?: boolean | undefined;
+	readonly currentStage: string; readonly dueDate: string;
+	readonly frameworkTrialDate?: string | undefined; readonly ceramicTrialDate?: string | undefined;
+	readonly clinicalNotes: string; readonly totalLabPriceRub: number;
+	readonly labCostRub?: number | undefined; readonly costRub?: number | undefined;
+	readonly selectedLabName?: string | undefined; readonly laboratoryName?: string | undefined;
+	readonly attachedImageUrl: string | null; readonly isWarrantyRework?: boolean | undefined;
+	readonly reworkReason?: string | undefined; readonly originalOrderNumber?: string | undefined;
 	readonly effectiveOverride?: { authorized: boolean; doctorName: string } | null | undefined;
 	readonly gostOrderNumber: string;
 }
@@ -109,6 +103,10 @@ export function buildLabOrderApiPayload(params: BuildLabOrderPayloadParams) {
 		stage: currentStage || "sent_to_lab",
 		clinicalNotes: `* ${comprehensiveNotes}`,
 		priceRub: totalLabPriceRub,
+		costRub: params.costRub ?? params.labCostRub ?? Math.round(totalLabPriceRub * 0.4),
+		labCostRub: params.labCostRub ?? params.costRub ?? Math.round(totalLabPriceRub * 0.4),
+		laboratoryName: params.laboratoryName || params.selectedLabName || "Основная лаборатория",
+		isWarrantyRework: Boolean(params.isWarrantyRework),
 		attachedImageUrl: attachedImageUrl || null,
 		tokenizedInitials: tokenized.tokenizedInitials,
 		qrPayload,
