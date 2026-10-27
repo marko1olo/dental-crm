@@ -53,15 +53,10 @@ export function useBatchWriteoffLogic(props: BatchWriteoffModalProps) {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		try {
-			let res = await fetch(`/api/inventory/${organizationId}/shift-deduct`, {
-				method: "POST", headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ bundleType: selectedShiftBundle, notes: `Пакетное списание смены (${selectedShiftBundle})` }),
-			}).catch(() => null);
+			const b = JSON.stringify({ bundleType: selectedShiftBundle, notes: `Списание смены (${selectedShiftBundle})` });
+			let res = await fetch(`/api/inventory/${organizationId}/shift-deduct`, { method: "POST", headers: { "Content-Type": "application/json" }, body: b }).catch(() => null);
 			if (!res?.ok) {
-				res = await fetch(`/api/inventory/${organizationId}/quick-writeoff-shift-bundle`, {
-					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ bundleType: selectedShiftBundle, notes: `Пакетное списание смены сотрудником ${effectiveDoctor}` }),
-				}).catch(() => null);
+				res = await fetch(`/api/inventory/${organizationId}/quick-writeoff-shift-bundle`, { method: "POST", headers: { "Content-Type": "application/json" }, body: b }).catch(() => null);
 			}
 			showToast(`Расходники смены (${selectedShiftBundle}) списаны в 1 клик! Мягкий овердрафт активен.`, "success");
 			if (onDeductionComplete) await onDeductionComplete();
@@ -94,16 +89,9 @@ export function useBatchWriteoffLogic(props: BatchWriteoffModalProps) {
 		setIsSubmitting(true);
 		try {
 			const payload = { serviceCode: serviceCode || service804nCode, toothNumber, allowSoftOverdraft: true };
-			let res = await fetch(`/api/inventory/${organizationId}/deduct/visit`, {
-				method: "POST", headers: { "Content-Type": "application/json" },
-				body: JSON.stringify(payload),
-			}).catch(() => null);
-			if (!res?.ok) {
-				res = await fetch(`/api/warehouse/${organizationId}/deduct/visit`, {
-					method: "POST", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify(payload),
-				}).catch(() => null);
-			}
+			const b = JSON.stringify(payload);
+			let res = await fetch(`/api/inventory/${organizationId}/deduct/visit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: b }).catch(() => null);
+			if (!res?.ok) res = await fetch(`/api/warehouse/${organizationId}/deduct/visit`, { method: "POST", headers: { "Content-Type": "application/json" }, body: b }).catch(() => null);
 			showToast(`Материалы по процедуре «${procedureTitle || "Приём"}» успешно списаны.`, "success");
 			if (onDeductionComplete) await onDeductionComplete();
 			onClose();
@@ -115,9 +103,7 @@ export function useBatchWriteoffLogic(props: BatchWriteoffModalProps) {
 		}
 	};
 
-	const handlePrint = () => {
-		printWriteoffAct({ cabinetId, doctorName: effectiveDoctor, patientName });
-	};
+	const handlePrint = () => printWriteoffAct({ cabinetId, doctorName: effectiveDoctor, patientName });
 
 	return {
 		activeTab, setActiveTab, selectedShiftBundle, setSelectedShiftBundle, packageMultiplier,
