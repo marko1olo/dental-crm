@@ -40,7 +40,7 @@ export function createSterilizationLogRecord(params: CreateForm257RecordParams):
 		operatorName: params.operatorStaffFullName,
 	});
 
-	const chemicalIndName = params.chamberPoints[0]?.indicatorTradeNameRu ?? "ИнтеТЕСТ-В-134/5";
+	const chemicalIndName = params.chamberPoints[0]?.indicatorTradeNameRu ?? "Химический интегратор 5 класса (пар 134°C)";
 
 	return {
 		id,

@@ -15,11 +15,16 @@ import { renderWarehouseMdlpLaunchers } from "./administrative/WarehouseMdlpLaun
 import { renderDocumentsStandaloneLauncher } from "./administrative/DocumentsStandaloneLauncher";
 import { renderPricelistStandaloneLauncher } from "./administrative/PricelistStandaloneLauncher";
 import { renderOmnichannelAndTelephonyLauncher } from "./administrative/OmnichannelAndTelephonyStandaloneLauncher";
+import { renderSanPinStandaloneLauncher } from "./administrative/SanPinStandaloneLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
+	// 0. Журналы стерилизации и автоклавирования СанПиН (?sanpin=1, ?sterilization=1)
+	const sanpin = renderSanPinStandaloneLauncher();
+	if (sanpin) return sanpin;
 
 	// 0. Прейскурант и каталог услуг (?pricelist=1, ?catalog=1)
 	const pricelist = renderPricelistStandaloneLauncher();

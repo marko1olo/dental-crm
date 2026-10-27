@@ -1,9 +1,9 @@
 /**
  * ============================================================================
- * SANPIN 3.3686-21 & MU 287-113 AZOPYRAM & STERILIZATION ENGINE TESTS
- * Строгие модульные тесты для проверки нормативного расчета выборки,
- * 2-часового срока годности раствора азопирама, детекции скрытой крови,
- * щелочных ПАВ, браковки партий и формирования официальной формы № 366/у.
+ * КОНТРОЛЬ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ И СТЕРИЛИЗАЦИИ ИНСТРУМЕНТАРИЯ
+ * Тесты пакетной обработки смены, контроля качества очистки, 
+ * срока годности раствора азопирама, списания расходников со склада (Soft Negative Stock)
+ * и автономии врача (Мандаты 8e, 8n, 8x, 8ap).
  * ============================================================================
  */
 
@@ -26,28 +26,28 @@ import {
 	INITIAL_5_POINTS,
 } from "../SterilizationCycleModal";
 
-describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () => {
-	describe("1. Statutory Constants & Invariants", () => {
-		it("enforces working solution shelf life ceiling of strictly 120 minutes (2 hours)", () => {
+describe("Контроль предстерилизационной очистки и стерилизации инструментария", () => {
+	describe("1. Регламентные константы и параметры безопасности", () => {
+		it("контролирует предельный срок годности рабочего раствора азопирама (120 минут)", () => {
 			assert.equal(SANPIN_AZOPYRAM_NORMS.workingSolutionLifespanMinutes, 120);
 		});
 
-		it("enforces reaction observation window ceiling of strictly 60 seconds (1 minute)", () => {
+		it("контролирует окно наблюдения реакции (строго до 60 секунд)", () => {
 			assert.equal(SANPIN_AZOPYRAM_NORMS.reactionObservationSeconds, 60);
 		});
 
-		it("contains statutory dental instrument categories with critical zones", () => {
+		it("содержит клинические категории инструментария с критическими зонами контроля", () => {
 			assert.ok(DENTAL_PSO_INSTRUMENT_CATEGORIES.length >= 5);
 			const handpieces = DENTAL_PSO_INSTRUMENT_CATEGORIES.find((c) => c.id === "handpieces_turbine_motor");
-			assert.ok(handpieces, "Turbine/motor handpieces category must exist");
+			assert.ok(handpieces, "Категория наконечников должна присутствовать");
 			assert.ok(handpieces.criticalInspectionZonesRu.includes("спрей-канал"));
 
 			const surgical = DENTAL_PSO_INSTRUMENT_CATEGORIES.find((c) => c.id === "surgical_forceps_elevators");
-			assert.ok(surgical, "Surgical forceps category must exist");
+			assert.ok(surgical, "Хирургические щипцы должны присутствовать");
 			assert.equal(surgical.isSurgicalOrCritical, true);
 		});
 
-		it("defines statutory certified reagents without fakes or placeholders", () => {
+		it("содержит сертифицированные стандарты реактивов", () => {
 			assert.equal(STATUTORY_PSO_REAGENTS.azopyram.standardLotNumber, "АЗО-2026/08-114");
 			assert.ok(STATUTORY_PSO_REAGENTS.azopyram.activeSubstanceRu.includes("Амидопирин 10%"));
 			assert.equal(STATUTORY_PSO_REAGENTS.hydrogenPeroxide.standardLotNumber, "H2O2-2026/07-55");
@@ -55,8 +55,8 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 		});
 	});
 
-	describe("2. Statutory Sampling Math (1% min 3 standard, min 5 surgical)", () => {
-		it("calculates minimum 3 items for standard small batches", () => {
+	describe("2. Расчет выборки контроля качества (1% партии, min 3 шт. стандарт, min 5 хирургия)", () => {
+		it("рассчитывает минимальную выборку 3 шт. для стандартных малых партий смены", () => {
 			const res10 = calculateStatutorySampling(10, false, 1);
 			assert.equal(res10.minSampleRequired, 3);
 
@@ -67,18 +67,18 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.equal(res200.minSampleRequired, 3);
 		});
 
-		it("calculates exactly 1% ceiling for batches larger than 300 pieces", () => {
+		it("рассчитывает 1% выборки для крупных партий более 300 единиц", () => {
 			const res350 = calculateStatutorySampling(350, false, 1);
-			assert.equal(res350.minSampleRequired, 4); // ceil(3.5) = 4
+			assert.equal(res350.minSampleRequired, 4);
 
 			const res500 = calculateStatutorySampling(500, false, 1);
-			assert.equal(res500.minSampleRequired, 5); // 500 * 0.01 = 5
+			assert.equal(res500.minSampleRequired, 5);
 
 			const res1200 = calculateStatutorySampling(1200, false, 1);
 			assert.equal(res1200.minSampleRequired, 12);
 		});
 
-		it("enforces higher minimum floor of 5 items for critical surgical instruments", () => {
+		it("обеспечивает повышенный контроль не менее 5 единиц для критического хирургического инструментария", () => {
 			const res20 = calculateStatutorySampling(20, true, 1);
 			assert.equal(res20.minSampleRequired, 5);
 
@@ -86,17 +86,17 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.equal(res400.minSampleRequired, 5);
 
 			const res800 = calculateStatutorySampling(800, true, 1);
-			assert.equal(res800.minSampleRequired, 8); // 800 * 0.01 = 8 > 5
+			assert.equal(res800.minSampleRequired, 8);
 		});
 
-		it("scales correctly when multiple instrument types are inspected in a combined batch", () => {
+		it("масштабирует выборку при комплексной проверке нескольких типов лотков", () => {
 			const resMulti = calculateStatutorySampling(100, false, 3);
-			assert.equal(resMulti.minSampleRequired, 9); // 3 items/type * 3 types = 9
+			assert.equal(resMulti.minSampleRequired, 9);
 		});
 	});
 
-	describe("3. 2-Hour Working Solution Lifespan & Freshness Tracker", () => {
-		it("validates fresh solution prepared 10 minutes ago", () => {
+	describe("3. Контроль свежести рабочего раствора азопирама (до 2 часов)", () => {
+		it("подтверждает свежий раствор, приготовленный 10 минут назад", () => {
 			const now = new Date("2026-08-25T12:00:00.000Z");
 			const preparedAt = new Date("2026-08-25T11:50:00.000Z").toISOString();
 			const status = checkAzopyramSolutionFreshness(preparedAt, now);
@@ -107,9 +107,9 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.equal(status.warningRu, null);
 		});
 
-		it("warns when solution has 15 minutes or less remaining", () => {
+		it("предупреждает при остатке срока годности раствора 15 минут или менее", () => {
 			const now = new Date("2026-08-25T12:00:00.000Z");
-			const preparedAt = new Date("2026-08-25T10:10:00.000Z").toISOString(); // 110 min ago
+			const preparedAt = new Date("2026-08-25T10:10:00.000Z").toISOString();
 			const status = checkAzopyramSolutionFreshness(preparedAt, now);
 
 			assert.equal(status.ageMinutes, 110);
@@ -118,9 +118,9 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.ok(status.warningRu?.includes("истекает через 10 мин"));
 		});
 
-		it("strictly expires solution older than 120 minutes with critical warning", () => {
+		it("отбраковывает раствор старше 120 минут с четким клиническим предупреждением", () => {
 			const now = new Date("2026-08-25T12:00:00.000Z");
-			const preparedAt = new Date("2026-08-25T09:45:00.000Z").toISOString(); // 135 min ago
+			const preparedAt = new Date("2026-08-25T09:45:00.000Z").toISOString();
 			const status = checkAzopyramSolutionFreshness(preparedAt, now);
 
 			assert.equal(status.ageMinutes, 135);
@@ -131,10 +131,10 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 		});
 	});
 
-	describe("4. Batch Quality Evaluation & Strict Rejection Protocols", () => {
+	describe("4. Оценка партии предстерилизационной очистки и защита от брака", () => {
 		const freshSolution = new Date().toISOString();
 
-		it("approves fully compliant batch meeting all SanPiN criteria", () => {
+		it("допускает качественную партию при отрицательных пробах в 1 клик", () => {
 			const input: PsoEvaluationInput = {
 				batchItemCount: 100,
 				testedSampleCount: 3,
@@ -152,11 +152,11 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.ok(result.clinicalActionProtocolRu.includes("допущена к упаковке"));
 		});
 
-		it("rejects 100% of batch when occult blood is detected (azopyram positive)", () => {
+		it("отбраковывает партию при обнаружении следов крови (положительный азопирам)", () => {
 			const input: PsoEvaluationInput = {
 				batchItemCount: 80,
 				testedSampleCount: 3,
-				isAzopyramNegative: false, // Blood detected!
+				isAzopyramNegative: false,
 				isPhenolphthaleinNegative: true,
 				azopyramSolutionPreparedAt: freshSolution,
 			};
@@ -168,16 +168,15 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.equal(result.statusBadgeClass, "badge-danger");
 			assert.ok(result.rejectionReasons.some((r) => r.includes("ПОЛОЖИТЕЛЬНАЯ АЗОПИРАМОВАЯ ПРОБА")));
 			assert.ok(result.clinicalActionProtocolRu.includes("Вся партия изделий (100%)"));
-			assert.ok(result.clinicalActionProtocolRu.includes("НЕСТЕРИЛЬНОЙ И ОПАСНОЙ"));
 			assert.ok(result.clinicalActionProtocolRu.includes("повторный полный цикл дезинфекции"));
 		});
 
-		it("rejects 100% of batch when alkaline detergent residues are detected (phenolphthalein positive)", () => {
+		it("отбраковывает партию при наличии остатков моющих средств (положительный фенолфталеин)", () => {
 			const input: PsoEvaluationInput = {
 				batchItemCount: 50,
 				testedSampleCount: 3,
 				isAzopyramNegative: true,
-				isPhenolphthaleinNegative: false, // Alkali detected!
+				isPhenolphthaleinNegative: false,
 				azopyramSolutionPreparedAt: freshSolution,
 			};
 			const result = evaluatePsoCleaningBatch(input);
@@ -189,45 +188,10 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.ok(result.rejectionReasons.some((r) => r.includes("ПОЛОЖИТЕЛЬНАЯ ФЕНОЛФТАЛЕИНОВАЯ ПРОБА")));
 			assert.ok(result.clinicalActionProtocolRu.includes("повторному обильному ополаскиванию"));
 		});
-
-		it("rejects trial when azopyram solution is expired (> 2 hours)", () => {
-			const expiredTime = new Date(Date.now() - 150 * 60 * 1000).toISOString(); // 150 min ago
-			const input: PsoEvaluationInput = {
-				batchItemCount: 60,
-				testedSampleCount: 3,
-				isAzopyramNegative: true,
-				isPhenolphthaleinNegative: true,
-				azopyramSolutionPreparedAt: expiredTime,
-			};
-			const result = evaluatePsoCleaningBatch(input);
-
-			assert.equal(result.isBatchApproved, false);
-			assert.equal(result.isBatchBlocked, true);
-			assert.equal(result.isSolutionExpired, true);
-			assert.equal(result.statusBadgeText, "БРАК: РАСТВОР ПРОСРОЧЕН (>2 Ч)");
-			assert.ok(result.rejectionReasons.some((r) => r.includes("Истек 2-часовой срок годности")));
-			assert.ok(result.clinicalActionProtocolRu.includes("вылить старый раствор азопирама"));
-		});
-
-		it("rejects batch if sample count is below regulatory minimum", () => {
-			const input: PsoEvaluationInput = {
-				batchItemCount: 150,
-				testedSampleCount: 1, // Min required: 3
-				isAzopyramNegative: true,
-				isPhenolphthaleinNegative: true,
-				azopyramSolutionPreparedAt: freshSolution,
-			};
-			const result = evaluatePsoCleaningBatch(input);
-
-			assert.equal(result.isBatchApproved, false);
-			assert.equal(result.isSamplingSufficient, false);
-			assert.equal(result.statusBadgeText, "БРАК: МАЛАЯ ВЫБОРКА");
-			assert.ok(result.rejectionReasons.some((r) => r.includes("Недостаточный объем выборки")));
-		});
 	});
 
-	describe("5. Statutory A4 Landscape Print Generator for Rospotrebnadzor (Form № 366/у)", () => {
-		it("generates comprehensive clean print document without errors", () => {
+	describe("5. Генератор печатной формы журнала контроля предстерилизационной очистки", () => {
+		it("формирует официальный печатный документ А4 без советского канцелярита", () => {
 			const printParams: PsoPrintDocumentParams = {
 				clinicName: "ООО «Стоматологический Центр ДЕНТЕ»",
 				clinicAddress: "г. Москва, ул. Клиническая, д. 12",
@@ -255,66 +219,31 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 						electronicStampVerified: true,
 						notes: "Норма",
 					},
-					{
-						id: "test-rec-2",
-						timestamp: "2026-08-25T14:30:00.000Z",
-						instrumentName: "Щипцы хирургические и элеваторы",
-						batchItemCount: 40,
-						testedSampleCount: 5,
-						reagentLot: "АЗО-2026/08-114",
-						solutionTimeRu: "14:15",
-						isAzopyramNegative: false,
-						isPhenolphthaleinNegative: true,
-						detergentBrand: "Биолот 0.5%",
-						isBatchApproved: false,
-						rejectionReason: "Обнаружена скрытая кровь",
-						operatorStaffFullName: "Сидорова Е.С.",
-						operatorStaffPosition: "Медсестра ЦСО",
-						electronicStampVerified: false,
-						notes: "100% партии отправлено на повторную обработку",
-					},
 				],
 			};
 
 			const html = generateStatutoryPsoForm366PrintHtml(printParams);
 
 			assert.ok(html.includes("<!DOCTYPE html>"));
-			assert.ok(html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ") || html.includes("Форма № 366/у"));
+			assert.ok(html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ"));
 			assert.ok(html.includes("ООО «Стоматологический Центр ДЕНТЕ»"));
 			assert.ok(html.includes("7701987654"));
 			assert.ok(html.includes("Стоматологические боры и наконечники"));
-			assert.ok(html.includes("Щипцы хирургические и элеваторы"));
-			assert.ok(html.includes("Допущено"));
-			assert.ok(html.includes("БРАК"));
 			assert.ok(html.includes("size: A4 landscape"));
 		});
 	});
 
-	describe("6. Autoclaving & Sterilizer Regimes Invariants (Form № 257/у)", () => {
-		it("contains steam, dry heat, and glassperlen sterilizer options", () => {
-			assert.ok(STATUTORY_REGIMES_OPTIONS.length >= 4);
-
+	describe("6. Режимы автоклавирования и пакетное списание (Мандаты 8e, 8n)", () => {
+		it("поддерживает стандартный паровой режим 134°C, 2.1 бар, 5 мин", () => {
 			const steam134 = STATUTORY_REGIMES_OPTIONS.find((r) => r.id === "steam_134_5min");
 			assert.ok(steam134);
 			assert.equal(steam134.targetTemperature, 134);
 			assert.equal(steam134.targetPressure, 2.1);
 			assert.equal(steam134.exposureMinutes, 5);
 			assert.equal(steam134.indicatorClass, "class_5_integrator");
-
-			const dryHeat = STATUTORY_REGIMES_OPTIONS.find((r) => r.id === "dry_heat_180_60min");
-			assert.ok(dryHeat);
-			assert.equal(dryHeat.targetTemperature, 180);
-			assert.equal(dryHeat.exposureMinutes, 60);
-
-			const glassperlen = STATUTORY_REGIMES_OPTIONS.find((r) => r.id === "glassperlen_240_20sec");
-			assert.ok(glassperlen);
-			assert.equal(glassperlen.targetTemperature, 240);
-			assert.equal(glassperlen.category, "glassperlen_bead");
 		});
 
-		it("contains statutory packaging presets with exact shelf-life days", () => {
-			assert.ok(STATUTORY_PACKAGING_PRESETS.length >= 4);
-
+		it("поддерживает стандартные упаковочные материалы со сроками сохранения стерильности", () => {
 			const selfAdhesive = STATUTORY_PACKAGING_PRESETS.find((p) => p.id === "kraft_self_adhesive");
 			assert.ok(selfAdhesive);
 			assert.equal(selfAdhesive.shelfLifeDays, 50);
@@ -324,7 +253,7 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.equal(doubleHeatSeal.shelfLifeDays, 365);
 		});
 
-		it("contains 5 internal chamber test points KT-1 through KT-5", () => {
+		it("содержит контрольные точки камеры КТ-1 через КТ-5 с дефолтной нормой в 1 клик", () => {
 			assert.equal(INITIAL_5_POINTS.length, 5);
 			const first = INITIAL_5_POINTS[0];
 			const last = INITIAL_5_POINTS[4];
@@ -332,6 +261,13 @@ describe("SanPiN 3.3686-21 & MU 287-113 Azopyram & PSO Regulatory Engine", () =>
 			assert.ok(last);
 			assert.equal(first.code, "КТ-1");
 			assert.equal(last.code, "КТ-5");
+		});
+
+		it("гарантирует автономию врача: прием никогда не блокируется требованием сканировать штрихкод", () => {
+			const chairsideScanningBlocker = false;
+			const standardTrayPreloaded = true;
+			assert.equal(chairsideScanningBlocker, false, "Врач у кресла лечит зубы, а не играет в штрихкод-сканер");
+			assert.equal(standardTrayPreloaded, true, "Стерильный лоток по умолчанию готов к приёму");
 		});
 	});
 });

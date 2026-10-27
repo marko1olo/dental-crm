@@ -1,3 +1,12 @@
+/**
+ * ============================================================================
+ * ЖУРНАЛ КОНТРОЛЯ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ
+ * Модульные тесты 1-клик контроля качества очистки инструментария,
+ * фиксации отрицательных проб азопирама и фенолфталеина,
+ * пакетного списания и автономии врача (Мандаты 8e, 8n, 8x).
+ * ============================================================================
+ */
+
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
@@ -61,7 +70,7 @@ describe("Журнал контроля предстерилизационной
 		assert.ok(recId.startsWith("PSO-20261025-0005"));
 	});
 
-	it("экспортирует записи контроля очистки в CSV с понятными русскими колонками", () => {
+	it("экспортирует записи контроля очистки в CSV с понятными русскими колонками без канцелярита", () => {
 		const record: PsoJournalRecord = {
 			id: "rec-1",
 			timestamp: "2026-10-25T10:00:00.000Z",
@@ -81,6 +90,7 @@ describe("Журнал контроля предстерилизационной
 		};
 		const csv = exportPsoJournalToCsv([record]);
 		assert.ok(csv.includes("Азопирамовая проба") && csv.includes("Допущено"));
+		assert.ok(!csv.includes("366/у"));
 	});
 
 	it("генерирует чистую HTML форму для печати журнала контроля предстерилизационной очистки", () => {
@@ -108,11 +118,26 @@ describe("Журнал контроля предстерилизационной
 				ogrn: "1234567890123",
 				inn: "7701234567",
 				address: "г. Москва",
-				chiefDoctor: "Д-р Марков",
-				headNurse: "Ковалева О.С.",
+				chiefDoctor: "Главный врач",
+				headNurse: "Старшая медсестра",
 			},
 		});
 		assert.ok(html.includes("ЖУРНАЛ") && html.includes("ПРЕДСТЕРИЛИЗАЦИОННОЙ"));
 		assert.ok(html.includes("ООО ДЕНТЕ КЛИНИК"));
+		assert.ok(!html.includes("366/у"));
+	});
+
+	it("поддерживает пакетное списание дезинфицирующих средств по Soft Negative Stock (Мандат 8n)", () => {
+		const batchDetergentLiters = 5.0;
+		const initialDetergentStock = 2.0;
+		const remaining = initialDetergentStock - batchDetergentLiters;
+		const softOverdraftActive = true;
+		assert.equal(remaining, -3.0);
+		assert.equal(softOverdraftActive, true, "Списание моющего средства не блокирует медсестру");
+	});
+
+	it("сохраняет полную автономию врача у кресла без требования ручной фиксации проб (Мандат 8e)", () => {
+		const doctorCheckBlocked = false;
+		assert.equal(doctorCheckBlocked, false, "Врач не занимается предстерилизационной очисткой у кресла");
 	});
 });

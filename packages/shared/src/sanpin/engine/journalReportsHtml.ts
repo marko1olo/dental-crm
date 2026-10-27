@@ -112,7 +112,7 @@ export function generatePsoJournalPrintHtml(params: {
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Журнал качества ПСО (Форма № 366/у)</title>
+	<title>Журнал учета качества предстерилизационной очистки</title>
 	<style>
 		@page { size: A4 landscape; margin: 12mm; }
 		body { font-family: 'Times New Roman', serif; font-size: 9pt; line-height: 1.2; color: #000; }
@@ -130,7 +130,7 @@ export function generatePsoJournalPrintHtml(params: {
 	<div class="header">
 		<div class="clinic-name">${clinic.name}</div>
 		<div style="font-size: 8pt;">ИНН ${clinic.inn} | ОГРН ${clinic.ogrn} | ${clinic.address}</div>
-		<div class="title">ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/у)</div>
+		<div class="title">ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ</div>
 		<div class="subtitle">В соответствии с требованиями СанПиН 3.3686-21 «Профилактика инфекционных болезней» (раздел IV)</div>
 		<div style="margin-top: 4px; font-size: 8.5pt;"><strong>${range}</strong></div>
 	</div>
@@ -231,7 +231,7 @@ export function generateForm257PrintHtml(
 <html lang="ru">
 <head>
 	<meta charset="utf-8">
-	<title>Журнал контроля работы стерилизаторов (Форма № 257/у)</title>
+	<title>Журнал контроля работы стерилизаторов (автоклавов)</title>
 	<style>
 		@page { size: A4 landscape; margin: 10mm; }
 		body { font-family: 'Times New Roman', serif; font-size: 8.5pt; line-height: 1.2; color: #000; }
@@ -248,7 +248,7 @@ export function generateForm257PrintHtml(
 	<div class="header">
 		<div class="clinic-title">${clinicInfo.name}</div>
 		<div style="font-size: 7.5pt;">ИНН ${clinicInfo.inn} | ОГРН ${clinicInfo.ogrn} | ${clinicInfo.address}</div>
-		<div class="form-title">ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ И СУХОЖАРОВЫХ ШКАФОВ (ФОРМА № 257/у)</div>
+		<div class="form-title">ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ (АВТОКЛАВОВ)</div>
 		<div style="font-size: 7.5pt; color: #333;">В соответствии с требованиями СанПиН 3.3686-21 «Профилактика инфекционных болезней» (${periodLabelRu})</div>
 	</div>
 

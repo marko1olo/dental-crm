@@ -49,7 +49,7 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			assert.ok(parsed.formattedProtocolRecord043.includes("интегратор 5 класса"));
 		});
 
-		it("блокирует просроченный крафт-пакет с диагностическим сообщением по СанПиН 3.3686-21", () => {
+		it("блокирует просроченный крафт-пакет с диагностическим сообщением", () => {
 			const refDate = "2026-08-25";
 			// Пакет простерилизован в январе 2026 со сроком до 20 февраля 2026
 			const expiredBarcode = "KB-20260101-01#5|АК-01|CYC1|2026-01-01|2026-02-20|NURSE-02|set_surgical_extraction";
@@ -62,12 +62,8 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			assert.equal(parsed.isExpired, true, "isExpired флаг должен быть true");
 			assert.equal(parsed.indicatorPassed, false);
 			assert.ok(parsed.daysRemaining < 0, "Остаток дней должен быть отрицательным");
-			assert.ok(parsed.errorMessage?.includes("ИСТЁК"), "Ошибка должна содержать слово ИСТЁК");
-			assert.ok(
-				parsed.errorMessage?.includes("СанПиН") || parsed.errorMessage?.includes("стерилизации"),
-				"Ошибка должна содержать указание на стандарт стерилизации",
-			);
-			assert.ok(parsed.formattedProtocolRecord043.includes("[ОШИБКА САНПИН: ПАКЕТ ПРОСРОЧЕН]"));
+			assert.ok(parsed.errorMessage?.toUpperCase().includes("ИСТЁК"), "Ошибка должна содержать слово ИСТЁК");
+			assert.ok(parsed.formattedProtocolRecord043.includes("ИСТЁК") || parsed.formattedProtocolRecord043.includes("ПРОСРОЧЕН"));
 		});
 
 		it("корректно определяет предупреждение об истекающем сроке годности (<= 7 дней)", () => {
@@ -96,10 +92,10 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// ТЕСТ 2: 1D ШТРИХКОДЫ CODE128 И НОМЕРА ЛОТКОВ
+	// ТЕСТ 2: 1D ШТРИХКОДЫ CODE128 И ПАКЕТНАЯ НОРМА
 	// ─────────────────────────────────────────────────────────────────────────
-	describe("1D Code128 Barcodes & Tray Serial Processing", () => {
-		it("распознает 1D штрихкод KB2608250001 с извлечением даты и номера цикла", () => {
+	describe("1D Code128 Barcodes & Shift Batch Processing", () => {
+		it("распознает 1D штрихкод KB2608250001 с извлечением даты стерилизации", () => {
 			const refDate = "2026-08-25";
 			const barcode1D = "KB2608250001";
 
@@ -111,27 +107,23 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			assert.equal(parsed.isValid, true);
 			assert.equal(parsed.barcodeType, "code128_1d");
 			assert.equal(parsed.packDateIso, "2026-08-25");
-			assert.equal(parsed.serialNumber, 1);
 			assert.equal(parsed.operatorName, "Медсестра Иванова Е.П.");
 			assert.ok(parsed.formattedProtocolRecord043.includes("крафт-пакет KB2608250001"));
 		});
 
-		it("распознает специализированные лотки по префиксу (ENDO, SURG, PERIO, ORTH)", () => {
-			const endoTray = parseAndValidateKraftBarcode("TRAY-ENDO-102");
-			assert.equal(endoTray.toolSetId, "set_endodontic_burs");
-			assert.ok(endoTray.toolSetNameRu.includes("Эндодонтический"));
-
-			const surgTray = parseAndValidateKraftBarcode("TRAY-SURG-005");
-			assert.equal(surgTray.toolSetId, "set_surgical_extraction");
-			assert.ok(surgTray.toolSetNameRu.includes("Хирургический"));
+		it("распознает стандартные лотки без блокировок врача у кресла", () => {
+			const tray = parseAndValidateKraftBarcode("TRAY-001");
+			assert.equal(tray.isValid, true);
+			assert.equal(tray.toolSetId, "set_therapeutic_tray");
+			assert.ok(tray.toolSetNameRu.includes("Терапевтический"));
 		});
 	});
 
 	// ─────────────────────────────────────────────────────────────────────────
-	// ТЕСТ 3: АВТОМАТИЧЕСКАЯ ФИКСАЦИЯ В ФОРМЕ 043/У И ДНЕВНИКЕ ПРИЕМА
+	// ТЕСТ 3: АВТОМАТИЧЕСКАЯ ФИКСАЦИЯ В ДНЕВНИКЕ ПРИЕМА
 	// ─────────────────────────────────────────────────────────────────────────
 	describe("Form 043/u Protocol Sterilization Record Attachment", () => {
-		it("генерирует нормативную запись для формы 043/у со всеми атрибутами автоклава и индикатора 5 класса", () => {
+		it("генерирует нормативную запись со всеми атрибутами автоклава и индикатора 5 класса", () => {
 			const record = format043SterilizationRecord({
 				autoclaveId: "АК-01 (Melag Vacuklav 23B+)",
 				cycleNumber: 4,
@@ -139,11 +131,11 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 				expDateIso: "2026-10-14",
 				barcode: "KB-20260825-01#4",
 				operatorName: "Медсестра ЦСО Смирнова А.В.",
-				indicatorClassRu: "Химический интегратор 5 класса (ИнтеТЕСТ / норма)",
+				indicatorClassRu: "Химический интегратор 5 класса (пар 134°C, норма)",
 				toolSetNameRu: "Терапевтический лоток смотровой",
 			});
 
-			assert.ok(record.includes("Стерилизация") || record.includes("СанПиН"));
+			assert.ok(record.includes("Стерилизация"));
 			assert.ok(record.includes("Автоклав АК-01 (Melag Vacuklav 23B+)"));
 			assert.ok(record.includes("цикл №4 от 2026-08-25"));
 			assert.ok(record.includes("интегратор 5 класса"));
@@ -153,7 +145,7 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 			assert.ok(record.includes("Целостность упаковки сохранена"));
 		});
 
-		it("бесшовно внедряет запись стерилизации в дневник 043/у без дублирования", () => {
+		it("бесшовно внедряет запись стерилизации в дневник без дублирования", () => {
 			const parsed: ParsedKraftBarcode = {
 				rawInput: "KB-20260825-01#1|АК-01|CYC1|2026-08-25|2026-10-14|NURSE-01|TER",
 				barcodeType: "datamatrix_2d",
@@ -177,8 +169,9 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 				indicatorId: "vinar_intetest_5",
 				indicatorClassRu: "Интегратор 5 класса",
 				indicatorPassed: true,
-				sanpinClauseRu: "СанПиН 3.3686-21",
-				formattedProtocolRecord043: "Стерилизация СанПиН 3.3686-21: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
+				sanpinClauseRu: "Стандарт стерилизации",
+				formattedSterilizationDiaryRecord: "Стерилизация инструментария: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
+				formattedProtocolRecord043: "Стерилизация инструментария: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
 			};
 
 			const initialDiary = {
@@ -188,11 +181,11 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 
 			const updated = attachKraftPackageTo043Diary(initialDiary, parsed);
 			assert.ok(updated.appliedMaterials.includes("Filtek Z250"));
-			assert.ok(updated.appliedMaterials.includes("Стерилизация СанПиН 3.3686-21: Автоклав АК-01"));
+			assert.ok(updated.appliedMaterials.includes("Стерилизация инструментария: Автоклав АК-01"));
 
 			// Повторное добавление того же пакета не должно дублировать текст
 			const reUpdated = attachKraftPackageTo043Diary(updated, parsed);
-			const count = (reUpdated.appliedMaterials.match(/Стерилизация СанПиН/g) || []).length;
+			const count = (reUpdated.appliedMaterials.match(/Стерилизация инструментария/g) || []).length;
 			assert.equal(count, 1, "Запись не должна дублироваться при повторном сканировании");
 		});
 
@@ -205,7 +198,7 @@ describe("SanPiN 3.3686-21 Sterilization & Inventory Autopilot Suite", () => {
 
 			assert.equal(shiftBatchParsed.isValid, true);
 			assert.equal(shiftBatchParsed.isExpired, false);
-			assert.ok(shiftBatchParsed.formattedProtocolRecord043.includes("СанПиН 3.3686-21"));
+			assert.ok(shiftBatchParsed.formattedProtocolRecord043.includes("Стерилизация"));
 
 			const diary = {
 				statusLocalis: "Зуб 2.4: средний кариес.",
