@@ -45,7 +45,7 @@ export const MarketingRoiModal: React.FC<MarketingRoiModalProps> = ({
 		});
 	}, [performanceChannels, categoryFilter, searchQuery]);
 
-	// ст. 13 323-ФЗ & 152-ФЗ Personal Data Protection: initials, phone mask & sanitized plan titles
+	// Защита персональных данных и врачебная тайна: инициалы, маска телефона и нейтральные названия планов лечения
 	const sanitizedAttributions = useMemo(() => {
 		const q = searchQuery.toLowerCase().trim();
 		return attributionsData

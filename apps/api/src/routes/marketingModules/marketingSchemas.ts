@@ -22,15 +22,30 @@ export const marketingUtmSchema = z.object({
 
 export type MarketingUtmParams = z.infer<typeof marketingUtmSchema>;
 
+/** Строгий реляционный енам каналов привлечения (Мандат 8ap) */
+export const relationalMarketingChannelEnum = z.enum([
+	"referral", // сарафан (рекомендации, родственники)
+	"maps", // Яндекс Карты / 2ГИС
+	"website", // онлайн-запись (сайт клиники)
+	"telephony", // АТС (входящие вызовы)
+	"partner", // страховая / партнеры
+]);
+
+export type RelationalMarketingChannel = z.infer<typeof relationalMarketingChannelEnum>;
+
 /** Допустимые идентификаторы каналов привлечения */
 export const marketingChannelKeySchema = z.enum([
+	"referral",
+	"maps",
+	"website",
+	"telephony",
+	"partner",
 	"website_widget",
 	"yandex_maps",
 	"gis_2",
 	"prodoctorov",
 	"tg_bot",
 	"wa_bot",
-	"telephony",
 ]);
 
 export type MarketingChannelKey = z.infer<typeof marketingChannelKeySchema>;

@@ -19,7 +19,7 @@ export const MarketingRoiFooter: React.FC<MarketingRoiFooterProps> = ({ onClose 
 				<button
 					type="button"
 					onClick={onClose}
-					className="marketing-roi-action-btn primary"
+					className="dente-btn dente-btn-primary marketing-roi-action-btn primary"
 					data-testid="close-marketing-roi-btn"
 				>
 					<span>Закрыть аналитику</span>
