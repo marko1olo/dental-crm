@@ -8,10 +8,9 @@
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
 	scrollbar-width: none;
-	padding-bottom: 2px;
-	margin: 0 -4px;
-	padding-left: 4px;
-	padding-right: 16px;
+	padding: 8px 16px 8px 14px;
+	margin: 0;
+	background: var(--paper);
 }
 
 .mobile-inventory-chips-scroller::-webkit-scrollbar {

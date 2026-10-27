@@ -43,12 +43,11 @@ export const AcceptanceWaybillsHeader: React.FC<AcceptanceWaybillsHeaderProps> =
 					<button
 						type="button"
 						onClick={onLoadSample}
-						className="acceptance-btn-secondary"
-						style={{ height: 32, fontSize: 12 }}
+						className="acceptance-btn-secondary acceptance-btn-sm"
 						title="Загрузить образцовую накладную от Стомторга со стандартным набором материалов"
 						data-testid="btn-load-sample-waybill"
 					>
-						<Sparkles size={14} style={{ color: "var(--teal, #0d9488)" }} />
+						<Sparkles size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 						<span>Образец (Стомторг)</span>
 					</button>
 					<button

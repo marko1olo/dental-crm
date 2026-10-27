@@ -72,7 +72,7 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 
 	if (isInventoryStandalone) {
 		return (
-			<div className="w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
+			<div className="fixed inset-0 z-[99999] w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
 				<InventoryView organizationId="demo-clinic-org" />
 			</div>
 		);
@@ -80,7 +80,7 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 
 	if (isInboundInvoiceStandalone) {
 		return (
-			<div className="w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
+			<div className="fixed inset-0 z-[99999] w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
 				<InventoryInboundInvoiceModal
 					isOpen={true}
 					organizationId="demo-clinic-org"

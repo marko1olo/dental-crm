@@ -59,7 +59,7 @@ export const ShiftBatchModalFooter: React.FC<ShiftBatchModalFooterProps> = ({
 						onClick={onExecuteShiftDeduction}
 						disabled={isSubmitting}
 						data-testid="btn-confirm-shift-batch-deduction"
-						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 sm:px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs cursor-pointer transition-all active:scale-98 disabled:opacity-50 whitespace-nowrap shrink-0"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 sm:px-4 rounded-xl bg-[var(--primary)] hover:brightness-110 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs cursor-pointer transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap shrink-0"
 					>
 						{isSubmitting ? (
 							<>
@@ -83,7 +83,7 @@ export const ShiftBatchModalFooter: React.FC<ShiftBatchModalFooterProps> = ({
 						onClick={onConfirmProcedureDeduction}
 						disabled={isSubmitting}
 						data-testid="btn-confirm-procedure-deduction"
-						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 sm:px-4 rounded-xl bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs cursor-pointer transition-all active:scale-98 disabled:opacity-50 whitespace-nowrap shrink-0"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 sm:px-4 rounded-xl bg-[var(--primary)] hover:brightness-110 text-white text-xs font-bold inline-flex items-center justify-center gap-1.5 sm:gap-2 shadow-xs cursor-pointer transition-all active:scale-95 disabled:opacity-50 whitespace-nowrap shrink-0"
 					>
 						{isSubmitting ? (
 							<>

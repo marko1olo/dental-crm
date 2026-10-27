@@ -42,13 +42,13 @@ export const WarehouseOverviewKpiBar: React.FC<
 				<button
 					type="button"
 					onClick={onOpenShiftDeductionModal}
-					className="text-[11px] font-bold text-teal-800 dark:text-teal-200 bg-teal-500/15 hover:bg-teal-500/25 px-2.5 py-1 rounded-lg border border-teal-500/30 flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+					className="secondary-button text-[11px] font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] px-2.5 py-1 rounded-lg border border-[var(--line)] flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
 					data-testid="btn-overview-shift-batch-deduction"
 					title="Списать расходники за смену"
 				>
 					<PackageCheck
 						size={13}
-						className="text-teal-600 dark:text-teal-400"
+						className="text-[var(--teal,#0d9488)]"
 					/>
 					<span>Списать расходники за смену</span>
 				</button>
@@ -57,7 +57,7 @@ export const WarehouseOverviewKpiBar: React.FC<
 				<button
 					type="button"
 					onClick={onOpenWaybills}
-					className="text-[11px] font-semibold text-teal-700 dark:text-teal-300 hover:underline flex items-center gap-1 cursor-pointer"
+					className="text-[11px] font-semibold text-[var(--teal,#0d9488)] hover:underline flex items-center gap-1 cursor-pointer"
 				>
 					<Truck size={12} />
 					<span>Оприходовать накладную</span>

@@ -15,11 +15,11 @@ export const WarehouseStockAlertsActions: React.FC<
 			<button
 				type="button"
 				onClick={onOpenWaybills}
-				className="primary-button text-xs font-semibold cursor-pointer"
+				className="secondary-button h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-colors"
 				data-testid="alert-action-open-waybills"
 				title="Оприходовать накладную поставщика и закрыть дефицит"
 			>
-				<Truck size={14} className="shrink-0" />
+				<Truck size={13} className="shrink-0 text-[var(--teal,#0d9488)]" />
 				<span className="whitespace-nowrap">Приход накладной</span>
 			</button>
 		)}
@@ -27,13 +27,13 @@ export const WarehouseStockAlertsActions: React.FC<
 			<button
 				type="button"
 				onClick={onOpenBatchTracking}
-				className="secondary-button text-xs font-semibold cursor-pointer"
+				className="secondary-button h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-colors"
 				data-testid="alert-action-open-batches"
 				title="Партионный учёт и контроль сроков годности FEFO"
 			>
 				<Layers
-					size={14}
-					className="text-teal-600 dark:text-teal-400 shrink-0"
+					size={13}
+					className="text-[var(--teal,#0d9488)] shrink-0"
 				/>
 				<span className="whitespace-nowrap">Партии FEFO</span>
 			</button>
@@ -42,13 +42,13 @@ export const WarehouseStockAlertsActions: React.FC<
 			<button
 				type="button"
 				onClick={onOpenInventoryAudit}
-				className="secondary-button text-xs font-semibold cursor-pointer"
+				className="secondary-button h-7 min-h-[28px] px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold cursor-pointer inline-flex items-center gap-1.5 shadow-xs transition-colors"
 				data-testid="alert-action-open-audit"
 				title="Провести инвентаризацию и сверку остатков"
 			>
 				<FileText
-					size={14}
-					className="text-teal-600 dark:text-teal-400 shrink-0"
+					size={13}
+					className="text-[var(--teal,#0d9488)] shrink-0"
 				/>
 				<span className="whitespace-nowrap">Инвентаризация</span>
 			</button>

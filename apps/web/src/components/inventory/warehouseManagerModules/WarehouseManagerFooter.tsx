@@ -29,7 +29,7 @@ export const WarehouseManagerFooter: React.FC<WarehouseManagerFooterProps> = ({
 			<div className="flex items-center gap-2">
 				<button
 					type="button"
-					className="h-9 px-4 text-xs font-semibold rounded-lg border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,#f1f5f9)] transition-colors cursor-pointer"
+					className="h-9 px-4 text-xs font-semibold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer"
 					onClick={onCancel}
 				>
 					Отмена
@@ -37,7 +37,7 @@ export const WarehouseManagerFooter: React.FC<WarehouseManagerFooterProps> = ({
 
 				<button
 					type="button"
-					className="h-9 px-5 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-700 text-white flex items-center gap-2 shadow-sm transition-colors cursor-pointer disabled:opacity-50"
+					className="h-9 px-5 text-xs font-bold rounded-xl bg-[var(--primary,#0d9488)] hover:brightness-110 active:scale-95 text-white flex items-center gap-2 shadow-xs transition-all cursor-pointer disabled:opacity-50"
 					onClick={onConfirm}
 					disabled={isSubmitting}
 					data-testid="confirm-writeoff-btn"

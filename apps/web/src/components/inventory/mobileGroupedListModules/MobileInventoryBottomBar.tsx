@@ -22,10 +22,10 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 				className="mobile-inventory-primary-fab cursor-pointer"
 				onClick={onOpenInboundDrawer}
 				data-testid="mobile-btn-inbound-batch"
-				aria-label="Оприходовать партию материалов (+ Приход)"
+				aria-label="Оприходовать партию материалов (Приход)"
 			>
 				<Plus size={20} aria-hidden="true" />
-				<span>+ Приход</span>
+				<span>Приход</span>
 			</button>
 
 			{onOpenMdlpScanning && (

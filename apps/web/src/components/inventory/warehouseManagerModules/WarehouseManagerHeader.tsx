@@ -43,7 +43,7 @@ export const WarehouseManagerHeader: React.FC<WarehouseManagerHeaderProps> = ({
 				{activeView === "act_preview" ? (
 					<button
 						type="button"
-						className="h-9 px-3 text-xs font-semibold rounded-lg border border-[var(--border,#cbd5e1)] hover:bg-[var(--paper-strong,#f1f5f9)] flex items-center gap-1.5 transition-colors cursor-pointer"
+						className="h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] flex items-center gap-1.5 transition-colors cursor-pointer"
 						onClick={onBackToInventory}
 						data-testid="back-to-inventory-btn"
 					>
@@ -55,7 +55,7 @@ export const WarehouseManagerHeader: React.FC<WarehouseManagerHeaderProps> = ({
 						{onOpenInventoryAudit && (
 							<button
 								type="button"
-								className="h-9 px-3 text-xs font-semibold rounded-lg border border-[var(--border,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] flex items-center gap-1.5 transition-colors cursor-pointer"
+								className="h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-strong,#f1f5f9)] flex items-center gap-1.5 transition-colors cursor-pointer"
 								onClick={onOpenInventoryAudit}
 								data-testid="switch-to-inventory-audit-btn"
 								title="Перейти к инвентаризации остатков"
@@ -66,12 +66,12 @@ export const WarehouseManagerHeader: React.FC<WarehouseManagerHeaderProps> = ({
 						)}
 						<button
 							type="button"
-							className="h-9 px-3 text-xs font-semibold rounded-lg border border-teal-600 text-teal-700 dark:text-teal-400 hover:bg-teal-50 dark:hover:bg-teal-950/40 flex items-center gap-1.5 transition-colors cursor-pointer"
+							className="h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--border,#cbd5e1)] bg-[var(--paper)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center gap-1.5 transition-colors cursor-pointer"
 							onClick={onSwitchToAct}
 							data-testid="switch-to-act-btn"
 							title="Оформить акт списания единолично"
 						>
-							<FileText size={14} />
+							<FileText size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 							Акт списания ({writeoffCount})
 						</button>
 					</>

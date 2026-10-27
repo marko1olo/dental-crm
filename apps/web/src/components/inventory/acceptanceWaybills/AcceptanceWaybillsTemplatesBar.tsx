@@ -32,8 +32,7 @@ export const AcceptanceWaybillsTemplatesBar: React.FC<AcceptanceWaybillsTemplate
 			))}
 			<button
 				type="button"
-				className="acceptance-preset-chip"
-				style={{ background: "var(--teal-soft, rgba(13,148,136,0.1))", color: "var(--teal, #0d9488)" }}
+				className="acceptance-preset-chip acceptance-preset-chip--accent"
 				onClick={onAddEmptyItem}
 				data-testid="btn-add-empty-line"
 			>

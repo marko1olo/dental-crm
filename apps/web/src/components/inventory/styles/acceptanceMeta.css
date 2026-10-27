@@ -104,3 +104,8 @@
 	border-color: var(--teal, #0d9488);
 	color: var(--teal, #0d9488);
 }
+.acceptance-preset-chip--accent {
+	background: var(--teal-soft, rgba(13, 148, 136, 0.1));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}

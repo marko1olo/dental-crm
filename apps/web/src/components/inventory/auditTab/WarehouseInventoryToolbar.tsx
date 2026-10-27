@@ -8,20 +8,21 @@ export interface WarehouseInventoryToolbarProps {
 	readonly discrepancyOnly: boolean;
 	readonly onToggleDiscrepancy: () => void;
 	readonly totals: InventoryAuditTotals;
-	readonly onReconcileAllMatch: () => void;
-	readonly onConfirmShiftActuals: () => void;
-	readonly onPrintInv3: () => void;
-	readonly onPrintInv19: () => void;
-	readonly onPrintTorg16: () => void;
-	readonly onApplyAuditDoc: () => void;
-	readonly isApplying: boolean;
+	readonly onReconcileAllMatch: () => void; readonly onConfirmShiftActuals: () => void;
+	readonly onPrintStockCountSheet?: () => void; readonly onPrintDiscrepancySheet?: () => void;
+	readonly onPrintWriteoffAct?: () => void;
+	readonly onPrintInv3?: () => void; readonly onPrintInv19?: () => void; readonly onPrintTorg16?: () => void;
+	readonly onApplyAuditDoc: () => void; readonly isApplying: boolean;
 }
 
-export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps> = ({
-	searchQuery, onSearchChange, discrepancyOnly, onToggleDiscrepancy, totals,
-	onReconcileAllMatch, onConfirmShiftActuals, onPrintInv3, onPrintInv19, onPrintTorg16,
-	onApplyAuditDoc, isApplying,
-}) => {
+export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps> = (props) => {
+	const {
+		searchQuery, onSearchChange, discrepancyOnly, onToggleDiscrepancy, totals,
+		onReconcileAllMatch, onConfirmShiftActuals, onApplyAuditDoc, isApplying,
+	} = props;
+	const printStockCount = props.onPrintStockCountSheet ?? props.onPrintInv3;
+	const printDiscrepancy = props.onPrintDiscrepancySheet ?? props.onPrintInv19;
+	const printWriteoff = props.onPrintWriteoffAct ?? props.onPrintTorg16;
 	return (
 		<div className="h-9 min-h-[36px] px-3 bg-[var(--paper)] border border-[var(--line)] rounded-xl flex items-center justify-between gap-2 shrink-0">
 			<div className="flex items-center gap-2 flex-1 min-w-0">
@@ -45,54 +46,59 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 				<button
 					type="button"
 					onClick={onToggleDiscrepancy}
-					className={`h-7 px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 ${discrepancyOnly ? "bg-amber-500/20 text-amber-900 dark:text-amber-200 border-amber-500/40" : "border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}
+					className={`secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border text-xs font-semibold transition-all cursor-pointer shrink-0 inline-flex items-center gap-1 ${
+						discrepancyOnly
+							? "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--teal,#0d9488)] font-bold shadow-xs"
+							: "border-[var(--line)] bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+					}`}
 					data-testid="btn-filter-discrepancies"
 				>
-					Только расхождения ({totals.shortageItemsCount + totals.surplusItemsCount})
+					<span>Только расхождения</span>
+					<span className="text-[11px] opacity-75 font-mono">({totals.shortageItemsCount + totals.surplusItemsCount})</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onConfirmShiftActuals}
-					className="h-7 px-2.5 rounded-lg bg-emerald-600 text-white hover:bg-emerald-700 text-xs font-semibold inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-xs"
+					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)]/10 text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs transition-colors"
 					title="Инвентаризация в 1 клик: подтвердить фактические остатки на смену без бюрократии"
 					data-testid="btn-reconcile-match-all"
 				>
-					<CheckCircle2 size={13} />
-					<span>✓ Подтвердить фактические остатки на смену</span>
+					<CheckCircle2 size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<span>✓ Подтвердить остатки на смену</span>
 				</button>
 			</div>
 
-			<div className="flex items-center gap-2 shrink-0">
+			<div className="flex items-center gap-1.5 shrink-0">
 				<button
 					type="button"
-					onClick={onPrintInv3}
-					className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
+					onClick={printStockCount}
+					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
 					data-testid="btn-print-inv3"
 					title="Печать описи фактических остатков"
 				>
-					<Printer size={13} /><span>Опись остатков</span>
+					<Printer size={13} className="text-[var(--muted)] shrink-0" /><span>Опись остатков</span>
 				</button>
 
 				<button
 					type="button"
-					onClick={onPrintInv19}
-					className="h-7 px-2.5 rounded-lg border border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
+					onClick={printDiscrepancy}
+					className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
 					data-testid="btn-print-inv19"
 					title="Печать сличительной ведомости расхождений"
 				>
-					<Printer size={13} /><span>Сличительная ведомость</span>
+					<Printer size={13} className="text-[var(--muted)] shrink-0" /><span>Сличительная ведомость</span>
 				</button>
 
 				{totals.shortageItemsCount > 0 && (
 					<button
 						type="button"
-						onClick={onPrintTorg16}
-						className="h-7 px-2.5 rounded-lg border border-rose-300 text-rose-700 dark:text-rose-300 hover:bg-rose-50 text-xs font-semibold flex items-center gap-1 cursor-pointer shrink-0 whitespace-nowrap"
+						onClick={printWriteoff}
+						className="secondary-button h-8 min-h-[32px] px-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap transition-colors"
 						data-testid="btn-print-torg16"
 						title="Сформировать акт списания недостач и боя"
 					>
-						<PackageX size={13} /><span>Акт списания</span>
+						<PackageX size={13} className="text-[var(--muted)] shrink-0" /><span>Акт списания</span>
 					</button>
 				)}
 
@@ -100,7 +106,7 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 					type="button"
 					onClick={onApplyAuditDoc}
 					disabled={isApplying}
-					className="h-7 px-3 rounded-lg bg-teal-600 text-white font-semibold text-xs hover:bg-teal-700 active:scale-98 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
+					className="primary-button h-8 min-h-[32px] px-3 rounded-xl bg-[var(--primary)] text-white font-semibold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
 					data-testid="btn-apply-audit"
 				>
 					<Check size={14} />
