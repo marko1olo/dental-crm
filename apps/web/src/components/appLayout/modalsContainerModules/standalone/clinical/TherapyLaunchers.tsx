@@ -15,6 +15,7 @@ import {
 	StandaloneRecallsHost,
 } from "./StandaloneTherapyWorkspaceHosts";
 import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHost";
+import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
@@ -50,6 +51,14 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		return (
 			<StandaloneClinicalTemplatesHost
 				onClose={() => clearUrlTokens(["protocols", "clinical-templates", "diary-templates"])}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["endo", "endodontics", "root-canals", "chairside-endo"])) {
+		return (
+			<StandaloneEndoHost
+				onClose={() => clearUrlTokens(["endo", "endodontics", "root-canals", "chairside-endo"])}
 			/>
 		);
 	}

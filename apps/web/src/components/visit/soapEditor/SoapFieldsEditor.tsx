@@ -77,6 +77,8 @@ export const SoapFieldsEditor: React.FC<SoapFieldsEditorProps> = ({
 				onFieldChange={onFieldChange}
 				onInputFocus={onInputFocus}
 				onInputBlur={onInputBlur}
+				selectedTooth={selectedTooth}
+				patientId={patientId}
 			/>
 		</div>
 	);
