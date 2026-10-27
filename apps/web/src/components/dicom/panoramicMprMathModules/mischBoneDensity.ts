@@ -34,7 +34,7 @@ export function classifyMischBoneDensity(hu: number): BoneDensityRecommendation 
 			mischClass: "D1", huRange: ">1250 HU", label: "D1 — Плотная кортикальная кость (Oak-like)",
 			description: "Гомогенная плотная кортикальная пластинка, минимальная васкуляризация.", drillingRpm: "400–600 RPM",
 			torqueNcm: "40–45 N·cm", irrigation: true, corticalTap: true, underDrilling: false, underDrillingMm: 0,
-			osteotomeCondensation: false, clinicalAdvice: "ОБЯЗАТЕЛЕН кортикальный метчик на 100% длины. Обильное охлаждение!",
+			osteotomeCondensation: false, clinicalAdvice: "ОБЯЗАТЕЛЕН кортикальный метчик (Cortical Tap) на 100% длины. Обильное охлаждение!",
 		};
 	}
 	if (hu >= MISCH_THRESHOLDS.D2_MIN) {

@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import { randomUUID } from "node:crypto";
 import {
 	getImagingAnnotationsForStudy,
@@ -10,14 +10,32 @@ import * as schema from "../../db/schema.js";
 import { and, eq } from "drizzle-orm";
 import { withTenantCtx } from "../../db/rls.js";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
+import { fixtureUuid, withFixtureTenant } from "../support/fixtureOrganizations.js";
 import { registerStudiesRoutes } from "../../routes/imaging/studiesRoutes.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 
 describe("Dental DICOM & Radiology Measurements SSOT Persistence", () => {
-	const orgId = "c752bbc3-e8e3-4e4b-a008-8b8444ef097d";
-	const patientId = "01a0d7f7-d48c-7838-89e3-d747341585fc";
+	const orgId = fixtureUuid("imagingMeas", 1);
+	const patientId = fixtureUuid("imagingMeas", 2);
 	const studyId = randomUUID();
+
+	before(async () => {
+		await withFixtureTenant(orgId, async () => {
+			await db.insert(schema.organizations).values({ id: orgId, name: "Клиника измерений" });
+			await db.insert(schema.patients).values({ id: patientId, organizationId: orgId, fullName: "Пациент Рентгенов" });
+		});
+	});
+
+	after(async () => {
+		await withFixtureTenant(orgId, async () => {
+			await db.delete(schema.imagingAnnotations).where(eq(schema.imagingAnnotations.organizationId, orgId));
+			await db.delete(schema.imagingViewerSessions).where(eq(schema.imagingViewerSessions.organizationId, orgId));
+			await db.delete(schema.imagingStudies).where(eq(schema.imagingStudies.organizationId, orgId));
+			await db.delete(schema.patients).where(eq(schema.patients.organizationId, orgId));
+			await db.delete(schema.organizations).where(eq(schema.organizations.id, orgId));
+		});
+	});
 
 	it("saves and retrieves calibrated millimeter measurements from PostgreSQL", async () => {
 		// 1. Create a transient test study row
