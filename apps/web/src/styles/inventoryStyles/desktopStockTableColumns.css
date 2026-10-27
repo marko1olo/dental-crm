@@ -58,8 +58,8 @@
 }
 
 .inventory-col-actions {
-	width: 280px;
-	min-width: 270px;
-	max-width: 320px;
+	width: 200px;
+	min-width: 195px;
+	max-width: 220px;
 	text-align: right;
 }

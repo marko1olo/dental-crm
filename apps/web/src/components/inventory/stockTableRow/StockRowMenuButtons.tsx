@@ -1,4 +1,4 @@
-import { Printer, QrCode, ShieldCheck, TrendingUp } from "lucide-react";
+import { ArrowDownToLine, Printer, QrCode, ShieldCheck, TrendingUp } from "lucide-react";
 import React from "react";
 import { showToast } from "../../GlobalToast.js";
 import type { InventoryItem } from "../inventoryDataMappers.js";
@@ -6,7 +6,9 @@ import { StockRowEditDeleteButtons } from "./StockRowEditDeleteButtons.js";
 
 export interface StockRowMenuButtonsProps {
 	readonly item: InventoryItem;
+	readonly writeQty?: number | undefined;
 	readonly onCloseMenu: () => void;
+	readonly onReceiveItem?: ((item: InventoryItem, qty: number) => void) | undefined;
 	readonly onOpenWarehouseManager?: (() => void) | undefined;
 	readonly onOpenInventoryAudit?: (() => void) | undefined;
 	readonly onEditItem?: ((item: InventoryItem) => void) | undefined;
@@ -15,7 +17,9 @@ export interface StockRowMenuButtonsProps {
 
 export const StockRowMenuButtons: React.FC<StockRowMenuButtonsProps> = ({
 	item,
+	writeQty = 1,
 	onCloseMenu,
+	onReceiveItem,
 	onOpenWarehouseManager,
 	onOpenInventoryAudit,
 	onEditItem,
@@ -38,13 +42,30 @@ export const StockRowMenuButtons: React.FC<StockRowMenuButtonsProps> = ({
 
 	return (
 		<>
+			{onReceiveItem && (
+				<button
+					type="button"
+					onClick={() => {
+						onCloseMenu();
+						onReceiveItem(item, writeQty);
+					}}
+					className="w-full px-2.5 py-1.5 rounded-lg text-xs text-left font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
+					role="menuitem"
+					title={`Оприходовать материал на склад (+${writeQty})`}
+					data-testid={`btn-item-arrival-${item.id}`}
+				>
+					<ArrowDownToLine size={13} className="text-[var(--ink-muted)] shrink-0" />
+					<span>Оприходовать (+{writeQty})</span>
+				</button>
+			)}
+
 			<button
 				type="button"
 				onClick={handleCopyBarcode}
 				className="w-full px-2.5 py-1.5 rounded-lg text-xs text-left font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 				role="menuitem"
 			>
-				<QrCode size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
+				<QrCode size={13} className="text-[var(--ink-muted)] shrink-0" />
 				<span>Штрихкод {item.barcode ? `(${item.barcode})` : ""}</span>
 			</button>
 
@@ -58,7 +79,7 @@ export const StockRowMenuButtons: React.FC<StockRowMenuButtonsProps> = ({
 					className="w-full px-2.5 py-1.5 rounded-lg text-xs text-left font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 					role="menuitem"
 				>
-					<TrendingUp size={13} className="text-blue-600 shrink-0" />
+					<TrendingUp size={13} className="text-[var(--ink-muted)] shrink-0" />
 					<span>История движений</span>
 				</button>
 			)}
@@ -69,7 +90,7 @@ export const StockRowMenuButtons: React.FC<StockRowMenuButtonsProps> = ({
 				className="w-full px-2.5 py-1.5 rounded-lg text-xs text-left font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 				role="menuitem"
 			>
-				<Printer size={13} className="text-indigo-600 shrink-0" />
+				<Printer size={13} className="text-[var(--ink-muted)] shrink-0" />
 				<span>Печать этикетки</span>
 			</button>
 
@@ -83,7 +104,7 @@ export const StockRowMenuButtons: React.FC<StockRowMenuButtonsProps> = ({
 					className="w-full px-2.5 py-1.5 rounded-lg text-xs text-left font-medium text-[var(--ink)] hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer transition-colors"
 					role="menuitem"
 				>
-					<ShieldCheck size={13} className="text-emerald-600 shrink-0" />
+					<ShieldCheck size={13} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Инвентаризация (сверка)</span>
 				</button>
 			)}

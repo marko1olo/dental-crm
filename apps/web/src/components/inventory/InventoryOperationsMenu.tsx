@@ -68,13 +68,13 @@ export const InventoryOperationsMenu: React.FC<InventoryOperationsMenuProps> = (
 		<div ref={menuRef} className="shrink-0 relative inline-block">
 			<button
 				type="button"
-				className="h-9 min-h-[36px] px-2.5 xl:px-3 rounded-xl shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-medium text-xs sm:text-sm cursor-pointer transition border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
+				className="dente-btn dente-btn-secondary h-9 min-h-[36px] px-3 rounded-xl shrink-0 whitespace-nowrap inline-flex items-center gap-1.5 font-medium text-xs sm:text-sm cursor-pointer transition border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 				onClick={onToggle}
 				title="Операции со складом: списание по наряду, перемещения, инвентаризация, маркировка, нормы расхода"
 				aria-expanded={isOpen}
 				data-testid="btn-warehouse-ops-menu"
 			>
-				<PackageCheck className="w-4 h-4 text-[var(--primary)] shrink-0" />
+				<PackageCheck className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
 				<span>Операции</span>
 				<ChevronDown
 					className={`w-3.5 h-3.5 text-[var(--ink-muted)] transition-transform duration-150 ${isOpen ? "rotate-180" : ""}`}

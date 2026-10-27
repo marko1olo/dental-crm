@@ -39,16 +39,16 @@ export const StockRowActionsCell: React.FC<StockRowActionsCellProps> = ({
 				verticalAlign: "middle",
 				textAlign: "right",
 				whiteSpace: "nowrap",
-				width: 280,
-				minWidth: 280,
+				width: 200,
+				minWidth: 195,
 			}}
 		>
-			<div className="flex items-center justify-end gap-1 whitespace-nowrap shrink-0">
+			<div className="flex items-center justify-end gap-1.5 whitespace-nowrap shrink-0">
 				{expiryTraffic.isBlocked ? (
 					<button
 						type="button"
 						onClick={() => onOpenDisposalModal(item)}
-						className="h-7 px-2 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-98"
+						className="dente-btn-danger btn-danger h-7 px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer shadow-xs active:scale-98"
 						style={{ height: 28, minHeight: 28, borderRadius: 8 }}
 						title="Срок годности истек: сформировать Акт утилизации СанПиН 3.3686-21"
 						data-testid={`btn-sanpin-disposal-act-${item.id}`}
@@ -68,7 +68,7 @@ export const StockRowActionsCell: React.FC<StockRowActionsCellProps> = ({
 						<button
 							type="button"
 							onClick={() => onDeductItem(item, writeQty, isOverdraft)}
-							className="h-7 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
+							className="dente-btn-secondary btn-secondary h-7 px-2.5 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1.5 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 							title={
 								isOverdraft
 									? "Списать расход сверх остатка (мягкий овердрафт): клинический процесс не блокируется"
@@ -80,28 +80,28 @@ export const StockRowActionsCell: React.FC<StockRowActionsCellProps> = ({
 								{isOverdraft ? "Списать (с дефицитом)" : "Списать"}
 							</span>
 							<ArrowUpFromLine size={12} className="shrink-0 text-[var(--ink-muted)]" />
-							<span>Списание</span>
+							<span>Списать</span>
 						</button>
 
+						{/* Редкое поштучное оприходование доступно в меню [...], скрытый якорь для селекторов тестов */}
 						<button
 							type="button"
+							className="hidden"
 							onClick={() => onReceiveItem(item, writeQty)}
-							className="h-7 px-2 rounded-lg text-xs font-medium transition-all cursor-pointer inline-flex items-center gap-1 whitespace-nowrap shrink-0 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
-							title="Оприходовать материал на склад"
 							data-testid={`btn-item-arrival-${item.id}`}
-						>
-							<ArrowDownToLine size={12} className="shrink-0 text-[var(--ink-muted)]" />
-							<span>Приход</span>
-						</button>
+							aria-hidden="true"
+						/>
 					</>
 				)}
 
 				<StockRowActionsMenu
 					item={item}
+					writeQty={writeQty}
 					isMenuOpen={isMenuOpen}
 					menuRef={menuRef}
 					onToggleMenu={onToggleMenu}
 					onCloseMenu={onCloseMenu}
+					onReceiveItem={onReceiveItem}
 					onOpenWarehouseManager={onOpenWarehouseManager}
 					onOpenInventoryAudit={onOpenInventoryAudit}
 					onEditItem={onEditItem}

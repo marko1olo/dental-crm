@@ -26,7 +26,7 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 			{onOpenShiftDeductionModal && (
 				<button
 					type="button"
-					className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--primary)]/10 text-xs font-bold text-[var(--primary)] cursor-pointer transition-colors"
+					className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] cursor-pointer transition-colors"
 					data-testid="nurse-menu-shift-batch-deduction-btn"
 					onClick={() => {
 						onOpenShiftDeductionModal();
@@ -35,7 +35,7 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 					role="menuitem"
 					title="Списание расходников смены по оказанным услугам в 1 клик"
 				>
-					<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
+					<PackageCheck size={15} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Списать расходники смены</span>
 				</button>
 			)}
@@ -43,7 +43,7 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 			{onOpenSterilizationCycleModal && (
 				<button
 					type="button"
-					className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--teal,#0d9488)]/10 text-xs font-bold text-[var(--teal,#0d9488)] cursor-pointer transition-colors"
+					className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] cursor-pointer transition-colors"
 					data-testid="nurse-menu-sterilization-batch-cycle-btn"
 					onClick={() => {
 						onOpenSterilizationCycleModal();
@@ -52,14 +52,14 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 					role="menuitem"
 					title="1-кликовый цикл автоклавирования: списание крафт-пакетов и индикаторов 5 класса со склада"
 				>
-					<Flame size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
+					<Flame size={15} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Стерилизация в автоклаве (1 клик)</span>
 				</button>
 			)}
 
 			<button
 				type="button"
-				className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
+				className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] cursor-pointer transition-colors"
 				data-testid="nurse-menu-quick-standard-kit-btn"
 				onClick={() => {
 					onQuickWriteoffStandardKit();
@@ -68,13 +68,13 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 				role="menuitem"
 				title="Быстрое списание базового набора приёма (перчатки, маска, слюноотсос, нагрудник, валики)"
 			>
-				<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
+				<PackageCheck size={15} className="text-[var(--ink-muted)] shrink-0" />
 				<span>Списать базовый набор</span>
 			</button>
 
 			<button
 				type="button"
-				className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium cursor-pointer transition-colors"
+				className="flex items-center gap-2 px-3 py-2 rounded-lg text-left w-full hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] cursor-pointer transition-colors"
 				data-testid="nurse-menu-quick-sterilization-kit-btn"
 				onClick={() => {
 					onQuickWriteoffSterilizationKit();
@@ -83,7 +83,7 @@ export const InventoryOperationsQuickGroup: React.FC<InventoryOperationsQuickGro
 				role="menuitem"
 				title="Быстрое списание набора стерилизации: 1 лоток в крафт-пакете + перчатки"
 			>
-				<PackageCheck size={15} className="text-[var(--primary)] shrink-0" />
+				<PackageCheck size={15} className="text-[var(--ink-muted)] shrink-0" />
 				<span>Набор стерилизации (1 лоток + перчатки)</span>
 			</button>
 

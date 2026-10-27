@@ -39,7 +39,7 @@ export const StockTableHeader: React.FC = () => {
 						<div className="text-[10px] opacity-75 font-normal tracking-normal">за единицу</div>
 					</div>
 				</th>
-				<th className="inventory-col-actions" style={{ ...TH_STYLE, textAlign: "right", width: 280, minWidth: 280 }}>
+				<th className="inventory-col-actions" style={{ ...TH_STYLE, textAlign: "right", width: 200, minWidth: 195 }}>
 					Действия
 				</th>
 			</tr>

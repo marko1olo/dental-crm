@@ -57,11 +57,11 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 			{/* Primary CTA: ровно 1 Primary кнопка в шапке склада (Мандаты 8e, 8n, 8am) */}
 			<button
 				type="button"
-				className="bg-[var(--primary)] text-white hover:brightness-110 active:scale-95 h-9 min-h-[36px] px-3 font-semibold text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 shadow-xs whitespace-nowrap inline-flex items-center transition"
+				className="dente-btn dente-btn-primary btn-primary h-9 min-h-[36px] px-3 font-semibold text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 shadow-xs whitespace-nowrap inline-flex items-center transition"
 				onClick={() => setIsAcceptanceWaybillsOpen(true)}
 				data-testid="btn-acceptance-waybills"
 			>
-				<Truck className="w-4 h-4 shrink-0" />
+				<Truck className="w-4 h-4 shrink-0 text-white" />
 				<span>+ Оприходовать накладную</span>
 			</button>
 
@@ -69,14 +69,14 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 			{onOpenShiftDeductionModal && (
 				<button
 					type="button"
-					className="secondary-button inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 whitespace-nowrap items-center bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)]/10 text-[var(--ink)] transition"
+					className="dente-btn dente-btn-secondary secondary-button inline-flex h-9 min-h-[36px] px-3 font-medium text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 whitespace-nowrap items-center bg-[var(--paper)] border border-[var(--line)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs transition"
 					onClick={onOpenShiftDeductionModal}
 					title="Автоматическое списание расходных материалов за смену по закрытым визитам (1 клик)"
 					data-testid="btn-open-shift-batch-deduction"
 				>
-					<Zap className="w-4 h-4 shrink-0 text-amber-500 fill-amber-500" />
-					<span className="hidden sm:inline">⚡ Списать расходники смены</span>
-					<span className="sm:hidden">⚡ Смена</span>
+					<Zap className="w-4 h-4 shrink-0 text-[var(--ink-muted)]" />
+					<span className="hidden sm:inline">Списать смену</span>
+					<span className="sm:hidden">Смена</span>
 				</button>
 			)}
 
@@ -92,14 +92,14 @@ export const InventoryToolbarActions: React.FC<InventoryToolbarActionsProps> = (
 				onQuickWriteoffVisitBundle={props.handleQuickWriteoffVisitBundle} onQuickWriteoffShiftBundle={props.handleQuickWriteoffShiftBundle}
 			/>
 
-			<button type="button" className="secondary-button h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap inline-flex items-center" onClick={openAddModal} data-testid="btn-add-inventory-item">
-				<Plus className="w-4 h-4 shrink-0" />
+			<button type="button" className="dente-btn dente-btn-secondary secondary-button h-9 min-h-[36px] px-3 font-medium text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 whitespace-nowrap inline-flex items-center border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs transition" onClick={openAddModal} data-testid="btn-add-inventory-item">
+				<Plus className="w-4 h-4 shrink-0 text-[var(--ink-muted)]" />
 				<span>Позиция</span>
 			</button>
 
 			{onOpenProtocolDeduction && (
-				<button type="button" className="secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-2.5 font-semibold text-xs sm:text-sm gap-1 rounded-xl shrink-0 whitespace-nowrap items-center" onClick={onOpenProtocolDeduction} title="Нормы списания по процедурам" data-testid="btn-open-protocol-deduction">
-					<PackageCheck className="w-4 h-4 shrink-0 text-[var(--teal)]" />
+				<button type="button" className="dente-btn dente-btn-secondary secondary-button hidden xl:inline-flex h-9 min-h-[36px] px-3 font-medium text-xs sm:text-sm gap-1.5 rounded-xl shrink-0 whitespace-nowrap items-center border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs transition" onClick={onOpenProtocolDeduction} title="Нормы списания по процедурам" data-testid="btn-open-protocol-deduction">
+					<PackageCheck className="w-4 h-4 shrink-0 text-[var(--ink-muted)]" />
 					<span>Нормы расхода</span>
 				</button>
 			)}

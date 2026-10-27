@@ -5,10 +5,12 @@ import { StockRowMenuButtons } from "./StockRowMenuButtons.js";
 
 export interface StockRowActionsMenuProps {
 	readonly item: InventoryItem;
+	readonly writeQty?: number | undefined;
 	readonly isMenuOpen: boolean;
 	readonly menuRef?: React.RefObject<HTMLDivElement | null> | undefined;
 	readonly onToggleMenu: () => void;
 	readonly onCloseMenu: () => void;
+	readonly onReceiveItem?: ((item: InventoryItem, qty: number) => void) | undefined;
 	readonly onOpenWarehouseManager?: (() => void) | undefined;
 	readonly onOpenInventoryAudit?: (() => void) | undefined;
 	readonly onEditItem?: ((item: InventoryItem) => void) | undefined;
@@ -17,10 +19,12 @@ export interface StockRowActionsMenuProps {
 
 export const StockRowActionsMenu: React.FC<StockRowActionsMenuProps> = ({
 	item,
+	writeQty,
 	isMenuOpen,
 	menuRef,
 	onToggleMenu,
 	onCloseMenu,
+	onReceiveItem,
 	onOpenWarehouseManager,
 	onOpenInventoryAudit,
 	onEditItem,
@@ -47,7 +51,9 @@ export const StockRowActionsMenu: React.FC<StockRowActionsMenuProps> = ({
 				>
 					<StockRowMenuButtons
 						item={item}
+						writeQty={writeQty}
 						onCloseMenu={onCloseMenu}
+						onReceiveItem={onReceiveItem}
 						onOpenWarehouseManager={onOpenWarehouseManager}
 						onOpenInventoryAudit={onOpenInventoryAudit}
 						onEditItem={onEditItem}
