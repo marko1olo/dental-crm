@@ -7,6 +7,7 @@ import type React from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
 import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHubModal";
+import { DocumentsTemplateGrid } from "../../../documentsView/DocumentsTemplateGrid";
 import type { StandaloneLaunchersProps } from "./modalsContainerTypes";
 import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./standalone/ReportsStandaloneLauncher";
@@ -47,6 +48,31 @@ export function renderStandaloneLaunchers(
 		return (
 			<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
 				<PatientOmnichannelHubModal isOpen={true} onClose={() => {}} portal={false} />
+			</div>
+		);
+	}
+
+	// 0. Documents Template Catalog Standalone Launcher (?documents_catalog=1, #documents-catalog)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("documents_catalog") ||
+			window.location.hash.includes("documents-catalog") ||
+			window.location.hash.includes("documents_catalog"))
+	) {
+		return (
+			<div
+				className="w-full min-h-screen p-4 sm:p-6 bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] overflow-y-auto"
+				data-testid="standalone-documents-catalog-root"
+			>
+				<DocumentsTemplateGrid
+					selectedDocumentKind="primary_intake_package"
+					onSelectDocumentKind={() => {}}
+					onCreateDocument={() => {}}
+					onOpenFocusEditor={() => {}}
+					activeCategoryTab="all"
+					searchQuery=""
+					onOpenPrimaryIntakePackage={() => {}}
+				/>
 			</div>
 		);
 	}

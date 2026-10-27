@@ -49,7 +49,7 @@ const INITIAL_NODES: MeshNode[] = [
 		role: "Ресепшен (Касса, Запись)",
 		ip: "192.168.1.101",
 		syncStatus: "synced",
-		lastTx: "10:14:02 (Чек 54-ФЗ №148)",
+		lastTx: "10:14:02 (Кассовый чек №148)",
 	},
 	{
 		id: "node-surgery",
@@ -196,7 +196,7 @@ export const LanMeshGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) => 
 								<span className="font-bold">Внешний интернет недоступен! Режим автономного Wi-Fi Mesh:</span>
 								<p className="text-[10px] text-amber-800/90 dark:text-amber-300/90 mt-0.5 leading-normal">
 									Все 3 рабочих места синхронизируются напрямую по протоколу UDP/TCP через локальный Wi-Fi роутер.
-									Одонтограмма, касса 54-ФЗ и снимки сохраняются в локальный IndexedDB без риска потери данных.
+									Одонтограмма, кассовые чеки и снимки сохраняются в локальный IndexedDB без риска потери данных.
 								</p>
 							</div>
 						</div>

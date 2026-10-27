@@ -86,7 +86,7 @@ export const AnalyticsReportsGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTo
 							Интерактивный дашборд руководителя
 						</span>
 						<span className="text-[10px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-semibold">
-							Касса 54-ФЗ Онлайн
+							Кассовые чеки онлайн
 						</span>
 					</div>
 

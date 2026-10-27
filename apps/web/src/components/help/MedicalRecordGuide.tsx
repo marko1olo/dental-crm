@@ -63,7 +63,7 @@ export const MedicalRecordGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour 
 				</div>
 			</div>
 
-			{/* НАГЛЯДНАЯ СХЕМА КАРТЫ 043/у (Visual Medical Record Proof) */}
+			{/* НАГЛЯДНАЯ СХЕМА МЕДИЦИНСКОЙ КАРТЫ (Visual Medical Record Proof) */}
 			<div className="p-3.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-3">
 				<div className="flex items-center justify-between gap-2">
 					<div className="font-semibold text-xs text-[var(--ink)] flex items-center gap-1.5">
