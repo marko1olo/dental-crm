@@ -243,7 +243,7 @@ export interface RecordInstallmentPaymentInput {
 	readonly cashierName?: string | undefined;
 }
 
-export interface FiscalReceipt54FzResult {
+export interface FiscalReceiptResult {
 	readonly receiptNumber: string;
 	readonly fiscalSign: string;
 	readonly fiscalDocumentNumber: number;
@@ -256,14 +256,16 @@ export interface FiscalReceipt54FzResult {
 	readonly qrPayload: string;
 }
 
+export type FiscalReceipt54FzResult = FiscalReceiptResult;
+
 /**
- * 1-клик прием очередного платежа по рассрочке с выбиванием фискального чека 54-ФЗ.
+ * 1-клик прием очередного платежа по рассрочке с выбиванием фискального чека.
  */
 export function recordInstallmentPayment(
 	input: RecordInstallmentPaymentInput,
 ): {
 	updatedPlan: InstallmentPlan;
-	receipt: FiscalReceipt54FzResult;
+	receipt: FiscalReceiptResult;
 } {
 	const currentIso = input.paidAtIso || new Date().toISOString();
 	const paymentMethod = input.paymentMethod || "card";

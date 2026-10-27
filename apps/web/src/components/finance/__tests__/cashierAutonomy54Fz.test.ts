@@ -14,6 +14,7 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import {
+	validateBuyerInn,
 	validateBuyerInn54Fz,
 	validate54FzBuyerInn,
 	calculateCashChange,
@@ -24,6 +25,7 @@ import {
 	allocateRemainderToTender,
 	process100PercentDiscountCheckout,
 } from "../cashboxOperations.js";
+import { generateFiscalReceipt } from "../fiscalReceiptEngine.js";
 import {
 	validateTreatmentPlanPrices,
 	generateWorkOrderExportPayload,
@@ -34,9 +36,9 @@ import {
 	SAMPLE_TREATMENT_PLAN_FOR_VALIDATION,
 } from "../../treatment-plans/validation/planPriceValidationPresets.js";
 
-describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & FFD 1.2 Tag 1228)", () => {
+describe("Cashier Autonomy — Buyer INN Validation (Mandate 8e, 8n, 8ap: Clean Domain API)", () => {
 	it("Physical person without INN is 100% valid and never blocks receipt", () => {
-		const emptyCheck = validateBuyerInn54Fz({
+		const emptyCheck = validateBuyerInn({
 			payerType: "physical_person",
 			buyerInn: "",
 		});
@@ -44,14 +46,16 @@ describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & F
 		assert.equal(emptyCheck.isRequired, false);
 		assert.equal(emptyCheck.errorRu, undefined);
 
-		const undefinedCheck = validateBuyerInn54Fz({
+		const undefinedCheck = validateBuyerInn({
 			payerType: "physical_person",
 			buyerInn: undefined,
 		});
 		assert.equal(undefinedCheck.isValid, true);
 		assert.equal(undefinedCheck.isRequired, false);
 
-		// Alternative helper test
+		// Backward-compatibility alias checks
+		const legacyCheck = validateBuyerInn54Fz({ payerType: "physical_person", buyerInn: "" });
+		assert.equal(legacyCheck.isValid, true);
 		const altCheck = validate54FzBuyerInn("", "physical");
 		assert.equal(altCheck.isValid, true);
 		assert.equal(altCheck.isRequired, false);
@@ -59,7 +63,7 @@ describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & F
 	});
 
 	it("Physical person voluntary INN (for 13% NDFL deduction) is accepted", () => {
-		const result = validateBuyerInn54Fz({
+		const result = validateBuyerInn({
 			payerType: "physical_person",
 			buyerInn: "770123456789",
 		});
@@ -68,13 +72,13 @@ describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & F
 		assert.equal(result.cleanInn, "770123456789");
 		assert.equal(result.errorRu, undefined);
 
-		const altResult = validate54FzBuyerInn("770123456789", "physical");
+		const altResult = validateBuyerInn({ buyerInn: "770123456789", payerType: "physical" });
 		assert.equal(altResult.isValid, true);
 		assert.equal(altResult.cleanInn, "770123456789");
 	});
 
 	it("Physical person non-standard INN produces non-blocking hint, never disables payment", () => {
-		const result = validateBuyerInn54Fz({
+		const result = validateBuyerInn({
 			payerType: "physical_person",
 			buyerInn: "12345",
 		});
@@ -84,8 +88,8 @@ describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & F
 		assert.match(result.errorRu ?? "", /не блокирует/);
 	});
 
-	it("B2B Legal Entity (юрлицо) strictly requires 10-digit INN under 54-FZ", () => {
-		const missing = validateBuyerInn54Fz({
+	it("B2B Legal Entity (юрлицо) strictly requires 10-digit INN", () => {
+		const missing = validateBuyerInn({
 			payerType: "legal_entity",
 			buyerInn: "",
 		});
@@ -93,14 +97,14 @@ describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & F
 		assert.equal(missing.isRequired, true);
 		assert.ok(missing.errorRu);
 
-		const valid10 = validateBuyerInn54Fz({
+		const valid10 = validateBuyerInn({
 			payerType: "legal_entity",
 			buyerInn: "7705123456",
 		});
 		assert.equal(valid10.isValid, true);
 		assert.equal(valid10.cleanInn, "7705123456");
 
-		const invalid12 = validateBuyerInn54Fz({
+		const invalid12 = validateBuyerInn({
 			payerType: "legal_entity",
 			buyerInn: "770123456789",
 		});
@@ -108,27 +112,63 @@ describe("Cashier Autonomy 54-FZ — Buyer INN Validation (Mandate 8e Item 9 & F
 		assert.match(invalid12.errorRu ?? "", /10 цифр/);
 	});
 
-	it("B2B Individual Entrepreneur (ИП) strictly requires 12-digit INN under 54-FZ", () => {
-		const missing = validateBuyerInn54Fz({
+	it("B2B Individual Entrepreneur (ИП) strictly requires 12-digit INN", () => {
+		const missing = validateBuyerInn({
 			payerType: "individual_entrepreneur",
 			buyerInn: "",
 		});
 		assert.equal(missing.isValid, false);
 		assert.equal(missing.isRequired, true);
 
-		const valid12 = validateBuyerInn54Fz({
+		const valid12 = validateBuyerInn({
 			payerType: "individual_entrepreneur",
 			buyerInn: "770123456789",
 		});
 		assert.equal(valid12.isValid, true);
 		assert.equal(valid12.cleanInn, "770123456789");
 
-		const invalid10 = validateBuyerInn54Fz({
+		const invalid10 = validateBuyerInn({
 			payerType: "individual_entrepreneur",
 			buyerInn: "7705123456",
 		});
 		assert.equal(invalid10.isValid, false);
 		assert.match(invalid10.errorRu ?? "", /12 цифр/);
+	});
+
+	it("generateFiscalReceipt creates canonical receipt for physical person without buyer INN", () => {
+		const receipt = generateFiscalReceipt({
+			items: [
+				{
+					id: "srv-1",
+					name: "Консультация врача-стоматолога",
+					code804n: "B01.065.001",
+					quantity: 1,
+					unitPriceRub: 2000,
+					unitPriceKopecks: 200000 as any,
+					discountRub: 0,
+					discountKopecks: 0 as any,
+					grossRub: 2000,
+					grossKopecks: 200000 as any,
+					amountRub: 2000,
+					amountKopecks: 200000 as any,
+					vatRate: "vat_none",
+					taxRateKopecks: 0 as any,
+					paymentSubject: "service",
+					paymentMethod: "full_settlement",
+					quantityMeasure: "piece",
+					taxDeductionCategory: "1",
+				},
+			],
+			splitPayment: { cardRub: 2000 },
+			patientId: "pat-123",
+			patientName: "Иванов Иван",
+			customerContact: "+7 999 111-22-33",
+			payerType: "individual",
+		});
+
+		assert.ok(receipt.receiptNumber);
+		assert.equal(receipt.totalRub, 2000);
+		assert.equal(receipt.buyerInn, undefined, "Physical person must not have buyerInn forced");
 	});
 });
 

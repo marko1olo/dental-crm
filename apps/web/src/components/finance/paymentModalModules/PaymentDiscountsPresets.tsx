@@ -23,7 +23,7 @@ export const PaymentDiscountsPresets: React.FC<PaymentDiscountsPresetsProps> = (
 				patientDepositRub={patientDepositRub}
 			/>
 			<PaymentBuyerRequisitesSection tendersHook={tendersHook} />
-			<span className="sr-only" data-testid="statute-54fz-reference">По 54-ФЗ для физлиц не требуется</span>
+			<span className="sr-only" data-testid="statute-54fz-reference">Для пациентов-физлиц ИНН не требуется</span>
 		</>
 	);
 };

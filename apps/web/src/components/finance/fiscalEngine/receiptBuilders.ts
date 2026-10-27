@@ -25,8 +25,10 @@ import {
 	FFD12_CORRECTION_LABELS,
 	FFD12_OPERATION_LABELS,
 	TREATMENT_STAGE_LABELS,
+	type FiscalReceiptResult,
 	type FiscalReceipt54FzResult,
 	type Order804nFiscalReceiptItem,
+	type ShiftCloseZReportResult,
 	type ShiftCloseZReport54FzResult,
 	type SplitPaymentInput,
 } from "./types";
@@ -200,14 +202,14 @@ export function mapTreatmentItemsToFiscalReceipt(
 }
 
 /**
- * Построение готового фискального чека 54-ФЗ со всеми обязательными реквизитами.
+ * Построение готового фискального кассового чека со всеми обязательными реквизитами (Мандат 8ap).
  */
-export function generateFiscalReceipt54Fz(params: {
+export function generateFiscalReceipt(params: {
 	readonly items: readonly (TreatmentPlanItem | Order804nFiscalReceiptItem)[];
 	readonly splitPayment: SplitPaymentInput;
 	readonly patientId: string;
 	readonly patientName: string;
-	readonly customerContact: string; // Телефон или Email для отправки электронного чека по 54-ФЗ
+	readonly customerContact: string; // Телефон или Email для отправки электронного чека
 	readonly cashierFullName?: string | undefined;
 	readonly cashierInn?: string | undefined;
 	readonly clinicLegalName?: string | undefined;
@@ -226,11 +228,11 @@ export function generateFiscalReceipt54Fz(params: {
 	readonly originalFiscalDocumentNumber?: string | undefined;
 	readonly originalFiscalSign?: string | undefined;
 	readonly refundReason?: string | undefined;
-	/** 54-ФЗ: Тип и реквизиты покупателя (только для юрлиц/ИП, для физлиц НЕ требуется) */
+	/** Реквизиты покупателя (только для юрлиц/ИП, для физлиц НЕ требуется) */
 	readonly payerType?: "individual" | "legal_entity" | undefined;
 	readonly buyerInn?: string | undefined;
 	readonly buyerName?: string | undefined;
-}): FiscalReceipt54FzResult {
+}): FiscalReceiptResult {
 	const {
 		items,
 		splitPayment,
@@ -382,11 +384,14 @@ export function generateFiscalReceipt54Fz(params: {
 	};
 }
 
+// Алиас обратной совместимости (Мандат 8ap)
+export const generateFiscalReceipt54Fz = generateFiscalReceipt;
+
 /**
- * Автоматическое формирование фискального Z-отчета закрытия смены 54-ФЗ (Тег 1038 / Отчет о закрытии смены)
+ * Автоматическое формирование Z-отчета закрытия смены (Мандат 8ap)
  * со сверкой эквайринга, СБП QR, наличного ящика и зачета аванса.
  */
-export function generateShiftCloseZReport54Fz(params: {
+export function generateShiftCloseZReport(params: {
 	readonly shiftNumber?: number | undefined;
 	readonly openDateIso?: string | undefined;
 	readonly cashierFullName?: string | undefined;
@@ -413,7 +418,7 @@ export function generateShiftCloseZReport54Fz(params: {
 			readonly count: number;
 		}[];
 	};
-}): ShiftCloseZReport54FzResult {
+}): ShiftCloseZReportResult {
 	const {
 		shiftNumber = 142,
 		openDateIso = new Date(Date.now() - 8 * 3600 * 1000).toISOString(),
@@ -513,3 +518,5 @@ export function generateShiftCloseZReport54Fz(params: {
 		fnResourceDaysRemaining: 420,
 	};
 }
+
+export const generateShiftCloseZReport54Fz = generateShiftCloseZReport;

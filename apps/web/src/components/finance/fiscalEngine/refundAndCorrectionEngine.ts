@@ -12,11 +12,13 @@ import {
 } from "@dental/shared";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import type {
+	FiscalReceiptResult,
 	FiscalReceipt54FzResult,
 	SplitPaymentAllocation,
 	SplitPaymentInput,
 } from "./types";
 import {
+	generateFiscalReceipt,
 	generateFiscalReceipt54Fz,
 	mapTreatmentItemsToFiscalReceipt,
 } from "./receiptBuilders";
@@ -74,10 +76,10 @@ export function calculateProportionalRefundAllocation(
 }
 
 /**
- * Генерация фискального кассового чека возврата прихода (54-ФЗ / ФФД 1.2 Тег 1054 = 2)
+ * Генерация фискального кассового чека возврата прихода (Мандат 8ap)
  * при отказе от части или всех услуг плана лечения с сохранением копеечной точности.
  */
-export function generateFiscalRefundReceipt54Fz(params: {
+export function generateFiscalRefundReceipt(params: {
 	readonly items: readonly TreatmentPlanItem[];
 	readonly originalReceipt: {
 		readonly receiptNumber: string;
@@ -97,7 +99,7 @@ export function generateFiscalRefundReceipt54Fz(params: {
 	readonly splitRefund?: SplitPaymentInput | undefined;
 	readonly customReceiptNumber?: string | undefined;
 	readonly cashierFullName?: string | undefined;
-}): FiscalReceipt54FzResult {
+}): FiscalReceiptResult {
 	const {
 		items,
 		originalReceipt,
@@ -129,7 +131,7 @@ export function generateFiscalRefundReceipt54Fz(params: {
 		splitPaymentInput = { cardRub: fiscalItemsData.totalRub };
 	}
 
-	return generateFiscalReceipt54Fz({
+	return generateFiscalReceipt({
 		items,
 		splitPayment: splitPaymentInput,
 		patientId: originalReceipt.patientId || "unknown-patient",
@@ -149,10 +151,13 @@ export function generateFiscalRefundReceipt54Fz(params: {
 	});
 }
 
+// Алиас обратной совместимости (Мандат 8ap)
+export const generateFiscalRefundReceipt54Fz = generateFiscalRefundReceipt;
+
 /**
- * Генерация фискального чека коррекции (54-ФЗ / ФФД 1.2 Теги 1173, 1178, 1179).
+ * Генерация фискального чека коррекции (Мандат 8ap).
  */
-export function generateFiscalCorrectionReceipt54Fz(params: {
+export function generateFiscalCorrectionReceipt(params: {
 	readonly items: readonly TreatmentPlanItem[];
 	readonly splitPayment: SplitPaymentInput;
 	readonly operationType?: Ffd12OperationType | undefined;
@@ -170,7 +175,7 @@ export function generateFiscalCorrectionReceipt54Fz(params: {
 	readonly taxationSystem?: Ffd12TaxationSystem | undefined;
 	readonly customReceiptNumber?: string | undefined;
 	readonly originalReceiptNumber?: string | undefined;
-}): FiscalReceipt54FzResult {
+}): FiscalReceiptResult {
 	const {
 		items,
 		splitPayment,
@@ -191,7 +196,7 @@ export function generateFiscalCorrectionReceipt54Fz(params: {
 		originalReceiptNumber,
 	} = params;
 
-	return generateFiscalReceipt54Fz({
+	return generateFiscalReceipt({
 		items,
 		splitPayment,
 		patientId,
@@ -212,3 +217,6 @@ export function generateFiscalCorrectionReceipt54Fz(params: {
 		originalReceiptNumber,
 	});
 }
+
+// Алиас обратной совместимости (Мандат 8ap)
+export const generateFiscalCorrectionReceipt54Fz = generateFiscalCorrectionReceipt;

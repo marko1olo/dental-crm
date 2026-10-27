@@ -15,7 +15,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { CashShiftWidget } from "../CashShiftWidget";
 import { FastCheckoutModal } from "../FastCheckoutModal";
-import { FiscalReceipt54FzModal } from "../FiscalReceipt54FzModal";
+import { FiscalReceiptModal, FiscalReceipt54FzModal } from "../FiscalReceiptModal";
 import { PaymentModal } from "../PaymentModal";
 
 describe("CashShiftWidget — Mandate 8e Autonomy & X-Report Verification", () => {
@@ -164,10 +164,10 @@ describe("PaymentModal — Multi-Tender & Doctor Autonomy Presets", () => {
 	});
 });
 
-describe("FiscalReceipt54FzModal Refund Mode (Mandates 8e, 8b, 8n)", () => {
-	it("renders FiscalReceipt54FzModal and synthesizes 804n clinical service when total is passed without line items", () => {
+describe("FiscalReceiptModal Refund Mode (Mandates 8e, 8b, 8n, 8ap: Clean Domain API)", () => {
+	it("renders canonical FiscalReceiptModal and synthesizes clinical service when total is passed without line items", () => {
 		const html = renderToString(
-			React.createElement(FiscalReceipt54FzModal, {
+			React.createElement(FiscalReceiptModal, {
 				isOpen: true,
 				onClose: () => {},
 				totalBillRub: 7500,
@@ -184,9 +184,23 @@ describe("FiscalReceipt54FzModal Refund Mode (Mandates 8e, 8b, 8n)", () => {
 		assert.ok(html.includes("Алексеева О. М."));
 	});
 
-	it("renders FiscalReceipt54FzModal in 54-FZ Income Return mode for advance refund (no line items)", () => {
+	it("renders FiscalReceipt54FzModal via backward-compatibility alias", () => {
 		const html = renderToString(
 			React.createElement(FiscalReceipt54FzModal, {
+				isOpen: true,
+				onClose: () => {},
+				totalBillRub: 7500,
+				patientName: "Алексеева О. М.",
+				initialTab: "act",
+			})
+		);
+
+		assert.ok(html.includes("Стоматологические медицинские услуги (клинический прием)"));
+	});
+
+	it("renders FiscalReceiptModal in Income Return mode for advance refund (no line items)", () => {
+		const html = renderToString(
+			React.createElement(FiscalReceiptModal, {
 				isOpen: true,
 				onClose: () => {},
 				patientId: "pat-refund-test-1",
@@ -201,9 +215,9 @@ describe("FiscalReceipt54FzModal Refund Mode (Mandates 8e, 8b, 8n)", () => {
 		assert.ok(html.includes('data-testid="refund-advance-container"'));
 	});
 
-	it("renders FiscalReceipt54FzModal in 54-FZ Income Return mode for line items with 1-click select all", () => {
+	it("renders FiscalReceiptModal in Income Return mode for line items with 1-click select all", () => {
 		const html = renderToString(
-			React.createElement(FiscalReceipt54FzModal, {
+			React.createElement(FiscalReceiptModal, {
 				isOpen: true,
 				onClose: () => {},
 				patientId: "pat-refund-test-2",
