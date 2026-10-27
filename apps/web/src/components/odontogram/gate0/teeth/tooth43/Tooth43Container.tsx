@@ -16,9 +16,12 @@ import { TOOTH43_GEOMETRY } from "./tooth43Geometry";
 export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 	isDark = false, zoom = 1, layers = DEFAULT_TOOTH46_LAYERS,
 	presetId, className, style, badgeRadius = 18.5, badgeCy, showBadge = true,
+	toothNumber, isFlipped: isFlippedProp,
 }) => {
 	const a = { ...DEFAULT_TOOTH46_LAYERS, ...layers };
 	if (showBadge === false) a.showBadge = false;
+	const num = toothNumber ?? 43;
+	const isFlipped = isFlippedProp ?? (num >= 21 && num <= 38);
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
 	const isEndo = Boolean(a.canals || a.pulp);
 	const noCrown = Boolean(a.implant && (a.implantStage === "pure" || a.implantStage === "healing_abutment"));
@@ -38,12 +41,13 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 			height={baseHeight * zoom}
 			{...(className ? { className } : {})}
 			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label="Анатомический нижний клык 43 (копьевидная коронка, рвущий бугор, мощный длинный корень 27мм)"
+			aria-label={`Анатомический нижний клык ${num}`}
 			role="img"
 		>
 			<Tooth46ShaderDefs />
-			<ToothAdaptivePeriapicalArea
-				toothId="43"
+			<g transform={isFlipped ? "translate(100, 0) scale(-1, 1)" : undefined}>
+				<ToothAdaptivePeriapicalArea
+					toothId={String(num)}
 				apices={TOOTH43_GEOMETRY.apices}
 				condition={a.periapicalCondition}
 				halo={a.periapicalHalo}
@@ -108,7 +112,8 @@ export const Tooth43Container: React.FC<Tooth46ContainerProps> = ({
 				isDark={isDark}
 			/>
 			{a.missing && <Tooth46SurgeryOverlay showMissing />}
-			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} toothNumber={43} />}
+			</g>
+			{a.showBadge !== false && <ToothStatusBadge presetId={presetId} layers={a} r={r} cy={cy} toothNumber={num} />}
 		</svg>
 	);
 };

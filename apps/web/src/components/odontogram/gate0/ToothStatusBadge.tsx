@@ -25,7 +25,8 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 	toothNumber,
 }) => {
 	const badge = resolveToothStatusBadge(presetId, layers, toothNumber);
-	const len = badge.code.length;
+	const textContent = (badge.code === "✓" && toothNumber) ? String(toothNumber) : badge.code;
+	const len = textContent.length;
 	const fontSize =
 		len === 1
 			? r * 0.92
@@ -43,10 +44,11 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 		<g
 			id="tooth46-status-badge"
 			data-testid="tooth-status-badge"
+			data-tooth-number={toothNumber}
 			role="status"
 			shapeRendering="geometricPrecision"
 		>
-			<title>{badge.title}</title>
+			<title>{toothNumber ? `${badge.title} (Зуб ${toothNumber})` : badge.title}</title>
 			<circle
 				cx={cx}
 				cy={cy}
@@ -67,7 +69,7 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 				fill={badge.text}
 				textRendering="geometricPrecision"
 			>
-				{badge.code}
+				{textContent}
 			</text>
 		</g>
 	);

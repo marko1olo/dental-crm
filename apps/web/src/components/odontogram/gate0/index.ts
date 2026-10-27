@@ -76,3 +76,4 @@ export * from "./tooth46LayerConstants";
 export * from "./tooth46PresetTypes";
 export * from "./tooth46Types";
 export * from "./gate0CariesMapper";
+export * from "./AnatomicalTooth";

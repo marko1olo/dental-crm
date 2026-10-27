@@ -16,19 +16,7 @@ import type {
 	RestorationCondition,
 } from "./tooth46PresetTypes";
 
-export type {
-	CanalCondition,
-	CariesChronicity,
-	CariesDepth,
-	CariesType,
-	CrownMaterial,
-	ImplantStage,
-	InlayOnlayType,
-	PeriapicalCondition,
-	PostCoreType,
-	RestorationCondition,
-	Tooth46ClinicalPreset,
-} from "./tooth46PresetTypes";
+export * from "./tooth46PresetTypes";
 
 export interface Tooth46LayerFlags {
 	roots?: boolean;
@@ -116,4 +104,6 @@ export interface Tooth46ContainerProps {
 	badgeRadius?: number | undefined;
 	badgeCy?: number | undefined;
 	showBadge?: boolean | undefined;
+	toothNumber?: number | undefined;
+	isFlipped?: boolean | undefined;
 }

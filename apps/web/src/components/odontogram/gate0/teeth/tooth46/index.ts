@@ -1,0 +1,12 @@
+export { Tooth46Container } from "./Tooth46Container";
+export { Tooth46RestorationOverlay } from "./Tooth46RestorationOverlay";
+export { Tooth46EnamelCrown } from "./Tooth46EnamelCrown";
+export { Tooth46OcclusalCusps } from "./Tooth46OcclusalCusps";
+export { Tooth46Roots } from "./Tooth46Roots";
+export { Tooth46PulpChamber } from "./Tooth46PulpChamber";
+export { Tooth46EndoCanals } from "./Tooth46EndoCanals";
+export { Tooth46CariesOverlay } from "./Tooth46CariesOverlay";
+export { Tooth46PostCoreOverlay } from "./Tooth46PostCoreOverlay";
+export { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
+export { TOOTH46_CUSPS, type Tooth46CuspDef } from "./tooth46CuspGeometry";
+export { TOOTH46_PULP_GEOMETRY, type Tooth46CanalAnatomy } from "./Tooth46PulpGeometry";
