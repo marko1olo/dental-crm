@@ -1,63 +1,19 @@
 /**
  * apps/api/src/routes/sanpin/sterilizationModules/sterilizationHelpers.ts
  *
- * Канонические вспомогательные методы привязки стерильных лотков и крафт-пакетов (СанПиН 3.3686-21, Форма 043/у):
- * - Расчет SHA-256 хеша дневника при привязке лотка к визиту
- * - Мягкий допуск соло-врача по экстренным показаниям (Мандаты 8e, 8n)
- * - Авто-инициализация лотка стерилизации при сканировании у кресла
- * - 1-клик вскрытие крафт-пакета медсестрой без комиссии из 3 человек
+ * Канонические вспомогательные методы привязки стерильных лотков и крафт-пакетов.
+ * Мандат 8b: строго <= 120 строк.
  */
 
-import { computeDiaryHash } from "../../../services/clinical/DiarySigningCeremonyService.js";
 import type {
 	AutoProvisionSterilizationLogParams,
-	DiaryHashInput,
 	EvaluateSterilizationLogInput,
 	EvaluateSterilizationLogResult,
 	UnsealKraftPackageParams,
 	UnsealKraftPackageResponse,
 } from "./sterilizationSchemas.js";
 
-export function computeDiaryHashForTrayLink(row: DiaryHashInput): string {
-	return computeDiaryHash(
-		row.visitId,
-		row.patientId ?? "",
-		row.anamnesis,
-		row.statusLocalis,
-		row.treatmentDescription,
-		row.diagnosisIcd10,
-		row.diagnosisTooth,
-		row.complications,
-		row.comorbidities,
-		row.instrumentTrayBarcode,
-	);
-}
-
-/**
- * Мандат 8e / 8n: Запись мягкого клинического допуска в дневник 043/у по экстренным показаниям.
- */
-export function buildEmergencySterilizationAdmissionNote(barcode: string): string {
-	return `[Стерилизация: мягкий допуск крафт-пакета ${barcode.trim()} по экстренным показаниям под личную ответственность врача (СанПиН 3.3686-21)]`;
-}
-
-/**
- * Добавляет отметку о допуске в описание лечения 043/у без дублирования.
- */
-export function applyEmergencySterilizationToDiaryTreatment(
-	currentTreatment: string | null | undefined,
-	barcode: string,
-): string {
-	const emergencyNote = buildEmergencySterilizationAdmissionNote(barcode);
-	const base = (currentTreatment ?? "").trim();
-	if (!base) return emergencyNote;
-	if (
-		base.includes(emergencyNote.trim()) ||
-		(base.includes(barcode.trim()) && (base.includes("мягкий допуск") || base.includes("Стерилизация")))
-	) {
-		return base;
-	}
-	return `${base}\n${emergencyNote}`;
-}
+export * from "./helpers/sterilizationDiaryLinkHelpers.js";
 
 /**
  * Мандаты 8e, 8n: Формирует параметры авто-регистрации крафт-пакета стерилизации

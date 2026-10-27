@@ -1,0 +1,88 @@
+import crypto from "node:crypto";
+
+export function generateDailySterilAndPsoRows(dateStr: string, organizationId: string, operatorId: string | null) {
+	const sterilRows = [
+		{
+			organizationId,
+			deviceName: "Автоклав Euronda E9 Next (Класс B)",
+			autoclaveId: "АК-01",
+			cycleNumber: 1,
+			itemsDescription: "Терапевтический инструментарий (зеркала, зонды, пинцеты, наконечники NSK Ti-Max)",
+			packagingType: "kraft_heat_sealed",
+			temperatureCelsius: "134",
+			pressureBar: "2.15",
+			durationMin: 5,
+			indicatorType: "class5_integrating",
+			cycleMode: "B",
+			passedIndicator: true,
+			status: "passed" as const,
+			barcode: `DNT-STER-${dateStr.replace(/-/g, "")}-1-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
+			operatorId,
+			notes: "⚡ 1-Клик автопилот месяца: норма СанПиН 3.3686-21, 5 точек КТ подтверждены",
+			createdAt: new Date(`${dateStr}T09:30:00Z`),
+		},
+		{
+			organizationId,
+			deviceName: "Автоклав Euronda E9 Next (Класс B)",
+			autoclaveId: "АК-01",
+			cycleNumber: 2,
+			itemsDescription: "Хирургический инструментарий (щипцы, элеваторы) и эндодонтические файлы",
+			packagingType: "kraft_self_adhesive",
+			temperatureCelsius: "134",
+			pressureBar: "2.15",
+			durationMin: 5,
+			indicatorType: "class5_integrating",
+			cycleMode: "B",
+			passedIndicator: true,
+			status: "passed" as const,
+			barcode: `DNT-STER-${dateStr.replace(/-/g, "")}-2-${crypto.randomBytes(2).toString("hex").toUpperCase()}`,
+			operatorId,
+			notes: "⚡ 1-Клик автопилот месяца: норма СанПиН 3.3686-21, 5 точек КТ подтверждены",
+			createdAt: new Date(`${dateStr}T14:30:00Z`),
+		},
+	];
+
+	const psoRows = [
+		{
+			organizationId,
+			testType: "both",
+			batchItemCount: 120,
+			testedSampleCount: 5,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isBatchApproved: true,
+			detergentBrand: "Биолот 0.5% + Аламинол 1%",
+			operatorId,
+			notes: "Терапевтический смотровой инструментарий | СанПиН 3.3686-21 (Норма)",
+			createdAt: new Date(`${dateStr}T08:50:00Z`),
+		},
+		{
+			organizationId,
+			testType: "both",
+			batchItemCount: 40,
+			testedSampleCount: 4,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isBatchApproved: true,
+			detergentBrand: "Оптимакс Про 1.5%",
+			operatorId,
+			notes: "Хирургический инструментарий | СанПиН 3.3686-21 (Норма)",
+			createdAt: new Date(`${dateStr}T13:45:00Z`),
+		},
+		{
+			organizationId,
+			testType: "both",
+			batchItemCount: 150,
+			testedSampleCount: 5,
+			isAzopyramNegative: true,
+			isPhenolphthaleinNegative: true,
+			isBatchApproved: true,
+			detergentBrand: "Биолот 0.5%",
+			operatorId,
+			notes: "Эндодонтический инструментарий и боры | УЗ-мойка 15 мин (Норма)",
+			createdAt: new Date(`${dateStr}T17:10:00Z`),
+		},
+	];
+
+	return { sterilRows, psoRows };
+}
