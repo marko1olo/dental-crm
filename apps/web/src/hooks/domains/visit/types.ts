@@ -261,6 +261,21 @@ export interface UseVisitNotesReturn {
 	undoTranscriptClear: () => void;
 }
 
+export interface UseVisitSpeechTranscriptionParams {
+	auth: {
+		denteClinicalReadHeaders: (extra?: Record<string, string>) => Record<string, string>;
+		denteClinicalMutationHeaders: (extra?: Record<string, string>) => Record<string, string>;
+	};
+	setError: (err: string | null) => void;
+	dashboard: Dashboard | null;
+	activeOrganizationId: string | null;
+	isOnline: boolean;
+	loadSpeechGatewayStatus: (options?: { silent?: boolean }) => Promise<any>;
+	loadSpeechRecordingRecovery: (options?: { silent?: boolean }) => Promise<void>;
+	applySpeechTranscription: (result: SpeechTranscriptionResponse) => void;
+	refreshPendingSpeechChunkState: () => Promise<void>;
+}
+
 export type UseVisitLogicReturn = VisitStoreSlice &
 	UseVisitSpeechReturn &
 	UseVisitAutosaveReturn &

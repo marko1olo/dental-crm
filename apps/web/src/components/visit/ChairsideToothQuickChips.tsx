@@ -27,7 +27,7 @@ export const ChairsideToothQuickChips: React.FC<ChairsideToothQuickChipsProps> =
 			<button
 				type="button"
 				onClick={onClear}
-				className={`dente-filter-chip min-h-[32px] sm:min-h-[32px] h-8 sm:h-8 px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer inline-flex items-center justify-center ${
+				className={`dente-filter-chip min-w-[44px] min-h-[44px] px-2.5 py-1 rounded-lg text-xs font-medium border transition-colors cursor-pointer inline-flex items-center justify-center ${
 					selectedTeethList.length === 0
 						? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal-strong,#0f766e)] shadow-xs font-bold"
 						: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"
@@ -45,7 +45,7 @@ export const ChairsideToothQuickChips: React.FC<ChairsideToothQuickChipsProps> =
 						key={t}
 						type="button"
 						onClick={() => onToothClick(t)}
-						className={`dente-filter-chip min-w-[36px] sm:min-w-[36px] min-h-[32px] sm:min-h-[32px] h-8 sm:h-8 px-2 py-1 rounded-lg text-xs font-mono font-semibold border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
+						className={`dente-filter-chip min-w-[44px] min-h-[44px] px-2 py-1 rounded-lg text-xs font-mono font-semibold border transition-all cursor-pointer inline-flex items-center justify-center gap-1.5 ${
 							active
 								? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal-strong,#0f766e)] shadow-xs font-bold"
 								: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"

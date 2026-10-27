@@ -26,23 +26,23 @@ export const SoapExpressProtocolsBar: React.FC<SoapExpressProtocolsBarProps> = (
 			<div className="flex items-center gap-1.5 flex-wrap">
 				<button type="button" onClick={() => onApplyExpressProtocol("caries")} className={btnCls} data-testid="btn-soap-express-caries" title="Протокол: Кариес дентина (K02.1)">
 					<Activity className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
-					<span>Кариес</span>
+					<span>Кариес (K02.1)</span>
 				</button>
 				<button type="button" onClick={() => onApplyExpressProtocol("pulpitis")} className={btnCls} data-testid="btn-soap-express-pulpitis" title="Протокол: Острый пульпит (K04.0)">
 					<Zap className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
-					<span>Пульпит</span>
+					<span>Пульпит (K04.0)</span>
 				</button>
 				<button type="button" onClick={() => onApplyExpressProtocol("periodontitis")} className={btnCls} data-testid="btn-soap-express-periodontitis" title="Протокол: Хронический периодонтит (K04.5)">
 					<HeartPulse className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
-					<span>Периодонтит</span>
+					<span>Периодонтит (K04.5)</span>
 				</button>
 				<button type="button" onClick={() => onApplyExpressProtocol("hygiene")} className={btnCls} data-testid="btn-soap-express-hygiene" title="Протокол: Профгигиена (K05.1)">
 					<ShieldCheck className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
-					<span>Гигиена</span>
+					<span>Профгигиена (K05.1)</span>
 				</button>
 				<button type="button" onClick={() => onApplyExpressProtocol("extraction")} className={btnCls} data-testid="btn-soap-express-extraction" title="Протокол: Простое удаление зуба (K01.1)">
 					<Scissors className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
-					<span>Удаление</span>
+					<span>Удаление (K01.1)</span>
 				</button>
 				<button type="button" onClick={() => onApplyExpressProtocol("extraction_complex")} className={btnCls} data-testid="btn-soap-express-extraction-complex" title="Протокол: Сложное удаление с альвеолотомией (K01.1)">
 					<Scissors className="w-3.5 h-3.5 text-[var(--ink-muted)]" />

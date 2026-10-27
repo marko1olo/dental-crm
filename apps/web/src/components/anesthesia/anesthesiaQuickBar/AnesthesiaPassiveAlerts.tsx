@@ -50,27 +50,27 @@ export function AnesthesiaPassiveAlerts({
 			{hasLidocaineAllergy && (
 				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/40 inline-flex items-center gap-1 shrink-0" data-testid="allergy-passive-badge" title="Аллергия на лидокаин в анамнезе. Рекомендован Скандонест 3%">
 					<AlertTriangle size={12} className="text-rose-600 shrink-0" />
-					<span>⚠️ У пациента аллергия на лидокаин (Аллергия в анамнезе: Лидокаин, рекомендован Скандонест 3%)</span>
+					<span>У пациента аллергия на лидокаин (Аллергия в анамнезе: Лидокаин, рекомендован Скандонест 3%)</span>
 					<span className="sr-only">Аллергия: Лидокаин</span>
 				</span>
 			)}
 			{hasArticaineAllergy && (
 				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/40 inline-flex items-center gap-1 shrink-0" data-testid="allergy-passive-badge-articaine" title="Аллергия на артикаин в анамнезе. Рекомендован Скандонест 3%">
 					<AlertTriangle size={12} className="text-rose-600 shrink-0" />
-					<span>⚠️ У пациента аллергия на артикаин (Аллергия в анамнезе: Артикаин, рекомендован Скандонест 3%)</span>
+					<span>У пациента аллергия на артикаин (Аллергия в анамнезе: Артикаин, рекомендован Скандонест 3%)</span>
 					<span className="sr-only">Аллергия: Артикаин</span>
 				</span>
 			)}
 			{(hasPenicillinAllergy || hasLatexAllergy) && (
 				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/40 inline-flex items-center gap-1 shrink-0" data-testid="allergy-passive-badge-general" title="Аллергологический анамнез">
 					<AlertTriangle size={12} className="text-rose-600 shrink-0" />
-					<span>{`⚠️ У пациента аллергия на ${[hasPenicillinAllergy && "пенициллин", hasLatexAllergy && "латекс"].filter(Boolean).join(" / ")}`}</span>
+					<span>{`У пациента аллергия на ${[hasPenicillinAllergy && "пенициллин", hasLatexAllergy && "латекс"].filter(Boolean).join(" / ")}`}</span>
 				</span>
 			)}
 			{(hasSulfiteAllergy || hasBronchialAsthma) && (
 				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 inline-flex items-center gap-1 shrink-0" data-testid="anesthesia-passive-allergy-alert" title="Рекомендован Скандонест 3% без вазоконстриктора">
 					<AlertTriangle size={12} className="text-amber-600 shrink-0" />
-					<span>⚠️ У пациента аллергия на сульфиты / бронхиальная астма (Аллергия в анамнезе: рекомендуется Скандонест 3% без вазоконстриктора)</span>
+					<span>У пациента аллергия на сульфиты / бронхиальная астма (Аллергия в анамнезе: рекомендуется Скандонест 3% без вазоконстриктора)</span>
 				</span>
 			)}
 			{isCardioRisk && (
