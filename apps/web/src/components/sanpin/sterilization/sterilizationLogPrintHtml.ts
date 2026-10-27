@@ -62,13 +62,13 @@ export function generateSterilizationLogPrintHtml(
 			</td>
 			<td style="width: 40%; text-align: right;">
 				<div class="font-bold">МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</div>
-				<div>Форма № 257/у</div>
+				<div>Журнал автоклавирования</div>
 				<div class="subtext">Журнал работы стерилизаторов (автоклавирования)</div>
 			</td>
 		</tr>
 	</table>
 
-	<div class="doc-title">Журнал работы стерилизаторов и автоклавирования (Форма № 257/у)</div>
+	<div class="doc-title">Журнал работы стерилизаторов и автоклавирования</div>
 	<div class="doc-subtitle">Контроль параметров циклов и термовременных индикаторов стерильности</div>
 
 	<table class="main-table">

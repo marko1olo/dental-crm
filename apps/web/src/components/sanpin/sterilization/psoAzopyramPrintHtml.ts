@@ -66,7 +66,7 @@ export function generatePsoAzopyramPrintHtml(
 			</td>
 			<td style="width: 40%; text-align: right;">
 				<div class="font-bold">МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</div>
-				<div>Форма № 366/у</div>
+				<div>Журнал предстерилизационной очистки (ПСО)</div>
 				<div class="subtext">Журнал контроля предстерилизационной очистки</div>
 			</td>
 		</tr>

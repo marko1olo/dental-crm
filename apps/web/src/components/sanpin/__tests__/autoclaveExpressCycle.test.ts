@@ -201,7 +201,7 @@ describe("SanPiN 3.3686-21 — Autoclave 1-Click Express Standard Cycle (Mandate
 
 			// Verify export to official Printable A4 HTML works
 			const html = generateForm257PrintHtml([record]);
-			assert.ok(html.includes("Форма № 257/у"));
+			assert.ok(html.includes("Журнал автоклавирования") || html.includes("Журнал работы стерилизаторов"));
 			assert.ok(html.includes("СТЕРИЛЬНО"));
 			assert.ok(html.includes("Смотровые лотки и наконечники (стандартный набор)"));
 		});

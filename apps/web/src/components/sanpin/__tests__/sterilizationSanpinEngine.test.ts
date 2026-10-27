@@ -555,8 +555,8 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 			// Verify pre-rendered CSV and HTML documents exist
 			assert.ok(bundle.csv257.includes("Melag Vacuklav 23 B+"));
 			assert.ok(bundle.csv366.includes("Азопирамовая проба"));
-			assert.ok(bundle.printHtml257.includes("Форма № 257/у"));
-			assert.ok(bundle.printHtml366.includes("Форма № 366/у"));
+			assert.ok(bundle.printHtml257.includes("Журнал автоклавирования") || bundle.printHtml257.includes("Журнал работы стерилизаторов"));
+			assert.ok(bundle.printHtml366.includes("Журнал предстерилизационной очистки") || bundle.printHtml366.includes("Азопирамовая проба"));
 			assert.ok(bundle.combinedDossierHtml.includes("ДОСЬЕ ПРОИЗВОДСТВЕННОГО САНИТАРНОГО КОНТРОЛЯ"));
 		});
 
@@ -744,7 +744,7 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 
 		it("generates valid official print HTML for Form 257/u", () => {
 			const html = generateForm257PrintHtml(sampleCycles, DEFAULT_CLINIC_REQUISITES);
-			assert.ok(html.includes("Форма № 257/у"));
+			assert.ok(html.includes("Журнал автоклавирования") || html.includes("Журнал работы стерилизаторов"));
 			assert.ok(html.includes("Журнал работы стерилизаторов"));
 			assert.ok(html.includes("ООО «ДЕНТЕ КЛИНИК»"));
 			assert.ok(html.includes("АК-01"));
@@ -753,7 +753,7 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 
 		it("generates valid official print HTML for Form 366/u (PSO)", () => {
 			const html = generatePso366PrintHtml(samplePso, DEFAULT_CLINIC_REQUISITES);
-			assert.ok(html.includes("Форма № 366/у"));
+			assert.ok(html.includes("Журнал предстерилизационной очистки") || html.includes("предстерилизационной очистки"));
 			assert.ok(html.includes("предстерилизационной очистки"));
 			assert.ok(html.includes("Азопирамовая проба"));
 			assert.ok(html.includes("Фенолфталеиновая проба"));

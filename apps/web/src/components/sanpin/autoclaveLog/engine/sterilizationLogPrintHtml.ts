@@ -48,7 +48,7 @@ export function generateSterilizationLogPrintHtml(
 		</div>
 		<div class="form-stamp">
 			<strong>МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</strong><br/>
-			Журнал автоклавирования и стерилизации (Форма № 257/у)<br/>
+			Журнал автоклавирования и стерилизации<br/>
 			СанПиН 3.3686-21 (раздел III)
 		</div>
 	</div>

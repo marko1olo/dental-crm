@@ -68,7 +68,7 @@ export const AutoclaveToolbarMoreMenu: React.FC<AutoclaveToolbarMoreMenuProps> =
 							data-testid="open-new-cycle-modal-btn"
 						>
 							<Plus size={15} color="#0284c7" />
-							<span>Внести цикл (параметры, КТ-1..5)</span>
+							<span>Запустить цикл автоклава (1 клик)</span>
 						</button>
 					)}
 
@@ -89,7 +89,7 @@ export const AutoclaveToolbarMoreMenu: React.FC<AutoclaveToolbarMoreMenuProps> =
 						data-testid="open-journal-257-studio-btn"
 					>
 						<FileSpreadsheet size={15} color="#059669" />
-						<span>Журнал автоклавирования</span>
+						<span>Сводный журнал стерилизации</span>
 					</button>
 				</div>
 			)}
