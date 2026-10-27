@@ -5,6 +5,7 @@ import {
 	type ChairsideSmartProtocolKey,
 	saveChairsideVisitDraft,
 } from "../clinicalVisitWorkflow";
+import { dispatchExpressProtocolServicesToInvoice } from "./soapExpressInvoiceBridge";
 import type { VisitSoapNoteValues } from "./types";
 
 interface ExpressProtocolParams {
@@ -77,6 +78,8 @@ export function useVisitSoapExpressProtocol({
 			onChange?.(next);
 
 			const targetTooth = selectedTooth ?? 16;
+			dispatchExpressProtocolServicesToInvoice(presetType, targetTooth, selectedSurfaces);
+
 			const fullText = [
 				`=== МЕДИЦИНСКАЯ КАРТА (ЗУБ ${targetTooth}) ===`,
 				`[Жалобы]: ${next.complaint}`,

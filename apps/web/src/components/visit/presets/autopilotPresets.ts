@@ -139,6 +139,66 @@ export function build1ClickExtractionPreset(
 }
 
 /**
+ * Построитель протокола сложного удаления зуба с альвеолотомией (K01.1).
+ */
+export function build1ClickExtractionComplexPreset(
+	toothNumber?: number | null,
+): DoctorAutopilotPreset {
+	const tooth = toothNumber ?? 48;
+	const toothPrefix = `Зуб ${tooth}: `;
+	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_extraction_complex_k011 || AUTOPILOT_EXTRACTION_K045;
+	return {
+		...base,
+		defaultTooth: tooth,
+		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
+		service804n: {
+			...base.service804n!,
+			title: `${base.service804n!.title} (Зуб ${tooth})`,
+		},
+	};
+}
+
+/**
+ * Построитель протокола установки имплантата (K08.1).
+ */
+export function build1ClickImplantPreset(
+	toothNumber?: number | null,
+): DoctorAutopilotPreset {
+	const tooth = toothNumber ?? 36;
+	const toothPrefix = `Зуб ${tooth}: `;
+	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_implant_standard_k081;
+	return {
+		...base,
+		defaultTooth: tooth,
+		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
+		service804n: {
+			...base.service804n!,
+			title: `${base.service804n!.title} (Зуб ${tooth})`,
+		},
+	};
+}
+
+/**
+ * Построитель протокола синус-лифтинга и НКР (K08.2).
+ */
+export function build1ClickSinusGbrPreset(
+	toothNumber?: number | null,
+): DoctorAutopilotPreset {
+	const tooth = toothNumber ?? 16;
+	const toothPrefix = `Зуб ${tooth}: `;
+	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_sinus_gbr_k082;
+	return {
+		...base,
+		defaultTooth: tooth,
+		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
+		service804n: {
+			...base.service804n!,
+			title: `${base.service804n!.title} (Зуб ${tooth})`,
+		},
+	};
+}
+
+/**
  * Построитель протокола физиологической нормы (Z01.2).
  */
 export function build1ClickNormPreset(): DoctorAutopilotPreset {
@@ -196,6 +256,27 @@ export function apply1ClickClinicalAutopilot(
 		case "extraction_k045":
 		case "surgery_extraction_simple":
 			targetPreset = build1ClickExtractionPreset(tooth, "K04.5");
+			break;
+		case "autopilot_extraction_complex_k011":
+		case "extraction_complex_k011":
+		case "extraction_complex":
+		case "surgery_extraction_complex":
+			targetPreset = build1ClickExtractionComplexPreset(tooth);
+			break;
+		case "autopilot_implant_standard_k081":
+		case "implant_standard_k081":
+		case "implant_standard":
+		case "surgery_implant_standard":
+		case "implant":
+			targetPreset = build1ClickImplantPreset(tooth);
+			break;
+		case "autopilot_sinus_gbr_k082":
+		case "sinus_gbr_k082":
+		case "sinus_gbr":
+		case "surgery_sinus_gbr":
+		case "sinus":
+		case "gbr":
+			targetPreset = build1ClickSinusGbrPreset(tooth);
 			break;
 		case "autopilot_norm_healthy":
 		case "norm_healthy":

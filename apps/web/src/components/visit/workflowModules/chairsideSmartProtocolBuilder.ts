@@ -57,6 +57,15 @@ export function buildChairsideSmartProtocol(
 		case "extraction":
 			diagnosis = `K01.1 Простое удаление ${toothLabel}`.trim();
 			break;
+		case "extraction_complex":
+			diagnosis = `K01.1 Сложное удаление с альвеолотомией ${toothLabel}`.trim();
+			break;
+		case "implant_standard":
+			diagnosis = `K08.1 Дентальная имплантация ${toothLabel}`.trim();
+			break;
+		case "sinus_gbr":
+			diagnosis = `K08.2 Синус-лифтинг и костная пластика НКР ${toothLabel}`.trim();
+			break;
 		case "ortho_wire_change":
 			diagnosis = "K07.4 Аномалии положения зубов. Смена ортодонтической дуги".trim();
 			break;

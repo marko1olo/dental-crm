@@ -17,8 +17,8 @@ export const StandaloneTreatmentPlanWorkspaceShell: React.FC<
 > = ({ title, onClose, children }) => {
 	return (
 		<div className="w-full min-h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)]">
-			<div className="min-h-[48px] max-h-[56px] shrink-0 flex items-center justify-between gap-3 px-3 sm:px-6 py-2 border-b border-[var(--line)]">
-				<div className="text-sm sm:text-base font-bold tracking-tight text-[var(--ink)] truncate">
+			<div className="min-h-[48px] max-h-[56px] shrink-0 flex items-center justify-between gap-2 sm:gap-3 px-3 sm:px-6 py-2 border-b border-[var(--line)]">
+				<div className="text-xs sm:text-base font-bold tracking-tight text-[var(--ink)] min-w-0">
 					{title}
 				</div>
 				<button
@@ -29,7 +29,8 @@ export const StandaloneTreatmentPlanWorkspaceShell: React.FC<
 					title="Вернуться в приложение"
 				>
 					<ArrowLeft size={16} className="text-[var(--muted)]" aria-hidden="true" />
-					<span>Назад в приложение</span>
+					<span className="hidden sm:inline">Назад в приложение</span>
+					<span className="sm:hidden">Назад</span>
 				</button>
 			</div>
 			<div className="flex-1 min-h-0">{children}</div>

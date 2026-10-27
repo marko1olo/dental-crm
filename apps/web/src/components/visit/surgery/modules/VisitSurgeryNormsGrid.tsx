@@ -31,15 +31,15 @@ export const VisitSurgeryNormsGrid: React.FC<VisitSurgeryNormsGridProps> = ({
 							className={`visit-surgery-touch-card bg-[var(--paper-soft)] dark:bg-slate-900 text-[var(--ink)] dark:text-slate-100 border-[var(--line)] dark:border-slate-800 hover:border-[var(--teal,#0d9488)] ${isSel ? "active !bg-teal-900/30 !border-teal-500" : ""}`}
 							data-testid={`btn-surgery-norm-${norm.id}`}
 						>
-							<div className="flex items-center justify-between gap-1 mb-1">
-								<strong className="text-xs font-extrabold truncate text-[var(--ink)]">
+							<div className="flex items-start justify-between gap-1 mb-1">
+								<strong className="text-xs font-extrabold leading-snug text-[var(--ink)]">
 									{norm.shortBadge}
 								</strong>
 								{isSel && (
-									<CheckCircle2 size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<CheckCircle2 size={16} className="text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
 								)}
 							</div>
-							<span className="text-[10px] font-mono text-[var(--muted)] truncate">
+							<span className="text-[10px] font-mono text-[var(--muted)] leading-tight">
 								{norm.serviceCode ? `${norm.serviceCode} · ` : norm.code804n ? `${norm.code804n} · ` : ""}{norm.icd10}
 							</span>
 						</button>

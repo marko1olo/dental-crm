@@ -119,6 +119,9 @@ export type ChairsideSmartProtocolKey =
 	| "periodontitis"
 	| "hygiene"
 	| "extraction"
+	| "extraction_complex"
+	| "implant_standard"
+	| "sinus_gbr"
 	| "ortho_wire_change"
 	| "ortho_aligner_activation"
 	| "ortho_bracket_control";
@@ -129,6 +132,17 @@ export const CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[]
 	"periodontitis",
 	"hygiene",
 	"extraction",
+];
+
+export const ALL_CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[] = [
+	"caries",
+	"pulpitis",
+	"periodontitis",
+	"hygiene",
+	"extraction",
+	"extraction_complex",
+	"implant_standard",
+	"sinus_gbr",
 	"ortho_wire_change",
 	"ortho_aligner_activation",
 	"ortho_bracket_control",
