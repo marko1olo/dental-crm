@@ -23,12 +23,12 @@
 }
 
 .treatment-tier-card.recommended {
-	border-color: var(--warn-fg);
+	border-color: var(--teal, #0d9488);
 }
 
 .treatment-tier-card.recommended.selected {
-	border-color: var(--warn-fg);
-	box-shadow: 0 0 0 2px var(--warn-bg), 0 12px 28px -6px rgba(245, 158, 11, 0.25);
+	border-color: var(--tp-primary, var(--teal));
+	box-shadow: 0 0 0 2px var(--tp-primary-light, rgba(13, 148, 136, 0.2)), 0 12px 28px -6px rgba(13, 148, 136, 0.25);
 }
 
 /* Doctor Recommendation Ribbon */
@@ -37,9 +37,9 @@
 	top: 0;
 	right: 0;
 	left: 0;
-	background: var(--warn-bg);
-	color: var(--warn-fg);
-	border-bottom: 1px solid var(--warn-fg);
+	background: var(--teal-soft, var(--paper-soft));
+	color: var(--teal-dark, var(--teal));
+	border-bottom: 1px solid var(--teal, var(--brand-primary));
 	font-size: 11px;
 	font-weight: 800;
 	text-transform: uppercase;
@@ -50,7 +50,7 @@
 	align-items: center;
 	justify-content: center;
 	gap: 6px;
-	box-shadow: 0 2px 6px rgba(217, 119, 6, 0.2);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.1);
 	z-index: 2;
 }
 
@@ -92,9 +92,9 @@
 }
 
 .treatment-tier-badge.standard {
-	color: var(--warn-fg);
-	background: var(--warn-bg);
-	border-color: var(--warn-fg);
+	color: var(--teal-dark, var(--teal));
+	background: var(--teal-soft, var(--paper-soft));
+	border-color: var(--teal, var(--brand-primary));
 }
 
 .treatment-tier-badge.optimum {

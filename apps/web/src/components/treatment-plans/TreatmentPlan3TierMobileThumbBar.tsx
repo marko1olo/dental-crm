@@ -44,7 +44,7 @@ export const TreatmentPlan3TierMobileThumbBar: React.FC<TreatmentPlan3TierMobile
 			<button
 				type="button"
 				onClick={(e) => onSignClick(e, activeTier)}
-				className="min-h-[52px] h-[52px] px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-extrabold text-sm shadow-md active:scale-98 flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-emerald-500"
+				className="dente-btn dente-btn-primary min-h-[52px] h-[52px] px-5 py-2.5 rounded-xl bg-[var(--teal,var(--brand-primary))] hover:brightness-105 text-white font-extrabold text-sm shadow-md active:scale-98 flex items-center justify-center gap-2 cursor-pointer shrink-0 transition-all touch-manipulation focus:outline-none focus:ring-2 focus:ring-[var(--teal)]"
 				data-testid="mobile-primary-sign-btn"
 			>
 				<PenTool size={16} className="shrink-0" />

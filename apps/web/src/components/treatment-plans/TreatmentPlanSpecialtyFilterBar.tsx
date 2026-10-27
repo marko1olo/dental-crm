@@ -58,7 +58,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 						<button
 							type="button"
 							onClick={() => !isSplitMode && onToggleSplitMode()}
-							className={`h-7 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${isSplitMode ? "bg-[var(--teal)] text-white" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							className={`h-7 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${isSplitMode ? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs font-bold" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							data-testid="tp-split-mode-btn"
 							title="Двухколоночный режим: Каталог услуг + Этапы плана"
 						>
@@ -68,7 +68,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 						<button
 							type="button"
 							onClick={() => isSplitMode && onToggleSplitMode()}
-							className={`h-7 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${!isSplitMode ? "bg-[var(--teal)] text-white" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							className={`h-7 px-2 rounded-md text-xs font-semibold flex items-center gap-1 transition-colors cursor-pointer ${!isSplitMode ? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-2xs font-bold" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							data-testid="tp-cards-mode-btn"
 							title="Классический вид карточек этапов"
 						>
@@ -82,7 +82,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 					type="button"
 					onClick={onOpenAddCatalogService}
 					data-testid="tp-add-catalog-service-btn"
-					className="secondary-button tp-action-btn tp-action-btn-catalog min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
+					className="secondary-button dente-btn dente-btn-secondary tp-action-btn tp-action-btn-catalog min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
 					title="Добавить услугу из каталога через поиск"
 				>
 					<Plus size={14} className="shrink-0" />
@@ -93,7 +93,7 @@ export const TreatmentPlanSpecialtyFilterBar: React.FC<TreatmentPlanSpecialtyFil
 					type="button"
 					onClick={onOpenCreateStageModal}
 					data-testid="tp-create-stage-btn"
-					className="secondary-button tp-action-btn tp-action-btn-stage min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
+					className="secondary-button dente-btn dente-btn-secondary tp-action-btn tp-action-btn-stage min-h-[44px] sm:min-h-[32px] h-[44px] sm:h-8 touch-manipulation"
 					title="Добавить новый этап в план лечения"
 				>
 					<Layers size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />

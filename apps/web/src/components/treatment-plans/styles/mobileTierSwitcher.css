@@ -18,10 +18,10 @@
 	padding: 8px 10px;
 	border-radius: var(--tp-radius-md, 10px);
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: 700;
 	color: var(--tp-text-muted, var(--ink-secondary, #475569));
-	background: var(--tp-bg, var(--paper, #ffffff));
-	border: 1px solid var(--tp-border, var(--line, #cbd5e1));
+	background: transparent;
+	border: 1px solid transparent;
 	display: inline-flex;
 	flex-direction: column;
 	align-items: center;
@@ -34,24 +34,20 @@
 	user-select: none;
 }
 
-.treatment-mobile-tier-btn:hover {
+.treatment-mobile-tier-btn:hover:not(.active) {
 	color: var(--tp-text-main, var(--ink, #0f172a));
 	background: var(--tp-surface-soft, var(--paper-soft, #f1f5f9));
-	border-color: var(--tp-primary, var(--teal, #0d9488));
 }
 
 .treatment-mobile-tier-btn.active {
-	background: var(--tp-primary, var(--teal, #0d9488));
-	color: #ffffff;
-	border-color: var(--tp-primary, var(--teal, #0d9488));
-	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #cbd5e1);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
-.treatment-mobile-tier-btn.active.standard {
-	background: var(--warn-bg, rgba(217, 119, 6, 0.15));
-	border-color: var(--warn-fg, #d97706);
-	color: var(--warn-fg, #d97706);
-	box-shadow: 0 4px 14px rgba(217, 119, 6, 0.2);
+.treatment-mobile-tier-btn.active .tier-price {
+	color: var(--teal, #0d9488);
 }
 
 /* ==========================================================================
@@ -63,36 +59,40 @@
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active) {
-	background: var(--paper-soft, #1e293b) !important;
-	border: 1px solid var(--line, rgba(255, 255, 255, 0.12)) !important;
-	color: var(--ink, #f8fafc) !important;
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	color: var(--ink-secondary, #94a3b8) !important;
 	box-shadow: none;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active):hover {
 	background: var(--paper-strong, #334155) !important;
-	border-color: var(--teal, #2dd4bf) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
 	color: #ffffff !important;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active) span,
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active) div {
-	color: var(--ink, #f8fafc) !important;
+	color: var(--ink-secondary, #94a3b8) !important;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active) .tier-price,
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn:not(.active) [class*="font-mono"] {
-	color: var(--ink-secondary, #cbd5e1) !important;
+	color: var(--muted, #64748b) !important;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn.active {
-	background: var(--teal, #2dd4bf) !important;
-	border-color: var(--teal, #2dd4bf) !important;
-	color: #04211c !important;
-	box-shadow: 0 4px 14px rgba(45, 212, 191, 0.35);
+	background: var(--paper-strong, #1e293b) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.18)) !important;
+	color: var(--ink, #f8fafc) !important;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3) !important;
 }
 
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn.active span,
 :is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn.active div {
-	color: #04211c !important;
+	color: var(--ink, #f8fafc) !important;
+}
+
+:is([data-theme="dark"], [data-theme="night"], [data-theme="ocean"], [data-theme="emerald"], [data-theme="cyber_xray"], .dark, html.dark) .treatment-mobile-tier-btn.active .tier-price {
+	color: var(--teal, #2dd4bf) !important;
 }

@@ -59,12 +59,5 @@
 	background: var(--tp-primary);
 	color: var(--paper-strong, var(--paper));
 	border-color: var(--tp-primary);
-	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35);
-}
-
-.treatment-tier-card.recommended.selected .treatment-tier-select-btn {
-	background: var(--warn-bg);
-	border-color: var(--warn-fg);
-	color: var(--warn-fg);
-	box-shadow: 0 4px 14px rgba(245, 158, 11, 0.3);
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.25);
 }

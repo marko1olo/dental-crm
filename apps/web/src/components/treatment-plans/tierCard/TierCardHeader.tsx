@@ -12,8 +12,8 @@ export const TierCardHeader: React.FC<TierCardHeaderProps> = ({ tier }) => {
 	return (
 		<>
 			{tier.isRecommended && (
-				<div className="flex items-center gap-1.5 px-4 py-1 rounded-full bg-gradient-to-r from-teal-600 to-emerald-600 text-white text-[11px] font-black shadow-lg uppercase tracking-wider whitespace-nowrap z-30 self-center mb-1 -mt-0.5">
-					<Crown size={13} />
+				<div className="flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal,var(--brand-primary))]/20 text-[11px] font-bold shadow-xs uppercase tracking-wider whitespace-nowrap z-30 self-center mb-1 -mt-0.5">
+					<Crown size={12} className="text-[var(--teal,var(--brand-primary))]" />
 					<span>{tier.badge}</span>
 				</div>
 			)}

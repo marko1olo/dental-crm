@@ -278,49 +278,49 @@
 	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06) !important;
 }
 
-/* Status: Agreed (Active - Noble Emerald) */
+/* Status: Agreed (Active) */
 .tp-status-btn.status-agreed {
-	color: #047857 !important;
+	color: var(--teal-dark, var(--teal)) !important;
 }
 :root[data-theme="dark"] .tp-status-btn.status-agreed {
-	color: #34d399 !important;
+	color: var(--teal) !important;
 }
 .tp-status-btn.status-agreed.active {
-	background: #059669 !important;
-	border-color: #059669 !important;
-	color: #ffffff !important;
+	background: var(--paper) !important;
+	border-color: var(--teal) !important;
+	color: var(--teal-dark, var(--teal)) !important;
 	font-weight: 700 !important;
-	box-shadow: 0 1px 3px rgba(5, 150, 105, 0.35) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Status: In Progress (Active - Canonical Teal) */
+/* Status: In Progress (Active) */
 .tp-status-btn.status-in-progress {
-	color: var(--teal-dark, #0f766e) !important;
+	color: var(--ink) !important;
 }
 :root[data-theme="dark"] .tp-status-btn.status-in-progress {
-	color: #2dd4bf !important;
+	color: var(--ink) !important;
 }
 .tp-status-btn.status-in-progress.active {
-	background: var(--teal, #0d9488) !important;
-	border-color: var(--teal, #0d9488) !important;
-	color: #ffffff !important;
+	background: var(--paper) !important;
+	border-color: var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
 	font-weight: 700 !important;
-	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.35) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 
-/* Status: Completed (Active - Noble Blue) */
+/* Status: Completed (Active) */
 .tp-status-btn.status-completed {
-	color: #1d4ed8 !important;
+	color: var(--muted) !important;
 }
 :root[data-theme="dark"] .tp-status-btn.status-completed {
-	color: #60a5fa !important;
+	color: var(--muted) !important;
 }
 .tp-status-btn.status-completed.active {
-	background: #2563eb !important;
-	border-color: #2563eb !important;
-	color: #ffffff !important;
+	background: var(--paper) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
 	font-weight: 700 !important;
-	box-shadow: 0 1px 3px rgba(37, 99, 235, 0.35) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.08) !important;
 }
 
 /* View Tab Switcher Buttons (3 Варианта, Поэтапный, 4 Фазы, Дорожная карта) */

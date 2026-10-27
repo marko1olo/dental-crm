@@ -25,7 +25,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 				onClick={() => onToggleNdflBreakdown()}
 				className={`w-full text-left px-2.5 py-1.5 rounded-lg text-[12.5px] font-medium flex items-center justify-between gap-2 cursor-pointer touch-manipulation min-h-[36px] h-9 transition-colors ${
 					showNdflBreakdown
-						? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20"
+						? "bg-[var(--teal-soft,var(--paper-soft))] text-[var(--teal-dark,var(--teal))] border border-[var(--teal)]/20"
 						: "text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				}`}
 				role="menuitem"
@@ -34,14 +34,14 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 				<div className="flex items-center gap-2">
 					<ShieldCheck
 						size={14}
-						className={showNdflBreakdown ? "text-emerald-600" : "text-[var(--muted)]"}
+						className={showNdflBreakdown ? "text-[var(--teal,var(--brand-primary))]" : "text-[var(--muted)]"}
 					/>
 					<span>Вычет 13% (НДФЛ)</span>
 				</div>
 				<span
 					className={`text-[11.5px] font-bold px-1.5 py-0.5 rounded ${
 						showNdflBreakdown
-							? "bg-emerald-600 text-white"
+							? "bg-[var(--teal,var(--brand-primary))] text-[var(--paper-strong,#ffffff)]"
 							: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 					}`}
 				>
@@ -76,7 +76,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 					role="menuitem"
 					title="Открыть студию поэтапной оплаты и эскроу-депозитов"
 				>
-					<Coins size={14} className="text-amber-500 shrink-0" />
+					<Coins size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 					<span>Поэтапная оплата & Эскроу</span>
 				</button>
 			)}
@@ -92,7 +92,7 @@ export const ToolbarParamsMenuItems: React.FC<ToolbarParamsMenuItemsProps> = ({
 					role="menuitem"
 					title="Проверить цены по прайсу и протоколам СтАР"
 				>
-					<FileCheck size={14} className="text-emerald-600 shrink-0" />
+					<FileCheck size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" />
 					<span>Валидация цен (Прайс СтАР)</span>
 				</button>
 			)}

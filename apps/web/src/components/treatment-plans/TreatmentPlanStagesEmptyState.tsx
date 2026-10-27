@@ -32,7 +32,7 @@ export const TreatmentPlanStagesEmptyState: React.FC<TreatmentPlanStagesEmptySta
 					<button
 						type="button"
 						onClick={() => onSetSpecialtyFilter("all")}
-						className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+						className="secondary-button dente-btn dente-btn-secondary h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
 					>
 						<span>Показать все этапы</span>
 					</button>
@@ -40,16 +40,35 @@ export const TreatmentPlanStagesEmptyState: React.FC<TreatmentPlanStagesEmptySta
 					<>
 						<button
 							type="button"
-							onClick={() => onApplyClinicalBundle("hygiene_turnkey")}
-							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+							onClick={() => onApplyClinicalBundle("caries_turnkey")}
+							className="secondary-button dente-btn dente-btn-secondary h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+							data-testid="empty-template-therapy"
 						>
 							<Sparkles size={13} />
-							<span>+ Пакет: Профгигиена</span>
+							<span>+ Терапия (Санация)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => onApplyClinicalBundle("crown_zirconia_turnkey")}
+							className="secondary-button dente-btn dente-btn-secondary h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+							data-testid="empty-template-orthopedics"
+						>
+							<Sparkles size={13} />
+							<span>+ Ортопедия (Коронка)</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => onApplyClinicalBundle("implant_turnkey")}
+							className="secondary-button dente-btn dente-btn-secondary h-8 px-3 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,var(--paper-soft))] hover:bg-[var(--teal-soft)] border border-[var(--teal)]/30 transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+							data-testid="empty-template-implant"
+						>
+							<Sparkles size={13} />
+							<span>+ All-on-4/6 (Имплантация)</span>
 						</button>
 						<button
 							type="button"
 							onClick={onOpenCreateStageModal}
-							className="h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
+							className="secondary-button dente-btn dente-btn-secondary h-8 px-3 rounded-lg text-xs font-bold text-[var(--ink,#0f172a)] bg-[var(--paper-strong,#ffffff)] hover:bg-[var(--paper-soft)] border border-[var(--line,var(--border,#cbd5e1))] transition-colors inline-flex items-center gap-1.5 shadow-2xs cursor-pointer"
 						>
 							<span>+ Создать этап</span>
 						</button>

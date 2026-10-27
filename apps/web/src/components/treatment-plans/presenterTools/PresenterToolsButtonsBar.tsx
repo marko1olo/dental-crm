@@ -68,7 +68,7 @@ export const PresenterToolsButtonsBar: React.FC<PresenterToolsButtonsBarProps> =
 					onClick={() => setActiveToolsPanel((prev) => (prev === "doctorDiscount" ? null : "doctorDiscount"))}
 					className={`min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-xl text-xs sm:text-[13px] font-bold inline-flex items-center gap-1.5 border transition-all cursor-pointer touch-manipulation shadow-2xs shrink-0 whitespace-nowrap ${
 						activeToolsPanel === "doctorDiscount" || isDiscountActive
-							? "bg-emerald-600 text-white border-emerald-600"
+							? "bg-[var(--teal)] text-[var(--paper-strong,#ffffff)] border-[var(--teal)]"
 							: "bg-[var(--paper-strong)] text-[var(--ink)] hover:border-[var(--teal)] border-[var(--line)]"
 					}`}
 					data-testid="toggle-discount-panel-btn"
@@ -82,7 +82,7 @@ export const PresenterToolsButtonsBar: React.FC<PresenterToolsButtonsBarProps> =
 
 			<div className="flex items-center gap-2">
 				{doctorDiscountPercent === 100 && (
-					<span className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+					<span className="text-[11px] font-bold text-[var(--teal-dark,var(--teal))]">
 						100% гарантия / персонал
 					</span>
 				)}
