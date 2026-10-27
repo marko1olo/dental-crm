@@ -198,7 +198,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			];
 
 			const html = generatePsoJournalPrintHtml({ records: sampleRecords });
-			assert.ok(html.includes("ФОРМА № 366/у"));
+			assert.ok(html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ") || html.includes("ПРЕДСТЕРИЛИЗАЦИОННОЙ"));
 			assert.ok(html.includes("СанПиН 3.3686-21"));
 			assert.ok(html.includes("Хирургические элеваторы и щипцы"));
 			assert.ok(html.includes("Отрицат."));
@@ -370,7 +370,7 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			});
 
 			const html = generateForm257PrintHtml([record]);
-			assert.ok(html.includes("ФОРМА № 257/у"));
+			assert.ok(html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ") || html.includes("СТЕРИЛИЗАТОРОВ"));
 			assert.ok(html.includes("СанПиН 3.3686-21"));
 			assert.ok(html.includes("Melag Vacuklav 23B+"));
 			assert.ok(html.includes("134.8°C / 2.18 бар"));

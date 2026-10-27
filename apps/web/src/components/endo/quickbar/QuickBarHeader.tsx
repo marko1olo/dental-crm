@@ -64,7 +64,7 @@ export const QuickBarHeader: React.FC<QuickBarHeaderProps> = ({
 				type="button"
 				onClick={onApplyCaOh2}
 				data-testid="btn-quick-caoh2"
-				className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-bold rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
+				className="secondary-button min-h-[32px] h-8 px-2.5 text-xs font-bold rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-50/80 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
 				title="Периодонтит (1-й визит): мехобработка -> ирригация NaOCl -> гидроксид кальция Ca(OH)2 (Каласепт) -> повязка"
 			>
 				<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
