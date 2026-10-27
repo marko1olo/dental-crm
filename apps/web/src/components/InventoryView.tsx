@@ -16,6 +16,7 @@ import { InboundWaybillModal } from "./inventory/InboundWaybillModal.js";
 import { BatchWriteoffModal } from "./inventory/BatchWriteoffModal.js";
 import { WarehouseBatchWriteoffModal } from "./inventory/WarehouseBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal.js";
+import { InventoryStockTable } from "./InventoryStockTable.js";
 
 export { INVENTORY_CATEGORIES, type InventoryCategoryFilter };
 export { BatchWriteoffModal, InboundWaybillModal, WarehouseBatchWriteoffModal, WarehouseInventoryAuditModal };
@@ -271,4 +272,6 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 };
 
 export const InventoryView = React.memo(InventoryViewInner);
+export const WarehouseView = InventoryView;
+export { InventoryStockTable as StockBalanceTable };
 export default InventoryView;

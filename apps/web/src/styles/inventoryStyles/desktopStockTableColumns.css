@@ -1,0 +1,65 @@
+/**
+ * desktopStockTableColumns.css - Desktop Stock Table 7-Column Layout (Mandate 8b <= 120 lines)
+ */
+
+.inventory-col-sku {
+	width: 105px;
+	min-width: 100px;
+	max-width: 110px;
+}
+
+.inventory-col-name {
+	min-width: 180px;
+}
+
+.inventory-col-category {
+	width: 105px;
+	min-width: 100px;
+	max-width: 110px;
+}
+
+.inventory-col-stock {
+	width: 95px;
+	min-width: 90px;
+	max-width: 105px;
+	text-align: right;
+}
+
+.inventory-col-threshold {
+	width: 80px;
+	min-width: 75px;
+	max-width: 85px;
+	text-align: right;
+}
+
+.inventory-col-cost {
+	width: 130px;
+	min-width: 120px;
+	max-width: 150px;
+	text-align: right;
+}
+
+.inventory-col-fefo {
+	width: 165px;
+	min-width: 155px;
+	max-width: 175px;
+}
+
+.inventory-col-lot {
+	width: 115px;
+	min-width: 110px;
+	max-width: 125px;
+}
+
+.inventory-col-barcode {
+	width: 105px;
+	min-width: 100px;
+	max-width: 110px;
+}
+
+.inventory-col-actions {
+	width: 280px;
+	min-width: 270px;
+	max-width: 320px;
+	text-align: right;
+}

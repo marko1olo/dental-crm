@@ -22,6 +22,15 @@ describe("Warehouse Modular Facade & Inventory Styles", () => {
 		assert.ok(lines.length <= 25, `mobile-inventory.css must be <= 25 lines, got ${lines.length}`);
 	});
 
+	it("verifies inventory.css is a clean import facade <= 25 lines per Mandate 8b", () => {
+		const facadePath = path.join(webRoot, "src/styles/modules/inventory.css");
+		assert.ok(fs.existsSync(facadePath), "inventory.css must exist");
+
+		const content = fs.readFileSync(facadePath, "utf8");
+		const lines = content.split("\n").filter((l) => l.trim().length > 0);
+		assert.ok(lines.length <= 25, `inventory.css must be <= 25 lines, got ${lines.length}`);
+	});
+
 	it("verifies all modular inventory stylesheets in inventoryStyles/ are strictly <= 120 lines", () => {
 		const dir = path.join(webRoot, "src/styles/inventoryStyles");
 		assert.ok(fs.existsSync(dir), "inventoryStyles directory must exist");
@@ -34,5 +43,13 @@ describe("Warehouse Modular Facade & Inventory Styles", () => {
 			const lines = fs.readFileSync(fullPath, "utf8").split("\n").length;
 			assert.ok(lines <= 120, `File ${file} has ${lines} lines, exceeding 120 lines limit!`);
 		}
+	});
+
+	it("verifies canonical SSOT exports WarehouseView and StockBalanceTable aliases", async () => {
+		const mod = await import("../InventoryView.js");
+		assert.equal(typeof mod.WarehouseView, "object");
+		assert.equal(typeof mod.InventoryView, "object");
+		assert.equal(typeof mod.StockBalanceTable, "function");
+		assert.equal(typeof mod.InventoryStockTable, "function");
 	});
 });
