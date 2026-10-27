@@ -80,14 +80,14 @@ export const FISCAL_REGISTER_PRESETS: readonly DevicePreset[] = [
 		type: "fiscal_kkm",
 		protocol: "com_serial",
 		defaultBaudRate: 115200,
-		description: "АТОЛ 25Ф / 30Ф / 55Ф (Драйвер ККТ 10.x, протокол 54-ФЗ ФФД 1.2)",
+		description: "АТОЛ 25Ф / 30Ф / 55Ф (Драйвер ККТ 10.x, фискальный регистратор)",
 	},
 	{
 		model: "SHTRIH_M_54FZ",
 		type: "fiscal_kkm",
 		protocol: "com_serial",
 		defaultBaudRate: 115200,
-		description: "Штрих-М / Ритейл-01Ф (Протокол Штрих-М 54-ФЗ ФФД 1.2)",
+		description: "Штрих-М / Ритейл-01Ф (Протокол Штрих-М, фискальный регистратор)",
 	},
 	{
 		model: "ATOL_TCP_LAN",

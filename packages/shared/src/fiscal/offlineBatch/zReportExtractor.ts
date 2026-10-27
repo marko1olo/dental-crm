@@ -88,7 +88,7 @@ export function generateZReportTape(
 		padCenter(clinicName),
 		...(clinicInn ? [padCenter(`ИНН: ${clinicInn}`)] : []),
 		divider,
-		padCenter("ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z-ОТЧЕТ 54-ФЗ)"),
+		padCenter("ОТЧЕТ О ЗАКРЫТИИ СМЕНЫ (Z-ОТЧЕТ)"),
 		padJustify("СМЕНА:", `№ ${zReport.shiftNumber}`),
 		padJustify("ОТКРЫТА:", new Date(zReport.openedAtIso).toLocaleString("ru-RU")),
 		padJustify("ЗАКРЫТА:", new Date(zReport.closedAtIso).toLocaleString("ru-RU")),

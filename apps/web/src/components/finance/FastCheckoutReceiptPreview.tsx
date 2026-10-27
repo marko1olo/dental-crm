@@ -420,7 +420,7 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 								<span className="truncate">
 									{targetBillKop === 0
 										? "Закрыть визит: Гарантия 100% (0 ₽)"
-										: `Принять оплату и выбить чек — ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`}
+										: `Принять оплату — ${(targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`}
 								</span>
 							</>
 						)}

@@ -22,7 +22,7 @@ export const fiscalReceiptItemSchema = z
 		id: z.string().uuid().optional(),
 		serviceId: z.string().uuid().optional().nullable(),
 		catalogItemId: z.string().uuid().optional().nullable(),
-		name: z.string().trim().min(1, "Наименование позиции обязательно").max(128, "Максимум 128 символов по ФФД 1.2 (Тег 1030)"),
+		name: z.string().trim().min(1, "Наименование позиции обязательно").max(128, "Максимум 128 символов"),
 		priceKopecks: z.number().int().min(0, "Цена в копейках должна быть неотрицательным числом"),
 		quantity: z.number().positive("Количество должно быть больше нуля").default(1),
 		discountKopecks: z.number().int().min(0).optional().nullable(),

@@ -1,0 +1,85 @@
+/**
+ * installmentsModalLayout.css — Layout, Header, KPI and Footer for PatientInstallmentsModal
+ * Compliance: Mandate 8b (<= 120 lines), Mandate 8am (Consistent Design-System)
+ */
+
+.patient-installments-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(4px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 12px;
+}
+
+.patient-installments-modal {
+	width: 100%;
+	max-width: 920px;
+	max-height: 90vh;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	color: var(--ink, #0f172a);
+}
+
+.patient-installments-header {
+	padding: 14px 18px;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	background: var(--paper-soft, #f8fafc);
+	gap: 12px;
+}
+
+.patient-installments-grid-kpi {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+	gap: 10px;
+	padding: 14px 18px;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.patient-installments-kpi-card {
+	padding: 10px 12px;
+	border-radius: 10px;
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	display: flex;
+	flex-direction: column;
+	gap: 2px;
+}
+
+.patient-installments-kpi-label {
+	font-size: 11px;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+	text-transform: uppercase;
+	letter-spacing: 0.3px;
+}
+
+.patient-installments-kpi-value {
+	font-size: 15px;
+	font-weight: 800;
+	font-family: monospace;
+	color: var(--ink, #0f172a);
+}
+
+.patient-installments-action-bar {
+	padding: 12px 18px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 10px;
+	flex-wrap: wrap;
+}

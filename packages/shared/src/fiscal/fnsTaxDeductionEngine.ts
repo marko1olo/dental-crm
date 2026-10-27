@@ -248,7 +248,7 @@ export function renderOfficialTaxCertificateKnd1151156Html(params: TaxDeductionC
 		yearPayments.length > 0
 			? `
 	<div style="margin-top: 8px;">
-		<div style="font-size: 9pt; font-weight: bold; margin-bottom: 2px;">Сведения о кассовых чеках (54-ФЗ):</div>
+		<div style="font-size: 9pt; font-weight: bold; margin-bottom: 2px;">Сведения о кассовых чеках:</div>
 		<table class="table-checks">
 			<thead>
 				<tr>

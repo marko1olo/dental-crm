@@ -571,8 +571,8 @@ export function generateFiscalPeriodStatementHtml(data: FiscalPeriodStatementDat
 
 		<!-- Подвал -->
 		<div class="footer-meta">
-			<div>Сформировано в модуле «Бухгалтерия & 54-ФЗ» CRM ДЕНТЕ • Дата формирования: ${escapeHtml(generatedDate)}</div>
-			<div>Форма соответствует требованиям 54-ФЗ и ФФД 1.2 (Приказ ФНС РФ № ЕД-7-20/662@)</div>
+			<div>Сформировано в модуле «Касса и чеки» CRM ДЕНТЕ • Дата формирования: ${escapeHtml(generatedDate)}</div>
+			<div>Сводная ведомость кассовых операций и фискального учета</div>
 		</div>
 	</div>
 </body>

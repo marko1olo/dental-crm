@@ -45,7 +45,7 @@ export const TAXATION_SYSTEMS: TaxationSystemConfig[] = [
 ];
 
 export const KKM_MODEL_OPTIONS = [
-	{ value: "АТОЛ-55Ф", label: "АТОЛ-55Ф (ФФД 1.2, автоотрез)" },
+	{ value: "АТОЛ-55Ф", label: "АТОЛ-55Ф (автоотрез)" },
 	{ value: "АТОЛ 30Ф", label: "АТОЛ 30Ф (Компактная касса)" },
 	{ value: "Штрих-М-01Ф", label: "Штрих-М-01Ф (Ритейл / Клиника)" },
 	{ value: "Эвотор 7.2", label: "Эвотор 7.2 (Смарт-терминал)" },
