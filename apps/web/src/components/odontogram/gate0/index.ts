@@ -69,7 +69,6 @@ export * from "./Tooth46CariesPresets";
 export * from "./Tooth46SurgeryOverlay";
 export * from "./archMockup";
 export * from "./mandible";
-export * from "./maxilla";
 export * from "./tooth46CuspGeometry";
 export * from "./tooth46GeometryConstants";
 export * from "./tooth46LayerConstants";
