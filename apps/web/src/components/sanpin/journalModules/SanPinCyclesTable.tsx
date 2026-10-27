@@ -67,7 +67,13 @@ export const SanPinCyclesTable: React.FC<SanPinCyclesTableProps> = ({
 
 			{/* MOBILE CARDS VIEW (390x844 Apple HIG) */}
 			<div className="sanpin-mobile-cards-wrap">
-				<SanPinMobileCyclesCards cycles={cycles} />
+				<SanPinMobileCyclesCards
+					cycles={cycles}
+					onAutofillShift={onAutofillShift}
+					isAutofilling={isAutofilling}
+					onQuickBatchNorm={onQuickBatchNorm}
+					onQuickPsoNorm={onQuickPsoNorm}
+				/>
 			</div>
 		</div>
 	);

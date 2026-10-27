@@ -57,7 +57,7 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 						{onQuickBatchNorm && (
 							<button
 								type="button"
-								className="primary-button sanpin-btn sanpin-btn-primary"
+								className="secondary-button sanpin-btn sanpin-btn-secondary"
 								onClick={() => {
 									if (isAutofilling) return;
 									onQuickBatchNorm(27, "134");
@@ -68,15 +68,18 @@ export const SanPinTableEmptyState: React.FC<SanPinTableEmptyStateProps> = ({
 									display: "inline-flex",
 									alignItems: "center",
 									gap: 8,
-									minHeight: 44,
-									padding: "0 20px",
+									minHeight: 40,
+									padding: "0 18px",
 									fontSize: "0.875rem",
-									fontWeight: 600,
+									fontWeight: 500,
+									borderRadius: "10px",
+									border: "1px solid var(--line, #e2e8f0)",
+									background: "var(--paper, #fff)",
+									color: "var(--ink, #1e293b)",
 									cursor: "pointer",
-									opacity: 1,
 								}}
 							>
-								<CheckCircle2 size={16} />
+								<CheckCircle2 size={16} color="var(--teal, #0d9488)" />
 								<span>{isAutofilling ? "Запись цикла..." : "Зафиксировать цикл автоклава за смену"}</span>
 							</button>
 						)}

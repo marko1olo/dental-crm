@@ -51,14 +51,13 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					type="button"
 					onClick={onAutofillShift}
 					aria-busy={autoFilling}
-					className="primary-button sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--primary,#0d9488)] hover:opacity-90 text-white shadow-xs px-3.5 text-[13px] font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
+					className="primary-button sanpin-btn-primary-cta h-9 min-h-[36px] rounded-xl bg-[var(--primary,#0d9488)] hover:opacity-90 text-white shadow-xs px-3.5 text-[13px] font-medium sm:inline-flex hidden items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
 					data-testid="sanpin-shift-close-primary-btn"
 					data-action="shift-close"
 					title="Зафиксировать смену стерилизации в 1 клик (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
 				>
 					<CheckCircle2 size={15} className="shrink-0 text-white" />
-					<span className="hidden sm:inline">{autoFilling ? "Фиксация..." : "Зафиксировать смену стерилизации"}</span>
-					<span className="sm:hidden">{autoFilling ? "Фиксация..." : "Зафиксировать смену"}</span>
+					<span>{autoFilling ? "Фиксация..." : "Зафиксировать смену стерилизации"}</span>
 				</button>
 
 				<button

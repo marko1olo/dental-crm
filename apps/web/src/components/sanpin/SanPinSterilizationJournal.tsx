@@ -49,7 +49,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 	const handleOpenNewCycle = onOpenNewCycleModal || (() => setInternalNewCycleModalOpen(true));
 
 	return (
-		<div className={`sanpin-sterilization-journal ${className}`} style={{ display: "flex", flexDirection: "column", gap: 12 }}>
+		<div className={`sanpin-sterilization-journal ${className}`} role="region" aria-label="Журнал автоклавирования" style={{ display: "flex", flexDirection: "column", gap: 12 }}>
 			<SanPinJournalToolbar
 				period={period}
 				onPeriodChange={setPeriod}
