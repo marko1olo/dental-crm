@@ -3,9 +3,15 @@ import React from "react";
 
 export interface SidebarQuickToolsProps {
 	readonly collapsed?: boolean;
+	readonly tasksCount?: number;
+	readonly recallsCount?: number;
 }
 
-export function SidebarQuickTools({ collapsed = false }: SidebarQuickToolsProps) {
+export function SidebarQuickTools({
+	collapsed = false,
+	tasksCount = 0,
+	recallsCount = 0,
+}: SidebarQuickToolsProps) {
 	const handleOpenTasks = () => {
 		window.dispatchEvent(new CustomEvent("dente:open-clinical-tasks"));
 	};
@@ -37,7 +43,18 @@ export function SidebarQuickTools({ collapsed = false }: SidebarQuickToolsProps)
 				<span className={navSlotClass}>
 					<ClipboardCheck aria-hidden="true" />
 					<span className="nav-copy min-w-0 overflow-hidden flex-1">
-						<span className="nav-label truncate min-w-0 block">Клинические задачи</span>
+						<span className="nav-label truncate min-w-0 flex items-center justify-between gap-1">
+							<span className="truncate">Клинические задачи</span>
+							{tasksCount > 0 && (
+								<span
+									className="sidebar-quick-tool-badge shrink-0"
+									data-testid="sidebar-tasks-count-badge"
+									title={`Клинические задачи: ${tasksCount}`}
+								>
+									{tasksCount}
+								</span>
+							)}
+						</span>
 						<small className="nav-hint truncate min-w-0 block">Передача этапов</small>
 					</span>
 					<span className={navCaptionClass}>Задачи</span>
@@ -54,7 +71,18 @@ export function SidebarQuickTools({ collapsed = false }: SidebarQuickToolsProps)
 				<span className={navSlotClass}>
 					<PhoneCall aria-hidden="true" />
 					<span className="nav-copy min-w-0 overflow-hidden flex-1">
-						<span className="nav-label truncate min-w-0 block">Профосмотры</span>
+						<span className="nav-label truncate min-w-0 flex items-center justify-between gap-1">
+							<span className="truncate">Профосмотры</span>
+							{recallsCount > 0 && (
+								<span
+									className="sidebar-quick-tool-badge shrink-0"
+									data-testid="sidebar-recalls-count-badge"
+									title={`Профосмотры: ${recallsCount}`}
+								>
+									{recallsCount}
+								</span>
+							)}
+						</span>
 						<small className="nav-hint truncate min-w-0 block">Повторные вызовы</small>
 					</span>
 					<span className={navCaptionClass}>Осмотры</span>

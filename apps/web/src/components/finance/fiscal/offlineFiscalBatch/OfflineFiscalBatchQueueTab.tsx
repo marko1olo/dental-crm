@@ -20,13 +20,25 @@ export function OfflineFiscalBatchQueueTab({
 			<div className="flex items-center justify-between">
 				<div className="text-sm text-[var(--muted)]">Список чеков, накопленных во время работы без связи с кассой:</div>
 				<div className="flex gap-2">
-					<button onClick={() => setStatusFilter("all")} className={`px-2.5 py-1 text-xs rounded-md ${statusFilter === "all" ? "bg-emerald-500 text-white font-bold" : "bg-[var(--paper-strong)] text-[var(--muted)]"}`}>
+					<button
+						type="button"
+						onClick={() => setStatusFilter("all")}
+						className={`dente-btn-pill ${statusFilter === "all" ? "active" : ""}`}
+					>
 						Все ({receiptsToDisplay.length})
 					</button>
-					<button onClick={() => setStatusFilter("pending")} className={`px-2.5 py-1 text-xs rounded-md ${statusFilter === "pending" ? "bg-amber-500 text-white font-bold" : "bg-[var(--paper-strong)] text-[var(--muted)]"}`}>
+					<button
+						type="button"
+						onClick={() => setStatusFilter("pending")}
+						className={`dente-btn-pill ${statusFilter === "pending" ? "active" : ""}`}
+					>
 						В очереди ({receiptsToDisplay.filter((r) => r.status === "pending").length})
 					</button>
-					<button onClick={() => setStatusFilter("fiscalized")} className={`px-2.5 py-1 text-xs rounded-md ${statusFilter === "fiscalized" ? "bg-emerald-600 text-white font-bold" : "bg-[var(--paper-strong)] text-[var(--muted)]"}`}>
+					<button
+						type="button"
+						onClick={() => setStatusFilter("fiscalized")}
+						className={`dente-btn-pill ${statusFilter === "fiscalized" ? "active" : ""}`}
+					>
 						Фискализированы ({receiptsToDisplay.filter((r) => r.status === "fiscalized").length})
 					</button>
 				</div>

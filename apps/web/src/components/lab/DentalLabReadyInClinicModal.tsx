@@ -89,24 +89,24 @@ export function DentalLabReadyInClinicModal({
 					</button>
 				</div>
 				<div className="flex gap-2 border-b border-[var(--line)] pb-2">
-					<button type="button" onClick={() => setChannel("whatsapp")} className={`px-3 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold transition cursor-pointer ${channel === "whatsapp" ? "bg-emerald-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>WhatsApp</button>
-					<button type="button" onClick={() => setChannel("sms")} className={`px-3 py-2 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold transition cursor-pointer ${channel === "sms" ? "bg-teal-600 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}>SMS</button>
+					<button type="button" onClick={() => setChannel("whatsapp")} className={`dente-btn-pill ${channel === "whatsapp" ? "active" : ""}`}>WhatsApp</button>
+					<button type="button" onClick={() => setChannel("sms")} className={`dente-btn-pill ${channel === "sms" ? "active" : ""}`}>SMS</button>
 				</div>
 				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] text-xs text-[var(--ink)] whitespace-pre-wrap font-sans max-h-40 overflow-y-auto">
 					{msgText}
 				</div>
 				<div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-[var(--line)]">
 					<div className="flex items-center gap-2">
-						<button type="button" onClick={handleCopy} className="px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold border border-[var(--line)] hover:bg-[var(--paper-soft)] flex items-center gap-1.5 cursor-pointer">
+						<button type="button" onClick={handleCopy} className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-0 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
 							<Copy size={14} /><span>Копировать</span>
 						</button>
 						{channel === "whatsapp" && (
-							<button type="button" onClick={handleSendWhatsApp} className="px-3.5 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold bg-emerald-600 hover:bg-emerald-500 text-white flex items-center gap-1.5 cursor-pointer">
-								<Send size={14} /><span>Открыть чат</span>
+							<button type="button" onClick={handleSendWhatsApp} className="dente-btn dente-btn-secondary min-h-[44px] sm:min-h-0 text-xs font-bold flex items-center gap-1.5 cursor-pointer">
+								<Send size={14} className="text-[var(--teal)]" /><span>Открыть чат</span>
 							</button>
 						)}
 					</div>
-					<button type="button" onClick={handleSchedule} className="px-4 py-2.5 min-h-[44px] sm:min-h-0 rounded-xl text-xs font-bold bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid="btn-lab-schedule-appointment">
+					<button type="button" onClick={handleSchedule} className="dente-btn dente-btn-primary min-h-[44px] sm:min-h-0 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs" data-testid="btn-lab-schedule-appointment">
 						<CalendarCheck size={14} /><span>Записать на примерку</span>
 					</button>
 				</div>

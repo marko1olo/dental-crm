@@ -45,10 +45,10 @@ export const PanoramicHeader: React.FC<PanoramicHeaderProps> = ({
 					onClick={onAutoDetectArch}
 					disabled={loading}
 					aria-label="Автоматическое определение зубной дуги"
-					className="mpr-btn-touch text-xs font-bold bg-indigo-600/80 hover:bg-indigo-600 text-white px-2.5 py-1 rounded-lg border border-indigo-500/50 flex items-center gap-1 transition-all shadow-sm active:scale-95 whitespace-nowrap min-h-[32px]"
+					className="dente-btn dente-btn-secondary text-xs font-bold px-2.5 py-1 flex items-center gap-1 whitespace-nowrap min-h-[32px]"
 					title="Автоматическое определение зубной дуги по MIP срезу КЛКТ"
 				>
-					<Sparkles className="w-3.5 h-3.5 text-amber-300" />
+					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
 					<span className="hidden sm:inline">Авто-дуга</span>
 				</button>
 

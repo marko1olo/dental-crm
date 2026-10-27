@@ -211,3 +211,173 @@
 		font-size: 0.8125rem;
 	}
 }
+
+/* ==========================================================================
+   SYSTEMIC ENFORCEMENT & CLOWN PALETTE ELIMINATION (Mandates 8am, 8ze, Apple HIG)
+   Authority: Eliminates haphazard purple, green, orange, cyan, sky, amber button
+   backgrounds across modals, toolbars, cards, and header actions.
+   ========================================================================== */
+
+/* 1. Primary CTA Unification: Any solid action button uses Noble Teal */
+button.btn-primary,
+button.btn-primary-cta,
+button.primary-button:not(.dente-btn-danger):not(.danger-button) {
+	background: var(--teal, #0d9488) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+}
+
+button.btn-primary:hover:not(:disabled),
+button.btn-primary-cta:hover:not(:disabled),
+button.primary-button:hover:not(:disabled):not(.dente-btn-danger):not(.danger-button) {
+	background: var(--teal-dark, #0f766e) !important;
+	border-color: var(--teal-dark, #0f766e) !important;
+	color: #ffffff !important;
+}
+
+/* 2. Secondary / Subdued Unification: Neutral contours (var(--paper), var(--line)) */
+button.secondary-button:not(.dente-btn-primary):not([class*="danger"]):not([class*="bad"]),
+button.btn-secondary:not(.dente-btn-primary):not([class*="danger"]):not([class*="bad"]) {
+	background: var(--paper, #ffffff) !important;
+	border: 1px solid var(--line, #e2e8f0) !important;
+	color: var(--ink, #111827) !important;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04) !important;
+}
+
+button.secondary-button:hover:not(:disabled):not(.dente-btn-primary):not([class*="danger"]):not([class*="bad"]),
+button.btn-secondary:hover:not(:disabled):not(.dente-btn-primary):not([class*="danger"]):not([class*="bad"]) {
+	background: var(--paper-hover, var(--paper-soft, #f8fafc)) !important;
+	border-color: var(--line-strong, var(--line, #cbd5e1)) !important;
+	color: var(--ink, #111827) !important;
+}
+
+/* 3. Danger / Destructive Restraint: Soft rose background with crisp boundary */
+.danger-button,
+.btn-danger,
+.dente-btn-danger {
+	background: var(--bad-surface, rgba(244, 63, 94, 0.08)) !important;
+	border: 1px solid var(--bad-line, rgba(244, 63, 94, 0.25)) !important;
+	color: var(--bad, #e11d48) !important;
+	box-shadow: 0 1px 2px rgba(225, 29, 72, 0.05) !important;
+}
+
+.danger-button:hover:not(:disabled),
+.btn-danger:hover:not(:disabled),
+.dente-btn-danger:hover:not(:disabled) {
+	background: var(--bad-soft, rgba(244, 63, 94, 0.16)) !important;
+	border-color: var(--bad, #e11d48) !important;
+	color: var(--bad, #e11d48) !important;
+}
+
+/* 4. Ghost / Tertiary: Flat transparent contour with hover */
+.ghost-button,
+.subtle-button,
+.btn-ghost,
+.btn-subtle {
+	background: transparent !important;
+	border: 1px solid transparent !important;
+	color: var(--ink-muted, #64748b) !important;
+	box-shadow: none !important;
+}
+
+.ghost-button:hover:not(:disabled),
+.subtle-button:hover:not(:disabled),
+.btn-ghost:hover:not(:disabled),
+.btn-subtle:hover:not(:disabled) {
+	background: var(--paper-soft, #f8fafc) !important;
+	color: var(--ink, #111827) !important;
+}
+
+/* 5. Suppress clown background classes on interactive buttons (except odontogram) */
+body:not(.odontogram-view) button[class*="bg-emerald-600"]:not(.dente-btn-secondary),
+body:not(.odontogram-view) button[class*="bg-sky-600"]:not(.dente-btn-secondary),
+body:not(.odontogram-view) button[class*="bg-cyan-600"]:not(.dente-btn-secondary) {
+	background: var(--teal, #0d9488) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+}
+
+body:not(.odontogram-view) button[class*="bg-emerald-600"]:hover:not(:disabled):not(.dente-btn-secondary),
+body:not(.odontogram-view) button[class*="bg-sky-600"]:hover:not(:disabled):not(.dente-btn-secondary),
+body:not(.odontogram-view) button[class*="bg-cyan-600"]:hover:not(:disabled):not(.dente-btn-secondary) {
+	background: var(--teal-dark, #0f766e) !important;
+	border-color: var(--teal-dark, #0f766e) !important;
+	color: #ffffff !important;
+}
+
+/* Dark theme support for canonical buttons */
+[data-theme="dark"] .dente-btn-secondary,
+[data-theme="night"] .dente-btn-secondary,
+[data-theme="ocean"] .dente-btn-secondary,
+[data-theme="emerald"] .dente-btn-secondary,
+[data-theme="cyber_xray"] .dente-btn-secondary,
+html.dark .dente-btn-secondary,
+.dark .dente-btn-secondary,
+[data-theme="dark"] button.secondary-button,
+[data-theme="night"] button.secondary-button,
+[data-theme="ocean"] button.secondary-button,
+[data-theme="emerald"] button.secondary-button,
+[data-theme="cyber_xray"] button.secondary-button,
+html.dark button.secondary-button,
+.dark button.secondary-button {
+	background: rgba(255, 255, 255, 0.05) !important;
+	border-color: var(--line) !important;
+	color: var(--ink) !important;
+}
+
+[data-theme="dark"] .dente-btn-secondary:hover:not(:disabled),
+[data-theme="night"] .dente-btn-secondary:hover:not(:disabled),
+[data-theme="ocean"] .dente-btn-secondary:hover:not(:disabled),
+[data-theme="emerald"] .dente-btn-secondary:hover:not(:disabled),
+[data-theme="cyber_xray"] .dente-btn-secondary:hover:not(:disabled),
+html.dark .dente-btn-secondary:hover:not(:disabled),
+.dark .dente-btn-secondary:hover:not(:disabled),
+[data-theme="dark"] button.secondary-button:hover:not(:disabled),
+[data-theme="night"] button.secondary-button:hover:not(:disabled),
+[data-theme="ocean"] button.secondary-button:hover:not(:disabled),
+[data-theme="emerald"] button.secondary-button:hover:not(:disabled),
+[data-theme="cyber_xray"] button.secondary-button:hover:not(:disabled),
+html.dark button.secondary-button:hover:not(:disabled),
+.dark button.secondary-button:hover:not(:disabled) {
+	background: rgba(255, 255, 255, 0.09) !important;
+	border-color: var(--line-strong, var(--line)) !important;
+	color: var(--ink) !important;
+}
+
+[data-theme="dark"] .dente-btn-danger,
+[data-theme="night"] .dente-btn-danger,
+[data-theme="ocean"] .dente-btn-danger,
+[data-theme="emerald"] .dente-btn-danger,
+[data-theme="cyber_xray"] .dente-btn-danger,
+html.dark .dente-btn-danger,
+.dark .dente-btn-danger,
+[data-theme="dark"] .danger-button,
+[data-theme="night"] .danger-button,
+[data-theme="ocean"] .danger-button,
+[data-theme="emerald"] .danger-button,
+[data-theme="cyber_xray"] .danger-button,
+html.dark .danger-button,
+.dark .danger-button {
+	background: rgba(244, 63, 94, 0.12) !important;
+	border-color: rgba(244, 63, 94, 0.3) !important;
+	color: #fb7185 !important;
+}
+
+[data-theme="dark"] .dente-btn-danger:hover:not(:disabled),
+[data-theme="night"] .dente-btn-danger:hover:not(:disabled),
+[data-theme="ocean"] .dente-btn-danger:hover:not(:disabled),
+[data-theme="emerald"] .dente-btn-danger:hover:not(:disabled),
+[data-theme="cyber_xray"] .dente-btn-danger:hover:not(:disabled),
+html.dark .dente-btn-danger:hover:not(:disabled),
+.dark .dente-btn-danger:hover:not(:disabled),
+[data-theme="dark"] .danger-button:hover:not(:disabled),
+[data-theme="night"] .danger-button:hover:not(:disabled),
+[data-theme="ocean"] .danger-button:hover:not(:disabled),
+[data-theme="emerald"] .danger-button:hover:not(:disabled),
+[data-theme="cyber_xray"] .danger-button:hover:not(:disabled),
+html.dark .danger-button:hover:not(:disabled),
+.dark .danger-button:hover:not(:disabled) {
+	background: rgba(244, 63, 94, 0.22) !important;
+	border-color: rgba(244, 63, 94, 0.45) !important;
+	color: #fda4af !important;
+}

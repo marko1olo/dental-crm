@@ -34,11 +34,11 @@ export const ExportActionButtons: React.FC<ExportActionButtonsProps> = ({
 				<button
 					type="button"
 					onClick={onSendTelegram}
-					className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-sky-500/30 bg-sky-500/10 text-sky-700 dark:text-sky-300 hover:bg-sky-500/20 transition-colors"
+					className="secondary-button min-h-[44px] text-xs py-2 px-3 inline-flex items-center gap-1.5 font-semibold cursor-pointer rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors"
 					data-testid="btn-export-telegram"
 					title="Отправить снимок пациенту в Telegram"
 				>
-					<Send size={15} />
+					<Send size={15} className="text-[var(--teal)] shrink-0" />
 					<span>В Telegram</span>
 				</button>
 			</div>

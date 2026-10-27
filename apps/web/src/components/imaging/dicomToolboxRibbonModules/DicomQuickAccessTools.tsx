@@ -46,8 +46,8 @@ export const DicomQuickAccessTools: React.FC<DicomQuickAccessToolsProps> = ({
 			<button type="button" onClick={() => onInstantScreenCapture(true)} className="icon-button h-8 w-8 rounded-lg flex items-center justify-center cursor-pointer transition-colors border border-slate-700 bg-slate-800 text-slate-300 hover:bg-slate-700" title="Снимок экрана в буфер">
 				<Camera size={15} />
 			</button>
-			<button type="button" data-testid="btn-dicom-hu-profile" id="btn-ez3d-hu-profile" onClick={onOpenHuProfile} className="secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-sky-500/50 bg-sky-600/30 text-sky-200 hover:bg-sky-600/40 text-[13px] font-semibold cursor-pointer transition-colors" title="Плотность HU">
-				<Activity size={14} className="text-sky-400" />
+			<button type="button" data-testid="btn-dicom-hu-profile" id="btn-ez3d-hu-profile" onClick={onOpenHuProfile} className="secondary-button h-8 px-2.5 rounded-lg inline-flex items-center gap-1.5 border border-[var(--teal)]/40 bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--teal))] hover:bg-[var(--teal)]/20 text-[13px] font-semibold cursor-pointer transition-colors" title="Плотность HU">
+				<Activity size={14} className="text-[var(--teal)]" />
 				<span>Плотность HU</span>
 			</button>
 			<div className="relative" ref={measureMenuRef}>

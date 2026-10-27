@@ -33,45 +33,45 @@ export function LabOrderCardDropdownMenu({
 	return (
 		<div className="absolute right-0 bottom-full mb-1 z-50 w-56 p-1.5 bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl shadow-lg flex flex-col gap-1 text-xs">
 			{handleOpenReadyInClinicPrompt && (
-				<button type="button" onClick={() => { onCloseMenu(); handleOpenReadyInClinicPrompt(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-menu-ready-schedule-btn-${order.id}`}>
-					<CalendarCheck className="w-3.5 h-3.5 text-emerald-500" /><span>Запись на примерку / SMS</span>
+				<button type="button" onClick={() => { onCloseMenu(); handleOpenReadyInClinicPrompt(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-semibold text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-menu-ready-schedule-btn-${order.id}`}>
+					<CalendarCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /><span>Запись на примерку / SMS</span>
 				</button>
 			)}
 			{handlePayFromCashbox && !isPaid && (
-				<button type="button" onClick={() => { onCloseMenu(); handlePayFromCashbox(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-emerald-500/10 font-bold text-emerald-700 dark:text-emerald-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-card-pay-cashbox-btn-${order.id}`}>
-					<DollarSign className="w-3.5 h-3.5 text-emerald-500" /><span>Оплатить из кассы</span>
+				<button type="button" onClick={() => { onCloseMenu(); handlePayFromCashbox(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-semibold text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-card-pay-cashbox-btn-${order.id}`}>
+					<DollarSign className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /><span>Оплатить из кассы</span>
 				</button>
 			)}
 			{handleMarkInstalled && order.status !== "completed" && (
-				<button type="button" onClick={() => { onCloseMenu(); handleMarkInstalled(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-blue-500/10 font-bold text-blue-700 dark:text-blue-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-card-mark-installed-btn-${order.id}`}>
-					<CheckCircle2 className="w-3.5 h-3.5 text-blue-500" /><span>Сдать работу пациенту</span>
+				<button type="button" onClick={() => { onCloseMenu(); handleMarkInstalled(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-semibold text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-card-mark-installed-btn-${order.id}`}>
+					<CheckCircle2 className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /><span>Сдать работу пациенту</span>
 				</button>
 			)}
 			<button type="button" onClick={() => { onCloseMenu(); handleOpenTracking(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer">
-				<Layers className="w-3.5 h-3.5 text-indigo-500" /><span>Сменить этап/статус</span>
+				<Layers className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" /><span>Сменить этап/статус</span>
 			</button>
 			{is3D && (
-				<button type="button" onClick={() => { onCloseMenu(); (handleView3DScan || handleAttach3DScan)(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-teal-500/10 font-bold text-teal-700 dark:text-teal-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-menu-view-scan-btn-${order.id}`}>
-					<Box className="w-3.5 h-3.5 text-teal-500" /><span>Открыть 3D-скан (STL/PLY)</span>
+				<button type="button" onClick={() => { onCloseMenu(); (handleView3DScan || handleAttach3DScan)(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-semibold text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-menu-view-scan-btn-${order.id}`}>
+					<Box className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /><span>Открыть 3D-скан (STL/PLY)</span>
 				</button>
 			)}
-			<button type="button" onClick={() => { onCloseMenu(); handleAttach3DScan(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-teal-700 dark:text-teal-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-attach-scan-btn-${order.id}`}>
-				<Box className="w-3.5 h-3.5 text-teal-500" /><span>Прикрепить 3D-скан</span>
+			<button type="button" onClick={() => { onCloseMenu(); handleAttach3DScan(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-attach-scan-btn-${order.id}`}>
+				<Box className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" /><span>Прикрепить 3D-скан</span>
 			</button>
 			<button type="button" onClick={() => { onCloseMenu(); handleAttachBitePhoto(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-attach-photo-btn-${order.id}`}>
 				<span>Фото прикуса</span>
 			</button>
 			<button type="button" onClick={() => { onCloseMenu(); handleTechnicianComment(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-tech-comment-btn-${order.id}`}>
-				<MessageSquare className="w-3.5 h-3.5 text-indigo-500" /><span>Указание технику</span>
+				<MessageSquare className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" /><span>Указание технику</span>
 			</button>
-			<button type="button" onClick={() => { onCloseMenu(); handleRepeatFitting(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-amber-500/10 font-bold text-amber-700 dark:text-amber-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-repeat-fitting-btn-${order.id}`}>
-				<RotateCcw className="w-3.5 h-3.5 text-amber-500" /><span>Повторная примерка</span>
+			<button type="button" onClick={() => { onCloseMenu(); handleRepeatFitting(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-semibold text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-repeat-fitting-btn-${order.id}`}>
+				<RotateCcw className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" /><span>Повторная примерка</span>
 			</button>
-			<button type="button" onClick={() => { onCloseMenu(); handleReclamation(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-rose-500/10 font-bold text-rose-700 dark:text-rose-300 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-reclamation-btn-${order.id}`}>
+			<button type="button" onClick={() => { onCloseMenu(); handleReclamation(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-rose-500/10 font-semibold text-rose-600 dark:text-rose-400 inline-flex items-center gap-2 cursor-pointer" data-testid={`lab-order-reclamation-btn-${order.id}`}>
 				<span>Отправить на переделку (0 ₽)</span>
 			</button>
 			<button type="button" onClick={() => { onCloseMenu(); handleOpenEditOrder(order); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer">
-				<DentalLabOrder className="w-3.5 h-3.5 text-indigo-500" /><span>Подробные параметры</span>
+				<DentalLabOrder className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" /><span>Подробные параметры</span>
 			</button>
 			{order.secureToken && (
 				<button type="button" onClick={() => { onCloseMenu(); copyPortalLink(order.secureToken!); }} className="w-full text-left px-2.5 py-1.5 min-h-[36px] rounded-lg hover:bg-[var(--paper-soft)] font-medium text-[var(--ink)] inline-flex items-center gap-2 cursor-pointer">

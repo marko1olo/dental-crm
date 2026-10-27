@@ -145,7 +145,21 @@ test("sidebar quick tools: canonical .nav-item design system compliance", () => 
 		"sidebar.css must be purged of legacy expanded sticker box styles",
 	);
 
-	// 6. Mandate 8b: file length <= 120 lines
+	// 6. Canonical counter badges compliance
+	assert.ok(
+		quickToolsSource.includes("sidebar-quick-tool-badge"),
+		"must support canonical sidebar-quick-tool-badge",
+	);
+	assert.ok(
+		sidebarCss.includes(".sidebar-quick-tool-badge"),
+		"sidebar.css must style .sidebar-quick-tool-badge with unified tokens",
+	);
+	assert.ok(
+		!quickToolsSource.includes("bg-amber-"),
+		"quick tools must not have circus amber classes",
+	);
+
+	// 7. Mandate 8b: file length <= 120 lines
 	const lines = quickToolsSource.split("\n").length;
 	assert.ok(lines <= 120, `SidebarQuickTools.tsx must be <= 120 lines (currently ${lines})`);
 });

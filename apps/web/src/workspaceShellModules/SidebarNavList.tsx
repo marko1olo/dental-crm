@@ -72,11 +72,11 @@ export function SidebarNavList({
 									<span>{viewLabels[view]}</span>
 									{view === "inventory" && reorderItemsCount > 0 && (
 										<span
-											className="shrink-0 px-1 py-0.2 rounded-full text-[9px] font-bold bg-amber-500/20 text-amber-800 dark:text-amber-200 border border-amber-500/30 whitespace-nowrap"
+											className="shrink-0 sidebar-nav-badge whitespace-nowrap"
 											data-testid="sidebar-inventory-reorder-badge"
 											title={`Требуется закупка: ${reorderItemsCount} позиций`}
 										>
-											⚠️ {reorderItemsCount} поз.
+											{reorderItemsCount} поз.
 										</span>
 									)}
 								</span>

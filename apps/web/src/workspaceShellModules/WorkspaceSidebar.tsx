@@ -10,7 +10,6 @@ import { useSettingsStore } from "../store/settingsStore";
 import { type AppView, viewLabels } from "../utils/routeUtils";
 import { clinicModeLabels } from "../workspaceUiLabels";
 import { SidebarNavList } from "./SidebarNavList";
-import { SidebarQuickTools } from "./SidebarQuickTools";
 import {
 	getRailViewsHiddenByMode,
 	getVisibleRailViews,
@@ -83,7 +82,6 @@ export function WorkspaceSidebar({
 					{modeExplanation}
 				</p>
 			)}
-			<SidebarQuickTools collapsed={collapsed} />
 			<div className="sidebar-footer max-w-full shrink-0 mt-auto flex flex-col gap-1.5 pt-2 pb-1 border-t border-[var(--line)]">
 				<div className="sidebar-footer-tier sidebar-footer-tier--top flex items-center justify-between gap-1 w-full">
 					<ThemeQuickAccessWidget variant="footer" collapsed={collapsed} />

@@ -1,5 +1,5 @@
 import React from "react";
-import { Bell, Calendar, Printer } from "lucide-react";
+import { Bell, Calendar, ClipboardCheck, Printer, RotateCcw } from "lucide-react";
 
 export interface DoctorShiftActionsDropdownProps {
 	readonly onPrintPreliminaryReport?: (() => void) | undefined;
@@ -68,5 +68,33 @@ export const DoctorShiftActionsDropdown: React.FC<DoctorShiftActionsDropdownProp
 				<span>Учёт отработанного времени и часов</span>
 			</button>
 		)}
+		<button
+			type="button"
+			role="menuitem"
+			onClick={() => {
+				onClose();
+				window.dispatchEvent(new CustomEvent("dente:open-clinical-tasks"));
+			}}
+			style={itemStyle}
+			className="hover:bg-[var(--paper-soft)]"
+			data-testid="shift-action-clinical-tasks"
+		>
+			<ClipboardCheck size={13} className="text-[var(--teal)]" />
+			<span>Клинические задачи (этапы)</span>
+		</button>
+		<button
+			type="button"
+			role="menuitem"
+			onClick={() => {
+				onClose();
+				window.dispatchEvent(new CustomEvent("dente:open-recalls-hub"));
+			}}
+			style={itemStyle}
+			className="hover:bg-[var(--paper-soft)]"
+			data-testid="shift-action-recalls-hub"
+		>
+			<RotateCcw size={13} className="text-[var(--teal)]" />
+			<span>Профосмотры (повторный Recall)</span>
+		</button>
 	</div>
 );

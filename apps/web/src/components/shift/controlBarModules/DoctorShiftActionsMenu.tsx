@@ -34,9 +34,6 @@ export const DoctorShiftActionsMenu: React.FC<DoctorShiftActionsMenuProps> = Rea
 		};
 	}, [isOpen]);
 
-	const hasActions = Boolean(onPrintPreliminaryReport || onCallAssistant || onOpenT13Timesheet);
-	if (!hasActions) return null;
-
 	return (
 		<div ref={menuRef} className={`doctor-shift-actions-menu relative ${className}`.trim()} style={{ position: "relative", display: "inline-block" }}>
 			<button

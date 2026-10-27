@@ -91,7 +91,7 @@ export const LostPatientCard: React.FC<LostPatientCardProps> = ({
 						href={`https://wa.me/${patient.phone.replace(/\D/g, "")}`}
 						target="_blank"
 						rel="noopener noreferrer"
-						className="h-8 px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-[13px] transition-colors inline-flex items-center gap-1.5 shadow-xs touch-manipulation"
+						className="dente-btn dente-btn-primary h-8 px-3 font-semibold text-[13px] inline-flex items-center gap-1.5 shadow-xs touch-manipulation"
 						title="Написать в WhatsApp"
 					>
 						<MessageSquare className="w-3.5 h-3.5" />

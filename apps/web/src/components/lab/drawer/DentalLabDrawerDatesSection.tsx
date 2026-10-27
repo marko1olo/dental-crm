@@ -80,7 +80,7 @@ export const DentalLabDrawerDatesSection: React.FC<DentalLabDrawerDatesSectionPr
 							<div className="text-[11px] text-amber-900/80 dark:text-amber-200/80 mt-0.5 truncate">{collision.warningRu}</div>
 						</div>
 					</div>
-					<button type="button" onClick={onAutoBookFitting} className="border border-amber-600 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg px-2 py-1 text-[11px] shrink-0 cursor-pointer shadow-2xs">
+					<button type="button" onClick={onAutoBookFitting} className="dente-btn-pill text-[11px] font-bold shrink-0 cursor-pointer">
 						Сдвинуть визит
 					</button>
 				</div>

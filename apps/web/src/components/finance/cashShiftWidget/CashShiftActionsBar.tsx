@@ -67,8 +67,13 @@ export function CashShiftActionsBar({
 				</div>
 			</div>
 			{pendingOfflineCount > 0 && (
-				<button type="button" onClick={onOpenOfflineBatchModal} className="min-h-[44px] px-3 rounded-xl border border-amber-500/40 bg-amber-500/15 text-amber-800 dark:text-amber-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer animate-pulse hover:bg-amber-500/25">
-					<Layers size={14} />
+				<button
+					type="button"
+					onClick={onOpenOfflineBatchModal}
+					className="dente-btn dente-btn-secondary min-h-[44px] px-3 text-xs font-bold flex items-center gap-1.5 cursor-pointer"
+					title={`Очередь чеков: ${pendingOfflineCount}`}
+				>
+					<Layers size={14} className="text-[var(--teal)] shrink-0" />
 					<span>Очередь: {pendingOfflineCount}</span>
 				</button>
 			)}
