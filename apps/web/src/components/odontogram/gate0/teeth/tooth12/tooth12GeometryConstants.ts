@@ -53,7 +53,8 @@ export const TOOTH12_GEOMETRY = {
 		{ id: "labial-ridge-crest", d: "M 50.0,150.5 C 50.0,138.0 50.0,126.0 50.0,114.0" },
 	],
 	fissuresY5: [
-		{ id: "labial-ridge-crest", d: "M 50.0,150.5 C 50.0,138.0 50.0,126.0 50.0,114.0" },
+		{ id: "mamelon-mesial", d: "M 59.0,150.5 C 59.0,138.0 58.5,128.0 58.0,118.0" },
+		{ id: "mamelon-distal", d: "M 41.0,148.0 C 41.0,136.0 41.5,126.0 42.0,116.0" },
 	],
 	cusps: TOOTH12_CUSPS,
 	endoCanals: [

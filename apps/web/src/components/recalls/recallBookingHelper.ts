@@ -12,7 +12,7 @@ export function resolveRecallServices(candidate: PatientRecallRecord): QuickBook
 		return [
 			{
 				id: "rec-srv-implant-check",
-				code804n: "A16.07.054",
+				serviceCode: "A16.07.054",
 				title: "Осмотр и динамический рентген-контроль дентального имплантата",
 				priceRub: 1500,
 				quantity: 1,
@@ -24,7 +24,7 @@ export function resolveRecallServices(candidate: PatientRecallRecord): QuickBook
 		return [
 			{
 				id: "rec-srv-perio-check",
-				code804n: "A16.07.019",
+				serviceCode: "A16.07.019",
 				title: "Пародонтальный поддерживающий осмотр и кюретаж",
 				priceRub: 2500,
 				quantity: 1,
@@ -40,7 +40,7 @@ export function resolveRecallServices(candidate: PatientRecallRecord): QuickBook
 		return [
 			{
 				id: "rec-srv-ortho-check",
-				code804n: "A16.07.048",
+				serviceCode: "A16.07.048",
 				title: "Контрольный осмотр и активация ортодонтического аппарата",
 				priceRub: 2000,
 				quantity: 1,
@@ -56,7 +56,7 @@ export function resolveRecallServices(candidate: PatientRecallRecord): QuickBook
 		return [
 			{
 				id: "rec-srv-endo-check",
-				code804n: "A06.07.003",
+				serviceCode: "A06.07.003",
 				title: "Прицельная внутриротовая контактная рентгенография / визиография",
 				priceRub: 600,
 				quantity: 1,
@@ -68,7 +68,7 @@ export function resolveRecallServices(candidate: PatientRecallRecord): QuickBook
 	return [
 		{
 			id: "rec-srv-hygiene",
-			code804n: "A16.07.051",
+			serviceCode: "A16.07.051",
 			title: "Профессиональная гигиена полости рта и зубов",
 			priceRub: 3500,
 			quantity: 1,

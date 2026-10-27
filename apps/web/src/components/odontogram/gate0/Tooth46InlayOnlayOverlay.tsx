@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_INLAY_ONLAY_GEOMETRY } from "./Tooth46InlayOnlayGeometry";
 import type { InlayOnlayType } from "./tooth46PresetTypes";
 

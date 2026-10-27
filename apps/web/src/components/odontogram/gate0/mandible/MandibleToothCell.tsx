@@ -3,7 +3,7 @@
  * Wheeler Ch. 11 sagittal symmetry (mirror Q3 via scaleX(-1)) (Mandate 8b <= 120 lines).
  */
 
-import type React from "react";
+import React from "react";
 import type { MandibleToothCellProps } from "./mandibleTypes";
 import { resolveMandibleToothComponent } from "./mandibleToothResolver";
 import { MandibleToothBadge } from "./MandibleToothBadge";

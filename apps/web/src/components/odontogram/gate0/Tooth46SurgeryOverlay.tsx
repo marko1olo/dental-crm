@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46GingivalCuff } from "./Tooth46GingivalCuff";
 import { Tooth46ImplantFixture } from "./Tooth46ImplantFixture";
 import { Tooth46ImplantSuprastructure } from "./Tooth46ImplantSuprastructure";

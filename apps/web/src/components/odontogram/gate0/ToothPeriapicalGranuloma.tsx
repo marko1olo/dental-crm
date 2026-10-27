@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { ApexPoint } from "./ToothAdaptivePeriapicalArea";
 
 export interface ToothPeriapicalGranulomaProps {

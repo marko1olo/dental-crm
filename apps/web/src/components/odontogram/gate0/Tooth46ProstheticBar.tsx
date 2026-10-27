@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CrownMaterial, Tooth46LayerFlags } from "./tooth46Types";
 
 const CROWN_MATS: readonly [CrownMaterial, string][] = [

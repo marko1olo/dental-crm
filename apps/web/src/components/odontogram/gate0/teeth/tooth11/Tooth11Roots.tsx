@@ -65,14 +65,6 @@ export const Tooth11Roots: React.FC<Tooth11RootsProps> = ({
 						strokeDasharray="1.2 0.8"
 						vectorEffect="non-scaling-stroke"
 					/>
-					<path
-						d={g.centralRootRidge}
-						fill="none"
-						stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.30)"}
-						strokeWidth="0.6"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
 				</g>
 			)}
 

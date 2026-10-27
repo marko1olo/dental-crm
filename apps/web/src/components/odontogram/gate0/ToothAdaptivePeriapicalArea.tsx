@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { ToothPeriapicalCyst } from "./ToothPeriapicalCyst";
 import { ToothPeriapicalGranuloma } from "./ToothPeriapicalGranuloma";
 import type { PeriapicalCondition } from "./tooth46Types";

@@ -32,9 +32,9 @@ export const TOOTH42_GEOMETRY = {
 	cejPath: "M 30.0,70.0 C 37.0,72.5 44.0,73.5 50.0,73.5 C 57.0,73.5 64.0,72.5 70.0,70.0",
 	apex: { x: 42.0, y: 145.0 },
 	apices: [{ x: 42.0, y: 145.0, r: 8.5 }] as const,
-	// Developmental vertical labial depressions
-	labialGrooveMesial: "M 41.0,23.5 C 41.0,37.0 41.5,51.0 42.5,65.0",
-	labialGrooveDistal: "M 59.0,25.0 C 59.0,38.0 58.5,51.0 57.5,65.0",
+	// Developmental vertical labial depressions (incisal & middle thirds, fading into cervical)
+	labialGrooveMesial: "M 41.0,24.0 C 41.0,31.5 41.3,39.0 42.0,47.5",
+	labialGrooveDistal: "M 59.0,25.0 C 59.0,32.5 58.7,39.0 58.0,47.5",
 	incisalHighlight: "M 34.0,22.0 L 66.0,23.8",
 	// Root developmental groove with distal curvature
 	rootSulcus: "M 50.5,75.0 C 49.0,96.0 46.0,118.0 42.5,137.0",

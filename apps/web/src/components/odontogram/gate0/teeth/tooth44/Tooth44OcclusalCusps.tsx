@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46SingleCusp } from "../../Tooth46SingleCusp";
 import { TOOTH44_CUSPS } from "./tooth44CuspGeometry";
 import { TOOTH44_GEOMETRY } from "./tooth44Geometry";
@@ -19,8 +19,8 @@ export const Tooth44OcclusalCusps: React.FC<Tooth44OcclusalCuspsProps> = ({
 	className,
 }) => {
 	const stroke = isDark ? "rgba(203, 213, 225, 0.70)" : "rgba(71, 85, 105, 0.45)";
-	const fShadow = isDark ? "rgba(15, 23, 42, 0.50)" : "rgba(100, 116, 139, 0.22)";
-	const fCore = isDark ? "rgba(203, 213, 225, 0.65)" : "rgba(71, 85, 105, 0.45)";
+	const fShadow = isDark ? "rgba(15, 23, 42, 0.35)" : "rgba(100, 116, 139, 0.15)";
+	const fCore = isDark ? "rgba(203, 213, 225, 0.45)" : "rgba(71, 85, 105, 0.30)";
 	const crFill = isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)";
 	const crStroke = isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)";
 	const crHighlight = isDark ? "rgba(255, 255, 255, 0.28)" : "rgba(255, 255, 255, 0.60)";
@@ -64,8 +64,8 @@ export const Tooth44OcclusalCusps: React.FC<Tooth44OcclusalCuspsProps> = ({
 					<path
 						d={TOOTH44_GEOMETRY.transverseRidge}
 						fill="none"
-						stroke={isDark ? "rgba(203, 213, 225, 0.55)" : "rgba(71, 85, 105, 0.35)"}
-						strokeWidth="1.2"
+						stroke={isDark ? "rgba(203, 213, 225, 0.35)" : "rgba(71, 85, 105, 0.22)"}
+						strokeWidth="0.8"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -86,7 +86,7 @@ export const Tooth44OcclusalCusps: React.FC<Tooth44OcclusalCuspsProps> = ({
 						d={fossae}
 						fill="none"
 						stroke={fShadow}
-						strokeWidth="0.8"
+						strokeWidth="0.6"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -94,7 +94,7 @@ export const Tooth44OcclusalCusps: React.FC<Tooth44OcclusalCuspsProps> = ({
 						d={fossae}
 						fill="none"
 						stroke={fCore}
-						strokeWidth="0.45"
+						strokeWidth="0.38"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH45_GEOMETRY } from "./tooth45Geometry";
 
 export interface Tooth45RootsProps {

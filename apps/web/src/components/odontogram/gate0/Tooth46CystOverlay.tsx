@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_PERIAPICAL_GEOMETRY } from "./Tooth46PeriapicalGeometry";
 import type { PeriapicalCondition } from "./tooth46Types";
 

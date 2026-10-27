@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46CrownDefects } from "./Tooth46CrownDefects";
 import {
 	CROWN_FILL_MAP,

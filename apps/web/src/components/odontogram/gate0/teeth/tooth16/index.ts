@@ -1,0 +1,18 @@
+export { Tooth16Container, type Tooth16ContainerProps } from "./Tooth16Container";
+export { Tooth16Roots, type Tooth16RootsProps } from "./Tooth16Roots";
+export { Tooth16EnamelCrown, type Tooth16EnamelCrownProps } from "./Tooth16EnamelCrown";
+export { Tooth16OcclusalCusps, type Tooth16OcclusalCuspsProps } from "./Tooth16OcclusalCusps";
+export { Tooth16SingleCusp, type Tooth16SingleCuspProps } from "./Tooth16SingleCusp";
+export { Tooth16EndoCanals, type Tooth16EndoCanalsProps } from "./Tooth16EndoCanals";
+export { Tooth16PulpChamber, type Tooth16PulpChamberProps } from "./Tooth16PulpChamber";
+export { Tooth16SingleCanal, type Tooth16SingleCanalProps } from "./Tooth16SingleCanal";
+export { Tooth16CariesOverlay, type Tooth16CariesOverlayProps } from "./Tooth16CariesOverlay";
+export { Tooth16RestorationOverlay, type Tooth16RestorationOverlayProps } from "./Tooth16RestorationOverlay";
+export { Tooth16PeriapicalArea, type Tooth16PeriapicalAreaProps } from "./Tooth16PeriapicalArea";
+export { Tooth16ShaderDefs } from "./Tooth16ShaderDefs";
+export { TOOTH16_GEOMETRY, TOOTH16_ROOTS_GEOMETRY } from "./tooth16GeometryConstants";
+export { TOOTH16_PULP_GEOMETRY, type Tooth16CanalAnatomy } from "./tooth16PulpGeometry";
+export { TOOTH16_CUSPS, type Tooth16CuspDef } from "./tooth16CuspGeometry";
+export { TOOTH16_CARIES_GEOMETRY } from "./tooth16CariesGeometry";
+export { TOOTH16_RESTORATION_GEOMETRY } from "./tooth16RestorationGeometry";
+export { TOOTH16_PERIAPICAL_GEOMETRY } from "./tooth16PeriapicalGeometry";

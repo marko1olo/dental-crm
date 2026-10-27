@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CariesDepth, CariesType, Tooth46LayerFlags } from "./tooth46Types";
 
 export interface Tooth46CariesBarProps {

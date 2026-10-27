@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46CystOverlay } from "./Tooth46CystOverlay";
 import { Tooth46ResorptionOverlay } from "./Tooth46ResorptionOverlay";
 import type { PeriapicalCondition } from "./tooth46Types";

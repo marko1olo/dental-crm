@@ -22,7 +22,7 @@ if (!fs.existsSync(PROOFS_DIR)) {
 
 async function detectWebBase() {
   if (process.env.WEB_BASE) return process.env.WEB_BASE;
-  for (const port of [5173, 5174, 5175]) {
+  for (const port of [5173, 5174, 5175, 5176]) {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/`);
       if (res.ok) {
@@ -322,7 +322,7 @@ async function run() {
     });
     page.on("pageerror", (err) => console.error("[BROWSER PAGEERROR]", err.message));
 
-    await page.goto(`${WEB_BASE}/?demo=true`, { waitUntil: "commit", timeout: 35000 });
+    await page.goto(`${WEB_BASE}/?demo=true#recalls`, { waitUntil: "commit", timeout: 35000 });
     await page.waitForTimeout(3000);
     await page.locator(".boot-logo-box").waitFor({ state: "detached", timeout: 15000 }).catch(() => {});
     await page.waitForFunction(() => !document.body?.innerText?.includes("Загрузка CRM") && !document.body?.innerText?.includes("Загрузка системы"), { timeout: 15000 }).catch(() => {});

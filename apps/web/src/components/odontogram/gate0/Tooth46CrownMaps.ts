@@ -63,6 +63,6 @@ export const getCuspSlopeColors = (mat: CrownMaterial) => ({
 	highlight:
 		mat === "emax"
 			? "url(#dente-emax-opalescent)"
-			: "rgba(255, 255, 255, 0.22)",
-	shadow: mat === "gold" ? "rgba(146, 64, 14, 0.20)" : "rgba(15, 23, 42, 0.12)",
+			: "rgba(255, 255, 255, 0.16)",
+	shadow: mat === "gold" ? "rgba(146, 64, 14, 0.08)" : "rgba(15, 23, 42, 0.04)",
 });

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46CariesClass1 } from "./Tooth46CariesClass1";
 import { Tooth46CariesClass2 } from "./Tooth46CariesClass2";
 import { TOOTH46_CARIES_SPECTRUM_GEOMETRY } from "./Tooth46CariesSpectrumGeometry";

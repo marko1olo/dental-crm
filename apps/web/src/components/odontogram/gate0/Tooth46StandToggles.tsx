@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46CariesBar } from "./Tooth46CariesBar";
 import { Tooth46ProstheticBar } from "./Tooth46ProstheticBar";

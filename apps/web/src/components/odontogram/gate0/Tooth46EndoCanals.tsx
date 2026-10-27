@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46BrokenFileOverlay } from "./Tooth46BrokenFileOverlay";
 import { TOOTH46_ENDO_PATHOLOGY_GEOMETRY } from "./Tooth46EndoPathologyGeometry";
 import { Tooth46PulpChamber } from "./Tooth46PulpChamber";

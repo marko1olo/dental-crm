@@ -27,6 +27,7 @@ export const Tooth42EnamelCrown: React.FC<Tooth42EnamelCrownProps> = ({
 	className,
 }) => {
 	const g = TOOTH42_GEOMETRY;
+	const grooveStroke = isDark ? "rgba(255, 255, 255, 0.12)" : "rgba(148, 163, 184, 0.15)";
 	const isC5 = cariesType === "class5";
 	const isC3 = cariesType === "class3";
 	const isMesial = cariesSurface === "mesial" || cariesSurface === "M";
@@ -73,8 +74,8 @@ export const Tooth42EnamelCrown: React.FC<Tooth42EnamelCrownProps> = ({
 					fill={isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)"}
 					vectorEffect="non-scaling-stroke"
 				/>
-				<path d={g.labialGrooveMesial} fill="none" stroke="rgba(148, 163, 184, 0.20)" strokeWidth="0.7" strokeLinecap="round" />
-				<path d={g.labialGrooveDistal} fill="none" stroke="rgba(148, 163, 184, 0.20)" strokeWidth="0.7" strokeLinecap="round" />
+				<path d={g.labialGrooveMesial} fill="none" stroke={grooveStroke} strokeWidth="0.45" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+				<path d={g.labialGrooveDistal} fill="none" stroke={grooveStroke} strokeWidth="0.45" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
 				<path d={g.incisalHighlight} fill="none" stroke={isDark ? "rgba(255, 255, 255, 0.40)" : "rgba(255, 255, 255, 0.70)"} strokeWidth="0.7" strokeLinecap="round" />
 			</g>
 		</g>

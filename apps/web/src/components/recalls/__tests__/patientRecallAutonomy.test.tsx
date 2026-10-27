@@ -1,21 +1,8 @@
-/**
- * patientRecallAutonomy.test.tsx
- *
- * Unit tests for Patient Recall & Prophylaxis Autonomy (Canonical SSOT: PatientRecallsHubModal):
- * - Mandate 8d: 7 Deadly Sins & Touch Targets (Apple HIG min-height >= 44px, zero unicode checkmarks).
- * - Mandate 8e: Doctor & Staff Autonomy (Zero unexplained disabled/dead buttons, active guidance feedback).
- * - Mandate 8n: Solo Doctor & Small Clinic Sovereignty.
- * - Mandate 8o: Task-Scope Reporting.
- */
-
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
-
-import {
-	PatientRecallsHubModal,
-} from "../PatientRecallsHubModal.js";
+import { PatientRecallsHubModal } from "../PatientRecallsHubModal.js";
 import {
 	generateSmsRecallMessage,
 	generateTelegramRecallMessage,
@@ -50,18 +37,18 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 			})
 		);
 
-		assert.ok(html.includes('data-testid="recall-whatsapp-btn-hub-rec-no-phone"'), "WhatsApp button must be rendered");
-		assert.ok(html.includes('data-testid="recall-telegram-btn-hub-rec-no-phone"'), "Telegram button must be rendered");
-		assert.ok(html.includes('data-testid="recall-script-btn-hub-rec-no-phone"'), "Script button must be rendered");
-		assert.ok(html.includes('data-testid="recall-book-btn-hub-rec-no-phone"'), "Book button must be rendered");
-		assert.ok(html.includes('data-testid="recall-sms-btn-hub-rec-no-phone"'), "SMS button must be rendered");
+		assert.ok(html.includes('data-testid="recall-whatsapp-btn-hub-rec-no-phone"'));
+		assert.ok(html.includes('data-testid="recall-telegram-btn-hub-rec-no-phone"'));
+		assert.ok(html.includes('data-testid="recall-script-btn-hub-rec-no-phone"'));
+		assert.ok(html.includes('data-testid="recall-book-btn-hub-rec-no-phone"'));
+		assert.ok(html.includes('data-testid="recall-sms-btn-hub-rec-no-phone"'));
 
 		// Doctor autonomy: Buttons MUST NOT have disabled attribute
-		assert.ok(!html.includes('data-testid="recall-whatsapp-btn-hub-rec-no-phone" disabled'), "WhatsApp button must NOT be disabled");
-		assert.ok(!html.includes('data-testid="recall-telegram-btn-hub-rec-no-phone" disabled'), "Telegram button must NOT be disabled");
-		assert.ok(!html.includes('data-testid="recall-script-btn-hub-rec-no-phone" disabled'), "Script button must NOT be disabled");
-		assert.ok(!html.includes('data-testid="recall-book-btn-hub-rec-no-phone" disabled'), "Book button must NOT be disabled");
-		assert.ok(!html.includes('data-testid="recall-sms-btn-hub-rec-no-phone" disabled'), "SMS button must NOT be disabled");
+		assert.ok(!html.includes('data-testid="recall-whatsapp-btn-hub-rec-no-phone" disabled'));
+		assert.ok(!html.includes('data-testid="recall-telegram-btn-hub-rec-no-phone" disabled'));
+		assert.ok(!html.includes('data-testid="recall-script-btn-hub-rec-no-phone" disabled'));
+		assert.ok(!html.includes('data-testid="recall-book-btn-hub-rec-no-phone" disabled'));
+		assert.ok(!html.includes('data-testid="recall-sms-btn-hub-rec-no-phone" disabled'));
 	});
 
 	it("2. Candidate action buttons have Apple HIG touch target min-height >= 44px (Mandate 8d)", () => {
@@ -72,9 +59,7 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 				initialCandidates: [hubCandidateWithoutPhone],
 			})
 		);
-
-		// Touch-first buttons must have inline or CSS min-height 44px
-		assert.ok(html.includes("min-height:44px") || html.includes("min-height: 44px"), "Touch targets must enforce Apple HIG min-height >= 44px");
+		assert.ok(html.includes("min-height:44px") || html.includes("min-height: 44px"));
 	});
 
 	it("3. Omnichannel message generators handle candidate without phone and format correctly", () => {
@@ -86,7 +71,6 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 		assert.ok(tgMsg.includes("Ольга"));
 		assert.ok(smsMsg.includes("Ольга"));
 
-		// Booking URL generation with fallback
 		const waUrl = buildWhatsAppUrl(hubCandidateWithoutPhone.phone, waMsg);
 		assert.ok(waUrl.startsWith("https://wa.me/"));
 		const tgUrl = buildTelegramUrl(hubCandidateWithoutPhone.phone, tgMsg);
@@ -102,14 +86,12 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 			})
 		);
 
-		// Extract SMS button portion
 		const smsBtnMatch = html.match(/<button[^>]*data-testid="recall-sms-btn-hub-rec-no-phone"[^>]*>([\s\S]*?)<\/button>/);
-		assert.ok(smsBtnMatch && smsBtnMatch[1], "SMS button must be found in markup");
-
+		assert.ok(smsBtnMatch && smsBtnMatch[1]);
 		const btnContent = smsBtnMatch[1] ?? "";
-		assert.ok(!btnContent.includes("✓"), "Must not contain raw unicode checkmark");
+		assert.ok(!btnContent.includes("✓"));
 		const hasEmoji = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}]/u.test(btnContent);
-		assert.strictEqual(hasEmoji, false, "SMS button must be completely free of raw emojis");
+		assert.strictEqual(hasEmoji, false);
 	});
 
 	it("5. PatientRecallsHubModal returns empty markup when isOpen is false", () => {
@@ -119,7 +101,6 @@ describe("Patient Recall & Prophylaxis Autonomy (Mandates 8d, 8e, 8n)", () => {
 				onClose: () => {},
 			})
 		);
-
 		assert.strictEqual(html, "");
 	});
 });

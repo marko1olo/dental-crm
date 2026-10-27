@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { Tooth46CanalAnatomy } from "./Tooth46PulpGeometry";
 
 export interface Tooth46SingleCanalProps {

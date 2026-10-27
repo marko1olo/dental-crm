@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_DEFECT_GEOMETRY } from "./Tooth46DefectGeometry";
 import type { CrownMaterial } from "./tooth46Types";
 

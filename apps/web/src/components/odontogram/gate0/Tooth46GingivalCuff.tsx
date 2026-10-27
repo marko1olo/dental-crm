@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";
 import type { ImplantStage } from "./tooth46Types";
 

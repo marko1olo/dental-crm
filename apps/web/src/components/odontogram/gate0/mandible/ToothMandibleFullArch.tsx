@@ -3,7 +3,7 @@
  * Anatomical Wheeler alignment, live CRM data bridge & CariesBar (Mandate 8b <= 120 lines).
  */
 
-import type React from "react";
+import React from "react";
 import { useMemo, useState } from "react";
 import type { ToothData } from "../../chart/types/toothRendererTypes";
 import { DEFAULT_TOOTH46_LAYERS, type Tooth46LayerFlags } from "../tooth46Types";

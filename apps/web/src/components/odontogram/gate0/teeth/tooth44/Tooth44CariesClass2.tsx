@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH44_CARIES_GEOMETRY } from "./tooth44CariesGeometry";
 import type { CariesDepth, CariesType } from "../../tooth46PresetTypes";
 

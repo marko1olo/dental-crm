@@ -15,6 +15,17 @@ export const Tooth46CrownShaders: React.FC = () => {
 		<>
 			{/* Clinical Crown Shader Aliases */}
 			<linearGradient id="dente-zirconia-crown" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-11" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-12" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-13" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-14" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-ceramic-15" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-ceramic-16" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-ceramic-17" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-ceramic-18" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-12-dark" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-13-dark" href="#dente-zirconia-ceramic" />
+			<linearGradient id="dente-zirconia-crown-14-dark" href="#dente-zirconia-ceramic" />
 			<linearGradient id="dente-pfm-crown" href="#dente-crown-pfm" />
 			<linearGradient id="dente-gold-crown" href="#dente-crown-gold" />
 			{/* 1. Monolithic Multilayer Zirconia (Katana ML / ZirCAD) */}
@@ -30,6 +41,12 @@ export const Tooth46CrownShaders: React.FC = () => {
 				<stop offset="40%" stopColor="#f0f9ff" stopOpacity="0.60" />
 				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
 			</linearGradient>
+			<linearGradient id="dente-zirconia-glaze-dark" x1="0" y1="0" x2="1" y2="0.5">
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
+				<stop offset="40%" stopColor="#94a3b8" stopOpacity="0.22" />
+				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
+			</linearGradient>
+			<linearGradient id="dente-crown-metal-ceramic" href="#dente-crown-pfm" />
 			<linearGradient id="dente-zirconia-chamfer" x1="0" y1="0" x2="0" y2="1">
 				<stop offset="0%" stopColor="#dfd3c1" stopOpacity="0.80" />
 				<stop offset="50%" stopColor="#c5b29b" stopOpacity="0.90" />

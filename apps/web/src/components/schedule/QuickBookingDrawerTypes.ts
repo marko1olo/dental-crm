@@ -3,6 +3,7 @@ import type { ChairDoctorShiftAssignment } from "./ScheduleGrid";
 
 export interface QuickBookingStageService {
   id?: string | undefined;
+  serviceCode?: string | undefined;
   code804n?: string | undefined;
   name?: string | undefined;
   title?: string | undefined;

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { getStatusBadge, TOOTH_STATUS_MATRIX, type ToothStatusBadgeInfo } from "./ToothStatusBadgeMatrix";
 import type { Tooth46LayerFlags } from "./tooth46Types";
 import { resolveToothStatusBadge } from "./ToothStatusBadgeResolver";
@@ -13,6 +13,7 @@ export interface ToothStatusBadgeProps {
 	cy?: number | undefined;
 	r?: number | undefined;
 	toothNumber?: number | undefined;
+	isDark?: boolean | undefined;
 }
 
 export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({

@@ -57,6 +57,8 @@ export interface Tooth46LayerFlags {
 	abfraction?: boolean;
 	postCore?: boolean;
 	postCoreType?: PostCoreType;
+	fiberPost?: boolean;
+	coreBuildUp?: boolean;
 	calculus?: boolean;
 	crack?: boolean;
 	implant?: boolean;

@@ -3,7 +3,7 @@
  * Mounts canonical ToothStatusBadge SVG with Apple HIG touch target (Mandate 8b <= 120 lines).
  */
 
-import type React from "react";
+import React from "react";
 import { ToothStatusBadge } from "../ToothStatusBadge";
 import type { Tooth46LayerFlags } from "../tooth46Types";
 import { resolveToothStatusBadge } from "../ToothStatusBadgeResolver";

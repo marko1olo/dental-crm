@@ -5,6 +5,7 @@ export interface Tooth13RestorationOverlayProps {
 	showPost?: boolean | undefined;
 	showCore?: boolean | undefined;
 	showCrown?: boolean | undefined;
+	showComposite?: boolean | undefined;
 	isDark?: boolean | undefined;
 	className?: string | undefined;
 }
@@ -18,6 +19,7 @@ export const Tooth13RestorationOverlay: React.FC<Tooth13RestorationOverlayProps>
 	showPost = true,
 	showCore = true,
 	showCrown = true,
+	showComposite = false,
 	isDark = false,
 	className,
 }) => {
@@ -26,6 +28,17 @@ export const Tooth13RestorationOverlay: React.FC<Tooth13RestorationOverlayProps>
 
 	return (
 		<g id="tooth13-restoration-overlay" {...(className ? { className } : {})}>
+			{/* 0. Light-Cured Composite Filling (Class III / Proximal) */}
+			{showComposite && (
+				<g id="tooth13-composite-filling">
+					<path
+						d="M 40,142 C 45,138 55,138 60,142 C 58,148 42,148 40,142 Z"
+						fill={isDark ? "url(#dente-composite-filling-dark)" : "url(#dente-composite-filling)"}
+						stroke="rgba(130, 95, 55, 0.65)"
+						strokeWidth="0.6"
+					/>
+				</g>
+			)}
 			{/* 1. Endodontic Fiber/Cast Post in Deep Canine Canal */}
 			{showPost && (
 				<g id="tooth13-endo-post">

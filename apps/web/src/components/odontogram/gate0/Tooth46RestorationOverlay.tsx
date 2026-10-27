@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46CrownOverlay } from "./Tooth46CrownOverlay";
 import { TOOTH46_DEFECT_GEOMETRY } from "./Tooth46DefectGeometry";
 import { TOOTH46_RESTORATION_GEOMETRY } from "./Tooth46RestorationGeometry";

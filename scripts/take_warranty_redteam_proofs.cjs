@@ -19,7 +19,7 @@ const PROOFS_DIR = path.resolve(__dirname, "../docs/proofs/warranty");
 const BRAIN_DIR = process.env.BRAIN_DIR || path.resolve("C:/Users/Admin/.gemini/antigravity/brain/4f3b6c6d-6bd4-4e36-83cd-90549934daed");
 
 async function resolveWebBase() {
-  for (const port of [5174, 5173, 5175, 5176]) {
+  for (const port of [5173, 5174, 5175, 5176]) {
     try {
       const res = await fetch(`http://127.0.0.1:${port}/`);
       if (res.ok || res.status === 200) {
@@ -281,7 +281,15 @@ async function openWarrantyPassport(page, isMobile = false) {
 
   const isWindowAlreadyOpen = await page.locator(".warranty-modal-window").isVisible({ timeout: 2000 }).catch(() => false);
   if (!isWindowAlreadyOpen) {
-    if (isMobile) {
+    await page.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente-open-warranty-passport"));
+      window.dispatchEvent(new CustomEvent("dente:open-warranty-passport"));
+      window.location.hash = "warranty-passport";
+      window.dispatchEvent(new HashChangeEvent("hashchange"));
+    });
+    await page.waitForTimeout(600);
+    const opened = await page.locator(".warranty-modal-window").isVisible({ timeout: 2000 }).catch(() => false);
+    if (!opened && isMobile) {
       const mobBtn = page.locator('[data-testid$="-warranty-btn"]').first();
       if (await mobBtn.isVisible({ timeout: 4000 }).catch(() => false)) {
         await mobBtn.click({ force: true });
@@ -293,7 +301,7 @@ async function openWarrantyPassport(page, isMobile = false) {
           await page.locator('[data-testid="visit-more-action-warranty-passport"]').click({ force: true });
         }
       }
-    } else {
+    } else if (!opened) {
       const moreBtn = page.locator('[data-testid="visit-header-more-actions-btn"]');
       if (await moreBtn.isVisible({ timeout: 4000 }).catch(() => false)) {
         await moreBtn.scrollIntoViewIfNeeded();
@@ -306,7 +314,7 @@ async function openWarrantyPassport(page, isMobile = false) {
     }
   }
 
-  await page.waitForSelector(".warranty-modal-window", { timeout: 15000 });
+  await page.waitForSelector(".warranty-modal-window, .warranty-mobile-drag-handle", { timeout: 15000 });
   await page.waitForTimeout(1000);
 }
 
@@ -476,11 +484,11 @@ async function main() {
     }
     try {
       await mobPage.evaluate(() => {
-        window.location.hash = "visit";
-        window.dispatchEvent(new HashChangeEvent("hashchange"));
+        window.dispatchEvent(new CustomEvent("dente-open-warranty-passport"));
+        window.dispatchEvent(new CustomEvent("dente:open-warranty-passport"));
       });
     } catch (_) {}
-    await mobPage.waitForTimeout(2500);
+    await mobPage.waitForTimeout(1000);
     await applyTheme(mobPage, false);
     await openWarrantyPassport(mobPage, true);
 

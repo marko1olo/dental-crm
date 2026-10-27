@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_ADVANCED_PATHOLOGY_GEOMETRY } from "./Tooth46AdvancedPathologyGeometry";
 import { TOOTH46_GEOMETRY } from "./tooth46GeometryConstants";
 

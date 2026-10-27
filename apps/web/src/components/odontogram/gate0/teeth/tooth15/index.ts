@@ -1,0 +1,18 @@
+export { Tooth15Container, type Tooth15ContainerProps } from "./Tooth15Container";
+export { Tooth15Roots, type Tooth15RootsProps } from "./Tooth15Roots";
+export { Tooth15EnamelCrown, type Tooth15EnamelCrownProps } from "./Tooth15EnamelCrown";
+export { Tooth15OcclusalCusps, type Tooth15OcclusalCuspsProps } from "./Tooth15OcclusalCusps";
+export { Tooth15SingleCusp, type Tooth15SingleCuspProps } from "./Tooth15SingleCusp";
+export { Tooth15EndoCanals, type Tooth15EndoCanalsProps } from "./Tooth15EndoCanals";
+export { Tooth15PulpChamber, type Tooth15PulpChamberProps } from "./Tooth15PulpChamber";
+export { Tooth15SingleCanal, type Tooth15SingleCanalProps } from "./Tooth15SingleCanal";
+export { Tooth15CariesOverlay, type Tooth15CariesOverlayProps } from "./Tooth15CariesOverlay";
+export { Tooth15RestorationOverlay, type Tooth15RestorationOverlayProps } from "./Tooth15RestorationOverlay";
+export { Tooth15PeriapicalArea, type Tooth15PeriapicalAreaProps } from "./Tooth15PeriapicalArea";
+export { Tooth15ShaderDefs } from "./Tooth15ShaderDefs";
+export { TOOTH15_GEOMETRY, TOOTH15_ROOTS_GEOMETRY } from "./tooth15GeometryConstants";
+export { TOOTH15_PULP_GEOMETRY, type Tooth15CanalAnatomy } from "./tooth15PulpGeometry";
+export { TOOTH15_CUSPS, type Tooth15CuspDef } from "./tooth15CuspGeometry";
+export { TOOTH15_CARIES_GEOMETRY } from "./tooth15CariesGeometry";
+export { TOOTH15_RESTORATION_GEOMETRY } from "./tooth15RestorationGeometry";
+export { TOOTH15_PERIAPICAL_GEOMETRY } from "./tooth15PeriapicalGeometry";

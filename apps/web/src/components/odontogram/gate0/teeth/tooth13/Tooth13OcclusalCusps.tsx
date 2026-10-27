@@ -26,14 +26,14 @@ export const Tooth13OcclusalCusps: React.FC<Tooth13OcclusalCuspsProps> = ({
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
 	const fissureStroke = isDark
-		? "rgba(148, 163, 184, 0.22)"
+		? "rgba(255, 255, 255, 0.16)"
 		: "rgba(148, 163, 184, 0.18)";
 	const crFill = isDark
 		? "url(#dente-cervical-ridge-13-dark)"
 		: "url(#dente-cervical-ridge-13)";
 	const crHighlight = isDark
-		? "rgba(255, 255, 255, 0.28)"
-		: "rgba(255, 255, 255, 0.60)";
+		? "rgba(255, 255, 255, 0.16)"
+		: "rgba(255, 255, 255, 0.35)";
 	const fissures = TOOTH13_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
 
 	return (
@@ -61,7 +61,7 @@ export const Tooth13OcclusalCusps: React.FC<Tooth13OcclusalCuspsProps> = ({
 						d={TOOTH13_GEOMETRY.cervicalRidgeHighlight}
 						fill="none"
 						stroke={crHighlight}
-						strokeWidth="0.75"
+						strokeWidth="0.5"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -71,9 +71,9 @@ export const Tooth13OcclusalCusps: React.FC<Tooth13OcclusalCuspsProps> = ({
 					))}
 				</g>
 			)}
-			{showFissures && (
+			{showFissures && fissures.trim() !== "" && (
 				<g id="tooth13-fissures" pointerEvents="none">
-					{/* Soft Anatomical Developmental Grooves */}
+					{/* Soft Anatomical Labial Depression Grooves */}
 					<path
 						d={fissures}
 						fill="none"

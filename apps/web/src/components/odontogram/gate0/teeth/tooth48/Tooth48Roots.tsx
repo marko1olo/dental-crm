@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH48_GEOMETRY } from "./tooth48Geometry";
 
 export interface Tooth48RootsProps {
@@ -49,26 +49,6 @@ export const Tooth48Roots: React.FC<Tooth48RootsProps> = ({
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>
-			{showGrooves && (
-				<g id="tooth48-fused-groove">
-					<path
-						d={TOOTH48_GEOMETRY.fusedRootSulcus}
-						fill="none"
-						stroke={isDark ? "rgba(15, 23, 42, 0.40)" : "rgba(100, 116, 139, 0.35)"}
-						strokeWidth="0.8"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-					<path
-						d={TOOTH48_GEOMETRY.fusedRootHighlight}
-						fill="none"
-						stroke={isDark ? "rgba(255, 255, 255, 0.15)" : "rgba(255, 255, 255, 0.25)"}
-						strokeWidth="0.6"
-						strokeLinecap="round"
-						vectorEffect="non-scaling-stroke"
-					/>
-				</g>
-			)}
 			{showCej && (
 				<path
 					d={TOOTH48_GEOMETRY.cejCurve}

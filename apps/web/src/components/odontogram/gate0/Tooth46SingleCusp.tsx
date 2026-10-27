@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { Tooth46CuspDef } from "./tooth46CuspGeometry";
 
 export interface Tooth46SingleCuspProps {

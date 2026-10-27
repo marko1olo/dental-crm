@@ -3,7 +3,7 @@
  * Doctor autonomy: 1-click status assignment without modal obstruction (Mandate 8e, 8b <= 100L).
  */
 
-import type React from "react";
+import React from "react";
 import type { Tooth46LayerFlags } from "../tooth46Types";
 
 export interface MandibleQuickActionBarProps {

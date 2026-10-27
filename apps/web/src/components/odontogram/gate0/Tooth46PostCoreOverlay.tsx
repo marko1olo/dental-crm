@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_POST_CORE_GEOMETRY } from "./Tooth46PostCoreGeometry";
 import type { PostCoreType } from "./tooth46Types";
 

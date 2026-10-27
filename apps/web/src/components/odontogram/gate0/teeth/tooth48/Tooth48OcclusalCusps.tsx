@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46SingleCusp } from "../../Tooth46SingleCusp";
 import { TOOTH48_CUSPS } from "./tooth48CuspGeometry";
 import { TOOTH48_GEOMETRY } from "./tooth48Geometry";

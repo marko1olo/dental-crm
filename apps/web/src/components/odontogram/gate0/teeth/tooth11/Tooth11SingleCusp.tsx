@@ -7,8 +7,8 @@ export interface Tooth11SingleCuspProps {
 }
 
 /**
- * Individual anatomical incisal edge & mamelon rendering for Tooth 11.
- * Eliminates low-poly origami polygons in favor of smooth anatomical enamel.
+ * Individual anatomical incisal edge & mamelon rendering for Tooth 11 (Wheeler Ch. 6).
+ * Sharp 90° mesio-incisal midline corner, delicate distal corner, silky smooth diffuse volume.
  * Mandate 8b <= 120 lines.
  */
 export const Tooth11SingleCusp: React.FC<Tooth11SingleCuspProps> = ({
@@ -19,16 +19,7 @@ export const Tooth11SingleCusp: React.FC<Tooth11SingleCuspProps> = ({
 
 	return (
 		<g id={`tooth11-cusp-${c.id}`}>
-			{c.labialRidgePath && (
-				<path
-					d={c.labialRidgePath}
-					fill="none"
-					stroke="url(#dente-ridge-highlight-11)"
-					strokeWidth="0.6"
-					strokeLinecap="round"
-					vectorEffect="non-scaling-stroke"
-				/>
-			)}
+			{/* Unified silky porcelain face — Zero origami facets, zero artificial center lines */}
 			<path
 				d={c.ridgePath}
 				fill="none"

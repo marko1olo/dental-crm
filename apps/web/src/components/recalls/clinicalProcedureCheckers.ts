@@ -1,82 +1,77 @@
-/* -------------------------------------------------------------------------- */
-/* Clinical Procedure Identifiers & Checks                                     */
-/* -------------------------------------------------------------------------- */
+/* Clinical Procedure Identifiers & Checks (SSOT Domain Logic) */
 
 export interface ClinicalProcedureIdentifier {
 	readonly code?: string | undefined;
 	readonly serviceCode?: string | undefined;
 	readonly nomenclatureCode?: string | undefined;
-	readonly code804n?: string | undefined;
+	readonly category?: string | undefined;
 	readonly name?: string | undefined;
 	readonly serviceName?: string | undefined;
 }
 
+function normalizeCode(proc: ClinicalProcedureIdentifier): string {
+	return (proc.serviceCode || proc.nomenclatureCode || proc.code || "").trim().replace(/\s+/g, "").toUpperCase();
+}
+
+function normalizeName(proc: ClinicalProcedureIdentifier): string {
+	return (proc.serviceName || proc.name || "").toLowerCase();
+}
+
 export function isProfessionalHygieneProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().replace(/\s+/g, "").toUpperCase();
-	if (
-		rawCode.startsWith("A16.07.051") ||
-		rawCode.startsWith("A16.07.020") ||
-		rawCode.startsWith("A16.07.039") ||
-		rawCode.startsWith("A22.07.001") ||
-		rawCode.startsWith("A22.07.002")
-	) {
+	const cat = (proc.category || "").toLowerCase();
+	if (cat === "hygiene" || cat === "prophylaxis" || cat === "periodontics") return true;
+
+	const code = normalizeCode(proc);
+	if (code.startsWith("A16.07.051") || code.startsWith("A16.07.020") || code.startsWith("A16.07.039") || code.startsWith("A22.07.001") || code.startsWith("A22.07.002")) {
 		return true;
 	}
-	const rawName = (proc.serviceName || proc.name || "").toLowerCase();
-	if (!rawName) return false;
-	const keywords = [
-		"профессиональная гигиена", "профессиональной гигиены", "профгигиен",
-		"air-flow", "air flow", "airflow", "снятие зубных отложений",
-		"удаление зубных отложений", "ультразвуковой скейлинг", "поддесневой скейлинг",
-		"чистка air", "чистка зубов ультразвук", "кюретаж пародонтальных карманов",
-		"vector-терапия", "вектор-терапия",
-	];
-	return keywords.some((kw) => rawName.includes(kw));
+	const name = normalizeName(proc);
+	if (!name) return false;
+	const keywords = ["профессиональная гигиена", "профгигиен", "снятие зубных отложений", "удаление зубных отложений", "ультразвуковой скейлинг", "поддесневой скейлинг", "кюретаж пародонтальных карманов"];
+	return keywords.some((kw) => name.includes(kw));
 }
 
 export function isOrthodonticAdjustmentProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
-	if (rawCode.startsWith("A16.07.048") || rawCode.startsWith("A16.07.047") || rawCode.startsWith("A16.07.046")) {
-		return true;
-	}
-	const rawName = (proc.serviceName || proc.name || "").toLowerCase();
-	return (
-		rawName.includes("активация дуг") || rawName.includes("смена дуг") ||
-		rawName.includes("замена дуг") || rawName.includes("замена лигатур") ||
-		rawName.includes("коррекция элайнер") || rawName.includes("выдача элайнер") ||
-		rawName.includes("ортодонтическая активация")
-	);
+	const cat = (proc.category || "").toLowerCase();
+	if (cat === "orthodontics" || cat === "orthodontic") return true;
+
+	const code = normalizeCode(proc);
+	if (code.startsWith("A16.07.048") || code.startsWith("A16.07.047") || code.startsWith("A16.07.046")) return true;
+	const name = normalizeName(proc);
+	return name.includes("ортодонтическая коррекция") || name.includes("контрольный осмотр ортодонт") || name.includes("коррекция элайнер") || name.includes("активация ортодонтического аппарата");
 }
 
 export function isImplantMonitoringProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
-	if (rawCode.startsWith("A16.07.054") || rawCode.startsWith("A06.07")) {
-		const rawName = (proc.serviceName || proc.name || "").toLowerCase();
-		if (rawName.includes("имплант") || rawName.includes("остеоинтеграц")) return true;
+	const cat = (proc.category || "").toLowerCase();
+	if (cat === "implantology" || cat === "implants") return true;
+
+	const code = normalizeCode(proc);
+	if (code.startsWith("A16.07.054") || code.startsWith("A06.07")) {
+		const name = normalizeName(proc);
+		if (name.includes("имплант") || name.includes("остеоинтеграц")) return true;
 	}
-	const rawName = (proc.serviceName || proc.name || "").toLowerCase();
-	return (
-		rawName.includes("контроль остеоинтеграции") || rawName.includes("осмотр имплант") ||
-		rawName.includes("рентген-контроль имплант") || rawName.includes("ревизия имплант")
-	);
+	const name = normalizeName(proc);
+	return name.includes("контроль остеоинтеграции") || name.includes("осмотр имплант") || name.includes("рентген-контроль имплант") || name.includes("ревизия имплант");
 }
 
 export function isPediatricProphylaxisProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
-	if (rawCode.startsWith("A16.07.057") || rawCode.startsWith("A11.07.012") || rawCode.startsWith("A11.07.024")) {
-		return true;
-	}
-	const rawName = (proc.serviceName || proc.name || "").toLowerCase();
-	return rawName.includes("фторирование") || rawName.includes("герметизация фиссур") || rawName.includes("ремотерапия") || rawName.includes("детская гигиена");
+	const cat = (proc.category || "").toLowerCase();
+	if (cat === "pediatric" || cat === "children") return true;
+
+	const code = normalizeCode(proc);
+	if (code.startsWith("A16.07.057") || code.startsWith("A11.07.012") || code.startsWith("A11.07.024")) return true;
+	const name = normalizeName(proc);
+	return name.includes("фторирование") || name.includes("герметизация фиссур") || name.includes("ремотерапия") || name.includes("детская гигиена");
 }
 
 export function isEndodonticCheckProcedure(proc: ClinicalProcedureIdentifier): boolean {
-	const rawCode = (proc.serviceCode || proc.nomenclatureCode || proc.code804n || proc.code || "").trim().toUpperCase();
-	if (rawCode.startsWith("A06.07.003") || rawCode.startsWith("A06.07.004") || rawCode.startsWith("A06.07.012")) {
-		return true;
-	}
-	const rawName = (proc.serviceName || proc.name || "").toLowerCase();
-	return rawName.includes("контрольный снимок") || rawName.includes("визиография") || rawName.includes("рентген") || rawName.includes("эндо");
+	const cat = (proc.category || "").toLowerCase();
+	if (cat === "endodontics" || cat === "radiology") return true;
+
+	const code = normalizeCode(proc);
+	if (code.startsWith("A06.07.003") || code.startsWith("A06.07.004") || code.startsWith("A06.07.012")) return true;
+	const name = normalizeName(proc);
+	return name.includes("контрольный снимок") || name.includes("визиография") || name.includes("рентген") || name.includes("эндо");
 }
 
 export function shouldResetRecallTimer(

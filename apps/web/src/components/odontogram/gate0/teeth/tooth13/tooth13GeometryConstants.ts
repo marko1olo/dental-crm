@@ -52,9 +52,7 @@ export const TOOTH13_GEOMETRY = {
 		{ id: "mesial-slope", d: "M 51.5,153.5 C 60.0,149.0 67.0,143.0 73.5,137.0" },
 		{ id: "distal-slope", d: "M 26.5,133.0 C 34.0,142.0 42.0,149.0 51.5,153.5" },
 	],
-	fissuresY5: [
-		{ id: "labial-ridge-crest", d: "M 51.5,153.5 C 51.2,138.0 50.8,124.0 50.5,110.0" },
-	],
+	fissuresY5: [],
 	cusps: TOOTH13_CUSPS,
 	endoCanals: [
 		{ id: "C", nameRu: "Магистральный канал клыка", apex: { x: 45.0, y: 4.5 } },

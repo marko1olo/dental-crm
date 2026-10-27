@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TOOTH46_ENDO_PATHOLOGY_GEOMETRY } from "./Tooth46EndoPathologyGeometry";
 
 export interface Tooth46BrokenFileOverlayProps {

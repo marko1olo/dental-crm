@@ -41,15 +41,15 @@ export const Tooth12ShaderDefs: React.FC = () => {
 				<stop offset="100%" stopColor="#ffffff" stopOpacity="1.0" />
 			</linearGradient>
 			<linearGradient id="dente-zirconia-crown-12-dark" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#334155" stopOpacity="0.95" />
-				<stop offset="35%" stopColor="#475569" stopOpacity="0.98" />
-				<stop offset="80%" stopColor="#64748b" stopOpacity="0.99" />
-				<stop offset="100%" stopColor="#94a3b8" stopOpacity="1.0" />
+				<stop offset="0%" stopColor="#e2d6c3" stopOpacity="0.96" />
+				<stop offset="25%" stopColor="#f1e5d4" stopOpacity="0.98" />
+				<stop offset="70%" stopColor="#f8fafc" stopOpacity="0.99" />
+				<stop offset="100%" stopColor="#ffffff" stopOpacity="1.0" />
 			</linearGradient>
 			<linearGradient id="dente-zirconia-glaze-dark" x1="0" y1="0" x2="1" y2="0.5">
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.40" />
-				<stop offset="40%" stopColor="#94a3b8" stopOpacity="0.15" />
-				<stop offset="100%" stopColor="#000000" stopOpacity="0.0" />
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.60" />
+				<stop offset="40%" stopColor="#ffffff" stopOpacity="0.25" />
+				<stop offset="100%" stopColor="#ffffff" stopOpacity="0.0" />
 			</linearGradient>
 
 			{/* Fiber Post in Lateral Canal */}
@@ -59,17 +59,16 @@ export const Tooth12ShaderDefs: React.FC = () => {
 				<stop offset="100%" stopColor="#94a3b8" stopOpacity="1" />
 			</linearGradient>
 
-			{/* Cervical Ridge Highlights */}
-			<linearGradient id="dente-cervical-ridge-12" x1="0" y1="94" x2="0" y2="128" gradientUnits="userSpaceOnUse">
+			{/* Cervical Ridge Highlights — Directional Upper Enamel Volume (y1=1 incisal -> y2=0 cervical) */}
+			<linearGradient id="dente-cervical-ridge-12" x1="0" y1="1" x2="0" y2="0">
 				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.45" />
-				<stop offset="35%" stopColor="#fef3c7" stopOpacity="0.18" />
-				<stop offset="75%" stopColor="#f8fafc" stopOpacity="0.04" />
-				<stop offset="100%" stopColor="#f8fafc" stopOpacity="0.0" />
+				<stop offset="60%" stopColor="#fef3c7" stopOpacity="0.25" />
+				<stop offset="100%" stopColor="#f8fafc" stopOpacity="0.05" />
 			</linearGradient>
-			<linearGradient id="dente-cervical-ridge-12-dark" x1="0" y1="94" x2="0" y2="128" gradientUnits="userSpaceOnUse">
-				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.22" />
-				<stop offset="35%" stopColor="#94a3b8" stopOpacity="0.08" />
-				<stop offset="100%" stopColor="#000000" stopOpacity="0.0" />
+			<linearGradient id="dente-cervical-ridge-12-dark" x1="0" y1="1" x2="0" y2="0">
+				<stop offset="0%" stopColor="#ffffff" stopOpacity="0.25" />
+				<stop offset="60%" stopColor="#94a3b8" stopOpacity="0.12" />
+				<stop offset="100%" stopColor="#0f172a" stopOpacity="0.02" />
 			</linearGradient>
 
 			<linearGradient id="dente-ridge-highlight-12" x1="0" y1="0" x2="0" y2="1">

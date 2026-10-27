@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46AdvancedPathologyOverlay } from "./Tooth46AdvancedPathologyOverlay";
 import { Tooth46CalculusOverlay } from "./Tooth46CalculusOverlay";
 import { TOOTH46_PATHOLOGY_GEOMETRY } from "./Tooth46PathologyGeometry";

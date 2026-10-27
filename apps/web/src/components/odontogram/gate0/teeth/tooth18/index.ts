@@ -1,0 +1,18 @@
+export { Tooth18Container, type Tooth18ContainerProps } from "./Tooth18Container";
+export { Tooth18Roots, type Tooth18RootsProps } from "./Tooth18Roots";
+export { Tooth18EnamelCrown, type Tooth18EnamelCrownProps } from "./Tooth18EnamelCrown";
+export { Tooth18OcclusalCusps, type Tooth18OcclusalCuspsProps } from "./Tooth18OcclusalCusps";
+export { Tooth18SingleCusp, type Tooth18SingleCuspProps } from "./Tooth18SingleCusp";
+export { Tooth18EndoCanals, type Tooth18EndoCanalsProps } from "./Tooth18EndoCanals";
+export { Tooth18PulpChamber, type Tooth18PulpChamberProps } from "./Tooth18PulpChamber";
+export { Tooth18SingleCanal, type Tooth18SingleCanalProps } from "./Tooth18SingleCanal";
+export { Tooth18CariesOverlay, type Tooth18CariesOverlayProps } from "./Tooth18CariesOverlay";
+export { Tooth18RestorationOverlay, type Tooth18RestorationOverlayProps } from "./Tooth18RestorationOverlay";
+export { Tooth18PeriapicalArea, type Tooth18PeriapicalAreaProps } from "./Tooth18PeriapicalArea";
+export { Tooth18ShaderDefs } from "./Tooth18ShaderDefs";
+export { TOOTH18_GEOMETRY, TOOTH18_ROOTS_GEOMETRY } from "./tooth18GeometryConstants";
+export { TOOTH18_PULP_GEOMETRY, type Tooth18CanalAnatomy } from "./tooth18PulpGeometry";
+export { TOOTH18_CUSPS, type Tooth18CuspDef } from "./tooth18CuspGeometry";
+export { TOOTH18_CARIES_GEOMETRY } from "./tooth18CariesGeometry";
+export { TOOTH18_RESTORATION_GEOMETRY } from "./tooth18RestorationGeometry";
+export { TOOTH18_PERIAPICAL_GEOMETRY } from "./tooth18PeriapicalGeometry";

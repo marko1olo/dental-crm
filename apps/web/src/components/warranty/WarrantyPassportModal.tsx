@@ -26,19 +26,40 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 
 	if (!isOpen) return null;
 
+	const handleIssueStandardOneClick = () => {
+		if (s.items.length === 0) {
+			if (completedStages && completedStages.length > 0) {
+				s.handleImportCompletedStages();
+			} else {
+				s.handleAddItem();
+			}
+		}
+		s.setRiskFactors((prev) => ({
+			...prev,
+			hygieneScore: 1.0,
+			bruxism: false,
+			nightGuardUsed: false,
+			smoking: false,
+			periodontitisHistory: false,
+			highCariesActivity: false,
+			uncontrolledDiabetes: false,
+			complianceRegularCheckups: true,
+		}));
+		s.handleAttachTo043u();
+		s.handlePrint();
+	};
+
 	const modalContent = (
 		<div className="warranty-modal-overlay" onClick={onClose} role="dialog" aria-modal="true">
 			<div className="warranty-modal-window" onClick={(e) => e.stopPropagation()}>
-				{/* Apple HIG Mobile Drag Handle */}
 				<div className="warranty-mobile-drag-handle" aria-hidden="true" />
 
-				{/* Header */}
 				<div className="warranty-modal-header">
 					<div className="warranty-header-left">
 						<div className="warranty-header-icon"><ShieldCheck size={22} /></div>
 						<div className="warranty-header-title">
 							<h3>Гарантийный паспорт & Сертификат качества</h3>
-							<p>Гарантия клиники и стандарты качества • Медицинская карта № {patient?.cardNumber || "б/н"}</p>
+							<p>Гарантия клиники и стандарты качества • Карта № {patient?.cardNumber || "б/н"}</p>
 						</div>
 					</div>
 					<div className="warranty-header-actions">
@@ -48,7 +69,6 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					</div>
 				</div>
 
-				{/* Tabs */}
 				<WarrantyModalTabs
 					activeTab={s.activeTab}
 					setActiveTab={s.setActiveTab}
@@ -56,7 +76,6 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					remediationsCount={s.remediations.length}
 				/>
 
-				{/* Body */}
 				<div className="warranty-modal-body">
 					{s.activeTab === "editor" && <WarrantyItemsStep completedStages={completedStages} {...s.itemsStepProps} />}
 					{s.activeTab === "preview" && <WarrantyPreviewPrint certificateHtml={s.certificateHtml} onPrint={s.handlePrint} />}
@@ -65,7 +84,6 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					{s.activeTab === "remediation" && <WarrantySignatureStep {...s.signatureStepProps} />}
 				</div>
 
-				{/* Footer */}
 				<WarrantyModalFooter
 					certificateId={s.certificateId}
 					integrityHash={s.certificateData.integrityHash}
@@ -73,6 +91,7 @@ export const WarrantyPassportModal: React.FC<WarrantyPassportModalProps> = (prop
 					shareMenuProps={s.shareMenuProps}
 					onPrint={s.handlePrint}
 					onAttachTo043u={s.handleAttachTo043u}
+					onIssueStandardOneClick={handleIssueStandardOneClick}
 					attachedStatus={s.attachedStatus}
 				/>
 			</div>

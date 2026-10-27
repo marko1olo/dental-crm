@@ -60,7 +60,7 @@ export async function sendRecallCandidateInvite(
 		}
 	}
 
-	const response = await fetch("/api/patients/recall-candidates/invite", {
+	const response = await fetch("/api/recalls/invite", {
 		method: "POST",
 		headers: { ...(headers ?? {}), "content-type": "application/json", Accept: "application/json" },
 		body: JSON.stringify({ patientId: params.patientId, channel: params.channel, body: params.body }),

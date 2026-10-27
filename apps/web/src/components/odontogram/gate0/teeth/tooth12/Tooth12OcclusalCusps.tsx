@@ -26,14 +26,14 @@ export const Tooth12OcclusalCusps: React.FC<Tooth12OcclusalCuspsProps> = ({
 		? "rgba(203, 213, 225, 0.70)"
 		: "rgba(71, 85, 105, 0.45)";
 	const fissureStroke = isDark
-		? "rgba(148, 163, 184, 0.22)"
-		: "rgba(148, 163, 184, 0.18)";
+		? "rgba(255, 255, 255, 0.12)"
+		: "rgba(148, 163, 184, 0.14)";
 	const crFill = isDark
 		? "url(#dente-cervical-ridge-12-dark)"
 		: "url(#dente-cervical-ridge-12)";
 	const crHighlight = isDark
-		? "rgba(255, 255, 255, 0.28)"
-		: "rgba(255, 255, 255, 0.60)";
+		? "rgba(255, 255, 255, 0.16)"
+		: "rgba(255, 255, 255, 0.35)";
 	const fissures = TOOTH12_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
 
 	return (
@@ -61,7 +61,7 @@ export const Tooth12OcclusalCusps: React.FC<Tooth12OcclusalCuspsProps> = ({
 						d={TOOTH12_GEOMETRY.cervicalRidgeHighlight}
 						fill="none"
 						stroke={crHighlight}
-						strokeWidth="0.75"
+						strokeWidth="0.5"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -71,14 +71,14 @@ export const Tooth12OcclusalCusps: React.FC<Tooth12OcclusalCuspsProps> = ({
 					))}
 				</g>
 			)}
-			{showFissures && (
+			{showFissures && fissures.trim() !== "" && (
 				<g id="tooth12-fissures" pointerEvents="none">
 					{/* Soft Anatomical Mamelon Developmental Grooves */}
 					<path
 						d={fissures}
 						fill="none"
 						stroke={fissureStroke}
-						strokeWidth="0.6"
+						strokeWidth="0.42"
 						strokeLinecap="round"
 						strokeLinejoin="round"
 						vectorEffect="non-scaling-stroke"
