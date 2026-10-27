@@ -1,8 +1,7 @@
 /**
  * apps/web/src/components/billing/paymentPaneModules/PaymentPaneCashTender.tsx
  *
- * Cash tender with quick bill addition chips (2-cols on mobile, 5-cols on desktop),
- * automatic change calculation, and zero disabled submit button.
+ * Cash tender with quick bill addition chips & zero disabled submit button.
  * Strictly <= 120 lines per Mandate 8b.
  */
 
@@ -34,7 +33,6 @@ export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
 			setCashTenderedRub(amountRub);
 			showToast(`Внесено ровно ${amountRub.toLocaleString("ru-RU")} ₽ без сдачи`, "info");
 		}
-		// Честный контур: тост успеха приходит только после подтверждения сервера внутри finalizeReceipt.
 		void finalizeReceipt("cash", amountRub);
 	};
 
@@ -45,7 +43,7 @@ export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
 		>
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-bold text-[var(--ink,#0f172a)] flex items-center gap-1.5">
-					<Banknote size={16} className="text-emerald-600" />
+					<Banknote size={16} className="text-[var(--teal,#0d9488)]" />
 					<span>Внесено наличными:</span>
 				</span>
 				<button
@@ -70,14 +68,14 @@ export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
 				<span className="font-bold text-sm text-[var(--ink,#0f172a)]">₽</span>
 			</div>
 
-			{/* Fast Bill Addition Chips: 2 cols on mobile, 5 cols on desktop */}
+			{/* Fast Bill Addition Chips */}
 			<div className="grid grid-cols-2 sm:grid-cols-5 gap-1.5">
 				{[500, 1000, 2000, 5000, 10000].map((bill) => (
 					<button
 						key={bill}
 						type="button"
 						onClick={() => setCashTenderedRub((prev: number) => (Number.isFinite(prev) ? prev : 0) + bill)}
-						className="h-8 px-2 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-mono font-bold text-[var(--ink,#0f172a)] hover:border-emerald-500 cursor-pointer shadow-2xs active:scale-95 transition-all text-center"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 h-11 px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-xs font-mono font-bold text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] cursor-pointer shadow-2xs active:scale-95 transition-all text-center"
 						data-testid={`btn-bill-${bill}`}
 					>
 						+{bill.toLocaleString("ru-RU")} ₽
@@ -89,7 +87,7 @@ export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
 				<span className="text-[var(--muted,#64748b)]">Сдача пациенту:</span>
 				<span
 					className={`font-mono font-extrabold text-sm ${
-						isCashShortage ? "text-amber-600 dark:text-amber-400" : "text-emerald-700 dark:text-emerald-300"
+						isCashShortage ? "text-amber-600 dark:text-amber-400" : "text-teal-700 dark:text-teal-300"
 					}`}
 					data-testid="display-cashier-change"
 				>
@@ -102,11 +100,11 @@ export const PaymentPaneCashTender: React.FC<PaymentPaneCashTenderProps> = ({
 			<button
 				type="button"
 				onClick={handleCashSubmit}
-				className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
+				className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
 				data-testid="btn-confirm-cash-tender"
 			>
 				<CheckCircle2 size={16} />
-				<span>{isSubmitting ? "Проведение..." : `Принять наличные (${amountRub.toLocaleString("ru-RU")} ₽)`}</span>
+				<span>{isSubmitting ? "Проведение..." : `Принять оплату — ${amountRub.toLocaleString("ru-RU")} ₽`}</span>
 			</button>
 		</div>
 	);

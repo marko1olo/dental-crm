@@ -21,7 +21,7 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 		activeMethod === "biometry";
 
 	return (
-		<div className="payment-pos-tiles-grid">
+		<div className="payment-pos-tiles-grid" data-testid="payment-pos-tiles">
 			{/* 1. СБП (QR-код) */}
 			<button
 				type="button"
@@ -29,16 +29,11 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 				className={`payment-pos-tile ${activeMethod === "sbp_qr" ? "is-active" : ""}`}
 				data-testid="tab-method-sbp"
 			>
-				<span data-testid="btn-tender-sbp" className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-xl bg-teal-500/15 text-teal-600 dark:text-teal-400 flex items-center justify-center shrink-0">
-						<QrCode size={18} />
-					</div>
-					<div className="text-left min-w-0">
-						<div className="font-bold text-xs sm:text-sm tracking-tight text-[var(--ink,#0f172a)] group-hover:text-teal-700">
+				<span data-testid="btn-tender-sbp" className="flex items-center gap-2 w-full min-w-0">
+					<QrCode size={16} className={`shrink-0 ${activeMethod === "sbp_qr" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} />
+					<div className="text-left min-w-0 leading-tight">
+						<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate">
 							СБП (QR-код)
-						</div>
-						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
-							Без комиссии 0 сек
 						</div>
 					</div>
 				</span>
@@ -51,16 +46,11 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 				className={`payment-pos-tile ${isCardActive ? "is-active" : ""}`}
 				data-testid="tab-method-card"
 			>
-				<span data-testid="btn-tender-card" className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-xl bg-blue-500/15 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0">
-						<CreditCard size={18} />
-					</div>
-					<div className="text-left min-w-0">
-						<div className="font-bold text-xs sm:text-sm tracking-tight text-[var(--ink,#0f172a)] group-hover:text-blue-700">
+				<span data-testid="btn-tender-card" className="flex items-center gap-2 w-full min-w-0">
+					<CreditCard size={16} className={`shrink-0 ${isCardActive ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} />
+					<div className="text-left min-w-0 leading-tight">
+						<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate">
 							Банковский терминал
-						</div>
-						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
-							МИР / Любая карта
 						</div>
 					</div>
 				</span>
@@ -73,16 +63,11 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 				className={`payment-pos-tile ${activeMethod === "cash" ? "is-active" : ""}`}
 				data-testid="tab-method-cash"
 			>
-				<span data-testid="btn-tender-cash" className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
-						<Banknote size={18} />
-					</div>
-					<div className="text-left min-w-0">
-						<div className="font-bold text-xs sm:text-sm tracking-tight text-[var(--ink,#0f172a)] group-hover:text-emerald-700">
+				<span data-testid="btn-tender-cash" className="flex items-center gap-2 w-full min-w-0">
+					<Banknote size={16} className={`shrink-0 ${activeMethod === "cash" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} />
+					<div className="text-left min-w-0 leading-tight">
+						<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate">
 							Наличные
-						</div>
-						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
-							Купюры и сдача
 						</div>
 					</div>
 				</span>
@@ -95,18 +80,13 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 				className={`payment-pos-tile ${activeMethod === "family_deposit" ? "is-active" : ""}`}
 				data-testid="tab-method-deposit"
 			>
-				<span data-testid="btn-tender-deposit" className="flex items-center gap-2">
-					<div className="w-8 h-8 rounded-xl bg-indigo-500/15 text-indigo-600 dark:text-indigo-400 flex items-center justify-center shrink-0">
-						<Wallet size={18} />
-					</div>
-					<div className="text-left min-w-0">
-						<div className="font-bold text-xs sm:text-sm tracking-tight text-[var(--ink,#0f172a)] group-hover:text-indigo-700">
-							Семейный депозит / Баланс
-						</div>
-						<div className="text-[11px] text-[var(--muted,#64748b)] truncate">
+				<span data-testid="btn-tender-deposit" className="flex items-center gap-2 w-full min-w-0">
+					<Wallet size={16} className={`shrink-0 ${activeMethod === "family_deposit" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} />
+					<div className="text-left min-w-0 leading-tight">
+						<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate">
 							{patientDepositRub > 0 || patientFamilyBalanceRub > 0
-								? `Доступно: ${(patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽`
-								: "Аванс или баланс"}
+								? `Аванс (${(patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)`
+								: "Семейный депозит / Баланс"}
 						</div>
 					</div>
 				</span>

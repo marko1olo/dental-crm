@@ -1,25 +1,26 @@
 /**
  * apps/web/src/components/finance/paymentModalStyles/paymentActionButtons.css
- * Apple HIG Primary CTA buttons (>= 52px), tender variations & cashier autonomy.
- * Mandate 8b: strictly <= 120 lines.
+ * Single Primary CTA (solid teal), secondary buttons & cashier autonomy.
+ * Strict Mandate 8b: <= 120 lines. Desktop 36px, Mobile >= 44px.
  */
 
 .payment-footer-submit-btn {
 	min-height: 36px !important;
 	height: 36px !important;
 	padding: 0 18px;
-	border-radius: 12px;
+	border-radius: 8px;
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
 	cursor: pointer;
 	border: 1px solid transparent !important;
+	background: var(--teal, #0d9488) !important;
 	color: #ffffff !important;
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-	box-shadow: 0 2px 8px rgba(13, 148, 136, 0.25);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
 	user-select: none;
 }
 
@@ -27,12 +28,13 @@
 	.payment-footer-submit-btn {
 		min-height: 44px !important;
 		height: 44px !important;
+		border-radius: 12px;
 	}
 }
 
 .payment-footer-submit-btn:hover:not(:disabled) {
-	transform: translateY(-1px);
-	filter: brightness(1.08);
+	background: var(--teal-strong, #0f766e) !important;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
 }
 
 .payment-footer-submit-btn:active:not(:disabled) {
@@ -45,52 +47,51 @@
 .payment-footer-submit-btn.btn-split,
 .payment-footer-submit-btn.btn-deposit,
 .payment-footer-submit-btn.btn-warranty {
-	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
-	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
+	background: var(--teal, #0d9488) !important;
 }
 
 .cash-submit-primary-btn {
-	min-height: 52px !important;
-	height: 52px !important;
+	min-height: 36px !important;
+	height: 36px !important;
 	width: 100%;
-	border-radius: 12px;
-	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
-	border: 1px solid #0f766e !important;
+	border-radius: 8px;
+	background: var(--teal, #0d9488) !important;
+	border: 1px solid var(--teal-strong, #0f766e) !important;
 	color: #ffffff !important;
-	font-weight: 800 !important;
-	font-size: 13.5px !important;
+	font-weight: 700 !important;
+	font-size: 13px !important;
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
 	cursor: pointer;
-	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
 }
 
-.cash-submit-primary-btn:hover:not(:disabled) {
-	background: linear-gradient(135deg, #0f766e, #115e59) !important;
-	transform: translateY(-1px);
-	box-shadow: 0 5px 14px rgba(13, 148, 136, 0.45);
+@media (max-width: 640px) {
+	.cash-submit-primary-btn {
+		min-height: 44px !important;
+		height: 44px !important;
+		border-radius: 12px;
+	}
 }
 
-[data-theme="dark"] .cash-submit-primary-btn {
-	background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
-	border-color: #2dd4bf !important;
-	color: #ffffff !important;
+.cash-submit-primary-btn:hover:not(:disabled) {
+	background: var(--teal-strong, #0f766e) !important;
 }
 
 .payment-footer-cancel-btn {
 	min-height: 36px;
 	height: 36px;
 	padding: 0 16px;
-	border-radius: 12px;
+	border-radius: 8px;
 	border: 1px solid var(--line, #cbd5e1) !important;
 	background: var(--paper-soft, #f8fafc) !important;
-	color: var(--muted, #64748b) !important;
+	color: var(--ink, #0f172a) !important;
 	font-size: 12px;
-	font-weight: 700;
+	font-weight: 600;
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
@@ -102,17 +103,11 @@
 	.payment-footer-cancel-btn {
 		min-height: 44px;
 		height: 44px;
+		border-radius: 12px;
 	}
 }
 
 .payment-footer-cancel-btn:hover {
 	background: var(--paper, #ffffff) !important;
-	color: var(--ink, #0f172a) !important;
 	border-color: var(--line-strong, #94a3b8) !important;
-}
-
-[data-theme="dark"] .payment-footer-cancel-btn {
-	background: #1e293b !important;
-	border-color: #334155 !important;
-	color: #94a3b8 !important;
 }

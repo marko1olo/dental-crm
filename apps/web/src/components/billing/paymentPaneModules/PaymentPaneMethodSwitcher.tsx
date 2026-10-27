@@ -2,7 +2,7 @@
  * apps/web/src/components/billing/paymentPaneModules/PaymentPaneMethodSwitcher.tsx
  *
  * Unified 36px Segmented Method Switcher conforming to UI_STANDARDS.md.
- * Radius 12px, zero accordion clutter.
+ * Radius 8px, zero accordion clutter.
  * Strictly <= 120 lines per Mandate 8b.
  */
 
@@ -19,12 +19,12 @@ export const PaymentPaneMethodSwitcher: React.FC<PaymentPaneMethodSwitcherProps>
 	activeMethod,
 	setActiveMethod,
 }) => {
-	const methods: { id: CashierPaymentMethod; label: string; icon: any; color: string; testId: string }[] = [
-		{ id: "sbp", label: "СБП QR", icon: QrCode, color: "teal", testId: "btn-method-tab-sbp" },
-		{ id: "card", label: "Карта", icon: CreditCard, color: "blue", testId: "btn-method-tab-card" },
-		{ id: "cash", label: "Наличные", icon: Banknote, color: "emerald", testId: "btn-method-tab-cash" },
-		{ id: "deposit", label: "Депозит", icon: Wallet, color: "indigo", testId: "btn-method-tab-deposit" },
-		{ id: "split", label: "Сплит", icon: Layers, color: "purple", testId: "btn-method-tab-split" },
+	const methods: { id: CashierPaymentMethod; label: string; icon: React.ComponentType<{ size?: number; className?: string }>; testId: string }[] = [
+		{ id: "sbp", label: "СБП QR", icon: QrCode, testId: "btn-method-tab-sbp" },
+		{ id: "card", label: "Карта", icon: CreditCard, testId: "btn-method-tab-card" },
+		{ id: "cash", label: "Наличные", icon: Banknote, testId: "btn-method-tab-cash" },
+		{ id: "deposit", label: "Депозит", icon: Wallet, testId: "btn-method-tab-deposit" },
+		{ id: "split", label: "Сплит", icon: Layers, testId: "btn-method-tab-split" },
 	];
 
 	return (
@@ -37,7 +37,7 @@ export const PaymentPaneMethodSwitcher: React.FC<PaymentPaneMethodSwitcherProps>
 				role="tablist"
 				data-testid="cashier-method-switcher"
 			>
-				{methods.map(({ id, label, icon: Icon, color, testId }) => {
+				{methods.map(({ id, label, icon: Icon, testId }) => {
 					const isActive = activeMethod === id;
 					return (
 						<button
@@ -46,14 +46,14 @@ export const PaymentPaneMethodSwitcher: React.FC<PaymentPaneMethodSwitcherProps>
 							role="tab"
 							aria-selected={isActive}
 							onClick={() => setActiveMethod(id)}
-							className={`flex-1 min-w-[58px] sm:min-w-0 h-9 px-1.5 sm:px-2 rounded-lg text-[11px] sm:text-xs font-bold flex items-center justify-center gap-1 transition-all cursor-pointer whitespace-nowrap ${
+							className={`flex-1 min-w-[58px] sm:min-w-0 min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-1.5 sm:px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer whitespace-nowrap ${
 								isActive
-									? "bg-[var(--paper,#ffffff)] text-teal-700 dark:text-teal-300 shadow-xs border border-teal-500/30 ring-1 ring-teal-500/20"
-									: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+									? "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs border border-[var(--teal,#0d9488)] font-bold"
+									: "text-[var(--ink-secondary,var(--muted,#64748b))] hover:text-[var(--ink,#0f172a)] border border-transparent"
 							}`}
 							data-testid={testId}
 						>
-							<Icon size={14} className={`text-${color}-600 shrink-0`} />
+							<Icon size={14} className={isActive ? "text-[var(--teal,#0d9488)] shrink-0" : "text-[var(--muted,#64748b)] shrink-0"} />
 							<span>{label}</span>
 						</button>
 					);

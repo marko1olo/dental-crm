@@ -41,7 +41,7 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 					<button
 						type="button"
 						onClick={onOpenLoyaltyModal}
-						className="min-h-[36px] h-9 px-3 sm:px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 sm:px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm font-semibold flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap shrink-0"
 						data-testid="btn-open-cashbox-loyalty-modal"
 						title="Списание бонусов и сертификаты пациента"
 					>
@@ -52,7 +52,7 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 					<button
 						type="button"
 						onClick={onOpenPaymentModal}
-						className="primary-button min-h-[36px] h-9 px-4 sm:px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs sm:text-sm whitespace-nowrap flex-1 sm:flex-initial justify-center flex items-center gap-2 cursor-pointer active:scale-[0.99] transition-all shadow-xs"
+						className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs sm:text-sm whitespace-nowrap flex-1 sm:flex-initial justify-center flex items-center gap-2 cursor-pointer active:scale-[0.99] transition-all shadow-xs"
 						data-testid="btn-open-cashbox-payment-modal"
 						title="Принять оплату от пациента"
 					>
@@ -62,7 +62,7 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 					<button
 						type="button"
 						onClick={onToggleManualForm}
-						className="min-h-[36px] h-9 w-9 px-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold flex items-center justify-center cursor-pointer transition-colors shrink-0"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 w-11 sm:w-9 px-0 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold flex items-center justify-center cursor-pointer transition-colors shrink-0"
 						title="Показать / скрыть ручные параметры"
 					>
 						{showManualForm ? <ChevronUp size={14} /> : <ChevronDown size={14} />}

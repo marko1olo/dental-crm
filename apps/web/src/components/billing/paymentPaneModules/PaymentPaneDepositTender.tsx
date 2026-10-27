@@ -37,7 +37,6 @@ export const PaymentPaneDepositTender: React.FC<PaymentPaneDepositTenderProps> =
 	setActiveMethod,
 }) => {
 	const handleDeductFullDeposit = () => {
-		// Честный контур: списание депозита фиксирует сервер (depositAmountRub), тост — после подтверждения.
 		void finalizeReceipt("deposit", amountRub);
 	};
 
@@ -57,12 +56,12 @@ export const PaymentPaneDepositTender: React.FC<PaymentPaneDepositTenderProps> =
 		>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<Wallet size={18} className="text-indigo-600" />
+					<Wallet size={16} className="text-[var(--teal,#0d9488)]" />
 					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 						Личный / Семейный депозит
 					</span>
 				</div>
-				<span className="text-xs font-mono font-bold text-indigo-600 dark:text-indigo-400">
+				<span className="text-xs font-mono font-semibold text-[var(--muted,#64748b)]">
 					Доступно: {totalAvailableDepositRub.toLocaleString("ru-RU")} ₽
 				</span>
 			</div>
@@ -86,11 +85,11 @@ export const PaymentPaneDepositTender: React.FC<PaymentPaneDepositTenderProps> =
 				<button
 					type="button"
 					onClick={handleDeductFullDeposit}
-					className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
+					className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
 					data-testid="btn-confirm-deposit-tender"
 				>
 					<CheckCircle2 size={16} />
-					<span>{isSubmitting ? "Списание..." : `Списать с депозита (${amountRub.toLocaleString("ru-RU")} ₽)`}</span>
+					<span>{isSubmitting ? "Списание..." : `Принять оплату — ${amountRub.toLocaleString("ru-RU")} ₽ (Списать с депозита)`}</span>
 				</button>
 			) : (
 				<div className="space-y-2">
@@ -100,10 +99,10 @@ export const PaymentPaneDepositTender: React.FC<PaymentPaneDepositTenderProps> =
 					<button
 						type="button"
 						onClick={handleSplitWithDeposit}
-						className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-indigo-600/15 hover:bg-indigo-600/25 border border-indigo-500/30 text-indigo-700 dark:text-indigo-300 text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer"
+						className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
 						data-testid="btn-split-with-deposit"
 					>
-						<Layers size={15} />
+						<Layers size={15} className="text-[var(--muted,#64748b)]" />
 						<span>Списать {totalAvailableDepositRub.toLocaleString("ru-RU")} ₽ + остаток через Сплит</span>
 					</button>
 				</div>

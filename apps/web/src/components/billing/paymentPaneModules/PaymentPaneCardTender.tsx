@@ -7,7 +7,6 @@
 
 import React from "react";
 import { CreditCard, CheckCircle2 } from "lucide-react";
-import { showToast } from "../../GlobalToast.js";
 
 interface PaymentPaneCardTenderProps {
 	readonly amountRub: number;
@@ -21,7 +20,6 @@ export const PaymentPaneCardTender: React.FC<PaymentPaneCardTenderProps> = ({
 	finalizeReceipt,
 }) => {
 	const handleConfirm = () => {
-		// Честный контур: результат оплаты подтверждает сервер внутри finalizeReceipt.
 		void finalizeReceipt("card", amountRub);
 	};
 
@@ -32,12 +30,12 @@ export const PaymentPaneCardTender: React.FC<PaymentPaneCardTenderProps> = ({
 		>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
-					<CreditCard size={18} className="text-blue-600" />
+					<CreditCard size={16} className="text-[var(--teal,#0d9488)]" />
 					<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 						Банковский терминал (Эквайринг)
 					</span>
 				</div>
-				<span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
+				<span className="text-xs font-mono font-semibold text-[var(--muted,#64748b)]">
 					Безналичный расчет
 				</span>
 			</div>
@@ -47,11 +45,11 @@ export const PaymentPaneCardTender: React.FC<PaymentPaneCardTenderProps> = ({
 			<button
 				type="button"
 				onClick={handleConfirm}
-				className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
+				className="w-full min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs sm:text-sm font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs active:scale-95 transition-all"
 				data-testid="btn-confirm-card-pos"
 			>
 				<CheckCircle2 size={16} />
-				<span>{isSubmitting ? "Проведение..." : `Карта одобрена банком (${amountRub.toLocaleString("ru-RU")} ₽)`}</span>
+				<span>{isSubmitting ? "Проведение..." : `Принять оплату — ${amountRub.toLocaleString("ru-RU")} ₽`}</span>
 			</button>
 		</div>
 	);

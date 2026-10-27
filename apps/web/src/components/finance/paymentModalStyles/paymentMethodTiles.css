@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/finance/paymentModalStyles/paymentMethodTiles.css
- * Apple POS tile architecture (Cash / Card / SBP QR / Deposit) & legacy pills.
- * Mandate 8b: strictly <= 120 lines.
+ * Apple POS tile architecture & legacy pills.
+ * Strict Mandate 8b: <= 120 lines. Neutral secondary buttons (36px desktop, >=44px touch).
  */
 
 .payment-pos-tiles-grid {
@@ -13,46 +13,37 @@
 .payment-pos-tile {
 	display: flex;
 	align-items: center;
-	min-height: 54px;
-	padding: 8px 12px;
-	border-radius: 14px;
-	border: 1.5px solid var(--line, #cbd5e1) !important;
+	min-height: 36px;
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1) !important;
 	background: var(--paper-soft, #f8fafc) !important;
 	color: var(--ink, #0f172a) !important;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 	cursor: pointer;
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
 	width: 100%;
 }
 
+@media (max-width: 768px) {
+	.payment-pos-tile {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 10px;
+	}
+}
+
 .payment-pos-tile:hover {
-	border-color: var(--teal, #0d9488) !important;
+	border-color: var(--line-strong, #94a3b8) !important;
 	background: var(--paper, #ffffff) !important;
-	transform: translateY(-1px);
-	box-shadow: 0 3px 8px rgba(13, 148, 136, 0.15);
 }
 
 .payment-pos-tile.is-active {
-	background: linear-gradient(135deg, rgba(13, 148, 136, 0.12), rgba(13, 148, 136, 0.05)) !important;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
 	border-color: var(--teal, #0d9488) !important;
-	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.22);
-}
-
-[data-theme="dark"] .payment-pos-tile {
-	background: #1e293b !important;
-	border-color: #334155 !important;
-	color: #f1f5f9 !important;
-}
-
-[data-theme="dark"] .payment-pos-tile:hover {
-	background: #334155 !important;
-	border-color: #2dd4bf !important;
-}
-
-[data-theme="dark"] .payment-pos-tile.is-active {
-	background: linear-gradient(135deg, rgba(45, 212, 191, 0.18), rgba(15, 23, 42, 0.6)) !important;
-	border-color: #2dd4bf !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
 }
 
 .payment-method-grid {
@@ -66,47 +57,37 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	min-height: 44px;
-	padding: 8px 14px;
-	border-radius: 12px;
-	font-weight: 700;
-	font-size: 13px;
-	border: 1.5px solid var(--line, #cbd5e1) !important;
+	min-height: 36px;
+	height: 36px;
+	padding: 0 12px;
+	border-radius: 8px;
+	font-weight: 600;
+	font-size: 12px;
+	border: 1px solid var(--line, #cbd5e1) !important;
 	background: var(--paper-soft, #f8fafc) !important;
 	color: var(--ink, #0f172a) !important;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
 	cursor: pointer;
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
 }
 
+@media (max-width: 768px) {
+	.payment-method-pill {
+		min-height: 44px;
+		height: 44px;
+		border-radius: 10px;
+	}
+}
+
 .payment-method-pill:hover {
-	border-color: var(--teal, #0d9488) !important;
+	border-color: var(--line-strong, #94a3b8) !important;
 	background: var(--paper, #ffffff) !important;
-	transform: translateY(-1px);
-	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.15);
 }
 
 .payment-method-pill.is-active {
-	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
-	border-color: #0d9488 !important;
-	color: #ffffff !important;
-	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
-}
-
-[data-theme="dark"] .payment-method-pill {
-	background: #1e293b !important;
-	border-color: #334155 !important;
-	color: #f1f5f9 !important;
-}
-
-[data-theme="dark"] .payment-method-pill:hover {
-	background: #334155 !important;
-	border-color: #2dd4bf !important;
-}
-
-[data-theme="dark"] .payment-method-pill.is-active {
-	background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
-	border-color: #2dd4bf !important;
-	color: #ffffff !important;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
+	border-color: var(--teal, #0d9488) !important;
+	color: var(--ink, #0f172a) !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.15);
 }

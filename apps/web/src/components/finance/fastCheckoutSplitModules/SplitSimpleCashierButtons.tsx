@@ -13,10 +13,10 @@ export interface SplitSimpleCashierButtonsProps {
 }
 
 const getBtnClass = (isActive: boolean) =>
-	`min-h-[52px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl flex items-center justify-center gap-2 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95 ${
+	`min-h-[44px] sm:min-h-[36px] sm:h-9 h-11 py-1 px-3 rounded-lg flex items-center justify-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
 		isActive
-			? "border-2 border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] ring-2 ring-[var(--teal,#0d9488)]/20 shadow-xs"
-			: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]/60 hover:bg-[var(--paper-soft,#f8fafc)]"
+			? "border border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.08))] text-[var(--teal-strong,#0f766e)] dark:text-[var(--teal,#2dd4bf)] shadow-2xs"
+			: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink-secondary,var(--muted,#64748b))] hover:text-[var(--ink,#0f172a)] hover:border-[var(--line-strong,#94a3b8)] hover:bg-[var(--paper-soft,#f8fafc)]"
 	}`;
 
 export const SplitSimpleCashierButtons: React.FC<SplitSimpleCashierButtonsProps> = ({
@@ -33,30 +33,30 @@ export const SplitSimpleCashierButtons: React.FC<SplitSimpleCashierButtonsProps>
 	return (
 		<div className={`grid gap-2 ${gridCols}`} data-testid="simple-cashier-methods">
 			<button type="button" onClick={() => onSelectMethod("bank_card")} className={getBtnClass(activeMethod === "bank_card")} data-testid="simple-card-btn">
-				<CreditCard size={18} className="shrink-0 text-current" /><span className="truncate">Картой</span>
+				<CreditCard size={15} className={`shrink-0 ${activeMethod === "bank_card" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} /><span className="truncate">Картой</span>
 			</button>
 			<button type="button" onClick={() => onSelectMethod("cash")} className={getBtnClass(activeMethod === "cash")} data-testid="simple-cash-btn">
-				<Banknote size={18} className="shrink-0 text-current" /><span className="truncate">Наличными</span>
+				<Banknote size={15} className={`shrink-0 ${activeMethod === "cash" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} /><span className="truncate">Наличными</span>
 			</button>
 			<button type="button" onClick={() => onSelectMethod("sbp_qr")} className={getBtnClass(activeMethod === "sbp_qr")} data-testid="simple-sbp-btn">
-				<QrCode size={18} className="shrink-0 text-current" /><span className="truncate">СБП QR</span>
+				<QrCode size={15} className={`shrink-0 ${activeMethod === "sbp_qr" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} /><span className="truncate">СБП QR</span>
 			</button>
 			{totalAvailableDeposit > 0 && (
 				<button type="button" onClick={() => onSelectMethod("patient_deposit")} className={getBtnClass(activeMethod === "patient_deposit")} data-testid="simple-deposit-btn" title={`Списать с депозита пациента (${totalAvailableDeposit.toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}>
-					<Coins size={18} className="shrink-0 text-current" /><span className="truncate">Депозит</span>
+					<Coins size={15} className={`shrink-0 ${activeMethod === "patient_deposit" ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} /><span className="truncate">Депозит</span>
 				</button>
 			)}
 			{hasBonus && (
 				<button type="button" onClick={() => onApplyOneClickLoyaltyPoints ? onApplyOneClickLoyaltyPoints() : onSelectMethod("loyalty_points")} className={getBtnClass(isLoyaltyActive)} data-testid="simple-loyalty-btn" title={`Списать бонусы: ${(loyaltyAmountRub > 0 ? loyaltyAmountRub : availableLoyaltyPointsRub).toLocaleString("ru-RU")} ₽`}>
-					<Sparkles size={18} className="shrink-0 text-current" />
+					<Sparkles size={15} className={`shrink-0 ${isLoyaltyActive ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted,#64748b)]"}`} />
 					<span className="truncate">
 						{loyaltyAmountRub > 0 ? `Бонусы (${loyaltyAmountRub} ₽)` : "Бонусы"}
 					</span>
 				</button>
 			)}
 			{onSwitchToSplitMode && (
-				<button type="button" onClick={onSwitchToSplitMode} className="min-h-[52px] sm:min-h-[44px] h-auto py-2.5 px-3 rounded-xl border border-dashed border-[var(--teal,#0d9488)]/60 bg-[var(--teal-surface,rgba(13,148,136,0.06))] hover:bg-[var(--teal-surface,rgba(13,148,136,0.14))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] flex items-center justify-center gap-1.5 font-extrabold text-sm transition-all cursor-pointer select-none active:scale-95" data-testid="simple-split-toggle-btn" title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)">
-					<Layers size={18} className="shrink-0 text-current" /><span className="truncate">Сплит</span>
+				<button type="button" onClick={onSwitchToSplitMode} className="min-h-[44px] sm:min-h-[36px] sm:h-9 h-11 py-1 px-3 rounded-lg border border-dashed border-[var(--line,#cbd5e1)] hover:border-[var(--teal,#0d9488)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95" data-testid="simple-split-toggle-btn" title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)">
+					<Layers size={15} className="shrink-0 text-[var(--muted,#64748b)]" /><span className="truncate">Сплит</span>
 				</button>
 			)}
 		</div>
