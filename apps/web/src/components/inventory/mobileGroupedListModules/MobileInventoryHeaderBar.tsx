@@ -62,7 +62,7 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 						className="mobile-inventory-search-input"
 						value={searchQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
-						placeholder="Название, штрихкод или артикул..."
+						placeholder="Поиск по названию или коду"
 						aria-label="Поиск по складу"
 						data-testid="mobile-inventory-search-input"
 					/>

@@ -64,10 +64,66 @@
 
 ---
 
-## 4. Четырёхсостоятельный визуальный пруф (4-State Visual Proof / Mandate 8al)
+## 5. Декомпозиция монолитов defaultBomSeeds.ts & deductionEngine.ts (Мандат 8b <= 120 строк)
 
-Все скриншоты сняты на живом стенде (`http://127.0.0.1:5173/?demo=true#inventory` + Fastify API на порту 4100):
-1. **☀️ PC Light (1440×900)**: [`01_inventory_batch_pc_light.png`](./01_inventory_batch_pc_light.png) (179 KB) — полная таблица складских запасов (7 колонок), Primary CTA `[ + Оприходовать накладную ]`, панель 1-клик пакетного списания расходников («Стандартная анестезия», «Профгигиена», «Пломба световая», «Хирургический пакет»), бейдж «🛡️ Расход сверх остатка разрешен».
-2. **🌙 PC Dark (1440×900)**: [`02_inventory_batch_pc_dark.png`](./02_inventory_batch_pc_dark.png) (178 KB) — глубокая темная тема, нулевое количество слепящих пятен, идеальный контраст текста и бейджей, WCAG AA.
-3. **📱 Mobile Light (390×844)**: [`03_inventory_batch_mobile_light.png`](./03_inventory_batch_mobile_light.png) (215 KB) — карточки Grouped List Cards по Apple HIG, тач-таргеты >= 44x44px (`- 1`), Floating Bottom Bar (`+ Приход`, `МДЛП`, `Смена`), 0px горизонтального скролла.
-4. **📱 Mobile Dark (390×844)**: [`04_inventory_batch_mobile_dark.png`](./04_inventory_batch_mobile_dark.png) (209 KB) — мобильная темная тема без бликов и наездов.
+1. **Технологические карты процедурных расходов (apps/api/src/services/inventory/bomSeeds/)**:
+   - `defaultBomSeeds.ts` (5L) — ультракомпактный канонический фасад (Мандат 8b <= 15 строк).
+   - Модули по клиническим профилям (все строго <= 120 строк):
+     - `types.ts` (49L) — интерфейсы `BomSeedMaterialItem`, `DefaultBomSeedEntry`, `SeedBomCatalogOptions`.
+     - `therapyRestorationBomSeed.ts` (87L) — пломбирование и кариес.
+     - `therapyHygieneBomSeed.ts` (78L) — профессиональная гигиена и чистка.
+     - `therapyBomSeeds.ts` (11L) — фасад терапевтических техкарт.
+     - `endoSingleCanalPrepBomSeed.ts` (78L) — эндодонтия 1 канал (инструментация).
+     - `endoSingleCanalObturationBomSeed.ts` (51L) — эндодонтия 1 канал (пломбирование).
+     - `endoSingleCanalBomSeeds.ts` (11L) — фасад 1-канального эндо.
+     - `endoMultiCanalPrepBomSeed.ts` (78L) — эндодонтия 2-4 канала (инструментация).
+     - `endoMultiCanalObturationBomSeed.ts` (51L) — эндодонтия 2-4 канала (пломбирование).
+     - `endoMultiCanalBomSeeds.ts` (11L) — фасад многоканального эндо.
+     - `endoBomSeeds.ts` (11L) — общий фасад эндодонтии.
+     - `surgerySimpleExtractionBomSeed.ts` (60L) — простое удаление зуба.
+     - `surgeryRootSeparationBomSeed.ts` (64L) — сложное удаление: разделение корней.
+     - `surgeryRetainedToothBomSeed.ts` (63L) — сложное удаление: ретинированный зуб.
+     - `surgeryComplexExtractionBomSeed.ts` (11L) — фасад сложного удаления.
+     - `surgeryExtractionBomSeeds.ts` (11L) — фасад всех удалений.
+     - `surgerySinusGraftBomSeed.ts` (99L) — синус-лифтинг и остеопластика.
+     - `surgeryImplantationBomSeed.ts` (78L) — установка дентального имплантата.
+     - `surgeryImplantBomSeeds.ts` (11L) — фасад имплантологии.
+     - `surgeryBomSeeds.ts` (11L) — общий фасад хирургии.
+     - `prostheticsBomSeeds.ts` (90L) — ортопедия (коронки, слепочные массы).
+     - `orthoFullArchBracketsBomSeed.ts` (99L) — фиксация брекет-системы.
+     - `orthoSingleBracketBomSeed.ts` (72L) — повторная фиксация замка.
+     - `orthoBracketsBomSeeds.ts` (11L) — фасад брекетов.
+     - `orthoArchwireBomSeed.ts` (72L) — смена ортодонтической дуги.
+     - `orthoElasticsSeparationBomSeed.ts` (63L) — сепарация и эластики.
+     - `orthoMechanicsBomSeeds.ts` (11L) — фасад механики дуг.
+     - `orthoBomSeeds.ts` (11L) — общий фасад ортодонтии.
+     - `registry.ts` (17L) — сборка реестра `DEFAULT_804N_BOM_SEEDS`.
+     - `seedHelpers.ts` (40L) — утилиты привязки материалов к номенклатурным услугам.
+     - `seedRunner.ts` (104L) — идемпотентный сидер `seedDefaultInventoryBoms`.
+     - `index.ts` (12L) — корневой barrel-фасад.
+
+2. **Движок партионного списания FEFO (apps/api/src/services/inventory/fefoModules/)**:
+   - `fefo/deductionEngine.ts` (5L) — ультракомпактный фасад (Мандат 8b <= 15 строк).
+   - Модули движка списания (все строго <= 120 строк):
+     - `types.ts` (15L) — переэкспорт контрактов движка.
+     - `batchValidationAndLabeling.ts` (50L) — валидация номеров партий и маркировки Честный Знак.
+     - `softOverdraftHandler.ts` (68L) — мягкий фоновый овердрафт при дефиците партии.
+     - `auditLogging.ts` (53L) — протоколирование аудита материальных проводок.
+     - `fefoBatchDeductor.ts` (65L) — атомарное списание партий со склада.
+     - `fefoDeficitResolver.ts` (87L) — обработка дефицита и расчет недостающих остатков.
+     - `fefoDeductionCore.ts` (91L) — алгоритмическое ядро списания партий FIFO/FEFO.
+     - `batchReceiving.ts` (96L) — оприходование новых партий с контролем срока годности.
+     - `scrapWriteOff.ts` (90L) — списание брака, боя и истекших сроков годности.
+     - `procedureBomDbResolver.ts` (107L) — чтение спецификаций номенклатуры из БД.
+     - `procedureBomDefaultFallback.ts` (103L) — фоллбэк на встроенные технологические карты.
+     - `procedureBomResolver.ts` (20L) — фасад резолвера техкарт.
+     - `procedureDeduction.ts` (67L) — высокоуровневое списание материалов по коду приема.
+     - `fefoServiceClass.ts` (46L) — класс `FefoStockService` со всеми методами.
+     - `index.ts` (14L) — корневой barrel-фасад.
+
+3. **Свежие 4-State Visual Proofs склада (100% живой интерфейс)**:
+   - ☀️ **PC Light (1440×900)**: [`01_inventory_stock_pc_light_1440x900.png`](./01_inventory_stock_pc_light_1440x900.png) (184 KB) — таблица 33 позиций, табы («Остатки», «Сроки годности», «Приходные накладные», «Инвентаризация», «Списание по приёму»), категории, быстрое списание `[- 1 +]`.
+   - 🌙 **PC Dark (1440×900)**: [`02_inventory_stock_pc_dark_1440x900.png`](./02_inventory_stock_pc_dark_1440x900.png) (188 KB) — глубокая эргономичная темная тема, высокий контраст.
+   - 📱 **Mobile Light (390×844)**: [`03_inventory_stock_mobile_light_390x844.png`](./03_inventory_stock_mobile_light_390x844.png) (175 KB) — Grouped List Cards по Apple HIG, индикаторы срока годности FEFO (зеленые полосы), поисковая строка со сканером камер, Floating Bottom Bar с ровно одной Primary CTA (`+ Приход`).
+   - 📱 **Mobile Dark (390×844)**: [`04_inventory_stock_mobile_dark_390x844.png`](./04_inventory_stock_mobile_dark_390x844.png) (173 KB) — мобильная темная тема без глитчей и горизонтального скролла.
+
