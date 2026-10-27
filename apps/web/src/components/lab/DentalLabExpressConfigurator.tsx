@@ -1,5 +1,5 @@
 import React from "react";
-import { Sparkles, Zap } from "lucide-react";
+import { Bookmark, Layers } from "lucide-react";
 import { addWorkingDays } from "./labMath";
 
 export interface DentalLabExpressConfiguratorProps {
@@ -49,19 +49,19 @@ export function DentalLabExpressConfigurator({
 	setShadeBody,
 }: DentalLabExpressConfiguratorProps) {
 	return (
-		<div className="p-3.5 sm:p-4 rounded-2xl bg-amber-500/10 border border-amber-500/30 space-y-3 shadow-2xs">
+		<div className="p-3.5 sm:p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3 shadow-2xs">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-2">
-					<span className="p-1.5 rounded-lg bg-amber-500 text-white shadow-2xs">
-						<Zap size={16} className="fill-current" />
+					<span className="p-1.5 rounded-lg bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20 shadow-2xs">
+						<Layers size={16} />
 					</span>
 					<div>
 						<h3 className="text-sm font-bold text-[var(--ink)] leading-tight">Быстрый наряд изделия</h3>
 						<p className="text-xs text-[var(--muted)]">Выбор конструкции, материала и цвета зуба в 1 клик</p>
 					</div>
 				</div>
-				<span className="text-[11px] font-bold px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-900 dark:text-amber-200 border border-amber-500/30 flex items-center gap-1">
-					<Sparkles size={12} className="text-amber-600 dark:text-amber-400" />
+				<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--paper)] text-[var(--ink-secondary)] border border-[var(--line)] flex items-center gap-1">
+					<Bookmark size={12} className="text-teal-600 dark:text-teal-400" />
 					<span>1 клик</span>
 				</span>
 			</div>
@@ -82,8 +82,8 @@ export function DentalLabExpressConfigurator({
 							}}
 							className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between min-h-[44px] ${
 								isSelected
-									? "bg-[var(--paper)] border-amber-500 ring-2 ring-amber-500/30 shadow-xs"
-									: "bg-[var(--paper-soft)] border-[var(--line)] hover:bg-[var(--paper)]"
+									? "bg-[var(--paper)] border-[var(--teal,#0d9488)] ring-2 ring-teal-500/20 shadow-2xs"
+									: "bg-[var(--paper)] border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid={`lab-preset-btn-${p.id}`}
 						>
@@ -91,7 +91,7 @@ export function DentalLabExpressConfigurator({
 								<div className="font-bold text-xs text-[var(--ink)]">{p.title}</div>
 								<div className="text-[11px] text-[var(--muted)] mt-0.5">{p.desc}</div>
 							</div>
-							<div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-amber-700 dark:text-amber-300">
+							<div className="mt-2 flex items-center justify-between text-[10px] font-semibold text-teal-700 dark:text-teal-300">
 								<span>Цвет: {p.shade}</span>
 								<span>Срок: {p.days} раб. дн.</span>
 							</div>

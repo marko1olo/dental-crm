@@ -134,7 +134,7 @@ export function ScheduleOptionsDropdown({
 			<button
 				type="button"
 				onClick={() => setIsOptionsMenuOpen((prev) => !prev)}
-				className="schedule-toolbar-options-btn secondary-button h-8 min-h-[32px] max-h-8 px-2.5 rounded-lg text-[13px] font-medium shrink-0 flex-shrink-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap"
+				className="schedule-toolbar-options-btn secondary-button h-8 min-h-[32px] sm:h-9 sm:min-h-[36px] max-h-8 sm:max-h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-[13px] font-medium shrink-0 flex-shrink-0 inline-flex items-center justify-center gap-1.5 whitespace-nowrap transition-colors"
 				style={{ flexShrink: 0, minWidth: "fit-content", whiteSpace: "nowrap" }}
 				title="Дополнительные режимы и списки расписания"
 				aria-label="Опции расписания"

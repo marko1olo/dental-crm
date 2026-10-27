@@ -66,7 +66,7 @@ export const AppointmentFooterQuickActions: React.FC<
 				<button
 					type="button"
 					onClick={handleCheckoutClick}
-					className="primary-button appointment-action-pay h-[24px] min-h-[24px] px-2.5 py-0.5 rounded-lg border border-violet-400/50 bg-violet-500/15 hover:bg-violet-500/25 text-violet-950 dark:text-violet-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95 touch-manipulation"
+					className="appointment-action-pay h-[26px] min-h-[26px] px-2.5 py-0.5 rounded-lg border border-violet-400/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-900 dark:text-violet-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95 touch-manipulation"
 					title={`К оплате на кассе: ${pName}`}
 					aria-label={`К оплате на кассе ${pName}`}
 					data-testid={`appointment-action-pay-${a.id}`}
@@ -83,7 +83,7 @@ export const AppointmentFooterQuickActions: React.FC<
 				<button
 					type="button"
 					onClick={handleOpenVisitClick}
-					className="primary-button appointment-action-visit h-[24px] min-h-[24px] px-2.5 py-0.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal)]/15 hover:bg-[var(--teal)]/25 text-[var(--teal-dark,var(--teal))] dark:text-teal-200 text-[11px] font-bold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95 touch-manipulation"
+					className="appointment-action-visit h-[26px] min-h-[26px] px-2.5 py-0.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 text-[var(--teal-dark,var(--teal))] dark:text-teal-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95 touch-manipulation"
 					title={`Открыть приём: ${pName}`}
 					aria-label={`Открыть приём ${pName}`}
 					data-testid={`appointment-action-start-${a.id}`}

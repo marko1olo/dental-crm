@@ -1,5 +1,5 @@
 import React from "react";
-import { FlaskConical, Printer, Sparkles, X } from "lucide-react";
+import { FlaskConical, Printer, Bookmark, X } from "lucide-react";
 
 export interface DentalLabOrderModalHeaderProps {
 	patientName: string;
@@ -50,13 +50,13 @@ export function DentalLabOrderModalHeader({
 				</div>
 			</div>
 			<div className="flex items-center gap-1.5 shrink-0">
-				<button type="button" onClick={onApplyDefaults} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-amber-500/40 bg-amber-500/10 hover:bg-amber-500/20 text-amber-800 dark:text-amber-200 transition cursor-pointer max-sm:!hidden" data-testid="lab-order-apply-defaults-btn">
-					<Sparkles className="w-3.5 h-3.5 text-amber-500" /><span>Шаблон (ZrO2 A2)</span>
+				<button type="button" onClick={onApplyDefaults} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] text-[var(--ink-secondary)] hover:text-[var(--ink)] transition cursor-pointer shadow-2xs max-sm:!hidden" data-testid="lab-order-apply-defaults-btn">
+					<Bookmark className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" /><span>Шаблон (ZrO2 A2)</span>
 				</button>
-				<button type="button" onClick={onPrint} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-xl border border-[var(--line)] hover:bg-[var(--paper)] text-[var(--ink)] transition cursor-pointer max-sm:!hidden">
-					<Printer className="w-3.5 h-3.5" /><span>Печать</span>
+				<button type="button" onClick={onPrint} className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] text-[var(--ink-secondary)] hover:text-[var(--ink)] transition cursor-pointer shadow-2xs max-sm:!hidden">
+					<Printer className="w-3.5 h-3.5 text-[var(--muted)]" /><span>Печать</span>
 				</button>
-				<button type="button" onClick={onClose} data-testid="lab-order-modal-close-btn" className="w-10 h-10 min-w-[40px] min-h-[40px] sm:w-8 sm:h-8 sm:min-w-0 sm:min-h-0 rounded-xl flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition cursor-pointer" aria-label="Закрыть">
+				<button type="button" onClick={onClose} data-testid="lab-order-modal-close-btn" className="w-10 h-10 min-w-[40px] min-h-[40px] sm:w-8 sm:h-8 sm:min-w-0 sm:min-h-0 rounded-xl flex items-center justify-center bg-transparent border border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] hover:border-[var(--line)] transition cursor-pointer" aria-label="Закрыть">
 					<X className="w-5 h-5" />
 				</button>
 			</div>

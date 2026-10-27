@@ -7,3 +7,19 @@
 @import "./scheduleStyles/scheduleStatusAndSolo.css";
 @import "./scheduleStyles/scheduleModalChips.css";
 @import "./scheduleStyles/scheduleModalCtaAndSlots.css";
+
+/* Schedule Toolbar & Filter Strip Invariants */
+.schedule-filter-strip {
+	height: 36px;
+}
+
+.schedule-toolbar-primary-quick-booking-btn {
+	height: 36px;
+}
+
+/* Status buttons must NEVER be blocked or disabled */
+.quick-status-btn,
+[data-testid^="quick-status-btn-"],
+[data-testid^="modal-status-btn-"] {
+	pointer-events: auto !important;
+}

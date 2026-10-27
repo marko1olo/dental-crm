@@ -17,11 +17,13 @@ export function DateRangeQuickButtons({
 	stepScheduleDay,
 	setScheduleDateFilter,
 }: DateRangeQuickButtonsProps): ReactElement {
+	const isToday = currentDateIso === todayIso;
+
 	return (
 		<div className="schedule-date-picker-group flex items-center gap-1 shrink-0 !border-r-0 !border-none !pr-0 !mr-0">
 			<button
 				type="button"
-				className="secondary-button schedule-day-step-prev h-8 min-h-[32px] w-8 min-w-[38px] sm:min-w-[32px] inline-flex items-center justify-center cursor-pointer rounded-lg font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+				className="secondary-button schedule-day-step-prev h-8 min-h-[32px] sm:h-9 sm:min-h-[36px] w-8 min-w-[38px] sm:min-w-[36px] sm:w-9 inline-flex items-center justify-center cursor-pointer rounded-lg font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] hover:border-[var(--line-strong,var(--line))] transition-all p-0 shrink-0"
 				onClick={() => stepScheduleDay(-1)}
 				aria-label="Показать предыдущий день"
 				title="День назад"
@@ -30,7 +32,7 @@ export function DateRangeQuickButtons({
 			</button>
 			<div className="relative inline-flex items-center w-[86px] min-w-[86px] sm:w-[104px] sm:min-w-[104px]">
 				<div
-					className="schedule-date-display w-full h-8 min-h-[32px] px-2 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] transition-all flex items-center justify-center gap-1 select-none pointer-events-none"
+					className="schedule-date-display w-full h-8 min-h-[32px] sm:h-9 sm:min-h-[36px] px-2 text-[13px] font-medium rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] transition-all flex items-center justify-center gap-1 select-none pointer-events-none"
 					aria-hidden="true"
 				>
 					<Calendar size={13} className="text-[var(--muted,#64748b)] shrink-0" />
@@ -47,7 +49,7 @@ export function DateRangeQuickButtons({
 			</div>
 			<button
 				type="button"
-				className="secondary-button schedule-day-step-next h-8 min-h-[32px] w-8 min-w-[38px] sm:min-w-[32px] inline-flex items-center justify-center cursor-pointer rounded-lg font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] transition-all p-0 shrink-0"
+				className="secondary-button schedule-day-step-next h-8 min-h-[32px] sm:h-9 sm:min-h-[36px] w-8 min-w-[38px] sm:min-w-[36px] sm:w-9 inline-flex items-center justify-center cursor-pointer rounded-lg font-medium border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] hover:border-[var(--line-strong,var(--line))] transition-all p-0 shrink-0"
 				onClick={() => stepScheduleDay(1)}
 				aria-label="Показать следующий день"
 				title="День вперёд"
@@ -57,10 +59,10 @@ export function DateRangeQuickButtons({
 			<button
 				type="button"
 				onClick={() => setScheduleDateFilter(todayIso)}
-				className={`secondary-button h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-					currentDateIso === todayIso
-						? "bg-[var(--teal)]/15 text-[var(--teal)] border-[var(--teal)]/40 font-bold"
-						: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)] hover:text-[var(--teal)]"
+				className={`secondary-button h-8 min-h-[32px] sm:h-9 sm:min-h-[36px] px-2.5 rounded-lg text-xs font-semibold border border-[var(--line)] transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+					isToday
+						? "bg-[var(--paper)] text-[var(--ink)] font-bold shadow-2xs"
+						: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
 				}`}
 				title="Перейти на сегодняшнюю дату"
 				data-testid="schedule-date-today-btn"

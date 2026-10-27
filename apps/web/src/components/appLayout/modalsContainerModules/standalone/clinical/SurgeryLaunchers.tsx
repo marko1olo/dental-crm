@@ -11,6 +11,7 @@ import { EmergencyRescueModal } from "../../../../emergency/EmergencyRescueModal
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
 import { clearUrlTokens } from "../deepLinkUrl";
 import {
+	StandaloneAnesthesiaHost,
 	StandaloneConsentHost,
 	StandalonePhotoProtocolHost,
 	StandaloneSurgeryProtocolHost,
@@ -86,6 +87,10 @@ export function renderSurgeryLaunchers(props: StandaloneLaunchersProps): React.R
 				onClose={() => clearUrlTokens(["surgery", "extraction"])}
 			/>
 		);
+	}
+
+	if (s.includes("anesthesia") || h.includes("anesthesia")) {
+		return <StandaloneAnesthesiaHost onClose={() => clearUrlTokens(["anesthesia"])} />;
 	}
 
 	return null;

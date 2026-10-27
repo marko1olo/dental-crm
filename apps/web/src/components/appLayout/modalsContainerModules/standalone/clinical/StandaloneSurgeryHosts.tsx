@@ -10,10 +10,25 @@ import type React from "react";
 import { useMemo } from "react";
 import { InformedConsentModal } from "../../../../consents/InformedConsentModal";
 import { ClinicalPhotoProtocolModal } from "../../../../photography/ClinicalPhotoProtocolModal";
+import { VisitSoapEditor } from "../../../../visit/VisitSoapEditor";
 import { VisitSurgeryProtocolTab } from "../../../../visit/surgery/VisitSurgeryProtocolTab";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import StandaloneTreatmentPlanWorkspaceShell from "../StandaloneTreatmentPlanWorkspaceShell";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
+
+export const StandaloneAnesthesiaHost: React.FC<{ onClose?: () => void }> = () => {
+	return (
+		<div className="w-full min-h-screen bg-[var(--paper-soft)] p-4 sm:p-6" data-testid="anesthesia-standalone-host">
+			<div className="max-w-5xl mx-auto bg-[var(--paper)] rounded-2xl shadow-sm border border-[var(--line)] overflow-hidden">
+				<VisitSoapEditor
+					patientName="Иванов Иван Иванович"
+					doctorName="Д-р Воронов Алексей Владимирович"
+					activeTooth={16}
+				/>
+			</div>
+		</div>
+	);
+};
 
 function MissingPatientGuard({ testId, onClose, message }: { testId: string; onClose: () => void; message: string }): React.ReactElement {
 	return (

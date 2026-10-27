@@ -71,6 +71,8 @@ export const VisitSoapEditorView: React.FC<VisitSoapEditorProps> = (props) => {
 					onToggleIcd10Selector={e.setIsIcd10SelectorOpen}
 					onApplyExpressProtocol={e.handleApplyExpressProtocol}
 					onOpenOrthoWidget={() => setIsOrthoWidgetOpen(true)}
+					patientId={props.patientId}
+					visitId={props.visitId}
 				/>
 			) : (
 				<SoapFullTextView

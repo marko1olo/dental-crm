@@ -53,10 +53,10 @@ export function DentalLabOrthopedicConstructionGrid({
 									setConstructionType(c.id);
 									if (isJawWideConstruction(c.id) && !jawScope) setJawScope?.("upper");
 								}}
-								className={`min-h-[44px] sm:min-h-[36px] p-2.5 rounded-xl border text-left text-xs transition cursor-pointer flex flex-col justify-center ${
+								className={`min-h-[44px] sm:min-h-[38px] p-2.5 rounded-xl border text-left text-xs transition cursor-pointer flex flex-col justify-center ${
 									isSel
-										? "bg-teal-500/10 border-teal-500 text-teal-900 dark:text-teal-200 font-bold ring-1 ring-teal-500 shadow-2xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										? "bg-teal-500/10 border-[var(--teal,#0d9488)] text-teal-900 dark:text-teal-200 font-bold ring-1 ring-[var(--teal,#0d9488)] shadow-2xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`construction-type-${c.id}`}
 							>
@@ -81,10 +81,10 @@ export function DentalLabOrthopedicConstructionGrid({
 								key={m.id}
 								type="button"
 								onClick={() => setMaterial(m.id)}
-								className={`min-h-[44px] sm:min-h-[36px] p-2.5 rounded-xl border text-left text-xs transition cursor-pointer flex flex-col justify-center ${
+								className={`min-h-[44px] sm:min-h-[38px] p-2.5 rounded-xl border text-left text-xs transition cursor-pointer flex flex-col justify-center ${
 									isSel
-										? "bg-amber-500/10 border-amber-500 text-amber-900 dark:text-amber-200 font-bold ring-1 ring-amber-500 shadow-2xs"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										? "bg-teal-500/10 border-[var(--teal,#0d9488)] text-teal-900 dark:text-teal-200 font-bold ring-1 ring-[var(--teal,#0d9488)] shadow-2xs"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`material-type-${m.id}`}
 							>

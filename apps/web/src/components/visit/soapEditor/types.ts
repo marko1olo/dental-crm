@@ -94,6 +94,16 @@ export interface SoapFieldsEditorProps {
 	onToggleIcd10Selector: (open: boolean | ((prev: boolean) => boolean)) => void;
 	onApplyExpressProtocol: (preset: ChairsideSmartProtocolKey) => void;
 	onOpenOrthoWidget?: (() => void) | undefined;
+	patientId?: string | undefined;
+	visitId?: string | undefined;
+	patientWeightKg?: number | undefined;
+	hasCardiovascularRisk?: boolean | undefined;
+	hasLidocaineAllergy?: boolean | undefined;
+	hasArticaineAllergy?: boolean | undefined;
+	hasSulfiteAllergy?: boolean | undefined;
+	hasBronchialAsthma?: boolean | undefined;
+	hasPenicillinAllergy?: boolean | undefined;
+	hasLatexAllergy?: boolean | undefined;
 }
 
 export interface SoapFullTextViewProps {

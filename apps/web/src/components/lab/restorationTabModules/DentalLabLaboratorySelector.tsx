@@ -78,7 +78,7 @@ export function DentalLabLaboratorySelector({
 					data-testid="lab-type-external-btn"
 				>
 					<div className="flex items-center gap-2">
-						<Truck className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
+						<Truck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
 						<div>
 							<div className="leading-tight">Внешняя лаборатория</div>
 							<div className="text-[10px] text-[var(--muted)] font-normal">Партнерская зуботехническая сеть</div>
@@ -102,8 +102,8 @@ export function DentalLabLaboratorySelector({
 								}}
 								className={`min-h-[36px] px-2.5 py-1 rounded-lg text-xs font-semibold border transition cursor-pointer ${
 									isSelected
-										? "bg-amber-500/15 border-amber-500 text-amber-900 dark:text-amber-100 font-bold ring-1 ring-amber-500/40"
-										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+										? "bg-teal-500/10 border-[var(--teal,#0d9488)] text-teal-900 dark:text-teal-200 font-bold ring-1 ring-[var(--teal,#0d9488)]"
+										: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink-secondary)] hover:border-[var(--line-strong)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`lab-partner-${partner.id}`}
 							>

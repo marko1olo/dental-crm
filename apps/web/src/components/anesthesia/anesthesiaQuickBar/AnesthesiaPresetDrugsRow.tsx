@@ -30,7 +30,7 @@ export function AnesthesiaPresetDrugsRow({
 				<button
 					type="button"
 					onClick={() => setTechniqueId("infiltration")}
-					className={`px-2.5 py-1 min-h-[36px] h-9 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+					className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 						techniqueId === "infiltration" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 					title="Инфильтрационная анестезия"
@@ -40,7 +40,7 @@ export function AnesthesiaPresetDrugsRow({
 				<button
 					type="button"
 					onClick={() => setTechniqueId("mandibular_torus")}
-					className={`px-2.5 py-1 min-h-[36px] h-9 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+					className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 						techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 					title="Проводниковая анестезия"
@@ -65,14 +65,14 @@ export function AnesthesiaPresetDrugsRow({
 						key={preset.testId}
 						type="button"
 						onClick={() => onApplyDirect(preset.drugId, preset.count, preset.defaultTechnique ?? techniqueId)}
-						className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[36px] h-9 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${borderClass}`}
+						className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-11 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${borderClass}`}
 						title={`${preset.fullLabelRu} • ${preset.clinicalScopeRu}`}
 						data-testid={testIdAttr}
 					>
 						{preset.drugId === "none" ? (
-							<CheckCircle2 size={13} className="text-slate-500 shrink-0" />
+							<CheckCircle2 size={14} className="text-slate-500 shrink-0" />
 						) : (
-							<Syringe size={13} className={isCardio ? "text-amber-600 shrink-0" : "text-teal-600 shrink-0"} />
+							<Syringe size={14} className={isCardio ? "text-amber-600 shrink-0" : "text-teal-600 shrink-0"} />
 						)}
 						<span>{preset.shortLabelRu}</span>
 						<span className="sr-only">{preset.srOnlyText}</span>

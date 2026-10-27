@@ -1,5 +1,5 @@
 import { Copy, Plus } from "lucide-react";
-import React from "react";
+import type React from "react";
 
 export interface QuickBookingDrawerFooterProps {
   isSubmitting: boolean;
@@ -28,14 +28,14 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className={`primary-button w-full min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] ${
+        className={`primary-button w-full min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 ${
           hasCollision
-            ? "!bg-amber-600 hover:!bg-amber-700 !border-amber-600"
-            : "!bg-[var(--teal-dark)] text-white hover:brightness-110"
+            ? "!bg-amber-600 hover:!bg-amber-700 !border-amber-600 text-white"
+            : "!bg-[var(--teal-dark)] text-white hover:brightness-110 shadow-xs"
         }`}
       >
-        <Plus size={16} className="shrink-0" />
-        <span className="whitespace-nowrap">
+        <Plus size={16} className="shrink-0 stroke-[2.5]" />
+        <span className="whitespace-nowrap font-bold">
           {isSubmitting ? (
             "Сохраняю запись…"
           ) : hasCollision ? (
@@ -43,7 +43,7 @@ export function QuickBookingDrawerFooter({
           ) : (
             <>
               Записать на приём
-              <span className="hidden sm:inline"> (Создать запись Ctrl+Enter)</span>
+              <span className="hidden sm:inline font-normal opacity-90"> (Создать запись Ctrl+Enter)</span>
             </>
           )}
         </span>
@@ -55,7 +55,7 @@ export function QuickBookingDrawerFooter({
           onClick={onRequestClose}
           aria-busy={isSubmitting}
           data-testid="quick-booking-cancel-btn"
-          className="secondary-button min-h-[44px] px-2.5 sm:px-3 bg-[var(--paper)] text-[var(--ink)] text-xs sm:text-sm shrink-0"
+          className="secondary-button min-h-[44px] px-2.5 sm:px-3 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs sm:text-sm shrink-0"
         >
           Отмена (Esc)
         </button>
@@ -76,7 +76,7 @@ export function QuickBookingDrawerFooter({
             type="button"
             onClick={onCopyConfirmation}
             data-testid="quick-booking-copy-confirmation-btn"
-            className="secondary-button min-h-[44px] px-2.5 sm:px-3 inline-flex items-center gap-1.5 text-xs shrink-0"
+            className="secondary-button min-h-[44px] px-2.5 sm:px-3 inline-flex items-center gap-1.5 text-xs shrink-0 border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
             title="Скопировать детали записи для отправки пациенту в WhatsApp/Telegram"
           >
             <Copy size={14} className="text-[var(--teal)] shrink-0" />

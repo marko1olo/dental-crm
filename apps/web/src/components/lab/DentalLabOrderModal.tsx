@@ -53,7 +53,7 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 					/>
 					{form.activeTab === "main" && (
 						<div className="space-y-4">
-							<DentalLabOrderModalPresetsBar onSelectPreset={form.handleApplyExpressPreset} />
+							<DentalLabOrderModalPresetsBar onSelectPreset={form.handleApplyExpressPreset} selectedMaterial={form.material} selectedConstruction={form.constructionType} />
 							<DentalLabRestorationTab
 								selectedTeeth={form.selectedTeeth} setSelectedTeeth={form.setSelectedTeeth}
 								toggleTooth={form.toggleTooth} selectQuadrant={form.selectQuadrant}

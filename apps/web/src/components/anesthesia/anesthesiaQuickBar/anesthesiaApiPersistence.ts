@@ -20,21 +20,10 @@ export interface PersistAnesthesiaLogParams {
 }
 
 export function resolveDrugMeta(drugId: AnestheticDrugId) {
-	if (drugId === "septanest_1_100k") {
-		return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Септанест с адреналином 1:100 000" };
-	}
-	if (drugId === "articaine_1_100k") {
-		return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С форте 1:100 000" };
-	}
-	if (drugId === "articaine_1_200k") {
-		return { drugEnum: "articaine" as const, vasoEnum: "1:200000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С 1:200 000" };
-	}
-	if (drugId === "mepivacaine_plain") {
-		return { drugEnum: "mepivacaine" as const, vasoEnum: "none" as const, concentrationPct: 3.0, brandName: "Скандонест 3%" };
-	}
-	if (drugId === "lidocaine_1_100k") {
-		return { drugEnum: "lidocaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 2.0, brandName: "Лидокаин 2% с адреналином" };
-	}
+	if (drugId === "septanest_1_100k") return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Септанест с адреналином 1:100 000" };
+	if (drugId === "articaine_1_100k") return { drugEnum: "articaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С форте 1:100 000" };
+	if (drugId === "mepivacaine_plain") return { drugEnum: "mepivacaine" as const, vasoEnum: "none" as const, concentrationPct: 3.0, brandName: "Скандонест 3%" };
+	if (drugId === "lidocaine_1_100k") return { drugEnum: "lidocaine" as const, vasoEnum: "1:100000" as const, concentrationPct: 2.0, brandName: "Лидокаин 2% с адреналином" };
 	return { drugEnum: "articaine" as const, vasoEnum: "1:200000" as const, concentrationPct: 4.0, brandName: "Ультракаин Д-С 1:200 000" };
 }
 
@@ -48,9 +37,7 @@ export function persistAnesthesiaLog(params: PersistAnesthesiaLogParams): void {
 	if (!params.patientId) return;
 	const { drugEnum, vasoEnum, concentrationPct, brandName } = resolveDrugMeta(params.drugId);
 	const techniqueEnum = resolveTechniqueEnum(params.techniqueId);
-	const toothNum = typeof params.targetToothNumberFdi === "number"
-		? params.targetToothNumberFdi
-		: parseInt(String(params.targetToothNumberFdi || ""), 10);
+	const toothNum = typeof params.targetToothNumberFdi === "number" ? params.targetToothNumberFdi : parseInt(String(params.targetToothNumberFdi || ""), 10);
 	const toothNumbers = Number.isInteger(toothNum) && toothNum > 0 ? [toothNum] : [];
 	const carpuleVolumeMl = params.drugId === "mepivacaine_plain" ? 1.8 : 1.7;
 
@@ -100,6 +87,8 @@ export async function postQuickCarpuleWriteoff(params: {
 	patientId?: string | null | undefined;
 	count: number;
 	drugId?: string | undefined;
+	needleName?: string | undefined;
+	needlesCount?: number | undefined;
 }): Promise<void> {
 	try {
 		await fetch("/api/inventory/quick-writeoff-carpules", {
@@ -110,7 +99,9 @@ export async function postQuickCarpuleWriteoff(params: {
 				patientId: params.patientId || null,
 				carpulesCount: params.count,
 				drugName: params.drugId || "Ультракаин Д-С",
-				notes: `Списание ${params.count} карпул у кресла`,
+				needleName: params.needleName,
+				needlesCount: params.needlesCount ?? (params.count > 0 ? 1 : 0),
+				notes: `Списание ${params.count} карпул и иглы (${params.needleName || "30G"}) у кресла`,
 			}),
 		});
 	} catch (err) {

@@ -8,3 +8,4 @@ export * from "./SoapFieldsEditor";
 export * from "./SoapFullTextView";
 export * from "./SoapToolbar";
 export * from "./VisitSoapEditorView";
+export * from "./VisitAnesthesiaSection";

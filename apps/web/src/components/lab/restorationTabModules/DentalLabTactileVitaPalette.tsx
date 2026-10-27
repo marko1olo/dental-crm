@@ -74,8 +74,8 @@ export function DentalLabTactileVitaPalette({
 
 			{/* Группа отбеливания: Bleach 1..4 (BL1..BL4) */}
 			<div className="pt-2 border-t border-[var(--line)] flex flex-wrap items-center gap-2">
-				<div className="flex items-center gap-1.5 text-[11px] font-bold text-amber-700 dark:text-amber-300 w-24 shrink-0">
-					<Sparkles className="w-3.5 h-3.5" />
+				<div className="flex items-center gap-1.5 text-[11px] font-semibold text-[var(--ink-secondary)] w-24 shrink-0">
+					<Sparkles className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
 					<span>Отбеливание:</span>
 				</div>
 				<div className="flex flex-wrap items-center gap-1.5 flex-1">
@@ -88,8 +88,8 @@ export function DentalLabTactileVitaPalette({
 								aria-label={`Выбрать ${b.label}`} title={`${b.label}: ${swatch?.desc || ""}`}
 								className={`min-h-[44px] min-w-[70px] h-11 px-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs ${
 									isSelected
-										? "bg-amber-600 text-white ring-2 ring-amber-500 ring-offset-1 font-extrabold shadow-xs"
-										: "bg-[var(--paper)] text-[var(--ink)] border border-amber-500/30 hover:bg-amber-500/10"
+										? "bg-teal-700 text-white ring-2 ring-teal-500 ring-offset-1 font-extrabold shadow-xs"
+										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`tactile-shade-${b.code}`}
 							>

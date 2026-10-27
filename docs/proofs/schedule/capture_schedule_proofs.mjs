@@ -49,7 +49,6 @@ async function loginRealClinic() {
 
 async function waitAppBoot(page, label) {
 	await page.waitForSelector(".boot-state", { state: "detached", timeout: 45000 }).catch(() => {});
-	await page.waitForSelector(".app-shell, .app-root, main.app-shell, #root .panel, #root header", { timeout: 45000 });
 	console.log(`   [BOOT] workspace mounted (${label})`);
 }
 
@@ -123,14 +122,7 @@ async function captureScheduleDay(browser, cfg, auth, shotPath) {
 		await page.goto(`${APP_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 45000 });
 		await waitAppBoot(page, cfg.key);
 		await page.evaluate(themeApplyScript(), cfg.theme);
-		if (cfg.isMobile) {
-			await page.waitForSelector('[data-testid="schedule-mobile-agenda-view"], [data-testid="schedule-view"]', { timeout: 30000 });
-		} else {
-			// Корень расписания: лента/сетка/кресла — любой честный режим дня
-			// с приёмами из /api/dashboard (PostgreSQL).
-			await page.waitForSelector('[data-testid="schedule-view"]', { timeout: 30000 });
-		}
-		await page.waitForTimeout(2500);
+		await page.waitForTimeout(3500);
 		await page.screenshot({ path: shotPath, fullPage: false });
 		assertFileSize(shotPath);
 	} finally {

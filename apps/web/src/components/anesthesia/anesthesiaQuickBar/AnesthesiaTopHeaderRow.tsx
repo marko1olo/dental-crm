@@ -16,6 +16,8 @@ export interface AnesthesiaTopHeaderRowProps {
 	readonly hasArticaineAllergy?: boolean | undefined;
 	readonly hasSulfiteAllergy?: boolean | undefined;
 	readonly hasBronchialAsthma?: boolean | undefined;
+	readonly hasPenicillinAllergy?: boolean | undefined;
+	readonly hasLatexAllergy?: boolean | undefined;
 	readonly isCardioRisk: boolean;
 	readonly techniqueId: InjectionTechniqueId;
 	readonly setTechniqueId: (t: InjectionTechniqueId) => void;
@@ -30,11 +32,13 @@ export function AnesthesiaTopHeaderRow({
 	hasArticaineAllergy,
 	hasSulfiteAllergy,
 	hasBronchialAsthma,
+	hasPenicillinAllergy,
+	hasLatexAllergy,
 	isCardioRisk,
 	techniqueId: _techniqueId,
 	setTechniqueId: _setTechniqueId,
 	onOpenEmergencyProtocol,
-	disabled = false,
+	disabled: _disabled = false,
 }: AnesthesiaTopHeaderRowProps) {
 	return (
 		<div className="flex items-center justify-between gap-2 flex-wrap min-w-0" data-testid="anesthesia-top-header-row">
@@ -50,6 +54,8 @@ export function AnesthesiaTopHeaderRow({
 					hasArticaineAllergy={hasArticaineAllergy}
 					hasSulfiteAllergy={hasSulfiteAllergy}
 					hasBronchialAsthma={hasBronchialAsthma}
+					hasPenicillinAllergy={hasPenicillinAllergy}
+					hasLatexAllergy={hasLatexAllergy}
 					isCardioRisk={isCardioRisk}
 				/>
 			</div>

@@ -10,15 +10,17 @@ export function QuickDurationPresetsRow({
 }) {
   return (
     <div className="sm:col-span-2">
-      <span className="text-xs font-semibold text-[var(--muted)] block mb-1">
-        Длительность: {durationMinutes} мин
-      </span>
+      <div className="flex items-center justify-between mb-1">
+        <span className="text-xs font-semibold text-[var(--muted)]">
+          Длительность: <strong className="text-[var(--ink)]">{durationMinutes} мин</strong>
+        </span>
+      </div>
       <div data-testid="quick-booking-duration-presets" className="mt-1">
         <span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
           Быстрый выбор длительности:
         </span>
         <div
-          className="dente-segmented-bar w-full flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto"
+          className="dente-segmented-bar w-full flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto gap-1"
           role="group"
           aria-label="Быстрый выбор длительности"
         >
@@ -31,10 +33,10 @@ export function QuickDurationPresetsRow({
                 key={preset.minutes}
                 type="button"
                 onClick={() => handleSelectDuration(preset.minutes)}
-                className={`dente-segmented-item flex-1 min-w-0 !h-9 sm:!h-9 !min-h-[36px] px-2 rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
+                className={`dente-segmented-item flex-1 min-w-[54px] min-h-[44px] sm:min-h-[36px] sm:h-9 px-2 rounded-lg text-xs font-medium transition-all inline-flex flex-col sm:flex-row items-center justify-center gap-0.5 sm:gap-1.5 cursor-pointer select-none active:scale-95 border ${
                   isSelected
-                    ? "active !bg-[var(--paper)] !text-[var(--teal)] !border-[var(--teal)] shadow-xs font-semibold"
-                    : "!text-[var(--muted)] hover:!text-[var(--ink)]"
+                    ? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line-strong,var(--line))] shadow-2xs font-semibold"
+                    : "border-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
                 }`}
                 data-testid={`duration-preset-${preset.minutes}`}
                 data-active={isSelected}
@@ -45,11 +47,11 @@ export function QuickDurationPresetsRow({
                   <span
                     className={`text-[10px] whitespace-nowrap ${
                       isSelected
-                        ? "text-[var(--teal)] opacity-90 font-medium"
-                        : "text-[var(--muted)]"
+                        ? "text-[var(--muted)] font-normal"
+                        : "text-[var(--muted)] opacity-80"
                     }`}
                   >
-                    · {displayHint}
+                    <span className="hidden sm:inline">· </span>{displayHint}
                   </span>
                 ) : null}
               </button>

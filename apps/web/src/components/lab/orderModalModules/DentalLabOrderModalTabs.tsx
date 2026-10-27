@@ -30,7 +30,7 @@ export function DentalLabOrderModalTabs({ activeTab, setActiveTab }: DentalLabOr
 						className={`min-h-[44px] sm:min-h-[34px] h-11 sm:h-[34px] px-3 rounded-xl sm:rounded-lg flex items-center gap-1.5 font-bold transition cursor-pointer ${
 							isActive
 								? "bg-[var(--paper)] text-[var(--primary)] border border-[var(--line)] shadow-2xs"
-								: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50"
+								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]/50 border border-transparent"
 						}`}
 					>
 						<Icon className="w-4 h-4 shrink-0" />
