@@ -1,8 +1,8 @@
-import { generatePayrollT51Csv, type DoctorPayrollResult } from "@dental/shared/payroll";
+import { generateDoctorPayrollCsv, type DoctorPayrollResult } from "@dental/shared/payroll";
 import { generateDoctorPayslipHtml } from "../../../components/payroll/staffPayrollEngine";
 
 export function exportDoctorPayrollCsv(calculationResult: DoctorPayrollResult, doctorName: string, periodStart: string, periodEnd: string): void {
-	const csv = generatePayrollT51Csv([calculationResult]);
+	const csv = generateDoctorPayrollCsv([calculationResult]);
 	const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
 	const url = URL.createObjectURL(blob);
 	const link = document.createElement("a");
