@@ -1,0 +1,42 @@
+import type React from "react";
+import type { WaitlistUrgency } from "./waitlistCancellationEngine";
+import type { PreferredTimeOfDay, WaitlistPriority } from "./waitlistMatchScoring";
+
+export interface WaitlistQuickAddFormProps {
+  readonly isOpen?: boolean;
+  readonly onClose?: () => void;
+  readonly isSubmitting: boolean;
+  readonly selectedPatientId: string;
+  readonly onSelectPatientId?: (id: string) => void;
+  readonly setSelectedPatientId?: (id: string) => void;
+  readonly quickNewPatientMode?: boolean;
+  readonly onToggleQuickNewPatientMode?: (mode: boolean) => void;
+  readonly quickFullName?: string;
+  readonly onChangeQuickFullName?: (name: string) => void;
+  readonly quickPhone?: string;
+  readonly onChangeQuickPhone?: (phone: string) => void;
+  readonly preferredDoctorId?: string;
+  readonly onChangePreferredDoctorId?: (id: string) => void;
+  readonly setPreferredDoctorId?: (id: string) => void;
+  readonly addUrgency?: WaitlistUrgency;
+  readonly onChangeAddUrgency?: (urgency: WaitlistUrgency) => void;
+  readonly priorityLevel?: WaitlistPriority;
+  readonly setPriorityLevel?: (level: WaitlistPriority) => void;
+  readonly addPreferredTime?: string;
+  readonly onChangeAddPreferredTime?: (time: string) => void;
+  readonly treatmentCategory?: string;
+  readonly setTreatmentCategory?: (cat: string) => void;
+  readonly preferredDays?: string[];
+  readonly setPreferredDays?: (days: string[]) => void;
+  readonly preferredTimeOfDay?: PreferredTimeOfDay[];
+  readonly setPreferredTimeOfDay?: (times: PreferredTimeOfDay[]) => void;
+  readonly expiryDays?: number | null;
+  readonly setExpiryDays?: (days: number | null) => void;
+  readonly customExpiryDate?: string;
+  readonly setCustomExpiryDate?: (date: string) => void;
+  readonly notes?: string;
+  readonly setNotes?: (notes: string) => void;
+  readonly onSubmit: (e: React.FormEvent) => void;
+  readonly patientsList: readonly any[];
+  readonly doctors: readonly any[];
+}
