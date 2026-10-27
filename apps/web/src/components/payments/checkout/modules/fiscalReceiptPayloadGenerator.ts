@@ -72,3 +72,5 @@ export function generateFiscalReceiptPayload(
 		offlineBuffered: options?.offlineBuffered ?? false,
 	};
 }
+
+export { generateFiscalReceiptPayload as generate54FzFiscalPayload };

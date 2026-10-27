@@ -35,7 +35,7 @@ export function FinanceCashboxModal({
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 animate-in fade-in duration-150"
+			className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex flex-col justify-end sm:items-center sm:justify-center p-0 sm:p-4 animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Окно кассы и расчетов с пациентами"
@@ -44,8 +44,9 @@ export function FinanceCashboxModal({
 				if (e.target === e.currentTarget) onClose();
 			}}
 		>
-			<div className="w-full max-w-5xl h-[92vh] max-h-[920px] rounded-2xl overflow-hidden shadow-2xl border border-[var(--line)] flex flex-col bg-[var(--paper)]">
-				<header className="flex items-center justify-between px-4 py-2.5 border-b border-[var(--line)] shrink-0 bg-[var(--paper-soft)]">
+			<div className="w-full max-w-5xl h-[92dvh] sm:h-[92vh] max-h-[920px] rounded-t-[24px] sm:rounded-2xl overflow-hidden shadow-2xl border-t sm:border border-[var(--line)] flex flex-col bg-[var(--paper)]">
+				<header className="relative flex items-center justify-between px-4 py-3 sm:py-2.5 border-b border-[var(--line)] shrink-0 bg-[var(--paper-soft)]">
+					<div className="sm:hidden absolute top-1.5 left-1/2 -translate-x-1/2 w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)]" aria-hidden="true" />
 					<div className="flex items-center gap-2">
 						<Banknote className="w-4 h-4 text-teal-600 dark:text-teal-400" />
 						<h2 className="text-sm font-bold text-[var(--ink)]">

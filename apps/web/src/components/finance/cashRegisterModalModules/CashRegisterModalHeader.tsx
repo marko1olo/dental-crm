@@ -24,7 +24,8 @@ export const CashRegisterModalHeader: React.FC<
 	setActiveTab,
 	onClose,
 }) => (
-	<div className="p-4 sm:p-5 border-b border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)] shrink-0">
+	<div className="relative p-4 sm:p-5 border-b border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)] shrink-0">
+		<div className="sm:hidden absolute top-1.5 left-1/2 -translate-x-1/2 w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)]" aria-hidden="true" />
 		<div className="flex items-center gap-3">
 			<div
 				className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isShiftActive ? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}
