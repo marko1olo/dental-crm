@@ -50,7 +50,7 @@ export function VisitView(rawProps?: Partial<VisitViewProps>) {
 		);
 	}
 
-	if (s.isMobile) {
+	if (s.isMobile && s.visitSubViewTab !== "diagnostics") {
 		return <VisitViewMobileLayout s={s} />;
 	}
 

@@ -16,7 +16,7 @@ export function VisitDiagnosticsTabView(props?: VisitDiagnosticsTabProps) {
 		<div
 			data-testid="visit-diagnostics-tab"
 			aria-label="Снимки и диагностика"
-			className="visit-diagnostics-tab bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] rounded-xl p-2 sm:p-2.5 flex flex-col gap-2 shadow-2xs"
+			className="visit-diagnostics-tab xray-workspace bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] rounded-xl p-2 sm:p-2.5 flex flex-col gap-2 shadow-2xs"
 		>
 			<div data-testid="visit-diagnostics-header" className="sr-only">
 				<span>Снимки и диагностика</span>

@@ -63,9 +63,9 @@ export function VisiographCockpitPresets({
 				type="button"
 				onClick={onToggleStudio}
 				title="Инструменты анализа снимка (PACS)"
-				className={isStudioMode ? "diag-btn-teal" : "diag-btn"}
+				className={isStudioMode ? "diag-btn active" : "diag-btn"}
 			>
-				<Sparkles size={14} className={isStudioMode ? "text-white" : "text-[var(--teal)]"} />
+				<Sparkles size={14} className="text-[var(--teal)]" />
 				<span>{isStudioMode ? "Закрыть PACS" : "Инструменты"}</span>
 			</button>
 		</div>

@@ -1,6 +1,6 @@
 /**
- * VisiographExportProtocolText.ts
- * Builds clinical protocol text for patient visit medical record (Form 043/u).
+ * VisiographExportProtocolText.ts — Протокол лучевого обследования в карту пациента (Форма 043/у).
+ * Честная оптическая плотность для 2D визиографии, HU строго для 3D КЛКТ. Мандат 8b (<=120 строк).
  */
 
 import { VISIOGRAPH_WINDOW_PRESETS } from "./VisiographWindowPresets";
@@ -27,9 +27,10 @@ export function buildForm043ProtocolText(payload: ClinicalSnapshotPayload): stri
 		if (expParts.length > 0) lines.push(`Параметры экспозиции: ${expParts.join(", ")}`);
 	}
 
-	const preset = payload.preset ?? (payload.viewKind?.startsWith("mpr") ? VISIOGRAPH_WINDOW_PRESETS.bone : undefined);
+	const is3D = Boolean(payload.viewKind?.startsWith("mpr") || payload.viewKind === "cbct");
+	const preset = payload.preset ?? (is3D ? VISIOGRAPH_WINDOW_PRESETS.bone : undefined);
 	if (preset) {
-		lines.push(`Режим контрастирования (HU): ${preset.label} (Окно WW: ${preset.windowWidth} HU, Уровень WL: ${preset.windowCenter} HU)`);
+		lines.push(`Режим контрастирования: ${preset.label} (Окно WW: ${preset.windowWidth}, Уровень WL: ${preset.windowCenter})`);
 	}
 
 	if (payload.contrast !== undefined || payload.brightness !== undefined || payload.gamma !== undefined || payload.sharpness !== undefined) {
@@ -59,7 +60,14 @@ export function buildForm043ProtocolText(payload: ClinicalSnapshotPayload): stri
 	}
 
 	if (payload.radiologicalFinding) lines.push(`Рентгенологическая картина: ${payload.radiologicalFinding}`);
-	if (payload.boneDensity) lines.push(`Плотность костной ткани (Misch): ${payload.boneDensity.classification} (среднее значение: ${Math.round(payload.boneDensity.averageHU ?? 0)} HU)`);
+	if (payload.boneDensity) {
+		if (payload.boneDensity.averageHU !== undefined) {
+			lines.push(`Плотность костной ткани (Misch): ${payload.boneDensity.classification} (среднее значение: ${Math.round(payload.boneDensity.averageHU)} HU)`);
+		} else {
+			const densityVal = payload.boneDensity.opticalDensity ?? 0;
+			lines.push(`Оптическая плотность костной ткани: ${payload.boneDensity.classification} (интенсивность: ${Math.round(densityVal)})`);
+		}
+	}
 	if (payload.implantDetails) lines.push(`Параметры планируемого имплантата: Ø ${(payload.implantDetails.diameterMm ?? 0).toFixed(1)} мм × L ${(payload.implantDetails.lengthMm ?? 0).toFixed(1)} мм${payload.implantDetails.system ? ` (Система: ${payload.implantDetails.system})` : ""}`);
 
 	if (payload.nerveDistanceMm !== undefined && Number.isFinite(payload.nerveDistanceMm)) {

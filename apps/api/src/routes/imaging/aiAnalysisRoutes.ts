@@ -71,7 +71,7 @@ export async function registerAiAnalysisRoutes(app: FastifyInstance) {
 		}
 
 		if (!imageBase64) {
-			return reply.code(400).send({ error: "Missing imageBase64 or valid studyId" });
+			return reply.code(400).send({ error: "Missing imageBase64", message: "Missing imageBase64 or valid studyId" });
 		}
 
 		try {

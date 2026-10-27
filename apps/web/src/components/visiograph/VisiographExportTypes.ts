@@ -38,7 +38,7 @@ export interface ClinicalSnapshotPayload {
 	toothCode?: string | undefined;
 	preset?: VisiographWindowPreset | undefined;
 	nerveDistanceMm?: number | undefined;
-	boneDensity?: { averageHU: number; classification: string } | undefined;
+	boneDensity?: { averageHU?: number; opticalDensity?: number; classification: string } | undefined;
 	implantDetails?: { diameterMm: number; lengthMm: number; system?: string | undefined } | undefined;
 	aiProtocolLog?: string | undefined;
 	clinicalNote?: string | undefined;

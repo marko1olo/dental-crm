@@ -35,7 +35,10 @@ export function DiagnosticsRvgSection({
 	onOpenRadiologyReferral,
 }: DiagnosticsRvgSectionProps) {
 	return (
-		<div className={isVisible ? "flex flex-col gap-2" : "hidden"}>
+		<div
+			className={isVisible ? "flex flex-col gap-2 visiograph-viewer" : "hidden"}
+			data-testid="visiograph-viewer"
+		>
 			{/* Модуль визиографа и рентген-анализа ИИ */}
 			<VisiographAnalyzer
 				patientId={activePatientId}

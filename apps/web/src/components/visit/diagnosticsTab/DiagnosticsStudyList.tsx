@@ -35,7 +35,7 @@ export function DiagnosticsStudyList({
 
 	return (
 		<div
-			data-testid="visit-diagnostics-attached-scans-gallery"
+			data-testid="xray-gallery"
 			className="px-2 py-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] shadow-2xs flex items-center gap-2 overflow-hidden h-[54px] min-h-[50px] max-h-[56px]"
 		>
 			<div className="flex items-center gap-1.5 shrink-0 pr-2 border-r border-[var(--line-subtle)] select-none">

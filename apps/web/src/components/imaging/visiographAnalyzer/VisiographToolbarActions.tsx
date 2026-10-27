@@ -52,17 +52,17 @@ export const VisiographToolbarActions: React.FC<Props> = ({
 				data-testid="btn-run-visiograph-ai"
 				onClick={onRunAiAnalysis}
 				disabled={isAnalyzing}
-				className="primary-button shrink-0"
+				className="secondary-button shrink-0"
 				style={getAiButtonStyle(isAnalyzing)}
 			>
 				{isAnalyzing ? (
 					<>
-						<Loader2 size={13} className="animate-spin" />
+						<Loader2 size={13} className="animate-spin text-[var(--teal)]" />
 						<span>Анализ...</span>
 					</>
 				) : (
 					<>
-						<Sparkles size={13} />
+						<Sparkles size={13} className="text-[var(--teal)]" />
 						<span>{hasAiReport ? "Перезапуск ИИ" : "ИИ-анализ"}</span>
 					</>
 				)}
