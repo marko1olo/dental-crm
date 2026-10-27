@@ -7,6 +7,6 @@ export * from "./types";
 export * from "./constants";
 export * from "./RosterHeaderToolbar";
 export * from "./RosterGridMatrix";
-export * from "./ShiftEditorModal";
+export { ShiftEditorModal, type ShiftPresetType } from "./ShiftEditorModal";
 export * from "./RosterStatsBar";
 export * from "./DoctorRosterMatrix";

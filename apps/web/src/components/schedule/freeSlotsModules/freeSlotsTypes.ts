@@ -3,6 +3,7 @@
  */
 
 import type { Appointment } from "@dental/shared";
+export type { Appointment };
 
 export type TimeOfDayFilter = "all" | "morning" | "day" | "evening";
 

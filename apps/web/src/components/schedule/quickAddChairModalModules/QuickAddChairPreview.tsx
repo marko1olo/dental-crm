@@ -1,5 +1,5 @@
 import type React from "react";
-import { DentalChairUnit } from "../icons/DentalIcons";
+import { DentalChairUnit } from "../../icons/DentalIcons";
 import { CHAIR_COLOR_PRESETS } from "./chairPresets";
 
 interface QuickAddChairPreviewProps {

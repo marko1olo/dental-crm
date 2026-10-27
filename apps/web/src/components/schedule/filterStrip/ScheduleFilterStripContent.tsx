@@ -58,7 +58,7 @@ export function ScheduleFilterStripContent(props: ScheduleFilterStripProps): Rea
 				<QuickAddChairModal
 					isOpen={isAddChairModalOpen}
 					onClose={() => setIsAddChairModalOpen(false)}
-					existingChairsCount={props.chairs.length || displayChairs.length}
+					existingChairsCount={props.chairs?.length || displayChairs.length}
 					{...(props.onAddChair ? { onAddChair: props.onAddChair } : {})}
 				/>
 			)}

@@ -3,7 +3,7 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  padding: 12px 10px calc(56px + 68px + env(safe-area-inset-bottom, 0px)) 10px;
+  padding: 12px 10px calc(56px + 68px + 24px + env(safe-area-inset-bottom, 0px)) 10px;
   width: 100%;
   box-sizing: border-box;
 }

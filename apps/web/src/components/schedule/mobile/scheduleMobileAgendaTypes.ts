@@ -70,6 +70,8 @@ export const resolveMobileAllergyBadge = (appt: Appointment, pat: any): string |
   return null;
 };
 
+export type StatusTheme = ReturnType<typeof getStatusTheme>;
+
 export const getStatusTheme = (status: Appointment["status"], labels: Record<Appointment["status"], string>) => {
   switch (status) {
     case "in_treatment":
