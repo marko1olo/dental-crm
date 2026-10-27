@@ -27,6 +27,7 @@
 @import "./modules/workspace-continuity.css";
 @import "./clinic-onboarding.css";
 @import "./modules/buttons.css";
+@import "./canonicalButtons.css";
 @import "./modules/shift-dashboard.css";
 @import "./modules/imaging-viewer.css";
 @import "./modules/imaging-mpr.css";

@@ -50,7 +50,7 @@ export const VisitBillingDiscountPopover: React.FC<VisitBillingDiscountPopoverPr
 						? "bg-emerald-50 dark:bg-emerald-950/40 border-emerald-500/40 text-emerald-700 dark:text-emerald-300"
 						: globalDiscountPercent > 0
 							? "bg-amber-50 dark:bg-amber-950/40 border-amber-500/40 text-amber-700 dark:text-amber-300"
-							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+							: "bg-[var(--paper,#ffffff)] border-[var(--line,#e2e8f0)] hover:border-teal-500 text-[var(--ink,#0f172a)]"
 				}`}
 				data-testid="chip-doctor-discount"
 				aria-haspopup="true"

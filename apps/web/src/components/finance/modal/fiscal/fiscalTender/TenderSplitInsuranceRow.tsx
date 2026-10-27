@@ -76,7 +76,7 @@ export const TenderSplitInsuranceRow: React.FC<TenderSplitInsuranceRowProps> = (
 							setCardAmount((prev) => prev + fallbackAmt);
 							showToast(`ДМС переведен на оплату пациентом (карта): ${formatMoneyRu(fallbackAmt)}`, "info", 2000);
 						}}
-						className="h-7 px-2.5 rounded-md text-[11px] font-bold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border border-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/60 cursor-pointer transition-colors"
+						className="h-7 px-2.5 rounded-md text-[11px] font-bold text-[var(--ink,#0f172a)] bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-hover,var(--paper-soft,#f8fafc))] cursor-pointer transition-colors"
 						title="Отмена страхового покрытия и перевод на оплату картой пациентом"
 						data-testid="btn-fallback-dms-to-patient"
 					>

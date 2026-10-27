@@ -137,8 +137,8 @@ export const PatientBillingDiscountsToolbar: React.FC<PatientBillingDiscountsToo
 							onClick={() => onSetDiscountPreset("colleague_100")}
 							className={`min-h-[44px] px-2.5 rounded-xl text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
 								discountPreset === "colleague_100"
-									? "bg-purple-600 text-white shadow-2xs"
-									: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
+									? "bg-teal-700 text-white shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid="btn-discount-colleague"
 							title="100% скидка для медицинского персонала и коллег"

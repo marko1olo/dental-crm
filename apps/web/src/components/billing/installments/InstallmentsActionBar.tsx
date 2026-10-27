@@ -39,20 +39,20 @@ export const InstallmentsActionBar: React.FC<InstallmentsActionBarProps> = ({
 				<button
 					type="button"
 					onClick={() => setActiveSubView(activeSubView === "create_preset" ? "schedule" : "create_preset")}
-					className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-[var(--ink)]"
+					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-[var(--ink)]"
 					data-testid="btn-open-create-preset"
 				>
-					<Plus className="w-3.5 h-3.5 text-teal-600" />
+					<Plus className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 					<span>Новый договор</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={() => setActiveSubView(activeSubView === "reminder" ? "schedule" : "reminder")}
-					className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-[var(--ink)]"
+					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer text-[var(--ink)]"
 					data-testid="btn-open-reminder"
 				>
-					<MessageSquare className="w-3.5 h-3.5 text-teal-600" />
+					<MessageSquare className="w-3.5 h-3.5 text-[var(--muted,#64748b)]" />
 					<span>Напомнить пациенту</span>
 				</button>
 
@@ -60,11 +60,11 @@ export const InstallmentsActionBar: React.FC<InstallmentsActionBarProps> = ({
 					<button
 						type="button"
 						onClick={onOpenBankInstallment}
-						className="h-8 px-3 rounded-lg border border-purple-500/40 bg-purple-50 dark:bg-purple-950/30 text-purple-800 dark:text-purple-200 hover:bg-purple-100 dark:hover:bg-purple-900/40 text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
 						data-testid="btn-open-bank-installment"
 						title="Оформить банковскую рассрочку (Сбер / Т-Банк)"
 					>
-						<QrCode className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
+						<QrCode className="w-3.5 h-3.5 text-[var(--muted,#64748b)]" />
 						<span>Банковская рассрочка (QR)</span>
 					</button>
 				)}
@@ -74,7 +74,7 @@ export const InstallmentsActionBar: React.FC<InstallmentsActionBarProps> = ({
 				<button
 					type="button"
 					onClick={handleQuickPayClick}
-					className="h-8 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition-colors"
+					className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
 					data-testid="btn-quick-pay-next"
 				>
 					<CreditCard className="w-3.5 h-3.5" />

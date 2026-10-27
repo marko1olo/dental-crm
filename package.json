@@ -30,6 +30,7 @@
     "check:sandboxes": "node scripts/sandbox_hunter.cjs",
     "check:encoding": "node --max-old-space-size=2048 scripts/check-encoding.mjs",
     "check:css-tokens": "node --max-old-space-size=2048 scripts/check-css-tokens.mjs",
+    "check:buttons": "node --max-old-space-size=2048 scripts/check-button-styles.mjs",
     "check:tracked-ignored": "node --max-old-space-size=2048 scripts/check-tracked-ignored.mjs",
     "check:dynamic-imports": "node --max-old-space-size=2048 scripts/check-dynamic-imports.mjs",
     "check:env-contract": "node --import tsx scripts/check-env-contract.mjs",

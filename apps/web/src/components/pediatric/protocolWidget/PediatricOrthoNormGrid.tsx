@@ -37,7 +37,7 @@ export const PediatricOrthoNormGrid: React.FC<PediatricOrthoNormGridProps> = ({
 					className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
 						orthoFrenulumNormal
 							? "border-teal-500 bg-teal-50/80 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-1 ring-teal-500/20"
-							: "border-amber-400 bg-amber-50/80 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
+							: "border-amber-500 bg-amber-50/80 text-amber-950 dark:border-amber-500 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
 					}`}
 					title="Анатомическое прикрепление уздечек губ и языка"
 					data-testid="pediatric-ortho-frenulum-toggle"
@@ -55,7 +55,7 @@ export const PediatricOrthoNormGrid: React.FC<PediatricOrthoNormGridProps> = ({
 					className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
 						orthoNasalBreathing
 							? "border-teal-500 bg-teal-50/80 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-1 ring-teal-500/20"
-							: "border-amber-400 bg-amber-50/80 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
+							: "border-amber-500 bg-amber-50/80 text-amber-950 dark:border-amber-500 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
 					}`}
 					title="Тип дыхания ребенка (носовое / ротовое)"
 					data-testid="pediatric-ortho-breathing-toggle"
@@ -73,7 +73,7 @@ export const PediatricOrthoNormGrid: React.FC<PediatricOrthoNormGridProps> = ({
 					className={`flex min-h-[48px] items-center justify-between rounded-xl border px-3 py-2 text-left transition active:scale-[0.98] cursor-pointer touch-manipulation select-none ${
 						orthoNoHarmfulHabits
 							? "border-teal-500 bg-teal-50/80 text-teal-950 dark:border-teal-400 dark:bg-teal-950/60 dark:text-teal-100 ring-1 ring-teal-500/20"
-							: "border-amber-400 bg-amber-50/80 text-amber-950 dark:border-amber-400 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
+							: "border-amber-500 bg-amber-50/80 text-amber-950 dark:border-amber-500 dark:bg-amber-950/60 dark:text-amber-100 ring-1 ring-amber-500/20"
 					}`}
 					title="Вредные привычки: сосание пальца, соски, посторонних предметов"
 					data-testid="pediatric-ortho-habits-toggle"

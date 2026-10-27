@@ -36,11 +36,7 @@ export const ActPrintActionBarButtons: React.FC<ActPrintActionBarButtonsProps> =
 						}
 					}}
 					aria-busy={isExecuting}
-					className={`flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] flex-1 sm:flex-initial rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all ${
-						hasDeficit
-							? "bg-gradient-to-r from-amber-600 to-yellow-600 hover:from-amber-500 hover:to-yellow-500 border border-amber-400/50"
-							: "bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
-					}`}
+					className="flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] flex-1 sm:flex-initial rounded-xl text-xs font-bold text-white shadow-md cursor-pointer transition-all bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500"
 					title={
 						hasDeficit
 							? "Позиции будут списаны со склада в фоновом режиме до оприходования накладной."

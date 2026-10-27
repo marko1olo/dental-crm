@@ -74,84 +74,84 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 					<button
 						type="button"
 						onClick={() => onQuickPreset("100_card")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-100-card"
 						title="Оплатить 100% банковской картой через терминал"
 					>
-						<CreditCard size={14} className="shrink-0 text-blue-600" />
+						<CreditCard size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate">Картой 100%</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("100_cash")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-100-cash"
 						title="Оплатить 100% наличными ровно в кассу без сдачи"
 					>
-						<Banknote size={14} className="shrink-0 text-emerald-600" />
+						<Banknote size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate sm:hidden">Наличные 100%</span>
 						<span className="truncate hidden sm:inline">Без сдачи (Нал 100%)</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("100_sbp")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-teal-500/40 bg-[var(--paper,#ffffff)] hover:bg-teal-500/15 text-teal-700 dark:text-teal-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-100-sbp"
 						title="Оплатить 100% по СБП QR"
 					>
-						<QrCode size={14} className="shrink-0 text-teal-600" />
+						<QrCode size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate">СБП QR 100%</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("use_deposit")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-amber-500/40 bg-[var(--paper,#ffffff)] hover:bg-amber-500/15 text-amber-700 dark:text-amber-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-use-deposit"
 						title="Списать аванс / депозит пациента с зачетом аванса и доплатой картой"
 					>
-						<Coins size={14} className="shrink-0 text-amber-600" />
+						<Coins size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate">Аванс + Карта</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("deposit_cash")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-emerald-500/40 bg-[var(--paper,#ffffff)] hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-deposit-cash"
 						title="Списать аванс / депозит пациента с доплатой наличными"
 					>
-						<Coins size={14} className="shrink-0 text-emerald-600" />
+						<Coins size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate">Аванс + Нал</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("split_50_50")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-purple-500/40 bg-[var(--paper,#ffffff)] hover:bg-purple-500/15 text-purple-700 dark:text-purple-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-split-50-50"
 						title="Разделить 50/50: половина картой, половина наличными (без копеечного дрейфа)"
 					>
-						<Layers size={14} className="shrink-0 text-purple-600" />
+						<Layers size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate sm:hidden">50% Карта / Нал</span>
 						<span className="truncate hidden sm:inline">50% Карта + 50% Нал</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("split_three_way")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-indigo-500/40 bg-[var(--paper,#ffffff)] hover:bg-indigo-500/15 text-indigo-700 dark:text-indigo-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-split-three-way"
 						title={`Комбинированная оплата: Аванс родственника (${familyPayerName}) + 50% Карта + 50% Нал`}
 					>
-						<Users size={14} className="shrink-0 text-indigo-600" />
+						<Users size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate sm:hidden" data-testid="preset-three-way-split">Сплит: 3 способа</span>
 						<span className="truncate hidden sm:inline" data-testid="preset-three-way-split">Нал + Карта + Аванс</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => onQuickPreset("warranty_100")}
-						className="min-h-[40px] min-w-0 px-2 py-1.5 rounded-xl border-2 border-blue-500/40 bg-[var(--paper,#ffffff)] hover:bg-blue-500/15 text-blue-700 dark:text-blue-300 text-xs font-black flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-xs"
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-0 px-2.5 py-1 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--line-strong,#94a3b8)] text-[var(--ink,#0f172a)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shadow-2xs"
 						data-testid="btn-checkout-warranty-100"
 						title="100% гарантийная переделка (к оплате 0 ₽)"
 					>
-						<ShieldCheck size={14} className="shrink-0 text-blue-600" />
+						<ShieldCheck size={14} className="shrink-0 text-[var(--muted,#64748b)]" />
 						<span className="truncate sm:hidden">Гарантия (0 ₽)</span>
 						<span className="truncate hidden sm:inline">100% Гарантия (0 ₽)</span>
 					</button>
@@ -294,10 +294,10 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						<button
 							type="button"
 							onClick={() => onSetDiscountPreset("warranty_100")}
-							className={`min-h-[38px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-extrabold flex items-center gap-1 transition-all cursor-pointer ${
+							className={`min-h-[38px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold flex items-center gap-1 transition-all cursor-pointer ${
 								discountPreset === "warranty_100"
-									? "bg-blue-600 text-white shadow-2xs ring-2 ring-blue-400"
-									: "bg-blue-50 dark:bg-blue-950/50 hover:bg-blue-100 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-800"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)]"
 							}`}
 							data-testid="btn-discount-warranty"
 							title="100% гарантийная переделка (к оплате 0 ₽)"
@@ -310,8 +310,8 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 							onClick={() => onSetDiscountPreset("colleague_100")}
 							className={`min-h-[38px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1 ${
 								discountPreset === "colleague_100"
-									? "bg-purple-600 text-white shadow-2xs ring-2 ring-purple-400"
-									: "bg-purple-50 dark:bg-purple-950/50 hover:bg-purple-100 text-purple-700 dark:text-purple-300 border border-purple-300 dark:border-purple-800"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-2xs"
+									: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft)]"
 							}`}
 							data-testid="btn-discount-colleague"
 							title="100% скидка для коллег и медицинского персонала"
@@ -390,23 +390,23 @@ export const FastCheckoutPresetsAndDiscounts: React.FC<FastCheckoutPresetsAndDis
 						</div>
 					)}
 					{discountPreset === "warranty_100" && (
-						<div className="p-2 rounded-xl bg-blue-500/10 border border-blue-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-blue-950 dark:text-blue-100">
+						<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] text-xs flex items-center justify-between gap-2 flex-wrap text-[var(--ink,#0f172a)]">
 							<div className="flex items-center gap-2 font-bold">
-								<ShieldCheck size={14} className="text-blue-600 shrink-0" />
+								<ShieldCheck size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 								<span>100% Гарантийная переделка: стоимость списана в 0 ₽</span>
 							</div>
-							<span className="text-[11px] font-mono text-blue-700 dark:text-blue-300">
+							<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
 								Чек 0 ₽ / Гарантия
 							</span>
 						</div>
 					)}
 					{discountPreset === "colleague_100" && (
-						<div className="p-2 rounded-xl bg-purple-500/10 border border-purple-500/30 text-xs flex items-center justify-between gap-2 flex-wrap text-purple-950 dark:text-purple-100">
+						<div className="p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#cbd5e1)] text-xs flex items-center justify-between gap-2 flex-wrap text-[var(--ink,#0f172a)]">
 							<div className="flex items-center gap-2 font-bold">
-								<ShieldCheck size={14} className="text-purple-600 shrink-0" />
+								<ShieldCheck size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 								<span>100% Скидка сотруднику: лечение персонала</span>
 							</div>
-							<span className="text-[11px] font-mono text-purple-700 dark:text-purple-300">
+							<span className="text-[11px] font-mono text-[var(--muted,#64748b)]">
 								Чек 0 ₽ / Персонал
 							</span>
 						</div>

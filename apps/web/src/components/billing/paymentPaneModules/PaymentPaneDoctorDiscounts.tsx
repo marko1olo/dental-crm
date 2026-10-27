@@ -75,8 +75,8 @@ export const PaymentPaneDoctorDiscounts: React.FC<PaymentPaneDoctorDiscountsProp
 						onClick={() => applyDoctorDiscount(pct)}
 						className={`h-8 rounded-lg border text-[11px] font-mono font-bold transition-all cursor-pointer ${
 							activeDiscountPercent === pct && !isWarranty100
-								? "border-amber-500 bg-amber-500/15 text-amber-800 dark:text-amber-200"
-								: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-amber-400 text-[var(--ink,#0f172a)]"
+								? "border-teal-500 bg-teal-500/15 text-teal-800 dark:text-teal-200"
+								: "border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-teal-500 text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid={`btn-discount-${pct}`}
 					>

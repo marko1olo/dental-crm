@@ -1,0 +1,213 @@
+/* ==========================================================================
+   DENTE CRM — CANONICAL BUTTON SYSTEM (canonicalButtons.css)
+   Authority: MANDATES 8am, 8ze, 8al (Apple HIG, 4-State Visual Proof, Button Purity)
+   ==========================================================================
+   1. STRICTLY ONE PRIMARY CTA (.dente-btn-primary) PER VISIBLE CONTEXT (Teal #0d9488)
+   2. NEUTRAL CONTOURS FOR SECONDARY / GHOST / PRESET PILLS (No circus amber/purple)
+   3. DESKTOP HEIGHT: 36px (h-9) | MOBILE TOUCH TARGET: >= 48px (h-12)
+   4. ACTIVE SCALE: 0.98 | TOUCH MANIPULATION
+   ========================================================================== */
+
+.dente-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	font-family: inherit;
+	font-weight: 500;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	border-radius: 0.75rem;
+	border: 1px solid transparent;
+	box-sizing: border-box;
+	white-space: nowrap;
+	user-select: none;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease, transform 0.1s ease;
+	height: 36px;
+	min-height: 36px;
+	padding: 0 0.875rem;
+	text-decoration: none;
+}
+
+.dente-btn:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+.dente-btn:disabled,
+.dente-btn[aria-disabled="true"] {
+	opacity: 0.45;
+	cursor: not-allowed;
+	pointer-events: none;
+	box-shadow: none;
+	transform: none;
+}
+
+.dente-btn svg {
+	width: 1rem;
+	height: 1rem;
+	flex-shrink: 0;
+}
+
+/* ==========================================================================
+   PRIMARY CTA BUTTON: Strictly ONE per visible context
+   Solid teal var(--teal, #0d9488), white text, no circus rainbow
+   ========================================================================== */
+.dente-btn-primary {
+	background: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+	color: #ffffff !important;
+	box-shadow: 0 1px 3px var(--teal-glow, rgba(13, 148, 136, 0.28)), 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.dente-btn-primary:hover:not(:disabled) {
+	background: var(--teal-dark, #0f766e);
+	border-color: var(--teal-dark, #0f766e);
+	color: #ffffff !important;
+	box-shadow: 0 4px 12px var(--teal-glow, rgba(13, 148, 136, 0.38));
+}
+
+/* ==========================================================================
+   SECONDARY BUTTON: Neutral outline button
+   Clean paper background, neutral line border, ink text
+   ========================================================================== */
+.dente-btn-secondary {
+	background: var(--paper, #ffffff);
+	border-color: var(--line, #e2e8f0);
+	color: var(--ink, #111827);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.dente-btn-secondary:hover:not(:disabled) {
+	background: var(--paper-hover, var(--paper-soft, #f8fafc));
+	border-color: var(--line-strong, var(--line, #cbd5e1));
+	color: var(--ink, #111827);
+	box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+}
+
+/* ==========================================================================
+   SUBTLE / GHOST BUTTON: Transparent flat contour
+   ========================================================================== */
+.dente-btn-subtle,
+.dente-btn-ghost {
+	background: transparent;
+	border-color: transparent;
+	color: var(--ink-muted, var(--ink-2, #64748b));
+	box-shadow: none;
+}
+
+.dente-btn-subtle:hover:not(:disabled),
+.dente-btn-ghost:hover:not(:disabled) {
+	background: var(--paper-hover, var(--paper-soft, #f8fafc));
+	border-color: transparent;
+	color: var(--ink, #111827);
+}
+
+/* ==========================================================================
+   PILL PRESET / CHIP BUTTON: Neutral capsule presets
+   Rounded full, compact text, zero circus amber/purple/orange
+   ========================================================================== */
+.dente-btn-pill {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	font-family: inherit;
+	font-weight: 500;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	border-radius: 9999px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink-secondary, var(--ink-2, #64748b));
+	padding: 0.375rem 0.75rem;
+	height: auto;
+	min-height: 28px;
+	box-sizing: border-box;
+	white-space: nowrap;
+	user-select: none;
+	cursor: pointer;
+	touch-action: manipulation;
+	transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, transform 0.1s ease;
+	text-decoration: none;
+}
+
+.dente-btn-pill:hover:not(:disabled) {
+	border-color: var(--line-strong, var(--line, #cbd5e1));
+	color: var(--ink, #111827);
+	background: var(--paper-hover, var(--paper-soft, #f8fafc));
+}
+
+.dente-btn-pill:active:not(:disabled) {
+	transform: scale(0.97);
+}
+
+.dente-btn-pill:disabled,
+.dente-btn-pill[aria-disabled="true"] {
+	opacity: 0.45;
+	cursor: not-allowed;
+	pointer-events: none;
+}
+
+.dente-btn-pill svg {
+	width: 0.875rem;
+	height: 0.875rem;
+	flex-shrink: 0;
+}
+
+/* Active / Selected state for pills */
+.dente-btn-pill.active,
+.dente-btn-pill[aria-pressed="true"],
+.dente-btn-pill[data-active="true"] {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.12));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+	font-weight: 600;
+}
+
+/* ==========================================================================
+   DANGER BUTTON: Clean neutral destructive contour
+   No blinding neon red block, subtle border + ink/bad text
+   ========================================================================== */
+.dente-btn-danger {
+	background: var(--paper, #ffffff);
+	border-color: var(--bad-line, var(--rust-soft, var(--bad-bg, #fee2e2)));
+	color: var(--bad, var(--bad-fg, #ef4444));
+	box-shadow: 0 1px 2px rgba(239, 68, 68, 0.05);
+}
+
+.dente-btn-danger:hover:not(:disabled) {
+	background: var(--bad-soft, var(--bad-bg, #fee2e2));
+	border-color: var(--bad, var(--bad-fg, #ef4444));
+	color: var(--bad, var(--bad-fg, #ef4444));
+}
+
+.dente-btn-danger:active:not(:disabled) {
+	transform: scale(0.98);
+}
+
+/* ==========================================================================
+   RESPONSIVE TOUCH ERGONOMICS (Apple HIG / Mandate 8ze)
+   Desktop: 36px | Mobile (< 768px or pointer: coarse): >= 48px
+   ========================================================================== */
+@media (max-width: 768px), (pointer: coarse) {
+	.dente-btn {
+		height: 48px;
+		min-height: 48px;
+		padding: 0 1rem;
+		font-size: 0.9375rem;
+		border-radius: 0.875rem;
+	}
+
+	.dente-btn svg {
+		width: 1.25rem;
+		height: 1.25rem;
+	}
+
+	.dente-btn-pill {
+		min-height: 36px;
+		padding: 0.4375rem 0.875rem;
+		font-size: 0.8125rem;
+	}
+}

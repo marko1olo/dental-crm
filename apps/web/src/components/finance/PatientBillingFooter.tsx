@@ -123,10 +123,10 @@ export const PatientBillingFooter: React.FC<PatientBillingFooterProps> = ({
 				<button
 					type="button"
 					onClick={onOpenRefund}
-					className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-[var(--paper)] border border-amber-600/30 text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30 shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
+					className="min-h-[44px] px-2.5 sm:px-3 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-95 shrink-0 whitespace-nowrap"
 					data-testid="btn-footer-partial-refund"
 				>
-					<RotateCcw className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+					<RotateCcw className="w-3.5 h-3.5 text-[var(--ink-secondary)] shrink-0" />
 					<span className="whitespace-nowrap shrink-0">Возврат</span>
 				</button>
 			</div>

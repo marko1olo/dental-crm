@@ -60,7 +60,7 @@ export const ItemCardGhostWarning: React.FC<ItemCardGhostWarningProps> = ({
 							<button
 								type="button"
 								onClick={() => onRestoreToothStatus(toothNum)}
-								className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-white dark:bg-zinc-800 border border-amber-400 dark:border-amber-600 text-amber-900 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer"
+								className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-bold rounded-md bg-white dark:bg-zinc-800 border border-[var(--line,#cbd5e1)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] transition-colors cursor-pointer"
 								title="Восстановить статус зуба на формуле (врачебная автономия)"
 								data-testid={`btn-ghost-restore-tooth-${toothNum}`}
 							>

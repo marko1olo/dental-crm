@@ -33,8 +33,8 @@ export function LabOrdersTableRowButtons(props: LabOrdersTableRowButtonsProps): 
 				</>
 			) : order.status === "refitting" ? (
 				<>
-					<button type="button" onClick={() => menuHandlers.onRepeatFitting(order)} className="h-7 min-h-[28px] px-2 rounded-lg border border-purple-500/30 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 hover:bg-purple-100 font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Припасовка / Повторная примерка" data-testid={`lab-order-table-fitting-btn-${order.id}`}>
-						<RotateCcw className="w-3 h-3" /><span>Припасовка</span>
+					<button type="button" onClick={() => menuHandlers.onRepeatFitting(order)} className="h-7 min-h-[28px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,var(--paper-soft,#f8fafc))] font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Припасовка / Повторная примерка" data-testid={`lab-order-table-fitting-btn-${order.id}`}>
+						<RotateCcw className="w-3 h-3 text-teal-600 dark:text-teal-400" /><span>Припасовка</span>
 					</button>
 					<button type="button" onClick={() => onOpenPrintOrder(order)} className="secondary-button h-7 min-h-[28px] px-2 rounded-lg border border-teal-600/30 bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-semibold text-[11px] inline-flex items-center gap-1 shadow-2xs transition-all cursor-pointer whitespace-nowrap" title="Распечатать наряд в зуботехническую лабораторию" data-testid={`lab-order-table-print-btn-${order.id}`}>
 						<Printer className="w-3 h-3 text-teal-600 dark:text-teal-400" /><span>Печать</span>

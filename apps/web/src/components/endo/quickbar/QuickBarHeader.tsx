@@ -78,10 +78,10 @@ export const QuickBarHeader: React.FC<QuickBarHeaderProps> = ({
 					type="button"
 					onClick={onApplyCaOh2}
 					data-testid="btn-quick-caoh2"
-					className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
+					className="secondary-button min-h-[32px] h-8 px-2 text-xs font-bold rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-hover,var(--paper-soft,#f8fafc))] flex items-center gap-1 transition-all cursor-pointer shadow-2xs active:scale-98"
 					title="Временная повязка гидроксида кальция Ca(OH)2 (Каласепт) на 10-14 дней"
 				>
-					<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400" />
+					<ShieldCheck size={13} className="text-teal-600 dark:text-teal-400" />
 					<span className="hidden sm:inline">Временная Ca(OH)2</span>
 					<span className="sm:hidden">Ca(OH)2</span>
 				</button>

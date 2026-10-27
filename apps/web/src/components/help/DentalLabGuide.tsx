@@ -129,8 +129,8 @@ export const DentalLabGuide: React.FC<ClinicalGuideProps> = ({ onLaunchTour }) =
 									onClick={() => setSelectedShade(sh.code)}
 									className={`p-1.5 rounded-lg border text-center transition-all cursor-pointer ${
 										selectedShade === sh.code
-											? "border-amber-500 bg-amber-500/15 ring-2 ring-amber-500/30 scale-102"
-											: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-amber-400/50"
+											? "border-teal-500 bg-teal-500/15 ring-2 ring-teal-500/30 scale-102"
+											: "border-[var(--line)] bg-[var(--paper-soft)] hover:border-teal-500/50"
 									}`}
 								>
 									{/* Color Swatch Dot */}

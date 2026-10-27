@@ -50,7 +50,7 @@ export const PerioToothCard: React.FC<PerioToothCardProps> = React.memo(({
 					: isMissing
 						? "bg-[var(--paper-soft)]/30 border-[var(--line)] opacity-40 hover:opacity-75"
 						: isImplant
-							? "bg-amber-500/10 border-amber-500/30 hover:border-amber-400"
+							? "bg-amber-500/10 border-amber-500/30 hover:border-amber-500"
 							: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/50 hover:bg-[var(--paper-soft)]"
 			}`}
 			title={`Зуб ${tooth.toothNumber} (${toothName})`}

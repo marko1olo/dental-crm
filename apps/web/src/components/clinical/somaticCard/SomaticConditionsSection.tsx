@@ -28,7 +28,7 @@ export const SomaticConditionsSection: React.FC<SomaticConditionsSectionProps> =
 					onClick={() => onToggle("hasDiabetesMellitus")}
 					className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 						profile.hasDiabetesMellitus
-							? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
+							? "bg-amber-50 dark:bg-amber-950/50 border-amber-500 text-amber-900 dark:text-amber-200"
 							: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 					}`}
 					title="Сахарный диабет (риск замедленной эпителизации и инфекций)"
@@ -51,7 +51,7 @@ export const SomaticConditionsSection: React.FC<SomaticConditionsSectionProps> =
 					onClick={() => onToggle("hasBronchialAsthma")}
 					className={`flex items-center min-w-0 gap-2 p-2 sm:p-2.5 min-h-[36px] rounded-xl border text-xs font-semibold text-left transition-all cursor-pointer ${
 						profile.hasBronchialAsthma
-							? "bg-amber-50 dark:bg-amber-950/50 border-amber-400 text-amber-900 dark:text-amber-200"
+							? "bg-amber-50 dark:bg-amber-950/50 border-amber-500 text-amber-900 dark:text-amber-200"
 							: "bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 border-[var(--line,#e2e8f0)] dark:border-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-amber-50/50"
 					}`}
 					title="Бронхиальная астма (наличие ингалятора у пациента обязательно)"

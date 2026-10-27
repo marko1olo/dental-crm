@@ -52,8 +52,8 @@ export const FastCheckoutStageAdvanceMode: React.FC<
 				onClick={() => setStagePaymentMode("advance_30")}
 				className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 					stagePaymentMode === "advance_30"
-						? "border-amber-500 bg-amber-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-amber-500"
-						: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
+						? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]"
+						: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]"
 				}`}
 			>
 				<span>Аванс 30%</span>
@@ -69,8 +69,8 @@ export const FastCheckoutStageAdvanceMode: React.FC<
 				onClick={() => setStagePaymentMode("advance_50")}
 				className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 					stagePaymentMode === "advance_50"
-						? "border-amber-500 bg-amber-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-amber-500"
-						: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-amber-400"
+						? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]"
+						: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]"
 				}`}
 			>
 				<span>Аванс 50%</span>
@@ -86,8 +86,8 @@ export const FastCheckoutStageAdvanceMode: React.FC<
 				onClick={() => setStagePaymentMode("advance_offset_tag1215")}
 				className={`min-h-[44px] h-12 px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex flex-col justify-center items-center transition-all cursor-pointer ${
 					stagePaymentMode === "advance_offset_tag1215"
-						? "border-purple-500 bg-purple-500/10 text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-purple-500"
-						: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-purple-400"
+						? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--ink,#0f172a)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]"
+						: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)]"
 				}`}
 			>
 				<span>Зачет аванса</span>

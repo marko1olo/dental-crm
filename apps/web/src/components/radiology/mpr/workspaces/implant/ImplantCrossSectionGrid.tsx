@@ -164,7 +164,7 @@ export const ImplantCrossSectionGrid: React.FC<ImplantCrossSectionGridProps> = (
 								onClick={() => onChangeCrossSectionStepMm?.(opt.step)}
 								className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold transition-all cursor-pointer ${
 									isCur
-										? "bg-amber-600 text-white shadow-xs border border-amber-400"
+										? "bg-teal-600 text-white shadow-xs border border-teal-500"
 										: "text-zinc-400 hover:text-zinc-200 hover:bg-zinc-850"
 								}`}
 								title={opt.desc}

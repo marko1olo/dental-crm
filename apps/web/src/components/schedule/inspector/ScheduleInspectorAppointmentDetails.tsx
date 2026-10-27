@@ -361,7 +361,7 @@ export const ScheduleInspectorAppointmentDetails: React.FC<ScheduleInspectorAppo
               className={`h-7 px-2 rounded-lg text-[11px] font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
                 a.status === "arrived"
                   ? "bg-amber-500/15 text-amber-800 dark:text-amber-200 border-amber-500/40 ring-1 ring-amber-500/30"
-                  : "bg-[var(--paper)] hover:bg-amber-500/10 text-[var(--ink)] border-[var(--line)] hover:border-amber-400"
+                  : "bg-[var(--paper)] hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"
               }`}
               title="Пациент пришёл в клинику и ожидает в холле"
               data-testid="schedule-inspector-status-arrived"

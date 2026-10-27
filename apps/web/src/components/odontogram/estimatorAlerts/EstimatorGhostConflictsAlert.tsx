@@ -62,7 +62,7 @@ export const EstimatorGhostConflictsAlert: React.FC<EstimatorGhostConflictsAlert
 									<button
 										type="button"
 										onClick={() => onRestoreToothStatus(c.toothNumber)}
-										className="px-2 py-0.5 text-[11px] font-bold rounded bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+										className="px-2 py-0.5 text-[11px] font-bold rounded bg-white dark:bg-zinc-800 border border-amber-300 dark:border-amber-700 text-amber-900 dark:text-amber-200 hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 									>
 										Восстановить статус на формуле
 									</button>

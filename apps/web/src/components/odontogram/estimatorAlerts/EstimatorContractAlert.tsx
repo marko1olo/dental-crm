@@ -31,7 +31,7 @@ export const EstimatorContractAlert: React.FC<EstimatorContractAlertProps> = ({
 			<button
 				type="button"
 				onClick={onRetryContract}
-				className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors"
+				className="shrink-0 inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-[var(--paper-hover,var(--paper-soft))] dark:hover:bg-amber-900/60 transition-colors"
 			>
 				Повторить
 			</button>

@@ -69,7 +69,7 @@ export const MedicalCardHeaderToolbar: React.FC<MedicalCardHeaderToolbarProps> =
 						<button
 							type="button"
 							data-testid="btn-043-revise"
-							className={`${btnClass} ${isRevising ? "border-amber-500 bg-amber-50 dark:bg-amber-950/30 text-amber-800" : ""}`}
+							className={`${btnClass} ${isRevising ? "border-teal-500 bg-teal-50 dark:bg-teal-950/30 text-teal-800" : ""}`}
 							onClick={isRevising ? handleCancelRevise : handleBeginRevise}
 							title="Внести исправление в закрытую карту («Исправленному верить»)"
 						>

@@ -115,7 +115,7 @@ export function BotAdminsStep({
 					<div className="bot-plugin-info">
 						<div className="flex items-center gap-2">
 							<h4 className="bot-plugin-title">Контроль репутации и сбор отзывов</h4>
-							<span className="bot-pill-mini text-amber-700 bg-amber-100 dark:text-amber-300 dark:bg-amber-900/50">
+							<span className="bot-pill-mini text-teal-700 bg-teal-50 dark:text-teal-300 dark:bg-teal-950/50 border border-teal-500/20">
 								NPS & Рейтинг
 							</span>
 						</div>
@@ -189,7 +189,7 @@ export function BotAdminsStep({
 					<div className="bot-plugin-info">
 						<div className="flex items-center gap-2">
 							<h4 className="bot-plugin-title">Перевод на живого администратора клиники</h4>
-							<span className="bot-pill-mini text-purple-700 bg-purple-100 dark:text-purple-300 dark:bg-purple-900/50">
+							<span className="bot-pill-mini text-teal-700 bg-teal-50 dark:text-teal-300 dark:bg-teal-950/50 border border-teal-500/20">
 								Эскалация
 							</span>
 						</div>

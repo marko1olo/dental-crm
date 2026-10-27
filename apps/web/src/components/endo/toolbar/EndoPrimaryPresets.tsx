@@ -36,10 +36,10 @@ export const EndoPrimaryPresets: React.FC<EndoPrimaryPresetsProps> = ({
 			type="button"
 			data-testid="btn-caoh2-endo-protocol"
 			onClick={onApplyCaOh2}
-			className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold border border-amber-500/40 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 hover:bg-amber-100 dark:hover:bg-amber-900/50 flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0 active:scale-98"
+			className="secondary-button h-6 sm:h-7 px-2 rounded-lg text-xs font-bold border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-1 shadow-2xs transition-all cursor-pointer shrink-0 active:scale-98"
 			title="Механическая и медикаментозная обработка NaOCl 3% + временная паста Ca(OH)2 (Каласепт)"
 		>
-			<ShieldCheck size={13} className="text-amber-600 dark:text-amber-400 shrink-0" />
+			<ShieldCheck size={13} className="text-teal-600 dark:text-teal-400 shrink-0" />
 			<span className="truncate">NaOCl 3% + Ca(OH)2</span>
 		</button>
 

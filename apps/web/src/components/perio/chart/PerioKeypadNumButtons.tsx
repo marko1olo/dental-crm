@@ -75,7 +75,7 @@ export const PerioKeypadNumButtons: React.FC<PerioKeypadNumButtonsProps> = React
 			<button
 				type="button" disabled={readOnly} onClick={onTogglePlaque}
 				className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
-					currentSite?.plaque ? "bg-amber-500 text-slate-950 font-black border-amber-400 shadow-xs" : "bg-[var(--paper)] hover:bg-amber-500/20 text-amber-300 border-[var(--line)]"
+					currentSite?.plaque ? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-xs" : "bg-[var(--paper)] hover:bg-amber-500/20 text-amber-300 border-[var(--line)]"
 				}`}
 				title="Зубной налет PLQ (хоткей: P)"
 			>

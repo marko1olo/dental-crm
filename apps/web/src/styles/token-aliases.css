@@ -218,6 +218,9 @@
 	--warn: var(--warn-fg, #d97706);
 	--warn-border: rgba(217, 119, 6, 0.3);
 	--warn-line: var(--warn-border, rgba(217, 119, 6, 0.3));
+	--paper-hover: var(--paper-soft);
+	--bad-line: var(--rust-soft, var(--bad-bg));
+	--ink-secondary: var(--ink-2, var(--muted));
 	--border: var(--line);
 	--surface-2: var(--paper-soft);
 	--surface-floating: var(--paper-strong);

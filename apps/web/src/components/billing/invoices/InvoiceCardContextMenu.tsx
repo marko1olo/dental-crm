@@ -57,10 +57,10 @@ export const InvoiceCardContextMenu: React.FC<InvoiceCardContextMenuProps> = (pr
 			{isPending && onSplitPay && (
 				<button
 					type="button" onClick={onSplitPay}
-					className={`${itemBtnCls} hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 font-medium`}
+					className={`${itemBtnCls} hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] font-medium`}
 					role="menuitem" data-testid={`menu-split-pay-${inv.id}`}
 				>
-					<CreditCard size={14} className="text-purple-600 shrink-0" />
+					<CreditCard size={14} className="text-teal-600 shrink-0" />
 					<span>Сплит-оплата (нал + карта)</span>
 				</button>
 			)}
@@ -79,10 +79,10 @@ export const InvoiceCardContextMenu: React.FC<InvoiceCardContextMenuProps> = (pr
 			{isPending && (
 				<button
 					type="button" onClick={onApplyWarranty}
-					className={`${itemBtnCls} hover:bg-purple-50 dark:hover:bg-purple-950/30 text-purple-700 dark:text-purple-300 font-medium`}
+					className={`${itemBtnCls} hover:bg-[var(--paper-hover,var(--paper-soft))] text-[var(--ink)] font-medium`}
 					role="menuitem" data-testid={`menu-apply-warranty-${inv.id}`}
 				>
-					<ShieldCheck size={14} className="text-purple-600 shrink-0" />
+					<ShieldCheck size={14} className="text-emerald-600 shrink-0" />
 					<span>Гарантия 100% (0 ₽)</span>
 				</button>
 			)}

@@ -113,7 +113,7 @@ export const GlobalTreatmentsStrip: React.FC<GlobalTreatmentsStripProps> = ({
 									isHigh
 										? "border-blue-500 bg-blue-50 text-blue-900 dark:bg-blue-950/60 dark:text-blue-100 ring-2 ring-blue-400/40 shadow-xs"
 										: isPlanned
-											? "border-amber-400 dark:border-amber-600 bg-amber-500/15 text-amber-950 dark:text-amber-100 hover:border-amber-500"
+											? "border-amber-500 dark:border-amber-600 bg-amber-500/15 text-amber-950 dark:text-amber-100 hover:border-amber-600"
 											: "border-emerald-300 dark:border-emerald-700/60 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100 hover:border-emerald-500"
 								}`}
 							>

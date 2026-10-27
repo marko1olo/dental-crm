@@ -89,7 +89,7 @@ export const PediatricCariogramTab: React.FC<PediatricCariogramTabProps> = ({
 						className={`relative p-4 rounded-2xl border text-left transition-all min-h-[56px] cursor-pointer flex items-center justify-between gap-3 ${
 							currentLevel === "moderate"
 								? "bg-amber-500/15 border-amber-500 ring-2 ring-amber-500/30 text-amber-950 dark:text-amber-100 font-bold"
-								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-amber-400/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
+								: "bg-[var(--odontogram-paper,var(--paper,#ffffff))] border-[var(--odontogram-border-subtle,var(--line,#e2e8f0))] hover:border-amber-500/50 text-[var(--odontogram-ink,var(--ink,#0f172a))]"
 						}`}
 					>
 						<div className="flex items-center gap-3">

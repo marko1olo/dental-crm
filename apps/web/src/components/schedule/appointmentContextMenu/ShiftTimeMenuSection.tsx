@@ -24,7 +24,7 @@ export function ShiftTimeMenuSection({
 							onClose();
 							void handleShiftAppointmentTime(m);
 						}}
-						className="h-7 min-h-[28px] sm:h-7 sm:min-h-[28px] touch:min-h-[44px] px-1.5 py-1 rounded-md border border-amber-500/30 bg-amber-50 dark:bg-amber-950/40 hover:bg-amber-100 text-amber-900 dark:text-amber-200 text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
+						className="h-7 min-h-[28px] sm:h-7 sm:min-h-[28px] touch:min-h-[44px] px-1.5 py-1 rounded-md border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-hover,var(--paper-soft,#f8fafc))] text-[var(--ink,#0f172a)] text-xs font-bold transition-all cursor-pointer disabled:opacity-40 flex items-center justify-center whitespace-nowrap"
 						title={`Сдвинуть на +${m} минут`}
 					>
 						+{m}м

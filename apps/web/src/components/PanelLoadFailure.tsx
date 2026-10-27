@@ -60,7 +60,7 @@ export const PanelLoadFailure: React.FC<{
 				<button
 					type="button"
 					onClick={onRetry}
-					className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-amber-100 dark:hover:bg-amber-900/60 transition-colors text-xs self-start sm:self-auto"
+					className="shrink-0 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-amber-300 dark:border-amber-800 bg-white dark:bg-slate-900 text-amber-900 dark:text-amber-100 font-semibold cursor-pointer hover:bg-[var(--paper-hover,var(--paper-soft))] dark:hover:bg-amber-900/60 transition-colors text-xs self-start sm:self-auto"
 				>
 					<RefreshCw size={13} aria-hidden="true" /> {text.retryLabel}
 				</button>

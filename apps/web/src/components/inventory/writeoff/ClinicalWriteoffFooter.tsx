@@ -73,10 +73,8 @@ export const ClinicalWriteoffFooter: React.FC<ClinicalWriteoffFooterProps> = ({
 					type="button"
 					className={`cw-btn ${
 						!isValid
-							? "cw-btn-secondary border-amber-500/50 text-amber-700 dark:text-amber-300"
-							: totals.hasDeficit
-								? "cw-btn-primary bg-amber-600 hover:bg-amber-500 border-amber-400/50 text-white"
-								: "cw-btn-primary"
+							? "cw-btn-secondary opacity-60"
+							: "cw-btn-primary"
 					}`}
 					onClick={onConfirm}
 					disabled={isDeducting}

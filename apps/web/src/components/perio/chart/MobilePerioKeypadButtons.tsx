@@ -87,7 +87,7 @@ export const MobilePerioKeypadButtons: React.FC<MobilePerioKeypadButtonsProps> =
 					onClick={() => { triggerHaptic("selection"); onTogglePlaque(); }}
 					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentPlq
-							? "bg-amber-500 text-slate-950 font-black border-amber-400 shadow-sm"
+							? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-sm"
 							: "bg-[var(--paper-soft)] text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/15"
 					}`}
 					data-testid="perio-mobile-plaque-btn"

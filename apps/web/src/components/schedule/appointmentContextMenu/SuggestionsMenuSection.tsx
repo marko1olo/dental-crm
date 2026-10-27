@@ -20,7 +20,7 @@ export function SuggestionsMenuSection({
 				<button
 					type="button"
 					key={suggestion.id}
-					className="w-full text-left px-2.5 py-1.5 h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-amber-50 dark:hover:bg-amber-950/40 transition-colors flex items-center gap-2 cursor-pointer"
+					className="w-full text-left px-2.5 py-1.5 h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] touch:min-h-[44px] rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--paper-hover,var(--paper-soft))] transition-colors flex items-center gap-2 cursor-pointer"
 					role="menuitem"
 					onClick={() => onSelect(suggestion.section)}
 				>
