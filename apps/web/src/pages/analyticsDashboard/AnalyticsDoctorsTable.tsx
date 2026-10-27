@@ -49,7 +49,7 @@ export function DoctorProfitabilityTable({
 						const completion = formatCompletionRate(doc?.completionRate);
 						const marginTitle =
 							doc?.clinicMarginRub !== undefined && doc?.clinicMarginRub !== null
-								? `Маржа клиники: ${money(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Зарплатная ведомость: ${money(doc.doctorPayrollRub)}` : ""}`
+								? `Маржа клиники: ${money(doc.clinicMarginRub)}${doc.doctorPayrollRub ? ` • Выплата врачу: ${money(doc.doctorPayrollRub)}` : ""}`
 								: margin.title;
 						return (
 							<tr key={doc?.name ?? "unknown"}>
@@ -115,7 +115,7 @@ export function AnalyticsDoctorsTable({ rows }: AnalyticsDoctorsTableProps) {
 						type="button"
 						className="glass-action-btn"
 						onClick={() => window.print()}
-						title="Распечатать ведомость выработки врачей"
+						title="Распечатать отчёт по выработке врачей"
 					>
 						<Printer size={13} aria-hidden="true" />
 						<span>Печать</span>

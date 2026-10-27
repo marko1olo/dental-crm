@@ -20,7 +20,7 @@ test("financialAnalyticsEngine: formatMoneyKopecks formats integer kopecks accur
 	assert.equal(formatMoneyKopecks(Number.NaN), "0 ₽");
 });
 
-test("financialAnalyticsEngine: calculateClinicPnl adheres to clinical dental ratios", () => {
+test("financialAnalyticsEngine: calculateClinicPnl adheres to clinical dental ratios when expenses not provided", () => {
 	const revenue = 100000000; // 1 000 000 ₽ (100 млн копеек)
 	const marketing = 5000000;  // 50 000 ₽
 
@@ -37,4 +37,29 @@ test("financialAnalyticsEngine: calculateClinicPnl adheres to clinical dental ra
 	assert.equal(pnl.estimatedTaxKopecks, 6000000); // Estimated Tax = 6M
 	assert.equal(pnl.netProfitKopecks, 16000000); // Net Profit = 16M
 	assert.equal(pnl.netMarginPercent, 16);
+});
+
+test("financialAnalyticsEngine: calculateClinicPnl uses exact accounting facts from real expenses", () => {
+	const revenue = 50000000; // 500 000 ₽
+	const realExpenses = {
+		cogsKopecks: 8500000, // 85 000 ₽ (материалы + ЗТЛ факт)
+		payrollKopecks: 17500000, // 175 000 ₽ (выплаты врачам факт)
+		overheadKopecks: 6000000, // 60 000 ₽ (аренда кресел факт)
+		marketingSpendKopecks: 2000000, // 20 000 ₽
+		taxKopecks: 3000000, // 30 000 ₽
+	};
+
+	const pnl = calculateClinicPnl(revenue, 0, realExpenses);
+
+	assert.equal(pnl.grossRevenueKopecks, 50000000);
+	assert.equal(pnl.cogsKopecks, 8500000);
+	assert.equal(pnl.grossProfitKopecks, 41500000);
+	assert.equal(pnl.marketingSpendKopecks, 2000000);
+	assert.equal(pnl.payrollKopecks, 17500000);
+	assert.equal(pnl.overheadKopecks, 6000000);
+	assert.equal(pnl.totalOpexKopecks, 25500000); // 2M + 17.5M + 6M = 25.5M
+	assert.equal(pnl.ebitdaKopecks, 16000000); // 41.5M - 25.5M = 16M
+	assert.equal(pnl.estimatedTaxKopecks, 3000000);
+	assert.equal(pnl.netProfitKopecks, 13000000); // 16M - 3M = 13M
+	assert.equal(pnl.netMarginPercent, 26);
 });

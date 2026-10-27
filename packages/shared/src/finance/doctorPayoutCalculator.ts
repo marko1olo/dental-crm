@@ -352,7 +352,7 @@ export function payoutRowNote(input: {
 // ─── 5. CLINICAL & PERIOD HELPERS ────────────────────────────────────────────
 
 /**
- * Извлекает валидный номер медицинской карты пациента (форма 043/у).
+ * Извлекает валидный номер медицинской карты пациента (Мандаты 8e, 8x — чистый доменный язык).
  * Поддерживает как сигнатуру (cardNumber, patientId), так и (patientId, adminProfile).
  */
 export function extractMedicalCardNumber(
@@ -376,7 +376,7 @@ export function extractMedicalCardNumber(
 	}
 	const patientId = typeof arg2 === "string" ? arg2 : (arg1 ?? "");
 	const clean = patientId.replace(/-/g, "").slice(0, 6).toUpperCase();
-	return `043/у-${clean || "UNKNOWN"}`;
+	return `МК-${clean || "UNKNOWN"}`;
 }
 
 /**

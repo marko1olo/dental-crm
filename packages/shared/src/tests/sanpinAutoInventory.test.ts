@@ -172,6 +172,7 @@ describe("SANPIN 3.3686-21 STERILIZATION ROUTING & CONSUMABLES DEDUCTION (ROUND 
 				indicatorPassed: true,
 				sanpinClauseRu: "СанПиН 3.3686-21",
 				formattedProtocolRecord043: "Стерилизация СанПиН 3.3686-21: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
+				formattedSterilizationDiaryRecord: "Стерилизация СанПиН 3.3686-21: Автоклав АК-01 (цикл №1 от 2026-08-25), крафт-пакет KB-20260825-01#1.",
 			};
 
 			const initialDiary = {

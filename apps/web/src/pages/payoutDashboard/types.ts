@@ -176,3 +176,25 @@ export interface PayoutDoctorTableProps {
 	readonly onPageChange: (doctorId: string, page: number) => void;
 	readonly onOpenPayrollModal: (doctor: DoctorPayoutRow) => void;
 }
+
+export interface PayoutDoctorRowProps {
+	readonly row: DoctorPayoutRow;
+	readonly isExpanded: boolean;
+	readonly canEditRates: boolean;
+	readonly isEditingRate: boolean;
+	readonly rateDraft: string;
+	readonly rateSave: CommissionSaveState;
+	readonly onStartEditRate: (doctorId: string, currentRate: number | null) => void;
+	readonly onCancelEditRate: () => void;
+	readonly onRateDraftChange: (draft: string) => void;
+	readonly onSaveRate: (doctorId: string, raw: string) => void;
+	readonly onToggleExpandDoctor: (doctorId: string) => void;
+	readonly activeTab: "visits" | "lab";
+	readonly onSubTabChange: (doctorId: string, tab: "visits" | "lab") => void;
+	readonly searchQuery: string;
+	readonly onSearchChange: (doctorId: string, query: string) => void;
+	readonly currentPage: number;
+	readonly onPageChange: (doctorId: string, page: number) => void;
+	readonly onOpenPayrollModal: (doctor: DoctorPayoutRow) => void;
+}
+
