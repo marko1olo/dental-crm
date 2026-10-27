@@ -8,15 +8,34 @@ import type {
 	AdministratorRatesConfig,
 } from "./staffPayrollRoleTypes";
 
+function findSpecialtyRule(specialtyId: string): DoctorSpecialtyCommissionRule {
+	const found = DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === specialtyId);
+	if (found) return found;
+	const fallback = DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "general_dentist") || DOCTOR_SPECIALTY_PAYROLL_PRESETS[0];
+	if (!fallback) {
+		return {
+			specialtyId,
+			titleRu: "Врач-стоматолог общей практики (соло)",
+			defaultPercentage: 25,
+			retailProductsPercentage: 10,
+			deductsLabCosts: true,
+			deductsMaterialCosts: true,
+			minGuaranteeMonthlyKop: 6000000,
+			descriptionRu: "25% от чистой базы (выручка за вычетом лаборатории и материалов).",
+		};
+	}
+	return fallback;
+}
+
 export const DOCTOR_SPECIALTY_CONFIGS: Record<string, DoctorSpecialtyCommissionRule> = {
-	therapist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "therapist")!,
-	orthopedist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "orthopedist")!,
-	surgeon_implantologist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "surgeon_implantologist")!,
-	surgeon: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "surgeon")!,
-	orthodontist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "orthodontist")!,
-	hygienist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "hygienist")!,
-	pediatric: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "pediatric")!,
-	pediatric_dentist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "pediatric_dentist")!,
+	therapist: findSpecialtyRule("therapist"),
+	orthopedist: findSpecialtyRule("orthopedist"),
+	surgeon_implantologist: findSpecialtyRule("surgeon_implantologist"),
+	surgeon: findSpecialtyRule("surgeon"),
+	orthodontist: findSpecialtyRule("orthodontist"),
+	hygienist: findSpecialtyRule("hygienist"),
+	pediatric: findSpecialtyRule("pediatric"),
+	pediatric_dentist: findSpecialtyRule("pediatric_dentist"),
 	general_dentist: {
 		specialtyId: "general_dentist",
 		titleRu: "Врач-стоматолог общей практики",
@@ -27,9 +46,13 @@ export const DOCTOR_SPECIALTY_CONFIGS: Record<string, DoctorSpecialtyCommissionR
 		minGuaranteeMonthlyKop: 7000000,
 		descriptionRu: "25% от чистой базы (выручка за вычетом лаборатории и материалов).",
 	},
-	periodontist: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "periodontist")!,
-	solo_practitioner: DOCTOR_SPECIALTY_PAYROLL_PRESETS.find((p) => p.specialtyId === "solo_practitioner")!,
+	periodontist: findSpecialtyRule("periodontist"),
+	solo_practitioner: findSpecialtyRule("solo_practitioner"),
 };
+
+export function getDoctorSpecialtyCommissionConfig(specialtyId: string): DoctorSpecialtyCommissionRule {
+	return DOCTOR_SPECIALTY_CONFIGS[specialtyId] || findSpecialtyRule(specialtyId);
+}
 
 export const SOLO_DOCTOR_SPECIALTY_PRESETS: readonly SoloDoctorSpecialtyPreset[] = [
 	{
