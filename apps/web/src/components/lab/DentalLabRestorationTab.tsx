@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { type JawScope, IMPRESSION_TYPES, addWorkingDays } from "./labMath";
+import { DentalLabExpressConfigurator } from "./DentalLabExpressConfigurator";
 import { DentalLabFdiOdontogramPicker } from "./DentalLabFdiOdontogramPicker";
 import { DentalLabLaboratorySelector, EXTERNAL_LAB_PARTNERS } from "./restorationTabModules/DentalLabLaboratorySelector";
 import { DentalLabOrthopedicConstructionGrid } from "./restorationTabModules/DentalLabOrthopedicConstructionGrid";
@@ -58,30 +59,27 @@ export function DentalLabRestorationTab(props: DentalLabRestorationTabProps) {
 
 	return (
 		<div className="space-y-4">
+			<DentalLabExpressConfigurator
+				constructionType={props.constructionType} setConstructionType={props.setConstructionType}
+				material={props.material} setMaterial={props.setMaterial} dueDate={props.dueDate} setDueDate={props.setDueDate}
+				shadeClassical={props.shadeClassical} setShadeClassical={props.setShadeClassical}
+				shadeBleach={props.shadeBleach} setShadeBleach={props.setShadeBleach}
+				shadeBody={props.shadeBody} setShadeBody={props.setShadeBody} onOpenAdvancedShades={props.onOpenAdvancedShades}
+			/>
 			<DentalLabLaboratorySelector
-				labType={labType} setLabType={handleLabTypeChange}
-				selectedLabName={selectedLabName} setSelectedLabName={setSelectedLabName}
-				courierDays={courierDays} setCourierDays={setCourierDays}
+				labType={labType} setLabType={handleLabTypeChange} selectedLabName={selectedLabName}
+				setSelectedLabName={setSelectedLabName} courierDays={courierDays} setCourierDays={setCourierDays}
 			/>
 			<DentalLabOrthopedicConstructionGrid
 				constructionType={props.constructionType} setConstructionType={props.setConstructionType}
-				material={props.material} setMaterial={props.setMaterial}
-				jawScope={props.jawScope} setJawScope={props.setJawScope}
+				material={props.material} setMaterial={props.setMaterial} jawScope={props.jawScope} setJawScope={props.setJawScope}
 			/>
-			<DentalLabTactileVitaPalette
-				currentShade={currentShade} onSelectShade={handleSelectTactileShade}
-				onOpenAdvancedShades={props.onOpenAdvancedShades}
-			/>
+			<DentalLabTactileVitaPalette currentShade={currentShade} onSelectShade={handleSelectTactileShade} onOpenAdvancedShades={props.onOpenAdvancedShades} />
 			<DentalLabFdiOdontogramPicker
 				selectedTeeth={props.selectedTeeth} setSelectedTeeth={props.setSelectedTeeth}
-				toggleTooth={props.toggleTooth} selectQuadrant={props.selectQuadrant}
-				jawScope={props.jawScope} constructionType={props.constructionType}
+				toggleTooth={props.toggleTooth} selectQuadrant={props.selectQuadrant} jawScope={props.jawScope} constructionType={props.constructionType}
 			/>
-			<DentalLabDeliveryAndFittingCard
-				dueDate={props.dueDate} setDueDate={props.setDueDate}
-				fittingDate={props.fittingDate} setFittingDate={props.setFittingDate}
-				labType={labType} courierDays={courierDays} scheduledVisitDate={props.scheduledVisitDate}
-			/>
+			<DentalLabDeliveryAndFittingCard dueDate={props.dueDate} setDueDate={props.setDueDate} fittingDate={props.fittingDate} setFittingDate={props.setFittingDate} labType={labType} courierDays={courierDays} scheduledVisitDate={props.scheduledVisitDate} />
 			<div className="space-y-2 p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">
 				<label className="block text-xs font-bold text-[var(--ink)]">Слепок (оттиск) челюсти:</label>
 				<div className="flex flex-wrap gap-2">
