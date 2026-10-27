@@ -27,16 +27,16 @@ export const ChairsidePackageServiceList: React.FC<ChairsidePackageServiceListPr
 			{items.map((svc) => (
 				<label
 					key={svc.code804n}
-					className="flex items-center justify-between gap-2.5 py-1.5 px-1 rounded hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer select-none min-h-[36px]"
+					className="flex items-start justify-between gap-2.5 py-2 px-1 rounded hover:bg-slate-50 dark:hover:bg-slate-800/50 cursor-pointer select-none min-h-[44px]"
 				>
-					<div className="flex items-center gap-2 min-w-0 flex-1">
+					<div className="flex items-start gap-2 min-w-0 flex-1">
 						<input
 							type="checkbox"
 							checked={svc.checked}
 							onChange={() => onToggleCode(svc.code804n)}
-							className="w-4 h-4 rounded border-slate-300 dark:border-slate-700 text-teal-600 focus:ring-teal-500 shrink-0"
+							className="w-4 h-4 mt-0.5 rounded border-slate-300 dark:border-slate-700 text-teal-600 focus:ring-teal-500 shrink-0"
 						/>
-						<span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0">
+						<span className="font-mono text-[11px] font-semibold text-slate-500 dark:text-slate-400 shrink-0 mt-0.5">
 							[{svc.code804n}]
 						</span>
 						<span
@@ -44,12 +44,12 @@ export const ChairsidePackageServiceList: React.FC<ChairsidePackageServiceListPr
 								svc.checked
 									? "text-slate-900 dark:text-slate-100 font-medium"
 									: "text-slate-400 dark:text-slate-500 line-through"
-							} truncate`}
+							} break-words leading-tight flex-1`}
 						>
 							{svc.title}
 						</span>
 					</div>
-					<span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-200 shrink-0">
+					<span className="font-mono text-xs font-bold text-slate-900 dark:text-slate-200 shrink-0 mt-0.5 whitespace-nowrap">
 						{money(svc.priceRub)}
 					</span>
 				</label>

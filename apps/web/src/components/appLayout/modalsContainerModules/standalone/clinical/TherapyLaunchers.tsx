@@ -17,6 +17,7 @@ import {
 import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHost";
 import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
 import { StandaloneEndoHost } from "./StandaloneEndoHost";
+import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
@@ -68,6 +69,14 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		return (
 			<StandaloneEndoHost
 				onClose={() => clearUrlTokens(["endo", "endodontics", "root-canals", "chairside-endo"])}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["clinical-bundles", "diagnosis-packages"])) {
+		return (
+			<StandaloneClinicalBundlesHost
+				onClose={() => clearUrlTokens(["clinical-bundles", "diagnosis-packages"])}
 			/>
 		);
 	}

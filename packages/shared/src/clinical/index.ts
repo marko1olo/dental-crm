@@ -48,6 +48,7 @@ export * from "./patientRelationshipsEngine.js";
 export * from "./dentalFormulaSsot.js";
 export * from "./odontogramTreatmentEngine.js";
 export * from "./pediatricDentition.js";
+export * from "./playbooks/index.js";
 export * from "./smartClinicalPlaybooksEngine.js";
 export {
   generateMorningDoctorBriefing,
@@ -95,6 +96,7 @@ export {
 } from "./somaticSafetyEngine.js";
 export * from "./clinicalMarketMaterialsCatalog.js";
 export * from "./clinicalDiagnosesSsot.js";
+export * from "./bundles/index.js";
 export * from "./diagnosisServiceBundles.js";
 export * from "./pricelistBatchImport.js";
 export * from "./informedConsentEngine.js";

@@ -75,10 +75,10 @@ export const ChairsideDiagnosisPackageCard: React.FC<ChairsideDiagnosisPackageCa
 						type="button"
 						onClick={p.handleExportToCashier}
 						data-testid="export-diagnosis-bundle-cashier-btn"
-						className="flex-1 sm:flex-initial min-h-[44px] px-3 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-700 active:bg-indigo-800 text-white font-semibold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors shrink-0"
+						className="secondary-button flex-1 sm:flex-initial min-h-[44px] px-3 py-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 active:bg-slate-200 dark:active:bg-slate-600 text-slate-700 dark:text-slate-200 font-semibold text-xs flex items-center justify-center gap-1.5 shadow-2xs transition-colors shrink-0"
 						title="Передать пакет услуг в кассу с точным расчётом в копейках"
 					>
-						<Receipt className="w-4 h-4" />
+						<Receipt className="w-4 h-4 text-slate-500 dark:text-slate-400" />
 						В кассу
 					</button>
 				</div>
