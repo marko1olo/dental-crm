@@ -1,6 +1,10 @@
 /**
  * apps/web/src/components/patient/PatientDetailsModal.tsx
- * Тонкий фасад карточки пациента по Мандату 8b (лимит <= 10 строк).
+ *
+ * Canonical Shim Re-export for Backward Compatibility.
+ * Canonical Single Source of Truth (SSOT) moved to:
+ * apps/web/src/components/patients/PatientDetailsModal.tsx
  */
-export * from "./detailsModal/patientDetailsTypes";
-export { PatientDetailsModalView as PatientDetailsModal, PatientDetailsModalView as default } from "./detailsModal/PatientDetailsModalView";
+
+export * from "../patients/PatientDetailsModal";
+export { PatientDetailsModal as default } from "../patients/PatientDetailsModal";

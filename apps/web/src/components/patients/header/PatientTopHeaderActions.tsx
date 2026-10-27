@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from "react";
-import { Calendar, MessageSquare, MoreHorizontal, Stethoscope } from "lucide-react";
+import { MessageSquare, MoreHorizontal, Plus, Stethoscope } from "lucide-react";
 import { openWhatsAppChat } from "../../../store/telephonyStore";
 import { PatientTopHeaderMenu } from "./PatientTopHeaderMenu";
 
@@ -46,22 +46,22 @@ export function PatientTopHeaderActions({
 			<button
 				type="button"
 				onClick={onBookAppointment}
-				className="min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors cursor-pointer shrink-0"
+				className="min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-3.5 rounded-lg border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-bold text-xs inline-flex items-center gap-1.5 shadow-xs hover:opacity-95 transition-all cursor-pointer shrink-0"
 				title="Записать пациента в расписание приёма"
 				data-testid="patient-card-book-appointment-btn"
 			>
-				<Calendar size={13} className="text-[var(--teal)] shrink-0" />
-				<span>Записать на приём</span>
+				<Plus size={13} className="shrink-0" />
+				<span>+ Записать на приём</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={onOpenVisit}
-				className="min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-3 rounded-lg border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,#ffffff)] font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs hover:opacity-95 transition-all cursor-pointer shrink-0"
+				className="min-h-[44px] sm:min-h-[34px] sm:h-8.5 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold text-xs inline-flex items-center gap-1.5 shadow-2xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] transition-colors cursor-pointer shrink-0"
 				title="Начать амбулаторный приём пациента"
 				data-testid="patient-card-open-visit-btn"
 			>
-				<Stethoscope size={13} className="shrink-0" />
+				<Stethoscope size={13} className="text-[var(--teal)] shrink-0" />
 				<span>Начать приём</span>
 			</button>
 

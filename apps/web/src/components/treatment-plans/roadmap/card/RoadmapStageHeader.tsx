@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Check, CheckCircle2, ChevronDown, ChevronUp, Clock } from "lucide-react";
 import type { RoadmapStageData } from "../types.js";
 

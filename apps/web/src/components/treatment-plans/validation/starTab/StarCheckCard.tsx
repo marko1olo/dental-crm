@@ -8,7 +8,7 @@ export interface StarCheckCardProps {
 
 export const StarCheckCard: React.FC<StarCheckCardProps> = ({ check }) => {
 	const relatedCodes =
-		check.serviceCatalogCodesRelated || check.order804nCodesRelated;
+		check.serviceCatalogCodesRelated || check.order804nCodesRelated || [];
 
 	return (
 		<div
@@ -54,7 +54,7 @@ export const StarCheckCard: React.FC<StarCheckCardProps> = ({ check }) => {
 						? "Соответствует"
 						: check.status === "warning"
 							? "Рекомендация"
-							: "Дефект"}
+							: "Требует внимания"}
 				</span>
 			</div>
 

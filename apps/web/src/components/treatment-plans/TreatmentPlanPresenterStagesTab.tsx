@@ -1,5 +1,5 @@
 import { Package } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { StageCardHeader } from "./stagesTab/StageCardHeader.js";
 import { StageItemsTable } from "./stagesTab/StageItemsTable.js";
 import { StagesTabHeader } from "./stagesTab/StagesTabHeader.js";

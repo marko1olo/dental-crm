@@ -3,7 +3,8 @@
  * (Мандат 8b: строго <= 120 строк).
  */
 
-import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import {
 	calculateStaged304030Schedule,
 	calculatePlanTaxDeductionBreakdown,
@@ -17,20 +18,20 @@ import { mockStandardTierPresenter, mockTiersPresenter } from "./helpers/present
 
 describe("Treatment Plan Presenter — Иерархия тарифов и платежи", () => {
 	it("generates exactly 3 distinct tiers and maintains pricing hierarchy", () => {
-		expect(mockTiersPresenter).toHaveLength(3);
+		assert.equal(mockTiersPresenter.length, 3);
 		const economy = mockTiersPresenter.find((t) => t.tierId === "economy")!;
 		const standard = mockTiersPresenter.find((t) => t.tierId === "standard")!;
 		const optimum = mockTiersPresenter.find((t) => t.tierId === "optimum")!;
 
-		expect(economy.totalRub).toBeGreaterThan(0);
-		expect(standard.totalRub).toBeGreaterThanOrEqual(economy.totalRub);
-		expect(optimum.totalRub).toBeGreaterThanOrEqual(standard.totalRub);
+		assert.ok(economy.totalRub > 0);
+		assert.ok(standard.totalRub >= economy.totalRub);
+		assert.ok(optimum.totalRub >= standard.totalRub);
 
 		for (const tier of mockTiersPresenter) {
 			for (const stage of tier.stages) {
 				for (const item of stage.items) {
-					expect(item.code804n).toMatch(/^A\d{2}\.\d{2}\.\d{3}/);
-					expect(item.unitPriceRub).toBeGreaterThan(0);
+					assert.match(item.code804n, /^A\d{2}\.\d{2}\.\d{3}/);
+					assert.ok(item.unitPriceRub > 0);
 				}
 			}
 		}
@@ -40,19 +41,19 @@ describe("Treatment Plan Presenter — Иерархия тарифов и пла
 		const totalKopecks = parseKopecks(mockStandardTierPresenter.totalRub);
 		const schedule = calculateStaged304030Schedule(totalKopecks, true);
 
-		expect(schedule.isBalanced).toBe(true);
-		expect(schedule.partsKopecks).toHaveLength(3);
+		assert.equal(schedule.isBalanced, true);
+		assert.equal(schedule.partsKopecks.length, 3);
 		const sumMilestonesKopecks =
 			schedule.stage1AdvanceTherapyKopecks +
 			schedule.stage2SurgeryImplantKopecks +
 			schedule.stage3OrthopedicsKopecks;
-		expect(sumMilestonesKopecks).toBe(totalKopecks);
+		assert.equal(sumMilestonesKopecks, totalKopecks);
 	});
 
 	it("computes 0% installments and 13% NDFL tax deduction accurately", () => {
 		const totalRub = mockStandardTierPresenter.totalRub;
 		const installment12 = Math.round(totalRub / 12);
-		expect(mockStandardTierPresenter.monthlyInstallment12Rub).toBe(installment12);
+		assert.equal(mockStandardTierPresenter.monthlyInstallment12Rub, installment12);
 
 		const planItems = mockStandardTierPresenter.stages.flatMap((s) =>
 			s.items.map((it) => ({
@@ -64,19 +65,19 @@ describe("Treatment Plan Presenter — Иерархия тарифов и пла
 			})),
 		);
 		const deduction = calculatePlanTaxDeductionBreakdown(planItems);
-		expect(deduction.grandTotalRefund13Kopecks).toBeGreaterThan(0);
-		expect(deduction.netPriceWithRefundRub).toBeLessThanOrEqual(deduction.grandTotalRub);
+		assert.ok(deduction.grandTotalRefund13Kopecks > 0);
+		assert.ok(deduction.netPriceWithRefundRub <= deduction.grandTotalRub);
 	});
 
 	it("applies doctor discount and clamps percentages to [0, 100]", () => {
 		const discountedStages = applyDoctorDiscountToStages(mockStandardTierPresenter.stages, 15);
 		const recalculated = recalculateTierTotals(mockStandardTierPresenter, discountedStages);
-		expect(recalculated.totalRub).toBeLessThan(mockStandardTierPresenter.totalRub);
+		assert.ok(recalculated.totalRub < mockStandardTierPresenter.totalRub);
 
 		const clampedZero = applyDoctorDiscountToStages(mockStandardTierPresenter.stages, -10);
-		expect(recalculateTierTotals(mockStandardTierPresenter, clampedZero).totalRub).toBe(mockStandardTierPresenter.totalRub);
+		assert.equal(recalculateTierTotals(mockStandardTierPresenter, clampedZero).totalRub, mockStandardTierPresenter.totalRub);
 
 		const clampedHundred = applyDoctorDiscountToStages(mockStandardTierPresenter.stages, 120);
-		expect(recalculateTierTotals(mockStandardTierPresenter, clampedHundred).totalRub).toBe(0);
+		assert.equal(recalculateTierTotals(mockStandardTierPresenter, clampedHundred).totalRub, 0);
 	});
 });

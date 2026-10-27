@@ -51,7 +51,7 @@ export const StageCardHeader: React.FC<StageCardHeaderProps> = ({
 					<button
 						type="button"
 						onClick={() => onSendStage(stage, "visit")}
-						className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--paper-soft,var(--tp-surface-soft))] hover:bg-[var(--paper,var(--tp-surface))] border border-[var(--line-subtle,var(--tp-border))] text-[var(--ink,var(--tp-text-main))] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+						className="h-8 px-2.5 rounded-lg text-xs font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 						data-testid={`stage-send-to-visit-btn-${stage.stageNumber}`}
 						title="Перенести услуги этапа в текущий приём врача"
 					>
@@ -62,7 +62,7 @@ export const StageCardHeader: React.FC<StageCardHeaderProps> = ({
 					<button
 						type="button"
 						onClick={() => onSendStage(stage, "invoice")}
-						className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-[var(--teal-soft,rgba(20,184,166,0.1))] hover:bg-[var(--teal-soft-strong,rgba(20,184,166,0.2))] border border-[var(--teal,rgba(20,184,166,0.3))] text-[var(--teal-dark,var(--teal))] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+						className="h-8 px-2.5 rounded-lg text-xs font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 						data-testid={`stage-send-to-invoice-btn-${stage.stageNumber}`}
 						title="Перенести услуги этапа в кассовый счёт на оплату"
 					>
@@ -73,18 +73,18 @@ export const StageCardHeader: React.FC<StageCardHeaderProps> = ({
 					<button
 						type="button"
 						onClick={() => onPayStage(stage)}
-						className="h-8 px-2.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+						className="h-8 px-2.5 rounded-lg text-xs font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 						data-testid={`stage-pay-btn-${stage.stageNumber}`}
 						title="Оплатить этап в кассе (наличные, терминал, СБП)"
 					>
-						<CreditCard size={13} className="text-white shrink-0" />
+						<CreditCard size={13} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>Оплатить этап</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={handleOpenLab}
-						className="h-8 px-2.5 rounded-lg text-xs font-semibold bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-800 dark:text-amber-300 inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
+						className="h-8 px-2.5 rounded-lg text-xs font-medium bg-[var(--paper-soft)] hover:bg-[var(--paper)] border border-[var(--line-subtle)] text-[var(--ink)] inline-flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors"
 						data-testid={`stage-create-lab-order-btn-${stage.stageNumber}`}
 						title="Создать наряд в зуботехническую лабораторию (ЗТЛ)"
 					>

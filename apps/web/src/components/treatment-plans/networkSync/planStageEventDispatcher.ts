@@ -18,6 +18,20 @@ export function dispatchStageStartEvents(
 		}),
 	);
 
+	window.dispatchEvent(
+		new CustomEvent("dente-add-services-to-invoice", {
+			detail: {
+				patientId,
+				patientName,
+				stageNumber: stage.stageNumber,
+				stageTitle: stage.title,
+				services: stage.items,
+				items: stage.items,
+				target: "invoice",
+			},
+		}),
+	);
+
 	for (const item of stage.items) {
 		window.dispatchEvent(
 			new CustomEvent("dente-add-billing-item", {

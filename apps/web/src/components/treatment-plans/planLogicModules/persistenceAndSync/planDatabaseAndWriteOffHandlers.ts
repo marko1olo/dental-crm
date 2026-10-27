@@ -1,7 +1,6 @@
 import { useRef } from "react";
 import { showToast } from "../../../GlobalToast.js";
 import { logger } from "../../../../utils/logger.js";
-import { detectMutuallyExclusiveToothProcedures } from "../../validation/starProtocolValidationEngine.js";
 import { savePlanToPostgres } from "../../treatmentPlanNetworkSync.js";
 import type { PlanPersistenceAndSyncContext, TreatmentPlanStage, TreatmentPlanStatus } from "../types.js";
 
@@ -16,19 +15,6 @@ export function createPlanDatabaseAndWriteOffHandlers(ctx: PlanPersistenceAndSyn
 	const saveInFlightRef = useRef(false);
 
 	const handleStatusTransition = (newStatus: TreatmentPlanStatus) => {
-		if (newStatus === "agreed" || newStatus === "in_progress") {
-			const allItems = stages.flatMap((s) => s.items);
-			const conflicts = detectMutuallyExclusiveToothProcedures(allItems);
-			if (conflicts.length > 0) {
-				const first = conflicts[0]!;
-				showToast(
-					`Внимание: обнаружен клинический конфликт на зубе №${first.toothNumber}! («${first.procedureA.name}» и «${first.procedureB.name}»). Статус изменён под клиническую ответственность врача.`,
-					"warning",
-					6000,
-				);
-			}
-		}
-
 		setPlanStatus(newStatus);
 		onStatusChange?.(newStatus);
 		const statusLabels: Partial<Record<TreatmentPlanStatus, string>> = {

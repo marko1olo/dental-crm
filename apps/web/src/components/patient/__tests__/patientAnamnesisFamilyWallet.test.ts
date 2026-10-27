@@ -150,7 +150,20 @@ describe("Patient Anamnesis, Family Wallet & Drawer Integrity Suite", () => {
 		it("enforces zero disabled buttons in PatientAnamnesisTab source code", () => {
 			const tabFile = path.resolve(patientDir, "PatientAnamnesisTab.tsx");
 			const anamnesisDir = path.resolve(patientDir, "anamnesis");
+			const canonicalTabFile = path.resolve(patientDir, "../patients/PatientAnamnesisTab.tsx");
+			const canonicalAnamnesisDir = path.resolve(patientDir, "../patients/anamnesis");
 			let content = fs.readFileSync(tabFile, "utf-8");
+			if (fs.existsSync(canonicalTabFile)) {
+				content += `\n${fs.readFileSync(canonicalTabFile, "utf-8")}`;
+			}
+			if (fs.existsSync(canonicalAnamnesisDir)) {
+				const decompFiles = fs
+					.readdirSync(canonicalAnamnesisDir)
+					.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"));
+				for (const f of decompFiles) {
+					content += `\n${fs.readFileSync(path.join(canonicalAnamnesisDir, f), "utf-8")}`;
+				}
+			}
 			if (fs.existsSync(anamnesisDir)) {
 				const decompFiles = fs
 					.readdirSync(anamnesisDir)
@@ -403,7 +416,20 @@ describe("Patient Anamnesis, Family Wallet & Drawer Integrity Suite", () => {
 	describe("4. PatientDetailsModal Invariants", () => {
 		it("guarantees save button is never disabled by formIsValid or missing optional fields", () => {
 			const modalFile = path.resolve(patientDir, "PatientDetailsModal.tsx");
+			const canonicalModalFile = path.resolve(patientDir, "../patients/PatientDetailsModal.tsx");
+			const canonicalDetailsDir = path.resolve(patientDir, "../patients/detailsModal");
 			let content = fs.readFileSync(modalFile, "utf-8");
+			if (fs.existsSync(canonicalModalFile)) {
+				content += `\n${fs.readFileSync(canonicalModalFile, "utf-8")}`;
+			}
+			if (fs.existsSync(canonicalDetailsDir)) {
+				const files = fs
+					.readdirSync(canonicalDetailsDir)
+					.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"));
+				for (const f of files) {
+					content += `\n${fs.readFileSync(path.join(canonicalDetailsDir, f), "utf-8")}`;
+				}
+			}
 			const detailsDir = path.resolve(patientDir, "detailsModal");
 			if (fs.existsSync(detailsDir)) {
 				const files = fs

@@ -1,5 +1,5 @@
 import React from "react";
-import { Calendar, Stethoscope } from "lucide-react";
+import { Plus, Stethoscope } from "lucide-react";
 
 export interface MobileProfileFloatingBarProps {
 	readonly onStartVisit: () => void;
@@ -17,21 +17,21 @@ export const MobileProfileFloatingBar: React.FC<MobileProfileFloatingBarProps> =
 		>
 			<button
 				type="button"
-				onClick={onStartVisit}
+				onClick={onBookAppointment}
 				className="flex-1 min-h-[44px] h-11 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white font-bold text-sm inline-flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all cursor-pointer"
-				data-testid="mobile-floating-start-visit-btn"
+				data-testid="mobile-floating-book-btn"
 			>
-				<Stethoscope size={18} />
-				<span>Начать приём</span>
+				<Plus size={18} />
+				<span>+ Записать на приём</span>
 			</button>
 			<button
 				type="button"
-				onClick={onBookAppointment}
+				onClick={onStartVisit}
 				className="min-h-[44px] h-11 px-4 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] font-semibold text-sm inline-flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
-				data-testid="mobile-floating-book-btn"
+				data-testid="mobile-floating-start-visit-btn"
 			>
-				<Calendar size={18} className="text-[var(--teal,#0d9488)]" />
-				<span>Запись</span>
+				<Stethoscope size={18} className="text-[var(--teal,#0d9488)]" />
+				<span>Начать приём</span>
 			</button>
 		</div>
 	);
