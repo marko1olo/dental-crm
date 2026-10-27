@@ -132,11 +132,14 @@ test("Workspace Role Specialization & Clinical Ergonomics Verification", async (
 			"Role tab buttons must not exceed 7 controls to prevent choice overload",
 		);
 
-		// Source inspection for UI layout compliance
-		const selectorSource = fs.readFileSync(
+		// Source inspection for UI layout compliance (facade and submodules)
+		const selectorDir = path.resolve(__dirname, "../featuresSelector");
+		const selectorSource = [
 			path.resolve(__dirname, "../WorkspaceFeaturesSelector.tsx"),
-			"utf8",
-		);
+			path.resolve(selectorDir, "WorkspaceFeaturesSelectorView.tsx"),
+			path.resolve(selectorDir, "ClinicalRoleSelectorBar.tsx"),
+			path.resolve(selectorDir, "ClinicalRoleSpotlightCard.tsx"),
+		].filter((p) => fs.existsSync(p)).map((p) => fs.readFileSync(p, "utf8")).join("\n");
 
 		assert.ok(
 			selectorSource.includes('data-testid="clinical-role-selector-bar"'),
@@ -164,14 +167,19 @@ test("Workspace Role Specialization & Clinical Ergonomics Verification", async (
 	});
 
 	await t.test("8. Ironclad User Mandate: STRICTLY ZERO TOUCHES of CBCT / CT / DICOM / Radiology", () => {
-		const selectorSource = fs.readFileSync(
+		const selectorDir = path.resolve(__dirname, "../featuresSelector");
+		const selectorFiles = [
 			path.resolve(__dirname, "../WorkspaceFeaturesSelector.tsx"),
-			"utf8",
-		);
-		const historySource = fs.readFileSync(
+			...(fs.existsSync(selectorDir) ? fs.readdirSync(selectorDir).map((f) => path.resolve(selectorDir, f)) : []),
+		];
+		const selectorSource = selectorFiles.map((p) => fs.readFileSync(p, "utf8")).join("\n");
+
+		const historyDir = path.resolve(__dirname, "../recentPatients");
+		const historyFiles = [
 			path.resolve(__dirname, "../RecentPatientHistoryWidget.tsx"),
-			"utf8",
-		);
+			...(fs.existsSync(historyDir) ? fs.readdirSync(historyDir).map((f) => path.resolve(historyDir, f)) : []),
+		];
+		const historySource = historyFiles.map((p) => fs.readFileSync(p, "utf8")).join("\n");
 
 		const forbiddenPatterns = [
 			/\bCBCT\b/i,
@@ -233,10 +241,12 @@ test("Workspace Role Specialization & Clinical Ergonomics Verification", async (
 		}
 
 		// Source inspection for touch target compliance (>= 44x44px)
-		const historySource = fs.readFileSync(
+		const historyDir = path.resolve(__dirname, "../recentPatients");
+		const historyFiles = [
 			path.resolve(__dirname, "../RecentPatientHistoryWidget.tsx"),
-			"utf8",
-		);
+			...(fs.existsSync(historyDir) ? fs.readdirSync(historyDir).map((f) => path.resolve(historyDir, f)) : []),
+		];
+		const historySource = historyFiles.map((p) => fs.readFileSync(p, "utf8")).join("\n");
 
 		assert.ok(
 			historySource.includes('data-testid="recent-patient-1click-restore"'),

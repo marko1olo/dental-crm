@@ -143,8 +143,12 @@ test("DoctorClinicalTrainingTour — Clinical Operations & Ergonomics Verificati
 	});
 
 	await t.test("4. Non-blocking beacon ergonomics & z-index hierarchy", () => {
-		const componentPath = path.resolve(__dirname, "../DoctorClinicalTrainingTour.tsx");
-		const content = fs.readFileSync(componentPath, "utf8");
+		const tourDir = path.resolve(__dirname, "../trainingTour");
+		const tourFiles = [
+			path.resolve(__dirname, "../DoctorClinicalTrainingTour.tsx"),
+			...(fs.existsSync(tourDir) ? fs.readdirSync(tourDir).map((f) => path.resolve(tourDir, f)) : []),
+		];
+		const content = tourFiles.map((p) => fs.readFileSync(p, "utf8")).join("\n");
 
 		// Non-blocking beacon verification
 		assert.ok(
