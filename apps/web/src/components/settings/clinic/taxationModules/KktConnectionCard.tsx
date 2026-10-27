@@ -54,7 +54,7 @@ export const KktConnectionCard: React.FC<KktConnectionCardProps> = ({
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
 				<label className="space-y-1 block">
-					<span className="text-[11px] font-semibold text-[var(--muted)] block">Модель ККТ (54-ФЗ)</span>
+					<span className="text-[11px] font-semibold text-[var(--muted)] block">Модель кассового аппарата (ККТ)</span>
 					<select
 						aria-label="Модель ККТ"
 						data-testid="select-kkm-model"

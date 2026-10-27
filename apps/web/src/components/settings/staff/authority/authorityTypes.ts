@@ -34,7 +34,7 @@ export const FLAG_TITLES: Record<StaffAuthorityFlagKey, string> = {
 
 export const FLAG_HINTS: Record<StaffAuthorityFlagKey, string> = {
 	canSignMedicalRecords: "Право подписывать дневники приёма, ставить диагнозы и завершать приём.",
-	canManageMoney: "Проводить наличные и безналичные оплаты, чеки 54-ФЗ и возвраты.",
+	canManageMoney: "Проводить наличные и безналичные оплаты, кассовые чеки и возвраты.",
 	canManageImports: "Перенос базы пациентов и прайса из других программ.",
 };
 

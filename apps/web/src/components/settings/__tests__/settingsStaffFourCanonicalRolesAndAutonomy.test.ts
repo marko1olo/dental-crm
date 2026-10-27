@@ -64,7 +64,10 @@ describe("Settings & Staff Four Canonical Roles & Autonomy Inquisition (Mandates
 	it("4. DoctorSnilsValidationWidget uses CSS tokens, data.formatted/snilsFormatted, and never disables forms", () => {
 		const widgetPath = path.join(settingsDir, "DoctorSnilsValidationWidget.tsx");
 		assert.ok(fs.existsSync(widgetPath), "DoctorSnilsValidationWidget.tsx must exist");
-		const content = fs.readFileSync(widgetPath, "utf-8");
+		const facadeContent = fs.readFileSync(widgetPath, "utf-8");
+		const hookContent = fs.readFileSync(path.join(settingsDir, "snils", "useDoctorSnilsValidation.ts"), "utf-8");
+		const formContent = fs.readFileSync(path.join(settingsDir, "snils", "DoctorSnilsInputForm.tsx"), "utf-8");
+		const content = facadeContent + "\n" + hookContent + "\n" + formContent;
 
 		assert.ok(content.includes("data.formatted || data.snilsFormatted"), "Must support both formatted property names");
 		assert.ok(!content.includes("bg-white"), "Must not use raw bg-white");

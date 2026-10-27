@@ -37,7 +37,7 @@ export const SettingsNavigationMenu: React.FC<SettingsNavigationMenuProps> = ({
 				</div>
 				<h2
 					className="text-lg font-bold tracking-tight text-[var(--ink)] m-0 whitespace-nowrap"
-					title="Раздел административных настроек: управление персоналом, прайс-листом, интеграцией с ЕГИСЗ/ОФД и бланками"
+					title="Раздел административных настроек: управление персоналом, прейскурантом услуг, интеграцией с государственными и фискальными сервисами"
 				>
 					Настройки клиники
 				</h2>

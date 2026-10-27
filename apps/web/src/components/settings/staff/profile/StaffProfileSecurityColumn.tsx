@@ -56,7 +56,7 @@ export const StaffProfileSecurityColumn: React.FC<SecurityColumnProps> = ({
 							className="rounded mt-0.5 border-[var(--line)] text-teal-600"
 						/>
 						<div>
-							<span className="font-semibold text-[var(--ink)] block">Касса и чеки 54-ФЗ</span>
+							<span className="font-semibold text-[var(--ink)] block">Касса и чеки</span>
 							<span className="text-[var(--muted)] text-[11px]">Пробитие чеков, приём оплат и возвраты</span>
 						</div>
 					</label>

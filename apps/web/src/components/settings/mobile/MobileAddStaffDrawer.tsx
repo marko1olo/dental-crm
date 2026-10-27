@@ -86,7 +86,7 @@ export const MobileAddStaffDrawer: React.FC<MobileAddStaffDrawerProps> = ({
 					</div>
 
 					<div className="space-y-1">
-						<label className="text-xs font-medium text-[var(--muted)]">СНИЛС (для ЕГИСЗ)</label>
+						<label className="text-xs font-medium text-[var(--muted)]">СНИЛС (для электронных карт)</label>
 						<input
 							type="text"
 							placeholder="000-000-000 00"

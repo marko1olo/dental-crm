@@ -41,7 +41,7 @@ export const MobilePriceRegulatoryCard: React.FC<MobilePriceRegulatoryCardProps>
 
 			<div className="space-y-1.5">
 				<span className="text-[13px] font-medium text-[var(--ink)] block">
-					Ставка НДС (ст. 149 НК РФ)
+					Ставка НДС
 				</span>
 				<div className="grid grid-cols-2 gap-2">
 					<button
@@ -62,7 +62,7 @@ export const MobilePriceRegulatoryCard: React.FC<MobilePriceRegulatoryCardProps>
 						>
 							{vatRate === "vat_exempt" && <Check size={10} />}
 						</div>
-						<span className="text-xs">Без НДС (ст. 149)</span>
+						<span className="text-xs">Без НДС (медицинские услуги)</span>
 					</button>
 
 					<button

@@ -363,8 +363,8 @@ describe("Doctor & Admin Settings Red Team Inquisition", () => {
 		});
 
 		it("DoctorSettingsSection и AdminSettingsSection используют канонический DelimitedTileCard", () => {
-			const doctorContent = fs.readFileSync(path.join(settingsDir, "DoctorSettingsSection.tsx"), "utf-8");
-			const adminContent = fs.readFileSync(path.join(settingsDir, "AdminSettingsSection.tsx"), "utf-8");
+			const doctorContent = fs.readFileSync(path.join(settingsDir, "DoctorSettingsSection.tsx"), "utf-8") + "\n" + fs.readFileSync(path.join(settingsDir, "doctor", "DoctorAssistantsCard.tsx"), "utf-8");
+			const adminContent = fs.readFileSync(path.join(settingsDir, "AdminSettingsSection.tsx"), "utf-8") + "\n" + fs.readFileSync(path.join(settingsDir, "admin", "AdminCadenceCard.tsx"), "utf-8");
 			assert.ok(doctorContent.includes("<DelimitedTileCard") && adminContent.includes("<DelimitedTileCard"));
 			assert.equal(doctorContent.includes("bg-slate-300"), false);
 			assert.equal(adminContent.includes("bg-slate-300"), false);

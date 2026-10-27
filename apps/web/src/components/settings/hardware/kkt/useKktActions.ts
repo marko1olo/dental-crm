@@ -34,7 +34,7 @@ export function useKktActions({ protocol, host, port, cashier, isEmulatorMode }:
 				await new Promise((r) => setTimeout(r, 200));
 				const emuStatus: KktDeviceHealthStatus = {
 					online: true, paperOk: true, coverClosed: true, fnPresent: true, fnFiscalized: true, latencyMs: 3,
-					modelName: protocol === "atol" ? "АТОЛ 27Ф (Программный эмулятор 54-ФЗ)" : "ШТРИХ-М-01Ф (Программный эмулятор)",
+					modelName: protocol === "atol" ? "АТОЛ 27Ф (Программный эмулятор)" : "ШТРИХ-М-01Ф (Программный эмулятор)",
 					fnSerial: "9960440302145896", kktSerialNumber: "0010670000012345", shiftNumber: 142, checkedAt: new Date().toISOString(),
 				};
 				setHealthStatus(emuStatus);

@@ -225,7 +225,7 @@ export function PricesFilterToolbar({
 						className="secondary-button shrink-0"
 						onClick={onOpenServicePricelistModal}
 						data-testid="open-service-pricelist-modal-btn"
-						title="Печать официального прейскуранта клиники (А4, ст. 149 НК РФ)"
+						title="Печать официального прейскуранта клиники (А4)"
 					>
 						<Printer size={14} className="text-[var(--teal)] shrink-0" />
 						<span className="hidden sm:inline">Печать А4</span>

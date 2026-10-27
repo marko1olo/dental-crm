@@ -43,7 +43,7 @@ export const KktHeaderAndMode: React.FC<Props> = ({ isEmulatorMode, onEmulatorMo
 					fontWeight: 500,
 					color: isEmulatorMode ? "var(--success, green)" : "var(--ink)",
 				}}
-				title="В режиме эмулятора чеки рассчитываются по 54-ФЗ с генерацией QR-кода ФНС без расхода фискального накопителя"
+				title="В режиме эмулятора чеки рассчитываются с генерацией QR-кода без расхода фискального накопителя"
 			>
 				<input
 					type="checkbox"

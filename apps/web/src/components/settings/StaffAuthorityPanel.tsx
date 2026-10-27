@@ -17,7 +17,7 @@ export const StaffAuthorityPanel: React.FC = () => {
 
 			<div className="settings-card-body space-y-3">
 				<p className="text-xs text-[var(--muted)] m-0">
-					Простые и понятные полномочия: право подписи медкарты, доступ к кассе и чекам 54-ФЗ, перенос базы данных.
+					Простые и понятные полномочия: право подписи медкарты, доступ к кассе и чекам, перенос базы данных.
 				</p>
 
 				{rows.length === 0 ? (

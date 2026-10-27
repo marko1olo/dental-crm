@@ -86,7 +86,7 @@ export function useClinicFiscalSettings() {
 			if (updated.branchId) setBranchId(updated.branchId);
 			if (updated.cashBoxId) setCashBoxId(updated.cashBoxId);
 			setSaveStatus("saved");
-			showToast("Настройки налогообложения (СНО) и кассы 54-ФЗ сохранены", "success");
+			showToast("Настройки налогообложения и кассы сохранены", "success");
 		} catch (err) {
 			setSaveStatus("error");
 			showToast(err instanceof Error ? err.message : "Ошибка сохранения параметров кассы", "error");

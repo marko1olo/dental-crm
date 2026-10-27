@@ -83,7 +83,7 @@ export const PriceListCategoryFilter: React.FC<PriceListCategoryFilterProps> = (
 				</div>
 			</div>
 
-			{/* Категории номенклатуры 804н */}
+			{/* Категории прейскуранта услуг */}
 			<div className="flex items-center gap-1.5 flex-wrap">
 				{PRICELIST_CATEGORIES.map((cat: CategoryOption) => {
 					const isSelected = selectedCategory === cat.key;

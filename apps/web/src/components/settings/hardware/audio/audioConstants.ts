@@ -17,7 +17,7 @@ export const SIGNAL_LABELS: Record<ProceduralSignalType, SignalDescriptor> = {
 		icon: Scan,
 	},
 	cashier_kaching: {
-		title: "Фискализация чека 54-ФЗ",
+		title: "Печать кассового чека",
 		freq: "1200 + 2400 Гц (140 мс)",
 		desc: "Подтверждение безналичной оплаты картой/QR-кодом или успешной отправки фискального чека в ОФД.",
 		icon: Receipt,

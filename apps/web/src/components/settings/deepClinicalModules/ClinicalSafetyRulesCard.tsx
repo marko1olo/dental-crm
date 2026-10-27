@@ -266,7 +266,7 @@ export function ClinicalSafetyRulesCard({
 			<div className="p-4 rounded-2xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 				<h4 className="m-0 text-sm font-bold text-[var(--ink)] flex items-center gap-2">
 					<ShieldCheck size={16} className="text-teal-600" aria-hidden="true" />
-					Финансовая автономия врача и касса 54-ФЗ
+					Финансовая автономия врача и касса
 				</h4>
 
 				<div className="space-y-2.5 pt-1">
@@ -276,7 +276,7 @@ export function ClinicalSafetyRulesCard({
 								Экспресс-чеки без ИНН физлиц
 							</strong>
 							<span className="block text-[11px] text-[var(--muted)]">
-								По закону 54-ФЗ для пациентов-физлиц ИНН не обязателен. Чек выбивается моментально.
+								Для пациентов-физлиц ИНН не требуется. Чек формируется моментально.
 							</span>
 						</div>
 						<input
