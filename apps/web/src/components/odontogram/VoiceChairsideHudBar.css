@@ -6,8 +6,12 @@
 .dente-voice-hud-bar {
 	position: fixed;
 	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-	left: 50%;
-	transform: translateX(-50%);
+	left: 0;
+	right: 0;
+	margin-left: auto;
+	margin-right: auto;
+	width: fit-content;
+	max-width: calc(100vw - 32px);
 	z-index: 99990;
 	display: flex;
 	align-items: center;
@@ -22,8 +26,7 @@
 	font-size: 13px;
 	font-family: inherit;
 	pointer-events: auto;
-	max-width: calc(100vw - 32px);
-	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .dente-voice-hud-bar--listening {
@@ -31,11 +34,28 @@
 	box-shadow: 0 8px 32px rgba(13, 148, 136, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
 }
 
+.dente-voice-hud-text {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	max-width: 380px;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
 @media (max-width: 768px) {
 	.dente-voice-hud-bar {
 		bottom: calc(74px + env(safe-area-inset-bottom, 0px));
-		max-width: calc(100vw - 20px);
+		max-width: calc(100vw - 24px);
 		gap: 6px;
-		padding: 0 6px 0 8px;
+		padding: 0 4px 0 8px;
+	}
+	.dente-voice-hud-shortcut {
+		display: none !important;
+	}
+	.dente-voice-hud-text {
+		max-width: 190px;
+		font-size: 12px;
 	}
 }

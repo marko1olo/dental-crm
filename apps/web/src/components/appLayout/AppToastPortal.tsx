@@ -26,12 +26,6 @@ const VisiographIncomingToast = lazyWithRetry(() =>
 	})),
 );
 
-const VoiceChairsideHudBar = lazyWithRetry(() =>
-	import("../odontogram/VoiceChairsideHudBar").then((module) => ({
-		default: module.VoiceChairsideHudBar,
-	})),
-);
-
 const DoctorCommandHud = lazyWithRetry(() =>
 	import("../chairside/DoctorCommandHud").then((module) => ({
 		default: module.DoctorCommandHud,
@@ -71,9 +65,6 @@ export function AppToastPortal(props: AppToastPortalProps) {
 			</Suspense>
 			<Suspense fallback={null}>
 				<VisiographIncomingToast />
-			</Suspense>
-			<Suspense fallback={null}>
-				<VoiceChairsideHudBar />
 			</Suspense>
 			<Suspense fallback={null}>
 				<DoctorCommandHud

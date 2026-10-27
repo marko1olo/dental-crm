@@ -40,7 +40,7 @@ export function VoiceChairsideHudBar() {
 			</button>
 
 			{/* Status / Transcript / Result text */}
-			<div style={{ display: "flex", alignItems: "center", gap: 6, maxWidth: 380, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+			<div className="dente-voice-hud-text">
 				{isListening ? (
 					transcript ? (
 						<span style={{ fontStyle: "italic", color: "var(--ink)" }}>«{transcript}»</span>
@@ -53,12 +53,19 @@ export function VoiceChairsideHudBar() {
 						<span style={{ fontWeight: 500 }}>{lastActionResult.summaryText || "Команда применена"}</span>
 					</span>
 				) : (
-					<span style={{ color: "var(--ink-muted)" }}>Стерильный режим готов</span>
+					<span style={{ color: "var(--ink-muted)" }}>Стерильный режим</span>
 				)}
 			</div>
 
-			{/* Quick Shortcut Badge */}
-			<span style={{ padding: "2px 6px", fontSize: 11, fontWeight: 600, borderRadius: 4, background: "var(--paper, #111827)", color: "var(--ink-muted, #9ca3af)", border: "1px solid var(--line, #374151)", letterSpacing: "0.5px", flexShrink: 0 }}>
+			{/* Quick Shortcut Badge (Desktop Only) */}
+			<span
+				className="dente-voice-hud-shortcut"
+				style={{
+					padding: "2px 6px", fontSize: 11, fontWeight: 600, borderRadius: 4,
+					background: "var(--paper, #111827)", color: "var(--ink-muted, #9ca3af)",
+					border: "1px solid var(--line, #374151)", letterSpacing: "0.5px", flexShrink: 0,
+				}}
+			>
 				F8
 			</span>
 
