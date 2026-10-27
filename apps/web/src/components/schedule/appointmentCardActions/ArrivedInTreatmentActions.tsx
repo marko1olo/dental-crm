@@ -44,11 +44,11 @@ export function ArrivedInTreatmentActions({
 						if (isQuickStatusUpdating) return;
 						void handleShiftAppointmentTime(15);
 					}}
-					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--warn-bg)] text-[var(--warn-fg)] border border-[var(--warn-fg)]/40 hover:opacity-90 active:scale-95 font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap pointer-coarse:min-h-[44px]"
+					className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] border border-[var(--line)] active:scale-95 font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap pointer-coarse:min-h-[44px]"
 					title="Сдвинуть запись на +15 минут при опоздании"
 					data-testid="appointment-action-delay-btn"
 				>
-					<Clock size={14} />
+					<Clock size={14} className="text-[var(--ink-muted)] shrink-0" />
 					<span>+15 мин</span>
 				</button>
 			</div>
@@ -66,7 +66,7 @@ export function ArrivedInTreatmentActions({
 					if (isQuickStatusUpdating) return;
 					void handleQuickStatusChange("completed");
 				}}
-				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--ink)] text-[var(--paper)] hover:opacity-90 active:scale-95 font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
+				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal)] hover:bg-[var(--teal-dark,#0f766e)] active:scale-95 text-white font-semibold text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
 				title="Завершить приём (Клавиша 3)"
 				data-testid="appointment-action-complete-btn"
 			>
@@ -84,7 +84,7 @@ export function ArrivedInTreatmentActions({
 					else useAppStore.getState().setCurrentView("visit");
 					showToast(`Открыта карта визита: ${appointmentPatientName}`, "info");
 				}}
-				className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+				className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap pointer-coarse:min-h-[44px]"
 				title="Открыть дневник приёма"
 				data-testid="appointment-action-open-visit-btn"
 			>

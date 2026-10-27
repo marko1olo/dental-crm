@@ -62,7 +62,7 @@ export const ScheduleMobileSheetPatientContact: React.FC<
 						<button
 							type="button"
 							onClick={handleWhatsApp}
-							className="min-h-[44px] px-3 rounded-xl text-xs font-bold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+							className="secondary-button min-h-[44px] px-3 rounded-xl text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 						>
 							<MessageSquare
 								size={15}

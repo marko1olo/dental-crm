@@ -24,10 +24,10 @@ export function AppointmentTechnicalBreakChips({
             type="button"
             data-testid={`chip-block-${(preset as any).shortLabel || preset.label}`}
             onClick={() => onApplyTechnicalBreakPreset(preset)}
-            className="appointment-modal-break-chip inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-all h-8 min-h-[32px] px-3 rounded-xl border border-amber-500/40 bg-amber-500/10 text-[var(--ink)] hover:bg-amber-500/20 active:scale-95 shadow-2xs"
+            className="appointment-modal-break-chip dente-btn-pill inline-flex items-center gap-1.5 text-xs font-semibold cursor-pointer transition-all h-8 min-h-[32px] sm:h-8 sm:min-h-[32px] pointer-coarse:min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--paper)] hover:border-[var(--line-strong)] active:scale-95 shadow-2xs"
             title={preset.comment}
           >
-            <Clock size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+            <Clock size={12} className="text-[var(--teal)] shrink-0" />
             <span>{preset.label}</span>
           </button>
         ))}

@@ -66,13 +66,13 @@ export function GridAppointmentStatusPopover({
 			<button
 				type="button"
 				onClick={handlePayClick}
-				className="w-full text-left min-h-[34px] px-2 py-1 rounded-lg flex items-center gap-2 font-bold transition-colors cursor-pointer border-t border-[var(--line)] pt-1.5 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/10"
+				className="w-full text-left min-h-[34px] px-2 py-1 rounded-lg flex items-center gap-2 font-medium transition-colors cursor-pointer border-t border-[var(--line)] pt-1.5 text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 				data-testid={`quick-status-picker-pay-${appointmentId}`}
 				title="Перейти к приёму оплаты на кассе"
 			>
 				<CreditCard
 					size={13}
-					className="text-emerald-600 dark:text-emerald-400"
+					className="text-[var(--teal)] shrink-0"
 				/>
 				<span>Оплата на кассе</span>
 			</button>

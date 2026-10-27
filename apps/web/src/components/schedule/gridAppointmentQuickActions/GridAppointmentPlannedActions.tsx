@@ -63,11 +63,11 @@ export function GridAppointmentPlannedActions({
 					<button
 						type="button"
 						onClick={handleArrived}
-						className="icon-button secondary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-amber-500/15 hover:bg-amber-500 text-amber-800 hover:text-white dark:text-amber-200 dark:hover:text-white border border-amber-500/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
+						className="icon-button secondary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] border border-[var(--line)] transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0 touch:min-h-[44px] touch:min-w-[44px]"
 						title="Пациент пришёл — перевести «В холл» и подать сигнал в интерком"
 						data-testid={`dente-quick-arrived-${a.id}`}
 					>
-						<UserCheck size={12} className="shrink-0" />
+						<UserCheck size={12} className="shrink-0 text-[var(--teal)]" />
 						<span className="sr-only">Прибыл</span>
 					</button>
 					<button

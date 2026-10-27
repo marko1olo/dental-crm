@@ -88,11 +88,11 @@ export function InlinePatientFormInputs({
         <button
           type="button"
           onClick={handlePrintContract}
-          className="flex-1 min-h-[44px] py-2 px-3 bg-amber-500/15 hover:bg-amber-500/25 text-amber-900 dark:text-amber-200 border border-amber-500/30 font-bold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
+          className="secondary-button flex-1 min-h-[44px] py-2 px-3 bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] border border-[var(--line)] font-semibold rounded-lg text-xs transition-all flex items-center justify-center gap-1.5 cursor-pointer"
           data-testid="quick-booking-inline-print-contract-btn"
           title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
         >
-          <FileText size={14} className="text-amber-600" />
+          <FileText size={14} className="text-[var(--teal)]" />
           <span>Печать договора (_______)</span>
         </button>
         <button

@@ -75,9 +75,9 @@ export const GridAppointmentCommunicationSubmenu: React.FC<Props> = ({
 					<button
 						type="button"
 						onClick={handleWhatsApp}
-						className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/15 font-bold transition-colors cursor-pointer"
+						className="w-full text-left px-2.5 py-1.5 rounded-lg flex items-center gap-2 text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium transition-colors cursor-pointer"
 					>
-						<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400" />
+						<MessageSquare size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>WhatsApp напоминание</span>
 					</button>
 					<button

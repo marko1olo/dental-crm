@@ -96,7 +96,7 @@ export const PendingOnlineBookingCard: React.FC<PendingOnlineBookingCardProps> =
           disabled={false}
           onClick={handleDebouncedConfirm}
           aria-busy={isConfirming}
-          className="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer min-h-[36px] pointer-coarse:min-h-[44px]"
+          className="primary-button dente-btn dente-btn-primary px-3.5 py-1.5 rounded-xl text-white text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs cursor-pointer min-h-[36px] pointer-coarse:min-h-[44px] bg-[var(--teal)] hover:bg-[var(--teal-dark)]"
           data-testid={`confirm-online-booking-btn-${booking.id}`}
           data-test-confirm="slot"
         >

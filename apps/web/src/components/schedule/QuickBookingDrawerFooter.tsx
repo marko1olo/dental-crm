@@ -28,11 +28,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className={`primary-button w-full min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 ${
-          hasCollision
-            ? "!bg-amber-600 hover:!bg-amber-700 !border-amber-600 text-white"
-            : "!bg-[var(--teal-dark)] text-white hover:brightness-110 shadow-xs"
-        }`}
+        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">

@@ -53,7 +53,7 @@ export const WaitlistCandidateActions: React.FC<WaitlistCandidateActionsProps> =
 					onClick={onSendWhatsApp}
 					className={`h-9 sm:h-8 px-3 rounded-xl text-xs font-semibold inline-flex items-center gap-1.5 transition-all border pointer-coarse:min-h-[44px] ${
 						isContacted
-							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+							? "bg-[var(--paper-soft)] text-[var(--teal-dark)] border-[var(--teal)]/40 font-bold"
 							: "bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 					}`}
 					title="Предложить окно через WhatsApp"

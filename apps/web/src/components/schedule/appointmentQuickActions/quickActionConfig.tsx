@@ -40,7 +40,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <UserCheck size={13} className="shrink-0 text-current" />,
 			title: `Отметить прибытие: ${patientName} в клинике (Клавиша 1)`,
 			activeClass:
-				"bg-emerald-600 text-white font-bold shadow-2xs border-emerald-600",
+				"bg-[var(--teal)] text-white font-bold shadow-2xs border-[var(--teal)]",
 		},
 		{
 			key: "in_treatment",
@@ -50,7 +50,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <CalendarCheck size={13} className="shrink-0 text-current" />,
 			title: `Отметить: ${patientName} в кресле у врача (Клавиша 2)`,
 			activeClass:
-				"bg-[var(--teal-dark)] text-white font-bold shadow-2xs border-[var(--teal-dark)]",
+				"bg-[var(--teal)] text-white font-bold shadow-2xs border-[var(--teal)]",
 		},
 		{
 			key: "completed",
@@ -60,7 +60,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <CheckCircle2 size={13} className="shrink-0 text-current" />,
 			title: `Завершить прием: ${patientName} (Клавиша 3)`,
 			activeClass:
-				"bg-slate-700 dark:bg-slate-600 text-white font-bold shadow-2xs border-slate-700 dark:border-slate-600",
+				"bg-[var(--paper-strong)] text-[var(--ink)] font-bold shadow-2xs border border-[var(--line)]",
 		},
 		{
 			key: "confirmed",
@@ -70,7 +70,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <PhoneCall size={13} className="shrink-0 text-current" />,
 			title: `Подтвердить запись: звонок или SMS для ${patientName}`,
 			activeClass:
-				"bg-violet-600 text-white font-bold shadow-2xs border-violet-600",
+				"bg-[var(--teal)] text-white font-bold shadow-2xs border-[var(--teal)]",
 		},
 		{
 			key: "late",
@@ -81,7 +81,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <Clock size={13} className="shrink-0 text-current" />,
 			title: `Отметить опоздание: ${patientName} (Клавиша 4)`,
 			activeClass:
-				"bg-amber-600 text-white font-bold shadow-2xs border-amber-600",
+				"bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30",
 		},
 		{
 			key: "no_show",
@@ -91,7 +91,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <UserX size={13} className="shrink-0 text-current" />,
 			title: `Неявка: ${patientName} не пришел на прием (Клавиша 5)`,
 			activeClass:
-				"bg-rose-600 text-white font-bold shadow-2xs border-rose-600",
+				"bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30",
 		},
 		{
 			key: "cancelled",
@@ -101,7 +101,7 @@ export function buildQuickActionDefs(patientName: string): QuickActionDef[] {
 			icon: <XCircle size={13} className="shrink-0 text-current" />,
 			title: `Отменить прием: ${patientName}`,
 			activeClass:
-				"bg-slate-500 text-white font-bold shadow-2xs border-slate-500",
+				"bg-rose-500/15 text-rose-600 dark:text-rose-400 font-bold border border-rose-500/30",
 		},
 	];
 }

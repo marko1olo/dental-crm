@@ -1,7 +1,7 @@
 /**
- * PatientOmnichannelHubModal.tsx — Тонкий фасад омниканального центра сообщений (WhatsApp, Telegram, SMS),
- * дашборда NPS / лояльности и динамического эквайринга СБП.
- * Декомпозирован в поддиректорию omnichannelHub/ в соответствии с Мандатом 8b.
+ * PatientOmnichannelHubModal.tsx — Тонкий фасад омниканального центра сообщений,
+ * дашборда NPS и динамического эквайринга СБП.
+ * Строго <= 120 строк по Мандату 8b.
  */
 
 import React, { useId } from "react";
@@ -16,11 +16,8 @@ import {
 	useOmnichannelHubState,
 } from "./omnichannelHub/index.js";
 import { usePatientStore } from "../../store/patientStore.js";
-import { DEFAULT_CONTACTS, DEFAULT_TEMPLATES } from "./omnichannelEngine.js";
-import type {
-	OmnichannelTab,
-	PatientOmnichannelHubModalProps,
-} from "./omnichannelHub/types.js";
+import { DEFAULT_TEMPLATES } from "./omnichannelEngine.js";
+import type { OmnichannelTab, PatientOmnichannelHubModalProps } from "./omnichannelHub/types.js";
 import "./omnichannelHub.css";
 
 export type { OmnichannelTab, PatientOmnichannelHubModalProps };
@@ -29,15 +26,14 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	isOpen,
 	onClose,
 	initialPatientId,
-	clinicName = "DENTE Dental Clinic",
-	clinicAddress = "г. Москва, ул. Арбат, д. 24",
+	clinicName = "Клиника DENTE",
+	clinicAddress = "",
 	onSendMessage,
 	portal = false,
 }) => {
 	const modalTitleId = useId();
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId);
-	const effectivePatientId =
-		initialPatientId || selectedPatientId || DEFAULT_CONTACTS[0]?.id || "pat-101";
+	const effectivePatientId = initialPatientId || selectedPatientId || undefined;
 	const hub = useOmnichannelHubState({
 		initialPatientId: effectivePatientId,
 		clinicName,
@@ -48,12 +44,7 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div
-			className="omnichannel-modal-overlay"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby={modalTitleId}
-		>
+		<div className="omnichannel-modal-overlay" role="dialog" aria-modal="true" aria-labelledby={modalTitleId}>
 			<div className="omnichannel-modal-container hub-main-container">
 				<OmnichannelHeader
 					titleId={modalTitleId}
@@ -118,4 +109,3 @@ export const PatientOmnichannelHubModal: React.FC<PatientOmnichannelHubModalProp
 	}
 	return modalContent;
 };
-

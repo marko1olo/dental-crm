@@ -25,9 +25,9 @@ export function GridAppointmentHudStatusActions({
 							e.stopPropagation();
 							onQuickStatusChange(a.id, "in_treatment");
 						}}
-						className="min-h-[32px] px-2 rounded-xl bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-blue-500/20 cursor-pointer transition-all"
+						className="secondary-button min-h-[32px] sm:min-h-[32px] pointer-coarse:min-h-[44px] px-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all"
 					>
-						<UserCheck className="w-3.5 h-3.5" />
+						<UserCheck className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 						<span>В кресле</span>
 					</button>
 				)}
@@ -38,9 +38,9 @@ export function GridAppointmentHudStatusActions({
 							e.stopPropagation();
 							onQuickStatusChange(a.id, "completed");
 						}}
-						className="min-h-[32px] px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/20 cursor-pointer transition-all"
+						className="secondary-button min-h-[32px] sm:min-h-[32px] pointer-coarse:min-h-[44px] px-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all"
 					>
-						<CheckCircle2 className="w-3.5 h-3.5" />
+						<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 						<span>Завершён</span>
 					</button>
 				)}
@@ -51,9 +51,9 @@ export function GridAppointmentHudStatusActions({
 							e.stopPropagation();
 							onQuickStatusChange(a.id, "arrived");
 						}}
-						className="min-h-[32px] px-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-amber-500/20 cursor-pointer transition-all"
+						className="secondary-button min-h-[32px] sm:min-h-[32px] pointer-coarse:min-h-[44px] px-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all"
 					>
-						<User className="w-3.5 h-3.5" />
+						<User className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 						<span>Прибыл</span>
 					</button>
 				)}
@@ -64,9 +64,9 @@ export function GridAppointmentHudStatusActions({
 							e.stopPropagation();
 							onQuickStatusChange(a.id, "no_show");
 						}}
-						className="min-h-[32px] px-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-bold text-xs flex items-center justify-center gap-1.5 border border-rose-500/20 cursor-pointer transition-all"
+						className="danger-button min-h-[32px] sm:min-h-[32px] pointer-coarse:min-h-[44px] px-2 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 text-rose-600 dark:text-rose-400 font-semibold text-xs flex items-center justify-center gap-1.5 border border-rose-500/20 cursor-pointer transition-all"
 					>
-						<UserX className="w-3.5 h-3.5" />
+						<UserX className="w-3.5 h-3.5 shrink-0" />
 						<span>Неявка</span>
 					</button>
 				)}

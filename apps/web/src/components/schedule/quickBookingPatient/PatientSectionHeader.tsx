@@ -47,11 +47,11 @@ export function PatientSectionHeader(props: PatientSectionHeaderProps) {
           <button
             type="button"
             onClick={handlePrintBlank}
-            className="text-xs font-bold text-amber-700 dark:text-amber-300 hover:underline flex items-center gap-1 min-h-[44px] px-3 py-2 bg-amber-500/10 rounded-xl cursor-pointer transition-colors"
+            className="text-xs font-semibold text-[var(--ink)] hover:text-[var(--teal)] flex items-center gap-1 min-h-[44px] px-3 py-2 bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 rounded-xl border border-[var(--line)] cursor-pointer transition-colors"
             title="Распечатать типовой медицинский договор со строками _______ для ручного заполнения"
             data-testid="quick-booking-print-blank-contract-btn"
           >
-            <FileText size={14} className="text-amber-600" />
+            <FileText size={14} className="text-[var(--teal)] shrink-0" />
             <span>Бланк договора (_______)</span>
           </button>
           <button

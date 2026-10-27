@@ -57,11 +57,11 @@ export function CancelledNoShowActions({
 					if (isQuickStatusUpdating) return;
 					void handleQuickStatusChange("arrived");
 				}}
-				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--good)] hover:opacity-90 active:scale-95 text-white font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
+				className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all shadow-2xs whitespace-nowrap pointer-coarse:min-h-[44px]"
 				title="Отметить пациента прибывшим"
 				data-testid="appointment-action-arrived-btn"
 			>
-				<UserCheck size={14} />
+				<UserCheck size={14} className="text-[var(--teal)] shrink-0" />
 				<span>Прибыл</span>
 			</button>
 			<button
@@ -70,11 +70,11 @@ export function CancelledNoShowActions({
 					e.stopPropagation();
 					openAppointmentEditor(appointment);
 				}}
-				className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap"
+				className="secondary-button h-8 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--line)] text-[var(--ink)] border border-[var(--line)] font-medium text-[13px] inline-flex items-center gap-1.5 cursor-pointer transition-all whitespace-nowrap pointer-coarse:min-h-[44px]"
 				title="Перенести или изменить время записи"
 				data-testid="appointment-action-reschedule-btn"
 			>
-				<Clock size={14} />
+				<Clock size={14} className="text-[var(--ink-muted)] shrink-0" />
 				<span>Перенести</span>
 			</button>
 		</div>

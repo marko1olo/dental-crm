@@ -35,11 +35,11 @@ export function AppointmentModalLabCollisionAlert({
 				<button
 					type="button"
 					onClick={onSyncDate}
-					className="h-6 px-2 rounded-md bg-amber-600 hover:bg-amber-700 text-white font-bold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
+					className="secondary-button h-6 sm:h-6 pointer-coarse:min-h-[44px] px-2 rounded-md bg-[var(--paper)] hover:bg-[var(--paper-soft)] border border-[var(--line-strong)] text-[var(--ink)] font-semibold text-[11px] inline-flex items-center gap-1 cursor-pointer shrink-0 shadow-2xs transition-all active:scale-95"
 					data-testid="appointment-modal-sync-lab-date-banner-btn"
 					title="Синхронизировать дату приёма с готовностью ЗТЛ в 1 клик"
 				>
-					<Calendar size={11} />
+					<Calendar size={11} className="text-[var(--teal)] shrink-0" />
 					<span>Синхронизировать дату</span>
 				</button>
 			)}

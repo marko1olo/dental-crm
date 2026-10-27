@@ -49,7 +49,7 @@ export function AppointmentModalFooter({
           type="button"
           onClick={onClose}
           disabled={false}
-          className="appointment-modal-cta-cancel h-11 px-5 rounded-[14px] border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700/60 text-slate-700 dark:text-slate-200 text-sm font-medium transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center text-center select-none"
+          className="appointment-modal-cta-cancel secondary-button dente-btn dente-btn-secondary h-11 min-h-[44px] px-5 rounded-[14px] border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-sm font-medium transition-all cursor-pointer active:scale-95 shadow-2xs flex items-center justify-center text-center select-none"
         >
           Отмена
         </button>
@@ -58,13 +58,7 @@ export function AppointmentModalFooter({
           onClick={(e) => handleSave(e)}
           disabled={false}
           aria-busy={isSaving}
-          className={`appointment-modal-cta-save h-11 px-6 font-medium rounded-[14px] text-sm transition-all shadow-md hover:brightness-105 active:scale-95 flex items-center justify-center gap-2 cursor-pointer select-none ${
-            collision.isCitoOverbooking || isCito
-              ? "!bg-rose-600 hover:!bg-rose-700 !text-white shadow-rose-500/25"
-              : collision.hasCollision
-                ? "!bg-amber-600 hover:!bg-amber-700 !text-white shadow-amber-500/25"
-                : "!bg-[var(--teal,#0d9488)] hover:brightness-105 active:brightness-95 !text-white shadow-teal-500/20"
-          }`}
+          className="appointment-modal-cta-save primary-button dente-btn dente-btn-primary h-11 min-h-[44px] px-6 font-semibold rounded-[14px] text-sm transition-all shadow-md active:scale-95 flex items-center justify-center gap-2 cursor-pointer select-none bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white"
           data-testid="appointment-modal-save-btn"
         >
           <Check size={18} className="stroke-[2.5]" />

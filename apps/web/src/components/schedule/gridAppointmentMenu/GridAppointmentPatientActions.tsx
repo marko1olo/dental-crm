@@ -62,24 +62,24 @@ export const GridAppointmentPatientActions: React.FC<Props> = ({
 			<button
 				type="button"
 				onClick={handleCheckout}
-				className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 font-bold transition-colors cursor-pointer"
+				className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium transition-colors cursor-pointer"
 				title={`Оплата визита (касса): ${pName}`}
 				aria-label={`Оплата визита ${pName}`}
 				data-testid={`menu-pay-btn-${a.id}`}
 			>
-				<CreditCard size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+				<CreditCard size={14} className="text-[var(--teal)] shrink-0" />
 				<span>Оплата на кассе</span>
 			</button>
 			{patObj?.phone && (
 				<a
 					href={`tel:${patObj.phone}`}
 					onClick={() => onCloseMenu()}
-					className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-sky-500/15 text-sky-700 dark:text-sky-300 font-bold transition-colors cursor-pointer"
+					className="w-full text-left min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-lg flex items-center gap-2 hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium transition-colors cursor-pointer"
 					title={`Позвонить ${pName}: ${patObj.phone}`}
 					aria-label={`Позвонить ${pName}`}
 					data-testid={`menu-call-btn-${a.id}`}
 				>
-					<Phone size={14} className="text-sky-600 dark:text-sky-400 shrink-0" />
+					<Phone size={14} className="text-[var(--ink-muted)] shrink-0" />
 					<span className="truncate">Позвонить ({patObj.phone})</span>
 				</a>
 			)}

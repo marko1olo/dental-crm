@@ -87,10 +87,10 @@ export const SlotConflictDialogView: React.FC<SlotConflictDialogViewProps> = ({
 							type="button"
 							data-testid="slot-conflict-overbook-btn"
 							onClick={() => { onOverbook(); onClose(); }}
-							className="primary-button min-h-[44px] px-4 py-2 rounded-xl bg-amber-600 hover:bg-amber-700 active:bg-amber-800 text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+							className="primary-button dente-btn dente-btn-primary min-h-[44px] px-4 py-2 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
 							title="Записать в это же время (совмещение слотов для острой боли)"
 						>
-							<Zap className="w-4 h-4" />
+							<Zap className="w-4 h-4 fill-current" />
 							<span>Записать всё равно (острая боль)</span>
 						</button>
 					)}

@@ -27,7 +27,7 @@ export function PlannedConfirmedActions({
 				title="Отметить прибытие пациента в клинику (Клавиша 1)"
 				data-testid="appointment-action-arrived-btn"
 			>
-				<UserCheck size={14} className="text-amber-600 dark:text-amber-400" />
+				<UserCheck size={14} className="text-[var(--teal)] shrink-0" />
 				<span>Прибыл</span>
 			</button>
 			<button
@@ -43,7 +43,7 @@ export function PlannedConfirmedActions({
 				title="Начать приём в кресле (Клавиша 2)"
 				data-testid="appointment-action-in-treatment-btn"
 			>
-				<Stethoscope size={14} />
+				<Stethoscope size={14} className="shrink-0" />
 				<span>Начать приём</span>
 			</button>
 		</div>

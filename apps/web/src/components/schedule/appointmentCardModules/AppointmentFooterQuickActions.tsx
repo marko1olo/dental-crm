@@ -66,14 +66,14 @@ export const AppointmentFooterQuickActions: React.FC<
 				<button
 					type="button"
 					onClick={handleCheckoutClick}
-					className="appointment-action-pay h-[26px] min-h-[26px] px-2.5 py-0.5 rounded-lg border border-violet-400/40 bg-violet-500/10 hover:bg-violet-500/20 text-violet-900 dark:text-violet-200 text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95 touch-manipulation"
+					className="appointment-action-pay secondary-button h-[26px] min-h-[26px] px-2.5 py-0.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] text-[11px] font-semibold flex items-center justify-center gap-1 transition-all cursor-pointer select-none whitespace-nowrap shrink-0 shadow-2xs active:scale-95 touch-manipulation"
 					title={`К оплате на кассе: ${pName}`}
 					aria-label={`К оплате на кассе ${pName}`}
 					data-testid={`appointment-action-pay-${a.id}`}
 				>
 					<CreditCard
 						size={11}
-						className="shrink-0 text-violet-600 dark:text-violet-400"
+						className="shrink-0 text-[var(--teal)]"
 					/>
 					<span className="appointment-action-label whitespace-nowrap">
 						К оплате

@@ -77,11 +77,11 @@ export function GridAppointmentInChairActions({
 				<button
 					type="button"
 					onClick={handleOpenFinance}
-					className="icon-button secondary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-[var(--teal-soft)] hover:bg-[var(--teal)] text-[var(--teal-dark)] hover:text-white border border-[var(--teal)]/40 transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0"
+					className="icon-button secondary-button h-6 w-6 min-h-[24px] min-w-[24px] p-0 rounded-md text-[10px] font-extrabold bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] border border-[var(--line)] transition-all flex items-center justify-center cursor-pointer active:scale-95 shadow-2xs shrink-0 touch:min-h-[44px] touch:min-w-[44px]"
 					title="Перейти к оплате на кассе"
 					data-testid={`dente-quick-pay-${a.id}`}
 				>
-					<CreditCard size={12} />
+					<CreditCard size={12} className="text-[var(--teal)] shrink-0" />
 					<span className="sr-only">Касса</span>
 				</button>
 			)}

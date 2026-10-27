@@ -59,19 +59,19 @@ export function GridAppointmentHudCommunication({
 					<button
 						type="button"
 						onClick={handleCall}
-						className="flex-1 min-h-[32px] px-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 font-bold text-xs flex items-center justify-center gap-1 border border-emerald-500/20 cursor-pointer transition-all"
+						className="secondary-button flex-1 min-h-[32px] sm:min-h-[32px] pointer-coarse:min-h-[44px] px-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1 border border-[var(--line)] cursor-pointer transition-all"
 						title={`Позвонить: ${phone}`}
 					>
-						<Phone className="w-3.5 h-3.5" />
+						<Phone className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 						<span>Позвонить</span>
 					</button>
 					<button
 						type="button"
 						onClick={handleWhatsApp}
-						className="flex-1 min-h-[32px] px-2 rounded-xl bg-teal-500/10 hover:bg-teal-500/20 text-teal-700 dark:text-teal-300 font-bold text-xs flex items-center justify-center gap-1 border border-teal-500/20 cursor-pointer transition-all"
+						className="secondary-button flex-1 min-h-[32px] sm:min-h-[32px] pointer-coarse:min-h-[44px] px-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)]/50 text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1 border border-[var(--line)] cursor-pointer transition-all"
 						title="Написать в WhatsApp"
 					>
-						<MessageSquare className="w-3.5 h-3.5" />
+						<MessageSquare className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
 						<span>WhatsApp</span>
 					</button>
 				</>
