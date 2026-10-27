@@ -97,9 +97,14 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			/>
 		);
 
-		if (isModal || isOpen === true && isModal) {
+		if (isModal || (isOpen === true && isModal)) {
 			return (
-				<PeriodontogramModalView patientName={patientName} onClose={onClose}>
+				<PeriodontogramModalView
+					patientName={patientName}
+					onClose={onClose}
+					onSave={() => void logic.handleSaveDraft({ closeAfter: true })}
+					syncStatus={logic.syncStatus}
+				>
 					{body}
 				</PeriodontogramModalView>
 			);

@@ -9,7 +9,7 @@ import { useCallback, useEffect, useState } from "react";
 import { isDemoPatientId } from "../../../lib/demoMode";
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
-import { closeRemoteDraftSnapshot, createRemoteDraft, fetchRemoteDraft, patchRemoteDraftTeethAndSites } from "./perioDraftApi";
+import { closeRemoteDraftSnapshot, createRemoteDraft, fetchRemoteDraft, patchRemoteDraftTeethAndSites, saveFullRemotePeriodontogram } from "./perioDraftApi";
 import { getPerioStorageKey, loadLocalPerioDraft, saveLocalPerioDraft } from "./perioDraftStorage";
 import { buildPeriodontalTreatmentPlanJustification } from "./perioSideEffectsEngine";
 
@@ -76,6 +76,15 @@ export function usePerioDraftPersistence({
 		}
 
 		if (!draftSnapshotId) {
+			if (patientId && !isDemoPatientId(patientId) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
+				setSyncStatus("saving");
+				const ok = await saveFullRemotePeriodontogram(patientId, teeth, options?.notes, options?.closeAfter ? "closed" : "draft");
+				if (ok) {
+					setSyncStatus(options?.closeAfter ? "closed" : "synced");
+					showToast(options?.closeAfter ? "Пародонтограмма зафиксирована в ЭМК и закрыта" : "Пародонтограмма сохранена на сервере", "success", 3000);
+					return true;
+				}
+			}
 			setSyncStatus("synced"); showToast("Данные перио-карты сохранены", "info", 2500); return true;
 		}
 		setSyncStatus("saving");

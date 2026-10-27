@@ -23,12 +23,13 @@ export const PerioToolbarPresets: React.FC<PerioToolbarPresetsProps> = React.mem
 			{/* Доминирующий 1-клик сценарий нормы (Мандат 8e, 8am) */}
 			<button
 				type="button" onClick={() => onApplyExpressPreset("perio_norm_express")}
-				className="btn btn--secondary shrink-0 font-bold border-emerald-500/50 text-emerald-800 dark:text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 !h-9 !min-h-[44px] min-h-[44px] shadow-xs cursor-pointer flex items-center gap-1.5"
-				title="✓ Пародонт в норме (PSR 0) / Соматически здоров • Вся десна здорова (глубина 1–2 мм, кровоточивость 0%, PSR 0)"
+				className="btn btn--secondary shrink-0 font-bold border-emerald-500/50 text-emerald-800 dark:text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 !h-9 !min-h-[44px] min-h-[44px] min-w-[44px] shadow-xs cursor-pointer flex items-center gap-1.5"
+				title="✓ Физиологическая норма / Секстанты 0 • 1-клик: Здоровый пародонт (Норма) • Вся десна здорова (глубина 1–2 мм, кровоточивость 0%, PSR 0)"
 				data-testid="perio-toolbar-norm-1click-btn"
 			>
 				<ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-				<span>✓ Пародонт в норме (PSR 0) / Соматически здоров</span>
+				<span>✓ Физиологическая норма / Секстанты 0</span>
+				<span className="sr-only">1-клик: Здоровый пародонт (Норма)</span>
 			</button>
 
 			{/* Экспресс-скрининг PSR в 1 тап (коды 0..4*) */}
@@ -59,11 +60,11 @@ export const PerioToolbarPresets: React.FC<PerioToolbarPresetsProps> = React.mem
 			{/* Комплексная профгигиена в 1 клик (Мандаты 8e, 8n) */}
 			<button
 				type="button" onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-				className="btn btn--secondary shrink-0 font-semibold !h-9 !min-h-[44px] min-h-[44px] flex items-center gap-1.5"
-				title="Комплексная гигиена (УЗ + Air-Flow + Полировка + Фторлак)" data-testid="perio-toolbar-prophy-1click-btn"
+				className="btn btn--secondary shrink-0 font-semibold !h-9 !min-h-[44px] min-h-[44px] min-w-[44px] flex items-center gap-1.5"
+				title="Профгигиена полости рта (УЗ + Air-Flow + Полировка + Фторлак)" data-testid="perio-toolbar-prophy-1click-btn"
 			>
 				<UltrasonicScaler size={15} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-				<span>Комплексная гигиена (УЗ + Air-Flow + Полировка + Фторлак)</span>
+				<span>Профгигиена (УЗ + Air-Flow)</span>
 			</button>
 
 			<button
