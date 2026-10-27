@@ -1,520 +1,91 @@
-import { useEffect, useMemo, useRef, useState } from "react";
-import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
-import { showToast } from "../../GlobalToast";
+import { useEffect, useMemo } from "react";
 import {
-	addKopToRubAmount, buildFastCheckoutSbpQrData, calculateBaseStageAmountKop,
-	calculateSplitRemainingKop, computeCashChange, computeCheckoutValidation,
-	computeDepositPlusCardRemainderSplitKop, computeDepositRemainderTakeKop,
-	computeFamilyRemainderTakeKop, computeHalfSplitRemainderKop, computeQuickPresetSplitResult,
-	computeStageAdvanceCalc, computeStageDiscountCalc, computeTargetBillAmounts,
-	resolveEffectiveCashierFullName, resolveInitialSelectedStageId, resolveInitialTotalBillKop,
-	resolveTreatmentStages, splitStateToCheckoutPayments,
+	buildFastCheckoutSbpQrData, calculateBaseStageAmountKop, calculateSplitRemainingKop,
+	computeCashChange, computeCheckoutValidation, computeStageAdvanceCalc,
+	computeStageDiscountCalc, computeTargetBillAmounts, splitStateToCheckoutPayments,
 } from "./fastCheckoutCalculations";
-import {
-	checkFastCheckoutKktDeviceHealth, executeCheckSbpStatus, executeConfirmSbpManual,
-	executeFiscalPayment, executeFlushOfflineFiscalQueue, executeManualCardTerminalConfirm,
-	executeRetryFiscalizationDirect, subscribeFastCheckoutOfflineQueue,
-} from "./fastCheckoutFiscalSync";
-import type {
-	CheckoutPaymentMethodType, CheckoutSplitItem, ClientLegalType,
-	FastCheckoutDiscountPreset, FastCheckoutSplitAmountsSetters, InterruptedPaymentState,
-	KktHardwareStatusState, QuickCheckoutPresetType, SbpPaymentCheckStatus,
-	StagePaymentMode, TreatmentPlanStageOption, UseFastCheckoutLogicProps,
-} from "./types";
+import { assignFullAmountToMethod, resetAllSplitAmounts } from "./fastCheckoutSplitAssignments";
+import { useFastCheckoutExecutionHandlers } from "./useFastCheckoutExecutionHandlers";
+import { useFastCheckoutRemainderHandlers } from "./useFastCheckoutRemainderHandlers";
+import { useFastCheckoutTenderState } from "./useFastCheckoutTenderState";
+import type { CheckoutSplitItem, UseFastCheckoutLogicProps } from "./types";
 
-/** Сбрасывает все поля распределения сумм сплита в 0 ₽ */
-export function resetAllSplitAmounts(setters: FastCheckoutSplitAmountsSetters): void {
-	setters.setCardAmountRub(0);
-	setters.setCashAmountRub(0);
-	setters.setSbpAmountRub(0);
-	setters.setDepositAmountRub(0);
-	setters.setLoyaltyAmountRub(0);
-	setters.setDmsAmountRub(0);
-	setters.setCashTenderedRub(0);
-}
+export { assignFullAmountToMethod, resetAllSplitAmounts };
 
-/** Распределяет 100% целевой суммы на выбранный способ оплаты */
-export function assignFullAmountToMethod(
-	method: CheckoutPaymentMethodType,
-	amountRub: number,
-	setters: FastCheckoutSplitAmountsSetters,
-	includeDepositMethod = true,
-): void {
-	if (method === "cash") {
-		setters.setCashAmountRub(amountRub);
-		setters.setCashTenderedRub(amountRub);
-	} else if (method === "sbp_qr") {
-		setters.setSbpAmountRub(amountRub);
-	} else if (includeDepositMethod && method === "patient_deposit") {
-		setters.setDepositAmountRub(amountRub);
-	} else if (method === "loyalty_points") {
-		setters.setLoyaltyAmountRub(amountRub);
-	} else if (method === "dms_insurance") {
-		setters.setDmsAmountRub(amountRub);
-	} else {
-		setters.setCardAmountRub(amountRub);
-	}
-}
-
-/** Главная стейт-машина и хук управления быстрой кассой useFastCheckoutLogic */
 export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
-	const {
-		isOpen, onClose, totalBillKop: propTotalBillKop, totalBillRub: propTotalBillRub,
-		initialPaymentMethod, initialSimpleCashierMode, patientId, visitId,
-		patientPhone = "", patientEmail = "", patientDepositRub = 0, patientFamilyBalanceRub = 0,
-		orderId: propOrderId, invoiceId, stages: propStages, cashierFullName: propCashierFullName,
-		cashierName, attendingDoctorName, doctorName, onPaymentComplete, onSuccess,
-	} = props;
-
-	const initialTotalBillKop = resolveInitialTotalBillKop(props.amountKopecks, propTotalBillKop, propTotalBillRub, props.amountRub);
-	const effectiveCashierFullName = resolveEffectiveCashierFullName(propCashierFullName || cashierName, attendingDoctorName || doctorName);
-	const orderId = propOrderId || invoiceId || "";
-
-	const stages = useMemo<readonly TreatmentPlanStageOption[]>(() => {
-		return resolveTreatmentStages(propStages, initialTotalBillKop, isDemoShowcaseMode());
-	}, [propStages, initialTotalBillKop]);
-
-	const [selectedStageId, setSelectedStageId] = useState<string>("full_plan");
-	const [stagePaymentMode, setStagePaymentMode] = useState<StagePaymentMode>("full");
-	const [advanceAlreadyPaidRub] = useState<number>(0);
-	const resolvedInitialMethod: CheckoutPaymentMethodType = initialPaymentMethod ?? (() => {
-		switch (props.defaultMethod) {
-			case "card_terminal":
-			case "card":
-				return "bank_card";
-			case "cash":
-				return "cash";
-			case "sbp_qr":
-			case "sberpay_qr":
-				return "sbp_qr";
-			case "family_deposit":
-				return "patient_deposit";
-			case "split":
-				return "bank_card";
-			default:
-				return "sbp_qr";
-		}
-	})();
-	const [activeMethod, setActiveMethod] = useState<CheckoutPaymentMethodType>(resolvedInitialMethod);
-
-	const effectiveAdvanceAlreadyPaidRub = useMemo(() => {
-		const stage = stages.find((s) => s.id === selectedStageId);
-		if (stage) {
-			if (typeof stage.advanceAlreadyPaidRub === "number" && stage.advanceAlreadyPaidRub > 0) {
-				return stage.advanceAlreadyPaidRub;
-			}
-			if (typeof stage.advanceAlreadyPaidKop === "number" && stage.advanceAlreadyPaidKop > 0) {
-				return stage.advanceAlreadyPaidKop / 100;
-			}
-			if (typeof stage.paidAmountRub === "number" && stage.paidAmountRub > 0) {
-				return stage.paidAmountRub;
-			}
-			if (typeof stage.paidAmountKop === "number" && stage.paidAmountKop > 0) {
-				return stage.paidAmountKop / 100;
-			}
-		}
-		if (typeof props.advanceAlreadyPaidRub === "number" && props.advanceAlreadyPaidRub > 0) {
-			return props.advanceAlreadyPaidRub;
-		}
-		if (typeof props.advanceAlreadyPaidKop === "number" && props.advanceAlreadyPaidKop > 0) {
-			return props.advanceAlreadyPaidKop / 100;
-		}
-		return advanceAlreadyPaidRub;
-	}, [selectedStageId, stages, props.advanceAlreadyPaidRub, props.advanceAlreadyPaidKop, advanceAlreadyPaidRub]);
-
-	// Split Payment State (amounts in Rubles)
-	const [cardAmountRub, setCardAmountRub] = useState<number>(0);
-	const [cashAmountRub, setCashAmountRub] = useState<number>(0);
-	const [sbpAmountRub, setSbpAmountRub] = useState<number>(0);
-	const [sbpStatus, setSbpStatus] = useState<SbpPaymentCheckStatus>("awaiting");
-	const [isCheckingSbp, setIsCheckingSbp] = useState<boolean>(false);
-	const [sbpCheckMessage, setSbpCheckMessage] = useState<string | null>(null);
-	const [depositAmountRub, setDepositAmountRub] = useState<number>(0);
-	const [loyaltyAmountRub, setLoyaltyAmountRub] = useState<number>(0);
-	const [dmsAmountRub, setDmsAmountRub] = useState<number>(0);
-	const [cashTenderedRub, setCashTenderedRub] = useState<number>(0);
-	const [isPrinting, setIsPrinting] = useState<boolean>(false);
-	const inFlightRef = useRef(false);
-	const lastClickTimeRef = useRef(0);
-	const [, setIsOfflineBuffered] = useState<boolean>(false);
-	const [pendingOfflineCount, setPendingOfflineCount] = useState<number>(0);
-	const [isFlushingQueue, setIsFlushingQueue] = useState<boolean>(false);
-
-	// Acquiring & Fiscalization Emergency Fault-Tolerance
-	const [interruptedPaymentState, setInterruptedPaymentState] = useState<InterruptedPaymentState | null>(null);
-	const [isSubmittingManualCard, setIsSubmittingManualCard] = useState<boolean>(false);
-	const [kktHardwareStatus, setKktHardwareStatus] = useState<KktHardwareStatusState>({
-		online: false, paperOk: false, isChecking: Boolean(isOpen),
-	});
-
-	const [isTier2Open, setIsTier2Open] = useState<boolean>(false);
-	const [isSimpleCashierMode, setIsSimpleCashierMode] = useState<boolean>(() => {
-		if (initialSimpleCashierMode !== undefined) return initialSimpleCashierMode;
-		if (props.defaultMethod === "split" || props.initialSplit5050) return false;
-		return true;
-	});
-	const [clientType, setClientType] = useState<ClientLegalType>("physical_person");
-	const [buyerInn, setBuyerInn] = useState<string>("");
-	const [buyerName, setBuyerName] = useState<string>("");
-	const [isElectronicReceiptOnly, setIsElectronicReceiptOnly] = useState<boolean>(false);
-	const [availableLoyaltyPointsRub, setAvailableLoyaltyPointsRub] = useState<number>(
-		() => props.patientBonusPointsRub ?? props.patientLoyaltyPoints ?? 0
-	);
-
-	useEffect(() => {
-		const targetPatientId = patientId;
-		if (!isOpen || !targetPatientId) return;
-		let cancelled = false;
-		async function loadPatientLoyaltyPoints() {
-			if (!targetPatientId) return;
-			try {
-				const res = await fetch(`/api/loyalty/balance/${encodeURIComponent(targetPatientId)}`);
-				if (res.ok) {
-					const data = await res.json();
-					if (!cancelled && typeof data.activePoints === "number") {
-						setAvailableLoyaltyPointsRub(data.activePoints);
-					}
-				}
-			} catch {
-				// Silently fail in test or offline environment
-			}
-		}
-		void loadPatientLoyaltyPoints();
-		return () => {
-			cancelled = true;
-		};
-	}, [isOpen, patientId]);
-	const [discountPreset, setDiscountPreset] = useState<FastCheckoutDiscountPreset>(() => {
-		if (props.initialWarranty100) return "warranty_100";
-		if (props.initialDiscountPercent) return "manual_percent";
-		return "none";
-	});
-	const [customDiscountPercent, setCustomDiscountPercent] = useState<number>(() => props.initialDiscountPercent ?? 0);
-
-	const splitSetters: FastCheckoutSplitAmountsSetters = {
-		setCardAmountRub, setCashAmountRub, setSbpAmountRub,
-		setDepositAmountRub, setLoyaltyAmountRub, setDmsAmountRub, setCashTenderedRub,
-	};
-
-	useEffect(() => {
-		if (isOpen) {
-			if (initialPaymentMethod) setActiveMethod(initialPaymentMethod);
-			else if (resolvedInitialMethod) setActiveMethod(resolvedInitialMethod);
-			if (props.initialWarranty100) {
-				setDiscountPreset("warranty_100");
-			} else if (props.initialDiscountPercent) {
-				setDiscountPreset("manual_percent");
-				setCustomDiscountPercent(props.initialDiscountPercent);
-			}
-			if (props.defaultMethod === "split" || props.initialSplit5050) {
-				setIsSimpleCashierMode(false);
-			}
-			setSbpStatus("awaiting");
-			setSbpCheckMessage(null);
-			const initialStageId = resolveInitialSelectedStageId(propStages, isDemoShowcaseMode());
-			setSelectedStageId(initialStageId);
-			const initialStg = propStages?.find((s) => s.id === initialStageId);
-			const initAdvancePaid =
-				initialStg?.advanceAlreadyPaidRub ??
-				(initialStg?.advanceAlreadyPaidKop ? initialStg.advanceAlreadyPaidKop / 100 : undefined) ??
-				(initialStg?.paidAmountRub ?? (initialStg?.paidAmountKop ? initialStg.paidAmountKop / 100 : 0)) ??
-				props.advanceAlreadyPaidRub ??
-				(props.advanceAlreadyPaidKop ? props.advanceAlreadyPaidKop / 100 : 0);
-			if (initAdvancePaid > 0) {
-				setStagePaymentMode("advance_offset_tag1215");
-			} else {
-				setStagePaymentMode("full");
-			}
-			setKktHardwareStatus((prev) => ({ ...prev, isChecking: true }));
-			void checkFastCheckoutKktDeviceHealth().then((status) => {
-				setKktHardwareStatus(status);
-			});
-		}
-		if (!isOpen) {
-			inFlightRef.current = false;
-			setIsPrinting(false);
-		}
-	}, [isOpen, initialPaymentMethod, propStages, props.advanceAlreadyPaidRub, props.advanceAlreadyPaidKop]);
+	const t = useFastCheckoutTenderState(props);
 
 	const baseStageAmountKop = useMemo(() => {
-		const configuredKop = calculateBaseStageAmountKop(selectedStageId, initialTotalBillKop, stages);
+		const configuredKop = calculateBaseStageAmountKop(t.selectedStageId, t.initialTotalBillKop, t.stages);
 		if (configuredKop > 0) return configuredKop;
-		const splitSumKop = Math.round(
-			(cardAmountRub + cashAmountRub + sbpAmountRub + depositAmountRub + loyaltyAmountRub + dmsAmountRub) * 100,
-		);
+		const splitSumKop = Math.round((t.cardAmountRub + t.cashAmountRub + t.sbpAmountRub + t.depositAmountRub + t.loyaltyAmountRub + t.dmsAmountRub) * 100);
 		return splitSumKop > 0 ? splitSumKop : 0;
-	}, [
-		selectedStageId,
-		initialTotalBillKop,
-		stages,
-		cardAmountRub,
-		cashAmountRub,
-		sbpAmountRub,
-		depositAmountRub,
-		loyaltyAmountRub,
-		dmsAmountRub,
-	]);
+	}, [t.selectedStageId, t.initialTotalBillKop, t.stages, t.cardAmountRub, t.cashAmountRub, t.sbpAmountRub, t.depositAmountRub, t.loyaltyAmountRub, t.dmsAmountRub]);
 
-	const discountCalc = useMemo(() => {
-		return computeStageDiscountCalc(baseStageAmountKop, discountPreset, customDiscountPercent);
-	}, [baseStageAmountKop, discountPreset, customDiscountPercent]);
+	const discountCalc = useMemo(() => computeStageDiscountCalc(baseStageAmountKop, t.discountPreset, t.customDiscountPercent), [baseStageAmountKop, t.discountPreset, t.customDiscountPercent]);
+	const stageCalc = useMemo(() => computeStageAdvanceCalc(discountCalc.netKop, t.stagePaymentMode, t.advanceAlreadyPaidRub), [discountCalc.netKop, t.stagePaymentMode, t.advanceAlreadyPaidRub]);
+	const { effectiveBillKop, targetBillKop, targetBillRub, effectiveTotalRub } = computeTargetBillAmounts(discountCalc.netKop, t.stagePaymentMode, stageCalc);
 
-	const discountedStageAmountKop = discountCalc.netKop;
-
-	const stageCalc = useMemo(() => {
-		return computeStageAdvanceCalc(discountedStageAmountKop, stagePaymentMode, effectiveAdvanceAlreadyPaidRub);
-	}, [discountedStageAmountKop, stagePaymentMode, effectiveAdvanceAlreadyPaidRub]);
-
-	const { effectiveBillKop, targetBillKop, targetBillRub, effectiveTotalRub } =
-		computeTargetBillAmounts(discountedStageAmountKop, stagePaymentMode, stageCalc);
-
-	const effectiveSbpAmountRub = sbpAmountRub > 0 ? sbpAmountRub : targetBillRub;
+	const effectiveSbpAmountRub = t.sbpAmountRub > 0 ? t.sbpAmountRub : targetBillRub;
 	const effectiveSbpKopecks = Math.round(effectiveSbpAmountRub * 100);
-	const effectiveSbpOrderId = orderId?.trim() || `ORD-${Math.abs(initialTotalBillKop || 1000)}`;
-
-	const sbpQrData = useMemo(() => {
-		return buildFastCheckoutSbpQrData(effectiveSbpAmountRub, effectiveSbpKopecks, effectiveSbpOrderId);
-	}, [effectiveSbpAmountRub, effectiveSbpKopecks, effectiveSbpOrderId]);
+	const effectiveSbpOrderId = t.orderId?.trim() || `ORD-${Math.abs(t.initialTotalBillKop || 1000)}`;
+	const sbpQrData = useMemo(() => buildFastCheckoutSbpQrData(effectiveSbpAmountRub, effectiveSbpKopecks, effectiveSbpOrderId), [effectiveSbpAmountRub, effectiveSbpKopecks, effectiveSbpOrderId]);
 
 	useEffect(() => {
-		if (!isOpen) return;
-		if (stagePaymentMode === "advance_offset_tag1215") {
-			resetAllSplitAmounts(splitSetters);
-			const offsetRub = stageCalc.advanceOffsetTag1215Kop / 100;
-			const reqRub = stageCalc.requiredAmountKop / 100;
-			setDepositAmountRub(offsetRub);
-			assignFullAmountToMethod(activeMethod, reqRub, splitSetters, false);
-		} else if (isSimpleCashierMode) {
-			resetAllSplitAmounts(splitSetters);
-			assignFullAmountToMethod(activeMethod, targetBillRub, splitSetters, true);
+		if (!props.isOpen) return;
+		if (t.stagePaymentMode === "advance_offset_tag1215") {
+			resetAllSplitAmounts(t.splitSetters);
+			t.setDepositAmountRub(stageCalc.advanceOffsetTag1215Kop / 100);
+			assignFullAmountToMethod(t.activeMethod, stageCalc.requiredAmountKop / 100, t.splitSetters, false);
+		} else if (t.isSimpleCashierMode) {
+			resetAllSplitAmounts(t.splitSetters);
+			assignFullAmountToMethod(t.activeMethod, targetBillRub, t.splitSetters, true);
 		} else {
-			const totalAllocated = cardAmountRub + cashAmountRub + sbpAmountRub + depositAmountRub + loyaltyAmountRub + dmsAmountRub;
-			if (totalAllocated === 0 && targetBillRub > 0) {
-				assignFullAmountToMethod(activeMethod, targetBillRub, splitSetters, true);
-			}
+			const total = t.cardAmountRub + t.cashAmountRub + t.sbpAmountRub + t.depositAmountRub + t.loyaltyAmountRub + t.dmsAmountRub;
+			if (total === 0 && targetBillRub > 0) assignFullAmountToMethod(t.activeMethod, targetBillRub, t.splitSetters, true);
 		}
-	}, [isOpen, targetBillKop, targetBillRub, isSimpleCashierMode, stagePaymentMode, stageCalc.advanceOffsetTag1215Kop, stageCalc.requiredAmountKop]);
+	}, [props.isOpen, targetBillKop, targetBillRub, t.isSimpleCashierMode, t.stagePaymentMode, stageCalc.advanceOffsetTag1215Kop, stageCalc.requiredAmountKop]);
 
-	useEffect(() => {
-		return subscribeFastCheckoutOfflineQueue(setPendingOfflineCount);
-	}, []);
-
-	const payments = useMemo<readonly CheckoutSplitItem[]>(() => {
-		return splitStateToCheckoutPayments({
-			cardRub: cardAmountRub, cashRub: cashAmountRub, sbpRub: sbpAmountRub,
-			depositRub: depositAmountRub, loyaltyRub: loyaltyAmountRub, dmsRub: dmsAmountRub,
-		});
-	}, [cardAmountRub, cashAmountRub, sbpAmountRub, depositAmountRub, loyaltyAmountRub, dmsAmountRub]);
+	const payments = useMemo<readonly CheckoutSplitItem[]>(() => splitStateToCheckoutPayments({
+		cardRub: t.cardAmountRub, cashRub: t.cashAmountRub, sbpRub: t.sbpAmountRub, depositRub: t.depositAmountRub, loyaltyRub: t.loyaltyAmountRub, dmsRub: t.dmsAmountRub,
+	}), [t.cardAmountRub, t.cashAmountRub, t.sbpAmountRub, t.depositAmountRub, t.loyaltyAmountRub, t.dmsAmountRub]);
 
 	const remainingKop = useMemo(() => calculateSplitRemainingKop(targetBillKop, payments), [targetBillKop, payments]);
 	const remainingRub = useMemo(() => +(remainingKop / 100).toFixed(2), [remainingKop]);
-	const cashChange = useMemo(() => computeCashChange(cashTenderedRub, cashAmountRub), [cashTenderedRub, cashAmountRub]);
+	const cashChange = useMemo(() => computeCashChange(t.cashTenderedRub, t.cashAmountRub), [t.cashTenderedRub, t.cashAmountRub]);
 
-	const validation = useMemo(() => {
-		return computeCheckoutValidation({
-			orderId, targetBillKop, payments, cashTenderedRub, patientPhone, patientEmail,
-			clientType, buyerInn, buyerName, isElectronicReceiptOnly,
-		});
-	}, [orderId, targetBillKop, payments, cashTenderedRub, patientPhone, patientEmail, clientType, buyerInn, buyerName, isElectronicReceiptOnly]);
+	const validation = useMemo(() => computeCheckoutValidation({
+		orderId: t.orderId, targetBillKop, payments, cashTenderedRub: t.cashTenderedRub, patientPhone: props.patientPhone || "",
+		patientEmail: props.patientEmail || "", clientType: t.clientType, buyerInn: t.buyerInn, buyerName: t.buyerName, isElectronicReceiptOnly: t.isElectronicReceiptOnly,
+	}), [t.orderId, targetBillKop, payments, t.cashTenderedRub, props.patientPhone, props.patientEmail, t.clientType, t.buyerInn, t.buyerName, t.isElectronicReceiptOnly]);
 
-	const handleQuickPreset = (preset: QuickCheckoutPresetType) => {
-		if (preset === "warranty_100") {
-			setDiscountPreset("warranty_100");
-			resetAllSplitAmounts(splitSetters);
-			showToast("Применено: 100% Гарантия / переделка (0 ₽)", "info", 2000);
-			return;
-		}
-		const { activeMethod: nextMethod, splitState, cashTenderedRub: nextTendered } =
-			computeQuickPresetSplitResult(preset, targetBillKop, patientDepositRub, patientFamilyBalanceRub);
-		setActiveMethod(nextMethod);
-		setCardAmountRub(splitState.cardRub);
-		setCashAmountRub(splitState.cashRub);
-		setSbpAmountRub(splitState.sbpRub);
-		setDepositAmountRub(splitState.depositRub);
-		setLoyaltyAmountRub(splitState.loyaltyRub);
-		setDmsAmountRub(splitState.dmsRub ?? 0);
-		setCashTenderedRub(nextTendered);
-	};
+	const remainderHandlers = useFastCheckoutRemainderHandlers({
+		remainingKop, targetBillKop, targetBillRub, patientDepositRub: t.patientDepositRub, patientFamilyBalanceRub: t.patientFamilyBalanceRub,
+		depositAmountRub: t.depositAmountRub, cashAmountRub: t.cashAmountRub, cashTenderedRub: t.cashTenderedRub, availableLoyaltyPointsRub: t.availableLoyaltyPointsRub,
+		activeMethod: t.activeMethod, splitSetters: t.splitSetters, stages: t.stages, setSelectedStageId: t.setSelectedStageId, setCashTenderedRub: t.setCashTenderedRub,
+		setStagePaymentMode: t.setStagePaymentMode, setActiveMethod: t.setActiveMethod, setCardAmountRub: t.setCardAmountRub, setCashAmountRub: t.setCashAmountRub,
+		setSbpAmountRub: t.setSbpAmountRub, setDepositAmountRub: t.setDepositAmountRub, setLoyaltyAmountRub: t.setLoyaltyAmountRub, setDmsAmountRub: t.setDmsAmountRub,
+		setDiscountPreset: t.setDiscountPreset,
+	});
 
-	const handleStageSelect = (stageId: string) => {
-		setSelectedStageId(stageId);
-		setCashTenderedRub(0);
-		const stg = stages.find((s) => s.id === stageId);
-		const stgAdvancePaid =
-			stg?.advanceAlreadyPaidRub ??
-			(stg?.advanceAlreadyPaidKop ? stg.advanceAlreadyPaidKop / 100 : undefined) ??
-			(stg?.paidAmountRub ?? (stg?.paidAmountKop ? stg.paidAmountKop / 100 : 0));
-		if (stgAdvancePaid && stgAdvancePaid > 0) {
-			setStagePaymentMode("advance_offset_tag1215");
-		}
-	};
-
-	const handleSingle100Percent = (method: CheckoutPaymentMethodType) => {
-		setActiveMethod(method);
-		resetAllSplitAmounts(splitSetters);
-		assignFullAmountToMethod(method, targetBillRub, splitSetters, true);
-	};
-
-	const handleAddRemainingToCard = () => {
-		if (remainingKop <= 0) return;
-		setCardAmountRub((prev) => addKopToRubAmount(prev, remainingKop));
-	};
-
-	const handleAddRemainingToCash = () => {
-		if (remainingKop <= 0) return;
-		const nextCash = addKopToRubAmount(cashAmountRub, remainingKop);
-		setCashAmountRub(nextCash);
-		if (cashTenderedRub < nextCash) setCashTenderedRub(nextCash);
-	};
-
-	const handleAddRemainingToSbp = () => {
-		if (remainingKop <= 0) return;
-		setSbpAmountRub((prev) => addKopToRubAmount(prev, remainingKop));
-	};
-
-	const handleAddRemainingToDeposit = () => {
-		const toAddKop = computeDepositRemainderTakeKop(remainingKop, patientDepositRub, patientFamilyBalanceRub, depositAmountRub);
-		if (toAddKop <= 0) return;
-		setDepositAmountRub((prev) => addKopToRubAmount(prev, toAddKop));
-	};
-
-	const handleAddRemainingDepositPlusCard = () => {
-		if (remainingKop <= 0) return;
-		const { depositTakeKop, cardTakeKop } =
-			computeDepositPlusCardRemainderSplitKop(remainingKop, patientDepositRub, patientFamilyBalanceRub, depositAmountRub);
-		if (depositTakeKop > 0) setDepositAmountRub((prev) => addKopToRubAmount(prev, depositTakeKop));
-		if (cardTakeKop > 0) setCardAmountRub((prev) => addKopToRubAmount(prev, cardTakeKop));
-	};
-
-	const handleAddRemainingToLoyalty = () => {
-		if (remainingKop <= 0) return;
-		setLoyaltyAmountRub((prev) => addKopToRubAmount(prev, remainingKop));
-	};
-
-	const handleAddRemaining5050 = () => {
-		if (remainingKop <= 0) return;
-		const { halfCardKop, halfCashKop } = computeHalfSplitRemainderKop(remainingKop);
-		setCardAmountRub((prev) => addKopToRubAmount(prev, halfCardKop));
-		setCashAmountRub((prev) => {
-			const nextCash = addKopToRubAmount(prev, halfCashKop);
-			if (cashTenderedRub < nextCash) setCashTenderedRub(nextCash);
-			return nextCash;
-		});
-	};
-
-	const handleAddRemainingToFamily = () => {
-		if (remainingKop <= 0) return;
-		const toAddKop = computeFamilyRemainderTakeKop(remainingKop, patientFamilyBalanceRub);
-		setDepositAmountRub((prev) => addKopToRubAmount(prev, toAddKop));
-	};
-
-	const handleExecutePayment = async (forceOfflineBuffer = false) => {
-		await executeFiscalPayment(
-			{
-				targetBillKop, targetBillRub, effectiveTotalRub, cardAmountRub, cashAmountRub, sbpAmountRub,
-				depositAmountRub, loyaltyAmountRub, dmsAmountRub, cashTenderedRub, remainingRub, activeMethod,
-				validation, clientType, buyerInn, buyerName, isElectronicReceiptOnly, patientId, visitId,
-				patientPhone, patientEmail, orderId, effectiveCashierFullName, stageCalc, onPaymentComplete, onSuccess,
-				onClose, inFlightRef, lastClickTimeRef, isPrinting, setIsPrinting, setIsOfflineBuffered,
-				setInterruptedPaymentState, setCardAmountRub, setCashAmountRub, setCashTenderedRub,
-				setSbpAmountRub, setDepositAmountRub, setLoyaltyAmountRub, setDmsAmountRub,
-			},
-			forceOfflineBuffer,
-		);
-	};
-
-	const handleCheckSbpStatus = async (manual = false) => {
-		await executeCheckSbpStatus({
-			isCheckingSbp, sbpStatus, effectiveSbpKopecks, effectiveSbpOrderId, sbpQrData, manual,
-			setIsCheckingSbp, setSbpStatus, setSbpCheckMessage,
-			onPaidConfirmed: () => handleExecutePayment(false),
-		});
-	};
-
-	const handleConfirmSbpManual = async () => {
-		await executeConfirmSbpManual({
-			effectiveSbpOrderId, sbpQrData, effectiveSbpKopecks,
-			setIsCheckingSbp, setSbpStatus, setSbpCheckMessage,
-			onPaidConfirmed: () => handleExecutePayment(false),
-		});
-	};
-
-	useEffect(() => {
-		if (!isOpen || sbpStatus === "paid" || (activeMethod !== "sbp_qr" && sbpAmountRub <= 0)) return;
-		const interval = setInterval(() => {
-			void handleCheckSbpStatus(false);
-		}, 3500);
-		return () => clearInterval(interval);
-	}, [isOpen, sbpStatus, activeMethod, sbpAmountRub, effectiveSbpOrderId, effectiveSbpKopecks]);
-
-	const handleManualCardTerminalConfirm = async (overrideAmountRub?: number) => {
-		await executeManualCardTerminalConfirm({
-			targetBillRub, overrideAmountRub, patientId, visitId, patientPhone, patientEmail,
-			effectiveCashierFullName, orderId, clientType, buyerInn, buyerName, isElectronicReceiptOnly,
-			stageCalc, onPaymentComplete, onSuccess, onClose, setIsSubmittingManualCard, setIsOfflineBuffered,
-			setInterruptedPaymentState,
-		});
-	};
-
-	const handleAcceptPaymentOfflineFallback = async () => {
-		showToast(
-			"Принимаем оплату через автономный терминал... Чек поставлен в очередь отложенной печати!",
-			"info",
-			3000,
-		);
-		await handleExecutePayment(true);
-	};
-
-	const handleApplyOneClickLoyaltyPoints = () => {
-		if (availableLoyaltyPointsRub <= 0) return;
-		const pointsToRedeem = Math.min(availableLoyaltyPointsRub, targetBillRub);
-		if (pointsToRedeem >= targetBillRub) {
-			handleSingle100Percent("loyalty_points");
-		} else {
-			setLoyaltyAmountRub(pointsToRedeem);
-			const remaining = Number((targetBillRub - pointsToRedeem).toFixed(2));
-			if (activeMethod === "cash") {
-				setCashAmountRub(remaining);
-				setCashTenderedRub(remaining);
-			} else if (activeMethod === "sbp_qr") {
-				setSbpAmountRub(remaining);
-			} else {
-				setCardAmountRub(remaining);
-			}
-		}
-	};
-
-	const handleRetryFiscalizationDirect = async () => {
-		await executeRetryFiscalizationDirect({
-			patientPhone, patientEmail, effectiveCashierFullName, targetBillRub, cashAmountRub,
-			cardAmountRub, sbpAmountRub, depositAmountRub, loyaltyAmountRub,
-			setIsFlushingQueue, setInterruptedPaymentState,
-		});
-	};
-
-	const handleFlushQueue = async () => {
-		await executeFlushOfflineFiscalQueue(setIsFlushingQueue);
-	};
+	const execHandlers = useFastCheckoutExecutionHandlers({
+		targetBillKop, targetBillRub, effectiveTotalRub, cardAmountRub: t.cardAmountRub, cashAmountRub: t.cashAmountRub, sbpAmountRub: t.sbpAmountRub,
+		depositAmountRub: t.depositAmountRub, loyaltyAmountRub: t.loyaltyAmountRub, dmsAmountRub: t.dmsAmountRub, cashTenderedRub: t.cashTenderedRub,
+		remainingRub, activeMethod: t.activeMethod, validation, clientType: t.clientType, buyerInn: t.buyerInn, buyerName: t.buyerName,
+		isElectronicReceiptOnly: t.isElectronicReceiptOnly, patientId: props.patientId, visitId: props.visitId, patientPhone: props.patientPhone || "",
+		patientEmail: props.patientEmail || "", orderId: t.orderId, effectiveCashierFullName: t.effectiveCashierFullName, stageCalc,
+		onPaymentComplete: props.onPaymentComplete, onSuccess: props.onSuccess, onClose: props.onClose, isPrinting: t.isPrinting,
+		setIsPrinting: t.setIsPrinting, setIsOfflineBuffered: t.setIsOfflineBuffered, setInterruptedPaymentState: t.setInterruptedPaymentState,
+		setCardAmountRub: t.setCardAmountRub, setCashAmountRub: t.setCashAmountRub, setCashTenderedRub: t.setCashTenderedRub, setSbpAmountRub: t.setSbpAmountRub,
+		setDepositAmountRub: t.setDepositAmountRub, setLoyaltyAmountRub: t.setLoyaltyAmountRub, setDmsAmountRub: t.setDmsAmountRub, isCheckingSbp: t.isCheckingSbp,
+		sbpStatus: t.sbpStatus, effectiveSbpKopecks, effectiveSbpOrderId, sbpQrData, setIsCheckingSbp: t.setIsCheckingSbp, setSbpStatus: t.setSbpStatus,
+		setSbpCheckMessage: t.setSbpCheckMessage, setIsFlushingQueue: t.setIsFlushingQueue, setIsSubmittingManualCard: t.setIsSubmittingManualCard,
+	});
 
 	return {
-		stages, selectedStageId, stagePaymentMode, setStagePaymentMode, activeMethod, setActiveMethod,
-		cardAmountRub, setCardAmountRub, cashAmountRub, setCashAmountRub, sbpAmountRub, setSbpAmountRub,
-		sbpStatus, isCheckingSbp, sbpCheckMessage, depositAmountRub, setDepositAmountRub,
-		loyaltyAmountRub, setLoyaltyAmountRub, cashTenderedRub, setCashTenderedRub, isPrinting,
-		pendingOfflineCount, isFlushingQueue, interruptedPaymentState, setInterruptedPaymentState,
-		isSubmittingManualCard, kktHardwareStatus, isTier2Open, setIsTier2Open,
-		isSimpleCashierMode, setIsSimpleCashierMode, clientType, setClientType, buyerInn, setBuyerInn,
-		buyerName, setBuyerName, isElectronicReceiptOnly, setIsElectronicReceiptOnly,
-		discountPreset, setDiscountPreset, customDiscountPercent, setCustomDiscountPercent,
-		baseStageAmountKop, discountCalc, stageCalc, effectiveBillKop, targetBillKop, targetBillRub,
+		...t, baseStageAmountKop, discountCalc, stageCalc, effectiveBillKop, targetBillKop, targetBillRub,
 		effectiveSbpAmountRub, sbpQrData, remainingKop, remainingRub, cashChange, validation,
-		handleQuickPreset, handleStageSelect, handleSingle100Percent, handleAddRemainingToCard,
-		handleAddRemainingToCash, handleAddRemainingToSbp, handleAddRemainingToDeposit,
-		handleAddRemainingDepositPlusCard, handleAddRemainingToLoyalty, handleAddRemaining5050,
-		handleAddRemainingToFamily, handleApplyOneClickLoyaltyPoints, availableLoyaltyPointsRub,
-		handleExecutePayment, handleCheckSbpStatus, handleConfirmSbpManual,
-		handleManualCardTerminalConfirm, handleAcceptPaymentOfflineFallback,
-		handleRetryFiscalizationDirect, handleFlushQueue,
+		...remainderHandlers, ...execHandlers,
 	};
 }
 

@@ -29,7 +29,7 @@ export function validateBuyerInn(params: {
 	if (isPhysical) {
 		if (!cleanInn) return { isValid: true, isRequired: false };
 		const isStd = cleanInn.length === 12 || cleanInn.length === 10;
-		const hint = isStd ? undefined : "ИНН физлица обычно содержит 12 цифр (поле опционально и не блокирует чек)";
+		const hint = isStd ? undefined : "ИНН физлица обычно содержит 12 цифр (для 54-ФЗ поле опционально и не блокирует чек)";
 		return { isValid: true, isRequired: false, cleanInn, errorRu: hint, errorMessage: hint };
 	}
 
@@ -37,7 +37,7 @@ export function validateBuyerInn(params: {
 	const isIp = rawType === "individual_entrepreneur";
 
 	if (!cleanInn) {
-		const msg = isLegal ? "Для организации или ИП обязателен ИНН (10 или 12 цифр)" : "Для ИП обязателен ИНН (12 цифр)";
+		const msg = isLegal ? "Для организации обязателен ИНН (10 цифр)" : "Для ИП обязателен ИНН (12 цифр)";
 		return { isValid: false, isRequired: true, errorRu: msg, errorMessage: msg };
 	}
 

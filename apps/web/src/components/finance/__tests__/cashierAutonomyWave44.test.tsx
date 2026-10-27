@@ -56,7 +56,7 @@ describe("Wave 44: 54-FZ Cashier Autonomy & Citizen INN Optionality (Mandates 8e
 			"Must render data-testid inn-physical-not-required-badge"
 		);
 		assert.ok(
-			html.includes("По 54-ФЗ для физлиц не требуется"),
+			html.includes("Для физлиц не требуется"),
 			"Must state that INN is not required for physical persons"
 		);
 		assert.ok(
@@ -80,7 +80,7 @@ describe("Wave 44: 54-FZ Cashier Autonomy & Citizen INN Optionality (Mandates 8e
 			"FastCheckoutModal must have inn-physical-not-required-badge"
 		);
 		assert.ok(
-			html.includes("По 54-ФЗ для физлиц не требуется"),
+			html.includes("Для физлиц не требуется"),
 			"FastCheckoutModal must state INN not required for physical persons"
 		);
 		assert.ok(

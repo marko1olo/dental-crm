@@ -106,9 +106,10 @@
 	.payment-footer-submit-btn {
 		width: 100% !important;
 		min-width: 100% !important;
-		min-height: 48px !important;
-		height: 48px !important;
-		font-size: 14px !important;
+		min-height: 52px !important;
+		height: 52px !important;
+		font-size: 15px !important;
+		font-weight: 700 !important;
 		border-radius: 14px !important;
 	}
 

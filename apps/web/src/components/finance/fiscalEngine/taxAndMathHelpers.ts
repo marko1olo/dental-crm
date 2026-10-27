@@ -228,7 +228,7 @@ export function generateTaxDeductionCertificate(params: {
 }
 
 /**
- * Формирование фискального наименования услуги для тега 1030 (ФФД 1.2) с указанием зуба и кода 804н.
+ * Формирование фискального наименования услуги для кассового чека (Тег 1030) с указанием зуба и кода услуги.
  */
 export function formatFiscalItemName(
 	serviceName: string,
@@ -239,7 +239,7 @@ export function formatFiscalItemName(
 	const toothPart = toothNumber ? ` (зуб №${toothNumber})` : "";
 	const codePart = code804n ? ` [${code804n}]` : "";
 	const fullName = `${cleanName}${toothPart}${codePart}`;
-	// Тег 1030 ограничен 128 символами по стандарту ФФД 1.2
+	// Тег 1030 кассового чека ограничен 128 символами
 	return fullName.length > 128 ? fullName.slice(0, 125) + "..." : fullName;
 }
 

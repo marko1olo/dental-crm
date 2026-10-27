@@ -1,0 +1,68 @@
+import type React from "react";
+import type { CheckoutPaymentMethodType, FiscalReceiptPayload, TreatmentPlanStageOption } from "./types";
+
+/** Входные параметры хука быстрой кассы useFastCheckoutLogic */
+export interface UseFastCheckoutLogicProps {
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly amountKopecks?: number | undefined;
+	readonly totalBillKop?: number | undefined;
+	readonly totalBillRub?: number | undefined;
+	readonly amountRub?: number | undefined;
+	readonly initialPaymentMethod?: CheckoutPaymentMethodType | undefined;
+	readonly defaultMethod?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined;
+	readonly patientEmail?: string | undefined;
+	readonly patientDepositRub?: number | undefined;
+	readonly patientFamilyBalanceRub?: number | undefined;
+	readonly patientBonusPointsRub?: number | undefined;
+	readonly patientLoyaltyPoints?: number | undefined;
+	readonly familyPayerName?: string | undefined;
+	readonly familyHeadName?: string | undefined;
+	readonly orderId?: string | undefined;
+	readonly invoiceId?: string | undefined;
+	readonly stages?: readonly TreatmentPlanStageOption[] | undefined;
+	readonly cashierFullName?: string | undefined;
+	readonly cashierName?: string | undefined;
+	readonly attendingDoctorName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly initialSimpleCashierMode?: boolean | undefined;
+	readonly initialDiscountPercent?: number | undefined;
+	readonly initialDiscountReason?: string | undefined;
+	readonly initialCustomDiscountRub?: number | undefined;
+	readonly initialWarranty100?: boolean | undefined;
+	readonly initialSplit5050?: boolean | undefined;
+	readonly advanceAlreadyPaidRub?: number | undefined;
+	readonly advanceAlreadyPaidKop?: number | undefined;
+	readonly onPaymentComplete?: ((payload: FiscalReceiptPayload) => void) | undefined;
+	readonly items?: readonly any[] | undefined;
+	readonly onSuccess?: ((payload: any) => void) | undefined;
+	readonly containerTestId?: string | undefined;
+	readonly title?: string | undefined;
+}
+
+/** Состояние распределения сумм по способам оплаты (в рублях) */
+export interface FastCheckoutSplitAmountsState {
+	readonly cardAmountRub: number;
+	readonly cashAmountRub: number;
+	readonly sbpAmountRub: number;
+	readonly depositAmountRub: number;
+	readonly loyaltyAmountRub: number;
+	readonly dmsAmountRub: number;
+	readonly cashTenderedRub: number;
+}
+
+/** Сеттеры управления суммами сплит-оплаты */
+export interface FastCheckoutSplitAmountsSetters {
+	readonly setCardAmountRub: React.Dispatch<React.SetStateAction<number>>;
+	readonly setCashAmountRub: React.Dispatch<React.SetStateAction<number>>;
+	readonly setSbpAmountRub: React.Dispatch<React.SetStateAction<number>>;
+	readonly setDepositAmountRub: React.Dispatch<React.SetStateAction<number>>;
+	readonly setLoyaltyAmountRub: React.Dispatch<React.SetStateAction<number>>;
+	readonly setDmsAmountRub: React.Dispatch<React.SetStateAction<number>>;
+	readonly setCashTenderedRub: React.Dispatch<React.SetStateAction<number>>;
+}

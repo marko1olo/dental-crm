@@ -68,7 +68,12 @@ describe("REAL FINANCE & RECEIPTS INTEGRATION SUITE (Wave 21 Decomposed Modules)
 		assert.ok(fs.existsSync(indexPath), "index.tsx must exist");
 		assert.ok(fs.existsSync(toolbarPath), "FinanceOperationsToolbar.tsx must exist");
 
-		const combined = fs.readFileSync(indexPath, "utf-8") + "\n" + fs.readFileSync(toolbarPath, "utf-8");
+		const bannerPath = path.join(viewsDirPath, "PendingCheckoutBanner.tsx");
+		const cashboxSectionPath = path.join(viewsDirPath, "FinanceCashboxSection.tsx");
+		const combined = fs.readFileSync(indexPath, "utf-8") + "\n" +
+			fs.readFileSync(toolbarPath, "utf-8") +
+			(fs.existsSync(bannerPath) ? "\n" + fs.readFileSync(bannerPath, "utf-8") : "") +
+			(fs.existsSync(cashboxSectionPath) ? "\n" + fs.readFileSync(cashboxSectionPath, "utf-8") : "");
 
 		assert.ok(combined.includes('id="finance"'), "Must preserve id='finance'");
 		assert.ok(
