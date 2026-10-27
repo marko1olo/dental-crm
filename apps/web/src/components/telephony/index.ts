@@ -19,3 +19,4 @@ export * from "./useTelephonyState";
 export * from "./useIncomingCallData";
 export * from "./initiateOutboundCall";
 export * from "./telephonyAttribution";
+export * from "./headerCapsule";

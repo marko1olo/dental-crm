@@ -1,7 +1,4 @@
-import { ChevronDown, Headphones, PhoneCall, PhoneIncoming, PhoneOff, X } from "lucide-react";
 import React, { useRef } from "react";
-import { formatDurationTimer } from "../../store/telephonyStore";
-import { formatShortCallerName } from "./incomingCallPopupModules/incomingCallUtils";
 import { showToast } from "../GlobalToast";
 import { TelephonyWidgetHeader } from "./TelephonyWidgetHeader";
 import { TelephonyActiveCallHud } from "./telephonyFloatingWidget/TelephonyActiveCallHud";
@@ -29,67 +26,64 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 	if (isDoctorChairsideMode) {
 		return null;
 	}
-	if (s.isFullScreenStudioActive || s.hasPrimaryModal || (!s.activeCall && !s.isOpen && !props.defaultExpanded)) {
+	// Zero Floating Blobs Mandate: Telephony is fully unified into Ambient Header Capsule.
+	// Floating widget suppresses any rogue blobs unless explicitly mounted with defaultExpanded.
+	if (!props.defaultExpanded || s.isFullScreenStudioActive || s.hasPrimaryModal) {
 		return null;
 	}
+
 	return (
 		<div className={`dnt-telephony-island-container ${props.className || ""}`} data-testid="telephony-floating-widget">
-			{!s.isExpanded && (
-				<section className="dnt-telephony-island-pill" aria-label="Верхняя статусная капсула вызова (Dynamic Island)">
-					<div className={`dnt-pill-icon ${s.activeCall ? "dnt-pill-icon--active" : ""}`}>
-						{s.activeCall ? <PhoneIncoming size={14} /> : <Headphones size={14} />}
-					</div>
-					<div className="flex items-center gap-1.5 min-w-0 pr-0.5">
-						<div className="min-w-0 flex items-center gap-1 text-xs font-bold text-[var(--ink,#0f172a)]">
-							<span className="truncate max-w-[170px] sm:max-w-[240px]" title={s.activeCall ? s.callerName : "Софтфон клиники"}>
-								{s.activeCall ? formatShortCallerName(s.callerName) : "Софтфон клиники"}
-							</span>
-							{s.activeCall && <span className="dnt-widget-timer-pill text-[11px] px-1.5">{formatDurationTimer(s.elapsedSeconds)}</span>}
-						</div>
-					</div>
-					<div className="flex items-center gap-1 shrink-0 ml-0.5">
-						{s.activeCall && !s.isCallAnswered && (
-							<button type="button" onClick={() => { s.answerCall(); showToast("Вызов принят", "success"); }} className="dnt-btn-answer min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600 text-xs" title="Ответить на звонок">
-								<PhoneCall size={13} /><span className="hidden xs:inline sm:inline">Ответить</span>
-							</button>
-						)}
-						{s.activeCall && (
-							<button type="button" onClick={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} className="dnt-btn-hangup min-h-[32px] sm:min-h-[34px] px-2 sm:px-2.5 text-xs" title="Сбросить вызов">
-								<PhoneOff size={13} /><span className="hidden xs:inline sm:inline">Сброс</span>
-							</button>
-						)}
-						<button type="button" onClick={() => s.setIsExpanded(true)} className="dnt-btn-icon min-h-[30px] min-w-[30px]" title="Развернуть детали вызова" aria-label="Развернуть детали вызова">
-							<ChevronDown size={15} />
-						</button>
-						{!s.activeCall && (
-							<button type="button" onClick={() => { s.setIsOpen(false); s.setIsExpanded(false); }} className="dnt-btn-icon" title="Закрыть уведомление" aria-label="Закрыть уведомление">
-								<X size={15} />
-							</button>
-						)}
-					</div>
-				</section>
-			)}
-			{s.isExpanded && (
-				<div className="dnt-telephony-island-expanded" role="dialog" aria-label="Детализированный центр вызова (Dynamic Island Studio)">
-					<TelephonyWidgetHeader activeCall={s.activeCall} isCallAnswered={s.isCallAnswered} elapsedSeconds={s.elapsedSeconds} agentState={s.agentState} onSetAgentState={s.setAgentState} activeLineId={s.activeLineId} onSwitchLine={s.switchLine} line1={s.line1} line2={s.line2} isHeld={s.isHeld} onToggleHold={s.toggleHold} isMuted={s.isMuted} onToggleMute={s.toggleMute} onAnswerCall={() => { s.answerCall(); showToast("Вызов принят", "success"); }} onRejectCall={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} onCollapse={() => { if (!s.activeCall) s.setIsOpen(false); s.setIsExpanded(false); }} onClose={() => { if (s.activeCall) s.dismissCall(); s.setIsOpen(false); s.setIsExpanded(false); }} activeTab={s.activeTab} onSelectTab={s.setActiveTab} callHistoryCount={s.callHistory.length} isWsConnected={s.isWsConnected} />
-					<div className="dnt-widget-body">
-						{s.activeTab === "call" && (
-							<>
-								{s.activeCall && (
-									<TelephonyActiveCallHud activeCall={s.activeCall} isCallAnswered={s.isCallAnswered} elapsedSeconds={s.elapsedSeconds} isHeld={s.isHeld} onToggleHold={s.toggleHold} isMuted={s.isMuted} onToggleMute={s.toggleMute} showTransferPanel={s.showTransferPanel} onToggleTransferPanel={() => s.setShowTransferPanel((p) => !p)} transferType={s.transferType} onSetTransferType={s.setTransferType} onStartTransfer={(ext, type) => { s.startCallTransfer(ext, type); showToast(`Перевод звонка на ${ext} (${type === "blind" ? "Прямой" : "С консультацией"})`, "info"); }} onEndCall={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }} activeLineId={s.activeLineId} onSwitchLine={s.switchLine} line1={s.line1} line2={s.line2} />
-								)}
-								<TelephonyIncomingCallCard activeCall={s.activeCall} resolvedPatient={s.resolvedPatient} financialSummary={s.financialSummary} lastVisitSummary={s.lastVisitSummary} callerName={s.callerName} formattedPhone={s.formattedPhone} initials={s.initials} avatarColors={s.avatarColors} allergyAlerts={s.allergyAlerts} acutePainAlerts={s.acutePainAlerts} upcomingAppointment={s.upcomingAppointment} callAttribution={s.callAttribution} whatsappSent={s.whatsappSent} onSendWhatsApp={s.handleSendWhatsApp} onQuickBook={s.handleQuickBook} onOpenCard={() => { if (s.resolvedPatient) s.setSelectedPatientId(s.resolvedPatient.id); else if (s.activeCall?.phone) s.setNewPatientPhone(s.activeCall.phone); s.connectCall(); s.openCallDrawer(); }} showWidgetMoreMenu={s.showWidgetMoreMenu} onToggleWidgetMoreMenu={() => s.setShowWidgetMoreMenu((p) => !p)} onCloseWidgetMoreMenu={() => s.setShowWidgetMoreMenu(false)} isCapturingLead={s.isCapturingLead} onCaptureLead={s.handleCaptureLead} isHeld={s.isHeld} onToggleHold={s.toggleHold} onCopyPhone={() => { if (s.activeCall?.phone) { navigator.clipboard?.writeText(s.activeCall.phone); showToast("Номер телефона скопирован", "info"); } }} isCreatingPatient={s.isCreatingPatient} onQuickCreatePatient={s.handleQuickCreatePatient} isWsConnected={s.isWsConnected} onSwitchToDialer={() => s.setActiveTab("dialer")} />
-							</>
-						)}
-						{s.activeTab === "dialer" && (
-							<TelephonyDialpad dialNumber={s.dialNumber} onDialNumberChange={s.setDialNumber} onDialDigit={s.handleDialDigit} onDialBackspace={s.handleDialBackspace} onStartOutgoingCall={s.handleStartOutgoingCall} dialInputRef={dialInputRef} />
-						)}
-						{s.activeTab === "history" && (
-							<TelephonyRecentCallsList callHistory={s.callHistory} onRedial={(phone) => { s.setDialNumber(phone); s.setActiveTab("dialer"); }} onSendWhatsApp={() => s.handleSendWhatsApp()} />
-						)}
-					</div>
+			<div className="dnt-telephony-island-expanded" role="dialog" aria-label="Детализированный центр вызова (Dynamic Island Studio)">
+				<TelephonyWidgetHeader
+					activeCall={s.activeCall} isCallAnswered={s.isCallAnswered} elapsedSeconds={s.elapsedSeconds}
+					agentState={s.agentState} onSetAgentState={s.setAgentState} activeLineId={s.activeLineId}
+					onSwitchLine={s.switchLine} line1={s.line1} line2={s.line2} isHeld={s.isHeld} onToggleHold={s.toggleHold}
+					isMuted={s.isMuted} onToggleMute={s.toggleMute} onAnswerCall={() => { s.answerCall(); showToast("Вызов принят", "success"); }}
+					onRejectCall={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }}
+					onCollapse={() => { s.setIsOpen(false); s.setIsExpanded(false); }}
+					onClose={() => { if (s.activeCall) s.dismissCall(); s.setIsOpen(false); s.setIsExpanded(false); }}
+					activeTab={s.activeTab} onSelectTab={s.setActiveTab} callHistoryCount={s.callHistory.length} isWsConnected={s.isWsConnected}
+				/>
+				<div className="dnt-widget-body">
+					{s.activeTab === "call" && (
+						<>
+							{s.activeCall && (
+								<TelephonyActiveCallHud
+									activeCall={s.activeCall} isCallAnswered={s.isCallAnswered} elapsedSeconds={s.elapsedSeconds}
+									isHeld={s.isHeld} onToggleHold={s.toggleHold} isMuted={s.isMuted} onToggleMute={s.toggleMute}
+									showTransferPanel={s.showTransferPanel} onToggleTransferPanel={() => s.setShowTransferPanel((p) => !p)}
+									transferType={s.transferType} onSetTransferType={s.setTransferType}
+									onStartTransfer={(ext, type) => { s.startCallTransfer(ext, type); showToast(`Перевод звонка на ${ext} (${type === "blind" ? "Прямой" : "С консультацией"})`, "info"); }}
+									onEndCall={() => { s.rejectCall(); showToast("Вызов завершен", "info"); }}
+									activeLineId={s.activeLineId} onSwitchLine={s.switchLine} line1={s.line1} line2={s.line2}
+								/>
+							)}
+							<TelephonyIncomingCallCard
+								activeCall={s.activeCall} resolvedPatient={s.resolvedPatient} financialSummary={s.financialSummary}
+								lastVisitSummary={s.lastVisitSummary} callerName={s.callerName} formattedPhone={s.formattedPhone}
+								initials={s.initials} avatarColors={s.avatarColors} allergyAlerts={s.allergyAlerts}
+								acutePainAlerts={s.acutePainAlerts} upcomingAppointment={s.upcomingAppointment}
+								callAttribution={s.callAttribution} whatsappSent={s.whatsappSent} onSendWhatsApp={s.handleSendWhatsApp}
+								onQuickBook={s.handleQuickBook}
+								onOpenCard={() => { if (s.resolvedPatient) s.setSelectedPatientId(s.resolvedPatient.id); else if (s.activeCall?.phone) s.setNewPatientPhone(s.activeCall.phone); s.connectCall(); s.openCallDrawer(); }}
+								showWidgetMoreMenu={s.showWidgetMoreMenu} onToggleWidgetMoreMenu={() => s.setShowWidgetMoreMenu((p) => !p)}
+								onCloseWidgetMoreMenu={() => s.setShowWidgetMoreMenu(false)} isCapturingLead={s.isCapturingLead}
+								onCaptureLead={s.handleCaptureLead} isHeld={s.isHeld} onToggleHold={s.toggleHold}
+								onCopyPhone={() => { if (s.activeCall?.phone) { navigator.clipboard?.writeText(s.activeCall.phone); showToast("Номер телефона скопирован", "info"); } }}
+								isCreatingPatient={s.isCreatingPatient} onQuickCreatePatient={s.handleQuickCreatePatient}
+								isWsConnected={s.isWsConnected} onSwitchToDialer={() => s.setActiveTab("dialer")}
+							/>
+						</>
+					)}
+					{s.activeTab === "dialer" && (
+						<TelephonyDialpad dialNumber={s.dialNumber} onDialNumberChange={s.setDialNumber} onDialDigit={s.handleDialDigit} onDialBackspace={s.handleDialBackspace} onStartOutgoingCall={s.handleStartOutgoingCall} dialInputRef={dialInputRef} />
+					)}
+					{s.activeTab === "history" && (
+						<TelephonyRecentCallsList callHistory={s.callHistory} onRedial={(phone) => { s.setDialNumber(phone); s.setActiveTab("dialer"); }} onSendWhatsApp={() => s.handleSendWhatsApp()} />
+					)}
 				</div>
-			)}
+			</div>
 		</div>
 	);
 }

@@ -63,7 +63,7 @@ export function TelephonyToast(props: TelephonyToastProps): React.JSX.Element | 
 
 	return createPortal(
 		<div
-			className="telephony-toast-portal fixed inset-x-0 bottom-[70px] sm:bottom-auto sm:top-4 sm:right-6 sm:inset-x-auto sm:w-auto w-full z-[9990] pointer-events-none flex flex-col items-center sm:items-end px-2 sm:px-0"
+			className="telephony-toast-portal fixed inset-x-0 bottom-[70px] sm:bottom-auto sm:top-14 sm:right-6 sm:inset-x-auto sm:w-auto w-full z-[9990] pointer-events-none flex flex-col items-center sm:items-end px-2 sm:px-0"
 			data-testid="telephony-toast-portal"
 		>
 			{cardContent}

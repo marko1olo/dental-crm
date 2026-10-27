@@ -5,7 +5,9 @@
 
 import React, { useEffect } from "react";
 import { OmnichannelChatView } from "../../../../omnichannel_chat/OmnichannelChatView";
+import { PatientOmnichannelHubModal } from "../../../../messaging/PatientOmnichannelHubModal";
 import { IncomingCallPopup } from "../../../../telephony/IncomingCallPopup";
+import { TelephonyHeaderCapsule } from "../../../../telephony/headerCapsule";
 import { useTelephonyStore } from "../../../../../store/telephonyStore";
 import { useAppStore } from "../../../../../store/appStore";
 
@@ -14,10 +16,24 @@ export function renderOmnichannelAndTelephonyLauncher(): React.ReactElement | nu
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
 
+	const isOmnichannelHub =
+		s.includes("omnichannel_hub") ||
+		h.includes("omnichannel_hub") ||
+		s.includes("messaging_hub") ||
+		h.includes("messages") ||
+		s.includes("messages");
 	const isOmnichannel = s.includes("omnichannel") || h.includes("omnichannel");
 	const isTelephony = s.includes("telephony") || h.includes("telephony");
 
-	if (!isOmnichannel && !isTelephony) return null;
+	if (!isOmnichannelHub && !isOmnichannel && !isTelephony) return null;
+
+	if (isOmnichannelHub) {
+		return (
+			<div className="fixed inset-0 z-[99999] w-full h-screen min-h-screen bg-[var(--paper)] text-[var(--ink)] box-border flex flex-col overflow-hidden">
+				<PatientOmnichannelHubModal isOpen={true} onClose={() => {}} portal={false} />
+			</div>
+		);
+	}
 
 	if (isOmnichannel) {
 		return (
@@ -64,7 +80,7 @@ function TelephonyStandaloneContainer(): React.ReactElement {
 					<span className="text-xs text-[var(--muted)] border-l border-[var(--line)] pl-3">АРМ Администратора • Расписание приёмов</span>
 				</div>
 				<div className="flex items-center gap-2">
-					<span className="px-2.5 py-1 rounded-full bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 text-xs font-bold border border-emerald-500/20">АТС Онлайн</span>
+					<TelephonyHeaderCapsule id="topbar-chairside-telephony-btn" />
 				</div>
 			</header>
 
@@ -96,11 +112,10 @@ function TelephonyStandaloneContainer(): React.ReactElement {
 				</div>
 			</main>
 
-			<IncomingCallPopup defaultExpanded={true} />
+			<IncomingCallPopup defaultExpanded={false} />
 		</div>
 	);
 }
 
-export const DirectOmnichannelStandaloneLauncher: React.FC = () => {
-	return renderOmnichannelAndTelephonyLauncher();
-};
+export const DirectOmnichannelStandaloneLauncher: React.FC = () =>
+	renderOmnichannelAndTelephonyLauncher();
