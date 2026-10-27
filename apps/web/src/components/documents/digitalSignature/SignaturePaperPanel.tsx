@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckSquare, FileText, Printer } from "lucide-react";
+import { FileText, Printer } from "lucide-react";
 
 interface SignaturePaperPanelProps {
 	readonly paperSigned: boolean;
@@ -19,33 +19,78 @@ export const SignaturePaperPanel: React.FC<SignaturePaperPanelProps> = ({
 			display: "flex",
 			flexDirection: "column",
 			gap: "14px",
-			maxWidth: "500px",
+			maxWidth: "520px",
 			margin: "0 auto",
-			padding: "12px 0",
+			padding: "10px 0",
 		}}
 		data-testid="panel-signature-paper"
 	>
 		<div
 			style={{
-				padding: "14px",
-				borderRadius: "10px",
+				padding: "16px",
+				borderRadius: "12px",
 				border: "1px solid var(--line, #e2e8f0)",
 				background: "var(--paper-soft, #f8fafc)",
 				display: "flex",
 				alignItems: "center",
-				gap: "12px",
+				gap: "14px",
 			}}
 		>
-			<FileText size={24} color="var(--teal, #0d9488)" style={{ flexShrink: 0 }} />
+			<div
+				style={{
+					width: "44px",
+					height: "44px",
+					borderRadius: "10px",
+					background: "rgba(13, 148, 136, 0.12)",
+					color: "var(--teal, #0d9488)",
+					display: "flex",
+					alignItems: "center",
+					justifyContent: "center",
+					flexShrink: 0,
+				}}
+			>
+				<FileText size={22} />
+			</div>
 			<div>
-				<h4 style={{ margin: 0, fontSize: "13.5px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
-					Традиционное бумажное подписание
+				<h4 style={{ margin: 0, fontSize: "14px", fontWeight: 700, color: "var(--ink, #0f172a)" }}>
+					Традиционное подписание оригинала А4
 				</h4>
-				<p style={{ margin: "2px 0 0 0", fontSize: "12px", color: "var(--muted, #64748b)" }}>
-					Распечатайте бланк на принтере для личной физической подписи пациента ручкой
+				<p style={{ margin: "4px 0 0 0", fontSize: "12px", color: "var(--muted, #64748b)", lineHeight: 1.4 }}>
+					Распечатайте официальный бланк документа для личной физической подписи пациента ручкой.
 				</p>
 			</div>
 		</div>
+
+		{onPrintArchiveA4 && (
+			<button
+				type="button"
+				onClick={() => {
+					setPaperSigned(true);
+					onPrintArchiveA4();
+				}}
+				className="primary-button"
+				style={{
+					minHeight: "44px",
+					padding: "0 18px",
+					borderRadius: "8px",
+					border: "1px solid var(--teal, #0d9488)",
+					background: "var(--teal, #0d9488)",
+					color: "#ffffff",
+					fontSize: "13.5px",
+					fontWeight: 700,
+					display: "inline-flex",
+					alignItems: "center",
+					justifyContent: "center",
+					gap: "8px",
+					cursor: "pointer",
+					boxShadow: "0 2px 4px rgba(13, 148, 136, 0.2)",
+				}}
+				data-testid="btn-paper-print-sheet"
+			>
+				<Printer size={17} />
+				<span>Печать оригинала А4 для подписи пациентом</span>
+			</button>
+		)}
 
 		<label
 			style={{
@@ -72,29 +117,5 @@ export const SignaturePaperPanel: React.FC<SignaturePaperPanelProps> = ({
 			/>
 			<span>✓ Подписано на бумаге: пациент {patientName} расписался на распечатанном бланке</span>
 		</label>
-
-		{onPrintArchiveA4 && (
-			<button
-				type="button"
-				onClick={onPrintArchiveA4}
-				className="secondary-button"
-				style={{
-					height: "38px",
-					padding: "0 14px",
-					borderRadius: "8px",
-					fontSize: "12.5px",
-					fontWeight: 600,
-					display: "inline-flex",
-					alignItems: "center",
-					justifyContent: "center",
-					gap: "8px",
-					cursor: "pointer",
-				}}
-				data-testid="btn-paper-print-sheet"
-			>
-				<Printer size={15} color="var(--teal, #0d9488)" />
-				<span>Распечатать бумажный бланк (А4)</span>
-			</button>
-		)}
 	</div>
 );

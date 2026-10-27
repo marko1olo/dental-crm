@@ -14,8 +14,10 @@ export interface ImplantPassportConfig {
 }
 
 export interface AppHashRoutingState {
-	isPrescriptionForm107Open: boolean;
-	setIsPrescriptionForm107Open: Dispatch<SetStateAction<boolean>>;
+	isPrescriptionBlankOpen: boolean;
+	setIsPrescriptionBlankOpen: Dispatch<SetStateAction<boolean>>;
+	isPrescriptionForm107Open?: boolean | undefined;
+	setIsPrescriptionForm107Open?: Dispatch<SetStateAction<boolean>> | undefined;
 	prescriptionInitialMedId: string | null;
 	prescriptionInitialMedIds: string[] | null;
 	isImplantPassportDirectOpen: boolean;

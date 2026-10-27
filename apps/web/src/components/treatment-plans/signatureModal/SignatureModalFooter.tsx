@@ -49,7 +49,7 @@ export const SignatureModalFooter: React.FC<SignatureModalFooterProps> = ({
 				data-testid="paper-signature-confirm-btn"
 			>
 				<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400" />
-				<span>Утвердить и подписать на бумаге</span>
+				<span>Бумажный оригинал подписан пациентом</span>
 			</button>
 
 			<button

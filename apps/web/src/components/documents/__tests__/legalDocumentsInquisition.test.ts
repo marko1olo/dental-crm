@@ -15,13 +15,13 @@ import {
 	PHOTO_VIDEO_CONSENT_SAFE_DEFAULTS,
 	resolvePhotoVideoConsentSafeDefaults,
 } from "../photoVideoConsentBlockers";
-import { PrescriptionBlankModal, PrescriptionForm107Modal } from "../PrescriptionBlankModal";
+import { PrescriptionBlankModal } from "../PrescriptionBlankModal";
 import { getIntakeAndClinicalItems } from "../catalog/intakeAndClinicalItems";
 import type { ProfessionalA4DocumentTab } from "../professionalA4/types";
 
 describe("Legal Documents, Consents & Anti-Blockers Red Team Inquisition", () => {
-	it("1. Verifies that PrescriptionBlankModal and backwards-compatible PrescriptionForm107Modal match identically", () => {
-		assert.strictEqual(PrescriptionBlankModal, PrescriptionForm107Modal);
+	it("1. Verifies that PrescriptionBlankModal is the canonical prescription blank component without bureaucratic titles", () => {
+		assert.ok(PrescriptionBlankModal);
 		assert.strictEqual(PrescriptionBlankModal.displayName, "PrescriptionBlankModal");
 	});
 

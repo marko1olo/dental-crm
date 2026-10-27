@@ -67,7 +67,7 @@ export const StageCardHeader: React.FC<StageCardHeaderProps> = ({
 						title="Перенести услуги этапа в кассовый счёт на оплату"
 					>
 						<Receipt size={13} className="text-[var(--teal,var(--tp-primary))]" />
-						<span>В счёт</span>
+						<span>В счёт визита</span>
 					</button>
 
 					<button

@@ -14,6 +14,7 @@ export function useOutpatientArchiveState({
 	onOpenDocument,
 	onOpenBlankContract,
 	onOpenBlankConsent,
+	onOpenBlankMedicalCard,
 	onOpenBlankForm043,
 }: DocumentsOutpatientArchiveProps) {
 	// biome-ignore lint/suspicious/noExplicitAny: app logic context
@@ -78,7 +79,8 @@ export function useOutpatientArchiveState({
 		printPrimaryIntakePackage({ patient: getPatientPayload(), clinic: getClinicPayload(), doctorFullName: activeDoctor?.fullName || "" });
 	};
 
-	const handlePrintBlankForm043 = () => {
+	const handlePrintBlankMedicalCard = () => {
+		if (onOpenBlankMedicalCard) { onOpenBlankMedicalCard(); return; }
 		if (onOpenBlankForm043) { onOpenBlankForm043(); return; }
 		if (typeof window !== "undefined") {
 			const blankHtml = renderForm043uHtml({
@@ -114,6 +116,8 @@ export function useOutpatientArchiveState({
 		searchQuery, setSearchQuery, statusFilter, setStatusFilter,
 		activeDropdownDocId, setActiveDropdownDocId, displayLimit, setDisplayLimit,
 		documentSlice, filteredDocuments, appLogic,
-		handlePrintBlankContract, handlePrintBlankConsent, handlePrintBlankForm043, handleOpenLatest,
+		handlePrintBlankContract, handlePrintBlankConsent,
+		handlePrintBlankMedicalCard, handlePrintBlankForm043: handlePrintBlankMedicalCard,
+		handleOpenLatest,
 	};
 }

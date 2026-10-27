@@ -15,6 +15,7 @@ export interface DocumentsOutpatientArchiveProps {
 	onPrintDocument?: ((documentId: string) => void) | undefined;
 	onOpenBlankContract?: (() => void) | undefined;
 	onOpenBlankConsent?: (() => void) | undefined;
+	onOpenBlankMedicalCard?: (() => void) | undefined;
 	onOpenBlankForm043?: (() => void) | undefined;
 	className?: string | undefined;
 }

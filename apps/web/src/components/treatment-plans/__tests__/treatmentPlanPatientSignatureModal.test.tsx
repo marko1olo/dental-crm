@@ -29,7 +29,7 @@ describe("TreatmentPlanSignatureModal — Paper-First Autonomy & Doctor Freedom 
 		expect(html).toContain('data-testid="print-treatment-plan-btn"');
 		expect(html).toContain("Печать плана (А4)");
 		expect(html).toContain('data-testid="paper-signature-confirm-btn"');
-		expect(html).toContain("Утвердить и подписать на бумаге");
+		expect(html).toContain("Бумажный оригинал подписан пациентом");
 		expect(html).toContain('data-testid="confirm-sign-plan-btn"');
 		expect(html).toContain("Утвердить и подписать");
 		expect(html).not.toContain("<canvas");

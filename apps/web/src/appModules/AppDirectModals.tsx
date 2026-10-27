@@ -42,10 +42,13 @@ export function AppDirectModals({ routing, sessionAuth, appLogic }: AppDirectMod
 
 	return (
 		<>
-			{routing.isPrescriptionForm107Open && (
+			{(routing.isPrescriptionBlankOpen || routing.isPrescriptionForm107Open) && (
 				<PrescriptionModal
 					isOpen={true}
-					onClose={() => routing.setIsPrescriptionForm107Open(false)}
+					onClose={() => {
+						routing.setIsPrescriptionBlankOpen?.(false);
+						routing.setIsPrescriptionForm107Open?.(false);
+					}}
 					patient={patient}
 					doctorName={doctorName}
 					initialSelectedDrugIds={routing.prescriptionInitialMedIds ?? (routing.prescriptionInitialMedId ? [routing.prescriptionInitialMedId] : undefined)}

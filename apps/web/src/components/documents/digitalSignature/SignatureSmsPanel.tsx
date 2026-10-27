@@ -108,7 +108,7 @@ export const SignatureSmsPanel: React.FC<SignatureSmsPanelProps> = ({
 		>
 			<Lock size={13} color="var(--teal, #0d9488)" style={{ flexShrink: 0, marginTop: "2px" }} />
 			<span>
-				В соответствии со ст. 9 ФЗ № 63-ФЗ ввод кода является аналогом собственноручной подписи.
+				Ввод кода из СМС является подтверждением пациента.
 			</span>
 		</div>
 	</div>

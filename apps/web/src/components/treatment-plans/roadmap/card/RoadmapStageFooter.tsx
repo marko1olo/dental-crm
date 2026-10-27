@@ -56,7 +56,7 @@ export const RoadmapStageFooter: React.FC<FooterProps> = ({
 						title="Перенести услуги этапа в кассовый счёт на оплату"
 					>
 						<Receipt className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-						<span>В счёт</span>
+						<span>В счёт визита</span>
 					</button>
 				</div>
 

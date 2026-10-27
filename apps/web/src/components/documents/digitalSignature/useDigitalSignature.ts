@@ -5,7 +5,7 @@ import { showToast } from "../../GlobalToast";
 export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 	const { isOpen, onClose, document: doc, patient, onConfirmSignature } = props;
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [activeTab, setActiveTab] = useState<SignatureModeTab>("canvas");
+	const [activeTab, setActiveTab] = useState<SignatureModeTab>("paper");
 	const [isDrawing, setIsDrawing] = useState(false);
 	const [hasStroke, setHasStroke] = useState(false);
 	const [smsCode, setSmsCode] = useState("");
@@ -49,7 +49,7 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 		setExpectedOtp(code);
 		setSmsCountdown(60);
 		setSmsCode(code);
-		showToast(`Код подтверждения ПЭП отправлен: ${code}`, "info", 5000);
+		showToast(`Код подтверждения отправлен: ${code}`, "info", 5000);
 	}, []);
 
 	useEffect(() => {
@@ -63,16 +63,16 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 		if (activeTab === "canvas") {
 			const canvas = canvasRef.current;
 			signatureSvg = canvas && hasStroke ? canvas.toDataURL("image/png")
-				: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><text x='10' y='35' font-family='sans-serif' font-size='15' fill='%230d9488'>ПЭП: ${encodeURIComponent(patientName)}</text></svg>`;
+				: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><text x='10' y='35' font-family='sans-serif' font-size='15' fill='%230d9488'>ЭЦП: ${encodeURIComponent(patientName)}</text></svg>`;
 		} else if (activeTab === "sms") {
 			const entered = smsCode.trim();
 			if (!entered || (expectedOtp && entered !== expectedOtp)) {
 				showToast("Введите корректный код подтверждения", "error", 4000);
 				return;
 			}
-			signatureSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><text x='10' y='35' font-family='sans-serif' font-size='14' fill='%230d9488'>ПЭП СМС Код: ${encodeURIComponent(entered)}</text></svg>`;
+			signatureSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><text x='10' y='35' font-family='sans-serif' font-size='14' fill='%230d9488'>СМС Код: ${encodeURIComponent(entered)}</text></svg>`;
 		} else {
-			signatureSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='60'><text x='10' y='35' font-family='sans-serif' font-size='14' fill='%230d9488'>Подписано на бумажном носителе</text></svg>`;
+			signatureSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='280' height='60'><text x='10' y='35' font-family='sans-serif' font-size='14' fill='%230d9488'>Подписано на бумажном носителе (оригинал А4)</text></svg>`;
 		}
 
 		setIsSubmitting(true);

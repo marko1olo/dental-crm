@@ -3,8 +3,6 @@ import { Edit3, AlertCircle, Sparkles } from "lucide-react";
 import { useDocumentStore } from "../../../store/documentStore";
 import {
 	DENTAL_STATUTORY_MNN_CATALOG,
-	ORDER_1094N_NAME,
-	FORM_107_1_U_TITLE,
 	validatePrescriptionItemStrict,
 	type DentalMnnDefinition,
 } from "../prescriptionPrintEngine";
@@ -79,8 +77,8 @@ export const PrescriptionOrderForm: React.FC<PrescriptionOrderFormProps> =
 		return (
 			<article className="document-payload-card">
 				<div>
-					<h3>Назначение препаратов ({FORM_107_1_U_TITLE})</h3>
-					<p>Рецептурный бланк по {ORDER_1094N_NAME} с выпиской по МНН.</p>
+					<h3>Назначение препаратов (Рецептурный бланк)</h3>
+					<p>Рецептурный бланк с выпиской по МНН для аптеки.</p>
 				</div>
 				<div style={{ display: "flex", flexWrap: "wrap", gap: "6px", margin: "8px 0" }}>
 					{quickDrugs.map((drug) => (

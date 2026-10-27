@@ -46,6 +46,8 @@ export interface PrescriptionForm107Input {
 	readonly chronicPeriodicity?: string | undefined;
 }
 
+export type PrescriptionBlankInput = PrescriptionForm107Input;
+
 export interface PrescriptionValidationResult {
 	readonly isValid: boolean;
 	readonly errors: readonly string[];

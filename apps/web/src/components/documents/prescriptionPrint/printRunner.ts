@@ -60,3 +60,5 @@ export function printPrescriptionForm107Html(html: string): void {
 		window.print();
 	}
 }
+
+export const printPrescriptionBlankHtml = printPrescriptionForm107Html;

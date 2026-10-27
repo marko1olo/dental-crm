@@ -1,5 +1,5 @@
 import React from "react";
-import { FileSignature, Smartphone, CheckSquare } from "lucide-react";
+import { Printer, Smartphone, FileSignature } from "lucide-react";
 import type { SignatureModeTab } from "./types";
 
 interface SignatureTabSelectorProps {
@@ -12,9 +12,9 @@ export const SignatureTabSelector: React.FC<SignatureTabSelectorProps> = ({
 	setActiveTab,
 }) => {
 	const tabs: Array<{ id: SignatureModeTab; label: string; icon: React.ReactNode; testId: string }> = [
-		{ id: "canvas", label: "Росчерк (Стилус / Палец)", icon: <FileSignature size={15} />, testId: "tab-signature-canvas" },
-		{ id: "sms", label: "Код СМС / Telegram", icon: <Smartphone size={15} />, testId: "tab-signature-sms" },
-		{ id: "paper", label: "Подписано на бумаге", icon: <CheckSquare size={15} />, testId: "tab-signature-paper" },
+		{ id: "paper", label: "Печать оригинала А4 (Бумага)", icon: <Printer size={15} />, testId: "tab-signature-paper" },
+		{ id: "sms", label: "Код подтверждения (СМС)", icon: <Smartphone size={15} />, testId: "tab-signature-sms" },
+		{ id: "canvas", label: "Росчерк на экране (Стилус)", icon: <FileSignature size={15} />, testId: "tab-signature-canvas" },
 	];
 
 	return (

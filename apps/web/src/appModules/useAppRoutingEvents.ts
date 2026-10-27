@@ -52,7 +52,10 @@ export function useAppRoutingEvents(
 			if (hasLocationToken(s, h, ["ortho-photo", "orthodontic-photo"])) st.setIsOrthoPhotoDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["tooth-drawer", "tooth-card"])) st.setIsToothDrawerDirectModalOpen(true);
 			if (hasLocationToken(s, h, ["emergency", "rescue"])) st.setIsEmergencyDirectModalOpen(true);
-			if (hasLocationToken(s, h, ["prescriptions", "prescription", "rx"])) st.setIsPrescriptionForm107Open(true);
+			if (hasLocationToken(s, h, ["prescriptions", "prescription", "rx"])) {
+				st.setIsPrescriptionBlankOpen?.(true);
+				st.setIsPrescriptionForm107Open?.(true);
+			}
 			if (hasLocationToken(s, h, ["loyalty", "bonus", "family-pool", "points"])) st.setIsLoyaltyProgramOpen(true);
 			if (hasLocationToken(s, h, ["bonus-payment", "direct-cashier-bonus"])) st.setIsFastCheckoutDirectOpen(true);
 			if (hasLocationToken(s, h, ["zreport", "z-report", "shift-close", "shift_close"])) st.setIsShiftCloseZReportDirectOpen(true);
@@ -68,7 +71,8 @@ export function useAppRoutingEvents(
 	useEffect(() => {
 		const onRx = (e: Event) => {
 			const d = (e as CustomEvent<{ medicationId?: string; medicationIds?: string[] }>).detail;
-			stateRef.current.setIsPrescriptionForm107Open(true);
+			stateRef.current.setIsPrescriptionBlankOpen?.(true);
+			stateRef.current.setIsPrescriptionForm107Open?.(true);
 		};
 		const onPassport = (e?: Event) => {
 			const d = (e as CustomEvent<ImplantPassportConfig> | undefined)?.detail;

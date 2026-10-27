@@ -3,16 +3,16 @@ import type { ComprehensivePlanVariant } from "./types.js";
 
 export const optimumVipPreset: ComprehensivePlanVariant = {
 	tierCode: "optimum_vip",
-	title: "Оптимальный / Премиум (VIP)",
+	title: "Премиум (Комплексный)",
 	badgeText: "Максимальная эстетика и долговечность",
 	badgeType: "primary",
 	isRecommended: false,
 	headlineDescription:
-		"Бескомпромиссная тотальная реабилитация на премиальных швейцарских имплантатах Straumann BLX с пожизненной гарантией, " +
-		"цельноциркониевыми мостами Prettau Multi-layer и керамическими винирами E.max на фронтальную группу.",
-	implantSystem: "Straumann BLX / Nobel Biocare Active (Швейцария/Швеция)",
-	crownMaterial: "Цельный диоксид циркония Katana ML / Prettau Multi-unit",
-	aestheticMaterial: "Ультратонкие полевошпатные виниры / IPS e.max CAD",
+		"Эстетическая реабилитация, виниры E.max, имплантация Straumann/Nobel, каппы элайнеров. " +
+		"Бескомпромиссная тотальная реабилитация с пожизненной гарантией.",
+	implantSystem: "Straumann BLX SLActive / Nobel Biocare Active (Швейцария / Швеция)",
+	crownMaterial: "Керамические виниры IPS e.max CAD и цельный диоксид циркония Katana ML",
+	aestheticMaterial: "Ультратонкие керамические виниры IPS e.max и каппы элайнеров",
 	warrantyYears: 10,
 	estimatedServiceLifeYears: 25,
 	aestheticScore: 10,

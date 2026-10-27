@@ -83,13 +83,13 @@ export const SignatureCanvasPanel: React.FC<SignatureCanvasPanelProps> = ({
 					</div>
 				)}
 				<div style={{ position: "absolute", bottom: "6px", left: "16px", pointerEvents: "none", fontSize: "11px", color: "var(--muted, #64748b)" }}>
-					Линия подписи пациента · ПЭП 63-ФЗ
+					Линия личной подписи пациента
 				</div>
 			</div>
 			<div style={{ padding: "8px 12px", borderRadius: "8px", border: "1px solid rgba(13, 148, 136, 0.3)", background: "rgba(13, 148, 136, 0.08)", fontSize: "11.5px", display: "flex", gap: "8px" }}>
 				<ShieldCheck size={16} color="var(--teal, #0d9488)" style={{ flexShrink: 0, marginTop: "2px" }} />
 				<div>
-					<span style={{ fontWeight: 700, color: "var(--teal, #0d9488)" }}>Штамп ПЭП (63-ФЗ): </span>
+					<span style={{ fontWeight: 700, color: "var(--teal, #0d9488)" }}>Электронная отметка: </span>
 					Подписант: {patientName}. Хеш: {shortHash}
 				</div>
 			</div>

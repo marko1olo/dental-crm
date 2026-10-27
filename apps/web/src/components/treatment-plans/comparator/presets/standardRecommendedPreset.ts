@@ -3,14 +3,14 @@ import type { ComprehensivePlanVariant } from "./types.js";
 
 export const standardRecommendedPreset: ComprehensivePlanVariant = {
 	tierCode: "standard_recommended",
-	title: "Стандартный / Рекомендуемый",
+	title: "Оптимальный (Стандарт)",
 	badgeText: "Оптимальный баланс цены и качества",
 	badgeType: "success",
 	isRecommended: true,
 	headlineDescription:
-		"Самый популярный и клинически сбалансированный план. Надежные имплантаты Osstem TS III (Южная Корея), " +
-		"циркониевые коронки на индивидуальных титановых абатментах и высокоэстетичные пломбы Estelite.",
-	implantSystem: "Osstem TS III / Dentium SuperLine (Южная Корея)",
+		"Лечение под увеличением, циркониевые коронки, имплантация Osstem/Hiossen. " +
+		"Самый популярный и клинически сбалансированный план комплексной реабилитации.",
+	implantSystem: "Osstem TS III / Hiossen (Южная Корея / США)",
 	crownMaterial: "Диоксид циркония ZrO₂ на индивидуальном титановом абатменте",
 	aestheticMaterial: "Светоотверждаемый нанокомпозит Estelite Asteria / Tokuyama",
 	warrantyYears: 3,

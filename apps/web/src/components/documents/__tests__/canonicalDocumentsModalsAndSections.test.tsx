@@ -9,7 +9,7 @@ import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal.js";
 import { InformedConsentViewer } from "../InformedConsentViewer.js";
 import { FnsTaxCertificateModal } from "../FnsTaxCertificateModal.js";
 import type { Patient, GeneratedDocument } from "@dental/shared";
-import { PrescriptionForm107Modal } from "../PrescriptionForm107Modal.js";
+import { PrescriptionBlankModal } from "../PrescriptionBlankModal.js";
 import { PatientContractsSection } from "../PatientContractsSection.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -119,9 +119,9 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		assert.ok(html.includes("Печать справки"), "Must render print button");
 	});
 
-	it("renders PrescriptionForm107Modal with human clinical header and Latin Recipe", () => {
+	it("renders PrescriptionBlankModal with human clinical header and Latin Recipe", () => {
 		const html = renderToString(
-			<PrescriptionForm107Modal
+			<PrescriptionBlankModal
 				isOpen={true}
 				onClose={() => {}}
 				patient={mockPatient}
@@ -130,7 +130,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 			/>,
 		);
 
-		assert.ok(html.includes("prescription-form-107-modal"), "Must render modal container");
+		assert.ok(html.includes("prescription-form-107-modal") || html.includes("prescription-modal"), "Must render modal container");
 		assert.ok(html.includes("Рецептурный бланк"), "Must render human-readable prescription blank title");
 		assert.ok(html.includes("Rp.:"), "Must render Latin Recipe prefix");
 		assert.ok(html.includes("Печать рецепта"), "Must render print button");
@@ -172,7 +172,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 			"OutpatientCardPrintModal.tsx",
 			"InformedConsentViewer.tsx",
 			"FnsTaxCertificateModal.tsx",
-			"PrescriptionForm107Modal.tsx",
+			"PrescriptionBlankModal.tsx",
 			"PatientContractsSection.tsx",
 		];
 
@@ -192,7 +192,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 			"OutpatientCardPrintModal.tsx",
 			"InformedConsentViewer.tsx",
 			"FnsTaxCertificateModal.tsx",
-			"PrescriptionForm107Modal.tsx",
+			"PrescriptionBlankModal.tsx",
 			"PatientContractsSection.tsx",
 		];
 

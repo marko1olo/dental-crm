@@ -26,9 +26,6 @@ export const CANONICAL_PRESCRIPTION_DEFAULT_DRUGS: readonly PrescriptionPrescrib
 	defaultChx ? toPrescribedDrug(defaultChx) : null,
 ].filter((d): d is PrescriptionPrescribedDrug => d !== null);
 
-// Alias for backwards compatibility with tests
-export const CANONICAL_FORM_107_DEFAULT_DRUGS = CANONICAL_PRESCRIPTION_DEFAULT_DRUGS;
-
 export interface PrescriptionBlankModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -42,11 +39,9 @@ export interface PrescriptionBlankModalProps {
 	readonly disablePortal?: boolean | undefined;
 }
 
-export type PrescriptionForm107ModalProps = PrescriptionBlankModalProps;
-
 /**
  * Рецептурный бланк врача (PrescriptionBlankModal)
- * Чистый доменный компонент выписки рецептов и памяток пациенту без бюрократического канцелярита.
+ * Канонический доменный компонент выписки рецептов и памяток пациенту без бюрократического канцелярита.
  */
 export const PrescriptionBlankModal: React.FC<PrescriptionBlankModalProps> = ({
 	isOpen,
@@ -83,6 +78,3 @@ export const PrescriptionBlankModal: React.FC<PrescriptionBlankModalProps> = ({
 };
 
 PrescriptionBlankModal.displayName = "PrescriptionBlankModal";
-
-// Backwards compatibility alias
-export const PrescriptionForm107Modal = PrescriptionBlankModal;

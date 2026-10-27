@@ -59,11 +59,11 @@ export const SignatureHeader: React.FC<SignatureHeaderProps> = ({ onClose }) => 
 							border: "1px solid rgba(13, 148, 136, 0.3)",
 						}}
 					>
-						63-ФЗ ст. 5 · ПЭП
+						Оригинал А4 · Подпись
 					</span>
 				</div>
 				<p style={{ fontSize: "12px", color: "var(--muted, #64748b)", margin: "2px 0 0 0" }}>
-					Подписание пакета клиники стилусом, пальцем, через СМС или отметка о бумажном бланке
+					Печать бумажного оригинала А4 для подписи пациентом ручкой или электронное подтверждение
 				</p>
 			</div>
 		</div>

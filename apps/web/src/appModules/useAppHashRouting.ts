@@ -15,7 +15,7 @@ export function useAppHashRouting(
 	const s = typeof window !== "undefined" ? window.location.search || "" : "";
 	const h = typeof window !== "undefined" ? window.location.hash || "" : "";
 
-	const [isPrescriptionForm107Open, setIsPrescriptionForm107Open] = useState(false);
+	const [isPrescriptionBlankOpen, setIsPrescriptionBlankOpen] = useState(false);
 	const [prescriptionInitialMedId, setPrescriptionInitialMedId] = useState<string | null>(null);
 	const [prescriptionInitialMedIds, setPrescriptionInitialMedIds] = useState<string[] | null>(null);
 	const [isImplantPassportDirectOpen, setIsImplantPassportDirectOpen] = useState(() => hasLocationToken(s, h, ["implant_passport", "implant-passport", "implants"]));
@@ -49,7 +49,8 @@ export function useAppHashRouting(
 	const [isEmrCardDirectModalOpen, setIsEmrCardDirectModalOpen] = useState(() => hasLocationToken(s, h, ["emr", "medical-card", "form043", "card043"]));
 
 	const state: AppHashRoutingState = {
-		isPrescriptionForm107Open, setIsPrescriptionForm107Open,
+		isPrescriptionBlankOpen, setIsPrescriptionBlankOpen,
+		isPrescriptionForm107Open: isPrescriptionBlankOpen, setIsPrescriptionForm107Open: setIsPrescriptionBlankOpen,
 		prescriptionInitialMedId, prescriptionInitialMedIds,
 		isImplantPassportDirectOpen, setIsImplantPassportDirectOpen,
 		implantPassportConfig, setImplantPassportConfig,

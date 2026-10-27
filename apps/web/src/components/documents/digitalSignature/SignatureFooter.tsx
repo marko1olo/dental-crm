@@ -52,7 +52,7 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 					data-testid="btn-print-archive-blank"
 				>
 					<Printer size={15} color="var(--teal, #0d9488)" />
-					<span>Печать для архива (А4)</span>
+					<span>Печать оригинала А4</span>
 				</button>
 			)}
 		</div>
@@ -101,7 +101,7 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 				data-testid="btn-confirm-pep-signature"
 			>
 				<CheckCircle2 size={15} />
-				<span>{isSubmitting ? "Утверждение..." : "Утвердить подпись (ПЭП / Бумага)"}</span>
+				<span>{isSubmitting ? "Утверждение..." : "Утвердить подписание"}</span>
 			</button>
 		</div>
 	</div>

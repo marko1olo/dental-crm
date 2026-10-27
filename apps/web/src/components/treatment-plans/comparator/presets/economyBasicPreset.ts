@@ -2,13 +2,13 @@ import type { ComprehensivePlanVariant } from "./types.js";
 
 export const economyBasicPreset: ComprehensivePlanVariant = {
 	tierCode: "economy_basic",
-	title: "Базовый / Эконом",
+	title: "Базовый (Эконом)",
 	badgeText: "Доступное решение / Альтернатива",
 	badgeType: "neutral",
 	isRecommended: false,
 	headlineDescription:
-		"Минимально достаточный план для восстановления жевательной функции без масштабной хирургии. " +
-		"Бюгельное или съемное протезирование с кламмерной фиксацией и металлокерамические коронки CoCr.",
+		"Санация, металлокерамика, частичный съемный протез. " +
+		"Минимально достаточный план для восстановления жевательной функции без масштабной хирургии.",
 	implantSystem: "Без имплантации (съемное/бюгельное протезирование)",
 	crownMaterial: "Металлокерамика CoCr фрезерованная / литая",
 	aestheticMaterial: "Светоотверждаемый композит эконом-класса",
