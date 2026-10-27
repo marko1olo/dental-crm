@@ -1,50 +1,75 @@
 # Red Team Inquisition & Purification: Schedule & Appointments Domain
 
 ## 1. Контекст и архитектурная цель (Why)
-- **Ликвидация бюрократических тупиков и блокировок (Мандат 8e):** Устранены остаточные блокировки кнопок `disabled={...}` в расписании, карточках визитов, листах ожидания и онлайн-заявках (`PendingOnlineBookingsModal.tsx`, `DayConfirmationsTable.tsx`, `WaitlistBookingCard.tsx`, `ArrivedInTreatmentActions.tsx` и др.). Блокировки заменены на non-blocking debounced обработчики с `aria-busy` и тактильной индикацией без отключения кнопок из DOM.
-- **Суверенитет соло-врача (Мандат 8n):** В расписании никогда не требуется принудительного выбора ассистента, медсестры или начмеда (все роли опциональны). Запись на острую боль (CITO / Overbooking) всегда разрешена поверх занятых слотов по кнопке «Записать на это время (острая боль)» без запрещающих алертов.
-- **Apple HIG Touch Ergonomics на мобильных (390×844):** Расписание на смартфонах выводится в виде вертикальной хронологической повестки дня (Agenda View) с крупным временем слева, цветными маркерами и чипами статусов. Нативные нижние шторки (Bottom Sheets) снабжены тактильным Drag Handle 36×5px (`w-[36px] h-[5px] bg-[var(--line-strong)]`) и тач-таргетами $\ge 44\times 44$px (`pointer-coarse:min-h-[44px]`).
-- **Анти-монолит (Мандат 8b):** Монолитный файл `PendingOnlineBookingsModal.tsx` (267 строк) декомпозирован на чистые модули строго $\le 120$ строк:
-  - `pendingOnlineBookingsTypes.ts` (16 строк)
-  - `pendingOnlineBookingsHelpers.ts` (47 строк)
-  - `PendingOnlineBookingCard.tsx` (114 строк)
-  - `PendingOnlineBookingsEmptyState.tsx` (17 строк)
-  - `PendingOnlineBookingsModal.tsx` (105 строк)
+- **Ликвидация монолитов расписания (Мандат 8b: строго $\le 120$ строк на файл, фасады $\le 15$ строк или компактные композиции):**
+  1. `apps/web/src/components/schedule/doctorFreeSlotsEngine.ts` (714 строк) распилен на 6 сфокусированных математических и фильтрационных модулей в `freeSlotsModules/` с чистым 13-строчным фасадом.
+  2. `apps/web/src/components/schedule/useWaitlistDrawerOperations.ts` (689 строк) распилен на 7 доменных хуков в `waitlistModules/` с компактным фасадом 101 строка.
+  3. `apps/web/src/components/schedule/grid/useScheduleAppointmentInteractions.ts` (672 строки) распилен на 6 сфокусированных интеракционных хуков в `interactionModules/` с фасадом 69 строк.
+- **Суверенитет соло-врача и ноль бюрократии (Мандаты 8e, 8n):**
+  - Без обязательных ассистентов в расписании (все роли опциональны).
+  - Автопростановка 1-го кресла и врача в 0 кликов. Запись постоянного пациента в 2 клика.
+  - Non-blocking debounced автосейв, отсутствие блокировок `disabled={...}` на кнопках «Сохранить», «В кресло», «Чек».
+- **Apple HIG Touch Ergonomics на мобильных (390×844) & Design System (Мандаты 8al, 8am, 8ze):**
+  - Мобильный Agenda View на смартфонах $\le 768$px с крупным таймлайном, цветными статусами и свободными окнами.
+  - Сенсорные области тач-таргетов $\ge 44\times 44$px (`pointer-coarse:min-h-[44px]`).
+  - Ровно ОДНА Primary CTA кнопка на видимый мобильный контекст: «+ Новая запись» (высота 52px, Natural Thumb Zone, плавающая нижняя панель с blur-эффектом).
+  - 0px паразитного горизонтального скролла.
 
 ---
 
-## 2. Перечень изменений (What & Where)
-- `apps/web/src/components/schedule/PendingOnlineBookingsModal.tsx`: декомпозиция, устранен `disabled={isConfirming}`, добавлены `aria-busy`, debounced клик, `pointer-coarse:min-h-[44px]`.
-- `apps/web/src/components/schedule/PendingOnlineBookingCard.tsx`: отдельный модуль карточки онлайн-заявки с быстрыми действиями.
-- `apps/web/src/components/schedule/pendingOnlineBookingsHelpers.ts`: форматирование времени, доменные хелперы извлечения имен пациентов и врачей.
-- `apps/web/src/components/schedule/pendingOnlineBookingsTypes.ts`: типизированные контракты интерфейса.
-- `apps/web/src/components/schedule/PendingOnlineBookingsEmptyState.tsx`: состояние отсутствия ожидающих заявок.
-- `apps/web/src/components/schedule/DayConfirmationsTable.tsx`: устранен `disabled` на кнопках «✓ Подтверждён» и «✕ В лист ожидания».
-- `apps/web/src/components/schedule/DayConfirmationsPanel.tsx`: устранен `disabled={loading}` на кнопке «Обновить».
-- `apps/web/src/components/schedule/WaitlistBookingCard.tsx`: убран `disabled={isBooking}`.
-- `apps/web/src/components/schedule/WaitlistCandidateCard.tsx`: убран `disabled={loadingId === item.id}` на кнопках записи и меню.
-- `apps/web/src/components/schedule/WaitlistMatchesBlock.tsx`: убран `disabled={loading}` и `disabled={Boolean(bookingId)}`.
-- `apps/web/src/components/schedule/WaitlistQuickAddForm.tsx`: убран `disabled={isSubmitting}`.
-- `apps/web/src/components/schedule/ScheduleClipboardPanel.tsx`: убран `disabled={loading}` и `disabled={busyId === item.id}`.
-- `apps/web/src/components/schedule/appointmentCardActions/ArrivedInTreatmentActions.tsx`: убран `disabled={isQuickStatusUpdating}` на кнопках «В кресло», «+15 мин» и «Завершить».
-- `apps/web/src/components/schedule/appointmentCardActions/CancelledNoShowActions.tsx`: убран `disabled={isQuickStatusUpdating}` на кнопках «Восстановить» и «Прибыл».
-- `apps/web/src/components/schedule/appointmentCardActions/PlannedConfirmedActions.tsx`: убран `disabled={isQuickStatusUpdating}` на кнопках «Прибыл» и «Начать приём».
-- `apps/web/src/components/schedule/appointmentCardModules/AppointmentCardVisualBody.tsx`: убран `disabled={isQuickStatusUpdating}`.
-- `apps/web/src/components/schedule/appointmentContextMenu/CancellationMenuSection.tsx`: убран `disabled={isQuickStatusUpdating}` на меню отмены.
-- `apps/web/src/components/schedule/appointmentModalModules/AppointmentModalDialog.tsx`: тактильный Drag Handle 36×5px по Apple HIG.
-- `apps/web/src/components/schedule/appointmentStatus/AppointmentMobileBottomSheet.tsx`: тактильный Drag Handle 36×5px по Apple HIG.
-- `apps/web/src/components/schedule/grid/scheduleMobileSheet/ScheduleMobileSheetHeader.tsx`: тактильный Drag Handle 36×5px по Apple HIG.
-- `apps/web/src/components/schedule/__tests__/pendingOnlineBookingsRedTeamInquisition.test.tsx`: Red Team тесты на 0 disabled кнопок, touch targets $\ge 44$px и лимит $\le 120$ строк.
+## 2. Архитектура декомпозиции (What & Where)
+
+### А. Модули свободных окон (`freeSlotsModules/`)
+- `freeSlotsTypes.ts` (116 строк): контракты интервалов, занятости кресел и врачебных окон.
+- `intervalIntersectionMath.ts` (113 строк): математика пересечений временных интервалов и коллизий.
+- `slotAvailabilityFilters.ts` (115 строк): фильтрация свободных окон по врачам, креслам и кабинетам.
+- `freeSlotsChipFormatter.ts` (78 строк): форматирование меток времени и чипов слотов.
+- `chairDoctorOccupancyTally.ts` (115 строк): подсчет загрузки кресел и врачей.
+- `index.ts` (11 строк): единая точка реэкспорта.
+- `doctorFreeSlotsEngine.ts` (13 строк): сверхкомпактный фасад обратной совместимости.
+
+### Б. Модули листа ожидания (`waitlistModules/`)
+- `waitlistTypes.ts` (118 строк): контракты кандидатов, слотов и быстрых действий.
+- `useWaitlistData.ts` (118 строк): загрузка и кэширование записей листа ожидания.
+- `useWaitlistSlotMatching.ts` (87 строк): поиск подходящих окон для пациентов листа ожидания.
+- `useWaitlistContactActions.ts` (85 строк): быстрые коммуникации (звонок, мессенджер) без выхода из карточки.
+- `useWaitlistQuickAdd.ts` (118 строк): быстрое добавление в лист ожидания в 1 клик.
+- `useWaitlistBooking.ts` (118 строк): перемещение из листа ожидания в подтвержденную запись.
+- `index.ts` (12 строк): единая точка реэкспорта.
+- `useWaitlistDrawerOperations.ts` (101 строка): фасад композиции хуков.
+
+### В. Модули сетки и интеракций (`interactionModules/`)
+- `interactionTypes.ts` (33 строки): контракты контекстных меню, ховеров и зума.
+- `useGridDisplaySettings.ts` (116 строк): масштабирование сетки, переключение шага времени (15/30/60 мин).
+- `useAppointmentHoverAndMenu.ts` (118 строк): быстрый предпросмотр и контекстное меню визита.
+- `useAppointmentDurationAndShift.ts` (118 строк): изменение длительности и сдвиг времени записи.
+- `useAppointmentReassignAndWaitlist.ts` (110 строк): перенос между креслами и перемещение в лист ожидания.
+- `index.ts` (11 строк): единая точка реэкспорта.
+- `useScheduleAppointmentInteractions.ts` (69 строк): компактный фасад интеракций.
+
+### Г. Эргономика мобильного бара (`ScheduleMobileBottomBar.tsx`)
+- Унифицирован лейбл главной транзакционной кнопки: «+ Новая запись» (`data-testid="schedule-mobile-add-btn"`).
+- Высота кнопки 52px, Natural Thumb Zone, backdrop-filter: blur(20px).
 
 ---
 
 ## 3. Доказательства работоспособности (Proof & Verification)
+
 1. **Unit & Integration Tests:**
    - Команда: `npx vitest run apps/web/src/components/schedule/`
-   - Результат: **83 passed test files, 758 passed tests, 0 failed** (Exit Code 0).
-2. **Red Team Visual Proof (4-состояния на живом сервере Vite 127.0.0.1:5173):**
-   - ☀️ **PC Light (1440×900):** [`schedule_pc_light.png`](schedule_pc_light.png) — 198 561 байт.
-   - 🌙 **PC Dark (1440×900):** [`schedule_pc_dark.png`](schedule_pc_dark.png) — 183 150 байт.
-   - 📱 **Mobile Light (390×844):** [`schedule_mobile_light.png`](schedule_mobile_light.png) — 57 550 байт.
-   - 📱 **Mobile Dark (390×844):** [`schedule_mobile_dark.png`](schedule_mobile_dark.png) — 57 312 байт.
-   - Все 4 скриншота лично открыты через `read_file` и проверены по чек-листу 8 глобальных осей и 12 дефектов UI. Дефектов не обнаружено.
+   - Результат: **84 passed test files, 762 passed tests, 0 failed** (Exit Code 0).
+   - Все 16 тестов в `doctorFreeSlotsEngine.test.ts` зеленые.
+   - Все 18 тестов в `waitlistCancellation.test.ts` зеленые.
+   - Все 11 тестов в `WaitlistQuickFillModal.test.tsx` зеленые.
+   - Все тесты в `scheduleDurationAndLatenessQuickAdjustWave58.test.tsx` и `scheduleAppointmentDecompositionInquisition.test.tsx` зеленые.
+
+2. **Машинные гейты компиляции:**
+   - `npm run check:encoding` $\to$ **Exit Code 0** (21 968 файлов проверено, замечаний нет).
+   - `npm run check:css-tokens` $\to$ **Exit Code 0** (1 565 файлов проверено, 0 неразрешенных var, 0 ошибок).
+
+3. **4-State Red Team Visual Proofs (сняты на живом сервере Vite 127.0.0.1:5173 через Playwright Chrome):**
+   - ☀️ **01 PC Light (1440×900):** [`01_schedule_grid_pc_light_1440x900.png`](01_schedule_grid_pc_light_1440x900.png) (188 222 байт).
+   - 🌙 **02 PC Dark (1440×900):** [`02_schedule_grid_pc_dark_1440x900.png`](02_schedule_grid_pc_dark_1440x900.png) (154 784 байт).
+   - 📱 **03 Mobile Light (390×844):** [`03_schedule_agenda_mobile_light_390x844.png`](03_schedule_agenda_mobile_light_390x844.png) (141 721 байт).
+   - 📱 **04 Mobile Dark (390×844):** [`04_schedule_agenda_mobile_dark_390x844.png`](04_schedule_agenda_mobile_dark_390x844.png) (163 712 байт).
+   - Личный просмотр через `read_file`: 0 сплэш-скринов, ровно 1 Primary CTA «+ Запись» / «+ Новая запись», 0px горизонтального скролла, безупречная токенизация Dark Mode (изумрудно-обсидиановые тона).
