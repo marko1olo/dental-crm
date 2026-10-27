@@ -107,7 +107,7 @@ function PayrollPreviewApp() {
 				<button
 					type="button"
 					onClick={() => setIsModalOpen(true)}
-					className="min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 text-xs font-bold rounded-xl border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 transition-all shadow-xs cursor-pointer whitespace-nowrap self-start sm:self-auto"
+					className="dente-btn dente-btn-primary min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 text-xs font-semibold rounded-lg bg-[var(--teal,#0d9488)] text-white hover:opacity-90 active:scale-95 transition-all shadow-xs cursor-pointer whitespace-nowrap self-start sm:self-auto"
 					data-testid="open-payroll-modal-btn"
 				>
 					Открыть ведомость

@@ -87,10 +87,10 @@ export function PayrollTabHeader({
 				<button
 					type="button"
 					onClick={onPrintPayslip}
-					className="primary-button min-h-[44px] sm:min-h-0 sm:h-9 px-3.5 rounded-lg bg-[var(--teal,#0d9488)] text-white font-semibold text-xs inline-flex items-center justify-center gap-1.5 hover:opacity-90 active:scale-95 transition-all cursor-pointer shadow-xs flex-1 sm:flex-initial"
+					className="secondary-button min-h-[44px] sm:min-h-0 sm:h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs inline-flex items-center justify-center gap-1.5 hover:bg-[var(--paper-soft,#f8fafc)] active:scale-95 transition-all cursor-pointer shadow-xs flex-1 sm:flex-initial"
 					title="Печать официального расчетного листка (A4)"
 				>
-					<Printer className="w-3.5 h-3.5 shrink-0" />
+					<Printer className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 					<span>Расчетный листок</span>
 				</button>
 			</div>
