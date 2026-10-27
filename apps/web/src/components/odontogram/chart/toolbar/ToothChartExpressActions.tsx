@@ -32,36 +32,36 @@ export const ToothChartExpressActions: React.FC<ToothChartExpressActionsProps> =
 			<button
 				type="button"
 				onClick={handleMarkIntactDentition}
-				className="min-h-[32px] h-8 px-3 py-0.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+				className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-semibold bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
 				title="Физиологическая норма (Мандат 8e): вся зубная формула отмечается здоровой в 1 клик"
 				data-testid="mark-intact-dentition-btn"
 				data-action="tooth-chart-mark-intact-btn"
 			>
-				<ToothMolar size={14} className="text-white shrink-0" />
+				<ToothMolar size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
 				<span>Все интактны / норма</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={handleMarkProHygieneDone}
-				className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+				className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
 				title="Профессиональная гигиена: снятие зубных отложений УЗ + Air-Flow + полировка + протокол в дневник"
 				data-testid="tooth-chart-mark-pro-hygiene-btn"
 				data-action="tooth-chart-mark-pro-hygiene-btn"
 			>
-				<UltrasonicScaler size={13} className="text-[var(--teal,teal)] shrink-0" />
+				<UltrasonicScaler size={13} className="text-[var(--teal)] shrink-0" />
 				<span>Профгигиена</span>
 			</button>
 
 			<button
 				type="button"
 				onClick={handleApplyFastCariesK021}
-				className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+				className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
 				title="Кариес дентина (K02.1) для выбранного зуба: протокол в дневник + пломбирование композитом"
 				data-testid="tooth-chart-apply-fast-caries-btn"
 				data-action="tooth-chart-apply-fast-caries-btn"
 			>
-				<ToothCaries size={13} className="text-amber-500 shrink-0" />
+				<ToothCaries size={13} className="text-[var(--ink-muted)] shrink-0" />
 				<span>Пломба K02.1</span>
 			</button>
 
@@ -69,12 +69,12 @@ export const ToothChartExpressActions: React.FC<ToothChartExpressActionsProps> =
 				<button
 					type="button"
 					onClick={handleMarkWisdomTeethMissing}
-					className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+					className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
 					title="Первичная адентия третьих моляров: зубы 18, 28, 38, 48 отмечаются отсутствующими"
 					data-testid="mark-wisdom-missing-btn"
 					data-action="tooth-chart-mark-wisdom-missing-btn"
 				>
-					<ToothExtractForceps size={13} className="text-[var(--muted)] shrink-0" />
+					<ToothExtractForceps size={13} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Без 8-ок</span>
 				</button>
 			)}
@@ -83,11 +83,11 @@ export const ToothChartExpressActions: React.FC<ToothChartExpressActionsProps> =
 				<button
 					type="button"
 					onClick={handleMarkMolarsMissing}
-					className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+					className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
 					title="Вторичная частичная адентия моляров: зубы 16, 26, 36, 46 отмечаются удаленными ранее"
 					data-testid="mark-molars-missing-btn"
 				>
-					<ToothExtractForceps size={13} className="text-[var(--muted)] shrink-0" />
+					<ToothExtractForceps size={13} className="text-[var(--ink-muted)] shrink-0" />
 					<span>Без моляров</span>
 				</button>
 			)}
@@ -95,11 +95,11 @@ export const ToothChartExpressActions: React.FC<ToothChartExpressActionsProps> =
 			<button
 				type="button"
 				onClick={handleMarkFrontIntact}
-				className="min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-xs shrink-0 whitespace-nowrap"
+				className="dente-btn dente-btn-secondary min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-0.5 rounded-lg text-xs font-medium bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] flex items-center gap-1.5 transition-all cursor-pointer active:scale-98 shadow-2xs shrink-0 whitespace-nowrap"
 				title="Физиологическая норма фронтальной группы: зубы 13–23, 33–43 отмечаются здоровыми"
 				data-testid="mark-front-intact-btn"
 			>
-				<ToothIncisor size={13} className="text-[var(--teal,teal)] shrink-0" />
+				<ToothIncisor size={13} className="text-[var(--teal)] shrink-0" />
 				<span>Интактный фронт</span>
 			</button>
 		</div>

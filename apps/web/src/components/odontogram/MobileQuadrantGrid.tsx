@@ -22,19 +22,10 @@ export const MobileQuadrantGrid: React.FC<MobileQuadrantGridProps> = memo(
 							onClick={() => onSelectQuadrant(quad.id)}
 							title={quad.title}
 							data-testid={quad.testId}
-							style={
-								isActive
-									? {
-											backgroundColor: "#0d9488",
-											color: "#ffffff",
-											borderColor: "#0f766e",
-										}
-									: undefined
-							}
 							className={`mobile-quadrant-btn min-h-[44px] h-[44px] px-2.5 py-1.5 rounded-xl font-bold flex items-center justify-between gap-1.5 border transition-all cursor-pointer touch-manipulation active:scale-[0.98] ${
 								isActive
-									? "active bg-teal-600 text-white border-teal-700 shadow-sm font-black ring-2 ring-teal-500/40"
-									: "bg-[var(--odontogram-paper,var(--paper))] text-[var(--odontogram-ink,var(--ink))] border-[var(--odontogram-border,var(--line))] hover:border-teal-500 hover:bg-[var(--odontogram-surface-hover,var(--paper-strong))]"
+									? "active bg-[var(--teal,#0d9488)] text-white border-[var(--teal-strong,#0f766e)] shadow-sm font-black ring-2 ring-[var(--teal)]/40"
+									: "bg-[var(--odontogram-paper,var(--paper))] text-[var(--odontogram-ink,var(--ink))] border-[var(--odontogram-border,var(--line))] hover:border-[var(--teal)] hover:bg-[var(--odontogram-surface-hover,var(--paper-strong))]"
 							}`}
 						>
 							<div className="flex items-center gap-1.5 min-w-0">

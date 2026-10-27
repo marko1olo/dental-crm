@@ -18,35 +18,35 @@ export const ChairsideToothQuickGroups: React.FC<ChairsideToothQuickGroupsProps>
 	hasSelectedTeeth,
 }) => {
 	return (
-		<div className="mb-2.5 p-2 rounded-md bg-indigo-50/70 dark:bg-indigo-950/40 border border-indigo-200/60 dark:border-indigo-800/40 flex flex-wrap items-center gap-1.5 text-xs">
-			<span className="text-[11px] font-semibold text-indigo-900 dark:text-indigo-300 mr-1">
+		<div className="mb-2.5 p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center gap-1.5 text-xs">
+			<span className="text-[11px] font-semibold text-[var(--ink-muted)] mr-1">
 				Быстрые группы:
 			</span>
 			<button
 				type="button"
 				onClick={() => onSelectGroup([13, 12, 11, 21, 22, 23])}
-				className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
+				className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-colors cursor-pointer text-xs font-medium"
 			>
 				Фронт в/ч (13–23)
 			</button>
 			<button
 				type="button"
 				onClick={() => onSelectGroup([43, 42, 41, 31, 32, 33])}
-				className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
+				className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-colors cursor-pointer text-xs font-medium"
 			>
 				Фронт н/ч (33–43)
 			</button>
 			<button
 				type="button"
 				onClick={() => onSelectGroup(FDI_UPPER_TEETH)}
-				className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
+				className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-colors cursor-pointer text-xs font-medium"
 			>
 				Вся в/ч (18–28)
 			</button>
 			<button
 				type="button"
 				onClick={() => onSelectGroup(FDI_LOWER_TEETH)}
-				className="min-h-[44px] px-3 py-1.5 rounded-md bg-white dark:bg-slate-900 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800 hover:bg-indigo-100 dark:hover:bg-indigo-900/40 cursor-pointer text-xs font-medium"
+				className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] transition-colors cursor-pointer text-xs font-medium"
 			>
 				Вся н/ч (48–38)
 			</button>
@@ -54,7 +54,7 @@ export const ChairsideToothQuickGroups: React.FC<ChairsideToothQuickGroupsProps>
 				<button
 					type="button"
 					onClick={onClear}
-					className="min-h-[44px] px-3 py-1.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800 hover:bg-rose-100 dark:hover:bg-rose-900/40 cursor-pointer text-xs font-medium ml-auto"
+					className="min-h-[32px] sm:min-h-[32px] h-8 px-2.5 py-1 rounded-lg bg-[var(--paper)] text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/40 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer text-xs font-medium ml-auto"
 				>
 					Сбросить
 				</button>

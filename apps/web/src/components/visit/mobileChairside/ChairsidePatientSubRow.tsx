@@ -23,7 +23,7 @@ export const ChairsidePatientSubRow: React.FC<ChairsidePatientSubRowProps> = ({
 
 			{consolidatedAllergyChip ? (
 				<div
-					className="mobile-chairside-allergy-chip inline-flex items-center gap-1 text-xs text-amber-800 dark:text-amber-200"
+					className="mobile-chairside-allergy-chip mobile-chairside-allergy-pulse inline-flex items-center gap-1 text-xs"
 					data-testid={`${testId}-allergy-chip`}
 					title={consolidatedAllergyChip}
 				>

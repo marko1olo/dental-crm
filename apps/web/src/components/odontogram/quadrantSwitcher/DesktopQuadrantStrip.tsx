@@ -54,14 +54,14 @@ export const DesktopQuadrantStrip: React.FC<DesktopQuadrantStripProps> = ({
 				className={`min-h-[32px] h-8 px-2.5 sm:px-3.5 py-1 rounded-xl text-xs font-black border transition-all cursor-pointer select-none shrink-0 flex items-center justify-center whitespace-nowrap ${
 					currentQuadrant === "all"
 						? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
-						: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:text-[var(--teal,#0d9488)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:bg-[var(--paper-soft)]"
+						: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:text-[var(--teal,#0d9488)] border-[var(--line)] dark:border-white/20 hover:bg-[var(--paper-soft)]"
 				}`}
 				title="Показать полную зубную формулу (все зубы)"
 				data-testid="quadrant-btn-all"
 			>
 				Все ({allTeethCount})
 			</button>
-			<div className="h-4 w-px bg-[var(--line-strong,#cbd5e1)] dark:bg-white/20 mx-0.5 shrink-0" />
+			<div className="h-4 w-px bg-[var(--line)] dark:bg-white/20 mx-0.5 shrink-0" />
 			<div className="flex items-center gap-1.5 sm:gap-2 flex-nowrap shrink-0">
 				{quads.map((q) => (
 					<button
@@ -70,8 +70,8 @@ export const DesktopQuadrantStrip: React.FC<DesktopQuadrantStripProps> = ({
 						onClick={() => onSelectQuadrant(q.id)}
 						className={`quadrant-btn min-h-[32px] h-8 px-2.5 sm:px-3 py-1 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-between gap-1.5 sm:gap-2 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							currentQuadrant === q.id
-								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-2 ring-indigo-400/40"
-								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:border-indigo-400 hover:bg-[var(--paper-soft)]"
+								? "bg-[var(--teal,#0d9488)] text-white font-bold border-[var(--teal-strong,#0f766e)] shadow-xs ring-1 ring-[var(--teal)]/40"
+								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line)] dark:border-white/20 hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
 						}`}
 						title={q.title}
 						data-testid={`quadrant-btn-${q.id}`}

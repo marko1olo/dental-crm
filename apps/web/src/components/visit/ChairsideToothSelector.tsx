@@ -47,15 +47,15 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 	const firstTooth = selectedTeethList[0];
 
 	return (
-		<div className="mb-3 p-2.5 rounded-lg bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80">
+		<div className="mb-3 p-2.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]">
 			<div className="flex flex-wrap items-center justify-between gap-2 mb-2">
 				<div className="flex items-center gap-2 flex-wrap">
-					<span className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
-						<Target className="w-3.5 h-3.5 text-indigo-500" />
+					<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5">
+						<Target className="w-3.5 h-3.5 text-[var(--teal)]" />
 						Привязка к зубу:
 					</span>
 					{selectedTeethList.length > 0 ? (
-						<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-indigo-100 text-indigo-800 dark:bg-indigo-900/60 dark:text-indigo-200 border border-indigo-300 dark:border-indigo-700">
+						<span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal-dark,var(--teal,#0f766e))] border border-[var(--teal)]/30">
 							{selectedTeethList.length === 1 && firstTooth !== undefined ? (
 								<>
 									<span>Зуб {firstTooth}</span>
@@ -64,18 +64,18 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 									)}
 								</>
 							) : <span>Зубы: {selectedTeethList.join(", ")} ({selectedTeethList.length})</span>}
-							<button type="button" onClick={handleClear} className="hover:text-indigo-950 dark:hover:text-white p-0.5 rounded-full min-w-[20px] min-h-[20px] inline-flex items-center justify-center cursor-pointer" title="Сбросить">
+							<button type="button" onClick={handleClear} className="hover:text-[var(--ink)] p-0.5 rounded-full min-w-[20px] min-h-[20px] inline-flex items-center justify-center cursor-pointer" title="Сбросить">
 								<X className="w-3.5 h-3.5" />
 							</button>
 						</span>
-					) : <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-slate-200 text-slate-700 dark:bg-slate-700 dark:text-slate-300">Без зуба (общая услуга)</span>}
+					) : <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-[var(--paper)] text-[var(--ink-muted)] border border-[var(--line)]">Без зуба (общая услуга)</span>}
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap">
 					<button
 						type="button"
 						onClick={() => setIsMultiSelect(!isMultiSelect)}
-						className={`dente-filter-chip text-xs min-h-[34px] py-1.5 px-3 rounded-md font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${isMultiSelect ? "bg-teal-600 text-white border-teal-600 shadow-xs" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-teal-600"}`}
+						className={`dente-filter-chip text-xs min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 px-3 rounded-lg font-medium flex items-center gap-1.5 transition-colors cursor-pointer border ${isMultiSelect ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal-strong,#0f766e)] shadow-xs font-bold" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--teal)]"}`}
 					>
 						<Layers className="w-3.5 h-3.5" />
 						<span>{isMultiSelect ? "Группа (вкл.)" : "Выбор группы"}</span>
@@ -83,7 +83,7 @@ export const ChairsideToothSelector: React.FC<ChairsideToothSelectorProps> = ({
 					<button
 						type="button"
 						onClick={onToggleToothGrid}
-						className="dente-filter-chip text-xs text-[var(--ink)] hover:text-teal-600 font-medium flex items-center gap-1 min-h-[34px] py-1.5 px-3 rounded-md bg-[var(--paper)] transition-colors cursor-pointer border border-[var(--line)] hover:border-teal-600"
+						className="dente-filter-chip text-xs text-[var(--ink)] hover:text-[var(--teal)] font-medium flex items-center gap-1 min-h-[32px] sm:min-h-[36px] h-8 sm:h-9 px-3 rounded-lg bg-[var(--paper)] transition-colors cursor-pointer border border-[var(--line)] hover:border-[var(--teal)]"
 					>
 						{isToothGridOpen ? <>Скрыть формулу <ChevronUp className="w-3.5 h-3.5" /></> : <>Все 32 зуба (11–48) <ChevronDown className="w-3.5 h-3.5" /></>}
 					</button>

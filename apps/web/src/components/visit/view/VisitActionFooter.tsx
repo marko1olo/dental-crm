@@ -172,7 +172,7 @@ export function VisitActionFooter({
 							setFastPrintDocType("partisan_insert_043u");
 							setIsFastPrintModalOpen(true);
 						}}
-						className="h-10 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+						className="h-9 min-h-[36px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 						title="Распечатать дневник визита в медицинскую карту (A5 / A4 с линией отреза)"
 					>
 						<Printer size={15} className="text-[var(--ink-muted)]" />
@@ -185,7 +185,7 @@ export function VisitActionFooter({
 							setFastPrintDocType("form043u");
 							setIsFastPrintModalOpen(true);
 						}}
-						className="h-10 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+						className="h-9 min-h-[36px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 						title="Печать документов (Медкарта, Акт с чеком, Смета)"
 					>
 						<Printer size={15} className="text-[var(--ink-muted)]" />

@@ -53,8 +53,8 @@ export const ToothChartQuadrantBar: React.FC<ToothChartQuadrantBarProps> = memo(
 				onClick={() => handleSelectQuadrant("all")}
 				className={`min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 rounded-lg text-xs font-bold border transition-all cursor-pointer select-none shrink-0 flex items-center justify-center whitespace-nowrap ${
 					currentQuadrant === "all"
-						? "bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-black border-[var(--teal-dark,var(--teal))] shadow-xs"
-						: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:text-[var(--teal,#0d9488)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:bg-[var(--paper-soft)]"
+						? "bg-[var(--teal,#0d9488)] text-white font-bold border-[var(--teal-strong,#0f766e)] shadow-xs"
+						: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:text-[var(--teal,#0d9488)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
 				}`}
 				title="Показать полную зубную формулу"
 				data-testid="quadrant-btn-all"
@@ -72,14 +72,16 @@ export const ToothChartQuadrantBar: React.FC<ToothChartQuadrantBarProps> = memo(
 						onClick={() => handleSelectQuadrant(q.id)}
 						className={`quadrant-btn min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-2.5 sm:px-2 rounded-lg text-xs font-bold flex items-center gap-1 border transition-all cursor-pointer select-none shrink-0 whitespace-nowrap ${
 							isActive
-								? "bg-indigo-600 text-white font-black border-indigo-700 shadow-xs ring-1 ring-indigo-400/40"
-								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line-strong,#cbd5e1)] dark:border-white/20 hover:border-indigo-400 hover:bg-[var(--paper-soft)]"
+								? "bg-[var(--teal,#0d9488)] text-white font-bold border-[var(--teal-strong,#0f766e)] shadow-xs ring-1 ring-[var(--teal)]/40"
+								: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
 						}`}
 						title={q.title}
 						data-testid={`quadrant-btn-${q.id}`}
 					>
 						<span className="font-extrabold">{q.label}</span>
-						<span className="text-xs px-1 py-0.2 rounded bg-black/20 font-mono font-black shrink-0">{q.badge}</span>
+						<span className={`text-xs px-1 py-0.2 rounded font-mono font-black shrink-0 ${
+							isActive ? "bg-black/25 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line-subtle)]"
+						}`}>{q.badge}</span>
 					</button>
 				);
 			})}
