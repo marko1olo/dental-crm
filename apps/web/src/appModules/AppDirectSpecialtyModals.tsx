@@ -43,7 +43,14 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			)}
 			{routing.isOrthoProtocolDirectModalOpen && (
 				<Suspense fallback={null}>
-					<OrthodonticVisitProtocolWidget isOpen={true} onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)} patientName="Смирнова Екатерина Андреевна" patientId="pat-demo-ortho-01" doctorName="Д-р Соколов А. В." clinicName="DENTE Clinic" />
+					<OrthodonticVisitProtocolWidget
+						isOpen={true}
+						onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)}
+						patientName={patient?.fullName || patient?.name || "Смирнова Екатерина Андреевна"}
+						patientId={patient?.id || "pat-demo-ortho-01"}
+						doctorName={staffUser?.name || activeDoctor?.fullName || activeDoctor?.name || "Д-р Соколов А. В."}
+						clinicName="DENTE Clinic"
+					/>
 				</Suspense>
 			)}
 			{routing.isToothDrawerDirectModalOpen && (

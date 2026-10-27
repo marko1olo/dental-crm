@@ -50,24 +50,24 @@ export function useCephAiBackend({
 
 	const aiBackendBadge = useMemo(() => {
 		if (aiStats?.isCalibratedFallback) return "Шаблон";
-		if (aiBackendPref === "auto") return detectedBackend ? detectedBackend.badge : "GPU";
-		if (aiBackendPref === "webgpu") return "WebGPU";
-		if (aiBackendPref === "webgl") return "WebGL";
-		return "CPU";
+		if (aiBackendPref === "auto") return detectedBackend ? detectedBackend.badge : "Шаблон";
+		if (aiBackendPref === "webgpu") return "Калибровка";
+		if (aiBackendPref === "webgl") return "Шаблон";
+		return "Калибровка";
 	}, [aiBackendPref, detectedBackend, aiStats]);
 
 	const aiBackendLabel = useMemo(() => {
 		if (aiStats?.isCalibratedFallback) return "Анатомический шаблон (калибровка)";
-		if (aiBackendPref === "auto") return detectedBackend ? detectedBackend.labelRu : "Автоматически";
-		if (aiBackendPref === "webgpu") return "Дискретная GPU (WebGPU)";
-		if (aiBackendPref === "webgl") return "Интегрированная GPU (WebGL)";
-		return "Процессор (WASM / CPU)";
+		if (aiBackendPref === "auto") return detectedBackend ? detectedBackend.labelRu : "Анатомический шаблон";
+		if (aiBackendPref === "webgpu") return "Калибровка по линейке";
+		if (aiBackendPref === "webgl") return "Анатомический шаблон";
+		return "Калибровка по линейке";
 	}, [aiBackendPref, detectedBackend, aiStats]);
 
 	const handleRunAiAutoPlacement = useCallback(async () => {
 		const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId || "");
 		if (!imageUrl && !isDemo) {
-			showToast("Для запуска AI авторазметки необходимо загрузить реальный снимок ТРГ пациента", "warning");
+			showToast("Для разметки необходимо загрузить снимок ТРГ пациента", "warning");
 			return;
 		}
 
@@ -89,11 +89,10 @@ export function useCephAiBackend({
 			if (result.isCalibratedFallback) {
 				showToast(`✓ Применен анатомический шаблон (${count} ориентиров). Выполните ручную проверку`, "success");
 			} else {
-				const badge = result.backend === "webgpu" ? "WebGPU" : result.backend === "webgl" ? "WebGL" : "CPU";
-				showToast(`✓ Авторазметка: ${count} ориентиров расставлены за ${result.latencyMs} мс [${badge}]`, "success");
+				showToast(`✓ Ориентиры расставлены: ${count} точек за ${result.latencyMs} мс [Калибровка]`, "success");
 			}
 		} catch (err) {
-			showToast(`Ошибка AI авторазметки: ${err instanceof Error ? err.message : String(err)}`, "error");
+			showToast(`Ошибка разметки: ${err instanceof Error ? err.message : String(err)}`, "error");
 		} finally {
 			setIsAiInferring(false);
 		}

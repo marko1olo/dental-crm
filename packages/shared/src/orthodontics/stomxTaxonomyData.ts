@@ -1,7 +1,7 @@
 /**
  * packages/shared/src/orthodontics/stomxTaxonomyData.ts
  *
- * StomX Orthodontic Diagnostic Taxonomy Options, ICD-10 Classifiers & Clinical Presets.
+ * Ортодонтические диагностические таксономии, классификаторы МКБ-10 и клинические пресеты.
  *
  * Compliant with:
  * - Supreme Law: THE HAMMER (Zero Mocks, Absolute Parity)

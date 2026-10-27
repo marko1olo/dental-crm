@@ -2,7 +2,7 @@ import type { DoctorAutopilotPreset } from "../clinicalSoapTypes";
 
 // =========================================================================
 // КЛИНИЧЕСКИЕ АВТОПИЛОТЫ ВРАЧА-СТОМАТОЛОГА У КРЕСЛА (МАНДАТЫ 8e, 8n)
-// Приказы Минздрава РФ № 804н, № 1051н (ИДС), Форма 043/у и рекомендации СтАР
+// Клинические протоколы, согласия (ИДС), дневник приёма и рекомендации СтАР
 // =========================================================================
 
 // ── 1. КАРИЕС ДЕНТИНА (К02.1) ──
@@ -581,6 +581,98 @@ export const DOCTOR_1CLICK_AUTOPILOT_PRESETS: readonly DoctorAutopilotPreset[] =
 		AUTOPILOT_NORM_HEALTHY,
 	];
 
+// ── 7. ОРТОДОНТИЯ: СМЕНА ДУГ (K07.4) ──
+export const AUTOPILOT_ORTHO_WIRE_CHANGE: DoctorAutopilotPreset = {
+	id: "autopilot_ortho_wire_change",
+	title: "Смена ортодонтической дуги (NiTi .014/.016, лигатуры, A16.07.048.002)",
+	shortBadge: "Смена дуг",
+	category: "orthodontics",
+	icd10: "K07.4",
+	icd10Label: "Аномалии положения зубов",
+	defaultTooth: 16,
+	is1ClickAutopilot: true,
+	complaint: "Плановый ортодонтический визит для активации брекет-системы и смены дуги. Жалобы на чувство натяжения после смены дуги.",
+	anamnesis: "Проводится ортодонтическое лечение с применением брекет-системы. Пациент соблюдает рекомендации по гигиене и диете.",
+	statusLocalis: "Брекет-система фиксирована на верхней и нижней челюсти. Позиционирование брекетов корректное, отклеек нет. Десна бледно-розовая, гигиена удовлетворительная.",
+	treatmentDescription:
+		"1. Снятие старых эластических лигатур.\n" +
+		"2. Извлечение дуги, антисептическая обработка полости рта.\n" +
+		"3. Установка новой нивелирующей дуги NiTi .014 / .016. Подгонка по форме зубного ряда, заведение в щечные трубки моляров, дистальный загиб.\n" +
+		"4. Фиксация новыми эластическими лигатурами.\n" +
+		"5. Контроль окклюзионных контактов.",
+	service804n: {
+		code804n: "A16.07.048.002",
+		title: "Смена ортодонтической дуги",
+		basePriceRub: 2500,
+		category: "orthodontics",
+	},
+	additionalServices804n: [
+		{
+			code804n: "A16.07.048",
+			title: "Активация элементов брекет-системы",
+			basePriceRub: 1500,
+			category: "orthodontics",
+		},
+	],
+	recommendations: "Щадящая диета 2-3 дня. Использование ортодонтического воска при натирании. Контрольный осмотр через 4-6 недель.",
+};
+
+// ── 8. ОРТОДОНТИЯ: АКТИВАЦИЯ ЭЛАЙНЕРОВ (K07.2) ──
+export const AUTOPILOT_ORTHO_ALIGNER_ACTIVATION: DoctorAutopilotPreset = {
+	id: "autopilot_ortho_aligner_activation",
+	title: "Активация элайнеров (контроль трекинга, выдача капп, A16.07.046)",
+	shortBadge: "Элайнеры",
+	category: "orthodontics",
+	icd10: "K07.2",
+	icd10Label: "Аномалии соотношения зубных дуг",
+	defaultTooth: 11,
+	is1ClickAutopilot: true,
+	complaint: "Плановый визит по лечению на элайнерах. Жалоб нет, ношение капп регулярное (не менее 22 ч в сутки).",
+	anamnesis: "Ортодонтическое лечение на системе прозрачных капп (элайнеров). Протокол соблюдается.",
+	statusLocalis: "Элайнеры плотно припасованы к зубам, краевое прилегание точное. Композитные аттачменты сохранены. Гигиена хорошая.",
+	treatmentDescription:
+		"1. Осмотр полости рта, оценка динамики перемещения зубов.\n" +
+		"2. Контроль припасовки текущего сета элайнеров.\n" +
+		"3. Межзубная калиброванная сепарация (IPR) 0.2 мм в запланированных сегментах.\n" +
+		"4. Примерка и выдача следующих пар капп (сеты на руки).\n" +
+		"5. Инструктаж по графику смены капп каждые 10-14 дней.",
+	service804n: {
+		code804n: "A16.07.046",
+		title: "Ортодонтическая коррекция с применением элайнеров",
+		basePriceRub: 3000,
+		category: "orthodontics",
+	},
+	recommendations: "Ношение элайнеров 20-22 часа в сутки. Снятие только во время еды и чистки зубов. Контрольный визит через 4-6 недель.",
+};
+
+// ── 9. ОРТОДОНТИЯ: КОНТРОЛЬ БРЕКЕТОВ / ОТКЛЕЙКА (K07.4) ──
+export const AUTOPILOT_ORTHO_BRACKET_CONTROL: DoctorAutopilotPreset = {
+	id: "autopilot_ortho_bracket_control",
+	title: "Фиксация отклеившегося брекета (A16.07.048.001)",
+	shortBadge: "Брекеты",
+	category: "orthodontics",
+	icd10: "K07.4",
+	icd10Label: "Аномалии положения зубов",
+	defaultTooth: 14,
+	is1ClickAutopilot: true,
+	complaint: "Подвижность или отклейка брекета во время еды.",
+	anamnesis: "Проводится ортодонтическое лечение на брекет-системе. Механическое отклеивание брекета 1-2 дня назад.",
+	statusLocalis: "Брекет отклеен. Эмаль зуба интактна, остатки адгезива на вестибулярной поверхности.",
+	treatmentDescription:
+		"1. Удаление остатков адгезива ультразвуковым наконечником и полировочной головкой.\n" +
+		"2. Кислотное травление эмали 37% ортофосфорной кислотой 30 сек, смывание водой, высушивание.\n" +
+		"3. Нанесение ортодонтического праймера.\n" +
+		"4. Позиционирование и фиксация брекета на композит светового отверждения, полимеризация 20 сек.\n" +
+		"5. Установка дуги в паз брекета, фиксация эластической лигатурой.",
+	service804n: {
+		code804n: "A16.07.048.001",
+		title: "Фиксация одного брекета / замка",
+		basePriceRub: 1200,
+		category: "orthodontics",
+	},
+	recommendations: "Исключить твердую и вязкую пищу в первые сутки. Контроль фиксации.",
+};
+
 /**
  * Быстрый словарь автопилот-пресетов по ID.
  */
@@ -615,4 +707,13 @@ export const DOCTOR_AUTOPILOT_PRESETS_MAP: Readonly<
 	autopilot_norm_healthy: AUTOPILOT_NORM_HEALTHY,
 	norm_healthy: AUTOPILOT_NORM_HEALTHY,
 	norm: AUTOPILOT_NORM_HEALTHY,
+	autopilot_ortho_wire_change: AUTOPILOT_ORTHO_WIRE_CHANGE,
+	ortho_wire_change: AUTOPILOT_ORTHO_WIRE_CHANGE,
+	wire_change: AUTOPILOT_ORTHO_WIRE_CHANGE,
+	autopilot_ortho_aligner_activation: AUTOPILOT_ORTHO_ALIGNER_ACTIVATION,
+	ortho_aligner_activation: AUTOPILOT_ORTHO_ALIGNER_ACTIVATION,
+	aligner_activation: AUTOPILOT_ORTHO_ALIGNER_ACTIVATION,
+	autopilot_ortho_bracket_control: AUTOPILOT_ORTHO_BRACKET_CONTROL,
+	ortho_bracket_control: AUTOPILOT_ORTHO_BRACKET_CONTROL,
+	bracket_control: AUTOPILOT_ORTHO_BRACKET_CONTROL,
 };

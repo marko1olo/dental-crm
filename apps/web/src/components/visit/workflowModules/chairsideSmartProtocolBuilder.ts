@@ -57,6 +57,15 @@ export function buildChairsideSmartProtocol(
 		case "extraction":
 			diagnosis = `K01.1 Простое удаление ${toothLabel}`.trim();
 			break;
+		case "ortho_wire_change":
+			diagnosis = "K07.4 Аномалии положения зубов. Смена ортодонтической дуги".trim();
+			break;
+		case "ortho_aligner_activation":
+			diagnosis = "K07.2 Аномалии соотношения зубных дуг. Активация элайнеров".trim();
+			break;
+		case "ortho_bracket_control":
+			diagnosis = `K07.4 Аномалии положения зубов. Фиксация отклеившегося брекета ${toothLabel}`.trim();
+			break;
 	}
 
 	return {

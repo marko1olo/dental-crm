@@ -18,6 +18,8 @@ export interface VisitSoapNoteValues {
 export interface VisitSoapEditorProps {
 	readonly visitId?: string | undefined;
 	readonly patientId?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
 	readonly initialValues?: VisitSoapNoteValues | undefined;
 	readonly activeTooth?: number | null | undefined;
 	readonly onSelectActiveTooth?: ((tooth: number) => void) | undefined;
@@ -29,6 +31,7 @@ export interface VisitSoapEditorProps {
 	readonly autoFocusField?: "complaint" | "treatmentPlan" | null | undefined;
 	readonly isTemplatesOpen?: boolean | undefined;
 	readonly onToggleTemplates?: ((open: boolean) => void) | undefined;
+	readonly onOpenOrthoWidget?: (() => void) | undefined;
 }
 
 export interface UnsavedDraftNoticeState {
@@ -90,6 +93,7 @@ export interface SoapFieldsEditorProps {
 	isIcd10SelectorOpen: boolean;
 	onToggleIcd10Selector: (open: boolean | ((prev: boolean) => boolean)) => void;
 	onApplyExpressProtocol: (preset: ChairsideSmartProtocolKey) => void;
+	onOpenOrthoWidget?: (() => void) | undefined;
 }
 
 export interface SoapFullTextViewProps {

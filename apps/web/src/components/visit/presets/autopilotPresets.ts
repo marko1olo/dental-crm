@@ -20,7 +20,7 @@ export * from "./autopilotPresetsData";
 
 // =========================================================================
 // ПОСТРОИТЕЛИ И ПРИМЕНЕНИЕ КЛИНИЧЕСКИХ АВТОПИЛОТОВ (МАНДАТЫ 8e, 8n)
-// Приказы Минздрава РФ № 804н, № 1051н (ИДС), Форма 043/у и рекомендации СтАР
+// Клинические протоколы, согласия (ИДС), дневник приёма и рекомендации СтАР
 // =========================================================================
 
 /**
@@ -147,7 +147,7 @@ export function build1ClickNormPreset(): DoctorAutopilotPreset {
 
 /**
  * Чистая функция применения клинического автопилота.
- * Вычисляет результирующий дневник SOAP (Форма 043/у), списание со склада и услуги 804н.
+ * Вычисляет результирующий дневник SOAP, списание со склада и услуги приёма.
  */
 export function apply1ClickClinicalAutopilot(
 	presetId: string,
@@ -201,6 +201,21 @@ export function apply1ClickClinicalAutopilot(
 		case "norm_healthy":
 		case "norm":
 			targetPreset = build1ClickNormPreset();
+			break;
+		case "autopilot_ortho_wire_change":
+		case "ortho_wire_change":
+		case "wire_change":
+			targetPreset = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_ortho_wire_change || build1ClickCariesPreset(tooth);
+			break;
+		case "autopilot_ortho_aligner_activation":
+		case "ortho_aligner_activation":
+		case "aligner_activation":
+			targetPreset = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_ortho_aligner_activation || build1ClickCariesPreset(tooth);
+			break;
+		case "autopilot_ortho_bracket_control":
+		case "ortho_bracket_control":
+		case "bracket_control":
+			targetPreset = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_ortho_bracket_control || build1ClickCariesPreset(tooth);
 			break;
 		default: {
 			const found = DOCTOR_AUTOPILOT_PRESETS_MAP[presetId];

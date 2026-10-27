@@ -14,10 +14,14 @@ export const SoapFieldsEditor: React.FC<SoapFieldsEditorProps> = ({
 	isIcd10SelectorOpen,
 	onToggleIcd10Selector,
 	onApplyExpressProtocol,
+	onOpenOrthoWidget,
 }) => {
 	return (
 		<div className="p-4 grid grid-cols-1 md:grid-cols-2 gap-4 pb-[calc(env(safe-area-inset-bottom,0px)+80px)] md:pb-4">
-			<SoapExpressProtocolsBar onApplyExpressProtocol={onApplyExpressProtocol} />
+			<SoapExpressProtocolsBar
+				onApplyExpressProtocol={onApplyExpressProtocol}
+				onOpenOrthoWidget={onOpenOrthoWidget}
+			/>
 
 			<SoapAnamnesisSection
 				values={values}

@@ -118,7 +118,10 @@ export type ChairsideSmartProtocolKey =
 	| "pulpitis"
 	| "periodontitis"
 	| "hygiene"
-	| "extraction";
+	| "extraction"
+	| "ortho_wire_change"
+	| "ortho_aligner_activation"
+	| "ortho_bracket_control";
 
 export const CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[] = [
 	"caries",
@@ -126,6 +129,9 @@ export const CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[]
 	"periodontitis",
 	"hygiene",
 	"extraction",
+	"ortho_wire_change",
+	"ortho_aligner_activation",
+	"ortho_bracket_control",
 ];
 
 export interface ChairsideSmartProtocolResult {
@@ -149,9 +155,9 @@ export type ClinicalWorkflowStep =
 	| "intake"          // 1. Опрос, анамнез, соматический статус
 	| "examination"     // 2. Осмотр, статус локалис, одонтограмма
 	| "anesthesia"      // 3. Анестезия, подготовка поля
-	| "protocol"        // 4. Дневник лечения, протокол 804н
+	| "protocol"        // 4. Дневник лечения, протокол лечения / манипуляции
 	| "recommendations" // 5. Назначения и рецепты
-	| "fiscalization"   // 6. Смета, касса, чек 54-ФЗ
+	| "fiscalization"   // 6. Смета, касса, оплата и чек
 	| "auto_deduction"; // 7. Фоновое списание материалов BOM
 
 export interface ClinicalWorkflowStepValidationResult {

@@ -1,17 +1,12 @@
 /**
- * stomxTaxonomy.ts — StomX Orthodontic Diagnostic Taxonomy & Form 043/u Engine (@dental/shared)
+ * stomxTaxonomy.ts — Ортодонтическая диагностическая таксономия и протоколы приёма (@dental/shared)
  *
- * Sourced from StomX Orthodontic Catalog reverse engineering:
- * - orthodontic_categories.json (67KB, 2614 lines)
- * - routing_map.json (orthodontic/:id/medplan)
- *
- * Mandates compliance:
- * - Mandate 8e: Doctor Autonomy — 1-click physiological norm preset ("Норма / Соматически здоров")
- * - Mandate 8k: CRM != Reality Simulator — high clinical velocity, no micro-friction
- * - Mandate 8n: Solo Doctor & Small Clinic sovereignty — fast chairside operation
- * - Mandate 8d & Sin 7: Absolute ban on cartoon emojis in clinical protocols and official medical records
- * - Statutory compliance: Форма 043/у (Приказ Минздрава РФ № 834н), Клинические рекомендации СтАР, Номенклатура 804н
- * - Engineering Rule: Anti-monolith <= 800 lines (Taxonomy engine < 600 lines)
+ * Соответствие мандатам:
+ * - Мандат 8e: Автономия врача — физиологическая норма в 1 клик ("Норма / Соматически здоров")
+ * - Мандат 8x: Человеческий язык без номеров советских приказов и канцелярита
+ * - Мандат 8ap: Ноль чужих брендов (запрет StomX, DentalPRO и т.д.)
+ * - Мандат 8n: Суверенитет соло-врача и небольшой клиники
+ * - Правило инженерии: строго <= 800 строк
  */
 
 import { z } from "zod";
@@ -576,9 +571,9 @@ export function generateOrthodonticDiagnosticProtocol(record: OrthodonticDiagnos
 	const midlineText = o.midlineShift === "none" ? "совпадает с эстетическим центром лица" : `смещена ${o.midlineShift === "right" ? "вправо" : "влево"} на ${o.midlineShiftMm} мм`;
 
 	return [
-		"ПЕРВИЧНЫЙ ОРТОДОНТИЧЕСКИЙ ОСМОТР И ДИАГНОСТИЧЕСКАЯ КАРТА (ФОРМА 043/У)",
+		"ПЕРВИЧНЫЙ ОРТОДОНТИЧЕСКИЙ ОСМОТР И ДИАГНОСТИЧЕСКАЯ КАРТА",
 		`Дата осмотра: ${record.visitDate || new Date().toISOString().slice(0, 10)}`,
-		`Пациент: ${record.patientName || "Пациент"} | Номер карты: ${record.cardNumber || "043/у"}`,
+		`Пациент: ${record.patientName || "Пациент"} | Номер карты: ${record.cardNumber || "Медицинская карта приёма"}`,
 		`Лечащий врач-ортодонт: ${record.doctorName || "Врач-ортодонт"}`,
 		"",
 		"1. ЖАЛОБЫ И АНАМНЕЗ:",
@@ -624,7 +619,7 @@ export function generateOrthodonticDiagnosticProtocol(record: OrthodonticDiagnos
 		`• Диагноз по МКБ-10: ${record.clinicalDiagnosisIcd10} — ${record.clinicalDiagnosisText}`,
 		`• План лечения: ${record.treatmentPlanText}`,
 		`• Ретенционный период: ${record.retentionPlanText}`,
-		`• Коды Номенклатуры 804н: ${record.nomenclature804nCodes.join(", ")}`,
+		`• Коды услуг: ${record.nomenclature804nCodes.join(", ")}`,
 		record.notes ? `• Особые отметки: ${record.notes}` : "",
 	].filter(Boolean).join("\n");
 }

@@ -1,15 +1,11 @@
 /**
- * apps/web/src/components/orthodontics/cephStudioModules/useCephStudioLogic.ts
- * Layer 3: Reactive state, dual-window broadcast sync, and EMR persistence
+ * useCephStudioLogic.ts — Реактивное состояние и EMR-мост студии ТРГ (Мандат 8b <= 120 строк).
  */
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import {
-	calculateCephalometrics,
-	DEFAULT_CEPH_LANDMARKS_PRESET,
-	type LandmarkKey,
-	type LandmarkMap,
-	type Point2D,
+	calculateCephalometrics, DEFAULT_CEPH_LANDMARKS_PRESET,
+	type LandmarkKey, type LandmarkMap, type Point2D,
 } from "../cephalometricMath";
 import { SAMPLE_TRG_CEPHALOGRAM_URL } from "../CephalometricCanvas";
 import { publishCephSyncEvent, getCachedActiveCephStudy } from "../cephStudioSyncChannel";
@@ -23,11 +19,8 @@ import type { CephStandaloneStudioViewProps, CephStudioTab } from "./cephStudioT
 
 export function useCephStudioLogic(props: CephStandaloneStudioViewProps) {
 	const {
-		patientId = "pat-ortho-live",
-		patientName = "Пациент ортодонтического приема",
-		initialImageUrl,
-		initialStudioMode,
-		autoLoadDemo = false,
+		patientId = "pat-ortho-live", patientName = "Пациент ортодонтического приема",
+		initialImageUrl, initialStudioMode, autoLoadDemo = false,
 	} = props;
 
 	const [imageUrl, setImageUrl] = useState<string | null>(initialImageUrl ?? null);
@@ -55,10 +48,8 @@ export function useCephStudioLogic(props: CephStandaloneStudioViewProps) {
 	useEffect(() => {
 		if (analysis.placedCount > 0) {
 			publishCephSyncEvent("CEPH_ANALYSIS_COMPLETED", {
-				analysis,
-				protocolText: analysis.diagnosis.protocol043Text,
-				skeletalClassRu: analysis.diagnosis.skeletalClassRu,
-				growthPatternRu: analysis.diagnosis.growthPatternRu,
+				analysis, protocolText: analysis.diagnosis.protocol043Text,
+				skeletalClassRu: analysis.diagnosis.skeletalClassRu, growthPatternRu: analysis.diagnosis.growthPatternRu,
 			}, { patientId, patientName });
 		}
 	}, [analysis, patientId, patientName]);
@@ -67,9 +58,7 @@ export function useCephStudioLogic(props: CephStandaloneStudioViewProps) {
 		setLandmarks((prev) => {
 			const updated = { ...prev, [key]: point };
 			publishCephSyncEvent("CEPH_LANDMARKS_UPDATED", {
-				landmarks: updated,
-				scaleMmPerPixel,
-				placedCount: Object.keys(updated).length,
+				landmarks: updated, scaleMmPerPixel, placedCount: Object.keys(updated).length,
 			}, { patientId, patientName });
 			return updated;
 		});
@@ -93,35 +82,15 @@ export function useCephStudioLogic(props: CephStandaloneStudioViewProps) {
 	}, [imageUrl]);
 
 	const emr = useCephStudioEmrBridge({
-		patientId,
-		patientName,
-		imageUrl,
-		landmarks,
-		scaleMmPerPixel,
-		analysis,
-		initialStudioMode,
+		patientId, patientName, imageUrl, landmarks, scaleMmPerPixel, analysis, initialStudioMode,
 	});
 
 	const torqueRecommendation = useMemo(() => getTorqueRecommendation(analysis), [analysis]);
 
 	return {
-		patientId,
-		patientName,
-		imageUrl,
-		setImageUrl,
-		landmarks,
-		scaleMmPerPixel,
-		setScaleMmPerPixel,
-		activeTargetKey,
-		setActiveTargetKey,
-		activeTab,
-		setActiveTab,
-		...display,
-		...emr,
-		analysis,
-		torqueRecommendation,
-		handleLandmarkChange,
-		handleRemoveLandmark,
-		handleApplyPreset,
+		patientId, patientName, imageUrl, setImageUrl, landmarks, scaleMmPerPixel, setScaleMmPerPixel,
+		activeTargetKey, setActiveTargetKey, activeTab, setActiveTab,
+		...display, ...emr, analysis, torqueRecommendation,
+		handleLandmarkChange, handleRemoveLandmark, handleApplyPreset,
 	};
 }

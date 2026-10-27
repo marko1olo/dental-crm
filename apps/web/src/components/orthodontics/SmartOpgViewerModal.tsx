@@ -37,7 +37,8 @@ export const SmartOpgViewerModal: React.FC<SmartOpgViewerModalProps> = ({
 		if (!result) { showToast("Снимок не загружен или анализ недоступен", "warning"); return; }
 		if (onApplyOdontogram) {
 			onApplyOdontogram(result.analysis.teeth);
-			setIsApplied(true); setTimeout(() => setIsApplied(false), 2500);
+			setIsApplied(true);
+			showToast("Данные зубных дуг ОПТГ успешно перенесены в зубную формулу", "success");
 		}
 	}, [isLoading, result, onApplyOdontogram]);
 

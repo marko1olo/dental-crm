@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, Suspense, lazy } from "react";
 import { SoapFieldsEditor } from "./SoapFieldsEditor";
 import { SoapFullTextView } from "./SoapFullTextView";
 import { SoapTemplatesDrawer } from "./SoapTemplatesDrawer";
@@ -6,8 +6,13 @@ import { SoapMobileActionBar, SoapToolbar } from "./SoapToolbar";
 import type { VisitSoapEditorProps } from "./types";
 import { useVisitSoapEditor } from "./useVisitSoapEditor";
 
+const OrthodonticVisitProtocolWidget = lazy(() =>
+	import("../../orthodontics/OrthodonticVisitProtocolWidget").then((m) => ({ default: m.OrthodonticVisitProtocolWidget }))
+);
+
 export const VisitSoapEditorView: React.FC<VisitSoapEditorProps> = (props) => {
 	const { className = "", isLocked = false, onSelectActiveTooth } = props;
+	const [isOrthoWidgetOpen, setIsOrthoWidgetOpen] = useState(false);
 	const e = useVisitSoapEditor(props);
 
 	return (
@@ -65,6 +70,7 @@ export const VisitSoapEditorView: React.FC<VisitSoapEditorProps> = (props) => {
 					isIcd10SelectorOpen={e.isIcd10SelectorOpen}
 					onToggleIcd10Selector={e.setIsIcd10SelectorOpen}
 					onApplyExpressProtocol={e.handleApplyExpressProtocol}
+					onOpenOrthoWidget={() => setIsOrthoWidgetOpen(true)}
 				/>
 			) : (
 				<SoapFullTextView
@@ -82,6 +88,19 @@ export const VisitSoapEditorView: React.FC<VisitSoapEditorProps> = (props) => {
 				activeViewMode={e.activeViewMode}
 				onChangeViewMode={e.setActiveViewMode}
 			/>
+
+			{isOrthoWidgetOpen && (
+				<Suspense fallback={null}>
+					<OrthodonticVisitProtocolWidget
+						isOpen={isOrthoWidgetOpen}
+						onClose={() => setIsOrthoWidgetOpen(false)}
+						patientName={props.patientName || "Пациент"}
+						patientId={props.patientId}
+						doctorName={props.doctorName || "Лечащий врач-ортодонт"}
+						selectedTooth={e.selectedTooth}
+					/>
+				</Suspense>
+			)}
 		</div>
 	);
 };
