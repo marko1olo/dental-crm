@@ -1,130 +1,33 @@
-import {
-	Calendar,
-	Clock,
-	MoreVertical,
-	Plus,
-} from "lucide-react";
+import { MoreVertical, Plus } from "lucide-react";
 import type React from "react";
 import type { ReactElement } from "react";
+import { ScheduleOptionsDateSection } from "./ScheduleOptionsDateSection";
+import type { ScheduleOptionsDropdownProps } from "./scheduleOptionsDropdownTypes";
+import { ScheduleOptionsGridStepSection } from "./ScheduleOptionsGridStepSection";
 import { ScheduleOptionsMobileSection } from "./ScheduleOptionsMobileSection";
+import { ScheduleOptionsQueueSection } from "./ScheduleOptionsQueueSection";
 import { ScheduleOptionsToolsSection } from "./ScheduleOptionsToolsSection";
-import type {
-	ScheduleBranch,
-	ScheduleChair,
-	ScheduleStaffMember,
-} from "./types";
 
-export interface ScheduleOptionsDropdownProps {
-	isOptionsMenuOpen: boolean;
-	setIsOptionsMenuOpen: React.Dispatch<React.SetStateAction<boolean>>;
-	optionsMenuRef: React.RefObject<HTMLDivElement | null>;
-	onQuickBooking?: (() => void) | undefined;
-	setScheduleViewMode?: ((mode: "timeline" | "grid" | "chairs") => void) | undefined;
-	scheduleViewMode?: ("timeline" | "grid" | "chairs") | undefined;
-	hasMultipleBranches: boolean;
-	selectedBranchId?: string | null | undefined;
-	onSelectBranch?: ((branchId: string | null) => void) | undefined;
-	activeBranches: ScheduleBranch[];
-	activeScheduleFilterCount: number;
-	resetScheduleFilters: () => void;
-	hasMultipleChairs: boolean;
-	myChair: ScheduleChair | null;
-	isMyChairActive: boolean;
-	handleSelectMyChair: () => void;
-	hasMultipleDoctors: boolean;
-	activeDoctors: ScheduleStaffMember[];
-	scheduleDoctorFilterId?: string | null | undefined;
-	setScheduleDoctorFilterId?: ((id: string | null) => void) | undefined;
-	displayChairs: readonly ScheduleChair[];
-	scheduleChairFilterId?: string | null | undefined;
-	setScheduleChairFilterId?: ((id: string | null) => void) | undefined;
-	setScheduleDateFilter: (date: string) => void;
-	tomorrowIso: string;
-	scheduleStatusFilter?: string | null | undefined;
-	setScheduleStatusFilter?: ((status: string | null) => void) | undefined;
-	onSelectWholeWeek?: (() => void) | undefined;
-	handleRepeatBookingOffset: (days: 7 | 14 | 30) => void;
-	gridStepMinutes?: (15 | 30 | 60) | undefined;
-	onGridStepChange?: ((step: 15 | 30 | 60) => void) | undefined;
-	handleOpenAddChair: () => void;
-	onOpenPatientSearch?: (() => void) | undefined;
-	onToggleSmartAi?: (() => void) | undefined;
-	onOpenDoctorFreeSlots?: (() => void) | undefined;
-	onOpenPreventiveInspection?: (() => void) | undefined;
-	preventiveInspectionCount?: number | undefined;
-	onOpenTomorrowReminders?: (() => void) | undefined;
-	onEmergencyCitoBooking?: (() => void) | undefined;
-	onToggleShiftAnalytics?: (() => void) | undefined;
-	showShiftAnalytics?: boolean | undefined;
-	onOpenShiftRoster?: (() => void) | undefined;
-	onOpenDoctorShiftDrawer?: (() => void) | undefined;
-	onOpenChairDateRangeModal?: (() => void) | undefined;
-	onOpenWaitlist?: (() => void) | undefined;
-	waitlistCount?: number | undefined;
-	onToggleConfirmations?: (() => void) | undefined;
-	showConfirmationsPanel?: boolean | undefined;
-	onToggleFreedSlots?: (() => void) | undefined;
-	showFreedSlotsPanel?: boolean | undefined;
-	onToggleClipboard?: (() => void) | undefined;
-	showClipboardPanel?: boolean | undefined;
-	onOpenCalendarSync?: (() => void) | undefined;
-}
+export type { ScheduleOptionsDropdownProps } from "./scheduleOptionsDropdownTypes";
 
-export function ScheduleOptionsDropdown({
-	isOptionsMenuOpen,
-	setIsOptionsMenuOpen,
-	optionsMenuRef,
-	onQuickBooking,
-	setScheduleViewMode,
-	scheduleViewMode = "timeline",
-	hasMultipleBranches,
-	selectedBranchId,
-	onSelectBranch,
-	activeBranches,
-	activeScheduleFilterCount,
-	resetScheduleFilters,
-	hasMultipleChairs,
-	myChair,
-	isMyChairActive,
-	handleSelectMyChair,
-	hasMultipleDoctors,
-	activeDoctors,
-	scheduleDoctorFilterId,
-	setScheduleDoctorFilterId,
-	displayChairs,
-	scheduleChairFilterId,
-	setScheduleChairFilterId,
-	setScheduleDateFilter,
-	tomorrowIso,
-	scheduleStatusFilter,
-	setScheduleStatusFilter,
-	onSelectWholeWeek,
-	handleRepeatBookingOffset,
-	gridStepMinutes = 30,
-	onGridStepChange,
-	handleOpenAddChair,
-	onOpenPatientSearch,
-	onToggleSmartAi,
-	onOpenDoctorFreeSlots,
-	onOpenPreventiveInspection,
-	preventiveInspectionCount = 0,
-	onOpenTomorrowReminders,
-	onEmergencyCitoBooking,
-	onToggleShiftAnalytics,
-	showShiftAnalytics = false,
-	onOpenShiftRoster,
-	onOpenDoctorShiftDrawer,
-	onOpenChairDateRangeModal,
-	onOpenWaitlist,
-	waitlistCount = 0,
-	onToggleConfirmations,
-	showConfirmationsPanel = false,
-	onToggleFreedSlots,
-	showFreedSlotsPanel = false,
-	onToggleClipboard,
-	showClipboardPanel = false,
-	onOpenCalendarSync,
-}: ScheduleOptionsDropdownProps): ReactElement {
+export function ScheduleOptionsDropdown(props: ScheduleOptionsDropdownProps): ReactElement {
+	const {
+		isOptionsMenuOpen,
+		setIsOptionsMenuOpen,
+		optionsMenuRef,
+		onQuickBooking,
+		setScheduleDateFilter,
+		tomorrowIso,
+		onSelectWholeWeek,
+		setScheduleViewMode,
+		handleRepeatBookingOffset,
+		scheduleStatusFilter,
+		setScheduleStatusFilter,
+		gridStepMinutes = 30,
+		onGridStepChange,
+		handleOpenAddChair,
+	} = props;
+
 	return (
 		<div
 			className="relative inline-flex items-center shrink-0 flex-shrink-0 min-w-fit"
@@ -162,7 +65,6 @@ export function ScheduleOptionsDropdown({
 				role="menu"
 				aria-hidden={!isOptionsMenuOpen}
 			>
-				{/* Quick Booking Option in Dropdown */}
 				{onQuickBooking && (
 					<button
 						type="button"
@@ -180,277 +82,35 @@ export function ScheduleOptionsDropdown({
 					</button>
 				)}
 
-				{/* Mobile filters & view switchers */}
-				<ScheduleOptionsMobileSection
-					setScheduleViewMode={setScheduleViewMode || (() => {})}
-					scheduleViewMode={scheduleViewMode}
+				<ScheduleOptionsMobileSection {...(props as any)} />
+
+				<ScheduleOptionsDateSection
+					setScheduleDateFilter={setScheduleDateFilter}
+					tomorrowIso={tomorrowIso}
 					setIsOptionsMenuOpen={setIsOptionsMenuOpen}
-					hasMultipleBranches={hasMultipleBranches}
-					selectedBranchId={selectedBranchId}
-					onSelectBranch={onSelectBranch}
-					activeBranches={activeBranches}
-					activeScheduleFilterCount={activeScheduleFilterCount}
-					resetScheduleFilters={resetScheduleFilters}
-					hasMultipleChairs={hasMultipleChairs}
-					myChair={myChair}
-					isMyChairActive={isMyChairActive}
-					handleSelectMyChair={handleSelectMyChair}
-					hasMultipleDoctors={hasMultipleDoctors}
-					activeDoctors={activeDoctors}
-					scheduleDoctorFilterId={scheduleDoctorFilterId}
-					setScheduleDoctorFilterId={setScheduleDoctorFilterId}
-					displayChairs={displayChairs}
-					scheduleChairFilterId={scheduleChairFilterId}
-					setScheduleChairFilterId={setScheduleChairFilterId}
+					onSelectWholeWeek={onSelectWholeWeek}
+					setScheduleViewMode={setScheduleViewMode}
+					handleRepeatBookingOffset={handleRepeatBookingOffset}
 				/>
 
-				{/* Quick dates */}
-				<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)]">
-					Навигация по датам
-				</div>
-				<button
-					type="button"
-					onClick={() => {
-						setScheduleDateFilter("");
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-					role="menuitem"
-				>
-					<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Сегодня</span>
-				</button>
+				<ScheduleOptionsQueueSection
+					scheduleStatusFilter={scheduleStatusFilter}
+					setScheduleStatusFilter={setScheduleStatusFilter}
+					setIsOptionsMenuOpen={setIsOptionsMenuOpen}
+				/>
 
-				<button
-					type="button"
-					onClick={() => {
-						setScheduleDateFilter(tomorrowIso);
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-					role="menuitem"
-				>
-					<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Завтра</span>
-				</button>
-
-				<button
-					type="button"
-					onClick={() => {
-						window.location.hash = "shift";
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-					role="menuitem"
-					title="Перейти в журнал приёмов и очередей за смену"
-				>
-					<Clock size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Журнал приёмов за смену</span>
-				</button>
-
-				{/* Shift Queue Statuses in Options Menu */}
-				{setScheduleStatusFilter && (
-					<div className="px-2 py-1.5 border-t border-[var(--line)] mt-1 pt-1.5">
-						<div className="text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] mb-1">
-							Очередь смены
-						</div>
-						<div className="grid grid-cols-2 gap-1">
-							<button
-								type="button"
-								onClick={() => {
-									setScheduleStatusFilter("all");
-									setIsOptionsMenuOpen(false);
-								}}
-								className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
-									!scheduleStatusFilter || scheduleStatusFilter === "all"
-										? "bg-[var(--teal,var(--brand-primary))] text-white"
-										: "bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--teal-soft)]"
-								}`}
-							>
-								Все статусы
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setScheduleStatusFilter("arrived");
-									setIsOptionsMenuOpen(false);
-								}}
-								className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
-									scheduleStatusFilter === "arrived"
-										? "bg-amber-500 text-white"
-										: "bg-amber-500/10 text-amber-800 dark:text-amber-200 hover:bg-amber-500/20"
-								}`}
-							>
-								Ожидает приёма
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setScheduleStatusFilter("in_treatment");
-									setIsOptionsMenuOpen(false);
-								}}
-								className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
-									scheduleStatusFilter === "in_treatment"
-										? "bg-[var(--teal,var(--brand-primary))] text-white"
-										: "bg-[var(--teal-soft)] text-[var(--teal-dark)] hover:bg-[var(--teal-surface)]"
-								}`}
-							>
-								На приёме
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setScheduleStatusFilter("completed");
-									setIsOptionsMenuOpen(false);
-								}}
-								className={`px-2 py-1 rounded-md text-xs font-semibold text-left transition-colors ${
-									scheduleStatusFilter === "completed"
-										? "bg-slate-700 text-white"
-										: "bg-slate-500/10 text-slate-700 dark:text-slate-300 hover:bg-slate-500/20"
-								}`}
-							>
-								Ожидает оплаты
-							</button>
-						</div>
-					</div>
-				)}
-
-				<button
-					type="button"
-					onClick={() => {
-						if (onSelectWholeWeek) {
-							onSelectWholeWeek();
-						} else if (setScheduleViewMode) {
-							setScheduleViewMode("timeline");
-						}
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-					role="menuitem"
-				>
-					<Calendar size={14} className="text-[var(--teal,var(--brand-primary))]" />
-					<span>Вся неделя</span>
-				</button>
-
-				{/* Repeat booking offsets */}
-				<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
-					Повторный прием (+Повтор)
-				</div>
-				<button
-					type="button"
-					onClick={() => {
-						handleRepeatBookingOffset(7);
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-					role="menuitem"
-				>
-					<span>Через 7 дней</span>
-					<span className="text-[10px] font-mono opacity-70">+7д</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						handleRepeatBookingOffset(14);
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-					role="menuitem"
-				>
-					<span>Через 14 дней</span>
-					<span className="text-[10px] font-mono opacity-70">+14д</span>
-				</button>
-				<button
-					type="button"
-					onClick={() => {
-						handleRepeatBookingOffset(30);
-						setIsOptionsMenuOpen(false);
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center justify-between cursor-pointer"
-					role="menuitem"
-				>
-					<span>Через 1 месяц</span>
-					<span className="text-[10px] font-mono opacity-70">+30д</span>
-				</button>
-
-				{/* Actions & Utilities */}
 				<div className="px-2 py-1 text-[10px] font-bold uppercase tracking-wider text-[var(--muted)] border-t border-[var(--line)] mt-1 pt-1.5">
 					Инструменты расписания
 				</div>
 
-				{/* Переключатель шага сетки (15 / 30 / 60 мин) */}
-				<div className="flex items-center justify-between px-2.5 py-1 text-xs">
-					<span className="font-semibold text-[var(--muted)]">Шаг сетки:</span>
-					<div
-						className="schedule-grid-step-segmented shrink-0 select-none"
-						role="group"
-						aria-label="Шаг сетки расписания"
-						data-testid="schedule-filter-grid-step-selector"
-					>
-						{([15, 30, 60] as const).map((step) => (
-							<button
-								key={step}
-								type="button"
-								onClick={() => {
-									onGridStepChange?.(step);
-									setIsOptionsMenuOpen(false);
-								}}
-								className={`schedule-grid-step-btn ${
-									(gridStepMinutes ?? 30) === step ? "active" : ""
-								}`}
-								data-testid={`filter-strip-step-${step}`}
-							>
-								{step}м
-							</button>
-						))}
-					</div>
-				</div>
-
-				<button
-					type="button"
-					onClick={() => {
-						setIsOptionsMenuOpen(false);
-						handleOpenAddChair();
-					}}
-					className="w-full min-h-[44px] sm:min-h-0 sm:py-1.5 py-2.5 text-left px-2.5 rounded-lg text-xs font-medium text-[var(--ink)] hover:bg-[var(--teal-soft)] hover:text-[var(--teal-dark)] transition-colors flex items-center gap-2 cursor-pointer"
-					style={{ minHeight: "44px" }}
-					role="menuitem"
-					data-testid="schedule-options-add-chair-btn"
-					title="Быстрое добавление кресла или кабинета в расписание"
-				>
-					<Plus size={14} className="text-[var(--teal,var(--brand-primary))] shrink-0" aria-hidden="true" />
-					<span>Добавить кресло (+ Кресло)</span>
-				</button>
-
-				{/* Secondary tools & panels section */}
-				<ScheduleOptionsToolsSection
-					{...({
-						setIsOptionsMenuOpen,
-						onOpenPatientSearch: onOpenPatientSearch || (() => {}),
-						onToggleSmartAi: onToggleSmartAi || (() => {}),
-						setScheduleViewMode: setScheduleViewMode || (() => {}),
-						scheduleViewMode,
-						onOpenDoctorFreeSlots: onOpenDoctorFreeSlots || (() => {}),
-						onOpenPreventiveInspection: onOpenPreventiveInspection || (() => {}),
-						preventiveInspectionCount,
-						onOpenTomorrowReminders: onOpenTomorrowReminders || (() => {}),
-						onEmergencyCitoBooking: onEmergencyCitoBooking || (() => {}),
-						onToggleShiftAnalytics: onToggleShiftAnalytics || (() => {}),
-						showShiftAnalytics,
-						onOpenShiftRoster: onOpenShiftRoster || (() => {}),
-						onOpenDoctorShiftDrawer: onOpenDoctorShiftDrawer || (() => {}),
-						onOpenChairDateRangeModal: onOpenChairDateRangeModal || (() => {}),
-						onOpenWaitlist: onOpenWaitlist || (() => {}),
-						waitlistCount,
-						onToggleConfirmations: onToggleConfirmations || (() => {}),
-						showConfirmationsPanel,
-						onToggleFreedSlots: onToggleFreedSlots || (() => {}),
-						showFreedSlotsPanel,
-						onToggleClipboard: onToggleClipboard || (() => {}),
-						showClipboardPanel,
-						onOpenCalendarSync: onOpenCalendarSync || (() => {}),
-					} as any)}
+				<ScheduleOptionsGridStepSection
+					gridStepMinutes={gridStepMinutes}
+					onGridStepChange={onGridStepChange}
+					handleOpenAddChair={handleOpenAddChair}
+					setIsOptionsMenuOpen={setIsOptionsMenuOpen}
 				/>
+
+				<ScheduleOptionsToolsSection {...(props as any)} />
 			</div>
 		</div>
 	);
