@@ -52,15 +52,15 @@ export const PrescriptionExpressPillCard: React.FC<PrescriptionExpressPillCardPr
 				onClick={() => onSelectPreset(preset)}
 				className="text-left w-full flex flex-col gap-1.5 cursor-pointer bg-transparent border-0 p-0 focus:outline-hidden"
 			>
-				<div className="flex items-start justify-between gap-1.5 w-full">
+				<div className="flex items-start justify-between gap-1.5 w-full flex-wrap sm:flex-nowrap">
 					<span className="text-xs font-bold text-[var(--ink)] leading-snug">{preset.label}</span>
 					{isConflict && (
 						<span
 							data-testid={`preset-allergy-badge-${preset.id}`}
-							className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0"
+							className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-700 dark:text-rose-300 border border-rose-500/30 flex items-center gap-1 shrink-0 ml-auto"
 						>
 							<AlertTriangle className="w-2.5 h-2.5 text-rose-600 shrink-0" />
-							Аллерген в пакете
+							Аллерген
 						</span>
 					)}
 				</div>

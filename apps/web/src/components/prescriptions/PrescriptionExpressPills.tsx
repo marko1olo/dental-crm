@@ -30,12 +30,14 @@ const QUICK_SOLO_DRUGS = [
 	{ id: "amoxicillin_500", label: "Амоксициллин 500 мг" },
 	{ id: "amoxiclav_625", label: "Амоксиклав 625 мг" },
 	{ id: "amoxiclav_875_125", label: "Амоксиклав 1000 мг" },
-	{ id: "nimesulide_100", label: "Найз 100 мг" },
+	{ id: "nimesulide_100", label: "Нимесил 100 мг (Найз)" },
 	{ id: "ibuprofen_400", label: "Ибупрофен 400 мг" },
-	{ id: "ketorolac_10", label: "Кеторол 10 мг" },
+	{ id: "ketorolac_10", label: "Кеторол Экспресс 10 мг" },
 	{ id: "chlorhexidine_005", label: "Хлоргексидин 0.05%" },
 	{ id: "miramistin_001", label: "Мирамистин 0.01%" },
 	{ id: "linex_forte", label: "Линекс (Пробиотик)" },
+	{ id: "clarithromycin_500", label: "Кларитромицин 500 мг" },
+	{ id: "clindamycin_300", label: "Клиндамицин 300 мг" },
 ] as const;
 
 export const PrescriptionExpressPills: React.FC<PrescriptionExpressPillsProps> = ({

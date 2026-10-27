@@ -1,8 +1,4 @@
-/**
- * prescriptionPresetsAntibiotics.ts — Dental Antibiotic Presets
- * DENTE Dental CRM (Mandate 8b <= 120 lines).
- */
-
+// prescriptionPresetsAntibiotics.ts — Dental Antibiotic Presets (Mandate 8b <= 120 lines)
 import type { DentalMedicationPreset } from "./prescriptionPresetTypes";
 
 export const PRESETS_ANTIBIOTICS: readonly DentalMedicationPreset[] = [
@@ -74,6 +70,34 @@ export const PRESETS_ANTIBIOTICS: readonly DentalMedicationPreset[] = [
 		quantityLabel: "N. 10 (таблетки)",
 		dispenseLatin: "D.t.d. N 10 in tab.",
 		signaRu: "S. Внутрь по 1 таблетке 2 раза в сутки после еды через 12 часов, запивая водой, курс 5 дней.",
+		validityDays: 60,
+	},
+	{
+		id: "amoxiclav_625",
+		tradeNameRu: "Амоксиклав 625 мг (Аугментин 500+125 мг)",
+		activeSubstanceRu: "Амоксициллин + Клавулановая кислота",
+		category: "antibiotic",
+		categoryLabelRu: "Антибиотик (Пенициллины)",
+		latinRp: "Rp.: Tab. Amoxicillini et Acidi clavulanici 500/125 mg",
+		formRu: "таблетки диспергируемые",
+		dosageRu: "500/125 мг",
+		quantityLabel: "N. 15",
+		dispenseLatin: "D.t.d. N 15 in tab.",
+		signaRu: "S. Внутрь по 1 таблетке 3 раза в сутки во время еды, курс 5 дней.",
+		validityDays: 60,
+	},
+	{
+		id: "clindamycin_300",
+		tradeNameRu: "Клиндамицин 300 мг (Далацин Ц)",
+		activeSubstanceRu: "Клиндамицин",
+		category: "antibiotic",
+		categoryLabelRu: "Антибиотик резерва (Линкозамид при аллергии на пенициллин)",
+		latinRp: "Rp.: Caps. Clindamycini 300 mg",
+		formRu: "капсулы",
+		dosageRu: "300 мг",
+		quantityLabel: "N. 16 (капсулы)",
+		dispenseLatin: "D.t.d. N 16 in caps.",
+		signaRu: "S. Внутрь по 1 капсуле (300 мг) 3–4 раза в день (каждые 6–8 ч), курс 7 дней.",
 		validityDays: 60,
 	},
 	{

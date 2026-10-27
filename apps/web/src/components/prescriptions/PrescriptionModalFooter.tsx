@@ -15,14 +15,8 @@ export interface PrescriptionModalFooterProps {
 	readonly onPrintPrescription: () => void;
 }
 
-export const PrescriptionModalFooter: React.FC<
-	PrescriptionModalFooterProps
-> = ({
-	isMemoCopied,
-	onCopyPatientMemo,
-	onInsertToDiary,
-	onPrintPatientMemo,
-	onPrintPrescription,
+export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = ({
+	isMemoCopied, onCopyPatientMemo, onInsertToDiary, onPrintPatientMemo, onPrintPrescription,
 }) => {
 	return (
 		<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 px-3 sm:px-6 py-2.5 sm:py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
@@ -43,11 +37,11 @@ export const PrescriptionModalFooter: React.FC<
 						type="button"
 						data-testid="insert-to-diary-btn"
 						onClick={onInsertToDiary}
-						title="Перенести назначения в дневник приёма"
-						className="secondary-button btn btn--secondary h-9 px-2 text-xs font-semibold rounded-xl inline-flex items-center gap-1 cursor-pointer justify-center"
+						title="Сохранить назначения в карту пациента"
+						className="secondary-button btn btn--secondary h-9 px-1.5 text-xs font-semibold rounded-xl inline-flex items-center gap-1 cursor-pointer justify-center"
 					>
 						<Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-						<span className="truncate">В дневник</span>
+						<span className="whitespace-nowrap">В карту</span>
 					</button>
 					<button
 						type="button"

@@ -14,21 +14,27 @@ export const CORE_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] =
 	[
 		{
 			id: "post_surgery_periodontitis",
-			label: "После хирургии / периодонтита (Амоксиклав)",
-			desc: "Амоксиклав 1000 мг 2 р/д (7 дн.) + Найз 100 мг при болях + Хлоргексидин 0.05% ванночки",
-			drugIds: ["amoxiclav_875_125", "nimesulide_100", "chlorhexidine_005"],
+			label: "«После сложного удаления»",
+			desc: "Нимесил 100 мг 2 р/д (3 дня) + Хлоргексидин 0.05% ротовые ванночки",
+			drugIds: ["nimesulide_100", "chlorhexidine_005"],
+		},
+		{
+			id: "antibiotic_periodontitis",
+			label: "«Антибиотикотерапия (Периостит / Периодонтит)»",
+			desc: "Амоксиклав 1000 мг 2 р/д (7 дн.) + Линекс Форте (пробиотик)",
+			drugIds: ["amoxiclav_875_125", "linex_forte"],
+		},
+		{
+			id: "anti_inflammatory_course",
+			label: "«Обезболивание (НПВС)»",
+			desc: "Кеторол Экспресс 10 мг / Ибупрофен 400 мг при болях",
+			drugIds: ["ketorolac_10", "ibuprofen_400"],
 		},
 		{
 			id: "penicillin_allergy",
 			label: "При аллергии на пенициллины (Азитромицин)",
 			desc: "Азитромицин 500 мг 1 р/д (3 дн.) + Ибупрофен 400 мг + Мирамистин 0.01%",
 			drugIds: ["azithromycin_500", "ibuprofen_400", "miramistin_001"],
-		},
-		{
-			id: "anti_inflammatory_course",
-			label: "Противовоспалительный курс (Найз / НПВП)",
-			desc: "Найз (Нимесил) 100 мг 2 р/д + Хлоргексидин 0.05% ванночки",
-			drugIds: ["nimesulide_100", "chlorhexidine_005"],
 		},
 		{
 			id: "pediatric_dental",
@@ -56,6 +62,18 @@ export const CORE_FAST_PRESCRIPTION_SETS: readonly DentalFastPrescriptionSet[] =
 				"ibuprofen_400",
 				"chlorhexidine_005",
 			],
+		},
+		{
+			id: "amoxiclav_625_course",
+			label: "Курс: Амоксиклав 625 мг + Линекс + Нимесулид",
+			desc: "Амоксиклав 625 мг 3 р/д (5 дн.) + Линекс Форте + Нимесулид 100 мг при болях",
+			drugIds: ["amoxiclav_625", "linex_forte", "nimesulide_100"],
+		},
+		{
+			id: "penicillin_allergy_reserve",
+			label: "Резерв при аллергии на пенициллины (Кларитромицин)",
+			desc: "Кларитромицин 500 мг 1 р/д (5-7 дн.) + Найз 100 мг + Хлоргексидин 0.05%",
+			drugIds: ["clarithromycin_500", "nimesulide_100", "chlorhexidine_005"],
 		},
 		{
 			id: "post_extraction_complex",

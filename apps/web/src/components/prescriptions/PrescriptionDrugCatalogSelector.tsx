@@ -18,7 +18,9 @@ export const PrescriptionDrugCatalogSelector: React.FC<
 > = (props) => {
 	const isPediatric =
 		props.selectedDrugIds.includes("ibuprofen_suspension_100_5ml") ||
-		(props.patientWeightKg !== undefined && props.patientWeightKg > 0);
+		(props.patientWeightKg !== undefined &&
+			props.patientWeightKg > 0 &&
+			props.patientWeightKg <= 40);
 
 	return (
 		<div

@@ -54,24 +54,25 @@ describe("Prescriptions Order 1094n: 4 Express-Sets & Somatic Anamnesis Soft-Che
 		assert.deepStrictEqual([...set4.drugIds], ["ibuprofen_suspension_100_5ml"]);
 	});
 
-	it("2. Web DENTAL_FAST_PRESCRIPTION_SETS matches the 4 express sets", () => {
+	it("2. Web DENTAL_FAST_PRESCRIPTION_SETS matches the canonical express sets", () => {
 		const set1 = DENTAL_FAST_PRESCRIPTION_SETS[0]!;
 		const set2 = DENTAL_FAST_PRESCRIPTION_SETS[1]!;
 		const set3 = DENTAL_FAST_PRESCRIPTION_SETS[2]!;
-		const set4 = DENTAL_FAST_PRESCRIPTION_SETS[3]!;
 
+		// 1. «После сложного удаления» (Нимесил 100мг x 2р/д 3 дня + Хлоргексидин 0.05% ротовые ванночки)
 		assert.strictEqual(set1.id, "post_surgery_periodontitis");
-		assert.ok(set1.label.includes("После хирургии / периодонтита"));
+		assert.ok(set1.label.includes("После сложного удаления"));
+		assert.deepStrictEqual([...set1.drugIds], ["nimesulide_100", "chlorhexidine_005"]);
 
-		assert.strictEqual(set2.id, "penicillin_allergy");
-		assert.ok(set2.label.includes("При аллергии на пенициллины"));
+		// 2. «Антибиотикотерапия (Периостит / Периодонтит)» (Амоксиклав 625мг / 1000мг + пробиотик)
+		assert.strictEqual(set2.id, "antibiotic_periodontitis");
+		assert.ok(set2.label.includes("Антибиотикотерапия"));
+		assert.deepStrictEqual([...set2.drugIds], ["amoxiclav_875_125", "linex_forte"]);
 
+		// 3. «Обезболивание (НПВС)» (Кеторол Экспресс / Ибупрофен)
 		assert.strictEqual(set3.id, "anti_inflammatory_course");
-		assert.ok(set3.label.includes("Противовоспалительный курс"));
-
-		assert.strictEqual(set4.id, "pediatric_dental");
-		assert.ok(set4.label.includes("Детский стоматологический"));
-		assert.ok(set4.drugIds.includes("ibuprofen_suspension_100_5ml"));
+		assert.ok(set3.label.includes("Обезболивание"));
+		assert.deepStrictEqual([...set3.drugIds], ["ketorolac_10", "ibuprofen_400"]);
 	});
 
 	it("3. Calculates pediatric ibuprofen suspension dose by weight (10 mg/kg)", () => {
