@@ -55,6 +55,23 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 				) : (
 					<>
 						<DocumentsCatalogView {...vm.catalogViewProps} />
+						<DocumentsTemplateGrid
+							selectedDocumentKind={vm.selectedDocumentKind}
+							onSelectDocumentKind={vm.setSelectedDocumentKind}
+							onCreateDocument={(k) => void vm.createDocument(k)}
+							onOpenFocusEditor={(k) => {
+								vm.setSelectedDocumentKind(k);
+								vm.setIsEditingInFocus(true);
+							}}
+							activeCategoryTab={vm.activeCategoryTab}
+							searchQuery={vm.registrySearchQuery}
+							documentCreateSavingKind={vm.documentCreateSavingKind}
+							sanitizedDocumentFactoryGroups={vm.sanitizedDocumentFactoryGroups}
+							documentLabels={vm.documentLabels}
+							onOpenPrimaryIntakePackage={() => vm.setIsPrimaryIntakeOpen(true)}
+							onDirectPrintPrimaryIntake={vm.handleDirectPrintPrimaryIntake}
+							className="my-3"
+						/>
 						<DocumentsRecentList {...vm.recentListProps} />
 					</>
 				)}

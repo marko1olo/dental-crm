@@ -1,0 +1,95 @@
+/**
+ * clinicalCareTemplates.ts
+ * Clinical dental record and treatment planning templates.
+ * Mandates 8b, 8e, 8x, 8ap: Zero regulatory bird-language.
+ */
+
+import type { DocumentTemplateItem } from "./documentTemplateTypes";
+
+export const CLINICAL_CARE_TEMPLATES: readonly DocumentTemplateItem[] = [
+	{
+		id: "dental_medical_card_043u",
+		kind: "dental_medical_card_043u",
+		titleRu: "Медицинская карта приёма",
+		category: "clinical",
+		badgeRu: "Медкарта",
+		descriptionRu: "Официальный амбулаторный бланк стоматолога с зубной формулой, жалобами, анамнезом и дневником.",
+		regulationRu: "Медицинская карта",
+		printSupported: true,
+		isPrimary: true,
+		isStatutory: true,
+	},
+	{
+		id: "orthodontic_medical_card_043_1u",
+		kind: "orthodontic_medical_card_043_1u",
+		titleRu: "Медицинская карта ортодонтического приёма",
+		category: "clinical",
+		badgeRu: "Ортодонтия",
+		descriptionRu: "Амбулаторная карта ортодонтического лечения, антропометрия, расчёт снимков и план биомеханики.",
+		regulationRu: "Ортодонтическая карта",
+		printSupported: true,
+		isStatutory: true,
+	},
+	{
+		id: "treatment_plan",
+		kind: "treatment_plan",
+		titleRu: "Комплексный план стоматологического лечения",
+		category: "clinical",
+		badgeRu: "План лечения",
+		descriptionRu: "Поэтапный план санации, терапевтические, хирургические и ортопедические этапы со сметой.",
+		regulationRu: "Клинические рекомендации",
+		printSupported: true,
+		isPrimary: true,
+	},
+	{
+		id: "treatment_plan_acceptance",
+		kind: "treatment_plan_acceptance",
+		titleRu: "Лист согласования плана лечения",
+		category: "clinical",
+		badgeRu: "Согласование",
+		descriptionRu: "Письменное утверждение пациентом выбранного варианта плана, сроков и гарантийных обязательств.",
+		regulationRu: "Согласование плана",
+		printSupported: true,
+	},
+	{
+		id: "procedure_specific_consent_packet",
+		kind: "procedure_specific_consent_packet",
+		titleRu: "Процедурный пакет информированных согласий",
+		category: "clinical",
+		badgeRu: "Пакет согласий",
+		descriptionRu: "Специализированные согласия на терапию, эндодонтию, имплантацию, ортодонтию и отбеливание.",
+		regulationRu: "Специализированные согласия",
+		printSupported: true,
+	},
+	{
+		id: "anesthesia_consent_log",
+		kind: "anesthesia_consent_log",
+		titleRu: "ИДС и протокол местной анестезии",
+		category: "clinical",
+		badgeRu: "Анестезия",
+		descriptionRu: "Инфильтрационная и проводниковая анестезия, аллергоанамнез, дозировка и протокол введения.",
+		regulationRu: "Протокол анестезии",
+		printSupported: true,
+	},
+	{
+		id: "anesthesia_consent",
+		kind: "anesthesia_consent",
+		titleRu: "ИДС на местную анестезию",
+		category: "clinical",
+		badgeRu: "Анестезия",
+		descriptionRu: "Инфильтрационная и проводниковая анестезия, опрос аллергического анамнеза и рисков.",
+		regulationRu: "Согласие на анестезию",
+		printSupported: true,
+		isPrimary: false,
+	},
+	{
+		id: "endodontic_consent",
+		kind: "endodontic_consent",
+		titleRu: "ИДС на эндодонтическое лечение",
+		category: "clinical",
+		badgeRu: "Корневые каналы",
+		descriptionRu: "Депульпирование, обработка каналов, обтурация гуттаперчей и временная герметизация.",
+		regulationRu: "Протокол эндодонтии",
+		printSupported: true,
+	},
+];

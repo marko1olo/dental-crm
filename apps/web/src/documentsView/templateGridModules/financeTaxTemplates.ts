@@ -1,0 +1,101 @@
+/**
+ * financeTaxTemplates.ts
+ * Invoices, tax certificates, receipts, and acts in clean clinical Russian.
+ * Mandates 8b, 8e, 8x, 8ap: Zero regulatory bird-language.
+ */
+
+import type { DocumentTemplateItem } from "./documentTemplateTypes";
+
+export const FINANCE_TAX_TEMPLATES: readonly DocumentTemplateItem[] = [
+	{
+		id: "tax_deduction_certificate",
+		kind: "tax_deduction_certificate",
+		titleRu: "Справка для налогового вычета (ФНС)",
+		category: "finance_tax",
+		badgeRu: "Справка ФНС",
+		descriptionRu: "Унифицированная справка для социального налогового вычета по расходам на лечение.",
+		regulationRu: "Налоговый вычет",
+		printSupported: true,
+		isStatutory: true,
+	},
+	{
+		id: "legacy_tax_deduction_certificate",
+		kind: "legacy_tax_deduction_certificate",
+		titleRu: "Справка для налоговой за прошлые периоды",
+		category: "finance_tax",
+		badgeRu: "Архив ФНС",
+		descriptionRu: "Справка об оплате медицинских услуг старого образца по расходам прошлых лет.",
+		regulationRu: "Архив справок",
+		printSupported: true,
+	},
+	{
+		id: "tax_deduction_application",
+		kind: "tax_deduction_application",
+		titleRu: "Заявление на выдачу справки для налогового вычета",
+		category: "finance_tax",
+		badgeRu: "Заявление",
+		descriptionRu: "Заявление пациента с указанием налогового периода, ИНН и данных плательщика.",
+		regulationRu: "Заявление на вычет",
+		printSupported: true,
+	},
+	{
+		id: "tax_deduction_registry",
+		kind: "tax_deduction_registry",
+		titleRu: "Журнал регистрации справок для налоговой",
+		category: "finance_tax",
+		badgeRu: "Реестр ФНС",
+		descriptionRu: "Внутренний реестр клиники по выданным справкам налогового вычета и суммам оплат.",
+		regulationRu: "Журнал учёта",
+		printSupported: true,
+	},
+	{
+		id: "completed_works_act",
+		kind: "completed_works_act",
+		titleRu: "Акт выполненных стоматологических работ",
+		category: "finance_tax",
+		badgeRu: "Акт",
+		descriptionRu: "Акт приема-сдачи оказанных услуг к договору с перечнем позиций прейскуранта.",
+		regulationRu: "Акт выполненных работ",
+		printSupported: true,
+	},
+	{
+		id: "payment_invoice",
+		kind: "payment_invoice",
+		titleRu: "Счет на оплату медицинских услуг",
+		category: "finance_tax",
+		badgeRu: "Счет",
+		descriptionRu: "Счет на безналичную оплату услуг клиники для физических и юридических лиц.",
+		regulationRu: "Счет на оплату",
+		printSupported: true,
+	},
+	{
+		id: "payment_receipt",
+		kind: "payment_receipt",
+		titleRu: "Квитанция об оплате (копия чека)",
+		category: "finance_tax",
+		badgeRu: "Квитанция",
+		descriptionRu: "Товарный чек и квитанция с детализацией фискального платежа и способа оплаты.",
+		regulationRu: "Кассовый чек",
+		printSupported: true,
+	},
+	{
+		id: "installment_payment_schedule",
+		kind: "installment_payment_schedule",
+		titleRu: "График поэтапной оплаты и рассрочки",
+		category: "finance_tax",
+		badgeRu: "Рассрочка",
+		descriptionRu: "Дополнительное соглашение с графиком траншей за ортодонтическое и ортопедическое лечение.",
+		regulationRu: "График рассрочки",
+		printSupported: true,
+	},
+	{
+		id: "payment_refund_correction_request",
+		kind: "payment_refund_correction_request",
+		titleRu: "Заявление на возврат / корректировку платежа",
+		category: "finance_tax",
+		badgeRu: "Возврат",
+		descriptionRu: "Заявление пациента на возврат денежных средств за неоказанные услуги по кассе.",
+		regulationRu: "Заявление на возврат",
+		printSupported: true,
+	},
+];

@@ -6,6 +6,7 @@ export const DirectPricelistLauncher: React.FC = () => {
 		if (typeof window === "undefined") return false;
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
+		if (s.includes("documents") || h.includes("documents")) return false;
 		return (
 			s.includes("pricelist") ||
 			s.includes("catalog") ||

@@ -55,15 +55,15 @@ export interface DocumentsToolbarProps {
 }
 
 export interface DocumentsTemplateGridProps {
-	readonly selectedDocumentKind: DocumentKind;
-	readonly onSelectDocumentKind: (kind: DocumentKind) => void;
-	readonly onCreateDocument: (kind: DocumentKind) => void | Promise<void>;
-	readonly onOpenFocusEditor: (kind: DocumentKind) => void;
-	readonly onOpenA4Preview?: ((kind: DocumentKind) => void) | undefined;
+	readonly selectedDocumentKind: DocumentKind | (string & {});
+	readonly onSelectDocumentKind: (kind: DocumentKind | (string & {})) => void;
+	readonly onCreateDocument: (kind: DocumentKind | (string & {})) => void | Promise<void>;
+	readonly onOpenFocusEditor: (kind: DocumentKind | (string & {})) => void;
+	readonly onOpenA4Preview?: ((kind: DocumentKind | (string & {})) => void) | undefined;
 	readonly activeCategoryTab: DocumentCategoryTab;
 	readonly searchQuery: string;
 	readonly isCreating?: boolean | undefined;
-	readonly documentCreateSavingKind?: DocumentKind | null | undefined;
+	readonly documentCreateSavingKind?: DocumentKind | (string & {}) | null | undefined;
 	readonly sanitizedDocumentFactoryGroups?: Array<{
 		title: string;
 		kinds: DocumentKind[];
