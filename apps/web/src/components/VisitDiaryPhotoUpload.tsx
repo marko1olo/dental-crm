@@ -107,6 +107,7 @@ export function VisitDiaryPhotoUpload({
 			return;
 		}
 
+		const cleanVisitId = visitId.startsWith("visit-") ? visitId.slice(6) : visitId;
 		const controller = new AbortController();
 		let cancelled = false;
 		const clinicToken = readDenteClinicToken() || null;
@@ -115,7 +116,7 @@ export function VisitDiaryPhotoUpload({
 			let status: number | null = null;
 			try {
 				const response = await fetch(
-					`/api/files/visits/${visitId}/attachments`,
+					`/api/files/visits/${cleanVisitId}/attachments`,
 					{
 						headers: {
 							...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
@@ -232,13 +233,18 @@ export function VisitDiaryPhotoUpload({
 		};
 	}, [attachments]);
 
+	const onPrintPhotosChangeRef = useRef(onPrintPhotosChange);
+	useEffect(() => {
+		onPrintPhotosChangeRef.current = onPrintPhotosChange;
+	});
+
 	/*
 	 * Отдать снимки в печать 043/у только когда blob: готов.
 	 * Иначе <img src=/api/...> в window.print уйдёт без x-dente-clinic-token
 	 * и на бумаге будут битые картинки / 401.
 	 */
 	useEffect(() => {
-		if (!onPrintPhotosChange) return;
+		if (!onPrintPhotosChangeRef.current) return;
 		const ready: DiaryPrintPhoto[] = [];
 		for (const att of attachments) {
 			const objectUrl = photoObjectUrls[att.id];
@@ -250,16 +256,16 @@ export function VisitDiaryPhotoUpload({
 				objectUrl,
 			});
 		}
-		onPrintPhotosChange(ready);
-	}, [attachments, photoObjectUrls, unreadablePhotoIds, onPrintPhotosChange]);
+		onPrintPhotosChangeRef.current(ready);
+	}, [attachments, photoObjectUrls, unreadablePhotoIds]);
 
 	// Сброс списка печати при смене приёма / размонтировании — иначе
 	// в 043/у другого визита останутся чужие blob:.
 	useEffect(() => {
 		return () => {
-			onPrintPhotosChange?.([]);
+			onPrintPhotosChangeRef.current?.([]);
 		};
-	}, [onPrintPhotosChange]);
+	}, []);
 	const uploadBlobAttachment = useCallback(
 		async (compressedBlob: Blob, fileName: string) => {
 			if (!diaryId) {

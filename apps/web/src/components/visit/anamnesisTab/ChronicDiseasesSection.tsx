@@ -1,18 +1,14 @@
 /**
  * apps/web/src/components/visit/anamnesisTab/ChronicDiseasesSection.tsx
  *
- * Layer 2: Клинические соматические стоп-факторы и стоматологический анамнез:
- * инфаркт, ЭКС/кардиостимулятор, антикоагулянты, бисфосфонаты (MRONJ), диабет,
- * беременность с триместром, опыт анестезии и дентофобия.
+ * Layer 2: Клинические соматические стоп-факторы и стоматологический анамнез (Мандат 8e).
  */
 
-import React, { useId } from "react";
-import { Activity, Check, HeartPulse, Plus } from "lucide-react";
-import {
-	DENTAL_HISTORY_ITEMS,
-	type PregnancyTrimester,
-	SOMATIC_STOP_FACTORS,
-} from "./types";
+import React from "react";
+import { Check, HeartPulse, Plus } from "lucide-react";
+import { type PregnancyTrimester, SOMATIC_STOP_FACTORS } from "./types";
+import { SomaticRiskClarifyInputs } from "./SomaticRiskClarifyInputs";
+import { DentalHistorySection } from "./DentalHistorySection";
 
 export interface ChronicDiseasesSectionProps {
 	readonly selectedRisks: readonly string[];
@@ -39,12 +35,8 @@ export const ChronicDiseasesSection: React.FC<ChronicDiseasesSectionProps> = ({
 	selectedHistory,
 	toggleHistory,
 }) => {
-	const anticoagulantInputId = useId();
-	const bisphosphonateInputId = useId();
-
 	return (
 		<>
-			{/* ═══ БЛОК 2: КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ И СОМАТИКА ═══ */}
 			<div className="space-y-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/50 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
 				<div className="flex items-center justify-between">
 					<label className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 uppercase tracking-wider">
@@ -86,106 +78,21 @@ export const ChronicDiseasesSection: React.FC<ChronicDiseasesSectionProps> = ({
 					})}
 				</div>
 
-				{/* Уточняющие инпуты для антикоагулянтов, бисфосфонатов и триместра беременности */}
-				{(selectedRisks.some((r) => r.includes("антикоагулянт")) ||
-					selectedRisks.some((r) => r.includes("бисфосфонат")) ||
-					selectedRisks.some((r) => r.includes("Беременность") || r.includes("лактац"))) && (
-					<div className="anamnesis-clarify-card">
-						{selectedRisks.some((r) => r.includes("антикоагулянт")) && (
-							<div className="flex flex-col gap-1">
-								<label
-									htmlFor={anticoagulantInputId}
-									className="text-[11px] font-bold text-rose-800 dark:text-rose-300"
-								>
-									Препарат антикоагулянта и МНО:
-								</label>
-								<input
-									id={anticoagulantInputId}
-									type="text"
-									value={anticoagulantName}
-									onChange={(e) => setAnticoagulantName(e.target.value)}
-									placeholder="Варфарин (МНО 2.1), Ксарелто 20 мг..."
-									className="anamnesis-input"
-								/>
-							</div>
-						)}
-
-						{selectedRisks.some((r) => r.includes("бисфосфонат")) && (
-							<div className="flex flex-col gap-1">
-								<label
-									htmlFor={bisphosphonateInputId}
-									className="text-[11px] font-bold text-rose-800 dark:text-rose-300"
-								>
-									Препарат бисфосфонатов (риск БОНЧ):
-								</label>
-								<input
-									id={bisphosphonateInputId}
-									type="text"
-									value={bisphosphonateName}
-									onChange={(e) => setBisphosphonateName(e.target.value)}
-									placeholder="Акласта 5 мг/год, Пролиа, Зомета..."
-									className="anamnesis-input"
-								/>
-							</div>
-						)}
-
-						{selectedRisks.some((r) => r.includes("Беременность") || r.includes("лактац")) && (
-							<div className="flex flex-col gap-1">
-								<span className="text-[11px] font-bold text-pink-800 dark:text-pink-300">
-									Срок / Период лактации:
-								</span>
-								<select
-									value={pregnancyTrimester}
-									onChange={(e) =>
-										setPregnancyTrimester(
-											e.target.value as PregnancyTrimester,
-										)
-									}
-									className="anamnesis-input"
-									aria-label="Срок беременности или период лактации"
-								>
-									<option value="trimester_1">1-й триместр (неотложка, без адреналина)</option>
-									<option value="trimester_2">2-й триместр (безопасное окно)</option>
-									<option value="trimester_3">3-й триместр</option>
-									<option value="lactation">Период лактации / ГВ</option>
-								</select>
-							</div>
-						)}
-					</div>
-				)}
+				<SomaticRiskClarifyInputs
+					selectedRisks={selectedRisks}
+					anticoagulantName={anticoagulantName}
+					setAnticoagulantName={setAnticoagulantName}
+					bisphosphonateName={bisphosphonateName}
+					setBisphosphonateName={setBisphosphonateName}
+					pregnancyTrimester={pregnancyTrimester}
+					setPregnancyTrimester={setPregnancyTrimester}
+				/>
 			</div>
 
-			{/* ═══ БЛОК 3: СТОМАТОЛОГИЧЕСКИЙ АНАМНЕЗ И ОПЫТ АНЕСТЕЗИИ ═══ */}
-			<div className="space-y-2.5">
-				<label className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 uppercase tracking-wider">
-					<Activity className="w-4 h-4 text-purple-500" />
-					<span>3. Стоматологический анамнез (Опыт анестезии, дентофобия, кровоточивость)</span>
-				</label>
-				<div className="flex flex-wrap gap-2">
-					{DENTAL_HISTORY_ITEMS.map((item) => {
-						const isSelected = selectedHistory.includes(item.label);
-						const activeClass = item.isAlert
-							? "anamnesis-chip--active-purple-alert"
-							: "anamnesis-chip--active-purple";
-						return (
-							<button
-								key={item.id}
-								type="button"
-								onClick={() => toggleHistory(item.label)}
-								data-testid={`toggle-history-${item.id}`}
-								className={`anamnesis-chip ${isSelected ? activeClass : ""}`}
-							>
-								{isSelected ? (
-									<Check className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400" />
-								) : (
-									<Plus className="w-3.5 h-3.5 text-[var(--muted,#64748b)]" />
-								)}
-								<span>{item.label}</span>
-							</button>
-						);
-					})}
-				</div>
-			</div>
+			<DentalHistorySection
+				selectedHistory={selectedHistory}
+				toggleHistory={toggleHistory}
+			/>
 		</>
 	);
 };

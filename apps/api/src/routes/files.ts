@@ -338,7 +338,15 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		try {
 			const orgId = await requireResolvedOrganizationId(request, reply);
 			if (!orgId) return;
-			const { visitId } = request.params as { visitId: string };
+			const { visitId: rawVisitId } = request.params as { visitId: string };
+			const visitId = rawVisitId.startsWith("visit-") ? rawVisitId.slice(6) : rawVisitId;
+			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitId);
+			if (!isUuid) {
+				return reply.code(404).send({
+					error: "VisitNotFound",
+					message: "Приём не найден в этой клинике.",
+				});
+			}
 
 			/*
 			 * БЫЛО: только filter attachments.visitId + org — чужой/несуществующий
@@ -413,7 +421,15 @@ export async function registerFilesRoutes(app: FastifyInstance) {
 		try {
 			const orgId = await requireResolvedOrganizationId(request, reply);
 			if (!orgId) return;
-			const { visitId } = request.params as { visitId: string };
+			const { visitId: rawVisitId } = request.params as { visitId: string };
+			const visitId = rawVisitId.startsWith("visit-") ? rawVisitId.slice(6) : rawVisitId;
+			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(visitId);
+			if (!isUuid) {
+				return reply.code(404).send({
+					error: "VisitNotFound",
+					message: "Приём не найден в этой клинике.",
+				});
+			}
 
 			/*
 			 * БЫЛО: insert attachments с organizationId=org вызывающего и visitId

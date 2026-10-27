@@ -1,14 +1,14 @@
 /**
  * apps/web/src/components/visit/anamnesisTab/AnamnesisVoiceInput.tsx
  *
- * Layer 2: Основные жалобы пациента у кресла, голосовой ввод примечаний врача (Whisper),
- * свободный ввод терапии и нижняя панель действий (перенос в дневник, синхронизация с ЭМК).
+ * Layer 2: Основные жалобы пациента у кресла и голосовой ввод примечаний врача (Мандат 8e).
  */
 
 import React, { useId } from "react";
-import { Activity, Check, Plus, RotateCcw, Save, Stethoscope } from "lucide-react";
+import { Check, Plus, Stethoscope } from "lucide-react";
 import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 import { PATIENT_COMPLAINTS_LIST } from "./types";
+import { AnamnesisBottomBar } from "./AnamnesisBottomBar";
 
 export interface AnamnesisVoiceInputProps {
 	readonly selectedComplaints: readonly string[];
@@ -31,7 +31,6 @@ export const AnamnesisVoiceInput: React.FC<AnamnesisVoiceInputProps> = ({
 
 	return (
 		<>
-			{/* ═══ БЛОК 4: ОСНОВНЫЕ ЖАЛОБЫ ПАЦИЕНТА ═══ */}
 			<div className="space-y-2.5">
 				<label className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-slate-200 flex items-center gap-2 uppercase tracking-wider">
 					<Stethoscope className="w-4 h-4 text-teal-500" />
@@ -59,13 +58,9 @@ export const AnamnesisVoiceInput: React.FC<AnamnesisVoiceInputProps> = ({
 				</div>
 			</div>
 
-			{/* ═══ БЛОК 5: ДОПОЛНИТЕЛЬНЫЕ ПРИМЕЧАНИЯ С ГОЛОСОМ ═══ */}
 			<div className="space-y-2">
 				<div className="flex items-center justify-between">
-					<label
-						htmlFor={customNotesId}
-						className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider"
-					>
+					<label htmlFor={customNotesId} className="text-xs font-bold text-[var(--muted,#64748b)] uppercase tracking-wider">
 						Дополнительные примечания врача и постоянная терапия:
 					</label>
 					<div className="flex items-center">
@@ -73,9 +68,7 @@ export const AnamnesisVoiceInput: React.FC<AnamnesisVoiceInputProps> = ({
 							context="visit"
 							sterileMode={false}
 							className="p-1"
-							onResult={(text) =>
-								setCustomNotes((prev) => (prev ? `${prev} ${text}` : text))
-							}
+							onResult={(text) => setCustomNotes((prev) => (prev ? `${prev} ${text}` : text))}
 						/>
 					</div>
 				</div>
@@ -90,42 +83,10 @@ export const AnamnesisVoiceInput: React.FC<AnamnesisVoiceInputProps> = ({
 				/>
 			</div>
 
-			{/* ═══ НИЖНЯЯ ПАНЕЛЬ ДЕЙСТВИЙ (0 DISABLED КНОПОК) ═══ */}
-			<div className="flex items-center justify-between gap-3 pt-3 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 flex-wrap">
-				<button
-					type="button"
-					onClick={onApplyPhysiologicalNorm}
-					className="anamnesis-top-btn anamnesis-top-btn--secondary"
-					title="Сбросить все риски до физиологической нормы"
-				>
-					<RotateCcw className="w-3.5 h-3.5 text-slate-500" />
-					<span>Сброс в норму</span>
-				</button>
-
-				<div className="flex items-center gap-2">
-					<button
-						type="button"
-						onClick={onApplyToDiary}
-						className="anamnesis-top-btn anamnesis-top-btn--secondary"
-						data-testid="sync-anamnesis-btn"
-						title="Перенести текущие данные анамнеза в дневник приёма"
-					>
-						<Activity className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-						<span>В дневник приёма</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={onApplyToDiary}
-						className="anamnesis-top-btn anamnesis-top-btn--primary"
-						data-testid="btn-save-anamnesis-to-patient"
-						title="Сохранить анамнез и аллергии в медицинскую карту пациента"
-					>
-						<Save className="w-3.5 h-3.5" />
-						<span>Сохранить в медкарту</span>
-					</button>
-				</div>
-			</div>
+			<AnamnesisBottomBar
+				onApplyPhysiologicalNorm={onApplyPhysiologicalNorm}
+				onApplyToDiary={onApplyToDiary}
+			/>
 		</>
 	);
 };

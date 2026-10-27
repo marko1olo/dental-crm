@@ -77,7 +77,7 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 				visitId={visitId}
 				diaryId={logic.diaryId}
 				isLocked={logic.isLocked}
-				handlePrintPhotosChange={(p) => modals.setPrintPhotos(p)}
+				handlePrintPhotosChange={modals.setPrintPhotos}
 			/>
 
 			<VisitDiaryActionsFooter

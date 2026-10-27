@@ -1,20 +1,12 @@
 /**
  * apps/web/src/components/visit/anamnesisTab/SomaticQuickNormBar.tsx
  *
- * Layer 1: Панель быстрых пресетов «Физиологическая норма», заголовок,
- * вызов клинических шаблонов и статусный баннер соматической безопасности.
+ * Layer 1: Панель быстрых пресетов «Физиологическая норма», заголовок и безопасность.
  */
 
 import React from "react";
-import {
-	AlertCircle,
-	AlertOctagon,
-	Plus,
-	ShieldAlert,
-	ShieldCheck,
-	Sparkles,
-	Stethoscope,
-} from "lucide-react";
+import { Plus, ShieldAlert, ShieldCheck, Sparkles, Stethoscope } from "lucide-react";
+import { SomaticSafetyBanner } from "./SomaticSafetyBanner";
 
 export interface SomaticQuickNormBarProps {
 	readonly activePat?: { fullName?: string } | null | undefined;
@@ -23,6 +15,7 @@ export interface SomaticQuickNormBarProps {
 	readonly selectedAllergies: Record<string, string>;
 	readonly selectedAllergyCount: number;
 	readonly onOpenStomxTemplates?: (() => void) | undefined;
+	readonly onOpenClinicalTemplates?: (() => void) | undefined;
 	readonly onApplyPhysiologicalNorm: () => void;
 	readonly onApplyToDiary: () => void;
 }
@@ -34,24 +27,28 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 	selectedAllergies,
 	selectedAllergyCount,
 	onOpenStomxTemplates,
+	onOpenClinicalTemplates,
 	onApplyPhysiologicalNorm,
 	onApplyToDiary,
 }) => {
+	const openTemplates = onOpenClinicalTemplates ?? onOpenStomxTemplates ?? (() => {
+		window.dispatchEvent(new CustomEvent("dente-open-clinical-templates"));
+		window.dispatchEvent(new CustomEvent("dente-open-stomx-templates"));
+	});
+
+	const hasAlerts = selectedRisks.length > 0 || selectedAllergyCount > 0;
+	const iconBg = totalCriticalAlerts
+		? "bg-rose-50 dark:bg-rose-950/40 text-[#ef4444] border-2 border-[#ef4444]"
+		: hasAlerts
+			? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700"
+			: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800";
+
 	return (
 		<>
-			{/* Top Bar: Заголовок и главные CTA кнопки */}
 			<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3.5 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800">
 				<div className="flex items-center gap-3">
-					<div
-						className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border shrink-0 transition-colors ${
-							totalCriticalAlerts
-								? "bg-rose-50 dark:bg-rose-950/40 text-[#ef4444] border-2 border-[#ef4444]"
-								: selectedRisks.length > 0 || selectedAllergyCount > 0
-									? "bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 border-amber-300 dark:border-amber-700"
-									: "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border-emerald-200 dark:border-emerald-800"
-						}`}
-					>
-						{selectedRisks.length === 0 && selectedAllergyCount === 0 ? (
+					<div className={`flex items-center justify-center w-9 h-9 sm:w-10 sm:h-10 rounded-xl border shrink-0 transition-colors ${iconBg}`}>
+						{!hasAlerts ? (
 							<ShieldCheck className="w-5 h-5" />
 						) : totalCriticalAlerts ? (
 							<ShieldAlert className="w-5 h-5" />
@@ -73,13 +70,7 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 				<div className="flex items-center gap-2 flex-wrap shrink-0">
 					<button
 						type="button"
-						onClick={
-							onOpenStomxTemplates ??
-							(() =>
-								window.dispatchEvent(
-									new CustomEvent("dente-open-stomx-templates"),
-								))
-						}
+						onClick={openTemplates}
 						className="anamnesis-top-btn anamnesis-top-btn--teal"
 						data-testid="btn-open-stomt-templates-anamnesis"
 						title="Открыть каталог клинических шаблонов (Терапия, Ортопедия, Хирургия, Имплантология, Пародонтология)"
@@ -89,7 +80,6 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 						<span>Клинические шаблоны (448)</span>
 					</button>
 
-					{/* 1-Click Кнопка соматической нормы */}
 					<button
 						type="button"
 						onClick={onApplyPhysiologicalNorm}
@@ -114,46 +104,12 @@ export const SomaticQuickNormBar: React.FC<SomaticQuickNormBarProps> = ({
 				</div>
 			</div>
 
-			{/* Статусный баннер: Анатомический красный (#ef4444) или Спокойный Изумрудный */}
-			{totalCriticalAlerts ? (
-				<div
-					className="flex items-center gap-3 p-3 rounded-xl bg-rose-50 dark:bg-rose-950/40 border-2 border-[#ef4444] text-rose-950 dark:text-rose-100 text-xs shadow-xs select-none"
-					data-testid="visit-anamnesis-critical-alert"
-					role="alert"
-					title="Клинические стоп-факторы безопасности у кресла (Медицинская карта приёма)"
-				>
-					<AlertOctagon className="w-5 h-5 text-[#ef4444] shrink-0" />
-					<div className="flex flex-col gap-0.5 min-w-0">
-						<span className="font-bold text-[#ef4444]">
-							Клинические стоп-факторы безопасности у кресла:
-						</span>
-						<span className="text-[11.5px] text-rose-900 dark:text-rose-200">
-							{selectedAllergyCount > 0
-								? `Аллергии: ${Object.entries(selectedAllergies).map(([a, r]) => `${a} (${r})`).join(", ")}. `
-								: ""}
-							{selectedRisks.length > 0
-								? `Соматические риски: ${selectedRisks.join(", ")}. `
-								: ""}
-							Обязательна коррекция местного анестетика, профилактика анафилаксии, оценка риска кровотечения и остеонекроза челюсти (БОНЧ).
-						</span>
-					</div>
-				</div>
-			) : selectedRisks.length > 0 || selectedAllergyCount > 0 ? (
-				<div
-					className="flex items-center gap-2.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30 border border-amber-300 dark:border-amber-700 text-amber-950 dark:text-amber-200 text-xs font-semibold"
-					data-testid="visit-anamnesis-alert-banner"
-				>
-					<AlertCircle className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
-					<span>
-						Отмечены соматические особенности:{" "}
-						{selectedRisks.join(", ")}
-						{selectedAllergyCount > 0
-							? `; Аллергии: ${Object.keys(selectedAllergies).join(", ")}`
-							: ""}
-						. Учитывать при премедикации и выборе концентрации вазоконстриктора.
-					</span>
-				</div>
-			) : null}
+			<SomaticSafetyBanner
+				totalCriticalAlerts={totalCriticalAlerts}
+				selectedRisks={selectedRisks}
+				selectedAllergies={selectedAllergies}
+				selectedAllergyCount={selectedAllergyCount}
+			/>
 		</>
 	);
 };

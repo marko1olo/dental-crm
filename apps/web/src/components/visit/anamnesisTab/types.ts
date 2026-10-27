@@ -1,20 +1,7 @@
 /**
  * apps/web/src/components/visit/anamnesisTab/types.ts
- *
- * Layer 0: Доменные типы, интерфейсы и клинические каталоги вкладки анамнеза приёма.
- * Соответствует Приказу Минздрава РФ № 834н, Форме 043/у и стандартам СтАР.
- *
- * data-testid="visit-anamnesis-tab"
+ * Layer 0: Доменные типы, интерфейсы и клинические каталоги вкладки анамнеза приёма (Мандат 8b, <= 120 строк).
  */
-
-export interface VisitAnamnesisTabProps {
-	readonly onAppendAnamnesis?: ((text: string) => void) | undefined;
-	readonly onAppendComorbidities?: ((text: string) => void) | undefined;
-	readonly activeTooth?: number | null | undefined;
-	readonly onOpenStomxTemplates?: (() => void) | undefined;
-}
-
-// ─── 1. АЛЛЕРГОЛОГИЧЕСКИЙ КАТАЛОГ СТОМАТОЛОГА (SSOT ИЗ @dental/shared) ──────
 
 import {
 	ALLERGY_REACTIONS,
@@ -26,11 +13,16 @@ import {
 
 export { ALLERGY_REACTIONS };
 
+export interface VisitAnamnesisTabProps {
+	readonly onAppendAnamnesis?: ((text: string) => void) | undefined;
+	readonly onAppendComorbidities?: ((text: string) => void) | undefined;
+	readonly activeTooth?: number | null | undefined;
+	readonly onOpenClinicalTemplates?: (() => void) | undefined;
+	readonly onOpenStomxTemplates?: (() => void) | undefined;
+}
+
 export type AllergenItem = DentalAllergenDefinition;
-
 export const DENTAL_ALLERGENS: readonly AllergenItem[] = DENTAL_ALLERGEN_CATALOG;
-
-// ─── 2. КРИТИЧЕСКИЕ СТОП-ФАКТОРЫ И СОМАТИКА (SSOT ИЗ @dental/shared) ────────
 
 export interface SomaticStopFactorItem {
 	readonly id: string;
@@ -47,8 +39,6 @@ export const SOMATIC_STOP_FACTORS: readonly SomaticStopFactorItem[] =
 		hint: item.hint,
 	}));
 
-// ─── 3. СТОМАТОЛОГИЧЕСКИЙ АНАМНЕЗ ────────────────────────────────────────
-
 export interface DentalHistoryItem {
 	readonly id: string;
 	readonly label: string;
@@ -57,36 +47,19 @@ export interface DentalHistoryItem {
 
 export const DENTAL_HISTORY_ITEMS: readonly DentalHistoryItem[] = [
 	{ id: "anes_good", label: "Опыт анестезии положительный (без осложнений)" },
-	{
-		id: "anes_bad",
-		label: "Осложнения при анестезии (коллапс / реакция)",
-		isAlert: true,
-	},
+	{ id: "anes_bad", label: "Осложнения при анестезии (коллапс / реакция)", isAlert: true },
 	{ id: "anes_weak", label: "Анестезия действует слабо / не наступает" },
 	{ id: "sedation", label: "Ранее лечился под седацией / наркозом" },
-	{
-		id: "bleed_past",
-		label: "Длительное кровотечение после удалений",
-		isAlert: true,
-	},
+	{ id: "bleed_past", label: "Длительное кровотечение после удалений", isAlert: true },
 	{ id: "alveolitis", label: "Альвеолит в анамнезе (воспаление лунки)" },
-	{
-		id: "dentophobia",
-		label: "Дентофобия (страх лечения, панические атаки)",
-		isAlert: true,
-	},
-	{
-		id: "bruxism",
-		label: "Бруксизм / гипертонус мышц / стираемость",
-	},
+	{ id: "dentophobia", label: "Дентофобия (страх лечения, панические атаки)", isAlert: true },
+	{ id: "bruxism", label: "Бруксизм / гипертонус мышц / стираемость" },
 	{ id: "bleeding_gums", label: "Кровоточивость десен при чистке" },
 	{ id: "implants_present", label: "Наличие дентальных имплантатов" },
 	{ id: "crowns_present", label: "Наличие коронок / мостовидных протезов" },
 	{ id: "ortho_braces", label: "Ортодонтическое лечение (брекеты / элайнеры)" },
 	{ id: "removable_denture", label: "Съемные протезы (бюгель / пластинка)" },
 ] as const;
-
-// ─── 4. ОСНОВНЫЕ ЖАЛОБЫ ПАЦИЕНТА ─────────────────────────────────────────
 
 export const PATIENT_COMPLAINTS_LIST = [
 	"Острая самопроизвольная боль",
@@ -103,11 +76,7 @@ export const PATIENT_COMPLAINTS_LIST = [
 	"Плановый осмотр (жалоб нет)",
 ] as const;
 
-export type PregnancyTrimester =
-	| "trimester_1"
-	| "trimester_2"
-	| "trimester_3"
-	| "lactation";
+export type PregnancyTrimester = "trimester_1" | "trimester_2" | "trimester_3" | "lactation";
 
 export interface AnamnesisDraftPayload {
 	selectedAllergies: Record<string, string>;
