@@ -1,4 +1,4 @@
-import { CheckCircle2 } from "lucide-react";
+import { UserCheck } from "lucide-react";
 
 export interface CryptoProPinSignSectionProps {
 	lockInProgress: boolean;
@@ -10,29 +10,27 @@ export interface CryptoProPinSignSectionProps {
 
 export function CryptoProPinSignSection({
 	lockInProgress,
-	handleSessionLock,
 	pinCode,
 	setPinCode,
 	setFailureText,
 }: CryptoProPinSignSectionProps) {
 	return (
-		<div className="mb-6">
-			<button
-				type="button"
-				onClick={handleSessionLock}
-				disabled={lockInProgress}
-				data-testid="diary-one-click-session-sign-btn"
-				className="w-full mb-4 px-4 py-3 bg-[var(--teal-fill,var(--teal))] hover:bg-[var(--teal-dark,var(--teal))] text-[var(--on-teal,white)] font-semibold rounded-xl transition-colors shadow-sm disabled:opacity-60 flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
-			>
-				<CheckCircle2 className="w-4 h-4 shrink-0" />
-				<span>Подписать и закрыть приём (1 клик)</span>
-			</button>
+		<div className="mb-4">
+			<div className="p-3.5 mb-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)] leading-relaxed">
+				<div className="font-semibold text-[var(--ink)] mb-1 flex items-center gap-1.5 text-sm">
+					<UserCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
+					<span>Подписание активной сессией врача</span>
+				</div>
+				<p>
+					Вы вошли в смену. Нажмите <strong>«Подписать дневник»</strong> внизу для заверения в 1 клик без лишних паролей.
+				</p>
+			</div>
 
 			<label
 				htmlFor="cryptopro-pincode"
 				className="block text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wider"
 			>
-				Или подтвердите ПИН-кодом смены (опционально)
+				ПИН-код сотрудника (опционально)
 			</label>
 			<input
 				id="cryptopro-pincode"
