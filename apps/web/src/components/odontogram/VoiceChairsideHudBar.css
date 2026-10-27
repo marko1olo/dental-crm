@@ -1,0 +1,41 @@
+/**
+ * VoiceChairsideHudBar.css — Chairside Hands-Free Sterile Voice HUD Styling.
+ * Apple HIG Touch Ergonomics, Natural Thumb Zone, Safe Area Insets.
+ */
+
+.dente-voice-hud-bar {
+	position: fixed;
+	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 99990;
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-height: 52px;
+	padding: 0 8px 0 12px;
+	background: var(--paper-strong, #1f2937);
+	color: var(--ink, #f9fafb);
+	border: 1px solid var(--line, #374151);
+	border-radius: 26px;
+	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	font-size: 13px;
+	font-family: inherit;
+	pointer-events: auto;
+	max-width: calc(100vw - 32px);
+	transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dente-voice-hud-bar--listening {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 8px 32px rgba(13, 148, 136, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+@media (max-width: 768px) {
+	.dente-voice-hud-bar {
+		bottom: calc(74px + env(safe-area-inset-bottom, 0px));
+		max-width: calc(100vw - 20px);
+		gap: 6px;
+		padding: 0 6px 0 8px;
+	}
+}

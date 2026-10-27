@@ -11,59 +11,59 @@ describe("VoiceOfflineQueue: IndexedDB / In-Memory Resilient Storage", () => {
 	it("correctly formats Russian pluralization for restored dictation badges", () => {
 		assert.strictEqual(
 			formatRestoredDictationsBadge(1),
-			"📡 Восстановлено 1 надиктованное сообщение после обрыва сети",
+			"Восстановлено 1 надиктованное сообщение после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(2),
-			"📡 Восстановлено 2 надиктованных сообщения после обрыва сети",
+			"Восстановлено 2 надиктованных сообщения после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(3),
-			"📡 Восстановлено 3 надиктованных сообщения после обрыва сети",
+			"Восстановлено 3 надиктованных сообщения после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(4),
-			"📡 Восстановлено 4 надиктованных сообщения после обрыва сети",
+			"Восстановлено 4 надиктованных сообщения после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(5),
-			"📡 Восстановлено 5 надиктованных сообщений после обрыва сети",
+			"Восстановлено 5 надиктованных сообщений после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(11),
-			"📡 Восстановлено 11 надиктованных сообщений после обрыва сети",
+			"Восстановлено 11 надиктованных сообщений после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(12),
-			"📡 Восстановлено 12 надиктованных сообщений после обрыва сети",
+			"Восстановлено 12 надиктованных сообщений после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(14),
-			"📡 Восстановлено 14 надиктованных сообщений после обрыва сети",
+			"Восстановлено 14 надиктованных сообщений после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(21),
-			"📡 Восстановлено 21 надиктованное сообщение после обрыва сети",
+			"Восстановлено 21 надиктованное сообщение после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(22),
-			"📡 Восстановлено 22 надиктованных сообщения после обрыва сети",
+			"Восстановлено 22 надиктованных сообщения после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(25),
-			"📡 Восстановлено 25 надиктованных сообщений после обрыва сети",
+			"Восстановлено 25 надиктованных сообщений после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(101),
-			"📡 Восстановлено 101 надиктованное сообщение после обрыва сети",
+			"Восстановлено 101 надиктованное сообщение после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(102),
-			"📡 Восстановлено 102 надиктованных сообщения после обрыва сети",
+			"Восстановлено 102 надиктованных сообщения после обрыва сети",
 		);
 		assert.strictEqual(
 			formatRestoredDictationsBadge(111),
-			"📡 Восстановлено 111 надиктованных сообщений после обрыва сети",
+			"Восстановлено 111 надиктованных сообщений после обрыва сети",
 		);
 	});
 
@@ -219,7 +219,7 @@ describe("VoiceOfflineQueue: IndexedDB / In-Memory Resilient Storage", () => {
 		assert.strictEqual(badgeMessages.length, 1);
 		assert.strictEqual(
 			badgeMessages[0],
-			"📡 Восстановлено 2 надиктованных сообщения после обрыва сети",
+			"Восстановлено 2 надиктованных сообщения после обрыва сети",
 		);
 
 		const pendingAfter = await queue.getPending();
