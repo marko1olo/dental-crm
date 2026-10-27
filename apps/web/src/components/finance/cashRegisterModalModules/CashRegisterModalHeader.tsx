@@ -27,7 +27,7 @@ export const CashRegisterModalHeader: React.FC<
 	<div className="p-4 sm:p-5 border-b border-[var(--line)] flex items-center justify-between gap-3 bg-[var(--paper-soft)] shrink-0">
 		<div className="flex items-center gap-3">
 			<div
-				className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isShiftActive ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400" : "bg-amber-500/15 text-amber-600 dark:text-amber-400"}`}
+				className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${isShiftActive ? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)]" : "bg-[var(--paper-soft)] text-[var(--muted)]"}`}
 			>
 				<ShieldCheck size={22} />
 			</div>
@@ -38,7 +38,7 @@ export const CashRegisterModalHeader: React.FC<
 				>
 					<span>Кассовая смена</span>
 					<span
-						className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${isShiftActive ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" : "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30"}`}
+						className={`text-xs px-2.5 py-0.5 rounded-full font-bold border ${isShiftActive ? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal-strong,#0f766e)] dark:text-[var(--teal,#2dd4bf)] border-[var(--teal,#0d9488)]/30" : "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]"}`}
 					>
 						{isShiftActive ? `Смена №${shiftNumber} активна` : "Смена закрыта"}
 					</span>
@@ -57,7 +57,7 @@ export const CashRegisterModalHeader: React.FC<
 					<button
 						type="button"
 						onClick={() => setActiveTab("reconciliation")}
-						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "reconciliation" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+						className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "reconciliation" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] border border-transparent"}`}
 						data-testid="tab-reconciliation"
 					>
 						Сверка итогов
@@ -65,7 +65,7 @@ export const CashRegisterModalHeader: React.FC<
 					<button
 						type="button"
 						onClick={() => setActiveTab("drawer")}
-						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "drawer" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+						className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "drawer" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] border border-transparent"}`}
 						data-testid="tab-drawer"
 					>
 						Кассовый ящик
@@ -73,7 +73,7 @@ export const CashRegisterModalHeader: React.FC<
 					<button
 						type="button"
 						onClick={() => setActiveTab("tape")}
-						className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "tape" ? "bg-[var(--teal)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"}`}
+						className={`min-h-[32px] px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${activeTab === "tape" ? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] border border-transparent"}`}
 						data-testid="tab-tape"
 					>
 						Чековая лента

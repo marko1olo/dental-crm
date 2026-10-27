@@ -4,8 +4,7 @@
  * Decomposed into ./paymentModalModules/ in strict compliance with Mandate 8b (<= 120 lines facade).
  */
 
-import type React from "react";
-import { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { calculatePaymentDiscount, type PaymentDiscountCalculation } from "./cashboxOperations.js";
 import { generateActPrintHtml, generateInvoicePrintHtml } from "./modal/payment/paymentModalPrintHtml.js";
@@ -41,6 +40,15 @@ export const PaymentModal: React.FC<PaymentModalProps> = (props) => {
 	const [showReceiptSidePanel, setShowReceiptSidePanel] = useState<boolean>(true);
 	const [mobileTab, setMobileTab] = useState<"checkout" | "receipt">("checkout");
 	const { rawTotalDueRub, effectiveCashier, discountsHook, tendersHook, execHook } = usePaymentModalLogic(props);
+
+	useEffect(() => {
+		if (!isOpen) return;
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if (e.key === "Escape") onClose();
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, [isOpen, onClose]);
 
 	if (!isOpen) return null;
 

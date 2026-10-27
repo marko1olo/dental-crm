@@ -33,8 +33,8 @@ export function CashboxDoctorDiscountsRow({
 
 				<button
 					type="button"
-					className={`h-[30px] px-2.5 rounded-lg text-xs font-semibold border cursor-pointer ${
-						isWarranty ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-[30px] px-2.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${
+						isWarranty ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => {
 						setIsWarranty(!isWarranty);
@@ -46,8 +46,8 @@ export function CashboxDoctorDiscountsRow({
 
 				<button
 					type="button"
-					className={`h-[30px] px-2.5 rounded-lg text-xs font-semibold border cursor-pointer ${
-						isStaffColleague ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+					className={`min-h-[44px] sm:min-h-[32px] sm:h-[30px] px-2.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${
+						isStaffColleague ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 					}`}
 					onClick={() => {
 						setIsStaffColleague(!isStaffColleague);
@@ -63,8 +63,8 @@ export function CashboxDoctorDiscountsRow({
 						<button
 							key={pct}
 							type="button"
-							className={`h-[30px] px-2.5 rounded-lg text-xs font-semibold border cursor-pointer ${
-								active ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
+							className={`min-h-[44px] sm:min-h-[32px] sm:h-[30px] px-2.5 rounded-lg text-xs font-semibold border cursor-pointer transition-all ${
+								active ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
 							}`}
 							onClick={() => {
 								setDiscountPercent(discountPercent === pct ? 0 : pct);
@@ -80,7 +80,7 @@ export function CashboxDoctorDiscountsRow({
 				{(isWarranty || isStaffColleague || discountPercent > 0) && (
 					<button
 						type="button"
-						className="h-[30px] px-2 rounded-lg text-xs text-[var(--muted)] underline cursor-pointer bg-transparent border-none"
+						className="min-h-[44px] sm:min-h-[32px] sm:h-[30px] px-2 rounded-lg text-xs text-[var(--muted)] hover:text-[var(--ink)] underline cursor-pointer bg-transparent border-none"
 						onClick={onResetDiscount}
 					>
 						Сбросить
@@ -92,7 +92,7 @@ export function CashboxDoctorDiscountsRow({
 				<button
 					type="button"
 					onClick={onOpenRetailModal}
-					className="h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center gap-1.5 font-semibold text-xs cursor-pointer"
+					className="min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 					data-testid="btn-open-retail-showcase"
 					title="Витрина сопутствующих товаров ресепшена (Curaprox, Marvis, подарочные сертификаты)"
 				>

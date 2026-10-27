@@ -35,7 +35,7 @@ export const CashRegisterModalFooter: React.FC<
 			<span>•</span>
 			<span>
 				В ящике:{" "}
-				<strong className="text-teal-700 dark:text-teal-300">
+				<strong className="text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)]">
 					{cashInDrawerRub.toLocaleString("ru-RU")} ₽
 				</strong>
 			</span>
@@ -88,7 +88,7 @@ export const CashRegisterModalFooter: React.FC<
 					type="button"
 					onClick={onCloseShift}
 					aria-busy={isProcessing}
-					className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 sm:px-5 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 flex-2 sm:flex-none text-center"
+					className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 sm:px-5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer shadow-xs active:scale-95 flex-2 sm:flex-none text-center"
 					data-testid="btn-1click-close-shift"
 				>
 					<Lock size={15} className="shrink-0" />

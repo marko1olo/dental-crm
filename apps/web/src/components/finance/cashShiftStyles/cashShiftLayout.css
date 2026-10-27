@@ -57,11 +57,11 @@
 }
 
 .cash-shift-btn-open {
-	background: var(--red, #ef4444);
+	background: var(--teal, #0d9488);
 }
 
 .cash-shift-btn-open:hover {
-	background: #dc2626;
+	background: var(--teal-strong, #0f766e);
 }
 
 .cash-shift-btn-closed {
@@ -69,7 +69,7 @@
 }
 
 .cash-shift-btn-closed:hover {
-	background: #0f766e;
+	background: var(--teal-strong, #0f766e);
 }
 
 .cash-shift-grid {

@@ -30,10 +30,10 @@ export const CashShiftCompactReportsMenu: React.FC<CashShiftCompactReportsMenuPr
 				type="button"
 				onClick={() => setIsReportsMenuOpen((prev) => !prev)}
 				data-testid="btn-shift-reports-menu"
-				className="secondary-button h-8 min-h-[32px] px-2.5 text-[13px] font-semibold flex items-center gap-1 cursor-pointer shrink-0 rounded-lg"
+				className="secondary-button min-h-[44px] sm:min-h-[32px] h-8 px-2.5 text-[13px] font-semibold flex items-center gap-1 cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors"
 				title="Отчёты и экспорт (X-отчет, Ведомость А4, 1С)"
 			>
-				<MoreHorizontal size={14} className="shrink-0" />
+				<MoreHorizontal size={14} className="shrink-0 text-[var(--muted)]" />
 				<span className="hidden md:inline">Отчёты</span>
 			</button>
 
@@ -68,7 +68,7 @@ export const CashShiftCompactReportsMenu: React.FC<CashShiftCompactReportsMenuPr
 					className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 					title="Печать сводной бухгалтерской ведомости А4"
 				>
-					<FileText size={13} className="shrink-0 text-[var(--teal)]" />
+					<FileText size={13} className="shrink-0 text-[var(--muted)]" />
 					<span>Ведомость А4</span>
 				</button>
 
@@ -82,7 +82,7 @@ export const CashShiftCompactReportsMenu: React.FC<CashShiftCompactReportsMenuPr
 					className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 					title="Выгрузить данные смены для 1С:Бухгалтерии"
 				>
-					<FileSpreadsheet size={13} className="shrink-0 text-[var(--brand)]" />
+					<FileSpreadsheet size={13} className="shrink-0 text-[var(--muted)]" />
 					<span>Экспорт в 1С (CSV)</span>
 				</button>
 
@@ -96,7 +96,7 @@ export const CashShiftCompactReportsMenu: React.FC<CashShiftCompactReportsMenuPr
 					className="w-full text-left px-2.5 py-1.5 text-xs font-medium rounded hover:bg-[var(--paper-soft)] flex items-center gap-2 cursor-pointer text-[var(--ink)]"
 					title="Открыть кассу клиники (сверка наличности, X/Z-лента)"
 				>
-					<Zap size={13} className="shrink-0 text-[var(--warning-fg,#b45309)]" />
+					<Zap size={13} className="shrink-0 text-[var(--muted)]" />
 					<span>Касса клиники</span>
 				</button>
 			</div>

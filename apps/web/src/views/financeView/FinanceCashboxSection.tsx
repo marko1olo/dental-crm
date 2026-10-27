@@ -24,12 +24,6 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 			showToast("Выберите пациента в картотеке — оплата проводится на конкретного пациента.", "warning");
 			return;
 		}
-		if (!(summaryAmount > 0)) {
-			showToast("Укажите сумму к оплате в форме ниже.", "info");
-			setShowManualForm(true);
-			s.focusPaymentCapture?.();
-			return;
-		}
 		setIsPaymentModalOpen(true);
 	};
 

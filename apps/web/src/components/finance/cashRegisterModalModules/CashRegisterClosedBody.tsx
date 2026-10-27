@@ -28,7 +28,7 @@ export const CashRegisterClosedBody: React.FC<CashRegisterClosedBodyProps> = ({
 				type="button"
 				onClick={onOpenShift}
 				aria-busy={isProcessing}
-				className="min-h-[44px] px-6 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center gap-2"
+				className="primary-button min-h-[44px] px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-sm shadow-md transition-all cursor-pointer flex items-center gap-2 active:scale-[0.99]"
 				data-testid="btn-1click-open-shift"
 			>
 				<Unlock size={16} />

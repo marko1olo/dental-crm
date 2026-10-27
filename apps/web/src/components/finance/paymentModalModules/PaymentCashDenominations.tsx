@@ -20,7 +20,7 @@ export const PaymentCashDenominations: React.FC<PaymentCashDenominationsProps> =
 				<button
 					type="button"
 					onClick={() => setReceivedCashRub(0)}
-					className="text-[11px] text-rose-600 dark:text-rose-400 font-bold hover:underline cursor-pointer bg-transparent border-0 shadow-none p-0"
+					className="text-[11px] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] font-bold hover:underline cursor-pointer bg-transparent border-0 shadow-none p-0"
 					data-testid="btn-cash-reset"
 				>
 					Сброс (0 ₽)

@@ -20,7 +20,7 @@ export const PaymentCashCalculator: React.FC<PaymentCashCalculatorProps> = ({
 	return (
 		<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] space-y-2.5">
 			<div className="flex items-center gap-2.5">
-				<div className="w-9 h-9 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+				<div className="w-9 h-9 rounded-xl bg-[var(--teal-surface,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] flex items-center justify-center shrink-0">
 					<Banknote size={18} />
 				</div>
 				<div>
@@ -42,7 +42,7 @@ export const PaymentCashCalculator: React.FC<PaymentCashCalculatorProps> = ({
 					<button
 						type="button"
 						onClick={() => setReceivedCashRub(totalDueRub)}
-						className="text-[11px] font-bold text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer flex items-center gap-1 bg-transparent border-0 shadow-none p-0"
+						className="text-[11px] font-bold text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] hover:underline cursor-pointer flex items-center gap-1 bg-transparent border-0 shadow-none p-0"
 						data-testid="btn-cash-exact-amount"
 					>
 						<Coins size={12} />
@@ -57,16 +57,16 @@ export const PaymentCashCalculator: React.FC<PaymentCashCalculatorProps> = ({
 						value={receivedCashRub || ""}
 						onChange={(e) => setReceivedCashRub(Math.max(0, parseFloat(e.target.value) || 0))}
 						placeholder="0 ₽"
-						className="h-10 sm:h-9.5 w-full px-3 text-lg sm:text-base font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink,#0f172a)] outline-none focus:border-emerald-500 shadow-2xs"
+						className="h-10 sm:h-9.5 w-full px-3 text-lg sm:text-base font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,#0d9488)] shadow-2xs"
 						data-testid="input-cash-received"
 					/>
 					<button
 						type="button"
 						onClick={() => setReceivedCashRub(totalDueRub)}
-						className="cash-quick-match-btn min-h-[38px]"
+						className="cash-quick-match-btn min-h-[44px] sm:min-h-[36px]"
 						title="Внести сумму ровно без сдачи"
 					>
-						<Zap size={15} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
+						<Zap size={15} className="text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)] shrink-0" />
 						<span>Без сдачи</span>
 					</button>
 				</div>

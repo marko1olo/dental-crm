@@ -29,9 +29,9 @@ export function FinanceToolbarLeft({
 			<button
 				type="button"
 				onClick={onToggleCashShift}
-				className={`inline-flex items-center gap-1.5 px-2 py-1 sm:py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none ${
+				className={`inline-flex items-center gap-1.5 px-2 py-1 sm:py-0.5 rounded-lg text-xs font-semibold border transition-all cursor-pointer shrink-0 select-none min-h-[44px] sm:min-h-[28px] ${
 					isCashShiftOpen
-						? "bg-amber-500/15 border-amber-500/40 text-amber-700 dark:text-amber-300"
+						? "bg-[var(--teal-surface,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal-strong,#0f766e)] dark:text-[var(--teal,#2dd4bf)]"
 						: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--line-strong,rgba(0,0,0,0.15))]"
 				}`}
 				title={

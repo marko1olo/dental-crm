@@ -19,7 +19,7 @@ export const PaymentDoctorDiscountsBar: React.FC<PaymentDoctorDiscountsBarProps>
 		<div className="p-2.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] space-y-2 text-xs" data-testid="payment-modal-presets-bar">
 			<div className="flex items-center justify-between gap-2 flex-wrap">
 				<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
-					<Percent size={14} className="text-amber-500 shrink-0" />
+					<Percent size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Скидки врача:</span>
 				</div>
 				<div className="flex items-center gap-1.5">
@@ -35,7 +35,7 @@ export const PaymentDoctorDiscountsBar: React.FC<PaymentDoctorDiscountsBarProps>
 						value={discountsHook.discountPercent || ""}
 						onChange={(e) => discountsHook.handleCustomPercentChange(parseFloat(e.target.value) || 0)}
 						placeholder="0%"
-						className="h-7.5 w-16 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-amber-500 shadow-2xs"
+						className="h-7.5 w-16 px-2 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,#0d9488)] shadow-2xs"
 						data-testid="input-discount-custom-percent"
 					/>
 				</div>
@@ -54,7 +54,7 @@ export const PaymentDoctorDiscountsBar: React.FC<PaymentDoctorDiscountsBarProps>
 							data-testid={p.testId}
 							title={p.title}
 						>
-							{p.percent > 0 && <Percent size={11} className={isActive ? "text-white" : "text-amber-600 dark:text-amber-400"} />}
+							{p.percent > 0 && <Percent size={11} className={isActive ? "text-white" : "text-[var(--teal,#0d9488)] dark:text-[var(--teal,#2dd4bf)]"} />}
 							<span>{p.label}</span>
 						</button>
 					);

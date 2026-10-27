@@ -44,7 +44,7 @@ export function PendingCheckoutBanner({
 					<button
 						type="button"
 						onClick={onOpenSplitPayment}
-						className="primary-button min-h-[28px] h-[28px] px-2.5 py-0 text-xs font-bold bg-teal-600 hover:bg-teal-700 text-white rounded-lg flex items-center gap-1 shadow-xs cursor-pointer select-none"
+						className="primary-button min-h-[44px] sm:min-h-[32px] sm:h-8 px-3 py-0 text-xs font-bold bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white rounded-lg flex items-center gap-1 shadow-xs cursor-pointer select-none active:scale-[0.99] transition-all"
 						data-testid="btn-pay-pending-checkout"
 					>
 						<span>Оплатить в кассе</span>

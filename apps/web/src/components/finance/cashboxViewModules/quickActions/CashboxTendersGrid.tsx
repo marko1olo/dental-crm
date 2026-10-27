@@ -47,26 +47,26 @@ export function CashboxTendersGrid({
 					<>
 						<button
 							type="button"
-							className="h-10 px-3 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white inline-flex items-center justify-center gap-1.5 font-bold text-xs cursor-pointer"
+							className="min-h-[44px] sm:min-h-[38px] h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 							onClick={() => { onAllocateAll("card"); onOpenPaymentWithMethod("card_terminal"); }}
 						>
-							<CreditCard className="w-4 h-4 shrink-0" />
+							<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 							<span>Всё картой</span>
 						</button>
 						<button
 							type="button"
-							className="h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer"
+							className="min-h-[44px] sm:min-h-[38px] h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 							onClick={() => { onAllocateAll("cash"); onOpenPaymentWithMethod("cash"); }}
 						>
-							<Banknote className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<Banknote className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 							<span>Всё наличными</span>
 						</button>
 						<button
 							type="button"
-							className="h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer"
+							className="min-h-[44px] sm:min-h-[38px] h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 							onClick={() => { onAllocateAll("sbp"); onOpenPaymentWithMethod("sbp_qr"); }}
 						>
-							<QrCode className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+							<QrCode className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 							<span>Всё по СБП</span>
 						</button>
 					</>
@@ -74,34 +74,34 @@ export function CashboxTendersGrid({
 
 				<button
 					type="button"
-					className="h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer"
+					className="min-h-[44px] sm:min-h-[38px] h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 					onClick={() => onOpenPaymentWithMethod("card_terminal")}
 					data-testid="btn-open-fast-checkout-modal"
 					title="Оформление оплаты и кассового чека"
 				>
-					<Receipt className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+					<Receipt className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Кассовый чек</span>
 				</button>
 
 				<button
 					type="button"
-					className="h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer"
+					className="min-h-[44px] sm:min-h-[38px] h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 					onClick={() => onOpenPaymentWithMethod("split")}
 					data-testid="btn-open-split-modal"
 					title="Комбинированная смешанная оплата (несколько способов)"
 				>
-					<Layers className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+					<Layers className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Смешанная оплата</span>
 				</button>
 
 				<button
 					type="button"
-					className="h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer"
+					className="min-h-[44px] sm:min-h-[38px] h-10 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-1.5 font-semibold text-xs cursor-pointer transition-colors"
 					onClick={() => onOpenPaymentWithMethod("split")}
 					data-testid="btn-open-payment-modal"
 					title="Универсальное окно смешанной оплаты и терминала"
 				>
-					<Sparkles className="w-4 h-4 text-[var(--teal,var(--brand-primary))] shrink-0" />
+					<Sparkles className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
 					<span>Терминал / Сплит</span>
 				</button>
 			</div>

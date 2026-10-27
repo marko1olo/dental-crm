@@ -57,7 +57,8 @@ export const CashboxQuickCard: React.FC<CashboxQuickCardProps> = ({
 						title="Принять оплату от пациента"
 					>
 						<span className="sr-only">Принять оплату</span>
-						<span>Принять оплату и выбить чек</span>
+						<span className="hidden sm:inline">Принять оплату и выбить чек</span>
+						<span className="sm:hidden">Оплатить и чек</span>
 					</button>
 					<button
 						type="button"

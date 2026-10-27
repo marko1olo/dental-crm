@@ -53,15 +53,15 @@ export const PaymentHeaderMobile: React.FC<PaymentHeaderMobileProps> = ({
 						</button>
 					</div>
 
-					{/* Close Touch Button (44x44px target) */}
+					{/* Close Touch Button (44x44px touch target) */}
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-8 h-8 rounded-full border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center cursor-pointer transition-colors"
+						className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-full border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] flex items-center justify-center cursor-pointer transition-colors"
 						aria-label="Закрыть шторку оплаты"
 						data-testid="btn-close-payment-modal-mobile"
 					>
-						<X size={16} />
+						<X size={18} />
 					</button>
 				</div>
 			</div>
