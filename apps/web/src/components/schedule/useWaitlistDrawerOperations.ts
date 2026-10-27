@@ -1,115 +1,23 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
-import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
-import { actionFailureToast, type PanelSubject } from "../../lib/panelStateText";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
-import { logger } from "../../utils/logger";
-import { showToast } from "../GlobalToast";
+/**
+ * useWaitlistDrawerOperations.ts — Composed facade hook for waitlist drawer operations.
+ */
+
+import { useEffect } from "react";
 import {
-	type DoctorFreeSlot,
-	deriveClinicWorkingHours,
-	findDoctorFreeSlots,
-} from "./doctorFreeSlotsEngine";
-import {
-	type TargetSlotInfo,
-	type WaitlistCandidateItem,
-	type WaitlistUrgency,
-	URGENCY_CONFIG,
-	generateWaitlistOfferMessage,
-	openTelegramChat,
-	openWhatsAppChat,
-} from "./waitlistCancellationEngine";
-import { DEFAULT_SOLO_CHAIR } from "./ScheduleGrid";
-import { useWebsocket } from "../../hooks/useWebsocket";
+	useWaitlistData,
+	useWaitlistSlotMatching,
+	useWaitlistContactActions,
+	useWaitlistQuickAdd,
+	useWaitlistBooking,
+	type UseWaitlistDrawerOperationsProps,
+} from "./waitlistModules";
 
-const DEMO_SHOWCASE_WAITLIST_CANDIDATES: WaitlistCandidateItem[] = [
-	{
-		id: "demo-waitlist-cand-1",
-		patientId: "demo-patient-volkov",
-		patientName: "Волков Сергей Николаевич",
-		patientPhone: "+7 (916) 111-22-33",
-		preferredDoctorId: "doc-smirnov",
-		preferredDoctorName: "Д-р Смирнов А.П.",
-		priorityLevel: "high",
-		urgency: "acute_pain",
-		treatmentCategory: "Терапия",
-		notes: "Острая боль в области 4.6, просит ближайшее окно к Смирнову",
-		status: "waiting",
-		createdAt: new Date(Date.now() - 3600 * 1000 * 12).toISOString(),
-	},
-	{
-		id: "demo-waitlist-cand-2",
-		patientId: "demo-patient-morozova",
-		patientName: "Морозова Елена Викторовна",
-		patientPhone: "+7 (926) 444-55-66",
-		preferredDoctorId: "doc-smirnov",
-		preferredDoctorName: "Д-р Смирнов А.П.",
-		priorityLevel: "medium",
-		urgency: "ortho_endo",
-		treatmentCategory: "Ортодонтия",
-		notes: "Активация дуги, готова подойти день-в-день",
-		status: "waiting",
-		createdAt: new Date(Date.now() - 3600 * 1000 * 24).toISOString(),
-	},
-];
-
-export function waitlistWriteHeaders(): Record<string, string> {
-	return denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
-}
-
-export async function writeFailureText(
-	response: Response,
-	action: string,
-): Promise<string> {
-	// biome-ignore lint/suspicious/noExplicitAny: error body parsing
-	const body = await response.json().catch((err: any) => {
-		logger.error(err);
-		showToast(
-			actionFailureToast(
-				"Ошибка чтения ответа",
-				(err as { status?: number })?.status ?? null,
-			),
-			"error",
-		);
-		return null;
-	});
-	const serverMessage =
-		body && typeof body.message === "string" ? body.message.trim() : "";
-	if (serverMessage) return serverMessage;
-	if (response.status === 401 || response.status === 403) {
-		return `Не удалось ${action}: требуется вход сотрудника клиники.`;
-	}
-	if (response.status === 404) {
-		return `Не удалось ${action}: запись уже изменена или удалена.`;
-	}
-	if (response.status >= 500) {
-		return `Не удалось ${action}: сервер клиники ответил отказом. Повторите попытку.`;
-	}
-	return `Не удалось ${action}. Повторите попытку.`;
-}
-
-export const WAITLIST_SUBJECT: PanelSubject = {
-	notLoadedTitle: "Очередь ожидания не прочитана",
-	accusative: "очередь ожидания",
-	emptyTitle: "В листе ожидания никто не ждёт",
-	emptyHint:
-		"Пациентов в очереди нет. Добавьте пациента формой ниже за 5 секунд, и при отмене чужой записи система сама предложит его на освободившееся окно.",
-	failureConsequence:
-		"Список ожидания не прочитан. Освободившееся окно можно отдать мимо тех, кто его ждёт.",
-};
-
-export interface UseWaitlistDrawerOperationsProps {
-	readonly isOpen: boolean;
-	readonly targetSlot?: TargetSlotInfo | null | undefined;
-	readonly onBookSlot?:
-		| ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void)
-		| undefined;
-	readonly updateNewAppointmentDraft?: ((key: any, value: any) => void) | undefined;
-	readonly focusNewAppointmentEditor?: (() => void) | undefined;
-	readonly onAppointmentCreated?: (() => void) | undefined;
-	readonly onClose: () => void;
-	readonly dashboard?: any;
-	readonly auth?: any;
-}
+export {
+	waitlistWriteHeaders,
+	writeFailureText,
+	WAITLIST_SUBJECT,
+	type UseWaitlistDrawerOperationsProps,
+} from "./waitlistModules";
 
 export function useWaitlistDrawerOperations({
 	isOpen,
@@ -122,532 +30,55 @@ export function useWaitlistDrawerOperations({
 	dashboard,
 	auth,
 }: UseWaitlistDrawerOperationsProps) {
-	const [items, setItems] = useState<WaitlistCandidateItem[]>([]);
-	const [isLoading, setIsLoading] = useState(false);
-	const [loadFailureStatus, setLoadFailureStatus] = useState<
-		number | null | undefined
-	>(undefined);
-	const [loadingId, setLoadingId] = useState<string | null>(null);
-	const [contactedPatients, setContactedPatients] = useState<Set<string>>(
-		new Set(),
-	);
-	const [bookedItemIds, setBookedItemIds] = useState<Set<string>>(new Set());
-
-	// Quick 5-second Add Patient Form State
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [selectedPatientId, setSelectedPatientId] = useState("");
-	const [quickNewPatientMode, setQuickNewPatientMode] = useState(false);
-	const [quickFullName, setQuickFullName] = useState("");
-	const [quickPhone, setQuickPhone] = useState("");
-	const [preferredDoctorId, setPreferredDoctorId] = useState(
-		targetSlot?.doctorUserId || "",
-	);
-	const [addUrgency, setAddUrgency] = useState<WaitlistUrgency>("acute_pain");
-	const [addPreferredTime, setAddPreferredTime] = useState<string>("any");
-	const [notes, setNotes] = useState("");
-	const [isAddFormOpen, setIsAddFormOpen] = useState(false);
-
-	const staff = dashboard?.clinicSettings?.staff ?? [];
 	const clinicName = dashboard?.clinicSettings?.name || "DENTE";
 
-	// Sync doctor preference if targetSlot changes
+	const {
+		items,
+		isLoading,
+		loadFailureStatus,
+		loadingId: dataLoadingId,
+		fetchWaitlist,
+		handleFulfill,
+		handleDelete,
+	} = useWaitlistData(isOpen, auth);
+
+	const { serverMatchesMap, fallbackFreeSlots } = useWaitlistSlotMatching(
+		isOpen,
+		targetSlot,
+		dashboard,
+		auth,
+	);
+
+	const {
+		contactedPatients,
+		handleSendWhatsApp,
+		handleSendTelegram,
+		handleCopySms,
+	} = useWaitlistContactActions(targetSlot, clinicName);
+
+	const quickAdd = useWaitlistQuickAdd(targetSlot?.doctorUserId || "", fetchWaitlist);
+	const { setPreferredDoctorId } = quickAdd;
+
 	useEffect(() => {
 		if (targetSlot?.doctorUserId) {
 			setPreferredDoctorId(targetSlot.doctorUserId);
 		}
-	}, [targetSlot?.doctorUserId]);
+	}, [targetSlot?.doctorUserId, setPreferredDoctorId]);
 
-	const fetchWaitlist = useCallback(async () => {
-		try {
-			setIsLoading(true);
-			setLoadFailureStatus(undefined);
-			const res = await fetch("/api/waitlist", {
-				headers: auth?.denteClinicalReadHeaders
-					? auth.denteClinicalReadHeaders()
-					: {},
-			});
-			if (res.ok) {
-				const data = await res.json();
-				const list = Array.isArray(data) ? data : [];
-				if (list.length === 0 && isDemoShowcaseMode()) {
-					setItems(DEMO_SHOWCASE_WAITLIST_CANDIDATES);
-				} else {
-					setItems(list);
-				}
-				return;
-			}
-			if (isDemoShowcaseMode()) {
-				setItems(DEMO_SHOWCASE_WAITLIST_CANDIDATES);
-				return;
-			}
-			setLoadFailureStatus(res.status);
-		} catch (e) {
-			logger.error("Failed to load waitlist", e);
-			if (isDemoShowcaseMode()) {
-				setItems(DEMO_SHOWCASE_WAITLIST_CANDIDATES);
-				return;
-			}
-			setLoadFailureStatus(null);
-		} finally {
-			setIsLoading(false);
-		}
-	}, [auth]);
-
-	useEffect(() => {
-		if (isOpen) {
-			fetchWaitlist();
-		}
-	}, [isOpen, fetchWaitlist]);
-
-	// Real-time WebSocket connection to /api/ws/schedule
-	const wsUrl = useMemo(() => {
-		const configured = (
-			import.meta as unknown as { env?: Record<string, string> }
-		).env?.VITE_WS_URL;
-		if (configured) return configured;
-		if (typeof window === "undefined") return "";
-		const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
-		return `${protocol}//${window.location.host}/api/ws/schedule`;
-	}, []);
-
-	const { lastMessage } = useWebsocket(isOpen ? wsUrl : "");
-
-	useEffect(() => {
-		if (!isOpen || !lastMessage?.type) return;
-		if (
-			lastMessage.type === "WAITLIST_UPDATED" ||
-			lastMessage.type === "WAITLIST_DELETED" ||
-			lastMessage.type === "APPOINTMENT_UPDATED"
-		) {
-			fetchWaitlist();
-		}
-	}, [isOpen, lastMessage, fetchWaitlist]);
-
-	// Backend server matches for targeted freed slot
-	const [serverMatchesMap, setServerMatchesMap] = useState<Map<
-		string,
-		{
-			entryId: string;
-			patientId: string;
-			score?: number;
-			matchReasons?: string[];
-			reason?: string;
-			sameDoctor?: boolean;
-			timeFits?: boolean;
-			alreadyBooked?: boolean;
-			waitingDays?: number;
-		}
-	> | null>(null);
-
-	useEffect(() => {
-		const apptId = targetSlot?.appointmentId;
-		if (!apptId || !isOpen) {
-			setServerMatchesMap(null);
-			return;
-		}
-		let isCancelled = false;
-		async function fetchServerMatches() {
-			try {
-				const res = await fetch(
-					`/api/appointments/${encodeURIComponent(apptId!)}/waitlist-matches`,
-					{
-						headers: auth?.denteClinicalReadHeaders
-							? auth.denteClinicalReadHeaders()
-							: {},
-					},
-				);
-				if (res.ok) {
-					const data = await res.json();
-					if (!isCancelled && data && Array.isArray(data.matches)) {
-						const map = new Map<string, any>();
-						for (const m of data.matches) {
-							if (m.entryId) map.set(m.entryId, m);
-							if (m.patientId) map.set(m.patientId, m);
-						}
-						setServerMatchesMap(map);
-					}
-				}
-			} catch (err) {
-				logger.warn("Could not fetch server waitlist matches for target slot:", err);
-			}
-		}
-		void fetchServerMatches();
-		return () => {
-			isCancelled = true;
-		};
-	}, [targetSlot?.appointmentId, isOpen, auth]);
-
-	// 1-Click WhatsApp Direct
-	const handleSendWhatsApp = (item: WaitlistCandidateItem) => {
-		if (!item.patientPhone) {
-			showToast("У пациента не указан номер телефона", "error");
-			return;
-		}
-		const msg = generateWaitlistOfferMessage({
-			patientName: item.patientName,
-			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
-			startsAt: targetSlot?.startsAt || new Date().toISOString(),
-			clinicName,
-		});
-
-		openWhatsAppChat(item.patientPhone, msg);
-		setContactedPatients((prev) => new Set(prev).add(item.id));
-		showToast(
-			`Сообщение WhatsApp подготовлено для ${item.patientName || "пациента"}`,
-			"success",
-		);
-	};
-
-	// 1-Click Telegram Direct
-	const handleSendTelegram = (item: WaitlistCandidateItem) => {
-		if (!item.patientPhone) {
-			showToast("У пациента не указан номер телефона", "error");
-			return;
-		}
-		const msg = generateWaitlistOfferMessage({
-			patientName: item.patientName,
-			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
-			startsAt: targetSlot?.startsAt || new Date().toISOString(),
-			clinicName,
-		});
-
-		openTelegramChat(item.patientPhone, msg);
-		setContactedPatients((prev) => new Set(prev).add(item.id));
-		showToast(
-			`Предложение слота сформировано для Telegram: ${item.patientName || "пациент"}`,
-			"success",
-		);
-	};
-
-	// 1-Click Copy SMS
-	const handleCopySms = (item: WaitlistCandidateItem) => {
-		const msg = generateWaitlistOfferMessage({
-			patientName: item.patientName,
-			doctorName: targetSlot?.doctorName || item.preferredDoctorName,
-			startsAt: targetSlot?.startsAt || new Date().toISOString(),
-			clinicName,
-		});
-
-		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-			void navigator.clipboard.writeText(msg).then(() => {
-				setContactedPatients((prev) => new Set(prev).add(item.id));
-				showToast("Текст сообщения пациенту скопирован в буфер", "success");
-			});
-		}
-	};
-
-	// 1-Click Booking into Freed Target Slot with 152-FZ messaging
-	const handleOneClickBookSlot = async (item: WaitlistCandidateItem) => {
-		if (loadingId === item.id) return;
-		setLoadingId(item.id);
-		try {
-			if (onBookSlot && targetSlot) {
-				await onBookSlot(item, targetSlot);
-			} else if (targetSlot) {
-				if (targetSlot.appointmentId) {
-					const patchRes = await fetch(
-						`/api/appointments/${encodeURIComponent(targetSlot.appointmentId)}`,
-						{
-							method: "PATCH",
-							headers: waitlistWriteHeaders(),
-							body: JSON.stringify({
-								patientId: item.patientId,
-								status: "planned",
-								expectedCurrentStatus: ["cancelled", "no_show"],
-								reason:
-									item.treatmentCategory ||
-									item.notes ||
-									targetSlot.reason ||
-									"Запись из листа ожидания (посадка в окно)",
-								comment: `Посадка из листа ожидания: пациент ${item.patientName || ""}`,
-								assistantUserId: "",
-							}),
-						},
-					);
-
-					if (!patchRes.ok) {
-						const err = await patchRes.json().catch(() => null);
-						showToast(
-							err?.message || "Не удалось занять окно расписания",
-							"error",
-						);
-						return;
-					}
-				} else {
-					const effectiveDoctorUserId =
-						targetSlot.doctorUserId ||
-						item.preferredDoctorId ||
-						auth?.user?.id ||
-						staff.find(
-							// biome-ignore lint/suspicious/noExplicitAny: doctor filtering
-							(s: any) =>
-								s.role === "doctor" ||
-								s.role === "Врач" ||
-								s.role === "admin" ||
-								s.role === "owner",
-						)?.id ||
-						undefined;
-
-					const effectiveChairId =
-						targetSlot.chairId ||
-						dashboard?.clinicSettings?.chairs?.[0]?.id ||
-						dashboard?.chairs?.[0]?.id ||
-						DEFAULT_SOLO_CHAIR.id;
-
-					const postRes = await fetch("/api/appointments", {
-						method: "POST",
-						headers: waitlistWriteHeaders(),
-						body: JSON.stringify({
-							patientId: item.patientId,
-							doctorUserId: effectiveDoctorUserId,
-							chairId: effectiveChairId,
-							startsAt: targetSlot.startsAt,
-							endsAt: targetSlot.endsAt,
-							status: "planned",
-							reason:
-								item.treatmentCategory ||
-								item.notes ||
-								"Запись из листа ожидания",
-							comment: "Запись из листа ожидания",
-							assistantUserId: "",
-							clientMutationId: `waitlist-direct-${Date.now()}`,
-						}),
-					});
-
-					if (!postRes.ok) {
-						const err = await postRes.json().catch(() => null);
-						showToast(
-							err?.message || "Не удалось создать запись на прием",
-							"error",
-						);
-						return;
-					}
-				}
-
-				await fetch(`/api/waitlist/${encodeURIComponent(item.id)}`, {
-					method: "PUT",
-					headers: waitlistWriteHeaders(),
-					body: JSON.stringify({ status: "fulfilled" }),
-				}).catch((e) =>
-					logger.warn("Failed to mark waitlist item fulfilled", e),
-				);
-			} else {
-				updateNewAppointmentDraft?.("patientId", item.patientId);
-				if (item.preferredDoctorId) {
-					updateNewAppointmentDraft?.("doctorUserId", item.preferredDoctorId);
-				}
-				onClose();
-				focusNewAppointmentEditor?.();
-				showToast(
-					`Пациент «${item.patientName || ""}» выбран. Укажите время записи.`,
-					"success",
-				);
-				return;
-			}
-
-			const offerMsg = generateWaitlistOfferMessage({
-				patientName: item.patientName,
-				doctorName: targetSlot?.doctorName || item.preferredDoctorName,
-				startsAt: targetSlot?.startsAt || new Date().toISOString(),
-				clinicName,
-			});
-
-			if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
-				void navigator.clipboard.writeText(offerMsg).catch(() => {});
-			}
-
-			setBookedItemIds((prev) => new Set(prev).add(item.id));
-			showToast(
-				`Пациент «${item.patientName || "Пациент"}» записан в слот! Сообщение WhatsApp/SMS скопировано.`,
-				"success",
-				5000,
-			);
-
-			fetchWaitlist();
-			onAppointmentCreated?.();
-		} catch (err) {
-			logger.error("Failed to book waitlist candidate", err);
-			showToast("Ошибка при записи пациента в слот", "error");
-		} finally {
-			setLoadingId(null);
-		}
-	};
-
-	// Mark waitlist item fulfilled
-	const handleFulfill = async (item: WaitlistCandidateItem) => {
-		if (loadingId === item.id) return;
-		setLoadingId(item.id);
-		try {
-			const res = await fetch(`/api/waitlist/${encodeURIComponent(item.id)}`, {
-				method: "PUT",
-				headers: waitlistWriteHeaders(),
-				body: JSON.stringify({ status: "fulfilled" }),
-			});
-			if (res.ok) {
-				showToast(
-					`${item.patientName || "Пациент"} отмечен как принятый`,
-					"success",
-				);
-				fetchWaitlist();
-			} else {
-				showToast(await writeFailureText(res, "закрыть заявку"), "error");
-			}
-		} catch {
-			showToast("Сервер клиники не ответил. Повторите попытку.", "error");
-		} finally {
-			setLoadingId(null);
-		}
-	};
-
-	// Delete waitlist item
-	const handleDelete = async (id: string) => {
-		if (loadingId === id) return;
-		setLoadingId(id);
-		try {
-			const res = await fetch(`/api/waitlist/${encodeURIComponent(id)}`, {
-				method: "DELETE",
-				headers: waitlistWriteHeaders(),
-			});
-			if (res.ok) {
-				showToast("Запись удалена из листа ожидания", "success");
-				fetchWaitlist();
-			} else {
-				showToast(await writeFailureText(res, "удалить запись"), "error");
-			}
-		} catch {
-			showToast("Сервер клиники не ответил", "error");
-		} finally {
-			setLoadingId(null);
-		}
-	};
-
-	// Fast 5-Second Waitlist Registration
-	const handleQuickAdd = async (e: React.FormEvent) => {
-		e.preventDefault();
-		if (isSubmitting) return;
-		let effectivePatientId = selectedPatientId;
-		setIsSubmitting(true);
-		try {
-			if (quickNewPatientMode) {
-				const fName = quickFullName.trim();
-				const fPhone = quickPhone.trim();
-				if (!fName && !fPhone) {
-					showToast("Укажите имя или телефон пациента", "warning");
-					return;
-				}
-				try {
-					const patRes = await fetch("/api/patients", {
-						method: "POST",
-						headers: waitlistWriteHeaders(),
-						body: JSON.stringify({
-							fullName: fName || `Пациент (${fPhone})`,
-							phone: fPhone || null,
-							allowDuplicate: true,
-						}),
-					});
-					if (patRes.ok) {
-						const patData = await patRes.json();
-						const patObj = patData?.patient || patData;
-						if (patObj?.id) effectivePatientId = patObj.id;
-					} else {
-						const errData = await patRes.json().catch(() => null);
-						const existingId = errData?.existingPatient?.id || errData?.existingPatientId;
-						if (patRes.status === 409 && existingId) {
-							effectivePatientId = existingId;
-						} else {
-							showToast(errData?.message || "Не удалось создать карту нового пациента", "error");
-							return;
-						}
-					}
-				} catch {
-					showToast("Ошибка связи с сервером при создании карты пациента", "error");
-					return;
-				}
-			}
-
-			if (!effectivePatientId) {
-				showToast("Выберите или укажите пациента", "warning");
-				return;
-			}
-
-			const urgencyCfg = URGENCY_CONFIG[addUrgency];
-			const priorityLevel =
-				addUrgency === "acute_pain" ? "high" : addUrgency === "ortho_endo" ? "medium" : "low";
-			const preferredTimeRanges =
-				addPreferredTime !== "any" || notes.trim()
-					? [{ day: "any", slot: addPreferredTime, ...(notes.trim() ? { notes: notes.trim() } : {}), urgency: addUrgency }]
-					: [];
-
-			const res = await fetch("/api/waitlist", {
-				method: "POST",
-				headers: waitlistWriteHeaders(),
-				body: JSON.stringify({
-					patientId: effectivePatientId,
-					preferredDoctorId: preferredDoctorId || null,
-					priorityLevel,
-					preferredTimeRanges,
-					notes: notes.trim() || null,
-					urgency: addUrgency,
-				}),
-			});
-
-			if (res.ok) {
-				showToast(`Пациент добавлен в лист ожидания (${urgencyCfg.shortLabel}) за 5 сек!`, "success");
-				setSelectedPatientId("");
-				setQuickFullName("");
-				setQuickPhone("");
-				setQuickNewPatientMode(false);
-				setNotes("");
-				setIsAddFormOpen(false);
-				fetchWaitlist();
-			} else {
-				showToast(await writeFailureText(res, "добавить в лист ожидания"), "error");
-			}
-		} catch {
-			showToast("Ошибка соединения с сервером клиники", "error");
-		} finally {
-			setIsSubmitting(false);
-		}
-	};
-
-	// Nearest free slots lookup
-	const fallbackFreeSlots = useMemo(() => {
-		if (targetSlot) return [];
-		const today = new Date().toISOString().slice(0, 10);
-		const workingWindow = deriveClinicWorkingHours(dashboard);
-		const days = findDoctorFreeSlots({
-			startDate: today,
-			horizonDays: 3,
-			durationMinutes: 30,
-			appointments: dashboard?.appointments ?? [],
-			chairs: dashboard?.clinicSettings?.chairs ?? [],
-			clinicStartHour: workingWindow.clinicStartHour,
-			clinicEndHour: workingWindow.clinicEndHour,
-			workingDays: workingWindow.workingDays,
-		});
-		const flat: (DoctorFreeSlot & {
-			dateFormatted: string;
-			doctorName?: string;
-		})[] = [];
-		for (const day of days) {
-			for (const s of day.slots) {
-				const doc = staff.find((m: any) => m.id === s.doctorId);
-				flat.push({
-					...s,
-					dateFormatted: day.dateFormatted,
-					doctorName: doc?.fullName || doc?.name || "Дежурный врач",
-				});
-				if (flat.length >= 6) break;
-			}
-			if (flat.length >= 6) break;
-		}
-		return flat;
-	}, [
+	const { bookedItemIds, bookingId, handleOneClickBookSlot } = useWaitlistBooking({
 		targetSlot,
-		dashboard?.appointments,
-		dashboard?.clinicSettings?.chairs,
-		staff,
-	]);
+		onBookSlot,
+		updateNewAppointmentDraft,
+		focusNewAppointmentEditor,
+		onAppointmentCreated,
+		onClose,
+		dashboard,
+		auth,
+		onRefreshWaitlist: fetchWaitlist,
+		clinicName,
+	});
+
+	const loadingId = dataLoadingId || bookingId;
 
 	return {
 		items,
@@ -656,25 +87,7 @@ export function useWaitlistDrawerOperations({
 		loadingId,
 		contactedPatients,
 		bookedItemIds,
-		isSubmitting,
-		selectedPatientId,
-		setSelectedPatientId,
-		quickNewPatientMode,
-		setQuickNewPatientMode,
-		quickFullName,
-		setQuickFullName,
-		quickPhone,
-		setQuickPhone,
-		preferredDoctorId,
-		setPreferredDoctorId,
-		addUrgency,
-		setAddUrgency,
-		addPreferredTime,
-		setAddPreferredTime,
-		notes,
-		setNotes,
-		isAddFormOpen,
-		setIsAddFormOpen,
+		...quickAdd,
 		fetchWaitlist,
 		handleSendWhatsApp,
 		handleSendTelegram,
@@ -682,7 +95,6 @@ export function useWaitlistDrawerOperations({
 		handleOneClickBookSlot,
 		handleFulfill,
 		handleDelete,
-		handleQuickAdd,
 		fallbackFreeSlots,
 		serverMatchesMap,
 	};

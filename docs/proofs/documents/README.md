@@ -18,12 +18,30 @@
 - **Проверка CSS токенов (scripts/check-css-tokens.mjs):** 711 файлов проверено, 0 неразрешенных var() (Exit Code 0).
 - **Лимит строк (scripts/verify-all-invariants.mjs):** 126 затронутых файлов, 0 файлов > 120 строк.
 
-## 3. 4-State Red Team Visual Proof (Живой DOM http://127.0.0.1:5173/?demo=true#documents)
-- **☀️ 1. PC Light (1440×900):** `docs/proofs/documents/pc_light_1440x900.png`
-  - Чистый реестр документов, 1 Primary CTA изумрудная кнопка, быстрый запуск бланков, 0px горизонтального скролла.
-- **🌙 2. PC Dark (1440×900):** `docs/proofs/documents/pc_dark_1440x900.png`
-  - Глубокая тёмная тема, высокая контрастность текста и бейджей, OLED-совместимые токены без белых засветов.
-- **📱 3. Mobile Light (390×844):** `docs/proofs/documents/mobile_light_390x844.png`
+## 3. 4-State Red Team Visual Proof (Живой DOM http://127.0.0.1:5173/documents-preview.html)
+- **☀️ 1. PC Light (1440×900):** `docs/proofs/documents/01_documents_registry_pc_light_1440x900.png`
+  - Чистый реестр документов, 1 Primary CTA изумрудная кнопка («Печать карты приёма»), быстрый запуск бланков, 0px горизонтального скролла.
+- **🌙 2. PC Dark (1440×900):** `docs/proofs/documents/02_documents_registry_pc_dark_1440x900.png`
+  - Глубокая тёмная тема (`#0b1320`), высокая контрастность текста и бейджей, OLED-совместимые токены без белых засветов, сияющий изумрудный акцент `#2dd4bf`.
+- **📱 3. Mobile Light (390×844):** `docs/proofs/documents/03_documents_registry_mobile_light_390x844.png`
   - Apple HIG сенсорная сетка (тач-таргеты $\ge 44\times 44$px), Natural Thumb Zone, Grouped Cards, 0px горизонтального дрифта.
-- **🌙 4. Mobile Dark (390×844):** `docs/proofs/documents/mobile_dark_390x844.png`
-  - Тёмная тема смартфона, нативный контраст бейджей подписи и статусов.
+- **🌙 4. Mobile Dark (390×844):** `docs/proofs/documents/04_documents_registry_mobile_dark_390x844.png`
+  - Тёмная тема смартфона, нативный контраст бейджей подписи и статусов, тактильные быстрые сценарии.
+
+## 4. Каноническая модульная архитектура хелперов и хуков (Мандаты 8b, 8e, 8x, 8ap)
+- **Устранение монолитных дубликатов `DocumentHelpers.ts` (729 строк) и `appHelpers/documentHelpers.ts` (700 строк):**
+  - Создан канонический SSOT в `apps/web/src/documentsView/helpers/`:
+    * `signatureDraftHelpers.ts`
+    * `payloadDraftHelpers.ts`
+    * `paymentSelectionHelpers.ts`
+    * `taxDocumentHelpers.ts`
+    * `consentProcedureHelpers.ts`
+    * `documentGeneralHelpers.ts`
+    * `index.ts` (фасад SSOT)
+  - Старые файлы заменены на ультракомпактные фасады $\le 6$ строк.
+- **Декомпозиция доменных хуков:**
+  - `useDocumentDerivedValues.ts` (ранее 702 строки) декомпозирован на 6 модулей в `derived/` + чистый фасад 85 строк.
+  - `useDocumentWorkflowModule.ts` (ранее 695 строк) декомпозирован на 3 модуля в `workflow/` + фасад 132 строки.
+- **Автономия и бейджи (Мандаты 8e, 8x):**
+  - Подтверждена работа `documentVoidAutonomyRunner.ts` без блокировок.
+  - Стандартизированы бейджи `ИДС: Подписано / Черновик / Требуется` без птичьего канцелярита.

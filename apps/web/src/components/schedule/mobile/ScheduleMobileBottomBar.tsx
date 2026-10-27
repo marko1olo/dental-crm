@@ -19,7 +19,7 @@ export const ScheduleMobileBottomBar: React.FC<ScheduleMobileBottomBarProps> = (
         onClick={onAction}
         data-testid="schedule-mobile-add-btn"
       >
-        <span>+ Записать визит</span>
+        <span>+ Новая запись</span>
       </button>
     </div>
   );

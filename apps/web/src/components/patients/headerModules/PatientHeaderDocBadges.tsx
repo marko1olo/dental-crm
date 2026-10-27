@@ -39,19 +39,19 @@ const CONSENT_CONFIG = {
 	issued: {
 		cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25",
 		icon: <ShieldCheck size={11} className="shrink-0 text-emerald-600 dark:text-emerald-400" />,
-		label: "Согласие: Подписано",
-		title: "Информированное согласие на лечение подписано",
+		label: "ИДС: Подписано",
+		title: "Информированное добровольное согласие на лечение подписано",
 	},
 	draft: {
 		cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25",
 		icon: <Clock size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />,
-		label: "Согласие: Черновик",
-		title: "Согласие на лечение в статусе черновика",
+		label: "ИДС: Черновик",
+		title: "Информированное добровольное согласие на лечение в статусе черновика",
 	},
 	none: {
 		cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25",
 		icon: <ShieldAlert size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />,
-		label: "Согласие: Требуется",
+		label: "ИДС: Требуется",
 		title: "Требуется оформить согласие на лечение перед началом приёма",
 	},
 };

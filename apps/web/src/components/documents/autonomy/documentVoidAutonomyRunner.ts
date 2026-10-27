@@ -60,19 +60,22 @@ export async function executeDocumentVoidAutonomy(
 		String(params.documentVoidReasonText || "").trim() ||
 		DEFAULT_VOID_REASON_TEXT;
 
-	params.setDocumentVoidStaffFullName?.(effectiveStaffFullName);
-	params.setDocumentVoidStaffRole?.(effectiveStaffRole);
-	params.setDocumentVoidReasonText?.(effectiveReasonText);
+	if (!params.documentVoidStaffFullName?.trim()) {
+		params.setDocumentVoidStaffFullName?.(effectiveStaffFullName);
+	}
+	if (!params.documentVoidStaffRole?.trim()) {
+		params.setDocumentVoidStaffRole?.(effectiveStaffRole);
+	}
+	if (!params.documentVoidReasonText?.trim()) {
+		params.setDocumentVoidReasonText?.(effectiveReasonText);
+	}
 	params.setDocumentVoidArchivePreserved?.(true);
 	params.setDocumentVoidStatusReviewed?.(true);
 
 	let executed = false;
 	const docId = params.documentVoidConfirmation?.id;
 
-	if (typeof params.rawConfirmDocumentVoid === "function") {
-		await params.rawConfirmDocumentVoid();
-		executed = true;
-	} else if (docId && typeof params.updateDocumentStatus === "function") {
+	if (docId && typeof params.updateDocumentStatus === "function") {
 		const payload: VoidDocumentInput = {
 			voidAttestation: {
 				reasonCode: params.documentVoidReasonCode ?? "draft_error",
@@ -94,6 +97,9 @@ export async function executeDocumentVoidAutonomy(
 			showToast("Документ успешно аннулирован (архивная копия сохранена)", "info");
 			executed = true;
 		}
+	} else if (typeof params.rawConfirmDocumentVoid === "function") {
+		await params.rawConfirmDocumentVoid();
+		executed = true;
 	}
 
 	return {

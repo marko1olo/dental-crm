@@ -45,7 +45,7 @@ export function PatientLegalBadges({ contractStatus, consentStatus }: PatientLeg
 					data-testid="badge-consent-status"
 				>
 					<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
-					<span>Согласие: Подписано</span>
+					<span>ИДС: Подписано</span>
 				</span>
 			) : consentStatus === "draft" ? (
 				<span
@@ -54,7 +54,7 @@ export function PatientLegalBadges({ contractStatus, consentStatus }: PatientLeg
 					data-testid="badge-consent-status"
 				>
 					<FileText className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-					<span>Согласие: Черновик</span>
+					<span>ИДС: Черновик</span>
 				</span>
 			) : (
 				<span
@@ -63,7 +63,7 @@ export function PatientLegalBadges({ contractStatus, consentStatus }: PatientLeg
 					data-testid="badge-consent-status"
 				>
 					<ShieldAlert className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
-					<span>Согласие: Требуется</span>
+					<span>ИДС: Требуется</span>
 				</span>
 			)}
 		</>
