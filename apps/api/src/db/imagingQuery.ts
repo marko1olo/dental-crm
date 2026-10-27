@@ -261,7 +261,7 @@ export async function getImagingStudiesWithFilters(
 		.orderBy(desc(schema.xrayScans.capturedAt));
 
 	for (const item of legacyScans) {
-		if (!existingStudyIds.has(item.scan.id)) {
+		if (item?.scan?.id && !existingStudyIds.has(item.scan.id)) {
 			const scanModality = item.scan.kind === "opg" ? "PX" : "IO";
 			if (filters.modality && filters.modality.toUpperCase() !== scanModality) {
 				continue;
