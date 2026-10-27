@@ -14,14 +14,14 @@ import { resolveConsentKeyFromDocument } from "../../visit/consents/visitConsent
 describe("Consent SSOT Engine Suite (323-ФЗ, 1051н, 152-ФЗ, Mandates 8e & 8n)", () => {
 	describe("1. Statutory Consent Titles & Dictionary", () => {
 		it("provides full statutory titles for all canonical 1051n and 152-FZ consent keys", () => {
-			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_INSPECTION_1051N.includes("1051н"));
+			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_INSPECTION_1051N.includes("первичный осмотр"));
 			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_ANESTHESIA.includes("обезболивание"));
 			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_THERAPY.includes("терапевтическое"));
 			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_SURGERY_IMPLANT.includes("хирургическое"));
 			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_ORTHOPEDICS.includes("ортопедическое"));
 			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_ORTHODONTICS.includes("ортодонтическое"));
 			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_HYGIENE_BLEACHING.includes("гигиену"));
-			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_PERSONAL_DATA.includes("152-ФЗ"));
+			assert.ok(STATUTORY_CONSENT_KEY_LABELS.CONSENT_PERSONAL_DATA.includes("персональных данных"));
 		});
 
 		it("getConsentStatutoryTitle returns registered label or falls back to key", () => {

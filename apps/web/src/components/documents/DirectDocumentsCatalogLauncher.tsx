@@ -4,10 +4,12 @@
  * Мандат 8aq: Монтирование в живой UI. Мандат 8b: строго <= 120 строк.
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { DocumentsTemplateGrid } from "../../documentsView/DocumentsTemplateGrid";
+import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
 
-export function renderDocumentsCatalogLauncher(): React.ReactElement | null {
+export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
+	const [isIntakeOpen, setIsIntakeOpen] = useState(false);
 	if (typeof window === "undefined") return null;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
@@ -34,14 +36,21 @@ export function renderDocumentsCatalogLauncher(): React.ReactElement | null {
 				onOpenFocusEditor={() => {}}
 				activeCategoryTab="all"
 				searchQuery=""
-				onOpenPrimaryIntakePackage={() => {}}
+				onOpenPrimaryIntakePackage={() => setIsIntakeOpen(true)}
 			/>
+			{isIntakeOpen && (
+				<PrimaryIntakePackageModal
+					isOpen={isIntakeOpen}
+					onClose={() => setIsIntakeOpen(false)}
+					patient={null}
+				/>
+			)}
 		</div>
 	);
 }
 
-export const DirectDocumentsCatalogLauncher: React.FC = () => {
-	return renderDocumentsCatalogLauncher();
-};
+export function renderDocumentsCatalogLauncher(): React.ReactElement | null {
+	return <DirectDocumentsCatalogLauncher />;
+}
 
 export default DirectDocumentsCatalogLauncher;

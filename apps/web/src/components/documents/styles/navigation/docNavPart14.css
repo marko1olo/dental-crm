@@ -1,10 +1,48 @@
-@media (max-width: 640px) {
+@media (max-width: 768px) {
 	.document-package-modal-overlay {
-		padding: 6px;
+		padding: 0;
+		align-items: flex-end;
+		justify-content: stretch;
+		background: rgba(15, 23, 42, 0.75);
+		backdrop-filter: blur(12px);
+		-webkit-backdrop-filter: blur(12px);
+		overflow: hidden;
+		z-index: 2000;
 	}
 	.document-package-modal-content {
-		max-height: 98vh;
-		border-radius: 12px;
+		width: 100vw;
+		max-width: 100vw;
+		min-width: 100vw;
+		height: 94dvh;
+		max-height: 94dvh;
+		border-radius: 24px 24px 0 0;
+		border-left: none;
+		border-right: none;
+		border-bottom: none;
+		margin: 0;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+		animation: documentSheetSlideUp 0.28s cubic-bezier(0.2, 0.9, 0.3, 1);
+		display: flex;
+		flex-direction: column;
+		overflow: hidden;
+	}
+	.document-package-modal-content::before {
+		content: "";
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 9999px;
+		background: var(--line-strong, #94a3b8);
+		margin: 8px auto 2px auto;
+		flex-shrink: 0;
+	}
+	@keyframes documentSheetSlideUp {
+		from {
+			transform: translateY(100%);
+		}
+		to {
+			transform: translateY(0);
+		}
 	}
 	.document-package-modal-header {
 		padding: 10px 14px;
@@ -101,3 +139,4 @@
 	background: var(--teal-soft);
 	border-color: var(--teal);
 }
+

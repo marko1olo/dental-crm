@@ -30,11 +30,11 @@ export function CatalogToolbarActions({
 			<button
 				type="button"
 				onClick={handleOpenIntake}
-				className="primary-button h-8 px-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white font-bold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0 shadow-2xs"
+				className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] font-semibold text-xs flex items-center gap-1.5 cursor-pointer transition shrink-0"
 				data-testid="btn-catalog-primary-intake"
-				title="Пакет приёма в 1 клик (Договор + Анкета здоровья + Согласие на лечение + Персданные)"
+				title="Открыть пакет приёма (Договор + Анкета здоровья + Согласие на лечение + Персданные)"
 			>
-				<Printer className="w-3.5 h-3.5 text-white" />
+				<Printer className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 				<span className="whitespace-nowrap">Пакет приёма</span>
 			</button>
 			<button

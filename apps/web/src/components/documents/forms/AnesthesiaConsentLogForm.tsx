@@ -154,39 +154,6 @@ export const AnesthesiaConsentLogForm = React.memo(
 			<DocumentPayloadCard
 				title="Журнал анестезии"
 				description="Перед созданием: метод, препарат, зона, доза и реакция."
-				notice={
-					limits.tooLong.length > 0 ? (
-						<div
-							className="schedule-create-missing document-anesthesia-too-long"
-							role="status"
-							aria-live="polite"
-							style={{ marginTop: "12px" }}
-						>
-							<strong>
-								Журнал не создастся: текст в {limits.tooLong.length} поле
-								длиннее, чем принимает сервер. Отказ на нажатие «Создать» при
-								этом говорит про незаполненные поля, поэтому причину пишем
-								здесь:
-							</strong>
-							<ul>
-								{limits.tooLong.map((entry) => (
-									<li key={entry.field}>
-										{entry.label} — {entry.length} символов, принимается не
-										больше {entry.limit}: сократите на{" "}
-										{entry.length - entry.limit}
-										{entry.field === "anesthesiaMedicationJoin"
-											? `. В строку дозы уходит склейка «препарат, вазоконстриктор», и у неё предел ${ANESTHESIA_MEDICATION_JOIN_LIMIT ?? 0} — короче, чем у самого поля препарата: сократите любое из двух`
-											: ""}
-									</li>
-								))}
-							</ul>
-							<small>
-								Текст не обрезается сам: обрезка посередине испортила бы
-								клиническую запись, поэтому сокращает врач.
-							</small>
-						</div>
-					) : null
-				}
 			>
 				<label>
 					Метод
