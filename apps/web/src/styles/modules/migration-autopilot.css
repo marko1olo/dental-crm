@@ -330,3 +330,217 @@
 	overflow-wrap: anywhere;
 	padding: 5px 8px;
 }
+
+/* ==========================================================================
+   MIGRATION AUTOPILOT RED TEAM ERGONOMICS & APPLE HIG ADAPTIVE (Mandates 8e, 8n, HIG)
+   ========================================================================== */
+.migration-autopilot-result {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	color: var(--ink, #0f172a);
+	display: grid;
+	gap: 14px;
+	padding: 16px;
+	box-shadow: var(--shadow-sm, 0 1px 2px 0 rgba(0, 0, 0, 0.05));
+}
+
+.migration-autopilot-result .dicom-discovery-head strong,
+.migration-autopilot-result .migration-operator-score strong,
+.migration-autopilot-result .migration-autopilot-summary strong,
+.migration-autopilot-result .migration-autopilot-operator-packet strong,
+.migration-autopilot-result .migration-autopilot-script strong,
+.migration-autopilot-result .migration-autopilot-clinic strong,
+.migration-autopilot-result .migration-triage-queue strong,
+.migration-autopilot-result .migration-lane-card strong,
+.migration-autopilot-result .migration-checklist-card strong,
+.migration-autopilot-result .migration-source-card strong {
+	color: var(--ink, #0f172a);
+	font-size: 14px;
+	font-weight: 700;
+}
+
+.migration-autopilot-result .dicom-discovery-head span,
+.migration-autopilot-result .migration-operator-score span,
+.migration-autopilot-result .migration-autopilot-summary span,
+.migration-autopilot-result .migration-autopilot-summary small,
+.migration-autopilot-result .migration-autopilot-operator-packet span,
+.migration-autopilot-result .migration-autopilot-operator-packet small,
+.migration-autopilot-result .migration-autopilot-script span,
+.migration-autopilot-result .migration-autopilot-script small,
+.migration-autopilot-result .migration-autopilot-clinic span,
+.migration-autopilot-result .migration-triage-queue span,
+.migration-autopilot-result .migration-triage-queue small,
+.migration-autopilot-result .migration-lane-card span,
+.migration-autopilot-result .migration-lane-card small,
+.migration-autopilot-result .migration-checklist-card span,
+.migration-autopilot-result .migration-checklist-card small,
+.migration-autopilot-result .migration-source-card span,
+.migration-autopilot-result .migration-source-card small,
+.migration-autopilot-result .migration-dry-run-summary p {
+	color: var(--muted, #64748b);
+	font-size: 13px;
+	font-weight: 500;
+}
+
+.migration-autopilot-result .dicom-discovery-grid article,
+.migration-autopilot-result .migration-autopilot-summary article,
+.migration-autopilot-result .migration-autopilot-operator-packet,
+.migration-autopilot-result .migration-autopilot-script,
+.migration-autopilot-result .migration-autopilot-clinic,
+.migration-autopilot-result .migration-triage-queue,
+.migration-autopilot-result .migration-triage-item,
+.migration-autopilot-result .migration-dry-run-summary {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-left: 3px solid var(--primary, #0d9488);
+	border-radius: 10px;
+	padding: 10px 12px;
+}
+
+.migration-autopilot-result .migration-source-artifact-list span {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	font-weight: 600;
+}
+
+.migration-autopilot-result .migration-technical-boundary {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 8px;
+	padding: 8px 12px;
+	color: var(--muted, #64748b);
+}
+
+.migration-autopilot-result .migration-technical-boundary summary {
+	cursor: pointer;
+	font-size: 12px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.migration-operator-action-bar {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin: 8px 0;
+	width: 100%;
+}
+
+.migration-primary-cta-btn {
+	align-items: center;
+	background: var(--primary, #0d9488);
+	border: 1px solid transparent;
+	border-radius: 10px;
+	color: #ffffff;
+	cursor: pointer;
+	display: inline-flex;
+	font-size: 14px;
+	font-weight: 700;
+	gap: 8px;
+	min-height: 38px;
+	padding: 8px 18px;
+	transition: background 0.15s ease, transform 0.05s ease;
+}
+
+.migration-primary-cta-btn:hover:not(:disabled) {
+	background: var(--primary-hover, #0f766e);
+}
+
+.migration-secondary-actions-group {
+	align-items: center;
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.migration-secondary-actions-group .secondary-button {
+	align-items: center;
+	border-radius: 10px;
+	display: inline-flex;
+	font-size: 13px;
+	font-weight: 600;
+	gap: 6px;
+	min-height: 36px;
+	padding: 6px 14px;
+}
+
+.migration-candidate-preview-block {
+	display: grid;
+	gap: 12px;
+	width: 100%;
+}
+
+.migration-grouped-checklist {
+	display: grid;
+	gap: 8px;
+}
+
+.migration-checklist-card,
+.migration-lane-card,
+.migration-source-card {
+	border-radius: 12px;
+	overflow: hidden;
+	transition: border-color 0.15s ease;
+}
+
+/* Mobile Apple HIG & Thumb Zone Adaptations */
+@media (max-width: 768px) {
+	.migration-autopilot-result {
+		overflow-x: clip;
+		max-width: 100%;
+		padding: 10px 8px;
+	}
+
+	.migration-operator-action-bar {
+		flex-direction: column;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.migration-primary-cta-btn {
+		justify-content: center;
+		min-height: 48px;
+		width: 100%;
+	}
+
+	.migration-secondary-actions-group {
+		display: grid;
+		grid-template-columns: 1fr;
+		width: 100%;
+	}
+
+	.migration-secondary-actions-group .secondary-button {
+		justify-content: center;
+		min-height: 44px;
+		width: 100%;
+	}
+
+	.migration-grouped-checklist {
+		border: 1px solid var(--line-subtle, rgba(255, 255, 255, 0.15));
+		border-radius: 16px;
+		overflow: hidden;
+		padding: 4px;
+	}
+
+	.migration-checklist-card {
+		border-radius: 12px;
+		min-height: 52px;
+		padding: 10px 12px;
+	}
+
+	.migration-source-card-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		width: 100%;
+	}
+
+	.migration-source-card-actions button {
+		justify-content: center;
+		min-height: 44px;
+	}
+}
+

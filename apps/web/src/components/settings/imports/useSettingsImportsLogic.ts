@@ -28,6 +28,8 @@ import type {
 	SmartImportPreviewResponse,
 } from "@dental/shared";
 import { clinicPublicLookupFieldLabels, migrationTriageStatusPriority } from "./constants";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
+import { DEMO_SHOWCASE_MIGRATION_AUTOPILOT } from "./migrationAutopilotDemo";
 import type { DicomFirstFrameViewerState, InputChangeEvent } from "./types";
 
 export interface UseSettingsImportsLogicParams {
@@ -178,7 +180,8 @@ export function useSettingsImportsLogic(params: UseSettingsImportsLogicParams) {
 				: "Сохранить профиль";
 
 	const typedMigrationAutopilot =
-		migrationAutopilot as MigrationAutopilotResponse | null;
+		(migrationAutopilot as MigrationAutopilotResponse | null) ??
+		(isDemoShowcaseMode() ? DEMO_SHOWCASE_MIGRATION_AUTOPILOT : null);
 	const typedMigrationSourceDiscovery =
 		migrationSourceDiscovery as MigrationLocalSourceDiscoveryResponse | null;
 	const typedMigrationSourceWorkup =
