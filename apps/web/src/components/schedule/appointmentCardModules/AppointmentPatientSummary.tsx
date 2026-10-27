@@ -41,6 +41,19 @@ export const AppointmentPatientSummary: React.FC<AppointmentPatientSummaryProps>
 				{durationMin > 30 && aEnd && aEnd !== aStart ? `${aStart} - ${aEnd}` : aStart}
 			</span>
 
+			{/* Duration Badge for long visits (>= 60 min, e.g. 1 час, 2ч, 3ч) */}
+			{durationMin >= 60 && (
+				<span
+					className="text-[10px] font-bold px-1.5 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line-strong)] text-[var(--ink)] shrink-0 font-mono select-none"
+					title={`Продолжительность: ${durationMin >= 120 ? `${Math.floor(durationMin / 60)} ч ${durationMin % 60 ? `${durationMin % 60} мин` : ""}`.trim() : `${durationMin} мин`}`}
+					data-testid={`appointment-duration-badge-${a.id}`}
+				>
+					{durationMin >= 120
+						? `${Math.floor(durationMin / 60)} ч${durationMin % 60 ? ` ${durationMin % 60}м` : ""}`
+						: `${durationMin} мин`}
+				</span>
+			)}
+
 			{/* CITO / Urgent Pain Alert */}
 			{isCito && (
 				<span

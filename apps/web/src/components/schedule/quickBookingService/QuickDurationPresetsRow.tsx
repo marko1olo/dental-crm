@@ -17,7 +17,11 @@ export function QuickDurationPresetsRow({
         <span className="text-xs font-bold text-[var(--muted)] block mb-1.5">
           Быстрый выбор длительности:
         </span>
-        <div className="flex flex-wrap gap-1.5">
+        <div
+          className="dente-segmented-bar w-full flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto"
+          role="group"
+          aria-label="Быстрый выбор длительности"
+        >
           {DURATION_PRESETS.map((preset) => {
             const isSelected = durationMinutes === preset.minutes;
             const displayHint = (preset as any).serviceHint || (preset as any).hint || "";
@@ -27,19 +31,21 @@ export function QuickDurationPresetsRow({
                 key={preset.minutes}
                 type="button"
                 onClick={() => handleSelectDuration(preset.minutes)}
-                className={`min-h-[44px] px-3 py-2 rounded-xl text-xs sm:text-sm font-medium transition-all inline-flex items-center gap-1.5 cursor-pointer select-none active:scale-95 border ${
+                className={`dente-segmented-item flex-1 min-w-0 !h-9 sm:!h-9 !min-h-[36px] px-2 rounded-lg text-xs font-medium transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer select-none active:scale-95 ${
                   isSelected
-                    ? "bg-[linear-gradient(180deg,var(--teal-fill),var(--teal-dark))] text-[var(--on-teal)] border-[var(--teal-dark)] shadow-sm font-semibold"
-                    : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+                    ? "active !bg-[var(--paper)] !text-[var(--teal)] !border-[var(--teal)] shadow-xs font-semibold"
+                    : "!text-[var(--muted)] hover:!text-[var(--ink)]"
                 }`}
                 data-testid={`duration-preset-${preset.minutes}`}
+                data-active={isSelected}
+                aria-pressed={isSelected}
               >
-                <span className="font-semibold">{displayLabel}</span>
+                <span className="font-semibold whitespace-nowrap">{displayLabel}</span>
                 {displayHint ? (
                   <span
-                    className={`text-[10px] ${
+                    className={`text-[10px] whitespace-nowrap ${
                       isSelected
-                        ? "text-[var(--on-teal)] opacity-90 font-medium"
+                        ? "text-[var(--teal)] opacity-90 font-medium"
                         : "text-[var(--muted)]"
                     }`}
                   >

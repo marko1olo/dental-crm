@@ -3,9 +3,13 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { PendingOnlineBookingsModal } from "../PendingOnlineBookingsModal";
 import { PendingOnlineBookingCard } from "../PendingOnlineBookingCard";
 import type { Appointment } from "@dental/shared";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("PendingOnlineBookingsModal Red Team Inquisition (Mandates 8e, 8b, Apple HIG)", () => {
   const mockBooking: Appointment = {

@@ -1,0 +1,78 @@
+/**
+ * DENTE Dental CRM — Appointment Modal CTA & Hatched Slots Styles
+ * Mandate 8b: Modular stylesheet <= 120 lines
+ */
+
+.appointment-modal-cta-save {
+	height: 44px !important;
+	padding: 0 24px !important;
+	border-radius: 12px !important;
+	font-size: 14px !important;
+	font-weight: 800 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	gap: 8px !important;
+	background-color: var(--teal) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal) !important;
+	cursor: pointer !important;
+	box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35) !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.appointment-modal-cta-save:hover {
+	filter: brightness(1.08) !important;
+	box-shadow: 0 6px 18px rgba(13, 148, 136, 0.45) !important;
+}
+
+.appointment-modal-cta-save:active {
+	transform: scale(0.97) !important;
+}
+
+.appointment-modal-cta-cancel {
+	height: 44px !important;
+	padding: 0 20px !important;
+	border-radius: 12px !important;
+	font-size: 14px !important;
+	font-weight: 700 !important;
+	display: inline-flex !important;
+	align-items: center !important;
+	justify-content: center !important;
+	border: 1px solid var(--line-strong) !important;
+	background-color: var(--paper-soft) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1) !important;
+}
+
+.appointment-modal-cta-cancel:hover {
+	background-color: var(--paper-subtle, var(--paper)) !important;
+}
+
+.appointment-modal-cta-cancel:active {
+	transform: scale(0.97) !important;
+}
+
+/* ─── HATCHED BACKGROUND FOR OFF-DUTY / NON-WORKING DOCTOR SLOTS ─── */
+.schedule-slot-hatched,
+.schedule-slot--off-duty,
+.schedule-non-working-slot {
+	background-color: var(--paper-soft) !important;
+	background-image: repeating-linear-gradient(
+		-45deg,
+		transparent,
+		transparent 6px,
+		var(--line-strong) 6px,
+		var(--line-strong) 7px
+	) !important;
+	opacity: 0.75;
+	transition: opacity 0.15s ease, background-color 0.15s ease;
+}
+
+.schedule-slot-hatched:hover,
+.schedule-slot--off-duty:hover,
+.schedule-non-working-slot:hover {
+	opacity: 0.95;
+	background-color: var(--paper-subtle, var(--paper)) !important;
+}

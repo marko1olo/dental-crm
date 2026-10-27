@@ -149,17 +149,21 @@ async function main() {
 	if (!browserExecutable) throw new Error("No Chrome/Edge executable found");
 	fs.mkdirSync(OUT_DIR, { recursive: true });
 	const auth = await loginRealClinic();
-	const browser = await chromium.launch({ executablePath: browserExecutable, headless: true });
-	try {
-		for (const cfg of STATES) {
-			const shotPath = path.join(OUT_DIR, cfg.file);
-			console.log(`\n[SHOT] ${cfg.key} -> ${cfg.file}`);
+	for (const cfg of STATES) {
+		const shotPath = path.join(OUT_DIR, cfg.file);
+		console.log(`\n[SHOT] ${cfg.key} -> ${cfg.file}`);
+		const browser = await chromium.launch({
+			executablePath: browserExecutable,
+			headless: true,
+			args: ["--no-sandbox", "--disable-gpu"],
+		});
+		try {
 			await captureScheduleDay(browser, cfg, auth, shotPath);
+		} finally {
+			await browser.close();
 		}
-		console.log("\n[DONE] 4-State schedule proofs captured through the live circuit.");
-	} finally {
-		await browser.close();
 	}
+	console.log("\n[DONE] 4-State schedule proofs captured through the live circuit.");
 }
 
 main().catch((err) => {

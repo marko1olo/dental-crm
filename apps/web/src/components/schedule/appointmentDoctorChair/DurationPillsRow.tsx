@@ -8,7 +8,12 @@ export function DurationPillsRow({
   applyDuration: (minutes: number) => void;
 }) {
   return (
-    <div className="flex items-center gap-1.5 flex-wrap" data-testid="appointment-quick-durations">
+    <div
+      className="dente-segmented-bar w-full flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] overflow-x-auto"
+      data-testid="appointment-quick-durations"
+      role="group"
+      aria-label="Выбор длительности приёма"
+    >
       {[15, 30, 45, 60, 90, 120].map((mins) => {
         const isSelected = currentDurationMinutes === mins;
         const label = mins === 60 ? "1 час (60 мин)" : `${mins} мин`;
@@ -18,13 +23,15 @@ export function DurationPillsRow({
             type="button"
             onClick={() => applyDuration(mins)}
             data-testid={`appointment-duration-pill-${mins}`}
-            className={`appointment-modal-duration-chip ${isSelected ? "active" : ""} h-8 sm:h-8.5 px-3 rounded-xl border text-xs font-bold transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
+            data-active={isSelected}
+            aria-pressed={isSelected}
+            className={`dente-segmented-item appointment-modal-duration-chip ${isSelected ? "active" : ""} flex-1 min-w-0 !h-9 sm:!h-9 !min-h-[36px] px-2 rounded-lg text-xs font-bold transition-all cursor-pointer select-none active:scale-95 flex items-center justify-center ${
               isSelected
-                ? "!bg-[var(--teal)] !text-white !border-[var(--teal)] shadow-sm ring-2 ring-[var(--teal)]/25 font-bold"
-                : "bg-[var(--paper-soft)] border-[var(--line-strong)] text-[var(--ink)] hover:bg-[var(--paper-subtle)]"
+                ? "!bg-[var(--paper)] !text-[var(--teal)] !border-[var(--teal)] shadow-xs font-bold"
+                : "!text-[var(--muted)] hover:!text-[var(--ink)]"
             }`}
           >
-            {label}
+            <span className="whitespace-nowrap">{label}</span>
           </button>
         );
       })}
