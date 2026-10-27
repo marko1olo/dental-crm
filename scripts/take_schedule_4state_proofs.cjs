@@ -491,6 +491,7 @@ async function main() {
 		const pcLight = await capture(pcPage, path.join(proofDir, "schedule_pc_light_1440x900.png"));
 		fs.copyFileSync(pcLight.path, path.join(proofDir, "pc_schedule_light_1440x900.png"));
 		fs.copyFileSync(pcLight.path, path.join(legacyProofDir, "pc_schedule_light_1440x900.png"));
+		fs.copyFileSync(pcLight.path, path.join(proofDir, "pc_light_1440x900.png"));
 
 		// PC Dark
 		console.log("  -> Switching to Dark theme...");
@@ -498,6 +499,7 @@ async function main() {
 		const pcDark = await capture(pcPage, path.join(proofDir, "schedule_pc_dark_1440x900.png"));
 		fs.copyFileSync(pcDark.path, path.join(proofDir, "pc_schedule_dark_1440x900.png"));
 		fs.copyFileSync(pcDark.path, path.join(legacyProofDir, "pc_schedule_dark_1440x900.png"));
+		fs.copyFileSync(pcDark.path, path.join(proofDir, "pc_dark_1440x900.png"));
 
 		await pcContext.close();
 
@@ -532,9 +534,16 @@ async function main() {
 		// Mobile Light
 		console.log("  -> Switching to Mobile Light theme...");
 		await setTheme(mobilePage, "light", false);
+		const apptCard = await mobilePage.$('[data-testid="schedule-mobile-appt-card"], .schedule-mobile-card');
+		if (apptCard) {
+			console.log("  -> Tapping mobile appointment card to open Bottom Sheet...");
+			await apptCard.click();
+			await mobilePage.waitForTimeout(800);
+		}
 		const mobLight = await capture(mobilePage, path.join(proofDir, "schedule_mobile_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_schedule_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(legacyProofDir, "mobile_schedule_light_390x844.png"));
+		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_light_390x844.png"));
 
 		// Mobile Dark
 		console.log("  -> Switching to Mobile Dark theme...");
@@ -542,6 +551,7 @@ async function main() {
 		const mobDark = await capture(mobilePage, path.join(proofDir, "schedule_mobile_dark_390x844.png"));
 		fs.copyFileSync(mobDark.path, path.join(proofDir, "mobile_schedule_dark_390x844.png"));
 		fs.copyFileSync(mobDark.path, path.join(legacyProofDir, "mobile_schedule_dark_390x844.png"));
+		fs.copyFileSync(mobDark.path, path.join(proofDir, "mobile_dark_390x844.png"));
 
 		await mobileContext.close();
 
