@@ -15,6 +15,7 @@ import {
 	StandaloneRecallsHost,
 } from "./StandaloneTherapyWorkspaceHosts";
 import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHost";
+import { StandaloneEmrProtocolHost } from "./StandaloneEmrProtocolHost";
 import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
@@ -51,6 +52,14 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		return (
 			<StandaloneClinicalTemplatesHost
 				onClose={() => clearUrlTokens(["protocols", "clinical-templates", "diary-templates"])}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["emr-protocol", "protocol-generator", "star-protocol"])) {
+		return (
+			<StandaloneEmrProtocolHost
+				onClose={() => clearUrlTokens(["emr-protocol", "protocol-generator", "star-protocol"])}
 			/>
 		);
 	}

@@ -6,4 +6,4 @@
 
 export * from "./emrProtocolEngine";
 export * from "./EmrProtocolGeneratorModal";
-
+export * from "./protocolModal";
