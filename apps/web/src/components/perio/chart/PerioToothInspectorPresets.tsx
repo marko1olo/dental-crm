@@ -96,8 +96,8 @@ export const PerioToothInspectorPresets: React.FC<PerioToothInspectorPresetsProp
 				<span className="text-[11px] font-bold text-[var(--muted)] shrink-0 mr-1">Пульт глубины (1–9 мм):</span>
 				{[1, 2, 3, 4, 5, 6, 7, 8, 9].map((val) => (
 					<button
-						key={val} type="button" disabled={readOnly}
-						onClick={() => setAllSites(val, val > 4, false)}
+						key={val} type="button" aria-disabled={readOnly}
+						onClick={() => !readOnly && setAllSites(val, val > 4, false)}
 						className={`min-w-[34px] h-7.5 rounded-lg font-black text-xs flex items-center justify-center border transition-all cursor-pointer shadow-2xs active:scale-95 ${
 							val <= 3
 								? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"

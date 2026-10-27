@@ -40,8 +40,8 @@ export const PerioKeypadNumButtons: React.FC<PerioKeypadNumButtonsProps> = React
 					<button
 						key={numVal}
 						type="button"
-						disabled={readOnly}
-						onClick={() => onKeypadDepth(numVal)}
+						aria-disabled={readOnly}
+						onClick={() => !readOnly && onKeypadDepth(numVal)}
 						className={`min-w-[44px] min-h-[44px] sm:min-w-[34px] sm:min-h-0 sm:h-9 rounded-lg font-black text-xs sm:text-sm transition-all active:scale-95 cursor-pointer flex items-center justify-center border ${
 							isNorm
 								? "bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
@@ -61,7 +61,7 @@ export const PerioKeypadNumButtons: React.FC<PerioKeypadNumButtonsProps> = React
 
 			{/* BOP Toggle */}
 			<button
-				type="button" disabled={readOnly} onClick={onToggleBop}
+				type="button" aria-disabled={readOnly} onClick={() => !readOnly && onToggleBop()}
 				className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
 					currentSite?.bleedingOnProbing ? "bg-rose-500 text-white border-rose-400 shadow-xs" : "bg-[var(--paper)] hover:bg-rose-500/20 text-rose-300 border-[var(--line)]"
 				}`}
@@ -73,7 +73,7 @@ export const PerioKeypadNumButtons: React.FC<PerioKeypadNumButtonsProps> = React
 
 			{/* PLQ Toggle */}
 			<button
-				type="button" disabled={readOnly} onClick={onTogglePlaque}
+				type="button" aria-disabled={readOnly} onClick={() => !readOnly && onTogglePlaque()}
 				className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2.5 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
 					currentSite?.plaque ? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-xs" : "bg-[var(--paper)] hover:bg-amber-500/20 text-amber-300 border-[var(--line)]"
 				}`}
@@ -84,7 +84,7 @@ export const PerioKeypadNumButtons: React.FC<PerioKeypadNumButtonsProps> = React
 
 			{/* PUS Toggle */}
 			<button
-				type="button" disabled={readOnly} onClick={onToggleSuppuration}
+				type="button" aria-disabled={readOnly} onClick={() => !readOnly && onToggleSuppuration()}
 				className={`min-h-[44px] min-w-[44px] sm:min-h-0 sm:h-9 px-2 rounded-lg font-bold text-xs flex items-center justify-center gap-1 transition-all active:scale-95 cursor-pointer border ${
 					currentSite?.suppuration ? "bg-indigo-500 text-white border-indigo-400 shadow-xs" : "bg-[var(--paper)] hover:bg-indigo-500/20 text-indigo-300 border-[var(--line)]"
 				}`}

@@ -20,11 +20,8 @@ export interface PerioMobileCockpitHeaderProps {
 export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> = React.memo(({
 	aapDiagnosis, insertStatus, onApplyExpressPreset, onInsertToProtocol, onOpenPsrDrawer,
 }) => {
-	const severityClass =
-		aapDiagnosis.severity === "intact" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30"
-			: aapDiagnosis.severity === "gingivitis" ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30"
-				: aapDiagnosis.severity === "moderate" ? "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30"
-					: "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40";
+	const sev = aapDiagnosis.severity;
+	const severityClass = sev === "intact" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30" : sev === "gingivitis" ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" : sev === "moderate" ? "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30" : "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40";
 
 	return (
 		<div className="w-full flex flex-col gap-1.5">
@@ -51,16 +48,17 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 				<button
 					type="button" onClick={() => onApplyExpressPreset("perio_norm_express")}
 					className="min-h-[48px] px-2 py-2 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-800 dark:text-emerald-200 border border-emerald-500/40 active:scale-95 text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
-					title="Вся десна здорова (Норма) • Пародонт интактен (глубина 1–2 мм, BOP 0%, PSR 0)"
+					title="✓ Пародонт в норме (PSR 0) / Соматически здоров • Вся десна здорова (глубина 1–2 мм, BOP 0%, PSR 0)"
 					data-testid="perio-toolbar-norm-1click-btn"
 				>
 					<ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-					<span className="whitespace-nowrap font-bold">Интактен (PSR 0)</span>
+					<span className="whitespace-nowrap font-bold">✓ Норма (PSR 0)</span>
 				</button>
 
 				<button
 					type="button" onClick={() => onApplyExpressPreset("pro_hygiene_express")}
 					className="min-h-[48px] px-2 py-2 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--line)] border border-[var(--line)] active:scale-95 text-[var(--ink)] text-xs font-bold flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer text-center"
+					title="Комплексная гигиена (УЗ + Air-Flow + Полировка + Фторлак)"
 					data-testid="perio-toolbar-prophy-1click-btn"
 				>
 					<UltrasonicScaler size={16} className="shrink-0 text-cyan-600 dark:text-cyan-400" />

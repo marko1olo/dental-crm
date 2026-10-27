@@ -92,18 +92,18 @@ export const PerioToothInspectorSitesGrid: React.FC<PerioToothInspectorSitesGrid
 						{/* BOP, PLQ, PUS */}
 						<div className="flex items-center justify-between pt-1 border-t border-[var(--line)] gap-1">
 							<button
-								type="button" disabled={readOnly}
-								onClick={() => onUpdateToothSite(num, siteCfg.key, (p) => ({ bleedingOnProbing: !p.bleedingOnProbing }))}
+								type="button" aria-disabled={readOnly}
+								onClick={() => !readOnly && onUpdateToothSite(num, siteCfg.key, (p) => ({ bleedingOnProbing: !p.bleedingOnProbing }))}
 								className={`flex-1 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-0.5 cursor-pointer transition-all ${site.bleedingOnProbing ? "bg-rose-500 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"}`}
 							>BOP</button>
 							<button
-								type="button" disabled={readOnly}
-								onClick={() => onUpdateToothSite(num, siteCfg.key, (p) => ({ plaque: !p.plaque }))}
+								type="button" aria-disabled={readOnly}
+								onClick={() => !readOnly && onUpdateToothSite(num, siteCfg.key, (p) => ({ plaque: !p.plaque }))}
 								className={`flex-1 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-0.5 cursor-pointer transition-all ${site.plaque ? "bg-amber-500 text-slate-950 font-black" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"}`}
 							>PLQ</button>
 							<button
-								type="button" disabled={readOnly}
-								onClick={() => onUpdateToothSite(num, siteCfg.key, (p) => ({ suppuration: !p.suppuration }))}
+								type="button" aria-disabled={readOnly}
+								onClick={() => !readOnly && onUpdateToothSite(num, siteCfg.key, (p) => ({ suppuration: !p.suppuration }))}
 								className={`flex-1 py-1 rounded text-[10px] font-bold flex items-center justify-center gap-0.5 cursor-pointer transition-all ${site.suppuration ? "bg-indigo-500 text-white" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]"}`}
 							>PUS</button>
 						</div>

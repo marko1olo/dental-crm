@@ -24,11 +24,11 @@ export const PerioToolbarPresets: React.FC<PerioToolbarPresetsProps> = React.mem
 			<button
 				type="button" onClick={() => onApplyExpressPreset("perio_norm_express")}
 				className="btn btn--secondary shrink-0 font-bold border-emerald-500/50 text-emerald-800 dark:text-emerald-200 bg-emerald-500/15 hover:bg-emerald-500/25 !h-9 !min-h-[44px] min-h-[44px] shadow-xs cursor-pointer flex items-center gap-1.5"
-				title="Вся десна здорова (Норма) • Пародонт интактен (глубина 1–2 мм, кровоточивость 0%, PSR 0 во всех секстантах)"
+				title="✓ Пародонт в норме (PSR 0) / Соматически здоров • Вся десна здорова (глубина 1–2 мм, кровоточивость 0%, PSR 0)"
 				data-testid="perio-toolbar-norm-1click-btn"
 			>
 				<ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-				<span>Вся десна здорова (Норма) · PSR 0</span>
+				<span>✓ Пародонт в норме (PSR 0) / Соматически здоров</span>
 			</button>
 
 			{/* Экспресс-скрининг PSR в 1 тап (коды 0..4*) */}
@@ -56,14 +56,14 @@ export const PerioToolbarPresets: React.FC<PerioToolbarPresetsProps> = React.mem
 				>4*</button>
 			</div>
 
-			{/* Профгигиена • Гингивит • Тяжелый пародонтит • Интактно • Рецессия */}
+			{/* Комплексная профгигиена в 1 клик (Мандаты 8e, 8n) */}
 			<button
 				type="button" onClick={() => onApplyExpressPreset("pro_hygiene_express")}
-				className="btn btn--secondary shrink-0 !h-9 !min-h-[36px]"
-				title="Профессиональная гигиена полости рта" data-testid="perio-toolbar-prophy-1click-btn"
+				className="btn btn--secondary shrink-0 font-semibold !h-9 !min-h-[44px] min-h-[44px] flex items-center gap-1.5"
+				title="Комплексная гигиена (УЗ + Air-Flow + Полировка + Фторлак)" data-testid="perio-toolbar-prophy-1click-btn"
 			>
 				<UltrasonicScaler size={15} className="shrink-0 text-cyan-600 dark:text-cyan-400" />
-				<span>Профгигиена</span>
+				<span>Комплексная гигиена (УЗ + Air-Flow + Полировка + Фторлак)</span>
 			</button>
 
 			<button

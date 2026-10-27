@@ -3,11 +3,12 @@
  * Архитектурный слой Layer 3: Hook (Мандат 8b, <= 120 строк).
  */
 
-import type { PerioChartSummary, PerioDynamicsSummary, PerioToothRecord } from "@dental/shared";
+import { PERIO_SITE_KEYS, type PerioChartSummary, type PerioDynamicsSummary, type PerioToothRecord } from "@dental/shared";
 import { useCallback, useState } from "react";
 import { useVisitStore } from "../../../store/visitStore";
 import { showToast } from "../../GlobalToast";
 import { generatePerioProtocolText } from "./perioPresets";
+import { buildPeriodontalTreatmentPlanJustification } from "./perioSideEffectsEngine";
 
 export interface UsePerioProtocolActionsOptions {
 	readonly teeth: readonly PerioToothRecord[];
@@ -37,6 +38,17 @@ export function usePerioProtocolActions({
 			objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${text}` : text,
 		}));
 
+		// Автопредложение плана лечения при наличии патологии >= 4 мм с BOP или >= 5 мм
+		const affected = teeth.filter((t) => !t.isMissing && PERIO_SITE_KEYS.some((k) => (t[k]?.probingDepthMm ?? 0) >= 4 && (t[k]?.bleedingOnProbing || (t[k]?.probingDepthMm ?? 0) >= 5)));
+		if (affected.length > 0) {
+			const { planText, prophyService, curettageServices } = buildPeriodontalTreatmentPlanJustification(affected);
+			useVisitStore.getState().setVisitNoteForm((prev) => ({
+				...prev, treatmentPlan: prev.treatmentPlan && !prev.treatmentPlan.includes("План пародонтологического лечения") ? `${prev.treatmentPlan}\n\n${planText}` : prev.treatmentPlan || planText,
+			}));
+			useVisitStore.getState().addCompletedService(prophyService);
+			for (const cur of curettageServices) useVisitStore.getState().addCompletedService(cur);
+		}
+
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
 				detail: { soap: text, mode: "smart_append" },
@@ -53,7 +65,7 @@ export function usePerioProtocolActions({
 		setInsertStatus(true);
 		setTimeout(() => setInsertStatus(false), 2500);
 		showToast("Протокол пародонтограммы перенесён в дневник приёма и зафиксирован в ЭМК", "success", 4000);
-	}, [generateProtocolText, onInsertToProtocol, handleSaveDraft]);
+	}, [generateProtocolText, teeth, onInsertToProtocol, handleSaveDraft]);
 
 	const handleCopyProtocol = useCallback(() => {
 		const text = generateProtocolText();

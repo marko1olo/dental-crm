@@ -95,7 +95,7 @@ export const PeriodontogramModalView: React.FC<
 							<button
 								type="button"
 								onClick={onClose}
-								className="primary-button button-lg min-h-[44px] px-6"
+								className="secondary-button button-lg min-h-[44px] px-6"
 								data-testid="perio-modal-done-bottom-btn"
 							>
 								<Check size={16} className="text-white" />

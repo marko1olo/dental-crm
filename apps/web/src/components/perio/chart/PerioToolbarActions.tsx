@@ -67,7 +67,7 @@ export const PerioToolbarActions: React.FC<PerioToolbarActionsProps> = React.mem
 				<button
 					type="button"
 					onClick={onSaveDraft}
-					disabled={syncStatus === "saving"}
+					aria-busy={syncStatus === "saving"}
 					className="primary-button shrink-0 font-bold !h-9 !min-h-[36px]"
 					title="Сохранить карту пародонта в электронную медицинскую карту"
 					data-testid="perio-save-draft-btn"

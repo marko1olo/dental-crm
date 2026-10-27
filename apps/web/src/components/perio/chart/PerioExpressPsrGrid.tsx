@@ -58,8 +58,8 @@ export const PerioExpressPsrGrid: React.FC<PerioExpressPsrGridProps> = React.mem
 									const def = PSR_CODE_DEFINITIONS[codeVal];
 									return (
 										<button
-											key={codeVal} type="button" disabled={readOnly}
-											onClick={() => onApplySextantCode(sextant.name, codeVal, hasAsterisk)}
+											key={codeVal} type="button" aria-disabled={readOnly}
+											onClick={() => !readOnly && onApplySextantCode(sextant.name, codeVal, hasAsterisk)}
 											className={`h-8 min-w-[32px] sm:min-w-[34px] rounded-lg font-bold text-[12.5px] flex items-center justify-center transition-all cursor-pointer touch-manipulation border ${
 												isSelected ? def.badgeClass + " ring-1 ring-white/50 scale-105" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border-[var(--line)]"
 											}`}
@@ -71,8 +71,8 @@ export const PerioExpressPsrGrid: React.FC<PerioExpressPsrGridProps> = React.mem
 									);
 								})}
 								<button
-									type="button" disabled={readOnly}
-									onClick={() => onApplySextantCode(sextant.name, currentCode, !hasAsterisk)}
+									type="button" aria-disabled={readOnly}
+									onClick={() => !readOnly && onApplySextantCode(sextant.name, currentCode, !hasAsterisk)}
 									className={`h-8 min-w-[32px] sm:min-w-[34px] rounded-lg font-bold text-[13px] flex items-center justify-center transition-all cursor-pointer touch-manipulation border ${
 										hasAsterisk ? "bg-rose-500 text-white border-rose-400 ring-1 ring-white/50" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-rose-600 border-[var(--line)]"
 									}`}

@@ -41,7 +41,7 @@ export const MobilePerioKeypadButtons: React.FC<MobilePerioKeypadButtonsProps> =
 			<div className="grid grid-cols-5 gap-1.5 w-full">
 				{DEPTH_TILES.map((item) => (
 					<button
-						key={item.val} type="button" disabled={readOnly} onClick={() => onDepthTap(item.val)}
+						key={item.val} type="button" aria-disabled={readOnly} onClick={() => !readOnly && onDepthTap(item.val)}
 						className={`min-h-[48px] h-12 rounded-xl flex flex-col items-center justify-center border transition-all active:scale-95 cursor-pointer touch-manipulation shadow-xs ${item.cls}`}
 						data-testid={`perio-keypad-depth-${item.val}`}
 						title={`Глубина ${item.label} (${item.sub})`}
@@ -55,8 +55,8 @@ export const MobilePerioKeypadButtons: React.FC<MobilePerioKeypadButtonsProps> =
 			{/* Маркеры: Кровоточивость (BOP), Нагноение (PUS), Налёт (PLQ) */}
 			<div className="grid grid-cols-3 gap-1.5 w-full">
 				<button
-					type="button" disabled={readOnly}
-					onClick={() => { triggerHaptic("impact"); onToggleBop(); }}
+					type="button" aria-disabled={readOnly}
+					onClick={() => { if (readOnly) return; triggerHaptic("impact"); onToggleBop(); }}
 					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentBop
 							? "bg-rose-600 text-white border-rose-400 font-black shadow-sm"
@@ -69,8 +69,8 @@ export const MobilePerioKeypadButtons: React.FC<MobilePerioKeypadButtonsProps> =
 				</button>
 
 				<button
-					type="button" disabled={readOnly}
-					onClick={() => { triggerHaptic("impact"); onToggleSuppuration(); }}
+					type="button" aria-disabled={readOnly}
+					onClick={() => { if (readOnly) return; triggerHaptic("impact"); onToggleSuppuration(); }}
 					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentPus
 							? "bg-indigo-600 text-white border-indigo-400 font-black shadow-sm"
@@ -83,8 +83,8 @@ export const MobilePerioKeypadButtons: React.FC<MobilePerioKeypadButtonsProps> =
 				</button>
 
 				<button
-					type="button" disabled={readOnly}
-					onClick={() => { triggerHaptic("selection"); onTogglePlaque(); }}
+					type="button" aria-disabled={readOnly}
+					onClick={() => { if (readOnly) return; triggerHaptic("selection"); onTogglePlaque(); }}
 					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
 						currentPlq
 							? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-sm"

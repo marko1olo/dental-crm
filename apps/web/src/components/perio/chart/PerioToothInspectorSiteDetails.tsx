@@ -47,8 +47,8 @@ export const PerioToothInspectorSiteDetails: React.FC<PerioToothInspectorSiteDet
 					const isBorderline = numVal === 4;
 					return (
 						<button
-							key={numVal} type="button" disabled={readOnly}
-							onClick={() => onUpdateToothSite(selectedTooth.toothNumber, activeSiteKey, (prev) => ({
+							key={numVal} type="button" aria-disabled={readOnly}
+							onClick={() => !readOnly && onUpdateToothSite(selectedTooth.toothNumber, activeSiteKey, (prev) => ({
 								probingDepthMm: numVal,
 								bleedingOnProbing: numVal > 4 ? true : prev.bleedingOnProbing,
 								calMm: calculateClinicalAttachmentLevel(numVal, prev.gingivalMarginMm ?? 0),

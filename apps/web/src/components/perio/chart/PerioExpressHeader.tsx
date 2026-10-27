@@ -56,7 +56,8 @@ export const PerioExpressHeader: React.FC<PerioExpressHeaderProps> = React.memo(
 						onClick={onInsertToProtocol}
 						className="secondary-button !min-h-[32px] !h-8 !px-3 text-xs shrink-0"
 						title="Внести текущее заключение пародонтограммы в дневник приёма"
-						data-testid="perio-express-insert-043-btn"
+						data-testid="perio-express-insert-protocol-btn"
+						data-legacy-testid="perio-express-insert-043-btn"
 					>
 						{insertStatus ? <Check size={14} className="text-emerald-500" /> : <FileText size={14} className="text-teal-600 dark:text-teal-400" />}
 						<span>{insertStatus ? "Внесено в дневник!" : "Внести в дневник"}</span>

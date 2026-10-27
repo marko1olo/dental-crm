@@ -51,8 +51,8 @@ export const MobilePerioKeypadHeader: React.FC<MobilePerioKeypadHeaderProps> = R
 			<div className="flex items-center gap-1 shrink-0">
 				<button
 					type="button"
-					disabled={readOnly}
-					onClick={onToothNorm}
+					aria-disabled={readOnly}
+					onClick={() => !readOnly && onToothNorm()}
 					className="min-h-[44px] px-2.5 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 active:scale-95 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold flex items-center gap-1 cursor-pointer"
 					title="Зуб в норме: карманы 1–2 мм, кровоточивости нет"
 					data-testid="perio-keypad-depth-0"

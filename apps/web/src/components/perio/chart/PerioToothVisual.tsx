@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { fastGetClinicalToneHex } from "../perioRafOptimizer";
+import { probingDepthClinicalHex } from "../perioHeatmap";
 import { PerioImplantVisualSvg, PerioMissingVisualSvg } from "./PerioMissingOrImplantSvg";
 
 export interface PerioToothVisualProps {
@@ -35,7 +35,7 @@ export const PerioToothVisual: React.FC<PerioToothVisualProps> = React.memo(({
 
 	const maxPd = Math.max(buccalPd, lingualPd);
 	const pocketVisualHeight = Math.min(18, Math.max(2, (maxPd - 2) * 2.8));
-	const pocketColor = fastGetClinicalToneHex(maxPd);
+	const pocketColor = probingDepthClinicalHex(maxPd);
 
 	const rootPath = isAnterior
 		? isUpper ? "M 10 24 L 14 46 L 18 24 Z" : "M 10 28 L 14 6 L 18 28 Z"

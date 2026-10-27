@@ -32,9 +32,24 @@ export function dispatchPresetSideEffects(
 			}),
 		);
 		if (service) {
-			window.dispatchEvent(
-				new CustomEvent("dente-add-estimate-service", { detail: service }),
-			);
+			const priceKopecks = (service.price || 0) * 100;
+			const invoiceItem = {
+				code: service.code, code804n: service.code, name: service.name, nameRu: service.name,
+				price: service.price, priceRub: service.price, priceKopecks, amountKopecks: priceKopecks,
+				quantity: 1, category: service.category || "hygiene", stageKind: "hygiene", isPrimary: true,
+			};
+			window.dispatchEvent(new CustomEvent("dente-add-services-to-invoice", {
+				detail: { services: [invoiceItem], toothNumber: undefined, teethNumbers: [], stageKind: "hygiene" },
+			}));
+			window.dispatchEvent(new CustomEvent("dente-add-estimate-service", { detail: service }));
+			try {
+				useVisitStore.getState().addCompletedService?.({
+					serviceId: `perio_service_${service.code}`, code: service.code, name: service.name,
+					price: service.price, priceRub: service.price, priceKopecks, quantity: 1, category: service.category || "hygiene",
+				});
+			} catch (err) {
+				console.warn("[PerioInvoice] addCompletedService fallback:", err);
+			}
 		}
 		if (result.title.toLowerCase().includes("гигиен")) {
 			void deductPeriodontalConsumablesSoftOverdraft("hygiene");

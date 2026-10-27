@@ -32,8 +32,8 @@ export const PerioToothCardHeader: React.FC<PerioToothCardHeaderProps> = React.m
 				)}
 				{!isMissing && onCycleMobility && (
 					<button
-						type="button" disabled={readOnly}
-						onClick={(e) => { e.stopPropagation(); onCycleMobility(); }}
+						type="button" aria-disabled={readOnly}
+						onClick={(e) => { e.stopPropagation(); if (!readOnly) onCycleMobility(); }}
 						className={`px-1 py-0.2 rounded text-[8px] font-black tracking-tight cursor-pointer transition-all border ${
 							tooth.mobility === 0
 								? "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:bg-amber-500/20 hover:text-amber-300"
@@ -51,8 +51,8 @@ export const PerioToothCardHeader: React.FC<PerioToothCardHeaderProps> = React.m
 				)}
 				{!isMissing && isFurcationEligibleTooth(tooth.toothNumber) && onCycleFurcation && (
 					<button
-						type="button" disabled={readOnly}
-						onClick={(e) => { e.stopPropagation(); onCycleFurcation(); }}
+						type="button" aria-disabled={readOnly}
+						onClick={(e) => { e.stopPropagation(); if (!readOnly) onCycleFurcation(); }}
 						className={`px-1 py-0.2 rounded text-[8px] font-black tracking-tight cursor-pointer transition-all border ${
 							tooth.furcation === 0
 								? "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)] hover:bg-rose-500/20 hover:text-rose-300"

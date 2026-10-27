@@ -48,8 +48,8 @@ export const PerioToothCardSitesRow: React.FC<PerioToothCardSitesRowProps> = Rea
 						<span className="font-mono text-[10px] font-black leading-none mt-0.5">{pd}</span>
 						<div className="flex items-center gap-1 mt-0.5">
 							<button
-								type="button" disabled={readOnly}
-								onClick={(e) => { e.stopPropagation(); onToggleBop(sKey); }}
+								type="button" aria-disabled={readOnly}
+								onClick={(e) => { e.stopPropagation(); if (!readOnly) onToggleBop(sKey); }}
 								className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 									site.bleedingOnProbing
 										? "bg-rose-500 border-rose-300 text-white shadow-xs ring-1 ring-rose-300"
@@ -60,8 +60,8 @@ export const PerioToothCardSitesRow: React.FC<PerioToothCardSitesRowProps> = Rea
 								{site.bleedingOnProbing && <span className="w-1.5 h-1.5 rounded-full bg-white block" />}
 							</button>
 							<button
-								type="button" disabled={readOnly}
-								onClick={(e) => { e.stopPropagation(); onTogglePlaque(sKey); }}
+								type="button" aria-disabled={readOnly}
+								onClick={(e) => { e.stopPropagation(); if (!readOnly) onTogglePlaque(sKey); }}
 								className={`w-3.5 h-3.5 rounded-full cursor-pointer transition-all flex items-center justify-center border ${
 									site.plaque
 										? "bg-amber-400 border-amber-200 text-slate-950 shadow-xs ring-1 ring-amber-200"

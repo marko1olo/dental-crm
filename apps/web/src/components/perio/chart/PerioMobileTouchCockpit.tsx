@@ -64,10 +64,8 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 	return (
 		<div className="perio-mobile-touch-cockpit flex flex-col gap-3 w-full max-w-full overflow-x-clip select-none" data-testid="perio-mobile-cockpit">
 			<PerioMobileCockpitHeader
-				aapDiagnosis={aapDiagnosis}
-				insertStatus={insertStatus}
-				onApplyExpressPreset={onApplyExpressPreset}
-				onInsertToProtocol={onInsertToProtocol}
+				aapDiagnosis={aapDiagnosis} insertStatus={insertStatus}
+				onApplyExpressPreset={onApplyExpressPreset} onInsertToProtocol={onInsertToProtocol}
 				onOpenPsrDrawer={() => setIsPsrDrawerOpen(true)}
 			/>
 			<PerioMobileCockpitKpi summary={summary} />
@@ -99,7 +97,7 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 			{onSaveDraft && (
 				<div className="w-full pt-1 pb-2">
 					<button
-						type="button" onClick={onSaveDraft} disabled={syncStatus === "saving"}
+						type="button" onClick={onSaveDraft} aria-busy={syncStatus === "saving"}
 						className="primary-button button-lg min-h-[48px] h-12 w-full font-bold shadow-md"
 						data-testid="perio-mobile-save-primary-btn"
 					>
@@ -109,10 +107,8 @@ export const PerioMobileTouchCockpit: React.FC<PerioMobileTouchCockpitProps> = R
 				</div>
 			)}
 			<PerioMobileDrawer
-				isOpen={isPsrDrawerOpen}
-				onClose={() => setIsPsrDrawerOpen(false)}
-				onApplyNormAll={onSetAllIntact}
-				onApplySextantCode={onApplySextantCode}
+				isOpen={isPsrDrawerOpen} onClose={() => setIsPsrDrawerOpen(false)}
+				onApplyNormAll={onSetAllIntact} onApplySextantCode={onApplySextantCode}
 			/>
 		</div>
 	);

@@ -61,7 +61,7 @@ export function applyExpressPerioPreset(
 	if (presetId === "pro_hygiene_express") {
 		service = {
 			code: "A16.07.051",
-			name: "Профессиональная гигиена полости рта и зубов (ультразвуковое удаление отложений, Air-Flow, полировка, фторирование)",
+			name: "Комплексная профессиональная гигиена полости рта (УЗ + Air-Flow + Полировка + Фторлак)",
 			price: 5500,
 			category: "hygiene",
 		};

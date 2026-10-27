@@ -45,7 +45,7 @@ export const PerioMobileQuadrantBar: React.FC<PerioMobileQuadrantBarProps> = Rea
 						className={`min-h-[48px] py-1 px-1 rounded-xl flex flex-col items-center justify-center transition-all cursor-pointer ${
 							activeQuadrant === qKey
 								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-teal-500/50 font-bold"
-								: "text-[var(--muted)] hover:text-[var(--ink)]"
+								: "bg-transparent text-[var(--muted)] hover:bg-[var(--paper)]/40 hover:text-[var(--ink)] border border-transparent"
 						}`}
 						data-testid={`perio-quadrant-tab-${qKey}`}
 					>

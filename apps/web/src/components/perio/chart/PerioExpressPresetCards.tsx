@@ -42,7 +42,8 @@ export const PerioExpressPresetCards: React.FC<PerioExpressPresetCardsProps> = R
 	<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 2xl:grid-cols-7 gap-2.5">
 		{PRESET_CARDS.map(({ id, testId, title, icd, desc, btnClass, textClass, badgeClass, Icon, extraAction }) => (
 			<button
-				key={id} type="button" disabled={readOnly} onClick={() => onApplyExpressPreset(id)}
+				key={id} type="button" onClick={() => !readOnly && onApplyExpressPreset(id)}
+				aria-disabled={readOnly}
 				className={`min-h-[50px] p-3 rounded-xl border transition-all cursor-pointer text-left active:scale-[0.98] shadow-xs flex flex-col justify-center min-w-0 ${btnClass}`}
 				data-testid={testId}
 				{...(extraAction ? { "data-preset-action": extraAction } : {})}

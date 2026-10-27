@@ -91,15 +91,17 @@ export const PeriodontogramDesktopView: React.FC<PeriodontogramDesktopViewProps>
 				onSetProbingDepth={(num, key, d) => updateToothSite(num, key, () => ({ probingDepthMm: d }))}
 				onSetGingivalMargin={(num, key, gm) => updateToothSite(num, key, () => ({ gingivalMarginMm: gm }))}
 			/>
-			{selectedTooth ? (
-				<PerioToothInspector
-					selectedTooth={selectedTooth} readOnly={readOnly}
-					onUpdateToothProperties={updateToothProperties} onUpdateToothSite={updateToothSite}
-				/>
-			) : (
-				<div className="p-3 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">
-					Выберите зуб в схеме, чтобы увидеть шесть точек зондирования и свойства зуба
-				</div>
+			{isTier3ProbingExpanded && (
+				selectedTooth ? (
+					<PerioToothInspector
+						selectedTooth={selectedTooth} readOnly={readOnly}
+						onUpdateToothProperties={updateToothProperties} onUpdateToothSite={updateToothSite}
+					/>
+				) : (
+					<div className="p-3 sm:p-4 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--muted)]">
+						Выберите зуб в схеме, чтобы увидеть шесть точек зондирования и свойства зуба
+					</div>
+				)
 			)}
 			<PerioDiagnosticsPanel
 				isDiagnosticsExpanded={isDiagnosticsExpanded} onCloseDiagnostics={() => setIsDiagnosticsExpanded(false)}
