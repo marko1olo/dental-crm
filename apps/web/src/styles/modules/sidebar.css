@@ -152,67 +152,33 @@ html.dark .sidebar .nav-item.active,
 	opacity: 1 !important;
 }
 
-/* 5. Quick Tools (Clinical Tasks & Recalls Hub) */
+/* 5. Quick Tools (Clinical Tasks & Recalls Hub) — Canonical .nav-item Hierarchy */
 .sidebar-quick-tools {
 	border-top: 1px solid var(--line-subtle, var(--line)) !important;
 	box-sizing: border-box !important;
 	width: 100% !important;
-}
-
-.sidebar-quick-tool-btn {
+	padding-top: 4px !important;
+	padding-bottom: 2px !important;
 	display: flex !important;
-	align-items: center !important;
-	border-radius: 8px !important;
-	border: 1px solid transparent !important;
-	background: transparent !important;
-	color: var(--ink) !important;
-	box-sizing: border-box !important;
-	text-decoration: none !important;
-	transition: background 0.15s ease, border-color 0.15s ease, color 0.15s ease !important;
+	flex-direction: column !important;
+	gap: 2px !important;
 }
 
-.sidebar-quick-tool-btn--expanded {
-	width: calc(100% - 4px) !important;
-	margin: 1px 2px !important;
-	padding: 5px 8px !important;
-	min-height: 30px !important;
-	gap: 8px !important;
-	font-size: 12px !important;
-	font-weight: 500 !important;
+.sidebar button.sidebar-quick-tool-btn {
+	background: transparent;
+	border: 1px solid transparent;
+	font-family: inherit;
+	text-align: left;
+	cursor: pointer;
+	appearance: none;
+	-webkit-appearance: none;
+	color: var(--ink);
 }
 
-.sidebar-quick-tool-btn--expanded:hover {
+.sidebar button.sidebar-quick-tool-btn:hover {
 	background: var(--teal-surface, rgba(45, 212, 191, 0.08)) !important;
-	border-color: var(--line-subtle, var(--line)) !important;
-	color: var(--teal, #0d9488) !important;
-}
-
-.sidebar-quick-tool-btn--collapsed {
-	width: 36px !important;
-	height: 36px !important;
-	min-width: 36px !important;
-	min-height: 36px !important;
-	padding: 0 !important;
-	justify-content: center !important;
-	border: 1px solid var(--line) !important;
-	background: var(--paper-soft, rgba(0, 0, 0, 0.03)) !important;
-}
-
-.sidebar-quick-tool-btn--collapsed:hover {
-	background: var(--teal-surface, rgba(45, 212, 191, 0.12)) !important;
-	border-color: var(--teal, #0d9488) !important;
-}
-
-[data-theme="dark"] .sidebar-quick-tool-btn--collapsed,
-.dark .sidebar-quick-tool-btn--collapsed {
-	background: rgba(255, 255, 255, 0.04) !important;
-	border-color: var(--line) !important;
-}
-
-[data-theme="dark"] .sidebar-quick-tool-btn--collapsed:hover,
-.dark .sidebar-quick-tool-btn--collapsed:hover {
-	background: var(--teal-soft, rgba(45, 212, 191, 0.16)) !important;
-	border-color: var(--teal, #2dd4bf) !important;
+	color: var(--ink) !important;
+	border-color: transparent !important;
 }
 
 /* 6. Sidebar Footer with 2-Tier Stack */
@@ -389,12 +355,12 @@ html.dark .sidebar .nav-item.active,
 .sidebar-footer .dnt-control-center-popover {
 	position: fixed !important;
 	top: auto !important;
-	bottom: 52px !important;
+	bottom: 86px !important;
 	left: 10px !important;
 	right: auto !important;
 	width: 360px !important;
 	max-width: calc(100% - 24px) !important;
-	max-height: calc(100vh - 65px) !important;
+	max-height: calc(100vh - 100px) !important;
 	overflow-y: auto !important;
 	z-index: 9999 !important;
 	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(13, 148, 136, 0.15) !important;

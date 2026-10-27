@@ -6,6 +6,9 @@ import { fileURLToPath } from "node:url";
 const shellPath = fileURLToPath(
 	new URL("../workspaceShellModules/WorkspaceSidebar.tsx", import.meta.url),
 );
+const quickToolsPath = fileURLToPath(
+	new URL("../workspaceShellModules/SidebarQuickTools.tsx", import.meta.url),
+);
 const sidebarCssPath = fileURLToPath(
 	new URL("../styles/modules/sidebar.css", import.meta.url),
 );
@@ -86,4 +89,63 @@ test("sidebar ergonomics & width optimization", () => {
 		sidebarCss.includes('[data-collapsed="true"] .sidebar {\n\twidth: 76px !important;'),
 		"collapsed state must preserve 76px rail width",
 	);
+});
+
+test("sidebar quick tools: canonical .nav-item design system compliance", () => {
+	const quickToolsSource = readFileSync(quickToolsPath, "utf8");
+	const sidebarCss = readFileSync(sidebarCssPath, "utf8");
+
+	// 1. Must use canonical nav-item class for seamless design integration
+	assert.ok(
+		quickToolsSource.includes('className="nav-item sidebar-quick-tool-btn"'),
+		"quick tool buttons must inherit canonical nav-item class",
+	);
+
+	// 2. Must feature canonical clinical micro-hints
+	assert.ok(
+		quickToolsSource.includes("Передача этапов"),
+		"clinical tasks must have 'Передача этапов' micro-hint",
+	);
+	assert.ok(
+		quickToolsSource.includes("Повторные вызовы"),
+		"recalls hub must have 'Повторные вызовы' micro-hint",
+	);
+
+	// 3. Must feature collapsed captions
+	assert.ok(
+		quickToolsSource.includes(">Задачи</span>"),
+		"clinical tasks must have 'Задачи' caption in collapsed mode",
+	);
+	assert.ok(
+		quickToolsSource.includes(">Осмотры</span>"),
+		"recalls hub must have 'Осмотры' caption in collapsed mode",
+	);
+
+	// 4. No sticker classes or hardcoded colored text classes
+	assert.ok(
+		!quickToolsSource.includes("sidebar-quick-tool-btn--collapsed"),
+		"must not use legacy collapsed sticker classes",
+	);
+	assert.ok(
+		!quickToolsSource.includes("sidebar-quick-tool-btn--expanded"),
+		"must not use legacy expanded sticker classes",
+	);
+	assert.ok(
+		!quickToolsSource.includes("text-[var(--teal"),
+		"must not hardcode teal text on icons",
+	);
+
+	// 5. CSS must not have legacy sticker box styling
+	assert.ok(
+		!sidebarCss.includes(".sidebar-quick-tool-btn--collapsed"),
+		"sidebar.css must be purged of legacy collapsed sticker box styles",
+	);
+	assert.ok(
+		!sidebarCss.includes(".sidebar-quick-tool-btn--expanded"),
+		"sidebar.css must be purged of legacy expanded sticker box styles",
+	);
+
+	// 6. Mandate 8b: file length <= 120 lines
+	const lines = quickToolsSource.split("\n").length;
+	assert.ok(lines <= 120, `SidebarQuickTools.tsx must be <= 120 lines (currently ${lines})`);
 });
