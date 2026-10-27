@@ -4,4 +4,6 @@
 @import "./pnlStyles/pnlHeader.css";
 @import "./pnlStyles/pnlKpiCards.css";
 @import "./pnlStyles/pnlBreakdownTable.css";
+@import "./pnlStyles/pnlFooter.css";
+@import "./pnlStyles/pnlMobile.css";
 @import "./pnlStyles/pnlDarkTheme.css";

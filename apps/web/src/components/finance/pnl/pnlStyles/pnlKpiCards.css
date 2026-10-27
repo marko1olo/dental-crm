@@ -1,4 +1,4 @@
-/* pnlKpiCards.css — Executive KPI Cards, Value Badges & Breakeven Grid (Mandate 8b <= 120 lines) */
+/* pnlKpiCards.css — Executive KPI Cards, Badges & Summary Grids (Mandate 8b <= 120 lines) */
 
 .pnl-kpi-grid {
 	display: grid;
@@ -40,23 +40,23 @@
 }
 
 .pnl-kpi-val.revenue {
-	color: #2563eb;
+	color: var(--teal-dark, #0f766e);
 }
 
 .pnl-kpi-val.cogs {
-	color: #e11d48;
+	color: var(--rust, #b91c1c);
 }
 
 .pnl-kpi-val.profit {
-	color: #059669;
+	color: var(--green, #15803d);
 }
 
 .pnl-kpi-val.loss {
-	color: #dc2626;
+	color: var(--red, #ef4444);
 }
 
 .pnl-kpi-val.ebitda {
-	color: #7c3aed;
+	color: var(--brand-600, #0284c7);
 }
 
 .pnl-breakeven-grid {
@@ -79,4 +79,22 @@
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 	gap: 12px;
+}
+
+@media (max-width: 768px) {
+	.pnl-kpi-grid {
+		grid-template-columns: repeat(2, 1fr);
+		padding: 10px 12px;
+		gap: 8px;
+	}
+	.pnl-kpi-card {
+		padding: 8px 10px;
+	}
+	.pnl-kpi-val {
+		font-size: 16px;
+	}
+	.pnl-breakeven-grid,
+	.pnl-chair-summary-grid {
+		grid-template-columns: 1fr;
+	}
 }

@@ -1,0 +1,71 @@
+/* pnlMobile.css — Apple HIG Mobile Grouped Cards & Touch Layout (Mandate 8b <= 120 lines) */
+
+.pnl-mobile-view {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	padding-bottom: 8px;
+}
+
+.pnl-mobile-group {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pnl-mobile-group-header {
+	font-size: 13px;
+	font-weight: 700;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--ink, #0f172a);
+	padding: 0 4px;
+}
+
+.pnl-mobile-cards-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.pnl-mobile-card {
+	background: var(--paper-strong, #f8fafc);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 8px;
+	padding: 12px 14px;
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.pnl-mobile-card-row {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 13px;
+	gap: 8px;
+}
+
+.pnl-mobile-card-title {
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.pnl-mobile-card-val {
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+}
+
+.pnl-mobile-card-details {
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	font-size: 11px;
+	color: var(--muted, #64748b);
+	padding-top: 2px;
+	gap: 6px;
+	flex-wrap: wrap;
+}

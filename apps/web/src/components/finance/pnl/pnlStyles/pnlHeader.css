@@ -5,12 +5,17 @@
 	align-items: center;
 	justify-content: space-between;
 	gap: 12px;
-	padding: 12px 18px;
+	padding: 10px 18px;
 	border-bottom: 1px solid var(--border, #e2e8f0);
 	background: var(--paper-strong, #f8fafc);
 	min-height: 52px;
 }
-
+.pnl-header-title-box {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	min-width: 0;
+}
 .pnl-title {
 	font-size: 16px;
 	font-weight: 700;
@@ -20,20 +25,20 @@
 	gap: 8px;
 	flex-shrink: 0;
 	white-space: nowrap;
+	color: var(--ink, #0f172a);
 }
-
+.pnl-title-icon { color: var(--teal, #0d9488); flex-shrink: 0; }
 .pnl-badge {
-	background: #f1f5f9;
-	color: #475569;
-	border: 1px solid #cbd5e1;
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--muted, #475569);
+	border: 1px solid var(--border, #cbd5e1);
 	border-radius: 4px;
 	font-size: 11px;
 	font-weight: 600;
-	padding: 2px 6px;
+	padding: 2px 8px;
 	flex-shrink: 0;
 	white-space: nowrap;
 }
-
 .pnl-header-actions {
 	display: flex;
 	align-items: center;
@@ -41,12 +46,12 @@
 	flex-shrink: 0;
 	gap: 8px;
 }
-
+.pnl-period-switcher { display: flex; align-items: center; gap: 4px; }
 .pnl-date-btn {
 	height: 32px;
-	padding: 0 9px;
+	padding: 0 10px;
 	border: 1px solid var(--border, #e2e8f0);
-	border-radius: 4px;
+	border-radius: 6px;
 	background: var(--paper, #ffffff);
 	font-size: 12px;
 	font-weight: 500;
@@ -54,15 +59,23 @@
 	color: var(--ink, #0f172a);
 	white-space: nowrap;
 	flex-shrink: 0;
-	min-width: max-content;
+	transition: all 0.15s ease;
 }
-
+.pnl-date-btn:hover { background: var(--paper-soft, #f1f5f9); }
 .pnl-date-btn.active {
-	background: #2563eb;
+	background: var(--teal, #0d9488);
 	color: #ffffff;
-	border-color: #2563eb;
+	border-color: var(--teal, #0d9488);
+	font-weight: 600;
 }
-
+.pnl-date-btn.pnl-icon-btn {
+	width: 32px;
+	height: 32px;
+	padding: 0;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
 .pnl-btn-close {
 	min-width: 44px;
 	min-height: 44px;
@@ -77,9 +90,18 @@
 	color: var(--muted, #64748b);
 	cursor: pointer;
 	flex-shrink: 0;
+	transition: all 0.15s ease;
 }
-
 .pnl-btn-close:hover {
 	color: var(--ink, #0f172a);
 	background: var(--paper, #ffffff);
+}
+@media (max-width: 768px) {
+	.pnl-header { padding: 8px 12px; flex-wrap: wrap; gap: 8px; }
+	.pnl-title span { font-size: 14px; }
+	.pnl-period-switcher {
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 2px;
+	}
 }

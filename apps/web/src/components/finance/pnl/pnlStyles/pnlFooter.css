@@ -1,0 +1,103 @@
+/* pnlFooter.css — P&L Modal Actions, Primary CTA & Safe Area (Mandate 8b <= 120 lines) */
+
+.pnl-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 10px 18px;
+	border-top: 1px solid var(--border, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	min-height: 54px;
+	flex-shrink: 0;
+}
+
+.pnl-footer-meta {
+	display: flex;
+	align-items: center;
+	font-size: 12px;
+	color: var(--muted, #64748b);
+}
+
+.pnl-footer-status {
+	font-weight: 500;
+}
+
+.pnl-footer-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.pnl-footer-btn-primary {
+	height: 36px;
+	padding: 0 16px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border: 1px solid var(--teal, #0d9488);
+	border-radius: 6px;
+	font-size: 13px;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.pnl-footer-btn-primary:hover {
+	background: var(--teal-dark, #0f766e);
+	border-color: var(--teal-dark, #0f766e);
+}
+
+.pnl-footer-btn-secondary {
+	height: 36px;
+	padding: 0 12px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--border, #e2e8f0);
+	border-radius: 6px;
+	font-size: 12px;
+	font-weight: 500;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.pnl-footer-btn-secondary:hover {
+	background: var(--paper-soft, #f1f5f9);
+}
+
+@media (max-width: 768px) {
+	.pnl-footer {
+		padding: 10px 14px;
+		padding-bottom: max(10px, env(safe-area-inset-bottom, 10px));
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+	.pnl-footer-meta {
+		justify-content: center;
+		font-size: 11px;
+	}
+	.pnl-footer-actions {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+	}
+	.pnl-footer-btn-primary {
+		grid-column: span 2;
+		height: 44px;
+		justify-content: center;
+		font-size: 14px;
+	}
+	.pnl-footer-btn-secondary {
+		height: 40px;
+		justify-content: center;
+	}
+}

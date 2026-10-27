@@ -9,11 +9,21 @@ import type React from "react";
 import { renderFiscalReceiptLauncher } from "./FiscalReceiptLaunchers";
 import { StandaloneCashFlowLauncherHost } from "./StandaloneCashFlowLauncherHost";
 import { StandaloneFastCheckoutHost, StandaloneSbpPaymentHost } from "./CashierPaymentLauncherHosts";
+import { ManagerialPnlDashboardModal } from "../../../../finance/pnl";
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderCashierFinanceLaunchers(props: StandaloneLaunchersProps): React.ReactElement | null {
 	const { isSbpDirectModalOpen, setIsSbpDirectModalOpen, isReceiptDirectModalOpen, setIsReceiptDirectModalOpen } = props;
+
+	if (hasUrlToken(["pnl", "managerial_pnl"])) {
+		return (
+			<ManagerialPnlDashboardModal
+				isOpen={true}
+				onClose={() => clearUrlTokens(["pnl", "managerial_pnl"])}
+			/>
+		);
+	}
 
 	if (hasUrlToken(["fast_checkout", "checkout"])) {
 		return (

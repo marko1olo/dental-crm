@@ -1,4 +1,4 @@
-/* pnlBreakdownTable.css — P&L Breakdown Table, Progress Bars & Tags (Mandate 8b <= 120 lines) */
+/* pnlBreakdownTable.css — P&L Tables, Progress Bars & Tags (Mandate 8b <= 120 lines) */
 
 .pnl-table-wrapper {
 	border: 1px solid var(--border, #e2e8f0);
@@ -9,7 +9,7 @@
 }
 .pnl-table {
 	width: 100%;
-	min-width: 640px;
+	min-width: 620px;
 	border-collapse: collapse;
 	font-size: 12px;
 }
@@ -29,10 +29,9 @@
 	padding: 8px 12px;
 	border-bottom: 1px solid var(--border, #e2e8f0);
 	white-space: nowrap;
+	color: var(--ink, #0f172a);
 }
-.pnl-table tr:last-child td {
-	border-bottom: none;
-}
+.pnl-table tr:last-child td { border-bottom: none; }
 .pnl-table tr.total-row td {
 	background: var(--paper-strong, #f8fafc);
 	font-weight: 700;
@@ -40,7 +39,7 @@
 .pnl-progress-bar-bg {
 	width: 100%;
 	height: 6px;
-	background: #e2e8f0;
+	background: var(--line, #e2e8f0);
 	border-radius: 3px;
 	overflow: hidden;
 	margin-top: 4px;
@@ -48,33 +47,43 @@
 .pnl-progress-bar-fill {
 	height: 100%;
 	border-radius: 3px;
+	transition: width 0.3s ease;
 }
 .pnl-tag-cogs {
 	display: inline-block;
 	font-size: 10px;
 	font-weight: 600;
-	padding: 1px 5px;
+	padding: 1px 6px;
 	border-radius: 3px;
-	background: #fee2e2;
-	color: #991b1b;
+	background: var(--rust-soft, #fee2e2);
+	color: var(--rust, #b91c1c);
 }
 .pnl-tag-opex {
 	display: inline-block;
 	font-size: 10px;
 	font-weight: 600;
-	padding: 1px 5px;
+	padding: 1px 6px;
 	border-radius: 3px;
-	background: #f1f5f9;
-	color: #475569;
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--muted, #475569);
 }
 .pnl-tag-taxes {
 	display: inline-block;
 	font-size: 10px;
 	font-weight: 600;
+	padding: 1px 6px;
+	border-radius: 3px;
+	background: var(--amber-soft, #fef3c7);
+	color: var(--amber, #d97706);
+}
+.pnl-tag-locked {
+	margin-left: 6px;
+	font-size: 10px;
+	color: var(--amber, #d97706);
+	background: var(--amber-soft, #fef3c7);
 	padding: 1px 5px;
 	border-radius: 3px;
-	background: #fef3c7;
-	color: #92400e;
+	border: 1px solid var(--border, #cbd5e1);
 }
 .pnl-status-pill {
 	display: inline-block;
@@ -84,32 +93,12 @@
 	border-radius: 4px;
 }
 .pnl-status-pill.success {
-	background: #dcfce7;
-	color: #15803d;
-	border: 1px solid #bbf7d0;
+	background: rgba(21, 128, 61, 0.12);
+	color: var(--green, #15803d);
+	border: 1px solid rgba(21, 128, 61, 0.25);
 }
 .pnl-status-pill.danger {
-	background: #fee2e2;
-	color: #b91c1c;
-	border: 1px solid #fecaca;
-}
-.pnl-action-btn-expense {
-	height: 32px;
-	padding: 0 12px;
-	border: 1px solid #b91c1c;
-	border-radius: 4px;
-	background: #b91c1c;
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-	color: #ffffff;
-	display: inline-flex;
-	align-items: center;
-	gap: 6px;
-	transition: background 0.15s ease;
-	white-space: nowrap;
-	flex-shrink: 0;
-}
-.pnl-action-btn-expense:hover {
-	background: #991b1b;
+	background: var(--rust-soft, #fee2e2);
+	color: var(--rust, #b91c1c);
+	border: 1px solid rgba(239, 68, 68, 0.25);
 }
