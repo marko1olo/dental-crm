@@ -17,7 +17,7 @@ export const PayrollServicesTable: React.FC<PayrollServicesTableProps> = ({
 }) => {
 	return (
 		<div className="flex flex-col gap-2">
-			<h3 className="text-xs font-bold text-[var(--ink,#0f172a)] uppercase tracking-wider">
+			<h3 className="text-xs font-bold text-[var(--ink,#0f172a)]">
 				Детализация выполненных нарядов и приемов за период:
 			</h3>
 

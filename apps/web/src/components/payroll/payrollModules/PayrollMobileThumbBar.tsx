@@ -40,7 +40,7 @@ export const PayrollMobileThumbBar: React.FC<PayrollMobileThumbBarProps> = ({
 				<button
 					type="button"
 					onClick={onAccrueSalary}
-					className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[44px] px-3 text-xs font-bold rounded-xl border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 transition-all cursor-pointer active:scale-98 shadow-sm whitespace-nowrap"
+					className="inline-flex items-center justify-center gap-1.5 flex-1 min-h-[44px] px-3 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] transition-all cursor-pointer active:scale-98 shadow-sm whitespace-nowrap"
 					data-testid="doctor-payroll-mobile-accrue-btn"
 				>
 					<Check className="w-4 h-4 shrink-0" />

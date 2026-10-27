@@ -35,7 +35,7 @@ export const SOLO_DOCTOR_SPECIALTY_PRESETS: readonly SoloDoctorSpecialtyPreset[]
 	{
 		specialtyId: "general_dentist",
 		titleRu: "Врач-стоматолог общей практики (соло)",
-		labelRu: "Лечащий врач (соло-практика) — Стоматолог общей практики",
+		labelRu: "Стоматолог общей практики",
 	},
 	{
 		specialtyId: "therapist",

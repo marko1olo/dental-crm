@@ -86,7 +86,7 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 					<button
 						type="button"
 						onClick={handleAccrueSalary}
-						className="inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[var(--primary,#0d9488)] bg-[var(--primary,#0d9488)] text-white hover:opacity-95 shadow-xs transition-all cursor-pointer active:scale-98 whitespace-nowrap"
+						className="inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] shadow-xs transition-all cursor-pointer active:scale-98 whitespace-nowrap"
 						data-testid="doctor-payroll-accrue-btn"
 						title="Начислить заработную плату врачу по закрытым счетам"
 					>
