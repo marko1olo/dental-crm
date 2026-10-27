@@ -50,7 +50,7 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 		labelRu: match?.nameRu ?? type,
 		idsSigningAllowed: isLegal,
 		descriptionRu: isLegal
-			? "Законный представитель: имеет право подписывать информированное согласие (ИДС) за несовершеннолетнего"
+			? "Законный представитель: имеет право подписывать согласие на лечение за несовершеннолетнего"
 			: "Член семьи: подписание согласий за несовершеннолетнего требует нотариальной доверенности",
 	};
 }

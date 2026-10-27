@@ -5,7 +5,7 @@ import {
 	ShieldAlert,
 	ShieldCheck,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface PatientHeaderDocBadgesProps {
 	readonly contractStatus: "issued" | "draft" | "none";
@@ -39,20 +39,20 @@ const CONSENT_CONFIG = {
 	issued: {
 		cls: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/25",
 		icon: <ShieldCheck size={11} className="shrink-0 text-emerald-600 dark:text-emerald-400" />,
-		label: "ИДС: Подписано",
-		title: "Информированное согласие (ИДС) подписано",
+		label: "Согласие: Подписано",
+		title: "Информированное согласие на лечение подписано",
 	},
 	draft: {
 		cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25",
 		icon: <Clock size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />,
-		label: "ИДС: Черновик",
-		title: "ИДС в статусе черновика",
+		label: "Согласие: Черновик",
+		title: "Согласие на лечение в статусе черновика",
 	},
 	none: {
 		cls: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/25",
 		icon: <ShieldAlert size={11} className="shrink-0 text-amber-600 dark:text-amber-400" />,
-		label: "ИДС: Требуется",
-		title: "Требуется оформить ИДС перед началом приёма",
+		label: "Согласие: Требуется",
+		title: "Требуется оформить согласие на лечение перед началом приёма",
 	},
 };
 

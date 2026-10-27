@@ -68,6 +68,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 
 			<PatientWorkspaceTabContent patientId={patientId} logic={logic} />
 
+			{/* PatientTreatmentPlanDrawerModal mounted via PatientWorkspaceModalsWrapper */}
 			<PatientWorkspaceModalsWrapper patientId={patientId} patientName={patientName ?? undefined} logic={logic} />
 
 			<div className="h-24 w-full shrink-0 pointer-events-none" aria-hidden="true" />

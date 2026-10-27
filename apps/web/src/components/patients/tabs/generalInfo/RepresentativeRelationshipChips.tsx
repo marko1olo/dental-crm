@@ -69,13 +69,13 @@ export const RepresentativeRelationshipChips: React.FC<RepresentativeRelationshi
 							<span>{rep.nameRu}</span>
 							{rep.isLegalRepresentative && (
 								<span
-									className={`px-1 py-0.2 rounded text-[9px] font-black uppercase ${
+									className={`px-1 py-0.2 rounded text-[9px] font-bold ${
 										isSelected
 											? "bg-white/20 text-white"
 											: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
 									}`}
 								>
-									ИДС
+									согласие
 								</span>
 							)}
 						</button>

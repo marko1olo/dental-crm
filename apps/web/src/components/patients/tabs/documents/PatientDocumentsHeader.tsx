@@ -42,7 +42,7 @@ export const PatientDocumentsHeader: React.FC<PatientDocumentsHeaderProps> = ({
 					<span className="truncate">Официальная документация пациента</span>
 				</h3>
 				<p className="text-xs text-[var(--muted)] m-0 mt-0.5 truncate hidden sm:block">
-					Медицинские карты, договоры на оказание услуг, согласия (ИДС) и справки.
+					Медицинские карты, договоры на оказание услуг, согласия на лечение и справки.
 				</p>
 			</div>
 
@@ -52,10 +52,10 @@ export const PatientDocumentsHeader: React.FC<PatientDocumentsHeaderProps> = ({
 					onClick={() => onOpenFastPrint("form043u")}
 					className="h-8 min-h-[32px] px-3 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-xs font-semibold inline-flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs shrink-0 active:scale-95"
 					data-testid="btn-fast-vector-print-hub"
-					title="Мгновенная векторная печать карты, акта и сметы"
+					title="Мгновенная печать карты, акта и сметы"
 				>
 					<Printer size={13} className="shrink-0" />
-					<span>Векторная печать (0 мс)</span>
+					<span>Печать карты и смет</span>
 				</button>
 
 				<div className="relative" ref={blanksMenuRef}>

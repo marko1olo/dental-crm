@@ -8,6 +8,9 @@ export * from "./constants";
 export { PatientPassportAddressStep } from "./PatientPassportAddressStep";
 export { PatientContactsRepresentativeStep } from "./PatientContactsRepresentativeStep";
 export { PatientMedicalFlagsStep } from "./PatientMedicalFlagsStep";
+export { PatientPhoneOnlyRow } from "./PatientPhoneOnlyRow";
+export { PatientBirthDateRow } from "./PatientBirthDateRow";
+export { PatientCreationExtraSection } from "./PatientCreationExtraSection";
 export { usePatientCreationForm } from "./usePatientCreationForm";
 
 export {

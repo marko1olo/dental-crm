@@ -3,6 +3,7 @@ import { AlertOctagon, Calendar, CreditCard, Phone, Sparkles, User } from "lucid
 import React from "react";
 import type { PatientSearchResultItem } from "../patientSearchFuzzy";
 import type { SomaticBadgeInfo } from "./types";
+import { HighlightText } from "./HighlightText";
 
 interface PatientSearchResultRowProps {
 	readonly item: PatientSearchResultItem;
@@ -34,13 +35,7 @@ export function PatientSearchResultRow({
 				<div className="min-w-0 flex-1 flex flex-col gap-0.5">
 					<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 						<span className="font-bold text-xs truncate">
-							{item.fullNameHighlights.map((part, pIdx) =>
-								part.isMatch ? (
-									<mark key={pIdx} className="bg-[var(--teal)]/25 text-[var(--teal-dark,var(--teal))] font-black rounded-xs px-0.5">
-										{part.text}
-									</mark>
-								) : (<span key={pIdx}>{part.text}</span>),
-							)}
+							<HighlightText parts={item.fullNameHighlights} />
 						</span>
 						{item.isFuzzy && (
 							<span
@@ -71,15 +66,7 @@ export function PatientSearchResultRow({
 						{p.phone && (
 							<span className="inline-flex items-center gap-1 font-mono font-medium">
 								<Phone size={10} className="shrink-0 text-[var(--teal)]" />
-								<span>
-									{item.phoneHighlights.map((part, pIdx) =>
-										part.isMatch ? (
-											<mark key={pIdx} className="bg-[var(--teal)]/25 text-[var(--teal-dark,var(--teal))] font-bold rounded-xs px-0.5">
-												{part.text}
-											</mark>
-										) : (<span key={pIdx}>{part.text}</span>),
-									)}
-								</span>
+								<span><HighlightText parts={item.phoneHighlights} /></span>
 							</span>
 						)}
 						{p.birthDate && (
@@ -92,13 +79,11 @@ export function PatientSearchResultRow({
 							<span className="inline-flex items-center gap-1 shrink-0 font-mono text-[10px]">
 								<CreditCard size={10} className="shrink-0 text-[var(--muted)]" />
 								<span>
-									{item.cardHighlights
-										? item.cardHighlights.map((part, pIdx) =>
-											part.isMatch ? (
-												<mark key={pIdx} className="bg-[var(--teal)]/25 text-[var(--teal-dark,var(--teal))] font-bold rounded-xs px-0.5">{part.text}</mark>
-											) : (<span key={pIdx}>{part.text}</span>),
-										)
-										: `№${(p as any).cardNumber}`}
+									{item.cardHighlights ? (
+										<HighlightText parts={item.cardHighlights} />
+									) : (
+										`№${(p as any).cardNumber}`
+									)}
 								</span>
 							</span>
 						)}

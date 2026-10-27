@@ -1,5 +1,5 @@
 import { Wallet } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";

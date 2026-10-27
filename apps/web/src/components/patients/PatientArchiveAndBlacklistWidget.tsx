@@ -65,10 +65,10 @@ export const PatientArchiveAndBlacklistWidget: React.FC<{
 										? "Снять блокировку записи"
 										: "Заблокировать запись и добавить в ЧС"
 								}
-								className={`px-4 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center ${
+								className={`px-4 py-2 min-h-[44px] sm:min-h-[32px] rounded-xl text-xs font-bold transition-colors disabled:opacity-60 disabled:cursor-not-allowed inline-flex items-center justify-center cursor-pointer border ${
 									logic.isBlacklisted
-										? "bg-emerald-600 hover:bg-emerald-700 text-white"
-										: "bg-rose-600 hover:bg-rose-700 text-white"
+										? "border-[var(--line)] bg-[var(--paper)] hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:border-emerald-500 shadow-2xs"
+										: "border-[var(--line)] bg-[var(--paper)] hover:bg-rose-50 dark:hover:bg-rose-950/30 text-[var(--ink)] hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-400 shadow-2xs"
 								}`}
 							>
 								{logic.loading

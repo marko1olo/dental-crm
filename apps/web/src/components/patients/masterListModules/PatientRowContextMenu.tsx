@@ -85,7 +85,7 @@ export const PatientRowContextMenu: React.FC<PatientRowContextMenuProps> = ({
 			onClick={() => { onClose(); void printBlankMedicalContract(patient); }}
 		>
 			<FileText size={14} className="text-blue-600 dark:text-blue-400 shrink-0" />
-			<span>Печать бланка договора (____)</span>
+			<span>Печать договора на лечение</span>
 		</button>
 
 		<button
@@ -96,7 +96,7 @@ export const PatientRowContextMenu: React.FC<PatientRowContextMenuProps> = ({
 			data-testid="row-print-blank-consent"
 		>
 			<ShieldCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-			<span>Печать бланка ИДС (____)</span>
+			<span>Печать согласия на лечение</span>
 		</button>
 
 		{patient.phone && (

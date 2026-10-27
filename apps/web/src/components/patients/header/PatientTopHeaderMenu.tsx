@@ -73,7 +73,7 @@ export function PatientTopHeaderMenu({
 			</button>
 			<button type="button" onClick={() => { onClose(); void printBlankMedicalConsent(selectedPatient); }} className={itemCls} data-testid="header-print-blank-consent-btn">
 				<ShieldCheck size={13} className="text-[var(--muted)] shrink-0" />
-				<span>Печать согласия ИДС</span>
+				<span>Печать согласия на лечение</span>
 			</button>
 		</div>
 	);

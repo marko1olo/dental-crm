@@ -45,10 +45,10 @@ export function MobilePatientTopBar({
 				<button
 					type="button"
 					onClick={onStartVisit}
-					className="min-h-[44px] px-3 rounded-xl bg-[var(--teal,#0d9488)] text-[var(--on-teal,#ffffff)] font-bold text-xs inline-flex items-center gap-1.5 shadow-xs active:scale-95 transition-all cursor-pointer"
+					className="min-h-[44px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs inline-flex items-center gap-1.5 shadow-2xs active:scale-95 transition-all cursor-pointer"
 					data-testid="mobile-quick-visit-btn"
 				>
-					<Stethoscope size={14} />
+					<Stethoscope size={14} className="text-[var(--teal,#0d9488)]" />
 					<span>Приём</span>
 				</button>
 			</div>

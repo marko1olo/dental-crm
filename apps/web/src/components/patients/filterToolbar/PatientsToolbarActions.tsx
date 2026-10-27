@@ -22,7 +22,7 @@ export const PatientsToolbarActions: React.FC<PatientsToolbarActionsProps> = ({
 		<div className="patients-header-actions shrink-0 flex items-center gap-1.5">
 			<button
 				type="button"
-				className="secondary-button shrink-0 min-w-0 text-xs sm:text-[13px] h-9 min-h-[36px] px-3 rounded-xl font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
+				className="secondary-button shrink-0 min-w-0 text-xs sm:text-[13px] h-9 min-h-[36px] px-2.5 rounded-xl font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 				onClick={onOpenRecallsHub}
 				title="Профосмотры и диспансерный учет (Recall, гигиена, импланты)"
 				data-testid="btn-recalls-hub"
@@ -34,7 +34,7 @@ export const PatientsToolbarActions: React.FC<PatientsToolbarActionsProps> = ({
 
 			<button
 				type="button"
-				className="secondary-button shrink-0 min-w-0 text-xs sm:text-[13px] h-9 min-h-[36px] px-3 rounded-xl font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
+				className="secondary-button shrink-0 min-w-0 text-xs sm:text-[13px] h-9 min-h-[36px] px-2.5 rounded-xl font-medium inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all select-none border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] shadow-xs"
 				onClick={onOpenTactileSearch}
 				title="Тактильная матрица поиска исследований по аппаратам и датам"
 				data-testid="btn-patients-tactile-search"

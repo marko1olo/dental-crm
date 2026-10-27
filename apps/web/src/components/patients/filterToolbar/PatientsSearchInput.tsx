@@ -15,7 +15,7 @@ export const PatientsSearchInput: React.FC<PatientsSearchInputProps> = ({
 	searchInputRef,
 }) => {
 	return (
-		<div className="dente-search-wrap patients-search-box relative flex-1 max-w-[320px] min-w-[220px] flex items-center">
+		<div className="dente-search-wrap patients-search-box relative flex-1 max-w-[280px] min-w-[170px] flex items-center">
 			<Search
 				aria-hidden="true"
 				className="dente-search-icon search-icon w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none"

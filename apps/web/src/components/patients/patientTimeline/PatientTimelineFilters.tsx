@@ -1,10 +1,10 @@
 import React from "react";
 import { Filter, Scan } from "lucide-react";
 import {
-	FDI_TEETH_LIST,
 	TIMELINE_DATE_PRESETS,
 	type TimelineDatePreset,
 } from "./types";
+import { TimelineDropdownFilters } from "./TimelineDropdownFilters";
 
 export interface PatientTimelineFiltersProps {
 	readonly filteredCount: number;
@@ -65,63 +65,18 @@ export const PatientTimelineFilters: React.FC<PatientTimelineFiltersProps> = ({
 					))}
 				</div>
 
-				<div className="flex items-center gap-1 text-slate-300">
-					<span className="text-[#00C853] font-black">●</span>
-					<span className="font-semibold text-slate-300">Дата:</span>
-					<select
-						value={selectedDateFilter}
-						onChange={(e) => {
-							onSelectDateFilter(e.target.value);
-							if (e.target.value !== "all") onSelectDatePreset("all");
-						}}
-						className="h-7 px-2 rounded-md bg-[#131f33] border border-[#233554] text-white text-xs outline-none cursor-pointer hover:border-emerald-500"
-						data-testid="timeline-date-filter"
-					>
-						<option value="all">Все даты</option>
-						{availableDates.map((dateStr) => (
-							<option key={dateStr} value={dateStr}>
-								{dateStr}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div className="flex items-center gap-1 text-slate-300">
-					<span className="text-[#00C853] font-black">●</span>
-					<span className="font-semibold text-slate-300">Зуб:</span>
-					<select
-						value={selectedToothFilter}
-						onChange={(e) => onSelectToothFilter(e.target.value)}
-						className="h-7 px-2 rounded-md bg-[#131f33] border border-[#233554] text-white text-xs outline-none cursor-pointer hover:border-emerald-500"
-						data-testid="timeline-tooth-filter"
-					>
-						<option value="all">Все зубы</option>
-						{FDI_TEETH_LIST.map((tooth) => (
-							<option key={tooth} value={tooth}>
-								#{tooth} {availableTeeth.includes(tooth) ? "● (есть)" : ""}
-							</option>
-						))}
-					</select>
-				</div>
-
-				<div className="flex items-center gap-1 text-slate-300">
-					<span className="text-[#00C853] font-black">●</span>
-					<span className="font-semibold text-slate-300">Режим:</span>
-					<select
-						value={selectedModalityFilter}
-						onChange={(e) => onSelectModalityFilter(e.target.value)}
-						className="h-7 px-2 rounded-md bg-[#131f33] border border-[#233554] text-white text-xs outline-none cursor-pointer hover:border-emerald-500"
-						data-testid="timeline-modality-filter"
-					>
-						<option value="all">Все режимы</option>
-						<option value="io">IO-сенсор (RVG)</option>
-						<option value="opg">Панорама (ОПТГ)</option>
-						<option value="cbct">КТ 3D (КЛКТ)</option>
-						<option value="ceph">Цефалостат (ТРГ)</option>
-						<option value="camera">IO-камера (Видео)</option>
-						<option value="other">Другое (TWAIN/Фото)</option>
-					</select>
-				</div>
+				<TimelineDropdownFilters
+					selectedDateFilter={selectedDateFilter}
+					onSelectDateFilter={onSelectDateFilter}
+					availableDates={availableDates}
+					selectedDatePreset={selectedDatePreset}
+					onSelectDatePreset={onSelectDatePreset}
+					selectedToothFilter={selectedToothFilter}
+					onSelectToothFilter={onSelectToothFilter}
+					availableTeeth={availableTeeth}
+					selectedModalityFilter={selectedModalityFilter}
+					onSelectModalityFilter={onSelectModalityFilter}
+				/>
 			</div>
 
 			{onOpenTactileSearch && (

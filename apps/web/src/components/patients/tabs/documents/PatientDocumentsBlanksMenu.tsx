@@ -35,7 +35,7 @@ export const PatientDocumentsBlanksMenu: React.FC<PatientDocumentsBlanksMenuProp
 				data-testid="btn-print-blank-consent"
 			>
 				<ShieldCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-				<span className="truncate">Бланк ИДС</span>
+				<span className="truncate">Бланк согласия на лечение</span>
 			</button>
 			<button
 				type="button"

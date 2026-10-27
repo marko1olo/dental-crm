@@ -75,7 +75,7 @@ export const PatientCardHeader: React.FC<PatientCardHeaderProps> = React.memo(
 						<button
 							type="button"
 							onClick={onApplyNorm}
-							className="min-h-[40px] px-3 rounded-xl bg-emerald-600/10 hover:bg-emerald-600/20 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs font-bold inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
+							className="min-h-[40px] px-3 rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-strong,var(--paper))] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--teal)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer select-none"
 							title="Зафиксировать физиологическую норму"
 							data-testid="btn-patient-card-somatic-norm"
 						>

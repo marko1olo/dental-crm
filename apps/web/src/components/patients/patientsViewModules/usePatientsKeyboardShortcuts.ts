@@ -1,5 +1,6 @@
 import type { Patient } from "@dental/shared";
 import { useEffect, type RefObject } from "react";
+import { handlePatientArrowNavigation } from "./patientArrowNavigation";
 
 export interface UsePatientsKeyboardShortcutsOptions {
 	searchInputRef: RefObject<HTMLInputElement | null>;
@@ -73,38 +74,12 @@ export function usePatientsKeyboardShortcuts({
 			}
 			const targetTag = (document.activeElement?.tagName || "").toLowerCase();
 			const isOtherInput =
-				(targetTag === "input" &&
-					document.activeElement !== searchInputRef.current) ||
+				(targetTag === "input" && document.activeElement !== searchInputRef.current) ||
 				targetTag === "textarea" ||
 				targetTag === "select";
 			if (!isOtherInput && (e.key === "ArrowDown" || e.key === "ArrowUp")) {
-				if (!displayPatients || displayPatients.length === 0) return;
 				e.preventDefault();
-				const currentIndex = displayPatients.findIndex(
-					(p) => p.id === selectedPatientId,
-				);
-				let nextIndex = 0;
-				if (e.key === "ArrowDown") {
-					nextIndex =
-						currentIndex < 0
-							? 0
-							: Math.min(currentIndex + 1, displayPatients.length - 1);
-				} else {
-					nextIndex = currentIndex <= 0 ? 0 : currentIndex - 1;
-				}
-				const nextPatient = displayPatients[nextIndex];
-				if (nextPatient) {
-					if (nextIndex >= patientPagination.limit) {
-						patientPagination.loadMore(
-							Math.max(50, nextIndex - patientPagination.limit + 10),
-						);
-					}
-					handleSelectPatient(nextPatient.id);
-					const el = document.querySelector(
-						`[data-patient-id="${nextPatient.id}"]`,
-					);
-					el?.scrollIntoView({ block: "nearest", behavior: "smooth" });
-				}
+				handlePatientArrowNavigation(e.key, displayPatients, selectedPatientId, patientPagination, handleSelectPatient);
 			}
 		};
 		window.addEventListener("keydown", handleGlobalKeyDown);
@@ -121,8 +96,7 @@ export function usePatientsKeyboardShortcuts({
 		handleClearSearch,
 		displayPatients,
 		selectedPatientId,
-		patientPagination.limit,
-		patientPagination.loadMore,
+		patientPagination,
 		handleSelectPatient,
 		searchInputRef,
 	]);

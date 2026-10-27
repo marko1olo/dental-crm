@@ -1,20 +1,12 @@
 import { kopecksToRub } from "@dental/shared";
 import { isNegativeAllergyStatement } from "../../utils/somaticNorm";
+import {
+	getSentimentDescriptor,
+	type PatientSentimentInfo,
+	type PatientSentimentType,
+} from "./sentimentConfig";
 
-export type PatientSentimentType = "loyal_vip" | "cancellation_risk" | "strict_ids_required" | "standard";
-
-export interface PatientSentimentInfo {
-	type: PatientSentimentType;
-	label: string;
-	shortLabel: string;
-	badgeEmoji: string;
-	colorTheme: "emerald" | "amber" | "rose" | "slate";
-	description: string;
-	clinicalDirective: string;
-	calculatedLtvRub: number;
-	complianceScorePercent: number;
-	riskFactors: string[];
-}
+export type { PatientSentimentInfo, PatientSentimentType };
 
 export function computePatientSentiment(
 	// biome-ignore lint/suspicious/noExplicitAny: flexible patient record
@@ -22,18 +14,7 @@ export function computePatientSentiment(
 	overrides?: { sentiment?: PatientSentimentType | null | undefined; ltvRub?: number | null | undefined; complianceScore?: number | null | undefined } | undefined,
 ): PatientSentimentInfo {
 	if (!patient && !overrides?.sentiment) {
-		return {
-			type: "standard",
-			label: "Стандартный профиль",
-			shortLabel: "Стандарт",
-			badgeEmoji: "",
-			colorTheme: "slate",
-			description: "Стандартный профиль обслуживания пациента.",
-			clinicalDirective: "Стандартный клинический протокол приёма и оформления медицинской карты.",
-			calculatedLtvRub: overrides?.ltvRub ?? 0,
-			complianceScorePercent: overrides?.complianceScore ?? 100,
-			riskFactors: [],
-		};
+		return getSentimentDescriptor("standard", overrides?.ltvRub ?? 0, overrides?.complianceScore ?? 100);
 	}
 
 	const forcedType = overrides?.sentiment || patient?.sentimentType;
@@ -45,7 +26,6 @@ export function computePatientSentiment(
 	);
 	const tier = String(patient?.loyaltyTier || patient?.administrativeProfile?.loyaltyTier || patient?.tier || "").toLowerCase();
 
-	// Mandate 8ap: Расчет строго по нормализованным клиническим полям, ноль парсинга заметок регулярками
 	const rawAllergies = patient?.allergies ?? patient?.clinicalSafety?.allergies ?? patient?.allergiesList;
 	const hasNormalizedAllergies = Array.isArray(rawAllergies)
 		? rawAllergies.length > 0
@@ -69,58 +49,5 @@ export function computePatientSentiment(
 	else if (hasCancelRisk) type = "cancellation_risk";
 	else if (tier === "platinum" || tier === "gold" || tier === "vip" || ltv >= 100000) type = "loyal_vip";
 
-	if (type === "loyal_vip") {
-		return {
-			type: "loyal_vip",
-			label: "Лояльный профиль / VIP",
-			shortLabel: "VIP • Лояльный",
-			badgeEmoji: "",
-			colorTheme: "emerald",
-			description: "Постоянный пациент с высокой лояльностью.",
-			clinicalDirective: "Приоритетная запись в удобное время, персональный менеджер куратора.",
-			calculatedLtvRub: ltv,
-			complianceScorePercent: overrides?.complianceScore ?? 95,
-			riskFactors: [],
-		};
-	}
-	if (type === "cancellation_risk") {
-		return {
-			type: "cancellation_risk",
-			label: "Риск неявки (расписание)",
-			shortLabel: "Риск неявки",
-			badgeEmoji: "",
-			colorTheme: "amber",
-			description: "Повышенная вероятность пропуска приёма по объективной статистике.",
-			clinicalDirective: "Контрольный звонок администратора за 24 ч + SMS-напоминание утром в день приёма.",
-			calculatedLtvRub: ltv,
-			complianceScorePercent: overrides?.complianceScore ?? 65,
-			riskFactors: ["Повышенная вероятность срыва записи по данным расписания"],
-		};
-	}
-	if (type === "strict_ids_required") {
-		return {
-			type: "strict_ids_required",
-			label: "Соматический стоп-фактор (ИДС)",
-			shortLabel: "Аллергоанамнез",
-			badgeEmoji: "",
-			colorTheme: "rose",
-			description: "Особое внимание: отягощенный аллергоанамнез.",
-			clinicalDirective: "Оформление расширенного согласия на лечение, протоколирование мер безопасности.",
-			calculatedLtvRub: ltv,
-			complianceScorePercent: overrides?.complianceScore ?? 80,
-			riskFactors: ["Отягощенный аллергоанамнез: подбор гипоаллергенной анестезии, обязательное согласие на лечение (ИДС)"],
-		};
-	}
-	return {
-		type: "standard",
-		label: "Стандартный профиль",
-		shortLabel: "Норма",
-		badgeEmoji: "",
-		colorTheme: "slate",
-		description: "Соматически сохранный профиль, норма.",
-		clinicalDirective: "Стандартный клинический протокол приёма и оформления медицинской карты.",
-		calculatedLtvRub: ltv,
-		complianceScorePercent: overrides?.complianceScore ?? 100,
-		riskFactors: [],
-	};
+	return getSentimentDescriptor(type, ltv, overrides?.complianceScore);
 }

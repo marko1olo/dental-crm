@@ -20,15 +20,15 @@ export const MobilePatientDocumentsTab: React.FC<MobilePatientDocumentsTabProps>
 	const docItems = [
 		{
 			title: "Договор на оказание медицинских услуг",
-			desc: "Печать чистого бланка договора со строками ______",
+			desc: "Печать чистого бланка договора для зоны ожидания",
 			icon: FileText,
 			iconBg: "bg-teal-500/10 text-teal-600 dark:text-teal-400",
 			onClick: () => void printBlankMedicalContract(patient),
 			testId: "mobile-doc-contract-btn",
 		},
 		{
-			title: "Информированное согласие (ИДС)",
-			desc: "Печать чистого бланка согласия со строками ______",
+			title: "Информированное согласие на лечение",
+			desc: "Печать чистого бланка согласия для зоны ожидания",
 			icon: Shield,
 			iconBg: "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400",
 			onClick: () => void printBlankMedicalConsent(patient),

@@ -23,7 +23,7 @@ export const RepresentativeAlertBanner: React.FC<RepresentativeAlertBannerProps>
 					<div className="flex items-center gap-2">
 						<ShieldAlert className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
 						<span>
-							<strong>Родственник / Сопровождающий:</strong> Пациент младше 15 лет. Информированное согласие (ИДС) подписывает законный представитель (родитель / опекун).
+							<strong>Родственник / Сопровождающий:</strong> Пациент младше 15 лет. Согласие на приём подписывает законный представитель (родитель / опекун).
 							<span className="sr-only">Основание: ст. 20 323-ФЗ, ст. 64 СК РФ</span>
 						</span>
 					</div>
@@ -51,7 +51,7 @@ export const RepresentativeAlertBanner: React.FC<RepresentativeAlertBannerProps>
 						<span className={compact ? "text-[11px]" : ""}>
 							{selectedRep.isLegalRepresentative ? (
 								<>
-									<strong>Законный представитель ребёнка:</strong> Имеет право подписывать информированное добровольное согласие (ИДС) на приём и лечение.
+									<strong>Законный представитель ребёнка:</strong> Имеет право подписывать согласие на приём и лечение.
 								</>
 							) : (
 								<>
@@ -67,7 +67,7 @@ export const RepresentativeAlertBanner: React.FC<RepresentativeAlertBannerProps>
 								: "bg-amber-600 text-white border-amber-700"
 						}`}
 					>
-						{selectedRep.isLegalRepresentative ? "Право подписи ИДС: ДА" : "ИДС: по доверенности"}
+						{selectedRep.isLegalRepresentative ? "Право подписи: ДА" : "По доверенности"}
 					</span>
 				</div>
 			)}

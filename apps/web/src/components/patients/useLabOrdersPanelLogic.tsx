@@ -1,9 +1,15 @@
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
-import { type DentalLabOrderData, type CanonicalLabOrderStatus, buildLabAppointmentDraft } from "../lab/labMath";
+import type { DentalLabOrderData, CanonicalLabOrderStatus } from "../lab/labMath";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import type { LabOrder } from "./LabOrdersPanel";
+import {
+	copyLabOrderPortalLink,
+	deleteLabOrder,
+	scheduleLabAppointment,
+	transitionLabOrderStatus,
+} from "./labOrders/labOrderActions";
 
 export function useLabOrdersPanelLogic(patientId?: string) {
 	const appLogic = useOptionalAppLogicContext();
@@ -11,14 +17,19 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
 
-	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false); const [isLabHubOpen, setIsLabHubOpen] = useState(false);
-	const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false); const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
+	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+	const [isLabHubOpen, setIsLabHubOpen] = useState(false);
+	const [isTrackerModalOpen, setIsTrackerModalOpen] = useState(false);
+	const [isTrackingDrawerOpen, setIsTrackingDrawerOpen] = useState(false);
 	const [selectedOrderForEdit, setSelectedOrderForEdit] = useState<DentalLabOrderData | null>(null);
 	const [selectedOrderForTracking, setSelectedOrderForTracking] = useState<DentalLabOrderData | null>(null);
 	const [openMenuOrderId, setOpenMenuOrderId] = useState<string | null>(null);
 	const [modalInitialTab, setModalInitialTab] = useState<"main" | "shades" | "stages" | "print">("main");
-	const cardMenuRef = useRef<HTMLDivElement | null>(null); const presetsMenuRef = useRef<HTMLDivElement | null>(null);
-	const [promptState, setPromptState] = useState<any | null>(null); const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
+	const cardMenuRef = useRef<HTMLDivElement | null>(null);
+	const presetsMenuRef = useRef<HTMLDivElement | null>(null);
+	const [promptState, setPromptState] = useState<any | null>(null);
+	const [isPresetsMenuOpen, setIsPresetsMenuOpen] = useState(false);
+	const [showQuickForm, setShowQuickForm] = useState(false);
 
 	const fetchOrders = useCallback(async () => {
 		setLoading(true);
@@ -38,57 +49,16 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 
 	useEffect(() => { void fetchOrders(); }, [fetchOrders]);
 
-	const [showQuickForm, setShowQuickForm] = useState(false);
-
-	const handleStatusTransition = async (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
-		try {
-			const res = await fetch(`/api/clinical/lab-orders/${orderId}/status`, {
-				method: "PATCH",
-				headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-				body: JSON.stringify({ status: targetStatus }),
-			});
-			if (res.ok) {
-				showToast(`Статус наряда изменен: ${targetStatus}`, "success");
-				void fetchOrders();
-			}
-		} catch {
-			showToast("Ошибка сети при смене статуса", "error");
-		}
+	const handleStatusTransition = (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
+		void transitionLabOrderStatus(orderId, targetStatus, () => void fetchOrders());
 	};
 
 	const handleScheduleAppointment = (order: LabOrder) => {
-		const draft = buildLabAppointmentDraft(order as any);
-		if (!draft) return;
-		if (appLogic?.updateNewAppointmentDraft) {
-			appLogic.updateNewAppointmentDraft("patientId", order.patientId);
-			if (order.doctorId) appLogic.updateNewAppointmentDraft("doctorUserId", order.doctorId);
-			appLogic.updateNewAppointmentDraft("startsAt", draft.targetDateIso);
-			appLogic.updateNewAppointmentDraft("reason", draft.reason);
-			if (appLogic.setShowCreateForm) appLogic.setShowCreateForm(true);
-		}
-		window.location.hash = "#schedule";
-		showToast(`Визит запланирован на дату готовности: ${new Date(draft.targetDateIso).toLocaleDateString("ru-RU")}`, "success");
+		scheduleLabAppointment(order, appLogic);
 	};
 
-	const copyPortalLink = (token: string) => {
-		const url = `${window.location.origin}/#/portal/lab-order/${token}`;
-		navigator.clipboard.writeText(url);
-		showToast("Ссылка для зуботехника скопирована в буфер обмена", "success");
-	};
-
-	const handleDeleteOrder = async (id: string) => {
-		try {
-			const res = await fetch(`/api/clinical/lab-orders/${id}`, {
-				method: "DELETE",
-				headers: denteAdminSecretRequestHeaders(),
-			});
-			if (res.ok) {
-				showToast("Заказ ЗТЛ удален", "success");
-				void fetchOrders();
-			}
-		} catch {
-			showToast("Ошибка удаления", "error");
-		}
+	const handleDeleteOrder = (id: string) => {
+		void deleteLabOrder(id, () => void fetchOrders());
 	};
 
 	return {
@@ -118,7 +88,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		handleQuickSubmit: async () => {},
 		handleOneClickCreate: async () => {},
 		fetchOrders, handleStatusTransition, handleScheduleAppointment,
-		copyPortalLink, handleDeleteOrder,
+		copyPortalLink: copyLabOrderPortalLink, handleDeleteOrder,
 		handleOpenPrintOrder: (order: LabOrder) => { setSelectedOrderForEdit(order as any); setModalInitialTab("print"); setIsOrderModalOpen(true); },
 		handleOpenTrackingDrawer: (order: LabOrder) => { setSelectedOrderForTracking(order as any); setIsTrackingDrawerOpen(true); },
 		handleAttachBitePhoto: () => { setOpenMenuOrderId(null); showToast("Фото прикуса прикреплено", "success"); },

@@ -108,7 +108,7 @@ export function MobilePatientFamilySection({
 							showToast("Раздел привязки семьи доступен во вкладке Медкарта", "info");
 							onOpenCardTab?.();
 						}}
-						className="text-xs font-bold text-[var(--teal)] underline cursor-pointer"
+						className="secondary-button text-xs font-semibold px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:text-[var(--teal,#0d9488)] transition-all cursor-pointer"
 					>
 						Создать семью
 					</button>

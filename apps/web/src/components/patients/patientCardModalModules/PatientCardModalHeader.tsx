@@ -48,7 +48,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = ({
 					type="button"
 					data-testid="btn-patient-card-diploma"
 					onClick={onOpenDiploma}
-					className="border border-amber-500/40 bg-amber-500/15 text-amber-900 dark:text-amber-200 hover:bg-amber-500/25 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-bold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
 					title="Распечатать «Диплом за храбрость» маленькому пациенту"
 				>
 					<Award className="w-4 h-4 text-amber-600 dark:text-amber-400 shrink-0" />
@@ -61,7 +61,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = ({
 				type="button"
 				data-testid="btn-patient-tax-deduction"
 				onClick={onOpenTaxCertificate}
-				className="border border-teal-500/30 bg-teal-500/10 text-teal-800 dark:text-teal-200 hover:bg-teal-500/20 min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
+				className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg inline-flex items-center gap-1.5 cursor-pointer shrink-0 whitespace-nowrap select-none transition-all shadow-2xs"
 				title="Справка об оплате медицинских услуг для налогового вычета (13%)"
 			>
 				<FileCheck className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />

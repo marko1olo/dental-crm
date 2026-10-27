@@ -49,11 +49,11 @@ export function PatientCreationModalFooter({
 					type="button"
 					className="secondary-button quick-create-print-blank-contract-btn"
 					onClick={handlePrintBlankContract}
-					title="Распечатать бланк договора со строками «________» для зоны ожидания"
+					title="Распечатать чистый бланк договора для зоны ожидания"
 					data-testid="patient-creation-print-blank-contract-btn"
 				>
 					<Printer size={16} aria-hidden="true" />
-					<span>Бланк договора («____»)</span>
+					<span>Печать бланка договора</span>
 				</button>
 				<button
 					type="button"
@@ -80,7 +80,7 @@ export function PatientCreationModalFooter({
 				{duplicateConflict ? (
 					<button
 						type="button"
-						className="secondary-button !bg-amber-500/15 !text-amber-800 dark:!text-amber-200 !border-amber-500/40 hover:!bg-amber-500/25"
+						className="secondary-button"
 						onClick={() => void handleCreateAsNewDuplicate()}
 						disabled={false}
 						data-testid="footer-allow-duplicate-create-btn"

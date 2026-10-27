@@ -29,32 +29,32 @@ export function PatientMobileBackHeader({
 					<button
 						type="button"
 						onClick={onOpenVisit}
-						className="min-h-[34px] h-8 px-2.5 py-1 rounded-lg bg-[var(--teal)] hover:opacity-95 text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
+						className="min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 sm:px-2.5 py-1.5 sm:py-1 rounded-xl sm:rounded-lg bg-[var(--teal)] hover:opacity-95 text-[var(--on-teal,#ffffff)] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0"
 						title="Открыть приём"
 						data-testid="patient-mobile-header-open-visit-btn"
 					>
-						<Stethoscope size={13} aria-hidden="true" />
+						<Stethoscope size={14} aria-hidden="true" />
 						<span>Приём</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => void printBlankMedicalContract(selectedPatient)}
-						className="min-h-[34px] h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
+						className="min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-2.5 sm:px-2 py-1.5 sm:py-1 rounded-xl sm:rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
 						title="Распечатать бланк договора"
 						data-testid="patient-mobile-header-print-contract-btn"
 					>
-						<FileText size={13} aria-hidden="true" />
+						<FileText size={14} aria-hidden="true" />
 						<span>Договор</span>
 					</button>
 					<button
 						type="button"
 						onClick={() => void printBlankMedicalConsent(selectedPatient)}
-						className="min-h-[34px] h-8 px-2 py-1 rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
-						title="Распечатать бланк ИДС"
+						className="min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-2.5 sm:px-2 py-1.5 sm:py-1 rounded-xl sm:rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] text-xs font-semibold inline-flex items-center gap-1 shadow-xs cursor-pointer shrink-0"
+						title="Распечатать бланк согласия на лечение"
 						data-testid="patient-mobile-header-print-consent-btn"
 					>
-						<ShieldCheck size={13} aria-hidden="true" />
-						<span>ИДС</span>
+						<ShieldCheck size={14} aria-hidden="true" />
+						<span>Согласие</span>
 					</button>
 				</div>
 			)}
