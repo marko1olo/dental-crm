@@ -21,7 +21,7 @@ export const DentalLabExpressClassicalGroups: React.FC<
 						<span className="text-xs font-bold text-[var(--ink,#0f172a)]">
 							{grp.name}
 						</span>
-						<span className="text-[10px] font-semibold text-teal-700 dark:text-teal-300">
+						<span className="text-[10px] font-semibold text-[var(--muted,#64748b)]">
 							{grp.toneRu}
 						</span>
 					</div>
@@ -35,10 +35,10 @@ export const DentalLabExpressClassicalGroups: React.FC<
 									type="button"
 									onClick={() => onSelectShade(shade)}
 									data-testid={`shade-chip-${shade}`}
-									className={`min-h-[36px] py-1 px-1 rounded-md border flex flex-col items-center justify-center gap-0.5 cursor-pointer transition shadow-2xs ${
+									className={`min-h-[44px] sm:min-h-[36px] py-1 px-1 rounded-lg border flex flex-col items-center justify-center gap-0.5 cursor-pointer transition shadow-2xs active:scale-[0.98] ${
 										isSelected
-											? "border-teal-600 bg-teal-500/15 font-bold text-teal-900 dark:text-teal-100 ring-1 ring-teal-500"
-											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--teal)]"
+											? "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] font-bold text-white ring-2 ring-[var(--teal,#0d9488)]"
+											: "border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 									}`}
 									title={`${shade}: ${swatch?.desc || ""}`}
 								>

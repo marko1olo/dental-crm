@@ -34,7 +34,8 @@ export function useOrderFormSubmit(ctx: OrderFormSubmitContext) {
 		setIsSubmitting(true);
 		try {
 			const finalShade = ctx.shadeSystem === "3d_master" ? ctx.shade3dMaster : ctx.shadeSystem === "bleach" ? ctx.shadeBleach : ctx.shadeClassical;
-			await executeSaveLabOrder({ ...ctx, effectivePatientId, effectiveOverride, finalShade });
+			const effectiveTeeth = (ctx.selectedTeeth && ctx.selectedTeeth.length > 0) || ctx.jawScope ? ctx.selectedTeeth : [16];
+			await executeSaveLabOrder({ ...ctx, effectivePatientId, effectiveOverride, finalShade, selectedTeeth: effectiveTeeth });
 		} catch (err: any) {
 			showToast(err.message || "Ошибка сохранения наряда ЗТЛ", "error");
 		} finally {

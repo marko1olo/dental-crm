@@ -40,7 +40,10 @@ function getInitialSelectedTeeth(params?: UseTeethParams): number[] {
 			return [toothNum];
 		}
 	}
-	return [];
+	if (params?.initialJawScope || params?.initialOrder?.jawScope) {
+		return [];
+	}
+	return [16];
 }
 
 export function useOrderFormTeethAndConstruction(params?: UseTeethParams) {

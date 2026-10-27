@@ -75,8 +75,8 @@ export function DentalLabPriceMatrixModal({
 								<div className="text-[10px] text-[var(--muted)]">
 									ЗТЛ: {item.suggestedCostRub.toLocaleString("ru-RU")} ₽
 								</div>
-								<span className="mt-1 px-2 py-0.5 rounded text-[11px] font-semibold bg-teal-600 text-white inline-flex items-center gap-1">
-									<Check size={11} />
+								<span className="mt-1 px-2 py-0.5 rounded-lg text-[11px] font-semibold border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-secondary)] inline-flex items-center gap-1 shadow-2xs">
+									<Check size={11} className="text-[var(--teal)]" />
 									<span>Выбрать</span>
 								</span>
 							</div>

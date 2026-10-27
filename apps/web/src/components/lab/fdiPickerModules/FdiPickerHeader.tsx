@@ -57,8 +57,8 @@ export function FdiPickerHeader({
 						onClick={handleConnectBridgeSpan}
 						className={`lab-quadrant-btn transition-colors ${
 							constructionType === "bridge"
-								? "bg-teal-600 text-white font-extrabold ring-2 ring-teal-400"
-								: "text-teal-700 dark:text-teal-300 font-bold border-teal-300 dark:border-teal-700 bg-teal-50 dark:bg-teal-900/40 hover:bg-teal-100 dark:hover:bg-teal-900/60"
+								? "bg-[var(--teal,#0d9488)] text-white font-extrabold ring-2 ring-[var(--teal,#0d9488)]"
+								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal)] font-semibold"
 						}`}
 						title="Заполнить промежуточные единицы мостовидного протеза между выбранными опорами"
 						data-testid="bridge-connect-span-btn"

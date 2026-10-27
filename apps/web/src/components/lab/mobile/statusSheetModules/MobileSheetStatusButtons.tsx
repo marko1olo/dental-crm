@@ -24,15 +24,15 @@ export function MobileSheetStatusButtons({
 					onClick={() => { onStatusChange(order.id!, "ready_in_clinic"); onClose(); }}
 					className={`mobile-lab-status-action-btn variant-ready ${
 						currentStatus === "ready" || currentStatus === "ready_in_clinic" || currentStatus === "shipped"
-							? "ring-2 ring-teal-500 font-black" : ""
+							? "is-active ring-2 ring-[var(--teal,#0d9488)] font-black" : ""
 					}`}
 					data-testid="mobile-status-btn-ready-in-clinic"
 				>
 					<div className="flex items-center gap-2.5">
-						<CheckCircle2 size={18} />
+						<CheckCircle2 size={18} className="text-[var(--teal)]" />
 						<span>Принят в клинику</span>
 					</div>
-					<ChevronRight size={16} />
+					<ChevronRight size={16} className="text-[var(--muted)]" />
 				</button>
 
 				<button
@@ -40,15 +40,15 @@ export function MobileSheetStatusButtons({
 					onClick={() => { onStatusChange(order.id!, "fitting"); onClose(); }}
 					className={`mobile-lab-status-action-btn variant-fitting ${
 						currentStatus === "fitting" || currentStatus === "try_in"
-							? "ring-2 ring-purple-500 font-black" : ""
+							? "is-active ring-2 ring-[var(--teal,#0d9488)] font-black" : ""
 					}`}
 					data-testid="mobile-status-btn-fitting"
 				>
 					<div className="flex items-center gap-2.5">
-						<Sparkles size={18} />
+						<Sparkles size={18} className="text-[var(--muted)]" />
 						<span>Передан на примерку</span>
 					</div>
-					<ChevronRight size={16} />
+					<ChevronRight size={16} className="text-[var(--muted)]" />
 				</button>
 
 				<button
@@ -58,25 +58,25 @@ export function MobileSheetStatusButtons({
 					data-testid="mobile-status-btn-correction"
 				>
 					<div className="flex items-center gap-2.5">
-						<RotateCcw size={18} />
+						<RotateCcw size={18} className="text-[var(--bad-fg,#e11d48)]" />
 						<span>Отправить на переделку (0 ₽)</span>
 					</div>
-					<ChevronRight size={16} />
+					<ChevronRight size={16} className="text-[var(--muted)]" />
 				</button>
 
 				<button
 					type="button"
 					onClick={() => { onStatusChange(order.id!, "completed"); onClose(); }}
 					className={`mobile-lab-status-action-btn variant-completed ${
-						currentStatus === "completed" ? "ring-2 ring-emerald-500 font-black" : ""
+						currentStatus === "completed" ? "is-active ring-2 ring-[var(--teal,#0d9488)] font-black" : ""
 					}`}
 					data-testid="mobile-status-btn-completed"
 				>
 					<div className="flex items-center gap-2.5">
-						<Check size={18} />
+						<Check size={18} className="text-[var(--teal)]" />
 						<span>Зафиксирован в полости рта</span>
 					</div>
-					<ChevronRight size={16} />
+					<ChevronRight size={16} className="text-[var(--muted)]" />
 				</button>
 			</div>
 		</div>

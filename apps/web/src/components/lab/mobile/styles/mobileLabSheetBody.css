@@ -62,26 +62,22 @@
 	transform: scale(0.98);
 }
 
-.mobile-lab-status-action-btn.variant-ready {
-	background: color-mix(in srgb, var(--teal, #0d9488) 12%, transparent);
-	border-color: color-mix(in srgb, var(--teal, #0d9488) 35%, transparent);
-	color: var(--teal, #0d9488);
+.mobile-lab-status-action-btn:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
 }
 
-.mobile-lab-status-action-btn.variant-fitting {
-	background: color-mix(in srgb, #8b5cf6 12%, transparent);
-	border-color: color-mix(in srgb, #8b5cf6 35%, transparent);
-	color: #7c3aed;
-}
-
-.mobile-lab-status-action-btn.variant-correction {
-	background: color-mix(in srgb, #f43f5e 12%, transparent);
-	border-color: color-mix(in srgb, #f43f5e 35%, transparent);
-	color: #e11d48;
-}
-
+.mobile-lab-status-action-btn.variant-ready,
+.mobile-lab-status-action-btn.variant-fitting,
+.mobile-lab-status-action-btn.variant-correction,
 .mobile-lab-status-action-btn.variant-completed {
-	background: color-mix(in srgb, #10b981 12%, transparent);
-	border-color: color-mix(in srgb, #10b981 35%, transparent);
-	color: #059669;
+	background: var(--paper);
+	border-color: var(--line);
+	color: var(--ink);
+}
+
+.mobile-lab-status-action-btn.is-active {
+	background: var(--teal-surface, color-mix(in srgb, var(--teal, #0d9488) 10%, transparent));
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
 }

@@ -18,7 +18,7 @@ export function DentalLab3dMasterGrid({
 					className="flex flex-col sm:flex-row sm:items-center gap-1.5"
 					data-testid={`vita-3dmaster-group-l${grp.level}`}
 				>
-					<span className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 w-24 shrink-0">
+					<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] w-24 shrink-0">
 						{grp.name}:
 					</span>
 					<div className="flex flex-wrap items-center gap-1.5 flex-1 max-w-full overflow-x-auto scrollbar-none overscroll-contain py-0.5">
@@ -37,10 +37,10 @@ export function DentalLab3dMasterGrid({
 											? `${shade}: ${swatch.desc}`
 											: `Выбрать оттенок 3D-Master ${shade}`
 									}
-									className={`min-h-[44px] sm:min-h-[48px] min-w-[50px] sm:min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+									className={`min-h-[44px] sm:min-h-[48px] min-w-[50px] sm:min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 										isSelected
-											? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
+											? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 									}`}
 									data-testid={`vita-shade-${shade}`}
 								>

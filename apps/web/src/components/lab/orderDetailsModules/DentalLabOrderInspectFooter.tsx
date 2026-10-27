@@ -23,15 +23,10 @@ export function DentalLabOrderInspectFooter({
 				<button
 					type="button"
 					className="ztl-btn-secondary"
-					style={{
-						color: "var(--bad-fg, #e11d48)",
-						borderColor: "var(--bad-line, #fecdd3)",
-						fontWeight: 700,
-					}}
 					onClick={() => onOpenWarrantyRework(order)}
 					title="Оформить рекламацию"
 				>
-					<RotateCcw size={14} />
+					<RotateCcw size={14} className="text-[var(--bad-fg,#e11d48)]" />
 					<span>Рекламация</span>
 				</button>
 			)}
@@ -40,15 +35,10 @@ export function DentalLabOrderInspectFooter({
 					type="button"
 					className="ztl-btn-secondary"
 					data-testid="ztl-details-view-3d-scan-btn"
-					style={{
-						color: "var(--teal, #0d9488)",
-						borderColor: "var(--teal-line, #99f6e4)",
-						fontWeight: 700,
-					}}
 					onClick={() => onView3DScan(order)}
 					title="Открыть 3D-скан челюсти"
 				>
-					<Box size={14} />
+					<Box size={14} className="text-[var(--muted)]" />
 					<span>3D-скан (STL/PLY)</span>
 				</button>
 			)}
@@ -57,10 +47,10 @@ export function DentalLabOrderInspectFooter({
 				className="ztl-btn-secondary"
 				onClick={() => onPrintBlank(order)}
 			>
-				<Printer size={14} />
+				<Printer size={14} className="text-[var(--muted)]" />
 				<span>Распечатать А4</span>
 			</button>
-			<button type="button" className="ztl-btn-primary" onClick={onClose}>
+			<button type="button" className="ztl-btn-secondary font-bold" onClick={onClose}>
 				Закрыть
 			</button>
 		</footer>

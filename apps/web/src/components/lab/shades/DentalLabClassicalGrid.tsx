@@ -37,10 +37,10 @@ export function DentalLabClassicalGrid({
 											? `${shade}: ${swatch.desc}`
 											: `Выбрать оттенок ${shade}`
 									}
-									className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+									className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 										isSelected
-											? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
+											? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+											: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 									}`}
 									data-testid={`vita-shade-${shade}`}
 								>
@@ -61,8 +61,8 @@ export function DentalLabClassicalGrid({
 			))}
 
 			{/* Дополнительная строка Bleach (BL1..BL4) прямо в Classical для быстрой доступности */}
-			<div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-slate-200/80 dark:border-slate-700/80">
-				<span className="text-[11px] font-semibold text-amber-700 dark:text-amber-400 w-16 shrink-0">
+			<div className="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[var(--line,#cbd5e1)]">
+				<span className="text-[11px] font-semibold text-[var(--muted,#64748b)] w-16 shrink-0">
 					Bleach:
 				</span>
 				<div className="flex flex-wrap items-center gap-1.5 flex-1">
@@ -81,10 +81,10 @@ export function DentalLabClassicalGrid({
 										? `${shade}: ${swatch.desc}`
 										: `Выбрать оттенок ${shade}`
 								}
-								className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+								className={`min-h-[48px] min-w-[56px] px-2.5 rounded-lg text-xs font-bold font-mono transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-[0.98] ${
 									isSelected
-										? "bg-teal-600 text-white ring-2 ring-teal-500 ring-offset-1 shadow-sm font-extrabold"
-										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:bg-[var(--paper-soft,#f8fafc)]"
+										? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 shadow-2xs font-extrabold"
+										: "bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft,#f8fafc)] shadow-2xs"
 								}`}
 								data-testid={`vita-shade-${shade}`}
 							>

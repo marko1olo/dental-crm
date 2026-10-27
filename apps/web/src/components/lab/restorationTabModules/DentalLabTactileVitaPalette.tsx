@@ -88,7 +88,7 @@ export function DentalLabTactileVitaPalette({
 								aria-label={`Выбрать ${b.label}`} title={`${b.label}: ${swatch?.desc || ""}`}
 								className={`min-h-[44px] min-w-[70px] h-11 px-2.5 rounded-xl text-xs font-mono font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95 shadow-2xs ${
 									isSelected
-										? "bg-teal-700 text-white ring-2 ring-teal-500 ring-offset-1 font-extrabold shadow-xs"
+										? "bg-[var(--teal,#0d9488)] text-white ring-2 ring-[var(--teal,#0d9488)] ring-offset-1 font-extrabold shadow-xs"
 										: "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--line-strong)] hover:bg-[var(--paper-soft)]"
 								}`}
 								data-testid={`tactile-shade-${b.code}`}

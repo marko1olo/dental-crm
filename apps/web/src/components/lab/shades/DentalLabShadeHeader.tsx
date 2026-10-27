@@ -77,7 +77,7 @@ export function DentalLabShadeHeader({
 				<span className="text-xs text-[var(--muted,#64748b)] font-medium">
 					Выбранный оттенок:
 				</span>
-				<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-teal-600 text-white shadow-xs inline-flex items-center gap-1.5">
+				<span className="text-xs font-mono font-bold px-2.5 py-1 rounded-md bg-[var(--teal,#0d9488)] text-white shadow-xs inline-flex items-center gap-1.5">
 					{currentSwatch && (
 						<span
 							className="w-2.5 h-2.5 rounded-full border border-white/60 shrink-0"
@@ -89,11 +89,11 @@ export function DentalLabShadeHeader({
 				</span>
 				{selectedStumpShade && (
 					<span
-						className="text-xs font-mono font-bold px-2 py-1 rounded-md bg-amber-700 dark:bg-amber-600 text-white shadow-xs inline-flex items-center gap-1.5"
+						className="text-xs font-mono font-bold px-2 py-1 rounded-md border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-xs inline-flex items-center gap-1.5"
 						title={`Культя зуба: ${selectedStumpShade}`}
 						data-testid="selected-stump-shade-header-chip"
 					>
-						<span className="text-[10px] opacity-80">Культя:</span>
+						<span className="text-[10px] text-[var(--muted,#64748b)]">Культя:</span>
 						<span>{selectedStumpShade}</span>
 					</span>
 				)}

@@ -39,7 +39,7 @@ export function LabOrderCardActions({
 				<button
 					type="button"
 					onClick={() => handleOpenReadyInClinicPrompt(order)}
-					className="primary-button flex-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shadow-xs transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer"
+					className="primary-button flex-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs shadow-xs transition-all inline-flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98]"
 					title="Конструкция доставлена курьером в клинику"
 					data-testid={`lab-order-ready-in-clinic-btn-${order.id}`}
 				>
@@ -50,22 +50,22 @@ export function LabOrderCardActions({
 				<button
 					type="button"
 					onClick={() => handleOpenPrintOrder(order)}
-					className="secondary-button flex-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
+					className="secondary-button flex-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--ink)] font-semibold text-xs border border-[var(--line)] hover:border-[var(--line-strong)] transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
 					title="Распечатать наряд в лабораторию"
 					data-testid={`lab-order-print-ztl1-btn-${order.id}`}
 				>
-					<Printer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+					<Printer className="w-3.5 h-3.5 text-[var(--muted)]" />
 					<span>Печать наряда</span>
 				</button>
 			) : (
 				<button
 					type="button"
 					onClick={() => handleOpenTracking(order)}
-					className="secondary-button flex-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-teal-50 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 hover:bg-teal-100 dark:hover:bg-teal-900/50 font-bold text-xs border border-teal-200 dark:border-teal-800 transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer"
+					className="secondary-button flex-1 min-h-[44px] sm:min-h-[32px] h-11 sm:h-8 px-3 rounded-xl bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink-secondary)] hover:text-[var(--ink)] font-semibold text-xs border border-[var(--line)] hover:border-[var(--line-strong)] transition-colors inline-flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs active:scale-[0.98]"
 					title="Сменить этап или статус изготовления"
 					data-testid={`lab-order-stage-status-btn-${order.id}`}
 				>
-					<Layers className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+					<Layers className="w-3.5 h-3.5 text-[var(--muted)]" />
 					<span>Этап/статус</span>
 				</button>
 			)}
