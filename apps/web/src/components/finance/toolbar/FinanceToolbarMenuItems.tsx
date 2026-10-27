@@ -55,7 +55,7 @@ export function FinanceToolbarMenuItems(p: FinanceToolbarMenuProps): React.JSX.E
 				<MenuItemBtn onClick={wrap(p.onOpenTaxCertificate)} icon={<FileText size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />} label="Справка для налогового вычета" testId="btn-finance-open-tax-cert" />
 			)}
 			{p.onOpenT13Timesheet && (
-				<MenuItemBtn onClick={wrap(p.onOpenT13Timesheet)} icon={<Calendar size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />} label="Учёт рабочих часов (Т-13)" testId="btn-finance-open-timesheet-t13" />
+				<MenuItemBtn onClick={wrap(p.onOpenT13Timesheet)} icon={<Calendar size={14} className="shrink-0 text-cyan-600 dark:text-cyan-400" />} label="Учет рабочих смен врача" testId="btn-finance-open-timesheet-t13" />
 			)}
 			<MenuItemBtn onClick={wrap(p.onOpenCashbox)} icon={<Banknote size={14} className="shrink-0 text-teal-600 dark:text-teal-400" />} label="Касса и оплата" testId="btn-finance-open-cashbox" />
 			{p.onOpenSplitPayment && (

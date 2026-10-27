@@ -1,11 +1,13 @@
 /**
- * taxAndDeductionMath.ts — Precise Kopeck Math, progressive NDFL & IDENT discount distribution.
+ * taxAndDeductionMath.ts — Precise Kopeck Math, progressive NDFL & clinical discount distribution.
  * Layer 1: Pure Utilities & Math (0 side effects).
  */
 
 import type { Kopecks } from "../../money.js";
 import { kopecksToRub as kopecksToRubles } from "../../fiscal/kopecksArithmetic.js";
 import type {
+	DiscountSalaryBaseParams,
+	DiscountSalaryBaseResult,
 	IdentDiscountSalaryBaseParams,
 	IdentDiscountSalaryBaseResult,
 } from "./types.js";
@@ -20,11 +22,11 @@ export function toKop(rub: number | undefined, kop: Kopecks | undefined): Kopeck
 }
 
 /**
- * Расчет расчетной базы врача при скидках и частичной оплате долга по каноническим политикам IDENT.
+ * Расчет расчетной базы врача при скидках и частичной оплате долга по клиническим политикам.
  */
-export function calculateIdentDiscountSalaryBase(
-	params: IdentDiscountSalaryBaseParams,
-): IdentDiscountSalaryBaseResult {
+export function calculateDiscountSalaryBase(
+	params: DiscountSalaryBaseParams,
+): DiscountSalaryBaseResult {
 	const { grossRevenueKop, invoiceTotalKop, paidKop, discountKop, clinicCostsKop, policy } = params;
 	const isFullyPaid = paidKop >= invoiceTotalKop;
 	const debtKop = Math.max(0, invoiceTotalKop - paidKop) as Kopecks;
@@ -75,3 +77,6 @@ export function calculateIdentDiscountSalaryBase(
 		debtRub: kopecksToRubles(debtKop),
 	};
 }
+
+/** @deprecated Use calculateDiscountSalaryBase (Mandate 8ap) */
+export const calculateIdentDiscountSalaryBase = calculateDiscountSalaryBase;

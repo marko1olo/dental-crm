@@ -36,13 +36,20 @@ export { doctorPayouts } from "./reportEngine.js";
 export { buildDoctorPayoutAggregateQuery } from "./queries.js";
 
 export {
+	type DoctorSalaryModel,
+	type DoctorSalaryCalculationInput,
+	type DoctorSalaryCalculationResult,
+	type DoctorSalaryPriceApplicationMode,
+	type DiscountAllocationPolicy,
 	type IdentSalaryModel,
 	type IdentDoctorSalaryCalculationParams,
 	type IdentDoctorSalaryCalculationResult,
 	type IdentSalaryPriceApplicationMode,
 	type IdentDiscountAllocationPolicy,
 	type DoctorOneTimeDeduction,
+	calculateDoctorSalary,
 	calculateIdentDoctorSalary,
 	extractDeductibleMaterialsFromWriteoff,
+	DOCTOR_SALARY_MODEL_NAMES_RU,
 	IDENT_SALARY_MODEL_NAMES_RU,
 } from "@dental/shared";

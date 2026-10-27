@@ -4,6 +4,7 @@
  */
 
 import type { Kopecks } from "../../money.js";
+import type { ClinicalMaterialWriteoffResult } from "../../warehouse/clinicalMaterialWriteoffEngine.js";
 import type { IdentMaterialWriteoffResult } from "../../warehouse/identMaterialWriteoffEngine.js";
 
 export interface SpecialtyCategoryRates {
@@ -48,37 +49,46 @@ export interface CategoryAccrualBreakdown {
 }
 
 /**
- * Политики распределения скидок и частичной оплаты IDENT (IDENT Payroll Models):
- * 1. "gross_unconditional": «Без учета скидки» (Формула 1 IDENT) — скидки покрываются клиникой, врач получает 100% со своей базы.
+ * Политики распределения скидок и частичной оплаты сдельной выручки врача:
+ * 1. "gross_unconditional": «Без учета скидки» — скидки покрываются клиникой, врач получает 100% со своей базы.
  * 2. "clinic_first": «Сначала клиника» — из внесенных пациентом средств сначала компенсируются расходы клиники (материалы + ЗТЛ).
  * 3. "doctor_first": «Сначала врач» — из внесенных пациентом средств сначала выплачивается вознаграждение врачу.
  * 4. "proportional": «Пропорционально» — оплаченная сумма делит чистую базу пропорционально коэффициенту оплаты (paid / invoiceTotal).
  */
-export type IdentDiscountAllocationPolicy =
+export type DiscountAllocationPolicy =
 	| "clinic_first"
 	| "doctor_first"
 	| "proportional"
 	| "gross_unconditional";
 
-export interface IdentDiscountSalaryBaseParams {
+/** @deprecated Use DiscountAllocationPolicy (Mandate 8ap) */
+export type IdentDiscountAllocationPolicy = DiscountAllocationPolicy;
+
+export interface DiscountSalaryBaseParams {
 	readonly grossRevenueKop: Kopecks;
 	readonly invoiceTotalKop: Kopecks;
 	readonly paidKop: Kopecks;
 	readonly discountKop: Kopecks;
 	readonly clinicCostsKop: Kopecks;
-	readonly policy: IdentDiscountAllocationPolicy;
+	readonly policy: DiscountAllocationPolicy;
 }
 
-export interface IdentDiscountSalaryBaseResult {
+/** @deprecated Use DiscountSalaryBaseParams (Mandate 8ap) */
+export type IdentDiscountSalaryBaseParams = DiscountSalaryBaseParams;
+
+export interface DiscountSalaryBaseResult {
 	readonly doctorBaseKop: Kopecks;
 	readonly doctorBaseRub: number;
 	readonly clinicShareKop: Kopecks;
 	readonly clinicShareRub: number;
-	readonly policyApplied: IdentDiscountAllocationPolicy;
+	readonly policyApplied: DiscountAllocationPolicy;
 	readonly isFullyPaid: boolean;
 	readonly debtKop: Kopecks;
 	readonly debtRub: number;
 }
+
+/** @deprecated Use DiscountSalaryBaseResult (Mandate 8ap) */
+export type IdentDiscountSalaryBaseResult = DiscountSalaryBaseResult;
 
 /**
  * Разовое удержание из процента врача (Dentaro: компенсация брака/переделок ЗТЛ).
@@ -239,31 +249,40 @@ export interface ServiceSalaryItemBreakdown {
 }
 
 /**
- * 3 канонические модели расчета сдельной заработной платы врачей IDENT:
+ * 3 канонические модели расчета сдельной заработной платы врачей:
  * 1. "gross": По валовой выручке (Gross). Начисление от прейскурантной стоимости услуг. Клиника берет все расходы (ЗТЛ и материалы) на себя.
  * 2. "net": По чистой выручке (Net). Из базы вычитаются расходы на ЗТЛ и прямые дорогостоящие материалы (Уровень 2: expensive_clinical).
  *    Общеклинические накладные материалы (Уровень 1: cheap_overhead — салфетки, валики, слюноотсосы) НЕ удерживаются (ст. 129 ТК РФ).
  * 3. "cash_basis": По кассовому чеку (Cash Basis). Начисление строго по факту поступления средств в кассу/на р/сч.
  *    Поддерживает «Цену для ЗП» (salary_price) и 4 политики распределения скидок и частичных оплат.
  */
-export type IdentSalaryModel = "gross" | "net" | "cash_basis";
+export type DoctorSalaryModel = "gross" | "net" | "cash_basis";
 
-export const IDENT_SALARY_MODEL_NAMES_RU: Record<IdentSalaryModel, string> = {
+/** @deprecated Use DoctorSalaryModel (Mandate 8ap) */
+export type IdentSalaryModel = DoctorSalaryModel;
+
+export const DOCTOR_SALARY_MODEL_NAMES_RU: Record<DoctorSalaryModel, string> = {
 	gross: "По валовой выручке (Gross — без вычета лаборатории и материалов)",
 	net: "По чистой выручке (Net — за вычетом прямых материалов и ЗТЛ)",
 	cash_basis: "По кассовому чеку (Cash Basis — по факту денег в кассе с учетом «Цены для ЗП»)",
 };
 
+/** @deprecated Use DOCTOR_SALARY_MODEL_NAMES_RU (Mandate 8ap) */
+export const IDENT_SALARY_MODEL_NAMES_RU = DOCTOR_SALARY_MODEL_NAMES_RU;
+
 /**
- * Способ применения «Цены для ЗП» (salary_price) в IDENT:
+ * Способ применения «Цены для ЗП» (salary_price):
  * - "flat_addition": фиксированная ставка/доплата за единицу услуги к сдельщине врача.
  * - "replaces_gross_base": расчет процента ведется от эталонной «Цены для ЗП» вместо цены коммерческого прайса
  *   (актуально при маркетинговых акциях и дисконтных программах, чтобы врач не терял в доходе).
  */
-export type IdentSalaryPriceApplicationMode = "flat_addition" | "replaces_gross_base";
+export type DoctorSalaryPriceApplicationMode = "flat_addition" | "replaces_gross_base";
 
-export interface IdentDoctorSalaryCalculationParams {
-	readonly model: IdentSalaryModel;
+/** @deprecated Use DoctorSalaryPriceApplicationMode (Mandate 8ap) */
+export type IdentSalaryPriceApplicationMode = DoctorSalaryPriceApplicationMode;
+
+export interface DoctorSalaryCalculationInput {
+	readonly model: DoctorSalaryModel;
 	/** Валовая стоимость оказанных услуг (Gross) в копейках или рублях */
 	readonly grossRevenueKop?: Kopecks;
 	readonly grossRevenueRub?: number;
@@ -282,17 +301,17 @@ export interface IdentDoctorSalaryCalculationParams {
 	/** Общеклинические накладные расходы (Уровень 1: cheap_overhead) — не удерживаются с врача ст. 129 ТК РФ */
 	readonly overheadMaterialsCostKop?: Kopecks;
 	readonly overheadMaterialsCostRub?: number;
-	/** Результат 2-уровневого списания материалов IDENT (автоматически извлекает уровни 1 и 2) */
-	readonly materialWriteoffResult?: IdentMaterialWriteoffResult;
+	/** Результат 2-уровневого списания материалов (автоматически извлекает уровни 1 и 2) */
+	readonly materialWriteoffResult?: ClinicalMaterialWriteoffResult;
 	/** Процент вознаграждения врача от расчетной базы (напр. 25 = 25%) */
 	readonly doctorPercent: number;
 	/** «Цена для ЗП» (salary_price) из прейскуранта или номенклатуры */
 	readonly salaryPriceKop?: Kopecks;
 	readonly salaryPriceRub?: number;
 	/** Способ применения «Цены для ЗП» (по умолчанию "flat_addition") */
-	readonly salaryPriceApplication?: IdentSalaryPriceApplicationMode;
-	/** Политика распределения скидок и частичной оплаты IDENT (по умолчанию "proportional") */
-	readonly discountPolicy?: IdentDiscountAllocationPolicy;
+	readonly salaryPriceApplication?: DoctorSalaryPriceApplicationMode;
+	/** Политика распределения скидок и частичной оплаты (по умолчанию "proportional") */
+	readonly discountPolicy?: DiscountAllocationPolicy;
 	/** Гарантированный оклад за период */
 	readonly fixedSalaryKop?: Kopecks;
 	readonly fixedSalaryRub?: number;
@@ -308,8 +327,11 @@ export interface IdentDoctorSalaryCalculationParams {
 	readonly ndflRatePercent?: number;
 }
 
-export interface IdentDoctorSalaryCalculationResult {
-	readonly model: IdentSalaryModel;
+/** @deprecated Use DoctorSalaryCalculationInput (Mandate 8ap) */
+export type IdentDoctorSalaryCalculationParams = DoctorSalaryCalculationInput;
+
+export interface DoctorSalaryCalculationResult {
+	readonly model: DoctorSalaryModel;
 	readonly modelNameRu: string;
 	readonly grossRevenueKop: Kopecks;
 	readonly grossRevenueRub: number;
@@ -363,6 +385,9 @@ export interface IdentDoctorSalaryCalculationResult {
 	readonly coveredOverheadMaterialsRub: number;
 }
 
+/** @deprecated Use DoctorSalaryCalculationResult (Mandate 8ap) */
+export type IdentDoctorSalaryCalculationResult = DoctorSalaryCalculationResult;
+
 export interface DoctorT51VisitItem {
 	readonly visitId: string;
 	readonly visitDate: string;
@@ -408,3 +433,8 @@ export interface DoctorT51PrintPayload {
 	readonly visits?: readonly DoctorT51VisitItem[] | undefined;
 	readonly labOrders?: readonly DoctorT51LabItem[] | undefined;
 }
+
+/** Алиасы клинического стандарта без советских форм Госкомстата (Мандат 8x) */
+export type DoctorPayslipVisitItem = DoctorT51VisitItem;
+export type DoctorPayslipLabItem = DoctorT51LabItem;
+export type DoctorPayslipPrintPayload = DoctorT51PrintPayload;

@@ -110,10 +110,10 @@ export const RosterNavBar: React.FC<RosterNavBarProps> = React.memo(
 						className={`roster-tab-btn ${activeTab === "t13" ? "active" : ""}`}
 						onClick={() => onSelectTab("t13")}
 						style={{ minHeight: "34px", height: "34px" }}
-						title="Табель учёта рабочего времени"
+						title="Учет рабочих смен врача"
 					>
 						<FileSpreadsheet size={16} />
-						<span>Табель учёта времени</span>
+						<span>Учет рабочих смен врача</span>
 					</button>
 					<button
 						type="button"

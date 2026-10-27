@@ -4,7 +4,7 @@
  */
 
 import type { Kopecks } from "../../money.js";
-import type { IdentMaterialWriteoffResult } from "../../warehouse/identMaterialWriteoffEngine.js";
+import type { ClinicalMaterialWriteoffResult } from "../../warehouse/clinicalMaterialWriteoffEngine.js";
 import type { DentalSpecialtyCategory } from "./types.js";
 
 /**
@@ -69,12 +69,12 @@ export function classifyServiceCategory(
 }
 
 /**
- * Извлекает себестоимость материалов для уменьшения расчетной базы врача из результатов 2-уровневого списания IDENT.
+ * Извлекает себестоимость материалов для уменьшения расчетной базы врача из результатов 2-уровневого списания.
  * Уровень 1 (общеклинические overhead-материалы: салфетки, валики, слюноотсосы) оплачивается клиникой и НЕ удерживается (ст. 129 ТК РФ).
  * Уровень 2 (дорогие клинические материалы: импланты, мембраны, абатменты) подлежит вычету в модели Net.
  */
 export function extractDeductibleMaterialsFromWriteoff(
-	writeoffResult: IdentMaterialWriteoffResult,
+	writeoffResult: ClinicalMaterialWriteoffResult,
 ): {
 	expensiveClinicalCostKop: Kopecks;
 	cheapOverheadCostKop: Kopecks;

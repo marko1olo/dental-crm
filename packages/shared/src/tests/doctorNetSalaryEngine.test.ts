@@ -182,7 +182,7 @@ test("classifyServiceCategory: maps service titles and Order 804n codes to clini
 	assert.strictEqual(classifyServiceCategory("Профессиональная гигиена полости рта Air Flow", "A16.07.051"), "hygiene");
 });
 
-test("generateDoctorT51Html: generates compliant Unified Form T-51 payslip with itemized visits and lab orders", () => {
+test("generateDoctorEarningsPayslipHtml: generates clinical doctor production payslip with itemized visits and lab orders", () => {
 	const html = generateDoctorT51Html({
 		organizationName: 'ООО "ДЕНТЕ ДЕНТАЛ КЛИНИК"',
 		organizationInn: "7701234567",
@@ -237,8 +237,7 @@ test("generateDoctorT51Html: generates compliant Unified Form T-51 payslip with 
 		],
 	});
 
-	assert.ok(html.includes("Расчетный листок"));
-	assert.ok(html.includes("Унифицированная форма № Т-51"));
+	assert.ok(html.includes("Расчетный лист выработки врача"));
 	assert.ok(html.includes("Смирнов Алексей Владимирович"));
 	assert.ok(html.includes("Ковалев Игорь Николаевич"));
 	assert.ok(html.includes("A16.07.004.001"));
