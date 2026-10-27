@@ -135,8 +135,8 @@
 	background: var(--paper-subtle, var(--paper-soft, #f8fafc));
 	border: 1px solid var(--line, #e2e8f0);
 	border-radius: 14px;
-	padding: 12px;
-	margin-bottom: 10px;
+	padding: 10px 12px;
+	margin-bottom: 8px;
 	transition: border-color 0.2s ease;
 	overflow: hidden;
 }
@@ -416,3 +416,4 @@
 	color: #ffffff;
 	border-color: #000000;
 }
+

@@ -389,12 +389,12 @@ html.dark .sidebar .nav-item.active,
 .sidebar-footer .dnt-control-center-popover {
 	position: fixed !important;
 	top: auto !important;
-	bottom: 86px !important;
+	bottom: 52px !important;
 	left: 10px !important;
 	right: auto !important;
 	width: 360px !important;
 	max-width: calc(100% - 24px) !important;
-	max-height: calc(100vh - 100px) !important;
+	max-height: calc(100vh - 65px) !important;
 	overflow-y: auto !important;
 	z-index: 9999 !important;
 	box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.3), 0 0 20px rgba(13, 148, 136, 0.15) !important;
