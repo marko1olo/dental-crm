@@ -14,6 +14,7 @@ import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheck
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabOrderLauncher } from "./components/lab/DirectDentalLabOrderLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
+import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -98,6 +99,7 @@ export function AppShell() {
 			<DirectReportsLauncher />
 			<DirectDentalLabOrderLauncher />
 			<DirectKnowledgeBaseLauncher />
+			<DirectWaitlistMatchesLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
