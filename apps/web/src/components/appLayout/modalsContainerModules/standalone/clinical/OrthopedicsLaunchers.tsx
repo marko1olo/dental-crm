@@ -7,6 +7,7 @@ import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { isPatientPresentationRoute } from "../../../../photography/presentationSyncProtocol";
 import { OrthopedicsChairsidePanel } from "../../../../orthopedics/OrthopedicsChairsidePanel";
+import { DentalLabOrderModal } from "../../../../lab/DentalLabOrderModal";
 
 const PatientPresentationStandaloneView = lazyWithRetry(() =>
 	import("../../../../photography/PatientPresentationStandaloneView").then((m) => ({
@@ -19,6 +20,25 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 
 	const search = window.location.search || "";
 	const hash = window.location.hash || "";
+
+	if (
+		search.includes("standalone=dental_lab") ||
+		search.includes("standalone=lab_order") ||
+		hash.includes("dental_lab") ||
+		hash.includes("lab_order")
+	) {
+		return (
+			<DentalLabOrderModal
+				isOpen={true}
+				onClose={() => {
+					window.location.hash = "";
+				}}
+				patientName="Ковалев Дмитрий Сергеевич"
+				doctorName="Д-р Смирнова Е. В. (Ортопед)"
+				initialToothFdi="16"
+			/>
+		);
+	}
 
 	if (search.includes("standalone=orthopedics") || hash.includes("orthopedics")) {
 		return (

@@ -51,6 +51,7 @@ describe("Dental Lab Responsiveness, 32px Dense Registry & Perfect Print Audit",
 		if (portalCssContent.includes("@import")) {
 			const importMatches = [...portalCssContent.matchAll(/@import\s+["']([^"']+)["'];/g)].map((m) => m[1]);
 			for (const rel of importMatches) {
+				if (!rel) continue;
 				const full = path.resolve(webSrcDir, rel);
 				if (fs.existsSync(full)) {
 					portalCssContent += "\n" + fs.readFileSync(full, "utf-8");

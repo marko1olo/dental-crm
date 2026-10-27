@@ -57,6 +57,15 @@ export function useOrderFormTeethAndConstruction(params?: UseTeethParams) {
 	});
 	const [material, setMaterial] = useState<string>("zirconia_multilayer");
 	const [impressionType, setImpressionType] = useState<string>("a_silicone");
+	const [labType, setLabType] = useState<"in_house" | "external">(
+		params?.initialOrder?.labType || "in_house",
+	);
+	const [selectedLabName, setSelectedLabName] = useState<string>(
+		params?.initialOrder?.labPartnerName || "Своя лаборатория клиники",
+	);
+	const [courierDays, setCourierDays] = useState<number>(
+		params?.initialOrder?.courierDeliveryDays ?? 0,
+	);
 
 	const toggleTooth = (tooth: number) => {
 		setSelectedTeeth((prev) =>
@@ -85,6 +94,12 @@ export function useOrderFormTeethAndConstruction(params?: UseTeethParams) {
 		setMaterial,
 		impressionType,
 		setImpressionType,
+		labType,
+		setLabType,
+		selectedLabName,
+		setSelectedLabName,
+		courierDays,
+		setCourierDays,
 		toggleTooth,
 		selectQuadrant,
 	};

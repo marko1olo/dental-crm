@@ -11,17 +11,15 @@ import {
 	EXPRESS_PRESET_EMAX_CROWN, EXPRESS_PRESET_BRIDGE_ZIRCONIA, EXPRESS_PRESET_EMAX_INLAY,
 } from "./dentalLabModalPresets";
 import { useDentalLabOrderForm, type LabModalTabKey } from "./useDentalLabOrderForm";
-import { DentalLabOrderModalHeader } from "./orderModalModules/DentalLabOrderModalHeader";
-import { DentalLabOrderModalTabs } from "./orderModalModules/DentalLabOrderModalTabs";
-import { DentalLabOrderModalBanners } from "./orderModalModules/DentalLabOrderModalBanners";
-import { DentalLabOrderModalFooter } from "./orderModalModules/DentalLabOrderModalFooter";
-import { DentalLabOrderModalPresetsBar } from "./orderModalModules/DentalLabOrderModalPresetsBar";
+import {
+	DentalLabOrderModalHeader, DentalLabOrderModalTabs, DentalLabOrderModalBanners,
+	DentalLabOrderModalFooter, DentalLabOrderModalPresetsBar,
+} from "./orderModalModules/DentalLabOrderModalModules";
 
 export * from "./labMath";
 export {
-	MODAL_EXPRESS_LAB_PRESETS, buildLabOrderMessengerSummary, type LabOrderMessengerParams,
-	EXPRESS_PRESET_EMAX_CROWN, EXPRESS_PRESET_BRIDGE_ZIRCONIA, EXPRESS_PRESET_EMAX_INLAY,
-	DentalLabStagesTab, useDentalLabOrderForm, type LabModalTabKey,
+	MODAL_EXPRESS_LAB_PRESETS, buildLabOrderMessengerSummary, type LabOrderMessengerParams, EXPRESS_PRESET_EMAX_CROWN,
+	EXPRESS_PRESET_BRIDGE_ZIRCONIA, EXPRESS_PRESET_EMAX_INLAY, DentalLabStagesTab, useDentalLabOrderForm, type LabModalTabKey,
 };
 
 /**
@@ -69,6 +67,9 @@ export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
 								setShadeClassical={(s) => { form.setShadeClassical(s); form.setShadeBody(s); }} shadeBleach={form.shadeBleach}
 								setShadeBleach={(s) => { form.setShadeBleach(s); form.setShadeBody(s); }} shadeBody={form.shadeBody}
 								setShadeBody={form.setShadeBody} onOpenAdvancedShades={() => form.setActiveTab("shades")}
+								labType={form.labType} setLabType={form.setLabType} selectedLabName={form.selectedLabName} setSelectedLabName={form.setSelectedLabName}
+								courierDays={form.courierDays} setCourierDays={form.setCourierDays} scheduledVisitDate={form.scheduledVisitDate}
+								fittingDate={form.ceramicTrialDate} setFittingDate={form.setCeramicTrialDate}
 							/>
 						</div>
 					)}

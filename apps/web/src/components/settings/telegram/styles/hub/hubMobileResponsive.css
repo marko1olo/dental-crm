@@ -1,4 +1,8 @@
 /* Мобильная адаптация Apple HIG (<= 768px) */
+.tg-sheet-drag-handle {
+	display: none;
+}
+
 @media (max-width: 768px) {
 	.telegram-hub-container {
 		overflow-x: clip;
@@ -62,8 +66,9 @@
 	.tg-status-banner .tg-btn-secondary,
 	.tg-status-banner .tg-btn-danger,
 	.tg-status-banner .tg-btn-primary {
-		flex: 1;
-		min-width: 120px;
+		flex: 1 1 100%;
+		width: 100%;
+		justify-content: center;
 	}
 
 	.tg-qr-layout {
@@ -75,5 +80,28 @@
 		width: 100%;
 		box-sizing: border-box;
 	}
-}
 
+	.tg-patient-qr-card {
+		grid-template-columns: 1fr !important;
+		justify-items: center;
+		text-align: center;
+		gap: 16px !important;
+	}
+
+	.tg-sheet-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--line, #cbd5e1);
+		margin: 0 auto 12px auto;
+	}
+
+	.tg-table-tent-sheet {
+		align-self: flex-end;
+		border-radius: 24px 24px 0 0 !important;
+		width: 100% !important;
+		max-width: 100% !important;
+		padding-bottom: max(24px, env(safe-area-inset-bottom)) !important;
+	}
+}

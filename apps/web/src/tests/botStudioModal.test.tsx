@@ -39,7 +39,7 @@ describe("BotStudioModal & Onboarding Suite", () => {
 
 		// Check header
 		expect(html).toContain("Студия ботов DENTE: Быстрый запуск");
-		expect(html).toContain("152-ФЗ Безопасно");
+		expect(html).toContain("Конфиденциально и защищено");
 
 		// Check 2-column layout elements
 		expect(html).toContain("bot-modal-wizard-col");

@@ -10,6 +10,16 @@ export const MATERIALS = [
 		unitCostRub: 6500,
 	},
 	{
+		id: "emax_press",
+		name: "Пресс-керамика IPS e.max Press",
+		desc: "Высокоэстетичная прессованная керамика (470 МПа)",
+		category: "Стеклокерамика",
+		tag: "Эстетика",
+		costTier: "Эстетик",
+		baseCostKopecks: 750000,
+		unitCostRub: 7500,
+	},
+	{
 		id: "emax_lithium_disilicate",
 		name: "Прессованная керамика IPS e.max Press / CAD (Дисиликат лития)",
 		desc: "Максимальная флюоресценция и адгезивная фиксация (500 МПа)",
@@ -18,6 +28,16 @@ export const MATERIALS = [
 		costTier: "Эстетик",
 		baseCostKopecks: 750000,
 		unitCostRub: 7500,
+	},
+	{
+		id: "lithium_disilicate_cad",
+		name: "Дисиликат лития (CAD/CAM блоки)",
+		desc: "Высокоточный фрезерованный дисиликат лития",
+		category: "Стеклокерамика",
+		tag: "Эстетика",
+		costTier: "Эстетик",
+		baseCostKopecks: 700000,
+		unitCostRub: 7000,
 	},
 	{
 		id: "pfm_cocr",

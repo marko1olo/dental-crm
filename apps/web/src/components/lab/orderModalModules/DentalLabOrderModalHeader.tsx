@@ -33,7 +33,7 @@ export function DentalLabOrderModalHeader({
 				<div className="min-w-0 flex-1">
 					<div className="flex items-center flex-wrap gap-1.5">
 						<h2 id="dental-lab-modal-title" className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
-							Заказ в лабораторию (ЗТЛ)
+							Заказ в зуботехническую лабораторию
 						</h2>
 						<span className="whitespace-nowrap shrink-0 hidden sm:inline-block px-2 py-0.5 text-xs font-bold rounded-md bg-teal-500/15 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 							CAD/CAM Pro
