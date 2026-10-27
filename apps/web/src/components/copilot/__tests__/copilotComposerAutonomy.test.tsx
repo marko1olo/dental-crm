@@ -98,7 +98,15 @@ describe("CopilotComposer & Voice Dictation Autonomy (Mandates 8d, 8e, 8k, 8n)",
 
 	it("5. source code audit: VoiceDictationAssistantModal real clinical behavior without simulator mocks (Mandates 8e, 8k, 8s)", () => {
 		const modalPath = path.resolve(__dirname, "../../voice/VoiceDictationAssistantModal.tsx");
-		const sourceCode = fs.readFileSync(modalPath, "utf-8");
+		const dictationDir = path.resolve(__dirname, "../../voice/dictationModal");
+		let sourceCode = fs.readFileSync(modalPath, "utf-8");
+		if (fs.existsSync(dictationDir)) {
+			for (const file of fs.readdirSync(dictationDir)) {
+				if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+					sourceCode += "\n" + fs.readFileSync(path.join(dictationDir, file), "utf-8");
+				}
+			}
+		}
 
 		// Real clinical text fallback: parses genuine clinical speech instead of mock fallback strings
 		expect(sourceCode).toContain("handleApplyManualText");

@@ -15,6 +15,7 @@ import {
 	StandaloneRecallsHost,
 } from "./StandaloneTherapyWorkspaceHosts";
 import { StandaloneClinicalTemplatesHost } from "./StandaloneClinicalTemplatesHost";
+import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderTherapyLaunchers(): React.ReactElement | null {
@@ -49,6 +50,16 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		return (
 			<StandaloneClinicalTemplatesHost
 				onClose={() => clearUrlTokens(["protocols", "clinical-templates", "diary-templates"])}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["voice-dictation", "voice-assistant", "voice", "smart-mic"])) {
+		return (
+			<VoiceDictationAssistantModal
+				isOpen={true}
+				onClose={() => clearUrlTokens(["voice-dictation", "voice-assistant", "voice", "smart-mic"])}
+				activeToothNumber={46}
 			/>
 		);
 	}

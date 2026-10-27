@@ -2,8 +2,17 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
 >
-> ⚠️ **СТАТУС (2026-10-27 / WAVES 301–365 / ВОЛНА 365 ДЕКОМПОЗИЦИЯ ТУЛБАРА ПРИЁМА И ИДС СОГЛАСИЙ <= 120 СТРОК, ФАСАДЫ <= 15 СТРОК, АВТОНОМИЯ ВРАЧА, НОЛЬ ФАРМАКОЛОГИЧЕСКОЙ И ЮРИДИЧЕСКОЙ ПАРАНОЙИ, ЧИСТЫЙ КЛИНИЧЕСКИЙ ЯЗЫК, APPLE HIG, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-10-27 / WAVES 301–366 / ВОЛНА 366 ДЕКОМПОЗИЦИЯ ГОЛОСОВОГО АССИСТЕНТА И ДИКТОВКИ <= 120 СТРОК, ФАСАДЫ <= 15 СТРОК, АВТОНОМИЯ ВРАЧА, НОЛЬ CANVAS-СИМУЛЯТОРОВ, ЧИСТЫЙ КЛИНИЧЕСКИЙ ЯЗЫК, APPLE HIG, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 > Проведена тотальная декомпозиция всех монолитов кодовой базы и беспощадная ликвидация госпитального карго-культа (Мандаты 1..8n):
+> -40. Волна 366 (Верховная Red Team декомпозиция голосового клинического ассистента врача у кресла и системы диктовки в apps/web/src/components/voice/ и apps/web/src/components/audio/ под лимит <= 120 строк по Мандату 8b, фасады <= 15 строк, автономия врача Мандат 8e, ликвидация CanvasWaveform и замена на легковесный CSS/SVG VU-метр без нагрузки на GPU Мандат 8ap, суверенитет соло-врача Мандат 8n, живой клинический русский язык Мандат 8x, Apple HIG touch ergonomics, 4-состояный Red Team Visual Proof Gate / Мандаты 8b, 8e, 8n, 8x, 8ap, 8ze, 8al, 8am):
+>     1) Декомпозиция монолитов голосовой диктовки и аудиопотока (суммарно более 1 200 строк) на чистые модули строго <= 120 строк по Мандату 8b, канонические фасады строго <= 15 строк:
+>        - VoiceDictationAssistantModal.tsx (исходно 682 строки -> фасад 5 строк <= 15) -> dictationModal/: voiceModalTypes.ts (23 стр), useVoiceDictation.ts (118 стр), VoiceModalHeader.tsx (40 стр), VoiceModalStage.tsx (58 стр), VoiceModalTranscript.tsx (57 стр), VoiceModalCommandList.tsx (100 стр), VoiceModalSoapCard.tsx (46 стр), VoiceModalPresets.tsx (68 стр), VoiceModalFooter.tsx (38 стр), VoiceDictationAssistantModalView.tsx (88 стр).
+>        - AudioStreamManager index.ts (исходно 586 строк -> фасад 13 строк <= 15) -> audioStreamManager/: audioStreamConfig.ts (66 стр), audioStreamFallback.ts (40 стр), audioStreamLifecycle.ts (112 стр), audioStreamPcmHandler.ts (95 стр), AudioStreamStateBase.ts (67 стр), AudioStreamManagerClass.ts (109 стр).
+>     2) Мандат 8ap (Ликвидация псевдонаучных симуляторов): тяжелый CanvasWaveform с бесконечным циклом requestAnimationFrame в модалке диктовки полностью устранен и заменен на легкий, энергоэффективный CSS/SVG VU-метр (анимированные полоски громкости по voiceMeterHeights), не нагружающий GPU и батарею ноутбука врача.
+>     3) Мандаты 8e & 8n (Автономия соло-врача): кнопки «Применить всё», «Применить» и «Распознать» никогда не блокируются (`disabled = false`), свободная диктовка дневника визита 043/у без бюрократических барьеров, автоматический fallback на SOAP-план при свободной речи без формальных стоматологических кодов.
+>     4) Apple HIG и сенсорная эргономика: на экранах смартфонов (<= 768px) голосовой ассистент открывается в виде нативного Bottom Sheet со стеклянным размытием и тактильным Drag Handle 36x5px, Natural Thumb Zone, кнопка микрофона 72x72px (десктоп) / 64x64px (мобильный) >= 56x56px, тач-таргеты всех кнопок и чипов >= 44x44px, ровно 1 Primary CTA на видимый экран, 0px паразитного горизонтального скролла.
+>     5) 100% инженерная надежность: vitest (54 теста passed в 4 тестовых сьютах: voiceAndTelephonyAutonomyInquisition, AudioStreamManager, jawOcclusionAutonomy, copilotComposerAutonomy), npm run check:encoding (21329 файлов, 0 замечаний).
+>     6) 4-состояный Red Team Visual Proof Gate: в docs/proofs/voice/ сняты и лично отсмотрены через read_file все 4 реальных скриншота на живом стенде Vite (☀️ 01_voice_pc_light.png 120KB, 🌙 02_voice_pc_dark.png 173KB, 📱 03_voice_mobile_light.png 226KB, 📱 04_voice_mobile_dark.png 244KB); подтверждено соблюдение всех 10 стандартов Apple HIG и отсутствие 7 смертных грехов десктопа.
 > -39. Волна 365 (Верховная Red Team декомпозиция тулбара быстрых действий врача и системы информированных добровольных согласий (ИДС) в Приёме под лимит <= 120 строк по Мандату 8b, фасады <= 15 строк, автономия врача Мандат 8e, ноль фармакологической и юридической паранойи Мандат 8y, суверенитет соло-врача и малой клиники Мандат 8n, живой клинический русский язык без советского канцелярита и номеров законов Мандаты 8x и 8ap, Apple HIG touch ergonomics, 4-состояный Red Team Visual Proof Gate / Мандаты 8b, 8e, 8n, 8x, 8y, 8ze, 8al, 8am, 8ap):
 >     1) Декомпозиция 6 целевых монолитов в apps/web/src/components/visit/ (суммарно более 2 300 строк) на модули строго <= 120 строк по Мандату 8b, канонические фасады строго <= 15 строк:
 >        - VisitActionButtonsToolbar.tsx (исходно 520 строк -> фасад 11 строк <= 15) -> toolbar/: VisitToolbarSomaticNorm.tsx (24 стр), VisitToolbarDocumentPrinting.tsx (72 стр), VisitToolbarQuickActions.tsx (70 стр), VisitToolbarFinishAndSave.tsx (47 стр), VisitToolbarMoreMenu.tsx (35 стр), VisitToolbarMoreMenuItems.tsx (75 стр), VisitFloatingBottomBar.tsx (59 стр), VisitActionButtonsLayout.tsx (57 стр), index.ts (8 стр).
@@ -11862,6 +11871,48 @@
         - `02_insurance_hub_pc_dark.png` (1440×900, темная тема, высокий контраст WCAG AAA)
         - `03_insurance_split_mobile_light.png` (390×844, мобильный Bottom Sheet, 0px горизонтального скролла)
         - `04_insurance_split_mobile_dark.png` (390×844, темная тема на смартфоне, тач-таргеты $\ge 44$px).
+
+50. **Декомпозиция голосового клинического ассистента врача у кресла и системы диктовки VoiceDictationAssistantModal и AudioStreamManager под лимит Мандата 8b (все файлы <= 120 строк, фасады <= 15 строк), ликвидация CanvasWaveform и 4-State Red Team Visual Proof (Мандаты 8b, 8e, 8n, 8x, 8ap, 8ze, 8am)**:
+    - **1. Радикальная декомпозиция монолитов диктовки и аудиопотока (Мандат 8b)**:
+      * `VoiceDictationAssistantModal.tsx` (было 682 строки) декомпозирован в канонический фасад (5 строк, строго $\le 15$ строк) и 10 чистых микромодулей в `apps/web/src/components/voice/dictationModal/`, каждый строго $\le 120$ строк:
+        - `voiceModalTypes.ts` (23 строки) — типы команд, парсинга и props модалки;
+        - `useVoiceDictation.ts` (118 строк) — хук бизнес-логики аудиоклиента, реактивного распознавания, тостов и применения команд;
+        - `VoiceModalHeader.tsx` (40 строк) — шапка с иконкой Sparkles, заголовком, активным зубом и кнопкой закрытия;
+        - `VoiceModalStage.tsx` (58 строк) — интерактивная сцена записи, кнопка микрофона 72x72px (десктоп) / 64x64px (мобильный), легкий CSS/SVG VU-метр;
+        - `VoiceModalTranscript.tsx` (57 строк) — карточка живого распознанного текста, автоскролл, кнопка очистки;
+        - `VoiceModalCommandList.tsx` (100 строк) — список распознанных клинических команд со статусами доверия и кнопками применения;
+        - `VoiceModalSoapCard.tsx` (46 строк) — карточка автогенерации дневника приёма SOAP (жалобы, осмотр, план, рекомендации);
+        - `VoiceModalPresets.tsx` (68 строк) — клинические голосовые шаблоны (10 примеров) и форма резервного текстового ввода;
+        - `VoiceModalFooter.tsx` (38 строк) — вторичная кнопка «Закрыть» и единственная Primary CTA кнопка «Применить всё»;
+        - `VoiceDictationAssistantModalView.tsx` (88 строк) — компонент-контейнер с нативным Bottom Sheet для смартфонов.
+      * `AudioStreamManager` `index.ts` (было 586 строк) декомпозирован в канонический фасад (13 строк, строго $\le 15$ строк) и модули в `apps/web/src/components/audio/audioStreamManager/`, каждый строго $\le 120$ строк:
+        - `audioStreamConfig.ts` (66 строк) — резолвинг настроек и DSP-пресетов стоматологического кабинета;
+        - `audioStreamFallback.ts` (40 строк) — безопасный ScriptProcessor fallback с обязательным Mute Gain (0.0);
+        - `audioStreamLifecycle.ts` (112 строк) — запуск захвата микрофона, граф фильтров, инициализация worklet и полное освобождение нод;
+        - `audioStreamPcmHandler.ts` (95 строк) — обработка 16kHz PCM чанков, скользящий шумовой порог и сброс VAD-сегментов;
+        - `AudioStreamStateBase.ts` (67 строк) — базовый класс нод Web Audio и прокси-геттеры/сеттеры для тестов;
+        - `AudioStreamManagerClass.ts` (109 строк) — координатор AudioStreamManager.
+    - **2. Ликвидация псевдонаучных симуляторов (Мандат 8ap)**:
+      * Тяжелый `CanvasWaveform` с бесконечным циклом `requestAnimationFrame` в модалке диктовки полностью устранен и заменен на легкий, энергоэффективный CSS/SVG VU-метр (анимированные полоски громкости по `voiceMeterHeights`), не нагружающий GPU и батарею ноутбука врача у кресла.
+    - **3. Автономия врача и ноль блокировок (Мандаты 8e & 8n)**:
+      * Кнопки «Применить всё», «Применить» и «Распознать» никогда не блокируются (`disabled = false`);
+      * Реализована свободная диктовка дневника визита 043/у без бюрократических барьеров: при надиктовывании свободной клинической речи без строгих ключевых слов текст автоматически направляется в SOAP-план приёма (`onApplySoapNote({ plan: rawText })`);
+      * При клике на пустую модалку выводится понятный тост-руководство («Произнесите диагноз или статус зуба в микрофон или выберите клинический шаблон ниже») вместо серой кнопки.
+    - **4. Apple HIG Touch Ergonomics (Мандаты 8ze, 8al, 8am)**:
+      * На экранах смартфонов ($\le 768$px) голосовой ассистент открывается в виде нативного Bottom Sheet со стеклянным размытием и тактильным Drag Handle 36×5px;
+      * Кнопка микрофона $\ge 56\times 56$px (72×72px десктоп / 64×64px смартфон), тач-таргеты всех кнопок и чипов $\ge 44\times 44$px;
+      * Ровно одна Primary CTA изумрудная кнопка на видимый экран («Применить всё»), остальные действия — вторичные outline/ghost;
+      * 0px паразитного горизонтального скролла (`max-width: 100vw; overflow-x: clip;`).
+    - **5. 100% доказательная база Vitest & Encoding**:
+      * Vitest: 54 теста passed в 4 тестовых сьютах (`voiceAndTelephonyAutonomyInquisition.test.ts`, `AudioStreamManager.test.ts`, `jawOcclusionAutonomy.test.tsx`, `copilotComposerAutonomy.test.tsx`), Exit Code 0;
+      * `npm run check:encoding`: проверено 21 329 файлов, 0 замечаний (Exit Code 0).
+    - **6. 4-состояный Red Team Visual Proof Gate**:
+      * В `docs/proofs/voice/` сняты и лично отсмотрены через `read_file` все 4 реальных скриншота на живом дев-сервере Vite 5173:
+        - `01_voice_pc_light.png` (1440×900, светлая тема десктоп, 120 KB);
+        - `02_voice_pc_dark.png` (1440×900, тёмная тема десктоп, высокий контраст, 173 KB);
+        - `03_voice_mobile_light.png` (390×844, светлая тема смартфон, нативный Bottom Sheet, 226 KB);
+        - `04_voice_mobile_dark.png` (390×844, тёмная тема смартфон, Natural Thumb Zone, 244 KB).
+
 
 
 

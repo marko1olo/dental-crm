@@ -16,7 +16,21 @@ const __dirname = path.dirname(__filename);
 describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e, 8i, 8k, 8s)", () => {
 	const componentsDir = path.resolve(__dirname, "../../");
 	const voiceDir = path.resolve(__dirname, "../");
+	const dictationDir = path.join(voiceDir, "dictationModal");
 	const telephonyDir = path.resolve(componentsDir, "telephony");
+
+	const getVoiceModalCode = () => {
+		const modalPath = path.join(voiceDir, "VoiceDictationAssistantModal.tsx");
+		let code = fs.readFileSync(modalPath, "utf-8");
+		if (fs.existsSync(dictationDir)) {
+			for (const file of fs.readdirSync(dictationDir)) {
+				if (file.endsWith(".ts") || file.endsWith(".tsx")) {
+					code += "\n" + fs.readFileSync(path.join(dictationDir, file), "utf-8");
+				}
+			}
+		}
+		return code;
+	};
 
 	describe("1. Solo Doctor Autonomy & Form 043/u Diary Notes (Mandates 8e, 8s)", () => {
 		it("correctly identifies valid FDI tooth numbers in Russian spoken speech", () => {
@@ -53,8 +67,7 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 		});
 
 		it("guarantees 1-chair solo doctor free dictation without blocking validations", () => {
-			const modalPath = path.join(voiceDir, "VoiceDictationAssistantModal.tsx");
-			const code = fs.readFileSync(modalPath, "utf-8");
+			const code = getVoiceModalCode();
 
 			// Must support applying rawText directly to SOAP diary notes when no formal dental keywords are matched
 			assert.ok(
@@ -70,8 +83,7 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 
 	describe("2. Audio Lifecycle & Memory Leak Law (Mandates 8i, 8k)", () => {
 		it("VoiceDictationAssistantModal explicitly releases AudioContext and MediaStream on unmount", () => {
-			const modalPath = path.join(voiceDir, "VoiceDictationAssistantModal.tsx");
-			const code = fs.readFileSync(modalPath, "utf-8");
+			const code = getVoiceModalCode();
 
 			// AudioContext and MediaStream must be cleaned up on unmount
 			assert.ok(
@@ -225,8 +237,7 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 
 	describe("4. CSS Token Conformity & Theme Hygiene", () => {
 		it("VoiceDictationAssistantModal eradicates hardcoded hex colors and binds to design tokens", () => {
-			const modalPath = path.join(voiceDir, "VoiceDictationAssistantModal.tsx");
-			const code = fs.readFileSync(modalPath, "utf-8");
+			const code = getVoiceModalCode();
 
 			assert.ok(!code.includes("#ef444420"), "Must not contain #ef444420");
 			assert.ok(!code.includes("#ef4444"), "Must not contain #ef4444");
@@ -254,6 +265,7 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 	describe("5. Zero Cartoon Emojis (Mandate 8d pt 7)", () => {
 		const targetFiles = [
 			path.join(voiceDir, "VoiceDictationAssistantModal.tsx"),
+			...fs.readdirSync(dictationDir).filter(f => f.endsWith(".ts") || f.endsWith(".tsx")).map(f => path.join(dictationDir, f)),
 			path.join(voiceDir, "voiceClinicalCommands.ts"),
 			path.join(telephonyDir, "TelephonyFloatingWidget.tsx"),
 			path.join(telephonyDir, "IncomingCallPopup.tsx"),
