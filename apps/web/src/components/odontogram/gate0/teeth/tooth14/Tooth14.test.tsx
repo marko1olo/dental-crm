@@ -7,12 +7,12 @@ describe("Tooth 14 Wheeler Ch. 10 Maxillary First Premolar Anatomical Invariants
 	it("enforces Wheeler 2 separate roots (Buccal & Palatal) with bifurcation at mid-root", () => {
 		expect(TOOTH14_GEOMETRY.apices.length).toBe(2);
 		const [buccalApex, palatalApex] = TOOTH14_GEOMETRY.apices;
-		expect(buccalApex?.x).toBe(34.0);
+		expect(buccalApex?.x).toBe(33.0);
 		expect(buccalApex?.y).toBe(14.0);
-		expect(palatalApex?.x).toBe(66.0);
+		expect(palatalApex?.x).toBe(67.0);
 		expect(palatalApex?.y).toBe(16.0);
-		// Root trunk bifurcation
-		expect(TOOTH14_GEOMETRY.bifurcationFornix.y).toBe(55);
+		// Root trunk bifurcation at Y ≈ 42..45
+		expect(TOOTH14_GEOMETRY.bifurcationFornix.y).toBe(44.5);
 		expect(TOOTH14_GEOMETRY.bifurcationShadow).toBeDefined();
 	});
 
@@ -20,10 +20,10 @@ describe("Tooth 14 Wheeler Ch. 10 Maxillary First Premolar Anatomical Invariants
 		const pulp = TOOTH14_GEOMETRY.pulp;
 		expect(pulp.buccalCanal.id).toBe("Buccal");
 		expect(pulp.palatalCanal.id).toBe("Palatal");
-		expect(pulp.buccalCanal.apex.x).toBe(34.0);
-		expect(pulp.palatalCanal.apex.x).toBe(66.0);
-		expect(pulp.buccalHorn.y).toBe(140);
-		expect(pulp.palatalHorn.y).toBe(136);
+		expect(pulp.buccalCanal.apex.x).toBe(33.0);
+		expect(pulp.palatalCanal.apex.x).toBe(67.0);
+		expect(pulp.buccalHorn.y).toBe(120);
+		expect(pulp.palatalHorn.y).toBe(116);
 	});
 
 	it("models Wheeler Ch. 10 mesial marginal groove and sharp buccal cusp", () => {
@@ -33,8 +33,10 @@ describe("Tooth 14 Wheeler Ch. 10 Maxillary First Premolar Anatomical Invariants
 		const palatalCusp = TOOTH14_GEOMETRY.cusps.find((c) => c.id === "P");
 		expect(buccalCusp).toBeDefined();
 		expect(palatalCusp).toBeDefined();
-		// In upper premolar, crown points downward, so buccal cusp tip is at larger Y (151.5 vs 146.0)
+		// In upper premolar, crown points downward, so buccal cusp tip is at larger Y (146.0 vs 140.5)
 		expect(buccalCusp!.apex.y).toBeGreaterThan(palatalCusp!.apex.y);
+		// Wheeler unique trait: buccal cusp tip offset distally (x > 50), so mesial slope is longer
+		expect(buccalCusp!.apex.x).toBeGreaterThan(50.0);
 	});
 
 	it("renders Tooth14Container with unified viewBox 0 0 100 218", () => {

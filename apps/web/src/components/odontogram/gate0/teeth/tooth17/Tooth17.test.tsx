@@ -17,7 +17,7 @@ describe("Tooth17 Wheeler Ch. 11 Maxillary Second Molar Anatomical Invariants", 
 		assert.ok(!ids.includes("Carabelli" as any));
 	});
 
-	it("defines 3 closer parallel roots with buccal apex distance strictly narrower than Tooth 16 (52px vs 56px)", () => {
+	it("defines 3 closer parallel roots with buccal apex distance strictly narrower than Tooth 16 (52px vs 57.5px)", () => {
 		const mb = TOOTH17_GEOMETRY.mbApex;
 		const db = TOOTH17_GEOMETRY.dbApex;
 		const distance = db.x - mb.x;

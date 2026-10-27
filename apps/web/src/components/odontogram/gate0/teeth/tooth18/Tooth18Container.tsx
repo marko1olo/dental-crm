@@ -43,7 +43,7 @@ export const Tooth18Container: React.FC<Tooth46ContainerProps> = ({
 			height={baseHeight * zoom}
 			{...(className ? { className } : {})}
 			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label="Анатомический верхний третий моляр 18 (сердцевидная форма, сросшиеся корни)"
+			aria-label="Анатомический верхний третий моляр 18 (сердцевидная коронка, сросшиеся корни)"
 			role="img"
 		>
 			<Tooth46ShaderDefs />

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CariesDepth, CariesType } from "../../tooth46PresetTypes";
 import { TOOTH13_GEOMETRY } from "./tooth13Geometry";
 import { TOOTH13_CARIES_GEOMETRY } from "./tooth13CariesGeometry";
@@ -24,7 +24,6 @@ export const Tooth13EnamelCrown: React.FC<Tooth13EnamelCrownProps> = ({
 	className,
 }) => {
 	const g = TOOTH13_GEOMETRY;
-	const ridgeStroke = isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.65)";
 	const isC5 = cariesType === "class5";
 	const isC3 = cariesType === "class3";
 	const isDistal = cariesSurface === "distal" || cariesSurface === "D";
@@ -61,10 +60,23 @@ export const Tooth13EnamelCrown: React.FC<Tooth13EnamelCrownProps> = ({
 				vectorEffect="non-scaling-stroke"
 			/>
 			<g clipPath="url(#tooth13-crown-clip)">
-				<path d={g.crownMonolithPath} fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"} vectorEffect="non-scaling-stroke" />
-				<path d={g.crownMonolithPath} fill={isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)"} vectorEffect="non-scaling-stroke" />
-				<path d={g.labialRidgeHighlight} fill="none" stroke={isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)"} strokeWidth="3.2" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
-				<path d={g.labialRidgeHighlight} fill="none" stroke={ridgeStroke} strokeWidth="0.8" strokeLinecap="round" vectorEffect="non-scaling-stroke" />
+				<path
+					d={g.crownMonolithPath}
+					fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				<path
+					d={g.crownMonolithPath}
+					fill={isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)"}
+					vectorEffect="non-scaling-stroke"
+				/>
+				{/* Massive Central Labial Ridge & Highlight */}
+				<path d={g.labialRidge} fill="none" stroke="rgba(148, 163, 184, 0.28)" strokeWidth="1.6" strokeLinecap="round" />
+				<path d={g.labialRidgeHighlight} fill="none" stroke={isDark ? "rgba(255, 255, 255, 0.35)" : "rgba(255, 255, 255, 0.65)"} strokeWidth="1.0" strokeLinecap="round" />
+				{/* Prominent Cingulum */}
+				<path d={g.cingulum} fill="none" stroke="rgba(148, 163, 184, 0.32)" strokeWidth="1.2" strokeLinecap="round" />
+				{/* Convex Equator Highlight */}
+				<path d={g.crownEquatorHighlight} fill="none" stroke="rgba(255, 255, 255, 0.30)" strokeWidth="1.8" strokeLinecap="round" />
 			</g>
 		</g>
 	);

@@ -25,7 +25,7 @@ export const Tooth17Roots: React.FC<Tooth17RootsProps> = ({
 				<path d={geo.rootMonolithPath} />
 			</clipPath>
 
-			{/* Monolithic 3-Root Silhouette with Distal Parallel Slant */}
+			{/* Monolithic 3-Root Silhouette */}
 			<path
 				id="tooth17-root-monolith"
 				d={geo.rootMonolithPath}
@@ -65,9 +65,9 @@ export const Tooth17Roots: React.FC<Tooth17RootsProps> = ({
 			{/* Developmental grooves & longitudinal sulci */}
 			{showGrooves && (
 				<g id="tooth17-root-grooves">
-					<path d="M 24,20 C 23,38 22,60 21,80" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 77,22 C 78,40 80,62 80,80" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 50,14 C 50,34 50,56 50,76" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 24,22 C 23,36 21,52 20,68" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 77,24 C 77.5,38 78,54 78,68" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 50,14 C 50,30 50,46 50,62" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
 				</g>
 			)}
 

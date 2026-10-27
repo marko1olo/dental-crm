@@ -34,7 +34,7 @@ export const Tooth16EnamelCrown: React.FC<Tooth16EnamelCrownProps> = ({
 				{destructive && (
 					<mask id="tooth16-crown-destruct-mask">
 						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
-						<path d="M 36,118 C 44,116 54,116 62,120 C 66,130 58,140 48,140 C 38,140 32,130 36,118 Z" fill="#000000" />
+						<path d="M 36,104 C 44,102 54,102 62,106 C 66,116 58,126 48,126 C 38,126 32,116 36,104 Z" fill="#000000" />
 					</mask>
 				)}
 			</defs>

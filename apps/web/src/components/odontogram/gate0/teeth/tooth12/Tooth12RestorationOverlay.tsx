@@ -15,9 +15,7 @@ export interface Tooth12RestorationOverlayProps {
 	className?: string | undefined;
 }
 
-export const Tooth12RestorationOverlay: React.FC<
-	Tooth12RestorationOverlayProps
-> = ({
+export const Tooth12RestorationOverlay: React.FC<Tooth12RestorationOverlayProps> = ({
 	showComposite = false,
 	showZirconiaCrown = false,
 	crownMaterial = "zirconia",
@@ -29,13 +27,10 @@ export const Tooth12RestorationOverlay: React.FC<
 	className,
 }) => {
 	const geo = TOOTH12_GEOMETRY;
-	const compositeBorder = isDark
-		? "rgba(226, 232, 240, 0.75)"
-		: "rgba(130, 95, 55, 0.65)";
+	const compositeBorder = isDark ? "rgba(226, 232, 240, 0.75)" : "rgba(130, 95, 55, 0.65)";
 
 	return (
 		<g id="tooth12-restorations" className={className}>
-			{/* Specific Maxillary Lateral Incisor Orthopedic Crown */}
 			{showZirconiaCrown && (
 				<ToothCrownOverlay
 					toothId="12"
@@ -52,8 +47,6 @@ export const Tooth12RestorationOverlay: React.FC<
 					isImplant={isImplant}
 				/>
 			)}
-
-			{/* Light-Cured Composite Filling (Cervical Class V) */}
 			{showComposite && (
 				<g id="tooth12-composite-filling">
 					<path
@@ -65,7 +58,7 @@ export const Tooth12RestorationOverlay: React.FC<
 						vectorEffect="non-scaling-stroke"
 					/>
 					<path
-						d="M 40.0,98.0 C 44.5,99.5 55.5,99.5 60.0,98.0"
+						d="M 39.0,76.5 C 44.5,78.0 55.5,78.0 61.0,76.5"
 						fill="none"
 						stroke={isDark ? "rgba(217, 119, 6, 0.7)" : "rgba(120, 53, 15, 0.75)"}
 						strokeWidth="0.55"

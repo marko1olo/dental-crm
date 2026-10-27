@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CanalCondition } from "../../tooth46Types";
 import { TOOTH13_PULP_GEOMETRY } from "./tooth13PulpGeometry";
 
@@ -9,7 +9,7 @@ export interface Tooth13PulpChamberProps {
 }
 
 /**
- * Spear-shaped coronal pulp chamber for Tooth 13 (Maxillary Canine)
+ * Massive pointed coronal pulp chamber with tearing cusp horn for Tooth 13
  * Mandate 8b <= 120 lines.
  */
 export const Tooth13PulpChamber: React.FC<Tooth13PulpChamberProps> = ({
@@ -51,10 +51,22 @@ export const Tooth13PulpChamber: React.FC<Tooth13PulpChamberProps> = ({
 				d={p.coronalPulpChamber}
 				fill={chamberFill}
 				stroke={chamberStroke}
-				strokeWidth="0.8"
+				strokeWidth="0.75"
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
+			{/* Neurovascular Trunk */}
+			{p.neuroPlexus.map((n) => (
+				<path
+					key={n.id}
+					d={n.d}
+					fill="none"
+					stroke={isNecrotic ? "#78716c" : isPulpitis ? "#b91c1c" : "#e11d48"}
+					strokeWidth="0.8"
+					strokeLinecap="round"
+					opacity="0.80"
+				/>
+			))}
 		</g>
 	);
 };

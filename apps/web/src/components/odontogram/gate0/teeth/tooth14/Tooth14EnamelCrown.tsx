@@ -41,7 +41,7 @@ export const Tooth14EnamelCrown: React.FC<Tooth14EnamelCrownProps> = ({
 					<mask id="tooth14-crown-destruct-mask">
 						<rect x="0" y="0" width="100" height="250" fill="#ffffff" />
 						<path
-							d="M 36,134 C 44,136 56,136 64,134 C 62,143 56,146 50,146 C 44,146 38,143 36,134 Z"
+							d="M 36,116 C 44,118 56,118 64,116 C 62,123 56,126 50,126 C 44,126 38,123 36,116 Z"
 							fill="#000000"
 						/>
 					</mask>

@@ -18,15 +18,15 @@ describe("Tooth16 Wheeler Ch. 11 Maxillary First Molar Anatomical Invariants", (
 		assert.ok(TOOTH16_GEOMETRY.cristaObliquaRidge);
 	});
 
-	it("defines 3 divergent roots (Trifurcation) with Palatal root being longest (Y=8)", () => {
+	it("defines 3 divergent roots (Trifurcation) with Palatal root being longest (Y=10)", () => {
 		const apices = TOOTH16_GEOMETRY.apices;
 		assert.equal(apices.length, 3);
 		assert.equal(TOOTH16_GEOMETRY.palatalApex.x, 50);
-		assert.equal(TOOTH16_GEOMETRY.palatalApex.y, 8);
-		assert.equal(TOOTH16_GEOMETRY.mbApex.x, 22);
+		assert.equal(TOOTH16_GEOMETRY.palatalApex.y, 10);
+		assert.equal(TOOTH16_GEOMETRY.mbApex.x, 21);
 		assert.equal(TOOTH16_GEOMETRY.mbApex.y, 16);
-		assert.equal(TOOTH16_GEOMETRY.dbApex.x, 78);
-		assert.equal(TOOTH16_GEOMETRY.dbApex.y, 20);
+		assert.equal(TOOTH16_GEOMETRY.dbApex.x, 78.5);
+		assert.equal(TOOTH16_GEOMETRY.dbApex.y, 18);
 		assert.ok(TOOTH16_GEOMETRY.palatalApex.y < TOOTH16_GEOMETRY.mbApex.y);
 	});
 

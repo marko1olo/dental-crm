@@ -44,7 +44,7 @@ export const Tooth15Container: React.FC<Tooth46ContainerProps> = ({
 			height={baseHeight * zoom}
 			{...(className ? { className } : {})}
 			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label="Анатомический верхний второй премоляр 15 (однокорневой, бугры равной высоты)"
+			aria-label="Анатомический верхний второй премоляр 15 (однокорневой, равновеликие щечный и нёбный бугры)"
 			role="img"
 		>
 			<Tooth46ShaderDefs />

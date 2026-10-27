@@ -84,9 +84,9 @@ export const Tooth16EndoCanals: React.FC<Tooth16EndoCanalsProps> = ({
 					{/* Apical Sealer Puffs at 3 root tips during Overfill */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth16-overfill-puffs">
-							<circle cx={22} cy={16} r={2.0} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
-							<circle cx={50} cy={8} r={2.4} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
-							<circle cx={78} cy={20} r={1.9} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={21} cy={16} r={2.0} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={50} cy={10} r={2.4} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={78.5} cy={18} r={1.9} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
 						</g>
 					)}
 
@@ -94,9 +94,9 @@ export const Tooth16EndoCanals: React.FC<Tooth16EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="16"
-							path="M 25,28 L 22,16"
-							fracturePoint={{ x: 25, y: 28 }}
-							flutes={["M 24,24 L 26,26", "M 23,18 L 25,20"]}
+							path="M 24,28 L 21,16"
+							fracturePoint={{ x: 24, y: 28 }}
+							flutes={["M 23,24 L 25,26", "M 22,18 L 24,20"]}
 							isDark={isDark}
 						/>
 					)}

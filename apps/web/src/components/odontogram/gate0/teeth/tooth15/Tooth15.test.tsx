@@ -7,8 +7,8 @@ describe("Tooth 15 Wheeler Ch. 10 Maxillary Second Premolar Anatomical Invariant
 	it("enforces Wheeler 1 single tapered conical root with single apical center", () => {
 		expect(TOOTH15_GEOMETRY.apices.length).toBe(1);
 		const [apex] = TOOTH15_GEOMETRY.apices;
-		expect(apex?.x).toBe(48.0);
-		expect(apex?.y).toBe(18.0);
+		expect(apex?.x).toBe(49.0);
+		expect(apex?.y).toBe(14.0);
 		expect(TOOTH15_GEOMETRY.rootSulcus).toBeDefined();
 		expect(TOOTH15_GEOMETRY.rootSulcusHighlight).toBeDefined();
 	});
@@ -17,11 +17,11 @@ describe("Tooth 15 Wheeler Ch. 10 Maxillary Second Premolar Anatomical Invariant
 		const canals = TOOTH15_GEOMETRY.pulp.canals;
 		expect(canals.length).toBe(1);
 		expect(canals[0]?.id).toBe("Main");
-		expect(canals[0]?.orifice.x).toBe(50.0);
-		expect(canals[0]?.apex.x).toBe(48.0);
+		expect(canals[0]?.orifice.x).toBe(49.5);
+		expect(canals[0]?.apex.x).toBe(49.0);
 		// Equal height coronal horns
-		expect(TOOTH15_GEOMETRY.pulp.buccalHorn.y).toBe(138);
-		expect(TOOTH15_GEOMETRY.pulp.palatalHorn.y).toBe(138);
+		expect(TOOTH15_GEOMETRY.pulp.buccalHorn.y).toBe(118);
+		expect(TOOTH15_GEOMETRY.pulp.palatalHorn.y).toBe(118);
 	});
 
 	it("models Wheeler Ch. 10 equal-height cusps and supplemental occlusal wrinkles", () => {

@@ -11,7 +11,7 @@ export interface Tooth14RootsProps {
 
 /**
  * Anatomical Dual Divergent Roots for Maxillary First Premolar 14
- * Wheeler Ch. 10 — Bifurcated Buccal & Palatal roots with trunk depression
+ * Wheeler Ch. 10 — Bifurcated Buccal & Palatal roots with trunk depression.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth14Roots: React.FC<Tooth14RootsProps> = ({
@@ -55,8 +55,9 @@ export const Tooth14Roots: React.FC<Tooth14RootsProps> = ({
 				{/* Parabolic Bifurcation Fornix Shadow */}
 				<path
 					d={TOOTH14_GEOMETRY.bifurcationShadow}
-					fill={shadowColor}
-					stroke="none"
+					fill="url(#dente-furcation-shadow)"
+					clipPath="url(#tooth14-root-clip)"
+					pointerEvents="none"
 				/>
 				{/* Mid-root Trunk Sulcus Groove */}
 				{showGrooves && (

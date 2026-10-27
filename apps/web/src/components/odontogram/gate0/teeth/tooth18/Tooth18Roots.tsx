@@ -25,7 +25,7 @@ export const Tooth18Roots: React.FC<Tooth18RootsProps> = ({
 				<path d={geo.rootMonolithPath} />
 			</clipPath>
 
-			{/* Fused Conical Root Silhouette with Distal Curve */}
+			{/* Fused Conical Root Block Silhouette */}
 			<path
 				id="tooth18-root-monolith"
 				d={geo.rootMonolithPath}
@@ -46,12 +46,11 @@ export const Tooth18Roots: React.FC<Tooth18RootsProps> = ({
 				/>
 			</g>
 
-			{/* Developmental grooves demarcating fused root segments */}
+			{/* Developmental grooves indicating fused root lines */}
 			{showGrooves && (
 				<g id="tooth18-root-grooves">
-					<path d="M 28,94 C 27,76 30,52 36,32" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 68,94 C 64,76 56,54 44,32" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 48,94 C 47,74 44,52 40,30" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 44,24 C 41,38 34,54 30,68" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 52,24 C 55,38 62,54 66,68" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
 				</g>
 			)}
 

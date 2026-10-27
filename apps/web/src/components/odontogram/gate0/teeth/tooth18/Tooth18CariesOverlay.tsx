@@ -32,13 +32,13 @@ export const Tooth18CariesOverlay: React.FC<Tooth18CariesOverlayProps> = ({
 				<g id="tooth18-caries-class1">
 					{!isDestructive ? (
 						<>
-							<path d="M 40,123 C 46,121 54,121 59,125 C 53,131 46,131 40,123 Z" fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth="0.6" />
-							{!isSuperficial && <path d="M 42,124 C 46,122 52,122 56,125 C 52,129 46,129 42,124 Z" fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.5" />}
-							{isProfunda && <circle cx={49} cy={126} r="2.0" fill={necroticFill} stroke="#0c0a09" strokeWidth="0.4" />}
+							<path d="M 40,106 C 45,103 53,103 58,108 C 53,113 45,113 40,106 Z" fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth="0.6" />
+							{!isSuperficial && <path d="M 42,107 C 45,105 51,105 55,108 C 51,111 45,111 42,107 Z" fill={lesionFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="0.5" />}
+							{isProfunda && <circle cx={48} cy={109} r="2.0" fill={necroticFill} stroke="#0c0a09" strokeWidth="0.4" />}
 						</>
 					) : (
 						<g id="tooth18-caries-c1-destruct">
-							<path d="M 40,118 C 47,116 55,116 62,120 C 65,130 58,138 49,138 C 41,138 36,130 40,118 Z" fill={necroticFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="1.2" />
+							<path d="M 36,104 C 44,102 54,102 62,106 C 66,116 58,126 48,126 C 38,126 32,116 36,104 Z" fill={necroticFill} stroke="rgba(154, 52, 18, 0.95)" strokeWidth="1.2" />
 						</g>
 					)}
 				</g>
@@ -49,20 +49,20 @@ export const Tooth18CariesOverlay: React.FC<Tooth18CariesOverlayProps> = ({
 				<g id="tooth18-caries-class2">
 					{(cariesType === "class2_m" || cariesType === "class2_mo" || cariesType === "class2_mod") && (
 						<g id="tooth18-caries-c2-mesial">
-							<path d="M 18,118 C 16,124 17,133 20,137 C 23,135 24,126 21,120 Z" fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.6" />
-							{!isSuperficial && <path d="M 18.5,121 C 17,125 18,131 20,134 C 22,132 22.5,127 20.5,122 Z" fill={lesionFill} />}
-							{isProfunda && <circle cx={19.5} cy={126} r="1.6" fill={necroticFill} />}
+							<path d="M 18,105 C 16,111 17,119 20,123 C 23,121 24,112 21,106 Z" fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.6" />
+							{!isSuperficial && <path d="M 18.5,108 C 17,112 18,117 20,120 C 22,118 22.5,113 20.5,108 Z" fill={lesionFill} />}
+							{isProfunda && <circle cx={19.5} cy={113} r="1.6" fill={necroticFill} />}
 						</g>
 					)}
 					{(cariesType === "class2_d" || cariesType === "class2_do" || cariesType === "class2_mod") && (
 						<g id="tooth18-caries-c2-distal">
-							<path d="M 80,116 C 82,122 81,130 78,134 C 74,132 74,122 77,117 Z" fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.6" />
-							{!isSuperficial && <path d="M 79.5,119 C 81,123 80,128 78,131 C 75.5,129 75.5,123 77.5,119 Z" fill={lesionFill} />}
-							{isProfunda && <circle cx={78.5} cy={124} r="1.6" fill={necroticFill} />}
+							<path d="M 82,103 C 84,109 83,117 80,122 C 77,120 77,110 79,104 Z" fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.6" />
+							{!isSuperficial && <path d="M 81.5,106 C 83,110 82,115 80,119 C 78,117 78,111 79.5,106 Z" fill={lesionFill} />}
+							{isProfunda && <circle cx={80.5} cy={112} r="1.6" fill={necroticFill} />}
 						</g>
 					)}
 					{(cariesType === "class2_mo" || cariesType === "class2_do" || cariesType === "class2_mod") && (
-						<path d="M 27,124 C 38,122 60,124 70,126" stroke={lesionFill} strokeWidth="1.9" strokeLinecap="round" fill="none" />
+						<path d="M 28,108 C 38,106 60,108 70,110" stroke={lesionFill} strokeWidth="2.0" strokeLinecap="round" fill="none" />
 					)}
 				</g>
 			)}
@@ -70,9 +70,9 @@ export const Tooth18CariesOverlay: React.FC<Tooth18CariesOverlayProps> = ({
 			{/* Class V: Cervical Notch near CEJ */}
 			{cariesType === "class5" && (
 				<g id="tooth18-caries-class5">
-					<path d="M 24,98 C 38,95 62,95 76,98 C 71,103 29,103 24,98 Z" fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.6" />
-					{!isSuperficial && <path d="M 30,98.5 C 40,96.5 60,96.5 70,98.5 C 66,101.5 34,101.5 30,98.5 Z" fill={lesionFill} />}
-					{isProfunda && <path d="M 38,98.8 C 44,97.5 56,97.5 62,98.8 C 59,100.5 41,100.5 38,98.8 Z" fill={necroticFill} />}
+					<path d="M 24,76 C 36,73 62,73 76,76 C 71,81 29,81 24,76 Z" fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.6" />
+					{!isSuperficial && <path d="M 30,76.5 C 40,74.5 59,74.5 69,76.5 C 65,79.5 35,79.5 30,76.5 Z" fill={lesionFill} />}
+					{isProfunda && <path d="M 38,76.8 C 45,75.5 54,75.5 61,76.8 C 58,78.5 41,78.5 38,76.8 Z" fill={necroticFill} />}
 				</g>
 			)}
 		</g>

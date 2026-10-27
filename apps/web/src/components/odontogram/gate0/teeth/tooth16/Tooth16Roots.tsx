@@ -65,9 +65,9 @@ export const Tooth16Roots: React.FC<Tooth16RootsProps> = ({
 			{/* Developmental grooves & longitudinal sulci */}
 			{showGrooves && (
 				<g id="tooth16-root-grooves">
-					<path d="M 22,22 C 20,40 19,62 18,82" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 79,26 C 81,44 82,64 82,82" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
-					<path d="M 50,12 C 50,34 50,56 50,78" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 21,22 C 19,36 18,52 17,68" stroke={grooveStroke} strokeWidth="0.8" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 79,24 C 80,38 81,54 81,68" stroke={grooveStroke} strokeWidth="0.7" strokeDasharray="2,1.5" fill="none" />
+					<path d="M 50,14 C 50,30 50,46 50,62" stroke={grooveStroke} strokeWidth="0.6" strokeDasharray="2,1.5" fill="none" />
 				</g>
 			)}
 

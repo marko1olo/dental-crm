@@ -94,9 +94,9 @@ export const Tooth17EndoCanals: React.FC<Tooth17EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="17"
-							path="M 27,28 L 24,16"
-							fracturePoint={{ x: 27, y: 28 }}
-							flutes={["M 26,24 L 28,26", "M 25,18 L 27,20"]}
+							path="M 26,28 L 24,16"
+							fracturePoint={{ x: 26, y: 28 }}
+							flutes={["M 25,24 L 27,26", "M 24,18 L 26,20"]}
 							isDark={isDark}
 						/>
 					)}

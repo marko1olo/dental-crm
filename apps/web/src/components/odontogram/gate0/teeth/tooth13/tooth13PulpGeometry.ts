@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Wheeler Ch. 9 Maxillary Canine (Tooth 13) Pulp & Canal
- * Tall spear-like pulp horn (Y=128.0) & deepest root canal up to Y=10.5.
+ * Massive pointed pulp horn & single deep canal to apex (50.0, 10.5).
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
@@ -14,32 +14,32 @@ export interface Tooth13CanalAnatomy {
 }
 
 export const TOOTH13_PULP_GEOMETRY = {
-	// Slender spear-like coronal pulp chamber in cervical half (Wheeler Ch. 9)
 	coronalPulpChamber:
-		"M 48.0,91.5 " +
-		"C 45.5,93.5 44.0,102.5 44.0,112.5 " +
-		"C 44.0,118.5 47.0,123.5 50.0,128.0 " + // Slender spear horn pointing to cusp tip
-		"C 53.0,123.5 56.0,118.5 56.0,112.5 " +
-		"C 56.0,102.5 54.5,93.5 52.0,91.5 " +
-		"C 51.0,90.0 49.0,90.0 48.0,91.5 Z",
+		"M 46.5,72.0 " +
+		"C 41.5,76.0 37.0,90.0 36.0,105.0 " +
+		"C 35.5,112.0 38.0,122.0 50.0,132.0 " + // Tall pointed canine cusp horn
+		"C 62.0,122.0 64.5,112.0 64.0,105.0 " +
+		"C 63.0,90.0 58.5,76.0 53.5,72.0 " +
+		"C 51.5,70.5 48.5,70.5 46.5,72.0 Z",
 	canals: [
 		{
 			id: "Main",
 			nameRu: "Центральный корневой канал",
-			orifice: { x: 50.0, y: 91.0 },
+			orifice: { x: 50.0, y: 71.0 },
 			apex: { x: 50.0, y: 10.5 },
 			centerLine:
-				"M 50.0,91.0 L 50.0,10.5",
+				"M 50.0,71.0 C 50.0,48.0 50.0,28.0 50.0,10.5",
 			taperedLumen:
-				"M 47.5,91.0 C 47.8,64.0 48.8,32.0 49.3,10.5 " +
-				"L 50.7,10.5 C 51.2,32.0 52.2,64.0 52.5,91.0 Z",
+				"M 47.0,71.0 C 47.5,48.0 48.5,28.0 49.0,10.5 " +
+				"C 49.5,10.5 50.5,10.5 51.0,10.5 " +
+				"C 51.5,28.0 52.5,48.0 53.0,71.0 Z",
 		},
 	] as readonly Tooth13CanalAnatomy[],
 	rostrumMap: {
-		grooves: "M 48.0,91.0 C 49.0,89.5 51.0,89.5 52.0,91.0",
-		orifices: [{ id: "Main", x: 50.0, y: 91.0, r: 1.2 }],
+		grooves: "M 47.0,71.0 C 48.5,69.5 51.5,69.5 53.0,71.0",
+		orifices: [{ id: "Main", x: 50.0, y: 71.0, r: 1.4 }],
 	},
 	neuroPlexus: [
-		{ id: "canine_trunk", d: "M 50.0,91.0 C 50.0,102.0 50.0,113.0 50.0,125.0" },
+		{ id: "central_trunk", d: "M 50.0,71.0 C 50.0,88.0 50.0,106.0 50.0,128.0" },
 	] as const,
 } as const;

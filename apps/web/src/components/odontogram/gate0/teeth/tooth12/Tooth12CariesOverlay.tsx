@@ -3,14 +3,21 @@ import type { CariesChronicity, CariesDepth, CariesType } from "../../tooth46Pre
 import { TOOTH12_CARIES_GEOMETRY } from "./tooth12CariesGeometry";
 
 export interface Tooth12CariesOverlayProps {
-	cariesType?: CariesType | undefined; cariesDepth?: CariesDepth | undefined;
-	chronicity?: CariesChronicity | undefined; cariesSurface?: "mesial" | "distal" | "M" | "D" | undefined;
-	isDark?: boolean | undefined; className?: string | undefined;
+	cariesType?: CariesType | undefined;
+	cariesDepth?: CariesDepth | undefined;
+	chronicity?: CariesChronicity | undefined;
+	cariesSurface?: "mesial" | "distal" | "M" | "D" | undefined;
+	isDark?: boolean | undefined;
+	className?: string | undefined;
 }
 
 export const Tooth12CariesOverlay: React.FC<Tooth12CariesOverlayProps> = ({
-	cariesType = "class3", cariesDepth = "media", chronicity = "acute",
-	cariesSurface, isDark = false, className,
+	cariesType = "class3",
+	cariesDepth = "media",
+	chronicity = "acute",
+	cariesSurface,
+	isDark = false,
+	className,
 }) => {
 	const g = TOOTH12_CARIES_GEOMETRY;
 	const isChronic = chronicity === "chronic";
@@ -102,7 +109,6 @@ export const Tooth12CariesOverlay: React.FC<Tooth12CariesOverlayProps> = ({
 						{isDestruct && <>
 							<path d={g.class5.destructive.dentin} fill={lesionFill} stroke="#b45309" strokeWidth="0.6" />
 							<path d={g.class5.destructive.border} fill="none" stroke="#0c0a09" strokeWidth="1.5" strokeLinecap="round" />
-							{(g.class5.destructive.steps || []).map((s, i) => <path key={i} d={s} fill="none" stroke={stepStroke} strokeWidth="0.8" strokeLinecap="round" />)}
 						</>}
 					</g>
 				</g>

@@ -9,17 +9,17 @@ import {
 } from "./index";
 
 describe("Tooth13 Wheeler Ch. 9 Maxillary Canine Anatomical Invariants", () => {
-	it("enforces diamond spear crown with sharp tearing cusp apex (Y=154)", () => {
+	it("enforces diamond spear crown with sharp tearing cusp apex (Y=150)", () => {
 		assert.ok(TOOTH13_GEOMETRY.labialRidge);
 		assert.ok(TOOTH13_GEOMETRY.labialRidgeHighlight);
 		assert.ok(TOOTH13_GEOMETRY.cingulum);
 	});
 
-	it("maintains Wheeler Ch. 9 massive crown width (53px, 7.5mm scale)", () => {
+	it("maintains Wheeler Ch. 9 massive crown width (53px scale)", () => {
 		const path = TOOTH13_GEOMETRY.crownMonolithPath;
-		assert.ok(path.includes("24.0,94.5"));
-		assert.ok(path.includes("76.0,94.5"));
-		assert.ok(path.includes("50.0,154.0"));
+		assert.ok(path.includes("23.5,73.0"));
+		assert.ok(path.includes("76.5,73.0"));
+		assert.ok(path.includes("50.0,150.0"));
 	});
 
 	it("models longest human root up to Y=8.0 with apex at (50, 8)", () => {

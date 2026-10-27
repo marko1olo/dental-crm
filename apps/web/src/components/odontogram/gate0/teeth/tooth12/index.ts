@@ -7,3 +7,4 @@ export { Tooth12EndoCanals } from "./Tooth12EndoCanals";
 export { Tooth12CariesOverlay } from "./Tooth12CariesOverlay";
 export { TOOTH12_GEOMETRY } from "./tooth12Geometry";
 export { TOOTH12_PULP_GEOMETRY, type Tooth12CanalAnatomy } from "./tooth12PulpGeometry";
+export { TOOTH12_CARIES_GEOMETRY } from "./tooth12CariesGeometry";

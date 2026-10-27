@@ -14,8 +14,8 @@ export interface Tooth15EndoCanalsProps {
 }
 
 /**
- * Single Root Canal Endodontic System for Tooth 15 (Wheeler Ch. 10)
- * 1 wide central canal + Coronal pulp chamber with 2 equal horns.
+ * Single Tapered Root Canal Endodontic System for Tooth 15 (Wheeler Ch. 10)
+ * Central wide canal + Coronal pulp chamber with 2 equal-height horns.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
@@ -41,7 +41,7 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 
 	return (
 		<g id="tooth15-endodontics" className={className}>
-			{/* Coronal Pulp Chamber with Equal Buccal & Palatal Horns */}
+			{/* Coronal Pulp Chamber with Balanced Buccal & Palatal Horns */}
 			{showPulp && (
 				<g id="tooth15-pulp-chamber">
 					<path
@@ -54,24 +54,24 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 				</g>
 			)}
 
-			{/* Single Wide Root Canal System */}
+			{/* Root Canal Tract (Main Canal) */}
 			{showCanals && (
 				<g id="tooth15-canals-tract">
-					{p.canals.map((c) => (
+					{p.canals.map((canal) => (
 						<Tooth46SingleCanal
-							key={c.id}
-							canal={c as any}
+							key={canal.id}
+							canal={canal as any}
 							showGuttaPercha={showGuttaPercha}
 							isNecrotic={isNecrotic}
 							isUnderfill={isUnderfill}
 						/>
 					))}
 
-					{/* Overfilled Apical Sealer Puff at Apex (48.0, 18.0) */}
+					{/* Overfilled Apical Sealer Puff at Root Apex */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth15-overfill-puffs">
 							<path
-								d="M 46.0,18.5 C 44.5,16.0 46.5,14.0 48.0,15.5 C 49.5,17.0 48.5,19.0 46.0,18.5 Z"
+								d="M 47.5,14.5 C 46.0,12.0 48.0,10.0 49.5,11.5 C 51.0,13.0 49.5,15.0 47.5,14.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -79,12 +79,12 @@ export const Tooth15EndoCanals: React.FC<Tooth15EndoCanalsProps> = ({
 						</g>
 					)}
 
-					{/* Broken Instrument in Central Canal */}
+					{/* Broken Instrument Marker */}
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="15"
-							path="M 49.0,30.0 L 48.0,18.0"
-							fracturePoint={{ x: 49.0, y: 30.0 }}
+							path="M 49.5,24.0 L 49.0,14.0"
+							fracturePoint={{ x: 49.5, y: 24.0 }}
 						/>
 					)}
 				</g>

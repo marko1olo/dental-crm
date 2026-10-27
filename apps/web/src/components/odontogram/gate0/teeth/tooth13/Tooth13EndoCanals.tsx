@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Tooth46SingleCanal } from "../../Tooth46SingleCanal";
 import { ToothBrokenFileMarker } from "../../ToothBrokenFileMarker";
 import type { CanalCondition } from "../../tooth46Types";
@@ -30,12 +30,10 @@ export const Tooth13EndoCanals: React.FC<Tooth13EndoCanalsProps> = ({
 
 	return (
 		<g id="tooth13-endodontics" className={className}>
-			{/* Coronal Pulp Chamber */}
 			{showPulp && (
 				<Tooth13PulpChamber condition={canalCondition} isDark={isDark} />
 			)}
 
-			{/* Straight Cylindrical Canal Tract */}
 			{showCanals && (
 				<g id="tooth13-canals-tract">
 					{p.canals.map((canal) => (
@@ -48,11 +46,11 @@ export const Tooth13EndoCanals: React.FC<Tooth13EndoCanalsProps> = ({
 						/>
 					))}
 
-					{/* Overfilled Apical Sealer Puff at Longest Apex (Y=8.0) */}
+					{/* Overfilled Apical Sealer Puff at Deep Apex (50.0, 8.0) */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth13-overfill-puffs">
 							<path
-								d="M 48.0,9.5 C 46.2,8.0 47.2,5.5 49.7,6.0 C 52.2,6.5 52.0,9.0 50.0,9.5 Z"
+								d="M 48.5,8.5 C 47.0,6.5 48.0,3.5 50.0,4.0 C 52.0,3.5 53.0,6.5 51.5,8.5 Z"
 								fill="url(#dente-sealer-puff)"
 								stroke="#881337"
 								strokeWidth="0.6"
@@ -64,11 +62,11 @@ export const Tooth13EndoCanals: React.FC<Tooth13EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="13"
-							path="M 50.0,24.0 L 50.0,10.2"
-							fracturePoint={{ x: 50.0, y: 24.0 }}
+							path="M 50.0,22.0 C 50.0,18.0 50.0,14.0 50.0,10.5"
+							fracturePoint={{ x: 50.0, y: 22.0 }}
 							flutes={[
-								"M 49.0,21.0 L 51.0,19.0",
-								"M 49.0,16.0 L 51.0,14.0",
+								"M 48.5,19.0 C 49.5,18.5 50.5,18.5 51.5,19.0",
+								"M 48.8,15.0 C 49.6,14.5 50.4,14.5 51.2,15.0",
 							]}
 							isDark={isDark}
 						/>

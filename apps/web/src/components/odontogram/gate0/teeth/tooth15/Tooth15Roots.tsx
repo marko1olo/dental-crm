@@ -11,7 +11,7 @@ export interface Tooth15RootsProps {
 
 /**
  * Anatomical Single Conical Root for Maxillary Second Premolar 15
- * Wheeler Ch. 10 — 1 tapered root with developmental depression
+ * Wheeler Ch. 10 — Single tapered root with deep sulcus longitudinalis.
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth15Roots: React.FC<Tooth15RootsProps> = ({
@@ -23,6 +23,12 @@ export const Tooth15Roots: React.FC<Tooth15RootsProps> = ({
 	const strokeColor = isDark
 		? "rgba(203, 213, 225, 0.55)"
 		: "rgba(71, 85, 105, 0.40)";
+	const sulcusShadow = isDark
+		? "rgba(15, 23, 42, 0.60)"
+		: "rgba(115, 82, 48, 0.30)";
+	const sulcusHighlight = isDark
+		? "rgba(255, 255, 255, 0.15)"
+		: "rgba(255, 255, 255, 0.45)";
 
 	return (
 		<g id="tooth15-roots" {...(className ? { className } : {})}>
@@ -30,7 +36,7 @@ export const Tooth15Roots: React.FC<Tooth15RootsProps> = ({
 				<path d={TOOTH15_GEOMETRY.rootMonolithPath} />
 			</clipPath>
 
-			{/* Monolithic Single Conical Root */}
+			{/* Monolithic Single Tapered Conical Root */}
 			<path
 				id="tooth15-root-monolith"
 				d={TOOTH15_GEOMETRY.rootMonolithPath}
@@ -49,30 +55,30 @@ export const Tooth15Roots: React.FC<Tooth15RootsProps> = ({
 					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
-				{/* Longitudinal Depression Groove */}
+				{/* Deep Longitudinal Root Groove (Sulcus longitudinalis) */}
 				{showGrooves && (
 					<>
 						<path
 							d={TOOTH15_GEOMETRY.rootSulcus}
 							fill="none"
-							stroke={strokeColor}
-							strokeWidth="0.75"
+							stroke={sulcusShadow}
+							strokeWidth="1.2"
 							strokeLinecap="round"
-							opacity="0.6"
 							vectorEffect="non-scaling-stroke"
 						/>
 						<path
 							d={TOOTH15_GEOMETRY.rootSulcusHighlight}
 							fill="none"
-							stroke={isDark ? "rgba(255, 255, 255, 0.25)" : "rgba(255, 255, 255, 0.55)"}
-							strokeWidth="0.5"
+							stroke={sulcusHighlight}
+							strokeWidth="0.6"
 							strokeLinecap="round"
+							vectorEffect="non-scaling-stroke"
 						/>
 					</>
 				)}
 			</g>
 
-			{/* Cemento-Enamel Junction (CEJ) */}
+			{/* Scalloped Cemento-Enamel Junction (CEJ) */}
 			{showCej && (
 				<path
 					d={TOOTH15_GEOMETRY.cejCurve}

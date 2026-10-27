@@ -8,7 +8,7 @@ export interface Tooth12RootsProps {
 }
 
 /**
- * Slender single root with distal apical curvature for Tooth 12 (Maxillary Lateral Incisor)
+ * Slender single root with distal apical curvature for Tooth 12
  * Mandate 8b <= 120 lines.
  */
 export const Tooth12Roots: React.FC<Tooth12RootsProps> = ({
@@ -44,8 +44,17 @@ export const Tooth12Roots: React.FC<Tooth12RootsProps> = ({
 					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
+				{/* Natural Longitudinal Developmental Depression */}
+				<path
+					d={g.rootSulcus}
+					fill="none"
+					stroke={isDark ? "rgba(15, 23, 42, 0.35)" : "rgba(115, 82, 48, 0.22)"}
+					strokeWidth="2.2"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
 			</g>
-			{/* CEJ line */}
+			{/* Scalloped Anatomical CEJ */}
 			<path
 				d={g.cejPath}
 				fill="none"

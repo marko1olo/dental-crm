@@ -17,9 +17,9 @@ describe("Tooth11 Wheeler Ch. 8 Maxillary Central Incisor Anatomical Invariants"
 
 	it("maintains Wheeler Ch. 8 central incisor widest crown width (57px scale) & 90° mesial angle", () => {
 		const path = TOOTH11_GEOMETRY.crownMonolithPath;
-		assert.ok(path.includes("21.5,93.5"));
-		assert.ok(path.includes("78.5,93.5"));
-		assert.ok(path.includes("78.5,150.0"));
+		assert.ok(path.includes("21.5,73.5"));
+		assert.ok(path.includes("78.5,73.5"));
+		assert.ok(path.includes("78.5,148.0"));
 	});
 
 	it("models powerful straight conical single root with apex at (50, 14)", () => {

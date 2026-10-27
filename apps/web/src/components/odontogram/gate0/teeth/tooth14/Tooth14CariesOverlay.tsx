@@ -59,7 +59,7 @@ export const Tooth14CariesOverlay: React.FC<Tooth14CariesOverlayProps> = ({
 					{hasMesial && (
 						<g id="tooth14-caries-c2-mesial">
 							<path d={c.mesialBox} fill={lesionFill} stroke={haloStroke} strokeWidth="0.6" />
-							{isProfunda && <ellipse cx="27" cy="126" rx="2.5" ry="3.5" fill={necroticFill} />}
+							{isProfunda && <ellipse cx="26" cy="108" rx="2.5" ry="3.5" fill={necroticFill} />}
 						</g>
 					)}
 					{(cariesType === "class2_mo" || cariesType === "class2_do" || cariesType === "class2_mod") && (
@@ -68,7 +68,7 @@ export const Tooth14CariesOverlay: React.FC<Tooth14CariesOverlayProps> = ({
 					{hasDistal && (
 						<g id="tooth14-caries-c2-distal">
 							<path d={c.distalBox} fill={lesionFill} stroke={haloStroke} strokeWidth="0.6" />
-							{isProfunda && <ellipse cx="71" cy="126" rx="2.5" ry="3.5" fill={necroticFill} />}
+							{isProfunda && <ellipse cx="72" cy="108" rx="2.5" ry="3.5" fill={necroticFill} />}
 						</g>
 					)}
 				</g>

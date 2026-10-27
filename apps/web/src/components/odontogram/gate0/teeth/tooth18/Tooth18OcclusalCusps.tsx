@@ -36,7 +36,7 @@ export const Tooth18OcclusalCusps: React.FC<Tooth18OcclusalCuspsProps> = ({
 				<path id="tooth18-central-basin" d={geo.centralBasinPath} fill={isDark ? "rgba(15, 23, 42, 0.40)" : "rgba(226, 232, 240, 0.50)"} />
 				<path id="tooth18-distal-basin" d={geo.distalBasinPath} fill={isDark ? "rgba(15, 23, 42, 0.35)" : "rgba(226, 232, 240, 0.45)"} />
 
-				{/* Exactly 3 Cusps: MB, DB, Lingual (ZERO Carabelli) */}
+				{/* 3 Cusps: MB, DB, Lingual with individual slopes */}
 				{showCusps && TOOTH18_CUSPS.map((c) => (
 					<Tooth46SingleCusp key={c.id} cusp={c as any} isDark={isDark} />
 				))}

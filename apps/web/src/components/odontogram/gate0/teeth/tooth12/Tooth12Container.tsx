@@ -38,7 +38,7 @@ export const Tooth12Container: React.FC<Tooth46ContainerProps> = ({
 			height={baseHeight * zoom}
 			{...(className ? { className } : {})}
 			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label="Анатомический верхний латеральный резец 12 (скругленный дистальный угол, дистальный изгиб апекса корня)"
+			aria-label="Анатомический верхний боковой резец 12 (изящная коронка, скругленный угол, тонкий изогнутый корень)"
 			role="img"
 		>
 			<Tooth46ShaderDefs />

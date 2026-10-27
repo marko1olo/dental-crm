@@ -15,24 +15,24 @@ describe("Tooth12 Wheeler Ch. 8 Maxillary Lateral Incisor Anatomical Invariants"
 		assert.ok(TOOTH12_GEOMETRY.foramenCaecum);
 	});
 
-	it("maintains Wheeler Ch. 8 lateral incisor crown width (47px scale)", () => {
+	it("maintains Wheeler Ch. 8 lateral incisor crown width (48px scale)", () => {
 		const path = TOOTH12_GEOMETRY.crownMonolithPath;
-		assert.ok(path.includes("26.5,94.0"));
-		assert.ok(path.includes("73.5,94.0"));
+		assert.ok(path.includes("26.0,73.5"));
+		assert.ok(path.includes("74.0,73.5"));
 	});
 
-	it("models single slender root with marked distal apical curvature (44, 18)", () => {
+	it("models single slender root with marked distal apical curvature (55, 14)", () => {
 		const apex = TOOTH12_GEOMETRY.apex;
-		assert.equal(apex.x, 44.0);
-		assert.equal(apex.y, 18.0);
+		assert.equal(apex.x, 55.0);
+		assert.equal(apex.y, 14.0);
 		assert.ok(TOOTH12_GEOMETRY.rootSulcus);
 	});
 
-	it("defines 1 curved canal up to Y=20.0", () => {
+	it("defines 1 curved canal up to Y=16.5", () => {
 		const canals = TOOTH12_PULP_GEOMETRY.canals;
 		assert.equal(canals.length, 1);
 		assert.equal(canals[0]?.id, "Main");
-		assert.equal(canals[0]?.apex.y, 20.0);
+		assert.equal(canals[0]?.apex.y, 16.5);
 	});
 
 	it("renders Tooth12Container with badge clearance (cy=194.5, height=218)", () => {

@@ -12,7 +12,7 @@ export interface Tooth15OcclusalCuspsProps {
 }
 
 /**
- * Anatomical 3D Equal Cusps & Wrinkled Occlusal Grooves for Premolar 15
+ * Anatomical 3D Cusp Slopes, Lobes & Wrinkled Fissures for Maxillary Second Premolar 15
  * Mandate 8b <= 120 lines. ViewBox: "0 0 100 218".
  */
 export const Tooth15OcclusalCusps: React.FC<Tooth15OcclusalCuspsProps> = ({
@@ -28,7 +28,7 @@ export const Tooth15OcclusalCusps: React.FC<Tooth15OcclusalCuspsProps> = ({
 	const crFill = isDark ? "url(#dente-cervical-ridge-dark)" : "url(#dente-cervical-ridge)";
 	const crStroke = isDark ? "rgba(255, 255, 255, 0.20)" : "rgba(255, 255, 255, 0.40)";
 	const crHighlight = isDark ? "rgba(255, 255, 255, 0.28)" : "rgba(255, 255, 255, 0.60)";
-	const suppl = TOOTH15_GEOMETRY.supplementalGrooves.map((g) => g.d).join(" ");
+	const wrinkles = TOOTH15_GEOMETRY.supplementalGrooves.map((g) => g.d).join(" ");
 
 	return (
 		<g id="tooth15-crown" className={className}>
@@ -44,7 +44,7 @@ export const Tooth15OcclusalCusps: React.FC<Tooth15OcclusalCuspsProps> = ({
 			)}
 			{showCusps && (
 				<g id="tooth15-cusp-ridges" clipPath="url(#tooth15-crown-clip)">
-					{/* Buccal Cervical Ridge */}
+					{/* Buccal Cervical Convexity Ridge */}
 					<path
 						d={TOOTH15_GEOMETRY.buccalCervicalRidge}
 						fill={crFill}
@@ -60,7 +60,7 @@ export const Tooth15OcclusalCusps: React.FC<Tooth15OcclusalCuspsProps> = ({
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
-					{/* 2 Equal Cusps: Buccal (B) & Palatal (P) */}
+					{/* 2 Equal-Height Balanced Cusps: Buccal (B) & Palatal (P) */}
 					{TOOTH15_CUSPS.map((c) => (
 						<Tooth46SingleCusp key={c.id} cusp={c as any} isDark={isDark} />
 					))}
@@ -73,7 +73,7 @@ export const Tooth15OcclusalCusps: React.FC<Tooth15OcclusalCuspsProps> = ({
 						d={TOOTH15_GEOMETRY.sulcusCentralis}
 						fill="none"
 						stroke={fShadow}
-						strokeWidth="0.8"
+						strokeWidth="0.85"
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
@@ -85,21 +85,23 @@ export const Tooth15OcclusalCusps: React.FC<Tooth15OcclusalCuspsProps> = ({
 						strokeLinecap="round"
 						vectorEffect="non-scaling-stroke"
 					/>
-					{/* Supplemental Wrinkles */}
+					{/* Wheeler Hallmark: Multiple Supplemental Branching Wrinkles */}
 					<path
-						d={suppl}
+						d={wrinkles}
 						fill="none"
 						stroke={fShadow}
-						strokeWidth="0.6"
+						strokeWidth="0.65"
 						strokeLinecap="round"
+						opacity="0.8"
 						vectorEffect="non-scaling-stroke"
 					/>
 					<path
-						d={suppl}
+						d={wrinkles}
 						fill="none"
 						stroke={fCore}
 						strokeWidth="0.35"
 						strokeLinecap="round"
+						opacity="0.8"
 						vectorEffect="non-scaling-stroke"
 					/>
 				</g>

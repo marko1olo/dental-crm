@@ -38,7 +38,7 @@ export const Tooth13Container: React.FC<Tooth46ContainerProps> = ({
 			height={baseHeight * zoom}
 			{...(className ? { className } : {})}
 			style={{ display: "block", overflow: "visible", ...(style ?? {}) }}
-			aria-label="Анатомический верхний клык 13 (ромбовидная коронка, рвущий бугор, самый длинный корень 30мм)"
+			aria-label="Анатомический верхний клык 13 (ромбовидная коронка-копье, рвущий бугор, мощный длинный корень)"
 			role="img"
 		>
 			<Tooth46ShaderDefs />

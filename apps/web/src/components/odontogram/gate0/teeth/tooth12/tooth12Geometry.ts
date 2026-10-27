@@ -1,60 +1,64 @@
 /**
  * DENTE Dental CRM — Wheeler Ch. 8 Maxillary Lateral Incisor (Tooth 12) Geometry
- * Anatomical scale: 6.5mm crown width (distinctly narrower than 11: X=26.5..73.5),
- * both angles rounded (distal heavily rounded), distally sloping incisal ridge,
- * marked distal apical curvature of root (apex at 44.0, 18.0), Foramen Caecum.
+ * Anatomical scale: 6.5mm crown width (more slender, delicate and convex than Central Incisor).
+ * Chisel crown (48px width: X=26.0..74.0, Y=70.5..145.0), rounded mesioincisal angle,
+ * pronounced sloping rounded distoincisal angle, slender root with distal apical curvature (apex at 55.0, 14.0),
+ * and anatomical blind pit (Foramen Caecum).
  * Mandate 8b: Strictly <= 120 lines. ViewBox: "0 0 100 218".
  */
 
 export const TOOTH12_GEOMETRY = {
 	toothId: "12",
-	nameRu: "Верхний латеральный резец",
+	nameRu: "Верхний боковой резец",
 	viewBox: "0 0 100 218",
-	// Chisel crown: incisal edge sloping distally, rounded distoincisal angle
+	// Chisel crown: incisal edge sloping distally, rounded mesial & heavily rounded distal angles
 	crownMonolithPath:
-		"M 26.5,94.0 " +
-		"C 25.0,106.0 24.8,118.0 25.5,130.0 " +
-		"C 26.0,138.0 27.5,143.5 31.0,145.5 " + // Heavily rounded distoincisal angle
-		"C 35.0,146.5 45.0,147.8 55.0,148.5 " + // Distally sloping incisal ridge
-		"C 62.0,149.0 68.0,149.2 71.0,149.0 " +
-		"C 72.8,148.8 73.5,147.5 73.5,145.5 " + // Rounded mesioincisal angle
-		"C 74.0,134.0 74.2,120.0 73.8,108.0 " +
-		"C 73.6,101.0 73.6,96.5 73.5,94.0 " +
-		"C 65.5,92.0 57.5,91.0 50.0,91.0 " +   // Scalloped CEJ arching toward root
-		"C 42.5,91.0 34.5,92.0 26.5,94.0 Z",
-	// Single slender root with marked distal apical curvature to the left (apex at X=44.0, Y=18.0)
+		"M 26.0,73.5 " +
+		"C 24.5,84.0 24.0,98.0 25.0,114.0 " +
+		"C 25.5,124.0 27.0,134.0 30.5,141.0 " + // Distinctly rounded and sloped distoincisal angle
+		"C 33.5,144.0 42.0,145.0 50.0,145.0 " + // Incisal ridge
+		"C 58.0,145.0 66.0,144.5 71.0,143.5 " +
+		"C 72.8,143.0 73.8,141.5 74.0,139.0 " + // Rounded mesioincisal angle
+		"C 74.5,125.0 75.0,105.0 74.5,90.0 " +  // Mesial contour
+		"C 74.2,84.0 74.0,78.0 74.0,73.5 " +
+		"C 66.0,71.5 58.0,70.5 50.0,70.5 " +    // Cervical line
+		"C 42.0,70.5 34.0,71.5 26.0,73.5 Z",
+	// Slender single root with marked distal apical curvature (apex at 55.0, 14.0)
 	rootMonolithPath:
-		"M 26.5,94.0 " +
-		"C 28.5,78.0 34.0,52.0 39.5,32.0 " +
-		"C 41.0,24.0 42.5,18.0 44.0,18.0 " +   // Apical curvature to distal (X=44.0)
-		"C 45.8,18.0 47.5,21.0 49.5,28.0 " +
-		"C 55.5,50.0 64.5,74.0 73.5,94.0 " +
-		"C 65.5,92.0 57.5,91.0 50.0,91.0 " +
-		"C 42.5,91.0 34.5,92.0 26.5,94.0 Z",
-	cejPath: "M 26.5,94.0 C 34.5,92.0 42.5,91.0 50.0,91.0 C 57.5,91.0 65.5,92.0 73.5,94.0",
-	apex: { x: 44.0, y: 18.0 },
-	apices: [{ x: 44.0, y: 18.0, r: 8.0 }] as const,
+		"M 26.0,73.5 " +
+		"C 28.0,58.0 34.0,42.0 42.0,28.0 " +
+		"C 46.5,20.0 51.0,15.5 55.0,14.0 " +    // Distal curved apex
+		"C 57.0,14.0 59.0,16.5 60.5,20.0 " +
+		"C 64.0,28.0 69.5,46.0 72.5,58.0 " +
+		"C 73.5,63.0 73.8,68.0 74.0,73.5 " +
+		"C 66.0,71.5 58.0,70.5 50.0,70.5 " +
+		"C 42.0,70.5 34.0,71.5 26.0,73.5 Z",
+	cejPath: "M 26.0,73.5 C 34.0,71.5 42.0,70.5 50.0,70.5 C 58.0,70.5 66.0,71.5 74.0,73.5",
+	apex: { x: 55.0, y: 14.0 },
+	apices: [{ x: 55.0, y: 14.0, r: 8.0 }] as const,
 	// Developmental vertical labial depressions
-	labialGrooveMesial: "M 62.0,95.0 C 62.0,110.0 62.5,126.0 63.0,142.0",
-	labialGrooveDistal: "M 38.0,95.0 C 38.0,110.0 37.5,126.0 37.0,140.0",
-	incisalHighlight: "M 30.5,144.5 C 45.0,146.8 58.0,147.8 71.0,147.5",
+	labialGrooveMesial: "M 64.0,76.0 C 65.0,96.0 65.0,118.0 64.5,138.0",
+	labialGrooveDistal: "M 38.0,76.0 C 37.0,96.0 36.5,118.0 36.0,136.0",
+	incisalHighlight: "M 31.0,143.5 C 44.0,144.5 58.0,144.5 71.5,143.0",
+	// Foramen Caecum (Anatomical blind pit near cingulum)
+	foramenCaecum: "M 50.0,77.5 C 48.5,77.5 47.5,78.5 47.5,80.0 C 47.5,81.5 48.5,82.5 50.0,82.5 C 51.5,82.5 52.5,81.5 52.5,80.0 C 52.5,78.5 51.5,77.5 50.0,77.5 Z",
 	// Root developmental groove with distal curvature
-	rootSulcus: "M 50.0,89.0 C 48.0,68.0 45.5,44.0 44.0,24.0",
-	foramenCaecum: { x: 50.0, y: 104.0, r: 1.2 },
+	rootSulcus: "M 52.0,68.0 C 53.0,50.0 54.0,32.0 55.0,18.0",
 	cervicalShoulderPath:
-		"M 26.5,94.0 C 34.5,92.0 42.5,91.0 50.0,91.0 C 57.5,91.0 65.5,92.0 73.5,94.0 " +
-		"L 73.0,96.5 C 65.5,94.5 57.5,93.5 50.0,93.5 C 42.5,93.5 34.5,94.5 27.0,96.5 Z",
+		"M 26.0,73.5 C 34.0,71.5 42.0,70.5 50.0,70.5 C 58.0,70.5 66.0,71.5 74.0,73.5 " +
+		"C 73.5,76.0 66.0,73.5 50.0,72.5 C 34.0,73.5 26.5,76.0 26.0,73.5 Z",
 	compositeFillingPath:
-		"M 38.0,93.0 C 42.5,91.5 57.5,91.5 62.0,93.0 C 60.5,98.0 56.5,99.5 50.0,99.5 C 43.5,99.5 39.5,98.0 38.0,93.0 Z",
+		"M 37.0,73.0 C 43.0,71.5 57.0,71.5 63.0,73.0 C 61.5,78.0 57.0,79.5 50.0,79.5 C 43.0,79.5 38.5,78.0 37.0,73.0 Z",
 	zirconiaCrownShell:
-		"M 26.5,94 C 25,106 24.8,118 25.5,130 C 26,138 27.5,143.5 31,145.5 C 45,147.8 55,148.5 71,149 " +
-		"C 72.8,148.8 73.5,147.5 73.5,145.5 C 74,134 74.2,120 73.8,108 C 73.6,96.5 73.5,94 73.5,94 " +
-		"C 65.5,92 50,91 26.5,94 Z",
+		"M 26,73.5 C 24.5,84 24,98 25,114 C 25.5,124 27,134 30.5,141 " +
+		"C 33.5,144 50,145 71,143.5 C 72.8,143 73.8,141.5 74,139 " +
+		"C 74.5,125 75,105 74.5,90 C 74.2,84 74,78 74,73.5 " +
+		"C 66,71.5 50,70.5 26,73.5 Z",
 	crownCuspSlopes: [] as const,
 	crownSpecularRidges: [
-		{ id: "incisal_bevel", d: "M 30.0,144.0 C 44.0,146.0 58.0,147.0 71.0,147.0" },
-		{ id: "mesial_mamelon", d: "M 62.0,95.0 C 62.0,110.0 62.5,126.0 63.0,142.0" },
-		{ id: "distal_mamelon", d: "M 38.0,95.0 C 38.0,110.0 37.5,126.0 37.0,140.0" },
+		{ id: "incisal_bevel", d: "M 31.0,143.5 C 44.0,144.5 58.0,144.5 71.5,143.0" },
+		{ id: "mesial_mamelon", d: "M 64.0,76.0 C 65.0,96.0 65.0,118.0 64.5,138.0" },
+		{ id: "distal_mamelon", d: "M 38.0,76.0 C 37.0,96.0 36.5,118.0 36.0,136.0" },
 	],
-	crownEquatorHighlight: "M 28,118 C 38,115 62,115 71,118",
+	crownEquatorHighlight: "M 27.0,105.0 C 38.0,102.0 62.0,102.0 73.0,105.0",
 } as const;

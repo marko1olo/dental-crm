@@ -44,7 +44,7 @@ export const Tooth15CariesOverlay: React.FC<Tooth15CariesOverlayProps> = ({
 			className={className}
 			clipPath="url(#tooth15-crown-clip)"
 		>
-			{/* Class I Occlusal Fissure Caries */}
+			{/* Class I Occlusal Fissure & Wrinkle Caries */}
 			{isClass1 && (
 				<g id="tooth15-caries-class1">
 					<path d={c.class1.halo} fill="url(#dente-caries-demin)" stroke={haloStroke} strokeWidth="0.5" />
@@ -59,7 +59,7 @@ export const Tooth15CariesOverlay: React.FC<Tooth15CariesOverlayProps> = ({
 					{hasMesial && (
 						<g id="tooth15-caries-c2-mesial">
 							<path d={c.mesialBox} fill={lesionFill} stroke={haloStroke} strokeWidth="0.6" />
-							{isProfunda && <ellipse cx="27" cy="126" rx="2.5" ry="3.5" fill={necroticFill} />}
+							{isProfunda && <ellipse cx="26" cy="108" rx="2.5" ry="3.5" fill={necroticFill} />}
 						</g>
 					)}
 					{(cariesType === "class2_mo" || cariesType === "class2_do" || cariesType === "class2_mod") && (
@@ -68,7 +68,7 @@ export const Tooth15CariesOverlay: React.FC<Tooth15CariesOverlayProps> = ({
 					{hasDistal && (
 						<g id="tooth15-caries-c2-distal">
 							<path d={c.distalBox} fill={lesionFill} stroke={haloStroke} strokeWidth="0.6" />
-							{isProfunda && <ellipse cx="71" cy="126" rx="2.5" ry="3.5" fill={necroticFill} />}
+							{isProfunda && <ellipse cx="72" cy="108" rx="2.5" ry="3.5" fill={necroticFill} />}
 						</g>
 					)}
 				</g>

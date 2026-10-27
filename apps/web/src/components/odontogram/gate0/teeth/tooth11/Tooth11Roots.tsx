@@ -44,8 +44,17 @@ export const Tooth11Roots: React.FC<Tooth11RootsProps> = ({
 					fill={isDark ? "url(#dente-root-contour-dark)" : "url(#dente-root-contour)"}
 					vectorEffect="non-scaling-stroke"
 				/>
+				{/* Natural Longitudinal Developmental Depression */}
+				<path
+					d={g.rootSulcus}
+					fill="none"
+					stroke={isDark ? "rgba(15, 23, 42, 0.35)" : "rgba(115, 82, 48, 0.22)"}
+					strokeWidth="2.4"
+					strokeLinecap="round"
+					vectorEffect="non-scaling-stroke"
+				/>
 			</g>
-			{/* CEJ line */}
+			{/* Scalloped Anatomical CEJ */}
 			<path
 				d={g.cejPath}
 				fill="none"

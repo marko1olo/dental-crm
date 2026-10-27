@@ -56,7 +56,7 @@ export const Tooth18EndoCanals: React.FC<Tooth18EndoCanalsProps> = ({
 				</g>
 			)}
 
-			{/* 3 Canals (MB, Palatal, DB) converging towards apex */}
+			{/* 3 Canals (MB, Palatal, DB) */}
 			{showCanals && (
 				<g id="tooth18-canals-tract">
 					{p.canals.map((c) => (
@@ -84,9 +84,9 @@ export const Tooth18EndoCanals: React.FC<Tooth18EndoCanalsProps> = ({
 					{/* Apical Sealer Puffs at fused root tip during Overfill */}
 					{showGuttaPercha && isOverfill && (
 						<g id="tooth18-overfill-puffs">
-							<circle cx={34} cy={24} r={1.8} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
-							<circle cx={40} cy={24} r={2.2} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
-							<circle cx={46} cy={25} r={1.8} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={42} cy={22} r={1.9} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={48} cy={18} r={2.2} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
+							<circle cx={54} cy={22} r={1.9} fill="url(#dente-sealer-puff)" stroke="#881337" strokeWidth="0.5" />
 						</g>
 					)}
 
@@ -94,9 +94,9 @@ export const Tooth18EndoCanals: React.FC<Tooth18EndoCanalsProps> = ({
 					{isBrokenFile && (
 						<ToothBrokenFileMarker
 							toothId="18"
-							path="M 35,32 L 34,24"
-							fracturePoint={{ x: 35, y: 32 }}
-							flutes={["M 34,28 L 36,30", "M 33.5,22 L 35.5,24"]}
+							path="M 40,32 L 42,22"
+							fracturePoint={{ x: 40, y: 32 }}
+							flutes={["M 39,28 L 41,30", "M 40,24 L 42,26"]}
 							isDark={isDark}
 						/>
 					)}
