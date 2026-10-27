@@ -57,6 +57,7 @@ export interface ChairsidePatientQuickBarProps {
   handleOpenPrescription?: (() => void) | undefined;
   handleOpenLabOrder?: (() => void) | undefined;
   onOpenWarrantyModal?: (() => void) | undefined;
+  onOpenDiarySheet?: (() => void) | undefined;
   onClose?: (() => void) | undefined;
   onPrevStep: () => void;
   testId?: string | undefined;

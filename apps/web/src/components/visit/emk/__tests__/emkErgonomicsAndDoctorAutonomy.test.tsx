@@ -130,7 +130,15 @@ describe("RED TEAM INQUISITION: Clinical Ergonomics & Doctor Autonomy", () => {
 	});
 
 	it("5. VisitHeaderMonolith demotes emergency rescue button to quiet mode", () => {
-		const source = fs.readFileSync(visitHeaderPath, "utf8");
+		let source = fs.readFileSync(visitHeaderPath, "utf8");
+		const toolbarDir = path.resolve(__dirname, "../../view/visitHeader/toolbar");
+		if (fs.existsSync(toolbarDir)) {
+			for (const f of fs.readdirSync(toolbarDir)) {
+				if (/\.(ts|tsx)$/.test(f)) {
+					source += "\n" + fs.readFileSync(path.join(toolbarDir, f), "utf8");
+				}
+			}
+		}
 
 		// Emergency rescue button must not scream with red border on normal screens
 		assert.ok(

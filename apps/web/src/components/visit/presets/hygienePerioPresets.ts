@@ -2,7 +2,7 @@ import type { ClinicalSoapPreset } from "../clinicalSoapTypes";
 import { findSoapProtocolById } from "@dental/shared";
 
 /**
- * Пресеты профессиональной гигиены, пародонтологии и детской стоматологии (Форма 043/у, Приказ Минздрава РФ № 804н).
+ * Пресеты профессиональной гигиены, пародонтологии и детской стоматологии (Клиническая карта приёма, номенклатура услуг).
  */
 export const HYGIENE_PERIO_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 3. K05.3 ХРОНИЧЕСКИЙ ПАРОДОНТИТ ──

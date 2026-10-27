@@ -55,7 +55,7 @@ export function PatientAvatarAndInfoSection({
 			/>
 			<span className="font-bold text-xs sm:text-sm text-[var(--ink)] shrink-0 whitespace-nowrap" title={fullName}>
 				<span className="sm:hidden font-bold">{shortName}</span>
-				<span className="hidden sm:inline truncate max-w-[150px] xl:max-w-[220px]">{fullName}</span>
+				<span className="hidden sm:inline truncate max-w-[160px] xl:max-w-[220px]">{fullName}</span>
 			</span>
 			{patientAge && <span className="text-xs text-[var(--muted)] shrink-0 hidden xs:inline">· {patientAge}</span>}
 			<span className="hidden sm:inline-flex shrink-0">
@@ -77,7 +77,7 @@ export function PatientAvatarAndInfoSection({
 				</span>
 			) : (
 				<span
-					className="inline-flex items-center gap-1 px-1.5 sm:px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/30 text-emerald-800 dark:text-emerald-300 font-medium text-xs shadow-xs shrink-0 whitespace-nowrap"
+					className="sr-only"
 					data-testid="visit-focus-allergy-clean"
 					title="Отягощенный аллергоанамнез не выявлен"
 				>
@@ -99,7 +99,7 @@ export function PatientAvatarAndInfoSection({
 				>
 					<HeartPulse size={13} className="text-rose-600 dark:text-rose-400 shrink-0" aria-hidden="true" />
 					<span className="sm:hidden text-[10px] whitespace-nowrap">{somaticText.replace(/^Риск:\s*/i, "")}</span>
-					<span className="hidden sm:inline whitespace-nowrap truncate max-w-[150px] xl:max-w-[200px]">{somaticText}</span>
+					<span className="hidden sm:inline whitespace-nowrap truncate max-w-[160px] xl:max-w-[200px]">{somaticText}</span>
 				</span>
 			)}
 

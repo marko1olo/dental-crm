@@ -1,0 +1,114 @@
+/**
+ * apps/web/src/components/visit/flowProgressStyles/flowProgressSteps.css
+ * Steps grid, step dots, pulse animations, and step notes.
+ */
+
+.vfp-steps {
+	display: grid;
+	grid-template-columns: repeat(1, minmax(0, 1fr));
+	gap: 0.75rem;
+	background-color: var(--paper);
+	padding: 1rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line);
+}
+
+@media (min-width: 640px) {
+	.vfp-steps {
+		grid-template-columns: repeat(2, minmax(0, 1fr));
+	}
+}
+
+@media (min-width: 768px) {
+	.vfp-steps {
+		grid-template-columns: repeat(4, minmax(0, 1fr));
+	}
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vfp-steps {
+	background-color: var(--paper);
+	border-color: var(--line);
+}
+
+.vfp-step {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: var(--ink-2, var(--muted));
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vfp-step {
+	color: var(--ink-2, var(--muted));
+}
+
+.vfp-step-label {
+	font-weight: 500;
+}
+
+.vfp-dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	flex-shrink: 0;
+}
+
+.pulse-running {
+	opacity: 0.9;
+	box-shadow: 0 0 0 2px var(--teal-soft);
+}
+
+.vfp-step-status {
+	font-size: 1rem;
+}
+
+.vfp-step-notes {
+	background-color: var(--warn-bg);
+	border: 1px solid var(--warn-fg);
+	border-radius: 0.5rem;
+	padding: 0.75rem;
+	font-size: 0.875rem;
+	line-height: 1.25rem;
+	color: var(--warn-fg);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vfp-step-notes {
+	background-color: var(--warn-bg);
+	border-color: var(--warn-fg);
+	color: var(--warn-fg);
+}
+
+.vfp-step-notes strong {
+	display: block;
+	margin-bottom: 0.375rem;
+	font-size: 0.75rem;
+	line-height: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	font-weight: 600;
+}
+
+.vfp-step-notes ul {
+	margin: 0;
+	padding-left: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	list-style: disc;
+}
+
+.vfp-step-notes p {
+	margin: 0;
+	margin-top: 0.5rem;
+	padding-top: 0.5rem;
+	border-top: 1px solid var(--warn-fg);
+	font-size: 0.75rem;
+	color: var(--warn-fg);
+	line-height: 1.5;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .vfp-step-notes p {
+	border-top-color: var(--warn-fg);
+	color: var(--warn-fg);
+}

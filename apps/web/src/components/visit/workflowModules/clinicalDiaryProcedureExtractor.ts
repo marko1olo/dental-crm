@@ -3,8 +3,8 @@
  * DENTE Dental CRM — Clinical Diary Procedure Extractor
  * ═══════════════════════════════════════════════════════════════════════════
  * 
- * Автоматический анализ дневника 043/у и извлечение фактически проведенных
- * процедур по номенклатуре МЗ РФ 804н со стандартным прайс-листом.
+ * Автоматический анализ дневника приёма и извлечение фактически проведенных
+ * процедур по клиническому прейскуранту со стандартным прайс-листом.
  */
 
 import type {
@@ -21,7 +21,7 @@ import { extractFromDiaryHeuristics } from "./diaryParserHeuristics";
 export { CLINICAL_STANDARD_PRICE_CATALOG } from "./clinicalStandardCatalog";
 
 /**
- * Автоматический анализ дневника 043/у и извлечение фактически проведенных процедур.
+ * Автоматический анализ дневника приёма и извлечение фактически проведенных процедур.
  */
 export function extractProceduresFromDiary(
 	diary: ClinicalVisitCompletionInput["diary"],

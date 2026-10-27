@@ -68,7 +68,7 @@ export function VisitToolbarMoreMenuItems({
 			</button>
 			<button type="button" onClick={() => { onClose(); setIsPrescriptionModalOpen?.(true); }} data-testid="visit-more-action-prescription" className="group w-full text-left flex items-center gap-2 px-3 py-2 text-xs font-medium rounded-lg hover:bg-[var(--paper-soft)] cursor-pointer text-[var(--ink)] transition-colors min-h-[44px] sm:min-h-[38px]" role="menuitem">
 				<Pill className="w-4 h-4 text-[var(--ink-muted)] group-hover:text-[var(--teal)] shrink-0" />
-				<div className="flex flex-col"><span className="font-semibold">Выписать рецепт</span><span className="text-[10px] text-[var(--muted)]">Бланки 107-1/у и 148-1/у-88, антибиотики, НПВС</span></div>
+				<div className="flex flex-col"><span className="font-semibold">Выписать рецепт</span><span className="text-[10px] text-[var(--muted)]">Рецепты на лекарства, антибиотики, НПВС</span></div>
 			</button>
 		</div>
 	);

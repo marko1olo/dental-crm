@@ -1,11 +1,12 @@
 import React from "react";
-import { FlaskConical, Pill, Printer, ShieldCheck, X } from "lucide-react";
+import { FileText, FlaskConical, Pill, Printer, ShieldCheck, X } from "lucide-react";
 
 export interface ChairsidePatientHeaderActionsProps {
 	handlePrintForm043uFast?: (() => void) | undefined;
 	handleOpenPrescription?: (() => void) | undefined;
 	handleOpenLabOrder?: (() => void) | undefined;
 	onOpenWarrantyModal?: (() => void) | undefined;
+	onOpenDiarySheet?: (() => void) | undefined;
 	onClose?: (() => void) | undefined;
 	testId?: string;
 }
@@ -17,18 +18,32 @@ export const ChairsidePatientHeaderActions: React.FC<
 	handleOpenPrescription,
 	handleOpenLabOrder,
 	onOpenWarrantyModal,
+	onOpenDiarySheet,
 	onClose,
 	testId = "mobile-chairside-workspace",
 }) => {
 	return (
 		<div className="mobile-chairside-hud-actions">
+			{onOpenDiarySheet && (
+				<button
+					type="button"
+					onClick={onOpenDiarySheet}
+					className="mobile-chairside-icon-btn text-teal-600 dark:text-teal-400"
+					aria-label="Дневник приёма"
+					title="Дневник приёма (SOAP)"
+					data-testid={`${testId}-diary-drawer-btn`}
+				>
+					<FileText size={18} />
+				</button>
+			)}
+
 			{handleOpenPrescription && (
 				<button
 					type="button"
 					onClick={handleOpenPrescription}
 					className="mobile-chairside-icon-btn text-emerald-600 dark:text-emerald-400"
 					aria-label="Рецептурный бланк на лекарства"
-					title="Рецепты на лекарства (бланки 107-1/у и 148)"
+					title="Рецепты на лекарства"
 					data-testid={`${testId}-prescription-btn`}
 				>
 					<Pill size={18} />

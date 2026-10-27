@@ -1,0 +1,75 @@
+/**
+ * apps/web/src/components/visit/anamnesisTab/styles/anamnesisVariantsTopButtons.css
+ * Teal, Norm, and Primary CTA variants for top-bar anamnesis buttons.
+ */
+
+/* Teal outline button (e.g. "Клинические шаблоны (448)") */
+.anamnesis-top-btn--teal {
+	background: var(--teal-soft, #f0fdfa);
+	border: 1px solid var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+}
+
+.anamnesis-top-btn--teal:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 5px rgba(13, 148, 136, 0.25);
+}
+
+.dark .anamnesis-top-btn--teal,
+[data-theme="dark"] .anamnesis-top-btn--teal {
+	background: rgba(13, 148, 136, 0.18);
+	border-color: var(--teal, #14b8a6);
+	color: #5eead4;
+}
+
+.dark .anamnesis-top-btn--teal:hover,
+[data-theme="dark"] .anamnesis-top-btn--teal:hover {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+}
+
+/* 1-Click Norm Button (Primary emerald) */
+.anamnesis-top-btn--norm {
+	background: #059669;
+	border: 1px solid #047857;
+	color: #ffffff;
+	box-shadow: 0 1px 3px rgba(5, 150, 105, 0.25);
+}
+
+.anamnesis-top-btn--norm:hover {
+	background: #047857;
+	border-color: #065f46;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(5, 150, 105, 0.35);
+}
+
+.dark .anamnesis-top-btn--norm,
+[data-theme="dark"] .anamnesis-top-btn--norm {
+	background: #059669;
+	border-color: #10b981;
+	color: #ffffff;
+}
+
+/* Primary Action Button (Teal solid, e.g. "Сохранить в медкарту") */
+.anamnesis-top-btn--primary {
+	background: var(--teal, #0d9488);
+	border: 1px solid var(--teal-dark, #0f766e);
+	color: #ffffff;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+}
+
+.anamnesis-top-btn--primary:hover {
+	background: var(--teal-dark, #0f766e);
+	border-color: #115e59;
+	transform: translateY(-1px);
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+.dark .anamnesis-top-btn--primary,
+[data-theme="dark"] .anamnesis-top-btn--primary {
+	background: #0d9488;
+	border-color: #14b8a6;
+	color: #ffffff;
+}

@@ -13,6 +13,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 	handleOpenPrescription,
 	handleOpenLabOrder,
 	onOpenWarrantyModal,
+	onOpenDiarySheet,
 	onClose,
 	onPrevStep,
 	testId = "mobile-chairside-workspace",
@@ -57,6 +58,7 @@ export const ChairsidePatientQuickBar: React.FC<ChairsidePatientQuickBarProps> =
 					handleOpenPrescription={handleOpenPrescription}
 					handleOpenLabOrder={handleOpenLabOrder}
 					onOpenWarrantyModal={onOpenWarrantyModal}
+					onOpenDiarySheet={onOpenDiarySheet}
 					onClose={onClose}
 					testId={testId}
 				/>

@@ -29,6 +29,7 @@ export function useChairsideVisitWorkspace({
   const [isNormApplied, setIsNormApplied] = useState(false);
   const [activeQuadrant, setActiveQuadrant] = useState<1 | 2 | 3 | 4>(1);
   const [isCheckoutSheetOpen, setIsCheckoutSheetOpen] = useState(false);
+  const [isDiarySheetOpen, setIsDiarySheetOpen] = useState(false);
   const [isStageTaken, setIsStageTaken] = useState(false);
 
   // Speech Recognition state for SmartMicrophone
@@ -438,6 +439,8 @@ export function useChairsideVisitWorkspace({
     setActiveQuadrant,
     isCheckoutSheetOpen,
     setIsCheckoutSheetOpen,
+    isDiarySheetOpen,
+    setIsDiarySheetOpen,
     isStageTaken,
     isRecording,
     recognizedVoiceSnippet,

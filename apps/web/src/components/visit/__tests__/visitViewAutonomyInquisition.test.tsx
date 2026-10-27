@@ -146,7 +146,7 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	const statePath = path.resolve(__dirname, "../view/useVisitViewState.ts");
 	const stateModulesDir = path.resolve(__dirname, "../view/viewStateModules");
 	const stateModulesSource = fs.existsSync(stateModulesDir)
-		? fs.readdirSync(stateModulesDir).map((f) => fs.readFileSync(path.join(stateModulesDir, f), "utf8")).join("\n")
+		? fs.readdirSync(stateModulesDir).filter((f) => fs.statSync(path.join(stateModulesDir, f)).isFile()).map((f) => fs.readFileSync(path.join(stateModulesDir, f), "utf8")).join("\n")
 		: "";
 	const visitViewSource = [
 		fs.readFileSync(visitViewPath, "utf8"),
@@ -300,7 +300,9 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	});
 
 	it("9. emr043Math renders 'ПОДПИСАНО ВРАЧОМ' watermark when closed/signed and 'ЧЕРНОВИК' when draft (Mandate 8e)", () => {
-		const emr043Path = path.resolve(__dirname, "../../emr/emr043Math.ts");
+		const emr043Path = fs.existsSync(path.resolve(__dirname, "../../emr/math/recordMathStamps.ts"))
+			? path.resolve(__dirname, "../../emr/math/recordMathStamps.ts")
+			: path.resolve(__dirname, "../../emr/emr043Math.ts");
 		const emr043Source = fs.readFileSync(emr043Path, "utf8");
 
 		expect(emr043Source).toContain(
@@ -354,10 +356,16 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 		expect(visitViewSource).toContain('"dente-open-lab-order-modal"');
 
 		// VisitHeaderMonolith has matching test-ids and button/dropdown actions
+		const toolbarDir = path.resolve(__dirname, "../view/visitHeader/toolbar");
 		const headerMonolithPath = fs.existsSync(path.resolve(__dirname, "../view/visitHeader/VisitActionButtonsToolbar.tsx"))
 			? path.resolve(__dirname, "../view/visitHeader/VisitActionButtonsToolbar.tsx")
 			: path.resolve(__dirname, "../view/VisitHeaderMonolith.tsx");
-		const headerMonolithSource = fs.readFileSync(headerMonolithPath, "utf8");
+		const headerMonolithSource = [
+			fs.existsSync(headerMonolithPath) ? fs.readFileSync(headerMonolithPath, "utf8") : "",
+			fs.existsSync(toolbarDir)
+				? fs.readdirSync(toolbarDir).map((f) => fs.readFileSync(path.join(toolbarDir, f), "utf8")).join("\n")
+				: "",
+		].join("\n");
 		expect(headerMonolithSource).toContain('data-testid="btn-visit-lab-order-fast"');
 		expect(headerMonolithSource).toContain('data-testid="visit-more-action-lab-order"');
 		expect(headerMonolithSource).toContain("onOpenLabOrderModal");

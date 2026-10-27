@@ -318,7 +318,7 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 											data-testid="summary-prescription-btn"
 										>
 											<Pill className="w-4 h-4 text-blue-500 shrink-0" />
-											<span>Рецепт (107-1/у)</span>
+											<span>Рецепт на лекарства</span>
 										</button>
 									) : null}
 									{onOpenRadiologyReferral ? (
@@ -392,7 +392,7 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 							)}
 						</div>
 
-						{/* Secondary CTA: Печать карты 043/у */}
+						{/* Secondary CTA: Печать медицинской карты */}
 						<button
 							type="button"
 							onClick={() => {
@@ -403,12 +403,12 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 									window.print();
 								}
 							}}
-							className="inline-flex items-center justify-center gap-2 px-5 py-2.5 min-h-[48px] rounded-xl bg-[var(--teal)] text-[var(--on-teal,white)] text-sm sm:text-base font-extrabold hover:bg-[var(--teal-dark)] transition-colors shadow-md cursor-pointer whitespace-nowrap shrink-0"
+							className="inline-flex items-center justify-center gap-2 px-4 py-2 min-h-[44px] sm:min-h-[36px] sm:h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-sm font-semibold hover:bg-[var(--paper-soft)] transition-colors shadow-xs cursor-pointer whitespace-nowrap shrink-0"
 							data-testid="summary-print-btn"
 							title="Печать медицинской карты приёма"
 							aria-label="Печать медицинской карты приёма"
 						>
-							<Printer className="w-4 h-4" />
+							<Printer className="w-4 h-4 text-[var(--muted)]" />
 							<span>Печать медицинской карты</span>
 						</button>
 
@@ -417,12 +417,12 @@ export const VisitSummaryModalContent: React.FC<VisitSummaryModalContentProps> =
 							type="button"
 							onClick={handleCompleteVisitAction}
 							disabled={isCompleting}
-							className="inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[48px] min-w-[200px] rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-sm sm:text-base font-black transition-colors shadow-md cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
+							className="inline-flex items-center justify-center gap-2 px-5 py-2 min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-[190px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white text-sm font-bold transition-colors shadow-sm cursor-pointer disabled:opacity-50 whitespace-nowrap shrink-0"
 							data-testid="summary-complete-visit-btn"
 							title="Завершить приём и сформировать чек"
 						>
-							<CheckCircle2 className="w-5 h-5 stroke-[2.5]" />
-							<span>{isCompleting ? "Завершаю..." : "Завершить приём"}</span>
+							<CheckCircle2 className="w-4 h-4 stroke-[2.5]" />
+							<span>{isCompleting ? "Завершаю..." : "Завершить приём и чек"}</span>
 						</button>
 					</div>
 				</div>

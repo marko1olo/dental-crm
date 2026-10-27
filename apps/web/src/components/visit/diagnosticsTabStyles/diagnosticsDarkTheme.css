@@ -1,0 +1,66 @@
+/**
+ * apps/web/src/components/visit/diagnosticsTabStyles/diagnosticsDarkTheme.css
+ * Dark Mode & Atmosphere Themes support for Diagnostics Tab.
+ */
+
+.dark .diag-segmented-bar,
+[data-theme="dark"] .diag-segmented-bar,
+[data-theme="night"] .diag-segmented-bar,
+[data-theme="cyber_xray"] .diag-segmented-bar {
+	background: rgba(15, 23, 42, 0.85);
+	border-color: rgba(255, 255, 255, 0.2);
+}
+
+.dark .diag-segmented-item,
+[data-theme="dark"] .diag-segmented-item,
+[data-theme="night"] .diag-segmented-item,
+[data-theme="cyber_xray"] .diag-segmented-item {
+	color: #94a3b8;
+}
+
+.dark .diag-segmented-item:hover,
+[data-theme="dark"] .diag-segmented-item:hover,
+[data-theme="night"] .diag-segmented-item:hover,
+[data-theme="cyber_xray"] .diag-segmented-item:hover {
+	color: #f8fafc;
+	background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .diag-segmented-item.active,
+[data-theme="dark"] .diag-segmented-item.active,
+[data-theme="night"] .diag-segmented-item.active,
+[data-theme="cyber_xray"] .diag-segmented-item.active {
+	background: rgba(30, 41, 59, 0.95);
+	border-color: rgba(255, 255, 255, 0.28);
+	color: #2dd4bf;
+	box-shadow: 0 1px 4px rgba(0, 0, 0, 0.35);
+}
+
+.dark .diag-btn,
+[data-theme="dark"] .diag-btn,
+[data-theme="night"] .diag-btn,
+[data-theme="cyber_xray"] .diag-btn {
+	background: rgba(30, 41, 59, 0.85);
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	color: #f1f5f9;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}
+
+.dark .diag-btn:hover,
+[data-theme="dark"] .diag-btn:hover,
+[data-theme="night"] .diag-btn:hover,
+[data-theme="cyber_xray"] .diag-btn:hover {
+	background: rgba(51, 65, 85, 0.95);
+	border-color: #2dd4bf;
+	color: #ffffff;
+}
+
+.dark .diag-badge,
+[data-theme="dark"] .diag-badge,
+[data-theme="night"] .diag-badge,
+[data-theme="cyber_xray"] .diag-badge {
+	background: rgba(30, 41, 59, 0.85);
+	border: 1px solid rgba(255, 255, 255, 0.22);
+	color: #2dd4bf;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+}

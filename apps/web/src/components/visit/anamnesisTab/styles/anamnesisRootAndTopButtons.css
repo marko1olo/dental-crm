@@ -1,0 +1,83 @@
+/**
+ * apps/web/src/components/visit/anamnesisTab/styles/anamnesisRootAndTopButtons.css
+ * Root container & base top-bar buttons for clinical anamnesis tab.
+ */
+
+/* ─── Root & Container ───────────────────────────────────────────────────── */
+.visit-anamnesis-tab {
+	display: flex;
+	flex-direction: column;
+	gap: 16px;
+	width: 100%;
+	max-width: 100%;
+	padding: 18px 20px;
+	border-radius: 16px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.dark .visit-anamnesis-tab,
+[data-theme="dark"] .visit-anamnesis-tab,
+[data-theme="night"] .visit-anamnesis-tab,
+[data-theme="cyber_xray"] .visit-anamnesis-tab {
+	border-color: rgba(255, 255, 255, 0.12);
+	background: var(--paper, #0f172a);
+	color: #f1f5f9;
+}
+
+/* ─── Top Bar Buttons (Strict 32px height, 8px radius) ──────────────────── */
+.anamnesis-top-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 13px;
+	border-radius: 8px;
+	font-size: 12px;
+	font-weight: 600;
+	line-height: 1;
+	white-space: nowrap;
+	cursor: pointer;
+	user-select: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+}
+
+.anamnesis-top-btn:active {
+	transform: scale(0.98);
+}
+
+/* Secondary ghost/outline button (e.g. "В дневник приёма") */
+.anamnesis-top-btn--secondary {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line-strong, #cbd5e1);
+	color: var(--ink, #0f172a);
+}
+
+.anamnesis-top-btn--secondary:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal-dark, #0f766e);
+	transform: translateY(-1px);
+	box-shadow: 0 2px 4px rgba(0, 0, 0, 0.06);
+}
+
+.dark .anamnesis-top-btn--secondary,
+[data-theme="dark"] .anamnesis-top-btn--secondary,
+[data-theme="night"] .anamnesis-top-btn--secondary {
+	background: rgba(255, 255, 255, 0.06);
+	border-color: rgba(255, 255, 255, 0.2);
+	color: #f1f5f9;
+}
+
+.dark .anamnesis-top-btn--secondary:hover,
+[data-theme="dark"] .anamnesis-top-btn--secondary:hover {
+	background: rgba(255, 255, 255, 0.12);
+	border-color: rgba(255, 255, 255, 0.35);
+	color: #ffffff;
+}

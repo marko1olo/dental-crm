@@ -1,0 +1,48 @@
+/**
+ * apps/web/src/components/visit/anamnesisTab/styles/anamnesisClarifyInputs.css
+ * Clarification cards and input fields for anamnesis tab.
+ */
+
+.anamnesis-clarify-card {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+	gap: 12px;
+	padding: 12px 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	margin-top: 8px;
+}
+
+.dark .anamnesis-clarify-card,
+[data-theme="dark"] .anamnesis-clarify-card {
+	border-color: rgba(255, 255, 255, 0.14);
+	background: rgba(255, 255, 255, 0.03);
+}
+
+.anamnesis-input {
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line-strong, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 12px;
+	font-weight: 500;
+	transition: all 0.15s ease;
+	outline: none;
+}
+
+.anamnesis-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.15));
+}
+
+.dark .anamnesis-input,
+[data-theme="dark"] .anamnesis-input {
+	border-color: rgba(255, 255, 255, 0.2);
+	background: rgba(255, 255, 255, 0.05);
+	color: #f1f5f9;
+}

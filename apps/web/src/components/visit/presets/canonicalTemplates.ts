@@ -6,7 +6,7 @@ import type {
 import { findSoapProtocolById } from "@dental/shared";
 
 /**
- * Канонические шаблоны Формы 043/у (SOAP-протоколы).
+ * Канонические клинические шаблоны (SOAP-протоколы дневника приёма).
  */
 export const CANONICAL_SOAP_TEMPLATES: Record<
 	CanonicalSoapTemplateKey,

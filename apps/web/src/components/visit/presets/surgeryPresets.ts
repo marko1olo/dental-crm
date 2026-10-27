@@ -2,7 +2,7 @@ import type { ClinicalSoapPreset } from "../clinicalSoapTypes";
 import { findSoapProtocolById } from "@dental/shared";
 
 /**
- * Пресеты хирургической стоматологии и имплантологии (Форма 043/у, Приказ Минздрава РФ № 804н).
+ * Пресеты хирургической стоматологии и имплантологии (Клиническая карта приёма, номенклатура услуг).
  */
 export const SURGERY_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 4. K01.1 УДАЛЕНИЕ ЗУБА (ХИРУРГИЧЕСКИЙ ПРОТОКОЛ) ──

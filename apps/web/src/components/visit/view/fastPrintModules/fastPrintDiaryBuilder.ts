@@ -189,6 +189,7 @@ export function buildFastPrintDiarySheetHtml(params: FastPrintDiarySheetParams):
 	<style>
 		@page { size: A4; margin: 15mm 15mm 15mm 20mm; }
 		body { font-family: "Times New Roman", Times, serif; font-size: 11pt; line-height: 1.35; color: #000; margin: 0; padding: 0; }
+		.watermark { position: fixed; top: 40%; left: 15%; width: 70%; text-align: center; font-size: 52pt; font-weight: bold; color: rgba(180, 180, 180, 0.22); transform: rotate(-30deg); pointer-events: none; z-index: 9999; }
 		.header { text-align: center; border-bottom: 2px solid #000; padding-bottom: 6px; margin-bottom: 12px; }
 		.clinic-title { font-size: 13pt; font-weight: bold; text-transform: uppercase; }
 		.doc-sub { font-size: 10pt; font-style: italic; margin-top: 2px; }
@@ -204,6 +205,7 @@ export function buildFastPrintDiarySheetHtml(params: FastPrintDiarySheetParams):
 	</style>
 </head>
 <body>
+	${!params.isSigned ? `<div class="watermark">ЧЕРНОВИК</div>` : `<div class="watermark signed" style="color: rgba(13, 148, 136, 0.12);">ПОДПИСАНО ВРАЧОМ</div>`}
 	<div class="header">
 		<div class="clinic-title">${params.clinicName || "Стоматологическая клиника DENTE"}</div>
 		<div class="doc-sub">Дневник приёма стоматологического пациента<!-- Вкладыш в медицинскую карту стоматологического пациента № 043/у --></div>

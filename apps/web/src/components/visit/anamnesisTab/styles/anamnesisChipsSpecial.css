@@ -1,0 +1,113 @@
+/**
+ * apps/web/src/components/visit/anamnesisTab/styles/anamnesisChipsSpecial.css
+ * Purple, Teal active variants & Allergen reaction selector.
+ */
+
+/* Dental History Alert (Purple Alert: Anesthesia collapse, dentophobia) */
+.anamnesis-chip--active-purple-alert {
+	background: rgba(147, 51, 234, 0.12) !important;
+	border: 1px solid #9333ea !important;
+	color: #6b21a8 !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(147, 51, 234, 0.18) !important;
+}
+.anamnesis-chip--active-purple-alert:hover {
+	background: rgba(147, 51, 234, 0.18) !important;
+	border-color: #7e22ce !important;
+}
+.dark .anamnesis-chip--active-purple-alert,
+[data-theme="dark"] .anamnesis-chip--active-purple-alert {
+	background: rgba(147, 51, 234, 0.25) !important;
+	border-color: #c084fc !important;
+	color: #f3e8ff !important;
+}
+
+/* Dental History Normal (Purple Soft: Regular anesthesia, crowns) */
+.anamnesis-chip--active-purple {
+	background: rgba(168, 85, 247, 0.08) !important;
+	border: 1px solid #a855f7 !important;
+	color: #581c87 !important;
+	font-weight: 600;
+}
+.anamnesis-chip--active-purple:hover {
+	background: rgba(168, 85, 247, 0.14) !important;
+	border-color: #9333ea !important;
+}
+.dark .anamnesis-chip--active-purple,
+[data-theme="dark"] .anamnesis-chip--active-purple {
+	background: rgba(168, 85, 247, 0.18) !important;
+	border-color: #c084fc !important;
+	color: #e9d5ff !important;
+}
+
+/* Patient Complaints (Teal) */
+.anamnesis-chip--active-teal {
+	background: rgba(13, 148, 136, 0.1) !important;
+	border: 1px solid #0d9488 !important;
+	color: #0f766e !important;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.18) !important;
+}
+.anamnesis-chip--active-teal:hover {
+	background: rgba(13, 148, 136, 0.16) !important;
+	border-color: #0f766e !important;
+}
+.dark .anamnesis-chip--active-teal,
+[data-theme="dark"] .anamnesis-chip--active-teal {
+	background: rgba(13, 148, 136, 0.22) !important;
+	border-color: #14b8a6 !important;
+	color: #99f6e4 !important;
+}
+
+/* Allergen Group & Reaction Selector */
+.anamnesis-allergen-item {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+.anamnesis-reaction-selector {
+	display: inline-flex;
+	align-items: center;
+	position: relative;
+	height: 32px;
+	min-height: 32px;
+	max-height: 32px;
+	padding: 0 28px 0 10px;
+	border-radius: 8px;
+	border: 1px solid rgba(239, 68, 68, 0.4);
+	background: rgba(239, 68, 68, 0.06);
+	color: #991b1b;
+	font-size: 11.5px;
+	font-weight: 600;
+	white-space: nowrap;
+	box-shadow: 0 1px 2px rgba(239, 68, 68, 0.08);
+	transition: all 0.15s ease;
+}
+.anamnesis-reaction-selector:hover {
+	border-color: #ef4444;
+	background: rgba(239, 68, 68, 0.1);
+}
+.dark .anamnesis-reaction-selector,
+[data-theme="dark"] .anamnesis-reaction-selector,
+[data-theme="night"] .anamnesis-reaction-selector {
+	border-color: rgba(239, 68, 68, 0.5);
+	background: rgba(239, 68, 68, 0.16);
+	color: #fca5a5;
+}
+.anamnesis-reaction-select {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	opacity: 0;
+	cursor: pointer;
+	appearance: none;
+}
+.anamnesis-reaction-arrow {
+	position: absolute;
+	right: 8px;
+	width: 13px;
+	height: 13px;
+	color: #ef4444;
+	pointer-events: none;
+}

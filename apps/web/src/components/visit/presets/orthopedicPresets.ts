@@ -2,7 +2,7 @@ import type { ClinicalSoapPreset } from "../clinicalSoapTypes";
 import { findSoapProtocolById } from "@dental/shared";
 
 /**
- * Пресеты ортопедической стоматологии (Форма 043/у, Приказ Минздрава РФ № 804н).
+ * Пресеты ортопедической стоматологии (Клиническая карта приёма, номенклатура услуг).
  */
 export const ORTHOPEDIC_SOAP_PRESETS: readonly ClinicalSoapPreset[] = [
 	// ── 11. Z51.8 ОРТОПЕДИЧЕСКОЕ ПРЕПАРИРОВАНИЕ ПОД КОРОНКУ ──

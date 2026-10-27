@@ -1,0 +1,86 @@
+/**
+ * apps/web/src/components/visit/flowProgressStyles/flowProgressRootAndBadges.css
+ * Root container, title and status badges for Visit Flow Progress.
+ */
+
+.visit-flow-progress {
+	background-color: var(--paper-soft);
+	border: 1px solid var(--line);
+	border-radius: 0.75rem;
+	padding: 1.25rem;
+	margin-bottom: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	box-shadow: var(--shadow-1);
+}
+
+.vfp-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.vfp-title {
+	margin: 0;
+	font-size: 1rem;
+	line-height: 1.5rem;
+	color: var(--ink);
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 600;
+}
+
+.vfp-title svg {
+	color: var(--teal);
+}
+
+.vfp-badge {
+	font-size: 0.75rem;
+	padding: 0.25rem 0.6rem;
+	border-radius: 9999px;
+	font-weight: 500;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+}
+
+.status-running {
+	background-color: var(--info-bg);
+	color: var(--info-fg);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .status-running {
+	background-color: var(--info-bg);
+	color: var(--info-fg);
+}
+
+.status-success {
+	background-color: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .status-success {
+	background-color: var(--ok-bg);
+	color: var(--ok-fg);
+}
+
+.status-partial {
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .status-partial {
+	background-color: var(--warn-bg);
+	color: var(--warn-fg);
+}
+
+.status-error {
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .status-error {
+	background-color: var(--bad-bg);
+	color: var(--bad-fg);
+}
