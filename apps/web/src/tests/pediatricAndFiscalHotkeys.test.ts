@@ -10,7 +10,7 @@ import {
 import {
 	calculateSplitPaymentAllocation,
 	type SplitPaymentInput,
-} from "../components/finance/order804nFiscalEngine";
+} from "../components/finance/fiscalReceiptEngine";
 
 describe("PediatricMixedDentitionModal — Ergonomics & Root Resorption Hotkeys", () => {
 	test("Быстрые клавиши 0, 1, 2, 3, 4 однозначно сопоставлены с клиническими стадиями резорбции корней (0%, 25%, 50%, 75%, 100%)", () => {

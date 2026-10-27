@@ -9,7 +9,7 @@ import { FiscalBodyTabs } from "./modal/fiscal/FiscalBodyTabs";
 import { FiscalHeaderAndTabs } from "./modal/fiscal/FiscalHeaderAndTabs";
 import { FiscalReceiptFooter } from "./modal/fiscal/FiscalReceiptFooter";
 import type { FiscalReceiptModalProps } from "./modal/fiscal/fiscalModalTypes";
-import { useFiscalReceipt54FzLogic } from "./modal/fiscal/useFiscalReceipt54FzLogic";
+import { useFiscalReceiptLogic } from "./modal/fiscal/useFiscalReceiptLogic";
 
 export * from "./modal/fiscal/fiscalModalRefundLogic";
 export * from "./modal/fiscal/fiscalModalTypes";
@@ -19,7 +19,7 @@ export const FiscalReceiptModal: React.FC<FiscalReceiptModalProps> = (
 ) => {
 	const { isOpen, onClose, patientName = "Пациент" } = props;
 
-	const logic = useFiscalReceipt54FzLogic(props);
+	const logic = useFiscalReceiptLogic(props);
 	const { itemsHook, tenderHook, auxHook } = logic;
 
 	if (!isOpen) return null;

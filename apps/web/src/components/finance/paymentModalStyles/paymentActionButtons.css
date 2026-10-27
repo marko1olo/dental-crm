@@ -54,8 +54,8 @@
 	height: 52px !important;
 	width: 100%;
 	border-radius: 12px;
-	background: linear-gradient(135deg, #059669, #047857) !important;
-	border: 1px solid #047857 !important;
+	background: linear-gradient(135deg, #0d9488, #0f766e) !important;
+	border: 1px solid #0f766e !important;
 	color: #ffffff !important;
 	font-weight: 800 !important;
 	font-size: 13.5px !important;
@@ -64,20 +64,20 @@
 	justify-content: center;
 	gap: 8px;
 	cursor: pointer;
-	box-shadow: 0 3px 10px rgba(5, 150, 105, 0.35);
+	box-shadow: 0 3px 10px rgba(13, 148, 136, 0.35);
 	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 	user-select: none;
 }
 
 .cash-submit-primary-btn:hover:not(:disabled) {
-	background: linear-gradient(135deg, #047857, #065f46) !important;
+	background: linear-gradient(135deg, #0f766e, #115e59) !important;
 	transform: translateY(-1px);
-	box-shadow: 0 5px 14px rgba(5, 150, 105, 0.45);
+	box-shadow: 0 5px 14px rgba(13, 148, 136, 0.45);
 }
 
 [data-theme="dark"] .cash-submit-primary-btn {
-	background: linear-gradient(135deg, #059669, #10b981) !important;
-	border-color: #34d399 !important;
+	background: linear-gradient(135deg, #0d9488, #14b8a6) !important;
+	border-color: #2dd4bf !important;
 	color: #ffffff !important;
 }
 
