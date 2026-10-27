@@ -1,6 +1,6 @@
 import type React from "react";
 import { useRef, useState } from "react";
-import { FileText, Sparkles } from "lucide-react";
+import { CheckCircle2, FileText } from "lucide-react";
 import type { PerioPathologyPreset } from "../../../../lib/clinicalProtocols";
 import { VisitDiaryPerioPediatricPresets } from "../VisitDiaryPerioPediatricPresets";
 
@@ -49,9 +49,9 @@ export const VisitDiaryPresetsAccordion: React.FC<VisitDiaryPresetsAccordionProp
 			className="group rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] px-3 py-2 text-xs"
 			data-testid="fast-clinical-presets-bar"
 		>
-			<summary className="cursor-pointer font-bold text-xs text-[var(--ink)] hover:text-[var(--teal)] flex items-center justify-between select-none list-none">
+			<summary className="cursor-pointer font-bold text-xs text-[var(--ink)] hover:text-[var(--ink-secondary,var(--ink))] flex items-center justify-between select-none list-none">
 				<span className="flex items-center gap-1.5">
-					<Sparkles className="w-3.5 h-3.5 text-[var(--teal)]" />
+					<FileText className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 					<span>Клинические протоколы и формулы (PSR, Дети, Кариес...)</span>
 				</span>
 				<span className="text-[11px] font-medium text-[var(--muted)] group-open:hidden">
@@ -67,11 +67,11 @@ export const VisitDiaryPresetsAccordion: React.FC<VisitDiaryPresetsAccordionProp
 						<button
 							type="button"
 							onClick={() => onPopulateFromOdontogram(activeTeeth)}
-							className="vde-043__btn vde-043__btn--norm border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
+							className="vde-043__btn vde-043__btn--norm border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center gap-1.5"
 							title="Сформировать структурированный дневник из отметок на зубной формуле"
 							data-testid="populate-diary-from-odontogram-btn"
 						>
-							<FileText size={14} className="shrink-0 text-[var(--teal)]" />
+							<FileText size={14} className="shrink-0 text-[var(--ink-muted)]" />
 							<span>Заполнить дневник из формулы</span>
 						</button>
 					</div>
@@ -84,11 +84,11 @@ export const VisitDiaryPresetsAccordion: React.FC<VisitDiaryPresetsAccordionProp
 								if (isLocked && !isRevising) beginRevise();
 								onApplyNorm();
 							}}
-							className="border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
+							className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--line-strong)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
 							data-testid="diary-norm-043-btn"
 							title="Заполнить дневник физиологической нормой: соматически здоров, интактные зубы"
 						>
-							<Sparkles className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+							<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 							<span>Физиологическая норма (соматически здоров)</span>
 						</button>
 					</div>

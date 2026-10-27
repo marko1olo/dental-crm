@@ -40,11 +40,11 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 			<button
 				type="button"
 				data-testid="open-1click-templates-btn"
-				className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors flex items-center gap-1.5 text-xs"
+				className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center gap-1.5 text-xs"
 				onClick={onOpenTemplates}
 				title="Открыть каталог клинических протоколов и шаблонов дневника"
 			>
-				<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+				<Sparkles className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 				<span>Клинические протоколы</span>
 			</button>
 			<button
@@ -52,33 +52,33 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 				id="diary-norm-direct-btn"
 				data-testid="diary-norm-direct-btn"
 				onClick={onApplyNorm}
-				className="border border-emerald-500/40 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-100 dark:hover:bg-emerald-900/40 font-bold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
+				className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--line-strong)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs transition-colors flex items-center gap-1.5 text-xs cursor-pointer"
 				title="Заполнить в 1 клик физиологическую норму: соматически здоров, слизистая бледно-розовая, зубы интактны"
 			>
-				<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+				<CheckCircle2 className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
 				<span>Норма (здоров)</span>
 			</button>
 			<button
 				type="button"
 				data-testid="diary-print-043"
-				className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors flex items-center gap-1.5 text-xs"
+				className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center gap-1.5 text-xs"
 				onClick={onOpenPrintPreview}
 				title="Предпросмотр и печать медицинской карты"
 			>
-				<Printer className="w-4 h-4" />
+				<Printer className="w-4 h-4 text-[var(--ink-muted)]" />
 				<span className="hidden sm:inline">Печать карты</span>
 			</button>
 			<div className="relative inline-block" ref={moreRef} style={{ position: "relative" }}>
 				<button
 					type="button"
 					data-testid="diary-more-actions-btn"
-					className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors flex items-center justify-center text-xs"
+					className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center justify-center text-xs"
 					onClick={() => setIsOpen((v) => !v)}
 					title="Дополнительные документы и бланки"
 					aria-label="Дополнительные действия дневника"
 					aria-expanded={isOpen}
 				>
-					<MoreHorizontal className="w-4 h-4" />
+					<MoreHorizontal className="w-4 h-4 text-[var(--ink-muted)]" />
 				</button>
 				<VisitDiaryHeaderMoreMenu
 					isOpen={isOpen}
@@ -98,10 +98,10 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 							setIsOpen(false);
 							onApplyNorm();
 						}}
-						className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:border-emerald-500/40 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 text-emerald-800 dark:text-emerald-200 font-semibold text-left cursor-pointer transition-colors"
+						className="flex items-center gap-2 px-2.5 py-1.5 rounded-lg border border-transparent hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-left cursor-pointer transition-colors"
 						title="Заполнить физиологическую норму: соматически здоров, интактные зубы"
 					>
-						<CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+						<CheckCircle2 className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
 						<span>Норма (соматически здоров)</span>
 					</button>
 				</VisitDiaryHeaderMoreMenu>

@@ -28,7 +28,7 @@ export const ChairsidePatientHeaderActions: React.FC<
 				<button
 					type="button"
 					onClick={onOpenDiarySheet}
-					className="mobile-chairside-icon-btn text-teal-600 dark:text-teal-400"
+					className="mobile-chairside-icon-btn text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Дневник приёма"
 					title="Дневник приёма (SOAP)"
 					data-testid={`${testId}-diary-drawer-btn`}
@@ -41,7 +41,7 @@ export const ChairsidePatientHeaderActions: React.FC<
 				<button
 					type="button"
 					onClick={handleOpenPrescription}
-					className="mobile-chairside-icon-btn text-emerald-600 dark:text-emerald-400"
+					className="mobile-chairside-icon-btn text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Рецептурный бланк на лекарства"
 					title="Рецепты на лекарства"
 					data-testid={`${testId}-prescription-btn`}
@@ -54,7 +54,7 @@ export const ChairsidePatientHeaderActions: React.FC<
 				<button
 					type="button"
 					onClick={handlePrintForm043uFast}
-					className="mobile-chairside-icon-btn"
+					className="mobile-chairside-icon-btn text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Печать медицинской карты приёма"
 					title="Медицинская карта приёма (печать со штампом)"
 					data-testid={`${testId}-print-btn`}
@@ -67,7 +67,7 @@ export const ChairsidePatientHeaderActions: React.FC<
 				<button
 					type="button"
 					onClick={handleOpenLabOrder}
-					className="mobile-chairside-icon-btn mobile-chairside-icon-btn-secondary text-teal-600 dark:text-teal-400"
+					className="mobile-chairside-icon-btn mobile-chairside-icon-btn-secondary text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Наряд ЗТЛ"
 					title="Наряд в лабораторию"
 					data-testid={`${testId}-lab-btn`}
@@ -80,7 +80,7 @@ export const ChairsidePatientHeaderActions: React.FC<
 				<button
 					type="button"
 					onClick={onOpenWarrantyModal}
-					className="mobile-chairside-icon-btn mobile-chairside-icon-btn-secondary text-indigo-600 dark:text-indigo-400"
+					className="mobile-chairside-icon-btn mobile-chairside-icon-btn-secondary text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Гарантийный паспорт"
 					title="Гарантийный паспорт"
 					data-testid={`${testId}-warranty-btn`}
@@ -93,7 +93,7 @@ export const ChairsidePatientHeaderActions: React.FC<
 				<button
 					type="button"
 					onClick={onClose}
-					className="mobile-chairside-icon-btn text-[var(--muted)]"
+					className="mobile-chairside-icon-btn text-[var(--ink-muted)] hover:text-[var(--ink)]"
 					aria-label="Свернуть приём"
 					data-testid={`${testId}-close-btn`}
 				>

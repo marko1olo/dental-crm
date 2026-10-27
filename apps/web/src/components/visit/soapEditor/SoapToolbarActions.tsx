@@ -35,19 +35,19 @@ export const SoapToolbarActions: React.FC<SoapToolbarActionsProps> = ({
 						type="button"
 						onClick={onEnableCorrection}
 						data-testid="btn-soap-enable-correction"
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-bold rounded-lg flex items-center gap-1.5 cursor-pointer bg-amber-500 hover:bg-amber-600 text-white transition-colors shadow-xs"
+						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--line-strong)] transition-colors shadow-2xs"
 						title="Приём закрыт. Нажмите для внесения правок («Исправленному верить»)"
 					>
-						<Edit3 className="w-3.5 h-3.5" />
+						<Edit3 className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 						<span className="hidden md:inline">Внести исправление</span>
 						<span className="md:hidden">Исправить</span>
 					</button>
 				) : (
 					<div
 						data-testid="badge-soap-correction-active"
-						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-800"
+						className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-semibold rounded-lg flex items-center gap-1.5 bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
 					>
-						<Check className="w-3.5 h-3.5 text-emerald-600" />
+						<Check className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 						<span>Исправленному верить</span>
 					</div>
 				))}
@@ -56,11 +56,11 @@ export const SoapToolbarActions: React.FC<SoapToolbarActionsProps> = ({
 				type="button"
 				onClick={onToggleTemplates}
 				data-testid="btn-open-stomt-templates"
-				className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3.5 text-[13px] font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer bg-teal-600 hover:bg-teal-700 text-white transition-colors shadow-xs"
+				className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3.5 text-[13px] font-semibold rounded-lg flex items-center gap-1.5 cursor-pointer bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--line-strong)] transition-colors shadow-2xs"
 				title="Открыть каталог 448 клинических шаблонов"
 				aria-label="Клинические шаблоны (448)"
 			>
-				<Sparkles className="w-3.5 h-3.5" />
+				<Sparkles className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 				<span>Клинические шаблоны (448)</span>
 			</button>
 
@@ -69,11 +69,11 @@ export const SoapToolbarActions: React.FC<SoapToolbarActionsProps> = ({
 				onClick={onApplyNorm}
 				disabled={false}
 				data-testid="btn-soap-physio-norm"
-				className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-700 dark:text-emerald-300 border border-emerald-500/40 transition-colors"
+				className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--line-strong)] transition-colors shadow-2xs"
 				title="Соматически здоров / Интактные зубы: зафиксировать физиологическую норму в 1 клик"
 				aria-label="Соматически здоров / Интактные зубы (Норма)"
 			>
-				<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+				<Check className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 				<span>Норма</span>
 			</button>
 
@@ -91,7 +91,7 @@ export const SoapToolbarActions: React.FC<SoapToolbarActionsProps> = ({
 				{copied ? (
 					<Check className="w-4 h-4 text-emerald-600" />
 				) : (
-					<Copy className="w-4 h-4" />
+					<Copy className="w-4 h-4 text-[var(--ink-muted)]" />
 				)}
 			</button>
 
@@ -100,11 +100,11 @@ export const SoapToolbarActions: React.FC<SoapToolbarActionsProps> = ({
 				onClick={onExplicitSave}
 				disabled={false}
 				data-testid="btn-soap-save"
-				className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--teal-soft,rgba(13,148,136,0.1))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.2))] text-[var(--teal)] border border-[var(--teal-surface,var(--teal))] transition-colors"
+				className="secondary-button min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-[13px] font-semibold rounded-lg flex items-center gap-1 cursor-pointer bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)] hover:border-[var(--line-strong)] transition-colors shadow-2xs"
 				title="Сохранить дневник приёма сейчас"
 				aria-label="Сохранить дневник"
 			>
-				<Check className="w-3.5 h-3.5 text-[var(--teal)]" />
+				<Check className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 				<span className="hidden xl:inline">Сохранить</span>
 			</button>
 		</>

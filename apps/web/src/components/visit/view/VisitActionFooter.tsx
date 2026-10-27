@@ -104,16 +104,11 @@ export function VisitActionFooter({
 
 					<div className="flex items-center gap-2 flex-wrap" style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
 						{REPEAT_INTERVAL_PRESETS.map((preset) => {
-							const isPrimary = preset.days === 7;
 							return (
 								<button
 									key={preset.id}
 									type="button"
-									className={
-										isPrimary
-											? "border border-[var(--teal)] bg-[var(--teal)] text-white font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:bg-[var(--teal)]/90 transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
-											: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
-									}
+									className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
 									data-testid={`visit-repeat-btn-${preset.id}`}
 									onClick={() => {
 										createSmartSequentialAppointment({
@@ -124,7 +119,7 @@ export function VisitActionFooter({
 									}}
 									title={`Запланировать повторный визит через ${preset.days} дн в 1 клик`}
 								>
-									<CalendarPlus size={14} />
+									<CalendarPlus size={14} className="text-[var(--ink-muted)]" />
 									<span>{preset.buttonLabel}</span>
 								</button>
 							);
@@ -139,10 +134,10 @@ export function VisitActionFooter({
 									protocolKey: recommendedKey,
 								});
 							}}
-							className="border border-[var(--teal)]/50 bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
+							className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-all cursor-pointer inline-flex items-center gap-1.5 text-xs whitespace-nowrap"
 							title={`Запланировать «${recommendedProtocol.title}» через ${recommendedProtocol.defaultIntervalDays} дней в 1 клик`}
 						>
-							<FastForward size={14} />
+							<FastForward size={14} className="text-[var(--ink-muted)]" />
 							<span>
 								+{" "}
 								{recommendedProtocol.shortLabel.includes("(")
@@ -177,10 +172,10 @@ export function VisitActionFooter({
 							setFastPrintDocType("partisan_insert_043u");
 							setIsFastPrintModalOpen(true);
 						}}
-						className="h-10 px-3.5 rounded-lg border border-[var(--teal)]/40 bg-[var(--teal-soft,#0d948815)] hover:bg-[var(--teal-soft,#0d948825)] text-[var(--teal,#0d9488)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+						className="h-10 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 						title="Распечатать дневник визита в медицинскую карту (A5 / A4 с линией отреза)"
 					>
-						<Printer size={15} />
+						<Printer size={15} className="text-[var(--ink-muted)]" />
 						<span>Дневник визита (вклейка)</span>
 					</button>
 					<button
@@ -190,10 +185,10 @@ export function VisitActionFooter({
 							setFastPrintDocType("form043u");
 							setIsFastPrintModalOpen(true);
 						}}
-						className="h-10 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
+						className="h-10 px-3.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-colors cursor-pointer"
 						title="Печать документов (Медкарта, Акт с чеком, Смета)"
 					>
-						<Printer size={15} className="text-teal-600 dark:text-teal-400" />
+						<Printer size={15} className="text-[var(--ink-muted)]" />
 						<span>Печать (Медкарта, Акт, Смета)</span>
 					</button>
 					<span className="text-xs text-[var(--muted)]">{safeVisitPrimaryAction.detail}</span>

@@ -85,13 +85,14 @@
 }
 
 .mobile-chairside-icon-btn {
-  min-width: 36px; min-height: 36px; width: 36px; height: 36px;
+  min-width: 44px; min-height: 44px; width: 44px; height: 44px;
   display: inline-flex; align-items: center; justify-content: center;
-  border-radius: 10px; background: var(--paper-soft, #f1f5f9); color: var(--ink, #0f172a);
-  border: 1px solid var(--line-subtle, #e2e8f0); cursor: pointer;
-  transition: transform 0.15s ease, background-color 0.15s ease; flex-shrink: 0;
+  border-radius: 12px; background: var(--paper, #ffffff); color: var(--ink, #0f172a);
+  border: 1px solid var(--line, #e2e8f0); cursor: pointer;
+  transition: transform 0.15s ease, background-color 0.15s ease, border-color 0.15s ease; flex-shrink: 0;
 }
-.mobile-chairside-icon-btn:active { transform: scale(0.92); background: var(--line-subtle, #e2e8f0); }
+.mobile-chairside-icon-btn:hover { background: var(--paper-soft, #f1f5f9); color: var(--ink, #0f172a); }
+.mobile-chairside-icon-btn:active { transform: scale(0.94); background: var(--paper-strong, #e2e8f0); }
 
 @media (max-width: 639px) {
   .mobile-chairside-icon-btn-secondary { display: none !important; }
@@ -100,13 +101,13 @@
 /* ── Dark Mode HUD Overrides ── */
 [data-theme="dark"] .mobile-chairside-hud,
 .dark .mobile-chairside-hud {
-  background: rgba(15, 23, 42, 0.88); border-bottom-color: rgba(255, 255, 255, 0.08);
+  background: var(--paper-strong, rgba(15, 23, 42, 0.88)); border-bottom-color: var(--line, rgba(255, 255, 255, 0.08));
 }
 [data-theme="dark"] .mobile-chairside-allergy-clean,
 .dark .mobile-chairside-allergy-clean {
-  color: #34d399; background: rgba(16, 185, 129, 0.15); border-color: rgba(16, 185, 129, 0.3);
+  color: var(--emerald, #34d399); background: var(--emerald-soft, rgba(16, 185, 129, 0.15)); border-color: var(--emerald-line, rgba(16, 185, 129, 0.3));
 }
 [data-theme="dark"] .mobile-chairside-icon-btn,
 .dark .mobile-chairside-icon-btn {
-  background: #1e293b; border-color: rgba(255, 255, 255, 0.1); color: #f1f5f9;
+  background: var(--paper, #1e293b); border-color: var(--line, rgba(255, 255, 255, 0.1)); color: var(--ink, #f1f5f9);
 }

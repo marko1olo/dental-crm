@@ -4,7 +4,7 @@ import { useDoctorPreferencesStore } from "../../../store/doctorPreferencesStore
 import { useUiSurfaceStore } from "../../../store/uiSurfaceStore";
 import { showToast } from "../../GlobalToast";
 import { EmkAnesthesiaAlert } from "./EmkAnesthesiaAlert";
-import { EmkAnesthesiaPresetChips } from "./EmkAnesthesiaPresetChips";
+import { EmkAnesthesiaPresetChips, ANESTHESIA_METHODS } from "./EmkAnesthesiaPresetChips";
 import { appendClinicalText, type EmkSectionProps } from "./EmkTypes";
 import type { EmkAnesthesiaPreset } from "./emkAnesthesiaPresets";
 
@@ -20,13 +20,20 @@ export function EmkAnesthesiaSection({
 			? "scandonest_3"
 			: "ultracain_ds_forte",
 	);
+	const [selectedMethod, setSelectedMethod] = React.useState<string>("infiltration");
 
 	const handleApplyPreset = (preset: EmkAnesthesiaPreset) => {
 		setSelectedDrugKey(preset.key);
+		const methodObj = ANESTHESIA_METHODS.find((m) => m.id === selectedMethod);
+		const methodLabel = methodObj ? methodObj.label : "Инфильтрационная";
+		const clinicalNote = preset.clinicalNote.replace(
+			/^Инфильтрационная/i,
+			methodLabel,
+		);
 		const curr = visitNoteForm?.treatmentPlan || "";
 		updateVisitNoteField(
 			"treatmentPlan",
-			appendClinicalText(curr, preset.clinicalNote, "\n\n"),
+			appendClinicalText(curr, clinicalNote, "\n\n"),
 		);
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
@@ -34,7 +41,7 @@ export function EmkAnesthesiaSection({
 					detail: {
 						service: {
 							id: `anes-${Date.now()}`,
-							title: `Анестезия инфильтрационная (${preset.shortLabel})`,
+							title: `Анестезия ${methodLabel.toLowerCase()} (${preset.shortLabel})`,
 							code: preset.procedureCode,
 							priceRub: preset.priceRub,
 						},
@@ -76,11 +83,7 @@ export function EmkAnesthesiaSection({
 					notes: "Экстренное списание укладки «Антишок»",
 				}),
 			}).catch(() => {});
-			showToast(
-				"🚨 Укладка «Антишок» списана. Протокол открыт.",
-				"warning",
-				4500,
-			);
+			showToast("🚨 Укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
 		} catch {
 			showToast("🚨 Экстренная укладка «Антишок» списана", "info", 3000);
 		}
@@ -95,7 +98,9 @@ export function EmkAnesthesiaSection({
 			/>
 			<EmkAnesthesiaPresetChips
 				selectedDrugKey={selectedDrugKey}
+				selectedMethod={selectedMethod}
 				favoriteAnes={favoriteAnes}
+				onSelectMethod={setSelectedMethod}
 				onApplyPreset={handleApplyPreset}
 				onNoAnesthesia={handleNoAnesthesia}
 				onAntishockEmergency={handleAntishockEmergency}

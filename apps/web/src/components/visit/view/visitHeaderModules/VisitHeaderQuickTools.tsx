@@ -36,8 +36,8 @@ export function VisitHeaderQuickTools({
 				title="Оформить заказ-наряд в зуботехническую лабораторию (ЗТЛ)"
 				aria-label="Наряд в ЗТЛ"
 			>
-				<FlaskConical className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
-				<span className="hidden 2xl:inline">+ Наряд в ЗТЛ</span>
+				<FlaskConical className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
+				<span className="hidden 2xl:inline">Наряд ЗТЛ</span>
 				<span className="2xl:hidden text-[11px]">ЗТЛ</span>
 			</button>
 
@@ -50,8 +50,9 @@ export function VisitHeaderQuickTools({
 				title="Открыть клинический ассистент у кресла"
 				aria-label="Ассистент у кресла"
 			>
-				<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
+				<Sparkles className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 				<span className="hidden 2xl:inline">Ассистент</span>
+				<span className="2xl:hidden text-[11px]">AI</span>
 			</button>
 
 			<button
@@ -65,6 +66,7 @@ export function VisitHeaderQuickTools({
 			>
 				<UserCheck className="w-4 h-4 text-[var(--ink-muted)] shrink-0" aria-hidden="true" />
 				<span className="hidden 2xl:inline">Очередь смены</span>
+				<span className="2xl:hidden text-[11px]">Очередь</span>
 			</button>
 		</div>
 	);
