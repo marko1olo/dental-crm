@@ -139,7 +139,7 @@ export const CashRegisterSplitSection: React.FC<CashRegisterSplitSectionProps> =
 				</div>
 				<div>
 					<label className="text-[11px] text-[var(--muted,#64748b)] block mb-1">
-						С аванса (₽)
+						Аванс / Кошелёк (₽)
 					</label>
 					<input
 						type="number"

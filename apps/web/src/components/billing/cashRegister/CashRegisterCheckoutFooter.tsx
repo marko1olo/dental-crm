@@ -26,7 +26,7 @@ export const CashRegisterCheckoutFooter: React.FC<CashRegisterCheckoutFooterProp
 				type="button"
 				onClick={onClose}
 				disabled={isSubmitting}
-				className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#cbd5e1)] text-xs sm:text-sm font-medium text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors"
+				className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#cbd5e1)] text-xs sm:text-sm font-medium text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors dente-btn-secondary"
 			>
 				Отмена
 			</button>
@@ -36,7 +36,7 @@ export const CashRegisterCheckoutFooter: React.FC<CashRegisterCheckoutFooterProp
 				onClick={onExecutePayment}
 				data-testid="btn-confirm-checkout-payment"
 				data-testid-alt="execute-fast-checkout-btn"
-				className="min-h-[52px] sm:min-h-[44px] flex-1 max-w-sm py-2.5 px-5 rounded-2xl sm:rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
+				className="min-h-[52px] sm:min-h-[44px] flex-1 max-w-sm py-2.5 px-5 rounded-2xl sm:rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98] dente-btn-primary"
 				style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
 			>
 				<span data-testid="btn-submit-checkout-54fz" className="contents">

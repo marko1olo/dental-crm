@@ -72,14 +72,17 @@ export const CashRegisterDiscountsSection: React.FC<CashRegisterDiscountsSection
 			</div>
 
 			{/* Physical Person Non-Requirement Badge (Mandates 8e, 8n) */}
-			<div className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs">
+			<div
+				className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs"
+				title="Плательщик: физическое лицо (ИНН не требуется)"
+			>
 				<div className="flex items-center gap-1.5 text-[var(--muted,#64748b)]">
 					<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
-					<span>Плательщик: физическое лицо</span>
+					<span className="font-medium text-[var(--ink)]">Плательщик: физическое лицо</span>
 				</div>
 				<span
 					data-testid="inn-physical-not-required-badge"
-					className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))]"
+					className="inline-flex items-center px-2.5 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
 				>
 					ИНН не требуется
 				</span>
