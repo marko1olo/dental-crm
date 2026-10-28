@@ -73,7 +73,8 @@ function CopilotPreviewApp() {
     const view = params.get("view") || "drawer";
     setCurrentView(view);
     if (view === "voice") {
-      setDrawerOpen(false);
+      const isMobileScreen = typeof window !== "undefined" && window.innerWidth <= 768;
+      setDrawerOpen(!isMobileScreen);
       setVoiceActive(true);
     } else if (view === "hud") {
       setDrawerOpen(false);
@@ -147,7 +148,17 @@ function CopilotPreviewApp() {
         messages={messages}
         busy={false}
         phase={null}
-        pending={null}
+        pending={currentView === "voice" || activeTab === "pending" ? {
+          callId: "call-save-diary-1",
+          toolName: "clinical.save_protocol_043",
+          args: {
+            patientId: "patient-1",
+            tooth: 36,
+            icd10: "K02.1",
+            diagnosis: "Кариес дентина",
+            treatmentPlan: "Инфильтрационная анестезия Убистезин 1.7 мл, реставрация зуба 36 светоотверждаемым композитом",
+          },
+        } : null}
         nameCache={{}}
         nudges={[
           {

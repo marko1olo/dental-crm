@@ -8,12 +8,31 @@
  * - Anesthetics used (drug name, volume ml, carpules, technique)
  * - Restorative, endodontic, surgical, and orthopedic materials
  * - Clinical observations (percussion, vitality, probing depth, mobility)
+ *
+ * Compliant with Mandate 8b / 8zi (Decomposed, ~350 lines).
  */
 
 import {
 	ALL_VALID_FDI_TEETH,
 	Icd10ClinicalValidator,
 } from "../../clinical/Icd10ClinicalValidator.js";
+import {
+	CLINICAL_MATERIAL_PATTERNS,
+	CLINICAL_PROCEDURE_PATTERNS,
+	DENTAL_DIAGNOSIS_RULES,
+	RUSSIAN_COMPOUND_ORDINALS,
+	RUSSIAN_TEETH_ONES,
+	RUSSIAN_TEETH_TENS,
+} from "./voiceDictation/voiceDictationRules.js";
+
+export {
+	CLINICAL_MATERIAL_PATTERNS,
+	CLINICAL_PROCEDURE_PATTERNS,
+	DENTAL_DIAGNOSIS_RULES,
+	RUSSIAN_COMPOUND_ORDINALS,
+	RUSSIAN_TEETH_ONES,
+	RUSSIAN_TEETH_TENS,
+};
 
 export interface ParsedAnesthesia {
 	readonly drug?: string | undefined;
@@ -55,123 +74,6 @@ export interface ParsedClinicalEntities {
 }
 
 // ─── 1. FDI TOOTH PARSER ───────────────────────────────────────────────────
-
-const RUSSIAN_TEETH_TENS: Readonly<Record<string, number>> = {
-	десять: 10,
-	одиннадцать: 11,
-	двенадцать: 12,
-	тринадцать: 13,
-	четырнадцать: 14,
-	пятнадцать: 15,
-	шестнадцать: 16,
-	семнадцать: 17,
-	восемнадцать: 18,
-	двадцать: 20,
-	тридцать: 30,
-	сорок: 40,
-	пятьдесят: 50,
-	шестьдесят: 60,
-	семьдесят: 70,
-	восемьдесят: 80,
-};
-
-const RUSSIAN_TEETH_ONES: Readonly<Record<string, number>> = {
-	один: 1,
-	первый: 1,
-	первого: 1,
-	первом: 1,
-	два: 2,
-	второй: 2,
-	второго: 2,
-	втором: 2,
-	три: 3,
-	третий: 3,
-	третьего: 3,
-	третьем: 3,
-	четыре: 4,
-	четвертый: 4,
-	четвертого: 4,
-	четвертом: 4,
-	пять: 5,
-	пятый: 5,
-	пятого: 5,
-	пятом: 5,
-	шесть: 6,
-	шестой: 6,
-	шестого: 6,
-	шестом: 6,
-	семь: 7,
-	седьмой: 7,
-	седьмого: 7,
-	седьмом: 7,
-	восемь: 8,
-	восьмой: 8,
-	восьмого: 8,
-	восьмом: 8,
-};
-
-const RUSSIAN_COMPOUND_ORDINALS: Readonly<Record<string, number>> = {
-	одиннадцатый: 11,
-	одиннадцатого: 11,
-	двенадцатый: 12,
-	двенадцатого: 12,
-	тринадцатый: 13,
-	тринадцатого: 13,
-	четырнадцатый: 14,
-	четырнадцатого: 14,
-	пятнадцатый: 15,
-	пятнадцатого: 15,
-	шестнадцатый: 16,
-	шестнадцатого: 16,
-	семнадцатый: 17,
-	семнадцатого: 17,
-	восемнадцатый: 18,
-	восемнадцатого: 18,
-	двадцатьпервый: 21,
-	двадцатьвторой: 22,
-	двадцатьтретий: 23,
-	двадцатьчетвертый: 24,
-	двадцатьпятый: 25,
-	двадцатьшестой: 26,
-	двадцатьседьмой: 27,
-	двадцатьвосьмой: 28,
-	тридцатьпервый: 31,
-	тридцатьвторой: 32,
-	тридцатьтретий: 33,
-	тридцатьчетвертый: 34,
-	тридцатьпятый: 35,
-	тридцатьшестой: 36,
-	тридцатьседьмой: 37,
-	тридцатьвосьмой: 38,
-	сорокпервый: 41,
-	сороквторой: 42,
-	сороктретий: 43,
-	сорокчетвертый: 44,
-	сорокпятый: 45,
-	сорокшестой: 46,
-	сорокседьмой: 47,
-	сороквосьмой: 48,
-	пятьдесятпервый: 51,
-	пятьдесятвторой: 52,
-	пятьдесяттретий: 53,
-	пятьдесятчетвертый: 54,
-	пятьдесятпятый: 55,
-	шестьдесятпервый: 61,
-	шестьдесятвторой: 62,
-	шестьдесяттретий: 63,
-	шестьдесятчетвертый: 64,
-	шестьдесятпятый: 65,
-	семьдесятпервый: 71,
-	семьдесятвторой: 72,
-	семьдесяттретий: 73,
-	семьдесятчетвертый: 74,
-	семьдесятпятый: 75,
-	восемьдесятпервый: 81,
-	восемьдесятвторой: 82,
-	восемьдесяттретий: 83,
-	восемьдесятчетвертый: 84,
-	восемьдесятпятый: 85,
-};
 
 export function extractFdiTeeth(text: string): number[] {
 	const foundTeeth = new Set<number>();
@@ -261,115 +163,8 @@ export function extractFdiTeeth(text: string): number[] {
 
 // ─── 2. ICD-10 & DIAGNOSTIC RECOGNITION ────────────────────────────────────
 
-interface DiagnosisRule {
-	readonly code: string;
-	readonly titleRu: string;
-	readonly keywords: string[];
-}
-
-const DENTAL_DIAGNOSIS_RULES: DiagnosisRule[] = [
-	{
-		code: "K02.1",
-		titleRu: "Кариес дентина (средний / глубокий)",
-		keywords: [
-			"кариес дентина",
-			"глубокий кариес",
-			"средний кариес",
-			"кариозная полость",
-			"кариес",
-			"caries",
-		],
-	},
-	{
-		code: "K02.0",
-		titleRu: "Кариес эмали (в стадии пятна / поверхностный)",
-		keywords: ["кариес эмали", "начальный кариес", "белое пятно", "поверхностный кариес"],
-	},
-	{
-		code: "K04.0",
-		titleRu: "Пульпит (острый / хронический)",
-		keywords: [
-			"пульпит",
-			"острый пульпит",
-			"хронический пульпит",
-			"пульсирующая боль",
-			"ночная боль",
-			"pulpitis",
-		],
-	},
-	{
-		code: "K04.5",
-		titleRu: "Хронический апикальный периодонтит",
-		keywords: [
-			"периодонтит",
-			"апикальный периодонтит",
-			"верхушечный периодонтит",
-			"гранулема",
-			"периапикальный очаг",
-			"periodontitis",
-		],
-	},
-	{
-		code: "K04.7",
-		titleRu: "Периапикальный абсцесс без свища (периостит / флюс)",
-		keywords: ["периапикальный абсцесс", "периостит", "флюс", "припухлость щеки", "гнойный экссудат"],
-	},
-	{
-		code: "K05.1",
-		titleRu: "Хронический гингивит (катаральный / гипертрофический)",
-		keywords: ["гингивит", "катаральный гингивит", "кровоточивость десны", "отек сосочков"],
-	},
-	{
-		code: "K05.3",
-		titleRu: "Хронический генерализованный/локализованный пародонтит",
-		keywords: [
-			"пародонтит",
-			"пародонтальный карман",
-			"пародонтоз",
-			"убыль костной ткани",
-			"скейлинг",
-			"bop",
-		],
-	},
-	{
-		code: "K03.1",
-		titleRu: "Сошлифовывание / Клиновидный дефект зубов",
-		keywords: ["клиновидный дефект", "клиновидный", "эрозия эмали", "некариозное поражение"],
-	},
-	{
-		code: "K03.0",
-		titleRu: "Повышенное стирание зубов (патологическая стираемость)",
-		keywords: ["патологическая стираемость", "повышенное стирание", "стираемость зубов"],
-	},
-	{
-		code: "K01.1",
-		titleRu: "Ретенированные и дистопированные зубы",
-		keywords: [
-			"ретинированный",
-			"дистопированный",
-			"полуретинированный",
-			"восьмерка",
-			"зуб мудрости",
-			"перикоронит",
-		],
-	},
-	{
-		code: "K08.1",
-		titleRu: "Потеря зубов (частичная адентия / дефект зубного ряда)",
-		keywords: [
-			"адентия",
-			"частичная потеря зубов",
-			"дефект зубного ряда",
-			"удаленный зуб",
-			"имплантация",
-			"протезирование",
-		],
-	},
-];
-
 export function extractDiagnoses(text: string, primaryTooth?: number): ParsedDiagnosis[] {
 	const results: ParsedDiagnosis[] = [];
-	const lower = text.toLowerCase();
 
 	// 1. Explicit ICD-10 code extraction: "K02.1", "К04.0" (handling Cyrillic K)
 	const codeRegex = /\b[KКkк](\d{2})(?:\.(\d{1,2}))?\b/g;
@@ -396,6 +191,7 @@ export function extractDiagnoses(text: string, primaryTooth?: number): ParsedDia
 	}
 
 	// 2. Keyword heuristic matching
+	const lower = text.toLowerCase();
 	for (const rule of DENTAL_DIAGNOSIS_RULES) {
 		for (const kw of rule.keywords) {
 			if (lower.includes(kw)) {
@@ -484,28 +280,7 @@ export function extractAnesthesia(text: string): ParsedAnesthesia | undefined {
 	};
 }
 
-// ─── 4. MATERIALS & INSTRUMENTS EXTRACTION ────────────────────────────────
-
-const CLINICAL_MATERIAL_PATTERNS: { name: string; regex: RegExp }[] = [
-	{ name: "Коффердам / Изоляция", regex: /(коффердам|раббердам|optradam|optragate|оптрагейт)/i },
-	{ name: "Filtek Ultimate (3M ESPE)", regex: /(filtek|филтек|z250)/i },
-	{ name: "Estelite Asteria (Tokuyama)", regex: /(estelite|эстелайт|asteria|астерия)/i },
-	{ name: "Gradia Direct (GC)", regex: /(gradia|градия)/i },
-	{ name: "SDR Flow+ (Dentsply)", regex: /(sdr|сдр)/i },
-	{ name: "Адгезивная система (Single Bond Universal)", regex: /(адгезив|бонд|single bond|universal bond)/i },
-	{ name: "Гипохлорит натрия 3% (NaClO)", regex: /(гипохлорит|naclo)/i },
-	{ name: "ЭДТА 17% (EDTA)", regex: /(эдта|edta|эндожи)/i },
-	{ name: "Хлоргексидин 2%", regex: /(хлоргексидин)/i },
-	{ name: "Гидроксид кальция (Calasept)", regex: /(каласепт|calasept|метапекс|metapex|гидроксид кальция)/i },
-	{ name: "Эндодонтический силер (AH Plus / CeraSeal)", regex: /(ah plus|аш плюс|ceraseal|bioroot|силер)/i },
-	{ name: "Гуттаперча (вертикальная/латеральная конденсация)", regex: /(гуттаперч|gutta)/i },
-	{ name: "MTA / ProRoot / Биодентин", regex: /(mta|мта|proroot|biodentine|биодентин)/i },
-	{ name: "Стеклоиономерный цемент (Vitremer / Fuji IX)", regex: /(vitremer|витремер|fuji|фуджи|сиц)/i },
-	{ name: "Дентальный имплантат Osstem / Straumann", regex: /(osstem|осстем|straumann|штрауман|nobel|dentium|megagen)/i },
-	{ name: "Коллагеновая губка (Альвостаз / Neocones)", regex: /(альвостаз|гемостатическая губка|губка|alvostas)/i },
-	{ name: "Шовный материал (Vicryl / Monocryl 4-0/5-0)", regex: /(викрил|vicryl|монокрил|шов|швы|пга|полиамид)/i },
-	{ name: "А-силиконовый оттискной материал (Honigum / Elite HD)", regex: /(а-силикон|силикон|honigum|слепок|оттиск)/i },
-];
+// ─── 4. MATERIALS EXTRACTION ──────────────────────────────────────────────
 
 export function extractMaterials(text: string): string[] {
 	const found = new Set<string>();
@@ -517,7 +292,7 @@ export function extractMaterials(text: string): string[] {
 	return Array.from(found);
 }
 
-// ─── 5. CLINICAL OBSERVATIONS & FINDINGS ──────────────────────────────────
+// ─── 5. CLINICAL FINDINGS ──────────────────────────────────────────────────
 
 export function extractClinicalFindings(
 	text: string,
@@ -555,62 +330,7 @@ export function extractClinicalFindings(
 	};
 }
 
-// ─── 6. PROCEDURES & CLINICAL INTERVENTIONS ──────────────────────────────
-
-const CLINICAL_PROCEDURE_PATTERNS: { name: string; regex: RegExp }[] = [
-	{
-		name: "Препарирование и формирование кариозной полости",
-		regex: /(препарирован|формирован[иея] полост|иссечен[иея] некротизирован|некрэктоми)/i,
-	},
-	{
-		name: "Изоляция рабочего поля (коффердам / раббердам)",
-		regex: /(коффердам|раббердам|изоляци[яи]|optragate|оптрагейт)/i,
-	},
-	{
-		name: "Восстановление зуба светоотверждаемым композитом (пломба / реставрация)",
-		regex: /(светов[а-я]+ пломб|светоотверждаем|пломбирован|постановк[а-я]* пломб|пломб[а-я]+|реставраци|фотополимер)/i,
-	},
-	{
-		name: "Механическая и медикаментозная обработка корневых каналов",
-		regex: /(мехобработк|обработк[аеу]? канал|машинн[ые|ыми] файл|протейпер|расширени[ея] канал|промывани[ея] гипохлорит)/i,
-	},
-	{
-		name: "Обтурация корневых каналов гуттаперчей с силером",
-		regex: /(обтураци|пломбирован[иея] канал|пломбировк[аеу] канал|латеральн[ая|ой] конденсаци|вертикальн[ая|ой] конденсаци)/i,
-	},
-	{
-		name: "Проведение местной анестезии (инфильтрационная / проводниковая)",
-		regex: /(анестези|инфильтраци|проводников|мандибулярн|торусальн|интралигаментарн|убистезин|септонест|артикаин)/i,
-	},
-	{
-		name: "Удаление зуба (простое / сложное)",
-		regex: /(удалени[ея] зуб|экстракци|люксаци|элеватор|щипц)/i,
-	},
-	{
-		name: "Профессиональная гигиена полости рта (Air-Flow / ультразвуковой скейлинг)",
-		regex: /(профгигиен|гигиен|чистк|air-flow|эйр[- ]?флоу|скейлинг|ультразвук|сняти[ея] отложени)/i,
-	},
-	{
-		name: "Снятие анатомических оттисков / интраоральное сканирование",
-		regex: /(оттиск|слеп[ока]|сканирован|интраоральн)/i,
-	},
-	{
-		name: "Фиксация несъемной ортопедической конструкции (коронка / винир / вкладка)",
-		regex: /(фиксаци[яи] коронк|фиксаци[яи] вкладк|фиксаци[яи] винир|цементировк)/i,
-	},
-	{
-		name: "Установка дентального имплантата",
-		regex: /(имплантаци|установк[аеи]? имплант)/i,
-	},
-	{
-		name: "Наложение швов",
-		regex: /(наложени[ея] шв|ушивани|шовный материал|викрил)/i,
-	},
-	{
-		name: "Шлифовка и полировка реставрации",
-		regex: /(полировк|шлифовк|окклюзионн[ое|ая] припасовк)/i,
-	},
-];
+// ─── 6. PROCEDURES EXTRACTION ──────────────────────────────────────────────
 
 export function extractProcedures(text: string, _primaryTooth?: number): string[] {
 	const found = new Set<string>();

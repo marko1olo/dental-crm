@@ -147,7 +147,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs"
+        className="primary-button dente-btn dente-btn-primary w-full min-h-[48px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">
@@ -342,7 +342,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
         className={`relative w-full bg-[var(--paper)] flex flex-col z-10 text-[var(--ink)] overflow-hidden ${
           isMobile
             ? "max-h-[92dvh] rounded-t-[24px] border-t border-[var(--line)] shadow-[0_-12px_40px_rgba(0,0,0,0.25)] animate-slide-up"
-            : "sm:w-[450px] sm:max-w-[450px] h-full border-l border-[var(--line)] shadow-2xl animate-slide-in"
+            : "sm:w-[480px] sm:max-w-[480px] h-full border-l border-[var(--line)] shadow-2xl animate-slide-in"
         }`}
       >
         {isMobile && (

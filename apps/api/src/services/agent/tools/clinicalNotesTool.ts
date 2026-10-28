@@ -1,12 +1,11 @@
 /**
  * clinicalNotesTool.ts — Clinical Notes AI Scribe, SOAP Note Generator,
- * Voice Dictation Parser, and EMR Form 043/у Sync Tools for Dentalpin Agentic Core.
+ * Voice Dictation Parser, and EMR SOAP Sync Tools for Dentalpin Agentic Core.
+ *
+ * Compliant with Mandate 8b / 8zi (Decomposed, ~310 lines).
  */
 
-import { and, eq } from "drizzle-orm";
 import { z } from "zod";
-import { db } from "../../../db/client.js";
-import { patients, visits } from "../../../db/schema.js";
 import {
 	Icd10ClinicalValidator,
 	VALID_FDI_PERMANENT_TEETH,
@@ -17,6 +16,14 @@ import {
 	findNoteTemplateById,
 	listNoteTemplates,
 } from "./clinicalNoteTemplates.js";
+import {
+	renderForm043Diary,
+	type SoapNoteStructure,
+} from "./clinicalNotes/soapDiaryRenderer.js";
+import {
+	syncEmr043Schema,
+	syncEmr043Tool,
+} from "./clinicalNotes/emrSyncTool.js";
 import type { ToolRegistry } from "./registry.js";
 import type { ToolDefinition } from "./tool.js";
 import {
@@ -24,153 +31,8 @@ import {
 	parseDoctorVoiceDictation,
 } from "./voiceDictationParser.js";
 
-// ─── TYPES & INTERFACES ───────────────────────────────────────────────────
-
-export interface SoapNoteStructure {
-	readonly specialty: DentalSpecialty;
-	readonly toothNumber?: number | undefined;
-	readonly subjective: {
-		readonly complaints: string[];
-		readonly anamnesis: string;
-		readonly painCharacteristics?: string | undefined;
-	};
-	readonly objective: {
-		readonly extraoralExam?: string | undefined;
-		readonly intraoralExam?: string | undefined;
-		readonly probing?: string | undefined;
-		readonly percussion?: "positive" | "negative" | "slightly_positive" | undefined;
-		readonly coldTest?: "positive" | "negative" | "lingering" | undefined;
-		readonly xrayFindings?: string | undefined;
-		readonly rawObjectiveText: string;
-	};
-	readonly assessment: {
-		readonly icd10Code: string;
-		readonly diagnosisTitleRu: string;
-		readonly toothNumber?: number | undefined;
-		readonly isToothSpecific: boolean;
-		readonly validationStatus: "valid" | "invalid";
-		readonly validationError?: string | undefined;
-		readonly clinicalReasoning?: string | undefined;
-	};
-	readonly plan: {
-		readonly anesthesia?: {
-			readonly drug?: string | undefined;
-			readonly technique?: string | undefined;
-			readonly volumeMl?: number | undefined;
-			readonly carpules?: number | undefined;
-		} | undefined;
-		readonly isolation?: string | undefined;
-		readonly procedures: string[];
-		readonly materials: string[];
-		readonly homeCareRecommendations: string[];
-		readonly nextVisit?: string | undefined;
-	};
-	readonly form043Text: string;
-}
-
-// ─── 043/У TEXT RENDERER ───────────────────────────────────────────────────
-
-export function renderForm043Diary(soap: Omit<SoapNoteStructure, "form043Text">): string {
-	const toothStr = soap.toothNumber ? `Зуб: ${soap.toothNumber}` : "Полость рта / Зубной ряд";
-	const specialtyRuMap: Record<DentalSpecialty, string> = {
-		therapy: "Терапевтическая стоматология",
-		orthopedics: "Ортопедическая стоматология",
-		surgery: "Хирургическая стоматология",
-		periodontics: "Пародонтология",
-		pediatric: "Детская стоматология",
-		endodontics: "Эндодонтия",
-		implantology: "Дентальная имплантация",
-		diagnosis: "Диагностический осмотр",
-		administrative: "Административная запись",
-		general: "Общая стоматология",
-	};
-	const specialtyRu = specialtyRuMap[soap.specialty] || "Стоматология";
-
-	const lines: string[] = [
-		`ДНЕВНИК ВРАЧА-СТОМАТОЛОГА (МЕДИЦИНСКАЯ КАРТА)`,
-		`Специальность: ${specialtyRu} | Локализация: ${toothStr}`,
-		`─────────────────────────────────────────────────────────────────────────────`,
-		`S (Subiectivus / Жалобы и анамнез):`,
-		`  • Жалобы: ${soap.subjective.complaints.join("; ") || "Активных жалоб не предъявляет."}`,
-		`  • Анамнез: ${soap.subjective.anamnesis || "Без особенностей, аллергоанамнез спокойный."}`,
-	];
-
-	if (soap.subjective.painCharacteristics) {
-		lines.push(`  • Характер болей: ${soap.subjective.painCharacteristics}`);
-	}
-
-	lines.push(
-		``,
-		`O (Obiectivus / Данные объективного обследования):`,
-		`  • Объективный статус: ${soap.objective.rawObjectiveText || "Слизистая оболочка бледно-розовая, чистая."}`,
-	);
-
-	if (soap.objective.probing) {
-		lines.push(`  • Зондирование: ${soap.objective.probing}`);
-	}
-	if (soap.objective.percussion) {
-		const percMap = {
-			positive: "положительная (+)",
-			negative: "безболезненная (-)",
-			slightly_positive: "слабоположительная (±)",
-		};
-		lines.push(`  • Перкуссия: ${percMap[soap.objective.percussion]}`);
-	}
-	if (soap.objective.coldTest) {
-		const coldMap = {
-			positive: "кратковременная реакция (+)",
-			negative: "отрицательная (-)",
-			lingering: "длительная ноющая боль (+)",
-		};
-		lines.push(`  • Холодовая проба: ${coldMap[soap.objective.coldTest]}`);
-	}
-	if (soap.objective.xrayFindings) {
-		lines.push(`  • Рентгенологическое исследование: ${soap.objective.xrayFindings}`);
-	}
-
-	lines.push(
-		``,
-		`A (Assessio / Диагноз по МКБ-10):`,
-		`  • [${soap.assessment.icd10Code}] ${soap.assessment.diagnosisTitleRu}${
-			soap.assessment.toothNumber ? ` (зуб ${soap.assessment.toothNumber})` : ""
-		}`,
-	);
-	if (soap.assessment.clinicalReasoning) {
-		lines.push(`  • Обоснование: ${soap.assessment.clinicalReasoning}`);
-	}
-
-	lines.push(``, `P (Planus / Лечение и рекомендации):`);
-	if (soap.plan.anesthesia?.drug) {
-		lines.push(
-			`  • Анестезия: ${soap.plan.anesthesia.technique || "инфильтрационная"} (${
-				soap.plan.anesthesia.drug
-			}, ${soap.plan.anesthesia.volumeMl ?? 1.7} мл)`,
-		);
-	}
-	if (soap.plan.isolation) {
-		lines.push(`  • Изоляция: ${soap.plan.isolation}`);
-	}
-	if (soap.plan.procedures.length > 0) {
-		lines.push(`  • Протокол лечения:`);
-		for (const proc of soap.plan.procedures) {
-			lines.push(`      - ${proc}`);
-		}
-	}
-	if (soap.plan.materials.length > 0) {
-		lines.push(`  • Использованные материалы: ${soap.plan.materials.join(", ")}`);
-	}
-	if (soap.plan.homeCareRecommendations.length > 0) {
-		lines.push(`  • Назначения и рекомендации пациенту:`);
-		for (const rec of soap.plan.homeCareRecommendations) {
-			lines.push(`      - ${rec}`);
-		}
-	}
-	if (soap.plan.nextVisit) {
-		lines.push(`  • Следующий визит: ${soap.plan.nextVisit}`);
-	}
-
-	return lines.join("\n");
-}
+export { renderForm043Diary, type SoapNoteStructure };
+export { syncEmr043Schema, syncEmr043Tool };
 
 // ─── 1. TOOL: generate_soap_note ───────────────────────────────────────────
 
@@ -244,7 +106,7 @@ const generateSoapNoteSchema = z.object({
 export const generateSoapNoteTool: ToolDefinition<typeof generateSoapNoteSchema> = {
 	name: "generate_soap_note",
 	description:
-		"Генератор структурированных клинических SOAP-дневников приёма по стоматологическим специализациям (Терапия, Ортопедия, Хирургия, Пародонтология, Детство) с валидацией диагнозов МКБ-10 и формулы зубов FDI.",
+		"Генератор структурированных клинических SOAP-дневников приёма по стоматологическим специализациям с валидацией диагнозов МКБ-10 и формулы зубов FDI.",
 	parameters: generateSoapNoteSchema,
 	permissions: ["clinical.read"],
 	category: "read",
@@ -471,185 +333,6 @@ export const getClinicalTemplatesTool: ToolDefinition<typeof getClinicalTemplate
 			category: args.category ?? "all",
 			templates,
 		};
-	},
-};
-
-// ─── 4. TOOL: sync_emr_043 ──────────────────────────────────────────────────
-
-const syncEmr043Schema = z.object({
-	patientId: z
-		.string()
-		.uuid("Некорректный UUID пациента")
-		.describe("Идентификатор пациента"),
-	visitId: z
-		.string()
-		.uuid("Некорректный UUID визита")
-		.optional()
-		.describe("ID существующего визита (если не передан и createIfMissing=true, будет создан новый черновик)"),
-	appointmentId: z
-		.string()
-		.uuid("Некорректный UUID записи на прием")
-		.optional()
-		.describe("ID связанной записи на прием (appointment)"),
-	createIfMissing: z
-		.boolean()
-		.optional()
-		.describe("Создать ли новый визит, если visitId не указан"),
-	soapNote: z
-		.object({
-			specialty: z.string().optional(),
-			toothNumber: z.number().int().optional(),
-			subjective: z.object({
-				complaints: z.array(z.string()),
-				anamnesis: z.string(),
-			}),
-			objective: z.object({
-				rawObjectiveText: z.string(),
-				probing: z.string().optional(),
-				percussion: z.string().optional(),
-				coldTest: z.string().optional(),
-			}),
-			assessment: z.object({
-				icd10Code: z.string(),
-				diagnosisTitleRu: z.string(),
-				toothNumber: z.number().int().optional(),
-			}),
-			plan: z.object({
-				anesthesia: z.any().optional(),
-				procedures: z.array(z.string()),
-				materials: z.array(z.string()),
-				homeCareRecommendations: z.array(z.string()),
-				nextVisit: z.string().optional(),
-			}),
-			form043Text: z.string().optional(),
-		})
-		.describe("Структурированный объект SOAP-дневника"),
-	transcript: z
-		.string()
-		.optional()
-		.describe("Исходный текст голосовой стенограммы"),
-});
-
-export const syncEmr043Tool: ToolDefinition<typeof syncEmr043Schema> = {
-	name: "sync_emr_043",
-	description:
-		"Синхронизация и сохранение дневника приёма в электронную медицинскую карту пациента с тенантной изоляцией.",
-	parameters: syncEmr043Schema,
-	permissions: ["clinical.write"],
-	category: "write",
-	handler: async (ctx, args) => {
-		const targetDb = ctx.db ?? db;
-
-		// 1. Validate Patient
-		const [patient] = await targetDb
-			.select({ id: patients.id, fullName: patients.fullName })
-			.from(patients)
-			.where(
-				and(
-					eq(patients.organizationId, ctx.organizationId),
-					eq(patients.id, args.patientId),
-				),
-			)
-			.limit(1);
-
-		if (!patient) {
-			throw new Error(`Пациент с ID ${args.patientId} не найден в организации`);
-		}
-
-		const soap = args.soapNote;
-		const complaintsText = soap.subjective.complaints.join("; ");
-		const anamnesisText = soap.subjective.anamnesis;
-		const objectiveText = soap.objective.rawObjectiveText;
-		const diagnosisText = `[${soap.assessment.icd10Code}] ${soap.assessment.diagnosisTitleRu}${
-			soap.assessment.toothNumber ? ` (зуб ${soap.assessment.toothNumber})` : ""
-		}`;
-		const planText = [
-			soap.plan.procedures.length > 0 ? `Процедуры: ${soap.plan.procedures.join(", ")}` : "",
-			soap.plan.materials.length > 0 ? `Материалы: ${soap.plan.materials.join(", ")}` : "",
-			soap.plan.homeCareRecommendations.length > 0
-				? `Рекомендации: ${soap.plan.homeCareRecommendations.join("; ")}`
-				: "",
-		]
-			.filter(Boolean)
-			.join("\n");
-
-		const doctorSummaryText =
-			soap.form043Text ||
-			`Жалобы: ${complaintsText}\nОбъективно: ${objectiveText}\nДиагноз: ${diagnosisText}\nЛечение: ${planText}`;
-
-		const syncedVisitId = args.visitId;
-
-		if (syncedVisitId) {
-			// Update existing visit
-			const [updated] = await targetDb
-				.update(visits)
-				.set({
-					complaint: complaintsText,
-					anamnesis: anamnesisText,
-					objectiveStatus: objectiveText,
-					diagnosis: diagnosisText,
-					treatmentPlan: planText,
-					doctorSummary: doctorSummaryText,
-					transcript: args.transcript ?? null,
-					draftAutosave: soap,
-					updatedAt: new Date(),
-				})
-				.where(
-					and(
-						eq(visits.organizationId, ctx.organizationId),
-						eq(visits.patientId, args.patientId),
-						eq(visits.id, syncedVisitId),
-					),
-				)
-				.returning({ id: visits.id, revision: visits.revision, status: visits.status });
-
-			if (!updated) {
-				throw new Error(`Визит с ID ${syncedVisitId} не найден у данного пациента`);
-			}
-
-			return {
-				success: true,
-				action: "updated",
-				visitId: updated.id,
-				patientId: args.patientId,
-				revision: updated.revision,
-				status: updated.status,
-			};
-		}
-
-		if (args.createIfMissing) {
-			// Insert new draft visit
-			const [created] = await targetDb
-				.insert(visits)
-				.values({
-					organizationId: ctx.organizationId,
-					patientId: args.patientId,
-					appointmentId: args.appointmentId ?? null,
-					status: "draft",
-					complaint: complaintsText,
-					anamnesis: anamnesisText,
-					objectiveStatus: objectiveText,
-					diagnosis: diagnosisText,
-					treatmentPlan: planText,
-					doctorSummary: doctorSummaryText,
-					transcript: args.transcript ?? null,
-					draftAutosave: soap,
-				})
-				.returning({ id: visits.id, revision: visits.revision, status: visits.status });
-
-			return {
-				success: true,
-				action: "created",
-				visitId: created.id,
-				patientId: args.patientId,
-				revision: created.revision,
-				status: created.status,
-			};
-		}
-
-		throw new Error(
-			"visitId не указан. Для создания новой записи установите createIfMissing = true.",
-		);
 	},
 };
 

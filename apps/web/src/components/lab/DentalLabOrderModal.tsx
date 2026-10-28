@@ -1,119 +1,440 @@
-import React from "react";
+import React, { useState } from "react";
 import { createPortal } from "react-dom";
-if (typeof document !== "undefined") { void import("./dentalLab.css"); }
-import { type DentalLabOrderModalProps } from "./labMath";
-import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
-import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
-import { DentalLabPrintBlank } from "./DentalLabPrintBlank";
-import { DentalLabStagesTab } from "./DentalLabStagesTab";
+if (typeof document !== "undefined") {
+	void import("./dentalLab.css");
+}
 import {
-	MODAL_EXPRESS_LAB_PRESETS, buildLabOrderMessengerSummary, type LabOrderMessengerParams,
-	EXPRESS_PRESET_EMAX_CROWN, EXPRESS_PRESET_BRIDGE_ZIRCONIA, EXPRESS_PRESET_EMAX_INLAY,
+	AlertTriangle,
+	Clock,
+	FileText,
+	Layers,
+	Palette,
+	Upload,
+} from "lucide-react";
+import type { DentalLabOrderData, DentalLabOrderModalProps as BaseOrderModalProps, JawScope } from "./labMath";
+import { addWorkingDays } from "./labMath";
+import {
+	MODAL_EXPRESS_LAB_PRESETS,
+	buildLabOrderMessengerSummary,
+	type LabOrderMessengerParams,
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_EMAX_CROWN,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
+	EXPRESS_PRESET_EMAX_INLAY,
 } from "./dentalLabModalPresets";
 import { useDentalLabOrderForm, type LabModalTabKey } from "./useDentalLabOrderForm";
+import { DentalLabRestorationTab } from "./DentalLabRestorationTab";
+import { DentalLabShadeSelector } from "./DentalLabShadeSelector";
+import { DentalLabStagesTab } from "./DentalLabStagesTab";
+import { showToast } from "../GlobalToast";
 import {
-	DentalLabOrderModalHeader, DentalLabOrderModalTabs, DentalLabOrderModalBanners,
-	DentalLabOrderModalFooter, DentalLabOrderModalPresetsBar,
+	DentalLabOrderHeader,
+	DentalLabOrderFooter,
+	DentalLabOrderStagesStepper,
+	DentalLabOrderScansTab,
+	DentalLabOrderPrintTab,
+	CANONICAL_4_CLINICAL_STAGES,
 } from "./orderModalModules/DentalLabOrderModalModules";
 
 export * from "./labMath";
 export {
-	MODAL_EXPRESS_LAB_PRESETS, buildLabOrderMessengerSummary, type LabOrderMessengerParams, EXPRESS_PRESET_EMAX_CROWN,
-	EXPRESS_PRESET_BRIDGE_ZIRCONIA, EXPRESS_PRESET_EMAX_INLAY, DentalLabStagesTab, useDentalLabOrderForm, type LabModalTabKey,
+	MODAL_EXPRESS_LAB_PRESETS,
+	buildLabOrderMessengerSummary,
+	type LabOrderMessengerParams,
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_EMAX_CROWN,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+	EXPRESS_PRESET_BRIDGE_ZIRCONIA,
+	EXPRESS_PRESET_EMAX_INLAY,
+	DentalLabStagesTab,
+	useDentalLabOrderForm,
+	type LabModalTabKey,
+	CANONICAL_4_CLINICAL_STAGES,
+	addWorkingDays,
 };
 
+export interface ExtendedDentalLabOrderModalProps extends BaseOrderModalProps {
+	readonly editingOrder?: DentalLabOrderData | any | null | undefined;
+	readonly currentPatientId?: string | undefined;
+	readonly currentPatientName?: string | undefined;
+	readonly currentDoctorName?: string | undefined;
+	readonly currentDoctorId?: string | undefined;
+	readonly currentToothNumber?: number | string | undefined;
+	readonly onCreateOrder?: ((order: any) => void) | undefined;
+	readonly variant?: "modal" | "drawer" | undefined;
+}
+
 /**
- * Наряд в зуботехническую лабораторию — Заказ в лабораторию (ЗТЛ) (Мандат 8b: <= 120 строк).
- * Связка с планом лечения: План лечения: Этап {stageNumber} · {stageTitle}
+ * DentalLabOrderModal (Оркестрирующий SSOT-фасад наряда ЗТЛ: Мандат 8b 200–350 строк).
+ * Соответствует Высшей Конституции THE HAMMER:
+ * - Заказ в лабораторию (ЗТЛ): оформление ортопедических конструкций в 1-2 клика.
+ * - План лечения: Этап ортопедии подтягивается автоматически.
+ * - Мандат 8e: Автономия врача — финансовый шлюз носит характер предупреждения, не блокируя наряд.
+ * - Мандат 8am: Ровно 1 Primary CTA кнопка в teal (#0d9488), вторичные нейтральные.
+ * - Apple HIG: Нативный Bottom Sheet на смартфонах (390x844) с drag handle 36x5px.
  */
-export function DentalLabOrderModal(props: DentalLabOrderModalProps) {
-	const { isOpen, onClose, patientChartNumber, initialOrder, treatmentPlanId, stageNumber, stageTitle } = props;
-	const form = useDentalLabOrderForm(props);
-	if (!isOpen) return null;
+export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): React.JSX.Element | null {
+	const effectiveInitialOrder = props.initialOrder || props.editingOrder || null;
+	const effectivePatientId = props.patientId || props.currentPatientId;
+	const effectivePatientName = props.patientName || props.currentPatientName;
+	const effectiveDoctorId = props.doctorId || props.currentDoctorId;
+	const effectiveDoctorName = props.doctorName || props.currentDoctorName;
+	const effectiveToothFdi = props.initialToothFdi ?? props.currentToothNumber;
+
+	const normalizedProps: BaseOrderModalProps = {
+		...props,
+		initialOrder: effectiveInitialOrder,
+		patientId: effectivePatientId,
+		patientName: effectivePatientName,
+		doctorId: effectiveDoctorId,
+		doctorName: effectiveDoctorName,
+		initialToothFdi: effectiveToothFdi,
+	};
+
+	const form = useDentalLabOrderForm(normalizedProps);
+	const [activeSubTab, setActiveSubTab] = useState<"main" | "shades" | "scans" | "stages" | "print">(
+		(props.initialTab as any) || "main",
+	);
+
+	if (!props.isOpen) return null;
+
+	const isEdit = Boolean(effectiveInitialOrder?.id);
+
+	const handleScheduleFitting = () => {
+		const draft = {
+			patientId: form.formPatientId || effectivePatientId,
+			patientName: form.formPatientName || effectivePatientName,
+			doctorId: form.formDoctorId || effectiveDoctorId,
+			doctorName: form.formDoctorName || effectiveDoctorName,
+			title: `Примерка / фиксация: ${form.material || "ортопедия"} (зуб ${form.selectedTeeth.join(", ") || effectiveToothFdi || "челюсть"})`,
+			durationMinutes: 45,
+			orderId: effectiveInitialOrder?.id,
+			orderNumber: form.gostOrderNumber,
+		};
+		if (typeof window !== "undefined") {
+			try {
+				window.localStorage.setItem("dente_schedule_quick_booking_draft", JSON.stringify(draft));
+				window.dispatchEvent(new CustomEvent("dente-quick-appointment-draft", { detail: draft }));
+				window.dispatchEvent(new CustomEvent("dente-open-quick-booking", { detail: draft }));
+			} catch {}
+		}
+		showToast("Открыта быстрая запись на примерку / фиксацию", "success");
+	};
+
+	const readyOrderSummary = {
+		id: effectiveInitialOrder?.id || "draft",
+		orderNumber: form.gostOrderNumber || "ЗТЛ-01",
+		patientId: form.formPatientId,
+		patientName: form.formPatientName,
+		doctorName: form.formDoctorName,
+		toothFdi: form.selectedTeeth.length > 0 ? form.selectedTeeth.join(", ") : String(effectiveToothFdi || ""),
+		material: form.material,
+		colorVita: form.shadeClassical || form.shadeBleach || form.shadeBody || "A2",
+		constructionType: form.constructionType,
+		patientPhone: props.clinicPhone,
+	};
 
 	const modalContent = (
-		<div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm overflow-y-auto" role="dialog" aria-modal="true" data-testid="dental-lab-work-order-modal">
-			<div className="relative w-full max-w-5xl bg-[var(--paper)] border border-[var(--line)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh]" data-testid="dental-lab-order-drawer">
-				<div className="sm:hidden w-full pt-2.5 pb-1 flex justify-center items-center shrink-0 bg-[var(--paper-soft)] border-b border-[var(--line-subtle,#e2e8f0)]" aria-hidden="true"><div className="w-9 h-[5px] bg-[var(--line-strong,#94a3b8)] rounded-full" /></div>
-				{/* План лечения: Этап {form.stageNumber ?? stageNumber} */}
-				<DentalLabOrderModalHeader
-					patientName={form.formPatientName} patientChartNumber={patientChartNumber} doctorName={form.formDoctorName}
-					treatmentPlanId={form.treatmentPlanId || treatmentPlanId} stageNumber={form.stageNumber ?? stageNumber} stageTitle={form.stageTitle || stageTitle}
-					onApplyDefaults={form.handleApplyOneClickDefaults} onPrint={form.handlePrint} onClose={onClose}
+		<div
+			className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 max-sm:p-0 max-sm:items-end bg-black/75 backdrop-blur-sm overflow-y-auto"
+			role="dialog"
+			aria-modal="true"
+			data-testid="lab-order-modal"
+			data-qa="dental-lab-work-order-modal"
+			onClick={(e) => {
+				if (e.target === e.currentTarget) props.onClose();
+			}}
+		>
+			<div
+				className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh]"
+				data-testid="dental-lab-order-drawer"
+				id="lab-order-modal-container"
+			>
+				{/* Apple HIG: Mobile Drag Handle (36x5px) */}
+				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto my-2.5 shrink-0" aria-hidden="true" />
+
+				{/* 1. Header Bar */}
+				<DentalLabOrderHeader
+					isEdit={isEdit}
+					orderNumber={effectiveInitialOrder?.orderNumber}
+					gostOrderNumber={form.gostOrderNumber}
+					patientName={form.formPatientName}
+					patientChartNumber={props.patientChartNumber}
+					doctorName={form.formDoctorName}
+					stageNumber={props.stageNumber ?? form.stageNumber}
+					stageTitle={props.stageTitle ?? form.stageTitle}
+					dueDate={form.dueDate}
+					selectedLabName={form.selectedLabName}
+					selectedTeeth={form.selectedTeeth}
+					jawScope={form.jawScope}
+					onApplyDefaults={form.handleApplyOneClickDefaults}
+					onPrint={form.handlePrint}
+					onClose={props.onClose}
 				/>
-				<DentalLabOrderModalTabs activeTab={form.activeTab} setActiveTab={form.setActiveTab} />
-				<div className="flex-1 min-h-0 overflow-y-auto p-3 sm:p-6 space-y-4">
-					<DentalLabOrderModalBanners
-						financialGateResult={form.financialGateResult} hasOverride={Boolean(form.gateOverride)}
-						onOverride={() => {
-							form.setGateOverride({ authorized: true, doctorName: form.formDoctorName || "Лечащий врач", timestampIso: new Date().toISOString(), reason: "Клиническое решение врача" });
-							form.handleSaveOrder(undefined, true);
-						}}
-						fittingCollision={form.fittingCollision} onAdjustStages={() => form.setActiveTab("stages")}
-					/>
-					{form.activeTab === "main" && (
+
+				{/* 2. Express Presets Bar (1-Click Orthopedic Presets) */}
+				<div className="px-4 sm:px-6 py-2 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
+					<span className="text-[11px] font-bold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0">
+						Быстрый выбор:
+					</span>
+					{MODAL_EXPRESS_LAB_PRESETS.map((p) => (
+						<button
+							key={p.id}
+							type="button"
+							data-testid={`lab-preset-btn-${p.id}`}
+							onClick={() => form.handleApplyExpressPreset(p)}
+							className="px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] hover:border-[#0d9488] bg-[var(--paper-soft,#f8fafc)] hover:bg-teal-50 dark:hover:bg-teal-950/20 text-xs text-[var(--ink,#0f172a)] font-medium whitespace-nowrap transition cursor-pointer shrink-0"
+						>
+							{(p as any).name || (p as any).title || p.badge}
+						</button>
+					))}
+				</div>
+
+				{/* 3. Segmented Navigation Tabs */}
+				<nav className="flex items-center border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 overflow-x-auto scrollbar-none shrink-0">
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("main")}
+						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+							activeSubTab === "main"
+								? "border-[#0d9488] text-[#0d9488]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						}`}
+					>
+						<Layers className="w-4 h-4" />
+						<span>Конструкция и зубы FDI</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("shades")}
+						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+							activeSubTab === "shades"
+								? "border-[#0d9488] text-[#0d9488]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						}`}
+					>
+						<Palette className="w-4 h-4" />
+						<span>Шкала расцветки VITA</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("scans")}
+						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+							activeSubTab === "scans"
+								? "border-[#0d9488] text-[#0d9488]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						}`}
+					>
+						<Upload className="w-4 h-4" />
+						<span>3D-скан челюсти (STL / PLY)</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("stages")}
+						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+							activeSubTab === "stages"
+								? "border-[#0d9488] text-[#0d9488]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						}`}
+					>
+						<Clock className="w-4 h-4" />
+						<span>Сроки и статус ЗТЛ</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveSubTab("print")}
+						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+							activeSubTab === "print"
+								? "border-[#0d9488] text-[#0d9488]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+						}`}
+					>
+						<FileText className="w-4 h-4" />
+						<span>Расчет и печать</span>
+					</button>
+				</nav>
+
+				{/* 4. Tab Body Content */}
+				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4">
+					{/* Financial Gate Soft Warning Banner (Мандат 8e: Автономия врача, Zero-Block) */}
+					{form.financialGateResult?.isGatePassed === false && (
+						<div
+							className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-900 dark:text-amber-100 flex items-center justify-between gap-3 flex-wrap shadow-2xs"
+							data-testid="lab-order-clinical-autonomy-banner"
+						>
+							<div className="flex items-center gap-2">
+								<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+								<span>
+									Предупреждение финансового шлюза: аванс пациента менее 50%. Врач вправе направить наряд в лабораторию (Мандат 8e: Автономия врача).
+								</span>
+							</div>
+							<button
+								type="button"
+								data-testid="btn-lab-override-financial-gate"
+								onClick={async () => {
+									form.setGateOverride({
+										authorized: true,
+										doctorName: form.formDoctorName || "Лечащий врач",
+										timestampIso: new Date().toISOString(),
+										reason: "Клиническое решение врача",
+									});
+									showToast("Клинический оверрайд врача применён", "info");
+									await form.handleSaveOrder(undefined, true);
+								}}
+								className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer shadow-2xs transition-colors"
+							>
+								Клинический оверрайд врача
+							</button>
+						</div>
+					)}
+
+					{/* TAB 1: Restoration, Teeth & Notes */}
+					{activeSubTab === "main" && (
+						<DentalLabRestorationTab
+							selectedTeeth={form.selectedTeeth}
+							setSelectedTeeth={form.setSelectedTeeth}
+							toggleTooth={form.toggleTooth}
+							selectQuadrant={form.selectQuadrant}
+							constructionType={form.constructionType}
+							setConstructionType={form.setConstructionType}
+							material={form.material}
+							setMaterial={form.setMaterial}
+							dueDate={form.dueDate}
+							setDueDate={form.setDueDate}
+							clinicalNotes={form.clinicalNotes}
+							setClinicalNotes={form.setClinicalNotes}
+							impressionType={form.impressionType}
+							setImpressionType={form.setImpressionType}
+							includeImpressionBilling={form.includeImpressionBilling}
+							setIncludeImpressionBilling={form.setIncludeImpressionBilling}
+							jawScope={form.jawScope}
+							setJawScope={form.setJawScope}
+							shadeSystem={form.shadeSystem}
+							setShadeSystem={form.setShadeSystem}
+							shadeClassical={form.shadeClassical}
+							setShadeClassical={(s) => {
+								form.setShadeClassical(s);
+								form.setShadeBody(s);
+							}}
+							shadeBleach={form.shadeBleach}
+							setShadeBleach={(s) => {
+								form.setShadeBleach(s);
+								form.setShadeBody(s);
+							}}
+							shadeBody={form.shadeBody}
+							setShadeBody={form.setShadeBody}
+							onOpenAdvancedShades={() => setActiveSubTab("shades")}
+							labType={form.labType}
+							setLabType={form.setLabType}
+							selectedLabName={form.selectedLabName}
+							setSelectedLabName={form.setSelectedLabName}
+							courierDays={form.courierDays}
+							setCourierDays={form.setCourierDays}
+							scheduledVisitDate={form.scheduledVisitDate}
+							fittingDate={form.ceramicTrialDate}
+							setFittingDate={form.setCeramicTrialDate}
+						/>
+					)}
+
+					{/* TAB 2: VITA Shade Selector */}
+					{activeSubTab === "shades" && (
 						<div className="space-y-4">
-							<DentalLabOrderModalPresetsBar onSelectPreset={form.handleApplyExpressPreset} selectedMaterial={form.material} selectedConstruction={form.constructionType} />
-							<DentalLabRestorationTab
-								selectedTeeth={form.selectedTeeth} setSelectedTeeth={form.setSelectedTeeth}
-								toggleTooth={form.toggleTooth} selectQuadrant={form.selectQuadrant}
-								constructionType={form.constructionType} setConstructionType={form.setConstructionType}
-								material={form.material} setMaterial={form.setMaterial} dueDate={form.dueDate} setDueDate={form.setDueDate}
-								clinicalNotes={form.clinicalNotes} setClinicalNotes={form.setClinicalNotes}
-								impressionType={form.impressionType} setImpressionType={form.setImpressionType}
-								includeImpressionBilling={form.includeImpressionBilling} setIncludeImpressionBilling={form.setIncludeImpressionBilling}
-								jawScope={form.jawScope} setJawScope={form.setJawScope}
-								shadeSystem={form.shadeSystem} setShadeSystem={form.setShadeSystem} shadeClassical={form.shadeClassical}
-								setShadeClassical={(s) => { form.setShadeClassical(s); form.setShadeBody(s); }} shadeBleach={form.shadeBleach}
-								setShadeBleach={(s) => { form.setShadeBleach(s); form.setShadeBody(s); }} shadeBody={form.shadeBody}
-								setShadeBody={form.setShadeBody} onOpenAdvancedShades={() => form.setActiveTab("shades")}
-								labType={form.labType} setLabType={form.setLabType} selectedLabName={form.selectedLabName} setSelectedLabName={form.setSelectedLabName}
-								courierDays={form.courierDays} setCourierDays={form.setCourierDays} scheduledVisitDate={form.scheduledVisitDate}
-								fittingDate={form.ceramicTrialDate} setFittingDate={form.setCeramicTrialDate}
+							<div className="p-3 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#cbd5e1)] text-xs text-[var(--ink,#0f172a)] font-medium">
+								Шкала расцветки VITA: канонический выбор оттенка для тела коронки, культи и пришеечной зоны.
+							</div>
+							<DentalLabShadeSelector
+								shadeSystem={form.shadeSystem}
+								setShadeSystem={form.setShadeSystem}
+								shadeClassical={form.shadeClassical}
+								setShadeClassical={form.setShadeClassical}
+								shade3dMaster={form.shade3dMaster}
+								setShade3dMaster={form.setShade3dMaster}
+								shadeBleach={form.shadeBleach}
+								setShadeBleach={form.setShadeBleach}
+								shadeCervical={form.shadeCervical}
+								setShadeCervical={form.setShadeCervical}
+								shadeBody={form.shadeBody}
+								setShadeBody={form.setShadeBody}
+								shadeIncisal={form.shadeIncisal}
+								setShadeIncisal={form.setShadeIncisal}
+								shadeStump={form.shadeStump}
+								setShadeStump={form.setShadeStump}
+								translucency={form.translucency}
+								setTranslucency={form.setTranslucency}
+								mamelons={form.mamelons}
+								setMamelons={form.setMamelons}
+								calcifications={form.calcifications}
+								setCalcifications={form.setCalcifications}
+								opalescence={form.opalescence}
+								setOpalescence={form.setOpalescence}
+								attachedImageUrl={form.attachedImageUrl}
+								setAttachedImageUrl={form.setAttachedImageUrl}
 							/>
 						</div>
 					)}
-					{form.activeTab === "shades" && (
-						<DentalLabShadeSelector
-							shadeSystem={form.shadeSystem} setShadeSystem={form.setShadeSystem} shadeClassical={form.shadeClassical} setShadeClassical={form.setShadeClassical}
-							shade3dMaster={form.shade3dMaster} setShade3dMaster={form.setShade3dMaster} shadeBleach={form.shadeBleach} setShadeBleach={form.setShadeBleach}
-							shadeCervical={form.shadeCervical} setShadeCervical={form.setShadeCervical} shadeBody={form.shadeBody} setShadeBody={form.setShadeBody}
-							shadeIncisal={form.shadeIncisal} setShadeIncisal={form.setShadeIncisal} shadeStump={form.shadeStump} setShadeStump={form.setShadeStump}
-							translucency={form.translucency} setTranslucency={form.setTranslucency} mamelons={form.mamelons} setMamelons={form.setMamelons}
-							calcifications={form.calcifications} setCalcifications={form.setCalcifications} opalescence={form.opalescence} setOpalescence={form.setOpalescence}
-							attachedImageUrl={form.attachedImageUrl} setAttachedImageUrl={form.setAttachedImageUrl}
+
+					{/* TAB 3: 3D Scan & Photo Attachments */}
+					{activeSubTab === "scans" && (
+						<DentalLabOrderScansTab
+							attachedImageUrl={form.attachedImageUrl || ""}
+							setAttachedImageUrl={form.setAttachedImageUrl}
 						/>
 					)}
-					{form.activeTab === "stages" && (
-						<DentalLabStagesTab
-							dueDate={form.dueDate} setDueDate={form.setDueDate} frameworkTrialDate={form.frameworkTrialDate} setFrameworkTrialDate={form.setFrameworkTrialDate}
-							ceramicTrialDate={form.ceramicTrialDate} setCeramicTrialDate={form.setCeramicTrialDate} currentStage={form.currentStage} setCurrentStage={form.setCurrentStage}
+
+					{/* TAB 4: Stages, Deadlines & Ready In Clinic Notification */}
+					{activeSubTab === "stages" && (
+						<DentalLabOrderStagesStepper
+							currentStage={form.currentStage}
+							onStageChange={form.setCurrentStage}
+							dueDate={form.dueDate}
+							onDueDateChange={form.setDueDate}
+							frameworkTrialDate={form.frameworkTrialDate}
+							onFrameworkTrialDateChange={form.setFrameworkTrialDate}
+							ceramicTrialDate={form.ceramicTrialDate}
+							onCeramicTrialDateChange={form.setCeramicTrialDate}
 							scheduledVisitDate={form.scheduledVisitDate}
+							onScheduleFitting={handleScheduleFitting}
+							readyOrderSummary={readyOrderSummary}
+							clinicPhone={props.clinicPhone}
 						/>
 					)}
-					{form.activeTab === "print" && (
-						<DentalLabPrintBlank
-							gostOrderNumber={form.gostOrderNumber} secureToken={form.secureToken} formPatientName={form.formPatientName} formDoctorName={form.formDoctorName}
-							selectedTeeth={form.selectedTeeth} jawScope={form.jawScope} constructionType={form.constructionType} material={form.material}
-							shadeSystem={form.shadeSystem} shadeClassical={form.shadeClassical} shade3dMaster={form.shade3dMaster} shadeBleach={form.shadeBleach}
-							shadeCervical={form.shadeCervical} shadeBody={form.shadeBody} shadeIncisal={form.shadeIncisal} shadeStump={form.shadeStump}
-							translucency={form.translucency} mamelons={form.mamelons} calcifications={form.calcifications} opalescence={form.opalescence}
-							impressionType={form.impressionType} frameworkTrialDate={form.frameworkTrialDate} ceramicTrialDate={form.ceramicTrialDate}
-							dueDate={form.dueDate} clinicalNotes={form.clinicalNotes} totalLabPriceRub={form.totalLabPriceRub} portalUrl={form.portalUrl}
-							handlePrint={form.handlePrint} currentStage={form.currentStage} onShareMessenger={form.handleCopyMessengerSummary}
+
+					{/* TAB 5: Financials & A4 Printable Blank */}
+					{activeSubTab === "print" && (
+						<DentalLabOrderPrintTab
+							form={form}
+							totalLabPriceRub={form.totalLabPriceRub}
+							priceRubInput={form.priceRubInput}
+							doctorAmountRub={form.doctorAmountRub}
+							doctorSharePct={form.doctorSharePct}
+							onPrint={form.handlePrint}
+							onShareMessenger={form.handleCopyMessengerSummary}
 						/>
 					)}
 				</div>
-				<DentalLabOrderModalFooter
-					jawScope={form.jawScope} selectedTeeth={form.selectedTeeth} isSubmitting={form.isSubmitting}
-					isEdit={Boolean(initialOrder?.id)} onCopySummary={form.handleCopyMessengerSummary}
-					onPrint={form.handlePrint} onClose={onClose} onSubmit={() => form.handleSaveOrder()}
+
+				{/* 5. Footer: Neutral Secondaries & EXACTLY ONE Primary CTA */}
+				<DentalLabOrderFooter
+					jawScope={form.jawScope}
+					selectedTeeth={form.selectedTeeth}
+					isSubmitting={form.isSubmitting}
+					isEdit={isEdit}
+					onCopySummary={form.handleCopyMessengerSummary}
+					onPrint={form.handlePrint}
+					onClose={props.onClose}
+					onSubmit={() => form.handleSaveOrder()}
 				/>
 			</div>
 		</div>
 	);
 
-	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
+	if (typeof document !== "undefined") {
+		return createPortal(modalContent, document.body);
+	}
+	return modalContent;
 }
 
 export { DentalLabOrderModal as DentalLabWorkOrderModal };

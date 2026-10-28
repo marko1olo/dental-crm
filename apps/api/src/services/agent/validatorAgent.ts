@@ -7,207 +7,45 @@
  * - State Register of Medicines of the Russian Federation (ГРЛС Минздрава РФ).
  * - FDI World Dental Federation two-digit tooth numbering notation (ISO 3950).
  *
- * Invariant Guarantees (Zero-Mock, Pure Deterministic TypeScript):
- * 1. Allergological status guard (Penicillins, Articaine, Esters, NSAIDs, Iodine, Latex).
- * 2. Somatic contraindications guard:
- *    - Adrenaline/Epinephrine absolutely contraindicated in Thyrotoxicosis (ICD-10 E05),
- *      Stage III Arterial Hypertension (I10/I11), and Pheochromocytoma.
- *    - Suggests vasoconstrictor-free Mepivacaine 3% plain (Scandonest/Mepivastesin).
- * 3. Odontogram integrity guard:
- *    - Rejects extractions, caries preparations, or endodontic treatments on teeth
- *      already marked as "extracted_absent" / "Отс(A)".
- *    - Validates FDI tooth numbering boundaries (11-18, 21-28, 31-38, 41-48, 51-55, 61-65, 71-75, 81-85).
- * 4. Microsecond execution: 0 extra LLM calls, deterministic mathematical execution.
+ * Compliant with Mandate 8b / 8zi (Decomposed, ~440 lines).
  */
 
 import {
 	auditClinicalDrugSafety,
 	type DrugSafetyAuditInput,
-	type ClinicalDrugSafetyAuditResult,
-	type DdiSeverity,
 } from "@dental/shared";
+import {
+	ARTICAINE_KEYWORDS,
+	type ClinicalPlanInput,
+	type ClinicalValidationContext,
+	type ClinicalValidationErrorCode,
+	type ClinicalValidationIssue,
+	type ClinicalValidationResult,
+	type ClinicalValidationSeverity,
+	EPINEPHRINE_KEYWORDS,
+	HYPERTENSION_STAGE_3_KEYWORDS,
+	isValidFdiToothNumber,
+	NSAID_KEYWORDS,
+	type OdontogramToothStatus,
+	PENICILLIN_KEYWORDS,
+	PHEOCHROMOCYTOMA_KEYWORDS,
+	type ProposedClinicalItem,
+	type SafeAlternativeRecommendation,
+	THYROTOXICOSIS_KEYWORDS,
+} from "./validator/validatorSafetyRules.js";
 
-// ============================================================================
-// CONTRACTS & TYPES
-// ============================================================================
-
-export type ClinicalValidationSeverity = "safe" | "info" | "warning" | "critical";
-
-export type ClinicalValidationErrorCode =
-	| "ALLERGY_CONTRAINDICATION"
-	| "SOMATIC_CONTRAINDICATION"
-	| "ODONTOGRAM_ABSENT_TOOTH"
-	| "INVALID_FDI_TOOTH_NUMBER"
-	| "PREGNANCY_NSAID_RISK"
-	| "ULCER_NSAID_RISK";
-
-export interface ClinicalValidationIssue {
-	readonly code: ClinicalValidationErrorCode;
-	readonly severity: "critical" | "warning" | "info";
-	readonly message: string;
-	readonly field?: string | undefined;
-	readonly offender?: string | undefined;
-	readonly suggestedFix?: string | undefined;
-}
-
-export interface SafeAlternativeRecommendation {
-	readonly original: string;
-	readonly replacement: string;
-	readonly clinicalRationaleRu: string;
-}
-
-export interface OdontogramToothStatus {
-	readonly statusCode: string; // e.g. "extracted_absent", "healthy", "caries", "implant", "crown"
-	readonly surfaces?: readonly string[] | undefined;
-	readonly notes?: string | undefined;
-}
-
-export interface ClinicalValidationContext {
-	readonly patientId?: string | undefined;
-	readonly organizationId?: string | undefined;
-	readonly patientName?: string | undefined;
-	readonly knownAllergies?: readonly string[] | undefined;
-	readonly somaticConditions?: readonly string[] | undefined;
-	readonly currentMedications?: readonly string[] | undefined;
-	readonly activeDentalFormula?: Record<number, OdontogramToothStatus> | undefined;
-	readonly isPregnant?: boolean | undefined;
-	readonly pregnancyTrimester?: number | undefined;
-	readonly hasPepticUlcer?: boolean | undefined;
-}
-
-export interface ProposedClinicalItem {
-	readonly type: "tooth_procedure" | "prescription" | "anesthesia" | "referral" | "other";
-	readonly toothNumber?: number | undefined;
-	readonly action?: string | undefined; // e.g. "extraction", "restoration", "endodontics", "implant"
-	readonly procedureTitle?: string | undefined;
-	readonly medicationName?: string | undefined;
-	readonly dosage?: string | undefined;
-	readonly icd10?: string | undefined;
-}
-
-export interface ClinicalPlanInput {
-	readonly planId?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly items: readonly ProposedClinicalItem[];
-	readonly doctorNotes?: string | undefined;
-}
-
-export interface ClinicalValidationResult {
-	readonly isValid: boolean;
-	readonly severity: ClinicalValidationSeverity;
-	readonly issues: readonly ClinicalValidationIssue[];
-	readonly blockedActions: readonly string[];
-	readonly revisedPlan?: ClinicalPlanInput | undefined;
-	readonly safeAlternatives: readonly SafeAlternativeRecommendation[];
-	readonly summaryRu: string;
-	readonly auditedAtIso: string;
-}
-
-// ============================================================================
-// FDI TOOTH NUMBER VALIDATOR
-// ============================================================================
-
-const VALID_ADULT_FDI_TEETH = new Set<number>([
-	11, 12, 13, 14, 15, 16, 17, 18,
-	21, 22, 23, 24, 25, 26, 27, 28,
-	31, 32, 33, 34, 35, 36, 37, 38,
-	41, 42, 43, 44, 45, 46, 47, 48,
-]);
-
-const VALID_DECIDUOUS_FDI_TEETH = new Set<number>([
-	51, 52, 53, 54, 55,
-	61, 62, 63, 64, 65,
-	71, 72, 73, 74, 75,
-	81, 82, 83, 84, 85,
-]);
-
-export function isValidFdiToothNumber(tooth: number): boolean {
-	return VALID_ADULT_FDI_TEETH.has(tooth) || VALID_DECIDUOUS_FDI_TEETH.has(tooth);
-}
-
-// ============================================================================
-// PHARMACOLOGICAL KEYWORD DETECTORS
-// ============================================================================
-
-const EPINEPHRINE_KEYWORDS = [
-	"адреналин",
-	"эпинефрин",
-	"epinephrine",
-	"adrenaline",
-	"ультракаин д-с",
-	"ультракаин дс",
-	"ультракаин форте",
-	"убистезин",
-	"убистезин форте",
-	"септанест",
-	"артикаин с адреналином",
-	"артикаин с эпинефрином",
-	"1:100000",
-	"1:200000",
-];
-
-const THYROTOXICOSIS_KEYWORDS = [
-	"тиреотоксикоз",
-	"гипертиреоз",
-	"базедова",
-	"зоб",
-	"e05",
-	"thyrotoxicosis",
-	"hyperthyroidism",
-];
-
-const HYPERTENSION_STAGE_3_KEYWORDS = [
-	"гипертония 3",
-	"гипертоническая болезнь 3",
-	"аг 3",
-	"артериальная гипертензия 3",
-	"гипертонический криз",
-	"кризовое течение",
-	"i10",
-	"i11",
-	"stage 3 hypertension",
-];
-
-const PHEOCHROMOCYTOMA_KEYWORDS = [
-	"феохромоцитома",
-	"c74.1",
-	"d35.0",
-	"pheochromocytoma",
-];
-
-const NSAID_KEYWORDS = [
-	"нпвп",
-	"нпвс",
-	"ибупрофен",
-	"кеторол",
-	"кеторолак",
-	"нимесил",
-	"нимесулид",
-	"диклофенак",
-	"аспирин",
-	"ацетилсалицил",
-	"кетопрофен",
-	"мелоксикам",
-];
-
-const PENICILLIN_KEYWORDS = [
-	"пенициллин",
-	"амоксициллин",
-	"амоксиклав",
-	"аугментин",
-	"ампициллин",
-	"оксациллин",
-	"флемоксин",
-];
-
-const ARTICAINE_KEYWORDS = [
-	"артикаин",
-	"ультракаин",
-	"убистезин",
-	"септанест",
-	"примакаин",
-	"брилокаин",
-];
+export type {
+	ClinicalValidationSeverity,
+	ClinicalValidationErrorCode,
+	ClinicalValidationIssue,
+	SafeAlternativeRecommendation,
+	OdontogramToothStatus,
+	ClinicalValidationContext,
+	ProposedClinicalItem,
+	ClinicalPlanInput,
+	ClinicalValidationResult,
+};
+export { isValidFdiToothNumber };
 
 // ============================================================================
 // CLINICAL VALIDATOR IMPLEMENTATION

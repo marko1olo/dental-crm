@@ -16,6 +16,7 @@ import { DirectReportsLauncher } from "./components/reports/DirectReportsLaunche
 import { DirectDentalLabOrderLauncher } from "./components/lab/DirectDentalLabOrderLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
+import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
@@ -74,22 +75,32 @@ function ThemeController() {
 	return null;
 }
 
+function isStandaloneActive(): boolean {
+	if (typeof window === "undefined") return false;
+	const s = window.location.search || "";
+	const h = window.location.hash || "";
+	return s.includes("standalone") || h.includes("appointment_booking") || h.includes("quick_booking") || h.includes("dental_lab") || h.includes("waitlist");
+}
+
 export function AppShell() {
+	const standalone = isStandaloneActive();
 	return (
 		<BootErrorBoundary audience="clinic">
 			<ThemeController />
 			<ThemeBackground />
-			<Suspense
-				fallback={
-					<main className="boot-state" aria-busy="true">
-						<Stethoscope aria-hidden="true" className="boot-logo" />
-						<h1>DENTE</h1>
-						<p>Загрузка CRM</p>
-					</main>
-				}
-			>
-				<DentalWorkspace />
-			</Suspense>
+			{!standalone && (
+				<Suspense
+					fallback={
+						<main className="boot-state" aria-busy="true">
+							<Stethoscope aria-hidden="true" className="boot-logo" />
+							<h1>DENTE</h1>
+							<p>Загрузка CRM</p>
+						</main>
+					}
+				>
+					<DentalWorkspace />
+				</Suspense>
+			)}
 			<DirectMedicalInsertLauncher />
 			<DirectPricelistLauncher />
 			<DirectWarehouseMdlpLauncher />
@@ -104,6 +115,7 @@ export function AppShell() {
 			<DirectDentalLabOrderLauncher />
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
+			<DirectAppointmentBookingLauncher />
 			<DirectMarketingRoiLauncher />
 			<DirectClinicalBundlesLauncher />
 			<GlobalToast />

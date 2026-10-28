@@ -26,6 +26,12 @@
   z-index: 9999;
 }
 
+@media (min-width: 1024px) {
+  body:has(.copilot-drawer.open) .copilot-voice-stenographer--modal {
+    right: 464px;
+  }
+}
+
 @media (max-width: 768px) {
   .copilot-voice-stenographer--modal {
     bottom: 0;
