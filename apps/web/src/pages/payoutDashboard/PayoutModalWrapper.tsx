@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { DoctorPayrollModal } from "../../components/finance/payroll/DoctorPayrollModal.js";
+import { DoctorPayrollModal } from "../../components/payroll/DoctorPayrollModal.js";
 import { doctorServicesForPayrollModal, mapRoleToSpecialtyId } from "./payoutHelpers.js";
 import type { DoctorPayoutReport, DoctorPayoutRow } from "./types.js";
 

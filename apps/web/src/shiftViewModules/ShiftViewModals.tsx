@@ -1,6 +1,6 @@
 import React from "react";
 import type { Dashboard } from "@dental/shared";
-import { DoctorPayrollModal } from "../components/finance/payroll/DoctorPayrollModal";
+import { DoctorPayrollModal } from "../components/payroll/DoctorPayrollModal";
 import { DoctorShiftCloseModal } from "../components/shift";
 import { QueueBoardModal } from "./QueueBoardModal";
 

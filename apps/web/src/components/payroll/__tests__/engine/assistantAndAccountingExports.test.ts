@@ -1,5 +1,5 @@
 /**
- * assistantAndAccountingExports.test.ts — Assistant Shifts & 1C:ZUP Document Generation
+ * assistantAndAccountingExports.test.ts — Assistant Shifts & Staff Payroll Accounting Exports
  * Mandate 8b: File strictly <= 120 lines.
  */
 
@@ -8,12 +8,11 @@ import { describe, it } from "node:test";
 import {
 	calculateAssistantStaffPayroll,
 	calculateConsolidatedStaffPayroll,
-	generate1CZup31Xml,
-	generate1CZup31Csv,
+	generateStaffPayrollAccountingCsv,
 	type AssistantStaffPayrollInput,
 } from "../../staffPayrollEngine";
 
-describe("Assistant Shifts & 1C:ZUP 3.1 Document Generation", () => {
+describe("Assistant Shifts & Staff Payroll Accounting Document Generation", () => {
 	it("1.1 Calculates assistant shifts, radiographs and surgery assistances", () => {
 		const asstInput: AssistantStaffPayrollInput = {
 			employeeId: "asst-1",
@@ -25,40 +24,44 @@ describe("Assistant Shifts & 1C:ZUP 3.1 Document Generation", () => {
 			shifts: [
 				{
 					id: "sh-1",
-					dateIso: "2026-08-04",
+					dateIso: "2026-08-05",
 					shiftType: "standard_6h",
 					hoursWorked: 6.0,
 					isSterilizationShift: true,
-					radiographsTakenCount: 6,
-					surgeriesAssistedCount: 2,
+					radiographsTakenCount: 4,
+					surgeriesAssistedCount: 1,
 				},
 				{
 					id: "sh-2",
-					dateIso: "2026-08-08",
+					dateIso: "2026-08-10",
 					shiftType: "full_12h",
 					hoursWorked: 12.0,
-					isSterilizationShift: false,
-					radiographsTakenCount: 4,
-					surgeriesAssistedCount: 1,
+					isSterilizationShift: true,
+					radiographsTakenCount: 6,
+					surgeriesAssistedCount: 3,
+				},
+				{
+					id: "sh-3",
+					dateIso: "2026-08-15",
+					shiftType: "custom",
+					hoursWorked: 4.5,
+					isNightShift: true,
 				},
 			],
 		};
 
 		const res = calculateAssistantStaffPayroll(asstInput);
-		assert.equal(res.totalShiftsCount, 2);
-		assert.equal(res.totalHoursWorked, 18.0);
-		assert.equal(res.categoryBonusPercent, 20);
-		assert.equal(res.totalRadiographsCount, 10);
+		assert.equal(res.totalShiftsCount, 3);
+		assert.equal(res.totalHoursWorked, 22.5);
+		assert.equal(res.sterilizationBonusKop, 100000);
 		assert.equal(res.radiographsPayoutKop, 150000);
-		assert.equal(res.totalSurgeriesCount, 3);
-		assert.equal(res.surgeriesPayoutKop, 150000);
-		assert.equal(res.sterilizationBonusKop, 50000);
+		assert.equal(res.surgeriesPayoutKop, 200000);
 		assert.ok(res.grossPayoutBeforeTaxKop > 0);
 	});
 
-	it("1.2 Generates compliant 1C:ZUP 3.1 XML and CSV documents for doctor payroll", () => {
+	it("1.2 Generates clean staff payroll accounting CSV with UTF-8 BOM", () => {
 		const summary = calculateConsolidatedStaffPayroll({
-			clinicName: "ООО «Денте Стоматология»",
+			clinicName: "Стоматологическая клиника ДЕНТЕ",
 			organizationInn: "7701984512",
 			organizationKpp: "770101001",
 			periodStartIso: "2026-08-01",
@@ -74,7 +77,7 @@ describe("Assistant Shifts & 1C:ZUP 3.1 Document Generation", () => {
 					id: "srv-1",
 					dateIso: "2026-08-15",
 					patientName: "Смирнова Екатерина Васильевна",
-					medicalCardNumber: "043/у-2026/891",
+					medicalCardNumber: "2026/891",
 					serviceNameRu: "Лечение пульпита",
 					category: "therapy",
 					grossRevenueKop: 2000000,
@@ -84,16 +87,10 @@ describe("Assistant Shifts & 1C:ZUP 3.1 Document Generation", () => {
 			}],
 		});
 
-		const xml = generate1CZup31Xml(summary, "ЗП-TEST-01", "2026-08-31");
-		assert.ok(xml.includes('<?xml version="1.0" encoding="UTF-8"?>'));
-		assert.ok(xml.includes("<ЗарплатаКадрыДокумент"));
-		assert.ok(xml.includes('ТабельныйНомер="00101"'));
-		assert.ok(xml.includes('ФИО="Смирнов Алексей Петрович"'));
-		assert.ok(xml.includes("<ВидРасчета>Сдельная оплата труда (стоматология)</ВидРасчета>"));
-
-		const csv = generate1CZup31Csv(summary);
+		const csv = generateStaffPayrollAccountingCsv(summary);
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("00101"));
 		assert.ok(csv.includes("Смирнов Алексей Петрович"));
+		assert.ok(csv.includes("Начисление"));
 	});
 });

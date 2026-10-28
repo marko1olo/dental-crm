@@ -84,6 +84,8 @@
 	.payroll-modal-container {
 		max-height: 95vh;
 		height: 95vh;
+		border-top-left-radius: 24px;
+		border-top-right-radius: 24px;
 		border-bottom-left-radius: 0;
 		border-bottom-right-radius: 0;
 		border-left: none;

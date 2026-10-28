@@ -91,7 +91,12 @@ const SAMPLE_SERVICES: DoctorCompletedServiceItem[] = [
 ];
 
 function PayrollPreviewApp() {
-	const [isModalOpen, setIsModalOpen] = useState(false);
+	const [isModalOpen, setIsModalOpen] = useState(() => {
+		if (typeof window !== "undefined") {
+			return window.location.search.includes("modal") || window.location.hash.includes("modal") || window.location.hash.includes("payroll");
+		}
+		return false;
+	});
 
 	return (
 		<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-5 flex flex-col gap-4">

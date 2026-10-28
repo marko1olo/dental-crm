@@ -5,6 +5,7 @@ import {
 	PayrollTotalsBar,
 	PayrollServicesTable,
 	PayrollEmptyDoctorState,
+	PayrollActionButtonsBar,
 } from "./payrollModules";
 import type { useDoctorPayrollModalState } from "./useDoctorPayrollModalState";
 
@@ -15,7 +16,6 @@ export interface DoctorPayrollModalContentProps {
 	readonly state: ReturnType<typeof useDoctorPayrollModalState>;
 	readonly onSendToMessenger: (platform?: "clipboard" | "whatsapp" | "telegram") => void;
 	readonly onDownloadCsv: () => void;
-	readonly onExport1C?: () => void;
 	readonly onPrintPayslip: () => void;
 }
 
@@ -26,7 +26,6 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 	state,
 	onSendToMessenger,
 	onDownloadCsv,
-	onExport1C,
 	onPrintPayslip,
 }) => {
 	const {
@@ -41,6 +40,11 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 	return (
 		<div className="payroll-modal-overlay" data-testid="doctor-payroll-modal">
 			<div className="payroll-modal-container">
+				{/* Apple HIG Drag Handle for Mobile View */}
+				<div className="sm:hidden flex justify-center pt-2.5 pb-1.5 bg-[var(--paper-soft,#f8fafc)] shrink-0">
+					<div className="w-9 h-1 bg-[var(--line,#cbd5e1)] rounded-full" />
+				</div>
+
 				<PayrollHeader
 					clinicName={clinicName}
 					taxRegime={taxRegime}
@@ -64,11 +68,16 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 
 				<div className="p-4 sm:p-5 overflow-y-auto flex flex-col gap-5 flex-1">
 					{!activeDoc ? (
-						<PayrollEmptyDoctorState
-							doctorsList={doctorsList}
-							selectedDoctorId={selectedDoctorId}
-							onSelectDoctorId={setSelectedDoctorId}
-						/>
+						<div className="flex flex-col items-center justify-center p-8 bg-[var(--paper-soft,#f8fafc)] rounded-2xl border border-[var(--line,#e2e8f0)] text-center my-auto min-h-[300px]">
+							<h3 className="text-base font-bold text-[var(--ink,#0f172a)] mb-1.5">
+								Выберите врача для формирования расчетного листа
+							</h3>
+							<PayrollEmptyDoctorState
+								doctorsList={doctorsList}
+								selectedDoctorId={selectedDoctorId}
+								onSelectDoctorId={setSelectedDoctorId}
+							/>
+						</div>
 					) : (
 						<>
 							<PayrollRentalSection
@@ -110,6 +119,18 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 						</>
 					)}
 				</div>
+
+				{/* Floating Bottom Action Bar: Desktop footer + Mobile Thumb Zone */}
+				{activeDoc && (
+					<PayrollActionButtonsBar
+						payrollResult={payrollResult}
+						copyFeedback={copyFeedback}
+						onSendToMessenger={onSendToMessenger}
+						onDownloadCsv={onDownloadCsv}
+						onPrintPayslip={onPrintPayslip}
+						onClose={onClose}
+					/>
+				)}
 			</div>
 		</div>
 	);

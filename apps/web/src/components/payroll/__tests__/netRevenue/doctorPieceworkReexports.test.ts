@@ -9,7 +9,7 @@ import {
 	calculateDoctorStaffPayroll,
 	calculateAssistantStaffPayroll,
 	calculateConsolidatedStaffPayroll,
-	generate1CZup31Xml,
+	generateDoctorPayrollCsv,
 	type StaffDoctorCompletedServiceItem,
 	type DoctorStaffPayrollInput,
 } from "../../staffPayrollEngine";
@@ -21,26 +21,26 @@ describe("Doctor Piecework Re-exports & Implant Deductions (Mandate 8e, 8n)", ()
 		assert.ok(calculateDoctorStaffPayroll, "calculateDoctorStaffPayroll must be exported");
 		assert.ok(calculateAssistantStaffPayroll, "calculateAssistantStaffPayroll must be exported");
 		assert.ok(calculateConsolidatedStaffPayroll, "calculateConsolidatedStaffPayroll must be exported");
-		assert.ok(generate1CZup31Xml, "generate1CZup31Xml must be exported");
+		assert.ok(generateDoctorPayrollCsv, "generateDoctorPayrollCsv must be exported");
 	});
 
 	it("1.2 Computes doctor piecework with automatic lab/material deduction and clinical directions", () => {
 		const services: StaffDoctorCompletedServiceItem[] = [
 			{
 				id: "srv-1", dateIso: "2026-08-05", patientName: "Смирнова Екатерина Васильевна",
-				medicalCardNumber: "043/у-2026/891", serviceNameRu: "Лечение пульпита",
-				order804nCode: "A16.07.002.001", toothCode: "16", category: "therapy",
+				medicalCardNumber: "2026/891", serviceNameRu: "Лечение пульпита",
+				toothCode: "16", category: "therapy",
 				grossRevenueKop: 2500000, labCostKop: 0, materialCostKop: 200000,
 			},
 			{
 				id: "srv-2", dateIso: "2026-08-10", patientName: "Сидорова Светлана Сергеевна",
-				medicalCardNumber: "043/у-2026/512", serviceNameRu: "Циркониевая коронка CAD/CAM",
-				order804nCode: "A16.07.004.002", toothCode: "24", category: "orthopedics",
+				medicalCardNumber: "2026/512", serviceNameRu: "Циркониевая коронка CAD/CAM",
+				toothCode: "24", category: "orthopedics",
 				grossRevenueKop: 3500000, labCostKop: 800000, materialCostKop: 150000,
 			},
 			{
 				id: "srv-3", dateIso: "2026-08-15", patientName: "Попов Артем Сергеевич",
-				medicalCardNumber: "043/у-2026/651", serviceNameRu: "Набор Curaprox 5460",
+				medicalCardNumber: "2026/651", serviceNameRu: "Набор Curaprox 5460",
 				category: "retail_hygiene", grossRevenueKop: 300000, labCostKop: 0, materialCostKop: 0,
 			},
 		];

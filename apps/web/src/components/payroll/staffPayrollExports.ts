@@ -4,17 +4,12 @@
  * Compliance: Mandate 8x & 8ap (Clean Russian Clinical Terminology without Bureaucratic Codes).
  */
 
-export { escapeXml } from "./exports/escapeXml";
 export {
 	generateDoctorPayrollCsv,
 	generateStaffPayrollCsv,
 	generateStaffPayrollT51Csv,
 	generatePayrollT51Csv,
 } from "./exports/payrollCsvExporter";
-export {
-	generateStaffPayrollXml,
-	generate1CZup31Xml,
-} from "./exports/staffPayrollXmlExporter";
 export {
 	generateStaffPayrollAccountingCsv,
 	generate1CZup31Csv,

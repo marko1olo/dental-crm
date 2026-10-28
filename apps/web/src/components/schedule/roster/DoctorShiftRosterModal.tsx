@@ -6,7 +6,7 @@
 
 import React from "react";
 import { Check } from "lucide-react";
-import { DoctorPayrollModal } from "../../finance/payroll/DoctorPayrollModal";
+import { DoctorPayrollModal } from "../../payroll/DoctorPayrollModal";
 import {
 	type CabinetDefinition,
 	CLINIC_CABINETS_CATALOG,

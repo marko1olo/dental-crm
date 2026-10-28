@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import { DoctorPayrollModal } from "../finance/payroll/DoctorPayrollModal";
+import { DoctorPayrollModal } from "../payroll/DoctorPayrollModal";
 import { StaffAuthorityPanel } from "./StaffAuthorityPanel";
 import { StaffCommissionsPanel } from "./StaffCommissionsPanel";
 import { StaffProfileCard } from "./StaffProfileCard";

@@ -2,8 +2,6 @@ import {
 	generateDoctorPayrollCsv,
 	generateDoctorPayslipHtml,
 	generateDoctorPayslipMessengerText,
-	calculateConsolidatedStaffPayroll,
-	generateStaffPayrollXml,
 	type DoctorCompletedServiceItem,
 	type DoctorPayrollResult,
 } from "./staffPayrollEngine";
@@ -22,8 +20,6 @@ export function useDoctorPayrollModalActions({
 	payrollResult,
 	servicesToUse,
 	periodStart,
-	periodEnd,
-	soloSpecialtyId,
 	resolvedClinicName,
 	setCopyFeedback,
 }: UseDoctorPayrollModalActionsParams) {
@@ -51,41 +47,6 @@ export function useDoctorPayrollModalActions({
 		URL.revokeObjectURL(url);
 	};
 
-	const handleExport1C = () => {
-		const summary = calculateConsolidatedStaffPayroll({
-			clinicName: resolvedClinicName,
-			periodStartIso: periodStart,
-			periodEndIso: periodEnd,
-			doctors: [{
-				employeeId: payrollResult.doctorId || "doc-1",
-				employeeTabNumber: "00101",
-				employeeFullName: payrollResult.doctorName,
-				specialtyId: (soloSpecialtyId as any) || "therapist",
-				periodStartIso: periodStart,
-				periodEndIso: periodEnd,
-				services: servicesToUse.map((s) => ({
-					id: s.id,
-					dateIso: s.dateIso,
-					patientName: s.patientName,
-					medicalCardNumber: s.medicalCardNumber,
-					serviceNameRu: s.serviceNameRu,
-					category: s.category,
-					grossRevenueKop: s.grossRevenueKop,
-					labCostKop: s.labCostKop,
-					materialCostKop: s.materialCostKop,
-				})),
-			}],
-		});
-		const xml = generateStaffPayrollXml(summary, `ЗП-${payrollResult.doctorId || "DOC"}`, periodEnd);
-		const blob = new Blob([xml], { type: "application/xml;charset=utf-8;" });
-		const url = URL.createObjectURL(blob);
-		const a = document.createElement("a");
-		a.href = url;
-		a.download = `выгрузка_1с_зарплата_${payrollResult.doctorId || "report"}_${periodStart}.xml`;
-		a.click();
-		URL.revokeObjectURL(url);
-	};
-
 	const handlePrintPayslip = () => {
 		const printWindow = window.open("", "_blank", "width=800,height=900");
 		const html = generateDoctorPayslipHtml(payrollResult, resolvedClinicName, servicesToUse);
@@ -95,5 +56,5 @@ export function useDoctorPayrollModalActions({
 		printWindow.document.close();
 	};
 
-	return { handleSendToMessenger, handleDownloadCsv, handleExport1C, handlePrintPayslip };
+	return { handleSendToMessenger, handleDownloadCsv, handlePrintPayslip };
 }

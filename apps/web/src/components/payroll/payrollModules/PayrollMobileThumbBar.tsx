@@ -25,7 +25,7 @@ export const PayrollMobileThumbBar: React.FC<PayrollMobileThumbBarProps> = ({
 					title={copyFeedback ?? "Скопировать сводку в мессенджер"}
 					aria-label={copyFeedback ?? "В чат"}
 				>
-					<Share2 className="w-5 h-5 text-[var(--teal,#0d9488)] shrink-0" />
+					<Share2 className="w-5 h-5 text-[var(--muted,#64748b)] shrink-0" />
 				</button>
 				<button
 					type="button"
@@ -35,7 +35,7 @@ export const PayrollMobileThumbBar: React.FC<PayrollMobileThumbBarProps> = ({
 					title="Сформировать печатный расчетный листок"
 					aria-label="Печать ведомости"
 				>
-					<Printer className="w-5 h-5 text-[var(--teal,#0d9488)] shrink-0" />
+					<Printer className="w-5 h-5 text-[var(--muted,#64748b)] shrink-0" />
 				</button>
 				<button
 					type="button"
@@ -44,9 +44,11 @@ export const PayrollMobileThumbBar: React.FC<PayrollMobileThumbBarProps> = ({
 					data-testid="doctor-payroll-mobile-accrue-btn"
 				>
 					<Check className="w-4 h-4 shrink-0" />
-					<span>Начислить зарплату</span>
+					<span>✓ Выплатить зарплату</span>
 				</button>
 			</div>
 		</div>
 	);
 };
+
+export default PayrollMobileThumbBar;

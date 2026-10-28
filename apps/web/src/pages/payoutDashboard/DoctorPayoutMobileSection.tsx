@@ -5,7 +5,7 @@
 
 import React from "react";
 import { DoctorPayoutMobileWallet } from "../../components/finance/DoctorPayoutMobileWallet";
-import { DoctorPayrollModal } from "../../components/finance/payroll/DoctorPayrollModal";
+import { DoctorPayrollModal } from "../../components/payroll/DoctorPayrollModal";
 import { DoctorSelectionNotice } from "./DoctorSelectionNotice.js";
 import { doctorServicesForPayrollModal, mapRoleToSpecialtyId } from "./payoutHelpers.js";
 import type { DoctorPayoutReport, DoctorPayoutRow } from "./types.js";

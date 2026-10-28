@@ -10,8 +10,8 @@ import {
 	generatePayrollT51Csv,
 	generateDoctorPayslipMessengerText,
 	type DoctorCompletedServiceItem,
-} from "../components/finance/payroll/payrollEngine";
-import { DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "../components/finance/payroll/payrollPresets";
+} from "../components/payroll/staffPayrollEngine";
+import { DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "../components/payroll/staffPayrollEngine";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

@@ -3,7 +3,7 @@
  */
 
 import { isGeneralClinicOverheadConsumable } from "@dental/shared";
-import type { DoctorCompletedServiceItem } from "../../components/finance/payroll/payrollEngine";
+import type { DoctorCompletedServiceItem } from "../../components/payroll/staffPayrollEngine";
 import type { DoctorPayoutRow, DoctorPayoutLabOrder } from "./types";
 
 /** Текущий месяц в виде YYYY-MM для поля ввода. */

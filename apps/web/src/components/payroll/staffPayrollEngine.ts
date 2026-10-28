@@ -68,15 +68,12 @@ export {
 } from "@dental/shared/payroll";
 
 export {
-	escapeXml,
 	generateDoctorPayrollCsv,
 	generateStaffPayrollCsv,
 	generateStaffPayrollT51Csv,
 	generatePayrollT51Csv,
 	generateDoctorPayslipHtml,
 	generateDoctorPayslipMessengerText,
-	generateStaffPayrollXml,
-	generate1CZup31Xml,
 	generateStaffPayrollAccountingCsv,
 	generate1CZup31Csv,
 	generateStaffPayrollLedgerHtml,
@@ -85,13 +82,10 @@ export {
 
 import type { StaffPayrollRecord, ConsolidatedStaffPayrollSummary } from "./engine/staffPayrollAssistantAdminTypes";
 import { calculateConsolidatedStaffPayroll } from "./engine/consolidatedCalculation";
-import { generateStaffPayrollXml } from "./exports/staffPayrollXmlExporter";
 import { generateStaffPayrollCsv } from "./exports/payrollCsvExporter";
 
 // Canonical Aliases & Interop
 export type AnyStaffPayrollResult = StaffPayrollRecord;
 export type UnifiedStaffPayrollLedger = ConsolidatedStaffPayrollSummary;
 export const calculateUnifiedStaffPayrollLedger = calculateConsolidatedStaffPayroll;
-export const exportStaffPayrollToXml = generateStaffPayrollXml;
-export const exportStaffPayrollTo1CZupXml = generateStaffPayrollXml;
 export const exportStaffPayrollToCsv = generateStaffPayrollCsv;

@@ -13,6 +13,7 @@ import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModal
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { CopilotGlobalHost } from "../copilot/CopilotGlobalHost";
+import { DoctorPayrollModal } from "../payroll/DoctorPayrollModal";
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -26,10 +27,18 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 		(isLoyaltyFromStore ? (primaryModal?.payload as any) : null) || bridge.loyaltyModalContext;
 	const isEmergencyFromStore = primaryModal?.id === "emergency_rescue";
 	const isEffectiveEmergencyOpen = Boolean(bridge.isEmergencyRescueOpen || isEmergencyFromStore);
+	const isPayrollFromStore = primaryModal?.id === "doctor_payroll" || primaryModal?.id === "payroll";
 
 	return (
 		<>
 			{renderStandaloneLaunchers(props)}
+
+			{isPayrollFromStore && (
+				<DoctorPayrollModal
+					isOpen={true}
+					onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
+				/>
+			)}
 
 			<ClinicalModalsSubcontainer
 				isGlobalVisiographOpen={bridge.isGlobalVisiographOpen}

@@ -8,13 +8,12 @@ import { describe, it } from "node:test";
 import {
 	calculateConsolidatedStaffPayroll,
 	generateStaffPayrollT51Csv,
-	generate1CZup31Xml,
 } from "../../staffPayrollEngine";
 
 describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 	it("1.1 Preserves Ledger Base + Bonus == Gross equality when doctor minimum guarantee applies", () => {
 		const summary = calculateConsolidatedStaffPayroll({
-			clinicName: "ООО «Денте Стоматология»",
+			clinicName: "Стоматологическая клиника ДЕНТЕ",
 			periodStartIso: "2026-08-01",
 			periodEndIso: "2026-08-31",
 			doctors: [{
@@ -24,12 +23,13 @@ describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 				specialtyId: "therapist",
 				periodStartIso: "2026-08-01",
 				periodEndIso: "2026-08-31",
+				daysWorked: 12,
 				services: [{
-					id: "s-1",
-					dateIso: "2026-08-10",
-					patientName: "Пациент",
-					medicalCardNumber: "043/у",
-					serviceNameRu: "Осмотр",
+					id: "srv-low",
+					dateIso: "2026-08-05",
+					patientName: "Пациент Н",
+					medicalCardNumber: "101",
+					serviceNameRu: "Осмотр и консультация",
 					category: "therapy",
 					grossRevenueKop: 2000000,
 					labCostKop: 0,
@@ -38,14 +38,16 @@ describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 			}],
 		});
 
-		const docResult = summary.records[0];
-		assert.ok(docResult && docResult.role === "doctor");
-		assert.equal(docResult.minimumGuaranteeApplied, true);
-		assert.equal(docResult.grossPayoutBeforeTaxKop, 6000000);
+		const doctorRecord = summary.records.find((r) => r.employeeId === "doc-low");
+		assert.ok(doctorRecord, "Doctor record must exist");
+		assert.equal(doctorRecord.minimumGuaranteeApplied, true);
+		assert.equal(doctorRecord.grossPayoutBeforeTaxKop, 6000000); // 60,000 ₽ minimum guarantee floor
+		assert.ok(doctorRecord.guaranteeTopUpKop && doctorRecord.guaranteeTopUpKop > 0);
 
 		const csv = generateStaffPayrollT51Csv(summary);
-		const doctorRow = csv.split("\n").find((l) => l.includes("Новиков Денис Олегович"));
-		assert.ok(doctorRow, "Doctor row exists in CSV");
+		const rows = csv.split("\n");
+		const doctorRow = rows.find((r) => r.includes("Новиков Денис Олегович"));
+		assert.ok(doctorRow, "Doctor must be listed in T-51 CSV");
 
 		const cols = doctorRow.split(";");
 		const col8Base = Number.parseFloat(cols[7] ?? "0");
@@ -56,9 +58,5 @@ describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 		assert.equal(col9Bonus, 54000.0);
 		assert.equal(col10Gross, 60000.0);
 		assert.equal(Math.round((col8Base + col9Bonus) * 100), Math.round(col10Gross * 100));
-
-		const xml = generate1CZup31Xml(summary);
-		assert.ok(xml.includes("Доплата до гарантированного оклада (минимальная гарантия)"));
-		assert.ok(xml.includes("<Сумма>54000.00</Сумма>"));
 	});
 });
