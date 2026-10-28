@@ -24,7 +24,7 @@ const SAMPLE_MESSAGES = [
   {
     kind: "text",
     role: "user" as const,
-    text: "Осмотр: зуб 36 глубокий кариес дентина, жалуется на боли от холодного. Назначь протокол лечения и план.",
+    text: "Осмотр: зуб 36 глубокий кариес дентина, жалуется на боли от холодного. Назначь протокол лечения и смету.",
   },
   {
     kind: "tool",
@@ -52,31 +52,11 @@ const SAMPLE_MESSAGES = [
   },
 ];
 
-const SAMPLE_UI_CONTEXT = {
-  view: "odontogram",
-  viewLabel: "Одонтограмма",
-  patientId: "pat-1",
-  patientName: "Иванов Иван Иванович",
-  doctorName: "Доктор Смирнова Е.А.",
-  activeTooth: 36,
-  appointmentId: "appt-1",
-};
-
-const SAMPLE_TOOTH_PROPOSAL = {
-  toothNumber: 36,
-  condition: "caries" as const,
-  diagnosis: "K02.1 Кариес дентина",
-  confidence: 0.94,
-  reason: "Глубокая кариозная полость MOD, термопроба положительна",
-  recommendedServices: [
-    { code: "A16.07.002", name: "Наложение пломбы светового отверждения", priceKopecks: 450000 },
-  ],
-};
-
 function CopilotPreviewApp() {
   const [theme, setTheme] = useState("light");
+  const [currentView, setCurrentView] = useState("drawer");
   const [drawerOpen, setDrawerOpen] = useState(true);
-  const [activeTab, setActiveTab] = useState<"chat" | "pending" | "tasks">("chat");
+  const [activeTab, setActiveTab] = useState<"chat" | "pending">("chat");
   const [messages, setMessages] = useState<any[]>(SAMPLE_MESSAGES);
   const [voiceActive, setVoiceActive] = useState(false);
 
@@ -89,6 +69,24 @@ function CopilotPreviewApp() {
     document.documentElement.classList.toggle("dark", th === "dark");
     document.documentElement.classList.toggle("light", th !== "dark");
     document.documentElement.style.colorScheme = th;
+
+    const view = params.get("view") || "drawer";
+    setCurrentView(view);
+    if (view === "voice") {
+      setDrawerOpen(false);
+      setVoiceActive(true);
+    } else if (view === "hud") {
+      setDrawerOpen(false);
+      setVoiceActive(false);
+    } else {
+      setDrawerOpen(true);
+      setVoiceActive(false);
+    }
+
+    const tab = params.get("tab");
+    if (tab === "pending") {
+      setActiveTab("pending");
+    }
   }, []);
 
   return (
@@ -101,7 +99,7 @@ function CopilotPreviewApp() {
             <p className="text-xs text-[var(--muted)]">Пациент: Иванов И.И. • 28 октября 2026</p>
           </div>
           <div className="flex gap-2">
-            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--teal-soft)] text-[var(--teal-dark)]">
+            <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[var(--teal-soft,#0d94881a)] text-[var(--teal,#0d9488)]">
               В кресле (35 мин)
             </span>
           </div>
@@ -121,7 +119,7 @@ function CopilotPreviewApp() {
               <div
                 key={t}
                 className={`w-9 h-11 border rounded flex items-center justify-center text-xs font-mono ${
-                  t === 36 ? "border-[var(--teal)] bg-[var(--teal-soft)] font-bold text-[var(--teal-dark)]" : "bg-[var(--paper-soft)]"
+                  t === 36 ? "border-[var(--teal)] bg-[var(--teal-soft,#0d94881a)] font-bold text-[var(--teal,#0d9488)]" : "bg-[var(--paper-soft)]"
                 }`}
               >
                 {t}
@@ -132,26 +130,39 @@ function CopilotPreviewApp() {
       </div>
 
       {/* 1. Chairside Copilot HUD Capsule */}
-      <ChairsideCopilotHUD
-        status="active"
-        uiContext={SAMPLE_UI_CONTEXT}
-        activeToothProposal={SAMPLE_TOOTH_PROPOSAL}
-        onOpenDrawer={() => setDrawerOpen(true)}
-        onToggleVoice={() => setVoiceActive((v) => !v)}
-        isVoiceActive={voiceActive}
-      />
+      {(currentView === "hud" || currentView === "all") && (
+        <ChairsideCopilotHUD
+          activeTooth={36}
+          patientName="Иванов И.И."
+          patientAllergies={["Пенициллин"]}
+          initialOpen={true}
+          onClose={() => {}}
+        />
+      )}
 
       {/* 2. Canonical Copilot Drawer */}
       <CopilotDrawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
         messages={messages}
-        onSendMessage={async (text) => {
+        busy={false}
+        phase={null}
+        pending={null}
+        nameCache={{}}
+        nudges={[
+          {
+            id: "nudge-1",
+            text: "Зуб 36: Обнаружен кариес дентина (K02.1). Рекомендован протокол со светоотверждаемым композитом.",
+            priority: "medium",
+          },
+        ]}
+        activeTab={activeTab}
+        onTabChange={(t) => setActiveTab(t)}
+        onSend={(text) => {
           setMessages((prev) => [...prev, { kind: "text", role: "user", text }]);
         }}
-        activeTab={activeTab}
-        onTabChange={setActiveTab}
-        uiContext={SAMPLE_UI_CONTEXT}
+        onConfirm={() => {}}
+        onReset={() => setMessages([])}
       />
 
       {/* 3. Voice Stenographer */}
@@ -159,6 +170,8 @@ function CopilotPreviewApp() {
         isOpen={voiceActive}
         onClose={() => setVoiceActive(false)}
         activeTooth={36}
+        patientName="Иванов И.И."
+        initialTranscript="Зуб 36 глубокий кариес дентина, жалобы на боли от холодного, наложение пломбы светового отверждения."
       />
     </div>
   );

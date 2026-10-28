@@ -12,22 +12,24 @@ import { type ChairsideSoapDiary, formatFdiTooth, getCanalsForTooth, parseFdiToo
 import type { AgentContext } from "../../context.js";
 import type { ToolDefinition } from "../../tools/tool.js";
 import {
+	draftSoapDiarySchema,
 	draft043uSoapDiarySchema,
+	type DraftSoapDiaryInput,
 	type Draft043uSoapDiaryInput,
 	type Draft043uSoapDiaryResult,
 } from "../types.js";
 
-export const draft043uSoapDiaryTool: ToolDefinition<
-	typeof draft043uSoapDiarySchema,
+export const draftSoapDiaryTool: ToolDefinition<
+	typeof draftSoapDiarySchema,
 	Draft043uSoapDiaryResult
 > = {
-	name: "draft_043u_soap_diary",
+	name: "draft_soap_diary",
 	description:
-		"Генерация протокола приема по Форме 043/у (SOAP, МКБ-10, СтАР) с физиологической нормой по умолчанию в 1 клик, версионным аудитом и печатью без замков.",
-	parameters: draft043uSoapDiarySchema,
+		"Генерация первичного или повторного дневника приёма пациента по международному медицинскому стандарту SOAP с физиологической нормой по умолчанию в 1 клик, версионным аудитом и печатью без замков.",
+	parameters: draftSoapDiarySchema,
 	permissions: ["clinical.write"],
 	category: "write",
-	handler: async (_ctx: AgentContext, args: Draft043uSoapDiaryInput) => {
+	handler: async (_ctx: AgentContext, args: DraftSoapDiaryInput) => {
 		const parsedTooth = parseFdiTooth(args.toothNumber);
 		const fdiToothFormatted = formatFdiTooth(parsedTooth);
 		const canalCount = getCanalsForTooth(parsedTooth);
@@ -125,12 +127,15 @@ export const draft043uSoapDiaryTool: ToolDefinition<
 	},
 };
 
-export const draftSoapDiaryTool: ToolDefinition<
-	typeof draft043uSoapDiarySchema,
+/**
+ * Backward compatibility alias (Mandate 8ap).
+ */
+export const draft043uSoapDiaryTool: ToolDefinition<
+	typeof draftSoapDiarySchema,
 	Draft043uSoapDiaryResult
 > = {
-	...draft043uSoapDiaryTool,
-	name: "draft_soap_diary",
+	...draftSoapDiaryTool,
+	name: "draft_043u_soap_diary",
 	description:
-		"Генерация первичного или повторного дневника приёма пациента по международному медицинскому стандарту SOAP.",
+		"Генерация протокола приема по Форме 043/у (SOAP, МКБ-10, СтАР) с физиологической нормой по умолчанию в 1 клик, версионным аудитом и печатью без замков.",
 };

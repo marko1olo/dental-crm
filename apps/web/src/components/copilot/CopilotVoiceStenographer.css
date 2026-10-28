@@ -213,9 +213,9 @@
 }
 
 .copilot-entity-pill--soap {
-  background: rgba(59, 130, 246, 0.1);
-  border-color: var(--info, #3b82f6);
-  color: var(--info, #3b82f6);
+  background: var(--info-bg, rgba(59, 130, 246, 0.1));
+  border-color: var(--info-line, rgba(59, 130, 246, 0.3));
+  color: var(--info-fg, #3b82f6);
 }
 
 /* Action Controls Toolbar */

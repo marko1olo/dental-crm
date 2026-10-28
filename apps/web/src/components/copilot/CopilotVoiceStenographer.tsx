@@ -16,6 +16,7 @@ export interface CopilotVoiceStenographerProps {
   embedded?: boolean;
   activeTooth?: number | null;
   patientName?: string;
+  initialTranscript?: string;
   onClose?: () => void;
   onApplySoap?: (patch: Record<string, string>) => void;
   onApplyTooth?: (tooth: number, state: string) => void;
@@ -27,13 +28,14 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
   embedded = false,
   activeTooth = null,
   patientName = "Пациент",
+  initialTranscript = "",
   onClose,
   onApplySoap,
   onApplyTooth,
   className = "",
 }) => {
   const [isListening, setIsListening] = useState(false);
-  const [finalTranscript, setFinalTranscript] = useState("");
+  const [finalTranscript, setFinalTranscript] = useState(initialTranscript);
   const [interimTranscript, setInterimTranscript] = useState("");
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [parsedCommands, setParsedCommands] = useState<ParsedClinicalCommand[]>([]);
@@ -101,6 +103,13 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
 
     return commands;
   }, [activeTooth]);
+
+  useEffect(() => {
+    if (initialTranscript) {
+      setFinalTranscript(initialTranscript);
+      setParsedCommands(parseClinicalText(initialTranscript));
+    }
+  }, [initialTranscript, parseClinicalText]);
 
   // Handle SpeechRecognition Lifecycle
   const startListening = useCallback(() => {

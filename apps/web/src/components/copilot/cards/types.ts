@@ -66,7 +66,7 @@ export interface ScheduleSlotPickerCardProps {
 	onChangeDate?: ((date: string) => void) | undefined;
 }
 
-export interface Prescription107DrugItem {
+export interface PrescriptionDrugItem {
 	id: string;
 	mnn: string;
 	tradeName?: string | undefined;
@@ -77,8 +77,9 @@ export interface Prescription107DrugItem {
 	signa: string;
 	icd10?: string | undefined;
 }
+export type Prescription107DrugItem = PrescriptionDrugItem;
 
-export interface Prescription107Data {
+export interface PrescriptionData {
 	id?: string | undefined;
 	series?: string | undefined;
 	number?: string | undefined;
@@ -97,18 +98,20 @@ export interface Prescription107Data {
 	medicalLicense?: string | undefined;
 	diagnosisIcd10?: string | undefined;
 	diagnosisName?: string | undefined;
-	drugs: Prescription107DrugItem[];
+	drugs: PrescriptionDrugItem[];
 	isChronicallyIll?: boolean | undefined;
 	isSignedUkep?: boolean | undefined;
 	ukepCertificate?: string | undefined;
 	ukepSignedAt?: string | undefined;
 }
+export type Prescription107Data = PrescriptionData;
 
-export interface Prescription107CardProps {
-	prescription: Prescription107Data;
-	onPrint?: ((prescription: Prescription107Data) => void) | undefined;
-	onSignUkep?: ((prescription: Prescription107Data) => void) | undefined;
+export interface PrescriptionCardProps {
+	prescription: PrescriptionData;
+	onPrint?: ((prescription: PrescriptionData) => void) | undefined;
+	onSignUkep?: ((prescription: PrescriptionData) => void) | undefined;
 }
+export type Prescription107CardProps = PrescriptionCardProps;
 
 export interface EstimateStageBreakdown {
 	stageName: string;
@@ -203,7 +206,7 @@ export interface CopilotClinicalProtocolCardProps {
 	disabled?: boolean | undefined;
 }
 
-export interface CopilotProtocol043ConfirmCardProps {
+export interface CopilotSoapDiaryCardProps {
 	data: Protocol043Data;
 	callId?: string | undefined;
 	resolved?: ("confirm" | "reject") | undefined;
@@ -211,6 +214,7 @@ export interface CopilotProtocol043ConfirmCardProps {
 	onReject?: (() => void) | undefined;
 	disabled?: boolean | undefined;
 }
+export type CopilotProtocol043ConfirmCardProps = CopilotSoapDiaryCardProps;
 
 export interface CopilotDdiSafetyCardProps {
 	data: DdiSafetyAlertData;
@@ -221,7 +225,6 @@ export interface CopilotDdiSafetyCardProps {
 	disabled?: boolean | undefined;
 }
 
-
 export interface ProactiveAlertCardViewProps {
 	alert: ProactiveAlertCardData;
 	onDismiss?: ((alertId: string) => void) | undefined;
@@ -231,7 +234,6 @@ export interface ProactiveAlertCardViewProps {
 	onSendPrompt?: ((prompt: string) => void) | undefined;
 }
 
-
 export interface WhatsAppApprovalCardViewProps {
 	card: WhatsAppApprovalCard;
 	onApprove?:
@@ -240,4 +242,3 @@ export interface WhatsAppApprovalCardViewProps {
 	onReject?: ((approvalId: string, reason?: string) => void) | undefined;
 	onSendPrompt?: ((prompt: string) => void) | undefined;
 }
-

@@ -191,7 +191,10 @@ describe("CBCT Clinical Expansion Features Suite", () => {
 			assert.ok(rep26.statusLocalis043.includes("H = 7.3 мм") || rep26.statusLocalis043.includes("H = 7.2 мм") || rep26.statusLocalis043.includes("H = 7.25 мм"));
 			assert.ok(rep26.surgicalRecommendation043.includes("закрытым (транскрестальным"));
 			assert.ok(rep26.surgicalRecommendation043.includes("Горизонтальный дефицит"));
-			assert.ok(rep26.fullProtocolText.includes("ФОРМЫ 043/У"));
+			assert.ok(
+				rep26.fullProtocolText.includes("МЕДИЦИНСКАЯ КАРТА ПРИЁМА") ||
+				rep26.fullProtocolText.includes("ФОРМЫ 043/У")
+			);
 
 			// Case B: Severe vertical atrophy (H = 3.2 mm -> open lateral sinus lift)
 			const mockCaliperSevere = {

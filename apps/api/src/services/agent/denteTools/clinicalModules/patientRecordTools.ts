@@ -14,23 +14,25 @@ import { formatFdiTooth } from "../../chairsideSentinelEngine.js";
 import type { AgentContext } from "../../context.js";
 import type { ToolDefinition } from "../../tools/tool.js";
 import {
+	getPatientOutpatientRecordSchema,
 	getPatientEmk043uSchema,
+	type GetPatientOutpatientRecordInput,
 	type GetPatientEmk043uInput,
 	type PatientEmk043uResult,
 	type PatientEmk043uToothState,
 } from "../types.js";
 
-export const getPatientEmk043uTool: ToolDefinition<
-	typeof getPatientEmk043uSchema,
+export const getPatientOutpatientRecordTool: ToolDefinition<
+	typeof getPatientOutpatientRecordSchema,
 	PatientEmk043uResult
 > = {
-	name: "get_patient_emk_043u",
+	name: "get_patient_outpatient_record",
 	description:
-		"Получение электронной медицинской карты (ЭМК) пациента по Форме 043/у: паспортные данные, зубная формула FDI (11..48), соматический статус, аллергии и история предшествующих визитов.",
-	parameters: getPatientEmk043uSchema,
+		"Получение медицинской карты приёма пациента: паспортные данные, зубная формула FDI (11..48), соматический статус, аллергии и история предшествующих визитов.",
+	parameters: getPatientOutpatientRecordSchema,
 	permissions: ["clinical.read"],
 	category: "read",
-	handler: async (ctx: AgentContext, args: GetPatientEmk043uInput) => {
+	handler: async (ctx: AgentContext, args: GetPatientOutpatientRecordInput) => {
 		const targetDb = ctx.db ?? db;
 		const orgId = args.organizationId || ctx.organizationId || "";
 
@@ -142,14 +144,14 @@ export const getPatientEmk043uTool: ToolDefinition<
 };
 
 /**
- * Mandate 8ap: Clean clinical domain aliases.
+ * Backward compatibility alias (Mandate 8ap).
  */
-export const getPatientOutpatientRecordTool: ToolDefinition<
-	typeof getPatientEmk043uSchema,
+export const getPatientEmk043uTool: ToolDefinition<
+	typeof getPatientOutpatientRecordSchema,
 	PatientEmk043uResult
 > = {
-	...getPatientEmk043uTool,
-	name: "get_patient_outpatient_record",
+	...getPatientOutpatientRecordTool,
+	name: "get_patient_emk_043u",
 	description:
-		"Получение медицинской карты приёма пациента: паспортные данные, зубная формула FDI (11..48), соматический статус, аллергии и история предшествующих визитов.",
+		"Получение электронной медицинской карты (ЭМК) пациента по Форме 043/у: паспортные данные, зубная формула FDI (11..48), соматический статус, аллергии и история предшествующих визитов.",
 };

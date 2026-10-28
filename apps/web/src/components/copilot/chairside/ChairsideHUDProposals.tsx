@@ -51,7 +51,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
             <button
               type="button"
               onClick={onApplyTooth}
-              className="chairside-hud-btn-primary btn-apply-tooth"
+              className="chairside-hud-btn-secondary btn-apply-tooth"
               data-testid="chairside-btn-apply-tooth"
             >
               Применить к зубу
@@ -79,7 +79,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
           <button
             type="button"
             onClick={onApplyServices}
-            className="chairside-hud-btn-primary btn-apply-services w-full"
+            className="chairside-hud-btn-secondary btn-apply-services w-full"
             data-testid="chairside-btn-apply-services"
           >
             Добавить в смету
@@ -105,7 +105,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
         <button
           type="button"
           onClick={onApplySoap}
-          className="chairside-hud-btn-primary btn-apply-soap w-full"
+          className="chairside-hud-btn-secondary btn-apply-soap w-full"
           data-testid="chairside-btn-apply-soap"
         >
           Применить в визит
@@ -128,7 +128,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
               onClick={() => {
                 if (onDisposeCarpule) onDisposeCarpule(anestheticProposal.drugName, anestheticProposal.carpulesCount);
               }}
-              className="chairside-hud-btn-primary btn-apply-carpule flex-1"
+              className="chairside-hud-btn-secondary btn-apply-carpule flex-1"
               data-testid="chairside-btn-apply-carpule"
             >
               Применить анестезию
@@ -157,7 +157,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
           onClick={() => {
             if (onPrintInformedConsent) onPrintInformedConsent("IDS-02-THERAPY");
           }}
-          className="chairside-hud-btn-primary btn-apply-consent w-full"
+          className="chairside-hud-btn-secondary btn-apply-consent w-full"
           data-testid="chairside-btn-apply-consent"
         >
           Печать ИДС

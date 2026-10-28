@@ -161,12 +161,20 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 
 			if (toolStarted) {
 				const startData = toolStarted.data as Record<string, unknown>;
-				assert.strictEqual(startData.name, "clinical.find_patient");
+				assert.ok(
+					startData.name === "clinical.find_patient" ||
+						startData.name === "crm.search_patients",
+					`Expected patient search tool call, got: ${startData.name}`,
+				);
 			}
 
 			if (toolFinished) {
 				const finishData = toolFinished.data as Record<string, unknown>;
-				assert.strictEqual(finishData.name, "clinical.find_patient");
+				assert.ok(
+					finishData.name === "clinical.find_patient" ||
+						finishData.name === "crm.search_patients",
+					`Expected patient search tool call, got: ${finishData.name}`,
+				);
 			}
 
 			// Final / completion frame
@@ -193,16 +201,19 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 			const frames = parseSseStream(res.body);
 			assert.ok(frames.length >= 1);
 
-			const toolStarted = frames.find(
-				(f) => f.event === "tool_call_started" || f.event === "tool_call",
-			);
-			if (toolStarted) {
-				const startData = toolStarted.data as Record<string, unknown>;
+			const toolCalls = frames
+				.filter((f) => f.event === "tool_call_started" || f.event === "tool_call")
+				.map((f) => (f.data as Record<string, unknown>)?.name);
+			if (toolCalls.length > 0) {
 				assert.ok(
-					startData.name === "clinical.get_doctor_schedule" ||
-						startData.name === "crm.get_daily_schedule_intelligence" ||
-						startData.name === "crm.get_daily_patients",
-					`Expected schedule tool call, got ${startData.name}`,
+					toolCalls.some(
+						(name) =>
+							name === "clinical.get_doctor_schedule" ||
+							name === "crm.get_daily_schedule_intelligence" ||
+							name === "crm.get_daily_patients" ||
+							name === "ui_context.get_active_context",
+					),
+					`Expected schedule or context tool call, got ${toolCalls.join(", ")}`,
 				);
 			}
 

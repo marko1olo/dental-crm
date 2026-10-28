@@ -2,7 +2,7 @@ import React from 'react';
 import type { Protocol043Data, ReactStepItem } from '../copilotTypes';
 import { CopilotReactTracker } from '../cards/CopilotReactTracker';
 import { CopilotClinicalProtocolCard } from '../cards/CopilotClinicalProtocolCard';
-import { CopilotProtocol043ConfirmCard } from '../cards/CopilotProtocol043ConfirmCard';
+import { CopilotSoapDiaryCard } from '../cards/CopilotSoapDiaryCard';
 import type { ClinicalProtocolCardData } from '../cards/types';
 
 type Obj = Record<string, unknown>;
@@ -80,7 +80,7 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
       treatment: typeof pObj.treatment === 'string' ? pObj.treatment : undefined,
       recommendations: typeof pObj.recommendations === 'string' ? pObj.recommendations : undefined,
     };
-    return <CopilotProtocol043ConfirmCard data={p043Data} />;
+    return <CopilotSoapDiaryCard data={p043Data} />;
   }
 
   return null;

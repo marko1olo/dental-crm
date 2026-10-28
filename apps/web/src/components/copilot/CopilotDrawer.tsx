@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import {
   X, RotateCcw, Send, Mic, Sparkles, Check, AlertTriangle,
   Columns, User, Calendar, FileText, CheckCircle2, AlertCircle,
-  HelpCircle, ShieldAlert
+  HelpCircle, ShieldAlert, Calculator
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
@@ -265,14 +265,29 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   </p>
                   {/* Quick Playbooks */}
                   <div className="copilot-quick-prompts mt-4">
-                    <button type="button" onClick={() => handleSendPrompt("Заполни дневник приёма SOAP")} className="copilot-quick-prompt-btn">
-                      Заполни дневник приёма SOAP
+                    <button
+                      type="button"
+                      onClick={() => handleSendPrompt("Заполни дневник приёма")}
+                      className="copilot-quick-prompt-btn"
+                    >
+                      <FileText size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                      <span>Заполни дневник приёма</span>
                     </button>
-                    <button type="button" onClick={() => handleSendPrompt("Рассчитай 3 плана лечения")} className="copilot-quick-prompt-btn">
-                      Рассчитай 3 плана лечения
+                    <button
+                      type="button"
+                      onClick={() => handleSendPrompt("Рассчитай 3 плана лечения")}
+                      className="copilot-quick-prompt-btn"
+                    >
+                      <Calculator size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                      <span>Рассчитай 3 плана лечения</span>
                     </button>
-                    <button type="button" onClick={() => handleSendPrompt("Проверь лекарственную безопасность")} className="copilot-quick-prompt-btn">
-                      Проверь аллергии и совместимость
+                    <button
+                      type="button"
+                      onClick={() => handleSendPrompt("Проверь лекарственную безопасность")}
+                      className="copilot-quick-prompt-btn"
+                    >
+                      <ShieldAlert size={15} className="text-[var(--warn,#f59e0b)] shrink-0 mr-2" />
+                      <span>Проверь аллергии и совместимость</span>
                     </button>
                   </div>
                 </div>
@@ -332,7 +347,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                     <button
                       type="button"
                       onClick={() => onConfirm("reject", "Отклонено врачом")}
-                      className="copilot-btn-cancel"
+                      className="copilot-btn-secondary copilot-btn-cancel"
                       data-testid="copilot-reject-btn"
                     >
                       <X size={14} />
@@ -383,8 +398,8 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               value={input}
               onChange={(e) => handleInputChange(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Напишите команду или вопрос ассистенту... (Enter для отправки)"
-              rows={2}
+              placeholder={isMobile ? "Команда или вопрос ассистенту..." : "Напишите команду или вопрос ассистенту... (Enter для отправки)"}
+              rows={isMobile ? 1 : 2}
               data-testid="copilot-composer-input"
             />
 

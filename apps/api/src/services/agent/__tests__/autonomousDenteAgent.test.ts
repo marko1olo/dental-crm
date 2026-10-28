@@ -90,13 +90,16 @@ import {
 import {
 	bookChairsideAppointmentTool,
 	calculate804nEstimateTool,
+	calculateServicesEstimateTool,
 	calculateAnestheticDosageTool,
 	checkDrugInteractionsTool,
 	checkWarehouseSuppliesTool,
 	createDentalLabOrderTool,
 	draft043uSoapDiaryTool,
+	draftSoapDiaryTool,
 	generateInformedConsentIdsTool,
 	getPatientEmk043uTool,
+	getPatientOutpatientRecordTool,
 	normalizeAnatomicalSurfaces,
 	updateToothStatusTool,
 } from "../denteAgentTools.js";
@@ -319,6 +322,30 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			// Mandate 8d Sin 7 check: ZERO cartoon emojis in official Russian Form 043/u text
 			expect(diary.renderedText043).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
 			expect(diary.renderedText043).toMatch(/ДНЕВНИК ПРИЁМА ВРАЧА-СТОМАТОЛОГА/i);
+		});
+
+		it("Mandate 8ap: clean semantic tools parity (getPatientOutpatientRecord, calculateServicesEstimate, draftSoapDiary)", async () => {
+			const emrRes = await getPatientOutpatientRecordTool.handler(mockCtx, {
+				patientId: "pat-sem-001",
+			});
+			expect(emrRes.isPhysiologicalNorm).toBe(true);
+
+			const estRes = await calculateServicesEstimateTool.handler(mockCtx, {
+				patientId: "pat-sem-001",
+				toothNumber: 16,
+				serviceCodes: ["A16.07.030", "A16.07.082"],
+				discountPercent: 15,
+			});
+			expect(estRes.items.length).toBe(2);
+			expect(estRes.discountPercent).toBe(15);
+
+			const soapRes = await draftSoapDiaryTool.handler(mockCtx, {
+				patientId: "pat-sem-001",
+				toothNumber: 16,
+				diagnosisCode: "K02.1",
+			});
+			expect(soapRes.success).toBe(true);
+			expect(soapRes.soapDiary.assessment.icd10Code).toBe("K02.1");
 		});
 
 		it("calculate_anesthetic_dosage: calculates safe carpules by body weight for Articaine 4% 1:100 000", async () => {

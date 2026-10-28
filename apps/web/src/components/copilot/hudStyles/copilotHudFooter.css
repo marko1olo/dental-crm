@@ -22,9 +22,9 @@
   height: 36px;
   padding: 0 14px;
   border-radius: 8px;
-  background-color: var(--ok-fg);
-  color: var(--paper);
-  border: 1px solid var(--ok-fg);
+  background-color: var(--teal, #0d9488);
+  color: #ffffff;
+  border: 1px solid var(--teal, #0d9488);
   font-size: 13px;
   font-weight: 800;
   display: inline-flex;
@@ -33,11 +33,13 @@
   gap: 6px;
   cursor: pointer;
   transition: all 0.15s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.25));
 }
 
 .chairside-hud-btn-apply-all:hover {
-  opacity: 0.92;
+  background-color: var(--teal-dark, #0f766e);
+  border-color: var(--teal-dark, #0f766e);
+  opacity: 0.96;
 }
 
 .chairside-hud-btn-apply-all--undo {

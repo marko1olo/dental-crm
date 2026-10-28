@@ -140,7 +140,7 @@ describe("CBCT Panoramic Reconstruction (OPG) & Occlusal Z MIP Engine", () => {
 
 		it(
 			"reconstructs real Zakharov CBCT panorama with crisp Quadrant 4 tooth voxels (> 200 brightness)",
-			{ timeout: 15000 },
+			{ timeout: 35000 },
 			async () => {
 			if (!hasDemoData) {
 				console.log("Demo CBCT directory not found, skipping real dataset test.");

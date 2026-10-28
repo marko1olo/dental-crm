@@ -13,23 +13,26 @@ import { calculateAnestheticDosageTool, calculateAnestheticDosageSchema, type Ca
 import { generateInformedConsentIdsTool, generateInformedConsentIdsSchema, type GenerateInformedConsentIdsInput, type GenerateInformedConsentIdsResult } from "../tools/informedConsentTool.js";
 import { checkWarehouseSuppliesTool, checkWarehouseSuppliesSchema, type CheckWarehouseSuppliesInput, type CheckWarehouseSuppliesResult, type CriticalSupplyItem } from "../tools/warehouseSuppliesTool.js";
 import {
+	calculateServicesEstimateSchema,
 	calculate804nEstimateSchema,
+	type CalculateServicesEstimateResult,
 	type Calculate804nEstimateResult,
 	type EstimateLineItem,
 } from "./types.js";
 import { getDailyScheduleIntelligenceTool, getDoctorShiftsAndChairsTool } from "../tools/crmOperationalScheduleTools.js";
 import { getClinicOrDoctorRevenueTool, getPatientFamilyDepositAndDebtTool } from "../tools/crmFinancialIntelligenceTools.js";
-export const calculate804nEstimateTool: ToolDefinition<
-	typeof calculate804nEstimateSchema,
-	Calculate804nEstimateResult
+
+export const calculateServicesEstimateTool: ToolDefinition<
+	typeof calculateServicesEstimateSchema,
+	CalculateServicesEstimateResult
 > = {
-	name: "calculate_804n_estimate",
+	name: "calculate_services_estimate",
 	description:
 		"Расчет клинической сметы медицинских услуг в точных целых копейках со свободой скидок врача (0-100%).",
-	parameters: calculate804nEstimateSchema,
+	parameters: calculateServicesEstimateSchema,
 	permissions: ["billing.calculate"],
 	category: "read",
-	handler: async (_ctx: AgentContext, args: z.input<typeof calculate804nEstimateSchema>) => {
+	handler: async (_ctx: AgentContext, args: z.input<typeof calculateServicesEstimateSchema>) => {
 		const parsedTooth = parseFdiTooth(args.toothNumber);
 		const canalCount = getCanalsForTooth(parsedTooth);
 
@@ -137,14 +140,14 @@ export const calculate804nEstimateTool: ToolDefinition<
 };
 
 /**
- * Mandate 8ap: Clean clinical domain alias.
+ * Backward compatibility alias (Mandate 8ap).
  */
-export const calculateServicesEstimateTool: ToolDefinition<
-	typeof calculate804nEstimateSchema,
-	Calculate804nEstimateResult
+export const calculate804nEstimateTool: ToolDefinition<
+	typeof calculateServicesEstimateSchema,
+	CalculateServicesEstimateResult
 > = {
-	...calculate804nEstimateTool,
-	name: "calculate_services_estimate",
+	...calculateServicesEstimateTool,
+	name: "calculate_804n_estimate",
 	description:
 		"Расчет клинической сметы медицинских услуг в точных целых копейках со свободой скидок врача (0-100%).",
 };

@@ -14,7 +14,7 @@ import { generateInformedConsentIdsTool, generateInformedConsentIdsSchema, type 
 import { checkWarehouseSuppliesTool, checkWarehouseSuppliesSchema, type CheckWarehouseSuppliesInput, type CheckWarehouseSuppliesResult, type CriticalSupplyItem } from "../tools/warehouseSuppliesTool.js";
 import { getDailyScheduleIntelligenceTool, getDoctorShiftsAndChairsTool } from "../tools/crmOperationalScheduleTools.js";
 import { getClinicOrDoctorRevenueTool, getPatientFamilyDepositAndDebtTool } from "../tools/crmFinancialIntelligenceTools.js";
-export const getPatientEmk043uSchema = z.object({
+export const getOutpatientRecordSchema = z.object({
 	patientId: z
 		.string()
 		.min(1, "Идентификатор пациента обязателен")
@@ -32,9 +32,12 @@ export const getPatientEmk043uSchema = z.object({
 		.optional()
 		.describe("Количество последних визитов для выборки анамнеза"),
 });
-export type GetPatientEmk043uInput = z.infer<typeof getPatientEmk043uSchema>;
-export const getPatientOutpatientRecordSchema = getPatientEmk043uSchema;
-export type GetPatientOutpatientRecordInput = GetPatientEmk043uInput;
+export type GetOutpatientRecordInput = z.infer<typeof getOutpatientRecordSchema>;
+export const getPatientOutpatientRecordSchema = getOutpatientRecordSchema;
+export type GetPatientOutpatientRecordInput = GetOutpatientRecordInput;
+// Backward compatibility aliases (Mandate 8ap)
+export const getPatientEmk043uSchema = getOutpatientRecordSchema;
+export type GetPatientEmk043uInput = GetOutpatientRecordInput;
 export interface PatientEmk043uToothState {
 	toothNumber: number;
 	fdiFormatted: string;
@@ -94,7 +97,7 @@ export interface UpdateToothStatusResult {
 	diagnosisText: string;
 	message: string;
 }
-export const calculate804nEstimateSchema = z.object({
+export const calculateServicesEstimateSchema = z.object({
 	patientId: z.string().min(1, "patientId обязателен"),
 	toothNumber: z.union([z.number(), z.string()]).optional().describe("Номер зуба FDI"),
 	category: z
@@ -129,9 +132,10 @@ export const calculate804nEstimateSchema = z.object({
 		.optional()
 		.describe("Модификаторы цены (например, сложность +10%, гарантия -100%)"),
 });
-export type Calculate804nEstimateInput = z.infer<typeof calculate804nEstimateSchema>;
-export const calculateServicesEstimateSchema = calculate804nEstimateSchema;
-export type CalculateServicesEstimateInput = Calculate804nEstimateInput;
+export type CalculateServicesEstimateInput = z.infer<typeof calculateServicesEstimateSchema>;
+// Backward compatibility aliases (Mandate 8ap)
+export const calculate804nEstimateSchema = calculateServicesEstimateSchema;
+export type Calculate804nEstimateInput = CalculateServicesEstimateInput;
 export interface EstimateLineItem {
 	code: string;
 	title: string;
@@ -239,7 +243,7 @@ export interface BookChairsideAppointmentResult {
 	assistantRequired: false;
 	message: string;
 }
-export const draft043uSoapDiarySchema = z.object({
+export const draftSoapDiarySchema = z.object({
 	patientId: z.string().min(1, "patientId обязателен"),
 	toothNumber: z.union([z.number(), z.string()]).optional().describe("Номер зуба FDI"),
 	diagnosisCode: z.string().optional().describe("Код МКБ-10 (например, K04.0, K02.1)"),
@@ -250,9 +254,10 @@ export const draft043uSoapDiarySchema = z.object({
 	performedTreatment: z.string().optional().describe("Выполненные манипуляции"),
 	recommendations: z.string().optional().describe("Клинические рекомендации пациенту"),
 });
-export type Draft043uSoapDiaryInput = z.infer<typeof draft043uSoapDiarySchema>;
-export const draftSoapDiarySchema = draft043uSoapDiarySchema;
-export type DraftSoapDiaryInput = Draft043uSoapDiaryInput;
+export type DraftSoapDiaryInput = z.infer<typeof draftSoapDiarySchema>;
+// Backward compatibility aliases (Mandate 8ap)
+export const draft043uSoapDiarySchema = draftSoapDiarySchema;
+export type Draft043uSoapDiaryInput = DraftSoapDiaryInput;
 export interface Draft043uSoapDiaryResult {
 	success: true;
 	patientId: string;

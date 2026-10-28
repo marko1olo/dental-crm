@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Prescription107Data } from '../cards/types';
-import { Prescription107Card } from '../cards/Prescription107Card';
+import type { PrescriptionData } from '../cards/types';
+import { PrescriptionCard } from '../cards/PrescriptionCard';
 
 type Obj = Record<string, unknown>;
 
@@ -24,7 +24,7 @@ export function renderPrescriptionSection(tool: string, obj: Obj): React.ReactNo
     ? rawRx.items
     : [];
 
-  const drugsList: Prescription107Data['drugs'] = rawDrugs.map((d: unknown, i: number) => {
+  const drugsList: PrescriptionData['drugs'] = rawDrugs.map((d: unknown, i: number) => {
     const dObj = (d && typeof d === 'object' ? d : {}) as Record<string, unknown>;
     return {
       id: String(dObj.id || `drug_${i + 1}`),
@@ -39,7 +39,7 @@ export function renderPrescriptionSection(tool: string, obj: Obj): React.ReactNo
     };
   });
 
-  const rxData: Prescription107Data = {
+  const rxData: PrescriptionData = {
     id: typeof rawRx.id === 'string' ? rawRx.id : undefined,
     series: String(rawRx.series || rawRx.prescriptionSeriesNumber || '77-АА'),
     number: String(rawRx.number || '004821'),
@@ -63,9 +63,5 @@ export function renderPrescriptionSection(tool: string, obj: Obj): React.ReactNo
     ukepSignedAt: typeof rawRx.ukepSignedAt === 'string' ? rawRx.ukepSignedAt : undefined,
   };
 
-  if (rxData.patientName && rxData.drugs.length > 0) {
-    return <Prescription107Card prescription={rxData} />;
-  }
-
-  return null;
+  return <PrescriptionCard prescription={rxData} />;
 }
