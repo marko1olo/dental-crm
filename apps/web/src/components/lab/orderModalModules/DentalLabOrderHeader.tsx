@@ -2,12 +2,13 @@ import React from "react";
 import { FlaskConical, Sparkles, X, Printer, Calendar } from "lucide-react";
 
 export interface DentalLabOrderHeaderProps {
-	readonly isEdit: boolean;
+	readonly isEdit?: boolean | undefined;
 	readonly orderNumber?: string | undefined;
 	readonly gostOrderNumber?: string | undefined;
 	readonly patientName: string;
 	readonly patientChartNumber?: string | undefined;
 	readonly doctorName: string;
+	readonly treatmentPlanId?: string | undefined;
 	readonly stageNumber?: number | null | undefined;
 	readonly stageTitle?: string | null | undefined;
 	readonly dueDate?: string | undefined;
@@ -20,16 +21,17 @@ export interface DentalLabOrderHeaderProps {
 }
 
 /**
- * DentalLabOrderHeader — шапка заказ-наряда в зуботехническую лабораторию (Мандат 8b: <= 150 строк).
+ * DentalLabOrderHeader — шапка заказ-наряда в зуботехническую лабораторию (Мандат 8b: 120–160 строк).
  * Соответствует Mandates 8e (Автономия врача), 8x (Живой клинический язык), 8am (Единый дизайн-код).
  */
 export function DentalLabOrderHeader({
-	isEdit,
+	isEdit = false,
 	orderNumber,
 	gostOrderNumber,
 	patientName,
 	patientChartNumber,
 	doctorName,
+	treatmentPlanId,
 	stageNumber,
 	stageTitle,
 	dueDate,
@@ -96,18 +98,18 @@ export function DentalLabOrderHeader({
 				</div>
 			</div>
 
-			{/* Строка 2: Чипы «CAD/CAM Pro», «Этап 3» и мобильные быстрые действия («Норма», «Печать» иконкой) */}
+			{/* Строка 2: Чипы «CAD/CAM Pro», «Этап 3» и мобильные быстрые действия */}
 			<div className="flex items-center justify-between gap-2 flex-wrap text-xs">
 				<div className="flex items-center gap-1.5 flex-wrap">
 					<span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30">
 						CAD/CAM Pro
 					</span>
-					{stageNumber != null && (
+					{(treatmentPlanId || stageNumber != null) && (
 						<span
 							data-testid="lab-order-treatment-stage-chip"
 							className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30"
 						>
-							Этап {stageNumber} {stageTitle ? `(${stageTitle})` : ""}
+							Этап {stageNumber ?? 1} {stageTitle ? `(${stageTitle})` : ""}
 						</span>
 					)}
 					{selectedLabName && (
@@ -172,3 +174,5 @@ export function DentalLabOrderHeader({
 		</header>
 	);
 }
+
+export { DentalLabOrderHeader as DentalLabOrderModalHeader };

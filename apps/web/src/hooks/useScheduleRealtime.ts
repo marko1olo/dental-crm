@@ -72,6 +72,19 @@ export function useScheduleRealtime(
 		};
 	}, [lastMessage]);
 
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handleLabStatusSync = () => {
+			handlerRef.current?.();
+		};
+		window.addEventListener("dente-lab-order-ready", handleLabStatusSync);
+		window.addEventListener("dente-lab-order-status-changed", handleLabStatusSync);
+		return () => {
+			window.removeEventListener("dente-lab-order-ready", handleLabStatusSync);
+			window.removeEventListener("dente-lab-order-status-changed", handleLabStatusSync);
+		};
+	}, []);
+
 	useEffect(
 		() => () => {
 			if (timerRef.current) {

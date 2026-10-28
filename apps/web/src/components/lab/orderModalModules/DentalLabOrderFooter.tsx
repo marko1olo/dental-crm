@@ -1,6 +1,6 @@
 import React from "react";
-import { Check, Copy, Loader2, Printer, Send } from "lucide-react";
-import type { JawScope } from "../labMath";
+import { Copy, Loader2, Printer, Send } from "lucide-react";
+import { formatJawScopeLabel, type JawScope } from "../labMath";
 
 export interface DentalLabOrderFooterProps {
 	readonly jawScope?: JawScope | null | undefined;
@@ -14,7 +14,7 @@ export interface DentalLabOrderFooterProps {
 }
 
 /**
- * DentalLabOrderFooter — подвал заказ-наряда ЗТЛ (Мандат 8b: <= 120 строк).
+ * DentalLabOrderFooter — канонический подвал заказ-наряда ЗТЛ (Мандат 8b: 100–140 строк).
  * Мандат 8am: ровно ОДНА Primary CTA кнопка в teal (#0d9488), нейтральные вторичные с рамкой var(--line).
  * Мандат 8e: Primary CTA кнопка НИКОГДА не блокируется (disabled={false}).
  * Apple HIG: сенсорные зоны >= 44x44px, Natural Thumb Zone, Safe Area padding.
@@ -29,17 +29,17 @@ export function DentalLabOrderFooter({
 	onClose,
 	onSubmit,
 }: DentalLabOrderFooterProps): React.JSX.Element {
-	const teethSummaryLabel = jawScope
-		? `Челюсть: ${jawScope === "upper" ? "Верхняя" : jawScope === "lower" ? "Нижняя" : "Обе челюсти"}`
+	const teethLabel = jawScope
+		? `Челюсть: ${formatJawScopeLabel(jawScope)}`
 		: selectedTeeth.length > 0
 		? `Зубы FDI: ${selectedTeeth.join(", ")}`
-		: "Наряд без зубов (общий)";
+		: "Общий наряд / Челюсть";
 
 	return (
-		<footer className="border-t border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950 p-3 sm:px-6 sm:py-3.5 flex items-center justify-between gap-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
+		<footer className="border-t border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950 p-3 sm:px-6 sm:py-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3 shrink-0 pb-[calc(0.75rem+env(safe-area-inset-bottom,0px))]">
 			{/* Индикатор локализации зубов (десктоп) */}
 			<div className="max-sm:!hidden hidden sm:block text-xs font-semibold text-[var(--muted,#64748b)] dark:text-slate-400 truncate max-w-xs">
-				{teethSummaryLabel}
+				{teethLabel}
 			</div>
 
 			{/* Кнопки действий: нейтральные вторичные + СТРОГО 1 Primary CTA */}
@@ -80,17 +80,17 @@ export function DentalLabOrderFooter({
 				<button
 					type="button"
 					onClick={onSubmit}
-					data-testid="form-save-order-btn"
-					data-action="save-lab-order"
-					title={isEdit ? "Сохранить наряд в лабораторию" : "Сформировать наряд в лабораторию"}
-					className="primary-button min-h-[48px] sm:min-h-[36px] sm:h-9 px-5 flex-1 sm:flex-none rounded-xl border border-[#0d9488] bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-transform active:scale-95 cursor-pointer"
+					data-testid="submit-lab-order-btn"
+					data-qa="form-save-order-btn"
+					title={isEdit ? "Сохранить наряд в лабораторию" : "Отправить наряд в лабораторию"}
+					className="primary-button min-h-[48px] sm:min-h-[36px] sm:h-9 px-5 flex-1 sm:flex-none rounded-xl border border-[#0d9488] bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-transform active:scale-95 cursor-pointer"
 				>
 					{isSubmitting ? (
 						<Loader2 className="w-4 h-4 animate-spin shrink-0" />
 					) : (
-						<Check className="w-4 h-4 shrink-0" />
+						<Send className="w-4 h-4 shrink-0" />
 					)}
-					<span>{isEdit ? "Сохранить наряд" : "Создать заказ-наряд"}</span>
+					<span>{isEdit ? "Сохранить наряд в лабораторию" : "Отправить наряд в лабораторию"}</span>
 				</button>
 			</div>
 		</footer>

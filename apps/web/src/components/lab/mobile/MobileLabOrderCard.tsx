@@ -23,12 +23,34 @@ export function MobileLabOrderCard({ order, onSelect }: MobileLabOrderCardProps)
 	const deadline = formatMobileDeadlineAndTimer(order);
 	const isWarranty = (order as any).isWarrantyRework || order.status === "refitting" || order.priceRub === 0;
 
+	const statusBadge = (() => {
+		const st = (order.status || "").toLowerCase();
+		if (["ready", "ready_in_clinic", "shipped"].includes(st)) {
+			return { label: "Готово в клинике", className: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30" };
+		}
+		if (["fitting", "refitting", "try_in"].includes(st)) {
+			return { label: "Примерка", className: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" };
+		}
+		if (["completed", "delivered_to_patient"].includes(st)) {
+			return { label: "Сдано", className: "bg-slate-500/15 text-slate-800 dark:text-slate-300 border-slate-500/30" };
+		}
+		return { label: "В работе", className: "bg-teal-500/15 text-teal-800 dark:text-teal-300 border-teal-500/30" };
+	})();
+
 	return (
 		<article className="mobile-lab-card" onClick={() => onSelect(order)} data-testid={`mobile-lab-order-card-${order.id}`}>
 			<div className="mobile-lab-card-header">
 				<div className="mobile-lab-patient-block">
 					<div className="mobile-lab-patient-name" title={order.patientName}>{order.patientName || "Пациент"}</div>
-					<div className="mobile-lab-order-id">{orderNum}</div>
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className="mobile-lab-order-id">{orderNum}</span>
+						<span
+							className={`px-2 py-0.5 rounded-full text-[10px] font-extrabold border ${statusBadge.className}`}
+							data-testid={`mobile-lab-status-badge-${order.id}`}
+						>
+							{statusBadge.label}
+						</span>
+					</div>
 				</div>
 				<div className="mobile-lab-fdi-chip">
 					<span className="font-bold">{toothDisplay}</span>

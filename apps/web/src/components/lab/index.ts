@@ -55,11 +55,13 @@ export {
 } from "./DentalLabPriceMatrixModal";
 
 export {
+	DentalLabOrdersModal,
 	DentalLabOrderModal,
 	DentalLabOrderModal as DentalLabWorkOrderModal,
 	type DentalLabOrderModalProps,
 	type DentalLabOrderModalProps as DentalLabWorkOrderModalProps,
-} from "./DentalLabOrderModal";
+	type ExtendedDentalLabOrderModalProps,
+} from "./DentalLabOrdersModal";
 
 export {
 	DentalLabStageTrackingTimeline,
