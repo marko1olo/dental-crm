@@ -1,35 +1,15 @@
-/*
+/**
  * treatmentEstimatorStagesAndConflicts.ts — Клинические этапы, СтАР-гарантии, экспорт в кассу 54-ФЗ, конфликты зубов-призраков и коллизии.
- * Мандаты 8b, 8e: <= 800 строк, модульность, копеечная точность.
+ * Мандат 8e: Автономия врача — мягкие предупреждения без блокировок. Совместные назначения пломбы и коронки разрешены.
+ * Мандат 8b: Строго <= 500 строк (Sweet spot 300–400 строк).
  */
 
-import {
-	type Kopecks,
-	parseKopecks,
-} from "@dental/shared";
-import {
-	PLAN_SERVICE_RULES,
-	type PlanPriceCatalogItem,
-} from "../treatment-plans/planPricing";
-import type {
-	TreatmentPlanItem,
-	TreatmentPlanStageKind,
-} from "../treatment-plans/types";
-import {
-	type EstimatorRule,
-	type EstimatorSuggestionKey,
-	isDeciduousFdiToothNumber,
-} from "./treatmentEstimatorRules";
-import {
-	type EstimatorToothInput,
-	type PlanItem,
-	planItemFromRule,
-} from "./treatmentEstimatorCatalogMatching";
-import {
-	type EstimatorContract,
-	estimatorRowMoney,
-	safeKopecks,
-} from "./treatmentEstimatorMoney";
+import { type Kopecks, parseKopecks } from "@dental/shared";
+import { PLAN_SERVICE_RULES, type PlanPriceCatalogItem } from "../treatment-plans/planPricing";
+import type { TreatmentPlanItem, TreatmentPlanStageKind } from "../treatment-plans/types";
+import { type EstimatorRule, type EstimatorSuggestionKey, isDeciduousFdiToothNumber } from "./treatmentEstimatorRules";
+import { type EstimatorToothInput, type PlanItem, planItemFromRule } from "./treatmentEstimatorCatalogMatching";
+import { type EstimatorContract, estimatorRowMoney, safeKopecks } from "./treatmentEstimatorMoney";
 
 export type TreatmentStageId =
 	| "stage_1_therapy"
@@ -54,66 +34,36 @@ export interface TreatmentStageSummary {
 }
 
 export function resolveStageIdForItem(item: PlanItem): TreatmentStageId {
-	const nameLower = (item.name || "").toLowerCase();
+	const name = (item.name || "").toLowerCase();
 	const cat = (item.category || "").toLowerCase();
 
-	if (
-		nameLower.includes("гигиен") ||
-		nameLower.includes("чистк") ||
-		nameLower.includes("airflow") ||
-		cat === "hygiene"
-	) {
+	if (name.includes("гигиен") || name.includes("чистк") || name.includes("airflow") || cat === "hygiene") {
 		return "stage_5_hygiene";
 	}
-
 	if (
-		nameLower.includes("коронк") ||
-		nameLower.includes("протез") ||
-		nameLower.includes("e.max") ||
-		nameLower.includes("циркон") ||
-		nameLower.includes("вкладк") ||
-		nameLower.includes("винир") ||
-		nameLower.includes("абатмент") ||
-		cat === "prosthetics" ||
-		item.suggestion === "crown" ||
-		item.phase === 3
+		name.includes("коронк") || name.includes("протез") || name.includes("e.max") ||
+		name.includes("циркон") || name.includes("вкладк") || name.includes("винир") ||
+		name.includes("абатмент") || cat === "prosthetics" || item.suggestion === "crown" || item.phase === 3
 	) {
 		return "stage_4_orthopedics";
 	}
-
 	if (
-		nameLower.includes("имплант") ||
-		nameLower.includes("шаблон") ||
-		nameLower.includes("удален") ||
-		nameLower.includes("синус") ||
-		nameLower.includes("хирург") ||
-		cat === "surgery" ||
-		item.suggestion === "implant" ||
-		item.suggestion === "implantGuide" ||
-		item.phase === 2
+		name.includes("имплант") || name.includes("шаблон") || name.includes("удален") ||
+		name.includes("синус") || name.includes("хирург") || cat === "surgery" ||
+		item.suggestion === "implant" || item.suggestion === "implantGuide" || item.phase === 2
 	) {
 		return "stage_3_surgery";
 	}
-
 	if (
-		nameLower.includes("пульпит") ||
-		nameLower.includes("периодонтит") ||
-		nameLower.includes("канал") ||
-		nameLower.includes("обтурац") ||
-		nameLower.includes("эндодонт") ||
-		item.suggestion === "pulpitis" ||
-		item.suggestion === "periodontitis"
+		name.includes("пульпит") || name.includes("периодонтит") || name.includes("канал") ||
+		name.includes("обтурац") || name.includes("эндодонт") || item.suggestion === "pulpitis" || item.suggestion === "periodontitis"
 	) {
 		return "stage_2_endo";
 	}
-
 	return "stage_1_therapy";
 }
 
-export const STAGE_DEFINITIONS: Record<
-	TreatmentStageId,
-	{ titleRu: string; descriptionRu: string; phase: number }
-> = {
+export const STAGE_DEFINITIONS: Record<TreatmentStageId, { titleRu: string; descriptionRu: string; phase: number }> = {
 	stage_1_therapy: {
 		titleRu: "Этап I: Терапевтическая санация (кариес, реставрации)",
 		descriptionRu: "Лечение кариозных поражений, эстетическая реставрация композитами светового отверждения",
@@ -149,7 +99,6 @@ export function estimatorStagesBreakdown(
 	for (const id of Object.keys(STAGE_DEFINITIONS) as TreatmentStageId[]) {
 		stageMap.set(id, []);
 	}
-
 	for (const it of items) {
 		const stageId = resolveStageIdForItem(it);
 		const list = stageMap.get(stageId) ?? [];
@@ -160,7 +109,6 @@ export function estimatorStagesBreakdown(
 	return (Object.keys(STAGE_DEFINITIONS) as TreatmentStageId[]).map((stageId) => {
 		const def = STAGE_DEFINITIONS[stageId];
 		const stageItems = stageMap.get(stageId) ?? [];
-
 		let grossKopecks = 0 as Kopecks;
 		let discountKopecks = 0 as Kopecks;
 		let payableKopecks = 0 as Kopecks;
@@ -173,12 +121,9 @@ export function estimatorStagesBreakdown(
 				continue;
 			}
 			grossKopecks = (grossKopecks + m.lineKopecks) as Kopecks;
-			const disc = safeKopecks(it.discount) ?? (0 as Kopecks);
-			discountKopecks = (discountKopecks + disc) as Kopecks;
+			discountKopecks = (discountKopecks + (safeKopecks(it.discount) ?? 0)) as Kopecks;
 			payableKopecks = (payableKopecks + m.payableKopecks) as Kopecks;
 		}
-
-		const dmsCoveredKopecks = Math.max(0, grossKopecks - payableKopecks) as Kopecks;
 
 		return {
 			stageId,
@@ -189,7 +134,7 @@ export function estimatorStagesBreakdown(
 			grossKopecks,
 			discountKopecks,
 			payableKopecks,
-			dmsCoveredKopecks,
+			dmsCoveredKopecks: Math.max(0, grossKopecks - payableKopecks) as Kopecks,
 			grossRub: Math.round(grossKopecks / 100),
 			payableRub: Math.round(payableKopecks / 100),
 			incompleteRowsCount,
@@ -206,10 +151,10 @@ export interface TreatmentWarrantyInfo {
 }
 
 export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInfo {
-	const nameLower = (item.name || "").toLowerCase();
+	const name = (item.name || "").toLowerCase();
 	const cat = (item.category || "").toLowerCase();
 
-	if (nameLower.includes("имплант") || item.suggestion === "implant") {
+	if (name.includes("имплант") || item.suggestion === "implant") {
 		return {
 			warrantyMonths: 36,
 			serviceLifeMonths: 120,
@@ -218,15 +163,9 @@ export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInf
 			isManufacturerLifetimeWarranty: true,
 		};
 	}
-
 	if (
-		nameLower.includes("коронк") ||
-		nameLower.includes("протез") ||
-		nameLower.includes("e.max") ||
-		nameLower.includes("циркон") ||
-		nameLower.includes("винир") ||
-		cat === "prosthetics" ||
-		item.suggestion === "crown"
+		name.includes("коронк") || name.includes("протез") || name.includes("e.max") ||
+		name.includes("циркон") || name.includes("винир") || cat === "prosthetics" || item.suggestion === "crown"
 	) {
 		return {
 			warrantyMonths: 24,
@@ -235,14 +174,7 @@ export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInf
 			termsDescription: "Гарантия на целостность коронки/вкладки 24 месяца в соответствии с клиническими рекомендациями СтАР.",
 		};
 	}
-
-	if (
-		nameLower.includes("пульпит") ||
-		nameLower.includes("периодонтит") ||
-		nameLower.includes("канал") ||
-		item.suggestion === "pulpitis" ||
-		item.suggestion === "periodontitis"
-	) {
+	if (name.includes("пульпит") || name.includes("периодонтит") || name.includes("канал") || item.suggestion === "pulpitis" || item.suggestion === "periodontitis") {
 		return {
 			warrantyMonths: 12,
 			serviceLifeMonths: 36,
@@ -250,12 +182,7 @@ export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInf
 			termsDescription: "Гарантия 12 месяцев при обязательном последующем покрытии зуба коронкой/вкладкой в течение 3 месяцев.",
 		};
 	}
-
-	if (
-		nameLower.includes("кариес") ||
-		nameLower.includes("пломб") ||
-		item.suggestion === "caries"
-	) {
+	if (name.includes("кариес") || name.includes("пломб") || item.suggestion === "caries") {
 		return {
 			warrantyMonths: 12,
 			serviceLifeMonths: 24,
@@ -263,7 +190,6 @@ export function calculateTreatmentWarranty(item: PlanItem): TreatmentWarrantyInf
 			termsDescription: "Гарантия 12 месяцев на краевое прилегание и стабильность цвета фотополимерной пломбы по ГОСТ Р 52623.4-2015.",
 		};
 	}
-
 	return {
 		warrantyMonths: 6,
 		serviceLifeMonths: 12,
@@ -298,20 +224,12 @@ export function exportEstimatorToCashier(
 		const disc = it.discount || (discountPercent > 0 ? Math.round((gross * discountPercent) / 100) : 0);
 		const netPrice = Math.max(0, gross - disc);
 		const stageId = resolveStageIdForItem(it);
-		const stageKind: TreatmentPlanStageKind =
-			stageId === "stage_3_surgery"
-				? "stage_2_surgery"
-				: stageId === "stage_4_orthopedics"
-					? "stage_3_orthopedics"
-					: "stage_1_therapy";
+		const isSurg = stageId === "stage_3_surgery";
+		const isOrtho = stageId === "stage_4_orthopedics";
 
-		const category =
-			it.category ||
-			(stageId === "stage_3_surgery"
-				? "Хирургия"
-				: stageId === "stage_4_orthopedics"
-					? "Ортопедия"
-					: "Терапия");
+		const stageKind: TreatmentPlanStageKind = isSurg ? "stage_2_surgery" : isOrtho ? "stage_3_orthopedics" : "stage_1_therapy";
+		const category = it.category || (isSurg ? "Хирургия" : isOrtho ? "Ортопедия" : "Терапия");
+		const code804n = it.category === "surgery" ? "A16.07.054.001" : it.category === "prosthetics" ? "A16.07.004.001" : "A16.07.002.001";
 
 		return {
 			id: it.id || `est-item-${idx + 1}`,
@@ -322,12 +240,7 @@ export function exportEstimatorToCashier(
 			discountRub: disc,
 			quantity: qty,
 			phase: it.phase,
-			code804n:
-				it.category === "surgery"
-					? "A16.07.054.001"
-					: it.category === "prosthetics"
-						? "A16.07.004.001"
-						: "A16.07.002.001",
+			code804n,
 			...(it.toothNumber !== undefined ? { toothNumber: it.toothNumber } : {}),
 			stageKind,
 			...(it.priceId ? { priceId: it.priceId } : {}),
@@ -336,14 +249,12 @@ export function exportEstimatorToCashier(
 	});
 
 	const totalRub = mapped.reduce((acc, i) => acc + i.priceRub, 0);
-	const totalKopecks = parseKopecks(totalRub);
-
 	return {
 		patientId,
 		patientName,
 		items: mapped,
 		totalRub,
-		totalKopecks,
+		totalKopecks: parseKopecks(totalRub),
 		discountPercent,
 		createdAtIso: new Date().toISOString(),
 	};
@@ -354,13 +265,7 @@ export const exportEstimatorToCashier54Fz = exportEstimatorToCashier;
 export function isToothMissingOrExtracted(state?: string | null): boolean {
 	if (!state) return false;
 	const s = state.trim().toLowerCase();
-	return (
-		s === "missing" ||
-		s === "extracted" ||
-		s === "удален" ||
-		s === "удалён" ||
-		s === "отсутствует"
-	);
+	return s === "missing" || s === "extracted" || s === "удален" || s === "удалён" || s === "отсутствует";
 }
 
 export interface GhostToothConflict {
@@ -381,54 +286,28 @@ export function getGhostToothConflict(
 	const tooth = teeth.find((t) => t.toothNumber === item.toothNumber);
 	if (!tooth || !isToothMissingOrExtracted(tooth.state)) return null;
 
-	if (item.suggestion === "implant" || item.suggestion === "implantGuide") {
-		return null;
-	}
-	const nameLower = (item.name || "").toLowerCase();
-	if (
-		nameLower.includes("имплант") ||
-		nameLower.includes("шаблон") ||
-		nameLower.includes("синус") ||
-		nameLower.includes("протез съемн") ||
-		nameLower.includes("бюгель") ||
-		nameLower.includes("мостовидн")
-	) {
+	if (item.suggestion === "implant" || item.suggestion === "implantGuide") return null;
+	const name = (item.name || "").toLowerCase();
+	if (name.includes("имплант") || name.includes("шаблон") || name.includes("синус") || name.includes("протез съемн") || name.includes("бюгель") || name.includes("мостовидн")) {
 		return null;
 	}
 
 	let treatmentKind = "терапии";
-	if (
-		item.suggestion === "crown" ||
-		nameLower.includes("коронк") ||
-		nameLower.includes("вкладк")
-	) {
+	if (item.suggestion === "crown" || name.includes("коронк") || name.includes("вкладк")) {
 		treatmentKind = "коронки";
-	} else if (
-		item.suggestion === "caries" ||
-		nameLower.includes("кариес") ||
-		nameLower.includes("пломб")
-	) {
+	} else if (item.suggestion === "caries" || name.includes("кариес") || name.includes("пломб")) {
 		treatmentKind = "пломбы";
-	} else if (
-		item.suggestion === "pulpitis" ||
-		item.suggestion === "periodontitis" ||
-		nameLower.includes("пульпит") ||
-		nameLower.includes("канал") ||
-		nameLower.includes("эндодонт")
-	) {
+	} else if (item.suggestion === "pulpitis" || item.suggestion === "periodontitis" || name.includes("пульпит") || name.includes("канал") || name.includes("эндодонт")) {
 		treatmentKind = "эндодонтии";
 	}
-
-	const warningBadgeText = `Зуб ${item.toothNumber} удален на формуле! Требуется корректировка плана (имплантация/мостовидный протез вместо ${treatmentKind})`;
-	const message = `На зуб #${item.toothNumber} назначена услуга «${item.name}», однако в зубной формуле этот зуб отмечен как удаленный (${tooth.state}). Требуется корректировка плана (имплантация/мостовидный протез вместо ${treatmentKind}), либо восстановление статуса зуба на формуле (врачебная автономия).`;
 
 	return {
 		toothNumber: item.toothNumber,
 		toothState: tooth.state,
 		itemName: item.name,
 		itemSuggestion: item.suggestion,
-		warningBadgeText,
-		message,
+		warningBadgeText: `Зуб ${item.toothNumber} удален на формуле! Требуется корректировка плана (имплантация/мостовидный протез вместо ${treatmentKind})`,
+		message: `На зуб #${item.toothNumber} назначена услуга «${item.name}», однако в зубной формуле этот зуб отмечен как удаленный (${tooth.state}). Требуется корректировка плана (имплантация/мостовидный протез вместо ${treatmentKind}), либо восстановление статуса зуба на формуле (врачебная автономия).`,
 		replacementKind: "implant",
 	};
 }
@@ -453,12 +332,8 @@ export function convertGhostItemToImplant(
 ): PlanItem {
 	if (item.toothNumber === undefined) return item;
 	if (isDeciduousFdiToothNumber(item.toothNumber)) {
-		const { suggestion: _removedSuggestion, ...rest } = item;
-		return {
-			...rest,
-			name: `Удаление корня молочного зуба ${item.toothNumber}`,
-			phase: 2,
-		};
+		const { suggestion: _removed, ...rest } = item;
+		return { ...rest, name: `Удаление корня молочного зуба ${item.toothNumber}`, phase: 2 };
 	}
 	const implantRule: EstimatorRule = {
 		key: "implant",
@@ -469,11 +344,7 @@ export function convertGhostItemToImplant(
 			humanName: "установка имплантата",
 		},
 	};
-	return planItemFromRule(
-		implantRule,
-		{ toothNumber: item.toothNumber, state: "Planned_Implant" },
-		catalog,
-	);
+	return planItemFromRule(implantRule, { toothNumber: item.toothNumber, state: "Planned_Implant" }, catalog);
 }
 
 export interface PlanItemCollision {
@@ -500,23 +371,16 @@ export function detectPlanItemCollisions(
 
 		const hasPreservation = toothItems.some(
 			(i) =>
-				i.suggestion === "caries" ||
-				i.suggestion === "pulpitis" ||
-				i.suggestion === "periodontitis" ||
-				i.suggestion === "crown" ||
-				(i.name || "").toLowerCase().includes("пломб") ||
-				(i.name || "").toLowerCase().includes("вкладк") ||
-				(i.name || "").toLowerCase().includes("коронк"),
+				i.suggestion === "caries" || i.suggestion === "pulpitis" || i.suggestion === "periodontitis" ||
+				i.suggestion === "crown" || (i.name || "").toLowerCase().includes("пломб") ||
+				(i.name || "").toLowerCase().includes("вкладк") || (i.name || "").toLowerCase().includes("коронк"),
 		);
 
 		const hasReplacementOrExtraction = toothItems.some(
 			(i) =>
-				i.suggestion === "implant" ||
-				i.suggestion === "implantGuide" ||
-				(i.name || "").toLowerCase().includes("имплант") ||
-				(i.name || "").toLowerCase().includes("удален") ||
-				(i.name || "").toLowerCase().includes("съемн") ||
-				(i.name || "").toLowerCase().includes("протез"),
+				i.suggestion === "implant" || i.suggestion === "implantGuide" ||
+				(i.name || "").toLowerCase().includes("имплант") || (i.name || "").toLowerCase().includes("удален") ||
+				(i.name || "").toLowerCase().includes("съемн") || (i.name || "").toLowerCase().includes("протез"),
 		);
 
 		if (hasPreservation && hasReplacementOrExtraction) {
@@ -550,9 +414,6 @@ export function resolvePlanItemCollision(
 ): PlanItem[] {
 	return items.filter((item, idx) => {
 		if (item.toothNumber !== toothNumber) return true;
-		if (typeof keepItemIndexOrId === "number") {
-			return idx === keepItemIndexOrId;
-		}
-		return item.id === keepItemIndexOrId;
+		return typeof keepItemIndexOrId === "number" ? idx === keepItemIndexOrId : item.id === keepItemIndexOrId;
 	});
 }

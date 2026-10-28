@@ -269,6 +269,10 @@ describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d,
 			__dirname,
 			"../../../../src/components/odontogram/ToothWrapper.tsx",
 		);
+		const toothTouchHudPath = path.resolve(
+			__dirname,
+			"../../../../src/components/odontogram/toothWrapper/ToothTouchSurfaceHud.tsx",
+		);
 		const toothCardHudPath = path.resolve(
 			__dirname,
 			"../../../../src/components/odontogram/chart/ToothCardHud.tsx",
@@ -277,6 +281,9 @@ describe("CLIN-07: Fast Hover HUD (150ms) and Quick Action Presets (Mandates 8d,
 			fs.readFileSync(svgOdontogramPath, "utf-8") +
 			(fs.existsSync(toothWrapperPath)
 				? fs.readFileSync(toothWrapperPath, "utf-8")
+				: "") +
+			(fs.existsSync(toothTouchHudPath)
+				? fs.readFileSync(toothTouchHudPath, "utf-8")
 				: "") +
 			(fs.existsSync(toothCardHudPath)
 				? fs.readFileSync(toothCardHudPath, "utf-8")

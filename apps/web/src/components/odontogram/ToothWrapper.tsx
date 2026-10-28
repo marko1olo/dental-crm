@@ -3,23 +3,12 @@
  *
  * Wraps individual tooth SVG with clinical badges, mobile touch-zoom HUD,
  * desktop hover action HUD, keyboard hotkeys, and interproximal bridge connectors.
+ * Декомпозирован по Мандату 8b: <= 300 строк (Sweet spot 150–220).
  */
 
 import React from "react";
-import {
-	type AnatomicalSurfaceKey,
-	isSurfaceActive,
-	type RestorativeMaterialKey,
-	ROOT_RESORPTION_STAGES,
-} from "./anatomicalToothGeometries";
-import {
-	ANATOMICAL_SURFACE_LABELS_RU,
-} from "./anatomicalToothGeometries";
-import {
-	BOTTOM_SURFACE_KEYS,
-	getAnatomicalToothColors,
-	TOP_SURFACE_KEYS,
-} from "./AnatomicalToothColors";
+import type { RestorativeMaterialKey } from "./anatomicalToothGeometries";
+import { getAnatomicalToothColors } from "./AnatomicalToothColors";
 import {
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
@@ -28,7 +17,16 @@ import type { ToothData, ToothState } from "./ToothChart";
 import { TOOTH_STATE_LABELS } from "./ToothChart";
 import { useIsTouchScreen } from "./useIsTouchScreen";
 import { AnatomicalToothSVG } from "./AnatomicalToothSVG";
-import { ToothCardHud } from "./chart/ToothCardHud";
+import { ToothBridgeConnectors } from "./toothWrapper/ToothBridgeConnectors";
+import { ToothNumberBadge } from "./toothWrapper/ToothNumberBadge";
+import { ToothTouchSurfaceHud } from "./toothWrapper/ToothTouchSurfaceHud";
+import {
+	areSurfacesEqual,
+	areToothDataEqual,
+	areToothWrapperPropsEqual,
+} from "./toothWrapper/toothWrapperComparators";
+
+export { areSurfacesEqual, areToothDataEqual, areToothWrapperPropsEqual };
 
 export interface ToothWrapperProps {
 	tooth: ToothData;
@@ -53,88 +51,6 @@ export interface ToothWrapperProps {
 	bridgeMaterial?: RestorativeMaterialKey | undefined;
 	hasLeftBridgeConnector?: boolean | undefined;
 	hasRightBridgeConnector?: boolean | undefined;
-}
-
-export function areSurfacesEqual(
-	a?: readonly string[] | string[] | undefined,
-	b?: readonly string[] | string[] | undefined,
-): boolean {
-	if (a === b) return true;
-	if (!a || !b) return !a && !b;
-	if (a.length !== b.length) return false;
-	for (let i = 0; i < a.length; i++) {
-		if (a[i] !== b[i]) return false;
-	}
-	return true;
-}
-
-export function areToothDataEqual(prev: ToothData, next: ToothData): boolean {
-	if (prev === next) return true;
-	if (prev.toothNumber !== next.toothNumber) return false;
-	if (prev.state !== next.state) return false;
-	if (prev.material !== next.material) return false;
-	if (prev.canalObturation !== next.canalObturation) return false;
-	if (prev.hasPost !== next.hasPost) return false;
-	if (prev.postType !== next.postType) return false;
-	if (prev.boneLossLevel !== next.boneLossLevel) return false;
-	if (prev.boneLossType !== next.boneLossType) return false;
-	if (prev.furcationGrade !== next.furcationGrade) return false;
-	if (prev.furcation !== next.furcation) return false;
-	if (prev.mobility !== next.mobility) return false;
-	if (prev.gingivalRecession !== next.gingivalRecession) return false;
-	if (prev.periapicalLesion !== next.periapicalLesion) return false;
-	if (prev.rootResorptionStage !== next.rootResorptionStage) return false;
-	if (prev.rootResorption !== next.rootResorption) return false;
-	if (prev.pocketDepth !== next.pocketDepth) return false;
-	if (prev.pocketDepthMm !== next.pocketDepthMm) return false;
-	if (prev.maxPocketDepth !== next.maxPocketDepth) return false;
-	if (prev.bridgeRole !== next.bridgeRole) return false;
-	if (prev.canalObturationLevel !== next.canalObturationLevel) return false;
-	if (prev.periapicalLesionSize !== next.periapicalLesionSize) return false;
-	if (prev.hasFracture !== next.hasFracture) return false;
-	if (prev.hasApicoectomy !== next.hasApicoectomy) return false;
-	if (!areSurfacesEqual(prev.surfaces, next.surfaces)) return false;
-	if (!areSurfacesEqual(prev.bopSites, next.bopSites)) return false;
-	if (!areSurfacesEqual(prev.suppurationSites, next.suppurationSites)) return false;
-	return true;
-}
-
-export function areToothWrapperPropsEqual(
-	prev: ToothWrapperProps,
-	next: ToothWrapperProps,
-): boolean {
-	if (prev.isSelected !== next.isSelected) return false;
-	if (prev.isHovered !== next.isHovered) return false;
-	if (prev.isTop !== next.isTop) return false;
-	if (prev.scale !== next.scale) return false;
-	if (prev.useSurfaces !== next.useSurfaces) return false;
-	if (prev.activeStamp !== next.activeStamp) return false;
-	if (prev.pediatricMode !== next.pediatricMode) return false;
-	if (prev.showPulpAndCanals !== next.showPulpAndCanals) return false;
-	if (prev.showPeriapicalHalos !== next.showPeriapicalHalos) return false;
-	if (prev.showPeriodontalBoneLoss !== next.showPeriodontalBoneLoss) return false;
-	if (prev.isPontic !== next.isPontic) return false;
-	if (prev.bridgeMaterial !== next.bridgeMaterial) return false;
-	if (prev.hasLeftBridgeConnector !== next.hasLeftBridgeConnector) return false;
-	if (prev.hasRightBridgeConnector !== next.hasRightBridgeConnector) return false;
-	if (prev.onClick !== next.onClick) return false;
-	if (prev.onQuickStateChange !== next.onQuickStateChange) return false;
-	if (!areToothDataEqual(prev.tooth, next.tooth)) return false;
-
-	if (
-		(prev.isSelected || next.isSelected) &&
-		prev.selectedTeeth !== next.selectedTeeth
-	) {
-		const prevLen = prev.selectedTeeth?.length ?? 0;
-		const nextLen = next.selectedTeeth?.length ?? 0;
-		if (prevLen !== nextLen) return false;
-		if (prevLen > 0) {
-			for (let i = 0; i < prevLen; i++) {
-				if (prev.selectedTeeth![i] !== next.selectedTeeth![i]) return false;
-			}
-		}
-	}
-	return true;
 }
 
 export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
@@ -185,93 +101,30 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 		const furcation = furcationGrade ?? directFurcation;
 		const effectiveResorption = rootResorptionStage ?? rootResorption ?? 0;
 		const colors = getAnatomicalToothColors(state, material);
-
 		const isTouchScreen = useIsTouchScreen();
-
 		const isPrimary = Boolean(pediatricMode || (number >= 51 && number <= 85));
 
-		const renderNumberBadge = () => {
-			return (
-				<div className="relative flex flex-col items-center group/badge">
-					{!activeStamp && onQuickStateChange && !isTouchScreen && (
-						<ToothCardHud
-							number={number}
-							isTop={isTop}
-							isPrimary={isPrimary}
-							state={state}
-							surfaces={tooth.surfaces}
-							useSurfaces={useSurfaces}
-							selectedTeeth={selectedTeeth}
-							rootResorptionStage={effectiveResorption}
-							onQuickStateChange={onQuickStateChange}
-						/>
-					)}
-
-					<span
-						className={`tooth-number-badge ${isSelected ? "selected" : ""}`}
-						style={{ fontSize: "12px" }}
-					>
-						<span
-							className="tooth-status-dot"
-							style={{ backgroundColor: isPontic ? "#2563eb" : colors.badgeColor }}
-						/>
-						<span className="tooth-number-text font-black">{number}</span>
-						{isPontic && (
-							<span
-								className="ml-0.5 px-1 py-0.2 rounded text-xs font-black bg-blue-600 text-white shadow-2xs leading-none"
-								title="Тело мостовидного протеза (Bridge Pontic)"
-							>
-								BP
-							</span>
-						)}
-						{mobility !== undefined && mobility > 0 && (
-							<span
-								className="ml-0.5 px-1 py-0.2 rounded text-xs font-black bg-indigo-600 text-white shadow-2xs leading-none"
-								title={`Подвижность по Миллеру: ${mobility} ст.`}
-							>
-								M{mobility}
-							</span>
-						)}
-						{furcation !== undefined && furcation > 0 && (
-							<span
-								className={`ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none ${
-									furcation >= 3 ? "bg-rose-600" : "bg-amber-500"
-								}`}
-								title={`Поражение фуркации: ${furcation} ст.`}
-							>
-								F{furcation}
-							</span>
-						)}
-						{pocketDepth !== undefined && pocketDepth > 4 && (
-							<span
-								className={`ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none ${
-									pocketDepth >= 6 ? "bg-rose-600 animate-pulse" : "bg-amber-500"
-								}`}
-								title={`Пародонтальный карман ${pocketDepth} мм (Риск пародонтита K05.3)`}
-							>
-								P{pocketDepth}
-							</span>
-						)}
-						{effectiveResorption > 0 && (
-							<span
-								className="ml-0.5 px-1 py-0.2 rounded text-xs font-black text-white shadow-2xs leading-none"
-								data-testid={`tooth-resorption-badge-${number}`}
-								style={{
-									backgroundColor:
-										ROOT_RESORPTION_STAGES[effectiveResorption]?.badgeColor ?? "#f59e0b",
-								}}
-								title={`Физиологическая резорбция корня: ${
-									ROOT_RESORPTION_STAGES[effectiveResorption]?.nameRu ??
-									`${effectiveResorption}%`
-								}`}
-							>
-								{`R${effectiveResorption}%`}
-							</span>
-						)}
-					</span>
-				</div>
-			);
-		};
+		const renderBadge = () => (
+			<ToothNumberBadge
+				number={number}
+				isSelected={isSelected}
+				isTop={isTop}
+				isPontic={isPontic}
+				badgeColor={colors.badgeColor}
+				mobility={mobility}
+				furcation={furcation}
+				pocketDepth={pocketDepth}
+				effectiveResorption={effectiveResorption}
+				activeStamp={activeStamp}
+				onQuickStateChange={onQuickStateChange}
+				isTouchScreen={isTouchScreen}
+				isPrimary={isPrimary}
+				state={state}
+				surfaces={tooth.surfaces}
+				useSurfaces={useSurfaces}
+				selectedTeeth={selectedTeeth}
+			/>
+		);
 
 		return (
 			<div
@@ -350,40 +203,14 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 					}
 				}}
 			>
-				{hasLeftBridgeConnector && (
-					<div
-						className={`bridge-connector-left absolute left-0 w-3.5 h-3.5 -translate-x-2 z-20 pointer-events-none rounded-full shadow-xs border border-blue-400/60 ${
-							isTop ? "top-[62%]" : "top-[36%]"
-						}`}
-						style={{
-							background:
-								bridgeMaterial === "gold"
-									? "linear-gradient(135deg, #f59e0b, #b45309)"
-									: bridgeMaterial === "ceramic_emax"
-										? "linear-gradient(135deg, #38bdf8, #0284c7)"
-										: "linear-gradient(135deg, #93c5fd, #2563eb)",
-						}}
-						title="Мостовидное соединение"
-					/>
-				)}
-				{hasRightBridgeConnector && (
-					<div
-						className={`bridge-connector-right absolute right-0 w-3.5 h-3.5 translate-x-2 z-20 pointer-events-none rounded-full shadow-xs border border-blue-400/60 ${
-							isTop ? "top-[62%]" : "top-[36%]"
-						}`}
-						style={{
-							background:
-								bridgeMaterial === "gold"
-									? "linear-gradient(135deg, #f59e0b, #b45309)"
-									: bridgeMaterial === "ceramic_emax"
-										? "linear-gradient(135deg, #38bdf8, #0284c7)"
-										: "linear-gradient(135deg, #93c5fd, #2563eb)",
-						}}
-						title="Мостовидное соединение"
-					/>
-				)}
+				<ToothBridgeConnectors
+					hasLeftBridgeConnector={hasLeftBridgeConnector}
+					hasRightBridgeConnector={hasRightBridgeConnector}
+					isTop={isTop}
+					bridgeMaterial={bridgeMaterial}
+				/>
 
-				{isTop && renderNumberBadge()}
+				{isTop && renderBadge()}
 				<AnatomicalToothSVG
 					number={number}
 					state={state}
@@ -417,201 +244,25 @@ export const ToothWrapper: React.FC<ToothWrapperProps> = React.memo(
 					showPeriapicalHalos={showPeriapicalHalos}
 					showPeriodontalBoneLoss={showPeriodontalBoneLoss}
 				/>
-				{!isTop && renderNumberBadge()}
+				{!isTop && renderBadge()}
 
 				{isSelected && isTouchScreen && !activeStamp && (
-					<div
-						className={`tooth-touch-surface-hud ${isTop ? "bottom-pos" : "top-pos"}`}
-						data-testid={`touch-zoom-hud-${number}`}
-						onClick={(e) => e.stopPropagation()}
-					>
-						<div className="flex items-center justify-between w-full gap-2 px-1 pb-1 border-b border-[var(--odontogram-border-subtle)] text-[11px]">
-							<span className="font-extrabold text-[var(--odontogram-ink)]">
-								Зуб {number}
-							</span>
-							<span className="text-[10px] text-[var(--odontogram-ink-muted)] font-medium">
-								{TOOTH_STATE_LABELS[state]}
-							</span>
-						</div>
-
-						{useSurfaces && (
-							<div className="flex items-center gap-1.5 flex-wrap justify-center py-1">
-								{(isTop ? TOP_SURFACE_KEYS : BOTTOM_SURFACE_KEYS).map((sKey) => {
-									const geomKey = sKey === "P" ? "L" : sKey;
-									const isActive = isSurfaceActive(geomKey as AnatomicalSurfaceKey, surfaces);
-									const labelInfo = ANATOMICAL_SURFACE_LABELS_RU[geomKey as AnatomicalSurfaceKey];
-									const shortLabel =
-										sKey === "O"
-											? "О (Жев)"
-											: sKey === "V"
-												? "В (Вест)"
-												: sKey === "P"
-													? "П (Небн)"
-													: sKey === "L"
-														? "Я (Язычн)"
-														: sKey === "M"
-															? "М (Медиал)"
-															: sKey === "D"
-																? "Д (Дистал)"
-																: "C (Шеечн)";
-									return (
-										<button
-											key={sKey}
-											type="button"
-											onClick={(e) => {
-												e.stopPropagation();
-												onClick(e, number, sKey);
-											}}
-											className={`touch-surface-btn ${isActive ? "active" : ""}`}
-											title={`${labelInfo?.nameRu ?? sKey} зуба ${number}`}
-											data-testid={`touch-surface-btn-${number}-${sKey}`}
-										>
-											<span>{shortLabel}</span>
-										</button>
-									);
-								})}
-							</div>
-						)}
-
-						{onQuickStateChange && (
-							<div className="flex items-center gap-1.5 flex-wrap justify-center pt-1 border-t border-[var(--odontogram-border-subtle)]">
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Caries", useSurfaces ? surfaces : undefined);
-									}}
-									className="touch-quick-state-btn bg-amber-500/15 hover:bg-amber-500 text-amber-800 dark:text-amber-300 hover:text-white border border-amber-500/40"
-									title="Кариес"
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-amber-500" />
-									<span>Кариес</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Filled", useSurfaces ? surfaces : undefined);
-									}}
-									className="touch-quick-state-btn bg-blue-500/15 hover:bg-blue-500 text-blue-800 dark:text-blue-300 hover:text-white border border-blue-500/40"
-									title="Пломба"
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-blue-500" />
-									<span>Пломба</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Pulpitis", useSurfaces ? surfaces : undefined);
-									}}
-									className="touch-quick-state-btn bg-rose-500/15 hover:bg-rose-500 text-rose-800 dark:text-rose-300 hover:text-white border border-rose-500/40"
-									title="Пульпит"
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-rose-500" />
-									<span>Пульпит</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Periodontitis", useSurfaces ? surfaces : undefined);
-									}}
-									className="touch-quick-state-btn bg-orange-500/15 hover:bg-orange-500 text-orange-800 dark:text-orange-300 hover:text-white border border-orange-500/40"
-									title="Периодонтит"
-									data-testid={`touch-quick-periodontitis-${number}`}
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-orange-500" />
-									<span>Периодонтит</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Crown", useSurfaces ? surfaces : undefined);
-									}}
-									className="touch-quick-state-btn bg-emerald-500/15 hover:bg-emerald-500 text-emerald-800 dark:text-emerald-300 hover:text-white border border-emerald-500/40"
-									title="Коронка"
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-									<span>Коронка</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Implant", surfaces);
-									}}
-									className="touch-quick-state-btn bg-indigo-500/15 hover:bg-indigo-500 text-indigo-800 dark:text-indigo-300 hover:text-white border border-indigo-500/40"
-									title="Имплантат"
-									data-testid={`touch-quick-implant-${number}`}
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-indigo-500" />
-									<span>Имплант</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Missing", undefined);
-									}}
-									className="touch-quick-state-btn bg-slate-500/15 hover:bg-slate-500 text-slate-800 dark:text-slate-300 hover:text-white border border-slate-500/40"
-									title="Удален"
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-slate-500" />
-									<span>Удален</span>
-								</button>
-								<button
-									type="button"
-									onClick={(e) => {
-										e.stopPropagation();
-										const targets =
-											selectedTeeth?.includes(number) && selectedTeeth.length > 0
-												? selectedTeeth
-												: [number];
-										onQuickStateChange(targets, "Healthy", []);
-									}}
-									className="touch-quick-state-btn bg-teal-500/15 hover:bg-teal-500 text-teal-800 dark:text-teal-300 hover:text-white border border-teal-500/40"
-									title="Здоров"
-								>
-									<span className="w-2.5 h-2.5 rounded-full bg-teal-500" />
-									<span>Здоров</span>
-								</button>
-							</div>
-						)}
-					</div>
+					<ToothTouchSurfaceHud
+						number={number}
+						state={state}
+						isTop={isTop}
+						surfaces={surfaces}
+						useSurfaces={useSurfaces}
+						selectedTeeth={selectedTeeth}
+						onQuickStateChange={onQuickStateChange}
+						onClick={onClick}
+					/>
 				)}
 			</div>
 		);
 	},
 	areToothWrapperPropsEqual,
 );
+
 ToothWrapper.displayName = "ToothWrapper";
+export default ToothWrapper;
