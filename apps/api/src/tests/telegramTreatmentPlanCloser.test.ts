@@ -176,7 +176,11 @@ describe("Telegram Treatment Plan Closer & Installment Calculator Suite", () => 
 
 	after(async () => {
 		globalThis.fetch = originalFetch;
-		mock.restoreAll();
+		if (typeof (mock as any).restoreAll === "function") {
+			(mock as any).restoreAll();
+		} else if (typeof mock.reset === "function") {
+			mock.reset();
+		}
 		if (app) {
 			await app.close();
 		}

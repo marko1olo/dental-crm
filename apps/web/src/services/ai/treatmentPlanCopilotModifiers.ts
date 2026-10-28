@@ -70,6 +70,22 @@ export function replaceImplantationWithBridge(
 		targetTeeth = Array.from(new Set(targetTeeth)).sort((a, b) => a - b);
 	}
 
+	// Клинический гейт: концевые дефекты (зубы 18, 28, 38, 48) не имеют дистальной опоры для мостовидного протеза
+	const terminalTooth = targetTeeth.find((t) => (t % 10) === 8);
+	if (terminalTooth) {
+		return {
+			success: false,
+			commandType: "bridge_replace",
+			commandTitle: "Заменить имплантацию на мостовидный протез",
+			explanation: `Концевой дефект зубного ряда в области зуба ${terminalTooth}: отсутствует дистальная опора для мостовидного протеза. Мостовидный протез невозможен, показана дентальная имплантация либо съемное протезирование.`,
+			stages,
+			auditTrail: [],
+			oldTotalRub,
+			newTotalRub: oldTotalRub,
+			deltaRub: 0,
+		};
+	}
+
 	const targetSet = new Set(targetTeeth);
 
 	const updatedStages: TreatmentPlanStage[] = stages.map((stage) => {

@@ -63,7 +63,9 @@ export function applyEconomyScenarioToPlan(
 				item.category === "Ортопедия" &&
 				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|керамич/i.test(item.name))
 			) {
-				const economyPrice = 16000;
+				const qty = item.quantity || 1;
+				const economyUnitPrice = 16000;
+				const economyPrice = economyUnitPrice * qty;
 				if (item.priceRub !== economyPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -84,7 +86,7 @@ export function applyEconomyScenarioToPlan(
 						: "Восстановление зуба коронкой металлокерамической стандарт",
 					materials: "КХС / Керамическая масса Duceram Plus",
 					priceRub: economyPrice,
-					unitPriceRub: economyPrice,
+					unitPriceRub: economyUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Эконом: надежное функциональное протезирование металлокерамикой",
@@ -96,7 +98,9 @@ export function applyEconomyScenarioToPlan(
 				item.category === "Хирургия" &&
 				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
-				const economyPrice = 32000;
+				const qty = item.quantity || 1;
+				const economyUnitPrice = 32000;
+				const economyPrice = economyUnitPrice * qty;
 				if (item.priceRub !== economyPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -116,7 +120,7 @@ export function applyEconomyScenarioToPlan(
 						: "Внутрикостная дентальная имплантация системы Osstem (Корея)",
 					materials: "Титан Grade 4, поверхность SA",
 					priceRub: economyPrice,
-					unitPriceRub: economyPrice,
+					unitPriceRub: economyUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Эконом: базовая имплантация Osstem TS-III",
@@ -129,7 +133,9 @@ export function applyEconomyScenarioToPlan(
 				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
-				const economyPrice = 4500;
+				const qty = item.quantity || 1;
+				const economyUnitPrice = 4500;
+				const economyPrice = economyUnitPrice * qty;
 				if (item.priceRub !== economyPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -150,7 +156,7 @@ export function applyEconomyScenarioToPlan(
 						: "Восстановление зуба пломбой световой полимеризации стандарт",
 					materials: "Светоотверждаемый композит Filtek Z250 / Gradia Direct",
 					priceRub: economyPrice,
-					unitPriceRub: economyPrice,
+					unitPriceRub: economyUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Эконом: стандартная терапевтическая санация",
@@ -198,7 +204,9 @@ export function applyOptimumScenarioToPlan(
 				item.category === "Ортопедия" &&
 				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
 			) {
-				const optimumPrice = 26000;
+				const qty = item.quantity || 1;
+				const optimumUnitPrice = 26000;
+				const optimumPrice = optimumUnitPrice * qty;
 				if (item.priceRub !== optimumPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -219,7 +227,7 @@ export function applyOptimumScenarioToPlan(
 						: "Восстановление зуба коронкой из диоксида циркония Katana STML",
 					materials: "Диоксид циркония Katana STML multi-layer CAD/CAM",
 					priceRub: optimumPrice,
-					unitPriceRub: optimumPrice,
+					unitPriceRub: optimumUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Оптимум: биоинертный многослойный диоксид циркония без сколов",
@@ -231,7 +239,9 @@ export function applyOptimumScenarioToPlan(
 				item.category === "Хирургия" &&
 				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
-				const optimumPrice = 38000;
+				const qty = item.quantity || 1;
+				const optimumUnitPrice = 38000;
+				const optimumPrice = optimumUnitPrice * qty;
 				if (item.priceRub !== optimumPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -251,7 +261,7 @@ export function applyOptimumScenarioToPlan(
 						: "Внутрикостная дентальная имплантация Osstem SLA",
 					materials: "Титан Grade 4 / SLA поверхность гидрофильная",
 					priceRub: optimumPrice,
-					unitPriceRub: optimumPrice,
+					unitPriceRub: optimumUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Оптимум: ускоренная гидрофильная остеоинтеграция SLA",
@@ -264,7 +274,9 @@ export function applyOptimumScenarioToPlan(
 				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
-				const optimumPrice = 7500;
+				const qty = item.quantity || 1;
+				const optimumUnitPrice = 7500;
+				const optimumPrice = optimumUnitPrice * qty;
 				if (item.priceRub !== optimumPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -285,7 +297,7 @@ export function applyOptimumScenarioToPlan(
 						: "Эстетическая реставрация зуба нанокомпозитом под коффердамом",
 					materials: "Наногибридный композит Estelite Asteria / Tokuyama Dental",
 					priceRub: optimumPrice,
-					unitPriceRub: optimumPrice,
+					unitPriceRub: optimumUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Оптимум: послойное анатомическое восстановление бугров и фиссур",
@@ -333,7 +345,9 @@ export function applyPremiumScenarioToPlan(
 				item.category === "Ортопедия" &&
 				((item.code804n || "").startsWith("A16.07.004") || /коронк|протез|винир|циркони|e\.max|металлокерам/i.test(item.name))
 			) {
-				const premiumPrice = 45000;
+				const qty = item.quantity || 1;
+				const premiumUnitPrice = 45000;
+				const premiumPrice = premiumUnitPrice * qty;
 				if (item.priceRub !== premiumPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -354,7 +368,7 @@ export function applyPremiumScenarioToPlan(
 						: "Высокоэстетическая керамическая коронка/винир E.max Press с индивидуальным нанесением",
 					materials: "Пресс-керамика Ivoclar E.max Press + облицовка Vita VM9",
 					priceRub: premiumPrice,
-					unitPriceRub: premiumPrice,
+					unitPriceRub: premiumUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Премиум: живая глубина цвета, опалесценция и безупречное краевое прилегание",
@@ -366,7 +380,9 @@ export function applyPremiumScenarioToPlan(
 				item.category === "Хирургия" &&
 				((item.code804n || "").startsWith("A16.07.054") || /имплант/i.test(item.name))
 			) {
-				const premiumPrice = 65000;
+				const qty = item.quantity || 1;
+				const premiumUnitPrice = 65000;
+				const premiumPrice = premiumUnitPrice * qty;
 				if (item.priceRub !== premiumPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -386,7 +402,7 @@ export function applyPremiumScenarioToPlan(
 						: "Дентальная имплантация Straumann BLX / Nobel Active (Швейцария)",
 					materials: "Сплав Roxolid, поверхность SLActive / TiUnite",
 					priceRub: premiumPrice,
-					unitPriceRub: premiumPrice,
+					unitPriceRub: premiumUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Премиум: ускоренная гидрофильная остеоинтеграция 3-4 недели и максимальная стабильность",
@@ -399,7 +415,9 @@ export function applyPremiumScenarioToPlan(
 				((item.code804n || "").startsWith("A16.07.002") || /кариес|пломб|реставрац/i.test(item.name)) &&
 				!/коффердам|девитал|анестез/i.test(item.name)
 			) {
-				const premiumPrice = 12000;
+				const qty = item.quantity || 1;
+				const premiumUnitPrice = 12000;
+				const premiumPrice = premiumUnitPrice * qty;
 				if (item.priceRub !== premiumPrice) {
 					auditTrail.push({
 						action: "modified",
@@ -420,7 +438,7 @@ export function applyPremiumScenarioToPlan(
 						: "Художественная реставрация зуба под микроскопом Leica",
 					materials: "Опалесцентный нанокомпозит Tokuyama Omnichroma / Asteria + Leica M320",
 					priceRub: premiumPrice,
-					unitPriceRub: premiumPrice,
+					unitPriceRub: premiumUnitPrice,
 					discountRub: 0,
 					requiresManualPricing: false,
 					clinicalRationale: "Сценарий Премиум: микронная точность прилегания и оптическая неотличимость от эмали",

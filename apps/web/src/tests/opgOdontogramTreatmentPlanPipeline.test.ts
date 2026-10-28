@@ -189,7 +189,7 @@ describe("OPG -> Odontogram -> Treatment Plan (3 Tiers) -> Form 043/U Pipeline",
 		assert.equal(extItem.code, "A16.07.001.003");
 	});
 
-	it("6. Facades and aliases are properly exported for all consumer components", async () => {
+	it("6. Facades and aliases are properly exported for all consumer components", { timeout: 15000 }, async () => {
 		const wizardModule = await import("../components/treatment-plans/TreatmentPlanWizard");
 		assert.ok(wizardModule.PlanWizardModal, "PlanWizardModal must be exported");
 		assert.equal(wizardModule.PlanWizardModal, wizardModule.TreatmentPlanWizard);

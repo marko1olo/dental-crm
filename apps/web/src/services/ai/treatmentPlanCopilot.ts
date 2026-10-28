@@ -96,13 +96,15 @@ export function optimizePlanForBudget(
 				(item.code804n.startsWith("A16.07.004") || /циркони|e\.max|керамич/i.test(item.name)) &&
 				item.priceRub > 20000
 			) {
+				const qty = item.quantity || 1;
 				const economyPrice = 16000;
+				const totalEconomyPrice = economyPrice * qty;
 				auditTrail.push({
 					action: "modified",
 					description: `Замена коронки "${item.name}" на металлокерамический аналог`,
 					stageNumber: stage.stageNumber,
 					oldPriceRub: item.priceRub,
-					newPriceRub: economyPrice,
+					newPriceRub: totalEconomyPrice,
 					code804n: "A16.07.004.002",
 					...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
 				});
@@ -114,7 +116,7 @@ export function optimizePlanForBudget(
 						? `Восстановление зуба ${item.toothNumber} коронкой металлокерамической стандарт`
 						: "Восстановление зуба коронкой металлокерамической стандарт",
 					materials: "КХС / Керамическая масса Duceram Plus",
-					priceRub: economyPrice,
+					priceRub: totalEconomyPrice,
 					unitPriceRub: economyPrice,
 					discountRub: 0,
 					clinicalRationale: "Оптимизация под бюджет: выбор прочной металлокерамической конструкции",
@@ -127,13 +129,15 @@ export function optimizePlanForBudget(
 				item.code804n.startsWith("A16.07.054") &&
 				item.priceRub > 40000
 			) {
+				const qty = item.quantity || 1;
 				const economyPrice = 32000;
+				const totalEconomyPrice = economyPrice * qty;
 				auditTrail.push({
 					action: "modified",
 					description: `Замена имплантата на стандартную систему Osstem TS-III SA`,
 					stageNumber: stage.stageNumber,
 					oldPriceRub: item.priceRub,
-					newPriceRub: economyPrice,
+					newPriceRub: totalEconomyPrice,
 					code804n: item.code804n,
 					...(item.toothNumber !== undefined ? { toothNumber: item.toothNumber } : {}),
 				});
@@ -144,7 +148,7 @@ export function optimizePlanForBudget(
 						? `Внутрикостная дентальная имплантация системы Osstem (Корея) в области зуба ${item.toothNumber}`
 						: "Внутрикостная дентальная имплантация системы Osstem (Корея)",
 					materials: "Титан Grade 4, поверхность SA",
-					priceRub: economyPrice,
+					priceRub: totalEconomyPrice,
 					unitPriceRub: economyPrice,
 					discountRub: 0,
 					clinicalRationale: "Оптимизация под бюджет: проверенная клиническая система Osstem",

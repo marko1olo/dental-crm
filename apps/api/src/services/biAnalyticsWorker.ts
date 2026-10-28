@@ -533,11 +533,13 @@ export interface BiAnalyticsSnapshotRun {
  * Функция `async`, поэтому до правки вызывающий получал исполненный `Promise` и
  * отказ прав RLS `42501` был неотличим от успешно собранной аналитики.
  */
-export async function computeBiAnalyticsSnapshots(): Promise<BiAnalyticsSnapshotRun> {
+export async function computeBiAnalyticsSnapshots(targetOrgId?: string): Promise<BiAnalyticsSnapshotRun> {
 	try {
-		const orgs = await withSuperuserBypass((tx) =>
-			tx.select().from(organizations),
-		);
+		const orgs = targetOrgId
+			? [{ id: targetOrgId } as any]
+			: await withSuperuserBypass((tx) =>
+					tx.select().from(organizations),
+				);
 		if (!orgs.length) return { organizations: 0, succeeded: 0, failed: [] };
 
 		const snapshotDate = new Date();

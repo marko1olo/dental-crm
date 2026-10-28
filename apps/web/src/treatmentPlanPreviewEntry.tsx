@@ -18,10 +18,13 @@ import "./theme.css";
 import { TreatmentPlan3TierComparison } from "./components/treatment-plans/TreatmentPlan3TierComparison";
 import { generate3TierPlanComparison } from "./components/treatment-plans/treatmentPlanStagesEngine";
 import type { TreatmentPlanTierId } from "./components/treatment-plans/types";
+import type { ToothData } from "./components/odontogram/ToothChart";
 
-const demoTeeth: any[] = [
-	{ id: 16, state: "caries", systemicNotes: "Глубокий кариес" },
-	{ id: 36, state: "missing", systemicNotes: "Отсутствует зуб, показана имплантация" },
+const demoTeeth: ToothData[] = [
+	{ toothNumber: 16, state: "Caries" },
+	{ toothNumber: 26, state: "Pulpitis" },
+	{ toothNumber: 36, state: "Missing" },
+	{ toothNumber: 46, state: "Missing" },
 ];
 
 function TreatmentPlanPreviewApp() {
@@ -29,7 +32,7 @@ function TreatmentPlanPreviewApp() {
 	const themeParam = params.get("theme") || "light";
 	const isDark = themeParam === "dark" || themeParam === "night";
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
-	const tiers = generate3TierPlanComparison(demoTeeth);
+	const tiers = generate3TierPlanComparison(demoTeeth, undefined, 0, 0, { isDemoMode: true });
 
 	useEffect(() => {
 		document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");

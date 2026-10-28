@@ -407,7 +407,7 @@ describe("воронка планов лечения совпадает с пе�
 	test("computeBiAnalyticsSnapshots записывает не пустой массив [], а реальные данные воронки планов", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 
-		await computeBiAnalyticsSnapshots();
+		await computeBiAnalyticsSnapshots(ORG_ID);
 		const { planFunnel } = await readSnapshot(ORG_ID);
 
 		assert.ok(
