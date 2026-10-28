@@ -2,17 +2,15 @@ import React, { useState, useMemo } from "react";
 import {
   Check,
   CheckCircle2,
-  CreditCard,
-  Flame,
   Layers,
-  Percent,
   ShieldCheck,
-  Sparkles,
-  Zap,
 } from "lucide-react";
 import type { EstimateTierCardProps, EstimateTierOption } from "./types";
 import { useVisitStore } from "../../../store/visitStore";
 import { formatMoney } from "../useCopilotFormat";
+import { EstimateTierComparatorStrip } from "./estimate/EstimateTierComparatorStrip";
+import { EstimateTierPerksGrid } from "./estimate/EstimateTierPerksGrid";
+import { EstimateTierStagesList } from "./estimate/EstimateTierStagesList";
 
 export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 	data,
@@ -191,34 +189,11 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 			</div>
 
 			{/* 3-Package Comparator Strip */}
-			<div className="copilot-et-segmented-control" role="tablist">
-				{tiers.map((tier) => {
-					const isSelected = tier.tierKey === currentTierKey;
-					const badgeText = tier.badge || (tier.tierKey === "optimum" ? "Рекомендуемый" : tier.tierKey === "premium" ? "Премиум" : "Базовый");
-					return (
-						<button
-							key={tier.tierKey}
-							type="button"
-							role="tab"
-							aria-selected={isSelected}
-							onClick={() => handleTierSwitch(tier.tierKey)}
-							className={`copilot-et-segment-btn ${isSelected ? `active ${tier.tierKey}` : ""}`}
-						>
-							<span className="copilot-et-segment-name">
-								{tier.tierKey === "optimum"
-									? "Оптимум"
-									: tier.tierKey === "premium"
-										? "Премиум"
-										: "Эконом"}
-							</span>
-							<span className="copilot-et-segment-material">{badgeText}</span>
-							<span className="copilot-et-segment-price tabular-nums">
-								{formatMoney(tier.totalRub)}
-							</span>
-						</button>
-					);
-				})}
-			</div>
+			<EstimateTierComparatorStrip
+				tiers={tiers}
+				currentTierKey={currentTierKey}
+				onSelectTier={handleTierSwitch}
+			/>
 
 			{/* Active Tier Presentation Body */}
 			{activeTierObj && (
@@ -249,38 +224,7 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 					</div>
 
 					{/* Tax Deduction & Installments Grid */}
-					<div className="copilot-et-perks-grid">
-						<div className="copilot-et-perk-box">
-							<span className="copilot-et-perk-label flex items-center gap-1">
-								<Percent size={11} className="text-[var(--teal)]" />
-								<span>Вычет 13% НДФЛ</span>
-							</span>
-							<span className="copilot-et-perk-val text-[var(--teal)] tabular-nums">
-								-{formatMoney(activeTierObj.taxDeductionRub)}
-							</span>
-							<span className="text-[10px] text-[var(--muted)]">
-								К оплате: {formatMoney(activeTierObj.netCostAfterDeductionRub)}
-							</span>
-						</div>
-
-						<div className="copilot-et-perk-box">
-							<span className="copilot-et-perk-label flex items-center gap-1">
-								<CreditCard size={11} className="text-[var(--amber)]" />
-								<span>Рассрочка 0%</span>
-							</span>
-							<span className="copilot-et-perk-val text-[var(--ink)] tabular-nums">
-								от{" "}
-								{formatMoney(
-									activeTierObj.monthlyInstallmentRub ||
-										Math.round(activeTierObj.totalRub / 12),
-								)}{" "}
-								/ мес
-							</span>
-							<span className="text-[10px] text-[var(--muted)]">
-								на {activeTierObj.installmentMonths || 12} месяцев
-							</span>
-						</div>
-					</div>
+					<EstimateTierPerksGrid activeTierObj={activeTierObj} />
 
 					{/* Warranty & Materials */}
 					<div className="copilot-et-materials">
@@ -291,73 +235,8 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 						<div>{activeTierObj.materialsDescription}</div>
 					</div>
 
-					{/* Stages Breakdown with Green Checkmarks */}
-					<div className="copilot-et-stages-block">
-						<div className="copilot-et-stages-header">
-							<CheckCircle2 size={13} className="text-[var(--teal)]" />
-							<span>Этапы плана лечения:</span>
-						</div>
-						<div className="copilot-et-stages-list">
-							{(activeTierObj.stages && activeTierObj.stages.length > 0
-								? activeTierObj.stages
-								: [
-										{
-											stageName: "Терапевтическая подготовка и препарирование",
-											proceduresCount: 2,
-											totalRub: Math.round(activeTierObj.totalRub * 0.3),
-										},
-										{
-											stageName: "Оптические слепки / сканирование и лаборатория",
-											proceduresCount: 1,
-											totalRub: Math.round(activeTierObj.totalRub * 0.25),
-										},
-										{
-											stageName:
-												activeTierObj.tierKey === "economy"
-													? "Примерка и фиксация металлокерамики Co-Cr"
-													: activeTierObj.tierKey === "optimum"
-														? "Адгезивная фиксация керамической коронки e.max"
-														: "Прецизионная посадка коронки из диоксида циркония",
-											proceduresCount: 1,
-											totalRub: Math.round(activeTierObj.totalRub * 0.45),
-										},
-									]
-							).map((stage, idx) => (
-								<div key={idx} className="copilot-et-stage-row">
-									<div className="copilot-et-stage-info">
-										<CheckCircle2
-											size={14}
-											className="text-[var(--teal)] flex-shrink-0"
-										/>
-										<span className="copilot-et-stage-name">
-											{stage.stageName}
-											{stage.proceduresCount ? (
-												<span className="text-[var(--muted)] font-normal text-[11px] ml-1">
-													({stage.proceduresCount} проц.)
-												</span>
-											) : null}
-										</span>
-									</div>
-									<span className="copilot-et-stage-price tabular-nums">
-										{formatMoney(stage.totalRub)}
-									</span>
-								</div>
-							))}
-						</div>
-					</div>
-
-					{/* Key Advantages */}
-					<ul className="copilot-et-advantages-list">
-						{activeTierObj.keyAdvantages.map((adv, i) => (
-							<li key={i} className="copilot-et-adv-item">
-								<CheckCircle2
-									size={13}
-									className="text-[var(--teal)] flex-shrink-0 mt-0.5"
-								/>
-								<span>{adv}</span>
-							</li>
-						))}
-					</ul>
+					{/* Stages Breakdown & Key Advantages */}
+					<EstimateTierStagesList activeTierObj={activeTierObj} />
 
 					{/* 1-Click Apply Tier Action Button */}
 					<button
@@ -385,8 +264,3 @@ export const EstimateTierCard: React.FC<EstimateTierCardProps> = ({
 		</div>
 	);
 };
-
-// ============================================================================
-// 5. CopilotReactTracker COMPONENT (Animated ReAct Execution Cycle)
-// ============================================================================
-

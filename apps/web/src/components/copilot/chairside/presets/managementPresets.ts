@@ -1,0 +1,153 @@
+/**
+ * managementPresets.ts — Practice management presets (schedule, shift, revenue).
+ *
+ * Compliance:
+ * - Mandate 8b: Subcomponent <= 200 lines.
+ * - Zero cartoon emojis, 100% strict clinical models.
+ */
+
+export const MANAGEMENT_PRESETS = [
+  {
+    id: "schedule-today",
+    label: "Пациенты сегодня",
+    prompt: "Сколько пациентов сегодня? Кто следующий на приёме?",
+    toothNumber: 0,
+    toothState: "Healthy",
+    toothStateLabel: "Расписание дня",
+    surfaces: [],
+    services: [],
+    soap: {
+      complaint: "Запрос расписания приёма врача на сегодня.",
+      anamnesis: "Текущая смена: 14:00–20:00, терапевтический кабинет.",
+      objectiveStatus: "Всего приёмов: 6. Завершено: 3. В кресле: 1. Ожидается: 2.",
+      diagnosis: "Оперативная сводка расписания",
+      treatmentPlan: "1. 14:00 — Иванов И.И. (кариес 16, завершено). 2. 15:30 — Смирнова Е.В. (профгигиена). 3. 17:00 — Кузнецов А.П. (осмотр).",
+      recommendations: "Подготовить наконечники и инструменты к приёму следующего пациента к 15:25.",
+    },
+    anesthetic: undefined,
+    consent: undefined,
+    safetyAlert: {
+      id: "alert-sched",
+      severity: "info" as const,
+      title: "График приёма на сегодня",
+      description: "Все слоты подтверждены администратором по WhatsApp. Задержек графика нет.",
+    },
+    verdict: "На сегодня запланировано 6 приёмов. Сейчас в кресле: текущий пациент. Следующий пациент в 15:30: Смирнова Е.В. (профгигиена).",
+    thoughts: [
+      {
+        id: "ts-1",
+        stepNumber: 1,
+        title: "Запрос расписания смены врача...",
+        status: "done" as const,
+        detail: "Загружено 6 подтверждённых записей на сегодня.",
+        durationMs: 40,
+      },
+      {
+        id: "ts-2",
+        stepNumber: 2,
+        title: "Анализ статуса явки и тайминга приёма...",
+        status: "done" as const,
+        detail: "3 завершено, 1 на приёме, 2 ожидается. Отклонений от графика нет.",
+        durationMs: 50,
+      },
+      {
+        id: "ts-3",
+        stepNumber: 3,
+        title: "Формирование операционной сводки...",
+        status: "done" as const,
+        detail: "Следующий пациент: 15:30 — Смирнова Е.В.",
+        durationMs: 35,
+      },
+    ],
+  },
+  {
+    id: "doctor-shift",
+    label: "Моя смена",
+    prompt: "Какая у меня смена и график на этой неделе?",
+    toothNumber: 0,
+    toothState: "Healthy",
+    toothStateLabel: "Табель смен",
+    surfaces: [],
+    services: [],
+    soap: {
+      complaint: "Запрос рабочего графика и сменности врача.",
+      anamnesis: "Ставка: 1.0 (36 рабочих часов в неделю по нормативу Минздрава РФ).",
+      objectiveStatus: "Пн, Ср, Пт — 1-я смена (08:00–14:00). Вт, Чт — 2-я смена (14:00–20:00). Выходные: Сб, Вс.",
+      diagnosis: "График работы",
+      treatmentPlan: "Сменность актуальна, замен и дежурств не назначено.",
+      recommendations: "Соблюдение норм труда и отдыха медицинского персонала.",
+    },
+    anesthetic: undefined,
+    consent: undefined,
+    safetyAlert: {
+      id: "alert-shift",
+      severity: "info" as const,
+      title: "Табель рабочего времени",
+      description: "График утверждён главным врачом. Норма часов выполняется в полном объёме.",
+    },
+    verdict: "Ваш график на неделю: Пн, Ср, Пт — 1-я смена (08:00–14:00). Вт, Чт — 2-я смена (14:00–20:00). Замен нет.",
+    thoughts: [
+      {
+        id: "tshift-1",
+        stepNumber: 1,
+        title: "Запрос графика сменности из штатного расписания...",
+        status: "done" as const,
+        detail: "Смена согласована, кабинет закреплен.",
+        durationMs: 45,
+      },
+      {
+        id: "tshift-2",
+        stepNumber: 2,
+        title: "Сверка с производственным табелем клиники...",
+        status: "done" as const,
+        detail: "Норма часов: 36 ч/неделю. Переработок нет.",
+        durationMs: 40,
+      },
+    ],
+  },
+  {
+    id: "daily-revenue",
+    label: "Выручка за сегодня",
+    prompt: "Какая выручка и касса за сегодня?",
+    toothNumber: 0,
+    toothState: "Healthy",
+    toothStateLabel: "Касса дня",
+    surfaces: [],
+    services: [],
+    soap: {
+      complaint: "Запрос финансовой сводки за текущий рабочий день.",
+      anamnesis: "Кассовая смена открыта в 08:00 администратором.",
+      objectiveStatus: "Выручка за день: 42 800 ₽. Закрыто 3 наряда-заказа. Средний чек: 14 266 ₽.",
+      diagnosis: "Финансовый отчет",
+      treatmentPlan: "1. Терапия кариеса — 8 200 ₽. 2. Эндодонтия 26 — 18 500 ₽. 3. Профгигиена — 6 500 ₽. 4. Предоплата — 9 600 ₽.",
+      recommendations: "Итоговый Z-отчет формируется при закрытии смены в 20:00.",
+    },
+    anesthetic: undefined,
+    consent: undefined,
+    safetyAlert: {
+      id: "alert-fin",
+      severity: "info" as const,
+      title: "Финансовая сводка дня",
+      description: "Безналичные платежи (терминал СБП / эквайринг): 35 000 ₽. Наличные: 7 800 ₽. Расхождений с кассой нет.",
+    },
+    verdict: "Выручка за сегодня: 42 800 ₽ (3 наряда-заказа, 1 предоплата). Безналичные: 35 000 ₽, Наличные: 7 800 ₽.",
+    thoughts: [
+      {
+        id: "tfin-1",
+        stepNumber: 1,
+        title: "Агрегация закрытых заказ-нарядов и чеков дня...",
+        status: "done" as const,
+        detail: "3 заказ-наряда + 1 предоплата по смете. Итого 42 800 ₽.",
+        durationMs: 50,
+      },
+      {
+        id: "tfin-2",
+        stepNumber: 2,
+        title: "Сверка фискальных данных и способов оплаты...",
+        status: "done" as const,
+        detail: "Эквайринг/СБП: 35 000 ₽, наличные: 7 800 ₽. Данные сошлись 100%.",
+        durationMs: 60,
+      },
+    ],
+  },
+];

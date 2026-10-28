@@ -1,31 +1,90 @@
-/* Mobile Responsive Override */
+/* Mobile Responsive Override (Apple HIG Bottom Sheet Standards - Mandates 8m, 8ze, 8al) */
+@keyframes copilotBackdropFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes copilotBottomSheetSlideUp {
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
+}
+
 @media (max-width: 768px) {
+  /* Mobile Backdrop (tap to dismiss, non-intrusive) */
+  .copilot-drawer-backdrop {
+    display: block !important;
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    z-index: 99998;
+    pointer-events: auto !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+    animation: copilotBackdropFadeIn 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+
+  /* Native Apple HIG Bottom Sheet */
   .copilot-drawer,
   .copilot-drawer-panel {
-    top: 0;
+    top: auto;
     left: 0;
     right: 0;
     bottom: 0;
     width: 100%;
-    max-width: 100%;
-    height: 100vh;
-    height: 100dvh;
+    max-width: 100vw;
+    height: min(90vh, 90dvh);
+    max-height: 92dvh;
     border-left: none;
+    border-top: 1px solid var(--line, rgba(15, 118, 110, 0.15));
     border-radius: 24px 24px 0 0;
     z-index: 99999;
+    box-shadow: 0 -8px 36px rgba(0, 0, 0, 0.22);
+    transform: translateY(0);
+    animation: copilotBottomSheetSlideUp 0.32s cubic-bezier(0.16, 1, 0.3, 1);
+    overflow-x: clip;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
+
+  /* Tactile iOS Drag Handle (36x5px) */
   .copilot-drawer-drag-handle {
     display: block;
     width: 36px;
     height: 5px;
-    margin: 8px auto 2px;
+    margin: 10px auto 4px;
     background: var(--line-strong, rgba(0, 0, 0, 0.25));
     border-radius: 9999px;
     flex-shrink: 0;
   }
-  .copilot-msg-bubble {
-    max-width: 90%;
+
+  /* Touch Target minimum >= 44x44px (Apple HIG & Mandate 8ze) */
+  .copilot-icon-btn,
+  .copilot-mic-btn,
+  .copilot-send-btn,
+  .copilot-tab-btn,
+  .copilot-nudge-action {
+    min-width: 44px;
+    min-height: 44px;
   }
+
+  .copilot-composer-box {
+    padding: 6px 8px;
+    gap: 6px;
+  }
+
+  .copilot-msg-bubble {
+    max-width: 92%;
+  }
+
   .copilot-hotkey-hint {
     display: none !important;
   }
@@ -35,5 +94,12 @@
   .copilot-hotkey-hint {
     display: none !important;
   }
-}
 
+  .copilot-icon-btn,
+  .copilot-mic-btn,
+  .copilot-send-btn,
+  .copilot-tab-btn {
+    min-width: 44px;
+    min-height: 44px;
+  }
+}

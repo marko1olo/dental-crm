@@ -70,33 +70,41 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = (props) => {
 	const totalTasksCount = pendingConfirmCount + pendingHitLCount + pendingAlertCount + shiftDebtRecalls.length + shiftDebtEstimates.length;
 
 	const content = (
-		<aside className="copilot-drawer open" aria-label="ДЕНТА — Клинический ассистент">
-			<CopilotDrawerHeader busy={busy} phase={phase} onClose={onClose} onReset={handleReset} />
-			<CopilotDrawerContextBar uiContext={uiContext} />
-			<CopilotDrawerTabs activeTab={activeTab} onTabChange={onTabChange} messagesCount={messages.length} totalTasksCount={totalTasksCount} />
-			<CopilotNudges nudges={nudges} onDismiss={onDismissNudge} onAct={handleSendEnriched} />
-			<div className="copilot-feed" ref={feedRef}>
-				{activeTab === "chat" ? (
-					<CopilotDrawerFeed
-						messages={messages} nameCache={nameCache} proactiveAlerts={proactiveAlerts}
-						onConfirm={onConfirm} onSelectPatient={onSelectPatient} onSelectAppointment={onSelectAppointment}
-						onBookSlot={onBookSlot} onSendPrompt={handleSendEnriched} onDismissProactiveAlert={onDismissProactiveAlert}
-					/>
-				) : (
-					<CopilotDrawerTasksTab
-						totalEstimatesSumRub={totalEstimatesSumRub} shiftDebtRecalls={shiftDebtRecalls} shiftDebtEstimates={shiftDebtEstimates}
-						pending={pending} nameCache={nameCache} whatsappHitLCards={whatsappHitLCards} proactiveAlerts={proactiveAlerts}
-						onConfirm={onConfirm} onBookSlot={onBookSlot} onSendPrompt={handleSendEnriched}
-						onDismissProactiveAlert={onDismissProactiveAlert} onApproveWhatsApp={onApproveWhatsApp} onRejectWhatsApp={onRejectWhatsApp}
-					/>
-				)}
-			</div>
-			{activeTab === "chat" && <CopilotDrawerPlaybooks onSendPrompt={handleSendEnriched} />}
-			<CopilotComposer value={input} busy={busy} onChange={handleInputChange} onSubmit={handleSubmit} onReset={handleReset} patientId={uiContext.patientId ?? null} />
-			<div className="hidden" data-testid="copilot-chat-panel-container">
-				<CopilotChatPanel {...props} embedMode={true} />
-			</div>
-		</aside>
+		<>
+			<div
+				className="copilot-drawer-backdrop"
+				onClick={onClose}
+				aria-hidden="true"
+				data-testid="copilot-drawer-backdrop"
+			/>
+			<aside className="copilot-drawer open" aria-label="ДЕНТА — Клинический ассистент">
+				<CopilotDrawerHeader busy={busy} phase={phase} onClose={onClose} onReset={handleReset} />
+				<CopilotDrawerContextBar uiContext={uiContext} />
+				<CopilotDrawerTabs activeTab={activeTab} onTabChange={onTabChange} messagesCount={messages.length} totalTasksCount={totalTasksCount} />
+				<CopilotNudges nudges={nudges} onDismiss={onDismissNudge} onAct={handleSendEnriched} />
+				<div className="copilot-feed" ref={feedRef}>
+					{activeTab === "chat" ? (
+						<CopilotDrawerFeed
+							messages={messages} nameCache={nameCache} proactiveAlerts={proactiveAlerts}
+							onConfirm={onConfirm} onSelectPatient={onSelectPatient} onSelectAppointment={onSelectAppointment}
+							onBookSlot={onBookSlot} onSendPrompt={handleSendEnriched} onDismissProactiveAlert={onDismissProactiveAlert}
+						/>
+					) : (
+						<CopilotDrawerTasksTab
+							totalEstimatesSumRub={totalEstimatesSumRub} shiftDebtRecalls={shiftDebtRecalls} shiftDebtEstimates={shiftDebtEstimates}
+							pending={pending} nameCache={nameCache} whatsappHitLCards={whatsappHitLCards} proactiveAlerts={proactiveAlerts}
+							onConfirm={onConfirm} onBookSlot={onBookSlot} onSendPrompt={handleSendEnriched}
+							onDismissProactiveAlert={onDismissProactiveAlert} onApproveWhatsApp={onApproveWhatsApp} onRejectWhatsApp={onRejectWhatsApp}
+						/>
+					)}
+				</div>
+				{activeTab === "chat" && <CopilotDrawerPlaybooks onSendPrompt={handleSendEnriched} />}
+				<CopilotComposer value={input} busy={busy} onChange={handleInputChange} onSubmit={handleSubmit} onReset={handleReset} patientId={uiContext.patientId ?? null} />
+				<div className="hidden" data-testid="copilot-chat-panel-container">
+					<CopilotChatPanel {...props} embedMode={true} />
+				</div>
+			</aside>
+		</>
 	);
 
 	if (typeof document !== "undefined" && document.body) return createPortal(content, document.body);
