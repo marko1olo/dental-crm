@@ -117,7 +117,7 @@ describe("Пакетная стерилизация смены и автомат
 	describe("4. Чистота терминологии от советского канцелярита и номеров приказов (Мандат 8x)", () => {
 		it("канонические разделы СанПиН используют живой клинический язык", () => {
 			const tabIds = SANPIN_CANONICAL_TABS.map((t) => t.id);
-			assert.deepEqual(tabIds, ["autoclave", "pso", "disinfection", "sterilizers"]);
+			assert.deepEqual(tabIds, ["autoclave", "pso", "disinfection", "waste", "sterilizers"]);
 
 			for (const tab of SANPIN_CANONICAL_TABS) {
 				assert.ok(!tab.label.includes("257/у"), `Вкладка ${tab.id} не должна содержать '257/у'`);

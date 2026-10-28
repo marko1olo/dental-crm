@@ -41,7 +41,7 @@ export function SterilizerRegimeBanner({
 				</div>
 				<div>
 					<span style={{ fontSize: "0.8rem", fontWeight: 700, color: "var(--ink, #0f172a)", display: "block" }}>
-						Режимы стерилизации по СанПиН 3.3686-21 (Табл. 3.12)
+						Стандартные режимы стерилизации (Класс B: 134°C / 121°C)
 					</span>
 					<span style={{ fontSize: "0.7rem", color: "var(--muted, #64748b)" }}>
 						Основной режим: 134°C / 2.1 бар / 5 мин. Щадящий режим: 121°C / 1.1 бар / 20 мин.

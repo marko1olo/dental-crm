@@ -43,6 +43,7 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 				autoclave: "autoclave", kraft: "autoclave", "kraft-packets": "autoclave",
 				pso: "pso", cleaning: "pso", azopyram: "pso",
 				disinfection: "disinfection", "uv-cleaning": "disinfection", uv: "disinfection",
+				waste: "waste", "medical-waste": "waste",
 				sterilizers: "sterilizers", fleet: "sterilizers", equipment: "sterilizers",
 			};
 			if (sub && tabMap[sub]) setActiveTab(tabMap[sub]!);

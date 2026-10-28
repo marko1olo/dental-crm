@@ -16,7 +16,9 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 
 import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
+import { AutoclaveJournalTab } from "../AutoclaveJournalTab";
 import { AutoclaveSterilizationJournalView } from "../AutoclaveSterilizationJournalView";
+import { CleaningControlTab } from "../CleaningControlTab";
 import { SanpinCleaningAndDisinfectionView } from "../SanpinCleaningAndDisinfectionView";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -34,24 +36,31 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 			);
 		});
 
-		it("AutoclaveSterilizationJournalView укладывается в диапазон 280–380 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "AutoclaveSterilizationJournalView.tsx");
-			assert.ok(fs.existsSync(filePath), "AutoclaveSterilizationJournalView.tsx обязан существовать");
+		it("AutoclaveJournalTab укладывается в диапазон 200–320 строк", () => {
+			const filePath = path.join(SANPIN_DIR, "AutoclaveJournalTab.tsx");
+			assert.ok(fs.existsSync(filePath), "AutoclaveJournalTab.tsx обязан существовать");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
-				lines >= 250 && lines <= 390,
-				`AutoclaveSterilizationJournalView.tsx (${lines} строк) должен быть около 280–380 строк`,
+				lines >= 200 && lines <= 350,
+				`AutoclaveJournalTab.tsx (${lines} строк) должен быть около 200–320 строк`,
 			);
 		});
 
-		it("SanpinCleaningAndDisinfectionView укладывается в диапазон 250–350 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "SanpinCleaningAndDisinfectionView.tsx");
-			assert.ok(fs.existsSync(filePath), "SanpinCleaningAndDisinfectionView.tsx обязан существовать");
+		it("CleaningControlTab укладывается в диапазон 200–320 строк", () => {
+			const filePath = path.join(SANPIN_DIR, "CleaningControlTab.tsx");
+			assert.ok(fs.existsSync(filePath), "CleaningControlTab.tsx обязан существовать");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
-				lines >= 240 && lines <= 360,
-				`SanpinCleaningAndDisinfectionView.tsx (${lines} строк) должен быть около 250–350 строк`,
+				lines >= 200 && lines <= 350,
+				`CleaningControlTab.tsx (${lines} строк) должен быть около 200–320 строк`,
 			);
+		});
+
+		it("Фасады обратной совместимости AutoclaveSterilizationJournalView и SanpinCleaningAndDisinfectionView компактны (до 50 строк)", () => {
+			const f1 = fs.readFileSync(path.join(SANPIN_DIR, "AutoclaveSterilizationJournalView.tsx"), "utf-8").split("\n").length;
+			const f2 = fs.readFileSync(path.join(SANPIN_DIR, "SanpinCleaningAndDisinfectionView.tsx"), "utf-8").split("\n").length;
+			assert.ok(f1 <= 50, `AutoclaveSterilizationJournalView.tsx (${f1}L) обязан быть тонким фасадом <= 50L`);
+			assert.ok(f2 <= 50, `SanpinCleaningAndDisinfectionView.tsx (${f2}L) обязан быть тонким фасадом <= 50L`);
 		});
 	});
 
@@ -72,32 +81,40 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 		});
 	});
 
-	describe("3. AutoclaveSterilizationJournalView (Электронный журнал циклов)", () => {
+	describe("3. AutoclaveJournalTab & AutoclaveSterilizationJournalView (Электронный журнал циклов)", () => {
 		it("рендерит десктопную таблицу с колонками и мобильный адаптивный слой", () => {
-			const html = renderToStaticMarkup(<AutoclaveSterilizationJournalView />);
+			const html = renderToStaticMarkup(<AutoclaveJournalTab />);
 
-			assert.ok(html.includes("autoclave-journal-view"), "Контейнер журнала");
-			assert.ok(html.includes("autoclave-desktop-table"), "Десктопная таблица");
-			assert.ok(html.includes("autoclave-mobile-cards"), "Мобильный слой карточек");
+			assert.ok(html.includes("autoclave-journal-tab"), "Контейнер журнала");
+			assert.ok(html.includes("autoclave-desktop-view"), "Десктопная таблица");
+			assert.ok(html.includes("autoclave-mobile-view"), "Мобильный слой карточек");
 			assert.ok(html.includes('data-testid="start-cycle-primary-btn"'), "Primary CTA кнопка запуска");
 			assert.ok(html.includes("sanpin-mobile-start-cycle-cta"), "Floating Bottom Bar для смартфонов");
 			assert.ok(html.includes("overflow-x-clip"), "0px паразитного горизонтального скролла");
 			assert.ok(!html.includes("Форма 257/у"), "Запрещен советский канцелярит 257/у");
 		});
+
+		it("фасад AutoclaveSterilizationJournalView корректно делегирует в AutoclaveJournalTab", () => {
+			const html = renderToStaticMarkup(<AutoclaveSterilizationJournalView />);
+			assert.ok(html.includes("autoclave-journal-tab"), "Фасад должен возвращать разметку журнала");
+		});
 	});
 
-	describe("4. SanpinCleaningAndDisinfectionView (Очистка, уборка и бактерицидные лампы)", () => {
-		it("рендерит 3 подраздела и 1-клик фиксацию норм", () => {
-			const html = renderToStaticMarkup(<SanpinCleaningAndDisinfectionView />);
+	describe("4. CleaningControlTab & SanpinCleaningAndDisinfectionView (Очистка, уборка и бактерицидные лампы)", () => {
+		it("рендерит журнал контроля качества очистки инструментов с 1-клик фиксацией", () => {
+			const html = renderToStaticMarkup(<CleaningControlTab />);
 
-			assert.ok(html.includes("sanpin-cleaning-view"), "Корневой контейнер");
-			assert.ok(html.includes("Контроль очистки"), "Подраздел контроля очистки");
-			assert.ok(html.includes("Журнал уборок"), "Подраздел уборок");
-			assert.ok(html.includes("Бактерицидные лампы"), "Подраздел ламп");
+			assert.ok(html.includes("cleaning-control-tab"), "Корневой контейнер");
+			assert.ok(html.includes("Контроль очистки инструментов"), "Заголовок контроля очистки");
 			assert.ok(html.includes("Азопирамовая проба"), "Азопирамовая проба");
-			assert.ok(html.includes("Зафиксировать пробу (100% норма)"), "1-клик фиксация нормы");
+			assert.ok(html.includes("Зафиксировать пробу"), "1-клик фиксация нормы");
 			assert.ok(!html.includes("МУ-287-113"), "Запрещен советский канцелярит МУ-287-113");
 			assert.ok(!html.includes("Форма 366/у"), "Запрещен советский канцелярит 366/у");
+		});
+
+		it("фасад SanpinCleaningAndDisinfectionView корректно делегирует в CleaningControlTab", () => {
+			const html = renderToStaticMarkup(<SanpinCleaningAndDisinfectionView initialSubTab="pso" />);
+			assert.ok(html.includes("cleaning-control-tab"), "Фасад должен возвращать разметку очистки");
 		});
 	});
 });

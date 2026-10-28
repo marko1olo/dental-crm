@@ -3,17 +3,21 @@
  * apps/web/src/components/sanpin/SanpinRegisters.tsx
  *
  * Мастер-контейнер журналов стерилизации и дезинфекции (Мандаты 8b, 8e, 8n, 8x).
- * Каноническая 3-компонентная SSOT архитектура:
- * 1. Журнал автоклавирования (AutoclaveSterilizationJournalView.tsx)
- * 2. Очистка, дезинфекция и уборка (SanpinCleaningAndDisinfectionView.tsx)
- * 3. Паспорт оборудования стерилизационной (SterilizerFleetManager.tsx)
- * 4. Модалка запуска цикла автоклава в 1 клик (SterilizationBatchCycleModal.tsx)
+ * Каноническая 5-компонентная SSOT архитектура:
+ * 1. Журнал автоклавирования (AutoclaveJournalTab.tsx)
+ * 2. Контроль очистки инструментов (CleaningControlTab.tsx)
+ * 3. Уборка и дезинфекция (UvAndCleaningTab.tsx)
+ * 4. Утилизация медицинских отходов (MedicalWasteRegisterTab.tsx)
+ * 5. Паспорт оборудования стерилизационной (SterilizerFleetManager.tsx)
+ * 6. Модалка запуска цикла автоклава в 1 клик (SterilizationBatchCycleModal.tsx)
  */
 
 import React, { useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { AutoclaveSterilizationJournalView } from "./AutoclaveSterilizationJournalView";
-import { SanpinCleaningAndDisinfectionView } from "./SanpinCleaningAndDisinfectionView";
+import { AutoclaveJournalTab } from "./AutoclaveJournalTab";
+import { CleaningControlTab } from "./CleaningControlTab";
+import { UvAndCleaningTab } from "./UvAndCleaningTab";
+import { MedicalWasteRegisterTab } from "./MedicalWasteRegisterTab";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import { SterilizationBatchCycleModal } from "./SterilizationBatchCycleModal";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
@@ -26,6 +30,11 @@ import { SANPIN_REGISTERS_TOAST_MESSAGES } from "./sanpinToastMessages";
 
 export * from "./sanpinNavigationConfig";
 export * from "./sanpinToastMessages";
+export * from "./AutoclaveJournalTab";
+export * from "./CleaningControlTab";
+export * from "./UvAndCleaningTab";
+export * from "./MedicalWasteRegisterTab";
+export * from "./SterilizerFleetManager";
 export * from "./AutoclaveSterilizationJournalView";
 export * from "./SanpinCleaningAndDisinfectionView";
 export * from "./SterilizationBatchCycleModal";
@@ -81,16 +90,15 @@ function SanpinRegistersInner({
 			)}
 
 			{(logic.activeTab === "autoclave" || logic.activeTab === "kraft") && (
-				<AutoclaveSterilizationJournalView
+				<AutoclaveJournalTab
 					key={`autoclave-view-${logic.refreshCounter}`}
 					initialFilterAutoclave={initialFilterAutoclave}
 				/>
 			)}
 
 			{(logic.activeTab === "pso" || logic.activeTab === "cleaning") && (
-				<SanpinCleaningAndDisinfectionView
+				<CleaningControlTab
 					key={`cleaning-view-${logic.refreshCounter}`}
-					initialSubTab={logic.activeTab === "cleaning" ? "cleaning" : "pso"}
 				/>
 			)}
 
@@ -98,9 +106,21 @@ function SanpinRegistersInner({
 				logic.activeTab === "uv_cleaning" ||
 				logic.activeTab === "bactericidal" ||
 				logic.activeTab === "cabinet_readiness") && (
-				<SanpinCleaningAndDisinfectionView
+				<UvAndCleaningTab
 					key={`disinfection-view-${logic.refreshCounter}`}
-					initialSubTab={logic.activeTab === "bactericidal" ? "bactericidal" : "cleaning"}
+					initialSubTab={
+						logic.activeTab === "bactericidal"
+							? "bactericidal"
+							: logic.activeTab === "cabinet_readiness"
+								? "readiness"
+								: "cleaning"
+					}
+				/>
+			)}
+
+			{logic.activeTab === "waste" && (
+				<MedicalWasteRegisterTab
+					key={`waste-view-${logic.refreshCounter}`}
 				/>
 			)}
 

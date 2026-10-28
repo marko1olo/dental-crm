@@ -17,6 +17,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import { AutoclaveJournalTab } from "../AutoclaveJournalTab";
 import { CleaningControlTab } from "../CleaningControlTab";
 import { UvAndCleaningTab } from "../UvAndCleaningTab";
+import { MedicalWasteRegisterTab } from "../MedicalWasteRegisterTab";
 import { SterilizerFleetManager } from "../SterilizerFleetManager";
 import { SanpinRegisters } from "../SanpinRegisters";
 import { SANPIN_CANONICAL_TABS } from "../sanpinNavigationConfig";
@@ -26,12 +27,13 @@ const SANPIN_DIR = path.resolve(__dirname, "..");
 
 describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛИЗАЦИИ И САНПИН (RED TEAM AUDIT)", () => {
 	describe("1. Ликвидация птичьего языка советских приказов (Мандат 8x)", () => {
-		it("канонические 4 вкладки названы живым русским языком без советских аббревиатур", () => {
-			assert.equal(SANPIN_CANONICAL_TABS.length, 4);
+		it("канонические 5 вкладок названы живым русским языком без советских аббревиатур", () => {
+			assert.equal(SANPIN_CANONICAL_TABS.length, 5);
 			const expected = [
 				{ id: "autoclave", label: "Журнал автоклавирования" },
 				{ id: "pso", label: "Контроль очистки инструментов" },
-				{ id: "disinfection", label: "Учет ламп и уборок" },
+				{ id: "disinfection", label: "Уборка и дезинфекция" },
+				{ id: "waste", label: "Утилизация медицинских отходов" },
 				{ id: "sterilizers", label: "Оборудование стерилизационной" },
 			];
 
@@ -50,6 +52,7 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 				"AutoclaveJournalTab.tsx",
 				"CleaningControlTab.tsx",
 				"UvAndCleaningTab.tsx",
+				"MedicalWasteRegisterTab.tsx",
 				"SanpinRegisters.tsx",
 			];
 
@@ -62,11 +65,12 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 	});
 
 	describe("2. Золотой стандарт размера файлов (Мандат 8b: Sweet Spot 200–300 строк)", () => {
-		it("все 4 консолидированные вкладки укладываются в диапазон разумного размера", () => {
+		it("все 5 консолидированных вкладок укладываются в диапазон разумного размера", () => {
 			const filesToCheck = [
 				{ name: "AutoclaveJournalTab.tsx", max: 350 },
 				{ name: "CleaningControlTab.tsx", max: 350 },
 				{ name: "UvAndCleaningTab.tsx", max: 350 },
+				{ name: "MedicalWasteRegisterTab.tsx", max: 200 },
 				{ name: "SterilizerFleetManager.tsx", max: 350 },
 				{ name: "SanpinRegisters.tsx", max: 200 },
 			];
@@ -104,6 +108,11 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 			assert.ok(html.includes("Журнал уборок"), "Подраздел уборок");
 			assert.ok(html.includes("Готовность кабинетов"), "Подраздел готовности");
 		});
+
+		it("MedicalWasteRegisterTab рендерит учет отходов классов А и Б", () => {
+			const html = renderToStaticMarkup(<MedicalWasteRegisterTab />);
+			assert.ok(html.includes("УТИЛИЗАЦИЯ ОТХОДОВ") || html.includes("Учет образования"), "Раздел утилизации отходов");
+		});
 	});
 
 	describe("4. Мобильная эргономика (Apple HIG 390x844 & Natural Thumb Zone)", () => {
@@ -122,7 +131,7 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 	});
 
 	describe("5. Автономия врача и отсутствие блокировок (Мандат 8e, 8n)", () => {
-		it("SanpinRegisters монтирует все 4 вкладки и не содержит блокирующих кнопок disabled", () => {
+		it("SanpinRegisters монтирует все 5 вкладок и не содержит блокирующих кнопок disabled", () => {
 			const html = renderToStaticMarkup(<SanpinRegisters />);
 			assert.ok(html.includes("sanpin-container"), "Корневой контейнер");
 			assert.ok(!html.includes('disabled=""'), "Никаких заблокированных кнопок disabled в боевом интерфейсе");

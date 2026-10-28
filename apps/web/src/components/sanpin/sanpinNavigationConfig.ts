@@ -11,6 +11,7 @@ import {
 	Flame,
 	FlaskConical,
 	Sparkles,
+	Trash2,
 	Settings,
 } from "lucide-react";
 import React from "react";
@@ -21,6 +22,7 @@ export type SanpinRegisterTab =
 	| "cleaning"
 	| "disinfection"
 	| "uv_cleaning"
+	| "waste"
 	| "sterilizers"
 	| "fleet"
 	// Legacy aliases to prevent breakage if referenced
@@ -51,9 +53,15 @@ export const SANPIN_CANONICAL_TABS: SanpinTabDef[] = [
 	},
 	{
 		id: "disinfection",
-		label: "Учет ламп и уборок",
-		shortLabel: "Лампы и уборка",
+		label: "Уборка и дезинфекция",
+		shortLabel: "Уборка и лампы",
 		icon: Sparkles,
+	},
+	{
+		id: "waste",
+		label: "Утилизация медицинских отходов",
+		shortLabel: "Медотходы",
+		icon: Trash2,
 	},
 	{
 		id: "sterilizers",
