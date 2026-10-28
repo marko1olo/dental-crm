@@ -98,3 +98,16 @@ export {
 	formatOrthodonticPatientMemo,
 	getRuDateString,
 } from "./orthoPatientMemo";
+
+export {
+	ARCHWIRE_MATERIALS,
+	BRACKET_SYSTEMS,
+	ELASTIC_SCHEMES,
+	ELASTIC_SIZES,
+	ROUND_SECTIONS,
+	RECT_SECTIONS,
+	ANGLE_CLASS_OPTIONS,
+	WORKHORSE_ARCHWIRES,
+	type OrthodonticStageKind,
+	type ArchwireMaterial,
+} from "./orthodonticVisitProtocol/index.js";

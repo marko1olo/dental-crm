@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import React from "react";
 import { renderToString } from "react-dom/server";
 import { AnesthesiaQuickBar } from "../AnesthesiaQuickBar";
 import { calculateAnesthesiaSafety } from "../anesthesiaEngine";
@@ -59,5 +60,12 @@ describe("Red Team Inquisition: Anesthesia Clinical Autonomy & Fast Presets (Man
 		assert.ok(safety.diaryEntryRu.includes("Осложнений нет"), "Contains zero complications");
 		assert.equal(safety.diaryEntryRu.includes("30G"), false, "Must NOT leak needle gauge bureaucracy");
 		assert.equal(safety.diaryEntryRu.includes("Серия:"), false, "Must NOT leak batch bureaucracy in standard diary");
+	});
+
+	it("7. Passive dosage alert triggered on pediatric weight without disabling Primary CTA (Mandates 8e, 8y)", () => {
+		const html = renderToString(<AnesthesiaQuickBar patientWeightKg={15} patientAgeYears={5} onApplyAnesthesia={() => {}} />);
+		assert.ok(html.includes("data-testid=\"anesthesia-passive-overdose-alert\"") || html.includes("15 кг"), "Must render weight indicator");
+		const btnMatch = html.match(/<button[^>]*data-testid="btn-apply-anesthesia-to-card"[^>]*>/);
+		assert.ok(btnMatch && !btnMatch[0].includes("disabled"), "Primary CTA button must NEVER be disabled");
 	});
 });

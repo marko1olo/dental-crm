@@ -5,17 +5,12 @@
 
 import React, { useState, useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import "./styles/tailwind.css";
-import "./styles/main.css";
-import "./styles.css";
+import "./styles/tokens.css";
+import "./styles/themes.css";
 import "./styles/token-aliases.css";
 import "./styles/touch-targets.css";
-import "./styles/modules/mobile-touch.css";
-import "./styles/overflow-fixes.css";
-import "./styles/contrast-fixes.css";
-import "./styles/themes.css";
-import "./styles/theme-overrides.css";
-import "./theme.css";
+import "./styles/tailwind.css";
+import "./components/anesthesia/anesthesia.css";
 import { AnesthesiaQuickBar } from "./components/anesthesia/AnesthesiaQuickBar";
 import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
 import { Syringe, Heart, FileText, CheckCircle2, ShieldAlert } from "lucide-react";

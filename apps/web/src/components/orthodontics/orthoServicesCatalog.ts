@@ -48,3 +48,4 @@ export const ALIGNER_SERVICES: Array<Omit<OrthodonticService, "stageKind">> = [
 
 export const ORTHO_804N_ACTIONS_MAP = ORTHO_ACTIONS_SERVICES_MAP;
 export const ALIGNER_804N_SERVICES = ALIGNER_SERVICES;
+export { calculateOrthodonticServices804n, calculateOrthodonticServices } from "./orthoServicesCalculator.js";

@@ -108,7 +108,7 @@ export function AnesthesiaStepperAndCtaRow(props: AnesthesiaStepperAndCtaRowProp
 				data-testid="btn-apply-anesthesia-to-card"
 			>
 				<CheckCircle2 size={14} className="shrink-0" />
-				<span>✓ Применить анестезию</span>
+				<span>Применить анестезию</span>
 				<span className="sr-only">Применить анестезию В карту В дневник</span>
 			</button>
 		</div>

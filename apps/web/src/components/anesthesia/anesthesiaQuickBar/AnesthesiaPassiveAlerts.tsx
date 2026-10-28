@@ -16,6 +16,9 @@ export interface AnesthesiaPassiveAlertsProps {
 	readonly isCardioRisk: boolean;
 	readonly weight: number;
 	readonly targetToothNumberFdi?: number | string | undefined;
+	readonly isOverdose?: boolean | undefined;
+	readonly maxSafeCarpulesCount?: number | undefined;
+	readonly carpulesCount?: number | undefined;
 }
 
 export function AnesthesiaPassiveAlerts({
@@ -28,8 +31,11 @@ export function AnesthesiaPassiveAlerts({
 	isCardioRisk,
 	weight,
 	targetToothNumberFdi,
+	isOverdose,
+	maxSafeCarpulesCount,
+	carpulesCount,
 }: AnesthesiaPassiveAlertsProps) {
-	const hasAnyAlert = hasLidocaineAllergy || hasArticaineAllergy || hasSulfiteAllergy || hasBronchialAsthma || hasPenicillinAllergy || hasLatexAllergy || isCardioRisk;
+	const hasAnyAlert = hasLidocaineAllergy || hasArticaineAllergy || hasSulfiteAllergy || hasBronchialAsthma || hasPenicillinAllergy || hasLatexAllergy || isCardioRisk || isOverdose;
 
 	return (
 		<div className="flex items-center gap-1.5 flex-wrap min-w-0" data-testid="anesthesia-passive-alerts-strip">
@@ -77,6 +83,12 @@ export function AnesthesiaPassiveAlerts({
 				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 inline-flex items-center gap-1 shrink-0" data-testid="anesthesia-passive-cardio-alert" title="Кардио-профиль: рекомендуется препарат без вазоконстриктора (Скандонест 3%)">
 					<AlertTriangle size={12} className="text-amber-600 shrink-0" />
 					<span>Рекомендуется препарат без вазоконстриктора (Скандонест 3%) (Кардио-контроль)</span>
+				</span>
+			)}
+			{isOverdose && (
+				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 inline-flex items-center gap-1 shrink-0" data-testid="anesthesia-passive-overdose-alert" title="Превышение терапевтической нормы по весу">
+					<AlertTriangle size={12} className="text-amber-600 shrink-0" />
+					<span>{`⚠️ Превышение стандартной нормы для ${weight} кг${maxSafeCarpulesCount !== undefined ? ` (макс. ${maxSafeCarpulesCount} карп.)` : ""}`}</span>
 				</span>
 			)}
 		</div>

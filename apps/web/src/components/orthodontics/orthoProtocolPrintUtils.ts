@@ -34,6 +34,8 @@ export function printOrthodonticCard({
 	}
 }
 
+export const printOrthodonticCardA4 = printOrthodonticCard;
+
 export function copyTextToClipboard(text: string, successMsg = "Скопировано в буфер обмена"): void {
 	if (typeof navigator !== "undefined" && navigator?.clipboard?.writeText) {
 		navigator.clipboard

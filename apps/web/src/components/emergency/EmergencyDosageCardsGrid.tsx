@@ -7,7 +7,9 @@ import React from 'react';
 import type { EmergencyScenarioId } from './emergencyRescuePresets';
 import type { calculateAllEmergencyDosages, calculateLipidRescueDoses } from './emergencyRescueEngine';
 import { EmergencyDrugCardItem } from './emergencyModules/EmergencyDrugCardItem';
-import './emergencyDosages.css';
+if (typeof document !== 'undefined') {
+	import('./emergencyDosages.css');
+}
 
 export interface EmergencyDosageCardsGridProps {
 	activeScenarioId?: EmergencyScenarioId;

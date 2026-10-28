@@ -23,6 +23,9 @@ export interface AnesthesiaTopHeaderRowProps {
 	readonly setTechniqueId: (t: InjectionTechniqueId) => void;
 	readonly onOpenEmergencyProtocol?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
+	readonly isOverdose?: boolean | undefined;
+	readonly maxSafeCarpulesCount?: number | undefined;
+	readonly carpulesCount?: number | undefined;
 }
 
 export function AnesthesiaTopHeaderRow({
@@ -39,6 +42,9 @@ export function AnesthesiaTopHeaderRow({
 	setTechniqueId: _setTechniqueId,
 	onOpenEmergencyProtocol,
 	disabled: _disabled = false,
+	isOverdose,
+	maxSafeCarpulesCount,
+	carpulesCount,
 }: AnesthesiaTopHeaderRowProps) {
 	return (
 		<div className="flex items-center justify-between gap-2 flex-wrap min-w-0" data-testid="anesthesia-top-header-row">
@@ -57,6 +63,9 @@ export function AnesthesiaTopHeaderRow({
 					hasPenicillinAllergy={hasPenicillinAllergy}
 					hasLatexAllergy={hasLatexAllergy}
 					isCardioRisk={isCardioRisk}
+					isOverdose={isOverdose}
+					maxSafeCarpulesCount={maxSafeCarpulesCount}
+					carpulesCount={carpulesCount}
 				/>
 			</div>
 			<button

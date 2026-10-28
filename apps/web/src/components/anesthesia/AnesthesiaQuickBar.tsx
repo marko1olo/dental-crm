@@ -6,19 +6,14 @@
 import { CheckCircle2 } from "lucide-react";
 import React, { useId, useState } from "react";
 import { type AnestheticDrugId, type InjectionTechniqueId } from "./anesthesiaCatalog";
-import {
-	type AnesthesiaCalculationResult, type AnesthesiaPatientMemoParams,
-	calculateAnesthesiaSafety, formatAnesthesiaPatientMemo, resolveClinicalDefaultWeightKg,
-} from "./anesthesiaEngine";
+import { type AnesthesiaCalculationResult, type AnesthesiaPatientMemoParams, calculateAnesthesiaSafety, formatAnesthesiaPatientMemo, resolveClinicalDefaultWeightKg } from "./anesthesiaEngine";
 import { persistAnesthesiaLog, postQuickCarpuleWriteoff } from "./anesthesiaQuickBar/anesthesiaApiPersistence";
 import { AnesthesiaMobileBottomSheet } from "./anesthesiaQuickBar/AnesthesiaMobileBottomSheet";
 import { AnesthesiaPresetDrugsRow } from "./anesthesiaQuickBar/AnesthesiaPresetDrugsRow";
 import { AnesthesiaStepperAndCtaRow } from "./anesthesiaQuickBar/AnesthesiaStepperAndCtaRow";
 import { AnesthesiaTopHeaderRow } from "./anesthesiaQuickBar/AnesthesiaTopHeaderRow";
 
-if (typeof document !== "undefined") {
-	import("./anesthesia.css");
-}
+if (typeof document !== "undefined") import("./anesthesia.css");
 
 export { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocolsReception";
 export type { AnesthesiaPatientMemoParams, AnesthesiaCalculationResult };
@@ -56,6 +51,15 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 	const memoCopyButtonId = useId();
 
 	const weight = resolveClinicalDefaultWeightKg(props.patientWeightKg, props.patientAgeYears, false);
+	const effDrug: AnestheticDrugId = selectedDrugId === "none" ? "articaine_1_100k" : selectedDrugId;
+	const currentSafety = calculateAnesthesiaSafety({
+		drugId: effDrug, carpulesCount, patientWeightKg: weight, patientAgeYears: props.patientAgeYears ?? 35,
+		asaStatus: isCardioRisk ? "asa_3" : "asa_1", hasCardiovascularRisk: isCardioRisk,
+		hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy), hasBronchialAsthma: Boolean(props.hasBronchialAsthma),
+		isPregnantOrLactating: Boolean(props.isPregnantOrLactating), techniqueId, targetToothNumberFdi: props.targetToothNumberFdi,
+		needleType: techniqueId.includes("mandibular") ? "g27_long_35mm" : "g30_short_21mm", aspirationNegativeConfirmed: isAspirationNegative,
+	});
+	const isOverdoseWarning = selectedDrugId !== "none" && (currentSafety.isOverdose || currentSafety.isEpinephrineOverdose || carpulesCount > currentSafety.maxSafeCarpulesCount);
 	const showToast = (msg: string) => { setToastMessage(msg); setTimeout(() => setToastMessage(null), 3000); };
 	const stepCarpules = (delta: number) => setCarpulesCount((prev) => Math.min(10.0, Math.max(0.5, Math.round((prev + delta) * 10) / 10)));
 
@@ -89,7 +93,7 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 
 	return (
 		<div className="anesthesia-quick-bar" data-testid="anesthesia-quick-bar">
-			<AnesthesiaTopHeaderRow targetToothNumberFdi={props.targetToothNumberFdi} weight={weight} hasLidocaineAllergy={props.hasLidocaineAllergy} hasArticaineAllergy={props.hasArticaineAllergy} hasSulfiteAllergy={props.hasSulfiteAllergy} hasBronchialAsthma={props.hasBronchialAsthma} hasPenicillinAllergy={props.hasPenicillinAllergy} hasLatexAllergy={props.hasLatexAllergy} isCardioRisk={isCardioRisk} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={false} />
+			<AnesthesiaTopHeaderRow targetToothNumberFdi={props.targetToothNumberFdi} weight={weight} hasLidocaineAllergy={props.hasLidocaineAllergy} hasArticaineAllergy={props.hasArticaineAllergy} hasSulfiteAllergy={props.hasSulfiteAllergy} hasBronchialAsthma={props.hasBronchialAsthma} hasPenicillinAllergy={props.hasPenicillinAllergy} hasLatexAllergy={props.hasLatexAllergy} isCardioRisk={isCardioRisk} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={false} isOverdose={isOverdoseWarning} maxSafeCarpulesCount={currentSafety.maxSafeCarpulesCount} carpulesCount={carpulesCount} />
 			<div className="flex items-center justify-between gap-2 flex-wrap min-w-0 pt-0.5">
 				<AnesthesiaPresetDrugsRow selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} carpulesCount={carpulesCount} onApplyDirect={applyAnesthesiaDirect} disabled={false} />
 				<AnesthesiaStepperAndCtaRow carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} stepCarpules={stepCarpules} isAspirationNegative={isAspirationNegative} setIsAspirationNegative={setIsAspirationNegative} copyPatientMemo={copyPatientMemo} memoCopyButtonId={memoCopyButtonId} onApplyToCard={() => applyAnesthesiaDirect(selectedDrugId, carpulesCount)} onOpenMobileDrawer={() => setIsMobileDrawerOpen(true)} onOpenEmergencyProtocol={props.onOpenEmergencyProtocol} disabled={false} />
@@ -106,7 +110,7 @@ export function AnesthesiaQuickBar(props: AnesthesiaQuickBarProps) {
 					<span>{toastMessage}</span>
 				</div>
 			)}
-			<AnesthesiaMobileBottomSheet isOpen={isMobileDrawerOpen} onClose={() => setIsMobileDrawerOpen(false)} carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onApplyDirect={applyAnesthesiaDirect} disabled={false} />
+			<AnesthesiaMobileBottomSheet isOpen={isMobileDrawerOpen} onClose={() => setIsMobileDrawerOpen(false)} carpulesCount={carpulesCount} setCarpulesCount={setCarpulesCount} selectedDrugId={selectedDrugId} techniqueId={techniqueId} setTechniqueId={setTechniqueId} onApplyDirect={applyAnesthesiaDirect} disabled={false} isOverdose={isOverdoseWarning} maxSafeCarpulesCount={currentSafety.maxSafeCarpulesCount} />
 			<span className="sr-only" data-testid="anesthesia-dose-norm-preset">Норма: Артикаин 1:100к</span>
 		</div>
 	);
