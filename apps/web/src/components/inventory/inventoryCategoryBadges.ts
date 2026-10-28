@@ -18,5 +18,9 @@ export function getCategoryBadge(category?: string): { label: string; className:
 		return { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
 	}
 	const norm = category.toLowerCase().trim();
-	return CATEGORY_MAP[norm] || { label: "Материалы", className: "bg-[var(--paper-soft)] text-[var(--muted)] border-[var(--line)]" };
+	if (CATEGORY_MAP[norm]) {
+		return CATEGORY_MAP[norm];
+	}
+	const fallbackLabel = category.trim() || "Материалы";
+	return { label: fallbackLabel, className: "bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]" };
 }

@@ -2,11 +2,10 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { InventoryStockTable } from "../InventoryStockTable.js";
-import type { InventoryItem } from "../useInventoryLogic.js";
+import { InventoryStockTable, type WarehouseStockItem } from "../InventoryStockTable.js";
 
 describe("FEFO Smart Anesthesia & Expiry Traffic Light: Table Rendering", () => {
-	const testItems: readonly InventoryItem[] = [
+	const testItems: readonly WarehouseStockItem[] = [
 		{
 			id: "item-green",
 			name: "Артикаин 1:100 000 (Ультракаин Д-С Форте)",

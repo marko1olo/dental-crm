@@ -15,6 +15,7 @@ import {
 	getExpiryTrafficLight,
 	getWarehouseFefoTrafficLight,
 	getFefoTrafficLight,
+	getCategoryBadge,
 	type ExpiryTrafficLightInfo,
 	type ExpiryTrafficStatus,
 	type FefoTrafficLightInfo,
@@ -24,6 +25,7 @@ export {
 	getExpiryTrafficLight,
 	getWarehouseFefoTrafficLight,
 	getFefoTrafficLight,
+	getCategoryBadge,
 	type ExpiryTrafficLightInfo,
 	type ExpiryTrafficStatus,
 	type FefoTrafficLightInfo,
@@ -274,7 +276,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 											<span className="text-[11px] font-mono text-[var(--muted)]">#{sku}</span>
 											<h4 className="font-semibold text-sm text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</h4>
 											<div className="flex items-center gap-2 mt-0.5 flex-wrap">
-												<span className="text-xs text-[var(--muted)]">{item.category || "Расходные материалы"}</span>
+												<span className="text-xs text-[var(--muted)]">{getCategoryBadge(item.category || "").label}</span>
 												{item.expirationDate && (
 													<span className={`inline-flex px-1.5 py-0.2 rounded font-medium text-[10px] border ${traffic.className}`}>{traffic.badgeTextRu}</span>
 												)}
@@ -378,7 +380,9 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 												)}
 											</td>
 											{/* 3. Категория */}
-											<td className="py-2.5 px-3 text-xs text-[var(--muted)] truncate" title={item.category || "Расходные"}>{item.category || "Расходные"}</td>
+											<td className="py-2.5 px-3 text-xs text-[var(--muted)] whitespace-nowrap" title={getCategoryBadge(item.category || "").label}>
+												{getCategoryBadge(item.category || "").label}
+											</td>
 											{/* 4. Остаток */}
 											<td className="py-2.5 px-3 text-right font-mono font-bold tabular-nums">
 												<span className={isOverdraft ? "text-amber-500" : isLow ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}>{qty}</span>

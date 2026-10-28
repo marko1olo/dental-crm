@@ -37,9 +37,9 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 							onClick={onOpenMdlpScanning}
 							className="mobile-inventory-kpi-badge cursor-pointer hover:border-[var(--teal)] transition-colors active:scale-95"
 							data-testid="mobile-header-btn-mdlp"
-							title="Маркированные медикаменты МДЛП и Честный Знак"
+							title="Маркированные медикаменты и Честный Знак"
 						>
-							МДЛП
+							Маркировка
 						</button>
 					)}
 					<span

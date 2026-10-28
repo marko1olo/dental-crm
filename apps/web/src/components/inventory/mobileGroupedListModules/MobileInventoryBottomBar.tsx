@@ -33,12 +33,12 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 					type="button"
 					className="mobile-inventory-secondary-btn cursor-pointer"
 					onClick={onOpenMdlpScanning}
-					title="Маркированные медикаменты Честный Знак / МДЛП"
-					aria-label="Маркировка"
+					title="Маркированные медикаменты и Честный Знак"
+					aria-label="Маркировка и Честный Знак"
 					data-testid="mobile-btn-mdlp-trigger"
 				>
 					<QrCode size={18} aria-hidden="true" />
-					<span>МДЛП</span>
+					<span>Скан</span>
 				</button>
 			)}
 

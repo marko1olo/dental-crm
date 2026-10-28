@@ -29,7 +29,7 @@ export interface InventoryStockTableProps extends WarehouseStockTableProps {
 	readonly onShowMore?: (() => void) | undefined;
 	readonly onOpenWarehouseManager?: (() => void) | undefined;
 	readonly onOpenInventoryAudit?: (() => void) | undefined;
-	readonly onCreateDisposalAct?: ((item: WarehouseStockItem) => void) | undefined;
+	readonly onCreateDisposalAct?: ((item: WarehouseStockItem | any) => void) | undefined;
 }
 
 export const InventoryStockTable: React.FC<InventoryStockTableProps> = (props) => {

@@ -3,6 +3,7 @@ import {
 } from "lucide-react";
 import React from "react";
 import { getExpiryTrafficLight } from "../InventoryStockTable.js";
+import { getCategoryBadge } from "../inventoryCategoryBadges.js";
 import type { InventoryItem } from "../inventoryDataMappers.js";
 import { getItemCategoryType } from "./types.js";
 
@@ -44,7 +45,7 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 			<div className="mobile-inventory-item-info">
 				<div className="mobile-inventory-item-name">{item.name}</div>
 				<div className="mobile-inventory-item-meta">
-					<span>{item.category || "Расходные материалы"}</span>
+					<span>{getCategoryBadge(item.category).label}</span>
 					<span>•</span>
 					<span className="mobile-inventory-stock-highlight">{item.stockQuantity} {item.unit || "шт."}</span>
 					{item.lotNumber && (

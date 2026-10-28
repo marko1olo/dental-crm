@@ -27,7 +27,7 @@ export interface WarehouseInboundInvoiceModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly organizationId?: string | undefined;
-	readonly initialWaybill?: unknown;
+	readonly initialWaybill?: any;
 	readonly inventoryItems?: readonly {
 		readonly id: string;
 		readonly name: string;
