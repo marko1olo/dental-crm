@@ -20,6 +20,7 @@ import {
 } from "./types";
 import { ToothSurfacesSelector } from "./ToothSurfacesSelector";
 import { ToothClinicalTestsSection } from "./ToothClinicalTestsSection";
+import { ToothRadiologyDiagnosticSection } from "./ToothRadiologyDiagnosticSection";
 
 export interface ToothDiagnosisTabProps {
 	code: string;
@@ -35,6 +36,7 @@ export interface ToothDiagnosisTabProps {
 	handleAdd804nService: (preset: any) => void;
 	appendToEMKField: (field: string, text: string) => void;
 	onSelectSurface?: (surface: string) => void;
+	onOpenCbctMpr?: () => void;
 }
 
 export function ToothDiagnosisTab({
@@ -49,6 +51,7 @@ export function ToothDiagnosisTab({
 	handleAdd804nService,
 	appendToEMKField,
 	onSelectSurface,
+	onOpenCbctMpr,
 }: ToothDiagnosisTabProps) {
 	const currentProtocol = TOOTH_CLINICAL_PROTOCOLS[selectedProtocolKey];
 
@@ -68,6 +71,12 @@ export function ToothDiagnosisTab({
 				code={code}
 				selectedSurfaces={selectedSurfaces}
 				onSelectSurface={onSelectSurface}
+			/>
+
+			{/* 1-Click RVG снимок и запуск 3D КЛКТ MPR */}
+			<ToothRadiologyDiagnosticSection
+				code={code}
+				onOpenCbctMpr={onOpenCbctMpr}
 			/>
 
 			<div className="_ccm-sub-label">Физиологическое состояние</div>

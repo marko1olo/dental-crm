@@ -1,4 +1,4 @@
-import type { MprPlane } from "../../cbctMprMath";
+import type { MprPlane } from "../cbctMprMath";
 import { ROMEXIS_COLORS } from "../cbctOverlayDecorationMath";
 
 export interface PlaneColors {

@@ -32,6 +32,30 @@ import {
 	updateOdontogramToothToPlannedImplant,
 } from "../ctImplantIntegrationBridge";
 
+/**
+ * Compresses canvas frame to WebP/JPEG (0.85 quality) to avoid Fastify 413 Payload Too Large
+ * and reduce storage consumption while preserving clinical diagnostic fidelity.
+ */
+function captureCompressedCanvasDataUrl(canvas: HTMLCanvasElement): string {
+	try {
+		const webpUrl = canvas.toDataURL("image/webp", 0.85);
+		if (webpUrl && webpUrl.startsWith("data:image/webp")) {
+			return webpUrl;
+		}
+	} catch {
+		// fallback
+	}
+	try {
+		const jpegUrl = canvas.toDataURL("image/jpeg", 0.85);
+		if (jpegUrl && jpegUrl.startsWith("data:image/jpeg")) {
+			return jpegUrl;
+		}
+	} catch {
+		// fallback
+	}
+	return canvas.toDataURL("image/png");
+}
+
 export interface UseCbctStudioExportsProps {
 	readonly patientId?: string | undefined;
 	readonly patientDisplayName: string;
@@ -126,7 +150,7 @@ export function useCbctStudioExports({
 					  (document.querySelector('canvas') as HTMLCanvasElement | null)
 					: null);
 			if (targetCanvas) {
-				sliceDataUrl = targetCanvas.toDataURL("image/png");
+				sliceDataUrl = captureCompressedCanvasDataUrl(targetCanvas);
 			}
 		} catch {
 			// ignore canvas capture failure
@@ -261,7 +285,7 @@ export function useCbctStudioExports({
 					  (document.querySelector('canvas') as HTMLCanvasElement | null)
 					: null);
 			if (targetCanvas) {
-				sliceDataUrl = targetCanvas.toDataURL("image/png");
+				sliceDataUrl = captureCompressedCanvasDataUrl(targetCanvas);
 			}
 		} catch {
 			// ignore canvas capture failure
@@ -388,7 +412,7 @@ export function useCbctStudioExports({
 					  (document.querySelector('canvas') as HTMLCanvasElement | null)
 					: null);
 			if (targetCanvas) {
-				sliceDataUrl = targetCanvas.toDataURL("image/png");
+				sliceDataUrl = captureCompressedCanvasDataUrl(targetCanvas);
 			}
 		} catch {
 			// ignore canvas capture failure

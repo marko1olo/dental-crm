@@ -720,3 +720,40 @@ export function normalizedXrayPregnancyStatus(
 ): XrayCbctReferralPregnancyStatus {
 	return isOptionValue(value, xrayPregnancyStatusOptions) ? value : "unknown";
 }
+
+export * from "./imagingMprHelpers.js";
+
+export {
+	dicomWorkbenchDraftStoreName,
+	mprWorkbenchDraftStoreName,
+} from "../helpers/offlineStorageEngine";
+
+export type {
+	DicomWorkbenchIndexedDbDraft,
+	DicomWorkbenchLocalDraft,
+	MprWorkbenchIndexedDbDraft,
+	MprWorkbenchLocalDraft,
+	MprWorkbenchState,
+} from "./types";
+
+export function readFileAsDataUrl(file: File): Promise<string> {
+	return new Promise((resolve, reject) => {
+		const reader = new FileReader();
+		reader.onerror = () => reject(new Error("Снимок не удалось прочитать"));
+		reader.onload = () =>
+			resolve(typeof reader.result === "string" ? reader.result : "");
+		reader.readAsDataURL(file);
+	});
+}
+
+export function loadImageFromDataUrl(
+	dataUrl: string,
+): Promise<HTMLImageElement> {
+	return new Promise((resolve, reject) => {
+		const image = new Image();
+		image.onload = () => resolve(image);
+		image.onerror = () => reject(new Error("Снимок не удалось распознать"));
+		image.src = dataUrl;
+	});
+}
+

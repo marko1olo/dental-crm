@@ -384,7 +384,7 @@
 }
 
 .mobile-radiology-drag-handle {
-	width: 38px;
+	width: 36px;
 	height: 5px;
 	border-radius: 999px;
 	background: var(--line-strong, rgba(148, 163, 184, 0.4));

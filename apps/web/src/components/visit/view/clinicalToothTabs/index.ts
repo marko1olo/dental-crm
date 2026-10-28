@@ -25,3 +25,4 @@ export { ToothTherapyTab } from "./ToothTherapyTab";
 export { ToothEndoTab } from "./ToothEndoTab";
 export { ToothSurgeryTab } from "./ToothSurgeryTab";
 export { ToothAssignedServicesSection } from "./ToothAssignedServicesSection";
+export { ToothRadiologyDiagnosticSection } from "./ToothRadiologyDiagnosticSection";
