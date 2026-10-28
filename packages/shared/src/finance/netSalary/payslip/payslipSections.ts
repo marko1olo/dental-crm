@@ -2,13 +2,13 @@
  * payslipSections.ts — HTML section builders for doctor production payslip (Mandate 8b, <= 120 lines).
  */
 
-import type { DoctorT51VisitItem, DoctorT51LabItem, CategoryAccrualBreakdown } from "../types.js";
+import type { DoctorPayslipVisitItem, DoctorPayslipLabItem, CategoryAccrualBreakdown } from "../types.js";
 
 export function formatMoney(rub: number): string {
 	return rub.toLocaleString("ru-RU", { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + " ₽";
 }
 
-export function renderVisitsSectionHtml(visits: readonly DoctorT51VisitItem[] = []): string {
+export function renderVisitsSectionHtml(visits: readonly DoctorPayslipVisitItem[] = []): string {
 	if (visits.length === 0) return "";
 	const rows = visits.map((v, i) => `
 		<tr>
@@ -40,7 +40,7 @@ export function renderVisitsSectionHtml(visits: readonly DoctorT51VisitItem[] = 
 	</table>`;
 }
 
-export function renderLabOrdersSectionHtml(labOrders: readonly DoctorT51LabItem[] = []): string {
+export function renderLabOrdersSectionHtml(labOrders: readonly DoctorPayslipLabItem[] = []): string {
 	if (labOrders.length === 0) return "";
 	const rows = labOrders.map((l, i) => `
 		<tr>

@@ -37,6 +37,7 @@ export {
 	payoutRowNote,
 	extractMedicalCardNumber,
 	humanizeRestorationType,
+	generateDoctorPayslipHtml,
 	generateDoctorT51Payslip,
 	doctorPayouts,
 	buildDoctorPayoutAggregateQuery,

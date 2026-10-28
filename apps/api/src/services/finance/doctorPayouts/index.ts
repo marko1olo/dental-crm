@@ -30,7 +30,7 @@ export {
 	humanizeRestorationType,
 } from "./helpers.js";
 
-export { generateDoctorT51Payslip } from "./t51Payslip.js";
+export { generateDoctorPayslipHtml, generateDoctorT51Payslip } from "./doctorPayslip.js";
 
 export { doctorPayouts } from "./reportEngine.js";
 export { buildDoctorPayoutAggregateQuery } from "./queries.js";

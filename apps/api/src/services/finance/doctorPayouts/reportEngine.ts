@@ -5,10 +5,11 @@ import {
 	DENTAL_SPECIALTY_NAMES_RU,
 	type DentalSpecialtyCategory,
 	type CategoryAccrualBreakdown,
+	generateDoctorEarningsPayslipHtml,
 	generateDoctorT51Html,
-	type DoctorT51PrintPayload,
-	type DoctorT51VisitItem,
-	type DoctorT51LabItem,
+	type DoctorPayslipPrintPayload,
+	type DoctorPayslipVisitItem,
+	type DoctorPayslipLabItem,
 	isGeneralClinicOverheadConsumable,
 } from "@dental/shared";
 import type {
@@ -334,7 +335,7 @@ export async function doctorPayouts(
 			});
 		}
 
-		const t51Visits: DoctorT51VisitItem[] = doctorVisitsList.flatMap((v) =>
+		const payslipVisits: DoctorPayslipVisitItem[] = doctorVisitsList.flatMap((v) =>
 			v.services.map((srv) => {
 				const srvTotal = roundMoney(new Decimal(srv.priceRub).times(srv.quantity));
 				const srvAccrued = percentOfMoney(srvTotal, commissionPct ?? 0);
@@ -352,7 +353,7 @@ export async function doctorPayouts(
 			}),
 		);
 
-		const t51LabOrders: DoctorT51LabItem[] = doctorLabOrdersList.map((lo) => ({
+		const payslipLabOrders: DoctorPayslipLabItem[] = doctorLabOrdersList.map((lo) => ({
 			orderNumber: lo.orderNumber,
 			patientName: lo.patientName,
 			restorationType: lo.restorationType,
@@ -362,7 +363,7 @@ export async function doctorPayouts(
 			isWarranty: Boolean(lo.isWarranty),
 		}));
 
-		const t51Payload: DoctorT51PrintPayload = {
+		const payslipPayload: DoctorPayslipPrintPayload = {
 			organizationName: drillDown.organizationName,
 			organizationInn: drillDown.organizationInn ?? "",
 			doctorName: row.doctorName,
@@ -387,11 +388,11 @@ export async function doctorPayouts(
 			overheadConsumablesCoveredRub: overheadCostRub,
 			netPayoutRub: computed.payoutRub ?? 0,
 			...(categoryBreakdown.length > 0 ? { categoryBreakdown } : {}),
-			...(t51Visits.length > 0 ? { visits: t51Visits } : {}),
-			...(t51LabOrders.length > 0 ? { labOrders: t51LabOrders } : {}),
+			...(payslipVisits.length > 0 ? { visits: payslipVisits } : {}),
+			...(payslipLabOrders.length > 0 ? { labOrders: payslipLabOrders } : {}),
 		};
 
-		const t51Html = generateDoctorT51Html(t51Payload);
+		const payslipHtml = generateDoctorEarningsPayslipHtml(payslipPayload);
 
 		return {
 			doctorUserId: row.doctorUserId,
@@ -419,7 +420,8 @@ export async function doctorPayouts(
 			withheldMaterialRub: computed.withheldMaterialRub,
 			payoutRub: computed.payoutRub,
 			...(categoryBreakdown.length > 0 ? { categoryBreakdown } : {}),
-			t51Html,
+			payslipHtml,
+			t51Html: payslipHtml,
 			note: payoutRowNote({
 				state: computed.state,
 				materialsState,

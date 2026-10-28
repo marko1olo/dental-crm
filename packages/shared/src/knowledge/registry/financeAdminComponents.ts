@@ -340,9 +340,9 @@ export const ANALYTICS_DASHBOARD_COMPONENT: CrmComponentKnowledge = {
 			role: ["owner", "admin"],
 		},
 		{
-			id: "btn-export-payroll-t51",
-			label: "Зарплатная ведомость",
-			selector: '[data-testid="btn-export-payroll-t51"]',
+			id: "btn-export-doctor-payslip",
+			label: "Расчетная ведомость врача",
+			selector: '[data-testid="btn-export-doctor-payslip"], [data-testid="btn-export-payroll-t51"], [data-testid="doctor-payroll-download-csv"]',
 			effect: "Рассчитывает процент врачей и ассистентов от чистой выручки (Net Revenue) без копеечных ошибок.",
 			requiresConfirmation: false,
 			role: ["owner"],
@@ -352,7 +352,7 @@ export const ANALYTICS_DASHBOARD_COMPONENT: CrmComponentKnowledge = {
 		kpiCardsGrid: '[data-testid="analytics-kpi-cards-grid"]',
 		revenueChart: '[data-testid="analytics-revenue-chart"]',
 		chairUtilizationBar: '[data-testid="chair-utilization-bar"]',
-		payrollExportButton: '[data-testid="btn-export-payroll-t51"]',
+		payrollExportButton: '[data-testid="btn-export-doctor-payslip"], [data-testid="btn-export-payroll-t51"], [data-testid="doctor-payroll-download-csv"]',
 	},
 	visualGuides: [
 		{
@@ -380,13 +380,13 @@ export const ANALYTICS_DASHBOARD_COMPONENT: CrmComponentKnowledge = {
 		{
 			symptom: "Расхождения в расчёте зарплаты врачей",
 			cause: "Учёт скидок или возвратов.",
-			solution: "Система рассчитывает мотивацию по форме Т-51 строго от чистой поступившей выручки (Net Revenue) с учётом скидок.",
-			recoverySelector: '[data-testid="btn-export-payroll-t51"]',
+			solution: "Система рассчитывает мотивацию врача строго от чистой поступившей выручки (Net Revenue) с учётом скидок.",
+			recoverySelector: '[data-testid="btn-export-doctor-payslip"], [data-testid="btn-export-payroll-t51"], [data-testid="doctor-payroll-download-csv"]',
 		},
 	],
 	scaleAdaptability: "Соло-врач видит свой личный чистый доход. Владелец сети видит сравнение филиалов.",
-	complianceNotes: "Управленческий учёт, форма Т-51 расчёта заработной платы, ст. 149 НК РФ.",
-	keywords: ["аналитика", "выручка", "отчёты", "зарплата", "т51", "кпи", "kpi", "средний чек", "загрузка кресел"],
+	complianceNotes: "Управленческий учёт, расчетная ведомость начислений заработной платы врача, ст. 149 НК РФ.",
+	keywords: ["аналитика", "выручка", "отчёты", "зарплата", "ведомость", "расчетный листок", "кпи", "kpi", "средний чек", "загрузка кресел"],
 };
 
 export const CHAIRSIDE_COPILOT_COMPONENT: CrmComponentKnowledge = {

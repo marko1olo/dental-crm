@@ -78,6 +78,8 @@ export function PayrollTabHeader({
 					onClick={onExportCsv}
 					className="secondary-button min-h-[44px] sm:min-h-0 sm:h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs inline-flex items-center justify-center gap-1.5 hover:bg-[var(--paper-soft,#f8fafc)] active:scale-95 transition-all cursor-pointer shadow-xs flex-1 sm:flex-initial"
 					title="Выгрузить расчетную ведомость в формате CSV (1C:Предприятие)"
+					data-testid="btn-export-doctor-payslip"
+					id="btn-export-doctor-payslip"
 				>
 					<Download className="w-3.5 h-3.5 text-[var(--teal,var(--brand-primary))] shrink-0" />
 					<span className="hidden sm:inline">Экспорт ведомости (CSV)</span>

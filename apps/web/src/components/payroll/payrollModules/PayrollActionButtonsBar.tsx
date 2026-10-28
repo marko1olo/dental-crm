@@ -56,7 +56,8 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 						onClick={onDownloadCsv}
 						className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
 						title="Выгрузить расчетную ведомость в формате CSV"
-						data-testid="doctor-payroll-download-csv"
+						data-testid="btn-export-doctor-payslip"
+						id="btn-export-doctor-payslip"
 					>
 						<Download className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 						<span>Экспорт ведомости (CSV)</span>

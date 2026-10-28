@@ -137,7 +137,9 @@ export type DoctorPayoutRow = {
 	/** Детализация начислений по категориям (терапия, ортопедия, хирургия, ортодонтия, гигиена). */
 	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[] | undefined;
 
-	/** Печатная форма расчетного листка Т-51. */
+	/** Официальная печатная форма расчетного листка (ведомости) врача. */
+	readonly payslipHtml?: string | undefined;
+	/** @deprecated Use payslipHtml (Mandate 8x / 8ap). */
 	readonly t51Html?: string | undefined;
 
 	/** Причина и действие человеческим языком — для показа как есть. */

@@ -12,6 +12,7 @@ import test from "node:test";
 import {
 	computeDoctorPayout,
 	extractMedicalCardNumber,
+	generateDoctorPayslipHtml,
 	generateDoctorT51Payslip,
 	humanizeRestorationType,
 	MAX_PAYOUT_PERIOD_DAYS,
@@ -333,7 +334,7 @@ test("extractMedicalCardNumber корректно извлекает номер 
 	assert.equal(fromOms, "ОМС 1234567890123456");
 
 	const fallback = extractMedicalCardNumber("123e4567-e89b-12d3-a456-426614174000", null);
-	assert.equal(fallback, "043/у-123E45");
+	assert.equal(fallback, "МК-123E45");
 });
 
 test("humanizeRestorationType возвращает понятное русское наименование зуботехнической конструкции", () => {
@@ -387,7 +388,7 @@ test("общеклинические расходники (салфетки, в�
 	assert.equal(result.payoutRub, 22000);
 });
 
-test("generateDoctorT51Payslip формирует официальный расчетный листок Т-51 с реестром приемов и ЗТЛ", () => {
+test("generateDoctorPayslipHtml формирует официальную расчетную ведомость выработки врача с реестром приемов и ЗТЛ", () => {
 	const mockDoctorRow: DoctorPayoutRow = {
 		doctorUserId: "d1234567-89ab-cdef-0123-456789abcdef",
 		doctorName: "Барабаш Сергей Владимирович",
@@ -476,7 +477,7 @@ test("generateDoctorT51Payslip формирует официальный рас�
 		],
 	};
 
-	const html = generateDoctorT51Payslip(mockDoctorRow, {
+	const html = generateDoctorPayslipHtml(mockDoctorRow, {
 		organizationName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",
 		organizationInn: "7701234567",
 		periodFrom: "2026-07-01T00:00:00.000Z",

@@ -4,11 +4,12 @@ import {
 	calculateDoctorNetSalary,
 	calculateServicesPayrollBreakdown,
 	classifyServiceCategory,
+	generateDoctorEarningsPayslipHtml,
 	generateDoctorT51Html,
 	isGeneralClinicOverheadConsumable,
 } from "../finance/doctorNetSalaryEngine.js";
 
-test("calculateDoctorNetSalary: correctly calculates Net Revenue according to Form T-51 statutory formula", () => {
+test("calculateDoctorNetSalary: correctly calculates Net Revenue according to doctor piece-rate formula", () => {
 	const result = calculateDoctorNetSalary({
 		grossRevenueRub: 100000,
 		labCostRub: 20000,
@@ -183,7 +184,7 @@ test("classifyServiceCategory: maps service titles and Order 804n codes to clini
 });
 
 test("generateDoctorEarningsPayslipHtml: generates clinical doctor production payslip with itemized visits and lab orders", () => {
-	const html = generateDoctorT51Html({
+	const html = generateDoctorEarningsPayslipHtml({
 		organizationName: 'ООО "ДЕНТЕ ДЕНТАЛ КЛИНИК"',
 		organizationInn: "7701234567",
 		doctorName: "Смирнов Алексей Владимирович",

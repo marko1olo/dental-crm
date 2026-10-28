@@ -13,7 +13,7 @@ import {
 } from "./payrollEngine";
 import { DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "./payrollPresets";
 
-describe("Doctor & Staff Payroll Calculation Engine (Т-51 / НДФЛ 13%)", () => {
+describe("Doctor & Staff Payroll Calculation Engine (Сдельная ведомость / НДФЛ 13%)", () => {
 	it("1.1 Therapist piece-rate calculation with direct material deduction", () => {
 		const services: DoctorCompletedServiceItem[] = [
 			{

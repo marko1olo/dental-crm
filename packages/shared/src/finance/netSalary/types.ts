@@ -216,7 +216,7 @@ export interface DoctorNetSalaryBreakdown {
 	readonly netPayoutKop: Kopecks;
 	readonly netPayoutRub: number;
 
-	/** Форматированные строки для печати ведомости Т-51 */
+	/** Форматированные строки для печати расчетной ведомости врача */
 	readonly formattedGross: string;
 	readonly formattedNetBase: string;
 	readonly formattedTotalAccrued: string;
@@ -388,7 +388,7 @@ export interface DoctorSalaryCalculationResult {
 /** @deprecated Use DoctorSalaryCalculationResult (Mandate 8ap) */
 export type IdentDoctorSalaryCalculationResult = DoctorSalaryCalculationResult;
 
-export interface DoctorT51VisitItem {
+export interface DoctorPayslipVisitItem {
 	readonly visitId: string;
 	readonly visitDate: string;
 	readonly patientName: string;
@@ -400,7 +400,7 @@ export interface DoctorT51VisitItem {
 	readonly accruedRub: number;
 }
 
-export interface DoctorT51LabItem {
+export interface DoctorPayslipLabItem {
 	readonly orderNumber: string;
 	readonly patientName: string;
 	readonly restorationType: string;
@@ -410,7 +410,7 @@ export interface DoctorT51LabItem {
 	readonly isWarranty: boolean;
 }
 
-export interface DoctorT51PrintPayload {
+export interface DoctorPayslipPrintPayload {
 	readonly organizationName: string;
 	readonly organizationInn?: string | undefined;
 	readonly doctorName: string;
@@ -430,11 +430,13 @@ export interface DoctorT51PrintPayload {
 	readonly overheadConsumablesCoveredRub?: number | undefined;
 	readonly netPayoutRub: number;
 	readonly categoryBreakdown?: readonly CategoryAccrualBreakdown[] | undefined;
-	readonly visits?: readonly DoctorT51VisitItem[] | undefined;
-	readonly labOrders?: readonly DoctorT51LabItem[] | undefined;
+	readonly visits?: readonly DoctorPayslipVisitItem[] | undefined;
+	readonly labOrders?: readonly DoctorPayslipLabItem[] | undefined;
 }
 
-/** Алиасы клинического стандарта без советских форм Госкомстата (Мандат 8x) */
-export type DoctorPayslipVisitItem = DoctorT51VisitItem;
-export type DoctorPayslipLabItem = DoctorT51LabItem;
-export type DoctorPayslipPrintPayload = DoctorT51PrintPayload;
+/** @deprecated Use DoctorPayslipVisitItem (Мандат 8x / 8ap) */
+export type DoctorT51VisitItem = DoctorPayslipVisitItem;
+/** @deprecated Use DoctorPayslipLabItem (Мандат 8x / 8ap) */
+export type DoctorT51LabItem = DoctorPayslipLabItem;
+/** @deprecated Use DoctorPayslipPrintPayload (Мандат 8x / 8ap) */
+export type DoctorT51PrintPayload = DoctorPayslipPrintPayload;

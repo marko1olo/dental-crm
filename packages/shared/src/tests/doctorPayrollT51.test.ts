@@ -3,14 +3,15 @@ import assert from "node:assert/strict";
 import {
 	calculateDoctorPeriodPayroll,
 	calculateAssistantPeriodPayroll,
+	generateDoctorPayrollCsv,
 	generatePayrollT51Csv,
 	DOCTOR_SPECIALTY_PAYROLL_PRESETS,
 	ASSISTANT_SHIFT_RULE,
 	KPI_BONUS_TIERS,
 	type DoctorCompletedServiceItem,
-} from "../finance/doctorPayrollT51.js";
+} from "../finance/doctorPayrollEngine.js";
 
-describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
+describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 	it("1.1 Calculates therapist commission with material deductions, min guarantee, and NDFL 13%", () => {
 		const services: DoctorCompletedServiceItem[] = [
 			{
@@ -207,7 +208,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 		assert.equal(res.netPayoutToAssistantKop, 1096200);
 	});
 
-	it("1.6 Generates valid Russian Form T-51 CSV with UTF-8 BOM", () => {
+	it("1.6 Generates valid Russian doctor payslip summary CSV with UTF-8 BOM", () => {
 		const resWithServices = calculateDoctorPeriodPayroll({
 			doctorId: "doc-1",
 			doctorName: "Д-р Смирнов А. В.",
@@ -228,7 +229,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine (Form T-51)", () => {
 				},
 			],
 		});
-		const csv = generatePayrollT51Csv([resWithServices]);
+		const csv = generateDoctorPayrollCsv([resWithServices]);
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("Табельный ID;Врач;Специальность;Период"));
 		assert.ok(csv.includes("Д-р Смирнов А. В."));

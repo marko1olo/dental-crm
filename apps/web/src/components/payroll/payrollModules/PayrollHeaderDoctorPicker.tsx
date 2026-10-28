@@ -49,11 +49,14 @@ export const PayrollHeaderDoctorPicker: React.FC<PayrollHeaderDoctorPickerProps>
 					className="h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs font-bold text-[var(--ink,#0f172a)] focus:outline-none focus:ring-2 focus:ring-[var(--teal,#0d9488)]"
 				>
 					{doctorsList.length === 0 ? (
-						SOLO_DOCTOR_SPECIALTY_PRESETS.map((spec) => (
-							<option key={spec.specialtyId} value={spec.specialtyId}>
-								{spec.labelRu}
-							</option>
-						))
+						<>
+							<option value="solo-doctor">{DEFAULT_SOLO_DOCTOR.name}</option>
+							{SOLO_DOCTOR_SPECIALTY_PRESETS.map((spec) => (
+								<option key={spec.specialtyId} value={spec.specialtyId}>
+									{spec.labelRu}
+								</option>
+							))}
+						</>
 					) : (
 						<>
 							<option value="">— Выберите врача —</option>

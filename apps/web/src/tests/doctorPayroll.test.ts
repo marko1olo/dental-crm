@@ -1,13 +1,20 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	calculateDoctorPeriodPayroll,
 	calculateAssistantPeriodPayroll,
+	generateDoctorPayrollCsv,
 	generatePayrollT51Csv,
 	generateDoctorPayslipMessengerText,
 	type DoctorCompletedServiceItem,
 } from "../components/finance/payroll/payrollEngine";
 import { DOCTOR_SPECIALTY_PAYROLL_PRESETS } from "../components/finance/payroll/payrollPresets";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 	it("should calculate therapist commission with material deductions and NDFL 13%", () => {
@@ -115,7 +122,7 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 			periodEndIso: "2026-08-31",
 			services: [],
 		});
-		const csv = generatePayrollT51Csv([res]);
+		const csv = generateDoctorPayrollCsv([res]);
 		assert.ok(csv.startsWith("\uFEFF"));
 		assert.ok(csv.includes("Д-р Смирнов"));
 	});
@@ -473,9 +480,6 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 	});
 
 	it("DoctorPayrollTab facade and modules strictly respect Mandate 8b line limits (<= 120 lines)", () => {
-		const fs = require("node:fs");
-		const path = require("node:path");
-
 		const tabPath = path.resolve(__dirname, "../views/financeView/DoctorPayrollTab.tsx");
 		assert.ok(fs.existsSync(tabPath), "DoctorPayrollTab.tsx must exist");
 		const tabLines = fs.readFileSync(tabPath, "utf-8").split("\n").length;
