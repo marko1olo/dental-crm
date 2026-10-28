@@ -59,7 +59,7 @@ export function generateComprehensivePerioProtocolText(
 	lines.push(`   ${psrSummary}`);
 	lines.push("   (S1: 17-14, S2: 13-23, S3: 24-27, S4: 37-34, S5: 33-43, S6: 44-47; * — подвижность/фуркация)");
 	lines.push("");
-	lines.push("2. Клинические индексы и данные 6-точечного зондирования (Форма 043/у) — Медицинская карта приёма:");
+	lines.push("2. Клинические индексы и данные 6-точечного зондирования — Медицинская карта приёма:");
 	lines.push(`   • Индекс кровоточивости десны FMBS (BOP): ${currentSummary.fmbsPercent}% (норма: ≤ 10%)`);
 	lines.push(`   • Индекс зубного налёта FMPS (Plaque): ${currentSummary.fmpsPercent}% (норма: ≤ 20%)`);
 	lines.push(`   • Максимальная глубина карманов (PD): ${currentSummary.maxPocketDepthMm} мм (средняя: ${currentSummary.meanPocketDepthMm} мм)`);

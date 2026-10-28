@@ -75,6 +75,34 @@ export function usePerioDraftPersistence({
 			for (const cur of curettageServices) useVisitStore.getState().addCompletedService(cur);
 		}
 
+		// Авто-трансляция индексов и протокола периодонтограммы в объективный статус дневника приёма
+		const protocolText = generateProtocolText();
+		if (protocolText) {
+			useVisitStore.getState().setVisitNoteForm((prev) => {
+				const header = "ПРОТОКОЛ ПАРОДОНТОЛОГИЧЕСКОГО ОБСЛЕДОВАНИЯ";
+				if (prev.objectiveStatus && prev.objectiveStatus.includes(header)) {
+					const parts = prev.objectiveStatus.split(header);
+					const pre = parts[0]?.trim();
+					return {
+						...prev,
+						objectiveStatus: pre ? `${pre}\n\n${protocolText}` : protocolText,
+					};
+				}
+				return {
+					...prev,
+					objectiveStatus: prev.objectiveStatus ? `${prev.objectiveStatus}\n\n${protocolText}` : protocolText,
+				};
+			});
+
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: { soap: protocolText, mode: "smart_append" },
+					}),
+				);
+			}
+		}
+
 		if (!draftSnapshotId) {
 			if (patientId && !isDemoPatientId(patientId) && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(patientId)) {
 				setSyncStatus("saving");
