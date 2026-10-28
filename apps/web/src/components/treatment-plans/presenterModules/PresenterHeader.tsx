@@ -128,7 +128,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 						onClick={() => onTabChange("comparison")}
 						className={`min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
 							activeTab === "comparison"
-								? "bg-[var(--teal)] text-[var(--paper-strong,#ffffff)] shadow-sm"
+								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
 								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)]"
 						}`}
 						data-testid="tab-tiers-selector"
@@ -140,7 +140,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 						onClick={() => onTabChange("print")}
 						className={`min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
 							activeTab === "print"
-								? "bg-[var(--teal)] text-[var(--paper-strong,#ffffff)] shadow-sm"
+								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
 								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)]"
 						}`}
 						data-testid="tab-print-preview"
@@ -174,14 +174,14 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 
 			{/* Панель Копайлота */}
 			{isCopilotOpen && (
-				<div className="p-3 bg-[var(--paper)] border-t border-[var(--line)] flex flex-col gap-2.5">
+				<div className="p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] flex flex-col gap-2.5">
 					<div className="flex items-center justify-between gap-2 flex-wrap">
 						<span className="text-xs font-bold text-[var(--ink)]">AI Copilot у кресла</span>
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Оптимизировать бюджет плана лечения")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 								data-testid="presenter-copilot-btn-budget_optimize"
 							>
 								Оптимизировать бюджет
@@ -189,7 +189,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Замена импланта на мостовидный протез")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 								data-testid="presenter-copilot-btn-implant_to_bridge"
 							>
 								Мост вместо импланта
@@ -197,7 +197,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("All-on-4 верхняя челюсть")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 								data-testid="presenter-copilot-btn-all_on_4_upper"
 							>
 								All-on-4 Верх
@@ -205,7 +205,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("All-on-4 нижняя челюсть")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 								data-testid="presenter-copilot-btn-all_on_4_lower"
 							>
 								All-on-4 Низ
@@ -213,7 +213,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Костная пластика Bio-Oss")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 								data-testid="presenter-copilot-btn-bone_graft_bio_oss"
 							>
 								Костная пластика
@@ -221,7 +221,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Пересчет анестезии и изоляции")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
 								data-testid="presenter-copilot-btn-recalculate_anesthesia_isolation"
 							>
 								Анестезия
@@ -240,10 +240,10 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 						<button
 							type="button"
 							onClick={onCopilotSend}
-							className="min-h-[36px] min-w-[36px] px-3 rounded-lg bg-[var(--teal)] text-[var(--paper-strong,#ffffff)] text-xs font-bold inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
+							className="min-h-[36px] min-w-[36px] px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 cursor-pointer shrink-0"
 							data-testid="presenter-copilot-send-btn"
 						>
-							<Send className="w-3.5 h-3.5" />
+							<Send className="w-3.5 h-3.5 text-[var(--muted)]" />
 							<span className="hidden sm:inline">Отправить</span>
 						</button>
 					</div>
