@@ -6,7 +6,7 @@
 
 import { and, desc, eq, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { normalizePaymentMethod } from "@dental/shared";
+import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shared";
 import {
 	requireResolvedOrganizationId,
 	requireResolvedStaffOrAdminOrganizationId,
@@ -332,9 +332,11 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 				(["card", "sbp", "online"].includes(body.method || "") ? Number(totalKopecks) : 0);
 
 			if (resolvedCashKop > 0 && cashDeskBox) {
-				const curBal = Number(cashDeskBox.balanceRub || 0);
-				const addRub = Number((resolvedCashKop / 100).toFixed(2));
-				const newBal = Number((curBal + addRub).toFixed(2));
+				const curBalKop = rubToKopecks(cashDeskBox.balanceRub || 0);
+				const newBalKop = curBalKop + resolvedCashKop;
+				const curBal = kopecksToRub(curBalKop);
+				const addRub = kopecksToRub(resolvedCashKop);
+				const newBal = kopecksToRub(newBalKop);
 
 				await tx.insert(cashOperations).values({
 					organizationId: orgId,
@@ -356,9 +358,11 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			}
 
 			if (resolvedElecKop > 0 && cashlessBox) {
-				const curBal = Number(cashlessBox.balanceRub || 0);
-				const addRub = Number((resolvedElecKop / 100).toFixed(2));
-				const newBal = Number((curBal + addRub).toFixed(2));
+				const curBalKop = rubToKopecks(cashlessBox.balanceRub || 0);
+				const newBalKop = curBalKop + resolvedElecKop;
+				const curBal = kopecksToRub(curBalKop);
+				const addRub = kopecksToRub(resolvedElecKop);
+				const newBal = kopecksToRub(newBalKop);
 
 				await tx.insert(cashOperations).values({
 					organizationId: orgId,

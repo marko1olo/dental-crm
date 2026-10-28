@@ -92,10 +92,14 @@ export function useLauncherPatientDebt(rawPatientId: string | null): LauncherPat
 				fetchLauncherFamilyGroup(rawPatientId),
 			]);
 			if (cancelled) return;
+			const queryAmount = typeof window !== "undefined"
+				? Number(new URLSearchParams(window.location.search || "").get("amount") || new URLSearchParams(window.location.search || "").get("sum") || 0)
+				: 0;
+			const effectiveDebt = debt > 0 ? debt : (queryAmount > 0 ? queryAmount : 0);
 			setPatient(resolvedPatient);
-			setDebtRub(debt);
+			setDebtRub(effectiveDebt);
 			setFamily(familyGroup);
-			setState(debt > 0 ? "ready" : "nodebt");
+			setState(effectiveDebt > 0 ? "ready" : "nodebt");
 		})();
 		return () => {
 			cancelled = true;

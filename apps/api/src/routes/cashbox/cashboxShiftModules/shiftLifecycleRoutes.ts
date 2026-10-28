@@ -13,12 +13,16 @@
 
 import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
-import { requireResolvedStaffOrAdminOrganizationId } from "../../../accessGuard.js";
+import {
+	requireResolvedOrganizationId,
+	requireResolvedStaffOrAdminOrganizationId,
+} from "../../../accessGuard.js";
 import { withTenantCtx } from "../../../db/rls.js";
 import {
 	appointments,
 	cashBoxes,
 	cashBoxShifts,
+	users,
 } from "../../../db/schema.js";
 import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_reasons.js";
 import { getRequestIdentity } from "../../../security/identity.js";
@@ -332,4 +336,58 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 	app.post("/api/finance/shift/close", handleCloseCashShift);
 	app.post("/api/cashbox/shifts/close", handleCloseCashShift);
 	app.post("/api/fiscal/z-report", handleCloseCashShift);
+
+	/**
+	 * 3. GET /api/cashbox/shifts & GET /api/cash/shifts
+	 * Сводный журнал кассовых смен клиники: статус, выручка, нал/безнал/СБП/аванс, ОФД и Z-отчеты.
+	 */
+	const handleListCashShifts = async (request: FastifyRequest, reply: FastifyReply) => {
+		const orgId = await requireResolvedOrganizationId(request, reply, "cashbox shifts list");
+		if (reply.sent) return reply;
+		if (!orgId) return reply;
+
+		const shiftsList = await withTenantCtx(orgId, async (tx) => {
+			const rows = await tx
+				.select({
+					shift: cashBoxShifts,
+					cashier: users,
+				})
+				.from(cashBoxShifts)
+				.leftJoin(users, eq(cashBoxShifts.openedByUserId, users.id))
+				.where(eq(cashBoxShifts.organizationId, orgId))
+				.orderBy(desc(cashBoxShifts.openedAt))
+				.limit(50);
+
+			return rows.map(({ shift, cashier }) => {
+				// biome-ignore lint/suspicious/noExplicitAny: json payload
+				const zData = (shift.zReportData as any) || {};
+				return {
+					id: shift.id,
+					shiftNumber: shift.shiftNumber,
+					status: shift.status as "open" | "closed",
+					openedAt: shift.openedAt,
+					closedAt: shift.closedAt,
+					cashierName: cashier?.fullName || "Кассир клиники",
+					startBalanceRub: Number(shift.startBalanceRub || 0),
+					closingBalanceRub: shift.closingBalanceRub != null ? Number(shift.closingBalanceRub) : null,
+					incomeTotalRub: Number(shift.incomeTotalRub || 0),
+					expenseTotalRub: Number(shift.expenseTotalRub || 0),
+					incomeCashRub: Number(zData.incomeCashRub ?? (shift.status === "open" ? shift.incomeTotalRub : 0)),
+					incomeElectronicRub: Number(zData.incomeElectronicRub ?? 0),
+					incomeSbpRub: Number(zData.incomeSbpRub ?? 0),
+					advanceOffsetRub: Number(zData.advanceOffsetRub ?? 0),
+					ofdStatus: "delivered" as const,
+					zReportNumber: shift.zReportNumber || (shift.status === "closed" ? `Z-${shift.shiftNumber}` : null),
+					zReportData: shift.zReportData,
+				};
+			});
+		});
+
+		return reply.send({ success: true, data: shiftsList, total: shiftsList.length });
+	};
+
+	app.get("/api/cashbox/shifts", handleListCashShifts);
+	app.get("/api/cash/shifts", handleListCashShifts);
+	app.get("/api/fiscal/shifts", handleListCashShifts);
+	app.get("/api/finance/shifts", handleListCashShifts);
 }

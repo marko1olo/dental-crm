@@ -6,12 +6,13 @@ import { FinanceTransactionsSection } from "./FinanceTransactionsSection";
 import { FinanceModalsHost } from "./modalModules/FinanceModalsHost";
 import { DoctorPayrollTab } from "./DoctorPayrollTab";
 import { FinanceTabsNavBar } from "./FinanceTabsNavBar";
+import { CashShiftJournalView } from "../../components/cashbox/CashShiftJournalView";
 import type { FinanceViewComponentProps } from "./types";
 import { useFinanceView } from "./useFinanceView";
 
 export function FinanceView(rawProps?: FinanceViewComponentProps) {
 	const s = useFinanceView(rawProps);
-	const [activeTab, setActiveTab] = useState<"cashbox" | "doctor_payroll">("cashbox");
+	const [activeTab, setActiveTab] = useState<"cashbox" | "doctor_payroll" | "shift_journal">("cashbox");
 	const [isDoctorPayrollOpen, setIsDoctorPayrollOpen] = useState(false);
 
 	return (
@@ -66,6 +67,15 @@ export function FinanceView(rawProps?: FinanceViewComponentProps) {
 
 			{activeTab === "doctor_payroll" ? (
 				<DoctorPayrollTab clinicName={s.dashboard?.clinicSettings?.name} />
+			) : activeTab === "shift_journal" ? (
+				<div className="pt-2">
+					<CashShiftJournalView
+						clinicName={s.dashboard?.clinicSettings?.name}
+						cashierFullName={s.paymentFiscalCashierName}
+						onOpenShiftCloseModal={() => s.handleCloseShift()}
+						onOpenNewShift={() => s.handleOpenShift()}
+					/>
+				</div>
 			) : (
 				<>
 					<FinanceSummaryCards

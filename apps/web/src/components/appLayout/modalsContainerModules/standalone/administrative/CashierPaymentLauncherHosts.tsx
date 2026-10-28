@@ -14,6 +14,9 @@ import { showToast } from "../../../../GlobalToast";
 import StandaloneDeepLinkMissingState from "../StandaloneDeepLinkMissingState";
 import { readPatientIdFromUrl, useLauncherPatientDebt } from "../useLauncherPatientDebt";
 
+const CashRegisterCheckoutModal = lazyWithRetry(() =>
+	import("../../../../billing/CashRegisterCheckoutModal").then((m) => ({ default: m.CashRegisterCheckoutModal })),
+);
 const FastCheckoutModal = lazyWithRetry(() =>
 	import("../../../../finance/FastCheckoutModal").then((m) => ({ default: m.FastCheckoutModal })),
 );
@@ -55,13 +58,14 @@ export const StandaloneFastCheckoutHost: React.FC<{ onClose: () => void }> = ({ 
 		return <AppLoadingState message="Загрузка данных кассы из базы..." />;
 	}
 	return (
-		<FastCheckoutModal
+		<CashRegisterCheckoutModal
 			isOpen={true}
-			totalBillRub={debtRub}
+			totalDueRub={debtRub}
+			amountRub={debtRub}
 			patientId={patient.id}
 			patientName={patient.fullName}
 			patientPhone={patient.phone}
-			patientFamilyBalanceRub={family?.balanceRub ?? 0}
+			patientDepositRub={family?.balanceRub ?? 0}
 			onClose={onClose}
 		/>
 	);

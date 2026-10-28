@@ -11,6 +11,7 @@ import { DirectDocumentsCatalogLauncher } from "./components/documents/DirectDoc
 import { DirectSanPinStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/SanPinStandaloneLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
+import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabOrderLauncher } from "./components/lab/DirectDentalLabOrderLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
@@ -98,6 +99,7 @@ export function AppShell() {
 			<DirectDocumentsCatalogLauncher />
 			<DirectImplantPassportLauncher />
 			<DirectFastCheckoutLauncher />
+			<DirectCashboxSsotLauncher />
 			<DirectReportsLauncher />
 			<DirectDentalLabOrderLauncher />
 			<DirectKnowledgeBaseLauncher />

@@ -29,7 +29,7 @@ export function validateBuyerInn(params: {
 	if (isPhysical) {
 		if (!cleanInn) return { isValid: true, isRequired: false };
 		const isStd = cleanInn.length === 12 || cleanInn.length === 10;
-		const hint = isStd ? undefined : "ИНН физлица обычно содержит 12 цифр (для кассового чека поле опционально и не блокирует чек)";
+		const hint = isStd ? undefined : "ИНН физлица обычно содержит 12 цифр (для 54-ФЗ поле опционально и не блокирует кассовый чек)";
 		return { isValid: true, isRequired: false, cleanInn, errorRu: hint, errorMessage: hint };
 	}
 

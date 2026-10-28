@@ -1,8 +1,8 @@
 import React from "react";
 
 export interface FinanceTabsNavBarProps {
-	readonly activeTab: "cashbox" | "doctor_payroll";
-	readonly onSelectTab: (tab: "cashbox" | "doctor_payroll") => void;
+	readonly activeTab: "cashbox" | "doctor_payroll" | "shift_journal";
+	readonly onSelectTab: (tab: "cashbox" | "doctor_payroll" | "shift_journal") => void;
 }
 
 export function FinanceTabsNavBar({ activeTab, onSelectTab }: FinanceTabsNavBarProps): React.JSX.Element {
@@ -59,6 +59,32 @@ export function FinanceTabsNavBar({ activeTab, onSelectTab }: FinanceTabsNavBarP
 					}}
 				>
 					Зарплата врачей
+				</button>
+				<button
+					type="button"
+					role="tab"
+					aria-selected={activeTab === "shift_journal"}
+					onClick={() => onSelectTab("shift_journal")}
+					className={`dente-segmented-item ${activeTab === "shift_journal" ? "active" : ""}`}
+					data-testid="tab-shift-journal"
+					style={{
+						display: "inline-flex",
+						alignItems: "center",
+						justifyContent: "center",
+						minHeight: "44px",
+						padding: "0 18px",
+						borderRadius: "8px",
+						fontSize: "13px",
+						fontWeight: activeTab === "shift_journal" ? 700 : 500,
+						color: activeTab === "shift_journal" ? "var(--teal, #0d9488)" : "var(--muted, #64748b)",
+						background: activeTab === "shift_journal" ? "var(--paper, #ffffff)" : "transparent",
+						border: activeTab === "shift_journal" ? "1px solid var(--teal, #0d9488)" : "1px solid transparent",
+						boxShadow: activeTab === "shift_journal" ? "0 1px 3px rgba(13, 148, 136, 0.15)" : "none",
+						cursor: "pointer",
+						transition: "all 0.15s ease",
+					}}
+				>
+					Журнал смен
 				</button>
 			</div>
 		</div>
