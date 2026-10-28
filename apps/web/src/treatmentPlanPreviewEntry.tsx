@@ -188,7 +188,7 @@ function TreatmentPlanPreviewApp() {
 			<TreatmentPlanPresenterModal
 				isOpen={isPresenterOpen}
 				onClose={() => setIsPresenterOpen(false)}
-				patientName="Смирнова Екатерина Васильевна"
+				patientName="Алексеева Анна Сергеевна"
 				patientId="PAT-2026-0891"
 				doctorFullName="Д-р Воронов Михаил Васильевич"
 				clinicName="Стоматологическая клиника DENTE"

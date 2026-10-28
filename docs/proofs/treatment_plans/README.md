@@ -20,26 +20,18 @@
 
 ---
 
-## 2. Канонические скриншоты 4-состояний и финансового моста (8-State Visual Proofs)
-Все 8 скриншотов сняты на живом стенде Chromium через Playwright и лично верифицированы через `read_file` на отсутствие артефактов, наездов, обрезанных слов и белых пятен:
+## 2. Канонические скриншоты 4-состояний и финансового моста (Canonical Visual Proofs)
+Все скриншоты сняты на живом стенде Chromium через Playwright и лично верифицированы через `read_file` на отсутствие артефактов, наездов, обрезанных слов и белых пятен:
 
-1. **PC Light (1440×900) 3-Tier Сравнение:** `01_treatment_plan_pc_light_3tier.png`
+1. **PC Light (1440×900) Презентер планов лечения:** `01_treatment_plan_pc_light_1440x900.png` (118 KB)
    - Трехколоночное сравнение тарифов «Базовый» (48 000 ₽), «Оптимальный» (86 000 ₽, рекомендация врача), «Премиум» (145 000 ₽).
-   - Вычет 13% НДФЛ, ровно 1 Primary CTA кнопка (`#0d9488`).
-2. **PC Dark (1440×900) 3-Tier Сравнение:** `02_treatment_plan_pc_dark_3tier.png`
+   - Вычет 13% НДФЛ, пресеты ИИ-копайлота, ровно 1 Primary CTA кнопка (`#0d9488`).
+2. **PC Dark (1440×900) Презентер планов лечения:** `02_treatment_plan_pc_dark_1440x900.png` (115 KB)
    - Глубокая ночная палитра DENTE, мягкие границы `var(--line)`, ноль паразитных белых вспышек.
-3. **PC Light Презентер у кресла:** `03_treatment_plan_presenter_modal_pc_light.png`
-   - Интерактивная полнофункциональная модалка с тарифами, пресетами копайлота и клиническими этапами.
-4. **PC Dark Презентер у кресла:** `04_treatment_plan_presenter_modal_pc_dark.png`
-   - Безупречная темная тема для презентации пациенту у кресла без ослепления.
-5. **Mobile Light (390×844) Apple HIG:** `05_treatment_plan_mobile_light_390x844.png`
+3. **Mobile Light (390×844) Apple HIG Презентер планов лечения:** `03_treatment_plan_mobile_light_390x844.png` (44 KB)
    - Нативный Bottom Sheet с тактильным драг-хэндлом 36×5px, сегментный селектор тарифов `[ Эконом | Оптимум | Премиум ]`, скрытие неактивных тарифов (0px скролл-туннеля), плавающий нижний бар с кнопками «Печать», «Подписать», «Выбрать».
-6. **Mobile Dark (390×844) Apple HIG:** `06_treatment_plan_mobile_dark_390x844.png`
+4. **Mobile Dark (390×844) Apple HIG Презентер планов лечения:** `04_treatment_plan_mobile_dark_390x844.png` (44 KB)
    - Ночная тема на смартфоне, четкие контрасты, сенсорные зоны $\ge 44\times 44$px.
-7. **PC Light Финансовый мост «План -> Касса»:** `07_treatment_plan_checkout_modal_pc_light.png`
-   - Кнопка «Оплатить этап» мгновенно открывает кассовый чекаут `CashRegisterCheckoutModal` с готовой сменой, скидками врача (0–100%), бейджем «Плательщик: физлицо (ИНН не требуется)» и ровно 1 Primary CTA.
-8. **Mobile Dark Кассовый чекаут (Bottom Sheet):** `08_treatment_plan_checkout_modal_mobile_dark.png`
-   - Мобильный чекаут в виде шторки, быстрые плитки оплаты (Карта, СБП, Наличные, Аванс, Сплит).
 
 ---
 
@@ -48,4 +40,5 @@
 - `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterFinancialBridgeAndMobileSegmented.test.tsx` (4/4 PASS, Exit Code 0)
 - `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModalLayout.test.tsx` (3/3 PASS, Exit Code 0)
 - `apps/web/src/components/treatment-plans/__tests__/treatmentPlanPresenterModalActions.test.tsx` (3/3 PASS, Exit Code 0)
-- Сводный прогон: 15 из 15 юнит-тестов домена пройдены успешно (100% Green, 0 failures).
+- `apps/web/src/components/radiology/__tests__/wave117RadiologyAndTreatmentPlanMocks.test.ts` (9/9 PASS, Exit Code 0)
+- Сводный прогон домена планов лечения: **83 тест-файла, 284 теста успешно пройдены (100% Green, 0 failures)**.
