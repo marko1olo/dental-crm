@@ -66,7 +66,12 @@ export async function performAutoVisitBomDeduction(
 		patientFullName: options.patientFullName,
 		doctorFullName: options.doctorFullName,
 		visitDate: options.visitDate,
-		renderedServices: normalizedServices as any,
+		renderedServices: normalizedServices.map((s) => ({
+			serviceCode: s.serviceCode,
+			serviceTitle: s.serviceTitle,
+			quantity: s.quantity,
+			toothNumber: s.toothNumber,
+		})),
 		currentStockMap: stockMap,
 		allowOverdraft: options.allowOverdraft !== false,
 		includeStandardPpe: options.includeStandardPpe !== false,

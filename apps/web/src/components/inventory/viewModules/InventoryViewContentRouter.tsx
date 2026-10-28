@@ -71,10 +71,10 @@ export const InventoryViewContentRouter: React.FC<InventoryViewContentRouterProp
 			items={inventorySlice.visibleItems} isLoading={isLoading} organizationId={organizationId}
 			searchQuery={searchQuery} loadError={loadError} hasMore={inventorySlice.hasMore}
 			remainingCount={inventorySlice.remainingCount} onShowMore={() => setDisplayLimit((prev) => prev + 40)}
-			onSelectItem={openEditModal} onEditItem={openEditModal}
-			onDeductItem={(item) => { setAdjustingItem(item); setAdjustType("out"); setAdjustAmount(""); }}
-			onReceiveItem={(item) => { setAdjustingItem(item); setAdjustType("in"); setAdjustAmount(""); }}
-			onDeleteItem={handleDeleteItem} onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
+			onSelectItem={(item) => openEditModal(item as any)} onEditItem={(item) => openEditModal(item as any)}
+			onDeductItem={(item) => { setAdjustingItem(item as any); setAdjustType("out"); setAdjustAmount(""); }}
+			onReceiveItem={(item) => { setAdjustingItem(item as any); setAdjustType("in"); setAdjustAmount(""); }}
+			onDeleteItem={(item) => handleDeleteItem(typeof item === "string" ? item : item?.id, typeof item === "string" ? item : item?.name)} onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
 			onOpenAddModal={openAddModal} onOpenWarehouseManager={() => setIsWarehouseManagerOpen(true)}
 			onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)} onRetry={fetchItems}
 		/>

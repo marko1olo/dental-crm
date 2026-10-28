@@ -44,8 +44,8 @@ export const ShiftBatchProcedureTab: React.FC<ShiftBatchProcedureTabProps> = ({
 		patientName,
 		toothNumber,
 		currentStockMap,
-		warehouseItems: warehouseItems as any,
-		onConfirmDeduction: onConfirmDeduction as any,
+		warehouseItems,
+		onConfirmDeduction,
 	});
 
 	return (

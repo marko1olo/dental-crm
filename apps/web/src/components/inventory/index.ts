@@ -1,5 +1,6 @@
 export * from "./WarehouseStockTable.js";
 export * from "./WarehouseStockMobileCards.js";
+export * from "./WarehouseInboundInvoiceModal.js";
 export * from "./InboundWaybillModal.js";
 export * from "./InboundWaybillItemsTable.js";
 export * from "./ShiftBatchWriteoffModal.js";

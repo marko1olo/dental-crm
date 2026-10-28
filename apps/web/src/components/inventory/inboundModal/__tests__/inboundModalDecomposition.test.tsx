@@ -4,7 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { InboundInvoiceModal } from "../InboundInvoiceModal.js";
 import { InboundInvoiceMobileCards } from "../InboundInvoiceMobileCards.js";
 import { InboundInvoiceItemsTable } from "../InboundInvoiceItemsTable.js";
@@ -15,7 +15,7 @@ const __dirname = path.dirname(__filename);
 const INBOUND_MODAL_DIR = path.resolve(__dirname, "..");
 const FACADE_FILE = path.resolve(__dirname, "../../../InventoryInboundInvoiceModal.tsx");
 
-const sampleItems = [
+const sampleItems: any = [
 	{
 		id: "it-1", name: "Перчатки нитриловые", stockQuantity: 50,
 		category: "Расходные материалы", unit: "уп.", unitCostRub: "650",

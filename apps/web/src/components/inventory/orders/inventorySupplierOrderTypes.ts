@@ -4,7 +4,7 @@ import type { TechMapCategory } from "../inventoryMath.js";
 export interface SupplierPurchaseOrderItemView {
 	readonly sku: string;
 	readonly materialName: string;
-	readonly category: TechMapCategory;
+	readonly category: TechMapCategory | string;
 	readonly unit: string;
 	readonly currentStock: number;
 	readonly criticalThreshold: number;

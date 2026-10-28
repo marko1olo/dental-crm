@@ -13,19 +13,22 @@ export function syncAutoBomDeduction(
 	try {
 		useInventoryStore.getState().deductStock(
 			options.organizationId || "org-default",
-			result.items.map((i) => ({
-				inventoryItemId: i.inventoryItemId,
-				itemName: i.itemName,
-				quantity: i.deductedQty,
-				visitId: options.visitId,
-				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
-				lotNumber: (i as any).batchId || null,
-				expirationDate: (i as any).expirationDate || null,
-				unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
-			})),
+			result.items.map((i) => {
+				const ext = i as unknown as Record<string, unknown>;
+				return {
+					inventoryItemId: i.inventoryItemId,
+					itemName: i.itemName,
+					quantity: i.deductedQty,
+					visitId: options.visitId,
+					reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
+					lotNumber: typeof ext.batchId === "string" ? ext.batchId : null,
+					expirationDate: typeof ext.expirationDate === "string" ? ext.expirationDate : null,
+					unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
+				};
+			}),
 			{
 				visitId: options.visitId,
-				...(options.fetchFn ? { customFetch: options.fetchFn as any } : {}),
+				...(options.fetchFn ? { customFetch: options.fetchFn } : {}),
 				allowOverdraft: options.allowOverdraft ?? true,
 				reason: `Автосписание расходников по визиту ${options.visitNumber || options.visitId}`,
 			},
@@ -54,16 +57,19 @@ export function syncAutoBomDeduction(
 				serviceId: s.serviceCode,
 				quantity: s.quantity,
 			})),
-			items: result.items.map((i) => ({
-				inventoryItemId: i.inventoryItemId,
-				id: i.inventoryItemId,
-				name: i.itemName,
-				quantity: i.deductedQty,
-				unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
-				reason: `Автосписание по визиту ${options.visitNumber || options.visitId}`,
-				lotNumber: (i as any).batchId || null,
-				expirationDate: (i as any).expirationDate || null,
-			})),
+			items: result.items.map((i) => {
+				const ext = i as unknown as Record<string, unknown>;
+				return {
+					inventoryItemId: i.inventoryItemId,
+					id: i.inventoryItemId,
+					name: i.itemName,
+					quantity: i.deductedQty,
+					unitCostRub: Number((i.unitCostPriceKopecks / 100).toFixed(2)),
+					reason: `Автосписание по визиту ${options.visitNumber || options.visitId}`,
+					lotNumber: typeof ext.batchId === "string" ? ext.batchId : null,
+					expirationDate: typeof ext.expirationDate === "string" ? ext.expirationDate : null,
+				};
+			}),
 			allowOverdraft: true,
 			paperJournalAcknowledged: true,
 		};

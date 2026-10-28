@@ -34,7 +34,7 @@ export function useClinicalWriteoffExportHandlers(
 			return {
 				sku: l.sku || l.materialId,
 				materialName: l.nameRu,
-				category: l.category as any,
+				category: l.category,
 				unit: l.unit,
 				currentStock: l.stockAvailable,
 				criticalThreshold: threshold,

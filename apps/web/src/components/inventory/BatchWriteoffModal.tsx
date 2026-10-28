@@ -1,19 +1,14 @@
 /**
- * BATCH WRITEOFF MODAL (SSOT ПАКЕТНОЕ СПИСАНИЕ РАСХОДНИКОВ)
- * Канонический реэкспорт SSOT ShiftBatchWriteoffModal (Мандаты 8b, 8e, 8n).
+ * apps/web/src/components/inventory/BatchWriteoffModal.tsx
+ *
+ * Канонический реэкспорт SSOT WarehouseBatchWriteoffModal (Мандаты 8b, 8e, 8n).
  */
 
-import { ShiftBatchWriteoffModal, type ShiftBatchWriteoffModalProps } from "./ShiftBatchWriteoffModal.js";
+import {
+	WarehouseBatchWriteoffModal,
+	type WarehouseBatchWriteoffModalProps,
+} from "./WarehouseBatchWriteoffModal.js";
 
-export type BatchWriteoffModalProps = ShiftBatchWriteoffModalProps & {
-	activeTab?: string;
-	onTabChange?: (tab: string) => void;
-	procedureTitle?: string;
-	serviceCode?: string;
-	patientName?: string;
-	toothNumber?: number;
-	visitId?: string;
-};
-
-export { ShiftBatchWriteoffModal as BatchWriteoffModal };
-export default ShiftBatchWriteoffModal;
+export type BatchWriteoffModalProps = WarehouseBatchWriteoffModalProps;
+export { WarehouseBatchWriteoffModal as BatchWriteoffModal };
+export default WarehouseBatchWriteoffModal;

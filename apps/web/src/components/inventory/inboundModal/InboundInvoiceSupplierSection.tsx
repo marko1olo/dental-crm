@@ -31,7 +31,8 @@ export const InboundInvoiceSupplierSection: React.FC<InboundInvoiceSupplierSecti
 			if (sup.name) names.add(sup.name);
 		}
 		for (const it of inventoryItems) {
-			if ((it as any).supplier) names.add((it as any).supplier);
+			const ext = it as unknown as Record<string, unknown>;
+			if (typeof ext.supplier === "string" && ext.supplier.trim()) names.add(ext.supplier.trim());
 		}
 		return Array.from(names);
 	}, [inventoryItems]);

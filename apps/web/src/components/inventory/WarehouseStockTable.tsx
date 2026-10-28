@@ -1,80 +1,82 @@
 /**
  * apps/web/src/components/inventory/WarehouseStockTable.tsx
  *
- * Канонический каталог остатков и материалов склада DENTE CRM.
- * Реализует Мандаты 8b (Sweet Spot 200–350 строк), 8e (Автономия персонала),
- * 8n (Мягкий овердрафт Soft Negative Stock), 8am (1 Primary CTA) и Apple HIG.
+ * Каноническая SSOT-таблица складских остатков и материалов DENTE CRM (280–380L).
+ * 7 калиброванных колонок без обрезки справа (Артикул / Наименование / Категория /
+ * Остаток / Ед. изм. / Мин. запас / Статус остатка), индикаторы запаса («В норме»,
+ * «Мало», «Перерасход (овердрафт)»), быстрый поиск (Ctrl+K) и фильтры по категориям.
+ * Мандаты 8b (Sweet Spot 280–380L), 8e (Автономия), 8n (Мягкий овердрафт), 8am (1 Primary CTA).
  */
 
-import React, { useMemo, useState } from "react";
-import {
-	AlertTriangle, Calendar, CheckCircle2, ChevronRight, Edit2,
-	MinusCircle, Package, PackagePlus, PlusCircle, Search, Trash2,
-} from "lucide-react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { AlertTriangle, CheckCircle2, ChevronRight, Edit2, MinusCircle, Package, PlusCircle, Search, Trash2, Zap } from "lucide-react";
 import { useIsMobile } from "../../hooks/useIsMobile.js";
-import { WarehouseStockMobileCards } from "./WarehouseStockMobileCards.js";
 import {
-	formatExpDate, getCategoryBadge, getExpiryTrafficLight,
-	getFefoTrafficLight, getWarehouseFefoTrafficLight,
-	type ExpiryTrafficLightInfo, type ExpiryTrafficStatus, type FefoTrafficLightInfo,
+	getExpiryTrafficLight,
+	getWarehouseFefoTrafficLight,
+	getFefoTrafficLight,
+	type ExpiryTrafficLightInfo,
+	type ExpiryTrafficStatus,
+	type FefoTrafficLightInfo,
 } from "./inventoryExpiryUtils.js";
 
 export {
-	formatExpDate, getCategoryBadge, getExpiryTrafficLight,
-	getFefoTrafficLight, getWarehouseFefoTrafficLight,
-	type ExpiryTrafficLightInfo, type ExpiryTrafficStatus, type FefoTrafficLightInfo,
+	getExpiryTrafficLight,
+	getWarehouseFefoTrafficLight,
+	getFefoTrafficLight,
+	type ExpiryTrafficLightInfo,
+	type ExpiryTrafficStatus,
+	type FefoTrafficLightInfo,
 };
 
 export interface WarehouseStockItem {
 	id: string;
 	name: string;
-	category?: string | null;
-	stockQuantity?: number | string | null;
-	currentQty?: number | string | null;
-	currentStock?: number | string | null;
-	unit?: string | null;
-	unitCostRub?: string | number | null;
-	averageCostRub?: string | number | null;
-	unitCost?: string | number | null;
-	expirationDate?: string | null;
-	lotNumber?: string | null;
-	batchNumber?: string | null;
-	barcode?: string | null;
-	sku?: string | null;
-	criticalThreshold?: number | string | null;
-	minStockLevel?: number | string | null;
-	minStock?: number | string | null;
-	[key: string]: any;
+	sku?: string | null | undefined;
+	barcode?: string | null | undefined;
+	category?: string | null | undefined;
+	stockQuantity?: number | string | null | undefined;
+	currentQty?: number | string | null | undefined;
+	currentStock?: number | string | null | undefined;
+	unit?: string | null | undefined;
+	unitCostRub?: string | number | null | undefined;
+	averageCostRub?: string | number | null | undefined;
+	unitCost?: string | number | null | undefined;
+	criticalThreshold?: number | string | null | undefined;
+	minStockLevel?: number | string | null | undefined;
+	minStock?: number | string | null | undefined;
+	expirationDate?: string | null | undefined;
+	lotNumber?: string | null | undefined;
+	batchNumber?: string | null | undefined;
+	[key: string]: unknown;
 }
 
 export interface WarehouseStockTableProps {
-	items: WarehouseStockItem[];
-	isLoading?: boolean;
-	loadError?: string | null;
-	searchQuery?: string;
-	organizationId?: string;
-	onSelectItem?: (item: WarehouseStockItem) => void;
-	onReceiveItem?: (item: WarehouseStockItem) => void;
-	onDeductItem?: (item: WarehouseStockItem) => void;
-	onEditItem?: (item: WarehouseStockItem) => void;
-	onDeleteItem?: (item: WarehouseStockItem) => void;
-	onOpenAddModal?: () => void;
-	onOpenWaybills?: () => void;
-	onOpenShiftDeduction?: () => void;
-	onRetry?: () => void;
-	className?: string;
+	items: readonly WarehouseStockItem[] | WarehouseStockItem[];
+	isLoading?: boolean | undefined;
+	loadError?: string | null | undefined;
+	searchQuery?: string | undefined;
+	organizationId?: string | undefined;
+	onSelectItem?: ((item: WarehouseStockItem) => void) | undefined;
+	onReceiveItem?: ((item: WarehouseStockItem, ...args: unknown[]) => void) | undefined;
+	onDeductItem?: ((item: WarehouseStockItem, ...args: unknown[]) => void) | undefined;
+	onEditItem?: ((item: WarehouseStockItem) => void) | undefined;
+	onDeleteItem?: ((itemOrId: WarehouseStockItem | string, name?: string | undefined) => void) | undefined;
+	onOpenAddModal?: (() => void) | undefined;
+	onOpenWaybills?: (() => void) | undefined;
+	onOpenShiftDeduction?: (() => void) | undefined;
+	onRetry?: (() => void) | undefined;
+	className?: string | undefined;
 }
 
-const CATEGORY_CHIPS = [
-	{ id: "all", label: "Все материалы" },
-	{ id: "anesthesia", label: "Анестетики" },
-	{ id: "consumable", label: "Расходные" },
-	{ id: "composite", label: "Пломбировочные" },
-	{ id: "endodontic", label: "Эндодонтия" },
-	{ id: "hygiene", label: "Гигиена" },
-	{ id: "surgery", label: "Хирургия" },
+const CATEGORY_TABS = [
+	{ id: "all", label: "Все категории" },
+	{ id: "therapy", label: "Терапия" },
 	{ id: "orthopedic", label: "Ортопедия" },
-	{ id: "disinfection", label: "Дезинфекция" },
+	{ id: "surgery", label: "Хирургия" },
+	{ id: "consumable", label: "Расходники" },
+	{ id: "anesthesia", label: "Анестетики" },
+	{ id: "hygiene", label: "Гигиена" },
 ];
 
 export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
@@ -95,53 +97,61 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 }) => {
 	const isMobile = useIsMobile(768);
 	const [localSearch, setLocalSearch] = useState("");
-	const [selectedCategory, setSelectedCategory] = useState("all");
+	const [activeCategory, setActiveCategory] = useState("all");
+	const searchInputRef = useRef<HTMLInputElement>(null);
 	const effectiveSearch = externalSearch || localSearch;
+
+	useEffect(() => {
+		const handleKeyDown = (e: KeyboardEvent) => {
+			if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "k") {
+				e.preventDefault();
+				searchInputRef.current?.focus();
+			}
+		};
+		window.addEventListener("keydown", handleKeyDown);
+		return () => window.removeEventListener("keydown", handleKeyDown);
+	}, []);
 
 	const filteredItems = useMemo(() => {
 		let res = items;
-		if (selectedCategory !== "all") {
-			const catLower = selectedCategory.toLowerCase();
+		if (activeCategory !== "all") {
+			const cat = activeCategory.toLowerCase();
 			res = res.filter((it) => {
 				const c = (it.category || "").toLowerCase();
-				if (catLower === "anesthesia") return c.includes("анест") || c.includes("anest");
-				if (catLower === "consumable") return c.includes("расход") || c.includes("consum");
-				if (catLower === "composite") return c.includes("пломб") || c.includes("композ") || c.includes("терап");
-				if (catLower === "endodontic") return c.includes("эндо") || c.includes("endo");
-				if (catLower === "hygiene") return c.includes("гигиен") || c.includes("hygi");
-				if (catLower === "surgery") return c.includes("хирург") || c.includes("surg");
-				if (catLower === "orthopedic") return c.includes("ортоп") || c.includes("ortho");
-				if (catLower === "disinfection") return c.includes("дезинф") || c.includes("стерил");
-				return c.includes(catLower);
+				if (cat === "therapy") return c.includes("терап") || c.includes("пломб") || c.includes("композ");
+				if (cat === "orthopedic") return c.includes("ортоп") || c.includes("слепоч");
+				if (cat === "surgery") return c.includes("хирург") || c.includes("имплант") || c.includes("шовн");
+				if (cat === "consumable") return c.includes("расход") || c.includes("перчат") || c.includes("маск") || c.includes("валик");
+				if (cat === "anesthesia") return c.includes("анест") || c.includes("артик") || c.includes("убистезин");
+				if (cat === "hygiene") return c.includes("гигиен") || c.includes("чистк") || c.includes("порошок");
+				return c.includes(cat);
 			});
 		}
 		if (effectiveSearch.trim()) {
 			const q = effectiveSearch.trim().toLowerCase();
-			res = res.filter((it) =>
-				(it.name || "").toLowerCase().includes(q) ||
-				(it.lotNumber || "").toLowerCase().includes(q) ||
-				(it.barcode || "").toLowerCase().includes(q),
-			);
+			res = res.filter((it) => (it.name || "").toLowerCase().includes(q) || (it.sku || "").toLowerCase().includes(q) || (it.barcode || "").toLowerCase().includes(q));
 		}
 		return res;
-	}, [items, selectedCategory, effectiveSearch]);
+	}, [items, activeCategory, effectiveSearch]);
 
-	const kpi = useMemo(() => {
-		let totalCount = items.length, overdraftCount = 0, lowStockCount = 0, totalRub = 0;
+	const stats = useMemo(() => {
+		let total = items.length, overdraft = 0, low = 0, totalRub = 0;
 		for (const it of items) {
 			const qty = Number(it.stockQuantity ?? it.currentStock ?? it.currentQty ?? 0);
+			const min = Number(it.criticalThreshold ?? it.minStockLevel ?? it.minStock ?? 5);
 			const cost = Number(it.averageCostRub ?? it.unitCostRub ?? 0);
-			if (qty < 0) overdraftCount++; else if (qty <= 5) lowStockCount++;
+			if (qty < 0) overdraft++;
+			else if (qty <= min) low++;
 			if (qty > 0) totalRub += qty * cost;
 		}
-		return { totalCount, overdraftCount, lowStockCount, totalRub: Math.round(totalRub) };
+		return { total, overdraft, low, totalRub: Math.round(totalRub) };
 	}, [items]);
 
 	if (isLoading && items.length === 0) {
 		return (
 			<div className="flex flex-col items-center justify-center p-12 text-[var(--muted)] gap-3 bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
 				<Package className="animate-spin text-[var(--teal,#0d9488)]" size={32} />
-				<span className="text-sm font-medium">Загрузка каталога остатков...</span>
+				<span className="text-sm font-medium">Загрузка складских остатков...</span>
 			</div>
 		);
 	}
@@ -151,249 +161,247 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 			<div className="p-6 text-center bg-[var(--paper)] rounded-2xl border border-[var(--line)] text-[var(--ink)]">
 				<AlertTriangle className="mx-auto mb-2 text-amber-500" size={32} />
 				<p className="text-sm text-[var(--muted)] mb-4">{loadError}</p>
-				{onRetry && (
-					<button type="button" onClick={onRetry} className="secondary-button px-4 py-2 text-xs">
-						Повторить попытку
-					</button>
-				)}
+				{onRetry && <button type="button" onClick={onRetry} className="secondary-button px-4 py-2 text-xs">Повторить попытку</button>}
 			</div>
 		);
 	}
 
-	const kpiCards = [
-		{ label: "Всего позиций", val: String(kpi.totalCount), cls: "text-[var(--ink)]" },
-		{ label: "В наличии (оценка)", val: `${kpi.totalRub.toLocaleString("ru-RU")} ₽`, cls: "text-[var(--ink)]" },
-		{ label: "Мало на складе", val: String(kpi.lowStockCount), cls: kpi.lowStockCount > 0 ? "text-amber-500" : "text-[var(--ink)]" },
-		{ label: "Мягкий овердрафт", val: kpi.overdraftCount > 0 ? `${kpi.overdraftCount} поз.` : "0 (дефицита нет)", cls: kpi.overdraftCount > 0 ? "text-amber-500" : "text-emerald-500" },
-	];
-
 	return (
 		<div className={`w-full flex flex-col gap-3 ${className}`} data-testid="warehouse-stock-table-root">
-			{/* KPI плашки */}
+			{/* Верхняя статусная панель KPI */}
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2 shrink-0">
-				{kpiCards.map((c) => (
-					<div key={c.label} className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
-						<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">{c.label}</span>
-						<span className={`text-xl font-bold ${c.cls}`}>{c.val}</span>
-					</div>
-				))}
+				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
+					<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">Всего материалов</span>
+					<span className="text-xl font-bold text-[var(--ink)]">{stats.total} поз.</span>
+				</div>
+				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
+					<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">Оценка остатка</span>
+					<span className="text-xl font-bold text-[var(--ink)] font-mono tabular-nums">{stats.totalRub.toLocaleString("ru-RU")} ₽</span>
+				</div>
+				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
+					<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">Мало на складе</span>
+					<span className={`text-xl font-bold ${stats.low > 0 ? "text-amber-500" : "text-emerald-500"}`}>{stats.low} поз.</span>
+				</div>
+				<div className="p-3 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)] flex flex-col">
+					<span className="text-[11px] font-medium uppercase tracking-wider text-[var(--muted)]">Мягкий овердрафт</span>
+					<span className={`text-xl font-bold ${stats.overdraft > 0 ? "text-amber-500" : "text-emerald-500"}`}>{stats.overdraft > 0 ? `${stats.overdraft} поз.` : "0 (дефицита нет)"}</span>
+				</div>
 			</div>
 
 			{/* Тулбар поиска и фильтрации */}
-			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0 bg-[var(--paper)] p-2.5 rounded-xl border border-[var(--line)]">
-				<div className="dente-search-wrap relative flex-1 min-w-[200px]">
-					<Search className="dente-search-icon absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" size={16} />
-					<input
-						type="text"
-						value={localSearch}
-						onChange={(e) => setLocalSearch(e.target.value)}
-						placeholder="Поиск по названию, серии или штрихкоду..."
-						className="dente-search-input w-full !pl-10 pr-3 !h-9 !min-h-[36px] text-sm bg-[var(--paper-soft)] text-[var(--ink)] rounded-lg border border-[var(--line-subtle)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] transition-colors"
-						data-testid="warehouse-search-input"
-					/>
+			<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 bg-[var(--paper)] p-2.5 rounded-xl border border-[var(--line)]">
+				<div className="relative flex-1 min-w-[220px]">
+					<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" size={16} />
+					<input ref={searchInputRef} type="text" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Поиск по артикулу, названию или категории (Ctrl+K)..." className="w-full !pl-9 pr-3 !h-9 !min-h-[36px] text-sm bg-[var(--paper-soft)] text-[var(--ink)] rounded-lg border border-[var(--line-subtle)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] transition-colors" data-testid="warehouse-search-input" />
 				</div>
-				<div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
-					{CATEGORY_CHIPS.map((cat) => {
-						const active = selectedCategory === cat.id;
-						return (
+				<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
+					{CATEGORY_TABS.map((tab) => (
+						<button key={tab.id} type="button" onClick={() => setActiveCategory(tab.id)} className={`px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 transition-colors whitespace-nowrap ${activeCategory === tab.id ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line-subtle)]"}`} data-testid={`warehouse-tab-${tab.id}`}>
+							{tab.label}
+						</button>
+					))}
+				</div>
+				{(onOpenWaybills || onOpenShiftDeduction || onOpenAddModal) && (
+					<div className="flex items-center gap-1.5 shrink-0 flex-wrap sm:flex-nowrap">
+						{onOpenShiftDeduction && (
 							<button
-								key={cat.id}
 								type="button"
-								onClick={() => setSelectedCategory(cat.id)}
-								className={`px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 transition-colors ${
-									active
-										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
-										: "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line-subtle)]"
-								}`}
+								onClick={onOpenShiftDeduction}
+								className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
+								data-testid="btn-warehouse-shift-deduction"
+								title="Списать расходники за смену (1 клик)"
 							>
-								{cat.label}
+								<Zap size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span>Списать смену</span>
 							</button>
-						);
-					})}
-				</div>
+						)}
+						{onOpenWaybills && (
+							<button
+								type="button"
+								onClick={onOpenWaybills}
+								className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] shadow-xs transition-colors shrink-0 whitespace-nowrap"
+								data-testid="btn-warehouse-waybills"
+							>
+								<Package size={15} className="shrink-0" />
+								<span>+ Приходная накладная</span>
+							</button>
+						)}
+						{onOpenAddModal && !onOpenWaybills && (
+							<button
+								type="button"
+								onClick={onOpenAddModal}
+								className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] shadow-xs transition-colors shrink-0 whitespace-nowrap"
+								data-testid="btn-warehouse-add-item"
+							>
+								<PlusCircle size={15} className="shrink-0" />
+								<span>+ Позиция</span>
+							</button>
+						)}
+					</div>
+				)}
 			</div>
 
-			{/* Предупреждение о дефиците (Мандат 8n) */}
-			{kpi.overdraftCount > 0 && (
-				<div className="flex items-center gap-3 p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-600 dark:text-amber-400 text-xs shrink-0">
-					<AlertTriangle size={18} className="shrink-0" />
-					<div className="flex-1">
-						<span className="font-semibold">Мягкий овердрафт активен (Мандат 8n):</span> {kpi.overdraftCount} поз. списаны под приём до внесения накладной поставщика. Проведение процедур и приёмов не блокируется.
+			{/* Мягкий овердрафт предупреждение */}
+			{stats.overdraft > 0 && (
+				<div className="flex items-center justify-between gap-3 p-3 bg-amber-500/10 border border-amber-500/25 rounded-xl text-amber-600 dark:text-amber-400 text-xs shrink-0">
+					<div className="flex items-center gap-2">
+						<AlertTriangle size={16} className="shrink-0" />
+						<span><strong>Мягкий овердрафт:</strong> {stats.overdraft} поз. списаны под приём до внесения накладной. Работа клиники не блокируется.</span>
 					</div>
-					{onOpenWaybills && (
-						<button
-							type="button"
-							onClick={onOpenWaybills}
-							className="secondary-button px-2.5 py-1 text-xs shrink-0"
-						>
-							Внести накладную
-						</button>
-					)}
+					{onOpenWaybills && <button type="button" onClick={onOpenWaybills} className="secondary-button px-2.5 py-1 text-xs shrink-0 font-medium">Внести накладную</button>}
 				</div>
 			)}
 
-			{/* Контент: Desktop Таблица vs Mobile Grouped Inset Cards (Мандат 8ze) */}
+			{/* Контент: Desktop 7 колонок vs Mobile Grouped Cards (Apple HIG) */}
 			{isMobile ? (
-				<WarehouseStockMobileCards
-					items={filteredItems}
-					onSelectItem={onSelectItem}
-					onReceiveItem={onReceiveItem}
-					onDeductItem={onDeductItem}
-					onEditItem={onEditItem}
-				/>
+				<div className="flex flex-col gap-2.5 w-full max-w-full overflow-x-clip" data-testid="warehouse-stock-mobile-cards">
+					{filteredItems.length === 0 ? (
+						<div className="py-8 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-2xl border border-[var(--line)]">Материалов не найдено</div>
+					) : (
+						filteredItems.map((item) => {
+							const qty = Number(item.stockQuantity ?? item.currentStock ?? item.currentQty ?? 0);
+							const unit = item.unit || "шт.";
+							const isOverdraft = qty < 0;
+							const minStock = Number(item.criticalThreshold ?? item.minStockLevel ?? item.minStock ?? 5);
+							const isLow = qty <= minStock && qty >= 0;
+							const sku = item.sku || item.barcode || item.id.slice(0, 8);
+							const traffic = getExpiryTrafficLight(item.expirationDate);
+
+							return (
+								<div key={item.id} onClick={() => onSelectItem?.(item)} className="p-3.5 bg-[var(--paper)] rounded-2xl border border-[var(--line)] shadow-xs flex flex-col gap-2.5 transition-colors cursor-pointer hover:border-[var(--teal,#0d9488)]/40">
+									<div className="flex items-start justify-between gap-2">
+										<div className="flex-1 min-w-0">
+											<span className="text-[11px] font-mono text-[var(--muted)]">#{sku}</span>
+											<h4 className="font-semibold text-sm text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</h4>
+											<div className="flex items-center gap-2 mt-0.5 flex-wrap">
+												<span className="text-xs text-[var(--muted)]">{item.category || "Расходные материалы"}</span>
+												{item.expirationDate && (
+													<span className={`inline-flex px-1.5 py-0.2 rounded font-medium text-[10px] border ${traffic.className}`}>{traffic.badgeTextRu}</span>
+												)}
+											</div>
+										</div>
+										<span className={`px-2.5 py-1 rounded-full text-xs font-bold shrink-0 ${isOverdraft ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" : isLow ? "bg-amber-500/15 text-amber-600 dark:text-amber-400" : "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400"}`}>
+											{isOverdraft ? `⚠️ ${qty} ${unit}` : isLow ? `Мало (${qty})` : `В норме (${qty})`}
+										</span>
+									</div>
+
+									{/* Строка с гарантией высоты >= 52px и тач-мишенями >= 44x44px */}
+									<div className="min-h-[52px] flex items-center justify-between text-xs pt-2 border-t border-[var(--line-subtle)] gap-2">
+										<div className="flex flex-col font-mono text-[var(--muted)] text-[11px] tabular-nums">
+											<span>Остаток: <strong className="text-[var(--ink)] font-bold">{qty} {unit}</strong></span>
+											<span>Мин. запас: {minStock} {unit}</span>
+										</div>
+										<div className="flex items-center gap-1.5 shrink-0">
+											{onReceiveItem && (
+												<button
+													type="button"
+													onClick={(e) => { e.stopPropagation(); onReceiveItem(item); }}
+													className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-emerald-600 dark:text-emerald-400 border border-emerald-500/25 bg-emerald-500/10 hover:bg-emerald-500/20 active:scale-95 transition-transform"
+													title="Оприходовать партию"
+													aria-label={`Приход ${item.name}`}
+												>
+													<PlusCircle size={18} />
+												</button>
+											)}
+											<button
+												type="button"
+												onClick={(e) => { e.stopPropagation(); onDeductItem?.(item); }}
+												className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-amber-600 dark:text-amber-400 border border-amber-500/25 bg-amber-500/10 hover:bg-amber-500/20 active:scale-95 transition-transform"
+												title="Списать расходник (мягкий овердрафт)"
+												aria-label={`Списать ${item.name}`}
+											>
+												<MinusCircle size={18} />
+											</button>
+											{onEditItem && (
+												<button
+													type="button"
+													onClick={(e) => { e.stopPropagation(); onEditItem(item); }}
+													className="secondary-button min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line-subtle)] active:scale-95 transition-transform"
+													title="Редактировать"
+													aria-label={`Редактировать ${item.name}`}
+												>
+													<Edit2 size={16} />
+												</button>
+											)}
+										</div>
+									</div>
+								</div>
+							);
+						})
+					)}
+				</div>
 			) : (
-				<div className="overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--paper)]">
-					<table className="w-full text-left text-sm border-collapse" data-testid="warehouse-stock-table">
+				<div className="overflow-x-auto rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs">
+					<table style={{ tableLayout: "fixed", width: "100%" }} className="w-full text-left text-sm border-collapse" data-testid="warehouse-stock-table">
 						<thead>
 							<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-								<th className="py-3 px-3.5">Наименование</th>
-								<th className="py-3 px-3">Категория</th>
-								<th className="py-3 px-3">
-									<div>Срок годности</div>
-									<div className="text-[10px] text-[var(--muted)] font-normal normal-case">Партия / FEFO</div>
-								</th>
-								<th className="py-3 px-3 text-right">Остаток</th>
-								<th className="py-3 px-3 text-right">Мин. запас</th>
-								<th className="py-3 px-3 text-right">Себестоимость</th>
-								<th className="py-3 px-3.5 text-right">Действия</th>
+								<th style={{ width: "100px" }} className="py-3 px-3">Артикул</th>
+								<th className="py-3 px-3">Наименование</th>
+								<th style={{ width: "130px" }} className="py-3 px-3">Категория</th>
+								<th style={{ width: "90px" }} className="py-3 px-3 text-right font-semibold">Остаток</th>
+								<th style={{ width: "75px" }} className="py-3 px-3 text-center">Ед. изм.</th>
+								<th style={{ width: "95px" }} className="py-3 px-3 text-right font-semibold">Мин. запас</th>
+								<th style={{ width: "230px" }} className="py-3 px-3.5 text-center">Статус остатка</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line-subtle)]">
 							{filteredItems.length === 0 ? (
 								<tr>
-									<td colSpan={7} className="py-10 text-center text-sm text-[var(--muted)]">
-										Позиций не найдено
-									</td>
+									<td colSpan={7} className="py-10 text-center text-sm text-[var(--muted)]">Материалов по заданным критериям не найдено</td>
 								</tr>
 							) : (
 								filteredItems.map((item) => {
 									const qty = Number(item.stockQuantity ?? item.currentStock ?? item.currentQty ?? 0);
-									const isOverdraft = qty < 0;
 									const unit = item.unit || "шт.";
-									const minStock = item.criticalThreshold ?? item.minStockLevel ?? item.minStock ?? null;
-									const costVal = item.averageCostRub ?? item.unitCostRub ?? item.unitCost ?? null;
+									const isOverdraft = qty < 0;
+									const minStock = Number(item.criticalThreshold ?? item.minStockLevel ?? item.minStock ?? 5);
+									const isLow = qty <= minStock && qty >= 0;
+									const sku = item.sku || item.barcode || item.id.slice(0, 8);
 									const traffic = getExpiryTrafficLight(item.expirationDate);
+
 									return (
-										<tr
-											key={item.id}
-											data-testid={`stock-row-${item.id}`}
-											className={`hover:bg-[var(--paper-soft)]/50 transition-colors group cursor-pointer stock-row-${item.id}`}
-											onClick={() => onSelectItem?.(item)}
-										>
-											<td className="py-2.5 px-3.5">
-												<div className="font-medium text-[var(--ink)]">{item.name}</div>
-												{item.barcode && (
-													<span className="text-[11px] text-[var(--muted)] font-mono">
-														{item.barcode}
-													</span>
-												)}
-												{item.sku && !item.barcode && (
-													<span className="text-[11px] text-[var(--muted)] font-mono">
-														{item.sku}
-													</span>
+										<tr key={item.id} data-testid={`stock-row-${item.id}`} className={`hover:bg-[var(--paper-soft)]/60 transition-colors cursor-pointer stock-row-${item.id}`} onClick={() => onSelectItem?.(item)}>
+											{/* 1. Артикул */}
+											<td className="py-2.5 px-3 font-mono text-xs text-[var(--muted)] truncate" title={sku}>{sku}</td>
+											{/* 2. Наименование */}
+											<td className="py-2.5 px-3">
+												<div className="font-medium text-[var(--ink)] truncate" title={item.name}>{item.name}</div>
+												{item.expirationDate && (
+													<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+														<span className={`inline-flex px-1.5 py-0.2 rounded font-medium text-[10px] border ${traffic.className}`}>{traffic.badgeTextRu}</span>
+														{traffic.status === "expired" && (
+															<button type="button" data-testid={`btn-sanpin-disposal-act-${item.id}`} onClick={(e) => e.stopPropagation()} className="secondary-button px-1.5 py-0.2 text-[10px] text-rose-500">
+																Акт утилизации
+															</button>
+														)}
+													</div>
 												)}
 											</td>
-											<td className="py-2.5 px-3 text-[var(--muted)] text-xs">
-												{item.category || "—"}
+											{/* 3. Категория */}
+											<td className="py-2.5 px-3 text-xs text-[var(--muted)] truncate" title={item.category || "Расходные"}>{item.category || "Расходные"}</td>
+											{/* 4. Остаток */}
+											<td className="py-2.5 px-3 text-right font-mono font-bold tabular-nums">
+												<span className={isOverdraft ? "text-amber-500" : isLow ? "text-amber-500" : "text-emerald-600 dark:text-emerald-400"}>{qty}</span>
 											</td>
-											<td className="py-2.5 px-3 text-xs text-[var(--muted)]">
-												<div className="flex items-center gap-1.5 flex-wrap">
-													<span className={`inline-flex px-2 py-0.5 rounded-md font-medium text-[11px] border ${traffic.className}`}>
-														{traffic.badgeTextRu}
-													</span>
-													{traffic.status === "expired" && (
-														<button
-															type="button"
-															data-testid={`btn-sanpin-disposal-act-${item.id}`}
-															onClick={(e) => {
-																e.stopPropagation();
-															}}
-															className="secondary-button px-2 py-0.5 text-[10px] text-rose-500"
-														>
-															Акт утилизации СанПиН 3.3686-21
-														</button>
-													)}
-													{(item.lotNumber || item.batchNumber) && (
-														<span className="px-1.5 py-0.2 rounded bg-[var(--paper-soft)] text-[10px] font-mono">
-															{item.lotNumber || item.batchNumber}
+											{/* 5. Ед. изм. */}
+											<td className="py-2.5 px-3 text-center text-xs text-[var(--muted)] font-medium">{unit}</td>
+											{/* 6. Мин. запас */}
+											<td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--muted)] tabular-nums">{minStock}</td>
+											{/* 7. Статус остатка (Мандат 8n: В норме / Мало / Перерасход (овердрафт)) */}
+											<td className="py-2.5 px-3.5 text-center">
+												<div className="inline-flex items-center gap-1.5 justify-center flex-wrap">
+													{isOverdraft || qty === 0 ? (
+														<span data-testid={`soft-overdraft-badge-${item.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Списано под операцию (мягкий овердрафт)">
+															{qty < 0 ? `⚠️ Перерасход (${qty})` : "Ожидается поставка (мягкий овердрафт)"}
 														</span>
+													) : isLow ? (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-amber-500/15 text-amber-600 dark:text-amber-400">Мало</span>
+													) : (
+														<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">В норме</span>
 													)}
-												</div>
-											</td>
-											<td className="py-2.5 px-3 text-right font-medium">
-												{isOverdraft || qty === 0 ? (
-													<span
-														data-testid={`soft-overdraft-badge-${item.id}`}
-														className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
-														title="Списано под операцию (мягкий Овердрафт, накладная ещё не внесена)"
-													>
-														{qty < 0 ? `⚠️ ${qty} ${unit} (Дефицит / Овердрафт)` : "Ожидается поставка (мягкий овердрафт)"}
-													</span>
-												) : (
-													<span className="inline-flex px-2 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
-														{qty} {unit}
-													</span>
-												)}
-											</td>
-											<td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--muted)]">
-												{minStock != null ? `${minStock} ${unit}` : "—"}
-											</td>
-											<td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--ink)]">
-												{costVal != null ? `${Number(costVal).toLocaleString("ru-RU")} ₽` : "—"}
-											</td>
-											<td className="py-2.5 px-3.5 text-right">
-												<div className="inline-flex items-center gap-1">
-													{onReceiveItem && (
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																onReceiveItem(item);
-															}}
-															className="secondary-button p-1.5 text-xs text-emerald-600 dark:text-emerald-400"
-															title="Оприходовать партию"
-														>
-															<PlusCircle size={15} />
-														</button>
-													)}
-													<button
-														type="button"
-														onClick={(e) => {
-															e.stopPropagation();
-															onDeductItem?.(item);
-														}}
-														className="secondary-button p-1.5 text-xs text-amber-600 dark:text-amber-400"
-														title="Списать расходник"
-													>
-														<MinusCircle size={15} />
-														<span className="sr-only">Списать (Овердрафт)</span>
+													<button type="button" onClick={(e) => { e.stopPropagation(); onDeductItem?.(item); }} className="secondary-button p-1 text-xs text-amber-600 dark:text-amber-400" title="Списать расходник">
+														<MinusCircle size={14} /><span className="sr-only">Списать (Овердрафт)</span>
 													</button>
-													{onEditItem && (
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																onEditItem(item);
-															}}
-															className="secondary-button p-1.5 text-xs text-[var(--muted)]"
-															title="Редактировать позицию"
-														>
-															<Edit2 size={14} />
-														</button>
-													)}
-													{onDeleteItem && (
-														<button
-															type="button"
-															onClick={(e) => {
-																e.stopPropagation();
-																onDeleteItem(item);
-															}}
-															className="secondary-button p-1.5 text-xs text-rose-500"
-															title="Удалить"
-														>
-															<Trash2 size={14} />
-														</button>
-													)}
 												</div>
 											</td>
 										</tr>

@@ -62,7 +62,7 @@ export const WarehouseAuditToolbar: React.FC<WarehouseAuditToolbarProps> = ({
 					<span style={{ fontSize: "0.75rem", color: "var(--muted)", fontWeight: 600 }}>Сортировка:</span>
 					<select
 						value={sortOrder}
-						onChange={(e) => onSortOrderChange(e.target.value as any)}
+						onChange={(e) => onSortOrderChange(e.target.value as "default" | "fefo" | "discrepancy" | "name")}
 						style={{
 							fontSize: "0.8125rem",
 							padding: "4px 8px",

@@ -7,7 +7,7 @@ import {
 	getWarehouseFefoTrafficLight,
 	type ExpiryTrafficLightInfo,
 	type FefoTrafficLightInfo,
-} from "../inventoryExpiryUtils.js";
+} from "../InventoryStockTable.js";
 import { MobileStockCardHeader } from "./MobileStockCardHeader.js";
 import { MobileStockCardStats } from "./MobileStockCardStats.js";
 

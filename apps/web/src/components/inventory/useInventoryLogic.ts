@@ -121,7 +121,6 @@ export function useInventoryLogic(organizationId: string) {
 		handleQuickWriteoffVisitBundle: quickWriteoff.handleQuickWriteoffVisitBundle,
 		isWritingOffVisitBundle: quickWriteoff.isWritingOffVisitBundle,
 		getHeaders,
-		// biome-ignore lint/suspicious/noExplicitAny: automated suppression
-		servicesList: (dashboard as any)?.prices || dashboard?.serviceCatalog || [],
+		servicesList: (dashboard as Record<string, unknown> | undefined)?.prices ?? dashboard?.serviceCatalog ?? [],
 	};
 }

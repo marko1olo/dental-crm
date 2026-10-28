@@ -1,12 +1,13 @@
 /**
+ * apps/web/src/components/InventoryInboundInvoiceModal.tsx
  * Корневой фасад модального окна приходной накладной (Мандат 8b: <= 15 строк).
  */
+
 export {
-	InventoryInboundInvoiceModal,
+	WarehouseInboundInvoiceModal as InventoryInboundInvoiceModal,
 	default,
-} from "./inventory/inboundModal/index.js";
+} from "./inventory/WarehouseInboundInvoiceModal.js";
 export type {
-	InboundInvoiceItemLine,
-	InventoryInboundInvoiceModalProps,
-	InboundInvoiceTotals,
-} from "./inventory/inboundModal/index.js";
+	WarehouseInboundInvoiceModalProps as InventoryInboundInvoiceModalProps,
+	InboundInvoiceItem as InboundInvoiceItemLine,
+} from "./inventory/WarehouseInboundInvoiceModal.js";

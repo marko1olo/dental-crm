@@ -86,3 +86,21 @@
 4. `docs/proofs/inventory/04_inventory_mobile_dark.png` — Мобильный, тёмная тема (390×844).
 
 Все 4 состояния подтверждают корректный рендеринг модального окна `BatchWriteoffModal`, наличие реальных списываемых позиций, доступность кнопки списания (`disabled={false}`) и соблюдение сенсорных стандартов Apple HIG на мобильном вьюпорте.
+
+---
+
+## 6. Устранение сбоев экспорта и типизация опциональных полей (Октябрь 2026)
+
+### 6.1 Восстановление канонических экспортов светофора годности
+- Функция `getExpiryTrafficLight`, тип `ExpiryTrafficLightInfo` и статус `ExpiryTrafficStatus` перенесены в ядро `fefo/fefoTrafficLightCore.ts` и реэкспортированы фасадами `fefoTrafficLight.ts`, `inventoryExpiryUtils.ts`, `InventoryStockTable.tsx` и `WarehouseStockTable.tsx`.
+- Карточки `MobileStockCard.tsx` и `MobileInventoryItemCard.tsx` подключают расчет срока годности через канонический шлюз без разрывов модульных связей.
+
+### 6.2 Чистая типизация без `as any` (`exactOptionalPropertyTypes: true`)
+- Все опциональные поля в интерфейсах `WarehouseStockItem`, `WarehouseStockTableProps`, `ShiftBatchSummaryItem`, `WarehouseBatchWriteoffModalProps`, `ConsumablesDeductionModalProps` приведены к строгому формату `field?: type | undefined;`.
+- Ликвидированы небезопасные касты `as any` в `WarehouseStockTable.tsx`, `ShiftBatchProcedureTab.tsx`, `WarehouseAuditToolbar.tsx`, `useClinicalWriteoffExportHandlers.ts`, `useClinicalWriteoffServices.ts`, `bomDeductionNetworkSync.ts`, `InboundInvoiceSupplierSection.tsx`.
+
+### 6.3 Принцип Soft Negative Stock (Мандаты 8n, 8v, 8aa)
+- Задержка входящей накладной или временный 0 остаток на складе никогда не блокируют проведение клинического приёма, закрытие наряда или расчет пациента на кассе.
+- Списание препаратов и расходников производится на 100% автоматически в фоновом режиме по технологическим картам процедур (BOM) без отвлечения врача у кресла.
+- В складском контуре при отрицательном балансе отображается пассивный бейдж «Мягкий овердрафт», а последующий приход автоматически сальдирует дефицит.
+

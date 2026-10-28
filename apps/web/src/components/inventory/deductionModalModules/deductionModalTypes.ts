@@ -26,8 +26,11 @@ export interface ConsumablesDeductionModalProps {
 	readonly patientName?: string | undefined;
 	readonly toothNumber?: number | undefined | null;
 	readonly currentStockMap?: Record<string, number> | undefined;
-	readonly warehouseItems?: readonly any[] | undefined;
-	readonly onConfirmDeduction?: (items: readonly ConsumablesDeductionModalItem[]) => void | Promise<void>;
+	readonly warehouseItems?: readonly unknown[] | undefined;
+	readonly onConfirmDeduction?:
+		| ((items: readonly ConsumablesDeductionModalItem[]) => void | Promise<void>)
+		| (() => void | Promise<void>)
+		| undefined;
 }
 
 export interface DeductionTotals {
