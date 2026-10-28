@@ -61,11 +61,12 @@ export const PaymentHeaderDesktop: React.FC<PaymentHeaderDesktopProps> = ({
 						type="button"
 						onClick={() => setShowReceiptSidePanel((prev) => !prev)}
 						className={`payment-doc-tab ${showReceiptSidePanel ? "is-active" : ""}`}
-						title="Показать/скрыть кассовый чек"
+						title="Показать/скрыть кассовый чек (54-ФЗ)"
 						data-testid="btn-toggle-receipt-tape"
 					>
 						<Receipt size={14} className={showReceiptSidePanel ? "text-teal-600 dark:text-teal-400" : ""} />
 						<span className="hidden sm:inline">Кассовый чек</span>
+						<span className="sr-only">54-ФЗ</span>
 					</button>
 
 					<button

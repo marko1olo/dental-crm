@@ -13,7 +13,7 @@ export interface SplitSimpleCashierButtonsProps {
 }
 
 const getBtnClass = (isActive: boolean) =>
-	`min-h-[44px] sm:min-h-[36px] sm:h-9 h-11 py-1 px-3 rounded-lg flex items-center justify-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
+	`min-h-[48px] sm:min-h-[36px] sm:h-9 h-12 py-1 px-3 rounded-xl flex items-center justify-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95 ${
 		isActive
 			? "border border-[var(--teal,#0d9488)] bg-[var(--teal-surface,rgba(13,148,136,0.08))] text-[var(--teal-strong,#0f766e)] dark:text-[var(--teal,#2dd4bf)] shadow-2xs"
 			: "border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink-secondary,var(--muted,#64748b))] hover:text-[var(--ink,#0f172a)] hover:border-[var(--line-strong,#94a3b8)] hover:bg-[var(--paper-soft,#f8fafc)]"
@@ -55,7 +55,7 @@ export const SplitSimpleCashierButtons: React.FC<SplitSimpleCashierButtonsProps>
 				</button>
 			)}
 			{onSwitchToSplitMode && (
-				<button type="button" onClick={onSwitchToSplitMode} className="min-h-[44px] sm:min-h-[36px] sm:h-9 h-11 py-1 px-3 rounded-lg border border-dashed border-[var(--line,#cbd5e1)] hover:border-[var(--teal,#0d9488)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95" data-testid="simple-split-toggle-btn" title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)">
+				<button type="button" onClick={onSwitchToSplitMode} className="min-h-[48px] sm:min-h-[36px] sm:h-9 h-12 py-1 px-3 rounded-xl border border-dashed border-[var(--line,#cbd5e1)] hover:border-[var(--teal,#0d9488)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] flex items-center justify-center gap-1.5 font-bold text-xs transition-all cursor-pointer select-none active:scale-95" data-testid="simple-split-toggle-btn" title="Разделить оплату между несколькими источниками (Нал + Карта + СБП + Депозит)">
 					<Layers size={15} className="shrink-0 text-[var(--muted,#64748b)]" /><span className="truncate">Сплит</span>
 				</button>
 			)}

@@ -13,9 +13,9 @@
 .payment-pos-tile {
 	display: flex;
 	align-items: center;
-	min-height: 36px;
-	height: 36px;
-	padding: 0 12px;
+	min-height: 44px;
+	height: auto;
+	padding: 6px 12px;
 	border-radius: 8px;
 	border: 1px solid var(--line, #cbd5e1) !important;
 	background: var(--paper-soft, #f8fafc) !important;
@@ -57,9 +57,9 @@
 	align-items: center;
 	justify-content: center;
 	gap: 8px;
-	min-height: 36px;
-	height: 36px;
-	padding: 0 12px;
+	min-height: 44px;
+	height: auto;
+	padding: 6px 12px;
 	border-radius: 8px;
 	font-weight: 600;
 	font-size: 12px;

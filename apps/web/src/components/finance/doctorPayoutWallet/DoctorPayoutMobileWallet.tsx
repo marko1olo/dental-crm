@@ -84,7 +84,7 @@ export function DoctorPayoutMobileWallet({
 					type="button"
 					className="doctor-wallet-primary-cta"
 					onClick={() => wallet.currentDoctor && onOpenPayrollModal(wallet.currentDoctor)}
-					aria-label="Открыть расчёт выплат врачу"
+					aria-label="Открыть расчётную ведомость"
 				>
 					<FileSpreadsheet size={18} />
 					<span>Расчёт выплат врачу</span>
