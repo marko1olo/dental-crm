@@ -1,7 +1,7 @@
 import React from 'react';
 import { ChairsideCopilotHUD } from '../ChairsideCopilotHUD';
+import { CopilotVoiceStenographer } from '../CopilotVoiceStenographer';
 import { ClinicalProtocolsCatalogModal } from '../../visit/clinicalCatalog/ClinicalProtocolsCatalogModal';
-import { VoiceDictationAssistantModal } from '../../voice/VoiceDictationAssistantModal';
 import { useVisitStore } from '../../../store/visitStore';
 import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../../visit/clinicalCatalog/clinicalProtocolsCatalog';
 
@@ -61,10 +61,11 @@ export const CopilotGlobalModals: React.FC<CopilotGlobalModalsProps> = ({
       )}
 
       {isVoiceModalOpen && (
-        <VoiceDictationAssistantModal
+        <CopilotVoiceStenographer
           isOpen={isVoiceModalOpen}
           onClose={closeVoiceModal}
-          activeToothNumber={activeTooth}
+          activeTooth={activeTooth}
+          patientName={patientName}
         />
       )}
     </>

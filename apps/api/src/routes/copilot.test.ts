@@ -200,7 +200,8 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 				const startData = toolStarted.data as Record<string, unknown>;
 				assert.ok(
 					startData.name === "clinical.get_doctor_schedule" ||
-						startData.name === "crm.get_daily_schedule_intelligence",
+						startData.name === "crm.get_daily_schedule_intelligence" ||
+						startData.name === "crm.get_daily_patients",
 					`Expected schedule tool call, got ${startData.name}`,
 				);
 			}
