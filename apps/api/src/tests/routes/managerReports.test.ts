@@ -1207,4 +1207,41 @@ describe("отчёты руководителю", () => {
 		assert.equal(body.totalRub, 0);
 		assert.equal(body.isEmpty, true);
 	});
+
+	test("финансовая сводка руководителя отдает честные типы оплат и наряды", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/financial-summary",
+			headers: ORG_HEADERS,
+		});
+		assert.equal(response.statusCode, 200, response.body);
+		const body = JSON.parse(response.body);
+		assert.ok(typeof body.totalRevenueRub === "number");
+		assert.ok(typeof body.totalRevenueKopecks === "number");
+		assert.ok(typeof body.invoicesCount === "number");
+		assert.ok(typeof body.averageCheckRub === "number");
+		assert.ok(body.paymentBreakdown);
+		assert.ok(body.paymentBreakdown.cash);
+		assert.ok(body.paymentBreakdown.card);
+		assert.ok(body.paymentBreakdown.sbp);
+		assert.ok(body.paymentBreakdown.deposit);
+	});
+
+	test("ведомость начисления зарплаты врачам считает Net Revenue в копейках", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const response = await app.inject({
+			method: "GET",
+			url: "/api/reports/doctor-payroll",
+			headers: ORG_HEADERS,
+		});
+		assert.equal(response.statusCode, 200, response.body);
+		const body = JSON.parse(response.body);
+		assert.ok(Array.isArray(body.rows));
+		assert.ok(body.totals);
+		assert.ok(typeof body.totals.totalNetRevenueKopecks === "number");
+		assert.ok(typeof body.totals.totalPayoutKopecks === "number");
+	});
 });

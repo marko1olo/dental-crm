@@ -25,6 +25,8 @@ import {
 	clinicTimeZone,
 	currentMonthPeriod,
 	doctorPerformance,
+	doctorPayrollReport,
+	financialExecutiveSummary,
 	instantOfLocalTime,
 	patientFlow,
 	type ReportScope,
@@ -304,6 +306,20 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		};
 	});
 
+	/**
+	 * Сводный пульт руководителя: Выручка за период, наряды, средний чек и
+	 * разбивка по реальным типам оплат (Наличные, Банковские карты, Оплата по QR СБП, Списание с авансов/депозитов).
+	 */
+	app.get("/api/reports/financial-summary", async (request, reply) => {
+		const resolved = await scopeFor(request, reply, "report financial summary");
+		if (!resolved) return;
+		const report = await financialExecutiveSummary(resolved.scope);
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
+			...report,
+		};
+	});
+
 	app.get("/api/reports/doctors", async (request, reply) => {
 		const resolved = await scopeFor(request, reply, "report doctors");
 		if (!resolved) return;
@@ -311,6 +327,22 @@ export async function registerReportRoutes(app: FastifyInstance) {
 		return {
 			period: { from: resolved.scope.from, to: resolved.scope.to },
 			doctors: report.rows,
+			...report,
+		};
+	});
+
+	/**
+	 * Прозрачная ведомость начисления зарплаты врачам по формуле Net Revenue:
+	 * Оказано услуг (руб.), Списано материалов техкарт (руб.), Чистая выручка (Net Revenue),
+	 * Процентная ставка врача (%), Итого к выплате (руб.).
+	 * Все расчёты ведутся в целочисленных копейках без float-погрешностей.
+	 */
+	app.get("/api/reports/doctor-payroll", async (request, reply) => {
+		const resolved = await scopeFor(request, reply, "report doctor payroll");
+		if (!resolved) return;
+		const report = await doctorPayrollReport(resolved.scope);
+		return {
+			period: { from: resolved.scope.from, to: resolved.scope.to },
 			...report,
 		};
 	});
