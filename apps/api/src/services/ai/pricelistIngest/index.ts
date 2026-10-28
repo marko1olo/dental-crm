@@ -5,5 +5,6 @@
 
 export * from "./types.js";
 export * from "./documentTabularParser.js";
+export * from "./nomenclatureMatcher.js";
 export * from "./nomenclature804nMatcher.js";
 export * from "./ingestionPipelineCore.js";

@@ -34,17 +34,8 @@
 	justify-content: center;
 	flex-shrink: 0;
 }
-.material-boms-title {
-	margin: 0;
-	font-size: 16px;
-	font-weight: 700;
-	color: var(--ink);
-}
-.material-boms-subtitle {
-	margin: 2px 0 0 0;
-	font-size: 12.5px;
-	color: var(--muted);
-}
+.material-boms-title { margin: 0; font-size: 16px; font-weight: 700; color: var(--ink); }
+.material-boms-subtitle { margin: 2px 0 0 0; font-size: 12.5px; color: var(--muted); }
 .material-boms-header-actions {
 	display: flex;
 	align-items: center;
@@ -53,8 +44,8 @@
 	flex-shrink: 0;
 }
 .material-boms-btn {
-	min-height: 36px;
-	padding: 6px 14px;
+	min-height: 38px;
+	padding: 8px 14px;
 	border-radius: 8px;
 	font-size: 13px;
 	font-weight: 600;
@@ -66,26 +57,11 @@
 	border: 1px solid transparent;
 	white-space: nowrap;
 }
-.material-boms-btn-primary {
-	background: var(--teal, #14b8a6);
-	color: var(--on-teal, #ffffff);
-	border: none;
-}
-.material-boms-btn-primary:hover:not(:disabled) {
-	filter: brightness(1.08);
-}
-.material-boms-btn-secondary {
-	background: var(--paper-soft, rgba(0, 0, 0, 0.04));
-	color: var(--ink);
-	border: 1px solid var(--line);
-}
-.material-boms-btn-secondary:hover:not(:disabled) {
-	background: var(--paper-strong);
-}
-.material-boms-btn:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
+.material-boms-btn-primary { background: var(--teal, #14b8a6); color: var(--on-teal, #ffffff); border: none; }
+.material-boms-btn-primary:hover:not(:disabled) { filter: brightness(1.08); }
+.material-boms-btn-secondary { background: var(--paper-soft, rgba(0, 0, 0, 0.04)); color: var(--ink); border: 1px solid var(--line); }
+.material-boms-btn-secondary:hover:not(:disabled) { background: var(--paper-strong); }
+.material-boms-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .material-boms-stats-row {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
@@ -100,19 +76,22 @@
 	flex-direction: column;
 	gap: 6px;
 }
-.material-boms-stat-label {
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--muted);
-	text-transform: uppercase;
-	letter-spacing: 0.5px;
-}
-.material-boms-stat-value {
-	font-size: 22px;
-	font-weight: 700;
-	color: var(--ink);
-}
-.material-boms-stat-desc {
-	font-size: 12px;
-	color: var(--muted);
+.material-boms-stat-label { font-size: 12px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+.material-boms-stat-value { font-size: 22px; font-weight: 700; color: var(--ink); }
+.material-boms-stat-desc { font-size: 12px; color: var(--muted); }
+
+/* Apple HIG Mobile Touch Ergonomics (<= 640px) */
+@media (max-width: 640px) {
+	.material-boms-header { padding: 12px; }
+	.material-boms-header-info { flex: 1 1 100%; }
+	.material-boms-header-actions { width: 100%; display: flex; flex-direction: column; gap: 8px; }
+	.material-boms-btn {
+		min-height: 44px;
+		padding: 10px 14px;
+		width: 100%;
+		justify-content: center;
+		white-space: normal;
+		text-align: center;
+	}
+	.material-boms-btn-primary { order: -1; }
 }

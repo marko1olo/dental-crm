@@ -100,7 +100,7 @@ const InventoryViewInner: React.FC<{ organizationId: string }> = ({ organization
 	if (isLoading && items.length === 0) {
 		return <div className="flex items-center justify-center h-full text-[var(--muted)] gap-3"><Package size={20} /><span>Загрузка склада...</span></div>;
 	}
-	if (isMobile) {
+	if (isMobile && activeSubTab === "inventory") {
 		return (
 			<InventoryViewMobileLayout
 				items={items}

@@ -12,7 +12,7 @@ import type {
 	PriceListIngestionStats,
 } from "./types.js";
 import { extractLinesFromPriceList, extractPriceAndTitleFromLine } from "./documentTabularParser.js";
-import { matchOrder804nNomenclature } from "./nomenclature804nMatcher.js";
+import { matchOrder804nNomenclature } from "./nomenclatureMatcher.js";
 
 // =============================================================================
 // CLINIC CATALOG CROSS-REFERENCING ENGINE

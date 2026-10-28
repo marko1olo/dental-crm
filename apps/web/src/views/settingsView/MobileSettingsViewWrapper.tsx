@@ -70,7 +70,7 @@ export function MobileSettingsViewWrapper({
 								setMobileSection("root");
 								selectSettingsTab("clinic");
 							}}
-							className="min-w-[44px] min-h-[44px] -ml-1 px-1.5 flex items-center gap-1 text-[15px] font-medium text-[var(--teal)] cursor-pointer shrink-0"
+							className="min-w-[44px] min-h-[44px] -ml-1 px-1.5 flex items-center gap-1 text-[15px] font-medium text-[var(--teal)] bg-transparent border-0 cursor-pointer shrink-0"
 							aria-label="Назад в настройки"
 							data-testid="btn-mobile-subtab-back"
 						>
