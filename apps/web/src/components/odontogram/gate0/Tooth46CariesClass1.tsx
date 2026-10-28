@@ -10,6 +10,7 @@ export interface Tooth46CariesClass1Props {
 	cariesDepth?: CariesDepth | undefined;
 	isDark?: boolean;
 	showBuccalPit?: boolean;
+	isDestructive?: boolean;
 }
 
 /**
@@ -23,10 +24,11 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	cariesDepth,
 	isDark = false,
 	showBuccalPit = true,
+	isDestructive = false,
 }) => {
 	const c1 = TOOTH46_CARIES_GEOMETRY;
 	const isSuperficial = cariesDepth === "superficial";
-	const isDestructive = cariesDepth === "destructive";
+	const isDestruct = isDestructive || cariesDepth === "destructive";
 	const isProfunda = cariesDepth === "profunda";
 	const destr = TOOTH46_CARIES_DESTRUCTIVE_GEOMETRY.destructive;
 
@@ -35,7 +37,7 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 	return (
 		<g id="tooth46-caries-class1">
 			{/* Non-destructive depths: superficial, media, profunda */}
-			{!isDestructive && (
+			{!isDestruct && (
 				<>
 					<path d={c1.demineralizedHalo} fill="url(#dente-caries-demin)" stroke={isSuperficial ? deminStroke : haloStroke} strokeWidth={isSuperficial ? "0.8" : "0.6"} />
 					{!isSuperficial && (
@@ -59,11 +61,11 @@ export const Tooth46CariesClass1: React.FC<Tooth46CariesClass1Props> = ({
 				</>
 			)}
 
-			{/* Destructive Stage 4: physical cutout into transparency, NO filled blob over void! */}
-			{isDestructive && (
+			{/* Destructive Stage 4: exposed necrotic dentin crater + enamel fracture margin */}
+			{isDestruct && (
 				<g id="tooth46-caries-class1-destructive">
-					<path d={destr.fractureMargin} fill="none" stroke="rgba(120, 53, 15, 0.95)" strokeWidth="2.2" strokeLinecap="round" />
-					<path d={destr.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.0" strokeLinecap="round" />
+					<path d={TOOTH46_CARIES_DESTRUCTIVE_GEOMETRY.destructiveCutout} fill={lesionFill} stroke="rgba(120, 53, 15, 0.95)" strokeWidth="0.8" />
+					<path d={destr.fractureMargin} fill="none" stroke="#0c0a09" strokeWidth="1.2" strokeLinecap="round" />
 					{destr.fractureSteps.map((s, idx) => (
 						<path key={`c1-step-${idx}`} d={s} fill="none" stroke={isDark ? "#f1f5f9" : "#ffffff"} strokeWidth="0.85" strokeLinecap="round" />
 					))}

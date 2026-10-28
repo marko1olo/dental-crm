@@ -76,8 +76,10 @@ export const Tooth16ShaderDefs: React.FC = () => {
 
 			{/* Composite Core Build-up (Natural dentin shade A2) */}
 			<linearGradient id="dente-core-composite-16" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#fef3c7" stopOpacity="0.95" />
-				<stop offset="100%" stopColor="#fde68a" stopOpacity="0.90" />
+				<stop offset="0%" stopColor="#fef3c7" stopOpacity="0.98" />
+				<stop offset="35%" stopColor="#fde68a" stopOpacity="0.98" />
+				<stop offset="70%" stopColor="#f59e0b" stopOpacity="0.92" />
+				<stop offset="100%" stopColor="#d97706" stopOpacity="0.88" />
 			</linearGradient>
 
 			{/* Cervical Ridge Highlights */}

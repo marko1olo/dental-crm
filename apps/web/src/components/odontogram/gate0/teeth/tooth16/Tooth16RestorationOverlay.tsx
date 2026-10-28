@@ -46,8 +46,10 @@ export const Tooth16RestorationOverlay: React.FC<Tooth16RestorationOverlayProps>
 					<path d={r.ferruleCollar} fill="url(#dente-root-dentin-16)" stroke={isDark ? "#64748b" : "#94a3b8"} strokeWidth="0.7" />
 					<path d={r.chamferMarginLine} fill="none" stroke={isDark ? "#94a3b8" : "#64748b"} strokeWidth="0.6" />
 					<path d={r.postCore.palatalShaft} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.6" />
-					<path d={r.postCore.mesialPin} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.5" />
-					<path d={r.postCore.coreStump} fill="url(#dente-core-composite-16)" stroke="rgba(2, 132, 199, 0.80)" strokeWidth="0.75" strokeDasharray="3 1.5" />
+					{(r.postCore as any).mesialPin && (
+						<path d={(r.postCore as any).mesialPin} fill="url(#dente-fiber-post)" stroke="#94a3b8" strokeWidth="0.5" />
+					)}
+					<path d={r.postCore.coreStump} fill="url(#dente-core-composite-16)" stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"} strokeWidth="0.75" strokeLinejoin="round" />
 				</g>
 			)}
 

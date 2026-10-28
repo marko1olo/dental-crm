@@ -24,7 +24,8 @@ export const Tooth46SingleCanal: React.FC<Tooth46SingleCanalProps> = ({
 	if (showGuttaPercha) {
 		const ax = canal.apex.x;
 		const ay = canal.apex.y;
-		const apicalPlugD = `M ${ax - 1.0},${ay - 0.8} C ${ax - 1.0},${ay + 0.5} ${ax + 1.0},${ay + 0.5} ${ax + 1.0},${ay - 0.8} Z`;
+		// Apical seal dome stops strictly 0.2-0.5mm inside the physiological apical constriction
+		const apicalPlugD = `M ${ax - 0.8},${ay - 1.2} C ${ax - 0.8},${ay - 0.2} ${ax + 0.8},${ay - 0.2} ${ax + 0.8},${ay - 1.2} Z`;
 
 		return (
 			<g id={`canal-${canal.id}`}>
@@ -32,17 +33,17 @@ export const Tooth46SingleCanal: React.FC<Tooth46SingleCanalProps> = ({
 					d={lumenD}
 					fill="url(#dente-guttapercha-cone)"
 					stroke="url(#dente-guttapercha-sheath)"
-					strokeWidth="0.8"
+					strokeWidth="0.75"
 					strokeLinejoin="round"
 					vectorEffect="non-scaling-stroke"
 				/>
+				{/* Soft internal thermoplastic specular reflection (never piercing apex) */}
 				<path
 					d={canal.centerLine}
 					fill="none"
-					stroke="#ffffff"
-					strokeWidth="0.65"
-					strokeOpacity="0.85"
-					strokeLinecap="round"
+					stroke="rgba(254, 205, 211, 0.35)"
+					strokeWidth="0.40"
+					strokeLinecap="butt"
 					vectorEffect="non-scaling-stroke"
 				/>
 				{isUnderfill && underfillData ? (

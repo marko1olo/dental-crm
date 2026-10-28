@@ -15,15 +15,11 @@ export const TOOTH18_RESTORATION_GEOMETRY = {
 
 	// 2. Post & Core (Anchor pin in Fused/Palatal canal + Anatomical prepared stump)
 	postCore: {
-		// Conical fiber/cast post in Fused/Palatal canal (Y=38..100.5)
+		// Conical fiber/cast post in Fused/Palatal canal (Y=46..100.5), leaving apical seal to Y=19.0
 		palatalShaft:
-			"M 54.0,38 L 55.8,38 " +
-			"C 55.2,56 54.2,78 53.0,100.5 L 49.5,100.5 " +
-			"C 51.0,78 52.8,56 54.0,38 Z",
-		// Auxiliary mesial anti-rotational retention pin
-		mesialPin:
-			"M 38.5,72 C 39.0,82 39.8,92 40.5,100.5 L 38.5,100.5 " +
-			"C 37.8,92 37.0,82 36.5,72 Z",
+			"M 40.5,46.0 L 42.7,46.0 " +
+			"C 43.5,65 45.0,84 47.0,100.5 L 43.5,100.5 " +
+			"C 41.8,84 40.8,65 40.5,46.0 Z",
 		// Anatomical prepared molar stump (6-8° convergence, DB lower)
 		coreStump:
 			"M 24.0,101.5 C 25.5,110 27.5,120 31.0,128 " +

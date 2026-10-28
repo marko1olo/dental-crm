@@ -79,8 +79,8 @@ export const Tooth14RestorationOverlay: React.FC<Tooth14RestorationOverlayProps>
 					<path
 						d={r.coreBuildUpPath}
 						fill="url(#dente-composite-core)"
-						stroke={isDark ? "#94a3b8" : "#cbd5e1"}
-						strokeWidth="0.7"
+						stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"}
+						strokeWidth="0.75"
 						strokeLinejoin="round"
 						vectorEffect="non-scaling-stroke"
 					/>

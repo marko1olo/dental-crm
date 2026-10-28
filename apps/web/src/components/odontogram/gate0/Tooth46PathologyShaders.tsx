@@ -22,8 +22,10 @@ export const Tooth46PathologyShaders: React.FC = () => {
 				<stop offset="100%" stopColor="#cbd5e1" stopOpacity="0.85" />
 			</linearGradient>
 			<linearGradient id="dente-composite-core" x1="0" y1="0" x2="0" y2="1">
-				<stop offset="0%" stopColor="#38bdf8" stopOpacity="0.75" />
-				<stop offset="100%" stopColor="#0284c7" stopOpacity="0.85" />
+				<stop offset="0%" stopColor="#fef3c7" stopOpacity="0.98" />
+				<stop offset="35%" stopColor="#fde68a" stopOpacity="0.98" />
+				<stop offset="70%" stopColor="#f59e0b" stopOpacity="0.92" />
+				<stop offset="100%" stopColor="#d97706" stopOpacity="0.88" />
 			</linearGradient>
 
 			{/* Dental Calculus (Supragingival Mineralized Limestone & Subgingival Serumal) */}

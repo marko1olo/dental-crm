@@ -26,7 +26,7 @@ export const Tooth12SingleCanal: React.FC<Tooth12SingleCanalProps> = ({
 	const ay = canal.apex.y;
 
 	if (showGuttaPercha) {
-		const apicalPlugD = `M ${ax - 1.0},${ay + 0.8} C ${ax - 1.0},${ay - 0.5} ${ax + 1.0},${ay - 0.5} ${ax + 1.0},${ay + 0.8} Z`;
+		const apicalPlugD = `M ${ax - 0.8},${ay + 1.2} C ${ax - 0.8},${ay + 0.2} ${ax + 0.8},${ay + 0.2} ${ax + 0.8},${ay + 1.2} Z`;
 
 		return (
 			<g id={`tooth12-canal-${canal.id}`} data-testid={`tooth12-canal-${canal.id}`}>
@@ -41,17 +41,16 @@ export const Tooth12SingleCanal: React.FC<Tooth12SingleCanalProps> = ({
 				<path
 					d={canal.centerLine}
 					fill="none"
-					stroke="#ffffff"
-					strokeWidth="0.60"
-					strokeOpacity="0.90"
-					strokeLinecap="round"
+					stroke="rgba(254, 205, 211, 0.35)"
+					strokeWidth="0.40"
+					strokeLinecap="butt"
 					vectorEffect="non-scaling-stroke"
 				/>
 				<path
 					d={apicalPlugD}
 					fill="#be123c"
 					stroke="#881337"
-					strokeWidth="0.5"
+					strokeWidth="0.3"
 					vectorEffect="non-scaling-stroke"
 				/>
 			</g>

@@ -60,7 +60,7 @@ export const Tooth11RestorationOverlay: React.FC<Tooth11RestorationOverlayProps>
 			{showCore && (
 				<g id="tooth11-ferrule-and-core">
 					<path d={r.ferruleCollarPath} fill={isDark ? "#334155" : "#e2e8f0"} stroke={strokeColor} strokeWidth="0.7" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
-					<path d={r.coreBuildUpPath} fill="url(#dente-composite-core)" stroke={isDark ? "#94a3b8" : "#cbd5e1"} strokeWidth="0.7" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
+					<path d={r.coreBuildUpPath} fill="url(#dente-composite-core)" stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"} strokeWidth="0.75" strokeLinejoin="round" vectorEffect="non-scaling-stroke" />
 				</g>
 			)}
 

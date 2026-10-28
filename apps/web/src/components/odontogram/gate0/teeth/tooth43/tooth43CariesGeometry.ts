@@ -42,6 +42,7 @@ export const TOOTH43_CARIES_GEOMETRY = {
 		destructive: { border: "M 34.0,35.0 C 38.0,42.0 38.0,54.0 34.0,61.0", dentin: "M 34.0,35.0 C 38.0,42.0 38.0,54.0 34.0,61.0 C 37.5,56.0 37.5,40.0 34.0,35.0 Z", steps: ["M 34.0,35.0 L 36.5,33.5", "M 34.0,61.0 L 36.5,62.5"] },
 	},
 
+
 	// Class IV Cusp Apex & Incisal Slopes (Center / M / D x 4 depths)
 	class4: {
 		mesial: {

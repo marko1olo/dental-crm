@@ -41,6 +41,7 @@ export const TOOTH41_CARIES_GEOMETRY = {
 		destructive: { border: "M 41.0,29.0 C 45.0,34.0 45.0,46.0 41.0,51.0", dentin: "M 41.0,29.0 C 45.0,34.0 45.0,46.0 41.0,51.0 C 44.5,47.0 44.5,33.0 41.0,29.0 Z", steps: ["M 41.0,29.0 L 43.5,27.5", "M 41.0,51.0 L 43.5,52.5"] },
 	},
 
+
 	// Class IV Incisal Angle Fracture (M & D x 4 depths)
 	class4: {
 		mesial: {

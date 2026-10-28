@@ -41,9 +41,6 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 						<path d={g.class1.necroticCore} fill={necroticFill} stroke="rgba(12, 10, 9, 0.98)" strokeWidth="0.7" />
 					)}
 					<path d={g.class1.buccalGrooveTrace} fill="none" stroke={stroke} strokeWidth="0.7" strokeLinecap="round" />
-					{g.class1.microPits.map((p, i) => (
-						<circle key={i} cx={p.cx} cy={p.cy} r={p.r} fill={necroticFill} />
-					))}
 				</g>
 			)}
 
@@ -93,8 +90,7 @@ export const Tooth17CariesOverlay: React.FC<Tooth17CariesOverlayProps> = ({
 
 			{cariesType === "destructive" && (
 				<g id="tooth17-caries-destructive">
-					<path d={g.destructive} fill={lesionFill} stroke={stroke} strokeWidth="0.8" />
-					<circle cx={51.5} cy={138} r={7} fill={necroticFill} />
+					<path d={g.destructive} fill={lesionFill} stroke={stroke} strokeWidth="1.0" />
 				</g>
 			)}
 		</g>

@@ -29,9 +29,7 @@ export const ToothMandibleFullArch: React.FC<ToothMandibleFullArchProps> = ({
 	className = "",
 }) => {
 	const [internalSelected, setInternalSelected] = useState<number | null>(46);
-	const [localOverrides, setLocalOverrides] = useState<Record<number, Tooth46LayerFlags>>({
-		46: { ...DEFAULT_TOOTH46_LAYERS, caries: true, cariesType: "class1", cariesDepth: "media" },
-	});
+	const [localOverrides, setLocalOverrides] = useState<Record<number, Tooth46LayerFlags>>({});
 	const selectedTooth = controlledSelected !== undefined ? controlledSelected : internalSelected;
 
 	const teethDataLookup = useMemo(() => {
@@ -45,7 +43,12 @@ export const ToothMandibleFullArch: React.FC<ToothMandibleFullArchProps> = ({
 	const getToothLayers = (num: number): Tooth46LayerFlags => {
 		if (localOverrides[num]) return localOverrides[num];
 		const d = layersMap instanceof Map ? layersMap.get(num) : layersMap?.[num];
-		return d ?? toothDataToGate0Flags(teethDataLookup.get(num), num);
+		if (d) return d;
+		if (teethDataLookup.has(num)) return toothDataToGate0Flags(teethDataLookup.get(num), num);
+		if (num === 46 && !teethData && !teethDataMap) {
+			return { ...DEFAULT_TOOTH46_LAYERS, caries: true, cariesType: "class1", cariesDepth: "media" };
+		}
+		return toothDataToGate0Flags(undefined, num);
 	};
 
 	const mutateSelected = (patch: Partial<Tooth46LayerFlags>) => {

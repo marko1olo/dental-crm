@@ -64,9 +64,8 @@ export const Tooth47RestorationOverlay: React.FC<
 						<path
 							d={geo.coreStump}
 							fill="url(#dente-composite-core)"
-							stroke="rgba(2, 132, 199, 0.90)"
-							strokeWidth="0.7"
-							strokeDasharray="2.5 1.5"
+							stroke={isDark ? "rgba(245, 158, 11, 0.85)" : "rgba(180, 83, 9, 0.85)"}
+							strokeWidth="0.75"
 							strokeLinejoin="round"
 							vectorEffect="non-scaling-stroke"
 						/>
