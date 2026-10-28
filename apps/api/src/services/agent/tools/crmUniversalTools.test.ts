@@ -103,9 +103,10 @@ describe("1. Patient Management Tools (Mandate 8l & 8e)", () => {
 
 	test("create_patient registers patient with 1-click physiological norm defaults (Mandate 8e)", async () => {
 		const ctx = createTestContext();
+		const randomSuffix = Math.floor(100000 + Math.random() * 900000);
 		const result = await createPatientTool.handler(ctx, {
 			fullName: "Ковалев Дмитрий Сергеевич",
-			phone: "+7 (916) 555-44-33",
+			phone: `+7 (916) ${randomSuffix.toString().slice(0, 3)}-${randomSuffix.toString().slice(3, 5)}-${randomSuffix.toString().slice(5)}`,
 			birthDate: "1994-08-20",
 		});
 

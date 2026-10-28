@@ -6,7 +6,6 @@
  */
 
 export {
-	CANONICAL_804N_PRICE_CATALOG,
 	CANONICAL_SERVICES_PRICE_CATALOG,
 	resolveStandardCatalogPrice,
 	type StandardCatalogService,

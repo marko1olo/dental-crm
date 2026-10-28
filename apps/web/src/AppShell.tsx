@@ -19,6 +19,7 @@ import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitl
 import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
+import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -118,6 +119,7 @@ export function AppShell() {
 			<DirectAppointmentBookingLauncher />
 			<DirectMarketingRoiLauncher />
 			<DirectClinicalBundlesLauncher />
+			<DirectCopilotLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

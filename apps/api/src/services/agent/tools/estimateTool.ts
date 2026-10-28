@@ -27,7 +27,7 @@ export {
 	type CalculatedStageSummary,
 	type CalculatedTierEstimate,
 	type CalculateTreatmentEstimateResult,
-	CANONICAL_804N_PRICE_CATALOG,
+	CANONICAL_SERVICES_PRICE_CATALOG,
 	parseFdiTooth,
 	type RawEstimateItemInput,
 	resolveMaterialForTierAndCategory,

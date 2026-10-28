@@ -97,10 +97,6 @@ export const CANONICAL_SERVICES_PRICE_CATALOG: Readonly<
 	},
 };
 
-/**
- * Backward compatibility alias (Mandate 8ap).
- */
-export const CANONICAL_804N_PRICE_CATALOG = CANONICAL_SERVICES_PRICE_CATALOG;
 
 export function resolveStandardCatalogPrice(
 	code?: string | null,

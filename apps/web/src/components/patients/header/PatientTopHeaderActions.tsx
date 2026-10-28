@@ -51,7 +51,7 @@ export function PatientTopHeaderActions({
 				data-testid="patient-card-book-appointment-btn"
 			>
 				<Plus size={13} className="shrink-0" />
-				<span>+ Записать на приём</span>
+				<span>Записать на приём</span>
 			</button>
 
 			<button

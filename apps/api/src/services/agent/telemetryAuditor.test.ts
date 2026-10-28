@@ -14,6 +14,7 @@
  */
 
 import assert from "node:assert";
+import { randomUUID } from "node:crypto";
 import { describe, test } from "node:test";
 import { compactHistory, summarizeHistorySegment } from "./orchestrator.js";
 import {
@@ -282,10 +283,11 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 		test("aggregates multiple telemetry events with exact mathematical sums", async () => {
 			const auditor = new TelemetryAuditor();
 			auditor.clearInMemory();
+			const testOrgA = randomUUID();
 
 			// Record events for Org A
 			await auditor.recordUsage({
-				organizationId: ORG_A,
+				organizationId: testOrgA,
 				modelName: "gpt-4o",
 				provider: "openai",
 				promptTokens: 1000,
@@ -295,7 +297,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			});
 
 			await auditor.recordUsage({
-				organizationId: ORG_A,
+				organizationId: testOrgA,
 				modelName: "claude-3-7-sonnet",
 				provider: "anthropic",
 				promptTokens: 2000,
@@ -305,7 +307,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			});
 
 			await auditor.recordUsage({
-				organizationId: ORG_A,
+				organizationId: testOrgA,
 				modelName: "deepseek-chat",
 				provider: "deepseek",
 				promptTokens: 5000,
@@ -315,9 +317,9 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 				errorCode: "TIMEOUT",
 			});
 
-			const stats = await auditor.getOrganizationUsageStats(ORG_A);
+			const stats = await auditor.getOrganizationUsageStats(testOrgA);
 
-			assert.strictEqual(stats.organizationId, ORG_A);
+			assert.strictEqual(stats.organizationId, testOrgA);
 			assert.strictEqual(stats.totalRequests, 3);
 			assert.strictEqual(stats.successfulRequests, 2);
 			assert.strictEqual(stats.errorRequests, 1);
@@ -371,10 +373,12 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 		test("enforces strict multi-tenant isolation", async () => {
 			const auditor = new TelemetryAuditor();
 			auditor.clearInMemory();
+			const tenantA = randomUUID();
+			const tenantB = randomUUID();
 
 			// Org A event
 			await auditor.recordUsage({
-				organizationId: ORG_A,
+				organizationId: tenantA,
 				modelName: "gpt-4o",
 				provider: "openai",
 				promptTokens: 1000,
@@ -383,15 +387,15 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 
 			// Org B event
 			await auditor.recordUsage({
-				organizationId: ORG_B,
+				organizationId: tenantB,
 				modelName: "claude-3-7-sonnet",
 				provider: "anthropic",
 				promptTokens: 5000,
 				completionTokens: 2000,
 			});
 
-			const statsA = await auditor.getOrganizationUsageStats(ORG_A);
-			const statsB = await auditor.getOrganizationUsageStats(ORG_B);
+			const statsA = await auditor.getOrganizationUsageStats(tenantA);
+			const statsB = await auditor.getOrganizationUsageStats(tenantB);
 
 			assert.strictEqual(statsA.totalRequests, 1);
 			assert.strictEqual(statsA.totalTokens, 1500);
@@ -405,12 +409,13 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 		test("filters usage by period window", async () => {
 			const auditor = new TelemetryAuditor();
 			auditor.clearInMemory();
+			const periodOrg = randomUUID();
 
 			const pastDate = new Date(Date.now() - 10 * 24 * 60 * 60 * 1000);
 			const recentDate = new Date();
 
 			await auditor.recordUsage({
-				organizationId: ORG_A,
+				organizationId: periodOrg,
 				modelName: "gpt-4o-mini",
 				provider: "openai",
 				promptTokens: 1000,
@@ -419,7 +424,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 			});
 
 			await auditor.recordUsage({
-				organizationId: ORG_A,
+				organizationId: periodOrg,
 				modelName: "gpt-4o-mini",
 				provider: "openai",
 				promptTokens: 2000,
@@ -427,7 +432,7 @@ describe("SQUAD LAMBDA — AI Token Telemetry, Cost Auditor & Context Compactor"
 				createdAt: recentDate,
 			});
 
-			const filteredStats = await auditor.getOrganizationUsageStats(ORG_A, {
+			const filteredStats = await auditor.getOrganizationUsageStats(periodOrg, {
 				from: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000),
 				to: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000),
 			});

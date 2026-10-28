@@ -22,7 +22,7 @@ export const MobileProfileFloatingBar: React.FC<MobileProfileFloatingBarProps> =
 				data-testid="mobile-floating-book-btn"
 			>
 				<Plus size={18} />
-				<span>+ Записать на приём</span>
+				<span>Записать на приём</span>
 			</button>
 			<button
 				type="button"
