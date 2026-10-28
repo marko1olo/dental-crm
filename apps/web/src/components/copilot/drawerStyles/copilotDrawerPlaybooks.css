@@ -51,3 +51,41 @@
   transform: scale(0.96);
 }
 
+/* Quick Playbooks in Empty State */
+.copilot-quick-prompts {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 320px;
+  margin: 16px auto 0 auto;
+}
+
+.copilot-quick-prompt-btn {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background-color: var(--paper-soft);
+  border: 1px solid var(--line);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--ink);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-align: left;
+  user-select: none;
+}
+
+.copilot-quick-prompt-btn:hover {
+  background-color: var(--teal-soft, rgba(13, 148, 136, 0.1));
+  border-color: var(--teal);
+  color: var(--teal-dark, var(--teal));
+  transform: translateX(2px);
+}
+
+.copilot-quick-prompt-btn:active {
+  transform: scale(0.98);
+}
+

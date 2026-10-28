@@ -92,7 +92,7 @@
   font-size: 12px;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
   .copilot-action-confirm-actions button {
     min-height: 44px;
     height: 44px;
