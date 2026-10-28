@@ -101,4 +101,154 @@ describe("Gate 0 — Real CRM ToothData & Domain Adapter Integration", () => {
 		const tooth47 = updated.find((t) => t.toothNumber === 47);
 		assert.equal(tooth47?.state, "Healthy");
 	});
+
+	it("supports simultaneous Multi-Defect Layering: Crown + Gutta-percha + Apical Periodontitis", () => {
+		const complexTooth: ToothData = {
+			toothNumber: 46,
+			state: "Crown",
+			material: "zirconia",
+			canalObturation: "gutta_percha",
+			periapicalLesion: true,
+		};
+
+		const flags = toothDataToGate0Flags(complexTooth);
+
+		// Layer 1 & 2: Orthopedic Crown
+		assert.equal(flags.zirconiaCrown, true, "Zirconia crown layer must be active");
+		assert.equal(flags.crown, false, "Natural enamel crown must be replaced by prosthesis");
+		assert.equal(flags.cusps, false);
+		assert.equal(flags.fissures, false);
+		assert.equal(flags.crownMaterial, "zirconia");
+
+		// Layer 3: Endodontics (Gutta-percha filled root canals)
+		assert.equal(flags.roots, true, "Root trunk must remain visible");
+		assert.equal(flags.canals, true, "Root canals must be active");
+		assert.equal(flags.guttaPercha, true, "Gutta-percha obturation must be preserved under crown");
+		assert.equal(flags.pulp, true, "Pulp/canal anatomy must be rendered");
+
+		// Layer 4: Periapical Pathology (Apical Periodontitis / Granuloma)
+		assert.equal(flags.periapicalHalo, true, "Apical halo must render at root apex");
+		assert.equal(flags.periapicalCondition, "granuloma", "Default apical condition is granuloma");
+
+		// Lossless reconstruction preserves both endo obturation and periapical lesion
+		const reconstructed = gate0FlagsToToothState(46, flags);
+		assert.equal(reconstructed.state, "Crown");
+		assert.equal(reconstructed.canalObturation, "gutta_percha");
+		assert.equal(reconstructed.periapicalLesion, true);
+	});
+
+	it("preserves treated canals (gutta-percha) on composite-filled teeth", () => {
+		const filledEndoTooth: ToothData = {
+			toothNumber: 46,
+			state: "Filled",
+			canalObturation: "gutta_percha",
+		};
+
+		const flags = toothDataToGate0Flags(filledEndoTooth);
+		assert.equal(flags.composite, true, "Composite filling must be active");
+		assert.equal(flags.compositeCondition, "adequate");
+		assert.equal(flags.canals, true, "Canals must be active");
+		assert.equal(flags.guttaPercha, true, "Gutta-percha must be preserved");
+	});
+
+	it("handles Residual Root (Root / R): extinguishes coronal portion and accentuates root trunk", () => {
+		const rootTooth: ToothData = {
+			toothNumber: 46,
+			state: "Root",
+		};
+
+		const flags = toothDataToGate0Flags(rootTooth);
+		assert.equal(flags.crown, false, "Enamel crown must be suppressed");
+		assert.equal(flags.cusps, false, "Cusps must be suppressed");
+		assert.equal(flags.fissures, false, "Fissures must be suppressed");
+		assert.equal(flags.roots, true, "Root anatomy must be preserved");
+		assert.equal(flags.zirconiaCrown, false);
+		assert.equal(flags.composite, false);
+
+		// With post & core build-up in root
+		const postRootTooth: ToothData = {
+			toothNumber: 46,
+			state: "Root",
+			hasPost: true,
+			postType: "cast",
+		};
+		const postFlags = toothDataToGate0Flags(postRootTooth);
+		assert.equal(postFlags.roots, true);
+		assert.equal(postFlags.crown, false);
+		assert.equal(postFlags.postCore, true);
+		assert.equal(postFlags.postCoreType, "cast");
+	});
+
+	it("handles Bridge Pontics & Abutments cleanly (pontic has no roots, abutment has roots)", () => {
+		// Pontic: artificial crown spanning missing gap without biological roots
+		const pontic: ToothData = {
+			toothNumber: 46,
+			state: "Missing",
+			bridgeRole: "pontic",
+			material: "ceramic_emax",
+		};
+		const ponticFlags = toothDataToGate0Flags(pontic);
+		assert.equal(ponticFlags.zirconiaCrown, true, "Pontic must render artificial crown");
+		assert.equal(ponticFlags.crownMaterial, "emax");
+		assert.equal(ponticFlags.roots, false, "Pontic must not have natural roots in bone");
+		assert.equal(ponticFlags.missing, false, "Pontic fills the missing gap");
+
+		// Direct Bridge state
+		const directBridge: ToothData = {
+			toothNumber: 46,
+			state: "Bridge",
+		};
+		const bridgeFlags = toothDataToGate0Flags(directBridge);
+		assert.equal(bridgeFlags.zirconiaCrown, true);
+		assert.equal(bridgeFlags.roots, false);
+
+		// Abutment (pillar) tooth: has natural roots and crown
+		const pillar: ToothData = {
+			toothNumber: 47,
+			state: "Bridge_Abutment",
+			material: "pfm_crown",
+		};
+		const pillarFlags = toothDataToGate0Flags(pillar);
+		assert.equal(pillarFlags.zirconiaCrown, true);
+		assert.equal(pillarFlags.crownMaterial, "pfm");
+		assert.equal(pillarFlags.roots, true, "Abutment pillar must retain biological roots");
+	});
+
+	it("handles defective restorations (Дп, Дк, Defective_Restoration, secondary caries)", () => {
+		// Defective filling via Russian abbreviation 'Дп'
+		const defComposite = toothDataToGate0Flags({ toothNumber: 46, state: "Дп" as any });
+		assert.equal(defComposite.composite, true);
+		assert.equal(defComposite.compositeCondition, "defective");
+
+		// Defective crown via Russian abbreviation 'Дк'
+		const defCrown = toothDataToGate0Flags({ toothNumber: 46, state: "Дк" as any });
+		assert.equal(defCrown.zirconiaCrown, true);
+		assert.equal(defCrown.crownCondition, "defective");
+
+		// Secondary caries on existing composite
+		const secCaries = toothDataToGate0Flags({
+			toothNumber: 46,
+			state: "Filled",
+			clinicalData: { hasSecondaryCaries: true },
+		});
+		assert.equal(secCaries.composite, true);
+		assert.equal(secCaries.compositeCondition, "defective");
+		assert.equal(secCaries.caries, true);
+	});
+
+	it("handles clinical overlays: calculus, fractures, and clinicalData endo markers", () => {
+		const calculusTooth = toothDataToGate0Flags({ toothNumber: 46, state: "Calculus" });
+		assert.equal(calculusTooth.calculus, true);
+
+		const fractureTooth = toothDataToGate0Flags({ toothNumber: 46, state: "Healthy", hasFracture: true });
+		assert.equal(fractureTooth.crack, true);
+
+		const clinEndoTooth = toothDataToGate0Flags({
+			toothNumber: 46,
+			state: "Healthy",
+			clinicalData: { hasTreatedCanals: true },
+		});
+		assert.equal(clinEndoTooth.canals, true);
+		assert.equal(clinEndoTooth.guttaPercha, true);
+	});
 });

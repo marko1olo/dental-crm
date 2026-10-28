@@ -16,6 +16,7 @@ export function gate0FlagsToToothState(num: number, flags: Tooth46LayerFlags): P
 		res.clinicalData = { stage: flags.implantStage ?? "pure" };
 	} else if (flags.zirconiaCrown) {
 		res.state = "Crown";
+		if (flags.roots === false) res.bridgeRole = "pontic";
 		res.material = flags.crownMaterial === "pfm" ? "pfm_crown" : flags.crownMaterial === "emax" ? "ceramic_emax" : "zirconia";
 		res.clinicalData = { crownMaterial: flags.crownMaterial, condition: flags.crownCondition };
 	} else if (flags.inlayOnlay) {
@@ -56,5 +57,16 @@ export function gate0FlagsToToothState(num: number, flags: Tooth46LayerFlags): P
 		res.postType = flags.postCoreType === "cast" ? "cast_core" : "fiber";
 	}
 	if (flags.crack || flags.rootFracture) res.hasFracture = true;
+	if (flags.guttaPercha && res.canalObturation === undefined) {
+		res.canalObturation = "gutta_percha";
+	}
+	if (
+		(flags.periapicalHalo ||
+			flags.periapicalCondition === "granuloma" ||
+			flags.periapicalCondition === "cyst") &&
+		res.periapicalLesion === undefined
+	) {
+		res.periapicalLesion = true;
+	}
 	return res;
 }

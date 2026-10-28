@@ -17,8 +17,8 @@ export function isAnteriorTooth(toothNumber: number): boolean {
 }
 
 export function mapRestorativeToCrownMaterial(mat?: string): CrownMaterial {
-	if (mat === "pfm" || mat === "metal_ceramic") return "pfm";
-	if (mat === "emax" || mat === "ceramic") return "emax";
+	if (mat === "pfm" || mat === "metal_ceramic" || mat === "pfm_crown") return "pfm";
+	if (mat === "emax" || mat === "ceramic" || mat === "ceramic_emax") return "emax";
 	if (mat === "gold") return "gold";
 	if (mat === "metal") return "metal";
 	if (mat === "pmma" || mat === "composite" || mat === "temporary") return "pmma";
@@ -94,14 +94,38 @@ export function applyAuxiliaryOverlays(
 	tooth: ToothData,
 	clin: Record<string, unknown>,
 ): void {
-	if (tooth.periapicalLesion) {
+	if (tooth.periapicalLesion || clin.hasPeriapicalLesion || clin.periapicalLesion) {
 		flags.periapicalHalo = true;
-		flags.periapicalCondition = (clin.periapicalCondition as Tooth46LayerFlags["periapicalCondition"]) ?? "granuloma";
+		flags.periapicalCondition =
+			(clin.periapicalCondition as Tooth46LayerFlags["periapicalCondition"]) ??
+			(flags.periapicalCondition && flags.periapicalCondition !== "none"
+				? flags.periapicalCondition
+				: "granuloma");
 	}
-	if (tooth.hasPost) flags.postCore = true, flags.postCoreType = (tooth.postType as PostCoreType) ?? "fiber";
-	if (tooth.canalObturation) flags.canals = true, flags.guttaPercha = true;
-	if (tooth.hasFracture) flags.crack = true;
-	if (tooth.rootResorption || tooth.rootResorptionStage) {
+	if (tooth.hasPost || clin.hasPost || tooth.postType || clin.postType) {
+		flags.postCore = true;
+		flags.postCoreType =
+			(tooth.postType as PostCoreType) ?? (clin.postType as PostCoreType) ?? "fiber";
+	}
+	if (tooth.canalObturation || clin.hasTreatedCanals || clin.treatedCanals) {
+		flags.canals = true;
+		flags.pulp = true;
+		if (tooth.canalObturation === "resorcinol_formalin" || clin.resorcinolFormalin) {
+			flags.resorcinolFormalin = true;
+			flags.guttaPercha = false;
+		} else if (tooth.canalObturation === "calcium_hydroxide" || clin.calciumHydroxide) {
+			flags.calciumHydroxide = true;
+			flags.guttaPercha = false;
+		} else {
+			flags.guttaPercha = true;
+		}
+	}
+	if (tooth.hasFracture || clin.hasFracture || clin.crack) flags.crack = true;
+	if (clin.rootFracture || clin.verticalRootFracture) flags.rootFracture = true;
+	if (clin.rootPerforation) flags.rootPerforation = true;
+	if (clin.canalLedge) flags.canalLedge = true;
+	if (tooth.calculus || clin.calculus || clin.hasCalculus) flags.calculus = true;
+	if (tooth.rootResorption || tooth.rootResorptionStage || clin.rootResorption) {
 		flags.periapicalHalo = true;
 		flags.periapicalCondition = "resorption";
 	}
