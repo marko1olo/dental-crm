@@ -1,9 +1,10 @@
 /* ==========================================================================
-   PATIENTS REDESIGN QUICK CREATE (Mandate 8b: <= 120 lines, Mandate 8e, 8n)
+   PATIENTS REDESIGN QUICK CREATE (Mandate 8b: Sweet Spot <= 220 lines, Mandate 8e, 8n, 8am)
    Quick 2-click patient onboarding: FIO + Phone, non-blocking workflows.
+   Apple HIG Bottom Sheet on Mobile (<= 768px), Natural Thumb Zone & Touch Targets >= 44x44px.
    ========================================================================== */
 
-/* Smart Input Group */
+/* ─── 1. SMART INLINE INPUT GROUP (DASHBOARD & INTAKE) ───────────────────── */
 .smart-create-group {
 	display: flex;
 	align-items: flex-end;
@@ -39,7 +40,7 @@
 	box-shadow: 0 0 0 3px var(--teal-surface);
 }
 
-/* Concise Notices & Guidance */
+/* ─── 2. NOTICES & ADVISORY GUIDANCE (MANDATE 8e) ───────────────────────── */
 .patients-clinic-wide-notice {
 	background: var(--paper-soft);
 	color: var(--ink);
@@ -64,7 +65,345 @@
 	margin: 0 0 6px 0;
 }
 
-/* Theme overrides */
+/* ─── 3. PATIENT CREATION MODAL & APPLE HIG BOTTOM SHEET ─────────────────── */
+.create-patient-modal-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 1000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	background: rgba(0, 0, 0, 0.6);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+	overflow-y: auto;
+}
+
+.create-patient-modal-card {
+	position: relative;
+	width: 100%;
+	max-width: 660px;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+	overflow: hidden;
+	color: var(--ink);
+	animation: modalAppear 0.15s ease-out;
+}
+
+@keyframes modalAppear {
+	from {
+		opacity: 0;
+		transform: scale(0.97) translateY(6px);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+}
+
+.create-patient-modal-drag-handle-wrap {
+	display: none;
+}
+
+.create-patient-modal-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--line-strong, rgba(0, 0, 0, 0.2));
+}
+
+.create-patient-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+}
+
+.create-patient-modal-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+}
+
+.create-patient-modal-icon-badge {
+	width: 38px;
+	height: 38px;
+	border-radius: 12px;
+	background: var(--teal-surface);
+	color: var(--teal);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.create-patient-modal-title {
+	font-size: 16px;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.25;
+}
+
+.create-patient-modal-subtitle {
+	font-size: 12px;
+	color: var(--muted);
+	margin: 2px 0 0 0;
+}
+
+.create-patient-modal-close-btn {
+	min-width: 44px;
+	min-height: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 12px;
+	border: none;
+	background: transparent;
+	color: var(--muted);
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.create-patient-modal-close-btn:hover {
+	background: var(--line);
+	color: var(--ink);
+}
+
+.create-patient-modal-body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 16px 20px;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	-webkit-overflow-scrolling: touch;
+	overscroll-behavior: contain;
+}
+
+.create-patient-form-field {
+	display: flex;
+	flex-direction: column;
+	gap: 5px;
+	width: 100%;
+}
+
+.create-patient-label-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 8px;
+}
+
+.create-patient-label {
+	font-size: 13px;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.create-patient-smart-parse-btn {
+	font-size: 11px;
+	font-weight: 600;
+	padding: 3px 8px;
+	border-radius: 8px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	cursor: pointer;
+	transition: all 0.15s;
+}
+
+.create-patient-smart-parse-btn:hover {
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.create-patient-input {
+	width: 100%;
+	height: 42px;
+	min-height: 42px;
+	padding: 0 14px;
+	border-radius: 12px;
+	border: 1px solid var(--line-strong);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 14px;
+	box-sizing: border-box;
+	transition: all 0.2s;
+}
+
+.create-patient-input:focus {
+	border-color: var(--teal);
+	outline: none;
+	background: var(--paper);
+	box-shadow: 0 0 0 3px var(--teal-surface);
+}
+
+.create-patient-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 12px;
+}
+
+.create-patient-full-width {
+	grid-column: 1 / -1;
+}
+
+.create-patient-doc-section {
+	border-top: 1px solid var(--line-subtle);
+	padding-top: 12px;
+	margin-top: 4px;
+}
+
+.create-patient-doc-toggle-btn {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--teal);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 36px;
+	padding: 0;
+}
+
+.create-patient-doc-toggle-btn:hover {
+	text-decoration: underline;
+}
+
+.create-patient-modal-footer {
+	padding: 12px 20px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+}
+
+.create-patient-modal-actions {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 8px;
+	flex-wrap: wrap;
+}
+
+.create-patient-modal-actions .primary-button {
+	background: linear-gradient(180deg, var(--teal-fill, #0d9488), var(--teal-dark, #0f766e));
+	color: var(--on-teal, #ffffff);
+	min-height: 44px;
+	height: 44px;
+	font-weight: 700;
+	font-size: 14px;
+	padding: 0 20px;
+	border-radius: 12px;
+	box-shadow: 0 4px 14px -4px var(--teal-ring);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	border: none;
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.create-patient-modal-actions .secondary-button {
+	min-height: 44px;
+	height: 44px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-weight: 600;
+	font-size: 13px;
+	padding: 0 14px;
+	border-radius: 12px;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	transition: all 0.15s ease;
+}
+
+.create-patient-modal-actions .secondary-button:hover {
+	background: var(--paper-soft);
+	border-color: var(--line-strong);
+}
+
+/* ─── 4. MOBILE APPLE HIG BOTTOM SHEET OVERRIDES (<= 768px) ──────────────── */
+@media (max-width: 768px) {
+	.create-patient-modal-overlay {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	.create-patient-modal-card {
+		max-height: 88dvh;
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		width: 100%;
+		max-width: 100vw;
+		overflow-x: clip;
+		animation: bottomSheetSlideUp 0.22s cubic-bezier(0.32, 0.72, 0, 1);
+	}
+
+	@keyframes bottomSheetSlideUp {
+		from {
+			transform: translateY(100%);
+		}
+		to {
+			transform: translateY(0);
+		}
+	}
+
+	.create-patient-modal-drag-handle-wrap {
+		display: flex;
+		justify-content: center;
+		padding: 10px 0 4px 0;
+		background: var(--paper-soft);
+	}
+
+	.create-patient-grid-2 {
+		display: flex;
+		flex-direction: column;
+		gap: 12px;
+	}
+
+	.create-patient-modal-footer {
+		padding-bottom: max(16px, env(safe-area-inset-bottom, 16px));
+	}
+
+	.create-patient-modal-actions {
+		display: flex;
+		flex-direction: column-reverse;
+		width: 100%;
+		gap: 8px;
+	}
+
+	.create-patient-modal-actions > button {
+		width: 100%;
+		justify-content: center;
+	}
+
+	.create-patient-modal-actions .primary-button {
+		width: 100%;
+		order: 1; /* Natural Thumb Zone First */
+	}
+}
+
+/* ─── 5. DARK & ATMOSPHERIC THEME OVERRIDES ───────────────────────────────── */
 [data-theme="dark"] .smart-create-group,
 [data-theme="night"] .smart-create-group,
 [data-theme="contrast"] .smart-create-group,
@@ -89,4 +428,40 @@
 	background: var(--teal-surface);
 	color: var(--teal-light, var(--teal));
 	border-color: var(--teal-ring);
+}
+
+[data-theme="dark"] .create-patient-modal-card,
+[data-theme="night"] .create-patient-modal-card,
+[data-theme="contrast"] .create-patient-modal-card,
+[data-theme="cyber_xray"] .create-patient-modal-card {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+[data-theme="dark"] .create-patient-modal-header,
+[data-theme="dark"] .create-patient-modal-footer,
+[data-theme="dark"] .create-patient-modal-drag-handle-wrap,
+[data-theme="night"] .create-patient-modal-header,
+[data-theme="night"] .create-patient-modal-footer,
+[data-theme="night"] .create-patient-modal-drag-handle-wrap,
+[data-theme="contrast"] .create-patient-modal-header,
+[data-theme="contrast"] .create-patient-modal-footer,
+[data-theme="contrast"] .create-patient-modal-drag-handle-wrap {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+[data-theme="dark"] .create-patient-modal-drag-handle,
+[data-theme="night"] .create-patient-modal-drag-handle,
+[data-theme="contrast"] .create-patient-modal-drag-handle {
+	background: rgba(255, 255, 255, 0.25);
+}
+
+[data-theme="dark"] .create-patient-input,
+[data-theme="night"] .create-patient-input,
+[data-theme="contrast"] .create-patient-input,
+[data-theme="cyber_xray"] .create-patient-input {
+	background: var(--paper, #0f172a);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+	color: #f8fafc;
 }

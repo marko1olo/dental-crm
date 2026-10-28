@@ -1,12 +1,10 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
+import { generatePrimaryIntakePackageHtml } from "../../documents/primaryIntakePackagePrintEngine";
+import { appointmentScheduleMissingFields } from "../../../AppHelpers";
 
 describe("Blank Contract Package & Solo Doctor Booking Autonomy (Mandate 8e, 8n)", () => {
-	it("prints blank contract package with '_______' placeholders and 0 rubles without 403 or server errors", { timeout: 15000 }, async () => {
-		const { generatePrimaryIntakePackageHtml } = await import(
-			"../../documents/primaryIntakePackagePrintEngine.js"
-		);
-
+	it("prints blank contract package with '_______' placeholders and 0 rubles without 403 or server errors", () => {
 		const html = generatePrimaryIntakePackageHtml({
 			patient: null,
 			clinic: { clinicName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", legalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»", inn: "7707083893" },
@@ -22,9 +20,7 @@ describe("Blank Contract Package & Solo Doctor Booking Autonomy (Mandate 8e, 8n)
 		assert.ok(html.includes("0 (ноль) рублей") || html.includes("0 ₽") || html.includes("ориентировочная"));
 	});
 
-	it("allows booking appointment without mandatory assistant (solo doctor or dynamic assignment)", async () => {
-		const { appointmentScheduleMissingFields } = await import("../../../AppHelpers.js");
-
+	it("allows booking appointment without mandatory assistant (solo doctor or dynamic assignment)", () => {
 		const staff = [
 			{ id: "doc-1", fullName: "Д-р Барабаш С.В.", role: "doctor" as const, active: true },
 			{ id: "asst-1", fullName: "Медсестра Иванова М.П.", role: "assistant" as const, active: true },
