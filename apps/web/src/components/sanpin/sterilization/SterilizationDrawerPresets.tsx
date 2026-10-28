@@ -41,17 +41,17 @@ export function SterilizationDrawerPresets({
 								>
 									<IconCmp size={18} />
 								</div>
-								<div className="flex flex-col min-w-0">
-									<span className="text-sm font-bold text-[var(--ink,#0f172a)] leading-tight">
+								<div className="flex flex-col min-w-0 flex-1">
+									<span className="text-sm font-bold text-[var(--ink,#0f172a)] leading-tight whitespace-normal break-words">
 										{preset.title}
 									</span>
-									<span className="text-xs text-[var(--muted,#64748b)] leading-snug">
+									<span className="text-xs text-[var(--muted,#64748b)] leading-snug whitespace-normal break-words">
 										{preset.subtitle}
 									</span>
 								</div>
 							</div>
 							{isSelected && (
-								<span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/20 text-[var(--teal,#0d9488)] inline-flex items-center gap-1">
+								<span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-teal-500/20 text-[var(--teal,#0d9488)] inline-flex items-center gap-1 shrink-0">
 									<Check size={12} /> Выбран
 								</span>
 							)}
