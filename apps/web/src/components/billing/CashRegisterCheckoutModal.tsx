@@ -13,7 +13,6 @@
 
 import React, { useState, useEffect, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Check, RefreshCw, Tag, ShieldCheck } from "lucide-react";
 import {
 	kopecksToRub,
 	rubToKopecks,
@@ -23,59 +22,25 @@ import {
 	generateQrCodeSvg,
 	formatDisplayCurrency,
 } from "@dental/shared";
-import {
-	CashRegisterTendersSection,
-	type CheckoutTenderMethod,
-} from "./cashRegister/CashRegisterTendersSection";
+import { CashRegisterTendersSection } from "./cashRegister/CashRegisterTendersSection";
 import { CashRegisterSplitSection } from "./cashRegister/CashRegisterSplitSection";
-import {
-	CashRegisterFiscalSection,
-	type ReceiptDeliveryMethod,
-} from "./cashRegister/CashRegisterFiscalSection";
+import { CashRegisterFiscalSection } from "./cashRegister/CashRegisterFiscalSection";
 import { CashRegisterFeedbackSection } from "./cashRegister/CashRegisterFeedbackSection";
 import { CashRegisterCheckoutHeader } from "./cashRegister/CashRegisterCheckoutHeader";
 import { CashRegisterCheckoutFooter } from "./cashRegister/CashRegisterCheckoutFooter";
 import { CashRegisterDiscountsSection } from "./cashRegister/CashRegisterDiscountsSection";
 import { CashRegisterTotalDisplay } from "./cashRegister/CashRegisterTotalDisplay";
+import type {
+	CheckoutTenderMethod,
+	ReceiptDeliveryMethod,
+	CashRegisterCheckoutModalProps,
+} from "./cashRegister/cashRegisterTypes";
 
-export type { CheckoutTenderMethod, ReceiptDeliveryMethod };
-
-export interface CashRegisterCheckoutModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly totalDueRub?: number | undefined;
-	readonly amountRub?: number | undefined;
-	readonly totalBillRub?: number | undefined;
-	readonly totalBillKop?: number | undefined;
-	readonly amountKopecks?: number | undefined;
-	readonly patientId?: string | undefined;
-	readonly patientName?: string | undefined;
-	readonly patientPhone?: string | undefined;
-	readonly patientEmail?: string | undefined;
-	readonly patientDepositRub?: number | undefined;
-	readonly patientFamilyBalanceRub?: number | undefined;
-	readonly invoiceId?: string | undefined;
-	readonly visitId?: string | undefined;
-	readonly orderId?: string | undefined;
-	readonly cashierFullName?: string | undefined;
-	readonly cashierName?: string | undefined;
-	readonly doctorFullName?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly attendingDoctorName?: string | undefined;
-	readonly clinicLegalName?: string | undefined;
-	readonly defaultMethod?: CheckoutTenderMethod | string | undefined;
-	readonly initialPaymentMethod?: string | undefined;
-	readonly initialDiscountPercent?: number | undefined;
-	readonly initialWarranty100?: boolean | undefined;
-	readonly initialCustomDiscountRub?: number | undefined;
-	readonly initialDiscountReason?: string | undefined;
-	readonly containerTestId?: string | undefined;
-	readonly title?: string | undefined;
-	readonly onOpenSplitPayment?: (() => void) | undefined;
-	readonly onOpenDepositTopup?: (() => void) | undefined;
-	readonly onSuccess?: ((payload: any) => void) | undefined;
-	readonly onPaymentComplete?: ((payload: any) => void) | undefined;
-}
+export type {
+	CheckoutTenderMethod,
+	ReceiptDeliveryMethod,
+	CashRegisterCheckoutModalProps,
+};
 
 export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps> = ({
 	isOpen,

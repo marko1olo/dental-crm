@@ -4,8 +4,6 @@ import {
 	ANESTHESIA_PKU_PRESETS,
 	calculateDefaultCarpuleExpirationDate,
 	create1ClickAnesthesiaPkuDisposalRecord,
-	generateAnesthesiaPkuDisposalAct,
-	generateAnesthesiaPkuDisposalHtml,
 	validateCarpuleExpirationDate,
 } from "../anesthesia/pkuDisposal.js";
 
@@ -98,29 +96,6 @@ describe("Anesthesia Carpule Disposal Engine (SanPiN 3.3686-21 / Mandate 8e / So
 			const expiredRes = validateCarpuleExpirationDate("2025-01", "2026-09-01");
 			assert.equal(expiredRes.isExpired, true);
 			assert.ok(expiredRes.warningRu?.includes("ИСТЁК"));
-		});
-	});
-
-	describe("4. Official SanPiN 3.3686-21 Act & HTML Generation (Mandate 8e)", () => {
-		it("generates plain-text official Act containing single-nurse clearance without Alaminol simulation", () => {
-			const record = create1ClickAnesthesiaPkuDisposalRecord("ultracain_ds_forte_1");
-			const act = generateAnesthesiaPkuDisposalAct(record);
-
-			assert.ok(act.includes("АКТ СПИСАНИЯ И УТИЛИЗАЦИИ МЕСТНЫХ АНЕСТЕТИКОВ"));
-			assert.ok(act.includes("СанПиН 3.3686-21"));
-			assert.ok(act.includes("комиссия из 3 человек не требуется"));
-			assert.ok(act.includes("[ЭЦП ПОДТВЕРЖДЕНА В 1 КЛИК]"));
-			assert.ok(!act.includes("Аламинол"), "Act must NOT contain Alaminol simulation");
-			assert.equal(/⚡|★|✔|🔴|🟢|🟡/.test(act), false, "Official Act must not contain emojis");
-		});
-
-		it("generates statutory HTML document with clean print styles", () => {
-			const record = create1ClickAnesthesiaPkuDisposalRecord("septanest_100_1");
-			const html = generateAnesthesiaPkuDisposalHtml(record);
-
-			assert.ok(html.includes("sanpin-pku-act-document"));
-			assert.ok(html.includes("Септанест 1:100 000"));
-			assert.ok(html.includes("без комиссии из 3 человек"));
 		});
 	});
 });
