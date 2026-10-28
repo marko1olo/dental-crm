@@ -6,11 +6,11 @@ import { showToast } from "../../GlobalToast";
 import type { AppointmentProcedureBadgeProps } from "./appointmentCardTypes";
 
 export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps> = ({
-	appointment: a,
-	procedureLabel,
-	teethList,
-	docTheme,
-	durationMin,
+	appointment: a = { id: "preview-appt" } as any,
+	procedureLabel = "",
+	teethList = [],
+	docTheme = null,
+	durationMin = 30,
 	labStatusInfo,
 }) => {
 	const handleLabClick = (e: React.MouseEvent) => {
@@ -20,7 +20,7 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 			window.location.hash = "#lab";
 		}
 		showToast(
-			`ЗТЛ: ${labStatusInfo.labelRu} (${labStatusInfo.orderNumber || "Наряд"})`,
+			`ЗТЛ: ${labStatusInfo?.labelRu || "В клинике"} (${labStatusInfo?.orderNumber || "Наряд"})`,
 			"info",
 		);
 	};
@@ -28,7 +28,7 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 	return (
 		<div
 			className="appointment-card-row-procedure flex items-center gap-1.5 flex-wrap w-full min-w-0 text-xs text-[var(--ink)]"
-			data-testid={`appointment-card-procedure-row-${a.id}`}
+			data-testid={`appointment-card-procedure-row-${a?.id || "default"}`}
 		>
 			{/* Procedure Icon & Label */}
 			<div className="flex items-center gap-1.5 min-w-0 flex-1">

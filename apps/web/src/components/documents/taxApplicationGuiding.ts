@@ -26,6 +26,8 @@ export interface TaxApplicationGuidanceReview {
 	requiredCount: number;
 	blockers: TaxApplicationGuideItem[];
 	canPrint: boolean;
+	canSign: boolean;
+	disabled: false;
 	isSoftGuiding: boolean;
 }
 
@@ -111,6 +113,8 @@ export function taxApplicationGuidanceReview(
 		requiredCount: checks.length,
 		blockers: checks.filter((c) => !c.ok).map(({ field, label, hint, isSoftGuide }) => ({ field, label, hint, isSoftGuide })),
 		canPrint: true,
+		canSign: true,
+		disabled: false,
 		isSoftGuiding: true,
 	};
 }

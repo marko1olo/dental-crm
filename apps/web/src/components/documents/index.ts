@@ -19,6 +19,7 @@ export * from "./TaxAccountingPackageModal";
 export * from "./DocumentsOutpatientArchive";
 export * from "./DocumentsCatalogView";
 export * from "./DigitalSignatureTabletModal";
+export * from "./PatientConsentSignDrawer";
 export * from "./informedConsentGuiding";
 export * from "./taxApplicationGuiding";
 export * from "./photoVideoConsentGuiding";

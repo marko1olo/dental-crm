@@ -41,6 +41,8 @@ describe("Legal Documents, Consents & Anti-Blockers Red Team Inquisition", () =>
 		});
 
 		assert.strictEqual(emptyReview.canPrint, true, "Printing must NEVER be disabled");
+		assert.strictEqual(emptyReview.canSign, true, "Signing must NEVER be disabled (Mandate 8e)");
+		assert.strictEqual(emptyReview.disabled, false, "Disabled must be false (Mandate 8e)");
 		assert.strictEqual(emptyReview.isSoftGuiding, true, "Blockers must act strictly as soft guidance");
 		assert.ok(emptyReview.blockers.every((b) => b.isSoftGuide === true), "Every item must have isSoftGuide flag");
 
@@ -65,6 +67,8 @@ describe("Legal Documents, Consents & Anti-Blockers Red Team Inquisition", () =>
 		});
 
 		assert.strictEqual(emptyReview.canPrint, true, "Printing tax application must never be blocked");
+		assert.strictEqual(emptyReview.canSign, true, "Signing tax application must never be blocked (Mandate 8e)");
+		assert.strictEqual(emptyReview.disabled, false, "Disabled must be false (Mandate 8e)");
 		assert.strictEqual(emptyReview.isSoftGuiding, true);
 
 		const resolved = resolveTaxApplicationSafeDefaults({});
@@ -84,6 +88,8 @@ describe("Legal Documents, Consents & Anti-Blockers Red Team Inquisition", () =>
 		});
 
 		assert.strictEqual(emptyReview.canPrint, true, "Printing photo/video consent must never be blocked");
+		assert.strictEqual(emptyReview.canSign, true, "Signing photo/video consent must never be blocked (Mandate 8e)");
+		assert.strictEqual(emptyReview.disabled, false, "Disabled must be false (Mandate 8e)");
 		assert.strictEqual(emptyReview.isSoftGuiding, true);
 
 		const resolved = resolvePhotoVideoConsentSafeDefaults({});

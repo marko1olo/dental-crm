@@ -1,3 +1,8 @@
+import React from "react";
+import {
+	PatientConsentSignDrawer,
+	type PatientConsentSignDrawerProps,
+} from "../documents/PatientConsentSignDrawer.js";
 import {
 	InformedConsentModal,
 	type InformedConsentModalProps,
@@ -6,8 +11,15 @@ import {
 } from "./InformedConsentModal.js";
 
 /**
- * Канонический алиас для InformedConsentModal (SSOT) без лишних оберток и матрешек (Мандат 8b).
+ * Канонический SSOT модального окна и шторки согласия (Мандаты 8b, 8e, 8x).
+ * Поддерживает планшетный Bottom Sheet у кресла и пакетный режим без лишних матрешек.
  */
-export const ConsentModal = InformedConsentModal;
-export type { ConsentModalProps, InformedConsentModalProps, SignedConsentPayload };
-export default InformedConsentModal;
+export const ConsentModal: React.FC<ConsentModalProps | PatientConsentSignDrawerProps> = (props) => {
+	if ("initialPackageKey" in props && props.initialPackageKey) {
+		return <InformedConsentModal {...(props as InformedConsentModalProps)} />;
+	}
+	return <PatientConsentSignDrawer {...(props as PatientConsentSignDrawerProps)} />;
+};
+
+export type { ConsentModalProps, InformedConsentModalProps, PatientConsentSignDrawerProps, SignedConsentPayload };
+export default ConsentModal;

@@ -7,6 +7,7 @@
 import React, { useState } from "react";
 import { DocumentsTemplateGrid } from "../../documentsView/DocumentsTemplateGrid";
 import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
+import { PatientConsentSignDrawer } from "./PatientConsentSignDrawer";
 
 export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 	const [isIntakeOpen, setIsIntakeOpen] = useState(false);
@@ -14,6 +15,27 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
 	const search = new URLSearchParams(s);
+
+	const isConsentDrawerStandalone =
+		search.get("consent_sign_drawer") === "1" ||
+		search.get("patient_consent_drawer") === "1" ||
+		h.includes("consent-sign-drawer") ||
+		h.includes("patient-consent-drawer");
+
+	if (isConsentDrawerStandalone) {
+		return (
+			<div className="fixed inset-0 z-[1000] flex flex-col bg-black/40" data-testid="standalone-consent-drawer-root">
+				<PatientConsentSignDrawer
+					isOpen={true}
+					onClose={() => {}}
+					patient={{ id: "p-01", fullName: "Смирнов Алексей Петрович", birthDate: "1988-04-12" } as any}
+					doctorFullName="Д-р Воронов Алексей Владимирович"
+					clinicName="Стоматология ДЕНТЕ Премиум"
+					defaultConsentKind="therapeutic"
+				/>
+			</div>
+		);
+	}
 
 	const isDocCatalogStandalone =
 		search.get("documents_catalog") === "1" ||

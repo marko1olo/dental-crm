@@ -9,7 +9,7 @@ export interface DentalLabOrderHeaderProps {
 	readonly patientChartNumber?: string | undefined;
 	readonly doctorName: string;
 	readonly stageNumber?: number | null | undefined;
-	readonly stageTitle?: string | undefined;
+	readonly stageTitle?: string | null | undefined;
 	readonly dueDate?: string | undefined;
 	readonly selectedLabName?: string | undefined;
 	readonly selectedTeeth?: readonly number[] | undefined;

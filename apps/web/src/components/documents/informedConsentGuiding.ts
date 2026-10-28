@@ -17,6 +17,8 @@ export interface InformedConsentGuidanceReview {
 	requiredCount: number;
 	blockers: InformedConsentGuideItem[];
 	canPrint: boolean;
+	canSign: boolean;
+	disabled: false;
 	isSoftGuiding: boolean;
 }
 
@@ -81,7 +83,7 @@ export function informedConsentGuidanceReview(
 	options?: { allowBlankForPrint?: boolean; isCito?: boolean },
 ): InformedConsentGuidanceReview {
 	if (options?.allowBlankForPrint || options?.isCito) {
-		return { requiredCount: 11, blockers: [], canPrint: true, isSoftGuiding: true };
+		return { requiredCount: 11, blockers: [], canPrint: true, canSign: true, disabled: false, isSoftGuiding: true };
 	}
 	const area = filled(input.toothOrArea) || filled(input.inferredTreatmentArea);
 	const indication = filled(input.diagnosisOrIndication) || filled(input.activeVisitComplaint);
@@ -105,6 +107,8 @@ export function informedConsentGuidanceReview(
 		requiredCount: checks.length,
 		blockers: checks.filter((c) => !c.ok).map(({ field, label, hint, isSoftGuide }) => ({ field, label, hint, isSoftGuide })),
 		canPrint: true,
+		canSign: true,
+		disabled: false,
 		isSoftGuiding: true,
 	};
 }

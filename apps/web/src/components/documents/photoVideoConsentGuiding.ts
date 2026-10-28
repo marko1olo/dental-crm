@@ -18,6 +18,8 @@ export interface PhotoVideoConsentGuidanceReview {
 	requiredCount: number;
 	blockers: PhotoVideoConsentGuideItem[];
 	canPrint: boolean;
+	canSign: boolean;
+	disabled: false;
 	isSoftGuiding: boolean;
 }
 
@@ -65,7 +67,7 @@ export function photoVideoConsentGuidanceReview(
 	options?: { allowBlankForPrint?: boolean; isCito?: boolean },
 ): PhotoVideoConsentGuidanceReview {
 	if (options?.allowBlankForPrint || options?.isCito) {
-		return { requiredCount: 4, blockers: [], canPrint: true, isSoftGuiding: true };
+		return { requiredCount: 4, blockers: [], canPrint: true, canSign: true, disabled: false, isSoftGuiding: true };
 	}
 	const checks: Array<PhotoVideoConsentGuideItem & { ok: boolean }> = [
 		{ field: "photoVideoMaterials", label: "Виды материалов", hint: "рекомендуется отметить виды фото/видео (по умолчанию: интраоральные фото и КТ)", isSoftGuide: true, ok: input.materials.length > 0 },
@@ -79,6 +81,8 @@ export function photoVideoConsentGuidanceReview(
 		requiredCount: checks.length,
 		blockers: checks.filter((c) => !c.ok).map(({ field, label, hint, isSoftGuide }) => ({ field, label, hint, isSoftGuide })),
 		canPrint: true,
+		canSign: true,
+		disabled: false,
 		isSoftGuiding: true,
 	};
 }

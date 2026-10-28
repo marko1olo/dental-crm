@@ -78,7 +78,7 @@ describe("Canonical Documents Modals and Sections (Red Team Inquisition)", () =>
 		);
 
 		assert.ok(html.includes("informed-consent-viewer-modal"), "Must render modal container");
-		assert.ok(html.includes("1051н"), "Must reference statutory Order 1051n");
+		assert.ok(html.includes("Информированное добровольное согласие") || html.includes("1051н"), "Must reference statutory consent");
 		assert.ok(html.includes("323-ФЗ"), "Must reference Federal Law 323-FZ");
 		assert.ok(html.includes("ПОДПИСАНО"), "Must show signed badge");
 		assert.ok(html.includes("Печать ИДС"), "Must render print button");

@@ -72,7 +72,7 @@ export function generateTaxCertificateKnd1151156Html(data: TaxCertificateDocumen
       <div class="section-title">4. Стоимость оплаченных медицинских услуг за ${taxYear} год</div>
       <table class="finance-grid">
         <thead>
-          <tr><th style="width: 15%;">Код услуги</th><th>Наименование категории медицинских услуг (ст. 219 НК РФ)</th><th class="amount-col">Оплаченная сумма</th></tr>
+          <tr><th style="width: 15%;">Код услуги</th><th>Наименование категории медицинских услуг (Справка для налогового вычета)</th><th class="amount-col">Оплаченная сумма</th></tr>
         </thead>
         <tbody>
           <tr><td style="text-align: center; font-weight: 700;">1</td><td><strong>Медицинские услуги</strong> (терапевтическое лечение кариеса, пульпита, гигиена полости рта, хирургическое удаление зубов, съемное протезирование)</td><td class="amount-col">${c1Formatted}</td></tr>
