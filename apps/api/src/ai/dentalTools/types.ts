@@ -31,6 +31,7 @@ export interface DentalToolContext {
 	// biome-ignore lint/suspicious/noExplicitAny: Drizzle database instance
 	db?: any;
 	allowLocalExecution?: boolean | undefined;
+	requireConfirmation?: boolean | undefined;
 }
 
 // biome-ignore lint/suspicious/noExplicitAny: Generic dental tool entry

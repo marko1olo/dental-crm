@@ -76,7 +76,7 @@ export async function handleRunWorkstationCommand(
 		};
 	}
 
-	return await executeCommandWithTimeout(command, workingDir, args.waitMsBeforeAsync);
+	return await executeCommandWithTimeout(command, workingDir, args.waitMsBeforeAsync ?? 3000);
 }
 
 export const runWorkstationCommandTool: DentalToolEntry<typeof runWorkstationCommandSchema> = {

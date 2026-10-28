@@ -27,6 +27,17 @@ import {
 import { zodToJsonSchema } from "../tools/schemaSerializer.js";
 import { createProxiedFetch, getGlobalProxyUrl } from "../proxyDispatcher.js";
 
+function cleanGeminiSchema(obj: unknown): unknown {
+	if (!obj || typeof obj !== "object") return obj;
+	if (Array.isArray(obj)) return obj.map(cleanGeminiSchema);
+	const cleaned: Record<string, unknown> = {};
+	for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
+		if (k === "additionalProperties" || k === "$schema") continue;
+		cleaned[k] = cleanGeminiSchema(v);
+	}
+	return cleaned;
+}
+
 export const DEFAULT_GEMINI_MODEL_CASCADE: readonly string[] = [
 	"gemini-3.5-flash-lite",
 	"gemini-3.1-flash-lite",
@@ -188,7 +199,7 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 							return {
 								name: fn.name,
 								description: fn.description || "",
-								parameters: fn.parameters,
+								parameters: cleanGeminiSchema(fn.parameters),
 							};
 						}
 						const agentTool = t as AgentTool;
@@ -199,7 +210,7 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 						return {
 							name: agentTool.name,
 							description: agentTool.description || "",
-							parameters: parameters || {
+							parameters: cleanGeminiSchema(parameters) || {
 								type: "object",
 								properties: {},
 							},
