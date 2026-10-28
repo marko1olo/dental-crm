@@ -75,16 +75,32 @@ async function captureProof(page, filename) {
   const hash = crypto.createHash("md5").update(buf).digest("hex").slice(0, 10);
   console.log(`  -> Captured: ${filename} (${sizeKb} KB, md5: ${hash})`);
 
-  if (buf.length < 25 * 1024) {
-    throw new Error(`Screenshot ${filename} is too small: ${sizeKb} KB (< 25 KB)`);
+  if (buf.length < 40 * 1024) {
+    throw new Error(`Screenshot ${filename} is too small: ${sizeKb} KB (< 40 KB)`);
   }
 
   // Synchronize legacy and numbered files
   const legacyMap = {
-    "schedule_pc_light_1440x900.png": ["pc_schedule_light_1440x900.png", "01_schedule_pc_light.png"],
-    "schedule_pc_dark_1440x900.png": ["pc_schedule_dark_1440x900.png", "02_schedule_pc_dark.png"],
-    "schedule_mobile_light_390x844.png": ["mobile_schedule_light_390x844.png", "03_schedule_mobile_light.png"],
-    "schedule_mobile_dark_390x844.png": ["mobile_schedule_dark_390x844.png", "04_schedule_mobile_dark.png"],
+    "schedule_pc_light_1440x900.png": [
+      "pc_schedule_light_1440x900.png",
+      "01_schedule_pc_light.png",
+      "01_schedule_pc_light_1440x900.png",
+    ],
+    "schedule_pc_dark_1440x900.png": [
+      "pc_schedule_dark_1440x900.png",
+      "02_schedule_pc_dark.png",
+      "02_schedule_pc_dark_1440x900.png",
+    ],
+    "schedule_mobile_light_390x844.png": [
+      "mobile_schedule_light_390x844.png",
+      "03_schedule_mobile_light.png",
+      "03_schedule_mobile_light_390x844.png",
+    ],
+    "schedule_mobile_dark_390x844.png": [
+      "mobile_schedule_dark_390x844.png",
+      "04_schedule_mobile_dark.png",
+      "04_schedule_mobile_dark_390x844.png",
+    ],
   };
   if (legacyMap[filename]) {
     for (const targetName of legacyMap[filename]) {

@@ -186,10 +186,10 @@ export const ScheduleMobileTimelineRow: React.FC<
 					data-testid={`appointment-card-clickable-${appt.id}`}
 				>
 					{/* Header: Patient Name + Tooth Badge + Status Badge */}
-					<div className="schedule-mobile-card-header flex items-center justify-between gap-1.5 min-w-0">
-						<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
+					<div className="schedule-mobile-card-header flex items-start justify-between gap-1.5 min-w-0">
+						<div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
 							<span
-								className="text-[14px] font-semibold text-[var(--ink)] truncate"
+								className="text-[14px] font-semibold text-[var(--ink)] truncate max-w-full"
 								title={fullPatientName}
 							>
 								{pName}
@@ -201,7 +201,7 @@ export const ScheduleMobileTimelineRow: React.FC<
 							)}
 						</div>
 
-						<div className="flex items-center gap-1 shrink-0">
+						<div className="flex items-center gap-1 shrink-0 pt-0.5">
 							<span
 								className={`schedule-mobile-status-badge text-[11px] font-bold px-2 py-0.5 rounded-lg ${statusTheme.badgeBg} whitespace-nowrap`}
 							>

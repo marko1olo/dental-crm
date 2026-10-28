@@ -104,7 +104,19 @@ async function captureScreen(page, filename) {
   const outPath = path.join(OUT_DOCS, filename);
   await page.screenshot({ path: outPath, fullPage: false, animations: "disabled", timeout: 15000 });
   const size = fs.statSync(outPath).size;
-  console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
+  console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 40960}`);
+
+  // Duplicate to numbered canonical filenames required by Red Team auditor
+  const numberedMap = {
+    "schedule_pc_light_1440x900.png": "01_schedule_pc_light_1440x900.png",
+    "schedule_pc_dark_1440x900.png": "02_schedule_pc_dark_1440x900.png",
+    "schedule_mobile_light_390x844.png": "03_schedule_mobile_light_390x844.png",
+    "schedule_mobile_dark_390x844.png": "04_schedule_mobile_dark_390x844.png",
+  };
+  if (numberedMap[filename]) {
+    fs.copyFileSync(outPath, path.join(OUT_DOCS, numberedMap[filename]));
+    console.log(`[Copied] -> ${numberedMap[filename]}`);
+  }
 }
 
 async function run() {
