@@ -98,4 +98,46 @@ describe("AnesthesiaDosageCalculator — Adult & Pediatric MRD", () => {
 		assert.equal(overdosePediatric.isOverdose, true);
 		assert.equal(overdosePediatric.safetyZone, "overdose_danger");
 	});
+
+	it("4. Missing or zero patient weight falls back smoothly to 70 kg without throwing or blocking doctor (Mandates 8e, 8n)", () => {
+		const noWeightResult = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 1.0,
+			patientWeightKg: undefined,
+			patientAgeYears: 35,
+			asaStatus: "asa_1",
+			hasCardiovascularRisk: false,
+			hasSulfiteAllergy: false,
+			hasBronchialAsthma: false,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			aspirationNegativeConfirmed: true,
+		});
+
+		assert.equal(noWeightResult.maxSafeActiveMg, 490, "Default 70 kg adult must have 490 mg max dose");
+		assert.equal(noWeightResult.maxSafeCarpulesCount, 7.2, "Default 70 kg adult must have 7.2 carpules max");
+		assert.equal(noWeightResult.isOverdose, false);
+		assert.ok(noWeightResult.diaryEntryRu.includes("Sol. Articaini"), "Must generate valid clinical diary text");
+	});
+
+	it("5. Passive allergy warnings never block doctor actions or freeze the visit (Mandates 8e, 8y)", () => {
+		const allergyResult = calculateAnesthesiaSafety({
+			drugId: "articaine_1_100k",
+			carpulesCount: 1.0,
+			patientWeightKg: 70,
+			patientAgeYears: 40,
+			asaStatus: "asa_1",
+			hasCardiovascularRisk: false,
+			hasSulfiteAllergy: true,
+			hasBronchialAsthma: true,
+			isPregnantOrLactating: false,
+			techniqueId: "infiltration",
+			needleType: "g30_short_21mm",
+			aspirationNegativeConfirmed: true,
+		});
+
+		assert.ok(allergyResult.contraindicationsTriggered.length > 0, "Must contain passive contraindication alert");
+		assert.ok(allergyResult.diaryEntryRu.length > 0, "Diary protocol must be formed without blocking");
+	});
 });

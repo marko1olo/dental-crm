@@ -42,17 +42,17 @@ export function AnesthesiaStepperAndCtaRow(props: AnesthesiaStepperAndCtaRowProp
 
 	return (
 		<div className="flex items-center gap-1.5 flex-wrap min-w-0 ml-auto" data-testid="anesthesia-stepper-cta-group">
-			<fieldset className="hidden sm:inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 m-0" aria-label="Быстрый выбор карпул">
+			<fieldset className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0 m-0" aria-label="Быстрый выбор карпул">
 				{CARPULE_PRESETS.map((p) => (
 					<button
 						key={p.count}
 						type="button"
 						onClick={() => setCarpulesCount(p.count)}
 						data-testid={p.id}
-						className={`px-2 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer min-h-[44px] inline-flex items-center justify-center ${
-							carpulesCount === p.count ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)]" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`px-2.5 py-1 text-xs font-semibold rounded-lg transition-colors cursor-pointer min-h-[44px] min-w-[44px] inline-flex items-center justify-center ${
+							carpulesCount === p.count ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)] shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
-						title={`${p.label} карп.`}
+						title={`${p.label} карп. (${(p.count * 1.7).toFixed(1)} мл)`}
 					>
 						{p.label}
 					</button>

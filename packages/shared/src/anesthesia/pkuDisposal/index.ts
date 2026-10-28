@@ -7,4 +7,3 @@ export * from "./expirationValidator.js";
 export * from "./vitalsSafety.js";
 export * from "./presets.js";
 export * from "./recordEngine.js";
-export * from "./actFormatter.js";

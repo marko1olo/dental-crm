@@ -21,15 +21,19 @@ export function EmkAnesthesiaSection({
 			: "ultracain_ds_forte",
 	);
 	const [selectedMethod, setSelectedMethod] = React.useState<string>("infiltration");
+	const [selectedCarpulesCount, setSelectedCarpulesCount] = React.useState<number>(1);
 
-	const handleApplyPreset = (preset: EmkAnesthesiaPreset) => {
+	const handleApplyPreset = (preset: EmkAnesthesiaPreset, count: number = selectedCarpulesCount) => {
 		setSelectedDrugKey(preset.key);
 		const methodObj = ANESTHESIA_METHODS.find((m) => m.id === selectedMethod);
 		const methodLabel = methodObj ? methodObj.label : "Инфильтрационная";
-		const clinicalNote = preset.clinicalNote.replace(
+		let clinicalNote = preset.clinicalNote.replace(
 			/^Инфильтрационная/i,
 			methodLabel,
 		);
+		if (count === 2) {
+			clinicalNote = clinicalNote.replace(/1\.[78]\s*мл/g, "3.4 мл (2 карпулы)");
+		}
 		const curr = visitNoteForm?.treatmentPlan || "";
 		updateVisitNoteField(
 			"treatmentPlan",
@@ -41,16 +45,17 @@ export function EmkAnesthesiaSection({
 					detail: {
 						service: {
 							id: `anes-${Date.now()}`,
-							title: `Анестезия ${methodLabel.toLowerCase()} (${preset.shortLabel})`,
+							title: `Анестезия ${methodLabel.toLowerCase()} (${preset.shortLabel})${count === 2 ? " (2 карпулы)" : ""}`,
 							code: preset.procedureCode,
-							priceRub: preset.priceRub,
+							priceRub: preset.priceRub * count,
+							quantity: count,
 						},
 					},
 				}),
 			);
 		}
 		showToast(
-			`Анестезия (${preset.shortLabel}) внесена в протокол и счёт`,
+			`Анестезия (${preset.shortLabel}, ${count} карп.) внесена в протокол и счёт`,
 			"success",
 			2500,
 		);
@@ -83,9 +88,9 @@ export function EmkAnesthesiaSection({
 					notes: "Экстренное списание укладки «Антишок»",
 				}),
 			}).catch(() => {});
-			showToast("🚨 Укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
+			showToast("Экстренная укладка «Антишок» списана. Протокол открыт.", "warning", 4500);
 		} catch {
-			showToast("🚨 Экстренная укладка «Антишок» списана", "info", 3000);
+			showToast("Экстренная укладка «Антишок» списана", "info", 3000);
 		}
 		useUiSurfaceStore.getState().openPrimaryModal("emergency_rescue");
 	};
@@ -99,8 +104,10 @@ export function EmkAnesthesiaSection({
 			<EmkAnesthesiaPresetChips
 				selectedDrugKey={selectedDrugKey}
 				selectedMethod={selectedMethod}
+				selectedCarpulesCount={selectedCarpulesCount}
 				favoriteAnes={favoriteAnes}
 				onSelectMethod={setSelectedMethod}
+				onSelectCarpulesCount={setSelectedCarpulesCount}
 				onApplyPreset={handleApplyPreset}
 				onNoAnesthesia={handleNoAnesthesia}
 				onAntishockEmergency={handleAntishockEmergency}

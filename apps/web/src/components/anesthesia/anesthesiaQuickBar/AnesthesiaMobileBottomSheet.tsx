@@ -76,11 +76,35 @@ export function AnesthesiaMobileBottomSheet({
 					})}
 				</div>
 
-				<div className="flex items-center justify-between gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-					<span className="text-xs font-bold text-[var(--ink)]">Доза: {carpulesCount} карп. ({(carpulesCount * 1.7).toFixed(1)} мл)</span>
-					<div className="flex items-center gap-1">
-						<button type="button" disabled={carpulesCount <= 0.5} onClick={() => setCarpulesCount(Math.max(0.5, carpulesCount - 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-black text-sm flex items-center justify-center cursor-pointer" data-testid="btn-decrease-carpules-mobile">−</button>
-						<button type="button" disabled={carpulesCount >= 10.0} onClick={() => setCarpulesCount(Math.min(10.0, carpulesCount + 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-black text-sm flex items-center justify-center cursor-pointer" data-testid="btn-increase-carpules-mobile">+</button>
+				<div className="flex flex-col gap-2 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
+					<div className="flex items-center justify-between gap-2">
+						<span className="text-xs font-bold text-[var(--ink)]">Дозировка: {carpulesCount} карп. ({(carpulesCount * 1.7).toFixed(1)} мл)</span>
+						<div className="flex items-center gap-1">
+							<button type="button" disabled={carpulesCount <= 0.5} onClick={() => setCarpulesCount(Math.max(0.5, carpulesCount - 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-black text-sm flex items-center justify-center cursor-pointer disabled:opacity-30" data-testid="btn-decrease-carpules-mobile">−</button>
+							<button type="button" disabled={carpulesCount >= 10.0} onClick={() => setCarpulesCount(Math.min(10.0, carpulesCount + 0.5))} className="min-w-[44px] min-h-[44px] w-11 h-11 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-black text-sm flex items-center justify-center cursor-pointer disabled:opacity-30" data-testid="btn-increase-carpules-mobile">+</button>
+						</div>
+					</div>
+					<div className="grid grid-cols-2 gap-2 pt-1">
+						<button
+							type="button"
+							onClick={() => setCarpulesCount(1.0)}
+							className={`min-h-[44px] py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+								carpulesCount === 1.0 ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border-[var(--teal)] shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="btn-dose-1carp-mobile"
+						>
+							1 карпула (1.7 мл)
+						</button>
+						<button
+							type="button"
+							onClick={() => setCarpulesCount(2.0)}
+							className={`min-h-[44px] py-2 rounded-xl text-xs font-bold border transition-all cursor-pointer flex items-center justify-center gap-1 ${
+								carpulesCount === 2.0 ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border-[var(--teal)] shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)] hover:text-[var(--ink)]"
+							}`}
+							data-testid="btn-dose-2carp-mobile"
+						>
+							2 карпулы (3.4 мл)
+						</button>
 					</div>
 				</div>
 

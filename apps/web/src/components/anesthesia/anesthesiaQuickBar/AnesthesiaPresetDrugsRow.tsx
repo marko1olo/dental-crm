@@ -21,7 +21,7 @@ export function AnesthesiaPresetDrugsRow({
 	selectedDrugId,
 	techniqueId,
 	setTechniqueId,
-	carpulesCount: _carpulesCount,
+	carpulesCount,
 	onApplyDirect,
 }: AnesthesiaPresetDrugsRowProps) {
 	return (
@@ -64,7 +64,7 @@ export function AnesthesiaPresetDrugsRow({
 					<button
 						key={preset.testId}
 						type="button"
-						onClick={() => onApplyDirect(preset.drugId, preset.count, preset.defaultTechnique ?? techniqueId)}
+						onClick={() => onApplyDirect(preset.drugId, preset.drugId === "none" ? 0 : (carpulesCount > 0 ? carpulesCount : preset.count), preset.defaultTechnique ?? techniqueId)}
 						className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-11 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${borderClass}`}
 						title={`${preset.fullLabelRu} • ${preset.clinicalScopeRu}`}
 						data-testid={testIdAttr}

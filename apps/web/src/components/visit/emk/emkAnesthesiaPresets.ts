@@ -17,26 +17,26 @@ export interface EmkAnesthesiaPreset {
 export const EMK_ANESTHESIA_PRESETS: readonly EmkAnesthesiaPreset[] = [
 	{
 		key: "ultracain_ds_forte",
-		title: "Артикаин 1:100 000 (1.7 мл)",
-		shortLabel: "Артикаин 1:100 000 (1.7 мл)",
+		title: "Септанест 1:100 000 (1.7 мл)",
+		shortLabel: "Септанест 1:100 000",
 		clinicalNote:
-			"Инфильтрационная анестезия Sol. Ultracaini D-S Forte 1:100 000 — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
+			"Инфильтрационная анестезия Sol. Septanest 1:100 000 (Артикаин 4% + Адреналин 1:100 000) — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
 		procedureCode: "anes-conduction-forte",
 		priceRub: 1100,
 	},
 	{
 		key: "ultracain_ds",
-		title: "Артикаин 1:200 000 (1.7 мл)",
-		shortLabel: "Артикаин 1:200 000 (1.7 мл)",
+		title: "Ультракаин Д-С 1:200 000 (1.7 мл)",
+		shortLabel: "Ультракаин Д-С 1:200 000",
 		clinicalNote:
-			"Инфильтрационная анестезия Sol. Ultracaini D-S 1:200 000 — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
+			"Инфильтрационная анестезия Sol. Ultracaini D-S 1:200 000 (Артикаин 4% + Адреналин 1:200 000) — 1.7 мл. Анестезия наступила через 3 минуты, без осложнений.",
 		procedureCode: "anes-infiltration-standard",
 		priceRub: 950,
 	},
 	{
 		key: "scandonest_3",
-		title: "Мепивакаин 3% (без адреналина) 1.8 мл",
-		shortLabel: "Мепивакаин 3% (без адреналина)",
+		title: "Скандонест 3% (без адреналина) 1.8 мл",
+		shortLabel: "Скандонест 3% (без адреналина)",
 		clinicalNote:
 			"Инфильтрационная анестезия Sol. Scandonest 3% (без адреналина) — 1.8 мл. Анестезия наступила через 3 минуты, без осложнений.",
 		procedureCode: "anes-plain-mepivacaine",
