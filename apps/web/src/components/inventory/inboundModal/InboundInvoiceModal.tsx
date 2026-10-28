@@ -1,27 +1,49 @@
+/**
+ * apps/web/src/components/inventory/inboundModal/InboundInvoiceModal.tsx
+ *
+ * Декомпозированная модалка приходной накладной поставщика DENTE CRM (Мандаты 8b, 8e, 8n, 8ze).
+ * Ровно 1 Primary CTA кнопка var(--teal), отсутствие блокировок кнопки при открытии,
+ * полная адаптивность для мобильных устройств (Apple HIG) и десктопа.
+ */
+
 import React from "react";
+import { createPortal } from "react-dom";
+import type { InventoryItem } from "../useInventoryLogic.js";
 import { InboundInvoiceHeader } from "./InboundInvoiceHeader.js";
+import { InboundInvoiceSupplierSection } from "./InboundInvoiceSupplierSection.js";
 import { InboundInvoiceItemsTable } from "./InboundInvoiceItemsTable.js";
 import { InboundInvoiceMobileCards } from "./InboundInvoiceMobileCards.js";
-import { InboundInvoiceSupplierSection } from "./InboundInvoiceSupplierSection.js";
 import { InboundInvoiceTotalsFooter } from "./InboundInvoiceTotalsFooter.js";
-import type { InventoryInboundInvoiceModalProps } from "./InboundInvoiceTypes.js";
 import { useInboundInvoiceLogic } from "./useInboundInvoiceLogic.js";
+import type { InventoryInboundInvoiceModalProps } from "./InboundInvoiceTypes.js";
 
-/**
- * Модальное окно приходной накладной и оприходования материалов (Мандаты 8b, 8e, 8n, 8ze).
- * Декомпозировано на изолированные микро-модули <= 120 строк.
- */
+export { InboundInvoiceModal as default };
+
 export const InboundInvoiceModal: React.FC<InventoryInboundInvoiceModalProps> = ({
 	isOpen,
 	onClose,
-	organizationId,
-	inventoryItems,
+	organizationId = "",
+	inventoryItems = [],
 	onInvoicePosted,
 	getHeaders,
 }) => {
-	const logic = useInboundInvoiceLogic(
+	const {
+		invoiceNumber,
+		setInvoiceNumber,
+		invoiceDate,
+		setInvoiceDate,
+		supplierName,
+		setSupplierName,
+		lines,
+		totals,
+		isPosting,
+		handleAddLine,
+		handleRemoveLine,
+		handleLineChange,
+		handlePostInvoice,
+	} = useInboundInvoiceLogic(
 		organizationId,
-		inventoryItems,
+		inventoryItems as readonly InventoryItem[],
 		onClose,
 		onInvoicePosted,
 		getHeaders,
@@ -29,58 +51,66 @@ export const InboundInvoiceModal: React.FC<InventoryInboundInvoiceModalProps> = 
 
 	if (!isOpen) return null;
 
-	return (
+	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 overflow-y-auto"
+			className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="inbound-invoice-title"
-			onClick={(e) => e.target === e.currentTarget && onClose()}
+			data-testid="warehouse-inbound-invoice-modal"
+			onClick={(e) => {
+				if (e.target === e.currentTarget && !isPosting) onClose();
+			}}
 		>
-			<div
-				className="bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-2xl w-full max-w-4xl shadow-2xl flex flex-col max-h-[92vh] overflow-hidden my-auto"
-				onClick={(e) => e.stopPropagation()}
+			<form
+				onSubmit={handlePostInvoice}
+				style={{ maxWidth: "880px", width: "95%" }}
+				className="relative my-auto rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl flex flex-col max-h-[85vh] overflow-hidden text-[var(--ink)]"
 			>
+				{/* Apple HIG Drag Handle для мобильных */}
+				<div className="w-10 h-1 rounded-full bg-[var(--line)] mx-auto mt-2 sm:hidden shrink-0" aria-hidden="true" />
+
+				{/* Шапка модалки */}
 				<InboundInvoiceHeader onClose={onClose} />
 
-				<form onSubmit={logic.handlePostInvoice} className="flex flex-col flex-1 overflow-hidden">
-					<InboundInvoiceSupplierSection
-						invoiceNumber={logic.invoiceNumber}
-						setInvoiceNumber={logic.setInvoiceNumber}
-						invoiceDate={logic.invoiceDate}
-						setInvoiceDate={logic.setInvoiceDate}
-						supplierName={logic.supplierName}
-						setSupplierName={logic.setSupplierName}
-						inventoryItems={inventoryItems}
+				{/* Реквизиты накладной и поставщик */}
+				<InboundInvoiceSupplierSection
+					invoiceNumber={invoiceNumber}
+					setInvoiceNumber={setInvoiceNumber}
+					invoiceDate={invoiceDate}
+					setInvoiceDate={setInvoiceDate}
+					supplierName={supplierName}
+					setSupplierName={setSupplierName}
+					inventoryItems={inventoryItems as readonly InventoryItem[]}
+				/>
+
+				{/* Сетка позиций (десктопная таблица и мобильные карточки по Apple HIG) */}
+				<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+					<InboundInvoiceItemsTable
+						lines={lines}
+						inventoryItems={inventoryItems as readonly InventoryItem[]}
+						onAddLine={handleAddLine}
+						onChangeLine={handleLineChange}
+						onRemoveLine={handleRemoveLine}
 					/>
-
-					<div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-3">
-						<InboundInvoiceItemsTable
-							lines={logic.lines}
-							inventoryItems={inventoryItems}
-							onAddLine={logic.handleAddLine}
-							onChangeLine={logic.handleLineChange}
-							onRemoveLine={logic.handleRemoveLine}
-						/>
-
-						<InboundInvoiceMobileCards
-							lines={logic.lines}
-							inventoryItems={inventoryItems}
-							onAddLine={logic.handleAddLine}
-							onChangeLine={logic.handleLineChange}
-							onRemoveLine={logic.handleRemoveLine}
-						/>
-					</div>
-
-					<InboundInvoiceTotalsFooter
-						totals={logic.totals}
-						isPosting={logic.isPosting}
-						onClose={onClose}
+					<InboundInvoiceMobileCards
+						lines={lines}
+						inventoryItems={inventoryItems as readonly InventoryItem[]}
+						onAddLine={handleAddLine}
+						onChangeLine={handleLineChange}
+						onRemoveLine={handleRemoveLine}
 					/>
-				</form>
-			</div>
+				</div>
+
+				{/* Подвал с итогами и действиями: ровно 1 Primary CTA кнопка var(--teal) */}
+				<InboundInvoiceTotalsFooter
+					totals={totals}
+					isPosting={isPosting}
+					onClose={onClose}
+				/>
+			</form>
 		</div>
 	);
-};
 
-export default InboundInvoiceModal;
+	return typeof document === "undefined" ? modalContent : createPortal(modalContent, document.body);
+};

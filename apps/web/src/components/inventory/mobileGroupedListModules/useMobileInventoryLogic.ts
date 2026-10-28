@@ -11,6 +11,7 @@ export function useMobileInventoryLogic(
 	onQuickDeduct?: (item: InventoryItem, qty?: number) => void | Promise<void>,
 	onReceiveItem?: (item: InventoryItem, qty?: number, lot?: string, exp?: string) => void | Promise<void>,
 	onRefresh?: () => void,
+	getHeaders?: (extra?: Record<string, string>) => Record<string, string>,
 ) {
 	const [isInboundDrawerOpen, setIsInboundDrawerOpen] = useState(false);
 	const [drawerTargetItem, setDrawerTargetItem] = useState<InventoryItem | null>(null);
@@ -58,14 +59,20 @@ export function useMobileInventoryLogic(
 			if (onQuickDeduct) {
 				await onQuickDeduct(item, 1);
 			} else {
+				const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
 				const res = await fetch(`/api/inventory/${organizationId}/${item.id}/stock`, {
 					method: "PATCH",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ adjustment: -1, allowOverdraft: true }),
+					headers,
+					body: JSON.stringify({ adjustment: -1, allowOverdraft: true, reason: "Быстрое списание у кресла врача" }),
 				});
 				if (res.ok) {
 					const isDeficit = item.stockQuantity <= 1;
-					showToast(isDeficit ? `Списано 1 ед. «${item.name}» (списание с дефицитом)` : `Списано 1 ед. «${item.name}»`, isDeficit ? "warning" : "success");
+					showToast(
+						isDeficit
+							? `Списано 1 ед. «${item.name}» (мягкий овердрафт: дефицит зафиксирован)`
+							: `Списано 1 ед. «${item.name}»`,
+						isDeficit ? "warning" : "success",
+					);
 					if (onRefresh) onRefresh();
 				} else {
 					showToast("Ошибка списания со склада", "error");

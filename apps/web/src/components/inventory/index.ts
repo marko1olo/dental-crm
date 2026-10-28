@@ -3,6 +3,7 @@ export * from "./WarehouseStockMobileCards.js";
 export * from "./WarehouseInboundInvoiceModal.js";
 export * from "./InboundWaybillModal.js";
 export * from "./InboundWaybillItemsTable.js";
+export * from "./ConsumablesBatchWriteoffModal.js";
 export * from "./ShiftBatchWriteoffModal.js";
 export * from "./InventoryStockTable.js";
 export * from "./AcceptanceWaybillsModal.js";

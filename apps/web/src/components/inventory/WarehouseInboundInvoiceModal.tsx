@@ -3,12 +3,12 @@
  *
  * Каноническая SSOT-модалка оприходования накладной поставщика DENTE CRM (250–350L).
  * Номер накладной, поставщик, выбор товаров из каталога, количество, цена закупки в копейках.
- * Мандаты 8b (Sweet Spot 250–350L), 8e (Автономия), 8n (Оприходование), 8am (1 Primary CTA var(--teal)).
+ * Мандаты 8b (Sweet Spot 250–350L), 8e (Автономия), 8n (Оприходование), 8am (1 Primary CTA var(--teal)), 8x (Живой язык).
  */
 
 import React, { useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, CheckCircle2, PackagePlus, Plus, Trash2, X, Zap } from "lucide-react";
+import { AlertTriangle, CheckCircle2, PackagePlus, Plus, Trash2, X, Zap, Box } from "lucide-react";
 
 export interface InboundInvoiceItem {
 	id: string;
@@ -66,11 +66,17 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 	getHeaders,
 }) => {
 	const defaultId = useId();
-	const [invoiceNumber, setInvoiceNumber] = useState(initialWaybill?.waybillNumber || `ТОРГ-12 / ${new Date().toISOString().slice(0, 10).replace(/-/g, "")}`);
+	const [invoiceNumber, setInvoiceNumber] = useState(
+		initialWaybill?.waybillNumber || `Приходная накладная № ${new Date().toISOString().slice(0, 10).replace(/-/g, "")}-1`,
+	);
 	const [supplierName, setSupplierName] = useState(initialWaybill?.supplier?.name || initialWaybill?.supplierName || DEFAULT_SUPPLIERS[0]);
 	const [receiptDate, setReceiptDate] = useState(initialWaybill?.receiptDate || new Date().toISOString().slice(0, 10));
 	const [isPosting, setIsPosting] = useState(false);
 	const [errorBanner, setErrorBanner] = useState<string | null>(null);
+	const [isAddingNewItem, setIsAddingNewItem] = useState(false);
+	const [newItemName, setNewItemName] = useState("");
+	const [newItemUnit, setNewItemUnit] = useState("шт.");
+	const [newItemCost, setNewItemCost] = useState("1000");
 
 	const [lines, setLines] = useState<InboundInvoiceItem[]>(() => {
 		if (initialWaybill?.items?.length) {
@@ -137,6 +143,26 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 		})));
 	};
 
+	const handleCreateNewCatalogItem = () => {
+		if (!newItemName.trim()) return;
+		const cost = Math.max(0, parseFloat(newItemCost) || 0);
+		setLines((prev) => [
+			...prev,
+			{
+				id: `new-${Date.now()}`,
+				name: newItemName.trim(),
+				quantity: 1,
+				priceRub: cost,
+				priceKopecks: Math.round(cost * 100),
+				unit: newItemUnit,
+				lotNumber: `LOT-${Date.now().toString().slice(-4)}`,
+				expirationDate: "2028-12-31",
+			},
+		]);
+		setNewItemName("");
+		setIsAddingNewItem(false);
+	};
+
 	const totalKopecks = useMemo(() => lines.reduce((acc, l) => acc + (Number(l.quantity) || 0) * (Number(l.priceKopecks) || 0), 0), [lines]);
 	const totalRub = totalKopecks / 100;
 
@@ -157,11 +183,14 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 					inventoryItemId: l.inventoryItemId,
 					name: l.name,
 					quantity: Number(l.quantity) || 1,
+					purchasePriceKopecks: l.priceKopecks,
+					purchasePricePerUnit: l.priceRub,
 					priceKopecks: l.priceKopecks,
 					unitCostRub: l.priceRub,
 					unit: l.unit || "шт.",
-					expirationDate: l.expirationDate || "2028-12-31",
+					batchNumber: l.lotNumber || `LOT-${Date.now().toString().slice(-4)}`,
 					lotNumber: l.lotNumber || `LOT-${Date.now().toString().slice(-4)}`,
+					expirationDate: l.expirationDate || "2028-12-31",
 				})),
 			};
 
@@ -169,12 +198,13 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 			const res = await fetch(url, { method: "POST", headers, body: JSON.stringify(payload) });
 
 			if (!res.ok) {
+				// Фоллбэк прямого пополнения остатков с погашением овердрафта
 				for (const item of payload.items) {
 					if (item.inventoryItemId) {
 						await fetch(`/api/inventory/${organizationId || "current"}/${item.inventoryItemId}/stock`, {
 							method: "PATCH",
 							headers,
-							body: JSON.stringify({ adjustment: item.quantity, reason: `Приход по накладной ${invoiceNumber}` }),
+							body: JSON.stringify({ adjustment: item.quantity, allowOverdraft: true, reason: `Приход по накладной ${invoiceNumber}` }),
 						}).catch(() => {});
 					}
 				}
@@ -196,6 +226,7 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 			className="fixed inset-0 flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
+			aria-labelledby="inbound-invoice-title"
 			data-testid="warehouse-inbound-invoice-modal"
 			onClick={(e) => { if (e.target === e.currentTarget && !isPosting) onClose(); }}
 		>
@@ -213,7 +244,7 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 						</div>
 						<div>
 							<div className="flex items-center gap-2">
-								<h3 className="text-base sm:text-lg font-bold text-[var(--ink)]">Приходная накладная поставщика</h3>
+								<h3 id="inbound-invoice-title" className="text-base sm:text-lg font-bold text-[var(--ink)]">Приходная накладная поставщика</h3>
 								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
 									FEFO контроль
 								</span>
@@ -241,10 +272,10 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 						</div>
 					)}
 
-					{/* Реквизиты */}
+					{/* Реквизиты накладной */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line-subtle)]">
 						<div>
-							<label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mb-1">Номер накладной</label>
+							<label className="block text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)] mb-1">Номер приходной накладной</label>
 							<input type="text" value={invoiceNumber} onChange={(e) => setInvoiceNumber(e.target.value)} className="w-full px-3 py-1.5 text-sm bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden" data-testid="inbound-invoice-number-input" />
 						</div>
 						<div>
@@ -260,15 +291,65 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 						</div>
 					</div>
 
-					{/* Быстрые шаблоны */}
-					<div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
-						<span className="text-[11px] font-medium text-[var(--muted)] shrink-0">Шаблон:</span>
-						{PRESETS.map((p) => (
-							<button key={p.label} type="button" onClick={() => handleApplyPreset(p)} className="px-2.5 py-1 text-xs rounded-lg bg-[var(--paper-soft)] text-[var(--ink)] hover:bg-[var(--line)] border border-[var(--line-subtle)] transition-colors shrink-0 flex items-center gap-1.5">
-								<Zap size={12} className="text-amber-500" /><span>{p.label}</span>
-							</button>
-						))}
+					{/* Быстрые шаблоны и создание карточки */}
+					<div className="flex flex-wrap items-center justify-between gap-2">
+						<div className="flex items-center gap-2 overflow-x-auto no-scrollbar">
+							<span className="text-[11px] font-medium text-[var(--muted)] shrink-0">Шаблон:</span>
+							{PRESETS.map((p) => (
+								<button key={p.label} type="button" onClick={() => handleApplyPreset(p)} className="secondary-button px-2.5 py-1 text-xs rounded-lg flex items-center gap-1.5 shrink-0">
+									<Zap size={12} className="text-amber-500" /><span>{p.label}</span>
+								</button>
+							))}
+						</div>
+						<button
+							type="button"
+							onClick={() => setIsAddingNewItem(!isAddingNewItem)}
+							className="secondary-button px-2.5 py-1 text-xs flex items-center gap-1 font-medium ml-auto"
+						>
+							<Box size={14} className="text-[var(--teal)]" />
+							<span>{isAddingNewItem ? "Скрыть форму карточки" : "+ Новый материал в каталог"}</span>
+						</button>
 					</div>
+
+					{/* Секция быстрого добавления новой карточки номенклатуры */}
+					{isAddingNewItem && (
+						<div className="p-3.5 bg-[var(--paper-soft)] rounded-xl border border-[var(--line)] space-y-2.5 animate-in fade-in">
+							<div className="text-xs font-bold text-[var(--ink)]">Быстрая карточка нового материала</div>
+							<div className="grid grid-cols-1 sm:grid-cols-4 gap-2.5 text-xs">
+								<input
+									type="text"
+									placeholder="Наименование материала"
+									value={newItemName}
+									onChange={(e) => setNewItemName(e.target.value)}
+									className="sm:col-span-2 px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden"
+								/>
+								<input
+									type="text"
+									placeholder="Ед. (шт, уп)"
+									value={newItemUnit}
+									onChange={(e) => setNewItemUnit(e.target.value)}
+									className="px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden"
+								/>
+								<div className="flex items-center gap-2">
+									<input
+										type="number"
+										placeholder="Цена ₽"
+										value={newItemCost}
+										onChange={(e) => setNewItemCost(e.target.value)}
+										className="w-full px-2.5 py-1.5 bg-[var(--paper)] text-[var(--ink)] rounded-lg border border-[var(--line)] focus:outline-hidden"
+									/>
+									<button
+										type="button"
+										onClick={handleCreateNewCatalogItem}
+										className="primary-button px-3 py-1.5 text-xs font-semibold shrink-0"
+										style={{ background: "var(--teal)", color: "#ffffff" }}
+									>
+										Добавить
+									</button>
+								</div>
+							</div>
+						</div>
+					)}
 
 					{/* Таблица позиций из каталога склада */}
 					<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
@@ -305,12 +386,14 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 					</div>
 				</div>
 
-				{/* Футер: ровно 1 Primary CTA кнопка var(--teal) */}
+				{/* Футер: ровно 1 Primary CTA кнопка var(--teal), остальные вторичные */}
 				<div className="p-3.5 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2 flex-wrap shrink-0">
 						<span className="text-sm font-medium text-[var(--muted)]">Итого:</span>
 						<strong className="text-base font-bold text-[var(--ink)] font-mono tabular-nums">{totalRub.toLocaleString("ru-RU")} ₽</strong>
-						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1">ТОРГ-12</button>
+						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1" title="ТОРГ-12" data-testid="print-waybill">
+							Печать накладной
+						</button>
 						<button type="button" onClick={() => {}} className="secondary-button px-2.5 py-1 text-xs font-medium">CSV</button>
 					</div>
 					<div className="flex items-center gap-2.5 shrink-0 ml-auto">

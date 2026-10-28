@@ -88,4 +88,5 @@ export interface MobileInventoryGroupedListProps {
 	readonly onRefresh?: (() => void) | undefined;
 	readonly onOpenMdlpScanning?: (() => void) | undefined;
 	readonly money?: ((amountRub: any) => string) | undefined;
+	readonly getHeaders?: ((extra?: Record<string, string>) => Record<string, string>) | undefined;
 }

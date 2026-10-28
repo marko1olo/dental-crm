@@ -3,7 +3,7 @@ import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryStockAdjustModal } from "../InventoryStockAdjustModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
 import { AcceptanceWaybillsModal } from "../AcceptanceWaybillsModal.js";
-import { WarehouseBatchWriteoffModal } from "../WarehouseBatchWriteoffModal.js";
+import { ConsumablesBatchWriteoffModal } from "../ConsumablesBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 import { InventoryExternalModals } from "../InventoryExternalModals.js";
 import {
@@ -62,7 +62,7 @@ export const InventoryViewModalsContainer: React.FC<InventoryViewModalsContainer
 			)}
 
 			{isBatchOpen && (
-				<WarehouseBatchWriteoffModal
+				<ConsumablesBatchWriteoffModal
 					isOpen={isBatchOpen} onClose={handleCloseBatchWriteoff}
 					organizationId={organizationId} currentStockMap={stockMap}
 					warehouseItems={items} onDeductionComplete={fetchItems}

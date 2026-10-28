@@ -8,9 +8,9 @@ const WarehouseTransferModal = lazy(() =>
 		default: module.WarehouseTransferModal,
 	})),
 );
-const ClinicalWriteoffModal = lazy(() =>
-	import("../writeoff/ClinicalWriteoffModal.js").then((module) => ({
-		default: module.ClinicalWriteoffModal,
+const ConsumablesBatchWriteoffModal = lazy(() =>
+	import("../ConsumablesBatchWriteoffModal.js").then((module) => ({
+		default: module.ConsumablesBatchWriteoffModal,
 	})),
 );
 const WarehouseInventoryAuditModal = lazy(() =>
@@ -52,7 +52,7 @@ export const InventoryClinicalModals: React.FC<InventoryClinicalModalsProps> = (
 		<>
 			{isClinicalWriteoffOpen && (
 				<Suspense fallback={null}>
-					<ClinicalWriteoffModal
+					<ConsumablesBatchWriteoffModal
 						isOpen={isClinicalWriteoffOpen}
 						onClose={onCloseClinicalWriteoff}
 						onConfirmWriteoff={onConfirmClinicalWriteoff}

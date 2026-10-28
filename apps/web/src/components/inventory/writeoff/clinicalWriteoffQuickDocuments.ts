@@ -4,11 +4,6 @@ export {
 } from "./quickDocs/quickAnesthesiaPackageDocument.js";
 
 export {
-	type QuickCarpuleWriteoffParams,
-	createQuickCarpuleWriteoffDocument,
-} from "./quickDocs/quickCarpuleDocument.js";
-
-export {
 	type QuickVisitWriteoffParams,
 	createQuickVisitWriteoffDocument,
 } from "./quickDocs/quickVisitDocument.js";

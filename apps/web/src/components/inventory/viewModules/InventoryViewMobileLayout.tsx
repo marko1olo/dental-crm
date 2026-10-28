@@ -4,7 +4,7 @@ import { MobileInventoryGroupedList, type MobileInventoryCategoryType } from "..
 import { InventoryItemFormModal } from "../InventoryItemFormModal.js";
 import { InventoryConfirmDialog } from "../InventoryConfirmDialog.js";
 import { InboundWaybillModal } from "../InboundWaybillModal.js";
-import { WarehouseBatchWriteoffModal } from "../WarehouseBatchWriteoffModal.js";
+import { ConsumablesBatchWriteoffModal } from "../ConsumablesBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 
 const MdlpScanningModal = lazy(() => import("../../mdlp/MdlpScanningModal.js").then((m) => ({ default: m.MdlpScanningModal })));
@@ -66,6 +66,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 				onOpenMdlpScanning={externalModalsProps?.onOpenMdlpScanning}
 				onQuickWriteoffCarpules={handleQuickWriteoffCarpules} isWritingOffCarpules={isWritingOffCarpules}
 				onRefresh={() => fetchItems()} money={money}
+				getHeaders={getHeaders}
 			/>
 
 			<InventoryItemFormModal
@@ -90,7 +91,7 @@ export const InventoryViewMobileLayout: React.FC<InventoryViewMobileLayoutProps>
 			)}
 
 			{isBatchActive && (
-				<WarehouseBatchWriteoffModal
+				<ConsumablesBatchWriteoffModal
 					isOpen={isBatchActive} onClose={handleCloseBatch}
 					organizationId={organizationId} warehouseItems={items} onDeductionComplete={fetchItems}
 				/>

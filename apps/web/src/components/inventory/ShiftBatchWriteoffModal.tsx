@@ -1,17 +1,19 @@
 /**
  * apps/web/src/components/inventory/ShiftBatchWriteoffModal.tsx
  *
- * Канонический реэкспорт SSOT WarehouseBatchWriteoffModal (Мандаты 8b, 8e, 8n).
+ * Канонический реэкспорт SSOT ConsumablesBatchWriteoffModal (Мандаты 8b, 8e, 8n).
  */
 
 import {
-	WarehouseBatchWriteoffModal,
-	type WarehouseBatchWriteoffModalProps,
-	type ShiftBatchSummaryData,
-	type ShiftBatchSummaryItem,
-} from "./WarehouseBatchWriteoffModal.js";
+	ConsumablesBatchWriteoffModal,
+	type ConsumablesBatchWriteoffModalProps,
+	type ShiftBatchWriteoffData,
+	type ShiftConsumableItem,
+} from "./ConsumablesBatchWriteoffModal.js";
 
-export type ShiftBatchWriteoffModalProps = WarehouseBatchWriteoffModalProps;
-export type { ShiftBatchSummaryData, ShiftBatchSummaryItem };
-export { WarehouseBatchWriteoffModal as ShiftBatchWriteoffModal };
-export default WarehouseBatchWriteoffModal;
+export type ShiftBatchWriteoffModalProps = ConsumablesBatchWriteoffModalProps;
+export type ShiftBatchSummaryData = ShiftBatchWriteoffData;
+export type ShiftBatchSummaryItem = ShiftConsumableItem;
+
+export { ConsumablesBatchWriteoffModal as ShiftBatchWriteoffModal };
+export default ConsumablesBatchWriteoffModal;

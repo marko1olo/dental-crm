@@ -20,12 +20,16 @@ export type { MobileInventoryCategoryType, MobileInventoryGroupedListProps };
 export { matchesCategory, getItemCategoryType, MOBILE_INVENTORY_CATEGORIES };
 
 export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProps> = (props) => {
-	const { items, organizationId, searchQuery, onSearchChange, onClearSearch, selectedCategory, onSelectCategory } = props;
+	const { items, organizationId, searchQuery, onSearchChange, onClearSearch, selectedCategory, onSelectCategory, getHeaders } = props;
 	const { onQuickDeduct, onReceiveItem, onSelectItem, onEditItem, onOpenInboundInvoice, onOpenShiftDeduction, onRefresh } = props;
-	const logic = useMobileInventoryLogic(items, organizationId, searchQuery, selectedCategory, onQuickDeduct, onReceiveItem, onRefresh);
+	const logic = useMobileInventoryLogic(items, organizationId, searchQuery, selectedCategory, onQuickDeduct, onReceiveItem, onRefresh, getHeaders);
 
 	const handleSubmitInbound = async (e: React.FormEvent) => {
 		e.preventDefault();
+		if (!logic.drawerTargetItem) {
+			showToast("Выберите материал для пополнения склада", "warning");
+			return;
+		}
 		if (logic.drawerQuantity <= 0) {
 			showToast("Укажите количество для оприходования", "warning");
 			return;
@@ -33,26 +37,32 @@ export const MobileInventoryGroupedList: React.FC<MobileInventoryGroupedListProp
 		logic.setIsSubmittingInbound(true);
 		logic.triggerHaptic();
 		try {
-			if (logic.drawerTargetItem && onReceiveItem) {
+			if (onReceiveItem) {
 				await onReceiveItem(logic.drawerTargetItem, logic.drawerQuantity, logic.drawerLotNumber, logic.drawerExpDate);
 				showToast(`Оприходовано ${logic.drawerQuantity} ед. «${logic.drawerTargetItem.name}» на склад`, "success");
-			} else if (logic.drawerTargetItem) {
+			} else {
+				const headers = getHeaders ? getHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" };
 				const res = await fetch(`/api/inventory/${organizationId}/${logic.drawerTargetItem.id}/stock`, {
-					method: "PATCH", headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({ adjustment: logic.drawerQuantity, allowOverdraft: true }),
+					method: "PATCH",
+					headers,
+					body: JSON.stringify({
+						adjustment: logic.drawerQuantity,
+						allowOverdraft: true,
+						lotNumber: logic.drawerLotNumber,
+						expirationDate: logic.drawerExpDate,
+						reason: "Оприходование партии в мобильном интерфейсе",
+					}),
 				});
 				if (res.ok) {
 					showToast(`Оприходовано +${logic.drawerQuantity} ед. «${logic.drawerTargetItem.name}»`, "success");
 					if (onRefresh) onRefresh();
+				} else {
+					showToast("Ошибка сохранения партии на складе", "error");
 				}
-			} else if (onOpenInboundInvoice) {
-				logic.setIsInboundDrawerOpen(false);
-				onOpenInboundInvoice();
-				return;
 			}
 			logic.setIsInboundDrawerOpen(false);
 		} catch {
-			showToast("Сбой при оприходовании партии", "error");
+			showToast("Сбой сети при оприходовании партии", "error");
 		} finally {
 			logic.setIsSubmittingInbound(false);
 		}

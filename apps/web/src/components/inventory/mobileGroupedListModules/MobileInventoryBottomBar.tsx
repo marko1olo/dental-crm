@@ -22,7 +22,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 				className="mobile-inventory-primary-fab cursor-pointer"
 				onClick={onOpenInboundDrawer}
 				data-testid="mobile-btn-inbound-batch"
-				aria-label="Оприходовать партию материалов (Приход)"
+				aria-label="Оприходовать партию материалов"
 			>
 				<Plus size={20} aria-hidden="true" />
 				<span>Приход</span>
@@ -45,7 +45,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 			{onOpenShiftDeduction && (
 				<button
 					type="button"
-					className="mobile-inventory-shift-btn cursor-pointer"
+					className="mobile-inventory-secondary-btn cursor-pointer"
 					onClick={onOpenShiftDeduction}
 					title="Пакетное списание расходников за смену в 1 клик"
 					aria-label="Списать смену"
@@ -66,7 +66,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 					data-testid="mobile-btn-waybills"
 				>
 					<ArrowDownToLine size={18} aria-hidden="true" />
-					<span className="hidden sm:inline">Накладные</span>
+					<span>Накладные</span>
 				</button>
 			)}
 		</div>
@@ -78,3 +78,5 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 
 	return barElement;
 };
+
+export default MobileInventoryBottomBar;
