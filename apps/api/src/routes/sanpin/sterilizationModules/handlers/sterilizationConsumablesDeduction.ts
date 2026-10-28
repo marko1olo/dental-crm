@@ -7,7 +7,7 @@
 
 import { and, eq, ilike, or } from "drizzle-orm";
 import { db } from "../../../../db/client.js";
-import { inventoryItems, inventoryTransactions } from "../../../../db/schema.js";
+import { inventoryItems, inventoryTransactions, stockBatches } from "../../../../db/schema.js";
 import {
 	type SterilizationDeductionParams,
 	type SterilizationDeductionResult,
@@ -81,6 +81,21 @@ export async function executeSterilizationConsumablesDeduction(
 					userId: params.userId ?? null,
 					notes: note,
 				});
+
+				// Пакетное списание из активной партии stock_batches
+				const [batch] = await tx
+					.select()
+					.from(stockBatches)
+					.where(and(eq(stockBatches.inventoryItemId, item.id), eq(stockBatches.organizationId, orgId), eq(stockBatches.status, "active")))
+					.limit(1)
+					.for("update");
+				if (batch) {
+					const rem = Math.max(0, Number(batch.remainingQty || 0) - spec.qty);
+					await tx
+						.update(stockBatches)
+						.set({ remainingQty: String(rem), status: rem <= 0 ? "depleted" : "active", updatedAt: new Date() })
+						.where(eq(stockBatches.id, batch.id));
+				}
 
 				deductedSummary.push({ itemName: item.name, quantityDeducted: spec.qty, isOverdraft, remainingStock: nextStock });
 			}

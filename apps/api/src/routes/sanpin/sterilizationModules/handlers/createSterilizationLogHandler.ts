@@ -87,10 +87,15 @@ export async function handleCreateSterilizationLog(
 		})
 		.returning();
 
+	const batchCount = Math.max(
+		1,
+		Number((rawBody as any).packagesCount ?? (rawBody as any).batchSize ?? 1),
+	);
+
 	void executeSterilizationConsumablesDeduction({
 		organizationId,
 		userId: data.operatorId ?? (req as any).user?.id ?? null,
-		count: 1,
+		count: batchCount,
 		packagingType: data.packagingType,
 		indicatorType: data.indicatorType,
 		cycleNumber: data.cycleNumber,

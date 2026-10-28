@@ -55,9 +55,11 @@ export function AutoclaveJournalTab({
 		>
 			<style>{`
 				.autoclave-desktop-view { display: block; }
+				.autoclave-desktop-cta { display: inline-flex; }
 				.autoclave-mobile-view { display: none; }
 				@media (max-width: 768px) {
 					.autoclave-desktop-view { display: none !important; }
+					.autoclave-desktop-cta { display: none !important; }
 					.autoclave-mobile-view { display: block !important; }
 				}
 			`}</style>
@@ -107,16 +109,14 @@ export function AutoclaveJournalTab({
 					</button>
 
 					{/* РОСКОШНЫЙ PRIMARY CTA (МАНДАТ 8am) */}
-					{!isMobile && (
-						<button
-							type="button" onClick={() => setIsCycleDrawerOpen(true)}
-							className="h-8 min-h-[32px] px-3.5 rounded-lg font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs inline-flex items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
-							data-testid="start-cycle-primary-btn" title="Запустить цикл стерилизации (134°C, Класс B)"
-						>
-							<Plus size={14} className="text-white" />
-							<span>Запустить цикл стерилизации</span>
-						</button>
-					)}
+					<button
+						type="button" onClick={() => setIsCycleDrawerOpen(true)}
+						className="autoclave-desktop-cta hidden sm:inline-flex h-8 min-h-[32px] px-3.5 rounded-lg font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-xs items-center gap-1.5 cursor-pointer touch-manipulation transition-all"
+						data-testid="start-cycle-primary-btn" title="Запустить цикл стерилизации (134°C, Класс B)"
+					>
+						<Plus size={14} className="text-white" />
+						<span>Запустить цикл стерилизации</span>
+					</button>
 				</div>
 			</div>
 
@@ -262,18 +262,16 @@ export function AutoclaveJournalTab({
 				)}
 
 				{/* Floating Bottom Bar (Natural Thumb Zone для смартфонов, Мандат 8am: 1 Primary CTA) */}
-				{isMobile && (
-					<div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-[var(--paper,#fff)]/95 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] shadow-lg flex items-center pb-[max(12px,env(safe-area-inset-bottom))]">
-						<button
-							type="button" onClick={() => setIsCycleDrawerOpen(true)}
-							className="w-full h-12 min-h-[48px] rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
-							data-testid="sanpin-mobile-start-cycle-cta"
-						>
-							<Plus size={18} className="text-white" />
-							<span>Запустить цикл стерилизации</span>
-						</button>
-					</div>
-				)}
+				<div className="fixed bottom-0 left-0 right-0 z-40 p-3 bg-[var(--paper,#fff)]/95 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] shadow-lg flex items-center pb-[max(12px,env(safe-area-inset-bottom))]">
+					<button
+						type="button" onClick={() => setIsCycleDrawerOpen(true)}
+						className="w-full h-12 min-h-[48px] rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+						data-testid="sanpin-mobile-start-cycle-cta"
+					>
+						<Plus size={18} className="text-white" />
+						<span>Запустить цикл стерилизации</span>
+					</button>
+				</div>
 			</div>
 
 			{/* ШТОРКА ЗАПУСКА ЦИКЛА СТЕРИЛИЗАЦИИ */}

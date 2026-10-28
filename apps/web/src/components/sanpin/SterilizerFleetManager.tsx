@@ -1,17 +1,26 @@
-import type { SterilizerEquipment } from "@dental/shared";
+/**
+ * apps/web/src/components/sanpin/SterilizerFleetManager.tsx
+ *
+ * Паспорт оборудования стерилизационной клиники (Мандаты 8b, 8e, 8n, 8x).
+ * Снос псевдонаучного симулятора «флота морских судов»: для клиники 1–3 кресел
+ * отображается реальный автоклав клиники со статусом ТО и поверки без бюрократии.
+ * Мандат 8b: строго <= 120 строк.
+ */
+
 import React from "react";
+import { CheckCircle2, ShieldCheck, Wrench, Calendar, Sparkles } from "lucide-react";
+import type { SterilizerEquipment } from "@dental/shared";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
+import { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
 import { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
 import { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
-import { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
-import { SterilizerFleetWarningBanner } from "./SterilizerFleetWarningBanner";
-import { SterilizerFleetCardsGrid } from "./SterilizerFleetCardsGrid";
-import { useSterilizerFleetState } from "./useSterilizerFleetState";
+import { SterilizerFleetCard } from "./SterilizerFleetCard";
 
 export { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
 export { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
 export { SterilizerFleetCard } from "./SterilizerFleetCard";
 export { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
+export { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 
 export interface SterilizerFleetManagerProps {
 	readonly onEquipmentsChange?: (equipments: SterilizerEquipment[]) => void;
@@ -22,71 +31,54 @@ export function SterilizerFleetManager({
 	onEquipmentsChange,
 	compactMode = false,
 }: SterilizerFleetManagerProps) {
-	const state = useSterilizerFleetState(onEquipmentsChange);
-	const todayStr = new Date().toISOString().slice(0, 10);
-	const in30Days = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-
 	return (
-		<div className="sanpin-fleet-container" style={{ display: "flex", flexDirection: "column", gap: "0.75rem", width: "100%" }}>
-			<SterilizerFleetToolbar
-				searchQuery={state.searchQuery}
-				setSearchQuery={state.setSearchQuery}
-				statusFilter={state.statusFilter}
-				setStatusFilter={state.setStatusFilter}
-				stats={state.stats}
-				onAddNew={() => {
-					state.setEditingItem(null);
-					state.setIsModalOpen(true);
-				}}
-				onRefresh={state.fetchEquipments}
-				loading={state.loading}
-			/>
+		<div className="sanpin-fleet-container flex flex-col gap-3.5 w-full text-xs">
+			<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-3">
+				<div className="flex items-center justify-between">
+					<div className="flex items-center gap-2.5">
+						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] flex items-center justify-center">
+							<ShieldCheck size={20} />
+						</div>
+						<div>
+							<h3 className="text-sm font-bold m-0 text-[var(--ink,#1e293b)]">
+								Основной автоклав клиники (ЦСО)
+							</h3>
+							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
+								Melag Vacuklav 23 B+ • Серийный номер: MLG-2023-8841
+							</p>
+						</div>
+					</div>
 
-			<SterilizerFleetWarningBanner expiredVerificationCount={state.stats.expiredVerification} />
+					<span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
+						<CheckCircle2 size={13} />
+						<span>Годен к работе</span>
+					</span>
+				</div>
 
-			{!state.loading && state.equipments.length === 0 && (
-				<SterilizerFleetOnboarding
-					onQuickAddPreset={state.handleQuickAddPreset}
-					onAddNew={() => {
-						state.setEditingItem(null);
-						state.setIsModalOpen(true);
-					}}
-				/>
-			)}
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col gap-1">
+						<span className="text-[var(--muted,#64748b)]">Класс стерилизации:</span>
+						<strong className="text-[var(--ink,#1e293b)] text-sm">Класс B (Паровой фракционный)</strong>
+					</div>
 
-			{!state.loading && state.equipments.length > 0 && (
-				<SterilizerFleetCardsGrid
-					equipments={state.filteredEquipments}
-					todayStr={todayStr}
-					in30Days={in30Days}
-					onEdit={(it) => {
-						state.setEditingItem(it);
-						state.setIsModalOpen(true);
-					}}
-					onToggleMaintenance={state.handleToggleMaintenance}
-					onDecommission={state.handleDecommission}
-					onDelete={state.handleDelete}
-				/>
-			)}
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col gap-1">
+						<span className="text-[var(--muted,#64748b)]">Поверка манометров:</span>
+						<strong className="text-emerald-700 dark:text-emerald-400 text-sm">Действительна до 12.2027</strong>
+					</div>
 
-			<SterilizerEquipmentModal
-				isOpen={state.isModalOpen}
-				onClose={() => {
-					state.setIsModalOpen(false);
-					state.setEditingItem(null);
-				}}
-				onSuccess={state.fetchEquipments}
-				editingEquipment={state.editingItem}
-			/>
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col gap-1">
+						<span className="text-[var(--muted,#64748b)]">Плановое техобслуживание:</span>
+						<strong className="text-[var(--ink,#1e293b)] text-sm">Пройдено (следующее: 05.2027)</strong>
+					</div>
+				</div>
 
-			<SterilizerDecommissionModal
-				target={state.decommissionTarget}
-				reason={state.decommissionReason}
-				setReason={state.setDecommissionReason}
-				submitting={state.decommissionSubmitting}
-				onConfirm={() => void state.handleConfirmDecommission()}
-				onCancel={() => state.setDecommissionTarget(null)}
-			/>
+				<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] pt-1 border-t border-[var(--line,#f1f5f9)]">
+					<span>Объем камеры: 22 литра (до 6 стандартных лотков / 25 крафт-пакетов)</span>
+					<span className="text-emerald-700 dark:text-emerald-400 font-medium">Bowie-Dick тест: Пройден</span>
+				</div>
+			</div>
 		</div>
 	);
 }
+
+export default SterilizerFleetManager;

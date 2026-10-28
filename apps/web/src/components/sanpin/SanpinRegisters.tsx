@@ -3,27 +3,20 @@
  * apps/web/src/components/sanpin/SanpinRegisters.tsx
  *
  * Мастер-контейнер журналов стерилизации и дезинфекции (Мандаты 8b, 8e, 8n, 8x).
- * Консолидированная 4-вкладочная архитектура:
- * 1. Журнал автоклавирования (AutoclaveJournalTab.tsx)
- * 2. Контроль очистки инструментов (CleaningControlTab.tsx)
- * 3. Учет ламп и уборок (UvAndCleaningTab.tsx)
- * 4. Оборудование стерилизационной (SterilizerFleetManager.tsx)
- *
- * Клинические тосты:
- * - Журналы стерилизации в норме
- * - Журналы за неделю заполнены
- * - Смена заполнена: автоклавы и контроль очистки инструментов в норме
+ * Каноническая 3-компонентная SSOT архитектура:
+ * 1. Журнал автоклавирования (AutoclaveSterilizationJournalView.tsx)
+ * 2. Очистка, дезинфекция и уборка (SanpinCleaningAndDisinfectionView.tsx)
+ * 3. Паспорт оборудования стерилизационной (SterilizerFleetManager.tsx)
+ * 4. Модалка запуска цикла автоклава в 1 клик (SterilizationBatchCycleModal.tsx)
  */
 
-import React from "react";
+import React, { useState } from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { AutoclaveJournalTab } from "./AutoclaveJournalTab";
-import { CleaningControlTab } from "./CleaningControlTab";
-import { UvAndCleaningTab } from "./UvAndCleaningTab";
+import { AutoclaveSterilizationJournalView } from "./AutoclaveSterilizationJournalView";
+import { SanpinCleaningAndDisinfectionView } from "./SanpinCleaningAndDisinfectionView";
 import { SterilizerFleetManager } from "./SterilizerFleetManager";
+import { SterilizationBatchCycleModal } from "./SterilizationBatchCycleModal";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
-import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
-import { AutoclaveSterilizationLogModal } from "./autoclaveLog/AutoclaveSterilizationLogModal";
 import { SanpinRegistersHeader } from "./SanpinRegistersHeader";
 import { useSanpinRegistersLogic } from "./registers/useSanpinRegistersLogic";
 import { SanpinKpiSummaryGrid } from "./registers/SanpinKpiSummaryGrid";
@@ -33,6 +26,9 @@ import { SANPIN_REGISTERS_TOAST_MESSAGES } from "./sanpinToastMessages";
 
 export * from "./sanpinNavigationConfig";
 export * from "./sanpinToastMessages";
+export * from "./AutoclaveSterilizationJournalView";
+export * from "./SanpinCleaningAndDisinfectionView";
+export * from "./SterilizationBatchCycleModal";
 
 export interface SanpinRegistersProps {
 	readonly initialTab?: SanpinRegisterTab | undefined;
@@ -48,6 +44,7 @@ function SanpinRegistersInner({
 	const appLogic = useOptionalAppLogicContext();
 	const auth = appLogic?.auth;
 	const logic = useSanpinRegistersLogic(auth, appLogic, initialTab);
+	const [isDirectCycleModalOpen, setIsDirectCycleModalOpen] = useState(false);
 
 	return (
 		<div className={`sanpin-container ${className}`}>
@@ -65,9 +62,9 @@ function SanpinRegistersInner({
 				onRefreshSummary={logic.fetchSummary}
 				onAutofillShift={logic.handleAutofillShift}
 				onOpenRetroactiveBatchModal={() => logic.setIsRetroactiveBatchModalOpen(true)}
-				onOpenKraftModal={() => logic.setIsKraftModalOpen(true)}
-				onOpenSterilizationLogModal={() => logic.setIsJournal257ModalOpen(true)}
-				onOpenJournal257Modal={() => logic.setIsJournal257ModalOpen(true)}
+				onOpenKraftModal={() => setIsDirectCycleModalOpen(true)}
+				onOpenSterilizationLogModal={() => setIsDirectCycleModalOpen(true)}
+				onOpenJournal257Modal={() => setIsDirectCycleModalOpen(true)}
 			/>
 
 			<SanpinRegisterTabsNav
@@ -84,36 +81,39 @@ function SanpinRegistersInner({
 			)}
 
 			{(logic.activeTab === "autoclave" || logic.activeTab === "kraft") && (
-				<AutoclaveJournalTab
-					key={`autoclave-tab-${logic.refreshCounter}`}
+				<AutoclaveSterilizationJournalView
+					key={`autoclave-view-${logic.refreshCounter}`}
 					initialFilterAutoclave={initialFilterAutoclave}
 				/>
 			)}
 
 			{(logic.activeTab === "pso" || logic.activeTab === "cleaning") && (
-				<CleaningControlTab key={`cleaning-tab-${logic.refreshCounter}`} />
+				<SanpinCleaningAndDisinfectionView
+					key={`cleaning-view-${logic.refreshCounter}`}
+					initialSubTab={logic.activeTab === "cleaning" ? "cleaning" : "pso"}
+				/>
 			)}
 
 			{(logic.activeTab === "disinfection" ||
 				logic.activeTab === "uv_cleaning" ||
 				logic.activeTab === "bactericidal" ||
 				logic.activeTab === "cabinet_readiness") && (
-				<UvAndCleaningTab key={`disinfection-tab-${logic.refreshCounter}`} />
+				<SanpinCleaningAndDisinfectionView
+					key={`disinfection-view-${logic.refreshCounter}`}
+					initialSubTab={logic.activeTab === "bactericidal" ? "bactericidal" : "cleaning"}
+				/>
 			)}
 
 			{(logic.activeTab === "sterilizers" || logic.activeTab === "fleet") && (
-				<SterilizerFleetManager key={`fleet-tab-${logic.refreshCounter}`} />
+				<SterilizerFleetManager key={`fleet-view-${logic.refreshCounter}`} />
 			)}
 
-			<KraftPackageBarcodeModal
-				isOpen={logic.isKraftModalOpen}
-				onClose={() => logic.setIsKraftModalOpen(false)}
+			<SterilizationBatchCycleModal
+				isOpen={isDirectCycleModalOpen}
+				onClose={() => setIsDirectCycleModalOpen(false)}
+				onSuccess={logic.fetchSummary}
 			/>
-			<AutoclaveSterilizationLogModal
-				isOpen={logic.isJournal257ModalOpen}
-				initialTab="sterilization_log"
-				onClose={() => logic.setIsJournal257ModalOpen(false)}
-			/>
+
 			<RetroactiveSanpinBatchModal
 				isOpen={logic.isRetroactiveBatchModalOpen}
 				onClose={() => logic.setIsRetroactiveBatchModalOpen(false)}

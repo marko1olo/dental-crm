@@ -6,6 +6,9 @@
  */
 
 export * from "./SanpinRegisters";
+export * from "./AutoclaveSterilizationJournalView";
+export * from "./SanpinCleaningAndDisinfectionView";
+export * from "./SterilizationBatchCycleModal";
 export * from "./SanpinAutoclaveRegisterTab";
 export * from "./PsoRegisterTab";
 export * from "./SanpinUvAndCleaningRegisterTab";
