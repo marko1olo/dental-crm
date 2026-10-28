@@ -8,4 +8,5 @@
  * `apps/web/src/utils/demoModeEngine.ts`.
  */
 
-export * from "../utils/demoModeEngine.js";
+export * from "../utils/demoModeModules/index";
+export * from "../utils/demoModeEngine";

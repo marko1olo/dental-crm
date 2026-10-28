@@ -27,6 +27,15 @@ export function detectMutuallyExclusiveToothProcedures(
 		if (extractions.length > 0 && restorations.length > 0) {
 			for (const ext of extractions) {
 				for (const rest of restorations) {
+					// Мандат 8e: если манипуляции разнесены по разным этапам или клиническим сценариям,
+					// это легитимный последовательный маршрут (например, удаление -> имплантация -> коронка).
+					if (ext.stageKind && rest.stageKind && ext.stageKind !== rest.stageKind) {
+						continue;
+					}
+					if (ext.stageNumber !== undefined && rest.stageNumber !== undefined && ext.stageNumber !== rest.stageNumber) {
+						continue;
+					}
+
 					const isCrown =
 						(rest.code804n && rest.code804n.startsWith("A16.07.004")) ||
 						/коронк|протез|вкладк/i.test(rest.name);

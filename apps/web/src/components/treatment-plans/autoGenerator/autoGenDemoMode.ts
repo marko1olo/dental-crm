@@ -2,7 +2,7 @@ import type { ToothData } from "../../odontogram/ToothChart";
 import {
 	isDemoShowcaseMode as isCentralDemoShowcaseMode,
 	setRuntimeDemoMode as setCentralDemoShowcaseMode,
-} from "../../../lib/demoMode";
+} from "../../../utils/demoModeModules/index";
 
 export const DEMO_SHOWCASE_TEETH: readonly ToothData[] = [
 	{ toothNumber: 16, state: "Caries", notes: "Глубокий кариес жевательной поверхности" },
