@@ -1,37 +1,73 @@
 /**
  * VoiceChairsideHudBar.css — Chairside Hands-Free Sterile Voice HUD Styling.
- * Apple HIG Touch Ergonomics, Natural Thumb Zone, Safe Area Insets.
+ * Apple HIG Touch Ergonomics, Natural Thumb Zone, Design Token Compliance.
  */
 
 .dente-voice-hud-bar {
 	position: fixed;
 	bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-	left: 0;
+	left: var(--sidebar-width, 0px);
 	right: 0;
 	margin-left: auto;
 	margin-right: auto;
 	width: fit-content;
-	max-width: calc(100vw - 32px);
+	max-width: calc(100vw - var(--sidebar-width, 0px) - 32px);
 	z-index: 99990;
 	display: flex;
 	align-items: center;
 	gap: 10px;
 	min-height: 52px;
-	padding: 0 8px 0 12px;
-	background: var(--paper-strong, #1f2937);
-	color: var(--ink, #f9fafb);
-	border: 1px solid var(--line, #374151);
+	padding: 0 8px 0 10px;
+	background: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
 	border-radius: 26px;
-	box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+	box-shadow: 0 8px 28px rgba(0, 0, 0, 0.16);
 	font-size: 13px;
 	font-family: inherit;
 	pointer-events: auto;
 	transition: background-color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
 }
 
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-bar {
+	background: var(--paper-strong, #1e293b);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, #334155);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.45);
+}
+
 .dente-voice-hud-bar--listening {
 	border-color: var(--teal, #0d9488);
-	box-shadow: 0 8px 32px rgba(13, 148, 136, 0.35), 0 2px 8px rgba(0, 0, 0, 0.4);
+	box-shadow: 0 8px 32px rgba(13, 148, 136, 0.35), 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.dente-voice-hud-mic-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
+	border-radius: 22px;
+	background: var(--paper-subtle, #f1f5f9);
+	color: var(--ink-muted, #64748b);
+	border: none;
+	cursor: pointer;
+	padding: 0;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-mic-btn {
+	background: var(--paper-subtle, #334155);
+	color: var(--ink-muted, #94a3b8);
+}
+
+.dente-voice-hud-mic-btn--active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	box-shadow: 0 0 14px var(--teal, #0d9488);
 }
 
 .dente-voice-hud-text {
@@ -39,9 +75,131 @@
 	align-items: center;
 	gap: 6px;
 	max-width: 380px;
+	min-width: 0;
 	overflow: hidden;
 	text-overflow: ellipsis;
 	white-space: nowrap;
+}
+
+.dente-voice-hud-transcript {
+	font-style: italic;
+	color: var(--ink, #0f172a);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-transcript {
+	color: var(--ink, #f8fafc);
+}
+
+.dente-voice-hud-listening-label {
+	color: var(--teal, #0d9488);
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dente-voice-hud-result {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--teal, #0d9488);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dente-voice-hud-result-text {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dente-voice-hud-idle {
+	color: var(--ink-muted, #64748b);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-idle {
+	color: var(--ink-muted, #94a3b8);
+}
+
+.dente-voice-hud-error {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	color: var(--amber, #d97706);
+	min-width: 0;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-error {
+	color: #fbbf24;
+}
+
+.dente-voice-hud-error-msg {
+	font-weight: 500;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.dente-voice-hud-shortcut {
+	padding: 2px 6px;
+	font-size: 11px;
+	font-weight: 600;
+	border-radius: 4px;
+	background: var(--paper, #ffffff);
+	color: var(--ink-muted, #64748b);
+	border: 1px solid var(--line, #e2e8f0);
+	letter-spacing: 0.5px;
+	flex-shrink: 0;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-shortcut {
+	background: var(--paper, #0f172a);
+	color: var(--ink-muted, #94a3b8);
+	border-color: var(--line, #334155);
+}
+
+.dente-voice-hud-close-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	min-width: 44px;
+	min-height: 44px;
+	width: 44px;
+	height: 44px;
+	background: transparent;
+	color: var(--ink-muted, #64748b);
+	border: none;
+	cursor: pointer;
+	border-radius: 22px;
+	padding: 0;
+	flex-shrink: 0;
+	transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-close-btn {
+	color: var(--ink-muted, #94a3b8);
+}
+
+.dente-voice-hud-close-btn:hover {
+	background: var(--paper-subtle, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+:is([data-theme="dark"], [data-theme="night"], .dark) .dente-voice-hud-close-btn:hover {
+	background: var(--paper-subtle, #334155);
+	color: var(--ink, #f8fafc);
 }
 
 @media (max-width: 768px) {
@@ -49,13 +207,13 @@
 		bottom: calc(74px + env(safe-area-inset-bottom, 0px));
 		max-width: calc(100vw - 24px);
 		gap: 6px;
-		padding: 0 4px 0 8px;
+		padding: 0 4px 0 6px;
 	}
 	.dente-voice-hud-shortcut {
 		display: none !important;
 	}
 	.dente-voice-hud-text {
-		max-width: 190px;
+		max-width: 200px;
 		font-size: 12px;
 	}
 }

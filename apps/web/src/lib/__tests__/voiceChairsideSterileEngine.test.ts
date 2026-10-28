@@ -1,5 +1,7 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import {
+	dispatchSterileVoiceActions,
+	insertTextIntoActiveInput,
 	mapSurfaceKeywords,
 	mapVoiceStatusToToothState,
 	parseVoiceChairsideCommand,
@@ -64,5 +66,107 @@ describe("voiceChairsideSterileEngine", () => {
 		expect(res.hasActions).toBe(false);
 		expect(res.teethActions).toHaveLength(0);
 		expect(res.anesthesiaAction).toBeNull();
+	});
+
+	it("insertTextIntoActiveInput inserts text into active textarea with event dispatch", () => {
+		const originalDoc = globalThis.document;
+		let inputFired = false;
+		let changeFired = false;
+
+		const mockTextarea: any = {
+			tagName: "TEXTAREA",
+			value: "Ранее запломбирован.",
+			selectionStart: 20,
+			selectionEnd: 20,
+			setSelectionRange(start: number, end: number) {
+				this.selectionStart = start;
+				this.selectionEnd = end;
+			},
+			dispatchEvent(e: any) {
+				if (e.type === "input") inputFired = true;
+				if (e.type === "change") changeFired = true;
+				return true;
+			},
+		};
+
+		globalThis.document = {
+			activeElement: mockTextarea,
+		} as any;
+
+		try {
+			const success = insertTextIntoActiveInput("Жалобы на боли от горячего.");
+			expect(success).toBe(true);
+			expect(mockTextarea.value).toBe("Ранее запломбирован. Жалобы на боли от горячего.");
+			expect(inputFired).toBe(true);
+			expect(changeFired).toBe(true);
+		} finally {
+			globalThis.document = originalDoc;
+		}
+	});
+
+	it("insertTextIntoActiveInput returns false when no input is focused", () => {
+		const originalDoc = globalThis.document;
+		globalThis.document = {
+			activeElement: { tagName: "BUTTON" },
+		} as any;
+
+		try {
+			const success = insertTextIntoActiveInput("Тестовый текст");
+			expect(success).toBe(false);
+		} finally {
+			globalThis.document = originalDoc;
+		}
+	});
+
+	it("dispatchSterileVoiceActions dispatches dente-odontogram-update and dente-apply-soap-protocol events", () => {
+		const originalWindow = globalThis.window;
+		let odontogramDetail: any = null;
+		let soapDetail: any = null;
+
+		const listeners: Record<string, ((e: any) => void)[]> = {};
+		const mockWindow: any = {
+			addEventListener(evt: string, fn: any) {
+				listeners[evt] = listeners[evt] || [];
+				listeners[evt].push(fn);
+			},
+			removeEventListener(evt: string, fn: any) {
+				if (listeners[evt]) {
+					listeners[evt] = listeners[evt].filter((f) => f !== fn);
+				}
+			},
+			dispatchEvent(e: any) {
+				const list = listeners[e.type] || [];
+				for (const fn of list) fn(e);
+				return true;
+			},
+		};
+
+		globalThis.window = mockWindow;
+
+		try {
+			mockWindow.addEventListener("dente-odontogram-update", (e: any) => {
+				odontogramDetail = e.detail;
+			});
+			mockWindow.addEventListener("dente-apply-soap-protocol", (e: any) => {
+				soapDetail = e.detail;
+			});
+
+			const parseResult = parseVoiceChairsideCommand(
+				"Зуб 46 кариес жевательная. Жалобы на боль от сладкого. Анестезия ультракаин 1 карпул"
+			);
+			const dispatched = dispatchSterileVoiceActions(parseResult);
+
+			expect(dispatched).toBe(true);
+			expect(odontogramDetail).not.toBeNull();
+			expect(odontogramDetail.states).toHaveLength(1);
+			expect(odontogramDetail.states[0].toothNumber).toBe(46);
+			expect(odontogramDetail.states[0].state).toBe("Caries");
+
+			expect(soapDetail).not.toBeNull();
+			expect(soapDetail.complaint).toContain("боль от сладкого");
+			expect(soapDetail.treatmentPlan).toContain("Анестезия");
+		} finally {
+			globalThis.window = originalWindow;
+		}
 	});
 });

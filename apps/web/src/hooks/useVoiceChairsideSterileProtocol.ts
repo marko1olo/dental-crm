@@ -3,37 +3,29 @@
  *
  * Allows dentist in sterile nitrile gloves to update odontogram & diary:
  * - Hotkeys: F8 (foot pedal switch), Alt+V / Alt+М (toggle mic)
- * - Auto-commit with 1800ms silence detection
- * - Real-time earcon audible confirmation
+ * - Auto-commit with 1800ms silence detection & noise suppression
+ * - Real-time earcon audible confirmation & active input insertion
+ * - Calm error toasts and HUD error indicator (zero silent failures)
  *
- * Rules: THE_HAMMER_MASTER_PROMPT.md, frontend.md, <500 lines.
+ * Unified with useUnifiedDictation (Mandates 8e, 8l, THE_HAMMER).
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
 	dispatchSterileVoiceActions,
+	insertTextIntoActiveInput,
 	parseVoiceChairsideCommand,
 	type SterileVoiceParseResult,
 } from "../lib/voiceChairsideSterileEngine";
-
-// Web Speech API interface shims
-interface SpeechRecognitionResultItem {
-	transcript: string;
-	confidence: number;
-}
-interface SpeechRecognitionResultList {
-	[index: number]: { [index: number]: SpeechRecognitionResultItem; isFinal: boolean };
-	length: number;
-}
-interface SpeechRecognitionEventLike {
-	resultIndex: number;
-	results: SpeechRecognitionResultList;
-}
+import { voiceDictationErrorText } from "../components/odontogram/voiceDictationText";
+import { showToast } from "../components/GlobalToast";
+import { useUnifiedDictation } from "./useUnifiedDictation";
 
 export interface UseVoiceChairsideSterileProtocolReturn {
 	isListening: boolean;
 	transcript: string;
 	lastActionResult: SterileVoiceParseResult | null;
+	errorMessage: string | null;
 	isHudVisible: boolean;
 	toggleListening: (force?: boolean) => void;
 	dismissHud: () => void;
@@ -41,13 +33,10 @@ export interface UseVoiceChairsideSterileProtocolReturn {
 }
 
 export function useVoiceChairsideSterileProtocol(): UseVoiceChairsideSterileProtocolReturn {
-	const [isListening, setIsListening] = useState(false);
 	const [transcript, setTranscript] = useState("");
 	const [lastActionResult, setLastActionResult] = useState<SterileVoiceParseResult | null>(null);
 	const [isHudVisible, setIsHudVisible] = useState(false);
 
-	// biome-ignore lint/suspicious/noExplicitAny: browser speech engine polymorphism
-	const recognitionRef = useRef<any>(null);
 	const silenceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 	const latestTranscriptRef = useRef("");
 
@@ -55,113 +44,79 @@ export function useVoiceChairsideSterileProtocol(): UseVoiceChairsideSterileProt
 		const text = latestTranscriptRef.current.trim();
 		if (!text) return;
 
+		const insertedIntoInput = insertTextIntoActiveInput(text);
 		const result = parseVoiceChairsideCommand(text);
+
 		if (result.hasActions) {
 			dispatchSterileVoiceActions(result);
 			setLastActionResult(result);
+			setIsHudVisible(true);
+		} else if (insertedIntoInput) {
+			setLastActionResult({
+				hasActions: true,
+				teethActions: [],
+				anesthesiaAction: null,
+				diaryActions: [],
+				summaryText: "Текст вставлен в активное поле",
+			});
 			setIsHudVisible(true);
 		}
 		setTranscript("");
 		latestTranscriptRef.current = "";
 	}, []);
 
-	const stopListeningInternal = useCallback(() => {
-		if (silenceTimerRef.current) {
-			clearTimeout(silenceTimerRef.current);
-			silenceTimerRef.current = null;
-		}
-		commitPendingActions();
-		if (recognitionRef.current) {
-			try {
-				recognitionRef.current.stop();
-			} catch {
-				// ignore already stopped
-			}
-			recognitionRef.current = null;
-		}
-		setIsListening(false);
-	}, [commitPendingActions]);
-
-	const startListeningInternal = useCallback(() => {
-		if (typeof window === "undefined") return;
-
-		// Cleanup previous session
-		if (recognitionRef.current) {
-			try {
-				recognitionRef.current.abort();
-			} catch {
-				// ignore
-			}
-			recognitionRef.current = null;
-		}
-
-		// Check for Web Speech API
-		// biome-ignore lint/suspicious/noExplicitAny: standard browser vendor prefixes
-		const SpeechRecognitionConstructor = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-		if (SpeechRecognitionConstructor) {
-			try {
-				const recognizer = new SpeechRecognitionConstructor();
-				recognizer.continuous = true;
-				recognizer.interimResults = true;
-				recognizer.lang = "ru-RU";
-
-				recognizer.onresult = (event: SpeechRecognitionEventLike) => {
-					let currentInterim = "";
-					for (let i = event.resultIndex; i < event.results.length; i++) {
-						const res = event.results[i];
-						if (res?.[0]) {
-							currentInterim += res[0].transcript;
-						}
-					}
-
-					latestTranscriptRef.current = currentInterim;
-					setTranscript(currentInterim);
-					setIsHudVisible(true);
-
-					// Reset silence debounce timer
-					if (silenceTimerRef.current) {
-						clearTimeout(silenceTimerRef.current);
-					}
-					silenceTimerRef.current = setTimeout(() => {
-						commitPendingActions();
-					}, 1800);
-				};
-
-				recognizer.onerror = () => {
-					// Silent fallback on permission or speech error
-					stopListeningInternal();
-				};
-
-				recognizer.onend = () => {
-					setIsListening(false);
-				};
-
-				recognizer.start();
-				recognitionRef.current = recognizer;
-				setIsListening(true);
-				setIsHudVisible(true);
-			} catch {
-				// Mic error fallback
-				setIsListening(false);
-			}
-		} else {
-			// Mock / headless environment fallback
-			setIsListening(true);
+	const {
+		isRecording,
+		startDictation,
+		stopDictation,
+		error,
+	} = useUnifiedDictation({
+		context: "visit",
+		onInterim: (interim) => {
+			if (!interim) return;
+			latestTranscriptRef.current = interim;
+			setTranscript(interim);
 			setIsHudVisible(true);
+
+			if (silenceTimerRef.current) {
+				clearTimeout(silenceTimerRef.current);
+			}
+			silenceTimerRef.current = setTimeout(() => {
+				commitPendingActions();
+			}, 1800);
+		},
+		onResult: (finalText) => {
+			if (!finalText) return;
+			latestTranscriptRef.current = finalText;
+			setTranscript(finalText);
+			setIsHudVisible(true);
+			commitPendingActions();
+		},
+	});
+
+	// Calm error toast handling without silent failures (Red Team mandate)
+	useEffect(() => {
+		if (error) {
+			const calmMessage = voiceDictationErrorText(error);
+			showToast(calmMessage, "warning", 6000);
 		}
-	}, [commitPendingActions, stopListeningInternal]);
+	}, [error]);
 
 	const toggleListening = useCallback(
 		(force?: boolean) => {
-			const targetState = force !== undefined ? force : !isListening;
+			const targetState = force !== undefined ? force : !isRecording;
 			if (targetState) {
-				startListeningInternal();
+				void startDictation();
 			} else {
-				stopListeningInternal();
+				if (silenceTimerRef.current) {
+					clearTimeout(silenceTimerRef.current);
+					silenceTimerRef.current = null;
+				}
+				commitPendingActions();
+				void stopDictation();
 			}
 		},
-		[isListening, startListeningInternal, stopListeningInternal],
+		[isRecording, startDictation, stopDictation, commitPendingActions],
 	);
 
 	const dismissHud = useCallback(() => {
@@ -178,7 +133,7 @@ export function useVoiceChairsideSterileProtocol(): UseVoiceChairsideSterileProt
 		[commitPendingActions],
 	);
 
-	// Global Hotkeys: F8 (foot pedal switch), Alt+V / Alt+М
+	// Global Hotkeys: F8 (foot pedal switch), Alt+V / Alt+М, and dente:toggle-sterile-voice event
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
 			// F8 is standard hardware foot pedal switch
@@ -188,7 +143,7 @@ export function useVoiceChairsideSterileProtocol(): UseVoiceChairsideSterileProt
 				return;
 			}
 
-			// Alt+V or Alt+М (Russian)
+			// Alt+V or Alt+М (Russian layout support)
 			if (e.altKey && !e.ctrlKey && !e.metaKey) {
 				const key = e.key.toLowerCase();
 				if (key === "v" || key === "м" || e.code === "KeyV") {
@@ -203,26 +158,28 @@ export function useVoiceChairsideSterileProtocol(): UseVoiceChairsideSterileProt
 			}
 		};
 
+		const handleVoiceToggleEvent = (e: Event) => {
+			const force = (e as CustomEvent<{ force?: boolean }>)?.detail?.force;
+			toggleListening(force);
+		};
+
 		window.addEventListener("keydown", handleKeyDown);
+		window.addEventListener("dente:toggle-sterile-voice", handleVoiceToggleEvent);
+
 		return () => {
 			window.removeEventListener("keydown", handleKeyDown);
+			window.removeEventListener("dente:toggle-sterile-voice", handleVoiceToggleEvent);
 			if (silenceTimerRef.current) {
 				clearTimeout(silenceTimerRef.current);
-			}
-			if (recognitionRef.current) {
-				try {
-					recognitionRef.current.abort();
-				} catch {
-					// ignore
-				}
 			}
 		};
 	}, [isHudVisible, toggleListening, dismissHud]);
 
 	return {
-		isListening,
+		isListening: isRecording,
 		transcript,
 		lastActionResult,
+		errorMessage: error ? voiceDictationErrorText(error) : null,
 		isHudVisible,
 		toggleListening,
 		dismissHud,

@@ -189,14 +189,96 @@ export function parseVoiceChairsideCommand(rawText: string): SterileVoiceParseRe
 }
 
 /**
+ * Inserts recognized speech directly into the currently focused input/textarea.
+ * Ensures hands-free dictation immediately populates active diary fields (complaints, anamnesis, objective).
+ * Supports React controlled inputs by invoking native property setters and bubbling input/change events.
+ */
+export function insertTextIntoActiveInput(text: string): boolean {
+	if (typeof document === "undefined" || !text.trim()) return false;
+	const active = document.activeElement as any;
+	if (!active) return false;
+
+	const isTextArea =
+		typeof HTMLTextAreaElement !== "undefined"
+			? active instanceof HTMLTextAreaElement
+			: active.tagName === "TEXTAREA";
+
+	const isTextInput =
+		typeof HTMLInputElement !== "undefined"
+			? active instanceof HTMLInputElement && (!active.type || active.type === "text" || active.type === "search")
+			: active.tagName === "INPUT" && (!active.type || active.type === "text" || active.type === "search");
+
+	if (isTextArea || isTextInput) {
+		const start = typeof active.selectionStart === "number" ? active.selectionStart : (active.value?.length ?? 0);
+		const end = typeof active.selectionEnd === "number" ? active.selectionEnd : (active.value?.length ?? 0);
+		const val = String(active.value || "");
+		const prefix = start > 0 && !/\s$/.test(val.slice(0, start)) ? " " : "";
+		const cleanText = text.trim();
+		const nextVal = val.slice(0, start) + prefix + cleanText + val.slice(end);
+
+		// Support React controlled components via prototype value descriptor setter
+		try {
+			const proto = Object.getPrototypeOf(active);
+			const descriptor = Object.getOwnPropertyDescriptor(proto, "value");
+			if (descriptor?.set) {
+				descriptor.set.call(active, nextVal);
+			} else {
+				active.value = nextVal;
+			}
+		} catch {
+			active.value = nextVal;
+		}
+
+		const newCursor = start + prefix.length + cleanText.length;
+		if (typeof active.setSelectionRange === "function") {
+			try {
+				active.setSelectionRange(newCursor, newCursor);
+			} catch {
+				// ignore
+			}
+		}
+
+		if (typeof active.dispatchEvent === "function") {
+			try {
+				const InputEventClass = typeof Event !== "undefined" ? Event : function (this: any, type: string) { this.type = type; } as any;
+				active.dispatchEvent(new InputEventClass("input", { bubbles: true }));
+				active.dispatchEvent(new InputEventClass("change", { bubbles: true }));
+			} catch {
+				// ignore
+			}
+		}
+		return true;
+	}
+	return false;
+}
+
+/**
  * Dispatches clinical actions to the application event bus.
+ * Integrates with canonical DENTE events:
+ * - 'dente-odontogram-update' for tooth formula mutations
+ * - 'dente-apply-soap-protocol' for Form 043/u clinical diary syncing
  */
 export function dispatchSterileVoiceActions(result: SterileVoiceParseResult): boolean {
 	if (!result.hasActions || typeof window === "undefined") {
 		return false;
 	}
 
-	// 1. Dispatch teeth updates
+	// 1. Dispatch canonical odontogram event
+	if (result.teethActions.length > 0) {
+		window.dispatchEvent(
+			new CustomEvent("dente-odontogram-update", {
+				detail: {
+					states: result.teethActions.map((t) => ({
+						toothNumber: t.toothNumber,
+						state: t.state,
+						surfaces: t.surfaces,
+					})),
+				},
+			}),
+		);
+	}
+
+	// 2. Dispatch legacy tooth events for backward compatibility
 	for (const toothAction of result.teethActions) {
 		window.dispatchEvent(
 			new CustomEvent("dente:voice-tooth-update", {
@@ -205,7 +287,47 @@ export function dispatchSterileVoiceActions(result: SterileVoiceParseResult): bo
 		);
 	}
 
-	// 2. Dispatch diary updates
+	// 3. Dispatch canonical Form 043/u clinical diary event
+	const complaints = result.diaryActions
+		.filter((d) => d.section === "complaints")
+		.map((d) => d.text)
+		.join(". ");
+	const objective = result.diaryActions
+		.filter((d) => d.section === "objective")
+		.map((d) => d.text)
+		.join(". ");
+	const treatment = result.diaryActions
+		.filter((d) => d.section === "treatment")
+		.map((d) => d.text)
+		.join(". ");
+	const anesthesiaText = result.anesthesiaAction
+		? `Анестезия: ${result.anesthesiaAction.drug} — ${result.anesthesiaAction.cartridges} карп. (${result.anesthesiaAction.volumeMl.toFixed(1)} мл)`
+		: "";
+	const combinedTreatment = [anesthesiaText, treatment].filter(Boolean).join("\n");
+
+	if (complaints || objective || combinedTreatment) {
+		window.dispatchEvent(
+			new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					mode: "smart_append",
+					immediate: true,
+					complaint: complaints || undefined,
+					complaints: complaints || undefined,
+					objectiveStatus: objective || undefined,
+					statusLocalis: objective || undefined,
+					treatmentPlan: combinedTreatment || undefined,
+					treatmentDescription: combinedTreatment || undefined,
+					soap: {
+						complaint: complaints || undefined,
+						objectiveStatus: objective || undefined,
+						treatmentPlan: combinedTreatment || undefined,
+					},
+				},
+			}),
+		);
+	}
+
+	// 4. Dispatch legacy diary events for backward compatibility
 	for (const diaryAction of result.diaryActions) {
 		window.dispatchEvent(
 			new CustomEvent("dente:voice-diary-append", {
@@ -214,7 +336,7 @@ export function dispatchSterileVoiceActions(result: SterileVoiceParseResult): bo
 		);
 	}
 
-	// 3. Audible tactile feedback (Doctor's earcon)
+	// 5. Audible tactile feedback (Doctor's earcon)
 	if (result.teethActions.length > 0) {
 		playTactileEarcon("norm");
 	} else if (result.diaryActions.length > 0 || result.anesthesiaAction) {
