@@ -254,14 +254,14 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 										<span className="text-[11px] text-[var(--muted,#64748b)]">Азопирам (кровь):</span>
 										<span className="font-semibold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
 											<CheckCircle2 size={11} />
-											{isAzopyramOk ? "Отрицательно ✓" : "Положительно"}
+											{isAzopyramOk ? "Отрицательно" : "Положительно"}
 										</span>
 									</div>
 									<div className="flex flex-col">
 										<span className="text-[11px] text-[var(--muted,#64748b)]">Фенолфталеин (щелочь):</span>
 										<span className="font-semibold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
 											<CheckCircle2 size={11} />
-											{isPhenolOk ? "Отрицательно ✓" : "Положительно"}
+											{isPhenolOk ? "Отрицательно" : "Положительно"}
 										</span>
 									</div>
 								</div>
