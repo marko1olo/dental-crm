@@ -31,7 +31,7 @@ export function generateDetailedReceiptHtml(
 		)
 		.join("");
 
-	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Кассовый чек 54-ФЗ № ${invoice.invoiceNumber}</title>
+	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>Кассовый чек № ${invoice.invoiceNumber}</title>
 <style>
 @page { size: A4 portrait; margin: 15mm; }
 body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; font-size: 12px; color: #0f172a; margin: 0; padding: 20px; line-height: 1.4; }

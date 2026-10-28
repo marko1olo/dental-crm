@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/billing/DepositTopupModal.tsx
  *
- * DENTE Dental CRM — Patient Personal & Family Deposit Topup Modal (54-FZ Advance).
+ * DENTE Dental CRM — Patient Personal & Family Deposit Topup Modal (Advance).
  * Decomposed facade delegating to ./depositModal/ in strict compliance with Mandate 8b.
  * Strictly <= 120 lines.
  */

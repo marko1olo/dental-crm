@@ -129,7 +129,7 @@ export async function registerCashboxRefundRoutes(app: FastifyInstance): Promise
 					amountRub,
 					balanceBeforeRub: balanceBefore,
 					balanceAfterRub: balanceAfter,
-					reasonText: reasonText || "Возврат денежных средств покупателю (54-ФЗ)",
+					reasonText: reasonText || "Возврат денежных средств покупателю",
 					operatorId: operatorId ?? null,
 				})
 				.returning();

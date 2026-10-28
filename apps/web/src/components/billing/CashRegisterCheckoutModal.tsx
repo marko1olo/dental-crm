@@ -2,7 +2,7 @@
  * apps/web/src/components/billing/CashRegisterCheckoutModal.tsx
  *
  * Single Source of Truth (SSOT) Compatibility Facade:
- * Canonical 54-FZ checkout modal delegating directly to PaymentModal.
+ * Canonical checkout modal delegating directly to PaymentModal.
  *
  * Governed by:
  * - Mandate 8za (Anti-Duplicates SSOT): Single Source of Truth is PaymentModal.

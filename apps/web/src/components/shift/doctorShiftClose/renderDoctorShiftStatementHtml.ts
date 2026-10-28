@@ -71,11 +71,11 @@ body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-
 <tr><td>Списание с лицевых депозитов пациентов</td><td class="num">${depositRub.toLocaleString("ru-RU")} ₽</td></tr>
 <tr style="background: #f8fafc; font-weight: bold;"><td>Итого сданная касса:</td><td class="num">${effectiveTotalCashRub.toLocaleString("ru-RU")} ₽</td></tr>
 </tbody></table>
-<h3>3. Сверка кассы 54-ФЗ и фискальные реквизиты</h3>
+<h3>3. Сверка кассы и фискальные реквизиты</h3>
 <table class="table"><thead><tr><th>Реквизит / Параметр</th><th style="width: 220px; text-align: right;">Значение</th></tr></thead><tbody>
 <tr><td>Кассовый аппарат (ККТ)</td><td class="num">${cashboxName}</td></tr>
 <tr><td>Фискальный Z-отчёт с гашением</td><td class="num">${fiscalDocNumber}</td></tr>
-<tr><td>Реквизиты фискализации (54-ФЗ)</td><td class="num">ФД: 00042 • ФПД: 3829104812 • ФН: 996044030</td></tr>
+<tr><td>Реквизиты фискализации</td><td class="num">ФД: 00042 • ФПД: 3829104812 • ФН: 996044030</td></tr>
 <tr><td>Учётный остаток наличных (по чекам)</td><td class="num">${cashRub.toLocaleString("ru-RU")} ₽</td></tr>
 <tr><td>Фактический остаток наличных (в ящике)</td><td class="num">${countedCashRub.toLocaleString("ru-RU")} ₽</td></tr>
 <tr style="background: #f8fafc; font-weight: bold;"><td>Расхождение кассы:</td><td class="num" style="color: ${isCashBalanced ? "#15803d" : "#b91c1c"};">${cashDifferenceRub.toLocaleString("ru-RU")} ₽ (${isCashBalanced ? "Сверено без расхождений" : "Расхождение"})</td></tr>

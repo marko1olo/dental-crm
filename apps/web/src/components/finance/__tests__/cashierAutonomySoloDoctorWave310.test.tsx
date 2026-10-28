@@ -242,7 +242,7 @@ describe("Wave 310: UI Rendering & Button State Autonomy (Mandates 8e, 8n)", () 
 
 		// Badge confirming INN is not required for physical persons
 		assert.ok(html.includes('data-testid="inn-physical-not-required-badge"'), "Must render non-required badge");
-		assert.ok(html.includes("По 54-ФЗ для физлиц не требуется"));
+		assert.ok(html.toLowerCase().includes("для физлиц не требуется") || html.includes("Для пациентов-физлиц ИНН не требуется"));
 
 		// Physical INN input is rendered with placeholder stating it is not required
 		assert.ok(html.includes('data-testid="input-buyer-inn-physical"'));

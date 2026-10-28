@@ -29,10 +29,10 @@ export function MarketingSourcesCardsGrid({ metrics, onSyncWithCrm }: MarketingS
 						type="button"
 						onClick={onSyncWithCrm}
 						className="secondary-button h-8 min-h-[32px] px-2.5 rounded-lg text-xs font-semibold inline-flex items-center gap-1"
-						title="Пересчитать выручку по чекам 54-ФЗ"
+						title="Пересчитать выручку по кассовым чекам"
 					>
 						<RefreshCw size={12} />
-						<span>Сверить с чеками 54-ФЗ</span>
+						<span>Сверить с кассовыми чеками</span>
 					</button>
 				)}
 			</div>

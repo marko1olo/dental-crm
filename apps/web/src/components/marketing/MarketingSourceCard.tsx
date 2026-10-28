@@ -38,7 +38,7 @@ export function MarketingSourceCard({ metric }: MarketingSourceCardProps) {
 			</div>
 
 			<div className="my-1">
-				<span className="text-[10.5px] uppercase font-bold text-[var(--muted)] block">Выручка по чекам 54-ФЗ</span>
+				<span className="text-[10.5px] uppercase font-bold text-[var(--muted)] block">Выручка по кассовым чекам</span>
 				<strong className="marketing-source-card-revenue">{revRub} ₽</strong>
 			</div>
 

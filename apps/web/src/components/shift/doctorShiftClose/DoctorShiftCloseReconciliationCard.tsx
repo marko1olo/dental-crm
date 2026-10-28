@@ -138,7 +138,7 @@ export const DoctorShiftCloseReconciliationCard: React.FC<DoctorShiftCloseReconc
 						onChange={(e) => onSetPrintZReport(e.target.checked)}
 						className="rounded border-[var(--line,#cbd5e1)] text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] w-4 h-4"
 					/>
-					<span>Снять фискальный Z-отчёт с гашением (54-ФЗ)</span>
+					<span>Снять Z-отчёт с закрытием смены</span>
 				</label>
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[var(--ink,#0f172a)] font-medium">
 					<input

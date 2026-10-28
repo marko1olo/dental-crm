@@ -196,13 +196,14 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           <button
             type="button"
             onClick={() => state.setActiveTab("add_new")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] flex items-center gap-1.5 whitespace-nowrap ml-auto ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[36px] flex items-center gap-1.5 whitespace-nowrap ml-auto shrink-0 ${
               state.activeTab === "add_new"
                 ? "bg-[var(--teal,#0d9488)] text-white shadow-sm"
                 : "bg-[var(--paper-subtle,#f1f5f9)] text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
             }`}
           >
-            <span>+ Добавить пациента</span>
+            <span className="hidden sm:inline">+ Добавить пациента</span>
+            <span className="sm:hidden">+ Запись</span>
           </button>
         </div>
 

@@ -47,7 +47,7 @@ export const FastCheckoutPayerTypePanel: React.FC<
 							className="inline mr-1 shrink-0 text-[var(--teal)]"
 						/>
 						Для пациентов-физлиц ИНН не требуется{" "}
-						<span className="sr-only">По 54-ФЗ для физлиц не требуется (ИНН не требуется для физических лиц)</span>
+						<span className="sr-only">Для физических лиц ИНН не требуется</span>
 					</span>
 				)}
 			</div>

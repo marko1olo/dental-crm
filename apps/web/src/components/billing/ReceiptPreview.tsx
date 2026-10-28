@@ -1,9 +1,9 @@
 /**
- * ReceiptPreview.tsx — 54-FZ Thermal Receipt & Printable Sales Slip (80mm Tape & A4).
+ * ReceiptPreview.tsx — Thermal Receipt & Printable Sales Slip (80mm Tape & A4).
  * Decomposed into ./receiptPreview/ in strict compliance with Mandate 8b (<= 120 lines facade).
  *
  * Governed by:
- * - 54-ФЗ (ФФД 1.2): requisites, VAT exemption, FNS verification QR code.
+ * - Cash & Fiscal standards: mandatory requisites, VAT exemption, FNS verification QR code.
  * - Mandate 8d pt 4: WCAG AAA contrast, deep black on white tape in both Light and Dark themes.
  * - Mandate 8e: Doctor & Cashier autonomy (instant 1-click printing, zero blocker dialogs).
  */
