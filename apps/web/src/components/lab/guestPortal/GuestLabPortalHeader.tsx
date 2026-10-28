@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Beaker, User } from "lucide-react";
 import type { LabOrderData } from "./guestPortalTypes.js";
 import { getLabPortalStatusLabel, renderLabPortalStatusIcon } from "./guestPortalTypes.js";

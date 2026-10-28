@@ -30,6 +30,10 @@
 }
 
 @media (max-width: 768px) {
+	.ztl-desktop-only-btn {
+		display: none !important;
+	}
+
 	.ztl-hub-backdrop,
 	.ztl-modal-overlay {
 		padding: 0;
@@ -61,5 +65,39 @@
 		overflow-x: auto;
 		-webkit-overflow-scrolling: touch;
 		padding-bottom: max(16px, env(safe-area-inset-bottom));
+	}
+
+	/* Полноразмерные вертикальные поля фильтров ЗТЛ без обрезания placeholder */
+	.ztl-filter-bar {
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: stretch !important;
+		height: auto !important;
+		min-height: auto !important;
+		max-height: none !important;
+		padding: 10px 14px !important;
+		gap: 8px !important;
+		overflow-x: visible !important;
+	}
+
+	.ztl-search-input-wrap {
+		width: 100% !important;
+		max-width: 100% !important;
+		min-width: 0 !important;
+		flex: none !important;
+	}
+
+	.ztl-search-input {
+		width: 100% !important;
+		height: 44px !important;
+		min-height: 44px !important;
+		font-size: 13px !important;
+	}
+
+	.ztl-select {
+		width: 100% !important;
+		height: 44px !important;
+		min-height: 44px !important;
+		font-size: 13px !important;
 	}
 }

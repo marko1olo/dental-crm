@@ -50,7 +50,7 @@ export function DentalLabOrderDrawer(props: DentalLabOrderDrawerProps) {
 
 	const drawerContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex justify-end max-sm:items-end bg-black/60 backdrop-blur-xs transition-opacity"
+			className="fixed inset-0 z-[99999] flex justify-end max-sm:items-end bg-black/60 transition-opacity"
 			role="dialog"
 			aria-modal="true"
 			data-testid="dental-lab-work-order-modal"

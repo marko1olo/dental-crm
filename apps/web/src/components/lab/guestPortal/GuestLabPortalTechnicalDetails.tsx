@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CheckCircle2, Clock } from "lucide-react";
 import type { LabOrderData } from "./guestPortalTypes.js";
 import { MATERIAL_LABELS } from "../guestLabPortalHelpers.js";

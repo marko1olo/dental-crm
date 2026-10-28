@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Box, Download, ExternalLink, Image as ImageIcon } from "lucide-react";
 import {
 	getAttachmentExtension,

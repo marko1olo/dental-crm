@@ -79,15 +79,16 @@ export const SanPinJournalToolbarFilters: React.FC<SanPinJournalToolbarFiltersPr
 				</select>
 			</div>
 
-			<div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-				<div style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
-					<Search size={14} style={{ position: "absolute", left: 10, color: "var(--muted, #64748b)" }} />
+			<div className="w-full sm:w-auto" style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+				<div className="w-full sm:w-auto" style={{ position: "relative", display: "inline-flex", alignItems: "center" }}>
+					<Search size={14} style={{ position: "absolute", left: 12, color: "var(--muted, #64748b)", pointerEvents: "none" }} />
 					<input
 						type="text"
 						placeholder="Поиск по набору или партии..."
 						value={searchQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
-						style={{ height: 32, paddingLeft: 30, paddingRight: 10, borderRadius: 8, border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)", fontSize: "0.8125rem", color: "var(--ink, #1e293b)", width: 230 }}
+						className="w-full sm:w-56"
+						style={{ height: 36, paddingLeft: 40, paddingRight: 10, borderRadius: 8, border: "1px solid var(--line, #cbd5e1)", background: "var(--paper, #fff)", fontSize: "0.8125rem", color: "var(--ink, #1e293b)" }}
 					/>
 				</div>
 			</div>

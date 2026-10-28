@@ -55,12 +55,16 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 			</select>
 		</div>
 
-		<div className="flex items-center gap-2 flex-wrap">
+		<div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
 			<div className="relative inline-flex items-center w-full sm:w-auto">
-				<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none" />
+				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none" />
 				<input
-					type="text" placeholder="Поиск по набору или партии..." value={searchQuery} onChange={(e) => onSearchChange(e.target.value)}
-					className="h-8 pl-8 pr-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-xs text-[var(--ink,#1e293b)] w-full sm:w-52 focus:outline-none"
+					type="text"
+					placeholder="Поиск по набору или партии..."
+					value={searchQuery}
+					onChange={(e) => onSearchChange(e.target.value)}
+					className="h-9 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-xs text-[var(--ink,#1e293b)] w-full sm:w-52 focus:outline-none"
+					style={{ paddingLeft: 36, paddingRight: 10 }}
 				/>
 			</div>
 			{onQuickBatchNorm && (

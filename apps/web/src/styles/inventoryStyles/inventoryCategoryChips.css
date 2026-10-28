@@ -1,20 +1,24 @@
 /* inventoryCategoryChips.css - Horizontal Category Chips Scroller (Mandate 8b <= 120 lines) */
 
 .mobile-inventory-chips-scroller {
-	display: flex;
+	display: flex !important;
+	flex-direction: row !important;
+	flex-wrap: nowrap !important;
 	align-items: center;
 	gap: 6px;
-	overflow-x: auto;
+	overflow-x: auto !important;
 	overscroll-behavior-x: contain;
 	-webkit-overflow-scrolling: touch;
-	scrollbar-width: none;
+	scrollbar-width: none !important;
 	padding: 8px 16px 8px 14px;
 	margin: 0;
 	background: var(--paper);
+	width: 100%;
+	box-sizing: border-box;
 }
 
 .mobile-inventory-chips-scroller::-webkit-scrollbar {
-	display: none;
+	display: none !important;
 }
 
 .mobile-inventory-chip {
@@ -31,12 +35,20 @@
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	white-space: nowrap;
-	flex-shrink: 0;
+	white-space: nowrap !important;
+	flex-shrink: 0 !important;
 	cursor: pointer;
 	transition: all 0.15s ease;
 	user-select: none;
 	-webkit-tap-highlight-color: transparent;
+	overflow: visible !important;
+	text-overflow: clip !important;
+}
+
+.mobile-inventory-chip span {
+	white-space: nowrap !important;
+	overflow: visible !important;
+	text-overflow: clip !important;
 }
 
 .mobile-inventory-chip:active {
@@ -58,6 +70,7 @@
 	padding: 1px 6px;
 	border-radius: 9999px;
 	line-height: 1.2;
+	flex-shrink: 0 !important;
 }
 
 .mobile-inventory-chip.active .mobile-inventory-chip-count {

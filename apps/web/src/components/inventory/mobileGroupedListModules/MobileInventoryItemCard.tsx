@@ -100,11 +100,11 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 				disabled={isDeducting}
 				onClick={(e) => onQuickDeduct(e, item)}
 				aria-label={`Списать 1 единицу ${item.name}`}
-				title={`Списать 1 ${item.unit || "шт."} прямо у кресла`}
+				title={`Быстро списать 1 ${item.unit || "шт."} прямо у кресла`}
 				data-testid={`btn-quick-deduct-${item.id}`}
 			>
-				<Minus size={15} aria-hidden="true" />
-				<span>1</span>
+				<Minus size={13} aria-hidden="true" className="shrink-0 text-rose-500" />
+				<span className="font-bold text-xs whitespace-nowrap">−1 {item.unit || "шт."}</span>
 			</button>
 		</div>
 	);

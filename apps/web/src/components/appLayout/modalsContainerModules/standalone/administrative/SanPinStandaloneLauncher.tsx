@@ -26,7 +26,7 @@ export function renderSanPinStandaloneLauncher(): React.ReactElement | null {
 
 	return (
 		<div
-			className="fixed inset-0 z-[1000] flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] overflow-y-auto"
+			className="fixed inset-0 z-[99999] [isolation:isolate] flex flex-col bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] overflow-y-auto"
 			data-testid="sanpin-standalone-view"
 		>
 			<SanPinJournalView initialTab={initialTab} />

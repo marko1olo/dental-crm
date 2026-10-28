@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CheckCircle2, Clock, RefreshCcw, Truck } from "lucide-react";
 
 export interface GuestLabPortalStatusActionsProps {

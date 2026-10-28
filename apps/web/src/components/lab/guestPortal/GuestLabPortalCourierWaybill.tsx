@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { FileText, Printer, Truck } from "lucide-react";
 import type { LabOrderData } from "./guestPortalTypes.js";
 import { getLabPortalStatusLabel } from "./guestPortalTypes.js";

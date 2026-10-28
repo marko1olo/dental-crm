@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Camera } from "lucide-react";
 
 export interface GuestLabPortalPhotoUploadProps {

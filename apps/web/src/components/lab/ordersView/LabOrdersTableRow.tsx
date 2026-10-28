@@ -38,12 +38,12 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 			data-testid={`lab-order-table-row-${order.id}`}
 			onClick={() => { if (order.id) onSelectTimelineOrder(order.id); }}
 		>
-			<td className="px-2.5 py-1.5 whitespace-nowrap align-middle">
+			<td className="px-2.5 py-1.5 whitespace-nowrap align-middle w-[80px]">
 				<span className="font-mono font-bold text-[11px] text-teal-600 dark:text-teal-400">{num}</span>
 			</td>
-			<td className="px-2.5 py-1.5 whitespace-nowrap align-middle">
-				<div className="flex items-center gap-1.5 flex-wrap">
-					<span className="font-bold text-xs text-[var(--ink)]" title={order.patientName}>{order.patientName || "Пациент"}</span>
+			<td className="px-2.5 py-1.5 whitespace-nowrap align-middle w-[150px]">
+				<div className="flex items-center gap-1.5 flex-nowrap">
+					<span className="font-bold text-xs text-[var(--ink)] truncate max-w-[130px]" title={order.patientName}>{order.patientName || "Пациент"}</span>
 					{order.stageNumber ? (
 						<span className="px-1.5 py-0.5 rounded text-[10px] font-semibold bg-sky-50 dark:bg-sky-950/60 text-sky-700 dark:text-sky-300 border border-sky-200 dark:border-sky-800 shrink-0">
 							Этап {order.stageNumber}
@@ -51,18 +51,18 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 					) : null}
 				</div>
 			</td>
-			<td className="px-2 py-1.5 whitespace-nowrap align-middle text-center">
+			<td className="px-2 py-1.5 whitespace-nowrap align-middle text-center w-[80px]">
 				<span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 dark:bg-slate-800 border border-[var(--line)] font-mono">
 					{order.toothFdi ? `№ ${order.toothFdi}` : "Челюсть"}
 				</span>
 			</td>
-			<td className="px-2.5 py-1.5 align-middle">
-				<div className="flex flex-col min-w-[160px] max-w-[340px] break-words">
-					<span className="font-semibold text-xs text-[var(--ink)] leading-snug whitespace-normal break-words" title={`${order.constructionType || ""} ${displayMaterial}`}>{title}</span>
-					{showMaterial && <span className="text-[10px] text-[var(--muted)] leading-tight whitespace-normal break-words">{displayMaterial}</span>}
+			<td className="px-2.5 py-1.5 align-middle w-[195px]">
+				<div className="flex flex-col min-w-[130px] max-w-[200px]">
+					<span className="font-semibold text-xs text-[var(--ink)] leading-snug truncate" title={`${order.constructionType || ""} ${displayMaterial}`}>{title}</span>
+					{showMaterial && <span className="text-[10px] text-[var(--muted)] leading-tight truncate" title={displayMaterial}>{displayMaterial}</span>}
 				</div>
 			</td>
-			<td className="px-2.5 py-0 whitespace-nowrap align-middle">
+			<td className="px-2.5 py-0 whitespace-nowrap align-middle w-[50px]">
 				{order.colorVita ? (
 					<span className="inline-flex items-center gap-1 font-bold text-[11px]">
 						<span className="w-2.5 h-2.5 rounded-full border border-black/20 shrink-0" style={{ backgroundColor: swatchBg }} />
@@ -70,9 +70,9 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 					</span>
 				) : <span className="text-[var(--muted)] text-[11px]">—</span>}
 			</td>
-			<td className="px-2.5 py-0 whitespace-nowrap align-middle">{getStatusBadge(order.status)}</td>
-			<td className="px-2.5 py-0 whitespace-nowrap align-middle">{renderLabDueBadge(order)}</td>
-			<td className="px-2.5 py-0 whitespace-nowrap align-middle font-mono font-bold text-xs text-right">
+			<td className="px-2.5 py-0 whitespace-nowrap align-middle w-[130px]">{getStatusBadge(order.status)}</td>
+			<td className="px-2.5 py-0 whitespace-nowrap align-middle w-[125px]">{renderLabDueBadge(order)}</td>
+			<td className="px-2.5 py-0 whitespace-nowrap align-middle font-mono font-bold text-xs text-right w-[85px]">
 				{isWarranty ? (
 					<span className="text-emerald-600 dark:text-emerald-400 font-bold" title="Гарантийная рекламация: 0 ₽ для пациента">0 ₽ (Гарантия)</span>
 				) : order.priceRub != null ? (
@@ -86,7 +86,7 @@ export function LabOrdersTableRow(props: LabOrdersTableRowProps): React.JSX.Elem
 					</div>
 				) : "—"}
 			</td>
-			<td className="px-3 py-0 whitespace-nowrap align-middle text-left min-w-[190px]" onClick={(e) => e.stopPropagation()}>
+			<td className="px-3 py-0 whitespace-nowrap align-middle text-left w-[210px]" onClick={(e) => e.stopPropagation()}>
 				<LabOrdersTableRowButtons
 					order={order} openMenuOrderId={openMenuOrderId} setOpenMenuOrderId={setOpenMenuOrderId}
 					onOpenReadyInClinicPrompt={onOpenReadyInClinicPrompt} onOpenPrintOrder={onOpenPrintOrder}

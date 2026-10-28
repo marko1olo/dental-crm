@@ -10,6 +10,10 @@ export interface MobileInventoryHeaderBarProps {
 	readonly onOpenMdlpScanning?: (() => void) | undefined;
 }
 
+/**
+ * Шапка мобильного склада (Мандаты 8b, 8am, 8ze <= 120 строк).
+ * Аккуратные компактные бейджи «МДЛП» и «Поз: X» рядом с заголовком.
+ */
 export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> = ({
 	totalCount,
 	lowStockCount,
@@ -26,29 +30,32 @@ export const MobileInventoryHeaderBar: React.FC<MobileInventoryHeaderBarProps> =
 					<h1 className="mobile-inventory-title-text">Склад материалов</h1>
 				</div>
 
-				<div className="flex items-center gap-2">
+				<div className="flex items-center gap-1.5 shrink-0">
 					{onOpenMdlpScanning && (
 						<button
 							type="button"
 							onClick={onOpenMdlpScanning}
-							className="mobile-inventory-kpi-badge cursor-pointer"
+							className="mobile-inventory-kpi-badge cursor-pointer hover:border-[var(--teal)] transition-colors active:scale-95"
 							data-testid="mobile-header-btn-mdlp"
 							title="Маркированные медикаменты МДЛП и Честный Знак"
 						>
 							МДЛП
 						</button>
 					)}
-					{lowStockCount > 0 ? (
+					<span
+						className="mobile-inventory-kpi-badge"
+						data-testid="mobile-inventory-total-badge"
+						title="Всего номенклатурных позиций на складе"
+					>
+						Поз: {totalCount}
+					</span>
+					{lowStockCount > 0 && (
 						<span
 							className="mobile-inventory-kpi-badge has-shortage"
 							title="Критический дефицит материалов"
 							data-testid="mobile-inventory-deficit-badge"
 						>
 							Дефицит: {lowStockCount}
-						</span>
-					) : (
-						<span className="mobile-inventory-kpi-badge">
-							Поз: {totalCount}
 						</span>
 					)}
 				</div>

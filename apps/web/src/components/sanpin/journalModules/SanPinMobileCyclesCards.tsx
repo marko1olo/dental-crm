@@ -38,7 +38,8 @@ export const SanPinMobileCyclesCards: React.FC<SanPinMobileCyclesCardsProps> = (
 								onAutofillShift();
 							}}
 							aria-busy={isAutofilling}
-							className="h-11 min-h-[44px] w-full rounded-xl font-semibold bg-[var(--teal,#0d9488)] text-white shadow-xs px-4 text-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+							className="h-11 min-h-[44px] w-full font-semibold text-white px-4 text-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation transition-all"
+							style={{ border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.25)", background: "var(--teal, #0d9488)", color: "#ffffff", borderRadius: 12 }}
 						>
 							<CheckCircle2 size={16} />
 							<span>{isAutofilling ? "Заполнение..." : "Заполнить смену по нормам"}</span>

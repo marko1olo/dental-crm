@@ -12,7 +12,7 @@ export interface DentalLabDrawerBodyProps {
 
 export function DentalLabDrawerBody({ form }: DentalLabDrawerBodyProps) {
 	return (
-		<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4">
+		<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-5 space-y-4 pb-[calc(90px+env(safe-area-inset-bottom,0px))]">
 			<DentalLabDrawerGeneralSection
 				formPatientName={form.patientName}
 				setFormPatientName={form.setPatientName}

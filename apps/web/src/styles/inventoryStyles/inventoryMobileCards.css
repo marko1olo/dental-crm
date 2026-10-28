@@ -2,6 +2,7 @@
 
 .mobile-inventory-grouped-inset {
 	margin: 12px;
+	margin-bottom: calc(84px + env(safe-area-inset-bottom, 0px));
 	background: var(--paper);
 	border: 1px solid var(--line);
 	border-radius: 16px;
