@@ -19,8 +19,8 @@ export const PaymentHeroDominant: React.FC<PaymentHeroDominantProps> = ({
 			<div className="text-[11px] font-bold uppercase tracking-wider text-[var(--muted,#64748b)]">
 				Сумма к оплате
 			</div>
-			<div className="payment-hero-amount text-3xl sm:text-4xl font-black font-mono tracking-tight text-[var(--ink,#0f172a)] my-0.5" data-testid="mobile-hero-amount">
-				{discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽
+			<div className="payment-hero-amount text-[34px] sm:text-[38px] font-bold font-mono tracking-tight text-[var(--ink,#0f172a)] my-0.5" data-testid="mobile-hero-amount">
+				<span data-testid="display-total-amount-due">{discountsHook.totalDueRub.toLocaleString("ru-RU")} ₽</span>
 			</div>
 			{discountsHook.discountRub > 0 && (
 				<div className="flex items-center justify-center gap-1.5 text-xs">

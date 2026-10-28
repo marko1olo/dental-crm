@@ -29,9 +29,9 @@
 
 @media (max-width: 768px) {
 	.payment-pos-tile {
-		min-height: 44px;
-		height: 44px;
-		border-radius: 10px;
+		min-height: 48px !important;
+		height: 48px !important;
+		border-radius: 12px !important;
 	}
 }
 

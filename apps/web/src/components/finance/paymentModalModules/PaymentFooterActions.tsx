@@ -38,11 +38,20 @@ export const PaymentFooterActions: React.FC<PaymentFooterActionsProps> = (props)
 			</div>
 
 			<div className="flex items-center gap-2 w-full sm:w-auto">
-				{/* Secondary Action: Cancel */}
+				{/* Secondary Action: Defer / Cancel */}
 				<button
 					type="button"
 					onClick={onClose}
-					className="payment-footer-cancel-btn min-h-[44px] md:min-h-[36px] md:h-9 px-4 rounded-xl hidden sm:inline-flex items-center justify-center cursor-pointer"
+					className="payment-footer-cancel-btn min-h-[44px] md:min-h-[36px] md:h-9 px-3.5 rounded-xl hidden sm:inline-flex items-center justify-center cursor-pointer border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--line,#cbd5e1)] transition-colors"
+					data-testid="btn-payment-defer"
+					title="Отложить оформление чека без отмены визита"
+				>
+					Отложить
+				</button>
+				<button
+					type="button"
+					onClick={onClose}
+					className="payment-footer-cancel-btn min-h-[44px] md:min-h-[36px] md:h-9 px-4 rounded-xl hidden sm:inline-flex items-center justify-center cursor-pointer border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] hover:bg-[var(--line,#cbd5e1)] transition-colors"
 				>
 					Отмена
 				</button>

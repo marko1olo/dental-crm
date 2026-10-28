@@ -7,6 +7,7 @@
 
 export * from "./cashShift/index.js";
 export * from "./PaymentModal.js";
+export * from "./PaymentFiscalModal.js";
 export * from "./FastCheckoutModal.js";
 export * from "./CashReceiptModal.js";
 export * from "./ServiceReceiptPrintDocument.js";

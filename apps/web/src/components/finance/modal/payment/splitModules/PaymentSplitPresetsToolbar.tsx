@@ -123,6 +123,31 @@ export const PaymentSplitPresetsToolbar: React.FC<PaymentSplitPresetsToolbarProp
 				<span>Всё наличными</span>
 			</button>
 
+			{(patientDepositRub > 0 || patientFamilyBalanceRub > 0) && (
+				<button
+					type="button"
+					onClick={() => {
+						const effectiveDeposit = Math.max(0, patientDepositRub + patientFamilyBalanceRub);
+						const totalKop = rubToKopecks(totalDueRub);
+						const depKop = Math.min(totalKop, rubToKopecks(effectiveDeposit));
+						const remKop = Math.max(0, totalKop - depKop);
+						setSplitDepositRub(kopecksToRub(depKop));
+						setSplitCardRub(kopecksToRub(remKop));
+						setSplitCashRub(0);
+						setSplitSbpRub(0);
+						setSplitCertificateRub(0);
+						setSplitBonusRub(0);
+						setSplitDmsRub?.(0);
+					}}
+					className="split-remainder-chip bg-teal-50 dark:bg-teal-950/40 border-teal-500/30 text-teal-700 dark:text-teal-300 font-bold"
+					data-testid="btn-preset-deposit-rest-card"
+					title="Списать аванс/семейный кошелек, а остаток перевести на карту"
+				>
+					<Zap size={12} className="text-teal-600 dark:text-teal-400" />
+					<span>Аванс ({Math.min(totalDueRub, patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽) + Карта</span>
+				</button>
+			)}
+
 			{availableDmsCoverageRub !== undefined && availableDmsCoverageRub > 0 && (
 				<>
 					<button
@@ -189,28 +214,6 @@ export const PaymentSplitPresetsToolbar: React.FC<PaymentSplitPresetsToolbarProp
 				>
 					<span>Округлить сотни</span>
 				</button>
-				{patientDepositRub > 0 && (
-					<button
-						type="button"
-						onClick={() => {
-							const totalKop = rubToKopecks(totalDueRub);
-							const depKop = Math.min(totalKop, rubToKopecks(patientDepositRub));
-							const remKop = Math.max(0, totalKop - depKop);
-							setSplitDepositRub(kopecksToRub(depKop));
-							setSplitCardRub(kopecksToRub(remKop));
-							setSplitCashRub(0);
-							setSplitSbpRub(0);
-							setSplitCertificateRub(0);
-							setSplitBonusRub(0);
-							setSplitDmsRub?.(0);
-						}}
-						className="split-remainder-chip"
-						data-testid="btn-preset-deposit-rest-card"
-					>
-						<Zap size={12} className="text-teal-600 dark:text-teal-400" />
-						<span>Аванс ({Math.min(totalDueRub, patientDepositRub)} ₽) + Карта</span>
-					</button>
-				)}
 				<button
 					type="button"
 					onClick={() => applySplitRemainder("card")}

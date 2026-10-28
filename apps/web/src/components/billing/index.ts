@@ -12,6 +12,7 @@ export * from "./installmentsEngine.js";
 export * from "./PatientInstallmentsModal.js";
 export * from "./RetailProductsModal.js";
 export * from "./PaymentModal.js";
+export * from "./PaymentFiscalModal.js";
 export * from "./ReceiptPreview.js";
 export * from "./CashRegisterDrawer.js";
 export * from "./CashRegisterCheckoutModal.js";

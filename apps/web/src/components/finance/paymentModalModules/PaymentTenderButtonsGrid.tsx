@@ -32,63 +32,58 @@ export const PaymentTenderButtonsGrid: React.FC<PaymentFooterActionsProps> = ({
 					rawTotalRub: rawTotalDueRub, discountReason: discountsHook.discountReason || "Гарантия 100%",
 				});
 				onClose();
-			}} className="payment-footer-submit-btn btn-warranty min-h-[44px] md:min-h-[36px] md:h-9 px-4 rounded-xl w-full sm:w-auto" data-testid="btn-payment-close-warranty-zero">
-				<CheckCircle size={16} /><span>Закрыть визит: Гарантия 100% (0 ₽)</span>
+			}} className="payment-footer-submit-btn btn-warranty min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-payment-close-warranty-zero">
+				<CheckCircle size={16} /><span>Оформить гарантийный чек (0 ₽)</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "cash") {
 		return (
-			<button type="button" onClick={execHook.handleCashSubmit} disabled={execHook.isSubmittingCash} title="Принять оплату (Enter)" className="payment-footer-submit-btn btn-cash min-h-[44px] md:min-h-[36px] md:h-9 px-5 rounded-xl w-full sm:w-auto" data-testid="btn-cash-submit-footer">
+			<button type="button" onClick={execHook.handleCashSubmit} disabled={execHook.isSubmittingCash} title="Оплатить и напечатать чек (Enter)" className="payment-footer-submit-btn btn-cash min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-cash-submit-footer">
 				<span data-testid="btn-cash-submit" className="sr-only">Принять наличные</span>
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить наличными — {formattedDue} ₽</span>
-				<span className="hidden sm:inline">Принять оплату — {formattedDue} ₽</span>
-				<span className="sm:hidden">Принять оплату {formattedDue} ₽</span>
+				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "sbp_qr") {
 		return (
-			<button type="button" onClick={execHook.handleConfirmSbpManual} disabled={tendersHook.isCheckingSbp} title="Принять оплату через СБП" className="payment-footer-submit-btn btn-sbp min-h-[44px] md:min-h-[36px] md:h-9 px-5 rounded-xl w-full sm:w-auto" data-testid="btn-sbp-submit-footer">
+			<button type="button" onClick={execHook.handleConfirmSbpManual} disabled={tendersHook.isCheckingSbp} title="Оплатить и напечатать чек через СБП" className="payment-footer-submit-btn btn-sbp min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-sbp-submit-footer">
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить через СБП ({formattedDue} ₽)</span>
-				<span className="hidden sm:inline">Принять оплату — {formattedDue} ₽ (СБП)</span>
-				<span className="sm:hidden">Принять оплату {formattedDue} ₽ (СБП)</span>
+				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "split") {
 		return (
-			<button type="button" onClick={execHook.handleSplitSubmit} disabled={execHook.isSubmittingSplit} title="Принять оплату (сплит)" className="payment-footer-submit-btn btn-split min-h-[44px] md:min-h-[36px] md:h-9 px-5 rounded-xl w-full sm:w-auto" data-testid="btn-split-submit-footer">
+			<button type="button" onClick={execHook.handleSplitSubmit} disabled={execHook.isSubmittingSplit} title="Оплатить и напечатать чек (сплит)" className="payment-footer-submit-btn btn-split min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-split-submit-footer">
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить сплит ({formattedDue} ₽)</span>
-				<span className="hidden sm:inline">Принять оплату — {formattedDue} ₽ (сплит)</span>
-				<span className="sm:hidden">Принять оплату {formattedDue} ₽ (сплит)</span>
+				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "family_deposit") {
 		return (
-			<button type="button" onClick={() => execHook.handleDepositOrPartialCombo("deposit")} disabled={execHook.isSubmittingDeposit} title="Принять оплату (аванс)" className="payment-footer-submit-btn btn-deposit min-h-[44px] md:min-h-[36px] md:h-9 px-5 rounded-xl w-full sm:w-auto" data-testid="btn-deposit-submit-footer">
+			<button type="button" onClick={() => execHook.handleDepositOrPartialCombo("deposit")} disabled={execHook.isSubmittingDeposit} title="Оплатить и напечатать чек с депозита" className="payment-footer-submit-btn btn-deposit min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-deposit-submit-footer">
 				{srReceiptAnchor}<Wallet size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить с депозита ({formattedDue} ₽)</span>
-				<span className="hidden sm:inline">Принять оплату — {formattedDue} ₽ (аванс)</span>
-				<span className="sm:hidden">Принять оплату {formattedDue} ₽ (аванс)</span>
+				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	return (
-		<button type="button" onClick={() => execHook.handleManualCardTerminalConfirm()} disabled={execHook.isSubmittingManualCard} title="Принять оплату (Enter)" className="payment-footer-submit-btn btn-card min-h-[44px] md:min-h-[36px] md:h-9 px-5 rounded-xl w-full sm:w-auto" data-testid="btn-card-submit-footer">
+		<button type="button" onClick={() => execHook.handleManualCardTerminalConfirm()} disabled={execHook.isSubmittingManualCard} title="Оплатить и напечатать чек картой (Enter)" className="payment-footer-submit-btn btn-card min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-card-submit-footer">
 			{srReceiptAnchor}<CreditCard size={16} className="shrink-0" />
 			<span className="sr-only">Оплатить картой — {formattedDue} ₽</span>
-			<span className="hidden sm:inline">Принять оплату — {formattedDue} ₽</span>
-			<span className="sm:hidden">Принять оплату {formattedDue} ₽</span>
+			<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
 		</button>
 	);
 };

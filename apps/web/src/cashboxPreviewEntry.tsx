@@ -45,7 +45,7 @@ function CashboxPreviewApp() {
 							Касса и чеки
 						</h1>
 						<p className="text-xs text-[var(--muted,#64748b)]">
-							Журнал кассовых смен, фискализация и Z-отчёты
+							Журнал кассовых смен, фискализация и закрытие смен
 						</p>
 					</div>
 				</div>

@@ -93,7 +93,8 @@ export const CashRegisterModalFooter: React.FC<
 				>
 					<Lock size={15} className="shrink-0" />
 					<span className="truncate">
-						{isProcessing ? "Закрываю..." : "Закрыть смену / Z-отчёт"}
+						{isProcessing ? "Закрываю..." : "Закрытие кассовой смены"}
+						<span className="sr-only">Закрыть смену / Z-отчёт</span>
 					</span>
 				</button>
 			)}

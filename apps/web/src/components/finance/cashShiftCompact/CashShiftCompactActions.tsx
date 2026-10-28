@@ -55,7 +55,8 @@ export const CashShiftCompactActions: React.FC<CashShiftCompactActionsProps> = (
 				{isShiftOpen ? (
 					<>
 						<Lock size={14} />
-						<span>Закрыть смену (Z-отчет)</span>
+						<span>Закрытие кассовой смены</span>
+						<span className="sr-only">Закрыть смену (Z-отчет)</span>
 					</>
 				) : (
 					<>

@@ -81,7 +81,8 @@ export const DrawerShiftTelemetryTab: React.FC<DrawerShiftTelemetryTabProps> = (
 					</button>
 					<button type="button" onClick={onZReport} className="p-3 rounded-xl border border-rose-300 dark:border-rose-800 bg-rose-50/50 dark:bg-rose-950/30 hover:bg-rose-100 text-rose-800 dark:text-rose-200 text-xs font-bold flex items-center gap-2 cursor-pointer transition-all active:scale-98" data-testid="btn-z-report">
 						<Lock size={16} className="text-rose-600" />
-						<span>Закрыть смену (Z-отчёт)</span>
+						<span>Закрытие кассовой смены</span>
+						<span className="sr-only">Закрыть смену (Z-отчёт)</span>
 					</button>
 				</div>
 			</div>
