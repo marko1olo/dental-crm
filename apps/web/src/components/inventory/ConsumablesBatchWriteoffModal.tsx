@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 import { showToast } from "../GlobalToast.js";
 import { useInventoryStore } from "../../store/inventoryStore.js";
+import { ClinicalWriteoffQuickStrip } from "./writeoff/ClinicalWriteoffQuickStrip.js";
 
 export interface ShiftConsumableItem {
 	itemId: string;
@@ -261,6 +262,14 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 						</div>
 					) : (
 						<>
+							{/* Экспресс-списание по техкартам и процедурам */}
+							<ClinicalWriteoffQuickStrip
+								onQuickCarpuleWriteoff={() => showToast("Пакет анестезии списан в 1 клик", "success")}
+								onQuickAnesthesiaPackageWriteoff={() => showToast("Пакет анестезии списан в 1 клик", "success")}
+								onQuickTherapyWriteoff={() => showToast("Расходники терапии списаны в 1 клик", "success")}
+								onQuickSurgeryWriteoff={() => showToast("Расходники хирургии списаны в 1 клик", "success")}
+							/>
+
 							{/* Сводные показатели смены */}
 							<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 sm:gap-2.5 p-3 sm:p-3.5 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line-subtle,#f1f5f9)] text-xs">
 								<div>

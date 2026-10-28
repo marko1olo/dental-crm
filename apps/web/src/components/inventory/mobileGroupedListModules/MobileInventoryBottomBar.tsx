@@ -24,7 +24,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 				data-testid="mobile-btn-inbound-batch"
 				aria-label="Оприходовать партию материалов"
 			>
-				<Plus size={20} aria-hidden="true" />
+				<Plus size={18} aria-hidden="true" />
 				<span>Приход</span>
 			</button>
 
@@ -37,7 +37,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 					aria-label="Маркировка и Честный Знак"
 					data-testid="mobile-btn-mdlp-trigger"
 				>
-					<QrCode size={18} aria-hidden="true" />
+					<QrCode size={16} aria-hidden="true" />
 					<span>Скан</span>
 				</button>
 			)}
@@ -51,7 +51,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 					aria-label="Списать смену"
 					data-testid="mobile-btn-shift-deduction"
 				>
-					<PackageCheck size={18} aria-hidden="true" />
+					<PackageCheck size={16} aria-hidden="true" />
 					<span>Смена</span>
 				</button>
 			)}
@@ -65,7 +65,7 @@ export const MobileInventoryBottomBar: React.FC<MobileInventoryBottomBarProps> =
 					aria-label="Открыть накладные"
 					data-testid="mobile-btn-waybills"
 				>
-					<ArrowDownToLine size={18} aria-hidden="true" />
+					<ArrowDownToLine size={16} aria-hidden="true" />
 					<span>Накладные</span>
 				</button>
 			)}
