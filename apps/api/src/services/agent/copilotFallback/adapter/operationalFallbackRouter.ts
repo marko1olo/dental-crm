@@ -14,6 +14,92 @@ import {
 } from "./tokenStreamEmitter.js";
 
 /**
+ * Детерминированный разбор даты, времени и клинической причины визита
+ */
+function parseBookingDetails(text: string, lower: string) {
+	const targetDate = new Date();
+	if (lower.includes("послезавтра")) {
+		targetDate.setDate(targetDate.getDate() + 2);
+	} else if (lower.includes("завтра")) {
+		targetDate.setDate(targetDate.getDate() + 1);
+	} else {
+		const daysMap: Record<string, number> = {
+			"понедельник": 1,
+			"вторник": 2,
+			"среду": 3,
+			"среда": 3,
+			"четверг": 4,
+			"пятницу": 5,
+			"пятница": 5,
+			"субботу": 6,
+			"суббота": 6,
+			"воскресенье": 0,
+		};
+		for (const [dayName, dayNum] of Object.entries(daysMap)) {
+			if (lower.includes(dayName)) {
+				const currentDay = targetDate.getDay();
+				let diff = dayNum - currentDay;
+				if (diff <= 0) diff += 7;
+				targetDate.setDate(targetDate.getDate() + diff);
+				break;
+			}
+		}
+	}
+
+	let hours = 10;
+	let minutes = 0;
+	const timeMatch =
+		lower.match(/(?:в|на)\s*(\d{1,2})(?::(\d{2})|[-.](\d{2})|\s*(?:часов|час|утра|дня|вечера))?/i) ||
+		lower.match(/(\d{1,2}):(\d{2})/);
+	if (timeMatch) {
+		const parsedHours = parseInt(timeMatch[1], 10);
+		const parsedMinutes = parseInt(timeMatch[2] || timeMatch[3] || "0", 10);
+		if (parsedHours >= 0 && parsedHours <= 23) {
+			hours = parsedHours;
+			minutes = parsedMinutes >= 0 && parsedMinutes <= 59 ? parsedMinutes : 0;
+		}
+	} else if (lower.includes("после обеда") || lower.includes("вечером")) {
+		hours = 16;
+	} else if (lower.includes("утром")) {
+		hours = 10;
+	}
+
+	targetDate.setHours(hours, minutes, 0, 0);
+
+	let reason = "Консультация и лечение";
+	let durationMinutes = 30;
+
+	if (lower.includes("гигиен") || lower.includes("чистк") || lower.includes("airflow")) {
+		reason = "Профессиональная гигиена полости рта";
+		durationMinutes = 60;
+	} else if (lower.includes("удален") || lower.includes("вырвать")) {
+		reason = "Хирургический приём: удаление зуба";
+		durationMinutes = 40;
+	} else if (lower.includes("пульпит") || lower.includes("канал") || lower.includes("периодонтит")) {
+		reason = "Эндодонтическое лечение корневых каналов";
+		durationMinutes = 60;
+	} else if (lower.includes("кариес") || lower.includes("пломб") || lower.includes("реставрац")) {
+		reason = "Терапевтическое лечение кариеса и реставрация";
+		durationMinutes = 45;
+	} else if (lower.includes("коронк") || lower.includes("слепок") || lower.includes("протез") || lower.includes("ортопед")) {
+		reason = "Ортопедический приём и протезирование";
+		durationMinutes = 45;
+	} else if (lower.includes("имплант")) {
+		reason = "Хирургическая имплантация";
+		durationMinutes = 60;
+	} else if (lower.includes("консультац") || lower.includes("осмотр")) {
+		reason = "Первичная консультация и клинический осмотр";
+		durationMinutes = 30;
+	}
+
+	return {
+		startsAt: targetDate.toISOString(),
+		durationMinutes,
+		reason,
+	};
+}
+
+/**
  * Attempts to route operational & scheduling commands. Returns an async generator if matched, or null.
  */
 export async function* tryRouteOperationalFallback(
@@ -49,13 +135,12 @@ export async function* tryRouteOperationalFallback(
 		lower.includes("перенести запись") ||
 		lower.includes("перенос приема")
 	) {
-		const nextDay = new Date(Date.now() + 24 * 60 * 60 * 1000);
-		nextDay.setHours(14, 0, 0, 0);
+		const booking = parseBookingDetails(userText, lower);
 		yield emitToolUse(
 			"crm.reschedule_appointment",
 			{
 				appointmentId: "app_pending_reschedule",
-				newStartsAt: nextDay.toISOString(),
+				newStartsAt: booking.startsAt,
 				reason: userText,
 			},
 			"call_resched_app",
@@ -71,16 +156,15 @@ export async function* tryRouteOperationalFallback(
 		lower.includes("создай запись") ||
 		lower.includes("назначь прием")
 	) {
-		const tomorrow = new Date(Date.now() + 24 * 60 * 60 * 1000);
-		tomorrow.setHours(10, 0, 0, 0);
+		const booking = parseBookingDetails(userText, lower);
 		yield emitToolUse(
 			"crm.book_appointment",
 			{
 				patientId: contextPatientId,
 				doctorUserId: "00000000-0000-7000-8000-000000000002",
-				startsAt: tomorrow.toISOString(),
-				durationMinutes: 45,
-				reason: "Плановое лечение кариеса",
+				startsAt: booking.startsAt,
+				durationMinutes: booking.durationMinutes,
+				reason: booking.reason,
 			},
 			"call_book_app",
 		);
