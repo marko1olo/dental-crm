@@ -240,7 +240,10 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 								</span>
 							)}
 							{isCito && (
-								<span className="px-1 py-0.2 rounded text-[10px] font-black bg-rose-600 text-white shrink-0 shadow-2xs animate-pulse">
+								<span
+									className="px-1 py-0.2 rounded text-[10px] font-black bg-rose-600 text-white shrink-0 shadow-2xs animate-pulse"
+									data-testid="appointment-cito-overbooking-badge"
+								>
 									CITO
 								</span>
 							)}

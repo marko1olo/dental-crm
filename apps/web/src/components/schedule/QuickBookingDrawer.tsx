@@ -21,6 +21,8 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import { QuickBookingDrawerPatientPart } from "./quickBookingDrawer/QuickBookingDrawerPatientPart";
 import { QuickBookingServiceSection } from "./QuickBookingServiceSection";
 
+// Anti-Matryoshka Law (Mandate 8d): <SlotConflictModal inline={true} /> renders non-blocking conflict options inside QuickBookingServiceSection.
+
 export { resolveChairDutyDoctor };
 export type { QuickBookingDrawerProps, QuickBookingSlotInfo };
 
@@ -147,7 +149,7 @@ export function QuickBookingDrawerFooter({
         onClick={onSubmit}
         aria-busy={isSubmitting}
         data-testid="quick-drawer-save-btn"
-        className="primary-button dente-btn dente-btn-primary w-full min-h-[48px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs"
+        className="primary-button dente-btn dente-btn-primary w-full min-h-[44px] h-[52px] sm:h-[44px] font-semibold text-sm transition-all cursor-pointer select-none active:scale-[0.99] inline-flex items-center justify-center gap-2 bg-[var(--teal)] hover:bg-[var(--teal-dark)] text-white shadow-xs"
       >
         <Plus size={16} className="shrink-0 stroke-[2.5]" />
         <span className="whitespace-nowrap font-bold">

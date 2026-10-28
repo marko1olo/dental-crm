@@ -130,9 +130,9 @@ export function SterilizationBatchCycleModal({
 				className="w-full sm:max-w-lg max-h-[92dvh] overflow-y-auto rounded-t-3xl sm:rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col text-[var(--ink,#1e293b)] animate-in slide-in-from-bottom-4 duration-200"
 				onClick={(e) => e.stopPropagation()}
 			>
-				{/* Тактильный хэндл для смартфонов */}
+				{/* Тактильный хэндл для смартфонов (Apple HIG 36x5px) */}
 				<div className="flex sm:hidden justify-center pt-2.5 pb-1" aria-hidden="true">
-					<div className="w-10 h-1.5 rounded-full bg-[var(--line,#cbd5e1)] opacity-60" />
+					<div className="w-[36px] h-[5px] rounded-full bg-[var(--line,#cbd5e1)] opacity-70" />
 				</div>
 
 				{/* Шапка модалки */}
@@ -176,14 +176,17 @@ export function SterilizationBatchCycleModal({
 								setAutoclaveId(val);
 								if (val === "АК-01") {
 									setDeviceName("Основной автоклав клиники (Melag Vacuklav 23 B+)");
+								} else if (val === "АК-02") {
+									setDeviceName("Автоклав W&H Lina 17 (17 л)");
 								} else {
-									setDeviceName("Резервный автоклав (Woson Tanzo Touch 23L)");
+									setDeviceName("Стерилизатор Касимов ГП-40 СПУ (40 л)");
 								}
 							}}
 							className="h-10 px-3 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-xs text-[var(--ink,#1e293b)] font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 						>
 							<option value="АК-01">АК-01 — Основной автоклав клиники (Melag Vacuklav 23 B+)</option>
-							<option value="АК-02">АК-02 — Резервный автоклав (Woson Tanzo Touch 23L)</option>
+							<option value="АК-02">АК-02 — Автоклав W&H Lina 17 (17 л)</option>
+							<option value="АК-03">АК-03 — Стерилизатор Касимов ГП-40 СПУ (40 л)</option>
 						</select>
 					</div>
 

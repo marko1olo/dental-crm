@@ -28,15 +28,27 @@ describe("Schedule Modals & Appointment Monolith Decomposition Suite (/decompose
       "components/schedule/appointmentModalModules",
     );
     assert.ok(fs.existsSync(dir), "appointmentModalModules dir must exist");
-    const files = fs.readdirSync(dir);
+    const getAllFiles = (d: string): string[] => {
+      const results: string[] = [];
+      for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+        const full = path.join(d, entry.name);
+        if (entry.isDirectory()) {
+          results.push(...getAllFiles(full));
+        } else if (entry.isFile() && /\.(tsx?|jsx?)$/.test(entry.name)) {
+          results.push(full);
+        }
+      }
+      return results;
+    };
+    const files = getAllFiles(dir);
     assert.ok(files.length >= 4, "Must contain all decomposed modules");
 
-    for (const file of files) {
-      const fullPath = path.join(dir, file);
+    for (const fullPath of files) {
+      const rel = path.relative(dir, fullPath).replace(/\\/g, "/");
       const lines = fs.readFileSync(fullPath, "utf8").split(/\r?\n/).length;
       assert.ok(
         lines <= 500,
-        `Module appointmentModalModules/${file} must be <= 500 lines, got ${lines}`,
+        `Module appointmentModalModules/${rel} must be <= 500 lines, got ${lines}`,
       );
     }
   });

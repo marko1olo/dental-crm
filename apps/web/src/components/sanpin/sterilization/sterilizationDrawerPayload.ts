@@ -31,9 +31,11 @@ export function buildSterilizationCyclePayload({
 	const selectedDev = clinicDevices.find((d) => d.id === deviceId);
 	const deviceName =
 		selectedDev?.brandModelRu ||
-		(deviceId === "АК-02"
-			? "W&H Lisa 17 (Класс B)"
-			: "Melag Vacuklav 23 B+ (Класс B)");
+		(deviceId === "АК-03"
+			? "Касимов ГП-40 СПУ (Сухожаровой стерилизатор)"
+			: deviceId === "АК-02"
+				? "W&H Lina 17 (Класс B)"
+				: "Melag Vacuklav 23 B+ (Класс B)");
 
 	return {
 		deviceName,

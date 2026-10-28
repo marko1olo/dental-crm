@@ -52,7 +52,8 @@ export function SterilizationDrawerParams({
 								<option value="АК-01">
 									АК-01 — Melag Vacuklav 23 B+ (22 л)
 								</option>
-								<option value="АК-02">АК-02 — W&H Lisa 17 (17 л)</option>
+								<option value="АК-02">АК-02 — W&H Lina 17 (17 л)</option>
+								<option value="АК-03">АК-03 — Касимов ГП-40 СПУ (40 л)</option>
 							</>
 						)}
 					</select>

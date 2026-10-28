@@ -23,21 +23,18 @@ export function extractTeethList(appointment?: Appointment | null): string[] {
 }
 
 /**
- * Formats full patient FIO into a readable, non-truncated medical card string.
+ * Formats full patient FIO into a readable, non-truncated medical card string:
+ * "Кузнецов Петр Сергеевич" -> "Кузнецов Петр С."
+ * "Иванов Иван" -> "Иванов Иван"
  */
 export function formatPatientDisplayFio(name: string | null | undefined): string {
 	if (!name || !name.trim()) return "Пациент";
 	const parts = name.trim().split(/\s+/);
 	if (parts.length >= 3) {
 		const lastName = parts[0];
-		const firstInitial = parts[1]?.charAt(0);
+		const firstName = parts[1];
 		const middleInitial = parts[2]?.charAt(0);
-		return `${lastName} ${firstInitial ? `${firstInitial}.` : ""}${middleInitial ? `${middleInitial}.` : ""}`.trim();
-	}
-	if (parts.length === 2) {
-		const lastName = parts[0];
-		const firstInitial = parts[1]?.charAt(0);
-		return `${lastName} ${firstInitial ? `${firstInitial}.` : ""}`.trim();
+		return `${lastName} ${firstName} ${middleInitial ? `${middleInitial}.` : ""}`.trim();
 	}
 	return name.trim();
 }

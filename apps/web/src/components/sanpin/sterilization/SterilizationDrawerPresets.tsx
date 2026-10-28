@@ -42,10 +42,10 @@ export function SterilizationDrawerPresets({
 									<IconCmp size={18} />
 								</div>
 								<div className="flex flex-col min-w-0">
-									<span className="text-sm font-bold text-[var(--ink,#0f172a)] truncate">
+									<span className="text-sm font-bold text-[var(--ink,#0f172a)] leading-tight">
 										{preset.title}
 									</span>
-									<span className="text-xs text-[var(--muted,#64748b)] truncate">
+									<span className="text-xs text-[var(--muted,#64748b)] leading-snug">
 										{preset.subtitle}
 									</span>
 								</div>

@@ -325,11 +325,13 @@ async function main() {
 		await setTheme(pcPage, "light");
 		await dismissTourElements(pcPage);
 		await saveProof(pcPage, "01_sanpin_autoclave_pc_light.png");
+		await saveProof(pcPage, "01_sanpin_journal_pc_light_1440x900.png");
 		await saveProof(pcPage, "pc_light_sanpin_autoclave_1440x900.png");
 
 		await setTheme(pcPage, "dark");
 		await dismissTourElements(pcPage);
 		await saveProof(pcPage, "02_sanpin_autoclave_pc_dark.png");
+		await saveProof(pcPage, "02_sanpin_journal_pc_dark_1440x900.png");
 		await saveProof(pcPage, "pc_dark_sanpin_autoclave_1440x900.png");
 
 		// 1.2 PSO PC Light & Dark
@@ -384,8 +386,24 @@ async function main() {
 		await saveProof(mobPage, "03_sanpin_autoclave_mobile_light.png");
 		await saveProof(mobPage, "mobile_light_sanpin_autoclave_390x844.png");
 
+		// Open mobile cycle drawer (Bottom Sheet) and capture
+		console.log("--- [CYCLE DRAWER] Opening mobile cycle drawer ---");
+		const ctaBtn = mobPage.locator('[data-testid="sanpin-mobile-start-cycle-cta"]');
+		await ctaBtn.waitFor({ state: "visible", timeout: 15000 });
+		await ctaBtn.click({ force: true });
+		await mobPage.waitForSelector('[data-testid="sterilization-cycle-drawer"]', { state: "visible", timeout: 15000 });
+		await mobPage.waitForTimeout(800);
+		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "03_sanpin_cycle_mobile_light_390x844.png");
+
 		await setTheme(mobPage, "dark");
 		await dismissTourElements(mobPage);
+		await saveProof(mobPage, "04_sanpin_cycle_mobile_dark_390x844.png");
+
+		// Close drawer for subsequent tabs
+		await mobPage.keyboard.press("Escape").catch(() => {});
+		await mobPage.waitForTimeout(400);
+
 		await saveProof(mobPage, "04_sanpin_mobile_dark.png");
 		await saveProof(mobPage, "04_sanpin_autoclave_mobile_dark.png");
 		await saveProof(mobPage, "mobile_dark_sanpin_autoclave_390x844.png");

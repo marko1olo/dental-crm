@@ -60,7 +60,7 @@ export function SterilizationCycleDrawer({
 					className="flex sm:hidden justify-center pt-2.5 pb-1"
 					aria-hidden="true"
 				>
-					<div className="w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)] opacity-70" />
+					<div className="w-[36px] h-[5px] rounded-full bg-[var(--line,#cbd5e1)] opacity-70" />
 				</div>
 
 				<div className="flex items-center justify-between px-5 py-3.5 border-b border-[var(--line,#e2e8f0)] dark:border-[#334155]">
