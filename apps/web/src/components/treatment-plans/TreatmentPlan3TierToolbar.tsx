@@ -46,7 +46,7 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] shadow-2xs max-w-full overflow-x-clip">
 			<ToolbarTitleBadge />
 
-			<div className="flex items-center gap-1.5 flex-wrap max-w-full py-0.5">
+			<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none max-w-full py-0.5">
 				<ToolbarPaymentModeSelector
 					activePaymentMode={activePaymentMode}
 					onPaymentModeChange={onPaymentModeChange}

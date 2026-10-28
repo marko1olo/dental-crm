@@ -217,32 +217,19 @@ export const SberPayIntegration: React.FC<SberPayIntegrationProps> = ({
 
 	return (
 		<div className="sberpay-integration-widget p-4 rounded-2xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] space-y-4">
-			{/* Unconfigured Notice (Mandate 8y Production Integrity) */}
+			{/* Unconfigured Notice (Mandate 8y Production Integrity, compact passive row) */}
 			{!isConfigured && (
 				<div
-					className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2.5 text-xs"
+					className="p-2.5 sm:p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-900 dark:text-amber-200 flex items-center gap-2 text-xs"
 					data-testid="sberpay-unconfigured-notice"
 				>
-					<div className="flex items-start gap-2">
-						<AlertCircle size={16} className="text-amber-600 shrink-0 mt-0.5" />
-						<div>
-							<p className="font-bold">Терминал Сбербанк POS не настроен</p>
-							<p className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
-								В промышленном контуре необходимо указать параметры эквайринга в разделе «Настройки клиники → Оборудование».
-							</p>
-						</div>
+					<AlertCircle size={15} className="text-amber-600 shrink-0" />
+					<div className="flex-1 min-w-0">
+						<span className="font-semibold">Терминал Сбербанк POS не настроен</span>
+						<span className="text-[11px] text-[var(--muted,#64748b)] ml-1.5 hidden sm:inline">
+							• Укажите параметры эквайринга в разделе «Настройки клиники → Оборудование».
+						</span>
 					</div>
-					{onSelectAlternativeMethod && (
-						<div className="flex items-center gap-2 shrink-0">
-							<button
-								type="button"
-								onClick={() => onSelectAlternativeMethod("cash")}
-								className="min-h-[36px] px-3 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs cursor-pointer transition-colors"
-							>
-								Оплата в кассу
-							</button>
-						</div>
-					)}
 				</div>
 			)}
 

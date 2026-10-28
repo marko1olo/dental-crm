@@ -20,8 +20,7 @@ export const TreatmentPlan3TierMobileThumbBar: React.FC<TreatmentPlan3TierMobile
 }) => {
 	return (
 		<div
-			className="sm:hidden fixed left-0 right-0 z-40 px-4 py-2.5 bg-[var(--paper-strong,var(--paper,#ffffff))]/95 backdrop-blur-xl border-t border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex items-center justify-between gap-3"
-			style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}
+			className="sm:hidden fixed left-0 right-0 bottom-0 z-40 px-4 py-3 pb-[max(14px,calc(12px+env(safe-area-inset-bottom,0px)))] bg-[var(--paper-strong,var(--paper,#ffffff))] backdrop-blur-2xl border-t border-[var(--line,var(--border,#cbd5e1))] shadow-2xl flex items-center justify-between gap-3"
 			data-testid="treatment-mobile-floating-thumb-bar"
 		>
 			<div className="flex flex-col min-w-0 flex-1">

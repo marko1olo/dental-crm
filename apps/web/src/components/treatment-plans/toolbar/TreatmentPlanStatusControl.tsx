@@ -14,9 +14,9 @@ export const TreatmentPlanStatusControl: React.FC<TreatmentPlanStatusControlProp
 	planAgeDays,
 }) => {
 	return (
-		<div className="flex items-center gap-1.5 shrink-0" data-testid="treatment-plan-status-pill">
+		<div className="flex items-center gap-1.5 shrink-0 max-w-full overflow-x-auto scrollbar-none" data-testid="treatment-plan-status-pill">
 			<div
-				className="tp-segmented-bar shrink-0"
+				className="tp-segmented-bar shrink-0 flex-nowrap"
 				role="group"
 				aria-label="Статус плана лечения"
 				data-testid="treatment-plan-status-control"

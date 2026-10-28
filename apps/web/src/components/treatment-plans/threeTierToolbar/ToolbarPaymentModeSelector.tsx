@@ -11,7 +11,7 @@ export const ToolbarPaymentModeSelector: React.FC<ToolbarPaymentModeSelectorProp
 }) => {
 	return (
 		<div
-			className="tp-segmented-bar shrink-0"
+			className="tp-segmented-bar shrink-0 flex-nowrap overflow-x-auto scrollbar-none"
 			role="group"
 			aria-label="Режим расчета оплаты"
 		>

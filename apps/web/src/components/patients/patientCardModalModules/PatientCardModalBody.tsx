@@ -36,7 +36,7 @@ export const PatientCardModalBody: React.FC<PatientCardModalBodyProps> = ({
 	dashboard, visits,
 }) => {
 	return (
-		<div className="p-3 sm:p-5 overflow-y-auto flex-1">
+		<div className="p-3 sm:p-5 pb-[calc(100px+env(safe-area-inset-bottom,0px))] sm:pb-5 overflow-y-auto flex-1">
 			{activeTab === "finance" ? (
 				<PatientFinanceTab
 					patient={patientData}

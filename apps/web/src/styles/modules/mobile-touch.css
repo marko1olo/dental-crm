@@ -211,3 +211,10 @@ summary,
 	}
 }
 
+/* ── 6. Canonical Touch Responsive Visibility Utilities (Apple HIG / Mandate 8ze) ── */
+@media (max-width: 640px) {
+	.mobile-hide {
+		display: none !important;
+	}
+}
+

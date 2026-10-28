@@ -33,7 +33,7 @@ export const TreatmentPlanTierCard: React.FC<TreatmentPlanTierCardProps> = ({
 			<div
 				className={
 					isMobile
-						? "space-y-2.5 my-2"
+						? "space-y-2.5 my-2 pb-[calc(100px+env(safe-area-inset-bottom,0px))]"
 						: "flex-1 overflow-y-auto min-h-0 pr-1 space-y-2 sm:space-y-2.5 my-2 overscroll-contain"
 				}
 			>

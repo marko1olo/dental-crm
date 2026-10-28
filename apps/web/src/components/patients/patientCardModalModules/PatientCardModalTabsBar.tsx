@@ -12,7 +12,7 @@ interface PatientCardModalTabsBarProps {
 const TABS = [
 	{ id: "general", testId: "tab-patient-general", label: "Паспортные данные", Icon: FileText },
 	{ id: "anamnesis", testId: "tab-patient-anamnesis", label: "Анамнез", Icon: HeartPulse },
-	{ id: "visits", testId: "tab-patient-visits", label: "Визиты", Icon: History },
+	{ id: "visits", testId: "tab-patient-visits", label: "Визиты и файлы", Icon: History },
 	{ id: "finance", testId: "tab-patient-finance", label: "Счета и баланс", Icon: Wallet },
 	{ id: "radiology", testId: "tab-patient-radiology", label: "Снимки и КТ", Icon: Scan },
 	{ id: "formula", testId: "tab-patient-formula", label: "Формула", Icon: ToothMolar },
@@ -26,8 +26,8 @@ export const PatientCardModalTabsBar: React.FC<PatientCardModalTabsBarProps> = (
 	onSelectTab,
 	onApplyNorm,
 }) => (
-	<div className="flex items-center justify-between px-3.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto gap-2 scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
-		<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+	<div className="flex items-center gap-1.5 sm:gap-2 px-2.5 sm:px-4 py-2 border-b border-[var(--glass-border)] bg-[var(--paper-strong)] flex-nowrap overflow-x-auto scrollbar-none [scrollbar-width:none] [&::-webkit-scrollbar]:hidden scroll-smooth print:hidden">
+		<div className="flex items-center gap-1 sm:gap-2 shrink-0">
 			{TABS.map((tab) => {
 				const isActive = activeTab === tab.id;
 				const Icon = tab.Icon;
@@ -36,7 +36,7 @@ export const PatientCardModalTabsBar: React.FC<PatientCardModalTabsBarProps> = (
 						key={tab.id}
 						type="button"
 						data-testid={tab.testId}
-						className={`min-h-[44px] sm:min-h-[32px] h-8 px-3 text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0 whitespace-nowrap select-none ${
+						className={`min-h-[44px] sm:min-h-[32px] h-8 px-2 sm:px-3 text-[11px] sm:text-xs font-semibold rounded-lg transition-colors cursor-pointer inline-flex items-center gap-1 sm:gap-1.5 shrink-0 whitespace-nowrap select-none ${
 							isActive
 								? "border border-[var(--teal)] bg-[var(--teal)] text-[var(--on-teal,white)] shadow-xs font-bold"
 								: "border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal)] shadow-2xs font-semibold"
@@ -53,7 +53,7 @@ export const PatientCardModalTabsBar: React.FC<PatientCardModalTabsBarProps> = (
 		<button
 			type="button"
 			data-testid="btn-somatic-healthy-norm"
-			className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none"
+			className="border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2 sm:px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors min-h-[44px] sm:min-h-[32px] h-8 text-xs inline-flex items-center gap-1 sm:gap-1.5 cursor-pointer active:scale-98 shrink-0 whitespace-nowrap select-none ml-auto"
 			onClick={onApplyNorm}
 			title="Зафиксировать физиологическую норму: соматически здоров"
 		>

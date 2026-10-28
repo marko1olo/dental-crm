@@ -86,7 +86,7 @@ export const PaymentPosTiles: React.FC<PaymentPosTilesProps> = ({
 						<div className="font-semibold text-xs text-[var(--ink,#0f172a)] truncate">
 							{patientDepositRub > 0 || patientFamilyBalanceRub > 0
 								? `Аванс (${(patientDepositRub + patientFamilyBalanceRub).toLocaleString("ru-RU")} ₽)`
-								: "Семейный депозит / Баланс"}
+								: "Депозит семьи"}
 						</div>
 					</div>
 				</span>
