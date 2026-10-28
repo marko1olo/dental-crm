@@ -138,23 +138,39 @@ export const QUICK_CHAIRSIDE_SERVICES = [
   { code804n: "A16.07.051", title: "Профессиональная гигиена Air-Flow", shortTitle: "Профгигиена Air-Flow", priceRub: 4000 },
 ];
 
-export const TOOTH_STATUS_OPTIONS = [
-  { id: "Healthy", label: "Здоров (Интактен)", desc: "Без патологий" },
-  { id: "Caries", label: "Кариес", desc: "Поражение твердых тканей" },
-  { id: "Defective_Restoration", label: "Дефект пломбы (Дп)", desc: "Краевая проницаемость / скол" },
-  { id: "Filled", label: "Пломба", desc: "Ранее леченый зуб" },
-  { id: "Pulpitis", label: "Пульпит", desc: "Воспаление сосудисто-нервного пучка" },
-  { id: "Periodontitis", label: "Периодонтит", desc: "Периапикальный очаг" },
-  { id: "Root_Canal_Treated", label: "Каналы лечены (Кл)", desc: "Эндодонтическая обтурация" },
-  { id: "Root", label: "Корень (R)", desc: "Разрушение коронки >80%" },
-  { id: "Crown", label: "Коронка", desc: "Искусственная ортопедическая коронка" },
-  { id: "Bridge", label: "Мост / Понтик (И)", desc: "Промежуточная часть моста" },
-  { id: "Veneer", label: "Винир (В)", desc: "Керамическая накладка" },
-  { id: "Inlay", label: "Вкладка (ВК)", desc: "Микропротезирование inlay/onlay" },
-  { id: "Implant", label: "Имплантат", desc: "Дентальный имплантат с абатментом" },
-  { id: "Missing", label: "Удален (Отсутствует)", desc: "Дефект зубного ряда" },
-  { id: "Calculus", label: "Зубной камень (Зк)", desc: "Твердые зубные отложения" },
-];
+export interface ToothStatusOptionItem {
+  id: string;
+  label: string;
+  desc: string;
+  category: "therapy" | "endo" | "orthopedics" | "surgery";
+}
+
+export const TOOTH_STATUS_OPTIONS: readonly ToothStatusOptionItem[] = [
+  // 1. Терапия и гигиена
+  { id: "Healthy", label: "Здоров (Интактен)", desc: "Физиологическая норма без патологий", category: "therapy" },
+  { id: "Caries", label: "Кариес (C)", desc: "Поражение твердых тканей эмали и дентина", category: "therapy" },
+  { id: "Defective_Restoration", label: "Дефект пломбы (Дп)", desc: "Краевая проницаемость, вторичный кариес / скол", category: "therapy" },
+  { id: "Filled", label: "Пломба (П)", desc: "Анатомическая реставрация твердых тканей", category: "therapy" },
+  { id: "Calculus", label: "Зубной камень (Зк)", desc: "Минерализованные над/поддесневые отложения", category: "therapy" },
+
+  // 2. Эндодонтия и корни
+  { id: "Pulpitis", label: "Пульпит (P)", desc: "Воспаление сосудисто-нервного пучка зуба", category: "endo" },
+  { id: "Periodontitis", label: "Периодонтит (Pt)", desc: "Периапикальный очаг деструкции костной ткани", category: "endo" },
+  { id: "Root_Canal_Treated", label: "Каналы лечены (Кл)", desc: "Эндодонтическая обтурация корневых каналов", category: "endo" },
+  { id: "Root", label: "Корень (R)", desc: "Разрушение коронковой части зуба >80%", category: "endo" },
+
+  // 3. Ортопедия и микропротезирование
+  { id: "Crown", label: "Коронка (К)", desc: "Искусственная ортопедическая коронка", category: "orthopedics" },
+  { id: "Bridge", label: "Мост / Понтик (И)", desc: "Промежуточная искусственная часть мостовидного протеза", category: "orthopedics" },
+  { id: "Veneer", label: "Винир (В)", desc: "Керамическая эстетическая накладка", category: "orthopedics" },
+  { id: "Inlay", label: "Вкладка (ВК)", desc: "Микропротезирование керамической вкладкой inlay/onlay", category: "orthopedics" },
+
+  // 4. Хирургия и дентальная имплантация
+  { id: "Implant", label: "Имплантат (Им)", desc: "Установленный дентальный имплантат с абатментом", category: "surgery" },
+  { id: "Planned_Implant", label: "Имплант в плане", desc: "Запланированная дентальная имплантация", category: "surgery" },
+  { id: "Missing", label: "Удален (0)", desc: "Отсутствующий зуб, дефект зубного ряда", category: "surgery" },
+  { id: "Retained", label: "Ретинированный (Р)", desc: "Непрорезавшийся зуб в костной ткани челюсти", category: "surgery" },
+] as const;
 
 export const PAYMENT_METHOD_OPTIONS = [
   { id: "sbp", label: "СБП (QR-код)", desc: "Комиссия 0.4%, мгновенный чек" },

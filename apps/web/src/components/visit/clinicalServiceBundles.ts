@@ -63,7 +63,7 @@ export function resolveClinicalServiceBundlesAgainstCatalog(
 					id: `${bundle.id}_${svc.code804n}`,
 					code804n: svc.code804n,
 					title: svc.title,
-					defaultPriceKopecks: Math.round(svc.priceRub * 100),
+					defaultPriceKopecks: svc.priceKopecks ?? Math.round(svc.priceRub * 100),
 					defaultPriceRub: svc.priceRub,
 					requiredByDefault: true,
 					category: "Терапия",
@@ -75,12 +75,14 @@ export function resolveClinicalServiceBundlesAgainstCatalog(
 				code804n: svc.code804n,
 				title: resolved.fromCatalog ? resolved.title : svc.title,
 				priceRub: resolved.priceRub,
+				priceKopecks: resolved.priceKopecks,
 			};
 		});
 
 		return {
 			...bundle,
 			totalPriceRub: Math.round(totalKopecks) / 100,
+			totalPriceKopecks: Math.round(totalKopecks),
 			services: resolvedServices,
 		};
 	});

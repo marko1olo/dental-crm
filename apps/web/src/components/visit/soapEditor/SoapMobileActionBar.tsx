@@ -1,5 +1,5 @@
 import { Check, Edit3, Eye, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { playTactileEarcon } from "../../../lib/intercomSound";
 
 export interface SoapMobileActionBarProps {

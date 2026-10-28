@@ -8,8 +8,8 @@ import type { FastifyInstance } from "fastify";
 import { registerDoctorEarningsHandlers } from "./doctorEarnings/index.js";
 
 export * from "./doctorEarnings/types.js";
-export * from "./doctorEarnings/sampleEarningsAdapter.js";
 export * from "./doctorEarnings/liveEarningsCalculator.js";
+
 
 export async function registerDoctorEarningsRoutes(
 	app: FastifyInstance,

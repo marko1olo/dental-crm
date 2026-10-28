@@ -161,7 +161,7 @@ export function EmkComplaintsSection({
 							updateVisitNoteField("complaints", val);
 						}}
 						placeholder="Опишите жалобы пациента (характер боли, локализация, провоцирующие факторы)..."
-						className="w-full min-h-[85px] p-3 pr-10 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
+						className="w-full min-h-[115px] sm:min-h-[85px] p-3 pb-5 pr-10 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 					/>
 					<button
 						type="button"
@@ -240,7 +240,7 @@ export function EmkComplaintsSection({
 					value={visitNoteForm?.anamnesis || ""}
 					onCommit={updateVisitNoteField}
 					placeholder="История настоящего заболевания, перенесенные соматические заболевания, аллергологический статус..."
-					className="w-full min-h-[85px] p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
+					className="w-full min-h-[115px] sm:min-h-[85px] p-3 pb-5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
 				/>
 
 				{/* Ряд быстрых соматических чипов */}

@@ -1,5 +1,5 @@
 import { Edit3, Eye } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SoapToolbarViewModeTabsProps {
 	readonly activeViewMode: "fields" | "full_text";

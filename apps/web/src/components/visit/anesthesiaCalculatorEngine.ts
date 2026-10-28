@@ -94,8 +94,9 @@ export function getPassiveAllergyNotice(
 ): string | null {
 	if (!somaticProfile) return null;
 	const check = checkAnesthesiaSomaticContraindications({ drugKey, somaticProfile });
-	if (check.alerts.length === 0) return null;
-	return `⚠️ ${check.alerts.map((a) => a.message).join("; ")}`;
+	const dangerAlerts = check.alerts.filter((a) => a.severity === "danger" || a.severity === "warning");
+	if (dangerAlerts.length === 0) return null;
+	return `⚠️ ${dangerAlerts.map((a) => a.message).join("; ")}`;
 }
 
 export function calculateAnesthesiaSafety(
@@ -110,6 +111,82 @@ export function calculateAnesthesiaSafety(
 		...params,
 		patientWeightKg: effectiveWeight,
 	});
+}
+
+export interface ClinicalCarpulePreset {
+	readonly drugKey: AnesthesiaDrugKey;
+	readonly labelRu: string;
+	readonly carpulesCount: 1 | 2;
+	readonly volumeMl: number;
+	readonly isAdrenalineFree: boolean;
+	readonly isCardioSafe: boolean;
+	readonly defaultTechnique: AnesthesiaMethodKey;
+}
+
+export const CLINICAL_CHAIRSIDE_ANESTHESIA_PRESETS: readonly ClinicalCarpulePreset[] = [
+	{
+		drugKey: "septanest_100",
+		labelRu: "Септанест 1:100 000 (1 карп. 1.7 мл)",
+		carpulesCount: 1,
+		volumeMl: 1.7,
+		isAdrenalineFree: false,
+		isCardioSafe: false,
+		defaultTechnique: "infiltration",
+	},
+	{
+		drugKey: "ultracain_ds_forte",
+		labelRu: "Убистезин / Ультракаин Д-С форте 1:100 000 (1 карп. 1.7 мл)",
+		carpulesCount: 1,
+		volumeMl: 1.7,
+		isAdrenalineFree: false,
+		isCardioSafe: false,
+		defaultTechnique: "infiltration",
+	},
+	{
+		drugKey: "scandonest_3",
+		labelRu: "Скандонест 3% (без адреналина, 1 карп. 1.7 мл) • Кардио",
+		carpulesCount: 1,
+		volumeMl: 1.7,
+		isAdrenalineFree: true,
+		isCardioSafe: true,
+		defaultTechnique: "infiltration",
+	},
+	{
+		drugKey: "ultracain_ds",
+		labelRu: "Ультракаин Д-С 1:200 000 (1 карп. 1.7 мл) • Щадящий",
+		carpulesCount: 1,
+		volumeMl: 1.7,
+		isAdrenalineFree: false,
+		isCardioSafe: false,
+		defaultTechnique: "infiltration",
+	},
+];
+
+/**
+ * 1-клик запись в карту приёма без псевдонаучных симуляций
+ */
+export function formatClinicalChairsideEntry(params: {
+	drugKey: AnesthesiaDrugKey | "none";
+	carpulesCount?: number;
+	toothNumber?: number | string;
+	technique?: string;
+}): string {
+	if (params.drugKey === "none" || params.carpulesCount === 0) {
+		return "Анестезия не проводилась (лечение проведено без анестезии по согласию пациента).";
+	}
+	const count = params.carpulesCount ?? 1;
+	const vol = Math.round(count * 1.7 * 10) / 10;
+	const drugName =
+		params.drugKey === "scandonest_3"
+			? "Скандонест 3% (Мепивакаин без адреналина)"
+			: params.drugKey === "ultracain_ds"
+				? "Ультракаин Д-С (Артикаин 4% + адреналин 1:200 000)"
+				: params.drugKey === "septanest_100"
+					? "Септанест 1:100 000 (Артикаин 4% + адреналин 1:100 000)"
+					: "Убистезин форте / Ультракаин Д-С форте (Артикаин 4% + адреналин 1:100 000)";
+	const tech = params.technique ?? "Инфильтрационная";
+	const toothArea = params.toothNumber ? ` в области зуба ${params.toothNumber}` : "";
+	return `${tech} анестезия препаратом ${drugName} ${vol} мл (${count} карп.)${toothArea}. Аспирационная проба отрицательная. Обезболивание глубокое, без осложнений.`;
 }
 
 export * from "../anesthesia/anesthesiaCatalog.js";

@@ -8,6 +8,7 @@ export function toVisitToothUiState(state: string): VisitToothUiState {
 	const s = String(state || "").trim().toLowerCase();
 	if (!s || s === "healthy" || s === "idle" || s === "0") return "idle";
 	if (s.includes("missing") || s.includes("extract") || s.includes("edentul")) return "missing";
+	if (s.includes("defective")) return "caries";
 	if (s.includes("caries")) return "caries";
 	if (s.includes("pulpitis") || s.includes("pulp")) return "pulpitis";
 	if (s.includes("periodontitis") || s.includes("perio") || s.includes("treatment")) return "treatment";
@@ -19,6 +20,7 @@ export function toVisitToothUiState(state: string): VisitToothUiState {
 		s.includes("veneer")
 	)
 		return "crown";
+	if (s.includes("root_canal_treated")) return "done";
 	if (s.includes("done") || s.includes("fill") || s.includes("restor")) return "done";
 	if (s.includes("watch")) return "watch";
 	if (s.includes("planned")) return "planned";
@@ -32,11 +34,20 @@ export function toOdontogramToothState(visitState: string): string {
 	const s = String(visitState || "").trim().toLowerCase();
 	if (!s || s === "idle" || s === "healthy") return "Healthy";
 	if (s === "caries") return "Caries";
+	if (s === "defective_restoration" || s === "defective") return "Defective_Restoration";
 	if (s === "pulpitis") return "Pulpitis";
 	if (s === "treatment" || s.includes("perio")) return "Periodontitis";
+	if (s === "calculus") return "Calculus";
+	if (s === "root_canal_treated") return "Root_Canal_Treated";
+	if (s === "root") return "Root";
 	if (s === "done" || s.includes("fill")) return "Filled";
 	if (s === "crown") return "Crown";
+	if (s === "bridge") return "Bridge";
+	if (s === "veneer") return "Veneer";
+	if (s === "inlay") return "Inlay";
 	if (s === "missing") return "Missing";
+	if (s === "retained") return "Retained";
+	if (s === "implant") return "Implant";
 	if (s === "watch") return "Watch";
 	if (s === "planned") return "Planned_Implant";
 	return "Healthy";

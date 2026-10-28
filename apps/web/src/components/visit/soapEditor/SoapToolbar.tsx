@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { SoapMobileActionBar } from "./SoapMobileActionBar";
 import { SoapToolbarActions } from "./SoapToolbarActions";
 import { SoapToolbarContextSelectors } from "./SoapToolbarContextSelectors";

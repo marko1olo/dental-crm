@@ -8,6 +8,7 @@ export * from "./types";
 export * from "./ChairsidePatientQuickBar";
 export * from "./ChairsideStepNav";
 export * from "./ChairsideTeethQuickSelector";
+export * from "./ToothQuickStatusSheet";
 export * from "./ChairsideSmartMicrophone";
 export * from "./ChairsideProtocolsSection";
 export * from "./ChairsideBottomStickyActions";

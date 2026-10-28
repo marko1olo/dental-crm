@@ -29,6 +29,8 @@ export function useOdontogramEventsListener(patientId: string | null | undefined
 						diagnosis: soap.diagnosisIcd10Label || soap.diagnosisTooth,
 						diagnosisIcd10: soap.diagnosisIcd10, treatmentPlan: soap.treatmentDescription,
 					});
+				} else {
+					useVisitStore.getState().clearVisitToothRecord(String(t.toothNumber));
 				}
 			}
 			if (Object.keys(nextStates).length > 0) {
@@ -76,6 +78,8 @@ export function useOdontogramEventsListener(patientId: string | null | undefined
 						}),
 					);
 				}
+			} else {
+				useVisitStore.getState().clearVisitToothRecord(code);
 			}
 		};
 

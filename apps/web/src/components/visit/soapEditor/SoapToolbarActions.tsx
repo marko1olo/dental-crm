@@ -1,5 +1,5 @@
 import { Check, Copy, Edit3, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { SoapToolbarViewModeTabs } from "./SoapToolbarViewModeTabs";
 
 export interface SoapToolbarActionsProps {

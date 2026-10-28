@@ -1,5 +1,5 @@
 import { Check, Clock, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SoapToolbarDraftNoticeProps {
 	readonly unsavedDraftNotice: { timeStr: string } | null;

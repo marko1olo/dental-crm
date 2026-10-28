@@ -35,14 +35,15 @@ export function EmkStepperControls({
 							type="button"
 							role="tab"
 							aria-selected={isActive}
-							className={`mobile-segmented-btn flex-1 min-h-[40px] px-1 text-[12.5px] rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-1 touch-manipulation select-none border ${
+							className={`mobile-segmented-btn flex-1 min-h-[40px] px-0.5 text-[11.5px] sm:text-[12px] rounded-lg transition-all cursor-pointer inline-flex items-center justify-center gap-0.5 touch-manipulation select-none border whitespace-nowrap overflow-hidden text-ellipsis ${
 								isActive
 									? "active bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] shadow-xs font-semibold"
 									: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border-transparent font-medium"
 							}`}
 							onClick={() => setActiveEmkTab(step.id)}
 						>
-							<span>{step.label}</span>
+							<span className="hidden sm:inline">{step.label}</span>
+							<span className="sm:hidden">{step.shortLabel || step.label}</span>
 							{isFilled && (
 								<span
 									className={`w-1.5 h-1.5 rounded-full shrink-0 ${

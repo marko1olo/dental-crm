@@ -7,11 +7,8 @@ import React, { useMemo, useState } from "react";
 import { CheckCircle2 } from "lucide-react";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { showToast } from "../../GlobalToast";
-import { MobileBottomSheet } from "../../mobile/MobileBottomSheet";
-import {
-  TOOTH_STATUS_OPTIONS,
-  type ChairsideTeethQuickSelectorProps,
-} from "./types";
+import { ToothQuickStatusSheet } from "./ToothQuickStatusSheet";
+import type { ChairsideTeethQuickSelectorProps } from "./types";
 
 export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorProps> = ({
   activeQuadrant,
@@ -200,43 +197,28 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
         </div>
       </div>
 
-      {/* NATIVE BOTTOM SHEET: ВЫБОР СТАТУСА ЗУБА */}
-      <MobileBottomSheet
+      {/* NATIVE iOS BOTTOM SHEET: ВЫБОР СТАТУСА ЗУБА (Apple HIG §2.2) */}
+      <ToothQuickStatusSheet
         isOpen={Boolean(selectedToothModal)}
+        toothNumber={selectedToothModal}
+        currentStatus={selectedToothModal ? toothStateByCode[selectedToothModal] : undefined}
         onClose={() => setSelectedToothModal(null)}
-        title={`Зуб ${selectedToothModal}: Клинический статус`}
+        onSelectStatus={(statusId, item) => {
+          if (selectedToothModal && setToothState) {
+            setToothState(selectedToothModal, statusId);
+            if (typeof window !== "undefined") {
+              window.dispatchEvent(
+                new CustomEvent("dente-update-tooth-state", {
+                  detail: { toothNumber: selectedToothModal, state: statusId },
+                }),
+              );
+            }
+            showToast(`Зуб ${selectedToothModal}: ${item.label}`, "info");
+          }
+          setSelectedToothModal(null);
+        }}
         testId={`${testId}-tooth-sheet`}
-      >
-        <div className="space-y-2 py-2">
-          {TOOTH_STATUS_OPTIONS.map((item) => (
-            <div
-              key={item.id}
-              className="mobile-chairside-row-item rounded-xl border border-[var(--line)]"
-              onClick={() => {
-                if (selectedToothModal && setToothState) {
-                  triggerHaptic("selection");
-                  setToothState(selectedToothModal, item.id);
-                  if (typeof window !== "undefined") {
-                    window.dispatchEvent(
-                      new CustomEvent("dente-update-tooth-state", {
-                        detail: { toothNumber: selectedToothModal, state: item.id },
-                      }),
-                    );
-                  }
-                  showToast(`Зуб ${selectedToothModal}: ${item.label}`, "info");
-                }
-                setSelectedToothModal(null);
-              }}
-            >
-              <div>
-                <div className="text-[15px] font-bold text-[var(--ink)]">{item.label}</div>
-                <div className="text-[12px] text-[var(--muted)]">{item.desc}</div>
-              </div>
-              <CheckCircle2 size={18} className="text-teal-600" />
-            </div>
-          ))}
-        </div>
-      </MobileBottomSheet>
+      />
     </>
   );
 };

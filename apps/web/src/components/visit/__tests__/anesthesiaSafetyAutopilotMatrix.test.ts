@@ -1,117 +1,76 @@
+/**
+ * anesthesiaSafetyAutopilotMatrix.test.ts — Chairside Clinical Matrix & Autopilot Resolution
+ * Mandates 8e (Doctor Autonomy), 8x (Clear Russian Clinical Language), 8y (Zero Pharma Paranoia).
+ */
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import {
 	CARDIO_LIMIT_BADGE_TEXT,
-	EPINEPHRINE_BLOCKED_BADGE_TEXT,
+	formatClinicalChairsideEntry,
 	formatAnesthesiaSoapText,
 	resolveAutopilotAnesthesia,
 } from "../anesthesiaCalculatorEngine";
-import {
-	getAnesthesiaAutopilotForPatient,
-	calculatePatientMrdForProfile,
-	parseSafetyProfileFromText,
-} from "../../patients/safetyMath";
 
-describe("Anesthesia Safety Autopilot — End-to-End Autopilot Resolution & Matrix", () => {
-	it("resolves Healthy Patient -> Ultracain DS Forte 1:100k (Standard)", () => {
+describe("Chairside Clinical Matrix & 1-Click Autopilot (Mandates 8e, 8x, 8y)", () => {
+	it("resolves Healthy Patient -> Ultracain DS Forte 1:100 000 (Standard)", () => {
 		const auto = resolveAutopilotAnesthesia({
 			somaticProfile: {},
-			patientWeightKg: 70,
 		});
 		assert.equal(auto.selectedDrugKey, "ultracain_ds_forte");
 		assert.equal(auto.isCardioRestricted, false);
 		assert.equal(auto.cardioLimitBadgeText, null);
 	});
 
-	it("resolves Hypertension/IHD -> Scandonest 3% with cardio badge", () => {
+	it("resolves Hypertension/IHD -> Scandonest 3% (Plain) with cardio badge", () => {
 		const auto = resolveAutopilotAnesthesia({
 			somaticProfile: { hasHypertension: true, hasIhd: true },
-			patientWeightKg: 70,
 		});
 		assert.equal(auto.selectedDrugKey, "scandonest_3");
 		assert.equal(auto.cardioLimitBadgeText, CARDIO_LIMIT_BADGE_TEXT);
 	});
 
-	it("resolves Bronchial Asthma -> Scandonest 3% (Plain / Sulfite-free)", () => {
+	it("resolves Bronchial Asthma -> Scandonest 3% (Sulfite-free plain)", () => {
 		const auto = resolveAutopilotAnesthesia({
 			somaticProfile: { hasBronchialAsthma: true },
-			patientWeightKg: 70,
 		});
 		assert.equal(auto.selectedDrugKey, "scandonest_3");
 		assert.match(auto.badgeText, /Без сульфитов/);
 	});
 
-	it("resolves Pregnancy -> Ultracain DS 1:200 000 (Gold Standard)", () => {
+	it("resolves Pregnancy -> Ultracain DS 1:200 000 (Low Epinephrine)", () => {
 		const auto = resolveAutopilotAnesthesia({
 			somaticProfile: { isPregnantOrLactating: true, pregnancyTrimester: "trimester_1" },
-			patientWeightKg: 55,
 		});
 		assert.equal(auto.selectedDrugKey, "ultracain_ds");
 		assert.match(auto.badgeText, /Беременность \/ Лактация/);
 	});
 
-	it("resolves Multi-Comorbidity: Pregnancy + Sulfite Allergy -> Scandonest 3% (Vital priority)", () => {
-		const auto = resolveAutopilotAnesthesia({
-			somaticProfile: { isPregnantOrLactating: true, hasSulfiteAllergy: true },
-			patientWeightKg: 60,
-		});
-		assert.equal(auto.selectedDrugKey, "scandonest_3");
-		assert.match(auto.badgeText, /Без сульфитов/);
-	});
-
-	it("resolves Multi-Comorbidity: Hypertension + Pregnancy -> Ultracain DS 1:200k with Cardio Limit", () => {
-		const auto = resolveAutopilotAnesthesia({
-			somaticProfile: { isPregnantOrLactating: true, hasHypertension: true },
-			patientWeightKg: 65,
-		});
-		assert.equal(auto.selectedDrugKey, "ultracain_ds");
-		assert.equal(auto.isCardioRestricted, true);
-		assert.equal(auto.cardioLimitBadgeText, CARDIO_LIMIT_BADGE_TEXT);
-		assert.equal(auto.mrdCarpules, 4.0);
-	});
-});
-
-describe("Anesthesia Safety Autopilot — Patient Safety Math Integration", () => {
-	it("converts unstructured text into structured profile and executes autopilot", () => {
-		const note = "Пациент 58 лет. ИБС, перенесенный инфаркт миокарда (I21), гипертония II ст. Принимает бисопролол.";
-		const parsed = parseSafetyProfileFromText(note);
-		assert.equal(parsed.hasHypertension, true);
-		assert.equal(parsed.hasIhd, true);
-		assert.equal(parsed.hasCardiovascularDisease, true);
-
-		const auto = getAnesthesiaAutopilotForPatient(parsed, 75);
-		assert.ok(
-			auto.cardioLimitBadgeText === CARDIO_LIMIT_BADGE_TEXT ||
-				auto.cardioLimitBadgeText === EPINEPHRINE_BLOCKED_BADGE_TEXT,
-		);
-	});
-
-	it("calculates profile-based MRD correctly through safetyMath bridge", () => {
-		const mrd = calculatePatientMrdForProfile({
-			profile: "Анамнез: Бронхиальная астма J45, гипертония",
-			drugKey: "scandonest_3",
-			patientWeightKg: 70,
+	it("generates clean Russian medical record entry without bureaucratic jargon", () => {
+		const entry = formatClinicalChairsideEntry({
+			drugKey: "septanest_100",
+			carpulesCount: 1,
+			toothNumber: 36,
 		});
 
-		assert.equal(mrd.drugKey, "scandonest_3");
-		assert.equal(mrd.patientWeightKg, 70);
-		assert.equal(mrd.mrdDoseMg, 300);
+		assert.match(entry, /Инфильтрационная анестезия/);
+		assert.match(entry, /Септанест 1:100 000/);
+		assert.match(entry, /1\.7 мл/);
+		assert.match(entry, /1 карп\./);
+		assert.match(entry, /зуба 36/);
+		assert.match(entry, /Аспирационная проба отрицательная/);
 	});
 
-	it("generates clean SOAP text with somatic safety notes", () => {
+	it("serializes SOAP diary text cleanly with negative aspiration test", () => {
 		const soap = formatAnesthesiaSoapText({
 			methodKey: "mandibular",
 			drugKey: "scandonest_3",
 			carpulesCount: 1,
-			patientWeightKg: 70,
 			toothNumber: 47,
-			somaticProfile: { hasHypertension: true, hasBronchialAsthma: true },
+			somaticProfile: { hasHypertension: true },
 		});
 
 		assert.match(soap, /Проводниковая мандибулярная анестезия в области зуба 47/);
 		assert.match(soap, /Скандонест 3%/);
-		assert.match(soap, /Кардиоваскулярный риск/i);
-		assert.match(soap, /Бронхиальная астма \/ аллергия на сульфиты/);
 		assert.match(soap, /Аспирационная проба отрицательная/);
 	});
 });

@@ -110,3 +110,7 @@ export function RenderForm043u({
 		</div>
 	);
 }
+
+/** Чистый семантический доменный алиас (Мандат 8ap) */
+export const RenderVisitDiary = RenderForm043u;
+

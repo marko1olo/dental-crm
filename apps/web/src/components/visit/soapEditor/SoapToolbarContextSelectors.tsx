@@ -1,5 +1,5 @@
 import { FileText } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { ALL_FDI_ADULT_TEETH } from "./constants";
 
 export interface SoapToolbarContextSelectorsProps {

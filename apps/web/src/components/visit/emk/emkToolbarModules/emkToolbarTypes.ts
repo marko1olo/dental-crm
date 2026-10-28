@@ -47,6 +47,7 @@ export interface EmkTabItem {
 export interface MobileStepItem {
 	id: string;
 	label: string;
+	shortLabel?: string;
 }
 
 export const DEFAULT_EMK_TABS: EmkTabItem[] = [
@@ -58,10 +59,10 @@ export const DEFAULT_EMK_TABS: EmkTabItem[] = [
 ];
 
 export const MOBILE_EMK_STEPS: MobileStepItem[] = [
-	{ id: "complaints", label: "1. Жалобы" },
-	{ id: "objectiveStatus", label: "2. Осмотр" },
-	{ id: "diagnosis", label: "3. Диагноз" },
-	{ id: "treatmentPlan", label: "4. Лечение" },
+	{ id: "complaints", label: "1. Жалобы", shortLabel: "1. Жалобы" },
+	{ id: "objectiveStatus", label: "2. Осмотр", shortLabel: "2. Осмотр" },
+	{ id: "diagnosis", label: "3. Диагноз", shortLabel: "3. Диагноз" },
+	{ id: "treatmentPlan", label: "4. Лечение", shortLabel: "4. План" },
 ];
 
 export function isEmkTabFilled(tabId: string, noteForm: Record<string, any> = {}): boolean {

@@ -121,7 +121,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 				<button
 					type="button"
 					onClick={() => scrollToSection("emk-complaints-section")}
-					className={`soap-status-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
+					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasComplaint
 							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
@@ -134,8 +134,11 @@ export const EmkSoapVisibilityTracker: React.FC<
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
-					<span className="font-semibold">
+					<span className="font-semibold hidden sm:inline">
 						{hasComplaint ? "Жалобы заполнены" : "Жалобы: нет"}
+					</span>
+					<span className="font-semibold sm:hidden">
+						{hasComplaint ? "Жалобы ✓" : "Жалобы"}
 					</span>
 				</button>
 
@@ -143,7 +146,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 				<button
 					type="button"
 					onClick={() => scrollToSection("emk-objective-status-section")}
-					className={`soap-status-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
+					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasObjective
 							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
@@ -156,8 +159,11 @@ export const EmkSoapVisibilityTracker: React.FC<
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
-					<span className="font-semibold">
+					<span className="font-semibold hidden sm:inline">
 						{hasObjective ? "Осмотр заполнен" : "Осмотр: нет"}
+					</span>
+					<span className="font-semibold sm:hidden">
+						{hasObjective ? "Осмотр ✓" : "Осмотр"}
 					</span>
 				</button>
 
@@ -165,7 +171,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 				<button
 					type="button"
 					onClick={() => scrollToSection("emk-diagnosis-protocol-section")}
-					className={`soap-status-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
+					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasDiagnosis
 							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
@@ -178,14 +184,17 @@ export const EmkSoapVisibilityTracker: React.FC<
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
-					<span className="font-semibold">Диагноз: {diagnosisText}</span>
+					<span className="font-semibold hidden sm:inline">Диагноз: {diagnosisText}</span>
+					<span className="font-semibold sm:hidden">
+						{hasDiagnosis ? (diagnosisText.startsWith("K") ? `${diagnosisText.split(" ")[0]} ✓` : "Диагноз ✓") : "Диагноз"}
+					</span>
 				</button>
 
 				{/* 4. Лечение (P) */}
 				<button
 					type="button"
 					onClick={() => scrollToSection("emk-treatment-section")}
-					className={`soap-status-chip inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
+					className={`soap-status-chip inline-flex items-center gap-0.5 sm:gap-1 px-1 sm:px-2 py-0.5 rounded-md text-[10.5px] sm:text-[11px] font-medium transition-colors cursor-pointer border whitespace-nowrap ${
 						hasTreatment
 							? "bg-emerald-500/10 border-emerald-500/30 text-emerald-800 dark:text-emerald-300 hover:bg-emerald-500/20"
 							: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:border-[var(--line-strong)]"
@@ -202,22 +211,26 @@ export const EmkSoapVisibilityTracker: React.FC<
 					) : (
 						<Circle size={11} className="text-[var(--muted)] shrink-0 opacity-60" />
 					)}
-					<span className="font-semibold">Лечение: {treatmentText}</span>
+					<span className="font-semibold hidden sm:inline">Лечение: {treatmentText}</span>
+					<span className="font-semibold sm:hidden">
+						{hasTreatment ? "План ✓" : "План"}
+					</span>
 				</button>
 			</div>
 
 			{/* Правая часть: Кнопка продолжения эндодонтии + Сводный бейдж готовности Формы 043/у */}
-			<div className="flex items-center gap-2 shrink-0 ml-auto">
+			<div className="flex items-center gap-1.5 sm:gap-2 shrink-0 ml-auto">
 				{showContinueButton && effectiveSnapshot && (
 					<button
 						type="button"
 						onClick={handleContinueClick}
 						data-testid="continue-endo-btn"
-						className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap active:scale-95"
+						className="inline-flex items-center gap-1.5 px-2 sm:px-2.5 py-1 rounded-md text-[10.5px] sm:text-[11px] font-bold bg-teal-600 hover:bg-teal-700 text-white shadow-xs transition-colors cursor-pointer whitespace-nowrap active:scale-95"
 						title={`Продолжить 2-й этап эндодонтического лечения зуба ${effectiveSnapshot.toothNumber} с визита от ${effectiveSnapshot.date}`}
 					>
 						<RotateCw size={12} className="shrink-0" />
-						<span>🔁 Продолжить лечение зуба {effectiveSnapshot.toothNumber} с визита от {effectiveSnapshot.date}</span>
+						<span className="hidden sm:inline">🔁 Продолжить лечение зуба {effectiveSnapshot.toothNumber} с визита от {effectiveSnapshot.date}</span>
+						<span className="sm:hidden">🔁 Зуб {effectiveSnapshot.toothNumber}</span>
 					</button>
 				)}
 				{activeTooth && (
@@ -226,14 +239,15 @@ export const EmkSoapVisibilityTracker: React.FC<
 					</span>
 				)}
 				<span
-					className={`px-2 py-0.5 rounded-full text-[11px] font-bold flex items-center gap-1 whitespace-nowrap ${
+					className={`px-1.5 sm:px-2 py-0.5 rounded-full text-[10.5px] sm:text-[11px] font-bold flex items-center gap-1 whitespace-nowrap shrink-0 ${
 						isComplete
 							? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border border-emerald-500/30"
 							: "bg-amber-500/15 text-amber-800 dark:text-amber-300 border border-amber-500/30"
 					}`}
 					data-testid="badge-soap-completion-status"
 				>
-					{isComplete ? "✓ Готов к подписи" : `${filledCount}/4 заполнено`}
+					<span className="hidden sm:inline">{isComplete ? "✓ Готов к подписи" : `${filledCount}/4 заполнено`}</span>
+					<span className="sm:hidden">{isComplete ? "✓ Готов" : `${filledCount}/4`}</span>
 				</span>
 			</div>
 		</div>

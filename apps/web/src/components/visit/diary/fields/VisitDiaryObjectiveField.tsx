@@ -1,5 +1,5 @@
 import React from "react";
-import { Search } from "lucide-react";
+import { Check, Search } from "lucide-react";
 import { SmartMicrophoneButton } from "../../../SmartMicrophoneButton";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
 import { ClinicalStenographerBar } from "../../emk/ClinicalStenographerBar";
@@ -71,6 +71,30 @@ export const VisitDiaryObjectiveField: React.FC<VisitDiaryObjectiveFieldProps> =
 				onKeyDown={steno.handleKeyDown}
 				placeholder="Внешний осмотр, перкуссия, пальпация, ЭОД, рентген (Стенограф: Tab / Пробел)..."
 			/>
+			<div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
+				<button
+					type="button"
+					onClick={() => {
+						ensureRevisingIfLocked();
+						const normObj = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологии. Прикус физиологический. Зондирование и перкуссия безболезненны.";
+						setDiary((p) => ({
+							...p,
+							statusLocalis: p.statusLocalis ? `${p.statusLocalis}\n${normObj}` : normObj,
+						}));
+						scheduleDebouncedSave();
+					}}
+					disabled={fieldsDisabled}
+					className={`dente-filter-chip shrink-0 ${
+						diary.statusLocalis?.includes("бледно-розовая") ? "active" : ""
+					}`}
+					data-active={Boolean(diary.statusLocalis?.includes("бледно-розовая"))}
+					data-testid="btn-quick-norm-objective"
+					title="Зафиксировать норму: слизистая бледно-розовая, без патологии"
+				>
+					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
+					<span>Слизистая в норме</span>
+				</button>
+			</div>
 			{!fieldsDisabled && (
 				<ClinicalStenographerBar
 					snippets={steno.fieldSnippets}

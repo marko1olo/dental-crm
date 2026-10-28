@@ -1,5 +1,5 @@
 import { Check, Copy, MoreHorizontal, Printer } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface SoapToolbarMoreMenuProps {
 	readonly isSoapMoreOpen: boolean;
