@@ -20,6 +20,8 @@ export interface FefoDeductionResult {
 	batchesUsed: FefoBatchUsage[];
 	isOverdraft: boolean;
 	deficitQty: number;
+	isNegativeStock?: boolean | undefined;
+	requiresReplenishment?: boolean | undefined;
 	warning?: string | undefined;
 }
 

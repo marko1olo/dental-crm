@@ -70,10 +70,24 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 		);
 	}
 
+	const getEffectiveOrgId = () => {
+		try {
+			if (typeof window !== "undefined") {
+				const cached = localStorage.getItem("dente_cached_active_staff_user") || localStorage.getItem("dental-crm:active-user:v1");
+				if (cached) {
+					const u = JSON.parse(cached);
+					if (u?.organizationId) return String(u.organizationId);
+				}
+				return localStorage.getItem("dente_organization_id") || "";
+			}
+		} catch (_) {}
+		return "01a00000-0000-0000-0000-000000000000";
+	};
+
 	if (isInventoryStandalone) {
 		return (
 			<div className="fixed inset-0 z-[99999] w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
-				<InventoryView organizationId="demo-clinic-org" />
+				<InventoryView organizationId={getEffectiveOrgId()} />
 			</div>
 		);
 	}
@@ -83,7 +97,7 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 			<div className="fixed inset-0 z-[99999] w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
 				<InventoryInboundInvoiceModal
 					isOpen={true}
-					organizationId="demo-clinic-org"
+					organizationId={getEffectiveOrgId()}
 					inventoryItems={[]}
 					onClose={() => {
 						const u = new URL(window.location.href);

@@ -109,9 +109,15 @@ function initTokenCache(): void {
 function readToken(key: string): string | null {
 	initTokenCache();
 	if (key === CLINIC_TOKEN_STORAGE_KEY) {
+		if (typeof window !== "undefined" && (window as any).__denteClinicToken) {
+			return String((window as any).__denteClinicToken);
+		}
 		return cachedClinicToken ?? (readDenteClinicToken() || null);
 	}
 	if (key === STAFF_TOKEN_STORAGE_KEY) {
+		if (typeof window !== "undefined" && (window as any).__denteStaffToken) {
+			return String((window as any).__denteStaffToken);
+		}
 		return cachedStaffToken ?? (readDenteStaffToken() || null);
 	}
 	const value = safeLocalStorageGetItem(key);

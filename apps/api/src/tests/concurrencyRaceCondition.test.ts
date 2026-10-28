@@ -326,8 +326,8 @@ describe("Echelon 1: ACID & Concurrency Race Condition Invariants", () => {
 		);
 	});
 
-	// ── 3. Concurrent Warehouse Stock Deductions (PATCH /api/inventory/:orgId/:itemId/stock) ──
-	test("3. Concurrent Warehouse Stock Deductions: 5 parallel requests to deduct 5 units from 6 units stock yield 1 success, 4 insufficientStock rejections, ending stock strictly 1 unit", async () => {
+	// ── 3. Concurrent Warehouse Stock Deductions (Soft Negative Stock, Mandate 8n) ──
+	test("3. Concurrent Warehouse Stock Deductions: 5 parallel requests to deduct 5 units from 6 units stock succeed with Soft Negative Stock (HTTP 200 OK, isOverdraft: true)", async () => {
 		// Reset warehouse stock to 6.000
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await tx
@@ -362,26 +362,20 @@ describe("Echelon 1: ACID & Concurrency Race Condition Invariants", () => {
 		);
 
 		const success = responses.filter((r) => r.statusCode === 200);
-		const rejected = responses.filter((r) => r.statusCode === 400);
 
 		assert.equal(
 			success.length,
-			1,
-			"Ровно 1 списание остатка склада на 5 единиц должно пройти успешно",
-		);
-		assert.equal(
-			rejected.length,
-			4,
-			"Ровно 4 списания должны быть отклонены из-за невозможности уйти в отрицательный остаток",
+			5,
+			"Все 5 списаний обязаны завершиться успехом 200 OK по правилу Soft Negative Stock (Мандат 8n)",
 		);
 
-		for (const r of rejected) {
-			const body = JSON.parse(r.body);
-			assert.equal(body.error, "insufficientStock");
-			assert.match(body.message, /Недостаточно остатка на складе/i);
-		}
+		const overdraftResponses = responses.map((r) => JSON.parse(r.body)).filter((b) => b.isOverdraft);
+		assert.ok(
+			overdraftResponses.length > 0,
+			"Запросы списания сверх остатка обязаны возвращать флаг isOverdraft: true",
+		);
 
-		// Verify database stockQuantity
+		// Verify database stockQuantity reflects actual sum without blocking doctors
 		const [item] = await db
 			.select()
 			.from(inventoryItems)
@@ -393,10 +387,14 @@ describe("Echelon 1: ACID & Concurrency Race Condition Invariants", () => {
 			);
 
 		assert.ok(item, "Позиция склада должна существовать");
+		assert.ok(
+			Number(item!.stockQuantity) <= 0,
+			"Итоговый остаток корректно отражает расход с мягким овердрафтом (<= 0)",
+		);
 		assert.equal(
-			Number(item.stockQuantity),
-			1,
-			"Итоговый остаток на складе должен быть строго 1.000 единиц, никогда не отрицательным",
+			Number(item!.stockQuantity),
+			-19,
+			"Итоговый остаток на складе корректно ушел в овердрафт -19 единиц (Soft Negative Stock, Мандат 8n)",
 		);
 	});
 

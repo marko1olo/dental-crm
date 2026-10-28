@@ -39,3 +39,15 @@ export const createAnesthesiaLogBodySchema = z.object({
 	autoDeductInventory: z.boolean().default(true),
 	addToVisitEstimate: z.boolean().default(true),
 });
+
+export const calculateSafetyBodySchema = z.object({
+	drug: anestheticDrugSchema.default("articaine"),
+	concentrationPct: z.number().positive().default(4.0),
+	vasoconstrictor: vasoconstrictorRatioSchema.default("1:200000"),
+	carpuleVolumeMl: z.number().positive().default(1.7),
+	carpulesAdministered: z.number().positive().default(1.0),
+	patientWeightKg: z.number().positive(),
+	patientAgeYears: z.number().int().nonnegative().optional().default(35),
+	asaClass: asaClassificationSchema.optional().default("ASA_I"),
+	hasCardiovascularDisease: z.boolean().optional().default(false),
+});

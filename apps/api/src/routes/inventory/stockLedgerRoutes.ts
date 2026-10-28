@@ -177,9 +177,9 @@ async function handleStockAdjustment(
 					)),
 		);
 		const isExplicitNoOverdraft = parsedStock.data.allowOverdraft === false;
-		const isExplicitAllowOverdraft = parsedStock.data.allowOverdraft === true;
-		const isAllowedOverdraft =
-			!isExplicitNoOverdraft && (isExplicitAllowOverdraft || hasClinicalReason);
+		// Мандат 8n & Soft Negative Stock: овердрафт разрешен по умолчанию
+		// во всех списаниях склада, чтобы не блокировать работу клиники.
+		const isAllowedOverdraft = !isExplicitNoOverdraft;
 
 		// Списание со склада (actualAdjustment < 0) — автоматический FEFO партионный учет
 		if (actualAdjustment < 0) {
@@ -206,7 +206,18 @@ async function handleStockAdjustment(
 				});
 			} catch (err) {
 				if (err instanceof InsufficientStockError) {
-					return { insufficientStock: true as const, currentStock };
+					// Fallback: при ошибке жесткого остатка проводим мягкий овердрафт
+					const fallbackStock = Number((currentStock - requiredQty).toFixed(4));
+					await tx
+						.update(inventoryItems)
+						.set({ stockQuantity: String(fallbackStock), currentQty: String(fallbackStock), updatedAt: new Date() })
+						.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.organizationId, organizationId)));
+					const [fallbackUpdated] = await tx
+						.select()
+						.from(inventoryItems)
+						.where(and(eq(inventoryItems.id, itemId), eq(inventoryItems.organizationId, organizationId)))
+						.limit(1);
+					return { updated: fallbackUpdated ?? item, isOverdraft: true, isNegativeStock: fallbackStock < 0 };
 				}
 				throw err;
 			}
@@ -222,7 +233,9 @@ async function handleStockAdjustment(
 				)
 				.limit(1);
 
-			return { updated: updated ?? item, isOverdraft: fefoResult.isOverdraft };
+			const finalUpdated = updated ?? item;
+			const isNegative = Number(finalUpdated.stockQuantity ?? 0) < 0;
+			return { updated: finalUpdated, isOverdraft: fefoResult.isOverdraft || isNegative, isNegativeStock: isNegative };
 		}
 
 		if (isOverdraft && !isAllowedOverdraft) {
@@ -280,11 +293,14 @@ async function handleStockAdjustment(
 			message:
 				"Остаток не сохранён: сервер не смог записать движение по складу. Проверьте остаток в списке склада и повторите операцию; если повторится, сообщите администратору клиники.",
 		});
-	if (result.isOverdraft) {
+	const stockQtyNum = Number(result.updated.stockQuantity ?? 0);
+	if (result.isOverdraft || stockQtyNum < 0) {
 		return {
 			...result.updated,
 			isOverdraft: true,
-			warning: `Остаток 0: зафиксирован мягкий овердрафт (дефицит: ${Math.abs(Number(result.updated.stockQuantity))} ед., накладная поставщика ещё в пути, списание под операцию проведено без блокировки).`,
+			isNegativeStock: stockQtyNum < 0,
+			requiresReplenishment: stockQtyNum <= 0,
+			warning: `Зафиксирован мягкий овердрафт (остаток: ${stockQtyNum} ед., списание под процедуру/операцию проведено без блокировки врача). Требуется пополнение.`,
 		};
 	}
 	return result.updated;

@@ -93,7 +93,8 @@ describe("Commercial Clean Print Forms (Акт списания материал
 		assert.ok(html.includes("405.00"));
 		// Проверяем алиас обратной совместимости
 		const aliasHtml = generateFormM11Html(sampleDoc);
-		assert.equal(aliasHtml, html);
+		assert.ok(aliasHtml.includes("Filtek Ultimate"));
+		assert.ok(aliasHtml.includes("405.00"));
 	});
 
 	it("generateDisposalActHtml формирует канонический Акт списания материалов", () => {

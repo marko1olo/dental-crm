@@ -89,14 +89,19 @@ export async function deductFefo(
 
 	await flushInventoryTransactions(tx, transactionsToInsert);
 
+	const isNegative = newStock < 0;
+	const finalWarning = warning ?? (isNegative ? `Внимание: допущен технический перерасход (остаток ${newStock} ед.). Требуется пополнение.` : undefined);
+
 	return {
 		inventoryItemId: inv.id,
 		inventoryItemName: inv.name,
 		requiredQty,
 		deductedQty: requiredQty,
 		batchesUsed,
-		isOverdraft,
-		deficitQty,
-		warning,
+		isOverdraft: isOverdraft || isNegative,
+		deficitQty: deficitQty > 0 ? deficitQty : (isNegative ? Math.abs(newStock) : 0),
+		isNegativeStock: isNegative,
+		requiresReplenishment: newStock <= 0,
+		warning: finalWarning,
 	};
 }

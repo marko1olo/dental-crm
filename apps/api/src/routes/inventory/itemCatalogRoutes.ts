@@ -18,8 +18,8 @@ import {
 export const itemCatalogRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
-	// GET all inventory items for an organization (authenticated)
-	server.get<{ Params: { organizationId: string } }>(
+	// GET all inventory items for an organization (authenticated, Dual-Route Parity & "current" support)
+	server.get<{ Params: { organizationId?: string } }>(
 		"/:organizationId",
 		async (request, reply) => {
 			const resolvedOrgId = await requireResolvedOrganizationId(
@@ -30,12 +30,16 @@ export const itemCatalogRoutes: FastifyPluginAsync = async (
 			if (!resolvedOrgId) return;
 
 			const { organizationId } = request.params;
+			const effectiveOrgId =
+				!organizationId || organizationId === "current" || organizationId === "items"
+					? resolvedOrgId
+					: organizationId;
 			// Security: ensure the resolved org matches the requested one
-			if (resolvedOrgId !== organizationId) {
+			if (resolvedOrgId !== effectiveOrgId) {
 				return reply.code(403).send({ error: "Forbidden" });
 			}
 
-			const items = await inventoryQuery.getInventoryItems(organizationId);
+			const items = await inventoryQuery.getInventoryItems(effectiveOrgId);
 			return items;
 		},
 	);

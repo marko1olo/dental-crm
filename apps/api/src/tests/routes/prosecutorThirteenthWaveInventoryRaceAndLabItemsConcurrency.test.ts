@@ -294,7 +294,7 @@ describe("PROSECUTOR 2: ТРИНАДЦАТАЯ ВОЛНА (INVENTORY STOCK RACE 
 	// =========================================================================
 	// ВЕКТОР 13.1: 10 ОДНОВРЕМЕННЫХ СПИСАНИЙ ПОСЛЕДНЕГО ОСТАТКА (ОСТАТОК = 1)
 	// =========================================================================
-	test("ВЕКТОР 13.1 [INVENTORY 10-THREAD DEDUCTION RACE]: 10 параллельных списаний 1 шт при остатке = 1", async (t) => {
+	test("ВЕКТОР 13.1 [INVENTORY 10-THREAD DEDUCTION RACE]: 10 параллельных списаний 1 шт при остатке = 1 с мягким овердрафтом (Мандат 8n)", async (t) => {
 		if (!databaseAvailable) return t.skip("База данных недоступна");
 
 		// 10 параллельных запросов на списание 1 карпулы анестетика
@@ -312,25 +312,16 @@ describe("PROSECUTOR 2: ТРИНАДЦАТАЯ ВОЛНА (INVENTORY STOCK RACE 
 		const responses = await Promise.all(concurrentDeductions);
 
 		const successes = responses.filter((r) => r.statusCode === 200);
-		const insufficientStocks = responses.filter(
-			(r) =>
-				r.statusCode === 400 &&
-				JSON.parse(r.payload).error === "insufficientStock",
-		);
 
 		console.log(
-			`[INVENTORY 10-THREAD RACE]: Успехов (200 OK): ${successes.length}, Отклонено (400 insufficientStock): ${insufficientStocks.length}`,
+			`[INVENTORY 10-THREAD RACE (SOFT NEGATIVE STOCK)]: Успехов (200 OK): ${successes.length}`,
+			responses.map((r) => ({ status: r.statusCode, body: r.body })),
 		);
 
 		assert.strictEqual(
 			successes.length,
-			1,
-			"Ровно один поток должен успеть списать последнюю карпулу (HTTP 200 OK)",
-		);
-		assert.strictEqual(
-			insufficientStocks.length,
-			9,
-			"Остальные 9 потоков обязаны получить отказ 400 insufficientStock",
+			10,
+			"Все 10 параллельных списаний обязаны завершиться успехом (HTTP 200 OK) без блокировки врача (Мандат 8n)",
 		);
 
 		// Проверка в базе данных PostgreSQL:
@@ -352,8 +343,8 @@ describe("PROSECUTOR 2: ТРИНАДЦАТАЯ ВОЛНА (INVENTORY STOCK RACE 
 
 		assert.strictEqual(
 			Number(itemInDb!.stockQuantity),
-			0,
-			"Остаток в БД обязан быть строго равен 0 (ни в коем случае не отрицательным!)",
+			-9,
+			"Остаток в БД обязан быть строго равен -9 (мягкий минусовой овердрафт для всех 10 карпул без блокировки врача)",
 		);
 
 		// Проверка журнала проводок (inventory_transactions):
@@ -373,12 +364,12 @@ describe("PROSECUTOR 2: ТРИНАДЦАТАЯ ВОЛНА (INVENTORY STOCK RACE 
 
 		assert.strictEqual(
 			transactions.length,
-			1,
-			"В журнале проводок ровно 1 запись списания (ноль фантомных проводок)",
+			10,
+			"В журнале проводок ровно 10 записей списания (все 10 списаний отражены в журнале без потерь)",
 		);
 
 		console.log(
-			"[ВЕКТОР 13.1 ОТБИТ]: ACID-транзакция с SELECT FOR UPDATE полностью предотвратила уход остатка в минус: 1x200, 9x400.",
+			"[ВЕКТОР 13.1 ОТБИТ]: Soft Negative Stock (Мандат 8n) гарантирует 10x200 OK, все списания учтены, остаток -9.",
 		);
 	});
 

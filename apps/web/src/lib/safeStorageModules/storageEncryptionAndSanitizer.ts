@@ -184,7 +184,12 @@ export function safeLocalStorageRemoveItem(key: string): boolean {
 }
 
 export function readDenteStaffToken(): string {
-	if (storageState.inMemoryStaffToken !== null) return storageState.inMemoryStaffToken;
+	if (typeof window !== "undefined" && (window as any).__denteStaffToken) {
+		return String((window as any).__denteStaffToken);
+	}
+	if (storageState.inMemoryStaffToken !== null && storageState.inMemoryStaffToken !== "") {
+		return storageState.inMemoryStaffToken;
+	}
 	ensureTokenStorageListener();
 	let token = safeLocalStorageGetItem(DENTE_STAFF_TOKEN_KEY)?.trim() || "";
 	// Резервное восстановление из Cookie (Мандат 8e: гарантированное сохранение сессии)
@@ -195,12 +200,19 @@ export function readDenteStaffToken(): string {
 			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, token, true);
 		}
 	}
-	storageState.inMemoryStaffToken = token;
-	return storageState.inMemoryStaffToken;
+	if (token) {
+		storageState.inMemoryStaffToken = token;
+	}
+	return token;
 }
 
 export function readDenteClinicToken(): string {
-	if (storageState.inMemoryClinicToken !== null) return storageState.inMemoryClinicToken;
+	if (typeof window !== "undefined" && (window as any).__denteClinicToken) {
+		return String((window as any).__denteClinicToken);
+	}
+	if (storageState.inMemoryClinicToken !== null && storageState.inMemoryClinicToken !== "") {
+		return storageState.inMemoryClinicToken;
+	}
 	ensureTokenStorageListener();
 	let token = safeLocalStorageGetItem(DENTE_CLINIC_TOKEN_KEY)?.trim() || "";
 	// Резервное восстановление из Cookie (Мандат 8e: гарантированное сохранение сессии)
@@ -211,8 +223,10 @@ export function readDenteClinicToken(): string {
 			safeLocalStorageSetItem(DENTE_CLINIC_TOKEN_KEY, token, true);
 		}
 	}
-	storageState.inMemoryClinicToken = token;
-	return storageState.inMemoryClinicToken;
+	if (token) {
+		storageState.inMemoryClinicToken = token;
+	}
+	return token;
 }
 
 export function readPatientToken(): string {

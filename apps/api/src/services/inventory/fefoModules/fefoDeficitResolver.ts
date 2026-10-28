@@ -63,17 +63,11 @@ export function resolveDeficitAndOverdraft(params: {
 
 		if (trueDeficit > 0) {
 			deficitQty = trueDeficit;
-			if (!allowOverdraft) {
-				throw new InsufficientStockError({
-					inventoryItemId: inv.id,
-					inventoryItemName: inv.name,
-					availableStock: requiredQty - trueDeficit,
-					requiredStock: requiredQty,
-				});
-			}
-
+			// Мандат 8n & Soft Negative Stock: жесткий отказ ликвидирован,
+			// операция завершается успешно с мягким овердрафтом (код 200 OK)
+			// и неблокирующим статусом «Требуется пополнение».
 			isOverdraft = true;
-			warning = `Внимание: допущен технический перерасход по материалу «${inv.name}» (дефицит ${deficitQty} ${inv.unit ?? "ед."}). Требуется оформление прихода накладной снабженцем.`;
+			warning = `Внимание: допущен технический перерасход по материалу «${inv.name}» (дефицит ${deficitQty} ${inv.unit ?? "ед."}). Требуется пополнение склада.`;
 
 			additionalTransactions.push({
 				organizationId,
