@@ -1,8 +1,8 @@
 import React from "react";
 import type { Patient, StaffMember } from "@dental/shared";
 import type { ClinicProfileDraft } from "../../../../AppHelpers";
-import { FileText, Printer } from "lucide-react";
-import { printBlankMedicalContract } from "../../../patients/blankContractPrint";
+import { FileText, PenTool, Printer } from "lucide-react";
+import { handlePrintBlankContract } from "./printBlankHelper";
 
 export interface DocumentPrimaryIntakeBannerProps {
 	activePatient?: Patient | null | undefined;
@@ -11,6 +11,7 @@ export interface DocumentPrimaryIntakeBannerProps {
 	handleDirectPrintPrimaryIntake: () => void;
 	setIsPrimaryIntakeOpen: (open: boolean) => void;
 	setIsA4PrintPreviewOpen?: ((open: boolean) => void) | undefined;
+	setIsPatientConsentSignDrawerOpen?: ((open: boolean) => void) | undefined;
 }
 
 export const DocumentPrimaryIntakeBanner: React.FC<DocumentPrimaryIntakeBannerProps> = React.memo(
@@ -21,26 +22,10 @@ export const DocumentPrimaryIntakeBanner: React.FC<DocumentPrimaryIntakeBannerPr
 		handleDirectPrintPrimaryIntake,
 		setIsPrimaryIntakeOpen,
 		setIsA4PrintPreviewOpen,
+		setIsPatientConsentSignDrawerOpen,
 	}) {
 		const handlePrintBlank = () => {
-			void printBlankMedicalContract(
-				activePatient
-					? {
-							id: activePatient.id,
-							fullName: activePatient.fullName,
-							phone: activePatient.phone,
-							birthDate: activePatient.birthDate,
-							administrativeProfile: (activePatient as any)?.administrativeProfile,
-						}
-					: null,
-				{
-					doctorName: activeDoctor?.fullName || "",
-					clinicName: clinicProfileDraft?.clinicName || clinicProfileDraft?.legalName,
-					clinicAddress: clinicProfileDraft?.address,
-					clinicInn: clinicProfileDraft?.inn,
-					clinicOgrn: clinicProfileDraft?.ogrn,
-				},
-			);
+			handlePrintBlankContract(activePatient, activeDoctor, clinicProfileDraft);
 		};
 
 		return (
@@ -88,6 +73,18 @@ export const DocumentPrimaryIntakeBanner: React.FC<DocumentPrimaryIntakeBannerPr
 					>
 						<span>Состав пакета (4 док.)</span>
 					</button>
+					{setIsPatientConsentSignDrawerOpen && (
+						<button
+							type="button"
+							className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] px-3 text-[12.5px] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+							onClick={() => setIsPatientConsentSignDrawerOpen(true)}
+							data-testid="btn-open-patient-consent-drawer"
+							title="Открыть экран подписания информированного согласия пациентом на планшете"
+						>
+							<PenTool size={14} aria-hidden="true" />
+							<span>Подпись на планшете</span>
+						</button>
+					)}
 					{setIsA4PrintPreviewOpen && (
 						<button
 							type="button"

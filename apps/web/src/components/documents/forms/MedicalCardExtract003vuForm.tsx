@@ -2,6 +2,8 @@ import React, { useState } from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DocumentPayloadCard } from "../DocumentPayloadCard";
 import type { MedicalCardExtract003vuPayload, MedicalExtractTreatmentStage } from "@dental/shared";
+import { MedicalCardExtractStagesTable } from "./medicalCardExtract/MedicalCardExtractStagesTable";
+import { getDefaultDemoStages } from "./medicalCardExtract/defaultStages";
 
 export interface MedicalCardExtract003vuFormProps {
 	initialPayload?: Partial<MedicalCardExtract003vuPayload> | undefined;
@@ -31,28 +33,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 			if (initialPayload?.treatmentStagesTimeline) {
 				return initialPayload.treatmentStagesTimeline;
 			}
-			if (isDemoShowcaseMode()) {
-				return [
-					{
-						treatmentDate: "2026-08-10",
-						toothOrAnatomicalArea: "26",
-						diagnosisIcd10: "K04.0",
-						diagnosisText: "Пульпит",
-						performedIntervention: "Анестезия Ubistesin 1.7 мл, экстирпация пульпы, медикаментозная обработка 3 каналов, временная обтурация гидроксидом кальция",
-						anesthesiaUsed: "Ubistesin 4% 1.7 мл",
-						attendingDoctorFullName: defaultDoctor,
-					},
-					{
-						treatmentDate: "2026-08-17",
-						toothOrAnatomicalArea: "26",
-						diagnosisIcd10: "K04.0",
-						diagnosisText: "Пульпит",
-						performedIntervention: "Постоянная обтурация корневых каналов методом латеральной компакции гуттаперчи с силером AH-Plus, реставрация коронковой части светоотверждаемым композитом",
-						attendingDoctorFullName: defaultDoctor,
-					},
-				];
-			}
-			return [];
+			return isDemoShowcaseMode() ? getDefaultDemoStages(defaultDoctor) : [];
 		});
 
 		const addStageRow = () => {
@@ -110,45 +91,7 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 						</button>
 					</div>
 
-					<div style={{ overflowX: "auto", marginBottom: "16px" }}>
-						<table className="table table-bordered table-sm" style={{ fontSize: "12px" }}>
-							<thead>
-								<tr>
-									<th>Дата</th>
-									<th>Зуб</th>
-									<th>Диагноз</th>
-									<th>Проведенное лечение</th>
-									<th>Врач</th>
-								</tr>
-							</thead>
-							<tbody>
-								{stages.length === 0 ? (
-									<tr>
-										<td
-											colSpan={5}
-											style={{
-												textAlign: "center",
-												padding: "16px",
-												color: "var(--muted, #64748b)",
-											}}
-										>
-											Этапы лечения не добавлены. Нажмите «+ Добавить этап»
-										</td>
-									</tr>
-								) : (
-									stages.map((st, idx) => (
-										<tr key={idx}>
-											<td>{st.treatmentDate}</td>
-											<td>{st.toothOrAnatomicalArea || "—"}</td>
-											<td>{st.diagnosisText || st.diagnosisIcd10}</td>
-											<td>{st.performedIntervention}</td>
-											<td>{st.attendingDoctorFullName}</td>
-										</tr>
-									))
-								)}
-							</tbody>
-						</table>
-					</div>
+					<MedicalCardExtractStagesTable stages={stages} />
 
 					<div className="form-group">
 						<label style={{ fontWeight: 600 }}>Рекомендации пациенту</label>
@@ -165,5 +108,3 @@ export const MedicalCardExtract003vuForm: React.FC<MedicalCardExtract003vuFormPr
 		);
 	},
 );
-
-export const MedicalCardExtract043uForm = MedicalCardExtract003vuForm;

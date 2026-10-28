@@ -1,5 +1,5 @@
 import React from "react";
-import { FileText, Printer } from "lucide-react";
+import { FileText, PenTool, Printer } from "lucide-react";
 import type { DocumentHeaderSectionProps } from "./header/documentHeaderTypes";
 import { DocumentHeadingBar } from "./header/DocumentHeadingBar";
 import { DocumentPatientBanner } from "./header/DocumentPatientBanner";
@@ -11,24 +11,12 @@ export type { DocumentHeaderSectionProps };
 export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React.memo(
 	function DocumentHeaderSection(props) {
 		const {
-			activePatient,
-			activeDoctor,
-			clinicProfileDraft,
-			typedActiveDocuments,
-			patientIssuedDocsCount,
-			patientDraftDocsCount,
-			activeUsableDocuments,
-			latestDocumentOpenGuidanceId,
-			handleOpenLatestDocument,
-			handleDirectPrintPrimaryIntake,
-			setIsPrimaryIntakeOpen,
-			setIsSurgicalPackageOpen,
-			setIsClinicalVisitOpen,
-			setIsTaxAccountingOpen,
-			setIsSanpinRegistryOpen,
-			setIsSickLeaveElnOpen,
-			setIsA4PrintPreviewOpen,
-			onSelectDocumentKind,
+			activePatient, activeDoctor, clinicProfileDraft, typedActiveDocuments,
+			patientIssuedDocsCount, patientDraftDocsCount, activeUsableDocuments,
+			latestDocumentOpenGuidanceId, handleOpenLatestDocument, handleDirectPrintPrimaryIntake,
+			setIsPrimaryIntakeOpen, setIsSurgicalPackageOpen, setIsClinicalVisitOpen,
+			setIsTaxAccountingOpen, setIsSanpinRegistryOpen, setIsSickLeaveElnOpen,
+			setIsA4PrintPreviewOpen, setIsPatientConsentSignDrawerOpen, onSelectDocumentKind,
 		} = props;
 
 		return (
@@ -83,6 +71,17 @@ export const DocumentHeaderSection: React.FC<DocumentHeaderSectionProps> = React
 						>
 							<span>Состав пакета (4 док.)</span>
 						</button>
+						{setIsPatientConsentSignDrawerOpen && (
+							<button
+								type="button"
+								className="secondary-button h-9 min-h-[36px] rounded-xl border border-[var(--teal,#0d9488)]/40 bg-[var(--paper)] text-[var(--teal,#0d9488)] px-3 text-[12.5px] font-semibold flex items-center gap-1.5 cursor-pointer"
+								onClick={() => setIsPatientConsentSignDrawerOpen(true)}
+								data-testid="btn-open-patient-consent-drawer"
+							>
+								<PenTool size={14} aria-hidden="true" />
+								<span>Подпись на планшете</span>
+							</button>
+						)}
 						{setIsA4PrintPreviewOpen && (
 							<button
 								type="button"

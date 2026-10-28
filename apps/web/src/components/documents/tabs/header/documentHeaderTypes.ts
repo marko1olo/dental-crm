@@ -20,5 +20,6 @@ export interface DocumentHeaderSectionProps {
 	setIsSanpinRegistryOpen: (open: boolean) => void;
 	setIsSickLeaveElnOpen?: ((open: boolean) => void) | undefined;
 	setIsA4PrintPreviewOpen?: ((open: boolean) => void) | undefined;
+	setIsPatientConsentSignDrawerOpen?: ((open: boolean) => void) | undefined;
 	onSelectDocumentKind?: ((kind: DocumentKind) => void) | undefined;
 }

@@ -58,15 +58,12 @@ export function useOutpatientArchiveState({
 
 	const getClinicPayload = () => ({
 		clinicName: appLogic?.dashboard?.clinicSettings?.profile?.clinicName || "ООО «Денте»",
-		legalName: "ООО «Денте»",
-		fullName: "ООО «Денте»",
+		legalName: "ООО «Денте»", fullName: "ООО «Денте»",
 		inn: (appLogic?.dashboard?.organization as { inn?: string } | undefined)?.inn || "",
 	});
 
 	const getPatientPayload = () => (activePatient ? {
-		fullName: activePatient.fullName || "",
-		birthDate: activePatient.birthDate,
-		phone: activePatient.phone,
+		fullName: activePatient.fullName || "", birthDate: activePatient.birthDate, phone: activePatient.phone,
 	} : null);
 
 	const handlePrintBlankContract = () => {
@@ -86,17 +83,16 @@ export function useOutpatientArchiveState({
 			const blankHtml = renderForm043uHtml({
 				medicalCardNumber: activePatient?.cardNumber || "__________",
 				cardOpenedDate: "«___» _________ 20___ г.",
-				patientFullName: activePatient?.fullName || "________________________________________________________",
+				patientFullName: activePatient?.fullName || "________________________",
 				patientBirthDate: activePatient?.birthDate || "«___» _________ _____ г.",
 				patientPhone: activePatient?.phone || "+7 (___) ___-__-__",
-				patientAddressRegistration: "________________________________________________________",
-				chiefComplaint: "________________________________________________________",
-				historyOfPresentIllness: "________________________________________________________",
-				allergologicalHistory: "________________________________________________________",
-				concomitantDiseases: "________________________________________________________",
+				patientAddressRegistration: "________________________",
+				chiefComplaint: "________________________",
+				historyOfPresentIllness: "________________________",
+				allergologicalHistory: "________________________",
+				concomitantDiseases: "________________________",
 				attendingDoctorFullName: activeDoctor?.fullName || "________________________",
-				isClosed: false,
-				watermarkText: "ЧЕРНОВИК (БЛАНК)",
+				isClosed: false, watermarkText: "ЧЕРНОВИК (БЛАНК)",
 			});
 			const pw = window.open("", "_blank");
 			if (pw) { pw.document.write(blankHtml); pw.document.close(); pw.focus(); pw.print(); }

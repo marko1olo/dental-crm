@@ -6,7 +6,6 @@
 import {
 	INCAPACITY_REASON_CODES,
 	SICK_LEAVE_CLOSING_CODES,
-	REGIME_VIOLATION_CODES,
 } from "../sickLeaveElnPresets.js";
 import { isDemoShowcaseMode } from "../../../../utils/demoModeEngine.js";
 import type { SickLeavePatientData, SickLeaveFormState } from "./types.js";
@@ -20,12 +19,7 @@ import {
 
 export function escapeXml(unsafe: string): string {
 	if (!unsafe) return "";
-	return unsafe
-		.replace(/&/g, "&amp;")
-		.replace(/</g, "&lt;")
-		.replace(/>/g, "&gt;")
-		.replace(/"/g, "&quot;")
-		.replace(/'/g, "&apos;");
+	return unsafe.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;");
 }
 
 export function generateElnXmlPayload(

@@ -27,26 +27,14 @@ export const SignaturePaperPanel: React.FC<SignaturePaperPanelProps> = ({
 	>
 		<div
 			style={{
-				padding: "16px",
-				borderRadius: "12px",
-				border: "1px solid var(--line, #e2e8f0)",
-				background: "var(--paper-soft, #f8fafc)",
-				display: "flex",
-				alignItems: "center",
-				gap: "14px",
+				padding: "16px", borderRadius: "12px", border: "1px solid var(--line, #e2e8f0)",
+				background: "var(--paper-soft, #f8fafc)", display: "flex", alignItems: "center", gap: "14px",
 			}}
 		>
 			<div
 				style={{
-					width: "44px",
-					height: "44px",
-					borderRadius: "10px",
-					background: "rgba(13, 148, 136, 0.12)",
-					color: "var(--teal, #0d9488)",
-					display: "flex",
-					alignItems: "center",
-					justifyContent: "center",
-					flexShrink: 0,
+					width: "44px", height: "44px", borderRadius: "10px", background: "rgba(13, 148, 136, 0.12)",
+					color: "var(--teal, #0d9488)", display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0,
 				}}
 			>
 				<FileText size={22} />

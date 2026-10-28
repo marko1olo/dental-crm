@@ -130,6 +130,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 	const [isEgiszRemdOpen, setIsEgiszRemdOpen] = useState(false);
 	const [isSickLeaveElnOpen, setIsSickLeaveElnOpen] = useState(false);
 	const [isA4PrintPreviewOpen, setIsA4PrintPreviewOpen] = useState(false);
+	const [isPatientConsentSignDrawerOpen, setIsPatientConsentSignDrawerOpen] = useState(false);
 
 	const selectedDocumentCreateGuidanceId = "document-create-selected-guidance";
 	const latestDocumentOpenGuidanceId = "document-open-latest-guidance";
@@ -320,7 +321,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 			latestDocumentOpenGuidanceId, handleOpenLatestDocument, setIsAutoclaveLogOpen,
 			handleDirectPrintPrimaryIntake, setIsPrimaryIntakeOpen, setIsSurgicalPackageOpen,
 			setIsClinicalVisitOpen, setIsTaxAccountingOpen, setIsSanpinRegistryOpen,
-			setIsA4PrintPreviewOpen, onSelectDocumentKind: setSelectedDocumentKind,
+			setIsA4PrintPreviewOpen, setIsPatientConsentSignDrawerOpen, onSelectDocumentKind: setSelectedDocumentKind,
 		},
 		focusPreviewProps: {
 			isEditingInFocus, onCloseFocus: () => setIsEditingInFocus(false),
@@ -407,6 +408,7 @@ export function useDocumentsViewController(rawProps?: Partial<DocumentsViewProps
 			onOpenAutoclaveLog257: () => setIsAutoclaveLogOpen(true),
 			isFnsNdflXmlOpen, setIsFnsNdflXmlOpen, isEgiszRemdOpen, setIsEgiszRemdOpen,
 			isSickLeaveElnOpen, setIsSickLeaveElnOpen, isA4PrintPreviewOpen, setIsA4PrintPreviewOpen,
+			isPatientConsentSignDrawerOpen, setIsPatientConsentSignDrawerOpen,
 			activePatient, activeDoctor, clinicProfileDraft, typedActiveDocuments, createDocument,
 			openIssuedDocumentHtml, setSelectedDocumentKind, taxDocumentYear, setTaxDocumentYear,
 			typedTaxDocumentPayerOptions, selectedTaxDocumentPayerKey: props.selectedTaxDocumentPayerKey,

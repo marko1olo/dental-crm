@@ -117,26 +117,3 @@
 		flex-shrink: 0;
 	}
 }
-
-.document-anamnesis-quick {
-	display: inline-flex;
-	align-items: center;
-	padding: 6px 12px;
-	min-height: 32px;
-	border-radius: 8px;
-	font-size: 12px;
-	font-weight: 600;
-	color: var(--teal-dark, var(--teal));
-	background: var(--teal-surface);
-	border: 1px solid var(--teal-soft);
-	cursor: pointer;
-	transition: all var(--transition-fast);
-	margin-top: 6px;
-	text-align: left;
-}
-
-.document-anamnesis-quick:hover {
-	background: var(--teal-soft);
-	border-color: var(--teal);
-}
-

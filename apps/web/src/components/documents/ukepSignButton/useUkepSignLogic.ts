@@ -11,6 +11,7 @@ import { showToast } from "../../GlobalToast";
 import type { CertificatesState } from "./types";
 import { SIGN_FAILURE_TAIL } from "./types";
 import { loadIssuedPdfBase64 } from "./loadIssuedPdf";
+import { submitUkepSignature } from "./submitUkepSignature";
 
 export function useUkepSignLogic(documentId: string, onSuccess?: () => void) {
 	const [isSigning, setIsSigning] = useState(false);
@@ -81,18 +82,7 @@ export function useUkepSignLogic(documentId: string, onSuccess?: () => void) {
 				return;
 			}
 			const signature = await signBase64WithCertificate(pdf.base64, selectedThumbprint);
-			const response = await fetch(`/api/documents/${documentId}/sign-ukep`, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					pkcs7Signature: signature,
-					certificateSerialNumber: selectedCert.serialNumber,
-					certificateSubject: selectedCert.subjectName,
-					validFrom: selectedCert.validFrom,
-					validTo: selectedCert.validTo,
-					signatureType: "ukep",
-				}),
-			});
+			const response = await submitUkepSignature(documentId, signature, selectedCert);
 			if (!response.ok) {
 				const reason = await responseErrorMessage(response, "Подпись УКЭП не сохранена");
 				failSigning(`${reason}. ${SIGN_FAILURE_TAIL}`);

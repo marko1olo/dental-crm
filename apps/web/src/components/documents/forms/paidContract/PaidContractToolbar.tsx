@@ -25,13 +25,11 @@ export const PaidContractToolbar: React.FC<PaidContractToolbarProps> = React.mem
 
 		useEffect(() => {
 			if (!isMoreMenuOpen) return;
-			const handleClickOutside = (e: MouseEvent) => {
-				if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) {
-					setIsMoreMenuOpen(false);
-				}
+			const onOut = (e: MouseEvent) => {
+				if (moreMenuRef.current && !moreMenuRef.current.contains(e.target as Node)) setIsMoreMenuOpen(false);
 			};
-			document.addEventListener("mousedown", handleClickOutside);
-			return () => document.removeEventListener("mousedown", handleClickOutside);
+			document.addEventListener("mousedown", onOut);
+			return () => document.removeEventListener("mousedown", onOut);
 		}, [isMoreMenuOpen]);
 
 		return (
@@ -87,33 +85,15 @@ export const PaidContractToolbar: React.FC<PaidContractToolbarProps> = React.mem
 						</button>
 						{isMoreMenuOpen && (
 							<div className="absolute right-0 top-full mt-1.5 w-60 bg-[var(--paper)] border border-[var(--line)] rounded-xl shadow-lg z-50 py-1.5 text-xs text-[var(--ink)]">
-								<button
-									type="button"
-									onClick={() => { setIsMoreMenuOpen(false); onGenNumber(); }}
-									className="w-full px-3 py-2 text-left hover:bg-[var(--line-subtle)] flex items-center gap-2 cursor-pointer font-medium"
-									data-testid="btn-paid-contract-gen-number"
-								>
-									<RefreshCw className="w-4 h-4 text-slate-500 shrink-0" />
-									<span>Новый номер договора</span>
+								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onGenNumber(); }} className="w-full px-3 py-2 text-left hover:bg-[var(--line-subtle)] flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-gen-number">
+									<RefreshCw className="w-4 h-4 text-slate-500 shrink-0" /><span>Новый номер договора</span>
 								</button>
-								<button
-									type="button"
-									onClick={() => { setIsMoreMenuOpen(false); onCopyText(); }}
-									className="w-full px-3 py-2 text-left hover:bg-[var(--line-subtle)] flex items-center gap-2 cursor-pointer font-medium"
-									data-testid="btn-paid-contract-copy-text"
-								>
-									<Copy className="w-4 h-4 text-slate-500 shrink-0" />
-									<span>Копировать текст</span>
+								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onCopyText(); }} className="w-full px-3 py-2 text-left hover:bg-[var(--line-subtle)] flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-copy-text">
+									<Copy className="w-4 h-4 text-slate-500 shrink-0" /><span>Копировать текст</span>
 								</button>
 								<div className="my-1 border-t border-[var(--line)]" />
-								<button
-									type="button"
-									onClick={() => { setIsMoreMenuOpen(false); onReset(); }}
-									className="w-full px-3 py-2 text-left hover:bg-rose-500/10 text-rose-600 flex items-center gap-2 cursor-pointer font-medium"
-									data-testid="btn-paid-contract-reset"
-								>
-									<RotateCcw className="w-4 h-4 text-rose-500 shrink-0" />
-									<span>Очистить поля</span>
+								<button type="button" onClick={() => { setIsMoreMenuOpen(false); onReset(); }} className="w-full px-3 py-2 text-left hover:bg-rose-500/10 text-rose-600 flex items-center gap-2 cursor-pointer font-medium" data-testid="btn-paid-contract-reset">
+									<RotateCcw className="w-4 h-4 text-rose-500 shrink-0" /><span>Очистить поля</span>
 								</button>
 							</div>
 						)}

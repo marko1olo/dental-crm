@@ -13,6 +13,8 @@ export interface DocumentModalsContainerProps {
 	a4InitialTab?: ProfessionalA4DocumentTab;
 	isPrimaryIntakeOpen: boolean;
 	setIsPrimaryIntakeOpen: (open: boolean) => void;
+	isPatientConsentSignDrawerOpen?: boolean;
+	setIsPatientConsentSignDrawerOpen?: (open: boolean) => void;
 	isSurgicalPackageOpen: boolean;
 	setIsSurgicalPackageOpen: (open: boolean) => void;
 	isClinicalVisitOpen: boolean;

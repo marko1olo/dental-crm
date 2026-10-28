@@ -1,24 +1,17 @@
 /**
  * ═══════════════════════════════════════════════════════════════════════════
- * FNS STATUTORY MEDICAL TAX DEDUCTION XML ENGINE (ПРИКАЗ ФНС № ЕД-7-11/755@)
+ * FNS STATUTORY MEDICAL TAX DEDUCTION XML ENGINE
  * KND 1151156 / Electronic XML Format KND 1184043 (UT_SVOPLMEDUSL Version 5.01)
  * ═══════════════════════════════════════════════════════════════════════════
- *
- * Transparent facade delegating to canonical @dental/shared implementation
- * (packages/shared/src/documents/ndflXmlGenerator.ts).
- * Complies with Mandates 8s, 8j, 8l (Single Source of Truth).
+ * Transparent facade delegating to canonical @dental/shared implementation.
  */
 
 import {
 	buildFnsKnd1151156Xml,
 	cleanDigits,
 	escapeXmlAttr,
-	type FnsClinicInfo,
-	type FnsFiscalReceiptItem,
 	type FnsKinshipCode,
 	type FnsNdflXmlResult,
-	type FnsPatientInfo,
-	type FnsPersonInfo,
 	type FnsPreflightIssue,
 	type FnsTaxPayload,
 	formatFnsRuDate,
@@ -26,9 +19,10 @@ import {
 	generateFnsNdflPrintHtml as sharedGenerateFnsNdflPrintHtml,
 	preflightValidatePayload as sharedPreflightValidatePayload,
 	rublesFromKopecks,
-	type SupportedTaxYear,
 } from "@dental/shared";
+import type { FnsNdflXmlPayload } from "./types";
 
+export * from "./types";
 export {
 	cleanDigits,
 	escapeXmlAttr,
@@ -37,39 +31,6 @@ export {
 	type FnsPreflightIssue,
 	type FnsNdflXmlResult,
 };
-
-export type FnsNdflClinicMetadata = FnsClinicInfo;
-export type FnsNdflPayerMetadata = FnsPersonInfo;
-
-export interface FnsNdflPatientMetadata extends Partial<FnsPatientInfo> {
-	kinshipCode: FnsKinshipCode;
-}
-
-export type FnsNdflFiscalReceiptItem = FnsFiscalReceiptItem;
-
-export interface FnsNdflXmlPayload {
-	documentNumber: string;
-	documentDate: string | Date;
-	taxYear: SupportedTaxYear | number;
-	taxInspectionCode?: string | undefined;
-	certificateKind?: "1" | "2" | "3" | undefined;
-	correctionNumber?: number | undefined;
-	softwareVersion?: string | undefined;
-	clinic: FnsNdflClinicMetadata;
-	payer: FnsNdflPayerMetadata;
-	patient: FnsNdflPatientMetadata;
-	receipts: FnsNdflFiscalReceiptItem[];
-	signatory?: {
-		signatoryRole: "1" | "2";
-		fullName: {
-			family: string;
-			given: string;
-			patronymic?: string | undefined;
-		};
-		snils?: string | undefined;
-		powerOfAttorneyNumber?: string | undefined;
-	} | undefined;
-}
 
 /** Разделение полного ФИО на Фамилию, Имя, Отчество */
 export function parseFio(fullNameStr: string): {
@@ -85,10 +46,6 @@ export function parseFio(fullNameStr: string): {
 	};
 }
 
-/**
- * Генерация уникального ИдФайл и имени файла по стандарту ФНС РФ:
- * UT_SVOPLMEDUSL_<КодНО>_<КодНО>_<ИдОтпр>_<ДатаДокГГГГММДД>_<UUID>
- */
 export function generateFnsFileName(
 	taxOfficeCode: string,
 	senderInn: string,
@@ -133,16 +90,10 @@ function adaptPayloadToShared(payload: FnsNdflXmlPayload): FnsTaxPayload {
 	};
 }
 
-/**
- * Валидация входных данных перед генерацией XML.
- */
 export function preflightValidatePayload(payload: FnsNdflXmlPayload): FnsPreflightIssue[] {
 	return sharedPreflightValidatePayload(adaptPayloadToShared(payload));
 }
 
-/**
- * Основной генератор XML по Приказу ФНС России № ЕД-7-11/755@ (КНД 1184043).
- */
 export function generateFnsNdflXml(
 	payload: FnsNdflXmlPayload,
 	customUuid?: string,
@@ -150,10 +101,6 @@ export function generateFnsNdflXml(
 	return buildFnsKnd1151156Xml(adaptPayloadToShared(payload), customUuid);
 }
 
-/**
- * Генерация печатного HTML документа "Справка об оплате медицинских услуг"
- * (Приложение № 1 к приказу ФНС России от 08.11.2023 № ЕА-7-11/824@ / форма по КНД 1151156).
- */
 export function generateFnsNdflPrintHtml(payload: FnsNdflXmlPayload): string {
 	return sharedGenerateFnsNdflPrintHtml(adaptPayloadToShared(payload));
 }
