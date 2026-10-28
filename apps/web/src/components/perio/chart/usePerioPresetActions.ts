@@ -23,8 +23,26 @@ export function usePerioPresetActions({
 	const handleSetAllIntact = useCallback(() => {
 		if (readOnly) return;
 		setTeeth((prev) => applyHealthyPeriodontiumPreset(prev));
+
+		const normStatusRu =
+			"Пародонт: десна бледно-розовая, плотная, зубодесневая борозда 1–2 мм, кровоточивость отсутствует (BOP 0%), патологических карманов нет, подвижность зубов физиологическая (0 ст.). Скрининг PSR: 0 во всех секстантах (Z01.2).";
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						objectiveStatus: normStatusRu,
+						diagnosis: "Z01.2 Стоматологическое обследование (Пародонт интактен / норма)",
+						mode: "merge",
+					},
+				}),
+			);
+		}
+
+		if (onInsertToProtocol) onInsertToProtocol(normStatusRu);
+
 		showToast("Пародонт интактен (норма): глубина 1–2 мм, BOP 0%, PMA 0%", "success", 4000);
-	}, [readOnly, setTeeth]);
+	}, [readOnly, setTeeth, onInsertToProtocol]);
 
 	const handleApplyExpressPreset = useCallback((presetId: PerioExpressPresetId) => {
 		if (readOnly) return;

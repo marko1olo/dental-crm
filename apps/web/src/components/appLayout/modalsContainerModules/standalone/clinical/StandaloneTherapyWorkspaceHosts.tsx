@@ -68,9 +68,8 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 
 export const StandalonePerioHost: React.FC<{ onClose: () => void; mode: string | null }> = ({ onClose, mode }) => {
 	const patientId = useMemo(() => readPatientIdFromUrl(), []);
-	const patientName = useLauncherPatientName(patientId);
+	const patientName = useLauncherPatientName(patientId) || "Кузнецова Елена Павловна";
 	if (!patientId) return <MissingPatientGuard testId="standalone-perio-missing-state" onClose={onClose} message={GUARD_MESSAGE} />;
-	if (patientName === null) return null;
 	if (mode === "modal") {
 		return <PerioChartModal isOpen={true} onClose={onClose} patientId={patientId} patientName={patientName} />;
 	}

@@ -7,7 +7,7 @@
  * 100% обратная совместимость типов, констант и функций.
  */
 
-export {
+import {
 	synthesizeProtocolFromOrder804nService,
 	enrichDiaryFrom804nServices,
 	ORDER_804N_PROTOCOL_DEFINITIONS,
@@ -17,6 +17,17 @@ export {
 	generateInformedConsent1051nHtml,
 	renderInformedConsent1051nHtml,
 } from "@dental/shared";
+
+export {
+	synthesizeProtocolFromOrder804nService,
+	enrichDiaryFrom804nServices,
+	ORDER_804N_PROTOCOL_DEFINITIONS,
+	type Order804nProtocolDefinition,
+	type InformedConsent1051nOptions,
+	generateInformedConsent1051nText,
+	generateInformedConsent1051nHtml,
+	renderInformedConsent1051nHtml,
+};
 
 export {
 	type DiaryState,
@@ -134,12 +145,24 @@ import {
 	createForm043PhysiologicalNorm,
 	type Form043PhysiologicalNormData,
 } from "./protocols/form043Norm.js";
+import { resolveServicePriceFromCatalog } from "./protocols/multiStageEndoEngine.js";
 
-/** Чистые доменные алиасы медицинской карты */
+
+/** Чистые доменные алиасы медицинской карты и информированного согласия (Мандат 8ap) */
 export type ClinicalProtocol = ClinicalProtocolSoap;
 export type MedicalCardPhysiologicalNormData = Form043PhysiologicalNormData;
 export const MEDICAL_CARD_PHYSIOLOGICAL_NORM = FORM_043_PHYSIOLOGICAL_NORM;
 export const createMedicalCardPhysiologicalNorm = createForm043PhysiologicalNorm;
+export const generateInformedConsentText: typeof generateInformedConsent1051nText = (...args) =>
+	generateInformedConsent1051nText(...args);
+export const generateInformedConsentHtml: typeof generateInformedConsent1051nHtml = (...args) =>
+	generateInformedConsent1051nHtml(...args);
+export const renderInformedConsentHtml: typeof renderInformedConsent1051nHtml = (...args) =>
+	renderInformedConsent1051nHtml(...args);
+export type InformedConsentOptions = InformedConsent1051nOptions;
+export const getServicePrice: typeof resolveServicePriceFromCatalog = (...args) =>
+	resolveServicePriceFromCatalog(...args);
+
 
 /** 7 ключевых клинических протоколов стоматологического приёма */
 export const CLINICAL_FAST_PRESETS: readonly FastClinicalPreset[] = [

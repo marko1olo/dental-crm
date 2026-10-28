@@ -1,6 +1,6 @@
 /**
- * periodontalProphyAndKeyboard.test.ts — Пресет «Профгигиена» и инвариант фокуса Numpad (Мандат 8k).
- * Мандат 8b: <= 120 строк.
+ * periodontalProphyAndKeyboard.test.ts — Пресет «Профгигиена» и экспресс-скрининг ВОЗ (Мандат 8e, 8k).
+ * Переписан в соответствии с приказом Создателя: без симуляторов клавиатуры и микро-дроча.
  */
 
 import { PSR_SEXTANTS } from "@dental/shared";
@@ -11,7 +11,7 @@ import { renderToString } from "react-dom/server";
 import { generatePsrDiaryProtocol } from "../perioMath";
 import { PeriodontogramChart } from "../PeriodontogramChart";
 
-describe("8. Prophy Protocol & Keyboard Intercept Invariants (Mandate 8k)", () => {
+describe("8. Prophy Protocol & PSR Screening Invariants (Mandates 8e, 8k)", () => {
 	it("pro_hygiene_express generates clinical hygiene protocol", () => {
 		const prophyDiary = generatePsrDiaryProtocol("pro_hygiene_express");
 		assert.ok(prophyDiary.includes("Профгигиена полости рта: УЗ-скейлинг"));
@@ -20,7 +20,7 @@ describe("8. Prophy Protocol & Keyboard Intercept Invariants (Mandate 8k)", () =
 		assert.ok(prophyDiary.includes("глубокое фторирование эмали"));
 	});
 
-	it("keyboard intercept is off by default and cards render cleanly", () => {
+	it("PeriodontogramChart renders PSR 6-sextant screening and hygiene actions cleanly", () => {
 		const html = renderToString(
 			React.createElement(PeriodontogramChart, {
 				patientId: "patient-keyboard-test",
@@ -28,18 +28,17 @@ describe("8. Prophy Protocol & Keyboard Intercept Invariants (Mandate 8k)", () =
 			}),
 		);
 
-		assert.ok(html.includes('data-testid="perio-probe-keyboard-toggle"'));
-		assert.ok(html.includes('tabindex="-1"') || html.includes('tabIndex="-1"'));
-		assert.ok(html.includes('data-testid="perio-preset-norm-card"'));
-		assert.ok(html.includes('data-testid="perio-preset-prophy-card"'));
-		assert.ok(html.includes('data-testid="perio-preset-gingivitis-card"'));
+		assert.ok(html.includes("data-testid=\"perio-toolbar-norm-1click-btn\""));
+		assert.ok(html.includes("data-testid=\"psr-all-intact-btn\""));
+		assert.ok(html.includes("data-testid=\"psr-hygiene-preset-btn\""));
+		assert.ok(html.includes("Кузнецов Петр Сергеевич"));
 
 		for (const sextant of PSR_SEXTANTS) {
 			assert.ok(html.includes(sextant.name));
 		}
 	});
 
-	it("keyboard toggle duplicate is rendered when Tier 3 is expanded", () => {
+	it("detailed chart tier 3 expands cleanly on request", () => {
 		const htmlTier3 = renderToString(
 			React.createElement(PeriodontogramChart, {
 				patientId: "patient-tier3-test",
@@ -47,6 +46,7 @@ describe("8. Prophy Protocol & Keyboard Intercept Invariants (Mandate 8k)", () =
 				initialTier3Expanded: true,
 			}),
 		);
-		assert.ok(htmlTier3.includes('data-testid="perio-probe-keyboard-toggle-tier3"'));
+		assert.ok(htmlTier3.includes("data-testid=\"perio-tooth-btn-16\""));
+		assert.ok(htmlTier3.includes("Дистально-вестибулярная"));
 	});
 });

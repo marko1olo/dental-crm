@@ -189,3 +189,41 @@ export function computeSnapshotIndices(
 		total_sites_probed: totalProbed,
 	};
 }
+
+/**
+ * Returns structured clinical hygiene recommendations based on WHO PSR code (0..4).
+ */
+export function getHygieneRecommendations(psrCode: number, hasAsterisk = false): string[] {
+	const recommendations: string[] = [];
+
+	if (psrCode === 0) {
+		recommendations.push("Профилактический осмотр через 6 месяцев.");
+		recommendations.push("Профессиональная гигиена полости рта по желанию пациента.");
+	} else if (psrCode === 1) {
+		recommendations.push("Контроль и обучение индивидуальной гигиене полости рта.");
+		recommendations.push("Удаление мягкого зубного налёта и полировка эмали пастой / Air-Flow.");
+	} else if (psrCode === 2) {
+		recommendations.push("Комплексная профессиональная гигиена: ультразвуковое снятие над- и поддесневого камня.");
+		recommendations.push("Полировка поверхностей корней Air-Flow и реминерализующая терапия.");
+	} else if (psrCode === 3) {
+		recommendations.push("Комплексная гигиена полости рта и закрытый кюретаж карманов (4–5 мм) в пораженных секстантах.");
+		recommendations.push("Медикаментозная противовоспалительная обработка пародонтальных карманов.");
+	} else {
+		recommendations.push("Комплексное пародонтологическое лечение: скейлинг, открытый кюретаж / лоскутная операция.");
+		recommendations.push("Консультация хирурга-пародонтолога и системная противовоспалительная терапия.");
+	}
+
+	if (hasAsterisk) {
+		recommendations.push("Осложнение (*): избирательное пришлифовывание суперконтактов и шинирование подвижных зубов.");
+	}
+
+	return recommendations;
+}
+
+/**
+ * Generates unified clinical hygiene text for Form 043 / outpatient notes.
+ */
+export function getHygienePlanText(psrCode: number, hasAsterisk = false): string {
+	return getHygieneRecommendations(psrCode, hasAsterisk).join(" ");
+}
+

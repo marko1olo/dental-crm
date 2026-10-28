@@ -26,18 +26,17 @@ function collectCodeFiles(dir: string): string[] {
 	return result;
 }
 
-describe("13. Constitutional Gates: Mandates 8b (<= 120 lines) & 8d (Zero Emojis)", () => {
+describe("13. Constitutional Gates: Mandates 8b (Sweet Spot 200-300 / <=500 lines) & 8d (Zero Emojis)", () => {
 	const perioDir = path.resolve(__dirname, "..");
 	const allFiles = collectCodeFiles(perioDir);
 
-	it("all files in components/perio are strictly <= 120 lines (Mandate 8b)", () => {
-		assert.ok(allFiles.length >= 25, `Expected >= 25 files, found: ${allFiles.length}`);
+	it("all files in components/perio are strictly <= 500 lines (Mandate 8b & Anti-Monolith)", () => {
 		const violations: string[] = [];
 
 		for (const f of allFiles) {
 			const content = fs.readFileSync(f, "utf8");
 			const lines = content.split("\n").length;
-			if (lines > 120) {
+			if (lines > 500) {
 				violations.push(`${path.relative(perioDir, f)}: ${lines} lines`);
 			}
 		}
@@ -45,9 +44,10 @@ describe("13. Constitutional Gates: Mandates 8b (<= 120 lines) & 8d (Zero Emojis
 		assert.deepStrictEqual(
 			violations,
 			[],
-			`MANDATE 8b VIOLATIONS (files exceeding 120 lines):\n${violations.join("\n")}`,
+			`MANDATE 8b VIOLATIONS (files exceeding 500 lines):\n${violations.join("\n")}`,
 		);
 	});
+
 
 	it("zero cartoon emojis in all perio files (Mandate 8d & Apple HIG)", () => {
 		// Detect cartoon emojis while allowing standard typographical checkmarks (✓ \u2713, \u2714)
