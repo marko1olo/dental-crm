@@ -1,19 +1,12 @@
 /**
  * toothDrawerPediatricFooter.css — Pediatric Resorption & Drawer Footer Actions
  */
-
-.dente-resorption-box {
-	display: flex;
-	flex-direction: column;
-	gap: 6px;
-}
-
+.dente-resorption-box { display: flex; flex-direction: column; gap: 6px; }
 .dente-resorption-grid {
 	display: grid;
 	grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 	gap: 6px;
 }
-
 .dente-resorption-btn {
 	min-height: 36px;
 	padding: 4px 8px;
@@ -29,17 +22,8 @@
 	cursor: pointer;
 	position: relative;
 }
-
-.dente-resorption-btn .resorption-title {
-	font-size: 12px;
-	font-weight: 700;
-}
-
-.dente-resorption-btn .resorption-sub {
-	font-size: 9px;
-	color: var(--muted, #64748b);
-}
-
+.dente-resorption-btn .resorption-title { font-size: 12px; font-weight: 700; }
+.dente-resorption-btn .resorption-sub { font-size: 9px; color: var(--muted, #64748b); }
 .dente-resorption-btn.selected {
 	background: var(--teal-surface);
 	border-color: var(--teal);
@@ -63,10 +47,7 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
-
-.dente-primary-action-btn:hover {
-	background: var(--teal-dark);
-}
+.dente-primary-action-btn:hover { background: var(--teal-dark); }
 
 .dente-secondary-btn {
 	min-height: 44px;
@@ -83,10 +64,7 @@
 	gap: 6px;
 	cursor: pointer;
 }
-
-.dente-secondary-btn:hover {
-	background: var(--paper-soft);
-}
+.dente-secondary-btn:hover { background: var(--paper-soft); }
 
 /* Drawer Footer */
 .dente-tooth-drawer-footer {
@@ -97,7 +75,6 @@
 	background: var(--paper-strong);
 	border-top: 1px solid var(--line);
 }
-
 .dente-drawer-btn-primary {
 	min-height: 44px;
 	padding: 8px 20px;
@@ -110,12 +87,10 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
-
 .dente-drawer-btn-primary:hover {
 	background: var(--teal-dark, #0f766e);
 	border-color: var(--teal-dark, #0f766e);
 }
-
 .dente-drawer-btn-secondary {
 	min-height: 44px;
 	padding: 8px 16px;
@@ -128,7 +103,15 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
+.dente-drawer-btn-secondary:hover { background: var(--paper-soft); }
 
-.dente-drawer-btn-secondary:hover {
-	background: var(--paper-soft);
+@media (max-width: 640px) {
+	.dente-tooth-drawer-footer {
+		padding: 10px 14px calc(12px + env(safe-area-inset-bottom, 0px));
+		position: sticky;
+		bottom: 0;
+		z-index: 30;
+	}
+	.dente-tooth-drawer-footer .footer-actions { width: 100%; display: flex; gap: 8px; }
+	.dente-tooth-drawer-footer .dente-drawer-btn-primary { flex: 1; }
 }

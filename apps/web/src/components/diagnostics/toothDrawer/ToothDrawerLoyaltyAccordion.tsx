@@ -29,12 +29,16 @@ export const ToothDrawerLoyaltyAccordion: React.FC<ToothDrawerLoyaltyAccordionPr
 				onClick={() => toggleSection("family_loyalty")}
 				className={`dente-accordion-trigger ${isExpanded ? "expanded" : ""}`}
 			>
-				<div className="trigger-left">
-					<Wallet size={16} color="var(--brand-primary, var(--teal))" />
-					<span className="trigger-title">4. Семейный депозит & Кешбэк (Сплит оплаты)</span>
+				<div className="trigger-left min-w-0 flex-1">
+					<div className="flex items-center gap-2 min-w-0">
+						<Wallet size={16} className="shrink-0" color="var(--brand-primary, var(--teal))" />
+						<span className="trigger-title truncate">4. Депозит & Бонусы</span>
+					</div>
+					<span className="trigger-summary text-[11px] text-[var(--muted)] font-medium pl-6 block sm:inline sm:pl-2">
+						Единый счет семьи
+					</span>
 				</div>
-				<div className="trigger-right">
-					<span className="trigger-summary">Единый счет семьи</span>
+				<div className="trigger-right shrink-0">
 					{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 				</div>
 			</button>

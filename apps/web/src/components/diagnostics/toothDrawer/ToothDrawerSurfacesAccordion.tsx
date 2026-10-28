@@ -31,14 +31,16 @@ export const ToothDrawerSurfacesAccordion: React.FC<ToothDrawerSurfacesAccordion
 				onClick={() => toggleSection("surfaces_endo")}
 				className={`dente-accordion-trigger ${isExpanded ? "expanded" : ""}`}
 			>
-				<div className="trigger-left">
-					<ToothMolar size={16} style={{ color: "var(--brand-primary, var(--teal))" }} />
-					<span className="trigger-title">1. Анатомия поверхностей (MOD) & Эндодонтия</span>
-				</div>
-				<div className="trigger-right">
-					<span className="trigger-summary">
+				<div className="trigger-left min-w-0 flex-1">
+					<div className="flex items-center gap-2 min-w-0">
+						<ToothMolar size={16} className="shrink-0" style={{ color: "var(--brand-primary, var(--teal))" }} />
+						<span className="trigger-title truncate">1. Поверхности MOD & Каналы</span>
+					</div>
+					<span className="trigger-summary text-[11px] text-teal-600 dark:text-teal-400 font-semibold pl-6 block sm:inline sm:pl-2">
 						Поверхности: {toothData?.surfaces?.length ? toothData.surfaces.join("") : "Интактно"}
 					</span>
+				</div>
+				<div className="trigger-right shrink-0">
 					{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 				</div>
 			</button>

@@ -22,29 +22,39 @@
 .dente-drawer-state-strip {
 	display: flex;
 	align-items: center;
-	gap: 4px;
-	padding: 6px 16px;
+	flex-wrap: nowrap;
+	gap: 6px;
+	padding: 6px 12px;
 	background: var(--paper);
 	border-bottom: 1px solid var(--line);
 	overflow-x: auto;
-	scrollbar-width: thin;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
+	-webkit-overflow-scrolling: touch;
+}
+
+.dente-drawer-state-strip::-webkit-scrollbar {
+	display: none;
 }
 
 .dente-state-quick-chip {
 	display: inline-flex;
 	align-items: center;
-	height: 32px;
-	min-height: 32px;
-	padding: 0 10px;
-	border-radius: 8px;
+	justify-content: center;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 14px;
+	border-radius: 10px;
 	border: 1px solid var(--line);
 	background: var(--paper-soft);
 	color: var(--ink);
-	font-size: 12px;
-	font-weight: 800;
+	font-size: 13px;
+	font-weight: 700;
 	cursor: pointer;
 	white-space: nowrap;
+	flex-shrink: 0;
 	transition: all 0.15s ease;
+	user-select: none;
 }
 
 .dente-state-quick-chip:hover {

@@ -57,42 +57,42 @@ export const MobilePerioKeypadButtons: React.FC<MobilePerioKeypadButtonsProps> =
 				<button
 					type="button" aria-disabled={readOnly}
 					onClick={() => { if (readOnly) return; triggerHaptic("impact"); onToggleBop(); }}
-					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[44px] h-11 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs whitespace-nowrap ${
 						currentBop
 							? "bg-rose-600 text-white border-rose-400 font-black shadow-sm"
 							: "bg-[var(--paper-soft)] text-rose-600 dark:text-rose-300 border-rose-500/40 hover:bg-rose-500/15"
 					}`}
 					data-testid="perio-mobile-bop-btn"
 				>
-					<Droplets size={16} className={currentBop ? "text-white" : "text-rose-500"} />
-					<span>{currentBop ? "BOP: Да" : "Кровоточивость"}</span>
+					<Droplets size={16} className={`shrink-0 ${currentBop ? "text-white" : "text-rose-500"}`} />
+					<span className="truncate">{currentBop ? "BOP: Да" : "Кровь (BOP)"}</span>
 				</button>
 
 				<button
 					type="button" aria-disabled={readOnly}
 					onClick={() => { if (readOnly) return; triggerHaptic("impact"); onToggleSuppuration(); }}
-					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[44px] h-11 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs whitespace-nowrap ${
 						currentPus
 							? "bg-indigo-600 text-white border-indigo-400 font-black shadow-sm"
 							: "bg-[var(--paper-soft)] text-indigo-600 dark:text-indigo-300 border-indigo-500/40 hover:bg-indigo-500/15"
 					}`}
 					data-testid="perio-mobile-pus-btn"
 				>
-					<AlertCircle size={16} className={currentPus ? "text-white" : "text-indigo-500"} />
-					<span>{currentPus ? "Гной: Есть" : "Гноетечение"}</span>
+					<AlertCircle size={16} className={`shrink-0 ${currentPus ? "text-white" : "text-indigo-500"}`} />
+					<span className="truncate">{currentPus ? "Гной: Есть" : "Гной"}</span>
 				</button>
 
 				<button
 					type="button" aria-disabled={readOnly}
 					onClick={() => { if (readOnly) return; triggerHaptic("selection"); onTogglePlaque(); }}
-					className={`min-h-[44px] h-11 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs ${
+					className={`min-h-[44px] h-11 px-2 rounded-xl font-bold text-xs flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer border shadow-xs whitespace-nowrap ${
 						currentPlq
 							? "bg-amber-500 text-slate-950 font-black border-amber-500 shadow-sm"
 							: "bg-[var(--paper-soft)] text-amber-700 dark:text-amber-300 border-amber-500/40 hover:bg-amber-500/15"
 					}`}
 					data-testid="perio-mobile-plaque-btn"
 				>
-					<span>{currentPlq ? "Налёт: Есть" : "Зубной налёт"}</span>
+					<span className="truncate">{currentPlq ? "Налёт: Есть" : "Зубной налёт"}</span>
 				</button>
 			</div>
 		</>

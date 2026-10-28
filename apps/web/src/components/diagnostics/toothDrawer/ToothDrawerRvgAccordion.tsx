@@ -34,12 +34,16 @@ export const ToothDrawerRvgAccordion: React.FC<ToothDrawerRvgAccordionProps> = (
 				onClick={() => toggleSection("rvg_xray")}
 				className={`dente-accordion-trigger ${isExpanded ? "expanded" : ""}`}
 			>
-				<div className="trigger-left">
-					<Scan size={16} color="var(--brand-primary, var(--teal))" />
-					<span className="trigger-title">3. Прицельный снимок визиографа (200×200 RVG)</span>
+				<div className="trigger-left min-w-0 flex-1">
+					<div className="flex items-center gap-2 min-w-0">
+						<Scan size={16} className="shrink-0" color="var(--brand-primary, var(--teal))" />
+						<span className="trigger-title truncate">3. Снимок RVG (2D / 3D)</span>
+					</div>
+					<span className="trigger-summary text-[11px] text-[var(--muted)] font-medium pl-6 block sm:inline sm:pl-2">
+						Периапикальный контроль
+					</span>
 				</div>
-				<div className="trigger-right">
-					<span className="trigger-summary">Периапикальный контроль</span>
+				<div className="trigger-right shrink-0">
 					{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 				</div>
 			</button>

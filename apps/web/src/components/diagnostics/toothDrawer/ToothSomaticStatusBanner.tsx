@@ -36,7 +36,7 @@ export const ToothSomaticStatusBanner: React.FC<ToothSomaticStatusBannerProps> =
 		<div className="flex items-center justify-between text-xs p-2 rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]" data-testid="tooth-somatic-norm-strip">
 			<div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 font-semibold min-w-0 truncate">
 				<ShieldCheck size={14} className="shrink-0" />
-				<span className="truncate min-w-0">Соматически здоров (ASA I) • Норма</span>
+				<span className="truncate min-w-0 font-bold" title="Соматически здоров (ASA I) • Норма">✓ Соматически здоров (ASA I) • Норма</span>
 			</div>
 			<button
 				type="button"

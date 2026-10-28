@@ -42,7 +42,7 @@ export const PeriodontogramModalView: React.FC<PeriodontogramModalViewProps> = (
 						</button>
 					)}
 				</header>
-				<div className="flex-1 overflow-y-auto p-2 md:p-4 overscroll-contain">
+				<div className="flex-1 overflow-y-auto p-2 md:p-4 overscroll-contain pb-[calc(84px+env(safe-area-inset-bottom,0px))] md:pb-4">
 					{children}
 				</div>
 				<footer className="perio-floating-bottom-bar flex items-center justify-between">

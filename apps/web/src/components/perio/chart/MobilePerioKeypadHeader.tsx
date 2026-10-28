@@ -29,14 +29,16 @@ export const MobilePerioKeypadHeader: React.FC<MobilePerioKeypadHeaderProps> = R
 	onNextSite,
 }) => {
 	return (
-		<div className="flex items-center justify-between text-xs font-semibold px-1 pb-1 border-b border-[var(--line-subtle)]">
-			<div className="flex items-center gap-1.5 min-w-0">
-				<span className="text-[var(--muted)]">Зуб:</span>
-				<strong className="text-[var(--ink)] font-mono text-sm truncate">
-					#{selectedToothNumber} ({SITE_SHORT_RU[currentFocusedSiteKey] ?? "В"})
+		<div className="flex items-center justify-between text-xs font-semibold px-1 pb-1 border-b border-[var(--line-subtle)] gap-2">
+			<div className="flex items-center gap-1.5 min-w-0 shrink-0">
+				<strong className="text-[var(--ink)] font-mono text-sm shrink-0 whitespace-nowrap">
+					Зуб #{selectedToothNumber}
 				</strong>
+				<span className="text-[11px] text-[var(--muted)] shrink-0 font-medium">
+					({SITE_SHORT_RU[currentFocusedSiteKey] ?? "В"})
+				</span>
 				<span
-					className={`font-black text-xs px-2 py-0.5 rounded-full shrink-0 ${
+					className={`font-black text-xs px-2 py-0.5 rounded-full shrink-0 whitespace-nowrap ${
 						currentPd <= 3
 							? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300"
 							: currentPd <= 5
@@ -44,7 +46,7 @@ export const MobilePerioKeypadHeader: React.FC<MobilePerioKeypadHeaderProps> = R
 								: "bg-rose-500/20 text-rose-700 dark:text-rose-300"
 					}`}
 				>
-					{currentPd <= 3 ? `${currentPd} мм (Норма)` : `Карман ${currentPd} мм`}
+					{currentPd <= 3 ? `${currentPd} мм` : `Карман ${currentPd} мм`}
 				</span>
 			</div>
 

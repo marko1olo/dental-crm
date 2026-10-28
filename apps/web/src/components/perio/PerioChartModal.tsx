@@ -9,7 +9,9 @@
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import React from "react";
 import { PeriodontogramChart } from "./PeriodontogramChart";
-import "./perioChart.css";
+if (typeof document !== "undefined") {
+	import("./perioChart.css");
+}
 
 export interface PerioChartModalProps {
 	readonly isOpen: boolean;

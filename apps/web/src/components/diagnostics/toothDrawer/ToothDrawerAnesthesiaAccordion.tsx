@@ -42,12 +42,16 @@ export const ToothDrawerAnesthesiaAccordion: React.FC<ToothDrawerAnesthesiaAccor
 				onClick={() => toggleSection("anesthesia")}
 				className={`dente-accordion-trigger ${isExpanded ? "expanded" : ""}`}
 			>
-				<div className="trigger-left">
-					<DentalSyringe size={16} style={{ color: "var(--brand-primary, var(--teal))" }} />
-					<span className="trigger-title">2. Экспресс-анестезия</span>
+				<div className="trigger-left min-w-0 flex-1">
+					<div className="flex items-center gap-2 min-w-0">
+						<DentalSyringe size={16} className="shrink-0" style={{ color: "var(--brand-primary, var(--teal))" }} />
+						<span className="trigger-title truncate">2. Экспресс-анестезия</span>
+					</div>
+					<span className="trigger-summary text-[11px] text-[var(--muted)] font-medium pl-6 block sm:inline sm:pl-2 truncate max-w-full" title="Артикаин • Ультракаин • Скандонест • Септанест">
+						Артикаин • Ультракаин • Скандонест • Септанест
+					</span>
 				</div>
-				<div className="trigger-right">
-					<span className="trigger-summary">Артикаин • Ультракаин • Скандонест • Септанест</span>
+				<div className="trigger-right shrink-0">
 					{isExpanded ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
 				</div>
 			</button>

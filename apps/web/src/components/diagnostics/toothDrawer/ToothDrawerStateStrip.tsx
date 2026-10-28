@@ -7,15 +7,15 @@ interface ToothDrawerStateStripProps {
 }
 
 const TOOTH_STATE_OPTIONS = [
-	{ state: "Healthy", label: "Здоров (0)" },
-	{ state: "Caries", label: "Кариес (C)" },
-	{ state: "Filled", label: "Пломба (F)" },
-	{ state: "Pulpitis", label: "Пульпит (P)" },
-	{ state: "Periodontitis", label: "Периодонтит (Pt)" },
-	{ state: "Crown", label: "Коронка (Cr)" },
-	{ state: "Implant", label: "Имплант (Imp)" },
+	{ state: "Healthy", label: "Здоров" },
+	{ state: "Caries", label: "Кариес" },
+	{ state: "Filled", label: "Пломба" },
+	{ state: "Pulpitis", label: "Пульпит" },
+	{ state: "Periodontitis", label: "Периодонтит" },
+	{ state: "Crown", label: "Коронка" },
+	{ state: "Implant", label: "Имплант" },
 	{ state: "Planned_Implant", label: "Имплант (план)" },
-	{ state: "Missing", label: "Отсутствует (X)" },
+	{ state: "Missing", label: "Отсутствует" },
 ] as const;
 
 export const ToothDrawerStateStrip: React.FC<ToothDrawerStateStripProps> = ({

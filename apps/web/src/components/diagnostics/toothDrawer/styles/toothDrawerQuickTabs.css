@@ -5,27 +5,33 @@
 .dente-drawer-quick-tabs {
 	display: flex;
 	align-items: center;
+	flex-wrap: nowrap;
 	gap: 6px;
-	padding: 8px 16px;
+	padding: 8px 12px;
 	background: var(--paper-strong);
 	border-bottom: 1px solid var(--line);
 	overflow-x: auto;
-	scrollbar-width: thin;
+	scrollbar-width: none;
+	-ms-overflow-style: none;
 	-webkit-overflow-scrolling: touch;
+}
+
+.dente-drawer-quick-tabs::-webkit-scrollbar {
+	display: none;
 }
 
 .dente-quick-tab-btn {
 	display: inline-flex;
 	align-items: center;
 	gap: 6px;
-	min-height: 34px;
-	height: 34px;
-	padding: 4px 12px;
-	border-radius: 6px;
+	min-height: 44px;
+	height: 44px;
+	padding: 0 14px;
+	border-radius: 10px;
 	border: none;
 	background: transparent;
 	color: var(--muted);
-	font-size: 12px;
+	font-size: 13px;
 	font-weight: 700;
 	cursor: pointer;
 	white-space: nowrap;

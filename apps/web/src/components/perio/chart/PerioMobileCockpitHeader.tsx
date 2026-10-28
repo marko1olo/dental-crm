@@ -22,12 +22,13 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 }) => {
 	const sev = aapDiagnosis.severity;
 	const severityClass = sev === "intact" ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-300 border-emerald-500/30" : sev === "gingivitis" ? "bg-amber-500/15 text-amber-800 dark:text-amber-300 border-amber-500/30" : sev === "moderate" ? "bg-orange-500/15 text-orange-800 dark:text-orange-300 border-orange-500/30" : "bg-rose-500/20 text-rose-800 dark:text-rose-300 border-rose-500/40";
+	const diagLabel = aapDiagnosis.icd10Code.startsWith("K05.3") ? `${aapDiagnosis.icd10Code} Пародонтит` : `${aapDiagnosis.icd10Code} • ${aapDiagnosis.diagnosisNameRu.split("(")[0]?.trim()}`;
 
 	return (
 		<div className="w-full flex flex-col gap-1.5">
 			<div className="w-full flex items-center justify-between gap-1.5">
 				<span className={`block flex-1 px-2.5 py-1.5 rounded-xl text-xs font-bold border text-center truncate ${severityClass}`} title={aapDiagnosis.diagnosisNameRu}>
-					{aapDiagnosis.icd10Code} • {aapDiagnosis.diagnosisNameRu.split("(")[0]?.trim()}
+					{diagLabel}
 				</span>
 				{onOpenPsrDrawer && (
 					<button
@@ -43,7 +44,7 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 				)}
 			</div>
 
-			{/* 1-клик кнопки: «Интактен (PSR 0)» • «Гигиена» • «В дневник» */}
+			{/* 1-клик кнопки: «✓ Норма PSR» • «Гигиена» • «В дневник» */}
 			<div className="grid grid-cols-3 gap-1.5 w-full">
 				<button
 					type="button" onClick={() => onApplyExpressPreset("perio_norm_express")}
@@ -52,7 +53,7 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 					data-testid="perio-toolbar-norm-1click-btn"
 				>
 					<ShieldCheck size={16} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
-					<span className="whitespace-nowrap font-bold">✓ Норма (PSR 0)</span>
+					<span className="whitespace-nowrap font-bold">✓ Норма PSR</span>
 				</button>
 
 				<button
@@ -75,11 +76,11 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 				</button>
 			</div>
 
-			{/* Быстрые патологии в 1 клик */}
-			<div className="grid grid-cols-4 gap-1.5 w-full">
+			{/* Быстрые патологии в 1 клик (без сломанных переносов) */}
+			<div className="flex items-center gap-1.5 w-full overflow-x-auto scrollbar-none flex-nowrap py-0.5">
 				<button
 					type="button" onClick={() => onApplyExpressPreset("gingivitis_express")}
-					className="min-h-[44px] px-1 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-900 dark:text-amber-200 border border-amber-500/30 text-[11px] font-bold flex flex-col items-center justify-center cursor-pointer text-center"
+					className="min-h-[44px] min-w-[80px] flex-1 px-1.5 py-1 rounded-xl bg-amber-500/15 hover:bg-amber-500/25 active:scale-95 text-amber-900 dark:text-amber-200 border border-amber-500/30 text-xs font-bold flex flex-col items-center justify-center cursor-pointer text-center whitespace-nowrap shrink-0"
 					data-testid="perio-mobile-preset-gingivitis-btn"
 				>
 					<span>Гингивит</span>
@@ -87,7 +88,7 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 				</button>
 				<button
 					type="button" onClick={() => onApplyExpressPreset("periodontitis_moderate_express")}
-					className="min-h-[44px] px-1 py-1 rounded-xl bg-orange-500/15 hover:bg-orange-500/25 active:scale-95 text-orange-900 dark:text-orange-200 border border-orange-500/30 text-[10px] font-bold flex flex-col items-center justify-center cursor-pointer text-center"
+					className="min-h-[44px] min-w-[86px] flex-1 px-1.5 py-1 rounded-xl bg-orange-500/15 hover:bg-orange-500/25 active:scale-95 text-orange-900 dark:text-orange-200 border border-orange-500/30 text-xs font-bold flex flex-col items-center justify-center cursor-pointer text-center whitespace-nowrap shrink-0"
 					data-testid="perio-mobile-preset-moderate-btn"
 				>
 					<span>Пародонтит</span>
@@ -95,7 +96,7 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 				</button>
 				<button
 					type="button" onClick={() => onApplyExpressPreset("periodontitis_severe_express")}
-					className="min-h-[44px] px-1 py-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-900 dark:text-rose-200 border border-rose-500/30 text-[11px] font-bold flex flex-col items-center justify-center cursor-pointer text-center"
+					className="min-h-[44px] min-w-[80px] flex-1 px-1.5 py-1 rounded-xl bg-rose-500/15 hover:bg-rose-500/25 active:scale-95 text-rose-900 dark:text-rose-200 border border-rose-500/30 text-xs font-bold flex flex-col items-center justify-center cursor-pointer text-center whitespace-nowrap shrink-0"
 					data-testid="perio-mobile-preset-severe-btn"
 				>
 					<span>Тяжелый</span>
@@ -103,7 +104,7 @@ export const PerioMobileCockpitHeader: React.FC<PerioMobileCockpitHeaderProps> =
 				</button>
 				<button
 					type="button" onClick={() => onApplyExpressPreset("recession_express")}
-					className="min-h-[44px] px-1 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 active:scale-95 text-purple-900 dark:text-purple-200 border border-purple-500/30 text-[11px] font-bold flex flex-col items-center justify-center cursor-pointer text-center"
+					className="min-h-[44px] min-w-[80px] flex-1 px-1.5 py-1 rounded-xl bg-purple-500/15 hover:bg-purple-500/25 active:scale-95 text-purple-900 dark:text-purple-200 border border-purple-500/30 text-xs font-bold flex flex-col items-center justify-center cursor-pointer text-center whitespace-nowrap shrink-0"
 					data-testid="perio-mobile-preset-recession-btn"
 				>
 					<span>Рецессия</span>

@@ -1,11 +1,12 @@
 /**
- * PeriodontogramChart.tsx — Интерактивная пародонтологическая карта приёма (32 зуба, 192 точки).
- * Архитектурная декомпозиция по Mandate 8b (Layer 5 Facade, <= 120 строк).
+ * PeriodontogramChart.tsx — Интерактивная пародонтологическая карта приёма (32 зуба, 192 точки). Mandate 8b <= 120 строк.
  */
 
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import React, { useId, useState } from "react";
-import "./perioChart.css";
+if (typeof document !== "undefined") {
+	import("./perioChart.css");
+}
 
 // Transparent zero-downtime re-exports
 export * from "./chart/PerioToothVisual";
