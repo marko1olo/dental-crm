@@ -3,7 +3,7 @@
  * Лимит <= 120 строк по Мандату 8b.
  */
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { showToast } from "../../GlobalToast";
 import {
 	createHealthySomaticNormProfile,
@@ -44,6 +44,19 @@ export function usePatientAnamnesisLogic({
 			setProfile((prev) => ({ ...prev, ...initialProfile }));
 		}
 	}, [initialProfile]);
+
+	// Mandate 8e: Debounced autosave (400ms) on profile changes so no note or chip is lost on tab switch
+	const isFirstRender = useRef(true);
+	useEffect(() => {
+		if (isFirstRender.current) {
+			isFirstRender.current = false;
+			return;
+		}
+		const timer = setTimeout(() => {
+			onSaveProfile?.(profile);
+		}, 400);
+		return () => clearTimeout(timer);
+	}, [profile, onSaveProfile]);
 
 	const evaluation = useMemo(() => evaluatePatientSafetyFlags(profile), [profile]);
 	const isNorm = useMemo(() => isSomaticProfilePhysiologicalNorm(profile), [profile]);
