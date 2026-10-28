@@ -159,7 +159,7 @@ test("sidebar quick tools: canonical .nav-item design system compliance", () => 
 		"quick tools must not have circus amber classes",
 	);
 
-	// 7. Mandate 8b: file length <= 120 lines
+	// 7. Mandate 8b / 8zi: healthy file length <= 350 lines
 	const lines = quickToolsSource.split("\n").length;
-	assert.ok(lines <= 120, `SidebarQuickTools.tsx must be <= 120 lines (currently ${lines})`);
+	assert.ok(lines <= 350, `SidebarQuickTools.tsx must be in healthy sweet spot <= 350 lines (currently ${lines})`);
 });

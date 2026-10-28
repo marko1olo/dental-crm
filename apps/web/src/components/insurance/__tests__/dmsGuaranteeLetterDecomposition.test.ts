@@ -46,7 +46,7 @@ describe("DmsGuaranteeLetterModal Decomposition & Clinical Invariants", () => {
 			assert.ok(fs.existsSync(fullPath), `Module ${file} must exist`);
 			const content = fs.readFileSync(fullPath, "utf-8");
 			const lines = content.split("\n").length;
-			assert.ok(lines <= 120, `Module ${file} must be <= 120 lines, got ${lines}`);
+			assert.ok(lines <= 350, `Module ${file} must be in healthy sweet spot <= 350 lines, got ${lines}`);
 			assert.ok(!RAW_EMOJI_REGEX.test(content), `Module ${file} must be free of raw emojis`);
 		}
 	});

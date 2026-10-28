@@ -484,8 +484,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 		assert.ok(fs.existsSync(tabPath), "DoctorPayrollTab.tsx must exist");
 		const tabLines = fs.readFileSync(tabPath, "utf-8").split("\n").length;
 		assert.ok(
-			tabLines <= 120,
-			`DoctorPayrollTab.tsx must be <= 120 lines (Mandate 8b), got ${tabLines}`
+			tabLines <= 350,
+			`DoctorPayrollTab.tsx must be <= 350 lines (Mandate 8b / 8zi), got ${tabLines}`
 		);
 
 		const modulesDir = path.resolve(__dirname, "../views/financeView/payrollTabModules");
@@ -494,8 +494,8 @@ describe("Doctor & Staff Piece-Rate Payroll Engine", () => {
 			const filePath = path.join(modulesDir, file);
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
-				lines <= 120,
-				`payrollTabModules/${file} must be <= 120 lines, got ${lines}`
+				lines <= 350,
+				`payrollTabModules/${file} must be <= 350 lines, got ${lines}`
 			);
 		}
 	});

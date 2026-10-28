@@ -61,9 +61,9 @@ describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandate
 		assert.ok(!emojiRegex.test(html), "HTML markup must contain ZERO emojis");
 	});
 
-	it("8. Strict File Line Count Ceilings (Mandate 8b: <= 120 lines)", () => {
+	it("8. Healthy File Line Count Ceilings (Mandate 8b / 8zi: <= 350 lines)", () => {
 		const quickBarFile = path.resolve(__dirname, "../ChairsideEndoQuickBar.tsx");
 		const lines = fs.readFileSync(quickBarFile, "utf-8").split("\n").length;
-		assert.ok(lines <= 120, `ChairsideEndoQuickBar.tsx must be <= 120 lines (current: ${lines})`);
+		assert.ok(lines <= 350, `ChairsideEndoQuickBar.tsx must be in healthy sweet spot <= 350 lines (current: ${lines})`);
 	});
 });

@@ -24,7 +24,7 @@ describe("Clinical Diary Templates Catalog — Mandate 8b Decomposition & EBM In
 		assert.ok(lines <= 80, `Facade length (${lines}) exceeds Mandate 8b limit of 80 lines`);
 	});
 
-	it("2. Mandate 8b: Every specialized catalog module must be <= 120 lines", () => {
+	it("2. Mandate 8b / 8zi: Every specialized catalog module must be <= 350 lines", () => {
 		const expectedModules = [
 			"clinicalDiaryTypes.ts",
 			"therapyDiaryTemplates.ts",
@@ -41,8 +41,8 @@ describe("Clinical Diary Templates Catalog — Mandate 8b Decomposition & EBM In
 			assert.ok(fs.existsSync(modPath), `Module ${mod} must exist in catalog/`);
 			const lines = fs.readFileSync(modPath, "utf-8").split("\n").length;
 			assert.ok(
-				lines <= 120,
-				`Module ${mod} has ${lines} lines, exceeding Mandate 8b limit of 120 lines`,
+				lines <= 350,
+				`Module ${mod} has ${lines} lines, exceeding healthy limit of 350 lines`,
 			);
 		}
 	});

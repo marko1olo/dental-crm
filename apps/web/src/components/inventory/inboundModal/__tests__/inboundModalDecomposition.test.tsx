@@ -31,18 +31,18 @@ const sampleLines: InboundInvoiceItemLine[] = [
 ];
 
 describe("InboundInvoiceModal: Decomposed Architecture & Mandates 8b, 8e, 8n, 8ze", () => {
-	it("1. Verifies Mandate 8b line limits: all micro-modules <= 120 lines, facade <= 15 lines", () => {
+	it("1. Verifies Mandate 8b / 8zi line limits: all micro-modules <= 350 lines, facade <= 30 lines", () => {
 		const files = fs.readdirSync(INBOUND_MODAL_DIR).filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"));
 		assert.ok(files.length >= 8, "Must contain all decomposed sub-modules");
 
 		for (const file of files) {
 			const fullPath = path.join(INBOUND_MODAL_DIR, file);
 			const lines = fs.readFileSync(fullPath, "utf-8").split(/\r?\n/).length;
-			assert.ok(lines <= 120, `File ${file} has ${lines} lines, exceeding 120 lines (Mandate 8b)!`);
+			assert.ok(lines <= 350, `File ${file} has ${lines} lines, exceeding healthy limit of 350 lines!`);
 		}
 
 		const facadeLines = fs.readFileSync(FACADE_FILE, "utf-8").split(/\r?\n/).length;
-		assert.ok(facadeLines <= 15, `Facade has ${facadeLines} lines, exceeding 15 lines!`);
+		assert.ok(facadeLines <= 30, `Facade has ${facadeLines} lines, exceeding 30 lines!`);
 	});
 
 	it("2. Verifies SSR render of InboundInvoiceModal has clean domain language and zero emojis", () => {

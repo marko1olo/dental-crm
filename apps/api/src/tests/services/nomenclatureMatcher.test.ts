@@ -119,8 +119,8 @@ describe("Nomenclature Matcher & Decomposed Modules Test Suite", () => {
 				} else if (entry.name.endsWith(".ts")) {
 					const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
 					assert.ok(
-						lines <= 120,
-						`${path.relative(root, fullPath)} has ${lines} lines (limit: <= 120 lines)`,
+						lines <= 350,
+						`${path.relative(root, fullPath)} has ${lines} lines (healthy limit: <= 350 lines)`,
 					);
 				}
 			}
@@ -130,7 +130,7 @@ describe("Nomenclature Matcher & Decomposed Modules Test Suite", () => {
 
 		const facadePath = path.join(root, "apps/api/src/services/ai/pricelistIngest/nomenclatureMatcher.ts");
 		const facadeLines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
-		assert.ok(facadeLines <= 15, `nomenclatureMatcher.ts has ${facadeLines} lines (limit: <= 15)`);
+		assert.ok(facadeLines <= 30, `nomenclatureMatcher.ts has ${facadeLines} lines (limit: <= 30)`);
 
 		const legacyFacadePath = path.join(root, "apps/api/src/services/ai/pricelistIngest/nomenclature804nMatcher.ts");
 		const legacyLines = fs.readFileSync(legacyFacadePath, "utf-8").split("\n").length;

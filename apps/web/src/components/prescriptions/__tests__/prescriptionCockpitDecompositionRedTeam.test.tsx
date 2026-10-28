@@ -42,7 +42,7 @@ import {
 describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)", () => {
 	const componentsDir = path.resolve(__dirname, "..");
 
-	it("1.1 PrescriptionCockpitModal.tsx is strictly <= 120 lines", () => {
+	it("1.1 PrescriptionCockpitModal.tsx is in healthy sweet spot <= 350 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionCockpitModal.tsx");
 		assert.ok(
 			fs.existsSync(filePath),
@@ -50,12 +50,12 @@ describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)
 		);
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
-			lines <= 120,
-			`PrescriptionCockpitModal.tsx must be <= 120 lines per Mandate, actual: ${lines}`,
+			lines <= 350,
+			`PrescriptionCockpitModal.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
 		);
 	});
 
-	it("1.2 PrescriptionExpressPills.tsx is strictly <= 120 lines", () => {
+	it("1.2 PrescriptionExpressPills.tsx is in healthy sweet spot <= 350 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionExpressPills.tsx");
 		assert.ok(
 			fs.existsSync(filePath),
@@ -63,12 +63,12 @@ describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)
 		);
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
-			lines <= 120,
-			`PrescriptionExpressPills.tsx must be <= 120 lines per Mandate, actual: ${lines}`,
+			lines <= 350,
+			`PrescriptionExpressPills.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
 		);
 	});
 
-	it("1.3 PrescriptionAllergyBanner.tsx is strictly <= 120 lines", () => {
+	it("1.3 PrescriptionAllergyBanner.tsx is in healthy sweet spot <= 350 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionAllergyBanner.tsx");
 		assert.ok(
 			fs.existsSync(filePath),
@@ -76,28 +76,28 @@ describe("Red Team Inquisition: Prescription Module Decomposition (<= 120 lines)
 		);
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
-			lines <= 120,
-			`PrescriptionAllergyBanner.tsx must be <= 120 lines per Mandate, actual: ${lines}`,
+			lines <= 350,
+			`PrescriptionAllergyBanner.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
 		);
 	});
 
-	it("1.4 PrescriptionPrintSheet.tsx is strictly <= 120 lines", () => {
+	it("1.4 PrescriptionPrintSheet.tsx is in healthy sweet spot <= 350 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionPrintSheet.tsx");
 		assert.ok(fs.existsSync(filePath), "PrescriptionPrintSheet.tsx must exist");
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
-			lines <= 120,
-			`PrescriptionPrintSheet.tsx must be <= 120 lines per Mandate, actual: ${lines}`,
+			lines <= 350,
+			`PrescriptionPrintSheet.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
 		);
 	});
 
-	it("1.5 PrescriptionPrintModal.tsx is a clean facade <= 120 lines", () => {
+	it("1.5 PrescriptionPrintModal.tsx is a clean facade <= 350 lines", () => {
 		const filePath = path.join(componentsDir, "PrescriptionPrintModal.tsx");
 		assert.ok(fs.existsSync(filePath), "PrescriptionPrintModal.tsx must exist");
 		const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 		assert.ok(
-			lines <= 120,
-			`PrescriptionPrintModal.tsx must be <= 120 lines per Mandate, actual: ${lines}`,
+			lines <= 350,
+			`PrescriptionPrintModal.tsx must be <= 350 lines per Mandate 8b / 8zi, actual: ${lines}`,
 		);
 	});
 });

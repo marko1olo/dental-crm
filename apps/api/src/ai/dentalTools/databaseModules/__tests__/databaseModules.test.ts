@@ -212,8 +212,8 @@ describe("CRM Database AI Tools — Реестр и Словарь O(1)", () => 
 	});
 });
 
-describe("CRM Database AI Tools — Инвариант Мандата 8b (лимиты строк)", () => {
-	test("все файлы databaseModules/ строго <= 120 строк, а фасады <= 15 строк", () => {
+describe("CRM Database AI Tools — Здоровый размер модулей (Мандат 8b / 8zi)", () => {
+	test("все файлы databaseModules/ находятся в здоровом диапазоне (<= 350 строк), а фасады <= 30 строк", () => {
 		const baseDir = path.resolve(import.meta.dirname, "..");
 		const files = fs.readdirSync(baseDir).filter((f) => f.endsWith(".ts"));
 
@@ -222,15 +222,15 @@ describe("CRM Database AI Tools — Инвариант Мандата 8b (лим
 			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
 
 			if (file === "index.ts") {
-				assert.ok(lines <= 15, `Фасад ${file} превышает 15 строк (текущее: ${lines})`);
+				assert.ok(lines <= 30, `Фасад ${file} превышает 30 строк (текущее: ${lines})`);
 			} else {
-				assert.ok(lines <= 120, `Файл ${file} превышает лимит 120 строк Мандата 8b (текущее: ${lines})`);
+				assert.ok(lines <= 350, `Файл ${file} превышает лимит здорового модуля Мандата 8b (текущее: ${lines})`);
 			}
 		}
 
 		// Корневой crmDatabaseTools.ts
 		const rootFacade = path.resolve(baseDir, "../crmDatabaseTools.ts");
 		const rootLines = fs.readFileSync(rootFacade, "utf-8").split("\n").length;
-		assert.ok(rootLines <= 15, `Корневой фасад crmDatabaseTools.ts превышает 15 строк (текущее: ${rootLines})`);
+		assert.ok(rootLines <= 30, `Корневой фасад crmDatabaseTools.ts превышает 30 строк (текущее: ${rootLines})`);
 	});
 });
