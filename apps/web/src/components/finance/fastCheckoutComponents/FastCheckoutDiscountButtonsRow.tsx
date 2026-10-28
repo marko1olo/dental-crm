@@ -1,6 +1,6 @@
 import React from "react";
 import { ShieldCheck, Sparkles, X } from "lucide-react";
-import type { FastCheckoutDiscountPreset } from "../payments/checkout/fastCheckoutEngine";
+import type { FastCheckoutDiscountPreset } from "../../payments/checkout/fastCheckoutEngine.js";
 
 export interface FastCheckoutDiscountButtonsRowProps {
 	readonly discountPreset: FastCheckoutDiscountPreset;

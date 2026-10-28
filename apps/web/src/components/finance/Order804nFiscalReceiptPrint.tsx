@@ -1,9 +1,9 @@
 /**
  * apps/web/src/components/finance/Order804nFiscalReceiptPrint.tsx
  *
- * Обратная совместимость с каноническим FiscalReceiptPrintView.tsx.
- * Mandate 8b: <10 lines facade.
+ * Фасад обратной совместимости с каноническим ServiceReceiptPrintDocument.tsx («Товарный чек / Акт услуг»).
+ * Mandate 8b & 8ap: <10 lines facade.
  */
 
-export * from "./FiscalReceiptPrintView.js";
-export { FiscalReceiptPrintView as default, FiscalReceiptPrintView as Order804nFiscalReceiptPrint } from "./FiscalReceiptPrintView.js";
+export * from "./ServiceReceiptPrintDocument.js";
+export { ServiceReceiptPrintDocument as default, ServiceReceiptPrintDocument as Order804nFiscalReceiptPrint, ServiceReceiptPrintDocument as FiscalReceiptPrintView } from "./ServiceReceiptPrintDocument.js";

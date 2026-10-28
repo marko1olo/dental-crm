@@ -17,9 +17,9 @@ interface UseFastCheckoutExecutionParams {
 	readonly cashTenderedRub: number; readonly remainingRub: number; readonly activeMethod: CheckoutPaymentMethodType;
 	readonly validation: FastCheckoutValidationResult; readonly clientType: ClientLegalType;
 	readonly buyerInn: string; readonly buyerName: string; readonly isElectronicReceiptOnly: boolean;
-	readonly patientId?: string; readonly visitId?: string; readonly patientPhone: string; readonly patientEmail: string;
+	readonly patientId?: string | undefined; readonly visitId?: string | undefined; readonly patientPhone: string; readonly patientEmail: string;
 	readonly orderId: string; readonly effectiveCashierFullName: string; readonly stageCalc: StageAdvanceCalculation;
-	readonly onPaymentComplete?: (payload: any) => void; readonly onSuccess?: (payload: any) => void;
+	readonly onPaymentComplete?: ((payload: any) => void) | undefined; readonly onSuccess?: ((payload: any) => void) | undefined;
 	readonly onClose: () => void; readonly isPrinting: boolean; readonly setIsPrinting: (val: boolean) => void;
 	readonly setIsOfflineBuffered: (val: boolean) => void; readonly setInterruptedPaymentState: (val: InterruptedPaymentState | null) => void;
 	readonly setCardAmountRub: (val: any) => void; readonly setCashAmountRub: (val: any) => void;

@@ -1,7 +1,7 @@
 /**
- * FiscalReceipt54FzModal.tsx — Обратная совместимость с каноническим FiscalReceiptModal.tsx.
- * Mandate 8b: <10 lines facade.
+ * FiscalReceipt54FzModal.tsx — Фасад обратной совместимости с каноническим CashReceiptModal.tsx («Кассовый чек»).
+ * Mandate 8b & 8ap: <10 lines facade.
  */
 
-export * from "./FiscalReceiptModal.js";
-export { FiscalReceiptModal as default, FiscalReceiptModal as FiscalReceipt54FzModal } from "./FiscalReceiptModal.js";
+export * from "./CashReceiptModal.js";
+export { CashReceiptModal as default, CashReceiptModal as FiscalReceipt54FzModal, CashReceiptModal as FiscalReceiptModal } from "./CashReceiptModal.js";

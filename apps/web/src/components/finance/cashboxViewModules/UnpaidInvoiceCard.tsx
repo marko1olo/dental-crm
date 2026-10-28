@@ -60,7 +60,7 @@ export function UnpaidInvoiceCard({
 					onClick={() => onSelectInvoiceForPayment(invoice)}
 					data-testid={`pay-invoice-button-${invoice.id}`}
 					aria-label={`Принять оплату счёта ${numberLabel} пациента ${invoice.patientName}`}
-					className="min-h-[44px] min-w-[140px] px-3.5 py-2 rounded-lg bg-[var(--primary)] text-[var(--paper)] font-medium text-sm flex items-center justify-center gap-1.5 shadow-xs hover:opacity-95 active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-[var(--primary)]/30 cursor-pointer"
+					className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 min-w-[130px] px-3.5 py-1.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-1.5 shadow-xs active:scale-[0.98] transition-all cursor-pointer"
 				>
 					<CreditCard className="w-4 h-4 shrink-0" />
 					<span>Принять оплату</span>

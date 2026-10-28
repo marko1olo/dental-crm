@@ -1,6 +1,6 @@
 import React from "react";
 import { ShieldCheck, Sparkles, Users, X } from "lucide-react";
-import type { FastCheckoutDiscountPreset } from "../payments/checkout/fastCheckoutEngine";
+import type { FastCheckoutDiscountPreset } from "../../payments/checkout/fastCheckoutEngine.js";
 
 export interface FastCheckoutDiscountBannersProps {
 	readonly discountPreset: FastCheckoutDiscountPreset;
@@ -76,7 +76,7 @@ export const FastCheckoutDiscountBanners: React.FC<FastCheckoutDiscountBannersPr
 				</div>
 			)}
 
-			{discountPreset === "staff_100" && (
+			{(discountPreset === "colleague_100" || (discountPreset as string) === "staff_100") && (
 				<div className="p-2.5 rounded-xl bg-purple-500/15 border border-purple-500/40 text-xs flex items-center justify-between gap-2 text-purple-950 dark:text-purple-100" data-testid="banner-staff-100">
 					<div className="flex items-center gap-2 font-bold">
 						<Users size={16} className="text-purple-600 shrink-0" />

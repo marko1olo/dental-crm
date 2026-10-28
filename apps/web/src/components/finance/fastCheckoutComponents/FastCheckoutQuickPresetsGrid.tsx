@@ -1,6 +1,6 @@
 import React from "react";
 import { Banknote, ChevronDown, Coins, CreditCard, Layers, QrCode, ShieldCheck, Users, Zap } from "lucide-react";
-import type { QuickCheckoutPresetType } from "../payments/checkout/fastCheckoutEngine";
+import type { QuickCheckoutPresetType } from "../../payments/checkout/fastCheckoutEngine.js";
 
 export interface FastCheckoutQuickPresetsGridProps {
 	readonly familyPayerName?: string | undefined;

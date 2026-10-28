@@ -6,12 +6,12 @@ import { FastCheckoutMoreOptionsMenu } from "./fastCheckoutComponents/FastChecko
 import { FastCheckoutValidationAlert } from "./fastCheckoutComponents/FastCheckoutValidationAlert";
 
 export interface FastCheckoutReceiptPreviewProps {
-	readonly kktHardwareStatus: { readonly online: boolean; readonly paperOk: boolean; readonly error?: string; readonly isChecking: boolean };
+	readonly kktHardwareStatus: { readonly online: boolean; readonly paperOk: boolean; readonly error?: string | undefined; readonly isChecking: boolean };
 	readonly interruptedPaymentState: { readonly isInterrupted: boolean; readonly reason: string; readonly amountRub: number; readonly method: string } | null;
 	readonly setInterruptedPaymentState: React.Dispatch<React.SetStateAction<{ readonly isInterrupted: boolean; readonly reason: string; readonly amountRub: number; readonly method: string } | null>>;
 	readonly isPrinting: boolean; readonly isFlushingQueue: boolean; readonly isSubmittingManualCard: boolean; readonly pendingOfflineCount: number;
-	readonly validation: { readonly isValid: boolean; readonly errorMessageRu?: string; readonly errorMessage?: string };
-	readonly activeMethod: string; readonly targetBillKop: number; readonly targetBillRub: number; readonly patientPhone?: string; readonly patientEmail?: string;
+	readonly validation: { readonly isValid: boolean; readonly errorMessageRu?: string | undefined; readonly errorMessage?: string | undefined };
+	readonly activeMethod: string; readonly targetBillKop: number; readonly targetBillRub: number; readonly patientPhone?: string | undefined; readonly patientEmail?: string | undefined;
 	readonly isElectronicReceiptOnly: boolean; readonly setIsElectronicReceiptOnly: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly onClose: () => void; readonly onExecutePayment: (forceOfflineBuffer?: boolean) => Promise<void>;
 	readonly onAcceptPaymentOfflineFallback: () => Promise<void>; readonly onManualCardTerminalConfirm: (overrideAmountRub?: number) => Promise<void>;
