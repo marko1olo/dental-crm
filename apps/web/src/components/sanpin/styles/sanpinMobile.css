@@ -46,6 +46,8 @@
 	.sanpin-kpi-desktop-detail,
 	.sanpin-desktop-only-btn,
 	.sanpin-desktop-only-label,
+	.sanpin-btn-shift-cta,
+	.sanpin-btn-export-cta,
 	.sanpin-desktop-table-container {
 		display: none !important;
 	}
@@ -70,27 +72,43 @@
 		border-radius: 12px;
 	}
 
+	/* Canonical Horizontal Scroll Chips Bar for Mobile (Apple HIG) */
+	.sanpin-unified-nav {
+		width: 100% !important;
+		max-width: 100% !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+		-ms-overflow-style: none !important;
+		padding: 6px 0 !important;
+	}
+
+	.sanpin-unified-nav::-webkit-scrollbar {
+		display: none !important;
+	}
+
 	.sanpin-tabs-strip {
-		width: 100%;
-		display: flex !important;
-		gap: 4px !important;
-		padding: 3px !important;
+		width: max-content !important;
+		min-width: max-content !important;
+		display: inline-flex !important;
+		gap: 6px !important;
+		padding: 4px !important;
 		box-sizing: border-box;
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
+		overflow-x: visible !important;
+		border-radius: 12px !important;
 	}
 
 	.sanpin-tabs-strip .sanpin-tab-btn {
 		min-height: 44px !important;
 		height: 44px !important;
-		padding: 0 6px !important;
-		flex: 1 1 0 !important;
-		min-width: 0 !important;
+		padding: 0 14px !important;
+		flex: 0 0 auto !important;
+		flex-shrink: 0 !important;
+		min-width: max-content !important;
 		justify-content: center;
-		overflow: hidden;
-		text-overflow: ellipsis;
-		white-space: nowrap;
-		font-size: 0.775rem !important;
+		white-space: nowrap !important;
+		font-size: 0.8125rem !important;
+		border-radius: 9px !important;
 	}
 
 	.sanpin-kpi-grid {

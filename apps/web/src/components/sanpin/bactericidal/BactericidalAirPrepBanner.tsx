@@ -63,16 +63,16 @@ export function BactericidalAirPrepBanner({
 					aria-busy={submitting}
 					className="sanpin-btn touch-manipulation"
 					style={{
-						minHeight: "44px", padding: "0.55rem 1.15rem", fontSize: "0.875rem", fontWeight: 800,
+						minHeight: "44px", padding: "0.55rem 1.15rem", fontSize: "0.875rem", fontWeight: 700,
 						cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center",
-						gap: "0.45rem", borderRadius: "8px", background: "var(--teal, #0d9488)", color: "#ffffff",
+						gap: "0.45rem", borderRadius: "10px", background: "var(--teal, #0d9488)", color: "#ffffff",
 						border: "none", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)", opacity: submitting ? 0.7 : 1,
 					}}
 					data-testid="bactericidal-open-morning-shift-btn"
 					title="Открыть утреннюю смену: зафиксировать предсменное обеззараживание воздуха для всех аппаратов"
 				>
 					<Sun size={17} />
-					<span>Открыть утреннюю смену (кварцевание 30 мин + норма)</span>
+					<span>Открыть утреннюю смену (кварцевание 30 мин)</span>
 				</button>
 
 				<button
@@ -81,16 +81,16 @@ export function BactericidalAirPrepBanner({
 					aria-busy={submitting}
 					className="sanpin-btn touch-manipulation"
 					style={{
-						minHeight: "44px", padding: "0.55rem 1.15rem", fontSize: "0.875rem", fontWeight: 800,
+						minHeight: "44px", padding: "0.55rem 1.15rem", fontSize: "0.875rem", fontWeight: 600,
 						cursor: "pointer", whiteSpace: "nowrap", display: "inline-flex", alignItems: "center",
-						gap: "0.45rem", borderRadius: "8px", background: "var(--brand-primary, #0284c7)", color: "#ffffff",
-						border: "none", boxShadow: "0 2px 8px rgba(2, 132, 199, 0.3)", opacity: submitting ? 0.7 : 1,
+						gap: "0.45rem", borderRadius: "10px", background: "var(--paper, #ffffff)", color: "var(--ink, #1e293b)",
+						border: "1px solid var(--line, #cbd5e1)", boxShadow: "none", opacity: submitting ? 0.7 : 1,
 					}}
 					data-testid="bactericidal-close-evening-shift-btn"
-					title="Закрыть вечернюю смену (финальная дезинфекция): фиксирует дневную смену 6 ч + заключительное обеззараживание 30 мин без ручного счета"
+					title="Закрыть вечернюю смену: фиксирует дневную смену 6 ч и заключительное обеззараживание воздуха 30 мин"
 				>
 					<Moon size={17} />
-					<span>Закрыть вечернюю смену (финальная дезинфекция)</span>
+					<span>Закрыть вечернюю смену</span>
 				</button>
 			</div>
 		</div>

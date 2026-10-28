@@ -52,13 +52,13 @@ export function RetroactiveBatchControlBar({
 					type="button"
 					onClick={onRecordDayAutoclaveCycle}
 					aria-busy={isLoggingDayCycle}
-					className="sanpin-btn sanpin-btn-primary"
-					style={{ minHeight: "46px", padding: "0.6rem 1.25rem", fontSize: "0.9rem", fontWeight: 800, background: "linear-gradient(135deg, #0d9488 0%, #0f766e 100%)", cursor: "pointer" }}
+					className="sanpin-btn sanpin-btn-secondary"
+					style={{ minHeight: "44px", padding: "0.6rem 1.15rem", fontSize: "0.875rem", fontWeight: 600, background: "var(--paper, #ffffff)", color: "var(--ink, #1e293b)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "10px", cursor: "pointer" }}
 					data-testid={isModal ? "modal-record-day-autoclave-cycle-btn" : "record-day-autoclave-cycle-btn"}
-					title="1-клик фиксация дневного цикла: Автоклав B-класс, 134°C, 2.1 бар, 5 мин, индикаторы 5 класса норма, списание крафт-пакетов со склада"
+					title="Фиксация дневного цикла: Автоклав B-класс, 134°C, 2.1 бар, 5 мин, индикаторы 5 класса норма, списание крафт-пакетов со склада"
 				>
-					<Save size={18} />
-					<span>{isLoggingDayCycle ? "Фиксация..." : "Зафиксировать дневной цикл автоклавирования"}</span>
+					<Save size={16} />
+					<span>{isLoggingDayCycle ? "Фиксация..." : "Зафиксировать дневной цикл"}</span>
 				</button>
 
 				<button
@@ -66,10 +66,10 @@ export function RetroactiveBatchControlBar({
 					onClick={onSaveToRegisters}
 					aria-busy={isSaving}
 					className="sanpin-btn sanpin-btn-primary"
-					style={{ minHeight: "46px", padding: "0.6rem 1.25rem", fontSize: "0.9rem", fontWeight: 800, background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)", cursor: "pointer" }}
+					style={{ minHeight: "44px", padding: "0.6rem 1.25rem", fontSize: "0.875rem", fontWeight: 700, background: "var(--teal, #0d9488)", color: "#ffffff", border: "none", borderRadius: "10px", cursor: "pointer", boxShadow: "0 2px 8px rgba(13, 148, 136, 0.3)" }}
 					data-testid={isModal ? "modal-save-batch-to-registers-btn" : "save-batch-to-registers-btn"}
 				>
-					<Save size={18} />
+					<Save size={16} />
 					<span>{isSaving ? "Сохранение..." : "Сохранить в реестры клиники"}</span>
 				</button>
 
@@ -77,31 +77,31 @@ export function RetroactiveBatchControlBar({
 					type="button"
 					onClick={onPrintDossier}
 					className="sanpin-btn sanpin-btn-secondary"
-					style={{ minHeight: "46px", padding: "0.6rem 1.1rem", fontSize: "0.9rem", fontWeight: 700, borderColor: "var(--brand-primary, #2563eb)", color: "var(--brand-primary, #2563eb)", cursor: "pointer" }}
+					style={{ minHeight: "44px", padding: "0.6rem 1.1rem", fontSize: "0.875rem", fontWeight: 600, background: "var(--paper, #ffffff)", color: "var(--ink, #1e293b)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "10px", cursor: "pointer" }}
 					data-testid={isModal ? "modal-print-batch-dossier-btn" : "print-batch-dossier-btn"}
 				>
-					<Printer size={18} /> <span>Распечатать готовые сшивы</span>
+					<Printer size={16} /> <span>Печать сшивов</span>
 				</button>
 
 				<button
 					type="button"
 					onClick={onExportCsv}
 					className="sanpin-btn sanpin-btn-secondary"
-					style={{ minHeight: "46px", padding: "0.6rem 0.9rem", fontSize: "0.85rem", cursor: "pointer" }}
+					style={{ minHeight: "44px", padding: "0.6rem 0.9rem", fontSize: "0.85rem", background: "var(--paper, #ffffff)", color: "var(--ink, #1e293b)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "10px", cursor: "pointer" }}
 					title="Экспорт в CSV"
 				>
-					<Download size={16} /> CSV
+					<Download size={15} /> CSV
 				</button>
 
 				<button
 					type="button"
 					onClick={onExportScheduleSyncCsv}
 					className="sanpin-btn sanpin-btn-secondary"
-					style={{ minHeight: "46px", padding: "0.6rem 0.9rem", fontSize: "0.85rem", cursor: "pointer" }}
+					style={{ minHeight: "44px", padding: "0.6rem 0.9rem", fontSize: "0.85rem", background: "var(--paper, #ffffff)", color: "var(--ink, #1e293b)", border: "1px solid var(--line, #cbd5e1)", borderRadius: "10px", cursor: "pointer" }}
 					title="Сводная ведомость стерилизационной нагрузки расписания (CSV)"
 					data-testid="export-schedule-sanpin-sync-csv-btn"
 				>
-					<Download size={16} /> Ведомость расписания (CSV)
+					<Download size={15} /> CSV расписания
 				</button>
 			</div>
 		</div>

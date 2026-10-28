@@ -34,6 +34,9 @@ import {
 } from "./cashRegister/CashRegisterFiscalSection";
 import { CashRegisterFeedbackSection } from "./cashRegister/CashRegisterFeedbackSection";
 import { CashRegisterCheckoutHeader } from "./cashRegister/CashRegisterCheckoutHeader";
+import { CashRegisterCheckoutFooter } from "./cashRegister/CashRegisterCheckoutFooter";
+import { CashRegisterDiscountsSection } from "./cashRegister/CashRegisterDiscountsSection";
+import { CashRegisterTotalDisplay } from "./cashRegister/CashRegisterTotalDisplay";
 
 export type { CheckoutTenderMethod, ReceiptDeliveryMethod };
 
@@ -403,108 +406,31 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 				{/* Modal Body */}
 				<div className="p-4 sm:p-5 overflow-y-auto space-y-4 max-w-full">
 					{/* Primary Due Total Display (Apple HIG Big Headline) */}
-					<div className="p-4 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] flex flex-col items-center justify-center gap-1 text-center">
-						<span className="text-xs font-medium text-[var(--muted,#64748b)] uppercase tracking-wider">
-							Сумма к оплате
-						</span>
-						<span data-testid="display-total-amount-due" className="inline-block">
-							<span
-								className="text-[32px] md:text-[36px] font-bold text-[var(--ink,#0f172a)] tracking-tight leading-none"
-								data-testid="checkout-total-amount"
-							>
-								{formatDisplayCurrency(totalDue)}
-							</span>
-						</span>
-						{rawAmount > 0 && (isWarranty || discountPercent > 0) && (
-							<span className="text-xs text-[var(--muted)] line-through">
-								Исходная стоимость: {formatDisplayCurrency(rawAmount)}
-							</span>
-						)}
-						{effectiveDepositLimit > 0 && (
-							<span className="text-xs text-[var(--teal,#0d9488)] font-medium mt-1">
-								Доступен аванс / депозит: {effectiveDepositLimit.toLocaleString("ru-RU")} ₽
-							</span>
-						)}
-					</div>
+					<CashRegisterTotalDisplay
+						totalDue={totalDue}
+						rawAmount={rawAmount}
+						isWarranty={isWarranty}
+						discountPercent={discountPercent}
+						effectiveDepositLimit={effectiveDepositLimit}
+					/>
 
-					{/* Doctor Discounts Row (Mandate 8e, 1-Click Warranty) */}
-					<div className="flex items-center justify-between gap-1.5 p-2.5 bg-[var(--paper-soft,#f8fafc)] rounded-xl border border-[var(--line,#e2e8f0)] text-xs flex-wrap">
-						<span className="text-xs font-semibold text-[var(--ink)] flex items-center gap-1.5 shrink-0">
-							<Tag className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-							Скидки врача:
-						</span>
-						<div className="flex items-center gap-1.5 flex-wrap">
-							<button
-								type="button"
-								data-testid="btn-discount-warranty"
-								onClick={() => {
-									setIsWarranty(!isWarranty);
-									setDiscountPercent(0);
-								}}
-								className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-semibold border transition-colors ${
-									isWarranty
-										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
-								}`}
-							>
-								100% Гарантия
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setDiscountPercent(discountPercent === 50 ? 0 : 50);
-									setIsWarranty(false);
-								}}
-								className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-semibold border transition-colors ${
-									discountPercent === 50 && !isWarranty
-										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
-								}`}
-							>
-								50% Коллеги
-							</button>
-							<button
-								type="button"
-								onClick={() => {
-									setDiscountPercent(discountPercent === 10 ? 0 : 10);
-									setIsWarranty(false);
-								}}
-								className={`min-h-[36px] px-3 py-1 rounded-lg text-xs font-semibold border transition-colors ${
-									discountPercent === 10 && !isWarranty
-										? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]"
-										: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"
-								}`}
-							>
-								10% Пенсионеры
-							</button>
-							{(isWarranty || discountPercent > 0) && (
-								<button
-									type="button"
-									onClick={() => {
-										setIsWarranty(false);
-										setDiscountPercent(0);
-									}}
-									className="text-xs text-[var(--muted)] hover:text-[var(--ink)] underline min-h-[36px] px-1.5"
-								>
-									Сбросить
-								</button>
-							)}
-						</div>
-					</div>
-
-					{/* 54-FZ Physical Person Non-Requirement Badge (Mandates 8e, 8n) */}
-					<div className="flex items-center justify-between p-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs">
-						<div className="flex items-center gap-1.5 text-[var(--muted,#64748b)]">
-							<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Плательщик: физическое лицо</span>
-						</div>
-						<span
-							data-testid="inn-physical-not-required-badge"
-							className="inline-flex items-center px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--ok-bg,rgba(16,185,129,0.1))] text-[var(--ok-fg,#10b981)] border border-[var(--ok-fg,rgba(16,185,129,0.2))]"
-						>
-							ИНН не требуется
-						</span>
-					</div>
+					{/* Doctor Discounts Row & Physical Person Badge */}
+					<CashRegisterDiscountsSection
+						isWarranty={isWarranty}
+						discountPercent={discountPercent}
+						onToggleWarranty={() => {
+							setIsWarranty(!isWarranty);
+							setDiscountPercent(0);
+						}}
+						onSetDiscountPercent={(pct) => {
+							setDiscountPercent(discountPercent === pct ? 0 : pct);
+							setIsWarranty(false);
+						}}
+						onResetDiscounts={() => {
+							setIsWarranty(false);
+							setDiscountPercent(0);
+						}}
+					/>
 
 					{/* Payment Tender Method Tiles, Cash change & SBP QR */}
 					<CashRegisterTendersSection
@@ -558,47 +484,13 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 				</div>
 
 				{/* Footer with exactly ONE Primary CTA Button (Mandate 8am) */}
-				<div
-					className="px-5 py-3.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between gap-3"
-					style={{ paddingBottom: "max(0.875rem, env(safe-area-inset-bottom))" }}
-				>
-					<button
-						type="button"
-						onClick={onClose}
-						disabled={isSubmitting}
-						className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#cbd5e1)] text-xs sm:text-sm font-medium text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper,#ffffff)] transition-colors"
-					>
-						Отмена
-					</button>
-
-					<button
-						type="button"
-						onClick={handleExecutePayment}
-						data-testid="btn-confirm-checkout-payment"
-						data-testid-alt="execute-fast-checkout-btn"
-						className="min-h-[52px] sm:min-h-[44px] flex-1 max-w-sm py-2.5 px-5 rounded-2xl sm:rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-sm font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 active:scale-[0.98]"
-						style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
-					>
-						<span data-testid="btn-submit-checkout-54fz" className="contents">
-							{isSubmitting ? (
-								<>
-									<RefreshCw className="w-4 h-4 animate-spin" />
-									<span>Пробитие чека...</span>
-								</>
-							) : isWarranty || totalDue === 0 ? (
-								<>
-									<Check className="w-4 h-4 shrink-0" />
-									<span data-testid="btn-payment-close-warranty-zero">Закрыть визит: Гарантия 100% (0 ₽)</span>
-								</>
-							) : (
-								<>
-									<Check className="w-4 h-4 shrink-0" />
-									<span>Принять оплату {formatDisplayCurrency(totalDue)}</span>
-								</>
-							)}
-						</span>
-					</button>
-				</div>
+				<CashRegisterCheckoutFooter
+					isSubmitting={isSubmitting}
+					isWarranty={isWarranty}
+					totalDue={totalDue}
+					onClose={onClose}
+					onExecutePayment={handleExecutePayment}
+				/>
 			</div>
 		</div>
 	);

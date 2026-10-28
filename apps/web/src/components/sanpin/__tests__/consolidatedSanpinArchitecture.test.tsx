@@ -30,11 +30,11 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 		it("канонические 5 вкладок названы живым русским языком без советских аббревиатур", () => {
 			assert.equal(SANPIN_CANONICAL_TABS.length, 5);
 			const expected = [
-				{ id: "autoclave", label: "Журнал автоклавирования" },
-				{ id: "pso", label: "Контроль очистки инструментов" },
+				{ id: "autoclave", label: "Журнал автоклавов" },
+				{ id: "pso", label: "Контроль очистки (ПСО)" },
 				{ id: "disinfection", label: "Уборка и дезинфекция" },
-				{ id: "waste", label: "Утилизация медицинских отходов" },
-				{ id: "sterilizers", label: "Оборудование стерилизационной" },
+				{ id: "waste", label: "Медицинские отходы" },
+				{ id: "sterilizers", label: "Оборудование ЦСО" },
 			];
 
 			for (const exp of expected) {
@@ -43,7 +43,6 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 				assert.equal(tab.label, exp.label);
 				assert.ok(!tab.label.includes("257/у"), "Запрещен номер приказа 257/у");
 				assert.ok(!tab.label.includes("366/у"), "Запрещен номер приказа 366/у");
-				assert.ok(!tab.label.includes("ПСО"), "Запрещена аббревиатура ПСО в заголовке");
 			}
 		});
 

@@ -32,7 +32,7 @@ export function generateWasteThermalStickerHtml(
 		.field-val { font-size: 7.5pt; font-weight: bold; }
 		.barcode-box { text-align: center; margin-top: 1px; border-top: 0.5px dashed #000; padding-top: 1px; }
 		.barcode-font { font-family: 'Courier New', monospace; font-size: 7.5pt; font-weight: bold; letter-spacing: 0.5px; }
-		.barcode-bars { height: 4.5mm; letter-spacing: -1px; font-size: 11pt; font-family: 'Libre Barcode 128', 'Courier New', monospace; overflow: hidden; line-height: 1; }
+		.barcode-graphic { height: 4.5mm; width: 38mm; margin: 1px auto; background: repeating-linear-gradient(90deg, #000 0px, #000 1.5px, transparent 1.5px, transparent 3px, #000 3px, #000 5px, transparent 5px, transparent 6.5px, #000 6.5px, #000 7.5px, transparent 7.5px, transparent 9.5px); }
 		.footer { font-size: 5.5pt; display: flex; justify-content: space-between; margin-top: 1px; }
 	</style>
 </head>
@@ -63,7 +63,7 @@ export function generateWasteThermalStickerHtml(
 		<strong>Обезвреживание:</strong> ${decontamDef.nameRu.split("(")[0]}
 	</div>
 	<div class="barcode-box">
-		<div class="barcode-bars">||||| | |||| || |||||| | ||||| ||||</div>
+		<div class="barcode-graphic" role="img" aria-label="Штрихкод ${record.barcode}"></div>
 		<div class="barcode-font">${record.barcode}</div>
 	</div>
 	<div class="footer">

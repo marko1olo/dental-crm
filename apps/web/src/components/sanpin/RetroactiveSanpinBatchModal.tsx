@@ -50,9 +50,9 @@ export function RetroactiveSanpinBatchModal({
 						<div
 							style={{
 								width: "40px", height: "40px", borderRadius: "10px",
-								background: "linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)",
+								background: "var(--teal, #0d9488)",
 								display: "flex", alignItems: "center", justifyContent: "center",
-								color: "#ffffff", boxShadow: "0 4px 12px rgba(37, 99, 235, 0.25)",
+								color: "#ffffff", boxShadow: "0 4px 12px rgba(13, 148, 136, 0.25)",
 							}}
 						>
 							<Sparkles size={22} />
@@ -60,7 +60,7 @@ export function RetroactiveSanpinBatchModal({
 						<div>
 							<h3 style={{ margin: 0, fontSize: "1.15rem", fontWeight: 800, display: "flex", alignItems: "center", gap: "0.5rem" }}>
 								Пакетное закрытие журналов стерилизации
-								<span style={{ fontSize: "0.75rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: "6px", background: "rgba(37, 99, 235, 0.1)", color: "var(--brand-primary, #2563eb)" }}>
+								<span style={{ fontSize: "0.75rem", fontWeight: 700, padding: "0.15rem 0.5rem", borderRadius: "6px", background: "rgba(13, 148, 136, 0.1)", color: "var(--teal, #0d9488)" }}>
 									Автозаполнение
 								</span>
 							</h3>

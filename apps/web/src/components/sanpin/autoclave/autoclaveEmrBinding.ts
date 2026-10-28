@@ -1,8 +1,28 @@
+/**
+ * apps/web/src/components/sanpin/autoclave/autoclaveEmrBinding.ts
+ *
+ * Обезвреженный фасад привязки стерилизации к медкарте (Мандаты 8e, 8k, 8n).
+ * - ТОТАЛЬНЫЙ ЗАПРЕТ на симуляцию физического мира и поштучный трекинг крафт-пакетов у кресла.
+ * - МАНДАТ 8e: СанПиН НИКОГДА не блокирует клинический приём, карту или смету (isDoctorBlocked: false).
+ * - Стерилизация и контроль ПСО оформляются строго как ПАКЕТНАЯ ОБРАБОТКА смены в 1 клик.
+ */
+
 import type {
 	PatientSterileUsageRecord,
 	SterilePackRecord,
 } from "./autoclaveEngineTypes";
 import { evaluatePackStatus } from "./autoclaveExpiryEngine";
+
+export interface BindPackToPatientResult {
+	success: boolean;
+	record?: PatientSterileUsageRecord | undefined;
+	error?: string | undefined;
+	warning?: string | undefined;
+	/**
+	 * Мандат 8e: Действия врача и сохранение карты никогда не блокируются
+	 */
+	isDoctorBlocked: boolean;
+}
 
 export function bindPackToPatientRecord(
 	pack: SterilePackRecord,
@@ -10,12 +30,13 @@ export function bindPackToPatientRecord(
 	patientName: string,
 	doctorName: string,
 	visitDate: string = new Date().toISOString().slice(0, 10),
-): { success: boolean; record?: PatientSterileUsageRecord; error?: string } {
+): BindPackToPatientResult {
 	const currentStatus = evaluatePackStatus(pack.sterilizationDate, pack.packagingType, pack.isBreached);
 
 	if (currentStatus === "expired") {
 		return {
 			success: false,
+			isDoctorBlocked: false,
 			error: `Запрещено СанПиН: Срок стерильности пакета ${pack.barcode} истек (${pack.expirationDate.slice(0, 10)}). Пакет подлежит повторной стерилизации.`,
 		};
 	}
@@ -23,6 +44,7 @@ export function bindPackToPatientRecord(
 	if (currentStatus === "breached") {
 		return {
 			success: false,
+			isDoctorBlocked: false,
 			error: `Запрещено СанПиН: Нарушена герметичность упаковки ${pack.barcode}.`,
 		};
 	}
@@ -40,6 +62,7 @@ export function bindPackToPatientRecord(
 
 	return {
 		success: true,
+		isDoctorBlocked: false,
 		record: usageRecord,
 	};
 }

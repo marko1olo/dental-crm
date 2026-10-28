@@ -71,17 +71,16 @@ export function RetroactiveBatchHeroBanner({
 					onClick={onGenerateBatch}
 					style={{
 						width: "100%",
-						minHeight: "56px",
+						minHeight: "52px",
 						padding: "0.85rem 1.5rem",
-						fontSize: "1.05rem",
-						fontWeight: 900,
-						letterSpacing: "0.02em",
-						background: "var(--ok-fg)",
-						borderColor: "var(--ok-fg)",
-						color: "var(--on-teal, #ffffff)",
-						borderRadius: "0.5rem",
+						fontSize: "1rem",
+						fontWeight: 700,
+						letterSpacing: "0.01em",
+						background: "var(--teal, #0d9488)",
+						color: "#ffffff",
+						borderRadius: "12px",
 						cursor: "pointer",
-						boxShadow: "0 4px 14px rgba(5, 150, 105, 0.4)",
+						boxShadow: "0 4px 14px rgba(13, 148, 136, 0.35)",
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "center",
@@ -90,8 +89,8 @@ export function RetroactiveBatchHeroBanner({
 					}}
 					data-testid="execute-sanpin-batch-1click-btn"
 				>
-					<FileCheck size={22} color="var(--on-teal, #ffffff)" />
-					<span>Заполнить все журналы стерилизации за период</span>
+					<FileCheck size={20} color="#ffffff" />
+					<span>Заполнить журналы стерилизации за период в 1 клик</span>
 				</button>
 			</div>
 		</div>

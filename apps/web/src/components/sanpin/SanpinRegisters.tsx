@@ -27,6 +27,7 @@ import { SanpinKpiSummaryGrid } from "./registers/SanpinKpiSummaryGrid";
 import { SanpinRegisterTabsNav } from "./registers/SanpinRegisterTabsNav";
 import { type SanpinRegisterTab } from "./sanpinNavigationConfig";
 import { SANPIN_REGISTERS_TOAST_MESSAGES } from "./sanpinToastMessages";
+import "./SanpinRegisters.css";
 
 export * from "./sanpinNavigationConfig";
 export * from "./sanpinToastMessages";
