@@ -576,3 +576,26 @@ export const draft043uSoapDiaryTool: ToolDefinition<
 		};
 	},
 };
+
+/**
+ * Mandate 8ap: Clean clinical domain aliases.
+ */
+export const getPatientOutpatientRecordTool: ToolDefinition<
+	typeof getPatientEmk043uSchema,
+	PatientEmk043uResult
+> = {
+	...getPatientEmk043uTool,
+	name: "get_patient_outpatient_record",
+	description:
+		"Получение медицинской карты приёма пациента: паспортные данные, зубная формула FDI (11..48), соматический статус, аллергии и история предшествующих визитов.",
+};
+
+export const draftSoapDiaryTool: ToolDefinition<
+	typeof draft043uSoapDiarySchema,
+	Draft043uSoapDiaryResult
+> = {
+	...draft043uSoapDiaryTool,
+	name: "draft_soap_diary",
+	description:
+		"Генерация первичного или повторного дневника приёма пациента по международному медицинскому стандарту SOAP.",
+};

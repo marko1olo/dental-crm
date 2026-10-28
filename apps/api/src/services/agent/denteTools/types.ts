@@ -33,6 +33,8 @@ export const getPatientEmk043uSchema = z.object({
 		.describe("Количество последних визитов для выборки анамнеза"),
 });
 export type GetPatientEmk043uInput = z.infer<typeof getPatientEmk043uSchema>;
+export const getPatientOutpatientRecordSchema = getPatientEmk043uSchema;
+export type GetPatientOutpatientRecordInput = GetPatientEmk043uInput;
 export interface PatientEmk043uToothState {
 	toothNumber: number;
 	fdiFormatted: string;
@@ -63,6 +65,7 @@ export interface PatientEmk043uResult {
 	}>;
 	renderedSummary: string;
 }
+export type PatientOutpatientRecordResult = PatientEmk043uResult;
 export const updateToothStatusSchema = z.object({
 	patientId: z.string().min(1, "patientId обязателен"),
 	tooth: z
@@ -127,6 +130,8 @@ export const calculate804nEstimateSchema = z.object({
 		.describe("Модификаторы цены (например, сложность +10%, гарантия -100%)"),
 });
 export type Calculate804nEstimateInput = z.infer<typeof calculate804nEstimateSchema>;
+export const calculateServicesEstimateSchema = calculate804nEstimateSchema;
+export type CalculateServicesEstimateInput = Calculate804nEstimateInput;
 export interface EstimateLineItem {
 	code: string;
 	title: string;
@@ -151,6 +156,7 @@ export interface Calculate804nEstimateResult {
 	formattedTotal: string;
 	doctorAutonomyApplied: true;
 }
+export type CalculateServicesEstimateResult = Calculate804nEstimateResult;
 export const checkDrugInteractionsSchema = z.object({
 	patientId: z.string().min(1, "patientId обязателен"),
 	plannedDrugs: z
@@ -245,6 +251,8 @@ export const draft043uSoapDiarySchema = z.object({
 	recommendations: z.string().optional().describe("Клинические рекомендации пациенту"),
 });
 export type Draft043uSoapDiaryInput = z.infer<typeof draft043uSoapDiarySchema>;
+export const draftSoapDiarySchema = draft043uSoapDiarySchema;
+export type DraftSoapDiaryInput = Draft043uSoapDiaryInput;
 export interface Draft043uSoapDiaryResult {
 	success: true;
 	patientId: string;
@@ -255,3 +263,4 @@ export interface Draft043uSoapDiaryResult {
 	readyForOneClickApply: true;
 	isDraftEditable: true;
 }
+export type DraftSoapDiaryResult = Draft043uSoapDiaryResult;

@@ -89,6 +89,7 @@ export interface AutonomousDenteAgentInput {
 
 export type ActionCardType =
 	| "apply_soap_diary"
+	| "apply_services_estimate"
 	| "apply_estimate_804n"
 	| "apply_tooth_status"
 	| "apply_lab_order"
@@ -131,6 +132,7 @@ export interface AutonomousDenteAgentResult {
 	safetyAlerts: ChairsideSafetyAlert[];
 	steps: ReActStep[];
 	soapDiary?: ChairsideSoapDiary | undefined;
+	estimateServices?: Calculate804nEstimateResult | undefined;
 	estimate804n?: Calculate804nEstimateResult | undefined;
 	labOrder?: CreateDentalLabOrderResult | undefined;
 	appointment?: BookChairsideAppointmentResult | undefined;
@@ -617,6 +619,7 @@ export class AutonomousDenteAgent {
 			safetyAlerts,
 			steps,
 			soapDiary: diaryResult?.soapDiary,
+			estimateServices: estimateResult,
 			estimate804n: estimateResult,
 			labOrder: labOrderResult,
 			appointment: appointmentResult,

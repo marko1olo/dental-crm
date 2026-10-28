@@ -52,17 +52,31 @@ export {
     getPatientFamilyDepositAndDebtTool,
 };
 
-import { getPatientEmk043uTool, updateToothStatusTool, checkDrugInteractionsTool, createDentalLabOrderTool, draft043uSoapDiaryTool } from "./clinicalAgentTools.js";
+import {
+    getPatientEmk043uTool,
+    getPatientOutpatientRecordTool,
+    updateToothStatusTool,
+    checkDrugInteractionsTool,
+    createDentalLabOrderTool,
+    draft043uSoapDiaryTool,
+    draftSoapDiaryTool,
+} from "./clinicalAgentTools.js";
 import { bookChairsideAppointmentTool } from "./crmAgentTools.js";
-import { calculate804nEstimateTool } from "./financeAgentTools.js";
+import {
+    calculate804nEstimateTool,
+    calculateServicesEstimateTool,
+} from "./financeAgentTools.js";
 
 export const DENTE_AGENT_TOOLS = {
+    get_patient_outpatient_record: getPatientOutpatientRecordTool,
     get_patient_emk_043u: getPatientEmk043uTool,
     update_tooth_status: updateToothStatusTool,
+    calculate_services_estimate: calculateServicesEstimateTool,
     calculate_804n_estimate: calculate804nEstimateTool,
     check_drug_interactions: checkDrugInteractionsTool,
     create_dental_lab_order: createDentalLabOrderTool,
     book_chairside_appointment: bookChairsideAppointmentTool,
+    draft_soap_diary: draftSoapDiaryTool,
     draft_043u_soap_diary: draft043uSoapDiaryTool,
     calculate_anesthetic_dosage: calculateAnestheticDosageTool,
     generate_informed_consent_ids: generateInformedConsentIdsTool,

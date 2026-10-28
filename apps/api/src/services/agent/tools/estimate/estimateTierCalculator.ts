@@ -30,11 +30,12 @@ import {
 Decimal.set({ precision: 20, rounding: Decimal.ROUND_HALF_UP });
 
 export {
+	CANONICAL_SERVICES_PRICE_CATALOG,
 	CANONICAL_804N_PRICE_CATALOG,
 	resolveStandardCatalogPrice,
 	type StandardCatalogService,
-} from "./priceCatalog804n.js";
-import { resolveStandardCatalogPrice } from "./priceCatalog804n.js";
+} from "./priceCatalogServices.js";
+import { resolveStandardCatalogPrice } from "./priceCatalogServices.js";
 
 // ─── TIER DEFINITIONS & MATERIAL SPECIFICATIONS ─────────────────────────────
 

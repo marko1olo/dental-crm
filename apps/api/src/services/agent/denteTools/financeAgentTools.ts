@@ -135,3 +135,16 @@ export const calculate804nEstimateTool: ToolDefinition<
 		};
 	},
 };
+
+/**
+ * Mandate 8ap: Clean clinical domain alias.
+ */
+export const calculateServicesEstimateTool: ToolDefinition<
+	typeof calculate804nEstimateSchema,
+	Calculate804nEstimateResult
+> = {
+	...calculate804nEstimateTool,
+	name: "calculate_services_estimate",
+	description:
+		"Расчет клинической сметы медицинских услуг в точных целых копейках со свободой скидок врача (0-100%).",
+};

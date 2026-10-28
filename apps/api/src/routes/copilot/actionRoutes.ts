@@ -1,30 +1,26 @@
 /**
  * actionRoutes.ts — Layer 2: Fastify Routes for Doctor Action Confirmations and Clinical Tools.
+ *
+ * Mandate 8b: Refactored and decomposed into:
+ * - actionConfirmationHandler.ts (shared confirm/reject logic with ReAct stream closure)
+ * - clinicalToolRoutes.ts (direct clinical diary, prescription, plan, DDI routes)
+ *
+ * Provides two-phase execution guard and doctor confirmation workflows.
  */
 
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { db } from "../../db/client.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { PERMISSIONS } from "../../security/permissions.js";
-import {
-	AgentOrchestrator,
-	buildDenteAgentSystemPrompt,
-	defaultCopilotActionManager,
-	defaultLlmProvider,
-	defaultSessionStore,
-	defaultToolRegistry,
-	formatSseEvent,
-	type AgentContext,
-	type TurnEvent,
-} from "../../services/agent/index.js";
+import { handleActionConfirmation } from "./actionConfirmationHandler.js";
+import { clinicalToolRoutes } from "./clinicalToolRoutes.js";
 import { confirmationBodySchema } from "./types.js";
-
-const DENTE_COPILOT_SYSTEM_PROMPT = buildDenteAgentSystemPrompt();
 
 export const actionRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
+	// Register direct clinical tool endpoints
+	await server.register(clinicalToolRoutes);
+
 	// POST /api/v1/copilot/sessions/:sessionId/confirmations/:callId — Doctor confirmation/rejection
 	server.post<{
 		Params: { sessionId: string; callId: string };
@@ -58,211 +54,20 @@ export const actionRoutes: FastifyPluginAsync = async (
 			const userId =
 				identity.userId ?? "00000000-0000-7000-8000-000000000001";
 			const { decision, reason, modifiedArgs } = parsedBody.data;
-
 			const wantsJson = request.headers.accept === "application/json";
 
-			if (decision === "confirm") {
-				const pending = await defaultCopilotActionManager.resolvePending(
-					callId,
-					resolvedOrgId,
-				);
-				if (!pending) {
-					if (wantsJson) {
-						return reply.code(404).send({
-							error: "NotFound",
-							message:
-								"Запрос на действие не найден или истек срок ожидания (15 минут)",
-						});
-					}
-					reply.raw.setHeader(
-						"Content-Type",
-						"text/event-stream; charset=utf-8",
-					);
-					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-					reply.raw.setHeader("Connection", "keep-alive");
-					reply.raw.setHeader("X-Accel-Buffering", "no");
-					reply.raw.flushHeaders?.();
-					reply.raw.write(
-						formatSseEvent({
-							type: "token",
-							text: "\n\n⚠️ Запрос на действие не найден или истек срок ожидания (15 минут).",
-						}),
-					);
-					reply.raw.write(
-						formatSseEvent({ type: "final", stopReason: "expired" }),
-					);
-					reply.raw.end();
-					return;
-				}
-
-				const ctx: AgentContext = {
-					organizationId: resolvedOrgId,
-					clinicId: resolvedOrgId,
-					userId,
-					sessionId,
-					mode: "autonomous",
-					role: identity.role ?? "doctor",
-					permissions: [...PERMISSIONS],
-					tools: defaultToolRegistry,
-					db,
-				};
-
-				try {
-					const result = await defaultCopilotActionManager.confirmAction(
-						ctx,
-						callId,
-						modifiedArgs,
-					);
-
-					if (wantsJson) {
-						return reply.code(200).send({
-							ok: result.ok,
-							result: result.ok ? result.data : undefined,
-							error: result.error,
-						});
-					}
-
-					// Setup SSE headers for ReAct Stream Closure
-					reply.raw.setHeader(
-						"Content-Type",
-						"text/event-stream; charset=utf-8",
-					);
-					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-					reply.raw.setHeader("Connection", "keep-alive");
-					reply.raw.setHeader("X-Accel-Buffering", "no");
-					reply.raw.flushHeaders?.();
-
-					const toolFinishedEvent: TurnEvent = {
-						type: "tool_call_finished",
-						callId,
-						name: pending.toolName,
-						ok: result.ok,
-						result: result.ok ? result.data : { error: result.error },
-					};
-					reply.raw.write(formatSseEvent(toolFinishedEvent));
-
-					// Append tool result into persistent session history
-					const session = await defaultSessionStore.getOrCreate(
-						sessionId,
-						resolvedOrgId,
-						userId,
-						resolvedOrgId,
-					);
-
-					session.history.push({
-						role: "tool",
-						content: [
-							{
-								type: "tool_result",
-								toolCallId: callId,
-								content: result.ok ? result.data : { error: result.error },
-								isError: !result.ok,
-							},
-						],
-					});
-
-					// Continue ReAct turn to generate closing assistant message
-					const stream = AgentOrchestrator.runTurnStream({
-						ctx,
-						provider: defaultLlmProvider,
-						system: DENTE_COPILOT_SYSTEM_PROMPT,
-						history: session.history,
-						toolNames: defaultToolRegistry.list(),
-						redactor: session.redactor,
-					});
-
-					for await (const event of stream) {
-						if (event.type === "confirmation_required") {
-							defaultCopilotActionManager.registerPending(
-								sessionId,
-								event.callId,
-								event.name,
-								event.arguments,
-								{ organizationId: resolvedOrgId, userId },
-							);
-						}
-						reply.raw.write(formatSseEvent(event));
-					}
-
-					await defaultSessionStore
-						.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
-						.catch(() => {});
-				} catch (err) {
-					const errorMsg = err instanceof Error ? err.message : String(err);
-					reply.raw.write(
-						formatSseEvent({
-							type: "token",
-							text: `\n\n❌ Исключение при выполнении действия: ${errorMsg}`,
-						}),
-					);
-					reply.raw.write(
-						formatSseEvent({ type: "final", stopReason: "error" }),
-					);
-				} finally {
-					reply.raw.end();
-				}
-				return;
-			}
-
-			// decision === "reject"
-			const rejection = await defaultCopilotActionManager.rejectActionAsync(
-				callId,
-				reason ?? "Отклонено пользователем",
+			await handleActionConfirmation({
+				reply,
 				resolvedOrgId,
-			);
-
-			if (wantsJson) {
-				return reply.code(200).send({
-					ok: true,
-					rejected: true,
-					reason: rejection.reason,
-				});
-			}
-
-			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-			reply.raw.setHeader("Connection", "keep-alive");
-			reply.raw.setHeader("X-Accel-Buffering", "no");
-			reply.raw.flushHeaders?.();
-
-			try {
-				const session = await defaultSessionStore.getOrCreate(
-					sessionId,
-					resolvedOrgId,
-					userId,
-					resolvedOrgId,
-				);
-
-				session.history.push({
-					role: "tool",
-					content: [
-						{
-							type: "tool_result",
-							toolCallId: callId,
-							content: {
-								error: `Действие отменено пользователем: ${rejection.reason}`,
-							},
-							isError: true,
-						},
-					],
-				});
-
-				reply.raw.write(
-					formatSseEvent({
-						type: "token",
-						text: `\n\n🚫 Действие отменено пользователем: ${rejection.reason}`,
-					}),
-				);
-				reply.raw.write(
-					formatSseEvent({ type: "final", stopReason: "rejected" }),
-				);
-
-				await defaultSessionStore
-					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
-					.catch(() => {});
-			} finally {
-				reply.raw.end();
-			}
+				userId,
+				role: identity.role ?? "doctor",
+				sessionId,
+				callId,
+				decision,
+				reason,
+				modifiedArgs,
+				wantsJson,
+			});
 		},
 	);
 
@@ -307,371 +112,20 @@ export const actionRoutes: FastifyPluginAsync = async (
 				(request.body as { sessionId?: string })?.sessionId ??
 				"default-session";
 			const { decision, reason, modifiedArgs } = parsedBody.data;
-
 			const wantsJson = request.headers.accept === "application/json";
 
-			if (decision === "confirm") {
-				const pending = await defaultCopilotActionManager.resolvePending(
-					callId,
-					resolvedOrgId,
-				);
-				if (!pending) {
-					if (wantsJson) {
-						return reply.code(404).send({
-							error: "NotFound",
-							message:
-								"Запрос на действие не найден или истек срок ожидания (15 минут)",
-						});
-					}
-					reply.raw.setHeader(
-						"Content-Type",
-						"text/event-stream; charset=utf-8",
-					);
-					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-					reply.raw.setHeader("Connection", "keep-alive");
-					reply.raw.setHeader("X-Accel-Buffering", "no");
-					reply.raw.flushHeaders?.();
-					reply.raw.write(
-						formatSseEvent({
-							type: "token",
-							text: "\n\n⚠️ Запрос на действие не найден или истек срок ожидания (15 минут).",
-						}),
-					);
-					reply.raw.write(
-						formatSseEvent({ type: "final", stopReason: "expired" }),
-					);
-					reply.raw.end();
-					return;
-				}
-
-				const ctx: AgentContext = {
-					organizationId: resolvedOrgId,
-					clinicId: resolvedOrgId,
-					userId,
-					sessionId,
-					mode: "autonomous",
-					role: identity.role ?? "doctor",
-					permissions: [...PERMISSIONS],
-					tools: defaultToolRegistry,
-					db,
-				};
-
-				try {
-					const result = await defaultCopilotActionManager.confirmAction(
-						ctx,
-						callId,
-						modifiedArgs,
-					);
-
-					if (wantsJson) {
-						return reply.code(200).send({
-							ok: result.ok,
-							result: result.ok ? result.data : undefined,
-							error: result.error,
-						});
-					}
-
-					// Setup SSE headers for ReAct Stream Closure
-					reply.raw.setHeader(
-						"Content-Type",
-						"text/event-stream; charset=utf-8",
-					);
-					reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-					reply.raw.setHeader("Connection", "keep-alive");
-					reply.raw.setHeader("X-Accel-Buffering", "no");
-					reply.raw.flushHeaders?.();
-
-					const toolFinishedEvent: TurnEvent = {
-						type: "tool_call_finished",
-						callId,
-						name: pending.toolName,
-						ok: result.ok,
-						result: result.ok ? result.data : { error: result.error },
-					};
-					reply.raw.write(formatSseEvent(toolFinishedEvent));
-
-					// Append tool result into persistent session history
-					const session = await defaultSessionStore.getOrCreate(
-						sessionId,
-						resolvedOrgId,
-						userId,
-						resolvedOrgId,
-					);
-
-					session.history.push({
-						role: "tool",
-						content: [
-							{
-								type: "tool_result",
-								toolCallId: callId,
-								content: result.ok ? result.data : { error: result.error },
-								isError: !result.ok,
-							},
-						],
-					});
-
-					// Continue ReAct turn to generate closing assistant message
-					const stream = AgentOrchestrator.runTurnStream({
-						ctx,
-						provider: defaultLlmProvider,
-						system: DENTE_COPILOT_SYSTEM_PROMPT,
-						history: session.history,
-						toolNames: defaultToolRegistry.list(),
-						redactor: session.redactor,
-					});
-
-					for await (const event of stream) {
-						if (event.type === "confirmation_required") {
-							defaultCopilotActionManager.registerPending(
-								sessionId,
-								event.callId,
-								event.name,
-								event.arguments,
-								{ organizationId: resolvedOrgId, userId },
-							);
-						}
-						reply.raw.write(formatSseEvent(event));
-					}
-
-					await defaultSessionStore
-						.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
-						.catch(() => {});
-				} catch (err) {
-					const errorMsg = err instanceof Error ? err.message : String(err);
-					reply.raw.write(
-						formatSseEvent({
-							type: "token",
-							text: `\n\n❌ Исключение при выполнении действия: ${errorMsg}`,
-						}),
-					);
-					reply.raw.write(
-						formatSseEvent({ type: "final", stopReason: "error" }),
-					);
-				} finally {
-					reply.raw.end();
-				}
-				return;
-			}
-
-			// decision === "reject"
-			const rejection = await defaultCopilotActionManager.rejectActionAsync(
-				callId,
-				reason ?? "Отклонено пользователем",
+			await handleActionConfirmation({
+				reply,
 				resolvedOrgId,
-			);
-
-			if (wantsJson) {
-				return reply.code(200).send({
-					ok: true,
-					rejected: true,
-					reason: rejection.reason,
-				});
-			}
-
-			reply.raw.setHeader("Content-Type", "text/event-stream; charset=utf-8");
-			reply.raw.setHeader("Cache-Control", "no-cache, no-transform");
-			reply.raw.setHeader("Connection", "keep-alive");
-			reply.raw.setHeader("X-Accel-Buffering", "no");
-			reply.raw.flushHeaders?.();
-
-			try {
-				const session = await defaultSessionStore.getOrCreate(
-					sessionId,
-					resolvedOrgId,
-					userId,
-					resolvedOrgId,
-				);
-
-				session.history.push({
-					role: "tool",
-					content: [
-						{
-							type: "tool_result",
-							toolCallId: callId,
-							content: {
-								error: `Действие отменено пользователем: ${rejection.reason}`,
-							},
-							isError: true,
-						},
-					],
-				});
-
-				reply.raw.write(
-					formatSseEvent({
-						type: "token",
-						text: `\n\n🚫 Действие отменено пользователем: ${rejection.reason}`,
-					}),
-				);
-				reply.raw.write(
-					formatSseEvent({ type: "final", stopReason: "rejected" }),
-				);
-
-				await defaultSessionStore
-					.save(sessionId, resolvedOrgId, session, userId, resolvedOrgId)
-					.catch(() => {});
-			} finally {
-				reply.raw.end();
-			}
-		},
-	);
-
-	// POST /api/v1/copilot/clinical/diary — Generate 043/у visit diary protocol
-	server.post<{ Body: Record<string, unknown> }>(
-		"/api/v1/copilot/clinical/diary",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot generate visit diary",
-			);
-			if (!resolvedOrgId) return;
-
-			const identity = getRequestIdentity(request);
-			const context: AgentContext = {
-				organizationId: resolvedOrgId,
-				clinicId: resolvedOrgId,
-				userId: identity.userId ?? "system",
-				sessionId: `copilot-direct-${Date.now()}`,
-				mode: "autonomous",
-				permissions: [...PERMISSIONS],
-				tools: defaultToolRegistry,
-				db,
-			};
-
-			try {
-				const result = await defaultToolRegistry.call(
-					context,
-					"generate_visit_diary",
-					request.body ?? {},
-				);
-				return reply.send(result);
-			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : String(err);
-				return reply.code(400).send({
-					error: "ClinicalToolExecutionError",
-					message: errMsg,
-				});
-			}
-		},
-	);
-
-	// POST /api/v1/copilot/clinical/prescription-107 — Generate Form 107-1/у prescription
-	server.post<{ Body: Record<string, unknown> }>(
-		"/api/v1/copilot/clinical/prescription-107",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot create prescription 107",
-			);
-			if (!resolvedOrgId) return;
-
-			const identity = getRequestIdentity(request);
-			const context: AgentContext = {
-				organizationId: resolvedOrgId,
-				clinicId: resolvedOrgId,
-				userId: identity.userId ?? "system",
-				sessionId: `copilot-direct-${Date.now()}`,
-				mode: "autonomous",
-				permissions: [...PERMISSIONS],
-				tools: defaultToolRegistry,
-				db,
-			};
-
-			try {
-				const result = await defaultToolRegistry.call(
-					context,
-					"create_prescription_107",
-					request.body ?? {},
-				);
-				return reply.send(result);
-			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : String(err);
-				return reply.code(400).send({
-					error: "PrescriptionGenerationError",
-					message: errMsg,
-				});
-			}
-		},
-	);
-
-	// POST /api/v1/copilot/clinical/treatment-plan — Generate 3-Tier Treatment Plan
-	server.post<{ Body: Record<string, unknown> }>(
-		"/api/v1/copilot/clinical/treatment-plan",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot suggest treatment plan",
-			);
-			if (!resolvedOrgId) return;
-
-			const identity = getRequestIdentity(request);
-			const context: AgentContext = {
-				organizationId: resolvedOrgId,
-				clinicId: resolvedOrgId,
-				userId: identity.userId ?? "system",
-				sessionId: `copilot-direct-${Date.now()}`,
-				mode: "autonomous",
-				permissions: [...PERMISSIONS],
-				tools: defaultToolRegistry,
-				db,
-			};
-
-			try {
-				const result = await defaultToolRegistry.call(
-					context,
-					"suggest_treatment_plan",
-					request.body ?? {},
-				);
-				return reply.send(result);
-			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : String(err);
-				return reply.code(400).send({
-					error: "TreatmentPlanGenerationError",
-					message: errMsg,
-				});
-			}
-		},
-	);
-
-	// POST /api/v1/copilot/clinical/check-ddi — Audit DDI & Medication Contraindications
-	server.post<{ Body: Record<string, unknown> }>(
-		"/api/v1/copilot/clinical/check-ddi",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot check drug interactions",
-			);
-			if (!resolvedOrgId) return;
-
-			const identity = getRequestIdentity(request);
-			const context: AgentContext = {
-				organizationId: resolvedOrgId,
-				clinicId: resolvedOrgId,
-				userId: identity.userId ?? "system",
-				sessionId: `copilot-direct-${Date.now()}`,
-				mode: "autonomous",
-				permissions: [...PERMISSIONS],
-				tools: defaultToolRegistry,
-				db,
-			};
-
-			try {
-				const result = await defaultToolRegistry.call(
-					context,
-					"check_drug_interaction",
-					request.body ?? {},
-				);
-				return reply.send(result);
-			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : String(err);
-				return reply.code(400).send({
-					error: "DrugSafetyAuditError",
-					message: errMsg,
-				});
-			}
+				userId,
+				role: identity.role ?? "doctor",
+				sessionId,
+				callId,
+				decision,
+				reason,
+				modifiedArgs,
+				wantsJson,
+			});
 		},
 	);
 };
