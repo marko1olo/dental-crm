@@ -31,8 +31,8 @@ export async function receiveBatch(
 	const batchMeta = validateAndNormalizeBatch({
 		rawBatchNumber: input.batchNumber,
 		rawExpirationDate: input.expirationDate,
-		rawManufactureDate: input.manufactureDate,
-		rawBarcode: input.barcode,
+		rawManufactureDate: input.manufactureDate ?? null,
+		rawBarcode: input.barcode ?? null,
 	});
 
 	const [inv] = await tx
@@ -96,11 +96,11 @@ export async function receiveBatch(
 		organizationId,
 		itemId: inv.id,
 		batchId: createdBatch.id,
-		warehouseId,
+		warehouseId: warehouseId ?? null,
 		quantity,
 		unitCostRub: purchasePricePerUnit != null ? String(purchasePricePerUnit) : inv.unitCostRub,
-		userId,
-		notes,
+		userId: userId ?? null,
+		notes: notes ?? null,
 		closedDeficit: deficit,
 	});
 

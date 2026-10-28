@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import { getFefoTrafficLight } from "../fefoTrafficLight.js";
 import {

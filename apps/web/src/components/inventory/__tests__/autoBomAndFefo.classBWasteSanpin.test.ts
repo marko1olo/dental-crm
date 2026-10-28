@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { executeShiftCloseClassBWasteDisposal } from "../autoBomDeductionEngine.js";
 
 describe("4. SanPiN Class B Carpule Disposal Act (СанПиН 2.1.3684-21 / 3.3686-21)", () => {

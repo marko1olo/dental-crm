@@ -48,11 +48,11 @@ export async function deductFefo(
 		itemId: inv.id,
 		activeBatches,
 		requiredQty,
-		warehouseId,
-		visitId,
-		userId,
+		warehouseId: warehouseId ?? null,
+		visitId: visitId ?? null,
+		userId: userId ?? null,
 		transactionType,
-		notes,
+		notes: notes ?? null,
 		defaultUnitCostRub: inv.unitCostRub,
 	});
 
@@ -66,11 +66,11 @@ export async function deductFefo(
 		requiredQty,
 		allowOverdraft,
 		organizationId,
-		visitId,
-		warehouseId,
+		visitId: visitId ?? null,
+		warehouseId: warehouseId ?? null,
 		transactionType,
-		userId,
-		notes,
+		userId: userId ?? null,
+		notes: notes ?? null,
 	});
 
 	const transactionsToInsert: InventoryTransactionInsert[] = [...batchTransactions, ...additionalTransactions];

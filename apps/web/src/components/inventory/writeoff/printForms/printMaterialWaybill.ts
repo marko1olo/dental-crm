@@ -64,5 +64,91 @@ export function generateMaterialWaybillHtml(
 </body></html>`;
 }
 
-// Алиас для обратной совместимости вызовов
-export const generateFormM11Html = generateMaterialWaybillHtml;
+/**
+ * generateFormM11Html — Типовая межотраслевая форма № М-11 (ОКУД 0315003) «Требование-накладная».
+ */
+export function generateFormM11Html(
+	doc: any,
+	clinicInfo: ClinicLegalInfo = DEFAULT_CLINIC_LEGAL_INFO,
+): string {
+	const clinicName = doc.clinicName || doc.clinicInfo?.clinicNameRu || clinicInfo.clinicNameRu;
+	const doctor = doc.doctorName || doc.doctorFullName || "Врач-стоматолог";
+	const position = doc.doctorPosition || doc.doctorSpecialty || "Врач";
+	const totals = doc.totals || {};
+	const totalRub = totals.totalCostRubles != null
+		? totals.totalCostRubles
+		: (totals.totalCostKopecks ? totals.totalCostKopecks / 100 : 0);
+
+	const rowsHtml = (doc.lines || []).map((line: any, index: number) => {
+		const unitRub = line.unitCostKopecks ? (line.unitCostKopecks / 100) : (line.unitCostRub || 0);
+		const lineTotalRub = line.totalCostKopecks ? (line.totalCostKopecks / 100) : (line.totalCostRub || 0);
+		const name = line.nameRu || line.name || "Материал";
+
+		return `<tr>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${index + 1}</td>
+			<td style="border: 1px solid #000; padding: 4px;">${name}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${line.sku || "—"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${line.okeiCode || "796"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: center;">${line.unit || "шт."}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: right;">${line.standardQuantity ?? "—"}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">${line.actualQuantity ?? line.quantity ?? 0}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: right;">${Number(unitRub).toFixed(2)}</td>
+			<td style="border: 1px solid #000; padding: 4px; text-align: right; font-weight: bold;">${Number(lineTotalRub).toFixed(2)}</td>
+		</tr>`;
+	}).join("\n");
+
+	return `<!DOCTYPE html>
+<html lang="ru"><head><meta charset="utf-8"><title>Форма М-11 № ${doc.actNumber}</title>
+<style>
+	@page { size: A4 landscape; margin: 10mm; }
+	body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif; font-size: 8pt; color: #000; line-height: 1.25; }
+	.form-header { text-align: right; font-size: 7pt; margin-bottom: 8px; }
+	.title { text-align: center; font-weight: bold; font-size: 11pt; margin: 8px 0; }
+	table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 8pt; }
+	th { border: 1px solid #000; padding: 4px; background: #f8fafc; font-weight: bold; text-align: center; font-size: 7.5pt; }
+	td { border: 1px solid #000; padding: 4px; }
+	.signs { display: flex; justify-content: space-between; margin-top: 20px; font-size: 8pt; }
+</style></head><body>
+	<div class="form-header">
+		Типовая межотраслевая форма № <strong>М-11</strong><br>
+		Утверждена постановлением Госкомстата России от 30.10.97 № 71а<br>
+		Код по ОКУД <strong>0315003</strong>
+	</div>
+	<div style="margin-bottom: 8px;"><strong>Организация:</strong> ${clinicName}</div>
+	<div class="title">ТРЕБОВАНИЕ-НАКЛАДНАЯ № ${doc.actNumber} от ${doc.actDate} г.</div>
+	<table>
+		<thead>
+			<tr>
+				<th rowspan="2">№ п/п</th>
+				<th rowspan="2">Материал, наименование, сорт, размер, марка</th>
+				<th rowspan="2">Номенклатурный номер (артикул)</th>
+				<th colspan="2">Единица измерения</th>
+				<th colspan="2">Количество</th>
+				<th rowspan="2">Цена, руб. коп.</th>
+				<th rowspan="2">Сумма без учета НДС, руб. коп.</th>
+			</tr>
+			<tr>
+				<th>код</th>
+				<th>наименование</th>
+				<th>затребовано</th>
+				<th>отпущено</th>
+			</tr>
+		</thead>
+		<tbody>
+			${rowsHtml}
+			<tr style="font-weight: bold; background: #f8fafc;">
+				<td colspan="6" style="text-align: right;">ИТОГО:</td>
+				<td style="text-align: right;">${totals.totalMaterialsQuantity ?? ""}</td>
+				<td></td>
+				<td style="text-align: right;">${Number(totalRub).toFixed(2)}</td>
+			</tr>
+		</tbody>
+	</table>
+	<div class="signs">
+		<div>Через кого: __________________ (${position})</div>
+		<div>Затребовал: __________________ (${doctor})</div>
+		<div>Отпустил: __________________</div>
+		<div>Получил: __________________</div>
+	</div>
+</body></html>`;
+}

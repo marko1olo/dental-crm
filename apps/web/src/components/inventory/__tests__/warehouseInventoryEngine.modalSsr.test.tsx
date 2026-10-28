@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { WarehouseInventoryAuditModal } from "../WarehouseInventoryAuditModal.js";
 
 describe("WarehouseInventoryAuditModal React Component Rendering", () => {

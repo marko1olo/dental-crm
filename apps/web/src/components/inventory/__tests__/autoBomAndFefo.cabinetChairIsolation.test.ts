@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { performAutoVisitBomDeduction } from "../autoBomDeductionEngine.js";
 
 describe("Auto-BOM Chair/Cabinet Isolation", () => {

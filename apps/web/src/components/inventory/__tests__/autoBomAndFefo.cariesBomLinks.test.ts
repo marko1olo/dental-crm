@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { calculateAutoVisitConsumables } from "@dental/shared";
 
 describe("1. Auto-BOM Deduction for A16.07.002 (Custom Links)", () => {

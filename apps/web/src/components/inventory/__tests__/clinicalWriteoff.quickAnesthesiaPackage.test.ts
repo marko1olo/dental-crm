@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { createQuickAnesthesiaPackageWriteoffDocument } from "../writeoff/clinicalWriteoffQuickDocuments.js";
 import { validateWriteoffDocument } from "../writeoff/clinicalWriteoffEngine.js";
 import { generateAct0504230Html } from "../writeoff/clinicalWriteoffPrintForms.js";

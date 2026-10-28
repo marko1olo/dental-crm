@@ -16,10 +16,19 @@ import { InboundWaybillModal } from "./inventory/InboundWaybillModal.js";
 import { BatchWriteoffModal } from "./inventory/BatchWriteoffModal.js";
 import { WarehouseBatchWriteoffModal } from "./inventory/WarehouseBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal.js";
+import { WarehouseStockTable } from "./inventory/WarehouseStockTable.js";
+import { ShiftBatchWriteoffModal } from "./inventory/ShiftBatchWriteoffModal.js";
 import { InventoryStockTable } from "./InventoryStockTable.js";
 
 export { INVENTORY_CATEGORIES, type InventoryCategoryFilter };
-export { BatchWriteoffModal, InboundWaybillModal, WarehouseBatchWriteoffModal, WarehouseInventoryAuditModal };
+export {
+	WarehouseStockTable,
+	InboundWaybillModal,
+	ShiftBatchWriteoffModal,
+	BatchWriteoffModal,
+	WarehouseBatchWriteoffModal,
+	WarehouseInventoryAuditModal,
+};
 export * from "./InventoryStockTable.js";
 export * from "./InventoryBatchFefoPanel.js";
 export * from "./InventoryInboundInvoiceModal.js";

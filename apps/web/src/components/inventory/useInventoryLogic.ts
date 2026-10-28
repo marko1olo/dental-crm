@@ -23,7 +23,20 @@ export function useInventoryLogic(organizationId: string) {
 	const effectiveOrgId =
 		organizationId ||
 		dashboard?.clinicSettings?.profile?.organizationId ||
-		"01a00000-0000-0000-0000-000000000000";
+		dashboard?.activeVisit?.organizationId ||
+		(() => {
+			try {
+				if (typeof window !== "undefined") {
+					const cached = localStorage.getItem("dente_cached_active_staff_user") || localStorage.getItem("dental-crm:active-user:v1");
+					if (cached) {
+						const u = JSON.parse(cached);
+						if (u?.organizationId) return String(u.organizationId);
+					}
+				}
+			} catch (_) {}
+			return "";
+		})() ||
+		"current";
 
 	const getHeaders = useCallback(
 		(extra?: Record<string, string>) => {
