@@ -1,7 +1,2 @@
-/**
- * MissingPriceBannerActions.tsx — Фасад панели действий баннера (делегирует в MissingPriceAlertHub.tsx).
- */
-export {
-	MissingPriceBannerActions,
-	type MissingPriceBannerActionsProps,
-} from "./MissingPriceAlertHub";
+export { MissingPriceBannerActions, default } from "./missingPriceHub/MissingPriceBannerActions";
+export type { MissingPriceBannerActionsProps } from "./missingPriceHub/types";

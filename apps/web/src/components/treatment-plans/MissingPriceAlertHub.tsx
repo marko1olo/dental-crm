@@ -1,16 +1,14 @@
 /**
- * MissingPriceAlertHub.tsx — фасад хаба предупреждений и оценки услуг без цены.
- * Декомпозирован по Мандату 8b (все файлы <= 120 строк).
+ * MissingPriceAlertHub.tsx — Фасад хаба инлайн-оценки стоимости услуг.
+ * Делегирует исполнение каноническому MissingPriceAlert (Мандат 8b).
  */
 
 import React from "react";
-import { MissingPriceAlertHubView } from "./missingPriceHub/MissingPriceAlertHubView";
-import type { MissingPriceAlertProps } from "./missingPriceHub/types";
+import { MissingPriceAlert, type MissingPriceAlertProps } from "./MissingPriceAlert";
 
-export * from "./missingPriceHub";
-
+export { MissingPriceAlert, type MissingPriceAlertProps };
 export const MissingPriceAlertHub: React.FC<MissingPriceAlertProps> = (props) => {
-	return <MissingPriceAlertHubView {...props} />;
+	return <MissingPriceAlert {...props} />;
 };
 
 export default MissingPriceAlertHub;

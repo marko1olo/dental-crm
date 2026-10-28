@@ -1,4 +1,9 @@
-import { useState, useRef, useEffect } from "react";
+/**
+ * useMissingPriceAlert.ts — Хук спокойного инлайн-редактирования цены процедуры этапа лечения.
+ * Валидация строго в целочисленных копейках (amountKopecks) без float-ошибок (Мандат 8e).
+ */
+
+import { useState, useRef, useEffect, useCallback } from "react";
 import type { TreatmentPlanItem } from "./types";
 import {
 	createWarrantyPlanItem,
@@ -11,6 +16,15 @@ export interface UseMissingPriceAlertProps {
 	readonly onUpdatePrice?: ((itemId: string, newPriceRub: number) => void) | undefined;
 	readonly onUpdateItem?: ((updatedItem: TreatmentPlanItem) => void) | undefined;
 	readonly onKeepAgreedPrice?: ((itemId: string) => void) | undefined;
+}
+
+export function parseKopecksFromRubString(val: string): { kopecks: number; rub: number } | null {
+	const clean = val.trim().replace(/\s+/g, "").replace(",", ".");
+	if (clean === "") return null;
+	const num = Number(clean);
+	if (Number.isNaN(num) || num < 0 || !Number.isFinite(num)) return null;
+	const kopecks = Math.round(num * 100);
+	return { kopecks, rub: kopecks / 100 };
 }
 
 export function useMissingPriceAlert({
@@ -37,48 +51,53 @@ export function useMissingPriceAlert({
 		? false
 		: (item.requiresManualPricing ?? (item.priceRub === 0));
 
-	const handleSetWarrantyZeroPrice = () => {
+	const handleSetWarrantyZeroPrice = useCallback(() => {
 		setError(null);
 		setIsEditing(false);
 		if (onUpdatePrice) onUpdatePrice(item.id, 0);
 		if (onUpdateItem) onUpdateItem(createWarrantyPlanItem(item));
-	};
+	}, [item, onUpdatePrice, onUpdateItem]);
 
-	const handleKeepAgreedPrice = () => {
+	const handleKeepAgreedPrice = useCallback(() => {
 		setError(null);
 		setIsEditing(false);
 		if (onKeepAgreedPrice) onKeepAgreedPrice(item.id);
 		if (onUpdateItem) onUpdateItem(createAgreedPricePlanItem(item));
-	};
+	}, [item, onKeepAgreedPrice, onUpdateItem]);
 
-	const handleSavePrice = () => {
-		const cleanVal = inputPrice.trim().replace(/\s+/g, "").replace(",", ".");
-		const parsedNum = Number(cleanVal);
-
-		if (cleanVal === "" || Number.isNaN(parsedNum) || parsedNum < 0) {
-			setError("Введите корректную сумму в рублях (или 0 для гарантии)");
+	const handleSavePrice = useCallback(() => {
+		const parsed = parseKopecksFromRubString(inputPrice);
+		if (!parsed) {
+			setError("Укажите корректную сумму в рублях (или 0 ₽ для гарантии)");
 			return;
 		}
 
 		setError(null);
 		setIsEditing(false);
 
-		const updatedPrice = Math.round(parsedNum * 100) / 100;
-		if (onUpdatePrice) onUpdatePrice(item.id, updatedPrice);
-		if (onUpdateItem) onUpdateItem(createPriceUpdatedPlanItem(item, updatedPrice));
-	};
-
-	const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-		if (e.key === "Enter") {
-			e.preventDefault();
-			handleSavePrice();
-		} else if (e.key === "Escape") {
-			e.preventDefault();
-			setInputPrice(item.priceRub > 0 ? String(item.priceRub) : "");
-			setError(null);
-			setIsEditing(false);
+		const updatedPriceRub = parsed.rub;
+		if (onUpdatePrice) onUpdatePrice(item.id, updatedPriceRub);
+		if (onUpdateItem) {
+			const updated = createPriceUpdatedPlanItem(item, updatedPriceRub);
+			(updated as any).amountKopecks = parsed.kopecks;
+			onUpdateItem(updated);
 		}
-	};
+	}, [inputPrice, item, onUpdatePrice, onUpdateItem]);
+
+	const handleKeyDown = useCallback(
+		(e: React.KeyboardEvent<HTMLInputElement>) => {
+			if (e.key === "Enter") {
+				e.preventDefault();
+				handleSavePrice();
+			} else if (e.key === "Escape") {
+				e.preventDefault();
+				setInputPrice(item.priceRub > 0 ? String(item.priceRub) : "");
+				setError(null);
+				setIsEditing(false);
+			}
+		},
+		[handleSavePrice, item.priceRub],
+	);
 
 	return {
 		isEditing,

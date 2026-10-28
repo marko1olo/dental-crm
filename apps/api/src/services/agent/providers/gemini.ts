@@ -1,9 +1,11 @@
 /**
  * gemini.ts — Google Gemini LLM Provider Adapter.
  * Supports gemini-2.5-flash, gemini-3.5-flash, gemini-3.6-flash, gemini-2.0-flash with native REST & SSE streaming.
+ *
+ * Mandate 8b: Monolith decomposed into geminiModules (<= 300 lines).
  */
 
-import type { ProviderMessage, TextBlock, ToolResultBlock, ToolUseBlock } from "../types.js";
+import type { ProviderMessage } from "../types.js";
 import type {
 	AgentTool,
 	ChatOptions,
@@ -11,10 +13,9 @@ import type {
 	LlmProviderId,
 	LlmStreamChunk,
 } from "../omniGatewayTypes.js";
-import { LlmProviderError, parseSseStream } from "../omniGatewayTypes.js";
+import { LlmProviderError } from "../omniGatewayTypes.js";
 import {
 	filterActiveModelCascade,
-	getAvailableProviderKeys,
 	getProviderKeyCandidates,
 	keyRetryLimit,
 	recordModelFailure,
@@ -24,34 +25,15 @@ import {
 	selectProviderKey,
 	type SpeechProviderKeyCandidate,
 } from "../../../speech/keyPool.js";
-import { zodToJsonSchema } from "../tools/schemaSerializer.js";
 import { createProxiedFetch, getGlobalProxyUrl } from "../proxyDispatcher.js";
+import {
+	DEFAULT_GEMINI_MODEL_CASCADE,
+	formatGeminiContents,
+	formatGeminiFunctionDeclarations,
+} from "./geminiModules/geminiFormatter.js";
+import { parseGeminiSseChunks } from "./geminiModules/geminiSseParser.js";
 
-function cleanGeminiSchema(obj: unknown): unknown {
-	if (!obj || typeof obj !== "object") return obj;
-	if (Array.isArray(obj)) return obj.map(cleanGeminiSchema);
-	const cleaned: Record<string, unknown> = {};
-	for (const [k, v] of Object.entries(obj as Record<string, unknown>)) {
-		if (k === "additionalProperties" || k === "$schema") continue;
-		cleaned[k] = cleanGeminiSchema(v);
-	}
-	return cleaned;
-}
-
-export const DEFAULT_GEMINI_MODEL_CASCADE: readonly string[] = [
-	"gemini-3.5-flash-lite",
-	"gemini-3.1-flash-lite",
-	"gemini-3.8-flash",
-	"gemini-3.7-flash",
-	"gemini-3.6-flash",
-	"gemini-3.5-flash",
-	"gemini-3.1-pro",
-	"gemini-3.1-pro-preview",
-	"gemini-2.5-flash",
-	"gemini-2.5-pro",
-	"gemini-2.0-flash",
-	"gemini-1.5-flash",
-] as const;
+export { DEFAULT_GEMINI_MODEL_CASCADE };
 
 export class GeminiProviderAdapter implements LlmProviderAdapter {
 	public readonly providerId: LlmProviderId = "gemini";
@@ -121,102 +103,8 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 			getGlobalProxyUrl("google");
 		const fetchFn = options.fetchFn ?? createProxiedFetch(proxyUrl);
 
-		// Format contents for Gemini REST API
-		const contents: Array<{
-			role: "user" | "model";
-			parts: Array<
-				| { text: string }
-				| { functionCall: { name: string; args: Record<string, unknown> } }
-				| { functionResponse: { name: string; response: Record<string, unknown> } }
-			>;
-		}> = [];
-
-		for (const msg of messages) {
-			if (msg.role === "system") {
-				continue; // Handled in systemInstruction
-			}
-
-			if (typeof msg.content === "string") {
-				contents.push({
-					role: msg.role === "assistant" ? "model" : "user",
-					parts: [{ text: msg.content }],
-				});
-				continue;
-			}
-
-			if (Array.isArray(msg.content)) {
-				const parts: Array<
-					| { text: string }
-					| { functionCall: { name: string; args: Record<string, unknown> } }
-					| { functionResponse: { name: string; response: Record<string, unknown> } }
-				> = [];
-
-				for (const block of msg.content) {
-					if (block.type === "text") {
-						parts.push({ text: block.text });
-					} else if (block.type === "tool_use") {
-						parts.push({
-							functionCall: {
-								name: block.name,
-								args: block.input,
-							},
-						});
-					} else if (block.type === "tool_result") {
-						parts.push({
-							functionResponse: {
-								name: block.toolCallId,
-								response:
-									typeof block.content === "object" && block.content !== null
-										? (block.content as Record<string, unknown>)
-										: { output: block.content },
-							},
-						});
-					}
-				}
-
-				if (parts.length > 0) {
-					const hasFunctionResponse = parts.some((p) => "functionResponse" in p);
-					const role = hasFunctionResponse
-						? "user"
-						: msg.role === "assistant"
-							? "model"
-							: "user";
-					contents.push({ role, parts });
-				}
-			}
-		}
-
-		if (contents.length === 0) {
-			contents.push({ role: "user", parts: [{ text: "Привет" }] });
-		}
-
-		// Format tools for Gemini functionDeclarations
-		const functionDeclarations =
-			tools.length > 0
-				? tools.map((t) => {
-						if ("function" in t && typeof (t as any).function === "object") {
-							const fn = (t as any).function;
-							return {
-								name: fn.name,
-								description: fn.description || "",
-								parameters: cleanGeminiSchema(fn.parameters),
-							};
-						}
-						const agentTool = t as AgentTool;
-						let parameters = agentTool.parameters;
-						if (parameters && typeof (parameters as any).safeParse === "function") {
-							parameters = zodToJsonSchema(parameters as any);
-						}
-						return {
-							name: agentTool.name,
-							description: agentTool.description || "",
-							parameters: cleanGeminiSchema(parameters) || {
-								type: "object",
-								properties: {},
-							},
-						};
-					})
-				: undefined;
+		const contents = formatGeminiContents(messages);
+		const functionDeclarations = formatGeminiFunctionDeclarations(tools);
 
 		const generationConfig: Record<string, unknown> = {
 			temperature: options.temperature ?? config?.temperature ?? 0.2,
@@ -263,9 +151,7 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 					? (attempt === 0 ? candidates[0] : null)
 					: selectProviderKey("gemini", triedFingerprints, "round_robin");
 
-				if (!candidate) {
-					break;
-				}
+				if (!candidate) break;
 				triedFingerprints.add(candidate.fingerprint);
 				const apiKey = candidate.value;
 
@@ -309,9 +195,7 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 					if (!explicitApiKey) {
 						recordProviderKeyFailure("gemini", candidate, reqErr);
 					}
-					if (explicitApiKey) {
-						throw reqErr;
-					}
+					if (explicitApiKey) throw reqErr;
 					continue;
 				}
 
@@ -335,17 +219,13 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 						{
 							providerId: "gemini",
 							statusCode,
-							retryable:
-								isRateLimit || isModelOverloaded || statusCode >= 500,
+							retryable: isRateLimit || isModelOverloaded || statusCode >= 500,
 						},
 					);
 					lastError = reqErr;
 
 					if (isModelOverloaded) {
-						// 503 / 504 / 404: Google server overload on this model.
-						// Ban the model so we don't hammer it, and fail over to the next model in cascade!
 						recordModelFailure(currentModel, reqErr);
-						// Reset triedFingerprints so the next model in cascade has access to all healthy keys!
 						triedFingerprints.clear();
 						break;
 					}
@@ -355,10 +235,7 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 					}
 
 					if (isRateLimit) {
-						if (explicitApiKey) {
-							// Single explicit key is exhausted; do not cascade across all 12 models with the same rate-limited key
-							throw reqErr;
-						}
+						if (explicitApiKey) throw reqErr;
 						console.warn(
 							`[GeminiProvider] Key ${candidate.fingerprint} rate limited (429) on model ${currentModel}. Swapping key...`,
 						);
@@ -366,13 +243,10 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 					}
 
 					if (statusCode === 401 || statusCode === 403 || statusCode >= 500) {
-						if (explicitApiKey) {
-							throw reqErr;
-						}
+						if (explicitApiKey) throw reqErr;
 						continue;
 					}
 
-					// Non-retryable client error (e.g. 400 Bad Request)
 					throw reqErr;
 				}
 
@@ -380,11 +254,7 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 					clearTimeout(timeoutTimer);
 					const reqErr = new LlmProviderError(
 						`Gemini response body is null (model: ${currentModel})`,
-						{
-							providerId: "gemini",
-							statusCode: 502,
-							retryable: true,
-						},
+						{ providerId: "gemini", statusCode: 502, retryable: true },
 					);
 					lastError = reqErr;
 					if (!explicitApiKey) {
@@ -398,92 +268,16 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 				}
 				recordModelSuccess(currentModel);
 
-				let toolCallIndex = 0;
 				let emittedAny = false;
-
 				try {
-					const sseStream = parseSseStream(response.body, controller.signal);
-
-					for await (const frame of sseStream) {
-						let parsed: any;
-						try {
-							parsed = JSON.parse(frame.data);
-						} catch {
-							continue;
-						}
-
-						if (parsed.usageMetadata) {
-							emittedAny = true;
-							yield {
-								type: "usage",
-								inputTokens: parsed.usageMetadata.promptTokenCount ?? 0,
-								outputTokens: parsed.usageMetadata.candidatesTokenCount ?? 0,
-								totalTokens: parsed.usageMetadata.totalTokenCount,
-							};
-						}
-
-						const candidateObj = parsed.candidates?.[0];
-						if (!candidateObj) continue;
-
-						const parts = candidateObj.content?.parts;
-						if (Array.isArray(parts)) {
-							for (const part of parts) {
-								if (part.text) {
-									emittedAny = true;
-									yield {
-										type: "text_delta",
-										text: part.text,
-									};
-								}
-
-								if (part.functionCall) {
-									emittedAny = true;
-									const callId = `gemini_call_${Date.now()}_${toolCallIndex}`;
-									const fnName = part.functionCall.name;
-									const fnArgs = part.functionCall.args ?? {};
-
-									yield {
-										type: "tool_call_start",
-										id: callId,
-										name: fnName,
-										index: toolCallIndex,
-									};
-
-									yield {
-										type: "tool_call_delta",
-										id: callId,
-										name: fnName,
-										argumentsDelta: JSON.stringify(fnArgs),
-										index: toolCallIndex,
-									};
-
-									yield {
-										type: "tool_call_end",
-										id: callId,
-										name: fnName,
-										arguments: fnArgs,
-										index: toolCallIndex,
-									};
-
-									toolCallIndex++;
-								}
-							}
-						}
-
-						if (candidateObj.finishReason) {
-							emittedAny = true;
-							yield {
-								type: "done",
-								stopReason: candidateObj.finishReason.toLowerCase(),
-							};
-							return;
-						}
-					}
+					yield* parseGeminiSseChunks(
+						response.body,
+						controller.signal,
+						() => { emittedAny = true; },
+					);
 					return;
 				} catch (streamErr: unknown) {
-					if (emittedAny) {
-						throw streamErr;
-					}
+					if (emittedAny) throw streamErr;
 					lastError = streamErr;
 					if (!explicitApiKey) {
 						recordProviderKeyFailure("gemini", candidate, streamErr);

@@ -24,7 +24,7 @@ export const MissingPriceBannerEditingActions: React.FC<MissingPriceBannerEditin
 
 	return (
 		<div className="flex items-center gap-1.5 flex-wrap">
-			<div className="relative">
+			<div className="relative inline-flex items-center">
 				<input
 					ref={inputRef}
 					type="text"
@@ -36,19 +36,18 @@ export const MissingPriceBannerEditingActions: React.FC<MissingPriceBannerEditin
 					}}
 					onKeyDown={handleKeyDown}
 					placeholder="0"
-					className="w-28 px-2.5 py-1.5 text-xs font-mono font-bold bg-[var(--paper-strong,var(--paper,#ffffff))] text-[var(--ink,#0f172a)] border border-amber-500 rounded-lg outline-none shadow-xs"
+					className="w-28 px-2.5 py-1 text-xs font-mono font-bold bg-[var(--paper-strong,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--teal,#0d9488)] rounded-lg outline-none shadow-2xs focus:ring-1 focus:ring-[var(--teal)] transition-all"
 					data-testid={`full-price-input-${itemId}`}
+					aria-label="Цена процедуры в рублях"
 				/>
-				<span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-400 pointer-events-none">
-					₽
-				</span>
+				<span className="ml-1 text-xs font-bold text-[var(--muted,#64748b)]">₽</span>
 			</div>
 
 			<button
 				type="button"
 				onClick={() => setInputPrice("0")}
-				className="min-h-[34px] px-2.5 py-1.5 rounded-lg text-xs font-mono font-bold bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-500/30 cursor-pointer transition-colors"
-				title="Установить 0 ₽"
+				className="secondary-button dente-btn dente-btn-secondary h-8 px-2 rounded-lg text-xs font-mono font-bold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] bg-[var(--paper)] border border-[var(--line)] cursor-pointer transition-colors shadow-2xs"
+				title="Установить 0 ₽ (Гарантия)"
 			>
 				0 ₽
 			</button>
@@ -56,11 +55,12 @@ export const MissingPriceBannerEditingActions: React.FC<MissingPriceBannerEditin
 			<button
 				type="button"
 				onClick={handleSavePrice}
-				className="min-h-[34px] flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white cursor-pointer transition-colors shadow-xs active:scale-98"
+				className="primary-button dente-btn dente-btn-primary h-8 px-3 rounded-xl text-xs font-bold bg-[var(--teal,#0d9488)] text-white hover:brightness-105 cursor-pointer transition-all shadow-2xs inline-flex items-center gap-1"
 				data-testid={`full-price-save-btn-${itemId}`}
+				title="Сохранить цену (Enter)"
 			>
-				<Check size={14} />
-				<span>Сохранить</span>
+				<Check size={13} />
+				<span>Готово</span>
 			</button>
 
 			<button
@@ -69,12 +69,18 @@ export const MissingPriceBannerEditingActions: React.FC<MissingPriceBannerEditin
 					setIsEditing(false);
 					setError(null);
 				}}
-				className="min-h-[34px] p-2 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 hover:bg-slate-300 cursor-pointer flex items-center justify-center transition-colors"
+				className="secondary-button dente-btn dente-btn-secondary h-8 p-1.5 rounded-xl bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] border border-[var(--line)] cursor-pointer transition-colors shadow-2xs"
+				title="Отмена (Esc)"
 				data-testid={`full-price-cancel-btn-${itemId}`}
-				title="Отмена"
 			>
-				<X size={14} />
+				<X size={13} />
 			</button>
+
+			{error && (
+				<span className="text-[11px] text-rose-600 dark:text-rose-400 font-semibold ml-1">{error}</span>
+			)}
 		</div>
 	);
 };
+
+export default MissingPriceBannerEditingActions;

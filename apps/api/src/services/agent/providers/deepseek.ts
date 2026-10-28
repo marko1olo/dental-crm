@@ -1,9 +1,11 @@
 /**
  * deepseek.ts — DeepSeek LLM Provider Adapter.
  * Supports deepseek-chat (V3) and deepseek-reasoner (R1) with reasoning_content thinking streaming.
+ *
+ * Mandate 8b: Monolith decomposed into deepseekModules (<= 300 lines).
  */
 
-import type { ProviderMessage, TextBlock, ToolResultBlock, ToolUseBlock } from "../types.js";
+import type { ProviderMessage } from "../types.js";
 import type {
 	AgentTool,
 	ChatOptions,
@@ -11,7 +13,7 @@ import type {
 	LlmProviderId,
 	LlmStreamChunk,
 } from "../omniGatewayTypes.js";
-import { LlmProviderError, parseSseStream } from "../omniGatewayTypes.js";
+import { LlmProviderError } from "../omniGatewayTypes.js";
 import {
 	getProviderKeyCandidates,
 	keyRetryLimit,
@@ -20,18 +22,18 @@ import {
 	selectProviderKey,
 	type SpeechProviderKeyCandidate,
 } from "../../../speech/keyPool.js";
-import { zodToJsonSchema } from "../tools/schemaSerializer.js";
 import { createProxiedFetch, getGlobalProxyUrl } from "../proxyDispatcher.js";
 import {
-	AgentRouterClient,
 	DEFAULT_AGENTROUTER_BASE_URL,
 	DEFAULT_AGENTROUTER_MODEL,
 	parseApiKeys,
-	safeParseToolArguments,
-	type AgentRouterChatMessage,
-	type AgentRouterChatParams,
-	type AgentRouterToolDefinition,
 } from "../../../ai/agentRouterClient.js";
+import {
+	formatDeepSeekMessages,
+	formatDeepSeekTools,
+} from "./deepseekModules/deepseekFormatter.js";
+import { streamDeepSeekAgentRouter } from "./deepseekModules/deepseekAgentRouter.js";
+import { parseDeepSeekSseChunks } from "./deepseekModules/deepseekSseParser.js";
 
 export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 	public readonly providerId: LlmProviderId = "deepseek";
@@ -54,7 +56,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 			options.modelId === "deepseek-v4-flash" ||
 			config?.baseUrl?.includes("agentrouter") ||
 			process.env.AGENTROUTER_BASE_URL?.includes("agentrouter") ||
-			(!explicitApiKey && process.env.AGENTROUTER_API_KEYS)
+			(!explicitApiKey && process.env.AGENTROUTER_API_KEYS),
 		);
 
 		const candidates: SpeechProviderKeyCandidate[] = explicitApiKey
@@ -83,109 +85,12 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 
 		const model = options.modelId || config?.modelId || this.defaultModel;
 		const isReasoner = model === "deepseek-reasoner" || model.includes("reasoner");
-		const timeoutMs = options.timeoutMs ?? config?.timeoutMs ?? 90_000; // Reasoning can take longer
-		const proxyUrl =
-			config?.proxyUrl ||
-			getGlobalProxyUrl("deepseek");
+		const timeoutMs = options.timeoutMs ?? config?.timeoutMs ?? 90_000;
+		const proxyUrl = config?.proxyUrl || getGlobalProxyUrl("deepseek");
 		const fetchFn = options.fetchFn ?? createProxiedFetch(proxyUrl);
 
-		const formattedMessages: Array<{
-			role: string;
-			content: string | null;
-			tool_calls?: Array<{
-				id: string;
-				type: "function";
-				function: { name: string; arguments: string };
-			}>;
-			tool_call_id?: string;
-		}> = [];
-
-		if (options.system) {
-			formattedMessages.push({
-				role: "system",
-				content: options.system,
-			});
-		}
-
-		for (const msg of messages) {
-			if (typeof msg.content === "string") {
-				formattedMessages.push({
-					role: msg.role,
-					content: msg.content,
-				});
-				continue;
-			}
-
-			if (Array.isArray(msg.content)) {
-				const textBlocks = msg.content.filter(
-					(b): b is TextBlock => b.type === "text",
-				);
-				const toolUseBlocks = msg.content.filter(
-					(b): b is ToolUseBlock => b.type === "tool_use",
-				);
-				const toolResultBlocks = msg.content.filter(
-					(b): b is ToolResultBlock => b.type === "tool_result",
-				);
-
-				if (toolResultBlocks.length > 0) {
-					for (const tr of toolResultBlocks) {
-						formattedMessages.push({
-							role: "tool",
-							tool_call_id: tr.toolCallId,
-							content:
-								typeof tr.content === "string"
-									? tr.content
-									: JSON.stringify(tr.content),
-						});
-					}
-				} else {
-					const textContent = textBlocks.map((b) => b.text).join("\n");
-					const toolCalls =
-						toolUseBlocks.length > 0
-							? toolUseBlocks.map((tu) => ({
-									id: tu.id,
-									type: "function" as const,
-									function: {
-										name: tu.name,
-										arguments: JSON.stringify(tu.input),
-									},
-								}))
-							: undefined;
-
-					formattedMessages.push({
-						role: msg.role,
-						content: textContent || null,
-						...(!isReasoner && toolCalls ? { tool_calls: toolCalls } : {}),
-					});
-				}
-			}
-		}
-
-		// Format tools (Note: deepseek-chat supports function calling; deepseek-reasoner does not support tools)
-		const formattedTools =
-			!isReasoner && tools.length > 0
-				? tools.map((t) => {
-						if ("type" in t && t.type === "function") {
-							return t;
-						}
-						const agentTool = t as AgentTool;
-						let parameters = agentTool.parameters;
-						if (parameters && typeof (parameters as any).safeParse === "function") {
-							parameters = zodToJsonSchema(parameters as any);
-						}
-						return {
-							type: "function",
-							function: {
-								name: agentTool.name,
-								description: agentTool.description ?? "",
-								parameters: parameters ?? {
-									type: "object",
-									properties: {},
-								},
-							},
-						};
-					})
-				: undefined;
+		const formattedMessages = formatDeepSeekMessages(messages, options, isReasoner);
+		const formattedTools = formatDeepSeekTools(tools, isReasoner);
 
 		if (useAgentRouter) {
 			const routerBaseUrl = (
@@ -204,163 +109,16 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 				? [explicitApiKey]
 				: parseApiKeys(process.env.AGENTROUTER_API_KEYS);
 
-			const client = new AgentRouterClient({
-				baseUrl: routerBaseUrl,
-				defaultModel: routerModel,
-				apiKeys: routerKeys,
-				fetchFn: options.fetchFn ?? createProxiedFetch(proxyUrl),
-			});
-
-			const routerTools: AgentRouterToolDefinition[] | undefined =
-				formattedTools && formattedTools.length > 0
-					? formattedTools.map((t: any) => ({
-							type: "function",
-							function: {
-								name: t.function.name,
-								description: t.function.description,
-								parameters: t.function.parameters as Record<string, unknown>,
-							},
-						}))
-					: undefined;
-
-			const params: AgentRouterChatParams = {
-				messages: formattedMessages as AgentRouterChatMessage[],
-				model: routerModel,
-				tools: routerTools,
-				tool_choice:
-					routerTools && routerTools.length > 0 ? "auto" : undefined,
-				temperature: options.temperature ?? config?.temperature ?? 0.2,
-				max_tokens: options.maxTokens ?? config?.maxTokens ?? 4096,
+			yield* streamDeepSeekAgentRouter({
+				formattedMessages,
+				formattedTools,
+				options,
+				routerBaseUrl,
+				routerModel,
+				routerKeys,
+				proxyUrl,
 				timeoutMs,
-				signal: options.signal,
-				...(options.responseFormat?.type === "json_object"
-					? { response_format: { type: "json_object" } }
-					: {}),
-			};
-
-			type QueueItem =
-				| { kind: "chunk"; chunk: LlmStreamChunk }
-				| { kind: "error"; error: unknown }
-				| { kind: "done" };
-
-			const queue: QueueItem[] = [];
-			let notify: (() => void) | null = null;
-
-			const push = (item: QueueItem) => {
-				queue.push(item);
-				if (notify) {
-					const cb = notify;
-					notify = null;
-					cb();
-				}
-			};
-
-			client
-				.createStreamingChatCompletion(params, {
-					onChunk: (text) => {
-						if (text) {
-							push({ kind: "chunk", chunk: { type: "text_delta", text } });
-						}
-					},
-					onReasoningChunk: (text) => {
-						if (text) {
-							push({ kind: "chunk", chunk: { type: "thinking_delta", text } });
-						}
-					},
-					onToolCallDelta: (delta) => {
-						if (delta.function?.name) {
-							push({
-								kind: "chunk",
-								chunk: {
-									type: "tool_call_start",
-									id: delta.id || `call_${delta.index}`,
-									name: delta.function.name,
-									index: delta.index,
-								},
-							});
-						}
-						if (delta.function?.arguments) {
-							push({
-								kind: "chunk",
-								chunk: {
-									type: "tool_call_delta",
-									id: delta.id,
-									name: delta.function?.name,
-									argumentsDelta: delta.function.arguments,
-									index: delta.index,
-								},
-							});
-						}
-					},
-				})
-				.then((fullResponse) => {
-					const toolCalls = fullResponse.choices[0]?.message?.tool_calls;
-					if (toolCalls && toolCalls.length > 0) {
-						for (let i = 0; i < toolCalls.length; i++) {
-							const tc = toolCalls[i];
-							if (!tc) continue;
-							const parsedArgs = safeParseToolArguments(tc as any) ?? {};
-							push({
-								kind: "chunk",
-								chunk: {
-									type: "tool_call_end",
-									id: (tc as any).id,
-									name: (tc as any).function?.name,
-									arguments: parsedArgs,
-									index: i,
-								},
-							});
-						}
-					}
-
-					if (fullResponse.usage) {
-						push({
-							kind: "chunk",
-							chunk: {
-								type: "usage",
-								inputTokens: fullResponse.usage.prompt_tokens,
-								outputTokens: fullResponse.usage.completion_tokens,
-								totalTokens: fullResponse.usage.total_tokens,
-							},
-						});
-					}
-
-					push({
-						kind: "chunk",
-						chunk: {
-							type: "done",
-							stopReason: fullResponse.choices[0]?.finish_reason || "stop",
-						},
-					});
-
-					push({ kind: "done" });
-				})
-				.catch((err) => {
-					push({ kind: "error", error: err });
-				});
-
-			while (true) {
-				if (queue.length === 0) {
-					await new Promise<void>((resolve) => {
-						notify = resolve;
-					});
-				}
-				const item = queue.shift()!;
-				if (item.kind === "chunk") {
-					yield item.chunk;
-				} else if (item.kind === "error") {
-					const statusCode = (item.error as any)?.status ?? 500;
-					const errMsg =
-						item.error instanceof Error ? item.error.message : String(item.error);
-					throw new LlmProviderError(errMsg, {
-						providerId: "deepseek",
-						statusCode,
-						retryable: statusCode === 429 || statusCode === 402 || statusCode >= 500,
-					});
-				} else if (item.kind === "done") {
-					break;
-				}
-			}
+			});
 			return;
 		}
 
@@ -395,9 +153,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 				? candidates[0]
 				: selectProviderKey("deepseek", triedFingerprints, "round_robin");
 
-			if (!candidate) {
-				break;
-			}
+			if (!candidate) break;
 			triedFingerprints.add(candidate.fingerprint);
 			const apiKey = candidate.value;
 
@@ -438,9 +194,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 				if (!explicitApiKey) {
 					recordProviderKeyFailure("deepseek", candidate, reqErr);
 				}
-				if (attempt < maxAttempts - 1) {
-					continue;
-				}
+				if (attempt < maxAttempts - 1) continue;
 				throw reqErr;
 			}
 
@@ -469,10 +223,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 					recordProviderKeyFailure("deepseek", candidate, reqErr);
 				}
 
-				if (retryable && attempt < maxAttempts - 1) {
-					continue;
-				}
-
+				if (retryable && attempt < maxAttempts - 1) continue;
 				throw reqErr;
 			}
 
@@ -486,9 +237,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 				if (!explicitApiKey) {
 					recordProviderKeyFailure("deepseek", candidate, reqErr);
 				}
-				if (attempt < maxAttempts - 1) {
-					continue;
-				}
+				if (attempt < maxAttempts - 1) continue;
 				throw reqErr;
 			}
 
@@ -496,156 +245,20 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 				recordProviderKeySuccess("deepseek", candidate);
 			}
 
-			const pendingToolCalls = new Map<
-				number,
-				{ id: string; name: string; args: string; started: boolean }
-			>();
 			let emittedAny = false;
-
 			try {
-				const sseStream = parseSseStream(response.body, controller.signal);
-
-				for await (const frame of sseStream) {
-					if (frame.data === "[DONE]") {
-						for (const [index, tc] of pendingToolCalls.entries()) {
-							let parsedArgs: Record<string, unknown> | string = {};
-							try {
-								parsedArgs = JSON.parse(tc.args || "{}");
-							} catch {
-								parsedArgs = tc.args;
-							}
-							emittedAny = true;
-							yield {
-								type: "tool_call_end",
-								id: tc.id || `call_${index}`,
-								name: tc.name,
-								arguments: parsedArgs,
-								index,
-							};
-						}
-						pendingToolCalls.clear();
-						emittedAny = true;
-						yield { type: "done", stopReason: "stop" };
-						return;
-					}
-
-					let parsed: any;
-					try {
-						parsed = JSON.parse(frame.data);
-					} catch {
-						continue;
-					}
-
-					if (parsed.usage) {
-						emittedAny = true;
-						yield {
-							type: "usage",
-							inputTokens: parsed.usage.prompt_tokens ?? 0,
-							outputTokens: parsed.usage.completion_tokens ?? 0,
-							totalTokens: parsed.usage.total_tokens,
-						};
-					}
-
-					const choice = parsed.choices?.[0];
-					if (!choice) continue;
-
-					const delta = choice.delta;
-					if (delta) {
-						// DeepSeek R1 reasoning_content
-						if (delta.reasoning_content) {
-							emittedAny = true;
-							yield {
-								type: "thinking_delta",
-								text: delta.reasoning_content,
-							};
-						}
-
-						if (delta.content) {
-							emittedAny = true;
-							yield {
-								type: "text_delta",
-								text: delta.content,
-							};
-						}
-
-						if (delta.tool_calls && Array.isArray(delta.tool_calls)) {
-							for (const tc of delta.tool_calls) {
-								const index = tc.index ?? 0;
-								const existing = pendingToolCalls.get(index) ?? {
-									id: "",
-									name: "",
-									args: "",
-									started: false,
-								};
-
-								if (tc.id) existing.id = tc.id;
-								if (tc.function?.name) existing.name = tc.function.name;
-
-								if (!existing.started && (existing.id || existing.name)) {
-									existing.started = true;
-									emittedAny = true;
-									yield {
-										type: "tool_call_start",
-										id: existing.id || `call_${index}`,
-										name: existing.name,
-										index,
-									};
-								}
-
-								if (tc.function?.arguments) {
-									existing.args += tc.function.arguments;
-									emittedAny = true;
-									yield {
-										type: "tool_call_delta",
-										id: existing.id,
-										name: existing.name,
-										argumentsDelta: tc.function.arguments,
-										index,
-									};
-								}
-
-								pendingToolCalls.set(index, existing);
-							}
-						}
-					}
-
-					if (choice.finish_reason) {
-						for (const [index, tc] of pendingToolCalls.entries()) {
-							let parsedArgs: Record<string, unknown> | string = {};
-							try {
-								parsedArgs = JSON.parse(tc.args || "{}");
-							} catch {
-								parsedArgs = tc.args;
-							}
-							emittedAny = true;
-							yield {
-								type: "tool_call_end",
-								id: tc.id || `call_${index}`,
-								name: tc.name,
-								arguments: parsedArgs,
-								index,
-							};
-						}
-						pendingToolCalls.clear();
-						emittedAny = true;
-						yield {
-							type: "done",
-							stopReason: choice.finish_reason,
-						};
-						return;
-					}
-				}
+				yield* parseDeepSeekSseChunks(
+					response.body,
+					controller.signal,
+					() => { emittedAny = true; },
+				);
 				return;
 			} catch (streamErr: unknown) {
-				if (emittedAny) {
-					throw streamErr;
-				}
+				if (emittedAny) throw streamErr;
 				if (!explicitApiKey) {
 					recordProviderKeyFailure("deepseek", candidate, streamErr);
 				}
-				if (attempt < maxAttempts - 1) {
-					continue;
-				}
+				if (attempt < maxAttempts - 1) continue;
 				throw streamErr;
 			} finally {
 				clearTimeout(timeoutTimer);

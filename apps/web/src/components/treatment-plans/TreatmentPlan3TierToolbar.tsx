@@ -1,6 +1,7 @@
 /**
  * TreatmentPlan3TierToolbar.tsx — Верхняя панель управления 3-Tier сравнения планов (DENTE CRM).
  * Декомпозирована по Мандату 8b (все файлы <= 120 строк).
+ * Строго 1 строка высотой 36px без слоеных пирогов (Мандат 8am).
  */
 
 import React from "react";
@@ -43,10 +44,10 @@ export const TreatmentPlan3TierToolbar: React.FC<TreatmentPlan3TierToolbarProps>
 	initialParamsOpen = false,
 }) => {
 	return (
-		<div className="flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] shadow-2xs max-w-full overflow-x-clip">
+		<div className="flex items-center justify-between gap-2 px-3 h-9 min-h-[36px] max-h-[36px] rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] shadow-2xs max-w-full overflow-hidden flex-nowrap">
 			<ToolbarTitleBadge />
 
-			<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none max-w-full py-0.5">
+			<div className="flex items-center gap-1.5 flex-nowrap overflow-x-auto scrollbar-none max-w-full py-0.5 shrink-0">
 				<ToolbarPaymentModeSelector
 					activePaymentMode={activePaymentMode}
 					onPaymentModeChange={onPaymentModeChange}

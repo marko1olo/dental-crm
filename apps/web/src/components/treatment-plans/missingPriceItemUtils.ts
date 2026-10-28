@@ -1,3 +1,8 @@
+/**
+ * missingPriceItemUtils.ts — Утилиты обновления позиций плана лечения.
+ * Инвариант целочисленных копеек (amountKopecks) без float-погрешностей.
+ */
+
 import type { TreatmentPlanItem } from "./types";
 
 export function createWarrantyPlanItem(item: TreatmentPlanItem): TreatmentPlanItem {
@@ -10,6 +15,7 @@ export function createWarrantyPlanItem(item: TreatmentPlanItem): TreatmentPlanIt
 		isWarranty: true,
 		warrantyDiscountPercent: 100,
 		warrantyPriceRub: 0,
+		amountKopecks: 0 as any,
 	};
 }
 
@@ -27,6 +33,7 @@ export function createPriceUpdatedPlanItem(
 	updatedPrice: number,
 ): TreatmentPlanItem {
 	const isZero = updatedPrice === 0;
+	const kopecks = Math.round(updatedPrice * 100);
 	return {
 		...item,
 		priceRub: updatedPrice,
@@ -35,5 +42,6 @@ export function createPriceUpdatedPlanItem(
 		isWarranty: isZero ? (item.isWarranty ?? true) : false,
 		warrantyDiscountPercent: isZero ? 100 : undefined,
 		warrantyPriceRub: isZero ? 0 : undefined,
+		amountKopecks: kopecks as any,
 	};
 }

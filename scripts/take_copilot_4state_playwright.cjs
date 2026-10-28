@@ -2,7 +2,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = "1f784865-817c-41fd-8ea4-2c2f3badaf47";
+const CONV_ID = "92c5269a-92c2-480f-8e50-d218230d73e6";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}/screenshots`);
 
@@ -17,7 +17,7 @@ async function saveProof(page, filename) {
 	await page.screenshot({ path: pDocs, fullPage: false, animations: "disabled" });
 	fs.copyFileSync(pDocs, pBrain);
 	const size = fs.statSync(pDocs).size;
-	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 20000}`);
+	console.log(`[Captured] ${filename} (${size} bytes) -> OK: ${size >= 40000}`);
 }
 
 async function setTheme(page, theme) {
@@ -67,6 +67,39 @@ async function loginAndMountWorkspace(page) {
 	console.log("Workspace mounted! URL:", page.url());
 }
 
+async function openCopilot(page) {
+	console.log("Opening Copilot Drawer...");
+	await page.evaluate(() => {
+		if (window.__denteCopilot?.open) {
+			window.__denteCopilot.open();
+		} else {
+			window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+		}
+	});
+	await page.waitForTimeout(1500);
+
+	// Inject realistic clinical messages if chat is blank
+	await page.evaluate(() => {
+		if (window.__denteCopilot?.setMessages) {
+			window.__denteCopilot.setMessages([
+				{
+					id: "msg-clinical-1",
+					role: "user",
+					content: "Острая боль 26 зуб, ночные приступы от холодного.",
+					timestamp: new Date().toISOString(),
+				},
+				{
+					id: "msg-clinical-2",
+					role: "assistant",
+					content: "Диагноз: K04.0 Пульпит зуба 2.6.\n• Протокол эндодонтии (3 канала машинным NiTi).\n• Анестезия: Артикаин 4% 1:100 000 (1 карпула 1.7 мл).\n• Подготовлен черновик дневника приёма и сметы без замков.",
+					timestamp: new Date().toISOString(),
+				},
+			]);
+		}
+	});
+	await page.waitForTimeout(800);
+}
+
 async function run() {
 	console.log("[Proof Runner] Launching Playwright Chromium for Live Copilot 4-State Proofs...");
 	const browser = await chromium.launch({
@@ -81,17 +114,7 @@ async function run() {
 		const pcContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
 		const pcPage = await pcContext.newPage();
 		await loginAndMountWorkspace(pcPage);
-
-		// Open Copilot Drawer
-		console.log("Opening Copilot Drawer on PC...");
-		await pcPage.evaluate(() => {
-			if (window.__denteCopilot?.open) {
-				window.__denteCopilot.open();
-			} else {
-				window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
-			}
-		});
-		await pcPage.waitForTimeout(1500);
+		await openCopilot(pcPage);
 
 		// PC Light
 		console.log("Capturing 01_copilot_drawer_pc_light_1440.png...");
@@ -111,36 +134,33 @@ async function run() {
 
 		await pcContext.close();
 
-		// 3 & 4. Mobile Context (390x844)
-		console.log("\n--- Phase 3 & 4: Mobile Context (390x844) ---");
+		// 3 & 4. Mobile Context (390x844 with Retina 2x)
+		console.log("\n--- Phase 3 & 4: Mobile Context (390x844 @2x Retina) ---");
 		const mobileContext = await browser.newContext({
 			viewport: { width: 390, height: 844 },
+			deviceScaleFactor: 2,
 			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.0 Mobile/15E148 Safari/604.1",
 			isMobile: true,
 			hasTouch: true,
 		});
 		const mobilePage = await mobileContext.newPage();
 		await loginAndMountWorkspace(mobilePage);
-
-		// Open Copilot Drawer as Bottom Sheet on mobile
-		console.log("Opening Copilot Drawer on Mobile...");
-		await mobilePage.evaluate(() => {
-			if (window.__denteCopilot?.open) {
-				window.__denteCopilot.open();
-			} else {
-				window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
-			}
-		});
-		await mobilePage.waitForTimeout(1500);
+		await openCopilot(mobilePage);
 
 		// Mobile Light
 		console.log("Capturing 03_copilot_bottom_sheet_mobile_light_390.png...");
 		await setTheme(mobilePage, "light");
 		await saveProof(mobilePage, "03_copilot_bottom_sheet_mobile_light_390.png");
 
-		// Mobile Dark
-		console.log("Capturing 04_copilot_bottom_sheet_mobile_dark_390.png...");
+		// Mobile Dark: switch to Tasks tab ("pending")
+		console.log("Capturing 04_copilot_bottom_sheet_mobile_dark_390.png (Tasks Tab)...");
 		await setTheme(mobilePage, "dark");
+		await mobilePage.evaluate(() => {
+			if (window.__denteCopilot?.setActiveTab) {
+				window.__denteCopilot.setActiveTab("pending");
+			}
+		});
+		await mobilePage.waitForTimeout(800);
 		await saveProof(mobilePage, "04_copilot_bottom_sheet_mobile_dark_390.png");
 
 		await mobileContext.close();

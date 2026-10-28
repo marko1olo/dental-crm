@@ -1,62 +1,56 @@
 import React from "react";
-import { TreatmentPlanPresenterPrintView } from "../TreatmentPlanPresenterPrintView";
-import {
-	getTierLetter,
-	type useTreatmentPlanPresenterState,
-} from "./useTreatmentPlanPresenterState";
-import type { TreatmentPlanPresenterModalProps } from "./treatmentPlanPresenterTypes";
+import type { TreatmentPlanTier } from "../treatmentPlanTypes";
+import { formatRubles } from "../treatmentPlanTypes";
 
 export interface TreatmentPlanPresenterPrintTabProps {
-	readonly s: ReturnType<typeof useTreatmentPlanPresenterState>;
-	readonly props: TreatmentPlanPresenterModalProps;
+	readonly patientName: string;
+	readonly doctorFullName: string;
+	readonly activeTier: TreatmentPlanTier | null;
 }
 
 export const TreatmentPlanPresenterPrintTab: React.FC<TreatmentPlanPresenterPrintTabProps> = ({
-	s,
-	props,
+	patientName,
+	doctorFullName,
+	activeTier,
 }) => {
-	const {
-		patientName = "",
-		patientId = "",
-		patientPhone = "",
-		patientBirthDate,
-		doctorFullName = "",
-		doctorSpecialty = "",
-		clinicName = "DENTE Стоматология",
-		clinicLegalName = "",
-		clinicInn = "",
-		clinicOgrn = "",
-		clinicAddress = "",
-		clinicPhone = "",
-		clinicLicense = "",
-		watermarkText,
-	} = props;
-
 	return (
-		<TreatmentPlanPresenterPrintView
-			printDocFormat={s.printDocFormat}
-			setPrintDocFormat={s.setPrintDocFormat}
-			showMicroConsumables={s.showMicroConsumables}
-			setShowMicroConsumables={s.setShowMicroConsumables}
-			selectedTier={s.selectedTier}
-			patientName={patientName}
-			patientBirthDate={patientBirthDate}
-			patientPhone={patientPhone}
-			doctorFullName={doctorFullName}
-			doctorSpecialty={doctorSpecialty}
-			clinicName={clinicName}
-			clinicLegalName={clinicLegalName}
-			clinicInn={clinicInn}
-			clinicOgrn={clinicOgrn}
-			clinicAddress={clinicAddress}
-			clinicPhone={clinicPhone}
-			clinicLicense={clinicLicense}
-			displayContractNumber={s.displayContractNumber}
-			todayRu={s.todayRu}
-			watermarkText={watermarkText}
-			getTierLetter={getTierLetter}
-			patientId={patientId}
-			planAgeDays={s.planAgeDays}
-		/>
+		<div className="p-6 rounded-2xl border border-[var(--line)] bg-[var(--paper)] space-y-4 max-w-3xl mx-auto print:border-0 print:p-0">
+			<div className="text-center pb-3 border-b border-[var(--line)]">
+				<h3 className="text-lg font-black text-[var(--ink)] uppercase tracking-wider m-0">
+					Приложение к Договору на оказание стоматологических услуг
+				</h3>
+				<p className="text-xs text-[var(--muted)] m-0 mt-1">
+					План стоматологического лечения и смета процедур клиники
+				</p>
+			</div>
+
+			<div className="grid grid-cols-2 gap-4 text-xs">
+				<div>
+					<span className="text-[var(--muted)] block">Пациент:</span>
+					<strong className="text-[var(--ink)]">{patientName}</strong>
+				</div>
+				<div>
+					<span className="text-[var(--muted)] block">Лечащий врач:</span>
+					<strong className="text-[var(--ink)]">{doctorFullName}</strong>
+				</div>
+				<div>
+					<span className="text-[var(--muted)] block">Выбранный вариант:</span>
+					<strong className="text-[var(--teal)] font-bold">{activeTier?.title}</strong>
+				</div>
+				<div>
+					<span className="text-[var(--muted)] block">Гарантийные обязательства:</span>
+					<strong className="text-[var(--ink)]">{activeTier?.warrantyYears || 2} года</strong>
+				</div>
+			</div>
+
+			<div className="pt-3 border-t border-[var(--line)] flex items-center justify-between">
+				<span className="text-sm font-bold text-[var(--ink)]">Итоговая стоимость плана:</span>
+				<span className="text-2xl font-black text-[var(--ink)]">
+					{formatRubles(activeTier?.totalRub || 0)}
+				</span>
+			</div>
+		</div>
 	);
 };
+
+export default TreatmentPlanPresenterPrintTab;

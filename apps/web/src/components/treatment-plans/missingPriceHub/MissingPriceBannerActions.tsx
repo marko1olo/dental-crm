@@ -24,3 +24,5 @@ export const MissingPriceBannerActions: React.FC<MissingPriceBannerActionsProps>
 		</div>
 	);
 };
+
+export default MissingPriceBannerActions;
