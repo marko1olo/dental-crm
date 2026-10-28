@@ -88,6 +88,21 @@
   .copilot-hotkey-hint {
     display: none !important;
   }
+
+  /* Split-View toggle hidden on mobile bottom sheet */
+  .copilot-split-view-btn {
+    display: none !important;
+  }
+
+  .copilot-drawer-header {
+    padding: 10px 14px;
+    gap: 8px;
+  }
+
+  .copilot-drawer-title {
+    font-size: 14px;
+    max-width: calc(100vw - 140px);
+  }
 }
 
 @media (pointer: coarse) {

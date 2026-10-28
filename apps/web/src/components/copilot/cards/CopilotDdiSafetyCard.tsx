@@ -41,7 +41,7 @@ export const CopilotDdiSafetyCard: React.FC<CopilotDdiSafetyCardProps> = ({
         <div style={{ minWidth: 0, flex: 1 }}>
           <div className="flex items-center justify-between gap-2 flex-wrap">
             <h4 className="copilot-ddi-title">
-              {replacedStatus ? "Лекарственная безопасность подтверждена" : (data.title || "Критическое предупреждение: Конфликт препаратов")}
+              {replacedStatus ? "Лекарственная безопасность подтверждена" : (data.title || "Сведения о лекарственной совместимости (анамнез)")}
             </h4>
             <span className={`copilot-ddi-severity-pill ${replacedStatus ? "safe" : "danger"}`}>
               {replacedStatus ? "Безопасно" : "Внимание (анамнез)"}

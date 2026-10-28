@@ -20,6 +20,21 @@
   flex: 1;
 }
 
+.copilot-status-indicator {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
+.copilot-status-indicator > div {
+  min-width: 0;
+  flex: 1;
+  overflow: hidden;
+}
+
 .copilot-drawer-subtitle {
   font-size: 11px;
   color: var(--muted, #6b7280);

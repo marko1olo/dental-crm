@@ -60,7 +60,19 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
   const [input, setInput] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [isDocked, setIsDocked] = useState(false);
+  const [isMobile, setIsMobile] = useState(() => (
+    typeof window !== "undefined" ? window.innerWidth <= 768 : false
+  ));
   const feedRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+    };
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
 
   const handleInputChange = (val: string) => {
     setInput(val);
@@ -140,15 +152,17 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           </div>
 
           <div className="copilot-header-actions copilot-drawer-header-actions">
-            <button
-              type="button"
-              onClick={() => setIsDocked((prev) => !prev)}
-              className="copilot-icon-btn copilot-split-view-btn"
-              title="Split-View / Докинг панели"
-              aria-label="Split-View"
-            >
-              <Columns size={16} />
-            </button>
+            {!isMobile && (
+              <button
+                type="button"
+                onClick={() => setIsDocked((prev) => !prev)}
+                className="copilot-icon-btn copilot-split-view-btn"
+                title="Split-View / Докинг панели"
+                aria-label="Split-View"
+              >
+                <Columns size={16} />
+              </button>
+            )}
             <button
               type="button"
               onClick={handleReset}
