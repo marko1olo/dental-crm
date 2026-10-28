@@ -74,7 +74,7 @@ export const AnatomicalGate0FullArchView: React.FC<AnatomicalGate0FullArchViewPr
 			className={`anatomical-gate0-full-arch-view w-full overflow-x-auto touch-pan-x select-none py-2 px-1 ${className ?? ""}`}
 			data-testid="anatomical-gate0-full-arch-view"
 		>
-			<div className="min-w-[860px] flex flex-col items-center justify-center gap-2 mx-auto">
+			<div className="min-w-[860px] flex flex-col items-center justify-center gap-1 mx-auto">
 				<AnatomicalGate0Row
 					isUpper={true}
 					leftTeeth={q1}
@@ -86,7 +86,13 @@ export const AnatomicalGate0FullArchView: React.FC<AnatomicalGate0FullArchViewPr
 					onToothClick={handleToothClickInternal}
 					archTitle="Верхняя челюсть"
 				/>
-				<div className="w-full max-w-4xl h-[1px] bg-slate-200/80 dark:bg-slate-700/60 my-0.5" />
+				<div className="w-full max-w-4xl flex items-center justify-center gap-3 my-0.5" title="Окклюзионная плоскость">
+					<div className="flex-1 h-px bg-slate-200/70 dark:bg-slate-700/50" />
+					<span className="text-[10px] uppercase font-bold tracking-widest text-slate-400/80 dark:text-slate-500/80 select-none">
+						Окклюзия
+					</span>
+					<div className="flex-1 h-px bg-slate-200/70 dark:bg-slate-700/50" />
+				</div>
 				<AnatomicalGate0Row
 					isUpper={false}
 					leftTeeth={q4}

@@ -54,8 +54,8 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 			className={`flex flex-col items-center w-full ${isUpper ? "order-1" : "order-3"}`}
 			data-testid={isUpper ? "anatomical-arch-upper" : "anatomical-arch-lower"}
 		>
-			{archTitle && (
-				<div className="text-[11px] font-semibold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1">
+			{archTitle && isUpper && (
+				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-0.5">
 					{archTitle}
 				</div>
 			)}
@@ -71,6 +71,11 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 				</div>
 				{renderQuadrant(rightTeeth, isUpper ? "quadrant-2" : "quadrant-3")}
 			</div>
+			{archTitle && !isUpper && (
+				<div className="text-[11px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mt-0.5">
+					{archTitle}
+				</div>
+			)}
 		</div>
 	);
 });

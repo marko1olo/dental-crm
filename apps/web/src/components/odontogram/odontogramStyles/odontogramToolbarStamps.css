@@ -55,17 +55,18 @@
 }
 .odontogram-stamp-palette {
 	background: var(--paper, #ffffff);
-	border: 1px solid var(--line-strong, var(--odontogram-border, #cbd5e1));
-	border-radius: 12px;
-	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.03);
+	border: 1.5px solid var(--line-strong, #cbd5e1);
+	border-radius: 14px;
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02);
+	margin-bottom: 8px;
 }
 .odontogram-stamp-tool-btn {
 	height: 32px;
 	min-height: 32px;
 	max-height: 32px;
-	padding: 0 12px;
+	padding: 0 10px;
 	border-radius: 8px;
-	font-size: 12px;
+	font-size: 11.5px;
 	font-weight: 700;
 	display: inline-flex;
 	align-items: center;
@@ -77,12 +78,177 @@
 	border: 1.5px solid var(--line-strong, #cbd5e1);
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+	transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
 }
+.odontogram-stamp-tool-btn:hover {
+	transform: translateY(-1px);
+	box-shadow: 0 3px 6px rgba(0, 0, 0, 0.08);
+}
+.odontogram-stamp-tool-btn:active {
+	transform: translateY(0);
+}
+
+/* Clinical Stamp Individual Tile Colors & Delimiters */
+.odontogram-stamp-tool-btn--healthy {
+	border-color: rgba(16, 185, 129, 0.45);
+	background: rgba(16, 185, 129, 0.06);
+	color: #065f46;
+}
+.odontogram-stamp-tool-btn--healthy:hover {
+	background: rgba(16, 185, 129, 0.12);
+	border-color: #10b981;
+}
+
+.odontogram-stamp-tool-btn--caries {
+	border-color: rgba(245, 158, 11, 0.45);
+	background: rgba(245, 158, 11, 0.06);
+	color: #92400e;
+}
+.odontogram-stamp-tool-btn--caries:hover {
+	background: rgba(245, 158, 11, 0.12);
+	border-color: #f59e0b;
+}
+
+.odontogram-stamp-tool-btn--defective {
+	border-color: rgba(244, 63, 94, 0.45);
+	background: rgba(244, 63, 94, 0.06);
+	color: #9f1239;
+}
+.odontogram-stamp-tool-btn--defective:hover {
+	background: rgba(244, 63, 94, 0.12);
+	border-color: #f43f5e;
+}
+
+.odontogram-stamp-tool-btn--filled {
+	border-color: rgba(13, 148, 136, 0.45);
+	background: rgba(13, 148, 136, 0.06);
+	color: #115e59;
+}
+.odontogram-stamp-tool-btn--filled:hover {
+	background: rgba(13, 148, 136, 0.12);
+	border-color: #0d9488;
+}
+
+.odontogram-stamp-tool-btn--pulpitis {
+	border-color: rgba(239, 68, 68, 0.45);
+	background: rgba(239, 68, 68, 0.06);
+	color: #991b1b;
+}
+.odontogram-stamp-tool-btn--pulpitis:hover {
+	background: rgba(239, 68, 68, 0.12);
+	border-color: #ef4444;
+}
+
+.odontogram-stamp-tool-btn--periodontitis {
+	border-color: rgba(234, 88, 12, 0.45);
+	background: rgba(234, 88, 12, 0.06);
+	color: #9a3412;
+}
+.odontogram-stamp-tool-btn--periodontitis:hover {
+	background: rgba(234, 88, 12, 0.12);
+	border-color: #ea580c;
+}
+
+.odontogram-stamp-tool-btn--root-canal {
+	border-color: rgba(6, 182, 212, 0.45);
+	background: rgba(6, 182, 212, 0.06);
+	color: #155e75;
+}
+.odontogram-stamp-tool-btn--root-canal:hover {
+	background: rgba(6, 182, 212, 0.12);
+	border-color: #06b6d4;
+}
+
+.odontogram-stamp-tool-btn--root {
+	border-color: rgba(220, 38, 38, 0.45);
+	background: rgba(220, 38, 38, 0.06);
+	color: #991b1b;
+}
+.odontogram-stamp-tool-btn--root:hover {
+	background: rgba(220, 38, 38, 0.12);
+	border-color: #dc2626;
+}
+
+.odontogram-stamp-tool-btn--crown {
+	border-color: rgba(37, 99, 235, 0.45);
+	background: rgba(37, 99, 235, 0.06);
+	color: #1e40af;
+}
+.odontogram-stamp-tool-btn--crown:hover {
+	background: rgba(37, 99, 235, 0.12);
+	border-color: #2563eb;
+}
+
+.odontogram-stamp-tool-btn--bridge {
+	border-color: rgba(59, 130, 246, 0.45);
+	background: rgba(59, 130, 246, 0.06);
+	color: #1e40af;
+}
+.odontogram-stamp-tool-btn--bridge:hover {
+	background: rgba(59, 130, 246, 0.12);
+	border-color: #3b82f6;
+}
+
+.odontogram-stamp-tool-btn--veneer {
+	border-color: rgba(139, 92, 246, 0.45);
+	background: rgba(139, 92, 246, 0.06);
+	color: #5b21b6;
+}
+.odontogram-stamp-tool-btn--veneer:hover {
+	background: rgba(139, 92, 246, 0.12);
+	border-color: #8b5cf6;
+}
+
+.odontogram-stamp-tool-btn--inlay {
+	border-color: rgba(99, 102, 241, 0.45);
+	background: rgba(99, 102, 241, 0.06);
+	color: #3730a3;
+}
+.odontogram-stamp-tool-btn--inlay:hover {
+	background: rgba(99, 102, 241, 0.12);
+	border-color: #6366f1;
+}
+
+.odontogram-stamp-tool-btn--implant {
+	border-color: rgba(124, 58, 237, 0.45);
+	background: rgba(124, 58, 237, 0.06);
+	color: #5b21b6;
+}
+.odontogram-stamp-tool-btn--implant:hover {
+	background: rgba(124, 58, 237, 0.12);
+	border-color: #7c3aed;
+}
+
+.odontogram-stamp-tool-btn--missing {
+	border-color: rgba(100, 116, 139, 0.45);
+	background: rgba(100, 116, 139, 0.06);
+	color: #334155;
+}
+.odontogram-stamp-tool-btn--missing:hover {
+	background: rgba(100, 116, 139, 0.12);
+	border-color: #64748b;
+}
+
+.odontogram-stamp-tool-btn--calculus {
+	border-color: rgba(217, 119, 6, 0.45);
+	background: rgba(217, 119, 6, 0.06);
+	color: #92400e;
+}
+.odontogram-stamp-tool-btn--calculus:hover {
+	background: rgba(217, 119, 6, 0.12);
+	border-color: #d97706;
+}
+
 .odontogram-stamp-tool-btn--active {
-	background: var(--teal-soft, rgba(13, 148, 136, 0.14)) !important;
-	border-color: var(--teal, #0d9488) !important;
-	color: var(--teal-dark, #0f766e) !important;
-	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.3) !important;
+	background: var(--teal, #0d9488) !important;
+	border-color: #0f766e !important;
+	color: #ffffff !important;
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.4), 0 2px 8px rgba(13, 148, 136, 0.3) !important;
+	transform: translateY(-1px);
+}
+.odontogram-stamp-tool-btn--active span {
+	color: #ffffff !important;
 }
 .odontogram-stamp-inspection-btn {
 	height: 32px;
@@ -127,13 +293,170 @@
 	color: var(--ink, #f1f5f9);
 }
 :is([data-theme="dark"], html.dark) .odontogram-stamp-palette {
-	background: var(--paper-soft, #0f172a);
-	border-color: rgba(255, 255, 255, 0.15);
+	background: color-mix(in srgb, var(--paper-soft, #0f172a) 92%, #020617 8%);
+	border-color: rgba(255, 255, 255, 0.16);
+	box-shadow: 0 4px 20px rgba(0, 0, 0, 0.45), 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 :is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn {
-	background: var(--paper, #18181b);
-	border-color: rgba(255, 255, 255, 0.18);
-	color: var(--ink, #f4f4f5);
+	background: rgba(255, 255, 255, 0.04);
+	color: var(--ink, #f1f5f9);
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--healthy {
+	border-color: rgba(16, 185, 129, 0.5);
+	background: rgba(16, 185, 129, 0.12);
+	color: #6ee7b7;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--healthy:hover {
+	background: rgba(16, 185, 129, 0.22);
+	border-color: #34d399;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--caries {
+	border-color: rgba(245, 158, 11, 0.5);
+	background: rgba(245, 158, 11, 0.12);
+	color: #fcd34d;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--caries:hover {
+	background: rgba(245, 158, 11, 0.22);
+	border-color: #fbbf24;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--defective {
+	border-color: rgba(244, 63, 94, 0.5);
+	background: rgba(244, 63, 94, 0.12);
+	color: #fda4af;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--defective:hover {
+	background: rgba(244, 63, 94, 0.22);
+	border-color: #fb7185;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--filled {
+	border-color: rgba(13, 148, 136, 0.5);
+	background: rgba(13, 148, 136, 0.12);
+	color: #5eead4;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--filled:hover {
+	background: rgba(13, 148, 136, 0.22);
+	border-color: #2dd4bf;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--pulpitis {
+	border-color: rgba(239, 68, 68, 0.5);
+	background: rgba(239, 68, 68, 0.12);
+	color: #fca5a5;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--pulpitis:hover {
+	background: rgba(239, 68, 68, 0.22);
+	border-color: #f87171;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--periodontitis {
+	border-color: rgba(234, 88, 12, 0.5);
+	background: rgba(234, 88, 12, 0.12);
+	color: #fdba74;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--periodontitis:hover {
+	background: rgba(234, 88, 12, 0.22);
+	border-color: #fb923c;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--root-canal {
+	border-color: rgba(6, 182, 212, 0.5);
+	background: rgba(6, 182, 212, 0.12);
+	color: #67e8f9;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--root-canal:hover {
+	background: rgba(6, 182, 212, 0.22);
+	border-color: #22d3ee;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--root {
+	border-color: rgba(220, 38, 38, 0.5);
+	background: rgba(220, 38, 38, 0.12);
+	color: #fca5a5;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--root:hover {
+	background: rgba(220, 38, 38, 0.22);
+	border-color: #ef4444;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--crown {
+	border-color: rgba(37, 99, 235, 0.5);
+	background: rgba(37, 99, 235, 0.12);
+	color: #93c5fd;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--crown:hover {
+	background: rgba(37, 99, 235, 0.22);
+	border-color: #60a5fa;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--bridge {
+	border-color: rgba(59, 130, 246, 0.5);
+	background: rgba(59, 130, 246, 0.12);
+	color: #93c5fd;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--bridge:hover {
+	background: rgba(59, 130, 246, 0.22);
+	border-color: #60a5fa;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--veneer {
+	border-color: rgba(139, 92, 246, 0.5);
+	background: rgba(139, 92, 246, 0.12);
+	color: #c4b5fd;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--veneer:hover {
+	background: rgba(139, 92, 246, 0.22);
+	border-color: #a78bfa;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--inlay {
+	border-color: rgba(99, 102, 241, 0.5);
+	background: rgba(99, 102, 241, 0.12);
+	color: #a5b4fc;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--inlay:hover {
+	background: rgba(99, 102, 241, 0.22);
+	border-color: #818cf8;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--implant {
+	border-color: rgba(124, 58, 237, 0.5);
+	background: rgba(124, 58, 237, 0.12);
+	color: #c4b5fd;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--implant:hover {
+	background: rgba(124, 58, 237, 0.22);
+	border-color: #a78bfa;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--missing {
+	border-color: rgba(148, 163, 184, 0.5);
+	background: rgba(148, 163, 184, 0.12);
+	color: #cbd5e1;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--missing:hover {
+	background: rgba(148, 163, 184, 0.22);
+	border-color: #94a3b8;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--calculus {
+	border-color: rgba(217, 119, 6, 0.5);
+	background: rgba(217, 119, 6, 0.12);
+	color: #fcd34d;
+}
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--calculus:hover {
+	background: rgba(217, 119, 6, 0.22);
+	border-color: #f59e0b;
+}
+
+:is([data-theme="dark"], html.dark) .odontogram-stamp-tool-btn--active {
+	background: var(--teal, #0d9488) !important;
+	border-color: #2dd4bf !important;
+	color: #ffffff !important;
+	box-shadow: 0 0 0 2px rgba(45, 212, 191, 0.45), 0 2px 10px rgba(13, 148, 136, 0.5) !important;
 }
 :is([data-theme="dark"], html.dark) .odontogram-stamp-inspection-btn {
 	background: var(--paper, #18181b);

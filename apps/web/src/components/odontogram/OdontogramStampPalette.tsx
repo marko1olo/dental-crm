@@ -259,7 +259,7 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 
 	return (
 		<div
-			className={`odontogram-stamp-palette w-full flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl border select-none ${className}`.trim()}
+			className={`odontogram-stamp-palette w-full flex flex-wrap items-center justify-between gap-2 px-3 py-2 rounded-2xl border select-none ${className}`.trim()}
 			role="toolbar"
 			aria-label="Панель клинических штампов патологий одонтограммы"
 			data-testid="odontogram-stamp-palette"
@@ -331,6 +331,9 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 								<span
 									className={`w-2.5 h-2.5 rounded-full shrink-0 shadow-2xs ring-1 ring-black/10 dark:ring-white/20 ${opt.colorDotClass}`}
 								/>
+								<span className="text-[10px] font-mono font-bold opacity-60 shrink-0">
+									{opt.abbr}
+								</span>
 								<span className="whitespace-nowrap font-bold">
 									<span className="hidden md:inline">{opt.label}</span>
 									<span className="md:hidden">{opt.shortLabel}</span>
