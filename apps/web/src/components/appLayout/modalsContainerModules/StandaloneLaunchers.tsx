@@ -8,6 +8,7 @@ import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
 import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHubModal";
 import { DocumentsTemplateGrid } from "../../../documentsView/DocumentsTemplateGrid";
+import { EmkComplaintsSection } from "../../visit/emk/EmkComplaintsSection";
 import type { StandaloneLaunchersProps } from "./modalsContainerTypes";
 import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./standalone/ReportsStandaloneLauncher";
@@ -35,6 +36,27 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("odontogram-mandible"))
 	) {
 		return <Tooth46InspectionStand />;
+	}
+
+	// 0. EMK Complaints & Voice Dictation Standalone Host (?emk_complaints=1, #emk-complaints)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("emk_complaints") ||
+			window.location.hash.includes("emk-complaints") ||
+			window.location.search.includes("emk-complaints"))
+	) {
+		return (
+			<div className="w-full min-h-screen p-4 sm:p-6 bg-[var(--paper)] text-[var(--ink)] flex flex-col justify-start max-w-4xl mx-auto box-border">
+				<EmkComplaintsSection
+					visitNoteForm={{
+						complaint: "Ноющая боль в зубе 36 от сладкого и термических раздражителей, сохраняющаяся до 15-20 минут.",
+						complaints: "Ноющая боль в зубе 36 от сладкого и термических раздражителей, сохраняющаяся до 15-20 минут.",
+						anamnesis: "Соматически здоров. Аллергологический анамнез не отягощен. Хронические заболевания отрицает.",
+					}}
+					updateVisitNoteField={() => {}}
+				/>
+			</div>
+		);
 	}
 
 	// 0. Omnichannel Messaging Hub Standalone Launcher (?omnichannel_hub=1, #omnichannel_hub)

@@ -141,12 +141,19 @@ export const QUICK_CHAIRSIDE_SERVICES = [
 export const TOOTH_STATUS_OPTIONS = [
   { id: "Healthy", label: "Здоров (Интактен)", desc: "Без патологий" },
   { id: "Caries", label: "Кариес", desc: "Поражение твердых тканей" },
+  { id: "Defective_Restoration", label: "Дефект пломбы (Дп)", desc: "Краевая проницаемость / скол" },
+  { id: "Filled", label: "Пломба", desc: "Ранее леченый зуб" },
   { id: "Pulpitis", label: "Пульпит", desc: "Воспаление сосудисто-нервного пучка" },
   { id: "Periodontitis", label: "Периодонтит", desc: "Периапикальный очаг" },
-  { id: "Filled", label: "Пломба", desc: "Ранее леченый зуб" },
+  { id: "Root_Canal_Treated", label: "Каналы лечены (Кл)", desc: "Эндодонтическая обтурация" },
+  { id: "Root", label: "Корень (R)", desc: "Разрушение коронки >80%" },
   { id: "Crown", label: "Коронка", desc: "Искусственная ортопедическая коронка" },
+  { id: "Bridge", label: "Мост / Понтик (И)", desc: "Промежуточная часть моста" },
+  { id: "Veneer", label: "Винир (В)", desc: "Керамическая накладка" },
+  { id: "Inlay", label: "Вкладка (ВК)", desc: "Микропротезирование inlay/onlay" },
   { id: "Implant", label: "Имплантат", desc: "Дентальный имплантат с абатментом" },
   { id: "Missing", label: "Удален (Отсутствует)", desc: "Дефект зубного ряда" },
+  { id: "Calculus", label: "Зубной камень (Зк)", desc: "Твердые зубные отложения" },
 ];
 
 export const PAYMENT_METHOD_OPTIONS = [

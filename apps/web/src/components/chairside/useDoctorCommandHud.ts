@@ -107,7 +107,13 @@ export function useDoctorCommandHud(options: UseDoctorCommandHudOptions = {}) {
 			}
 		};
 
-		const handleCustomOpen = () => setIsOpen(true);
+		const handleCustomOpen = (event?: Event) => {
+			setIsOpen(true);
+			const customEvt = event as CustomEvent<{ query?: string; voice?: boolean }> | undefined;
+			if (customEvt?.detail?.query) {
+				setQuery(customEvt.detail.query);
+			}
+		};
 		const handleCustomClose = () => setIsOpen(false);
 		const handleCustomToggle = () => setIsOpen((prev) => !prev);
 

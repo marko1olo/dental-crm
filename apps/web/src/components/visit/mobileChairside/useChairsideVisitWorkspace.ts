@@ -7,6 +7,7 @@ import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { triggerHaptic } from "../../../native/mobileBridge";
 import { showToast } from "../../GlobalToast";
 import { useVisitStore } from "../../../store/visitStore";
+import { useUnifiedDictation } from "../../../hooks/useUnifiedDictation";
 import type {
   MobileChairsideBillingItem,
   MobileChairsideStep,
@@ -32,10 +33,41 @@ export function useChairsideVisitWorkspace({
   const [isDiarySheetOpen, setIsDiarySheetOpen] = useState(false);
   const [isStageTaken, setIsStageTaken] = useState(false);
 
-  // Speech Recognition state for SmartMicrophone
-  const [isRecording, setIsRecording] = useState(false);
+  // Speech Recognition state for SmartMicrophone via Unified Dictation (Mandate 8e, zero fake timeouts)
   const [recognizedVoiceSnippet, setRecognizedVoiceSnippet] = useState("");
-  const speechRecognitionRef = useRef<any>(null);
+  const currentStepRef = useRef(currentStep);
+  currentStepRef.current = currentStep;
+  const visitNoteFormRef = useRef(visitNoteForm);
+  visitNoteFormRef.current = visitNoteForm;
+
+  const {
+    isRecording,
+    toggleDictation: toggleVoiceRecordingInternal,
+  } = useUnifiedDictation({
+    context: "visit",
+    onInterim: (text) => {
+      if (text) setRecognizedVoiceSnippet(text);
+    },
+    onResult: (transcript) => {
+      if (!transcript) return;
+      triggerHaptic("success");
+      setRecognizedVoiceSnippet(transcript);
+      const step = currentStepRef.current;
+      const form = visitNoteFormRef.current;
+      if (step === "complaints") {
+        const cur = form?.complaint || "";
+        updateVisitNoteField("complaint", cur ? `${cur} ${transcript}` : transcript);
+      } else if (step === "exam") {
+        const cur = form?.objectiveStatus || "";
+        updateVisitNoteField("objectiveStatus", cur ? `${cur} ${transcript}` : transcript);
+      } else if (step === "diagnosis") {
+        updateVisitNoteField("diagnosis", transcript);
+      } else if (step === "treatment") {
+        const cur = form?.treatmentPlan || "";
+        updateVisitNoteField("treatmentPlan", cur ? `${cur} ${transcript}` : transcript);
+      }
+    },
+  });
 
   // In-session chairside billing items (derived from treatment plan or completed store items)
   const [billingItems, setBillingItems] = useState<MobileChairsideBillingItem[]>(() => {
@@ -214,83 +246,11 @@ export function useChairsideVisitWorkspace({
     showToast("✓ Норма внесена: пациент соматически здоров, зубные ряды интактны", "success");
   }, [handleApplySomaticNormQuick, updateVisitNoteField, setToothState, flushPendingVisitSaves]);
 
-  // Smart Microphone toggler with real Web Speech API (zero fake timeouts or mocks)
-  const toggleVoiceRecording = useCallback(() => {
+  // Smart Microphone toggler via useUnifiedDictation (zero fake timeouts or mocks)
+  const toggleVoiceRecording = useCallback(async () => {
     triggerHaptic("selection");
-    if (isRecording) {
-      if (speechRecognitionRef.current) {
-        try {
-          speechRecognitionRef.current.stop();
-        } catch {
-          // ignore
-        }
-      }
-      setIsRecording(false);
-      showToast("Диктовка завершена", "info");
-      return;
-    }
-
-    const SpeechRecognition =
-      (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-
-    if (!SpeechRecognition) {
-      setIsRecording(false);
-      showToast("Голосовой ввод не поддерживается данным браузером", "warning");
-      return;
-    }
-
-    try {
-      const recognition = new SpeechRecognition();
-      speechRecognitionRef.current = recognition;
-      recognition.lang = "ru-RU";
-      recognition.interimResults = true;
-      recognition.maxAlternatives = 1;
-
-      recognition.onstart = () => {
-        setIsRecording(true);
-        showToast("Слушаю клиническую речь...", "info");
-      };
-
-      recognition.onresult = (event: any) => {
-        const current = event.resultIndex;
-        const transcript = event.results[current]?.[0]?.transcript;
-        if (!transcript) return;
-        setRecognizedVoiceSnippet(transcript);
-
-        if (event.results[current].isFinal) {
-          triggerHaptic("success");
-          if (currentStep === "complaints") {
-            const cur = visitNoteForm?.complaint || "";
-            updateVisitNoteField("complaint", cur ? `${cur} ${transcript}` : transcript);
-          } else if (currentStep === "exam") {
-            const cur = visitNoteForm?.objectiveStatus || "";
-            updateVisitNoteField("objectiveStatus", cur ? `${cur} ${transcript}` : transcript);
-          } else if (currentStep === "diagnosis") {
-            updateVisitNoteField("diagnosis", transcript);
-          } else if (currentStep === "treatment") {
-            const cur = visitNoteForm?.treatmentPlan || "";
-            updateVisitNoteField("treatmentPlan", cur ? `${cur} ${transcript}` : transcript);
-          }
-        }
-      };
-
-      recognition.onerror = () => {
-        setIsRecording(false);
-        speechRecognitionRef.current = null;
-      };
-
-      recognition.onend = () => {
-        setIsRecording(false);
-        speechRecognitionRef.current = null;
-      };
-
-      recognition.start();
-    } catch {
-      setIsRecording(false);
-      speechRecognitionRef.current = null;
-      showToast("Не удалось запустить распознавание речи", "warning");
-    }
-  }, [isRecording, currentStep, visitNoteForm, updateVisitNoteField]);
+    await toggleVoiceRecordingInternal();
+  }, [toggleVoiceRecordingInternal]);
 
   // Append Quick Voice Phrase
   const appendQuickPhrase = useCallback(

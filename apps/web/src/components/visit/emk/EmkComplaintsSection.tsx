@@ -20,6 +20,7 @@ import {
 import { showToast } from "../../GlobalToast";
 import { DebouncedEmkTextarea } from "./DebouncedEmkTextarea";
 import type { EmkSectionProps } from "./EmkTypes";
+import { useUnifiedDictation } from "../../../hooks/useUnifiedDictation";
 
 interface SymptomChip {
 	id: string;
@@ -101,75 +102,27 @@ export function EmkComplaintsSection({
 		updateVisitNoteField("anamnesis", `${current}. ${chipText}`);
 	};
 
-	const [isListening, setIsListening] = React.useState<boolean>(false);
-	const recognitionRef = React.useRef<any>(null);
-
-	const handleToggleVoiceDictation = () => {
-		if (typeof window === "undefined") return;
-		const SpeechRec =
-			(window as any).SpeechRecognition ||
-			(window as any).webkitSpeechRecognition;
-		if (!SpeechRec) {
-			showToast("Голосовой ввод не поддерживается данным браузером", "info");
-			return;
-		}
-
-		if (isListening && recognitionRef.current) {
-			try {
-				recognitionRef.current.stop();
-			} catch {
-				// ignore
+	const {
+		isRecording,
+		toggleDictation,
+	} = useUnifiedDictation({
+		context: "visit",
+		onResult: (transcript) => {
+			if (transcript && updateVisitNoteField) {
+				const current = (
+					visitNoteForm?.complaint ||
+					visitNoteForm?.complaints ||
+					""
+				).trim();
+				const nextVal = current
+					? `${current} ${transcript.trim()}`
+					: transcript.trim();
+				updateVisitNoteField("complaint", nextVal);
+				updateVisitNoteField("complaints", nextVal);
+				showToast("Жалобы записаны голосом", "success", 2000);
 			}
-			setIsListening(false);
-			return;
-		}
-
-		try {
-			const rec = new SpeechRec();
-			rec.lang = "ru-RU";
-			rec.continuous = false;
-			rec.interimResults = false;
-
-			rec.onstart = () => {
-				setIsListening(true);
-				showToast("Слушаю жалобы пациента...", "info", 2000);
-			};
-
-			rec.onresult = (event: any) => {
-				const transcript = event.results?.[0]?.[0]?.transcript;
-				if (
-					transcript &&
-					typeof transcript === "string" &&
-					updateVisitNoteField
-				) {
-					const current = (
-						visitNoteForm?.complaint ||
-						visitNoteForm?.complaints ||
-						""
-					).trim();
-					const nextVal = current
-						? `${current} ${transcript.trim()}`
-						: transcript.trim();
-					updateVisitNoteField("complaint", nextVal);
-					updateVisitNoteField("complaints", nextVal);
-					showToast("Жалобы записаны голосом", "success", 2000);
-				}
-			};
-
-			rec.onerror = () => {
-				setIsListening(false);
-			};
-
-			rec.onend = () => {
-				setIsListening(false);
-			};
-
-			recognitionRef.current = rec;
-			rec.start();
-		} catch {
-			setIsListening(false);
-		}
-	};
+		},
+	});
 
 	return (
 		<div className="flex flex-col gap-3.5" data-testid="emk-complaints-section">
@@ -180,18 +133,21 @@ export function EmkComplaintsSection({
 						<FileText size={15} className="text-[var(--teal,var(--brand-primary))]" />
 						<span>Жалобы пациента</span>
 					</label>
-					<span className="text-[11px] text-[var(--muted)]">
-						Симптомы со слов пациента
-					</span>
-					{/* Скрытый триггер для программной совместимости */}
-					<button
-						type="button"
-						data-testid="btn-emk-complaints-norm"
-						onClick={handleFillComplaintsNorm}
-						className="hidden"
-						aria-hidden="true"
-						tabIndex={-1}
-					/>
+					<div className="flex items-center gap-2">
+						<span className="text-[11px] text-[var(--muted)] hidden md:inline">
+							Симптомы со слов пациента
+						</span>
+						<button
+							type="button"
+							data-testid="btn-emk-complaints-norm"
+							onClick={handleFillComplaintsNorm}
+							className="emk-norm-button"
+							title="Заполнить жалобы нормой: Жалоб нет"
+						>
+							<CheckCircle2 size={14} className="shrink-0" />
+							<span>Жалоб нет</span>
+						</button>
+					</div>
 				</div>
 
 				{/* Поле жалоб с компактной иконкой микрофона в правом нижнем углу (Apple-style) */}
@@ -209,21 +165,21 @@ export function EmkComplaintsSection({
 					/>
 					<button
 						type="button"
-						onClick={handleToggleVoiceDictation}
+						onClick={toggleDictation}
 						className={`absolute right-2.5 bottom-2.5 w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
-							isListening
+							isRecording
 								? "bg-rose-500 text-white animate-pulse"
 								: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] border border-[var(--line)]"
 						}`}
 						title={
-							isListening
+							isRecording
 								? "Остановить запись"
 								: "Надиктовать жалобы голосом"
 						}
 						aria-label="Голосовой ввод жалоб"
 						data-testid="btn-dictate-complaints"
 					>
-						<Mic size={14} className={isListening ? "animate-pulse" : ""} />
+						<Mic size={14} className={isRecording ? "animate-pulse" : ""} />
 					</button>
 				</div>
 

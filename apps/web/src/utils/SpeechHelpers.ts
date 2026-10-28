@@ -1,176 +1,44 @@
+/**
+ * @file SpeechHelpers.ts
+ * @description Чистый доменный модуль голосовой диктовки и офлайн-очереди аудиофрагментов.
+ * Вычищен от посторонних зависимостей (КТ, MPR, налоги, профиль клиники) по Мандату 8b.
+ */
+
 import {
-	type AcceptVisitDraftResponse,
-	type AiJobKind,
-	type AiRecognitionTarget,
-	type Appointment,
 	buildRuleBasedVisitDraftFromTranscript,
-	type ClinicalToothRow,
-	type CreateAppointmentInput,
 	type Dashboard,
 	type DentalSpecialty,
-	type DenteTelegramBotMode,
-	type DenteTelegramFeature,
-	type DenteTelegramLinkCodePublic,
-	type DenteTelegramMessagePreview,
-	type DenteTelegramOutboxResponse,
-	type DenteTelegramPrivacyMode,
-	type DenteTelegramVisualCardKey,
-	type DenteTelegramVisualCardUrls,
-	type DicomSeriesPreviewGroup,
-	type DicomViewerToolStateBundleResponse,
-	type DicomViewerWorkbenchManifestResponse,
-	type DocumentIngestionResponse,
-	type DocumentIngestionTarget,
-	type DocumentIssueSignatureMode,
-	type DocumentVoidReasonCode,
-	documentKindMetadata,
-	type GeneratedDocument,
-	type ImagingSourceKind,
-	type ImagingStudyKind,
-	type ImagingViewerAnnotation,
-	type ImagingViewerImplantPlan,
-	type ImagingViewerSessionState,
-	type ImagingViewerWindowPreset,
-	type ImportSourceKind,
-	type InstallmentPaymentStatus,
-	type Patient,
-	type PatientIntakePregnancyStatus,
-	type PaymentMethod,
-	type PhotoVideoConsentMaterial,
-	type PostVisitCareTopic,
-	type PricelistSourceKind,
-	type ProcedureSpecificConsentProcedure,
-	type SmartImportMode,
 	type SpeechChunkUploadInput,
 	type SpeechGatewayStatus,
 	type SpeechProviderConnector,
 	type SpeechTranscriptionResponse,
-	type TaxDeductionApplicationDeliveryChannel,
-	type TaxDeductionApplicationForm,
-	type TaxDeductionApplicationRelationship,
-	type TreatmentPlanAcceptanceVariant,
-	type UiLanguage,
-	type UpdateAppointmentInput,
-	type UpdatePatientInput,
 	type VisitNoteDraft,
-	type XrayCbctReferralPregnancyStatus,
-	type XrayCbctReferralPriority,
-	type XrayCbctReferralStudyType,
 } from "@dental/shared";
-import type { CSSProperties } from "react";
 import { showToast } from "../components/GlobalToast";
-import type { CtImplantLibraryItem } from "../ctPlanningTools";
-import {
-	imagingKindLabels,
-	imagingSourceLabels,
-	type MprProjection,
-	type MprWindowPreset,
-} from "../imagingUiLabels";
-import { denteAdminSecretRequestHeaders } from "../lib/denteRequestHeaders";
 import { actionFailureToast } from "../lib/panelStateText";
 import {
-	readDenteClinicToken,
-	safeLocalStorageGetItem,
 	safeLocalStorageRemoveItem,
 	safeLocalStorageSetItem,
 } from "../lib/safeLocalStorage";
+import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
 import {
-	clampMprAxisDeg,
-	clampMprSlabMm,
-	clampMprSliceIndex,
-} from "../mprControlMath";
-import { pricelistSourceKindLabels } from "../pricelistUiMeta";
+	type PendingVisitSave,
+	assertSpeechChunkDbStores,
+	localQueueOrganizationMatches,
+	pendingVisitSaveQueueLocalKey,
+	pendingVisitSaveStoreName,
+	sensitiveLocalDraftRetentionMs,
+	sortPendingSpeechChunks,
+	sortPendingVisitSaves,
+} from "./CommonHelpers";
 import {
-	collectDicomWorkstationClientFacts,
-	isBrowserImagingScanAbortError,
-	isBrowserMigrationScanAbortError,
-	localImagingFolderFingerprint,
-} from "./browserScanUtils";
+	dicomWorkbenchDraftStoreName,
+	mprWorkbenchDraftStoreName,
+} from "./ImagingHelpers";
 import {
-	buildClinicProfileUpdatePayload,
-	buildPatientAdministrativeProfilePayload,
-	type ClinicProfileDraft,
-	clinicLegalMissingFields,
-	clinicLegalReadinessPercent,
-	clinicProfileDraftFromProfile,
-	clinicProfileDraftSignature,
-	clinicProfileEndpoint,
-	defaultAppointmentStartLocal,
-	defaultStaffScheduleDraft,
-	defaultWorkingDays,
-	emptyClinicProfileDraft,
-	isDentalSpecialty,
-	isStaffRole,
-	normalizedDentalSpecialty,
-	normalizedStaffRole,
-	normalizeOptionalWorkingDaysDraft,
-	normalizeWorkingDaysDraft,
-	nullableClinicDraftValue,
-	nullablePatientDraftValue,
-	type PatientAdministrativeProfileDraft,
-	patientAdministrativeProfileDraftFromPatient,
-	patientAdministrativeProfileDraftIssue,
-	patientAdministrativeProfileDraftSignature,
-	roleFocusOrder,
-	type StaffScheduleDraft,
-	staffScheduleDraftFromWorkingHours,
-	staffScheduleDraftSignature,
-	staffWorkingHoursFromDraft,
-	staffWorkingHoursFromSimpleDraft,
-} from "./clinicProfileUtils";
-import {
-	addMinutesToClinicDateTimeLocal,
-	calendarDayInTimeZone,
-	dateInputValuePlusDays,
-	formatDateTime,
-	formatShortDate,
-	formatTime,
-	fromDateTimeLocalValue,
-	isDateInputValue,
-	isDateTimeLocalInputValue,
-	isoDateLabel,
-	isValidDateParts,
-	minutesLabel,
-	normalizeClockTime,
-	shiftCalendarDay,
-	timeZoneDateParts,
-	timeZoneOffsetMinutes,
-	timeZoneOffsetSuffix,
-	toDateInputValue,
-	todayDateInputValue,
-	validClockTime,
-	weekdayFromDateInput,
-} from "./dateTimeUtils";
-import {
-	localConvenienceRetentionMs,
 	localSavedAtFresh,
 	organizationScopedLocalStorageKey,
 } from "./localStorageHelpers";
-import type { AppView } from "./routeUtils";
-import {
-	postVisitCareTopicOptions,
-	telegramVisualCardFields,
-} from "../workspaceStaticOptions";
-import {
-	defaultUiPreferences,
-	type UiPreferences,
-	type UiPreferencesInput,
-	uiPreferencesStorageKey,
-} from "./preferencesUtils";
-import {
-	appointmentLabels,
-	clinicalRuleActionLabels,
-	clinicalRuleSeverityLabels,
-	paymentMethodLabels,
-	recognitionTargetLabels,
-	serviceCategoryLabels,
-} from "../workspaceUiLabels";
-import { money, moneyUnknownLabel } from "./financeUtils";
-import { countLabel } from "../lib/russianPlural.js";
-import { logger } from "./logger";
-import { PendingVisitSave, pendingVisitSaveQueueLocalKey, sortPendingVisitSaves, localQueueOrganizationMatches, sensitiveLocalDraftRetentionMs, sortPendingSpeechChunks, pendingVisitSaveStoreName, assertSpeechChunkDbStores } from "./CommonHelpers";
-import { normalizedLocalOrganizationId } from "./AuthOnboardingHelpers";
-import { dicomWorkbenchDraftStoreName, mprWorkbenchDraftStoreName } from "./ImagingHelpers";
 
 export function speechGatewayCanUpload(
 	status: SpeechGatewayStatus | null,
@@ -193,6 +61,8 @@ export type BrowserSpeechRecognition = {
 		| ((event: { results: ArrayLike<{ 0: { transcript: string } }> }) => void)
 		| null;
 	start: () => void;
+	stop?: () => void;
+	abort?: () => void;
 };
 
 export type BrowserWindowWithSpeech = Window &
@@ -211,6 +81,7 @@ export type VisitNoteField =
 
 export type VisitNoteForm = Record<VisitNoteField, string> & {
 	recommendations?: string;
+	complaints?: string;
 };
 
 export const visitNoteFieldDefinitions: Array<{
@@ -317,13 +188,9 @@ export type PendingSpeechChunk = SpeechChunkUploadInput & {
 };
 
 export const pendingSpeechChunkQueueKey = "dental-crm:pending-speech-chunks";
-
 export const speechChunkDbName = "dental-crm-offline";
-
 export const speechChunkDbVersion = 4;
-
 export const speechChunkStoreName = "pendingSpeechChunks";
-
 export const speechLocalStorageFallbackMaxBytes = 4_000_000;
 
 export let speechChunkDbPromise: Promise<IDBDatabase> | null = null;
@@ -363,8 +230,9 @@ export function appendSpeechTextWithoutDuplicateTail(
 	if (
 		normalizedCurrent.endsWith(normalizedNext) ||
 		normalizedCurrent.includes(normalizedNext)
-	)
+	) {
 		return current;
+	}
 
 	const currentWords = (normalizedCurrent ?? "").split(" ").filter(Boolean);
 	const nextWords = (normalizedNext ?? "").split(" ").filter(Boolean);
@@ -460,10 +328,11 @@ export function speechChunkIndexedDbAvailable(): boolean {
 }
 
 export function openSpeechChunkDb(): Promise<IDBDatabase> {
-	if (!speechChunkIndexedDbAvailable())
+	if (!speechChunkIndexedDbAvailable()) {
 		return Promise.reject(
 			new Error("Браузер не дает сохранить аудио для отправки позже"),
 		);
+	}
 	if (speechChunkDbPromise) return speechChunkDbPromise;
 	speechChunkDbPromise = new Promise((resolve, reject) => {
 		const request = window.indexedDB.open(
@@ -505,14 +374,6 @@ export function openSpeechChunkDb(): Promise<IDBDatabase> {
 		};
 		request.onsuccess = () => {
 			const db = request.result;
-			// БЫЛО: при смене версии соединение закрывалось, но КЭШ промиса оставался
-			// указывать на закрытый дескриптор. Сценарий: открыта вторая вкладка после
-			// обновления версии хранилища — первая закрывала своё соединение, а все
-			// последующие db.transaction(...) бросали InvalidStateError. Сохранение
-			// приёма падало на запасной путь в localStorage, который к тому моменту
-			// уже очищен, и очередь неотправленных записей приёма перезаписывалась
-			// пустой — при том, что интерфейс сообщал «сохранено локально».
-			// Сбрасываем кэш, чтобы следующий вызов открыл соединение заново.
 			db.onversionchange = () => {
 				speechChunkDbPromise = null;
 				db.close();
@@ -584,5 +445,3 @@ export const speechProviderConnectorLabels: Record<
 	local_bridge: "локальный модуль",
 	local_planned: "локально",
 };
-
-// biome-ignore lint/suspicious/noExplicitAny: automated suppression
