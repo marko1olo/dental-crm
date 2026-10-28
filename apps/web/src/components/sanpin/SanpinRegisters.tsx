@@ -12,15 +12,10 @@ import { useSanpinRegistersLogic } from "./registers/useSanpinRegistersLogic";
 import { SanpinKpiSummaryGrid } from "./registers/SanpinKpiSummaryGrid";
 import { SanpinRegisterTabsNav } from "./registers/SanpinRegisterTabsNav";
 import { type SanpinRegisterTab } from "./sanpinNavigationConfig";
-import "./SanpinRegisters.css";
+import { SANPIN_REGISTERS_TOAST_MESSAGES } from "./sanpinToastMessages";
 
 export * from "./sanpinNavigationConfig";
-
-export const SANPIN_REGISTERS_TOAST_MESSAGES = {
-	statusOk: "Журналы стерилизации в норме",
-	weekDone: "Журналы за неделю заполнены",
-	shiftDone: "Смена заполнена:",
-} as const;
+export * from "./sanpinToastMessages";
 
 export interface SanpinRegistersProps {
 	readonly initialTab?: SanpinRegisterTab | undefined;

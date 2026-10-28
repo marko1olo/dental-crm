@@ -10,4 +10,4 @@ export {
 	handleGenerateMonthlySterilizationLog,
 	handleGenerateMonthlySterilizationLog as handleGenerateMonthlyForm257,
 } from "./autoclaveMonthlyJournalPrint.js";
-export { handlePrintSinglePouch } from "./autoclaveSinglePouchPrint.js";
+

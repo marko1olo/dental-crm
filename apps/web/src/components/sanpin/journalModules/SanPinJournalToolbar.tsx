@@ -60,10 +60,10 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 				<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none" />
 				<input
 					type="text"
-					placeholder="Поиск по набору или партии..."
+					placeholder="Поиск по набору..."
 					value={searchQuery}
 					onChange={(e) => onSearchChange(e.target.value)}
-					className="h-9 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-xs text-[var(--ink,#1e293b)] w-full sm:w-52 focus:outline-none"
+					className="h-9 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-xs text-[var(--ink,#1e293b)] w-full sm:w-60 focus:outline-none"
 					style={{ paddingLeft: 36, paddingRight: 10 }}
 				/>
 			</div>
@@ -71,12 +71,6 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 				<button type="button" onClick={() => onQuickBatchNorm(27, "134")} className={BTN_SEC} data-testid="toolbar-batch-btn" title="Пакетная стерилизация смены">
 					<Sparkles size={13} />
 					<span>Пакетная стерилизация смены</span>
-				</button>
-			)}
-			{(onPrintForm257 || onPrintSterilizationLog) && (
-				<button type="button" onClick={onPrintForm257 || onPrintSterilizationLog} className={BTN_SEC} data-testid="toolbar-print-btn" title="Печать журнала">
-					<Printer size={13} />
-					<span>Печать журнала</span>
 				</button>
 			)}
 			{onOpenNewCycleModal && (

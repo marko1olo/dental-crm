@@ -1,6 +1,13 @@
+/**
+ * apps/web/src/components/sanpin/waste/wasteWeightCalculators.ts
+ *
+ * Упрощенный расчет массы медицинских отходов партии/смены (СанПиН 2.1.3684-21).
+ * Мандат 8b: строго 30-40 строк. Отказ от микро-симуляции граммов тары.
+ */
+
 import { getMedicalWastePackaging, type MedicalWastePackagingTypeId } from "./medicalWastePresets.js";
 
-export function calculateWasteNetWeight(grossKg: number, tareKg: number): number {
+export function calculateWasteNetWeight(grossKg: number, tareKg = 0): number {
 	const g = Math.max(0, Number(grossKg) || 0);
 	const t = Math.max(0, Number(tareKg) || 0);
 	const net = Math.max(0, g - t);
@@ -49,8 +56,8 @@ export function calculateWasteWeightsFromGrams(
 		grossGrams: grossG,
 		tareGrams: tareG,
 		netGrams: netG,
-		grossKg: Math.round((grossG / 1000) * 1000) / 1000,
-		tareKg: Math.round((tareG / 1000) * 1000) / 1000,
-		netKg: Math.round((netG / 1000) * 1000) / 1000,
+		grossKg: Math.round((grossG / 1000) * 100) / 100,
+		tareKg: Math.round((tareG / 1000) * 100) / 100,
+		netKg: Math.round((netG / 1000) * 100) / 100,
 	};
 }
