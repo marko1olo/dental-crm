@@ -9,6 +9,8 @@ import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemov
 import { useAppStore } from "../../store/appStore";
 import { useCopilotContextSync } from "./CopilotContextSync";
 import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
+import { CopilotConfirmParamsView } from "./drawer/CopilotConfirmParamsView";
+import { CopilotMarkdown } from "./CopilotMarkdown";
 import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./copilotTypes";
 import "./CopilotDrawer.css";
 
@@ -274,12 +276,20 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         {nudges.length > 0 && (
           <div className="copilot-nudges-bar">
             {nudges.slice(0, 2).map((nudge) => (
-              <div key={nudge.id} className="copilot-nudge-item">
-                <AlertTriangle size={14} className="text-[var(--warn)] shrink-0" />
+              <div key={nudge.id} className={`copilot-nudge-item ${(nudge as any).priority === "high" ? "high" : ""}`}>
+                <div className="copilot-nudge-icon">
+                  <AlertTriangle size={15} />
+                </div>
                 <span className="copilot-nudge-text">{nudge.text}</span>
                 {onDismissNudge && (
-                  <button type="button" onClick={() => onDismissNudge(nudge.id)} className="copilot-nudge-close">
-                    <X size={12} />
+                  <button
+                    type="button"
+                    onClick={() => onDismissNudge(nudge.id)}
+                    className="copilot-nudge-close"
+                    title="Закрыть уведомление"
+                    aria-label="Закрыть уведомление"
+                  >
+                    <X size={13} />
                   </button>
                 )}
               </div>
@@ -338,8 +348,12 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                       <div className="copilot-msg-header">
                         <span className="copilot-msg-author">{isUser ? "Врач" : "Ассистент ДЕНТА"}</span>
                       </div>
-                      <div className="copilot-msg-text" style={{ whiteSpace: "pre-wrap" }}>
-                        {messageText}
+                      <div className="copilot-msg-text">
+                        {isUser ? (
+                          <div style={{ whiteSpace: "pre-wrap" }}>{messageText}</div>
+                        ) : (
+                          <CopilotMarkdown text={messageText} />
+                        )}
                       </div>
 
                       {/* Tool call indicator */}
@@ -364,11 +378,11 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                       <p className="copilot-confirm-sub">Действие: {humanizeToolName(pending.name || pending.toolName)}</p>
                     </div>
                   </div>
-                  <div className="copilot-confirm-params">
-                    <pre className="text-xs font-mono p-2 bg-[var(--paper-subtle)] rounded border border-[var(--line)] overflow-x-auto">
-                      {JSON.stringify(pending.args, null, 2)}
-                    </pre>
-                  </div>
+                  <CopilotConfirmParamsView
+                    name={pending.name || pending.toolName || undefined}
+                    args={pending.args}
+                    nameCache={nameCache}
+                  />
                   <div className="copilot-confirm-actions">
                     <button
                       type="button"

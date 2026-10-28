@@ -53,7 +53,17 @@ export function getClinicalDiff(
     return { target: 'Запись на приём', from: 'Текущий слот записи', to: dt ? `${dt} (${doc})` : `Новый слот (${doc})`, badge: 'Расписание' };
   }
 
-  // 6. Generic fallback if args have fields
+  // 6. Treatment estimate / plan
+  if (name.includes('estimate') || name.includes('treatment_estimate')) {
+    const tooth = args.toothNumber || args.tooth || '46';
+    const diag = String(args.diagnosis || 'План лечения');
+    const total = args.totalRub ? `${Number(args.totalRub).toLocaleString('ru-RU')} ₽` : args.totalKopecks ? `${Math.round(Number(args.totalKopecks) / 100).toLocaleString('ru-RU')} ₽` : '';
+    const servicesCount = Array.isArray(args.services) ? `${args.services.length} услуг(и)` : '';
+    const summary = [servicesCount, total].filter(Boolean).join(' • ') || 'Расчёт сформирован';
+    return { target: `План лечения: Зуб ${tooth}`, from: 'Первичный статус', to: `${diag} (${summary})`, badge: 'План лечения' };
+  }
+
+  // 7. Generic fallback if args have fields
   const keys = Object.keys(args);
   if (keys.length > 0) {
     const summary = keys.slice(0, 2).map((k) => `${k}: ${String(args[k])}`).join(', ');
@@ -91,15 +101,21 @@ export function humanizeArg(
   if (key === 'discount_percent') {
     return { label: meta.label, text: `${value}%`, Icon: meta.icon };
   }
-  if (key === 'amount_rub') {
+  if (key === 'amount_rub' || key === 'totalRub') {
     return { label: meta.label, text: `${Number(value).toLocaleString('ru-RU')} ₽`, Icon: meta.icon };
+  }
+  if (key === 'totalKopecks') {
+    return { label: meta.label, text: `${Math.round(Number(value) / 100).toLocaleString('ru-RU')} ₽`, Icon: meta.icon };
+  }
+  if (key === 'toothNumber' || key === 'tooth') {
+    return { label: meta.label, text: `Зуб ${value}`, Icon: meta.icon };
   }
   if (Array.isArray(value)) {
     return { label: meta.label, text: value.join(', '), Icon: meta.icon };
   }
   return {
     label: meta.label,
-    text: typeof value === 'object' && value !== null ? JSON.stringify(value) : String(value ?? ''),
+    text: typeof value === 'object' && value !== null ? Object.entries(value).map(([k, v]) => `${k}: ${v}`).join('; ') : String(value ?? ''),
     Icon: meta.icon,
   };
 }

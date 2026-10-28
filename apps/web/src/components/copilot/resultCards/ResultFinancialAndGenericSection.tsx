@@ -28,14 +28,21 @@ export function renderFinancialAndGenericSection(tool: string, obj: Obj, result:
   const moneyPattern = /total|collected|invoiced|net|refunded|amount|balance|cost|price/i;
 
   for (const [key, value] of Object.entries(obj)) {
-    if (value === null || value === undefined || Array.isArray(value) || typeof value === 'object') {
+    if (value === null || value === undefined) {
       continue;
     }
-    let display = String(value);
-    if (typeof value === 'number' && moneyPattern.test(key)) {
-      display = formatMoney(value, currency);
+    let display = "";
+    if (Array.isArray(value)) {
+      display = value.map((item) => (typeof item === "object" && item !== null ? Object.entries(item).map(([k, v]) => `${k}: ${v}`).join(", ") : String(item))).join(", ");
+    } else if (typeof value === "object") {
+      display = Object.entries(value).map(([k, v]) => `${k}: ${v}`).join("; ");
+    } else {
+      display = String(value);
+      if (typeof value === "number" && moneyPattern.test(key)) {
+        display = formatMoney(value, currency);
+      }
     }
-    rows.push({ label: key.replace(/_/g, ' '), value: display });
+    rows.push({ label: key.replace(/_/g, " "), value: display });
   }
 
   if (rows.length > 0) {
@@ -53,10 +60,30 @@ export function renderFinancialAndGenericSection(tool: string, obj: Obj, result:
     );
   }
 
-  // Fallback raw view
+  // Fallback human view
+  const entries = typeof result === "object" && result !== null ? Object.entries(result as Record<string, unknown>) : [];
+  if (entries.length > 0) {
+    return (
+      <div className="rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] p-3 text-xs shadow-sm space-y-1.5">
+        {entries.map(([k, v]) => (
+          <div key={k} className="flex items-start justify-between gap-2 text-xs">
+            <span className="text-[var(--muted)] font-medium capitalize">{k.replace(/_/g, " ")}:</span>
+            <span className="text-[var(--ink)] font-semibold text-right">
+              {Array.isArray(v)
+                ? v.join(", ")
+                : typeof v === "object" && v !== null
+                ? Object.entries(v).map(([subK, subV]) => `${subK}: ${subV}`).join("; ")
+                : String(v ?? "—")}
+            </span>
+          </div>
+        ))}
+      </div>
+    );
+  }
+
   return (
-    <pre className="p-2.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-mono text-[var(--ink)] overflow-x-auto m-0">
-      {JSON.stringify(result, null, 2)}
-    </pre>
+    <div className="p-2.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)]">
+      {String(result ?? "Действие выполнено успешно")}
+    </div>
   );
 }

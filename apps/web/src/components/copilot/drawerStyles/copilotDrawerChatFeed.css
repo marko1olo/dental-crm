@@ -81,6 +81,31 @@
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.04);
 }
 
+.copilot-msg-bubble h4,
+.copilot-msg-bubble h3,
+.copilot-msg-bubble h2 {
+  color: inherit;
+  margin-top: 6px;
+  margin-bottom: 3px;
+  font-weight: 700;
+}
+
+.copilot-msg-bubble p {
+  margin: 3px 0;
+  line-height: 1.45;
+}
+
+.copilot-msg-bubble ul,
+.copilot-msg-bubble ol {
+  margin: 4px 0;
+  padding-left: 0;
+}
+
+.copilot-msg-bubble li {
+  line-height: 1.45;
+  margin: 2px 0;
+}
+
 .copilot-streaming-cursor {
   display: inline-block;
   width: 6px;

@@ -3,6 +3,7 @@ export interface CopilotNudge {
 	kind: string;
 	text?: string | undefined;
 	title?: string | undefined;
+	priority?: "low" | "medium" | "high" | undefined;
 	payload?: Record<string, unknown> | undefined;
 	created_at: string;
 	expires_at?: string | undefined;

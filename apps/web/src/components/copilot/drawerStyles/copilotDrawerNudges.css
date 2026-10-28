@@ -1,4 +1,90 @@
-/* Nudges Banner */
+/* ==========================================================================
+   copilotDrawerNudges.css — Nudge Banners and Critical Telemetry Alerts
+   Mandate 8b: Architecture decomposition (<= 120 lines)
+   ========================================================================== */
+
+/* Nudges Bar Container inside Copilot Drawer */
+.copilot-nudges-bar {
+  padding: 8px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background-color: var(--paper-soft, #f8fafc);
+  border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.12));
+  box-sizing: border-box;
+  width: 100%;
+}
+
+.copilot-nudge-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background-color: var(--amber-soft, rgba(245, 158, 11, 0.1));
+  border: 1px solid var(--amber, #f59e0b);
+  color: var(--ink, #0f172a);
+  font-size: 12px;
+  line-height: 1.4;
+  box-sizing: border-box;
+  width: 100%;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+.copilot-nudge-item.high {
+  background-color: var(--rust-soft, rgba(239, 68, 68, 0.1));
+  border-color: var(--rust, #ef4444);
+}
+
+.copilot-nudge-item .copilot-nudge-icon {
+  width: 18px;
+  height: 18px;
+  color: var(--amber, #f59e0b);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 1px;
+}
+
+.copilot-nudge-item.high .copilot-nudge-icon {
+  color: var(--rust, #ef4444);
+}
+
+.copilot-nudge-text {
+  flex: 1;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink, #0f172a);
+  margin: 0;
+  line-height: 1.45;
+  word-break: break-word;
+}
+
+.copilot-nudge-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: none;
+  background: transparent;
+  color: var(--muted, #64748b);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: all 0.15s ease;
+  padding: 0;
+  margin-top: 1px;
+}
+
+.copilot-nudge-close:hover {
+  background: rgba(0, 0, 0, 0.08);
+  color: var(--ink, #0f172a);
+}
+
+/* Legacy Card Variant */
 .copilot-nudge-card {
   display: flex;
   align-items: flex-start;
@@ -10,52 +96,6 @@
   box-shadow: 0 2px 8px var(--teal-glow, rgba(13, 148, 136, 0.15));
   margin-bottom: 6px;
   box-sizing: border-box;
-}
-
-.copilot-nudge-icon {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background-color: var(--teal, #0d9488);
-  color: #ffffff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.copilot-nudge-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.copilot-nudge-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 4px;
-}
-
-.copilot-nudge-title {
-  font-size: 12px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  color: var(--teal-dark, #0f766e);
-}
-
-.copilot-nudge-text {
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--ink, #0f172a);
-  margin: 0 0 10px 0;
-  line-height: 1.4;
-}
-
-.copilot-nudge-actions {
-  display: flex;
-  align-items: center;
-  gap: 8px;
 }
 
 .copilot-nudge-btn {
@@ -79,4 +119,3 @@
 .copilot-nudge-btn:hover {
   background-color: var(--teal-dark, #0f766e);
 }
-
