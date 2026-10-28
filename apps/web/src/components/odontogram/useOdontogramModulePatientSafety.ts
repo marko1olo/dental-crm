@@ -66,13 +66,13 @@ export function useOdontogramModulePatientSafety(
 
 	const initialSmartMode = useMemo<"adult" | "pediatric" | "mixed">(() => {
 		if (propDentitionMode) return propDentitionMode;
-		if (pediatricMode !== undefined)
-			return pediatricMode ? "pediatric" : "adult";
 		if (patientAge !== null) {
 			if (patientAge < 6) return "pediatric";
 			if (patientAge < 12) return "mixed";
 			return "adult";
 		}
+		if (pediatricMode !== undefined)
+			return pediatricMode ? "pediatric" : "adult";
 		if (perspective === "pediatric") return "pediatric";
 		return "adult";
 	}, [propDentitionMode, pediatricMode, patientAge, perspective]);

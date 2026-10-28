@@ -21,12 +21,16 @@ export function useOdontogramModuleSyncFacade({
 	activeDoctor,
 	onClearMenu,
 }: UseOdontogramModuleSyncFacadeParams) {
-	const sync = useOdontogramSync({ patientId, pediatricMode, onClearMenu });
 	const safety = useOdontogramModulePatientSafety(
 		activePatient,
 		propDentitionMode,
 		pediatricMode,
 	);
+	const sync = useOdontogramSync({
+		patientId,
+		pediatricMode: safety.initialSmartMode === "pediatric",
+		onClearMenu,
+	});
 
 	const [dentitionMode, setDentitionMode] = useState<
 		"adult" | "pediatric" | "mixed"

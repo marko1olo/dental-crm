@@ -6,12 +6,13 @@
  *
  * Invariants:
  * - ZERO CARTOON EMOJIS: strictly pure CSS/SVG color indicators (w-2.5 h-2.5 rounded-full).
- * - Full pathology coverage: Healthy, Caries, Pulpitis, Periodontitis, Filled, Crown, Missing, Implant.
+ * - Full pathology coverage: 15 clinical stamps organized by category tabs.
  * - Prominent active stamp indicator with 1-click reset and Escape dismissal.
  * - Test IDs preserved for seamless E2E automation.
+ * - Mandate 8b compliant (Sweet spot ~300L).
  */
 
-import React, { useEffect, useCallback } from "react";
+import React, { useEffect, useCallback, useState, useMemo } from "react";
 import { MousePointer, Sparkles, X, Check } from "lucide-react";
 import type { ToothState } from "./ToothChart";
 import { TOOTH_STATE_LABELS } from "./chart/toothChartTypes";
@@ -26,18 +27,34 @@ export interface OdontogramStampPaletteProps {
 	className?: string;
 }
 
-interface StampOption {
-	state: ToothState;
-	label: string;
-	shortLabel: string;
-	abbr: string;
-	testId: string;
-	colorDotClass: string;
-	colorStyleClass: string;
-	description: string;
+export type StampCategory = "all" | "therapy" | "endo_surgery" | "ortho_perio";
+
+export interface StampCategoryTab {
+	readonly id: StampCategory;
+	readonly label: string;
+	readonly testId: string;
 }
 
-const STAMP_OPTIONS: readonly StampOption[] = [
+export const STAMP_CATEGORIES: readonly StampCategoryTab[] = [
+	{ id: "all", label: "Все", testId: "stamp-category-all" },
+	{ id: "therapy", label: "Терапия", testId: "stamp-category-therapy" },
+	{ id: "endo_surgery", label: "Эндо / Хирургия", testId: "stamp-category-endo-surgery" },
+	{ id: "ortho_perio", label: "Ортопедия / Паро", testId: "stamp-category-ortho-perio" },
+];
+
+export interface StampOption {
+	readonly state: ToothState;
+	readonly label: string;
+	readonly shortLabel: string;
+	readonly abbr: string;
+	readonly testId: string;
+	readonly colorDotClass: string;
+	readonly colorStyleClass: string;
+	readonly description: string;
+	readonly categories: readonly ("therapy" | "endo_surgery" | "ortho_perio")[];
+}
+
+export const STAMP_OPTIONS: readonly StampOption[] = [
 	{
 		state: "Healthy",
 		label: "Здоров",
@@ -47,6 +64,7 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		colorDotClass: "bg-[#10b981]",
 		colorStyleClass: "odontogram-stamp-tool-btn--healthy",
 		description: "Норма (Интактный)",
+		categories: ["therapy"],
 	},
 	{
 		state: "Caries",
@@ -57,26 +75,18 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		colorDotClass: "bg-[#f59e0b]",
 		colorStyleClass: "odontogram-stamp-tool-btn--caries",
 		description: "Кариозное поражение (C)",
+		categories: ["therapy"],
 	},
 	{
-		state: "Pulpitis",
-		label: "Пульпит",
-		shortLabel: "Пт",
-		abbr: "Пт",
-		testId: "quick-trigger-pulpitis-btn",
-		colorDotClass: "bg-[#ef4444]",
-		colorStyleClass: "odontogram-stamp-tool-btn--pulpitis",
-		description: "Воспаление пульпы (P)",
-	},
-	{
-		state: "Periodontitis",
-		label: "Периодонтит",
-		shortLabel: "Pt",
-		abbr: "Pt",
-		testId: "quick-trigger-periodontitis-btn",
-		colorDotClass: "bg-[#ea580c]",
-		colorStyleClass: "odontogram-stamp-tool-btn--periodontitis",
-		description: "Периодонтит (Pt)",
+		state: "Defective_Restoration",
+		label: "Дефект пломбы",
+		shortLabel: "Дп",
+		abbr: "Дп",
+		testId: "quick-trigger-defective-btn",
+		colorDotClass: "bg-[#f43f5e]",
+		colorStyleClass: "odontogram-stamp-tool-btn--defective",
+		description: "Дефект пломбы / краевое прилегание (Дп)",
+		categories: ["therapy"],
 	},
 	{
 		state: "Filled",
@@ -87,6 +97,51 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		colorDotClass: "bg-[#0d9488]",
 		colorStyleClass: "odontogram-stamp-tool-btn--filled",
 		description: "Пломбированный зуб (Pl)",
+		categories: ["therapy"],
+	},
+	{
+		state: "Pulpitis",
+		label: "Пульпит",
+		shortLabel: "Пт",
+		abbr: "Пт",
+		testId: "quick-trigger-pulpitis-btn",
+		colorDotClass: "bg-[#ef4444]",
+		colorStyleClass: "odontogram-stamp-tool-btn--pulpitis",
+		description: "Воспаление пульпы (P)",
+		categories: ["endo_surgery"],
+	},
+	{
+		state: "Periodontitis",
+		label: "Периодонтит",
+		shortLabel: "Pt",
+		abbr: "Pt",
+		testId: "quick-trigger-periodontitis-btn",
+		colorDotClass: "bg-[#ea580c]",
+		colorStyleClass: "odontogram-stamp-tool-btn--periodontitis",
+		description: "Периодонтит (Pt)",
+		categories: ["endo_surgery"],
+	},
+	{
+		state: "Root_Canal_Treated",
+		label: "Каналы лечены",
+		shortLabel: "Кл",
+		abbr: "Кл",
+		testId: "quick-trigger-root-canal-btn",
+		colorDotClass: "bg-[#06b6d4]",
+		colorStyleClass: "odontogram-stamp-tool-btn--root-canal",
+		description: "Лечены каналы (Endo)",
+		categories: ["endo_surgery"],
+	},
+	{
+		state: "Root",
+		label: "Корень",
+		shortLabel: "R",
+		abbr: "R",
+		testId: "quick-trigger-root-btn",
+		colorDotClass: "bg-[#dc2626]",
+		colorStyleClass: "odontogram-stamp-tool-btn--root",
+		description: "Разрушенный корень (R)",
+		categories: ["endo_surgery"],
 	},
 	{
 		state: "Crown",
@@ -97,6 +152,51 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		colorDotClass: "bg-[#2563eb]",
 		colorStyleClass: "odontogram-stamp-tool-btn--crown",
 		description: "Ортопедическая коронка (K)",
+		categories: ["ortho_perio"],
+	},
+	{
+		state: "Bridge",
+		label: "Мост",
+		shortLabel: "И",
+		abbr: "И",
+		testId: "quick-trigger-bridge-btn",
+		colorDotClass: "bg-[#3b82f6]",
+		colorStyleClass: "odontogram-stamp-tool-btn--bridge",
+		description: "Мостовидный протез / Искусственный (И)",
+		categories: ["ortho_perio"],
+	},
+	{
+		state: "Veneer",
+		label: "Винир",
+		shortLabel: "В",
+		abbr: "В",
+		testId: "quick-trigger-veneer-btn",
+		colorDotClass: "bg-[#8b5cf6]",
+		colorStyleClass: "odontogram-stamp-tool-btn--veneer",
+		description: "Керамический винир (В)",
+		categories: ["ortho_perio"],
+	},
+	{
+		state: "Inlay",
+		label: "Вкладка",
+		shortLabel: "ВК",
+		abbr: "ВК",
+		testId: "quick-trigger-inlay-btn",
+		colorDotClass: "bg-[#6366f1]",
+		colorStyleClass: "odontogram-stamp-tool-btn--inlay",
+		description: "Культевая / керамическая вкладка (ВК)",
+		categories: ["ortho_perio"],
+	},
+	{
+		state: "Implant",
+		label: "Имплант",
+		shortLabel: "Им",
+		abbr: "Им",
+		testId: "quick-trigger-implant-btn",
+		colorDotClass: "bg-[#7c3aed]",
+		colorStyleClass: "odontogram-stamp-tool-btn--implant",
+		description: "Дентальный имплантат (I)",
+		categories: ["endo_surgery", "ortho_perio"],
 	},
 	{
 		state: "Missing",
@@ -107,16 +207,18 @@ const STAMP_OPTIONS: readonly StampOption[] = [
 		colorDotClass: "bg-[#64748b]",
 		colorStyleClass: "odontogram-stamp-tool-btn--missing",
 		description: "Отсутствует / Адентия (0)",
+		categories: ["endo_surgery"],
 	},
 	{
-		state: "Implant",
-		label: "Имплант",
-		shortLabel: "И",
-		abbr: "И",
-		testId: "quick-trigger-implant-btn",
-		colorDotClass: "bg-[#7c3aed]",
-		colorStyleClass: "odontogram-stamp-tool-btn--implant",
-		description: "Дентальный имплантат (I)",
+		state: "Calculus",
+		label: "Зубной камень",
+		shortLabel: "Зк",
+		abbr: "Зк",
+		testId: "quick-trigger-calculus-btn",
+		colorDotClass: "bg-[#d97706]",
+		colorStyleClass: "odontogram-stamp-tool-btn--calculus",
+		description: "Минерализованные зубные отложения (Зк)",
+		categories: ["therapy", "ortho_perio"],
 	},
 ];
 
@@ -128,6 +230,8 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 	selectedTeeth = [],
 	className = "",
 }) => {
+	const [activeCategory, setActiveCategory] = useState<StampCategory>("all");
+
 	// Dismiss active stamp tool on Escape key
 	useEffect(() => {
 		const handleKeyDown = (e: KeyboardEvent) => {
@@ -146,31 +250,66 @@ export const OdontogramStampPalette: React.FC<OdontogramStampPaletteProps> = Rea
 		}
 	}, [activeStampTool, setActiveStampTool]);
 
+	const visibleStamps = useMemo(() => {
+		if (activeCategory === "all") return STAMP_OPTIONS;
+		return STAMP_OPTIONS.filter((opt) => opt.categories.includes(activeCategory));
+	}, [activeCategory]);
+
 	const hasSelection = selectedTeeth.length > 0;
 
 	return (
 		<div
-			className={`odontogram-stamp-palette w-full flex flex-wrap items-center gap-2 px-3 py-1.5 rounded-xl border select-none ${className}`.trim()}
+			className={`odontogram-stamp-palette w-full flex flex-wrap items-center justify-between gap-2 px-3 py-1.5 rounded-xl border select-none ${className}`.trim()}
 			role="toolbar"
 			aria-label="Панель клинических штампов патологий одонтограммы"
 			data-testid="odontogram-stamp-palette"
 		>
-			{/* Left section: Title & Pathology stamp buttons */}
-			<div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+			{/* Left section: Title + Category Segmented Tabs + Stamp Buttons */}
+			<div className="flex flex-wrap items-center gap-1.5 sm:gap-2 min-w-0">
 				<div className="flex items-center gap-1.5 text-xs font-bold shrink-0">
 					<Sparkles size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-					<span className="font-extrabold text-[12px] text-slate-800 dark:text-slate-100">
-						Штамп патологии:
+					<span className="font-extrabold text-[12px] text-slate-800 dark:text-slate-100 hidden sm:inline">
+						Штамп:
 					</span>
 				</div>
 
-				{/* 8 Clinical Pathology Triggers — Tactile 32px Delimited Tile Cards */}
+				{/* Segmented Category Filter Tabs */}
+				<div
+					className="inline-flex items-center p-0.5 rounded-lg bg-slate-100 dark:bg-slate-800/70 border border-slate-200/80 dark:border-white/10 shrink-0"
+					role="tablist"
+					aria-label="Категории клинических штампов"
+				>
+					{STAMP_CATEGORIES.map((cat) => {
+						const isSelected = activeCategory === cat.id;
+						return (
+							<button
+								key={cat.id}
+								type="button"
+								role="tab"
+								aria-selected={isSelected}
+								onClick={() => setActiveCategory(cat.id)}
+								data-testid={cat.testId}
+								className={`px-2 py-0.5 rounded-md text-[11px] font-bold transition-all cursor-pointer select-none whitespace-nowrap ${
+									isSelected
+										? "bg-white dark:bg-slate-900 text-teal-800 dark:text-teal-300 shadow-2xs border border-black/5 dark:border-white/10"
+										: "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+								}`}
+							>
+								{cat.label}
+							</button>
+						);
+					})}
+				</div>
+
+				<div className="hidden lg:block h-4 w-px bg-[var(--line,#e2e8f0)] dark:bg-white/15 shrink-0" aria-hidden="true" />
+
+				{/* Clinical Pathology Triggers — Tactile 32px Delimited Tile Cards */}
 				<div
 					className="flex flex-wrap items-center gap-1.5"
 					role="group"
 					aria-label="Штампы патологий и состояний зубов"
 				>
-					{STAMP_OPTIONS.map((opt) => {
+					{visibleStamps.map((opt) => {
 						const isActive = activeStampTool === opt.state;
 						return (
 							<button

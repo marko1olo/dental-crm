@@ -44,4 +44,5 @@ export type ToothState =
 	| "Calculus"
 	| "Bleeding"
 	| "Recession"
-	| "Pocket";
+	| "Pocket"
+	| "Defective_Restoration";

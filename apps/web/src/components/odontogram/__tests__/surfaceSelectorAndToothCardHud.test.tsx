@@ -80,13 +80,17 @@ describe("ToothCardHud Compact Non-Overlapping Architecture", () => {
 		assert.ok(html.includes('data-testid="quick-filled-16"'), "Must contain quick Filled action");
 		assert.ok(html.includes('data-testid="quick-healthy-16"'), "Must contain quick Healthy action");
 
-		// Вторичные кнопки: Эндодонтия (Пульпит & Периодонтит), Ортопедия и Хирургия
+		// Вторичные кнопки: Эндодонтия (Пульпит, Периодонтит, Каналы), Ортопедия и Хирургия (Коронка, Мост, Имплант, Корень, Удален)
 		assert.ok(html.includes('data-testid="quick-pulpitis-16"'), "Must contain quick Pulpitis action");
 		assert.ok(html.includes('data-testid="quick-periodontitis-16"'), "Must contain quick Periodontitis action");
+		assert.ok(html.includes('data-testid="quick-root-canal-16"'), "Must contain quick Root Canal action");
 		assert.ok(html.includes("Периодонтит"), "Must display human Periodontitis text");
 		assert.ok(html.includes(">Pt<"), "Must display clinical Pt badge");
+		assert.ok(html.includes(">Кл<"), "Must display clinical Kl badge");
 		assert.ok(html.includes('data-testid="quick-crown-16"'), "Must contain quick Crown action");
+		assert.ok(html.includes('data-testid="quick-bridge-16"'), "Must contain quick Bridge action");
 		assert.ok(html.includes('data-testid="quick-implant-16"'), "Must contain quick Implant action");
+		assert.ok(html.includes('data-testid="quick-root-16"'), "Must contain quick Root action");
 		assert.ok(html.includes('data-testid="quick-missing-16"'), "Must contain quick Missing action");
 	});
 

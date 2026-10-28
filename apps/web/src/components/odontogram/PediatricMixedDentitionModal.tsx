@@ -62,6 +62,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 						onApplyEarlyMixedNorm={logic.handleApplyEarlyMixedNorm}
 						onApplyPermanentNorm={logic.handleApplyPermanentNorm}
 						onApplyProcedurePreset={logic.handleApplyProcedurePreset}
+						onInsertCariogramToClinicalNote={logic.handleInsertCariogramToClinicalNote}
 						onInsertCariogramTo043={logic.handleInsertCariogramTo043}
 					/>
 
@@ -82,6 +83,7 @@ export const PediatricMixedDentitionModal: React.FC<PediatricMixedDentitionModal
 							cariogramInput={logic.cariogramInput}
 							onCariogramInputChange={logic.setCariogramInput}
 							cariogramResult={logic.cariogramResult}
+							onInsertCariogramToClinicalNote={logic.handleInsertCariogramToClinicalNote}
 							onInsertCariogramTo043={logic.handleInsertCariogramTo043}
 						/>
 					)}

@@ -315,8 +315,8 @@ describe("4. OdontogramToolbarQuickActions: Batch Selection & Occlusion Launcher
 	});
 });
 
-describe("5. OdontogramStampPalette: 8 Pathology Stamps & Inspection Mode", () => {
-	it("renders all 8 clinical pathology stamps with tactile 32px height and inspection reset", () => {
+describe("5. OdontogramStampPalette: 15 Clinical Pathology Stamps & Category Filtering", () => {
+	it("renders all clinical pathology stamps, category filter tabs, and inspection reset", () => {
 		const html = renderToString(
 			<OdontogramStampPalette
 				activeStampTool={null}
@@ -325,15 +325,34 @@ describe("5. OdontogramStampPalette: 8 Pathology Stamps & Inspection Mode", () =
 			/>,
 		);
 
+		// Category tabs
+		const categoryTestIds = [
+			"stamp-category-all",
+			"stamp-category-therapy",
+			"stamp-category-endo-surgery",
+			"stamp-category-ortho-perio",
+		];
+		for (const catId of categoryTestIds) {
+			assert.ok(html.includes(`data-testid="${catId}"`), `Must render category tab: ${catId}`);
+		}
+
+		// All 15 Clinical Stamps
 		const requiredTestIds = [
 			"quick-trigger-healthy-btn",
 			"quick-trigger-caries-btn",
+			"quick-trigger-defective-btn",
+			"quick-trigger-filling-btn",
 			"quick-trigger-pulpitis-btn",
 			"quick-trigger-periodontitis-btn",
-			"quick-trigger-filling-btn",
+			"quick-trigger-root-canal-btn",
+			"quick-trigger-root-btn",
 			"quick-trigger-crown-btn",
-			"quick-trigger-extracted-btn",
+			"quick-trigger-bridge-btn",
+			"quick-trigger-veneer-btn",
+			"quick-trigger-inlay-btn",
 			"quick-trigger-implant-btn",
+			"quick-trigger-extracted-btn",
+			"quick-trigger-calculus-btn",
 		];
 
 		for (const tid of requiredTestIds) {

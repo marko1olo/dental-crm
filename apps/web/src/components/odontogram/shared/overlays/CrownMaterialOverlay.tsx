@@ -47,6 +47,12 @@ export const CrownMaterialOverlay: React.FC<CrownMaterialOverlayProps> = ({
 				strokeLinejoin="round"
 				vectorEffect="non-scaling-stroke"
 			/>
+			<path
+				d={geometry.crownShellPath}
+				fill={isDark ? "url(#dente-proximal-contour-dark)" : "url(#dente-proximal-contour)"}
+				vectorEffect="non-scaling-stroke"
+				pointerEvents="none"
+			/>
 			{material === "pfm" && geometry.pfmCollarPath && (
 				<path
 					d={geometry.pfmCollarPath}
