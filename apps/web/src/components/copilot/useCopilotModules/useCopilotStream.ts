@@ -85,7 +85,11 @@ export function useCopilotStream({
 	const streamRequest = useCallback(
 		async (pathStr: string, body: unknown) => {
 			const token = readDenteClinicToken() || readDenteStaffToken() || "";
-			abortControllerRef.current = new AbortController();
+			if (abortControllerRef.current) {
+				abortControllerRef.current.abort();
+			}
+			const controller = new AbortController();
+			abortControllerRef.current = controller;
 
 			try {
 				const res = await fetch(`${apiBaseUrl}${pathStr}`, {
@@ -95,7 +99,7 @@ export function useCopilotStream({
 						Authorization: token ? `Bearer ${token}` : "",
 					},
 					body: JSON.stringify(body),
-					signal: abortControllerRef.current.signal,
+					signal: controller.signal,
 				});
 
 				if (!res.ok || !res.body) {
@@ -105,10 +109,14 @@ export function useCopilotStream({
 					return;
 				}
 
-				await readEventStream(res.body, handleEvent, abortControllerRef.current.signal);
+				await readEventStream(res.body, handleEvent, controller.signal);
 			} catch (err: unknown) {
 				if ((err as Error).name !== "AbortError") {
 					handleEvent("error", { detail: String(err) });
+				}
+			} finally {
+				if (abortControllerRef.current === controller) {
+					abortControllerRef.current = null;
 				}
 			}
 		},

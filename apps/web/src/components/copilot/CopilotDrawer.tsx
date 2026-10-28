@@ -14,6 +14,29 @@ import "./CopilotDrawer.css";
 
 export type { ProactiveNudge };
 
+const TOOL_TITLES_RU: Record<string, string> = {
+  "clinical.calculate_treatment_estimate": "Предварительный расчёт сметы лечения",
+  "calculate_treatment_estimate": "Предварительный расчёт сметы лечения",
+  "clinical.save_protocol_043": "Сохранение протокола приёма в медкарту",
+  "save_protocol_043": "Сохранение протокола приёма в медкарту",
+  "clinical.check_drug_interactions": "Проверка лекарственной совместимости",
+  "check_drug_interactions": "Проверка лекарственной совместимости",
+  "clinical.update_odontogram": "Обновление статуса зубной формулы",
+  "update_odontogram": "Обновление статуса зубной формулы",
+  "clinical.add_procedure_to_invoice": "Добавление услуги в счёт приёма",
+  "add_procedure_to_invoice": "Добавление услуги в счёт приёма",
+  "clinical.create_appointment": "Бронирование приёма в расписании",
+  "create_appointment": "Бронирование приёма в расписании",
+};
+
+function humanizeToolName(name?: string | null): string {
+  if (!name) return "Клиническое действие";
+  if (TOOL_TITLES_RU[name]) return TOOL_TITLES_RU[name]!;
+  const cleaned = name.replace(/^(clinical|crm)\./, "");
+  if (TOOL_TITLES_RU[cleaned]) return TOOL_TITLES_RU[cleaned]!;
+  return cleaned.replace(/_/g, " ");
+}
+
 export interface CopilotDrawerProps {
   isOpen: boolean;
   messages: CopilotUiMessage[];
@@ -73,6 +96,18 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+    if (isOpen) {
+      document.body.classList.add("copilot-open");
+    } else {
+      document.body.classList.remove("copilot-open");
+    }
+    return () => {
+      document.body.classList.remove("copilot-open");
+    };
+  }, [isOpen]);
 
   const handleInputChange = (val: string) => {
     setInput(val);
@@ -311,7 +346,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                       {(msg as any).toolCalls && (msg as any).toolCalls.length > 0 && (
                         <div className="copilot-tool-execution-banner mt-2">
                           <CheckCircle2 size={13} className="text-[var(--teal)] shrink-0" />
-                          <span className="text-xs">Выполнен инструмент: {((msg as any).toolCalls[0].name || "").replace("clinical.", "").replace("crm.", "")}</span>
+                          <span className="text-xs">Выполнен инструмент: {humanizeToolName((msg as any).toolCalls[0].name)}</span>
                         </div>
                       )}
                     </div>
@@ -326,7 +361,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                     <AlertCircle size={18} className="text-[var(--teal)] shrink-0" />
                     <div>
                       <h4 className="copilot-confirm-title">Подтверждение операции</h4>
-                      <p className="copilot-confirm-sub">Действие: {pending.toolName}</p>
+                      <p className="copilot-confirm-sub">Действие: {humanizeToolName(pending.name || pending.toolName)}</p>
                     </div>
                   </div>
                   <div className="copilot-confirm-params">

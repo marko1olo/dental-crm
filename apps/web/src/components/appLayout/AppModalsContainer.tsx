@@ -12,6 +12,7 @@ import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/Admin
 import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModals";
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
+import { CopilotGlobalHost } from "../copilot/CopilotGlobalHost";
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -76,6 +77,8 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 					if (!open) useUiSurfaceStore.getState().closePrimaryModal("emergency_rescue");
 				}}
 			/>
+
+			<CopilotGlobalHost />
 		</>
 	);
 }

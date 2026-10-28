@@ -1,8 +1,11 @@
 export interface TextUiMessage {
+	id?: string | undefined;
 	kind: "text";
 	role: "user" | "assistant";
 	text: string;
+	timestamp?: string | undefined;
 	streaming?: boolean | undefined;
+	toolCalls?: Array<{ id: string; name: string; args: Record<string, unknown> }> | undefined;
 }
 
 export interface ToolUiMessage {
@@ -57,6 +60,7 @@ export type CopilotUiMessage =
 export interface PendingConfirmation {
 	callId: string;
 	name: string;
+	toolName?: string | undefined;
 	args: Record<string, unknown>;
 }
 

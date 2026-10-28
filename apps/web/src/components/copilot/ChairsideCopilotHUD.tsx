@@ -84,18 +84,20 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     if (!intent) return;
     if (intent.teethUpdates && intent.teethUpdates.length > 0) {
       const first = intent.teethUpdates[0];
-      setToothProposal({
-        toothNumber: first.toothNumber,
-        state: first.state || "C2",
-        stateLabel: first.icd10Title || first.clinicalStatus || "Кариес",
-        surfaces: (first.surfaces ? [...first.surfaces] : ["O"]),
-        applied: false,
-      });
-      if (first.icd10Code || first.icd10Title) {
-        setSoapProposal((prev) => ({
-          ...prev,
-          diagnosis: `${first.icd10Code || ""} ${first.icd10Title || ""}`.trim() || prev.diagnosis,
-        }));
+      if (first) {
+        setToothProposal({
+          toothNumber: first.toothNumber,
+          state: first.state || "C2",
+          stateLabel: first.icd10Title || first.clinicalStatus || "Кариес",
+          surfaces: (first.surfaces ? [...first.surfaces] : ["O"]),
+          applied: false,
+        });
+        if (first.icd10Code || first.icd10Title) {
+          setSoapProposal((prev) => ({
+            ...prev,
+            diagnosis: `${first.icd10Code || ""} ${first.icd10Title || ""}`.trim() || prev.diagnosis,
+          }));
+        }
       }
     }
     if (intent.anesthesia) {

@@ -1,6 +1,8 @@
 export interface CopilotNudge {
 	id: string;
 	kind: string;
+	text?: string | undefined;
+	title?: string | undefined;
 	payload?: Record<string, unknown> | undefined;
 	created_at: string;
 	expires_at?: string | undefined;

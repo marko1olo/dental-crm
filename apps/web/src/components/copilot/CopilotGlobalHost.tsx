@@ -1,4 +1,5 @@
 import React, { useState, useCallback } from 'react';
+import { Sparkles } from 'lucide-react';
 import { useCopilot } from './useCopilot';
 import { CopilotDrawer } from './CopilotDrawer';
 import { useCopilotContextSync } from './CopilotContextSync';
@@ -90,7 +91,11 @@ export const CopilotGlobalHost: React.FC = () => {
         onTabChange={copilot.setActiveTab}
         onClose={copilot.closeDrawer}
         onSend={copilot.send}
-        onConfirm={copilot.confirm}
+        onConfirm={(decision, reason) => {
+          if (effectivePending) {
+            void copilot.confirm(effectivePending.callId, decision, undefined, reason);
+          }
+        }}
         onReset={copilot.reset}
         onDismissNudge={copilot.dismissNudge}
       />
@@ -109,6 +114,22 @@ export const CopilotGlobalHost: React.FC = () => {
         patientAllergies={uiContext.allergies}
         activeTooth={numericActiveTooth}
       />
+      {!copilot.isOpen && (
+        <button
+          type="button"
+          onClick={copilot.openDrawer}
+          className="copilot-trigger-btn"
+          aria-label="Открыть ИИ-Ассистент ДЕНТА"
+          title="ИИ-Ассистент ДЕНТА (Голос / Команды)"
+          data-testid="copilot-floating-trigger"
+        >
+          <Sparkles size={18} className="shrink-0" />
+          <span className="hidden sm:inline font-semibold">ИИ Ассистент</span>
+          {effectivePending && (
+            <span className="w-2.5 h-2.5 rounded-full bg-[var(--warn,#f59e0b)] animate-pulse" />
+          )}
+        </button>
+      )}
     </>
   );
 };

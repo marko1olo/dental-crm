@@ -31,6 +31,13 @@
   transform: translateY(0) scale(0.98);
 }
 
+/* Hide floating trigger when drawer is active in DOM */
+body.copilot-open .copilot-trigger-btn,
+:has(.copilot-drawer.open) .copilot-trigger-btn,
+:has([data-testid="copilot-drawer"]) .copilot-trigger-btn {
+  display: none !important;
+}
+
 .copilot-footer-actions {
   display: flex;
   align-items: center;

@@ -9,6 +9,14 @@
   box-sizing: border-box;
 }
 
+.copilot-chat-feed {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 6px;
+  box-sizing: border-box;
+}
+
 /* Messages */
 .copilot-msg-row {
   display: flex;

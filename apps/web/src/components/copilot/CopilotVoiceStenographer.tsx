@@ -12,15 +12,15 @@ export interface ParsedClinicalCommand {
 }
 
 export interface CopilotVoiceStenographerProps {
-  isOpen?: boolean;
-  embedded?: boolean;
-  activeTooth?: number | null;
-  patientName?: string;
-  initialTranscript?: string;
-  onClose?: () => void;
-  onApplySoap?: (patch: Record<string, string>) => void;
-  onApplyTooth?: (tooth: number, state: string) => void;
-  className?: string;
+  isOpen?: boolean | undefined;
+  embedded?: boolean | undefined;
+  activeTooth?: number | null | undefined;
+  patientName?: string | undefined;
+  initialTranscript?: string | undefined;
+  onClose?: (() => void) | undefined;
+  onApplySoap?: ((patch: Record<string, string>) => void) | undefined;
+  onApplyTooth?: ((tooth: number, state: string) => void) | undefined;
+  className?: string | undefined;
 }
 
 export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> = ({
