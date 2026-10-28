@@ -114,10 +114,8 @@ const mockDashboard = {
 const targetDirs = [
   path.resolve("docs/screenshots/odontogram_audit"),
   path.resolve("docs/proofs/odontogram"),
-  "C:/Users/Admin/.gemini/antigravity/brain/7767a456-9606-4400-a560-692c86dcd4a1",
-  "C:/Users/Admin/.gemini/antigravity/brain/c8b0a113-d724-454f-ada2-66f09061b986",
-  "C:/Users/Admin/.gemini/antigravity/brain/9ea21f87-962f-4962-8237-a01bee2ebf13",
-  "C:/Users/Admin/.gemini/antigravity/brain/8c13fca0-8160-48cc-95c0-54805cda73b5",
+  "C:/Users/Admin/.gemini/antigravity/brain/a6f2b5ab-6bb4-4d96-af8a-9006a477cf49",
+  "C:/Users/Admin/.gemini/antigravity/brain/8c7a136c-ef0f-4141-8963-8f352a2d1d24",
 ];
 
 for (const d of targetDirs) {
@@ -125,6 +123,14 @@ for (const d of targetDirs) {
 }
 
 async function saveProof(page, fileName, description = "") {
+  try {
+    await page.waitForFunction(() => {
+      const txt = document.body ? document.body.innerText : "";
+      return !txt.includes("Загрузка системы") && !txt.includes("Загрузка CRM");
+    }, { timeout: 10000 }).catch(() => {});
+  } catch (_) {}
+  await page.waitForTimeout(300);
+
   for (const dir of targetDirs) {
     const fullPath = path.join(dir, fileName);
     try {
@@ -185,11 +191,18 @@ async function setTheme(page, theme) {
 async function setupPageRoutes(page) {
   await page.route("**/api/**", async (route) => {
     const req = route.request();
-    if (req.resourceType() === "script" || req.resourceType() === "stylesheet" || req.resourceType() === "document") {
-      return route.continue();
-    }
     const url = req.url();
-    if (url.includes("/src/") || url.includes("/@") || url.includes("/node_modules/")) {
+    if (
+      req.resourceType() === "script" ||
+      req.resourceType() === "stylesheet" ||
+      req.resourceType() === "document" ||
+      url.includes("/src/") ||
+      url.includes("/@") ||
+      url.includes("/node_modules/") ||
+      url.includes("?import") ||
+      url.includes("?v=") ||
+      /\.(js|mjs|ts|tsx|css|map)(\?|$)/i.test(url)
+    ) {
       return route.continue();
     }
     if (url.includes("/api/dashboard")) {
@@ -412,9 +425,10 @@ async function run() {
     // 1-Click tooth stamping test (Click tooth 16 to apply stamp immediately without modal)
     console.log("[Desktop] Stamping tooth 16 with Caries stamp in 1 click...");
     await dPage.evaluate(() => {
-      const t = document.querySelector('[data-tooth-id="16"]') ||
-                document.querySelector('.tooth-svg-wrapper[data-tooth="16"]') ||
-                document.querySelector('[data-testid="tooth-cell-16"]');
+      const t = document.querySelector('[data-testid="anatomical-tooth-cell-16"]') ||
+                document.querySelector('[data-tooth-number="16"]') ||
+                document.querySelector('[data-tooth-id="16"]') ||
+                document.querySelector('.tooth-svg-wrapper[data-tooth="16"]');
       if (t) t.click();
     });
     await dPage.waitForTimeout(600);
@@ -427,17 +441,21 @@ async function run() {
     console.log("[Desktop] Opening ToothRadialMenu on Tooth 14 via DOM click...");
     await ensureOdontogramSubtab();
     await dPage.evaluate(() => {
-      const t = document.querySelector('[data-tooth-id="14"]') ||
-                document.querySelector('.tooth-svg-wrapper[data-tooth="14"]') ||
-                document.querySelector('[data-testid="tooth-cell-14"]');
+      const t = document.querySelector('[data-testid="anatomical-tooth-cell-14"]') ||
+                document.querySelector('[data-tooth-number="14"]') ||
+                document.querySelector('[data-tooth-id="14"]') ||
+                document.querySelector('.tooth-svg-wrapper[data-tooth="14"]');
       if (t) t.click();
     });
+    await dPage.waitForSelector('.tooth-radial-menu', { timeout: 8000 }).catch(() => {});
     await dPage.waitForTimeout(800);
 
     await setTheme(dPage, "light");
+    await dPage.waitForSelector('.tooth-radial-menu', { timeout: 3000 }).catch(() => {});
     await saveProof(dPage, "07_tooth_radial_menu_desktop_light.png", "Desktop Light Tooth Radial Menu Open (Tooth 14)");
 
     await setTheme(dPage, "dark");
+    await dPage.waitForSelector('.tooth-radial-menu', { timeout: 3000 }).catch(() => {});
     await saveProof(dPage, "08_tooth_radial_menu_desktop_dark.png", "Desktop Dark Tooth Radial Menu Open (Tooth 14)");
 
     // Test Escape hotkey to close radial menu
@@ -554,13 +572,13 @@ async function run() {
     // 2B. Mobile Tooth Radial Menu (Bottom Sheet)
     console.log("[Mobile] Opening Tooth Bottom Sheet on Tooth 16 via DOM click...");
     await mPage.evaluate(() => {
-      const t = Array.from(document.querySelectorAll('.mobile-tooth-tile, button')).find(b => b.textContent && b.textContent.includes('16')) ||
-                document.querySelector('.mobile-tooth-tile') ||
-                document.querySelector('[data-tooth-id="16"]');
+      const t = document.querySelector('[data-testid="mobile-chairside-workspace-tooth-tile-16"]') ||
+                document.querySelector('[data-testid*="-tooth-tile-16"]') ||
+                document.querySelector('.mobile-tooth-tile');
       if (t) t.click();
     });
     try {
-      await mPage.waitForSelector('.mobile-bottom-sheet-content, .mobile-bottom-sheet-container, [data-testid="tooth-radial-mobile-sheet"]', { timeout: 10000 });
+      await mPage.waitForSelector('[data-testid="mobile-chairside-workspace-tooth-sheet"], .mobile-bottom-sheet-content, .mobile-bottom-sheet-container, [data-testid="tooth-radial-mobile-sheet"]', { timeout: 10000 });
     } catch {
       await mPage.waitForTimeout(1500);
     }

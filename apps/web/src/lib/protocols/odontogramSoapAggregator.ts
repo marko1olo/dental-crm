@@ -64,9 +64,11 @@ export function getIcdPriority(code: string): number {
 	if (c.startsWith("K04.5") || c.startsWith("K04")) return 80;
 	if (c.startsWith("K02.1") || c.startsWith("K02.2")) return 70;
 	if (c.startsWith("K02.0") || c.startsWith("K02")) return 65;
-	if (c.startsWith("K01.1") || c.startsWith("K08.1")) return 60;
+	if (c.startsWith("K01.1") || c.startsWith("K08.1") || c.startsWith("K08.3")) return 60;
 	if (c.startsWith("K05.3") || c.startsWith("K05.0") || c.startsWith("K05")) return 50;
+	if (c.startsWith("K03")) return 45;
 	if (c.startsWith("Z51")) return 40;
+	if (c.startsWith("Z98")) return 35;
 	if (c.startsWith("Z01")) return 30;
 	return 10;
 }
@@ -85,7 +87,7 @@ export function generateSoapFromOdontogramStates(
 ): Partial<DiaryState> {
 	const nonHealthy = states.filter((s) => {
 		const norm = (s.state || "").toLowerCase();
-		return norm !== "healthy" && norm !== "" && norm !== "0";
+		return norm !== "healthy" && norm !== "" && norm !== "0" && norm !== "idle";
 	});
 
 	if (nonHealthy.length === 0) {

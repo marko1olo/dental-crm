@@ -205,24 +205,24 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 				</div>
 
 				{/* Действия в шапке: ровно 1 Primary CTA («Сохранить периодонтограмму») */}
-				<div className="flex items-center gap-2">
+				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
 					<button
 						type="button"
 						onClick={handleSetAllIntact}
 						disabled={readOnly}
-						className="min-h-[44px] h-9 px-3 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 font-semibold text-xs flex items-center gap-1.5 border border-emerald-500/30 cursor-pointer transition-all"
+						className="min-h-[44px] h-10 px-3.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 font-semibold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer transition-all w-full sm:w-auto"
 						title="Мгновенная физиологическая норма (Мандат 8e)"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
 						<Check className="w-3.5 h-3.5" />
-						✓ Пародонт в норме (PSR 0)
+						Пародонт в норме (PSR 0)
 					</button>
 
 					<button
 						type="button"
 						onClick={() => void handleSaveDraft({ closeAfter: false })}
 						disabled={readOnly}
-						className="min-h-[44px] h-9 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center gap-1.5 shadow-xs cursor-pointer transition-all"
+						className="min-h-[44px] h-10 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all w-full sm:w-auto"
 						data-testid="perio-save-draft-btn"
 					>
 						<Save className="w-3.5 h-3.5" />

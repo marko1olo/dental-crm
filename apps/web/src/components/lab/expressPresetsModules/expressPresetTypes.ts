@@ -25,7 +25,7 @@ export interface ExpressLabPreset {
 
 export const ONE_CLICK_LAB_DEFAULTS = {
 	materialId: "zirconia_multilayer",
-	materialName: "Коронка ZrO2 (диоксид циркония)",
+	materialName: "Диоксид циркония (Katana STML)",
 	colorVita: "A2",
 	workingDays: 5,
 	translucency: "HT",

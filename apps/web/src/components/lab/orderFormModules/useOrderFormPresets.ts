@@ -50,7 +50,7 @@ export function useOrderFormPresets(setters: OrderFormPresetsSetters) {
 			setters.setSelectedTeeth([16]);
 		}
 		showToast(
-			`Применен шаблон: «Коронка ZrO2, цвет А2, зуб 16, 5 раб. дней» (до ${due.toLocaleDateString("ru-RU")})`,
+			`Применен шаблон: «Коронка Katana STML (ZrO2), цвет А2, зуб 16, 5 раб. дней» (до ${due.toLocaleDateString("ru-RU")})`,
 			"success",
 			4000,
 		);

@@ -360,6 +360,15 @@ describe("Voice AI Dental STT Grammar Parser (dentalGrammarParser.ts)", () => {
 			assert.strictEqual(items[0]?.bleedingOnProbing, true);
 		});
 
+		it("extracts isolated probing command with bleeding: 'сорок шесть дистально пять, кровоточивость'", () => {
+			const items = extractPerioVoiceMeasurements("сорок шесть дистально пять, кровоточивость");
+			assert.strictEqual(items.length, 1);
+			assert.strictEqual(items[0]?.toothNumber, 46);
+			assert.strictEqual(items[0]?.distoBuccal?.probingDepthMm, 5);
+			assert.strictEqual(items[0]?.distoBuccal?.bleedingOnProbing, true);
+			assert.strictEqual(items[0]?.bleedingOnProbing, true);
+		});
+
 		it("extracts triplet pocket depths with recession and bop: 'зуб 46 карманы 4 3 5 рецессия 1 bop плюс'", () => {
 			const items = extractPerioVoiceMeasurements("зуб 46 карманы 4 3 5 рецессия 1 bop плюс");
 			assert.strictEqual(items.length, 1);

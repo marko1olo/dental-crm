@@ -19,7 +19,7 @@ export interface DentalLabExpressConfiguratorProps {
 }
 
 export const CHAIRSIDE_EXPRESS_PRESETS = [
-	{ id: "zirconia_prettau", title: "Коронка диоксид циркония (Prettau/Katana)", shortTitle: "Коронка ZrO2 Prettau/Katana", mat: "zirconia_multilayer", type: "single_crown", days: 5, shade: "A2" },
+	{ id: "zirconia_prettau", title: "Коронка диоксид циркония (Katana STML)", shortTitle: "Коронка Katana STML (ZrO2)", mat: "zirconia_multilayer", type: "single_crown", days: 5, shade: "A2" },
 	{ id: "emax_press", title: "Коронка E.max прессованная", shortTitle: "Коронка E.max прессованная", mat: "emax_lithium_disilicate", type: "single_crown", days: 5, shade: "A2" },
 	{ id: "pfm_cocr", title: "Металлокерамика", shortTitle: "Металлокерамика CoCr", mat: "pfm_cocr", type: "single_crown", days: 5, shade: "A3" },
 	{ id: "pmma_cadcam", title: "Временная PMMA CAD/CAM", shortTitle: "Временная PMMA CAD/CAM", mat: "pmma_temporary", type: "single_crown", days: 2, shade: "A2" },

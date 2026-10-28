@@ -112,9 +112,16 @@ export function evaluateAppointmentLabStatus(
 		rawStatus === "received" ||
 		rawStatus === "delivered" ||
 		rawStatus === "shipped" ||
+		rawStatus === "в клинике" ||
+		rawStatus === "готов в клинике" ||
+		rawStatus === "готовая работа" ||
+		rawStatus === "доставлен в клинику" ||
 		rawStage === "ready_in_clinic" ||
 		rawStage === "ready_fixation" ||
 		rawStage === "delivered_to_clinic" ||
+		rawStage === "в клинике" ||
+		rawStage === "готов в клинике" ||
+		rawStage === "готовая работа" ||
 		Boolean(order.receivedDate);
 
 	if (isReadyInClinic) {

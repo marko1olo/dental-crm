@@ -33,7 +33,7 @@ export function useChairsideSync(setters: ChairsideSyncSetters) {
 				const matLower = String(draft.material).toLowerCase();
 				if (matLower.includes("e.max") || matLower.includes("emax") || matLower.includes("винир") || matLower.includes("veneer")) {
 					setNewWorkType("crown_emax");
-				} else if (matLower.includes("zro2") || matLower.includes("zirconia") || matLower.includes("цирконий")) {
+				} else if (matLower.includes("zro2") || matLower.includes("zirconia") || matLower.includes("цирконий") || matLower.includes("katana")) {
 					setNewWorkType("crown_zirconia");
 				} else if (matLower.includes("pmma") || matLower.includes("временн") || matLower.includes("temporary")) {
 					setNewWorkType("temporary_pmma");

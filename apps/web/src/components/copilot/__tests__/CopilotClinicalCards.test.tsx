@@ -35,7 +35,7 @@ describe('Copilot Clinical Cards', () => {
       isSignedUkep: true, ukepCertificate: '00E10352F71B39D48C19', ukepSignedAt: '31.08.2026 22:30',
     };
     const html = renderToString(<Prescription107Card prescription={rxData} onPrint={() => {}} onSignUkep={() => {}} />);
-    assert.ok(html.includes('Рецептурный бланк № 107-1/у') && html.includes('Tab. Nimesulidi 100 мг'));
-    assert.ok(html.includes('00E10352F71B39D48C19') && html.includes('Печать 107-1/у'));
+    assert.ok(html.includes('Рецептурный бланк') && html.includes('Tab. Nimesulidi 100 мг'));
+    assert.ok(html.includes('00E10352F71B39D48C19') && html.includes('Печать рецепта'));
   });
 });

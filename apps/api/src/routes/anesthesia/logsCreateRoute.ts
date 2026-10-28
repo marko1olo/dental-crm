@@ -12,9 +12,23 @@ import { anesthesiaLogs, patients, serviceCatalogItems, treatmentItems, users, v
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
-import { createAnesthesiaLogBodySchema } from "./schemas.js";
+import { calculateSafetyBodySchema, createAnesthesiaLogBodySchema } from "./schemas.js";
 
 export function registerLogsCreateRoute(app: FastifyInstance): void {
+	app.post("/api/anesthesia/calculate-safety", async (request, reply) => {
+		const identity = getRequestIdentity(request);
+		const staffRole = identity.role ?? (request as unknown as { user?: { role?: string | null } }).user?.role ?? null;
+		const evalAccess = evaluateClinicalAccess(staffRole);
+		if (!evalAccess.hasClinicalAccess) {
+			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.write", role: staffRole, message: `Отказ в доступе к калькулятору анестезии: ${evalAccess.reason}` });
+		}
+		const parsed = calculateSafetyBodySchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.status(400).send({ message: "Некорректные параметры расчета безопасности анестетика", errors: parsed.error.format() });
+		}
+		const calculation = calculateAnestheticSafety(parsed.data);
+		return reply.status(200).send({ success: true, calculation });
+	});
 	app.post("/api/anesthesia/patients/:patientId/logs", async (request, reply) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;

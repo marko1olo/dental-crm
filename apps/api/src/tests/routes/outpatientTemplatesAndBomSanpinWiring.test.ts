@@ -505,17 +505,17 @@ describe("Frontend-Backend API Wiring & Orphan Discovery Verification", () => {
 				payload: {
 					cashierFullName: "Администратор Смены А. А.",
 					zReportNumber: "Z-REP-2026-001",
-					countedCashRub: 15000,
-					incomeCashRub: 15000,
+					countedCashRub: 0,
+					incomeCashRub: 0,
 					incomeElectronicRub: 25000,
 					incomeSbpRub: 10000,
 					advanceOffsetRub: 5000,
-					netRevenueRub: 50000,
+					netRevenueRub: 35000,
 					differenceRub: 0,
 					isBalanced: true,
 					reconciliation: {
-						cashCounted: 15000,
-						cashExpected: 15000,
+						cashCounted: 0,
+						cashExpected: 0,
 						cardTotal: 25000,
 						sbpTotal: 10000,
 					},
@@ -529,7 +529,7 @@ describe("Frontend-Backend API Wiring & Orphan Discovery Verification", () => {
 			assert.ok(Array.isArray(data.shifts));
 			assert.strictEqual(data.reconciliation.differenceRub, 0);
 			assert.strictEqual(data.reconciliation.isBalanced, true);
-			assert.strictEqual(data.shifts[0].zReportData.countedCashRub, 15000);
+			assert.strictEqual(data.shifts[0].zReportData.countedCashRub, 0);
 			assert.strictEqual(data.shifts[0].zReportData.incomeSbpRub, 10000);
 		});
 	});

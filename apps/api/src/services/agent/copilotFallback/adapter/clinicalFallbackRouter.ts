@@ -189,8 +189,12 @@ export async function* tryRouteClinicalFallback(
 		lower.includes("осмотр") ||
 		lower.includes("диктовка") ||
 		lower.includes("жалоб") ||
-		lower.includes("статус") ||
-		lower.includes("043")
+		lower.includes("соматический статус") ||
+		lower.includes("объективный статус") ||
+		lower.includes("локальный статус") ||
+		lower.includes("протокол приема") ||
+		lower.includes("карта приема") ||
+		lower.includes("заполни дневник")
 	) {
 		yield emitToolUse(
 			"clinical_notes.parse_voice_dictation",

@@ -63,7 +63,7 @@ export const ToothCardHud: React.FC<ToothCardHudProps> = memo(({
 
 	return (
 		<div
-			className={`tooth-hover-quick-hud absolute tooth-card-hud-compact ${hudAlignClass} hidden group-hover/badge:flex flex-col transition-all duration-150 z-50 p-1.5 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-xl backdrop-blur-md pointer-events-auto whitespace-nowrap w-[216px] min-w-[216px] max-w-[226px] box-border ${
+			className={`tooth-hover-quick-hud absolute tooth-card-hud-compact ${hudAlignClass} hidden group-hover/badge:flex flex-col transition-all duration-150 z-50 p-1.5 rounded-xl bg-[var(--odontogram-paper)]/95 border border-[var(--odontogram-border-strong)] shadow-xl backdrop-blur-md pointer-events-auto whitespace-nowrap w-[216px] min-w-[216px] max-w-[226px] overflow-x-clip box-border ${
 				isTop ? "top-full mt-1.5" : "bottom-full mb-1.5"
 			}`}
 			onClick={(e) => e.stopPropagation()}

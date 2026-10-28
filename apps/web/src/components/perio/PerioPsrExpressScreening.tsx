@@ -127,7 +127,7 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 						data-testid="psr-all-intact-btn"
 					>
 						<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-						✓ Пародонт интактен (Код 0)
+						Пародонт интактен (Код 0)
 					</button>
 
 					<button

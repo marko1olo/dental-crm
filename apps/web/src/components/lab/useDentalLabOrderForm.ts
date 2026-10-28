@@ -42,6 +42,38 @@ export function useDentalLabOrderForm(props: DentalLabOrderModalProps) {
 	const shadesState = useOrderFormShades(initialOrder?.attachedImageUrl || null);
 	const datesState = useOrderFormDatesAndOcclusion();
 
+	useEffect(() => {
+		const handleOpenModal = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (!detail) return;
+			if (detail.toothFdi || detail.toothNumber) {
+				const num = Number.parseInt(String(detail.toothFdi || detail.toothNumber), 10);
+				if (!Number.isNaN(num) && num >= 11 && num <= 85) {
+					teethState.setSelectedTeeth([num]);
+				}
+			}
+			if (detail.material) {
+				const matLower = String(detail.material).toLowerCase();
+				if (matLower.includes("zirconia") || matLower.includes("цирконий") || matLower.includes("katana")) {
+					teethState.setMaterial("zirconia_multilayer");
+					teethState.setConstructionType("single_crown");
+				} else if (matLower.includes("emax") || matLower.includes("e.max")) {
+					teethState.setMaterial("emax_lithium_disilicate");
+				}
+			}
+			if (detail.colorVita) {
+				shadesState.setShadeSystem("classical");
+				shadesState.setShadeClassical(detail.colorVita);
+				shadesState.setShadeBody(detail.colorVita);
+			}
+			if (detail.patientName) setFormPatientName(detail.patientName);
+			if (detail.doctorName) setFormDoctorName(detail.doctorName);
+		};
+
+		window.addEventListener("dente-open-lab-order-modal", handleOpenModal);
+		return () => window.removeEventListener("dente-open-lab-order-modal", handleOpenModal);
+	}, [teethState.setSelectedTeeth, teethState.setMaterial, teethState.setConstructionType, shadesState.setShadeSystem, shadesState.setShadeClassical, shadesState.setShadeBody]);
+
 	const financials = useOrderFormFinancialsAndGate({
 		initialPriceRub: initialOrder?.priceRub, initialClinicShare: initialOrder?.clinicSharePct,
 		initialDoctorShare: initialOrder?.doctorSharePct, stageTotalRub, stagePaidRub, patientDepositRub,

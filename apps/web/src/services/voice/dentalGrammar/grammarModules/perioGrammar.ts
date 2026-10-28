@@ -9,7 +9,7 @@ import { parsePerioDepthNumber } from "./perioDepthParser";
 export function extractPerioVoiceMeasurements(text: string): PerioToothVoiceItem[] {
 	if (!text || typeof text !== "string") return [];
 	const lower = text.toLowerCase().replace(/ё/g, "е");
-	if (!/(?:карман|глубин|пародонт|перио|bop|боп|кровоточив|кровит|рецесси|подвижност|фуркаци|удален|отсутствует|адентия)/i.test(lower)) {
+	if (!/(?:карман|глубин|пародонт|перио|bop|боп|кровоточив|кровит|рецесси|подвижност|фуркаци|удален|отсутствует|адентия|дистальн|мезиальн|медиальн|вестибулярн|щечн|язычн|небн|зондирован)/i.test(lower)) {
 		return [];
 	}
 	const teeth = extractFdiTeethNumbers(text);

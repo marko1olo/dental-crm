@@ -48,17 +48,25 @@ export const DENTAL_LAB_DETAILED_STAGE_KEYS: readonly DentalLabDetailedStageKey[
 
 export function getStatusBadge(status?: string): React.ReactNode {
 	switch (status) {
+		case "draft":
+			return (
+				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-slate-100 text-slate-800 dark:bg-slate-950/40 dark:text-slate-300">
+					Черновик
+				</span>
+			);
 		case "sent":
 		case "sent_to_lab":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 dark:bg-blue-950/40 dark:text-blue-300">
-					Отправлен в ЗТЛ
+					Отправлен в лабораторию
 				</span>
 			);
 		case "in_progress":
+		case "cad_modeling":
+		case "model_cad_design":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-					В работе (CAD/CAM)
+					На моделировании
 				</span>
 			);
 		case "fitting":
@@ -66,7 +74,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "try_in":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-purple-100 text-purple-800 dark:bg-purple-950/40 dark:text-purple-300">
-					На примерке / Доработке
+					На примерке
 				</span>
 			);
 		case "ready":
@@ -76,7 +84,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "received":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-teal-100 text-teal-800 dark:bg-teal-950/40 dark:text-teal-300">
-					В клинике / Готов
+					Готов в клинике
 				</span>
 			);
 		case "completed":
@@ -86,7 +94,7 @@ export function getStatusBadge(status?: string): React.ReactNode {
 		case "installed_completed":
 			return (
 				<span className="px-2 py-0.5 text-xs font-semibold rounded-full bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300">
-					Зафиксировано
+					Установлен пациенту
 				</span>
 			);
 		case "warranty_rework":

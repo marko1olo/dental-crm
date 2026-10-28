@@ -76,7 +76,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					<ToothRadialPrimaryGrid primaryItems={primaryItems} currentState={currentState} selectedSurfaces={selectedSurfaces} surfaces={surfaces} onSelectWithHaptic={handleSelectStateWithHaptic} />
 					<ToothRadialSecondaryAccordion secondaryItems={secondaryItems} currentState={currentState} selectedSurfaces={selectedSurfaces} surfaces={surfaces} onSelectWithHaptic={handleSelectStateWithHaptic} isOpen={isMoreStatusesOpen} setIsOpen={setIsMoreStatusesOpen} />
 					<ToothRadialResorptionBar isPrimary={isPrimary} iropz={iropz} currentState={currentState} onSelectState={onSelectState} onClose={onClose} />
-					<ToothRadialFooterActions toothScanThumbnail={toothScanThumbnail} onOpenRvg={() => handleOpenRvg(onClose)} onOpenTherapy={onOpenTherapy} onAddToInvoice={onAddToInvoice} onOpenEndo={onOpenEndo} onClose={onClose} />
+					<ToothRadialFooterActions toothNumber={toothNumber} toothScanThumbnail={toothScanThumbnail} onOpenRvg={() => handleOpenRvg(onClose)} onOpenTherapy={onOpenTherapy} onAddToInvoice={onAddToInvoice} onOpenEndo={onOpenEndo} onClose={onClose} />
 				</div>
 			)}
 		</div>

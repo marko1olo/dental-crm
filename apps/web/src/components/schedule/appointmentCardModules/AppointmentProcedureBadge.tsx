@@ -117,9 +117,9 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 						)}
 						<span>
 							{labStatusInfo.isOverdue
-								? `ЗТЛ: +${labStatusInfo.daysOverdue}д!`
+								? `⚠️ ЗТЛ задерживает: +${labStatusInfo.daysOverdue} дн`
 								: labStatusInfo.state === "ready_in_clinic"
-									? labStatusInfo.readinessText || labStatusInfo.shortLabelRu
+									? "✓ Работа из ЗТЛ в клинике"
 									: labStatusInfo.shortLabelRu}
 						</span>
 					</span>

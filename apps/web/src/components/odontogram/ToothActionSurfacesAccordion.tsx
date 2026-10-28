@@ -44,8 +44,8 @@ export const ToothActionSurfacesAccordion: React.FC<
 						: "вся коронка"}
 				</span>
 			</summary>
-			<div className="flex flex-col gap-1 mt-2 pt-2 border-t border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50">
-				<div className="flex items-center justify-between gap-1 flex-nowrap overflow-x-auto py-0.5">
+			<div className="flex flex-col gap-1.5 mt-2 pt-2 border-t border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700/50 w-full overflow-x-clip box-border">
+				<div className="grid grid-cols-5 gap-2 w-full max-w-full overflow-x-clip py-1">
 					{SURFACE_CHIPS.map((chip) => {
 						const isSelected =
 							chip.surfs.length > 0 &&
@@ -61,10 +61,10 @@ export const ToothActionSurfacesAccordion: React.FC<
 										: Array.from(new Set([...prev, ...chip.surfs])),
 								);
 								}}
-								className={`flex-1 min-h-[44px] sm:min-h-[32px] min-w-[44px] px-2 py-1 rounded-lg text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center ${
+								className={`w-full min-h-[44px] h-[44px] min-w-[44px] px-1 rounded-xl text-xs font-mono font-black border transition-all cursor-pointer select-none touch-manipulation flex items-center justify-center text-center ${
 									isSelected
-										? "bg-teal-600 text-white border-teal-600 shadow-xs scale-105"
-										: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)]"
+										? "bg-teal-600 text-white border-teal-600 shadow-xs scale-102"
+										: "bg-[var(--odontogram-paper,#ffffff)] dark:bg-zinc-900 text-[var(--odontogram-ink,#0f172a)] dark:text-zinc-200 border-[var(--odontogram-border-subtle,#e2e8f0)] dark:border-zinc-700 hover:bg-[var(--odontogram-surface-hover,#e2e8f0)] active:scale-95"
 								}`}
 								title={chip.title}
 								data-testid={`odontogram-module-surf-${chip.label}`}

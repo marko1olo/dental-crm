@@ -2,8 +2,8 @@ import type { ExpressLabPreset } from "./expressPresetTypes";
 
 export const EXPRESS_PRESET_ZIRCONIA_CROWN: ExpressLabPreset = {
 	id: "zirconia_crown_express",
-	title: "Циркониевая коронка на свой зуб (Prettau / Katana) — стандарт",
-	shortDesc: "Анатомическая форма, контакт 50 мкм, зазор под цемент 30 мкм, скан/слепок А-силикон, 5 раб. дней (24 000 ₽ / 7 500 ₽)",
+	title: "Коронка диоксид циркония (Katana STML) — стандарт",
+	shortDesc: "Анатомическая форма Katana STML, контакт 50 мкм, зазор под цемент 30 мкм, цвет VITA A2, 5 раб. дней (24 000 ₽ / 7 500 ₽)",
 	constructionType: "single_crown",
 	materialId: "zirconia_multilayer",
 	colorVita: "A2",
@@ -18,7 +18,7 @@ export const EXPRESS_PRESET_ZIRCONIA_CROWN: ExpressLabPreset = {
 	surfaceTexture: "natural_anatomy",
 	cementGapMicrons: 30,
 	impressionType: "a_silicone",
-	badge: "Коронка ZrO2 (5 дн.)",
+	badge: "Katana STML (5 дн.)",
 };
 
 export const EXPRESS_PRESET_PMMA_TEMPORARY: ExpressLabPreset = {

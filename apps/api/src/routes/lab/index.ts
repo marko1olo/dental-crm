@@ -28,6 +28,15 @@ export {
 	CANONICAL_DENTAL_LAB_PRESETS,
 } from "./types.js";
 
+export {
+	registerCashLabPaymentRoutes,
+	registerLabPaymentRoutes,
+} from "./paymentModules/labOrderPaymentRoutes.js";
+export { labOrderPayHandler } from "./paymentModules/labOrderPayHandler.js";
+export { labOrderMarkInstalledHandler } from "./paymentModules/labOrderMarkInstalledHandler.js";
+export { executeLabOrderPayment } from "./paymentModules/labOrderPayDb.js";
+export { executeLabOrderMarkInstalled } from "./paymentModules/labOrderMarkInstalledDb.js";
+
 export * from "./types.js";
 export * from "./expressOrderRoutes.js";
 export * from "./ordersCrudRoutes.js";

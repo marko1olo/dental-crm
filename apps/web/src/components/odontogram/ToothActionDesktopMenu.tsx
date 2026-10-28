@@ -50,7 +50,7 @@ export const ToothActionDesktopMenu: React.FC<ToothActionMenuPortalProps> = ({
 			/>
 			<div
 				role="menu"
-				className="tooth-radial-menu"
+				className="tooth-radial-menu animate-in fade-in zoom-in-95 duration-150"
 				style={{
 					position: "fixed",
 					left: clampedX,

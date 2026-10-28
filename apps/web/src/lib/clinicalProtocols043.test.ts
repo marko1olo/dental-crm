@@ -199,6 +199,138 @@ describe("clinicalProtocols043 — Protocol Generation (generateSoapFromOdontogr
 		assert.ok(soap.treatmentDescription.includes("Снятие несостоятельной пломбы"));
 	});
 
+	it("generates Defective_Restoration protocol with secondary caries note and composite replacement", () => {
+		const soap = generateSoapFromOdontogramFinding({
+			toothNumber: 36,
+			state: "Defective_Restoration",
+			surfaces: ["O", "M"],
+		});
+		assert.equal(soap.diagnosisIcd10, "K02.1");
+		assert.equal(soap.diagnosisTooth, "36");
+		assert.ok(soap.diagnosisIcd10Label.includes("дефект пломбы"));
+		assert.ok(soap.anamnesis.includes("скол края пломбы"));
+		assert.ok(soap.statusLocalis.includes("несостоятельная реставрация"));
+		assert.ok(soap.treatmentDescription.includes("Снятие несостоятельной реставрации"));
+	});
+
+	it("generates Calculus (K03.6) scaling and hygiene protocol", () => {
+		const soap = generateSoapFromOdontogramFinding({
+			toothNumber: 41,
+			state: "Calculus",
+		});
+		assert.equal(soap.diagnosisIcd10, "K03.6");
+		assert.equal(soap.diagnosisTooth, "41");
+		assert.ok(soap.diagnosisIcd10Label.includes("зубной камень"));
+		assert.ok(soap.statusLocalis.includes("зубные отложения"));
+		assert.ok(soap.treatmentDescription.includes("Ультразвуковой скейлинг"));
+	});
+
+	it("generates Root_Canal_Treated (Z98.8) observation and crown recommendation protocol", () => {
+		const soap = generateSoapFromOdontogramFinding({
+			toothNumber: 46,
+			state: "Root_Canal_Treated",
+		});
+		assert.equal(soap.diagnosisIcd10, "Z98.8");
+		assert.equal(soap.diagnosisTooth, "46");
+		assert.ok(soap.diagnosisIcd10Label.includes("ранее леченные каналы"));
+		assert.ok(soap.statusLocalis.includes("корневые каналы равномерно обтурированы"));
+		assert.ok(soap.treatmentDescription.includes("Рентген-контроль"));
+	});
+
+	it("generates Root (K08.3) extraction protocol", () => {
+		const soap = generateSoapFromOdontogramFinding({
+			toothNumber: 14,
+			state: "Root",
+		});
+		assert.equal(soap.diagnosisIcd10, "K08.3");
+		assert.equal(soap.diagnosisTooth, "14");
+		assert.ok(soap.diagnosisIcd10Label.includes("Оставшийся корень зуба"));
+		assert.ok(soap.statusLocalis.includes("остался корень зуба"));
+		assert.ok(soap.treatmentDescription.includes("извлечение корня зуба"));
+	});
+
+	it("generates Retained (K01.1) surgical extraction protocol", () => {
+		const soap = generateSoapFromOdontogramFinding({
+			toothNumber: 38,
+			state: "Retained",
+		});
+		assert.equal(soap.diagnosisIcd10, "K01.1");
+		assert.equal(soap.diagnosisTooth, "38");
+		assert.ok(soap.diagnosisIcd10Label.includes("Ретинированные зубы"));
+		assert.ok(soap.statusLocalis.includes("зуб ретинирован в толще челюстной кости"));
+		assert.ok(soap.treatmentDescription.includes("Фрагментация ретинированного зуба"));
+	});
+
+	it("generates Bridge, Veneer, and Inlay orthopedic protocols", () => {
+		const bridge = generateSoapFromOdontogramFinding({
+			toothNumber: 45,
+			state: "Bridge",
+		});
+		assert.equal(bridge.diagnosisIcd10, "K08.1");
+		assert.ok(bridge.diagnosisIcd10Label.includes("мостовидный протез"));
+		assert.ok(bridge.statusLocalis.includes("мостовидного протеза"));
+		assert.ok(bridge.treatmentDescription.includes("мостовидного протеза"));
+
+		const veneer = generateSoapFromOdontogramFinding({
+			toothNumber: 11,
+			state: "Veneer",
+		});
+		assert.equal(veneer.diagnosisIcd10, "K03.7");
+		assert.ok(veneer.diagnosisIcd10Label.includes("керамический винир"));
+		assert.ok(veneer.treatmentDescription.includes("препарирование вестибулярной поверхности"));
+
+		const inlay = generateSoapFromOdontogramFinding({
+			toothNumber: 16,
+			state: "Inlay",
+		});
+		assert.equal(inlay.diagnosisIcd10, "Z51.8");
+		assert.ok(inlay.diagnosisIcd10Label.includes("керамическая вкладка"));
+		assert.ok(inlay.treatmentDescription.includes("под керамическую накладку"));
+	});
+
+	it("guarantees ALL 17 clinical states generate valid, rich SOAP protocols without falling to blank", () => {
+		const all17States = [
+			"Healthy",
+			"Caries",
+			"Defective_Restoration",
+			"Filled",
+			"Calculus",
+			"Pulpitis",
+			"Periodontitis",
+			"Root_Canal_Treated",
+			"Root",
+			"Missing",
+			"Implant",
+			"Planned_Implant",
+			"Crown",
+			"Bridge",
+			"Veneer",
+			"Inlay",
+			"Retained",
+		];
+
+		for (const state of all17States) {
+			const soap = generateSoapFromOdontogramFinding({
+				toothNumber: 36,
+				state,
+			});
+			assert.ok(soap.diagnosisIcd10, `State ${state} must have diagnosisIcd10`);
+			assert.ok(soap.diagnosisIcd10Label, `State ${state} must have diagnosisIcd10Label`);
+			assert.ok(soap.anamnesis.length > 10, `State ${state} must have non-empty anamnesis`);
+			assert.ok(soap.statusLocalis.length > 10, `State ${state} must have non-empty statusLocalis`);
+			assert.ok(soap.treatmentDescription.length > 10, `State ${state} must have non-empty treatmentDescription`);
+			assert.ok(soap.recommendations.length > 5, `State ${state} must have non-empty recommendations`);
+
+			if (state !== "Healthy") {
+				assert.notEqual(
+					soap.statusLocalis,
+					"Зуб 36 (нижний левый первый моляр): Интактен. Твердые ткани без кариозных поражений. Зондирование безболезненно. Десна плотно прилежит.",
+					`State ${state} must not fall back to Healthy/Интактен default!`,
+				);
+			}
+		}
+	});
+
 	it("generates Crown (коронка / ортопедия Z51.8) protocol", () => {
 		const soap = generateSoapFromOdontogramFinding({
 			toothNumber: 26,

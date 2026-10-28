@@ -398,21 +398,13 @@ describe("Proactive Alert Broadcasting via CopilotStreamManager", () => {
 		streamManager = new CopilotStreamManager();
 	});
 
-	test("Broadcasts proactive alert to connected subscribers", (t, done) => {
+	test("Broadcasts proactive alert to connected subscribers", () => {
 		const receivedEvents: string[] = [];
 
 		const mockSubscriber = {
 			organizationId: "org-stream-1",
 			write: (data: string) => {
 				receivedEvents.push(data);
-				if (
-					data.includes("proactive_alert") &&
-					data.includes("Острая зубная боль")
-				) {
-					assert.ok(data.includes("event: proactive_alert"));
-					assert.ok(data.includes("CRITICAL"));
-					done();
-				}
 			},
 		};
 
@@ -439,6 +431,10 @@ describe("Proactive Alert Broadcasting via CopilotStreamManager", () => {
 				},
 			],
 		});
+
+		assert.ok(receivedEvents.some((e) => e.includes("event: proactive_alert")));
+		assert.ok(receivedEvents.some((e) => e.includes("CRITICAL")));
+		assert.ok(receivedEvents.some((e) => e.includes("Острая зубная боль")));
 	});
 
 	test("Subscriber does not receive alerts intended for another organization", () => {

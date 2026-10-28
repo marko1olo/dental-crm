@@ -81,6 +81,20 @@
 	z-index: 10;
 }
 
+:is([data-theme="dark"], html.dark) .tooth-radial-menu {
+	background-color: var(--odontogram-paper, var(--paper, #0f172a));
+	border-color: rgba(255, 255, 255, 0.15);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1);
+}
+
+:is([data-theme="dark"], html.dark) .tooth-radial-menu.caret-top::after {
+	border-bottom-color: var(--odontogram-paper, var(--paper, #0f172a));
+}
+
+:is([data-theme="dark"], html.dark) .tooth-radial-menu.caret-bottom::after {
+	border-top-color: var(--odontogram-paper, var(--paper, #0f172a));
+}
+
 @media (max-width: 768px) {
 	.tooth-radial-menu {
 		max-width: calc(100% - 16px);

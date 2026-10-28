@@ -43,26 +43,28 @@ describe("Odontogram Clinical State Matrix & Badge Alignment", () => {
 	});
 
 	it("getClinicalBundleForToothState returns correct bundles according to 804n clinical packages", () => {
-		// Caries and Defective_Restoration -> caries bundle
+		// Caries -> caries bundle, Defective_Restoration -> defective_restoration bundle
 		assert.equal(getClinicalBundleForToothState("Caries")?.id, "caries");
-		assert.equal(getClinicalBundleForToothState("Defective_Restoration")?.id, "caries");
+		assert.equal(getClinicalBundleForToothState("Defective_Restoration")?.id, "defective_restoration");
 
-		// Calculus -> hygiene bundle (or fallback to caries)
+		// Calculus -> hygiene bundle
 		assert.equal(getClinicalBundleForToothState("Calculus")?.id, "hygiene");
 
-		// Pulpitis and Periodontitis -> endo_1 bundle
+		// Pulpitis and Periodontitis -> endo_1, endo_3, periodontitis bundles
 		assert.equal(getClinicalBundleForToothState("Pulpitis")?.id, "endo_1");
-		assert.equal(getClinicalBundleForToothState("Periodontitis")?.id, "endo_1");
+		assert.equal(getClinicalBundleForToothState("Pulpitis", 16)?.id, "endo_3"); // верхний моляр (3 канала)
+		assert.equal(getClinicalBundleForToothState("Pulpitis", 11)?.id, "endo_1"); // резец (1 канал)
+		assert.equal(getClinicalBundleForToothState("Periodontitis")?.id, "periodontitis");
 
 		// Missing and Root -> surgery_extraction bundle
 		assert.equal(getClinicalBundleForToothState("Missing")?.id, "surgery_extraction");
 		assert.equal(getClinicalBundleForToothState("Root")?.id, "surgery_extraction");
 
-		// Prosthetics: Crown, Bridge, Veneer, Inlay -> crown bundle
+		// Prosthetics: Crown, Bridge -> crown bundle, Veneer -> veneer, Inlay -> inlay
 		assert.equal(getClinicalBundleForToothState("Crown")?.id, "crown");
 		assert.equal(getClinicalBundleForToothState("Bridge")?.id, "crown");
-		assert.equal(getClinicalBundleForToothState("Veneer")?.id, "crown");
-		assert.equal(getClinicalBundleForToothState("Inlay")?.id, "crown");
+		assert.equal(getClinicalBundleForToothState("Veneer")?.id, "veneer");
+		assert.equal(getClinicalBundleForToothState("Inlay")?.id, "inlay");
 
 		// Healthy and Retained -> null
 		assert.equal(getClinicalBundleForToothState("Healthy"), null);

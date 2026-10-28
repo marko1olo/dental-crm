@@ -9,8 +9,20 @@ export interface LabStatusConfig {
 }
 
 export const LAB_STATUS_MAP: Record<string, LabStatusConfig> = {
+  draft: {
+    label: 'Черновик',
+    bg: 'var(--paper-soft)',
+    fg: 'var(--muted)',
+    icon: <Package className="w-3 h-3 text-[var(--muted)]" />,
+  },
   in_production: {
-    label: 'В производстве',
+    label: 'На моделировании',
+    bg: 'var(--teal-soft)',
+    fg: 'var(--teal)',
+    icon: <Clock className="w-3 h-3 text-[var(--teal)]" />,
+  },
+  in_progress: {
+    label: 'На моделировании',
     bg: 'var(--teal-soft)',
     fg: 'var(--teal)',
     icon: <Clock className="w-3 h-3 text-[var(--teal)]" />,
@@ -28,22 +40,46 @@ export const LAB_STATUS_MAP: Record<string, LabStatusConfig> = {
     icon: <Truck className="w-3 h-3 text-[var(--warn-fg)]" />,
   },
   delivered: {
-    label: 'Доставлен в клинику',
+    label: 'Готов в клинике',
     bg: 'var(--ok-bg)',
     fg: 'var(--ok-fg)',
     icon: <CheckCircle2 className="w-3 h-3 text-[var(--ok-fg)]" />,
   },
   ready: {
-    label: 'Готов к примерке',
+    label: 'Готов в клинике',
+    bg: 'var(--ok-bg)',
+    fg: 'var(--ok-fg)',
+    icon: <CheckCircle2 className="w-3 h-3 text-[var(--ok-fg)]" />,
+  },
+  ready_in_clinic: {
+    label: 'Готов в клинике',
     bg: 'var(--ok-bg)',
     fg: 'var(--ok-fg)',
     icon: <CheckCircle2 className="w-3 h-3 text-[var(--ok-fg)]" />,
   },
   fitting: {
-    label: 'Примерка / Коррекция',
+    label: 'На примерке',
     bg: 'var(--warn-bg)',
     fg: 'var(--warn-fg)',
     icon: <Clock className="w-3 h-3 text-[var(--warn-fg)]" />,
+  },
+  try_in: {
+    label: 'На примерке',
+    bg: 'var(--warn-bg)',
+    fg: 'var(--warn-fg)',
+    icon: <Clock className="w-3 h-3 text-[var(--warn-fg)]" />,
+  },
+  delivered_to_patient: {
+    label: 'Установлен пациенту',
+    bg: 'var(--ok-bg)',
+    fg: 'var(--ok-fg)',
+    icon: <CheckCircle2 className="w-3 h-3 text-[var(--ok-fg)]" />,
+  },
+  completed: {
+    label: 'Установлен пациенту',
+    bg: 'var(--ok-bg)',
+    fg: 'var(--ok-fg)',
+    icon: <CheckCircle2 className="w-3 h-3 text-[var(--ok-fg)]" />,
   },
   delayed: {
     label: 'Задержан лабораторией',

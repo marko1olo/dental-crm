@@ -35,7 +35,7 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
         <div className="copilot-rx-title-box">
           <h4 className="copilot-rx-title">
             <Pill size={16} className="text-[var(--teal)]" />
-            <span>Рецептурный бланк № 107-1/у</span>
+            <span>Рецептурный бланк</span>
           </h4>
         </div>
         <div className="flex flex-col items-end gap-1">
@@ -91,10 +91,10 @@ export const Prescription107Card: React.FC<Prescription107CardProps> = ({
           type="button"
           onClick={handlePrint}
           className="copilot-rx-print-btn"
-          title="Распечатать официальный бланк 107-1/у"
+          title="Распечатать официальный рецептурный бланк"
         >
           <Printer size={15} />
-          <span>Печать 107-1/у</span>
+          <span>Печать рецепта</span>
         </button>
 
         <button

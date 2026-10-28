@@ -23,11 +23,19 @@ function checkIsLabActive(): boolean {
 
 export const DirectDentalLabOrderLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => checkIsLabActive());
+	const [initialToothFdi, setInitialToothFdi] = useState<string>("16");
 
 	useEffect(() => {
-		const handleOpen = () => setIsOpen(true);
+		const handleOpen = (e?: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			if (detail?.toothFdi || detail?.toothNumber) {
+				setInitialToothFdi(String(detail.toothFdi || detail.toothNumber));
+			}
+			setIsOpen(true);
+		};
 		window.addEventListener("dente:open-lab-order", handleOpen);
 		window.addEventListener("dente:open-dental-lab", handleOpen);
+		window.addEventListener("dente-open-lab-order-modal", handleOpen);
 
 		const handleState = () => {
 			if (checkIsLabActive()) {
@@ -41,6 +49,7 @@ export const DirectDentalLabOrderLauncher: React.FC = () => {
 		return () => {
 			window.removeEventListener("dente:open-lab-order", handleOpen);
 			window.removeEventListener("dente:open-dental-lab", handleOpen);
+			window.removeEventListener("dente-open-lab-order-modal", handleOpen);
 			window.removeEventListener("hashchange", handleState);
 			window.removeEventListener("popstate", handleState);
 		};
@@ -59,7 +68,7 @@ export const DirectDentalLabOrderLauncher: React.FC = () => {
 			}}
 			patientName="Ковалев Дмитрий Сергеевич"
 			doctorName="Д-р Смирнова Е. В. (Ортопед)"
-			initialToothFdi="16"
+			initialToothFdi={initialToothFdi}
 		/>
 	);
 };

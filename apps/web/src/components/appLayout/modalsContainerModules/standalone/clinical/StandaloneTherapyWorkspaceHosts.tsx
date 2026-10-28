@@ -67,7 +67,14 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 }
 
 export const StandalonePerioHost: React.FC<{ onClose: () => void; mode: string | null }> = ({ onClose, mode }) => {
-	const patientId = useMemo(() => readPatientIdFromUrl(), []);
+	const patientId = useMemo(() => {
+		const fromUrl = readPatientIdFromUrl();
+		if (fromUrl) return fromUrl;
+		if (typeof window !== "undefined" && (window.localStorage.getItem("dente_demo_showcase") === "true" || window.location.search.includes("demo=true"))) {
+			return "demo-perio-patient-001";
+		}
+		return null;
+	}, []);
 	const patientName = useLauncherPatientName(patientId) || "Кузнецова Елена Павловна";
 	if (!patientId) return <MissingPatientGuard testId="standalone-perio-missing-state" onClose={onClose} message={GUARD_MESSAGE} />;
 	if (mode === "modal") {

@@ -21,9 +21,17 @@ import { toVisitToothUiState } from "../visit/useVisitEmkToothSync";
 
 export function getClinicalBundleForToothState(
 	state: ToothState,
+	toothNumber?: number,
 ): ClinicalServiceBundle | null {
-	if (state === "Caries" || state === "Defective_Restoration") {
+	if (state === "Caries") {
 		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ?? null;
+	}
+	if (state === "Defective_Restoration") {
+		return (
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "defective_restoration") ??
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ??
+			null
+		);
 	}
 	if (state === "Calculus") {
 		return (
@@ -32,19 +40,56 @@ export function getClinicalBundleForToothState(
 			null
 		);
 	}
-	if (state === "Pulpitis" || state === "Periodontitis") {
+	if (
+		state === "Periodontitis" ||
+		state === "Periodontitis_Mild" ||
+		state === "Periodontitis_Moderate" ||
+		state === "Periodontitis_Severe"
+	) {
+		return (
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "periodontitis") ??
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_1") ??
+			null
+		);
+	}
+	if (state === "Pulpitis") {
+		const isMolar =
+			toothNumber !== undefined &&
+			[16, 17, 18, 26, 27, 28, 36, 37, 38, 46, 47, 48].includes(toothNumber);
+		if (isMolar) {
+			const mBundle = CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_3");
+			if (mBundle) return mBundle;
+		}
 		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_1") ?? null;
 	}
-	if (state === "Missing" || state === "Root") {
+	if (
+		state === "Missing" ||
+		state === "Root" ||
+		state === "Extracted"
+	) {
 		return (
 			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "surgery_extraction") ?? null
+		);
+	}
+	if (state === "Veneer") {
+		return (
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "veneer") ??
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "crown") ??
+			null
+		);
+	}
+	if (state === "Inlay") {
+		return (
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "inlay") ??
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "crown") ??
+			null
 		);
 	}
 	if (
 		state === "Crown" ||
 		state === "Bridge" ||
-		state === "Veneer" ||
-		state === "Inlay"
+		state === "Bridge_Abutment" ||
+		state === "Planned_Crown"
 	) {
 		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "crown") ?? null;
 	}
@@ -103,9 +148,9 @@ export function dispatchOdontogramSoapAndBundle(params: {
 		}
 
 		// 2. Предварительная смета услуг по номенклатуре 804н
-		const bundle = getClinicalBundleForToothState(state);
-		if (bundle) {
-			targets.forEach((tNum) => {
+		targets.forEach((tNum) => {
+			const bundle = getClinicalBundleForToothState(state, tNum);
+			if (bundle) {
 				window.dispatchEvent(
 					new CustomEvent("dente-add-services-to-invoice", {
 						detail: {
@@ -122,7 +167,9 @@ export function dispatchOdontogramSoapAndBundle(params: {
 								title: s.title,
 								price: s.priceRub,
 								priceRub: s.priceRub,
+								priceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
 								unitPriceRub: s.priceRub,
+								unitPriceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
 								quantity: 1,
 								toothCode: String(tNum),
 								toothNumber: tNum,
@@ -130,7 +177,30 @@ export function dispatchOdontogramSoapAndBundle(params: {
 						},
 					}),
 				);
-			});
+			}
+		});
+
+		// 2.1. Автоматическая подготовка ортопедического черновика наряда ЗТЛ
+		if (state === "Crown" || state === "Bridge" || state === "Veneer" || state === "Inlay") {
+			try {
+				const draft = {
+					toothFdi: targets.join(", "),
+					toothNumber: targets.join(", "),
+					material: state === "Veneer" ? "crown_emax" : "crown_zirconia",
+					colorVita: "A2",
+					patientId,
+					priceRub: 24000 * targets.length,
+					costRub: 7500 * targets.length,
+				};
+				if (typeof sessionStorage !== "undefined") {
+					sessionStorage.setItem("dente_chairside_ortho_order_draft", JSON.stringify(draft));
+				}
+				if (typeof localStorage !== "undefined") {
+					localStorage.setItem("dente_chairside_ortho_order_draft", JSON.stringify(draft));
+				}
+			} catch {
+				// Non-blocking storage fallback
+			}
 		}
 
 		// 3. Синхронизация с VisitEmbeddedOdontogram и шиной событий
@@ -214,103 +284,103 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 		state: "Healthy",
 		label: "Здоров (0)",
 		className:
-			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+			"bg-emerald-500/10 text-emerald-900 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20",
 	},
 	{
 		state: "Caries",
 		label: "Кариес (C)",
 		className:
-			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
+			"bg-rose-500/10 text-rose-900 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20",
 	},
 	{
 		state: "Defective_Restoration",
 		label: "Дефект пломбы (Дп)",
 		className:
-			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
+			"bg-rose-500/10 text-rose-900 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20",
 	},
 	{
 		state: "Filled",
 		label: "Пломба (П)",
 		className:
-			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+			"bg-blue-500/10 text-blue-900 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/20",
 	},
 	{
 		state: "Calculus",
 		label: "Зубной камень (Зк)",
 		className:
-			"bg-amber-700/10 text-amber-700 dark:text-amber-400 border-amber-700/20 hover:bg-amber-700/20",
+			"bg-amber-700/10 text-amber-950 dark:text-amber-300 border-amber-700/30 hover:bg-amber-700/20",
 	},
 	{
 		state: "Pulpitis",
 		label: "Пульпит (P)",
 		className:
-			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
+			"bg-rose-500/10 text-rose-900 dark:text-rose-300 border-rose-500/30 hover:bg-rose-500/20",
 	},
 	{
 		state: "Periodontitis",
 		label: "Периодонтит (Pt)",
 		className:
-			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+			"bg-amber-500/10 text-amber-950 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20",
 	},
 	{
 		state: "Root_Canal_Treated",
 		label: "Лечены каналы (Кл)",
 		className:
-			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+			"bg-emerald-500/10 text-emerald-900 dark:text-emerald-300 border-emerald-500/30 hover:bg-emerald-500/20",
 	},
 	{
 		state: "Root",
 		label: "Корень (R)",
 		className:
-			"bg-rose-950/20 text-rose-800 dark:text-rose-300 border-rose-800/30 hover:bg-rose-900/30",
+			"bg-rose-950/20 text-rose-950 dark:text-rose-200 border-rose-800/40 hover:bg-rose-900/30",
 	},
 	{
 		state: "Missing",
 		label: "Отсутствует (0)",
 		className:
-			"bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20",
+			"bg-slate-500/10 text-slate-900 dark:text-slate-200 border-slate-500/30 hover:bg-slate-500/20",
 	},
 	{
 		state: "Implant",
 		label: "Имплантат (Им)",
 		className:
-			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+			"bg-amber-500/10 text-amber-950 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20",
 	},
 	{
 		state: "Planned_Implant",
 		label: "Имплант в плане",
 		className:
-			"bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
+			"bg-indigo-500/10 text-indigo-950 dark:text-indigo-300 border-indigo-500/30 hover:bg-indigo-500/20",
 	},
 	{
 		state: "Crown",
 		label: "Коронка (К)",
 		className:
-			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+			"bg-blue-500/10 text-blue-900 dark:text-blue-300 border-blue-500/30 hover:bg-blue-500/20",
 	},
 	{
 		state: "Bridge",
 		label: "Искусственный (мост) (И)",
 		className:
-			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+			"bg-amber-500/10 text-amber-950 dark:text-amber-300 border-amber-500/30 hover:bg-amber-500/20",
 	},
 	{
 		state: "Veneer",
 		label: "Винир (В)",
 		className:
-			"bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20",
+			"bg-sky-500/10 text-sky-950 dark:text-sky-300 border-sky-500/30 hover:bg-sky-500/20",
 	},
 	{
 		state: "Inlay",
 		label: "Вкладка (ВК)",
 		className:
-			"bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20",
+			"bg-sky-500/10 text-sky-950 dark:text-sky-300 border-sky-500/30 hover:bg-sky-500/20",
 	},
 	{
 		state: "Retained",
 		label: "Ретинированный (Р)",
 		className:
-			"bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20",
+			"bg-purple-500/10 text-purple-950 dark:text-purple-300 border-purple-500/30 hover:bg-purple-500/20",
 	},
 ];
 

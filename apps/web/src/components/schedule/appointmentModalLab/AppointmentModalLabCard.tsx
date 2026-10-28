@@ -83,8 +83,10 @@ export function AppointmentModalLabCard({
 					data-testid="appointment-modal-lab-status"
 				>
 					{item.statusInfo.isOverdue
-						? `Просрочен на ${item.statusInfo.daysOverdue} дн!`
-						: item.statusInfo.labelRu}
+						? `⚠️ ЗТЛ задерживает: +${item.statusInfo.daysOverdue} дн`
+						: item.statusInfo.state === "ready_in_clinic"
+							? "✓ Работа из ЗТЛ в клинике"
+							: item.statusInfo.labelRu}
 				</span>
 			</div>
 

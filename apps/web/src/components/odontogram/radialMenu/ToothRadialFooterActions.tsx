@@ -1,26 +1,49 @@
-import { Camera, Coins } from "lucide-react";
+import { Camera, Coins, FlaskConical } from "lucide-react";
 import type React from "react";
 import { DentalHandpiece, EndoFileCanal } from "../../icons/DentalIcons";
 
 export interface ToothRadialFooterActionsProps {
+	readonly toothNumber?: number | undefined;
 	readonly toothScanThumbnail?: { id: string; url: string; title: string } | null | undefined;
 	readonly onOpenRvg?: (() => void) | undefined;
 	readonly onOpenTherapy?: (() => void) | undefined;
 	readonly onAddToInvoice?: (() => void) | undefined;
 	readonly onOpenEndo?: (() => void) | undefined;
+	readonly onOrderLab?: ((toothNumber: number) => void) | undefined;
 	readonly onClose: () => void;
 }
 
 export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> = ({
+	toothNumber,
 	toothScanThumbnail,
 	onOpenRvg,
 	onOpenTherapy,
 	onAddToInvoice,
 	onOpenEndo,
+	onOrderLab,
 	onClose,
 }) => {
+	const handleOrderLab = () => {
+		const num = toothNumber || 16;
+		if (onOrderLab) {
+			onOrderLab(num);
+		} else if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-open-lab-order-modal", {
+					detail: {
+						toothFdi: String(num),
+						toothNumber: String(num),
+						material: "Katana STML",
+						colorVita: "A2",
+					},
+				}),
+			);
+		}
+		onClose();
+	};
+
 	return (
-		<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line-subtle)]">
+		<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line-subtle)] flex-wrap sm:flex-nowrap">
 			<button
 				type="button"
 				onClick={() => { onOpenRvg?.(); onClose(); }}
@@ -38,6 +61,16 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 						<span>Снимок RVG</span>
 					</span>
 				)}
+			</button>
+			<button
+				type="button"
+				onClick={handleOrderLab}
+				className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+				title={`Заказать в ЗТЛ (Katana STML): зуб ${toothNumber || 16}`}
+				data-testid="radial-menu-footer-order-lab-btn"
+			>
+				<FlaskConical size={13} className="shrink-0" />
+				<span>Заказать в ЗТЛ</span>
 			</button>
 			{onOpenTherapy && (
 				<button

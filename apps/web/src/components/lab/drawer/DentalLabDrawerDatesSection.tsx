@@ -94,10 +94,11 @@ export const DentalLabDrawerDatesSection: React.FC<DentalLabDrawerDatesSectionPr
 					data-testid="form-status-select"
 				>
 					<option value="draft">Черновик</option>
-					<option value="sent_to_lab">Отправлен технику</option>
-					<option value="in_progress">В работе у техника</option>
-					<option value="ready_in_clinic">Поступил в клинику (Готов к примерке)</option>
-					<option value="delivered_to_patient">Сдан пациенту</option>
+					<option value="sent_to_lab">Отправлен в лабораторию</option>
+					<option value="in_progress">На моделировании</option>
+					<option value="try_in">На примерке</option>
+					<option value="ready_in_clinic">Готов в клинике</option>
+					<option value="delivered_to_patient">Установлен пациенту</option>
 				</select>
 			</div>
 		</div>

@@ -70,7 +70,7 @@ export const ToothTouchSurfaceHud: React.FC<ToothTouchSurfaceHudProps> = memo(({
 				</div>
 			)}
 			{onQuickStateChange && (
-				<div className="flex items-center gap-1 overflow-x-auto max-w-[340px] sm:max-w-none py-0.5">
+				<div className="flex flex-wrap items-center justify-center gap-1.5 max-w-[340px] py-0.5 overflow-x-clip box-border">
 					{[
 						{ label: "Кариес", state: "Caries" as ToothState, color: "bg-amber-500", bg: "bg-amber-500/15 text-amber-900 dark:text-amber-200 border-amber-500/40", useSurf: true },
 						{ label: "Пломба", state: "Filled" as ToothState, color: "bg-blue-500", bg: "bg-blue-500/15 text-blue-900 dark:text-blue-200 border-blue-500/40", useSurf: true },

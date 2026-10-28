@@ -176,10 +176,9 @@ async function handleStockAdjustment(
 						parsedStock.data.reason,
 					)),
 		);
-		const isExplicitNoOverdraft = parsedStock.data.allowOverdraft === false;
-		// Мандат 8n & Soft Negative Stock: овердрафт разрешен по умолчанию
-		// во всех списаниях склада, чтобы не блокировать работу клиники.
-		const isAllowedOverdraft = !isExplicitNoOverdraft;
+		// Мандат 8n & Soft Negative Stock: овердрафт разрешен всегда
+		// во всех списаниях склада, чтобы никогда не блокировать работу врача у кресла (Мандат 8e).
+		const isAllowedOverdraft = true;
 
 		// Списание со склада (actualAdjustment < 0) — автоматический FEFO партионный учет
 		if (actualAdjustment < 0) {
@@ -295,12 +294,15 @@ async function handleStockAdjustment(
 		});
 	const stockQtyNum = Number(result.updated.stockQuantity ?? 0);
 	if (result.isOverdraft || stockQtyNum < 0) {
+		const deficit = stockQtyNum < 0 ? Math.abs(stockQtyNum) : 0;
 		return {
 			...result.updated,
 			isOverdraft: true,
 			isNegativeStock: stockQtyNum < 0,
+			deficit,
 			requiresReplenishment: stockQtyNum <= 0,
-			warning: `Зафиксирован мягкий овердрафт (остаток: ${stockQtyNum} ед., списание под процедуру/операцию проведено без блокировки врача). Требуется пополнение.`,
+			warning: `Зафиксирован мягкий овердрафт (остаток: ${stockQtyNum} ед., списание проведено без блокировки врача/персонала). Требуется довнести приходную накладную.`,
+			warningMessage: `Мягкий овердрафт: остаток ${stockQtyNum} ед. (дефицит: ${deficit}). Процедура не заблокирована, закупщику сформировано уведомление.`,
 		};
 	}
 	return result.updated;

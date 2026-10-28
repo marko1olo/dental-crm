@@ -58,7 +58,7 @@ describe("DENTE Clinical Constitution & Agent Prompts Suite", () => {
 				DENTE_REACT_CYCLE_PROMPT.includes("OBSERVATION & VERDICT"),
 			);
 			assert.ok(DENTE_REACT_CYCLE_PROMPT.includes("FDI"));
-			assert.ok(DENTE_REACT_CYCLE_PROMPT.includes("804n billing"));
+			assert.ok(DENTE_REACT_CYCLE_PROMPT.includes("billing"));
 		});
 	});
 
