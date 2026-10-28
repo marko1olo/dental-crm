@@ -16,13 +16,13 @@ export function VisitDiaryRevisionsHistory({
 
 	return (
 		<details
-			className="clinical-diary__revisions vde-043__revisions no-print"
+			className="clinical-diary__revisions no-print"
 			data-testid="diary-revisions-history"
 		>
-			<summary className="clinical-diary__revisions-summary vde-043__revisions-summary">
+			<summary className="clinical-diary__revisions-summary">
 				История правок ({diaryRevisions.length})
 			</summary>
-			<ol className="clinical-diary__revisions-list vde-043__revisions-list">
+			<ol className="clinical-diary__revisions-list">
 				{(diaryRevisions ?? []).map((rev, idx) => {
 					const when = rev.revisedAt
 						? new Date(rev.revisedAt).toLocaleString("ru-RU")
@@ -43,36 +43,36 @@ export function VisitDiaryRevisionsHistory({
 					return (
 						<li
 							key={rev.id}
-							className="vde-043__revision-item"
+							className="clinical-diary__revision-item"
 							data-testid={`diary-revision-item-${idx}`}
 						>
-							<div className="vde-043__revision-meta">
-								<span className="vde-043__revision-when">{when}</span>
+							<div className="clinical-diary__revision-meta">
+								<span className="clinical-diary__revision-when">{when}</span>
 								{rev.revisedByFullName ? (
-									<span className="vde-043__revision-who">
+									<span className="clinical-diary__revision-who">
 										Кто: {rev.revisedByFullName}
 									</span>
 								) : rev.revisedByUserId ? (
-									<span className="vde-043__revision-who vde-043__revision-who--unknown">
+									<span className="clinical-diary__revision-who clinical-diary__revision-who--unknown">
 										Кто: ФИО в записи не сохранено
 									</span>
 								) : null}
 								{rev.revisionReason ? (
-									<span className="vde-043__revision-reason">
+									<span className="clinical-diary__revision-reason">
 										Причина: {rev.revisionReason}
 									</span>
 								) : (
-									<span className="vde-043__revision-reason vde-043__revision-reason--missing">
+									<span className="clinical-diary__revision-reason clinical-diary__revision-reason--missing">
 										Причина не указана
 									</span>
 								)}
 							</div>
 							{prevBits.length > 0 ? (
-								<ul className="vde-043__revision-prev">
+								<ul className="clinical-diary__revision-prev">
 									{(prevBits ?? []).map((b) => (
 										<li key={b.label} className="min-w-0 break-words">
 											<strong>{b.label}:</strong>{" "}
-											<span className="vde-043__revision-prev-text min-w-0 break-words">
+											<span className="clinical-diary__revision-prev-text min-w-0 break-words">
 												{b.text.length > 280
 													? `${b.text.slice(0, 280)}…`
 													: b.text}
@@ -81,7 +81,7 @@ export function VisitDiaryRevisionsHistory({
 									))}
 								</ul>
 							) : (
-								<div className="vde-043__revision-prev-empty">
+								<div className="clinical-diary__revision-prev-empty">
 									Поля дневника до правки не сохранены
 								</div>
 							)}

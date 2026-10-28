@@ -34,8 +34,8 @@ export const VisitDiarySection: React.FC<VisitDiarySectionProps> = ({
 	const fieldsDisabled = false;
 
 	return (
-		<div className="clinical-diary vde-043 no-print" data-testid="visit-diary-editor" data-tour="visit-diary" data-form="medical-diary">
-			<div className="clinical-diary__glow vde-043__glow" aria-hidden="true" />
+		<div className="clinical-diary medical-diary no-print" data-testid="visit-diary-editor" data-tour="visit-diary" data-form="medical-diary">
+			<div className="clinical-diary__glow" aria-hidden="true" />
 
 			<VisitDiaryHeader
 				logic={logic}

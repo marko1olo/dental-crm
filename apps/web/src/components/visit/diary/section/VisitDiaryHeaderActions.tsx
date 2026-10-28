@@ -36,7 +36,7 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 	}, [isOpen]);
 
 	return (
-		<div className="vde-043__header-actions flex items-center gap-1.5">
+		<div className="clinical-diary__header-actions flex items-center gap-1.5">
 			<button
 				type="button"
 				data-testid="open-1click-templates-btn"
@@ -60,10 +60,12 @@ export const VisitDiaryHeaderActions: React.FC<VisitDiaryHeaderActionsProps> = (
 			</button>
 			<button
 				type="button"
-				data-testid="diary-print-043"
+				id="diary-print-emr-card-btn"
+				data-testid="diary-print-emr-card"
+				data-legacy-testid="diary-print-043"
 				className="border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center gap-1.5 text-xs"
 				onClick={onOpenPrintPreview}
-				title="Предпросмотр и печать медицинской карты"
+				title="Предпросмотр и печать медицинской карты приёма"
 			>
 				<Printer className="w-4 h-4 text-[var(--ink-muted)]" />
 				<span className="hidden sm:inline">Печать карты</span>

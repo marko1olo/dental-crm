@@ -3,7 +3,7 @@
  * Apple iOS HIG Mobile Bottom Sheet Drawer for Anesthesia (Mandate 8e, 8al, <= 120 lines)
  */
 
-import { CheckCircle2, Syringe, X } from "lucide-react";
+import { AlertTriangle, CheckCircle2, Syringe, X } from "lucide-react";
 import React from "react";
 import type { AnestheticDrugId, InjectionTechniqueId } from "../anesthesiaCatalog";
 import { CLINICAL_FAST_PRESETS, type ClinicalFastPresetItem } from "./primaryDrugs";
@@ -74,7 +74,8 @@ export function AnesthesiaMobileBottomSheet({
 
 				{isOverdose && maxSafeCarpulesCount && carpulesCount > maxSafeCarpulesCount && (
 					<div className="px-3 py-1.5 rounded-xl bg-amber-500/15 border border-amber-500/40 text-amber-800 dark:text-amber-200 text-xs font-semibold flex items-center gap-1.5" data-testid="mobile-anesthesia-passive-warning">
-						<span>⚠️ Доза выше стандартной нормы (макс. {maxSafeCarpulesCount} карп.)</span>
+						<AlertTriangle size={13} className="text-amber-600 shrink-0" />
+						<span>Доза выше стандартной нормы (макс. {maxSafeCarpulesCount} карп.)</span>
 					</div>
 				)}
 

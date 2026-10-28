@@ -88,7 +88,7 @@ export function AnesthesiaPassiveAlerts({
 			{isOverdose && (
 				<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-amber-500/15 text-amber-800 dark:text-amber-200 border border-amber-500/40 inline-flex items-center gap-1 shrink-0" data-testid="anesthesia-passive-overdose-alert" title="Превышение терапевтической нормы по весу">
 					<AlertTriangle size={12} className="text-amber-600 shrink-0" />
-					<span>{`⚠️ Превышение стандартной нормы для ${weight} кг${maxSafeCarpulesCount !== undefined ? ` (макс. ${maxSafeCarpulesCount} карп.)` : ""}`}</span>
+					<span>{`Превышение стандартной нормы для ${weight} кг${maxSafeCarpulesCount !== undefined ? ` (макс. ${maxSafeCarpulesCount} карп.)` : ""}`}</span>
 				</span>
 			)}
 		</div>

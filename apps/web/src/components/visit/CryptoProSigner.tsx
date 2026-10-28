@@ -21,12 +21,15 @@ export { CRYPTO_SIGNING_UNAVAILABLE_TEXT };
  * - CryptoProLockedBanner: Плашка подписанной и защищенной записи
  * - CryptoProSignerModal: Модальное окно подписания с порталом в DOM
  * 
- * Автономия врача (Мандат 8e): Кнопка подписания guarded strictly by
- * disabled={lockInProgress} and is never blocked without clinical reason.
+ * Автономия врача (Мандат 8e, 8am): Кнопка подписания ЭЦП является нейтральной
+ * вторичной (secondary), строго подчиняясь правилу 1 Primary CTA на видимый контекст
+ * (Primary CTA закреплен за «Завершить приём и счёт»). Кнопка никогда не блокируется
+ * без клинической причины.
  */
 export const CryptoProSigner: React.FC<CryptoProSignerProps> = (props) => {
 	const { isLocked, lockedAt, onPrintDraft } = props;
 	const state = useCryptoProSignerState(props);
+	const { lockInProgress } = state;
 
 	if (isLocked) {
 		return <CryptoProLockedBanner lockedAt={lockedAt} />;
@@ -36,14 +39,18 @@ export const CryptoProSigner: React.FC<CryptoProSignerProps> = (props) => {
 		<>
 			<button
 				type="button"
+				id="crypto-pro-sign-btn"
+				data-testid="crypto-pro-sign-btn"
+				disabled={lockInProgress}
 				onClick={() => {
 					state.setFailureText(null);
 					state.setShowPinDialog(true);
 				}}
-				className="flex items-center gap-2 px-4 py-2 bg-[var(--teal,var(--brand-primary))] hover:opacity-90 text-[var(--on-teal,white)] rounded-xl transition-colors border border-[var(--teal,var(--brand-primary))] shadow-sm min-h-[44px] cursor-pointer font-medium"
+				className="flex items-center gap-2 px-3.5 py-2 border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] hover:border-[var(--line-strong)] rounded-xl transition-colors shadow-2xs min-h-[44px] cursor-pointer font-medium text-xs sm:text-sm"
+				title="Добровольное подписание дневника приёма ЭЦП (КЭП / ГОСТ)"
 			>
-				<Lock className="w-4 h-4" />
-				<span>Подписать и закрыть</span>
+				<Lock className="w-4 h-4 text-[var(--ink-muted)] shrink-0" />
+				<span>Подписать ЭЦП</span>
 			</button>
 
 			<CryptoProSignerModal state={state} onPrintDraft={onPrintDraft} />

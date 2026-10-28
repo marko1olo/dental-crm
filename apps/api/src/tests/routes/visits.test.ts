@@ -44,7 +44,7 @@ describe("visits routes integration", () => {
 	afterEach(() => {
 		app.close();
 		process.env = originalEnv;
-		mock.restoreAll();
+		(mock as any).restoreAll?.() ?? (mock as any).reset?.();
 	});
 
 	const visitId = "123e4567-e89b-12d3-a456-426614174000";
@@ -265,7 +265,7 @@ describe("visits routes - accept visit draft errors", () => {
 
 	afterEach(async () => {
 		await app.close();
-		mock.restoreAll();
+		(mock as any).restoreAll?.() ?? (mock as any).reset?.();
 	});
 
 	test("accept visit draft visit not found error path", async () => {
@@ -379,7 +379,7 @@ describe("visits routes - охрана каждого маршрута", () => {
 	afterEach(async () => {
 		await app.close();
 		delete process.env.DENTE_CLINICAL_ADMIN_SECRET;
-		mock.restoreAll();
+		(mock as any).restoreAll?.() ?? (mock as any).reset?.();
 	});
 
 	for (const route of routes) {

@@ -14,13 +14,13 @@ export const VisitDiaryHeader: React.FC<VisitDiaryHeaderProps> = ({
 	onApplyNorm,
 }) => {
 	return (
-		<div className="clinical-diary__header vde-043__header">
-			<div className="clinical-diary__header-title-wrap vde-043__header-title-wrap">
-				<div className="clinical-diary__form-badge vde-043__form-badge">ЭМК</div>
-				<h3 className="clinical-diary__title vde-043__title">Дневник приёма</h3>
+		<div className="clinical-diary__header">
+			<div className="clinical-diary__header-title-wrap">
+				<div className="clinical-diary__form-badge">ЭМК</div>
+				<h3 className="clinical-diary__title">Дневник приёма</h3>
 				{logic.lastSavedAt ? (
 					<span
-						className="clinical-diary__saved-badge vde-043__saved-badge"
+						className="clinical-diary__saved-badge"
 						title={`Дневник сохранён: ${new Date(logic.lastSavedAt).toLocaleTimeString("ru-RU")}`}
 					>
 						<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
@@ -33,7 +33,7 @@ export const VisitDiaryHeader: React.FC<VisitDiaryHeaderProps> = ({
 					</span>
 				) : (
 					<span
-						className="clinical-diary__saved-badge vde-043__saved-badge opacity-60"
+						className="clinical-diary__saved-badge opacity-60"
 						title="Черновик ещё не сохранён на сервере"
 					>
 						<Clock className="w-3.5 h-3.5 text-amber-500" />
@@ -41,7 +41,7 @@ export const VisitDiaryHeader: React.FC<VisitDiaryHeaderProps> = ({
 					</span>
 				)}
 				<span
-					className="clinical-diary__saved-badge vde-043__saved-badge"
+					className="clinical-diary__saved-badge"
 					data-testid="visit-diary-egisz-badge"
 					title="Фоновая отправка в ЕГИСЗ (РЭМД): протокол передается в Минздрав в фоновом режиме без задержек приёма"
 				>
@@ -49,8 +49,8 @@ export const VisitDiaryHeader: React.FC<VisitDiaryHeaderProps> = ({
 					<span className="text-teal-700 dark:text-teal-300 font-medium">Отправлено в ЕГИСЗ</span>
 				</span>
 				{logic.isSaving && (
-					<span className="clinical-diary__saving-indicator vde-043__saving-indicator">
-						<span className="clinical-diary__saving-spinner vde-043__saving-spinner" />
+					<span className="clinical-diary__saving-indicator">
+						<span className="clinical-diary__saving-spinner" />
 						<span>Сохраняю...</span>
 					</span>
 				)}

@@ -96,7 +96,8 @@ export function getPassiveAllergyNotice(
 	const check = checkAnesthesiaSomaticContraindications({ drugKey, somaticProfile });
 	const dangerAlerts = check.alerts.filter((a) => a.severity === "danger" || a.severity === "warning");
 	if (dangerAlerts.length === 0) return null;
-	return `⚠️ ${dangerAlerts.map((a) => a.message).join("; ")}`;
+	const msg = dangerAlerts.map((a) => a.message).join("; ");
+	return msg.startsWith("⚠️") ? msg : `⚠️ ${msg}`;
 }
 
 export function calculateAnesthesiaSafety(

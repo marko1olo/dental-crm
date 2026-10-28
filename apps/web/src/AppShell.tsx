@@ -19,6 +19,7 @@ import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitl
 import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
+import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
@@ -80,7 +81,24 @@ function isStandaloneActive(): boolean {
 	if (typeof window === "undefined") return false;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
-	return s.includes("standalone") || h.includes("appointment_booking") || h.includes("quick_booking") || h.includes("dental_lab") || h.includes("waitlist");
+	return (
+		s.includes("standalone") ||
+		h.includes("standalone") ||
+		h.includes("appointment_booking") ||
+		h.includes("quick_booking") ||
+		h.includes("dental_lab") ||
+		h.includes("waitlist") ||
+		h.includes("visit_standalone") ||
+		s.includes("visit_standalone") ||
+		h.includes("chairside-visit") ||
+		s.includes("chairside-visit") ||
+		s.includes("inventory") ||
+		h.includes("inventory") ||
+		s.includes("warehouse") ||
+		h.includes("warehouse") ||
+		s.includes("inbound") ||
+		h.includes("inbound")
+	);
 }
 
 export function AppShell() {
@@ -119,6 +137,7 @@ export function AppShell() {
 			<DirectAppointmentBookingLauncher />
 			<DirectMarketingRoiLauncher />
 			<DirectClinicalBundlesLauncher />
+			<DirectVisitLauncher />
 			<DirectCopilotLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>

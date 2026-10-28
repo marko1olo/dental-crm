@@ -14,7 +14,7 @@
 
 import React, { useCallback, useEffect, useState } from "react";
 import { useSoftPresence } from "../../../hooks/useSoftPresence";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import { useIsMobile } from "../../../hooks/useIsMobile";
 import type { VisitViewProps } from "./types";
 import { useVisitProtocolSync } from "./viewStateModules/useVisitProtocolSync";
@@ -24,7 +24,7 @@ import { useVisitToothHandlers } from "./viewStateModules/useVisitToothHandlers"
 import { useVisitModalsState } from "./viewStateModules/useVisitModalsState";
 
 export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
-	const appLogic = (useAppLogicContext() as Partial<VisitViewProps>) || {};
+	const appLogic = (useOptionalAppLogicContext() as Partial<VisitViewProps>) || {};
 	const props = { ...appLogic, ...(rawProps || {}) } as VisitViewProps;
 
 	const {
@@ -59,7 +59,21 @@ export function useVisitViewState(rawProps?: Partial<VisitViewProps>) {
 
 	const isMobile = useIsMobile(768);
 
-	const [visitSubViewTab, setVisitSubViewTab] = useState<string>("odontogram");
+	const [visitSubViewTab, setVisitSubViewTab] = useState<string>(() => {
+		if (props.visitSubViewTab) return props.visitSubViewTab;
+		if (typeof window !== "undefined") {
+			const p = new URLSearchParams(window.location.search);
+			const urlTab = p.get("subtab") || p.get("tab");
+			if (urlTab) return urlTab;
+		}
+		return "odontogram";
+	});
+
+	useEffect(() => {
+		if (props.visitSubViewTab && props.visitSubViewTab !== visitSubViewTab) {
+			setVisitSubViewTab(props.visitSubViewTab);
+		}
+	}, [props.visitSubViewTab]);
 	const [activeQuadrant, setActiveQuadrant] = useState<number | null>(null);
 	const [activeStamp, setActiveStamp] = useState<string>("watch");
 	const activeStampRef = React.useRef<string>("watch");
