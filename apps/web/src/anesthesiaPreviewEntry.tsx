@@ -85,7 +85,7 @@ function AnesthesiaPreviewApp() {
 			<footer className="bg-[var(--paper)] rounded-2xl border border-[var(--line)] p-4 shadow-xs flex flex-col gap-2">
 				<div className="flex items-center gap-2 text-xs font-bold text-[var(--ink)]">
 					<FileText size={15} className="text-[var(--teal,#0d9488)]" />
-					<span>Сформированная запись дневника приёма Формы 043/у (без блокировок, 1 тап):</span>
+					<span>Сформированная запись дневника приёма (без блокировок, 1 тап):</span>
 				</div>
 				<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] leading-relaxed font-mono">
 					{activeDiaryText}

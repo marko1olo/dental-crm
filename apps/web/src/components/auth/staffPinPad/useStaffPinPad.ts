@@ -64,9 +64,9 @@ export function useStaffPinPad({
 		if (errorText) setErrorText(null);
 		let targetUser = selectedUser;
 		if (!targetUser) {
-			if (activeStaff && activeStaff.length === 1) {
-				targetUser = activeStaff[0];
-				setSelectedUser(targetUser as StaffUser);
+			if (activeStaff && activeStaff.length === 1 && activeStaff[0]) {
+				targetUser = activeStaff[0] as StaffUser;
+				setSelectedUser(targetUser);
 			} else if (listPhase === "failed" || listPhase === "empty" || listPhase === "loading" || isDemoShowcaseMode()) {
 				targetUser = (((getDemoShowcaseStaff() as unknown as StaffUnlockMember[])[0] || DEMO_CHIEF_DOCTOR) as StaffUser);
 				setSelectedUser(targetUser);

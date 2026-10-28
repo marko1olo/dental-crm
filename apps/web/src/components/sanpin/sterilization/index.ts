@@ -17,6 +17,7 @@ export * from "./sterilizationPresets.js";
 export * from "./useSterilizationDrawerLogic.js";
 export * from "../sterilizationModules/index.js";
 
+export type { AutoclaveCycleRecord } from "./types.js";
 export {
 	detectMissingSterilizationDays,
 	type MissingSterilizationDaysAuditResult,

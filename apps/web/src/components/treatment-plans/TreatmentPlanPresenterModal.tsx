@@ -35,15 +35,27 @@ export interface TreatmentPlanPresenterModalProps {
 	readonly onClose: () => void;
 	readonly patientName?: string;
 	readonly patientId?: string;
+	readonly patientPhone?: string;
+	readonly patientBirthDate?: string | undefined;
 	readonly doctorFullName?: string;
+	readonly doctorSpecialty?: string;
 	readonly clinicName?: string;
+	readonly clinicLegalName?: string;
+	readonly clinicInn?: string;
+	readonly clinicOgrn?: string;
+	readonly clinicAddress?: string;
+	readonly clinicPhone?: string;
+	readonly clinicLicense?: string;
+	readonly planId?: string;
+	readonly planCreatedAtIso?: string;
+	readonly isDemoMode?: boolean;
 	readonly tiers?: readonly TreatmentPlanTier[];
 	readonly initialSelectedTierId?: TreatmentPlanTierId;
 	readonly onApproveAndSign?: (tier: TreatmentPlanTier) => void;
+	readonly onConfirmSelection?: (tier: TreatmentPlanTier) => void;
 	readonly onPayStage?: (stage: TreatmentPlanStage) => void;
 	readonly className?: string;
 	readonly teeth?: unknown;
-	readonly patientPhone?: string;
 }
 
 export function getTierLetter(tierId: TreatmentPlanTierId): string {

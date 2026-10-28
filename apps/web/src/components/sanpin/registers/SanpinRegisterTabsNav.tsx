@@ -11,7 +11,17 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 	onSelectTab,
 }) => {
 	return (
-		<div className="sanpin-unified-nav" style={{ padding: "4px 8px" }}>
+		<div
+			className="sanpin-unified-nav"
+			style={{
+				padding: "4px 0",
+				width: "100%",
+				maxWidth: "100%",
+				overflowX: "auto",
+				WebkitOverflowScrolling: "touch",
+				scrollbarWidth: "none",
+			}}
+		>
 			<div
 				className="sanpin-tabs-strip"
 				role="tablist"
@@ -21,9 +31,10 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 					gap: "6px",
 					alignItems: "center",
 					background: "var(--paper-soft, #f1f5f9)",
-					padding: "3px",
-					borderRadius: "10px",
+					padding: "4px",
+					borderRadius: "12px",
 					border: "1px solid var(--line, #e2e8f0)",
+					minWidth: "max-content",
 				}}
 			>
 				{SANPIN_CANONICAL_TABS.map((tab) => {
@@ -42,10 +53,13 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 								display: "inline-flex",
 								alignItems: "center",
 								gap: "6px",
-								padding: "6px 14px",
+								padding: "8px 14px",
+								minHeight: "44px",
+								minWidth: "max-content",
+								flexShrink: 0,
 								fontSize: "0.825rem",
 								fontWeight: isActive ? 700 : 500,
-								borderRadius: "8px",
+								borderRadius: "9px",
 								border: "none",
 								background: isActive ? "var(--paper, #ffffff)" : "transparent",
 								color: isActive ? "var(--teal, #0d9488)" : "var(--muted, #64748b)",
@@ -55,7 +69,7 @@ export const SanpinRegisterTabsNav: React.FC<SanpinRegisterTabsNavProps> = ({
 								whiteSpace: "nowrap",
 							}}
 						>
-							<Icon size={14} color={isActive ? "var(--teal, #0d9488)" : "currentColor"} className="shrink-0" />
+							<Icon size={15} color={isActive ? "var(--teal, #0d9488)" : "currentColor"} className="shrink-0" />
 							<span className="hidden sm:inline">{tab.label}</span>
 							<span className="inline sm:hidden">{tab.shortLabel}</span>
 						</button>

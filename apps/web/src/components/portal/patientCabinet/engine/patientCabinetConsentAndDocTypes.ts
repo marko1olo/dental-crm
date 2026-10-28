@@ -1,13 +1,19 @@
+import type { TreatmentPlanStage } from "./patientCabinetTypes.js";
 import type { ConsentSignatureAudit } from "./patientCabinetPlanTypes.js";
 
 export interface TreatmentPlanTier {
+	readonly tierId?: "basic" | "standard" | "premium" | string | undefined;
 	readonly tierNameRu?: string | undefined;
 	readonly nameRu?: string | undefined;
 	readonly titleRu?: string | undefined;
+	readonly subtitleRu?: string | undefined;
 	readonly totalCostRub: number;
 	readonly durationWeeks?: number | undefined;
-	readonly summaryRu: string;
-	readonly advantagesRu: readonly string[];
+	readonly warrantyMonths?: number | undefined;
+	readonly summaryRu?: string | undefined;
+	readonly advantagesRu?: readonly string[] | undefined;
+	readonly benefits?: readonly string[] | undefined;
+	readonly stages?: readonly TreatmentPlanStage[] | undefined;
 	readonly implantSystemRu?: string | undefined;
 	readonly crownMaterialRu?: string | undefined;
 	readonly warrantyYears?: number | undefined;
@@ -15,7 +21,7 @@ export interface TreatmentPlanTier {
 
 export interface ThreeTierTreatmentPlanModel {
 	readonly selectedTier: "basic" | "standard" | "premium";
-	readonly tiers: Record<"basic" | "standard" | "premium", TreatmentPlanTier>;
+	readonly tiers: readonly TreatmentPlanTier[];
 }
 
 export interface PatientStatutoryConsent {

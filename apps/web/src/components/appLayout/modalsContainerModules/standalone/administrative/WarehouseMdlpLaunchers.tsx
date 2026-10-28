@@ -8,6 +8,7 @@ import { MdlpScanningModal } from "../../../../mdlp/MdlpScanningModal";
 import { MdlpDisposalQueueModal } from "../../../../inventory/mdlp/MdlpDisposalQueueModal";
 import { InventoryView } from "../../../../InventoryView";
 import { InventoryInboundInvoiceModal } from "../../../../InventoryInboundInvoiceModal";
+import { WarehouseBatchWriteoffModal } from "../../../../inventory/WarehouseBatchWriteoffModal";
 
 export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
@@ -38,6 +39,11 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 		search.get("inbound") === "1" ||
 		h.includes("inbound_invoice") ||
 		h.includes("inbound_modal");
+
+	const isBatchWriteoffStandalone =
+		search.get("batch_writeoff") === "1" ||
+		search.get("shift_deduct") === "1" ||
+		h.includes("batch_writeoff");
 
 	if (isMdlpDisposalStandalone) {
 		return (
@@ -86,7 +92,7 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 
 	if (isInventoryStandalone) {
 		return (
-			<div className="fixed inset-0 z-[99999] w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
+			<div className="fixed inset-0 z-[99999] w-full h-full flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
 				<InventoryView organizationId={getEffectiveOrgId()} />
 			</div>
 		);
@@ -94,19 +100,32 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 
 	if (isInboundInvoiceStandalone) {
 		return (
-			<div className="fixed inset-0 z-[99999] w-screen h-screen flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
-				<InventoryInboundInvoiceModal
-					isOpen={true}
-					organizationId={getEffectiveOrgId()}
-					inventoryItems={[]}
-					onClose={() => {
-						const u = new URL(window.location.href);
-						u.searchParams.delete("inbound_invoice");
-						u.searchParams.delete("inbound");
-						window.history.replaceState({}, "", u.pathname + (u.search || ""));
-					}}
-				/>
-			</div>
+			<InventoryInboundInvoiceModal
+				isOpen={true}
+				organizationId={getEffectiveOrgId()}
+				inventoryItems={[]}
+				onClose={() => {
+					const u = new URL(window.location.href);
+					u.searchParams.delete("inbound_invoice");
+					u.searchParams.delete("inbound");
+					window.history.replaceState({}, "", u.pathname + (u.search || ""));
+				}}
+			/>
+		);
+	}
+
+	if (isBatchWriteoffStandalone) {
+		return (
+			<WarehouseBatchWriteoffModal
+				isOpen={true}
+				organizationId={getEffectiveOrgId()}
+				onClose={() => {
+					const u = new URL(window.location.href);
+					u.searchParams.delete("batch_writeoff");
+					u.searchParams.delete("shift_deduct");
+					window.history.replaceState({}, "", u.pathname + (u.search || ""));
+				}}
+			/>
 		);
 	}
 

@@ -1,8 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
-import { test } from "vitest";
+import { dirname, resolve } from "node:path";
+import { test } from "node:test";
+import { fileURLToPath } from "node:url";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 const root = resolve(__dirname, "../../../..");
 const canonicalCss = readFileSync(resolve(root, "apps/web/src/styles/canonicalButtons.css"), "utf8");
 const sidebarCss = readFileSync(resolve(root, "apps/web/src/styles/modules/sidebar.css"), "utf8");

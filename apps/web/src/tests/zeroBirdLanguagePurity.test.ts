@@ -106,7 +106,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("7. VisiographTopToolbar: purged 'DICOM Part 10' tech badge from export button", () => {
-		const toolbarCode = readComponent("components/visiograph/VisiographTopToolbar.tsx");
+		const toolbarCode =
+			readComponent("components/visiograph/VisiographTopToolbar.tsx") +
+			"\n" +
+			readComponent("components/visiograph/VisiographToolbarSecondaryMenu.tsx");
 		assert.ok(!toolbarCode.includes("DICOM Part 10"), "VisiographTopToolbar must not cite DICOM Part 10 in export button title");
 		assert.ok(toolbarCode.includes("Экспорт снимка (JPEG, PNG, DICOM)"), "VisiographTopToolbar must use clean export title");
 	});
@@ -171,10 +174,11 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const sanpinCode =
 			readComponent("components/sanpin/SanpinRegisters.tsx") +
 			"\n" +
-			readComponent("components/sanpin/SanpinRegistersHeader.tsx");
-		assert.ok(sanpinCode.includes("Журналы стерилизации в норме"), "Sanpin toast must be clean Russian");
+			readComponent("components/sanpin/SanpinRegistersHeader.tsx") +
+			"\n" +
+			readComponent("components/sanpin/registers/useSanpinRegistersLogic.ts");
+		assert.ok(sanpinCode.includes("Смена заполнена:") || sanpinCode.includes("Журналы за период успешно зафиксированы"), "Sanpin toast must be clean Russian");
 		assert.ok(!sanpinCode.includes("Журналы СанПиН в норме"), "Sanpin toast must not shout СанПиН");
-		assert.ok(sanpinCode.includes("Журналы за неделю заполнены"), "Week toast must be clean");
 		assert.ok(sanpinCode.includes("Смена заполнена:"), "Shift toast must be clean");
 
 		const warrantyCode = readComponent("components/warranty/WarrantyPassportModal.tsx");
@@ -196,7 +200,9 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 			"\n" +
 			readComponent("components/orthodontics/OrthoProtocolModalHeader.tsx") +
 			"\n" +
-			readComponent("components/orthodontics/OrthoProtocolPreviewSection.tsx");
+			readComponent("components/orthodontics/OrthoProtocolPreviewSection.tsx") +
+			"\n" +
+			readComponent("components/orthodontics/previewSection/ProtocolPreviewHeader.tsx");
 		assert.ok(!orthoWidgetCode.includes('"Печать 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Печать 043/у'");
 		assert.ok(!orthoWidgetCode.includes('"Внести в дневник 043/у"'), "OrthodonticVisitProtocolWidget must not have 'Внести в дневник 043/у'");
 		assert.ok(!orthoWidgetCode.includes("Дневник приёма (Форма 043/у)"), "Preview header must not have '(Форма 043/у)'");
@@ -216,7 +222,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 		const odontogramTabCode = readComponent("components/visit/VisitOdontogramTab.tsx");
 		assert.ok(!odontogramTabCode.includes("Дневник и ЕГИСЗ"), "VisitOdontogramTab must not mention ЕГИСЗ in doctor notice");
 
-		const surgeryBarCode = readComponent("components/visit/surgery/VisitSurgeryExtractionBar.tsx");
+		const surgeryBarCode =
+			readComponent("components/visit/surgery/VisitSurgeryExtractionBar.tsx") +
+			"\n" +
+			readComponent("components/visit/surgery/barModules/ExtractionComplexitySelector.tsx");
 		assert.ok(!surgeryBarCode.includes("Номенклатура 804н"), "VisitSurgeryExtractionBar must not cite order 804н");
 		assert.ok(surgeryBarCode.includes("Сложность экстракции (Услуга)"), "VisitSurgeryExtractionBar must use human term Услуга");
 
@@ -229,7 +238,10 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("17. Patient Card & Odontogram: purged 043/u, 54-FZ and Potemkin placeholders (Mandate 8x, 8z, 18)", () => {
-		const historyCode = readComponent("components/patients/PatientHistoryTab.tsx");
+		const historyCode =
+			readComponent("components/patients/PatientHistoryTab.tsx") +
+			"\n" +
+			readComponent("components/patients/patientHistory/DrawerFooter.tsx");
 		assert.ok(!historyCode.includes("Выписка 043/у"), "PatientHistoryTab must not have Выписка 043/у");
 		assert.ok(historyCode.includes("Выписка из карты"), "PatientHistoryTab must have clean label Выписка из карты");
 

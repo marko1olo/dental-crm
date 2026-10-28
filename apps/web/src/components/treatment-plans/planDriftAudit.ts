@@ -21,7 +21,7 @@ export interface PriceDriftInfo {
 
 export function detectPriceDrift(
 	snapshotPriceRub: number,
-	catalogItem?: { basePriceRub: number; active?: boolean } | null,
+	catalogItem?: { basePriceRub: number; active?: boolean | undefined } | null | undefined,
 	_isPlanImmutable = false,
 ): PriceDriftInfo {
 	const currentCatalogPriceRub = catalogItem?.basePriceRub ?? snapshotPriceRub;

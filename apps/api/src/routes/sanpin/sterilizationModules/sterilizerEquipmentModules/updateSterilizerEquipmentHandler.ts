@@ -28,7 +28,12 @@ export async function handleUpdateSterilizerEquipment(
 	const body = parsed.data;
 
 	if (body.action) {
-		const updated = await executeEquipmentLifecycleAction(id, organizationId, body);
+		const updated = await executeEquipmentLifecycleAction(id, organizationId, {
+			action: body.action,
+			...(body.notes !== undefined ? { notes: body.notes } : {}),
+			...(body.decommissionReason !== undefined ? { decommissionReason: body.decommissionReason } : {}),
+			...(body.decommissioningDate !== undefined ? { decommissioningDate: body.decommissioningDate } : {}),
+		});
 		if (!updated) {
 			return reply.code(404).send({ error: "NotFound", message: "Аппарат не найден" });
 		}

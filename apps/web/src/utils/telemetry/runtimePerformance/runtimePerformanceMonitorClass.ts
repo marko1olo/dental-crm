@@ -54,7 +54,7 @@ export class RuntimePerformanceMonitor {
 		this.observers = attachLifecycleObservers({
 			onVisibilityChange: (vis) => {
 				this.isTabVisible = vis;
-				this.store.currentMetrics.isTabVisible = vis;
+				this.store.currentMetrics = { ...this.store.currentMetrics, isTabVisible: vis };
 				this.samplerLoop.cancel();
 				if (vis) this.scheduleBurst(400);
 			},

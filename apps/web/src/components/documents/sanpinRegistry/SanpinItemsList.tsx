@@ -6,9 +6,9 @@ export interface SanpinItemsListProps {
 	radiationDocs: GeneratedDocument[];
 	onOpenSickLeaveEln: () => void;
 	/** Семантический обработчик открытия журнала автоклавирования (Мандат 8ap) */
-	onOpenAutoclaveLog?: () => void;
+	onOpenAutoclaveLog?: (() => void) | undefined;
 	/** @deprecated Обратная совместимость с устаревшими вызовами */
-	onOpenAutoclaveLog257?: () => void;
+	onOpenAutoclaveLog257?: (() => void) | undefined;
 	onOpenEgiszRemd: () => void;
 	onOpenPsoJournal366?: (() => void) | undefined;
 	onSelectDocumentKind: (kind: DocumentKind) => void;

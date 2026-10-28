@@ -25,7 +25,6 @@ import {
 	Gauge,
 } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
-import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export interface SterilizationBatchCycleModalProps {
 	readonly isOpen: boolean;
@@ -70,39 +69,37 @@ export function SterilizationBatchCycleModal({
 		};
 
 		try {
-			if (!isDemoShowcaseMode()) {
-				const response = await fetch("/api/sanpin/sterilization/quick-norm", {
+			const response = await fetch("/api/sanpin/sterilization/quick-norm", {
+				method: "POST",
+				headers: {
+					...getDenteAuthHeaders(),
+					"Content-Type": "application/json",
+				},
+				body: JSON.stringify(payload),
+			}).catch(() => null);
+
+			if (!response || !response.ok) {
+				// Фоллбек на стандартный лог стерилизации
+				await fetch("/api/sanpin/sterilization", {
 					method: "POST",
 					headers: {
 						...getDenteAuthHeaders(),
 						"Content-Type": "application/json",
 					},
-					body: JSON.stringify(payload),
-				});
-
-				if (!response.ok) {
-					// Фоллбек на стандартный лог стерилизации
-					await fetch("/api/sanpin/sterilization", {
-						method: "POST",
-						headers: {
-							...getDenteAuthHeaders(),
-							"Content-Type": "application/json",
-						},
-						body: JSON.stringify({
-							deviceName,
-							autoclaveId,
-							packagesCount,
-							cycleNumber: 1,
-							temperatureCelsius: isStandard ? 134 : 121,
-							pressureBar: isStandard ? 2.15 : 1.15,
-							durationMin: isStandard ? 5 : 20,
-							itemsDescription: `Партия стерилизации (${packagesCount} крафт-пакетов)`,
-							packagingType: isStandard ? "kraft_self_adhesive" : "kraft_heat_sealed",
-							indicatorType: "class5_integrating",
-							passedIndicator: true,
-						}),
-					}).catch(() => null);
-				}
+					body: JSON.stringify({
+						deviceName,
+						autoclaveId,
+						packagesCount,
+						cycleNumber: 1,
+						temperatureCelsius: isStandard ? 134 : 121,
+						pressureBar: isStandard ? 2.15 : 1.15,
+						durationMin: isStandard ? 5 : 20,
+						itemsDescription: `Партия стерилизации (${packagesCount} крафт-пакетов)`,
+						packagingType: isStandard ? "kraft_self_adhesive" : "kraft_heat_sealed",
+						indicatorType: "class5_integrating",
+						passedIndicator: true,
+					}),
+				}).catch(() => null);
 			}
 
 			setFeedbackToast(`Цикл стерилизации запущен: ${packagesCount} пакетов списано со склада`);

@@ -31,10 +31,10 @@ export interface InformedConsentPatientInfo {
 export interface InformedConsentModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	initialMode?: "packages" | "single";
-	initialPackageKey?: ConsentPackageKey;
-	initialTemplateKey?: ConsentTemplateKey;
-	initialVerificationMethod?: VerificationMethod;
+	initialMode?: ("packages" | "single") | undefined;
+	initialPackageKey?: ConsentPackageKey | undefined;
+	initialTemplateKey?: ConsentTemplateKey | undefined;
+	initialVerificationMethod?: VerificationMethod | undefined;
 	patient?: InformedConsentPatientInfo | null | undefined;
 	patientId?: string | null | undefined;
 	visitId?: string | null | undefined;

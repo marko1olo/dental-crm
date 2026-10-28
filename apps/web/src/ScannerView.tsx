@@ -67,7 +67,7 @@ export function ScannerView() {
 
 			{/* Sub-view Rendering */}
 			{activeSubTab === "sanpin" ? (
-				<div style={{ flex: 1, minHeight: 0, overflowY: "auto" }}>
+				<div style={{ flex: 1, minHeight: 0, overflowY: "auto", overflowX: "clip", maxWidth: "100%" }}>
 					<SanpinRegisters />
 				</div>
 			) : (

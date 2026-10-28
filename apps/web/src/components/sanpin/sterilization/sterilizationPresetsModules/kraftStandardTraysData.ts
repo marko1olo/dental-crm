@@ -94,5 +94,6 @@ export function createStandardSterileTrayBarcode(
 		indicatorPassed: true,
 		sanpinClauseRu: "Правила хранения стерильных изделий",
 		formattedProtocolRecord043,
+		formattedSterilizationDiaryRecord: formattedProtocolRecord043,
 	};
 }

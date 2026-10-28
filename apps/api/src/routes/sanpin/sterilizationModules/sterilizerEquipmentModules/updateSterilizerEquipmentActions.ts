@@ -6,10 +6,10 @@ export async function executeEquipmentLifecycleAction(
 	id: string,
 	organizationId: string,
 	body: {
-		action: "put_in_maintenance" | "return_to_service" | "decommission" | "recommission";
-		notes?: string | null;
-		decommissionReason?: string;
-		decommissioningDate?: string;
+		action: "put_in_maintenance" | "return_to_service" | "decommission" | "recommission" | "update_verification";
+		notes?: string | null | undefined;
+		decommissionReason?: string | null | undefined;
+		decommissioningDate?: string | null | undefined;
 	},
 ) {
 	const today = new Date().toISOString().slice(0, 10);

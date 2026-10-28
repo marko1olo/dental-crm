@@ -70,10 +70,9 @@ describe("SanPiN Bactericidal & Sterilizer Zero-Setup Provisioning (Mandates 8e,
 			__dirname,
 			"../BactericidalRegisterTab.tsx",
 		);
-		const psoFilePath = path.resolve(
-			__dirname,
-			"../PsoRegisterTab.tsx",
-		);
+		const psoFilePath = fs.existsSync(path.resolve(__dirname, "../CleaningControlTab.tsx"))
+			? path.resolve(__dirname, "../CleaningControlTab.tsx")
+			: path.resolve(__dirname, "../PsoRegisterTab.tsx");
 
 		it("BactericidalRegisterTab has zero equipment disabled locks", () => {
 			const bacContent = fs.readFileSync(bacFilePath, "utf8");

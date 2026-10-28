@@ -35,9 +35,16 @@ export interface PatientPersonalCabinetData {
 	readonly prescriptions: readonly PatientPrescriptionItem[];
 	readonly familyMembers: readonly PatientCabinetFamilyMember[];
 	readonly diagnosticScans: readonly PatientDiagnosticScan[];
+	readonly scans?: readonly PatientDiagnosticScan[] | undefined;
+	readonly somaticRiskProfile?: Record<string, unknown> | undefined;
+	readonly somaticRiskLevel?: "high" | "moderate" | "low" | undefined;
 }
 
 export interface PatientCabinetSummary {
+	readonly totalInvoicesCount?: number | undefined;
+	readonly unpaidInvoicesCount?: number | undefined;
+	readonly totalPaidAmountRub?: number | undefined;
+	readonly upcomingAppointmentsCount?: number | undefined;
 	readonly nextAppointment?: PatientAppointment | undefined;
 	readonly activeTreatmentPlan?: PatientTreatmentPlan | undefined;
 	readonly totalUnpaidAmountRub: number;

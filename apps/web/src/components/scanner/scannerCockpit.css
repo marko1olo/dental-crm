@@ -15,7 +15,8 @@
 	padding: 16px 20px;
 	box-sizing: border-box;
 	gap: 16px;
-	overflow-x: hidden;
+	overflow-x: clip;
+	max-width: 100%;
 }
 
 @media (max-width: 768px) {

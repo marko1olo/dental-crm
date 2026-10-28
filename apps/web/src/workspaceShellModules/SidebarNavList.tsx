@@ -6,8 +6,8 @@ import { collapsedNavLabels, sidebarHints, sidebarIcons } from "./sidebarNavigat
 export interface SidebarNavListProps {
 	readonly allowedViews: AppView[];
 	readonly currentView: AppView;
-	readonly collapsed?: boolean;
-	readonly onViewIntent?: (view: AppView, intent: "hover" | "cancel") => void;
+	readonly collapsed?: boolean | undefined;
+	readonly onViewIntent?: ((view: AppView, intent: "hover" | "cancel") => void) | undefined;
 	readonly reorderItemsCount: number;
 }
 

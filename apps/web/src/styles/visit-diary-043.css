@@ -1,7 +1,6 @@
 /**
- * visit-diary-043.css — Canonical Forwarder to Decomposed diaryStyles
- * Mandates 8b (<=110 lines), 8x (human clinical terms), 8ap (anti-bureaucracy).
- * All modular stylesheets reside in apps/web/src/components/visit/diaryStyles/.
+ * visit-diary-043.css — Legacy Forwarder to visit-clinical-diary.css (Mandate 8x & 8ap)
+ * Retained strictly for backwards-compatibility; all new code imports visit-clinical-diary.css.
  */
 
-@import "../components/visit/diaryStyles/index.css";
+@import "./visit-clinical-diary.css";

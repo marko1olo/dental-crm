@@ -67,10 +67,10 @@ export function BusinessOperationsViewRouter({
 		);
 	}
 
-	if (currentView === "scanner") {
+	if (currentView === "scanner" || (currentView as string) === "sterilization" || (currentView as string) === "sanpin") {
 		return (
 			<WorkspaceRouteErrorBoundary view="scanner" label={viewLabels.scanner} panelClassName="panel scanner-panel" panelId="scanner">
-				<Suspense fallback={<AppLoadingState message="Загрузка сканера документов..." />}>
+				<Suspense fallback={<AppLoadingState message="Загрузка журналов стерилизации и автоклавирования..." />}>
 					<ScannerView />
 				</Suspense>
 			</WorkspaceRouteErrorBoundary>

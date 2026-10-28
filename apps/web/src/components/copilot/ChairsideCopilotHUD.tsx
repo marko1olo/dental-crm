@@ -82,13 +82,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const handleIntentParsed = useCallback((intent: DentalVoiceIntent) => {
     if (!intent) return;
-    if (intent.teeth && intent.teeth.length > 0) {
-      const first = intent.teeth[0];
+    if (intent.teethUpdates && intent.teethUpdates.length > 0) {
+      const first = intent.teethUpdates[0];
       setToothProposal({
         toothNumber: first.toothNumber,
         state: first.state || "C2",
         stateLabel: first.icd10Title || first.clinicalStatus || "Кариес",
-        surfaces: first.surfaces || ["O"],
+        surfaces: (first.surfaces ? [...first.surfaces] : ["O"]),
         applied: false,
       });
       if (first.icd10Code || first.icd10Title) {
@@ -102,13 +102,16 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
       setAnestheticProposal({
         drugName: intent.anesthesia.displayName || intent.anesthesia.tradeName,
         carpulesCount: intent.anesthesia.cartridgeCount || 1,
+        patientWeightKg: 70,
         maxCarpules: 4,
+        epinephrineMcg: 10,
+        isCardiovascularRisk: false,
         applied: false,
       });
     }
-    if (intent.procedures && intent.procedures.length > 0) {
+    if (intent.procedures804n && intent.procedures804n.length > 0) {
       setServicesProposal(
-        intent.procedures.map((p, idx) => ({
+        intent.procedures804n.map((p, idx) => ({
           id: `proc-voice-${idx}-${Date.now()}`,
           code804n: p.code804n,
           title: p.name,

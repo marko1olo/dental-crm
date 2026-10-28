@@ -731,6 +731,8 @@ export {
 export type {
 	DicomWorkbenchIndexedDbDraft,
 	DicomWorkbenchLocalDraft,
+	ImagingViewerLocalDraft,
+	LocalImagingFolderDraft,
 	MprWorkbenchIndexedDbDraft,
 	MprWorkbenchLocalDraft,
 	MprWorkbenchState,

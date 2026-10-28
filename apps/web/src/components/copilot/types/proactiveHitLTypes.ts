@@ -6,6 +6,8 @@ export interface CopilotNudge {
 	expires_at?: string | undefined;
 }
 
+export type ProactiveNudge = CopilotNudge;
+
 export interface CopilotSuggestion {
 	id: string;
 	icon: string;

@@ -279,8 +279,9 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               )}
 
               {messages.map((msg, idx) => {
-                const isUser = msg.role === "user";
-                const isAssistant = msg.role === "assistant";
+                const isUser = msg.kind === "text" && msg.role === "user";
+                const isAssistant = !isUser;
+                const messageText = msg.kind === "text" || msg.kind === "thinking" ? msg.text : (msg as any).name || (msg as any).content || "";
                 return (
                   <div key={idx} className={`copilot-msg-row ${isUser ? "copilot-msg-row--user user" : "copilot-msg-row--assistant assistant"}`}>
                     <div className={`copilot-msg-bubble ${isUser ? "copilot-msg-bubble--user user" : "copilot-msg-bubble--assistant assistant"}`}>
@@ -288,7 +289,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                         <span className="copilot-msg-author">{isUser ? "Врач" : "Ассистент ДЕНТА"}</span>
                       </div>
                       <div className="copilot-msg-text" style={{ whiteSpace: "pre-wrap" }}>
-                        {msg.text || (msg as any).content || ""}
+                        {messageText}
                       </div>
 
                       {/* Tool call indicator */}
