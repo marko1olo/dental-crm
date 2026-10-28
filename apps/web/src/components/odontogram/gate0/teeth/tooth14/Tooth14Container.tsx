@@ -104,7 +104,7 @@ export const Tooth14Container: React.FC<Tooth14ContainerProps> = ({
 				{a.missing && <ToothUpperSurgeryOverlay showMissing isDark={isDark} />}
 			</g>
 			{a.showBadge !== false && (
-				<ToothStatusBadge presetId={presetId} isDark={isDark} cx={50} cy={cy} r={r} toothNumber={num} />
+				<ToothStatusBadge presetId={presetId} layers={a} isDark={isDark} cx={50} cy={cy} r={r} toothNumber={num} />
 			)}
 		</svg>
 	);

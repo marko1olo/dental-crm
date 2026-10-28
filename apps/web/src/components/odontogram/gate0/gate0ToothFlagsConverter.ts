@@ -13,7 +13,7 @@ export function toothDataToGate0Flags(tooth: ToothData): Tooth46LayerFlags {
 	const state = tooth.state;
 	const clin = (tooth.clinicalData ?? {}) as Record<string, unknown>;
 
-	switch (state) {
+	switch (state as string) {
 		case "Caries":
 		case "caries":
 			flags.caries = true;
@@ -23,13 +23,26 @@ export function toothDataToGate0Flags(tooth: ToothData): Tooth46LayerFlags {
 			break;
 		case "Filled":
 		case "filled":
-		case "Filling" as ToothState:
-			if (tooth.material === "inlay" || clin.type === "inlay") flags.inlayOnlay = "inlay";
-			else if (tooth.material === "onlay" || clin.type === "onlay") flags.inlayOnlay = "onlay";
+		case "Filling":
+			if ((tooth.material as string) === "inlay" || clin.type === "inlay") flags.inlayOnlay = "inlay";
+			else if ((tooth.material as string) === "onlay" || clin.type === "onlay") flags.inlayOnlay = "onlay";
 			else {
 				flags.composite = true;
 				flags.compositeCondition = clin.condition === "defective" || clin.defective ? "defective" : "adequate";
 			}
+			break;
+		case "Inlay":
+		case "inlay":
+			flags.inlayOnlay = "inlay";
+			break;
+		case "Veneer":
+		case "veneer":
+			flags.zirconiaCrown = true;
+			flags.crown = false;
+			flags.cusps = false;
+			flags.fissures = false;
+			flags.crownMaterial = "emax";
+			flags.crownCondition = clin.condition === "defective" || clin.defective ? "defective" : "adequate";
 			break;
 		case "Crown":
 		case "crown":

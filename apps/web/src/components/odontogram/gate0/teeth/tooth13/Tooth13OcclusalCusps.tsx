@@ -34,7 +34,7 @@ export const Tooth13OcclusalCusps: React.FC<Tooth13OcclusalCuspsProps> = ({
 	const crHighlight = isDark
 		? "rgba(255, 255, 255, 0.16)"
 		: "rgba(255, 255, 255, 0.35)";
-	const fissures = TOOTH13_GEOMETRY.fissuresY5.map((f) => f.d).join(" ");
+	const fissures = TOOTH13_GEOMETRY.fissuresMaxillary.map((f) => f.d).join(" ");
 
 	return (
 		<g id="tooth13-crown" className={className}>

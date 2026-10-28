@@ -1,5 +1,6 @@
 import type { OdontogramViewMode } from "@dental/shared";
 import type React from "react";
+import { AnatomicalGate0FullArchView } from "./AnatomicalGate0FullArchView";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
@@ -46,12 +47,12 @@ export const OdontogramActiveViewSlot: React.FC<
 		<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
 			<div className="odontogram-active-view-slot w-full flex-1 min-w-0 flex flex-col gap-2.5">
 				{activeMode === "anatomical_svg" && (
-					<ToothChart
+					<AnatomicalGate0FullArchView
 						{...sharedViewProps}
-						useSurfaces={false}
-						showPulpAndCanals={showPulpAndCanals}
-						showPeriapicalHalos={true}
-						showPeriodontalBoneLoss={true}
+						teethData={teethData}
+						selectedTeeth={selectedTeeth}
+						onQuickStateChange={onQuickStateChange}
+						activeStamp={activeStampTool}
 					/>
 				)}
 				{activeMode === "compact_clinical" && (

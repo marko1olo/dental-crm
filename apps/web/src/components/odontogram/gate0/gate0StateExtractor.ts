@@ -16,11 +16,11 @@ export function gate0FlagsToToothState(num: number, flags: Tooth46LayerFlags): P
 		res.clinicalData = { stage: flags.implantStage ?? "pure" };
 	} else if (flags.zirconiaCrown) {
 		res.state = "Crown";
-		res.material = flags.crownMaterial === "pfm" ? "metal_ceramic" : flags.crownMaterial === "emax" ? "ceramic" : "zirconia";
+		res.material = flags.crownMaterial === "pfm" ? "pfm_crown" : flags.crownMaterial === "emax" ? "ceramic_emax" : "zirconia";
 		res.clinicalData = { crownMaterial: flags.crownMaterial, condition: flags.crownCondition };
 	} else if (flags.inlayOnlay) {
 		res.state = "Inlay";
-		res.material = "ceramic";
+		res.material = "ceramic_emax";
 		res.clinicalData = { type: flags.inlayOnlay };
 	} else if (flags.composite) {
 		res.state = "Filled";
@@ -53,7 +53,7 @@ export function gate0FlagsToToothState(num: number, flags: Tooth46LayerFlags): P
 
 	if (flags.postCore) {
 		res.hasPost = true;
-		res.postType = flags.postCoreType === "cast" ? "cast" : "fiber";
+		res.postType = flags.postCoreType === "cast" ? "cast_core" : "fiber";
 	}
 	if (flags.crack || flags.rootFracture) res.hasFracture = true;
 	return res;
