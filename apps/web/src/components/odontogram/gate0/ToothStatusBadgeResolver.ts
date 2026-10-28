@@ -1,5 +1,24 @@
-import { getStatusBadge, type ToothStatusBadgeInfo } from "./ToothStatusBadgeMatrix";
+import { getStatusBadge, INTACT_BADGE, type ToothStatusBadgeInfo } from "./ToothStatusBadgeMatrix";
 import type { Tooth46LayerFlags } from "./tooth46Types";
+
+const BADGE_KEY_ALIASES: Record<string, string> = {
+	"Кл": "treated_canals",
+	treated_canals: "treated_canals",
+	root_canal_treated: "treated_canals",
+	"Дп": "defective_filling",
+	defective_filling: "defective_filling",
+	"И": "bridge_pontic",
+	bridge: "bridge_pontic",
+	bridge_pontic: "bridge_pontic",
+	"Зк": "calculus",
+	calculus: "calculus",
+	"В": "veneer",
+	veneer: "veneer",
+	"ВК": "inlay",
+	inlay: "inlay",
+	"Кд": "abfraction",
+	abfraction: "abfraction",
+};
 
 export function resolveToothStatusBadge(
 	presetId?: string | undefined,
@@ -8,12 +27,25 @@ export function resolveToothStatusBadge(
 ): ToothStatusBadgeInfo {
 	const isAnterior = toothNumber !== undefined && [1, 2, 3].includes(toothNumber % 10);
 	if (presetId) {
+		const aliasKey = BADGE_KEY_ALIASES[presetId];
+		if (aliasKey) {
+			return getStatusBadge(aliasKey);
+		}
 		if (presetId === "caries") {
 			return getStatusBadge(isAnterior ? "c3_media" : "c1_media");
 		}
 		return getStatusBadge(presetId);
 	}
 	if (!layers) return getStatusBadge("intact");
+
+	if (layers.statusBadge) {
+		const aliasKey = BADGE_KEY_ALIASES[layers.statusBadge];
+		const badgeKey = aliasKey ?? layers.statusBadge;
+		const badge = getStatusBadge(badgeKey);
+		if (badge !== INTACT_BADGE || layers.statusBadge === "intact" || layers.statusBadge === "✓") {
+			return badge;
+		}
+	}
 
 	if (layers.missing) return getStatusBadge("missing");
 	if (layers.implant) {
@@ -59,7 +91,7 @@ export function resolveToothStatusBadge(
 	if (layers.periapicalCondition === "cyst") return getStatusBadge("cyst");
 	if (layers.periapicalCondition === "resorption") return getStatusBadge("resorption");
 	if (layers.periapicalCondition === "granuloma" || layers.periapicalHalo) return getStatusBadge("periodontitis");
-	if (layers.guttaPercha) return getStatusBadge("endodontics");
+	if (layers.guttaPercha) return getStatusBadge("treated_canals");
 	if (layers.abfraction) return getStatusBadge("abfraction");
 	if (layers.calculus) return getStatusBadge("calculus");
 	if (layers.crack) return getStatusBadge("crack");

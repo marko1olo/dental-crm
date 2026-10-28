@@ -86,4 +86,43 @@ describe("Gate 0 ToothStatusBadge — 36 Black x Depth Clinical Matrix", () => {
 		assert.equal(resolveToothStatusBadge(undefined, { caries: true } as any, 46).code, "C1m");
 		assert.equal(resolveToothStatusBadge(undefined, { caries: true } as any, 41).code, "C3m");
 	});
+
+	it("resolves clinical badge aliases and layer states correctly", () => {
+		// Treated canals
+		assert.equal(resolveToothStatusBadge("Кл").code, "Кл");
+		assert.equal(resolveToothStatusBadge("treated_canals").code, "Кл");
+		assert.equal(resolveToothStatusBadge("root_canal_treated").code, "Кл");
+		assert.equal(resolveToothStatusBadge(undefined, { guttaPercha: true }).code, "Кл");
+
+		// Defective filling
+		assert.equal(resolveToothStatusBadge("Дп").code, "Дп");
+		assert.equal(resolveToothStatusBadge("defective_filling").code, "Дп");
+
+		// Bridge pontic
+		assert.equal(resolveToothStatusBadge("И").code, "И");
+		assert.equal(resolveToothStatusBadge("bridge").code, "И");
+		assert.equal(resolveToothStatusBadge("bridge_pontic").code, "И");
+
+		// Calculus
+		assert.equal(resolveToothStatusBadge("Зк").code, "Зк");
+		assert.equal(resolveToothStatusBadge("calculus").code, "Зк");
+
+		// Veneer & Inlay
+		assert.equal(resolveToothStatusBadge("В").code, "В");
+		assert.equal(resolveToothStatusBadge("veneer").code, "В");
+		assert.equal(resolveToothStatusBadge("ВК").code, "ВК");
+		assert.equal(resolveToothStatusBadge("inlay").code, "ВК");
+
+		// Abfraction
+		assert.equal(resolveToothStatusBadge("Кд").code, "Кд");
+		assert.equal(resolveToothStatusBadge("abfraction").code, "Кд");
+		assert.equal(resolveToothStatusBadge(undefined, { abfraction: true }).code, "Кд");
+
+		// layers.statusBadge override
+		assert.equal(resolveToothStatusBadge(undefined, { statusBadge: "Кл" }).code, "Кл");
+		assert.equal(resolveToothStatusBadge(undefined, { statusBadge: "defective_filling" }).code, "Дп");
+		assert.equal(resolveToothStatusBadge(undefined, { statusBadge: "bridge_pontic" }).code, "И");
+		assert.equal(resolveToothStatusBadge(undefined, { statusBadge: "veneer" }).code, "В");
+		assert.equal(resolveToothStatusBadge(undefined, { statusBadge: "inlay" }).code, "ВК");
+	});
 });

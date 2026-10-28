@@ -38,7 +38,9 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 	// 3. Пломбы и микропротезы
 	composite: { code: "П", title: "Пломба состоятельная", bg: "#0284c7", border: "#0369a1", text: "#ffffff" },
 	composite_defective: { code: "Пд", title: "Пломба дефектная (вторичный кариес)", bg: "#0369a1", border: "#dc2626", text: "#ffffff" },
+	defective_filling: { code: "Дп", title: "Дефект пломбы / вторичный кариес", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
 	restoration_inlay: { code: "Вк", title: "Керамическая вкладка Inlay", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
+	inlay: { code: "ВК", title: "Керамическая вкладка Inlay", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
 	restoration_onlay: { code: "Нк", title: "Керамическая накладка Onlay", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
 
 	// 4. Пульпит и периодонтит
@@ -49,6 +51,7 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 
 	// 5. Каналы и эндодонтия
 	endodontics: { code: "Э", title: "Обтурация каналов гуттаперчей", bg: "#10b981", border: "#047857", text: "#ffffff" },
+	treated_canals: { code: "Кл", title: "Каналы лечены (ранее обтурированы)", bg: "#10b981", border: "#047857", text: "#ffffff" },
 	underfill: { code: "Эн", title: "Недопломбировка корневых каналов", bg: "#f59e0b", border: "#d97706", text: "#0f172a" },
 	overfill: { code: "Эп", title: "Выведение силера за апекс (Puff)", bg: "#f59e0b", border: "#d97706", text: "#0f172a" },
 	broken_file: { code: "Ин", title: "Отломок инструмента в канале", bg: "#ef4444", border: "#991b1b", text: "#ffffff" },
@@ -71,6 +74,8 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 	crown_metal_defective: { code: "Meд", title: "Металлическая коронка со сквозным истиранием", bg: "#64748b", border: "#dc2626", text: "#ffffff" },
 	crown_pmma: { code: "Кв", title: "Временная пластмассовая коронка PMMA", bg: "#d97706", border: "#fbbf24", text: "#ffffff" },
 	crown_pmma_defective: { code: "Квд", title: "Временная коронка (трещина / скол)", bg: "#d97706", border: "#dc2626", text: "#ffffff" },
+	bridge_pontic: { code: "И", title: "Искусственный зуб / понтик моста", bg: "#d97706", border: "#b45309", text: "#ffffff" },
+	veneer: { code: "В", title: "Керамический винир", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
 	postCore: { code: "СВШ", title: "Стекловолоконный штифт с билдапом", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
 	postCore_cast: { code: "КШВ", title: "Литая культевая вкладка", bg: "#475569", border: "#64748b", text: "#ffffff" },
 
@@ -82,10 +87,20 @@ export const TOOTH_STATUS_MATRIX: Record<string, ToothStatusBadgeInfo> = {
 	implant_temporary: { code: "Ив", title: "Временная коронка на имплантате", bg: "#6366f1", border: "#f59e0b", text: "#ffffff" },
 
 	// 8. Некариозные и пародонтология
-	abfraction: { code: "Кл", title: "Клиновидный дефект (Abfraction)", bg: "#854d0e", border: "#a16207", text: "#ffffff" },
+	abfraction: { code: "Кд", title: "Клиновидный дефект (K03.1)", bg: "#854d0e", border: "#a16207", text: "#ffffff" },
 	pathological_attrition: { code: "Ст", title: "Патологическая стираемость эмали и дентина", bg: "#854d0e", border: "#a16207", text: "#ffffff" },
-	calculus: { code: "Км", title: "Зубной камень (над- и поддесневой)", bg: "#78350f", border: "#92400e", text: "#ffffff" },
+	calculus: { code: "Зк", title: "Зубной камень и отложения", bg: "#78350f", border: "#92400e", text: "#ffffff" },
 	crack: { code: "Тр", title: "Трещина эмали (Infraction)", bg: "#dc2626", border: "#b91c1c", text: "#ffffff" },
+
+	// 9. Клинические алиасы кодов и идентификаторов
+	"Кл": { code: "Кл", title: "Каналы лечены (ранее обтурированы)", bg: "#10b981", border: "#047857", text: "#ffffff" },
+	root_canal_treated: { code: "Кл", title: "Каналы лечены (ранее обтурированы)", bg: "#10b981", border: "#047857", text: "#ffffff" },
+	"Дп": { code: "Дп", title: "Дефект пломбы / вторичный кариес", bg: "#ef4444", border: "#b91c1c", text: "#ffffff" },
+	"Зк": { code: "Зк", title: "Зубной камень и отложения", bg: "#78350f", border: "#92400e", text: "#ffffff" },
+	"В": { code: "В", title: "Керамический винир", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
+	"ВК": { code: "ВК", title: "Керамическая вкладка Inlay", bg: "#0284c7", border: "#38bdf8", text: "#ffffff" },
+	"Кд": { code: "Кд", title: "Клиновидный дефект (K03.1)", bg: "#854d0e", border: "#a16207", text: "#ffffff" },
+	bridge: { code: "И", title: "Искусственный зуб / понтик моста", bg: "#d97706", border: "#b45309", text: "#ffffff" },
 };
 
 export const INTACT_BADGE: ToothStatusBadgeInfo = {

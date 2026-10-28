@@ -22,18 +22,30 @@ import { toVisitToothUiState } from "../visit/useVisitEmkToothSync";
 export function getClinicalBundleForToothState(
 	state: ToothState,
 ): ClinicalServiceBundle | null {
-	if (state === "Caries") {
+	if (state === "Caries" || state === "Defective_Restoration") {
 		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ?? null;
+	}
+	if (state === "Calculus") {
+		return (
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "hygiene") ??
+			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "caries") ??
+			null
+		);
 	}
 	if (state === "Pulpitis" || state === "Periodontitis") {
 		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "endo_1") ?? null;
 	}
-	if (state === "Missing") {
+	if (state === "Missing" || state === "Root") {
 		return (
 			CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "surgery_extraction") ?? null
 		);
 	}
-	if (state === "Crown") {
+	if (
+		state === "Crown" ||
+		state === "Bridge" ||
+		state === "Veneer" ||
+		state === "Inlay"
+	) {
 		return CLINICAL_SERVICE_BUNDLES.find((b) => b.id === "crown") ?? null;
 	}
 	return null;
@@ -199,10 +211,34 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 	className: string;
 }> = [
 	{
+		state: "Healthy",
+		label: "Здоров (0)",
+		className:
+			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
+	},
+	{
 		state: "Caries",
 		label: "Кариес (C)",
 		className:
 			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
+	},
+	{
+		state: "Defective_Restoration",
+		label: "Дефект пломбы (Дп)",
+		className:
+			"bg-rose-500/10 text-rose-600 dark:text-rose-400 border-rose-500/20 hover:bg-rose-500/20",
+	},
+	{
+		state: "Filled",
+		label: "Пломба (П)",
+		className:
+			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+	},
+	{
+		state: "Calculus",
+		label: "Зубной камень (Зк)",
+		className:
+			"bg-amber-700/10 text-amber-700 dark:text-amber-400 border-amber-700/20 hover:bg-amber-700/20",
 	},
 	{
 		state: "Pulpitis",
@@ -217,20 +253,26 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
 	{
-		state: "Filled",
-		label: "Пломба (F)",
+		state: "Root_Canal_Treated",
+		label: "Лечены каналы (Кл)",
 		className:
-			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
 	},
 	{
-		state: "Crown",
-		label: "Коронка (Cr)",
+		state: "Root",
+		label: "Корень (R)",
 		className:
-			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+			"bg-rose-950/20 text-rose-800 dark:text-rose-300 border-rose-800/30 hover:bg-rose-900/30",
+	},
+	{
+		state: "Missing",
+		label: "Отсутствует (0)",
+		className:
+			"bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20",
 	},
 	{
 		state: "Implant",
-		label: "Имплант (Imp)",
+		label: "Имплантат (Им)",
 		className:
 			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
 	},
@@ -241,28 +283,34 @@ export const TOOTH_STATE_ACTIONS: ReadonlyArray<{
 			"bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 border-indigo-500/20 hover:bg-indigo-500/20",
 	},
 	{
-		state: "Missing",
-		label: "Отсутствует (X)",
+		state: "Crown",
+		label: "Коронка (К)",
 		className:
-			"bg-slate-500/10 text-slate-600 dark:text-slate-400 border-slate-500/20 hover:bg-slate-500/20",
+			"bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20 hover:bg-blue-500/20",
+	},
+	{
+		state: "Bridge",
+		label: "Искусственный (мост) (И)",
+		className:
+			"bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20 hover:bg-amber-500/20",
+	},
+	{
+		state: "Veneer",
+		label: "Винир (В)",
+		className:
+			"bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20",
+	},
+	{
+		state: "Inlay",
+		label: "Вкладка (ВК)",
+		className:
+			"bg-sky-500/10 text-sky-600 dark:text-sky-400 border-sky-500/20 hover:bg-sky-500/20",
 	},
 	{
 		state: "Retained",
 		label: "Ретинированный (Р)",
 		className:
 			"bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20",
-	},
-	{
-		state: "Root",
-		label: "Корень (R)",
-		className:
-			"bg-rose-950/20 text-rose-800 dark:text-rose-300 border-rose-800/30 hover:bg-rose-900/30",
-	},
-	{
-		state: "Healthy",
-		label: "Здоров (0)",
-		className:
-			"bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20 hover:bg-emerald-500/20",
 	},
 ];
 
