@@ -475,7 +475,11 @@ describe("Universal Multi-Vendor Sensor Gateway Suite", () => {
 		});
 
 		it("verifies HardwareSettingsTab renders universal-sensor-gateway-card with 1-click diagnostics", () => {
-			const tabSrc = readSource("components/settings/HardwareSettingsTab.tsx");
+			let tabSrc = readSource("components/settings/HardwareSettingsTab.tsx");
+			const cardPath = path.join(webSrcRoot, "components/settings/hardwareTab/HardwareSensorGatewayCard.tsx");
+			if (existsSync(cardPath)) {
+				tabSrc += "\n" + readFileSync(cardPath, "utf8");
+			}
 			assert.ok(tabSrc.includes('data-testid="universal-sensor-gateway-card"'));
 			assert.ok(tabSrc.includes('data-testid="hw-btn-auto-detect-sensor"'));
 			assert.ok(tabSrc.includes('data-testid="hw-btn-test-sensor-connection"'));

@@ -7,3 +7,4 @@ export * from "./ImagingDesktopWorkspace";
 export * from "./useImagingDicomweb";
 export * from "./useImagingViewController";
 export * from "./useImagingViewState";
+export * from "./useResolvedImagingStudies";

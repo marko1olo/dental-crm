@@ -38,33 +38,16 @@ export interface ImagingViewModalsProps {
 	openPopoutStudio: (studyId?: string, imageIds?: string[]) => void;
 }
 
-export function ImagingViewModals({
-	isCbctStudioOpen,
-	setIsCbctStudioOpen,
-	isCtSelectorOpen,
-	setIsCtSelectorOpen,
-	isPanoramicWindowOpen,
-	setIsPanoramicWindowOpen,
-	isRadiologyModuleOpen,
-	setIsRadiologyModuleOpen,
-	isExportModalOpen,
-	setIsExportModalOpen,
-	isComparisonOpen,
-	setIsComparisonOpen,
-	isRvgCaptureOpen,
-	setIsRvgCaptureOpen,
-	rvgInitialTooth,
-	onRvgSaveToEmr,
-	selectedImagingStudy,
-	activePatient,
-	activeAppointment,
-	activeImagingStudies,
-	authClinicName,
-	effectivePreviewUrl,
-	selectedStudySummary,
-	setSelectedImagingStudyId,
-	openPopoutStudio,
-}: ImagingViewModalsProps) {
+export function ImagingViewModals(props: ImagingViewModalsProps) {
+	const {
+		isCbctStudioOpen, setIsCbctStudioOpen, isCtSelectorOpen, setIsCtSelectorOpen,
+		isPanoramicWindowOpen, setIsPanoramicWindowOpen, isRadiologyModuleOpen, setIsRadiologyModuleOpen,
+		isExportModalOpen, setIsExportModalOpen, isComparisonOpen, setIsComparisonOpen,
+		isRvgCaptureOpen, setIsRvgCaptureOpen, rvgInitialTooth, onRvgSaveToEmr,
+		selectedImagingStudy, activePatient, activeAppointment, activeImagingStudies,
+		authClinicName, effectivePreviewUrl, selectedStudySummary, setSelectedImagingStudyId, openPopoutStudio,
+	} = props;
+
 	return (
 		<>
 			{isRvgCaptureOpen && (

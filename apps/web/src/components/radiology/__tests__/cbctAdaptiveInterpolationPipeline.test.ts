@@ -213,9 +213,16 @@ describe("CBCT Two-Stage Adaptive Slice Interpolation Pipeline (FEAT-010)", () =
 		});
 	});
 
+	function resolveWebFile(relPath: string): string {
+		if (fs.existsSync(path.resolve(relPath))) return path.resolve(relPath);
+		const stripped = relPath.replace(/^apps\/web\//, "");
+		if (fs.existsSync(path.resolve(stripped))) return path.resolve(stripped);
+		return path.resolve(relPath);
+	}
+
 	describe("4. Static Source Code Inquisition: Eradication of Hardcoded Trilinear", () => {
 		it("proves apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts uses dynamic effectiveInterpolation", () => {
-			const filePath = path.resolve(
+			const filePath = resolveWebFile(
 				"apps/web/src/components/radiology/mpr/useCbctSliceRenderer.ts",
 			);
 			const source = fs.readFileSync(filePath, "utf-8");
@@ -244,7 +251,7 @@ describe("CBCT Two-Stage Adaptive Slice Interpolation Pipeline (FEAT-010)", () =
 		});
 
 		it("proves CbctMprViewport.tsx component exists and notifies interaction on user gestures", () => {
-			const viewportPath = path.resolve(
+			const viewportPath = resolveWebFile(
 				"apps/web/src/components/radiology/mpr/CbctMprViewport.tsx",
 			);
 			assert.ok(fs.existsSync(viewportPath), "CbctMprViewport.tsx must exist");
@@ -261,7 +268,7 @@ describe("CBCT Two-Stage Adaptive Slice Interpolation Pipeline (FEAT-010)", () =
 		});
 
 		it("proves useCbctInteractionHandlers.ts notifies interaction on wheel and drag events", () => {
-			const handlersPath = path.resolve(
+			const handlersPath = resolveWebFile(
 				"apps/web/src/components/radiology/mpr/useCbctInteractionHandlers.ts",
 			);
 			const source = fs.readFileSync(handlersPath, "utf-8");

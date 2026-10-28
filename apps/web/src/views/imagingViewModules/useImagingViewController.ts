@@ -3,6 +3,7 @@ import { showToast } from "../../components/GlobalToast";
 import { processCameraPhotoCapture } from "../../components/imaging";
 import { routeOpenCbctPopout } from "../../utils/runtimeRouter";
 import type { ImagingModalId, ImagingViewProps } from "./imagingViewTypes";
+import { useImagingStudyMetadataAttach } from "./useImagingStudyMetadataAttach";
 
 export function useImagingViewController(props: ImagingViewProps, appLogic: any) {
 	const auth = appLogic?.auth;
@@ -48,11 +49,7 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 		const handleOpenRvg = (e: Event) => {
 			const detail = (e as CustomEvent<{ tooth?: string; toothFdiCode?: string; toothNumber?: number }>).detail;
 			const tooth = detail?.tooth || detail?.toothFdiCode || (detail?.toothNumber ? String(detail.toothNumber) : null);
-			if (tooth && tooth !== "all") {
-				setRvgInitialTooth(tooth);
-			} else {
-				setRvgInitialTooth(null);
-			}
+			setRvgInitialTooth(tooth && tooth !== "all" ? tooth : null);
 			setActiveModal("rvg_capture");
 		};
 		window.addEventListener("dente-open-backoffice-modal", handleOpen);
@@ -88,51 +85,14 @@ export function useImagingViewController(props: ImagingViewProps, appLogic: any)
 		}
 	};
 
-	const handleAttachTooth = useCallback(async (toothCode: string) => {
-		if (!selectedImagingStudy?.id) return;
-		(props as any).onStudyUpdated?.({ ...selectedImagingStudy, toothCode: toothCode || null });
-		try {
-			const res = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}`, {
-				method: "PATCH",
-				headers: auth?.denteClinicalMutationHeaders ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" },
-				body: JSON.stringify({ toothCode: toothCode || null }),
-			});
-			if (res.ok) {
-				const updated = await res.json();
-				(props as any).onStudyUpdated?.(updated);
-				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
-				showToast(toothCode ? `Снимок привязан к зубу ${toothCode}` : "Привязка к зубу снята", "success");
-			}
-		} catch { showToast("Не удалось обновить привязку к зубу", "error"); }
-	}, [selectedImagingStudy, auth, props, appLogic]);
-
-	const handleAttachVisit = useCallback(async (visitId: string) => {
-		if (!selectedImagingStudy?.id) return;
-		try {
-			const res = await fetch(`/api/imaging/studies/${selectedImagingStudy.id}`, {
-				method: "PATCH",
-				headers: auth?.denteClinicalMutationHeaders ? auth.denteClinicalMutationHeaders({ "Content-Type": "application/json" }) : { "Content-Type": "application/json" },
-				body: JSON.stringify({ visitId: visitId || null }),
-			});
-			if (res.ok) {
-				const updated = await res.json();
-				(props as any).onStudyUpdated?.(updated);
-				if (appLogic?.loadDashboard) void appLogic.loadDashboard();
-				showToast("Снимок привязан к текущему приёму", "success");
-			}
-		} catch { showToast("Не удалось обновить привязку к визиту", "error"); }
-	}, [selectedImagingStudy?.id, auth, props, appLogic]);
+	const { handleAttachTooth, handleAttachVisit } = useImagingStudyMetadataAttach(
+		selectedImagingStudy, auth, props, appLogic,
+	);
 
 	const handleRvgSaveToEmr = useCallback((study: any) => {
-		if (study?.id && setSelectedImagingStudyId) {
-			setSelectedImagingStudyId(study.id);
-		}
-		if ((props as any).onStudyCreated) {
-			(props as any).onStudyCreated(study);
-		}
-		if (appLogic?.loadDashboard) {
-			void appLogic.loadDashboard();
-		}
+		if (study?.id && setSelectedImagingStudyId) setSelectedImagingStudyId(study.id);
+		if ((props as any).onStudyCreated) (props as any).onStudyCreated(study);
+		if (appLogic?.loadDashboard) void appLogic.loadDashboard();
 	}, [setSelectedImagingStudyId, props, appLogic]);
 
 	return {

@@ -222,7 +222,11 @@ describe("Radiology Studies Archive & PACS Production Isolation Invariant (Red T
 		const studiesRoutesPath = path.resolve(getApiRoot(), "src/routes/imaging/studiesRoutes.ts");
 		assert.ok(fs.existsSync(studiesRoutesPath), "studiesRoutes.ts exists on disk");
 
-		const source = fs.readFileSync(studiesRoutesPath, "utf-8");
+		let source = fs.readFileSync(studiesRoutesPath, "utf-8");
+		const regPath = path.resolve(getApiRoot(), "src/routes/imaging/modules/studiesRegistration.ts");
+		if (fs.existsSync(regPath)) {
+			source += "\n" + fs.readFileSync(regPath, "utf-8");
+		}
 
 		// Endpoint parity checks
 		assert.ok(
