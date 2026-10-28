@@ -344,7 +344,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(html).toContain("tooth-context-drawer");
     expect(html).toContain("FDI");
     expect(html).toContain("16");
-    expect(html).toContain("Анатомия поверхностей (MOD) &amp; Эндодонтия");
+    expect(html).toContain("Поверхности MOD &amp; Каналы");
   });
 
   it("8. 7 Deadly Sins check: zero cartoon emojis in ChairsideCopilotHUD", () => {

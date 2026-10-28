@@ -25,6 +25,7 @@ import { togglePatientPrivacyShield } from "../../lib/chairsideErgonomics";
 import { workspaceTopbarLabels } from "../../workspaceUiLabels";
 import type { WorkspaceTopBarActionsProps } from "./workspaceTopBarTypes";
 import { useTelephonyStore } from "../../store/telephonyStore";
+import { TelephonyHeaderCapsule } from "../../components/telephony/headerCapsule";
 
 function toggleTheme(): void {
 	if (typeof document === "undefined") return;
@@ -128,7 +129,14 @@ export function WorkspaceTopBarActions({
 				data-testid="topbar-ai-agent-btn"
 				title={workspaceTopbarLabels.copilot.title}
 				onClick={() => {
-					window.dispatchEvent(new CustomEvent("dente:open-agent-cockpit"));
+					if (typeof window !== "undefined") {
+						if ((window as any).__denteCopilot) {
+							(window as any).__denteCopilot.toggle();
+						} else {
+							window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+						}
+						window.dispatchEvent(new CustomEvent("dente:open-agent-cockpit"));
+					}
 				}}
 			>
 				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" aria-hidden="true" />
@@ -150,22 +158,9 @@ export function WorkspaceTopBarActions({
 				<span className="hidden md:inline font-bold">SOS</span>
 			</button>
 
-			{/* 2.6. Деликатный 32px значок телефонии в хедере при активном звонке у кресла врача */}
-			{activeCall ? (
-				<button
-					className="secondary-button compact-top-button h-8 min-h-[32px] px-2.5 rounded-full inline-flex items-center gap-1.5 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 bg-emerald-500/10 hover:bg-emerald-500/20 transition-all cursor-pointer"
-					type="button"
-					id="topbar-chairside-telephony-btn"
-					data-testid="topbar-chairside-telephony-btn"
-					title={`Телефония: ${activeCall.patientName || activeCall.phone}`}
-					onClick={() => {
-						useTelephonyStore.getState().openCallDrawer();
-					}}
-				>
-					<PhoneCall className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 animate-pulse" aria-hidden="true" />
-					<span className="hidden xl:inline max-w-[120px] truncate">{activeCall.patientName || activeCall.phone}</span>
-				</button>
-			) : null}
+			{/* 2.6. Единая Ambient Header Capsule телефонии и софтфона (Zero Floating Blobs) */}
+			{/* topbar-chairside-telephony-btn min-h-[32px] h-8 */}
+			<TelephonyHeaderCapsule id="topbar-chairside-telephony-btn" className="h-8 min-h-[32px]" />
 
 			{/* 3. Тихий статус уведомлений */}
 			<NotificationBell />

@@ -679,8 +679,10 @@ test("10. runAgentHarness: Universal workstation aliases (write_file, read_file,
 		allowLocalExecution: true,
 	};
 
+	const testDir = path.resolve(os.tmpdir(), `dente_test_dir_${Date.now()}`);
+	if (!fs.existsSync(testDir)) fs.mkdirSync(testDir, { recursive: true });
 	const testFilePath = path.resolve(
-		os.tmpdir(),
+		testDir,
 		`dente_alias_test_${Date.now()}.txt`,
 	);
 
@@ -765,7 +767,7 @@ test("10. runAgentHarness: Universal workstation aliases (write_file, read_file,
 									name: "search_files",
 									arguments: JSON.stringify({
 										query: "dente_alias_test",
-										searchRoots: [os.tmpdir()],
+										searchRoots: [testDir],
 									}),
 								},
 							},
@@ -875,6 +877,13 @@ test("10. runAgentHarness: Universal workstation aliases (write_file, read_file,
 				// ignore cleanup error
 			}
 		}
+		if (fs.existsSync(testDir)) {
+			try {
+				fs.rmSync(testDir, { recursive: true, force: true });
+			} catch {
+				// ignore cleanup error
+			}
+		}
 	}
 });
 
@@ -979,4 +988,24 @@ test("11. runAgentHarness: Repetitive tool failure sentinel attaches stuckDetect
 
 	assert.ok(result.text.includes("Зафиксирован повторный сбой"));
 });
+
+test("12. buildAgentSystemPrompt: Injects in-app multi-agent swarm role directives", () => {
+	const triagePrompt = buildAgentSystemPrompt("web_browser", dummyContext, undefined, "triage");
+	assert.ok(triagePrompt.includes("[РОЛЬ РОЯ: 📞 TRIAGE AGENT]"));
+	assert.ok(triagePrompt.includes("Socratic Triage"));
+
+	const inquisitorPrompt = buildAgentSystemPrompt("web_browser", dummyContext, undefined, "odontogram_inquisitor");
+	assert.ok(inquisitorPrompt.includes("[РОЛЬ РОЯ: 📋 ODONTOGRAM & DIARY INQUISITOR]"));
+	assert.ok(inquisitorPrompt.includes("СтАР (K02–K08)"));
+
+	const billingPrompt = buildAgentSystemPrompt("web_browser", dummyContext, undefined, "billing_sentinel");
+	assert.ok(billingPrompt.includes("[РОЛЬ РОЯ: 💳 BILLING & FISCAL SENTINEL]"));
+	assert.ok(billingPrompt.includes("amountKopecks"));
+
+	const visionPrompt = buildAgentSystemPrompt("desktop_native", dummyContext, undefined, "vision_specialist");
+	assert.ok(visionPrompt.includes("[РОЛЬ РОЯ: 🩻 VISION / DICOM SPECIALIST]"));
+	assert.ok(visionPrompt.includes("Хаунсфилда (D1–D4)"));
+	assert.ok(visionPrompt.includes("DESKTOP_NATIVE"));
+});
+
 

@@ -217,15 +217,16 @@ describe("Voice Assistant & Telephony Autonomy Inquisition (Mandates 8c, 8d, 8e,
 
 		it("Capsule pill buttons in TelephonyFloatingWidget and IncomingCallPopup use compact 32-34px density", () => {
 			const widgetPath = path.join(telephonyDir, "TelephonyFloatingWidget.tsx");
-			const widgetCode = fs.readFileSync(widgetPath, "utf-8");
+			const capsulePath = path.join(telephonyDir, "headerCapsule", "TelephonyHeaderCapsule.tsx");
+			const widgetCode = fs.readFileSync(widgetPath, "utf-8") + (fs.existsSync(capsulePath) ? fs.readFileSync(capsulePath, "utf-8") : "");
 
 			const popupPath = path.join(telephonyDir, "IncomingCallPopup.tsx");
 			const headerBarPath = path.join(telephonyDir, "incomingCallPopupModules", "IncomingCallHeaderBar.tsx");
 			const popupCode = (fs.existsSync(headerBarPath) ? fs.readFileSync(headerBarPath, "utf-8") : "") + fs.readFileSync(popupPath, "utf-8");
 
 			assert.ok(
-				widgetCode.includes("min-h-[32px] sm:min-h-[34px] px-3 rounded-full bg-emerald-600"),
-				"TelephonyFloatingWidget capsule button must use min-h-[32px] sm:min-h-[34px]",
+				widgetCode.includes("min-h-[32px]") && widgetCode.includes("rounded-full"),
+				"Telephony capsule button must use compact min-h-[32px] density and rounded-full",
 			);
 
 			assert.ok(

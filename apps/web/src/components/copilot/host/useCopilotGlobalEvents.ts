@@ -64,6 +64,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     };
 
     window.addEventListener('dente:toggle-copilot', handleCustomToggle);
+    window.addEventListener('dente:open-agent-cockpit', opts.openDrawer);
     window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
     window.addEventListener('dente:open-chairside-hud', opts.openHud);
     window.addEventListener('dente:close-chairside-hud', opts.closeHud);
@@ -76,6 +77,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
 
     return () => {
       window.removeEventListener('dente:toggle-copilot', handleCustomToggle);
+      window.removeEventListener('dente:open-agent-cockpit', opts.openDrawer);
       window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
       window.removeEventListener('dente:open-chairside-hud', opts.openHud);
       window.removeEventListener('dente:close-chairside-hud', opts.closeHud);
