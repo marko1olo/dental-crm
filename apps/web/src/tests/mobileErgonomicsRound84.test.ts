@@ -19,19 +19,27 @@ test("Round 84: Mobile Adaptability (375px-414px) & Touch-First Ergonomics Suite
 		assert.ok(BOTTOM_TEETH.includes(38), "Lower arch must include tooth 38");
 
 		// Verify ToothChart source has MIN_ARCH_SCALE <= 0.35 for 375px iPhone SE screens
-		const toothChartPath = path.resolve(process.cwd(), "src/components/odontogram/ToothChart.tsx");
+		const toothChartPath = fs.existsSync(path.resolve(process.cwd(), "src/components/odontogram/ToothChart.tsx"))
+			? path.resolve(process.cwd(), "src/components/odontogram/ToothChart.tsx")
+			: path.resolve(process.cwd(), "apps/web/src/components/odontogram/ToothChart.tsx");
 		const toothChartSrc = fs.readFileSync(toothChartPath, "utf-8");
 		assert.ok(toothChartSrc.includes("MIN_ARCH_SCALE = 0.35"), "MIN_ARCH_SCALE must be 0.35 for 375px mobile viewport fit");
 	});
 
 	await t.test("2. ScheduleGrid contains >= 48px touch targets for quick status toggles and actions", () => {
-		const scheduleGridPath = path.resolve(process.cwd(), "src/components/schedule/ScheduleGrid.tsx");
+		const scheduleGridPath = fs.existsSync(path.resolve(process.cwd(), "src/components/schedule/ScheduleGrid.tsx"))
+			? path.resolve(process.cwd(), "src/components/schedule/ScheduleGrid.tsx")
+			: path.resolve(process.cwd(), "apps/web/src/components/schedule/ScheduleGrid.tsx");
 		const scheduleGridSrc = fs.readFileSync(scheduleGridPath, "utf-8");
 		const scheduleAgendaPath = fs.existsSync(path.resolve(process.cwd(), "src/components/schedule/mobile/ScheduleMobileAgendaView.tsx"))
 			? path.resolve(process.cwd(), "src/components/schedule/mobile/ScheduleMobileAgendaView.tsx")
-			: path.resolve(process.cwd(), "src/components/schedule/ScheduleMobileAgendaView.tsx");
+			: fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/schedule/mobile/ScheduleMobileAgendaView.tsx"))
+				? path.resolve(process.cwd(), "apps/web/src/components/schedule/mobile/ScheduleMobileAgendaView.tsx")
+				: path.resolve(process.cwd(), "src/components/schedule/ScheduleMobileAgendaView.tsx");
 		const scheduleAgendaSrc = fs.readFileSync(scheduleAgendaPath, "utf-8");
-		const scheduleTrackPath = path.resolve(process.cwd(), "src/components/schedule/grid/ScheduleAppointmentTrack.tsx");
+		const scheduleTrackPath = fs.existsSync(path.resolve(process.cwd(), "src/components/schedule/grid/ScheduleAppointmentTrack.tsx"))
+			? path.resolve(process.cwd(), "src/components/schedule/grid/ScheduleAppointmentTrack.tsx")
+			: path.resolve(process.cwd(), "apps/web/src/components/schedule/grid/ScheduleAppointmentTrack.tsx");
 		const scheduleTrackSrc = fs.readFileSync(scheduleTrackPath, "utf-8");
 
 		// ScheduleGrid routes to dedicated sovereign mobile agenda view
@@ -60,23 +68,31 @@ test("Round 84: Mobile Adaptability (375px-414px) & Touch-First Ergonomics Suite
 			assert.ok(preset.treatmentDescription, "Preset must have treatmentDescription");
 		}
 
-		const barPath = path.resolve(process.cwd(), "src/components/visit/ClinicalQuickPresetsBar.tsx");
+		const barPath = fs.existsSync(path.resolve(process.cwd(), "src/components/visit/ClinicalQuickPresetsBar.tsx"))
+			? path.resolve(process.cwd(), "src/components/visit/ClinicalQuickPresetsBar.tsx")
+			: path.resolve(process.cwd(), "apps/web/src/components/visit/ClinicalQuickPresetsBar.tsx");
 		const barSrc = fs.readFileSync(barPath, "utf-8");
 		assert.ok(barSrc.includes("grid-cols-2"), "ClinicalQuickPresetsBar must use grid-cols-2 on smartphones");
 		assert.ok(barSrc.includes("min-h-[50px]") || barSrc.includes("min-h-[48px]"), "Preset buttons must be >= 48-50px");
 	});
 
 	await t.test("4. CSS verification: touch-targets.css & mobile-touch.css enforce 0 horizontal overflow and touch-first targets", () => {
-		const touchTargetsPath = path.resolve(process.cwd(), "src/styles/touch-targets.css");
+		const touchTargetsPath = fs.existsSync(path.resolve(process.cwd(), "src/styles/touch-targets.css"))
+			? path.resolve(process.cwd(), "src/styles/touch-targets.css")
+			: path.resolve(process.cwd(), "apps/web/src/styles/touch-targets.css");
 		const rawTouch = fs.readFileSync(touchTargetsPath, "utf-8");
-		const mobileOverridesPath = path.resolve(process.cwd(), "src/styles/touchStyles/touchMobileOverrides.css");
+		const mobileOverridesPath = fs.existsSync(path.resolve(process.cwd(), "src/styles/touchStyles/touchMobileOverrides.css"))
+			? path.resolve(process.cwd(), "src/styles/touchStyles/touchMobileOverrides.css")
+			: path.resolve(process.cwd(), "apps/web/src/styles/touchStyles/touchMobileOverrides.css");
 		const touchTargetsCss = rawTouch + "\n" + (fs.existsSync(mobileOverridesPath) ? fs.readFileSync(mobileOverridesPath, "utf-8") : "");
 
 		assert.ok(touchTargetsCss.includes("overflow-x: hidden"), "Must enforce overflow-x: hidden on root elements");
 		assert.ok(touchTargetsCss.includes("min-height: 48px"), "Must enforce min-height: 48px on touch targets");
 		assert.ok(touchTargetsCss.includes("grid-template-columns: repeat(2, minmax(0, 1fr))"), "Must define 2-column grid for mobile templates");
 
-		const mobileTouchPath = path.resolve(process.cwd(), "src/styles/modules/mobile-touch.css");
+		const mobileTouchPath = fs.existsSync(path.resolve(process.cwd(), "src/styles/modules/mobile-touch.css"))
+			? path.resolve(process.cwd(), "src/styles/modules/mobile-touch.css")
+			: path.resolve(process.cwd(), "apps/web/src/styles/modules/mobile-touch.css");
 		const mobileTouchCss = fs.readFileSync(mobileTouchPath, "utf-8");
 		assert.ok(mobileTouchCss.includes("overflow-x: hidden"), "mobile-touch.css must enforce overflow-x: hidden");
 		assert.ok(mobileTouchCss.includes("touch-action: manipulation"), "mobile-touch.css must eliminate double-tap delays");

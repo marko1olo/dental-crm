@@ -1,7 +1,7 @@
 import { isNegativeAllergyStatement } from "../../../utils/somaticNorm";
 
 /**
- * Resolves patient 54-FZ balance as a numeric value.
+ * Resolves patient account balance as a numeric value.
  */
 export function resolvePatientBalance(
 	patient?: { balanceRub?: number | string | null; balance?: number | string | null } | null,

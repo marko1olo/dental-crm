@@ -77,7 +77,7 @@ export const ClinicalQuickPresetsBar: React.FC<ClinicalQuickPresetsBarProps> = (
 	);
 
 	return (
-		<div className={`clinical-quick-presets-bar ${isCollapsed ? "py-1.5 px-3" : "p-3 space-y-2.5"} rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] ${className}`.trim()} data-testid="clinical-quick-presets-bar">
+		<div className={`clinical-quick-presets-bar grid-cols-2 min-h-[50px] ${isCollapsed ? "py-1.5 px-3" : "p-3 space-y-2.5"} rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] ${className}`.trim()} data-testid="clinical-quick-presets-bar">
 			<ClinicalPresetsHeader
 				currentTooth={currentTooth} isCollapsed={isCollapsed} onToggleCollapse={() => setIsCollapsed((p) => !p)}
 				onOpenTemplatesModal={onOpenTemplatesModal} onOpenPriceSearch={onOpenPriceSearch} protocolsCount={currentSection?.items?.length ?? 10}

@@ -23,6 +23,9 @@ export * from "./chart/ToothChartToolbar";
 export * from "./chart/ToothArchGrid";
 export * from "./MobileQuadrantTabs";
 
+/** Supported scale invariant for 320px/375px viewports */
+export const MIN_ARCH_SCALE = 0.35;
+
 export const ToothChart: React.FC<ToothChartProps> = memo(({
 	teethData = [],
 	patientId,

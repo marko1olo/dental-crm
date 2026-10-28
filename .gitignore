@@ -188,13 +188,14 @@ scripts/*.bak
 **/*.original.ts.bak
 
 # ---- Корневые пруф-скриншоты и папка screenshots/ --------------------------
-# Нужные скриншоты живут в docs/screenshots/. Корневой мусор — игнорируем.
-proof_*.png
-schedule_pc_*.png
-visit_diary_pc_*.png
+# Нужные скриншоты живут в docs/screenshots/ и docs/proofs/. Корневой мусор — игнорируем.
+/proof_*.png
+/schedule_pc_*.png
+/visit_diary_pc_*.png
 /screenshots/
 !/screenshots/migration-wizard/
 !docs/screenshots/
+!docs/proofs/
 
 # Файл с именем NUL — всегда следствие ошибки, а не чей-то замысел.
 #

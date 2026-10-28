@@ -100,7 +100,7 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 						className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border shrink-0 transition-transform hover:scale-105 cursor-pointer ${labStatusInfo.badgeClass}`}
 						title={
 							labStatusInfo.state === "ready_in_clinic"
-								? `${labStatusInfo.readinessText || `Работа из ЗТЛ доставлена: ${labStatusInfo.workTypeRu || "Конструкция"}${labStatusInfo.toothFdi ? ` зуб ${labStatusInfo.toothFdi}` : ""}`}. Нажмите для перехода в ЗТЛ`
+								? `${labStatusInfo.readinessText || `Работа в клинике: ${labStatusInfo.workTypeRu || "Конструкция"}${labStatusInfo.toothFdi ? ` зуб ${labStatusInfo.toothFdi}` : ""}`}. Поступил в клинику. Нажмите для перехода в ЗТЛ`
 								: `Статус наряда ЗТЛ: ${labStatusInfo.labelRu}${
 										labStatusInfo.workTypeRu ? ` (${labStatusInfo.workTypeRu})` : ""
 									}${labStatusInfo.colorVita ? ` VITA ${labStatusInfo.colorVita}` : ""}. Нажмите для перехода в ЗТЛ`
@@ -119,7 +119,7 @@ export const AppointmentProcedureBadge: React.FC<AppointmentProcedureBadgeProps>
 							{labStatusInfo.isOverdue
 								? `⚠️ ЗТЛ задерживает: +${labStatusInfo.daysOverdue} дн`
 								: labStatusInfo.state === "ready_in_clinic"
-									? "✓ Работа из ЗТЛ в клинике"
+									? "🦷 Работа в клинике"
 									: labStatusInfo.shortLabelRu}
 						</span>
 					</span>

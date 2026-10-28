@@ -36,24 +36,24 @@ export function GridAppointmentHudHeader({
 						}}
 						className={`px-2.5 py-0.5 rounded-lg text-xs font-black font-mono shrink-0 whitespace-nowrap cursor-pointer transition-all hover:scale-105 active:scale-95 flex items-center gap-1 ${
 							pBalance > 0
-								? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
+								? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
 								: pBalance < 0
-									? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30"
+									? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/30"
 									: "bg-[var(--paper-soft)] text-[var(--muted)] border border-[var(--line)]"
 						}`}
 						title={
 							pBalance > 0
-								? "Долг за лечение. Клик для оплаты"
+								? "Депозит пациента"
 								: pBalance < 0
-									? "Депозит пациента"
+									? "Долг за лечение. Клик для оплаты"
 									: "Баланс нулевой"
 						}
 					>
 						<span>
 							{pBalance > 0
-								? `Долг ${pBalance.toLocaleString("ru-RU")} ₽`
+								? `Депозит: +${pBalance.toLocaleString("ru-RU")} ₽`
 								: pBalance < 0
-									? `Аванс ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
+									? `Долг: ${Math.abs(pBalance).toLocaleString("ru-RU")} ₽`
 									: "0 ₽"}
 						</span>
 					</button>
