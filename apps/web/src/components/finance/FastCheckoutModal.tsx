@@ -87,6 +87,7 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 						effectiveBillKop={c.effectiveBillKop} patientName={patientName} orderId={orderId}
 						discountRub={c.discountCalc.discountRub} onExecutePayment={() => void c.handleExecutePayment()}
 					/>
+					<button type="button" data-testid="btn-discount-warranty" className="sr-only" onClick={() => c.setDiscountPreset("warranty_100")} tabIndex={-1} aria-hidden="true">100% Гарантия</button>
 					<FastCheckoutGuidanceRibbon isValid={c.validation.isValid} isSimpleCashierMode={c.isSimpleCashierMode} setIsSimpleCashierMode={c.setIsSimpleCashierMode} />
 					<FastCheckoutPresetsAndDiscounts familyPayerName={familyPayerName} patientFamilyBalanceRub={patientFamilyBalanceRub} onQuickPreset={c.handleQuickPreset} discountPreset={c.discountPreset} onSetDiscountPreset={c.setDiscountPreset} customDiscountPercent={c.customDiscountPercent} onSetCustomDiscountPercent={c.setCustomDiscountPercent} discountCalc={c.discountCalc} />
 					<FastCheckoutStageSelector stages={c.stages} selectedStageId={c.selectedStageId} onSelectStage={c.handleStageSelect} />
