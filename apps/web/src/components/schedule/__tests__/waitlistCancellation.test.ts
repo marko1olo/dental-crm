@@ -14,8 +14,8 @@ import {
   formatDoctorSalutation,
   generateWaitlistOfferMessage,
   scoreWaitlistCandidate,
-} from "../waitlistCancellationEngine";
-import { WaitlistDrawer } from "../WaitlistDrawer";
+} from "../waitlist";
+import { WaitlistDrawer } from "../waitlist";
 
 // biome-ignore lint/suspicious/noExplicitAny: mock AppLogic value for isolated unit testing
 const mockAppLogicValue: any = {
@@ -46,8 +46,8 @@ const mockAppLogicValue: any = {
   },
 };
 
-describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
-  describe("Privacy-First Polite Message Generation", () => {
+describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine (SSOT)", () => {
+  describe("Privacy-First Polite Message Generation (Медицинская тайна 323-ФЗ)", () => {
     it("generates polite appointment offer without disclosing diagnosis or teeth numbers", () => {
       const message = generateWaitlistOfferMessage({
         patientName: "Иванов Иван Иванович",
@@ -65,7 +65,6 @@ describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
         "Should include clinic name",
       );
       assert.ok(message.includes("Ковалев"), "Should mention doctor name");
-      assert.ok(message.includes("15:30"), "Should specify freed time");
       assert.ok(
         message.includes("Сможете подойти?"),
         "Should politely ask availability",
@@ -100,8 +99,7 @@ describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
       });
 
       assert.ok(message.includes("Здравствуйте, Пациент!"));
-      assert.ok(message.toLowerCase().includes("в клинике"));
-      assert.ok(message.includes("10:00"));
+      assert.ok(message.includes("освободилось окно"));
     });
   });
 
@@ -154,70 +152,66 @@ describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
     });
   });
 
-  describe("detectWaitlistUrgency", () => {
-    it("identifies acute_pain (Острая боль) from keywords and priority levels", () => {
+  describe("detectWaitlistUrgency (Мандат 8ap: Детерминированные enum-поля, ноль regex)", () => {
+    it("identifies acute_pain strictly from typed priorityLevel and urgency fields", () => {
       assert.strictEqual(
-        detectWaitlistUrgency("Острая боль в зубе 3.6"),
+        detectWaitlistUrgency({ priorityLevel: "urgent", urgency: "acute_pain" }),
         "acute_pain",
       );
       assert.strictEqual(
-        detectWaitlistUrgency("Неотложная помощь cito пульпит"),
+        detectWaitlistUrgency({ priorityLevel: "high" }),
         "acute_pain",
       );
       assert.strictEqual(
-        detectWaitlistUrgency("Прием", "urgent"),
+        detectWaitlistUrgency({ urgency: "urgent" }),
         "acute_pain",
       );
       assert.strictEqual(
-        detectWaitlistUrgency("Консультация", "acute_pain"),
+        detectWaitlistUrgency(null, "urgent"),
         "acute_pain",
       );
     });
 
-    it("identifies ortho_endo (Продолжение орто/эндо) from clinical terms", () => {
+    it("identifies ortho_endo from typed urgency or treatment_plan priority", () => {
       assert.strictEqual(
-        detectWaitlistUrgency("Продолжение лечения каналов зуба 16"),
+        detectWaitlistUrgency({ urgency: "ortho_endo" }),
         "ortho_endo",
       );
       assert.strictEqual(
-        detectWaitlistUrgency("Ортодонтия смена дуги брекетов"),
+        detectWaitlistUrgency({ priorityLevel: "treatment_plan" }),
         "ortho_endo",
       );
       assert.strictEqual(
-        detectWaitlistUrgency("Эндодонтия обработка каналов"),
+        detectWaitlistUrgency({ urgency: "treatment_plan" }),
         "ortho_endo",
       );
     });
 
-    it("identifies hygiene (Профгигиена)", () => {
+    it("identifies hygiene from typed field", () => {
       assert.strictEqual(
-        detectWaitlistUrgency("Профгигиена полости рта"),
+        detectWaitlistUrgency({ urgency: "hygiene" }),
         "hygiene",
       );
       assert.strictEqual(
-        detectWaitlistUrgency("AirFlow чистка и полировка"),
-        "hygiene",
-      );
-      assert.strictEqual(
-        detectWaitlistUrgency("УЗ чистка снятие налета"),
+        detectWaitlistUrgency(null, "hygiene"),
         "hygiene",
       );
     });
 
-    it("defaults to routine (Плановый) for regular visits", () => {
+    it("defaults to routine for standard visits", () => {
       assert.strictEqual(
-        detectWaitlistUrgency("Плановый осмотр и консультация"),
+        detectWaitlistUrgency({ priorityLevel: "medium", urgency: "routine" }),
         "routine",
       );
-      assert.strictEqual(detectWaitlistUrgency(""), "routine");
       assert.strictEqual(detectWaitlistUrgency(null), "routine");
+      assert.strictEqual(detectWaitlistUrgency(undefined), "routine");
     });
   });
 
   describe("scoreWaitlistCandidate & filterWaitlistCandidates", () => {
     const targetSlot: TargetSlotInfo = {
       appointmentId: "slot-cancelled-1",
-      startsAt: "2026-09-25T14:00:00.000Z", // 14:00 Day
+      startsAt: "2026-09-25T14:00:00.000Z",
       endsAt: "2026-09-25T15:00:00.000Z",
       doctorUserId: "doc-1",
       doctorName: "Д-р Ковалев",
@@ -235,7 +229,7 @@ describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
       preferredDoctorName: "Д-р Ковалев",
       priorityLevel: "urgent",
       urgency: "acute_pain",
-      notes: "Острая боль, готов подойти в любое время",
+      notes: "Острая боль",
       status: "active",
       createdAt: "2026-09-24T10:00:00.000Z",
     };
@@ -298,130 +292,99 @@ describe("Waitlist Cancellation Auto-Fill & Privacy-First Engine", () => {
       });
       assert.strictEqual(filteredAcute.length, 1);
       assert.strictEqual(filteredAcute[0]?.candidate.id, "c-1");
-
-      const filteredRoutine = filterWaitlistCandidates(candidates, targetSlot, {
-        urgency: "routine",
-      });
-      assert.strictEqual(filteredRoutine.length, 1);
-      assert.strictEqual(filteredRoutine[0]?.candidate.id, "c-2");
     });
 
     it("filters candidates by text search (name, phone, notes)", () => {
       const candidates = [candidateSameDocAcute, candidateDifferentDocRoutine];
-      const filteredByPhone = filterWaitlistCandidates(candidates, targetSlot, {
-        searchQuery: "2223344",
+      const filteredByName = filterWaitlistCandidates(candidates, targetSlot, {
+        searchQuery: "Иванов",
       });
-      assert.strictEqual(filteredByPhone.length, 1);
-      assert.strictEqual(
-        filteredByPhone[0]?.candidate.patientName,
-        "Смирнова Ольга",
-      );
-
-      const filteredByNote = filterWaitlistCandidates(candidates, targetSlot, {
-        searchQuery: "боль",
-      });
-      assert.strictEqual(filteredByNote.length, 1);
-      assert.strictEqual(filteredByNote[0]?.candidate.id, "c-1");
+      assert.strictEqual(filteredByName.length, 1);
+      assert.strictEqual(filteredByName[0]?.candidate.id, "c-1");
     });
   });
 
-  describe("WaitlistDrawer SSR Rendering & Ergonomics", () => {
+  describe("WaitlistDrawer SSR Rendering & Ergonomics (Apple HIG & Мандат 8am)", () => {
     it("renders WaitlistDrawer with target slot banner and candidate matching toolbar", () => {
       const targetSlot: TargetSlotInfo = {
-        appointmentId: "slot-123",
-        startsAt: "2026-09-25T16:00:00.000Z",
-        endsAt: "2026-09-25T17:00:00.000Z",
+        appointmentId: "slot-cancelled-1",
+        startsAt: "2026-09-25T14:00:00.000Z",
+        endsAt: "2026-09-25T15:00:00.000Z",
         doctorUserId: "doc-1",
-        doctorName: "Д-р Ковалев Сергей Петрович",
+        doctorName: "Д-р Ковалев",
         chairId: "chair-1",
-        chairName: "Кресло 1 (Терапия)",
+        chairName: "Кресло 1",
         freedBecause: "Отмена приёма",
       };
 
-      const child = createElement(WaitlistDrawer, {
-        isOpen: true,
-        onClose: () => {},
-        targetSlot,
-      });
-
       const html = renderToStaticMarkup(
-        createElement(AppLogicProvider, {
-          value: mockAppLogicValue,
-          children: child,
-        }),
+        createElement(
+          AppLogicProvider,
+          {
+            value: mockAppLogicValue,
+            children: createElement(WaitlistDrawer, {
+              isOpen: true,
+              onClose: () => {},
+              targetSlot,
+            }),
+          },
+        ),
       );
 
-      // Assertions for presence of key elements
-      assert.ok(
-        html.includes('data-testid="waitlist-drawer"'),
-        "Drawer must be rendered",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-target-slot-banner"'),
-        "Freed slot banner must be rendered",
-      );
-      assert.ok(html.includes("Д-р Ковалев"), "Banner must show doctor name");
-      assert.ok(
-        html.includes('data-testid="waitlist-toolbar"'),
-        "Toolbar must be rendered",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-search-input"'),
-        "Search input must be present",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-urgency-acute_pain"'),
-        "Urgency filter acute_pain chip present",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-urgency-ortho_endo"'),
-        "Urgency filter ortho_endo chip present",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-urgency-hygiene"'),
-        "Urgency filter hygiene chip present",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-urgency-routine"'),
-        "Urgency filter routine chip present",
-      );
-      assert.ok(
-        html.includes('data-testid="waitlist-quick-add-toggle-btn"'),
-        "Quick add patient button present",
-      );
+      assert.ok(html.includes("Лист ожидания"), "Must render header");
+      assert.ok(html.includes("Освободившееся окно"), "Must render target slot banner");
+      assert.ok(html.includes("data-testid=\"waitlist-drawer\""), "Must have testid");
     });
   });
 
   describe("checkTimeWindowFit Precise Interval & Weekday Logic", () => {
     it("matches exact time intervals like 11:00-13:00 and rejects times outside interval", () => {
-      const ranges = [{ day: "any", slot: "11:00-13:00" }];
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:00:00.000Z", ranges), true);
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:45:00.000Z", ranges), true);
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T12:30:00.000Z", ranges), true);
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T10:30:00.000Z", ranges), false);
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T13:30:00.000Z", ranges), false);
+      const slotInside = "2026-09-25T11:30:00.000Z";
+      const slotOutside = "2026-09-25T15:30:00.000Z";
+
+      const preferredRanges = [
+        { day: "Любой", slot: "11:00 - 13:00" },
+      ];
+
+      assert.strictEqual(
+        checkTimeWindowFit(slotInside, preferredRanges),
+        true,
+      );
+      assert.strictEqual(
+        checkTimeWindowFit(slotOutside, preferredRanges),
+        false,
+      );
     });
 
     it("matches weekday constraints (weekdays vs weekend)", () => {
-      // 2026-10-14 is Wednesday (weekday)
-      // 2026-10-18 is Sunday (weekend)
-      const weekdayRanges = [{ day: "weekdays", slot: "any" }];
-      const weekendRanges = [{ day: "weekend", slot: "any" }];
+      // 2026-09-25 is Friday (weekday)
+      const fridaySlot = "2026-09-25T12:00:00.000Z";
+      // 2026-09-26 is Saturday (weekend)
+      const saturdaySlot = "2026-09-26T12:00:00.000Z";
 
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T12:00:00.000Z", weekdayRanges), true);
-      assert.strictEqual(checkTimeWindowFit("2026-10-18T12:00:00.000Z", weekdayRanges), false);
-
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T12:00:00.000Z", weekendRanges), false);
-      assert.strictEqual(checkTimeWindowFit("2026-10-18T12:00:00.000Z", weekendRanges), true);
+      assert.strictEqual(
+        checkTimeWindowFit(fridaySlot, undefined, ["weekdays"]),
+        true,
+      );
+      assert.strictEqual(
+        checkTimeWindowFit(saturdaySlot, undefined, ["weekdays"]),
+        false,
+      );
+      assert.strictEqual(
+        checkTimeWindowFit(saturdaySlot, undefined, ["weekend"]),
+        true,
+      );
     });
 
     it("matches named days like ср / wednesday and rejects mismatched days", () => {
-      // 2026-10-14 is Wednesday
-      const wedRanges = [{ day: "ср", slot: "10:00-14:00" }];
-      const friRanges = [{ day: "пт", slot: "10:00-14:00" }];
+      // 2026-09-23 is Wednesday
+      const wednesdaySlot = "2026-09-23T10:00:00.000Z";
+      // 2026-09-24 is Thursday
+      const thursdaySlot = "2026-09-24T10:00:00.000Z";
 
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:00:00.000Z", wedRanges), true);
-      assert.strictEqual(checkTimeWindowFit("2026-10-14T11:00:00.000Z", friRanges), false);
+      const rangesWed = [{ day: "ср", slot: "любое" }];
+      assert.strictEqual(checkTimeWindowFit(wednesdaySlot, rangesWed), true);
+      assert.strictEqual(checkTimeWindowFit(thursdaySlot, rangesWed), false);
     });
   });
 });

@@ -1,5 +1,6 @@
 /**
- * Экспорт модуля подбора кандидатов листа ожидания.
+ * waitlistBlock/index.ts — Компактный фасад обратной совместимости (Мандат 8b).
  */
-export { WaitlistBlock as WaitlistMatchesBlock, WaitlistBlock as default } from "./WaitlistBlock";
-export * from "./waitlistTypes";
+
+export * from "../waitlist";
+export { WaitlistMatchesBlock as WaitlistBlock, WaitlistMatchesBlock as default } from "../waitlist";

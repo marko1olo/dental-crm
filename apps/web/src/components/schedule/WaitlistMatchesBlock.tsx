@@ -1,10 +1,13 @@
 /**
- * Корневой фасад модуля подбора кандидатов листа ожидания.
+ * WaitlistMatchesBlock.tsx — Канонический фасад обратной совместимости (Мандат 8b: <30 строк).
+ * Полная реализация перенесена в SSOT: ./waitlist/WaitlistMatchesBlock.tsx
  */
-export {
-	WaitlistMatchesBlock,
-	default,
-	type WaitlistMatchesBlockProps,
-	type WaitlistMatchRow,
-	type WaitlistMatchReport,
-} from "./waitlistBlock";
+
+import {
+  WaitlistMatchesBlock,
+  type WaitlistMatchesBlockProps,
+} from "./waitlist/WaitlistMatchesBlock";
+
+export type WaitlistMatchRow = any;
+export type { WaitlistMatchesBlockProps };
+export { WaitlistMatchesBlock, WaitlistMatchesBlock as default };

@@ -1,10 +1,6 @@
 /**
- * waitlistModules/index.ts — Barrel export for waitlist modules.
+ * waitlistModules/index.ts — Компактный фасад обратной совместимости (Мандат 8b).
  */
 
-export * from "./waitlistTypes";
-export * from "./useWaitlistData";
-export * from "./useWaitlistSlotMatching";
-export * from "./useWaitlistContactActions";
-export * from "./useWaitlistQuickAdd";
-export * from "./useWaitlistBooking";
+export * from "../waitlist";
+export * from "../useWaitlistDrawerOperations";

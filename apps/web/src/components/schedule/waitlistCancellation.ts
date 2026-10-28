@@ -1,5 +1,5 @@
 /**
- * waitlistCancellation.ts — Canonical re-export of waitlistCancellationEngine
- * for Schedule Cancellation Auto-Fill & Waitlist Drawer.
+ * waitlistCancellation.ts — Ре-экспорт канонического фасада
  */
-export * from "./waitlistCancellationEngine";
+
+export * from "./waitlist/waitlistTypes";

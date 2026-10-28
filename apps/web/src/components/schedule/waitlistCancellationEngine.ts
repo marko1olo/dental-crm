@@ -1,30 +1,6 @@
-export {
-  type WaitlistUrgency,
-  type TargetSlotInfo,
-  type WaitlistCandidateItem,
-  type CandidateScoreResult,
-  URGENCY_CONFIG,
-} from "./waitlistCancellation/waitlistTypes";
+/**
+ * waitlistCancellationEngine.ts — Канонический фасад типов и логики (Мандат 8b: <20 строк).
+ * Полная реализация перенесена в SSOT: ./waitlist/waitlistTypes.ts
+ */
 
-export {
-  extractPatientPoliteName,
-  formatDoctorSalutation,
-  generateWaitlistOfferMessage,
-} from "./waitlistCancellation/waitlistSalutations";
-
-export {
-  detectWaitlistUrgency,
-} from "./waitlistCancellation/waitlistUrgencyDetector";
-
-export {
-  parsePreferredWeekday,
-  parseTimeToMinutes,
-  checkTimeWindowFit,
-} from "./waitlistCancellation/waitlistTimeFit";
-
-export {
-  scoreWaitlistCandidate,
-  filterWaitlistCandidates,
-  openWhatsAppChat,
-  openTelegramChat,
-} from "./waitlistCancellation/waitlistScoringAndFiltering";
+export * from "./waitlist/waitlistTypes";
