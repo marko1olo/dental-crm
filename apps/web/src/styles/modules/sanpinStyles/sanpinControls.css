@@ -1,0 +1,73 @@
+/* ==========================================================================
+   SANPIN CONTROLS & PERIOD SWITCHER
+   apps/web/src/styles/modules/sanpinStyles/sanpinControls.css
+   ========================================================================== */
+
+/* Header Action Strip: Single Row, Strict 32px Height, 8px Radius */
+.sanpin-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+	flex-shrink: 0;
+	flex-wrap: nowrap;
+}
+
+/* Segmented Period Switcher (День | Неделя | Месяц) */
+.sanpin-period-switch {
+	display: inline-flex;
+	align-items: center;
+	background: var(--paper-soft, #f1f5f9);
+	padding: 2px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	height: 32px;
+	min-height: 32px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-period-switch,
+.dark .sanpin-period-switch {
+	background: var(--paper-soft);
+	border-color: var(--line);
+}
+
+.sanpin-period-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 0.65rem;
+	height: 26px;
+	min-height: 26px;
+	font-size: 0.78rem;
+	font-weight: 600;
+	border-radius: 6px;
+	border: none;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	white-space: nowrap;
+}
+
+.sanpin-period-btn:hover {
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .sanpin-period-btn:hover,
+.dark .sanpin-period-btn:hover {
+	color: #f8fafc;
+}
+
+.sanpin-period-btn.active {
+	background: var(--paper, #ffffff);
+	color: var(--teal, #0d9488);
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="dark"] .sanpin-period-btn.active,
+.dark .sanpin-period-btn.active {
+	background: var(--paper-strong, #0f172a);
+	color: #2dd4bf;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}

@@ -40,7 +40,7 @@ export function SterilizationCycleDrawer({
 
 	const drawerElement = (
 		<div
-			className="sanpin-drawer-overlay fixed inset-0 z-[100050] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
+			className="sanpin-drawer-overlay fixed inset-0 z-[100050] flex flex-col justify-end sm:justify-center items-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-200"
 			data-testid="sterilization-cycle-drawer"
 			onClick={onClose}
 			onKeyDown={(e) => e.key === "Escape" && onClose()}
@@ -50,11 +50,11 @@ export function SterilizationCycleDrawer({
 			tabIndex={-1}
 		>
 			<div
-				className="sanpin-drawer-container w-full sm:max-w-xl max-h-[90dvh] sm:max-h-[92vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-2xl flex flex-col text-[var(--ink,#0f172a)]"
+				className="sanpin-drawer-container w-full sm:max-w-xl max-h-[90dvh] sm:max-h-[92vh] overflow-y-auto rounded-t-[24px] sm:rounded-2xl rounded-b-none sm:rounded-b-2xl bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] border-t border-x sm:border border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-2xl flex flex-col text-[var(--ink,#0f172a)] mb-0"
 				onClick={(e) => e.stopPropagation()}
 				onKeyDown={(e) => e.stopPropagation()}
 				role="document"
-				style={{ maxWidth: "580px", width: "100%" }}
+				style={{ maxWidth: "580px", width: "100%", marginBottom: 0 }}
 			>
 				<div
 					className="flex sm:hidden justify-center pt-2.5 pb-1"

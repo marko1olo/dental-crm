@@ -20,11 +20,11 @@ export function SterilizationDrawerFooter({
 	onClose,
 }: SterilizationDrawerFooterProps) {
 	return (
-		<div className="p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] sticky bottom-0 z-10 flex items-center gap-3">
+		<div className="p-4 sm:p-5 pb-[max(16px,env(safe-area-inset-bottom))] border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] sticky bottom-0 z-20 flex items-center gap-3">
 			<button
 				type="button"
 				onClick={onClose}
-				className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[48px] touch-manipulation cursor-pointer border border-[var(--line,#e2e8f0)]"
+				className="px-4 py-2.5 rounded-xl text-xs font-semibold text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[48px] touch-manipulation cursor-pointer border border-[var(--line,#e2e8f0)] dark:border-[#334155]"
 			>
 				Отмена
 			</button>

@@ -31,7 +31,7 @@ export function SterilizationDrawerBody({
 	sessionStaffName,
 }: SterilizationDrawerBodyProps) {
 	return (
-		<div className="p-5 flex flex-col gap-4 overflow-y-auto">
+		<div className="p-4 sm:p-5 pb-8 flex flex-col gap-4 overflow-y-auto">
 			<SterilizationDrawerPresets
 				selectedPresetId={selectedPresetId}
 				onSelectPreset={onSelectPreset}

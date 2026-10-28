@@ -2,11 +2,54 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import type { PsoCleaningLog } from "@dental/shared";
 import { showToast } from "../../GlobalToast";
 import { getDenteAuthHeaders } from "../../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DEFAULT_DOM_PAGE_SIZE, sliceDomList } from "../../../utils/domVirtualizationHelper";
 import { printPsoJournal } from "./psoPrintHelper";
 
+const DEFAULT_PSO_DEMO_LOGS: PsoCleaningLog[] = [
+	{
+		id: "pso-demo-1",
+		timestamp: new Date().toISOString(),
+		instrumentName: "Терапевтический смотровой набор (лотки, зеркала, зонды, пинцеты)",
+		batchItemCount: 50,
+		testedSampleCount: 5,
+		isAzopyramNegative: true,
+		isPhenolphthaleinNegative: true,
+		detergentBrand: "Биолот 0.5% + Аламинол 1%",
+		operatorName: "Иванова А. С. (ЦСО)",
+		status: "norm",
+		notes: "Азопирамовая и фенолфталеиновая пробы отрицательны. Норма 100%.",
+	},
+	{
+		id: "pso-demo-2",
+		timestamp: new Date(Date.now() - 3600000 * 3).toISOString(),
+		instrumentName: "Хирургический инструментарий (элеваторы, щипцы, шприцы карпульные)",
+		batchItemCount: 30,
+		testedSampleCount: 3,
+		isAzopyramNegative: true,
+		isPhenolphthaleinNegative: true,
+		detergentBrand: "Биолот 0.5% + Аламинол 1%",
+		operatorName: "Иванова А. С. (ЦСО)",
+		status: "norm",
+		notes: "Проба на скрытую кровь отрицательна. Допущено к автоклавированию.",
+	},
+	{
+		id: "pso-demo-3",
+		timestamp: new Date(Date.now() - 3600000 * 6).toISOString(),
+		instrumentName: "Ортодонтические наборы и слепочные ложки",
+		batchItemCount: 40,
+		testedSampleCount: 4,
+		isAzopyramNegative: true,
+		isPhenolphthaleinNegative: true,
+		detergentBrand: "Биолот 0.5% + Аламинол 1%",
+		operatorName: "Петрова Е. В. (ЦСО)",
+		status: "norm",
+		notes: "Регламентная предстерилизационная очистка. Норма.",
+	},
+];
+
 export function usePsoRegisterLogic(appLogic: any) {
-	const [logs, setLogs] = useState<PsoCleaningLog[]>([]);
+	const [logs, setLogs] = useState<PsoCleaningLog[]>(() => isDemoShowcaseMode() ? DEFAULT_PSO_DEMO_LOGS : []);
 	const [loading, setLoading] = useState(false);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [testFilter, setTestFilter] = useState<string>("all");
@@ -21,9 +64,16 @@ export function usePsoRegisterLogic(appLogic: any) {
 			setLoading(true);
 			let res = await fetch("/api/sanpin/sterilization/pso-tests", { headers: getDenteAuthHeaders() }).catch(() => null);
 			if (!res || !res.ok) res = await fetch("/api/registers/pso", { headers: getDenteAuthHeaders() }).catch(() => null);
-			setLogs(res && res.ok ? await res.json() : []);
+			if (res && res.ok) {
+				const data = await res.json();
+				setLogs(Array.isArray(data) && data.length > 0 ? data : (isDemoShowcaseMode() ? DEFAULT_PSO_DEMO_LOGS : []));
+			} else if (isDemoShowcaseMode()) {
+				setLogs(DEFAULT_PSO_DEMO_LOGS);
+			} else {
+				setLogs([]);
+			}
 		} catch {
-			setLogs([]);
+			setLogs(isDemoShowcaseMode() ? DEFAULT_PSO_DEMO_LOGS : []);
 		} finally {
 			setLoading(false);
 		}

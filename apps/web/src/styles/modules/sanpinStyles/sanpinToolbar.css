@@ -1,0 +1,52 @@
+/* ==========================================================================
+   SANPIN TOOLBAR & CONTROLS
+   apps/web/src/styles/modules/sanpinStyles/sanpinToolbar.css
+   ========================================================================== */
+
+/* Options Button */
+.sanpin-btn-options {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.3rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.65rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #334155);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.sanpin-btn-options:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--brand-primary, #2563eb);
+}
+
+[data-theme="dark"] .sanpin-btn-options,
+.dark .sanpin-btn-options {
+	background: #1e293b;
+	border-color: #334155;
+	color: #cbd5e1;
+}
+
+[data-theme="dark"] .sanpin-btn-options:hover,
+.dark .sanpin-btn-options:hover {
+	background: #334155;
+	color: #f8fafc;
+}
+
+/* Table Toolbar Controls: Strict 32px Height, 8px Radius */
+.sanpin-table-toolbar button,
+.sanpin-table-toolbar select,
+.sanpin-table-toolbar input {
+	height: 32px !important;
+	min-height: 32px !important;
+	border-radius: 8px !important;
+	font-size: 0.8125rem !important;
+}

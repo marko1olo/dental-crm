@@ -1,0 +1,101 @@
+/* ==========================================================================
+   SANPIN BASE LAYOUT & BADGES
+   apps/web/src/styles/modules/sanpinStyles/sanpinBase.css
+   ========================================================================== */
+
+.sanpin-container {
+	display: flex;
+	flex-direction: column;
+	gap: 0.65rem;
+	padding: 0.85rem 1.15rem;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #1e293b);
+	border-radius: 8px;
+	min-height: 80vh;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-container,
+.dark .sanpin-container {
+	background: var(--paper-strong, #0f172a);
+	color: var(--ink, #f8fafc);
+}
+
+/* Header & Title Area */
+.sanpin-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.25rem 0 0.5rem;
+	border-bottom: 1px solid var(--line, rgba(148, 163, 184, 0.2));
+	min-height: 40px;
+	box-sizing: border-box;
+}
+
+.sanpin-title-block {
+	display: flex;
+	align-items: center;
+	gap: 0.65rem;
+	flex-shrink: 0;
+}
+
+.sanpin-title-block h1 {
+	font-size: 1.05rem;
+	font-weight: 700;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 0.45rem;
+	color: var(--ink, #0f172a);
+}
+
+[data-theme="dark"] .sanpin-title-block h1,
+.dark .sanpin-title-block h1 {
+	color: #f8fafc;
+}
+
+/* Regulatory & Quality Badges */
+.sanpin-badge-gov {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.725rem;
+	font-weight: 600;
+	background: rgba(16, 185, 129, 0.12);
+	color: #059669;
+	padding: 0.2rem 0.55rem;
+	border-radius: 6px;
+	border: 1px solid rgba(16, 185, 129, 0.3);
+	height: 26px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-badge-gov,
+.dark .sanpin-badge-gov {
+	background: rgba(16, 185, 129, 0.2);
+	color: #34d399;
+	border-color: rgba(52, 211, 153, 0.3);
+}
+
+.sanpin-badge-quality {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	font-size: 0.725rem;
+	font-weight: 600;
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+	padding: 0.2rem 0.6rem;
+	border-radius: 6px;
+	border: 1px solid rgba(13, 148, 136, 0.25);
+	height: 26px;
+	box-sizing: border-box;
+}
+
+[data-theme="dark"] .sanpin-badge-quality,
+.dark .sanpin-badge-quality {
+	background: rgba(45, 212, 191, 0.15);
+	color: #2dd4bf;
+	border-color: rgba(45, 212, 191, 0.3);
+}

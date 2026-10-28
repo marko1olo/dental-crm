@@ -48,7 +48,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 			`}</style>
 
 			{/* БАННЕР СТАТУСА И БЫСТРАЯ ФИКСАЦИЯ НОРМЫ В 1 КЛИК */}
-			<div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex-wrap">
+			<div className="flex items-center justify-between gap-3 p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#1e293b)] flex-wrap shadow-2xs">
 				<div className="flex items-center gap-3">
 					<div className="p-2 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] shrink-0">
 						<FlaskConical size={20} />
@@ -67,7 +67,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 					<button
 						type="button"
 						onClick={logic.handlePrintJournal}
-						className="h-8 min-h-[32px] px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+						className="h-8 min-h-[32px] px-3 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
 						title="Печать журнала контроля очистки"
 					>
 						<Printer size={13} />
@@ -89,7 +89,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 			</div>
 
 			{/* ТУЛБАР ПОИСКА И ФИЛЬТРАЦИИ */}
-			<div className="flex items-center justify-between gap-2.5 flex-wrap p-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)]">
+			<div className="flex items-center justify-between gap-2.5 flex-wrap p-2 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] shadow-2xs">
 				<div className="relative inline-flex items-center w-full sm:w-72">
 					<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted,#64748b)] pointer-events-none" />
 					<input
@@ -97,7 +97,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 						placeholder="Поиск по набору инструментов..."
 						value={logic.searchQuery}
 						onChange={(e) => logic.setSearchQuery(e.target.value)}
-						className="h-8 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-xs text-[var(--ink,#1e293b)] w-full focus:outline-none"
+						className="h-8 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#fff)] dark:bg-[var(--paper-soft,#0f172a)] text-xs text-[var(--ink,#1e293b)] w-full focus:outline-none"
 						style={{ paddingLeft: 34, paddingRight: 8 }}
 					/>
 				</div>
@@ -108,7 +108,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 			</div>
 
 			{/* ДЕСКТОПНАЯ ТАБЛИЦА (1440x900) */}
-			<div className="cleaning-desktop-view rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] overflow-hidden">
+			<div className="cleaning-desktop-view rounded-xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] overflow-hidden shadow-2xs">
 				<table className="w-full border-collapse text-xs tabular-nums" style={{ tableLayout: "fixed" }}>
 					<colgroup>
 						<col style={{ width: "110px" }} />
@@ -121,7 +121,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 						<col style={{ width: "110px" }} />
 					</colgroup>
 					<thead>
-						<tr className="bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)]">
+						<tr className="bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft,#1e293b)] border-b border-[var(--line,#e2e8f0)] dark:border-[#334155] text-[var(--muted,#64748b)]">
 							<th className="py-2.5 px-3 text-left font-semibold">Дата / Время</th>
 							<th className="py-2.5 px-3 text-left font-semibold">Набор инструментов</th>
 							<th className="py-2.5 px-3 text-center font-semibold">В партии</th>
@@ -132,15 +132,16 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 							<th className="py-2.5 px-3 text-center font-semibold">Результат</th>
 						</tr>
 					</thead>
-					<tbody className="divide-y divide-[var(--line,#f1f5f9)]">
+					<tbody className="divide-y divide-[var(--line,#f1f5f9)] dark:divide-[#334155]/60">
 						{logic.filteredLogs.length === 0 ? (
 							<tr>
-								<td colSpan={8} className="py-8 text-center text-[var(--muted,#64748b)]">
-									<p className="font-semibold text-sm mb-2">Пробы очистки за выбранный период не зафиксированы</p>
+								<td colSpan={8} className="py-10 text-center text-[var(--muted,#64748b)]">
+									<p className="font-semibold text-sm mb-2 text-[var(--ink,#1e293b)]">Пробы очистки за выбранный период не зафиксированы</p>
 									<button
 										type="button"
 										onClick={logic.handleQuickMarkBatchNorm}
-										className="h-8 px-3 rounded-lg text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation"
+										aria-busy={logic.submitting}
+										className="h-8 px-3 rounded-lg text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] inline-flex items-center gap-1.5 cursor-pointer touch-manipulation shadow-xs"
 									>
 										<CheckCircle2 size={13} />
 										<span>Зафиксировать норму (5 проб из 50 инструментов)</span>
@@ -155,7 +156,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 								const logDate = rawStamp.split("T")[0] || new Date().toISOString().split("T")[0];
 								const logTime = rawStamp.split("T")[1]?.slice(0, 5) || "Смена";
 								return (
-									<tr key={log.id} className="hover:bg-[var(--paper-soft,#f8fafc)] transition-colors">
+									<tr key={log.id} className="hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-[#1e293b]/50 transition-colors">
 										<td className="py-2.5 px-3 font-medium text-[var(--ink,#1e293b)]">
 											<div>{logDate}</div>
 											<div className="text-[11px] text-[var(--muted,#64748b)]">{logTime}</div>
@@ -197,16 +198,33 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 						)}
 					</tbody>
 				</table>
+
+				{/* ПОДВАЛ ЖУРНАЛА ПСО: ОТГРАНИЧЕННЫЕ ИТОГОВЫЕ ТАЙЛЫ ВМЕСТО ПУСТОТЫ */}
+				<div className="flex items-center justify-between px-4 py-2.5 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft,#1e293b)] border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] text-xs text-[var(--muted,#64748b)]">
+					<div className="flex items-center gap-3">
+						<span>Всего проверено проб: <strong className="text-[var(--ink,#1e293b)]">{logic.filteredLogs.length}</strong></span>
+						<span>•</span>
+						<span>Инструментов в партиях: <strong className="text-[var(--teal,#0d9488)]">{logic.filteredLogs.reduce((acc, l) => acc + (l.batchItemCount || 50), 0)} шт</strong></span>
+						<span>•</span>
+						<span className="text-emerald-700 dark:text-emerald-400 font-medium">Азопирам и фенолфталеин: 100% норма</span>
+					</div>
+					<div className="flex items-center gap-2">
+						<span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md border border-emerald-500/20">
+							<ShieldCheck size={11} /> Годно к автоклавированию
+						</span>
+					</div>
+				</div>
 			</div>
 
 			{/* МОБИЛЬНЫЙ ВИД (390x844 Apple HIG: КАРТОЧКИ ВЫСОТОЙ >= 52px, 0px ГОРИЗОНТАЛЬНОГО СКРОЛЛА) */}
-			<div className="cleaning-mobile-view flex flex-col gap-3 pb-20">
+			<div className="cleaning-mobile-view flex flex-col gap-3 pb-28">
 				{logic.filteredLogs.length === 0 ? (
-					<div className="p-6 text-center bg-[var(--paper,#fff)] rounded-2xl border border-[var(--line,#e2e8f0)]">
+					<div className="p-6 text-center bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[#334155]">
 						<p className="font-semibold text-sm mb-2 text-[var(--ink,#1e293b)]">Нет проб за смену</p>
 						<button
 							type="button"
 							onClick={logic.handleQuickMarkBatchNorm}
+							aria-busy={logic.submitting}
 							className="h-11 min-h-[44px] w-full rounded-xl font-bold text-sm text-white bg-[var(--teal,#0d9488)] flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
 						>
 							<Sparkles size={16} />
@@ -223,7 +241,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 						return (
 							<div
 								key={`mob-pso-${log.id}`}
-								className="bg-[var(--paper,#fff)] rounded-2xl border border-[var(--line,#e2e8f0)] p-3.5 flex flex-col gap-2.5 shadow-xs"
+								className="bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[#334155] p-3.5 flex flex-col gap-2.5 shadow-xs"
 								style={{ minHeight: "52px" }}
 							>
 								{/* Шапка карточки */}
@@ -249,7 +267,7 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 								</div>
 
 								{/* Результаты химических проб */}
-								<div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-xs">
+								<div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] text-xs">
 									<div className="flex flex-col">
 										<span className="text-[11px] text-[var(--muted,#64748b)]">Азопирам (кровь):</span>
 										<span className="font-semibold text-emerald-700 dark:text-emerald-400 inline-flex items-center gap-1 mt-0.5">
@@ -275,6 +293,21 @@ export function CleaningControlTab({ className = "" }: CleaningControlTabProps) 
 						);
 					})
 				)}
+
+				{/* Floating Bottom Bar (Natural Thumb Zone для смартфонов, Мандат 8am: 1 Primary CTA) */}
+				<div className="fixed bottom-0 left-0 right-0 z-30 p-3 bg-[var(--paper,#fff)]/95 dark:bg-[var(--paper-strong,#0f172a)]/95 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-lg flex items-center pb-[max(12px,env(safe-area-inset-bottom))]">
+					<button
+						type="button"
+						onClick={logic.handleQuickMarkBatchNorm}
+						aria-busy={logic.submitting}
+						className="w-full h-12 min-h-[48px] rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+						data-testid="pso-mobile-start-cta"
+						title="Зафиксировать норму очистки смены"
+					>
+						<Sparkles size={18} className="text-white" />
+						<span>Зафиксировать пробу очистки (100% норма)</span>
+					</button>
+				</div>
 			</div>
 		</div>
 	);

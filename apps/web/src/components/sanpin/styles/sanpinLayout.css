@@ -10,7 +10,7 @@
 	background: var(--paper, #ffffff);
 	color: var(--ink, #0f172a);
 	border-radius: 12px;
-	min-height: 80vh;
+	min-height: auto;
 	box-sizing: border-box;
 	max-width: 100%;
 	overflow-x: clip;

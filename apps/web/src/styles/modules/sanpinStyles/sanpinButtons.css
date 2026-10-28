@@ -1,0 +1,84 @@
+/* ==========================================================================
+   SANPIN ACTION BUTTONS
+   apps/web/src/styles/modules/sanpinStyles/sanpinButtons.css
+   ========================================================================== */
+
+/* Primary CTA Button: 32px Height, 8px Radius, Dominant Emerald/Teal */
+.sanpin-btn-primary-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.85rem;
+	font-size: 0.8125rem;
+	font-weight: 700;
+	border-radius: 8px;
+	border: 1px solid var(--teal, #0d9488);
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	cursor: pointer;
+	white-space: nowrap;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+	transition: all 0.15s ease;
+}
+
+.sanpin-btn-primary-cta:hover {
+	background: #0f766e;
+	border-color: #0f766e;
+	box-shadow: 0 2px 6px rgba(13, 148, 136, 0.35);
+}
+
+[data-theme="dark"] .sanpin-btn-primary-cta,
+.dark .sanpin-btn-primary-cta {
+	background: #0d9488;
+	border-color: #0d9488;
+	color: #ffffff;
+}
+
+[data-theme="dark"] .sanpin-btn-primary-cta:hover,
+.dark .sanpin-btn-primary-cta:hover {
+	background: #14b8a6;
+	border-color: #14b8a6;
+}
+
+/* Secondary CTA: Print for Rospotrebnadzor */
+.sanpin-btn-export-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	height: 32px;
+	min-height: 32px;
+	padding: 0 0.75rem;
+	font-size: 0.8125rem;
+	font-weight: 600;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #1e293b);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+}
+
+.sanpin-btn-export-cta:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+[data-theme="dark"] .sanpin-btn-export-cta,
+.dark .sanpin-btn-export-cta {
+	background: #1e293b;
+	border-color: #334155;
+	color: #e2e8f0;
+}
+
+[data-theme="dark"] .sanpin-btn-export-cta:hover,
+.dark .sanpin-btn-export-cta:hover {
+	background: #334155;
+	border-color: #2dd4bf;
+	color: #2dd4bf;
+}
