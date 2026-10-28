@@ -8,7 +8,9 @@ import type { TreatmentPlanRoadmapProps } from "./types.js";
 import { useTreatmentPlanRoadmap } from "./useTreatmentPlanRoadmap.js";
 import { RoadmapTimelineHeader } from "./RoadmapTimelineHeader.js";
 import { RoadmapStageCard } from "./RoadmapStageCard.js";
-import "../treatmentPlanRoadmap.css";
+if (typeof window !== "undefined") {
+	void import("../treatmentPlanRoadmap.css");
+}
 
 export const TreatmentPlanRoadmap: React.FC<TreatmentPlanRoadmapProps> = (props) => {
 	const {

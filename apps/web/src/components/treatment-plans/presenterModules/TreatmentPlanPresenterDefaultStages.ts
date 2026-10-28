@@ -1,4 +1,4 @@
-import type { TreatmentPlanStage } from "../treatmentPlanTypes";
+import type { TreatmentPlanStage, TreatmentPlanTier } from "../treatmentPlanTypes";
 
 export const DEFAULT_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [
 	{
@@ -34,5 +34,44 @@ export const DEFAULT_PRESENTER_STAGES: readonly TreatmentPlanStage[] = [
 		items: [
 			{ id: "it-4", toothNumber: 36, code804n: "A16.07.004", name: "Установка коронки из диоксида циркония на имплантате", priceRub: 26500, quantity: 1 },
 		],
+	},
+];
+
+export const DEFAULT_PRESENTER_TIERS: readonly TreatmentPlanTier[] = [
+	{
+		tierId: "economy",
+		title: "Базовый (Эконом)",
+		subtitle: "Эконом-стандарт ОМС: базовая санация и светоотверждаемые пломбы",
+		badge: "Базовый",
+		isRecommended: false,
+		totalRub: 14500,
+		totalKopecks: 1450000,
+		warrantyYears: 1,
+		keyAdvantages: ["Базовая санация полости рта", "Светоотверждаемые композиты", "Гарантия клиники 1 год"],
+		stages: [DEFAULT_PRESENTER_STAGES[0]!],
+	},
+	{
+		tierId: "standard",
+		title: "Оптимальный",
+		subtitle: "Клиническая норма: нанокомпозит, эндодонтия под микроскопом, цирконий",
+		badge: "Оптимальный",
+		isRecommended: true,
+		totalRub: 86000,
+		totalKopecks: 8600000,
+		warrantyYears: 3,
+		keyAdvantages: ["Лечение каналов под микроскопом", "Высокопрочный нанокомпозит", "Циркониевая коронка CAD/CAM", "Гарантия клиники 3 года"],
+		stages: DEFAULT_PRESENTER_STAGES,
+	},
+	{
+		tierId: "optimum",
+		title: "Премиум",
+		subtitle: "Высокая эстетика: керамика E-max, дентальная имплантация Straumann",
+		badge: "Премиум",
+		isRecommended: false,
+		totalRub: 148000,
+		totalKopecks: 14800000,
+		warrantyYears: 10,
+		keyAdvantages: ["Премиальная имплантация Straumann", "Безметалловая керамика IPS e.max", "Пожизненная гарантия на имплантат", "Персональный куратор лечения"],
+		stages: DEFAULT_PRESENTER_STAGES,
 	},
 ];

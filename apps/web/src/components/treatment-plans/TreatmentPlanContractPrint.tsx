@@ -13,7 +13,9 @@ import { TreatmentPlanContractClinicPatientInfo } from "./TreatmentPlanContractC
 import { TreatmentPlanContractServicesTable } from "./TreatmentPlanContractServicesTable";
 import { TreatmentPlanContractFinancialSummary } from "./TreatmentPlanContractFinancialSummary";
 import { TreatmentPlanContractSignatures } from "./TreatmentPlanContractSignatures";
-import "../../styles/premium-document-print.css";
+if (typeof window !== "undefined") {
+	void import("../../styles/premium-document-print.css");
+}
 
 export interface TreatmentPlanContractPrintProps {
 	readonly isOpen: boolean;

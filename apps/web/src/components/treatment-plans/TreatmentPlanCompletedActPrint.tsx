@@ -8,7 +8,9 @@
 
 import React from "react";
 import { createPortal } from "react-dom";
-import "../../styles/premium-document-print.css";
+if (typeof window !== "undefined") {
+	void import("../../styles/premium-document-print.css");
+}
 import { TreatmentPlanActMaterialsTable } from "./TreatmentPlanActMaterialsTable";
 import {
 	ActPrintActionBar,

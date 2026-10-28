@@ -50,37 +50,36 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 	return (
 		<header className="flex flex-col border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
 			{/* Тактильный Drag Handle для смартфонов (Apple HIG) */}
-			<div className="sm:hidden flex justify-center pt-2 pb-1 bg-[var(--paper-soft)] shrink-0">
-				<div className="w-9 h-1 rounded-full bg-[var(--line)]" />
+			<div className="sm:hidden flex justify-center pt-2.5 pb-1 bg-[var(--paper-soft)] shrink-0">
+				<div className="w-[36px] h-[5px] rounded-full bg-[var(--line)]" />
 			</div>
 
 			{/* Верхняя строка: заголовок, врач/пациент и быстрые действия */}
-			<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)]/50">
-				<div className="flex items-center gap-3">
+			<div className="flex items-center justify-between px-4 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--line)]/50 gap-2">
+				<div className="flex items-center gap-2.5 sm:gap-3 min-w-0 flex-1">
 					<div className="p-2 rounded-xl bg-[var(--teal)]/10 text-[var(--teal)] shrink-0">
 						<Sparkles className="w-5 h-5" />
 					</div>
-					<div>
+					<div className="min-w-0 flex-1">
 						<div className="flex items-center gap-2">
-							<h2 id="treatment-presenter-modal-title" className="text-base sm:text-lg font-black text-[var(--ink)] m-0">
+							<h2 id="treatment-presenter-modal-title" className="text-sm sm:text-lg font-black text-[var(--ink)] m-0 truncate">
 								Презентация планов лечения
 							</h2>
-							<span className="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--teal)]/10 text-[var(--teal)] hidden sm:inline-block">
+							<span className="text-[10px] sm:text-[11px] font-semibold px-2 py-0.5 rounded-full bg-[var(--teal)]/10 text-[var(--teal)] hidden sm:inline-block shrink-0">
 								Прейскурант клиники
 							</span>
 						</div>
-						<p className="text-xs text-[var(--muted)] m-0 truncate max-w-xl">
-							Пациент: <strong className="text-[var(--ink)]">{patientName}</strong> · Врач:{" "}
-							<span className="text-[var(--ink)]">{doctorFullName}</span>
+						<p className="text-[11px] sm:text-xs text-[var(--muted)] m-0 truncate mt-0.5">
+							{patientName} · <span className="text-[var(--ink)]">{doctorFullName}</span>
 						</p>
 					</div>
 				</div>
 
-				<div className="flex items-center gap-1.5">
+				<div className="flex items-center gap-1 sm:gap-1.5 shrink-0">
 					<button
 						type="button"
 						onClick={onPrint}
-						className="w-10 h-10 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] flex items-center justify-center transition-all cursor-pointer"
+						className="treatment-presenter-desktop-only w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] hidden sm:flex items-center justify-center transition-all cursor-pointer"
 						title="Печать сметы"
 						data-testid="presenter-header-print-btn"
 					>
@@ -90,18 +89,18 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 					<button
 						type="button"
 						onClick={onCopyTiersSummary}
-						className="min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] hidden sm:inline-flex items-center gap-1.5 cursor-pointer"
+						className="treatment-presenter-desktop-only min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] hidden md:inline-flex items-center gap-1.5 cursor-pointer"
 						title="Скопировать смету для пациента"
 						data-testid="presenter-copy-tiers-summary-btn"
 					>
 						<Copy className="w-4 h-4 text-[var(--muted)]" />
-						<span>Скопировать смету для пациента</span>
+						<span>Скопировать смету</span>
 					</button>
 
 					<button
 						type="button"
 						onClick={onToggleFullscreen}
-						className="w-10 h-10 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] flex items-center justify-center transition-all cursor-pointer"
+						className="treatment-presenter-desktop-only w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] hidden sm:flex items-center justify-center transition-all cursor-pointer"
 						title={isFullscreen ? "Свернуть" : "На весь экран"}
 						data-testid="presenter-fullscreen-btn"
 					>
@@ -111,11 +110,11 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-10 h-10 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] flex items-center justify-center transition-all cursor-pointer"
+						className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)] flex items-center justify-center transition-all cursor-pointer"
 						title="Закрыть окно"
 						data-testid="btn-close-presenter"
 					>
-						<X className="w-5 h-5" />
+						<X className="w-4 h-4 sm:w-5 sm:h-5" />
 					</button>
 				</div>
 			</div>
@@ -174,14 +173,14 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 
 			{/* Панель Копайлота */}
 			{isCopilotOpen && (
-				<div className="p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] flex flex-col gap-2.5">
-					<div className="flex items-center justify-between gap-2 flex-wrap">
-						<span className="text-xs font-bold text-[var(--ink)]">AI Copilot у кресла</span>
-						<div className="flex items-center gap-1.5 flex-wrap">
+				<div className="p-2.5 sm:p-3 bg-[var(--paper-soft)] border-t border-[var(--line)] flex flex-col gap-2">
+					<div className="flex items-center justify-between gap-2">
+						<span className="text-xs font-bold text-[var(--ink)] shrink-0 hidden sm:inline">AI Copilot у кресла</span>
+						<div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none max-w-full pb-0.5">
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Оптимизировать бюджет плана лечения")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[34px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer shrink-0 whitespace-nowrap"
 								data-testid="presenter-copilot-btn-budget_optimize"
 							>
 								Оптимизировать бюджет
@@ -189,7 +188,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Замена импланта на мостовидный протез")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[34px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer shrink-0 whitespace-nowrap"
 								data-testid="presenter-copilot-btn-implant_to_bridge"
 							>
 								Мост вместо импланта
@@ -197,7 +196,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("All-on-4 верхняя челюсть")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[34px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer shrink-0 whitespace-nowrap"
 								data-testid="presenter-copilot-btn-all_on_4_upper"
 							>
 								All-on-4 Верх
@@ -205,7 +204,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("All-on-4 нижняя челюсть")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[34px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer shrink-0 whitespace-nowrap"
 								data-testid="presenter-copilot-btn-all_on_4_lower"
 							>
 								All-on-4 Низ
@@ -213,7 +212,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Костная пластика Bio-Oss")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[34px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer shrink-0 whitespace-nowrap"
 								data-testid="presenter-copilot-btn-bone_graft_bio_oss"
 							>
 								Костная пластика
@@ -221,7 +220,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 							<button
 								type="button"
 								onClick={() => onSelectCopilotPreset("Пересчет анестезии и изоляции")}
-								className="min-h-[36px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer"
+								className="min-h-[34px] px-2.5 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer shrink-0 whitespace-nowrap"
 								data-testid="presenter-copilot-btn-recalculate_anesthesia_isolation"
 							>
 								Анестезия

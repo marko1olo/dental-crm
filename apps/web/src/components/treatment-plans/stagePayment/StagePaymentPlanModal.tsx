@@ -12,7 +12,9 @@ import { StagePaymentModalTabs } from "./modal/StagePaymentModalTabs";
 import { StagePaymentModalBody } from "./modal/StagePaymentModalBody";
 import { StagePaymentInstallmentWrapper } from "./modal/StagePaymentInstallmentWrapper";
 import { StagePaymentStatusBanner } from "./modal/StagePaymentStatusBanner";
-import "./stagePayment.css";
+if (typeof window !== "undefined") {
+	void import("./stagePayment.css");
+}
 
 export type { StagePaymentModalTab, StagePaymentPlanModalProps };
 

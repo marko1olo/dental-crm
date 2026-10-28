@@ -6,7 +6,9 @@
 import React from "react";
 import type { TreatmentPlanStage, TreatmentPlanTier } from "./types";
 import { formatPlanPriceRub } from "./planPricing";
-import "../../styles/premium-document-print.css";
+if (typeof window !== "undefined") {
+	void import("../../styles/premium-document-print.css");
+}
 import { PrintViewToolbar } from "./printView/PrintViewToolbar";
 import { PrintViewHeader } from "./printView/PrintViewHeader";
 import { PrintViewStagesTable } from "./printView/PrintViewStagesTable";
