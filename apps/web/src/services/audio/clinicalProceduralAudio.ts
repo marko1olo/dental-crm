@@ -173,7 +173,7 @@ export class ClinicalProceduralAudioEngine {
 				// Ignore listener errors
 			}
 		}
-		if (typeof window !== "undefined") {
+		if (typeof window !== "undefined" && typeof window.dispatchEvent === "function") {
 			window.dispatchEvent(
 				new CustomEvent("dente:procedural-audio-played", { detail: event }),
 			);
