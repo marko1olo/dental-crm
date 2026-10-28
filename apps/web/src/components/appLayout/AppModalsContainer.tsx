@@ -23,6 +23,8 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 	const isEffectiveLoyaltyOpen = Boolean(bridge.isGlobalLoyaltyOpen || isLoyaltyFromStore);
 	const effectiveLoyaltyContext =
 		(isLoyaltyFromStore ? (primaryModal?.payload as any) : null) || bridge.loyaltyModalContext;
+	const isEmergencyFromStore = primaryModal?.id === "emergency_rescue";
+	const isEffectiveEmergencyOpen = Boolean(bridge.isEmergencyRescueOpen || isEmergencyFromStore);
 
 	return (
 		<>
@@ -68,8 +70,11 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				egiszCertificatesSection={bridge.egiszCertificatesSection}
 				isGlobalOnboardingOpen={bridge.isGlobalOnboardingOpen}
 				setIsGlobalOnboardingOpen={bridge.setIsGlobalOnboardingOpen}
-				isEmergencyRescueOpen={bridge.isEmergencyRescueOpen}
-				setIsEmergencyRescueOpen={bridge.setIsEmergencyRescueOpen}
+				isEmergencyRescueOpen={isEffectiveEmergencyOpen}
+				setIsEmergencyRescueOpen={(open) => {
+					bridge.setIsEmergencyRescueOpen(open);
+					if (!open) useUiSurfaceStore.getState().closePrimaryModal("emergency_rescue");
+				}}
 			/>
 		</>
 	);

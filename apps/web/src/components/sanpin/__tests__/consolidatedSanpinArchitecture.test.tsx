@@ -30,9 +30,9 @@ describe("КОНСОЛИДИРОВАННАЯ АРХИТЕКТУРА СТЕРИЛ
 		it("канонические 5 вкладок названы живым русским языком без советских аббревиатур", () => {
 			assert.equal(SANPIN_CANONICAL_TABS.length, 5);
 			const expected = [
-				{ id: "autoclave", label: "Журнал автоклавов" },
-				{ id: "pso", label: "Контроль очистки (ПСО)" },
-				{ id: "disinfection", label: "Уборка и дезинфекция" },
+				{ id: "autoclave", label: "Журнал стерилизации инструментов" },
+				{ id: "pso", label: "Предстерилизационная очистка" },
+				{ id: "disinfection", label: "Обеззараживание воздуха и уборка" },
 				{ id: "waste", label: "Медицинские отходы" },
 				{ id: "sterilizers", label: "Оборудование ЦСО" },
 			];

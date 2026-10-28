@@ -6,7 +6,7 @@
 import React from 'react';
 import { User } from 'lucide-react';
 import type { EmergencyVitalsSectionProps } from './emergencyRescueTypes';
-import '../emergencyVitals.css';
+// Emergency CSS unified in EmergencyRescueModal.css
 
 export function EmergencyVitalsSection({
 	patientWeightKg,

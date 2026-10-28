@@ -30,12 +30,12 @@ export function IncomingCallActionFooter({ ctrl }: IncomingCallActionFooterProps
 				type="button"
 				onClick={() => handleQuickBook("today_standard")}
 				className="primary-button flex-1 min-h-[44px] sm:min-h-[34px] sm:h-[34px] px-2 sm:px-3 text-xs font-bold whitespace-nowrap inline-flex items-center justify-center gap-1 rounded-xl cursor-pointer"
-				title={isKnownPatient ? "Записать пациента на приём" : "+ Быстрая запись лида"}
+				title={isKnownPatient ? "Записать пациента на приём" : "Создать пациента и записать (1 клик)"}
 				data-testid="badge-action-book"
 			>
 				<CalendarCheck size={15} className="shrink-0" />
-				<span className="hidden sm:inline">{isKnownPatient ? "Записать" : "+ Запись"}</span>
-				<span className="sm:hidden text-[11px]">Запись</span>
+				<span className="hidden sm:inline">{isKnownPatient ? "Записать на приём" : "Создать и записать"}</span>
+				<span className="sm:hidden text-[11px]">{isKnownPatient ? "Запись" : "Создать и записать"}</span>
 			</button>
 
 			<button

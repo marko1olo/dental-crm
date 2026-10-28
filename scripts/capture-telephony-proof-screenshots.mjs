@@ -199,22 +199,24 @@ async function main() {
     await pcPage.waitForSelector(".dnt-incoming-call-capsule, .dnt-incoming-call-badge", { state: "attached", timeout: 10000 }).catch(() => {});
     await sleep(600);
 
-    const pcLightPath = path.join(outDir, "01_telephony_pc_light.png");
+    const pcLightPath = path.join(outDir, "01_telephony_pc_light_1440x900.png");
     await pcPage.screenshot({ path: pcLightPath, fullPage: false });
+    fs.copyFileSync(pcLightPath, path.join(outDir, "01_telephony_pc_light.png"));
     const pcLightStat = fs.statSync(pcLightPath);
-    console.log(`  [OK] Saved 01_telephony_pc_light.png (${Math.round(pcLightStat.size / 1024)} KB)`);
+    console.log(`  [OK] Saved 01_telephony_pc_light_1440x900.png (${Math.round(pcLightStat.size / 1024)} KB)`);
 
     // 02_telephony_pc_dark.png
-    console.log("[Capturing] 02_telephony_pc_dark.png (1440x900, dark)...");
+    console.log("[Capturing] 02_telephony_pc_dark_1440x900.png (1440x900, dark)...");
     await setTheme(pcPage, "dark");
     await triggerCall(pcPage);
     await pcPage.waitForSelector(".dnt-incoming-call-capsule, .dnt-incoming-call-badge", { state: "attached", timeout: 10000 }).catch(() => {});
     await sleep(600);
 
-    const pcDarkPath = path.join(outDir, "02_telephony_pc_dark.png");
+    const pcDarkPath = path.join(outDir, "02_telephony_pc_dark_1440x900.png");
     await pcPage.screenshot({ path: pcDarkPath, fullPage: false });
+    fs.copyFileSync(pcDarkPath, path.join(outDir, "02_telephony_pc_dark.png"));
     const pcDarkStat = fs.statSync(pcDarkPath);
-    console.log(`  [OK] Saved 02_telephony_pc_dark.png (${Math.round(pcDarkStat.size / 1024)} KB)`);
+    console.log(`  [OK] Saved 02_telephony_pc_dark_1440x900.png (${Math.round(pcDarkStat.size / 1024)} KB)`);
 
     await pcContext.close();
 
@@ -243,22 +245,24 @@ async function main() {
     await mobilePage.waitForSelector(".dnt-incoming-call-capsule, .dnt-incoming-call-badge", { state: "attached", timeout: 10000 }).catch(() => {});
     await sleep(600);
 
-    const mobileLightPath = path.join(outDir, "03_telephony_mobile_light.png");
+    const mobileLightPath = path.join(outDir, "03_telephony_mobile_light_390x844.png");
     await mobilePage.screenshot({ path: mobileLightPath, fullPage: false });
+    fs.copyFileSync(mobileLightPath, path.join(outDir, "03_telephony_mobile_light.png"));
     const mobileLightStat = fs.statSync(mobileLightPath);
-    console.log(`  [OK] Saved 03_telephony_mobile_light.png (${Math.round(mobileLightStat.size / 1024)} KB)`);
+    console.log(`  [OK] Saved 03_telephony_mobile_light_390x844.png (${Math.round(mobileLightStat.size / 1024)} KB)`);
 
     // 04_telephony_mobile_dark.png
-    console.log("[Capturing] 04_telephony_mobile_dark.png (390x844, dark)...");
+    console.log("[Capturing] 04_telephony_mobile_dark_390x844.png (390x844, dark)...");
     await setTheme(mobilePage, "dark");
     await triggerCall(mobilePage);
     await mobilePage.waitForSelector(".dnt-incoming-call-capsule, .dnt-incoming-call-badge", { state: "attached", timeout: 10000 }).catch(() => {});
     await sleep(600);
 
-    const mobileDarkPath = path.join(outDir, "04_telephony_mobile_dark.png");
+    const mobileDarkPath = path.join(outDir, "04_telephony_mobile_dark_390x844.png");
     await mobilePage.screenshot({ path: mobileDarkPath, fullPage: false });
+    fs.copyFileSync(mobileDarkPath, path.join(outDir, "04_telephony_mobile_dark.png"));
     const mobileDarkStat = fs.statSync(mobileDarkPath);
-    console.log(`  [OK] Saved 04_telephony_mobile_dark.png (${Math.round(mobileDarkStat.size / 1024)} KB)`);
+    console.log(`  [OK] Saved 04_telephony_mobile_dark_390x844.png (${Math.round(mobileDarkStat.size / 1024)} KB)`);
 
     await mobileContext.close();
 

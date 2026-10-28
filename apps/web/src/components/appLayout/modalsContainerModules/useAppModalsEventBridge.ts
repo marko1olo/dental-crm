@@ -30,6 +30,9 @@ export function useAppModalsEventBridge() {
 			if (searchParams.get("onboarding") === "1" || searchParams.get("rapid-onboarding") === "1") {
 				setIsGlobalOnboardingOpen(true);
 			}
+			if (searchParams.get("emergency") === "1" || searchParams.get("antishock") === "1") {
+				setIsEmergencyRescueOpen(true);
+			}
 		} catch {
 			// ignore SSR
 		}

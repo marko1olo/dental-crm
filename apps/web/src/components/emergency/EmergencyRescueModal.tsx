@@ -24,7 +24,7 @@ import { EmergencyDosageCardsGrid } from './EmergencyDosageCardsGrid';
 import { EmergencyKitActionsBar } from './emergencyModules/EmergencyKitActionsBar';
 import { EmergencyProtocolHandoverBox } from './EmergencyProtocolHandoverBox';
 import { useEmergencyRescueLogic } from './emergencyModules/useEmergencyRescueLogic';
-import './emergencyRescue.css';
+import './EmergencyRescueModal.css';
 
 export { EmergencyDosageCardsGrid, EmergencyProtocolHandoverBox };
 export { formatEmergencyRelativeNotice };

@@ -61,10 +61,10 @@ export function TelephonyIncomingCallCard(props: TelephonyIncomingCallCardProps)
 					onClick={() => onQuickBook("urgent")}
 					className="primary-button dnt-cta-primary flex-1 whitespace-nowrap"
 					data-testid="widget-action-book"
-					title={isKnownPatient ? "Записать пациента на приём в расписание" : "+ Быстрая запись"}
+					title={isKnownPatient ? "Записать пациента на приём в расписание" : "Создать пациента и записать"}
 				>
 					<CalendarCheck size={14} className="shrink-0" />
-					<span>{isKnownPatient ? "Записать на приём" : "+ Быстрая запись"}</span>
+					<span>{isKnownPatient ? "Записать на приём" : "Создать пациента и записать"}</span>
 				</button>
 
 				<button

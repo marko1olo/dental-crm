@@ -26,7 +26,7 @@ export function AnesthesiaPresetDrugsRow({
 }: AnesthesiaPresetDrugsRowProps) {
 	return (
 		<div className="flex items-center gap-1.5 flex-wrap min-w-0" data-testid="anesthesia-chips-group">
-			<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Метод обезболивания">
+			<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 max-w-full flex-wrap sm:flex-nowrap" role="group" aria-label="Метод обезболивания">
 				<button
 					type="button"
 					onClick={() => setTechniqueId("infiltration")}
@@ -34,6 +34,7 @@ export function AnesthesiaPresetDrugsRow({
 						techniqueId === "infiltration" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
 					title="Инфильтрационная анестезия"
+					data-testid="technique-btn-infiltration"
 				>
 					Инфильтрационная
 				</button>
@@ -43,9 +44,21 @@ export function AnesthesiaPresetDrugsRow({
 					className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 						techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
 					}`}
-					title="Проводниковая анестезия"
+					title="Проводниковая (мандибулярная) анестезия"
+					data-testid="technique-btn-mandibular"
 				>
 					Проводниковая
+				</button>
+				<button
+					type="button"
+					onClick={() => setTechniqueId("intraligamentary_sta")}
+					className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+						techniqueId === "intraligamentary_sta" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"
+					}`}
+					title="Интралигаментарная анестезия"
+					data-testid="technique-btn-intraligamentary"
+				>
+					Интралигаментарная
 				</button>
 			</div>
 

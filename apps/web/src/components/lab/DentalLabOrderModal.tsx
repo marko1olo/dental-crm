@@ -149,7 +149,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 			}}
 		>
 			<div
-				className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border border-[var(--line,#cbd5e1)] rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh]"
+				className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh]"
 				data-testid="dental-lab-order-drawer"
 				id="lab-order-modal-container"
 			>
@@ -176,8 +176,8 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 				/>
 
 				{/* 2. Express Presets Bar (1-Click Orthopedic Presets) */}
-				<div className="px-4 sm:px-6 py-2 border-b border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
-					<span className="text-[11px] font-bold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0">
+				<div className="px-4 sm:px-6 py-2 border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
+					<span className="hidden sm:inline-block text-[11px] font-bold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0 pr-1">
 						Быстрый выбор:
 					</span>
 					{MODAL_EXPRESS_LAB_PRESETS.map((p) => (
@@ -186,7 +186,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 							type="button"
 							data-testid={`lab-preset-btn-${p.id}`}
 							onClick={() => form.handleApplyExpressPreset(p)}
-							className="px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] hover:border-[#0d9488] bg-[var(--paper-soft,#f8fafc)] hover:bg-teal-50 dark:hover:bg-teal-950/20 text-xs text-[var(--ink,#0f172a)] font-medium whitespace-nowrap transition cursor-pointer shrink-0"
+							className="px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-[#0d9488] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/20 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium whitespace-nowrap transition cursor-pointer shrink-0"
 						>
 							{(p as any).name || (p as any).title || p.badge}
 						</button>
@@ -194,66 +194,66 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 				</div>
 
 				{/* 3. Segmented Navigation Tabs */}
-				<nav className="flex items-center border-b border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] px-4 sm:px-6 overflow-x-auto scrollbar-none shrink-0">
+				<nav className="flex items-center border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950 px-3 sm:px-6 overflow-x-auto scrollbar-none shrink-0 gap-1">
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("main")}
-						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeSubTab === "main"
 								? "border-[#0d9488] text-[#0d9488]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
-						<Layers className="w-4 h-4" />
-						<span>Конструкция и зубы FDI</span>
+						<Layers className="w-4 h-4 shrink-0" />
+						<span><span className="hidden sm:inline">Конструкция и зубы FDI</span><span className="sm:hidden">Конструкция</span></span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("shades")}
-						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeSubTab === "shades"
 								? "border-[#0d9488] text-[#0d9488]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
-						<Palette className="w-4 h-4" />
-						<span>Шкала расцветки VITA</span>
+						<Palette className="w-4 h-4 shrink-0" />
+						<span><span className="hidden sm:inline">Шкала расцветки VITA</span><span className="sm:hidden">Шкала VITA</span></span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("scans")}
-						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeSubTab === "scans"
 								? "border-[#0d9488] text-[#0d9488]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
-						<Upload className="w-4 h-4" />
-						<span>3D-скан челюсти (STL / PLY)</span>
+						<Upload className="w-4 h-4 shrink-0" />
+						<span><span className="hidden sm:inline">3D-скан челюсти (STL / PLY)</span><span className="sm:hidden">3D-скан</span></span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("stages")}
-						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeSubTab === "stages"
 								? "border-[#0d9488] text-[#0d9488]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
-						<Clock className="w-4 h-4" />
-						<span>Сроки и статус ЗТЛ</span>
+						<Clock className="w-4 h-4 shrink-0" />
+						<span><span className="hidden sm:inline">Сроки и статус ЗТЛ</span><span className="sm:hidden">Сроки</span></span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("print")}
-						className={`py-3 px-3.5 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 ${
+						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeSubTab === "print"
 								? "border-[#0d9488] text-[#0d9488]"
-								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
-						<FileText className="w-4 h-4" />
-						<span>Расчет и печать</span>
+						<FileText className="w-4 h-4 shrink-0" />
+						<span><span className="hidden sm:inline">Расчет и печать</span><span className="sm:hidden">Расчет</span></span>
 					</button>
 				</nav>
 

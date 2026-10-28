@@ -36,13 +36,13 @@ describe("ДОМЕН 2: САНПИН, СТЕРИЛИЗАЦИЯ И ЖУРНАЛЫ
 			);
 		});
 
-		it("AutoclaveJournalTab укладывается в диапазон 200–320 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "AutoclaveJournalTab.tsx");
-			assert.ok(fs.existsSync(filePath), "AutoclaveJournalTab.tsx обязан существовать");
+		it("SanPinSterilizationJournal укладывается в диапазон 300–500 строк (Мандат 8b/8zi)", () => {
+			const filePath = path.join(SANPIN_DIR, "SanPinSterilizationJournal.tsx");
+			assert.ok(fs.existsSync(filePath), "SanPinSterilizationJournal.tsx обязан существовать");
 			const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
 			assert.ok(
-				lines >= 200 && lines <= 350,
-				`AutoclaveJournalTab.tsx (${lines} строк) должен быть около 200–320 строк`,
+				lines >= 300 && lines <= 500,
+				`SanPinSterilizationJournal.tsx (${lines} строк) должен быть в диапазоне 300–500 строк по Мандату 8b/8zi`,
 			);
 		});
 

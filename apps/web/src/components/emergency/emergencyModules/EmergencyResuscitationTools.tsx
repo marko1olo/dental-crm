@@ -7,7 +7,7 @@ import React from 'react';
 import { Clock, RotateCcw, Syringe, Heart, AlertTriangle, Check, PackageCheck } from 'lucide-react';
 import { STATUTORY_EMERGENCY_KIT_MEMO, formatTimerSeconds } from '../emergencyRescueEngine';
 import type { EmergencyResuscitationToolsProps } from './emergencyRescueTypes';
-import '../emergencyCpr.css';
+// Emergency CSS unified in EmergencyRescueModal.css
 
 export function EmergencyResuscitationTools({
 	adrenalineTimerSeconds,

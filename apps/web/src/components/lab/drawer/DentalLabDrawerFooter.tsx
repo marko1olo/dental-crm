@@ -30,12 +30,12 @@ export function DentalLabDrawerFooter({
 			<button
 				type="button"
 				onClick={onSubmit}
-				className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 flex-1 sm:flex-none rounded-xl border border-[var(--teal)] bg-[var(--teal)] hover:bg-[var(--teal-dark,#0d736b)] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-transform active:scale-95 cursor-pointer"
+				className="primary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 sm:px-5 flex-1 sm:flex-none rounded-xl border border-[#0d9488] bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs inline-flex items-center justify-center gap-2 shadow-2xs transition-transform active:scale-95 cursor-pointer"
 				data-testid="form-save-order-btn"
-				title="Отправить наряд в зуботехническую лабораторию (Мандат 8e)"
+				title={isEditing ? "Сохранить наряд в лабораторию" : "Сформировать наряд в лабораторию"}
 			>
 				<Check className="w-4 h-4 shrink-0" />
-				<span>{isEditing ? "✓ Сохранить наряд в ЗТЛ" : "✓ Отправить наряд в ЗТЛ"}</span>
+				<span>{isEditing ? "Сохранить" : "Создать наряд"}</span>
 			</button>
 		</div>
 	);

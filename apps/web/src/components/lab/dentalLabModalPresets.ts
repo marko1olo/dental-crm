@@ -14,6 +14,12 @@ export {
 	buildLabOrderMessengerSummary,
 } from "./orderModalModules/labOrderMessengerSummary";
 
+export {
+	EXPRESS_PRESET_ZIRCONIA_CROWN,
+	EXPRESS_PRESET_PFM_DUCERAM,
+	EXPRESS_PRESET_PMMA_TEMPORARY,
+};
+
 export const EXPRESS_PRESET_EMAX_CROWN: ExpressLabPreset = {
 	id: "emax_crown_express",
 	title: "Коронка E.max CAD / Press",

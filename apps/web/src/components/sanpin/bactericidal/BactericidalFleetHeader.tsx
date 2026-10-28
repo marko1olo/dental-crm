@@ -18,7 +18,7 @@ export function BactericidalFleetHeader({
 		<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "0.5rem", flexWrap: "wrap", gap: "0.5rem" }}>
 			<h3 style={{ margin: 0, fontSize: "1.05rem", display: "flex", alignItems: "center", gap: "0.5rem" }}>
 				<Wind size={18} color="var(--brand-primary)" />
-				Парк бактерицидных облучателей и рециркуляторов клиники ({equipmentCount} шт.)
+				Обеззараживание воздуха (УФ-рециркуляторы) ({equipmentCount} шт.)
 			</h3>
 			<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap" }}>
 				<button

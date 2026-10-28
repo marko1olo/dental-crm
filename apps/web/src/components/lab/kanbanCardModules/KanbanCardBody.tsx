@@ -55,10 +55,12 @@ export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment 
 
 			<div className="ztl-card-price-row">
 				<span style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined}>
-					{order.isWarrantyRework ? "0 руб (Гарантия)" : `${order.financials.patientPriceTotalRub.toLocaleString("ru-RU")} руб`}
+					{order.isWarrantyRework
+						? "0 руб (Гарантия)"
+						: `${(order.financials?.patientPriceTotalRub ?? (order as any).priceRub ?? 0).toLocaleString("ru-RU")} руб`}
 				</span>
 				<span style={{ color: "var(--muted, #64748b)", fontSize: "10px" }}>
-					Себест: {order.financials.labCostTotalRub.toLocaleString("ru-RU")} руб
+					Себест: {(order.financials?.labCostTotalRub ?? Math.round(((order as any).priceRub ?? 0) * 0.4)).toLocaleString("ru-RU")} руб
 				</span>
 			</div>
 		</>

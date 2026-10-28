@@ -40,10 +40,11 @@ export function DentalLabOrderModalFooter({
 				<div className="flex items-center gap-2">
 					<button
 						type="button" onClick={onCopySummary} data-testid="lab-order-copy-messenger-btn"
+						title="Скопировать для лаборатории"
 						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-3 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] text-[var(--ink-secondary)] hover:text-[var(--ink)] flex items-center gap-1.5 cursor-pointer shadow-2xs transition-colors whitespace-nowrap shrink-0"
 					>
 						<Copy className="w-3.5 h-3.5 text-[var(--muted)]" />
-						<span>Копия наряда</span>
+						<span>Скопировать для лаборатории</span>
 					</button>
 					<button
 						type="button" onClick={onPrint} data-testid="lab-order-footer-print-btn"
@@ -60,10 +61,11 @@ export function DentalLabOrderModalFooter({
 					</button>
 					<button
 						type="button" onClick={onSubmit} aria-busy={isSubmitting} data-testid="submit-lab-order-btn"
-						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 text-xs font-bold rounded-lg bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
+						title={isEdit ? "Сохранить наряд в лабораторию" : "Отправить наряд в лабораторию"}
+						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 text-xs font-bold rounded-lg border border-[#0d9488] bg-[var(--teal,#0d9488)] hover:bg-teal-700 text-white shadow-2xs flex items-center gap-1.5 cursor-pointer transition-all active:scale-[0.98] whitespace-nowrap shrink-0"
 					>
 						{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-						<span>{isEdit ? "✓ Сохранить наряд" : "✓ Отправить наряд в ЗТЛ"}</span>
+						<span>{isEdit ? "Сохранить" : "Создать наряд"}</span>
 					</button>
 				</div>
 			</div>
@@ -103,7 +105,7 @@ export function DentalLabOrderModalFooter({
 					data-testid="submit-lab-order-btn"
 				>
 					{isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-					<span>{isEdit ? "✓ Сохранить наряд в лабораторию (ЗТЛ)" : "✓ Отправить наряд в лабораторию (ЗТЛ)"}</span>
+					<span>{isEdit ? "Сохранить наряд в лабораторию (ЗТЛ)" : "Отправить наряд в лабораторию (ЗТЛ)"}</span>
 				</button>
 			</div>
 		</div>

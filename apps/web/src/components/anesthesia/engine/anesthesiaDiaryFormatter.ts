@@ -61,14 +61,16 @@ export function generateAnesthesiaDiaryEntry(params: AnesthesiaDiaryParams): str
 		? "инфильтрационная"
 		: tech.nameRu.includes("Проводниковая") || tech.nameRu.includes("Торусальная")
 			? "проводниковая"
-			: tech.nameRu.toLowerCase().split(" ")[0] || "местная";
+			: tech.nameRu.includes("Интралигаментарная")
+				? "интралигаментарная"
+				: tech.nameRu.toLowerCase().split(" ")[0] || "местная";
 
 	const toothPart = params.targetToothNumberFdi ? ` в области зуба ${params.targetToothNumberFdi}` : "";
 	const drugFormula = resolveLatinDrugFormula(params.drug);
 	const carpulesText = formatClinicalCarpulesText(params.carpulesCount);
 	const overrideNote = params.overrideReason ? ` [Клиническое решение врача: ${params.overrideReason}]` : "";
 
-	return `Проведена ${techNameRu} анестезия${toothPart} ${drugFormula} — ${params.injectedVolumeMl} мл (${carpulesText}). Осложнений нет.${overrideNote}`;
+	return `Проведена ${techNameRu} анестезия${toothPart} ${drugFormula} — ${params.injectedVolumeMl} мл (${carpulesText}). Анестезия наступила через 3 минуты, без осложнений. Осложнений нет.${overrideNote}`;
 }
 
 export interface AnesthesiaPatientMemoParams {

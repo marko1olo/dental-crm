@@ -8,17 +8,11 @@
  */
 
 import React from "react";
-import { CheckCircle2, ShieldCheck, Wrench, Calendar, Sparkles } from "lucide-react";
+import { CheckCircle2, ShieldCheck } from "lucide-react";
 import type { SterilizerEquipment } from "@dental/shared";
 import { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 import { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
-import { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
-import { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
-import { SterilizerFleetCard } from "./SterilizerFleetCard";
 
-export { SterilizerFleetToolbar } from "./SterilizerFleetToolbar";
-export { SterilizerFleetOnboarding } from "./SterilizerFleetOnboarding";
-export { SterilizerFleetCard } from "./SterilizerFleetCard";
 export { SterilizerDecommissionModal } from "./SterilizerDecommissionModal";
 export { SterilizerEquipmentModal } from "./SterilizerEquipmentModal";
 
@@ -33,7 +27,7 @@ export function SterilizerFleetManager({
 }: SterilizerFleetManagerProps) {
 	return (
 		<div className="sanpin-fleet-container flex flex-col gap-3.5 w-full text-xs">
-			<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-3">
+			<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex flex-col gap-3 shadow-xs">
 				<div className="flex items-center justify-between">
 					<div className="flex items-center gap-2.5">
 						<div className="w-9 h-9 rounded-xl bg-teal-500/10 text-[var(--teal,#0d9488)] flex items-center justify-center">

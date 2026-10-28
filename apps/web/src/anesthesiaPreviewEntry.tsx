@@ -17,12 +17,19 @@ import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 import "./theme.css";
 import { AnesthesiaQuickBar } from "./components/anesthesia/AnesthesiaQuickBar";
-import { Syringe, Heart, FileText, CheckCircle2 } from "lucide-react";
+import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
+import { Syringe, Heart, FileText, CheckCircle2, ShieldAlert } from "lucide-react";
 
 function AnesthesiaPreviewApp() {
 	const [activeDiaryText, setActiveDiaryText] = useState<string>(
 		"Проведена инфильтрационная анестезия в области зуба 16 Sol. Articaini 4% cum Epinephrini 1:200 000 — 1.7 мл (1 карпула). Осложнений нет."
 	);
+	const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			return new URLSearchParams(window.location.search).get("emergency") === "1";
+		}
+		return false;
+	});
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -34,8 +41,8 @@ function AnesthesiaPreviewApp() {
 	}, []);
 
 	return (
-		<main className="min-h-screen bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] p-6 flex flex-col gap-6">
-			<header className="flex items-center justify-between pb-4 border-b border-[var(--line)]">
+		<main className="min-h-screen bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] p-3 sm:p-6 flex flex-col gap-4 sm:gap-6">
+			<header className="flex items-center justify-between pb-3 sm:pb-4 border-b border-[var(--line)] flex-wrap gap-2">
 				<div className="flex items-center gap-3">
 					<div className="w-10 h-10 rounded-xl bg-[var(--teal,#0d9488)] text-white flex items-center justify-center shadow-sm">
 						<Syringe size={22} />
@@ -46,6 +53,14 @@ function AnesthesiaPreviewApp() {
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setIsEmergencyOpen(true)}
+						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors shadow-xs"
+					>
+						<ShieldAlert size={14} />
+						Аптечка 786н
+					</button>
 					<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
 						1-Click Presets: Active
 					</span>
@@ -95,6 +110,17 @@ function AnesthesiaPreviewApp() {
 					<span>Автоматическое списание со склада (Soft Negative Overdraft) и фиксация в карте приёма.</span>
 				</div>
 			</footer>
+
+			<EmergencyRescueModal
+				isOpen={isEmergencyOpen}
+				onClose={() => setIsEmergencyOpen(false)}
+				clinicName="Стоматология ДЕНТЕ"
+				clinicAddress="г. Москва, ул. Клиническая, д. 10"
+				clinicPhone="+7 (495) 123-45-67"
+				cabinetNumber="1"
+				doctorFullName="Д-р Иванов А. С."
+				initialPatientName="Смирнов Алексей Петрович"
+			/>
 		</main>
 	);
 }

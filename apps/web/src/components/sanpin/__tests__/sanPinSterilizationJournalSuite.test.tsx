@@ -77,13 +77,16 @@ describe("SANPIN STERILIZATION & KRAFT BATCH INQUISITOR SUITE (СанПиН 3.36
 			assert.ok(!content.includes("овербукинг") && !content.includes("overbooking"), "Файл не должен содержать «овербукинг»");
 		});
 
-		it("проверяет модульную декомпозицию фасада SanPinSterilizationJournal.tsx (<= 120 строк)", async () => {
+		it("проверяет золотой стандарт размера объединенного экрана SanPinSterilizationJournal.tsx (300–500 строк, Мандат 8b/8zi)", async () => {
 			const fs = await import("node:fs");
 			const path = await import("node:path");
 
-			const facadePath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx");
-			const facadeLines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
-			assert.ok(facadeLines <= 140, `Фасад SanPinSterilizationJournal.tsx должен быть <= 140 строк (факт: ${facadeLines})`);
+			const fullPath = path.join(process.cwd(), "apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx");
+			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
+			assert.ok(
+				lines >= 300 && lines <= 500,
+				`SanPinSterilizationJournal.tsx должен быть в диапазоне 300–500 строк по Мандату 8b/8zi (факт: ${lines})`,
+			);
 		});
 	});
 });

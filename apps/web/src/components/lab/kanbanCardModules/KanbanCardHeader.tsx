@@ -12,7 +12,7 @@ export function KanbanCardHeader({ order }: KanbanCardHeaderProps) {
 			<div className="ztl-card-top-row">
 				<span className="ztl-card-order-num">{order.orderNumber}</span>
 				<span className="ztl-card-teeth-badge">
-					Зубы: {order.selectedTeeth.join(", ")}
+					Зубы: {order.selectedTeeth?.join(", ") || (order as any).toothFdi || "челюсть"}
 				</span>
 			</div>
 
@@ -29,7 +29,7 @@ export function KanbanCardHeader({ order }: KanbanCardHeaderProps) {
 				<div style={{ marginTop: "3px", fontSize: "10.5px", color: "var(--teal, #0d9488)", fontWeight: 700, display: "flex", alignItems: "center", gap: "4px" }}>
 					<CheckCircle2 size={11} />
 					<span className="truncate">
-						Частичная поставка: готовы [{(order as any).deliveredTeeth?.join(", ") || order.selectedTeeth.join(", ")}]
+						Частичная поставка: готовы [{(order as any).deliveredTeeth?.join(", ") || order.selectedTeeth?.join(", ") || "—"}]
 					</span>
 				</div>
 			)}

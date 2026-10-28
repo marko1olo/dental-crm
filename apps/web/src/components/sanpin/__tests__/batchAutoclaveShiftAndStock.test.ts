@@ -129,9 +129,9 @@ describe("Пакетная стерилизация смены и автомат
 			const psoTab = SANPIN_CANONICAL_TABS.find((t) => t.id === "pso");
 			assert.ok(psoTab);
 			assert.ok(
-				psoTab.label === "Очистка инструментов" ||
-					psoTab.label === "Контроль очистки инструментов" ||
-					psoTab.label === "Контроль очистки (ПСО)",
+				psoTab.label === "Предстерилизационная очистка" ||
+					psoTab.label === "Очистка инструментов" ||
+					psoTab.label === "Контроль очистки инструментов",
 				`Метка вкладки очистки должна быть понятной по-русски, получено: '${psoTab.label}'`
 			);
 		});

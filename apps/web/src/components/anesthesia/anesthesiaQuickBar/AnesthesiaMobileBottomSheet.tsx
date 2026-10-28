@@ -53,6 +53,9 @@ export function AnesthesiaMobileBottomSheet({
 					<button type="button" onClick={() => setTechniqueId("mandibular_torus")} className={`flex-1 min-h-[44px] rounded-lg text-xs font-bold transition-all cursor-pointer ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border border-[var(--teal)]" : "anesthesia-tab-unselected"}`}>
 						Проводниковая
 					</button>
+					<button type="button" onClick={() => setTechniqueId("intraligamentary_sta")} className={`flex-1 min-h-[44px] rounded-lg text-xs font-bold transition-all cursor-pointer ${techniqueId === "intraligamentary_sta" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] border border-[var(--teal)]" : "anesthesia-tab-unselected"}`}>
+						Интралигаментарная
+					</button>
 				</div>
 
 				<div className="flex flex-col gap-2 pt-1">
@@ -111,7 +114,7 @@ export function AnesthesiaMobileBottomSheet({
 				<div className="pt-2 pb-[env(safe-area-inset-bottom)]">
 					<button type="button" onClick={() => { onApplyDirect(selectedDrugId, carpulesCount, techniqueId); onClose(); }} className="primary-button w-full min-h-[48px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-sm shadow-md flex items-center justify-center gap-2 cursor-pointer active:scale-98" data-testid="btn-apply-anesthesia-mobile-to-card">
 						<CheckCircle2 size={16} />
-						<span>Применить анестезию в протокол</span>
+						<span>✓ Применить анестезию</span>
 					</button>
 				</div>
 			</div>
