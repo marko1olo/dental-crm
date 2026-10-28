@@ -1,37 +1,39 @@
 import type {
-	DenteTelegramBotStatus,
-	DenteTelegramChatLinkListResponse,
 	DenteTelegramFeature,
-	DenteTelegramLinkCodeListResponse,
-	DenteTelegramOutboxResponse,
 	DenteTelegramPostVisitCheckupDelayHoursByTopic,
 	DenteTelegramVisualCardKey,
-	DenteTelegramVisualCardUrls,
 } from "@dental/shared";
 import {
-	denteAdminSecretRequestHeaders,
-	normalizeTelegramBotUsernameDraft,
-	normalizeTelegramPublicHttpsUrlDraft,
-	normalizeTelegramVisualCardUrlDraftsForSave,
 	operatorReadableErrorDetailFromUnknown,
 	operatorWorkflowFailureMessage,
-	responseErrorMessage,
-	type TelegramFeaturePlan,
-	telegramHumanMessage,
 } from "../AppHelpers.js";
 import { showToast } from "../components/GlobalToast";
 import { actionFailureToast } from "../lib/panelStateText";
 import { logger } from "../utils/logger.js";
 import { useAppStore } from "../store/appStore.js";
 import { useSettingsStore } from "../store/settingsStore.js";
-import {
-	defaultTelegramPostVisitCheckupDelayDrafts,
-	defaultTelegramPostVisitCheckupDelayHoursByTopic,
-	type TelegramPostVisitCheckupDelayDrafts,
-	type TelegramPostVisitCheckupDelayKey,
-	telegramFeatureLabels,
-	telegramPostVisitCheckupDelayFields,
+import type {
+	TelegramPostVisitCheckupDelayDrafts,
+	TelegramPostVisitCheckupDelayKey,
 } from "../workspaceStaticOptions.js";
+import {
+	createTelegramControlPlaneHeaders,
+	parseTelegramLinkTtlMinutes as parseTtl,
+	parseTelegramReminderLeadTimesHours as parseLeadTimes,
+	parseTelegramReviewRequestDelayHours as parseReviewDelay,
+	telegramFeatureLabel as resolveFeatureLabel,
+	prepareTelegramSettingsSave,
+	parseTelegramPostVisitCheckupDelayHours as parseCheckupDelays,
+	normalizeTelegramPostVisitCheckupDelayDrafts as normCheckupDelays,
+} from "./telegram/useTelegramTokenValidation.js";
+import {
+	buildTelegramStatusEndpoint,
+	buildTelegramOutboxRequestParams,
+	buildTelegramLinkCodeLedgerRequestParams,
+	buildTelegramChatLinkLedgerRequestParams,
+	fetchTelegramControlPlaneBundle,
+	putTelegramSettingsRequest,
+} from "./telegram/useTelegramWebhookState.js";
 
 export function useTelegramSettings(options: {
 	serverBaseUrl?: string | undefined;
@@ -42,20 +44,9 @@ export function useTelegramSettings(options: {
 	loadDashboard?: (() => Promise<void>) | undefined;
 }) {
 	const appStore = useAppStore();
-	const {
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		serverBaseUrl,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		apiFetch,
-		setError,
-		settingsAdminSecretSession,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		loadDashboard,
-	} = options;
+	const { setError, settingsAdminSecretSession } = options;
 	const {
 		dashboard,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setDashboard,
 		isTelegramLoading,
 		setIsTelegramLoading,
 		isTelegramLinkCreating,
@@ -71,42 +62,15 @@ export function useTelegramSettings(options: {
 		isTelegramChatLinksLoadingMore,
 		setIsTelegramChatLinksLoadingMore,
 	} = appStore;
+
 	const settingsStore = useSettingsStore();
 	const {
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramAdminSecretSession,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramAdminSecretSession,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramSendingItemId,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramSendingItemId,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramRevokingLinkId,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramRevokingLinkId,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramOutbox,
 		setTelegramOutbox,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramLinkCodeLedger,
 		setTelegramLinkCodeLedger,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramChatLinkLedger,
 		setTelegramChatLinkLedger,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramLinkCodes,
 		setTelegramLinkCodes,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramChatLinks,
 		setTelegramChatLinks,
-	} = settingsStore;
-
-	// Exporting the states from the store
-	const {
 		telegramModeDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramModeDraft,
 		telegramBotUsernameDraft,
 		setTelegramBotUsernameDraft,
 		telegramOwnBotUsernameDraft,
@@ -136,29 +100,13 @@ export function useTelegramSettings(options: {
 		telegramAllowVoiceIntakeDraft,
 		setTelegramAllowVoiceIntakeDraft,
 		telegramStaffEscalationChannelDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramStaffEscalationChannelDraft,
 		telegramPrivacyModeDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramPrivacyModeDraft,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramSettingsDirty,
 		setTelegramSettingsDirty,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramSettingsSaveState,
 		setTelegramSettingsSaveState,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramSettingsSaveError,
 		setTelegramSettingsSaveError,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramStatus,
 		setTelegramStatus,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		telegramFeaturePlan,
 		setTelegramFeaturePlan,
 		telegramBotConfigId,
-		// biome-ignore lint/correctness/noUnusedVariables: automated suppression
-		setTelegramBotConfigId,
 		telegramOutboxStatusFilter,
 		telegramOutboxTemplateFilter,
 	} = settingsStore;
@@ -169,10 +117,7 @@ export function useTelegramSettings(options: {
 		setTelegramSettingsSaveError(null);
 	}
 
-	function updateTelegramVisualCardUrlDraft(
-		key: DenteTelegramVisualCardKey,
-		value: string,
-	) {
+	function updateTelegramVisualCardUrlDraft(key: DenteTelegramVisualCardKey, value: string) {
 		setTelegramVisualCardUrlDrafts((current) => ({
 			...current,
 			[key]: value.trim() ? value : null,
@@ -182,72 +127,37 @@ export function useTelegramSettings(options: {
 
 	function toggleTelegramFeature(feature: DenteTelegramFeature) {
 		setTelegramEnabledFeaturesDraft((current) =>
-			current.includes(feature)
-				? current.filter((item) => item !== feature)
-				: [...current, feature],
+			current.includes(feature) ? current.filter((item) => item !== feature) : [...current, feature],
 		);
-		if (
-			feature === "voice_note_intake" &&
-			!telegramEnabledFeaturesDraft.includes(feature)
-		) {
+		if (feature === "voice_note_intake" && !telegramEnabledFeaturesDraft.includes(feature)) {
 			setTelegramAllowVoiceIntakeDraft(true);
 		}
 		markTelegramSettingsDirty();
 	}
 
-	function parseTelegramLinkTtlMinutes() {
-		const parsed = Number.parseInt(telegramTokenTtlDraft, 10);
-		if (!Number.isFinite(parsed)) return 15;
-		return Math.min(1440, Math.max(5, parsed));
+	function parseTelegramLinkTtlMinutes(): number {
+		return parseTtl(telegramTokenTtlDraft);
 	}
 
 	function parseTelegramReminderLeadTimesHours(): number[] {
-		const values = telegramReminderLeadTimesDraft
-			.split(/[,\s;]+/)
-			.map((item) => Number.parseInt(item, 10))
-			.filter((item) => Number.isFinite(item) && item >= 1 && item <= 168);
-		const unique = [...new Set(values)] as number[];
-		unique.sort((left, right) => right - left);
-		return unique.length ? unique.slice(0, 6) : [24];
+		return parseLeadTimes(telegramReminderLeadTimesDraft);
 	}
 
 	function parseTelegramReviewRequestDelayHours(): number {
-		const parsed = Number.parseInt(telegramReviewRequestDelayDraft, 10);
-		if (!Number.isFinite(parsed)) return 2;
-		return Math.min(720, Math.max(1, parsed));
+		return parseReviewDelay(telegramReviewRequestDelayDraft);
 	}
 
 	function parseTelegramPostVisitCheckupDelayHours(): DenteTelegramPostVisitCheckupDelayHoursByTopic {
-		const values = { ...defaultTelegramPostVisitCheckupDelayHoursByTopic };
-		for (const field of telegramPostVisitCheckupDelayFields) {
-			const parsed = Number.parseInt(
-				telegramPostVisitCheckupDelayDrafts[field.key],
-				10,
-			);
-			values[field.key] = Number.isFinite(parsed)
-				? Math.max(1, Math.min(720, parsed))
-				: defaultTelegramPostVisitCheckupDelayHoursByTopic[field.key];
-		}
-		return values;
+		return parseCheckupDelays(telegramPostVisitCheckupDelayDrafts);
 	}
 
 	function normalizeTelegramPostVisitCheckupDelayDrafts(
 		values: DenteTelegramPostVisitCheckupDelayHoursByTopic,
 	): TelegramPostVisitCheckupDelayDrafts {
-		const normalized = { ...defaultTelegramPostVisitCheckupDelayDrafts };
-		for (const field of telegramPostVisitCheckupDelayFields) {
-			normalized[field.key] = String(
-				values[field.key] ??
-					defaultTelegramPostVisitCheckupDelayDrafts[field.key],
-			);
-		}
-		return normalized;
+		return normCheckupDelays(values);
 	}
 
-	function updateTelegramPostVisitCheckupDelayDraft(
-		key: TelegramPostVisitCheckupDelayKey,
-		value: string,
-	) {
+	function updateTelegramPostVisitCheckupDelayDraft(key: TelegramPostVisitCheckupDelayKey, value: string) {
 		setTelegramPostVisitCheckupDelayDrafts((current) => ({
 			...current,
 			[key]: value,
@@ -256,25 +166,86 @@ export function useTelegramSettings(options: {
 	}
 
 	function telegramFeatureLabel(value: DenteTelegramFeature | string) {
-		return (
-			telegramFeatureLabels[value as DenteTelegramFeature] ??
-			telegramHumanMessage(value)
-		);
+		return resolveFeatureLabel(value);
 	}
 
 	function telegramControlPlaneHeaders(
 		extra: Record<string, string> = {},
 		adminSecretOverride?: string | null,
 	): Record<string, string> {
-		return denteAdminSecretRequestHeaders(
-			extra,
-			adminSecretOverride || settingsAdminSecretSession || undefined,
+		return createTelegramControlPlaneHeaders(extra, adminSecretOverride, settingsAdminSecretSession);
+	}
+
+	function telegramStatusEndpoint(): string {
+		return buildTelegramStatusEndpoint(dashboard, telegramModeDraft, telegramBotConfigId);
+	}
+
+	function telegramOutboxRequestParams(cursor?: string | null): URLSearchParams {
+		return buildTelegramOutboxRequestParams(
+			telegramOutboxStatusFilter,
+			telegramOutboxTemplateFilter,
+			cursor,
+			dashboard,
+			telegramModeDraft,
+			telegramBotConfigId,
 		);
 	}
 
-	async function saveTelegramSettings(
-		options: { silent?: boolean } = {},
-	): Promise<boolean> {
+	function telegramLinkCodeLedgerRequestParams(cursor?: string | null): URLSearchParams {
+		return buildTelegramLinkCodeLedgerRequestParams(
+			cursor,
+			dashboard,
+			telegramModeDraft,
+			telegramBotConfigId,
+		);
+	}
+
+	function telegramChatLinkLedgerRequestParams(cursor?: string | null): URLSearchParams {
+		return buildTelegramChatLinkLedgerRequestParams(
+			cursor,
+			dashboard,
+			telegramModeDraft,
+			telegramBotConfigId,
+		);
+	}
+
+	async function loadTelegramControlPlane(options: { silent?: boolean; adminSecret?: string } = {}) {
+		if (!options.silent) setIsTelegramLoading(true);
+		try {
+			const headers = telegramControlPlaneHeaders({}, options.adminSecret);
+			const bundle = await fetchTelegramControlPlaneBundle(
+				telegramStatusEndpoint(),
+				headers,
+				telegramOutboxRequestParams(),
+				telegramLinkCodeLedgerRequestParams(),
+				telegramChatLinkLedgerRequestParams(),
+			);
+			setTelegramStatus(bundle.status);
+			setTelegramFeaturePlan(bundle.featurePlan);
+			setTelegramOutbox(bundle.outbox);
+			setTelegramLinkCodeLedger(bundle.linkCodeLedger);
+			setTelegramChatLinkLedger(bundle.chatLinkLedger);
+			setTelegramLinkCodes(bundle.linkCodeLedger.linkCodes);
+			setTelegramChatLinks(bundle.chatLinkLedger.chatLinks);
+		} catch (telegramError) {
+			if (!options.silent) {
+				showToast(
+					actionFailureToast(
+						"Панель управления Telegram недоступна",
+						(telegramError as { status?: number })?.status ?? null,
+					),
+					"error",
+				);
+				setError(operatorWorkflowFailureMessage("Панель управления Telegram недоступна", telegramError));
+			} else {
+				logger.warn("[TelegramSettings] Background control plane load failed:", telegramError);
+			}
+		} finally {
+			if (!options.silent) setIsTelegramLoading(false);
+		}
+	}
+
+	async function saveTelegramSettings(options: { silent?: boolean } = {}): Promise<boolean> {
 		if (telegramPrivacyModeDraft === "consented_phi_templates") {
 			const message =
 				"Чувствительные Telegram-шаблоны заблокированы до отдельного согласия пациента, аудита и серверной политики PHI.";
@@ -283,160 +254,67 @@ export function useTelegramSettings(options: {
 			if (!options.silent) setError(message);
 			return false;
 		}
-		const patientLinkTokenTtlMinutes = parseTelegramLinkTtlMinutes();
-		if (String(patientLinkTokenTtlMinutes) !== telegramTokenTtlDraft) {
-			setTelegramTokenTtlDraft(String(patientLinkTokenTtlMinutes));
-		}
-		const appointmentReminderLeadTimesHours =
-			parseTelegramReminderLeadTimesHours();
-		const normalizedReminderLeadTimes =
-			appointmentReminderLeadTimesHours.join(", ");
-		if (normalizedReminderLeadTimes !== telegramReminderLeadTimesDraft) {
-			setTelegramReminderLeadTimesDraft(normalizedReminderLeadTimes);
-		}
-		const reviewRequestDelayHours = parseTelegramReviewRequestDelayHours();
-		if (String(reviewRequestDelayHours) !== telegramReviewRequestDelayDraft) {
-			setTelegramReviewRequestDelayDraft(String(reviewRequestDelayHours));
-		}
-		const postVisitCheckupDelayHoursByTopic =
-			parseTelegramPostVisitCheckupDelayHours();
-		const normalizedPostVisitCheckupDelayDrafts =
-			normalizeTelegramPostVisitCheckupDelayDrafts(
-				postVisitCheckupDelayHoursByTopic,
-			);
-		if (
-			JSON.stringify(normalizedPostVisitCheckupDelayDrafts) !==
-			JSON.stringify(telegramPostVisitCheckupDelayDrafts)
-		) {
-			setTelegramPostVisitCheckupDelayDrafts(
-				normalizedPostVisitCheckupDelayDrafts,
-			);
-		}
-		let botUsername: string | null;
-		let ownBotUsername: string | null;
-		let webhookBaseUrl: string | null;
-		let patientPortalBaseUrl: string | null;
-		let welcomeImageUrl: string | null;
-		let visualCardUrls: DenteTelegramVisualCardUrls;
-		let clinicReviewUrl: string | null;
-		let clinicMapsUrl: string | null;
+
+		let prepared: ReturnType<typeof prepareTelegramSettingsSave>;
 		try {
-			botUsername = normalizeTelegramBotUsernameDraft(
-				"Общий бот",
-				telegramBotUsernameDraft,
-			);
-			ownBotUsername = normalizeTelegramBotUsernameDraft(
-				"Бот клиники",
-				telegramOwnBotUsernameDraft,
-			);
-			webhookBaseUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Адрес приема сообщений Telegram",
-				telegramWebhookBaseUrlDraft,
-			);
-			patientPortalBaseUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Портал пациента",
-				telegramPatientPortalBaseUrlDraft,
-			);
-			welcomeImageUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Картинка приветствия",
-				telegramWelcomeImageUrlDraft,
-			);
-			visualCardUrls = normalizeTelegramVisualCardUrlDraftsForSave(
-				telegramVisualCardUrlDrafts,
-			);
-			clinicReviewUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Ссылка на отзыв",
-				telegramReviewUrlDraft,
-			);
-			clinicMapsUrl = normalizeTelegramPublicHttpsUrlDraft(
-				"Ссылка на карту",
-				telegramMapsUrlDraft,
-			);
+			prepared = prepareTelegramSettingsSave({
+				mode: telegramModeDraft,
+				privacyMode: telegramPrivacyModeDraft,
+				tokenTtl: telegramTokenTtlDraft,
+				reminderLeadTimes: telegramReminderLeadTimesDraft,
+				reviewRequestDelay: telegramReviewRequestDelayDraft,
+				postVisitCheckupDelays: telegramPostVisitCheckupDelayDrafts,
+				botUsername: telegramBotUsernameDraft,
+				ownBotUsername: telegramOwnBotUsernameDraft,
+				webhookBaseUrl: telegramWebhookBaseUrlDraft,
+				patientPortalBaseUrl: telegramPatientPortalBaseUrlDraft,
+				welcomeImageUrl: telegramWelcomeImageUrlDraft,
+				visualCardUrls: telegramVisualCardUrlDrafts,
+				reviewUrl: telegramReviewUrlDraft,
+				mapsUrl: telegramMapsUrlDraft,
+				enabledFeatures: telegramEnabledFeaturesDraft,
+				allowVoiceIntake: telegramAllowVoiceIntakeDraft,
+				staffEscalationChannel: telegramStaffEscalationChannelDraft,
+			});
 		} catch (urlError) {
 			if (!options.silent) {
 				showToast(
-					actionFailureToast(
-						"Ошибка выполнения операции",
-						(urlError as { status?: number })?.status ?? null,
-					),
+					actionFailureToast("Ошибка выполнения операции", (urlError as { status?: number })?.status ?? null),
 					"error",
 				);
 			} else {
 				logger.warn("[TelegramSettings] Background URL validation failed:", urlError);
 			}
 			const message =
-				operatorReadableErrorDetailFromUnknown(urlError) ??
-				"Проверьте Telegram-настройки перед сохранением.";
+				operatorReadableErrorDetailFromUnknown(urlError) ?? "Проверьте Telegram-настройки перед сохранением.";
 			setTelegramSettingsSaveState("error");
 			setTelegramSettingsSaveError(message);
 			if (!options.silent) setError(message);
 			return false;
 		}
-		if (
-			(botUsername ?? "") !== telegramBotUsernameDraft.trim().replace(/^@/, "")
-		)
-			setTelegramBotUsernameDraft(botUsername ?? "");
-		if (
-			(ownBotUsername ?? "") !==
-			telegramOwnBotUsernameDraft.trim().replace(/^@/, "")
-		) {
-			setTelegramOwnBotUsernameDraft(ownBotUsername ?? "");
+
+		const { normalizedDrafts, payload } = prepared;
+		if (normalizedDrafts.tokenTtl !== telegramTokenTtlDraft) setTelegramTokenTtlDraft(normalizedDrafts.tokenTtl);
+		if (normalizedDrafts.reminderLeadTimes !== telegramReminderLeadTimesDraft) setTelegramReminderLeadTimesDraft(normalizedDrafts.reminderLeadTimes);
+		if (normalizedDrafts.reviewRequestDelay !== telegramReviewRequestDelayDraft) setTelegramReviewRequestDelayDraft(normalizedDrafts.reviewRequestDelay);
+		if (JSON.stringify(normalizedDrafts.postVisitCheckupDelays) !== JSON.stringify(telegramPostVisitCheckupDelayDrafts)) {
+			setTelegramPostVisitCheckupDelayDrafts(normalizedDrafts.postVisitCheckupDelays);
 		}
-		if ((webhookBaseUrl ?? "") !== telegramWebhookBaseUrlDraft.trim())
-			setTelegramWebhookBaseUrlDraft(webhookBaseUrl ?? "");
-		if (
-			(patientPortalBaseUrl ?? "") !== telegramPatientPortalBaseUrlDraft.trim()
-		)
-			setTelegramPatientPortalBaseUrlDraft(patientPortalBaseUrl ?? "");
-		if ((welcomeImageUrl ?? "") !== telegramWelcomeImageUrlDraft.trim())
-			setTelegramWelcomeImageUrlDraft(welcomeImageUrl ?? "");
-		if (
-			JSON.stringify(visualCardUrls) !==
-			JSON.stringify(telegramVisualCardUrlDrafts)
-		)
-			setTelegramVisualCardUrlDrafts(visualCardUrls);
-		if ((clinicReviewUrl ?? "") !== telegramReviewUrlDraft.trim())
-			setTelegramReviewUrlDraft(clinicReviewUrl ?? "");
-		if ((clinicMapsUrl ?? "") !== telegramMapsUrlDraft.trim())
-			setTelegramMapsUrlDraft(clinicMapsUrl ?? "");
+		if (normalizedDrafts.botUsername !== telegramBotUsernameDraft.trim().replace(/^@/, "")) setTelegramBotUsernameDraft(normalizedDrafts.botUsername);
+		if (normalizedDrafts.ownBotUsername !== telegramOwnBotUsernameDraft.trim().replace(/^@/, "")) setTelegramOwnBotUsernameDraft(normalizedDrafts.ownBotUsername);
+		if (normalizedDrafts.webhookBaseUrl !== telegramWebhookBaseUrlDraft.trim()) setTelegramWebhookBaseUrlDraft(normalizedDrafts.webhookBaseUrl);
+		if (normalizedDrafts.patientPortalBaseUrl !== telegramPatientPortalBaseUrlDraft.trim()) setTelegramPatientPortalBaseUrlDraft(normalizedDrafts.patientPortalBaseUrl);
+		if (normalizedDrafts.welcomeImageUrl !== telegramWelcomeImageUrlDraft.trim()) setTelegramWelcomeImageUrlDraft(normalizedDrafts.welcomeImageUrl);
+		if (JSON.stringify(normalizedDrafts.visualCardUrls) !== JSON.stringify(telegramVisualCardUrlDrafts)) setTelegramVisualCardUrlDrafts(normalizedDrafts.visualCardUrls);
+		if (normalizedDrafts.reviewUrl !== telegramReviewUrlDraft.trim()) setTelegramReviewUrlDraft(normalizedDrafts.reviewUrl);
+		if (normalizedDrafts.mapsUrl !== telegramMapsUrlDraft.trim()) setTelegramMapsUrlDraft(normalizedDrafts.mapsUrl);
+
 		setIsTelegramSettingsSaving(true);
 		setTelegramSettingsSaveState("saving");
 		setTelegramSettingsSaveError(null);
 		try {
-			const response = await fetch("/api/settings/telegram", {
-				method: "PUT",
-				headers: telegramControlPlaneHeaders({
-					"Content-Type": "application/json",
-				}),
-				body: JSON.stringify({
-					mode: telegramModeDraft,
-					botUsername,
-					ownBotUsername,
-					webhookBaseUrl,
-					patientPortalBaseUrl,
-					welcomeImageUrl,
-					visualCardUrls,
-					clinicReviewUrl,
-					clinicMapsUrl,
-					enabledFeatures: telegramEnabledFeaturesDraft,
-					patientLinkTokenTtlMinutes,
-					appointmentReminderLeadTimesHours,
-					reviewRequestDelayHours,
-					postVisitCheckupDelayHoursByTopic,
-					allowVoiceIntake: telegramAllowVoiceIntakeDraft,
-					staffEscalationChannel:
-						telegramStaffEscalationChannelDraft.trim() || null,
-					privacyMode: telegramPrivacyModeDraft,
-				}),
-			});
-			if (!response.ok)
-				throw new Error(
-					await responseErrorMessage(
-						response,
-						"Настройки Telegram не сохранены",
-					),
-				);
-			setTelegramStatus((await response.json()) as DenteTelegramBotStatus);
+			const status = await putTelegramSettingsRequest(payload, telegramControlPlaneHeaders());
+			setTelegramStatus(status);
 			setTelegramSettingsDirty(false);
 			setTelegramSettingsSaveState("saved");
 			await loadTelegramControlPlane({ silent: true });
@@ -445,19 +323,13 @@ export function useTelegramSettings(options: {
 		} catch (telegramError) {
 			if (!options.silent) {
 				showToast(
-					actionFailureToast(
-						"Настройки Telegram не сохранены",
-						(telegramError as { status?: number })?.status ?? null,
-					),
+					actionFailureToast("Настройки Telegram не сохранены", (telegramError as { status?: number })?.status ?? null),
 					"error",
 				);
 			} else {
 				logger.warn("[TelegramSettings] Background autosave failed:", telegramError);
 			}
-			const message = operatorWorkflowFailureMessage(
-				"Настройки Telegram не сохранены",
-				telegramError,
-			);
+			const message = operatorWorkflowFailureMessage("Настройки Telegram не сохранены", telegramError);
 			setTelegramSettingsSaveState("error");
 			setTelegramSettingsSaveError(message);
 			if (!options.silent) setError(message);
@@ -501,169 +373,4 @@ export function useTelegramSettings(options: {
 		telegramFeatureLabel,
 		saveTelegramSettings,
 	};
-
-	async function loadTelegramControlPlane(
-		options: { silent?: boolean; adminSecret?: string } = {},
-	) {
-		if (!options.silent) setIsTelegramLoading(true);
-		try {
-			const headers = telegramControlPlaneHeaders({}, options.adminSecret);
-			const outboxParams = telegramOutboxRequestParams();
-			const linkCodeParams = telegramLinkCodeLedgerRequestParams();
-			const chatLinkParams = telegramChatLinkLedgerRequestParams();
-			const [
-				statusResponse,
-				featurePlanResponse,
-				outboxResponse,
-				linkCodesResponse,
-				chatLinksResponse,
-			] = await Promise.all([
-				fetch(telegramStatusEndpoint(), { cache: "no-store", headers }),
-				fetch("/api/telegram/feature-plan", { cache: "no-store", headers }),
-				fetch(`/api/telegram/outbox?${outboxParams.toString()}`, {
-					cache: "no-store",
-					headers,
-				}),
-				fetch(`/api/telegram/link-codes?${linkCodeParams.toString()}`, {
-					cache: "no-store",
-					headers,
-				}),
-				fetch(`/api/telegram/chat-links?${chatLinkParams.toString()}`, {
-					cache: "no-store",
-					headers,
-				}),
-			]);
-			if (!statusResponse.ok)
-				throw new Error(
-					await responseErrorMessage(statusResponse, "Статус Telegram"),
-				);
-			if (!featurePlanResponse.ok)
-				throw new Error(
-					await responseErrorMessage(featurePlanResponse, "План Telegram"),
-				);
-			if (!outboxResponse.ok)
-				throw new Error(
-					await responseErrorMessage(outboxResponse, "Очередь Telegram"),
-				);
-			if (!linkCodesResponse.ok)
-				throw new Error(
-					await responseErrorMessage(linkCodesResponse, "Коды Telegram"),
-				);
-			if (!chatLinksResponse.ok)
-				throw new Error(
-					await responseErrorMessage(
-						chatLinksResponse,
-						"Связанные Telegram-чаты",
-					),
-				);
-			setTelegramStatus(
-				(await statusResponse.json()) as DenteTelegramBotStatus,
-			);
-			setTelegramFeaturePlan(
-				(await featurePlanResponse.json()) as TelegramFeaturePlan,
-			);
-			setTelegramOutbox(
-				(await outboxResponse.json()) as DenteTelegramOutboxResponse,
-			);
-			const nextLinkCodeLedger =
-				(await linkCodesResponse.json()) as DenteTelegramLinkCodeListResponse;
-			const nextChatLinkLedger =
-				(await chatLinksResponse.json()) as DenteTelegramChatLinkListResponse;
-			setTelegramLinkCodeLedger(nextLinkCodeLedger);
-			setTelegramChatLinkLedger(nextChatLinkLedger);
-			setTelegramLinkCodes(nextLinkCodeLedger.linkCodes);
-			setTelegramChatLinks(nextChatLinkLedger.chatLinks);
-		} catch (telegramError) {
-			if (!options.silent) {
-				showToast(
-					actionFailureToast(
-						"Панель управления Telegram недоступна",
-						(telegramError as { status?: number })?.status ?? null,
-					),
-					"error",
-				);
-			} else {
-				logger.warn(
-					"[TelegramSettings] Background control plane load failed:",
-					telegramError,
-				);
-			}
-			if (!options.silent) {
-				setError(
-					operatorWorkflowFailureMessage(
-						"Панель управления Telegram недоступна",
-						telegramError,
-					),
-				);
-			}
-		} finally {
-			if (!options.silent) setIsTelegramLoading(false);
-		}
-	}
-
-	function telegramStatusEndpoint(): string {
-		const organizationId =
-			dashboard?.clinicSettings?.profile?.organizationId?.trim();
-		const botConfigId = telegramBotConfigId.trim();
-		if (
-			telegramModeDraft === "clinic_owned_bot" &&
-			organizationId &&
-			botConfigId
-		) {
-			return `/api/telegram/status/${encodeURIComponent(organizationId)}/${encodeURIComponent(botConfigId)}`;
-		}
-
-		return "/api/telegram/status";
-	}
-
-	function appendTelegramRuntimeScopeParams(
-		params: URLSearchParams,
-	): URLSearchParams {
-		const organizationId =
-			dashboard?.clinicSettings?.profile?.organizationId?.trim();
-		const botConfigId = telegramBotConfigId.trim();
-		if (
-			telegramModeDraft === "clinic_owned_bot" &&
-			organizationId &&
-			botConfigId
-		) {
-			params.set("botConfigId", botConfigId);
-			params.set("organizationId", organizationId);
-		}
-		return params;
-	}
-
-	function telegramOutboxRequestParams(
-		cursor?: string | null,
-	): URLSearchParams {
-		const params = new URLSearchParams();
-		params.set("limit", "80");
-		if (cursor) params.set("cursor", cursor);
-		if (telegramOutboxStatusFilter !== "all")
-			params.set("status", telegramOutboxStatusFilter);
-		if (telegramOutboxTemplateFilter !== "all")
-			params.set("templateKind", telegramOutboxTemplateFilter);
-		appendTelegramRuntimeScopeParams(params);
-		return params;
-	}
-
-	function telegramLinkCodeLedgerRequestParams(
-		cursor?: string | null,
-	): URLSearchParams {
-		const params = new URLSearchParams();
-		params.set("limit", "8");
-		if (cursor) params.set("cursor", cursor);
-		appendTelegramRuntimeScopeParams(params);
-		return params;
-	}
-
-	function telegramChatLinkLedgerRequestParams(
-		cursor?: string | null,
-	): URLSearchParams {
-		const params = new URLSearchParams();
-		params.set("limit", "8");
-		if (cursor) params.set("cursor", cursor);
-		appendTelegramRuntimeScopeParams(params);
-		return params;
-	}
 }
