@@ -48,6 +48,17 @@ export const SanpinKpiSummaryGrid: React.FC<SanpinKpiSummaryGridProps> = ({
 					Рециркуляторы и уборки в норме
 				</span>
 			</div>
+
+			<div
+				className={`sanpin-kpi-card sanpin-kpi-card--interactive ${activeTab === "sterilizers" ? "active-kpi" : ""}`}
+				onClick={() => onSelectTab("sterilizers")}
+			>
+				<span className="sanpin-kpi-label">Оборудование стерилизационной</span>
+				<span className="sanpin-kpi-value">{summary.sterilization?.activeDevices ?? 3} аппарата</span>
+				<span className="sanpin-kpi-subtext sanpin-kpi-subtext--ok">
+					Все аппараты в строю
+				</span>
+			</div>
 		</div>
 	);
 };

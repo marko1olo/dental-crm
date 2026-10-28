@@ -73,9 +73,9 @@ export function CardTwoLineBody({
 		<div className="appointment-card-two-line flex flex-col gap-1 min-w-0 max-w-full w-full select-none" data-testid="appointment-card-two-line" data-density="compact-2line">
 			<div className="flex items-center justify-between gap-1.5 min-w-0 max-w-full w-full">
 				<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-					<div className="appointment-card-time font-semibold text-xs text-[var(--ink)] flex items-center gap-1 shrink-0">
-						{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}
-						<span className="font-normal text-[var(--muted)]">{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}</span>
+					<div className="appointment-card-time font-semibold text-xs text-[var(--ink)] flex items-center gap-1 shrink-0 whitespace-nowrap font-mono tracking-tight">
+						<span>{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}</span>
+						<span className="font-normal text-[var(--muted)] whitespace-nowrap">{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}</span>
 					</div>
 					<CardPatientMetadata patientName={appointmentPatientName} patientId={appointmentPatient?.id || appointment.patientId} doctorName={appointmentDoctor?.fullName} appointment={appointment} sizeVariant="two-line" onOpenVisit={onOpenVisit} openAppointmentEditor={openAppointmentEditor} setIsMobileSheetOpen={setIsMobileSheetOpen} />
 				</div>

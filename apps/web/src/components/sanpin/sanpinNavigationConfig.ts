@@ -1,18 +1,30 @@
+/**
+ * apps/web/src/components/sanpin/sanpinNavigationConfig.ts
+ *
+ * Каноническая конфигурация навигации СанПиН и стерилизации (Мандаты 8b, 8x).
+ * - Живой клинический язык: «Журнал автоклавирования», «Контроль очистки инструментов»,
+ *   «Учет ламп и уборок», «Оборудование стерилизационной».
+ * - Никаких советских номеров приказов и форм.
+ */
+
 import {
 	Flame,
 	FlaskConical,
 	Sparkles,
+	Settings,
 } from "lucide-react";
 import React from "react";
 
 export type SanpinRegisterTab =
 	| "autoclave"
 	| "pso"
-	| "disinfection"
-	// Legacy aliases to prevent breakage if referenced
 	| "cleaning"
-	| "bactericidal"
+	| "disinfection"
+	| "uv_cleaning"
 	| "sterilizers"
+	| "fleet"
+	// Legacy aliases to prevent breakage if referenced
+	| "bactericidal"
 	| "kraft"
 	| "retroactive_batch"
 	| "cabinet_readiness";
@@ -27,21 +39,27 @@ export interface SanpinTabDef {
 export const SANPIN_CANONICAL_TABS: SanpinTabDef[] = [
 	{
 		id: "autoclave",
-		label: "Автоклав",
+		label: "Журнал автоклавирования",
 		shortLabel: "Автоклав",
 		icon: Flame,
 	},
 	{
 		id: "pso",
-		label: "Очистка инструментов",
+		label: "Контроль очистки инструментов",
 		shortLabel: "Очистка",
 		icon: FlaskConical,
 	},
 	{
 		id: "disinfection",
-		label: "Санитарный режим",
-		shortLabel: "Санрежим",
+		label: "Учет ламп и уборок",
+		shortLabel: "Лампы и уборка",
 		icon: Sparkles,
+	},
+	{
+		id: "sterilizers",
+		label: "Оборудование стерилизационной",
+		shortLabel: "Оборудование",
+		icon: Settings,
 	},
 ];
 

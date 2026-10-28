@@ -62,6 +62,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				isAutofilling={isAutofilling}
 				onAutofillNorms={() => handleAutofillNorms("month")}
 				onPrintForm257={handlePrintSterilizationLog || handlePrint257}
+				onPrintSterilizationLog={handlePrintSterilizationLog || handlePrint257}
 				onExportCsv={handleExportCsv}
 				onOpenEquipmentModal={handleOpenEquipment}
 				onOpenNewCycleModal={handleOpenNewCycle}

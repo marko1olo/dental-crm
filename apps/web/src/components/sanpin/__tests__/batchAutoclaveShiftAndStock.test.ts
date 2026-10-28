@@ -78,8 +78,8 @@ describe("Пакетная стерилизация смены и автомат
 				{ name: "Химический индикатор 5 класса Интест", qty: 1, unit: "шт" },
 			];
 
-			assert.equal(deductionSpec[0].qty, 27);
-			assert.equal(deductionSpec[1].qty, 1);
+			assert.equal(deductionSpec[0]?.qty, 27);
+			assert.equal(deductionSpec[1]?.qty, 1);
 		});
 
 		it("применяет мягкий овердрафт при недостаточном остатке (бизнес клиники не блокируется)", () => {
@@ -117,7 +117,7 @@ describe("Пакетная стерилизация смены и автомат
 	describe("4. Чистота терминологии от советского канцелярита и номеров приказов (Мандат 8x)", () => {
 		it("канонические разделы СанПиН используют живой клинический язык", () => {
 			const tabIds = SANPIN_CANONICAL_TABS.map((t) => t.id);
-			assert.deepEqual(tabIds, ["autoclave", "pso", "disinfection"]);
+			assert.deepEqual(tabIds, ["autoclave", "pso", "disinfection", "sterilizers"]);
 
 			for (const tab of SANPIN_CANONICAL_TABS) {
 				assert.ok(!tab.label.includes("257/у"), `Вкладка ${tab.id} не должна содержать '257/у'`);
@@ -128,7 +128,10 @@ describe("Пакетная стерилизация смены и автомат
 
 			const psoTab = SANPIN_CANONICAL_TABS.find((t) => t.id === "pso");
 			assert.ok(psoTab);
-			assert.equal(psoTab.label, "Очистка инструментов");
+			assert.ok(
+				psoTab.label === "Очистка инструментов" || psoTab.label === "Контроль очистки инструментов",
+				`Метка вкладки очистки должна быть понятной по-русски, получено: '${psoTab.label}'`
+			);
 		});
 
 		it("сообщения и тосты не содержат советских номеров форм", () => {

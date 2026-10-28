@@ -33,12 +33,12 @@ export const AppointmentPatientSummary: React.FC<AppointmentPatientSummaryProps>
 
 	return (
 		<div className="flex items-center gap-1.5 min-w-0 flex-1 overflow-hidden">
-			{/* Time Range: clear start - end time for long visits (e.g. 14:00 - 16:00) */}
+			{/* Time: clear start time as primary anchor, leaving room for patient name */}
 			<span
-				className="font-bold text-xs text-[var(--ink)] font-mono shrink-0"
+				className="font-bold text-xs text-[var(--ink)] font-mono shrink-0 whitespace-nowrap"
 				title={`Время приёма: ${aStart}–${aEnd}`}
 			>
-				{durationMin > 30 && aEnd && aEnd !== aStart ? `${aStart} - ${aEnd}` : aStart}
+				{aStart}
 			</span>
 
 			{/* Duration Badge for long visits (>= 60 min, e.g. 1 час, 2ч, 3ч) */}

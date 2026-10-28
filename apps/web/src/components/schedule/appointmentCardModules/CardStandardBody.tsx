@@ -73,9 +73,9 @@ export function CardStandardBody({
 	return (
 		<div className="appointment-card-expanded flex flex-col gap-1.5 min-w-0 max-w-full w-full" data-testid="appointment-card-expanded" data-density="expanded">
 			<div className="appointment-card-header border-b border-[var(--line)] pb-2 mb-1 flex justify-between items-center gap-2 min-w-0 flex-wrap">
-				<div className="appointment-card-time font-semibold text-sm text-[var(--ink)] flex items-center gap-2 shrink-0">
-					{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}
-					<span className="font-normal text-[var(--muted)]">{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}</span>
+				<div className="appointment-card-time font-semibold text-sm text-[var(--ink)] flex items-center gap-2 shrink-0 whitespace-nowrap font-mono tracking-tight">
+					<span>{appointment?.startsAt ? formatTime(appointment.startsAt) : ""}</span>
+					<span className="font-normal text-[var(--muted)] whitespace-nowrap">{appointment?.endsAt ? ` - ${formatTime(appointment.endsAt)}` : ""}</span>
 				</div>
 				<div className="flex items-center gap-1.5 flex-wrap min-w-0">
 					<CardStatusBadgeContainer appointmentId={appointment.id} displayStatus={displayStatus} appointmentLabels={appointmentLabels} isQuickStatusUpdating={isQuickStatusUpdating} isLocked={isLockedStatus} showSelector={!appointmentEditing} onStatusChange={(st) => void handleQuickStatusChange(st)} patientBalance={patientBalance} isCito={isCito} collisionMessage={activeScheduleCollision?.message ?? null} hasOpenVisit={appointmentHasOpenVisit} />

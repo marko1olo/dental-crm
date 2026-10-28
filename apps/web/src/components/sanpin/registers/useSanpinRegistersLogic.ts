@@ -41,7 +41,9 @@ export function useSanpinRegistersLogic(auth: any, appLogic: any, initialTab: Sa
 			const sub = parts[1] || (parts[0] !== "sanpin" && parts[0] !== "sterilization" ? parts[0] : "");
 			const tabMap: Record<string, SanpinRegisterTab> = {
 				autoclave: "autoclave", kraft: "autoclave", "kraft-packets": "autoclave",
-				pso: "pso", azopyram: "pso", disinfection: "disinfection", cleaning: "disinfection", uv: "disinfection",
+				pso: "pso", cleaning: "pso", azopyram: "pso",
+				disinfection: "disinfection", "uv-cleaning": "disinfection", uv: "disinfection",
+				sterilizers: "sterilizers", fleet: "sterilizers", equipment: "sterilizers",
 			};
 			if (sub && tabMap[sub]) setActiveTab(tabMap[sub]!);
 		};

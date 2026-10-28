@@ -64,7 +64,7 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 					value={searchQuery}
 					onChange={(e) => onSearchChange(e.target.value)}
 					className="h-9 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#fff)] text-xs text-[var(--ink,#1e293b)] w-full sm:w-60 focus:outline-none"
-					style={{ paddingLeft: 36, paddingRight: 10 }}
+					style={{ paddingLeft: 38, paddingRight: 10 }}
 				/>
 			</div>
 			{onQuickBatchNorm && (
@@ -83,6 +83,12 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 				<button type="button" onClick={onOpenEquipmentModal} className={BTN_SEC} data-testid="equipment-modal-btn" title="Оборудование ЦСО">
 					<Settings size={13} />
 					<span>Оборудование</span>
+				</button>
+			)}
+			{(onPrintSterilizationLog || onPrintForm257) && (
+				<button type="button" onClick={onPrintSterilizationLog || onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Печать журнала">
+					<Printer size={13} />
+					<span>Печать журнала</span>
 				</button>
 			)}
 			<button type="button" onClick={onExportCsv} className={BTN_SEC} data-testid="export-csv-btn" title="Экспорт в CSV">

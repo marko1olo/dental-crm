@@ -1,9 +1,26 @@
 // Desktop density styling contract: { height: "32px", minHeight: "32px" }
+/**
+ * apps/web/src/components/sanpin/SanpinRegisters.tsx
+ *
+ * Мастер-контейнер журналов стерилизации и дезинфекции (Мандаты 8b, 8e, 8n, 8x).
+ * Консолидированная 4-вкладочная архитектура:
+ * 1. Журнал автоклавирования (AutoclaveJournalTab.tsx)
+ * 2. Контроль очистки инструментов (CleaningControlTab.tsx)
+ * 3. Учет ламп и уборок (UvAndCleaningTab.tsx)
+ * 4. Оборудование стерилизационной (SterilizerFleetManager.tsx)
+ *
+ * Клинические тосты:
+ * - Журналы стерилизации в норме
+ * - Журналы за неделю заполнены
+ * - Смена заполнена: автоклавы и контроль очистки инструментов в норме
+ */
+
 import React from "react";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import { AutoclaveRegisterTab } from "./AutoclaveRegisterTab";
-import { PsoRegisterTab } from "./PsoRegisterTab";
-import { SanpinUvAndCleaningRegisterTab } from "./SanpinUvAndCleaningRegisterTab";
+import { AutoclaveJournalTab } from "./AutoclaveJournalTab";
+import { CleaningControlTab } from "./CleaningControlTab";
+import { UvAndCleaningTab } from "./UvAndCleaningTab";
+import { SterilizerFleetManager } from "./SterilizerFleetManager";
 import { RetroactiveSanpinBatchModal } from "./RetroactiveSanpinBatchModal";
 import { KraftPackageBarcodeModal } from "./kraft/KraftPackageBarcodeModal";
 import { AutoclaveSterilizationLogModal } from "./autoclaveLog/AutoclaveSterilizationLogModal";
@@ -66,14 +83,26 @@ function SanpinRegistersInner({
 				/>
 			)}
 
-			{logic.activeTab === "autoclave" && (
-				<AutoclaveRegisterTab key={`autoclave-tab-${logic.refreshCounter}`} />
+			{(logic.activeTab === "autoclave" || logic.activeTab === "kraft") && (
+				<AutoclaveJournalTab
+					key={`autoclave-tab-${logic.refreshCounter}`}
+					initialFilterAutoclave={initialFilterAutoclave}
+				/>
 			)}
-			{logic.activeTab === "pso" && (
-				<PsoRegisterTab key={`pso-tab-${logic.refreshCounter}`} />
+
+			{(logic.activeTab === "pso" || logic.activeTab === "cleaning") && (
+				<CleaningControlTab key={`cleaning-tab-${logic.refreshCounter}`} />
 			)}
-			{logic.activeTab === "disinfection" && (
-				<SanpinUvAndCleaningRegisterTab key={`disinfection-tab-${logic.refreshCounter}`} />
+
+			{(logic.activeTab === "disinfection" ||
+				logic.activeTab === "uv_cleaning" ||
+				logic.activeTab === "bactericidal" ||
+				logic.activeTab === "cabinet_readiness") && (
+				<UvAndCleaningTab key={`disinfection-tab-${logic.refreshCounter}`} />
+			)}
+
+			{(logic.activeTab === "sterilizers" || logic.activeTab === "fleet") && (
+				<SterilizerFleetManager key={`fleet-tab-${logic.refreshCounter}`} />
 			)}
 
 			<KraftPackageBarcodeModal
