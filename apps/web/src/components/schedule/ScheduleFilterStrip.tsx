@@ -1,14 +1,15 @@
 /**
  * DENTE Dental CRM — Schedule Filter Strip Facade (Layer 5)
  * Central navigation and filtering panel for clinic appointments schedule.
- * Decomposed Facade: delegates to ./filterStrip/ (<800 lines per file, Mandate 8d, 8e)
+ * Consolidated into ScheduleUnifiedToolbar (Mandates 8b, 8d, 8e, 8am).
  */
 
 import type React from "react";
 import type { ReactElement } from "react";
-import { ScheduleFilterStripContent } from "./filterStrip";
+import { ScheduleUnifiedToolbar } from "./ScheduleUnifiedToolbar";
 import type { ScheduleFilterStripProps } from "./filterStrip";
 
+export { ScheduleUnifiedToolbar } from "./ScheduleUnifiedToolbar";
 export { QuickAddChairModal, type QuickAddChairData } from "./QuickAddChairModal";
 
 export type {
@@ -35,5 +36,5 @@ export {
  * - Right: [⋮ Опции] dropdown menu (holding all 15 secondary modes) + STRICTLY 1 Primary "Запись" button.
  */
 export function ScheduleFilterStrip(props: ScheduleFilterStripProps): ReactElement {
-	return <ScheduleFilterStripContent {...props} />;
+	return <ScheduleUnifiedToolbar {...props} />;
 }

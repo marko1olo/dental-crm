@@ -72,6 +72,7 @@ export interface QuickBookingDrawerProps {
 export const COMMON_REASONS = [
   "Первичный осмотр",
   "Осмотр",
+  "Острая боль / Cito",
   "Кариес",
   "Пульпит",
   "Профгигиена",

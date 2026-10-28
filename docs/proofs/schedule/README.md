@@ -73,3 +73,35 @@
    - 📱 **03 Mobile Light (390×844):** [`03_schedule_agenda_mobile_light_390x844.png`](03_schedule_agenda_mobile_light_390x844.png) (141 721 байт).
    - 📱 **04 Mobile Dark (390×844):** [`04_schedule_agenda_mobile_dark_390x844.png`](04_schedule_agenda_mobile_dark_390x844.png) (163 712 байт).
    - Личный просмотр через `read_file`: 0 сплэш-скринов, ровно 1 Primary CTA «+ Запись» / «+ Новая запись», 0px горизонтального скролла, безупречная токенизация Dark Mode (изумрудно-обсидиановые тона).
+
+---
+
+## 4. Консолидация модалок быстрой записи и SSOT Расписания (Mandate 8b, 8e, 8n, 8ap, 8am)
+
+### А. Ликвидация дублирования и Sweet Spot размера файлов (Мандат 8b / 8zi)
+- **Канонический компонент:** `apps/web/src/components/schedule/QuickBookingDrawer.tsx` консолидирован в **392 строки** (целевой диапазон 300–500 строк).
+- В единый модуль собраны: шапка с CITO-бейдж пульсацией, шторка с overlay, клавиатурные акселераторы (Esc, Ctrl+Enter), интеграция с пациентом/креслом/длительностью, и футер.
+- **Унификация модалок:** `AppointmentBookingModal.tsx` преобразован в чистый фасадный ре-экспорт `QuickBookingDrawer as AppointmentBookingModal`, исключив параллельный 288-строчный дубль.
+- `QuickBookingDrawerHeader.tsx` и `QuickBookingDrawerFooter.tsx` сохранены как фасадные ре-экспорты для 100% обратной совместимости.
+
+### Б. Автономия соло-врача и малого кабинета (Мандаты 8e, 8n)
+- 1-клик запись: Пациент (поиск/создание в 1 поле) + Время + Кресло.
+- Селектор ассистента строго опционален: вариант по умолчанию `-- Без ассистента (соло-приём) --` и пояснение `Выбор ассистента строго опционален`.
+- Мягкий овербукинг (Soft Overbooking): кнопка «Записать на это время (острая боль)» всегда доступна. Кнопка сохранения никогда не блокируется (`disabled`).
+
+### В. Чистый доменный язык и снос regex-скоринга (Мандаты 8ap, 8x)
+- Скоринг надежности пациента строится исключительно на нормализованных столбцах PostgreSQL 18 (`appointments.status`, количество `no_show`, `cancelled`, lateness timestamps).
+- Ликвидированы ссылки на советские приказы и номера законов ("54-FZ") из комментариев и рантайма `patientAlerts.ts`.
+
+### Г. Единый дизайн-код (Мандат 8am & Apple HIG)
+- Ровно ОДНА Primary CTA кнопка в видимом контексте: `+ Записать на приём (Создать запись Ctrl+Enter)` (`#0d9488`, `bg-[var(--teal)] text-white shadow-xs font-bold`).
+- Вторичные кнопки: `Отмена (Esc)`, `Сбросить`, `Скопировать для пациента` выполнены в нейтральных токенах `var(--line)` / `var(--paper)`.
+- Сенсорный минимум $\ge 44\times 44$px для всех интерактивных элементов на мобильных экранах.
+
+### Д. Доказательства (4-State Red Team Visual Proofs)
+- ☀️ **PC Light (1440×900):** [`proof_schedule_quickbooking_01_pc_light_1440x900.png`](proof_schedule_quickbooking_01_pc_light_1440x900.png) (68 KB).
+- 🌙 **PC Dark (1440×900):** [`proof_schedule_quickbooking_02_pc_dark_1440x900.png`](proof_schedule_quickbooking_02_pc_dark_1440x900.png) (74 KB).
+- 📱 **Mobile Light (390×844):** [`proof_schedule_quickbooking_03_mobile_light_390x844.png`](proof_schedule_quickbooking_03_mobile_light_390x844.png) (55 KB).
+- 📱 **Mobile Dark (390×844):** [`proof_schedule_quickbooking_04_mobile_dark_390x844.png`](proof_schedule_quickbooking_04_mobile_dark_390x844.png) (55 KB).
+- **Результат инструментальной автопсии через `read_file`:** 0 дефектов верстки, идеальная адаптивность нижней шторки (Apple HIG Bottom Sheet), 0px горизонтального скролла, безупречная темная тема.
+
