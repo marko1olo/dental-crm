@@ -70,6 +70,9 @@ export const periodontogramSnapshots = pgTable(
 	}),
 );
 
+/** Канонический алиас схемы periodontal_charts (Periodontal Charts SSOT) */
+export const periodontalCharts = periodontogramSnapshots;
+
 export const periodontogramTeeth = pgTable(
 	"periodontogram_teeth",
 	{

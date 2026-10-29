@@ -8,7 +8,7 @@ import { PerioArchGrid } from "./PerioArchGrid";
 import { PerioDiagnosticsPanel } from "./PerioDiagnosticsPanel";
 import { PerioExpressBanner } from "./PerioExpressBanner";
 import { PerioHelpDrawer } from "./PerioHelpDrawer";
-import { PerioKeypadDrawer } from "./PerioKeypadDrawer";
+import { PerioKeypadDrawer } from "./PerioKeypad";
 import { PerioSummaryBar } from "./PerioSummaryBar";
 import { PerioToolbar } from "./PerioToolbar";
 import { PerioToothInspector } from "./PerioToothInspector";

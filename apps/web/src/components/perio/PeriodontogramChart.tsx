@@ -110,20 +110,29 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 		return result;
 	}, [psrSextants]);
 
-	// Обновление секстанта по клику в экспресс-скрининге
+	// Обновление секстанта по клику в экспресс-скрининге (раскрытие детальной карты только при PSR >= 3)
 	const handleUpdateSextant = useCallback(
 		(sextantId: PsrSextantId, code: PsrCode, asterisk?: boolean) => {
 			handleApplySextantCode(sextantId, code, asterisk);
+			if (code >= 3) {
+				setIsDetailedExpanded(true);
+			}
 		},
 		[handleApplySextantCode],
 	);
+
+	// Мгновенная физиологическая норма: сброс всех 6 секстантов в Код 0 и сворачивание 192 точек
+	const handleSetAllIntactWithCollapse = useCallback(() => {
+		handleSetAllIntact();
+		setIsDetailedExpanded(false);
+	}, [handleSetAllIntact]);
 
 	// Быстрый пресет гигиены (Код 1–2)
 	const handleApplyHygienePreset = useCallback(() => {
 		handleApplyExpressPreset("gingivitis_localized");
 	}, [handleApplyExpressPreset]);
 
-	// Быстрый пресет пародонтита (Код 3–4)
+	// Быстрый пресет пародонтита (Код 3–4, обязательное открытие детальной карты)
 	const handleApplyPeriodontitisPreset = useCallback(() => {
 		handleApplyExpressPreset("periodontitis_moderate");
 		setIsDetailedExpanded(true);
@@ -204,29 +213,30 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 					</div>
 				</div>
 
-				{/* Действия в шапке: ровно 1 Primary CTA («Сохранить периодонтограмму») */}
+				{/* Действия в шапке: ровно 1 Primary CTA («Сохранить статус десны») и вторичная кнопка нормы */}
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
 					<button
 						type="button"
-						onClick={handleSetAllIntact}
+						onClick={handleSetAllIntactWithCollapse}
 						disabled={readOnly}
-						className="min-h-[44px] h-10 px-3.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 font-semibold text-xs flex items-center justify-center gap-1.5 border border-emerald-500/30 cursor-pointer transition-all w-full sm:w-auto"
-						title="Мгновенная физиологическая норма (Мандат 8e)"
+						className="min-h-[44px] h-10 px-3.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all w-full sm:w-auto"
+						title="Пародонт в норме (PSR 0 во всех 6 секстантах) — Мандат 8e"
 						data-testid="perio-toolbar-norm-1click-btn"
 					>
-						<Check className="w-3.5 h-3.5" />
-						Пародонт в норме (PSR 0)
+						<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+						✓ Пародонт интактен (PSR 0 во всех 6 секстантах)
 					</button>
 
 					<button
 						type="button"
 						onClick={() => void handleSaveDraft({ closeAfter: false })}
 						disabled={readOnly}
-						className="min-h-[44px] h-10 px-4 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all w-full sm:w-auto"
+						className="min-h-[44px] h-10 px-4 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer transition-all w-full sm:w-auto"
+						title="Сохранить статус десны (пародонтограмму в ЭМК)"
 						data-testid="perio-save-draft-btn"
 					>
 						<Save className="w-3.5 h-3.5" />
-						Сохранить периодонтограмму
+						Сохранить статус десны
 					</button>
 
 					{isModal && onClose && (
@@ -246,7 +256,7 @@ export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.mem
 			<PerioPsrExpressScreening
 				screeningMap={screeningMap}
 				onUpdateSextant={handleUpdateSextant}
-				onSetAllIntact={handleSetAllIntact}
+				onSetAllIntact={handleSetAllIntactWithCollapse}
 				onApplyHygienePreset={handleApplyHygienePreset}
 				onApplyPeriodontitisPreset={handleApplyPeriodontitisPreset}
 				isDetailedExpanded={isDetailedExpanded}

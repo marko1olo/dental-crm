@@ -296,7 +296,7 @@
 >     6) Мобильный слой Apple HIG: Natural Thumb Zone, нативный Bottom Sheet с тач-таргетами $\ge 44\times 44$px, 0px паразитного горизонтального скролла.
 >     7) Полная доказательная база: 70 unit-тестов со 100% успехом (5 test suites); эталонные скриншоты в `docs/proofs/prescriptions/` (PC Light 146.4 KB, PC Dark 142.8 KB, Mobile Light 52.7 KB, Mobile Dark 52.6 KB), проверенные через `view_file`.
 > -16. Волна 342: Periodontal Charting Canonical SSOT, 1-Click Physiological Norm, Tactile Keypad Dial & Diagnostic Clinical Indices (PMA, CPI, BOP, PI) Inquisitor (Фича #482, Мандаты 8b, 8c, 8e, 8k, 8n, 8x, 8wy, 8ze, 8al):
->     1) Консолидация пародонтологии в канонический SSOT `apps/web/src/components/perio/` (с легкими шимами в `apps/web/src/components/periodontal/` для 100% обратной совместимости) и канонический API-шлюз `apps/api/src/routes/perio.ts`.
+>     1) Консолидация пародонтологии в канонический SSOT `apps/web/src/components/perio/` и канонический API-шлюз `apps/api/src/routes/perio.ts` / `apps/api/src/routes/periodontogram.ts`.
 >     2) 1-клик «✓ Пародонт интактен / Физиологическая норма» (`applyHealthyPeriodontiumPreset`): установка бороздки 1–2 мм, BOP 0%, PMA 0%, PI 0% с сохранением существующих имплантов и удаленных зубов.
 >     3) Интерактивная 6-точечная пародонтограмма зуба с сенсорным пультом 1..9 мм: визуальное контрастное выделение патологических карманов > 4 мм (5..12 мм) алым цветом высокой опасности, 4 мм янтарным, <= 3 мм изумрудным.
 >     4) Авторасчет клинических индексов PMA (%), CPI/КПИ Леуса, BOP (SBI %), PI (%) с жестким исключением удаленных зубов (`isMissing`) из знаменателей и баллов.

@@ -45,7 +45,7 @@ describe("9. SSOT Modal Consolidation & Mandate 8am (1 Primary CTA)", () => {
 		);
 
 		assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
-		assert.ok(html.includes("Сохранить периодонтограмму"));
+		assert.ok(html.includes("Сохранить периодонтограмму") || html.includes("Сохранить статус десны"));
 		// Zero mentions of Florida Probe (Mandate 8ap)
 		assert.strictEqual(html.includes("Florida Probe"), false);
 	});

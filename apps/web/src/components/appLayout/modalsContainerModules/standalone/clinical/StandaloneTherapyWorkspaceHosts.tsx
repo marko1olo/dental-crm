@@ -54,14 +54,16 @@ function PerioWorkspace({ patientId, patientName }: { patientId: string; patient
 	});
 	return (
 		<div className="w-full max-w-7xl mx-auto space-y-4">
-			<EmkPerioSection
-				visitNoteForm={diaryForm as any}
-				updateVisitNoteField={(f, v) => setDiaryForm((p) => ({ ...p, [f]: v }))}
-				patientId={patientId}
-				patientName={patientName}
-				activeTooth={16}
-			/>
 			<PeriodontogramChart patientId={patientId} patientName={patientName} />
+			<div className="hidden md:block">
+				<EmkPerioSection
+					visitNoteForm={diaryForm as any}
+					updateVisitNoteField={(f, v) => setDiaryForm((p) => ({ ...p, [f]: v }))}
+					patientId={patientId}
+					patientName={patientName}
+					activeTooth={16}
+				/>
+			</div>
 		</div>
 	);
 }

@@ -1,14 +1,23 @@
 /**
  * PerioToothInspector.tsx — Инспектор выбранного зуба (панель 6 точек зондирования).
- * Архитектурный слой Layer 5: Facade (Мандат 8b, <= 120 строк).
+ * Архитектурный слой: SSOT-фасад инспектора (Мандат 8b: Sweet Spot ~75 строк).
  */
 
 import React, { useState } from "react";
 import type { PerioSiteKey, PerioToothRecord } from "@dental/shared";
 import { PerioToothInspectorHeader } from "./PerioToothInspectorHeader";
 import { PerioToothInspectorPresets } from "./PerioToothInspectorPresets";
-import { PerioToothInspectorSiteDetails } from "./PerioToothInspectorSiteDetails";
 import { PerioToothInspectorSitesGrid } from "./PerioToothInspectorSitesGrid";
+import { PerioToothInspectorSiteDetails, SITE_NAMES_RU } from "./PerioToothInspectorSiteDetails";
+
+export { PerioToothInspectorHeader } from "./PerioToothInspectorHeader";
+export type { PerioToothInspectorHeaderProps } from "./PerioToothInspectorHeader";
+export { PerioToothInspectorPresets } from "./PerioToothInspectorPresets";
+export type { PerioToothInspectorPresetsProps } from "./PerioToothInspectorPresets";
+export { PerioToothInspectorSitesGrid } from "./PerioToothInspectorSitesGrid";
+export type { PerioToothInspectorSitesGridProps } from "./PerioToothInspectorSitesGrid";
+export { PerioToothInspectorSiteDetails, SITE_NAMES_RU } from "./PerioToothInspectorSiteDetails";
+export type { PerioToothInspectorSiteDetailsProps } from "./PerioToothInspectorSiteDetails";
 
 export interface PerioToothInspectorProps {
 	readonly selectedTooth: PerioToothRecord;

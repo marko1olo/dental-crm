@@ -122,12 +122,12 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 						type="button"
 						onClick={onSetAllIntact}
 						disabled={readOnly}
-						className="min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-800 dark:text-emerald-300 font-bold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-emerald-500/30"
-						title="Выставить Код 0 по всем 6 секстантам (глубина <3.5 мм, без кровоточивости)"
+						className="min-h-[44px] sm:min-h-[36px] h-9 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 transition-all cursor-pointer border border-[var(--line)]"
+						title="Пародонт в норме (Код 0 во всех 6 секстантах)"
 						data-testid="psr-all-intact-btn"
 					>
 						<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-						Пародонт интактен (Код 0)
+						✓ Пародонт интактен (PSR 0 во всех 6 секстантах)
 					</button>
 
 					<button

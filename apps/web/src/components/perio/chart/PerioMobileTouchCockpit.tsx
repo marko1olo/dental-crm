@@ -9,7 +9,7 @@ import { calculateClinicalAttachmentLevel, PERIO_SITE_KEYS, type PerioChartSumma
 import { Save } from "lucide-react";
 import React, { useState } from "react";
 import type { PerioExpressPresetId, PsrCode } from "../perioMath";
-import { MobilePerioKeypadDial } from "./MobilePerioKeypadDial";
+import { MobilePerioKeypadDial } from "./PerioKeypad";
 import { PerioMobileCockpitHeader } from "./PerioMobileCockpitHeader";
 import { PerioMobileCockpitKpi } from "./PerioMobileCockpitKpi";
 import { PerioMobileDrawer } from "./PerioMobileDrawer";

@@ -55,7 +55,7 @@ describe("3. 1-Click Healthy Gingiva Norm Autonomy (Mandates 8e, 8k)", () => {
 			"Must render toolbar norm 1-click button",
 		);
 		assert.ok(
-			cleanHtml.includes("Пародонт в норме") || cleanHtml.includes("Норма (PSR 0)"),
+			cleanHtml.includes("Пародонт в норме") || cleanHtml.includes("Норма (PSR 0)") || cleanHtml.includes("Пародонт интактен"),
 			"Must contain 1-click norm label",
 		);
 		assert.ok(
