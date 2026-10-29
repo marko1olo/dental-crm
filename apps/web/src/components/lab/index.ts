@@ -7,6 +7,38 @@
  * 2. DentalLabOrdersKanbanBoard — 4-column clinical Kanban board for order lifecycle.
  */
 
+// SSOT Lab Hub, Catalog, Card & Launcher
+export {
+	type DentalLabCatalogItem,
+	DENTAL_LAB_CATALOG,
+	type VitaShadeItem,
+	VITA_SHADES,
+	getVitaHex,
+	type LabStageId,
+	type LabStageDef,
+	LAB_STAGES,
+	type PartnerDentalLab,
+	PARTNER_LABS,
+	type DentalLabOrder,
+	SAMPLE_LAB_ORDERS,
+	formatDateIso,
+	formatRuDate,
+	formatKopecks,
+} from "./dentalLabData";
+export {
+	DentalLabHubModal,
+	DentalLabOrdersHubModal,
+	type DentalLabHubModalProps,
+} from "./DentalLabHubModal";
+export {
+	DentalLabOrderCard,
+	type DentalLabOrderCardProps,
+} from "./DentalLabOrderCard";
+export {
+	DirectDentalLabLauncher,
+	DirectDentalLabOrderLauncher,
+} from "./DirectDentalLabLauncher";
+
 // SSOT 1: Order Creation, Editing & Specification Drawer
 export {
 	DentalLabOrderDrawer,
