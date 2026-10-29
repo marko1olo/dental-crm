@@ -47,7 +47,7 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 			<button
 				type="button"
 				onClick={() => { onOpenRvg?.(); onClose(); }}
-				className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+				className="flex-1 min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-bold text-cyan-700 dark:text-cyan-300 bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 				title={toothScanThumbnail ? "Посмотреть снимок RVG" : "Захват снимка визиографа (RVG)"}
 			>
 				{toothScanThumbnail ? (
@@ -65,7 +65,7 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 			<button
 				type="button"
 				onClick={handleOrderLab}
-				className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+				className="flex-1 min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 				title={`Заказать в ЗТЛ (Katana STML): зуб ${toothNumber || 16}`}
 				data-testid="radial-menu-footer-order-lab-btn"
 			>
@@ -76,7 +76,7 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 				<button
 					type="button"
 					onClick={() => { onOpenTherapy(); onClose(); }}
-					className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+					className="flex-1 min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-bold text-teal-700 dark:text-teal-300 bg-teal-500/10 hover:bg-teal-500/20 border border-teal-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 				>
 					<DentalHandpiece size={13} />
 					<span>Терапия</span>
@@ -86,7 +86,7 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 				<button
 					type="button"
 					onClick={() => { onAddToInvoice(); onClose(); }}
-					className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+					className="flex-1 min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-bold text-amber-700 dark:text-amber-300 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 				>
 					<Coins size={13} />
 					<span>В смету</span>
@@ -96,7 +96,7 @@ export const ToothRadialFooterActions: React.FC<ToothRadialFooterActionsProps> =
 				<button
 					type="button"
 					onClick={() => { onOpenEndo(); onClose(); }}
-					className="flex-1 min-h-[32px] px-2 py-1 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+					className="flex-1 min-h-[44px] sm:min-h-[32px] px-2.5 py-1.5 sm:py-1 rounded-xl text-xs font-bold text-rose-600 dark:text-rose-300 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/25 flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 				>
 					<EndoFileCanal size={13} />
 					<span>Каналы</span>

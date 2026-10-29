@@ -84,6 +84,7 @@ export const PatientAnamnesisModal: React.FC<PatientAnamnesisModalProps> = React
 					</div>
 					<AnamnesisAccordionSections profile={profile} onUpdateField={updateField} />
 				</div>
+				{/* Действия и кнопка «Сохранить анкету» */}
 				<AnamnesisActionsFooter
 					onSave={handleSaveModal} onClose={onClose}
 					onSyncDiary={() => { const snippet = formatSafetyProfileToDiaryText(profile); onSyncToEmkDiary?.(snippet); navigator.clipboard.writeText(snippet); showToast("Текст анамнеза скопирован в буфер для медицинской карты", "success"); }}

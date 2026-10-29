@@ -55,6 +55,7 @@ import {
 	DEMO_SHOWCASE_MODAL_PATIENT,
 	DEMO_SHOWCASE_MODAL_SAFETY,
 	getRepresentativeLegalStatus,
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
@@ -71,6 +72,7 @@ export {
 	DEMO_SHOWCASE_MODAL_PATIENT,
 	DEMO_SHOWCASE_MODAL_SAFETY,
 	getRepresentativeLegalStatus,
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
@@ -127,7 +129,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static"
+			className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs select-none print:p-0 print:bg-white print:static"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="patient-card-modal-title"
@@ -162,7 +164,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							</h2>
 							<p className="text-xs text-[var(--muted)] m-0 truncate leading-tight">
 								{isCreateMode
-									? "Быстрое оформление за 10 секунд без бюрократии (Мандат 8n)"
+									? "Быстрое оформление за 10 секунд без бюрократии"
 									: `${patientData.phone ? `Тел: ${patientData.phone}` : "Паспортная карточка и клинический статус"}${
 											patientData.birthDate ? ` • ${patientData.birthDate}` : ""
 										}${
@@ -472,7 +474,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							{/* Ровно ОДНА Primary CTA кнопка var(--teal) */}
 							<button
 								type="button"
-								className="border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[44px] h-11 px-5 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5"
+								className="border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[44px] h-11 px-5 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 inline-flex items-center gap-1.5 whitespace-nowrap"
 								onClick={() => void creationForm.handleCreate()}
 								disabled={false}
 								data-testid="patient-creation-submit-btn"
@@ -487,7 +489,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<button
 								type="button"
 								onClick={onClose}
-								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[48px] h-12 text-sm cursor-pointer select-none transition-all active:scale-95"
+								className="flex-1 sm:flex-none border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-[14px] px-5 shadow-xs hover:bg-[var(--paper-soft)] hover:border-[var(--line-strong)] min-h-[48px] h-12 text-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[100px]"
 							>
 								Закрыть
 							</button>
@@ -497,7 +499,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								data-testid="btn-save-patient-card"
 								onClick={handleSave}
 								disabled={false}
-								className="flex-1 sm:flex-none border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[48px] h-12 px-6 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95"
+								className="flex-1 sm:flex-none border-0 bg-[var(--teal)] text-[var(--on-teal,white)] hover:opacity-95 min-h-[48px] h-12 px-6 text-sm font-bold rounded-[14px] shadow-sm cursor-pointer select-none transition-all active:scale-95 whitespace-nowrap min-w-[130px]"
 							>
 								Сохранить
 							</button>

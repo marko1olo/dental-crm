@@ -1,5 +1,5 @@
 import type React from "react";
-import { OdontogramToolbar } from "./OdontogramToolbar";
+import { OdontogramQuickBar } from "./OdontogramQuickBar";
 import type { OdontogramToolbarProps } from "./odontogramToolbarTypes";
 
 export interface OdontogramToolbarBridgeProps {
@@ -11,5 +11,5 @@ export const OdontogramToolbarBridge: React.FC<
 	OdontogramToolbarBridgeProps
 > = ({ hideModeSwitcher, toolbarProps }) => {
 	if (hideModeSwitcher) return null;
-	return <OdontogramToolbar {...toolbarProps} />;
+	return <OdontogramQuickBar {...toolbarProps} />;
 };

@@ -53,6 +53,23 @@
 	color: #047857;
 	border-color: rgba(16, 185, 129, 0.35);
 }
+.odontogram-toolbar__btn--primary-cta {
+	background: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+	font-weight: 700;
+	border: 1px solid var(--teal-dark, #0f766e) !important;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.35) !important;
+}
+.odontogram-toolbar__btn--primary-cta:hover {
+	background: var(--teal-dark, #0f766e) !important;
+	color: #ffffff !important;
+	box-shadow: 0 2px 5px rgba(13, 148, 136, 0.45) !important;
+}
+:is([data-theme="dark"], html.dark) .odontogram-toolbar__btn--primary-cta {
+	background: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+	border-color: rgba(255, 255, 255, 0.25) !important;
+}
 .odontogram-stamp-palette {
 	background: var(--paper, #ffffff);
 	border: 1.5px solid var(--line-strong, #cbd5e1);

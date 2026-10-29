@@ -21,3 +21,5 @@ export * from "./MobilePatientsGroupedList";
 export * from "./family/FamilyWalletModal";
 export * from "./tabs/PatientGeneralInfoTab";
 export * from "./safetyMath";
+export * from "./DirectPatientCardLauncher";
+

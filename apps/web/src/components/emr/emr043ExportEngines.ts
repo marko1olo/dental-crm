@@ -1,2 +1,7 @@
-export { escapeXml, generate043XmlCda } from "./export/recordExportXml";
-export { generate043JsonExport, generate043PlainText } from "./export/recordExportJsonText";
+/**
+ * apps/web/src/components/emr/emr043ExportEngines.ts
+ *
+ * @deprecated Use canonical `outpatientRecordExportEngines.ts` instead (Mandate 8ap, 8x).
+ */
+
+export * from "./outpatientRecordExportEngines";

@@ -323,7 +323,7 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 						data-testid="btn-apply-anesthesia-to-card"
 					>
 						<CheckCircle2 size={14} className="shrink-0" />
-						<span>✓ Внести анестезию в дневник приёма</span>
+						<span>Внести анестезию в дневник приёма</span>
 						<span className="sr-only">Применить анестезию В карту В дневник</span>
 					</button>
 				</div>

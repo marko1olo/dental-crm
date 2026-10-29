@@ -1,16 +1,14 @@
 import type {
 	RepresentativeRelationshipType,
 	RepresentativeRelationshipMeta,
-	StomxRepresentativeType,
-	StomxRepresentativeTypeMeta,
 } from "@dental/shared";
 import type { PatientClinicalSafetyProfile } from "../../safetyMath";
 
 export type {
 	RepresentativeRelationshipType,
 	RepresentativeRelationshipMeta,
-	StomxRepresentativeType,
-	StomxRepresentativeTypeMeta,
+	RepresentativeRelationshipType as StomxRepresentativeType,
+	RepresentativeRelationshipMeta as StomxRepresentativeTypeMeta,
 };
 
 export type IdentityDocType = "passport_rf" | "birth_certificate" | "foreign_passport" | "residence_permit" | "other";

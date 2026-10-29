@@ -39,8 +39,10 @@ export const REPRESENTATIVE_CATALOG: readonly RepresentativeTypeMeta[] = [
 	{ code: "other", nameRu: "Другой родственник", isLegalRepresentative: false, canAccessFamilyDeposit: false },
 ];
 
-export const STOMX_REPRESENTATIVE_CATALOG = REPRESENTATIVE_CATALOG;
+export const DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG = REPRESENTATIVE_CATALOG;
 export const REPRESENTATIVE_RELATIONSHIP_CATALOG = REPRESENTATIVE_CATALOG;
+/** @deprecated Mandate 8ap: Sovereign DENTE catalog is DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG */
+export const STOMX_REPRESENTATIVE_CATALOG = REPRESENTATIVE_CATALOG;
 
 export const REPRESENTATIVE_BY_CODE = Object.freeze(
 	Object.fromEntries(

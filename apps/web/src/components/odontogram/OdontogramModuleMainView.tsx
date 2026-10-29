@@ -45,7 +45,7 @@ export const OdontogramModuleMainView: React.FC<
 			dentitionMode={dentitionMode}
 			onDentitionModeChange={setDentitionMode}
 			selectedTeeth={sync.selectedTeeth}
-			onToothClick={sync.isMultiSelectMode ? handleToothClick : undefined}
+			onToothClick={handleToothClick}
 			onMarkIntactDentition={quickActions.handleMarkAllHealthy}
 			onMarkWisdomTeethMissing={quickActions.handleMarkWisdomMissing}
 			onQuickStateChange={sync.updateToothState}

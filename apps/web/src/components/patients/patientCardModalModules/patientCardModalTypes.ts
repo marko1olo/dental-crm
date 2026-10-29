@@ -2,12 +2,11 @@ import type { PatientClinicalSafetyProfile } from "../safetyMath";
 import { DEFAULT_SOMATIC_HEALTHY_NORM } from "../safetyMath";
 import type { PatientGeneralInfo } from "../tabs/PatientGeneralInfoTab";
 import {
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
-	type StomxRepresentativeType,
-	type StomxRepresentativeTypeMeta,
 } from "@dental/shared";
 
 export const DEMO_SHOWCASE_MODAL_PATIENT: PatientGeneralInfo = {
@@ -25,14 +24,15 @@ export const DEMO_SHOWCASE_MODAL_SAFETY: PatientClinicalSafetyProfile = {
 };
 
 export {
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
-	/** @deprecated Mandate 8ap: Canonical catalog is REPRESENTATIVE_RELATIONSHIP_CATALOG */
-	REPRESENTATIVE_RELATIONSHIP_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
+	/** @deprecated Mandate 8ap: Sovereign DENTE catalog is DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG */
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
 	type RepresentativeRelationshipMeta,
-	type StomxRepresentativeType,
-	type StomxRepresentativeTypeMeta,
+	type RepresentativeRelationshipType as StomxRepresentativeType,
+	type RepresentativeRelationshipMeta as StomxRepresentativeTypeMeta,
 };
 
 export function getRepresentativeLegalStatus(type: string | null | undefined): {

@@ -1,10 +1,12 @@
 import {
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	isStatutoryLegalRepresentative,
 } from "@dental/shared";
 import type { IdentityDocType } from "./types";
 
 export {
+	DENTE_REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
 	isStatutoryLegalRepresentative,
 };
