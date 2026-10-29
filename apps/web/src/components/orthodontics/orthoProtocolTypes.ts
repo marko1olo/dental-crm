@@ -22,7 +22,7 @@ export const ORTHODONTIC_STAGE_TABS: Array<{
 	{ id: "retention", label: "5. Снятие & Ретенция", shortLabel: "Ретенция", desc: "Снятие брекетов, ретейнеры, ретенционные каппы" },
 ];
 
-export type TargetArch = "upper" | "lower" | "both";
+export type TargetArch = "upper" | "lower" | "both" | "anterior";
 
 export type OrthoClinicalPresetId =
 	| "activation"
@@ -99,6 +99,28 @@ export {
 	getRuDateString,
 } from "./orthoPatientMemo";
 
+export type OrthodonticStageKind =
+	| "stage_ortho"
+	| "stage_1_leveling"
+	| "stage_2_working"
+	| "stage_3_finishing"
+	| "stage_4_retention";
+
+export type ArchwireSection =
+	| ".012" | ".014" | ".016" | ".018" | ".020"
+	| ".014x.025" | ".016x.022" | ".016x.025" | ".017x.025"
+	| ".018x.025" | ".019x.025" | ".021x.025";
+
+export type ElasticScheme = "class_1" | "class_2" | "class_3" | "box" | "triangle" | "cross";
+export type ElasticSize = "1_8_3_5oz" | "3_16_4_5oz" | "1_4_4_5oz" | "5_16_4_5oz" | "3_8_6oz";
+export type ElasticWearMode = "full_time" | "night_only" | "eat_removed";
+export type AngleClass = "I" | "II_1" | "II_2" | "III";
+export type AnbClass = "class_1" | "class_2" | "class_3";
+export type SagittalAnomaly = "normal" | "overjet" | "crossbite" | "reverse";
+export type VerticalAnomaly = "normal" | "deep" | "open";
+export type TransversalAnomaly = "normal" | "crossbite" | "scissors";
+export type TmjStatus = "healthy" | "clicking" | "pain" | "crepitation";
+
 export {
 	ARCHWIRE_MATERIALS,
 	BRACKET_SYSTEMS,
@@ -108,6 +130,5 @@ export {
 	RECT_SECTIONS,
 	ANGLE_CLASS_OPTIONS,
 	WORKHORSE_ARCHWIRES,
-	type OrthodonticStageKind,
 	type ArchwireMaterial,
 } from "./orthodonticVisitProtocol/index.js";

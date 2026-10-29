@@ -12,12 +12,10 @@ import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 import "./theme.css";
 
-import { OrthodonticVisitScreen } from "./components/orthodontics/OrthodonticVisitScreen";
-import { CephalometricAnalysisModal } from "./components/orthodontics/cephModal/CephalometricAnalysisModalUI";
+import { OrthodonticWorkspaceModal } from "./components/orthodontics/OrthodonticWorkspaceModal";
 
 function OrthoPreviewApp() {
-	const [isCephOpen, setIsCephOpen] = useState(false);
-	const [mode, setMode] = useState<"protocol" | "ceph">("protocol");
+	const [tab, setTab] = useState<"visit" | "ceph" | "aligners">("visit");
 
 	useEffect(() => {
 		const params = new URLSearchParams(window.location.search);
@@ -27,32 +25,25 @@ function OrthoPreviewApp() {
 		document.documentElement.classList.toggle("light", theme !== "dark");
 		document.documentElement.style.colorScheme = theme;
 
-		if (params.get("modal") === "ceph" || window.location.hash === "#ceph") {
-			setMode("ceph");
-			setIsCephOpen(true);
+		const hash = window.location.hash.toLowerCase();
+		if (params.get("modal") === "ceph" || hash.includes("#ceph")) {
+			setTab("ceph");
+		} else if (params.get("modal") === "aligners" || hash.includes("#aligner")) {
+			setTab("aligners");
+		} else {
+			setTab("visit");
 		}
 	}, []);
 
 	return (
-		<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)]">
-			{mode === "protocol" ? (
-				<OrthodonticVisitScreen
-					isOpen={true}
-					onClose={() => {}}
-					patientName="Смирнова Екатерина Андреевна"
-					patientId="pat-demo-ortho-01"
-					doctorName="Д-р Соколов А. В."
-					clinicName="DENTE Clinic"
-				/>
-			) : (
-				<CephalometricAnalysisModal
-					isOpen={true}
-					onClose={() => {}}
-					patientName="Смирнова Екатерина Андреевна"
-					patientId="pat-demo-ortho-01"
-					initialTab="metrics"
-				/>
-			)}
+		<div className="min-h-screen w-full bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center">
+			<OrthodonticWorkspaceModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTab={tab}
+				patientName="Смирнова Екатерина Андреевна"
+				doctorName="Д-р Соколов А. В."
+			/>
 		</div>
 	);
 }

@@ -11,6 +11,7 @@ import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPre
 import { DirectDocumentsCatalogLauncher } from "./components/documents/DirectDocumentsCatalogLauncher";
 import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
+import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
@@ -27,6 +28,9 @@ import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceL
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
+import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
+import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
+import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -130,7 +134,15 @@ function isStandaloneActive(): boolean {
 		s.includes("patient_card") ||
 		h.includes("patient_card") ||
 		s.includes("patient-card") ||
-		h.includes("patient-card")
+		h.includes("patient-card") ||
+		s.includes("payroll") ||
+		h.includes("payroll") ||
+		s.includes("salary") ||
+		h.includes("salary") ||
+		s.includes("earnings") ||
+		h.includes("earnings") ||
+		s.includes("doctor-payout") ||
+		h.includes("doctor-payout")
 	);
 }
 
@@ -162,6 +174,7 @@ export function AppShell() {
 			<DirectSanpinLauncher />
 			<DirectDocumentsCatalogLauncher />
 			<DirectImplantPassportLauncher />
+			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
@@ -178,6 +191,9 @@ export function AppShell() {
 			<DirectPerioLauncher />
 			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />
+			<DirectRecallsLauncher />
+			<DirectOrthoLauncher />
+			<DirectPayrollLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

@@ -74,7 +74,7 @@ describe("OrthodonticVisitScreen — Decomposition, Autonomy & Pure Clinical UI 
 	it("renders OrthoArchwiresAndTractionCard with wire materials and traction matrix", () => {
 		const html = renderToString(
 			<OrthoArchwiresAndTractionCard
-				archwireMaterial="niti"
+				archwireMaterial="NiTi"
 				setArchwireMaterial={() => {}}
 				archwireSection=".014"
 				setArchwireSection={() => {}}

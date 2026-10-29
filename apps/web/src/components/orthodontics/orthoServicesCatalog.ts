@@ -12,6 +12,16 @@ export interface OrthodonticService {
 // Backward-compatibility alias per Mandate 8ap
 export type OrthodonticService804n = OrthodonticService;
 
+export interface OrthoCalculatedService804n {
+	code: string;
+	name: string;
+	priceRub: number;
+	quantity: number;
+	category?: string;
+}
+
+export type OrthoCalculatedService = OrthoCalculatedService804n;
+
 export const ORTHO_ACTIONS_SERVICES_MAP: Record<string, Array<Omit<OrthodonticService, "stageKind">>> = {
 	wire_change: [
 		{ code: "A16.07.048.002", nameRu: "Смена ортодонтической дуги", priceRub: 2500 },

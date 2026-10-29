@@ -270,15 +270,19 @@ export const OrthodonticVisitScreen: React.FC<OrthodonticVisitScreenProps> = (pr
 						onClose={() => s.setIsCheckoutOpen(false)}
 						patientName={patientName}
 						initialAmountKopecks={Math.round(s.totalRub * 100)}
-						invoiceDraftItems={s.calculatedServices.map((srv, idx) => ({
-							id: `ortho-srv-${idx}`,
-							code: srv.code,
-							name: srv.name,
-							category: "orthodontics",
-							priceKopecks: Math.round(srv.priceRub * 100),
-							quantity: srv.quantity,
-							totalKopecks: Math.round(srv.priceRub * srv.quantity * 100),
-						}))}
+						invoiceDraftItems={s.calculatedServices.map((srv, idx) => {
+							const itemQuantity = (srv as any).quantity ?? 1;
+							const itemName = (srv as any).name ?? (srv as any).nameRu ?? "Ортодонтическая услуга";
+							return {
+								id: `ortho-srv-${idx}`,
+								code: srv.code,
+								name: itemName,
+								category: "orthodontics",
+								priceKopecks: Math.round(srv.priceRub * 100),
+								quantity: itemQuantity,
+								totalKopecks: Math.round(srv.priceRub * itemQuantity * 100),
+							};
+						})}
 					/>
 				)}
 

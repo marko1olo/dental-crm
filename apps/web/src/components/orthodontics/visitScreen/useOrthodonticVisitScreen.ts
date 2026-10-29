@@ -54,14 +54,14 @@ export function useOrthodonticVisitScreen({
 	const [targetArch, setTargetArch] = useState<TargetArch>("both");
 	const [bracketSystem, setBracketSystem] = useState("damon_q2");
 	const [bracketSlot, setBracketSlot] = useState<"0.018" | "0.022">("0.022");
-	const [archwireMaterial, setArchwireMaterial] = useState<ArchwireMaterial>("niti");
+	const [archwireMaterial, setArchwireMaterial] = useState<ArchwireMaterial>("NiTi");
 	const [archwireSection, setArchwireSection] = useState<ArchwireSection>(".014");
 	const [elasticScheme, setElasticScheme] = useState<ElasticScheme>("class_2");
 	const [elasticSize, setElasticSize] = useState<ElasticSize>("3_16_4_5oz");
 	const [elasticWear, setElasticWear] = useState<ElasticWearMode>("full_time");
 	const [selectedActions, setSelectedActions] = useState<string[]>(["wire_change", "ligature_change"]);
 	const [angleClass, setAngleClass] = useState<AngleClass>("I");
-	const [anbClass, setAnbClass] = useState<AnbClass>("I");
+	const [anbClass, setAnbClass] = useState<AnbClass>("class_1");
 	const [anbAngle, setAnbAngle] = useState(2.8);
 	const [sagittalAnomaly, setSagittalAnomaly] = useState<SagittalAnomaly>("normal");
 	const [verticalAnomaly, setVerticalAnomaly] = useState<VerticalAnomaly>("normal");
@@ -134,7 +134,7 @@ export function useOrthodonticVisitScreen({
 				: `Аппаратура: Брекеты ${bracketSystem} (паз ${bracketSlot}), дуга ${wireLabel} (${archLabel}).`,
 			selectedActions.includes("elastic_traction") ? `Тяги: ${elasticScheme}, размер ${elasticSize}, режим ${elasticWear}.` : "",
 			notes ? `Заметки врача: ${notes}` : "",
-			`Начислено услуг: ${calculatedServices.map((s) => `${s.code} ${s.name} (${s.priceRub} ₽)`).join("; ")}`,
+			`Начислено услуг: ${calculatedServices.map((s) => `${s.code} ${(s as any).name || (s as any).nameRu || ""} (${s.priceRub} ₽)`).join("; ")}`,
 			`Итого: ${totalRub} ₽`,
 		].filter(Boolean).join("\n");
 	}, [patientName, doctorName, stageFilter, angleClass, anbClass, anbAngle, alignerStep, alignerTotal, alignerDaysPerStep, bracketSystem, bracketSlot, archwireMaterial, archwireSection, targetArch, selectedActions, elasticScheme, elasticSize, elasticWear, notes, calculatedServices, totalRub]);
