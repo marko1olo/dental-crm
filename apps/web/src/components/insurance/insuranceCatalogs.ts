@@ -1,6 +1,6 @@
 /**
- * insuranceCatalogs.ts — Фасад каталогов страховых компаний и полисов ДМС
- * (Мандат 8b: <= 120 строк)
+ * insuranceCatalogs.ts — Canonical re-export facade from insuranceData SSOT.
  */
 
-export * from "./insuranceCatalogs/index.js";
+export * from "./insuranceData.js";
+export type DmsInsurerDefinition = import("./insuranceData.js").DmsInsurer;

@@ -738,7 +738,7 @@ describe("PatientCabinetAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", 
 			createElement(DocumentsTab, { data: { ...data, prescriptions: [sampleRx] }, selectedTaxYear: 2026, onSelectTaxYear: () => {}, taxDeductionCalc: taxDeduction, onStartConsentSigning: () => {}, onOpenTaxCertificateSheet: () => {}, onDownloadTaxCertificateDirect: () => {}, onShowToast: () => {} }),
 		);
 		assert.ok(docsTabHtml.includes(`data-testid="print-prescription-btn-${sampleRx.id}"`), "Renders 1-click print prescription button");
-		assert.ok(docsTabHtml.includes("Печать рецепта (107-1/у)"), "Button label indicates 107-1/u print");
+		assert.ok(docsTabHtml.includes("Печать рецептурного бланка"), "Button label indicates clean statutory print");
 		assert.equal(docsTabHtml.includes("<button disabled") || docsTabHtml.includes('disabled=""'), false, "Zero disabled buttons across Documents tab");
 	});
 

@@ -16,7 +16,7 @@ export const DocumentsPrescriptionsSection: React.FC<DocumentsPrescriptionsSecti
 }) => {
 	const handlePrint = (rx: NonNullable<PatientPersonalCabinetData["prescriptions"]>[number]) => {
 		openPrintWindow(generatePrescription107PrintHtml(rx, data));
-		onShowToast(`Рецептурный бланк 107-1/у (${rx.medicationName}) готов к печати!`);
+		onShowToast(`Рецептурный бланк (${rx.medicationName}) готов к печати!`);
 	};
 
 	return (
@@ -59,7 +59,7 @@ export const DocumentsPrescriptionsSection: React.FC<DocumentsPrescriptionsSecti
 								onClick={() => handlePrint(rx)}
 							>
 								<Printer size={15} />
-								<span>Печать рецепта (107-1/у)</span>
+								<span>Печать рецептурного бланка</span>
 							</button>
 						</div>
 					))}

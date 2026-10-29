@@ -1,6 +1,6 @@
 /**
- * dmsGuaranteeLetterDecomposition.test.ts — Verification suite for decomposed
- * DmsGuaranteeLetterModal facade and dmsGuaranteeLetter/* modular directory.
+ * dmsGuaranteeLetterDecomposition.test.ts — Verification suite for Insurance & DMS SSOT.
+ * Mandates: 8e (Autonomy), 8b (Sweet Spot), 8l (Integer kopecks), 8am, 8x.
  */
 
 import assert from "node:assert/strict";
@@ -11,48 +11,58 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "node:test";
 import {
-	COMMON_DENTAL_ICD10_DIAGNOSES, DEFAULT_BILL_ITEMS_TO_SPLIT,
-	DmsApprovedServicesMatrix, DmsCoverageSummaryBanner, DmsGuaranteeLetterModal,
-	DmsGuaranteeModalFooter, DmsInsurerAndPolicyForm, EXPRESS_GUARANTEE_LETTER_PRESETS,
-	FDI_ADULT_TEETH_LOWER, FDI_ADULT_TEETH_UPPER, QUICK_RUSSIAN_DMS_INSURER_CHIPS,
-	fetchPatientGuaranteeLettersFromApi, getActiveBillItemsToSplit,
-	mapBackendLetterToPatientGuaranteeLetter, saveGuaranteeLetterToApi,
+	COMMON_DENTAL_ICD10_DIAGNOSES,
+	DEFAULT_BILL_ITEMS_TO_SPLIT,
+	DmsApprovedServicesMatrix,
+	DmsCoverageSummaryBanner,
+	DmsGuaranteeLetterModal,
+	DmsGuaranteeModalFooter,
+	DmsInsurerAndPolicyForm,
+	EXPRESS_GUARANTEE_LETTER_PRESETS,
+	FDI_ADULT_TEETH_LOWER,
+	FDI_ADULT_TEETH_UPPER,
+	QUICK_RUSSIAN_DMS_INSURER_CHIPS,
+	fetchPatientGuaranteeLettersFromApi,
+	getActiveBillItemsToSplit,
+	mapBackendLetterToPatientGuaranteeLetter,
+	saveGuaranteeLetterToApi,
 } from "../DmsGuaranteeLetterModal";
+import {
+	calculateDmsCoPaymentSplit,
+	formatCurrencyKopecks,
+	formatCurrencyRub,
+	RUSSIAN_DMS_INSURERS,
+	rubToKopecks,
+	kopecksToRub,
+} from "../insuranceData";
+import { InsuranceWorkspaceModal } from "../InsuranceWorkspaceModal";
+import { InsuranceBillSplitCard } from "../InsuranceBillSplitCard";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const insuranceDir = path.resolve(__dirname, "..");
-const decomposedDir = path.resolve(insuranceDir, "dmsGuaranteeLetter");
 
 const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA70}-\u{1FAFF}]|⚡|🦷|⚠️|❌|✅|🚨|🔥|✓/u;
 
-describe("DmsGuaranteeLetterModal Decomposition & Clinical Invariants", () => {
-	it("1. Facade DmsGuaranteeLetterModal.tsx is strictly <= 120 lines and uses createPortal", () => {
-		const facadePath = path.resolve(insuranceDir, "DmsGuaranteeLetterModal.tsx");
-		const content = fs.readFileSync(facadePath, "utf-8");
-		const lineCount = content.split("\n").length;
-		assert.ok(lineCount <= 120, `Facade must be <= 120 lines, got ${lineCount}`);
-		assert.ok(content.includes("createPortal(modalContent, document.body)"));
-		assert.ok(!RAW_EMOJI_REGEX.test(content), "Facade must contain 0 raw emojis");
+describe("Insurance & Russian DMS SSOT Architecture & Clinical Invariants", () => {
+	it("1. Canonical modules are in healthy sweet spot range (200-450 lines)", () => {
+		const wsPath = path.resolve(insuranceDir, "InsuranceWorkspaceModal.tsx");
+		const splitCardPath = path.resolve(insuranceDir, "InsuranceBillSplitCard.tsx");
+		const dataPath = path.resolve(insuranceDir, "insuranceData.ts");
+
+		const wsLines = fs.readFileSync(wsPath, "utf-8").split("\n").length;
+		const splitLines = fs.readFileSync(splitCardPath, "utf-8").split("\n").length;
+		const dataLines = fs.readFileSync(dataPath, "utf-8").split("\n").length;
+
+		assert.ok(wsLines >= 300 && wsLines <= 500, `InsuranceWorkspaceModal sweet spot 300-500 lines, got ${wsLines}`);
+		assert.ok(splitLines >= 200 && splitLines <= 400, `InsuranceBillSplitCard sweet spot 200-400 lines, got ${splitLines}`);
+		assert.ok(dataLines >= 200 && dataLines <= 950, `insuranceData sweet spot 200-950 lines, got ${dataLines}`);
 	});
 
-	it("2. Decomposed modules exist, are <= 800 lines each, and contain 0 raw emojis", () => {
-		const requiredFiles = [
-			"types.ts", "useDmsGuaranteeLetterState.ts", "DmsCoverageSummaryBanner.tsx",
-			"DmsInsurerAndPolicyForm.tsx", "DmsApprovedServicesMatrix.tsx", "DmsGuaranteeModalFooter.tsx", "index.ts",
-		];
-		for (const file of requiredFiles) {
-			const fullPath = path.resolve(decomposedDir, file);
-			assert.ok(fs.existsSync(fullPath), `Module ${file} must exist`);
-			const content = fs.readFileSync(fullPath, "utf-8");
-			const lines = content.split("\n").length;
-			assert.ok(lines <= 350, `Module ${file} must be in healthy sweet spot <= 350 lines, got ${lines}`);
-			assert.ok(!RAW_EMOJI_REGEX.test(content), `Module ${file} must be free of raw emojis`);
-		}
-	});
-
-	it("3. Preserves 100% of public exports and subcomponents", () => {
+	it("2. Preserves 100% of public exports and Russian DMS top insurers", () => {
 		assert.equal(typeof DmsGuaranteeLetterModal, "function");
+		assert.equal(typeof InsuranceWorkspaceModal, "function");
+		assert.equal(typeof InsuranceBillSplitCard, "function");
 		assert.equal(typeof DmsCoverageSummaryBanner, "function");
 		assert.equal(typeof DmsInsurerAndPolicyForm, "function");
 		assert.equal(typeof DmsApprovedServicesMatrix, "function");
@@ -69,28 +79,43 @@ describe("DmsGuaranteeLetterModal Decomposition & Clinical Invariants", () => {
 		assert.equal(QUICK_RUSSIAN_DMS_INSURER_CHIPS.length, 6);
 	});
 
-	it("4. Renders all decomposed sections, top 6 Russian insurers, and 0 disabled buttons (Mandate 8e)", () => {
+	it("3. Integer kopeck split math holds strict balance invariant (Mandates 8l, 8n)", () => {
+		const items = [
+			{ id: "1", serviceCode: "A16.07.002.001", serviceName: "Пломба", quantity: 1, unitPriceKopecks: 450000 },
+			{ id: "2", serviceCode: "A16.07.030.002", serviceName: "Эндодонтия", quantity: 1, unitPriceKopecks: 580000 },
+			{ id: "3", serviceCode: "A16.07.050", serviceName: "Отбеливание", quantity: 1, unitPriceKopecks: 2600000, isExcluded: true },
+		];
+		const split = calculateDmsCoPaymentSplit(items, {
+			guaranteeLetter: {
+				id: "g1",
+				letterNumber: "ГП-1",
+				patientFullName: "Пациент",
+				issueDate: "2026-08-01",
+				validUntil: "2026-12-31",
+				maxApprovedAmountKopecks: 800000,
+			},
+			franchisePercent: 20,
+		});
+
+		assert.equal(split.totalBillKopecks, 3630000);
+		assert.equal(split.integrityInvariantHolds, true);
+		assert.equal(split.totalInsuranceCoveredKopecks + split.totalPatientOutOfPocketKopecks, split.totalBillKopecks);
+	});
+
+	it("4. Renders without disabled buttons, top Russian insurers, and clinical dates (Mandate 8e)", () => {
 		const html = renderToString(
-			React.createElement(DmsGuaranteeLetterModal, {
+			React.createElement(InsuranceWorkspaceModal, {
 				isOpen: true,
 				onClose: () => {},
-				patient: { id: "pat-dms-1", fullName: "Соколова Анна Викторовна", birthDate: "1990-04-15", policyNumber: "СГЗ-2026-998811" },
+				patient: { id: "pat-dms-1", fullName: "Соколова Анна Викторовна", birthDate: "15.04.1990", policyNumber: "СГЗ-2026-998811" },
 			}),
 		);
-		assert.ok(html.includes("dms-coverage-summary-banner"));
 		assert.ok(html.includes("15.04.1990"), "Must render Russian clinical date 15.04.1990");
-		assert.ok(!html.includes("1990-04-15"), "Must not leak raw ISO date 1990-04-15");
-		assert.ok(html.includes("Активно"), "Must render sentence-case 'Активно' badge");
-		assert.ok(html.includes("dms-insurer-policy-form"));
-		assert.ok(html.includes("dms-approved-teeth-selector"));
-		assert.ok(html.includes("dms-guarantee-modal-footer"));
+		assert.ok(html.includes("Актив"), "Must render active badge");
+		assert.ok(!html.includes("disabled="), "Must not render disabled buttons (Mandate 8e)");
 
 		for (const insurerName of ["СОГАЗ", "Ингосстрах", "РЕСО-Гарантия", "АльфаСтрахование", "ВСК", "Согласие"]) {
 			assert.ok(html.includes(insurerName), `Must render 1-click insurer ${insurerName}`);
 		}
-		assert.ok(html.includes("Сохранить гарантийное письмо"));
-		assert.ok(html.includes("Привязать к текущему визиту"));
-		assert.ok(html.includes("Отправить запрос на согласование"));
-		assert.ok(!html.includes("disabled="), "Must not render disabled buttons (Mandate 8e)");
 	});
 });

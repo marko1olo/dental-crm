@@ -1,75 +1,12 @@
-export * from "./insuranceCatalogs.js";
-export {
-	calculateDmsCoPaymentSplit,
-	calculateDmsCoPaymentSplitWithPayment,
-	calculatePatientPaymentSplit,
-	buildDmsReconciliationRegistry,
-	exportDmsRegistryToCsv,
-	kopecksToRubles,
-	rublesToKopecks,
-	formatCurrencyRub,
-	normalizeToothFdi,
-	isToothApprovedByLetter,
-	isServiceCodeApprovedByLetter,
-	type DmsGuaranteeLetter,
-	type DmsBillableLineItem,
-	type DmsSplitLineResult,
-	type DmsSplitCalculationResult,
-	type DmsRegistryItem,
-	type DmsReconciliationRegistry,
-	type PatientPaymentMethod,
-	type PatientPaymentSplit,
-} from "./dmsSplitEngine.js";
-export * from "./DmsGuaranteeLetterModal.js";
-export * from "./DmsBillSplitCalculatorSection.js";
-export * from "./DmsRegistryExportModal.js";
-export * from "./dmsClaimRegistryExport.js";
-export {
-	calculateDmsSplitInvoice,
-	generateDmsPreAuthRequest,
-	generateDmsStatutoryRegistry,
-	verifyServiceForDms,
-	formatKopecks,
-	exportRegistryToCsv,
-	generateBilateralAcceptanceActHtml,
-	type DmsBillItemInput,
-	type DmsSplitInvoiceSummary,
-	type DmsRegistryVisitServiceItem,
-	type DmsStatutoryRegistry,
-	type ClinicLegalInfo,
-} from "./dmsInsuranceEngine.js";
-export {
-	STATUTORY_DMS_INSURERS,
-	STATUTORY_DMS_PROGRAMS,
-	STATUTORY_804N_NOMENCLATURE,
-	STATUTORY_DMS_EXCLUSION_RULES,
-	SAMPLE_DMS_GUARANTEE_LETTERS,
-	getStatutoryInsurerById,
-	getStatutoryProgramByKey,
-	getNomenclature804nByCode,
-	type DmsGuaranteeLetterRecord,
-	type DmsGuaranteeLetterStatus,
-	type DmsInsurerId,
-	type DmsInsurerMetadata,
-	type DmsPreAuthApprovalStatus,
-	type DmsProgramKey,
-	type DmsProgramPolicyDefinition,
-	type DmsNomenclature804nItem,
-} from "./dmsInsurancePresets.js";
-export {
-	RUSSIAN_DMS_INSURERS,
-	DMS_STANDARD_EXCLUSIONS,
-	NOMENCLATURE_804N_CATALOG,
-	rubToKopecks,
-	kopecksToRub,
-	formatRubKopecks,
-	calculateServiceDmsDistribution,
-	calculateRegistryTotals,
-	search804nServices,
-	type DmsInsurerItem,
-	type DmsExclusionDefinition,
-	type Nomenclature804nItem,
-	type DmsRegistryServiceRecord,
-	type DmsRegistrySummary,
-} from "./insuranceMath.js";
+/**
+ * index.ts — Canonical SSOT exports for Insurance & Russian DMS subsystem.
+ *
+ * Mandates: 8b (Healthy sweet spot <= 120 lines), 8e, 8n.
+ */
 
+export * from "./insuranceData.js";
+export * from "./InsuranceWorkspaceModal.js";
+export * from "./InsuranceBillSplitCard.js";
+export * from "./DirectInsuranceLauncher.js";
+export { InsuranceWorkspaceModal as DmsGuaranteeLetterModal } from "./InsuranceWorkspaceModal.js";
+export { InsuranceBillSplitCard as DmsBillSplitCalculatorSection } from "./InsuranceBillSplitCard.js";

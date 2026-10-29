@@ -22,6 +22,7 @@ import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketi
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
+import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -111,7 +112,11 @@ function isStandaloneActive(): boolean {
 		s.includes("radiology") ||
 		h.includes("radiology") ||
 		s.includes("visiograph") ||
-		h.includes("visiograph")
+		h.includes("visiograph") ||
+		s.includes("implant-passport") ||
+		h.includes("implant-passport") ||
+		s.includes("implants") ||
+		h.includes("implants")
 	);
 }
 
@@ -154,6 +159,7 @@ export function AppShell() {
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
 			<DirectCopilotLauncher />
+			<DirectInsuranceLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
