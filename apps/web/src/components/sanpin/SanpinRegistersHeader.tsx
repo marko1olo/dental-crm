@@ -51,12 +51,12 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					type="button"
 					onClick={onAutofillShift}
 					aria-busy={autoFilling}
-					className="sanpin-btn-primary-cta sanpin-desktop-only-btn h-9 min-h-[36px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white font-bold px-3.5 text-[13px] sm:inline-flex hidden items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation shadow-xs"
+					className="secondary-button sanpin-btn-shift-autofill sanpin-desktop-only-btn h-9 min-h-[36px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-[#334155] bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#1e293b)] font-medium px-3.5 text-[13px] sm:inline-flex hidden items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation shadow-2xs"
 					data-testid="sanpin-shift-close-primary-btn"
 					data-action="shift-close"
 					title="Зафиксировать смену стерилизации в 1 клик (автоклавы 134°C, азопирам 100% норма, пакетное списание расходников)"
 				>
-					<CheckCircle2 size={15} className="shrink-0 text-white" />
+					<CheckCircle2 size={15} className="shrink-0 text-[var(--teal,#0d9488)]" />
 					<span>{autoFilling ? "Фиксация..." : "Зафиксировать смену"}</span>
 				</button>
 

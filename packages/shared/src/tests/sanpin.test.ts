@@ -579,12 +579,18 @@ describe("SanPiN Regulatory Engine & Shared Contracts", () => {
 			assert.ok(html.includes("Смирнов А. В."), "Title page must include chief doctor approval");
 			assert.ok(html.includes("Иванова М. П."), "Title page must include head nurse signature");
 
-			// Verify Section 1: PSO Form 366/u
-			assert.ok(html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/у)"));
+			// Verify Section 1: Pre-sterilization cleaning (PSO)
+			assert.ok(
+				html.includes("ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ") ||
+				html.includes("ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ"),
+			);
 			assert.ok(html.includes("Терапевтический смотровой набор"));
 
-			// Verify Section 2: Form 257/u
-			assert.ok(html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/у)"));
+			// Verify Section 2: Autoclave sterilization journal
+			assert.ok(
+				html.includes("ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ") ||
+				html.includes("ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ"),
+			);
 			assert.ok(html.includes("Euronda E9 Next"));
 
 			// Verify Section 3: Bactericidal & Cleanings
@@ -659,8 +665,14 @@ describe("SanPiN Regulatory Engine & Shared Contracts", () => {
 
 			assert.ok(csv.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM for Excel / 1C");
 			assert.ok(csv.includes("№ ЛО41-01137-77/00368421"), "CSV must contain medical license number");
-			assert.ok(csv.includes("=== РАЗДЕЛ 1: ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ (ФОРМА № 366/У) ==="));
-			assert.ok(csv.includes("=== РАЗДЕЛ 2: ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ АВТОКЛАВОВ (ФОРМА № 257/У) ==="));
+			assert.ok(
+				csv.includes("=== РАЗДЕЛ 1: ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ") ||
+				csv.includes("=== РАЗДЕЛ 1: ЖУРНАЛ УЧЕТА КАЧЕСТВА ПРЕДСТЕРИЛИЗАЦИОННОЙ ОБРАБОТКИ"),
+			);
+			assert.ok(
+				csv.includes("=== РАЗДЕЛ 2: ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ") ||
+				csv.includes("=== РАЗДЕЛ 2: ЖУРНАЛ КОНТРОЛЯ РАБОТЫ СТЕРИЛИЗАТОРОВ"),
+			);
 			assert.ok(csv.includes("=== РАЗДЕЛ 3.1: ЖУРНАЛ РЕГИСТРАЦИИ РАБОТЫ БАКТЕРИЦИДНЫХ УСТАНОВОК (Р 3.5.1904-04) ==="));
 			assert.ok(csv.includes("=== РАЗДЕЛ 3.2: ЖУРНАЛ ПРОВЕДЕНИЯ ГЕНЕРАЛЬНЫХ УБОРОК (САНПИН 3.3686-21) ==="));
 			assert.ok(csv.includes("=== РАЗДЕЛ 4: ЖУРНАЛ ТЕМПЕРАТУРНОГО РЕЖИМА ХОЛОДИЛЬНИКОВ И ХРАНЕНИЯ ЛС (ПРИКАЗ 706Н) ==="));

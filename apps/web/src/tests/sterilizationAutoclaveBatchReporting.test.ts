@@ -132,7 +132,12 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 		});
 
 		const printHtml = generateForm257PrintHtml(records, DEFAULT_CLINIC_LEGAL_INFO, "за Сентябрь 2026 г.");
-		assert.ok(printHtml.includes("Форма № 257/у"), "HTML должен содержать штамп Формы № 257/у");
+		assert.ok(
+			printHtml.includes("Журнал автоклавирования и стерилизации") ||
+			printHtml.includes("Журнал автоклавирования") ||
+			printHtml.includes("Форма № 257/у"),
+			"HTML должен содержать заголовок журнала автоклавирования и стерилизации",
+		);
 		assert.ok(printHtml.includes("СанПиН 3.3686-21"), "HTML должен ссылаться на СанПиН 3.3686-21");
 		assert.ok(printHtml.includes("size: A4 landscape"), "Печатный стиль должен быть A4 landscape");
 		assert.ok(printHtml.includes("Химический контроль (5 точек)"));

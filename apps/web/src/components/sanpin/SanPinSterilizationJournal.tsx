@@ -315,9 +315,9 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 			</div>
 
 			{/* МОБИЛЬНЫЙ ВИД (390x844 Apple HIG: КАРТОЧКИ ВЫСОТОЙ >= 52px, 0px ГОРИЗОНТАЛЬНОГО СКРОЛЛА) */}
-			<div className="sanpin-mobile-view autoclave-mobile-view flex flex-col gap-3 pb-28">
+			<div className="sanpin-mobile-view autoclave-mobile-view flex flex-col gap-3 pb-36">
 				{filteredCycles.length === 0 ? (
-					<div className="p-6 text-center bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[#334155]">
+					<div className="p-5 text-center bg-[var(--paper,#fff)] dark:bg-[var(--paper-strong,#1e293b)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[#334155]">
 						<p className="font-semibold text-sm mb-2 text-[var(--ink,#1e293b)]">Нет циклов за выбранный период</p>
 						<button
 							type="button" onClick={handleShiftBatch1Click}
@@ -384,11 +384,14 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 
 				{/* Floating Bottom Bar (Natural Thumb Zone для смартфонов, Мандат 8am: 1 Primary CTA) */}
 				{!isCycleDrawerOpen && (
-					<div className="fixed bottom-0 left-0 right-0 z-30 p-3 bg-[var(--paper,#fff)]/95 dark:bg-[var(--paper-strong,#0f172a)]/95 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-lg flex items-center pb-[max(12px,env(safe-area-inset-bottom))]">
+					<div
+						className="fixed left-0 right-0 z-30 p-2.5 sm:p-3 bg-[var(--paper,#fff)]/95 dark:bg-[var(--paper-strong,#0f172a)]/95 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] dark:border-[#334155] shadow-lg flex items-center"
+						style={{ bottom: "calc(56px + env(safe-area-inset-bottom, 0px))" }}
+					>
 						<button
 							type="button" onClick={handleOpenNewCycle}
 							aria-busy={isBatchSubmitting}
-							className="w-full h-12 min-h-[48px] rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation"
+							className="w-full h-11 min-h-[44px] rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] text-white shadow-sm flex items-center justify-center gap-2 cursor-pointer touch-manipulation active:scale-[0.99]"
 							data-testid="sanpin-mobile-start-cycle-cta" title="Пакетная стерилизация смены"
 						>
 							<Plus size={18} className="text-white" />
