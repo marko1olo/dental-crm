@@ -104,7 +104,7 @@
 	font-weight: 600;
 }
 
-@media (pointer: coarse) {
+@media (pointer: coarse), (max-width: 768px) {
 	.visiograph-top-toolbar {
 		height: 44px;
 		min-height: 44px;
@@ -112,13 +112,17 @@
 	}
 	.visiograph-top-toolbar .secondary-button,
 	.visiograph-top-toolbar .primary-button {
-		height: 36px;
-		min-height: 36px;
+		height: 44px;
+		min-height: 44px;
 	}
 	.visiograph-top-toolbar .icon-button {
-		width: 36px;
-		min-width: 36px;
-		height: 36px;
-		min-height: 36px;
+		width: 44px;
+		min-width: 44px;
+		height: 44px;
+		min-height: 44px;
+	}
+	.visiograph-tooth-badge {
+		height: 44px;
+		min-height: 44px;
 	}
 }

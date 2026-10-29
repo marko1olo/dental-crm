@@ -51,9 +51,9 @@ export function VisiographStudioSidebar({
 						return (
 							<button key={preset.id} type="button" onClick={() => onApplySensorPreset(preset)} className="visiograph-sidebar-preset-btn"
 								style={{
-									background: isSelected ? "var(--primary, #1f6feb)" : "var(--paper, #21262d)",
+									background: isSelected ? "var(--teal, var(--primary, #0d9488))" : "var(--paper, #21262d)",
 									color: isSelected ? "#ffffff" : "var(--ink, #c9d1d9)",
-									border: `1px solid ${isSelected ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
+									border: `1px solid ${isSelected ? "var(--teal, var(--primary, #0d9488))" : "var(--line, #30363d)"}`,
 								}} title={preset.description}>
 								<span>{preset.label}</span>{isSelected && <CheckCircle2 size={14} />}
 							</button>
@@ -61,9 +61,9 @@ export function VisiographStudioSidebar({
 					})}
 					<button key="manual-calib-btn" type="button" onClick={onStartManualCalibration} className="visiograph-sidebar-preset-btn"
 						style={{
-							background: activeTool === "calibrate" ? "var(--primary, #1f6feb)" : "var(--paper, #21262d)",
+							background: activeTool === "calibrate" ? "var(--teal, var(--primary, #0d9488))" : "var(--paper, #21262d)",
 							color: activeTool === "calibrate" ? "#ffffff" : "var(--ink, #c9d1d9)",
-							border: `1px solid ${activeTool === "calibrate" ? "var(--primary, #58a6ff)" : "var(--line, #30363d)"}`,
+							border: `1px solid ${activeTool === "calibrate" ? "var(--teal, var(--primary, #0d9488))" : "var(--line, #30363d)"}`,
 						}} title="Ручная калибровка по 2 точкам (шарик 5.0 мм или шаг резьбы)">
 						<span>Ручная калибровка (шарик / резьба)</span><Scale size={14} />
 					</button>

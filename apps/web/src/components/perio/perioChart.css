@@ -1,9 +1,36 @@
 /**
- * apps/web/src/components/perio/perioChart.css
- *
- * Facade stylesheet for Periodontogram Charting.
- * Mandate 8b: File <= 120 lines.
+ * apps/web/src/components/perio/perioChart.css — Стили кабинета пародонтологии DENTE CRM
+ * Apple HIG: Адаптивность тулбара, 0px паразитного скролла, Floating Bottom Bar.
  */
 
-@import "./chart/perioChartSheet.css";
-@import "./chart/perioChartControls.css";
+.perio-desktop-primary-cta {
+	display: inline-flex;
+}
+
+.perio-mobile-floating-bar {
+	display: none;
+}
+
+@media (max-width: 640px) {
+	.perio-desktop-primary-cta {
+		display: none !important;
+	}
+
+	.perio-mobile-floating-bar {
+		display: flex !important;
+	}
+
+	.perio-toolbar-actions {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		padding-bottom: 4px;
+		width: 100%;
+		gap: 0.5rem;
+	}
+
+	.perio-toolbar-actions::-webkit-scrollbar {
+		display: none;
+	}
+}

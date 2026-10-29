@@ -117,12 +117,32 @@ export function useVisiographStudioActions(opts: StudioActionsOptions) {
 						measurements: { angleDeg: a.angleDeg },
 						notes: "Угол наклона оси",
 					})),
+					...lesions.map((l) => ({
+						id: l.id,
+						toothCode: targetTooth,
+						annotationType: "lesion",
+						coordinates: { points: l.points },
+						measurements: {
+							areaMm2: l.areaMm2,
+							areaPx: l.areaPx,
+							perimeterMm: l.perimeterMm,
+							equivalentDiameterMm: l.equivalentDiameterMm,
+							classification: l.classification,
+						},
+						notes: `${l.classificationLabel}: ${l.clinicalDescription}`,
+					})),
 				];
 
 				await fetch(`/api/imaging/studies/${studyId}/measurements`, {
 					method: "POST",
 					headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
 					body: JSON.stringify({ measurements: measurementPayload }),
+				});
+
+				await fetch(`/api/imaging/studies/${studyId}/bind-tooth`, {
+					method: "POST",
+					headers: denteClinicalMutationHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({ toothCode: targetTooth }),
 				});
 			} catch {
 				// Офлайн фоллбэк

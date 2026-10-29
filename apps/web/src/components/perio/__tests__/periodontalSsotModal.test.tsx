@@ -49,4 +49,16 @@ describe("9. SSOT Modal Consolidation & Mandate 8am (1 Primary CTA)", () => {
 		// Zero mentions of Florida Probe (Mandate 8ap)
 		assert.strictEqual(html.includes("Florida Probe"), false);
 	});
+
+	it("provides print and BOP calculation actions without disabled attribute (Mandate 8e)", () => {
+		const html = renderToString(
+			<PeriodontogramChart readOnly={false} />,
+		);
+
+		assert.ok(html.includes("data-testid=\"perio-print-protocol-btn\""), "Print button must be present");
+		assert.ok(html.includes("data-testid=\"perio-calc-indices-btn\""), "BOP calc button must be present");
+		assert.ok(html.includes("data-testid=\"perio-save-mobile-btn\""), "Mobile primary CTA must be present");
+		// Ensure buttons are never disabled (Mandate 8e)
+		assert.strictEqual(html.includes("disabled=\"\""), false, "Buttons must not be disabled");
+	});
 });

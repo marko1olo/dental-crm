@@ -6,7 +6,7 @@
 
 .visiograph-viewport-container {
 	flex: 1;
-	background: var(--dark-bg, #090d16);
+	background: var(--paper-canvas, var(--dark-bg, #090d16));
 	display: flex;
 	align-items: center;
 	justify-content: center;

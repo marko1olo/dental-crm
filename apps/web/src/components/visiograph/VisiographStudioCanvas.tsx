@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useCallback } from "react";
-import { Sliders, X } from "lucide-react";
+import { Check, Sliders, X } from "lucide-react";
 import { DEFAULT_VISIOGRAPH_IMAGE_PARAMS, type VisiographImageParams } from "./VisiographImageProcessor";
 import {
 	type CalibrationReference,
@@ -39,15 +39,9 @@ export { STANDARD_SENSOR_PRESETS, recalculateRulersWithScale, recalculateLesions
 
 export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 	const {
-		imageUrl: initialImageUrl,
-		patientId = "pat_unknown",
-		patientFullName = "Пациент ДЕНТЕ",
-		toothCode = null,
-		studyId: initialStudyId,
-		doctorName = "Врач-рентгенолог ДЕНТЕ",
-		initialTool = "pointer",
-		onSaveToRecord,
-		onClose,
+		imageUrl: initialImageUrl, patientId = "pat_unknown", patientFullName = "Пациент ДЕНТЕ",
+		toothCode = null, studyId: initialStudyId, doctorName = "Врач-рентгенолог ДЕНТЕ",
+		initialTool = "pointer", onSaveToRecord, onClose,
 	} = props;
 
 	const [activeImageUrl, setActiveImageUrl] = useState<string | null>(initialImageUrl || null);
@@ -60,12 +54,8 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 	const [activeTool, setActiveTool] = useState<ActiveVisiographTool>(initialTool);
 	const [activeSensorPresetId, setActiveSensorPresetId] = useState<string | null>(null);
 	const [calibration, setCalibration] = useState<CalibrationReference>({
-		type: "sphere_5mm",
-		p1: { x: 0, y: 0 },
-		p2: { x: 100, y: 0 },
-		knownLengthMm: 5.0,
-		pixelDistance: 100,
-		scaleMmPerPixel: DEFAULT_PIXEL_SCALE_MM,
+		type: "sphere_5mm", p1: { x: 0, y: 0 }, p2: { x: 100, y: 0 },
+		knownLengthMm: 5.0, pixelDistance: 100, scaleMmPerPixel: DEFAULT_PIXEL_SCALE_MM,
 	});
 	const [isCalibrated, setIsCalibrated] = useState(false);
 	const [rulers, setRulers] = useState<RulerMeasurement[]>([]);
@@ -79,40 +69,14 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 	const [currentToothCode, setCurrentToothCode] = useState<string>(toothCode || "16");
 
 	const { canvasRef, getCanvasPoint, handleMouseMove, handleMouseLeave } = useVisiographCanvasState({
-		imageUrl: activeImageUrl || undefined,
-		params,
-		rulers,
-		angles,
-		lesions,
-		calibration,
-		isCalibrated,
-		activeTool,
-		drawingPoints,
-		hoverPos,
-		setHoverPos,
+		imageUrl: activeImageUrl || undefined, params, rulers, angles, lesions,
+		calibration, isCalibrated, activeTool, drawingPoints, hoverPos, setHoverPos,
 	});
 
 	const { handleApplySensorPreset, handleResetParams, handleApplyClinicalFilter, handlePrintProtocol, handleAttachToVisit } = useVisiographStudioActions({
-		canvasRef,
-		patientId,
-		patientFullName,
-		doctorName,
-		studyId,
-		toothCode: currentToothCode,
-		rulers,
-		angles,
-		lesions,
-		calibration,
-		isCalibrated,
-		activeClinicalFilter,
-		setParams,
-		setActiveClinicalFilter,
-		setActiveSensorPresetId,
-		setIsCalibrated,
-		setCalibration,
-		setRulers,
-		setLesions,
-		onSaveToRecord,
+		canvasRef, patientId, patientFullName, doctorName, studyId, toothCode: currentToothCode,
+		rulers, angles, lesions, calibration, isCalibrated, activeClinicalFilter, setParams,
+		setActiveClinicalFilter, setActiveSensorPresetId, setIsCalibrated, setCalibration, setRulers, setLesions, onSaveToRecord,
 	});
 
 	// Обработка перетаскивания и загрузки снимка через честный API в PostgreSQL
@@ -233,17 +197,17 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 			/>
 
 			{/* Мобильная кнопка вызова фильтров (Apple HIG Touch Target >= 44px) */}
-			<div className="md:hidden flex items-center justify-between px-3 py-1.5 border-b border-[var(--line)] bg-[var(--paper-soft)]">
+			<div className="md:hidden flex items-center justify-between px-3 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)]">
 				<button
 					type="button"
 					onClick={() => setIsMobileDrawerOpen(true)}
-					className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] min-h-[36px]"
+					className="flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-semibold bg-[var(--paper-strong)] border border-[var(--line)] text-[var(--ink)] min-h-[44px]"
 					data-testid="btn-open-mobile-filters"
 				>
-					<Sliders size={13} />
-					<span>Фильтры и пресеты датчиков</span>
+					<Sliders size={15} />
+					<span>Фильтры и сенсоры</span>
 				</button>
-				<span className="text-[11px] font-mono text-[var(--teal,#0d9488)] font-semibold">
+				<span className="text-xs font-mono text-[var(--teal,#0d9488)] font-bold px-2 py-1 rounded bg-[var(--paper-strong)] border border-[var(--line)]">
 					Зуб #{currentToothCode}
 				</span>
 			</div>
@@ -370,6 +334,79 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 					</div>
 				</div>
 			)}
+
+			{/* Apple HIG Floating Bottom Bar in Natural Thumb Zone */}
+			<div
+				className="md:hidden sticky bottom-0 z-30 w-full flex flex-col gap-2 p-3 border-t border-[var(--line)] bg-[var(--paper-strong,#0f172a)]/95 backdrop-blur-md shadow-2xl"
+				style={{ paddingBottom: "max(12px, env(safe-area-inset-bottom, 12px))" }}
+				data-testid="visiograph-mobile-floating-bar"
+			>
+				{/* Мобильные кнопки выбора инструментов (>= 44x44px) */}
+				<div className="flex items-center justify-between gap-1 overflow-x-auto pb-1 no-scrollbar">
+					<button
+						type="button"
+						onClick={() => { setActiveTool("pointer"); setDrawingPoints([]); }}
+						className={`flex-1 min-h-[44px] px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
+							activeTool === "pointer"
+								? "bg-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] text-white shadow-xs"
+								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+						}`}
+						title="Указатель"
+					>
+						<span>Указка</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => { setActiveTool("ruler"); setDrawingPoints([]); }}
+						className={`flex-1 min-h-[44px] px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
+							activeTool === "ruler"
+								? "bg-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] text-white shadow-xs"
+								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+						}`}
+						title="Линейка"
+					>
+						<span>Линейка</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => { setActiveTool("root_canal"); setDrawingPoints([]); }}
+						className={`flex-1 min-h-[44px] px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
+							activeTool === "root_canal"
+								? "bg-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] text-white shadow-xs"
+								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+						}`}
+						title="Эндо-апекс"
+					>
+						<span>Апекс</span>
+					</button>
+
+					<button
+						type="button"
+						onClick={() => { setActiveTool("angle"); setDrawingPoints([]); }}
+						className={`flex-1 min-h-[44px] px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1 border transition-colors ${
+							activeTool === "angle"
+								? "bg-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] text-white shadow-xs"
+								: "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"
+						}`}
+						title="Угломер"
+					>
+						<span>Угол</span>
+					</button>
+				</div>
+
+				{/* Главная кнопка Primary CTA цвета Teal (#0d9488) в нижней трети экрана (Apple HIG) */}
+				<button
+					type="button"
+					onClick={handleAttachToVisit}
+					className="w-full min-h-[48px] px-4 rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-[0.98]"
+					data-testid="btn-mobile-attach-to-visit"
+				>
+					<Check size={18} strokeWidth={2.5} />
+					<span>Сохранить в карту пациента</span>
+				</button>
+			</div>
 
 			<VisiographExportModal
 				isOpen={showExportModal}

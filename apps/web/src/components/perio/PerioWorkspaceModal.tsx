@@ -1,17 +1,19 @@
 /**
  * PerioWorkspaceModal.tsx — Единый канонический кабинет пародонтологии DENTE CRM
  * SSOT: Вкладка 1 (Экспресс-скрининг PSR), Вкладка 2 (Пародонтограмма с цифровым блоком 1–9)
- * Ровно 1 Primary CTA кнопка #0d9488 («✓ Зафиксировать статус пародонта»), Apple HIG (380–480 строк).
+ * Ровно 1 Primary CTA кнопка #0d9488 («✓ Зафиксировать статус пародонта»), Apple HIG (<= 450 строк).
  */
 
 import React, { useId, useMemo, useState, useCallback, useEffect } from "react";
-import { Activity, Check, Clock, Save, X, Layers, FileText, Sparkles } from "lucide-react";
+import { Activity, Check, Clock, Save, X, Layers, FileText, Sparkles, Printer, BarChart3, Info } from "lucide-react";
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
 import {
 	calculateClinicalAttachmentLevel,
 	calculatePerioIndices,
 	createDefaultPerioTeeth,
 	PERIO_SITE_KEYS,
+	convertPerioDentitionToSepa,
+	convertSepaDentitionToPerio,
 } from "@dental/shared";
 import {
 	applyExpressPerioPreset,
@@ -28,6 +30,10 @@ import {
 } from "./perioCatalogData";
 import type { PsrCode, PsrScreeningMap, PsrSextantId } from "./perioTypes";
 import { showToast } from "../GlobalToast";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import "./perioChart.css";
+
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 export interface PerioWorkspaceModalProps {
 	readonly isOpen?: boolean | undefined;
@@ -55,6 +61,7 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 	isOpen = true,
 	onClose,
 	isModal = false,
+	patientId,
 	patientName = "Пациент пародонтологии",
 	initialTeeth,
 	initialTab,
@@ -65,9 +72,7 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 	onInsertToProtocol,
 }) => {
 	const modalId = useId();
-	const [activeTab, setActiveTab] = useState<"psr" | "chart">(
-		() => initialTab ?? (initialTier3Expanded ? "chart" : "psr"),
-	);
+	const [activeTab, setActiveTab] = useState<"psr" | "chart">(() => initialTab ?? (initialTier3Expanded ? "chart" : "psr"));
 	const [teeth, setTeeth] = useState<PerioToothRecord[]>(
 		() => (initialTeeth && initialTeeth.length === 32 ? [...initialTeeth] : applyHealthyPeriodontiumPreset(createDefaultPerioTeeth(2))),
 	);
@@ -80,50 +85,78 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 	const [selectedSiteKey, setSelectedSiteKey] = useState<SiteKey>("distoBuccal");
 	const [syncStatus, setSyncStatus] = useState<"idle" | "saving" | "saved">("idle");
 	const [lastSavedAt, setLastSavedAt] = useState<string | null>(null);
+	const [showIndicesDetails, setShowIndicesDetails] = useState<boolean>(false);
 
 	const summary = useMemo(() => calculatePerioIndices(teeth), [teeth]);
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
+
+	useEffect(() => {
+		if (!patientId || !UUID_REGEX.test(patientId)) return;
+		let isCancelled = false;
+		async function loadPatientPerio() {
+			try {
+				const res = await fetch(`/api/perio/${patientId}`, { headers: { ...denteAdminSecretRequestHeaders() } });
+				if (!res.ok) return;
+				const json = await res.json();
+				if (isCancelled || !json.success || !json.data) return;
+				if (Array.isArray(json.data.teeth) && json.data.teeth.length > 0) {
+					const converted = convertSepaDentitionToPerio(json.data.teeth);
+					if (converted?.length === 32) setTeeth(converted);
+					if (json.data.updatedAt || json.data.recordedAt) {
+						setLastSavedAt(new Date(json.data.updatedAt || json.data.recordedAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
+						setSyncStatus("saved");
+					}
+				}
+			} catch { /* Офлайн фоллбэк */ }
+		}
+		void loadPatientPerio();
+		return () => { isCancelled = true; };
+	}, [patientId]);
 
 	useEffect(() => {
 		if (onChange) onChange(teeth, summary);
 	}, [teeth, summary, onChange]);
 
 	const updateSextant = useCallback((id: PsrSextantId, code: PsrCode, asterisk?: boolean) => {
-		setScreeningMap((prev) => ({
-			...prev,
-			[id]: { code, asterisk: asterisk ?? prev[id]?.asterisk ?? false },
-		}));
+		setScreeningMap((prev) => ({ ...prev, [id]: { code, asterisk: asterisk ?? prev[id]?.asterisk ?? false } }));
 		if (code >= 3) setActiveTab("chart");
 	}, []);
 
 	const toggleAsterisk = useCallback((id: PsrSextantId) => {
-		setScreeningMap((prev) => ({
-			...prev,
-			[id]: { code: prev[id]?.code ?? 0, asterisk: !prev[id]?.asterisk },
-		}));
+		setScreeningMap((prev) => ({ ...prev, [id]: { code: prev[id]?.code ?? 0, asterisk: !prev[id]?.asterisk } }));
 	}, []);
 
 	const handleSetAllIntact = useCallback(() => {
 		setTeeth(applyHealthyPeriodontiumPreset(createDefaultPerioTeeth(2)));
-		setScreeningMap({
-			S1: { code: 0 }, S2: { code: 0 }, S3: { code: 0 },
-			S4: { code: 0 }, S5: { code: 0 }, S6: { code: 0 },
-		});
+		setScreeningMap({ S1: { code: 0 }, S2: { code: 0 }, S3: { code: 0 }, S4: { code: 0 }, S5: { code: 0 }, S6: { code: 0 } });
 		showToast("Пародонт интактен (PSR 0 во всех 6 секстантах)", "success");
 	}, []);
 
 	const handleApplyPreset = useCallback((presetId: any) => {
 		const res = applyExpressPerioPreset(teeth, presetId);
 		setTeeth(res.updatedTeeth);
-		if (presetId.includes("severe") || presetId.includes("moderate")) {
-			setActiveTab("chart");
-		}
+		if (presetId.includes("severe") || presetId.includes("moderate")) setActiveTab("chart");
 		dispatchPresetSideEffects(res, onInsertToProtocol);
 	}, [teeth, onInsertToProtocol]);
 
 	const handleSave = useCallback(async () => {
 		setSyncStatus("saving");
 		try {
+			if (patientId && UUID_REGEX.test(patientId)) {
+				const sepaTeeth = convertPerioDentitionToSepa(teeth);
+				const allSites = sepaTeeth.flatMap((t) => (t.sites || []).map((s) => ({
+					toothNumber: t.toothNumber, siteCode: s.siteCode, probingDepthMm: s.probingDepthMm,
+					gingivalMarginMm: s.gingivalMarginMm, bleedingOnProbing: Boolean(s.bleedingOnProbing),
+					plaque: Boolean(s.plaque), calculus: Boolean(s.calculus), suppuration: Boolean(s.suppuration),
+				})));
+				await fetch(`/api/perio/${patientId}`, {
+					method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+					body: JSON.stringify({
+						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
+						sites: allSites, notes: `PSR: ${psrSummary.psrFormula} (${psrSummary.suggestedDiagnosisRu})`, status: "closed", autoClose: true,
+					}),
+				});
+			}
 			await deductPeriodontalConsumablesSoftOverdraft(summary.deepPocketsCount > 0 ? "curettage" : "hygiene");
 			setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
 			setSyncStatus("saved");
@@ -133,23 +166,24 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 		} catch {
 			setSyncStatus("saved");
 			showToast("✓ Статус пародонта сохранен локально", "success");
+			if (isModal && onClose) onClose();
 		}
-	}, [teeth, summary, onSave, isModal, onClose]);
+	}, [patientId, teeth, psrSummary, summary, onSave, isModal, onClose]);
 
-	const currentTooth = useMemo(
-		() => teeth.find((t) => t.toothNumber === selectedToothNum) || teeth[0]!,
-		[teeth, selectedToothNum],
-	);
+	const handlePrintProtocol = useCallback(() => {
+		if (typeof window !== "undefined") {
+			window.print();
+			showToast("Формирование протокола пародонтологии для печати", "info");
+		}
+	}, []);
+
+	const currentTooth = useMemo(() => teeth.find((t) => t.toothNumber === selectedToothNum) || teeth[0]!, [teeth, selectedToothNum]);
 
 	const handleUpdateDepth = useCallback((depth: number) => {
 		setTeeth((prev) => prev.map((t) => {
 			if (t.toothNumber !== selectedToothNum) return t;
 			const site = t[selectedSiteKey] || { probingDepthMm: 2, gingivalMarginMm: 0, bleedingOnProbing: false, plaque: false, calculus: false, suppuration: false };
-			const gm = site.gingivalMarginMm || 0;
-			return {
-				...t,
-				[selectedSiteKey]: { ...site, probingDepthMm: depth, calMm: calculateClinicalAttachmentLevel(depth, gm) },
-			};
+			return { ...t, [selectedSiteKey]: { ...site, probingDepthMm: depth, calMm: calculateClinicalAttachmentLevel(depth, site.gingivalMarginMm || 0) } };
 		}));
 		const idx = SITES.findIndex((s) => s.key === selectedSiteKey);
 		if (idx < SITES.length - 1) setSelectedSiteKey(SITES[idx + 1]!.key);
@@ -166,11 +200,7 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 	if (!isOpen) return null;
 
 	const content = (
-		<div
-			id={modalId}
-			data-testid="interactive-periodontogram"
-			className="interactive-periodontogram flex flex-col gap-3 select-none relative rounded-2xl p-3 sm:p-5 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-lg w-full max-w-full overflow-x-clip"
-		>
+		<div id={modalId} data-testid="interactive-periodontogram" className="interactive-periodontogram flex flex-col gap-3 select-none relative rounded-2xl p-3 sm:p-5 pb-20 sm:pb-5 bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-lg w-full max-w-full overflow-x-clip">
 			{/* ВЕРХНИЙ ТУЛБАР: Заголовок, Бейджи, Пресеты и ровно 1 Primary CTA #0d9488 */}
 			<div className="flex flex-wrap items-center justify-between gap-2.5 border-b border-[var(--line)] pb-3">
 				<div className="flex items-center gap-2.5">
@@ -180,65 +210,69 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 					<div>
 						<div className="flex items-center gap-2">
 							<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] leading-tight">Кабинет пародонтологии</h2>
-							{patientName && (
-								<span className="text-xs px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">
-									{patientName}
-								</span>
-							)}
+							{patientName && <span className="text-xs px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">{patientName}</span>}
 						</div>
 						<p className="text-xs text-[var(--muted)] flex items-center gap-2 pt-0.5">
 							{syncStatus === "saved" ? (
-								<span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium">
-									<Check className="w-3.5 h-3.5" /> Сохранено {lastSavedAt ? `в ${lastSavedAt}` : ""}
-								</span>
+								<span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400 font-medium"><Check className="w-3.5 h-3.5" /> Сохранено {lastSavedAt ? `в ${lastSavedAt}` : ""}</span>
 							) : syncStatus === "saving" ? (
-								<span className="inline-flex items-center gap-1 text-teal-600 dark:text-teal-400 font-medium animate-pulse">
-									<Clock className="w-3.5 h-3.5" /> Сохранение...
-								</span>
-							) : (
-								<span>Черновик</span>
-							)}
-							<span className="text-rose-600 dark:text-rose-400 font-semibold">• BOP: {summary.fmbsPercent}%</span>
-							{summary.deepPocketsCount > 0 && (
-								<span className="text-amber-600 dark:text-amber-400 font-medium">
-									{"• Карманы \u2265 4 мм: "}{summary.deepPocketsCount}
-								</span>
-							)}
+								<span className="inline-flex items-center gap-1 text-teal-600 dark:text-teal-400 font-medium animate-pulse"><Clock className="w-3.5 h-3.5" /> Сохранение...</span>
+							) : <span>Черновик</span>}
+							<button type="button" onClick={() => setShowIndicesDetails((prev) => !prev)} className="text-rose-600 dark:text-rose-400 font-semibold hover:underline cursor-pointer" title="Нажмите для подробного расчета индексов">• BOP: {summary.fmbsPercent}%</button>
+							{summary.deepPocketsCount > 0 && <span className="text-amber-600 dark:text-amber-400 font-medium">{"• Карманы \u2265 4 мм: "}{summary.deepPocketsCount}</span>}
 						</p>
 					</div>
 				</div>
 
-				<div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-					<button type="button" onClick={handleSetAllIntact} disabled={false} data-testid="perio-toolbar-norm-1click-btn" className="min-h-[44px] min-w-[44px] h-9 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all">
+				<div className="perio-toolbar-actions flex items-center gap-2 w-full sm:w-auto overflow-x-auto">
+					<button type="button" onClick={handleSetAllIntact} disabled={false} data-testid="perio-toolbar-norm-1click-btn" className="min-h-[44px] min-w-[44px] h-9 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all shrink-0">
 						<Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> 1-клик: Здоровый пародонт (Норма / Пародонт интактен)
 					</button>
-
-					<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} disabled={false} data-testid="perio-toolbar-prophy-1click-btn" className="min-h-[44px] min-w-[44px] h-9 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all">
+					<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} disabled={false} data-testid="perio-toolbar-prophy-1click-btn" className="min-h-[44px] min-w-[44px] h-9 px-3 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all shrink-0">
 						<Sparkles className="w-3.5 h-3.5 text-sky-500" /> Профгигиена
 					</button>
-
-					<button type="button" onClick={() => handleApplyPreset("periodontitis_severe_express")} disabled={false} data-testid="perio-preset-severe-btn" data-preset-card="perio-preset-severe-periodontitis-card" className="min-h-[44px] min-w-[44px] h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-rose-600 dark:text-rose-400 font-semibold text-xs flex items-center gap-1 border border-[var(--line)] cursor-pointer transition-all">
+					<button type="button" onClick={() => handleApplyPreset("periodontitis_severe_express")} disabled={false} data-testid="perio-preset-severe-btn" data-preset-card="perio-preset-severe-periodontitis-card" className="min-h-[44px] min-w-[44px] h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-rose-600 dark:text-rose-400 font-semibold text-xs flex items-center gap-1 border border-[var(--line)] cursor-pointer transition-all shrink-0">
 						Пародонтит тяжелый (6-8 мм)
 					</button>
-
-					<button type="button" onClick={handleSave} disabled={false} data-testid="perio-save-draft-btn" className="min-h-[44px] min-w-[44px] h-9 px-4 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-all ml-auto sm:ml-0" title="Сохранить статус десны (Зафиксировать статус пародонта)">
+					<button type="button" onClick={() => setShowIndicesDetails((prev) => !prev)} disabled={false} data-testid="perio-calc-indices-btn" className="min-h-[44px] min-w-[44px] h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all shrink-0" title="Расчёт индексов пародонта и BOP">
+						<BarChart3 className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" /> Расчёт BOP
+					</button>
+					<button type="button" onClick={handlePrintProtocol} disabled={false} data-testid="perio-print-protocol-btn" className="min-h-[44px] min-w-[44px] h-9 px-2.5 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs flex items-center gap-1.5 border border-[var(--line)] cursor-pointer transition-all shrink-0" title="Печать протокола осмотра">
+						<Printer className="w-3.5 h-3.5 text-[var(--muted)]" /> Печать
+					</button>
+					<button type="button" onClick={handleSave} disabled={false} data-testid="perio-save-draft-btn" className="perio-desktop-primary-cta min-h-[44px] min-w-[44px] h-9 px-4 rounded-lg bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-all ml-auto sm:ml-0 shrink-0" title="Сохранить статус десны (Зафиксировать статус пародонта)">
 						<Save className="w-4 h-4" /> ✓ Зафиксировать статус пародонта
 					</button>
-
 					{isModal && onClose && (
-						<button type="button" onClick={onClose} disabled={false} className="min-h-[44px] min-w-[44px] h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center cursor-pointer transition-all" title="Закрыть">
+						<button type="button" onClick={onClose} disabled={false} className="min-h-[44px] min-w-[44px] h-9 w-9 rounded-lg bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center cursor-pointer transition-all shrink-0" title="Закрыть">
 							<X className="w-4 h-4" />
 						</button>
 					)}
 				</div>
 			</div>
 
+			{/* ДЕТАЛИЗАЦИЯ ИНДЕКСОВ ПАРОДОНТА И BOP */}
+			{showIndicesDetails && (
+				<div className="p-3 rounded-xl bg-teal-500/10 border border-teal-500/30 flex flex-wrap items-center justify-between gap-3 text-xs">
+					<div className="flex items-center gap-2">
+						<Info className="w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0" />
+						<div>
+							<span className="font-bold text-[var(--ink)]">Сводные индексы пародонта:</span>{" "}
+							<span className="text-rose-600 dark:text-rose-400 font-bold">BOP: {summary.fmbsPercent}%</span> (кровоточащих точек),{" "}
+							<span className="text-amber-600 dark:text-amber-400 font-bold">Карманы {">= 4 мм"}: {summary.deepPocketsCount}</span>,{" "}
+							<span className="text-[var(--ink)] font-semibold">PSR: {psrSummary.psrFormula}</span>
+						</div>
+					</div>
+					<button type="button" onClick={() => setShowIndicesDetails(false)} className="text-[var(--muted)] hover:text-[var(--ink)] font-semibold underline cursor-pointer">Скрыть</button>
+				</div>
+			)}
+
 			{/* ТАБЫ: Экспресс-скрининг PSR vs Пародонтограмма */}
-			<div className="flex items-center gap-2 border-b border-[var(--line)] pb-2">
-				<button type="button" onClick={() => setActiveTab("psr")} className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-all ${activeTab === "psr" ? "bg-[#0d9488]/15 text-[#0d9488] border border-[#0d9488]/40 shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>
+			<div className="flex items-center gap-2 border-b border-[var(--line)] pb-2 overflow-x-auto">
+				<button type="button" onClick={() => setActiveTab("psr")} className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-all shrink-0 ${activeTab === "psr" ? "bg-[#0d9488]/15 text-[#0d9488] border border-[#0d9488]/40 shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>
 					<Layers className="w-4 h-4" /> Вкладка 1: Экспресс-скрининг пародонта PSR / CPITN (6 секстантов)
 				</button>
-				<button type="button" onClick={() => setActiveTab("chart")} className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-all ${activeTab === "chart" ? "bg-[#0d9488]/15 text-[#0d9488] border border-[#0d9488]/40 shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>
+				<button type="button" onClick={() => setActiveTab("chart")} className={`min-h-[44px] px-4 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center gap-2 cursor-pointer transition-all shrink-0 ${activeTab === "chart" ? "bg-[#0d9488]/15 text-[#0d9488] border border-[#0d9488]/40 shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)]"}`}>
 					<FileText className="w-4 h-4" /> Вкладка 2: Пародонтограмма (32 зуба, клавиши 1–9)
 				</button>
 			</div>
@@ -251,19 +285,11 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 							<button type="button" onClick={handleSetAllIntact} disabled={false} data-testid="psr-all-intact-btn" data-preset-card="perio-preset-norm-card" className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer">
 								<Check className="w-3.5 h-3.5" /> ✓ Все секстанты интактны (PSR 0)
 							</button>
-							<button type="button" onClick={() => handleApplyPreset("gingivitis_express")} disabled={false} data-testid="perio-preset-gingivitis-card" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-amber-600 dark:text-amber-400 font-semibold text-xs border border-[var(--line)] hover:border-amber-500 flex items-center gap-1 cursor-pointer">
-								Гингивит
-							</button>
-							<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} disabled={false} data-testid="psr-hygiene-preset-btn" data-preset-card="perio-preset-prophy-card" className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-sky-600 dark:text-sky-400 font-semibold text-xs border border-[var(--line)] hover:border-sky-500 flex items-center gap-1.5 cursor-pointer">
-								Профгигиена (PSR 1–2)
-							</button>
-							<button type="button" onClick={() => handleApplyPreset("periodontitis_moderate_express")} disabled={false} data-testid="psr-periodontitis-preset-btn" data-preset-card="perio-preset-periodontitis-card" className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-orange-600 dark:text-orange-400 font-semibold text-xs border border-[var(--line)] hover:border-orange-500 flex items-center gap-1.5 cursor-pointer">
-								Пародонтит (PSR 3–4)
-							</button>
+							<button type="button" onClick={() => handleApplyPreset("gingivitis_express")} disabled={false} data-testid="perio-preset-gingivitis-card" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-amber-600 dark:text-amber-400 font-semibold text-xs border border-[var(--line)] hover:border-amber-500 flex items-center gap-1 cursor-pointer">Гингивит</button>
+							<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} disabled={false} data-testid="psr-hygiene-preset-btn" data-preset-card="perio-preset-prophy-card" className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-sky-600 dark:text-sky-400 font-semibold text-xs border border-[var(--line)] hover:border-sky-500 flex items-center gap-1.5 cursor-pointer">Профгигиена (PSR 1–2)</button>
+							<button type="button" onClick={() => handleApplyPreset("periodontitis_moderate_express")} disabled={false} data-testid="psr-periodontitis-preset-btn" data-preset-card="perio-preset-periodontitis-card" className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-orange-600 dark:text-orange-400 font-semibold text-xs border border-[var(--line)] hover:border-orange-500 flex items-center gap-1.5 cursor-pointer">Пародонтит (PSR 3–4)</button>
 						</div>
-						<div className="text-xs font-bold text-[#0d9488] px-2.5 py-1 rounded-md bg-[#0d9488]/10 border border-[#0d9488]/20">
-							{psrSummary.psrFormula}
-						</div>
+						<div className="text-xs font-bold text-[#0d9488] px-2.5 py-1 rounded-md bg-[#0d9488]/10 border border-[#0d9488]/20">{psrSummary.psrFormula}</div>
 					</div>
 
 					<div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2.5">
@@ -399,6 +425,16 @@ export const PerioWorkspaceModal: React.FC<PerioWorkspaceModalProps> = React.mem
 					</div>
 				</div>
 			)}
+
+			{/* FLOATING BOTTOM BAR ДЛЯ СМАРТФОНОВ (Natural Thumb Zone, Мандат 8al, 8am, 8ze) */}
+			<div className="perio-mobile-floating-bar fixed bottom-0 left-0 right-0 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] z-20 flex items-center justify-between gap-2 shadow-lg">
+				<button type="button" onClick={handleSetAllIntact} disabled={false} className="min-h-[44px] px-3 rounded-xl bg-[var(--paper-soft)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] flex items-center gap-1 cursor-pointer">
+					<Check className="w-3.5 h-3.5" /> Норма
+				</button>
+				<button type="button" onClick={handleSave} disabled={false} data-testid="perio-save-mobile-btn" className="flex-1 min-h-[48px] px-4 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-sm cursor-pointer transition-all" title="Сохранить статус десны">
+					<Save className="w-4 h-4" /> ✓ Зафиксировать статус пародонта
+				</button>
+			</div>
 		</div>
 	);
 

@@ -71,6 +71,39 @@ export function VisiographStudioViewport({
 	const fileInputRef = useRef<HTMLInputElement | null>(null);
 	const [isDragOver, setIsDragOver] = useState(false);
 
+	// Apple HIG Pinch-to-zoom for Mobile / Tablets
+	const touchStartDistRef = useRef<number | null>(null);
+	const initialZoomRef = useRef<number>(1.0);
+
+	const handleTouchStart = (e: React.TouchEvent<HTMLDivElement>) => {
+		if (e.touches.length === 2) {
+			const t1 = e.touches[0];
+			const t2 = e.touches[1];
+			if (t1 && t2) {
+				const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+				touchStartDistRef.current = dist;
+				initialZoomRef.current = canvasZoom;
+			}
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent<HTMLDivElement>) => {
+		if (e.touches.length === 2 && touchStartDistRef.current !== null) {
+			const t1 = e.touches[0];
+			const t2 = e.touches[1];
+			if (t1 && t2) {
+				const currentDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+				const factor = currentDist / touchStartDistRef.current;
+				const newZoom = Math.min(3.5, Math.max(0.4, Number((initialZoomRef.current * factor).toFixed(2))));
+				setCanvasZoom(newZoom);
+			}
+		}
+	};
+
+	const handleTouchEnd = () => {
+		touchStartDistRef.current = null;
+	};
+
 	const handleWheel = (e: React.WheelEvent<HTMLDivElement>) => {
 		e.preventDefault();
 		const delta = e.deltaY < 0 ? 0.1 : -0.1;
@@ -121,6 +154,9 @@ export function VisiographStudioViewport({
 			className="visiograph-viewport-container"
 			data-testid="visiograph-studio-viewport"
 			onWheel={handleWheel}
+			onTouchStart={handleTouchStart}
+			onTouchMove={handleTouchMove}
+			onTouchEnd={handleTouchEnd}
 			onDragOver={handleDragOver}
 			onDragLeave={handleDragLeave}
 			onDrop={handleDrop}
@@ -215,10 +251,14 @@ export function VisiographStudioViewport({
 						onDoubleClick={onCanvasDoubleClick}
 						onMouseMove={onMouseMove}
 						onMouseLeave={onMouseLeave}
+						onTouchStart={handleTouchStart}
+						onTouchMove={handleTouchMove}
+						onTouchEnd={handleTouchEnd}
 						className="visiograph-viewport-canvas"
 						style={{
 							cursor: activeTool === "pointer" ? "default" : "crosshair",
 							transform: `scale(${canvasZoom}) rotate(${canvasRotationDeg}deg)`,
+							touchAction: "none",
 						}}
 					/>
 				</div>
