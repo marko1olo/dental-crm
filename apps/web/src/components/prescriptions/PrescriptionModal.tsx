@@ -306,7 +306,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 
 	const modalContent = (
 		<div
-			className="fixed inset-0 z-[99999] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 max-w-full overflow-x-clip"
+			className="fixed inset-0 z-[1000000] flex items-end sm:items-center justify-center p-0 sm:p-4 md:p-6 bg-black/65 backdrop-blur-md animate-in fade-in duration-200 max-w-full overflow-hidden"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Рецептурный бланк на лекарственные препараты"
@@ -316,7 +316,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 		>
 			<div
 				data-testid="prescription-modal"
-				className="flex flex-col w-full max-w-6xl max-h-[calc(100vh-64px)] h-[92dvh] sm:h-[820px] rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden overflow-x-clip min-h-0"
+				className="flex flex-col w-full max-w-6xl h-[92vh] sm:h-[820px] max-h-[94vh] sm:max-h-[calc(100vh-64px)] rounded-t-[24px] sm:rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden overflow-x-clip min-h-0"
 			>
 				{/* Apple HIG Tactile Drag Handle (Mobile) */}
 				<div className="sm:hidden w-full flex justify-center pt-3 pb-1.5 bg-[var(--paper-soft)] shrink-0 cursor-grab">
@@ -528,19 +528,19 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 						{/* Catalog Filter & Search */}
 						<div className="p-3 border-b border-[var(--line)] bg-[var(--paper)] flex flex-wrap items-center gap-2 shrink-0">
 							<div className="relative flex-1 min-w-[180px]">
-								<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+								<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
 								<input
 									type="text"
 									value={searchQuery}
 									onChange={(e) => setSearchQuery(e.target.value)}
 									placeholder="Поиск по названию или действию..."
-									className="w-full pl-9 pr-3 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+									className="w-full pl-10 pr-3 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 								/>
 							</div>
 							<select
 								value={activeCategory}
 								onChange={(e) => setActiveCategory(e.target.value)}
-								className="px-2.5 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] focus:outline-none"
+								className="px-2.5 py-1.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs text-[var(--ink)] focus:outline-none"
 							>
 								<option value="all">Все группы</option>
 								<option value="antibiotic">Антибиотики</option>
@@ -689,7 +689,7 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 
 					{/* Right Column: Live Printable Sheet Preview */}
 					<div
-						className={`lg:col-span-6 xl:col-span-5 flex flex-col min-h-0 bg-[var(--paper-soft)] p-4 overflow-y-auto ${
+						className={`lg:col-span-6 xl:col-span-5 flex flex-col min-h-0 bg-[var(--paper-soft)] p-4 pb-12 overflow-y-auto ${
 							mobileTab === "catalog" ? "hidden lg:flex" : "flex"
 						}`}
 					>
@@ -737,26 +737,27 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 				{/* Footer Actions: Exactly ONE Primary CTA #0d9488 (Mandate 8am) */}
 				<footer
 					data-testid="prescription-all-actions-row"
-					className="px-4 sm:px-5 py-2.5 sm:py-3 bg-[var(--paper-strong)] border-t border-[var(--line)] flex flex-wrap items-center justify-between gap-2.5 sm:gap-3 shrink-0 z-10"
+					className="px-3 sm:px-5 pt-2.5 sm:pt-3 pb-[max(12px,env(safe-area-inset-bottom,12px))] sm:pb-3 bg-[var(--paper-strong)] border-t border-[var(--line)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 sm:gap-3 shrink-0 z-10"
 				>
-					{/* Left Group: Patient Memo Copy & Print */}
-					<div className="flex flex-wrap items-center gap-2">
+					{/* Left Group: Patient Memo Copy & Print (Grid on mobile, flex on desktop) */}
+					<div className="grid grid-cols-3 sm:flex items-center gap-1.5 sm:gap-2">
 						<button
 							type="button"
 							data-testid="med-rx-copy-patient-btn"
 							title="Скопировать схему приёма и памятку для отправки пациенту в WhatsApp/Telegram"
 							onClick={handleCopyPatientMemo}
-							className="med-rx-copy-patient-btn secondary-button h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
+							className="med-rx-copy-patient-btn secondary-button h-10 sm:h-9 min-h-[44px] sm:min-h-[36px] px-2 sm:px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] sm:text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
 						>
 							{isMemoCopied ? (
 								<>
-									<Check className="w-4 h-4 text-emerald-500 shrink-0" />
-									<span className="text-emerald-600 dark:text-emerald-400">Скопировано!</span>
+									<Check className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
+									<span className="text-emerald-600 dark:text-emerald-400 truncate">Скопировано</span>
 								</>
 							) : (
 								<>
-									<Copy className="w-4 h-4 text-[var(--muted)] shrink-0" />
-									<span>Скопировать для пациента (WhatsApp/TG)</span>
+									<Copy className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
+									<span className="hidden sm:inline">Скопировать для пациента (WhatsApp/TG)</span>
+									<span className="sm:hidden truncate">Копия</span>
 								</>
 							)}
 						</button>
@@ -765,30 +766,32 @@ export const PrescriptionModal: React.FC<PrescriptionModalProps> = ({
 							type="button"
 							data-testid="print-prescription-btn"
 							onClick={handlePrint}
-							className="med-rx-print-btn secondary-button h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-2 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
+							className="med-rx-print-btn secondary-button h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-2 sm:px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] sm:text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
 						>
-							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
-							<span>Печать рецепта (А5)</span>
+							<Printer className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
+							<span className="hidden sm:inline">Печать рецепта (А5)</span>
+							<span className="sm:hidden truncate">Рецепт</span>
 						</button>
 
 						<button
 							type="button"
 							data-testid="print-patient-memo-btn"
 							onClick={handlePrint}
-							className="secondary-button h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
+							className="secondary-button h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-2 sm:px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-[11px] sm:text-xs font-semibold inline-flex items-center justify-center gap-1.5 transition-all shadow-2xs active:scale-[0.98] cursor-pointer"
 						>
-							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
-							<span>Печать памятки</span>
+							<Printer className="w-3.5 h-3.5 text-[var(--muted)] shrink-0" />
+							<span className="hidden sm:inline">Печать памятки</span>
+							<span className="sm:hidden truncate">Памятка</span>
 						</button>
 					</div>
 
 					{/* Right Group: Exactly ONE Primary CTA #0d9488 (Mandate 8am) */}
-					<div className="flex items-center gap-3 ml-auto">
+					<div className="flex items-center sm:ml-auto w-full sm:w-auto">
 						<button
 							type="button"
 							data-testid="insert-to-diary-btn"
 							onClick={handleInsertToDiary}
-							className="med-rx-insert-diary-btn h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-5 py-1.5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-[0.98] transition-all shadow-sm inline-flex items-center gap-1.5 cursor-pointer border-0"
+							className="med-rx-insert-diary-btn w-full sm:w-auto h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-5 py-2 sm:py-1.5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-[0.98] transition-all shadow-sm inline-flex items-center justify-center gap-1.5 cursor-pointer border-0"
 						>
 							{isInsertedToDiary ? (
 								<>

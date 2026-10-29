@@ -103,9 +103,9 @@ async function capture() {
 		const pcPage = await pcContext.newPage();
 		await injectStorage(pcPage, "light");
 
-		console.log(`[Navigate] Loading ${baseUrl}/?rx=1...`);
-		await pcPage.goto(`${baseUrl}/?rx=1`, { waitUntil: "commit", timeout: 30000 });
-		await pcPage.waitForTimeout(1500);
+		console.log(`[Navigate] Loading ${baseUrl}/?visit_standalone=1&rx=1...`);
+		await pcPage.goto(`${baseUrl}/?visit_standalone=1&rx=1`, { waitUntil: "commit", timeout: 30000 });
+		await pcPage.waitForTimeout(2000);
 		await prepareTheme(pcPage, "light");
 
 		console.log("Waiting for prescription modal on PC...");
@@ -123,8 +123,9 @@ async function capture() {
 
 		console.log("[1/4] Capturing PC Light (1440x900)...");
 		await prepareTheme(pcPage, "light");
-		const pcLightPath = path.join(PROOF_DIR, "01_prescriptions_pc_light.png");
+		const pcLightPath = path.join(PROOF_DIR, "01_prescription_modal_pc_light_1440x900.png");
 		await pcPage.screenshot({ path: pcLightPath, fullPage: false });
+		fs.copyFileSync(pcLightPath, path.join(PROOF_DIR, "01_prescriptions_pc_light.png"));
 		fs.copyFileSync(pcLightPath, path.join(PROOF_DIR, "prescription_pc_light_1440x900.png"));
 		fs.copyFileSync(pcLightPath, path.join(PROOF_DIR, "prescriptions_pc_light_1440x900.png"));
 		fs.copyFileSync(pcLightPath, path.join(PROOF_DIR, "pc-light-1440x900.png"));
@@ -132,8 +133,9 @@ async function capture() {
 		// PC Dark
 		console.log("[2/4] Capturing PC Dark (1440x900)...");
 		await prepareTheme(pcPage, "dark");
-		const pcDarkPath = path.join(PROOF_DIR, "02_prescriptions_pc_dark.png");
+		const pcDarkPath = path.join(PROOF_DIR, "02_prescription_modal_pc_dark_1440x900.png");
 		await pcPage.screenshot({ path: pcDarkPath, fullPage: false });
+		fs.copyFileSync(pcDarkPath, path.join(PROOF_DIR, "02_prescriptions_pc_dark.png"));
 		fs.copyFileSync(pcDarkPath, path.join(PROOF_DIR, "prescription_pc_dark_1440x900.png"));
 		fs.copyFileSync(pcDarkPath, path.join(PROOF_DIR, "prescriptions_pc_dark_1440x900.png"));
 		fs.copyFileSync(pcDarkPath, path.join(PROOF_DIR, "pc-dark-1440x900.png"));
@@ -153,9 +155,9 @@ async function capture() {
 		const mobilePage = await mobileContext.newPage();
 		await injectStorage(mobilePage, "light");
 
-		console.log(`[Navigate] Loading ${baseUrl}/?rx=1 on mobile...`);
-		await mobilePage.goto(`${baseUrl}/?rx=1`, { waitUntil: "commit", timeout: 30000 });
-		await mobilePage.waitForTimeout(1500);
+		console.log(`[Navigate] Loading ${baseUrl}/?visit_standalone=1&rx=1 on mobile...`);
+		await mobilePage.goto(`${baseUrl}/?visit_standalone=1&rx=1`, { waitUntil: "commit", timeout: 30000 });
+		await mobilePage.waitForTimeout(2000);
 		await prepareTheme(mobilePage, "light");
 
 		console.log("Waiting for prescription modal on mobile...");
@@ -173,8 +175,9 @@ async function capture() {
 
 		console.log("[3/4] Capturing Mobile Light (390x844)...");
 		await prepareTheme(mobilePage, "light");
-		const mobileLightPath = path.join(PROOF_DIR, "03_prescriptions_mobile_light.png");
+		const mobileLightPath = path.join(PROOF_DIR, "03_prescription_modal_mobile_light_390x844.png");
 		await mobilePage.screenshot({ path: mobileLightPath, fullPage: false });
+		fs.copyFileSync(mobileLightPath, path.join(PROOF_DIR, "03_prescriptions_mobile_light.png"));
 		fs.copyFileSync(mobileLightPath, path.join(PROOF_DIR, "prescription_mobile_light_390x844.png"));
 		fs.copyFileSync(mobileLightPath, path.join(PROOF_DIR, "prescriptions_mobile_light_390x844.png"));
 		fs.copyFileSync(mobileLightPath, path.join(PROOF_DIR, "mobile-light-390x844.png"));
@@ -182,8 +185,9 @@ async function capture() {
 		// Mobile Dark
 		console.log("[4/4] Capturing Mobile Dark (390x844)...");
 		await prepareTheme(mobilePage, "dark");
-		const mobileDarkPath = path.join(PROOF_DIR, "04_prescriptions_mobile_dark.png");
+		const mobileDarkPath = path.join(PROOF_DIR, "04_prescription_modal_mobile_dark_390x844.png");
 		await mobilePage.screenshot({ path: mobileDarkPath, fullPage: false });
+		fs.copyFileSync(mobileDarkPath, path.join(PROOF_DIR, "04_prescriptions_mobile_dark.png"));
 		fs.copyFileSync(mobileDarkPath, path.join(PROOF_DIR, "prescription_mobile_dark_390x844.png"));
 		fs.copyFileSync(mobileDarkPath, path.join(PROOF_DIR, "prescriptions_mobile_dark_390x844.png"));
 		fs.copyFileSync(mobileDarkPath, path.join(PROOF_DIR, "mobile-dark-390x844.png"));

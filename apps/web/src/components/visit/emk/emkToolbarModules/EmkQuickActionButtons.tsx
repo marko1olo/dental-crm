@@ -1,5 +1,5 @@
 import React from "react";
-import { BookOpen, ChevronDown, ShieldCheck } from "lucide-react";
+import { BookOpen, ChevronDown, ShieldCheck, Pill } from "lucide-react";
 import { EmkProtocolsDropdownMenu } from "./EmkProtocolsDropdownMenu";
 import { useEmkDropdownMenu } from "./useEmkDropdownMenu";
 import { EmkScheduleAndAutosaveBadges } from "./EmkScheduleAndAutosaveBadges";
@@ -54,6 +54,22 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 						<span className="sm:hidden">Норма</span>
 					</button>
 				)}
+
+				<button
+					type="button"
+					data-testid="btn-chairside-prescriptions-toolbar"
+					onClick={() => {
+						if (typeof window !== "undefined") {
+							window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
+						}
+					}}
+					className="secondary-button border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs h-[28px] px-2.5 rounded-lg inline-flex items-center gap-1.5 transition-colors cursor-pointer shrink-0"
+					title="Выписать рецепты и назначения на лекарства"
+				>
+					<Pill className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+					<span className="hidden md:inline">Рецепты и назначения</span>
+					<span className="md:hidden">Рецепты</span>
+				</button>
 
 				{onOpenProtocolsCatalog && (
 					<div className="inline-flex items-center shrink-0">

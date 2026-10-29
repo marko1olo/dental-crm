@@ -38,14 +38,30 @@ export function useVisitModalsState({
 		window.addEventListener("dente:open-informed-consent-modal", handler);
 		return () => window.removeEventListener("dente:open-informed-consent-modal", handler);
 	}, []);
-	const [isPrescriptionModalOpen, setIsPrescriptionModalOpenState] = useState(false);
+	const [isPrescriptionModalOpen, setIsPrescriptionModalOpenState] = useState(() => {
+		if (typeof window === "undefined") return false;
+		const s = window.location.search || "";
+		const h = window.location.hash || "";
+		return s.includes("prescription") || s.includes("rx") || h.includes("prescription") || h.includes("rx");
+	});
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const handler = () => setIsPrescriptionModalOpenState(true);
+		window.addEventListener("dente:open-prescriptions", handler);
+		window.addEventListener("dente-open-prescriptions", handler);
+		window.addEventListener("dente-open-prescription", handler);
+		return () => {
+			window.removeEventListener("dente:open-prescriptions", handler);
+			window.removeEventListener("dente-open-prescriptions", handler);
+			window.removeEventListener("dente-open-prescription", handler);
+		};
+	}, []);
+
 	const setIsPrescriptionModalOpen = useCallback((open: boolean) => {
-		if (open) {
-			if (typeof window !== "undefined") {
-				window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
-			}
-		} else {
-			setIsPrescriptionModalOpenState(false);
+		setIsPrescriptionModalOpenState(open);
+		if (open && typeof window !== "undefined") {
+			window.dispatchEvent(new CustomEvent("dente:open-prescriptions"));
 		}
 	}, []);
 	const [isVisiographComparisonModalOpen, setIsVisiographComparisonModalOpen] = useState(false);

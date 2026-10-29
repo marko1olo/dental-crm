@@ -12,12 +12,27 @@ import { useIsMobile } from "../../hooks/useIsMobile";
 import { hasUrlToken, clearUrlTokens } from "../appLayout/modalsContainerModules/standalone/deepLinkUrl";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import { AppLogicProvider } from "../../contexts/AppLogicContext";
+import { PrescriptionModal } from "../prescriptions/PrescriptionModal";
 import type { Dashboard, Patient, Appointment } from "@dental/shared";
+
+const VISIT_URL_TOKENS = [
+	"visit_standalone",
+	"standalone=visit",
+	"standalone-visit",
+	"chairside-visit",
+	"clinical_diary_standalone",
+	"rx",
+	"rx=1",
+	"prescription",
+	"prescriptions",
+	"standalone=prescription",
+	"prescription_standalone",
+];
 
 export const DirectVisitLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
-		return hasUrlToken(["visit_standalone", "standalone=visit", "standalone-visit", "chairside-visit", "clinical_diary_standalone"]);
+		return hasUrlToken(VISIT_URL_TOKENS);
 	});
 
 	const [dashboard, setDashboard] = useState<Dashboard | null>(null);
@@ -38,13 +53,32 @@ export const DirectVisitLauncher: React.FC = () => {
 
 	const isMobile = useIsMobile(768);
 
+	const [isPrescriptionModalOpen, setIsPrescriptionModalOpen] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		const s = window.location.search || "";
+		const h = window.location.hash || "";
+		return s.includes("rx") || s.includes("prescription") || h.includes("rx") || h.includes("prescription");
+	});
+
 	useEffect(() => {
 		const checkUrl = () => {
-			setIsOpen(hasUrlToken(["visit_standalone", "standalone=visit", "standalone-visit", "chairside-visit", "clinical_diary_standalone"]));
+			setIsOpen(hasUrlToken(VISIT_URL_TOKENS));
+			const s = window.location.search || "";
+			const h = window.location.hash || "";
+			if (s.includes("rx") || s.includes("prescription") || h.includes("rx") || h.includes("prescription")) {
+				setIsPrescriptionModalOpen(true);
+			}
 		};
+		const handleOpenRx = () => setIsPrescriptionModalOpen(true);
+		window.addEventListener("dente:open-prescriptions", handleOpenRx);
+		window.addEventListener("dente-open-prescriptions", handleOpenRx);
+		window.addEventListener("dente-open-prescription", handleOpenRx);
 		window.addEventListener("hashchange", checkUrl);
 		window.addEventListener("popstate", checkUrl);
 		return () => {
+			window.removeEventListener("dente:open-prescriptions", handleOpenRx);
+			window.removeEventListener("dente-open-prescriptions", handleOpenRx);
+			window.removeEventListener("dente-open-prescription", handleOpenRx);
 			window.removeEventListener("hashchange", checkUrl);
 			window.removeEventListener("popstate", checkUrl);
 		};
@@ -129,7 +163,7 @@ export const DirectVisitLauncher: React.FC = () => {
 
 	const handleClose = () => {
 		setIsOpen(false);
-		clearUrlTokens(["visit_standalone", "standalone=visit", "standalone-visit", "chairside-visit", "clinical_diary_standalone"]);
+		clearUrlTokens(VISIT_URL_TOKENS);
 		if (typeof window !== "undefined") {
 			window.location.hash = "#schedule";
 		}
@@ -169,6 +203,7 @@ export const DirectVisitLauncher: React.FC = () => {
 						handleApplySomaticNormQuick={handleApplySomaticNormQuick}
 						handleFinishVisitAction={handleClose}
 						handlePrintForm043uFast={() => {}}
+						handleOpenPrescription={() => setIsPrescriptionModalOpen(true)}
 						consolidatedAllergyChip="Нет аллергий"
 						patientAge={38}
 						toothStateByCode={{ 16: "caries", 24: "filled", 36: "pulpitis" }}
@@ -193,6 +228,26 @@ export const DirectVisitLauncher: React.FC = () => {
 							isQueueCockpitForced={false}
 						/>
 					</div>
+				)}
+				{isMobile && isPrescriptionModalOpen && (
+					<PrescriptionModal
+						isOpen={isPrescriptionModalOpen}
+						onClose={() => setIsPrescriptionModalOpen(false)}
+						patient={activePatient}
+						doctorName={activeDoctor.fullName}
+						doctorSpecialty={activeDoctor.specialty}
+						diary={{
+							diagnosisIcd10: "K02.1",
+							anamnesisVitae: visitNoteForm.anamnesis,
+						}}
+						allergies={activePatient?.allergies && activePatient.allergies.length > 0 ? activePatient.allergies : ["Пенициллины", "Аспирин"]}
+						onInsertToDiary={(rxText) => {
+							updateVisitNoteField(
+								"treatment",
+								`${visitNoteForm.treatment ? `${visitNoteForm.treatment}\n\n` : ""}Назначения: ${rxText}`
+							);
+						}}
+					/>
 				)}
 			</div>
 		</AppLogicProvider>
