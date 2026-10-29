@@ -21,7 +21,19 @@
  *      записей БД (PostgreSQL 18 treatment_plan_items), группирует по phase и сохраняет копейки.
  */
 
-import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+
+function expect(actual: any) {
+	return {
+		toBe: (expected: any) => assert.strictEqual(actual, expected),
+		toEqual: (expected: any) => assert.deepStrictEqual(actual, expected),
+		toHaveLength: (len: number) => assert.strictEqual(actual?.length, len),
+		toBeGreaterThan: (val: number) => assert.ok(actual > val, `${actual} is not > ${val}`),
+		toBeUndefined: () => assert.strictEqual(actual, undefined),
+		toBeNull: () => assert.strictEqual(actual, null),
+	};
+}
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";

@@ -52,7 +52,7 @@ export function registerPlanCompletionRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.write",
 					role: staffRole,
-					message: `Отказ в завершении позиций плана лечения (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в завершении позиций плана лечения: ${evalAccess.reason}`,
 				});
 			}
 

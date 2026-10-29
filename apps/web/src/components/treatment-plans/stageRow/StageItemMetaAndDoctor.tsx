@@ -22,7 +22,7 @@ export const StageItemMetaAndDoctor: React.FC<StageItemMetaAndDoctorProps> = ({
 					</span>
 				)}
 				<span className="text-[10px] font-mono text-[var(--muted,#64748b)] px-1.5 py-0.5 rounded bg-[var(--paper-soft,#f1f5f9)] dark:bg-[var(--paper-soft)] border border-[var(--line,#e2e8f0)] whitespace-nowrap">
-					{item.code804n}
+					{item.serviceCode || item.code804n}
 				</span>
 				<span className="text-[10px] text-[var(--muted,#64748b)] font-medium">
 					{item.category}

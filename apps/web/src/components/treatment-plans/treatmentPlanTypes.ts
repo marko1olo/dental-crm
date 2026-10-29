@@ -130,5 +130,13 @@ export function romanizeStageNumber(num: number): string {
 export function isPlanPriceImmutable(status?: string | null): boolean {
 	if (!status) return false;
 	const s = status.trim().toLowerCase();
-	return s === "approved" || s === "in_progress" || s === "active" || s === "completed";
+	return (
+		s === "approved" ||
+		s === "in_progress" ||
+		s === "active" ||
+		s === "completed" ||
+		s === "agreed" ||
+		s === "accepted" ||
+		s === "signed"
+	);
 }

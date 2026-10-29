@@ -34,8 +34,8 @@ export interface TreatmentPlanItem {
 	readonly id: string;
 	readonly toothNumber?: number | undefined;
 	readonly relatedToothNumbers?: readonly number[] | undefined;
-	readonly serviceCode?: string | undefined;
-	readonly code804n: string;
+	readonly serviceCode: string;
+	readonly code804n?: string | undefined;
 	readonly name: string;
 	readonly category: string;
 	readonly priceRub: number;

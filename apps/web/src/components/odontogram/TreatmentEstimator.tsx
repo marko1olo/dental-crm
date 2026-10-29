@@ -14,6 +14,7 @@ import {
 	exportEstimatorToCashier,
 } from "./treatmentEstimatorPricing";
 import { type EstimatorProps, PLAN_SUBJECT } from "./treatmentEstimatorTypes";
+import type { PlannerTab } from "./estimator/estimatorUiTypes";
 import { TreatmentEstimatorBottomBar } from "./estimator/TreatmentEstimatorBottomBar";
 import { TreatmentEstimatorModals } from "./estimator/TreatmentEstimatorModals";
 import { TreatmentEstimatorPhasesList } from "./estimator/TreatmentEstimatorPhasesList";
@@ -25,7 +26,7 @@ import { useEstimatorSave } from "./estimator/useEstimatorSave";
 
 export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, currentTeeth }) => {
 	const { dashboard } = useAppLogicContext();
-	const [plannerTab, setPlannerTab] = useState<"comprehensive_804n" | "manual_lines">("comprehensive_804n");
+	const [plannerTab, setPlannerTab] = useState<PlannerTab>("catalogServices");
 	const [showSignModal, setShowSignModal] = useState(false);
 	const [isFiscalModalOpen, setIsFiscalModalOpen] = useState(false);
 
@@ -62,7 +63,7 @@ export const TreatmentEstimator: React.FC<EstimatorProps> = ({ patientId, curren
 				unpricedWarning={saveBlock ? "Внимание: в смете есть позиции без цены — сохраняются с пометкой «Цена уточняется»" : null}
 			/>
 			<div className="flex-1 overflow-y-auto p-4 custom-scrollbar">
-				{plannerTab === "comprehensive_804n" ? (
+				{plannerTab === "catalogServices" || plannerTab === "comprehensive_804n" ? (
 					<TreatmentPlanModule patientId={patientId} patientName={patient?.fullName || "Пациент"} teethData={currentTeeth} />
 				) : (
 					<>

@@ -26,9 +26,9 @@ export const TreatmentEstimatorTopBar: React.FC<EstimatorTopBarProps> = ({
 				<div className="flex items-center gap-1 bg-[var(--paper)] border border-[var(--line)] p-1 rounded-lg text-xs font-bold flex-wrap" style={{ padding: "3px", gap: "4px" }}>
 					<button
 						type="button"
-						onClick={() => setPlannerTab("comprehensive_804n")}
-						style={{ padding: "5px 12px", borderRadius: "6px", ...(plannerTab === "comprehensive_804n" ? { backgroundColor: "#0d9488", color: "#ffffff" } : { color: "var(--muted)" }) }}
-						className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${plannerTab === "comprehensive_804n" ? "bg-teal-600 text-white shadow-xs font-black" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
+						onClick={() => setPlannerTab("catalogServices")}
+						style={{ padding: "5px 12px", borderRadius: "6px", ...(plannerTab === "catalogServices" || plannerTab === "comprehensive_804n" ? { backgroundColor: "#0d9488", color: "#ffffff" } : { color: "var(--muted)" }) }}
+						className={`px-3 py-1.5 min-h-[44px] sm:min-h-[30px] sm:h-[30px] inline-flex items-center justify-center rounded-md transition-all cursor-pointer touch-manipulation ${plannerTab === "catalogServices" || plannerTab === "comprehensive_804n" ? "bg-teal-600 text-white shadow-xs font-black" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"}`}
 						aria-label="3 Варианта плана"
 					>
 						3 Варианта плана

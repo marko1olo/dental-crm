@@ -979,6 +979,13 @@
      * `treatment_plan_mobile_light_390x844.png`
      * `treatment_plan_mobile_dark_390x844.png`
    - Подтверждено отсутствие всех 7 смертных грехов UI, контрастность в темной теме и эргономика зоны большого пальца.
+7. **Ликвидация раскола бэкенда и снятие бюрократического гейта (Постановление №659)**:
+   - Создан канонический SSOT бэкенда `apps/api/src/routes/treatmentPlan/patientTreatmentPlanHandlers.ts`, где смонтированы маршруты `/api/patients/:patientId/treatment-plans` и `/api/treatment-plans/:id`.
+   - `apps/api/src/routes/odontogram/planCrudRoutes.ts` сокращен с 685 до 50 строк (фасад с проверкой `app.hasRoute`), исключая конфликты маршрутизации Fastify.
+   - Полностью ликвидирован искусственный барьер 409 Conflict (Постановление №659 / ст. 16 ЗоЗПП): врач имеет полную автономию изменения плана у кресла (Мандат 8e). Реализованы мягкие ревизии (`version + 1`) с аудитом `TREATMENT_PLAN_REVISED`.
+   - Искоренен птичий язык регуляторов: `code804n` -> `serviceCode`, `plannerTab: "comprehensive_804n"` -> `"catalogServices"`, удалены сырые шифры из сообщений об ошибках (`planCompletionRoutes.ts`, `planVariantRoutes.ts`).
+   - Полный прогон тестового сьюта: 10 тестовых файлов, 101/101 тестов успешно пройдены (Exit Code 0).
+   - 4-состоятельные скриншоты лично проверены через `read_file` в `docs/proofs/treatment_plans/` (`01_treatment_plan_pc_light_1440x900.png`, `02_treatment_plan_pc_dark_1440x900.png`, `03_treatment_plan_mobile_light_390x844.png`, `04_treatment_plan_mobile_dark_390x844.png`).
 
 ### 12. Фича #483: Electronic Prescriptions Canonical SSOT, 1-Click Dental Courses, Order 1094n Statutory Compliance, Doctor Autonomy & Non-Blocking A5 Print Inquisitor
 

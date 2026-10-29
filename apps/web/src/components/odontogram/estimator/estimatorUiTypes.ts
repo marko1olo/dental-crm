@@ -7,7 +7,7 @@ import type {
 	PlanItemCollision,
 } from "../treatmentEstimatorPricing";
 
-export type PlannerTab = "comprehensive_804n" | "manual_lines";
+export type PlannerTab = "catalogServices" | "manual_lines" | "comprehensive_804n";
 
 export interface PlanLoadState {
 	phase: "loading" | "ready" | "failed";

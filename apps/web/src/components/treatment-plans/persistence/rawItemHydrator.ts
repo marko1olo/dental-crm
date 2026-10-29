@@ -10,12 +10,13 @@ export function hydrateRawPlanItem(
 	phaseNumber: number,
 	catalog?: readonly CatalogServiceLookupItem[],
 ): TreatmentPlanItem {
-	const rawPriceId = String(raw.priceId || raw.code804n || "");
+	const rawPriceId = String(raw.priceId || raw.serviceCode || raw.code804n || "");
 	const [cleanCode, explicitName] = rawPriceId.includes("::")
 		? rawPriceId.split("::")
 		: [rawPriceId, raw.name || ""];
 
-	const code804n = cleanCode || raw.code804n || "A16.07.001";
+	const serviceCode = raw.serviceCode || cleanCode || raw.code804n || "A16.07.001";
+	const code804n = serviceCode;
 	const name =
 		raw.name ||
 		explicitName ||
@@ -44,6 +45,7 @@ export function hydrateRawPlanItem(
 	return {
 		id: String(raw.id || `item_${phaseNumber}_${idx}_${Date.now()}`),
 		toothNumber,
+		serviceCode,
 		code804n,
 		name,
 		category,

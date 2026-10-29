@@ -50,7 +50,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.write",
 					role: staffRole,
-					message: `Отказ в утверждении плана лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
+					message: `Отказ в утверждении плана лечения: ${access.reason}`,
 				});
 			}
 
@@ -118,7 +118,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.write",
 					role: staffRole,
-					message: `Отказ в создании группы планов лечения (152-ФЗ / 323-ФЗ): ${access.reason}`,
+					message: `Отказ в создании группы планов лечения: ${access.reason}`,
 				});
 			}
 
@@ -236,7 +236,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.read",
 					role: staffRole,
-					message: `Отказ в чтении альтернативных планов (152-ФЗ / 323-ФЗ): ${access.reason}`,
+					message: `Отказ в чтении альтернативных планов: ${access.reason}`,
 				});
 			}
 
@@ -282,7 +282,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.manage",
 					role: staffRole,
-					message: `Отказ в закреплении цен плана (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в закреплении цен плана: ${evalAccess.reason}`,
 				});
 			}
 
@@ -386,7 +386,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.read",
 					role: staffRole,
-					message: `Отказ в чтении статуса закрепления цен (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в чтении статуса закрепления цен: ${evalAccess.reason}`,
 				});
 			}
 
@@ -439,7 +439,7 @@ export function registerPlanVariantRoutes(app: FastifyInstance) {
 					error: "PermissionDenied",
 					permission: "clinical.treatment_plan.manage",
 					role: staffRole,
-					message: `Отказ в настройке скидок плана (152-ФЗ / 323-ФЗ): ${evalAccess.reason}`,
+					message: `Отказ в настройке скидок плана: ${evalAccess.reason}`,
 				});
 			}
 
