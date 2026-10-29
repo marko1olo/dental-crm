@@ -32,7 +32,7 @@ export function MarketingSegmentsCohortCard({
 					onClick={onOpenLeakDetector}
 					data-testid="open-leak-detector-btn"
 				>
-					Детектор оттока (210д) →
+					Возвращаемость (210д) →
 				</button>
 			</div>
 

@@ -15,6 +15,11 @@ export function MarketingFunnelStagesChart({
 	intakeSplit,
 	onOpenDetailedAudit,
 }: MarketingFunnelStagesChartProps) {
+	// Каноническая воронка клиники (Мандат 8n, 8x): Лид -> Запись -> Визит -> План -> Оплата
+	const canonicalKeys = new Set(["new", "consult_booked", "showed_up", "treatment_plan_accepted", "paid"]);
+	const displayStages = stages.filter((st) => canonicalKeys.has(st.key));
+	const effectiveStages = displayStages.length >= 4 ? displayStages : stages.slice(0, 5);
+
 	return (
 		<div className="marketing-section-card" data-testid="marketing-funnel-section">
 			<div className="marketing-section-card-header">
@@ -33,7 +38,7 @@ export function MarketingFunnelStagesChart({
 			</div>
 
 			<div className="marketing-funnel-steps">
-				{stages.slice(0, 4).map((st, idx) => (
+				{effectiveStages.map((st, idx) => (
 					<div key={st.key} className="marketing-funnel-step">
 						<div className="marketing-funnel-step-left">
 							<span className="marketing-funnel-num">{idx + 1}</span>

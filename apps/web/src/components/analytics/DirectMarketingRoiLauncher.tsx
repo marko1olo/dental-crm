@@ -12,8 +12,8 @@ export const DirectMarketingRoiLauncher: React.FC = () => {
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
 		return (
-			s.includes("marketing") ||
-			h.includes("marketing") ||
+			s.includes("marketing-roi") ||
+			h.includes("marketing-roi") ||
 			s.includes("roi") ||
 			h.includes("roi") ||
 			h.includes("romi") ||
@@ -27,8 +27,8 @@ export const DirectMarketingRoiLauncher: React.FC = () => {
 			const s = window.location.search || "";
 			const h = window.location.hash || "";
 			if (
-				s.includes("marketing") ||
-				h.includes("marketing") ||
+				s.includes("marketing-roi") ||
+				h.includes("marketing-roi") ||
 				s.includes("roi") ||
 				h.includes("roi") ||
 				h.includes("romi") ||
@@ -55,11 +55,11 @@ export const DirectMarketingRoiLauncher: React.FC = () => {
 		setIsOpen(false);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
-			url.searchParams.delete("marketing");
+			url.searchParams.delete("marketing-roi");
 			url.searchParams.delete("roi");
 			url.searchParams.delete("romi");
 			const cleanHash = window.location.hash.replace(
-				/#marketing-roi|#marketing|#roi|#romi/g,
+				/#marketing-roi|#roi|#romi/g,
 				"",
 			);
 			const newUrl =

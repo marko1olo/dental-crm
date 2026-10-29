@@ -6,6 +6,12 @@
  */
 
 @media (max-width: 768px) {
+	.marketing-dashboard-page {
+		overflow-x: clip;
+		max-width: 100%;
+		padding: 12px;
+	}
+
 	.marketing-dashboard-page--embedded .marketing-dashboard-title-wrap {
 		position: absolute;
 		width: 1px;

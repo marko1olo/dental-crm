@@ -86,8 +86,8 @@
 
 .leads-mobile-actions-bar {
 	display: grid;
-	grid-template-columns: repeat(3, minmax(0, 1fr));
-	gap: 8px;
+	grid-template-columns: 0.9fr 0.9fr 1.6fr;
+	gap: 6px;
 	padding-top: 6px;
 	border-top: 1px solid var(--line-subtle);
 }

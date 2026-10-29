@@ -51,7 +51,7 @@ export function FunnelConversionInsightsPanel({
 								Низкая доходимость ({summary.showUpRatePercent}%):
 							</strong>{" "}
 							Внедрите авто-напоминания по WhatsApp/SMS за 24 часа и за 2 часа
-							до приема для роста Show-up до 80%+.
+							до приема для роста состоявшихся визитов до 80%+.
 						</div>
 					) : (
 						<div>

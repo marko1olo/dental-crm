@@ -79,7 +79,7 @@ export function FunnelModalHeaderBar({
 							</span>
 						</div>
 						<p style={{ margin: "2px 0 0", fontSize: 12, color: "var(--muted)" }}>
-							Конверсии от лида до оплаты в кассу • Юнит-экономика CAC/LTV • Маркетинговые каналы
+							Первичные обращения и запись • Эффективность рекламы и выручка • Каналы привлечения
 						</p>
 					</div>
 				</div>

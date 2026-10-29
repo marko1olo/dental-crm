@@ -42,20 +42,20 @@ export function FunnelFinancialKpiCards({ summary }: { summary: FunnelSummaryMet
 
 			<div style={cardStyle}>
 				<div style={titleStyle}>
-					<TrendingUp size={13} color="var(--accent)" /> CAC (Стоимость клика)
+					<TrendingUp size={13} color="var(--accent)" /> Стоимость привлечения (CAC)
 				</div>
 				<div style={{ fontSize: 20, fontWeight: 700, color: "var(--ink)" }}>
 					{summary.cacRub.toLocaleString("ru-RU")} ₽
 				</div>
 				<div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-					CPL: {summary.cplRub.toLocaleString("ru-RU")} ₽ | CPS:{" "}
+					Заявка: {summary.cplRub.toLocaleString("ru-RU")} ₽ | Визит:{" "}
 					{summary.cpsRub.toLocaleString("ru-RU")} ₽
 				</div>
 			</div>
 
 			<div style={cardStyle}>
 				<div style={titleStyle}>
-					<Flame size={13} color="var(--teal)" /> ROMI (Окупаемость)
+					<Flame size={13} color="var(--teal)" /> Окупаемость рекламы (ROMI)
 				</div>
 				<div
 					style={{
@@ -67,7 +67,7 @@ export function FunnelFinancialKpiCards({ summary }: { summary: FunnelSummaryMet
 					{summary.romiPercent}%
 				</div>
 				<div style={{ fontSize: 11, color: "var(--muted)", marginTop: 2 }}>
-					LTV/CAC: {summary.ltvToCacRatio}x
+					Возврат на вложения: {summary.ltvToCacRatio}x
 				</div>
 			</div>
 		</>

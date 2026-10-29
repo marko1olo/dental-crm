@@ -59,7 +59,7 @@ export function MarketingKpiCardsGrid({ summary }: MarketingKpiCardsGridProps) {
 				<div className="marketing-kpi-value">{summary.showUpLeads}</div>
 				<div className="marketing-kpi-sub">
 					<span className="marketing-kpi-tag-good">
-						CR {summary.showUpRatePercent}% в первичный визит
+						Конверсия {summary.showUpRatePercent}% в первичный визит
 					</span>
 				</div>
 			</div>

@@ -88,7 +88,7 @@ export const LeadMobileCardActionButtons: React.FC<
 				data-testid={`quick-schedule-btn-${lead.id}`}
 			>
 				<Calendar size={15} />
-				<span>Записать</span>
+				<span>Записать на приём</span>
 			</button>
 		</div>
 	);

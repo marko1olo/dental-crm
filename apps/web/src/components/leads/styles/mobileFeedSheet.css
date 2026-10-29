@@ -4,9 +4,14 @@
 }
 
 .leads-mobile-action-btn--call {
-	background: var(--teal-soft);
-	color: var(--teal-dark, var(--teal));
+	background: var(--paper-soft);
+	color: var(--ink);
+	border-color: var(--line);
+}
+
+.leads-mobile-action-btn--call:hover {
 	border-color: var(--teal);
+	color: var(--teal);
 }
 
 .leads-mobile-action-btn--whatsapp {
@@ -16,14 +21,17 @@
 }
 
 .leads-mobile-action-btn--schedule {
-	background: var(--paper);
-	color: var(--ink);
-	border-color: var(--line-strong, var(--line));
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+	font-weight: 700;
+	box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
 }
 
 .leads-mobile-action-btn--schedule:hover {
-	border-color: var(--teal);
-	color: var(--teal);
+	background: var(--teal-dark, #0f766e);
+	border-color: var(--teal-dark, #0f766e);
+	color: #ffffff;
 }
 
 

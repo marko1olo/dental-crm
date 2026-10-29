@@ -72,7 +72,7 @@ export function MarketingChannelAttributionTable({
 										{ch.spendRub > 0 ? `${ch.spendRub.toLocaleString("ru-RU")} ₽` : "0 ₽"}
 									</span>
 									<span className="marketing-channel-metric-sub">
-										{ch.cacRub > 0 ? `CAC ${ch.cacRub.toLocaleString("ru-RU")} ₽` : "CPL 0 ₽"}
+										{ch.cacRub > 0 ? `Пациент: ${ch.cacRub.toLocaleString("ru-RU")} ₽` : "Расход: 0 ₽"}
 									</span>
 								</div>
 							</div>

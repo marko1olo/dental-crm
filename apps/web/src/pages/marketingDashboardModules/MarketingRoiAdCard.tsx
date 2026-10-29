@@ -22,7 +22,7 @@ export function MarketingRoiAdCard({ summary, topChannel }: MarketingRoiAdCardPr
 					<TrendingUp size={16} className="text-[var(--teal)]" />
 					<span>Окупаемость рекламы (ROMI)</span>
 				</h2>
-				<span className="marketing-section-badge">Unit-экономика</span>
+				<span className="marketing-section-badge">Эффективность рекламы</span>
 			</div>
 
 			<div className="marketing-romi-hero">

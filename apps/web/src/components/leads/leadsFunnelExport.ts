@@ -27,9 +27,9 @@ export function exportFunnelReportCsv(result: FunnelAnalysisResult): string {
 	lines.push(`Всего обращений (Leads);${result.summary.totalLeads};шт.`);
 	lines.push(`Записано на консультацию;${result.summary.bookedLeads};шт.`);
 	lines.push(`Конверсия в запись;${result.summary.bookingRatePercent}%;%`);
-	lines.push(`Дошли до клиники (Show-up);${result.summary.showUpLeads};шт.`);
+	lines.push(`Дошли до клиники (состоявшиеся визиты);${result.summary.showUpLeads};шт.`);
 	lines.push(
-		`Доходимость (Show-up rate);${result.summary.showUpRatePercent}%;%`,
+		`Доходимость (состоявшиеся визиты);${result.summary.showUpRatePercent}%;%`,
 	);
 	lines.push(`Согласован план лечения;${result.summary.agreedPlanLeads};шт.`);
 	lines.push(
@@ -96,7 +96,7 @@ export function exportFunnelReportSummaryText(
 		`ДАЙДЖЕСТ ВОРОНКИ ПАЦИЕНТОВ CRM ДЕНТЕ (Период: ${result.period})`,
 		"--------------------------------------------------",
 		`Лидов получено: ${s.totalLeads} | Записано: ${s.bookedLeads} (${s.bookingRatePercent}%)`,
-		`Дошли до клиники: ${s.showUpLeads} (Show-up: ${s.showUpRatePercent}%)`,
+		`Дошли до клиники: ${s.showUpLeads} (визиты: ${s.showUpRatePercent}%)`,
 		`Оплатили лечение: ${s.paidLeads} (Итоговая конверсия: ${s.overallConversionPercent}%)`,
 		"--------------------------------------------------",
 		`Расходы на рекламу: ${s.totalMarketingSpendRub.toLocaleString("ru-RU")} ₽`,
