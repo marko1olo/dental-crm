@@ -34,4 +34,5 @@ export interface VisiographTopToolbarProps {
 	onToothChange?: ((tooth: string) => void) | undefined;
 	onAttachToVisit?: (() => void) | undefined;
 	isAttachedToVisit?: boolean | undefined;
+	onToggleMobileDrawer?: (() => void) | undefined;
 }

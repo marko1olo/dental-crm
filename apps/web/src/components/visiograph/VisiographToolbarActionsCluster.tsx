@@ -1,10 +1,11 @@
 /**
  * VisiographToolbarActionsCluster.tsx
- * Actions cluster: external 3D viewer, secondary dropdown, Dominant Emerald CTA, close button.
+ * Actions cluster: external 3D viewer, quick billing, secondary dropdown, Dominant Emerald CTA, close button.
+ * Strict Mandate 8am: Exactly ONE Primary CTA button (#0d9488) per visible context.
  */
 
-import { Box, Check, Sliders, X } from "lucide-react";
-import type React from "react";
+import { Box, Check, CreditCard, Sliders, X } from "lucide-react";
+import React, { useState } from "react";
 import type { ActiveVisiographToolType } from "./VisiographInteractiveOverlay";
 import { VisiographToolbarSecondaryMenu } from "./VisiographToolbarSecondaryMenu";
 
@@ -20,6 +21,7 @@ export interface VisiographToolbarActionsClusterProps {
 	onResetAll: () => void;
 	isAttached: boolean;
 	handleAttachClick: () => void;
+	toothCode?: string | null | undefined;
 	onClose?: (() => void) | undefined;
 }
 
@@ -35,10 +37,42 @@ export function VisiographToolbarActionsCluster({
 	onResetAll,
 	isAttached,
 	handleAttachClick,
+	toothCode = "16",
 	onClose,
 }: VisiographToolbarActionsClusterProps) {
+	const [isBilled, setIsBilled] = useState(false);
+
+	const handleQuickBill = () => {
+		setIsBilled(true);
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente:add-service-to-cashbox", {
+					detail: {
+						title: `Прицельный снимок визиографа (зуб ${toothCode || "16"})`,
+						amountRub: 450,
+						amountKopecks: 45000,
+						tooth: toothCode || "16",
+						modality: "rvg",
+					},
+				}),
+			);
+		}
+	};
+
 	return (
 		<div className="visiograph-toolbar-cluster">
+			{/* Вторичная кнопка 1-клик добавления в кассу 54-ФЗ */}
+			<button
+				type="button"
+				className="secondary-button"
+				data-testid="btn-visiograph-quick-bill"
+				onClick={handleQuickBill}
+				title="Добавить услугу прицельного снимка (450 ₽) в кассовый чек приёма"
+			>
+				<CreditCard size={13} aria-hidden="true" />
+				<span>{isBilled ? "✓ В чеке" : "+ В чек (450 ₽)"}</span>
+			</button>
+
 			<button
 				type="button"
 				className="secondary-button"
@@ -74,6 +108,7 @@ export function VisiographToolbarActionsCluster({
 				)}
 			</div>
 
+			{/* Ровно ОДНА Primary CTA кнопка цвета var(--teal, #0d9488) */}
 			<button
 				type="button"
 				className={`primary-button ${isAttached ? "is-attached" : ""}`}

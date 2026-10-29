@@ -89,6 +89,7 @@ export function VisiographTopToolbar({
 				onOpenExportModal={onOpenExportModal}
 				onResetAll={onResetAll}
 				isAttached={isAttachedToVisit || isAttachedLocal}
+				toothCode={toothCode}
 				handleAttachClick={() => {
 					if (onAttachToVisit) onAttachToVisit();
 					else onPrintProtocol();

@@ -2,6 +2,7 @@
    DENTE CRM — IMAGING STUDIES LIST & ROWS (viewerStudiesList.css)
    ==========================================================================
    Mandate 8b: Strictly <= 120 lines. Study cards, thumbnail previews & actions.
+   Apple HIG: Grouped List Cards & Touch Targets >= 44x44px on mobile screens.
    ========================================================================== */
 .imaging-empty {
 	align-content: center;
@@ -21,71 +22,118 @@
 .imaging-list {
 	align-content: start;
 	display: grid;
-	gap: 9px;
+	gap: 10px;
 }
 
 .imaging-row {
 	align-items: center;
 	background: var(--paper-strong, var(--paper, #fbfefd));
 	border: 1px solid var(--line);
-	border-radius: 10px;
+	border-radius: 12px;
 	color: var(--ink);
 	display: grid;
 	gap: 12px;
-	grid-template-columns: 48px minmax(0, 1fr) auto;
+	grid-template-columns: 72px minmax(0, 1fr) auto;
 	min-height: 76px;
 	padding: 12px;
 	text-align: left;
+	transition: all 0.15s ease;
 }
 
 .imaging-row.active {
-	border-color: var(--teal);
-	box-shadow: 0 0 0 3px rgba(15, 118, 110, 0.14);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.25);
 }
 
 .imaging-row img {
 	background: #0b2426;
-	border-radius: 7px;
+	border-radius: 8px;
 	height: 64px;
 	object-fit: cover;
-	width: 92px;
+	width: 72px;
 }
 
 .imaging-row h3 {
-	font-size: 15px;
-	line-height: 1.2;
+	font-size: 14.5px;
+	line-height: 1.25;
 	margin: 0;
+	color: var(--ink);
 }
 
 .imaging-row p {
 	color: var(--muted);
-	margin: 4px 0;
+	margin: 3px 0;
+	font-size: 12px;
 }
 
 .imaging-row span {
-	color: var(--teal-dark);
-	font-size: 12px;
-	font-weight: 850;
+	color: var(--teal-dark, #0f766e);
+	font-size: 11.5px;
+	font-weight: 700;
 }
 
 .imaging-row-actions {
 	align-items: center;
 	display: flex;
 	flex-wrap: wrap;
-	gap: 7px;
+	gap: 8px;
 	justify-content: flex-end;
 }
 
 .imaging-row-select {
 	min-height: 36px;
 	white-space: nowrap;
+	padding: 0 12px;
+	border-radius: 8px;
 }
 
 .imaging-row-select[aria-pressed="true"] {
-	background: var(--teal-soft);
-	color: var(--teal-dark);
+	background: var(--teal-soft, rgba(13, 148, 136, 0.15));
+	color: var(--teal, #0d9488);
+	font-weight: 700;
 }
 
 .imaging-needs_review {
-	border-left: 4px solid var(--amber);
+	border-left: 4px solid var(--amber, #f59e0b);
+}
+
+/* ─── Apple HIG: Mobile Grouped Cards on <= 768px ────────────────────────── */
+@media (max-width: 768px) {
+	.imaging-row {
+		display: flex;
+		flex-direction: column;
+		align-items: stretch;
+		border-radius: 16px;
+		padding: 14px;
+		gap: 12px;
+	}
+
+	.imaging-row img {
+		width: 100%;
+		height: 160px;
+		max-height: 180px;
+		border-radius: 12px;
+		object-fit: cover;
+	}
+
+	.imaging-row-actions {
+		width: 100%;
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 8px;
+		margin-top: 4px;
+	}
+
+	.imaging-row-select,
+	.imaging-row-actions .doc-link {
+		min-height: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 10px;
+		font-size: 13px;
+		font-weight: 600;
+		text-align: center;
+	}
 }

@@ -54,17 +54,18 @@ export const ImagingToothVisitGroup: React.FC<ImagingToothVisitGroupProps> = ({
 
 			{activeAppointment?.id && (
 				<button
-					data-testid="study-attach-visit-btn"
+					data-testid="btn-attach-to-visit"
+					id="study-attach-visit-btn"
 					type="button"
-					className={`h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-2xs ${
+					className={`h-8 px-3 rounded-xl border text-xs font-semibold inline-flex items-center gap-1.5 transition-all cursor-pointer shadow-sm active:scale-95 ${
 						isAttachedToCurrentVisit
 							? "border-emerald-500/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 font-semibold"
-							: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+							: "border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white hover:brightness-105"
 					}`}
 					title={isAttachedToCurrentVisit ? "Снимок прикреплен к текущему приёму" : "Привязать снимок к приёму в 1 клик"}
 					onClick={() => onAttachToVisit?.(activeAppointment.id)}
 				>
-					<Check size={14} className={isAttachedToCurrentVisit ? "text-emerald-500" : "text-[var(--ink-muted)]"} />
+					<Check size={14} className={isAttachedToCurrentVisit ? "text-emerald-500" : "text-white stroke-[2.5]"} />
 					<span>{isAttachedToCurrentVisit ? "В приёме" : "В приём"}</span>
 				</button>
 			)}
