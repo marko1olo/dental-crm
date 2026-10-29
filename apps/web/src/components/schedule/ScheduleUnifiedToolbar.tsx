@@ -233,7 +233,7 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 							aria-label="Новая запись (N)"
 						>
 							<Plus size={15} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
-							<span className="whitespace-nowrap font-bold">Новая запись</span>
+							<span className="whitespace-nowrap font-bold">Запись</span>
 						</button>
 					)}
 

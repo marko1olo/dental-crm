@@ -85,7 +85,7 @@ export function AppointmentModalLabCard({
 					{item.statusInfo.isOverdue
 						? `⚠️ ЗТЛ задерживает: +${item.statusInfo.daysOverdue} дн`
 						: item.statusInfo.state === "ready_in_clinic"
-							? "✓ Работа из ЗТЛ в клинике"
+							? `✓ ${item.statusInfo.labelRu || "Поступил в клинику"}`
 							: item.statusInfo.labelRu}
 				</span>
 			</div>

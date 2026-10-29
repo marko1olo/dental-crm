@@ -70,10 +70,10 @@ export interface DurationPreset {
 
 export const DURATION_PRESETS: readonly DurationPreset[] = [
 	{ minutes: 15, label: "15 мин", serviceHint: "Осмотр" },
-	{ minutes: 30, label: "30 мин", serviceHint: "Гигиена/Швы" },
+	{ minutes: 30, label: "30 мин", serviceHint: "Терапия" },
 	{ minutes: 45, label: "45 мин", serviceHint: "Терапия" },
-	{ minutes: 60, label: "60 мин", serviceHint: "Лечение" },
-	{ minutes: 90, label: "90 мин", serviceHint: "Хирургия" },
+	{ minutes: 60, label: "60 мин", serviceHint: "Эндо/Коронка" },
+	{ minutes: 90, label: "90 мин", serviceHint: "Хирургия/Имплантация" },
 	{ minutes: 120, label: "120 мин", serviceHint: "Ортопедия" },
 ];
 
