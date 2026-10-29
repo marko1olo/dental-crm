@@ -2,10 +2,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { ChairsideEndoQuickBar } from "../ChairsideEndoQuickBar";
-import { generateSoapEndoProtocol } from "../quickbar/soapGenerator";
-import { executeChairsideTransferToDiary } from "../quickbar/quickBarTransferExecutor";
-import type { QuickCanalState } from "../quickbar/types";
+import {
+	ChairsideEndoQuickBar,
+	generateSoapEndoProtocol,
+	executeChairsideTransferToDiary,
+	type QuickCanalState,
+} from "../ChairsideEndoQuickBar";
 
 describe("ChairsideEndoChips & Invoice Bridge (Mandates 8e, 8n)", () => {
 	it("1. 1-Click Quick-Pick Chips: Working Length (19, 20, 21, 21.5, 22 mm)", () => {

@@ -25,6 +25,7 @@ import "./components/copilot/CopilotVoiceStenographer.css";
 import { ChairsideCopilotHUD } from "./components/copilot/ChairsideCopilotHUD";
 import { CopilotDrawer } from "./components/copilot/CopilotDrawer";
 import { CopilotVoiceStenographer } from "./components/copilot/CopilotVoiceStenographer";
+import { CopilotWorkspaceHost } from "./components/copilot/CopilotWorkspaceHost";
 
 const SAMPLE_MESSAGES = [
   {
@@ -74,7 +75,7 @@ function CopilotPreviewApp() {
     document.documentElement.classList.toggle("light", th !== "dark");
     document.documentElement.style.colorScheme = th;
 
-    const view = params.get("view") || "drawer";
+    const view = params.get("view") || "host";
     setCurrentView(view);
     if (view === "voice") {
       const isMobileScreen = typeof window !== "undefined" && window.innerWidth <= 768;
@@ -83,8 +84,11 @@ function CopilotPreviewApp() {
     } else if (view === "hud") {
       setDrawerOpen(false);
       setVoiceActive(false);
-    } else {
+    } else if (view === "drawer") {
       setDrawerOpen(true);
+      setVoiceActive(false);
+    } else {
+      setDrawerOpen(false);
       setVoiceActive(false);
     }
 
@@ -104,7 +108,7 @@ function CopilotPreviewApp() {
         <div className="flex items-center gap-6">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)] flex items-center justify-center text-white shadow-sm font-bold">
-              🦷
+              <Sparkles size={16} />
             </div>
             <div>
               <span className="font-bold text-sm tracking-tight text-[var(--ink)]">DENTE</span>
@@ -331,47 +335,60 @@ function CopilotPreviewApp() {
       )}
 
       {/* 2. Canonical Copilot Drawer */}
-      <CopilotDrawer
-        isOpen={drawerOpen}
-        onClose={() => setDrawerOpen(false)}
-        messages={messages}
-        busy={false}
-        phase={null}
-        isVoiceActive={voiceActive}
-        onToggleVoice={() => setVoiceActive((prev) => !prev)}
-        pending={{
-          callId: "call-tx-46-confirm",
-          toolName: "clinical.calculate_treatment_estimate",
-          name: "clinical.calculate_treatment_estimate",
-          args: {
-            toothNumber: 46,
-            diagnosis: "K04.0 Хронический пульпит",
-            services: [
-              "A16.07.008 Пломбирование корневого канала зуба (эндодонтия) — 18 500 ₽",
-              "A16.07.002 Восстановление зуба пломбой (лечение кариеса) — 6 500 ₽",
-            ],
-            totalRub: 25000,
-            discount_percent: 10,
-            doctor_name: "Д-р Соколов А.В.",
-            safe_alternative: "Артикаин 4% 1:200 000 (кардио-протокол)",
-          },
-        }}
-        nameCache={{}}
-        nudges={[
-          {
-            id: "nudge-1",
-            text: "Зуб 36: Обнаружен кариес дентина (K02.1). Рекомендован протокол со светоотверждаемым композитом.",
-            priority: "medium",
-          },
-        ]}
-        activeTab={activeTab}
-        onTabChange={(t) => setActiveTab(t)}
-        onSend={(text) => {
-          setMessages((prev) => [...prev, { kind: "text", role: "user", text }]);
-        }}
-        onConfirm={() => {}}
-        onReset={() => setMessages([])}
-      />
+      {currentView === "drawer" && (
+        <CopilotDrawer
+          isOpen={drawerOpen}
+          onClose={() => setDrawerOpen(false)}
+          messages={messages}
+          busy={false}
+          phase={null}
+          isVoiceActive={voiceActive}
+          onToggleVoice={() => setVoiceActive((prev) => !prev)}
+          pending={{
+            callId: "call-tx-46-confirm",
+            toolName: "clinical.calculate_treatment_estimate",
+            name: "clinical.calculate_treatment_estimate",
+            args: {
+              toothNumber: 46,
+              diagnosis: "K04.0 Хронический пульпит",
+              services: [
+                "A16.07.008 Пломбирование корневого канала зуба (эндодонтия) — 18 500 ₽",
+                "A16.07.002 Восстановление зуба пломбой (лечение кариеса) — 6 500 ₽",
+              ],
+              totalRub: 25000,
+              discount_percent: 10,
+              doctor_name: "Д-р Соколов А.В.",
+              safe_alternative: "Артикаин 4% 1:200 000 (кардио-протокол)",
+            },
+          }}
+          nameCache={{}}
+          nudges={[
+            {
+              id: "nudge-1",
+              text: "Зуб 36: Обнаружен кариес дентина (K02.1). Рекомендован протокол со светоотверждаемым композитом.",
+              priority: "medium",
+            },
+          ]}
+          activeTab={activeTab}
+          onTabChange={(t) => setActiveTab(t)}
+          onSend={(text) => {
+            setMessages((prev) => [...prev, { kind: "text", role: "user", text }]);
+          }}
+          onConfirm={() => {}}
+          onReset={() => setMessages([])}
+        />
+      )}
+
+      {/* 3. SSOT Copilot Workspace Host (Кабинет Копайлота) */}
+      {(currentView === "host" || currentView === "copilot" || currentView === "all") && (
+        <CopilotWorkspaceHost
+          isOpen={true}
+          onClose={() => {}}
+          activeTooth={36}
+          patientName="Иванов Иван Иванович"
+          initialTab={activeTab === "pending" ? "actions" : "dialog"}
+        />
+      )}
 
       {/* 3. Voice Stenographer */}
       <CopilotVoiceStenographer

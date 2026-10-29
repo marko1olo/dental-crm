@@ -23,6 +23,7 @@ import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinical
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
+import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -116,7 +117,10 @@ function isStandaloneActive(): boolean {
 		s.includes("implant-passport") ||
 		h.includes("implant-passport") ||
 		s.includes("implants") ||
-		h.includes("implants")
+		h.includes("implants") ||
+		s.includes("copilot") ||
+		h.includes("copilot") ||
+		h === "#ai"
 	);
 }
 
@@ -160,6 +164,7 @@ export function AppShell() {
 			<DirectVisitLauncher />
 			<DirectCopilotLauncher />
 			<DirectInsuranceLauncher />
+			<DirectPerioLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
