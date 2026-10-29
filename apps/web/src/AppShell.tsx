@@ -4,11 +4,12 @@ import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
 import { DirectPricelistLauncher } from "./components/catalog/DirectPricelistLauncher";
+import { DirectWarehouseLauncher } from "./components/inventory/DirectWarehouseLauncher";
 import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/WarehouseMdlpLaunchers";
 import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher";
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { DirectDocumentsCatalogLauncher } from "./components/documents/DirectDocumentsCatalogLauncher";
-import { DirectSanPinStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/SanPinStandaloneLauncher";
+import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
@@ -24,6 +25,7 @@ import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
+import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -118,9 +120,12 @@ function isStandaloneActive(): boolean {
 		h.includes("implant-passport") ||
 		s.includes("implants") ||
 		h.includes("implants") ||
-		s.includes("copilot") ||
-		h.includes("copilot") ||
-		h === "#ai"
+		s.includes("copilot_standalone") ||
+		h.includes("copilot-standalone") ||
+		s.includes("copilot_workspace") ||
+		h.includes("copilot-workspace") ||
+		s.includes("anesthesia") ||
+		h.includes("anesthesia")
 	);
 }
 
@@ -145,10 +150,11 @@ export function AppShell() {
 			)}
 			<DirectMedicalInsertLauncher />
 			<DirectPricelistLauncher />
+			<DirectWarehouseLauncher />
 			<DirectWarehouseMdlpLauncher />
 			<DirectOmnichannelStandaloneLauncher />
 			<DirectPrescriptionLauncher />
-			<DirectSanPinStandaloneLauncher />
+			<DirectSanpinLauncher />
 			<DirectDocumentsCatalogLauncher />
 			<DirectImplantPassportLauncher />
 			<DirectRadiologyLauncher />
@@ -165,6 +171,7 @@ export function AppShell() {
 			<DirectCopilotLauncher />
 			<DirectInsuranceLauncher />
 			<DirectPerioLauncher />
+			<DirectAnesthesiaLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
