@@ -99,7 +99,7 @@ export function ScheduleOptionsMenu({
 						className="w-full py-2 text-left px-2.5 rounded-lg text-xs font-bold text-[var(--teal-dark,var(--teal))] bg-[var(--teal-soft,#f0fdfa)] hover:bg-[var(--teal,#0d9488)] hover:text-white transition-colors flex items-center gap-2 cursor-pointer"
 						role="menuitem"
 						data-testid="schedule-options-quick-booking-btn"
-						title="Быстрая запись (+ Запись)"
+						title="Новая запись на прием (+ Новая запись)"
 					>
 						<Plus size={14} className="shrink-0" />
 						<span>Быстрая запись</span>

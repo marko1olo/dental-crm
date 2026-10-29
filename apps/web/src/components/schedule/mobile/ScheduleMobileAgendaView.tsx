@@ -40,7 +40,8 @@ export const ScheduleMobileBottomBar: React.FC<{
 				onClick={onAction}
 				data-testid="schedule-mobile-add-btn"
 			>
-				<span>+ Записать визит</span>
+				<Plus size={18} className="shrink-0 stroke-[2.5]" />
+				<span>Новая запись</span>
 			</button>
 		</div>
 	);

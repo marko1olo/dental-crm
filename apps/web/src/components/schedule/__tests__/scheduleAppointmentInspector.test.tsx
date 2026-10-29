@@ -171,7 +171,7 @@ describe("ScheduleAppointmentInspector (StomX CRM Parity Right Inspector Panel)"
     assert.ok(htmlWithAppts.includes("Подтверждено:"));
     assert.ok(htmlWithAppts.includes("В клинике:"));
     assert.ok(htmlWithAppts.includes("Завершено:"));
-    assert.ok(htmlWithAppts.includes("Иванов И."));
+    assert.ok(htmlWithAppts.includes("Иванов Иван И."));
     assert.ok(htmlWithAppts.includes("Петрова А.С."));
 
     // Empty state when no appointments on the selected day

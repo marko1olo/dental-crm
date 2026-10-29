@@ -221,19 +221,19 @@ export function ScheduleUnifiedToolbar(props: ScheduleUnifiedToolbarProps): Reac
 						onViewModeChange={props.setScheduleViewMode}
 					/>
 
-					{/* Ровно ОДНА Primary CTA кнопка («+ Запись», #0d9488) */}
+					{/* Ровно ОДНА Primary CTA кнопка («+ Новая запись», #0d9488, Мандат 8am) */}
 					{props.onQuickBooking && (
 						<button
 							type="button"
 							onClick={props.onQuickBooking}
-							className="schedule-toolbar-primary-quick-booking-btn primary-button h-8 sm:h-9 min-h-[36px] px-3 sm:px-3.5 rounded-lg text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white transition-all"
+							className="schedule-toolbar-primary-quick-booking-btn primary-button h-9 min-h-[36px] px-4 rounded-xl text-[13px] font-bold inline-flex items-center justify-center gap-1.5 shrink-0 cursor-pointer shadow-2xs whitespace-nowrap bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white transition-all"
 							data-testid="schedule-toolbar-primary-quick-booking-btn"
 							data-tour="schedule-booking"
-							title="Быстрая запись на прием (+ Запись)"
-							aria-label="Быстрая запись (N)"
+							title="Новая запись на прием (+ Новая запись)"
+							aria-label="Новая запись (N)"
 						>
 							<Plus size={15} className="shrink-0 stroke-[2.5]" aria-hidden="true" />
-							<span className="whitespace-nowrap font-bold">Запись</span>
+							<span className="whitespace-nowrap font-bold">Новая запись</span>
 						</button>
 					)}
 

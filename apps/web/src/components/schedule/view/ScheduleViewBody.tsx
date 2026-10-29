@@ -308,7 +308,7 @@ export function ScheduleViewBody(props: ScheduleViewBodyProps) {
     if (!dashboard) return null;
     return (
       <ChairScheduleView
-        hideToolbar={false}
+        hideToolbar={true}
         gridStepMinutes={scheduleGridStep}
         onGridStepChange={setScheduleGridStep}
         dashboard={dashboard}
