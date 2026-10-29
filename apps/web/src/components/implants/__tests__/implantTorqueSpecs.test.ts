@@ -77,20 +77,30 @@ describe("Implant Torque Specifications & Warehouse Stock Catalog", () => {
 		assert.equal(IMPLANT_TORQUE_SPECS.osstem.torqueFinalScrewNcm, 30);
 	});
 
-	it("36. Decomposed torqueCatalogModules maintain 100% SSOT parity and strict file size limits", async () => {
-		const { getTorqueSpecsByBrand, getRecommendedTorqueNcm } = await import("../torqueCatalogModules/implantScrewdriverHelper");
-		const { TI_BASE_CATALOG } = await import("../torqueCatalogModules/tiBaseCatalogData");
+	it("36. Normalized implantCatalogData and torqueCatalog maintain 100% SSOT parity", async () => {
+		const { getTorqueSpecsByBrand, getRecommendedTorqueNcm, TI_BASE_CATALOG } = await import("../implantTorqueCatalog");
+		const { findImplantSystem, NORMALIZED_IMPLANT_SYSTEMS, TI_BASE_CATALOG_SSOT } = await import("../implantCatalogData");
 
 		const straumann = getTorqueSpecsByBrand("straumann");
 		assert.equal(straumann.torqueFinalScrewNcm, 35);
 		assert.equal(straumann.torqueMultiUnitBridgeScrewNcm, 15);
 		assert.ok(straumann.screwdriverDefault.includes("SCS"));
 
+		const straumannData = findImplantSystem("straumann");
+		assert.equal(straumannData.finalScrewTorqueNcm, 35);
+		assert.equal(straumannData.defaultTorqueNcm, 35);
+		assert.ok(straumannData.screwdriverType.includes("SCS"));
+
 		const nobel = getTorqueSpecsByBrand("nobel_biocare");
 		assert.equal(nobel.torqueFinalScrewNcm, 35);
 		assert.ok(nobel.screwdriverDefault.includes("Unigrip"));
 
+		const anyridge = findImplantSystem("anyridge");
+		assert.equal(anyridge.defaultTorqueNcm, 35);
+		assert.equal(anyridge.brandName, "AnyRidge");
+
 		assert.ok(TI_BASE_CATALOG.length >= 8);
+		assert.ok(TI_BASE_CATALOG_SSOT.length >= 8);
 		const variobase = TI_BASE_CATALOG.find((t) => t.id === "st-tb-nc-01");
 		assert.ok(variobase);
 		assert.equal(variobase.recommendedTorqueNcm, 35);

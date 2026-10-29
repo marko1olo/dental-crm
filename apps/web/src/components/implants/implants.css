@@ -1,10 +1,473 @@
 /* ==========================================================================
    IMPLANTS MODULE STYLES (DENTE CRM)
-   Streamlined, Glove-friendly, Zero-barrier Surgical Passport Cards
+   Канонический стиль протоколов имплантации и паспорта пациента.
+   Apple HIG Mobile Bottom Sheet (390x844), 1 Primary CTA в тиле, печать А4.
    ========================================================================== */
 
-@import "./styles/implant-layout.css";
-@import "./styles/implant-controls.css";
-@import "./styles/implant-mobile.css";
-@import "./styles/implant-mobile-actions.css";
-@import "./styles/implant-print.css";
+/* 1. Модальное окно и бэкдроп */
+.implant-passport-modal-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 10050;
+	background: rgba(15, 23, 42, 0.75);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.implant-passport-card-container {
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: var(--radius-xl, 20px);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.45);
+	width: 100%;
+	max-width: 840px;
+	max-height: calc(100vh - 48px);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.implant-sheet-drag-handle {
+	display: none;
+}
+
+.implant-passport-header-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 18px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.implant-passport-header-title {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+	flex: 1 1 auto;
+	overflow: hidden;
+}
+
+.implant-passport-header-title h2 {
+	font-size: 15px;
+	font-weight: 800;
+	margin: 0;
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	min-width: 0;
+	color: var(--ink);
+}
+
+.implant-passport-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.implant-passport-content {
+	padding: 18px;
+	overflow-y: auto;
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	min-height: 0;
+}
+
+/* 2. Навигация и табы */
+.implant-passport-tabs-nav {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 8px 16px;
+	background: var(--paper-soft);
+	border-bottom: 1px solid var(--line);
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+.implant-tab-btn {
+	transition: all 0.15s ease;
+}
+
+/* 3. Формы, инпуты и кнопки */
+.implant-form-row {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+@media (min-width: 640px) {
+	.implant-form-row {
+		flex-direction: row;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+	}
+}
+
+.implant-label {
+	font-size: 12px;
+	font-weight: 700;
+	color: var(--ink);
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.implant-select {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	border-radius: var(--radius-xl, 12px);
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	font-weight: 600;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.implant-select:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+}
+
+.implant-input {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	border-radius: var(--radius-xl, 12px);
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 13px;
+	outline: none;
+	transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.implant-input:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px var(--teal-soft, rgba(13, 148, 136, 0.2));
+}
+
+/* 3.1 Кнопки хирургических экспресс-протоколов (1 клик) */
+.implant-preset-btn {
+	height: auto !important;
+	min-height: 60px !important;
+	padding: 10px 12px !important;
+	display: flex !important;
+	flex-direction: column !important;
+	justify-content: center !important;
+	align-items: flex-start !important;
+	gap: 4px !important;
+	white-space: normal !important;
+	line-height: 1.3 !important;
+	box-sizing: border-box !important;
+	text-align: left !important;
+	border-radius: 12px !important;
+	border: 1px solid var(--line) !important;
+	background: var(--paper) !important;
+	color: var(--ink) !important;
+	cursor: pointer !important;
+	transition: background 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease !important;
+}
+
+.implant-preset-btn:hover {
+	border-color: var(--teal, #0d9488) !important;
+	background: var(--paper-soft) !important;
+}
+
+.implant-preset-btn.active,
+.implant-preset-btn-standard {
+	border-color: var(--teal, #0d9488) !important;
+	box-shadow: 0 0 0 1px var(--teal, #0d9488) !important;
+}
+
+/* 4. Тулбар брендов и системы */
+.implant-brand-toolbar {
+	display: flex;
+	align-items: center;
+	gap: 6px;
+	overflow-x: auto;
+	padding: 2px 0;
+	scrollbar-width: thin;
+}
+
+.implant-system-pill {
+	height: 36px;
+	min-height: 36px;
+	padding: 0 12px;
+	border-radius: 10px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--ink);
+	font-size: 12px;
+	font-weight: 700;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	white-space: nowrap;
+	flex-shrink: 0;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.implant-system-pill:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft);
+}
+
+.implant-system-pill.active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+/* 5. Карточка паспорта имплантата */
+.implant-passport-display-card {
+	padding: 18px;
+	border-radius: 16px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+}
+
+.anatomical-jaw-arch-container {
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	overflow-x: auto;
+	-webkit-overflow-scrolling: touch;
+	scrollbar-width: thin;
+}
+
+.anatomical-jaw-arch-container svg {
+	min-width: 320px;
+}
+
+/* 6. Нижняя панель действий (Natural Thumb Zone) */
+.implant-passport-actions {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 18px;
+	background: var(--paper-soft);
+	border-top: 1px solid var(--line);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+/* 7. APPLE HIG MOBILE BOTTOM SHEET (Экраны <= 768px, 390x844) */
+@media (max-width: 768px) {
+	.implant-passport-modal-backdrop {
+		align-items: flex-end;
+		justify-content: flex-end;
+		padding: 0;
+		overflow-x: clip;
+		max-width: 100vw;
+		height: 100vh;
+		height: 100dvh;
+	}
+
+	.implant-passport-card-container {
+		width: 100vw;
+		max-width: 100vw;
+		height: auto;
+		max-height: calc(100vh - 44px);
+		max-height: calc(100dvh - 44px);
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		box-shadow: 0 -10px 40px rgba(0, 0, 0, 0.4);
+		animation: implantSheetSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+		overflow-x: clip;
+	}
+
+	@keyframes implantSheetSlideUp {
+		from {
+			transform: translateY(100%);
+		}
+		to {
+			transform: translateY(0);
+		}
+	}
+
+	.implant-sheet-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		border-radius: 3px;
+		background: var(--line-strong, #94a3b8);
+		margin: 10px auto 4px auto;
+		opacity: 0.6;
+		flex-shrink: 0;
+	}
+
+	.implant-passport-header-bar {
+		padding: 8px 14px;
+		gap: 8px;
+		width: 100%;
+		box-sizing: border-box;
+	}
+
+	.implant-passport-header-title h2 {
+		font-size: 14px;
+	}
+
+	.implant-tabs-nav {
+		display: flex;
+		flex-wrap: nowrap;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+		gap: 6px;
+		padding: 6px 14px;
+	}
+
+	.implant-tabs-nav::-webkit-scrollbar {
+		display: none;
+	}
+
+	.implant-tabs-nav button {
+		flex-shrink: 0;
+		white-space: nowrap;
+		min-height: 40px;
+	}
+
+	.implant-btn-text-hide-mobile,
+	.implant-desktop-only {
+		display: none !important;
+	}
+
+	.implant-passport-content {
+		padding: 12px 14px;
+		gap: 12px;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	.implant-brand-toolbar {
+		height: auto;
+		min-height: 48px;
+		flex-wrap: wrap;
+		gap: 6px;
+	}
+
+	.implant-system-pill {
+		min-height: 44px;
+		height: 44px;
+		padding: 0 12px;
+		font-size: 13px;
+		border-radius: 10px;
+	}
+
+	.implant-select,
+	.implant-input {
+		min-height: 44px;
+		height: 44px;
+		font-size: 14px;
+	}
+
+	.implant-form-row {
+		gap: 4px;
+	}
+
+	/* Фиксированная нижняя панель в нижней трети экрана (Natural Thumb Zone) */
+	.implant-passport-actions {
+		position: sticky;
+		bottom: 0;
+		padding: 10px 14px max(14px, env(safe-area-inset-bottom)) 14px;
+		background: var(--paper);
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-top: 1px solid var(--line);
+		z-index: 20;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+	}
+
+	.implant-passport-actions > div:first-child {
+		display: none;
+	}
+
+	.implant-passport-actions > div:last-child {
+		width: 100%;
+		display: flex;
+		gap: 8px;
+	}
+
+	.implant-passport-actions .secondary-button {
+		flex-shrink: 0;
+		min-height: 44px;
+	}
+
+	.implant-passport-actions .primary-button {
+		flex: 1;
+		min-height: 44px;
+		justify-content: center;
+	}
+}
+
+/* 8. ПЕЧАТЬ А4 (@media print) */
+@media print {
+	.implant-passport-modal-backdrop {
+		position: static !important;
+		background: none !important;
+		padding: 0 !important;
+		backdrop-filter: none !important;
+		display: block !important;
+	}
+
+	.implant-passport-card-container {
+		max-width: 100% !important;
+		max-height: none !important;
+		box-shadow: none !important;
+		border: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+	}
+
+	.implant-passport-header-bar,
+	.implant-passport-actions,
+	.implant-passport-tabs-nav,
+	nav[role="tablist"],
+	.print\\:hidden {
+		display: none !important;
+	}
+
+	.implant-passport-content {
+		padding: 0 !important;
+		overflow: visible !important;
+	}
+
+	.implant-passport-display-card {
+		border: 1px solid #0f172a !important;
+		box-shadow: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
+		page-break-inside: avoid !important;
+	}
+
+	.anatomical-jaw-arch-container {
+		background: #ffffff !important;
+		border: 1px solid #cbd5e1 !important;
+		box-shadow: none !important;
+		page-break-inside: avoid !important;
+	}
+}

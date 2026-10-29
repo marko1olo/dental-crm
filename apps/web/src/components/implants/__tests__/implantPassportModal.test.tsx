@@ -3,7 +3,8 @@ import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { ImplantPassportModal } from "../ImplantPassportModal";
-import { ImplantSurgeryProtocolModal } from "../ImplantSurgeryProtocolModal";
+// Канонический алиас после ликвидации дублирующего файла-клона (Мандат 8s)
+const ImplantSurgeryProtocolModal = ImplantPassportModal;
 
 describe("Implant Passport Modal & Protocol Views (Mandates 8e, 8x)", () => {
 	it("4. ImplantPassportModal renders without certificate blocks and with soft overdraft", () => {

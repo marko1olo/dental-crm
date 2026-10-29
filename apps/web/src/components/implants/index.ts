@@ -4,6 +4,7 @@
  * touch-first ergonomics, warehouse soft overdraft non-blocking operations.
  */
 
+export * from "./implantCatalogData";
 export * from "./implantQuickPresets";
 export * from "./ImplantPassportCard";
 export * from "./ImplantPassportModal";
@@ -36,9 +37,11 @@ export function getImplantPlatformById(brand: ImplantBrand, line?: string): Plat
 
 export {
 	ImplantPassportModal as ImplantSurgicalPassportModal,
+	ImplantPassportModal as ImplantSurgeryProtocolModal,
 } from "./ImplantPassportModal";
-export { ImplantSurgeryProtocolModal } from "./ImplantSurgeryProtocolModal";
-export type { ImplantSurgeryProtocolModalProps } from "./ImplantSurgeryProtocolModal";
+export type {
+	ImplantPassportModalProps as ImplantSurgeryProtocolModalProps,
+} from "./ImplantPassportModal";
 export { ImplantBatchSelector } from "./ImplantBatchSelector";
 export type { ImplantBatchSelectorProps } from "./ImplantBatchSelector";
 export type {
