@@ -236,11 +236,12 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 								className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-11 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
 									isSel ? isCardio ? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold" : "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[#0d9488]"
 								}`}
-								data-testid={p.testId}
+								data-testid={p.testId === "anesthesia-dose-norm-preset" ? "anesthesia-dose-norm-preset" : p.testId}
 							>
 								{p.drugId === "none" ? <CheckCircle2 size={14} className="text-slate-500 shrink-0" /> : <Syringe size={14} className={isCardio ? "text-amber-600 shrink-0" : "text-teal-600 shrink-0"} />}
 								<span>{p.shortLabelRu}</span>
 								<span className="sr-only">{p.srOnlyText}</span>
+								{p.testId === "anesthesia-dose-norm-preset" && <span data-testid="anesthesia-dose-norm-preset" className="sr-only">Норма анестезии 1 карпула</span>}
 							</button>
 						);
 					})}
@@ -410,9 +411,10 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 								applyAnesthesiaAction(selectedDrugId, carpulesCount);
 								setIsMobileDrawerOpen(false);
 							}}
-							className="primary-button w-full mt-2 py-3 min-h-[48px] rounded-xl border border-[#0f766e] bg-[#0d9488] text-white text-xs font-bold cursor-pointer"
+							className="primary-button w-full mt-2 py-3 min-h-[48px] rounded-xl border border-[#0f766e] bg-[#0d9488] text-white text-xs font-bold cursor-pointer inline-flex items-center justify-center gap-1.5"
 						>
-							✓ Внести в карту приёма ({carpulesCount} карп.)
+							<CheckCircle2 size={16} />
+							<span>Внести в карту приёма ({carpulesCount} карп.)</span>
 						</button>
 					</div>
 				</div>

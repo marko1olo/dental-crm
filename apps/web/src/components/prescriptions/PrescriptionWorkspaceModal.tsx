@@ -123,6 +123,14 @@ export const PrescriptionWorkspaceModal: React.FC<PrescriptionModalProps> = ({
 	const isPenicillinSelected = selectedDrugs.some((d) => d.category === "antibiotic" && d.id.includes("amoxi"));
 	const isNsaidSelected = selectedDrugs.some((d) => d.category === "nsaid");
 
+	const patientAllergiesText = useMemo(() => {
+		if (Array.isArray(allergies) && allergies.length > 0) return allergies.join(", ");
+		if (typeof allergies === "string" && allergies.trim()) return allergies.trim();
+		if (Array.isArray(patient?.allergies) && patient.allergies.length > 0) return patient.allergies.join(", ");
+		if (typeof patient?.allergies === "string" && patient.allergies.trim()) return patient.allergies.trim();
+		return "";
+	}, [allergies, patient?.allergies]);
+
 	const handleSelectFastSet = useCallback((set: DentalFastPrescriptionSet) => {
 		const newDrugs: DentalOutpatientDrug[] = [];
 		for (const id of set.drugIds) {
@@ -238,7 +246,10 @@ export const PrescriptionWorkspaceModal: React.FC<PrescriptionModalProps> = ({
 								<h2 className="text-base font-bold text-[var(--ink)] truncate">Рецептурный бланк</h2>
 								<span className="hidden sm:inline-block text-[11px] font-mono px-2 py-0.5 rounded bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)]">{patientCard}</span>
 							</div>
-							<p className="text-xs text-[var(--muted)] truncate">Пациент: <strong className="text-[var(--ink)]">{patientName}</strong> · Врач: {doctorName}{diary?.diagnosisIcd10 ? ` · ${diary.diagnosisIcd10}` : ""}</p>
+							<p className="text-xs text-[var(--muted)] truncate">
+								Пациент: <strong className="text-[var(--ink)]">{patientName}</strong> · Врач: {doctorName}{diary?.diagnosisIcd10 ? ` · ${diary.diagnosisIcd10}` : ""}
+								{patientAllergiesText ? <span className="text-amber-700 dark:text-amber-300 font-semibold ml-2">⚠️ Аллергия: {patientAllergiesText}</span> : null}
+							</p>
 						</div>
 					</div>
 

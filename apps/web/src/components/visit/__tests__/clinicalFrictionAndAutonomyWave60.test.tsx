@@ -30,6 +30,8 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	const visiographAnalyzerPath = path.resolve(__dirname, '../../imaging/VisiographAnalyzer.tsx');
 	const visitDiagnosticsTabPath = path.resolve(__dirname, '../VisitDiagnosticsTab.tsx');
 	const anesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/AnesthesiaQuickBar.tsx');
+	const chairsideAnesthesiaQuickBarPath = path.resolve(__dirname, '../../anesthesia/ChairsideAnesthesiaQuickBar.tsx');
+	const anesthesiaCatalogDataPath = path.resolve(__dirname, '../../anesthesia/anesthesiaCatalogData.ts');
 	const anesthesiaQuickBarDir = path.resolve(__dirname, '../../anesthesia/anesthesiaQuickBar');
 
 	const usePatientLogicDir = path.resolve(__dirname, '../../../hooks/domains/patientLogicModules');
@@ -44,6 +46,8 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
 	const anesthesiaQuickBarCode = [
 		fs.readFileSync(anesthesiaQuickBarPath, 'utf8'),
+		fs.existsSync(chairsideAnesthesiaQuickBarPath) ? fs.readFileSync(chairsideAnesthesiaQuickBarPath, 'utf8') : '',
+		fs.existsSync(anesthesiaCatalogDataPath) ? fs.readFileSync(anesthesiaCatalogDataPath, 'utf8') : '',
 		...(fs.existsSync(anesthesiaQuickBarDir)
 			? fs.readdirSync(anesthesiaQuickBarDir).map((f) => fs.readFileSync(path.join(anesthesiaQuickBarDir, f), 'utf8'))
 			: []),
