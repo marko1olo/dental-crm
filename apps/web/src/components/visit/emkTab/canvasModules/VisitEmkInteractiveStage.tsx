@@ -13,7 +13,7 @@ import { EmkComplaintsAndAnamnesisSection } from "../../emkTabModules/EmkComplai
 import { EmkDiagnosisAndProtocolSection } from "../../emkTabModules/EmkDiagnosisAndProtocolSection";
 import { ClinicalQuickPresetsBar } from "../../ClinicalQuickPresetsBar";
 import { VisitDiaryAnesthesiaBar } from "../../diary/VisitDiaryAnesthesiaBar";
-import { postQuickCarpuleWriteoff } from "../../../anesthesia/anesthesiaQuickBar/anesthesiaApiPersistence";
+import { postQuickCarpuleWriteoff } from "../../../anesthesia/anesthesiaEngine";
 import { OrthopedicsChairsidePanel } from "../../../orthopedics/OrthopedicsChairsidePanel";
 import { VisitEmkServicesBilling } from "../VisitEmkServicesBilling";
 import type { VisitEmkInteractiveStageProps } from "./visitEmkCanvasTypes";
