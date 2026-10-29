@@ -31,8 +31,16 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 			})
 		);
 	};
-	["/:organizationId/shift-deduct", "/shift-deduct", "/:organizationId/batch-shift-writeoff", "/batch-shift-writeoff", "/:organizationId/shift-deduction", "/shift-deduction"]
-		.forEach((p) => server.post(p, handleShiftDeduct));
+	[
+		"/:organizationId/shift-batch-deduct",
+		"/shift-batch-deduct",
+		"/:organizationId/shift-deduct",
+		"/shift-deduct",
+		"/:organizationId/batch-shift-writeoff",
+		"/batch-shift-writeoff",
+		"/:organizationId/shift-deduction",
+		"/shift-deduction",
+	].forEach((p) => server.post(p, handleShiftDeduct));
 
 	// 1-клик протоколы процедур
 	server.post<{ Params?: { organizationId?: string }; Body?: Record<string, any> }>("/:organizationId/quick-writeoff-standard-kit", async (req, rep) => {

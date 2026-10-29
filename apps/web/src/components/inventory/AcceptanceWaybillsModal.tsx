@@ -1,17 +1,6 @@
 /**
- * ACCEPTANCE WAYBILLS MODAL (МАНДАТЫ 8e, 8k, 8n, 8s)
- * Канонический реэкспорт SSOT InboundWaybillModal.
+ * apps/web/src/components/inventory/AcceptanceWaybillsModal.tsx
+ * Канонический реэкспорт SSOT WarehouseInboundInvoiceModal (Мандаты 8b, 8e, 8n).
  */
-
-import React from "react";
-import { InboundWaybillModal, type InboundWaybillModalProps } from "./InboundWaybillModal.js";
-
-export type AcceptanceWaybillsModalProps = InboundWaybillModalProps & {
-	readonly initialWaybill?: any;
-};
-
-export const AcceptanceWaybillsModal: React.FC<AcceptanceWaybillsModalProps> = (props) => {
-	return <InboundWaybillModal {...props} />;
-};
-
-export default AcceptanceWaybillsModal;
+export * from "./WarehouseInboundInvoiceModal.js";
+export { default } from "./WarehouseInboundInvoiceModal.js";

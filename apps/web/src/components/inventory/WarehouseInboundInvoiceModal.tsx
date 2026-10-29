@@ -423,4 +423,12 @@ export const WarehouseInboundInvoiceModal: React.FC<WarehouseInboundInvoiceModal
 	return typeof document === "undefined" ? modal : createPortal(modal, document.body);
 };
 
+// Канонические SSOT алиасы (Мандаты 8b, 8e, 8n, 8s: ликвидация дублирующих накладных)
+export { WarehouseInboundInvoiceModal as InboundWaybillModal };
+export { WarehouseInboundInvoiceModal as AcceptanceWaybillsModal };
+export { WarehouseInboundInvoiceModal as InventoryInboundInvoiceModal };
+export type InboundWaybillModalProps = WarehouseInboundInvoiceModalProps;
+export type AcceptanceWaybillsModalProps = WarehouseInboundInvoiceModalProps;
+export type InboundWaybillLineItem = InboundInvoiceItem;
+
 export default WarehouseInboundInvoiceModal;

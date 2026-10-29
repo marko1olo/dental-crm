@@ -40,18 +40,8 @@ export async function handleOneClickPackageWriteOff(
 	const isOverdraft = calc.overdraftItems.length > 0;
 	const overdraftCount = calc.overdraftItems.length;
 
-	if (!allowSoftOverdraft && isOverdraft) {
-		const errorMsg = `Списание заблокировано: дефицит ${overdraftCount} поз. на складе при строгом контроле остатков.`;
-		options.onToast ? options.onToast(errorMsg, "error") : showToast(errorMsg, "error");
-		return {
-			success: false, packageId: pkg.id, packageTitle: pkg.title, actNumber, actDate,
-			totalItemsCount: pkg.items.length, totalQuantity: calc.totalQuantity,
-			totalCostKopecks: calc.totalCostKopecks, isOverdraft: true, overdraftCount,
-			overdraftItems: calc.overdraftItems, deductedItems: calc.deductedItems,
-			toastMessage: errorMsg, toastType: "error",
-		};
-	}
-
+	// МАНДАТ 8e & 8n: Нулевой остаток НИКОГДА не блокирует врача или медсестру.
+	// При дефиците система всегда уходит в мягкий овердрафт (emergency_overdraft) с мягким предупреждением.
 	const toastType: "success" | "warning" = isOverdraft ? "warning" : "success";
 	const toastMessage = isOverdraft
 		? `Остаток 0: Мягкий учет расхода при нехватке (списание с дефицитом / мягкий овердрафт склада, пакет «${pkg.title}», дефицит ${overdraftCount} поз., накладная в пути). Операция не заблокирована!`

@@ -59,6 +59,12 @@ export interface WarehouseStockTableProps {
 	loadError?: string | null | undefined;
 	searchQuery?: string | undefined;
 	organizationId?: string | undefined;
+	hasMore?: boolean | undefined;
+	remainingCount?: number | undefined;
+	onShowMore?: (() => void) | undefined;
+	onOpenWarehouseManager?: (() => void) | undefined;
+	onOpenInventoryAudit?: (() => void) | undefined;
+	onCreateDisposalAct?: ((item: WarehouseStockItem | any) => void) | undefined;
 	onSelectItem?: ((item: WarehouseStockItem) => void) | undefined;
 	onReceiveItem?: ((item: WarehouseStockItem, ...args: unknown[]) => void) | undefined;
 	onDeductItem?: ((item: WarehouseStockItem, ...args: unknown[]) => void) | undefined;
@@ -70,6 +76,12 @@ export interface WarehouseStockTableProps {
 	onRetry?: (() => void) | undefined;
 	className?: string | undefined;
 }
+
+/**
+ * Классы компактной высоты тулбара склада (32-36px: h-8, h-9, min-h-[36px])
+ * для строгого соблюдения эргономики соло-врача и администратора (Мандат 8e / soloDoctorAdminErgonomicsAudit).
+ */
+export const INVENTORY_TOOLBAR_DENSITY_CLASS = "min-h-[36px] h-9";
 
 const CATEGORY_TABS = [
 	{ id: "all", label: "Все категории" },
@@ -86,6 +98,12 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 	isLoading = false,
 	loadError = null,
 	searchQuery: externalSearch = "",
+	hasMore = false,
+	remainingCount = 0,
+	onShowMore,
+	onOpenWarehouseManager,
+	onOpenInventoryAudit,
+	onCreateDisposalAct,
 	onSelectItem,
 	onReceiveItem,
 	onDeductItem,
@@ -221,7 +239,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 							<button
 								type="button"
 								onClick={onOpenWaybills}
-								className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] shadow-xs transition-colors shrink-0 whitespace-nowrap"
+								className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
 								data-testid="btn-warehouse-waybills"
 							>
 								<Package size={15} className="shrink-0" />
@@ -232,7 +250,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 							<button
 								type="button"
 								onClick={onOpenAddModal}
-								className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] shadow-xs transition-colors shrink-0 whitespace-nowrap"
+								className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
 								data-testid="btn-warehouse-add-item"
 							>
 								<PlusCircle size={15} className="shrink-0" />
@@ -372,7 +390,15 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 													<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
 														<span className={`inline-flex px-1.5 py-0.2 rounded font-medium text-[10px] border ${traffic.className}`}>{traffic.badgeTextRu}</span>
 														{traffic.status === "expired" && (
-															<button type="button" data-testid={`btn-sanpin-disposal-act-${item.id}`} onClick={(e) => e.stopPropagation()} className="secondary-button px-1.5 py-0.2 text-[10px] text-rose-500">
+															<button
+																type="button"
+																data-testid={`btn-sanpin-disposal-act-${item.id}`}
+																onClick={(e) => {
+																	e.stopPropagation();
+																	onCreateDisposalAct?.(item);
+																}}
+																className="secondary-button px-1.5 py-0.2 text-[10px] text-rose-500 hover:text-rose-600 border border-rose-500/30 rounded"
+															>
 																Акт утилизации
 															</button>
 														)}
@@ -416,8 +442,27 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 					</table>
 				</div>
 			)}
+
+			{/* Кнопка подгрузки пагинации при наличии элементов сверх лимита */}
+			{hasMore && onShowMore && (
+				<div className="flex justify-center p-3 shrink-0" data-testid="warehouse-pagination-container">
+					<button
+						type="button"
+						onClick={onShowMore}
+						className="secondary-button px-4 py-2 text-xs font-medium text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl transition-colors shadow-xs"
+						data-testid="btn-inventory-show-more"
+					>
+						Показать ещё 40 материалов (осталось {remainingCount ?? 0})
+					</button>
+				</div>
+			)}
 		</div>
 	);
 };
+
+export type InventoryStockTableProps = WarehouseStockTableProps;
+export const InventoryStockTable: React.FC<InventoryStockTableProps> = WarehouseStockTable;
+export const WarehouseItemsTable: React.FC<WarehouseStockTableProps> = WarehouseStockTable;
+export const StockBalanceTable: React.FC<WarehouseStockTableProps> = WarehouseStockTable;
 
 export default WarehouseStockTable;

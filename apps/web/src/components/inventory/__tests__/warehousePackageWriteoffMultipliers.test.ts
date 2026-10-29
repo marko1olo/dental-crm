@@ -4,7 +4,7 @@ import { handleOneClickPackageWriteOff } from "../warehousePackageWriteOffEngine
 import type { InventoryItem } from "../useInventoryLogic";
 
 describe("Wave 64 (Feature 253): Writeoff Multipliers & Strict Overdraft", () => {
-	it("8. Строгий запрет овердрафта (allowSoftOverdraft: false) возвращает отказ при дефиците", async () => {
+	it("8. Нулевой остаток не блокирует списание: операция переходит в мягкий овердрафт с мягким предупреждением (Мандаты 8e, 8n)", async () => {
 		const emptyStock: Record<string, number> = {};
 
 		const result = await handleOneClickPackageWriteOff({
@@ -13,10 +13,10 @@ describe("Wave 64 (Feature 253): Writeoff Multipliers & Strict Overdraft", () =>
 			allowSoftOverdraft: false,
 		});
 
-		assert.equal(result.success, false);
+		assert.equal(result.success, true);
 		assert.equal(result.isOverdraft, true);
-		assert.equal(result.toastType, "error");
-		assert.ok(result.toastMessage.includes("Списание заблокировано"));
+		assert.equal(result.toastType, "warning");
+		assert.ok(result.toastMessage.includes("Операция не заблокирована"));
 	});
 
 	it("9. Множитель процедур quantityMultiplier корректно увеличивает списание (2 приёма)", async () => {

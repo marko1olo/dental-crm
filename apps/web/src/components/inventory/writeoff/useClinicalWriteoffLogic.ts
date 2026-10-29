@@ -36,15 +36,15 @@ export function useClinicalWriteoffLogic(props: ClinicalWriteoffModalProps) {
 	const patientName = propPatientName ?? (isDemo ? "Смирнов Алексей Викторович" : "Пациент");
 	const patientId = propPatientId ?? (isDemo ? "PAT-2026-0881" : "");
 	const doctorFullName = propDoctorFullName ?? (isDemo ? "Д-р Кузнецов М.С." : "Лечащий врач");
-	const stockBatches = propStockBatches ?? (isDemo ? DENTAL_CABINET_STOCK_PRESETS : []);
-	const services = useClinicalWriteoffServices(initialServices);
+	const stockBatches = (propStockBatches ?? (isDemo ? DENTAL_CABINET_STOCK_PRESETS : [])) as any;
+	const services = useClinicalWriteoffServices(initialServices as any);
 
 	const [actNumber, setActNumber] = useState<string>(
 		() => `АКТ-СПИС-${new Date().getFullYear()}/${String(new Date().getMonth() + 1).padStart(2, "0")}-${String(Date.now()).slice(-4)}`,
 	);
 	const [actDate, setActDate] = useState<string>(() => new Date().toISOString().slice(0, 10));
 	const [selectedCabinetId, setSelectedCabinetId] = useState<string>(cabinetId);
-	const [statutoryFormType] = useState<"0504230" | "M11" | "TORG16">(defaultFormType);
+	const [statutoryFormType] = useState<"0504230" | "M11" | "TORG16">((defaultFormType as any) || "0504230");
 	const [notes, setNotes] = useState<string>("");
 	const [isSingleSigner, setIsSingleSigner] = useState<boolean>(true);
 
