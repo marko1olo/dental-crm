@@ -452,7 +452,7 @@ export const PrescriptionWorkspaceModal: React.FC<PrescriptionModalProps> = ({
 							className="min-h-[44px] px-3.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-semibold inline-flex items-center justify-center gap-1.5 shadow-2xs active:scale-[0.98] cursor-pointer"
 						>
 							<Printer className="w-3.5 h-3.5 text-[var(--muted)]" />
-							<span>Печать (А5)</span>
+							<span>Печать рецепта (А5)</span>
 						</button>
 						<button
 							type="button"
