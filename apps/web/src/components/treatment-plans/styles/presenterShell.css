@@ -2,6 +2,9 @@
 .treatment-presenter-backdrop {
 	position: fixed;
 	inset: 0;
+	width: 100vw;
+	height: 100dvh !important;
+	max-height: 100dvh !important;
 	z-index: 10050;
 	background: rgba(15, 23, 42, 0.75);
 	backdrop-filter: blur(8px);

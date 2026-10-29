@@ -68,6 +68,12 @@ export function getTierLetter(tierId: TreatmentPlanTierId): string {
 	return "Вариант В: Премиум";
 }
 
+export function getTierShortTitle(tierId: TreatmentPlanTierId): string {
+	if (tierId === "economy") return "Эконом";
+	if (tierId === "standard" || tierId === "optimum") return "Оптимум";
+	return "Премиум";
+}
+
 export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalProps> = ({
 	isOpen,
 	onClose,
@@ -146,18 +152,18 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 
 	const modalContent = (
 		<div
-			className={`treatment-presenter-backdrop fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip max-w-[100vw] ${
+			className={`treatment-presenter-backdrop fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip max-w-[100vw] h-full max-h-none ${
 				isFullscreen ? "p-0" : ""
 			}`}
 			data-testid="treatment-plan-presenter-modal"
-			role="dialog"
-			aria-modal="true"
-			aria-labelledby="treatment-presenter-modal-title"
 		>
 			<div
-				className={`treatment-presenter-container flex flex-col w-full bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden transition-all mt-auto sm:my-auto ${
-					isFullscreen ? "h-screen w-screen rounded-none border-0" : "max-w-5xl h-[94dvh] sm:h-auto sm:max-h-[92vh]"
+				className={`treatment-presenter-container flex flex-col w-full bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden transition-all mt-auto mb-0 sm:my-auto ${
+					isFullscreen ? "h-screen w-screen rounded-none border-0" : "max-w-5xl h-[92dvh] sm:h-auto sm:max-h-[92vh]"
 				} ${className}`}
+				role="dialog"
+				aria-modal="true"
+				aria-labelledby="treatment-presenter-modal-title"
 			>
 				{/* 1. ШАПКА ПРЕЗЕНТАЦИИ */}
 				<PresenterHeader
@@ -279,7 +285,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 						>
 							<CheckCircle2 className="w-4 h-4 shrink-0" />
 							<span className="hidden sm:inline">{`Пациент выбрал ${getTierLetter(selectedTierId)}`}</span>
-							<span className="sm:hidden">{`Выбрать ${selectedTierId === "economy" ? "Эконом" : selectedTierId === "optimum" ? "Премиум" : "Оптимум"}`}</span>
+							<span className="sm:hidden">{`Выбрать «${getTierShortTitle(selectedTierId)}»`}</span>
 						</button>
 					</div>
 				</footer>
