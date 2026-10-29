@@ -151,6 +151,25 @@ export const FastCheckoutDiscountButtonsRow: React.FC<FastCheckoutDiscountButton
 			>
 				Ручная %
 			</button>
+			<div className="inline-flex items-center gap-1">
+				<input
+					id="input-discount-custom-percent"
+					type="number"
+					min={0}
+					max={100}
+					step="1"
+					value={customDiscountPercent || ""}
+					onChange={(e) => {
+						const val = Math.min(100, Math.max(0, parseFloat(e.target.value) || 0));
+						onSetCustomDiscountPercent(val);
+						onSetDiscountPreset(val > 0 ? "manual_percent" : "none");
+					}}
+					placeholder="0%"
+					aria-label="Своя скидка, %"
+					className="h-7 w-14 px-1.5 text-xs font-bold font-mono bg-[var(--paper,#ffffff)] border border-[var(--line,#cbd5e1)] rounded-lg text-[var(--ink,#0f172a)] outline-none focus:border-[var(--teal,#0d9488)]"
+					data-testid="input-discount-custom-percent"
+				/>
+			</div>
 			{discountPreset !== "none" && (
 				<button
 					type="button"

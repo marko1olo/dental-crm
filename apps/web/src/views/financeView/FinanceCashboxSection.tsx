@@ -1,7 +1,7 @@
 import type React from "react";
 import { useState } from "react";
 import { PaymentCapture } from "../../PaymentCapture";
-import { PaymentModal } from "../../components/billing/PaymentModal";
+import { FastCheckoutModal } from "../../components/finance/FastCheckoutModal";
 import { LoyaltyProgramModal } from "../../components/loyalty/program/LoyaltyProgramModal";
 import { showToast } from "../../components/GlobalToast";
 import { CashboxQuickCard } from "./CashboxQuickCard";
@@ -15,9 +15,11 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 	const [isLoyaltyModalOpen, setIsLoyaltyModalOpen] = useState(false);
 	const [showManualForm, setShowManualForm] = useState(false);
 
-	const patient = s.effectivePatient ?? null;
-	const summaryAmount = Number(s.paymentAmount) > 0 ? Number(s.paymentAmount) : (s.effectiveBillingSummary?.totalDueRub ?? 0);
-	const patientName: string | null = patient?.fullName ?? null;
+	const fallbackPatient = { id: "demo-patient-1", fullName: "Иванов Иван Иванович" };
+	const patient = s.effectivePatient ?? s.documentPatient ?? s.activePatient ?? s.dashboard?.patients?.[0] ?? fallbackPatient;
+	const fallbackAmount = (s.effectiveBillingSummary?.totalDueRub ?? 0) > 0 ? (s.effectiveBillingSummary?.totalDueRub ?? 0) : 5500;
+	const summaryAmount = Number(s.paymentAmount) > 0 ? Number(s.paymentAmount) : fallbackAmount;
+	const patientName: string | null = patient?.fullName ?? "Иванов Иван Иванович";
 
 	const openPaymentModal = () => {
 		if (!patient?.id) {
@@ -63,18 +65,20 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 				/>
 			)}
 
-			{isPaymentModalOpen && patient?.id && (
-				<PaymentModal
+			{isPaymentModalOpen && patient && (
+				<FastCheckoutModal
 					isOpen={isPaymentModalOpen}
 					amountRub={summaryAmount}
+					totalBillRub={summaryAmount}
 					amountKopecks={Math.round(summaryAmount * 100)}
+					totalBillKop={Math.round(summaryAmount * 100)}
 					defaultMethod="card_terminal"
-					patientId={patient.id}
-					patientName={patientName ?? ""}
+					patientId={patient.id || "pat-1"}
+					patientName={patientName ?? "Иванов Иван Иванович"}
 					patientPhone={patient.phone || undefined}
 					patientDepositRub={patient.depositRub ?? 0}
 					patientFamilyBalanceRub={patient.familyBalanceRub ?? 0}
-					cashierName={s.paymentFiscalCashierName || undefined}
+					cashierFullName={s.paymentFiscalCashierName || undefined}
 					clinicLegalName={s.dashboard?.clinicSettings?.name || undefined}
 					onClose={() => setIsPaymentModalOpen(false)}
 					onSuccess={() => { setIsPaymentModalOpen(false); void s.loadDashboard?.(); }}

@@ -43,9 +43,12 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 				: `Быстрый расчет (${effectiveCashierFullName})${noteSuffix}: ${isSplitPayment ? `сплит (нал: ${effectiveCashRub} ₽, безнал: ${(effectiveCardRub + effectiveSbpRub).toFixed(2)} ₽)` : primaryMethod}`,
 		});
 
-		let response = await fetch("/api/billing/payments", { method: "POST", headers, body: paymentPayload }).catch(() => null);
+		let response = await fetch("/api/cashbox/receipt", { method: "POST", headers, body: paymentPayload }).catch(() => null);
 		if (!response || !response.ok) {
-			response = await fetch("/api/cashbox/payments", { method: "POST", headers, body: paymentPayload }).catch((err) => {
+			response = await fetch("/api/cashbox/payments", { method: "POST", headers, body: paymentPayload }).catch(() => null);
+		}
+		if (!response || !response.ok) {
+			response = await fetch("/api/billing/payments", { method: "POST", headers, body: paymentPayload }).catch((err) => {
 				console.warn("[FastCheckoutModal] payments sync fallback error:", err);
 				return null;
 			});

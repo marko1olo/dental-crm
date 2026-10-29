@@ -409,4 +409,6 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 
 	app.post("/api/cashbox/payments", handleCashboxPayment);
 	app.post("/api/cash/payments", handleCashboxPayment);
+	app.post("/api/cashbox/receipt", handleCashboxPayment);
+	app.post("/api/cash/receipt", handleCashboxPayment);
 }

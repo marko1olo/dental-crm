@@ -1,7 +1,7 @@
 import type React from "react";
 import { RetailProductsModal } from "../../billing/RetailProductsModal.js";
 import { showToast } from "../../GlobalToast.js";
-import { PaymentModal } from "../PaymentModal.js";
+import { FastCheckoutModal } from "../FastCheckoutModal.js";
 import type { CashboxControllerReturn, CashboxViewProps } from "./types.js";
 
 export interface CashboxModalsContainerProps {
@@ -10,16 +10,17 @@ export interface CashboxModalsContainerProps {
 }
 
 /**
- * Modals container for CashRegisterView (PaymentModal + RetailProductsModal).
+ * Modals container for CashRegisterView (FastCheckoutModal + RetailProductsModal).
  * Mandate 8b: <= 120 lines.
  */
 export const CashboxModalsContainer: React.FC<CashboxModalsContainerProps> = ({ ctrl, props }) => {
 	return (
 		<>
 			{ctrl.isPaymentModalOpen && (
-				<PaymentModal
+				<FastCheckoutModal
 					isOpen={ctrl.isPaymentModalOpen}
 					amountRub={ctrl.checkoutResult.totalNetRub}
+					totalBillRub={ctrl.checkoutResult.totalNetRub}
 					patientId={ctrl.selectedInvoice?.patientId || props.patientId}
 					patientName={ctrl.selectedInvoice?.patientName || props.patientName}
 					patientPhone={ctrl.selectedInvoice?.patientPhone || props.patientPhone}
@@ -27,15 +28,15 @@ export const CashboxModalsContainer: React.FC<CashboxModalsContainerProps> = ({ 
 					patientFamilyBalanceRub={ctrl.effectiveFamilyBalanceRub}
 					visitId={ctrl.selectedInvoice?.visitId || props.visitId}
 					invoiceId={ctrl.selectedInvoice?.id || props.invoiceId}
-					documentId={ctrl.selectedInvoice?.id || props.documentId}
-					cashierName={props.cashierName || "Администратор / Врач"}
+					orderId={ctrl.selectedInvoice?.id || props.invoiceId}
+					cashierFullName={props.cashierName || "Администратор / Врач"}
 					clinicLegalName={props.clinicName || "Стоматологическая клиника"}
 					defaultMethod={ctrl.activePaymentMethod}
 					onClose={() => { ctrl.setIsPaymentModalOpen(false); ctrl.setSelectedInvoice(null); }}
 					onSuccess={(receipt) => {
 						ctrl.setIsPaymentModalOpen(false);
 						ctrl.handleInvoicePaymentSuccess(receipt);
-						props.onPaymentComplete?.(receipt);
+						props.onPaymentComplete?.(receipt as any);
 					}}
 				/>
 			)}

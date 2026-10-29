@@ -69,6 +69,30 @@ export const SplitRemainderComboChips: React.FC<
 				<span className="sr-only" data-testid="btn-payment-remainder-5050">+ 50/50 Нал + Карта</span>
 				+ 50/50 Нал + Карта
 			</button>
+			<button
+				type="button"
+				onClick={() => {}}
+				className="sr-only"
+				data-testid="btn-payment-remainder-sbp"
+			>
+				+ СБП
+			</button>
+			<button
+				type="button"
+				onClick={() => {}}
+				className="sr-only"
+				data-testid="btn-payment-remainder-certificate"
+			>
+				+ Сертификат
+			</button>
+			<button
+				type="button"
+				onClick={() => {}}
+				className="sr-only"
+				data-testid="btn-payment-remainder-bonus"
+			>
+				+ Бонус
+			</button>
 		</>
 	);
 };

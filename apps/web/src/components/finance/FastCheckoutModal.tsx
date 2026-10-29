@@ -75,12 +75,14 @@ export const FastCheckoutModal: React.FC<FastCheckoutModalProps> = (props) => {
 		initialFocusSelector: '[data-testid="simple-card-btn"], [data-testid="simple-cash-btn"], [data-testid="simple-sbp-btn"], [data-testid="simple-deposit-btn"], input, button',
 	});
 
+	const effectiveCashier = props.cashierFullName || props.cashierName || props.doctorName || props.attendingDoctorName || "";
+
 	if (!isOpen) return null;
 
 	const modalContent = (
 		<div ref={modalRef} className="fast-checkout-modal-overlay overflow-x-clip max-w-[100vw]" data-testid={props.containerTestId || (props.initialSimpleCashierMode === false ? "split-payment-modal" : "fast-checkout-modal")} tabIndex={-1}>
-			<div className="fast-checkout-modal-container max-w-3xl overflow-x-clip">
-				<FastCheckoutModalHeader patientName={patientName} orderId={orderId} effectiveBillKop={c.effectiveBillKop} onClose={onClose} />
+			<div className="fast-checkout-modal-container max-w-3xl overflow-x-clip max-h-[calc(100vh-64px)] flex flex-col min-h-0">
+				<FastCheckoutModalHeader patientName={patientName} orderId={orderId} effectiveBillKop={c.effectiveBillKop} cashierName={effectiveCashier} onClose={onClose} />
 				<div className="p-3 sm:p-4 pb-28 sm:pb-24 overflow-y-auto flex flex-col gap-4 flex-1 min-h-0">
 					<FastCheckoutWarrantyAndMobileTotal
 						isWarranty100={c.targetBillKop === 0 || c.discountPreset === "warranty_100"}

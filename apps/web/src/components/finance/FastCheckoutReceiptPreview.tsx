@@ -57,12 +57,37 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 					</button>
 					<button type="button" data-testid="btn-offline-checkout-fallback" onClick={() => void p.onAcceptPaymentOfflineFallback()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Принять оплату (чек пробить позже)</button>
 
-					<button type="button" data-testid="execute-fast-checkout-btn" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} className="primary-button w-full sm:w-auto min-h-[48px] sm:min-h-[36px] h-12 sm:h-9 px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
-						{p.isPrinting ? (<><Printer className="w-4 h-4 animate-spin shrink-0" /><span className="truncate">Печать кассового чека...</span></>) : (<><Check className="w-4 h-4 shrink-0" /><span className="sr-only">{p.targetBillKop === 0 ? "Закрыть визит: 100% Гарантия (0 ₽)" : `Оплатить ${(p.targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}</span><span className="truncate">{p.targetBillKop === 0 ? "Закрыть визит: Гарантия 100% (0 ₽)" : `Принять оплату — ${(p.targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽`}</span></>)}
+					<button
+						type="button"
+						data-testid="execute-fast-checkout-btn"
+						onClick={() => void p.onExecutePayment()}
+						disabled={p.isPrinting}
+						className="primary-button w-full sm:w-auto min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-[0.98] text-white font-bold text-xs sm:text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
+					>
+						{p.isPrinting ? (
+							<>
+								<Printer className="w-4 h-4 animate-spin shrink-0" />
+								<span className="truncate">Печать кассового чека...</span>
+							</>
+						) : (
+							<>
+								<Check className="w-4 h-4 shrink-0" />
+								<span className="sr-only">
+									{p.targetBillKop === 0
+										? "Закрыть визит: 100% Гарантия (0 ₽)"
+										: `Оплатить ${(p.targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽ (${friendlyMethodName})`}
+								</span>
+								<span className="truncate">
+									{p.targetBillKop === 0
+										? "Оформить гарантию (0 ₽)"
+										: `Оплатить и напечатать чек (${(p.targetBillKop / 100).toLocaleString("ru-RU", { minimumFractionDigits: 2 })} ₽)`}
+								</span>
+							</>
+						)}
 					</button>
 					<button type="button" data-testid="btn-submit-fast-checkout" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Выбить чек</button>
-					{p.activeMethod === "cash" && <button type="button" data-testid="btn-cash-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить наличными</button>}
-					{p.activeMethod === "split" && <button type="button" data-testid="btn-split-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить сплит</button>}
+					<button type="button" data-testid="btn-cash-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить наличными</button>
+					<button type="button" data-testid="btn-split-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить сплит</button>
 					{(p.activeMethod === "sbp_qr" || p.activeMethod === "sbp") && <button type="button" data-testid="btn-sbp-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить СБП</button>}
 				</div>
 			</div>

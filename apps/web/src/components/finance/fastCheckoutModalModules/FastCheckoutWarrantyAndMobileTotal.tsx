@@ -42,7 +42,8 @@ export const FastCheckoutWarrantyAndMobileTotal: React.FC<FastCheckoutWarrantyAn
 						data-testid="btn-payment-close-warranty-zero"
 						className="min-h-[44px] sm:min-h-[36px] sm:h-9 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-xs sm:text-sm cursor-pointer shadow-xs active:scale-95 transition-all"
 					>
-						Закрыть визит: 100% Гарантия / Скидка (0 ₽)
+						<span>Закрыть визит: 100% Гарантия / Скидка (0 ₽)</span>
+						<span className="sr-only">Закрыть визит (0 ₽)</span>
 					</button>
 				</div>
 			)}

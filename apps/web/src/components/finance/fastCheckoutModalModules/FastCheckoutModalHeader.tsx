@@ -5,12 +5,13 @@ export interface FastCheckoutModalHeaderProps {
 	readonly patientName: string;
 	readonly orderId?: string | undefined;
 	readonly effectiveBillKop: number;
+	readonly cashierName?: string | undefined;
 	readonly onClose: () => void;
 }
 
 export const FastCheckoutModalHeader: React.FC<
 	FastCheckoutModalHeaderProps
-> = ({ patientName, orderId, effectiveBillKop, onClose }) => (
+> = ({ patientName, orderId, effectiveBillKop, cashierName, onClose }) => (
 	<div className="relative p-3 sm:py-2.5 sm:px-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between bg-[var(--paper-soft,#f8fafc)]">
 		<div className="sm:hidden absolute top-1.5 left-1/2 -translate-x-1/2 w-9 h-1 rounded-full bg-[var(--line,#cbd5e1)]" aria-hidden="true" />
 		<div className="flex items-center gap-2.5 min-w-0">
@@ -22,7 +23,7 @@ export const FastCheckoutModalHeader: React.FC<
 					Оплата приёма и кассовый чек
 				</h2>
 				<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5 truncate">
-					{patientName} • Заказ #{orderId} • К оплате:{" "}
+					{patientName || "Пациент"}{cashierName ? ` • ${cashierName}` : ""} • Заказ #{orderId || "0"} • К оплате:{" "}
 					<span className="font-bold font-mono text-teal-700 dark:text-teal-300">
 						{(effectiveBillKop / 100).toLocaleString("ru-RU", {
 							minimumFractionDigits: 2,
