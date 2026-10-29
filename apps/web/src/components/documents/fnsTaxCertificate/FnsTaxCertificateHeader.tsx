@@ -47,7 +47,7 @@ export const FnsTaxCertificateHeader: React.FC<FnsTaxCertificateHeaderProps> = (
 					type="button"
 					onClick={onSaveToRegistry}
 					disabled={isIssuingDoc}
-					className="secondary-button h-9 min-h-[36px] px-3 text-xs inline-flex items-center gap-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
+					className="secondary-button hidden sm:inline-flex h-9 min-h-[36px] px-3 text-xs items-center gap-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
 					data-testid="tax-cert-save-registry-btn"
 					title="Зарегистрировать справку в реестре документов клиники"
 				>
@@ -59,7 +59,7 @@ export const FnsTaxCertificateHeader: React.FC<FnsTaxCertificateHeaderProps> = (
 			<button
 				type="button"
 				onClick={onPrint}
-				className="primary-button h-9 min-h-[36px] px-3.5 text-xs inline-flex items-center gap-1.5 rounded-xl cursor-pointer"
+				className="primary-button hidden sm:inline-flex h-9 min-h-[36px] px-3.5 text-xs items-center gap-1.5 rounded-xl cursor-pointer"
 				data-testid="tax-cert-print-btn"
 				title={
 					totalNetRub === 0
@@ -74,7 +74,7 @@ export const FnsTaxCertificateHeader: React.FC<FnsTaxCertificateHeaderProps> = (
 			<button
 				type="button"
 				onClick={onDownloadPdf}
-				className="secondary-button h-9 min-h-[36px] px-3 text-xs inline-flex items-center gap-1.5 rounded-xl hover:bg-[var(--paper-soft)] cursor-pointer"
+				className="secondary-button hidden sm:inline-flex h-9 min-h-[36px] px-3 text-xs items-center gap-1.5 rounded-xl hover:bg-[var(--paper-soft)] cursor-pointer"
 				data-testid="tax-cert-pdf-btn"
 				title={totalNetRub === 0 ? "Экспорт бланка справки в PDF (Мандат 8e)" : "Экспорт в PDF"}
 			>
@@ -85,7 +85,7 @@ export const FnsTaxCertificateHeader: React.FC<FnsTaxCertificateHeaderProps> = (
 			<button
 				type="button"
 				onClick={onClose}
-				className="icon-button secondary-button min-w-[36px] min-h-[36px] w-9 h-9 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] rounded-xl hover:bg-[var(--paper)] transition cursor-pointer"
+				className="icon-button secondary-button min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] w-11 h-11 sm:w-9 sm:h-9 flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] rounded-xl hover:bg-[var(--paper)] transition cursor-pointer"
 				data-testid="tax-cert-close-btn"
 				aria-label="Закрыть окно"
 			>

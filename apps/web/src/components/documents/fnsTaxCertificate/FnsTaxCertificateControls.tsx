@@ -36,7 +36,7 @@ export const FnsTaxCertificateControls: React.FC<FnsTaxCertificateControlsProps>
 			<select
 				value={selectedYear}
 				onChange={(e) => setSelectedYear(Number(e.target.value))}
-				className="w-full h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+				className="w-full h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-2 text-sm sm:text-xs rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 				data-testid="tax-cert-year-select"
 			>
 				<option value={2026}>2026 год</option>
@@ -52,7 +52,7 @@ export const FnsTaxCertificateControls: React.FC<FnsTaxCertificateControlsProps>
 			<select
 				value={relationship}
 				onChange={(e) => setRelationship(e.target.value as TaxDeductionRelationship)}
-				className="w-full h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+				className="w-full h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-2 text-sm sm:text-xs rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 				data-testid="tax-cert-relationship-select"
 			>
 				<option value="patient">Сам пациент (Код 1)</option>
@@ -71,7 +71,7 @@ export const FnsTaxCertificateControls: React.FC<FnsTaxCertificateControlsProps>
 				value={effectiveInn}
 				onChange={(e) => setTaxpayerInn(e.target.value)}
 				placeholder="12 цифр (необязательно при наличии паспорта)"
-				className={`w-full h-8 px-2 text-xs rounded-lg border bg-[var(--paper-soft)] text-[var(--ink)] ${
+				className={`w-full h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-2 text-sm sm:text-xs rounded-xl sm:rounded-lg border bg-[var(--paper-soft)] text-[var(--ink)] ${
 					isInnValid ? "border-[var(--line)]" : "border-rose-500"
 				}`}
 				data-testid="tax-cert-inn-input"
@@ -94,7 +94,7 @@ export const FnsTaxCertificateControls: React.FC<FnsTaxCertificateControlsProps>
 						value={taxpayerFullName}
 						onChange={(e) => setTaxpayerFullName(e.target.value)}
 						placeholder="ФИО плательщика (супруг, родитель)"
-						className="w-full h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+						className="w-full h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-2 text-sm sm:text-xs rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 						data-testid="tax-cert-taxpayer-name-input"
 					/>
 				</div>
@@ -106,7 +106,7 @@ export const FnsTaxCertificateControls: React.FC<FnsTaxCertificateControlsProps>
 						type="date"
 						value={taxpayerBirthDate}
 						onChange={(e) => setTaxpayerBirthDate(e.target.value)}
-						className="w-full h-8 px-2 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
+						className="w-full h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-2.5 sm:px-2 text-sm sm:text-xs rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)]"
 						data-testid="tax-cert-taxpayer-birthdate-input"
 					/>
 				</div>

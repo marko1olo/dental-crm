@@ -17,7 +17,7 @@ export function MobileDocumentsFloatingBar({
 }: MobileDocumentsFloatingBarProps) {
 	return (
 		<div
-			className="fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 px-3 py-2 bg-[var(--paper,#ffffff)]/90 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] flex items-center gap-2 shadow-lg"
+			className="fixed bottom-[calc(56px+env(safe-area-inset-bottom,0px))] left-0 right-0 z-40 pl-3 pr-[70px] py-2 bg-[var(--paper,#ffffff)]/90 backdrop-blur-md border-t border-[var(--line,#e2e8f0)] flex items-center gap-2 shadow-lg"
 			data-testid="mobile-documents-floating-bar"
 		>
 			<button

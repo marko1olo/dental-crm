@@ -81,7 +81,7 @@
 		flex-direction: column-reverse;
 		align-items: stretch;
 		gap: 10px;
-		padding: 10px 14px;
+		padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
 	}
 	.document-package-modal-footer > div,
 	.document-package-modal-footer > button {
