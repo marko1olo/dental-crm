@@ -1,7 +1,12 @@
 /**
  * PrescriptionPrintModal.tsx — Backward-compatibility facade
- * Canonical SSOT is PrescriptionModal.tsx per Mandates 8b & 8x.
+ * Canonical SSOT is PrescriptionWorkspaceModal.tsx per Mandates 8b & 8x.
  */
+
+export function resolvePrescriptionPatientName(patient?: { fullName?: string }, patientNameProp?: string): string {
+	const patientName = patient?.fullName || patientNameProp || "";
+	return patientName;
+}
 
 export {
 	PrescriptionModal,

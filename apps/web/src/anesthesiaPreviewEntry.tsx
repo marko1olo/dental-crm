@@ -54,7 +54,7 @@ function AnesthesiaPreviewApp() {
 						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-red-600 text-white text-xs font-semibold hover:bg-red-700 transition-colors shadow-xs"
 					>
 						<ShieldAlert size={14} />
-						Аптечка 786н
+						Экстренная аптечка
 					</button>
 					<span className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border border-emerald-500/20">
 						1-Click Presets: Active

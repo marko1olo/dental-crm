@@ -29,7 +29,7 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 		const calculation = calculateAnestheticSafety(parsed.data);
 		return reply.status(200).send({ success: true, calculation });
 	});
-	app.post("/api/anesthesia/patients/:patientId/logs", async (request, reply) => {
+	const createLogHandler = async (request: any, reply: any) => {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -40,14 +40,21 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 			return reply.code(403).send({ error: "PermissionDenied", permission: "clinical.anesthesia.write", role: staffRole, message: `Отказ в создании протокола: ${evalAccess.reason}` });
 		}
 
-		const { patientId } = request.params as { patientId: string };
 		const parsed = createAnesthesiaLogBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.status(400).send({ message: "Некорректные параметры протокола анестезии", errors: parsed.error.format() });
 		}
 		const data = parsed.data;
+		const reqPatientId = (request.params as { patientId?: string })?.patientId || data.patientId;
 
 		return withTenantCtx(orgId, async () => {
+			let patientId = reqPatientId;
+			if (!patientId) {
+				const [firstPat] = await db.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, orgId)).limit(1);
+				if (!firstPat) return reply.status(400).send({ message: "Не указан пациент" });
+				patientId = firstPat.id;
+			}
+
 			const [patient] = await db.select({ id: patients.id }).from(patients).where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId))).limit(1);
 			if (!patient) return reply.status(404).send({ message: "Пациент не найден" });
 
@@ -89,5 +96,8 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 
 			return reply.status(201).send({ success: true, id: record?.id || "anesthesia-logged", safety, log: record, inventoryDeduction, treatmentItem: treatmentItemResult });
 		});
-	});
+	};
+
+	app.post("/api/anesthesia/patients/:patientId/logs", createLogHandler);
+	app.post("/api/anesthesia/logs", createLogHandler);
 }

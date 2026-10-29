@@ -13,6 +13,7 @@ import {
 import { z } from "zod";
 
 export const createAnesthesiaLogBodySchema = z.object({
+	patientId: z.string().optional().nullable(),
 	visitId: z.string().uuid().optional().nullable(),
 	doctorId: z.string().uuid().optional().nullable(),
 	technique: anesthesiaTechniqueSchema.default("infiltration"),

@@ -26,6 +26,7 @@ import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLaunche
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
+import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -125,7 +126,11 @@ function isStandaloneActive(): boolean {
 		s.includes("copilot_workspace") ||
 		h.includes("copilot-workspace") ||
 		s.includes("anesthesia") ||
-		h.includes("anesthesia")
+		h.includes("anesthesia") ||
+		s.includes("patient_card") ||
+		h.includes("patient_card") ||
+		s.includes("patient-card") ||
+		h.includes("patient-card")
 	);
 }
 
@@ -172,6 +177,7 @@ export function AppShell() {
 			<DirectInsuranceLauncher />
 			<DirectPerioLauncher />
 			<DirectAnesthesiaLauncher />
+			<DirectPatientCardLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
