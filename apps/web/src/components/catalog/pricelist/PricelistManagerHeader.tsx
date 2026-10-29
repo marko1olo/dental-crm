@@ -19,35 +19,20 @@ export const PricelistManagerHeader: React.FC<PricelistManagerHeaderProps> = (
 	const { totalCount, ...actions } = props;
 
 	return (
-		<header
-			className="pricelist-modal-header"
-			style={{ padding: "0.75rem 1.25rem", gap: "0.75rem" }}
-		>
-			<div
-				className="pricelist-header-left"
-				style={{ display: "flex", alignItems: "center", gap: "0.75rem" }}
-			>
-				<div
-					className="pricelist-header-icon"
-					style={{ width: "40px", height: "40px" }}
-				>
+		<header className="pricelist-modal-header">
+			<div className="pricelist-header-left">
+				<div className="pricelist-header-icon">
 					<Layers size={22} />
 				</div>
 				<div>
-					<div
-						className="pricelist-header-title"
-						style={{ fontSize: "1.125rem", fontWeight: 700 }}
-					>
+					<div className="pricelist-header-title">
 						Прейскурант услуг
 					</div>
 					<div style={{ fontSize: "0.75rem", color: "var(--muted)" }}>
 						{totalCount} позиций · Каталог процедур клиники · НДС 0%
 					</div>
 				</div>
-				<div
-					className="pricelist-statutory-badge"
-					style={{ height: "28px", padding: "0 8px" }}
-				>
+				<div className="pricelist-statutory-badge">
 					<ShieldCheck size={14} />
 					<span>Каталог</span>
 				</div>

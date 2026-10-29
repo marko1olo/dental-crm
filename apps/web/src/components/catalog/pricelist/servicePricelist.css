@@ -1,22 +1,6 @@
 /**
  * DENTE Dental CRM — Service Catalog & Pricelist Stylesheet Facade
- * Mandate 8b Architecture: 100% Modular Decomposition (< 120 lines per file)
+ * Unified SSOT Stylesheet Module (Mandates 8b, 8zi)
  */
 
-@import "./styles/pricelistModalBase.css";
-@import "./styles/pricelistHeader.css";
-@import "./styles/pricelistToolbar.css";
-@import "./styles/pricelistTiersAndBatch.css";
-@import "./styles/pricelistCategorySidebar.css";
-@import "./styles/pricelistTable.css";
-@import "./styles/pricelistTableBadges.css";
-@import "./styles/pricelistButtonsAndFooter.css";
-@import "./styles/pricelistCsvImportModal.css";
-@import "./styles/pricelistThemeOverridesBase.css";
-@import "./styles/pricelistThemeOverridesControls.css";
-@import "./styles/pricelistTabletLayout.css";
-@import "./styles/pricelistMobileLayout.css";
-@import "./styles/pricelistMobileCardBase.css";
-@import "./styles/pricelistMobileCardElements.css";
-@import "./styles/pricelistMobileCardActions.css";
-@import "./styles/pricelistMobileCardDarkTheme.css";
+@import "./serviceCatalog.css";

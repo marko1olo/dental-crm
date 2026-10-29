@@ -1,5 +1,5 @@
 import type React from "react";
-import { PriceListMappingDiffView } from "../../pricing/PriceListMappingDiffView";
+import { PriceListMappingDiffView } from "../mappingDiff";
 import { PricelistImportDropzone } from "./PricelistImportDropzone";
 import { PricelistImportModalFooter } from "./PricelistImportModalFooter";
 import { PricelistImportModalHeader } from "./PricelistImportModalHeader";

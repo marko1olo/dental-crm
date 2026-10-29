@@ -2,7 +2,7 @@
  * DENTE Dental CRM — Statutory Minzdrav Order № 804n Service Catalog & Pricelist Domain Module
  */
 
-export * from "../../pricing/PriceListMappingDiffView";
+export * from "../mappingDiff";
 export * from "./PricelistCategorySidebar";
 export * from "./PricelistDataTable";
 export * from "./PricelistFiltersAndBatchBar";

@@ -1,27 +1,68 @@
 /**
- * DENTE Dental CRM — Types for Price List Mapping & 804n Nomenclature Diff
- * Layer 0: Component Props & Re-exports
+ * DENTE Dental CRM — Types for Service Catalog & Pricelist Mapping Diff
+ * Unified SSOT Canonical Types (Mandates 8b, 8zi)
  */
 
 import type { RefObject } from "react";
-import type {
-	ExistingCatalogReference,
-	IngestedMappingItem,
-	PriceDiffStats,
-	PriceMappingDiffFilterTab,
-} from "./itemTypes";
 
-export * from "./itemTypes";
+export type MappingConfidenceKind =
+	| "exact_code"
+	| "high_keyword"
+	| "medium_category"
+	| "low_unmatched";
+
+export type SuggestedAction = "create_new" | "update_existing" | "link_existing";
+
+export interface IngestedMappingItem {
+	readonly id: string;
+	readonly sourceLineNumber: number;
+	readonly rawLine: string;
+	readonly cleanedTitle: string;
+	readonly code804n: string;
+	readonly statutoryTitle804n: string;
+	readonly category: string;
+	readonly specialty: string;
+	readonly priceRub: number;
+	readonly priceKopecks: number;
+	readonly confidence: number; // 0..1
+	readonly confidenceKind: MappingConfidenceKind;
+	readonly suggestedAction: SuggestedAction;
+	readonly matchedExistingServiceId?: string | null | undefined;
+	readonly matchedExistingTitle?: string | undefined;
+	readonly matchedExistingPriceRub?: number | undefined;
+	readonly isApproved: boolean;
+	readonly warning?: string | undefined;
+}
+
+export interface ExistingCatalogReference {
+	readonly id: string;
+	readonly code: string;
+	readonly title: string;
+	readonly basePriceRub: number;
+	readonly category: string;
+}
+
+export type PriceMappingDiffFilterTab =
+	| "all"
+	| "new"
+	| "update"
+	| "attention";
+
+export interface PriceDiffStats {
+	readonly total: number;
+	readonly approvedCount: number;
+	readonly exactCount: number;
+	readonly newCount: number;
+	readonly updateCount: number;
+	readonly attentionCount: number;
+	readonly avgConfidence: number;
+}
 
 export interface PriceListMappingDiffViewProps {
 	readonly items: readonly IngestedMappingItem[];
-	readonly onItemsChange?:
-		| ((items: readonly IngestedMappingItem[]) => void)
-		| undefined;
+	readonly onItemsChange?: ((items: readonly IngestedMappingItem[]) => void) | undefined;
 	readonly onAcceptAll?: (() => void) | undefined;
-	readonly onApply?:
-		| ((approvedItems: readonly IngestedMappingItem[]) => void)
-		| undefined;
+	readonly onApply?: ((items: readonly IngestedMappingItem[]) => void) | undefined;
 	readonly onCancel?: (() => void) | undefined;
 	readonly existingCatalog?: readonly ExistingCatalogReference[] | undefined;
 	readonly isLoading?: boolean | undefined;
@@ -35,33 +76,10 @@ export interface PriceDiffToolbarProps {
 	readonly onSearchTermChange: (term: string) => void;
 	readonly searchInputId: string;
 	readonly onBatchMarkup: (percent: number) => void;
-	readonly onBatchRounding: (roundTo?: number | undefined) => void;
+	readonly onBatchRounding: (roundTo?: number) => void;
 	readonly onBatchSetZero: () => void;
 	readonly onAcceptAll: () => void;
 	readonly onDeselectAll: () => void;
-}
-
-export interface PriceDiffItemRowProps {
-	readonly item: IngestedMappingItem;
-	readonly isLinking: boolean;
-	readonly isHovered: boolean;
-	readonly editingPriceId: string | null;
-	readonly editingPriceBuffer: string;
-	readonly existingCatalog: readonly ExistingCatalogReference[];
-	readonly onMouseEnter: () => void;
-	readonly onMouseLeave: () => void;
-	readonly onToggleApprove: () => void;
-	readonly onSetCreateNew: () => void;
-	readonly onStartLinking: () => void;
-	readonly onCancelLinking: () => void;
-	readonly onLinkExisting: (targetServiceId: string) => void;
-	readonly onStartEditPrice: () => void;
-	readonly onPriceBufferChange: (val: string) => void;
-	readonly onCommitPrice: (val: string) => void;
-	readonly onCancelEditPrice: () => void;
-	readonly onModifyDelta: (deltaRub: number) => void;
-	readonly onSetZeroPrice: () => void;
-	readonly formatPrice: (rub: number) => string;
 }
 
 export interface PriceDiffTableProps {
@@ -78,13 +96,13 @@ export interface PriceDiffTableProps {
 	readonly onLeftScroll: () => void;
 	readonly onRightScroll: () => void;
 	readonly onHoverRow: (id: string | null) => void;
-	readonly onToggleApproveRow: (id: string) => void;
-	readonly onSetCreateNew: (id: string) => void;
-	readonly onSetActiveLinkRowId: (id: string | null) => void;
+	readonly onToggleApproveRow: (rowId: string) => void;
+	readonly onSetCreateNew: (rowId: string) => void;
+	readonly onSetActiveLinkRowId: (rowId: string | null) => void;
 	readonly onSetLinkExisting: (rowId: string, targetServiceId: string) => void;
 	readonly onStartEditPrice: (id: string, initialVal: number) => void;
 	readonly onPriceBufferChange: (val: string) => void;
-	readonly onCommitRowPrice: (rowId: string, val: string) => void;
+	readonly onCommitRowPrice: (rowId: string, rawVal: string) => void;
 	readonly onCancelEditPrice: () => void;
 	readonly onModifyRowDelta: (rowId: string, deltaRub: number) => void;
 	readonly onSetRowZeroPrice: (rowId: string) => void;
@@ -95,6 +113,6 @@ export interface PriceDiffSummaryBarProps {
 	readonly approvedCount: number;
 	readonly totalCount: number;
 	readonly isLoading?: boolean | undefined;
-	readonly onApply?: (() => void) | undefined;
+	readonly onApply: () => void;
 	readonly onCancel?: (() => void) | undefined;
 }

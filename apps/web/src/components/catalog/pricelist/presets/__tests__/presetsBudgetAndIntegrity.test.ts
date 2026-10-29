@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it as test } from "vitest";
+import { describe, it as test } from "node:test";
 import {
 	ANESTHESIA_STATUTORY_PRESETS,
 	BASELINE_804N_PRICELIST_SERVICES,

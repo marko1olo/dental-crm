@@ -1,6 +1,6 @@
 import type React from "react";
 import { useState } from "react";
-import type { IngestedMappingItem } from "../../pricing/PriceListMappingDiffView";
+import type { IngestedMappingItem } from "../mappingDiff";
 import {
 	mapProposalsToDiffItems,
 	mergeApprovedDiffItems,

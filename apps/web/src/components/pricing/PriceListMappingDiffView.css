@@ -1,18 +1,6 @@
 /**
- * DENTE Dental CRM — Dual-Pane Price List Ingestion & 804n Mapping Diff View Stylesheet
- * 100% Design-Token Compliant, Multi-Theme (Dark/Light/Cyber X-Ray/Night), Zero-Tailwind
- * Mandate 8b: File strictly <= 120 lines.
+ * DENTE Dental CRM — Backward-Compatible Stylesheet Bridge
+ * Points to canonical SSOT in ../catalog/mappingDiff/priceMappingDiff.css
  */
 
-@import "./styles/priceDiffContainer.css";
-@import "./styles/priceDiffToolbar.css";
-@import "./styles/priceDiffBatchButtons.css";
-@import "./styles/priceDiffSearchBox.css";
-@import "./styles/priceDiffPanes.css";
-@import "./styles/priceDiffBadges.css";
-@import "./styles/priceDiffMappedRows.css";
-@import "./styles/priceDiffPriceCol.css";
-@import "./styles/priceDiffRowActions.css";
-@import "./styles/priceDiffFooter.css";
-@import "./styles/priceDiffTablet.css";
-@import "./styles/priceDiffResponsive.css";
+@import "../catalog/mappingDiff/priceMappingDiff.css";

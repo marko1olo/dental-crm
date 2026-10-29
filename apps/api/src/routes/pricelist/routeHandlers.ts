@@ -42,4 +42,6 @@ export async function registerPricelistRoutes(app: FastifyInstance) {
 
 	app.get("/api/pricelist/export", handleExportPricelist);
 	app.post("/api/pricelist/batch-reprice", handleBatchReprice);
+	app.post("/api/services/batch-update", handleBatchReprice);
+	app.post("/api/services/batch-reprice", handleBatchReprice);
 }

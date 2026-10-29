@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { requestBatchRepriceApi } from "./serviceBatchRepriceApi";
 import {
 	batchPriceMarkup,
 	commitInlinePrice,
@@ -58,10 +59,19 @@ export function usePricelistPriceInteractions(
 			selectedSpecialty,
 			activeTier,
 		);
-		setItems(updated);
+		updateAndPersist(updated);
 		showToast(
 			`Применена наценка ${percent > 0 ? `+${percent}%` : `${percent}%`} (${PRICE_TIER_LABELS[activeTier]})`,
 		);
+
+		// Асинхронный SQL апдейт в PostgreSQL через Fastify API (Мандат 8n)
+		void requestBatchRepriceApi({
+			percentChange: percent,
+			roundMode: rounding,
+			category: selectedCategory !== "all" ? selectedCategory : undefined,
+			specialty: selectedSpecialty !== "all" ? selectedSpecialty : undefined,
+			serviceIds: selectedItemIds.size > 0 ? Array.from(selectedItemIds) : undefined,
+		});
 	};
 
 	return {

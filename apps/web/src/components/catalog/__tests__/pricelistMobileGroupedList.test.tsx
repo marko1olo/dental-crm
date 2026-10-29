@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { PricelistMobileGroupedList } from "../pricelist/PricelistMobileGroupedList";
 import { formatRubles } from "../pricelist/servicePricelist/currencyMath";
 import type { ServicePricelistItem } from "../pricelist/servicePricelistPresets";

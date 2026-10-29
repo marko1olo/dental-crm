@@ -1,5 +1,5 @@
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
-import type { IngestedMappingItem } from "../../pricing/PriceListMappingDiffView";
+import type { IngestedMappingItem } from "../mappingDiff";
 
 export async function requestPricelistIngestApi(
 	rawContent: string,

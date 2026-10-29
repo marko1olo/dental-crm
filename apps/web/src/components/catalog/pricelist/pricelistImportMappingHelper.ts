@@ -1,4 +1,4 @@
-import type { IngestedMappingItem } from "../../pricing/PriceListMappingDiffView";
+import type { IngestedMappingItem } from "../mappingDiff";
 import {
 	type ParsedPriceProposal,
 	rublesToKopecks,

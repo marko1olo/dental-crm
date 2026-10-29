@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { describe, it as test } from "vitest";
+import { describe, it as test } from "node:test";
 import {
 	BASELINE_804N_PRICELIST_SERVICES,
 	findPresetsByComplaint,
