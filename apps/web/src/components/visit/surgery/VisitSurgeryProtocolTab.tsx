@@ -50,9 +50,25 @@ export const VisitSurgeryProtocolTab: React.FC<VisitSurgeryProtocolTabProps> = (
 			<VisitSurgeryFooterActions s={s} patientName={patientName} doctorName={doctorName} onAddToInvoice={onAddToInvoice} onApplyToDiary={onApplyToDiary} />
 			{s.isImplantModalOpen && (
 				<ImplantPassportModal
-					isOpen={s.isImplantModalOpen} onClose={() => s.setIsImplantModalOpen(false)}
-					initialTooth={s.effectiveTooth} patientName={patientName} patientId={patientId}
-					doctorName={doctorName} doctorId={doctorId}
+					isOpen={s.isImplantModalOpen}
+					onClose={() => s.setIsImplantModalOpen(false)}
+					initialTooth={s.effectiveTooth}
+					patientName={patientName}
+					patientId={patientId}
+					doctorName={doctorName}
+					doctorId={doctorId}
+					onInsertIntoDiary={(text) => {
+						s.setProtocolText((prev) => (prev ? `${prev}\n\n${text}` : text));
+						onApplyToDiary?.(text);
+					}}
+					onSavePassport={(passport) => {
+						onAddToInvoice?.({
+							code: "SURG-IMP-01",
+							name: `Операция установки дентального имплантата ${passport.brand} Ø${passport.diameterMm}x${passport.lengthMm}мм (Зуб #${passport.toothFdi})`,
+							priceRub: passport.operationPriceRub,
+							quantity: 1,
+						});
+					}}
 				/>
 			)}
 		</section>

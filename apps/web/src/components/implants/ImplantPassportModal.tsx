@@ -5,6 +5,7 @@
  */
 
 import React, { useState, useEffect, useCallback, useId } from "react";
+import { createPortal } from "react-dom";
 import { AlertTriangle, Award, FileText, Printer, Sliders, Stethoscope, Wrench, X } from "lucide-react";
 import { DentalImplant } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
@@ -328,9 +329,9 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 
 	if (!isOpen) return null;
 
-	return (
-		<div className="implant-passport-modal-backdrop" role="dialog" aria-modal="true" aria-labelledby={titleId} data-testid="implant-passport-modal-backdrop">
-			<div className={`implant-passport-card-container implant-surgical-passport-modal max-h-[calc(100vh-48px)] flex flex-col min-h-0 ${className}`.trim()} data-testid="implant-passport-modal">
+	const modalContent = (
+		<div className="implant-passport-modal-backdrop" data-testid="implant-passport-modal-backdrop">
+			<div className={`implant-passport-card-container implant-surgical-passport-modal max-h-[calc(100vh-48px)] flex flex-col min-h-0 ${className}`.trim()} role="dialog" aria-modal="true" aria-labelledby={titleId} data-testid="implant-passport-modal">
 				{/* Apple HIG Drag Handle для мобильного Bottom Sheet */}
 				<div className="implant-sheet-drag-handle" aria-hidden="true" />
 
@@ -569,6 +570,10 @@ export const ImplantPassportModal: React.FC<ImplantPassportModalProps> = ({
 			</div>
 		</div>
 	);
+
+	return typeof document !== "undefined" && document.body
+		? createPortal(modalContent, document.body)
+		: modalContent;
 };
 
 export default ImplantPassportModal;
