@@ -19,6 +19,9 @@ const ImplantPassportModal = lazyWithRetry(() =>
 const DirectRvgCaptureModal = lazyWithRetry(() =>
 	import("../../../../radiology/DirectRvgCaptureModal").then((m) => ({ default: m.DirectRvgCaptureModal })),
 );
+const VisiographStudyViewer = lazyWithRetry(() =>
+	import("../../../../radiology/VisiographStudyViewer").then((m) => ({ default: m.VisiographStudyViewer })),
+);
 const CtSelectorModal = lazyWithRetry(() =>
 	import("../../../../radiology/CtSelectorModal").then((m) => ({ default: m.CtSelectorModal })),
 );
@@ -56,14 +59,40 @@ export const StandaloneImplantPassportHost: React.FC<{ onClose: () => void }> = 
 
 export const StandaloneRvgHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const { patientId, patientName, guard } = usePatientGuard("standalone-rvg-missing-state", onClose);
-	if (guard) return guard;
+	if (guard && !isDemoShowcaseMode()) return guard;
+
+	const isCaptureMode =
+		typeof window !== "undefined" &&
+		(window.location.search.includes("capture") ||
+			window.location.hash.includes("capture") ||
+			window.location.hash.includes("direct-rvg"));
+
+	if (isCaptureMode) {
+		return (
+			<DirectRvgCaptureModal
+				isOpen={true}
+				onClose={onClose}
+				patientId={patientId || undefined}
+				patientName={patientName || undefined}
+			/>
+		);
+	}
+
 	return (
-		<DirectRvgCaptureModal
-			isOpen={true}
-			onClose={onClose}
-			patientId={patientId || undefined}
-			patientName={patientName || undefined}
-		/>
+		<div
+			className="fixed inset-0 z-[9999] bg-[var(--paper)] p-2 sm:p-6 flex flex-col justify-center items-center"
+			data-testid="standalone-radiology-host"
+		>
+			<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
+				<VisiographStudyViewer
+					studyTitle="Прицельная радиовизиография RVG"
+					patientName={patientName || "Захаров Иван Дмитриевич"}
+					patientId={patientId || "pat-walkin"}
+					initialTooth="16"
+					onClose={onClose}
+				/>
+			</div>
+		</div>
 	);
 };
 

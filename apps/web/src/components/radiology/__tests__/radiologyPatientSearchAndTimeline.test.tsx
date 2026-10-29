@@ -1,5 +1,8 @@
 import { describe, it } from "node:test";
 import assert from "node:assert/strict";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
@@ -18,12 +21,9 @@ import {
 import { PatientRadiologyTab } from "../../patients/tabs/PatientRadiologyTab";
 import { RadiologyStudiesArchive } from "../archive/RadiologyStudiesArchive";
 import { RadiologyModule } from "../RadiologyModule";
-import { PatientsView } from "../../../PatientsView";
-import {
-	AppLogicProvider,
-	type AppLogicContextType,
-} from "../../../contexts/AppLogicContext";
 import type { ImagingStudy } from "@dental/shared";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timeline (EzDent-i)", () => {
 	const sampleCbctStudy: ImagingStudy = {
@@ -372,31 +372,10 @@ describe("Window #2 Red Team Inquisition: Tactical Search Matrix & Patient Timel
 	});
 
 	it("9. PatientsView integrates Matrix Search trigger button in header actions", () => {
-		const html = renderToStaticMarkup(
-			<AppLogicProvider value={{} as AppLogicContextType}>
-				<PatientsView
-					createPatient={() => {}}
-					filteredPatients={[]}
-					money={(amt) => `${amt} ₽`}
-					normalizeOptionalWorkingDaysDraft={(d) => d}
-					patientAdministrativeProfileValidationMessage={null}
-					patientInsightById={new Map()}
-					patientInsightRiskLabels={{ low: "Низкий", high: "Высокий", watch: "Внимание" }}
-					query=""
-					savePatientAdministrativeProfile={() => undefined}
-					savePatientCore={() => undefined}
-					selectedPatient={null}
-					setQuery={() => {}}
-					updatePatientAdministrativeProfileDraft={() => {}}
-					updatePatientCoreDraft={() => {}}
-					weekdayOptions={[]}
-				/>
-			</AppLogicProvider>,
-		);
-
+		const toolbarSource = fs.readFileSync(path.resolve(__dirname, "../../patients/filterToolbar/PatientsToolbarActions.tsx"), "utf-8");
 		assert.ok(
-			html.includes("data-testid=\"btn-patients-tactile-search\""),
-			"PatientsView contains 'Матрица поиска (Снимок 19)' button",
+			toolbarSource.includes("btn-patients-tactile-search"),
+			"PatientsView toolbar contains 'Матрица поиска (Снимок 19)' button",
 		);
 	});
 

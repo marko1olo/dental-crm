@@ -7,7 +7,9 @@
  */
 
 import React from "react";
-import "./radiologyReport.css";
+if (typeof window !== "undefined") {
+	void import("./radiologyReport.css");
+}
 import {
 	ReportA4PrintableSheet,
 	ReportFilmstripTray,

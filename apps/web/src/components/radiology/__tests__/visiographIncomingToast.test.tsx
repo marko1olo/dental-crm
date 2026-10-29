@@ -13,14 +13,15 @@
  * 5. Queued count badge (+N новых)
  */
 
-import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
+import { describe, it, beforeEach, afterEach } from "node:test";
+import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { VisiographIncomingToast } from "../VisiographIncomingToast";
+import { VisiographIncomingToast } from "../VisiographIncomingToast.js";
 import {
 	getVisiographHotFolderEngine,
-	VisiographHotFolderEngine,
-} from "../../../lib/visiographHotFolderEngine";
+	type VisiographHotFolderEngine,
+} from "../../../lib/visiographHotFolderEngine.js";
 
 describe("VisiographIncomingToast HUD Component", () => {
 	let engine: VisiographHotFolderEngine;
@@ -36,7 +37,7 @@ describe("VisiographIncomingToast HUD Component", () => {
 
 	it("renders null when there are no incoming scans", () => {
 		const html = renderToString(<VisiographIncomingToast />);
-		expect(html).toBe("");
+		assert.strictEqual(html, "");
 	});
 
 	it("renders clinical HUD when a scan is ingested", () => {
@@ -50,28 +51,28 @@ describe("VisiographIncomingToast HUD Component", () => {
 		const html = renderToString(<VisiographIncomingToast />);
 
 		// Verify container and accessibility
-		expect(html).toContain('role="alert"');
-		expect(html).toContain('data-testid="visiograph-incoming-toast"');
+		assert.ok(html.includes('role="alert"'));
+		assert.ok(html.includes('data-testid="visiograph-incoming-toast"'));
 
 		// Verify brand telemetry
-		expect(html).toContain("Vatech EzSensor HD");
+		assert.ok(html.includes("Vatech EzSensor HD"));
 
 		// Verify file details
-		expect(html).toContain("Vatech_Tooth16_Periapical.dcm");
-		expect(html).toContain("2.4 МБ");
+		assert.ok(html.includes("Vatech_Tooth16_Periapical.dcm"));
+		assert.ok(html.includes("2.4 МБ"));
 
 		// Verify 1-Click Primary CTA with active tooth
-		expect(html).toContain('data-testid="btn-link-to-tooth"');
-		expect(html).toMatch(/Привязать к зубу.*16/);
+		assert.ok(html.includes('data-testid="btn-link-to-tooth"'));
+		assert.match(html, /Привязать к зубу.*16/);
 
 		// Verify Secondary viewer button
-		expect(html).toContain('data-testid="btn-open-in-viewer"');
-		expect(html).toContain("Во вьюере");
+		assert.ok(html.includes('data-testid="btn-open-in-viewer"'));
+		assert.ok(html.includes("Во вьюере"));
 
 		// Verify design tokens & invariants
-		expect(html).toContain("var(--paper-strong)");
-		expect(html).toContain("var(--teal)");
-		expect(html).toContain("height:32px");
+		assert.ok(html.includes("var(--paper-strong)"));
+		assert.ok(html.includes("var(--teal)"));
+		assert.ok(html.includes("height:32px"));
 	});
 
 	it("renders queue badge (+N новых) when multiple scans are pending", () => {
@@ -90,6 +91,6 @@ describe("VisiographIncomingToast HUD Component", () => {
 
 		const html = renderToString(<VisiographIncomingToast />);
 
-		expect(html).toMatch(/\+.*2.*новых/);
+		assert.match(html, /\+.*2.*новых/);
 	});
 });

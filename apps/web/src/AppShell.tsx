@@ -10,6 +10,7 @@ import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPre
 import { DirectDocumentsCatalogLauncher } from "./components/documents/DirectDocumentsCatalogLauncher";
 import { DirectSanPinStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/SanPinStandaloneLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
+import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
@@ -97,7 +98,20 @@ function isStandaloneActive(): boolean {
 		s.includes("warehouse") ||
 		h.includes("warehouse") ||
 		s.includes("inbound") ||
-		h.includes("inbound")
+		h.includes("inbound") ||
+		s.includes("documents_catalog") ||
+		s.includes("document_templates") ||
+		h.includes("documents-catalog") ||
+		h.includes("documents_catalog") ||
+		h.includes("document-templates") ||
+		s.includes("consent_sign_drawer") ||
+		s.includes("patient_consent_drawer") ||
+		h.includes("consent-sign-drawer") ||
+		h.includes("patient-consent-drawer") ||
+		s.includes("radiology") ||
+		h.includes("radiology") ||
+		s.includes("visiograph") ||
+		h.includes("visiograph")
 	);
 }
 
@@ -128,6 +142,7 @@ export function AppShell() {
 			<DirectSanPinStandaloneLauncher />
 			<DirectDocumentsCatalogLauncher />
 			<DirectImplantPassportLauncher />
+			<DirectRadiologyLauncher />
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
 			<DirectReportsLauncher />

@@ -340,7 +340,7 @@ export const CbctImplantModal: React.FC<CbctImplantModalProps> = ({
 						<button
 							type="button"
 							onClick={handleSaveToPlan}
-							className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
+							className="px-3.5 py-1.5 rounded-md text-xs font-semibold text-zinc-100 bg-[var(--teal,#0d9488)] hover:opacity-95 transition-all cursor-pointer flex items-center gap-1.5 shadow-sm active:scale-95"
 							data-testid="cbct-btn-save-to-plan"
 						>
 							<Check className="w-3.5 h-3.5" />
