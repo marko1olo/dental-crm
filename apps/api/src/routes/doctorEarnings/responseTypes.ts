@@ -41,6 +41,16 @@ export interface DoctorMyEarningsSummary {
 		| "pending_cashier";
 }
 
+export interface DoctorSettlementStatementSummary {
+	readonly id: string;
+	readonly period: string;
+	readonly isFinalized: boolean;
+	readonly paidAt?: string | Date | null;
+	readonly grossRevenueRub: number;
+	readonly netPayoutRub: number;
+	readonly createdAt: string | Date;
+}
+
 export interface DoctorMyEarningsResponse {
 	readonly doctorId: string;
 	readonly doctorName: string;
@@ -54,4 +64,6 @@ export interface DoctorMyEarningsResponse {
 	readonly specialtyBreakdown: readonly DoctorEarningsCategoryBreakdown[];
 	readonly appointments: readonly DoctorEarningsAppointmentItem[];
 	readonly formulaExplanationRu: string;
+	readonly settlementStatement?: DoctorSettlementStatementSummary | null;
+	readonly isPeriodClosed?: boolean;
 }

@@ -8,7 +8,12 @@ import {
 	DEFAULT_SOLO_DOCTOR,
 } from "./staffPayrollEngine";
 import { getDefaultPayrollPeriod, getDatesForPeriodPreset, type PeriodPresetType } from "./doctorPayrollModalUtils";
-import { fetchDoctorEarningsApi } from "./fetchDoctorEarningsApi";
+import { fetchDoctorEarningsWithStatusApi } from "./fetchDoctorEarningsApi";
+import {
+	closeSettlementPeriodApi,
+	reopenSettlementPeriodApi,
+	type SettlementStatementPayload,
+} from "./closeSettlementPeriodApi";
 
 export interface UseDoctorPayrollModalParams {
 	readonly isOpen: boolean;
@@ -50,6 +55,11 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 	const [apiServices, setApiServices] = useState<DoctorCompletedServiceItem[]>([]);
 	const [isLoadingEarnings, setIsLoadingEarnings] = useState<boolean>(false);
 
+	const [isPeriodClosed, setIsPeriodClosed] = useState<boolean>(false);
+	const [settlementStatement, setSettlementStatement] = useState<SettlementStatementPayload | null>(null);
+	const [isClosingPeriod, setIsClosingPeriod] = useState<boolean>(false);
+	const [closingError, setClosingError] = useState<string | null>(null);
+
 	const handleSelectPeriodPreset = (preset: PeriodPresetType) => {
 		setPeriodPreset(preset);
 		const dates = getDatesForPeriodPreset(preset);
@@ -72,8 +82,15 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 		const docId = activeDoc.id;
 		let cancelled = false;
 		setIsLoadingEarnings(true);
-		fetchDoctorEarningsApi({ doctorId: docId, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime })
-			.then((items) => { if (!cancelled) { setApiServices(items); setIsLoadingEarnings(false); } })
+		fetchDoctorEarningsWithStatusApi({ doctorId: docId, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime })
+			.then((res) => {
+				if (!cancelled) {
+					setApiServices(res.services);
+					setIsPeriodClosed(res.isPeriodClosed);
+					setSettlementStatement(res.settlementStatement);
+					setIsLoadingEarnings(false);
+				}
+			})
 			.catch(() => { if (!cancelled) setIsLoadingEarnings(false); });
 		return () => { cancelled = true; };
 	}, [params.isOpen, params.initialServices, activeDoc?.id, periodStart, periodEnd, payoutModel, chairRentalRub, advanceRub, taxRegime]);
@@ -108,11 +125,98 @@ export function useDoctorPayrollModalState(params: UseDoctorPayrollModalParams) 
 		});
 	}, [params.isOpen, activeDoc, periodStart, periodEnd, servicesToUse, customPercent, params.useClinicalCategoryRates, taxRegime, params.doctorsList, payoutModel, chairRentalMode, chairRentalRub, advanceRub]);
 
+	const handleCloseSettlementPeriod = async () => {
+		if (!activeDoc?.id || isClosingPeriod) return;
+		setIsClosingPeriod(true);
+		setClosingError(null);
+		try {
+			const res = await closeSettlementPeriodApi({
+				doctorId: activeDoc.id,
+				periodStart,
+				periodEnd,
+				payoutModel,
+				chairRentalRub,
+				advanceRub,
+				taxRegime,
+				grossRevenueKop: payrollResult.totalGrossRevenueKop,
+				labCostKop: payrollResult.totalLabDeductionsKop,
+				materialCostKop: payrollResult.totalMaterialDeductionsKop,
+				netBaseKop: payrollResult.totalNetBaseKop,
+				categoryPercent: payrollResult.baseCommissionPercent,
+				totalAccruedKop: payrollResult.grossPayoutBeforeTaxKop,
+				ndflKop: payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop,
+				netPayoutKop: payrollResult.netPayoutToDoctorKop,
+				markPaid: false,
+			});
+			setIsPeriodClosed(true);
+			setSettlementStatement(res.statement);
+			setCopyFeedback("✓ Расчетный период закрыт в базе данных");
+			setTimeout(() => setCopyFeedback(null), 4000);
+		} catch (err: any) {
+			setClosingError(err?.message || "Не удалось закрыть расчетный период");
+		} finally {
+			setIsClosingPeriod(false);
+		}
+	};
+
+	const handleReopenSettlementPeriod = async () => {
+		if (!activeDoc?.id || isClosingPeriod) return;
+		setIsClosingPeriod(true);
+		setClosingError(null);
+		try {
+			await reopenSettlementPeriodApi(activeDoc.id, periodStart, periodEnd);
+			setIsPeriodClosed(false);
+			setSettlementStatement(null);
+			setCopyFeedback("Расчетный период открыт для редактирования");
+			setTimeout(() => setCopyFeedback(null), 4000);
+		} catch (err: any) {
+			setClosingError(err?.message || "Не удалось открыть расчетный период");
+		} finally {
+			setIsClosingPeriod(false);
+		}
+	};
+
+	const handleAccrueSalary = async () => {
+		if (!activeDoc?.id || isClosingPeriod) return;
+		setIsClosingPeriod(true);
+		setClosingError(null);
+		try {
+			const res = await closeSettlementPeriodApi({
+				doctorId: activeDoc.id,
+				periodStart,
+				periodEnd,
+				payoutModel,
+				chairRentalRub,
+				advanceRub,
+				taxRegime,
+				grossRevenueKop: payrollResult.totalGrossRevenueKop,
+				labCostKop: payrollResult.totalLabDeductionsKop,
+				materialCostKop: payrollResult.totalMaterialDeductionsKop,
+				netBaseKop: payrollResult.totalNetBaseKop,
+				categoryPercent: payrollResult.baseCommissionPercent,
+				totalAccruedKop: payrollResult.grossPayoutBeforeTaxKop,
+				ndflKop: payrollResult.ndflTaxKop ?? payrollResult.ndfl13TaxKop,
+				netPayoutKop: payrollResult.netPayoutToDoctorKop,
+				markPaid: true,
+			});
+			setIsPeriodClosed(true);
+			setSettlementStatement(res.statement);
+			setCopyFeedback("✓ Выплата проведена и сохранена в БД");
+			setTimeout(() => setCopyFeedback(null), 4000);
+		} catch (err: any) {
+			setClosingError(err?.message || "Не удалось провести выплату");
+		} finally {
+			setIsClosingPeriod(false);
+		}
+	};
+
 	return {
 		activeDoc, selectedDoctorId, setSelectedDoctorId, soloSpecialtyId, setSoloSpecialtyId,
 		periodStart, setPeriodStart, periodEnd, setPeriodEnd, periodPreset, setPeriodPreset, handleSelectPeriodPreset,
 		payoutModel, setPayoutModel, chairRentalMode, setChairRentalMode, shiftsCount, setShiftsCount, shiftRateRub, setShiftRateRub, chairRentalRub, setChairRentalRub,
 		advanceRub, setAdvanceRub, isNpdReceiptDone, setIsNpdReceiptDone,
 		copyFeedback, setCopyFeedback, customPercent, setCustomPercent, taxRegime, setTaxRegime, isLoadingEarnings, servicesToUse, payrollResult,
+		isPeriodClosed, settlementStatement, isClosingPeriod, closingError,
+		handleCloseSettlementPeriod, handleReopenSettlementPeriod, handleAccrueSalary,
 	};
 }

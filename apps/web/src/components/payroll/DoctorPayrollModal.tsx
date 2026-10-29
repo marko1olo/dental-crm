@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { createPortal } from "react-dom";
+import { Check } from "lucide-react";
 import {
 	type DoctorCompletedServiceItem,
 	SOLO_DOCTOR_SPECIALTY_PRESETS,
@@ -92,7 +93,6 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 	const branding = useDocumentBrandingStore();
 	const appLogic = useOptionalAppLogicContext();
 	const [activeTab, setActiveTab] = useState<"summary" | "services">("summary");
-	const [periodClosedNotice, setPeriodClosedNotice] = useState<boolean>(false);
 
 	const resolvedClinicName = (clinicName && clinicName.trim())
 		|| branding?.clinicName
@@ -115,11 +115,6 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 		resolvedClinicName,
 		setCopyFeedback: state.setCopyFeedback,
 	});
-
-	const handleCloseSettlementPeriod = () => {
-		setPeriodClosedNotice(true);
-		setTimeout(() => setPeriodClosedNotice(false), 4000);
-	};
 
 	if (!isOpen) return null;
 
@@ -183,9 +178,9 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 					</div>
 					<div className="hidden sm:flex items-center gap-2 text-xs font-semibold text-[var(--muted,#64748b)]">
 						<span>{state.activeDoc ? state.activeDoc.name : "Врач не выбран"}</span>
-						{periodClosedNotice && (
-							<span className="text-[var(--teal,#0d9488)] font-bold">
-								Период успешно закрыт
+						{state.isPeriodClosed && (
+							<span className="text-[var(--teal,#0d9488)] font-bold inline-flex items-center gap-1" data-testid="doctor-payroll-period-closed-badge">
+								<Check className="w-3.5 h-3.5" /> Расчетный период закрыт
 							</span>
 						)}
 					</div>
@@ -248,22 +243,40 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 									/>
 
 									{/* 1-Click Fast Settlement Period Close Trigger */}
-									<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-xs">
+									<div className="flex items-center justify-between p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-xs gap-3">
 										<div className="flex flex-col gap-0.5">
-											<span className="font-bold text-[var(--ink,#0f172a)]">
-												Закрытие расчетного периода
-											</span>
+											<div className="flex items-center gap-1.5 font-bold text-[var(--ink,#0f172a)]">
+												<span>Закрытие расчетного периода</span>
+												{state.isPeriodClosed && (
+													<span className="px-2 py-0.5 rounded-full bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] text-[10px] font-bold">
+														Зафиксирован в БД
+													</span>
+												)}
+											</div>
 											<span className="text-[var(--muted,#64748b)]">
-												Фиксация начислений за {state.periodStart} — {state.periodEnd} без бюрократических согласований
+												{state.isPeriodClosed
+													? `Начисления за ${state.periodStart} — ${state.periodEnd} зафиксированы в БД (Ведомость №${state.settlementStatement?.id?.slice(0, 8) ?? "—"})`
+													: `Фиксация начислений за ${state.periodStart} — ${state.periodEnd} без бюрократических согласований`}
 											</span>
+											{state.closingError && (
+												<span className="text-red-500 font-medium text-[11px] mt-0.5">
+													{state.closingError}
+												</span>
+											)}
 										</div>
 										<button
 											type="button"
-											onClick={handleCloseSettlementPeriod}
-											className="px-3 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap text-xs"
+											onClick={state.isPeriodClosed ? state.handleReopenSettlementPeriod : state.handleCloseSettlementPeriod}
+											disabled={state.isClosingPeriod}
+											className={state.isPeriodClosed
+												? "px-3 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap text-xs"
+												: "px-3.5 py-1.5 rounded-lg border border-[#0d9488] bg-[#0d9488] text-white font-bold hover:bg-[#0f766e] active:scale-98 transition-all cursor-pointer whitespace-nowrap text-xs shadow-xs"
+											}
 											data-testid="doctor-payroll-close-period-btn"
 										>
-											Закрыть период
+											{state.isClosingPeriod
+												? "Сохранение..."
+												: (state.isPeriodClosed ? "Открыть период" : "Закрыть период")}
 										</button>
 									</div>
 
@@ -319,6 +332,8 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						onDownloadCsv={handleDownloadCsv}
 						onPrintPayslip={handlePrintPayslip}
 						onClose={onClose}
+						onAccrueSalary={state.handleAccrueSalary}
+						isPeriodClosed={state.isPeriodClosed}
 					/>
 				)}
 			</div>

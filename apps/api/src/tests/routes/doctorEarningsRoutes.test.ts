@@ -123,4 +123,66 @@ describe("GET /api/doctor/my-earnings (Piece-Rate & Commission Transparency)", (
 		assert.ok(typeof body.summary.npdTaxRub === "number");
 		assert.ok(body.formulaExplanationRu.includes("Аренда кресла") || body.formulaExplanationRu.includes("Выручка"));
 	});
+
+	test("6. Сквозное закрытие расчетного периода (POST /api/doctor/close-settlement-period): фиксация в БД без симуляций", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/doctor/close-settlement-period",
+			headers: doctorHeaders(DOCTOR_MINE, "doctor"),
+			payload: {
+				doctorId: DOCTOR_MINE,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+				payoutModel: "percentage",
+				grossRevenueRub: 150000,
+				labCostRub: 20000,
+				materialsCostRub: 10000,
+				netBaseRevenueRub: 120000,
+				categoryPercent: 25,
+				calculatedPieceworkRub: 30000,
+				totalAccruedRub: 30000,
+				ndfl13Rub: 3900,
+				netPayoutRub: 26100,
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const body = JSON.parse(res.body);
+		assert.equal(body.ok, true);
+		assert.ok(body.statementId, "statementId обязателен");
+		assert.equal(body.statement.period, "2026-10");
+		assert.equal(body.statement.isFinalized, true);
+		assert.equal(body.statement.netPayoutRub, 26100);
+
+		// Проверка статуса через GET /api/doctor/settlement-period/status
+		const statusRes = await app.inject({
+			method: "GET",
+			url: `/api/doctor/settlement-period/status?doctorId=${DOCTOR_MINE}&from=2026-10-01&to=2026-10-31`,
+			headers: doctorHeaders(DOCTOR_MINE, "doctor"),
+		});
+		assert.equal(statusRes.statusCode, 200);
+		const statusBody = JSON.parse(statusRes.body);
+		assert.equal(statusBody.isClosed, true);
+		assert.ok(statusBody.statement);
+		assert.equal(statusBody.statement.id, body.statementId);
+	});
+
+	test("7. RBAC Охрана закрытия: лечащий врач не может закрывать чужой расчетный период", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/doctor/close-settlement-period",
+			headers: doctorHeaders(DOCTOR_MINE, "doctor"),
+			payload: {
+				doctorId: DOCTOR_OTHER,
+				periodStart: "2026-10-01",
+				periodEnd: "2026-10-31",
+				grossRevenueRub: 50000,
+				netPayoutRub: 12500,
+			},
+		});
+
+		assert.equal(res.statusCode, 403);
+		const body = JSON.parse(res.body);
+		assert.equal(body.error, "DoctorForbiddenError");
+	});
 });

@@ -1,4 +1,5 @@
 import type { DoctorCompletedServiceItem } from "./staffPayrollEngine";
+import type { SettlementStatementPayload } from "./closeSettlementPeriodApi";
 
 export interface FetchDoctorEarningsParams {
 	readonly doctorId: string;
@@ -10,9 +11,15 @@ export interface FetchDoctorEarningsParams {
 	readonly taxRegime: string;
 }
 
-export async function fetchDoctorEarningsApi(
+export interface FetchDoctorEarningsWithStatusResult {
+	readonly services: DoctorCompletedServiceItem[];
+	readonly isPeriodClosed: boolean;
+	readonly settlementStatement: SettlementStatementPayload | null;
+}
+
+export async function fetchDoctorEarningsWithStatusApi(
 	params: FetchDoctorEarningsParams
-): Promise<DoctorCompletedServiceItem[]> {
+): Promise<FetchDoctorEarningsWithStatusResult> {
 	const query = new URLSearchParams({
 		doctorId: params.doctorId,
 		from: params.periodStart,
@@ -56,5 +63,17 @@ export async function fetchDoctorEarningsApi(
 			}
 		}
 	}
-	return mapped;
+
+	return {
+		services: mapped,
+		isPeriodClosed: Boolean(data?.isPeriodClosed),
+		settlementStatement: data?.settlementStatement ?? null,
+	};
+}
+
+export async function fetchDoctorEarningsApi(
+	params: FetchDoctorEarningsParams
+): Promise<DoctorCompletedServiceItem[]> {
+	const res = await fetchDoctorEarningsWithStatusApi(params);
+	return res.services;
 }

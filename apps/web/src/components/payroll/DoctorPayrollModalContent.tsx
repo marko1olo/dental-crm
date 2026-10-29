@@ -129,6 +129,8 @@ export const DoctorPayrollModalContent: React.FC<DoctorPayrollModalContentProps>
 						onDownloadCsv={onDownloadCsv}
 						onPrintPayslip={onPrintPayslip}
 						onClose={onClose}
+						onAccrueSalary={state.handleAccrueSalary}
+						isPeriodClosed={state.isPeriodClosed}
 					/>
 				)}
 			</div>

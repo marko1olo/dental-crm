@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React from "react";
 import { Share2, Download, Printer, Check } from "lucide-react";
 import type { DoctorPayrollResult } from "../staffPayrollEngine";
 import { PayrollMobileThumbBar } from "./PayrollMobileThumbBar";
@@ -10,6 +10,8 @@ export interface PayrollActionButtonsBarProps {
 	readonly onDownloadCsv: () => void;
 	readonly onPrintPayslip: () => void;
 	readonly onClose: () => void;
+	readonly onAccrueSalary?: () => void;
+	readonly isPeriodClosed?: boolean;
 }
 
 export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = ({
@@ -18,23 +20,24 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 	onSendToMessenger,
 	onDownloadCsv,
 	onPrintPayslip,
+	onAccrueSalary,
+	isPeriodClosed = false,
 }) => {
-	const [accrualSuccess, setAccrualSuccess] = useState<boolean>(false);
-
-	const handleAccrueSalary = () => {
-		setAccrualSuccess(true);
-		setTimeout(() => setAccrualSuccess(false), 3500);
+	const handleAccrue = () => {
+		if (onAccrueSalary) {
+			onAccrueSalary();
+		}
 	};
 
 	return (
 		<>
 			{/* Desktop / Tablet Bar: Exactly 1 Primary CTA (#0d9488), other actions neutral secondary */}
 			<div className="hidden md:flex p-4 sm:p-5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] items-center justify-between flex-wrap gap-3 rounded-b-xl">
-				<div className="text-xs text-[var(--muted,#64748b)]">
-					Специальность: <span className="font-bold text-[var(--ink,#0f172a)]">{payrollResult.specialtyTitleRu}</span>
-					{accrualSuccess && (
-						<span className="ml-2 text-[var(--teal,#0d9488)] font-semibold inline-flex items-center gap-1">
-							<Check className="w-3.5 h-3.5" /> Выплата проведена
+				<div className="text-xs text-[var(--muted,#64748b)] flex items-center gap-2">
+					<span>Специальность: <span className="font-bold text-[var(--ink,#0f172a)]">{payrollResult.specialtyTitleRu}</span></span>
+					{isPeriodClosed && (
+						<span className="text-[var(--teal,#0d9488)] font-semibold inline-flex items-center gap-1">
+							<Check className="w-3.5 h-3.5" /> Период зафиксирован в БД
 						</span>
 					)}
 				</div>
@@ -63,22 +66,28 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 					<button
 						type="button"
 						onClick={onPrintPayslip}
-						className="inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+						className={isPeriodClosed
+							? "inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] shadow-xs transition-all cursor-pointer whitespace-nowrap"
+							: "inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+						}
 						data-testid="doctor-payroll-print-payslip"
 						title="Сформировать печатный расчетный листок с подписями"
 					>
-						<Printer className="w-3.5 h-3.5 text-[var(--muted,#64748b)]" />
+						<Printer className="w-3.5 h-3.5" />
 						<span>Печать ведомости</span>
 					</button>
 					<button
 						type="button"
-						onClick={handleAccrueSalary}
-						className="inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] shadow-xs transition-all cursor-pointer active:scale-98 whitespace-nowrap"
+						onClick={handleAccrue}
+						className={isPeriodClosed
+							? "inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+							: "inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] shadow-xs transition-all cursor-pointer active:scale-98 whitespace-nowrap"
+						}
 						data-testid="doctor-payroll-accrue-btn"
-						title="Выплатить заработную плату врачу по закрытым счетам"
+						title="Зафиксировать и выплатить заработную плату врачу по закрытым счетам"
 					>
 						<Check className="w-3.5 h-3.5" />
-						<span>✓ Выплатить зарплату</span>
+						<span>{isPeriodClosed ? "✓ Выплата проведена" : "✓ Выплатить зарплату"}</span>
 					</button>
 				</div>
 			</div>
@@ -88,7 +97,7 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 				copyFeedback={copyFeedback}
 				onSendToMessenger={onSendToMessenger}
 				onPrintPayslip={onPrintPayslip}
-				onAccrueSalary={handleAccrueSalary}
+				onAccrueSalary={handleAccrue}
 			/>
 		</>
 	);
