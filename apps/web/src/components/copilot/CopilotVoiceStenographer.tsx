@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import { Mic, MicOff, Check, RotateCcw, X, Sparkles, Stethoscope } from "lucide-react";
+import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } from "lucide-react";
 import { extractFdiTeethNumbers } from "@dental/shared";
 import "./CopilotVoiceStenographer.css";
 
@@ -154,7 +154,6 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
 
       rec.onerror = (e: any) => {
         if (e.error === "no-speech") {
-          // Normal timeout waiting for speech - do not frighten the doctor
           return;
         }
         if (e.error === "not-allowed" || e.error === "service-not-allowed") {
@@ -244,6 +243,26 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     if (onClose && !embedded) onClose();
   };
 
+  // Передача текста в глобальный поиск Ctrl+K
+  const handleSendToSearch = () => {
+    const text = `${finalTranscript} ${interimTranscript}`.trim();
+    if (!text) return;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("dente:open-global-search", { detail: { query: text } }));
+      window.dispatchEvent(new CustomEvent("dente:global-search", { detail: { query: text } }));
+    }
+  };
+
+  // Передача текста в чат Копайлота
+  const handleSendToChat = () => {
+    const text = `${finalTranscript} ${interimTranscript}`.trim();
+    if (!text) return;
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("dente:fill-copilot-input", { detail: { prompt: text } }));
+      window.dispatchEvent(new CustomEvent("dente:open-copilot"));
+    }
+  };
+
   useEffect(() => {
     return () => {
       if (recognitionRef.current) {
@@ -277,8 +296,14 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
           </div>
         </div>
 
-        {/* Audio VU Wave */}
-        <div className={`copilot-stenographer-vu-meter ${isListening ? "copilot-stenographer-vu-meter--active" : ""}`} aria-label="Индикатор аудио-сигнала">
+        {/* Audio VU Wave with 1-click stop */}
+        <div
+          className={`copilot-stenographer-vu-meter ${isListening ? "copilot-stenographer-vu-meter--active" : ""}`}
+          aria-label="Индикатор аудио-сигнала"
+          onClick={isListening ? stopListening : startListening}
+          title={isListening ? "Остановить запись" : "Включить запись"}
+          style={{ cursor: "pointer" }}
+        >
           <div className="copilot-vu-bar" />
           <div className="copilot-vu-bar" />
           <div className="copilot-vu-bar" />
@@ -316,8 +341,33 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         </div>
 
         {errorMessage && (
-          <div className="text-xs text-[var(--bad)] px-2 py-1 bg-[var(--bad)]/10 rounded">
+          <div className="text-xs text-[var(--bad,#ef4444)] px-2 py-1 bg-[var(--bad)]/10 rounded">
             {errorMessage}
+          </div>
+        )}
+
+        {/* Quick routing pills: В поиск Ctrl+K / В чат Копайлота */}
+        {(finalTranscript || interimTranscript) && (
+          <div className="flex items-center gap-2 pt-1 text-xs">
+            <span className="text-[11px] text-[var(--muted)]">Отправить:</span>
+            <button
+              type="button"
+              onClick={handleSendToSearch}
+              className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] transition-colors cursor-pointer"
+              title="Передать текст в глобальный поиск Ctrl+K"
+            >
+              <Search size={12} className="text-[var(--teal,#0d9488)]" />
+              <span>В поиск (Ctrl+K)</span>
+            </button>
+            <button
+              type="button"
+              onClick={handleSendToChat}
+              className="px-2.5 py-1 rounded-md border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-[11px] font-medium flex items-center gap-1 hover:bg-[var(--line)] transition-colors cursor-pointer"
+              title="Передать текст в окно чата с ассистентом"
+            >
+              <MessageSquare size={12} className="text-[var(--teal,#0d9488)]" />
+              <span>В чат ИИ</span>
+            </button>
           </div>
         )}
 
@@ -348,7 +398,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         )}
       </div>
 
-      {/* Actions Toolbar */}
+      {/* Actions Toolbar: ровно ОДНА Primary CTA кнопка var(--teal) (#0d9488) */}
       <footer className="copilot-stenographer-actions">
         <button
           type="button"

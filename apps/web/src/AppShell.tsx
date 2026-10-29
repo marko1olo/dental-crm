@@ -129,6 +129,9 @@ function isStandaloneActive(): boolean {
 		h.includes("copilot-standalone") ||
 		s.includes("copilot_workspace") ||
 		h.includes("copilot-workspace") ||
+		h === "#copilot" ||
+		h === "#ai" ||
+		s.includes("copilot=1") ||
 		s.includes("anesthesia") ||
 		h.includes("anesthesia") ||
 		s.includes("patient_card") ||

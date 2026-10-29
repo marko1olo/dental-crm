@@ -1,14 +1,14 @@
 /**
  * CopilotProtocol043Actions.tsx — Совместимый фасад действий карты приёма.
  *
- * Мандат 8ap: Каноническое имя компонента — CopilotExaminationProtocolActions.
+ * Мандат 8ap: Каноническое имя компонента — CopilotSoapDiaryConfirm.
  */
 
 export {
-  CopilotExaminationProtocolActions,
+  CopilotSoapDiaryConfirm,
   CopilotSoapDiaryActions,
   CopilotProtocol043Actions,
-  type CopilotExaminationProtocolActionsProps,
-  type CopilotSoapDiaryActionsProps,
+  type CopilotSoapDiaryConfirmProps,
   type CopilotProtocol043ActionsProps,
-} from "./CopilotExaminationProtocolActions";
+  type CopilotSoapDiaryActionsProps,
+} from "./CopilotSoapDiaryConfirm";

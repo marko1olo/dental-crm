@@ -13,12 +13,18 @@ export {
 	CopilotReactTracker,
 } from "./cards/CopilotReactTracker";
 export {
-	CopilotSoapDiaryCard,
-	CopilotSoapDiaryCard as CopilotExaminationProtocolCard,
-	CopilotSoapDiaryCard as CopilotMedicalCardProtocolCard,
-	CopilotSoapDiaryCard as ElectronicClinicalDiaryCard,
-	CopilotProtocol043ConfirmCard,
-} from "./cards/CopilotSoapDiaryCard";
+	CopilotVisitCardConfirm,
+	CopilotVisitCardConfirm as CopilotSoapDiaryCard,
+	CopilotVisitCardConfirm as CopilotExaminationProtocolCard,
+	CopilotVisitCardConfirm as CopilotMedicalCardProtocolCard,
+	CopilotVisitCardConfirm as ElectronicClinicalDiaryCard,
+	CopilotVisitCardConfirm as CopilotProtocol043ConfirmCard,
+} from "./cards/CopilotVisitCardConfirm";
+export {
+	CopilotSoapDiaryConfirm,
+	CopilotSoapDiaryConfirm as CopilotSoapDiaryActions,
+	CopilotSoapDiaryConfirm as CopilotProtocol043Actions,
+} from "./cards/CopilotSoapDiaryConfirm";
 export { CopilotClinicalProtocolCard } from "./cards/CopilotClinicalProtocolCard";
 export { CopilotDdiSafetyCard } from "./cards/CopilotDdiSafetyCard";
 export {

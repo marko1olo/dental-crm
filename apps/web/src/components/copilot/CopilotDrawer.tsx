@@ -9,7 +9,9 @@ import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemov
 import { useAppStore } from "../../store/appStore";
 import { useCopilotContextSync } from "./CopilotContextSync";
 import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
-import { CopilotConfirmParamsView } from "./drawer/CopilotConfirmParamsView";
+import { CopilotConfirmActionCard } from "./drawer/CopilotConfirmActionCard";
+import { CopilotDrawerTasksTab } from "./drawer/CopilotDrawerTasksTab";
+import { CopilotDrawerEmptyState } from "./drawer/CopilotDrawerEmptyState";
 import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
 import { CopilotMarkdown } from "./CopilotMarkdown";
 import { CopilotMessage } from "./CopilotMessage";
@@ -18,30 +20,6 @@ import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./co
 import "./CopilotDrawer.css";
 
 export type { ProactiveNudge };
-
-const TOOL_TITLES_RU: Record<string, string> = {
-  calculate_treatment_estimate: "Предварительный расчёт сметы лечения",
-  apply_treatment_estimate: "Применение сметы плана лечения",
-  draft_clinical_soap_diary: "Формирование дневника приёма (SOAP)",
-  get_patient_clinical_card: "Медицинская карта приёма",
-  save_clinical_diary: "Сохранение протокола приёма в медкарту",
-  save_visit_diary: "Сохранение протокола приёма в медкарту",
-  save_examination_protocol: "Сохранение протокола приёма в медкарту",
-  save_protocol_043: "Сохранение протокола приёма в медкарту",
-  create_prescription: "Оформление электронного рецепта",
-  create_electronic_prescription: "Оформление электронного рецепта",
-  create_prescription_107: "Оформление электронного рецепта",
-  check_drug_interactions: "Проверка лекарственной совместимости",
-  update_odontogram: "Обновление статуса зубной формулы",
-  add_procedure_to_invoice: "Добавление услуги в счёт приёма",
-  create_appointment: "Бронирование приёма в расписании",
-};
-
-function humanizeToolName(name?: string | null): string {
-  if (!name) return "Клиническое действие";
-  const cleaned = name.replace(/^(clinical|crm)\./, "");
-  return TOOL_TITLES_RU[cleaned] || cleaned.replace(/_/g, " ");
-}
 
 export interface CopilotDrawerProps {
   isOpen: boolean;
@@ -72,9 +50,10 @@ export interface CopilotDrawerProps {
 
 export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   isOpen, messages, busy, phase, pending, nameCache, nudges = [],
-  proactiveAlerts = [], activeTab, onTabChange, onClose, onSend,
+  proactiveAlerts = [], whatsappHitLCards = [], activeTab, onTabChange, onClose, onSend,
   onConfirm, onReset, onDismissNudge, onBookSlot,
   onSelectPatient, onSelectAppointment,
+  onDismissProactiveAlert, onApproveWhatsApp, onRejectWhatsApp,
   isVoiceActive: isVoiceActiveProp, onToggleVoice,
 }) => {
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
@@ -199,7 +178,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
   // Operational shift debts from store via SSOT hook
   const storeDashboard = useAppStore((s) => s.dashboard);
-  const { shiftDebtRecalls, shiftDebtEstimates } = useCopilotDrawerDebts(storeDashboard);
+  const { shiftDebtRecalls, shiftDebtEstimates, totalEstimatesSumRub } = useCopilotDrawerDebts(storeDashboard);
   const totalTasksCount = (pending ? 1 : 0) + shiftDebtRecalls.length + shiftDebtEstimates.length;
 
   if (!isOpen) return null;
@@ -396,73 +375,10 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           {activeTab === "chat" ? (
             <div className="copilot-chat-feed">
               {messages.length === 0 && (
-                <div className="copilot-feed-empty">
-                  <Sparkles size={32} className="text-[var(--teal)] opacity-60 mb-2" />
-                  <p className="text-sm font-medium text-[var(--ink)]">Ассистент готов к работе</p>
-                  <p className="text-xs text-[var(--muted)] max-w-xs mt-1">
-                    {runtimeMode === "desktop_native"
-                      ? "Управление рабочей станцией ПК: снимки визиографа, томографы, касса по COM/USB."
-                      : "Клинический ассистент: расписание, дневник SOAP, сметы и медкарта приёма."}
-                  </p>
-                  {/* Quick Playbooks */}
-                  <div className="copilot-quick-prompts mt-4">
-                    {runtimeMode === "desktop_native" ? (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleSendPrompt("Захвати экран визиографа")}
-                          className="copilot-quick-prompt-btn"
-                        >
-                          <Camera size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                          <span>Захвати экран визиографа</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSendPrompt("Найди снимки КЛКТ пациента")}
-                          className="copilot-quick-prompt-btn"
-                        >
-                          <FolderSearch size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                          <span>Найди снимки КЛКТ</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSendPrompt("Проверь фискальный регистратор")}
-                          className="copilot-quick-prompt-btn"
-                        >
-                          <Receipt size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                          <span>Касса по COM/USB</span>
-                        </button>
-                      </>
-                    ) : (
-                      <>
-                        <button
-                          type="button"
-                          onClick={() => handleSendPrompt("Заполни дневник приёма")}
-                          className="copilot-quick-prompt-btn"
-                        >
-                          <FileText size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                          <span>Заполни дневник приёма</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSendPrompt("Рассчитай 3 плана лечения")}
-                          className="copilot-quick-prompt-btn"
-                        >
-                          <Calculator size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                          <span>Рассчитай 3 плана лечения</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => handleSendPrompt("Проверь лекарственную безопасность")}
-                          className="copilot-quick-prompt-btn"
-                        >
-                          <ShieldAlert size={15} className="text-[var(--warn,#f59e0b)] shrink-0 mr-2" />
-                          <span>Проверь аллергии и совместимость</span>
-                        </button>
-                      </>
-                    )}
-                  </div>
-                </div>
+                <CopilotDrawerEmptyState
+                  runtimeMode={runtimeMode}
+                  onSendPrompt={handleSendPrompt}
+                />
               )}
 
               {messages.map((msg, idx) => (
@@ -479,72 +395,29 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
               {/* Two-Phase Confirmation Guard */}
               {pending && (
-                <div className="copilot-action-confirm-card" data-testid="copilot-action-confirm-card">
-                  <div className="copilot-confirm-header">
-                    <AlertCircle size={18} className="text-[var(--teal)] shrink-0" />
-                    <div>
-                      <h4 className="copilot-confirm-title">Подтверждение операции</h4>
-                      <p className="copilot-confirm-sub">Действие: {humanizeToolName(pending.name || pending.toolName)}</p>
-                    </div>
-                  </div>
-                  <CopilotConfirmParamsView
-                    name={pending.name || pending.toolName || undefined}
-                    args={pending.args || (pending as any).arguments || {}}
-                    nameCache={nameCache}
-                  />
-                  <div className="copilot-confirm-actions">
-                    <button
-                      type="button"
-                      onClick={() => onConfirm("confirm")}
-                      className="copilot-btn-primary"
-                      data-testid="copilot-confirm-btn"
-                    >
-                      <Check size={14} />
-                      Применить
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => onConfirm("reject", "Отклонено врачом")}
-                      className="copilot-btn-secondary copilot-btn-cancel"
-                      data-testid="copilot-reject-btn"
-                    >
-                      <X size={14} />
-                      Отмена
-                    </button>
-                  </div>
-                </div>
+                <CopilotConfirmActionCard
+                  pending={pending}
+                  nameCache={nameCache}
+                  onConfirm={onConfirm}
+                />
               )}
             </div>
           ) : (
-            /* Tasks Tab */
-            <div className="copilot-tasks-tab-content" data-testid="copilot-tasks-tab-content">
-              <div className="copilot-tasks-section">
-                <h3 className="copilot-tasks-section-title">Задачи смены</h3>
-
-                {/* Recalls */}
-                <div className="copilot-task-card">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-xs text-[var(--ink)]">Просроченные рекаллы</span>
-                    <span className="text-xs font-bold text-[var(--teal)]">{shiftDebtRecalls.length}</span>
-                  </div>
-                  <p className="text-xs text-[var(--muted)]">Пациенты, ожидающие повторного приглашения на гигиену и контроль.</p>
-                  {shiftDebtRecalls.length > 0 && onBookSlot && (
-                    <button type="button" onClick={() => onBookSlot({})} className="copilot-task-action-btn mt-2">
-                      Записаться на слот
-                    </button>
-                  )}
-                </div>
-
-                {/* Estimates */}
-                <div className="copilot-task-card mt-2">
-                  <div className="flex items-center justify-between mb-1">
-                    <span className="font-semibold text-xs text-[var(--ink)]">Ожидают ответа по смете</span>
-                    <span className="text-xs font-bold text-[var(--warn)]">{shiftDebtEstimates.length}</span>
-                  </div>
-                  <p className="text-xs text-[var(--muted)]">Сметы на лечении без подтверждения пациентом.</p>
-                </div>
-              </div>
-            </div>
+            <CopilotDrawerTasksTab
+              totalEstimatesSumRub={totalEstimatesSumRub}
+              shiftDebtRecalls={shiftDebtRecalls}
+              shiftDebtEstimates={shiftDebtEstimates}
+              pending={pending}
+              nameCache={nameCache}
+              whatsappHitLCards={whatsappHitLCards}
+              proactiveAlerts={proactiveAlerts}
+              onConfirm={onConfirm}
+              onBookSlot={onBookSlot}
+              onSendPrompt={handleSendPrompt}
+              onDismissProactiveAlert={onDismissProactiveAlert || onDismissNudge}
+              onApproveWhatsApp={onApproveWhatsApp}
+              onRejectWhatsApp={onRejectWhatsApp}
+            />
           )}
         </div>
 

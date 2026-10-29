@@ -1,7 +1,7 @@
 /**
  * DirectCopilotLauncher.tsx — Standalone лаунчер клинического ассистента DENTE.
- * Мандат 8aq: Монтирование в живой UI (#copilot, #ai, ?copilot=1, ?copilot_standalone=1).
- * Мандат 8b: размер 60-80 строк (Sweet Spot).
+ * Мандат 8aq: Монтирование в живой UI (#copilot, #ai, Ctrl+Space, dente:open-copilot).
+ * Мандат 8b: размер файла строго в Sweet Spot 60–80 строк.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -14,16 +14,16 @@ function checkIsCopilotActive(): boolean {
   const search = new URLSearchParams(s);
 
   return (
+    search.get("copilot") === "1" ||
     search.get("copilot_standalone") === "1" ||
     search.get("copilot_workspace") === "1" ||
-    search.get("copilot") === "workspace" ||
     search.get("view") === "copilot_standalone" ||
     search.get("view") === "copilot_workspace" ||
+    h === "#copilot" ||
+    h === "#ai" ||
     h === "#copilot-standalone" ||
     h === "#copilot-workspace" ||
-    h === "#ai-standalone" ||
-    h.includes("copilot-standalone") ||
-    h.includes("copilot-workspace")
+    h.includes("copilot")
   );
 }
 
@@ -37,12 +37,23 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
       setIsActive(active);
       if (active) setIsOpen(true);
     };
-
+    const handleOpenEvent = () => { setIsActive(true); setIsOpen(true); };
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.ctrlKey || e.metaKey) && (e.code === "Space" || e.key === " ")) {
+        e.preventDefault();
+        setIsActive((prev) => !prev);
+        setIsOpen((prev) => !prev);
+      }
+    };
     window.addEventListener("hashchange", handleLocationChange);
     window.addEventListener("popstate", handleLocationChange);
+    window.addEventListener("dente:open-copilot", handleOpenEvent);
+    window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("hashchange", handleLocationChange);
       window.removeEventListener("popstate", handleLocationChange);
+      window.removeEventListener("dente:open-copilot", handleOpenEvent);
+      window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 

@@ -214,10 +214,18 @@ export interface CopilotSoapDiaryCardProps {
 	onReject?: (() => void) | undefined;
 	disabled?: boolean | undefined;
 }
+export type CopilotVisitCardConfirmProps = CopilotSoapDiaryCardProps;
+export type CopilotSoapDiaryConfirmProps = {
+	savedStatus: boolean;
+	onSave: () => void;
+	onReject?: (() => void) | undefined;
+	disabled?: boolean | undefined;
+};
 export type CopilotExaminationProtocolCardProps = CopilotSoapDiaryCardProps;
 export type CopilotMedicalCardProtocolCardProps = CopilotSoapDiaryCardProps;
 export type CopilotProtocol043ConfirmCardProps = CopilotSoapDiaryCardProps;
 export type ExaminationProtocolData = Protocol043Data;
+export type VisitDiaryData = Protocol043Data;
 
 export interface CopilotDdiSafetyCardProps {
 	data: DdiSafetyAlertData;
