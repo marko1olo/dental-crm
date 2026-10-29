@@ -12,6 +12,7 @@ export * from "./recallProfile";
 export * from "./recallFilterSort";
 export * from "./recallActions";
 export * from "./recallMessagingApi";
+export { determineTaskCallTypeForCandidate } from "./recallsCatalogData";
 
 // Clean aliases for legacy imports
 import { sanitizePhoneNumber, extractFirstName } from "./recallSmsAndMessaging";

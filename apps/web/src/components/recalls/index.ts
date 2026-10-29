@@ -5,6 +5,11 @@
 
 export * from "./patientRecallEngine";
 export * from "./recallTemplates";
+export {
+	buildRecallMessageContent,
+	type PatientRecallItem,
+} from "./recallsCatalogData";
+export { DirectRecallsLauncher } from "./DirectRecallsLauncher";
 
 export {
 	PatientRecallsHubModal,

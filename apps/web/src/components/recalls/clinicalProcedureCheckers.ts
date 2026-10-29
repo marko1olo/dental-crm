@@ -2,6 +2,7 @@
 
 export interface ClinicalProcedureIdentifier {
 	readonly code?: string | undefined;
+	readonly code804n?: string | undefined;
 	readonly serviceCode?: string | undefined;
 	readonly nomenclatureCode?: string | undefined;
 	readonly category?: string | undefined;
@@ -10,7 +11,7 @@ export interface ClinicalProcedureIdentifier {
 }
 
 function normalizeCode(proc: ClinicalProcedureIdentifier): string {
-	return (proc.serviceCode || proc.nomenclatureCode || proc.code || "").trim().replace(/\s+/g, "").toUpperCase();
+	return (proc.code804n || proc.serviceCode || proc.nomenclatureCode || proc.code || "").trim().replace(/\s+/g, "").toUpperCase();
 }
 
 function normalizeName(proc: ClinicalProcedureIdentifier): string {
