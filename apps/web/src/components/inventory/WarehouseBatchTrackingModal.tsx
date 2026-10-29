@@ -1,5 +1,5 @@
 import { Package, ShieldAlert } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import { BatchTrackingFilterBar } from "./batchTrackingModules/BatchTrackingFilterBar.js";
 import { BatchTrackingHeader } from "./batchTrackingModules/BatchTrackingHeader.js";

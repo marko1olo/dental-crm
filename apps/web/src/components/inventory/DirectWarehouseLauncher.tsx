@@ -15,10 +15,12 @@ export const DirectWarehouseLauncher: React.FC = () => {
 			s.includes("warehouse=1") ||
 			s.includes("inventory=1") ||
 			s.includes("stock=1") ||
+			s.includes("warehouse_hub=1") ||
 			h.includes("#warehouse") ||
 			h.includes("#inventory") ||
 			h.includes("#stock") ||
-			h.includes("#warehouse-hub")
+			h.includes("#warehouse-hub") ||
+			h.includes("#warehouse_hub")
 		);
 	});
 
@@ -29,7 +31,13 @@ export const DirectWarehouseLauncher: React.FC = () => {
 
 		const handleHashChange = () => {
 			const h = window.location.hash || "";
-			if (h.includes("#warehouse") || h.includes("#inventory") || h.includes("#stock")) {
+			if (
+				h.includes("#warehouse") ||
+				h.includes("#inventory") ||
+				h.includes("#stock") ||
+				h.includes("#warehouse-hub") ||
+				h.includes("#warehouse_hub")
+			) {
 				setIsOpen(true);
 			}
 		};
@@ -54,7 +62,8 @@ export const DirectWarehouseLauncher: React.FC = () => {
 			url.searchParams.delete("warehouse");
 			url.searchParams.delete("inventory");
 			url.searchParams.delete("stock");
-			const cleanHash = window.location.hash.replace(/#(warehouse-hub|warehouse|inventory|stock)/g, "");
+			url.searchParams.delete("warehouse_hub");
+			const cleanHash = window.location.hash.replace(/#(warehouse-hub|warehouse_hub|warehouse|inventory|stock)/g, "");
 			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
 			window.history.replaceState({}, "", newUrl);
 		}

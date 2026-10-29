@@ -18,7 +18,6 @@ import { WarehouseAuditToolbar } from "./auditTab/WarehouseAuditToolbar.js";
 import { useWarehouseAuditState, type InventoryCategoryFilter } from "./auditTab/useWarehouseAuditState.js";
 import { WarehouseInventoryAuditTable } from "./WarehouseInventoryAuditTable.js";
 import { WarehouseInventoryKpisGrid } from "./WarehouseInventoryKpisGrid.js";
-import "./warehouseInventory.css";
 
 export interface WarehouseInventoryAuditModalProps {
 	readonly isOpen: boolean;

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { WarehouseWaybillsTabProps } from "./types.js";
 import { useWarehouseWaybills } from "./useWarehouseWaybills.js";
 import { WaybillDetailsEmpty } from "./WaybillDetailsEmpty.js";

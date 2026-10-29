@@ -1,5 +1,5 @@
 import { Search } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useMemo, useState } from "react";
 import { WarehouseOverviewKpiBar } from "./overviewTab/WarehouseOverviewKpiBar.js";
 import { WarehouseOverviewTable } from "./overviewTab/WarehouseOverviewTable.js";

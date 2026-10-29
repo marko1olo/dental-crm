@@ -1,5 +1,5 @@
 import { Plus, Search, Truck, X, Zap } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface WaybillsToolbarProps {
 	readonly searchQuery: string;

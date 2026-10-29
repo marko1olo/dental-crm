@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import type { WarehouseDiscrepancyAct, WarehouseTransferDocument } from "./warehouseTransferEngine.js";
 import { WarehouseTransferAddBar } from "./WarehouseTransferAddBar.js";
@@ -9,7 +9,6 @@ import { WarehouseTransferRouteBar } from "./WarehouseTransferRouteBar.js";
 import { WarehouseTransferSummaryBar } from "./WarehouseTransferSummaryBar.js";
 import { WarehouseTransferTable } from "./WarehouseTransferTable.js";
 import { useWarehouseTransferLogic } from "./useWarehouseTransferLogic.js";
-import "./warehouseTransfer.css";
 
 export interface WarehouseTransferModalProps {
 	readonly isOpen: boolean;

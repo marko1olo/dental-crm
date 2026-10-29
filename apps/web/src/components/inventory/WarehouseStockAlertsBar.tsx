@@ -1,5 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useMemo } from "react";
 import { WarehouseStockAlertBadges } from "./WarehouseStockAlertBadges.js";
 import { WarehouseStockAlertsActions } from "./WarehouseStockAlertsActions.js";

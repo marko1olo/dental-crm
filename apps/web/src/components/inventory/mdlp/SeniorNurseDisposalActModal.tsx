@@ -7,7 +7,6 @@ import { SeniorNurseDisposalPassportBar } from "./SeniorNurseDisposalPassportBar
 import { SeniorNurseDisposalSanpinBanner } from "./SeniorNurseDisposalSanpinBanner.js";
 import { SeniorNursePurchaseOrderModal } from "./SeniorNursePurchaseOrderModal.js";
 import { useSeniorNurseDisposalActLogic } from "./useSeniorNurseDisposalActLogic.js";
-import "./mdlpInventory.css";
 
 export { executeSeniorNurseDisposalActInBackground, type BackgroundDisposalActOptions } from "./seniorNurseDisposalEngine.js";
 

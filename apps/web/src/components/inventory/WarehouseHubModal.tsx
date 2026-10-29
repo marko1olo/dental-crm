@@ -136,7 +136,7 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
+			className="fixed inset-0 z-[100001] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-0 sm:p-4"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="warehouse-hub-title"
@@ -173,7 +173,7 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors"
+						className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
 						aria-label="Закрыть окно склада"
 						data-testid="btn-close-warehouse-hub"
 					>
@@ -221,18 +221,18 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 										<option value="МедСнаб Трейд">ООО «МедСнаб»</option>
 									</select>
 								</div>
-								<p className="text-[11px] text-[var(--muted)] mb-3">
+								<p className="hidden sm:block text-[11px] text-[var(--muted)] mb-3">
 									Поступление карпул, игл, композитов. Автоматически гасит отрицательный остаток у кресла.
 								</p>
 							</div>
 							<button
 								type="button"
 								onClick={handleExpressIncomingInvoice}
-								className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line)] hover:bg-[var(--line-subtle)] font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+								className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								data-testid="btn-express-inbound"
 							>
 								<PlusCircle size={15} className="text-emerald-600 dark:text-emerald-400" />
-								<span>+ Оприходовать стандартную накладную</span>
+								<span>+ Оприходовать накладную</span>
 							</button>
 						</div>
 
@@ -250,10 +250,10 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 												key={m}
 												type="button"
 												onClick={() => setProcMultiplier(m)}
-												className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+												className={`text-[10px] font-bold px-2 py-0.5 rounded cursor-pointer ${
 													procMultiplier === m
 														? "bg-teal-600 text-white"
-														: "bg-[var(--line-subtle)] text-[var(--muted)] hover:text-[var(--ink)]"
+														: "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
 												}`}
 											>
 												{m}x
@@ -264,7 +264,7 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 								<select
 									value={selectedTechMapId}
 									onChange={(e) => setSelectedTechMapId(e.target.value)}
-									className="w-full text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg px-2 py-1.5 mb-3 text-[var(--ink)]"
+									className="w-full text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg px-2 py-1.5 mb-2 sm:mb-3 text-[var(--ink)]"
 									aria-label="Выбор технологической карты процедуры"
 								>
 									{PROCEDURE_TECH_MAPS.map((tm) => (
@@ -277,11 +277,11 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 							<button
 								type="button"
 								onClick={handleBatchDeduction}
-								className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line)] hover:bg-[var(--line-subtle)] font-medium text-xs flex items-center justify-center gap-2 transition-colors"
+								className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium text-xs flex items-center justify-center gap-2 transition-colors cursor-pointer"
 								data-testid="btn-batch-deduct"
 							>
 								<MinusCircle size={15} className="text-rose-600 dark:text-rose-400" />
-								<span>- Списать пакет расходников ({procMultiplier}x)</span>
+								<span>- Списать материалы ({procMultiplier}x)</span>
 							</button>
 						</div>
 					</div>
@@ -387,7 +387,7 @@ export const WarehouseHubModal: React.FC<WarehouseHubModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] hover:bg-[var(--line-subtle)] text-xs font-medium transition-colors w-1/3 sm:w-auto flex items-center justify-center"
+							className="min-h-[44px] px-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-medium transition-colors w-1/3 sm:w-auto flex items-center justify-center cursor-pointer"
 							data-testid="btn-cancel-warehouse-hub"
 						>
 							Закрыть

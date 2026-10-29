@@ -11,7 +11,6 @@ import { MdlpDisposalSanpinBanner } from "./MdlpDisposalSanpinBanner.js";
 import { MdlpDisposalStatsBar } from "./MdlpDisposalStatsBar.js";
 import { MdlpDisposalSuccessBanner } from "./MdlpDisposalSuccessBanner.js";
 import { useMdlpDisposalLogic } from "./useMdlpDisposalLogic.js";
-import "./mdlpInventory.css";
 
 export interface MdlpDisposalQueueModalProps {
 	readonly isOpen: boolean;

@@ -6,7 +6,6 @@ import { MaterialBomHeaderStats } from "./bomModules/MaterialBomHeaderStats.js";
 import { MaterialBomListTable } from "./bomModules/MaterialBomListTable.js";
 import type { ProcedureMaterialRuleViewItem } from "./bomModules/materialBomTypes.js";
 import { useMaterialBomsData } from "./bomModules/useMaterialBomsData.js";
-import "./MaterialBomsSettingsPanel.css";
 
 export type { ProcedureMaterialRuleViewItem };
 

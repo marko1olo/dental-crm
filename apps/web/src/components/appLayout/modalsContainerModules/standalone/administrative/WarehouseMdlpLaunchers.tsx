@@ -6,10 +6,8 @@
 import React from "react";
 import { MdlpScanningModal } from "../../../../mdlp/MdlpScanningModal";
 import { MdlpDisposalQueueModal } from "../../../../inventory/mdlp/MdlpDisposalQueueModal";
-import { InventoryView } from "../../../../InventoryView";
 import { InventoryInboundInvoiceModal } from "../../../../InventoryInboundInvoiceModal";
 import { ConsumablesBatchWriteoffModal } from "../../../../inventory/ConsumablesBatchWriteoffModal";
-import { WarehouseHubModal } from "../../../../inventory/WarehouseHubModal";
 
 export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;
@@ -114,42 +112,6 @@ export function renderWarehouseMdlpLaunchers(): React.ReactElement | null {
 					window.history.replaceState({}, "", u.pathname + (u.search || ""));
 				}}
 			/>
-		);
-	}
-
-	const isWarehouseHubStandalone =
-		search.get("warehouse_hub") === "1" ||
-		search.get("warehouse") === "hub" ||
-		h.includes("warehouse_hub") ||
-		h.includes("warehouse-hub");
-
-	if (isWarehouseHubStandalone) {
-		return (
-			<WarehouseHubModal
-				isOpen={true}
-				organizationId={getEffectiveOrgId()}
-				onClose={() => {
-					const u = new URL(window.location.href);
-					u.searchParams.delete("warehouse_hub");
-					u.searchParams.delete("warehouse");
-					const cleanHash = window.location.hash.replace(/#(warehouse-hub|warehouse_hub)/g, "");
-					window.history.replaceState({}, "", u.pathname + (u.search || "") + cleanHash);
-				}}
-			/>
-		);
-	}
-
-	const isInventoryStandalone =
-		search.get("inventory") === "1" ||
-		search.get("warehouse") === "1" ||
-		h.includes("inventory") ||
-		h.includes("warehouse");
-
-	if (isInventoryStandalone) {
-		return (
-			<div className="fixed inset-0 z-[99999] w-full h-full flex flex-col bg-[var(--paper)] text-[var(--ink)] overflow-hidden">
-				<InventoryView organizationId={getEffectiveOrgId()} />
-			</div>
 		);
 	}
 

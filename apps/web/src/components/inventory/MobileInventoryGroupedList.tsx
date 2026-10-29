@@ -14,7 +14,6 @@ import {
 	MobileInventoryEmptyState,
 	MobileInventoryBottomBar,
 } from "./mobileGroupedListModules/index.js";
-import "../../styles/modules/mobile-inventory.css";
 
 export type { MobileInventoryCategoryType, MobileInventoryGroupedListProps };
 export { matchesCategory, getItemCategoryType, MOBILE_INVENTORY_CATEGORIES };

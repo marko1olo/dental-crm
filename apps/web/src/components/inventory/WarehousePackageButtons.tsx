@@ -1,5 +1,5 @@
 import { PackageCheck, ShieldCheck, Sparkles, Syringe } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ClinicalPackageId } from "./warehousePackageWriteOffEngine.js";
 
 export interface WarehousePackageButtonsProps {

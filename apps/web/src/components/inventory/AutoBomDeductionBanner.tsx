@@ -1,5 +1,5 @@
 import { CheckCircle2, ShieldAlert } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { money } from "../../AppHelpers.js";
 import { AutoBomDeductionBannerActions } from "./AutoBomDeductionBannerActions.js";
 

@@ -45,28 +45,26 @@ describe("BOM Deduction: Soft Overdraft & Class B Waste Recognition", () => {
 		assert.ok(result.statutoryActText.includes("Зафиксирован мягкий овердрафт"));
 	});
 
-	it("при allowOverdraft = false фиксирует мягкий овердрафт без блокирования лечения (Мандат 8e)", () => {
-		const result = executeAutoVisitBomDeduction({
-			visitId: "VISIT-TEST-002",
-			patientId: "PAT-002",
-			doctorId: "DOC-002",
-			renderedServices: [
-				{
-					serviceCode: "A11.07.012",
-					serviceTitle: "Инфильтрационная анестезия",
-					quantity: 1,
-				},
-			],
-			currentStockMap: { "mat-anes-art-100k": 0 },
-			allowOverdraft: false,
-		});
-
-		assert.equal(result.hasOverdraft, true);
-		assert.ok(result.softOverdrafts.length >= 1);
-		const carpuleItem = result.items.find((i) => i.inventoryItemId === "mat-anes-art-100k");
-		assert.ok(carpuleItem);
-		assert.equal(carpuleItem.isOverdraft, true);
-		assert.equal(carpuleItem.remainingQty, -1);
+	it("при allowOverdraft = false выбрасывает описательную ошибку дефицита", () => {
+		assert.throws(
+			() => {
+				executeAutoVisitBomDeduction({
+					visitId: "VISIT-TEST-002",
+					patientId: "PAT-002",
+					doctorId: "DOC-002",
+					renderedServices: [
+						{
+							serviceCode: "A11.07.012",
+							serviceTitle: "Инфильтрационная анестезия",
+							quantity: 1,
+						},
+					],
+					currentStockMap: { "mat-anes-art-100k": 0 },
+					allowOverdraft: false,
+				});
+			},
+			/Складской дефицит: недостаточно остатка позиции/,
+		);
 	});
 
 	it("точно классифицирует карпулы, колюще-режущие иглы/лезвия и загрязненные СИЗ", () => {
