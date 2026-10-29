@@ -39,10 +39,11 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 		.limit(1);
 
 	const cycleNumber = (lastCycle?.cycleNumber ?? 0) + 1;
-	const barcode = `BATCH-C${String(cycleNumber).padStart(2, "0")}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
+	const barcode = String(body.barcode || "").trim() || `BATCH-C${String(cycleNumber).padStart(2, "0")}-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
 	const expiresAt = computePackagingExpirationDate(packagingType as SterilizationPackagingType, now);
 	const cycleTimeLabel = String(body.cycleName || body.shiftCycleName || (now.getHours() < 12 ? "Утренний цикл" : now.getHours() < 17 ? "Дневной цикл" : "Вечерний цикл"));
 	const itemsDescription = String(body.itemsDescription || `${cycleTimeLabel} автоклавирования (${batchSize} упаковок: смотровые лотки, боры, наконечники, хирургия)`);
+	const indicatorType = String(body.indicatorType || (body.indicatorClass === "4" ? "class4_multivariable" : "class5_integrating"));
 
 	const [log] = await db
 		.insert(sterilizationLogs)
@@ -56,7 +57,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 			temperatureCelsius: temp,
 			pressureBar: pressure,
 			durationMin,
-			indicatorType: "class5_integrating",
+			indicatorType,
 			cycleMode: "B",
 			temperatureSet: temp,
 			pressureSet: pressure,
@@ -95,7 +96,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 		userId: (req as any).user?.id ?? null,
 		count: batchSize,
 		packagingType,
-		indicatorType: "class5_integrating",
+		indicatorType,
 		cycleNumber,
 		barcode,
 	});

@@ -16,7 +16,8 @@ function mapCycleRow(d: any, idx: number): SanPinCycleEntry {
 	const timeStr = rawDate.toTimeString().slice(0, 5);
 	const isNorm = d.status === "passed" || d.passedIndicator !== false;
 	// Честный маппинг: только данные из БД, никаких выдуманных автоклавов/штрихкодов/операторов.
-	const realBatchSize = Number(d.batchSize) || Number(d.kraftPouchesCount) || 0;
+	const batchMatch = d.notes?.match(/Партия\s+(\d+)/) || d.itemsDescription?.match(/Партия\s+(\d+)/);
+	const realBatchSize = Number(d.batchSize) || Number(d.kraftPouchesCount) || (batchMatch ? Number(batchMatch[1]) : 0);
 
 	return {
 		id: d.id || `cyc-${idx}`,
