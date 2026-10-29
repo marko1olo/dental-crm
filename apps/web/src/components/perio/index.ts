@@ -1,13 +1,26 @@
 export {
+	PSR_CODE_DEFINITIONS,
+	type PsrCode,
+	type PsrCodeDefinition,
+} from "./perioTypes";
+export {
 	PeriodontogramChart,
 	type PeriodontogramChartProps,
 } from "./PeriodontogramChart";
+export { PerioWorkspaceModal, type PerioWorkspaceModalProps } from "./PerioWorkspaceModal";
+export { DirectPerioLauncher } from "./DirectPerioLauncher";
 export { PerioPsrExpressScreening, type PerioPsrExpressScreeningProps } from "./PerioPsrExpressScreening";
 export { PeriodontalDetailedChart, type PeriodontalDetailedChartProps } from "./PeriodontalDetailedChart";
 export * from "./perioTypes";
+export * from "./perioCatalogData";
 export * from "./perioMath";
 export * from "./perioHeatmap";
-export * from "./periodontalQuickScreening";
+export {
+	generateComprehensivePerio043Text,
+	applyTherapistPathologyPreset,
+	generatePerioProtocolText,
+	type PresetApplyResult,
+} from "./periodontalQuickScreening";
 export * from "./PeriodontalPocketDepthModal";
 export {
 	PerioChartModal,

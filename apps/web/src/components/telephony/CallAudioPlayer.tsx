@@ -586,6 +586,18 @@ export function CallAudioPlayer({
 		};
 	}, [p.audioRef]);
 
+	const effectiveAudioSrc = useMemo(() => {
+		if (!recordingUrl || recordingUrl.trim() === "") return "";
+		const trimmed = recordingUrl.trim();
+		if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("blob:") || trimmed.startsWith("/")) {
+			return trimmed;
+		}
+		if (/^[0-9a-fA-F-]{36}$/.test(trimmed)) {
+			return `/api/telephony/recordings/${trimmed}/stream`;
+		}
+		return trimmed;
+	}, [recordingUrl]);
+
 	if (!recordingUrl || recordingUrl.trim() === "") {
 		return (
 			<CallAudioEmptyState
@@ -607,7 +619,7 @@ export function CallAudioPlayer({
 		>
 			<audio
 				ref={p.audioRef}
-				src={recordingUrl}
+				src={effectiveAudioSrc}
 				onTimeUpdate={p.handleTimeUpdate}
 				onLoadedMetadata={p.handleTimeUpdate}
 				onEnded={() => p.setIsPlaying(false)}

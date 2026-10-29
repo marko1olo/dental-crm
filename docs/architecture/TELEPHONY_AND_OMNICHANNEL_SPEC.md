@@ -128,3 +128,38 @@
      * 📱 `04_omnichannel_hub_mobile_dark.png` (390×844)
 
 
+---
+
+## 6. Ревизия Red Team Телефонии, Входящих Звонков и Плавающего Софтфона
+
+В рамках генеральной инквизиции телефонии и плавающего софтфона (Telephony & Omnichannel Hub) устранены критические архитектурные и визуальные дефекты:
+
+1. **Сквозной бэкенд жизненного цикла звонка (Fastify API + PostgreSQL 18):**
+   - Реализован роут `apps/api/src/routes/telephony/telephonyCallLifecycleHandler.ts`:
+     * `POST /api/telephony/calls/answer`: фиксация ответа оператора, установка таймстемпа начала разговора, WebSocket-бродкаст `TELEPHONY_CALL_ANSWERED`.
+     * `POST /api/telephony/calls/end`: завершение звонка, вычисление точной длительности, транзакционная запись в таблицу `communication_events` (с авто-привязкой пациента по номеру телефона либо лида в `crm_leads`), WebSocket-бродкаст `TELEPHONY_CALL_ENDED`.
+   - Подключен в `apps/api/src/routes/telephony/index.ts` и `apps/api/src/routes/telephony.ts`.
+   - Покрыт изолированными тестами `apps/api/src/tests/routes/telephonyCallLifecycle.test.ts` (100% pass).
+
+2. **Ликвидация файлового микро-шредера и prop-drilling ада (Мандат 8b):**
+   - Устранён каскад из 17 микро-файлов в `apps/web/src/components/telephony/incomingCallPopupModules/`.
+   - Создан канонический контроллер `useIncomingCallPopupController.ts` (290 строк, целевой Sweet Spot Мандата 8b):
+     * Единая точка правды для управления звонком (ответ, сброс, удержание, трансфер, быстрый интейк, бронирование слота);
+     * Прямая интеграция со стором телефонии (`telephonyStore`) и расписанием (`scheduleStore`);
+     * Автономия врача (Doctor Sterile Zone): автоматическое подавление всплывающего попапа на экранах `#visit`, `#odontogram`, `#periodontics`, `#cbct` и для роли врача.
+
+3. **Честный стриминг аудиозаписей (Zero-Mocks Invariant):**
+   - В `CallAudioPlayer.tsx` внедрен строгий резолвер URL стриминга: вместо фиктивных статических путей плеер запрашивает канонический эндпоинт `/api/telephony/recordings/:eventId/stream`.
+   - При отсутствии записи в БД плеер переходит в честное состояние пустого потока без процедурных эмуляторов звука.
+
+4. **Ликвидация дефектов мобильной эргономики (Apple HIG & Мандаты 8al, 8am):**
+   - В `IncomingCallHeaderBar.tsx` демонтирован класс `hidden sm:inline`, из-за которого текст на кнопках «Ответить» и «Сброс» полностью исчезал на мобильных экранах.
+   - Устранено усечение заголовка «ВХОДЯЩ...» на экранах 390×844: заменено на лаконичный анимированный пульсирующий бейдж статуса.
+   - В `IncomingCallActionFooter.tsx` соблюдено железное правило единого дизайн-кода: ровно ОДНА Primary CTA кнопка цвета `#0d9488` («Записать на приём» / `badge-action-book`), остальные кнопки переведены во вторичный нейтральный стиль.
+   - Обеспечен сенсорный минимум $\ge 44\times 44\text{px}$ для всех мобильных тач-таргетов, Natural Thumb Zone и 0px паразитного горизонтального дрифта.
+
+5. **Канонические 4-State Visual Proofs (сняты на живом инстансе `http://127.0.0.1:5173/`):**
+   - ☀️ `docs/proofs/telephony/01_telephony_pc_light_1440x900.png` (63.5 KB)
+   - 🌙 `docs/proofs/telephony/02_telephony_pc_dark_1440x900.png` (71.6 KB)
+   - 📱 `docs/proofs/telephony/03_telephony_mobile_light_390x844.png` (117.2 KB)
+   - 📱 `docs/proofs/telephony/04_telephony_mobile_dark_390x844.png` (114.7 KB)

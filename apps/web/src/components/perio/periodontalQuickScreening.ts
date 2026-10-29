@@ -37,4 +37,4 @@ export {
 	dispatchPresetSideEffects,
 	generatePerioProtocolText,
 	type PresetApplyResult,
-} from "./chart/perioPresets";
+} from "./perioCatalogData";

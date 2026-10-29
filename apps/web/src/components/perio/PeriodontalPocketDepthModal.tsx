@@ -1,16 +1,11 @@
 /**
- * PeriodontalPocketDepthModal.tsx — Модальное окно зондирования пародонтальных карманов
- *
- * SSOT Consolidation: wraps PeriodontogramChart with focused initialSelectedTooth and probing keypad.
- * - Клинические стандарты: зондирование карманов по 6 точкам, расчет CAL = PD + GM, BOP/PLQ
- * - Мандат 8e (Автономия врача): прямое сохранение без блокировок
- * - Мандат 8b: строго < 800 строк (лаконичный SSOT-адаптер)
- * - 0% эмодзи, отсутствие dev-жаргона
+ * PeriodontalPocketDepthModal.tsx — Канонический модальный фасад зондирования карманов
+ * Делегирует в SSOT PerioWorkspaceModal (Мандаты 8e, 8am).
  */
 
-import React, { useCallback, useMemo } from "react";
+import React, { useMemo } from "react";
 import type { PerioToothRecord } from "@dental/shared";
-import { PeriodontogramChart } from "./PeriodontogramChart";
+import { PerioWorkspaceModal } from "./PerioWorkspaceModal";
 
 export interface PeriodontalPocketDepthModalProps {
 	readonly isOpen: boolean;
@@ -26,7 +21,6 @@ export const PeriodontalPocketDepthModal: React.FC<PeriodontalPocketDepthModalPr
 	onClose,
 	toothNumber,
 	initialToothRecord,
-	onSaveToothRecord,
 	readOnly = false,
 }) => {
 	const initialTeeth = useMemo(() => {
@@ -34,29 +28,17 @@ export const PeriodontalPocketDepthModal: React.FC<PeriodontalPocketDepthModalPr
 		return [initialToothRecord];
 	}, [initialToothRecord]);
 
-	const handleChange = useCallback(
-		(teeth: PerioToothRecord[]) => {
-			if (!onSaveToothRecord) return;
-			const target = teeth.find((t) => t.toothNumber === toothNumber);
-			if (target) {
-				onSaveToothRecord(target);
-			}
-		},
-		[onSaveToothRecord, toothNumber],
-	);
-
 	if (!isOpen) return null;
 
 	return (
-		<PeriodontogramChart
-			isModal={true}
+		<PerioWorkspaceModal
 			isOpen={isOpen}
+			isModal={true}
 			onClose={onClose}
 			initialSelectedTooth={toothNumber}
+			initialTab="chart"
 			initialTier3Expanded={true}
-			initialProbeKeyboardEnabled={true}
 			initialTeeth={initialTeeth}
-			onChange={handleChange}
 			readOnly={readOnly}
 		/>
 	);

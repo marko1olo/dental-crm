@@ -10,7 +10,7 @@ import {
 } from "@dental/shared";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { buildPeriodontalTreatmentPlanJustification } from "../chart/perioSideEffectsEngine";
+import { buildPeriodontalTreatmentPlanJustification } from "../perioCatalogData";
 import { applyHealthyPeriodontiumPreset } from "../perioMath";
 
 describe("11. Chairside Hygiene & Treatment Plan Invoice Bridge", () => {

@@ -1,4 +1,5 @@
 import type { StoreApi } from "zustand";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	readDenteClinicToken,
 	readDenteStaffToken,
@@ -146,16 +147,14 @@ export async function fetchCallHistoryAction(set: SetState, get: GetState): Prom
 			const existing = get().callHistory;
 			const mapped: CallHistoryItem[] = data.calls.map((c: any) => {
 				const digits = (c.patientPhone || "").replace(/\D/g, "").slice(-10);
-				const patientName =
-					digits === "9162345678"
-						? "Смирнова Анна Сергеевна"
-						: digits === "9267778899"
-							? "Кузнецов Дмитрий Игоревич"
-							: digits === "9035551122"
-								? "Первичный абонент"
-								: c.patientName && !c.patientName.startsWith("Входящий вызов")
-									? c.patientName
-									: c.patientName || "Неизвестный номер";
+				let patientName = c.patientName && !c.patientName.startsWith("Входящий вызов")
+					? c.patientName
+					: c.patientName || "Неизвестный номер";
+				if (isDemoShowcaseMode()) {
+					if (digits === "9162345678") patientName = "Смирнова Анна Сергеевна";
+					else if (digits === "9267778899") patientName = "Кузнецов Дмитрий Игоревич";
+					else if (digits === "9035551122") patientName = "Первичный абонент";
+				}
 				return {
 					id: c.id,
 					callId: c.id,

@@ -14,7 +14,7 @@ import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyL
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
-import { DirectDentalLabOrderLauncher } from "./components/lab/DirectDentalLabOrderLauncher";
+import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
@@ -155,7 +155,7 @@ export function AppShell() {
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
 			<DirectReportsLauncher />
-			<DirectDentalLabOrderLauncher />
+			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
 			<DirectAppointmentBookingLauncher />

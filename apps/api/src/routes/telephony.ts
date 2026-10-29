@@ -13,6 +13,7 @@ import { telephonyCallerLookupRoutes } from "./telephonyCallerLookupRoutes.js";
 import { telephonyRecordingRoutes } from "./telephonyRecordingRoutes.js";
 import { telephonySipRoutes } from "./telephonySipRoutes.js";
 import {
+	telephonyCallLifecycleRoutes,
 	telephonyMissedCallsHandler,
 	telephonyOutboundHandler,
 	telephonySmsHandler,
@@ -61,4 +62,5 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	await server.register(telephonyRecordingRoutes);
 	await server.register(telephonySipRoutes);
 	await server.register(telephonyCallerLookupRoutes);
+	await server.register(telephonyCallLifecycleRoutes);
 };

@@ -1,5 +1,9 @@
 import type { StoreApi } from "zustand";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import {
+	readDenteClinicToken,
+	readDenteStaffToken,
+} from "../../lib/safeLocalStorage";
 import { normalizePhone } from "../telephonyHelpers";
 import { getSharedTelephonyAudioStreamManager } from "./telephonyAudioStreamManager";
 import {
@@ -215,6 +219,26 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 				line2: activeLineId === 2 ? { ...line2, state: "connected" as const, call: updatedCall } : line2,
 				callHistory: updatedHistory,
 			});
+
+			// Full stack CTI propagation: sync answer to API and notify PBX/WebSocket
+			try {
+				const staffToken = readDenteStaffToken();
+				const clinicToken = readDenteClinicToken();
+				void fetch("/api/telephony/calls/answer", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+					},
+					body: JSON.stringify({
+						callId: updatedCallId,
+						phone: updatedCall.phone,
+						patientId: updatedCall.patientId || undefined,
+						lineId: activeLineId,
+					}),
+				}).catch(() => {});
+			} catch {}
 		},
 
 		connectCall: () => {
@@ -324,6 +348,30 @@ export function createTelephonyCallActions(set: SetState, get: GetState) {
 				line2: nextL2,
 				callHistory: updatedHistory,
 			});
+
+			// Full stack CTI propagation: persist call completion in PostgreSQL 18 and refresh journal
+			try {
+				const staffToken = readDenteStaffToken();
+				const clinicToken = readDenteClinicToken();
+				void fetch("/api/telephony/calls/end", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+						...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+						...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+					},
+					body: JSON.stringify({
+						callId: updatedCallId,
+						phone: activeCall.phone,
+						patientId: activeCall.patientId || undefined,
+						durationSeconds: finalDuration,
+						recordingUrl: resolvedRecUrl,
+						notes: activeCall.patientName ? `Пациент: ${activeCall.patientName}` : undefined,
+					}),
+				})
+					.then(() => fetchCallHistoryAction(set, get))
+					.catch(() => {});
+			} catch {}
 		},
 
 		dismissCall: () => {

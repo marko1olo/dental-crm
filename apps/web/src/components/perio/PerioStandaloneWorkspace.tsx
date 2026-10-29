@@ -1,30 +1,18 @@
-import React, { useState } from "react";
-import { PeriodontogramChart } from "./PeriodontogramChart";
-import { EmkPerioSection } from "../visit/emk/EmkPerioSection";
+/**
+ * PerioStandaloneWorkspace.tsx — Автономный экран кабинета пародонтологии
+ * Делегирует в SSOT PerioWorkspaceModal (Мандаты 8b, 8e).
+ */
+
+import React from "react";
+import { PerioWorkspaceModal } from "./PerioWorkspaceModal";
 
 export function PerioStandaloneWorkspace(): React.ReactElement {
-	const [diaryForm, setDiaryForm] = useState<Record<string, any>>({
-		objectiveStatus: "",
-		diagnosis: "",
-		treatmentPlan: "",
-	});
-
 	return (
-		<div
-			className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto"
-			data-testid="perio-standalone-workspace"
-		>
+		<div className="w-full min-h-screen bg-[var(--paper)] text-[var(--ink)] p-3 sm:p-6 overflow-y-auto" data-testid="perio-standalone-workspace">
 			<div className="w-full max-w-7xl mx-auto space-y-4">
-				<EmkPerioSection
-					visitNoteForm={diaryForm}
-					updateVisitNoteField={(field, value) =>
-						setDiaryForm((prev) => ({ ...prev, [field]: value }))
-					}
-					patientId="demo_perio_patient"
-					patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
-					activeTooth={16}
-				/>
-				<PeriodontogramChart
+				<PerioWorkspaceModal
+					isOpen={true}
+					isModal={false}
 					patientId="demo_perio_patient"
 					patientName="Смирнова Анна Сергеевна (Пародонтограмма)"
 					doctorName="Д-р Соколов А. В."
@@ -33,3 +21,5 @@ export function PerioStandaloneWorkspace(): React.ReactElement {
 		</div>
 	);
 }
+
+export default PerioStandaloneWorkspace;
