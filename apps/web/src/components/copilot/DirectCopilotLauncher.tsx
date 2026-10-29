@@ -27,43 +27,104 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
 	const [activeTab, setActiveTab] = useState<"chat" | "pending">("chat");
 	const [isOpen, setIsOpen] = useState(true);
 
-	const [messages, setMessages] = useState<CopilotUiMessage[]>([
+	const [messages, setMessages] = useState<Array<CopilotUiMessage>>([
 		{
 			id: "msg-1",
 			role: "user",
 			kind: "text",
-			text: "Рассчитай предварительную смету лечения зуба 46 и проверь безопасность для пациента Смирнова Е. В.",
+			text: "ДЕНТА, пациент Сидоров А.П., 36 зуб глубокий кариес. Сформируй протокол приёма и выпиши Нимесил.",
 			timestamp: new Date().toISOString(),
 		},
 		{
 			id: "msg-2",
 			role: "assistant",
 			kind: "text",
-			text: "Составил предварительный план лечения зуба 46 (хронический пульпит). Аллергических реакций и противопоказаний к анестетикам в анамнезе не выявлено. Требуется подтверждение назначения врача.",
+			text: "Сформирован клинический протокол осмотра зуба 36 и подготовлен рецептурный бланк. Все назначения проверены на совместимость.",
 			timestamp: new Date().toISOString(),
-			toolCalls: [
-				{
-					id: "call-tx-46",
-					name: "clinical.calculate_treatment_estimate",
-					args: { tooth: 46, diagnosis: "K04.0" },
+		},
+		{
+			id: "msg-tool-exam",
+			role: "assistant",
+			kind: "tool",
+			name: "clinical.save_examination_protocol",
+			status: "done",
+			result: {
+				examination_protocol: {
+					patientName: "Сидоров Алексей Петрович",
+					tooth: "36",
+					diagnosis: "K02.1 Кариес дентина (глубокий кариес)",
+					complaints: "Кратковременные боли от температурных раздражителей в зубе 36.",
+					anamnesis: "Полость обнаружена 2 недели назад, ранее лечение зуба 36 не проводилось.",
+					objectiveStatus: "Глубокая кариозная полость MOD 36, зондирование болезненно по дну, перкуссия безболезненна.",
+					treatmentPlan: "Препарирование полости MOD 36. Пломбирование наногибридным светоотверждаемым композитом.",
 				},
-			],
+			},
+			timestamp: new Date().toISOString(),
+		} as unknown as CopilotUiMessage,
+		{
+			id: "msg-tool-rx",
+			role: "assistant",
+			kind: "tool",
+			name: "clinical.create_prescription",
+			status: "done",
+			result: {
+				prescription: {
+					series: "77-АА",
+					number: "004821",
+					patientName: "Сидоров Алексей Петрович",
+					patientBirthDate: "14.06.1988",
+					doctorName: "Д-р Барабаш С.В.",
+					doctorSpecialty: "Врач-стоматолог-терапевт",
+					diagnosisIcd10: "K02.1",
+					diagnosisName: "Кариес дентина",
+					validityDays: 60,
+					drugs: [
+						{
+							id: "rx-1",
+							mnn: "Nimesulide",
+							tradeName: "Нимесил",
+							latinName: "Tab. Nimesulidi",
+							dosageForm: "гранулы для суспензии",
+							dosage: "100 мг",
+							quantity: "№ 10",
+							signa: "По 1 пакетику 2 раза в день после еды при болях",
+						},
+					],
+					isSignedUkep: true,
+					ukepCertificate: "00E10352F71B39D48C19",
+					ukepSignedAt: "28.10.2026 22:30",
+				},
+			},
+			timestamp: new Date().toISOString(),
+		} as unknown as CopilotUiMessage,
+		{
+			id: "msg-tool-workstation",
+			role: "assistant",
+			kind: "tool",
+			name: "workstation.capture_screen",
+			status: "done",
+			result: {
+				screen_capture: {
+					appName: "Planmeca Romexis (Визиограф)",
+					dimensions: "1440x900",
+					format: "PNG",
+					filePath: "storage/radiology/RVG_tooth_36_mod.png",
+					status: "Снимок визиографа захвачен и прикреплен к приёму",
+				},
+			},
+			timestamp: new Date().toISOString(),
 		} as unknown as CopilotUiMessage,
 	]);
 
 	const [pending, setPending] = useState<PendingConfirmation | null>({
-		callId: "call_tx_46_confirm",
-		name: "clinical.calculate_treatment_estimate",
-		toolName: "clinical.calculate_treatment_estimate",
+		callId: "call_save_exam_36_confirm",
+		name: "save_examination_protocol",
+		toolName: "save_examination_protocol",
 		args: {
-			toothNumber: 46,
-			diagnosis: "K04.0 Хронический пульпит",
-			services: [
-				"A16.07.008 Пломбирование корневого канала зуба (эндодонтия)",
-				"A16.07.002 Восстановление зуба пломбой (лечение кариеса)",
-			],
-			totalRub: 25000,
-			totalKopecks: 2500000,
+			tooth: "36",
+			patientName: "Сидоров Алексей Петрович",
+			diagnosis: "K02.1 Кариес дентина",
+			treatment: "Пломбирование светоотверждаемым композитом MOD",
 		},
 	});
 

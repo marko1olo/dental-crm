@@ -122,8 +122,7 @@ export const CbctVolume3DViewport: React.FC<CbctVolume3DViewportProps> = ({
 			{isClippingOpen && <CbctVolume3DClippingPanel clipping={clipping} onClipChange={handleClipChange} onResetClipping={handleResetClipping} onQuickClipSpine={handleQuickClipSpine} onQuickClipOcciput={handleQuickClipOcciput} onStartInteraction={() => setIsInteracting(true)} onEndInteraction={() => setIsInteracting(false)} />}
 			{airwayResult && (
 				<div className="absolute top-10 left-2 z-30 bg-zinc-950/90 backdrop-blur-md px-3 py-2 rounded-md border border-cyan-500/50 shadow-2xl flex flex-col gap-1 text-[11px] pointer-events-auto max-w-[280px]" data-testid="cbct-airway-analysis-hud">
-					<div className="flex items-center justify-between font-bold text-cyan-300"><span className="flex items-center gap-1"><Wind className="w-3.5 h-3.5 text-cyan-400" /><span>Дыхательные пути (Airway)</span></span><span className="font-mono text-xs">{airwayResult.totalVolumeCm3.toFixed(1)} см³</span></div>
-					<div className="flex items-center justify-between text-zinc-300 text-[10px]"><span>Мин. просвет (Constriction):</span><span className="font-mono font-bold text-amber-300">{airwayResult.minAreaMm2.toFixed(0)} мм²</span></div>
+					<div className="flex items-center justify-between font-bold text-cyan-300"><span className="flex items-center gap-1"><Wind className="w-3.5 h-3.5 text-cyan-400" /><span>Воздушные полости (Airway)</span></span><span className="font-mono text-xs">{airwayResult.totalVolumeCm3.toFixed(1)} см³</span></div>
 					<div className="text-[9.5px] leading-tight text-zinc-400 border-t border-zinc-800/80 pt-1">{airwayResult.clinicalSummary}</div>
 				</div>
 			)}

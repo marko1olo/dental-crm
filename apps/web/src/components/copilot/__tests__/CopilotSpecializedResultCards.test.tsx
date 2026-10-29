@@ -60,4 +60,40 @@ describe('Copilot Specialized Result Cards', () => {
     const htmlDrug = renderToString(<CopilotResultCard name="check_drug_interactions" result={drugResult} />);
     assert.ok(htmlDrug.includes('Лидокаин') || htmlDrug.includes('гипертензии'));
   });
+
+  it('renders Desktop Native Workstation screen capture and study files cards via CopilotResultCard', () => {
+    const captureResult = {
+      screen_capture: {
+        appName: 'Planmeca Romexis 6.2 (Визиограф)',
+        dimensions: '1440x900',
+        format: 'PNG',
+        filePath: 'C:/Clinic_MVP/dental-crm/storage/radiology/RVG_tooth_36.png',
+        status: 'Снимок готов и прикреплён к ЭМК',
+      },
+    };
+    const htmlCapture = renderToString(
+      <CopilotResultCard name="workstation.capture_screen" result={captureResult} />
+    );
+    assert.ok(htmlCapture.includes('Оптический захват визиографа (ПК)'));
+    assert.ok(htmlCapture.includes('Planmeca Romexis'));
+    assert.ok(htmlCapture.includes('1440x900'));
+    assert.ok(htmlCapture.includes('Открыть RVG'));
+
+    const filesResult = {
+      workstation_files: {
+        folderPath: 'C:/MedicalStudies/Romexis',
+        totalFound: 2,
+        files: [
+          { name: 'CT_36_3D.dcm', sizeBytes: 44040192 },
+          { name: 'RVG_36.png', sizeBytes: 2097152 },
+        ],
+      },
+    };
+    const htmlFiles = renderToString(
+      <CopilotResultCard name="search_workstation_files" result={filesResult} />
+    );
+    assert.ok(htmlFiles.includes('Снимки и КЛКТ на рабочей станции'));
+    assert.ok(htmlFiles.includes('CT_36_3D.dcm'));
+    assert.ok(htmlFiles.includes('Открыть папку томографа'));
+  });
 });

@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
   X, RotateCcw, Send, Mic, MicOff, Sparkles, Check, AlertTriangle,
-  Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator
+  Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator,
+  Globe, Monitor, Camera, FolderSearch, Receipt
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
@@ -11,6 +12,7 @@ import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
 import { CopilotConfirmParamsView } from "./drawer/CopilotConfirmParamsView";
 import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
 import { CopilotMarkdown } from "./CopilotMarkdown";
+import { CopilotMessage } from "./CopilotMessage";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./copilotTypes";
 import "./CopilotDrawer.css";
@@ -22,7 +24,13 @@ const TOOL_TITLES_RU: Record<string, string> = {
   apply_treatment_estimate: "Применение сметы плана лечения",
   draft_clinical_soap_diary: "Формирование дневника приёма (SOAP)",
   get_patient_clinical_card: "Медицинская карта приёма",
+  save_clinical_diary: "Сохранение протокола приёма в медкарту",
+  save_visit_diary: "Сохранение протокола приёма в медкарту",
+  save_examination_protocol: "Сохранение протокола приёма в медкарту",
   save_protocol_043: "Сохранение протокола приёма в медкарту",
+  create_prescription: "Оформление электронного рецепта",
+  create_electronic_prescription: "Оформление электронного рецепта",
+  create_prescription_107: "Оформление электронного рецепта",
   check_drug_interactions: "Проверка лекарственной совместимости",
   update_odontogram: "Обновление статуса зубной формулы",
   add_procedure_to_invoice: "Добавление услуги в счёт приёма",
@@ -66,9 +74,14 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   isOpen, messages, busy, phase, pending, nameCache, nudges = [],
   proactiveAlerts = [], activeTab, onTabChange, onClose, onSend,
   onConfirm, onReset, onDismissNudge, onBookSlot,
+  onSelectPatient, onSelectAppointment,
   isVoiceActive: isVoiceActiveProp, onToggleVoice,
 }) => {
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
+  const [runtimeMode, setRuntimeMode] = useState<"web_browser" | "desktop_native">(() => {
+    const saved = safeLocalStorageGetItem("dente_copilot_runtime_mode");
+    return saved === "desktop_native" ? "desktop_native" : "web_browser";
+  });
   const [input, setInput] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [isDocked, setIsDocked] = useState(false);
   const baseTextRef = useRef<string>("");
@@ -214,16 +227,36 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               <span className={`copilot-status-dot ${busy ? "copilot-status-dot--busy" : "copilot-status-dot--ready"}`} />
               <div>
                 <h2 className="copilot-header-title copilot-drawer-title">
-                  {isDocked ? 'Копайлот' : 'ДЕНТА — Клинический ассистент'}
+                  {isMobile ? 'ДЕНТА Копайлот' : (isDocked ? 'Копайлот' : 'ДЕНТА — Клинический ассистент')}
                 </h2>
                 <p className="copilot-drawer-subtitle">
-                  {busy ? (phase || "Анализирую клинический контекст...") : "Готов к работе • Голос и команды"}
+                  {busy
+                    ? (phase || "Анализирую клинический контекст...")
+                    : isMobile
+                    ? "Рабочая станция ПК • Голос и снимки"
+                    : runtimeMode === "desktop_native"
+                    ? "Рабочая станция ПК • Томографы, визиограф, снимки"
+                    : "Клинический ассистент • Расписание, медкарта, касса"}
                 </p>
               </div>
             </div>
           </div>
 
           <div className="copilot-header-actions copilot-drawer-header-actions">
+            <button
+              type="button"
+              onClick={() => {
+                if (typeof window !== "undefined") {
+                  window.dispatchEvent(new CustomEvent("dente:open-voice-dictation"));
+                }
+              }}
+              className="copilot-icon-btn"
+              title="Открыть голосовой стенограф приёма"
+              aria-label="Голосовой стенограф"
+              data-testid="copilot-open-stenographer-btn"
+            >
+              <Mic size={16} />
+            </button>
             {!isMobile && (
               <button
                 type="button"
@@ -255,6 +288,32 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             </button>
           </div>
         </header>
+
+        {/* Runtime Mode Switcher (Web CRM vs Desktop Native Workstation) */}
+        <div className="copilot-mode-switcher-bar" data-testid="copilot-mode-switcher">
+          <button
+            type="button"
+            className={`copilot-mode-btn ${runtimeMode === "web_browser" ? "active" : ""}`}
+            onClick={() => {
+              setRuntimeMode("web_browser");
+              safeLocalStorageSetItem("dente_copilot_runtime_mode", "web_browser");
+            }}
+          >
+            <Globe size={13} />
+            <span>Веб-клиника</span>
+          </button>
+          <button
+            type="button"
+            className={`copilot-mode-btn ${runtimeMode === "desktop_native" ? "active" : ""}`}
+            onClick={() => {
+              setRuntimeMode("desktop_native");
+              safeLocalStorageSetItem("dente_copilot_runtime_mode", "desktop_native");
+            }}
+          >
+            <Monitor size={13} />
+            <span>Рабочая станция (ПК)</span>
+          </button>
+        </div>
 
         {/* Context Telemetry Bar */}
         <div className="copilot-context-bar" data-testid="copilot-context-bar">
@@ -341,67 +400,82 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   <Sparkles size={32} className="text-[var(--teal)] opacity-60 mb-2" />
                   <p className="text-sm font-medium text-[var(--ink)]">Ассистент готов к работе</p>
                   <p className="text-xs text-[var(--muted)] max-w-xs mt-1">
-                    Спросите о расписании, надиктуйте дневник SOAP или попросите рассчитать план лечения.
+                    {runtimeMode === "desktop_native"
+                      ? "Управление рабочей станцией ПК: снимки визиографа, томографы, касса по COM/USB."
+                      : "Клинический ассистент: расписание, дневник SOAP, сметы и медкарта приёма."}
                   </p>
                   {/* Quick Playbooks */}
                   <div className="copilot-quick-prompts mt-4">
-                    <button
-                      type="button"
-                      onClick={() => handleSendPrompt("Заполни дневник приёма")}
-                      className="copilot-quick-prompt-btn"
-                    >
-                      <FileText size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                      <span>Заполни дневник приёма</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSendPrompt("Рассчитай 3 плана лечения")}
-                      className="copilot-quick-prompt-btn"
-                    >
-                      <Calculator size={15} className="text-[var(--teal)] shrink-0 mr-2" />
-                      <span>Рассчитай 3 плана лечения</span>
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => handleSendPrompt("Проверь лекарственную безопасность")}
-                      className="copilot-quick-prompt-btn"
-                    >
-                      <ShieldAlert size={15} className="text-[var(--warn,#f59e0b)] shrink-0 mr-2" />
-                      <span>Проверь аллергии и совместимость</span>
-                    </button>
+                    {runtimeMode === "desktop_native" ? (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleSendPrompt("Захвати экран визиографа")}
+                          className="copilot-quick-prompt-btn"
+                        >
+                          <Camera size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                          <span>Захвати экран визиографа</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendPrompt("Найди снимки КЛКТ пациента")}
+                          className="copilot-quick-prompt-btn"
+                        >
+                          <FolderSearch size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                          <span>Найди снимки КЛКТ</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendPrompt("Проверь фискальный регистратор")}
+                          className="copilot-quick-prompt-btn"
+                        >
+                          <Receipt size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                          <span>Касса по COM/USB</span>
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button
+                          type="button"
+                          onClick={() => handleSendPrompt("Заполни дневник приёма")}
+                          className="copilot-quick-prompt-btn"
+                        >
+                          <FileText size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                          <span>Заполни дневник приёма</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendPrompt("Рассчитай 3 плана лечения")}
+                          className="copilot-quick-prompt-btn"
+                        >
+                          <Calculator size={15} className="text-[var(--teal)] shrink-0 mr-2" />
+                          <span>Рассчитай 3 плана лечения</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleSendPrompt("Проверь лекарственную безопасность")}
+                          className="copilot-quick-prompt-btn"
+                        >
+                          <ShieldAlert size={15} className="text-[var(--warn,#f59e0b)] shrink-0 mr-2" />
+                          <span>Проверь аллергии и совместимость</span>
+                        </button>
+                      </>
+                    )}
                   </div>
                 </div>
               )}
 
-              {messages.map((msg, idx) => {
-                const isUser = msg.kind === "text" && msg.role === "user";
-                const isAssistant = !isUser;
-                const messageText = msg.kind === "text" || msg.kind === "thinking" ? msg.text : (msg as any).name || (msg as any).content || "";
-                return (
-                  <div key={idx} className={`copilot-msg-row ${isUser ? "copilot-msg-row--user user" : "copilot-msg-row--assistant assistant"}`}>
-                    <div className={`copilot-msg-bubble ${isUser ? "copilot-msg-bubble--user user" : "copilot-msg-bubble--assistant assistant"}`}>
-                      <div className="copilot-msg-header">
-                        <span className="copilot-msg-author">{isUser ? "Врач" : "Ассистент ДЕНТА"}</span>
-                      </div>
-                      <div className="copilot-msg-text">
-                        {isUser ? (
-                          <div style={{ whiteSpace: "pre-wrap" }}>{messageText}</div>
-                        ) : (
-                          <CopilotMarkdown text={messageText} />
-                        )}
-                      </div>
-
-                      {/* Tool call indicator */}
-                      {(msg as any).toolCalls && (msg as any).toolCalls.length > 0 && (
-                        <div className="copilot-tool-execution-banner mt-2">
-                          <CheckCircle2 size={13} className="text-[var(--teal)] shrink-0" />
-                          <span className="text-xs">Выполнен инструмент: {humanizeToolName((msg as any).toolCalls[0].name)}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+              {messages.map((msg, idx) => (
+                <CopilotMessage
+                  key={msg.id || idx}
+                  message={msg}
+                  nameCache={nameCache}
+                  onConfirm={(callId, decision, modifiedArgs, reason) => onConfirm(decision, reason)}
+                  onSelectPatient={onSelectPatient}
+                  onSelectAppointment={onSelectAppointment}
+                  onBookSlot={onBookSlot}
+                />
+              ))}
 
               {/* Two-Phase Confirmation Guard */}
               {pending && (

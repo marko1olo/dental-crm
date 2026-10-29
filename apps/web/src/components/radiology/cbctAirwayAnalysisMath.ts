@@ -30,14 +30,14 @@ export function analyzeAirwayVolume(volume: CbctVoxelVolume): AirwayAnalysisResu
 	}
 	const totalVolumeMm3 = airwayVoxels * voxelVolumeMm3 * step;
 	const totalVolumeCm3 = totalVolumeMm3 / 1000.0;
-	const minAreaMm2 = Math.max(50, Math.min(350, totalVolumeCm3 * 12.5));
+	// Эрадикация псевдонаучной симуляции: без прямого отслеживания сечений трахеи
+	// запрещено умножать объем на 12.5 и фабриковать диагнозы апноэ (СОАС)
+	const minAreaMm2 = 0;
 
 	const clinicalSummary =
-		minAreaMm2 < 100
-			? "Выраженное сужение просвета дыхательных путей (высокий риск СОАС)"
-			: minAreaMm2 < 180
-				? "Умеренное сужение ретропалатального пространства"
-				: "Просвет верхних дыхательных путей в пределах физиологической нормы";
+		totalVolumeCm3 > 0
+			? `Объем воздушных полостей по порогу [-1024, -600 HU]: ${totalVolumeCm3.toFixed(1)} см³`
+			: "Данные о воздушных полостях отсутствуют";
 
 	return {
 		totalVolumeCm3,

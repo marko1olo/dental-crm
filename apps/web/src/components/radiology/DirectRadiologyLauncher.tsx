@@ -54,25 +54,27 @@ export const DirectRadiologyLauncher: React.FC = () => {
 		};
 	}, []);
 
-	if (!isOpen) return null;
-
 	return (
-		<div
-			className="fixed inset-0 z-[9999] bg-[var(--paper)] p-2 sm:p-6 flex flex-col justify-center items-center"
-			data-testid="direct-radiology-launcher-root"
-		>
-			<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
-				<VisiographStudyViewer
-					studyTitle="Прицельная радиовизиография RVG #16"
-					patientName={DEMO_RADIOLOGY_PATIENT.fullName}
-					patientId={DEMO_RADIOLOGY_PATIENT.id}
-					initialTooth={DEMO_RADIOLOGY_PATIENT.tooth}
-					onClose={() => setIsOpen(false)}
-				/>
-			</div>
-			{/* Всплывающий тост сетевого хотфолдера визиографа */}
+		<>
+			{isOpen && (
+				<div
+					className="fixed inset-0 z-[9999] bg-[var(--paper)] p-2 sm:p-6 flex flex-col justify-center items-center"
+					data-testid="direct-radiology-launcher-root"
+				>
+					<div className="w-full max-w-5xl h-full max-h-[850px] shadow-2xl rounded-2xl overflow-hidden">
+						<VisiographStudyViewer
+							studyTitle="Прицельная радиовизиография RVG #16"
+							patientName={DEMO_RADIOLOGY_PATIENT.fullName}
+							patientId={DEMO_RADIOLOGY_PATIENT.id}
+							initialTooth={DEMO_RADIOLOGY_PATIENT.tooth}
+							onClose={() => setIsOpen(false)}
+						/>
+					</div>
+				</div>
+			)}
+			{/* Всплывающий неблокирующий тост сетевого хотфолдера визиографа (активен всегда в фоне) */}
 			<VisiographHotFolderToast />
-		</div>
+		</>
 	);
 };
 

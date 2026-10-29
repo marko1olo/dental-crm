@@ -16,11 +16,11 @@ import {
 import type { CbctVoxelVolume } from "./cbctMprMath.js";
 import type { DentalArchCurve } from "./cbctArchSplineMath.js";
 
-export type ZakharovEdentulousToothFdi = 26 | 27;
+export type ZakharovEdentulousToothFdi = EdentulousToothFdi;
 export type ZakharovRidgeMeasurement = AlveolarRidgeMeasurement;
 
 export const ZAKHAROV_EDENTULOUS_PROFILES = EDENTULOUS_REFERENCE_PROFILES as Record<
-	ZakharovEdentulousToothFdi,
+	number,
 	ZakharovRidgeMeasurement
 >;
 

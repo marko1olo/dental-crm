@@ -9,6 +9,7 @@ import { renderEstimateSection } from './resultCards/ResultEstimateSection';
 import { renderPrescriptionSection } from './resultCards/ResultPrescriptionSection';
 import { renderScheduleSection } from './resultCards/ResultScheduleSection';
 import { renderPatientSection } from './resultCards/ResultPatientSection';
+import { renderWorkstationSection } from './resultCards/ResultWorkstationSection';
 import { renderFinancialAndGenericSection } from './resultCards/ResultFinancialAndGenericSection';
 
 export interface CopilotResultCardProps {
@@ -71,6 +72,9 @@ export const CopilotResultCard: React.FC<CopilotResultCardProps> = ({
 
   const patientView = renderPatientSection(tool, obj, result, onSelectPatient);
   if (patientView) return patientView;
+
+  const workstationView = renderWorkstationSection(tool, obj, result);
+  if (workstationView) return workstationView;
 
   return renderFinancialAndGenericSection(tool, obj, result);
 };

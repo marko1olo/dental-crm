@@ -83,6 +83,9 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const imageObjRef = useRef<HTMLImageElement | null>(null);
+	const touchStartDistRef = useRef<number | null>(null);
+	const initialZoomRef = useRef<number>(1);
+	const touchDragStartRef = useRef<{ x: number; y: number } | null>(null);
 
 	// Сброс всех настроек изображения
 	const handleResetView = useCallback(() => {
@@ -218,6 +221,41 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 
 	const handleMouseUp = () => setIsDragging(false);
 
+	// ─── Apple HIG: Сенсорные жесты pinch-to-zoom и touch-pan ─────────────────
+	const handleTouchStart = (e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length === 2) {
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			touchStartDistRef.current = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			initialZoomRef.current = zoom;
+			touchDragStartRef.current = null;
+		} else if (e.touches.length === 1 && !isRulerActive) {
+			const t = e.touches[0]!;
+			touchDragStartRef.current = { x: t.clientX - pan.x, y: t.clientY - pan.y };
+			touchStartDistRef.current = null;
+		}
+	};
+
+	const handleTouchMove = (e: React.TouchEvent<HTMLCanvasElement>) => {
+		if (e.touches.length === 2 && touchStartDistRef.current !== null) {
+			const t1 = e.touches[0]!;
+			const t2 = e.touches[1]!;
+			const currentDist = Math.hypot(t1.clientX - t2.clientX, t1.clientY - t2.clientY);
+			if (currentDist > 0 && touchStartDistRef.current > 0) {
+				const ratio = currentDist / touchStartDistRef.current;
+				setZoom(Math.min(Math.max(0.5, initialZoomRef.current * ratio), 5));
+			}
+		} else if (e.touches.length === 1 && touchDragStartRef.current && !isRulerActive) {
+			const t = e.touches[0]!;
+			setPan({ x: t.clientX - touchDragStartRef.current.x, y: t.clientY - touchDragStartRef.current.y });
+		}
+	};
+
+	const handleTouchEnd = () => {
+		touchStartDistRef.current = null;
+		touchDragStartRef.current = null;
+	};
+
 	// ─── 1-Клик привязка к приёму и тихий учет дозы ────────────────────────────
 	const handlePrimaryAttach = () => {
 		setIsSaved(true);
@@ -268,22 +306,23 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 					</div>
 					<div className="flex flex-col min-w-0">
 						<span className="text-[13px] font-semibold truncate leading-tight">
-							{studyTitle} — {patientName}
+							<span className="sm:hidden">RVG #{selectedTooth} — {patientName}</span>
+							<span className="hidden sm:inline">{studyTitle} — {patientName}</span>
 						</span>
 						<span className="text-[11px] text-[var(--muted)] flex items-center gap-1.5 leading-tight">
 							<span>Зуб {selectedTooth}</span>
 							<span>•</span>
-							<span>Доза: {doseMsv} мЗв (норма)</span>
+							<span>Доза: {doseMsv} мЗв ({modality === "opg" ? "18-25" : "2-5"} мкЗв, норма)</span>
 						</span>
 					</div>
 				</div>
 
-				{/* Кнопка закрытия, если открыто модально */}
+				{/* Кнопка закрытия, если открыто модально (Apple HIG min 44x44px на мобильных) */}
 				{onClose && (
 					<button
 						type="button"
 						onClick={onClose}
-						className="flex h-9 w-9 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors min-w-[36px] min-h-[36px]"
+						className="flex h-11 w-11 sm:h-8 sm:w-8 items-center justify-center rounded-lg text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)] transition-colors min-w-[44px] min-h-[44px] sm:min-w-[32px] sm:min-h-[32px]"
 						title="Закрыть просмотрщик"
 						data-testid="btn-close-viewer"
 					>
@@ -292,7 +331,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 				)}
 			</div>
 
-			{/* Центральная рабочая область со снимком */}
+			{/* Центральная рабочая область со снимком (Pinch-to-zoom & Touch Pan) */}
 			<div className="relative flex-1 bg-[#090d16] overflow-hidden flex items-center justify-center cursor-crosshair">
 				<canvas
 					ref={canvasRef}
@@ -301,11 +340,16 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 					onMouseDown={handleMouseDown}
 					onMouseMove={handleMouseMove}
 					onMouseUp={handleMouseUp}
+					onTouchStart={handleTouchStart}
+					onTouchMove={handleTouchMove}
+					onTouchEnd={handleTouchEnd}
+					onTouchCancel={handleTouchEnd}
+					style={{ touchAction: "none" }}
 					className="w-full h-full select-none"
 					data-testid="visiograph-canvas"
 				/>
 
-				{/* Плавающий тулбар манипуляций со снимком (нейтральные кнопки) */}
+				{/* Плавающий тулбар манипуляций со снимком (нейтральные кнопки >=44x44px по Apple HIG) */}
 				<div
 					className="absolute top-3 left-3 flex items-center gap-1.5 p-1.5 rounded-xl shadow-lg z-10 max-w-[calc(100%-24px)] overflow-x-auto"
 					style={{ backgroundColor: "rgba(15, 23, 42, 0.95)", border: "1px solid rgba(255, 255, 255, 0.2)" }}
@@ -314,7 +358,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						type="button"
 						onClick={() => setZoom((z) => Math.min(z * 1.25, 5))}
 						style={{ backgroundColor: "#1e293b", color: "#ffffff", borderColor: "#475569" }}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
 						title="Увеличить (Zoom In)"
 						data-testid="btn-zoom-in"
 					>
@@ -324,7 +368,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						type="button"
 						onClick={() => setZoom((z) => Math.max(z * 0.8, 0.5))}
 						style={{ backgroundColor: "#1e293b", color: "#ffffff", borderColor: "#475569" }}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
 						title="Уменьшить (Zoom Out)"
 						data-testid="btn-zoom-out"
 					>
@@ -335,7 +379,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						type="button"
 						onClick={() => setBrightness((b) => (b >= 180 ? 100 : b + 25))}
 						style={{ backgroundColor: "#1e293b", color: "#ffffff", borderColor: "#475569" }}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
 						title={`Яркость: ${brightness}%`}
 						data-testid="btn-brightness"
 					>
@@ -345,7 +389,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						type="button"
 						onClick={() => setContrast((c) => (c >= 180 ? 100 : c + 25))}
 						style={{ backgroundColor: "#1e293b", color: "#ffffff", borderColor: "#475569" }}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
 						title={`Контраст: ${contrast}%`}
 						data-testid="btn-contrast"
 					>
@@ -359,7 +403,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 							color: "#ffffff",
 							borderColor: isInverted ? "#0d9488" : "#475569",
 						}}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border active:scale-95 transition-all"
 						title="Негатив / Инверсия"
 						data-testid="btn-invert"
 					>
@@ -377,7 +421,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 							color: "#ffffff",
 							borderColor: isRulerActive ? "#0d9488" : "#475569",
 						}}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border active:scale-95 transition-all"
 						title="Калиброванная линейка (мм)"
 						data-testid="btn-ruler"
 					>
@@ -387,7 +431,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						type="button"
 						onClick={handleResetView}
 						style={{ backgroundColor: "#1e293b", color: "#ffffff", borderColor: "#475569" }}
-						className="p-2 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
+						className="p-2 min-w-[44px] min-h-[44px] sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-lg border hover:brightness-125 active:scale-95 transition-all"
 						title="Сбросить вид"
 						data-testid="btn-reset-view"
 					>
@@ -398,7 +442,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 
 			{/* Нижняя командная строка: Селектор зуба, 1-клик чек и Ровно 1 Primary CTA */}
 			<div className="flex flex-wrap items-center justify-between px-4 py-3 border-t border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-3">
-				{/* Выбор зуба FDI 11-48 */}
+				{/* Выбор зуба FDI 11-48 (Apple HIG тач-таргет >=44px) */}
 				<div className="flex items-center gap-2">
 					<label htmlFor="fdi-tooth-select" className="text-xs font-medium text-[var(--muted)]">
 						Зуб FDI:
@@ -407,7 +451,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						id="fdi-tooth-select"
 						value={selectedTooth}
 						onChange={(e) => setSelectedTooth(e.target.value)}
-						className="h-8 px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold focus:outline-none focus:border-[var(--teal,#0d9488)]"
+						className="h-11 sm:h-8 min-h-[44px] sm:min-h-[32px] px-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-semibold focus:outline-none focus:border-[var(--teal,#0d9488)]"
 						data-testid="select-tooth-fdi"
 					>
 						{[
@@ -423,28 +467,28 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 					</select>
 				</div>
 
-				<div className="flex items-center gap-2">
-					{/* Вторичная кнопка: 1-Клик добавление в кассу / чек */}
+				<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+					{/* Вторичная кнопка: 1-Клик добавление в кассу / чек (Apple HIG min-h-[44px] на мобильных) */}
 					<button
 						type="button"
 						onClick={handleQuickBill}
 						disabled={isBilled}
-						className="flex items-center gap-1.5 h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] transition-all select-none shadow-xs active:scale-95"
+						className="flex items-center gap-1.5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 sm:px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] transition-all select-none shadow-xs active:scale-95 whitespace-nowrap shrink-0"
 						data-testid="btn-quick-bill"
 					>
-						<CreditCard className="h-3.5 w-3.5 text-[var(--muted)]" />
-						<span>{isBilled ? "✓ В чеке" : "+ В чек (450 ₽)"}</span>
+						<CreditCard className="h-3.5 w-3.5 text-[var(--muted)] shrink-0" />
+						<span className="whitespace-nowrap">{isBilled ? "✓ В чеке" : "+ В чек (450 ₽)"}</span>
 					</button>
 
 					{/* Единственная Primary CTA кнопка (#0d9488): Прикрепить к приёму */}
 					<button
 						type="button"
 						onClick={handlePrimaryAttach}
-						className="flex items-center gap-1.5 h-10 sm:h-9 min-h-[40px] sm:min-h-[36px] px-4 rounded-xl text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:brightness-105 active:scale-95 transition-all shadow-sm select-none"
+						className="flex items-center justify-center gap-1.5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:brightness-105 active:scale-95 transition-all shadow-sm select-none whitespace-nowrap shrink-0"
 						data-testid="btn-primary-attach"
 					>
-						<Check className="h-4 w-4 stroke-[2.5]" />
-						<span>{isSaved ? `✓ Привязано к зубу ${selectedTooth}` : `✓ Привязать к зубу ${selectedTooth}`}</span>
+						<Check className="h-4 w-4 stroke-[2.5] shrink-0" />
+						<span className="whitespace-nowrap">{isSaved ? `✓ Привязано к зубу ${selectedTooth}` : `✓ Привязать к зубу ${selectedTooth}`}</span>
 					</button>
 				</div>
 			</div>

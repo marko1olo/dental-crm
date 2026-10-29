@@ -74,7 +74,7 @@ export const VisiographHotFolderToast: React.FC<VisiographHotFolderToastProps> =
 			role="alert"
 			aria-live="polite"
 			data-testid="visiograph-incoming-toast"
-			className={`fixed bottom-28 sm:bottom-6 right-4 sm:right-6 z-[9999] flex flex-col gap-2.5 sm:gap-3 rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-bottom-3 ${className}`}
+			className={`fixed top-4 right-4 left-4 sm:left-auto sm:top-auto sm:bottom-6 sm:right-6 z-[9999] flex flex-col gap-2.5 sm:gap-3 rounded-2xl p-3 sm:p-3.5 shadow-2xl backdrop-blur-md transition-all duration-200 animate-in fade-in slide-in-from-top-3 sm:slide-in-from-bottom-3 ${className}`}
 			style={{
 				background: "var(--paper-strong)",
 				border: "1px solid var(--line)",
@@ -173,7 +173,7 @@ export const VisiographHotFolderToast: React.FC<VisiographHotFolderToastProps> =
 			</div>
 
 			{/* Панель действий: Вторичные кнопки 32px + Ровно 1 Primary CTA (#0d9488) */}
-			<div className="flex items-center gap-1.5 pt-1">
+			<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-1.5 pt-1">
 				{/* Единственная Primary CTA кнопка (#0d9488): Привязать к приёму */}
 				<button
 					type="button"
@@ -197,32 +197,34 @@ export const VisiographHotFolderToast: React.FC<VisiographHotFolderToastProps> =
 					</kbd>
 				</button>
 
-				{/* Вторичное действие: Открыть вьювер */}
-				<button
-					type="button"
-					onClick={handleOpenViewer}
-					data-testid="btn-open-in-viewer"
-					className="flex items-center justify-center gap-1 rounded-lg text-[11px] sm:text-[12px] font-medium px-2 sm:px-2.5 transition-colors border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] whitespace-nowrap"
-					style={{ height: "32px", minHeight: "32px" }}
-					title="Открыть снимок во вьюере для детальной обработки"
-				>
-					<Eye className="h-3.5 w-3.5 text-[var(--muted)]" />
-					<span>Во вьюере</span>
-				</button>
+				<div className="flex items-center gap-1.5 flex-1 sm:flex-initial">
+					{/* Вторичное действие: Открыть вьювер */}
+					<button
+						type="button"
+						onClick={handleOpenViewer}
+						data-testid="btn-open-in-viewer"
+						className="flex flex-1 sm:flex-initial items-center justify-center gap-1 rounded-lg text-[11px] sm:text-[12px] font-medium px-2 sm:px-2.5 transition-colors border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] whitespace-nowrap"
+						style={{ height: "32px", minHeight: "32px" }}
+						title="Открыть снимок во вьюере для детальной обработки"
+					>
+						<Eye className="h-3.5 w-3.5 text-[var(--muted)]" />
+						<span>Во вьюере</span>
+					</button>
 
-				{/* Вторичное действие: Добавить в чек кассы */}
-				<button
-					type="button"
-					onClick={handleAddToInvoice}
-					disabled={isBilled}
-					data-testid="btn-toast-add-bill"
-					className="flex items-center justify-center gap-1 rounded-lg text-[11px] sm:text-[12px] font-medium px-2 transition-colors border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] whitespace-nowrap"
-					style={{ height: "32px", minHeight: "32px" }}
-					title="Добавить услугу снимка в кассовый чек"
-				>
-					<CreditCard className="h-3.5 w-3.5 text-[var(--muted)]" />
-					<span>{isBilled ? "✓ В чеке" : "+ Чек"}</span>
-				</button>
+					{/* Вторичное действие: Добавить в чек кассы */}
+					<button
+						type="button"
+						onClick={handleAddToInvoice}
+						disabled={isBilled}
+						data-testid="btn-toast-add-bill"
+						className="flex flex-1 sm:flex-initial items-center justify-center gap-1 rounded-lg text-[11px] sm:text-[12px] font-medium px-2 transition-colors border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] whitespace-nowrap"
+						style={{ height: "32px", minHeight: "32px" }}
+						title="Добавить услугу снимка в кассовый чек"
+					>
+						<CreditCard className="h-3.5 w-3.5 text-[var(--muted)]" />
+						<span>{isBilled ? "✓ В чеке" : "+ Чек"}</span>
+					</button>
+				</div>
 			</div>
 		</aside>
 	);
