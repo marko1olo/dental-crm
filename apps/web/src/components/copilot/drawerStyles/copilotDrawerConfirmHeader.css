@@ -64,7 +64,7 @@
 
 .copilot-confirm-row {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   font-size: 13px;
   gap: 8px;
@@ -73,14 +73,16 @@
 .copilot-confirm-label {
   color: var(--muted, #6b7280);
   font-size: 13px;
+  flex-shrink: 0;
 }
 
 .copilot-confirm-val {
   font-weight: 600;
   color: var(--ink, #0f172a);
   text-align: right;
-  max-width: 65%;
+  max-width: 70%;
   word-break: break-word;
+  line-height: 1.35;
   font-size: 13px;
 }
 

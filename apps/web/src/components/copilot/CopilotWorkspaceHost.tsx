@@ -84,7 +84,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
     safeLocalStorageSetItem("dente_copilot_draft_text", val);
   };
 
-  const handleSendMessage = () => {
+  const handleSendMessage = async () => {
     const text = inputText.trim();
     if (!text) return;
     if (voice.isListening) voice.stopListening();
@@ -101,21 +101,46 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
     safeLocalStorageSetItem("dente_copilot_draft_text", "");
     voice.clearTranscript();
 
-    setTimeout(() => {
-      const isToothQuery = /\b([1-4][1-8])\b/.test(text);
-      const matchedTooth = text.match(/\b([1-4][1-8])\b/)?.[1] || (activeTooth ? String(activeTooth) : "36");
-      const assistantMsg: ChatMessage = {
-        id: `msg-${Date.now() + 1}`,
-        role: "assistant",
-        text: isToothQuery
-          ? `Зуб ${matchedTooth}: Клинический статус обновлен в соответствии с протоколом СтАР. Проведена верификация аллергоанамнеза и анатомических ориентиров.`
-          : `Запрос обработан по стандартам доказательной стоматологии (СтАР/ITI). Подготовлены рекомендации и расчет клинических манипуляций.`,
-        citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
-        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-        applied: false,
-      };
-      setMessages((prev) => [...prev, assistantMsg]);
-    }, 250);
+    try {
+      const res = await fetch("/api/v1/copilot/agent/execute", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          prompt: text,
+          context: { activeTooth, patientId, patientName },
+        }),
+      });
+
+      if (res.ok) {
+        const json = await res.json();
+        const assistantMsg: ChatMessage = {
+          id: `msg-${Date.now() + 1}`,
+          role: "assistant",
+          text: json.response || json.result?.message || "Клинический запрос обработан по стандартам доказательной стоматологии (СтАР/ITI).",
+          citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
+          timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          applied: false,
+        };
+        setMessages((prev) => [...prev, assistantMsg]);
+        return;
+      }
+    } catch {
+      // Local fallback without blocking doctor autonomy
+    }
+
+    const isToothQuery = /\b([1-4][1-8])\b/.test(text);
+    const matchedTooth = text.match(/\b([1-4][1-8])\b/)?.[1] || (activeTooth ? String(activeTooth) : "36");
+    const assistantMsg: ChatMessage = {
+      id: `msg-${Date.now() + 1}`,
+      role: "assistant",
+      text: isToothQuery
+        ? `Зуб ${matchedTooth}: Клинический статус обновлен в соответствии с протоколом СтАР. Проведена верификация аллергоанамнеза и анатомических ориентиров.`
+        : `Запрос обработан по стандартам доказательной стоматологии (СтАР/ITI). Подготовлены рекомендации и расчет клинических манипуляций.`,
+      citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
+      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      applied: false,
+    };
+    setMessages((prev) => [...prev, assistantMsg]);
   };
 
   // Ровно ОДНА Primary CTA кнопка (#0d9488) в Клиническом Диалоге

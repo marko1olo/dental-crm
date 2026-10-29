@@ -66,3 +66,9 @@
   text-overflow: ellipsis;
 }
 
+@media (max-width: 480px) {
+  .copilot-dictation-state {
+    display: none;
+  }
+}
+

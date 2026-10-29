@@ -14,16 +14,16 @@ function checkIsCopilotActive(): boolean {
   const search = new URLSearchParams(s);
 
   return (
-    search.get("copilot") === "1" ||
     search.get("copilot_standalone") === "1" ||
-    search.get("copilot_drawer") === "1" ||
-    search.get("copilot_proof") === "1" ||
-    search.get("view") === "copilot" ||
-    h === "#copilot" ||
-    h === "#ai" ||
+    search.get("copilot_workspace") === "1" ||
+    search.get("copilot") === "workspace" ||
+    search.get("view") === "copilot_standalone" ||
+    search.get("view") === "copilot_workspace" ||
+    h === "#copilot-standalone" ||
+    h === "#copilot-workspace" ||
+    h === "#ai-standalone" ||
     h.includes("copilot-standalone") ||
-    h.includes("copilot-drawer") ||
-    h.includes("copilot-proof")
+    h.includes("copilot-workspace")
   );
 }
 

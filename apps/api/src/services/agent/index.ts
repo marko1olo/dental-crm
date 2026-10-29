@@ -33,6 +33,7 @@ export * from "./semanticRouter.js";
 export * from "./prompts/index.js";
 export * from "./chairsideSentinelEngine.js";
 export * from "./tools/denteAgentTools.js";
+export { calculateTreatmentEstimateTool } from "./tools/clinicalTools.js";
 export { checkDrugInteractionsTool } from "./tools/denteAgentTools.js";
 export * from "./autonomousDenteAgent.js";
 
