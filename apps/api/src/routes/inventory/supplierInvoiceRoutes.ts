@@ -147,7 +147,7 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 						.where(
 							and(
 								eq(inventoryItems.organizationId, targetOrgId),
-								sql`lower(${inventoryItems.name}) = ANY(${requestedNames})`,
+								inArray(sql`lower(${inventoryItems.name})`, requestedNames),
 							),
 						)
 						.for("update");
@@ -222,9 +222,10 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 					preloadedByName.set(existingItem.name.toLowerCase().trim(), existingItem);
 
 					// 2. Ликвидация мягкого овердрафта (Мандат 8n):
-					const currentStock = Number(
+					const rawStock = Number(
 						existingItem.stockQuantity ?? existingItem.currentQty ?? 0,
 					);
+					const currentStock = Number.isFinite(rawStock) ? rawStock : 0;
 					const deficit = currentStock < 0 ? Math.abs(currentStock) : 0;
 					if (deficit > 0) {
 						overdraftResolvedCount++;
@@ -261,7 +262,8 @@ export const supplierInvoiceRoutes: FastifyPluginAsync = async (
 						.returning();
 
 					// 4. Обновляем остаток в карточке номенклатуры
-					const newStock = Number((currentStock + item.quantity).toFixed(3));
+					const calculatedNewStock = Number((currentStock + item.quantity).toFixed(3));
+					const newStock = Number.isFinite(calculatedNewStock) ? calculatedNewStock : item.quantity;
 					const shouldUpdateCardDate =
 						!existingItem.expirationDate ||
 						expirationDate < existingItem.expirationDate;

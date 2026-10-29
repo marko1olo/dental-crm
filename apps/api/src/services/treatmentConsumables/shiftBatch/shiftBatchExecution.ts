@@ -34,13 +34,18 @@ export async function executeShiftBatchDeduction(
 		return { success: true, isOverdraft: false, date: effectiveDate, deductedItems: [], warnings: [], message: "Нет позиций для списания." };
 	}
 
-	const unifiedItems = targets.map((t) => ({
-		exactItemId: t.itemId,
-		defaultName: t.name || `Материал ${t.itemId}`,
-		category: "Расходные материалы",
-		unit: "шт.",
-		qty: t.qty,
-	}));
+	const unifiedItems = targets.map((t: any) => {
+		const rawQty = Number(t.qty ?? t.quantity ?? t.qtyToDeduct ?? 1);
+		const effectiveQty = Number.isFinite(rawQty) && rawQty > 0 ? rawQty : 1;
+		const effectiveId = t.itemId || t.id || t.inventoryItemId || null;
+		return {
+			exactItemId: effectiveId,
+			defaultName: t.name || t.itemName || `Материал ${effectiveId || "без ID"}`,
+			category: t.category || "Расходные материалы",
+			unit: t.unit || "шт.",
+			qty: effectiveQty,
+		};
+	});
 
 	const res = await executeUnifiedStockDeduction(tx, {
 		organizationId,

@@ -77,6 +77,7 @@ export const InventoryViewContentRouter: React.FC<InventoryViewContentRouterProp
 			onDeleteItem={(item) => handleDeleteItem(typeof item === "string" ? item : item?.id, typeof item === "string" ? item : item?.name)} onOpenWaybills={() => setIsAcceptanceWaybillsOpen(true)}
 			onOpenAddModal={openAddModal} onOpenWarehouseManager={() => setIsWarehouseManagerOpen(true)}
 			onOpenInventoryAudit={() => setIsInventoryAuditOpen(true)} onRetry={fetchItems}
+			hideInternalToolbar={true}
 		/>
 	);
 };

@@ -52,7 +52,9 @@ export async function executeUnifiedStockDeduction(
 
 		const currentStock = Number(inv.stockQuantity ?? inv.currentQty ?? 0);
 		const baseStock = Number.isFinite(currentStock) ? currentStock : 0;
-		const newStock = Number((baseStock - target.qty).toFixed(4));
+		const deductQty = Number(target.qty);
+		const safeDeductQty = Number.isFinite(deductQty) && deductQty > 0 ? deductQty : 1;
+		const newStock = Number((baseStock - safeDeductQty).toFixed(4));
 		const isOverdraft = newStock < 0;
 		if (isOverdraft) hasOverdraft = true;
 
