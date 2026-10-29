@@ -107,8 +107,8 @@ export const OmnichannelChatComposer: React.FC<OmnichannelFooterProps> = ({
 					{/* Primary CTA кнопка отправки без disabled (Мандаты 8e, 8am) */}
 					<button
 						type="button"
-						className="hub-btn-send min-h-[44px] px-4 cursor-pointer inline-flex items-center gap-1.5"
-						style={{ minHeight: "44px" }}
+						className="hub-btn-send min-h-[44px] min-w-[44px] px-4 cursor-pointer inline-flex items-center gap-1.5"
+						style={{ minHeight: "44px", minWidth: "44px" }}
 						onClick={handleSendClick}
 						aria-label="Отправить сообщение"
 					>

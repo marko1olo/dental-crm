@@ -5,7 +5,7 @@ import { usePatientStore } from "../../store/patientStore";
 import { OrthopedicsChairsidePanel } from "../orthopedics/OrthopedicsChairsidePanel";
 import { OrthodonticPhotoProtocolModal } from "../diagnostics/OrthodonticPhotoProtocolModal";
 import { OrthodonticMaterialsQuickSelector } from "./OrthodonticMaterialsQuickSelector";
-import { OrthodonticVisitProtocolWidget } from "./OrthodonticVisitProtocolWidget";
+import { OrthodonticVisitScreen } from "./OrthodonticVisitScreen";
 import { CephalometricAnalysisModal } from "./CephalometricAnalysisModal";
 
 /**
@@ -101,10 +101,11 @@ export function OrthodonticPerspectiveView() {
 				patientId={selectedPatientId || ""}
 			/>
 
-			<OrthodonticVisitProtocolWidget
+			<OrthodonticVisitScreen
 				isOpen={isProtocolOpen}
 				onClose={() => setIsProtocolOpen(false)}
 				patientId={selectedPatientId || ""}
+				patientName={patientName || "Пациент"}
 			/>
 
 			<CephalometricAnalysisModal

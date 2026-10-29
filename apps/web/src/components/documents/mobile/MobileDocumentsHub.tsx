@@ -53,7 +53,7 @@ export function MobileDocumentsHub(props: MobileDocumentsHubProps): React.JSX.El
 				totalCount={filter.filteredDocs.length}
 				onStatusChange={filter.setActiveStatus}
 			/>
-			<div className="px-4 pb-24">
+			<div className="px-4 pb-32">
 				{filter.filteredDocs.length === 0 ? (
 					<EmptyState
 						title="Документы не найдены"

@@ -77,6 +77,18 @@ export const DocumentsCatalogView: React.FC<DocumentsCatalogViewProps> = (
 				))}
 			</div>
 
+			<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)] pt-3 pb-1 border-t border-[var(--line,#e2e8f0)] mt-2 flex-wrap gap-2">
+				<div className="flex items-center gap-2">
+					<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)] shrink-0" />
+					<span className="font-medium text-[var(--ink,#0f172a)]">
+						Каталог медицинских документов и бланков (16 утверждённых форм)
+					</span>
+				</div>
+				<span className="text-[11px] text-[var(--muted,#64748b)]">
+					Все бланки согласий и договоров соответствуют актуальным клиническим рекомендациям
+				</span>
+			</div>
+
 			<CatalogModals
 				patient={patient}
 				effectivePatientName={effectivePatientName}

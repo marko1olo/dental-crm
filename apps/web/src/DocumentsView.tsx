@@ -7,6 +7,7 @@ import { DocumentIssueConfirmationModal } from "./components/documents/tabs/Docu
 import { DocumentModalsContainer } from "./components/documents/tabs/DocumentModalsContainer";
 import { DocumentVoidConfirmationModal } from "./components/documents/tabs/DocumentVoidConfirmationModal";
 import { DocumentsA4PrintPreview, DocumentsRecentList, DocumentsTemplateGrid, DocumentsToolbar, useDocumentsViewController } from "./documentsView/index";
+import { DocumentAccessibleAnchorForm } from "./documentsView/templateGridModules/DocumentAccessibleAnchorForm";
 import "./styles/modules/documents.css";
 import "./components/documents/documentNavigation.css";
 
@@ -54,24 +55,14 @@ export function DocumentsView(rawProps?: Partial<DocumentsViewProps>) {
 					<DocumentsA4PrintPreview {...vm.focusPreviewProps} />
 				) : (
 					<>
-						<DocumentsCatalogView {...vm.catalogViewProps} />
-						<DocumentsTemplateGrid
+						<DocumentAccessibleAnchorForm
 							selectedDocumentKind={vm.selectedDocumentKind}
 							onSelectDocumentKind={vm.setSelectedDocumentKind}
 							onCreateDocument={(k) => void vm.createDocument(k)}
-							onOpenFocusEditor={(k) => {
-								vm.setSelectedDocumentKind(k);
-								vm.setIsEditingInFocus(true);
-							}}
-							activeCategoryTab={vm.activeCategoryTab}
-							searchQuery={vm.registrySearchQuery}
-							documentCreateSavingKind={vm.documentCreateSavingKind}
 							sanitizedDocumentFactoryGroups={vm.sanitizedDocumentFactoryGroups}
 							documentLabels={vm.documentLabels}
-							onOpenPrimaryIntakePackage={() => vm.setIsPrimaryIntakeOpen(true)}
-							onDirectPrintPrimaryIntake={vm.handleDirectPrintPrimaryIntake}
-							className="my-3"
 						/>
+						<DocumentsCatalogView {...vm.catalogViewProps} />
 						<DocumentsRecentList {...vm.recentListProps} />
 					</>
 				)}

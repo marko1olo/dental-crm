@@ -13,8 +13,8 @@ const ClinicalTasksPanel = lazyWithRetry(() =>
 const OrthodonticPhotoProtocolModal = lazyWithRetry(() =>
 	import("../components/diagnostics/OrthodonticPhotoProtocolModal").then((m) => ({ default: m.OrthodonticPhotoProtocolModal })),
 );
-const OrthodonticVisitProtocolWidget = lazyWithRetry(() =>
-	import("../components/orthodontics/OrthodonticVisitProtocolWidget").then((m) => ({ default: m.OrthodonticVisitProtocolWidget })),
+const OrthodonticVisitScreen = lazyWithRetry(() =>
+	import("../components/orthodontics/OrthodonticVisitScreen").then((m) => ({ default: m.OrthodonticVisitScreen })),
 );
 const ToothContextDrawer = lazyWithRetry(() =>
 	import("../components/diagnostics/ToothContextDrawer").then((m) => ({ default: m.ToothContextDrawer })),
@@ -43,7 +43,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			)}
 			{routing.isOrthoProtocolDirectModalOpen && (
 				<Suspense fallback={null}>
-					<OrthodonticVisitProtocolWidget
+					<OrthodonticVisitScreen
 						isOpen={true}
 						onClose={() => routing.setIsOrthoProtocolDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Смирнова Екатерина Андреевна"}

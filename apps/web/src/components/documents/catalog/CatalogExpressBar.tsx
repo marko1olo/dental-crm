@@ -26,20 +26,20 @@ export function CatalogExpressBar({
 					type="button"
 					data-testid="btn-fast-print-intake-package-1click"
 					onClick={onFastPrintPrimaryIntake}
-					className="primary-button inline-flex items-center gap-1.5 h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-bold hover:bg-[var(--teal-dark,#0f766e)] transition-colors cursor-pointer shadow-xs border border-transparent"
+					className="secondary-button inline-flex items-center gap-1.5 min-h-[36px] h-9 px-3.5 rounded-lg border border-[var(--teal,#0d9488)] bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] text-xs font-semibold hover:bg-[var(--teal,#0d9488)]/10 transition-colors cursor-pointer"
 					title="Распечатать сразу весь пакет первичного приёма: Договор + ИДС + Согласие на обработку персданных"
 				>
-					<Printer size={14} className="shrink-0" aria-hidden="true" />
+					<Printer size={15} className="shrink-0" aria-hidden="true" />
 					<span>Печать первичного пакета документов</span>
 				</button>
 				<button
 					type="button"
 					data-testid="btn-catalog-open-tax-quick"
 					onClick={onOpenTax}
-					className="secondary-button inline-flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold hover:border-[var(--teal,#0d9488)] transition-colors cursor-pointer"
+					className="secondary-button inline-flex items-center gap-1.5 min-h-[36px] h-9 px-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs font-semibold hover:border-[var(--teal,#0d9488)] transition-colors cursor-pointer"
 					title="Справка об оплате медицинских услуг для налогового вычета (13% НДФЛ)"
 				>
-					<Receipt size={14} className="shrink-0 text-[var(--teal,#0d9488)]" aria-hidden="true" />
+					<Receipt size={15} className="shrink-0 text-[var(--teal,#0d9488)]" aria-hidden="true" />
 					<span>Справка для налогового вычета (13% НДФЛ)</span>
 				</button>
 			</div>

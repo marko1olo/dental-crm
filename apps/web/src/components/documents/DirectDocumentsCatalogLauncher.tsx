@@ -4,13 +4,52 @@
  * Мандат 8aq: Монтирование в живой UI. Мандат 8b: строго <= 120 строк.
  */
 
-import React, { useState } from "react";
-import { DocumentsTemplateGrid } from "../../documentsView/DocumentsTemplateGrid";
+import React, { useMemo, useState } from "react";
+import { DocumentsView } from "../../DocumentsView";
 import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
 import { PatientConsentSignDrawer } from "./PatientConsentSignDrawer";
+import { AppLogicProvider, useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+
+const DEMO_PATIENT = {
+	id: "pat-demo-01",
+	fullName: "Смирнов Алексей Петрович",
+	birthDate: "1988-04-12",
+	phone: "+7 (916) 123-45-67",
+	cardNumber: "К-4821",
+	gender: "male" as const,
+	allergies: ["Пенициллины"],
+};
+
+const DEMO_DOCUMENTS = [
+	{ id: "doc-01", kind: "paid_medical_services_contract", title: "Договор на оказание медицинских услуг", status: "issued", patientId: "pat-demo-01", createdAt: "2026-10-25T10:00:00Z", issuedAt: "2026-10-25T10:15:00Z" },
+	{ id: "doc-02", kind: "informed_voluntary_consent_primary", title: "Информированное добровольное согласие на осмотр", status: "issued", patientId: "pat-demo-01", createdAt: "2026-10-25T10:05:00Z", issuedAt: "2026-10-25T10:16:00Z" },
+	{ id: "doc-03", kind: "dental_medical_card_043u", title: "Медицинская карта приёма стоматолога", status: "issued", patientId: "pat-demo-01", createdAt: "2026-10-25T10:20:00Z", issuedAt: "2026-10-25T11:00:00Z" },
+	{ id: "doc-04", kind: "therapeutic_treatment_plan", title: "План стоматологического лечения", status: "draft", patientId: "pat-demo-01", createdAt: "2026-10-28T14:00:00Z" },
+];
 
 export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 	const [isIntakeOpen, setIsIntakeOpen] = useState(false);
+	const existingContext = useOptionalAppLogicContext();
+
+	const fallbackAppLogic: any = useMemo(() => ({
+		dashboard: { patients: [DEMO_PATIENT], documents: DEMO_DOCUMENTS, appointments: [], doctors: [{ id: "doc-01", fullName: "Д-р Воронов М. С.", role: "doctor" }] },
+		activePatient: DEMO_PATIENT,
+		activeDoctor: { id: "doc-01", fullName: "Д-р Воронов М. С.", role: "doctor" },
+		activeDocuments: DEMO_DOCUMENTS,
+		activeUsableDocuments: DEMO_DOCUMENTS,
+		patientName: DEMO_PATIENT.fullName,
+		createDocument: async () => {},
+		requestDocumentIssue: () => {},
+		requestDocumentVoid: () => {},
+		confirmDocumentIssue: async () => {},
+		confirmDocumentVoid: async () => {},
+		openIssuedDocumentHtml: () => {},
+		downloadIssuedDocumentHtml: () => {},
+		downloadIssuedDocumentPdf: () => {},
+		handleDirectPrintPrimaryIntake: () => setIsIntakeOpen(true),
+		money: (rub: number) => `${rub?.toLocaleString("ru-RU") ?? "0"} ₽`,
+	}), []);
+
 	if (typeof window === "undefined") return null;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
@@ -30,7 +69,7 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 					onClose={() => {}}
 					patient={{ id: "p-01", fullName: "Смирнов Алексей Петрович", birthDate: "1988-04-12" } as any}
 					doctorFullName="Д-р Воронов Алексей Владимирович"
-					clinicName="Стоматология ДЕНТЕ Премиум"
+					clinicName="Стоматология ДЕНТЕ"
 					defaultConsentKind="therapeutic"
 				/>
 			</div>
@@ -46,20 +85,12 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 
 	if (!isDocCatalogStandalone) return null;
 
-	return (
+	const content = (
 		<div
-			className="fixed inset-0 z-[1000] flex flex-col bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] p-4 sm:p-6 overflow-y-auto"
+			className="fixed inset-0 z-[1000] flex flex-col bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] p-3 sm:p-6 overflow-y-auto"
 			data-testid="standalone-documents-catalog-root"
 		>
-			<DocumentsTemplateGrid
-				selectedDocumentKind="primary_intake_package"
-				onSelectDocumentKind={() => {}}
-				onCreateDocument={() => {}}
-				onOpenFocusEditor={() => {}}
-				activeCategoryTab="all"
-				searchQuery=""
-				onOpenPrimaryIntakePackage={() => setIsIntakeOpen(true)}
-			/>
+			<DocumentsView />
 			{isIntakeOpen && (
 				<PrimaryIntakePackageModal
 					isOpen={isIntakeOpen}
@@ -69,6 +100,11 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 			)}
 		</div>
 	);
+
+	if (!existingContext) {
+		return <AppLogicProvider value={fallbackAppLogic}>{content}</AppLogicProvider>;
+	}
+	return content;
 }
 
 export function renderDocumentsCatalogLauncher(): React.ReactElement | null {

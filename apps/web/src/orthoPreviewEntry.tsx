@@ -12,7 +12,7 @@ import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 import "./theme.css";
 
-import { OrthodonticVisitProtocolWidget } from "./components/orthodontics/OrthodonticVisitProtocolWidget";
+import { OrthodonticVisitScreen } from "./components/orthodontics/OrthodonticVisitScreen";
 import { CephalometricAnalysisModal } from "./components/orthodontics/cephModal/CephalometricAnalysisModalUI";
 
 function OrthoPreviewApp() {
@@ -36,7 +36,7 @@ function OrthoPreviewApp() {
 	return (
 		<div className="min-h-screen w-full bg-[var(--paper)] text-[var(--ink)]">
 			{mode === "protocol" ? (
-				<OrthodonticVisitProtocolWidget
+				<OrthodonticVisitScreen
 					isOpen={true}
 					onClose={() => {}}
 					patientName="Смирнова Екатерина Андреевна"

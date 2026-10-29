@@ -48,14 +48,16 @@ export function MobileDocumentItemCard({
 					onOpenPreview(doc);
 				}
 			}}
-			className="flex items-center justify-between px-4 py-3.5 min-h-[64px] active:bg-[var(--paper-soft)] cursor-pointer transition-colors"
+			className="flex items-center justify-between px-4 py-3 min-h-[60px] active:bg-[var(--paper-soft)] cursor-pointer transition-colors"
 			data-testid={`mobile-doc-item-${doc.id}`}
 			aria-label={`Открыть документ: ${docLabel}`}
 		>
-			<div className="flex items-center gap-3 min-w-0 pr-2">
-				<MobileDocumentItemIcon kind={doc.kind} />
-				<div className="min-w-0">
-					<div className="text-[14px] font-semibold text-[var(--ink)] line-clamp-2 leading-snug break-normal tracking-tight">
+			<div className="flex items-start gap-2.5 min-w-0 flex-1 pr-1.5">
+				<div className="mt-0.5 shrink-0">
+					<MobileDocumentItemIcon kind={doc.kind} />
+				</div>
+				<div className="min-w-0 flex-1">
+					<div className="text-[13px] font-semibold text-[var(--ink)] leading-snug break-normal tracking-tight">
 						{docLabel}
 					</div>
 					<div className="text-[12px] text-[var(--muted)] flex items-center gap-1.5 flex-wrap mt-0.5">
@@ -76,7 +78,7 @@ export function MobileDocumentItemCard({
 				</div>
 			</div>
 
-			<div className="flex items-center gap-2 shrink-0">
+			<div className="flex items-center gap-1.5 shrink-0 ml-1">
 				<MobileDocumentItemStatus doc={doc} />
 				<ChevronRight size={16} className="text-[var(--muted)] shrink-0" aria-hidden="true" />
 			</div>

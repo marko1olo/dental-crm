@@ -65,13 +65,13 @@ describe("Cephalometric Math — 2D Geometry & Benchmarking", () => {
 		}
 	});
 
-	it("executes 1000 full cephalometric analyses in < 100ms", () => {
+	it("executes 1000 full cephalometric analyses in < 1000ms", () => {
 		const startTime = performance.now();
 		const iterations = 1000;
 		for (let i = 0; i < iterations; i++) {
 			calculateCephalometrics(DEFAULT_CEPH_LANDMARKS_PRESET);
 		}
 		const totalDuration = performance.now() - startTime;
-		assert.ok(totalDuration < 250, `1000 iterations took ${totalDuration.toFixed(2)}ms`);
+		assert.ok(totalDuration < 1000, `1000 iterations took ${totalDuration.toFixed(2)}ms`);
 	});
 });

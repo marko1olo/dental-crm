@@ -76,7 +76,7 @@ export function CatalogCard({
 							if (item.kind && onOpenFocusEditor) onOpenFocusEditor(item.kind);
 							else if (item.onQuickAction) item.onQuickAction();
 						}}
-						className="secondary-button h-8 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
+						className="secondary-button min-h-[36px] h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] transition flex items-center gap-1.5 cursor-pointer flex-1 justify-center"
 						title={
 							patientDoc ? "Открыть документ пациента" : "Оформить документ"
 						}
@@ -90,7 +90,7 @@ export function CatalogCard({
 						<button
 							type="button"
 							onClick={item.onQuickAction}
-							className="secondary-button h-8 px-2.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--teal,#0d9488)] text-xs font-semibold text-[var(--ink,#0f172a)] transition flex items-center gap-1.5 cursor-pointer"
+							className="secondary-button min-h-[36px] h-9 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper-soft,#f8fafc)] hover:border-[var(--teal,#0d9488)] text-xs font-semibold text-[var(--ink,#0f172a)] transition flex items-center gap-1.5 cursor-pointer"
 							title="Печать бланка"
 							data-testid={`btn-print-${item.id}`}
 						>
