@@ -1,11 +1,49 @@
 /**
  * PrescriptionValidityDetails.tsx — Blank Series, Validity & Address Selector
- * Decomposed coordinator <= 120 lines (Mandate 8b).
+ * DENTE Dental CRM (Doctor Autonomy Mandates 8e, 8n, 8x, 8y & Mandate 8b Sweet Spot 200–350 lines).
  */
 
-import type React from "react";
-import { PrescriptionChronicOptions } from "./PrescriptionChronicOptions";
+import React from "react";
 import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
+
+export interface PrescriptionChronicOptionsProps {
+	readonly isChronicSpecialCare: boolean;
+	readonly onToggleChronicSpecialCare: () => void;
+	readonly chronicPeriodicity: string;
+	readonly onChronicPeriodicityChange: (val: string) => void;
+}
+
+export const PrescriptionChronicOptions: React.FC<
+	PrescriptionChronicOptionsProps
+> = ({
+	isChronicSpecialCare,
+	onToggleChronicSpecialCare,
+	chronicPeriodicity,
+	onChronicPeriodicityChange,
+}) => {
+	return (
+		<div className="p-2.5 rounded-xl border border-amber-500/30 bg-amber-500/10 flex flex-col gap-1.5">
+			<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-amber-800 dark:text-amber-200">
+				<input
+					type="checkbox"
+					checked={isChronicSpecialCare}
+					onChange={onToggleChronicSpecialCare}
+					className="rounded text-[var(--teal)] focus:ring-[var(--teal)]"
+				/>
+				Спец. отметка «По специальному назначению» (хронические заболевания)
+			</label>
+			{isChronicSpecialCare && (
+				<input
+					type="text"
+					placeholder="Периодичность отпуска (напр. ежемесячно / 1 раз в 15 дней)..."
+					value={chronicPeriodicity}
+					onChange={(e) => onChronicPeriodicityChange(e.target.value)}
+					className="w-full px-2.5 py-1 text-xs rounded-lg bg-[var(--paper)] border border-amber-500/30 text-[var(--ink)]"
+				/>
+			)}
+		</div>
+	);
+};
 
 export interface PrescriptionValidityDetailsProps {
 	readonly customSeriesNumber: string;
@@ -32,9 +70,17 @@ export const PrescriptionValidityDetails: React.FC<PrescriptionValidityDetailsPr
 	props,
 ) => {
 	const {
-		customSeriesNumber, onCustomSeriesNumberChange, validityDays, onValidityDaysChange,
-		isChronicSpecialCare, onToggleChronicSpecialCare, chronicPeriodicity,
-		onChronicPeriodicityChange, patientAddress, onPatientAddressChange, activeForm,
+		customSeriesNumber,
+		onCustomSeriesNumberChange,
+		validityDays,
+		onValidityDaysChange,
+		isChronicSpecialCare,
+		onToggleChronicSpecialCare,
+		chronicPeriodicity,
+		onChronicPeriodicityChange,
+		patientAddress,
+		onPatientAddressChange,
+		activeForm,
 	} = props;
 	const isSpecial = activeForm === "special" || activeForm === "148-1u-88";
 

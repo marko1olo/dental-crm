@@ -3,7 +3,7 @@
  * Decomposed coordinator <= 120 lines (Mandate 8b).
  */
 
-import type React from "react";
+import React from "react";
 import { PrescriptionCatalogList } from "./PrescriptionCatalogList";
 import { PrescriptionCustomDrugForm } from "./PrescriptionCustomDrugForm";
 import { PrescriptionExpressPills } from "./PrescriptionExpressPills";

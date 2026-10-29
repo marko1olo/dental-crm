@@ -1,6 +1,6 @@
 /**
  * prescriptionDocumentGenerator.ts — Clinical Prescription Document Synthesis
- * DENTE Dental CRM (Mandate 8b <= 120 lines).
+ * DENTE Dental CRM (Doctor Autonomy Mandates 8e, 8n, 8x, 8y & Mandate 8b <= 120 lines).
  */
 
 import {
@@ -8,16 +8,16 @@ import {
 	DENTAL_PRESCRIPTION_DRUG_CATALOG,
 } from "@dental/shared";
 import type {
-	Form107PrescriptionDocument,
-	Form107PrescriptionInput,
-	Form107RenderedItem,
+	PrescriptionDocument,
+	PrescriptionDocumentInput,
+	PrescriptionRenderedItem,
 } from "./prescriptionEngineTypes";
 import { DENTAL_MEDICATIONS_CATALOG } from "./prescriptionPresets";
 
 export function generatePrescriptionDocument(
-	input: Form107PrescriptionInput,
-): Form107PrescriptionDocument {
-	const items: Form107RenderedItem[] = [];
+	input: PrescriptionDocumentInput,
+): PrescriptionDocument {
+	const items: PrescriptionRenderedItem[] = [];
 
 	let count = 1;
 	for (const id of input.selectedMedicationIds) {

@@ -3,7 +3,7 @@
  */
 
 import { formatCanonicalRpLatin } from "@dental/shared";
-import type React from "react";
+import React from "react";
 
 export interface PrescriptionItemsRpListProps {
 	readonly activeItems: readonly {

@@ -4,7 +4,7 @@
  */
 
 import { FileText } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { PrescriptionAllergyConflictStrip } from "./PrescriptionAllergyConflictStrip";
 import { PrescriptionDocumentFooter } from "./PrescriptionDocumentFooter";
 import { PrescriptionDocumentHeader } from "./PrescriptionDocumentHeader";

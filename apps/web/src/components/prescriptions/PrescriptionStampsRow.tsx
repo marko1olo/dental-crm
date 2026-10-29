@@ -2,7 +2,7 @@
  * PrescriptionStampsRow.tsx — Official Physical Ink Stamp Circles Mockup
  */
 
-import type React from "react";
+import React from "react";
 import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionStampsRowProps {

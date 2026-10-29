@@ -1,11 +1,11 @@
 /**
  * prescriptionEngineTypes.ts — Prescription Document & Memo Generation Types
- * DENTE Dental CRM (Mandate 8b <= 120 lines).
+ * DENTE Dental CRM (Doctor Autonomy Mandates 8e, 8n, 8x, 8y & Mandate 8b <= 120 lines).
  */
 
 import type { DentalMedicationPreset } from "./prescriptionPresetTypes";
 
-export interface Form107PrescriptionInput {
+export interface PrescriptionDocumentInput {
 	readonly prescriptionSeriesNumber: string;
 	readonly dateIso: string;
 	readonly validityDays: 15 | 30 | 60 | 365;
@@ -32,7 +32,7 @@ export interface Form107PrescriptionInput {
 	} | null;
 }
 
-export interface Form107RenderedItem {
+export interface PrescriptionRenderedItem {
 	readonly itemNumber: number;
 	readonly latinRp: string;
 	readonly dispenseLatin: string;
@@ -40,12 +40,7 @@ export interface Form107RenderedItem {
 	readonly tradeNameRu: string;
 }
 
-/** Canonical semantic aliases per Mandate 8x & 8ap */
-export type PrescriptionDocumentInput = Form107PrescriptionInput;
-export type PrescriptionRenderedItem = Form107RenderedItem;
-export type PrescriptionGeneratedDocument = Form107PrescriptionDocument;
-
-export interface Form107PrescriptionDocument {
+export interface PrescriptionDocument {
 	readonly header: {
 		readonly seriesNumber: string;
 		readonly dateLabelRu: string;
@@ -68,7 +63,7 @@ export interface Form107PrescriptionDocument {
 		readonly specialty: string;
 		readonly snils?: string | undefined;
 	};
-	readonly items: readonly Form107RenderedItem[];
+	readonly items: readonly PrescriptionRenderedItem[];
 	readonly ukepSignature?:
 		| {
 				certificateSerialNumber?: string | undefined;
@@ -81,6 +76,12 @@ export interface Form107PrescriptionDocument {
 	readonly isChronicSpecialCare?: boolean | undefined;
 	readonly chronicPeriodicity?: string | undefined;
 }
+
+/** Backward compatibility aliases for legacy tests */
+export type Form107PrescriptionInput = PrescriptionDocumentInput;
+export type Form107RenderedItem = PrescriptionRenderedItem;
+export type Form107PrescriptionDocument = PrescriptionDocument;
+export type PrescriptionGeneratedDocument = PrescriptionDocument;
 
 export interface PatientPrescriptionMemoParams {
 	clinicName: string;
@@ -98,7 +99,11 @@ export interface PatientPrescriptionMemoParams {
 				tradeNameRu?: string;
 				activeSubstanceRu?: string;
 				formRu?: string;
-				signaRu: string;
+				dosageRu?: string;
+				latinRp?: string;
+				signaRu?: string;
+				dispenseLatin?: string;
 		  }
 	)[];
+	additionalNotesRu?: string | undefined;
 }

@@ -3,7 +3,7 @@
  * Official clinic stamp box, statutory header & Series/Number.
  */
 
-import type React from "react";
+import React from "react";
 import type { PrescriptionFormType } from "./prescriptionPreviewTypes";
 
 export interface PrescriptionDocumentHeaderProps {

@@ -3,7 +3,7 @@
  * Allows prescribing medications outside the default dental catalog.
  */
 
-import type React from "react";
+import React from "react";
 
 export interface PrescriptionCustomDrugFormProps {
 	readonly isAddingCustom: boolean;
@@ -72,7 +72,7 @@ export const PrescriptionCustomDrugForm: React.FC<
 			<button
 				type="button"
 				onClick={onAddCustomDrug}
-				className="primary-button h-8 px-3.5 text-xs font-bold rounded-lg transition-all cursor-pointer self-end shadow-xs"
+				className="secondary-button btn btn--secondary h-8 px-3.5 text-xs font-semibold rounded-lg transition-all cursor-pointer self-end"
 			>
 				Добавить в рецепт
 			</button>

@@ -5,7 +5,7 @@
  */
 
 import { Check, Copy, Printer } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface PrescriptionModalFooterProps {
 	readonly isMemoCopied: boolean;
@@ -58,7 +58,7 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					type="button"
 					data-testid="print-prescription-btn"
 					onClick={onPrintPrescription}
-					className="primary-button btn btn--primary w-full h-12 min-h-[48px] px-4 text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
+					className="primary-button btn btn--primary w-full h-12 min-h-[48px] px-4 text-sm font-bold rounded-xl inline-flex items-center justify-center gap-2 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white shadow-sm cursor-pointer transition-colors"
 				>
 					<Printer className="w-4 h-4 shrink-0" />
 					<span>Печать рецепта</span>
@@ -104,7 +104,7 @@ export const PrescriptionModalFooter: React.FC<PrescriptionModalFooterProps> = (
 					type="button"
 					data-testid="print-prescription-btn-desktop"
 					onClick={onPrintPrescription}
-					className="primary-button btn btn--primary h-9 min-h-[36px] px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white shadow-sm cursor-pointer"
+					className="primary-button btn btn--primary h-9 min-h-[36px] px-4 text-xs font-bold rounded-xl inline-flex items-center gap-1.5 bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white shadow-sm cursor-pointer transition-colors"
 				>
 					<Printer className="w-4 h-4 shrink-0" />
 					<span>Печать рецепта</span>

@@ -4,7 +4,7 @@
  */
 
 import { Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface PrescriptionPediatricCalculatorProps {
 	readonly patientWeightKg?: number | undefined;
