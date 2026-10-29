@@ -8,7 +8,7 @@ import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { OnlineBookingConversionPanel } from "../components/analytics/OnlineBookingConversionPanel.js";
 import { MarketingAttributionDashboard } from "../components/analytics/MarketingAttributionDashboard.js";
-import { PatientCreationModal } from "../components/patients/PatientCreationModal.js";
+import { PatientCreationModal } from "../components/patients/patientCreation/index.js";
 import { LeadConvertModal } from "../components/leads/LeadConvertModal.js";
 import { validateRecallInviteSafety } from "../components/recalls/recallSmsAndMessaging.js";
 import type { PatientRecallRecord } from "../components/recalls/recallCycleCatalog.js";
@@ -196,6 +196,7 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 		// Medical consent checkbox
 		assert.ok(html.includes('data-testid="consent-medical-checkbox"'));
 		assert.ok(
+			html.includes("Согласие на ведение медицинской карты и обработку данных") ||
 			html.includes("Медицинская карта и обслуживание"),
 		);
 		assert.ok(
@@ -207,6 +208,7 @@ describe("Marketing Attribution Separation & Self-Booking Panel (Feature #28 & #
 			html.includes('data-testid="consent-marketing-checkbox"'),
 		);
 		assert.ok(
+			html.includes("Сервисные напоминания о визитах") ||
 			html.includes("Рекламные предложения и акции"),
 		);
 		assert.ok(

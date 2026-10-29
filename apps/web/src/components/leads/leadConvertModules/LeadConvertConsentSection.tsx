@@ -1,6 +1,6 @@
 /**
- * DENTE Dental CRM — Leads Conversion Consent Section (152-FZ & FZ-38)
- * Mandate 8b (<= 120 lines)
+ * DENTE Dental CRM — Leads Conversion Consent Section
+ * Mandate 8x & 8ap (Human Clinical Terminology), Mandate 8b (<= 120 lines)
  */
 
 import { ShieldCheck } from "lucide-react";
@@ -65,12 +65,12 @@ export const LeadConvertConsentSection: React.FC<
 					type="checkbox"
 					checked={consentMedical}
 					onChange={(e) => setConsentMedical(e.target.checked)}
-					style={{ marginTop: 2 }}
+					style={{ marginTop: 2, accentColor: "var(--teal)" }}
 					data-testid="consent-medical-checkbox"
 				/>
 				<div>
 					<span style={{ fontWeight: 600 }}>
-						Медицинская карта и обслуживание
+						Согласие на ведение медицинской карты и обработку данных
 					</span>
 					<p className="m-0 text-[10.5px] leading-tight text-[var(--muted)]">
 						Оформление амбулаторной карты приёма и согласия на осмотр.
@@ -93,16 +93,16 @@ export const LeadConvertConsentSection: React.FC<
 					type="checkbox"
 					checked={consentMarketing}
 					onChange={(e) => setConsentMarketing(e.target.checked)}
-					style={{ marginTop: 2 }}
+					style={{ marginTop: 2, accentColor: "var(--teal)" }}
 					data-testid="consent-marketing-checkbox"
 				/>
 				<div>
 					<span style={{ fontWeight: 600 }}>
-						Рекламные предложения и акции
+						Сервисные напоминания о визитах
 					</span>
 					<p className="m-0 text-[10.5px] leading-tight text-[var(--muted)]">
 						{consentMarketing
-							? "Пациент согласен получать спецпредложения и информацию об акциях."
+							? "Пациент согласен получать напоминания о записи и информацию о визитах."
 							: "Отключено: отправляются только сервисные напоминания о времени приёма."}
 					</p>
 				</div>

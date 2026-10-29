@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Leads Conversion Patient Fields (Layer 4)
- * Mandate 8l (Zero Attribution Loss) & 152-FZ / FZ-38 Consent Separation, Mandate 8b (<= 120 lines)
+ * Mandate 8l (Zero Attribution Loss) & Mandate 8x/8ap (Human Clinical Language), Mandate 8b (<= 120 lines)
  */
 
 import React from "react";
