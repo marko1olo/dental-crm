@@ -426,6 +426,18 @@ export const createPrescription107Tool: ToolDefinition<
 	},
 };
 
+/**
+ * Clean domain alias for statutory prescription tool (Mandate 8ap).
+ */
+export const createPrescriptionTool: ToolDefinition<
+	typeof createPrescription107Schema
+> = {
+	...createPrescription107Tool,
+	name: "create_prescription",
+	description:
+		"Генерация официального электронного рецептурного бланка с латинской прописью Rp:, D.t.d. и сигнатурой S.",
+};
+
 // ─── 7. check_drug_interaction (DDI, Allergies, Pregnancy, Anticoagulants) ──
 
 const checkDrugInteractionSchema = z.object({

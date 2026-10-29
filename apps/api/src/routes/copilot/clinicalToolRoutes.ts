@@ -68,38 +68,54 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 		},
 	);
 
-	// POST /api/v1/copilot/clinical/prescription-107 — Generate standard outpatient prescription
+	// POST /api/v1/copilot/clinical/prescription & prescription-107 — Generate standard outpatient prescription
+	const prescriptionHandler = async (
+		request: any,
+		reply: any,
+	) => {
+		const resolvedOrgId = await requireResolvedOrganizationId(
+			request,
+			reply,
+			"copilot create electronic prescription",
+		);
+		if (!resolvedOrgId) return;
+
+		const identity = getRequestIdentity(request);
+		const context = createClinicalContext(
+			resolvedOrgId,
+			identity.userId ?? "system",
+		);
+
+		try {
+			const toolName = defaultToolRegistry.has("create_prescription")
+				? "create_prescription"
+				: "create_prescription_107";
+			const result = await defaultToolRegistry.call(
+				context,
+				toolName,
+				request.body ?? {},
+			);
+			return reply.send(result);
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			return reply.code(400).send({
+				error: "PrescriptionGenerationError",
+				message: errMsg,
+			});
+		}
+	};
+
+	server.post<{ Body: Record<string, unknown> }>(
+		"/api/v1/copilot/clinical/prescription",
+		prescriptionHandler,
+	);
+	server.post<{ Body: Record<string, unknown> }>(
+		"/api/v1/copilot/clinical/electronic-prescription",
+		prescriptionHandler,
+	);
 	server.post<{ Body: Record<string, unknown> }>(
 		"/api/v1/copilot/clinical/prescription-107",
-		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot create prescription 107",
-			);
-			if (!resolvedOrgId) return;
-
-			const identity = getRequestIdentity(request);
-			const context = createClinicalContext(
-				resolvedOrgId,
-				identity.userId ?? "system",
-			);
-
-			try {
-				const result = await defaultToolRegistry.call(
-					context,
-					"create_prescription_107",
-					request.body ?? {},
-				);
-				return reply.send(result);
-			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : String(err);
-				return reply.code(400).send({
-					error: "PrescriptionGenerationError",
-					message: errMsg,
-				});
-			}
-		},
+		prescriptionHandler,
 	);
 
 	// POST /api/v1/copilot/clinical/treatment-plan — Generate 3-Tier Treatment Plan

@@ -79,10 +79,8 @@
   font-weight: 600;
   color: var(--ink, #0f172a);
   text-align: right;
-  max-width: 280px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  max-width: 65%;
+  word-break: break-word;
   font-size: 13px;
 }
 

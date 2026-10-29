@@ -221,15 +221,40 @@ export class CopilotActionRunner {
 		};
 		const actionName = pending ? pending.name : "action";
 
-		// Notify backend if API is configured
-		if (apiBaseUrl) {
+		// Notify backend via canonical Fastify endpoints
+		if (typeof window !== "undefined" || apiBaseUrl) {
 			const token = readDenteClinicToken() || readDenteStaffToken() || "";
-			fetch(`${apiBaseUrl}/api/v1/copilot/confirm`, {
+			const baseUrl = apiBaseUrl.replace(/\/$/, "");
+			const actionEndpoint = `${baseUrl}/api/copilot/action`;
+			const confirmEndpoint = `${baseUrl}/api/v1/copilot/confirm`;
+			const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+			// 1. Canonical Fastify /api/copilot/action
+			fetch(actionEndpoint, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Accept: "application/json",
-					...(token ? { Authorization: `Bearer ${token}` } : {}),
+					...authHeader,
+				},
+				body: JSON.stringify({
+					sessionId: sessionId || "default-session",
+					callId,
+					decision: "confirm",
+					modifiedArgs: finalArgs,
+					confirmed: true,
+				}),
+			}).catch(() => {
+				// Local-first fallback: dispatch via alternative endpoint if necessary
+			});
+
+			// 2. Secondary confirmation endpoint
+			fetch(confirmEndpoint, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+					...authHeader,
 				},
 				body: JSON.stringify({
 					sessionId: sessionId || "default-session",
@@ -264,14 +289,33 @@ export class CopilotActionRunner {
 	): Promise<void> {
 		this.pendingActions.delete(callId);
 
-		if (apiBaseUrl) {
+		if (typeof window !== "undefined" || apiBaseUrl) {
 			const token = readDenteClinicToken() || readDenteStaffToken() || "";
-			fetch(`${apiBaseUrl}/api/v1/copilot/confirm`, {
+			const baseUrl = apiBaseUrl.replace(/\/$/, "");
+			const authHeader = token ? { Authorization: `Bearer ${token}` } : {};
+
+			fetch(`${baseUrl}/api/copilot/action`, {
 				method: "POST",
 				headers: {
 					"Content-Type": "application/json",
 					Accept: "application/json",
-					...(token ? { Authorization: `Bearer ${token}` } : {}),
+					...authHeader,
+				},
+				body: JSON.stringify({
+					sessionId: sessionId || "default-session",
+					callId,
+					decision: "reject",
+					reason,
+					confirmed: false,
+				}),
+			}).catch(() => {});
+
+			fetch(`${baseUrl}/api/v1/copilot/confirm`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					Accept: "application/json",
+					...authHeader,
 				},
 				body: JSON.stringify({
 					sessionId: sessionId || "default-session",

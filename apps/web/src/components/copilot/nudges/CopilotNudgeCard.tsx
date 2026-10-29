@@ -5,7 +5,8 @@ import type { CopilotNudge } from '../copilotTypes';
 export interface CopilotNudgeCardProps {
   nudge: CopilotNudge;
   isApplied: boolean;
-  onApply043: (nudge: CopilotNudge) => void;
+  onApplyClinicalDiary?: ((nudge: CopilotNudge) => void) | undefined;
+  onApply043?: ((nudge: CopilotNudge) => void) | undefined;
   onTrigger: (nudge: CopilotNudge) => void;
   onDismiss: (id: string) => void;
 }
@@ -13,12 +14,14 @@ export interface CopilotNudgeCardProps {
 export const CopilotNudgeCard: React.FC<CopilotNudgeCardProps> = ({
   nudge,
   isApplied,
+  onApplyClinicalDiary,
   onApply043,
   onTrigger,
   onDismiss,
 }) => {
   const isCancelled = nudge.kind === 'appointment_cancelled';
-  const isClinical = nudge.kind === 'clinical_tooth_protocol' || Boolean(nudge.payload?.form043);
+  const hasDiaryPayload = Boolean(nudge.payload?.clinicalDiary || nudge.payload?.form043);
+  const isClinical = nudge.kind === 'clinical_tooth_protocol' || hasDiaryPayload;
   const title = (nudge.payload?.title as string) || (isClinical ? 'КЛИНИЧЕСКИЙ ПРОТОКОЛ СТАР' : 'УМНАЯ ПОДСКАЗКА DENTE');
   const description = (nudge.payload?.description as string) || (nudge.payload?.text as string) ||
     (isCancelled ? 'Приём на сегодня отменён — освободилось окно в расписании. Предложить пациенту из листа ожидания?' : '');
@@ -26,6 +29,11 @@ export const CopilotNudgeCard: React.FC<CopilotNudgeCardProps> = ({
   const tooth = nudge.payload?.tooth as number | string | undefined;
   const icd10 = nudge.payload?.icd10 as string | undefined;
   const anesthesia = nudge.payload?.anesthesia as string | undefined;
+
+  const handleApplyDiary = () => {
+    if (onApplyClinicalDiary) onApplyClinicalDiary(nudge);
+    else if (onApply043) onApply043(nudge);
+  };
 
   return (
     <div
@@ -81,7 +89,7 @@ export const CopilotNudgeCard: React.FC<CopilotNudgeCardProps> = ({
           {isClinical && (
             <button
               type="button"
-              onClick={() => onApply043(nudge)}
+              onClick={handleApplyDiary}
               className="copilot-nudge-btn"
               style={{ backgroundColor: 'var(--teal, #0d9488)', color: '#ffffff', border: 'none', fontWeight: 600 }}
               disabled={isApplied}

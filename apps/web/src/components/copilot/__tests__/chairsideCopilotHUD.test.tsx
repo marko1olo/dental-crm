@@ -112,7 +112,7 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Применить к зубу");
   });
 
-  it("5. renders 804n Services & Billing card with codes, prices in rubles, and add button", () => {
+  it("5. renders Services & Billing proposal card with codes, prices in rubles, and add button", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
@@ -132,7 +132,7 @@ describe("ChairsideCopilotHUD Component Tests", () => {
     expect(html).toContain("Добавить в смету");
   });
 
-  it("6. renders Form 043/u SOAP Diary card with structured clinical sections", () => {
+  it("6. renders Medical Card SOAP Diary card with structured clinical sections", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}

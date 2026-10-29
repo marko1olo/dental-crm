@@ -59,14 +59,20 @@ export function renderClinicalAndReActSection(tool: string, obj: Obj): React.Rea
     return <CopilotClinicalProtocolCard data={cardData} />;
   }
 
-  // Medical Record Diary Card
+  // Medical Record Diary Card (Examination Protocol)
   if (
-    tool.includes('043') ||
+    tool.includes('examination') ||
     tool.includes('diary') ||
+    tool.includes('043') ||
     (obj.complaints !== undefined && obj.treatment !== undefined) ||
-    obj.protocol_043 !== undefined
+    obj.protocol_043 !== undefined ||
+    obj.examination_protocol !== undefined
   ) {
-    const pObj = (obj.protocol_043 && typeof obj.protocol_043 === 'object' ? obj.protocol_043 : obj) as Obj;
+    const pObj = (obj.examination_protocol && typeof obj.examination_protocol === 'object'
+      ? obj.examination_protocol
+      : obj.protocol_043 && typeof obj.protocol_043 === 'object'
+      ? obj.protocol_043
+      : obj) as Obj;
     const p043Data: Protocol043Data = {
       patientId: typeof pObj.patientId === 'string' ? pObj.patientId : undefined,
       patientName: typeof pObj.patientName === 'string' ? pObj.patientName : typeof pObj.patient_name === 'string' ? pObj.patient_name : undefined,

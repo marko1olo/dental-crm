@@ -15,6 +15,7 @@ import { SterilizationBatchCycleModal } from "./inventory/sterilizationCycle/Ste
 import { InboundWaybillModal } from "./inventory/InboundWaybillModal.js";
 import { WarehouseInboundInvoiceModal } from "./inventory/WarehouseInboundInvoiceModal.js";
 import { BatchWriteoffModal } from "./inventory/BatchWriteoffModal.js";
+import { ConsumablesBatchWriteoffModal } from "./inventory/ConsumablesBatchWriteoffModal.js";
 import { WarehouseBatchWriteoffModal } from "./inventory/WarehouseBatchWriteoffModal.js";
 import { WarehouseInventoryAuditModal } from "./inventory/WarehouseInventoryAuditModal.js";
 import { WarehouseStockTable } from "./inventory/WarehouseStockTable.js";
@@ -29,6 +30,7 @@ export {
 	ShiftBatchWriteoffModal,
 	BatchWriteoffModal,
 	WarehouseBatchWriteoffModal,
+	ConsumablesBatchWriteoffModal,
 	WarehouseInventoryAuditModal,
 };
 export * from "./InventoryStockTable.js";

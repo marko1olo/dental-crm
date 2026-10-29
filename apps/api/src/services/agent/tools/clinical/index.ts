@@ -28,6 +28,7 @@ import {
 import {
 	checkDrugInteractionsTool,
 	checkDrugInteractionTool,
+	createPrescriptionTool,
 	createPrescription107Tool,
 } from "./prescriptionsAndSanpinTools.js";
 import {
@@ -57,6 +58,7 @@ export {
 export {
 	checkDrugInteractionsTool,
 	checkDrugInteractionTool,
+	createPrescriptionTool,
 	createPrescription107Tool,
 	performClinicalDrugSafetyAudit,
 } from "./prescriptionsAndSanpinTools.js";
@@ -109,8 +111,9 @@ export function registerClinicalTools(
 	registry.register(getLabOrdersTool, moduleName);
 	registry.register(getFamilyBalanceTool, moduleName);
 
-	// 2. Clinical Copilot Tools (Form 043/у Diary, Prescription 107-1/у, 3-Tier Plans, DDI Safety)
+	// 2. Clinical Copilot Tools (Clinical Diary, Electronic Prescription, 3-Tier Plans, DDI Safety)
 	registry.register(generateVisitDiaryTool, moduleName);
+	registry.register(createPrescriptionTool, moduleName);
 	registry.register(createPrescription107Tool, moduleName);
 	registry.register(suggestTreatmentPlanTool, moduleName);
 	registry.register(checkDrugInteractionTool, moduleName);

@@ -7,6 +7,7 @@ export interface CopilotNudgesProps {
   nudges: CopilotNudge[];
   onAct?: ((prompt: string) => void) | undefined;
   onAction?: ((nudge: CopilotNudge) => void) | undefined;
+  onApplyClinicalDiary?: ((nudge: CopilotNudge) => void) | undefined;
   onApply043?: ((nudge: CopilotNudge) => void) | undefined;
   onDismiss: (id: string) => void;
 }
@@ -15,6 +16,7 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
   nudges,
   onAct,
   onAction,
+  onApplyClinicalDiary,
   onApply043,
   onDismiss,
 }) => {
@@ -35,8 +37,8 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
     }
   };
 
-  const handleApply043 = (nudge: CopilotNudge) => {
-    const f043 = nudge.payload?.form043 as
+  const handleApplyDiary = (nudge: CopilotNudge) => {
+    const note = (nudge.payload?.clinicalDiary || nudge.payload?.form043) as
       | {
           tooth?: number | string;
           diagnosis?: string;
@@ -47,17 +49,19 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
         }
       | undefined;
 
-    if (f043) {
+    if (note) {
       useVisitStore.getState().setVisitNoteForm({
-        complaint: f043.complaint || '',
-        anamnesis: f043.anamnesis || '',
-        objectiveStatus: f043.objectiveStatus || '',
-        diagnosis: f043.diagnosis || '',
-        treatmentPlan: f043.treatmentPlan || '',
+        complaint: note.complaint || '',
+        anamnesis: note.anamnesis || '',
+        objectiveStatus: note.objectiveStatus || '',
+        diagnosis: note.diagnosis || '',
+        treatmentPlan: note.treatmentPlan || '',
       });
     }
 
-    if (onApply043) {
+    if (onApplyClinicalDiary) {
+      onApplyClinicalDiary(nudge);
+    } else if (onApply043) {
       onApply043(nudge);
     }
 
@@ -74,7 +78,8 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
           key={nudge.id}
           nudge={nudge}
           isApplied={appliedId === nudge.id}
-          onApply043={handleApply043}
+          onApplyClinicalDiary={handleApplyDiary}
+          onApply043={handleApplyDiary}
           onTrigger={handleTrigger}
           onDismiss={onDismiss}
         />

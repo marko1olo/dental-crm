@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import type { CopilotActionConfirmProps } from './actionConfirm/actionConfirmTypes';
-import { ACTION_TITLES, isActionDestructive } from './actionConfirm/actionConfirmTitles';
+import {
+  ACTION_TITLES,
+  ActionConfirmButtons,
+  isActionDestructive,
+} from './actionConfirm/actionConfirmSSOT';
 import { getClinicalDiff } from './actionConfirm/actionConfirmDiff';
 import { syncVisitStoreWithAction } from './actionConfirm/actionConfirmStoreSync';
 import { ActionConfirmHeader } from './actionConfirm/ActionConfirmHeader';
 import { ActionConfirmDiffBox } from './actionConfirm/ActionConfirmDiffBox';
 import { ActionConfirmParamsGrid } from './actionConfirm/ActionConfirmParamsGrid';
 import { ActionConfirmRejectPrompt } from './actionConfirm/ActionConfirmRejectPrompt';
-import { ActionConfirmButtons } from './actionConfirm/ActionConfirmButtons';
 
 export type { CopilotActionConfirmProps };
 
