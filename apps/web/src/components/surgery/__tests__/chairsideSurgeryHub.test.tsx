@@ -1,0 +1,141 @@
+/**
+ * chairsideSurgeryHub.test.tsx — Валидация канонического рабочего стола амбулаторной хирургии и паспортов имплантатов.
+ * Стандарты: Мандаты 8b, 8e, 8n, 8x, 8y, 8am, 8aq, Apple HIG.
+ */
+
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
+import React from "react";
+import { renderToString } from "react-dom/server";
+import {
+	SURGERY_SCENARIOS,
+	SURGERY_IMPLANT_SYSTEMS,
+	SURGERY_DEFAULT_BATCHES,
+	evaluateSurgerySoftOverdraft,
+	computeOsteointegrationExpectedDate,
+	getImplantSystemById,
+} from "../surgeryCatalogData";
+import { ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal";
+import { DirectSurgeryLauncher } from "../DirectSurgeryLauncher";
+
+describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8am)", () => {
+	it("1. surgeryCatalogData contains all 4 canonical outpatient scenarios without Soviet order codes", () => {
+		const keys = Object.keys(SURGERY_SCENARIOS);
+		assert.equal(keys.length, 4);
+		assert.ok(keys.includes("extraction"));
+		assert.ok(keys.includes("resection_periostotomy"));
+		assert.ok(keys.includes("sinus_gbr"));
+		assert.ok(keys.includes("implant"));
+
+		// Check Mandate 8x: clean clinical language
+		for (const key of keys) {
+			const sc = SURGERY_SCENARIOS[key as keyof typeof SURGERY_SCENARIOS];
+			assert.ok(sc.titleRu.length > 0);
+			assert.ok(sc.icd10.length > 0);
+			assert.ok(!sc.titleRu.includes("043/у"), "No Soviet order numbers in titleRu");
+			assert.ok(!sc.defaultProtocolRu.includes("804н"), "No order numbers in protocol");
+		}
+	});
+
+	it("2. implant systems catalog includes Osstem, Straumann, Nobel Biocare, Dentium and Ankylos with valid torque specs", () => {
+		assert.ok(SURGERY_IMPLANT_SYSTEMS.length >= 5);
+		const osstem = getImplantSystemById("osstem");
+		assert.equal(osstem.brandName, "Osstem");
+		assert.equal(osstem.defaultTorqueNcm, 35);
+		assert.ok(osstem.minTorqueNcm >= 20 && osstem.maxSafeTorqueNcm <= 50);
+
+		const straumann = getImplantSystemById("straumann");
+		assert.equal(straumann.brandName, "Straumann");
+		assert.equal(straumann.defaultTorqueNcm, 35);
+
+		const nobel = getImplantSystemById("nobel_biocare");
+		assert.equal(nobel.brandName, "Nobel Biocare");
+
+		const dentium = getImplantSystemById("dentium");
+		assert.equal(dentium.brandName, "Dentium");
+
+		const ankylos = getImplantSystemById("ankylos");
+		assert.equal(ankylos.brandName, "Ankylos");
+	});
+
+	it("3. evaluateSurgerySoftOverdraft guarantees canProceed: true (Mandate 8e: Doctor autonomy)", () => {
+		const materials = [
+			{ id: "1", name: "Bio-Oss", unit: "g", quantity: 0.5, isWarehouseCritical: true },
+			{ id: "2", name: "Bio-Gide", unit: "pcs", quantity: 1, isWarehouseCritical: true },
+		];
+
+		const statusNoDelay = evaluateSurgerySoftOverdraft(materials, false);
+		assert.equal(statusNoDelay.hasOverdraft, false);
+		assert.equal(statusNoDelay.canProceed, true);
+
+		const statusDelayed = evaluateSurgerySoftOverdraft(materials, true);
+		assert.equal(statusDelayed.hasOverdraft, true);
+		assert.equal(statusDelayed.canProceed, true, "Mandate 8e: Doctor is NEVER blocked by warehouse delay!");
+		assert.ok(statusDelayed.detailsRu.includes("не блокируется"));
+	});
+
+	it("4. computeOsteointegrationExpectedDate computes 3 months for mandible and 5 months for maxilla", () => {
+		const baseDate = "2026-05-01T12:00:00.000Z";
+		const lowerMolarDate = computeOsteointegrationExpectedDate(baseDate, 46);
+		assert.equal(lowerMolarDate, "2026-08-01");
+
+		const upperIncisorDate = computeOsteointegrationExpectedDate(baseDate, 11);
+		assert.equal(upperIncisorDate, "2026-10-01");
+	});
+
+	it("5. ChairsideSurgeryHubModal renders with Apple HIG drag handle and single Primary CTA #0d9488", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialScenario="implant"
+				patientName="Пациент Тестовый"
+			/>,
+		);
+
+		// Apple HIG Drag Handle
+		assert.ok(html.includes("surgery-hub-drag-handle"), "Must contain Apple HIG drag handle for mobile Bottom Sheet");
+
+		// Header and Tooth Badge
+		assert.ok(html.includes("#46"), "Must render FDI tooth badge #46");
+		assert.ok(html.includes("Пациент Тестовый"), "Must render patient name");
+
+		// 4 Scenarios Nav
+		assert.ok(html.includes("scen-extraction") || html.includes("scenario-chip-extraction"));
+		assert.ok(html.includes("scenario-chip-implant"));
+
+		// 1 Primary CTA button #0d9488 per Mandate 8am
+		assert.ok(html.includes("btn-save-chairside-surgery"), "Must render Primary CTA button");
+		assert.ok(html.includes("✓ Зафиксировать операцию"), "CTA text must be verified");
+		assert.ok(html.includes("surgery-primary-cta"), "Must have surgery-primary-cta class");
+	});
+
+	it("6. ChairsideSurgeryHubModal returns null when isOpen is false", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={false}
+				onClose={() => {}}
+			/>,
+		);
+		assert.equal(html, "");
+	});
+
+	it("7. ChairsideSurgeryHubModal renders Soft Negative Stock overdraft notice when active", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+				inventoryOverdraftActive={true}
+			/>,
+		);
+		assert.ok(html.includes("surgery-hub-overdraft-notice"), "Must render soft overdraft notice");
+		assert.ok(html.includes("Мягкий овердрафт склада"), "Must display soft overdraft explanation");
+	});
+
+	it("8. DirectSurgeryLauncher mounts and renders without crash", () => {
+		const html = renderToString(<DirectSurgeryLauncher />);
+		// In non-browser environment without hash, returns empty string or renders clean
+		assert.equal(typeof html, "string");
+	});
+});

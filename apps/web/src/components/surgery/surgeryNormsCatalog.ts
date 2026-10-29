@@ -17,6 +17,7 @@ export type {
 	SurgicalWarehouseOverdraftStatus,
 };
 
+export * from "./surgeryCatalogData";
 export * from "./norms/surgeryCanonicalTexts";
 export * from "./norms/surgeryImplantProtocolBuilder";
 export * from "./norms/implantNorms";
