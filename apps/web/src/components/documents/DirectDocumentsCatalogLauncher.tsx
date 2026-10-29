@@ -7,7 +7,7 @@
 import React, { useMemo, useState } from "react";
 import { DocumentsView } from "../../DocumentsView";
 import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
-import { PatientConsentSignDrawer } from "./PatientConsentSignDrawer";
+import { ConsentModal } from "../consents/ConsentModal";
 import { AppLogicProvider, useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
 const DEMO_PATIENT = {
@@ -64,7 +64,7 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 	if (isConsentDrawerStandalone) {
 		return (
 			<div className="fixed inset-0 z-[1000] flex flex-col bg-black/40" data-testid="standalone-consent-drawer-root">
-				<PatientConsentSignDrawer
+				<ConsentModal
 					isOpen={true}
 					onClose={() => {}}
 					patient={{ id: "p-01", fullName: "Смирнов Алексей Петрович", birthDate: "1988-04-12" } as any}
