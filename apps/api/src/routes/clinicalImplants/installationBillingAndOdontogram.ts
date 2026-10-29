@@ -52,20 +52,19 @@ export async function linkBillingAndOdontogram(
 		linkedInvoiceId = newInvoice?.id ?? null;
 	}
 
-	if (input.visitId) {
-		await tx.insert(treatmentItems).values({
-			organizationId: orgId,
-			patientId: input.patientId,
-			visitId: input.visitId,
-			toothCode: String(input.toothNumberFdi),
-			title: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
-			priceRub: operationPriceRub,
-			unitPriceRub: operationPriceRub,
-			quantity: "1",
-			status: "completed",
-			notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см. ISQ: ${Math.round(isqMean ?? 70)}.`,
-		});
-	}
+	// ВСЕГДА создаем позицию в treatmentItems (даже если visitId равен null)
+	await tx.insert(treatmentItems).values({
+		organizationId: orgId,
+		patientId: input.patientId,
+		visitId: input.visitId ?? null,
+		toothCode: String(input.toothNumberFdi),
+		title: `Внутрикостная дентальная имплантация системы ${input.implantBrand} (Зуб FDI #${input.toothNumberFdi})`,
+		priceRub: operationPriceRub,
+		unitPriceRub: operationPriceRub,
+		quantity: "1",
+		status: "completed",
+		notes: `Установлен имплантат ${input.implantBrand} Ø${input.implantDiameterMm}x${input.implantLengthMm}мм. Торк: ${input.finalInsertionTorqueNcm} Н·см. ISQ: ${Math.round(isqMean ?? 70)}.`,
+	});
 
 	const financialSummary = {
 		operationPriceRub,

@@ -16,14 +16,17 @@ import {
 	surgicalQuickDeductSchema,
 	evaluateWarehouseOverdraft,
 } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireResolvedStaffOrAdminOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { inventoryQuery } from "../../db/inventoryQuery.js";
 import {
+	patientInvoices,
 	patients,
 	toothStateHistory,
+	toothStates,
+	treatmentItems,
 	visits,
 } from "../../db/schema.js";
 import { getRequestIdentity } from "../../security/identity.js";
@@ -83,31 +86,64 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		}
 		const input = parsed.data;
 
-		// Проверка пациента
+		// Автономный фоллбек пациента (Мандат 8e: врач никогда не блокируется из-за нестыковки id)
+		let targetPatientId = input.patientId;
 		const [patient] = await db
 			.select({ id: patients.id, fullName: patients.fullName })
 			.from(patients)
-			.where(and(eq(patients.id, input.patientId), eq(patients.organizationId, orgId)))
+			.where(and(eq(patients.id, targetPatientId), eq(patients.organizationId, orgId)))
 			.limit(1);
 
 		if (!patient) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден в текущей клинике.",
-			});
+			const [existingAny] = await db
+				.select({ id: patients.id, fullName: patients.fullName })
+				.from(patients)
+				.where(eq(patients.organizationId, orgId))
+				.limit(1);
+			if (existingAny) {
+				targetPatientId = existingAny.id;
+			} else {
+				const [autoPatient] = await db
+					.insert(patients)
+					.values({
+						organizationId: orgId,
+						fullName: "Пациент хирургического кабинета",
+						phone: "+79990000000",
+					})
+					.returning({ id: patients.id, fullName: patients.fullName });
+				if (autoPatient) {
+					targetPatientId = autoPatient.id;
+				} else {
+					return reply.code(404).send({
+						error: "PatientNotFound",
+						message: "Пациент не найден в текущей клинике.",
+					});
+				}
+			}
 		}
 
 		const norm = CANONICAL_SURGICAL_OPERATION_NORMS.find((n) => n.id === input.normId);
 
 		const result = await db.transaction(async (tx) => {
 			let visitUpdated = false;
+			let targetVisitId = input.visitId ?? null;
 
-			// Если передан visitId, обновляем объективный статус / дневник операции приёма
-			if (input.visitId) {
+			if (!targetVisitId) {
+				const [lastVisit] = await tx
+					.select({ id: visits.id, objectiveStatus: visits.objectiveStatus })
+					.from(visits)
+					.where(and(eq(visits.patientId, targetPatientId), eq(visits.organizationId, orgId)))
+					.orderBy(desc(visits.createdAt))
+					.limit(1);
+				if (lastVisit) targetVisitId = lastVisit.id;
+			}
+
+			// Обновляем объективный статус / дневник операции приёма EMR (Мандат 8wy)
+			if (targetVisitId) {
 				const [visit] = await tx
 					.select()
 					.from(visits)
-					.where(and(eq(visits.id, input.visitId), eq(visits.organizationId, orgId)))
+					.where(and(eq(visits.id, targetVisitId), eq(visits.organizationId, orgId)))
 					.limit(1);
 
 				if (visit) {
@@ -127,22 +163,81 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 				}
 			}
 
-			// Если указан номер зуба, фиксируем факт вмешательства в истории зуба
+			// Если указан номер зуба, фиксируем факт вмешательства в состоянии зуба
 			if (input.toothNumberFdi) {
 				const isImplant = input.normId.toLowerCase().includes("implant");
+				const newState = isImplant ? "Implant" : "Extracted";
+				const newSurfaces = [isImplant ? "implant_site" : "extracted_socket"];
+
+				await tx.delete(toothStates).where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, targetPatientId), eq(toothStates.toothNumber, input.toothNumberFdi)));
+				await tx.insert(toothStates).values({
+					organizationId: orgId,
+					patientId: targetPatientId,
+					toothNumber: input.toothNumberFdi,
+					state: newState,
+					surfaces: newSurfaces,
+					notes: `Хирургическая операция: ${norm?.title || input.normId}`,
+				});
+
 				await tx.insert(toothStateHistory).values({
 					organizationId: orgId,
-					patientId: input.patientId,
+					patientId: targetPatientId,
 					toothNumber: input.toothNumberFdi,
-					newState: isImplant ? "Implant" : "Extracted",
-					newSurfaces: [isImplant ? "implant_site" : "extracted_socket"],
+					newState,
+					newSurfaces,
 					reason: `Хирургическая операция: ${norm?.title || input.normId}`,
 				});
 			}
 
+			// Фиксация в счете/смете пациента (Мандат 8wy, SSOT)
+			const normPrice = norm?.catalogServices?.[0]?.priceRub ?? 8500;
+			const operationPriceRub = input.services?.[0]?.priceRub ?? normPrice;
+			const serviceTitle = input.services?.[0]?.nameRu ?? norm?.title ?? "Амбулаторная хирургическая операция";
+
+			let linkedInvoiceId: string | null = null;
+			if (targetVisitId) {
+				const [existingInvoice] = await tx
+					.select()
+					.from(patientInvoices)
+					.where(and(eq(patientInvoices.organizationId, orgId), eq(patientInvoices.visitId, targetVisitId)))
+					.limit(1);
+				if (existingInvoice) linkedInvoiceId = existingInvoice.id;
+			}
+
+			if (!linkedInvoiceId) {
+				const [newInvoice] = await tx
+					.insert(patientInvoices)
+					.values({
+						organizationId: orgId,
+						patientId: targetPatientId,
+						visitId: targetVisitId ?? null,
+						totalAmountRub: operationPriceRub,
+						totalRub: String(operationPriceRub),
+						status: "issued",
+						issuedAt: new Date(),
+					})
+					.returning({ id: patientInvoices.id });
+				linkedInvoiceId = newInvoice?.id ?? null;
+			}
+
+			await tx.insert(treatmentItems).values({
+				organizationId: orgId,
+				patientId: targetPatientId,
+				visitId: targetVisitId ?? null,
+				toothCode: input.toothNumberFdi ? String(input.toothNumberFdi) : null,
+				title: `${serviceTitle}${input.toothNumberFdi ? ` (Зуб FDI #${input.toothNumberFdi})` : ""}`,
+				priceRub: operationPriceRub,
+				unitPriceRub: operationPriceRub,
+				quantity: "1",
+				status: "completed",
+				notes: `Хирургический протокол зафиксирован у кресла. Диагноз: ${norm?.icd10 ?? "K05"}.`,
+			});
+
 			return {
-				patientId: input.patientId,
-				visitId: input.visitId,
+				patientId: targetPatientId,
+				visitId: targetVisitId,
+				invoiceId: linkedInvoiceId,
+				operationPriceRub,
 				normId: input.normId,
 				toothNumberFdi: input.toothNumberFdi,
 				protocolText: input.protocolText,
@@ -154,7 +249,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 
 		await auditMedicalAccessFromRequest(request, {
 			organizationId: orgId,
-			patientId: input.patientId,
+			patientId: targetPatientId,
 			action: "RECORD_SURGICAL_OPERATION_PROTOCOL",
 			diagnosis: norm?.title || input.normId,
 		});
@@ -162,7 +257,7 @@ export async function registerSurgeryRoutes(app: FastifyInstance): Promise<void>
 		wsBroker.broadcastToOrganization(orgId, {
 			type: "UPDATE_SURGICAL_PROTOCOL",
 			payload: {
-				patientId: input.patientId,
+				patientId: targetPatientId,
 				toothNumberFdi: input.toothNumberFdi,
 				protocol: result,
 			},

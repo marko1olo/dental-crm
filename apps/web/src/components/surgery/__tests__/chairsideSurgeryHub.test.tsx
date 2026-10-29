@@ -138,4 +138,35 @@ describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8
 		// In non-browser environment without hash, returns empty string or renders clean
 		assert.equal(typeof html, "string");
 	});
+
+	it("9. ChairsideSurgeryHubModal renders touch targets conforming to Apple HIG min-h-[44px]", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialScenario="implant"
+			/>,
+		);
+
+		// Touch targets for teeth, buttons and presets
+		assert.ok(html.includes("min-h-[44px]"), "Interactive elements must satisfy touch target >= 44x44px");
+		assert.ok(html.includes("btn-apply-physio-norm"), "Must render 1-click physiological norm button");
+		assert.ok(html.includes("btn-print-surgery-hub"), "Must render print button in header");
+		assert.ok(html.includes("btn-close-surgery-hub"), "Must render close button in header");
+	});
+
+	it("10. Full parity of implant systems and scenario codes for backend SSOT", () => {
+		for (const sys of SURGERY_IMPLANT_SYSTEMS) {
+			assert.ok(!sys.id.includes(" "), `System ID must be normalized without spaces: ${sys.id}`);
+			assert.ok(sys.defaultTorqueNcm >= 25 && sys.defaultTorqueNcm <= 45, `Torque ${sys.defaultTorqueNcm} must be in safe range for ${sys.brandName}`);
+			assert.ok(sys.defaultLotNumber.length > 0, `Lot number must be populated for ${sys.brandName}`);
+		}
+
+		for (const [key, sc] of Object.entries(SURGERY_SCENARIOS)) {
+			assert.ok(sc.serviceCode.length > 0, `Scenario ${key} must have serviceCode`);
+			assert.ok(sc.defaultPriceRub > 0, `Scenario ${key} must have positive price`);
+			assert.ok(sc.standardMaterials.length > 0, `Scenario ${key} must have standard materials for Soft Negative Stock`);
+		}
+	});
 });
