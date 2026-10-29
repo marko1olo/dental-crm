@@ -28,7 +28,7 @@ export function TelephonyFloatingWidget(props: TelephonyFloatingWidgetProps) {
 	}
 	// Zero Floating Blobs Mandate: Telephony is fully unified into Ambient Header Capsule.
 	// Floating widget suppresses any rogue blobs unless explicitly mounted with defaultExpanded.
-	if (!props.defaultExpanded || s.isFullScreenStudioActive || s.hasPrimaryModal) {
+	if ((!props.defaultExpanded && !props.showDialerDefault) || s.isFullScreenStudioActive || s.hasPrimaryModal) {
 		return null;
 	}
 

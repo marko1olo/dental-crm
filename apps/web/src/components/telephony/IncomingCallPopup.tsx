@@ -52,7 +52,7 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 	return createPortal(
 		<>
 			<div
-				className="dnt-incoming-call-badge-container z-[99990] flex flex-col pointer-events-none"
+				className={`dnt-incoming-call-badge-container z-[99990] flex flex-col pointer-events-none ${!shouldShowCapsule ? "is-expanded" : ""}`}
 				style={{ zIndex: 99990 }}
 				data-testid="incoming-call-badge-container"
 			>
@@ -64,6 +64,12 @@ export function IncomingCallPopup(props?: IncomingCallPopupProps): React.JSX.Ele
 						aria-label="Входящий звонок телефонии"
 						data-testid="incoming-call-popup"
 					>
+						{/* iOS Bottom Sheet Drag Handle (Apple HIG, Mandate 8am) */}
+						<div
+							className="w-9 h-1 rounded-full bg-[var(--line-strong,var(--line,#94a3b8))] mx-auto mb-1 hidden max-md:block shrink-0"
+							data-testid="bottom-sheet-drag-handle"
+							aria-hidden="true"
+						/>
 						<IncomingCallHeaderBar ctrl={ctrl} />
 						<IncomingCallPatientContextCard ctrl={ctrl} />
 						<IncomingCallQuickBookingSection ctrl={ctrl} />

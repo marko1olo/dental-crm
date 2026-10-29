@@ -112,7 +112,7 @@ function TelephonyStandaloneContainer(): React.ReactElement {
 				</div>
 			</main>
 
-			<IncomingCallPopup defaultExpanded={false} />
+			<IncomingCallPopup defaultExpanded={true} />
 		</div>
 	);
 }
