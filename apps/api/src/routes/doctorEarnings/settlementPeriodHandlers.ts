@@ -74,7 +74,7 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 		const body = parsed.data;
 
 		// Разрешаем doctorId в реальный UUID пользователя базы данных
-		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, body.doctorId, identity.userId);
+		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, body.doctorId, identity.userId ?? undefined);
 		if (!resolvedDoctorId) {
 			return reply.code(404).send({
 				error: "DoctorNotFoundError",
@@ -192,7 +192,7 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 
 		const identity = getRequestIdentity(request);
 		const effectiveOrgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, parsed.data.doctorId, identity.userId);
+		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, parsed.data.doctorId, identity.userId ?? undefined);
 		if (!resolvedDoctorId) return reply.code(404).send({ error: "DoctorNotFoundError" });
 
 		const { periodKey } = parsePeriodDates(parsed.data.periodStart, parsed.data.periodEnd);
@@ -206,7 +206,7 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 
 		const identity = getRequestIdentity(request);
 		const effectiveOrgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, String(q.doctorId), identity.userId);
+		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, String(q.doctorId), identity.userId ?? undefined);
 		if (!resolvedDoctorId) return reply.send({ isClosed: false, statement: null });
 
 		const { periodKey } = parsePeriodDates(String(q.from), String(q.to));

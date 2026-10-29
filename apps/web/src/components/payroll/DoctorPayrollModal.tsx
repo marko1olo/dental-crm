@@ -203,6 +203,18 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 						<>
 							{activeTab === "summary" ? (
 								<>
+									{/* Net Revenue Cards & Actions */}
+									<PayrollTotalsBar
+										payrollResult={state.payrollResult}
+										payoutModel={state.payoutModel}
+										taxRegime={state.taxRegime}
+										copyFeedback={state.copyFeedback}
+										onSendToMessenger={handleSendToMessenger}
+										onDownloadCsv={handleDownloadCsv}
+										onPrintPayslip={handlePrintPayslip}
+										onClose={onClose}
+									/>
+
 									{/* Net Revenue Transparent Mathematical Breakdown */}
 									<NetRevenueBreakdownBanner
 										result={state.payrollResult}
@@ -228,18 +240,6 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 										onSetShiftRateRub={state.setShiftRateRub}
 										onSetAdvanceRub={state.setAdvanceRub}
 										onSetIsNpdReceiptDone={state.setIsNpdReceiptDone}
-									/>
-
-									{/* Net Revenue Cards & Actions */}
-									<PayrollTotalsBar
-										payrollResult={state.payrollResult}
-										payoutModel={state.payoutModel}
-										taxRegime={state.taxRegime}
-										copyFeedback={state.copyFeedback}
-										onSendToMessenger={handleSendToMessenger}
-										onDownloadCsv={handleDownloadCsv}
-										onPrintPayslip={handlePrintPayslip}
-										onClose={onClose}
 									/>
 
 									{/* 1-Click Fast Settlement Period Close Trigger */}
@@ -270,7 +270,7 @@ export const DoctorPayrollModal: React.FC<DoctorPayrollModalProps> = ({
 											disabled={state.isClosingPeriod}
 											className={state.isPeriodClosed
 												? "px-3 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] font-semibold hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap text-xs"
-												: "px-3.5 py-1.5 rounded-lg border border-[#0d9488] bg-[#0d9488] text-white font-bold hover:bg-[#0f766e] active:scale-98 transition-all cursor-pointer whitespace-nowrap text-xs shadow-xs"
+												: "px-3.5 py-1.5 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] font-bold hover:bg-[var(--teal-soft,#f0fdfa)] active:scale-98 transition-all cursor-pointer whitespace-nowrap text-xs shadow-xs"
 											}
 											data-testid="doctor-payroll-close-period-btn"
 										>

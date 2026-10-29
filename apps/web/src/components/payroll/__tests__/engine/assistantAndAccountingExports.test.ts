@@ -43,9 +43,8 @@ describe("Assistant Shifts & Staff Payroll Accounting Document Generation", () =
 				{
 					id: "sh-3",
 					dateIso: "2026-08-15",
-					shiftType: "custom",
+					shiftType: "overtime_custom",
 					hoursWorked: 4.5,
-					isNightShift: true,
 				},
 			],
 		};

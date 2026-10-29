@@ -1,10 +1,18 @@
 /**
- * apps/web/src/components/patients/PatientDetailsModal.tsx
- * Тонкий канонический фасад карточки пациента по Мандату 8b (лимит <= 15-40 строк).
+ * PatientDetailsModal.tsx — Канонический фасад к единому мастер-компоненту PatientCardModal (Мандат 8b).
+ * Обеспечивает обратную совместимость для всех внешних лаунчеров и тестов.
  */
 
+import React from "react";
+import { PatientCardModal } from "./PatientCardModal";
+import type { PatientDetailsModalProps } from "./detailsModal/patientDetailsTypes";
+
 export * from "./detailsModal/patientDetailsTypes";
-export {
-	PatientDetailsModalView as PatientDetailsModal,
-	PatientDetailsModalView as default,
-} from "./detailsModal/PatientDetailsModalView";
+
+export const PatientDetailsModal: React.FC<PatientDetailsModalProps> = React.memo(
+	function PatientDetailsModal(props) {
+		return <PatientCardModal {...props} />;
+	},
+);
+
+export default PatientDetailsModal;

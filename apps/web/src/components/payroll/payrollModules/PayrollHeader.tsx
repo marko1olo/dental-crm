@@ -1,4 +1,5 @@
-import React from "react";
+import React, { useState } from "react";
+import { Filter, ChevronDown, ChevronUp } from "lucide-react";
 import { PayrollHeaderTopBar } from "./PayrollHeaderTopBar";
 import { PayrollHeaderPeriodFilters } from "./PayrollHeaderPeriodFilters";
 import { PayrollHeaderDoctorPicker } from "./PayrollHeaderDoctorPicker";
@@ -44,6 +45,18 @@ export const PayrollHeader: React.FC<PayrollHeaderProps> = ({
 	onSelectDoctorId,
 	onSelectSoloSpecialtyId,
 }) => {
+	const [isMobileFiltersOpen, setIsMobileFiltersOpen] = useState(false);
+
+	const selectedDoctorName = doctorsList.find((d) => d.id === selectedDoctorId)?.name
+		?? (doctorsList.length === 0 ? "Соло-практика" : "Врач не выбран");
+
+	const presetLabelsRu: Record<string, string> = {
+		current_month: "Текущий месяц",
+		previous_month: "Прошлый месяц",
+		quarter: "Квартал",
+		custom: "Период",
+	};
+
 	return (
 		<>
 			<PayrollHeaderTopBar
@@ -53,7 +66,29 @@ export const PayrollHeader: React.FC<PayrollHeaderProps> = ({
 				onClose={onClose}
 			/>
 
-			<div className="flex flex-col gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+			{/* Mobile Compact Period & Doctor Bar */}
+			<div className="sm:hidden flex items-center justify-between p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] text-xs">
+				<div className="flex items-center gap-1.5 truncate pr-2">
+					<span className="font-bold text-[var(--ink,#0f172a)] truncate">
+						{selectedDoctorName}
+					</span>
+					<span className="text-[11px] text-[var(--muted,#64748b)] shrink-0">
+						• {presetLabelsRu[periodPreset] ?? periodPreset}
+					</span>
+				</div>
+				<button
+					type="button"
+					onClick={() => setIsMobileFiltersOpen(!isMobileFiltersOpen)}
+					className="inline-flex items-center gap-1 px-2.5 py-1 text-[11px] font-semibold text-[var(--teal,#0d9488)] border border-[var(--line,#cbd5e1)] rounded-lg bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer shrink-0"
+					data-testid="doctor-payroll-toggle-filters-mobile"
+				>
+					<Filter className="w-3 h-3" />
+					<span>{isMobileFiltersOpen ? "Свернуть" : "Параметры"}</span>
+					{isMobileFiltersOpen ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+				</button>
+			</div>
+
+			<div className={`${isMobileFiltersOpen ? "flex" : "hidden sm:flex"} flex-col gap-3 p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]`}>
 				<PayrollHeaderPeriodFilters
 					periodPreset={periodPreset}
 					taxRegime={taxRegime}

@@ -67,7 +67,7 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 						type="button"
 						onClick={onPrintPayslip}
 						className={isPeriodClosed
-							? "inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] shadow-xs transition-all cursor-pointer whitespace-nowrap"
+							? "inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white hover:opacity-90 active:scale-98 shadow-xs transition-all cursor-pointer whitespace-nowrap"
 							: "inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
 						}
 						data-testid="doctor-payroll-print-payslip"
@@ -80,14 +80,14 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 						type="button"
 						onClick={handleAccrue}
 						className={isPeriodClosed
-							? "inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
-							: "inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[#0d9488] bg-[#0d9488] text-white hover:bg-[#0f766e] active:bg-[#0f766e] shadow-xs transition-all cursor-pointer active:scale-98 whitespace-nowrap"
+							? "inline-flex items-center gap-1.5 h-9 px-3 text-xs font-semibold rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer whitespace-nowrap shadow-xs"
+							: "inline-flex items-center gap-1.5 h-9 px-4 text-xs font-bold rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] text-white hover:opacity-90 active:scale-98 shadow-xs transition-all cursor-pointer active:scale-98 whitespace-nowrap"
 						}
 						data-testid="doctor-payroll-accrue-btn"
 						title="Зафиксировать и выплатить заработную плату врачу по закрытым счетам"
 					>
 						<Check className="w-3.5 h-3.5" />
-						<span>{isPeriodClosed ? "✓ Выплата проведена" : "✓ Выплатить зарплату"}</span>
+						<span>{isPeriodClosed ? "Выплата проведена" : "Выплатить зарплату"}</span>
 					</button>
 				</div>
 			</div>
@@ -98,6 +98,7 @@ export const PayrollActionButtonsBar: React.FC<PayrollActionButtonsBarProps> = (
 				onSendToMessenger={onSendToMessenger}
 				onPrintPayslip={onPrintPayslip}
 				onAccrueSalary={handleAccrue}
+				isPeriodClosed={isPeriodClosed}
 			/>
 		</>
 	);

@@ -30,7 +30,7 @@ export interface SettlementPeriodCloseParams {
 	readonly markPaid?: boolean;
 }
 
-export async function resolveDoctorUserUuid(orgId: string, doctorIdOrSolo: string, fallbackUserId?: string): Promise<string | null> {
+export async function resolveDoctorUserUuid(orgId: string, doctorIdOrSolo: string, fallbackUserId?: string | null): Promise<string | null> {
 	const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(doctorIdOrSolo);
 	if (isUuid && doctorIdOrSolo !== "solo-doctor") {
 		return doctorIdOrSolo;

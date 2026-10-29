@@ -26,6 +26,7 @@ export const DEMO_SHOWCASE_MODAL_SAFETY: PatientClinicalSafetyProfile = {
 
 export {
 	REPRESENTATIVE_RELATIONSHIP_CATALOG,
+	/** @deprecated Mandate 8ap: Canonical catalog is REPRESENTATIVE_RELATIONSHIP_CATALOG */
 	REPRESENTATIVE_RELATIONSHIP_CATALOG as STOMX_REPRESENTATIVE_CATALOG,
 	isStatutoryLegalRepresentative,
 	type RepresentativeRelationshipType,
@@ -56,20 +57,32 @@ export function getRepresentativeLegalStatus(type: string | null | undefined): {
 }
 
 export type PatientCardTab = "general" | "formula" | "perio" | "anamnesis" | "visits" | "documents" | "radiology" | "family" | "finance";
+export type PatientModalMode = "view" | "edit" | "create";
 
 export interface PatientCardModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly mode?: PatientModalMode | undefined;
 	readonly initialTab?: PatientCardTab | undefined;
-	readonly patient?: PatientGeneralInfo | null | undefined;
-	readonly patientData?: PatientGeneralInfo | null | undefined;
+	readonly patient?: PatientGeneralInfo | any | null | undefined;
+	readonly patientData?: PatientGeneralInfo | any | null | undefined;
+	readonly patientId?: string | null | undefined;
 	readonly initialSafetyProfile?: Partial<PatientClinicalSafetyProfile> | null | undefined;
 	readonly safetyProfile?: PatientClinicalSafetyProfile | null | undefined;
 	readonly onSavePatient?: ((patient: PatientGeneralInfo, safetyProfile: PatientClinicalSafetyProfile) => void | Promise<void>) | undefined;
+	readonly onSave?: ((patient: any, safety: any) => void) | undefined;
 	readonly onApplySomaticNorm?: (() => void) | undefined;
 	readonly disabled?: boolean | undefined;
 	readonly onNavigateToVisit?: ((visitId: string) => void) | undefined;
 	readonly onNewAppointment?: ((patientId?: string) => void) | undefined;
 	readonly dashboard?: any | undefined;
 	readonly visits?: any[] | undefined;
+	readonly className?: string | undefined;
+
+	// Поддержка режима создания (PatientCreationModal compatibility)
+	readonly createPatient?: ((options?: { allowDuplicate?: boolean }) => void | Promise<void | any>) | undefined;
+	readonly updatePatientCoreDraft?: ((field: any, value: string) => void) | undefined;
+	readonly customRequirements?: any | undefined;
+	readonly initialBirthDate?: string | undefined;
+	readonly initialIsChild?: boolean | undefined;
 }

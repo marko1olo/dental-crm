@@ -40,9 +40,12 @@ describe("Staff Multi-Role: Accounting Ledger & Guarantee Invariants", () => {
 
 		const doctorRecord = summary.records.find((r) => r.employeeId === "doc-low");
 		assert.ok(doctorRecord, "Doctor record must exist");
-		assert.equal(doctorRecord.minimumGuaranteeApplied, true);
-		assert.equal(doctorRecord.grossPayoutBeforeTaxKop, 6000000); // 60,000 ₽ minimum guarantee floor
-		assert.ok(doctorRecord.guaranteeTopUpKop && doctorRecord.guaranteeTopUpKop > 0);
+		assert.equal(doctorRecord.role, "doctor");
+		if (doctorRecord.role === "doctor") {
+			assert.equal(doctorRecord.minimumGuaranteeApplied, true);
+			assert.equal(doctorRecord.grossPayoutBeforeTaxKop, 6000000); // 60,000 ₽ minimum guarantee floor
+			assert.ok(doctorRecord.guaranteeTopUpKop && doctorRecord.guaranteeTopUpKop > 0);
+		}
 
 		const csv = generateStaffPayrollT51Csv(summary);
 		const rows = csv.split("\n");
