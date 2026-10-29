@@ -1,6 +1,7 @@
 import React from "react";
 import { PatientJourneyTimeline } from "../../PatientJourneyTimeline";
 import { PatientFinanceTab } from "../tabs/PatientFinanceTab";
+import { LabOrdersPanel } from "../LabOrdersPanel";
 import {
 	DEFAULT_WORKSPACE_PAGE_SIZE,
 	PatientWorkspacePlansTab,
@@ -48,6 +49,14 @@ export const PatientWorkspaceTabContent: React.FC<PatientWorkspaceTabContentProp
 				onShowMore={() => logic.setVisibleVisitsLimit((p: number) => p + DEFAULT_WORKSPACE_PAGE_SIZE)}
 				handleOpenVisitCallback={logic.handleOpenVisitCallback}
 			/>
+		);
+	}
+
+	if (activeTab === "lab") {
+		return (
+			<div className="p-1 sm:p-2" data-testid="patient-workspace-lab-tab">
+				<LabOrdersPanel patientId={patientId} />
+			</div>
 		);
 	}
 

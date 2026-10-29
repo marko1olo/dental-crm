@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 import { showToast } from "../GlobalToast";
 import type { DentalLabOrderData, CanonicalLabOrderStatus } from "../lab/labMath";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import type { LabOrder } from "./LabOrdersPanel";
+import type { LabOrder, LabOrderFilterKey } from "./labOrdersTypes";
 import {
 	copyLabOrderPortalLink,
 	deleteLabOrder,
@@ -16,6 +16,7 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 	const [orders, setOrders] = useState<LabOrder[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
+	const [filter, setFilter] = useState<LabOrderFilterKey>("all");
 
 	const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
 	const [isLabHubOpen, setIsLabHubOpen] = useState(false);
@@ -39,7 +40,8 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 			const res = await fetch(`/api/clinical/lab-orders${query}`, { headers: denteAdminSecretRequestHeaders() });
 			if (!res.ok) throw new Error("Не удалось загрузить заказы ЗТЛ");
 			const data = await res.json();
-			setOrders(Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : []);
+			const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];
+			setOrders(list);
 		} catch (err: any) {
 			setError(err.message || "Ошибка загрузки заказов ЗТЛ");
 		} finally {
@@ -47,10 +49,55 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		}
 	}, [patientId]);
 
-	useEffect(() => { void fetchOrders(); }, [fetchOrders]);
+	useEffect(() => {
+		void fetchOrders();
+	}, [fetchOrders]);
 
-	const handleStatusTransition = (orderId: string, targetStatus: CanonicalLabOrderStatus) => {
-		void transitionLabOrderStatus(orderId, targetStatus, () => void fetchOrders());
+	const filteredOrders = useMemo(() => {
+		if (filter === "all") return orders;
+		if (filter === "active") {
+			return orders.filter((o) =>
+				["sent", "sent_to_lab", "in_progress", "processing", "draft"].includes(o.status.toLowerCase()),
+			);
+		}
+		if (filter === "fitting") {
+			return orders.filter((o) =>
+				["fitting", "shipped", "refitting", "ready_for_fitting"].includes(o.status.toLowerCase()),
+			);
+		}
+		if (filter === "ready") {
+			return orders.filter((o) =>
+				["received", "ready_in_clinic", "in_clinic"].includes(o.status.toLowerCase()),
+			);
+		}
+		if (filter === "completed") {
+			return orders.filter((o) =>
+				["completed", "installed"].includes(o.status.toLowerCase()),
+			);
+		}
+		return orders;
+	}, [orders, filter]);
+
+	const filterCounts = useMemo(() => {
+		const counts: Record<LabOrderFilterKey, number> = {
+			all: orders.length,
+			active: 0,
+			fitting: 0,
+			ready: 0,
+			completed: 0,
+		};
+		for (const o of orders) {
+			const s = o.status.toLowerCase();
+			if (["sent", "sent_to_lab", "in_progress", "processing", "draft"].includes(s)) counts.active++;
+			if (["fitting", "shipped", "refitting", "ready_for_fitting"].includes(s)) counts.fitting++;
+			if (["received", "ready_in_clinic", "in_clinic"].includes(s)) counts.ready++;
+			if (["completed", "installed"].includes(s)) counts.completed++;
+		}
+		return counts;
+	}, [orders]);
+
+	const handleStatusTransition = (orderId: string, targetStatus: string) => {
+		void transitionLabOrderStatus(orderId, targetStatus as CanonicalLabOrderStatus, () => void fetchOrders());
 	};
 
 	const handleScheduleAppointment = (order: LabOrder) => {
@@ -61,39 +108,107 @@ export function useLabOrdersPanelLogic(patientId?: string) {
 		void deleteLabOrder(id, () => void fetchOrders());
 	};
 
+	const handleOpenCreateOrder = () => {
+		setSelectedOrderForEdit(null);
+		setModalInitialTab("main");
+		setIsOrderModalOpen(true);
+	};
+
+	const handleOpenEditOrder = (order: LabOrder) => {
+		setSelectedOrderForEdit(order as any);
+		setModalInitialTab("main");
+		setIsOrderModalOpen(true);
+	};
+
+	const handleOpenPrintOrder = (order: LabOrder) => {
+		setSelectedOrderForEdit(order as any);
+		setModalInitialTab("print");
+		setIsOrderModalOpen(true);
+	};
+
+	const handleOpenTrackingDrawer = (order: LabOrder) => {
+		setSelectedOrderForTracking(order as any);
+		setIsTrackingDrawerOpen(true);
+	};
+
 	return {
-		appLogic, orders, loading, error,
-		isOrderModalOpen, setIsOrderModalOpen,
-		isLabHubOpen, setIsLabHubOpen,
-		isTrackerModalOpen, setIsTrackerModalOpen,
-		selectedOrderForEdit, setSelectedOrderForEdit,
-		isTrackingDrawerOpen, setIsTrackingDrawerOpen,
+		appLogic,
+		orders,
+		filteredOrders,
+		filter,
+		setFilter,
+		filterCounts,
+		loading,
+		error,
+		isOrderModalOpen,
+		setIsOrderModalOpen,
+		isLabHubOpen,
+		setIsLabHubOpen,
+		isTrackerModalOpen,
+		setIsTrackerModalOpen,
+		selectedOrderForEdit,
+		setSelectedOrderForEdit,
+		isTrackingDrawerOpen,
+		setIsTrackingDrawerOpen,
 		selectedOrderForTracking,
-		openMenuOrderId, setOpenMenuOrderId,
-		modalInitialTab, setModalInitialTab,
-		cardMenuRef, promptState, setPromptState,
-		isPresetsMenuOpen, setIsPresetsMenuOpen, presetsMenuRef,
-		showQuickForm, setShowQuickForm,
-		selectedTeeth: [] as number[], setSelectedTeeth: () => {},
-		restorationType: "crown", setRestorationType: () => {},
-		material: "zirconia", setMaterial: () => {},
-		shadeSystem: "vita_classical", setShadeSystem: () => {},
-		colorVita: "A2", setColorVita: () => {},
-		stumpShade: "ND2", setStumpShade: () => {},
-		fittingDate: "", setFittingDate: () => {},
-		dueDate: "", setDueDate: () => {},
-		clinicalNotes: "", setClinicalNotes: () => {},
+		openMenuOrderId,
+		setOpenMenuOrderId,
+		modalInitialTab,
+		setModalInitialTab,
+		cardMenuRef,
+		promptState,
+		setPromptState,
+		isPresetsMenuOpen,
+		setIsPresetsMenuOpen,
+		presetsMenuRef,
+		showQuickForm,
+		setShowQuickForm,
+		selectedTeeth: [] as number[],
+		setSelectedTeeth: () => {},
+		restorationType: "crown",
+		setRestorationType: () => {},
+		material: "zirconia",
+		setMaterial: () => {},
+		shadeSystem: "vita_classical",
+		setShadeSystem: () => {},
+		colorVita: "A2",
+		setColorVita: () => {},
+		stumpShade: "ND2",
+		setStumpShade: () => {},
+		fittingDate: "",
+		setFittingDate: () => {},
+		dueDate: "",
+		setDueDate: () => {},
+		clinicalNotes: "",
+		setClinicalNotes: () => {},
 		calculatedMaterialCostKopecks: 0,
 		submitting: false,
 		handleQuickSubmit: async () => {},
 		handleOneClickCreate: async () => {},
-		fetchOrders, handleStatusTransition, handleScheduleAppointment,
-		copyPortalLink: copyLabOrderPortalLink, handleDeleteOrder,
-		handleOpenPrintOrder: (order: LabOrder) => { setSelectedOrderForEdit(order as any); setModalInitialTab("print"); setIsOrderModalOpen(true); },
-		handleOpenTrackingDrawer: (order: LabOrder) => { setSelectedOrderForTracking(order as any); setIsTrackingDrawerOpen(true); },
-		handleAttachBitePhoto: () => { setOpenMenuOrderId(null); showToast("Фото прикуса прикреплено", "success"); },
-		handleTechnicianComment: () => { setOpenMenuOrderId(null); showToast("Комментарий технику сохранен", "success"); },
-		handleRepeatFitting: () => { setOpenMenuOrderId(null); showToast("Назначена повторная примерка", "info"); },
-		handleReclamation: () => { setOpenMenuOrderId(null); showToast("Рекламация направлена в ЗТЛ", "warning"); },
+		fetchOrders,
+		handleStatusTransition,
+		handleScheduleAppointment,
+		copyPortalLink: copyLabOrderPortalLink,
+		handleDeleteOrder,
+		handleOpenCreateOrder,
+		handleOpenEditOrder,
+		handleOpenPrintOrder,
+		handleOpenTrackingDrawer,
+		handleAttachBitePhoto: () => {
+			setOpenMenuOrderId(null);
+			showToast("Фото прикуса прикреплено", "success");
+		},
+		handleTechnicianComment: () => {
+			setOpenMenuOrderId(null);
+			showToast("Комментарий технику сохранен", "success");
+		},
+		handleRepeatFitting: () => {
+			setOpenMenuOrderId(null);
+			showToast("Назначена повторная примерка", "info");
+		},
+		handleReclamation: () => {
+			setOpenMenuOrderId(null);
+			showToast("Рекламация направлена в ЗТЛ", "warning");
+		},
 	};
 }

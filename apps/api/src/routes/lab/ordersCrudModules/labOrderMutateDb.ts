@@ -68,6 +68,14 @@ export async function updateLabOrderInDb(
 	if (parsedDueDate !== undefined) updatePayload.dueDate = parsedDueDate;
 	if (effectiveNotes !== undefined) updatePayload.clinicalNotes = effectiveNotes;
 	if (updateData.priceRub !== undefined) updatePayload.priceRub = updateData.priceRub;
+	else if (updateData.amountKopecks !== undefined) updatePayload.priceRub = updateData.amountKopecks === null ? null : Math.round(Number(updateData.amountKopecks)) / 100;
+	else if (updateData.priceKopecks !== undefined) updatePayload.priceRub = updateData.priceKopecks === null ? null : Math.round(Number(updateData.priceKopecks)) / 100;
+
+	if (updateData.labCostRub !== undefined) updatePayload.labCostRub = updateData.labCostRub;
+	else if (updateData.costRub !== undefined) updatePayload.labCostRub = updateData.costRub;
+	else if (updateData.labCostKopecks !== undefined) updatePayload.labCostRub = updateData.labCostKopecks === null ? null : Math.round(Number(updateData.labCostKopecks)) / 100;
+	else if (updateData.costKopecks !== undefined) updatePayload.labCostRub = updateData.costKopecks === null ? null : Math.round(Number(updateData.costKopecks)) / 100;
+
 	if (targetStatus !== undefined) updatePayload.status = targetStatus;
 	if (updateData.labComments !== undefined) updatePayload.labComments = updateData.labComments;
 	if (updateData.attachedImageUrl !== undefined) updatePayload.attachedImageUrl = updateData.attachedImageUrl;
@@ -78,7 +86,15 @@ export async function updateLabOrderInDb(
 		.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
 		.returning();
 
-	return { kind: "ok" as const, updated };
+	const enriched = {
+		...updated,
+		priceKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
+		amountKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),
+		labCostKopecks: Math.round(Number(updated.labCostRub ?? 0) * 100),
+		costKopecks: Math.round(Number(updated.labCostRub ?? 0) * 100),
+	};
+
+	return { kind: "ok" as const, updated: enriched };
 }
 
 /**

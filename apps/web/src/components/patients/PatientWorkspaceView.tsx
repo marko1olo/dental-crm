@@ -42,6 +42,7 @@ export const PatientWorkspaceView: React.FC<PatientWorkspaceViewProps> = React.m
 							plansCount={logic.patientPlanItems.length}
 							visitsCount={logic.patientAppointments.length}
 							scansCount={logic.patientStudies.length}
+							labOrdersCount={logic.patientLabOrdersCount}
 						/>
 					</div>
 

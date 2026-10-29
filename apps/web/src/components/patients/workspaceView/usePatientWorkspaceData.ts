@@ -26,6 +26,10 @@ export function usePatientWorkspaceData(props: PatientWorkspaceViewProps, dashbo
 		return (dashboard?.treatmentPlanItems ?? []).filter((item: any) => item?.patientId === patientId);
 	}, [dashboard?.treatmentPlanItems, patientId]);
 
+	const patientLabOrdersCount = useMemo(() => {
+		return (dashboard?.labOrders ?? []).filter((item: any) => String(item?.patientId) === String(patientId)).length;
+	}, [dashboard?.labOrders, patientId]);
+
 	const currentPatient = useMemo(() => {
 		return (dashboard?.patients ?? []).find((p: any) => String(p?.id) === String(patientId));
 	}, [dashboard?.patients, patientId]);
@@ -79,5 +83,6 @@ export function usePatientWorkspaceData(props: PatientWorkspaceViewProps, dashbo
 		visitsSlice,
 		plansSlice,
 		patientAddendums,
+		patientLabOrdersCount,
 	};
 }

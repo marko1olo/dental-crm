@@ -12,7 +12,7 @@ function checkIsLabActive(): boolean {
 	const h = window.location.hash || "";
 	return (
 		s.includes("standalone=dental_lab") || s.includes("standalone=lab_order") || s.includes("standalone=lab_hub") ||
-		h.includes("dental-lab") || h.includes("dental_lab") || h.includes("lab_order") || h === "#lab" || h === "#lab-hub"
+		h.includes("dental-lab") || h.includes("dental_lab") || h.includes("lab_order") || h === "#lab-hub"
 	);
 }
 

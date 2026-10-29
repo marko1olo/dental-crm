@@ -12,4 +12,6 @@ export async function registerOrderStatusPatchRoutes(app: FastifyInstance) {
 	app.patch("/api/clinical/lab-orders/:id/status", patchLabOrderHandler);
 	app.patch("/api/dental-lab/orders/:id", patchLabOrderHandler);
 	app.patch("/api/dental-lab/orders/:id/status", patchLabOrderHandler);
+	app.patch("/api/v1/lab/orders/:id", patchLabOrderHandler);
+	app.patch("/api/v1/lab/orders/:id/status", patchLabOrderHandler);
 }

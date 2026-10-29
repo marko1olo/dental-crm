@@ -1,6 +1,6 @@
 import type { Appointment, Dashboard, TreatmentPlanItem } from "@dental/shared";
 
-export type WorkspaceTabKey = "timeline" | "plans" | "visits" | "scans" | "finance";
+export type WorkspaceTabKey = "timeline" | "plans" | "visits" | "scans" | "finance" | "lab";
 
 export interface PatientWorkspaceViewProps {
 	patientId: string;

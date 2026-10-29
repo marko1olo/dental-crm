@@ -104,7 +104,7 @@ async function run() {
 
 		const pcLightPage = await pcLightContext.newPage();
 		console.log("Navigating PC Light to http://127.0.0.1:5173/?demo=true#lab ...");
-		await pcLightPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "networkidle", timeout: 30000 });
+		await pcLightPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "domcontentloaded", timeout: 30000 });
 		await pcLightPage.waitForSelector('[data-testid="dental-lab-orders-view"]', { timeout: 30000 });
 		await setTheme(pcLightPage, "light");
 
@@ -116,15 +116,19 @@ async function run() {
 
 		await saveProof(
 			pcLightPage,
-			"01_lab_orders_pc_light.png",
+			"01_lab_orders_pc_light_1440x900.png",
 			"Kanban Board with canonical stages (PC Light 1440x900)"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "01_lab_orders_pc_light.png"),
+			path.join(PROOFS_DIR, "01_lab_orders_pc_light_1440x900.png"),
+			path.join(PROOFS_DIR, "01_lab_orders_pc_light.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "01_lab_orders_pc_light_1440x900.png"),
 			path.join(PROOFS_DIR, "01_lab_kanban_5stages_pc_light_1440x900.png")
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "01_lab_orders_pc_light.png"),
+			path.join(PROOFS_DIR, "01_lab_orders_pc_light_1440x900.png"),
 			path.join(PROOFS_DIR, "lab_pc_light_1440x900.png")
 		);
 		await pcLightContext.close();
@@ -138,7 +142,7 @@ async function run() {
 
 		const pcDarkPage = await pcDarkContext.newPage();
 		console.log("Navigating PC Dark to http://127.0.0.1:5173/?demo=true#lab ...");
-		await pcDarkPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "networkidle", timeout: 30000 });
+		await pcDarkPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "domcontentloaded", timeout: 30000 });
 		await pcDarkPage.waitForSelector('[data-testid="dental-lab-orders-view"]', { timeout: 30000 });
 		await setTheme(pcDarkPage, "dark");
 
@@ -156,15 +160,19 @@ async function run() {
 
 		await saveProof(
 			pcDarkPage,
-			"02_lab_orders_pc_dark.png",
+			"02_lab_orders_pc_dark_1440x900.png",
 			"Order Drawer with VITA 3D-Master shades, FDI odontogram, Code128 barcode, and quick intake (PC Dark 1440x900)"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "02_lab_orders_pc_dark.png"),
+			path.join(PROOFS_DIR, "02_lab_orders_pc_dark_1440x900.png"),
+			path.join(PROOFS_DIR, "02_lab_orders_pc_dark.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "02_lab_orders_pc_dark_1440x900.png"),
 			path.join(PROOFS_DIR, "02_lab_order_drawer_shades_pc_dark_1440x900.png")
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "02_lab_orders_pc_dark.png"),
+			path.join(PROOFS_DIR, "02_lab_orders_pc_dark_1440x900.png"),
 			path.join(PROOFS_DIR, "lab_pc_dark_1440x900.png")
 		);
 		await pcDarkContext.close();
@@ -182,22 +190,26 @@ async function run() {
 
 		const mobileLightPage = await mobileLightContext.newPage();
 		console.log("Navigating Mobile Light to http://127.0.0.1:5173/?demo=true#lab ...");
-		await mobileLightPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "networkidle", timeout: 30000 });
+		await mobileLightPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "domcontentloaded", timeout: 30000 });
 		await mobileLightPage.waitForSelector('.mobile-lab-container, [data-testid="mobile-lab-orders-timeline-view"]', { timeout: 30000 });
 		await setTheme(mobileLightPage, "light");
 		await mobileLightPage.waitForTimeout(1500);
 
 		await saveProof(
 			mobileLightPage,
-			"03_lab_orders_mobile_light.png",
+			"03_lab_orders_mobile_light_390x844.png",
 			"Mobile Lab Orders Grouped List cards (Mobile Light 390x844) - Touch targets >= 44px, Apple HIG"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "03_lab_orders_mobile_light.png"),
+			path.join(PROOFS_DIR, "03_lab_orders_mobile_light_390x844.png"),
+			path.join(PROOFS_DIR, "03_lab_orders_mobile_light.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "03_lab_orders_mobile_light_390x844.png"),
 			path.join(PROOFS_DIR, "03_lab_mobile_light_390x844.png")
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "03_lab_orders_mobile_light.png"),
+			path.join(PROOFS_DIR, "03_lab_orders_mobile_light_390x844.png"),
 			path.join(PROOFS_DIR, "lab_mobile_light_390x844.png")
 		);
 		await mobileLightContext.close();
@@ -215,7 +227,7 @@ async function run() {
 
 		const mobileDarkPage = await mobileDarkContext.newPage();
 		console.log("Navigating Mobile Dark to http://127.0.0.1:5173/?demo=true#lab ...");
-		await mobileDarkPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "networkidle", timeout: 30000 });
+		await mobileDarkPage.goto("http://127.0.0.1:5173/?demo=true#lab", { waitUntil: "domcontentloaded", timeout: 30000 });
 		await mobileDarkPage.waitForSelector('.mobile-lab-container, [data-testid="mobile-lab-orders-timeline-view"]', { timeout: 30000 });
 		await setTheme(mobileDarkPage, "dark");
 
@@ -229,15 +241,19 @@ async function run() {
 
 		await saveProof(
 			mobileDarkPage,
-			"04_lab_orders_mobile_dark.png",
+			"04_lab_orders_mobile_dark_390x844.png",
 			"Mobile Lab Orders Bottom Sheet in Dark Mode (Mobile Dark 390x844) - Apple HIG, 0px horizontal overflow"
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark.png"),
+			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark_390x844.png"),
+			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark.png")
+		);
+		fs.copyFileSync(
+			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark_390x844.png"),
 			path.join(PROOFS_DIR, "04_lab_mobile_dark_390x844.png")
 		);
 		fs.copyFileSync(
-			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark.png"),
+			path.join(PROOFS_DIR, "04_lab_orders_mobile_dark_390x844.png"),
 			path.join(PROOFS_DIR, "lab_mobile_dark_390x844.png")
 		);
 		await mobileDarkContext.close();

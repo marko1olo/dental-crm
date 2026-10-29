@@ -76,7 +76,23 @@ export async function insertLabOrderInDb(
 	const effectiveStatus = (data.status ? mapStageToLabOrderStatus(data.status) : null) ?? "draft";
 
 	const effectiveLabName = data.laboratoryName || data.labName || "Основная лаборатория";
-	const effectiveLabCost = data.labCostRub != null ? data.labCostRub : (data.costRub != null ? data.costRub : 7500);
+	const effectiveLabCost = data.labCostRub != null
+		? data.labCostRub
+		: data.costRub != null
+			? data.costRub
+			: data.labCostKopecks != null
+				? Math.round(Number(data.labCostKopecks)) / 100
+				: data.costKopecks != null
+					? Math.round(Number(data.costKopecks)) / 100
+					: 7500;
+
+	const effectivePriceRub = data.priceRub != null
+		? data.priceRub
+		: data.amountKopecks != null
+			? Math.round(Number(data.amountKopecks)) / 100
+			: data.priceKopecks != null
+				? Math.round(Number(data.priceKopecks)) / 100
+				: 24000;
 
 	const [createdOrder] = await tx
 		.insert(labOrders)
@@ -91,12 +107,20 @@ export async function insertLabOrderInDb(
 			colorVita: normalizedColor,
 			dueDate: parsedDueDate,
 			clinicalNotes: effectiveNotes ? (effectiveNotes.includes("Лаборатория:") ? effectiveNotes : `* Лаборатория: ${effectiveLabName}\n${effectiveNotes}`) : `* Лаборатория: ${effectiveLabName}`,
-			priceRub: data.priceRub != null ? data.priceRub : 24000,
+			priceRub: effectivePriceRub,
 			labCostRub: effectiveLabCost,
 			isWarranty: Boolean(data.isWarrantyRework),
 			status: effectiveStatus,
 		})
 		.returning();
 
-	return { kind: "ok" as const, order: createdOrder };
+	const enrichedOrder = {
+		...createdOrder,
+		priceKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),
+		amountKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),
+		labCostKopecks: Math.round(Number(createdOrder.labCostRub ?? 0) * 100),
+		costKopecks: Math.round(Number(createdOrder.labCostRub ?? 0) * 100),
+	};
+
+	return { kind: "ok" as const, order: enrichedOrder };
 }

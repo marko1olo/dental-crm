@@ -10,7 +10,7 @@ export async function selectLabOrdersQuery(
 	orgId: string,
 	patientId?: string,
 ) {
-	return tx
+	const rows = await tx
 		.select({
 			id: labOrders.id,
 			patientId: labOrders.patientId,
@@ -48,6 +48,14 @@ export async function selectLabOrdersQuery(
 			),
 		)
 		.orderBy(desc(labOrders.createdAt));
+
+	return rows.map((r) => ({
+		...r,
+		priceKopecks: Math.round(Number(r.priceRub ?? 0) * 100),
+		amountKopecks: Math.round(Number(r.priceRub ?? 0) * 100),
+		labCostKopecks: Math.round(Number(r.labCostRub ?? 0) * 100),
+		costKopecks: Math.round(Number(r.labCostRub ?? 0) * 100),
+	}));
 }
 
 export { seedDemoLabOrdersIfEmpty } from "./labOrderSeedDb.js";

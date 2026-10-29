@@ -1,4 +1,4 @@
-import { Calendar, Camera, Clock, FileText, Wallet } from "lucide-react";
+import { Calendar, Camera, Clock, FileText, FlaskConical, Wallet } from "lucide-react";
 import React from "react";
 import type { WorkspaceTabKey } from "./types";
 
@@ -8,6 +8,7 @@ export interface PatientWorkspaceTabsNavProps {
 	readonly plansCount: number;
 	readonly visitsCount: number;
 	readonly scansCount: number;
+	readonly labOrdersCount?: number;
 }
 
 interface TabDef {
@@ -19,11 +20,12 @@ interface TabDef {
 }
 
 export const PatientWorkspaceTabsNav: React.FC<PatientWorkspaceTabsNavProps> = React.memo(
-	({ activeTab, setActiveTab, plansCount, visitsCount, scansCount }) => {
+	({ activeTab, setActiveTab, plansCount, visitsCount, scansCount, labOrdersCount }) => {
 		const tabs: TabDef[] = [
 			{ id: "timeline", label: "Обзор и анамнез", icon: Clock, testId: "patient-tab-overview" },
 			{ id: "visits", label: "Визиты и ЭМК", icon: Calendar, count: visitsCount, testId: "patient-tab-visits" },
 			{ id: "plans", label: "Планы лечения", icon: FileText, count: plansCount, testId: "tab-patient-plans" },
+			{ id: "lab", label: "Наряды ЗТЛ", icon: FlaskConical, count: labOrdersCount, testId: "patient-tab-lab-orders" },
 			{ id: "finance", label: "Счета и оплата", icon: Wallet, testId: "patient-tab-finance" },
 			{ id: "scans", label: "Снимки и КТ", icon: Camera, count: scansCount, testId: "patient-tab-scans" },
 		];

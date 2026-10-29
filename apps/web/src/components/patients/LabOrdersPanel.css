@@ -1,6 +1,4 @@
-/* LabOrdersPanel.css — Medical Density 32px Toolbars & 1-Line Status Workflow */
-@import "./LabOrderCardItem.css";
-@import "./LabOrderCardFooter.css";
+/* LabOrdersPanel.css — Medical Density Toolbars & Apple HIG Ergonomics */
 
 .lab-orders-panel {
 	background: transparent;
@@ -13,98 +11,22 @@
 	gap: 12px;
 	color: var(--ink);
 	width: 100%;
+	max-width: 100%;
+	overflow-x: clip;
 }
 
-.lab-orders-header {
-	display: flex;
-	justify-content: space-between;
-	align-items: center;
-	gap: 8px;
-	flex-wrap: wrap;
-}
-
-.lab-orders-header h3 {
-	margin: 0;
-	font-size: 1rem;
-	color: var(--ink);
-	font-weight: 700;
-	letter-spacing: 0.01em;
-	display: flex;
-	align-items: center;
-	gap: 6px;
-}
-
-.lab-orders-toolbar {
-	display: flex;
-	align-items: center;
-	gap: 6px;
-	flex-wrap: nowrap;
-	overflow-x: auto;
-	scrollbar-width: thin;
-}
-
-.lab-btn-32 {
-	min-height: 32px;
-	height: 32px;
-	padding: 0 10px;
-	border-radius: 8px;
-	font-size: 13px;
-	font-weight: 600;
-	display: inline-flex;
-	align-items: center;
-	gap: 5px;
-	cursor: pointer;
-	border: 1px solid var(--line);
-	background: var(--paper-soft);
-	color: var(--ink);
-	transition: all 0.15s ease-in-out;
-	white-space: nowrap;
-}
-
-.lab-btn-32:hover:not(:disabled) {
-	background: var(--paper-elevated, var(--paper-soft));
-	border-color: var(--line-strong, var(--teal));
-	color: var(--teal);
-}
-
-.lab-btn-32.is-primary {
-	background: var(--teal);
-	color: var(--on-teal, #ffffff);
-	border-color: var(--teal-dark, var(--teal));
-}
-
-.lab-btn-32.is-primary:hover:not(:disabled) {
-	opacity: 0.92;
-	color: var(--on-teal, #ffffff);
-}
-
-.lab-btn-32:disabled {
-	opacity: 0.5;
-	cursor: not-allowed;
-}
-
-.lab-orders-list {
+.lab-orders-panel .lab-orders-list {
 	display: flex;
 	flex-direction: column;
 	gap: 10px;
 }
 
-.lab-orders-empty {
-	padding: 24px;
+.lab-orders-panel .lab-orders-empty {
+	padding: 32px 20px;
 	text-align: center;
 	color: var(--muted);
-	font-size: 0.85rem;
+	font-size: 0.875rem;
 	border: 1px dashed var(--line);
-	border-radius: 12px;
+	border-radius: 16px;
 	background: var(--paper-soft);
-}
-
-.lab-order-warning {
-	padding: 8px 12px;
-	background: var(--warn-bg, rgba(234, 179, 8, 0.1));
-	border: 1px solid var(--warn-fg, rgba(234, 179, 8, 0.3));
-	color: var(--warn-fg, #92400e);
-	border-radius: 8px;
-	font-size: 0.75rem;
-	font-weight: 600;
 }
