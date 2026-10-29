@@ -24,7 +24,10 @@ import {
 	requireResolvedOrganizationId,
 } from "../accessGuard.js";
 import { aggregateCrmMarketingMetrics } from "@dental/shared";
-import { registerMarketingPromosRoutes } from "./marketingPromosRoutes.js";
+import {
+	registerMarketingPromosRoutes,
+	readOrSeedOrganizationRomiChannels,
+} from "./marketingPromosRoutes.js";
 import {
 	calculateMarketingAttributionReport,
 	calculateOnlineBookingFunnel,
@@ -191,6 +194,17 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 				}).from(communicationEvents).where(eq(communicationEvents.organizationId, orgId)),
 			]);
 
+			let customBudgetsKopecks: Record<string, number> | undefined;
+			try {
+				const { channels: persistedChannels } = await readOrSeedOrganizationRomiChannels(orgId);
+				customBudgetsKopecks = {};
+				for (const ch of persistedChannels) {
+					if (ch.spentKopecks > 0) {
+						customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
+					}
+				}
+			} catch (_) {}
+
 			const romiChannels = aggregateCrmMarketingMetrics({
 				patients: allPatients.map((p) => ({
 					id: p.id,
@@ -213,6 +227,7 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 					channel: c.channel ?? "",
 					source: c.channel ?? "",
 				})),
+				customBudgetsKopecks,
 			});
 
 			return reply.code(200).send({

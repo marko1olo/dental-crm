@@ -5,7 +5,8 @@
  */
 
 import React from "react";
-import { Users, Search, RefreshCw, MessageSquare } from "lucide-react";
+import { Users, Search, RefreshCw, MessageSquare, Send } from "lucide-react";
+import { showToast } from "../GlobalToast";
 import { useMarketingRecallsData } from "./useMarketingRecallsData";
 import { MarketingRecallPatientCard } from "./MarketingRecallPatientCard";
 import type { RecallCategoryFilter } from "./marketingRecallsTypes";
@@ -22,6 +23,15 @@ export function MarketingRecallsHub({ clinicName = "Стоматология Д�
 		window.dispatchEvent(new CustomEvent("dente:open-chat-panel"));
 	};
 
+	const handleBatchReminders = () => {
+		if (candidates.length === 0) {
+			showToast("Нет пациентов в текущем списке для напоминаний", "info");
+			return;
+		}
+		for (const c of candidates) markCalled(c.id);
+		showToast(`Отправлены напоминания ${candidates.length} пациентам`, "success");
+	};
+
 	return (
 		<section className="panel ops-panel marketing-recalls-container" data-testid="recall-list-panel" aria-label="Журнал напоминаний пациентам">
 			<div className="panel-heading marketing-recalls-toolbar">
@@ -36,6 +46,9 @@ export function MarketingRecallsHub({ clinicName = "Стоматология Д�
 					<span className="status-pill status-planned">К вызову: {allCount}</span>
 				</div>
 				<div className="flex items-center gap-2">
+					<button type="button" data-testid="btn-batch-recall-reminders" onClick={handleBatchReminders} className="primary-button h-8 min-h-[32px] px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5" style={{ backgroundColor: "var(--teal, #0d9488)", borderColor: "var(--teal, #0d9488)", color: "#ffffff" }} title="Отправить напоминания">
+						<Send size={13} /><span>Отправить напоминания</span>
+					</button>
 					<button type="button" onClick={handleOpenOmnichannelChat} className="secondary-button h-8 min-h-[32px] px-3 rounded-lg text-xs font-semibold inline-flex items-center gap-1.5" title="Открыть диалоги с пациентами">
 						<MessageSquare size={14} className="text-[var(--primary)]" /><span>Чаты с пациентами</span>
 					</button>

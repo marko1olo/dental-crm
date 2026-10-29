@@ -43,19 +43,21 @@ export function MarketingViewHeader({
 				<span className="status-pill status-confirmed hidden sm:inline-flex">активен</span>
 			</div>
 
-			<div className="marketing-header-actions flex items-center gap-2 shrink-0 ml-auto sm:order-3">
-				<button
-					type="button"
-					className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3.5 inline-flex items-center gap-1.5 font-medium text-xs sm:text-sm shrink-0 cursor-pointer"
-					onClick={onOpenNewPromoModal}
-					data-testid="btn-marketing-primary-cta"
-					title="Создать новую рекламную кампанию или акцию"
-				>
-					<Plus size={15} aria-hidden="true" />
-					<span className="hidden sm:inline">Запустить акцию</span>
-					<span className="sm:hidden">Акция</span>
-				</button>
-			</div>
+			{activeTab === "promos" && (
+				<div className="marketing-header-actions flex items-center gap-2 shrink-0 ml-auto sm:order-3">
+					<button
+						type="button"
+						className="primary-button h-9 min-h-[36px] rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white shadow-xs px-3.5 inline-flex items-center gap-1.5 font-medium text-xs sm:text-sm shrink-0 cursor-pointer"
+						onClick={onOpenNewPromoModal}
+						data-testid="btn-marketing-primary-cta"
+						title="Создать новую рекламную кампанию или акцию"
+					>
+						<Plus size={15} aria-hidden="true" />
+						<span className="hidden sm:inline">Запустить акцию</span>
+						<span className="sm:hidden">Акция</span>
+					</button>
+				</div>
+			)}
 
 			<nav className="marketing-top-tabs w-full sm:w-auto order-3 sm:order-2" aria-label="Разделы маркетинга">
 				{MARKETING_TABS.map(({ id, label, title, testId, Icon }) => (

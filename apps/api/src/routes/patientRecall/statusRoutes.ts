@@ -2,7 +2,8 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../db/client.js";
 import { auditEvents, communicationEvents } from "../../db/schema.js";
 import { requireClinicalMutationContext } from "../../accessGuard.js";
-import { enforcePermissionWhenStaffKnown } from "../../security/permissions.js";
+import { roleHasPermission } from "../../security/permissions.js";
+import { getRequestIdentity } from "../../security/identity.js";
 import { recallCandidateBelongsTo } from "../../services/patients/recallCandidates.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { badRequest, statusUpdateSchema } from "./types.js";
@@ -15,11 +16,16 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			"recall status update",
 		);
 		if (!context) return;
+		const identity = getRequestIdentity(request);
 		if (
-			!enforcePermissionWhenStaffKnown(request, reply, "patients.write") &&
-			!enforcePermissionWhenStaffKnown(request, reply, "communications.write")
+			identity?.role &&
+			!roleHasPermission(identity.role, "patients.write") &&
+			!roleHasPermission(identity.role, "communications.write")
 		) {
-			return;
+			return reply.code(403).send({
+				error: "Forbidden",
+				message: "Недостаточно прав: требуется право 'patients.write' или 'communications.write'.",
+			});
 		}
 
 		const { patientId } = request.params as { patientId: string };

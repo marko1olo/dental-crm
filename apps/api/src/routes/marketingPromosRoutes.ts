@@ -219,7 +219,7 @@ async function readOrSeedOrganizationPromos(orgId: string): Promise<{
 	};
 }
 
-async function readOrSeedOrganizationRomiChannels(orgId: string): Promise<{
+export async function readOrSeedOrganizationRomiChannels(orgId: string): Promise<{
 	flags: Record<string, unknown>;
 	channels: AdvertisingChannelInput[];
 }> {

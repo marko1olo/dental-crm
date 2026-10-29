@@ -11,7 +11,7 @@ import {
 	calculateMarketingRomiSummary,
 	aggregateCrmMarketingMetrics,
 } from "@dental/shared";
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
+import { denteClinicalMutationHeaders } from "../../lib/denteRequestHeaders.js";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext.js";
 import { DEFAULT_DENTE_CHANNELS } from "./marketingRomiPresets.js";
 import type { RomiFieldKey } from "./MarketingRomiTableRow.js";
@@ -25,16 +25,14 @@ export function useMarketingRomiChannels() {
 	const persistChannels = useCallback((updated: AdvertisingChannelInput[]) => {
 		setChannels(updated);
 		try {
-			const headers = appLogic?.auth && typeof appLogic.auth.denteClinicalMutationHeaders === "function"
-				? appLogic.auth.denteClinicalMutationHeaders()
-				: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() };
+			const headers = { "Content-Type": "application/json", ...denteClinicalMutationHeaders() };
 			void fetch("/api/marketing/campaigns", {
 				method: "POST",
 				headers,
 				body: JSON.stringify({ channels: updated, campaigns: updated }),
 			}).catch(() => {});
 		} catch {}
-	}, [appLogic?.auth]);
+	}, []);
 
 	const calculatedMetrics: AdvertisingChannelMetric[] = useMemo(() => channels.map(buildAdvertisingChannelMetric), [channels]);
 	const summary = useMemo(() => calculateMarketingRomiSummary(calculatedMetrics), [calculatedMetrics]);
@@ -86,6 +84,7 @@ export function useMarketingRomiChannels() {
 		for (const ch of channels) if (ch.spentKopecks > 0) customBudgetsKopecks[ch.channelKey] = ch.spentKopecks;
 		const aggregated = aggregateCrmMarketingMetrics({ patients, appointments, payments, communicationEvents, customBudgetsKopecks });
 		persistChannels(aggregated);
+		void fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() }).catch(() => {});
 		const totalPatients = aggregated.reduce((acc, c) => acc + (c.primaryPatientsCount || 0), 0);
 		const totalRevRub = Math.round(aggregated.reduce((acc, c) => acc + (c.revenueKopecks || 0), 0) / 100).toLocaleString("ru-RU");
 		setSyncMessage(`Синхронизировано с CRM: учтено ${patients.length} пациентов (${totalPatients} первичных), ${appointments.length} приемов, ${payments.length} оплат (выручка ${totalRevRub} ₽)`);
@@ -100,6 +99,12 @@ export function useMarketingRomiChannels() {
 
 	useEffect(() => {
 		if ((appLogic?.dashboard?.patients?.length ?? 0) > 0) handleSyncWithCrm();
+		else {
+			void fetch("/api/marketing/romi", { headers: denteClinicalMutationHeaders() })
+				.then((r) => r.ok ? r.json() : null)
+				.then((d) => { if (d?.channels?.length) setChannels(d.channels); })
+				.catch(() => {});
+		}
 	}, []);
 
 	return {
