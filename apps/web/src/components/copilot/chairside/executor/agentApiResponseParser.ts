@@ -93,12 +93,13 @@ export function parseAgentApiResponse(
           surfaces: Array.isArray(p.surfaces) ? p.surfaces : [],
           applied: false,
         };
-      } else if (action.type === "apply_estimate_804n" && action.payload) {
+      } else if ((action.type === "apply_treatment_estimate" || action.type === "apply_estimate_804n") && action.payload) {
         const p = action.payload;
         if (Array.isArray(p.items)) {
           result.servicesProposal = p.items.map((it: any, idx: number) => ({
-            id: `srv-${it.code804n || idx}-${idx}`,
-            code804n: it.code804n || "A16.07.001",
+            id: `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
+            serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
+            code804n: it.serviceCode || it.code || it.code804n || "A16.07.001",
             title: it.title || "Услуга",
             toothNumber: it.toothNumber || data.toothNumber,
             quantity: it.quantity || 1,

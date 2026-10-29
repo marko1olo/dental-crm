@@ -16,7 +16,7 @@ import {
 } from "../../../clinical/Icd10ClinicalValidator.js";
 import { formatFdiTooth, parseFdiTooth } from "../../chairsideSentinelEngine.js";
 import type { AgentContext } from "../../context.js";
-import { normalizeAnatomicalSurfaces } from "../../denteAgentTools.js";
+import { normalizeAnatomicalSurfaces } from "../denteAgentTools.js";
 import type { ToolDefinition } from "../tool.js";
 import {
 	type ToothUpdateReportItem,

@@ -111,12 +111,14 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
         applied: false,
       });
     }
-    if (intent.procedures804n && intent.procedures804n.length > 0) {
+    const procs = intent.treatmentProcedures || intent.procedures804n;
+    if (procs && procs.length > 0) {
       setServicesProposal(
-        intent.procedures804n.map((p, idx) => ({
+        procs.map((p: any, idx: number) => ({
           id: `proc-voice-${idx}-${Date.now()}`,
-          code804n: p.code804n,
-          title: p.name,
+          serviceCode: p.serviceCode || p.code804n || "A16.07.001",
+          code804n: p.serviceCode || p.code804n || "A16.07.001",
+          title: p.name || p.title || "Медицинская услуга",
           priceRub: p.priceRub || 1500,
           quantity: p.quantity || 1,
           applied: false,

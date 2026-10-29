@@ -5,7 +5,7 @@
  * - Real Fastify / Agent API Contract (POST /api/v1/copilot/agent/execute with auth tokens, patientId, visitId, chairId).
  * - Parsing thought stream (ReAct reasoning), clinical verdict (T.A.R.S. 100%), and proactive action cards.
  * - Mandate 8e: Doctor Autonomy (Zero unexplained disabled buttons, 1-click dispatch, editable text before apply).
- * - 1-Click dispatch to Visit Note 043/u (onApplySoapDiary), 804n Estimate (onAddBillingItem / onApplyServices), Odontogram (onUpdateToothStatus / onApplyToothState).
+ * - 1-Click dispatch to Visit Note / Medical Card (onApplySoapDiary), Services Estimate (onAddBillingItem / onApplyServices), Odontogram (onUpdateToothStatus / onApplyToothState).
  * - 1-Click reversible undo for individual actions and "Откатить всё" batch undo.
  * - Cross-component bus sync: dente-apply-soap-protocol, dente-undo-soap-protocol, dente-add-billing-item, dente-odontogram-update.
  * - Mandate 8d & 8k: 0 cartoon emojis, CSS design tokens strictly.
@@ -124,7 +124,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(html).toContain("btn-preset-hygiene");
   });
 
-  it("2. renders ReAct thought stream and clinical cards (tooth, 804n services, SOAP diary)", () => {
+  it("2. renders ReAct thought stream and clinical cards (tooth, services estimate, SOAP diary)", () => {
     const html = renderToString(
       <ChairsideCopilotHUD
         initialOpen={true}
@@ -193,12 +193,12 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
             },
             {
               id: "act-services",
-              type: "apply_estimate_804n",
+              type: "apply_treatment_estimate",
               label: "Добавить услуги в план лечения",
               params: {
                 services: [
-                  { code804n: "A16.07.002.010", title: "Препарирование полости", priceRub: 2500, toothNumber: 36 },
-                  { code804n: "A16.07.002.011", title: "Пломба светового отверждения", priceRub: 4500, toothNumber: 36 },
+                  { serviceCode: "A16.07.002.010", code804n: "A16.07.002.010", title: "Препарирование полости", priceRub: 2500, toothNumber: 36 },
+                  { serviceCode: "A16.07.002.011", code804n: "A16.07.002.011", title: "Пломба светового отверждения", priceRub: 4500, toothNumber: 36 },
                 ],
               },
             },
@@ -298,6 +298,7 @@ describe("ChairsideCopilotHUD End-to-End Wiring (DEF-COPILOT-01 & Mandate 8e)", 
     expect(onApplySoapDiary).toHaveBeenCalledWith(sampleSoap);
 
     const sampleService = {
+      serviceCode: "A16.07.002.010",
       code804n: "A16.07.002.010",
       title: "Препарирование полости",
       priceRub: 2500,

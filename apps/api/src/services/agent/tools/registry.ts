@@ -12,7 +12,7 @@ import { registerClinicalTools } from "./clinicalTools.js";
 import { registerContextTools } from "./contextTools.js";
 import { registerRagTools } from "./ragTools.js";
 import { registerSanpinTools } from "./sanpinTools.js";
-import { registerDenteAgentTools } from "../denteAgentTools.js";
+import { registerDenteAgentTools } from "./denteAgentTools.js";
 import { registerCrmUniversalTools } from "./crmUniversalTools.js";
 import { registerWorkstationTools } from "./workstationTools.js";
 import { toolToAnthropicSchema, toolToOpenAiSchema } from "./schemaSerializer.js";

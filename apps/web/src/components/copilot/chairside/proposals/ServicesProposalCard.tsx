@@ -33,7 +33,7 @@ export const ServicesProposalCard: React.FC<ServicesProposalCardProps> = ({
           {servicesProposal.map((srv) => (
             <div key={srv.id} className="chairside-hud-service-item">
               <div className="min-w-0 flex-1">
-                <span className="chairside-hud-service-code">[{srv.code804n}]</span>{" "}
+                <span className="chairside-hud-service-code">[{srv.serviceCode || srv.code804n}]</span>{" "}
                 <span>{srv.title}</span>
               </div>
               <span className="chairside-hud-service-price">

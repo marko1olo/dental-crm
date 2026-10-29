@@ -51,7 +51,7 @@ export default defineConfig({
 	],
 
 	// Run your local dev server before starting the tests.
-	webServer: {
+	webServer: process.env.PLAYWRIGHT_SKIP_WEBSERVER ? undefined : {
 		command: "npm run dev",
 		url: "http://127.0.0.1:5173",
 		// Do not restart the server if it's already running locally.

@@ -70,7 +70,7 @@ export const ChairsideHUDProposals: React.FC<ChairsideHUDProposalsProps> = ({
           <ul className="text-xs space-y-1 text-[var(--muted)] mb-2">
             {servicesProposal.map((s) => (
               <li key={s.id} className="flex justify-between items-center">
-                <span className="truncate pr-2 font-mono text-[11px] text-[var(--muted)]">{s.code804n}</span>
+                <span className="truncate pr-2 font-mono text-[11px] text-[var(--muted)]">{s.serviceCode || s.code804n}</span>
                 <span className="truncate pr-2 flex-1">{s.title}</span>
                 <span className="shrink-0">{s.priceRub} ₽</span>
               </li>

@@ -89,20 +89,23 @@ import {
 } from "../autonomousDenteAgent.js";
 import {
 	bookChairsideAppointmentTool,
+	calculateTreatmentEstimateTool,
 	calculate804nEstimateTool,
 	calculateServicesEstimateTool,
 	calculateAnestheticDosageTool,
 	checkDrugInteractionsTool,
 	checkWarehouseSuppliesTool,
 	createDentalLabOrderTool,
+	draftClinicalSoapDiaryTool,
 	draft043uSoapDiaryTool,
 	draftSoapDiaryTool,
 	generateInformedConsentIdsTool,
+	getPatientClinicalCardTool,
 	getPatientEmk043uTool,
 	getPatientOutpatientRecordTool,
 	normalizeAnatomicalSurfaces,
 	updateToothStatusTool,
-} from "../denteAgentTools.js";
+} from "../tools/denteAgentTools.js";
 import type { AgentContext } from "../context.js";
 
 const mockCtx: AgentContext = {
@@ -135,7 +138,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			});
 
 			expect(res.patient.id).toBe("pat-emk-001");
-			expect(res.patient.card043Number).toMatch(/043\/у/i);
+			expect(res.patient.card043Number).toMatch(/043|МК/i);
 			expect(res.isPhysiologicalNorm).toBe(true);
 			expect(res.somaticStatus).toMatch(/соматически здоров|норма/i);
 
@@ -501,7 +504,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			// Actions cards check
 			expect(result.actions.length).toBeGreaterThanOrEqual(6);
 			const diaryCard = result.actions.find((a) => a.type === "apply_soap_diary");
-			const estCard = result.actions.find((a) => a.type === "apply_estimate_804n");
+			const estCard = result.actions.find((a) => a.type === "apply_treatment_estimate" || a.type === "apply_estimate_804n");
 			const labCard = result.actions.find((a) => a.type === "apply_lab_order");
 			const appCard = result.actions.find((a) => a.type === "apply_appointment");
 			const anesthCard = result.actions.find((a) => a.type === "apply_anesthetic_dosage");

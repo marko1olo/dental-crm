@@ -1,15 +1,15 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, RotateCcw, Send, Mic, Sparkles, Check, AlertTriangle,
-  Columns, User, Calendar, FileText, CheckCircle2, AlertCircle,
-  HelpCircle, ShieldAlert, Calculator
+  X, RotateCcw, Send, Mic, MicOff, Sparkles, Check, AlertTriangle,
+  Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
 import { useCopilotContextSync } from "./CopilotContextSync";
 import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
 import { CopilotConfirmParamsView } from "./drawer/CopilotConfirmParamsView";
+import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
 import { CopilotMarkdown } from "./CopilotMarkdown";
 import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./copilotTypes";
 import "./CopilotDrawer.css";
@@ -17,26 +17,21 @@ import "./CopilotDrawer.css";
 export type { ProactiveNudge };
 
 const TOOL_TITLES_RU: Record<string, string> = {
-  "clinical.calculate_treatment_estimate": "Предварительный расчёт сметы лечения",
-  "calculate_treatment_estimate": "Предварительный расчёт сметы лечения",
-  "clinical.save_protocol_043": "Сохранение протокола приёма в медкарту",
-  "save_protocol_043": "Сохранение протокола приёма в медкарту",
-  "clinical.check_drug_interactions": "Проверка лекарственной совместимости",
-  "check_drug_interactions": "Проверка лекарственной совместимости",
-  "clinical.update_odontogram": "Обновление статуса зубной формулы",
-  "update_odontogram": "Обновление статуса зубной формулы",
-  "clinical.add_procedure_to_invoice": "Добавление услуги в счёт приёма",
-  "add_procedure_to_invoice": "Добавление услуги в счёт приёма",
-  "clinical.create_appointment": "Бронирование приёма в расписании",
-  "create_appointment": "Бронирование приёма в расписании",
+  calculate_treatment_estimate: "Предварительный расчёт сметы лечения",
+  apply_treatment_estimate: "Применение сметы плана лечения",
+  draft_clinical_soap_diary: "Формирование дневника приёма (SOAP)",
+  get_patient_clinical_card: "Медицинская карта приёма",
+  save_protocol_043: "Сохранение протокола приёма в медкарту",
+  check_drug_interactions: "Проверка лекарственной совместимости",
+  update_odontogram: "Обновление статуса зубной формулы",
+  add_procedure_to_invoice: "Добавление услуги в счёт приёма",
+  create_appointment: "Бронирование приёма в расписании",
 };
 
 function humanizeToolName(name?: string | null): string {
   if (!name) return "Клиническое действие";
-  if (TOOL_TITLES_RU[name]) return TOOL_TITLES_RU[name]!;
   const cleaned = name.replace(/^(clinical|crm)\./, "");
-  if (TOOL_TITLES_RU[cleaned]) return TOOL_TITLES_RU[cleaned]!;
-  return cleaned.replace(/_/g, " ");
+  return TOOL_TITLES_RU[cleaned] || cleaned.replace(/_/g, " ");
 }
 
 export interface CopilotDrawerProps {
@@ -62,29 +57,25 @@ export interface CopilotDrawerProps {
   onSelectPatient?: (patientId: string) => void;
   onSelectAppointment?: (appointmentId: string) => void;
   onBookSlot?: (slot: any) => void;
+  isVoiceActive?: boolean;
+  onToggleVoice?: () => void;
 }
 
 export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
-  isOpen,
-  messages,
-  busy,
-  phase,
-  pending,
-  nameCache,
-  nudges = [],
-  proactiveAlerts = [],
-  activeTab,
-  onTabChange,
-  onClose,
-  onSend,
-  onConfirm,
-  onReset,
-  onDismissNudge,
-  onBookSlot,
+  isOpen, messages, busy, phase, pending, nameCache, nudges = [],
+  proactiveAlerts = [], activeTab, onTabChange, onClose, onSend,
+  onConfirm, onReset, onDismissNudge, onBookSlot,
+  isVoiceActive: isVoiceActiveProp, onToggleVoice,
 }) => {
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
   const [input, setInput] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [isDocked, setIsDocked] = useState(false);
+  const [localVoiceActive, setLocalVoiceActive] = useState(false);
+  const effectiveVoiceActive = isVoiceActiveProp !== undefined ? isVoiceActiveProp : localVoiceActive;
+  const toggleVoice = () => {
+    if (onToggleVoice) onToggleVoice();
+    else setLocalVoiceActive((prev) => !prev);
+  };
   const [isMobile, setIsMobile] = useState(() => (
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   ));
@@ -380,7 +371,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   </div>
                   <CopilotConfirmParamsView
                     name={pending.name || pending.toolName || undefined}
-                    args={pending.args}
+                    args={pending.args || (pending as any).arguments || {}}
                     nameCache={nameCache}
                   />
                   <div className="copilot-confirm-actions">
@@ -441,6 +432,14 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
         {/* Composer Toolbar */}
         <form className="copilot-composer" onSubmit={handleSubmit}>
+          {effectiveVoiceActive && (
+            <CopilotDictationBanner
+              dictationMode="web_speech"
+              isSpeaking={true}
+              audioLevel={0.7}
+              onStopVoice={toggleVoice}
+            />
+          )}
           <div className="copilot-composer-box">
             <textarea
               className="copilot-composer-input"
@@ -455,15 +454,13 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             <div className="copilot-composer-actions">
               <button
                 type="button"
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent("dente:open-voice-dictation"));
-                }}
-                className="copilot-icon-btn copilot-mic-btn"
-                title="Голосовой стенограф приёма"
+                onClick={toggleVoice}
+                className={`copilot-icon-btn copilot-mic-btn ${effectiveVoiceActive ? "active recording" : ""}`}
+                title={effectiveVoiceActive ? "Остановить надиктовку речи" : "Голосовая надиктовка ДЕНТА (Web Speech Live)"}
                 aria-label="Голос"
                 data-testid="copilot-composer-mic"
               >
-                <Mic size={18} />
+                {effectiveVoiceActive ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
 
               <button

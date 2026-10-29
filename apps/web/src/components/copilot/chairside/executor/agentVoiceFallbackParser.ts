@@ -63,11 +63,13 @@ export function tryParseVoiceFallback(
   };
 
   let servicesProposal: ChairsideServiceProposal[];
-  if (voiceIntent.procedures804n.length > 0) {
-    servicesProposal = voiceIntent.procedures804n.map((p, idx) => ({
-      id: `voice-srv-${idx}-${p.code804n}`,
-      code804n: p.code804n,
-      title: p.name,
+  const voiceProcs = (voiceIntent as any).treatmentProcedures || voiceIntent.procedures804n || [];
+  if (voiceProcs.length > 0) {
+    servicesProposal = voiceProcs.map((p: any, idx: number) => ({
+      id: `voice-srv-${idx}-${p.serviceCode || p.code804n || idx}`,
+      serviceCode: p.serviceCode || p.code804n || "A16.07.001",
+      code804n: p.serviceCode || p.code804n || "A16.07.001",
+      title: p.name || p.title || "Медицинская услуга",
       toothNumber: targetTooth,
       quantity: 1,
       priceRub: p.priceRub || 3500,

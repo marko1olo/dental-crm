@@ -32,6 +32,8 @@ const PARAM_LABELS_RU: Record<string, string> = {
   start_time: "Время начала",
   end_time: "Время окончания",
   duration_minutes: "Длительность",
+  serviceCode: "Код услуги",
+  treatmentProcedures: "План процедур",
   cabinet: "Кабинет",
   medication: "Препарат",
   drug_name: "Препарат",
@@ -52,7 +54,15 @@ export function CopilotConfirmParamsView({
   const rawTooth = args.toothNumber ?? args.tooth ?? args.teeth;
   const toothFormatted = rawTooth != null ? (Array.isArray(rawTooth) ? rawTooth.join(", ") : String(rawTooth)) : null;
   const diagnosis = typeof args.diagnosis === "string" ? args.diagnosis : typeof args.icd10 === "string" ? args.icd10 : null;
-  const services = Array.isArray(args.services) ? args.services : Array.isArray(args.procedures) ? args.procedures : null;
+  const services = Array.isArray(args.services)
+    ? args.services
+    : Array.isArray(args.treatmentProcedures)
+      ? args.treatmentProcedures
+      : Array.isArray(args.procedures)
+        ? args.procedures
+        : Array.isArray((args as any).procedures804n)
+          ? (args as any).procedures804n
+          : null;
 
   // Extract total financial amount
   let totalAmountFormatted: string | null = null;
@@ -74,7 +84,7 @@ export function CopilotConfirmParamsView({
   const hiddenKeys = new Set([
     "toothNumber", "tooth_number", "tooth", "teeth",
     "diagnosis", "icd10",
-    "services", "procedures",
+    "services", "procedures", "treatmentProcedures", "procedures804n",
     "totalRub", "totalKopecks", "amount_rub", "price", "cost", "amount",
     "callId", "toolCallId", "id", "_raw", "tierKey", "tier_key"
   ]);

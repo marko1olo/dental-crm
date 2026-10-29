@@ -92,6 +92,9 @@ function CopilotPreviewApp() {
     if (tab === "pending") {
       setActiveTab("pending");
     }
+    if (params.get("voice") === "true") {
+      setVoiceActive(true);
+    }
   }, []);
 
   return (
@@ -158,7 +161,7 @@ function CopilotPreviewApp() {
                 <div className="flex items-center gap-2 flex-wrap">
                   <h1 className="text-lg font-bold text-[var(--ink)]">Иванов Иван Иванович</h1>
                   <span className="text-xs px-2 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono">
-                    №043-1284
+                    №ЭМК-1284
                   </span>
                   <span className="text-xs px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-600 font-medium">
                     Первичный
@@ -187,7 +190,7 @@ function CopilotPreviewApp() {
                 className="px-3 py-1.5 rounded-lg border border-[var(--line)] text-xs font-medium hover:bg-[var(--paper-soft)] flex items-center gap-1.5"
               >
                 <Printer size={13} className="text-[var(--muted)]" />
-                <span>Печать 043/у</span>
+                <span>Печать медкарты</span>
               </button>
               <button
                 type="button"
@@ -278,7 +281,7 @@ function CopilotPreviewApp() {
             <div className="flex items-center justify-between border-b border-[var(--line)] pb-3">
               <div className="flex items-center gap-2">
                 <FileText size={16} className="text-[var(--teal)]" />
-                <h3 className="text-sm font-bold text-[var(--ink)]">Дневник приёма (SOAP) • Форма 043/у</h3>
+                <h3 className="text-sm font-bold text-[var(--ink)]">Дневник приёма (SOAP) • Медицинская карта</h3>
               </div>
               <span className="text-xs text-emerald-600 flex items-center gap-1 font-medium">
                 <CheckCircle2 size={12} /> Автосохранение активно
@@ -334,6 +337,8 @@ function CopilotPreviewApp() {
         messages={messages}
         busy={false}
         phase={null}
+        isVoiceActive={voiceActive}
+        onToggleVoice={() => setVoiceActive((prev) => !prev)}
         pending={{
           callId: "call-tx-46-confirm",
           toolName: "clinical.calculate_treatment_estimate",
@@ -342,11 +347,13 @@ function CopilotPreviewApp() {
             toothNumber: 46,
             diagnosis: "K04.0 Хронический пульпит",
             services: [
-              "A16.07.008 Пломбирование корневого канала зуба (эндодонтия)",
-              "A16.07.002 Восстановление зуба пломбой (лечение кариеса)",
+              "A16.07.008 Пломбирование корневого канала зуба (эндодонтия) — 18 500 ₽",
+              "A16.07.002 Восстановление зуба пломбой (лечение кариеса) — 6 500 ₽",
             ],
             totalRub: 25000,
-            totalKopecks: 2500000,
+            discount_percent: 10,
+            doctor_name: "Д-р Соколов А.В.",
+            safe_alternative: "Артикаин 4% 1:200 000 (кардио-протокол)",
           },
         }}
         nameCache={{}}

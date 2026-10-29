@@ -13,26 +13,32 @@
  */
 
 import {
+	getPatientClinicalCardTool,
 	getPatientEmk043uTool,
 	updateToothStatusTool,
+	calculateTreatmentEstimateTool,
 	calculate804nEstimateTool,
 	checkDrugInteractionsTool,
 	createDentalLabOrderTool,
 	bookChairsideAppointmentTool,
+	draftClinicalSoapDiaryTool,
 	draft043uSoapDiaryTool,
 	calculateAnestheticDosageTool,
 	generateInformedConsentIdsTool,
 	checkWarehouseSuppliesTool,
+	type CalculateTreatmentEstimateResult,
 	type Calculate804nEstimateResult,
 	type CreateDentalLabOrderResult,
 	type BookChairsideAppointmentResult,
+	type DraftClinicalSoapDiaryResult,
 	type Draft043uSoapDiaryResult,
+	type PatientClinicalCardResult,
 	type PatientEmk043uResult,
 	type UpdateToothStatusResult,
 	type CalculateAnestheticDosageResult,
 	type GenerateInformedConsentIdsResult,
 	type CheckWarehouseSuppliesResult,
-} from "../denteAgentTools.js";
+} from "../tools/denteAgentTools.js";
 import {
 	type ChairsideSafetyAlert,
 	type ChairsideSoapDiary,
@@ -58,6 +64,7 @@ import {
 export type ActionCardType =
 	| "apply_soap_diary"
 	| "apply_services_estimate"
+	| "apply_treatment_estimate"
 	| "apply_estimate_804n"
 	| "apply_tooth_status"
 	| "apply_lab_order"
@@ -182,7 +189,7 @@ export async function executeAutonomousReActCycle(
 			`Пациент ID: ${input.patientId}. Зуб FDI: ${fdiToothFormatted}.`,
 			`Жалобы: "${extractedComplaints || "Не указаны (физиологическая норма)"}".`,
 			`Анамнез: аллергии [${extractedAllergies.join(", ") || "отрицает"}], соматика [${extractedSomatic.join(", ") || "здоров"}].`,
-			`ДЕЙСТВИЕ: Вызов check_drug_interactions для проверки лекарственной совместимости и get_patient_emk_043u для открытия электронной карты.`,
+			`ДЕЙСТВИЕ: Вызов check_drug_interactions для проверки лекарственной совместимости и get_patient_clinical_card для открытия медицинской карты.`,
 		].join("\n");
 		fullThoughtTraces.push(thought1);
 
@@ -216,11 +223,11 @@ export async function executeAutonomousReActCycle(
 			timestamp: now(),
 		});
 
-		emkResult = await getPatientEmk043uTool.handler(ctx, {
+		emkResult = await getPatientClinicalCardTool.handler(ctx, {
 			patientId: input.patientId,
 			organizationId: orgId,
 		});
-		toolsInvoked.push("get_patient_emk_043u");
+		toolsInvoked.push("get_patient_clinical_card");
 
 		const anestheticObservation = await calculateAnestheticDosageTool.handler(ctx, {
 			patientWeightKg: resolvedWeight,
@@ -282,29 +289,29 @@ export async function executeAutonomousReActCycle(
 		actions.push(createToothStatusActionCard(toothStatusResult, fdiToothFormatted));
 	}
 
-	// ─── ITERATION 3: THOUGHT -> ACTION: calculate_804n_estimate
+	// ─── ITERATION 3: THOUGHT -> ACTION: calculate_treatment_estimate
 	currentIteration = 3;
 	if (currentIteration <= maxIterations) {
 		const thought3 = [
 			`[ИТЕРАЦИЯ 3/5: РАСЧЕТ СМЕТЫ В ТОЧНЫХ КОПЕЙКАХ]`,
 			`Категория: ${clinicalCategory}. Скидка врача: ${resolvedDiscount}% (свобода скидок без блокировок).`,
-			`ДЕЙСТВИЕ: Вызов calculate_804n_estimate для формирования калькуляции в точных целых копейках.`,
+			`ДЕЙСТВИЕ: Вызов calculate_treatment_estimate для формирования калькуляции в точных целых копейках.`,
 		].join("\n");
 		fullThoughtTraces.push(thought3);
 
-		estimateResult = await calculate804nEstimateTool.handler(ctx, {
+		estimateResult = await calculateTreatmentEstimateTool.handler(ctx, {
 			patientId: input.patientId,
 			toothNumber: resolvedTooth ?? undefined,
 			category: clinicalCategory as any,
 			discountPercent: resolvedDiscount,
 		});
-		toolsInvoked.push("calculate_804n_estimate");
+		toolsInvoked.push("calculate_treatment_estimate");
 
 		steps.push({
 			iteration: currentIteration,
 			thought: thought3,
 			action: {
-				tool: "calculate_804n_estimate",
+				tool: "calculate_treatment_estimate",
 				args: {
 					patientId: input.patientId,
 					toothNumber: resolvedTooth ?? undefined,
@@ -319,7 +326,7 @@ export async function executeAutonomousReActCycle(
 		actions.push(createEstimateActionCard(estimateResult, resolvedDiscount));
 	}
 
-	// ─── ITERATION 4: THOUGHT -> ACTION: draft_043u_soap_diary (and lab/appointment/consent)
+	// ─── ITERATION 4: THOUGHT -> ACTION: draft_clinical_soap_diary (and lab/appointment/consent)
 	currentIteration = 4;
 	if (currentIteration <= maxIterations) {
 		const thought4 = [
@@ -331,7 +338,7 @@ export async function executeAutonomousReActCycle(
 		].filter(Boolean).join("\n");
 		fullThoughtTraces.push(thought4);
 
-		diaryResult = await draft043uSoapDiaryTool.handler(ctx, {
+		diaryResult = await draftClinicalSoapDiaryTool.handler(ctx, {
 			patientId: input.patientId,
 			toothNumber: resolvedTooth ?? undefined,
 			diagnosisCode: primaryIcd10,
@@ -340,13 +347,13 @@ export async function executeAutonomousReActCycle(
 			allergiesStatus: emkResult?.allergies.join(", "),
 			oneClickNorm: !input.prompt,
 		});
-		toolsInvoked.push("draft_043u_soap_diary");
+		toolsInvoked.push("draft_clinical_soap_diary");
 
 		steps.push({
 			iteration: currentIteration,
 			thought: thought4,
 			action: {
-				tool: "draft_043u_soap_diary",
+				tool: "draft_clinical_soap_diary",
 				args: {
 					patientId: input.patientId,
 					toothNumber: resolvedTooth ?? undefined,

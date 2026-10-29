@@ -197,7 +197,8 @@ export function useChairsideCopilotState(props: ChairsideCopilotHUDProps) {
 
   // Voice listener integration (MANDATE 8l)
   const handleIntentParsed = useCallback((intent: any) => {
-    if (intent && (intent.teethUpdates.length > 0 || intent.anesthesia || intent.procedures804n.length > 0)) {
+    const procs = intent?.treatmentProcedures || intent?.procedures804n || [];
+    if (intent && (intent.teethUpdates.length > 0 || intent.anesthesia || procs.length > 0)) {
       const firstTooth = intent.teethUpdates[0];
       if (firstTooth) {
         setToothProposal((prev) => ({
@@ -222,6 +223,20 @@ export function useChairsideCopilotState(props: ChairsideCopilotHUDProps) {
           applied: false,
         });
       }
+      if (procs.length > 0) {
+        setServicesProposal(
+          procs.map((p: any, idx: number) => ({
+            id: `voice-srv-${idx}-${p.serviceCode || p.code804n || idx}`,
+            serviceCode: p.serviceCode || p.code804n || "A16.07.001",
+            code804n: p.serviceCode || p.code804n || "A16.07.001",
+            title: p.title || p.serviceTitle || p.name || "Медицинская услуга",
+            quantity: p.quantity || 1,
+            priceRub: p.priceRub || 1500,
+            toothNumber: p.toothNumber || activeTooth || undefined,
+            applied: false,
+          }))
+        );
+      }
       if (intent.soapNotes?.assessment) {
         const sn = intent.soapNotes;
         setSoapProposal((prev) => ({
@@ -235,7 +250,7 @@ export function useChairsideCopilotState(props: ChairsideCopilotHUDProps) {
         }));
       }
     }
-  }, []);
+  }, [activeTooth]);
 
   const { isListening, audioVolume, handleToggleVoice } = useChairsideVoiceEngine({
     onTranscriptFinal: setInputText,

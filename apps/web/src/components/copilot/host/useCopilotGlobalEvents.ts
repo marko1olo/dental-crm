@@ -63,10 +63,22 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       }
     };
 
+    const handleOpenCopilot = (e?: Event) => {
+      const customEvent = e as CustomEvent<{ messages?: CopilotUiMessage[]; pending?: PendingConfirmation | null; activeTab?: 'chat' | 'pending' }>;
+      if (customEvent?.detail) {
+        if (customEvent.detail.messages) opts.setCustomMessages(customEvent.detail.messages);
+        if (customEvent.detail.pending !== undefined) opts.setCustomPending(customEvent.detail.pending);
+        if (customEvent.detail.activeTab) opts.setActiveTab(customEvent.detail.activeTab);
+      }
+      opts.openDrawer();
+    };
+
     window.addEventListener('dente:toggle-copilot', handleCustomToggle);
-    window.addEventListener('dente:open-copilot', opts.openDrawer);
+    window.addEventListener('dente:open-copilot', handleOpenCopilot);
+    window.addEventListener('dente-open-copilot', handleOpenCopilot);
     window.addEventListener('dente:close-copilot', opts.closeDrawer);
-    window.addEventListener('dente:open-agent-cockpit', opts.openDrawer);
+    window.addEventListener('dente-close-copilot', opts.closeDrawer);
+    window.addEventListener('dente:open-agent-cockpit', handleOpenCopilot);
     window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
     window.addEventListener('dente:open-chairside-hud', opts.openHud);
     window.addEventListener('dente:close-chairside-hud', opts.closeHud);
@@ -79,9 +91,11 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
 
     return () => {
       window.removeEventListener('dente:toggle-copilot', handleCustomToggle);
-      window.removeEventListener('dente:open-copilot', opts.openDrawer);
+      window.removeEventListener('dente:open-copilot', handleOpenCopilot);
+      window.removeEventListener('dente-open-copilot', handleOpenCopilot);
       window.removeEventListener('dente:close-copilot', opts.closeDrawer);
-      window.removeEventListener('dente:open-agent-cockpit', opts.openDrawer);
+      window.removeEventListener('dente-close-copilot', opts.closeDrawer);
+      window.removeEventListener('dente:open-agent-cockpit', handleOpenCopilot);
       window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
       window.removeEventListener('dente:open-chairside-hud', opts.openHud);
       window.removeEventListener('dente:close-chairside-hud', opts.closeHud);

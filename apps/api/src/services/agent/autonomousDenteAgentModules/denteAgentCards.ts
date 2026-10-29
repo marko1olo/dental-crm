@@ -11,15 +11,17 @@ import type {
 	ProactiveActionCard,
 } from "./denteAgentExecution.js";
 import type {
+	CalculateTreatmentEstimateResult,
 	Calculate804nEstimateResult,
 	CreateDentalLabOrderResult,
 	BookChairsideAppointmentResult,
+	DraftClinicalSoapDiaryResult,
 	Draft043uSoapDiaryResult,
 	UpdateToothStatusResult,
 	CalculateAnestheticDosageResult,
 	GenerateInformedConsentIdsResult,
 	CheckWarehouseSuppliesResult,
-} from "../denteAgentTools.js";
+} from "../tools/denteAgentTools.js";
 import type { ChairsideSafetyAlert } from "../chairsideSentinelEngine.js";
 
 export function createAnestheticActionCard(
@@ -57,7 +59,7 @@ export function createEstimateActionCard(
 ): ProactiveActionCard {
 	return {
 		id: `card_est_${crypto.randomUUID().slice(0, 8)}`,
-		type: "apply_estimate_804n",
+		type: "apply_treatment_estimate",
 		title: `Смета услуг: ${estimate.formattedTotal} (скидка ${resolvedDiscount}%)`,
 		description: `Услуг: ${estimate.items.length}. Итого: ${estimate.totalRub} ₽ (${estimate.totalKopecks} коп.). Применение без административных паролей.`,
 		payload: estimate as any,

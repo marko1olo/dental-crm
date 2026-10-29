@@ -17,7 +17,8 @@ export interface ChairsideToothProposal {
 
 export interface ChairsideServiceProposal {
   id: string;
-  code804n: string;
+  serviceCode: string;
+  code804n?: string;
   title: string;
   toothNumber?: number | undefined;
   quantity: number;

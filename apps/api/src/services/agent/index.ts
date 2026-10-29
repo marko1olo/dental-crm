@@ -32,7 +32,7 @@ export * from "./validatorAgent.js";
 export * from "./semanticRouter.js";
 export * from "./prompts/index.js";
 export * from "./chairsideSentinelEngine.js";
-export * from "./denteAgentTools.js";
-export { checkDrugInteractionsTool } from "./denteAgentTools.js";
+export * from "./tools/denteAgentTools.js";
+export { checkDrugInteractionsTool } from "./tools/denteAgentTools.js";
 export * from "./autonomousDenteAgent.js";
 
