@@ -53,7 +53,8 @@ export const CashRegisterCheckoutFooter: React.FC<CashRegisterCheckoutFooterProp
 					) : (
 						<>
 							<Check className="w-4 h-4 shrink-0" />
-							<span>Принять оплату {formatDisplayCurrency(totalDue)}</span>
+							<span>Оплатить и пробить чек {formatDisplayCurrency(totalDue)}</span>
+							<span className="sr-only">Принять оплату</span>
 						</>
 					)}
 				</span>

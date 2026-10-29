@@ -62,7 +62,25 @@ function CashboxPreviewApp() {
 	}
 
 	return (
-		<div className="w-full min-h-screen bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] flex flex-col items-center justify-end md:justify-center p-0">
+		<div className="w-full min-h-screen bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] p-4 sm:p-6 md:p-8 flex flex-col items-center justify-start max-w-6xl mx-auto box-border">
+			<div className="w-full flex items-center justify-between mb-6 pb-4 border-b border-[var(--line,#e2e8f0)]">
+				<div>
+					<h1 className="text-xl sm:text-2xl font-bold text-[var(--ink,#0f172a)] tracking-tight">
+						Касса и чеки
+					</h1>
+					<p className="text-xs text-[var(--muted,#64748b)]">
+						Журнал кассовых смен, приём оплаты и фискализация чеков
+					</p>
+				</div>
+			</div>
+			<div className="w-full">
+				<CashShiftJournalView
+					clinicName="ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"
+					cashierFullName="Администратор Иванова Е. С."
+					onOpenShiftCloseModal={() => {}}
+					onOpenNewShift={() => {}}
+				/>
+			</div>
 			<CashRegisterCheckoutModal
 				isOpen={true}
 				onClose={() => {}}

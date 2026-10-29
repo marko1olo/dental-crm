@@ -11,6 +11,8 @@ export interface CashRegisterCheckoutModalProps {
 	readonly totalBillRub?: number | undefined;
 	readonly totalBillKop?: number | undefined;
 	readonly amountKopecks?: number | undefined;
+	readonly initialAmountKopecks?: number | undefined;
+	readonly invoiceDraftItems?: readonly any[] | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;

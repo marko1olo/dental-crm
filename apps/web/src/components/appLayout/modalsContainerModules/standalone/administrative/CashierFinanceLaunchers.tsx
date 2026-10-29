@@ -9,6 +9,7 @@ import type React from "react";
 import { renderFiscalReceiptLauncher } from "./FiscalReceiptLaunchers";
 import { StandaloneCashFlowLauncherHost } from "./StandaloneCashFlowLauncherHost";
 import { StandaloneFastCheckoutHost, StandaloneSbpPaymentHost } from "./CashierPaymentLauncherHosts";
+import { StandaloneCashboxSsotHost } from "./StandaloneCashboxSsotHost";
 import { ManagerialPnlDashboardModal } from "../../../../finance/pnl";
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
@@ -21,6 +22,14 @@ export function renderCashierFinanceLaunchers(props: StandaloneLaunchersProps): 
 			<ManagerialPnlDashboardModal
 				isOpen={true}
 				onClose={() => clearUrlTokens(["pnl", "managerial_pnl"])}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["cashbox", "cashbox_ssot", "cash_register", "shift_closing", "shift_journal"])) {
+		return (
+			<StandaloneCashboxSsotHost
+				onClose={() => clearUrlTokens(["cashbox", "cashbox_ssot", "cash_register", "shift_closing", "shift_journal"])}
 			/>
 		);
 	}

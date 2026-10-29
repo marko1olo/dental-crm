@@ -36,8 +36,8 @@ export function CashboxTendersGrid({
 			<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
 				{!checkoutResult.isZeroDue ? (
 					<>
-						<button type="button" className="primary-button col-span-2 sm:col-span-1 min-h-[44px] sm:min-h-[36px] sm:h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white inline-flex items-center justify-center gap-2 font-bold text-xs cursor-pointer shadow-xs transition-colors active:scale-[0.98]" onClick={() => onOpenPaymentWithMethod("card_terminal")} data-testid="btn-open-fast-checkout-modal" title="Принять оплату и выбить кассовый чек">
-							<Receipt className="w-4 h-4 shrink-0" /><span>Принять оплату</span>
+						<button type="button" className="primary-button col-span-2 sm:col-span-1 min-h-[44px] sm:min-h-[36px] sm:h-10 px-4 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white inline-flex items-center justify-center gap-2 font-bold text-xs cursor-pointer shadow-xs transition-colors active:scale-[0.98] dente-btn-primary" onClick={() => onOpenPaymentWithMethod("card_terminal")} data-testid="btn-open-fast-checkout-modal" title="Оплатить и выбить кассовый чек">
+							<Receipt className="w-4 h-4 shrink-0" /><span>Оплатить и пробить чек</span>
 						</button>
 						<button type="button" className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-2 font-semibold text-xs cursor-pointer transition-colors active:scale-[0.98]" onClick={() => { onAllocateAll("card"); onOpenPaymentWithMethod("card_terminal"); }}>
 							<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" /><span>Всё картой</span>
@@ -51,7 +51,7 @@ export function CashboxTendersGrid({
 					</>
 				) : (
 					<button type="button" className="secondary-button col-span-2 sm:col-span-4 min-h-[44px] sm:min-h-[36px] sm:h-10 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] inline-flex items-center justify-center gap-2 font-semibold text-xs cursor-pointer transition-colors active:scale-[0.98]" onClick={() => onOpenPaymentWithMethod("card_terminal")} data-testid="btn-open-fast-checkout-modal">
-						<Receipt className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" /><span>Кассовый чек</span>
+						<Receipt className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" /><span>Оплатить и пробить чек 0 ₽</span>
 					</button>
 				)}
 
@@ -62,9 +62,9 @@ export function CashboxTendersGrid({
 			</div>
 
 			<div className="sm:hidden fixed bottom-0 left-0 right-0 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] z-40 pb-[calc(0.75rem+env(safe-area-inset-bottom))] shadow-lg">
-				<button type="button" className="w-full min-h-[48px] h-12 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold text-sm inline-flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all" onClick={() => { if (checkoutResult.isZeroDue) { onProcessZeroDiscountCheckout(); } else { onOpenPaymentWithMethod("card_terminal"); } }} data-testid="mobile-primary-checkout-cta">
+				<button type="button" className="w-full min-h-[52px] h-[52px] rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold text-sm inline-flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary" onClick={() => { if (checkoutResult.isZeroDue) { onProcessZeroDiscountCheckout(); } else { onOpenPaymentWithMethod("card_terminal"); } }} data-testid="mobile-primary-checkout-cta">
 					<Receipt className="w-5 h-5 shrink-0" />
-					<span>{checkoutResult.isZeroDue ? "Оформить чек 0 ₽" : "Принять оплату"}</span>
+					<span>{checkoutResult.isZeroDue ? "Оформить чек 0 ₽" : "Оплатить и пробить чек"}</span>
 				</button>
 			</div>
 		</div>

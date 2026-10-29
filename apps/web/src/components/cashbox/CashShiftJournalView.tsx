@@ -278,13 +278,13 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 											Нал: {shift.incomeCashRub.toLocaleString("ru-RU")}
 										</span>
 										<span>•</span>
-										<span title="Карта" className="text-sky-600 font-semibold">
+										<span title="Карта" className="text-sky-600 dark:text-sky-400 font-semibold">
 											Безнал: {shift.incomeElectronicRub.toLocaleString("ru-RU")}
 										</span>
 										{shift.incomeSbpRub > 0 && (
 											<>
 												<span>•</span>
-												<span title="СБП" className="text-amber-600 font-semibold">
+												<span title="СБП" className="text-amber-600 dark:text-amber-400 font-semibold">
 													СБП: {shift.incomeSbpRub.toLocaleString("ru-RU")}
 												</span>
 											</>
@@ -349,7 +349,7 @@ export const CashShiftJournalView: React.FC<CashShiftJournalViewProps> = ({
 							<div>Нал: <b>{shift.incomeCashRub.toLocaleString("ru-RU")} ₽</b></div>
 							<div>Безнал: <b>{shift.incomeElectronicRub.toLocaleString("ru-RU")} ₽</b></div>
 							<div>СБП: <b>{shift.incomeSbpRub.toLocaleString("ru-RU")} ₽</b></div>
-							<div className="text-emerald-600 font-semibold">ОФД: Доставлен ✓</div>
+							<div className="text-emerald-600 dark:text-emerald-400 font-semibold">ОФД: Доставлен ✓</div>
 						</div>
 
 						<button

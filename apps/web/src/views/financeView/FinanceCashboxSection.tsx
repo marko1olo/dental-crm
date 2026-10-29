@@ -1,7 +1,7 @@
 import type React from "react";
 import { useState } from "react";
 import { PaymentCapture } from "../../PaymentCapture";
-import { FastCheckoutModal } from "../../components/finance/FastCheckoutModal";
+import { CashRegisterCheckoutModal } from "../../components/billing/CashRegisterCheckoutModal";
 import { LoyaltyProgramModal } from "../../components/loyalty/program/LoyaltyProgramModal";
 import { showToast } from "../../components/GlobalToast";
 import { CashboxQuickCard } from "./CashboxQuickCard";
@@ -66,13 +66,12 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 			)}
 
 			{isPaymentModalOpen && patient && (
-				<FastCheckoutModal
+				<CashRegisterCheckoutModal
 					isOpen={isPaymentModalOpen}
+					totalDueRub={summaryAmount}
 					amountRub={summaryAmount}
-					totalBillRub={summaryAmount}
 					amountKopecks={Math.round(summaryAmount * 100)}
-					totalBillKop={Math.round(summaryAmount * 100)}
-					defaultMethod="card_terminal"
+					defaultMethod="card"
 					patientId={patient.id || "pat-1"}
 					patientName={patientName ?? "Иванов Иван Иванович"}
 					patientPhone={patient.phone || undefined}
@@ -82,6 +81,7 @@ export function FinanceCashboxSection({ s }: FinanceCashboxSectionProps): React.
 					clinicLegalName={s.dashboard?.clinicSettings?.name || undefined}
 					onClose={() => setIsPaymentModalOpen(false)}
 					onSuccess={() => { setIsPaymentModalOpen(false); void s.loadDashboard?.(); }}
+					onPaymentComplete={() => { setIsPaymentModalOpen(false); void s.loadDashboard?.(); }}
 				/>
 			)}
 

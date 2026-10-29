@@ -50,6 +50,8 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 	totalBillRub: propBillRub,
 	totalBillKop: propBillKop,
 	amountKopecks: propKop,
+	initialAmountKopecks: propInitialKop,
+	invoiceDraftItems: _invoiceDraftItems,
 	patientId = "pat-walkin",
 	patientName = "Пациент",
 	patientPhone = "",
@@ -87,8 +89,9 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 		if (typeof propBillRub === "number") return Math.max(0, propBillRub);
 		if (typeof propBillKop === "number") return Math.max(0, kopecksToRub(propBillKop));
 		if (typeof propKop === "number") return Math.max(0, kopecksToRub(propKop));
+		if (typeof propInitialKop === "number") return Math.max(0, kopecksToRub(propInitialKop));
 		return 0;
-	}, [propTotalDue, propAmount, propBillRub, propBillKop, propKop]);
+	}, [propTotalDue, propAmount, propBillRub, propBillKop, propKop, propInitialKop]);
 
 	const [isWarranty, setIsWarranty] = useState<boolean>(initialWarranty100);
 	const [discountPercent, setDiscountPercent] = useState<number>(initialDiscountPercent);
@@ -195,15 +198,18 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 			setCashReceivedRub(totalDue);
 		} else if (m === "split") {
 			const half = Math.floor(totalDue / 2);
+			const rest = kopecksToRub(rubToKopecks(totalDue) - rubToKopecks(half));
 			setSplitCardRub(half);
-			setSplitCashRub(Number((totalDue - half).toFixed(2)));
+			setSplitCashRub(rest);
 			setSplitSbpRub(0);
 			setSplitDepositRub(0);
-			setCashReceivedRub(Number((totalDue - half).toFixed(2)));
+			setCashReceivedRub(rest);
 		} else if (m === "deposit") {
 			if (effectiveDepositLimit < totalDue) {
-				setSplitDepositRub(effectiveDepositLimit);
-				setSplitCardRub(Number((totalDue - effectiveDepositLimit).toFixed(2)));
+				const dep = effectiveDepositLimit;
+				const rest = kopecksToRub(rubToKopecks(totalDue) - rubToKopecks(dep));
+				setSplitDepositRub(dep);
+				setSplitCardRub(rest);
 				setSplitCashRub(0);
 				setSplitSbpRub(0);
 				setMethod("split");
@@ -214,20 +220,22 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 	const handleApplySplitPreset = (preset: "50-50" | "deposit-card" | "deposit-cash") => {
 		if (preset === "50-50") {
 			const half = Math.floor(totalDue / 2);
+			const rest = kopecksToRub(rubToKopecks(totalDue) - rubToKopecks(half));
 			setSplitCardRub(half);
-			setSplitCashRub(Number((totalDue - half).toFixed(2)));
+			setSplitCashRub(rest);
 			setSplitSbpRub(0);
 			setSplitDepositRub(0);
-			setCashReceivedRub(Number((totalDue - half).toFixed(2)));
+			setCashReceivedRub(rest);
 		} else if (preset === "deposit-card") {
 			const dep = Math.min(effectiveDepositLimit, totalDue);
+			const rest = kopecksToRub(rubToKopecks(totalDue) - rubToKopecks(dep));
 			setSplitDepositRub(dep);
-			setSplitCardRub(Number((totalDue - dep).toFixed(2)));
+			setSplitCardRub(rest);
 			setSplitCashRub(0);
 			setSplitSbpRub(0);
 		} else if (preset === "deposit-cash") {
 			const dep = Math.min(effectiveDepositLimit, totalDue);
-			const cash = Number((totalDue - dep).toFixed(2));
+			const cash = kopecksToRub(rubToKopecks(totalDue) - rubToKopecks(dep));
 			setSplitDepositRub(dep);
 			setSplitCashRub(cash);
 			setSplitCardRub(0);
