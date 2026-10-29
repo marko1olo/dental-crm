@@ -4,7 +4,7 @@ export const ALEXEY_THREE_TIER_PLAN: PatientThreeTierTreatmentPlan = {
 	selectedTier: "standard",
 	tiers: [
 		{
-			tierId: "economy",
+			tierId: "basic",
 			tierNameRu: "Базовый (Эконом)",
 			subtitleRu: "Восстановление жевательной функции металлокерамикой",
 			totalCostRub: 195000,
@@ -31,7 +31,7 @@ export const ALEXEY_THREE_TIER_PLAN: PatientThreeTierTreatmentPlan = {
 				{ id: "st-s2", orderIndex: 2, titleRu: "Навигационная имплантация Osstem TS III", categoryRu: "Хирургия", teethFdi: ["1.6", "2.6"], costRub: 110000, status: "completed", procedures: ["Имплантация #1.6", "Имплантация #2.6"] },
 				{ id: "st-s3", orderIndex: 3, titleRu: "Эндодонтия под микроскопом", categoryRu: "Терапия", teethFdi: ["3.6"], costRub: 28000, status: "completed", procedures: ["Лечение каналов под микроскопом"] },
 				{ id: "st-s4", orderIndex: 4, titleRu: "Виниры E.max и коронка #1.6", categoryRu: "Ортопедия", teethFdi: ["1.1-2.2", "1.6"], costRub: 89000, status: "completed", procedures: ["4 винира E.max", "Коронка цирконий #1.6"] },
-				{ id: "st-s5", orderIndex: 5, titleRu: "Коронка #2.6 и коронка #4.6", categoryRu: "Ортопедия", teethFdi: ["2.6", "4.6"], costRub: 97000, status: "in_progress", procedures: ["Коронка на имплант #2.6", "Коронка на зуб #4.6"] },
+				{ id: "st-s5", orderIndex: 5, titleRu: "Постоянное циркониевое протезирование импланта #2.6", categoryRu: "Ортопедия", teethFdi: ["2.6"], costRub: 35000, status: "in_progress", procedures: ["Индивидуальный титановый абатмент", "Циркониевая коронка Katana ML"] },
 			],
 		},
 		{

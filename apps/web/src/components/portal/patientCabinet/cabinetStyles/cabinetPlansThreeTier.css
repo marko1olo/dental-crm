@@ -21,7 +21,7 @@
 	justify-content: space-between;
 	gap: 10px;
 	padding: 8px 16px;
-	min-height: 40px;
+	min-height: 44px;
 	border-radius: var(--pc-radius-sm);
 	background: var(--pc-bg);
 	color: var(--pc-text-main);

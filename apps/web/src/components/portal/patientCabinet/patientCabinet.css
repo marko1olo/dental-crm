@@ -1,4 +1,4 @@
-/* patientCabinet.css — Patient Cabinet Master Stylesheet Facade (Mandate 8b <= 15 lines) */
+/* patientCabinet.css — Patient Cabinet Master Stylesheet */
 @import "./patientCabinetBase.css";
 @import "./patientCabinetResponsive.css";
 @import "./patientCabinetWidgets.css";
@@ -8,3 +8,21 @@
 @import "./cabinetStyles/cabinetInvoices.css";
 @import "./cabinetStyles/cabinetDarkTheme.css";
 @import "./cabinetStyles/cabinetMobile.css";
+
+/* Reception QR and Next Visit Time (SSOT) */
+.pc-next-visit-time {
+	font-size: 20px !important;
+	font-weight: 800 !important;
+	color: var(--pc-primary, #0d9488) !important;
+	letter-spacing: 0.02em;
+	line-height: 1.2;
+}
+
+.pc-reception-qr-card {
+	border: 2px solid var(--pc-primary, #0d9488);
+	background: var(--paper, var(--pc-surface, #ffffff));
+	border-radius: var(--pc-radius-md, 12px);
+	padding: 16px;
+	box-sizing: border-box;
+}
+

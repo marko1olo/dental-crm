@@ -137,8 +137,12 @@
 	.pc-year-btn,
 	.pc-filter-chip,
 	.pc-view-mode-btn,
-	.pc-stage-chevron-btn {
-		min-width: 44px;
+	.pc-stage-chevron-btn,
+	.pc-tier-tab-btn,
+	.pc-btn-primary,
+	.pc-btn-secondary,
+	.pc-btn-outline,
+	.pc-tax-download-btn {
 		min-height: 44px;
 		touch-action: manipulation;
 	}
@@ -199,8 +203,12 @@
 	.pc-year-btn,
 	.pc-filter-chip,
 	.pc-view-mode-btn,
-	.pc-stage-chevron-btn {
-		min-width: 44px;
+	.pc-stage-chevron-btn,
+	.pc-tier-tab-btn,
+	.pc-btn-primary,
+	.pc-btn-secondary,
+	.pc-btn-outline,
+	.pc-tax-download-btn {
 		min-height: 44px;
 		touch-action: manipulation;
 	}

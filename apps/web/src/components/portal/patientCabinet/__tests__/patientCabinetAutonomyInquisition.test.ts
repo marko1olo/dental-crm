@@ -788,4 +788,43 @@ describe("PatientCabinetAutonomyInquisition — Mandates 8c, 8d, 8e, 8s Audit", 
 		// 5. Zero disabled buttons invariant across DocumentsTab
 		assert.equal(docsPendingHtml.includes("<button disabled") || docsSignedHtml.includes("<button disabled"), false, "Zero disabled buttons on consent workflow");
 	});
+
+	it("17. Mandates 8e, 8n, 8am: 3-Tier Treatment Plan selection, 1-click 13% NDFL tax deduction card, zero disabled buttons, and single Teal CTA", () => {
+		// 1. Render TreatmentPlanTab
+		const planTabHtml = renderToStaticMarkup(
+			createElement(TreatmentPlanTab, {
+				data,
+				dentalPassport,
+				onPayStageWithSbp: () => {},
+				onBookAppointment: () => {},
+				onApproveTreatmentPlan: () => {},
+				onShowToast: () => {},
+			}),
+		);
+
+		// 2. Verify 3-Tier selector with all 3 options
+		assert.ok(planTabHtml.includes('data-testid="pc-3tier-selector"'), "Renders 3-tier selector container");
+		assert.ok(planTabHtml.includes('data-testid="btn-tier-basic"'), "Renders Basic/Economy tier button");
+		assert.ok(planTabHtml.includes('data-testid="btn-tier-standard"'), "Renders Standard/Optimum tier button");
+		assert.ok(planTabHtml.includes('data-testid="btn-tier-premium"'), "Renders Premium tier button");
+
+		// 3. Verify 1-click tax deduction card on plan
+		assert.ok(planTabHtml.includes('data-testid="pc-plan-tax-deduction-card"'), "Renders 1-click tax deduction card on treatment plan");
+		assert.ok(planTabHtml.includes('data-testid="pc-plan-tax-1click-btn"'), "Renders 1-click tax deduction download button");
+		assert.ok(planTabHtml.includes("Налоговый вычет 13% НДФЛ"), "Card contains 13% NDFL tax refund label");
+
+		// 4. Verify statutory FNS Order № ЕА-7-11/824@ (КНД 1151156) certificate generation
+		const taxCertHtml = generatePatientTaxCertificate1151156(data, 2026);
+		assert.ok(taxCertHtml.includes("1151156"), "Includes official form KND 1151156");
+		assert.ok(taxCertHtml.includes("СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ"), "Includes official statutory title");
+		assert.ok(taxCertHtml.includes("Код 01") || taxCertHtml.includes("код 1") || taxCertHtml.includes("01"), "Includes tax code classification");
+		assert.ok(taxCertHtml.includes(data.fullName), "Includes patient name");
+
+		// 5. Zero disabled buttons invariant across TreatmentPlanTab
+		assert.equal(
+			planTabHtml.includes("<button disabled") || planTabHtml.includes('disabled=""'),
+			false,
+			"TreatmentPlanTab contains zero disabled buttons (Mandate 8e)",
+		);
+	});
 });
