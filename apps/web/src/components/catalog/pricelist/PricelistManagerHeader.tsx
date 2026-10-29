@@ -1,4 +1,4 @@
-import { Layers, ShieldCheck } from "lucide-react";
+import { Layers, X } from "lucide-react";
 import type React from "react";
 import { PricelistManagerHeaderActions } from "./PricelistManagerHeaderActions";
 
@@ -16,7 +16,7 @@ export interface PricelistManagerHeaderProps {
 export const PricelistManagerHeader: React.FC<PricelistManagerHeaderProps> = (
 	props,
 ) => {
-	const { totalCount, ...actions } = props;
+	const { totalCount, onClose, ...actions } = props;
 
 	return (
 		<header className="pricelist-modal-header">
@@ -32,13 +32,17 @@ export const PricelistManagerHeader: React.FC<PricelistManagerHeaderProps> = (
 						{totalCount} позиций · Каталог процедур клиники · НДС 0%
 					</div>
 				</div>
-				<div className="pricelist-statutory-badge">
-					<ShieldCheck size={14} />
-					<span>Каталог</span>
-				</div>
+				<button
+					type="button"
+					className="pricelist-btn pricelist-btn-icon pricelist-close-btn-mobile"
+					onClick={onClose}
+					aria-label="Закрыть"
+				>
+					<X size={18} />
+				</button>
 			</div>
 
-			<PricelistManagerHeaderActions {...actions} />
+			<PricelistManagerHeaderActions {...actions} onClose={onClose} />
 		</header>
 	);
 };

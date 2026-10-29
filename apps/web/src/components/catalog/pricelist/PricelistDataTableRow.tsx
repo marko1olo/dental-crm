@@ -39,12 +39,7 @@ export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (
 
 	return (
 		<tr
-			style={{
-				background: isSelected ? "rgba(59, 130, 246, 0.05)" : undefined,
-				contain: "content",
-				contentVisibility: "auto",
-				containIntrinsicSize: "1px 64px",
-			}}
+			className={isSelected ? "pricelist-row-selected" : undefined}
 		>
 			<td style={{ textAlign: "center" }}>
 				<input
