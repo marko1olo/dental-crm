@@ -59,8 +59,6 @@ const MOCK_DASHBOARD = {
   ],
   serviceCatalog: [
     { id: 's1', code: 'A16.07.002.010', name: 'Препарирование кариозной полости', priceRub: 2500, category: 'therapy' },
-    { id: 's2', code: 'A16.07.002.011', name: 'Пломбирование светоотверждаемым композитом', priceRub: 4500, category: 'therapy' },
-    { id: 's3', code: 'A16.07.082', name: 'Изоляция операционного поля коффердамом', priceRub: 1500, category: 'therapy' },
   ],
   inventoryItems: [],
   shifts: [],
@@ -69,20 +67,6 @@ const MOCK_DASHBOARD = {
   imagingStudies: [],
   todayStats: { revenue: 85000, appointments: 8, newPatients: 3 },
   notifications: [],
-};
-
-const MOCK_CLINIC_PROFILE = {
-  id: 'org-1',
-  name: 'Стоматология ДЕНТЕ',
-  address: 'г. Москва, ул. Клиническая, 10',
-  phone: '+7 (495) 123-45-67',
-  mode: 'clinic',
-  features: {
-    hasInventoryModule: true,
-    hasAnalyticsModule: true,
-    hasMarketingModule: true,
-    hasPayrollModule: true,
-  },
 };
 
 async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width: number; height: number }) {
@@ -101,14 +85,6 @@ async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width:
       localStorage.setItem('dente_theme', t);
       localStorage.setItem('dente_theme_mode', t);
       localStorage.setItem('dente_offline_readiness_banner_dismissed_v1', 'true');
-      document.documentElement.setAttribute('data-theme', t);
-      if (t === 'dark') {
-        document.documentElement.classList.add('dark');
-        document.documentElement.classList.remove('light');
-      } else {
-        document.documentElement.classList.remove('dark');
-        document.documentElement.classList.add('light');
-      }
     },
     {
       clinicKey: DENTE_CLINIC_TOKEN_KEY,
@@ -119,51 +95,95 @@ async function setupPage(page: Page, theme: 'light' | 'dark', viewport: { width:
     },
   );
 
-  await page.route('**/api/system/**', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({ healthy: true, ready: true, issues: [], plans: [] }),
+  await page.route('**/*', async (route) => {
+    let url: URL;
+    try {
+      url = new URL(route.request().url());
+    } catch {
+      return route.continue();
+    }
+
+    if (url.pathname.startsWith('/api/')) {
+      if (url.pathname.startsWith('/api/auth/user/me')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ user: MOCK_USER, ...MOCK_USER }),
+        });
+      }
+      if (url.pathname.startsWith('/api/dashboard')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify(MOCK_DASHBOARD),
+        });
+      }
+      if (url.pathname.startsWith('/api/system/')) {
+        return route.fulfill({
+          status: 200,
+          contentType: 'application/json',
+          body: JSON.stringify({ healthy: true, ready: true, issues: [], plans: [] }),
+        });
+      }
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify([]),
+      });
+    }
+
+    return route.continue();
+  });
+}
+
+async function prepareCopilotState(page: Page, theme: 'light' | 'dark') {
+  await page.waitForFunction(() => typeof (window as any).__denteCopilot !== 'undefined', { timeout: 25000 });
+
+  await page.evaluate((currentTheme) => {
+    document.documentElement.setAttribute('data-theme', currentTheme);
+    if (currentTheme === 'dark') {
+      document.documentElement.classList.add('dark');
+      document.documentElement.classList.remove('light');
+    } else {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+    }
+
+    const copilot = (window as any).__denteCopilot;
+    copilot.open();
+    copilot.setMessages([
+      {
+        id: 'msg-1',
+        kind: 'text',
+        role: 'user',
+        text: 'Осмотр: зуб 36 глубокий кариес дентина, боли от холодного. Составь протокол SOAP и смету лечения.',
+      },
+      {
+        id: 'msg-2',
+        kind: 'text',
+        role: 'assistant',
+        text: `### Протокол SOAP (Зуб 36 — Кариес дентина)
+- **S (Жалобы)**: Кратковременные боли от термических раздражителей (холодное), быстро проходящие после устранения.
+- **O (Объективно)**: На окклюзионной поверхности зуба 36 глубокая кариозная полость дентина, зондирование слабо болезненно. ЭОД 8 мкА.
+- **A (Диагноз)**: K02.1 Кариес дентина (Зуб 36).
+- **P (План)**: Анестезия Артикаин 1:200000 1.7 мл, препарирование, изолирующая прокладка SDR, пломба светового отверждения.
+
+Подготовил предварительную смету для согласования:`,
+      },
+    ]);
+    copilot.setPending({
+      callId: 'call-est-1',
+      name: 'apply_treatment_estimate',
+      toolName: 'apply_treatment_estimate',
+      args: {
+        title: 'Смета лечения кариеса зуба 36',
+        servicesCount: 3,
+        amountKopecks: 765000,
+        discountPercent: 10,
+        doctorAutonomyGuaranteed: true,
+      },
     });
-  });
-  await page.route('**/api/**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify([]) });
-  });
-  await page.route('**/api/auth/user/me**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ user: MOCK_USER, ...MOCK_USER }) });
-  });
-  await page.route('**/api/dashboard**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_DASHBOARD) });
-  });
-  await page.route('**/api/settings/preferences**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify({ theme, language: 'ru' }) });
-  });
-  await page.route('**/api/settings/clinic/profile**', async (route) => {
-    await route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(MOCK_CLINIC_PROFILE) });
-  });
-  await page.route('**/api/v1/copilot/agent/execute', async (route) => {
-    await route.fulfill({
-      status: 200,
-      contentType: 'application/json',
-      body: JSON.stringify({
-        ok: true,
-        data: {
-          thought: 'Пациент с глубоким кариесом 36. План лечения сформирован.',
-          verdict: 'ВЕРДИКТ ГЛАВНОГО ВРАЧА DENTE: Зуб 36, K02.1 Кариес дентина. Физиологическая норма.',
-          actions: [
-            {
-              id: 'act-1',
-              type: 'apply_treatment_estimate',
-              title: 'Смета услуг: 8 500 ₽ (скидка 10%)',
-              description: 'Услуг: 3. Итого: 7 650 ₽. Применение без административных паролей.',
-              readyForOneClickApply: true,
-              doctorAutonomyGuaranteed: true,
-            },
-          ],
-        },
-      }),
-    });
-  });
+  }, theme);
 }
 
 test.describe('DENTE Copilot 4-State Visual Proof Gate (PC & Mobile, Light & Dark)', () => {
@@ -179,43 +199,43 @@ test.describe('DENTE Copilot 4-State Visual Proof Gate (PC & Mobile, Light & Dar
 
   // 1. PC Light (1440x900)
   test('01. PC Light Viewport (1440x900) — Copilot Drawer with Two-Phase Guard', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:5173/copilot-preview.html?theme=light&view=drawer&voice=true', { waitUntil: 'load' });
-    await page.waitForLoadState('domcontentloaded');
+    await setupPage(page, 'light', { width: 1440, height: 900 });
+    await page.goto('/?copilot=open', { waitUntil: 'domcontentloaded' });
+    await prepareCopilotState(page, 'light');
 
     await expect(page.locator('.copilot-drawer')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.copilot-action-confirm-card')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.copilot-dictation-banner')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.copilot-composer-input')).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(600);
 
     const screenshotPath = path.join(PROOFS_DIR, '01_copilot_drawer_pc_light_1440x900.png');
     await page.screenshot({ path: screenshotPath });
     const stat = fs.statSync(screenshotPath);
-    expect(stat.size).toBeGreaterThan(25000);
+    expect(stat.size).toBeGreaterThan(40000);
   });
 
   // 2. PC Dark (1440x900)
   test('02. PC Dark Viewport (1440x900) — Copilot Drawer in Dark Mode', async ({ page }) => {
-    await page.setViewportSize({ width: 1440, height: 900 });
-    await page.goto('http://127.0.0.1:5173/copilot-preview.html?theme=dark&view=drawer&voice=true', { waitUntil: 'load' });
-    await page.waitForLoadState('domcontentloaded');
+    await setupPage(page, 'dark', { width: 1440, height: 900 });
+    await page.goto('/?copilot=open', { waitUntil: 'domcontentloaded' });
+    await prepareCopilotState(page, 'dark');
 
     await expect(page.locator('.copilot-drawer')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.copilot-action-confirm-card')).toBeVisible({ timeout: 10000 });
-    await expect(page.locator('.copilot-dictation-banner')).toBeVisible({ timeout: 10000 });
+    await expect(page.locator('.copilot-composer-input')).toBeVisible({ timeout: 10000 });
     await page.waitForTimeout(600);
 
     const screenshotPath = path.join(PROOFS_DIR, '02_copilot_drawer_pc_dark_1440x900.png');
     await page.screenshot({ path: screenshotPath });
     const stat = fs.statSync(screenshotPath);
-    expect(stat.size).toBeGreaterThan(25000);
+    expect(stat.size).toBeGreaterThan(40000);
   });
 
   // 3. Mobile Light (390x844)
   test('03. Mobile Light Viewport (390x844) — Native Bottom Sheet Drawer', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('http://127.0.0.1:5173/copilot-preview.html?theme=light&view=drawer&voice=true', { waitUntil: 'load' });
-    await page.waitForLoadState('domcontentloaded');
+    await setupPage(page, 'light', { width: 390, height: 844 });
+    await page.goto('/?copilot=open', { waitUntil: 'domcontentloaded' });
+    await prepareCopilotState(page, 'light');
 
     await expect(page.locator('.copilot-drawer')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.copilot-action-confirm-card')).toBeVisible({ timeout: 10000 });
@@ -225,14 +245,14 @@ test.describe('DENTE Copilot 4-State Visual Proof Gate (PC & Mobile, Light & Dar
     const screenshotPath = path.join(PROOFS_DIR, '03_copilot_drawer_mobile_light_390x844.png');
     await page.screenshot({ path: screenshotPath });
     const stat = fs.statSync(screenshotPath);
-    expect(stat.size).toBeGreaterThan(25000);
+    expect(stat.size).toBeGreaterThan(40000);
   });
 
   // 4. Mobile Dark (390x844)
   test('04. Mobile Dark Viewport (390x844) — Native Bottom Sheet Drawer Dark Mode', async ({ page }) => {
-    await page.setViewportSize({ width: 390, height: 844 });
-    await page.goto('http://127.0.0.1:5173/copilot-preview.html?theme=dark&view=drawer&voice=true', { waitUntil: 'load' });
-    await page.waitForLoadState('domcontentloaded');
+    await setupPage(page, 'dark', { width: 390, height: 844 });
+    await page.goto('/?copilot=open', { waitUntil: 'domcontentloaded' });
+    await prepareCopilotState(page, 'dark');
 
     await expect(page.locator('.copilot-drawer')).toBeVisible({ timeout: 10000 });
     await expect(page.locator('.copilot-action-confirm-card')).toBeVisible({ timeout: 10000 });
@@ -242,6 +262,6 @@ test.describe('DENTE Copilot 4-State Visual Proof Gate (PC & Mobile, Light & Dar
     const screenshotPath = path.join(PROOFS_DIR, '04_copilot_drawer_mobile_dark_390x844.png');
     await page.screenshot({ path: screenshotPath });
     const stat = fs.statSync(screenshotPath);
-    expect(stat.size).toBeGreaterThan(25000);
+    expect(stat.size).toBeGreaterThan(40000);
   });
 });

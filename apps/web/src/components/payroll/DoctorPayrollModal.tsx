@@ -21,7 +21,6 @@ import {
 } from "./payrollModules";
 import { useDocumentBrandingStore } from "../../store/documentBrandingStore";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
-import "./doctorPayroll.css";
 
 export { DEFAULT_SOLO_DOCTOR, SOLO_DOCTOR_SPECIALTY_PRESETS, type SoloDoctorSpecialtyPreset, getDefaultPayrollPeriod };
 

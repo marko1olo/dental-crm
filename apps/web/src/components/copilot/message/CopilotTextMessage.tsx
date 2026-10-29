@@ -14,6 +14,8 @@ export const CopilotTextMessage: React.FC<CopilotTextMessageProps> = ({ message 
   const displayText = parsed?.context ? parsed.cleanText : message.text;
   const ctx = parsed?.context;
 
+  if (!displayText?.trim() && !message.streaming) return null;
+
   return (
     <div className={`copilot-msg-row ${isUser ? 'user' : 'assistant'}`}>
       {!isUser && (

@@ -11,9 +11,9 @@ import { AppLoadingState } from "../../../../AppBootState";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";
 import { lazyWithRetry } from "../../../../lib/lazyWithRetry";
 
-const DoctorPayrollModal = lazyWithRetry(() =>
-	import("../../../payroll/DoctorPayrollModal").then((module) => ({
-		default: module.DoctorPayrollModal,
+const DoctorPayrollHubModal = lazyWithRetry(() =>
+	import("../../../payroll/DoctorPayrollHubModal").then((module) => ({
+		default: module.DoctorPayrollHubModal,
 	})),
 );
 
@@ -57,7 +57,7 @@ function useRealDoctors(): PayrollDoctorOption[] {
 function PayrollLauncherHost() {
 	const doctors = useRealDoctors();
 	return (
-		<DoctorPayrollModal
+		<DoctorPayrollHubModal
 			isOpen={true}
 			onClose={() => {
 				const url = new URL(window.location.href);
