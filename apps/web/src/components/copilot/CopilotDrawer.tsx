@@ -11,6 +11,7 @@ import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
 import { CopilotConfirmParamsView } from "./drawer/CopilotConfirmParamsView";
 import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
 import { CopilotMarkdown } from "./CopilotMarkdown";
+import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./copilotTypes";
 import "./CopilotDrawer.css";
 
@@ -70,12 +71,55 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
   const [input, setInput] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [isDocked, setIsDocked] = useState(false);
-  const [localVoiceActive, setLocalVoiceActive] = useState(false);
-  const effectiveVoiceActive = isVoiceActiveProp !== undefined ? isVoiceActiveProp : localVoiceActive;
-  const toggleVoice = () => {
-    if (onToggleVoice) onToggleVoice();
-    else setLocalVoiceActive((prev) => !prev);
+  const baseTextRef = useRef<string>("");
+
+  const handleInputChange = (val: string) => {
+    setInput(val);
+    if (val.trim()) safeLocalStorageSetItem("dente_copilot_draft_text", val);
+    else safeLocalStorageRemoveItem("dente_copilot_draft_text");
   };
+
+  const dictation = useUnifiedDictation({
+    preferredMode: "gemini_live",
+    context: "chat",
+    specialty: "therapy",
+    patientId: uiContext.patientId ?? undefined,
+    onResult: (accumulated) => {
+      const base = baseTextRef.current.trim();
+      const spoken = accumulated.trim();
+      const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
+      handleInputChange(combined);
+    },
+    onInterim: (interim) => {
+      const base = baseTextRef.current.trim();
+      const spoken = `${dictation.fullTranscript || ""} ${interim || ""}`.trim();
+      const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
+      if (combined) {
+        setInput(combined);
+      }
+    },
+  });
+
+  const isVoiceRecording = dictation.isRecording || Boolean(isVoiceActiveProp);
+
+  const toggleVoice = async () => {
+    if (onToggleVoice) {
+      onToggleVoice();
+      return;
+    }
+    if (dictation.isRecording) {
+      const finalRes = await dictation.stopDictation();
+      const base = baseTextRef.current.trim();
+      const spoken = finalRes.trim();
+      const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
+      if (combined) handleInputChange(combined);
+    } else {
+      baseTextRef.current = input || "";
+      dictation.clearTranscript();
+      await dictation.startDictation("gemini_live");
+    }
+  };
+
   const [isMobile, setIsMobile] = useState(() => (
     typeof window !== "undefined" ? window.innerWidth <= 768 : false
   ));
@@ -102,13 +146,10 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     };
   }, [isOpen]);
 
-  const handleInputChange = (val: string) => {
-    setInput(val);
-    if (val.trim()) safeLocalStorageSetItem("dente_copilot_draft_text", val);
-    else safeLocalStorageRemoveItem("dente_copilot_draft_text");
-  };
-
   const handleReset = () => {
+    if (dictation.isRecording) {
+      void dictation.stopDictation();
+    }
     setInput("");
     safeLocalStorageRemoveItem("dente_copilot_draft_text");
     onReset();
@@ -121,6 +162,9 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+    if (dictation.isRecording) {
+      void dictation.stopDictation();
+    }
     if (!input.trim() || busy) return;
     handleSendPrompt(input);
     setInput("");
@@ -432,11 +476,11 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
         {/* Composer Toolbar */}
         <form className="copilot-composer" onSubmit={handleSubmit}>
-          {effectiveVoiceActive && (
+          {isVoiceRecording && (
             <CopilotDictationBanner
-              dictationMode="web_speech"
-              isSpeaking={true}
-              audioLevel={0.7}
+              dictationMode={dictation.mode || "web_speech"}
+              isSpeaking={dictation.isSpeaking}
+              audioLevel={dictation.audioLevel || (dictation.isSpeaking ? 0.7 : 0.2)}
               onStopVoice={toggleVoice}
             />
           )}
@@ -455,12 +499,12 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               <button
                 type="button"
                 onClick={toggleVoice}
-                className={`copilot-icon-btn copilot-mic-btn ${effectiveVoiceActive ? "active recording" : ""}`}
-                title={effectiveVoiceActive ? "Остановить надиктовку речи" : "Голосовая надиктовка ДЕНТА (Web Speech Live)"}
+                className={`copilot-icon-btn copilot-mic-btn ${isVoiceRecording ? "active recording" : ""}`}
+                title={isVoiceRecording ? "Остановить надиктовку речи" : "Голосовая надиктовка ДЕНТА (Web Speech Live)"}
                 aria-label="Голос"
                 data-testid="copilot-composer-mic"
               >
-                {effectiveVoiceActive ? <MicOff size={18} /> : <Mic size={18} />}
+                {isVoiceRecording ? <MicOff size={18} /> : <Mic size={18} />}
               </button>
 
               <button

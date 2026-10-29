@@ -357,4 +357,10 @@ export const chatRoutes: FastifyPluginAsync = async (
 		{ config: { tenantTxSelfManaged: true } },
 		handleUnifiedChat,
 	);
+
+	server.post(
+		"/api/copilot/chat",
+		{ config: { tenantTxSelfManaged: true } },
+		handleUnifiedChat,
+	);
 };

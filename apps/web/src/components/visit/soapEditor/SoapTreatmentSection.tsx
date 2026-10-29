@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { ChevronDown, ChevronUp, Zap } from "lucide-react";
 import type { VisitSoapNoteValues } from "./types";
 import { ChairsideEndoQuickBar } from "../../endo/ChairsideEndoQuickBar";
+import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 
 export interface SoapTreatmentSectionProps {
 	readonly values: VisitSoapNoteValues;
@@ -38,6 +39,11 @@ export const SoapTreatmentSection: React.FC<SoapTreatmentSectionProps> = ({
 						Протокол лечения
 					</label>
 					<div className="flex items-center gap-2">
+						<SmartMicrophoneButton
+							context="visit"
+							title="Голосовая диктовка протокола лечения"
+							onResult={(text) => onFieldChange("treatmentPlan", values.treatmentPlan ? `${values.treatmentPlan}\n${text}` : text)}
+						/>
 						<button
 							type="button"
 							onClick={() => setShowEndoBar((v) => !v)}
@@ -88,9 +94,16 @@ export const SoapTreatmentSection: React.FC<SoapTreatmentSectionProps> = ({
 			</div>
 
 			<div className="flex flex-col gap-1 md:col-span-2">
-				<label htmlFor="soap-recommendations" className="text-xs font-bold text-[var(--ink)]">
-					Рекомендации и назначения
-				</label>
+				<div className="flex items-center justify-between flex-wrap gap-1.5">
+					<label htmlFor="soap-recommendations" className="text-xs font-bold text-[var(--ink)]">
+						Рекомендации и назначения
+					</label>
+					<SmartMicrophoneButton
+						context="visit"
+						title="Голосовая диктовка рекомендаций"
+						onResult={(text) => onFieldChange("recommendations", values.recommendations ? `${values.recommendations} ${text}` : text)}
+					/>
+				</div>
 				<textarea
 					id="soap-recommendations"
 					rows={2}

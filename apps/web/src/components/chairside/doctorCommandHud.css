@@ -75,7 +75,7 @@
 	width: 100%;
 	height: 48px;
 	padding-left: 38px;
-	padding-right: 76px;
+	padding-right: 140px;
 	background: transparent;
 	border: none;
 	outline: none;
@@ -90,11 +90,19 @@
 	opacity: 0.85;
 }
 
-.doctor-command-hud-clear-btn {
+.doctor-command-hud-search-actions {
 	position: absolute;
-	right: 48px;
+	right: 12px;
 	top: 50%;
 	transform: translateY(-50%);
+	display: flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.doctor-command-hud-clear-btn {
+	position: static;
+	transform: none;
 	width: 24px;
 	height: 24px;
 	display: flex;
@@ -114,10 +122,8 @@
 }
 
 .doctor-command-hud-kbd-badge {
-	position: absolute;
-	right: 14px;
-	top: 50%;
-	transform: translateY(-50%);
+	position: static;
+	transform: none;
 	padding: 3px 7px;
 	font-size: 11px;
 	font-weight: 600;

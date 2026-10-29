@@ -1,6 +1,7 @@
 import React from "react";
 import { Check } from "lucide-react";
 import type { VisitSoapNoteValues } from "./types";
+import { SmartMicrophoneButton } from "../../SmartMicrophoneButton";
 
 export const NORM_COMPLAINT_TEXT =
 	"Жалоб на момент осмотра активно не предъявляет. Обратился(лась) для планового профилактического осмотра и санации полости рта.";
@@ -30,20 +31,27 @@ export const SoapAnamnesisSection: React.FC<SoapAnamnesisSectionProps> = ({
 					<label htmlFor="soap-complaints" className="text-xs font-bold text-[var(--ink)]">
 						Жалобы
 					</label>
-					<button
-						type="button"
-						onClick={() => onFieldChange("complaint", NORM_COMPLAINT_TEXT)}
-						data-testid="btn-soap-complaints-norm"
-						className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
-							values.complaint === NORM_COMPLAINT_TEXT
-								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-[var(--paper)] text-[var(--teal)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
-						}`}
-						title="Зафиксировать норму в 1 клик: жалоб нет"
-					>
-						<Check className="w-3 h-3 text-[var(--teal)]" />
-						<span>Жалоб нет</span>
-					</button>
+					<div className="flex items-center gap-1.5">
+						<SmartMicrophoneButton
+							context="visit"
+							title="Голосовая диктовка жалоб"
+							onResult={(text) => onFieldChange("complaint", values.complaint ? `${values.complaint} ${text}` : text)}
+						/>
+						<button
+							type="button"
+							onClick={() => onFieldChange("complaint", NORM_COMPLAINT_TEXT)}
+							data-testid="btn-soap-complaints-norm"
+							className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
+								values.complaint === NORM_COMPLAINT_TEXT
+									? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+									: "bg-[var(--paper)] text-[var(--teal)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
+							}`}
+							title="Зафиксировать норму в 1 клик: жалоб нет"
+						>
+							<Check className="w-3 h-3 text-[var(--teal)]" />
+							<span>Жалоб нет</span>
+						</button>
+					</div>
 				</div>
 				<textarea
 					id="soap-complaints"
@@ -63,20 +71,27 @@ export const SoapAnamnesisSection: React.FC<SoapAnamnesisSectionProps> = ({
 					<label htmlFor="soap-anamnesis" className="text-xs font-bold text-[var(--ink)]">
 						Анамнез и противопоказания
 					</label>
-					<button
-						type="button"
-						onClick={() => onFieldChange("anamnesis", NORM_ANAMNESIS_TEXT)}
-						data-testid="btn-soap-anamnesis-norm"
-						className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
-							values.anamnesis === NORM_ANAMNESIS_TEXT
-								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-[var(--paper)] text-[var(--teal)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
-						}`}
-						title="Зафиксировать норму в 1 клик: соматически здоров"
-					>
-						<Check className="w-3 h-3 text-[var(--teal)]" />
-						<span>Соматически здоров</span>
-					</button>
+					<div className="flex items-center gap-1.5">
+						<SmartMicrophoneButton
+							context="visit"
+							title="Голосовая диктовка анамнеза"
+							onResult={(text) => onFieldChange("anamnesis", values.anamnesis ? `${values.anamnesis} ${text}` : text)}
+						/>
+						<button
+							type="button"
+							onClick={() => onFieldChange("anamnesis", NORM_ANAMNESIS_TEXT)}
+							data-testid="btn-soap-anamnesis-norm"
+							className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
+								values.anamnesis === NORM_ANAMNESIS_TEXT
+									? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+									: "bg-[var(--paper)] text-[var(--teal)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
+							}`}
+							title="Зафиксировать норму в 1 клик: соматически здоров"
+						>
+							<Check className="w-3 h-3 text-[var(--teal)]" />
+							<span>Соматически здоров</span>
+						</button>
+					</div>
 				</div>
 				<textarea
 					id="soap-anamnesis"
@@ -96,20 +111,27 @@ export const SoapAnamnesisSection: React.FC<SoapAnamnesisSectionProps> = ({
 					<label htmlFor="soap-objective" className="text-xs font-bold text-[var(--ink)]">
 						Осмотр и зубная формула
 					</label>
-					<button
-						type="button"
-						onClick={() => onFieldChange("objectiveStatus", NORM_OBJECTIVE_TEXT)}
-						data-testid="btn-soap-objective-norm"
-						className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
-							values.objectiveStatus === NORM_OBJECTIVE_TEXT
-								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
-								: "bg-[var(--paper)] text-[var(--teal)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
-						}`}
-						title="Зафиксировать норму в 1 клик: слизистая бледно-розовая, в норме"
-					>
-						<Check className="w-3 h-3 text-[var(--teal)]" />
-						<span>Слизистая в норме</span>
-					</button>
+					<div className="flex items-center gap-1.5">
+						<SmartMicrophoneButton
+							context="visit"
+							title="Голосовая диктовка осмотра"
+							onResult={(text) => onFieldChange("objectiveStatus", values.objectiveStatus ? `${values.objectiveStatus} ${text}` : text)}
+						/>
+						<button
+							type="button"
+							onClick={() => onFieldChange("objectiveStatus", NORM_OBJECTIVE_TEXT)}
+							data-testid="btn-soap-objective-norm"
+							className={`inline-flex items-center gap-1 px-2 py-0.5 text-[11px] font-semibold rounded-md border transition-colors cursor-pointer ${
+								values.objectiveStatus === NORM_OBJECTIVE_TEXT
+									? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30"
+									: "bg-[var(--paper)] text-[var(--teal)] border-[var(--line)] hover:border-[var(--teal)] hover:bg-[var(--paper-soft)]"
+							}`}
+							title="Зафиксировать норму в 1 клик: слизистая бледно-розовая, в норме"
+						>
+							<Check className="w-3 h-3 text-[var(--teal)]" />
+							<span>Слизистая в норме</span>
+						</button>
+					</div>
 				</div>
 				<textarea
 					id="soap-objective"

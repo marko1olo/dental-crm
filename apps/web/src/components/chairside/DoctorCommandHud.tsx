@@ -31,6 +31,7 @@ import {
 	type CommandHudItem,
 	useDoctorCommandHud,
 } from "./useDoctorCommandHud";
+import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
 import "./doctorCommandHud.css";
 
 export interface DoctorCommandHudProps {
@@ -172,20 +173,31 @@ export function DoctorCommandHud(props: DoctorCommandHudProps) {
 						spellCheck={false}
 						autoComplete="off"
 					/>
-					{query.trim().length > 0 ? (
-						<button
-							type="button"
-							className="doctor-command-hud-clear-btn"
-							onClick={() => setQuery("")}
-							title="Очистить строку"
-							aria-label="Очистить строку"
-						>
-							<X size={14} />
-						</button>
-					) : null}
-					<kbd className="doctor-command-hud-kbd-badge" title="Закрыть">
-						Esc
-					</kbd>
+					<div className="doctor-command-hud-search-actions">
+						{query.trim().length > 0 ? (
+							<button
+								type="button"
+								className="doctor-command-hud-clear-btn"
+								onClick={() => setQuery("")}
+								title="Очистить строку"
+								aria-label="Очистить строку"
+							>
+								<X size={14} />
+							</button>
+						) : null}
+						<SmartMicrophoneButton
+							context="general"
+							title="Голосовой поиск и команды (Ctrl+K)"
+							className="doctor-command-hud-mic-btn"
+							onResult={(text) => {
+								const clean = text.replace(/^(найди|найти|пациент|пациента|открой|открыть|поиск)\s+/i, "").trim();
+								setQuery(clean || text);
+							}}
+						/>
+						<kbd className="doctor-command-hud-kbd-badge" title="Закрыть">
+							Esc
+						</kbd>
+					</div>
 				</div>
 
 				{/* Список подсказок и команд */}

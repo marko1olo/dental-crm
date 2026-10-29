@@ -128,4 +128,61 @@ export const actionRoutes: FastifyPluginAsync = async (
 			});
 		},
 	);
+
+	// POST /api/copilot/action — Canonical Fastify endpoint for copilot actions & confirmations
+	server.post<{
+		Body: {
+			sessionId?: string;
+			callId?: string;
+			decision?: "confirm" | "reject";
+			reason?: string;
+			modifiedArgs?: Record<string, unknown>;
+		};
+	}>(
+		"/api/copilot/action",
+		{ config: { tenantTxSelfManaged: true } },
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot action confirmation",
+			);
+			if (!resolvedOrgId) return;
+
+			const body = (request.body ?? {}) as {
+				sessionId?: string;
+				callId?: string;
+				decision?: "confirm" | "reject";
+				reason?: string;
+				modifiedArgs?: Record<string, unknown>;
+				confirmed?: boolean;
+			};
+			const callId = body.callId;
+			if (!callId) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный формат: укажите callId",
+				});
+			}
+
+			const identity = getRequestIdentity(request);
+			const userId =
+				identity.userId ?? "00000000-0000-7000-8000-000000000001";
+			const sessionId = body.sessionId ?? "default-session";
+			const decision = body.decision ?? (body.confirmed !== false ? "confirm" : "reject");
+
+			await handleActionConfirmation({
+				reply,
+				resolvedOrgId,
+				userId,
+				role: identity.role ?? "doctor",
+				sessionId,
+				callId,
+				decision,
+				reason: body.reason,
+				modifiedArgs: body.modifiedArgs,
+				wantsJson: true,
+			});
+		},
+	);
 };

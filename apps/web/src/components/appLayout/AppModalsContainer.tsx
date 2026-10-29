@@ -12,7 +12,6 @@ import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/Admin
 import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModals";
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
-import { CopilotGlobalHost } from "../copilot/CopilotGlobalHost";
 import { DoctorPayrollModal } from "../payroll/DoctorPayrollModal";
 
 export type { StandaloneLaunchersProps };
@@ -87,7 +86,6 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				}}
 			/>
 
-			<CopilotGlobalHost />
 		</>
 	);
 }
