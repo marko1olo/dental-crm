@@ -17,7 +17,9 @@ import { renderSpecializedAdministrativeLaunchers } from "./standalone/Specializ
 import { renderSpecializedClinicalLaunchers } from "./standalone/SpecializedClinicalLaunchers";
 import { StandaloneClinicalTemplatesHost } from "./standalone/clinical/StandaloneClinicalTemplatesHost";
 import { StandaloneEmrMedicalRecordHost } from "./standalone/clinical/StandaloneEmrMedicalRecordHost";
+import { StandalonePatientCardHost } from "./standalone/clinical/StandalonePatientCardHost";
 import { DirectVisitLauncher } from "../../visit/DirectVisitLauncher";
+import { DirectSanpinLauncher } from "../../sanpin/DirectSanpinLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -38,6 +40,19 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("chairside-visit"))
 	) {
 		return <DirectVisitLauncher />;
+	}
+
+	// 0. Direct SanPiN & Sterilization Production Control Hub (?sanpin=1, #sanpin, ?sterilization=1, #sterilization)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("sanpin") ||
+			window.location.hash.includes("sanpin") ||
+			window.location.search.includes("sterilization") ||
+			window.location.hash.includes("sterilization") ||
+			window.location.search.includes("autoclave") ||
+			window.location.hash.includes("autoclave"))
+	) {
+		return <DirectSanpinLauncher />;
 	}
 
 	// 0. Gate 0 Odontogram Tooth 46 Stand & 32-Tooth Full Arch Mockup Launcher
@@ -142,6 +157,18 @@ export function renderStandaloneLaunchers(
 		return (
 			<StandaloneEmrMedicalRecordHost
 				onClose={() => clearUrlTokens(["emr", "medical-card", "form043", "card043"])}
+			/>
+		);
+	}
+
+	// 0. Patient Card 360 Standalone Launcher (?patient_card=1, #patient-card)
+	if (
+		typeof window !== "undefined" &&
+		hasUrlToken(["patient-card", "patient_card"])
+	) {
+		return (
+			<StandalonePatientCardHost
+				onClose={() => clearUrlTokens(["patient-card", "patient_card"])}
 			/>
 		);
 	}

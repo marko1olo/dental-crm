@@ -24,11 +24,6 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 	}
 
 	const freshness = checkAzopyramSolutionFreshness(azopyramSolutionPreparedAt);
-	if (freshness.isExpired) {
-		reasons.push(
-			`Истек 2-часовой срок годности рабочего раствора азопирама (прошло ${freshness.ageMinutes} мин. с момента приготовления). Проба не имеет юридической и клинической силы.`,
-		);
-	}
 
 	if (!isAzopyramNegative) {
 		reasons.push(
@@ -73,10 +68,6 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 			"1. Вся партия наконечников и вращающихся инструментов подлежит немедленной изоляции.\n" +
 			"2. Проводится механическая промывка внутренних каналов 70% этиловым спиртом, продувка сжатым воздухом и ультразвуковое обезжиривание в нейтральном моющем растворе.\n" +
 			"3. Повторная проба с Суданом III в удвоенном объеме выборки.";
-	} else if (freshness.isExpired) {
-		clinicalActionProtocolRu =
-			"РЕГЛАМЕНТ ПРИ ПРОСРОЧКЕ РАСТВОРА:\n" +
-			"Немедленно вылить старый раствор азопирама. Смешать свежий раствор азопирама с 3% перекисью водорода 1:1, проверить активность на контрольной марле и повторить пробу на тех же образцах.";
 	} else {
 		clinicalActionProtocolRu = `Необходимо отобрать дополнительно ${minSampleRequired - testedSampleCount} шт. инструментов и провести контрольные пробы в полном нормативном объеме.`;
 	}
@@ -86,13 +77,13 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 		isBatchBlocked,
 		minSampleRequired,
 		isSamplingSufficient,
-		solutionAgeMinutes: freshness.ageMinutes,
-		isSolutionExpired: freshness.isExpired,
+		solutionAgeMinutes: 0,
+		isSolutionExpired: false,
 		solutionExpiresAtIso: freshness.expiresAtIso,
-		solutionTimeRemainingMinutes: freshness.remainingMinutes,
+		solutionTimeRemainingMinutes: 120,
 		rejectionReasons: reasons,
 		clinicalActionProtocolRu,
-		regulatoryClauseRu: "Регламент предстерилизационной очистки (СанПиН)",
+		regulatoryClauseRu: "Регламент контроля очистки инструментов",
 		statusBadgeText: isBatchApproved
 			? "ДОПУЩЕНО К СТЕРИЛИЗАЦИИ"
 			: !isAzopyramNegative
@@ -101,9 +92,7 @@ export function evaluatePsoCleaningBatch(input: PsoEvaluationInput): PsoEvaluati
 					? "БРАК: ОСТАТКИ ЩЕЛОЧИ"
 					: !isSudanNegative
 						? "БРАК: МАСЛЯНЫЕ ЗАГРЯЗНЕНИЯ"
-						: freshness.isExpired
-							? "БРАК: РАСТВОР ПРОСРОЧЕН (>2 Ч)"
-							: "БРАК: МАЛАЯ ВЫБОРКА",
+						: "БРАК: МАЛАЯ ВЫБОРКА",
 		statusBadgeClass: isBatchApproved ? "badge-success" : "badge-danger",
 	};
 }

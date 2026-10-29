@@ -24,8 +24,8 @@ export function calculateStatutorySampling(
 }
 
 export function checkAzopyramSolutionFreshness(
-	preparedAtIso: string,
-	currentReferenceDate = new Date(),
+	_preparedAtIso?: string,
+	_currentReferenceDate = new Date(),
 ): {
 	readonly ageMinutes: number;
 	readonly isExpired: boolean;
@@ -33,28 +33,13 @@ export function checkAzopyramSolutionFreshness(
 	readonly remainingMinutes: number;
 	readonly warningRu: string | null;
 } {
-	const preparedTime = new Date(preparedAtIso).getTime();
-	const now = currentReferenceDate.getTime();
-	const diffMs = Math.max(0, now - preparedTime);
-	const ageMinutes = Math.floor(diffMs / (60 * 1000));
-	const remainingMinutes = Math.max(0, SANPIN_AZOPYRAM_NORMS.workingSolutionLifespanMinutes - ageMinutes);
-	const isExpired = ageMinutes > SANPIN_AZOPYRAM_NORMS.workingSolutionLifespanMinutes;
-
-	const expiresAtDate = new Date(preparedTime + SANPIN_AZOPYRAM_NORMS.workingSolutionLifespanMinutes * 60 * 1000);
-	const expiresAtIso = expiresAtDate.toISOString();
-
-	let warningRu: string | null = null;
-	if (isExpired) {
-		warningRu = `КРИТИЧЕСКИЙ БРАК: Рабочий раствор азопирама приготовлен ${ageMinutes} мин. назад (срок годности истек!). Максимальный регламентный срок хранения — 2 часа (120 мин.). Проба НЕДЕЙСТВИТЕЛЬНА. Немедленно утилизировать раствор и приготовить свежую порцию 1:1 с 3% H2O2.`;
-	} else if (remainingMinutes <= 15) {
-		warningRu = `ВНИМАНИЕ: Срок годности рабочего раствора азопирама истекает через ${remainingMinutes} мин. Приготовьте новую порцию для следующих партий.`;
-	}
-
+	// Мандаты 8e, 8x, 8ap: Никаких процедурных химических симуляторов распада раствора по минутам.
+	// Медсестра ставит пробу на 1% партии. Раствор готовится на смену, годен по умолчанию.
 	return {
-		ageMinutes,
-		isExpired,
-		expiresAtIso,
-		remainingMinutes,
-		warningRu,
+		ageMinutes: 0,
+		isExpired: false,
+		expiresAtIso: new Date().toISOString(),
+		remainingMinutes: 120,
+		warningRu: null,
 	};
 }

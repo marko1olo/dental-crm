@@ -1,6 +1,6 @@
 import React from "react";
 import type { SterilizationCycleModalProps } from "./sterilizationCycleTypes";
-import { SterilizationCycleDrawer } from "../sterilization/SterilizationCycleDrawer";
+import { SterilizationBatchCycleModal } from "../SterilizationBatchCycleModal";
 
 export function SterilizationCycleModal({
 	isOpen,
@@ -9,10 +9,10 @@ export function SterilizationCycleModal({
 	clinicDevices = [],
 }: SterilizationCycleModalProps) {
 	return (
-		<SterilizationCycleDrawer
+		<SterilizationBatchCycleModal
 			isOpen={isOpen}
 			onClose={onClose}
-			onCycleApproved={onCycleCreated}
+			onCycleCreated={onCycleCreated}
 			clinicDevices={clinicDevices}
 		/>
 	);

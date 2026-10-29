@@ -19,7 +19,7 @@ import {
 	useSanPinJournalLogic, DEFAULT_CYCLES,
 	type SanPinCycleEntry, type SanPinJournalPeriod, type SanPinSterilizationJournalProps,
 } from "./journalModules";
-import { SterilizationCycleDrawer } from "./sterilization/SterilizationCycleDrawer";
+import { SterilizationBatchCycleModal } from "./SterilizationBatchCycleModal";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
@@ -398,8 +398,8 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				)}
 			</div>
 
-			{/* ШТОРКА ЗАПУСКА ЦИКЛА СТЕРИЛИЗАЦИИ */}
-			<SterilizationCycleDrawer
+			{/* МОДАЛЬНОЕ ОКНО ЗАПУСКА ЦИКЛА СТЕРИЛИЗАЦИИ */}
+			<SterilizationBatchCycleModal
 				isOpen={isCycleDrawerOpen}
 				onClose={() => setIsCycleDrawerOpen(false)}
 				onCycleApproved={() => void fetchCyclesFromDb()}
