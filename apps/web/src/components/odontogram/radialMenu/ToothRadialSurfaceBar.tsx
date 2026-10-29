@@ -44,7 +44,7 @@ export const ToothRadialSurfaceBar: React.FC<ToothRadialSurfaceBarProps> = ({
 								setSelectedSurfaces(next);
 								onSelectSurfaces?.(next);
 							}}
-							className={`${isMobile ? "min-h-[36px] min-w-[36px] text-xs px-2.5 py-1" : "min-h-[26px] text-[11px] px-2 py-0.5"} rounded-md font-mono font-black border transition-all cursor-pointer select-none flex items-center justify-center ${
+							className={`${isMobile ? "min-h-[44px] min-w-[44px] text-xs px-3 py-1.5" : "min-h-[26px] text-[11px] px-2 py-0.5"} rounded-md font-mono font-black border transition-all cursor-pointer select-none flex items-center justify-center ${
 								isMatch
 									? "bg-teal-600 text-white border-teal-600 shadow-2xs scale-105"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-hover)]"

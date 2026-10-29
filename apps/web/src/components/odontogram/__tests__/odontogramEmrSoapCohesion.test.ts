@@ -10,7 +10,8 @@
  */
 
 import assert from "node:assert/strict";
-import { describe, it, beforeEach } from "vitest";
+import test, { describe, beforeEach } from "node:test";
+const it = test;
 import {
 	dispatchOdontogramSoapAndBundle,
 	getClinicalBundleForToothState,

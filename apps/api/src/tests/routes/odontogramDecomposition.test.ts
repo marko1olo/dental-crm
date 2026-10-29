@@ -63,9 +63,11 @@ describe("Odontogram Monolith Safe Decomposition Parity Test", () => {
 		await registerOdontogramRoutes(app);
 		await app.ready();
 
-		// Tooth States
+		// Tooth States & Odontogram Status SSOT
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states" }), "GET /api/patients/:patientId/tooth-states");
 		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/tooth-states/batch" }), "POST /api/patients/:patientId/tooth-states/batch");
+		assert.ok(app.hasRoute({ method: "POST", url: "/api/odontogram/status" }), "POST /api/odontogram/status");
+		assert.ok(app.hasRoute({ method: "POST", url: "/api/patients/:patientId/odontogram/status" }), "POST /api/patients/:patientId/odontogram/status");
 
 		// Endo
 		assert.ok(app.hasRoute({ method: "GET", url: "/api/patients/:patientId/tooth-states/:toothNumber/endo" }), "GET /api/patients/:patientId/tooth-states/:toothNumber/endo");

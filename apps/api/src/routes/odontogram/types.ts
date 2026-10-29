@@ -100,6 +100,31 @@ export const batchToothStateSchema = z.object({
 	reason: z.string().max(1000).optional().nullable(),
 });
 
+export const odontogramStatusMutationSchema = z
+	.object({
+		patientId: z.string().uuid().optional(),
+		toothNumber: fdiToothNumberSchema.optional(),
+		toothNumbers: z.array(fdiToothNumberSchema).min(1).max(64).optional(),
+		state: clinicalToothStateSchema,
+		surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
+		notes: z.string().max(10000).optional().nullable(),
+		clinicalData: endoToothClinicalDataSchema.optional().nullable(),
+		visitId: z
+			.string()
+			.optional()
+			.nullable()
+			.transform((v) => (v && UUID_SHAPE.test(v) ? v : null)),
+		updatedAt: z.string().optional().nullable(),
+		version: z.number().int().nonnegative().optional().nullable(),
+		reason: z.string().max(1000).optional().nullable(),
+	})
+	.refine(
+		(data) =>
+			data.toothNumber !== undefined ||
+			(data.toothNumbers && data.toothNumbers.length > 0),
+		{ message: "Необходимо указать toothNumber или toothNumbers" },
+	);
+
 export function parseClinicalDataFromNotes(
 	notes: string | null | undefined,
 ): EndoToothClinicalData | null {

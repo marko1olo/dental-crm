@@ -137,6 +137,41 @@ export function useOdontogramSync({
 			window.dispatchEvent(
 				new CustomEvent("dente-odontogram-update", { detail: { patientId, states: next } }),
 			);
+
+			if (typeof window !== "undefined") {
+				if (toothNumbers.length === 1 && state !== "Healthy") {
+					window.dispatchEvent(
+						new CustomEvent("dente-apply-soap-protocol", {
+							detail: {
+								finding: {
+									toothNumber: toothNumbers[0],
+									state,
+									surfaces: apiSurfaces,
+								},
+								mode: "smart_append",
+								immediate: true,
+							},
+						}),
+					);
+				} else if (toothNumbers.length >= 20 && state === "Healthy") {
+					window.dispatchEvent(
+						new CustomEvent("dente-apply-soap-protocol", {
+							detail: {
+								soap: {
+									objective:
+										"Полость рта санирована. Слизистая оболочка бледно-розовая, умеренно увлажнена. Зубные ряды интактные, прикус физиологический. Патологических изменений пародонта и твердых тканей зубов не выявлено.",
+									assessment: "Z01.2 Стоматологическое обследование (Здоров)",
+									plan: "1. Профессиональная гигиена полости рта 1 раз в 6 месяцев.\n2. Контрольный профилактический осмотр через 6 месяцев.",
+									diagnosisIcd10: "Z01.2",
+								},
+								mode: "smart_append",
+								immediate: true,
+							},
+						}),
+					);
+				}
+			}
+
 			onClearMenuRef.current?.();
 			setSelectedTeeth((prev) => (prev.length > 0 ? [] : prev));
 

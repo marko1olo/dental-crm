@@ -18,8 +18,203 @@ import { ensurePatientInOrganization } from "./planHelpers.js";
 import {
 	UUID_SHAPE,
 	batchToothStateSchema,
+	odontogramStatusMutationSchema,
 	parseClinicalDataFromNotes,
 } from "./types.js";
+
+async function applyToothStateMutation(
+	organizationId: string,
+	patientId: string,
+	actorUserId: string | null,
+	data: {
+		toothNumbers: number[];
+		state: string;
+		surfaces?: string[] | null | undefined;
+		notes?: string | null | undefined;
+		clinicalData?: any;
+		visitId?: string | null | undefined;
+		updatedAt?: string | null | undefined;
+		version?: number | null | undefined;
+		reason?: string | null | undefined;
+	},
+) {
+	const toothNumbers = [...new Set<number>(data.toothNumbers)];
+	if (toothNumbers.length === 0) return [];
+
+	const now = new Date();
+	const maxFutureSkewMs = 60 * 1000; // max 1 minute future tolerance for clock drift
+	const incomingRawTime = data.updatedAt
+		? new Date(data.updatedAt).getTime()
+		: now.getTime();
+	const boundedIncomingTime = Math.min(
+		incomingRawTime,
+		now.getTime() + maxFutureSkewMs,
+	);
+	const incomingUpdatedAt = new Date(boundedIncomingTime);
+	const incomingVersion = data.version ?? 1;
+
+	const inserted = await withTenantCtx(organizationId, async (tx) => {
+		const previousStates = await tx
+			.select({
+				toothNumber: toothStates.toothNumber,
+				state: toothStates.state,
+				surfaces: toothStates.surfaces,
+				notes: toothStates.notes,
+				updatedAt: toothStates.updatedAt,
+				version: toothStates.version,
+			})
+			.from(toothStates)
+			.where(
+				and(
+					eq(toothStates.organizationId, organizationId),
+					eq(toothStates.patientId, patientId),
+					inArray(toothStates.toothNumber, toothNumbers),
+				),
+			);
+
+		type PreviousToothState = {
+			toothNumber: number;
+			state: string;
+			surfaces: unknown;
+			notes: string | null;
+			updatedAt: Date | null;
+			version: number | null;
+		};
+		const previousByTooth = new Map<number, PreviousToothState>(
+			(previousStates as PreviousToothState[]).map((row) => [
+				row.toothNumber,
+				row,
+			]),
+		);
+
+		const serializedClinicalNotes = data.clinicalData
+			? JSON.stringify(data.clinicalData)
+			: data.notes;
+
+		const historyToInsert: (typeof toothStateHistory.$inferInsert)[] = [];
+		const teethToDelete: number[] = [];
+		const statesToInsert: (typeof toothStates.$inferInsert)[] = [];
+
+		for (const toothNumber of toothNumbers) {
+			const prev = previousByTooth.get(toothNumber);
+			const prevTime = prev?.updatedAt ? new Date(prev.updatedAt).getTime() : 0;
+			const prevVersion = prev?.version ?? 0;
+			const incomingTime = incomingUpdatedAt.getTime();
+
+			const incomingWins =
+				!prev ||
+				incomingTime > prevTime ||
+				(incomingTime === prevTime && incomingVersion >= prevVersion);
+
+			if (incomingWins) {
+				// 1. Record transition into append-only tooth state history audit log
+				historyToInsert.push({
+					organizationId,
+					patientId,
+					visitId: data.visitId ?? null,
+					toothNumber,
+					previousState: prev?.state ?? null,
+					newState: data.state,
+					previousSurfaces: prev?.surfaces ?? null,
+					newSurfaces: data.surfaces || null,
+					changedByUserId: actorUserId,
+					reason: data.clinicalData
+						? "Эндодонтический протокол / обработка каналов"
+						: (data.reason || null),
+					changedAt: incomingUpdatedAt,
+				});
+
+				teethToDelete.push(toothNumber);
+
+				const effectiveNotes =
+					serializedClinicalNotes !== undefined
+						? serializedClinicalNotes
+						: (prev?.notes ?? null);
+
+				statesToInsert.push({
+					organizationId,
+					patientId,
+					toothNumber,
+					state: data.state,
+					surfaces: data.surfaces || null,
+					notes: effectiveNotes,
+					updatedAt: incomingUpdatedAt,
+					isSynced: false,
+					version: Math.max(prevVersion + 1, incomingVersion, 1),
+				});
+			} else {
+				// Stale offline mutation: Server active state is newer and wins (LWW),
+				// but offline mutation transition is STILL appended to toothStateHistory for full 043/u audit trail!
+				historyToInsert.push({
+					organizationId,
+					patientId,
+					visitId: data.visitId ?? null,
+					toothNumber,
+					previousState: null,
+					newState: data.state,
+					previousSurfaces: null,
+					newSurfaces: data.surfaces || null,
+					changedByUserId: actorUserId,
+					reason:
+						data.reason ||
+						"Оффлайн-синхронизация (LWW архив)",
+					changedAt: incomingUpdatedAt,
+				});
+			}
+		}
+
+		if (historyToInsert.length > 0) {
+			await tx.insert(toothStateHistory).values(historyToInsert);
+		}
+		if (teethToDelete.length > 0) {
+			await tx
+				.delete(toothStates)
+				.where(
+					and(
+						eq(toothStates.organizationId, organizationId),
+						eq(toothStates.patientId, patientId),
+						inArray(toothStates.toothNumber, teethToDelete),
+					),
+				);
+		}
+		if (statesToInsert.length > 0) {
+			await tx.insert(toothStates).values(statesToInsert);
+		}
+
+		const currentStates = await tx
+			.select({
+				toothNumber: toothStates.toothNumber,
+				state: toothStates.state,
+				surfaces: toothStates.surfaces,
+				notes: toothStates.notes,
+				updatedAt: toothStates.updatedAt,
+			})
+			.from(toothStates)
+			.where(
+				and(
+					eq(toothStates.organizationId, organizationId),
+					eq(toothStates.patientId, patientId),
+					inArray(toothStates.toothNumber, toothNumbers),
+				),
+			);
+
+		return currentStates.map((row) => ({
+			toothNumber: row.toothNumber,
+			state: row.state,
+			surfaces: row.surfaces,
+			notes: row.notes,
+			updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
+			clinicalData: parseClinicalDataFromNotes(row.notes),
+		}));
+	});
+
+	wsBroker.broadcastToOrganization(organizationId, {
+		type: "UPDATE_ODONTOGRAM",
+		payload: { patientId, states: inserted },
+	});
+
+	return inserted;
+}
 
 export function registerStatusRoutes(app: FastifyInstance) {
 	const getToothStatesHandler = async (request: FastifyRequest, reply: FastifyReply) => {
@@ -132,6 +327,116 @@ export function registerStatusRoutes(app: FastifyInstance) {
 	app.get("/api/patients/:patientId/tooth-states", getToothStatesHandler);
 	app.get("/api/patients/:patientId/odontogram", getToothStatesHandler);
 
+	// 1. Unified Canonical Route: POST /api/odontogram/status
+	app.post("/api/odontogram/status", async (request, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"odontogram status mutation",
+		);
+		if (!organizationId) return;
+
+		const parsed = odontogramStatusMutationSchema.safeParse(request.body);
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ToothStateValidationError",
+				message: "Ошибка валидации зубной формулы. Проверьте номер зуба и статус.",
+				details: parsed.error.format(),
+			});
+		}
+
+		const patientId = parsed.data.patientId;
+		if (!patientId || !UUID_SHAPE.test(patientId)) {
+			return reply.code(400).send({
+				error: "InvalidPatientId",
+				message: "Требуется корректный идентификатор пациента (patientId UUID)",
+			});
+		}
+
+		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+			return reply.code(404).send({ error: "PatientNotFound" });
+		}
+
+		const toothNumbers =
+			parsed.data.toothNumbers ??
+			(parsed.data.toothNumber !== undefined ? [parsed.data.toothNumber] : []);
+		const actorUserId = getRequestIdentity(request).userId;
+
+		const inserted = await applyToothStateMutation(
+			organizationId,
+			patientId,
+			actorUserId,
+			{
+				...parsed.data,
+				toothNumbers,
+				surfaces: parsed.data.surfaces as string[] | undefined,
+			},
+		);
+
+		return reply.send({
+			success: true,
+			states: inserted,
+			status: inserted[0]?.state ?? parsed.data.state,
+		});
+	});
+
+	// 2. Patient-scoped Route: POST /api/patients/:patientId/odontogram/status
+	app.post("/api/patients/:patientId/odontogram/status", async (request, reply) => {
+		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"patient odontogram status mutation",
+		);
+		if (!organizationId) return;
+
+		const { patientId } = request.params as { patientId: string };
+		if (!UUID_SHAPE.test(patientId)) {
+			return reply.code(400).send({ error: "InvalidPatientId" });
+		}
+		if (!(await ensurePatientInOrganization(patientId, organizationId))) {
+			return reply.code(404).send({ error: "PatientNotFound" });
+		}
+
+		const bodyObj =
+			typeof request.body === "object" && request.body
+				? (request.body as Record<string, unknown>)
+				: {};
+		const parsed = odontogramStatusMutationSchema.safeParse({
+			...bodyObj,
+			patientId,
+		});
+		if (!parsed.success) {
+			return reply.code(400).send({
+				error: "ToothStateValidationError",
+				message: "Ошибка валидации зубной формулы.",
+				details: parsed.error.format(),
+			});
+		}
+
+		const toothNumbers =
+			parsed.data.toothNumbers ??
+			(parsed.data.toothNumber !== undefined ? [parsed.data.toothNumber] : []);
+		const actorUserId = getRequestIdentity(request).userId;
+
+		const inserted = await applyToothStateMutation(
+			organizationId,
+			patientId,
+			actorUserId,
+			{
+				...parsed.data,
+				toothNumbers,
+				surfaces: parsed.data.surfaces as string[] | undefined,
+			},
+		);
+
+		return reply.send({
+			success: true,
+			states: inserted,
+			status: inserted[0]?.state ?? parsed.data.state,
+		});
+	});
+
+	// 3. Backward-compatible Batch Route: POST /api/patients/:patientId/tooth-states/batch
 	app.post(
 		"/api/patients/:patientId/tooth-states/batch",
 		async (request, reply) => {
@@ -158,180 +463,16 @@ export function registerStatusRoutes(app: FastifyInstance) {
 				});
 			}
 
-			const toothNumbers: number[] = [
-				...new Set<number>(parsed.data.toothNumbers),
-			];
-			if (toothNumbers.length === 0)
-				return reply.send({ success: true, states: [] });
-
 			const actorUserId = getRequestIdentity(request).userId;
-			const now = new Date();
-
-			const maxFutureSkewMs = 60 * 1000; // max 1 minute future tolerance for clock drift
-			const incomingRawTime = parsed.data.updatedAt
-				? new Date(parsed.data.updatedAt).getTime()
-				: now.getTime();
-			const boundedIncomingTime = Math.min(
-				incomingRawTime,
-				now.getTime() + maxFutureSkewMs,
+			const inserted = await applyToothStateMutation(
+				organizationId,
+				patientId,
+				actorUserId,
+				{
+					...parsed.data,
+					surfaces: parsed.data.surfaces as string[] | undefined,
+				},
 			);
-			const incomingUpdatedAt = new Date(boundedIncomingTime);
-			const incomingVersion = parsed.data.version ?? 1;
-
-			const inserted = await withTenantCtx(organizationId, async (tx) => {
-				const previousStates = await tx
-					.select({
-						toothNumber: toothStates.toothNumber,
-						state: toothStates.state,
-						surfaces: toothStates.surfaces,
-						notes: toothStates.notes,
-						updatedAt: toothStates.updatedAt,
-						version: toothStates.version,
-					})
-					.from(toothStates)
-					.where(
-						and(
-							eq(toothStates.organizationId, organizationId),
-							eq(toothStates.patientId, patientId),
-							inArray(toothStates.toothNumber, toothNumbers),
-						),
-					);
-
-				type PreviousToothState = {
-					toothNumber: number;
-					state: string;
-					surfaces: unknown;
-					notes: string | null;
-					updatedAt: Date | null;
-					version: number | null;
-				};
-				const previousByTooth = new Map<number, PreviousToothState>(
-					(previousStates as PreviousToothState[]).map((row) => [
-						row.toothNumber,
-						row,
-					]),
-				);
-
-				const serializedClinicalNotes = parsed.data.clinicalData
-					? JSON.stringify(parsed.data.clinicalData)
-					: parsed.data.notes;
-
-				const historyToInsert: (typeof toothStateHistory.$inferInsert)[] = [];
-				const teethToDelete: number[] = [];
-				const statesToInsert: (typeof toothStates.$inferInsert)[] = [];
-
-				for (const toothNumber of toothNumbers) {
-					const prev = previousByTooth.get(toothNumber);
-					const prevTime = prev?.updatedAt ? new Date(prev.updatedAt).getTime() : 0;
-					const prevVersion = prev?.version ?? 0;
-					const incomingTime = incomingUpdatedAt.getTime();
-
-					const incomingWins =
-						!prev ||
-						incomingTime > prevTime ||
-						(incomingTime === prevTime && incomingVersion >= prevVersion);
-
-					if (incomingWins) {
-						// 1. Record transition into append-only tooth state history audit log
-						historyToInsert.push({
-							organizationId,
-							patientId,
-							visitId: parsed.data.visitId ?? null,
-							toothNumber,
-							previousState: prev?.state ?? null,
-							newState: parsed.data.state,
-							previousSurfaces: prev?.surfaces ?? null,
-							newSurfaces: parsed.data.surfaces || null,
-							changedByUserId: actorUserId,
-							reason: parsed.data.clinicalData
-								? "Эндодонтический протокол / обработка каналов"
-								: (parsed.data.reason || null),
-							changedAt: incomingUpdatedAt,
-						});
-
-						teethToDelete.push(toothNumber);
-
-						const effectiveNotes =
-							serializedClinicalNotes !== undefined
-								? serializedClinicalNotes
-								: (prev?.notes ?? null);
-
-						statesToInsert.push({
-							organizationId,
-							patientId,
-							toothNumber,
-							state: parsed.data.state,
-							surfaces: parsed.data.surfaces || null,
-							notes: effectiveNotes,
-							updatedAt: incomingUpdatedAt,
-							isSynced: false,
-							version: Math.max(prevVersion + 1, incomingVersion, 1),
-						});
-					} else {
-						// Stale offline mutation: Server active state is newer and wins (LWW),
-						// but offline mutation transition is STILL appended to toothStateHistory for full 043/u audit trail!
-						historyToInsert.push({
-							organizationId,
-							patientId,
-							visitId: parsed.data.visitId ?? null,
-							toothNumber,
-							previousState: null,
-							newState: parsed.data.state,
-							previousSurfaces: null,
-							newSurfaces: parsed.data.surfaces || null,
-							changedByUserId: actorUserId,
-							reason:
-								parsed.data.reason ||
-								"Оффлайн-синхронизация (LWW архив)",
-							changedAt: incomingUpdatedAt,
-						});
-					}
-				}
-
-				if (historyToInsert.length > 0) {
-					await tx.insert(toothStateHistory).values(historyToInsert);
-				}
-				if (teethToDelete.length > 0) {
-					await tx
-						.delete(toothStates)
-						.where(
-							and(
-								eq(toothStates.organizationId, organizationId),
-								eq(toothStates.patientId, patientId),
-								inArray(toothStates.toothNumber, teethToDelete),
-							),
-						);
-				}
-				if (statesToInsert.length > 0) {
-					await tx.insert(toothStates).values(statesToInsert);
-				}
-
-				const currentStates = await tx
-					.select({
-						toothNumber: toothStates.toothNumber,
-						state: toothStates.state,
-						surfaces: toothStates.surfaces,
-						notes: toothStates.notes,
-						updatedAt: toothStates.updatedAt,
-					})
-					.from(toothStates)
-					.where(
-						and(
-							eq(toothStates.organizationId, organizationId),
-							eq(toothStates.patientId, patientId),
-							inArray(toothStates.toothNumber, toothNumbers),
-						),
-					);
-
-				return currentStates.map((row) => ({
-					toothNumber: row.toothNumber,
-					state: row.state,
-					surfaces: row.surfaces,
-					notes: row.notes,
-					updatedAt: row.updatedAt ? new Date(row.updatedAt).toISOString() : null,
-					clinicalData: parseClinicalDataFromNotes(row.notes),
-				}));
-			});
 
 			wsBroker.broadcastToOrganization(organizationId, {
 				type: "UPDATE_ODONTOGRAM",

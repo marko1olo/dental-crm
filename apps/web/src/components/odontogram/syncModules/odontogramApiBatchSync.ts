@@ -30,28 +30,37 @@ export async function sendToothStatesBatch(
 ): Promise<boolean> {
 	if (!patientId || toothNumbers.length === 0) return true;
 
-	const payload: ToothBatchPayload = {
+	const payload = {
+		patientId,
+		toothNumber: toothNumbers[0],
 		toothNumbers,
 		state,
 		...(surfaces && surfaces.length > 0 ? { surfaces } : {}),
 	};
 
 	try {
-		const res = await fetch(
-			`/api/patients/${patientId}/tooth-states/batch`,
-			{
+		let res = await fetch("/api/odontogram/status", {
+			method: "POST",
+			headers: denteAdminSecretRequestHeaders({
+				"Content-Type": "application/json",
+			}),
+			body: JSON.stringify(payload),
+		});
+
+		if (!res.ok) {
+			res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
 				method: "POST",
 				headers: denteAdminSecretRequestHeaders({
 					"Content-Type": "application/json",
 				}),
 				body: JSON.stringify(payload),
-			},
-		);
+			});
+		}
 
 		if (!res.ok) {
 			const rawBody = await res.text();
 			logger.error(
-				`[tooth states batch] ${res.status} ${rawBody.slice(0, 300)}`,
+				`[tooth states status mutation] ${res.status} ${rawBody.slice(0, 300)}`,
 			);
 			showToast(
 				"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
@@ -63,7 +72,7 @@ export async function sendToothStatesBatch(
 
 		return true;
 	} catch (err) {
-		logger.error("[tooth states batch] запрос не выполнен", err);
+		logger.error("[tooth states status mutation] запрос не выполнен", err);
 		showToast(
 			"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
 			"info",
