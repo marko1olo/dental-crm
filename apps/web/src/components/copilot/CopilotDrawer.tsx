@@ -195,7 +195,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     if (isOpen && activeTab === "chat" && feedRef.current) {
       feedRef.current.scrollTop = feedRef.current.scrollHeight;
     }
-  }, [isOpen, messages, activeTab]);
+  }, [isOpen, messages, pending, activeTab]);
 
   // Operational shift debts from store via SSOT hook
   const storeDashboard = useAppStore((s) => s.dashboard);
@@ -233,7 +233,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   {busy
                     ? (phase || "Анализирую клинический контекст...")
                     : isMobile
-                    ? "Рабочая станция ПК • Голос и снимки"
+                    ? (runtimeMode === "desktop_native" ? "Рабочая станция ОС • Голос и снимки" : "Мобильный копайлот • Голос и приём")
                     : runtimeMode === "desktop_native"
                     ? "Рабочая станция ПК • Томографы, визиограф, снимки"
                     : "Клинический ассистент • Расписание, медкарта, касса"}

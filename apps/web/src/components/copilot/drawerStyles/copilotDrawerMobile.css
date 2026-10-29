@@ -103,6 +103,14 @@
     font-size: 14px;
     max-width: calc(100vw - 140px);
   }
+
+  .copilot-feed {
+    padding: 10px 12px;
+  }
+
+  .copilot-chat-feed {
+    padding-bottom: 96px;
+  }
 }
 
 @media (pointer: coarse) {
