@@ -13,6 +13,11 @@ import {
 	handleUpdateTreatmentPlan,
 	handleUpdateTreatmentPlanStage,
 } from "./treatmentPlan/treatmentPlanCrudHandlers.js";
+import {
+	handleGetTreatmentPlanById,
+	handleListPatientTreatmentPlans,
+	handleUpsertPatientTreatmentPlan,
+} from "./treatmentPlan/patientTreatmentPlanHandlers.js";
 import { handleSignTreatmentPlanPep } from "./treatmentPlan/treatmentPlanPepHandler.js";
 import { handleStageTransition } from "./treatmentPlan/stageTransitionHandler.js";
 import {
@@ -23,8 +28,36 @@ import {
 export * from "./treatmentPlan/pipelineTypes.js";
 export * from "./treatmentPlan/treatmentPlanCrudHandlers.js";
 export * from "./treatmentPlan/treatmentPlanPepHandler.js";
+export * from "./treatmentPlan/patientTreatmentPlanHandlers.js";
 
 export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
+	// 0a. GET /api/treatment-plans/:id — Получение плана лечения по ID со связями
+	const hasGetId = typeof (server as any).hasRoute === "function"
+		? (server as any).hasRoute({ method: "GET", url: "/api/treatment-plans/:id" })
+		: false;
+	if (!hasGetId) {
+		server.get("/api/treatment-plans/:id", handleGetTreatmentPlanById);
+		server.get("/api/treatment-plan/:id", handleGetTreatmentPlanById);
+		server.get("/api/v1/treatment-plans/:id", handleGetTreatmentPlanById);
+		server.get("/api/v1/treatment-plan/:id", handleGetTreatmentPlanById);
+	}
+
+	// 0b. GET /api/patients/:patientId/treatment-plans — Список планов конкретного пациента
+	const hasGetPatientPlans = typeof (server as any).hasRoute === "function"
+		? (server as any).hasRoute({ method: "GET", url: "/api/patients/:patientId/treatment-plans" })
+		: false;
+	if (!hasGetPatientPlans) {
+		server.get("/api/patients/:patientId/treatment-plans", handleListPatientTreatmentPlans);
+	}
+
+	// 0c. POST /api/patients/:patientId/treatment-plans — Сохранение / создание ревизии плана лечения
+	const hasPostPatientPlans = typeof (server as any).hasRoute === "function"
+		? (server as any).hasRoute({ method: "POST", url: "/api/patients/:patientId/treatment-plans" })
+		: false;
+	if (!hasPostPatientPlans) {
+		server.post("/api/patients/:patientId/treatment-plans", handleUpsertPatientTreatmentPlan);
+	}
+
 	// 0. GET /api/treatment-plans — Список планов лечения клиники
 	const listPlansHandler = async (request: any, reply: any) => {
 		const context = await requireClinicalReadContext(request, reply, "list treatment plans");

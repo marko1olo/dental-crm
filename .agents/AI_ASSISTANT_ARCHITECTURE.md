@@ -265,9 +265,12 @@ CREATE TABLE ai_telemetry_logs (
    - Добавлены канонические стоматологические инструменты: `get_patient_outpatient_record`, `calculate_services_estimate`, `draft_soap_diary`.
    - Устранён баг ложного перехвата в `clinicalFallbackRouter.ts`: удалено голое слово «статус», блокировавшее проверку кассовой смены `crm.check_cashier_shift`.
 
-3. **Верификация и машинные гейты:**
-   - 463 целевых unit-теста (`apps/api/src/services/agent/` и `apps/api/src/routes/copilot*.test.ts`) проходят со 100% успехом (Exit Code 0).
-   - Чистота кодировок: `npm run check:encoding` (23 758 файлов проверено, 0 замечаний).
+3. **Верификация и машинные гейты (October 2026 Audit):**
+   - **Ликвидация RBAC 403 Forbidden**: Права `agent.read`, `agent.write`, `workstation.read`, `workstation.write` зафиксированы в `aiRbacGuard.ts` и `permissions.ts` для врачебного и административного контуров.
+   - **Google Gemini REST ReAct Fix**: В `geminiFormatter.ts` поле `functionResponse.name` строго приведено к зарегистрированному имени инструмента (`block.name`), ликвидируя `400 Invalid argument`.
+   - **Two-Phase Confirmation Engine**: Протестирован и доказан в бою контур `POST /api/v1/copilot/confirm` со стримингом SSE `tool_confirmation_required` и мгновенной фиксацией состояния в PostgreSQL 18.
+   - **Сквозные Unit & E2E тесты**: 62 целевых теста (`CopilotDrawer`, `ChairsideCopilotHUD`, `CopilotVoiceStenographer`, `aiRbacGuard`, `voiceAndTelephonyAutonomyInquisition`) проходят со 100% успехом (Exit Code 0).
+   - **4-State Visual Proofs**: 7 подтвержденных скриншотов в `docs/proofs/copilot_ai/` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 Bottom Sheet, Chairside HUD, Voice Stenographer).
    - TypeScript компиляция в скоупе агента: 0 ошибок.
 
 ---

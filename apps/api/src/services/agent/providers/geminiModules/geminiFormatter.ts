@@ -46,6 +46,18 @@ export interface GeminiContent {
 export function formatGeminiContents(messages: ProviderMessage[]): GeminiContent[] {
 	const contents: GeminiContent[] = [];
 
+	// Build toolCallId -> toolName mapping so Gemini functionResponse carries the valid declared function name
+	const toolNameMap = new Map<string, string>();
+	for (const msg of messages) {
+		if (Array.isArray(msg.content)) {
+			for (const block of msg.content) {
+				if (block.type === "tool_use" && block.id && block.name) {
+					toolNameMap.set(block.id, block.name);
+				}
+			}
+		}
+	}
+
 	for (const msg of messages) {
 		if (msg.role === "system") {
 			continue;
@@ -73,9 +85,13 @@ export function formatGeminiContents(messages: ProviderMessage[]): GeminiContent
 						},
 					});
 				} else if (block.type === "tool_result") {
+					const fnName =
+						(block as any).toolName ||
+						toolNameMap.get(block.toolCallId) ||
+						block.toolCallId;
 					parts.push({
 						functionResponse: {
-							name: block.toolCallId,
+							name: fnName,
 							response:
 								typeof block.content === "object" && block.content !== null
 									? (block.content as Record<string, unknown>)

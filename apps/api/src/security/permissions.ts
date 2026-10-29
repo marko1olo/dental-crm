@@ -73,6 +73,12 @@ export const PERMISSIONS = [
 	// полномочия, и цена ошибки в рассылке измеряется в штрафах ФАС.
 	"communications.read",
 	"communications.write",
+	// Управление ИИ-ассистентом и контекстом интерфейса (Мандат 8e)
+	"agent.read",
+	"agent.write",
+	// Доступ к рабочей станции врача (томографы, визиографы, файлы)
+	"workstation.read",
+	"workstation.write",
 ] as const;
 
 export type Permission = (typeof PERMISSIONS)[number];
@@ -122,6 +128,8 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"settings.read",
 		"communications.read",
 		"communications.write",
+		"agent.read",
+		"agent.write",
 	],
 
 	// Врач: ведёт приём, оформляет и принимает оплату у кресла (Мандат 8e / 8n соло-врач),
@@ -142,6 +150,10 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"egisz.submit",
 		// Врач видит переписку с пациентом, но рассылки не запускает.
 		"communications.read",
+		"agent.read",
+		"agent.write",
+		"workstation.read",
+		"workstation.write",
 	],
 
 	// Ассистент: видит приём и списывает материалы, ничего не решает.
@@ -152,6 +164,7 @@ const ROLE_PERMISSIONS: Record<string, readonly Permission[]> = {
 		"inventory.read",
 		"inventory.write",
 		"communications.read",
+		"agent.read",
 	],
 
 	// Куратор лечения: ведёт пациентов по воронке планов лечения, согласует сметы,

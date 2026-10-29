@@ -72,6 +72,8 @@ export const DEFAULT_AI_ROLE_PERMISSIONS: Readonly<
 		"analytics.read",
 		"payroll.read",
 		"egisz.*",
+		"agent.*",
+		"workstation.*",
 	],
 	doctor: [
 		"clinical.read",
@@ -87,6 +89,9 @@ export const DEFAULT_AI_ROLE_PERMISSIONS: Readonly<
 		"inventory.read",
 		"payroll.read.own",
 		"egisz.submit",
+		"agent.read",
+		"agent.write",
+		"workstation.*",
 	],
 	assistant: [
 		"patients.read",
@@ -98,6 +103,7 @@ export const DEFAULT_AI_ROLE_PERMISSIONS: Readonly<
 		"inventory.write",
 		"communications.read",
 		"tasks.read",
+		"agent.read",
 	],
 	registrar: [
 		"schedule.read",
@@ -111,6 +117,8 @@ export const DEFAULT_AI_ROLE_PERMISSIONS: Readonly<
 		"tasks.read",
 		"tasks.write",
 		"inventory.read",
+		"agent.read",
+		"agent.write",
 	],
 };
 

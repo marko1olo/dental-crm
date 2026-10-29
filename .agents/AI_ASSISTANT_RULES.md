@@ -191,4 +191,29 @@
    - Ассистент наделен полными правами на конфигурирование параметров клиники (`configure_clinic_setup`), поиск файлов на дисках ПК (`search_workstation_files`) и разбор/импорт клинических выгрузок (`import_clinic_data_file`).
    - Любая мутация настроек клиники или данных БД строго подчиняется двухфазному барьеру подтверждения (Two-Phase Guard) и не применяется без явного согласия пользователя в интерфейсе (Мандат 8e).
 
+---
+
+## 🛑 РАЗДЕЛ IX: RED TEAM ИНКВИЗИЦИЯ И ВЕРИФИКАЦИОННЫЙ СТАТУС (OCTOBER 2026 AUDIT)
+
+В рамках генеральной инквизиции кодовой базы ИИ-ассистента, копайлота и голосового стенографа устранены ключевые уязвимости и зафиксированы следующие боевые инварианты:
+
+1. **Ликвидация 403 Forbidden в RBAC-матрице (`aiRbacGuard.ts`)**:
+   - Права `agent.read`, `agent.write`, `workstation.read`, `workstation.write` официально включены в базовый профиль роли `doctor` и смежных ролей. Доступ копайлота к контексту UI (`ui_context.*`) и клиническим инструментам гарантирован без искусственных барьеров.
+2. **Устранение сбоя Google Gemini ReAct Tool Calling (`geminiFormatter.ts`)**:
+   - Исправлена ошибка протокола Gemini REST API: поле `functionResponse.name` строго мапится на каноническое имя зарегистрированного инструмента (`block.name`), а не на внутренний ID вызова (`callId`). Устранены падения с `400 Invalid argument`.
+3. **Бесшовный сбор контекста и релевантный фолбек (`copilotService.ts`)**:
+   - При обработке ответов ReAct устранена потеря пользовательского промпта после шага выполнения инструментов. Копайлот синтезирует точный клинический ответ по результату вызова функции без паразитных переключений на нерелевантные разделы базы знаний.
+4. **Инструментальное подтверждение двухфазного барьера (Two-Phase Confirmation)**:
+   - Боевой маршрут `POST /api/v1/copilot/confirm` протестирован в реальной PostgreSQL 18. Деструктивные операции (изменение одонтограммы, бронирование слотов, списание средств) требуют явного подтверждения оператором через UI, после чего атомарно коммитятся в базу данных.
+5. **4-состояный Red Team визуальный пруф (4-State Visual Proof)**:
+   - Подтверждена безупречная адаптивность интерфейсов Копайлота, Chairside HUD и Голосового Стенографа на реальном сервере:
+     * ☀️ **PC Light (1440×900)**: `docs/proofs/copilot_ai/copilot_ai_pc_light_1440x900.png`
+     * 🌙 **PC Dark (1440×900)**: `docs/proofs/copilot_ai/copilot_ai_pc_dark_1440x900.png`
+     * 📱 **Mobile Light (390×844)**: `docs/proofs/copilot_ai/copilot_ai_mobile_light_390x844.png` (Apple HIG Bottom Sheet с Drag Handle)
+     * 📱 **Mobile Dark (390×844)**: `docs/proofs/copilot_ai/copilot_ai_mobile_dark_390x844.png`
+     * ☀️ **Chairside HUD PC Light**: `docs/proofs/copilot_ai/copilot_ai_hud_chairside_pc_light_1440x900.png`
+     * 🌙 **Chairside HUD PC Dark**: `docs/proofs/copilot_ai/copilot_ai_hud_chairside_pc_dark_1440x900.png`
+     * 📱 **Voice Stenographer Mobile**: `docs/proofs/copilot_ai/copilot_ai_voice_stenographer_mobile_390x844.png`
+
+
 

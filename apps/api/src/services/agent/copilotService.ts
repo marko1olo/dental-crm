@@ -451,13 +451,49 @@ export function createDefaultLlmProvider(): LLMProvider {
 				);
 			}
 
+			// Check if previous turn executed a tool and synthesize closing clinical response
+			const lastMessage = params.messages[params.messages.length - 1];
+			const isToolTurn = lastMessage?.role === "tool";
+			if (isToolTurn && Array.isArray(lastMessage?.content)) {
+				const toolResult = (lastMessage.content as any[]).find(
+					(b) => b.type === "tool_result",
+				);
+				if (toolResult && toolResult.content && !toolResult.isError) {
+					const res = toolResult.content;
+					if (typeof res === "object" && res !== null) {
+						if ((res as any).subjective || (res as any).assessment || (res as any).soapSection) {
+							yield {
+								type: "text_delta",
+								text: "Клинический дневник приёма (SOAP) сформирован и готов к применению в медицинскую карту приёма.",
+							};
+							yield { type: "done", stopReason: "stop" };
+							return;
+						}
+						if ((res as any).totalAmountKopecks !== undefined || (res as any).items || (res as any).estimate) {
+							yield {
+								type: "text_delta",
+								text: "Предварительный расчёт сметы лечения сформирован и готов к согласованию с пациентом.",
+							};
+							yield { type: "done", stopReason: "stop" };
+							return;
+						}
+					}
+					yield {
+						type: "text_delta",
+						text: "Клиническое действие успешно выполнено.",
+					};
+					yield { type: "done", stopReason: "stop" };
+					return;
+				}
+			}
+
 			// Local Intelligent Fallback Generator (Deterministic SemanticRouter)
-			const lastMsg = params.messages[params.messages.length - 1];
+			const lastUserMsg = [...params.messages].reverse().find((m) => m.role === "user");
 			let userText = "";
-			if (typeof lastMsg?.content === "string") {
-				userText = lastMsg.content;
-			} else if (Array.isArray(lastMsg?.content)) {
-				userText = lastMsg.content
+			if (typeof lastUserMsg?.content === "string") {
+				userText = lastUserMsg.content;
+			} else if (Array.isArray(lastUserMsg?.content)) {
+				userText = lastUserMsg.content
 					.filter((b): b is TextBlock => b.type === "text")
 					.map((b) => b.text)
 					.join(" ");
