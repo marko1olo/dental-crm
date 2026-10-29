@@ -12,7 +12,7 @@ import { deductImplantScrew } from "./deductImplantScrew.js";
 import { linkBillingAndOdontogram } from "./installationBillingAndOdontogram.js";
 
 export function registerInstallationRoute(app: FastifyInstance) {
-	app.post("/api/clinical/implants/installations", async (request, reply) => {
+	const handleInstallation = async (request: any, reply: any) => {
 		const orgId = await requireResolvedStaffOrAdminOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -96,5 +96,8 @@ export function registerInstallationRoute(app: FastifyInstance) {
 		wsBroker.broadcastToOrganization(orgId, { type: "UPDATE_IMPLANT_RECORD", payload: { patientId: input.patientId, toothNumberFdi: input.toothNumberFdi, installationId: result.id, inventoryDeduction: result.inventoryDeduction, financials: result.financials } });
 
 		return reply.code(201).send({ success: true, installation: result, inventoryDeduction: result.inventoryDeduction, inventoryDeductions: result.deductedMaterials, financials: result.financials, isImmediateLoadingFeasible: result.isImmediateLoadingFeasible, evaluatedProtocol: protocol, decisionRationale });
-	});
+	};
+
+	app.post("/api/clinical/implants/installations", handleInstallation);
+	app.post("/api/implants/protocol", handleInstallation);
 }
