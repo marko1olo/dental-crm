@@ -38,6 +38,22 @@ body.copilot-open .copilot-trigger-btn,
   display: none !important;
 }
 
+/* Mobile ergonomics: lift above mobile bottom tabbar (56px) and schedule action bar */
+@media (max-width: 768px) {
+  .copilot-trigger-btn {
+    bottom: calc(72px + env(safe-area-inset-bottom, 0px));
+    right: 16px;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 12px;
+  }
+
+  body:has(.schedule-mobile-bottom-bar) .copilot-trigger-btn,
+  :has(.schedule-mobile-bottom-bar) .copilot-trigger-btn {
+    bottom: calc(136px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
 .copilot-footer-actions {
   display: flex;
   align-items: center;
