@@ -69,7 +69,7 @@ export function PatientAlertBadgesBar({
 					data-testid="visit-header-lab-status-badge"
 				>
 					{labStatus.isOverdue ? <AlertTriangle size={14} className="shrink-0" /> : labStatus.state === "ready_in_clinic" ? <CheckCircle2 size={14} className="shrink-0" /> : <Clock size={14} className="shrink-0" />}
-					<span className="font-extrabold">{labStatus.isOverdue ? `⚠️ ЗТЛ задерживает: +${labStatus.daysOverdue} дн` : labStatus.state === "ready_in_clinic" ? "✓ Работа из ЗТЛ в клинике" : labStatus.labelRu}</span>
+					<span className="font-extrabold">{labStatus.isOverdue ? `ЗТЛ задерживает: +${labStatus.daysOverdue} дн` : labStatus.state === "ready_in_clinic" ? "Работа из ЗТЛ в клинике" : labStatus.labelRu}</span>
 					{labStatus.colorVita && <span className="inline-block w-2.5 h-2.5 rounded-full border border-black/20" style={{ backgroundColor: hexColor || "#EBD7BB" }} title={`Цвет VITA ${labStatus.colorVita}`} />}
 				</span>
 			)}

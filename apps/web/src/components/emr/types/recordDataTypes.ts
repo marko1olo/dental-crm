@@ -103,8 +103,8 @@ export interface Form043EpicrisisData {
 }
 
 export interface MedicalCardForm043uData {
-	formNumber: "043/у";
-	formOrderName: "Приказ Минздрава СССР от 04.10.1980 № 1030" | "Приказ Минздрава России от 15.12.2014 № 834н";
+	formNumber: "043/у" | "Медицинская карта приёма" | string;
+	formOrderName: "Приказ Минздрава СССР от 04.10.1980 № 1030" | "Приказ Минздрава России от 15.12.2014 № 834н" | "Медицинская карта стоматологического пациента" | "Медицинская карта приёма" | string;
 	clinic: ClinicRequisites043;
 	passport: Form043PassportData;
 	anamnesis: Form043AnamnesisData;

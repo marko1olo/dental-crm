@@ -2,8 +2,8 @@ import type { MedicalCardForm043uData } from "../emr043Types";
 import { DEFAULT_32_PERMANENT_TEETH } from "./recordDefaultTeeth";
 
 export const DEFAULT_043_DATA: MedicalCardForm043uData = {
-	formNumber: "043/у",
-	formOrderName: "Приказ Минздрава СССР от 04.10.1980 № 1030" as unknown as MedicalCardForm043uData["formOrderName"],
+	formNumber: "Медицинская карта приёма",
+	formOrderName: "Медицинская карта стоматологического пациента",
 	clinic: {
 		clinicName: "Стоматологическая клиника «ДЕНТЕ»",
 		clinicLegalName: "ООО «ДЕНТЕ СТОМАТОЛОГИЯ»",

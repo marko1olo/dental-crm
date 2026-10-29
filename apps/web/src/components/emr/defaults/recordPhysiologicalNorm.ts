@@ -1,6 +1,7 @@
 import type { MedicalCardForm043uData } from "../emr043Types";
+import { DEFAULT_32_PERMANENT_TEETH } from "./recordDefaultTeeth";
 
-/** Заполнение незаполненных полей анамнеза и статуса физиологической нормой в 1 клик (Мандат 8e) */
+/** Заполнение незаполненных полей анамнеза, осмотра и интактных зубов физиологической нормой в 1 клик (Мандат 8e) */
 export function applyForm043PhysiologicalNorm(prev: MedicalCardForm043uData): MedicalCardForm043uData {
 	return {
 		...prev,
@@ -33,6 +34,9 @@ export function applyForm043PhysiologicalNorm(prev: MedicalCardForm043uData): Me
 		},
 		dentalStatus: {
 			...prev.dentalStatus,
+			odontogramTeeth: prev.dentalStatus?.odontogramTeeth?.length
+				? prev.dentalStatus.odontogramTeeth
+				: DEFAULT_32_PERMANENT_TEETH,
 			biteType: prev.dentalStatus?.biteType || "orthognathic",
 			biteDescription:
 				prev.dentalStatus?.biteDescription ||

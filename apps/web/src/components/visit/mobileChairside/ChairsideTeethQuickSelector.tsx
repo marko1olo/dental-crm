@@ -113,7 +113,7 @@ export const ChairsideTeethQuickSelector: React.FC<ChairsideTeethQuickSelectorPr
           >
             <div className="flex items-center gap-2">
               <CheckCircle2 size={18} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-              <span className="font-bold text-[14px]">✓ Интактные зубы (Норма в 1 клик)</span>
+              <span className="font-bold text-[14px]">Интактные зубы (Норма в 1 клик)</span>
             </div>
             <span className="text-[12px] opacity-80 font-medium">Все 32</span>
           </button>

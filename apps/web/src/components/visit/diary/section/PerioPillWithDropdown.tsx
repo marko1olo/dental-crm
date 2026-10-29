@@ -28,9 +28,11 @@ export const PerioPillWithDropdown: React.FC<PerioPillWithDropdownProps> = ({
 			<button
 				type="button"
 				onClick={handleInsertPerioStatus}
-				className="vde-043__btn vde-043__btn--norm border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
+				className="clinical-diary__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
 				title="Вставить физиологическую норму пародонта (десна бледно-розовая, плотная, карманов нет)"
-				data-testid="insert-perio-043-btn"
+				id="insert-perio-norm-btn"
+				data-testid="insert-perio-norm-btn"
+				data-legacy-testid="insert-perio-043-btn"
 			>
 				<Sparkles className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
 				<span className="whitespace-nowrap">Пародонт в норме</span>
@@ -38,7 +40,7 @@ export const PerioPillWithDropdown: React.FC<PerioPillWithDropdownProps> = ({
 			<button
 				type="button"
 				onClick={() => setShowPerioPathologyMenu((v) => !v)}
-				className="vde-043__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
+				className="clinical-diary__btn border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-bold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--teal)] transition-colors"
 				title="Выбрать протокол патологии пародонта (гингивит, пародонтит K05.3, абсцесс, рецессия)"
 				data-testid="perio-pathology-menu-btn"
 				aria-expanded={showPerioPathologyMenu}

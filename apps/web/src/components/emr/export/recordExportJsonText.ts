@@ -6,7 +6,7 @@ import { calculateDmftIndex, calculateCpitnIndex } from "../emr043Math";
 export function generate043JsonExport(data: MedicalCardForm043uData): string {
 	const payload = {
 		exportSchemaVersion: "1.0.0",
-		standardOrder: "Приказ Минздрава России от 15.12.2014 № 834н",
+		standardOrder: "Медицинская карта стоматологического пациента",
 		exportedAt: new Date().toISOString(),
 		...data,
 	};
@@ -22,7 +22,7 @@ export function generate043PlainText(data: MedicalCardForm043uData): string {
 	const cpitn = calculateCpitnIndex(d.cpitnIndex);
 
 	const lines: string[] = [
-		`МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (ФОРМА № 043/у)`,
+		`МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (МЕДИЦИНСКАЯ КАРТА ПРИЁМА)`,
 		`Номер карты: ${p.medicalCardNumber} | Дата открытия: ${p.cardOpenedDate}`,
 		`Клиника: ${data.clinic.clinicLegalName} (Лицензия № ${data.clinic.licenseNumber})`,
 		`--------------------------------------------------------------------------------`,
@@ -48,7 +48,7 @@ export function generate043PlainText(data: MedicalCardForm043uData): string {
 		`Прикус: ${dentalBiteTypeLabels[d.biteType] || d.biteDescription}`,
 		`Рентген: ${d.xrayFindingsDescription}`,
 		`--------------------------------------------------------------------------------`,
-		`4. ДНЕВНИКИ ПОСЕЩЕНИЙ (ФОРМА 043/У)`,
+		`4. ДНЕВНИКИ ПОСЕЩЕНИЙ И ПРОТОКОЛЫ ПРИЁМА`,
 	];
 
 	(data.visitDiaries || []).forEach((vd, idx) => {

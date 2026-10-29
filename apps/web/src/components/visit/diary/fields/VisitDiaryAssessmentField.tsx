@@ -1,9 +1,74 @@
 import React from "react";
+import { X } from "lucide-react";
 import type { DiaryState } from "../../../useVisitDiaryLogic";
-import type { ICD10_DICTIONARY } from "../../../../lib/icd10";
-import { SelectedIcdChip } from "./SelectedIcdChip";
-import { ToothInputField } from "./ToothInputField";
+import { getIcdColor, ICD10_DICTIONARY as ICD_LIST, type ICD10_DICTIONARY } from "../../../../lib/icd10";
 import { IcdSearchInputControl } from "./IcdSearchInputControl";
+
+export interface SelectedIcdChipProps {
+	readonly code: string;
+	readonly fieldsDisabled: boolean;
+	readonly onReset: () => void;
+}
+
+export const SelectedIcdChip: React.FC<SelectedIcdChipProps> = ({
+	code,
+	fieldsDisabled,
+	onReset,
+}) => {
+	const label = ICD_LIST.find((i) => i.code === code)?.label ?? "Диагноз выбран";
+
+	return (
+		<div
+			className={`clinical-diary__icd-chip min-h-[44px] min-w-0 break-words ${getIcdColor(code)}`}
+		>
+			<span className="clinical-diary__icd-code shrink-0">{code}</span>
+			<span className="flex-1 min-w-0 break-words">{label}</span>
+			{!fieldsDisabled && (
+				<button
+					type="button"
+					onClick={onReset}
+					className="clinical-diary__btn clinical-diary__btn--ghost clinical-diary__btn--icon shrink-0"
+					title="Сбросить диагноз"
+					aria-label="Сбросить диагноз"
+				>
+					<X className="w-3.5 h-3.5" />
+				</button>
+			)}
+		</div>
+	);
+};
+
+export interface ToothInputFieldProps {
+	readonly tooth: string;
+	readonly disabled: boolean;
+	readonly onChange: (tooth: string) => void;
+	readonly onFocus: () => void;
+}
+
+export const ToothInputField: React.FC<ToothInputFieldProps> = ({
+	tooth,
+	disabled,
+	onChange,
+	onFocus,
+}) => {
+	return (
+		<div className="clinical-diary__field">
+			<label className="clinical-diary__label" htmlFor="diary-tooth">
+				Зуб FDI
+			</label>
+			<input
+				id="diary-tooth"
+				disabled={disabled}
+				className="clinical-diary__input clinical-diary__tooth-input"
+				value={tooth}
+				onChange={(e) => onChange(e.target.value)}
+				onFocus={onFocus}
+				placeholder="16, 36..."
+				maxLength={32}
+			/>
+		</div>
+	);
+};
 
 export interface VisitDiaryAssessmentFieldProps {
 	readonly diary: DiaryState;
@@ -39,11 +104,11 @@ export const VisitDiaryAssessmentField: React.FC<VisitDiaryAssessmentFieldProps>
 	const selectedIcd = diary.diagnosisIcd10;
 
 	return (
-		<div className="vde-043__assessment">
-			<div className="vde-043__assessment-grid">
-				<div className="vde-043__field" ref={icdRef}>
-					<label className="vde-043__label" htmlFor="diary-icd-search">
-						<span className="vde-043__letter vde-043__letter--a">III</span> — Диагноз
+		<div className="clinical-diary__assessment">
+			<div className="clinical-diary__assessment-grid">
+				<div className="clinical-diary__field" ref={icdRef}>
+					<label className="clinical-diary__label" htmlFor="diary-icd-search">
+						<span className="clinical-diary__letter clinical-diary__letter--a">III</span> — Диагноз
 					</label>
 					{selectedIcd ? (
 						<SelectedIcdChip

@@ -69,7 +69,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
               <div className="flex items-center gap-2.5">
                 <CheckCircle2 size={22} className="shrink-0" />
                 <span className="text-[15px] font-bold">
-                  {ws.isNormApplied ? "✓ Норма внесена" : "✓ Соматически здоров / Норма"}
+                  {ws.isNormApplied ? "Норма внесена" : "Соматически здоров / Норма"}
                 </span>
               </div>
               <span className="text-[12px] opacity-90 font-medium">1 тап</span>
@@ -168,7 +168,7 @@ export const MobileChairsideVisitWorkspace: React.FC<MobileChairsideVisitWorkspa
             <div className="flex items-center gap-2.5">
               <CheckCircle2 size={20} className="shrink-0" />
               <span className="text-[14px] font-bold">
-                {ws.isNormApplied ? "✓ Норма внесена" : "✓ Соматически здоров / Норма"}
+                {ws.isNormApplied ? "Норма внесена" : "Соматически здоров / Норма"}
               </span>
             </div>
             <span className="text-[11px] opacity-90 font-medium">1 тап</span>

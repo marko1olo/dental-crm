@@ -55,7 +55,7 @@ export function VisitHeaderActionsToolbar(props: VisitViewHeaderProps) {
 				aria-label="Физиологическая норма"
 			>
 				<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0" aria-hidden="true" />
-				<span>✓ Норма</span>
+				<span>Норма</span>
 			</button>
 
 			<button

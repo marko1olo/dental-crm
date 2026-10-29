@@ -31,13 +31,13 @@ export function CryptoProSignerModal({ state, onPrintDraft }: CryptoProSignerMod
 					onPrintDraft={onPrintDraft}
 				/>
 
-				{/* Крупная статусная плашка «✓ Готов к подписанию» (Параграф 4) */}
+				{/* Крупная статусная плашка «Готов к подписанию» (Параграф 4) */}
 				<div
 					data-testid="diary-ready-for-signing-banner"
 					className="flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-800 dark:text-emerald-300 text-sm font-semibold mb-4 shrink-0"
 				>
 					<CheckCircle2 className="w-5 h-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
-					<span>✓ Готов к подписанию</span>
+					<span>Готов к подписанию</span>
 				</div>
 
 				<CryptoProTypeSelector

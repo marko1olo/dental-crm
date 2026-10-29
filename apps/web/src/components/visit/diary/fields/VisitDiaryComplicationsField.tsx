@@ -25,12 +25,12 @@ export const VisitDiaryComplicationsField: React.FC<VisitDiaryComplicationsField
 	handleAutoResize,
 }) => {
 	return (
-		<div className="vde-043__field vde-043__field--span2">
-			<label className="vde-043__label" htmlFor="vde-complications">
+		<div className="clinical-diary__field clinical-diary__field--span2">
+			<label className="clinical-diary__label" htmlFor="diary-complications">
 				<AlertTriangle className="w-3 h-3 text-[var(--bad-fg,#b91c1c)]" />
 				Осложнения и сопутствующие заболевания
 				{!fieldsDisabled && (
-					<div className="vde-043__label-mic">
+					<div className="clinical-diary__label-mic">
 						<SmartMicrophoneButton
 							context="visit"
 							sterileMode={false}
@@ -50,11 +50,11 @@ export const VisitDiaryComplicationsField: React.FC<VisitDiaryComplicationsField
 					</div>
 				)}
 			</label>
-			<div className="vde-043__complications-grid">
+			<div className="clinical-diary__complications-grid">
 				<textarea
-					id="vde-complications"
+					id="diary-complications"
 					disabled={fieldsDisabled}
-					className="auto-resize-ta vde-043__ta vde-043__ta--sm"
+					className="auto-resize-ta clinical-diary__ta clinical-diary__ta--sm"
 					value={diary.complications}
 					onChange={(e) => {
 						handleAutoResize(e);
@@ -70,7 +70,7 @@ export const VisitDiaryComplicationsField: React.FC<VisitDiaryComplicationsField
 				/>
 				<textarea
 					disabled={fieldsDisabled}
-					className="auto-resize-ta vde-043__ta vde-043__ta--sm"
+					className="auto-resize-ta clinical-diary__ta clinical-diary__ta--sm"
 					value={diary.comorbidities}
 					onChange={(e) => {
 						handleAutoResize(e);

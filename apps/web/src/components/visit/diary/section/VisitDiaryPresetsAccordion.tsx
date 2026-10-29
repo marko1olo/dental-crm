@@ -67,7 +67,7 @@ export const VisitDiaryPresetsAccordion: React.FC<VisitDiaryPresetsAccordionProp
 						<button
 							type="button"
 							onClick={() => onPopulateFromOdontogram(activeTeeth)}
-							className="vde-043__btn vde-043__btn--norm border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center gap-1.5"
+							className="clinical-diary__btn border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold rounded-lg px-2.5 py-1.5 shadow-2xs hover:border-[var(--line-strong)] transition-colors flex items-center gap-1.5"
 							title="Сформировать структурированный дневник из отметок на зубной формуле"
 							data-testid="populate-diary-from-odontogram-btn"
 						>

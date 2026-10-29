@@ -2,7 +2,6 @@ import React from "react";
 import { Sparkles } from "lucide-react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
-import { lazyWithRetry } from "../../lib/lazyWithRetry";
 import { VisitDiarySection } from "./VisitDiarySection";
 import type { VisitOdontogramTabProps } from "./odontogramTab/visitOdontogramTabTypes";
 import { useVisitOdontogramIds } from "./odontogramTab/useVisitOdontogramIds";
@@ -11,11 +10,7 @@ import { useVisitAutoOpen } from "./odontogramTab/useVisitAutoOpen";
 import { DentitionStatusBanner } from "./odontogramTab/DentitionStatusBanner";
 import { VisitDiaryInitializer } from "./odontogramTab/VisitDiaryInitializer";
 
-const OdontogramModule = lazyWithRetry(() =>
-	import("../odontogram/OdontogramModule").then((module) => ({
-		default: module.OdontogramModule,
-	})),
-);
+import { OdontogramModule } from "../odontogram/OdontogramModule";
 
 import { OdontogramSkeleton } from "./odontogramTab/OdontogramSkeleton";
 

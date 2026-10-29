@@ -14,8 +14,7 @@ export function renderClinicHeaderHtml(clinic: ClinicRequisites043, formOrderNam
     <div class="doc-requisites">
       <div class="form-badge">МЕДИЦИНСКАЯ ДОКУМЕНТАЦИЯ</div>
       <div>Медицинская карта приёма</div>
-      <div><strong>ФОРМА № 043/у</strong></div>
-      <div>Код формы по ОКУД: 3108805</div>
+      <div><strong>МЕДИЦИНСКАЯ КАРТА ПРИЁМА</strong></div>
       <div>${escapeHtml(formOrderName || "Медицинская карта стоматологического пациента")}</div>
     </div>
   </div>`;

@@ -59,13 +59,14 @@ export const PrintPreviewOverlay: React.FC<PrintPreviewOverlayProps> = ({
 
 	return createPortal(
 		<div
-			className="vde-043-print-overlay print-layer"
-			data-testid="form-043-preview"
+			className="clinical-diary-print-overlay print-layer"
+			data-testid="clinical-diary-preview"
+			data-legacy-testid="form-043-preview"
 			role="dialog"
 			aria-modal="true"
 			aria-label="Медицинская карта стоматологического пациента"
 		>
-			<div className="vde-043-print-sheet print-content">
+			<div className="clinical-diary-print-sheet print-content">
 				<PrintPreviewToolbar
 					onOpenBranding={() => setShowBrandingCustomizer(true)}
 					onClosePreview={() => setShowPreview(false)}

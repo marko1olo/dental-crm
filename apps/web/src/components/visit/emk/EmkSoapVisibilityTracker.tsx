@@ -138,7 +138,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 						{hasComplaint ? "Жалобы заполнены" : "Жалобы: нет"}
 					</span>
 					<span className="font-semibold sm:hidden">
-						{hasComplaint ? "Жалобы ✓" : "Жалобы"}
+						{hasComplaint ? "Жалобы" : "Жалобы"}
 					</span>
 				</button>
 
@@ -163,7 +163,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 						{hasObjective ? "Осмотр заполнен" : "Осмотр: нет"}
 					</span>
 					<span className="font-semibold sm:hidden">
-						{hasObjective ? "Осмотр ✓" : "Осмотр"}
+						{hasObjective ? "Осмотр" : "Осмотр"}
 					</span>
 				</button>
 
@@ -186,7 +186,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 					)}
 					<span className="font-semibold hidden sm:inline">Диагноз: {diagnosisText}</span>
 					<span className="font-semibold sm:hidden">
-						{hasDiagnosis ? (diagnosisText.startsWith("K") ? `${diagnosisText.split(" ")[0]} ✓` : "Диагноз ✓") : "Диагноз"}
+						{hasDiagnosis ? (diagnosisText.startsWith("K") ? `${diagnosisText.split(" ")[0]}` : "Диагноз") : "Диагноз"}
 					</span>
 				</button>
 
@@ -213,7 +213,7 @@ export const EmkSoapVisibilityTracker: React.FC<
 					)}
 					<span className="font-semibold hidden sm:inline">Лечение: {treatmentText}</span>
 					<span className="font-semibold sm:hidden">
-						{hasTreatment ? "План ✓" : "План"}
+						{hasTreatment ? "План" : "План"}
 					</span>
 				</button>
 			</div>
@@ -229,8 +229,8 @@ export const EmkSoapVisibilityTracker: React.FC<
 						title={`Продолжить 2-й этап эндодонтического лечения зуба ${effectiveSnapshot.toothNumber} с визита от ${effectiveSnapshot.date}`}
 					>
 						<RotateCw size={12} className="shrink-0" />
-						<span className="hidden sm:inline">🔁 Продолжить лечение зуба {effectiveSnapshot.toothNumber} с визита от {effectiveSnapshot.date}</span>
-						<span className="sm:hidden">🔁 Зуб {effectiveSnapshot.toothNumber}</span>
+						<span className="hidden sm:inline">Продолжить лечение зуба {effectiveSnapshot.toothNumber} с визита от {effectiveSnapshot.date}</span>
+						<span className="sm:hidden">Зуб {effectiveSnapshot.toothNumber}</span>
 					</button>
 				)}
 				{activeTooth && (
@@ -246,8 +246,8 @@ export const EmkSoapVisibilityTracker: React.FC<
 					}`}
 					data-testid="badge-soap-completion-status"
 				>
-					<span className="hidden sm:inline">{isComplete ? "✓ Готов к подписи" : `${filledCount}/4 заполнено`}</span>
-					<span className="sm:hidden">{isComplete ? "✓ Готов" : `${filledCount}/4`}</span>
+					<span className="hidden sm:inline">{isComplete ? "Готов к подписи" : `${filledCount}/4 заполнено`}</span>
+					<span className="sm:hidden">{isComplete ? "Готов" : `${filledCount}/4`}</span>
 				</span>
 			</div>
 		</div>

@@ -55,7 +55,7 @@ export function validateForm043uCompleteness(data: MedicalCardForm043uData): For
 	check(Boolean(data.dentalStatus?.oralMucosaStatus?.color), "oralMucosaStatus", "Состояние СОПР (слизистой)", "dental_status", "warning");
 
 	// Дневники визитов (Раздел 4)
-	check(Boolean(data.visitDiaries && data.visitDiaries.length > 0), "visitDiaries", "Хотя бы 1 запись в дневнике приёма (Форма 043/у)", "diaries", "critical");
+	check(Boolean(data.visitDiaries && data.visitDiaries.length > 0), "visitDiaries", "Хотя бы 1 запись в дневнике приёма", "diaries", "critical");
 
 	// Эпикриз (Раздел 5)
 	check(Boolean(data.epicrisis?.treatmentSummary?.trim()), "treatmentSummary", "Эпикриз / сводка лечения", "epicrisis", "warning");

@@ -1,5 +1,5 @@
 import React from "react";
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalCardForm043uData, Form043VisitDiaryEntry } from "../emr043Types";
 import type { calculateDmftIndex, calculateCpitnIndex } from "../emr043Math";
 import type { RecordTabType } from "./recordModalTypes";
 import { generatePrintableHtml043 } from "../emr043HtmlPrint";
@@ -20,6 +20,8 @@ interface RecordModalBodyProps {
 	onApplyNorm: () => void;
 	onOpenProtocolGenerator?: (() => void) | undefined;
 	onOpenInternalProtocolGenerator: () => void;
+	onAddDiary?: (entry: Form043VisitDiaryEntry) => void;
+	onDeleteDiary?: (index: number) => void;
 }
 
 export const RecordModalBody: React.FC<RecordModalBodyProps> = React.memo(function RecordModalBody(props) {
@@ -50,6 +52,8 @@ export const RecordModalBody: React.FC<RecordModalBodyProps> = React.memo(functi
 					formData={props.formData}
 					onOpenProtocolGenerator={props.onOpenProtocolGenerator}
 					onOpenInternalProtocolGenerator={props.onOpenInternalProtocolGenerator}
+					onAddDiary={props.onAddDiary}
+					onDeleteDiary={props.onDeleteDiary}
 				/>
 			)}
 			{props.activeTab === "epicrisis" && <Form043EpicrisisTab formData={props.formData} />}

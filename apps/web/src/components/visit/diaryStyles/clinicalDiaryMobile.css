@@ -7,7 +7,25 @@
 	.clinical-diary,
 	.vde-043 {
 		padding: 0.75rem;
-		border-radius: 0.85rem;
+		border-radius: 1rem;
+		overflow-x: clip;
+		max-width: 100vw;
+	}
+
+	/* Grouped List Cards pattern for mobile */
+	.clinical-diary__grid {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.clinical-diary__field,
+	.clinical-diary__assessment {
+		background: var(--paper-soft);
+		border: 1px solid var(--line);
+		border-radius: 1rem;
+		padding: 0.75rem;
+		box-shadow: var(--shadow-2xs, 0 1px 2px rgba(0, 0, 0, 0.04));
 	}
 
 	.clinical-diary__btn,
@@ -18,18 +36,19 @@
 		font-size: 0.8125rem;
 	}
 
-	.clinical-diary__btn:not(.clinical-diary__btn--icon),
-	.vde-043__btn:not(.vde-043__btn--icon),
-	.clinical-diary__badge,
-	.vde-043__badge {
-		width: 100%;
-	}
-
 	.clinical-diary__actions,
 	.vde-043__actions,
-	.clinical-diary__footer .clinical-diary__btn,
-	.vde-043__footer .vde-043__btn {
+	.clinical-diary__footer {
 		width: 100%;
+		flex-direction: column;
+		align-items: stretch;
+		gap: 0.5rem;
+	}
+
+	.clinical-diary__footer .clinical-diary__btn,
+	.clinical-diary__footer button {
+		width: 100%;
+		justify-content: center;
 	}
 
 	.clinical-diary-print-body,

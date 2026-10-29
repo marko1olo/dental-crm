@@ -27,18 +27,20 @@ function inferCategoryFromQuery(lower: string, targetTooth: number | null, fallb
 function calculateProtocolScore(proc: GroupedClinicalProcedure, lower: string, promptTokens: string[], inferredCategory: SpecialtyCategoryKey): number {
 	let score = 0;
 	const nameLower = proc.procedureName.toLowerCase();
-	if (inferredCategory !== "all" && proc.categoryKey === inferredCategory) score += 30;
+	if (inferredCategory !== "all" && proc.categoryKey === inferredCategory) score += 60;
+
+	if ((lower.includes("детск") || lower.includes("молочн") || lower.includes("ребен")) && (nameLower.includes("детство") || nameLower.includes("мол.зуб") || proc.categoryKey === "pediatric")) score += 80;
 
 	if (lower.includes("ретинир") && nameLower.includes("ретинированного")) score += 150;
-	if (lower.includes("удал") && !lower.includes("ретинир") && nameLower === "удаление зуба") score += 120;
+	if (lower.includes("удал") && !lower.includes("ретинир") && (nameLower === "удаление зуба" || nameLower.includes("удаление"))) score += 120;
 	if (lower.includes("синус") && nameLower.includes("синус-лифтинг")) score += 150;
 	if (lower.includes("имплант") && !nameLower.includes("удаление") && nameLower.includes("имплантация")) score += 120;
-	if (lower.includes("кариес") && lower.includes("глубок") && nameLower === "кариес дентина") score += 140;
-	if (lower.includes("кариес") && lower.includes("эмал") && nameLower === "кариес эмали") score += 140;
-	if (lower.includes("кариес") && !lower.includes("глубок") && !lower.includes("эмал") && nameLower === "кариес дентина") score += 100;
-	if (lower.includes("пульпит") && nameLower.startsWith("пульпит")) score += 130;
-	if (lower.includes("периодонтит") && nameLower.startsWith("периодонтит")) score += 130;
-	if (lower.includes("коронк") && nameLower.includes("коронку на своих зубах")) score += 130;
+	if (lower.includes("кариес") && lower.includes("глубок") && nameLower.startsWith("кариес дентина")) score += 140;
+	if (lower.includes("кариес") && lower.includes("эмал") && nameLower.startsWith("кариес эмали")) score += 140;
+	if (lower.includes("кариес") && !lower.includes("глубок") && !lower.includes("эмал") && nameLower.startsWith("кариес дентина")) score += 100;
+	if (lower.includes("пульпит") && (nameLower.startsWith("пульпит") || nameLower.includes("пульпит"))) score += 130;
+	if (lower.includes("периодонтит") && (nameLower.startsWith("периодонтит") || nameLower.includes("периодонтит"))) score += 130;
+	if (lower.includes("коронк") && (nameLower.includes("коронку на своих зубах") || nameLower.includes("коронка"))) score += 130;
 	if (lower.includes("винир") && nameLower.includes("виниры")) score += 140;
 	if (lower.includes("гигиен") && nameLower.includes("гигиена")) score += 140;
 	if (lower.includes("отбеливан") && nameLower.includes("отбеливание")) score += 130;

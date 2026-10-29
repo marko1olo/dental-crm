@@ -291,7 +291,7 @@ describe("Form 043/u Completeness Validation", () => {
 describe("Form 043/u Document Generators", () => {
 	it("generates magazine-grade printable HTML conforming to Order 834n", () => {
 		const html = generatePrintableHtml043(MOCK_CARD_DATA);
-		assert.ok(html.includes("ФОРМА № 043/у"), "Contains Form 043/u badge");
+		assert.ok(html.includes("МЕДИЦИНСКАЯ КАРТА ПРИЁМА"), "Contains Medical Card badge");
 		assert.ok(html.includes("Приказ Минздрава России от 15.12.2014 № 834н"), "References Order 834n");
 		assert.ok(html.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"), "Contains clinic legal name");
 		assert.ok(html.includes("Смирнов Алексей Владимирович"), "Contains patient name");
@@ -327,11 +327,11 @@ describe("Form 043/u Document Generators", () => {
 
 	it("generates structured plain text transcript for clipboard copy", () => {
 		const text = generate043PlainText(MOCK_CARD_DATA);
-		assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (ФОРМА № 043/у)"));
+		assert.ok(text.includes("МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА (МЕДИЦИНСКАЯ КАРТА ПРИЁМА)"));
 		assert.ok(text.includes("1. ПАСПОРТНАЯ ЧАСТЬ"));
 		assert.ok(text.includes("2. АНАМНЕЗ ЖИЗНИ И ЗАБОЛЕВАНИЯ"));
 		assert.ok(text.includes("3. СТОМАТОЛОГИЧЕСКИЙ СТАТУС"));
-		assert.ok(text.includes("4. ДНЕВНИКИ ПОСЕЩЕНИЙ (ФОРМА 043/У)"));
+		assert.ok(text.includes("4. ДНЕВНИКИ ПОСЕЩЕНИЙ И ПРОТОКОЛЫ ПРИЁМА"));
 		assert.ok(text.includes("5. ЭПИКРИЗ И КОНТРОЛЬНОЕ НАБЛЮДЕНИЕ"));
 	});
 

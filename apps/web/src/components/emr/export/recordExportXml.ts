@@ -23,7 +23,7 @@ export function generate043XmlCda(data: MedicalCardForm043uData): string {
   <typeId root="2.16.840.1.113883.1.3" extension="POCD_HD000040"/>
   <templateId root="1.2.643.5.1.13.100.1.1.834.43"/>
   <id root="1.2.643.5.1.13" extension="${escapeXml(p.medicalCardNumber)}"/>
-  <code code="834" codeSystem="1.2.643.5.1.13.100.1.1" displayName="Медицинская карта стоматологического пациента (Форма 043/у)"/>
+  <code code="834" codeSystem="1.2.643.5.1.13.100.1.1" displayName="Медицинская карта стоматологического пациента (Медицинская карта приёма)"/>
   <title>МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА № ${escapeXml(p.medicalCardNumber)}</title>
   <effectiveTime value="${createdIso.replace(/[-:T]/g, "").slice(0, 14)}"/>
   <confidentialityCode code="N" codeSystem="2.16.840.1.113883.5.25" displayName="normal"/>
@@ -77,7 +77,7 @@ export function generate043XmlCda(data: MedicalCardForm043uData): string {
       <component>
         <section>
           <code code="VISIT_DIARIES" codeSystem="1.2.643.5.1.13" displayName="Дневники посещений"/>
-          <title>Дневники посещений (Форма 043/у)</title>
+          <title>Дневники посещений и протоколы приёма</title>
           <text>${(data.visitDiaries || []).map((vd, i) => `<paragraph><strong>Визит ${i + 1} (${escapeXml(vd.entryDate)}):</strong> Диагноз: ${escapeXml(vd.assessmentDiagnosisText)} [${escapeXml(vd.assessmentIcd10Code)}]. Протокол: ${escapeXml(vd.procedureProtocol)}.</paragraph>`).join("")}</text>
         </section>
       </component>

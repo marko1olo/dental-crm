@@ -1,4 +1,5 @@
 import React from "react";
+import { Mic } from "lucide-react";
 import type { ClinicalFormFieldTarget } from "@dental/shared";
 import { ClinicalStenographerBar } from "./ClinicalStenographerBar";
 import { useClinicalStenographer } from "./useClinicalStenographer";
@@ -14,6 +15,11 @@ function inferTargetFieldFromKey(key: string): ClinicalFormFieldTarget {
 	return "all";
 }
 
+/**
+ * DebouncedEmkTextarea — Автосохранение текста ЭМК без задержек ввода
+ * и сквозной голосовой ввод с анимацией волны (Мандаты 8e, 8n).
+ * Строго <= 300 строк.
+ */
 export function DebouncedEmkTextarea({
 	fieldKey,
 	label,
@@ -89,7 +95,7 @@ export function DebouncedEmkTextarea({
 		flushCommit();
 	};
 
-	// Clinical Stenographer hook integration
+	// Clinical Stenographer hook integration with Voice
 	const targetField = stenographerFieldTarget ?? inferTargetFieldFromKey(fieldKey);
 	const {
 		fieldSnippets,
@@ -150,18 +156,58 @@ export function DebouncedEmkTextarea({
 
 	return (
 		<div className="w-full flex flex-col gap-1.5" data-testid={`emk-textarea-wrap-${fieldKey}`}>
-			<textarea
-				ref={setCombinedRef}
-				aria-label={label}
-				value={localValue}
-				placeholder={placeholder}
-				onChange={handleChange}
-				onBlur={handleBlur}
-				onKeyDown={handleKeyDown}
-				className={className}
-				data-testid={`textarea-${fieldKey}`}
-			/>
-			{enableStenographer && showStenographerChips && (fieldSnippets.length > 0 || isListening) && (
+			<div className="relative w-full">
+				<textarea
+					ref={setCombinedRef}
+					aria-label={label}
+					value={localValue}
+					placeholder={placeholder}
+					onChange={handleChange}
+					onBlur={handleBlur}
+					onKeyDown={handleKeyDown}
+					className={`${className || ""} pr-10`}
+					data-testid={`textarea-${fieldKey}`}
+				/>
+
+				{/* 1-Click Chairside Voice Button with Wave Animation */}
+				<button
+					type="button"
+					onClick={(e) => {
+						e.preventDefault();
+						if (isListening) {
+							applyInterim();
+						} else {
+							void toggleVoiceDictation();
+						}
+					}}
+					className={`absolute right-2.5 bottom-2.5 w-7 h-7 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs select-none ${
+						isListening
+							? "bg-rose-500 text-white animate-pulse ring-2 ring-rose-400/50"
+							: isProcessing
+								? "bg-teal-500/20 text-teal-600 animate-spin"
+								: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] border border-[var(--line)]"
+					}`}
+					title={
+						isListening
+							? "Идёт диктовка у кресла. Нажмите для быстрой вставки в дневник"
+							: `Надиктовать голосом: ${label || fieldKey}`
+					}
+					aria-label={`Голосовой ввод: ${label || fieldKey}`}
+					data-testid={fieldKey === "complaint" ? "btn-dictate-complaints" : `btn-dictate-${fieldKey}`}
+				>
+					{isListening ? (
+						<span className="flex items-center gap-0.5" aria-hidden="true">
+							<span className="w-0.5 h-3 bg-white animate-pulse" />
+							<span className="w-0.5 h-4 bg-white animate-pulse delay-75" />
+							<span className="w-0.5 h-2.5 bg-white animate-pulse delay-150" />
+						</span>
+					) : (
+						<Mic size={14} className="shrink-0" />
+					)}
+				</button>
+			</div>
+
+			{enableStenographer && showStenographerChips && (
 				<ClinicalStenographerBar
 					snippets={fieldSnippets}
 					onSelectSnippet={insertSnippet}

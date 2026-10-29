@@ -106,6 +106,8 @@ export const MedicalRecordPrintModal: React.FC<MedicalRecordPrintModalProps> = R
 						onApplyNorm={m.handleApplyNorm}
 						onOpenProtocolGenerator={onOpenProtocolGenerator}
 						onOpenInternalProtocolGenerator={() => m.setIsProtocolGeneratorOpen(true)}
+						onAddDiary={m.handleAddDiary}
+						onDeleteDiary={m.handleDeleteDiary}
 					/>
 				</div>
 			</div>

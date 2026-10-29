@@ -7,7 +7,6 @@ import {
 	Droplet,
 	FileText,
 	Heart,
-	Mic,
 	Pill,
 	Search,
 	ShieldAlert,
@@ -17,10 +16,8 @@ import {
 	UserCheck,
 	Zap,
 } from "lucide-react";
-import { showToast } from "../../GlobalToast";
 import { DebouncedEmkTextarea } from "./DebouncedEmkTextarea";
 import type { EmkSectionProps } from "./EmkTypes";
-import { useUnifiedDictation } from "../../../hooks/useUnifiedDictation";
 
 interface SymptomChip {
 	id: string;
@@ -102,28 +99,6 @@ export function EmkComplaintsSection({
 		updateVisitNoteField("anamnesis", `${current}. ${chipText}`);
 	};
 
-	const {
-		isRecording,
-		toggleDictation,
-	} = useUnifiedDictation({
-		context: "visit",
-		onResult: (transcript) => {
-			if (transcript && updateVisitNoteField) {
-				const current = (
-					visitNoteForm?.complaint ||
-					visitNoteForm?.complaints ||
-					""
-				).trim();
-				const nextVal = current
-					? `${current} ${transcript.trim()}`
-					: transcript.trim();
-				updateVisitNoteField("complaint", nextVal);
-				updateVisitNoteField("complaints", nextVal);
-				showToast("Жалобы записаны голосом", "success", 2000);
-			}
-		},
-	});
-
 	return (
 		<div className="flex flex-col gap-3.5" data-testid="emk-complaints-section">
 			{/* 1. Жалобы */}
@@ -150,38 +125,18 @@ export function EmkComplaintsSection({
 					</div>
 				</div>
 
-				{/* Поле жалоб с компактной иконкой микрофона в правом нижнем углу (Apple-style) */}
-				<div className="relative w-full">
-					<DebouncedEmkTextarea
-						fieldKey="complaint"
-						label="Жалобы пациента"
-						value={visitNoteForm?.complaint || visitNoteForm?.complaints || ""}
-						onCommit={(key, val) => {
-							updateVisitNoteField(key, val);
-							updateVisitNoteField("complaints", val);
-						}}
-						placeholder="Опишите жалобы пациента (характер боли, локализация, провоцирующие факторы)..."
-						className="w-full min-h-[115px] sm:min-h-[85px] p-3 pb-5 pr-10 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
-					/>
-					<button
-						type="button"
-						onClick={toggleDictation}
-						className={`absolute right-2.5 bottom-2.5 w-7 h-7 rounded-full flex items-center justify-center transition-all cursor-pointer shadow-2xs ${
-							isRecording
-								? "bg-rose-500 text-white animate-pulse"
-								: "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--teal)] hover:bg-[var(--paper-soft)] border border-[var(--line)]"
-						}`}
-						title={
-							isRecording
-								? "Остановить запись"
-								: "Надиктовать жалобы голосом"
-						}
-						aria-label="Голосовой ввод жалоб"
-						data-testid="btn-dictate-complaints"
-					>
-						<Mic size={14} className={isRecording ? "animate-pulse" : ""} />
-					</button>
-				</div>
+				{/* Поле жалоб с компактной иконкой микрофона и автосохранением */}
+				<DebouncedEmkTextarea
+					fieldKey="complaint"
+					label="Жалобы пациента"
+					value={visitNoteForm?.complaint || visitNoteForm?.complaints || ""}
+					onCommit={(key, val) => {
+						updateVisitNoteField(key, val);
+						updateVisitNoteField("complaints", val);
+					}}
+					placeholder="Опишите жалобы пациента (характер боли, локализация, провоцирующие факторы)..."
+					className="w-full min-h-[115px] sm:min-h-[85px] p-3 pb-5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-sm text-[var(--ink)] focus:outline-none focus:border-[var(--teal)] transition-all resize-y leading-relaxed shadow-2xs"
+				/>
 
 				{/* Ряд быстрых чипов симптомов */}
 				<div

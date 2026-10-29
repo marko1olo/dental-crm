@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "../../../store/appStore";
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalCardForm043uData, Form043VisitDiaryEntry } from "../emr043Types";
 import type { MedicalRecordPrintModalProps, RecordTabType } from "./recordModalTypes";
 import { DEFAULT_043_DATA, resolveClinicRequisites, applyForm043PhysiologicalNorm } from "../emr043DefaultData";
 import {
@@ -55,6 +55,23 @@ export function useMedicalRecordModal({
 	const cpitn = useMemo(() => calculateCpitnIndex(formData.dentalStatus.cpitnIndex), [formData.dentalStatus.cpitnIndex]);
 	const ageText = useMemo(() => formatPatientAge(formData.passport.patientBirthDate, formData.passport.cardOpenedDate), [formData.passport.patientBirthDate, formData.passport.cardOpenedDate]);
 
+	// Debounced автосейв всей карты на лету (Мандат 8e: Zero Keystroke Loss)
+	const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+	useEffect(() => {
+		if (autosaveRef.current) clearTimeout(autosaveRef.current);
+		autosaveRef.current = setTimeout(() => {
+			try {
+				if (typeof sessionStorage !== "undefined") {
+					const draftKey = `dente:medical_card_autosave:${formData.passport.medicalCardNumber || "common"}`;
+					sessionStorage.setItem(draftKey, JSON.stringify(formData));
+				}
+			} catch {}
+		}, 800);
+		return () => {
+			if (autosaveRef.current) clearTimeout(autosaveRef.current);
+		};
+	}, [formData]);
+
 	const { handlePrint, handleExportXml, handleExportJson, handleCopyText } = useRecordExports({
 		formData,
 		effectiveIsDraft,
@@ -73,10 +90,32 @@ export function useMedicalRecordModal({
 		onSave?.(formData);
 	}, [onSave, formData]);
 
+	const handleAddDiary = useCallback((newDiary: Form043VisitDiaryEntry) => {
+		setFormData((prev) => {
+			const updated = {
+				...prev,
+				visitDiaries: [newDiary, ...prev.visitDiaries],
+			};
+			onSave?.(updated);
+			return updated;
+		});
+	}, [onSave]);
+
+	const handleDeleteDiary = useCallback((index: number) => {
+		setFormData((prev) => {
+			const updated = {
+				...prev,
+				visitDiaries: prev.visitDiaries.filter((_, i) => i !== index),
+			};
+			onSave?.(updated);
+			return updated;
+		});
+	}, [onSave]);
+
 	return {
 		formData, setFormData, activeTab, setActiveTab, zoomScale, setZoomScale, isFullscreen, setIsFullscreen,
 		copiedToast, isMoreMenuOpen, setIsMoreMenuOpen, isProtocolGeneratorOpen, setIsProtocolGeneratorOpen,
 		effectiveIsDraft, validation, dmft, cpitn, ageText, handlePrint, handleExportXml, handleExportJson,
-		handleCopyText, handleApplyNorm, handleSaveForm,
+		handleCopyText, handleApplyNorm, handleSaveForm, handleAddDiary, handleDeleteDiary,
 	};
 }

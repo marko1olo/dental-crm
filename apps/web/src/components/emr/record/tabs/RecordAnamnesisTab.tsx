@@ -1,5 +1,5 @@
 import React from "react";
-import { HeartPulse, Sparkles } from "lucide-react";
+import { AlertTriangle, HeartPulse, Sparkles } from "lucide-react";
 import type { MedicalCardForm043uData } from "../../emr043Types";
 
 export interface Form043AnamnesisTabProps {
@@ -50,8 +50,9 @@ export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.mem
 								{a.allergologicalHistory &&
 								!a.allergologicalHistory.toLowerCase().includes("не отягощен") &&
 								!a.allergologicalHistory.toLowerCase().includes("нет") ? (
-									<span className="emr043-allergy-warning-inline">
-										⚠️ {a.allergologicalHistory}
+									<span className="emr043-allergy-warning-inline inline-flex items-center gap-1">
+										<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+										{a.allergologicalHistory}
 									</span>
 								) : (
 									a.allergologicalHistory || "Не отягощен"

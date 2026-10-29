@@ -27,13 +27,19 @@ export const VisitDiaryObjectiveField: React.FC<VisitDiaryObjectiveFieldProps> =
 	handleAutoResize,
 	steno,
 }) => {
+	const isObjectiveNormApplied = Boolean(
+		diary.statusLocalis?.includes("бледно-розовая") ||
+		diary.statusLocalis?.includes("Интактные зубы") ||
+		diary.statusLocalis?.includes("интактны"),
+	);
+
 	return (
-		<div className="vde-043__field">
-			<label className="vde-043__label" htmlFor="diary-status-localis">
+		<div className="clinical-diary__field">
+			<label className="clinical-diary__label" htmlFor="diary-status-localis">
 				<Search className="w-3 h-3 text-purple-600 dark:text-purple-400" />
-				<span className="vde-043__letter vde-043__letter--o">II</span> — Осмотр и зубная формула
+				<span className="clinical-diary__letter clinical-diary__letter--o">II</span> — Осмотр и зубная формула
 				{!fieldsDisabled && (
-					<div className="vde-043__label-mic">
+					<div className="clinical-diary__label-mic">
 						<SmartMicrophoneButton
 							context="visit"
 							sterileMode={false}
@@ -56,7 +62,7 @@ export const VisitDiaryObjectiveField: React.FC<VisitDiaryObjectiveFieldProps> =
 			<textarea
 				id="diary-status-localis"
 				disabled={fieldsDisabled}
-				className="auto-resize-ta vde-043__ta"
+				className="auto-resize-ta clinical-diary__ta"
 				value={diary.statusLocalis}
 				onChange={(e) => {
 					handleAutoResize(e);
@@ -76,7 +82,7 @@ export const VisitDiaryObjectiveField: React.FC<VisitDiaryObjectiveFieldProps> =
 					type="button"
 					onClick={() => {
 						ensureRevisingIfLocked();
-						const normObj = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологии. Прикус физиологический. Зондирование и перкуссия безболезненны.";
+						const normObj = "Слизистая оболочка полости рта бледно-розовая, влажная, без патологии. Зубные ряды интактны, прикус физиологический. Зондирование и перкуссия безболезненны.";
 						setDiary((p) => ({
 							...p,
 							statusLocalis: p.statusLocalis ? `${p.statusLocalis}\n${normObj}` : normObj,
@@ -85,14 +91,14 @@ export const VisitDiaryObjectiveField: React.FC<VisitDiaryObjectiveFieldProps> =
 					}}
 					disabled={fieldsDisabled}
 					className={`dente-filter-chip shrink-0 ${
-						diary.statusLocalis?.includes("бледно-розовая") ? "active" : ""
+						isObjectiveNormApplied ? "active" : ""
 					}`}
-					data-active={Boolean(diary.statusLocalis?.includes("бледно-розовая"))}
+					data-active={isObjectiveNormApplied}
 					data-testid="btn-quick-norm-objective"
-					title="Зафиксировать норму: слизистая бледно-розовая, без патологии"
+					title="Зафиксировать норму в 1 клик: интактные зубы, слизистая бледно-розовая, без патологии"
 				>
 					<Check className="w-3 h-3 text-[var(--teal)] shrink-0" />
-					<span>Слизистая в норме</span>
+					<span>Интактные зубы / Осмотр в норме</span>
 				</button>
 			</div>
 			{!fieldsDisabled && (

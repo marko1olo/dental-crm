@@ -18,7 +18,7 @@ export const VisitDiaryLoadingBanners: React.FC<VisitDiaryLoadingBannersProps> =
 		<>
 			{loadState.phase === "loading" && loadStateText && (
 				<div
-					className="vde-043__load-banner"
+					className="clinical-diary__load-banner p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)]"
 					data-testid="diary-load-loading"
 					role="status"
 					aria-live="polite"
@@ -31,7 +31,7 @@ export const VisitDiaryLoadingBanners: React.FC<VisitDiaryLoadingBannersProps> =
 			)}
 			{loadState.phase === "failed" && (
 				<div
-					className="vde-043__load-banner"
+					className="clinical-diary__load-banner p-3 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-xs text-[var(--ink)]"
 					data-testid="diary-load-failed"
 				>
 					<PanelLoadFailure

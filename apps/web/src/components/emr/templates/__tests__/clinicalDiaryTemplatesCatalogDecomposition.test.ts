@@ -1,7 +1,8 @@
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
 	CLINICAL_1CLICK_TEMPLATES_CATALOG,
 	PHYSIOLOGICAL_NORM_PRESET,
@@ -13,6 +14,8 @@ import {
 	PERIODONTIC_DIARY_TEMPLATES,
 	PEDIATRIC_DIARY_TEMPLATES,
 } from "../clinicalDiaryTemplatesCatalogData";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("Clinical Diary Templates Catalog — Mandate 8b Decomposition & EBM Inquisition", () => {
 	const catalogDir = path.resolve(__dirname, "../catalog");

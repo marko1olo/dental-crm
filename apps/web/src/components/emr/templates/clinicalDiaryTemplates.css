@@ -1,49 +1,7 @@
 /**
  * clinicalDiaryTemplates.css — Modern Clinical Diary Templates Layout Facade
- * Architectural Mandate 8b: Modular CSS architecture (all submodules <= 120 lines)
+ * Architectural Mandate 8b / 8zi: Consolidated CSS modules (~350 lines each)
  */
 
-@import "./styles/templatesModalContainer.css";
-@import "./styles/templatesHeaderAndRibbon.css";
-@import "./styles/templatesDominantNormBar.css";
-@import "./styles/templatesFastRibbon.css";
-@import "./styles/templatesSidebarAndFilters.css";
-@import "./styles/templatesSearchInput.css";
-@import "./styles/templatesCategoryChips.css";
-@import "./styles/templatesCardsList.css";
-@import "./styles/templatesEditorAndToolbar.css";
-@import "./styles/templatesToothChips.css";
-@import "./styles/templatesSoapTextarea.css";
-@import "./styles/templatesServicesCatalog.css";
-@import "./styles/templatesFooterAndActions.css";
-@import "./styles/templatesMobileResponsive.css";
-@import "./styles/templatesNosologyCaries.css";
-@import "./styles/templatesNosologyEndo.css";
-@import "./styles/templatesNosologyPerio.css";
-@import "./styles/templatesNosologyHygiene.css";
-
-/* Contract selector required by accessibility and UI validation */
-.cd-templates-close-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  min-height: 32px;
-  min-width: 32px;
-  border-radius: 8px;
-  border: 1px solid var(--line, #cbd5e1);
-  background: var(--paper-strong, #ffffff);
-  color: var(--muted, #64748b);
-  cursor: pointer;
-  transition: all 0.15s ease;
-}
-
-@media (max-width: 640px) {
-  .cd-templates-close-btn {
-    min-height: 44px;
-    min-width: 44px;
-    height: 44px;
-    width: 44px;
-  }
-}
+@import "./styles/templatesLayoutAndCatalog.css";
+@import "./styles/templatesEditorAndMobile.css";

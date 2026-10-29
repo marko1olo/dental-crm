@@ -66,8 +66,8 @@ export const RecordModalHeader: React.FC<RecordModalHeaderProps> = React.memo(fu
 					</div>
 				)}
 
-				<button type="button" className="emr043-btn emr043-btn-secondary" onClick={props.onApplyNorm} disabled={false} data-testid="btn-form043-apply-norm" title="Заполнить нормой">
-					<Sparkles className="w-4 h-4 text-amber-500 shrink-0" /><span>Норма</span>
+				<button type="button" className="emr043-btn emr043-btn-secondary" onClick={props.onApplyNorm} disabled={false} data-testid="btn-form043-apply-norm" title="Заполнить физиологической нормой / Интактные зубы (Мандат 8e)">
+					<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" /><span>Норма</span>
 				</button>
 
 				{props.hasOnSave && (

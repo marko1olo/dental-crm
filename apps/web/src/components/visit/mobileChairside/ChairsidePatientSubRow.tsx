@@ -36,7 +36,7 @@ export const ChairsidePatientSubRow: React.FC<ChairsidePatientSubRowProps> = ({
 					data-testid={`${testId}-allergy-clean-badge`}
 					title="Аллергии не выявлены"
 				>
-					<span className="mobile-chairside-allergy-clean-text">✓ Аллергии не выявлены</span>
+					<span className="mobile-chairside-allergy-clean-text">Аллергии не выявлены</span>
 				</div>
 			)}
 		</div>

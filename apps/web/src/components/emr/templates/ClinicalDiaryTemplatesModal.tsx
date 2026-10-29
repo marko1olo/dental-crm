@@ -4,17 +4,12 @@ import {
 	Sparkles,
 	FileText,
 	Check,
-	Copy,
 	X,
 	ShieldCheck,
 	Zap,
-	Search,
-	CheckCircle2,
 	Stethoscope,
-	Tag,
 } from "lucide-react";
 import {
-	type Clinical1ClickTemplate,
 	type ClinicalProtocolCategory,
 	type SynthesizedDiaryResult,
 	type Order804nServiceItem,
@@ -23,9 +18,10 @@ import {
 	getCore1ClickTemplates,
 	synthesize1ClickSoapDiary,
 	getToothAnatomicalDescription,
-	formatStatutoryUnifiedSoapText,
 	PHYSIOLOGICAL_NORM_PRESET,
 } from "./clinicalDiaryTemplatesEngine";
+import { ClinicalDiaryTemplatesSidebar } from "./ClinicalDiaryTemplatesSidebar";
+import { ClinicalDiaryTemplatesEditor } from "./ClinicalDiaryTemplatesEditor";
 import "./clinicalDiaryTemplates.css";
 
 export { PHYSIOLOGICAL_NORM_PRESET };
@@ -42,7 +38,7 @@ export interface ClinicalDiaryTemplatesModalProps {
 	readonly onApplyServices?: (services: readonly Order804nServiceItem[]) => void;
 }
 
-const COMMON_TEETH_PRESETS = [16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44];
+const COMMON_TEETH_PRESETS = [16, 26, 36, 46, 11, 21, 31, 41, 14, 24, 34, 44] as const;
 
 function renderTemplateIcon(iconName: string, className = "w-4 h-4 shrink-0") {
 	switch (iconName) {
@@ -74,15 +70,9 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 		onApplySoapText,
 		onApplyServices,
 	}) {
-		const coreTemplates = useMemo(() => {
-			return [PHYSIOLOGICAL_NORM_PRESET, ...getCore1ClickTemplates()];
-		}, []);
+		const coreTemplates = useMemo(() => [PHYSIOLOGICAL_NORM_PRESET, ...getCore1ClickTemplates()], []);
+		const allCatalogWithNorm = useMemo(() => [PHYSIOLOGICAL_NORM_PRESET, ...CLINICAL_1CLICK_TEMPLATES_CATALOG], []);
 
-		const allCatalogWithNorm = useMemo(() => {
-			return [PHYSIOLOGICAL_NORM_PRESET, ...CLINICAL_1CLICK_TEMPLATES_CATALOG];
-		}, []);
-
-		// Выбранный шаблон (по умолчанию: средний кариес К02.1)
 		const [selectedTemplateId, setSelectedTemplateId] = useState<string>("caries_medium_k02_1");
 		const [toothNumberInput, setToothNumberInput] = useState<string>(() =>
 			initialToothNumber ? String(initialToothNumber) : "16",
@@ -122,14 +112,12 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 			};
 		}, []);
 
-		// Синхронизация initialToothNumber при открытии
 		useEffect(() => {
 			if (initialToothNumber) {
 				setToothNumberInput(String(initialToothNumber));
 			}
 		}, [initialToothNumber]);
 
-		// Список отфильтрованных шаблонов (включая физиологическую норму)
 		const filteredTemplates = useMemo(() => {
 			const query = searchQuery.trim().toLowerCase().replace(/ё/g, "е");
 			let list = allCatalogWithNorm;
@@ -138,9 +126,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 				list = list.filter((t) => t.category === selectedCategory);
 			}
 
-			if (!query) {
-				return list;
-			}
+			if (!query) return list;
 
 			const tokens = query.split(/\s+/).filter(Boolean);
 			return list.filter((t) => {
@@ -151,18 +137,13 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 			});
 		}, [allCatalogWithNorm, searchQuery, selectedCategory]);
 
-		// Текущий выбранный объект шаблона
 		const activeTemplate = useMemo(() => {
 			if (selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id) {
 				return PHYSIOLOGICAL_NORM_PRESET;
 			}
-			return (
-				CLINICAL_1CLICK_TEMPLATES_CATALOG.find((t) => t.id === selectedTemplateId) ||
-				PHYSIOLOGICAL_NORM_PRESET
-			);
+			return CLINICAL_1CLICK_TEMPLATES_CATALOG.find((t) => t.id === selectedTemplateId) || PHYSIOLOGICAL_NORM_PRESET;
 		}, [selectedTemplateId]);
 
-		// Автогенерация синтезированного дневника
 		const synthesized = useMemo(() => {
 			return synthesize1ClickSoapDiary(selectedTemplateId, {
 				toothNumber: toothNumberInput,
@@ -172,26 +153,22 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 			});
 		}, [selectedTemplateId, toothNumberInput, doctorFullName, doctorSpecialty, patientFullName]);
 
-		// Обновление текста при смене шаблона или зуба (если врач не вносил ручных правок)
 		useEffect(() => {
 			if (!isCustomEdited) {
 				setEditedSoapText(synthesized.unifiedSoapText);
 			}
 		}, [synthesized, isCustomEdited]);
 
-		// 1-Click выбор шаблона из верхнего ряда или списка
 		const handleSelectTemplate = useCallback((templateId: string) => {
 			setSelectedTemplateId(templateId);
 			setIsCustomEdited(false);
 		}, []);
 
-		// Смена зуба
 		const handleToothChange = useCallback((toothVal: string) => {
 			setToothNumberInput(toothVal);
 			setIsCustomEdited(false);
 		}, []);
 
-		// Копирование в буфер обмена
 		const handleCopy = useCallback(() => {
 			const textToCopy = editedSoapText || synthesized.unifiedSoapText;
 			if (typeof navigator !== "undefined" && navigator.clipboard) {
@@ -205,7 +182,6 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 			}
 		}, [editedSoapText, synthesized.unifiedSoapText]);
 
-		// Применение в медицинскую карту приёма
 		const handleApply = useCallback(() => {
 			const finalSoapText = editedSoapText || synthesized.unifiedSoapText;
 			const finalResult: SynthesizedDiaryResult = {
@@ -239,6 +215,9 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 				}}
 			>
 				<div className="cd-templates-modal">
+					{/* Apple HIG: тактильный Drag Handle для мобильной шторки (36×5px) */}
+					<div className="cd-templates-drag-handle" aria-hidden="true" />
+
 					{/* ── Header ── */}
 					<header className="cd-templates-header">
 						<div className="cd-templates-title-group min-w-0 flex-1">
@@ -274,7 +253,7 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 						</button>
 					</header>
 
-					{/* ── Dominant Physiological Norm Preset ── */}
+					{/* ── Dominant Physiological Norm Preset (Mandate 8e) ── */}
 					<div className="cd-templates-dominant-norm-bar">
 						<div className="flex items-center gap-2 min-w-0">
 							<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)] shrink-0" />
@@ -291,16 +270,12 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 						>
 							<Sparkles className="w-4 h-4 text-emerald-500 shrink-0" />
 							<span>Соматически здоров / Физиологическая норма</span>
-							<span className="cd-dominant-norm-badge">
-								Норма
-							</span>
-							{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id && (
-								<Check className="w-3.5 h-3.5 shrink-0" />
-							)}
+							<span className="cd-dominant-norm-badge">Норма</span>
+							{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id && <Check className="w-3.5 h-3.5 shrink-0" />}
 						</button>
 					</div>
 
-					{/* ── Fast Presets Ribbon (TOP Presets with Norm) ── */}
+					{/* ── Fast Presets Ribbon ── */}
 					<div className="cd-templates-fast-ribbon" data-testid="cd-core-fast-ribbon">
 						<div className="cd-fast-ribbon-label">
 							<Zap className="w-3.5 h-3.5 text-amber-500" />
@@ -329,264 +304,33 @@ export const ClinicalDiaryTemplatesModal: React.FC<ClinicalDiaryTemplatesModalPr
 
 					{/* ── Body Split Pane ── */}
 					<div className="cd-templates-body">
-						{/* ── Left Sidebar (Catalog & Filters) ── */}
-						<aside className="cd-templates-sidebar">
-							<div className="cd-sidebar-controls">
-								{/* Search Bar */}
-								<div className="cd-search-wrap">
-									<Search className="cd-search-icon" />
-									<input
-										type="text"
-										value={searchQuery}
-										onChange={(e) => setSearchQuery(e.target.value)}
-										placeholder="Поиск протокола, МКБ-10, услуги..."
-										className="cd-search-input"
-										data-testid="cd-template-search-input"
-									/>
-									{searchQuery && (
-										<button
-											type="button"
-											onClick={() => setSearchQuery("")}
-											className="cd-search-clear"
-											aria-label="Очистить поиск"
-										>
-											<X className="w-3.5 h-3.5" />
-										</button>
-									)}
-								</div>
+						<ClinicalDiaryTemplatesSidebar
+							searchQuery={searchQuery}
+							onSearchQueryChange={setSearchQuery}
+							selectedCategory={selectedCategory}
+							onSelectCategory={setSelectedCategory}
+							allCatalogWithNorm={allCatalogWithNorm}
+							filteredTemplates={filteredTemplates}
+							selectedTemplateId={selectedTemplateId}
+							onSelectTemplate={handleSelectTemplate}
+							renderTemplateIcon={renderTemplateIcon}
+						/>
 
-								{/* Category Filter Tabs */}
-								<div className="cd-category-scroll dente-filter-chips">
-									<button
-										type="button"
-										onClick={() => setSelectedCategory("all")}
-										className={`cd-category-chip dente-filter-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === "all" ? "active" : ""}`}
-										data-active={selectedCategory === "all"}
-									>
-										Все ({allCatalogWithNorm.length})
-									</button>
-									{(Object.keys(CLINICAL_CATEGORY_LABELS) as ClinicalProtocolCategory[]).map((cat) => (
-										<button
-											key={cat}
-											type="button"
-											onClick={() => setSelectedCategory(cat)}
-											className={`cd-category-chip dente-filter-chip shrink-0 flex-shrink-0 whitespace-nowrap ${selectedCategory === cat ? "active" : ""}`}
-											data-active={selectedCategory === cat}
-										>
-											{CLINICAL_CATEGORY_LABELS[cat].split(" ")[0]}
-										</button>
-									))}
-								</div>
-							</div>
-
-							{/* Template Cards List */}
-							<div className="cd-template-list" data-testid="cd-templates-catalog-list">
-								{filteredTemplates.map((tmpl) => {
-									const isSelected = selectedTemplateId === tmpl.id;
-									return (
-										<button
-											key={tmpl.id}
-											type="button"
-											onClick={() => handleSelectTemplate(tmpl.id)}
-											className={`cd-template-item-card ${isSelected ? "active" : ""}`}
-											data-testid={`catalog-item-${tmpl.id}`}
-										>
-											<div className="cd-card-top-row">
-												<span className="cd-card-title flex items-center gap-1.5 min-w-0 flex-1">
-													{renderTemplateIcon(tmpl.icon, "w-4 h-4 text-teal-600 dark:text-teal-400 shrink-0")}
-													<span className="truncate">{tmpl.title}</span>
-												</span>
-												<span className="cd-card-icd-tag shrink-0">{tmpl.icd10Code}</span>
-											</div>
-											<div className="cd-card-category-tag truncate">
-												{CLINICAL_CATEGORY_LABELS[tmpl.category]} · {tmpl.order804nServices.length} услуг
-											</div>
-										</button>
-									);
-								})}
-								{filteredTemplates.length === 0 && (
-									<div className="p-4 text-center text-xs text-[var(--muted,#64748b)]">
-										Протоколы по запросу «{searchQuery}» не найдены.
-									</div>
-								)}
-							</div>
-						</aside>
-
-						{/* ── Right Main Pane (Editor & Live Protocol Preview) ── */}
-						<main className="cd-templates-editor-pane">
-							{/* Top Controls: Tooth Selector & Quick Chips */}
-							<div className="cd-editor-top-toolbar">
-								<div className="cd-tooth-selector-row">
-									<label htmlFor="cd-tooth-input" className="cd-tooth-input-label">
-										Зуб FDI (11–48):
-									</label>
-									<input
-										id="cd-tooth-input"
-										type="number"
-										min={11}
-										max={85}
-										value={toothNumberInput}
-										onChange={(e) => handleToothChange(e.target.value)}
-										className="cd-tooth-input"
-										placeholder="16"
-										data-testid="cd-tooth-input"
-									/>
-									<div className="cd-tooth-quick-chips">
-										{COMMON_TEETH_PRESETS.slice(0, 6).map((num) => (
-											<button
-												key={num}
-												type="button"
-												onClick={() => handleToothChange(String(num))}
-												className={`cd-tooth-chip ${toothNumberInput === String(num) ? "active" : ""}`}
-											>
-												{num}
-											</button>
-										))}
-									</div>
-								</div>
-
-								<div className="flex items-center gap-2 min-w-0">
-									<span className="text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1 min-w-0">
-										<Tag className="w-3.5 h-3.5 shrink-0" />
-										<span className="truncate">{activeTemplate.icd10Code} {activeTemplate.shortTitle}</span>
-									</span>
-								</div>
-							</div>
-
-							{/* Scrollable Editor Body */}
-							<div className="cd-editor-scroll-body">
-								{/* Statutory Info Banner */}
-								<div className="cd-statutory-summary-card">
-									<div className="flex items-center gap-2 font-medium min-w-0 flex-1">
-										<CheckCircle2 className="w-4 h-4 shrink-0 text-[var(--ok-fg,#15803d)]" />
-										<span className="truncate">
-											{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id ? (
-												<>
-													Сформирован канонический протокол СтАР: <strong>{PHYSIOLOGICAL_NORM_PRESET.title}</strong>
-												</>
-											) : (
-												<>
-													Сформирован канонический протокол СтАР: <strong>{activeTemplate.title}</strong>
-												</>
-											)}
-										</span>
-									</div>
-									<span className="font-mono text-xs opacity-90 shrink-0 ml-2">
-										{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-											? "Физиологическая норма · Врач правит только патологию"
-											: toothNumberInput
-												? getToothAnatomicalDescription(toothNumberInput)
-												: "Общий"}
-									</span>
-								</div>
-
-								{/* Unified Protocol Textarea */}
-								<div className="cd-soap-textarea-wrap">
-									<div className="cd-soap-textarea-label">
-										<span>
-											{selectedTemplateId === PHYSIOLOGICAL_NORM_PRESET.id
-												? "Единый протокол приема (Редактируемый дневник) — Врач правит только патологию:"
-												: "Единый протокол приема (Редактируемый дневник):"}
-										</span>
-										{isCustomEdited && (
-											<span className="text-emerald-600 dark:text-emerald-400 font-medium">
-												(внесены ручные правки · черновик автосохранён)
-											</span>
-										)}
-									</div>
-									<textarea
-										value={editedSoapText}
-										onChange={(e) => handleTextChange(e.target.value)}
-										className="cd-soap-textarea"
-										rows={14}
-										data-testid="cd-soap-textarea"
-										aria-label="Текст дневниковой записи"
-									/>
-								</div>
-
-								{/* Clinical Services Attached */}
-								{synthesized.order804nServices.length > 0 && (
-									<div className="cd-services-804n-box">
-										<div className="cd-services-title flex items-center justify-between">
-											<div className="flex items-center gap-1.5">
-												<Stethoscope className="w-4 h-4 text-[var(--teal,#0d9488)]" />
-												<span>Прикрепленные услуги каталога ({synthesized.order804nServices.length}):</span>
-											</div>
-											{typeof synthesized.totalEstimatedKopecks === "number" && synthesized.totalEstimatedKopecks > 0 && (
-												<span className="text-xs font-bold text-[var(--teal,#0d9488)]" data-testid="cd-services-total-price">
-													Итого: {(synthesized.totalEstimatedKopecks / 100).toLocaleString("ru-RU")} ₽
-												</span>
-											)}
-										</div>
-										<div className="cd-service-chips-row">
-											{synthesized.order804nServices.map((svc) => (
-												<div key={svc.code} className="cd-service-chip">
-													<span className="cd-service-code">{svc.code}</span>
-													<span>{svc.nameRu}</span>
-													{svc.defaultQuantity && svc.defaultQuantity > 1 && (
-														<span className="text-xs opacity-75">x{svc.defaultQuantity}</span>
-													)}
-													{typeof svc.priceKopecks === "number" && svc.priceKopecks > 0 && (
-														<span className="cd-service-price-tag">
-															{(svc.priceKopecks / 100).toLocaleString("ru-RU")} ₽
-														</span>
-													)}
-												</div>
-											))}
-										</div>
-									</div>
-								)}
-							</div>
-
-							{/* ── Footer ── */}
-							<footer className="cd-templates-footer">
-								<div className="cd-footer-meta">
-									<ShieldCheck className="w-4 h-4 text-[var(--ok-fg,#15803d)]" />
-									<span>Готов к автоматической вставке в медицинскую карту</span>
-								</div>
-
-								<div className="cd-footer-actions">
-									<button
-										type="button"
-										onClick={handleCopy}
-										className="cd-btn cd-btn-secondary"
-										data-testid="cd-copy-btn"
-									>
-										{isCopied ? (
-											<>
-												<Check className="w-4 h-4 text-emerald-600" />
-												<span>Скопировано!</span>
-											</>
-										) : (
-											<>
-												<Copy className="w-4 h-4" />
-												<span>Скопировать</span>
-											</>
-										)}
-									</button>
-
-									<button
-										type="button"
-										onClick={onClose}
-										className="cd-btn cd-btn-secondary"
-										data-testid="cd-cancel-btn"
-									>
-										Отмена
-									</button>
-
-									<button
-										type="button"
-										onClick={handleApply}
-										className="cd-btn cd-btn-primary"
-										data-testid="cd-apply-btn"
-										title="Мгновенная вставка регламентного протокола в карту"
-									>
-										<Sparkles className="w-4 h-4" />
-										<span>Вставить в дневник</span>
-									</button>
-								</div>
-							</footer>
-						</main>
+						<ClinicalDiaryTemplatesEditor
+							toothNumberInput={toothNumberInput}
+							onToothChange={handleToothChange}
+							commonTeethPresets={COMMON_TEETH_PRESETS}
+							activeTemplate={activeTemplate}
+							selectedTemplateId={selectedTemplateId}
+							editedSoapText={editedSoapText}
+							isCustomEdited={isCustomEdited}
+							onSoapTextChange={handleTextChange}
+							synthesized={synthesized}
+							isCopied={isCopied}
+							onCopy={handleCopy}
+							onClose={onClose}
+							onApply={handleApply}
+						/>
 					</div>
 				</div>
 			</div>,

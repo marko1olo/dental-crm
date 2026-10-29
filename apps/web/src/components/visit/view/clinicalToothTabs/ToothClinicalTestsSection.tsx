@@ -141,7 +141,7 @@ export function ToothClinicalTestsSection({
 							className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-[var(--line-strong,var(--line))] bg-[var(--paper)] hover:border-[var(--teal)] text-[var(--text)] text-xs font-semibold transition-colors shadow-2xs"
 						>
 							<Check className="w-3.5 h-3.5 text-emerald-500" />
-							<span>✓ Норма</span>
+							<span>Норма</span>
 						</button>
 						<button
 							type="button"

@@ -50,8 +50,8 @@ export function EmkQuickActionButtons(props: EmkQuickActionButtonsProps) {
 						title="Заполнить дневник физиологической нормой (Z01.2 «Соматически здоров») в 1 клик"
 					>
 						<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-						<span className="hidden sm:inline">✓ Соматически здоров / Норма</span>
-						<span className="sm:hidden">✓ Норма</span>
+						<span className="hidden sm:inline">Соматически здоров / Норма</span>
+						<span className="sm:hidden">Норма</span>
 					</button>
 				)}
 
