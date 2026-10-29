@@ -1,0 +1,23 @@
+{
+  "agent": "subagent_perio_inquisitor",
+  "role": "Верховный Red Team Инквизитор Пародонтологии, Экспресс-Скрининга PSR/CPITN и Пародонтограммы (Periodontics & PSR Screening SSOT)",
+  "updated": "2026-10-29T15:10:00+04:00",
+  "status": "COMPLETED",
+  "stand": {
+    "web": "http://127.0.0.1:5173",
+    "api": "http://127.0.0.1:4100",
+    "postgres": "127.0.0.1:5432"
+  },
+  "summary": "Ликвидирован микро-шредер из 57 файлов в apps/web/src/components/perio/chart/. Создан единый SSOT пародонтологии: perioCatalogData.ts (297 строк) и PerioWorkspaceModal.tsx (417 строк, строго <= 500 строк). Внедрен DirectPerioLauncher.tsx в AppShell с поддержкой hash-роутинга (#perio, #psr) и CustomEvent dente:open-perio. Обеспечена строгая автономия врача (Мандат 8e: кнопки disabled={false}, 1-клик физиологическая норма, soft negative stock). Единственная Primary CTA кнопка #0d9488 (Мандат 8am), мобильный сенсорный минимум >= 44x44px (Мандат 8ze). Пройдены все 52 теста (0 failures) и зафиксированы 4-state visual proofs.",
+  "proofs": {
+    "pc_light": "docs/proofs/perio/01_perio_workspace_pc_light_1440x900.png",
+    "pc_dark": "docs/proofs/perio/02_perio_workspace_pc_dark_1440x900.png",
+    "mobile_light": "docs/proofs/perio/03_perio_workspace_mobile_light_390x844.png",
+    "mobile_dark": "docs/proofs/perio/04_perio_workspace_mobile_dark_390x844.png"
+  },
+  "tests": {
+    "perio_tests": "52 pass, 0 fail",
+    "suites": "20 pass, 0 fail",
+    "typescript": "0 errors in components/perio"
+  }
+}
