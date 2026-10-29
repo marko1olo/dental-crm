@@ -1,11 +1,20 @@
+/**
+ * apps/web/src/components/odontogram/AiAnalysisImagingButtons.tsx
+ *
+ * Facade adapter for imaging analysis and unified odontogram A4 printing.
+ * Bridges browser print dialog with unified desktop print pipeline.
+ */
+
 import { Printer, Sparkles } from "lucide-react";
 import React from "react";
+import { triggerOdontogramPrint } from "./print/triggerOdontogramPrint";
 
 export interface AiAnalysisImagingButtonsProps {
 	readonly isSmartOpgOpen?: boolean | undefined;
 	readonly setIsSmartOpgOpen?: ((open: boolean) => void) | undefined;
 	readonly isOrthoCephOpen?: boolean | undefined;
 	readonly setIsOrthoCephOpen: React.Dispatch<React.SetStateAction<boolean>>;
+	readonly onPrintOdontogramA4?: (() => void) | undefined;
 	readonly onCloseMenu: () => void;
 }
 
@@ -16,6 +25,7 @@ export const AiAnalysisImagingButtons: React.FC<
 	setIsSmartOpgOpen,
 	isOrthoCephOpen,
 	setIsOrthoCephOpen,
+	onPrintOdontogramA4,
 	onCloseMenu,
 }) => {
 	const itemCls =
@@ -77,7 +87,7 @@ export const AiAnalysisImagingButtons: React.FC<
 				type="button"
 				onClick={() => {
 					onCloseMenu();
-					window.print();
+					triggerOdontogramPrint(onPrintOdontogramA4);
 				}}
 				className={itemCls}
 				title="Распечатать графическую одонтограмму на лист A4"

@@ -20,8 +20,8 @@ interface RecordModalBodyProps {
 	onApplyNorm: () => void;
 	onOpenProtocolGenerator?: (() => void) | undefined;
 	onOpenInternalProtocolGenerator: () => void;
-	onAddDiary?: (entry: Form043VisitDiaryEntry) => void;
-	onDeleteDiary?: (index: number) => void;
+	onAddDiary?: ((entry: Form043VisitDiaryEntry) => void) | undefined;
+	onDeleteDiary?: ((index: number) => void) | undefined;
 }
 
 export const RecordModalBody: React.FC<RecordModalBodyProps> = React.memo(function RecordModalBody(props) {

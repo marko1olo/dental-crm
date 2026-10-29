@@ -40,9 +40,9 @@ export const RecordModalHeader: React.FC<RecordModalHeaderProps> = React.memo(fu
 						<Check className="w-3 h-3 text-emerald-600" />ПОДПИСАНО ВРАЧОМ
 					</span>
 				)}
-				<div>
-					<h2 className="emr043-header-title">Медицинская карта № {props.formData.passport.medicalCardNumber}</h2>
-					<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
+				<div className="min-w-0">
+					<h2 className="emr043-header-title truncate">Медицинская карта № {props.formData.passport.medicalCardNumber}</h2>
+					<div className="truncate" style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 						Пациент: <strong>{props.formData.passport.patientFullName}</strong> ({props.ageText}) • Врач: <strong>{props.formData.passport.attendingDoctorFullName}</strong>
 					</div>
 				</div>

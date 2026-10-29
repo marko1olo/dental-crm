@@ -48,7 +48,7 @@ import {
 } from "../gost/gostFormulaSymbols";
 import {
 	calculateDmft,
-	formatOdontogramTo043ProtocolText,
+	formatOdontogramToClinicalProtocolText,
 } from "../gost/gostHistoryTypes";
 import {
 	areClassicGostOdontogramPropsEqual,
@@ -147,7 +147,7 @@ describe("GOST Formula Symbology, Hotkeys & DMFT Indices", () => {
 			{ toothNumber: 11, state: "Caries", surfaces: ["M", "D"] },
 			{ toothNumber: 21, state: "Filled" },
 		];
-		const text = formatOdontogramTo043ProtocolText(sampleTeeth);
+		const text = formatOdontogramToClinicalProtocolText(sampleTeeth);
 		assert.ok(text.includes("Зубная формула"));
 		assert.ok(text.includes("11:К(MD)"));
 		assert.ok(text.includes("21:П"));

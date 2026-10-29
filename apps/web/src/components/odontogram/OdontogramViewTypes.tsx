@@ -82,8 +82,11 @@ export interface OdontogramViewContainerProps {
 	isPerioOpen?: boolean | undefined;
 	onToggleEstimator?: (() => void) | undefined;
 	isEstimatorOpen?: boolean | undefined;
+	onLoadRadiologyAiReport?: (() => void) | undefined;
+	radiologyAiLoading?: boolean | undefined;
 	onLoadDiagnocat?: (() => void) | undefined;
 	diagnocatLoading?: boolean | undefined;
+	onPrintOdontogramA4?: (() => void) | undefined;
 	isMultiSelectMode?: boolean | undefined;
 	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
 	onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
@@ -219,6 +222,7 @@ export function areOdontogramViewContainerPropsEqual(
 	if (prev.activeQuadrant !== next.activeQuadrant) return false;
 	if (prev.isPerioOpen !== next.isPerioOpen) return false;
 	if (prev.isEstimatorOpen !== next.isEstimatorOpen) return false;
+	if (prev.radiologyAiLoading !== next.radiologyAiLoading) return false;
 	if (prev.diagnocatLoading !== next.diagnocatLoading) return false;
 	if (prev.isMultiSelectMode !== next.isMultiSelectMode) return false;
 	if (prev.patientId !== next.patientId) return false;

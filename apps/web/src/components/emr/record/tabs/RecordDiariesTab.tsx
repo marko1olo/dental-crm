@@ -15,8 +15,8 @@ export interface Form043DiariesTabProps {
 	readonly formData: MedicalCardForm043uData;
 	readonly onOpenProtocolGenerator?: (() => void) | undefined;
 	readonly onOpenInternalProtocolGenerator: () => void;
-	readonly onAddDiary?: (entry: Form043VisitDiaryEntry) => void;
-	readonly onDeleteDiary?: (index: number) => void;
+	readonly onAddDiary?: ((entry: Form043VisitDiaryEntry) => void) | undefined;
+	readonly onDeleteDiary?: ((index: number) => void) | undefined;
 }
 
 const COMMON_TEETH = [16, 26, 36, 46, 11, 21, 14, 24] as const;
@@ -145,7 +145,7 @@ export const Form043DiariesTab: React.FC<Form043DiariesTabProps> = React.memo(
 				id: `diary_${Date.now()}`,
 				entryDate,
 				entryTime,
-				toothNumber: Number(selectedTooth) || 16,
+				toothNumber: selectedTooth ? String(selectedTooth) : "16",
 				doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач",
 				doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
 				subjectiveComplaints: subjective || "Жалоб нет",

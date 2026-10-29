@@ -3,7 +3,7 @@ import { Award, Check, Copy, FileText } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import type { ToothData } from "./ToothChart";
 import {
-	formatOdontogramTo043ProtocolText,
+	formatOdontogramToClinicalProtocolText,
 	type DmftCalculationResult,
 } from "./classicGostTypes";
 
@@ -21,7 +21,7 @@ export const ClassicGostHeader: React.FC<ClassicGostHeaderProps> = ({
 	const [isCopied, setIsCopied] = useState(false);
 
 	const handleCopyProtocolText = () => {
-		const text = formatOdontogramTo043ProtocolText(teethData, pediatricMode);
+		const text = formatOdontogramToClinicalProtocolText(teethData, pediatricMode);
 		if (typeof navigator !== "undefined" && navigator.clipboard?.writeText) {
 			navigator.clipboard.writeText(text).then(
 				() => {

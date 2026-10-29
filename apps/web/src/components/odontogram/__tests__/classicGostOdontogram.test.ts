@@ -6,7 +6,7 @@ import {
 	areClassicGostOdontogramPropsEqual,
 	calculateDmft,
 	type ClassicGostOdontogramProps,
-	formatOdontogramTo043ProtocolText,
+	formatOdontogramToClinicalProtocolText,
 	getGostAbbreviation,
 	getNextFocusedTooth,
 	getToothStateFromHotkey,
@@ -345,7 +345,7 @@ describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
 			{ toothNumber: 48, state: "Missing" },
 		];
 
-		const text = formatOdontogramTo043ProtocolText(sampleTeeth, false);
+		const text = formatOdontogramToClinicalProtocolText(sampleTeeth, false);
 
 		assert.ok(text.includes("Зубная формула (постоянный прикус):"));
 		assert.ok(text.includes("16:К(MOD)"));
@@ -364,7 +364,7 @@ describe("Classic GOST 043/u — Visit Protocol / EMR Text Export", () => {
 			{ toothNumber: 75, state: "Missing" },
 		];
 
-		const text = formatOdontogramTo043ProtocolText(pedTeeth, true);
+		const text = formatOdontogramToClinicalProtocolText(pedTeeth, true);
 
 		assert.ok(text.includes("Зубная формула (молочный прикус):"));
 		assert.ok(text.includes("55:К(O)"));

@@ -36,7 +36,7 @@
 }
 
 .emr043-header-title-group {
-  display: flex; align-items: center; gap: 12px; flex-shrink: 0; min-width: 0;
+  display: flex; align-items: center; gap: 12px; flex-shrink: 1; min-width: 0;
 }
 .emr043-header-badge {
   display: inline-flex; align-items: center; gap: 4px;

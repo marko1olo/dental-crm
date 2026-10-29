@@ -65,8 +65,11 @@ export interface OdontogramToolbarProps {
 	setIsSmartOpgOpen?: React.Dispatch<React.SetStateAction<boolean>> | undefined;
 	setContextDrawerTooth: (tooth: number | null) => void;
 	onOpenPediatricModal?: (() => void) | undefined;
+	onLoadRadiologyAiReport?: (() => void) | undefined;
+	radiologyAiLoading?: boolean | undefined;
 	onLoadDiagnocat?: (() => void) | undefined;
 	diagnocatLoading?: boolean | undefined;
+	onPrintOdontogramA4?: (() => void) | undefined;
 	showWisdomTeeth: boolean;
 	setShowWisdomTeeth: React.Dispatch<React.SetStateAction<boolean>>;
 	showPulpAndCanals: boolean;

@@ -26,8 +26,11 @@ export interface OdontogramToolbarMoreMenuProps {
 	isPediatricEffective: boolean;
 	setContextDrawerTooth: (tooth: number | null) => void;
 	onOpenPediatricModal?: (() => void) | undefined;
+	onLoadRadiologyAiReport?: (() => void) | undefined;
+	radiologyAiLoading?: boolean | undefined;
 	onLoadDiagnocat?: (() => void) | undefined;
 	diagnocatLoading?: boolean | undefined;
+	onPrintOdontogramA4?: (() => void) | undefined;
 	showWisdomTeeth: boolean;
 	setShowWisdomTeeth: React.Dispatch<React.SetStateAction<boolean>>;
 	activeMode: OdontogramViewMode;

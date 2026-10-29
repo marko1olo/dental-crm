@@ -34,6 +34,7 @@ function getMoreMenuAllSources(): string {
 		"ClinicalExamButtons.tsx",
 		"AiAnalysisImagingButtons.tsx",
 		"AiAnalysisPediatricDiagnocatButtons.tsx",
+		"AiAnalysisMenuButtons.tsx",
 		"DisplayModesToggles.tsx",
 		"DisplayModesSelection.tsx",
 	];
@@ -103,7 +104,7 @@ describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contras
 				isVoiceListening={false}
 				setContextDrawerTooth={() => {}}
 				onOpenPediatricModal={() => {}}
-				onLoadDiagnocat={() => {}}
+				onLoadRadiologyAiReport={() => {}}
 				showWisdomTeeth={true}
 				setShowWisdomTeeth={() => {}}
 				activeMode="anatomical_svg"
@@ -141,9 +142,9 @@ describe("1. OdontogramToolbarMoreMenu: Typography Uniformity & WCAG AAA Contras
 		assert.ok(html.includes('data-testid="btn-more-menu-pediatric"'), "Must render btn-more-menu-pediatric");
 		assert.ok(html.includes("Сменный прикус"), "Must render Pediatric title");
 
-		// 8. Diagnocat AI
-		assert.ok(html.includes('data-testid="btn-more-menu-diagnocat"'), "Must render btn-more-menu-diagnocat");
-		assert.ok(html.includes("Diagnocat AI"), "Must render Diagnocat title");
+		// 8. Radiology AI Report (Mandate 8ap: Zero third-party brand names)
+		assert.ok(html.includes('data-testid="btn-more-menu-radiology-ai"'), "Must render btn-more-menu-radiology-ai");
+		assert.ok(html.includes("Радиологический ИИ-отчёт"), "Must render Radiology AI title");
 
 		// 9. Wisdom Teeth
 		assert.ok(html.includes('data-testid="btn-odontogram-wisdom-missing"'), "Must render btn-odontogram-wisdom-missing");
@@ -170,8 +171,8 @@ describe("2. OdontogramToolbarMoreMenu: Source AST & Callback Bindings Verificat
 		// 1. Smart OPG -> setIsSmartOpgOpen(true) & setIsMoreMenuOpen(false)
 		assert.ok(content.includes("setIsSmartOpgOpen(true)"), "Smart OPG calls setIsSmartOpgOpen(true)");
 
-		// 2. Print A4 -> window.print() & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("window.print()"), "Print A4 calls window.print()");
+		// 2. Print A4 -> triggerOdontogramPrint & setIsMoreMenuOpen(false)
+		assert.ok(content.includes("triggerOdontogramPrint"), "Print A4 calls triggerOdontogramPrint()");
 
 		// 3. Plan Wizard -> setIsPlanWizardOpen(true) & setIsMoreMenuOpen(false)
 		assert.ok(content.includes("setIsPlanWizardOpen(true)"), "Plan wizard calls setIsPlanWizardOpen(true)");
@@ -188,8 +189,8 @@ describe("2. OdontogramToolbarMoreMenu: Source AST & Callback Bindings Verificat
 		// 7. Pediatric -> onOpenPediatricModal() & setIsMoreMenuOpen(false)
 		assert.ok(content.includes("onOpenPediatricModal()"), "Pediatric calls onOpenPediatricModal()");
 
-		// 8. Diagnocat -> onLoadDiagnocat() & setIsMoreMenuOpen(false)
-		assert.ok(content.includes("onLoadDiagnocat()"), "Diagnocat calls onLoadDiagnocat()");
+		// 8. Radiology AI -> handleRadiologyReport / onLoadRadiologyAiReport & setIsMoreMenuOpen(false)
+		assert.ok(content.includes("handleRadiologyReport()") || content.includes("onLoadRadiologyAiReport()"), "Radiology AI calls report loader");
 
 		// 9. Wisdom -> setShowWisdomTeeth((prev) => !prev)
 		assert.ok(content.includes("setShowWisdomTeeth((prev) => !prev)"), "Wisdom calls setShowWisdomTeeth");

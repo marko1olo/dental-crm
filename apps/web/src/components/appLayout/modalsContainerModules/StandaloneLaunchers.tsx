@@ -7,15 +7,18 @@ import type React from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
 import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHubModal";
-import { DocumentsTemplateGrid } from "../../../documentsView/DocumentsTemplateGrid";
+import { DocumentsView } from "../../../DocumentsView";
 import { EmkComplaintsSection } from "../../visit/emk/EmkComplaintsSection";
+import { DirectCopilotLauncher } from "../../copilot/DirectCopilotLauncher";
 import type { StandaloneLaunchersProps } from "./modalsContainerTypes";
 import { renderPayrollLauncher } from "./standalone/PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./standalone/ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./standalone/SpecializedAdministrativeLaunchers";
 import { renderSpecializedClinicalLaunchers } from "./standalone/SpecializedClinicalLaunchers";
 import { StandaloneClinicalTemplatesHost } from "./standalone/clinical/StandaloneClinicalTemplatesHost";
-import { clearUrlTokens } from "./standalone/deepLinkUrl";
+import { StandaloneEmrMedicalRecordHost } from "./standalone/clinical/StandaloneEmrMedicalRecordHost";
+import { DirectVisitLauncher } from "../../visit/DirectVisitLauncher";
+import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
 	props: StandaloneLaunchersProps,
@@ -23,6 +26,18 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Chairside Visit & EMR Diary Launcher (?visit_standalone=1, ?standalone=visit, #visit_standalone)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("visit_standalone") ||
+			window.location.search.includes("standalone=visit") ||
+			window.location.search.includes("chairside-visit") ||
+			window.location.hash.includes("visit_standalone") ||
+			window.location.hash.includes("chairside-visit"))
+	) {
+		return <DirectVisitLauncher />;
 	}
 
 	// 0. Gate 0 Odontogram Tooth 46 Stand & 32-Tooth Full Arch Mockup Launcher
@@ -59,6 +74,19 @@ export function renderStandaloneLaunchers(
 		);
 	}
 
+	// 0. Copilot Assistant Standalone Launcher (?copilot_standalone=1, #copilot-standalone)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("copilot_standalone") ||
+			window.location.hash.includes("copilot-standalone") ||
+			window.location.search.includes("copilot_drawer") ||
+			window.location.hash.includes("copilot-drawer") ||
+			window.location.search.includes("copilot_proof") ||
+			window.location.hash.includes("copilot-proof"))
+	) {
+		return <DirectCopilotLauncher />;
+	}
+
 	// 0. Omnichannel Messaging Hub Standalone Launcher (?omnichannel_hub=1, #omnichannel_hub)
 	if (
 		typeof window !== "undefined" &&
@@ -83,18 +111,10 @@ export function renderStandaloneLaunchers(
 	) {
 		return (
 			<div
-				className="w-full min-h-screen p-4 sm:p-6 bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] overflow-y-auto"
+				className="w-full min-h-screen p-3 sm:p-6 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] overflow-y-auto"
 				data-testid="standalone-documents-catalog-root"
 			>
-				<DocumentsTemplateGrid
-					selectedDocumentKind="primary_intake_package"
-					onSelectDocumentKind={() => {}}
-					onCreateDocument={() => {}}
-					onOpenFocusEditor={() => {}}
-					activeCategoryTab="all"
-					searchQuery=""
-					onOpenPrimaryIntakePackage={() => {}}
-				/>
+				<DocumentsView />
 			</div>
 		);
 	}
@@ -110,6 +130,18 @@ export function renderStandaloneLaunchers(
 		return (
 			<StandaloneClinicalTemplatesHost
 				onClose={() => clearUrlTokens(["protocols", "clinical-templates"])}
+			/>
+		);
+	}
+
+	// 0. Electronic Medical Record (EMR) Standalone Launcher (?emr=1, #emr, ?medical-card=1)
+	if (
+		typeof window !== "undefined" &&
+		(hasUrlToken(["emr", "medical-card", "form043", "card043"]))
+	) {
+		return (
+			<StandaloneEmrMedicalRecordHost
+				onClose={() => clearUrlTokens(["emr", "medical-card", "form043", "card043"])}
 			/>
 		);
 	}
