@@ -5,7 +5,7 @@
 
 import { formatKopecksRu } from "@dental/shared";
 import { Coins, Plus, ShieldCheck, Sparkles, Wallet } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { PatientDepositWallet } from "./stagePaymentEngine.js";
 
 export interface StagePaymentEscrowTabProps {

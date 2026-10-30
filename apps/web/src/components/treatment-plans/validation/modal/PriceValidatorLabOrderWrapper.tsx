@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { LabWorkOrderModal } from "../../../lab/orders/LabWorkOrderModal.js";
 import type { TreatmentPlanValidationPayload } from "../planPriceValidationPresets.js";
 

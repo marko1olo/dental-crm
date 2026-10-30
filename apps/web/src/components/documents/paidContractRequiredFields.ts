@@ -62,7 +62,7 @@ export function paidContractRequiredFieldsReview(
 		{ field: "paidContractCustomerFullName", label: "Заказчик", hint: "ФИО заказчика", ok: customer !== "" },
 		{ field: "paidContractCareReason", label: "Основание обращения", hint: "жалоба или диагноз", ok: careReason !== "" },
 		{ field: "paidContractServiceScope", label: "Состав услуг", hint: "перечень согласованных услуг", ok: serviceScope !== "" },
-		{ field: "paidContractTotalRub", label: "Сумма договора", hint: "стоимость цифрами", ok: options?.allowBlankForPrint ? input.totalRub >= 0 : input.totalRub > 0 },
+		{ field: "paidContractTotalRub", label: "Сумма договора", hint: "стоимость цифрами", ok: typeof input.totalRub === "number" && input.totalRub >= 0 },
 		{ field: "paidContractPaymentTerms", label: "Порядок оплаты", hint: "условия оплаты", ok: filled(input.paymentTerms) !== "" },
 		{ field: "paidContractPriceChangeRules", label: "Изменение цены и объема", hint: "правила изменения цен", ok: filled(input.priceChangeRules) !== "" },
 		{ field: "paidContractFreeCareNotice", label: "Уведомление о бесплатной помощи", hint: "разъяснение госгарантий", ok: filled(input.freeCareNotice) !== "" },

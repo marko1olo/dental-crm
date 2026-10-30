@@ -13,7 +13,9 @@ import { DepositTopupHeader } from "./depositModal/DepositTopupHeader.js";
 import { DepositAmountSection } from "./depositModal/DepositAmountSection.js";
 import { DepositMethodAndOptionsSection } from "./depositModal/DepositMethodAndOptionsSection.js";
 import { DepositFooterActions } from "./depositModal/DepositFooterActions.js";
-import "./paymentModalStudio.css";
+if (typeof window !== "undefined") {
+	void import("./paymentModalStudio.css");
+}
 
 export type { DepositTopupModalProps };
 

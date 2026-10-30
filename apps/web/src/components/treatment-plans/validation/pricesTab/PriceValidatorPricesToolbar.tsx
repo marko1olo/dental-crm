@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Check, Lock, RefreshCw, ShieldCheck } from "lucide-react";
 import {
 	PLAN_PRICE_POLICY_PRESETS,

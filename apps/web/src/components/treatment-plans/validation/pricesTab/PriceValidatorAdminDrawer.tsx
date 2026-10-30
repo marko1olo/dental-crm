@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Check, ShieldCheck } from "lucide-react";
 import type { AdminOverrideMetadata } from "../planPriceValidationEngine.js";
 

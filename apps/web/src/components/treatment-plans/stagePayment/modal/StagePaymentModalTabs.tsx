@@ -7,7 +7,7 @@ import {
 	RotateCcw,
 	Wallet,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { PatientDepositWallet } from "../stagePaymentEngine.js";
 import type { StagePaymentModalTab } from "./stagePaymentModalTypes";
 

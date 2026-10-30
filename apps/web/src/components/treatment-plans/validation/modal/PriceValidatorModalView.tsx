@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CheckCircle2 } from "lucide-react";
 import { PriceValidatorFooter } from "../PriceValidatorFooter.js";
 import { PriceValidatorHeader } from "../PriceValidatorHeader.js";

@@ -3,7 +3,7 @@
  * для печатной формы Акта сдачи-приемки оказанных стоматологических услуг.
  */
 
-import type React from "react";
+import React from "react";
 import { ActClinicHeader } from "./actHeader/ActClinicHeader";
 import { ActDocumentTitleBanner } from "./actHeader/ActDocumentTitleBanner";
 import { ActRequisitesTable } from "./actHeader/ActRequisitesTable";

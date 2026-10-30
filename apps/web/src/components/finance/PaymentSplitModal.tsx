@@ -6,7 +6,7 @@
  * Mandate 8b: < 90 lines.
  */
 
-import type React from "react";
+import React from "react";
 import { clinicalProceduralAudio } from "../../services/audio/clinicalProceduralAudio.js";
 import {
 	FastCheckoutModal,
@@ -17,7 +17,9 @@ import {
 	type PaymentSplitViewProps,
 } from "./modal/payment/PaymentSplitView.js";
 import { PaymentModal } from "./PaymentModal.js";
-import "./paymentModalStudio.css";
+if (typeof window !== "undefined") {
+	void import("./paymentModalStudio.css");
+}
 
 export type { FastCheckoutModalProps, PaymentSplitViewProps };
 export { FastCheckoutModal, PaymentModal, PaymentSplitView };

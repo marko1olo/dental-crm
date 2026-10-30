@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { AlertTriangle, CheckCircle2, Clock } from "lucide-react";
 import type { PlanPriceValidationReport } from "../planPriceValidationEngine.js";
 

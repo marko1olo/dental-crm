@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { PriceLockResolutionPolicy } from "../planPriceValidationPresets.js";
 import type { ValidatedPlanItem } from "../planPriceValidationEngine.js";
 

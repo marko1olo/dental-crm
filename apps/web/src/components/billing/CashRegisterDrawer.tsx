@@ -12,7 +12,9 @@ import {
 	useCashRegisterDrawerState, DrawerHeader, DrawerTabs, DrawerShiftTelemetryTab,
 	DrawerReceiptsTab, DrawerCashOperationsTab, DrawerFooter,
 } from "./cashRegisterDrawer/index.js";
-import "./paymentModalStudio.css";
+if (typeof window !== "undefined") {
+	void import("./paymentModalStudio.css");
+}
 
 export type { ShiftReceiptEntry };
 

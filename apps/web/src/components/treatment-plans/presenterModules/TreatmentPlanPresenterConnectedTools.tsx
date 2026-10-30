@@ -2,7 +2,7 @@
  * TreatmentPlanPresenterConnectedTools.tsx — Connected tools strip adapter for presenter state.
  * Mandate 8b: <= 120 lines.
  */
-import type React from "react";
+import React from "react";
 import type { ToothData } from "../../odontogram/ToothChart";
 import { TreatmentPlanPresenterToolsStrip } from "../TreatmentPlanPresenterToolsStrip";
 import type { useTreatmentPlanPresenterState } from "./useTreatmentPlanPresenterState";

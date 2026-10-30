@@ -2,7 +2,7 @@
  * PriceValidatorHeader.tsx — Шапка модального окна валидации цен плана лечения (DENTE CRM).
  */
 
-import type React from "react";
+import React from "react";
 import { Award, Clock, ShieldCheck, X } from "lucide-react";
 import type { TreatmentPlanValidationPayload } from "./planPriceValidationPresets";
 import type { PlanPriceValidationReport } from "./planPriceValidationEngine";

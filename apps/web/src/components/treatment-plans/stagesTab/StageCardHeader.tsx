@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CalendarPlus, CreditCard, FlaskConical, Receipt } from "lucide-react";
 import type { TreatmentPlanStage } from "../types.js";
 

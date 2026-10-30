@@ -7,7 +7,7 @@
  * 3. Правовое обоснование сметы.
  */
 
-import type React from "react";
+import React from "react";
 import { FileCheck } from "lucide-react";
 import type { PlanPricePolicyPreset } from "./planPriceValidationPresets";
 import type { PlanPriceValidationReport } from "./planPriceValidationEngine";

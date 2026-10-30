@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Award } from "lucide-react";
 
 export type PriceValidatorActiveTab = "prices" | "star_protocols" | "summary";

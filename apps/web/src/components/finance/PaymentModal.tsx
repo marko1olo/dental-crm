@@ -11,7 +11,9 @@ import { generateActPrintHtml, generateInvoicePrintHtml } from "./modal/payment/
 import type { PaymentMethodTab, PaymentModalProps } from "./modal/payment/paymentModalTypes.js";
 import { usePaymentModalLogic } from "./modal/payment/usePaymentModalLogic.js";
 import { PaymentFooterActions, PaymentHeader, PaymentModalBody } from "./paymentModalModules/index.js";
-import "./paymentModalStudio.css";
+if (typeof window !== "undefined") {
+	void import("./paymentModalStudio.css");
+}
 
 export * from "./paymentModalModules/index.js";
 export {

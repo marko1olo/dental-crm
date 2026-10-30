@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Check, Eye, PackagePlus } from "lucide-react";
 import type { ClinicalBundleDefinition } from "../treatmentPlanBundlesEngine.js";
 import { getBundleIcon, getStageBadge } from "./bundleIcons.js";

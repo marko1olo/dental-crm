@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { AlertCircle, Clock, ShieldCheck } from "lucide-react";
 import { formatFdiToothName } from "../../../portal/patientPortalEngine.js";
 import { CANONICAL_ROADMAP_META } from "../roadmapPriceHelpers.js";

@@ -97,7 +97,7 @@ export const PresenterStagesSection: React.FC<PresenterStagesSectionProps> = ({
 											e.stopPropagation();
 											onPayStageClick(stage as TreatmentPlanStage);
 										}}
-										className="secondary-button dente-btn dente-btn-secondary min-h-[38px] px-3 sm:px-3.5 rounded-xl text-xs font-semibold text-[var(--teal)] bg-[var(--teal)]/10 hover:bg-[var(--teal)]/20 border border-[var(--teal)]/30 inline-flex items-center gap-1.5 cursor-pointer transition-all"
+										className="secondary-button dente-btn dente-btn-secondary min-h-[38px] px-3 sm:px-3.5 rounded-xl text-xs font-semibold text-[var(--ink)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] border border-[var(--line)] inline-flex items-center gap-1.5 cursor-pointer transition-all"
 										data-testid={`presenter-pay-stage-btn-${stage.id || idx}`}
 										title={`Оплатить этап №${stageNumber} через кассовый чек`}
 									>

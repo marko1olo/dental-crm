@@ -1,6 +1,5 @@
 import { X } from "lucide-react";
-import type React from "react";
-import { useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useAppLogicContext } from "../../contexts/AppLogicContext";
 import { showToast } from "../GlobalToast.js";
 import { TreatmentPlanModule } from "../treatment-plans/TreatmentPlanModule";

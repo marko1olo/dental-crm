@@ -6,7 +6,7 @@
  * 2. Кнопки быстрых действий (Печать протокола сверки, Оформление наряда ЗТЛ, Сформировать акт).
  */
 
-import type React from "react";
+import React from "react";
 import { FileCheck, FileText, Printer } from "lucide-react";
 import type { PlanPriceValidationReport } from "./planPriceValidationEngine";
 

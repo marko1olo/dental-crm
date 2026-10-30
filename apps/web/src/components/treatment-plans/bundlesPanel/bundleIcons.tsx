@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Activity, Droplet, PackagePlus, ShieldAlert, ShieldCheck, Sparkles, Zap } from "lucide-react";
 import { DentalCrown } from "../../icons/DentalIcons.js";
 import type { ClinicalBundleId } from "../treatmentPlanBundlesEngine.js";

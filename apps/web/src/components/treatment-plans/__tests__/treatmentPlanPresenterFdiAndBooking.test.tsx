@@ -4,7 +4,8 @@
  */
 
 import React from "react";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+import { expect } from "./helpers/signatureTestHelpers";
 import { renderToString } from "react-dom/server";
 import { TreatmentPlanPresenterDentalFormula } from "../presenterModules/TreatmentPlanPresenterDentalFormula";
 import { TreatmentPlanPresenterComparisonTab } from "../TreatmentPlanPresenterComparisonTab";

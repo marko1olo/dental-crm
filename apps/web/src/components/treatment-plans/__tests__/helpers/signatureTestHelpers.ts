@@ -6,6 +6,21 @@ export function expect(actual: any) {
 		toBe(expected: any) {
 			assert.equal(actual, expected);
 		},
+		toEqual(expected: any) {
+			assert.deepEqual(actual, expected);
+		},
+		toBeLessThanOrEqual(n: number) {
+			assert.ok(actual <= n, `Expected ${actual} <= ${n}`);
+		},
+		toBeGreaterThan(n: number) {
+			assert.ok(actual > n, `Expected ${actual} > ${n}`);
+		},
+		toBeTruthy() {
+			assert.ok(Boolean(actual), `Expected truthy, got ${actual}`);
+		},
+		toBeFalsy() {
+			assert.ok(!actual, `Expected falsy, got ${actual}`);
+		},
 		not: {
 			toBeNull() {
 				assert.notEqual(actual, null);

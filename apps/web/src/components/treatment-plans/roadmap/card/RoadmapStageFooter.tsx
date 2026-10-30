@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CalendarPlus, CheckCircle2, Receipt } from "lucide-react";
 import { formatKopecksToRubExact } from "../roadmapPriceHelpers.js";
 import type { RoadmapStageData } from "../types.js";

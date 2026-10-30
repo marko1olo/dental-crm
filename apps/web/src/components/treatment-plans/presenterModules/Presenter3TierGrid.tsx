@@ -130,7 +130,7 @@ export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 										e.stopPropagation();
 										onSelectTierId(tier.tierId);
 									}}
-									className="secondary-button dente-btn dente-btn-secondary min-h-[36px] px-3.5 py-1.5 text-xs font-bold rounded-xl border border-[var(--teal)] bg-[var(--teal)]/10 text-[var(--teal)] hover:bg-[var(--teal)] hover:text-[var(--paper-strong,#ffffff)] cursor-pointer"
+									className="secondary-button dente-btn dente-btn-secondary min-h-[36px] px-3.5 py-1.5 text-xs font-bold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] cursor-pointer transition-colors"
 									data-testid={`apply-tier-btn-${tier.tierId}`}
 								>
 									Применить

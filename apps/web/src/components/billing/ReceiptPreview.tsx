@@ -21,7 +21,9 @@ import {
 	ReceiptTapeFiscalFooter,
 	ReceiptA4Format,
 } from "./receiptPreview/index.js";
-import "./paymentModalStudio.css";
+if (typeof window !== "undefined") {
+	void import("./paymentModalStudio.css");
+}
 
 export type { ReceiptItem, ReceiptPaymentDetails, ReceiptPreviewProps };
 

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { TreatmentPlanPresenterComparisonTab } from "../TreatmentPlanPresenterComparisonTab";
 import { TreatmentPlanPresenterFinanceTab } from "../TreatmentPlanPresenterFinanceTab";
 import { TreatmentPlanPresenterStagesTab } from "../TreatmentPlanPresenterStagesTab";

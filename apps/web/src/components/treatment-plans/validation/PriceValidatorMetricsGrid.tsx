@@ -2,7 +2,7 @@
  * PriceValidatorMetricsGrid.tsx — Сетка карточек финансовых метрик валидатора цен (DENTE CRM).
  */
 
-import type React from "react";
+import React from "react";
 import { DollarSign, FileCheck, FileText, Lock } from "lucide-react";
 import type { PlanPriceValidationReport } from "./planPriceValidationEngine";
 

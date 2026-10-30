@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
+import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { LiveTreatmentPlanPresenterLauncher } from "../../appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher";
 import { TreatmentPlanPresenterEmptyState } from "../../appLayout/modalsContainerModules/standalone/TreatmentPlanPresenterEmptyState";
 import { DEFAULT_SAMPLE_TEETH } from "../presenterModules/state/presenterStateConstants";

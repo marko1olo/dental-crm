@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import {
 	BankInstallmentBreakdownCard,
 	BankInstallmentFooter,
@@ -8,7 +8,9 @@ import {
 	BankInstallmentQrView,
 	useBankInstallmentLogic,
 } from "./bankInstallmentModules";
-import "./bankInstallment.css";
+if (typeof window !== "undefined") {
+	void import("./bankInstallment.css");
+}
 
 export type { BankInstallmentQrModalProps };
 

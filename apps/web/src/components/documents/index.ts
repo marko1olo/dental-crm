@@ -23,3 +23,4 @@ export * from "./PatientConsentSignDrawer";
 export * from "./informedConsentGuiding";
 export * from "./taxApplicationGuiding";
 export * from "./photoVideoConsentGuiding";
+export * from "./documentsCatalogData";

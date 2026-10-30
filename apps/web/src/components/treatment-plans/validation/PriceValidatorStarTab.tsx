@@ -2,7 +2,7 @@
  * PriceValidatorStarTab.tsx — Вкладка стандартов и клинических протоколов СтАР (DENTE CRM).
  */
 
-import type React from "react";
+import React from "react";
 import type {
 	StarProtocolRuleCheck,
 	TreatmentPlanStarValidationReport,

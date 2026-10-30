@@ -16,7 +16,9 @@ import { InstallmentsReminderSubView } from "./installments/InstallmentsReminder
 import { InstallmentsPresetCreatorSubView } from "./installments/InstallmentsPresetCreatorSubView.js";
 import { InstallmentsScheduleTable } from "./installments/InstallmentsScheduleTable.js";
 import { InstallmentsActionBar } from "./installments/InstallmentsActionBar.js";
-import "./patientInstallments.css";
+if (typeof window !== "undefined") {
+	void import("./patientInstallments.css");
+}
 
 export type { PatientInstallmentsModalProps };
 

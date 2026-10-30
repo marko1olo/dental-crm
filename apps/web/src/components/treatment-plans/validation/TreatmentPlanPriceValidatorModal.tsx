@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { useMemo } from "react";
 import { createPortal } from "react-dom";
 import type { TreatmentPlanStage } from "../types.js";

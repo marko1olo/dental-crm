@@ -4,7 +4,7 @@
  */
 
 import { Check, CheckCircle2, FileSignature, Printer } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "./types";
 import { getTierShortLabel } from "./TreatmentPlan3TierComparison";
 

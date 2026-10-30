@@ -15,6 +15,7 @@ import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLaunche
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
+import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
@@ -31,6 +32,7 @@ import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCa
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
+import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -185,6 +187,7 @@ export function AppShell() {
 			<DirectRadiologyLauncher />
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
+			<DirectCashboxLauncher />
 			<DirectReportsLauncher />
 			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />
@@ -201,6 +204,7 @@ export function AppShell() {
 			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />
 			<DirectPayrollLauncher />
+			<DirectTreatmentPlanLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

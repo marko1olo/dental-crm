@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { MissingPriceAlert } from "../MissingPriceAlert.js";
 import { isMicroConsumable } from "../treatmentPlanConsumables.js";
 import type { TreatmentPlanStageItem } from "../types.js";

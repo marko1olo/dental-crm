@@ -1,12 +1,17 @@
 /**
  * apps/web/src/components/documents/DirectDocumentsCatalogLauncher.tsx
- * Standalone лаунчер каталога шаблонов документов (?documents_catalog=1, #documents-catalog)
- * Мандат 8aq: Монтирование в живой UI. Мандат 8b: строго <= 120 строк.
+ *
+ * Standalone лаунчер каталога документов, согласий 1051н и справок НДФЛ.
+ * Мандат 8aq: Монтирование в живой UI (AppShell).
+ * Реагирует на:
+ * - Хэши URL: #documents, #consents, #intake-package, #ndfl, #documents-catalog
+ * - Query-параметры: ?documents_catalog=1, ?consent_sign_drawer=1
+ * - Событие CustomEvent: "dente:open-documents"
  */
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { DocumentsView } from "../../DocumentsView";
-import { PrimaryIntakePackageModal } from "./PrimaryIntakePackageModal";
+import { ClinicalVisitPackageModal } from "./ClinicalVisitPackageModal";
 import { ConsentModal } from "../consents/ConsentModal";
 import { AppLogicProvider, useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 
@@ -21,15 +26,43 @@ const DEMO_PATIENT = {
 };
 
 const DEMO_DOCUMENTS = [
-	{ id: "doc-01", kind: "paid_medical_services_contract", title: "Договор на оказание медицинских услуг", status: "issued", patientId: "pat-demo-01", createdAt: "2026-10-25T10:00:00Z", issuedAt: "2026-10-25T10:15:00Z" },
-	{ id: "doc-02", kind: "informed_voluntary_consent_primary", title: "Информированное добровольное согласие на осмотр", status: "issued", patientId: "pat-demo-01", createdAt: "2026-10-25T10:05:00Z", issuedAt: "2026-10-25T10:16:00Z" },
-	{ id: "doc-03", kind: "dental_medical_card_043u", title: "Медицинская карта приёма стоматолога", status: "issued", patientId: "pat-demo-01", createdAt: "2026-10-25T10:20:00Z", issuedAt: "2026-10-25T11:00:00Z" },
-	{ id: "doc-04", kind: "therapeutic_treatment_plan", title: "План стоматологического лечения", status: "draft", patientId: "pat-demo-01", createdAt: "2026-10-28T14:00:00Z" },
+	{ id: "doc-01", kind: "paid_medical_services_contract" as const, title: "Договор оказания платных медицинских услуг", status: "issued" as const, patientId: "pat-demo-01", createdAt: "2026-10-25T10:00:00Z", issuedAt: "2026-10-25T10:15:00Z" },
+	{ id: "doc-02", kind: "informed_consent" as const, title: "Информированное добровольное согласие на лечение", status: "issued" as const, patientId: "pat-demo-01", createdAt: "2026-10-25T10:05:00Z", issuedAt: "2026-10-25T10:16:00Z" },
+	{ id: "doc-03", kind: "dental_medical_card_043u" as const, title: "Медицинская карта приёма", status: "issued" as const, patientId: "pat-demo-01", createdAt: "2026-10-25T10:20:00Z", issuedAt: "2026-10-25T11:00:00Z" },
+	{ id: "doc-04", kind: "treatment_plan" as const, title: "План стоматологического лечения", status: "draft" as const, patientId: "pat-demo-01", createdAt: "2026-10-28T14:00:00Z" },
 ];
 
 export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
-	const [isIntakeOpen, setIsIntakeOpen] = useState(false);
+	const [hash, setHash] = useState(() => (typeof window !== "undefined" ? window.location.hash : ""));
+	const [customEventState, setCustomEventState] = useState<{ open: boolean; tab?: "primary" | "clinical" | "tax" } | null>(null);
+	const [isPackageOpen, setIsPackageOpen] = useState(false);
+	const [packageTab, setPackageTab] = useState<"primary" | "clinical" | "tax">("primary");
+
 	const existingContext = useOptionalAppLogicContext();
+
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+
+		const handleHashChange = () => {
+			setHash(window.location.hash);
+		};
+
+		const handleCustomOpen = (e: Event) => {
+			const detail = (e as CustomEvent)?.detail;
+			const targetTab = detail?.tab === "ndfl" || detail?.tab === "tax" ? "tax" : detail?.tab === "clinical" ? "clinical" : "primary";
+			setCustomEventState({ open: true, tab: targetTab });
+			setPackageTab(targetTab);
+			setIsPackageOpen(true);
+		};
+
+		window.addEventListener("hashchange", handleHashChange);
+		window.addEventListener("dente:open-documents", handleCustomOpen);
+
+		return () => {
+			window.removeEventListener("hashchange", handleHashChange);
+			window.removeEventListener("dente:open-documents", handleCustomOpen);
+		};
+	}, []);
 
 	const fallbackAppLogic: any = useMemo(() => ({
 		dashboard: { patients: [DEMO_PATIENT], documents: DEMO_DOCUMENTS, appointments: [], doctors: [{ id: "doc-01", fullName: "Д-р Воронов М. С.", role: "doctor" }] },
@@ -46,27 +79,34 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 		openIssuedDocumentHtml: () => {},
 		downloadIssuedDocumentHtml: () => {},
 		downloadIssuedDocumentPdf: () => {},
-		handleDirectPrintPrimaryIntake: () => setIsIntakeOpen(true),
+		handleDirectPrintPrimaryIntake: () => {
+			setPackageTab("primary");
+			setIsPackageOpen(true);
+		},
 		money: (rub: number) => `${rub?.toLocaleString("ru-RU") ?? "0"} ₽`,
 	}), []);
 
 	if (typeof window === "undefined") return null;
+
 	const s = window.location.search || "";
-	const h = window.location.hash || "";
+	const h = hash || "";
 	const search = new URLSearchParams(s);
 
-	const isConsentDrawerStandalone =
+	const isConsentModalStandalone =
 		search.get("consent_sign_drawer") === "1" ||
 		search.get("patient_consent_drawer") === "1" ||
+		h === "#consents" ||
 		h.includes("consent-sign-drawer") ||
 		h.includes("patient-consent-drawer");
 
-	if (isConsentDrawerStandalone) {
+	if (isConsentModalStandalone) {
 		return (
 			<div className="fixed inset-0 z-[1000] flex flex-col bg-black/40" data-testid="standalone-consent-drawer-root">
 				<ConsentModal
 					isOpen={true}
-					onClose={() => {}}
+					onClose={() => {
+						if (window.location.hash === "#consents") window.location.hash = "";
+					}}
 					patient={{ id: "p-01", fullName: "Смирнов Алексей Петрович", birthDate: "1988-04-12" } as any}
 					doctorFullName="Д-р Воронов Алексей Владимирович"
 					clinicName="Стоматология ДЕНТЕ"
@@ -76,14 +116,23 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 		);
 	}
 
+	const isIntakeHash = h === "#intake-package" || h === "#intake";
+	const isNdflHash = h === "#ndfl" || h === "#tax";
 	const isDocCatalogStandalone =
 		search.get("documents_catalog") === "1" ||
 		search.get("document_templates") === "1" ||
+		h === "#documents" ||
 		h.includes("documents-catalog") ||
 		h.includes("documents_catalog") ||
-		h.includes("document-templates");
+		h.includes("document-templates") ||
+		isIntakeHash ||
+		isNdflHash ||
+		customEventState?.open;
 
 	if (!isDocCatalogStandalone) return null;
+
+	const effectiveTab = isNdflHash ? "tax" : isIntakeHash ? "primary" : packageTab;
+	const shouldShowPackageModal = isPackageOpen || isIntakeHash || isNdflHash;
 
 	const content = (
 		<div
@@ -91,11 +140,20 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 			data-testid="standalone-documents-catalog-root"
 		>
 			<DocumentsView />
-			{isIntakeOpen && (
-				<PrimaryIntakePackageModal
-					isOpen={isIntakeOpen}
-					onClose={() => setIsIntakeOpen(false)}
-					patient={null}
+			{shouldShowPackageModal && (
+				<ClinicalVisitPackageModal
+					isOpen={shouldShowPackageModal}
+					onClose={() => {
+						setIsPackageOpen(false);
+						setCustomEventState(null);
+						if (window.location.hash === "#intake-package" || window.location.hash === "#ndfl" || window.location.hash === "#documents") {
+							window.location.hash = "";
+						}
+					}}
+					patient={DEMO_PATIENT as any}
+					initialTab={effectiveTab}
+					doctorFullName="Д-р Воронов М. С."
+					existingDocuments={DEMO_DOCUMENTS as any}
 				/>
 			)}
 		</div>
