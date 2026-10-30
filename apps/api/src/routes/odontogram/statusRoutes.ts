@@ -326,9 +326,9 @@ export function registerStatusRoutes(app: FastifyInstance) {
 
 	app.get("/api/patients/:patientId/tooth-states", getToothStatesHandler);
 	app.get("/api/patients/:patientId/odontogram", getToothStatesHandler);
+	app.get("/api/odontogram/patient/:patientId", getToothStatesHandler);
 
-	// 1. Unified Canonical Route: POST /api/odontogram/status
-	app.post("/api/odontogram/status", async (request, reply) => {
+	const postToothStateMutationHandler = async (request: FastifyRequest, reply: FastifyReply) => {
 		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
 			request,
 			reply,
@@ -378,7 +378,11 @@ export function registerStatusRoutes(app: FastifyInstance) {
 			states: inserted,
 			status: inserted[0]?.state ?? parsed.data.state,
 		});
-	});
+	};
+
+	// 1. Unified Canonical Routes: POST /api/odontogram/status & POST /api/odontogram/tooth-state
+	app.post("/api/odontogram/status", postToothStateMutationHandler);
+	app.post("/api/odontogram/tooth-state", postToothStateMutationHandler);
 
 	// 2. Patient-scoped Route: POST /api/patients/:patientId/odontogram/status
 	app.post("/api/patients/:patientId/odontogram/status", async (request, reply) => {

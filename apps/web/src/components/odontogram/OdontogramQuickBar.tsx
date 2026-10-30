@@ -164,7 +164,7 @@ export const OdontogramQuickBar: React.FC<OdontogramQuickBarProps> = React.memo(
 							data-testid="mark-intact-dentition-btn"
 						>
 							<ShieldCheck size={14} className="text-white shrink-0" />
-							<span>✓ Санирован</span>
+							<span>✓ Норма в 1 клик</span>
 						</button>
 					)}
 

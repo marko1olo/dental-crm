@@ -39,13 +39,23 @@ export async function sendToothStatesBatch(
 	};
 
 	try {
-		let res = await fetch("/api/odontogram/status", {
+		let res = await fetch("/api/odontogram/tooth-state", {
 			method: "POST",
 			headers: denteAdminSecretRequestHeaders({
 				"Content-Type": "application/json",
 			}),
 			body: JSON.stringify(payload),
 		});
+
+		if (!res.ok) {
+			res = await fetch("/api/odontogram/status", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({
+					"Content-Type": "application/json",
+				}),
+				body: JSON.stringify(payload),
+			});
+		}
 
 		if (!res.ok) {
 			res = await fetch(`/api/patients/${patientId}/tooth-states/batch`, {
@@ -100,10 +110,17 @@ export async function fetchToothStatesFromServer(
 	}
 
 	try {
-		const res = await fetch(`/api/patients/${patientId}/tooth-states`, {
+		let res = await fetch(`/api/odontogram/patient/${patientId}`, {
 			headers: denteAdminSecretRequestHeaders(),
 			...(signal ? { signal } : {}),
 		});
+
+		if (!res.ok && res.status === 404) {
+			res = await fetch(`/api/patients/${patientId}/tooth-states`, {
+				headers: denteAdminSecretRequestHeaders(),
+				...(signal ? { signal } : {}),
+			});
+		}
 
 		const status = res.status;
 		const rawBody = await res.text();
