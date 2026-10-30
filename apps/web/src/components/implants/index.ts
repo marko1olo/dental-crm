@@ -9,6 +9,7 @@ export * from "./implantQuickPresets";
 export * from "./ImplantPassportCard";
 export * from "./ImplantPassportModal";
 export * from "./ImplantProtocolTab";
+export * from "./passportModal";
 export * from "./ImplantEconomicsSection";
 export * from "./ImplantConsumablesSelector";
 export * from "./ImplantWarehouseSelector";

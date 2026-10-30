@@ -1,6 +1,5 @@
 import React from "react";
-import { Copy } from "lucide-react";
-import { DentalForm043 } from "../icons/DentalIcons";
+import { Copy, FileText } from "lucide-react";
 import { showToast } from "../GlobalToast";
 
 export interface ImplantDiaryTabProps {
@@ -12,7 +11,7 @@ export const ImplantDiaryTab: React.FC<ImplantDiaryTabProps> = ({ diaryText }) =
 		<div className="space-y-3" data-testid="tab-content-diary">
 			<div className="flex items-center justify-between">
 				<span className="text-xs font-black uppercase text-[var(--muted)] tracking-wider flex items-center gap-1.5">
-					<DentalForm043 size={15} className="text-[var(--teal,#0d9488)]" />
+					<FileText size={15} className="text-[var(--teal,#0d9488)]" />
 					<span>Текст протокола для дневника приёма:</span>
 				</span>
 				<button

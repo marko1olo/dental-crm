@@ -90,4 +90,23 @@ describe("Implant Passport Modal & Protocol Views (Mandates 8e, 8x)", () => {
 		assert.ok(html.includes("Д-р Воронов А. В."));
 		assert.ok(!html.includes("disabled"));
 	});
+
+	it("35. ImplantPassportModal renders post-op memo tab with 1-click WhatsApp and Telegram actions", () => {
+		const html = renderToString(
+			<ImplantPassportModal
+				isOpen={true} onClose={() => {}} initialTooth={46} initialTab="memo" patientName="Смирнов В. И."
+			/>,
+		);
+		assert.ok(html.includes("implant-tab-memo"));
+		assert.ok(html.includes("tab-content-memo"));
+		assert.ok(html.includes("btn-memo-send-whatsapp"));
+		assert.ok(html.includes("btn-memo-send-telegram"));
+		assert.ok(html.includes("btn-memo-copy-text"));
+		assert.ok(html.includes("btn-memo-print"));
+		assert.ok(html.includes("15 минут") || html.includes("15 мин"));
+		assert.ok(html.includes("хлоргексидин") || html.includes("хлоргексидина"));
+		// Проверка запрета чужих CRM и птичьего языка (Мандаты 8ap, 8x)
+		assert.ok(!html.includes("StomX") && !html.includes("DentalPRO") && !html.includes("IDENT") && !html.includes("iStom"));
+		assert.ok(!html.includes("043/у") && !html.includes("804н") && !html.includes("257/у"));
+	});
 });

@@ -1,0 +1,118 @@
+/* ==========================================================================
+   IMPLANTS DARK THEME & RESPONSIVE REFINEMENTS (DENTE CRM)
+   Гарантированное переключение мобильных ярлыков и чистая тёмная тема
+   без слепящих пятен и рассинхрона (Мандаты 8e, 8am, 8ze).
+   ========================================================================== */
+
+/* 1. Семантические ярлыки текста (Apple HIG Responsive) */
+.implant-title-desktop { display: inline; }
+.implant-title-mobile { display: none; }
+.implant-btn-label-desktop { display: inline; }
+.implant-btn-label-mobile { display: none; }
+
+@media (max-width: 640px) {
+	.implant-title-desktop { display: none !important; }
+	.implant-title-mobile { display: inline !important; }
+	.implant-btn-label-desktop { display: none !important; }
+	.implant-btn-label-mobile { display: inline !important; }
+}
+
+/* 2. Адаптивная сетка экспресс-протоколов */
+.implant-presets-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 8px;
+}
+
+@media (max-width: 1024px) {
+	.implant-presets-grid {
+		grid-template-columns: repeat(2, 1fr);
+	}
+}
+
+@media (max-width: 640px) {
+	.implant-presets-grid {
+		grid-template-columns: 1fr;
+	}
+}
+
+/* 3. Гарантированный Primary CTA в мобильном и десктопном футере */
+.implant-passport-actions .primary-button {
+	background: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+	border: 1px solid var(--teal-dark, #0f766e) !important;
+}
+
+.implant-passport-actions .secondary-button {
+	background: var(--paper, #ffffff) !important;
+	color: var(--ink, #111827) !important;
+	border: 1px solid var(--line, rgba(15, 118, 110, 0.15)) !important;
+}
+
+/* 4. Тёмная тема (Dark Mode High-Contrast) */
+:is([data-theme="dark"], html.dark, .dark) .implant-passport-card-container {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+:is([data-theme="dark"], html.dark, .dark) .implant-passport-header-bar,
+:is([data-theme="dark"], html.dark, .dark) .implant-passport-actions,
+:is([data-theme="dark"], html.dark, .dark) .implant-tabs-nav {
+	background: var(--paper-soft, #1e293b);
+	border-color: var(--line, rgba(255, 255, 255, 0.1));
+}
+
+:is([data-theme="dark"], html.dark, .dark) .secondary-button,
+:is([data-theme="dark"], html.dark, .dark) .icon-button {
+	background: var(--paper, #0f172a) !important;
+	color: var(--ink, #f8fafc) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.15)) !important;
+}
+
+:is([data-theme="dark"], html.dark, .dark) .secondary-button:hover,
+:is([data-theme="dark"], html.dark, .dark) .icon-button:hover {
+	background: var(--paper-soft, #1e293b) !important;
+}
+
+:is([data-theme="dark"], html.dark, .dark) .primary-button,
+:is([data-theme="dark"], html.dark, .dark) .implant-passport-actions .primary-button {
+	background: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+	border-color: var(--teal-dark, #0f766e) !important;
+}
+
+:is([data-theme="dark"], html.dark, .dark) .primary-button:hover,
+:is([data-theme="dark"], html.dark, .dark) .implant-passport-actions .primary-button:hover {
+	background: #0f766e !important;
+}
+
+:is([data-theme="dark"], html.dark, .dark) .implant-select,
+:is([data-theme="dark"], html.dark, .dark) .implant-input {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+}
+
+:is([data-theme="dark"], html.dark, .dark) .implant-preset-btn {
+	background: var(--paper, #0f172a) !important;
+	color: var(--ink, #f8fafc) !important;
+	border-color: var(--line, rgba(255, 255, 255, 0.12)) !important;
+}
+
+:is([data-theme="dark"], html.dark, .dark) .implant-system-pill {
+	background: var(--paper, #0f172a);
+	color: var(--ink, #f8fafc);
+	border-color: var(--line, rgba(255, 255, 255, 0.15));
+}
+
+:is([data-theme="dark"], html.dark, .dark) .implant-system-pill.active {
+	background: var(--teal, #0d9488) !important;
+	color: #ffffff !important;
+}
+
+:is([data-theme="dark"], html.dark, .dark) [data-testid="passport-overdraft-notice"] button {
+	background: transparent !important;
+	color: var(--ink, #f8fafc) !important;
+	border: none !important;
+}
