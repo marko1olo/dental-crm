@@ -72,6 +72,25 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 			assert.ok(!html.includes("КНД 1151156"), "Must not expose KND numbers in checkout");
 		});
 
+		it("renders 100% doctor warranty mode with 0 ₽ total and warranty CTA without blockers", () => {
+			const html = renderToString(
+				<CashRegisterCheckoutModal
+					isOpen={true}
+					onClose={() => {}}
+					totalDueRub={0}
+					initialWarranty100={true}
+					patientId="pat-1"
+					patientName="Иванов Иван Иванович"
+					patientPhone="+7 (999) 111-22-33"
+					cashierFullName="Администратор Кассы"
+				/>
+			);
+
+			assert.ok(html.includes("100% Гарантийный случай врача"), "Must highlight warranty case");
+			assert.ok(html.includes("Оформить по гарантии (0 ₽)"), "CTA must state warranty execution");
+			assert.ok(html.includes("data-testid=\"btn-confirm-checkout-payment\""), "Must have confirm CTA");
+		});
+
 		it("renders null when closed", () => {
 			const html = renderToString(
 				<CashRegisterCheckoutModal

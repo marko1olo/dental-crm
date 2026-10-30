@@ -5,7 +5,7 @@
  * Mandates 8e, 8n, 8d (WCAG AAA contrast, zero emojis, clean 36px buttons).
  */
 
-import type React from "react";
+import React from "react";
 import {
 	type CashierPaymentMethod,
 	type CashRegisterPaymentPaneProps,

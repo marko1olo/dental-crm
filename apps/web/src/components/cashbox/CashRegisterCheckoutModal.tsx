@@ -20,6 +20,8 @@ import {
 	PAYER_TYPE_PRESETS, RECEIPT_PRINT_FORMATS,
 	type CashboxTenderType, type ClientPayerType, type ReceiptPrintFormat,
 } from "./cashboxCatalogData.js";
+import { isDemoPatientId, isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
 const TENDER_ICONS: Record<CashboxTenderType, React.ElementType> = {
 	card: CreditCard, cash: Banknote, sbp: QrCode, deposit: Wallet, split: Layers,
@@ -126,16 +128,12 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 	if (!isOpen) return null;
 
 	const handleExecutePayment = async () => {
-		if (isWarranty || totalDue === 0) {
-			const zeroData = { method: "warranty_discount_100", amountKopecks: 0, amountRub: 0, discountPercent: 100, patientId };
-			setReceiptSuccess(zeroData);
-			onSuccess?.(zeroData);
-			onPaymentComplete?.(zeroData);
-			setTimeout(onClose, 400);
+		const isWarrantyCase = isWarranty || totalDue === 0;
+		if (totalDue <= 0 && !isWarrantyCase) {
+			setErrorMessage("Сумма к оплате должна быть больше 0 ₽.");
 			return;
 		}
-		if (totalDue <= 0) { setErrorMessage("Сумма к оплате должна быть больше 0 ₽."); return; }
-		if (method === "split" && !splitBalances.isFullyPaid) {
+		if (method === "split" && !isWarrantyCase && !splitBalances.isFullyPaid) {
 			const diff = splitBalances.totalDueRub - splitBalances.allocatedRub;
 			setErrorMessage(`Сумма сплита не совпадает с итогом. Разница: ${diff > 0 ? `+${diff}` : diff} ₽.`);
 			return;
@@ -143,28 +141,51 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 		setIsSubmitting(true);
 		setErrorMessage(null);
 
-		const cashKop = method === "cash" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitCashRub) : 0;
-		const cardKop = method === "card" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitCardRub) : 0;
-		const sbpKop = method === "sbp" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitSbpRub) : 0;
-		const depKop = method === "deposit" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitDepositRub) : 0;
+		const cashKop = isWarrantyCase ? 0 : method === "cash" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitCashRub) : 0;
+		const cardKop = isWarrantyCase ? 0 : method === "card" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitCardRub) : 0;
+		const sbpKop = isWarrantyCase ? 0 : method === "sbp" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitSbpRub) : 0;
+		const depKop = isWarrantyCase ? 0 : method === "deposit" ? rubToKopecks(totalDue) : method === "split" ? rubToKopecks(splitDepositRub) : 0;
 
 		const payload = {
-			patientId, visitId: visitId || undefined, invoiceId: invoiceId || undefined,
-			amountKopecks: Number(totalKopecks), amountRub: totalDue,
-			method: method === "split" ? "split" : method === "sbp" ? "sbp" : method === "cash" ? "cash" : method === "deposit" ? "deposit" : "card",
-			cashAmountKopecks: cashKop, electronicAmountKopecks: cardKop + sbpKop, depositAmountKopecks: depKop,
-			cashierFullName, isElectronicReceiptOnly: receiptDelivery !== "print",
+			patientId: patientId && patientId !== "pat-walkin" ? patientId : undefined,
+			visitId: visitId || undefined,
+			invoiceId: invoiceId || undefined,
+			orderId: orderId || undefined,
+			amountKopecks: isWarrantyCase ? 0 : Number(totalKopecks),
+			amountRub: isWarrantyCase ? 0 : totalDue,
+			method: isWarrantyCase ? "warranty" : method === "split" ? "split" : method === "sbp" ? "sbp" : method === "cash" ? "cash" : method === "deposit" ? "deposit" : "card",
+			isWarranty: isWarrantyCase,
+			cashAmountKopecks: cashKop,
+			electronicAmountKopecks: cardKop + sbpKop,
+			depositAmountKopecks: depKop,
+			cashierFullName,
+			isElectronicReceiptOnly: receiptDelivery !== "print",
 			customerContact: receiptDelivery !== "print" ? customerContact.trim() : undefined,
-			clientType: payerType, buyerInn: payerType !== "physical_person" ? buyerInn.trim() || undefined : undefined,
-			printFormat, clientMutationId: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			clientType: payerType,
+			buyerInn: payerType !== "physical_person" ? buyerInn.trim() || undefined : undefined,
+			printFormat,
+			clientMutationId: `pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+			note: isWarrantyCase ? "Гарантийный расчёт (скидка 100%)" : undefined,
 		};
 
 		try {
+			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
 			const response = await fetch("/api/cashbox/payments", {
-				method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload),
+				method: "POST",
+				headers,
+				body: JSON.stringify(payload),
 			});
 			const json = await response.json().catch(() => null);
 			if (!response.ok || !json?.success) {
+				if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+					const fallbackData = { ...payload, status: isWarrantyCase ? "paid_warranty" : "paid" };
+					setReceiptSuccess(fallbackData);
+					setIsSubmitting(false);
+					onSuccess?.(fallbackData);
+					onPaymentComplete?.(fallbackData);
+					setTimeout(onClose, 800);
+					return;
+				}
 				setErrorMessage(json?.message || "Ошибка кассового узла при проведении платежа.");
 				setIsSubmitting(false);
 				return;
@@ -176,6 +197,15 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 			onPaymentComplete?.(paymentData);
 			setTimeout(onClose, 800);
 		} catch {
+			if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
+				const fallbackData = { ...payload, status: isWarrantyCase ? "paid_warranty" : "paid" };
+				setReceiptSuccess(fallbackData);
+				setIsSubmitting(false);
+				onSuccess?.(fallbackData);
+				onPaymentComplete?.(fallbackData);
+				setTimeout(onClose, 800);
+				return;
+			}
 			setErrorMessage("Сетевой сбой при связи с кассой. Проверьте подключение и повторите.");
 			setIsSubmitting(false);
 		}
