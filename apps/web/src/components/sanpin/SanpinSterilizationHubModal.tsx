@@ -110,7 +110,7 @@ export function SanpinSterilizationHubModal({
 						<div>
 							<div className="flex items-center gap-2">
 								<h2 className="text-sm sm:text-base font-bold tracking-tight">Журнал автоклавирования и стерилизации</h2>
-								<span className="hidden sm:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300">СанПиН 3.3686-21</span>
+								<span className="hidden sm:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300">Санитарный регламент клиники</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-[var(--ink-muted,#64748b)] dark:text-[var(--ink-muted-dark,#94a3b8)]">
 								{CLINIC_STERILIZERS[0].name} • Пакетная стерилизация смены
@@ -263,7 +263,7 @@ export function SanpinSterilizationHubModal({
 							<div className="p-3.5 rounded-xl border border-emerald-200 dark:border-emerald-900 bg-emerald-50/50 dark:bg-emerald-950/20 space-y-2">
 								<div className="flex items-center gap-2 text-emerald-800 dark:text-emerald-300 font-semibold text-xs uppercase tracking-wide">
 									<CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-									<span>Контроль качества стерилизации и предстерилизационной очистки (Норма СанПиН)</span>
+									<span>Контроль качества стерилизации и предстерилизационной очистки (азопирам / фенолфталеин)</span>
 								</div>
 								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-emerald-900 dark:text-emerald-200 pt-0.5">
 									<div className="p-2 rounded-lg bg-emerald-100/60 dark:bg-emerald-900/40">
@@ -422,7 +422,7 @@ export function SanpinSterilizationHubModal({
 				{/* 5. Footer: Exactly 1 Primary CTA Button (#0d9488) according to Mandate 8am */}
 				<div className="p-3.5 sm:p-4 pb-[max(1rem,env(safe-area-inset-bottom))] border-t border-[var(--line,#e2e8f0)] dark:border-[var(--line-strong,#334155)] bg-[var(--paper-subtle,#f8fafc)] dark:bg-[var(--paper,#1e293b)] flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
 					<div className="text-xs text-slate-500 text-center sm:text-left">
-						Списание {packagesCount} крафт-пакетов со склада в бэкофисе • Норма СанПиН
+						Списание {packagesCount} крафт-пакетов со склада в бэкофисе • Санитарный регламент клиники
 					</div>
 					<button
 						type="button"

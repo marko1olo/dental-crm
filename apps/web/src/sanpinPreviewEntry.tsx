@@ -10,10 +10,12 @@ import "./styles/themes.css";
 import "./theme.css";
 import "./styles/tailwind.css";
 import { SanpinSterilizationHubModal } from "./components/sanpin/SanpinSterilizationHubModal";
+import { SanPinSterilizationJournal } from "./components/sanpin/SanPinSterilizationJournal";
 
 function SanpinPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
 	const themeParam = params.get("theme") || "light";
+	const viewParam = params.get("view") || "journal";
 	const isDark = themeParam === "dark" || themeParam === "night";
 
 	useEffect(() => {
@@ -33,12 +35,16 @@ function SanpinPreviewApp() {
 	}, [isDark]);
 
 	return (
-		<div className="w-full min-h-screen bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] dark:text-[var(--ink-inverted,#f8fafc)] flex flex-col items-center justify-end sm:justify-center p-0">
-			<SanpinSterilizationHubModal
-				isOpen={true}
-				onClose={() => {}}
-				isDemo={true}
-			/>
+		<div className="w-full min-h-screen bg-[var(--paper-canvas,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] text-[var(--ink,#0f172a)] dark:text-[var(--ink-inverted,#f8fafc)] p-3 sm:p-5 box-border flex flex-col">
+			{viewParam === "hub" ? (
+				<SanpinSterilizationHubModal
+					isOpen={true}
+					onClose={() => {}}
+					isDemo={true}
+				/>
+			) : (
+				<SanPinSterilizationJournal />
+			)}
 		</div>
 	);
 }

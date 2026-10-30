@@ -47,6 +47,12 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	// Журнал работы стерилизаторов
 	app.get("/api/sanpin/sterilization", handleGetSterilizationLogs);
 	app.post("/api/sanpin/sterilization", handleCreateSterilizationLog);
+	app.get("/api/sanpin/autoclave/cycles", handleGetSterilizationLogs);
+	app.post("/api/sanpin/autoclave/cycles", handleCreateSterilizationLog);
+	app.get("/api/sterilization/cycles", handleGetSterilizationLogs);
+	app.post("/api/sterilization/cycles", handleCreateSterilizationLog);
+	app.get("/api/sanpin/sterilization/cycles", handleGetSterilizationLogs);
+	app.post("/api/sanpin/sterilization/cycles", handleCreateSterilizationLog);
 
 	// 1-клик запуск партии автоклава (134°C / 2.15 бар или 121°C / 1.15 бар) — канонический роут и алиасы
 	app.post("/api/sanpin/sterilization/quick-norm", handleQuickNormCycle);
