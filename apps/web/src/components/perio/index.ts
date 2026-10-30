@@ -8,6 +8,7 @@ export {
 	type PeriodontogramChartProps,
 } from "./PeriodontogramChart";
 export { PerioWorkspaceModal, type PerioWorkspaceModalProps } from "./PerioWorkspaceModal";
+export * from "./workspaceModal";
 export { DirectPerioLauncher } from "./DirectPerioLauncher";
 export { PerioPsrExpressScreening, type PerioPsrExpressScreeningProps } from "./PerioPsrExpressScreening";
 export { PeriodontalDetailedChart, type PeriodontalDetailedChartProps } from "./PeriodontalDetailedChart";

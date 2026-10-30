@@ -1,6 +1,6 @@
 /**
  * apps/web/src/components/perio/perioChart.css — Стили кабинета пародонтологии DENTE CRM
- * Apple HIG: Адаптивность тулбара, 0px паразитного скролла, Floating Bottom Bar.
+ * Apple HIG: Адаптивность тулбара, 0px паразитного скролла, Floating Bottom Bar (Natural Thumb Zone).
  */
 
 .perio-desktop-primary-cta {
@@ -11,13 +11,28 @@
 	display: none;
 }
 
-@media (max-width: 640px) {
+.perio-primary-cta-btn {
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+}
+
+.perio-primary-cta-btn:hover {
+	background-color: #0f766e !important;
+}
+
+.perio-primary-cta-btn svg,
+.perio-primary-cta-btn span {
+	color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
 	.perio-desktop-primary-cta {
 		display: none !important;
 	}
 
 	.perio-mobile-floating-bar {
 		display: flex !important;
+		padding-bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
 	}
 
 	.perio-toolbar-actions {
