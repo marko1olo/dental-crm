@@ -7,6 +7,7 @@ import { CLINICAL_PRESETS, type ClinicalPreset, defaultPreset } from "./chairsid
 import { mapToCanonicalToothState } from "./chairside/canonicalToothStateMapper";
 import { useChairsideVoiceEngine } from "./chairside/useChairsideVoiceEngine";
 import { ChairsideHUDProposals } from "./chairside/ChairsideHUDProposals";
+import { mapVoiceIntentToHUDProposals } from "./chairside/chairsideVoiceIntentMapper";
 import type {
   ChairsideCopilotHUDProps, ChairsideThoughtStep, ChairsideToothProposal,
   ChairsideServiceProposal, ChairsideSoapProposal, ChairsideAnestheticProposal,
@@ -82,59 +83,13 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const handleIntentParsed = useCallback((intent: DentalVoiceIntent) => {
     if (!intent) return;
-    if (intent.teethUpdates && intent.teethUpdates.length > 0) {
-      const first = intent.teethUpdates[0];
-      if (first) {
-        setToothProposal({
-          toothNumber: first.toothNumber,
-          state: first.state || "C2",
-          stateLabel: first.icd10Title || first.clinicalStatus || "Кариес",
-          surfaces: (first.surfaces ? [...first.surfaces] : ["O"]),
-          applied: false,
-        });
-        if (first.icd10Code || first.icd10Title) {
-          setSoapProposal((prev) => ({
-            ...prev,
-            diagnosis: `${first.icd10Code || ""} ${first.icd10Title || ""}`.trim() || prev.diagnosis,
-          }));
-        }
-      }
-    }
-    if (intent.anesthesia) {
-      setAnestheticProposal({
-        drugName: intent.anesthesia.displayName || intent.anesthesia.tradeName,
-        carpulesCount: intent.anesthesia.cartridgeCount || 1,
-        patientWeightKg: 70,
-        maxCarpules: 4,
-        epinephrineMcg: 10,
-        isCardiovascularRisk: false,
-        applied: false,
-      });
-    }
-    const procs = intent.treatmentProcedures || intent.procedures804n;
-    if (procs && procs.length > 0) {
-      setServicesProposal(
-        procs.map((p: any, idx: number) => ({
-          id: `proc-voice-${idx}-${Date.now()}`,
-          serviceCode: p.serviceCode || p.code804n || "A16.07.001",
-          code804n: p.serviceCode || p.code804n || "A16.07.001",
-          title: p.name || p.title || "Медицинская услуга",
-          priceRub: p.priceRub || 1500,
-          quantity: p.quantity || 1,
-          applied: false,
-        }))
-      );
-    }
-    if (intent.soapNotes) {
-      setSoapProposal((prev) => ({
-        ...prev,
-        complaint: intent.soapNotes?.subjective || prev.complaint,
-        objectiveStatus: intent.soapNotes?.objective || prev.objectiveStatus,
-        diagnosis: intent.soapNotes?.assessment || prev.diagnosis,
-        treatmentPlan: intent.soapNotes?.plan || prev.treatmentPlan,
-        recommendations: intent.soapNotes?.recommendations || prev.recommendations,
-      }));
-    }
+    setSoapProposal((prevSoap) => {
+      const mapped = mapVoiceIntentToHUDProposals(intent, prevSoap);
+      if (mapped.toothProposal) setToothProposal(mapped.toothProposal);
+      if (mapped.anestheticProposal) setAnestheticProposal(mapped.anestheticProposal);
+      if (mapped.servicesProposal) setServicesProposal(mapped.servicesProposal);
+      return mapped.soapPatch ? { ...prevSoap, ...mapped.soapPatch } : prevSoap;
+    });
   }, []);
 
   const { isListening, handleToggleVoice } = useChairsideVoiceEngine({

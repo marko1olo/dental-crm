@@ -15,50 +15,24 @@ import {
   Pill,
   BookOpen,
   HelpCircle,
+  Camera,
+  FolderSearch,
+  ExternalLink,
+  Activity,
+  Receipt,
+  Calculator,
 } from 'lucide-react';
 import type { SuggestionCategory } from '../copilotTypes';
+import { COPILOT_CATALOG_CATEGORIES } from '../copilotCatalogData';
 
-export const DEFAULT_SUGGESTION_CATEGORIES: SuggestionCategory[] = [
-  {
-    category: 'Быстрые действия у кресла',
-    items: [
-      { label: 'Заполнить дневник', prompt: 'Заполни дневник приёма по текущему пациенту', icon: 'FileText' },
-      { label: 'Составить смету', prompt: 'Рассчитай смету лечения на 3 тарифа: Эконом, Оптимум и Премиум', icon: 'CreditCard' },
-      { label: 'Проверить гарантию', prompt: 'Проверь гарантийный срок и статус ранее выполненных работ', icon: 'ShieldCheck' },
-      { label: 'Осмотр и формула', prompt: 'Покажи зубную формулу и зафиксируй статус зубов', icon: 'Stethoscope' },
-    ],
-  },
-  {
-    category: 'Рабочие сценарии',
-    items: [
-      { label: 'Утренняя сводка дня', prompt: 'Покажи утреннюю сводку на сегодня: сколько пациентов, выручка и задачи', icon: 'Sun' },
-      { label: 'Подготовка к приёму', prompt: 'Покажи детали ближайшего приёма и историю пациента', icon: 'UserCheck' },
-      { label: 'Заполнить окно в графике', prompt: 'Найди пациентов из листа ожидания для заполнения свободного окна', icon: 'CalendarPlus' },
-    ],
-  },
-  {
-    category: 'Пациенты',
-    items: [
-      { label: 'Поиск пациента', prompt: 'Найди пациента по фамилии или номеру телефона', icon: 'Search' },
-    ],
-  },
-  {
-    category: 'Расписание',
-    items: [
-      { label: 'Свободные окна сегодня', prompt: 'Покажи все свободные слоты у терапевта на сегодня', icon: 'Clock' },
-      { label: 'Записать на приём', prompt: 'Запиши пациента на консультацию к хирургу', icon: 'Calendar' },
-    ],
-  },
-  {
-    category: 'База знаний и обучение',
-    items: [
-      { label: 'Как устроено расписание', prompt: 'Расскажи, как устроена сетка расписания и как быстро создать запись', icon: 'BookOpen' },
-      { label: 'Касса и чеки', prompt: 'Как пробить чек и принять оплату картой или по СБП?', icon: 'CreditCard' },
-      { label: 'Зубная формула и норма', prompt: 'Как пользоваться зубной формулой и поставить норму?', icon: 'Stethoscope' },
-      { label: 'Справка для налогового вычета', prompt: 'Как сформировать справку для налогового вычета (13%)?', icon: 'FileText' },
-    ],
-  },
-];
+export const DEFAULT_SUGGESTION_CATEGORIES: SuggestionCategory[] = COPILOT_CATALOG_CATEGORIES.map((cat) => ({
+  category: cat.title,
+  items: cat.items.map((item) => ({
+    label: item.label,
+    prompt: item.prompt,
+    icon: item.icon,
+  })),
+}));
 
 export function renderSuggestionChipIcon(iconName?: string): React.ReactNode {
   switch (iconName) {
@@ -75,6 +49,13 @@ export function renderSuggestionChipIcon(iconName?: string): React.ReactNode {
     case 'Pill': return <Pill size={14} />;
     case 'BookOpen': return <BookOpen size={14} />;
     case 'HelpCircle': return <HelpCircle size={14} />;
+    case 'Camera': return <Camera size={14} />;
+    case 'FolderSearch': return <FolderSearch size={14} />;
+    case 'ExternalLink': return <ExternalLink size={14} />;
+    case 'Activity': return <Activity size={14} />;
+    case 'Receipt': return <Receipt size={14} />;
+    case 'Calculator': return <Calculator size={14} />;
+    case 'Stethoscope': return <Stethoscope size={14} />;
     default: return <Sparkles size={14} />;
   }
 }

@@ -1,6 +1,6 @@
 /**
  * DirectCopilotLauncher.tsx — Standalone лаунчер клинического ассистента DENTE.
- * Мандат 8aq: Монтирование в живой UI (#copilot, #ai, Ctrl+Space, dente:open-copilot).
+ * Мандат 8aq: Монтирование в живой UI (#copilot, #ai, #voice, Ctrl+Space, Ctrl+J, dente:open-copilot).
  * Мандат 8b: размер файла строго в Sweet Spot 60–80 строк.
  */
 
@@ -12,18 +12,11 @@ function checkIsCopilotActive(): boolean {
   const s = window.location.search || "";
   const h = window.location.hash || "";
   const search = new URLSearchParams(s);
-
   return (
-    search.get("copilot") === "1" ||
-    search.get("copilot_standalone") === "1" ||
-    search.get("copilot_workspace") === "1" ||
-    search.get("view") === "copilot_standalone" ||
-    search.get("view") === "copilot_workspace" ||
-    h === "#copilot" ||
-    h === "#ai" ||
-    h === "#copilot-standalone" ||
-    h === "#copilot-workspace" ||
-    h.includes("copilot")
+    search.get("copilot") === "1" || search.get("copilot_standalone") === "1" ||
+    search.get("copilot_workspace") === "1" || search.get("view") === "copilot_standalone" ||
+    search.get("view") === "copilot_workspace" || h === "#copilot" || h === "#ai" ||
+    h === "#voice" || h === "#copilot-standalone" || h.includes("copilot") || h.includes("voice")
   );
 }
 
@@ -39,7 +32,9 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
     };
     const handleOpenEvent = () => { setIsActive(true); setIsOpen(true); };
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && (e.code === "Space" || e.key === " ")) {
+      const isCtrlOrMeta = e.ctrlKey || e.metaKey;
+      const isKey = e.code === "Space" || e.key === " " || e.key === "j" || e.key === "J" || e.code === "KeyJ";
+      if (isCtrlOrMeta && isKey) {
         e.preventDefault();
         setIsActive((prev) => !prev);
         setIsOpen((prev) => !prev);
@@ -59,7 +54,7 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
-    if (typeof window !== "undefined" && (window.location.hash === "#copilot" || window.location.hash === "#ai")) {
+    if (typeof window !== "undefined" && (window.location.hash === "#copilot" || window.location.hash === "#ai" || window.location.hash === "#voice")) {
       window.history.pushState(null, "", window.location.pathname + window.location.search);
     }
   }, []);

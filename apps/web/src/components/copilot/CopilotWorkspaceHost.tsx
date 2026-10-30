@@ -433,7 +433,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
             <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2"><Receipt size={16} className="text-[var(--teal,#0d9488)]" /><span className="text-xs font-bold text-[var(--ink)]">Выставление счёта</span></div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">Касса 54-ФЗ</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">Касса и чеки</span>
               </div>
               <p className="text-xs text-[var(--muted)]">Пречек на препарирование и нанокомпозит: 6 500 ₽.</p>
               <button

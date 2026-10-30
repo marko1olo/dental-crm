@@ -237,7 +237,7 @@ export function renderWorkstationSection(
       : obj) as Obj;
     const deviceName = String(rawDev.device || rawDev.name || 'Фискальный регистратор (Атол)');
     const port = String(rawDev.port || 'COM3 / USB');
-    const state = String(rawDev.status || 'Готов к печати чеков (54-ФЗ)');
+    const state = String(rawDev.status || 'Готов к печати кассовых чеков');
 
     return (
       <div

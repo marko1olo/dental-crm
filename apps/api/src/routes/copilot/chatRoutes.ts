@@ -363,4 +363,10 @@ export const chatRoutes: FastifyPluginAsync = async (
 		{ config: { tenantTxSelfManaged: true } },
 		handleUnifiedChat,
 	);
+
+	server.post(
+		"/api/ai/chat",
+		{ config: { tenantTxSelfManaged: true } },
+		handleUnifiedChat,
+	);
 };
