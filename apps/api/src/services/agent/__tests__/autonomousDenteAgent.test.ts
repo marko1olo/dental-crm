@@ -90,18 +90,15 @@ import {
 import {
 	bookChairsideAppointmentTool,
 	calculateTreatmentEstimateTool,
-	calculate804nEstimateTool,
 	calculateServicesEstimateTool,
 	calculateAnestheticDosageTool,
 	checkDrugInteractionsTool,
 	checkWarehouseSuppliesTool,
 	createDentalLabOrderTool,
 	draftClinicalSoapDiaryTool,
-	draft043uSoapDiaryTool,
 	draftSoapDiaryTool,
 	generateInformedConsentIdsTool,
 	getPatientClinicalCardTool,
-	getPatientEmk043uTool,
 	getPatientOutpatientRecordTool,
 	normalizeAnatomicalSurfaces,
 	updateToothStatusTool,
@@ -132,8 +129,8 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 
 	// ─── 1. EXTENDED TOOLS AUDIT ───────────────────────────────────────────────
 	describe("1. Extended Clinical Tools", () => {
-		it("get_patient_emk_043u: returns patient record and FDI dental formula with physiological norm default", async () => {
-			const res = await getPatientEmk043uTool.handler(mockCtx, {
+		it("get_patient_clinical_card: returns patient record and FDI dental formula with physiological norm default", async () => {
+			const res = await getPatientClinicalCardTool.handler(mockCtx, {
 				patientId: "pat-emk-001",
 			});
 
@@ -187,8 +184,8 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			).rejects.toThrow(/вне допустимого диапазона|Некорректный номер зуба/i);
 		});
 
-		it("calculate_804n_estimate: computes exact integer kopecks with doctor discount (Mandate 8e)", async () => {
-			const res = await calculate804nEstimateTool.handler(mockCtx, {
+		it("calculate_treatment_estimate: computes exact integer kopecks with doctor discount (Mandate 8e)", async () => {
+			const res = await calculateTreatmentEstimateTool.handler(mockCtx, {
 				patientId: "pat-bill-001",
 				toothNumber: 26,
 				category: "endodontics",
@@ -208,8 +205,8 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(res.formattedTotal).toMatch(/₽|руб/i);
 		});
 
-		it("calculate_804n_estimate: supports 100% doctor discount without admin block (warranty remake)", async () => {
-			const res = await calculate804nEstimateTool.handler(mockCtx, {
+		it("calculate_treatment_estimate: supports 100% doctor discount without admin block (warranty remake)", async () => {
+			const res = await calculateTreatmentEstimateTool.handler(mockCtx, {
 				patientId: "pat-bill-002",
 				toothNumber: 14,
 				category: "therapy",
@@ -303,8 +300,8 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(res.endsAt).toBe("2026-09-28T14:45:00.000Z");
 		});
 
-		it("draft_043u_soap_diary: generates complete StAR Form 043/у note with zero cartoon emojis", async () => {
-			const res = await draft043uSoapDiaryTool.handler(mockCtx, {
+		it("draft_clinical_soap_diary: generates complete StAR Form note with zero cartoon emojis", async () => {
+			const res = await draftClinicalSoapDiaryTool.handler(mockCtx, {
 				patientId: "pat-diary-001",
 				toothNumber: 26,
 				diagnosisCode: "K04.0",

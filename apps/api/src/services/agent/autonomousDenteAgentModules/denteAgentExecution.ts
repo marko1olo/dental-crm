@@ -14,26 +14,20 @@
 
 import {
 	getPatientClinicalCardTool,
-	getPatientEmk043uTool,
 	updateToothStatusTool,
 	calculateTreatmentEstimateTool,
-	calculate804nEstimateTool,
 	checkDrugInteractionsTool,
 	createDentalLabOrderTool,
 	bookChairsideAppointmentTool,
 	draftClinicalSoapDiaryTool,
-	draft043uSoapDiaryTool,
 	calculateAnestheticDosageTool,
 	generateInformedConsentIdsTool,
 	checkWarehouseSuppliesTool,
 	type CalculateTreatmentEstimateResult,
-	type Calculate804nEstimateResult,
 	type CreateDentalLabOrderResult,
 	type BookChairsideAppointmentResult,
 	type DraftClinicalSoapDiaryResult,
-	type Draft043uSoapDiaryResult,
 	type PatientClinicalCardResult,
-	type PatientEmk043uResult,
 	type UpdateToothStatusResult,
 	type CalculateAnestheticDosageResult,
 	type GenerateInformedConsentIdsResult,
@@ -107,8 +101,8 @@ export interface AutonomousDenteAgentResult {
 	safetyAlerts: ChairsideSafetyAlert[];
 	steps: ReActStep[];
 	soapDiary?: ChairsideSoapDiary | undefined;
-	estimateServices?: Calculate804nEstimateResult | undefined;
-	estimate804n?: Calculate804nEstimateResult | undefined;
+	estimateServices?: CalculateTreatmentEstimateResult | undefined;
+	estimate804n?: CalculateTreatmentEstimateResult | undefined;
 	labOrder?: CreateDentalLabOrderResult | undefined;
 	appointment?: BookChairsideAppointmentResult | undefined;
 	anestheticDosage?: CalculateAnestheticDosageResult | undefined;
@@ -169,10 +163,10 @@ export async function executeAutonomousReActCycle(
 	};
 
 	let safetyAlerts: ChairsideSafetyAlert[] = [];
-	let emkResult: PatientEmk043uResult | undefined;
+	let emkResult: PatientClinicalCardResult | undefined;
 	let toothStatusResult: UpdateToothStatusResult | undefined;
-	let estimateResult: Calculate804nEstimateResult | undefined;
-	let diaryResult: Draft043uSoapDiaryResult | undefined;
+	let estimateResult: CalculateTreatmentEstimateResult | undefined;
+	let diaryResult: DraftClinicalSoapDiaryResult | undefined;
 	let labOrderResult: CreateDentalLabOrderResult | undefined;
 	let appointmentResult: BookChairsideAppointmentResult | undefined;
 	let anestheticResult: CalculateAnestheticDosageResult | undefined;
@@ -181,7 +175,7 @@ export async function executeAutonomousReActCycle(
 
 	const fullThoughtTraces: string[] = [];
 
-	// ─── ITERATION 1: THOUGHT -> ACTION: check_drug_interactions & get_patient_emk_043u
+	// ─── ITERATION 1: THOUGHT -> ACTION: check_drug_interactions & get_patient_clinical_card
 	let currentIteration = 1;
 	{
 		const thought1 = [

@@ -129,7 +129,7 @@ describe("OrthodonticWorkspaceModal SSR & Doctor Autonomy", () => {
 
 		// Ровно 1 Primary CTA кнопка #0d9488
 		assert.ok(html.includes("data-testid=\"ortho-primary-save-cta\""));
-		assert.ok(html.includes("Сохранить протокол активации и расчет"));
+		assert.ok(html.includes("Зафиксировать орто-протокол"));
 		assert.ok(html.includes("#0d9488"));
 
 		// Никаких блокировок кнопок (Мандат 8e)

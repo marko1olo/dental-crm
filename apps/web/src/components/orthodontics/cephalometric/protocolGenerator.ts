@@ -1,12 +1,12 @@
 /**
- * DENTE CRM — Form 043/u Orthodontic Clinical Protocol Generator (Layer 2)
- * Generates structured orthodontic examination protocol according to Russian Health Ministry Order 834n.
+ * DENTE CRM — Orthodontic Clinical Protocol Generator (Layer 2)
+ * Generates structured orthodontic examination protocol for the patient record.
  */
 
 import type { CephalometricAnalysisResult } from "./types";
 
 /**
- * Генерирует расширенный протокол ТРГ для медицинской карты 043/у (Приказ Минздрава 834н).
+ * Генерирует расширенный протокол ТРГ для медицинской карты приёма.
  */
 export function generateForm043OrthodonticProtocolText(
 	analysis: CephalometricAnalysisResult,

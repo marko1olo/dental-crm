@@ -12,11 +12,9 @@ import type {
 } from "./denteAgentExecution.js";
 import type {
 	CalculateTreatmentEstimateResult,
-	Calculate804nEstimateResult,
 	CreateDentalLabOrderResult,
 	BookChairsideAppointmentResult,
 	DraftClinicalSoapDiaryResult,
-	Draft043uSoapDiaryResult,
 	UpdateToothStatusResult,
 	CalculateAnestheticDosageResult,
 	GenerateInformedConsentIdsResult,
@@ -54,7 +52,7 @@ export function createToothStatusActionCard(
 }
 
 export function createEstimateActionCard(
-	estimate: Calculate804nEstimateResult,
+	estimate: CalculateTreatmentEstimateResult,
 	resolvedDiscount: number,
 ): ProactiveActionCard {
 	return {
@@ -69,7 +67,7 @@ export function createEstimateActionCard(
 }
 
 export function createSoapDiaryActionCard(
-	diary: Draft043uSoapDiaryResult,
+	diary: DraftClinicalSoapDiaryResult,
 ): ProactiveActionCard {
 	return {
 		id: `card_diary_${crypto.randomUUID().slice(0, 8)}`,
@@ -153,7 +151,7 @@ export function formatTarsClinicalVerdict(params: {
 	diagnosisName: string;
 	safetyAlerts: ChairsideSafetyAlert[];
 	anestheticResult?: CalculateAnestheticDosageResult | undefined;
-	estimateResult?: Calculate804nEstimateResult | undefined;
+	estimateResult?: CalculateTreatmentEstimateResult | undefined;
 	resolvedDiscount: number;
 	consentResult?: GenerateInformedConsentIdsResult | undefined;
 	warehouseResult?: CheckWarehouseSuppliesResult | undefined;
