@@ -275,6 +275,23 @@ export function AnalyticsHeaderBar({
 									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
 									role="menuitem"
 									onClick={() => {
+										if (typeof window !== "undefined") {
+											window.dispatchEvent(new CustomEvent("dente:open-analytics"));
+										}
+										setIsSectionMoreOpen(false);
+									}}
+									data-testid="btn-open-executive-analytics-studio"
+									title="Открыть управленческую аналитику и SSOT кассы 54-ФЗ"
+								>
+									<TrendingUp size={14} className="text-[var(--teal)]" />
+									<span>Управленческая студия (SSOT)</span>
+								</button>
+
+								<button
+									type="button"
+									className="w-full text-left px-2.5 py-2 rounded-lg text-xs font-semibold text-[var(--teal)] hover:bg-[var(--paper-soft)] transition-colors flex items-center gap-2 cursor-pointer"
+									role="menuitem"
+									onClick={() => {
 										onOpenMarketingRoi();
 										setIsSectionMoreOpen(false);
 									}}

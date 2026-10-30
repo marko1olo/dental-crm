@@ -24,6 +24,7 @@ import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitl
 import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
 import { DirectScheduleLauncher } from "./components/schedule/DirectScheduleLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
+import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
@@ -35,6 +36,7 @@ import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCa
 import { DirectPatientLauncher } from "./components/patients/DirectPatientLauncher";
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
+import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
@@ -190,7 +192,11 @@ function isStandaloneActive(): boolean {
 		s.includes("treatment-studio") ||
 		h.includes("treatment-studio") ||
 		h.includes("plans") ||
-		h.includes("estimates")
+		h.includes("estimates") ||
+		s.includes("executive_studio") ||
+		h.includes("executive-studio") ||
+		s.includes("analytics=direct") ||
+		s.includes("dashboard=direct")
 	);
 }
 
@@ -235,6 +241,7 @@ export function AppShell() {
 			<DirectAppointmentBookingLauncher />
 			<DirectScheduleLauncher />
 			<DirectMarketingRoiLauncher />
+			<DirectAnalyticsLauncher />
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
 			<DirectEmrLauncher />
@@ -246,6 +253,7 @@ export function AppShell() {
 			<DirectPatientLauncher />
 			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />
+			<DirectOrthodonticsLauncher />
 			<DirectPayrollLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />

@@ -12,11 +12,14 @@ export const DirectOrthoLauncher: React.FC = () => {
 		if (typeof window === "undefined") return false;
 		const hash = window.location.hash.toLowerCase();
 		const search = window.location.search.toLowerCase();
+		if (hash.includes("orthodontics") || hash.includes("ortho-protocol") || hash.includes("ortho-studio")) {
+			return false;
+		}
 		return (
-			hash.includes("#ortho") ||
+			hash === "#ortho" ||
+			hash.startsWith("#ortho-workspace") ||
 			hash.includes("#ceph") ||
 			hash.includes("#teleradiography") ||
-			search.includes("ortho=") ||
 			search.includes("ceph=")
 		);
 	});
@@ -40,10 +43,14 @@ export const DirectOrthoLauncher: React.FC = () => {
 	useEffect(() => {
 		const handleHash = () => {
 			const hash = window.location.hash.toLowerCase();
+			if (hash.includes("orthodontics") || hash.includes("ortho-protocol") || hash.includes("ortho-studio")) {
+				setIsOpen(false);
+				return;
+			}
 			if (hash.includes("#ceph") || hash.includes("#teleradiography")) {
 				setInitialTab("ceph");
 				setIsOpen(true);
-			} else if (hash.includes("#ortho")) {
+			} else if (hash === "#ortho" || hash.startsWith("#ortho-workspace")) {
 				setInitialTab("visit");
 				setIsOpen(true);
 			}
