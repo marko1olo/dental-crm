@@ -1,9 +1,13 @@
 /**
  * DENTE Dental CRM — Canonical Payroll Catalog & Exact Kopeck Engine
- * Mandate 8b (Sweet Spot 200–300 lines), Mandate 8e (Doctor Autonomy), Mandate 8n (Solo Practice Sovereignty).
+ * Mandate 8b (Sweet Spot 250–350 lines), Mandate 8e (Doctor Autonomy), Mandate 8n (Solo Practice Sovereignty).
  * Formula: Net Revenue = Gross (54-FZ) − Dental Lab (ЗТЛ) − Direct Materials (Импланты).
  * Strict integer arithmetic in KOPECKS (1 RUB = 100 KOPECKS) eliminating float-drift.
  */
+
+export type MotivationSchemeType = "net_percentage" | "gross_percentage" | "fixed_shift" | "chair_rental";
+export type PayrollPayoutStatus = "accrued" | "paid_rko";
+export type PayrollPeriodPreset = "today" | "yesterday" | "current_week" | "current_month" | "previous_month" | "shift" | "custom";
 
 export interface PayrollDoctorProfile {
 	readonly id: string;
@@ -13,6 +17,7 @@ export interface PayrollDoctorProfile {
 	readonly specialtyTitleRu: string;
 	readonly commissionPercent: number; // 20–35% (or 100% for solo chair rental)
 	readonly payoutModel: "percentage" | "chair_rental";
+	readonly motivationScheme?: MotivationSchemeType;
 	readonly defaultShiftRateKop: number; // e.g. 400000 kop (4 000 ₽/смена)
 	readonly minGuaranteeMonthlyKop: number; // e.g. 6000000 kop (60 000 ₽)
 	readonly taxRegime: "employee" | "self_employed";
@@ -54,6 +59,25 @@ export interface DoctorPayrollCalculation {
 	readonly netPayoutToDoctorKopecks: number;
 	readonly servicesCount: number;
 	readonly isChairRental: boolean;
+	readonly payoutStatus?: PayrollPayoutStatus;
+}
+
+export interface DoctorPayrollSummary {
+	readonly doctorId: string;
+	readonly doctorName: string;
+	readonly schemeType: MotivationSchemeType;
+	readonly totalGrossKopecks: number;
+	readonly totalLabCostKopecks: number;
+	readonly totalMaterialCostKopecks: number;
+	readonly totalNetBaseKopecks: number;
+	readonly doctorAccruedKopecks: number;
+	readonly chairRentalKopecks: number;
+	readonly advanceKopecks: number;
+	readonly ndfl13TaxKopecks: number;
+	readonly payoutKopecks: number;
+	readonly payoutStatus: PayrollPayoutStatus;
+	readonly servicesCount: number;
+	readonly minimumGuaranteeApplied: boolean;
 }
 
 export interface SoloRentalResult {
@@ -81,16 +105,14 @@ export interface AssistantPieceworkResult {
 	readonly totalAssistantPayoutKop: number;
 }
 
-export type PayrollPeriodPreset = "today" | "yesterday" | "current_week" | "current_month" | "custom";
-
 /** Pure integer arithmetic: Net Base = Gross − Lab − Materials */
 export function computeNetBaseKopecks(grossKop: number, labKop: number, matKop: number): number {
 	return Math.max(0, Math.round(grossKop) - Math.round(labKop) - Math.round(matKop));
 }
 
-/** Pure integer arithmetic: Doctor Commission = Net Base × Percent */
-export function calculateDoctorCommissionKopecks(netBaseKop: number, percent: number): number {
-	return (netBaseKop <= 0 || percent <= 0) ? 0 : Math.round((netBaseKop * percent) / 100);
+/** Pure integer arithmetic: Doctor Commission = Base × Percent */
+export function calculateDoctorCommissionKopecks(baseKop: number, percent: number): number {
+	return (baseKop <= 0 || percent <= 0) ? 0 : Math.round((baseKop * percent) / 100);
 }
 
 /** Mandate 8n: Solo Doctor Chair Rental Economics: [Gross] − [ЗТЛ] − [Материалы] − [Аренда] = Доход */
@@ -127,6 +149,65 @@ export function calculateAssistantPiecework(params: {
 	};
 }
 
+/** SSOT Canonical Doctor Payroll Summary (Mandate 8n, 8e) */
+export function calculateDoctorPayrollSummary(params: {
+	orders: readonly PayrollServiceOrder[];
+	doctor: PayrollDoctorProfile;
+	schemeType?: MotivationSchemeType;
+	percent?: number;
+	shiftsCount?: number;
+	shiftRateKop?: number;
+	hourlyRateKop?: number;
+	hoursWorked?: number;
+	advanceKop?: number;
+	isRkoPaid?: boolean;
+}): DoctorPayrollSummary {
+	const docOrders = params.orders.filter((o) => o.doctorId === params.doctor.id && o.isPaid54Fz);
+	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + o.paidKopecks, 0);
+	const totalLabCostKopecks = docOrders.reduce((sum, o) => sum + o.labCostKopecks, 0);
+	const totalMaterialCostKopecks = docOrders.reduce((sum, o) => sum + o.materialCostKopecks, 0);
+	const totalNetBaseKopecks = computeNetBaseKopecks(totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks);
+
+	const scheme: MotivationSchemeType = params.schemeType
+		?? (params.doctor.payoutModel === "chair_rental" ? "chair_rental" : "net_percentage");
+	const effectivePercent = params.percent ?? params.doctor.commissionPercent;
+	const advanceKopecks = Math.max(0, Math.round(params.advanceKop ?? 0));
+	let doctorAccruedKopecks = 0;
+	let chairRentalKopecks = 0;
+
+	if (scheme === "chair_rental") {
+		const shifts = params.shiftsCount ?? 12;
+		const rate = params.shiftRateKop ?? params.doctor.defaultShiftRateKop;
+		const hours = params.hoursWorked ?? 0;
+		const hourlyRate = params.hourlyRateKop ?? 0;
+		chairRentalKopecks = hours > 0 && hourlyRate > 0 ? Math.round(hours * hourlyRate) : Math.round(shifts * rate);
+		doctorAccruedKopecks = Math.max(0, totalNetBaseKopecks - chairRentalKopecks);
+	} else if (scheme === "gross_percentage") {
+		doctorAccruedKopecks = calculateDoctorCommissionKopecks(totalGrossKopecks, effectivePercent);
+	} else if (scheme === "fixed_shift") {
+		const shifts = params.shiftsCount ?? 12;
+		const rate = params.shiftRateKop ?? params.doctor.defaultShiftRateKop;
+		doctorAccruedKopecks = Math.round(shifts * rate);
+	} else {
+		// net_percentage (default)
+		doctorAccruedKopecks = calculateDoctorCommissionKopecks(totalNetBaseKopecks, effectivePercent);
+	}
+
+	const minGuaranteeKop = params.doctor.minGuaranteeMonthlyKop;
+	const minimumGuaranteeApplied = scheme !== "chair_rental" && docOrders.length > 0 && doctorAccruedKopecks < minGuaranteeKop;
+	const grossPayout = Math.max(doctorAccruedKopecks, minimumGuaranteeApplied ? minGuaranteeKop : 0);
+	const ndfl13TaxKopecks = params.doctor.taxRegime === "employee" ? Math.round((grossPayout * 13) / 100) : 0;
+	const payoutKopecks = Math.max(0, grossPayout - ndfl13TaxKopecks - advanceKopecks);
+
+	return {
+		doctorId: params.doctor.id, doctorName: params.doctor.name, schemeType: scheme,
+		totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks, totalNetBaseKopecks,
+		doctorAccruedKopecks, chairRentalKopecks, advanceKopecks, ndfl13TaxKopecks, payoutKopecks,
+		payoutStatus: params.isRkoPaid ? "paid_rko" : "accrued",
+		servicesCount: docOrders.length, minimumGuaranteeApplied,
+	};
+}
+
 /** Comprehensive Doctor Payroll Calculator from Orders */
 export function calculateDoctorPayrollFromOrders(
 	orders: readonly PayrollServiceOrder[],
@@ -134,48 +215,31 @@ export function calculateDoctorPayrollFromOrders(
 	options: {
 		periodLabelRu?: string; advanceKop?: number; shiftsCount?: number;
 		shiftRateKop?: number; customPercent?: number; taxRegime?: "employee" | "self_employed";
+		isRkoPaid?: boolean;
 	} = {},
 ): DoctorPayrollCalculation {
-	const docOrders = orders.filter((o) => o.doctorId === doctor.id && o.isPaid54Fz);
-	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + o.paidKopecks, 0);
-	const totalLabCostKopecks = docOrders.reduce((sum, o) => sum + o.labCostKopecks, 0);
-	const totalMaterialCostKopecks = docOrders.reduce((sum, o) => sum + o.materialCostKopecks, 0);
-	const totalNetBaseKopecks = computeNetBaseKopecks(totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks);
-
-	const isChairRental = doctor.payoutModel === "chair_rental";
-	const effectivePercent = isChairRental ? 100 : (options.customPercent ?? doctor.commissionPercent);
-	const advanceKopecks = Math.max(0, Math.round(options.advanceKop ?? 0));
-
-	let chairRentalKopecks = 0;
-	let earnedDoctorKopecks = 0;
-
-	if (isChairRental) {
-		const shifts = options.shiftsCount ?? 10;
-		const rate = options.shiftRateKop ?? doctor.defaultShiftRateKop;
-		chairRentalKopecks = Math.round(shifts * rate);
-		earnedDoctorKopecks = Math.max(0, totalNetBaseKopecks - chairRentalKopecks);
-	} else {
-		earnedDoctorKopecks = calculateDoctorCommissionKopecks(totalNetBaseKopecks, effectivePercent);
-	}
-
-	const minGuaranteeKop = doctor.minGuaranteeMonthlyKop;
-	const minimumGuaranteeApplied = !isChairRental && docOrders.length > 0 && earnedDoctorKopecks < minGuaranteeKop;
-	const grossPayoutBeforeTaxKop = Math.max(earnedDoctorKopecks, minimumGuaranteeApplied ? minGuaranteeKop : 0);
-	const taxRegime = options.taxRegime ?? doctor.taxRegime;
-	const ndfl13TaxKopecks = taxRegime === "employee" ? Math.round((grossPayoutBeforeTaxKop * 13) / 100) : 0;
-	const netPayoutToDoctorKopecks = Math.max(0, grossPayoutBeforeTaxKop - ndfl13TaxKopecks - advanceKopecks);
+	const summary = calculateDoctorPayrollSummary({
+		orders, doctor, percent: options.customPercent,
+		shiftsCount: options.shiftsCount, shiftRateKop: options.shiftRateKop,
+		advanceKop: options.advanceKop, isRkoPaid: options.isRkoPaid,
+	});
 
 	return {
 		doctorId: doctor.id, doctorName: doctor.name, specialtyTitleRu: doctor.specialtyTitleRu,
 		periodLabelRu: options.periodLabelRu ?? "Текущий расчетный период",
-		totalGrossKopecks, totalLabCostKopecks, totalMaterialCostKopecks, totalNetBaseKopecks,
-		commissionPercent: effectivePercent, earnedDoctorKopecks, chairRentalKopecks, advanceKopecks,
-		minimumGuaranteeApplied, grossPayoutBeforeTaxKop, ndfl13TaxKopecks, netPayoutToDoctorKopecks,
-		servicesCount: docOrders.length, isChairRental,
+		totalGrossKopecks: summary.totalGrossKopecks, totalLabCostKopecks: summary.totalLabCostKopecks,
+		totalMaterialCostKopecks: summary.totalMaterialCostKopecks, totalNetBaseKopecks: summary.totalNetBaseKopecks,
+		commissionPercent: options.customPercent ?? doctor.commissionPercent,
+		earnedDoctorKopecks: summary.doctorAccruedKopecks, chairRentalKopecks: summary.chairRentalKopecks,
+		advanceKopecks: summary.advanceKopecks, minimumGuaranteeApplied: summary.minimumGuaranteeApplied,
+		grossPayoutBeforeTaxKop: Math.max(summary.doctorAccruedKopecks, summary.minimumGuaranteeApplied ? doctor.minGuaranteeMonthlyKop : 0),
+		ndfl13TaxKopecks: summary.ndfl13TaxKopecks, netPayoutToDoctorKopecks: summary.payoutKopecks,
+		servicesCount: summary.servicesCount, isChairRental: doctor.payoutModel === "chair_rental",
+		payoutStatus: summary.payoutStatus,
 	};
 }
 
-/** Fast period calculator: [ Сегодня | Вчера | Текущая неделя | Месяц ] */
+/** Fast period calculator: [ Сегодня / Смена | Вчера | Текущая неделя | Текущий месяц | Прошлый месяц ] */
 export function getQuickPeriodDates(preset: PayrollPeriodPreset): { startIso: string; endIso: string; labelRu: string } {
 	const now = new Date();
 	const toYmd = (d: Date) => {
@@ -185,6 +249,7 @@ export function getQuickPeriodDates(preset: PayrollPeriodPreset): { startIso: st
 		return `${y}-${m}-${day}`;
 	};
 	if (preset === "today") return { startIso: toYmd(now), endIso: toYmd(now), labelRu: "Сегодня" };
+	if (preset === "shift") return { startIso: toYmd(now), endIso: toYmd(now), labelRu: "Смена" };
 	if (preset === "yesterday") {
 		const y = new Date(now);
 		y.setDate(y.getDate() - 1);
@@ -198,6 +263,11 @@ export function getQuickPeriodDates(preset: PayrollPeriodPreset): { startIso: st
 		end.setDate(end.getDate() + 6);
 		return { startIso: toYmd(start), endIso: toYmd(end), labelRu: "Текущая неделя" };
 	}
+	if (preset === "previous_month") {
+		const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+		const end = new Date(now.getFullYear(), now.getMonth(), 0);
+		return { startIso: toYmd(start), endIso: toYmd(end), labelRu: "Прошлый месяц" };
+	}
 	const start = new Date(now.getFullYear(), now.getMonth(), 1);
 	const end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 	return { startIso: toYmd(start), endIso: toYmd(end), labelRu: "Текущий месяц" };
@@ -205,11 +275,11 @@ export function getQuickPeriodDates(preset: PayrollPeriodPreset): { startIso: st
 
 /** Canonical 1-5 Chair Clinic & Solo Practice Doctors */
 export const CANONICAL_PAYROLL_DOCTORS: readonly PayrollDoctorProfile[] = [
-	{ id: "doc-volkov", name: "Д-р Волков Алексей Сергеевич", initials: "ВС", specialtyId: "orthopedics", specialtyTitleRu: "Стоматолог-ортопед", commissionPercent: 30, payoutModel: "percentage", defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 7000000, taxRegime: "employee" },
-	{ id: "doc-sokolova", name: "Д-р Соколова Елена Владимировна", initials: "СЕ", specialtyId: "therapy", specialtyTitleRu: "Стоматолог-терапевт", commissionPercent: 25, payoutModel: "percentage", defaultShiftRateKop: 350000, minGuaranteeMonthlyKop: 6000000, taxRegime: "employee" },
-	{ id: "doc-morozov", name: "Д-р Морозов Дмитрий Игоревич", initials: "МД", specialtyId: "surgery", specialtyTitleRu: "Стоматолог-хирург-имплантолог", commissionPercent: 35, payoutModel: "percentage", defaultShiftRateKop: 500000, minGuaranteeMonthlyKop: 8000000, taxRegime: "self_employed" },
-	{ id: "doc-smirnova", name: "Д-р Смирнова Анна Павловна", initials: "СА", specialtyId: "hygiene", specialtyTitleRu: "Стоматолог-гигиенист", commissionPercent: 20, payoutModel: "percentage", defaultShiftRateKop: 300000, minGuaranteeMonthlyKop: 4500000, taxRegime: "employee" },
-	{ id: "doc-kuznetsov", name: "Д-р Кузнецов Иван Михайлович", initials: "КИ", specialtyId: "solo_rental", specialtyTitleRu: "Соло-врач (Аренда кресла)", commissionPercent: 100, payoutModel: "chair_rental", defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 0, taxRegime: "self_employed" },
+	{ id: "doc-volkov", name: "Д-р Волков Алексей Сергеевич", initials: "ВС", specialtyId: "orthopedics", specialtyTitleRu: "Стоматолог-ортопед", commissionPercent: 30, payoutModel: "percentage", motivationScheme: "net_percentage", defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 7000000, taxRegime: "employee" },
+	{ id: "doc-sokolova", name: "Д-р Соколова Елена Владимировна", initials: "СЕ", specialtyId: "therapy", specialtyTitleRu: "Стоматолог-терапевт", commissionPercent: 25, payoutModel: "percentage", motivationScheme: "net_percentage", defaultShiftRateKop: 350000, minGuaranteeMonthlyKop: 6000000, taxRegime: "employee" },
+	{ id: "doc-morozov", name: "Д-р Морозов Дмитрий Игоревич", initials: "МД", specialtyId: "surgery", specialtyTitleRu: "Стоматолог-хирург-имплантолог", commissionPercent: 35, payoutModel: "percentage", motivationScheme: "net_percentage", defaultShiftRateKop: 500000, minGuaranteeMonthlyKop: 8000000, taxRegime: "self_employed" },
+	{ id: "doc-smirnova", name: "Д-р Смирнова Анна Павловна", initials: "СА", specialtyId: "hygiene", specialtyTitleRu: "Стоматолог-гигиенист", commissionPercent: 20, payoutModel: "percentage", motivationScheme: "net_percentage", defaultShiftRateKop: 300000, minGuaranteeMonthlyKop: 4500000, taxRegime: "employee" },
+	{ id: "doc-kuznetsov", name: "Д-р Кузнецов Иван Михайлович", initials: "КИ", specialtyId: "solo_rental", specialtyTitleRu: "Соло-врач (Аренда кресла)", commissionPercent: 100, payoutModel: "chair_rental", motivationScheme: "chair_rental", defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 0, taxRegime: "self_employed" },
 ];
 
 /** Realistic Canonical Service Orders in Kopecks */

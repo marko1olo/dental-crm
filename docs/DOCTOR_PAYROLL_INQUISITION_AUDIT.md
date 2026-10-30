@@ -112,3 +112,28 @@
   - `apps/api/src/tests/routes/doctorEarningsRoutes.test.ts` (5 passing, 0 failing) — **PASS**
   - `npm run check:encoding` (20136 файлов) — **PASS**
 
+---
+
+## 8. Волна 3: Каноническая студия зарплат (SSOT), Net Revenue (Gross − ЗТЛ − Материалы), аренда кресла и Apple HIG
+
+- **Архитектурный SSOT калькулятор (`payrollCatalogData.ts`, 286 строк)**:
+  - 100% целочисленные расчеты в копейках (`amountKopecks: BIGINT`, `netPayoutAmountKop`), полное исключение `float` ошибок.
+  - Поддержка схем мотивации `MotivationSchemeType`: `net_percentage` (сделка от чистой базы), `gross_percentage` (от вала), `fixed_shift` (оклад за смену), `chair_rental` (суверенитет соло-врача по Мандату 8n).
+  - Поддержка периодов `[ Смена | Текущий месяц | Прошлый месяц ]`.
+  - Учет гарантированного оклада (`minGuaranteeMonthlyKop`), авансов (`advanceDeductionKop`), налогового режима (самозанятый НПД 0/6%, сотрудник НДФЛ 13%).
+- **Каноническая Студия зарплат (`DoctorPayrollStudioModal.tsx`, 474 строки, Sweet Spot)**:
+  - Ровно ОДНА Primary CTA кнопка `#0d9488` (`var(--teal)`) `[✓ Выдать чек РКО]` (Мандат 8am), никогда не блокируется `disabled` (Мандат 8e).
+  - Hero блок с крупными акцентными цифрами начисленного дохода и суммы к выплате на руки.
+  - 1-клик переключение статуса `[ Начислено | Выплачено (РКО) ]`.
+  - Мобильный Bottom Sheet по канонам Apple HIG (iOS drawer с drag handle 36×5px, тач-таргеты $\ge 44\times 44\text{px}$, 0px паразитного скролла).
+  - Автономный запуск через прямой маунт `DirectPayrollLauncher.tsx` (хэши `#payroll`, `#doctor-payroll`, `#salary`, `#earnings`, `#doctor-payout`).
+- **Red Team Visual Proofs (docs/proofs/payroll/)**:
+  1. [`01_payroll_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/payroll/01_payroll_studio_pc_light_1440x900.png) (108.9 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  2. [`02_payroll_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/payroll/02_payroll_studio_pc_dark_1440x900.png) (90.6 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  3. [`03_payroll_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/payroll/03_payroll_studio_mobile_light_390x844.png) (46.4 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+  4. [`04_payroll_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/payroll/04_payroll_studio_mobile_dark_390x844.png) (47.1 КБ) — [ПРОВЕРЕНО: ЧИСТО].
+- **Результаты машинных проверок**:
+  - `npm run check:encoding` -> 23661 файлов, 0 замечаний (PASS).
+  - `npm run check:css-tokens` -> 1494 css-файлов, 0 неразрешенных переменных (PASS).
+  - Модульные тесты `doctorPayrollSSOTSuite.test.tsx` (11 passing) и `canonicalPayrollHubSsot.test.ts` (10 passing) — 100% PASS (21/21).
+

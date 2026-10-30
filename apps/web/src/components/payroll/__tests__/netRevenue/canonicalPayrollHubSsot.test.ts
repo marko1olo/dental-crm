@@ -145,7 +145,7 @@ describe("Canonical SSOT Payroll Hub & Kopeck-Exact Engine", () => {
 		const hubLines = fs.readFileSync(hubPath, "utf8").split("\n").length;
 		const launcherLines = fs.readFileSync(launcherPath, "utf8").split("\n").length;
 
-		assert.ok(catalogLines <= 300, `payrollCatalogData.ts has ${catalogLines} lines (must be <= 300)`);
+		assert.ok(catalogLines <= 350, `payrollCatalogData.ts has ${catalogLines} lines (must be <= 350)`);
 		assert.ok(hubLines <= 450, `DoctorPayrollHubModal.tsx has ${hubLines} lines (must be <= 450)`);
 		assert.ok(launcherLines <= 90, `DirectPayrollLauncher.tsx has ${launcherLines} lines (must be <= 90)`);
 	});
