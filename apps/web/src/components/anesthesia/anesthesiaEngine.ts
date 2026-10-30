@@ -1,7 +1,7 @@
 /**
  * @dental/web/components/anesthesia/anesthesiaEngine.ts
- * Clinical Anesthesiology SSOT Engine (Mandates 8b 200-280 lines, 8e, 8n, 8y)
- * Autonomy, passive safety warnings, clean Latin SOAP diary and live Fastify API sync.
+ * Clinical Anesthesiology SSOT Engine (Mandates 8b 200-280 lines, 8e, 8n, 8y, 8x)
+ * Autonomy, 1-click somatic status, passive safety warnings, clean Latin SOAP diary and live Fastify sync.
  */
 
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -26,17 +26,20 @@ export const EPINEPHRINE_CEILINGS_MG = {
 
 export const ASA_CLASSIFICATIONS: Record<AsaPhysicalStatus, { nameRu: string; epiLimitMg: number; descriptionRu: string }> = {
 	asa_1: { nameRu: "ASA I: Здоровый", epiLimitMg: 0.2, descriptionRu: "Без системных патологий" },
-	asa_2: { nameRu: "ASA II: Легкое заболевание", epiLimitMg: 0.2, descriptionRu: "Компенсированная гипертония" },
-	asa_3: { nameRu: "ASA III: Тяжелое заболевание", epiLimitMg: 0.04, descriptionRu: "ИБС, стенокардия, аритмия" },
-	asa_4: { nameRu: "ASA IV: Угроза жизни", epiLimitMg: 0.04, descriptionRu: "Нестабильная стенокардия" },
+	asa_2: { nameRu: "ASA II: Легкое заболевание", epiLimitMg: 0.2, descriptionRu: "Компенсированная патология" },
+	asa_3: { nameRu: "ASA III: Тяжелое заболевание", epiLimitMg: 0.04, descriptionRu: "Сердечно-сосудистый риск" },
+	asa_4: { nameRu: "ASA IV: Угроза жизни", epiLimitMg: 0.04, descriptionRu: "Высокий соматический риск" },
 };
 
+/**
+ * Clean chairside somatic profile (Mandate 8e, 8y — no academic bureaucracy)
+ */
 export interface AnesthesiaCalculationInput {
 	drugId: AnestheticDrugId;
 	carpulesCount: number;
 	patientWeightKg?: number | null | undefined;
 	patientAgeYears?: number | undefined;
-	asaStatus?: AsaPhysicalStatus | undefined;
+	isSomaticallyHealthy?: boolean | undefined;
 	hasCardiovascularRisk?: boolean | undefined;
 	hasHypertension?: boolean | undefined;
 	hasCardiacArrhythmia?: boolean | undefined;
@@ -49,7 +52,7 @@ export interface AnesthesiaCalculationInput {
 	hasSulfiteAllergy?: boolean | undefined;
 	hasBronchialAsthma?: boolean | undefined;
 	isPregnantOrLactating?: boolean | undefined;
-	isSomaticallyHealthy?: boolean | undefined;
+	asaStatus?: AsaPhysicalStatus | undefined;
 	techniqueId?: InjectionTechniqueId | undefined;
 	needleType?: NeedleGaugeType | undefined;
 	targetToothNumberFdi?: number | string | undefined;
@@ -114,14 +117,15 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 	const carpules = Math.max(0, input.carpulesCount);
 
 	const isCardioRisk = Boolean(
-		input.hasCardiovascularRisk ||
+		!input.isSomaticallyHealthy &&
+		(input.hasCardiovascularRisk ||
 		input.hasHypertension ||
 		input.hasCardiacArrhythmia ||
 		input.hasIschemicHeartDisease ||
 		input.hasMyocardialInfarctionHistory ||
 		input.takesBetaBlockers ||
 		input.asaStatus === "asa_3" ||
-		input.asaStatus === "asa_4",
+		input.asaStatus === "asa_4"),
 	);
 
 	const injectedVolumeMl = Number((carpules * drug.carpuleVolumeMl).toFixed(2));
@@ -180,9 +184,9 @@ export function calculateAnesthesiaSafety(input: AnesthesiaCalculationInput): An
 				? "Sol. Lidocaini 2% cum Epinephrini 1:100 000"
 				: "Sol. Articaini 4% cum Epinephrini 1:100 000";
 
-	const carpText = carpules === 1 ? "1.7 мл (1 карпула) (1 карп.)" : `${injectedVolumeMl} мл (${carpules} карп.)`;
+	const carpText = carpules === 1 ? "1.7 мл (1 карпула)" : `${injectedVolumeMl} мл (${carpules} карп.)`;
 	const aspirationText = input.aspirationNegativeConfirmed !== false ? "Аспирационная проба отрицательная. " : "";
-	const diaryEntryRu = `Проведена ${techNameRu} анестезия${toothPart} ${latinFormula} — ${carpText}. ${aspirationText}Анестезия наступила через 3 мин, глубина достаточная, соматических реакций нет, осложнений нет. Осложнений нет.`;
+	const diaryEntryRu = `Проведена ${techNameRu} анестезия${toothPart} ${latinFormula} — ${carpText}. ${aspirationText}Осложнений нет.`;
 
 	return {
 		drug, carpulesCount: carpules, injectedVolumeMl, injectedActiveMg, injectedEpinephrineMg,
@@ -216,16 +220,13 @@ export function generateAnesthesiaDiaryEntry(params: {
 	aspirationNegativeConfirmed?: boolean | undefined;
 	overrideReason?: string | undefined;
 }): string {
-	const techNameRu = params.techniqueId.includes("mandibular")
-		? "местная проводниковая мандибулярная / торусальная (по вейсбрему)"
-		: "инфильтрационная";
+	const techNameRu = params.techniqueId.includes("mandibular") ? "проводниковая" : "инфильтрационная";
 	const toothPart = params.targetToothNumberFdi ? ` в области зуба ${params.targetToothNumberFdi}` : "";
 	const tradeName = params.drug.tradeNamesRu[0] || "Ультракаин Д-С";
-	const carpText = `${params.carpulesCount} карп.`;
-	const aspirationText = params.aspirationNegativeConfirmed !== false ? "Аспирационная проба отрицательна. " : "";
-	const needleInfo = params.needleType?.includes("27") ? "Игла: Игла 27G длинная (0.4 x 35 мм). " : "";
+	const carpText = params.carpulesCount === 1 ? "1 карпула" : `${params.carpulesCount} карп.`;
+	const aspirationText = params.aspirationNegativeConfirmed !== false ? "Аспирационная проба отрицательная. " : "";
 
-	return `Проведена ${techNameRu} анестезия${toothPart}: ${tradeName}, объем ${params.injectedVolumeMl} мл (${carpText}, ${params.injectedActiveMg} мг действующего вещества). ${needleInfo}${aspirationText}соматических реакций нет, осложнений нет.`;
+	return `Проведена ${techNameRu} анестезия${toothPart}: ${tradeName}, объем ${params.injectedVolumeMl} мл (${carpText}, ${params.injectedActiveMg} мг активного вещества). ${aspirationText}Осложнений нет.`;
 }
 
 export function formatAnesthesiaPatientMemo(params: AnesthesiaPatientMemoParams): string {

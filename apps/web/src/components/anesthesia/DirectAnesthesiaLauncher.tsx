@@ -1,7 +1,7 @@
 /**
  * @dental/web/components/anesthesia/DirectAnesthesiaLauncher.tsx
- * Standalone Direct Mount for Chairside Anesthesia (Mandates 8b 60-90 lines, 8e, 8aq)
- * Listens for #anesthesia hash, search params and custom events in AppShell.
+ * Standalone Direct Mount for Chairside Anesthesia (Mandates 8b 60-100 lines, 8e, 8aq)
+ * Listens for #anesthesia, #narcotics, #emergency hashes, query params and dente:open-anesthesia event.
  */
 
 import { Syringe, X } from "lucide-react";
@@ -13,7 +13,12 @@ export const DirectAnesthesiaLauncher: React.FC = () => {
 		if (typeof window === "undefined") return false;
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
-		return s.includes("anesthesia") || h.includes("anesthesia");
+		return (
+			s.includes("anesthesia") ||
+			h.includes("anesthesia") ||
+			h.includes("narcotics") ||
+			h.includes("emergency")
+		);
 	});
 
 	useEffect(() => {
@@ -21,7 +26,14 @@ export const DirectAnesthesiaLauncher: React.FC = () => {
 		window.addEventListener("dente-open-anesthesia", handleOpen);
 		window.addEventListener("dente:open-anesthesia", handleOpen);
 		const handleHash = () => {
-			if (window.location.hash.includes("anesthesia") || window.location.search.includes("anesthesia")) {
+			const h = window.location.hash || "";
+			const s = window.location.search || "";
+			if (
+				h.includes("anesthesia") ||
+				h.includes("narcotics") ||
+				h.includes("emergency") ||
+				s.includes("anesthesia")
+			) {
 				setIsOpen(true);
 			}
 		};
@@ -40,7 +52,7 @@ export const DirectAnesthesiaLauncher: React.FC = () => {
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("anesthesia");
-			const cleanHash = window.location.hash.replace(/#anesthesia/g, "");
+			const cleanHash = window.location.hash.replace(/#(anesthesia|narcotics|emergency)/g, "");
 			window.history.replaceState({}, "", url.pathname + (url.search ? url.search : "") + cleanHash);
 		}
 	};
@@ -69,7 +81,7 @@ export const DirectAnesthesiaLauncher: React.FC = () => {
 						type="button"
 						onClick={handleClose}
 						aria-label="Закрыть"
-						className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center"
+						className="p-2 rounded-xl text-[var(--muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] cursor-pointer min-h-[44px] min-w-[44px] flex items-center justify-center border border-transparent hover:border-[var(--line)] transition-colors"
 					>
 						<X size={20} />
 					</button>

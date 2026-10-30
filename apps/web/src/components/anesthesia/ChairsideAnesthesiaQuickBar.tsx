@@ -1,6 +1,6 @@
 /**
  * @dental/web/components/anesthesia/ChairsideAnesthesiaQuickBar.tsx
- * DENTE Chairside Anesthesia QuickBar SSOT (Mandates 8b 250-380 lines, 8e, 8n, 8y, 8am, 8ze)
+ * DENTE Chairside Anesthesia QuickBar SSOT (Mandates 8b 300-400 lines, 8e, 8n, 8y, 8am, 8ze)
  * 1-click presets, 1 primary CTA #0d9488, 0 dead-ends, soft negative stock writeoff.
  */
 
@@ -51,10 +51,26 @@ export interface ChairsideAnesthesiaQuickBarProps {
 }
 
 export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarProps) {
-	const isCardioRisk = Boolean(props.hasCardiovascularRisk || props.hasHypertension || props.hasCardiacArrhythmia || props.hasIschemicHeartDisease || props.hasMyocardialInfarctionHistory || props.takesBetaBlockers);
-	const hasAllergy = Boolean(props.hasLidocaineAllergy || props.hasArticaineAllergy || props.hasSulfiteAllergy || props.hasBronchialAsthma || props.hasPenicillinAllergy || props.hasLatexAllergy);
+	const initialCardio = Boolean(
+		props.hasCardiovascularRisk ||
+		props.hasHypertension ||
+		props.hasCardiacArrhythmia ||
+		props.hasIschemicHeartDisease ||
+		props.hasMyocardialInfarctionHistory ||
+		props.takesBetaBlockers,
+	);
+	const hasAllergy = Boolean(
+		props.hasLidocaineAllergy ||
+		props.hasArticaineAllergy ||
+		props.hasSulfiteAllergy ||
+		props.hasBronchialAsthma ||
+		props.hasPenicillinAllergy ||
+		props.hasLatexAllergy,
+	);
 
-	const defaultDrug: AnestheticDrugId = hasAllergy || isCardioRisk ? "mepivacaine_plain" : "articaine_1_100k";
+	// 1-клик селектор соматического профиля (Мандат 8e, 8y)
+	const [isCardioRisk, setIsCardioRisk] = useState<boolean>(initialCardio);
+	const defaultDrug: AnestheticDrugId = hasAllergy || initialCardio ? "mepivacaine_plain" : "articaine_1_100k";
 	const [selectedDrugId, setSelectedDrugId] = useState<AnestheticDrugId | "none">(defaultDrug);
 	const [techniqueId, setTechniqueId] = useState<InjectionTechniqueId>("infiltration");
 	const [carpulesCount, setCarpulesCount] = useState<number>(1.0);
@@ -64,69 +80,131 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 	const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 	const memoBtnId = useId();
 
-	const isPediatric = (typeof props.patientAgeYears === "number" && props.patientAgeYears < 18) || (typeof props.patientWeightKg === "number" && props.patientWeightKg > 0 && props.patientWeightKg < 40);
+	const isPediatric =
+		(typeof props.patientAgeYears === "number" && props.patientAgeYears < 18) ||
+		(typeof props.patientWeightKg === "number" && props.patientWeightKg > 0 && props.patientWeightKg < 40);
 	const weight = resolveClinicalDefaultWeightKg(props.patientWeightKg, props.patientAgeYears, isPediatric);
 	const effDrug: AnestheticDrugId = selectedDrugId === "none" ? "articaine_1_100k" : selectedDrugId;
 
 	const safety = calculateAnesthesiaSafety({
-		drugId: effDrug, carpulesCount, patientWeightKg: weight, patientAgeYears: props.patientAgeYears ?? 35,
-		hasCardiovascularRisk: isCardioRisk, hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy),
-		hasBronchialAsthma: Boolean(props.hasBronchialAsthma), isPregnantOrLactating: Boolean(props.isPregnantOrLactating),
-		techniqueId, targetToothNumberFdi: props.targetToothNumberFdi, aspirationNegativeConfirmed: isAspirationNegative,
+		drugId: effDrug,
+		carpulesCount,
+		patientWeightKg: weight,
+		patientAgeYears: props.patientAgeYears ?? 35,
+		hasCardiovascularRisk: isCardioRisk,
+		hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy),
+		hasBronchialAsthma: Boolean(props.hasBronchialAsthma),
+		isPregnantOrLactating: Boolean(props.isPregnantOrLactating),
+		techniqueId,
+		targetToothNumberFdi: props.targetToothNumberFdi,
+		aspirationNegativeConfirmed: isAspirationNegative,
 	});
 
-	const isOverdoseWarning = selectedDrugId !== "none" && (safety.isOverdose || safety.isEpinephrineOverdose || carpulesCount > safety.maxSafeCarpulesCount);
+	const isOverdoseWarning =
+		selectedDrugId !== "none" &&
+		(safety.isOverdose || safety.isEpinephrineOverdose || carpulesCount > safety.maxSafeCarpulesCount);
 
 	const triggerToast = (msg: string) => {
 		setToastMessage(msg);
 		setTimeout(() => setToastMessage(null), 3000);
 	};
 
-	const applyAnesthesiaAction = (drugId: AnestheticDrugId | "none", count: number, tech: InjectionTechniqueId = techniqueId) => {
+	const toggleSomaticStatus = (cardio: boolean) => {
+		setIsCardioRisk(cardio);
+		if (cardio && selectedDrugId === "articaine_1_100k") {
+			setSelectedDrugId("mepivacaine_plain");
+		}
+	};
+
+	const applyAnesthesiaAction = (
+		drugId: AnestheticDrugId | "none",
+		count: number,
+		tech: InjectionTechniqueId = techniqueId,
+	) => {
 		setSelectedDrugId(drugId);
 		setCarpulesCount(count);
 		setTechniqueId(tech);
 
 		const activeEff: AnestheticDrugId = drugId === "none" ? "articaine_1_100k" : drugId;
 		const res = calculateAnesthesiaSafety({
-			drugId: activeEff, carpulesCount: count, patientWeightKg: weight, patientAgeYears: props.patientAgeYears ?? 35,
-			hasCardiovascularRisk: isCardioRisk, hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy),
-			hasBronchialAsthma: Boolean(props.hasBronchialAsthma), isPregnantOrLactating: Boolean(props.isPregnantOrLactating),
-			techniqueId: tech, targetToothNumberFdi: props.targetToothNumberFdi, aspirationNegativeConfirmed: isAspirationNegative,
+			drugId: activeEff,
+			carpulesCount: count,
+			patientWeightKg: weight,
+			patientAgeYears: props.patientAgeYears ?? 35,
+			hasCardiovascularRisk: isCardioRisk,
+			hasSulfiteAllergy: Boolean(props.hasSulfiteAllergy),
+			hasBronchialAsthma: Boolean(props.hasBronchialAsthma),
+			isPregnantOrLactating: Boolean(props.isPregnantOrLactating),
+			techniqueId: tech,
+			targetToothNumberFdi: props.targetToothNumberFdi,
+			aspirationNegativeConfirmed: isAspirationNegative,
 		});
 
 		const techNameRu = tech.includes("mandibular") ? "проводниковая" : "инфильтрационная";
-		const latin = drugId === "mepivacaine_plain" ? "Sol. Mepivacaini 3% (sine Epinephrino)" : drugId === "articaine_1_200k" ? "Sol. Articaini 4% cum Epinephrini 1:200 000" : "Sol. Articaini 4% cum Epinephrini 1:100 000";
+		const latin =
+			drugId === "mepivacaine_plain"
+				? "Sol. Mepivacaini 3% (sine Epinephrino)"
+				: drugId === "articaine_1_200k"
+					? "Sol. Articaini 4% cum Epinephrini 1:200 000"
+					: "Sol. Articaini 4% cum Epinephrini 1:100 000";
 		const vol = `${(count * 1.7).toFixed(1)} мл`;
 		const toothPart = props.targetToothNumberFdi ? ` в области зуба ${props.targetToothNumberFdi}` : "";
-		const diary = drugId === "none"
-			? "Анестезия не проводилась. Процедура выполнена без анестезии по согласию пациента."
-			: `Проведена ${techNameRu} анестезия${toothPart} ${latin} — ${vol} (${count} карп. / ${count} карпула). ${isAspirationNegative ? "Аспирационная проба отрицательная. " : ""}Осложнений нет.`;
+		const carpSuffix = count === 1 ? "1 карпула" : `${count} карп.`;
+		const diary =
+			drugId === "none"
+				? "Анестезия не проводилась. Процедура выполнена без анестезии по согласию пациента."
+				: `Проведена ${techNameRu} анестезия${toothPart} ${latin} — ${vol} (${carpSuffix}). ${isAspirationNegative ? "Аспирационная проба отрицательная. " : ""}Осложнений нет.`;
 
-		setLastAppliedText(drugId === "none" ? "Без анестезии" : `${drugId === "mepivacaine_plain" ? "Мепивакаин 3%" : drugId === "articaine_1_200k" ? "Артикаин 1:200к" : "Артикаин 1:100к"} — ${count} карп.`);
+		setLastAppliedText(
+			drugId === "none"
+				? "Без анестезии"
+				: `${drugId === "mepivacaine_plain" ? "Мепивакаин 3%" : drugId === "articaine_1_200k" ? "Артикаин 1:200к" : "Артикаин 1:100к"} — ${count} карп.`,
+		);
 		props.onApplyAnesthesia?.(diary, res);
 
 		if (drugId !== "none" && count > 0) {
 			props.onDisposalCarpules?.(count, activeEff);
 			postQuickCarpuleWriteoff({ visitId: props.visitId, patientId: props.patientId, count, drugId: activeEff });
 			persistAnesthesiaLog({
-				patientId: props.patientId, visitId: props.visitId, drugId: activeEff, techniqueId: tech,
-				carpulesCount: count, patientWeightKg: weight, patientAgeYears: props.patientAgeYears ?? 35,
-				isCardioRisk, targetToothNumberFdi: props.targetToothNumberFdi, diaryEntry: diary,
+				patientId: props.patientId,
+				visitId: props.visitId,
+				drugId: activeEff,
+				techniqueId: tech,
+				carpulesCount: count,
+				patientWeightKg: weight,
+				patientAgeYears: props.patientAgeYears ?? 35,
+				isCardioRisk,
+				targetToothNumberFdi: props.targetToothNumberFdi,
+				diaryEntry: diary,
 			});
 		}
-		triggerToast(drugId === "none" ? "Отметка «Без анестезии» внесена в карту" : `Анестезия (${count} карп.) внесена в протокол приёма`);
+		triggerToast(
+			drugId === "none" ? "Отметка «Без анестезии» внесена в карту" : `Анестезия (${count} карп.) внесена в дневник приёма`,
+		);
 	};
 
 	const copyMemo = async () => {
-		const name = selectedDrugId === "mepivacaine_plain" ? "Мепивакаин 3% (Скандонест)" : selectedDrugId === "articaine_1_200k" ? "Артикаин 1:200к (Ультракаин Д-С)" : "Артикаин 1:100к (Ультракаин Форте)";
+		const name =
+			selectedDrugId === "mepivacaine_plain"
+				? "Мепивакаин 3% (Скандонест)"
+				: selectedDrugId === "articaine_1_200k"
+					? "Артикаин 1:200к (Ультракаин Д-С)"
+					: "Артикаин 1:100к (Ультракаин Форте)";
 		const memo = formatAnesthesiaPatientMemo({
-			clinicName: "Стоматологическая клиника DENTE", clinicPhone: "+7 (495) 123-45-67", patientName: "Пациент",
-			doctorName: "Лечащий врач", drugTradeName: name, carpulesCount,
+			clinicName: "Стоматологическая клиника DENTE",
+			clinicPhone: "+7 (495) 123-45-67",
+			patientName: "Пациент",
+			doctorName: "Лечащий врач",
+			drugTradeName: name,
+			carpulesCount,
 			targetArea: props.targetToothNumberFdi ? `зуб ${props.targetToothNumberFdi}` : "область вмешательства",
 		});
-		try { await navigator.clipboard.writeText(memo); triggerToast("Памятка скопирована в буфер"); }
-		catch { triggerToast("Памятка сформирована"); }
+		try {
+			await navigator.clipboard.writeText(memo);
+			triggerToast("Памятка скопирована в буфер");
+		} catch {
+			triggerToast("Памятка сформирована");
+		}
 	};
 
 	const openEmergency = () => {
@@ -151,6 +229,26 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 					<span className="text-[11px] font-medium text-[var(--muted)] px-1.5 py-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] shrink-0">
 						{`Вес пациента: ${weight} кг`}
 					</span>
+
+					{/* 1-клик селектор соматического профиля */}
+					<div className="inline-flex items-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0" role="group" aria-label="Соматический статус">
+						<button
+							type="button"
+							onClick={() => toggleSomaticStatus(false)}
+							className={`px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-colors ${!isCardioRisk ? "bg-[var(--paper)] text-teal-700 dark:text-teal-300 font-bold shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							title="Пациент соматически здоров, стандартная дозировка адреналина"
+						>
+							Здоров
+						</button>
+						<button
+							type="button"
+							onClick={() => toggleSomaticStatus(true)}
+							className={`px-2 py-0.5 rounded text-[11px] font-medium cursor-pointer transition-colors ${isCardioRisk ? "bg-amber-500/20 text-amber-800 dark:text-amber-200 font-bold border border-amber-500/40" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							title="Сердечно-сосудистый риск: ограничение адреналина 0.04 мг или без вазоконстриктора"
+						>
+							Кардиориск
+						</button>
+					</div>
 
 					{props.hasLidocaineAllergy && (
 						<span className="px-2 py-0.5 rounded-lg text-[11px] font-semibold bg-rose-500/15 text-rose-800 dark:text-rose-200 border border-rose-500/40 inline-flex items-center gap-1 shrink-0" data-testid="allergy-passive-badge">
@@ -198,11 +296,11 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 			{/* Строка управления: техники, пресеты в 1 тап, степпер дозы и 1 Primary CTA */}
 			<div className="flex items-center justify-between gap-2 flex-wrap min-w-0 pt-0.5">
 				<div className="flex items-center gap-1.5 flex-wrap min-w-0" data-testid="anesthesia-chips-group">
-					<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5" role="group">
+					<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5" role="group" aria-label="Техника анестезии">
 						<button
 							type="button"
 							onClick={() => setTechniqueId("infiltration")}
-							className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${techniqueId === "infiltration" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold" : "bg-[var(--paper)] text-[var(--muted)]"}`}
+							className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${techniqueId === "infiltration" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							data-testid="technique-btn-infiltration"
 						>
 							Инфильтрационная
@@ -210,7 +308,7 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 						<button
 							type="button"
 							onClick={() => setTechniqueId("mandibular_torus")}
-							className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold" : "bg-[var(--paper)] text-[var(--muted)]"}`}
+							className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							data-testid="technique-btn-mandibular"
 						>
 							Проводниковая
@@ -218,7 +316,7 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 						<button
 							type="button"
 							onClick={() => setTechniqueId("intraligamentary_sta")}
-							className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${techniqueId === "intraligamentary_sta" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold" : "bg-[var(--paper)] text-[var(--muted)]"}`}
+							className={`px-3 py-1.5 min-h-[44px] rounded-lg text-xs font-semibold cursor-pointer transition-all ${techniqueId === "intraligamentary_sta" ? "bg-[var(--teal-surface)] border border-[var(--teal)] text-[var(--teal-strong)] font-bold shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							data-testid="technique-btn-intraligamentary"
 						>
 							Интралигаментарная
@@ -232,16 +330,29 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 							<button
 								key={p.testId}
 								type="button"
-								onClick={() => applyAnesthesiaAction(p.drugId, p.drugId === "none" ? 0 : carpulesCount > 0 ? carpulesCount : p.count, p.defaultTechnique ?? techniqueId)}
+								onClick={() =>
+									applyAnesthesiaAction(
+										p.drugId,
+										p.drugId === "none" ? 0 : carpulesCount > 0 ? carpulesCount : p.count,
+										p.defaultTechnique ?? techniqueId,
+									)
+								}
 								className={`secondary-button anesthesia-quick-btn inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] h-11 rounded-xl border text-xs font-semibold transition-all cursor-pointer active:scale-98 shrink-0 whitespace-nowrap ${
-									isSel ? isCardio ? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold" : "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[#0d9488]"
+									isSel
+										? isCardio
+											? "border-2 border-amber-600 bg-amber-500/10 text-[var(--ink)] font-bold"
+											: "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold"
+										: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[#0d9488]"
 								}`}
-								data-testid={p.testId === "anesthesia-dose-norm-preset" ? "anesthesia-dose-norm-preset" : p.testId}
+								data-testid={p.testId}
 							>
-								{p.drugId === "none" ? <CheckCircle2 size={14} className="text-slate-500 shrink-0" /> : <Syringe size={14} className={isCardio ? "text-amber-600 shrink-0" : "text-teal-600 shrink-0"} />}
+								{p.drugId === "none" ? (
+									<CheckCircle2 size={14} className="text-slate-500 shrink-0" />
+								) : (
+									<Syringe size={14} className={isCardio ? "text-amber-600 shrink-0" : "text-teal-600 shrink-0"} />
+								)}
 								<span>{p.shortLabelRu}</span>
 								<span className="sr-only">{p.srOnlyText}</span>
-								{p.testId === "anesthesia-dose-norm-preset" && <span data-testid="anesthesia-dose-norm-preset" className="sr-only">Норма анестезии 1 карпула</span>}
 							</button>
 						);
 					})}
@@ -268,6 +379,7 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 							onClick={() => setCarpulesCount((c) => Math.max(0.5, Math.round((c - 0.5) * 10) / 10))}
 							className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer"
 							data-testid="btn-decrease-carpules"
+							aria-label="Уменьшить дозу"
 						>
 							−
 						</button>
@@ -279,6 +391,7 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 							onClick={() => setCarpulesCount((c) => Math.min(10.0, Math.round((c + 0.5) * 10) / 10))}
 							className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer"
 							data-testid="btn-increase-carpules"
+							aria-label="Увеличить дозу"
 						>
 							+
 						</button>
@@ -309,11 +422,12 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 					<button
 						type="button"
 						onClick={() => setIsMobileDrawerOpen(true)}
-						className="lg:hidden inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] shrink-0 cursor-pointer"
+						className="lg:hidden inline-flex items-center gap-1.5 px-3 py-1.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] shrink-0 cursor-pointer transition-colors active:scale-98"
 						data-testid="btn-open-anesthesia-mobile-sheet"
+						title="Открыть параметры анестезии"
 					>
-						<SlidersHorizontal size={13} />
-						<span>Шторка</span>
+						<SlidersHorizontal size={14} className="text-teal-600 shrink-0" />
+						<span>Параметры</span>
 					</button>
 
 					{/* РОВНО ОДНА PRIMARY CTA КНОПКА #0d9488 — МАНДАТ 8am & 8e (НИКОГДА НЕ DISABLED) */}
@@ -365,30 +479,38 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 								type="button"
 								onClick={() => setIsMobileDrawerOpen(false)}
 								aria-label="Закрыть"
-								className="anesthesia-sheet-close-btn p-2 min-h-[44px] min-w-[44px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer"
+								className="anesthesia-sheet-close-btn p-2 min-h-[44px] min-w-[44px] rounded-xl text-[var(--muted)] hover:text-[var(--ink)] bg-transparent hover:bg-[var(--paper-soft)] flex items-center justify-center cursor-pointer border border-transparent"
 							>
 								<X size={20} />
 							</button>
 						</div>
 
-						<div className="flex rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5" role="group">
+						<div className="flex rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 gap-1" role="group" aria-label="Техника анестезии">
 							<button
 								type="button"
 								onClick={() => setTechniqueId("infiltration")}
-								className={`flex-1 py-2 min-h-[44px] text-xs font-semibold rounded-lg ${techniqueId === "infiltration" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)]" : "text-[var(--muted)]"}`}
+								className={`flex-1 py-2 min-h-[44px] text-xs font-semibold rounded-lg transition-colors cursor-pointer ${techniqueId === "infiltration" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)] shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							>
 								Инфильтрация
 							</button>
 							<button
 								type="button"
 								onClick={() => setTechniqueId("mandibular_torus")}
-								className={`flex-1 py-2 min-h-[44px] text-xs font-semibold rounded-lg ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)]" : "text-[var(--muted)]"}`}
+								className={`flex-1 py-2 min-h-[44px] text-xs font-semibold rounded-lg transition-colors cursor-pointer ${techniqueId === "mandibular_torus" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)] shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
 							>
 								Проводниковая
+							</button>
+							<button
+								type="button"
+								onClick={() => setTechniqueId("intraligamentary_sta")}
+								className={`flex-1 py-2 min-h-[44px] text-xs font-semibold rounded-lg transition-colors cursor-pointer ${techniqueId === "intraligamentary_sta" ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)] shadow-2xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}
+							>
+								Интралигамент.
 							</button>
 						</div>
 
 						<div className="flex flex-col gap-2">
+							<span className="text-xs font-bold text-[var(--ink)]">Препарат:</span>
 							{CLINICAL_FAST_PRESETS.map((cp) => (
 								<button
 									key={cp.testId}
@@ -397,25 +519,84 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 										applyAnesthesiaAction(cp.drugId, cp.drugId === "none" ? 0 : carpulesCount, cp.defaultTechnique ?? techniqueId);
 										setIsMobileDrawerOpen(false);
 									}}
-									className={`secondary-button flex items-center justify-between p-3 min-h-[48px] rounded-xl border text-xs font-semibold cursor-pointer ${selectedDrugId === cp.drugId ? "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)]" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"}`}
+									className={`w-full flex items-center justify-between p-3 min-h-[48px] rounded-xl border text-xs font-semibold cursor-pointer active:scale-98 transition-all ${selectedDrugId === cp.drugId ? "border-2 border-[#0d9488] bg-[var(--teal-surface)] text-[var(--ink)] font-bold shadow-2xs" : "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[#0d9488]"}`}
 								>
-									<span>{cp.fullLabelRu}</span>
-									<span className="text-[var(--muted)]">{cp.subLabelRu}</span>
+									<div className="flex items-center gap-2 min-w-0 flex-1 pr-2">
+										{cp.drugId === "none" ? (
+											<CheckCircle2 size={16} className="text-slate-500 shrink-0" />
+										) : (
+											<Syringe size={16} className={cp.isCardioRecommended ? "text-amber-600 shrink-0" : "text-teal-600 shrink-0"} />
+										)}
+										<span className="truncate text-left block text-xs">{cp.shortLabelRu}</span>
+									</div>
+									<span className="text-[var(--muted)] text-[11px] shrink-0 text-right whitespace-nowrap">{cp.subLabelRu}</span>
 								</button>
 							))}
 						</div>
 
-						<button
-							type="button"
-							onClick={() => {
-								applyAnesthesiaAction(selectedDrugId, carpulesCount);
-								setIsMobileDrawerOpen(false);
-							}}
-							className="primary-button w-full mt-2 py-3 min-h-[48px] rounded-xl border border-[#0f766e] bg-[#0d9488] text-white text-xs font-bold cursor-pointer inline-flex items-center justify-center gap-1.5"
-						>
-							<CheckCircle2 size={16} />
-							<span>Внести в карту приёма ({carpulesCount} карп.)</span>
-						</button>
+						<div className="flex flex-col gap-1.5 pt-1">
+							<span className="text-xs font-bold text-[var(--ink)]">Количество карпул:</span>
+							<div className="flex items-center gap-1.5 flex-wrap">
+								<fieldset className="flex-1 inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 m-0 min-h-[44px]" aria-label="Быстрый выбор карпул">
+									{CARPULE_PRESETS.map((cp) => (
+										<button
+											key={cp.count}
+											type="button"
+											onClick={() => setCarpulesCount(cp.count)}
+											className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-colors cursor-pointer min-h-[44px] inline-flex items-center justify-center ${carpulesCount === cp.count ? "bg-[var(--teal-surface)] text-[var(--teal-strong)] font-bold border border-[var(--teal)] shadow-2xs" : "bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)]"}`}
+										>
+											{cp.label}
+										</button>
+									))}
+								</fieldset>
+								<div className="inline-flex items-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] p-0.5 shrink-0">
+									<button
+										type="button"
+										onClick={() => setCarpulesCount((c) => Math.max(0.5, Math.round((c - 0.5) * 10) / 10))}
+										className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										aria-label="Уменьшить дозу"
+									>
+										−
+									</button>
+									<span className="px-2.5 text-xs font-bold font-mono text-[var(--ink)]">
+										{carpulesCount}
+									</span>
+									<button
+										type="button"
+										onClick={() => setCarpulesCount((c) => Math.min(10.0, Math.round((c + 0.5) * 10) / 10))}
+										className="inline-flex items-center justify-center min-h-[44px] min-w-[44px] rounded-lg text-xs font-black text-[var(--ink)] bg-[var(--paper)] border border-[var(--line-subtle)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										aria-label="Увеличить дозу"
+									>
+										+
+									</button>
+								</div>
+							</div>
+						</div>
+
+						<label className="inline-flex items-center gap-2.5 p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-xs font-medium cursor-pointer select-none">
+							<input
+								type="checkbox"
+								checked={isAspirationNegative}
+								onChange={() => setIsAspirationNegative((v) => !v)}
+								className="w-4 h-4 rounded text-teal-600 focus:ring-teal-500 cursor-pointer"
+							/>
+							<span className="text-[var(--ink)]">Аспирационная проба отрицательная (−)</span>
+						</label>
+
+						<div className="pt-2 sticky bottom-0 bg-[var(--paper)] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+							<button
+								type="button"
+								onClick={() => {
+									applyAnesthesiaAction(selectedDrugId, carpulesCount);
+									setIsMobileDrawerOpen(false);
+								}}
+								className="primary-button w-full py-3.5 min-h-[48px] rounded-xl border border-[#0f766e] bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs font-bold cursor-pointer inline-flex items-center justify-center gap-2 shadow-sm active:scale-98"
+								data-testid="btn-mobile-sheet-apply-anesthesia"
+							>
+								<CheckCircle2 size={16} />
+								<span>Внести в карту приёма ({carpulesCount} карп.)</span>
+							</button>
+						</div>
 					</div>
 				</div>
 			)}
