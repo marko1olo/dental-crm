@@ -1,45 +1,24 @@
 /**
  * apps/web/src/components/billing/CashRegisterCheckoutModal.tsx
  *
- * Canonical SSOT Re-export pointing to CashCheckoutStudioModal.
- * Governed by Mandate 8b (<40 lines facade) & Mandate 8n.
+ * Canonical SSOT Re-export pointing to modular cashbox checkout.
+ * Governed by Mandate 8b (< 25 lines facade) & Mandate 8n.
  */
 
 import React from "react";
 import {
-	CashCheckoutStudioModal,
-	type CashCheckoutStudioModalProps,
-} from "./CashCheckoutStudioModal.js";
+	CashRegisterCheckoutModal as CanonicalModal,
+	type CashRegisterCheckoutModalProps,
+} from "../cashbox/checkout/index.js";
 
-export type CashRegisterCheckoutModalProps = CashCheckoutStudioModalProps & {
-	readonly totalBillRub?: number;
-	readonly totalBillKop?: number;
-	readonly cashierName?: string;
-	readonly doctorName?: string;
-	readonly attendingDoctorName?: string;
-	readonly initialPaymentMethod?: string;
-};
+export type { CashRegisterCheckoutModalProps };
 
 export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps> = (props) => {
-	const totalDueRub =
-		props.totalDueRub ??
-		props.amountRub ??
-		props.totalBillRub ??
-		(props.totalBillKop ? props.totalBillKop / 100 : undefined);
-	const cashierFullName = props.cashierFullName || props.cashierName || "Администратор / Кассир";
-	const doctorFullName = props.doctorFullName || props.doctorName || props.attendingDoctorName;
-	const defaultMethod = props.defaultMethod || props.initialPaymentMethod || "card";
-
 	return (
-		<CashCheckoutStudioModal
+		<CanonicalModal
 			{...props}
-			title={props.title || "Касса · Оплата приёма"}
-			totalDueRub={totalDueRub}
-			cashierFullName={cashierFullName}
-			doctorFullName={doctorFullName}
-			defaultMethod={defaultMethod}
 			containerTestId={props.containerTestId || "cash-register-checkout-modal"}
-			submitButtonTestId="btn-submit-checkout-54fz"
+			title={props.title || "Касса · Оплата приёма"}
 		/>
 	);
 };
