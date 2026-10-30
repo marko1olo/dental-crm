@@ -1,6 +1,6 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { CalendarPlus, MessageSquare, Phone } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { openWhatsAppChat } from "../../../store/telephonyStore";
 import { showToast } from "../../GlobalToast";
 import { generateAppointmentWhatsAppMessage } from "../generateAppointmentWhatsAppMessage";

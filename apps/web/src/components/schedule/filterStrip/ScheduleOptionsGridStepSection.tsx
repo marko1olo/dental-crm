@@ -1,5 +1,5 @@
 import { Plus } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 interface ScheduleOptionsGridStepSectionProps {
 	gridStepMinutes?: (15 | 30 | 60) | undefined;

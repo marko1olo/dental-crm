@@ -1,6 +1,6 @@
 import type { Dashboard } from "@dental/shared";
 import { AlertTriangle, RefreshCw, ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useEffect, useMemo, useState } from "react";
 import { DoctorCalendarSyncHeader } from "./calendarSync/DoctorCalendarSyncHeader";
 import { DoctorCalendarSyncLinks } from "./calendarSync/DoctorCalendarSyncLinks";

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { AppointmentCardContextMenuProps } from "./types";
 
 interface ScheduleOpsProps {

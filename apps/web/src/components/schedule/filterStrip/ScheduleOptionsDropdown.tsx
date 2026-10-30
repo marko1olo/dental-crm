@@ -1,5 +1,5 @@
 import { MoreVertical, Plus } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import { ScheduleOptionsDateSection } from "./ScheduleOptionsDateSection";
 import type { ScheduleOptionsDropdownProps } from "./scheduleOptionsDropdownTypes";

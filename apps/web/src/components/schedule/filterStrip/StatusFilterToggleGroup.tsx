@@ -1,5 +1,5 @@
 import { Users } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import { StatusFilterQueueButtons } from "./StatusFilterQueueButtons";
 import type { ShiftQueueCounts } from "./types";

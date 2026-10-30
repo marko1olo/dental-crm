@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import { formatDoctorShortName } from "../ScheduleGrid";
 import type { ScheduleStaffMember } from "./types";

@@ -1,6 +1,6 @@
 import type { Appointment, Dashboard } from "@dental/shared";
 import { AlertTriangle } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { generateAppointmentWhatsAppMessage } from "../../generateAppointmentWhatsAppMessage";
 import { ScheduleMobileSheetPatientContact } from "./ScheduleMobileSheetPatientContact";
 

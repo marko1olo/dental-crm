@@ -1,6 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import { X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	getNormalizedAppointmentStatusLabel,
 	isAppointmentInChair,

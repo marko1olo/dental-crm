@@ -33,8 +33,9 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 						<FlaskConical className="w-5 h-5" />
 					</div>
 					<div className="min-w-0">
-						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] truncate">
-							Наряды в зуботехническую лабораторию (ЗТЛ)
+						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] leading-snug">
+							<span className="sm:hidden">Наряды в ЗТЛ</span>
+							<span className="hidden sm:inline">Наряды в зуботехническую лабораторию (ЗТЛ)</span>
 						</h2>
 						<p className="text-[11px] text-[var(--muted)] hidden sm:block truncate">
 							Клинический протокол • Сверка дедлайнов • Контроль себестоимости и ЗП

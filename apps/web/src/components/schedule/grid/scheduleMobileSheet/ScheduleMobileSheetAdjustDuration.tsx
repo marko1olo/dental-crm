@@ -1,6 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import { Clock, FastForward, UserMinus } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface ScheduleMobileSheetAdjustDurationProps {
 	selectedMobileAppt: Appointment;

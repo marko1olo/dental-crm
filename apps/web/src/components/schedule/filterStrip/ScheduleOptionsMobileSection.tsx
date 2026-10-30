@@ -1,5 +1,5 @@
 import { Armchair, LayoutGrid, List } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import { formatChairSpecialtyLabel } from "./constants";
 import type {

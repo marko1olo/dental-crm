@@ -1,5 +1,5 @@
 import { Calendar, Clock } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 interface ScheduleOptionsDateSectionProps {
 	setScheduleDateFilter: (date: string) => void;

@@ -1,5 +1,5 @@
 import type { Appointment } from "@dental/shared";
-import type React from "react";
+import React from "react";
 import { formatDoctorShortName } from "../../GridAppointmentCard";
 
 export interface MobileChairItem {

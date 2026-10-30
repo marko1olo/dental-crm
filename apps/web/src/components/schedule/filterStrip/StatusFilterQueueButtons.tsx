@@ -1,5 +1,5 @@
 import { CalendarCheck, CheckCircle2, UserCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import type { ShiftQueueCounts } from "./types";
 

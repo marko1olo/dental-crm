@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { AppointmentFooterQuickActions } from "./AppointmentFooterQuickActions";
 import { AppointmentHeaderQuickActions } from "./AppointmentHeaderQuickActions";
 import type { AppointmentQuickActionsMenuProps } from "./appointmentCardTypes";

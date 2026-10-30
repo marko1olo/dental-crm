@@ -8,7 +8,7 @@ import {
 	UserX,
 	XCircle,
 } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export type QuickActionStatus =
 	| "confirmed"

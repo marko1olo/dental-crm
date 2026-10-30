@@ -12,7 +12,11 @@ import {
  */
 
 export const labOrdersQuerySchema = z.object({
-	patientId: z.string().uuid().optional(),
+	patientId: z
+		.string()
+		.optional()
+		.nullable()
+		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : undefined)),
 });
 export type LabOrdersQuery = z.infer<typeof labOrdersQuerySchema>;
 

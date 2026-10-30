@@ -1,5 +1,5 @@
 import { ChevronDown, ChevronUp } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 interface ScheduleClipboardHeadingProps {
 	isCollapsed: boolean;

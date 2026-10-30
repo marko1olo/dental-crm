@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import { CabinetBranchSelector } from "./CabinetBranchSelector";
 import { CabinetChairChips } from "./CabinetChairChips";

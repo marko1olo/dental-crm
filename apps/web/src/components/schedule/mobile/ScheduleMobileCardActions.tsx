@@ -1,6 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import { CreditCard, Stethoscope } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { usePatientStore } from "../../../store/patientStore";
 import { showToast } from "../../GlobalToast";
 import { openVisitWithBackendSync } from "../appointmentCardActions/visitSyncHelper";

@@ -1,6 +1,6 @@
 import type { Appointment } from "@dental/shared";
 import { CalendarCheck, Stethoscope, UserCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { playIntercomChime } from "../../../lib/intercomSound";
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";

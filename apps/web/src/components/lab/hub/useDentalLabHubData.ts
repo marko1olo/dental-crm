@@ -1,6 +1,8 @@
 import { useState, useMemo, useCallback, useEffect } from "react";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { mapRawApiOrderToWorkflowOrder } from "../dentalLabApiMapper";
+import { CANONICAL_DEMO_LAB_ORDERS } from "../ordersView/canonicalDemoLabOrders";
 import type { DentalLabWorkflowOrder, LabWorkflowStatus } from "../dentalLabWorkflowEngine";
 
 export interface UseDentalLabHubDataParams {
@@ -29,19 +31,41 @@ export function useDentalLabHubData({
 	const [onlyDelayedFilter, setOnlyDelayedFilter] = useState(false);
 
 	const loadLabOrders = useCallback(async () => {
+		const isDemo = isDemoShowcaseMode() || (typeof window !== "undefined" && window.location.search.includes("demo=true"));
 		try {
 			const query = currentPatientId ? `?patientId=${encodeURIComponent(currentPatientId)}` : "";
 			const res = await fetch(`/api/clinical/lab-orders${query}`, { headers: denteAdminSecretRequestHeaders() });
-			if (!res.ok) { setOrders([]); return; }
+			if (!res.ok) {
+				if (isDemo) {
+					setOrders(CANONICAL_DEMO_LAB_ORDERS.map((raw, idx) =>
+						mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
+					));
+					return;
+				}
+				setOrders([]);
+				return;
+			}
 			const data = await res.json();
 			const list = Array.isArray(data) ? data : Array.isArray(data?.orders) ? data.orders : [];
 			if (list.length > 0) {
 				setOrders(list.map((raw: any, idx: number) =>
 					mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
 				));
-			} else { setOrders([]); }
+			} else if (isDemo) {
+				setOrders(CANONICAL_DEMO_LAB_ORDERS.map((raw, idx) =>
+					mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
+				));
+			} else {
+				setOrders([]);
+			}
 		} catch (err) {
 			console.warn("[DentalLabHub] Live load error:", err);
+			if (isDemo) {
+				setOrders(CANONICAL_DEMO_LAB_ORDERS.map((raw, idx) =>
+					mapRawApiOrderToWorkflowOrder(raw, idx, currentPatientId, currentPatientName, currentDoctorName),
+				));
+				return;
+			}
 			setOrders([]);
 		}
 	}, [currentPatientId, currentPatientName, currentDoctorName]);

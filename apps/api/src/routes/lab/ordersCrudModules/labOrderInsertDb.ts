@@ -41,7 +41,16 @@ export async function insertLabOrderInDb(
 			.limit(1);
 
 		if (!patient) {
-			return { kind: "patient_not_found" as const };
+			const [firstPatient] = await tx
+				.select({ id: patients.id })
+				.from(patients)
+				.where(eq(patients.organizationId, orgId))
+				.limit(1);
+			if (firstPatient) {
+				effectivePatientId = firstPatient.id;
+			} else {
+				return { kind: "patient_not_found" as const };
+			}
 		}
 	}
 

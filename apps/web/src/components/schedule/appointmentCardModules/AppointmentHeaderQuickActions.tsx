@@ -1,5 +1,5 @@
 import { MoreVertical } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { GridAppointmentMenu } from "../GridAppointmentMenu";
 import { GridAppointmentQuickActions } from "../GridAppointmentQuickActions";
 import type { AppointmentQuickActionsMenuProps } from "./appointmentCardTypes";

@@ -4,7 +4,7 @@
  * Consolidated into ScheduleUnifiedToolbar (Mandates 8b, 8d, 8e, 8am).
  */
 
-import type React from "react";
+import React from "react";
 import type { ReactElement } from "react";
 import { ScheduleUnifiedToolbar } from "./ScheduleUnifiedToolbar";
 import type { ScheduleFilterStripProps } from "./filterStrip";
