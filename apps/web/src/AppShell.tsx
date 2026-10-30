@@ -22,6 +22,7 @@ import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLaunche
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
+import { DirectScheduleLauncher } from "./components/schedule/DirectScheduleLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
@@ -31,11 +32,13 @@ import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceL
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
+import { DirectPatientLauncher } from "./components/patients/DirectPatientLauncher";
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
+import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -155,6 +158,12 @@ function isStandaloneActive(): boolean {
 		h.includes("patient_card") ||
 		s.includes("patient-card") ||
 		h.includes("patient-card") ||
+		s.includes("patients") ||
+		h.includes("patients") ||
+		s.includes("patient-studio") ||
+		h.includes("patient-studio") ||
+		s.includes("express-patient") ||
+		h.includes("express-patient") ||
 		s.includes("payroll") ||
 		h.includes("payroll") ||
 		s.includes("salary") ||
@@ -162,7 +171,26 @@ function isStandaloneActive(): boolean {
 		s.includes("earnings") ||
 		h.includes("earnings") ||
 		s.includes("doctor-payout") ||
-		h.includes("doctor-payout")
+		h.includes("doctor-payout") ||
+		s.includes("telephony") ||
+		h.includes("telephony") ||
+		s.includes("calls") ||
+		h.includes("calls") ||
+		s.includes("softphone") ||
+		h.includes("softphone") ||
+		s.includes("schedule") ||
+		h.includes("schedule") ||
+		s.includes("appointments") ||
+		h.includes("appointments") ||
+		h.includes("chair-schedule") ||
+		s.includes("treatment-plan") ||
+		h.includes("treatment-plan") ||
+		s.includes("treatment-plans") ||
+		h.includes("treatment-plans") ||
+		s.includes("treatment-studio") ||
+		h.includes("treatment-studio") ||
+		h.includes("plans") ||
+		h.includes("estimates")
 	);
 }
 
@@ -205,6 +233,7 @@ export function AppShell() {
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
 			<DirectAppointmentBookingLauncher />
+			<DirectScheduleLauncher />
 			<DirectMarketingRoiLauncher />
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
@@ -214,11 +243,13 @@ export function AppShell() {
 			<DirectPerioLauncher />
 			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />
+			<DirectPatientLauncher />
 			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />
 			<DirectPayrollLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />
+			<DirectTelephonyLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

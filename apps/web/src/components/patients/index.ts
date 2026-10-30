@@ -22,4 +22,7 @@ export * from "./family/FamilyWalletModal";
 export * from "./tabs/PatientGeneralInfoTab";
 export * from "./safetyMath";
 export * from "./DirectPatientCardLauncher";
+export * from "./patientCatalogData";
+export * from "./PatientStudioModal";
+export * from "./DirectPatientLauncher";
 

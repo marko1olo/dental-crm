@@ -1,13 +1,12 @@
 /**
- * DirectTreatmentPlanLauncher.tsx — Автономный монтируемый лаунчер планов лечения и смет (SSOT).
+ * DirectTreatmentPlanLauncher.tsx — Автономный лаунчер студии планов лечения (SSOT).
  * Мандаты 8b, 8aq: Монтирование в живой UI (AppShell.tsx), Sweet Spot (60–90 строк).
- * Реагирует на хэши #plans, #treatment-plans, #treatment-plan, #estimates
+ * Реагирует на хэши #treatment-plans, #treatment-plan, #treatment-studio, #plans, #estimates
  * и CustomEvent("dente:open-treatment-plan").
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { TreatmentPlanPresenterModal } from "./TreatmentPlanPresenterModal";
-import { buildCanonical3TierPlans } from "./treatmentPlansCatalogData";
+import { TreatmentPlanStudioModal } from "./TreatmentPlanStudioModal";
 
 export interface DirectTreatmentPlanLauncherProps {
 	readonly className?: string;
@@ -21,9 +20,12 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		return (
 			hash.includes("treatment-plan") ||
 			hash.includes("treatment-plans") ||
+			hash.includes("treatment-studio") ||
 			hash.includes("#plans") ||
 			hash.includes("#estimates") ||
 			search.includes("treatment-plan") ||
+			search.includes("treatment_plan") ||
+			search.includes("treatment-studio") ||
 			search.includes("plan=1") ||
 			search.includes("estimates=1")
 		);
@@ -71,23 +73,29 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 			url.searchParams.delete("plan");
 			url.searchParams.delete("plans");
 			url.searchParams.delete("treatment-plan");
+			url.searchParams.delete("treatment_plan");
+			url.searchParams.delete("treatment-studio");
 			url.searchParams.delete("estimates");
-			const cleanHash = window.location.hash.replace(/#(treatment-plans?|plans|estimates)/gi, "");
-			window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + cleanHash);
+			const cleanHash = window.location.hash.replace(
+				/#(treatment-plans?|treatment-studio|plans|estimates)/gi,
+				"",
+			);
+			window.history.replaceState(
+				null,
+				"",
+				url.pathname + (url.search ? url.search : "") + cleanHash,
+			);
 		}
 	}, []);
 
 	if (!isOpen) return null;
 
-	const tiers = buildCanonical3TierPlans();
-
 	return (
-		<TreatmentPlanPresenterModal
+		<TreatmentPlanStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientName={patientName}
 			doctorFullName={doctorFullName}
-			tiers={tiers}
 			initialSelectedTierId="optimum"
 		/>
 	);

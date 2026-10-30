@@ -25,6 +25,10 @@ import { DirectVisiographLauncher } from "../../visiograph/DirectVisiographLaunc
 import { DirectCashRegisterLauncher } from "../../billing/DirectCashRegisterLauncher";
 import { DirectWarehouseLauncher } from "../../inventory/DirectWarehouseLauncher";
 import { DirectOdontogramLauncher } from "../../odontogram/DirectOdontogramLauncher";
+import { DirectPatientLauncher } from "../../patients/DirectPatientLauncher";
+import { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
+import { DirectScheduleLauncher } from "../../schedule/DirectScheduleLauncher";
+import { DirectTreatmentPlanLauncher } from "../../treatment-plans/DirectTreatmentPlanLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -33,6 +37,47 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Telephony Studio & Calls Journal Standalone Launcher (#telephony, #calls, #softphone, ?telephony=1, ?calls=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("telephony") ||
+			window.location.hash.includes("telephony") ||
+			window.location.search.includes("calls") ||
+			window.location.hash.includes("calls") ||
+			window.location.search.includes("softphone") ||
+			window.location.hash.includes("softphone"))
+	) {
+		return <DirectTelephonyLauncher />;
+	}
+
+	// 0. Direct Chair Schedule Studio Standalone Launcher (#schedule-studio, #chair-schedule, ?schedule_studio=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("schedule_studio") ||
+			window.location.hash.includes("schedule-studio") ||
+			window.location.search.includes("chair-schedule") ||
+			window.location.hash.includes("chair-schedule") ||
+			window.location.hash === "#schedule" ||
+			window.location.hash === "#appointments")
+	) {
+		return <DirectScheduleLauncher />;
+	}
+
+	// 0. Direct Treatment Plan Studio Standalone Launcher (#treatment-plans, #treatment-plan, #treatment-studio, ?treatment-plan=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("treatment-studio") ||
+			window.location.hash.includes("treatment-studio") ||
+			window.location.search.includes("treatment-plan") ||
+			window.location.hash.includes("treatment-plan") ||
+			window.location.search.includes("treatment_plan") ||
+			window.location.hash.includes("treatment_plan") ||
+			window.location.search.includes("treatment-plans") ||
+			window.location.hash.includes("treatment-plans"))
+	) {
+		return <DirectTreatmentPlanLauncher />;
 	}
 
 	// 0. Direct Cash Register & Billing Checkout Studio Standalone Launcher (#billing-checkout, ?billing-checkout, #cashbox-studio)
@@ -214,6 +259,14 @@ export function renderStandaloneLaunchers(
 				onClose={() => clearUrlTokens(["emr", "medical-card", "form043", "card043"])}
 			/>
 		);
+	}
+
+	// 0. Direct Patient Studio & Express Registration Launcher (#patients, #patient-studio, ?patients=1, ?patient_studio=1)
+	if (
+		typeof window !== "undefined" &&
+		hasUrlToken(["patients", "patient-studio", "patient_studio", "express-patient", "express_patient"])
+	) {
+		return <DirectPatientLauncher />;
 	}
 
 	// 0. Patient Card 360 Standalone Launcher (?patient_card=1, #patient-card)
