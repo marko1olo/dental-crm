@@ -35,6 +35,7 @@ import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLaunche
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
+import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -98,6 +99,10 @@ function isStandaloneActive(): boolean {
 	return (
 		s.includes("standalone") ||
 		h.includes("standalone") ||
+		h.includes("odontogram") ||
+		s.includes("odontogram") ||
+		h.includes("dental-chart") ||
+		s.includes("dental-chart") ||
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
 		h.includes("dental_lab") ||
@@ -213,6 +218,7 @@ export function AppShell() {
 			<DirectOrthoLauncher />
 			<DirectPayrollLauncher />
 			<DirectTreatmentPlanLauncher />
+			<DirectOdontogramLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

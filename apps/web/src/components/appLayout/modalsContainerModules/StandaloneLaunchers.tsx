@@ -20,7 +20,11 @@ import { StandaloneEmrMedicalRecordHost } from "./standalone/clinical/Standalone
 import { StandalonePatientCardHost } from "./standalone/clinical/StandalonePatientCardHost";
 import { DirectVisitLauncher } from "../../visit/DirectVisitLauncher";
 import { DirectSanpinLauncher } from "../../sanpin/DirectSanpinLauncher";
+import { DirectSterilizationLauncher } from "../../sanpin/DirectSterilizationLauncher";
 import { DirectVisiographLauncher } from "../../visiograph/DirectVisiographLauncher";
+import { DirectCashRegisterLauncher } from "../../billing/DirectCashRegisterLauncher";
+import { DirectWarehouseLauncher } from "../../inventory/DirectWarehouseLauncher";
+import { DirectOdontogramLauncher } from "../../odontogram/DirectOdontogramLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -31,15 +35,32 @@ export function renderStandaloneLaunchers(
 		return null;
 	}
 
+	// 0. Direct Cash Register & Billing Checkout Studio Standalone Launcher (#billing-checkout, ?billing-checkout, #cashbox-studio)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("billing-checkout") || window.location.hash.includes("billing-checkout") ||
+			window.location.search.includes("billing_checkout") || window.location.hash.includes("billing_checkout") ||
+			window.location.search.includes("checkout-studio") || window.location.hash.includes("checkout-studio"))
+	) {
+		return <DirectCashRegisterLauncher />;
+	}
+
+	// 0. Direct Warehouse & Consumables Studio Standalone Launcher (#warehouse, #inventory-hub, ?warehouse=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("warehouse") || window.location.hash.includes("warehouse") ||
+			window.location.search.includes("inventory-hub") || window.location.hash.includes("inventory-hub") ||
+			window.location.search.includes("stock") || window.location.hash.includes("stock"))
+	) {
+		return <DirectWarehouseLauncher />;
+	}
+
 	// 0. Direct Chairside Visiograph (RVG) Launcher (?visiograph=1, #visiograph, ?rvg=1, #rvg, #rvg-studio)
 	if (
 		typeof window !== "undefined" &&
-		(window.location.search.includes("visiograph") ||
-			window.location.hash.includes("visiograph") ||
-			window.location.search.includes("rvg") ||
-			window.location.hash.includes("rvg") ||
-			window.location.search.includes("rvg-studio") ||
-			window.location.hash.includes("rvg-studio"))
+		(window.location.search.includes("visiograph") || window.location.hash.includes("visiograph") ||
+			window.location.search.includes("rvg") || window.location.hash.includes("rvg") ||
+			window.location.search.includes("rvg-studio") || window.location.hash.includes("rvg-studio"))
 	) {
 		return <DirectVisiographLauncher />;
 	}
@@ -56,17 +77,37 @@ export function renderStandaloneLaunchers(
 		return <DirectVisitLauncher />;
 	}
 
-	// 0. Direct SanPiN & Sterilization Production Control Hub (?sanpin=1, #sanpin, ?sterilization=1, #sterilization)
+	// 0. Direct Sterilization & Autoclave Hub (#sterilization, #sanpin-autoclave, #autoclave, ?sterilization=1, ?autoclave=1)
 	if (
 		typeof window !== "undefined" &&
-		(window.location.search.includes("sanpin") ||
-			window.location.hash.includes("sanpin") ||
-			window.location.search.includes("sterilization") ||
-			window.location.hash.includes("sterilization") ||
-			window.location.search.includes("autoclave") ||
-			window.location.hash.includes("autoclave"))
+		(window.location.search.includes("sterilization") || window.location.hash.includes("sterilization") ||
+			window.location.search.includes("autoclave") || window.location.hash.includes("autoclave") ||
+			window.location.hash.includes("sanpin-autoclave"))
+	) {
+		return <DirectSterilizationLauncher />;
+	}
+
+	// 0. Direct SanPiN Production Control Hub (?sanpin=1, #sanpin)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("sanpin") || window.location.hash.includes("sanpin"))
 	) {
 		return <DirectSanpinLauncher />;
+	}
+
+	// 0. Direct Chairside Odontogram Studio Launcher (?odontogram=1, #odontogram, #dental-chart, #odontogram-studio)
+	if (
+		typeof window !== "undefined" &&
+		!window.location.search.includes("odontogram-gate0") &&
+		!window.location.hash.includes("odontogram-gate0") &&
+		(window.location.search.includes("odontogram") ||
+			window.location.hash.includes("odontogram") ||
+			window.location.search.includes("dental-chart") ||
+			window.location.hash.includes("dental-chart") ||
+			window.location.search.includes("dental_chart") ||
+			window.location.hash.includes("dental_chart"))
+	) {
+		return <DirectOdontogramLauncher />;
 	}
 
 	// 0. Gate 0 Odontogram Tooth 46 Stand & 32-Tooth Full Arch Mockup Launcher
