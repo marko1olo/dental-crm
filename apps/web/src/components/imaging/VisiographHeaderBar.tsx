@@ -1,6 +1,8 @@
 import { AlertTriangle, Printer, Sparkles } from "lucide-react";
 import React from "react";
-import "../visit/VisitDiagnosticsTab.css";
+if (typeof document !== "undefined") {
+	void import("../visit/VisitDiagnosticsTab.css");
+}
 
 export interface VisiographHeaderBarProps {
 	readonly scanHistoryCount: number;

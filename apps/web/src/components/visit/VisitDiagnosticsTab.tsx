@@ -1,5 +1,7 @@
 import React from "react";
-import "./VisitDiagnosticsTab.css";
+if (typeof document !== "undefined") {
+	void import("./VisitDiagnosticsTab.css");
+}
 import { VisitDiagnosticsTabView } from "./diagnosticsTab";
 import type { DiagnosticTabMode, VisitDiagnosticsTabProps } from "./diagnosticsTab";
 

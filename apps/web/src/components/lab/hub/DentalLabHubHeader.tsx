@@ -54,11 +54,11 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 						<span>Экспорт CSV</span>
 					</button>
 
-					{/* Десктопный Primary CTA */}
+					{/* Десктопная кнопка (Secondary, Mandate 8am) */}
 					<button
 						type="button"
 						data-testid="btn-open-create-lab-order"
-						className="ztl-desktop-only-btn hidden sm:inline-flex h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-semibold text-xs shadow-2xs items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+						className="ztl-desktop-only-btn hidden sm:inline-flex h-9 min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs shadow-2xs items-center gap-1.5 cursor-pointer active:scale-95 transition-all"
 						onClick={onOpenCreateModal}
 						title="Создать новый наряд в лабораторию"
 					>
@@ -101,12 +101,12 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 				</div>
 			</div>
 
-			{/* Мобильный единственный Primary CTA во всю ширину */}
+			{/* Мобильная кнопка нового наряда (Secondary, Mandate 8am) */}
 			<div className="sm:hidden w-full">
 				<button
 					type="button"
 					data-testid="btn-open-create-lab-order-mobile"
-					className="w-full h-11 min-h-[44px] rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-strong,#0f766e)] text-white font-bold text-sm shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
+					className="w-full h-11 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-sm shadow-xs inline-flex items-center justify-center gap-2 cursor-pointer active:scale-95 transition-all"
 					onClick={onOpenCreateModal}
 					title="Создать новый наряд в лабораторию"
 				>

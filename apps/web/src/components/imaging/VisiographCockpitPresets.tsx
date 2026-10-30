@@ -1,6 +1,8 @@
 import { Activity, Sparkles } from "lucide-react";
 import React from "react";
-import "../visit/VisitDiagnosticsTab.css";
+if (typeof document !== "undefined") {
+	void import("../visit/VisitDiagnosticsTab.css");
+}
 
 export type VisiographPresetType = "standard" | "invert" | "endo" | "bone" | "enamel";
 

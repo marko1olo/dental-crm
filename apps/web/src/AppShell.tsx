@@ -97,6 +97,10 @@ function isStandaloneActive(): boolean {
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
 		h.includes("dental_lab") ||
+		h.includes("lab") ||
+		h.includes("ztl") ||
+		s.includes("lab") ||
+		s.includes("ztl") ||
 		h.includes("waitlist") ||
 		h.includes("visit_standalone") ||
 		s.includes("visit_standalone") ||
