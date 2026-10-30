@@ -13,7 +13,6 @@ function checkIsBookingActive(): boolean {
 	return (
 		s.includes("standalone=appointment_booking") ||
 		s.includes("standalone=booking") ||
-		s.includes("standalone=schedule") ||
 		s.includes("booking_modal=1") ||
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
@@ -27,10 +26,7 @@ function checkIsBookingActive(): boolean {
 		h.startsWith("#appointment/") ||
 		h === "#new-appointment" ||
 		h.startsWith("#new-appointment?") ||
-		h.startsWith("#new-appointment/") ||
-		h === "#schedule" ||
-		h.startsWith("#schedule?") ||
-		h.startsWith("#schedule/")
+		h.startsWith("#new-appointment/")
 	);
 }
 
