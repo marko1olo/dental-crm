@@ -34,7 +34,8 @@
 /* Hide floating trigger when drawer is active in DOM */
 body.copilot-open .copilot-trigger-btn,
 :has(.copilot-drawer.open) .copilot-trigger-btn,
-:has([data-testid="copilot-drawer"]) .copilot-trigger-btn {
+:has([data-testid="copilot-drawer"]) .copilot-trigger-btn,
+:has([data-testid="visiograph-studio-modal-root"]) .copilot-trigger-btn {
   display: none !important;
 }
 

@@ -19,9 +19,7 @@ export const DirectRadiologyLauncher: React.FC = () => {
 		const h = window.location.hash || "";
 		return (
 			s.includes("radiology") ||
-			s.includes("visiograph") ||
-			h.includes("radiology") ||
-			h.includes("visiograph")
+			h.includes("radiology")
 		);
 	});
 
@@ -35,9 +33,7 @@ export const DirectRadiologyLauncher: React.FC = () => {
 			const h = window.location.hash || "";
 			if (
 				s.includes("radiology") ||
-				s.includes("visiograph") ||
-				h.includes("radiology") ||
-				h.includes("visiograph")
+				h.includes("radiology")
 			) {
 				setIsOpen(true);
 			}

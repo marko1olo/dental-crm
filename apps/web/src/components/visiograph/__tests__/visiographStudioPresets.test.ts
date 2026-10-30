@@ -7,7 +7,7 @@ import {
 	recalculateRulersWithScale,
 	type RulerMeasurement,
 } from "../VisiographMeasurementMath";
-import { STANDARD_SENSOR_PRESETS } from "../VisiographStudioCanvas";
+import { STANDARD_SENSOR_PRESETS } from "../VisiographStudioTypes";
 
 describe("Visiograph Studio 1-Click Clinical Sensor Presets (Mandates 8e, 8k)", () => {
 	test("defines standard RVG Size 1, RVG Size 2, and OPG sensor presets with exact physical pitch", () => {

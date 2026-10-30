@@ -16,7 +16,7 @@ import {
 	type RulerMeasurement,
 } from "./VisiographMeasurementMath";
 import { handleToolCanvasClick, handleToolCanvasDoubleClick } from "./VisiographToolInteractions";
-import { VisiographExportModal } from "./VisiographExportModal";
+import { ImagingExportModal } from "../imaging/ImagingExportModal";
 import { VisiographTopToolbar } from "./VisiographTopToolbar";
 import { VisiographLesionsHud } from "./VisiographLesionsHud";
 import {
@@ -41,7 +41,7 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 	const {
 		imageUrl: initialImageUrl, patientId = "pat_unknown", patientFullName = "Пациент ДЕНТЕ",
 		toothCode = null, studyId: initialStudyId, doctorName = "Врач-рентгенолог ДЕНТЕ",
-		initialTool = "pointer", onSaveToRecord, onClose,
+		initialTool = "pointer", isModalHost = false, onSaveToRecord, onClose,
 	} = props;
 
 	const [activeImageUrl, setActiveImageUrl] = useState<string | null>(initialImageUrl || null);
@@ -193,6 +193,7 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 				toothCode={currentToothCode}
 				onToothChange={setCurrentToothCode}
 				onAttachToVisit={handleAttachToVisit}
+				isAttachedToVisit={isModalHost}
 				onToggleMobileDrawer={() => setIsMobileDrawerOpen((prev) => !prev)}
 			/>
 
@@ -397,18 +398,20 @@ export function VisiographStudioCanvas(props: VisiographStudioCanvasProps) {
 				</div>
 
 				{/* Главная кнопка Primary CTA цвета Teal (#0d9488) в нижней трети экрана (Apple HIG) */}
-				<button
-					type="button"
-					onClick={handleAttachToVisit}
-					className="w-full min-h-[48px] px-4 rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-[0.98]"
-					data-testid="btn-mobile-attach-to-visit"
-				>
-					<Check size={18} strokeWidth={2.5} />
-					<span>Сохранить в карту пациента</span>
-				</button>
+				{!isModalHost && (
+					<button
+						type="button"
+						onClick={handleAttachToVisit}
+						className="w-full min-h-[48px] px-4 rounded-xl font-bold text-sm bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] text-white flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-[0.98]"
+						data-testid="btn-mobile-attach-to-visit"
+					>
+						<Check size={18} strokeWidth={2.5} />
+						<span>Сохранить в карту пациента</span>
+					</button>
+				)}
 			</div>
 
-			<VisiographExportModal
+			<ImagingExportModal
 				isOpen={showExportModal}
 				onClose={() => setShowExportModal(false)}
 				canvasRef={canvasRef}

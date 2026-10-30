@@ -4,7 +4,7 @@
  */
 
 import { ChevronDown } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface VisiographToolbarToothBinderProps {
 	effectiveTooth: string;

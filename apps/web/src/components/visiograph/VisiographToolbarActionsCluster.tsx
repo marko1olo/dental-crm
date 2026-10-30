@@ -111,13 +111,13 @@ export function VisiographToolbarActionsCluster({
 			{/* Ровно ОДНА Primary CTA кнопка цвета var(--teal, #0d9488) */}
 			<button
 				type="button"
-				className={`primary-button ${isAttached ? "is-attached" : ""}`}
+				className={isAttached ? "secondary-button is-attached" : "primary-button"}
 				data-testid="btn-attach-to-visit"
 				onClick={handleAttachClick}
 				title="Сохранить снимок с измерениями в карту пациента (Прикрепить к визиту)"
 			>
 				<Check size={14} strokeWidth={2.5} />
-				<span>{isAttached ? "В приёме (в карте)" : "Сохранить в карту пациента"}</span>
+				<span>{isAttached ? "✓ В карте приёма" : "Сохранить в карту пациента"}</span>
 			</button>
 
 			{onClose && (

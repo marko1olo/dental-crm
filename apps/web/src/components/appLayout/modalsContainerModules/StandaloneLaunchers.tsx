@@ -3,7 +3,7 @@
  * Layer 5: Canonical Master Coordinator & Presentation Facade (<= 250 lines)
  */
 
-import type React from "react";
+import React from "react";
 import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { Tooth46InspectionStand } from "../../odontogram/gate0/Tooth46InspectionStand";
 import { PatientOmnichannelHubModal } from "../../messaging/PatientOmnichannelHubModal";
@@ -20,6 +20,7 @@ import { StandaloneEmrMedicalRecordHost } from "./standalone/clinical/Standalone
 import { StandalonePatientCardHost } from "./standalone/clinical/StandalonePatientCardHost";
 import { DirectVisitLauncher } from "../../visit/DirectVisitLauncher";
 import { DirectSanpinLauncher } from "../../sanpin/DirectSanpinLauncher";
+import { DirectVisiographLauncher } from "../../visiograph/DirectVisiographLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -28,6 +29,19 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Chairside Visiograph (RVG) Launcher (?visiograph=1, #visiograph, ?rvg=1, #rvg, #rvg-studio)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("visiograph") ||
+			window.location.hash.includes("visiograph") ||
+			window.location.search.includes("rvg") ||
+			window.location.hash.includes("rvg") ||
+			window.location.search.includes("rvg-studio") ||
+			window.location.hash.includes("rvg-studio"))
+	) {
+		return <DirectVisiographLauncher />;
 	}
 
 	// 0. Direct Chairside Visit & EMR Diary Launcher (?visit_standalone=1, ?standalone=visit, #visit_standalone)

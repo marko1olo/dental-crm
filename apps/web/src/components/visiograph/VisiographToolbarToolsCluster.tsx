@@ -4,7 +4,7 @@
  */
 
 import { Compass, MousePointer, RotateCw, Ruler, ZoomIn } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ActiveVisiographToolType } from "./VisiographInteractiveOverlay";
 
 export interface VisiographToolbarToolsClusterProps {

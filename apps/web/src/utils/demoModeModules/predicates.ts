@@ -89,7 +89,9 @@ export function isDemoShowcaseMode(explicitOverride?: boolean): boolean {
 				hash.includes("demo=true") ||
 				hash.includes("demo=1") ||
 				hash.includes("showcase=true") ||
-				hash.includes("cbct")
+				hash.includes("cbct") ||
+				hash.includes("visiograph") ||
+				hash.includes("rvg")
 			) {
 				localStorage.setItem("dente_demo_showcase", "true");
 				return true;

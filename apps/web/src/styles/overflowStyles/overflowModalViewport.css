@@ -83,7 +83,7 @@
 }
 
 .modal-viewport-guard,
-[role="dialog"] {
+[role="dialog"]:not(.fixed) {
 	max-height: 90vh;
 	max-height: 90dvh;
 	max-width: 100vw;

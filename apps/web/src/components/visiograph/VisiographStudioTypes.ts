@@ -30,6 +30,7 @@ export interface VisiographStudioCanvasProps {
 	studyId?: string | undefined;
 	doctorName?: string | undefined;
 	initialTool?: ActiveVisiographTool;
+	isModalHost?: boolean | undefined;
 	onSaveToRecord?: (
 		imageDataUri: string,
 		exportMeta: {

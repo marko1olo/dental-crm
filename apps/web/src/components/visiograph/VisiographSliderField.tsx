@@ -3,7 +3,7 @@
  * Reusable labeled range slider for radiological image adjustments.
  */
 
-import type React from "react";
+import React from "react";
 
 export interface VisiographSliderFieldProps {
 	label: string;

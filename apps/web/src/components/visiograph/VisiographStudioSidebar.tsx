@@ -3,7 +3,7 @@
  * Left adjustments sidebar for Visiograph & PACS Studio (Mandates 8b, 8e, 8n).
  */
 
-import type React from "react";
+import React from "react";
 import { AlertTriangle, CheckCircle2, Scale } from "lucide-react";
 import "./VisiographStudioSidebar.css";
 import { VisiographImageSliders } from "./VisiographImageSliders";

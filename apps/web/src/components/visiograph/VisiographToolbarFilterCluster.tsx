@@ -4,7 +4,7 @@
  */
 
 import { Activity, Contrast, Layers, Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	CLINICAL_VISIOGRAPH_FILTERS,
 	type ClinicalVisiographFilterPreset,

@@ -1,3 +1,6 @@
+export * from "./visiographCatalogData";
+export * from "./VisiographStudioModal";
+export * from "./DirectVisiographLauncher";
 export * from "./VisiographWindowPresets";
 export * from "./VisiographExportService";
 export * from "./VisiographImageProcessor";
@@ -8,7 +11,7 @@ export * from "./VisiographStudioCanvas";
 export * from "./VisiographProgressiveLoader";
 export * from "./VisiographLegalPrintProtocol";
 export * from "./VisiographInteractiveOverlay";
-export * from "./VisiographExportModal";
+export { ImagingExportModal as VisiographExportModal } from "../imaging/ImagingExportModal";
 export * from "./VisiographComparisonModal";
 export * from "./VisiographTopToolbar";
 export * from "./VisiographLesionsHud";

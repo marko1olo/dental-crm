@@ -5,7 +5,7 @@
  */
 
 import { Sliders } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { VisiographImageParams } from "./VisiographImageProcessor";
 import { VisiographSliderField } from "./VisiographSliderField";
 
