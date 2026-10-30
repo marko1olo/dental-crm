@@ -31,6 +31,12 @@ export const DirectCashboxLauncher: React.FC = () => {
 		const h = window.location.hash.toLowerCase();
 		const s = window.location.search.toLowerCase();
 
+		// Avoid collision when CashierFinanceLaunchers mounts StandaloneCashboxSsotHost
+		if (h.includes("cashbox_ssot") || s.includes("cashbox_ssot")) {
+			setIsOpen(false);
+			return;
+		}
+
 		const isCheckout = h.includes("checkout") || h.includes("payment") || s.includes("checkout") || s.includes("payment");
 		const isHub = h.includes("cashbox") || h.includes("cash-register") || h.includes("cash_register") || s.includes("cashbox");
 
