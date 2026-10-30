@@ -31,6 +31,27 @@ export {
 	type DentalLabHubModalProps,
 } from "./DentalLabHubModal";
 export {
+	DentalLabStudioModal,
+	type DentalLabStudioModalProps,
+} from "./DentalLabStudioModal";
+export {
+	CANONICAL_LAB_STAGES,
+	CANONICAL_LAB_MATERIALS,
+	VITA_SHADES_SSOT,
+	FDI_QUICK_TEETH,
+	CLINIC_LABORATORIES,
+	SEED_LAB_ORDERS,
+	type DentalLabOrderEntry,
+	type DentalLabStage,
+	type OrthopedicMaterialMeta,
+	type VitaShadeMeta,
+	formatKopecksToRubles,
+	getStageMeta,
+	getMaterialMeta,
+	isOrderOverdue,
+	calcNetRevenueKopecks,
+} from "./dentalLabCatalogData";
+export {
 	DentalLabOrderCard,
 	type DentalLabOrderCardProps,
 } from "./DentalLabOrderCard";

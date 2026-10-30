@@ -29,6 +29,9 @@ import { DirectPatientLauncher } from "../../patients/DirectPatientLauncher";
 import { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
 import { DirectScheduleLauncher } from "../../schedule/DirectScheduleLauncher";
 import { DirectTreatmentPlanLauncher } from "../../treatment-plans/DirectTreatmentPlanLauncher";
+import { DirectDentalLabLauncher } from "../../lab/DirectDentalLabLauncher";
+import { DirectAnalyticsLauncher } from "../../analytics/DirectAnalyticsLauncher";
+import { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -37,6 +40,40 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Dental Laboratory & Orthopedic Orders Studio Standalone Launcher (#lab, #dental-lab, #ztl, ?standalone=dental_lab, ?lab=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("standalone=dental_lab") ||
+			window.location.search.includes("standalone=lab_order") ||
+			window.location.search.includes("standalone=lab_hub") ||
+			window.location.search.includes("tab=lab") ||
+			window.location.search.includes("lab=1") ||
+			window.location.search.includes("dental-lab=1") ||
+			window.location.hash === "#lab" ||
+			window.location.hash === "#ztl" ||
+			window.location.hash === "#dental-lab" ||
+			window.location.hash === "#lab-studio" ||
+			window.location.hash === "#lab-orders" ||
+			window.location.hash.includes("dental-lab") ||
+			window.location.hash.includes("dental_lab"))
+	) {
+		return <DirectDentalLabLauncher />;
+	}
+
+	// 0. Direct Orthodontics Studio & Activation Protocol Standalone Launcher (#orthodontics, #ortho-protocol, ?orthodontics=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("orthodontics") ||
+			window.location.hash.includes("orthodontics") ||
+			window.location.search.includes("ortho-protocol") ||
+			window.location.hash.includes("ortho-protocol") ||
+			window.location.search.includes("ortho_protocol") ||
+			window.location.hash.includes("ortho_protocol") ||
+			window.location.hash.includes("ortho-studio"))
+	) {
+		return <DirectOrthodonticsLauncher />;
 	}
 
 	// 0. Direct Telephony Studio & Calls Journal Standalone Launcher (#telephony, #calls, #softphone, ?telephony=1, ?calls=1)
@@ -285,6 +322,20 @@ export function renderStandaloneLaunchers(
 	const payrollLauncher = renderPayrollLauncher();
 	if (payrollLauncher) {
 		return payrollLauncher;
+	}
+
+	// 0. Direct Executive Analytics Studio Launcher (#analytics, #dashboard, #executive-studio, ?analytics=direct)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#analytics" ||
+			window.location.hash === "#dashboard" ||
+			window.location.hash === "#executive-studio" ||
+			window.location.hash.includes("executive-studio") ||
+			window.location.search.includes("executive_studio") ||
+			window.location.search.includes("analytics=direct") ||
+			window.location.search.includes("dashboard=direct"))
+	) {
+		return <DirectAnalyticsLauncher />;
 	}
 
 	// 0. Executive Analytics & Reports Standalone Launcher (?reports=1, #reports, ?analytics=1)
