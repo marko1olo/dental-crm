@@ -1,83 +1,65 @@
 /**
  * DirectWarehouseLauncher.tsx — Standalone лаунчер склада и расходных материалов.
- * Слушает #warehouse, #inventory, #stock и события dente:open-warehouse (Мандаты 8aq, 8b: 60–90 строк).
+ * Слушает #warehouse, #inventory-hub, #stock и события dente:open-warehouse (Мандаты 8aq, 8b: 60–90 строк).
  */
 
 import React, { useEffect, useState, useCallback } from "react";
+import { WarehouseHubStudioModal } from "./WarehouseHubStudioModal.js";
 import { WarehouseHubModal } from "./WarehouseHubModal.js";
+
+const MATCH_PATTERN = /(#|\?)(warehouse|inventory-hub|inventory_hub|inventory|stock|warehouse-hub)/;
 
 export const DirectWarehouseLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
 		if (typeof window === "undefined") return false;
-		const s = window.location.search || "";
-		const h = window.location.hash || "";
-		return (
-			s.includes("warehouse=1") ||
-			s.includes("inventory=1") ||
-			s.includes("stock=1") ||
-			s.includes("warehouse_hub=1") ||
-			h.includes("#warehouse") ||
-			h.includes("#inventory") ||
-			h.includes("#stock") ||
-			h.includes("#warehouse-hub") ||
-			h.includes("#warehouse_hub")
-		);
+		return MATCH_PATTERN.test(window.location.search) || MATCH_PATTERN.test(window.location.hash);
 	});
 
 	const handleOpen = useCallback(() => setIsOpen(true), []);
 
 	useEffect(() => {
 		if (typeof window === "undefined") return;
-
-		const handleHashChange = () => {
-			const h = window.location.hash || "";
-			if (
-				h.includes("#warehouse") ||
-				h.includes("#inventory") ||
-				h.includes("#stock") ||
-				h.includes("#warehouse-hub") ||
-				h.includes("#warehouse_hub")
-			) {
-				setIsOpen(true);
-			}
-		};
+		const onHash = () => MATCH_PATTERN.test(window.location.hash) && setIsOpen(true);
 
 		window.addEventListener("dente:open-warehouse", handleOpen);
 		window.addEventListener("dente:open-inventory", handleOpen);
 		window.addEventListener("dente-open-warehouse", handleOpen);
-		window.addEventListener("hashchange", handleHashChange);
+		window.addEventListener("hashchange", onHash);
 
 		return () => {
 			window.removeEventListener("dente:open-warehouse", handleOpen);
 			window.removeEventListener("dente:open-inventory", handleOpen);
 			window.removeEventListener("dente-open-warehouse", handleOpen);
-			window.removeEventListener("hashchange", handleHashChange);
+			window.removeEventListener("hashchange", onHash);
 		};
 	}, [handleOpen]);
 
 	const handleClose = useCallback(() => {
 		setIsOpen(false);
 		if (typeof window !== "undefined") {
-			const url = new URL(window.location.href);
-			url.searchParams.delete("warehouse");
-			url.searchParams.delete("inventory");
-			url.searchParams.delete("stock");
-			url.searchParams.delete("warehouse_hub");
-			const cleanHash = window.location.hash.replace(/#(warehouse-hub|warehouse_hub|warehouse|inventory|stock)/g, "");
-			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
-			window.history.replaceState({}, "", newUrl);
+			const u = new URL(window.location.href);
+			["warehouse", "inventory", "stock", "inventory_hub"].forEach((k) => u.searchParams.delete(k));
+			const cleanHash = window.location.hash.replace(
+				/#(inventory-hub|inventory_hub|warehouse-hub|warehouse|inventory|stock)/g,
+				"",
+			);
+			window.history.replaceState({}, "", u.pathname + (u.search || "") + cleanHash);
 		}
 	}, []);
 
 	if (!isOpen) return null;
 
-	return (
-		<WarehouseHubModal
-			isOpen={isOpen}
-			onClose={handleClose}
-			organizationId="01a00000-0000-0000-0000-000000000000"
-		/>
-	);
+	const isStudio =
+		typeof window !== "undefined" &&
+		(window.location.hash.includes("inventory-hub") ||
+			window.location.search.includes("inventory_hub=1") ||
+			window.location.hash.includes("studio"));
+
+	if (isStudio) {
+		return <WarehouseHubStudioModal isOpen={isOpen} onClose={handleClose} />;
+	}
+
+	return <WarehouseHubModal isOpen={isOpen} onClose={handleClose} />;
 };
 
 export default DirectWarehouseLauncher;
