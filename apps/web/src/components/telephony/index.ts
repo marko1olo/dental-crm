@@ -20,3 +20,7 @@ export * from "./useIncomingCallData";
 export * from "./initiateOutboundCall";
 export * from "./telephonyAttribution";
 export * from "./headerCapsule";
+export * from "./telephonyCatalogData";
+export * from "./TelephonyStudioModal";
+export * from "./TelephonyCallList";
+export * from "./DirectTelephonyLauncher";
