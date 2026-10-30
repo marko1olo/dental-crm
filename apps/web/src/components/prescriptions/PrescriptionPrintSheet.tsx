@@ -10,6 +10,8 @@ import type { DentalOutpatientDrug } from "./prescriptionCatalogData";
 
 export interface PrescriptionPrintSheetProps {
 	readonly seriesNumber?: string;
+	readonly formType?: "standard" | "special" | string | undefined;
+	readonly isSpecial?: boolean | undefined;
 	readonly clinicName?: string;
 	readonly clinicAddress?: string;
 	readonly clinicPhone?: string;
@@ -34,7 +36,9 @@ export interface PrescriptionPrintSheetProps {
 }
 
 export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
-	seriesNumber = "РЦ-849201",
+	seriesNumber,
+	formType = "standard",
+	isSpecial: propIsSpecial,
 	clinicName = "Стоматологическая клиника «ДЕНТЕ»",
 	clinicAddress = "г. Москва, ул. Большая Полянка, д. 28, стр. 1",
 	clinicPhone = "+7 (495) 215-55-40",
@@ -46,11 +50,15 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 	medicalCardNumber = "К-4821",
 	prescriptionDate = new Date().toLocaleDateString("ru-RU"),
 	items = [],
-	validityDays = "60",
+	validityDays,
 	isMemoMode = false,
 	isUkepSigned = true,
 	className = "",
 }) => {
+	const isSpecial = propIsSpecial ?? (formType === "special" || formType === "148-1u-88");
+	const resolvedSeriesNumber = seriesNumber || (isSpecial ? "СП-849201" : "РЦ-849201");
+	const resolvedValidity = validityDays ?? (isSpecial ? "15" : "60");
+
 	return (
 		<div
 			data-testid="prescription-print-sheet"
@@ -62,7 +70,7 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 				<div className="flex flex-col gap-1 min-w-0">
 					<div className="flex items-center gap-2">
 						<span className="w-2.5 h-2.5 rounded-full bg-[var(--teal,#0d9488)] shrink-0" />
-						<h3 className="text-sm font-bold tracking-tight text-[var(--ink)] uppercase truncate">
+						<h3 className="text-sm font-bold tracking-tight text-[var(--ink)] uppercase leading-snug">
 							{clinicName}
 						</h3>
 					</div>
@@ -75,11 +83,11 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 				</div>
 
 				<div className="flex flex-col items-end shrink-0 text-right">
-					<div className="px-2.5 py-1 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-mono font-bold text-[var(--ink)]">
-						{seriesNumber}
+					<div className={`px-2.5 py-1 rounded-lg border text-xs font-mono font-bold ${isSpecial ? "bg-rose-500/10 border-rose-500/30 text-rose-700 dark:text-rose-300" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--ink)]"}`}>
+						{resolvedSeriesNumber}
 					</div>
-					<span className="text-[11px] font-medium text-[var(--teal,#0d9488)] mt-1">
-						{isMemoMode ? "Памятка пациента" : `Срок действия: ${validityDays} дней`}
+					<span className={`text-[11px] font-medium mt-1 ${isSpecial ? "text-rose-600 dark:text-rose-400 font-semibold" : "text-[var(--teal,#0d9488)]"}`}>
+						{isMemoMode ? "Памятка пациента" : isSpecial ? "Срок действия: 15 дней (учётный)" : `Срок действия: ${resolvedValidity} дней`}
 					</span>
 					<span className="text-[10px] text-[var(--muted)]">
 						{prescriptionDate}
@@ -88,27 +96,39 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 			</div>
 
 			{/* Patient & Doctor Context Grid */}
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
-				<div className="flex flex-col gap-0.5">
+			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs">
+				<div className="flex flex-col gap-1 min-w-0">
 					<span className="text-[10px] uppercase font-semibold text-[var(--muted)]">Пациент:</span>
-					<span className="font-bold text-[var(--ink)] truncate">
-						{patientName} {patientBirthDate ? `(${patientBirthDate})` : ""}
+					<span className="font-bold text-[var(--ink)] text-sm leading-snug">
+						{patientName}
 					</span>
-					<span className="text-[11px] text-[var(--muted)]">
-						Медицинская карта приёма: <strong className="text-[var(--ink)]">{medicalCardNumber}</strong>
-					</span>
+					<div className="flex items-center gap-2 text-[11px] text-[var(--muted)] flex-wrap">
+						{patientBirthDate ? (
+							<span>Дата рожд.: <strong className="text-[var(--ink)] font-mono">{patientBirthDate}</strong></span>
+						) : null}
+						<span>Медкарта: <strong className="text-[var(--ink)] font-mono">{medicalCardNumber}</strong></span>
+					</div>
 				</div>
-				<div className="flex flex-col gap-0.5 sm:text-right">
+				<div className="flex flex-col gap-1 sm:text-right min-w-0">
 					<span className="text-[10px] uppercase font-semibold text-[var(--muted)]">Лечащий врач:</span>
-					<span className="font-bold text-[var(--ink)] truncate">{doctorName}</span>
+					<span className="font-bold text-[var(--ink)] text-sm leading-snug truncate">{doctorName}</span>
 					<span className="text-[11px] text-[var(--muted)] truncate">{doctorSpecialty}</span>
+					{isSpecial ? (
+						<span className="text-[10px] font-bold text-rose-600 dark:text-rose-400">
+							⚠️ Предметно-количественный учёт
+						</span>
+					) : null}
 				</div>
 			</div>
 
 			{/* Document Title Banner */}
-			<div className="text-center py-1 border-b border-[var(--line-subtle,var(--line))]">
-				<h4 className="text-xs uppercase font-extrabold tracking-wider text-[var(--ink)]">
-					{isMemoMode ? "РЕКОМЕНДАЦИИ ПО ПРИЕМУ МЕДИКАМЕНТОВ" : "РЕЦЕПТУРНЫЙ БЛАНК (НАЗНАЧЕНИЯ ВРАЧА)"}
+			<div className="text-center py-1.5 border-b border-[var(--line-subtle,var(--line))]">
+				<h4 className={`text-xs uppercase font-extrabold tracking-wider ${isSpecial ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}`}>
+					{isMemoMode
+						? "РЕКОМЕНДАЦИИ ПО ПРИЕМУ МЕДИКАМЕНТОВ"
+						: isSpecial
+							? "СПЕЦИАЛЬНЫЙ РЕЦЕПТУРНЫЙ БЛАНК (УЧЁТНЫЙ)"
+							: "РЕЦЕПТУРНЫЙ БЛАНК (НАЗНАЧЕНИЯ ВРАЧА)"}
 				</h4>
 			</div>
 
@@ -182,6 +202,11 @@ export const PrescriptionPrintSheet: React.FC<PrescriptionPrintSheetProps> = ({
 						<span className="text-[10px] text-[var(--muted)] mt-0.5">
 							М.П. Лечащего врача и клиники · Подпись: _______________
 						</span>
+						{isSpecial ? (
+							<span className="text-[10px] text-rose-700 dark:text-rose-400 mt-0.5 font-medium">
+								Подпись зав. отделением: _______________
+							</span>
+						) : null}
 					</div>
 
 					{isUkepSigned && (

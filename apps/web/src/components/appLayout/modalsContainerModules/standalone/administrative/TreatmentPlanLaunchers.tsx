@@ -5,7 +5,7 @@
  * Никаких вбитых пациентов, зубов и демо-режимов «для красоты».
  */
 
-import type React from "react";
+import React from "react";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import type { StandaloneLaunchersProps } from "../../modalsContainerTypes";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";

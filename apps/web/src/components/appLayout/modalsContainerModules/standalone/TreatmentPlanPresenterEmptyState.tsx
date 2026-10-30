@@ -1,5 +1,5 @@
 import { FileText } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface TreatmentPlanPresenterEmptyStateProps {
 	readonly onClose: () => void;

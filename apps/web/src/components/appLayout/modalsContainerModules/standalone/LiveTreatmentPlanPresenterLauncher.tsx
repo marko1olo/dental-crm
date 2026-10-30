@@ -3,7 +3,7 @@
  * Декомпозирован по Мандату 8b (строго <= 120 строк).
  */
 
-import type React from "react";
+import React from "react";
 import { AppLoadingState } from "../../../../AppBootState";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import { denteAdminSecretRequestHeaders } from "../../../../lib/denteRequestHeaders";

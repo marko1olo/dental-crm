@@ -6,7 +6,7 @@
  * (loadStoredTeethData). Без patientId — гид, никаких демо-подстановок.
  */
 
-import type React from "react";
+import React from "react";
 import { useMemo } from "react";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
