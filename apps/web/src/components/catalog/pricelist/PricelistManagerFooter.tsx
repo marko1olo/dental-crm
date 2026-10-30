@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { STATUTORY_VAT_EXEMPTION_NOTE } from "./servicePricelistPresets";
 
 export interface PricelistManagerFooterProps {
@@ -26,7 +26,7 @@ export const PricelistManagerFooter: React.FC<PricelistManagerFooterProps> = ({
 			>
 				<ShieldCheck size={16} className="pricelist-legal-icon" />
 				<span style={{ fontSize: "0.75rem" }}>
-					{STATUTORY_VAT_EXEMPTION_NOTE} · Официальный справочник услуг
+					Официальный справочник услуг клиники · Без НДС
 				</span>
 			</div>
 

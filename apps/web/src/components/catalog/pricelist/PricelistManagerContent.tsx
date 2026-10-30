@@ -1,15 +1,20 @@
-import type React from "react";
+import React from "react";
 import { PricelistCategorySidebar } from "./PricelistCategorySidebar";
 import { PricelistDataTable } from "./PricelistDataTable";
+import {
+	syncDeactivateServiceToBackend,
+	syncServiceItemToBackend,
+} from "./pricelistDbSync";
 import type { useServicePricelistManager } from "./useServicePricelistManager";
 
 export interface PricelistManagerContentProps {
 	readonly mgr: ReturnType<typeof useServicePricelistManager>;
+	readonly adminSecret?: string | undefined;
 }
 
 export const PricelistManagerContent: React.FC<
 	PricelistManagerContentProps
-> = ({ mgr }) => {
+> = ({ mgr, adminSecret }) => {
 	return (
 		<div className="pricelist-main-layout">
 			<PricelistCategorySidebar
@@ -54,19 +59,19 @@ export const PricelistManagerContent: React.FC<
 					mgr.setEditingItem(it);
 					mgr.setIsEditModalOpen(true);
 				}}
-				onDuplicateItem={(it) =>
-					mgr.updateAndPersist([
-						{
-							...it,
-							id: `srv-dup-${Date.now()}`,
-							commercialTitle: `${it.commercialTitle} (копия)`,
-						},
-						...mgr.items,
-					])
-				}
-				onDeleteItem={(id) =>
-					mgr.updateAndPersist(mgr.items.filter((i) => i.id !== id))
-				}
+				onDuplicateItem={(it) => {
+					const dupItem = {
+						...it,
+						id: `srv-dup-${Date.now()}`,
+						commercialTitle: `${it.commercialTitle} (копия)`,
+					};
+					mgr.updateAndPersist([dupItem, ...mgr.items]);
+					void syncServiceItemToBackend(dupItem, true, adminSecret);
+				}}
+				onDeleteItem={(id) => {
+					mgr.updateAndPersist(mgr.items.filter((i) => i.id !== id));
+					void syncDeactivateServiceToBackend(id, adminSecret);
+				}}
 			/>
 		</div>
 	);

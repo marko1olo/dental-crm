@@ -1,5 +1,9 @@
 import { useState } from "react";
-import { requestBatchRepriceApi } from "./serviceBatchRepriceApi";
+import { syncInlinePriceToBackend } from "./pricelistDbSync";
+import {
+	type BatchRepriceApiOptions,
+	requestBatchRepriceApi,
+} from "./serviceBatchRepriceApi";
 import {
 	batchPriceMarkup,
 	commitInlinePrice,
@@ -26,6 +30,7 @@ export function usePricelistPriceInteractions(
 	updateAndPersist: (next: readonly ServicePricelistItem[]) => void,
 	setItems: (next: readonly ServicePricelistItem[]) => void,
 	showToast: (msg: string) => void,
+	adminSecret?: string,
 ) {
 	const [editingPriceCellId, setEditingPriceCellId] = useState<string | null>(
 		null,
@@ -37,6 +42,7 @@ export function usePricelistPriceInteractions(
 		if (res) {
 			updateAndPersist(res.updatedItems);
 			showToast(`Цена обновлена: ${formatRubles(res.parsed)}`);
+			void syncInlinePriceToBackend(itemId, res.parsed, adminSecret);
 		}
 		setEditingPriceCellId(null);
 	};
@@ -44,6 +50,7 @@ export function usePricelistPriceInteractions(
 	const handleSetZeroWarrantyPrice = (itemId: string) => {
 		updateAndPersist(setZeroWarrantyPrice(items, itemId));
 		showToast("Установлена гарантийная цена (0 ₽)");
+		void syncInlinePriceToBackend(itemId, 0, adminSecret);
 	};
 
 	const handleApplyBatchMarkup = (
@@ -65,13 +72,14 @@ export function usePricelistPriceInteractions(
 		);
 
 		// Асинхронный SQL апдейт в PostgreSQL через Fastify API (Мандат 8n)
-		void requestBatchRepriceApi({
+		const repricePayload: BatchRepriceApiOptions = {
 			percentChange: percent,
 			roundMode: rounding,
-			category: selectedCategory !== "all" ? selectedCategory : undefined,
-			specialty: selectedSpecialty !== "all" ? selectedSpecialty : undefined,
-			serviceIds: selectedItemIds.size > 0 ? Array.from(selectedItemIds) : undefined,
-		});
+			...(selectedCategory !== "all" ? { category: selectedCategory } : {}),
+			...(selectedSpecialty !== "all" ? { specialty: selectedSpecialty } : {}),
+			...(selectedItemIds.size > 0 ? { serviceIds: Array.from(selectedItemIds) } : {}),
+		};
+		void requestBatchRepriceApi(repricePayload, adminSecret);
 	};
 
 	return {

@@ -1,5 +1,5 @@
 import { Copy, Edit3, Trash2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ServicePricelistItem } from "./servicePricelistPresets";
 
 export interface PricelistDataTableRowActionsProps {

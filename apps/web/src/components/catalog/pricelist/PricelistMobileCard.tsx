@@ -1,5 +1,5 @@
 import { Clock } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { PricelistMobileCardActions } from "./PricelistMobileCardActions";
 import {
 	calculateTierPrice,
@@ -100,6 +100,14 @@ export const PricelistMobileCard: React.FC<PricelistMobileCardProps> = ({
 				<div className="pricelist-mobile-card-price-row">
 					<div className="pricelist-mobile-card-price">
 						{formatRubles(currentPrice)}
+						{currentPrice === 0 && (
+							<span
+								className="pricelist-zero-badge"
+								style={{ marginLeft: "6px", fontSize: "0.75rem" }}
+							>
+								0 ₽
+							</span>
+						)}
 					</div>
 					<PricelistMobileCardActions
 						item={item}

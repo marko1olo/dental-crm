@@ -4,7 +4,7 @@
  */
 
 import { AlertTriangle, Check, CheckCheck, Percent, RotateCcw, Search, ShieldCheck, Sparkles, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type {
 	PriceDiffStats,
 	PriceDiffSummaryBarProps,

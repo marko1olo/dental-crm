@@ -1,5 +1,5 @@
 import { CheckCircle2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export const PricelistToast: React.FC<{ readonly message: string | null }> = ({
 	message,

@@ -1,5 +1,5 @@
 import { X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { PricelistServiceFormBasicFields } from "./PricelistServiceFormBasicFields";
 import { PricelistServiceFormFooter } from "./PricelistServiceFormFooter";
 import { PricelistServiceFormIcdFields } from "./PricelistServiceFormIcdFields";

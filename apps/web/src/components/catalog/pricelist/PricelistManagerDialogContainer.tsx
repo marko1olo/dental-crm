@@ -1,4 +1,5 @@
-import type React from "react";
+import React from "react";
+import { syncServiceItemToBackend } from "./pricelistDbSync";
 import { PricelistFiltersAndBatchBar } from "./PricelistFiltersAndBatchBar";
 import { downloadPricelistCsv } from "./PricelistImportExportModal";
 import { PricelistManagerContent } from "./PricelistManagerContent";
@@ -73,7 +74,7 @@ export const PricelistManagerDialogContainer: React.FC<
 				/>
 
 				<PricelistToast message={mgr.toastMessage} />
-				<PricelistManagerContent mgr={mgr} />
+				<PricelistManagerContent mgr={mgr} adminSecret={adminSecret} />
 				<PricelistManagerFooter
 					visibleCount={mgr.filterSlice.pricelistSlice.visibleItems.length}
 					filteredTotalCount={mgr.filterSlice.filteredItems.length}
@@ -95,12 +96,14 @@ export const PricelistManagerDialogContainer: React.FC<
 					mgr.showToast(msg);
 				}}
 				onSaveItem={(saved) => {
+					const isNew = !mgr.editingItem;
 					mgr.updateAndPersist(
 						mgr.editingItem
 							? mgr.items.map((i) => (i.id === saved.id ? saved : i))
 							: [saved, ...mgr.items],
 					);
 					mgr.setIsEditModalOpen(false);
+					void syncServiceItemToBackend(saved, isNew, adminSecret);
 				}}
 			/>
 		</div>

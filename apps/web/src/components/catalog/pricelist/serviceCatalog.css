@@ -19,8 +19,8 @@
 }
 
 .price-input-quick:focus {
-	border-color: var(--brand-500, #3b82f6);
-	box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
 }
 
 /* Action Buttons */
@@ -180,7 +180,7 @@
 }
 
 .pricelist-legal-icon {
-	color: var(--brand-500, #3b82f6);
+	color: var(--teal, #0d9488);
 }
 /**
  * DENTE Dental CRM вЂ” Service Catalog Category Sidebar Styles
@@ -214,7 +214,7 @@
 }
 
 .pricelist-sidebar-footer-card {
-	margin-top: auto;
+	margin-top: 1rem;
 	padding: 0.75rem;
 	border-radius: 8px;
 	background: var(--paper, #ffffff);
@@ -278,8 +278,8 @@
 
 .category-nav-btn.active {
 	background: var(--paper, #ffffff);
-	border-color: var(--line, #e2e8f0);
-	color: var(--brand-500, #3b82f6);
+	border-color: var(--teal-line, rgba(13, 148, 136, 0.3));
+	color: var(--teal, #0d9488);
 	font-weight: 700;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
@@ -294,8 +294,8 @@
 }
 
 .category-nav-btn.active .category-nav-count {
-	background: rgba(59, 130, 246, 0.15);
-	color: var(--brand-500, #3b82f6);
+	background: var(--teal-subtle, rgba(13, 148, 136, 0.12));
+	color: var(--teal, #0d9488);
 }
 /**
  * DENTE Dental CRM вЂ” Service Catalog CSV Import Modal Styles
@@ -353,8 +353,8 @@
 }
 
 .csv-dropzone:hover {
-	border-color: var(--brand-500, #3b82f6);
-	background: rgba(59, 130, 246, 0.04);
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-subtle, rgba(13, 148, 136, 0.04));
 }
 /**
  * DENTE Dental CRM вЂ” Service Catalog Header Styles
@@ -379,7 +379,7 @@
 }
 
 .pricelist-header-icon {
-	color: var(--brand-500, #3b82f6);
+	color: var(--teal, #0d9488);
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -727,8 +727,8 @@
 
 	.pricelist-header-actions-secondary-row {
 		display: grid !important;
-		grid-template-columns: 1fr 1.25fr 1fr !important;
-		gap: 0.375rem !important;
+		grid-template-columns: 1fr 1fr !important;
+		gap: 0.5rem !important;
 		width: 100%;
 	}
 
@@ -853,7 +853,19 @@
 	display: flex;
 	flex-direction: column;
 	scroll-padding-bottom: 2rem;
-	padding-bottom: 0.5rem;
+	padding-bottom: 0.75rem;
+	scrollbar-width: thin;
+	scrollbar-color: var(--line, #cbd5e1) transparent;
+}
+
+.pricelist-table-container::-webkit-scrollbar {
+	width: 6px;
+	height: 6px;
+}
+
+.pricelist-table-container::-webkit-scrollbar-thumb {
+	background: var(--line, #cbd5e1);
+	border-radius: 3px;
 }
 
 .pricelist-desktop-table-view {
@@ -865,7 +877,8 @@
 
 .pricelist-data-table {
 	width: 100%;
-	border-collapse: collapse;
+	border-collapse: separate;
+	border-spacing: 0;
 	font-size: 0.8125rem;
 	text-align: left;
 }
@@ -893,7 +906,7 @@
 }
 
 .pricelist-data-table tr.pricelist-row-selected td {
-	background: rgba(59, 130, 246, 0.06);
+	background: var(--teal-subtle, rgba(13, 148, 136, 0.08));
 }
 
 .pricelist-data-table tr:hover td {
@@ -908,9 +921,9 @@
 	font-family: monospace;
 	font-size: 0.75rem;
 	font-weight: 600;
-	background: rgba(2, 132, 199, 0.08);
-	color: #0284c7;
-	border: 1px solid rgba(2, 132, 199, 0.25);
+	background: var(--teal-subtle, rgba(13, 148, 136, 0.08));
+	color: var(--teal, #0d9488);
+	border: 1px solid var(--teal-line, rgba(13, 148, 136, 0.25));
 	white-space: nowrap;
 }
 
@@ -1467,7 +1480,7 @@ tr:hover .pricelist-zero-hover-btn,
 }
 
 .tier-segment-btn.active {
-	background: var(--brand-500, #3b82f6);
+	background: var(--teal, #0d9488);
 	color: #ffffff;
 }
 
@@ -1477,12 +1490,18 @@ tr:hover .pricelist-zero-hover-btn,
 	align-items: center;
 	justify-content: space-between;
 	padding: 0.5rem 1.25rem;
-	background: rgba(59, 130, 246, 0.06);
-	border-bottom: 1px solid rgba(59, 130, 246, 0.15);
+	background: var(--teal-subtle, rgba(13, 148, 136, 0.06));
+	border-bottom: 1px solid var(--teal-line, rgba(13, 148, 136, 0.2));
 	font-size: 0.8125rem;
 	gap: 0.75rem;
 	flex-wrap: wrap;
 	flex-shrink: 0;
+}
+
+.margin-badge.neutral {
+	background: var(--surface, #f1f5f9);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #e2e8f0);
 }
 
 .batch-bar-left {
@@ -1514,8 +1533,8 @@ tr:hover .pricelist-zero-hover-btn,
 }
 
 .batch-quick-btn:hover {
-	border-color: var(--brand-500, #3b82f6);
-	color: var(--brand-500, #3b82f6);
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
 }
 
 .price-edit-container {

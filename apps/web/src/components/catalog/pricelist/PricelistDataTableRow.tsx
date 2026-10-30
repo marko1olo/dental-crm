@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { PricelistDataTableRowActions } from "./PricelistDataTableRowActions";
 import { PricelistDataTableRowPrice } from "./PricelistDataTableRowPrice";
 import type { PricelistDataTableRowProps } from "./PricelistDataTableRowProps";
@@ -74,9 +74,15 @@ export const PricelistDataTableRow: React.FC<PricelistDataTableRowProps> = (
 				/>
 			</td>
 			<td style={{ textAlign: "center" }}>
-				<span className={`margin-badge ${prof.level}`}>
-					{Number.isFinite(prof.marginPercent) ? prof.marginPercent : 0}%
-				</span>
+				{prof.totalCostRub > 0 ? (
+					<span className={`margin-badge ${prof.level}`}>
+						{Number.isFinite(prof.marginPercent) ? prof.marginPercent : 0}%
+					</span>
+				) : (
+					<span className="margin-badge neutral" title="Себестоимость не задана">
+						—
+					</span>
+				)}
 			</td>
 			<td
 				style={{

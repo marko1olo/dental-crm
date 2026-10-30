@@ -1,5 +1,5 @@
 import { Copy, Edit3, ShieldCheck, Trash2 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ServicePricelistItem } from "./servicePricelistPresets";
 
 export interface PricelistMobileCardActionsProps {
@@ -23,16 +23,6 @@ export const PricelistMobileCardActions: React.FC<
 }) => {
 	return (
 		<div className="pricelist-mobile-card-actions">
-			<button
-				type="button"
-				className={`pricelist-mobile-action-btn ${currentPrice === 0 ? "active" : ""}`}
-				onClick={() => onSetZeroWarrantyPrice(item.id)}
-				title="Установить гарантию 0 ₽"
-				aria-label="0 ₽ Гарантия"
-			>
-				<ShieldCheck size={16} />
-				<span>0 ₽</span>
-			</button>
 			<button
 				type="button"
 				className="pricelist-mobile-action-btn"

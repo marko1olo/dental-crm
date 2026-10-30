@@ -1,5 +1,5 @@
 import { Layers, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { PricelistManagerHeaderActions } from "./PricelistManagerHeaderActions";
 
 export interface PricelistManagerHeaderProps {

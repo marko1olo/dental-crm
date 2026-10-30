@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { PricelistImportExportModal } from "./PricelistImportExportModal";
 import { PricelistServiceFormModal } from "./PricelistServiceFormModal";
 import type { ServicePricelistItem } from "./servicePricelistPresets";

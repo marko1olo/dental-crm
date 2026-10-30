@@ -12,12 +12,14 @@ import {
 } from "./servicePricelistPresets";
 import { usePricelistFilterAndSlice } from "./usePricelistFilterAndSlice";
 import { usePricelistPriceInteractions } from "./usePricelistPriceInteractions";
+import { fetchPricelistFromBackend } from "./pricelistDbSync";
 import { usePricelistToast } from "./usePricelistToast";
 
 export function useServicePricelistManager(
 	initialItems: readonly ServicePricelistItem[] = CANONICAL_SERVICE_PRESETS,
 	onSaveCatalog?: (items: readonly ServicePricelistItem[]) => void,
 	isOpen = false,
+	adminSecret?: string,
 ) {
 	const [items, setItems] =
 		useState<readonly ServicePricelistItem[]>(initialItems);
@@ -35,9 +37,28 @@ export function useServicePricelistManager(
 	const { toastMessage, showToast } = usePricelistToast();
 
 	useEffect(() => {
-		if (isOpen && initialItems && initialItems.length > 0)
+		if (isOpen && initialItems && initialItems.length > 0) {
 			setItems(initialItems);
+		}
 	}, [isOpen, initialItems]);
+
+	// Реальная гидратация из Fastify / PostgreSQL SSOT при открытии модалки (Мандат 8wy, 8n)
+	useEffect(() => {
+		if (!isOpen) return;
+		let active = true;
+
+		async function hydrate() {
+			const remoteItems = await fetchPricelistFromBackend(adminSecret);
+			if (active && remoteItems && remoteItems.length > 0) {
+				setItems(remoteItems);
+			}
+		}
+
+		void hydrate();
+		return () => {
+			active = false;
+		};
+	}, [isOpen, adminSecret]);
 
 	const updateAndPersist = (next: readonly ServicePricelistItem[]) => {
 		setItems(next);
@@ -63,6 +84,7 @@ export function useServicePricelistManager(
 		updateAndPersist,
 		setItems,
 		showToast,
+		adminSecret,
 	);
 
 	const handleToggleSort = (f: PricelistSortField) => {

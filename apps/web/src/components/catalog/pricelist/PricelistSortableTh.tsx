@@ -1,5 +1,5 @@
 import { ArrowUpDown } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { PricelistSortField } from "./servicePricelistEngine";
 
 export interface PricelistSortableThProps {

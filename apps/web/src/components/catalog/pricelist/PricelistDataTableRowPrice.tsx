@@ -1,5 +1,5 @@
 import { Check, Edit3 } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { formatRubles } from "./servicePricelistEngine";
 
 export interface PricelistDataTableRowPriceProps {
@@ -71,20 +71,10 @@ export const PricelistDataTableRowPrice: React.FC<
 				<Edit3 size={12} className="pricelist-price-edit-icon" />
 			</button>
 
-			{currentPrice === 0 ? (
+			{currentPrice === 0 && (
 				<span className="pricelist-zero-badge" title="Гарантийная позиция (0 ₽)">
 					0 ₽
 				</span>
-			) : (
-				<button
-					type="button"
-					className="pricelist-zero-hover-btn"
-					onClick={onSetZeroWarrantyPrice}
-					title="Сделать бесплатной (0 ₽ Гарантия)"
-					aria-label="Установить 0 ₽ Гарантия"
-				>
-					0 ₽
-				</button>
 			)}
 		</div>
 	);

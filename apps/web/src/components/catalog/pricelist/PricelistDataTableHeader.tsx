@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { PricelistSortableTh } from "./PricelistSortableTh";
 import type { PricelistSortField } from "./servicePricelistEngine";
 import type { PriceTierKind } from "./servicePricelistPresets";

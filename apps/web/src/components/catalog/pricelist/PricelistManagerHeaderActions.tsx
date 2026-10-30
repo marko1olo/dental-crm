@@ -165,16 +165,6 @@ export const PricelistManagerHeaderActions: React.FC<
 
 				<button
 					type="button"
-					className="pricelist-btn pricelist-btn-save"
-					onClick={onSaveAndClose}
-					title="Сохранить изменения и закрыть"
-				>
-					<Check size={16} />
-					<span>Сохранить</span>
-				</button>
-
-				<button
-					type="button"
 					className="pricelist-btn pricelist-btn-icon pricelist-close-btn-desktop"
 					onClick={onClose}
 					aria-label="Закрыть"

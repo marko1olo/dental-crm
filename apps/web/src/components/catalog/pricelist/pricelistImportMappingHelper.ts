@@ -32,7 +32,7 @@ export function mapProposalsToDiffItems(
 				? "exact_code"
 				: p.confidence === "keyword_match"
 					? "high_keyword"
-					: "fallback";
+					: "low_unmatched";
 
 		return {
 			id: `ingest-${idx}-${Date.now()}`,
@@ -95,7 +95,7 @@ export function mergeApprovedDiffItems(
 			icd10Indications: [],
 			tags: [],
 			vatRate: 0,
-			vatExemptionArticle: "пп. 2 п. 2 ст. 149 НК РФ",
+			vatExemptionArticle: "Без НДС",
 			isActive: true,
 			isArchived: false,
 		});

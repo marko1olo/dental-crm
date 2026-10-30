@@ -3,7 +3,7 @@
  * Canonical SSOT Implementation (Mandates 8b, 8zi)
  */
 
-import type React from "react";
+import React from "react";
 import "./priceMappingDiff.css";
 import { PriceDiffSummaryBar, PriceDiffToolbar } from "./PriceDiffControls";
 import { PriceDiffTable } from "./PriceDiffPanes";

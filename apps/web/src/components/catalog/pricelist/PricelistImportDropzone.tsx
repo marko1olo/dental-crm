@@ -1,5 +1,5 @@
 import { FileSpreadsheet } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface PricelistImportDropzoneProps {
 	readonly importMode: "smart_text" | "csv";

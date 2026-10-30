@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { PricelistServiceFormTierGrid } from "./PricelistServiceFormTierGrid";
 
 export interface PricelistServiceFormTierFieldsProps {

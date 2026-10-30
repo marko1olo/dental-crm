@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { PriceListMappingDiffView } from "../mappingDiff";
 import { PricelistImportDropzone } from "./PricelistImportDropzone";
 import { PricelistImportModalFooter } from "./PricelistImportModalFooter";
@@ -37,6 +37,7 @@ export const PricelistImportExportModal: React.FC<
 		code: it.statutoryCode || it.code804n,
 		title: it.commercialTitle,
 		basePriceRub: it.basePriceRub,
+		category: it.category,
 	}));
 
 	return (

@@ -1,5 +1,5 @@
 import { ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import {
 	CATEGORY_LABELS,
 	type ServiceCategory,
@@ -53,13 +53,13 @@ export const PricelistCategorySidebar: React.FC<
 			<div className="pricelist-sidebar-footer-card">
 				<div className="pricelist-sidebar-card-title">
 					<ShieldCheck size={14} className="pricelist-sidebar-card-icon" />
-					<span>Номенклатура услуг</span>
+					<span>Справочник услуг</span>
 				</div>
 				<div className="pricelist-sidebar-card-text">
-					Прейскурант сформирован в соответствии со стандартами Минздрава РФ
+					Официальный каталог клиники ({categoryCounts.all || 0} позиций)
 				</div>
 				<div className="pricelist-sidebar-card-badge">
-					НДС 0% · ст. 149 НК РФ
+					Каталог утверждён · Без НДС
 				</div>
 			</div>
 		</nav>

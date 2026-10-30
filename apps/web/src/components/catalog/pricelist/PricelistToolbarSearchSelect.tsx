@@ -1,5 +1,5 @@
 import { Search, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useId } from "react";
 
 export interface PricelistToolbarSearchSelectProps {

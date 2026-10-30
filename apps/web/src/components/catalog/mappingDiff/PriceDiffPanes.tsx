@@ -4,7 +4,7 @@
  */
 
 import { Check, FileText, Link2, Plus, ShieldCheck, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { RefObject } from "react";
 import type {
 	ExistingCatalogReference,

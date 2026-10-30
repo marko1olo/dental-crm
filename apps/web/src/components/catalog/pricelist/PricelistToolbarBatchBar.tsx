@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { PriceRoundingMode } from "./servicePricelistEngine";
 import {
 	PRICE_TIER_LABELS,

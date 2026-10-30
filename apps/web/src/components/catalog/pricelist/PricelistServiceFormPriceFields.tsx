@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { PricelistServiceFormMarginSummary } from "./PricelistServiceFormMarginSummary";
 import {
 	DURATION_OPTIONS,

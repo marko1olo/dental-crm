@@ -40,6 +40,23 @@ const SAMPLE_ITEMS: readonly ServicePricelistItem[] = [
 		icd10Indications: ["K04.0"],
 		tags: ["хирургия"],
 	},
+	{
+		id: "srv-3",
+		code804n: "A16.07.001.099",
+		commercialTitle: "Гарантийный осмотр и коррекция",
+		statutoryTitle804n: "Осмотр гарантийный",
+		category: "therapy",
+		specialty: "therapist",
+		basePriceRub: 0,
+		basePriceKopecks: 0,
+		estimatedDurationMin: 15,
+		isActive: true,
+		isArchived: false,
+		vatRate: 0,
+		vatExemptionArticle: "Без НДС",
+		icd10Indications: [],
+		tags: ["гарантия"],
+	},
 ];
 
 describe("PricelistMobileGroupedList — Apple HIG Touch Ergonomics", () => {

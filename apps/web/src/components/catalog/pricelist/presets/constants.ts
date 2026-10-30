@@ -49,8 +49,8 @@ export const PRICE_TIER_LABELS: Record<PriceTierKind, string> = {
 };
 
 export const STATUTORY_VAT_EXEMPTION_NOTE =
-	"НДС не облагается (пп. 2 п. 2 ст. 149 НК РФ)";
+	"Официальный справочник услуг · Без НДС";
 
-export const STATUTORY_TAX_CODE_ARTICLE = "пп. 2 п. 2 ст. 149 НК РФ";
+export const STATUTORY_TAX_CODE_ARTICLE = "Без НДС";
 export const DEFAULT_VAT_RATE = 0 as const;
 export const DEFAULT_SERVICE_UNIT = "усл.";

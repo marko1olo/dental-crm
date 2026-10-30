@@ -1,5 +1,5 @@
 import { AlertCircle } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface PricelistDataTableEmptyAndMoreProps {
 	readonly hasMore: boolean;

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 export interface PricelistImportModalFooterProps {
 	readonly importMode: "csv" | "smart_text";

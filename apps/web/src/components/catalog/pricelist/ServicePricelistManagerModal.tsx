@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import { PricelistManagerDialogContainer } from "./PricelistManagerDialogContainer";
 import type { ServicePricelistManagerModalProps } from "./ServicePricelistManagerModalProps";
@@ -22,7 +22,7 @@ export const ServicePricelistManagerModal: React.FC<
 		chiefDoctorName = "Петров А. В.",
 		adminSecret,
 	} = props;
-	const mgr = useServicePricelistManager(initialItems, onSaveCatalog, isOpen);
+	const mgr = useServicePricelistManager(initialItems, onSaveCatalog, isOpen, adminSecret);
 
 	if (!isOpen) return null;
 	const clinicMeta = {
