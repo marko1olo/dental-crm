@@ -1,6 +1,6 @@
 import type { Patient } from "@dental/shared";
 import { ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { formatShortDate } from "../../../AppHelpers";
 
 export interface ClinicalPackagePatientCardProps {

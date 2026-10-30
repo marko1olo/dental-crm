@@ -1,5 +1,5 @@
 import { FileText, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useEffect, useState } from "react";
 import {
 	type ProfessionalA4DocumentTab,

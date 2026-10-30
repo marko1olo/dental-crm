@@ -8,7 +8,7 @@
 
 import React, { useState, useCallback, useId, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { AlertTriangle, Award, Check, FileText, Printer, ShieldCheck, Stethoscope, Wrench, X } from "lucide-react";
+import { AlertTriangle, Award, Check, Copy, FileText, MessageSquare, Printer, Send, Share2, ShieldCheck, Stethoscope, Wrench, X } from "lucide-react";
 import { DentalImplant } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
@@ -24,11 +24,12 @@ import {
 	type SurgeryCapType,
 	type MischBoneDensity,
 } from "./surgeryCatalogData";
+import { buildSurgicalPostOpMemoText } from "./protocols/surgeryPostOpMemo";
 import { ImplantPassportCard } from "../implants/ImplantPassportCard";
 import type { FastImplantPassportData } from "../implants/implantQuickPresets";
 import "./surgeryHub.css";
 
-export type SurgeryHubTab = "protocol" | "diary" | "passport";
+export type SurgeryHubTab = "protocol" | "diary" | "passport" | "memo";
 
 export interface ChairsideSurgeryHubModalProps {
 	readonly isOpen: boolean;
@@ -185,8 +186,38 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		onClose();
 	}, [onSaveProtocol, activeScenario, toothFdi, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, diameterMm, lengthMm, lotNumber, serialNumber, boneDensity, torqueNcm, selectedGraft, selectedMembrane, selectedSuture, patientId, onClose]);
 
+	const memoText = useMemo((): string => {
+		return buildSurgicalPostOpMemoText(activeScenario, {
+			patientName,
+			toothFdi,
+			doctorName,
+			implantBrand: selectedBrand,
+			capType,
+			hasSutures: true,
+		});
+	}, [activeScenario, patientName, toothFdi, doctorName, selectedBrand, capType]);
+
+	const handleCopyMemo = useCallback(() => {
+		navigator.clipboard?.writeText(memoText);
+		showToast("Памятка для пациента скопирована в буфер обмена", "success");
+	}, [memoText]);
+
+	const handleShareWhatsAppMemo = useCallback(() => {
+		const text = encodeURIComponent(memoText);
+		window.open(`https://api.whatsapp.com/send?text=${text}`, "_blank", "noopener,noreferrer");
+		showToast("Памятка пациенту открыта для отправки в WhatsApp", "success");
+	}, [memoText]);
+
+	const handleShareTelegramMemo = useCallback(() => {
+		const text = encodeURIComponent(memoText);
+		window.open(`https://t.me/share/url?text=${text}`, "_blank", "noopener,noreferrer");
+		showToast("Памятка пациенту открыта для отправки в Telegram", "success");
+	}, [memoText]);
+
 	const handlePrintDocument = () => {
-		setActiveTab(activeScenario === "implant" ? "passport" : "diary");
+		if (activeTab === "protocol") {
+			setActiveTab(activeScenario === "implant" ? "passport" : "diary");
+		}
 		setTimeout(() => { window.print?.(); showToast(`Печать документа операции #${toothFdi}`, "success"); }, 100);
 	};
 
@@ -243,6 +274,9 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							<Award size={14} className="shrink-0" /><span>3. Паспорт имплантата (А5)</span>
 						</button>
 					)}
+					<button type="button" role="tab" aria-selected={activeTab === "memo"} onClick={() => setActiveTab("memo")} className={`surgery-hub-tab-btn ${activeTab === "memo" ? "active" : ""}`} data-testid="tab-surgery-memo">
+						<MessageSquare size={14} className="shrink-0" /><span>{activeScenario === "implant" ? "4. Памятка пациенту" : "3. Памятка пациенту"}</span>
+					</button>
 				</nav>
 
 				<div className="surgery-hub-content">
@@ -256,7 +290,33 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						</div>
 					)}
 
-					{activeTab === "passport" && activeScenario === "implant" ? (
+					{activeTab === "memo" ? (
+						<div className="surgery-postop-memo-container min-h-0" data-testid="surgery-memo-content">
+							<div className="surgery-postop-memo-header">
+								<div className="flex items-center gap-2 min-w-0">
+									<MessageSquare size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<span className="text-xs font-bold text-[var(--ink)] truncate">Памятка пациенту (#{toothFdi} · {scenarioConfig.titleRu}):</span>
+								</div>
+								<div className="surgery-postop-memo-actions">
+									<button type="button" onClick={handleShareWhatsAppMemo} className="surgery-memo-action-btn whatsapp" data-testid="btn-share-whatsapp-memo" title="Отправить памятку в WhatsApp">
+										<Share2 size={14} /><span>WhatsApp</span>
+									</button>
+									<button type="button" onClick={handleShareTelegramMemo} className="surgery-memo-action-btn telegram" data-testid="btn-share-telegram-memo" title="Отправить памятку в Telegram">
+										<Send size={14} /><span>Telegram</span>
+									</button>
+									<button type="button" onClick={handleCopyMemo} className="surgery-memo-action-btn" data-testid="btn-copy-memo" title="Скопировать текст памятки">
+										<Copy size={14} /><span>Скопировать</span>
+									</button>
+								</div>
+							</div>
+							<textarea
+								readOnly
+								value={memoText}
+								className="surgery-postop-memo-text w-full h-72 sm:h-80 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-mono leading-relaxed resize-none focus:outline-none"
+								data-testid="surgery-memo-textarea"
+							/>
+						</div>
+					) : activeTab === "passport" && activeScenario === "implant" ? (
 						<div data-testid="surgery-passport-content"><ImplantPassportCard data={passportData} /></div>
 					) : activeTab === "diary" ? (
 						<div className="flex flex-col gap-3 min-h-0" data-testid="surgery-diary-content">
@@ -376,7 +436,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						</button>
 						{/* СТРОГО ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА #0d9488 */}
 						<button type="button" onClick={handleSaveOperationAndCommit} className="surgery-primary-cta" data-testid="btn-save-chairside-surgery">
-							<span className="hidden sm:inline">✓ Зафиксировать операцию и внести в карту</span><span className="sm:hidden">✓ Зафиксировать операцию</span>
+							<span className="hidden sm:inline">✓ Зафиксировать операцию и внести в карту приёма &gt;</span><span className="sm:hidden">✓ Зафиксировать операцию &gt;</span>
 						</button>
 					</div>
 				</footer>

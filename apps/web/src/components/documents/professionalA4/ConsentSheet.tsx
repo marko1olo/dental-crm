@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { A4DocumentInformedConsentData } from "@dental/shared";
 import { ConsentSheetPage1 } from "./ConsentSheetPage1";
 import { ConsentSheetPage2 } from "./ConsentSheetPage2";

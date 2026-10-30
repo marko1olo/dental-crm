@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 
 export function ConsentSheetHeader({
 	// biome-ignore lint/suspicious/noExplicitAny: clinic

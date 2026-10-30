@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { FileText, MoreHorizontal, X } from "lucide-react";
 
 export interface ClinicalPackageMoreMenuProps {

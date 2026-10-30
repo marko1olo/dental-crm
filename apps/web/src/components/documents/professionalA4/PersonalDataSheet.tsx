@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { A4DocumentPersonalDataConsentData } from "@dental/shared";
 import { PersonalDataSheetHeader } from "./PersonalDataSheetHeader";
 import { PersonalDataSignGrid } from "./PersonalDataSignGrid";

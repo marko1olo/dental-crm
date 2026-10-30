@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Search, X } from "lucide-react";
 import { CatalogCategoryTabs } from "./CatalogCategoryTabs";
 import { CatalogToolbarActions } from "./CatalogToolbarActions";

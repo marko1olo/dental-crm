@@ -1,5 +1,5 @@
 import type { Patient } from "@dental/shared";
-import type React from "react";
+import React from "react";
 import { InformedConsentViewerContent } from "./informedConsentViewer/InformedConsentViewerContent";
 import { InformedConsentViewerHeader } from "./informedConsentViewer/InformedConsentViewerHeader";
 import { InformedConsentViewerMetaBox } from "./informedConsentViewer/InformedConsentViewerMetaBox";

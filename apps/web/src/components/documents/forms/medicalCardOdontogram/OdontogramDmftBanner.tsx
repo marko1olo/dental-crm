@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CheckCircle2, Sparkles } from "lucide-react";
 import type { FdiToothRecord } from "@dental/shared";
 import {

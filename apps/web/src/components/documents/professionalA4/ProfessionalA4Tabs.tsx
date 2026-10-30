@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { ProfessionalA4DocumentTab } from "./types";
 
 export interface ProfessionalA4TabsProps {

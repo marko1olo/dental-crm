@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { FileCheck, FileText, Receipt, UserCheck } from "lucide-react";
 
 export interface FilterDocumentKindChipsProps {

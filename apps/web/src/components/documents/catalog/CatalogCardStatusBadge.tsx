@@ -1,5 +1,5 @@
 import { CheckCircle2, Clock } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { formatShortDate } from "../../../AppHelpers";
 
 export function CatalogCardStatusBadge({

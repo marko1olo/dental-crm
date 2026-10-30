@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Award, FileCheck, Printer } from "lucide-react";
 
 export interface CatalogToolbarActionsProps {

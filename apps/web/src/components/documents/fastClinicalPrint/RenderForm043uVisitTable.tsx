@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { FastClinicalPrintEngineProps } from "../FastClinicalPrintEngine";
 
 export function RenderForm043uVisitTable({

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import { DocumentA4PrintPreviewModal } from "../DocumentA4PrintPreviewModal";
 import { OutpatientCardPrintModal } from "../OutpatientCardPrintModal";

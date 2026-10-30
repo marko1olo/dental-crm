@@ -1,6 +1,6 @@
 import type { DocumentKind, GeneratedDocument } from "@dental/shared";
 import { Eye, Printer } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { CatalogCardStatusBadge } from "./CatalogCardStatusBadge";
 import type { DocumentCatalogItem } from "./types";
 

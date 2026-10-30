@@ -1,5 +1,5 @@
 import { CheckCircle2, Printer, Zap } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { ClinicalPackageMoreMenu } from "./ClinicalPackageMoreMenu";
 
 export interface ClinicalPackageFooterProps {

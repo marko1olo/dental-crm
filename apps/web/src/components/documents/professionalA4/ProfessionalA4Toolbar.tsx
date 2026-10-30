@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Printer } from "lucide-react";
 import { ProfessionalA4Tabs } from "./ProfessionalA4Tabs";
 import type { A4ZoomMode, ProfessionalA4DocumentTab } from "./types";

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { DocumentKind, GeneratedDocument, Patient } from "@dental/shared";
 import type { TaxDeductionTab } from "../../finance/taxDeduction/types";
 import type { ProfessionalA4DocumentTab } from "../ProfessionalDocumentA4Sheet";

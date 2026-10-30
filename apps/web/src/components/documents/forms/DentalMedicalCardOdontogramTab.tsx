@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { useMemo, useCallback } from "react";
 import { ToothChart, type ToothState } from "../../odontogram/ToothChart";
 import {

@@ -4,7 +4,7 @@
  * Разделы: История настоящего заболевания:, Анамнез жизни и соматический статус.
  */
 
-import type React from "react";
+import React from "react";
 import { AnamnesisSomaticSection } from "./medicalCard/AnamnesisSomaticSection";
 import { AnamnesisOralStatusSection } from "./medicalCard/AnamnesisOralStatusSection";
 import type { DentalMedicalCardAnamnesisTabProps } from "./medicalCard/medicalCardAnamnesisTypes";

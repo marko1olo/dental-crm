@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { A4DocumentInformedConsentData } from "@dental/shared";
 
 export interface ConsentSheetPage2Props {

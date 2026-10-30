@@ -4,6 +4,8 @@
    Apple HIG Mobile Bottom Sheet (390x844), 1 Primary CTA #0d9488, печать А5.
    ========================================================================== */
 
+@import "./styles/surgery-memo.css";
+
 .surgery-hub-modal-backdrop {
 	position: fixed;
 	inset: 0;
@@ -306,7 +308,7 @@ html.dark .surgery-scenario-chip.active {
 	}
 
 	.surgery-hub-tab-btn {
-		min-height: 40px;
+		min-height: 44px;
 		flex-shrink: 0;
 	}
 

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { formatAmountInWordsRu, formatRubles } from "@dental/shared";
 import type { A4DocumentContractData } from "@dental/shared";
 

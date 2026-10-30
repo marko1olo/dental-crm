@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { DocumentNavTabsProps, DocumentCategoryTab } from "./types";
 import { DOCUMENT_NAV_TABS_CONFIG } from "./constants";
 

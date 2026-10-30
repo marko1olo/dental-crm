@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { A4DocumentTreatmentPlanData } from "@dental/shared";
 import { TreatmentPlanSheetPage1 } from "./TreatmentPlanSheetPage1";
 import { TreatmentPlanSheetPage2 } from "./TreatmentPlanSheetPage2";

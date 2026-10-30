@@ -1,6 +1,6 @@
 import type { DocumentKind, GeneratedDocument } from "@dental/shared";
 import { CheckCircle2, Clock, PlusCircle, Zap } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { CLINICAL_STATUTORY_ITEMS } from "./types";
 
 export interface ClinicalPackageChecklistProps {

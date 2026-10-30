@@ -1,5 +1,5 @@
 import { Printer, Receipt } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface CatalogExpressBarProps {
 	onFastPrintPrimaryIntake: () => void;

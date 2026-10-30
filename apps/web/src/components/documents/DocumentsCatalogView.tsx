@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { CatalogCard } from "./catalog/CatalogCard";
 import { CatalogExpressBar } from "./catalog/CatalogExpressBar";
 import { CatalogModals } from "./catalog/CatalogModals";

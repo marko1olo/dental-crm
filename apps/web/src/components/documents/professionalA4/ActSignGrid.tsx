@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { A4DocumentActData } from "@dental/shared";
 
 export function ActSignGrid({

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { formatPassportString } from "@dental/shared";
 import type { A4DocumentInformedConsentData } from "@dental/shared";
 import { ConsentSheetHeader } from "./ConsentSheetHeader";

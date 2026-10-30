@@ -10,6 +10,10 @@ import {
 	SURGICAL_HEMOSTASIS_OPTIONS,
 	buildStandardExtractionProtocolText,
 	buildPostExtractionMemoText,
+	buildPostImplantMemoText,
+	buildPostSinusGbrMemoText,
+	buildPostPeriostotomyMemoText,
+	buildSurgicalPostOpMemoText,
 	SURGICAL_OPERATION_NORMS,
 } from "../surgeryProtocols";
 
@@ -85,5 +89,50 @@ describe("Surgery Extraction Presets & Post-Op Patient Memo", () => {
 			assert.equal(emojiRegex.test(norm.title), false);
 			assert.equal(emojiRegex.test(norm.postOpRecommendationsRu), false);
 		}
+	});
+
+	it("6. Post-op memos for implant, sinus lift and periostotomy contain cold, diet, meds, sutures & 0 emojis", () => {
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F1E6}-\u{1F1FF}]/u;
+
+		// Implant Memo
+		const implantMemo = buildPostImplantMemoText({
+			patientName: "Васильев Олег",
+			toothFdi: 46,
+			doctorName: "Д-р Воронов",
+			implantBrand: "Osstem",
+			capType: "fdm",
+		});
+		assert.ok(implantMemo.includes("ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ УСТАНОВКИ ИМПЛАНТАТА"));
+		assert.ok(implantMemo.includes("ХОЛОД"));
+		assert.ok(implantMemo.includes("АНТИСЕПТИЧЕСКИЙ РЕЖИМ"));
+		assert.ok(implantMemo.includes("ДИЕТА"));
+		assert.ok(implantMemo.includes("ШВЫ И ФОРМИРОВАТЕЛЬ"));
+		assert.equal(emojiRegex.test(implantMemo), false);
+
+		// Sinus Lift Memo
+		const sinusMemo = buildPostSinusGbrMemoText({
+			patientName: "Морозова Елена",
+			toothFdi: 16,
+			doctorName: "Д-р Воронов",
+		});
+		assert.ok(sinusMemo.includes("ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ СИНУС-ЛИФТИНГА"));
+		assert.ok(sinusMemo.includes("КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО СМОРКАТЬСЯ"));
+		assert.ok(sinusMemo.includes("ЗАПРЕТ ПЕРЕПАДОВ ДАВЛЕНИЯ"));
+		assert.equal(emojiRegex.test(sinusMemo), false);
+
+		// Periostotomy Memo
+		const perioMemo = buildPostPeriostotomyMemoText({
+			patientName: "Григорьев Артем",
+			toothFdi: 36,
+			doctorName: "Д-р Воронов",
+		});
+		assert.ok(perioMemo.includes("ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ ПЕРИОСТОТОМИИ"));
+		assert.ok(perioMemo.includes("ДРЕНАЖ"));
+		assert.ok(perioMemo.includes("НЕ ГРЕТЬ ЩЕКУ"));
+		assert.equal(emojiRegex.test(perioMemo), false);
+
+		// Universal dispatcher
+		const dispatchMemo = buildSurgicalPostOpMemoText("implant", { toothFdi: 36 });
+		assert.ok(dispatchMemo.includes("УСТАНОВКИ ИМПЛАНТАТА"));
 	});
 });

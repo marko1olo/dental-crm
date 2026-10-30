@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Printer } from "lucide-react";
 import type { DocumentQuickRoleScenariosProps } from "./types";
 import { SCENARIO_ITEMS } from "./scenarioData";

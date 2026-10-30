@@ -1,8 +1,8 @@
 /**
  * documentsCatalogData.ts
  *
- * Канонический реестр документов, информированных согласий (ИДС 1051н)
- * и справок налогового вычета 13% НДФЛ (КНД 1151156) DENTE Dental CRM.
+ * Канонический реестр документов, информированных согласий
+ * и справок налогового вычета 13% НДФЛ DENTE Dental CRM.
  *
  * Инварианты Мандата 8x, 8ap, 8e и 8n:
  * - Никаких советских шифров и канцелярита («043/у» -> «Медицинская карта приёма»).
@@ -98,8 +98,8 @@ export function getDocumentsCatalogData(
 			titleRu: "Информированное согласие на лечение",
 			category: "intake",
 			descriptionRu: "Добровольное информированное согласие на диагностику, осмотр и анестезию",
-			badgeRu: "Согласие 1051н",
-			regulationRu: "Согласие на лечение · Стандарт 1051н",
+			badgeRu: "Согласие на лечение",
+			regulationRu: "Клинический стандарт согласия",
 			icon: ShieldCheck,
 			isStatutory: true,
 			printSupported: true,
@@ -110,8 +110,8 @@ export function getDocumentsCatalogData(
 			kind: "personal_data_processing_consent",
 			titleRu: "Согласие на обработку персданных",
 			category: "intake",
-			descriptionRu: "Правовое основание для ведения медкарты, связи и оповещений (152-ФЗ)",
-			badgeRu: "Персданные 152-ФЗ",
+			descriptionRu: "Правовое основание для ведения медкарты, связи и сервисных уведомлений",
+			badgeRu: "Согласие на обработку персональных данных",
 			regulationRu: "Персональные данные · Конфиденциальность",
 			icon: UserCheck,
 			isStatutory: true,
@@ -226,9 +226,9 @@ export function getDocumentsCatalogData(
 			kind: "payment_receipt",
 			titleRu: "Квитанция и подтверждение оплаты",
 			category: "finance_tax",
-			descriptionRu: "Подтверждение оплаты услуг наличными, картой, СБП или авансом (54-ФЗ)",
+			descriptionRu: "Подтверждение оплаты услуг наличными, картой, СБП или авансом",
 			badgeRu: "Кассовый чек",
-			regulationRu: "Кассовый чек · Оплата 54-ФЗ",
+			regulationRu: "Кассовый чек и оплата",
 			icon: Receipt,
 			printSupported: true,
 			onQuickAction: () => handlers.onOpenKind?.("payment_receipt", "Квитанция и подтверждение оплаты"),

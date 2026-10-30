@@ -169,4 +169,40 @@ describe("Chairside Surgery Hub & Implant Passports SSOT (Mandates 8e, 8n, 8x, 8
 			assert.ok(sc.standardMaterials.length > 0, `Scenario ${key} must have standard materials for Soft Negative Stock`);
 		}
 	});
+
+	it("11. ChairsideSurgeryHubModal renders patient memo tab with WhatsApp and Telegram integration", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialScenario="implant"
+				initialTab="memo"
+				patientName="Кузнецов Петр"
+			/>,
+		);
+
+		assert.ok(html.includes("tab-surgery-memo"), "Must render patient memo tab button");
+		assert.ok(html.includes("surgery-memo-content"), "Must render patient memo content container");
+		assert.ok(html.includes("btn-share-whatsapp-memo"), "Must render WhatsApp share button");
+		assert.ok(html.includes("btn-share-telegram-memo"), "Must render Telegram share button");
+		assert.ok(html.includes("btn-copy-memo"), "Must render copy memo button");
+		assert.ok(html.includes("Кузнецов Петр"), "Must include patient name in memo text");
+		assert.ok(html.includes("ПАМЯТКА ПАЦИЕНТУ"), "Must render clear post-op title");
+	});
+
+	it("12. Mandate 8am & 8x: Exact Primary CTA button text and clean clinical terminology", () => {
+		const html = renderToString(
+			<ChairsideSurgeryHubModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>,
+		);
+
+		assert.ok(html.includes("✓ Зафиксировать операцию и внести в карту приёма &gt;"), "Must contain exact Mandate 8am Primary CTA text");
+		assert.ok(!html.includes("043/у"), "No Soviet order numbers in rendered HTML");
+		assert.ok(!html.includes("804н"), "No order numbers in rendered HTML");
+		assert.ok(!html.includes("54-ФЗ"), "No fiscal law numbers in rendered HTML");
+	});
 });

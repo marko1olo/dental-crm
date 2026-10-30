@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { FastPrintClinicInfo } from "./types";
 
 export function FastPrintLandlordForm({

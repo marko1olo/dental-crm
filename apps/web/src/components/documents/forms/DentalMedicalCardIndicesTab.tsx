@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { CpitnIndex } from "@dental/shared";
 import { CPITN_SEXTANT_OPTIONS, CPITN_TN_OPTIONS } from "./medicalCardIndices/cpitnOptions";
 import { CpitnSextantsGrid } from "./medicalCardIndices/CpitnSextantsGrid";
