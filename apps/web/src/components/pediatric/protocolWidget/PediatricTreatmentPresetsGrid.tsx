@@ -9,6 +9,7 @@ interface PediatricTreatmentPresetsGridProps {
 	readonly isInvasiveProtocol: boolean;
 	readonly consentSigned: boolean;
 	readonly onSignConsent323Fz: () => void;
+	readonly onConfirmConsent?: (() => void) | undefined;
 }
 
 export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGridProps> = ({
@@ -17,28 +18,33 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 	isInvasiveProtocol,
 	consentSigned,
 	onSignConsent323Fz,
+	onConfirmConsent,
 }) => {
+	const handleConsent = onConfirmConsent || onSignConsent323Fz;
+
 	return (
 		<>
 			{isInvasiveProtocol && !consentSigned && (
 				<div
 					className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-amber-500/40 bg-amber-500/10 p-2.5 text-xs text-amber-900 dark:text-amber-200"
-					data-testid="pediatric-323fz-alert-banner"
+					data-testid="pediatric-consent-alert-banner"
 				>
-					<div className="flex items-center gap-2 min-w-0">
-						<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
-						<span className="font-semibold truncate">
-							Выбрано инвазивное вмешательство. Требуется подтверждение информированного согласия (ИДС) представителя.
-						</span>
+					<div data-testid="pediatric-323fz-alert-banner" className="contents">
+						<div className="flex items-center gap-2 min-w-0">
+							<AlertCircle className="h-4 w-4 text-amber-600 dark:text-amber-400 shrink-0" />
+							<span className="font-semibold truncate">
+								Выбрано инвазивное вмешательство. Требуется подтверждение согласия законного представителя.
+							</span>
+						</div>
+						<button
+							type="button"
+							onClick={handleConsent}
+							className="min-h-[44px] sm:min-h-0 sm:h-7 px-3 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
+							data-testid="pediatric-btn-sign-consent"
+						>
+							<span data-testid="pediatric-btn-sign-consent-323fz">Согласие оформлено</span>
+						</button>
 					</div>
-					<button
-						type="button"
-						onClick={onSignConsent323Fz}
-						className="min-h-[32px] sm:min-h-0 sm:h-7 px-2.5 rounded-lg bg-teal-600 hover:bg-teal-700 text-white font-bold text-xs shrink-0 cursor-pointer transition active:scale-95"
-						data-testid="pediatric-btn-sign-consent-323fz"
-					>
-						ИДС оформлено
-					</button>
 				</div>
 			)}
 
@@ -78,3 +84,5 @@ export const PediatricTreatmentPresetsGrid: React.FC<PediatricTreatmentPresetsGr
 		</>
 	);
 };
+
+export default PediatricTreatmentPresetsGrid;

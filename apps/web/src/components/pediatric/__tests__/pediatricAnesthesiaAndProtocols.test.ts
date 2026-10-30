@@ -201,10 +201,10 @@ describe("Subagent 4: 0-Click Somatic Status & Purged Academic Clutter", () => {
 		expect(DEFAULT_PEDIATRIC_SOMATIC_NORM.physicalDevelopmentRu).toContain("соответствует");
 	});
 
-	it("default legal representative comes pre-configured with 323-FZ statutory reference", () => {
+	it("default legal representative comes pre-configured with clean human representative reference", () => {
 		expect(DEFAULT_LEGAL_REPRESENTATIVE.role).toBe("Мать");
 		expect(DEFAULT_LEGAL_REPRESENTATIVE.consentSigned).toBe(true);
-		expect(DEFAULT_LEGAL_REPRESENTATIVE.statutoryDocument).toContain("323-ФЗ");
+		expect(DEFAULT_LEGAL_REPRESENTATIVE.statutoryDocument).toContain("Законный представитель");
 	});
 });
 

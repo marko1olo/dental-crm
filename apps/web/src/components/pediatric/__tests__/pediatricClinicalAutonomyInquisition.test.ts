@@ -305,19 +305,15 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 	// ═══════════════════════════════════════════════════════════════════════════
 	// 4. LEGAL REPRESENTATIVE & 323-FZ ART. 20 (ANTI-DEADLOCK)
 	// ═══════════════════════════════════════════════════════════════════════════
-	describe("4. Legal Representative Verification (323-FZ Art. 20 & Family Code RF Art. 64)", () => {
-		it("provides statutory basis Art. 20 323-FZ and Art. 64 Family Code RF in default state", () => {
+	describe("4. Legal Representative Verification (Clean Russian & Non-blocking Consent)", () => {
+		it("provides statutory basis clean Russian in default state", () => {
 			assert.ok(
-				DEFAULT_LEGAL_REPRESENTATIVE.statutoryDocument.includes("323-ФЗ"),
-				"Default legal rep must cite 323-FZ",
-			);
-			assert.ok(
-				DEFAULT_LEGAL_REPRESENTATIVE.statutoryDocument.includes("64 СК РФ"),
-				"Default legal rep must cite Art. 64 Family Code RF",
+				DEFAULT_LEGAL_REPRESENTATIVE.statutoryDocument.includes("Законный представитель"),
+				"Default legal rep must state legal representative role",
 			);
 		});
 
-		it("renders non-blocking 323-FZ warning banner when consent is unsigned in PediatricSomaticAndLegalRep", () => {
+		it("renders non-blocking warning banner when consent is unsigned in PediatricSomaticAndLegalRep", () => {
 			const html = renderToString(
 				createElement(PediatricSomaticAndLegalRep, {
 					initialRepresentative: {
@@ -333,8 +329,8 @@ describe("Red Team Inquisition: Pediatric Dentistry & Frankl Behavior Protocols"
 				"Must render warning banner when consent is unsigned",
 			);
 			assert.ok(
-				html.includes("323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством"),
-				"Warning banner must cite 323-FZ Art. 20",
+				html.includes("Требуется согласие родителя на медицинское вмешательство"),
+				"Warning banner must use clean human Russian without raw statutory bureaucracy",
 			);
 			assert.ok(
 				html.includes(`data-testid="btn-one-click-sign-consent"`),

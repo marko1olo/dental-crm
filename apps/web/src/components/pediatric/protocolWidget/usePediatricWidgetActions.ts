@@ -49,8 +49,8 @@ export function usePediatricWidgetActions(
 	}, [onSelectSurfaces, state]);
 
 	const handleSignConsent323Fz = useCallback(() => {
-		state.setRepresentative({ ...state.representative, consentSigned: true, statutoryDocument: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)" });
-		showToast("ИДС законного представителя подтверждено (ст. 20 323-ФЗ)", "success", 2500);
+		state.setRepresentative({ ...state.representative, consentSigned: true, statutoryDocument: "Законный представитель (родитель / опекун)" });
+		showToast("Согласие законного представителя подтверждено", "success", 2500);
 	}, [state]);
 
 	const handleInsertToClinicalNote = useCallback(() => {

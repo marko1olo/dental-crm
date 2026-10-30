@@ -33,7 +33,7 @@ export const DEFAULT_LEGAL_REPRESENTATIVE: LegalRepresentativeData = {
 	role: "Мать",
 	fullName: "",
 	phone: "",
-	statutoryDocument: "ст. 20 323-ФЗ, ст. 64 СК РФ (законный представитель)",
+	statutoryDocument: "Законный представитель (родитель / опекун)",
 	consentSigned: true,
 };
 
@@ -48,8 +48,8 @@ export function formatPediatricRepresentativeText(
 
 	if (patientAge !== null && patientAge !== undefined && patientAge >= 15) {
 		const consentPart = rep.consentSigned
-			? "Согласие на лечение получено (пациент 15+ лет / представитель, ст. 54 323-ФЗ)"
-			: "Согласие может быть подписано пациентом самостоятельно (15+ лет, ст. 54 323-ФЗ) или представителем";
+			? "Согласие на лечение получено (пациент старше 15 лет / представитель)"
+			: "Согласие может быть подписано пациентом самостоятельно (старше 15 лет) или представителем";
 		return details
 			? `Родитель/представитель: ${repRole} (${details}). ${consentPart}.`
 			: `Родитель/представитель: ${repRole}. ${consentPart}.`;

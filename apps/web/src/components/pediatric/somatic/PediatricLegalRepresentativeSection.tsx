@@ -33,7 +33,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 
 			<div className="text-[11px] text-[var(--muted,#64748b)] font-medium">
 				<span>Законный представитель ребёнка</span>
-				<span className="ml-1 opacity-75">(ст. 64 СК РФ, ст. 20 323-ФЗ)</span>
+				<span className="ml-1 opacity-75">(родитель / опекун)</span>
 			</div>
 
 			<div className="flex flex-wrap gap-1" data-testid="pediatric-rep-role-chips">
@@ -45,7 +45,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 							key={r}
 							type="button"
 							onClick={() => setRepresentative((prev) => ({ ...prev, role: r }))}
-							className={`h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer ${
+							className={`min-h-[44px] sm:min-h-[28px] h-7 px-2.5 rounded-lg text-xs font-bold transition cursor-pointer active:scale-95 ${
 								isSelected
 									? "bg-teal-600 text-white shadow-xs"
 									: "bg-[var(--paper-soft,#f8fafc)] text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] hover:bg-[var(--paper-strong,#f1f5f9)]"
@@ -64,7 +64,7 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					value={representative.fullName}
 					onChange={(e) => setRepresentative((prev) => ({ ...prev, fullName: e.target.value }))}
 					placeholder="ФИО родителя (необязательно)"
-					className="h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-hidden"
+					className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-hidden"
 					data-testid="input-pediatric-rep-name"
 				/>
 				<input
@@ -72,49 +72,51 @@ export const PediatricLegalRepresentativeSection: React.FC<PediatricLegalReprese
 					value={representative.phone}
 					onChange={(e) => setRepresentative((prev) => ({ ...prev, phone: e.target.value }))}
 					placeholder="+7 (___) ___-__-__"
-					className="h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-hidden font-mono"
+					className="min-h-[44px] sm:min-h-[32px] h-8 px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink,#0f172a)] focus:border-teal-500 focus:outline-hidden font-mono"
 					data-testid="input-pediatric-rep-phone"
 				/>
 			</div>
 
 			<div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-[var(--line,#e2e8f0)]">
-				<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--ink,#0f172a)]">
+				<label className="flex items-center gap-2 cursor-pointer text-xs font-semibold text-[var(--ink,#0f172a)] min-h-[44px] sm:min-h-0">
 					<input
 						type="checkbox"
 						checked={representative.consentSigned}
 						onChange={(e) => setRepresentative((prev) => ({ ...prev, consentSigned: e.target.checked }))}
-						className="rounded text-teal-600 focus:ring-teal-500"
+						className="rounded text-teal-600 focus:ring-teal-500 w-4 h-4"
 						data-testid="checkbox-pediatric-consent-signed"
 					/>
 					<span>Согласие на приём оформлено</span>
 				</label>
 				{isMinor15Plus && (
 					<span className="text-[10px] font-bold text-sky-700 dark:text-sky-300">
-						Пациент 15+ лет (ст. 54 323-ФЗ)
+						Пациент старше 15 лет (вправе подписать согласие лично)
 					</span>
 				)}
 			</div>
 
 			{!representative.consentSigned && (
 				<div
-					className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2 flex items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-200"
+					className="rounded-lg border border-amber-300 bg-amber-50 dark:bg-amber-950/40 p-2.5 flex flex-wrap sm:flex-nowrap items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-200"
 					data-testid="rep-consent-warning-banner"
 				>
 					<span>
 						{isMinor15Plus
-							? "ст. 54 323-ФЗ: пациент старше 15 лет вправе подписать ИДС лично"
-							: "323-ФЗ ст. 20: требуется подписание ИДС родителем перед инвазивным вмешательством"}
+							? "Пациент старше 15 лет вправе подписать согласие на лечение лично"
+							: "Требуется согласие родителя на медицинское вмешательство"}
 					</span>
 					<button
 						type="button"
 						onClick={() => setRepresentative((prev) => ({ ...prev, consentSigned: true }))}
-						className="px-2 py-1 bg-amber-600 text-white rounded font-bold text-[11px] shrink-0"
+						className="min-h-[44px] sm:min-h-[28px] px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white rounded-lg font-bold text-xs shrink-0 cursor-pointer active:scale-95 transition"
 						data-testid="btn-one-click-sign-consent"
 					>
-						Подписать ИДС
+						Подтвердить согласие
 					</button>
 				</div>
 			)}
 		</div>
 	);
 };
+
+export default PediatricLegalRepresentativeSection;

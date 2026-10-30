@@ -396,8 +396,8 @@ describe("VisitPediatricProtocolWidget (Chairside 30-Second Pediatric Dental Wor
 			"Auto-substitutes mother's name without forcing extra fields",
 		);
 		assert.ok(
-			html.includes("ст. 64 СК РФ"),
-			"Contains Art. 64 Family Code RF legal representative reference",
+			html.includes("родитель / опекун") || html.includes("Законный представитель ребёнка"),
+			"Contains clean human legal representative reference",
 		);
 
 		// Contains pediatric teeth chart and somatic norm
