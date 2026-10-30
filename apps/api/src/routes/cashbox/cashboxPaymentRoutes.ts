@@ -16,8 +16,10 @@ import {
 	cashBoxes,
 	cashExpenseReasons,
 	cashOperations,
+	patientInvoices,
 	payments,
 	patients,
+	visits,
 } from "../../db/schema.js";
 import {
 	ensureOrganizationCashBoxes,
@@ -218,20 +220,31 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			headerIdemp?.trim() ||
 			`cbx-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
-		// Честная сумма: платеж без суммы невозможен. Нулевой расчет (скидка 100%)
-		// оформляется актом гарантийного обслуживания, а не кассовым платежом с чеком.
+		// Честная сумма: платеж без суммы невозможен, за исключением 100% гарантии врача (Мандаты 8e п. 7, 8n).
+		// Гарантийный расчёт оформляется закрытием счёта без фискального чека.
+		const isWarrantyPayment =
+			body.method === "warranty" ||
+			body.isWarranty === true ||
+			Boolean(
+				body.note &&
+					/(гаранти|передел|скидк.*100|100%|безвозмездн|warranty)/i.test(body.note),
+			);
+
 		let totalKopecks = 0n;
 		if (body.amountKopecks !== undefined) {
 			totalKopecks = BigInt(body.amountKopecks);
 		} else if (body.amountRub !== undefined) {
 			totalKopecks = BigInt(Math.round(body.amountRub * 100));
 		}
-		if (totalKopecks <= 0n) {
+		if (totalKopecks <= 0n && !isWarrantyPayment) {
 			return reply.code(400).send({
 				error: "ZeroAmountPayment",
 				message:
-					"Сумма платежа обязана быть больше нуля. Для гарантийной переделки со скидкой 100% оформите акт списания услуг без кассового чека.",
+					"Сумма платежа обязана быть больше нуля. Для гарантийной переделки со скидкой 100% укажите метод «warranty» или передайте флаг isWarranty.",
 			});
+		}
+		if (isWarrantyPayment && totalKopecks <= 0n) {
+			totalKopecks = 0n;
 		}
 
 		// Честная атрибуция: платеж проводится строго на выбранного пациента.
@@ -287,9 +300,9 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 			}
 			const resolvedPatientId = requestedPatientId;
 
-			// Генерируем номер кассового чека
-			const receiptNumber = `ФД-${Date.now().toString().slice(-6)}`;
-			const issuedAt = new Date().toISOString();
+			// Генерируем номер кассового чека (при гарантии 100% чек не пробивается)
+			const receiptNumber = isWarrantyPayment ? null : `ФД-${Date.now().toString().slice(-6)}`;
+			const issuedAt = isWarrantyPayment ? null : new Date().toISOString();
 
 			// 1. Фиксация платежа в таблице payments
 			const [newPayment] = await tx
@@ -306,12 +319,96 @@ export async function registerCashboxPaymentRoutes(app: FastifyInstance): Promis
 					fiscalReceiptNumber: receiptNumber,
 					fiscalReceiptIssuedAt: issuedAt,
 					payerFullName: body.cashierFullName || "Кассир",
-					note: body.note || `Оплата через кассу (${body.method || "card"})`,
+					note: body.note || (isWarrantyPayment ? "Гарантийный расчёт (скидка 100%)" : `Оплата через кассу (${body.method || "card"})`),
 				})
 				.returning();
 
 			if (!newPayment) {
 				throw new Error("Не удалось зафиксировать платёж в базе данных");
+			}
+
+			// 2. Списание счетов и визита в статус paid_warranty при гарантийном закрытии
+			if (isWarrantyPayment) {
+				if (body.invoiceId) {
+					await tx
+						.update(patientInvoices)
+						.set({
+							status: "paid_warranty",
+							paidAt: new Date(),
+						})
+						.where(
+							and(
+								eq(patientInvoices.id, body.invoiceId),
+								eq(patientInvoices.organizationId, orgId),
+							),
+						);
+				}
+				if (body.visitId) {
+					await tx
+						.update(patientInvoices)
+						.set({
+							status: "paid_warranty",
+							paidAt: new Date(),
+						})
+						.where(
+							and(
+								eq(patientInvoices.visitId, body.visitId),
+								eq(patientInvoices.organizationId, orgId),
+							),
+						);
+
+					await tx
+						.update(visits)
+						.set({ updatedAt: new Date() })
+						.where(and(eq(visits.id, body.visitId), eq(visits.organizationId, orgId)));
+				}
+
+				return {
+					id: newPayment.id,
+					amountKopecks: 0,
+					amountRub: 0,
+					method: "warranty",
+					status: "paid_warranty",
+					isWarranty: true,
+					fiscalReceiptNumber: null,
+					clientMutationId: effectiveMutationId,
+					note: newPayment.note,
+				};
+			}
+
+			// Если передан invoiceId или visitId для обычного платежа — закрываем счёт со статусом paid
+			if (body.invoiceId) {
+				await tx
+					.update(patientInvoices)
+					.set({
+						status: "paid",
+						paidAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patientInvoices.id, body.invoiceId),
+							eq(patientInvoices.organizationId, orgId),
+						),
+					);
+			}
+			if (body.visitId) {
+				await tx
+					.update(patientInvoices)
+					.set({
+						status: "paid",
+						paidAt: new Date(),
+					})
+					.where(
+						and(
+							eq(patientInvoices.visitId, body.visitId),
+							eq(patientInvoices.organizationId, orgId),
+						),
+					);
+
+				await tx
+					.update(visits)
+					.set({ updatedAt: new Date() })
+					.where(and(eq(visits.id, body.visitId), eq(visits.organizationId, orgId)));
 			}
 
 			// 2. Инициализируем и находим кассовые счета клиники

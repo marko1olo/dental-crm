@@ -391,6 +391,46 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 			});
 			assert.equal(replayRes.statusCode, 200);
 			assert.equal(replayRes.json().data.id, sbpJson.data.id);
+
+			// 6. Гарантийный расчёт со скидкой 100% (Мандаты 8e, 8n): метод "warranty" не крашится с ZeroAmountPayment,
+			// а честно закрывает счёт без кассового чека со статусом paid_warranty
+			const warrantyRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 0,
+					amountKopecks: 0,
+					method: "warranty",
+					clientMutationId: `cbx-test-warranty-${Date.now()}`,
+				},
+			});
+			assert.equal(warrantyRes.statusCode, 200, "100% warranty payment must return 200");
+			const warrantyJson = warrantyRes.json();
+			assert.equal(warrantyJson.success, true);
+			assert.equal(warrantyJson.data.status, "paid_warranty");
+			assert.equal(warrantyJson.data.isWarranty, true);
+			assert.equal(warrantyJson.data.amountKopecks, 0);
+			assert.equal(warrantyJson.data.fiscalReceiptNumber, null, "Warranty settlement must not emit fiscal receipt");
+
+			// 7. Гарантийный расчёт через флаг isWarranty: true
+			const isWarrantyRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 0,
+					isWarranty: true,
+					clientMutationId: `cbx-test-iswarranty-${Date.now()}`,
+				},
+			});
+			assert.equal(isWarrantyRes.statusCode, 200, "isWarranty: true payment must return 200");
+			const isWarrantyJson = isWarrantyRes.json();
+			assert.equal(isWarrantyJson.success, true);
+			assert.equal(isWarrantyJson.data.status, "paid_warranty");
+			assert.equal(isWarrantyJson.data.isWarranty, true);
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

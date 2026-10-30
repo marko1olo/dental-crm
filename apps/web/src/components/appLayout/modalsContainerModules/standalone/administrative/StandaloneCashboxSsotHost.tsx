@@ -11,7 +11,7 @@
 
 import React, { useState, useEffect } from "react";
 import { CreditCard, FileText, Plus, ShieldCheck, ArrowLeft, RefreshCw } from "lucide-react";
-import { CashRegisterCheckoutModal } from "../../../../billing/CashRegisterCheckoutModal";
+import { CashRegisterCheckoutModal } from "../../../../cashbox/CashRegisterCheckoutModal";
 import { CashShiftClosingModal } from "../../../../cashbox/CashShiftClosingModal";
 import { CashShiftJournalView } from "../../../../cashbox/CashShiftJournalView";
 

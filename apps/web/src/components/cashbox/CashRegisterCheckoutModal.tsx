@@ -257,6 +257,7 @@ export const CashRegisterCheckoutModal: React.FC<CashRegisterCheckoutModalProps>
 							return (
 								<button
 									key={d.percent} type="button"
+									data-testid={d.isWarranty ? "doctor-discount-warranty" : `doctor-discount-${d.percent}`}
 									onClick={() => {
 										if (d.isWarranty) { setIsWarranty(!isWarranty); setDiscountPercent(0); }
 										else { setIsWarranty(false); setDiscountPercent(discountPercent === d.percent ? 0 : d.percent); }

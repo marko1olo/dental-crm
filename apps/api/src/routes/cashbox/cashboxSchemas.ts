@@ -91,6 +91,7 @@ export const retryFiscalizeParamsSchema = z.object({
 export const cashboxPaymentRequestSchema = z.object({
 	patientId: z.string().uuid().optional(),
 	visitId: z.string().uuid().optional(),
+	invoiceId: z.string().optional(),
 	orderId: z.string().trim().max(128).optional(),
 	amountKopecks: z.union([z.number().int().nonnegative(), z.bigint()]).optional(),
 	amountRub: nonNegativeMoneyRubSchema.optional(),
@@ -106,6 +107,7 @@ export const cashboxPaymentRequestSchema = z.object({
 		"online",
 		"insurance",
 	]).optional().default("card"),
+	isWarranty: z.boolean().optional(),
 	cashAmountKopecks: z.number().int().nonnegative().optional(),
 	electronicAmountKopecks: z.number().int().nonnegative().optional(),
 	depositAmountKopecks: z.number().int().nonnegative().optional(),
@@ -115,4 +117,7 @@ export const cashboxPaymentRequestSchema = z.object({
 	note: z.string().trim().max(500).optional(),
 	isElectronicReceiptOnly: z.boolean().optional(),
 	customerContact: z.string().trim().max(128).optional(),
+	clientType: z.string().trim().optional(),
+	buyerInn: z.string().trim().optional(),
+	printFormat: z.string().trim().optional(),
 });
