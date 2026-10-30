@@ -1,6 +1,7 @@
 import React from "react";
 import { DentalLabOrderModal } from "../DentalLabOrderModal";
 import { DentalLabOrderDrawer } from "../DentalLabOrderDrawer";
+import { DentalLabOrdersHubModal } from "../DentalLabOrdersHubModal";
 import type { DentalLabOrderData } from "../dentalLabDefinitions";
 import type { LabPriceMatrixItem } from "../DentalLabPriceMatrixModal";
 import { DentalLabPriceMatrixModal } from "../DentalLabPriceMatrixModal";
@@ -43,6 +44,7 @@ export function LabOrderDetailsDrawer({
 	isWorkOrderModalOpen, onCloseWorkOrderModal, selectedOrderForEdit,
 	modalInitialTab, onOrderSaved, isPriceMatrixModalOpen, onClosePriceMatrixModal,
 	onSelectWorkType, isOrderDrawerOpen, onCloseOrderDrawer, view3DScanOrder, onClose3DScanViewer,
+	isHubModalOpen, onCloseHubModal,
 }: LabOrderDetailsDrawerProps): React.JSX.Element {
 	const scanModelFormat = view3DScanOrder?.attachedImageUrl && /\.ply($|[?#])/i.test(view3DScanOrder.attachedImageUrl)
 		? "ply"
@@ -98,6 +100,13 @@ export function LabOrderDetailsDrawer({
 					patientName={view3DScanOrder.patientName}
 					scanTitle={`3D-скан челюсти: Наряд #${view3DScanOrder.id ? view3DScanOrder.id.slice(0, 8) : ""} (${view3DScanOrder.toothFdi ? `зуб ${view3DScanOrder.toothFdi}` : "челюсть"})`}
 					toothCode={view3DScanOrder.toothFdi ?? undefined} orderId={view3DScanOrder.id}
+				/>
+			)}
+			{isHubModalOpen && (
+				<DentalLabOrdersHubModal
+					isOpen={Boolean(isHubModalOpen)}
+					onClose={onCloseHubModal || (() => {})}
+					onSaveOrder={() => onOrderSaved()}
 				/>
 			)}
 		</>

@@ -6,6 +6,7 @@
  * 2. CashShiftClosingModal: 4 revenue tenders, expected vs counted cash, terminal reconciliation, 1 Primary CTA.
  * 3. CashShiftJournalView: shift list, OFD status, print report buttons, 1 Primary CTA.
  * 4. Mandate 8e (0 disabled buttons), Mandate 8am (1 Primary CTA), Mandate 8x (Domain purity).
+ * 5. cashboxCatalogData & DirectCashboxLauncher mounting and event contracts.
  */
 
 import React from "react";
@@ -15,6 +16,15 @@ import { renderToString } from "react-dom/server";
 import { CashRegisterCheckoutModal } from "../CashRegisterCheckoutModal";
 import { CashShiftClosingModal } from "../CashShiftClosingModal";
 import { CashShiftJournalView } from "../CashShiftJournalView";
+import { DirectCashboxLauncher } from "../DirectCashboxLauncher";
+import {
+	CASHBOX_TENDER_PRESETS,
+	CASH_DENOMINATIONS,
+	QUICK_CASH_PRESET_BILLS,
+	PAYER_TYPE_PRESETS,
+	DOCTOR_DISCOUNT_PRESETS,
+	SPLIT_PAYMENT_PRESETS,
+} from "../cashboxCatalogData";
 
 describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 	describe("1. CashRegisterCheckoutModal (SSOT Checkout)", () => {
@@ -168,6 +178,48 @@ describe("Domain 4 SSOT Cashbox & Shift Screens Invariants", () => {
 			// 6. Desktop table and mobile grouped cards classes
 			assert.ok(html.includes("hidden md:block"), "Must have desktop table container");
 			assert.ok(html.includes("md:hidden"), "Must have mobile cards container");
+		});
+	});
+
+	describe("4. Cashbox Catalog Data Presets & Invariants", () => {
+		it("enforces Mandate 8n: Physical persons have isInnRequired = false", () => {
+			const phys = PAYER_TYPE_PRESETS.find((p) => p.id === "physical_person");
+			assert.ok(phys, "Physical person preset must exist");
+			assert.equal(phys?.isInnRequired, false, "Physical person must never require INN");
+
+			const legal = PAYER_TYPE_PRESETS.find((p) => p.id === "legal_entity");
+			assert.ok(legal, "Legal entity preset must exist");
+			assert.equal(legal?.isInnRequired, true);
+			assert.equal(legal?.innLength, 10);
+
+			const soleProp = PAYER_TYPE_PRESETS.find((p) => p.id === "sole_proprietor");
+			assert.ok(soleProp, "Sole proprietor preset must exist");
+			assert.equal(soleProp?.isInnRequired, true);
+			assert.equal(soleProp?.innLength, 12);
+		});
+
+		it("contains 5 canonical payment tenders with clean Russian labels", () => {
+			assert.equal(CASHBOX_TENDER_PRESETS.length, 5);
+			const ids = CASHBOX_TENDER_PRESETS.map((t) => t.id);
+			assert.deepEqual(ids, ["card", "cash", "sbp", "deposit", "split"]);
+		});
+
+		it("contains standard denominations and quick bills (1000, 2000, 5000)", () => {
+			assert.ok(CASH_DENOMINATIONS.length >= 6);
+			assert.deepEqual(QUICK_CASH_PRESET_BILLS, [1000, 2000, 5000]);
+		});
+
+		it("contains doctor discounts including 100% warranty (Mandate 8e)", () => {
+			const warranty = DOCTOR_DISCOUNT_PRESETS.find((d) => d.isWarranty);
+			assert.ok(warranty);
+			assert.equal(warranty?.percent, 100);
+		});
+	});
+
+	describe("5. DirectCashboxLauncher SSR & UI Tree Mounting", () => {
+		it("renders null on SSR when no hash/search is active", () => {
+			const html = renderToString(<DirectCashboxLauncher />);
+			assert.equal(html, "");
 		});
 	});
 });

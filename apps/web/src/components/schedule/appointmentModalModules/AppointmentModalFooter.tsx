@@ -66,12 +66,12 @@ export function AppointmentModalFooter({
             {isSaving
               ? "Сохраняю…"
               : collision.isCitoOverbooking || isCito
-                ? "Сохранить срочно (Острая боль)"
+                ? "✓ Сохранить срочно (Острая боль)"
                 : collision.hasCollision
-                  ? "Записать на это время (острая боль)"
+                  ? "✓ Записать на это время"
                   : isNewAppointment
-                    ? "Записать на приём"
-                    : "Сохранить запись"}
+                    ? "✓ Записать пациента"
+                    : "✓ Сохранить изменения"}
           </span>
         </button>
       </div>

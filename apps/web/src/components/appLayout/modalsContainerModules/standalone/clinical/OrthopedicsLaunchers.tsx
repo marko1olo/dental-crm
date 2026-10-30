@@ -9,7 +9,6 @@ import { isPatientPresentationRoute } from "../../../../photography/presentation
 import { OrthopedicsChairsidePanel } from "../../../../orthopedics/OrthopedicsChairsidePanel";
 import { DentalLabOrderModal } from "../../../../lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "../../../../lab/DentalLabOrdersHubModal";
-import { getSampleDentalLabOrders } from "../../../../lab/hub/dentalLabHubSampleOrders";
 
 const PatientPresentationStandaloneView = lazyWithRetry(() =>
 	import("../../../../photography/PatientPresentationStandaloneView").then((m) => ({
@@ -32,7 +31,6 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 		return (
 			<DentalLabOrdersHubModal
 				isOpen={true}
-				initialOrders={getSampleDentalLabOrders()}
 				onClose={() => {
 					window.location.hash = "";
 				}}

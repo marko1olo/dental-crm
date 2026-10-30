@@ -13,6 +13,16 @@ import {
   isTechnicalBreakAppointment,
   type AppointmentModalProps,
 } from "./appointmentModalModules/appointmentModalTypes";
+import {
+  DURATION_PRESETS,
+  SCHEDULE_DURATION_OPTIONS,
+  formatDurationLabel,
+  validateAppointmentDuration,
+  validateAppointmentTimeRange,
+  formatSlotRange,
+  APPOINTMENT_REFUSAL_REASONS,
+  APPOINTMENT_TYPE_PRESETS,
+} from "./scheduleCatalogData";
 import { AppointmentModalDialog } from "./appointmentModalModules/AppointmentModalDialog";
 import "./schedule.css";
 
@@ -21,6 +31,14 @@ export {
   QUICK_APPOINTMENT_REASONS,
   TECHNICAL_BREAK_PRESETS,
   isTechnicalBreakAppointment,
+  DURATION_PRESETS,
+  SCHEDULE_DURATION_OPTIONS,
+  formatDurationLabel,
+  validateAppointmentDuration,
+  validateAppointmentTimeRange,
+  formatSlotRange,
+  APPOINTMENT_REFUSAL_REASONS,
+  APPOINTMENT_TYPE_PRESETS,
 };
 export type { AppointmentModalProps };
 

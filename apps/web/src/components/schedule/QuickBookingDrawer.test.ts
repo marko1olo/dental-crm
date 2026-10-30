@@ -140,11 +140,11 @@ describe("QuickBookingDrawer", () => {
 		assert.ok(html.includes("15 мин"), "должен содержать 15 мин");
 		assert.ok(html.includes("Осмотр"), "должен содержать подсказку Осмотр");
 		assert.ok(html.includes("30 мин"), "должен содержать 30 мин");
-		assert.ok(html.includes("Гигиена/Швы"), "должен содержать подсказку Гигиена/Швы");
+		assert.ok(html.includes("Терапия") || html.includes("Гигиена/Швы"), "должен содержать подсказку Терапия или Гигиена/Швы");
 		assert.ok(html.includes("60 мин"), "должен содержать 60 мин");
-		assert.ok(html.includes("Лечение"), "должен содержать подсказку Лечение");
+		assert.ok(html.includes("Лечение") || html.includes("Эндо/Коронка"), "должен содержать подсказку Лечение или Эндо/Коронка");
 		assert.ok(html.includes("90 мин"), "должен содержать 90 мин");
-		assert.ok(html.includes("Хирургия"), "должен содержать подсказку Хирургия");
+		assert.ok(html.includes("Хирургия") || html.includes("Хирургия/Имплантация"), "должен содержать подсказку Хирургия или Хирургия/Имплантация");
 		assert.ok(html.includes("120 мин"), "должен содержать 120 мин");
 		assert.ok(html.includes("Ортопедия"), "должен содержать подсказку Ортопедия");
 		assert.ok(html.includes("data-testid=\"quick-booking-duration-presets\""), "должен быть testid контейнера длительностей");

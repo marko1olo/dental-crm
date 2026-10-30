@@ -156,11 +156,11 @@ export function QuickBookingDrawerFooter({
           {isSubmitting ? (
             "Сохраняю запись…"
           ) : hasCollision ? (
-            "Записать на это время (острая боль)"
+            "✓ Записать на это время"
           ) : (
             <>
-              Записать на приём
-              <span className="hidden sm:inline font-normal opacity-90"> (Создать запись Ctrl+Enter)</span>
+              ✓ Записать пациента
+              <span className="hidden sm:inline font-normal opacity-90"> (Ctrl+Enter)</span>
             </>
           )}
         </span>
@@ -352,7 +352,7 @@ export function QuickBookingDrawer(props: QuickBookingDrawerProps) {
             className="w-full flex items-center justify-center pt-3 pb-1 shrink-0 bg-[var(--paper-soft)] cursor-grab active:cursor-grabbing border-b border-[var(--line-subtle,#e2e8f0)]/30"
             aria-hidden="true"
           >
-            <div className="w-10 h-1.5 rounded-full bg-[var(--muted)]/40 hover:bg-[var(--muted)]/60 transition-colors" />
+            <div className="w-[36px] h-[5px] rounded-full bg-[var(--line-strong,var(--line))] hover:bg-[var(--muted)]/60 transition-colors" />
           </div>
         )}
 

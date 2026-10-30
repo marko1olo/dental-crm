@@ -188,7 +188,7 @@ export function DentalLabOrdersModal(props: ExtendedDentalLabOrderModalProps): R
 							onClick={() => form.handleApplyExpressPreset(p)}
 							className="px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-[#0d9488] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/20 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium whitespace-nowrap transition cursor-pointer shrink-0"
 						>
-							{(p as any).name || (p as any).title || p.badge}
+							{p.badge || (p as any).name || (p as any).title}
 						</button>
 					))}
 				</div>

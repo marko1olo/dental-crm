@@ -16,6 +16,7 @@ import "./styles/contrast-fixes.css";
 import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 import "./theme.css";
+import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { CashRegisterCheckoutModal } from "./components/cashbox/CashRegisterCheckoutModal";
 import { CashShiftJournalView } from "./components/cashbox/CashShiftJournalView";
 
@@ -26,14 +27,10 @@ function CashboxPreviewApp() {
 	const isDark = themeParam === "dark" || themeParam === "night";
 
 	useEffect(() => {
-		document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
-		if (isDark) {
-			document.documentElement.classList.add("dark");
-			document.documentElement.classList.remove("light");
-		} else {
-			document.documentElement.classList.add("light");
-			document.documentElement.classList.remove("dark");
-		}
+		applyThemeToRoot(
+			document.documentElement,
+			resolveTheme(isDark ? "dark" : "light", isDark)
+		);
 	}, [isDark]);
 
 	if (viewParam === "journal") {

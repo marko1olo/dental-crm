@@ -2,6 +2,7 @@ import React from "react";
 import {
 	DollarSign,
 	FlaskConical,
+	Layers,
 	Plus,
 	RefreshCw,
 	Search,
@@ -16,6 +17,7 @@ export function LabOrdersFilterBar({
 	onDoctorFilterChange,
 	doctorsList,
 	onOpenPriceMatrix,
+	onOpenHubModal,
 	onRefresh,
 	isLoading,
 	onOpenNewOrder,
@@ -68,6 +70,19 @@ export function LabOrdersFilterBar({
 
 			{/* Right: Actions (Прейскурант, Обновить, Новый наряд) */}
 			<div className="flex items-center gap-1.5 shrink-0">
+				{onOpenHubModal && (
+					<button
+						type="button"
+						onClick={onOpenHubModal}
+						className="h-9 min-h-[36px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] font-medium text-xs shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
+						data-testid="btn-open-lab-hub"
+						title="Канбан-хаб лаборатории"
+					>
+						<Layers className="w-3.5 h-3.5 text-[var(--ink-muted)] shrink-0" />
+						<span className="hidden sm:inline">Канбан-хаб</span>
+					</button>
+				)}
+
 				<button
 					type="button"
 					onClick={onOpenPriceMatrix}

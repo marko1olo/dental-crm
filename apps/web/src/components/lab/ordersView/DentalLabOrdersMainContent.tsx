@@ -35,6 +35,7 @@ export function DentalLabOrdersMainContent({
 				onDoctorFilterChange={setDoctorFilter}
 				doctorsList={doctorsList}
 				onOpenPriceMatrix={() => setIsPriceMatrixModalOpen(true)}
+				onOpenHubModal={() => logic.setIsHubModalOpen(true)}
 				onRefresh={() => void fetchOrders()}
 				isLoading={isLoading}
 				onOpenNewOrder={handleOpenNewOrder}

@@ -218,15 +218,33 @@ async function main() {
 			await injectStorage(context, auth, cfg.theme);
 			const page = await context.newPage();
 
+			page.on("console", (msg) => {
+				if (msg.type() === "error") {
+					console.log(`   [BROWSER ERROR ${cfg.key}] ${msg.text()}`);
+				}
+			});
+			page.on("pageerror", (err) => {
+				console.log(`   [PAGE CRASH ${cfg.key}] ${err.message}`);
+			});
+
 			try {
-				await page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 35000 });
+				await page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "networkidle", timeout: 35000 }).catch(() => {
+					return page.goto(`${WEB_BASE}/#schedule`, { waitUntil: "domcontentloaded", timeout: 35000 });
+				});
 
 				// Wait for initial loading splash to disappear and CRM shell to hydrate
-				for (let i = 0; i < 30; i++) {
+				for (let i = 0; i < 40; i++) {
 					await page.waitForTimeout(500);
 					try {
 						const text = await page.evaluate(() => document.body ? document.body.innerText : "");
-						if (!text.includes("Загрузка CRM") && !text.includes("Подготовка модулей") && text.length > 200) break;
+						if (
+							!text.includes("Загрузка CRM") &&
+							!text.includes("Подготовка модулей") &&
+							!text.includes("Загрузка системы") &&
+							text.length > 100
+						) {
+							break;
+						}
 					} catch (_) {
 						// Context destroyed due to router redirect, will retry next tick
 					}
@@ -234,32 +252,43 @@ async function main() {
 
 				// Wait for schedule-specific layout to be mounted
 				if (cfg.isMobile) {
-					await page.waitForSelector('[data-testid="schedule-mobile-agenda-view"], .schedule-mobile-agenda, [data-testid="schedule-mobile-add-btn"]', { timeout: 15000 }).catch(() => {});
+					await page.waitForSelector('[data-testid="schedule-mobile-agenda-view"], .schedule-mobile-agenda, [data-testid="schedule-mobile-add-btn"], [data-testid="quick-drawer-save-btn"]', { timeout: 20000 }).catch(() => {});
 				} else {
-					await page.waitForSelector('.schedule-unified-toolbar, [data-testid="schedule-toolbar-primary-quick-booking-btn"], .schedule-grid, [data-testid="schedule-view"]', { timeout: 15000 }).catch(() => {});
+					await page.waitForSelector('.schedule-unified-toolbar, [data-testid="schedule-toolbar-primary-quick-booking-btn"], .schedule-grid, [data-testid="schedule-view"], [data-testid="quick-drawer-save-btn"]', { timeout: 20000 }).catch(() => {});
 				}
 
 				await suppressOverlays(page);
 				await setTheme(page, cfg.theme);
-				await page.waitForTimeout(cfg.isMobile ? 3000 : 2500);
+				await page.waitForTimeout(cfg.isMobile ? 2000 : 2000);
 
 				// Detect BootErrorBoundary and auto-recover if backend was momentarily busy
 				const isBootError = await page.evaluate(() => {
 					const t = document.body ? document.body.innerText : "";
-					return t.includes("Не удалось открыть рабочее место") || !!document.querySelector(".boot-state-error");
+					return (
+						t.includes("Не удалось открыть рабочее место") ||
+						t.includes("Загрузка системы...") ||
+						!!document.querySelector(".boot-state-error")
+					);
 				});
 				if (isBootError) {
-					console.log(`   ⚠️ [Auto-Retry] BootError detected for ${cfg.key}, refreshing session...`);
-					await page.waitForTimeout(2000);
-					await page.reload({ waitUntil: "domcontentloaded", timeout: 35000 });
-					for (let i = 0; i < 30; i++) {
+					console.log(`   ⚠️ [Auto-Retry] BootState detected for ${cfg.key}, refreshing session...`);
+					await page.waitForTimeout(1500);
+					await page.reload({ waitUntil: "networkidle", timeout: 35000 }).catch(() => {});
+					for (let i = 0; i < 40; i++) {
 						await page.waitForTimeout(500);
 						const text = await page.evaluate(() => document.body ? document.body.innerText : "");
-						if (!text.includes("Загрузка CRM") && !text.includes("Не удалось открыть") && text.length > 200) break;
+						if (
+							!text.includes("Загрузка CRM") &&
+							!text.includes("Не удалось открыть") &&
+							!text.includes("Загрузка системы") &&
+							text.length > 100
+						) {
+							break;
+						}
 					}
 					await suppressOverlays(page);
 					await setTheme(page, cfg.theme);
-					await page.waitForTimeout(2500);
+					await page.waitForTimeout(2000);
 				}
 
 				await page.screenshot({ path: shotPath, fullPage: false, animations: "disabled" });
@@ -272,6 +301,18 @@ async function main() {
 					fs.copyFileSync(shotPath, altPath);
 					console.log(`   [Alias OK] ${altName}`);
 				}
+
+				// Canonical hub naming
+				const hubName = cfg.file.replace("_grid_", "_hub_").replace("_agenda_", "_hub_");
+				const hubPath = path.join(OUT_DIR, hubName);
+				fs.copyFileSync(shotPath, hubPath);
+				console.log(`   [Hub Alias OK] ${hubName}`);
+
+				// Plain 4-state naming
+				const plainName = `${cfg.key}.png`;
+				const plainPath = path.join(OUT_DIR, plainName);
+				fs.copyFileSync(shotPath, plainPath);
+				console.log(`   [Plain Alias OK] ${plainName}`);
 			} finally {
 				await context.close();
 			}

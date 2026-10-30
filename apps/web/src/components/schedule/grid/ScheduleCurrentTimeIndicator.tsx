@@ -18,7 +18,10 @@ function parseSlotMinutes(slot: string): number {
 
 function getCurrentTimeInfo(dateKey: string, timezone?: string) {
   const now = new Date();
-  let todayStr = now.toISOString().slice(0, 10);
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  let todayStr = `${y}-${m}-${d}`;
   let nowHours = now.getHours();
   let nowMinutes = now.getMinutes();
 
@@ -34,14 +37,14 @@ function getCurrentTimeInfo(dateKey: string, timezone?: string) {
         hour12: false,
       });
       const parts = formatter.formatToParts(now);
-      const y = parts.find((p) => p.type === "year")?.value;
-      const m = parts.find((p) => p.type === "month")?.value;
-      const d = parts.find((p) => p.type === "day")?.value;
-      const hr = parts.find((p) => p.type === "hour")?.value;
-      const min = parts.find((p) => p.type === "minute")?.value;
-      if (y && m && d) todayStr = `${y}-${m}-${d}`;
-      if (hr !== undefined) nowHours = Number.parseInt(hr, 10);
-      if (min !== undefined) nowMinutes = Number.parseInt(min, 10);
+      const py = parts.find((p) => p.type === "year")?.value;
+      const pm = parts.find((p) => p.type === "month")?.value;
+      const pd = parts.find((p) => p.type === "day")?.value;
+      const phr = parts.find((p) => p.type === "hour")?.value;
+      const pmin = parts.find((p) => p.type === "minute")?.value;
+      if (py && pm && pd) todayStr = `${py}-${pm}-${pd}`;
+      if (phr !== undefined) nowHours = Number.parseInt(phr, 10);
+      if (pmin !== undefined) nowMinutes = Number.parseInt(pmin, 10);
     } catch {
       // fallback to local time
     }
@@ -63,7 +66,7 @@ export const ScheduleCurrentTimeIndicator: React.FC<ScheduleCurrentTimeIndicator
   timeSlots,
   gridStep,
   dateKey,
-  timezone = "Europe/Moscow",
+  timezone,
   baseSlotHeightPx = 52,
   leftOffset = "clamp(68px, 5.5vw, 76px)",
 }) => {

@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
+import { DentalLabOrdersHubModal } from "./components/lab/DentalLabOrdersHubModal";
 import { DentalLabOrdersKanbanBoard, CANONICAL_4_KANBAN_COLUMNS } from "./components/lab/DentalLabOrdersKanbanBoard";
 import type { LabWorkflowStatus, DentalLabWorkflowOrder } from "./components/lab/dentalLabWorkflowEngine";
 import { CANONICAL_DEMO_LAB_ORDERS } from "./components/lab/ordersView/canonicalDemoLabOrders";
@@ -21,11 +22,11 @@ import "./theme.css";
 function LabPreviewApp() {
 	const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
 	const initialTheme = (params.get("theme") as "light" | "dark") || "light";
-	const initialView = (params.get("view") as "modal" | "kanban" | "schedule") || "modal";
+	const initialView = (params.get("view") as "modal" | "kanban" | "schedule" | "hub") || "kanban";
 	const initialTab = (params.get("tab") as "main" | "shades" | "stages" | "print") || "main";
 
 	const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
-	const [view, setView] = useState<"modal" | "kanban" | "schedule">(initialView);
+	const [view, setView] = useState<"modal" | "kanban" | "schedule" | "hub">(initialView);
 	const [modalTab, setModalTab] = useState<"main" | "shades" | "stages" | "print">(initialTab);
 	const [isModalOpen, setIsModalOpen] = useState(initialView === "modal");
 
@@ -58,6 +59,22 @@ function LabPreviewApp() {
 				toothFdi: "16",
 				selectedTeeth: [16],
 				priceRub: 14500,
+			},
+			{
+				id: "wf-5",
+				orderNumber: "ZTL-2026-092",
+				patientName: "Филиппова Елена Сергеевна",
+				doctorName: "Д-р Смирнова Е. В.",
+				currentStage: "sent_to_lab" as const,
+				dueDate: new Date(Date.now() + 3 * 86400000).toISOString(),
+				createdAt: new Date().toISOString(),
+				isUrgent: true,
+				constructionType: "Циркониевая коронка Katana",
+				material: "Multilayer Katana STML",
+				colorVita: "A1",
+				toothFdi: "21",
+				selectedTeeth: [21],
+				priceRub: 22000,
 			},
 		],
 		in_progress: [
@@ -120,52 +137,63 @@ function LabPreviewApp() {
 	return (
 		<div className="min-h-screen bg-[var(--bg,#f8fafc)] text-[var(--ink,#0f172a)] flex flex-col font-sans">
 			{/* Preview Toolbar */}
-			<header className="px-4 py-2.5 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#cbd5e1)] flex items-center justify-between gap-3 shrink-0">
+			<header className="px-3 sm:px-4 py-2 sm:py-2.5 bg-[var(--paper,#ffffff)] border-b border-[var(--line,#cbd5e1)] flex flex-wrap items-center justify-between gap-2 shrink-0">
 				<div className="flex items-center gap-2">
 					<FlaskConical className="w-5 h-5 text-[#0d9488]" />
-					<h1 className="text-sm font-extrabold text-[var(--ink,#0f172a)]">
+					<h1 className="text-xs sm:text-sm font-extrabold text-[var(--ink,#0f172a)] whitespace-nowrap">
 						DENTE ZTL · Red Team Stand
 					</h1>
-					<span className="px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
+					<span className="hidden sm:inline-block px-2 py-0.5 rounded text-[10px] font-bold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/20">
 						SSOT Consolidated
 					</span>
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap">
 					{/* View Switch */}
-					<div className="flex items-center rounded-xl border border-[var(--line,#cbd5e1)] p-0.5 bg-[var(--paper-soft,#f1f5f9)]">
+					<div className="flex items-center rounded-xl border border-[var(--line,#cbd5e1)] p-0.5 bg-[var(--paper-soft,#f1f5f9)] overflow-x-auto">
 						<button
 							type="button"
 							onClick={() => { setView("modal"); setIsModalOpen(true); }}
-							className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+							className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								view === "modal" ? "bg-[var(--paper,#ffffff)] shadow-2xs text-[#0d9488]" : "text-[var(--muted,#64748b)]"
 							}`}
 							data-testid="preview-switch-modal"
 						>
 							<Layers className="w-3.5 h-3.5" />
-							<span>Наряд (SSOT)</span>
+							<span>Наряд</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setView("kanban")}
-							className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+							className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								view === "kanban" ? "bg-[var(--paper,#ffffff)] shadow-2xs text-[#0d9488]" : "text-[var(--muted,#64748b)]"
 							}`}
 							data-testid="preview-switch-kanban"
 						>
 							<LayoutGrid className="w-3.5 h-3.5" />
-							<span>Канбан (4 этапа)</span>
+							<span>Канбан</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setView("hub")}
+							className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
+								view === "hub" ? "bg-[var(--paper,#ffffff)] shadow-2xs text-[#0d9488]" : "text-[var(--muted,#64748b)]"
+							}`}
+							data-testid="preview-switch-hub"
+						>
+							<FlaskConical className="w-3.5 h-3.5" />
+							<span>Хаб</span>
 						</button>
 						<button
 							type="button"
 							onClick={() => setView("schedule")}
-							className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 ${
+							className={`px-2 py-1 text-xs font-bold rounded-lg transition cursor-pointer flex items-center gap-1.5 whitespace-nowrap ${
 								view === "schedule" ? "bg-[var(--paper,#ffffff)] shadow-2xs text-[#0d9488]" : "text-[var(--muted,#64748b)]"
 							}`}
 							data-testid="preview-switch-schedule"
 						>
 							<Calendar className="w-3.5 h-3.5" />
-							<span>Расписание</span>
+							<span>Примерка</span>
 						</button>
 					</div>
 
@@ -173,7 +201,7 @@ function LabPreviewApp() {
 					<button
 						type="button"
 						onClick={() => setTheme((t) => (t === "light" ? "dark" : "light"))}
-						className="p-1.5 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition cursor-pointer shadow-2xs"
+						className="p-1.5 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition cursor-pointer shadow-2xs"
 						title="Переключить тему"
 						data-testid="preview-theme-toggle"
 					>
@@ -186,14 +214,19 @@ function LabPreviewApp() {
 			<main className="flex-1 p-4 sm:p-6 overflow-y-auto">
 				{view === "kanban" && (
 					<div className="max-w-7xl mx-auto space-y-4">
-						<div className="flex items-center justify-between">
-							<h2 className="text-base font-extrabold text-[var(--ink,#0f172a)]">
-								Единый реестр заказов в зуботехническую лабораторию (Канбан)
-							</h2>
+						<div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+							<div>
+								<h2 className="text-sm sm:text-base font-extrabold text-[var(--ink,#0f172a)]">
+									Единый реестр заказов в зуботехническую лабораторию (Канбан)
+								</h2>
+								<p className="text-xs text-[var(--muted,#64748b)]">
+									4 канонических клинических этапа · Автономия врача
+								</p>
+							</div>
 							<button
 								type="button"
 								onClick={() => { setView("modal"); setIsModalOpen(true); }}
-								className="px-4 py-2 rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs font-bold transition shadow-xs cursor-pointer"
+								className="w-full sm:w-auto px-4 py-2.5 min-h-[44px] rounded-xl bg-[#0d9488] hover:bg-[#0f766e] text-white text-xs font-bold transition shadow-xs cursor-pointer flex items-center justify-center gap-1.5 shrink-0"
 								data-testid="kanban-new-order-btn"
 							>
 								+ Создать наряд
@@ -263,6 +296,17 @@ function LabPreviewApp() {
 							</div>
 						</div>
 					</div>
+				)}
+
+				{view === "hub" && (
+					<DentalLabOrdersHubModal
+						isOpen={true}
+						onClose={() => setView("kanban")}
+						currentDoctorName="Д-р Смирнова Е. В. (Ортопед)"
+						currentPatientName="Ковалев Дмитрий Сергеевич"
+						currentPatientId="pat_direct"
+						currentToothNumber="16"
+					/>
 				)}
 
 				{/* SSOT Modal */}

@@ -148,7 +148,7 @@ export const labOrders = pgTable(
 		labCostRub: numeric("lab_cost_rub", { precision: 12, scale: 2, mode: "number" }),
 		/** Гарантийная переделка (относится на клинику, 0 вычетов с врача) */
 		isWarranty: boolean("is_warranty").notNull().default(false),
-		/** Статус сдачи и намертво блокировки installed (StomX Bible раздел 8) */
+		/** Статус сдачи и фиксации installed (клинический стандарт фиксации) */
 		isLockedInstalled: boolean("is_locked_installed").notNull().default(false),
 		installedAt: timestamp("installed_at", { withTimezone: true }),
 		paidFromCashOperationId: uuid("paid_from_cash_operation_id"),

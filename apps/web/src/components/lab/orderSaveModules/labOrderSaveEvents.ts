@@ -22,6 +22,7 @@ export function dispatchSavedOrderEvents(
 		window.dispatchEvent(new CustomEvent("dente-add-billing-item", {
 			detail: {
 				item: {
+					serviceCode: "A16.07.004",
 					code804n: "A16.07.004",
 					title: `Ортопедическая конструкция (${params.material || "ZrO2"}, зуб ${toothNum})`,
 					toothCode: String(toothNum),

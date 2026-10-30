@@ -40,6 +40,10 @@ export function useAppNavigationSync({
 	useEffect(() => {
 		if (typeof window === "undefined") return;
 
+		if (window.location.hash) {
+			syncViewFromHash(window.location.hash);
+		}
+
 		const handleHashChange = () => {
 			const hash = window.location.hash;
 			setCurrentHash(hash);
