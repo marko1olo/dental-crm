@@ -6,7 +6,7 @@
  * Core Route Rules 7 & 11, Mandate 8d UI Sin #7).
  */
 
-import { describe, it  } from "vitest";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";

@@ -41,8 +41,8 @@ export function validateBuyerInn(params: {
 		return { isValid: false, isRequired: true, errorRu: msg, errorMessage: msg };
 	}
 
-	if (isLegal && cleanInn.length !== 10) {
-		const msg = "ИНН юридического лица должен содержать ровно 10 цифр";
+	if (isLegal && cleanInn.length !== 10 && cleanInn.length !== 12) {
+		const msg = "ИНН юридического лица должен содержать 10 цифр (для ИП — 12 цифр)";
 		return { isValid: false, isRequired: true, cleanInn, errorRu: msg, errorMessage: msg };
 	}
 

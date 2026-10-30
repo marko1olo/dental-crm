@@ -5,4 +5,4 @@
  * Единый доменный язык DENTE без бюрократических номеров приказов.
  */
 
-export * from "./clinicalDiaryDefaultData";
+export * from "./medicalCardCatalogData";

@@ -7,7 +7,7 @@
  * 8k (CRM != Reality Simulator), 8n (Solo Doctor & Small Clinic Sovereignty).
  */
 
-import { describe, it  } from "vitest";
+import { describe, it } from "node:test";
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';

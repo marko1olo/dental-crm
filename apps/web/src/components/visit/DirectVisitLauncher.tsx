@@ -21,6 +21,9 @@ const VISIT_URL_TOKENS = [
 	"standalone-visit",
 	"chairside-visit",
 	"clinical_diary_standalone",
+	"visit-diary",
+	"visit_diary",
+	"diary",
 	"rx",
 	"rx=1",
 	"prescription",
@@ -70,15 +73,20 @@ export const DirectVisitLauncher: React.FC = () => {
 			}
 		};
 		const handleOpenRx = () => setIsPrescriptionModalOpen(true);
+		const handleOpenVisit = () => setIsOpen(true);
 		window.addEventListener("dente:open-prescriptions", handleOpenRx);
 		window.addEventListener("dente-open-prescriptions", handleOpenRx);
 		window.addEventListener("dente-open-prescription", handleOpenRx);
+		window.addEventListener("dente:open-visit", handleOpenVisit);
+		window.addEventListener("dente:open-visit-diary", handleOpenVisit);
 		window.addEventListener("hashchange", checkUrl);
 		window.addEventListener("popstate", checkUrl);
 		return () => {
 			window.removeEventListener("dente:open-prescriptions", handleOpenRx);
 			window.removeEventListener("dente-open-prescriptions", handleOpenRx);
 			window.removeEventListener("dente-open-prescription", handleOpenRx);
+			window.removeEventListener("dente:open-visit", handleOpenVisit);
+			window.removeEventListener("dente:open-visit-diary", handleOpenVisit);
 			window.removeEventListener("hashchange", checkUrl);
 			window.removeEventListener("popstate", checkUrl);
 		};

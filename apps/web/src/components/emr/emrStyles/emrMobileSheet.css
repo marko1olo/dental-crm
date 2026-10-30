@@ -32,8 +32,8 @@
   }
 
   .emr043-header-toolbar {
-    padding: 8px 12px 10px 12px;
-    gap: 8px;
+    padding: 8px 12px 6px 12px;
+    gap: 6px;
     min-height: auto;
     display: flex;
     flex-direction: column;
@@ -46,24 +46,31 @@
     display: flex;
     align-items: flex-start;
     flex-direction: column;
-    gap: 4px;
+    gap: 2px;
     padding-right: 48px;
     width: 100%;
   }
 
   .emr043-header-title {
     font-size: 15px;
-    line-height: 1.3;
+    line-height: 1.25;
     font-weight: 700;
   }
 
   .emr043-header-actions {
     display: flex;
     align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
+    flex-wrap: nowrap;
+    gap: 6px;
     width: 100%;
     margin-left: 0;
+    overflow-x: auto;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 2px;
+  }
+  .emr043-header-actions::-webkit-scrollbar {
+    display: none;
   }
 
   .emr043-btn-close {

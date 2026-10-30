@@ -12,7 +12,7 @@
  * - Mandate 8t: Verification via node --test without running tsc.
  */
 
-import { describe, it  } from "vitest";
+import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import React, { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";

@@ -1,3 +1,4 @@
+export * from "./medicalCardCatalogData";
 export * from "./clinicalDiaryTypes";
 export * from "./clinicalDiaryMath";
 export * from "./clinicalDiaryDefaultData";

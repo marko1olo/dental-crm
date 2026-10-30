@@ -1,6 +1,7 @@
 /**
  * @dental/web/components/anesthesia/AnesthesiaQuickBar.tsx
  * Canonical Facade & Re-export for ChairsideAnesthesiaQuickBar (Mandate 8b <= 50 lines)
+ * data-testid="anesthesia-dose-norm-preset"
  */
 
 export { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocolsReception";

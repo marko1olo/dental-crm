@@ -4,4 +4,4 @@
  * @deprecated Use canonical `outpatientRecordDefaultData.ts` instead (Mandate 8ap, 8x).
  */
 
-export * from "./outpatientRecordDefaultData";
+export * from "./medicalCardCatalogData";

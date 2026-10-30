@@ -13,6 +13,7 @@ import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
 import { DirectRadiologyLauncher } from "./components/radiology/DirectRadiologyLauncher";
+import { DirectVisiographLauncher } from "./components/visiograph/DirectVisiographLauncher";
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
@@ -24,6 +25,7 @@ import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAp
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
+import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
@@ -127,6 +129,10 @@ function isStandaloneActive(): boolean {
 		h.includes("radiology") ||
 		s.includes("visiograph") ||
 		h.includes("visiograph") ||
+		s.includes("rvg") ||
+		h.includes("rvg") ||
+		s.includes("imaging") ||
+		h.includes("imaging") ||
 		s.includes("implant-passport") ||
 		h.includes("implant-passport") ||
 		s.includes("implants") ||
@@ -185,6 +191,7 @@ export function AppShell() {
 			<DirectImplantPassportLauncher />
 			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />
+			<DirectVisiographLauncher />
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
 			<DirectCashboxLauncher />
@@ -196,6 +203,7 @@ export function AppShell() {
 			<DirectMarketingRoiLauncher />
 			<DirectClinicalBundlesLauncher />
 			<DirectVisitLauncher />
+			<DirectEmrLauncher />
 			<DirectCopilotLauncher />
 			<DirectInsuranceLauncher />
 			<DirectPerioLauncher />
