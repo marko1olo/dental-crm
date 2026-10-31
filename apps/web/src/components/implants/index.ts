@@ -6,6 +6,20 @@
 
 export * from "./implantologyCatalogData";
 export * from "./ImplantologyStudioModal";
+export {
+	useImplantologyStudioState,
+	ImplantStudioHeader,
+	ImplantPassportTab,
+	ImplantMemoTab,
+	ImplantProtocolTab as ImplantStudioProtocolTab,
+	ImplantDiaryTab as ImplantStudioDiaryTab,
+	type ImplantStudioTab,
+	type ImplantStudioHeaderProps,
+	type ImplantPassportTabProps,
+	type ImplantMemoTabProps,
+	type ImplantProtocolTabProps as ImplantStudioProtocolTabProps,
+	type ImplantDiaryTabProps as ImplantStudioDiaryTabProps,
+} from "./studio";
 export * from "./DirectImplantologyLauncher";
 export {
 	NORMALIZED_IMPLANT_SYSTEMS,
