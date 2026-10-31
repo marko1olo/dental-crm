@@ -1,14 +1,18 @@
-import { generateQrCodeSvg } from "@dental/shared";
-import { X } from "lucide-react";
-import React, { useMemo, useState } from "react";
-import {
-	createPhysiologicalNormSomaticQuestionnaire,
-	evaluateSomaticRisks,
-	INITIAL_SOMATIC_QUESTIONNAIRE,
-	type SomaticQuestionnaireData,
-} from "./SomaticQuestionnaireEngine";
+/**
+ * MobileSelfCheckinModal.tsx
+ * (DOMAIN: PORTAL & SELF-CHECKIN KIOSK)
+ *
+ * Express Mobile Self-Checkin & Kiosk Modal:
+ * - 1-Touch Check-in with Physiological Norm (Mandate 8e)
+ * - Decomposed Sweet Spot architecture (160-200 lines) matching Mandate 8b
+ * - Apple HIG bottom sheet ergonomics & touch targets >= 44x44px
+ * - Reusable MobileCheckinHeader and dedicated state machine
+ */
+
+import React from "react";
 import "./selfCheckin.css";
 import { AuthArtBackground } from "../../auth/AuthArtBackground";
+import { MobileCheckinHeader } from "./MobileCheckinHeader";
 import {
 	type StatutoryConsentItem,
 	DEFAULT_CONSENTS,
@@ -17,26 +21,35 @@ import {
 import { SelfCheckinPhoneAuthSection } from "./SelfCheckinPhoneAuthSection";
 import { SelfCheckinSomaticSection } from "./SelfCheckinSomaticSection";
 import { SelfCheckinTicketSection } from "./SelfCheckinTicketSection";
-import { isDemoPatientId, isDemoShowcaseMode } from "../../../lib/demoMode";
+import {
+	type CheckinStep,
+	useMobileSelfCheckinState,
+} from "./useMobileSelfCheckinState";
+import type { evaluateSomaticRisks } from "./SomaticQuestionnaireEngine";
 
 export * from "./SelfCheckinConsentsSection";
 export * from "./SelfCheckinPhoneAuthSection";
 export * from "./SelfCheckinSomaticSection";
 export * from "./SelfCheckinTicketSection";
+export * from "./MobileCheckinHeader";
+export * from "./MobileCheckinAppointmentCard";
+export * from "./useMobileSelfCheckinState";
+
+export type { CheckinStep };
 
 export interface MobileSelfCheckinModalProps {
-	isOpen: boolean;
-	onClose: () => void;
-	patientId?: string | undefined;
-	initialPhone?: string | undefined;
-	patientName?: string | undefined;
-	clinicName?: string | undefined;
-	doctorName?: string | undefined;
-	appointmentTime?: string | undefined;
-	cabinetName?: string | undefined;
-	queueTicket?: string | undefined;
-	initialStep?: CheckinStep | undefined;
-	onCheckinSuccess?: ((result: {
+	readonly isOpen: boolean;
+	readonly onClose: () => void;
+	readonly patientId?: string | undefined;
+	readonly initialPhone?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly appointmentTime?: string | undefined;
+	readonly cabinetName?: string | undefined;
+	readonly queueTicket?: string | undefined;
+	readonly initialStep?: CheckinStep | undefined;
+	readonly onCheckinSuccess?: ((result: {
 		patientId: string;
 		signedConsents: string[];
 		somaticProfile: ReturnType<typeof evaluateSomaticRisks>;
@@ -44,8 +57,6 @@ export interface MobileSelfCheckinModalProps {
 		visitStatus?: string | undefined;
 	}) => void) | undefined;
 }
-
-export type CheckinStep = "phone_auth" | "consents" | "somatic" | "completed";
 
 export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	isOpen,
@@ -61,374 +72,19 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 	initialStep = "phone_auth",
 	onCheckinSuccess,
 }) => {
-	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
-
-	const [serverPatientName, setServerPatientName] = useState<string | null>(null);
-	const [serverDoctorName, setServerDoctorName] = useState<string | null>(null);
-	const [serverAppointmentTime, setServerAppointmentTime] = useState<string | null>(null);
-	const [serverCabinetName, setServerCabinetName] = useState<string | null>(null);
-	const [serverQueueTicket, setServerQueueTicket] = useState<string | null>(null);
-
-	const effectivePhone =
-		initialPhone !== undefined
-			? initialPhone
-			: isDemo
-				? "+7 (913) 770-41-99"
-				: "";
-	const effectivePatientName =
-		serverPatientName ||
-		(patientName !== undefined
-			? patientName
-			: isDemo
-				? "Смирнова Анна Викторовна"
-				: "");
-	const effectiveDoctorName =
-		serverDoctorName ||
-		(doctorName !== undefined
-			? doctorName
-			: isDemo
-				? "Д-р Воронова Е. С. (Терапевт-микроскопист)"
-				: "");
-	const effectiveAppointmentTime =
-		serverAppointmentTime ||
-		(appointmentTime !== undefined
-			? appointmentTime
-			: isDemo
-				? "Сегодня в 14:30 (Кабинет 3)"
-				: "");
-	const effectiveQueueTicket =
-		serverQueueTicket ||
-		(queueTicket !== undefined
-			? queueTicket
-			: isDemo
-				? "Талон № А-07"
-				: "");
-	const [step, setStep] = useState<CheckinStep>(initialStep);
-	const [isSubmitting, setIsSubmitting] = useState(false);
-	const [authError, setAuthError] = useState<string | null>(null);
-
-	// Consents State
-	const [consents, setConsents] =
-		useState<StatutoryConsentItem[]>(DEFAULT_CONSENTS);
-	const [activeConsentIndex, setActiveConsentIndex] = useState(0);
-
-	// Somatic Questionnaire State
-	const [somaticData, setSomaticData] = useState<SomaticQuestionnaireData>(
-		INITIAL_SOMATIC_QUESTIONNAIRE,
-	);
-	const [isNormApplied, setIsNormApplied] = useState(false);
-	const [allergyDetails, setAllergyDetails] = useState("");
-	const [cardioDetails, setCardioDetails] = useState("");
-	const [coagulationDetails, setCoagulationDetails] = useState("");
-	const [consentNotice, setConsentNotice] = useState<string | null>(null);
-
-	// Specific dental allergy flags (penicillin, lidocaine, aspirin, sulfites)
-	const [quickAllergies, setQuickAllergies] = useState({
-		lidocaine: false,
-		penicillin: false,
-		aspirin: false,
-		sulfites: false,
+	const state = useMobileSelfCheckinState({
+		patientId,
+		initialPhone,
+		patientName,
+		doctorName,
+		appointmentTime,
+		cabinetName,
+		queueTicket,
+		initialStep,
+		onCheckinSuccess,
 	});
-
-	const displayQueueTicket = useMemo(() => {
-		return effectiveQueueTicket || (isDemo ? "Талон № А-07" : "Талон терминала");
-	}, [effectiveQueueTicket, isDemo]);
-
-	const doctorWaitMessage = useMemo(() => {
-		const docShort = effectiveDoctorName?.includes("(")
-			? (effectiveDoctorName.split("(")[0]?.trim() || effectiveDoctorName)
-			: (effectiveDoctorName || "");
-		const effectiveDoctor = docShort || (isDemo ? "Д-р Смирнова" : "Лечащий врач");
-		const cabMatch = effectiveAppointmentTime.match(/Кабинет\s*(\d+)/i);
-		const cabNum = cabinetName || (cabMatch ? cabMatch[1] : "");
-		const floorInfo = effectiveAppointmentTime.includes("этаж") ? "" : (cabNum ? " (2 этаж)" : "");
-		const cabInfo = cabNum ? ` в кабинете №${cabNum}${floorInfo}` : "";
-		return `${effectiveDoctor} ожидает вас${cabInfo}`;
-	}, [effectiveDoctorName, effectiveAppointmentTime, cabinetName, isDemo]);
-
-	const checkinCode = useMemo(() => {
-		const raw = `${effectivePatientName || "PATIENT"}-${effectiveAppointmentTime || "TIME"}`;
-		let hash = 0;
-		for (let i = 0; i < raw.length; i++) {
-			hash = (hash * 31 + raw.charCodeAt(i)) & 0x7fffffff;
-		}
-		const suffix = ((hash % 9000) + 1000).toString();
-		return `CK-${new Date().getFullYear()}-${suffix}`;
-	}, [effectivePatientName, effectiveAppointmentTime]);
-
-	const checkinQrSvg = useMemo(() => {
-		const verifyUrl = `https://dente.clinic/checkin/verify?ticket=${encodeURIComponent(checkinCode)}`;
-		return generateQrCodeSvg(verifyUrl, {
-			size: 84,
-			margin: 1,
-			title: `Талон чекина ${checkinCode}`,
-		});
-	}, [checkinCode]);
-
-	// 1-Touch Checkin State: последние 4 цифры номера телефона
-	const defaultLast4 = useMemo(() => {
-		const digits = (effectivePhone || "").replace(/\D/g, "");
-		return digits.slice(-4) || (isDemo ? "4199" : "");
-	}, [effectivePhone, isDemo]);
-	const [phoneDigits, setPhoneDigits] = useState(defaultLast4);
-	const [showOptionalDocs, setShowOptionalDocs] = useState(false);
 
 	if (!isOpen) return null;
-
-	// Consent Signature Confirm (1-Click Electronic Signature or Touch Canvas)
-	const handleSignCurrentConsent = (signatureSvgCustom?: string) => {
-		const updated = [...consents];
-		const current = updated[activeConsentIndex];
-		if (current) {
-			current.isSigned = true;
-			current.signatureSvg =
-				signatureSvgCustom ||
-				`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS / Киоск • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
-			current.signedAtIso = new Date().toISOString();
-		}
-		setConsents(updated);
-		setConsentNotice(null);
-
-		// Move to next consent or proceed to somatic step
-		if (activeConsentIndex < consents.length - 1) {
-			setActiveConsentIndex(activeConsentIndex + 1);
-		} else {
-			setStep("somatic");
-		}
-	};
-
-	// Physical Paper Registration on Reception Desk
-	const handleSignCurrentConsentWithPaper = () => {
-		const updated = [...consents];
-		const current = updated[activeConsentIndex];
-		if (current) {
-			current.isSigned = true;
-			current.signatureSvg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f8fafc" stroke="#475569" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#334155">НА БУМАГЕ (СТОЙКА РЕГИСТРАЦИИ)</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#475569">Подшито в медицинскую карту пациента</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${new Date().toLocaleString("ru-RU")}</text></svg>`;
-			current.signedAtIso = new Date().toISOString();
-		}
-		setConsents(updated);
-		setConsentNotice(null);
-
-		if (activeConsentIndex < consents.length - 1) {
-			setActiveConsentIndex(activeConsentIndex + 1);
-		} else {
-			setStep("somatic");
-		}
-	};
-
-	// 1-Click Electronic Signature for ALL statutory consents
-	const handleSignAllConsentsWithPep = () => {
-		const now = new Date();
-		const nowIso = now.toISOString();
-		const dtStr = now.toLocaleString("ru-RU");
-		const signed = consents.map((c) => ({
-			...c,
-			isSigned: true,
-			signatureSvg: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" width="320" height="80"><rect width="100%" height="100%" fill="#f0fdf4" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="4,4" rx="8"/><text x="160" y="30" text-anchor="middle" font-family="sans-serif" font-size="11" font-weight="bold" fill="#15803d">ПОДПИСАНО ЭЛЕКТРОННО</text><text x="160" y="48" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#166534">Код SMS / Киоск • ${phoneDigits ? `***-**-${phoneDigits}` : "+7 (***) ***-**-**"}</text><text x="160" y="65" text-anchor="middle" font-family="sans-serif" font-size="9" fill="#64748b">${dtStr}</text></svg>`,
-			signedAtIso: nowIso,
-		}));
-		setConsents(signed);
-		setConsentNotice(null);
-		setStep("somatic");
-	};
-
-	// 1-Click Physiological Norm Application (Mandate 8e)
-	const handleApplyPhysiologicalNorm = () => {
-		setSomaticData(createPhysiologicalNormSomaticQuestionnaire());
-		setAllergyDetails("");
-		setCardioDetails("");
-		setCoagulationDetails("");
-		setQuickAllergies({
-			lidocaine: false,
-			penicillin: false,
-			aspirin: false,
-			sulfites: false,
-		});
-		setIsNormApplied(true);
-	};
-
-	// Patient customizes only real dental allergies (penicillin, lidocaine, aspirin, sulfites)
-	const handleToggleQuickAllergy = (
-		key: "lidocaine" | "penicillin" | "aspirin" | "sulfites",
-	) => {
-		const nextVal = !quickAllergies[key];
-		const updatedQuick = { ...quickAllergies, [key]: nextVal };
-		setQuickAllergies(updatedQuick);
-
-		const hasAnyAllergy =
-			updatedQuick.lidocaine ||
-			updatedQuick.penicillin ||
-			updatedQuick.aspirin ||
-			updatedQuick.sulfites;
-
-		const allergyNames: string[] = [];
-		if (updatedQuick.penicillin) allergyNames.push("Пенициллин / Антибиотики");
-		if (updatedQuick.lidocaine) allergyNames.push("Лидокаин / Анестетики");
-		if (updatedQuick.aspirin) allergyNames.push("Аспирин / НПВС");
-		if (updatedQuick.sulfites) allergyNames.push("Сульфиты / Консерванты");
-
-		const newDetails = allergyNames.join(", ");
-		setAllergyDetails(newDetails);
-
-		setSomaticData((prev) => ({
-			...prev,
-			allergies: {
-				...prev.allergies,
-				hasAllergies: hasAnyAllergy,
-				localAnestheticsAllergy: updatedQuick.lidocaine,
-				antibioticsAllergy: updatedQuick.penicillin,
-				sulfiteAllergy: updatedQuick.sulfites,
-				details: newDetails,
-			},
-			coagulation: {
-				...prev.coagulation,
-				hasBleedingDisorder: updatedQuick.aspirin
-					? true
-					: prev.coagulation.hasBleedingDisorder,
-				details: updatedQuick.aspirin
-					? prev.coagulation.details
-						? prev.coagulation.details
-						: "Аспирин / НПВС (риск кровотечений)"
-					: (prev.coagulation.details || ""),
-			},
-		}));
-	};
-
-	const submitCheckinToBackend = async (payload: {
-		signed: StatutoryConsentItem[];
-		somatic: SomaticQuestionnaireData;
-		evaluatedRisks: ReturnType<typeof evaluateSomaticRisks>;
-		isEmergency?: boolean;
-	}) => {
-		setIsSubmitting(true);
-		setAuthError(null);
-		try {
-			const endpoint = payload.isEmergency ? "/api/portal/kiosk/emergency-checkin" : "/api/portal/self-checkin";
-			const res = await fetch(endpoint, {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({
-					phoneLast4: phoneDigits,
-					patientPhone: initialPhone,
-					patientId,
-					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
-					somaticProfile: payload.evaluatedRisks,
-					isEmergency: Boolean(payload.isEmergency),
-				}),
-			});
-			if (res.ok) {
-				const json = await res.json();
-				if (json?.patientName) setServerPatientName(json.patientName);
-				if (json?.doctorName) setServerDoctorName(json.doctorName);
-				if (json?.appointmentTime) setServerAppointmentTime(json.appointmentTime);
-				if (json?.cabinetName) setServerCabinetName(json.cabinetName);
-				if (json?.queueTicket) setServerQueueTicket(json.queueTicket);
-
-				setStep("completed");
-				onCheckinSuccess?.({
-					patientId: json?.patientId || patientId || "",
-					signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
-					somaticProfile: payload.evaluatedRisks,
-					queueTicket: json?.queueTicket || displayQueueTicket,
-					visitStatus: json?.visitStatus || (payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма"),
-				});
-				return;
-			}
-			const err = await res.json().catch(() => null);
-			if (err?.message) {
-				setAuthError(err.message);
-			}
-		} catch {
-			// In demo/test mode or offline kiosk, fallback gracefully to completion
-		} finally {
-			setIsSubmitting(false);
-		}
-
-		setStep("completed");
-		onCheckinSuccess?.({
-			patientId: patientId || "",
-			signedConsents: payload.signed.filter((c) => c.isSigned).map((c) => c.id),
-			somaticProfile: payload.evaluatedRisks,
-			queueTicket: payload.isEmergency ? "Талон № Э-01" : displayQueueTicket,
-			visitStatus: payload.isEmergency ? "⚡ В холле / Ожидает экстренного врача" : "В холле / Ожидает приёма",
-		});
-	};
-
-	const handleEmergencyCheckin = () => {
-		const normData = createPhysiologicalNormSomaticQuestionnaire();
-		const evaluatedNorm = evaluateSomaticRisks(normData);
-		void submitCheckinToBackend({
-			signed: consents,
-			somatic: normData,
-			evaluatedRisks: evaluatedNorm,
-			isEmergency: true,
-		});
-	};
-
-	// 1-Click Physiological Norm & Instant 5-Second Completion
-	const handleApplyPhysiologicalNormAndFinish = () => {
-		const normData = createPhysiologicalNormSomaticQuestionnaire();
-		setSomaticData(normData);
-		setAllergyDetails("");
-		setCardioDetails("");
-		setCoagulationDetails("");
-		setQuickAllergies({
-			lidocaine: false,
-			penicillin: false,
-			aspirin: false,
-			sulfites: false,
-		});
-		setIsNormApplied(true);
-
-		const evaluatedNorm = evaluateSomaticRisks(normData);
-		void submitCheckinToBackend({
-			signed: consents,
-			somatic: normData,
-			evaluatedRisks: evaluatedNorm,
-		});
-	};
-
-	// Somatic Health Update & Submission
-	const riskEvaluation = evaluateSomaticRisks({
-		...somaticData,
-		allergies: {
-			...somaticData.allergies,
-			details: allergyDetails,
-		},
-		cardiovascular: {
-			...somaticData.cardiovascular,
-			details: cardioDetails,
-		},
-		coagulation: {
-			...somaticData.coagulation,
-			details: coagulationDetails,
-		},
-	});
-
-	const handleCompleteCheckin = () => {
-		void submitCheckinToBackend({
-			signed: consents,
-			somatic: somaticData,
-			evaluatedRisks: riskEvaluation,
-		});
-	};
-
-	const handleOneTouchCheckin = () => {
-		setAuthError(null);
-		const signed = consents.map((c) => ({
-			...c,
-			isSigned: true,
-			signedAtIso: new Date().toISOString(),
-		}));
-		setConsents(signed);
-		void submitCheckinToBackend({
-			signed,
-			somatic: somaticData,
-			evaluatedRisks: riskEvaluation,
-		});
-	};
-
-	const allConsentsSigned = consents.every((c) => c.isSigned);
 
 	return (
 		<div className="selfcheckin-modal-backdrop" onClick={onClose}>
@@ -437,121 +93,86 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 				className="selfcheckin-modal-window"
 				onClick={(e) => e.stopPropagation()}
 			>
-				{/* Header */}
-				<header className="selfcheckin-header">
-					<div className="selfcheckin-header-left">
-						<div className="selfcheckin-clinic-badge">
-							<span className="selfcheckin-clinic-dot" />
-							<span>{clinicName}</span>
-						</div>
-						<h2 className="selfcheckin-title">
-							{step === "phone_auth" && "Вход и самочекин"}
-							{step === "consents" && "Электронная подпись согласий"}
-							{step === "somatic" && "Анкета здоровья и рисков"}
-							{step === "completed" && "Чекин успешно пройден!"}
-						</h2>
-					</div>
-					<button
-						type="button"
-						className="selfcheckin-close-btn"
-						onClick={onClose}
-						aria-label="Закрыть окно самочекина"
-					>
-						<X size={20} />
-					</button>
-				</header>
+				{/* Dedicated Reusable Header with Steps Bar */}
+				<MobileCheckinHeader
+					clinicName={clinicName}
+					step={state.step}
+					onClose={onClose}
+				/>
 
-				{/* Progress Indicator */}
-				<div className="selfcheckin-steps-bar">
-					<div
-						className={`selfcheckin-step-pill ${
-							step === "phone_auth" ? "active" : "done"
-						}`}
-					>
-						1. Экспресс-чекин
-					</div>
-					<div
-						className={`selfcheckin-step-pill ${
-							step === "completed" ? "active" : ""
-						}`}
-					>
-						2. Талон на приём
-					</div>
-				</div>
-
-				{/* Body Content by Step */}
+				{/* Body Content by Current Step */}
 				<div className="selfcheckin-content">
 					{/* STEP 1: Phone 1-Touch Auth & Instant Checkin */}
-					{step === "phone_auth" && (
+					{state.step === "phone_auth" && (
 						<SelfCheckinPhoneAuthSection
-							patientName={effectivePatientName}
-							appointmentTime={effectiveAppointmentTime}
-							doctorName={effectiveDoctorName}
-							phoneDigits={phoneDigits}
-							setPhoneDigits={setPhoneDigits}
-							showOptionalDocs={showOptionalDocs}
-							setShowOptionalDocs={setShowOptionalDocs}
-							authError={authError}
-							setAuthError={setAuthError}
-							isSubmitting={isSubmitting}
-							onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
-							onOneTouchCheckin={handleOneTouchCheckin}
-							onEmergencyCheckin={handleEmergencyCheckin}
-							onGoToConsents={() => setStep("consents")}
-							onGoToSomatic={() => setStep("somatic")}
+							patientName={state.effectivePatientName}
+							appointmentTime={state.effectiveAppointmentTime}
+							doctorName={state.effectiveDoctorName}
+							phoneDigits={state.phoneDigits}
+							setPhoneDigits={state.setPhoneDigits}
+							showOptionalDocs={state.showOptionalDocs}
+							setShowOptionalDocs={state.setShowOptionalDocs}
+							authError={state.authError}
+							setAuthError={state.setAuthError}
+							isSubmitting={state.isSubmitting}
+							onApplyPhysiologicalNorm={state.handleApplyPhysiologicalNorm}
+							onOneTouchCheckin={state.handleOneTouchCheckin}
+							onEmergencyCheckin={state.handleEmergencyCheckin}
+							onGoToConsents={() => state.setStep("consents")}
+							onGoToSomatic={() => state.setStep("somatic")}
 						/>
 					)}
 
 					{/* STEP 2: Statutory Consents with Vector Touch Signature */}
-					{step === "consents" && (
+					{state.step === "consents" && (
 						<SelfCheckinConsentsSection
-							consents={consents}
-							activeConsentIndex={activeConsentIndex}
-							signerPhone={effectivePhone}
+							consents={state.consents}
+							activeConsentIndex={state.activeConsentIndex}
+							signerPhone={state.effectivePhone}
 							onSelectConsentIndex={(idx) => {
-								setActiveConsentIndex(idx);
-								setConsentNotice(null);
+								state.setActiveConsentIndex(idx);
+								state.setConsentNotice(null);
 							}}
-							onSignAllConsentsWithPep={handleSignAllConsentsWithPep}
-							onSignCurrentConsent={handleSignCurrentConsent}
-							onSignCurrentConsentWithPaper={handleSignCurrentConsentWithPaper}
-							consentNotice={consentNotice}
-							allConsentsSigned={allConsentsSigned}
-							onProceedToSomatic={() => setStep("somatic")}
+							onSignAllConsentsWithPep={state.handleSignAllConsentsWithPep}
+							onSignCurrentConsent={state.handleSignCurrentConsent}
+							onSignCurrentConsentWithPaper={state.handleSignCurrentConsentWithPaper}
+							consentNotice={state.consentNotice}
+							allConsentsSigned={state.allConsentsSigned}
+							onProceedToSomatic={() => state.setStep("somatic")}
 						/>
 					)}
 
 					{/* STEP 3: Somatic Health Questionnaire */}
-					{step === "somatic" && (
+					{state.step === "somatic" && (
 						<SelfCheckinSomaticSection
-							somaticData={somaticData}
-							setSomaticData={setSomaticData}
-							isNormApplied={isNormApplied}
-							quickAllergies={quickAllergies}
-							onToggleQuickAllergy={handleToggleQuickAllergy}
-							onApplyPhysiologicalNorm={handleApplyPhysiologicalNorm}
-							onApplyPhysiologicalNormAndFinish={handleApplyPhysiologicalNormAndFinish}
-							onCompleteCheckin={handleCompleteCheckin}
-							allergyDetails={allergyDetails}
-							setAllergyDetails={setAllergyDetails}
-							cardioDetails={cardioDetails}
-							setCardioDetails={setCardioDetails}
-							coagulationDetails={coagulationDetails}
-							setCoagulationDetails={setCoagulationDetails}
-							riskEvaluation={riskEvaluation}
-							isSubmitting={isSubmitting}
+							somaticData={state.somaticData}
+							setSomaticData={state.setSomaticData}
+							isNormApplied={state.isNormApplied}
+							quickAllergies={state.quickAllergies}
+							onToggleQuickAllergy={state.handleToggleQuickAllergy}
+							onApplyPhysiologicalNorm={state.handleApplyPhysiologicalNorm}
+							onApplyPhysiologicalNormAndFinish={state.handleApplyPhysiologicalNormAndFinish}
+							onCompleteCheckin={state.handleCompleteCheckin}
+							allergyDetails={state.allergyDetails}
+							setAllergyDetails={state.setAllergyDetails}
+							cardioDetails={state.cardioDetails}
+							setCardioDetails={state.setCardioDetails}
+							coagulationDetails={state.coagulationDetails}
+							setCoagulationDetails={state.setCoagulationDetails}
+							riskEvaluation={state.riskEvaluation}
+							isSubmitting={state.isSubmitting}
 						/>
 					)}
 
 					{/* STEP 4: Completed Pass & Queue Ticket */}
-					{step === "completed" && (
+					{state.step === "completed" && (
 						<SelfCheckinTicketSection
-							displayQueueTicket={displayQueueTicket}
-							patientName={effectivePatientName}
-							appointmentTime={effectiveAppointmentTime}
-							doctorWaitMessage={doctorWaitMessage}
-							checkinQrSvg={checkinQrSvg}
-							checkinCode={checkinCode}
+							displayQueueTicket={state.displayQueueTicket}
+							patientName={state.effectivePatientName}
+							appointmentTime={state.effectiveAppointmentTime}
+							doctorWaitMessage={state.doctorWaitMessage}
+							checkinQrSvg={state.checkinQrSvg}
+							checkinCode={state.checkinCode}
 							onClose={onClose}
 						/>
 					)}
@@ -560,3 +181,5 @@ export const MobileSelfCheckinModal: React.FC<MobileSelfCheckinModalProps> = ({
 		</div>
 	);
 };
+
+MobileSelfCheckinModal.displayName = "MobileSelfCheckinModal";
