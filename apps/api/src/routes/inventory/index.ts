@@ -14,6 +14,7 @@ export {
 	normalizedExpirationDate,
 	toValidUuid,
 } from "./types.js";
+export { calculateAlertsFromItems } from "./itemCatalogRoutes.js";
 export {
 	batchTrackingRoutes,
 	itemCatalogRoutes,

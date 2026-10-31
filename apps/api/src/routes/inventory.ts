@@ -5,6 +5,7 @@ export {
 	INVALID_DATE,
 	normalizedExpirationDate,
 	toValidUuid,
+	calculateAlertsFromItems,
 	inventoryCreateBodySchema,
 	inventoryUpdateBodySchema,
 	inventoryStockBodySchema,
