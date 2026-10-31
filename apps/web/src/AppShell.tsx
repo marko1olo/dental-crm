@@ -37,6 +37,7 @@ import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
 import { DirectPatientLauncher } from "./components/patients/DirectPatientLauncher";
+import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
 import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrthodonticsLauncher";
@@ -50,6 +51,7 @@ import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLa
 import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
 import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
 import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
+import { DirectLeadsLauncher } from "./components/leads/DirectLeadsLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -209,7 +211,11 @@ function isStandaloneActive(): boolean {
 		s.includes("analytics=direct") ||
 		s.includes("dashboard=direct") ||
 		s.includes("reports") ||
-		h.includes("reports")
+		h.includes("reports") ||
+		s.includes("leads") ||
+		h.includes("leads") ||
+		h.includes("crm-leads") ||
+		h.includes("kanban")
 	);
 }
 
@@ -267,6 +273,7 @@ export function AppShell() {
 			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />
 			<DirectPatientLauncher />
+			<DirectRecallLauncher />
 			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />
 			<DirectOrthodonticsLauncher />
@@ -280,6 +287,7 @@ export function AppShell() {
 			<DirectOrthopedicsLauncher />
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
+			<DirectLeadsLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

@@ -28,6 +28,7 @@ export { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLa
 export { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
 export { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
 export { DirectOdontogramLauncher } from "../../odontogram/DirectOdontogramLauncher";
+export { DirectLeadsLauncher } from "../../leads/DirectLeadsLauncher";
 export { DirectAnalyticsLauncher };
 
 export function renderStandaloneLaunchers(

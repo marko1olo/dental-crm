@@ -15,6 +15,7 @@ import { DirectInsuranceLauncher } from "../../../insurance/DirectInsuranceLaunc
 import { DirectPublicBookingLauncher } from "../../../booking/DirectPublicBookingLauncher";
 import { DirectDentalLabLauncher } from "../../../lab/DirectDentalLabLauncher";
 import { DirectTelephonyLauncher } from "../../../telephony/DirectTelephonyLauncher";
+import { DirectRecallLauncher } from "../../../recalls/DirectRecallLauncher";
 import { DirectScheduleLauncher } from "../../../schedule/DirectScheduleLauncher";
 import { DirectTreatmentPlanLauncher } from "../../../treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectCashRegisterLauncher } from "../../../billing/DirectCashRegisterLauncher";
@@ -27,6 +28,7 @@ import { DocumentsView } from "../../../../DocumentsView";
 import { DirectPatientLauncher } from "../../../patients/DirectPatientLauncher";
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
+import { DirectLeadsLauncher } from "../../../leads/DirectLeadsLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
@@ -135,12 +137,26 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			render: () => <DirectDentalLabLauncher />,
 		},
 
-		// 5. Телефония и журнал входящих/исходящих звонков
+		// 5. Диспансерный учет, повторные вызовы и профосмотры
+		{
+			id: "recalls-studio",
+			title: "Студия повторных вызовов и профосмотров",
+			criteria: {
+				tokens: ["recalls", "prophylaxis", "recall-hub"],
+				searchIncludes: ["recalls=1", "standalone=recalls", "prophylaxis=1"],
+				exactHashes: ["#recalls", "#prophylaxis", "#recall-hub"],
+				hashPrefixes: ["#recalls?", "#recalls/", "#prophylaxis?", "#recall-hub?"],
+			},
+			render: () => <DirectRecallLauncher />,
+		},
+
+		// 5b. Телефония и журнал входящих/исходящих звонков
 		{
 			id: "telephony-studio",
 			title: "Телефония и журнал звонков",
 			criteria: {
 				tokens: ["telephony", "calls", "softphone"],
+				exclude: ["recalls", "recall-hub", "prophylaxis"],
 			},
 			render: () => <DirectTelephonyLauncher />,
 		},
@@ -321,6 +337,19 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 				],
 			},
 			render: () => <DirectAnalyticsLauncher />,
+		},
+
+		// 18. Воронка первичных обращений и CRM Лиды
+		{
+			id: "leads-studio",
+			title: "Воронка первичных обращений и CRM Лиды",
+			criteria: {
+				tokens: ["leads", "crm-leads", "leads-studio", "kanban"],
+				searchIncludes: ["leads=1", "standalone=leads"],
+				exactHashes: ["#leads", "#crm-leads", "#kanban", "#leads-studio"],
+				hashPrefixes: ["#leads?", "#leads/", "#crm-leads?", "#kanban?"],
+			},
+			render: () => <DirectLeadsLauncher />,
 		},
 	];
 

@@ -3,7 +3,7 @@
  * Декомпозирован по модулям: касса, склад, зарплата, отчеты, планы лечения.
  */
 
-import type React from "react";
+import React from "react";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { StandaloneLaunchersProps } from "../modalsContainerTypes";
 import { renderReportsComplianceLaunchers } from "./administrative/ReportsComplianceLaunchers";
@@ -16,11 +16,17 @@ import { renderDocumentsStandaloneLauncher } from "./administrative/DocumentsSta
 import { renderPricelistStandaloneLauncher } from "./administrative/PricelistStandaloneLauncher";
 import { renderOmnichannelAndTelephonyLauncher } from "./administrative/OmnichannelAndTelephonyStandaloneLauncher";
 import { renderSanPinStandaloneLauncher } from "./administrative/SanPinStandaloneLauncher";
+import { renderLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
+import { renderRecallsStandaloneLauncher } from "./administrative/RecallsStandaloneLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
+	// 0. Повторные вызовы и диспансеризация (?recalls=1, #recalls, #prophylaxis)
+	const recalls = renderRecallsStandaloneLauncher();
+	if (recalls) return recalls;
 
 	// 0. Журналы стерилизации и автоклавирования СанПиН (?sanpin=1, ?sterilization=1)
 	const sanpin = renderSanPinStandaloneLauncher();
@@ -61,6 +67,10 @@ export function renderSpecializedAdministrativeLaunchers(
 	// 6. Омниканальный чат и телефония
 	const omnichannelAndTelephony = renderOmnichannelAndTelephonyLauncher();
 	if (omnichannelAndTelephony) return omnichannelAndTelephony;
+
+	// 7. Воронка первичных обращений и CRM Лиды (?leads=1, #leads, #crm-leads, #kanban)
+	const leads = renderLeadsStandaloneLauncher();
+	if (leads) return leads;
 
 	return null;
 }
