@@ -2,9 +2,10 @@
  * DirectVisiographLauncher.tsx — Прямой автономный лаунчер визиографа и лучевой диагностики (Мандаты 8b, 8aq).
  *
  * Архитектурные стандарты:
- * - Мандат 8aq: Монтирование в живой UI (монтируется в AppShell.tsx).
- * - Слушает URL хэши: #visiograph, #rvg, #xray, #imaging.
- * - Слушает search-параметры: ?visiograph=..., ?rvg=...
+ * - Мандат 8b: Sweet Spot 60–100 строк.
+ * - Мандат 8aq: Монтирование в живой UI (AppShell.tsx и StandaloneLaunchers.tsx).
+ * - Слушает URL хэши: #visiograph, #xray, #radiology, #rvg, #imaging.
+ * - Слушает search-параметры: ?visiograph=1, ?xray=1, ?radiology=1, ?rvg=1.
  * - Слушает кастомные ивенты: "dente:open-visiograph", "dente-open-visiograph".
  */
 
@@ -18,11 +19,14 @@ export const DirectVisiographLauncher: React.FC = () => {
 		const h = (window.location.hash || "").toLowerCase();
 		return (
 			s.includes("visiograph") ||
+			s.includes("xray") ||
+			s.includes("radiology") ||
 			s.includes("rvg") ||
 			s.includes("imaging") ||
 			h.includes("visiograph") ||
-			h.includes("rvg") ||
 			h.includes("xray") ||
+			h.includes("radiology") ||
+			h.includes("rvg") ||
 			h.includes("imaging")
 		);
 	}, []);
@@ -59,8 +63,9 @@ export const DirectVisiographLauncher: React.FC = () => {
 			const h = window.location.hash.toLowerCase();
 			if (
 				h.includes("visiograph") ||
-				h.includes("rvg") ||
 				h.includes("xray") ||
+				h.includes("radiology") ||
+				h.includes("rvg") ||
 				h.includes("imaging")
 			) {
 				// Очищаем хэш без перезагрузки страницы
