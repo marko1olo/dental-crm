@@ -1,35 +1,28 @@
 /**
  * apps/web/src/components/consents/ConsentStudioModal.tsx
  *
- * Каноническая студия информированных согласий и договоров DENTE CRM (SSOT).
- * Пакетная подпись в 1 клик, автономия врача (Мандат 8e, zero disabled buttons),
- * Ровно 1 Primary CTA кнопка #0d9488 (Мандат 8am), Apple HIG Bottom Sheet (390x844).
- * Живой язык без канцелярита и сырых номеров приказов (Мандаты 8x, 8ap).
+ * Каноническая студия информированных согласий и медицинских договоров DENTE CRM (SSOT).
+ * Декомпозирована на специализированные sweet-spot модули (Мандат 8b/8zi):
+ *   - studio/ConsentSignaturePad.tsx — сенсорный холст подписи пальцем/стилусом (Apple HIG)
+ *   - studio/ConsentDocumentViewer.tsx — окно предпросмотра бланка с хешем целостности
+ *   - studio/ConsentBatchSignActions.tsx — панель реестра и пакетного выбора документов
+ * Пакетная подпись в 1 клик (Мандаты 8e, 8n), ровно 1 Primary CTA кнопка (#0d9488, Мандат 8am).
  */
 
-import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-	ShieldCheck,
-	Printer,
-	X,
-	CheckCircle2,
-	Clock,
-	FileSignature,
-	UserCheck,
-	RotateCcw,
-	CheckSquare,
-	Square,
-} from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { ShieldCheck, Printer, X, UserCheck } from "lucide-react";
 import {
 	CANONICAL_CONSENT_CATALOG,
 	type ConsentDocumentId,
 	type ConsentSignStatus,
 	type ConsentPartyContext,
-	type ConsentDocumentItem,
 	getConsentDocumentById,
 	generateConsentPrintHtml,
 	computeConsentIntegrityHash,
 } from "./consentCatalogData";
+import { ConsentSignaturePad } from "./studio/ConsentSignaturePad";
+import { ConsentDocumentViewer, type DocumentSignRecord } from "./studio/ConsentDocumentViewer";
+import { ConsentBatchSignActions } from "./studio/ConsentBatchSignActions";
 
 export interface ConsentStudioModalProps {
 	readonly isOpen: boolean;
@@ -46,13 +39,6 @@ export interface ConsentStudioModalProps {
 	}) => void;
 }
 
-interface SignItemRecord {
-	status: ConsentSignStatus;
-	signedAt?: string;
-	signatureSvg?: string;
-	integrityHash?: string;
-}
-
 export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	isOpen,
 	onClose,
@@ -65,22 +51,12 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 		? [...initialSelectedIds]
 		: ["therapy", "personal_data", "anesthesia", "paid_contract"];
 
-	const [selectedIds, setSelectedIds] = useState<Set<ConsentDocumentId>>(
-		new Set(defaultSelection),
-	);
+	const [selectedIds, setSelectedIds] = useState<Set<ConsentDocumentId>>(new Set(defaultSelection));
 	const [activeDocId, setActiveDocId] = useState<ConsentDocumentId>(initialDocId);
-	const [signRecords, setSignRecords] = useState<Record<string, SignItemRecord>>({});
+	const [signRecords, setSignRecords] = useState<Record<string, DocumentSignRecord>>({});
 	const [isPaperChecked, setIsPaperChecked] = useState<boolean>(false);
-	const [toastMsg, setToastMsg] = useState<string | null>(null);
-
-	// Встроенный легковесный векторный Signature Canvas
-	const canvasRef = useRef<HTMLCanvasElement | null>(null);
-	const [points, setPoints] = useState<{ x: number; y: number }[]>([]);
-	const [isDrawing, setIsDrawing] = useState<boolean>(false);
 	const [signatureSvg, setSignatureSvg] = useState<string>("");
-
-	const activeDoc: ConsentDocumentItem = getConsentDocumentById(activeDocId);
-	const currentRecord = signRecords[activeDocId] || { status: "pending" };
+	const [toastMsg, setToastMsg] = useState<string | null>(null);
 
 	useEffect(() => {
 		const onKeyDown = (e: KeyboardEvent) => {
@@ -90,69 +66,11 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 		return () => window.removeEventListener("keydown", onKeyDown);
 	}, [isOpen, onClose]);
 
-	const redrawCanvas = useCallback(() => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		ctx.clearRect(0, 0, canvas.width, canvas.height);
-		if (points.length < 2) return;
-		ctx.beginPath();
-		ctx.strokeStyle = "#0f172a";
-		ctx.lineWidth = 2.5;
-		ctx.lineCap = "round";
-		ctx.lineJoin = "round";
-		ctx.moveTo(points[0].x, points[0].y);
-		for (let i = 1; i < points.length; i++) {
-			ctx.lineTo(points[i].x, points[i].y);
-		}
-		ctx.stroke();
-	}, [points]);
+	if (!isOpen) return null;
 
-	useEffect(() => {
-		redrawCanvas();
-	}, [redrawCanvas]);
+	const activeDoc = getConsentDocumentById(activeDocId);
+	const currentRecord: DocumentSignRecord = signRecords[activeDocId] || { status: "pending" };
 
-	const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		canvas.setPointerCapture(e.pointerId);
-		setIsDrawing(true);
-		const rect = canvas.getBoundingClientRect();
-		const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-		setPoints([p]);
-	};
-
-	const handlePointerMove = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!isDrawing) return;
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const rect = canvas.getBoundingClientRect();
-		const p = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-		setPoints((prev) => [...prev, p]);
-	};
-
-	const handlePointerUp = (e: React.PointerEvent<HTMLCanvasElement>) => {
-		if (!isDrawing) return;
-		setIsDrawing(false);
-		const canvas = canvasRef.current;
-		if (canvas && canvas.hasPointerCapture(e.pointerId)) {
-			canvas.releasePointerCapture(e.pointerId);
-		}
-		if (points.length > 2) {
-			const d = points.reduce((acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`, "");
-			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="100%" height="100%"><path d="${d.trim()}" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
-			setSignatureSvg(svg);
-		}
-	};
-
-	const handleClearSignature = () => {
-		setPoints([]);
-		setSignatureSvg("");
-		redrawCanvas();
-	};
-
-	// 1-кликовое пакетное утверждение (Мандаты 8e, 8n)
 	const handleBatchSign = () => {
 		const nowStr = new Date().toLocaleString("ru-RU", {
 			day: "2-digit",
@@ -168,12 +86,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 		for (const docId of targetDocs) {
 			const hash = computeConsentIntegrityHash(docId, pName, nowStr, signatureSvg || "PAPER-ARCHIVE");
-			updated[docId] = {
-				status,
-				signedAt: nowStr,
-				signatureSvg: signatureSvg || undefined,
-				integrityHash: hash,
-			};
+			updated[docId] = { status, signedAt: nowStr, signatureSvg: signatureSvg || undefined, integrityHash: hash };
 		}
 		setSignRecords(updated);
 
@@ -195,12 +108,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	};
 
 	const handlePrintDoc = () => {
-		const rec = signRecords[activeDocId] || { status: "pending" };
-		const html = generateConsentPrintHtml(activeDoc, patientContext, {
-			status: rec.status,
-			signedAt: rec.signedAt,
-			signatureSvg: rec.signatureSvg,
-		});
+		const html = generateConsentPrintHtml(activeDoc, patientContext, currentRecord);
 		const win = window.open("", "_blank");
 		if (win) {
 			win.document.write(html);
@@ -220,14 +128,12 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	};
 
 	const toggleAllSelected = () => {
-		if (selectedIds.size === CANONICAL_CONSENT_CATALOG.length) {
-			setSelectedIds(new Set());
-		} else {
-			setSelectedIds(new Set(CANONICAL_CONSENT_CATALOG.map((d) => d.id)));
-		}
+		setSelectedIds(
+			selectedIds.size === CANONICAL_CONSENT_CATALOG.length
+				? new Set()
+				: new Set(CANONICAL_CONSENT_CATALOG.map((d) => d.id)),
+		);
 	};
-
-	if (!isOpen) return null;
 
 	return (
 		<div
@@ -253,8 +159,9 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							<ShieldCheck size={18} aria-hidden="true" />
 						</div>
 						<div className="min-w-0">
-							<h1 id="consent-studio-title" className="text-base md:text-lg font-semibold tracking-tight text-[var(--ink,#0f172a)] truncate">
-								Студия информированных согласий и договоров
+							<h1 id="consent-studio-title" className="text-sm md:text-lg font-semibold tracking-tight text-[var(--ink,#0f172a)] truncate">
+								<span className="md:hidden">Согласия и договоры</span>
+								<span className="hidden md:inline">Студия информированных согласий и договоров</span>
 							</h1>
 							<p className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block truncate">
 								{patientContext?.patientName ? `Пациент: ${patientContext.patientName}` : "Пакетное электронное и бумажное подписание медицинских документов"}
@@ -286,193 +193,30 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 				{/* 2-колоночный рабочий стол студии */}
 				<div className="flex-1 overflow-y-auto flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-[var(--line,#e2e8f0)] min-h-0">
-					{/* Левая панель: Реестр 15 бланков Минздрава и выбор пакета */}
-					<aside className="w-full md:w-80 shrink-0 p-3 md:p-4 bg-[var(--paper-soft,#f8fafc)]/50 flex flex-col gap-2">
-						<div className="flex items-center justify-between px-1">
-							<span className="text-[11px] font-semibold uppercase tracking-wider text-[var(--ink-muted,#64748b)]">
-								Бланки к визиту ({selectedIds.size}/{CANONICAL_CONSENT_CATALOG.length})
-							</span>
-							<button
-								type="button"
-								onClick={toggleAllSelected}
-								className="text-[11px] text-[var(--teal,#0d9488)] hover:underline font-medium min-h-[28px] flex items-center cursor-pointer bg-transparent border-0 p-0"
-							>
-								{selectedIds.size === CANONICAL_CONSENT_CATALOG.length ? "Снять все" : "Выбрать все"}
-							</button>
-						</div>
+					<ConsentBatchSignActions
+						documents={CANONICAL_CONSENT_CATALOG}
+						activeDocId={activeDocId}
+						selectedIds={selectedIds}
+						signRecords={signRecords}
+						onSelectDoc={setActiveDocId}
+						onToggleSelected={toggleDocSelected}
+						onToggleAll={toggleAllSelected}
+					/>
 
-						<div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none">
-							{CANONICAL_CONSENT_CATALOG.map((doc) => {
-								const rec = signRecords[doc.id] || { status: "pending" };
-								const isSelected = doc.id === activeDocId;
-								const isInPackage = selectedIds.has(doc.id);
-								const isSigned = rec.status !== "pending";
-
-								return (
-									<div
-										key={doc.id}
-										onClick={() => setActiveDocId(doc.id)}
-										className={`group flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all shrink-0 w-[240px] md:w-full min-h-[48px] cursor-pointer ${
-											isSelected
-												? "border-[var(--teal,#0d9488)] bg-[var(--paper,#ffffff)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]/20"
-												: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)]"
-										}`}
-									>
-										<div
-											onClick={(e) => {
-												e.stopPropagation();
-												toggleDocSelected(doc.id);
-											}}
-											className="mt-0.5 text-[var(--ink-muted,#64748b)] hover:text-[var(--teal,#0d9488)] min-h-[28px] min-w-[28px] flex items-center justify-center -ml-1 cursor-pointer shrink-0"
-											title={isInPackage ? "Исключить из пакета" : "Включить в пакет"}
-										>
-											{isInPackage ? (
-												<CheckSquare size={18} className="text-[var(--teal,#0d9488)]" />
-											) : (
-												<Square size={18} className="text-[var(--ink-muted,#94a3b8)]" />
-											)}
-										</div>
-
-										<div className="min-w-0 flex-1">
-											<div className="text-xs font-semibold text-[var(--ink,#0f172a)] leading-tight truncate">
-												{doc.title}
-											</div>
-											<div className="text-[11px] text-[var(--ink-muted,#64748b)] truncate mt-0.5">
-												{isSigned
-													? rec.status === "signed_paper"
-														? "Подписано на бумаге"
-														: "Подписано на планшете"
-													: "Ожидает подписи"}
-											</div>
-										</div>
-
-										<div className="shrink-0 mt-0.5">
-											{isSigned ? (
-												<CheckCircle2 size={16} className="text-emerald-600 dark:text-emerald-400" />
-											) : (
-												<Clock size={16} className="text-[var(--ink-muted,#94a3b8)]" />
-											)}
-										</div>
-									</div>
-								);
-							})}
-						</div>
-
-						<div className="mt-auto hidden md:flex items-center gap-2 p-2.5 rounded-xl bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] text-xs text-[var(--ink-muted,#64748b)]">
-							<FileSignature size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Юридическая сила ЭЦП по ст. 5 63-ФЗ. Пакетная подпись в 1 клик.</span>
-						</div>
-					</aside>
-
-					{/* Правая панель: Просмотр бланка и единый холст подписи */}
 					<main className="flex-1 p-4 md:p-6 overflow-y-auto flex flex-col gap-5 min-h-0">
-						<div className="border-b border-[var(--line,#e2e8f0)] pb-3">
-							<div className="flex items-center justify-between gap-2">
-								<h2 className="text-base md:text-lg font-bold text-[var(--ink,#0f172a)]">
-									{activeDoc.title}
-								</h2>
-								<span
-									className={`px-2.5 py-0.5 rounded-full text-xs font-medium shrink-0 ${
-										currentRecord.status === "signed_digital"
-											? "bg-teal-500/10 text-teal-700 dark:text-teal-400 border border-teal-500/20"
-											: currentRecord.status === "signed_paper"
-												? "bg-blue-500/10 text-blue-700 dark:text-blue-400 border border-blue-500/20"
-												: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
-									}`}
-								>
-									{currentRecord.status === "signed_digital"
-										? "✓ Подписано на планшете"
-										: currentRecord.status === "signed_paper"
-											? "✓ Подписано на бумаге"
-											: "Ожидает подписания"}
-								</span>
-							</div>
-							<p className="text-xs text-[var(--ink-muted,#64748b)] mt-1">
-								{activeDoc.subtitle} • {activeDoc.statutoryBasis}
-							</p>
-						</div>
+						<ConsentDocumentViewer
+							doc={activeDoc}
+							record={currentRecord}
+							patientContext={patientContext}
+						/>
 
-						{/* Разделы бланка */}
-						<div className="space-y-3.5 text-xs md:text-sm text-[var(--ink,#0f172a)] leading-relaxed">
-							{activeDoc.sections.map((section) => (
-								<div
-									key={section.id}
-									className="p-3.5 rounded-xl bg-[var(--paper-soft,#f8fafc)]/60 border border-[var(--line,#e2e8f0)]"
-								>
-									<h3 className="font-semibold text-[var(--ink,#0f172a)] mb-1">
-										{section.title}
-									</h3>
-									<p className="text-[var(--ink-muted,#64748b)]">{section.content}</p>
-									{section.bullets && (
-										<ul className="list-disc pl-5 mt-2 space-y-1 text-[var(--ink-muted,#64748b)]">
-											{section.bullets.map((b, i) => (
-												<li key={i}>{b}</li>
-											))}
-										</ul>
-									)}
-								</div>
-							))}
-						</div>
-
-						{/* Блок цифровой подписи пациента со стилуса или пальца */}
-						<div className="mt-2 p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xs space-y-4">
-							<div className="flex items-center justify-between">
-								<div className="flex items-center gap-2">
-									<FileSignature size={18} className="text-[var(--teal,#0d9488)]" />
-									<span className="text-xs md:text-sm font-semibold text-[var(--ink,#0f172a)]">
-										Электронная подпись пациента (Пакет из {selectedIds.size} бланков)
-									</span>
-								</div>
-								<span className="text-xs text-[var(--ink-muted,#64748b)]">
-									Сенсорный ввод или бумажный оригинал
-								</span>
-							</div>
-
-							<label className="flex items-center gap-3 p-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer transition-colors min-h-[44px]">
-								<input
-									type="checkbox"
-									checked={isPaperChecked}
-									onChange={(e) => setIsPaperChecked(e.target.checked)}
-									className="w-4 h-4 rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)] border-[var(--line,#cbd5e1)] cursor-pointer"
-								/>
-								<span className="text-xs md:text-sm text-[var(--ink,#0f172a)] font-medium">
-									✓ Подписано пациентом на бумажном носителе (оригинал хранится в архиве)
-								</span>
-							</label>
-
-							{!isPaperChecked && (
-								<div className="space-y-2">
-									<div className="flex items-center justify-between text-xs text-[var(--ink-muted,#64748b)]">
-										<span>Распишитесь пальцем или стилусом на экране (накладывается на весь пакет):</span>
-										<button
-											type="button"
-											onClick={handleClearSignature}
-											className="inline-flex items-center gap-1 text-xs text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[36px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] cursor-pointer"
-											title="Очистить холст"
-										>
-											<RotateCcw size={13} />
-											<span>Очистить подпись</span>
-										</button>
-									</div>
-									<div className="relative touch-none border border-[var(--line,#cbd5e1)] rounded-xl bg-white overflow-hidden shadow-2xs">
-										<canvas
-											ref={canvasRef}
-											width={360}
-											height={120}
-											onPointerDown={handlePointerDown}
-											onPointerMove={handlePointerMove}
-											onPointerUp={handlePointerUp}
-											className="w-full h-[120px] cursor-crosshair"
-										/>
-										{points.length === 0 && (
-											<div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-slate-400">
-												Поле для сенсорной подписи пациента (стилус или палец)
-											</div>
-										)}
-									</div>
-								</div>
-							)}
-						</div>
+						<ConsentSignaturePad
+							isPaperChecked={isPaperChecked}
+							onPaperCheckChange={setIsPaperChecked}
+							signatureSvg={signatureSvg}
+							onSignatureChange={setSignatureSvg}
+							selectedCount={selectedIds.size}
+						/>
 					</main>
 				</div>
 
