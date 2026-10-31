@@ -2,7 +2,7 @@
  * copilotSSOTSuite.test.tsx — Red Team SSOT сьют тестов канонического ИИ-копайлота DENTE CRM.
  * 
  * Проверка архитектурных инвариантов:
- * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 280–350, ChairsideCopilotStudioModal 380–480, DirectCopilotLauncher 60–100).
+ * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 280–350, CopilotStudioModal 380–480, DirectCopilotLauncher 60–100).
  * - Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 (var(--teal)).
  * - Мандат 8e: автономия врача, ноль disabled кнопок, Two-Phase Guard.
  * - Мандат 8wy: двухрежимный харнесс (Веб-ассистент vs Станция ОС).
@@ -17,7 +17,7 @@ import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { ChairsideCopilotStudioModal } from "../ChairsideCopilotStudioModal";
+import { CopilotStudioModal } from "../CopilotStudioModal";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
 import {
   COPILOT_CATALOG_CATEGORIES,
@@ -29,10 +29,10 @@ import {
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
+describe("Copilot Studio SSOT & Voice Suite", () => {
   it("1. рендерит панель студии Копайлота с шапкой, статусом движка и контекстом пациента", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
         activeTooth={36}
@@ -51,7 +51,7 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
 
   it("2. содержит обе ключевые вкладки: «Клинический диалог» и «Быстрые действия»", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
         initialTab="dialog"
@@ -63,7 +63,7 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
 
   it("3. Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 («Применить действие»)", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
         initialTab="dialog"
@@ -76,7 +76,7 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
 
   it("4. Apple HIG: нативный Drag Handle ровно 36x5px для выдвижного Bottom Sheet на мобильных", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
       />
@@ -89,7 +89,7 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
 
   it("5. Сенсорная эргономика Apple HIG: интерактивные кнопки имеют touch target >= 44x44px", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
       />
@@ -100,7 +100,7 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
 
   it("6. Мандат 8wy: Двухрежимный харнесс (Веб-ассистент vs Станция ОС)", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
       />
@@ -111,7 +111,7 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
 
   it("7. Вкладка «Быстрые действия»: рендерит 4 реальных Fastify инструмента без блокировок врача (Мандат 8e)", () => {
     const html = renderToString(
-      <ChairsideCopilotStudioModal
+      <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
         initialTab="actions"
@@ -121,7 +121,6 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
     assert.ok(html.includes("Зубная формула FDI"), "Инструмент одонтограммы должен присутствовать");
     assert.ok(html.includes("Выставление счёта"), "Инструмент кассы должен присутствовать");
     assert.ok(html.includes("Захват визиографа"), "Инструмент визиографа должен присутствовать");
-    // Мандат 8e: ни одна кнопка не имеет disabled
     assert.equal(html.includes("disabled"), false, "Кнопки быстрых действий не должны быть disabled");
   });
 
@@ -134,17 +133,17 @@ describe("Chairside Copilot Studio SSOT & Voice Suite", () => {
     assert.ok(phrases.includes("Запиши на завтра в 14:00"));
   });
 
-  it("9. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде ChairsideCopilotStudioModal.tsx", () => {
-    const filePath = path.join(__dirname, "../ChairsideCopilotStudioModal.tsx");
+  it("9. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде CopilotStudioModal.tsx", () => {
+    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
     const content = fs.readFileSync(filePath, "utf-8");
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-    assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в ChairsideCopilotStudioModal.tsx");
+    assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotStudioModal.tsx");
   });
 
-  it("10. Мандат 8b: размер файла ChairsideCopilotStudioModal.tsx строго в Sweet Spot 380–480 строк", () => {
-    const filePath = path.join(__dirname, "../ChairsideCopilotStudioModal.tsx");
+  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot 380–480 строк", () => {
+    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 380 && lines <= 480, `ChairsideCopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–480)`);
+    assert.ok(lines >= 380 && lines <= 480, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–480)`);
   });
 
   it("11. Мандат 8b: размер файла copilotCatalogData.ts строго в Sweet Spot 280–350 строк", () => {

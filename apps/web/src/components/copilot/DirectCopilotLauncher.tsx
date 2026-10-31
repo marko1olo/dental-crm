@@ -1,11 +1,10 @@
 /**
  * DirectCopilotLauncher.tsx — Standalone лаунчер клинического ассистента DENTE.
- * Мандат 8aq: Монтирование под #copilot, #ai-assistant, #chairside-copilot, ?copilot=1, ?ai=1.
+ * Мандат 8aq: Монтирование под #copilot, #ai, #chairside-copilot, ?copilot=1.
  * Мандат 8b: размер файла строго в Sweet Spot 60–80 строк.
  */
-
 import React, { useState, useEffect, useCallback } from "react";
-import { ChairsideCopilotStudioModal } from "./ChairsideCopilotStudioModal";
+import { CopilotStudioModal } from "./CopilotStudioModal";
 
 function checkIsCopilotActive(): boolean {
   if (typeof window === "undefined") return false;
@@ -34,8 +33,9 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
     const handleOpenEvent = () => { setIsActive(true); setIsOpen(true); };
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCtrlOrMeta = e.ctrlKey || e.metaKey;
-      const isKey = e.code === "Space" || e.key === " " || e.key === "j" || e.key === "J" || e.code === "KeyJ";
-      if (isCtrlOrMeta && isKey) {
+      const isK = e.key === "k" || e.key === "K" || e.code === "KeyK";
+      const isJ = e.key === "j" || e.key === "J" || e.code === "KeyJ";
+      if (isCtrlOrMeta && (isK || isJ)) {
         e.preventDefault();
         setIsActive((prev) => !prev);
         setIsOpen((prev) => !prev);
@@ -65,7 +65,7 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
   if (!isActive || !isOpen) return null;
 
   return (
-    <ChairsideCopilotStudioModal
+    <CopilotStudioModal
       isOpen={isOpen}
       onClose={handleClose}
       activeTooth={36}
@@ -75,3 +75,4 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
     />
   );
 }
+export default DirectCopilotLauncher;

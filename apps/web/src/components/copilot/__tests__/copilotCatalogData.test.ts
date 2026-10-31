@@ -18,7 +18,8 @@ import { DEFAULT_SUGGESTION_CATEGORIES } from "../suggestions/copilotSuggestionP
 
 describe("Copilot Catalog Data & SSOT Architecture", () => {
   it("размер copilotCatalogData.ts строго в Sweet Spot (280–350 строк, Мандат 8b)", () => {
-    const filePath = path.resolve(process.cwd(), "apps/web/src/components/copilot/copilotCatalogData.ts");
+    const candidate1 = path.resolve(process.cwd(), "apps/web/src/components/copilot/copilotCatalogData.ts");
+    const filePath = fs.existsSync(candidate1) ? candidate1 : path.resolve(process.cwd(), "src/components/copilot/copilotCatalogData.ts");
     const content = fs.readFileSync(filePath, "utf-8");
     const lineCount = content.split("\n").length;
     assert.ok(

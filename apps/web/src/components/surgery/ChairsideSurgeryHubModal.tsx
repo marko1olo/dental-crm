@@ -20,11 +20,11 @@ import {
 	SURGERY_SUTURE_CATALOG,
 	getImplantSystemById,
 	computeOsteointegrationExpectedDate,
+	buildSurgicalPostOpMemoText,
 	type SurgeryScenarioType,
 	type SurgeryCapType,
 	type MischBoneDensity,
 } from "./surgeryCatalogData";
-import { buildSurgicalPostOpMemoText } from "./protocols/surgeryPostOpMemo";
 import { ImplantPassportCard } from "../implants/ImplantPassportCard";
 import type { FastImplantPassportData } from "../implants/implantQuickPresets";
 import "./surgeryHub.css";
