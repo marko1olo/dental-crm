@@ -13,6 +13,7 @@ function checkIsTelephonyActive(): boolean {
 	if (typeof window === "undefined") return false;
 	const h = window.location.hash || "";
 	const s = window.location.search || "";
+	if (h.includes("recalls") || s.includes("recalls")) return false;
 	const params = new URLSearchParams(s);
 	return (
 		h.includes("telephony") ||

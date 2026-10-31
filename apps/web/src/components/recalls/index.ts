@@ -8,8 +8,22 @@ export * from "./recallTemplates";
 export {
 	buildRecallMessageContent,
 	type PatientRecallItem,
+	type RecallCycleType,
+	type CanonicalRecallWorkflowStatus,
+	type RecallContactStatus,
+	CANONICAL_RECALL_STATUS_CONFIG,
+	DEFAULT_RECALL_CANDIDATES,
+	DEMO_SHOWCASE_CANDIDATES,
 } from "./recallsCatalogData";
+
+export { DirectRecallLauncher } from "./DirectRecallLauncher";
 export { DirectRecallsLauncher } from "./DirectRecallsLauncher";
+
+export {
+	RecallStudioModal,
+	type RecallStudioModalProps,
+	type RecallStudioCycleFilter,
+} from "./RecallStudioModal";
 
 export {
 	PatientRecallsHubModal,

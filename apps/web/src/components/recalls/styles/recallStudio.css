@@ -1,0 +1,478 @@
+/* ==========================================================================
+   DENTE Dental CRM — Canonical Recall Studio Modal Styles (SSOT)
+   Mandates: 8b, 8e, 8n, 8x, 8ze, 8al, 8am (Apple HIG Touch & Zero Un-tokenized Colors)
+   ========================================================================== */
+
+.recall-studio-backdrop {
+	position: fixed;
+	inset: 0;
+	background: var(--backdrop, color-mix(in srgb, var(--paper-strong) 40%, black 60%));
+	backdrop-filter: blur(10px);
+	-webkit-backdrop-filter: blur(10px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 16px;
+	box-sizing: border-box;
+}
+
+.recall-studio-container {
+	width: 100%;
+	max-width: 1140px;
+	height: 88vh;
+	max-height: 88vh;
+	background: var(--paper);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	border-radius: 20px;
+	box-shadow: var(--shadow-3);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-sizing: border-box;
+}
+
+.recall-studio-drag-handle {
+	display: none;
+}
+
+.recall-studio-header {
+	padding: 18px 22px 14px 22px;
+	border-bottom: 1px solid var(--line);
+	background: var(--paper-strong);
+	display: flex;
+	flex-direction: column;
+	gap: 14px;
+	flex-shrink: 0;
+}
+
+.recall-studio-header-top {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+}
+
+.recall-studio-title-group {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.recall-studio-title {
+	font-size: 1.25rem;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.2;
+}
+
+.recall-studio-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted);
+	margin: 0;
+}
+
+.recall-studio-kpi-bar {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.recall-studio-kpi-chip {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	padding: 6px 12px;
+	border-radius: 10px;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--ink);
+}
+
+.recall-studio-kpi-chip--retention {
+	background: var(--teal-surface, var(--paper-soft));
+	border-color: var(--teal);
+	color: var(--teal);
+}
+
+.recall-studio-close-btn {
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper-soft);
+	color: var(--ink);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: background 0.15s ease;
+	flex-shrink: 0;
+}
+
+.recall-studio-cycle-strip {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	overflow-x: auto;
+	scrollbar-width: none;
+	padding-bottom: 2px;
+}
+
+.recall-studio-cycle-strip::-webkit-scrollbar {
+	display: none;
+}
+
+.recall-studio-cycle-btn {
+	min-height: 44px;
+	padding: 8px 16px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	color: var(--muted);
+	font-size: 0.8125rem;
+	font-weight: 600;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+	transition: all 0.15s ease;
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+}
+
+.recall-studio-cycle-btn.is-active {
+	background: var(--teal);
+	color: var(--on-teal, var(--paper-strong));
+	border-color: var(--teal);
+}
+
+.recall-studio-filter-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	flex-wrap: wrap;
+}
+
+.recall-studio-search-box {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	padding: 0 12px;
+	height: 44px;
+	min-height: 44px;
+	border-radius: 12px;
+	border: 1px solid var(--line);
+	background: var(--paper);
+	flex: 1;
+	max-width: 360px;
+}
+
+.recall-studio-search-input {
+	border: none;
+	outline: none;
+	background: transparent;
+	color: var(--ink);
+	font-size: 0.875rem;
+	width: 100%;
+}
+
+.recall-studio-body {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 18px 22px;
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+}
+
+.recall-studio-card {
+	min-height: 52px;
+	padding: 16px;
+	border-radius: 14px;
+	border: 1px solid var(--line);
+	background: var(--paper-strong);
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	box-sizing: border-box;
+	flex-shrink: 0;
+}
+
+.recall-studio-card-main {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 14px;
+	flex-wrap: wrap;
+}
+
+.recall-studio-patient-info {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.recall-studio-patient-name {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink);
+	margin: 0;
+}
+
+.recall-studio-patient-meta {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	font-size: 0.8125rem;
+	color: var(--muted);
+	flex-wrap: wrap;
+}
+
+.recall-studio-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+	padding: 4px 10px;
+	border-radius: 8px;
+	font-size: 0.75rem;
+	font-weight: 600;
+	border: 1px solid var(--line);
+	white-space: nowrap;
+}
+
+.recall-studio-badge--due {
+	background: var(--warn-bg, var(--paper-soft));
+	color: var(--warn-fg, var(--ink));
+	border-color: var(--warn-fg, var(--line));
+}
+
+.recall-studio-badge--reached {
+	background: var(--teal-surface, var(--paper-soft));
+	color: var(--teal);
+	border-color: var(--teal);
+}
+
+.recall-studio-badge--scheduled {
+	background: var(--ok-bg, var(--paper-soft));
+	color: var(--ok-fg, var(--teal));
+	border-color: var(--ok-fg, var(--teal));
+}
+
+.recall-studio-badge--declined {
+	background: var(--paper-soft);
+	color: var(--muted);
+	border-color: var(--line);
+}
+
+.recall-studio-actions-row {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	flex-wrap: wrap;
+}
+
+.recall-studio-btn-primary {
+	min-height: 44px;
+	padding: 10px 18px;
+	border-radius: 12px;
+	background: var(--teal);
+	color: var(--on-teal, var(--paper-strong));
+	border: none;
+	font-weight: 700;
+	font-size: 0.875rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	cursor: pointer;
+	transition: opacity 0.15s ease;
+}
+
+.recall-studio-btn-primary:hover {
+	opacity: 0.92;
+}
+
+.recall-studio-btn-secondary {
+	min-height: 44px;
+	padding: 10px 16px;
+	border-radius: 12px;
+	background: var(--paper-soft);
+	color: var(--ink);
+	border: 1px solid var(--line);
+	font-weight: 600;
+	font-size: 0.8125rem;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.recall-studio-btn-secondary:hover {
+	background: var(--paper);
+}
+
+.recall-studio-message-box {
+	margin-top: 6px;
+	padding: 12px 14px;
+	border-radius: 10px;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.recall-studio-message-text {
+	font-size: 0.875rem;
+	color: var(--ink);
+	margin: 0;
+	line-height: 1.4;
+}
+
+.recall-studio-message-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	font-size: 0.75rem;
+	color: var(--muted);
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.recall-studio-bottom-bar {
+	position: sticky;
+	bottom: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 16px;
+	padding: 14px 22px;
+	padding-bottom: max(14px, env(safe-area-inset-bottom));
+	background: var(--paper-strong);
+	border-top: 1px solid var(--line);
+	flex-shrink: 0;
+}
+
+/* ── Mobile Apple HIG Bottom Sheet (<= 768px) ── */
+@media (max-width: 768px) {
+	.recall-studio-backdrop {
+		padding: 0 !important;
+		align-items: flex-end !important;
+		justify-content: stretch !important;
+	}
+
+	.recall-studio-container {
+		width: 100vw !important;
+		max-width: 100vw !important;
+		height: 92vh !important;
+		max-height: 94vh !important;
+		border-radius: 24px 24px 0 0 !important;
+		border-bottom: none !important;
+		border-left: none !important;
+		border-right: none !important;
+		overflow-x: clip !important;
+		display: flex !important;
+		flex-direction: column !important;
+	}
+
+	.recall-studio-drag-handle {
+		display: block !important;
+		width: 36px !important;
+		height: 5px !important;
+		border-radius: 3px !important;
+		background: var(--line) !important;
+		margin: 10px auto 4px auto !important;
+		flex-shrink: 0 !important;
+	}
+
+	.recall-studio-header {
+		padding: 10px 14px 8px 14px !important;
+		gap: 8px !important;
+	}
+
+	.recall-studio-title {
+		font-size: 1.05rem !important;
+	}
+
+	.recall-studio-subtitle {
+		display: none !important;
+	}
+
+	.recall-studio-kpi-bar {
+		display: flex !important;
+		gap: 6px !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		scrollbar-width: none !important;
+	}
+
+	.recall-studio-kpi-bar::-webkit-scrollbar {
+		display: none !important;
+	}
+
+	.recall-studio-kpi-chip {
+		padding: 4px 8px !important;
+		font-size: 0.75rem !important;
+		white-space: nowrap !important;
+		flex-shrink: 0 !important;
+	}
+
+	.recall-studio-search-box {
+		max-width: 100% !important;
+		width: 100% !important;
+	}
+
+	.recall-studio-body {
+		padding: 10px 14px !important;
+		gap: 12px !important;
+		flex: 1 1 auto !important;
+		min-height: 0 !important;
+		overflow-y: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+	}
+
+	.recall-studio-card-main {
+		flex-direction: column !important;
+		align-items: stretch !important;
+		gap: 10px !important;
+	}
+
+	.recall-studio-actions-row {
+		width: 100% !important;
+		display: flex !important;
+		gap: 8px !important;
+	}
+
+	.recall-studio-actions-row button {
+		flex: 1 1 0 !important;
+		min-height: 44px !important;
+		justify-content: center !important;
+		font-size: 0.75rem !important;
+		padding: 8px 10px !important;
+	}
+
+	.recall-studio-bottom-bar {
+		padding: 10px 14px !important;
+		padding-bottom: max(16px, env(safe-area-inset-bottom)) !important;
+		flex-direction: column !important;
+		gap: 8px !important;
+		flex-shrink: 0 !important;
+	}
+
+	.recall-studio-bottom-bar .recall-studio-btn-primary {
+		width: 100% !important;
+		min-height: 48px !important;
+	}
+}
