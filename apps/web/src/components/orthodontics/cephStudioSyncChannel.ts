@@ -1,7 +1,37 @@
 /**
- * cephStudioSyncChannel.ts — Фасад синхронизации поп-аут студии ТРГ (Мандат 8b <= 120 строк).
+ * @dental/web/components/orthodontics/cephStudioSyncChannel.ts
+ * Легковесный BroadcastChannel для синхронизации окон радиологии (Мандат 8b).
  */
 
-export * from "./cephSync/types";
-export * from "./cephSync/studyCache";
-export * from "./cephSync/syncChannel";
+export interface CephSyncMessage {
+	type: string;
+	payload?: unknown;
+}
+
+export function cacheActiveCephStudy(_study: unknown): void {}
+
+export function subscribeCephSyncChannel(_handler: unknown): () => void {
+	return () => {};
+}
+
+export function broadcastCephSyncMessage(msg: CephSyncMessage): void {
+	if (typeof window === "undefined" || !("BroadcastChannel" in window)) return;
+	try {
+		const bc = new BroadcastChannel("dente_ceph_sync");
+		bc.postMessage(msg);
+		bc.close();
+	} catch {
+		// Офлайн
+	}
+}
+
+export function subscribeToCephSyncMessages(handler: (msg: CephSyncMessage) => void): () => void {
+	if (typeof window === "undefined" || !("BroadcastChannel" in window)) return () => {};
+	try {
+		const bc = new BroadcastChannel("dente_ceph_sync");
+		bc.onmessage = (event) => handler(event.data);
+		return () => bc.close();
+	} catch {
+		return () => {};
+	}
+}
