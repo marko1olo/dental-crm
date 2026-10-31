@@ -9,6 +9,7 @@ import { DirectWarehouseMdlpLauncher } from "./components/appLayout/modalsContai
 import { DirectOmnichannelStandaloneLauncher } from "./components/appLayout/modalsContainerModules/standalone/administrative/OmnichannelAndTelephonyStandaloneLauncher";
 import { DirectPrescriptionLauncher } from "./components/prescriptions/DirectPrescriptionLauncher";
 import { DirectDocumentsCatalogLauncher } from "./components/documents/DirectDocumentsCatalogLauncher";
+import { DirectDocumentsLauncher } from "./components/documents/DirectDocumentsLauncher";
 import { DirectSanpinLauncher } from "./components/sanpin/DirectSanpinLauncher";
 import { DirectImplantPassportLauncher } from "./components/implants/DirectImplantPassportLauncher";
 import { DirectSurgeryLauncher } from "./components/surgery/DirectSurgeryLauncher";
@@ -238,6 +239,7 @@ export function AppShell() {
 			<DirectPrescriptionLauncher />
 			<DirectSanpinLauncher />
 			<DirectDocumentsCatalogLauncher />
+			<DirectDocumentsLauncher />
 			<DirectImplantPassportLauncher />
 			<DirectSurgeryLauncher />
 			<DirectRadiologyLauncher />

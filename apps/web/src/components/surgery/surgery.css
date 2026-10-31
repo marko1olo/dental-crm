@@ -1,3 +1,5 @@
+@import "./surgeryHub.css";
+
 /* ==========================================================================
    SURGERY COCKPIT & SURGICAL PROTOCOL STYLES (DENTE Dental CRM Standards)
    Tier 2 Warm Context Surgical Protocol Engine (Mandates 8c, 8d, 8e, 8k, 8s, 8am)
@@ -380,5 +382,3 @@ html.dark .surgery-memo-action-btn {
 	border-color: var(--line, #334155);
 	color: var(--ink, #f8fafc);
 }
-
-@import "./surgeryHub.css";

@@ -24,3 +24,5 @@ export * from "./informedConsentGuiding";
 export * from "./taxApplicationGuiding";
 export * from "./photoVideoConsentGuiding";
 export * from "./documentsCatalogData";
+export * from "./DocumentsStudioModal";
+export * from "./DirectDocumentsLauncher";
