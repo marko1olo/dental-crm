@@ -109,6 +109,6 @@ describe("Service Pricelist Presets: Budget & Canonical Data Integrity", () => {
 		assert.strictEqual(SPECIALTY_LABELS.therapist, "Стоматолог-терапевт");
 		assert.strictEqual(SPECIALTY_LABELS.surgeon, "Стоматолог-хирург / имплантолог");
 		assert.strictEqual(PRICE_TIER_LABELS.standard, "Основной прайс (100%)");
-		assert.ok(STATUTORY_VAT_EXEMPTION_NOTE.includes("149 НК РФ"));
+		assert.ok(STATUTORY_VAT_EXEMPTION_NOTE.includes("Без НДС"));
 	});
 });
