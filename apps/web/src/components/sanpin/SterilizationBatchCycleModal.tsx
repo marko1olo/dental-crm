@@ -24,7 +24,7 @@ export interface SterilizationBatchCycleModalProps {
 	readonly defaultAutoclaveName?: string;
 	readonly defaultOperatorName?: string;
 	readonly defaultBatchSize?: number;
-	readonly clinicDevices?: readonly { id: string; brandModelRu: string }[];
+	readonly clinicDevices?: readonly { id: string; brandModelRu: string }[] | undefined;
 	readonly organizationId?: string;
 }
 

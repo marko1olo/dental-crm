@@ -172,8 +172,10 @@ export function createOneClickShiftBatch(options?: {
 	const timeStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 	const count = options?.packagesCount ?? 12;
 	const operator = options?.operatorName || "Иванова Е. С., ассистент ЦСО";
-	const program = AUTOCLAVE_PROGRAMS.find((p) => p.id === options?.programId) ?? AUTOCLAVE_PROGRAMS[0];
-	const device = options?.autoclaveName || CLINIC_STERILIZERS[0].name;
+	const fallbackProgram = AUTOCLAVE_PROGRAMS[0]!;
+	const program = AUTOCLAVE_PROGRAMS.find((p) => p.id === options?.programId) ?? fallbackProgram;
+	const fallbackDevice = CLINIC_STERILIZERS[0]!;
+	const device = options?.autoclaveName || fallbackDevice.name;
 
 	const sterilizationCycle: SterilizationBatchCycleRecord = {
 		id: `cycle-${Date.now()}`,

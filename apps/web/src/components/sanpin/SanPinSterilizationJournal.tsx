@@ -83,7 +83,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				await fetchCyclesFromDb(period);
 				setActiveTab("journal");
 			} else {
-				await handleQuickBatchNorm(packagesCount, String(tempCelsius), itemsSummaryInput);
+				await handleQuickBatchNorm(packagesCount, tempCelsius === 121 ? "121" : "134", itemsSummaryInput);
 				setActiveTab("journal");
 			}
 		} finally {

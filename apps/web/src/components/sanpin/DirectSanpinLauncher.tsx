@@ -1,77 +1,77 @@
 /**
  * apps/web/src/components/sanpin/DirectSanpinLauncher.tsx
  *
- * Прямой автономный лаунчер хаба стерилизации и СанПиН (Мандаты 8b, 8e, 8n, 8aq):
- * - Слушатели URL хешей: #sanpin, #sterilization, #autoclave, ?sanpin=1, ?sterilization=1
- * - Слушатели глобальных событий: "dente:open-sanpin", "dente:open-autoclave"
- * - Монтирует живой канонический мастер-контейнер SanpinRegisters и хаб стерилизации.
- * - Размер строго 50–90 строк (Мандат 8b).
+ * Автономный лаунчер Санитарной Студии и журналов стерилизации (Мандаты 8b, 8e, 8n, 8aq):
+ * - Слушатели URL хешей: #sanpin, #autoclave, #sterilization, ?sanpin=1, ?autoclave=1, ?sterilization=1
+ * - Слушатели глобальных событий: "dente:open-sanpin", "dente:open-autoclave", "dente:open-sterilization"
+ * - Монтирует живой канонический мастер-контейнер SanpinStudioModal.
+ * - Диапазон размера строго 70–90 строк (Мандат 8b/8zi).
  */
 
-import React, { useState, useEffect } from "react";
-import { SanpinRegisters } from "./SanpinRegisters";
-import { SanpinSterilizationHubModal } from "./SanpinSterilizationHubModal";
+import React, { useState, useEffect, useCallback } from "react";
+import { SanpinStudioModal, type SanpinStudioTab } from "./SanpinStudioModal";
 
 function checkIsSanpinActive(): boolean {
 	if (typeof window === "undefined") return false;
-	const h = window.location.hash || "";
-	const s = window.location.search || "";
+	const h = (window.location.hash || "").toLowerCase();
+	const s = (window.location.search || "").toLowerCase();
 	const params = new URLSearchParams(s);
 	return (
-		h.includes("sanpin") ||
-		h.includes("sterilization") ||
-		h.includes("autoclave") ||
-		params.get("sanpin") === "1" ||
-		params.get("sterilization") === "1" ||
-		params.get("autoclave") === "1"
+		h.includes("sanpin") || h.includes("sterilization") || h.includes("autoclave") ||
+		params.get("sanpin") === "1" || params.get("sterilization") === "1" || params.get("autoclave") === "1"
 	);
 }
 
-function checkIsHubRequested(): boolean {
-	if (typeof window === "undefined") return false;
-	const h = window.location.hash || "";
-	return h.includes("autoclave") || h.includes("sterilization") || h.includes("hub");
+function resolveInitialTab(): SanpinStudioTab {
+	if (typeof window === "undefined") return "autoclave";
+	const h = (window.location.hash || "").toLowerCase();
+	const s = (window.location.search || "").toLowerCase();
+	if (h.includes("pso") || h.includes("cleaning") || s.includes("pso")) return "pso";
+	if (h.includes("bactericidal") || h.includes("uv") || h.includes("dezar") || s.includes("uv")) return "bactericidal";
+	return "autoclave";
 }
 
 export const DirectSanpinLauncher: React.FC = () => {
 	const [isActive, setIsActive] = useState(checkIsSanpinActive);
-	const [isHubOpen, setIsHubOpen] = useState(checkIsHubRequested);
+	const [isStudioOpen, setIsStudioOpen] = useState(checkIsSanpinActive);
+	const [activeTab, setActiveTab] = useState<SanpinStudioTab>(resolveInitialTab);
+
+	const handleLocationChange = useCallback(() => {
+		const active = checkIsSanpinActive();
+		setIsActive(active);
+		setIsStudioOpen(active);
+		setActiveTab(resolveInitialTab());
+	}, []);
+
+	const handleClose = useCallback(() => setIsStudioOpen(false), []);
 
 	useEffect(() => {
-		const handleLocationChange = () => {
-			setIsActive(checkIsSanpinActive());
-			setIsHubOpen(checkIsHubRequested());
-		};
-		const handleOpenSanpin = () => setIsActive(true);
-		const handleOpenAutoclave = () => {
-			setIsActive(true);
-			setIsHubOpen(true);
-		};
+		const handleOpenSanpin = () => { setIsActive(true); setIsStudioOpen(true); };
+		const handleOpenAutoclave = () => { setIsActive(true); setIsStudioOpen(true); setActiveTab("autoclave"); };
 
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
 		window.addEventListener("dente:open-sanpin", handleOpenSanpin);
 		window.addEventListener("dente:open-autoclave", handleOpenAutoclave);
+		window.addEventListener("dente:open-sterilization", handleOpenAutoclave);
 
 		return () => {
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
 			window.removeEventListener("dente:open-sanpin", handleOpenSanpin);
 			window.removeEventListener("dente:open-autoclave", handleOpenAutoclave);
+			window.removeEventListener("dente:open-sterilization", handleOpenAutoclave);
 		};
-	}, []);
+	}, [handleLocationChange]);
 
-	if (!isActive) return null;
+	if (!isActive && !isStudioOpen) return null;
 
 	return (
-		<div
-			data-testid="direct-sanpin-launcher"
-			className="w-full min-h-screen bg-[var(--paper-canvas,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] p-2 sm:p-5 flex flex-col box-border"
-		>
-			<SanpinRegisters />
-			<SanpinSterilizationHubModal
-				isOpen={isHubOpen}
-				onClose={() => setIsHubOpen(false)}
+		<div data-testid="direct-sanpin-launcher" className="fixed inset-0 z-[9998] pointer-events-auto">
+			<SanpinStudioModal
+				isOpen={isStudioOpen}
+				onClose={handleClose}
+				initialTab={activeTab}
 			/>
 		</div>
 	);

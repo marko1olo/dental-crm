@@ -98,6 +98,8 @@ import "./components/schedule/roster/doctorShiftRoster.css";
 import "./components/schedule/chairSchedule.css";
 // Прейскурант и каталог услуг
 import "./components/catalog/pricelist/servicePricelist.css";
+// Санитарный контроль, стерилизация и автоклавирование (Мандаты 8b, 8e, 8n, 8am, 8aq)
+import "./components/sanpin/sanpin.css";
 // Рентген-модули: визиограф, hot-folder интейк и темный кокпит КЛКТ тюнера
 import "./components/radiology/rvgCapture.css";
 import "./components/radiology/hotFolderIntake.css";

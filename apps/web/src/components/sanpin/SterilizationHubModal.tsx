@@ -66,7 +66,7 @@ export function SterilizationHubModal({
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
 
 	const selectedDevice = useMemo(
-		() => CLINIC_STERILIZERS.find((d) => d.id === selectedAutoclaveId) ?? CLINIC_STERILIZERS[0],
+		() => CLINIC_STERILIZERS.find((d) => d.id === selectedAutoclaveId) ?? CLINIC_STERILIZERS[0]!,
 		[selectedAutoclaveId],
 	);
 	const stockDeductions = useMemo(() => calculateBatchStockDeduction(packagesCount), [packagesCount]);

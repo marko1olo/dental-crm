@@ -113,7 +113,7 @@ export function SanpinSterilizationHubModal({
 								<span className="hidden sm:inline-block text-[11px] font-semibold px-2 py-0.5 rounded-full bg-teal-100 dark:bg-teal-900/40 text-teal-800 dark:text-teal-300">Санитарный регламент клиники</span>
 							</div>
 							<p className="text-[11px] sm:text-xs text-[var(--ink-muted,#64748b)] dark:text-[var(--ink-muted-dark,#94a3b8)]">
-								{CLINIC_STERILIZERS[0].name} • Пакетная стерилизация смены
+								{CLINIC_STERILIZERS[0]?.name ?? "Melag Vacuklav 23 B+"} • Пакетная стерилизация смены
 							</p>
 						</div>
 					</div>
