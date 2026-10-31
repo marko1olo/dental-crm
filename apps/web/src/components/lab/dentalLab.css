@@ -1,11 +1,70 @@
-/* dentalLab.css — Главный канонический SSOT-файл стилей лаборатории (Мандат 8b: <= 120 строк) */
-@import "./styles/dentalLabShades.css";
-@import "./styles/dentalLabTeeth.css";
-@import "./styles/dentalLabHub.css";
-@import "./styles/dentalLabToolbar.css";
-@import "./styles/dentalLabFilterBar.css";
-@import "./styles/dentalLabFilterChips.css";
-@import "./styles/dentalLabKanbanColumns.css";
-@import "./styles/dentalLabKanbanCards.css";
-@import "./styles/dentalLabCardActions.css";
-@import "./styles/dentalLabPrintAndMobile.css";
+/**
+ * apps/web/src/components/lab/dentalLab.css
+ *
+ * DENTE Dental CRM — Консолидированные канонические стили зуботехнической лаборатории (SSOT).
+ * Поддержка светлой и тёмной тем через токены (var(--paper), var(--ink), var(--line), var(--teal)).
+ * 0px паразитного горизонтального скролла, Apple HIG адаптив (Мандаты 8b: Sweet Spot, 8am, 8ze).
+ */
+
+/* 1. Изоляция контекста модального окна и 0px скролла */
+[data-testid="dental-lab-studio-modal-root"] {
+	overflow-x: clip;
+	max-width: 100vw;
+}
+
+[data-testid="direct-dental-lab-launcher-root"] {
+	overflow-x: clip;
+	max-width: 100vw;
+}
+
+/* 2. Мобильный Bottom Sheet Apple HIG */
+@media (max-width: 639px) {
+	[data-testid="dental-lab-studio-modal-root"] > div {
+		border-bottom-left-radius: 0;
+		border-bottom-right-radius: 0;
+		max-height: 94vh;
+		animation: labSlideUp 0.24s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+}
+
+@keyframes labSlideUp {
+	from {
+		transform: translateY(100%);
+		opacity: 0.8;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+/* 3. Тонкие скроллбары без скачков макета (0px CLS) */
+[data-testid="lab-order-create-panel"]::-webkit-scrollbar,
+[data-testid="lab-orders-registry-panel"]::-webkit-scrollbar {
+	width: 5px;
+	height: 5px;
+}
+
+[data-testid="lab-order-create-panel"]::-webkit-scrollbar-thumb,
+[data-testid="lab-orders-registry-panel"]::-webkit-scrollbar-thumb {
+	background: var(--line-strong, #cbd5e1);
+	border-radius: 9999px;
+}
+
+/* 4. Сетка зубов FDI без разрывов */
+.grid-cols-14 {
+	grid-template-columns: repeat(14, minmax(0, 1fr));
+}
+
+/* 5. Интерактивные сенсорные области для мобильных устройств (Apple HIG >= 44x44px) */
+@media (pointer: coarse) {
+	[data-testid^="tooth-chip-"],
+	[data-testid^="shade-chip-"],
+	[data-testid^="filter-tab-"] {
+		min-height: 36px;
+	}
+
+	[data-testid="submit-lab-order-button"] {
+		min-height: 48px;
+	}
+}

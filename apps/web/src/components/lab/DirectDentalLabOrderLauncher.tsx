@@ -1,7 +1,8 @@
 /**
- * DirectDentalLabOrderLauncher.tsx — Канонический ре-экспорт лаунчера наряда в лабораторию.
+ * apps/web/src/components/lab/DirectDentalLabOrderLauncher.tsx
+ *
+ * DENTE Dental CRM — Канонический ре-экспорт лаунчера наряда в лабораторию.
  */
-export {
-	DirectDentalLabLauncher,
-	DirectDentalLabOrderLauncher,
-} from "./DirectDentalLabLauncher";
+
+export * from "./DirectLabLauncher";
+export { DirectLabLauncher as default } from "./DirectLabLauncher";
