@@ -16,7 +16,7 @@ import {
 	Sparkles,
 	UploadCloud,
 } from "lucide-react";
-import { useState } from "react";
+import React, { useState } from "react";
 
 interface VendorGuide {
 	id: string;
@@ -28,52 +28,36 @@ interface VendorGuide {
 
 const VENDOR_GUIDES: VendorGuide[] = [
 	{
-		id: "ident",
-		title: "IDENT",
-		recommendedFormat: "XLSX или DBF (PATIENT.DBF)",
-		steps:
-			"В программе IDENT откройте: «Отчеты» → «Пациенты» → «Экспорт в Excel (XLSX)». Либо скопируйте файлы таблиц DBF из рабочей папки IDENT.",
-		fields: "ФИО, телефоны, даты рождения, баланс, примечания и история приёмов.",
-	},
-	{
-		id: "dentalpro",
-		title: "DentalPRO",
-		recommendedFormat: "XLSX или CSV",
-		steps:
-			"В DentalPRO откройте раздел «Пациенты» → нажмите «Экспорт списка» в правом верхнем углу → выберите формат XLSX или CSV.",
-		fields: "Полный профиль пациента, контактные телефоны, соматический статус, примечания.",
-	},
-	{
-		id: "infodent",
-		title: "Инфодент",
-		recommendedFormat: "DBF или Excel (Windows-1251 / UTF-8)",
-		steps:
-			"В Инфодент выполните экспорт реестра пациентов в файл Excel/CSV или передайте таблицы DBF. Кодировка (CP1251 или UTF-8) определится автоматически.",
-		fields: "Картотека пациентов, номера медицинских карт, телефоны, дни рождения.",
-	},
-	{
-		id: "stomx",
-		title: "StomX",
-		recommendedFormat: "XLSX или CSV",
-		steps:
-			"В веб-панели StomX перейдите в «Настройки» → «Экспорт данных» → выберите «База пациентов». Сохранённый файл готов к переносу.",
-		fields: "ФИО, контакты, адреса, прикреплённые комментарии и балансы.",
-	},
-	{
-		id: "1c",
-		title: "1С:Стоматология",
-		recommendedFormat: "XLSX или XML",
-		steps:
-			"В 1С откройте «Пациенты» (или «Картотека») → кнопка «Еще» → «Вывести список» → сохраните как Excel (XLSX). Все колонки сопоставятся автоматически.",
-		fields: "ФИО, контактные телефоны, даты рождения, балансы и заметки.",
-	},
-	{
-		id: "excel",
-		title: "Excel / Таблицы",
+		id: "universal_excel",
+		title: "Универсальный Excel / CSV",
 		recommendedFormat: "XLSX, XLS или CSV",
 		steps:
 			"Подойдёт любая таблица с колонками ФИО, Телефон, Дата рождения. Порядок колонок произвольный — движок сопоставит поля автоматически.",
-		fields: "Любые произвольные колонки с автоматическим распознаванием контактов и дат.",
+		fields: "ФИО, телефоны, даты рождения, баланс, примечания и история приёмов.",
+	},
+	{
+		id: "medical_export",
+		title: "Выгрузка из медицинской системы",
+		recommendedFormat: "XLSX или CSV",
+		steps:
+			"Экспортируйте реестр пациентов или прейскурант из прежней системы в файл таблицы. Все стандартные колонки будут распознаны автоматически.",
+		fields: "Полный профиль пациента, контактные телефоны, соматический статус, примечания.",
+	},
+	{
+		id: "dbf_tables",
+		title: "Файлы таблиц и баз данных",
+		recommendedFormat: "DBF или SQLite (Windows-1251 / UTF-8)",
+		steps:
+			"Передайте таблицы DBF или локальный дамп базы. Кодировка (CP1251, CP866 или UTF-8) определится автоматически с верификацией целостности.",
+		fields: "Картотека пациентов, номера медицинских карт, телефоны, дни рождения, балансы.",
+	},
+	{
+		id: "imaging_dicom",
+		title: "Снимки и лучевая диагностика",
+		recommendedFormat: "Папка DICOM / RVG / КЛКТ",
+		steps:
+			"Выберите локальную папку томографа или визиографа. Система построит предпросмотр срезов и свяжет снимки с карточками пациентов.",
+		fields: "Серии срезов, аксиальные/панорамные проекции, метаданные пациентов.",
 	},
 ];
 
@@ -85,7 +69,7 @@ export function MigrationSourcePanel(props: {
 	onFile: (file: File) => void;
 }) {
 	const [dragging, setDragging] = useState(false);
-	const [selectedVendor, setSelectedVendor] = useState<string>("ident");
+	const [selectedVendor, setSelectedVendor] = useState<string>("universal_excel");
 
 	const activeGuide =
 		VENDOR_GUIDES.find((g) => g.id === selectedVendor) ??

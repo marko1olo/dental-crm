@@ -1,5 +1,6 @@
 import React from "react";
-import { describe, expect, it } from "vitest";
+import assert from "node:assert/strict";
+import test, { describe, it } from "node:test";
 import { renderToString } from "react-dom/server";
 import {
 	MigrationAutopilotSectionView,
@@ -13,7 +14,7 @@ import {
 describe("MigrationAutopilotSection Decomposed Modules (Mandate 8b <= 120 lines)", () => {
 	it("renders null if migrationAutopilot is null or undefined", () => {
 		const html = renderToString(React.createElement(MigrationAutopilotSectionView, { migrationAutopilot: null } as any));
-		expect(html).toBe("");
+		assert.equal(html, "");
 	});
 
 	it("renders exactly 1 primary CTA button and non-blocking secondary buttons", () => {
@@ -25,12 +26,12 @@ describe("MigrationAutopilotSection Decomposed Modules (Mandate 8b <= 120 lines)
 				onLookupClinicProfile: () => {},
 			}),
 		);
-		expect(html).toContain("data-testid=\"migration-run-autopilot-btn\"");
-		expect(html).toContain("Запустить пробный импорт (Dry Run)");
-		expect(html).toContain("data-testid=\"migration-discover-sources-btn\"");
-		expect(html).toContain("Повторить поиск");
-		expect(html).toContain("data-testid=\"migration-pick-folder-btn\"");
-		expect(html).toContain("Выбрать папку");
+		assert.ok(html.includes("data-testid=\"migration-run-autopilot-btn\""));
+		assert.ok(html.includes("Запустить пробный импорт (Dry Run)"));
+		assert.ok(html.includes("data-testid=\"migration-discover-sources-btn\""));
+		assert.ok(html.includes("Повторить поиск"));
+		assert.ok(html.includes("data-testid=\"migration-pick-folder-btn\""));
+		assert.ok(html.includes("Выбрать папку"));
 	});
 
 	it("renders operator score and status lanes correctly", () => {
@@ -44,10 +45,10 @@ describe("MigrationAutopilotSection Decomposed Modules (Mandate 8b <= 120 lines)
 			{ id: "lane-1", title: "База пациентов", owner: "admin", status: "ready", score: 0.9, detail: "Таблицы готовы", nextAction: "Импорт" },
 		];
 		const html = renderToString(React.createElement(MigrationOperatorLanesTable, { operatorPacket: mockPacket, lanes: mockLanes }));
-		expect(html).toContain("data-testid=\"migration-operator-lanes-table\"");
-		expect(html).toContain("85");
-		expect(html).toContain("База пациентов");
-		expect(html).toContain("Проверить целостность базы");
+		assert.ok(html.includes("data-testid=\"migration-operator-lanes-table\""));
+		assert.ok(html.includes("85"));
+		assert.ok(html.includes("База пациентов"));
+		assert.ok(html.includes("Проверить целостность базы"));
 	});
 
 	it("renders sources overview cards without blocking operator actions", () => {
@@ -75,10 +76,10 @@ describe("MigrationAutopilotSection Decomposed Modules (Mandate 8b <= 120 lines)
 				onPreviewCandidate: () => {},
 			}),
 		);
-		expect(html).toContain("data-testid=\"migration-sources-grid\"");
-		expect(html).toContain("План переноса");
-		expect(html).toContain("В разбор");
-		expect(html).toContain("Предпросмотр");
+		assert.ok(html.includes("data-testid=\"migration-sources-grid\""));
+		assert.ok(html.includes("План переноса"));
+		assert.ok(html.includes("В разбор"));
+		assert.ok(html.includes("Предпросмотр"));
 	});
 
 	it("renders dry run summary and handoff checklist with clean domain text", () => {
@@ -99,15 +100,15 @@ describe("MigrationAutopilotSection Decomposed Modules (Mandate 8b <= 120 lines)
 				operatorActionsProps: {} as any,
 			}),
 		);
-		expect(previewHtml).toContain("data-testid=\"migration-dry-run-summary\"");
-		expect(previewHtml).toContain("Прямой импорт SQLite");
+		assert.ok(previewHtml.includes("data-testid=\"migration-dry-run-summary\""));
+		assert.ok(previewHtml.includes("Прямой импорт SQLite"));
 
 		const checklistHtml = renderToString(
 			React.createElement(MigrationHandoffChecklistView, {
 				checklist: [{ id: "c1", title: "Сверка пациентов", owner: "admin", phase: "verify", status: "ready", detail: "OK" } as any],
 			}),
 		);
-		expect(checklistHtml).toContain("data-testid=\"migration-autopilot-handoff-checklist\"");
-		expect(checklistHtml).toContain("Сверка пациентов");
+		assert.ok(checklistHtml.includes("data-testid=\"migration-autopilot-handoff-checklist\""));
+		assert.ok(checklistHtml.includes("Сверка пациентов"));
 	});
 });

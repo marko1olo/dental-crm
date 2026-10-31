@@ -18,6 +18,18 @@ import { importRowStatusLabels } from "./constants";
 import { humanizeMigrationText, patientImportRowWarningText } from "./helpers";
 import type { InputChangeEvent, TextInputChangeEvent } from "./types";
 
+export const STANDARD_CLINICAL_PRICELIST_TEMPLATE = `Код;Наименование;Категория;Цена;Длительность
+A16.07.002;Наложение пломбы светового отверждения;Терапия;4500;45
+A16.07.002.001;Лечение среднего кариеса с реставрацией;Терапия;5200;60
+A16.07.030;Инструментальная и медикаментозная обработка канала;Терапия;3800;45
+A16.07.001;Удаление постоянного зуба простое;Хирургия;3500;30
+A16.07.001.002;Удаление зуба сложное с разъединением корней;Хирургия;6000;60
+A16.07.054;Установка дентального имплантата;Хирургия;35000;60
+A16.07.004;Восстановление зуба коронкой металлокерамической;Ортопедия;14000;60
+A16.07.004.001;Восстановление зуба коронкой из диоксида циркония;Ортопедия;24000;60
+A16.07.051;Профессиональная гигиена полости рта и Air-Flow;Гигиена;5000;45
+A01.07.001;Первичный осмотр и консультация врача-стоматолога;Консультация;1500;30`;
+
 export interface MigrationPreviewSectionProps {
 	settingsTab: string;
 	typedImportSourceKinds: ImportSourceKind[];
@@ -310,14 +322,28 @@ export function MigrationPreviewSection({
 					</button>
 				</div>
 				{!patientImportInputReady ? (
-					<p
-						className="import-empty-guidance"
+					<div
+						className="import-empty-guidance flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]"
 						role="status"
 						aria-live="polite"
 					>
-						Вставьте список пациентов, OCR журнала или надиктуйте импорт перед
-						проверкой.
-					</p>
+						<span className="text-xs text-[var(--ink-muted)]">
+							Вставьте список пациентов или нажмите для загрузки готового прейскуранта:
+						</span>
+						<button
+							type="button"
+							data-testid="load-standard-pricelists-btn"
+							className="secondary-button text-xs font-medium shrink-0"
+							onClick={() => {
+								setImportText(STANDARD_CLINICAL_PRICELIST_TEMPLATE);
+								setImportPreview(null);
+								setImportCommit(null);
+								setImportIntake(null);
+							}}
+						>
+							✓ Загрузить типовой прейскурант (терапия, ортопедия, хирургия)
+						</button>
+					</div>
 				) : null}
 			</div>
 

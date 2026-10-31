@@ -5,8 +5,8 @@
    Strictly <= 800 lines. Progress steps, kickstart grid, triage queue, dry runs.
    ========================================================================== */
 .migration-kickstart-panel {
-	background: #f4fbf8;
-	border: 1px solid #b8d8cc;
+	background: var(--paper-soft);
+	border: 1px solid var(--line);
 	border-left: 4px solid var(--teal);
 	border-radius: 8px;
 	display: grid;
@@ -31,9 +31,9 @@
 }
 
 .migration-kickstart-panel > div:first-child span {
-	color: #587269;
+	color: var(--muted);
 	font-size: 13px;
-	font-weight: 800;
+	font-weight: 500;
 }
 
 .migration-progress-strip {
@@ -43,9 +43,9 @@
 }
 
 .migration-progress-step {
-	background: #ffffff;
-	border: 1px solid #d7e8e1;
-	border-left: 4px solid #b7c8c1;
+	background: var(--paper);
+	border: 1px solid var(--line);
+	border-left: 4px solid var(--line-subtle);
 	border-radius: 8px;
 	display: grid;
 	gap: 3px;
@@ -54,11 +54,11 @@
 }
 
 .migration-progress-step.status-ready {
-	border-left-color: #2f9d78;
+	border-left-color: var(--teal);
 }
 
 .migration-progress-step.status-active {
-	border-left-color: #d8a43d;
+	border-left-color: var(--gold, #d8a43d);
 }
 
 .migration-progress-step.status-locked {
@@ -66,14 +66,14 @@
 }
 
 .migration-progress-step strong {
-	color: #23483d;
+	color: var(--ink);
 	font-size: 12px;
 }
 
 .migration-progress-step span {
-	color: #60756e;
+	color: var(--muted);
 	font-size: 12px;
-	font-weight: 800;
+	font-weight: 500;
 	line-height: 1.3;
 }
 
@@ -85,8 +85,8 @@
 
 .migration-kickstart-grid article {
 	align-content: start;
-	background: #ffffff;
-	border: 1px solid #d7e8e1;
+	background: var(--paper);
+	border: 1px solid var(--line);
 	border-radius: 8px;
 	display: grid;
 	gap: 8px;
@@ -95,14 +95,14 @@
 }
 
 .migration-kickstart-grid article > strong {
-	color: #23483d;
+	color: var(--ink);
 	font-size: 13px;
 }
 
 .migration-kickstart-grid article > span {
-	color: #60756e;
+	color: var(--muted);
 	font-size: 12px;
-	font-weight: 800;
+	font-weight: 500;
 	line-height: 1.35;
 }
 
