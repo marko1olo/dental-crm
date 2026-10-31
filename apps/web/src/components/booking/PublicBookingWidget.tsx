@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import "./bookingWidget.css";
 import {
@@ -96,6 +96,10 @@ export const PublicBookingWidget: React.FC<PublicBookingWidgetProps> = (props) =
 		</div>
 	);
 };
+
+export * from "./onlineBookingCatalogData";
+export { PublicBookingStudioModal } from "./PublicBookingStudioModal";
+export { DirectPublicBookingLauncher } from "./DirectPublicBookingLauncher";
 
 export const PublicBookingWidgetSSOT = PublicBookingWidget;
 export const PublicOnlineBookingWidget = PublicBookingWidget;

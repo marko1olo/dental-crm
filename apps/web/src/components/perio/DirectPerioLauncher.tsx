@@ -1,24 +1,28 @@
 /**
- * DirectPerioLauncher.tsx — Прямой автономный лаунчер кабинета пародонтологии (Мандаты 8b, 8aq, 60–80 строк).
- * Монтируется в корневой AppShell.tsx, слушает хэш #perio / #psr и события dente:open-perio.
+ * DirectPerioLauncher.tsx — Автономный лаунчер кабинета пародонтологии и экспресс-скрининга PSR
+ * Смонтирован в AppShell.tsx и StandaloneLaunchers.tsx, слушает #perio, #psr, #periodontics, ?perio=1.
+ * Норматив размера: 60–100 строк (Мандаты 8b, 8aq).
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { PerioWorkspaceModal } from "./PerioWorkspaceModal";
+import { PerioStudioModal } from "./PerioStudioModal";
 
 function checkIsPerioActive(): boolean {
 	if (typeof window === "undefined") return false;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
-	return s.includes("perio") || s.includes("psr") || h.includes("perio") || h.includes("psr");
+	return (
+		s.includes("perio") ||
+		s.includes("psr") ||
+		s.includes("periodontics") ||
+		h.includes("perio") ||
+		h.includes("psr") ||
+		h.includes("periodontics")
+	);
 }
 
 export const DirectPerioLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => checkIsPerioActive());
-	const [initialTab, setInitialTab] = useState<"psr" | "chart">(() => {
-		if (typeof window === "undefined") return "psr";
-		return window.location.hash.includes("chart") || window.location.search.includes("chart") ? "chart" : "psr";
-	});
 	const [patientId, setPatientId] = useState<string>("demo_perio_patient");
 	const [patientName, setPatientName] = useState<string>("Смирнова Анна Сергеевна (Пародонтология)");
 
@@ -27,9 +31,9 @@ export const DirectPerioLauncher: React.FC = () => {
 			const detail = (e as CustomEvent)?.detail;
 			if (detail?.patientId) setPatientId(String(detail.patientId));
 			if (detail?.patientName) setPatientName(String(detail.patientName));
-			if (detail?.tab === "chart" || detail?.tab === "psr") setInitialTab(detail.tab);
 			setIsOpen(true);
 		};
+
 		window.addEventListener("dente:open-perio", handleOpen);
 		window.addEventListener("dente:open-psr", handleOpen);
 		window.addEventListener("dente-open-perio-modal", handleOpen);
@@ -37,7 +41,6 @@ export const DirectPerioLauncher: React.FC = () => {
 		const handleState = () => {
 			if (checkIsPerioActive()) {
 				setIsOpen(true);
-				if (window.location.hash.includes("psr") || window.location.search.includes("psr")) setInitialTab("psr");
 			}
 		};
 		window.addEventListener("hashchange", handleState);
@@ -54,21 +57,20 @@ export const DirectPerioLauncher: React.FC = () => {
 
 	const handleClose = useCallback(() => {
 		setIsOpen(false);
-		if (typeof window !== "undefined" && (window.location.hash.includes("perio") || window.location.hash.includes("psr"))) {
-			history.replaceState(null, "", window.location.pathname + window.location.search);
+		if (typeof window !== "undefined" && checkIsPerioActive()) {
+			history.replaceState(null, "", window.location.pathname);
 		}
 	}, []);
 
 	if (!isOpen) return null;
 
 	return (
-		<PerioWorkspaceModal
+		<PerioStudioModal
 			isOpen={isOpen}
 			isModal={true}
 			onClose={handleClose}
 			patientId={patientId}
 			patientName={patientName}
-			initialTab={initialTab}
 		/>
 	);
 };

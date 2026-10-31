@@ -32,6 +32,7 @@ import { DirectTreatmentPlanLauncher } from "../../treatment-plans/DirectTreatme
 import { DirectDentalLabLauncher } from "../../lab/DirectDentalLabLauncher";
 import { DirectAnalyticsLauncher } from "../../analytics/DirectAnalyticsLauncher";
 import { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
+import { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -40,6 +41,26 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Public Online Booking Studio Standalone Launcher (#booking, #online-booking, #public-booking, ?booking=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("booking=1") ||
+			window.location.search.includes("online_booking=1") ||
+			window.location.search.includes("public_booking=1") ||
+			window.location.search.includes("standalone=booking") ||
+			window.location.search.includes("standalone=online_booking") ||
+			window.location.hash === "#booking" ||
+			window.location.hash.startsWith("#booking?") ||
+			window.location.hash.startsWith("#booking/") ||
+			window.location.hash === "#online-booking" ||
+			window.location.hash.startsWith("#online-booking?") ||
+			window.location.hash === "#public-booking" ||
+			window.location.hash.startsWith("#public-booking?") ||
+			window.location.hash === "#booking-studio")
+	) {
+		return <DirectPublicBookingLauncher />;
 	}
 
 	// 0. Direct Dental Laboratory & Orthopedic Orders Studio Standalone Launcher (#lab, #dental-lab, #ztl, ?standalone=dental_lab, ?lab=1)
@@ -226,10 +247,15 @@ export function renderStandaloneLaunchers(
 		);
 	}
 
-	// 0. Copilot Assistant Standalone Launcher (?copilot_standalone=1, #copilot-standalone)
+	// 0. Copilot Assistant Standalone Launcher (#copilot, #ai-assistant, #chairside-copilot, ?copilot=1, ?ai=1)
 	if (
 		typeof window !== "undefined" &&
-		(window.location.search.includes("copilot_standalone") ||
+		(window.location.search.includes("copilot") ||
+			window.location.hash.includes("copilot") ||
+			window.location.search.includes("ai=1") ||
+			window.location.hash.includes("ai-assistant") ||
+			window.location.hash.includes("chairside-copilot") ||
+			window.location.search.includes("copilot_standalone") ||
 			window.location.hash.includes("copilot-standalone") ||
 			window.location.search.includes("copilot_drawer") ||
 			window.location.hash.includes("copilot-drawer") ||

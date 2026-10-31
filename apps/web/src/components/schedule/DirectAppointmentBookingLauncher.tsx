@@ -12,15 +12,11 @@ function checkIsBookingActive(): boolean {
 	const h = window.location.hash || "";
 	return (
 		s.includes("standalone=appointment_booking") ||
-		s.includes("standalone=booking") ||
 		s.includes("booking_modal=1") ||
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
 		h.includes("schedule_booking") ||
 		h.includes("new-appointment") ||
-		h === "#booking" ||
-		h.startsWith("#booking?") ||
-		h.startsWith("#booking/") ||
 		h === "#appointment" ||
 		h.startsWith("#appointment?") ||
 		h.startsWith("#appointment/") ||
@@ -95,8 +91,6 @@ export const DirectAppointmentBookingLauncher: React.FC = () => {
 					window.location.hash.includes("schedule_booking") ||
 					window.location.hash === "#schedule" ||
 					window.location.hash.startsWith("#schedule?") ||
-					window.location.hash === "#booking" ||
-					window.location.hash.startsWith("#booking?") ||
 					window.location.hash === "#appointment" ||
 					window.location.hash.startsWith("#appointment?") ||
 					window.location.hash === "#new-appointment" ||

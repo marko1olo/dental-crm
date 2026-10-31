@@ -6,7 +6,7 @@
  * ЭМК открывается из визита в рабочем контуре.
  */
 
-import type React from "react";
+import React from "react";
 import { renderPatientDetailsLauncher } from "./PatientDetailsStandaloneLauncher";
 import {
 	StandaloneAnamnesisHost,
@@ -32,12 +32,12 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 		return <StandaloneHygieneHost onClose={() => clearUrlTokens(["hygiene"])} />;
 	}
 
-	if (hasUrlToken(["perio"])) {
+	if (hasUrlToken(["perio", "periodontics", "psr"])) {
 		const mode = new URLSearchParams(window.location.search || "").get("perio");
 		return (
 			<StandalonePerioHost
 				mode={mode}
-				onClose={() => clearUrlTokens(["perio"], ["perio"])}
+				onClose={() => clearUrlTokens(["perio", "periodontics", "psr"], ["perio", "periodontics", "psr"])}
 			/>
 		);
 	}
