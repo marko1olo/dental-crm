@@ -18,6 +18,7 @@ import { DirectVisiographLauncher } from "./components/visiograph/DirectVisiogra
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
+import { DirectCashierLauncher } from "./components/finance/DirectCashierLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
@@ -247,6 +248,7 @@ export function AppShell() {
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
 			<DirectCashboxLauncher />
+			<DirectCashierLauncher />
 			<DirectReportsLauncher />
 			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />

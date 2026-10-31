@@ -5,6 +5,9 @@
  * Clean Orchestrator Facade (<35 lines) in strict compliance with Mandate 8b.
  */
 
+export * from "./cashierCatalogData.js";
+export * from "./CashierStudioModal.js";
+export * from "./DirectCashierLauncher.js";
 export * from "./cashShift/index.js";
 export * from "./PaymentModal.js";
 export * from "./PaymentFiscalModal.js";
