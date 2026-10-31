@@ -1,72 +1,55 @@
 /**
  * apps/web/src/components/consents/DirectConsentLauncher.tsx
  *
- * Автономный лаунчер студии согласий и договоров DENTE CRM.
- * Монтируется в AppShell.tsx и StandaloneLaunchers.tsx (Мандаты 8b <= 100 строк, 8e, 8aq).
- * Слушает deep links: #consents, #consent, #documents, ?consents=1, ?consent=1.
+ * Автономный лаунчер студии согласий DENTE CRM (Мандаты 8b, 8e, 8aq).
+ * Монтируется в AppShell.tsx и StandaloneLaunchers.tsx.
+ * Обрабатывает deep-links #consent, #consents, ?consent=1 и события dente:open-consent.
  */
 
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useCallback } from "react";
 import { ConsentStudioModal } from "./ConsentStudioModal";
 
+const isConsentTarget = (): boolean => {
+	if (typeof window === "undefined") return false;
+	const s = window.location.search || "";
+	const h = window.location.hash || "";
+	return (
+		h === "#consents" ||
+		h === "#consent" ||
+		h.startsWith("#consent?") ||
+		h.startsWith("#consents?") ||
+		h === "#consent-studio" ||
+		h.includes("patient-consents") ||
+		s.includes("consents=1") ||
+		s.includes("consent=1") ||
+		s.includes("standalone=consents") ||
+		s.includes("tab=consents")
+	);
+};
+
 export const DirectConsentLauncher: React.FC = () => {
-	const [isOpen, setIsOpen] = useState<boolean>(() => {
-		if (typeof window === "undefined") return false;
-		const s = window.location.search || "";
-		const h = window.location.hash || "";
-		return (
-			h === "#consents" ||
-			h === "#consent" ||
-			h.startsWith("#consent?") ||
-			h.startsWith("#consents?") ||
-			h === "#documents" ||
-			h.startsWith("#documents?") ||
-			h === "#consent-studio" ||
-			h.includes("patient-consents") ||
-			s.includes("consents=1") ||
-			s.includes("consent=1") ||
-			s.includes("standalone=consents") ||
-			s.includes("tab=consents")
-		);
-	});
+	const [isOpen, setIsOpen] = useState<boolean>(isConsentTarget);
+
+	const handleOpen = useCallback(() => setIsOpen(true), []);
+	const handleHash = useCallback(() => {
+		if (isConsentTarget()) setIsOpen(true);
+	}, []);
 
 	useEffect(() => {
-		const handleOpen = () => setIsOpen(true);
-		const handleHashChange = () => {
-			const s = window.location.search || "";
-			const h = window.location.hash || "";
-			if (
-				h === "#consents" ||
-				h === "#consent" ||
-				h.startsWith("#consent?") ||
-				h.startsWith("#consents?") ||
-				h === "#documents" ||
-				h.startsWith("#documents?") ||
-				h === "#consent-studio" ||
-				h.includes("patient-consents") ||
-				s.includes("consents=1") ||
-				s.includes("consent=1") ||
-				s.includes("standalone=consents") ||
-				s.includes("tab=consents")
-			) {
-				setIsOpen(true);
-			}
-		};
-
+		window.addEventListener("dente:open-consent", handleOpen);
 		window.addEventListener("dente:open-consents", handleOpen);
 		window.addEventListener("dente-open-consents", handleOpen);
 		window.addEventListener("dente:open-documents", handleOpen);
-		window.addEventListener("hashchange", handleHashChange);
+		window.addEventListener("hashchange", handleHash);
 
 		return () => {
+			window.removeEventListener("dente:open-consent", handleOpen);
 			window.removeEventListener("dente:open-consents", handleOpen);
 			window.removeEventListener("dente-open-consents", handleOpen);
 			window.removeEventListener("dente:open-documents", handleOpen);
-			window.removeEventListener("hashchange", handleHashChange);
+			window.removeEventListener("hashchange", handleHash);
 		};
-	}, []);
-
-	if (!isOpen) return null;
+	}, [handleOpen, handleHash]);
 
 	const handleClose = () => {
 		setIsOpen(false);
@@ -75,15 +58,12 @@ export const DirectConsentLauncher: React.FC = () => {
 			url.searchParams.delete("consents");
 			url.searchParams.delete("consent");
 			url.searchParams.delete("standalone");
-			const cleanHash = window.location.hash.replace(
-				/#consents|#consent-studio|#consent/g,
-				"",
-			);
-			const newUrl =
-				url.pathname + (url.search ? url.search : "") + cleanHash;
-			window.history.replaceState({}, "", newUrl);
+			const cleanHash = window.location.hash.replace(/#consents|#consent-studio|#consent/g, "");
+			window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
 		}
 	};
+
+	if (!isOpen) return null;
 
 	return (
 		<ConsentStudioModal

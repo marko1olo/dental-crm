@@ -1,21 +1,10 @@
 /**
- * Master Stylesheet Facade
- * Decomposed per Mandate 8b & decomposer skill (<= 120 lines)
+ * apps/web/src/components/consents/informedConsent.css
+ *
+ * Канонический стилевой контракт информированных согласий и договоров DENTE CRM.
+ * Токены --paper, --ink, --teal, --line, Apple HIG touch target >= 44px.
  */
-@import "./styles/consentPart01.css";
-@import "./styles/consentPart02.css";
-@import "./styles/consentPart03.css";
-@import "./styles/consentPart04.css";
-@import "./styles/consentPart05.css";
-@import "./styles/consentPart06.css";
-@import "./styles/consentPart07.css";
-@import "./styles/consentPart08.css";
-@import "./styles/consentPart09.css";
-@import "./styles/consentPart10.css";
-@import "./styles/consentPart11.css";
-@import "./styles/consentPart12.css";
 
-/* Core Document Title & Token Contract (Mandates 8al & 8b) */
 .consent-document-title {
 	color: var(--ink);
 }
@@ -26,11 +15,8 @@
 	border-color: var(--line-strong, var(--teal));
 }
 
-/* Base design tokens verification anchor */
 .consent-token-anchor {
 	background: var(--paper);
 	color: var(--teal);
 	border-color: var(--muted);
 }
-
-

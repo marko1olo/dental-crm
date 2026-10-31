@@ -4,19 +4,14 @@
  * Канонический SSOT юридического контура, согласий и договоров DENTE CRM.
  */
 
-// Канонический каталог согласий и генератор печати А4 (Мандаты 8e, 8x, 8ap)
-export * from "./consentCatalogData.js";
+// Канонический реестр 15 бланков Минздрава, хэширование целостности и печать А4
+export * from "./consentCatalogData";
 
-// Каноническая Студия подписания согласий и договоров (Мандаты 8am, 8e, Apple HIG)
-export { ConsentStudioModal, type ConsentStudioModalProps } from "./ConsentStudioModal.js";
+// Каноническая студия пакетного подписания согласий и договоров (Мандаты 8e, 8am)
+export { ConsentStudioModal, type ConsentStudioModalProps } from "./ConsentStudioModal";
 
-// Автономный лаунчер deep links (#consents, #consent, #documents, ?consents=1)
-export { DirectConsentLauncher } from "./DirectConsentLauncher.js";
+// Автономный лаунчер deep links (#consents, #consent, ?consent=1, dente:open-consent)
+export { DirectConsentLauncher } from "./DirectConsentLauncher";
 
-// Реэкспорт совместимости
-export * from "./consentTemplatesRegistry.js";
-export * from "./signaturePadMath.js";
-export * from "./useConsentSigning.js";
-export * from "./ConsentModal.js";
-export * from "./InformedConsentModal.js";
-export * from "./SignaturePadCanvas.js";
+// Фасады совместимости
+export { InformedConsentModal, ConsentModal, type InformedConsentModalProps } from "./InformedConsentModal";
