@@ -95,7 +95,6 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 	const isConsentModalStandalone =
 		search.get("consent_sign_drawer") === "1" ||
 		search.get("patient_consent_drawer") === "1" ||
-		h === "#consents" ||
 		h.includes("consent-sign-drawer") ||
 		h.includes("patient-consent-drawer");
 
