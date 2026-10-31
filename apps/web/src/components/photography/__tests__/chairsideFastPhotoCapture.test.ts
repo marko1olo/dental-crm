@@ -9,10 +9,10 @@
  * - Anti-monolith <= 800 lines
  */
 
-import { describe, it } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -22,11 +22,34 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 	const componentsDir = path.resolve(__dirname, "..");
 	const visitDir = path.resolve(__dirname, "../../visit");
 
-	const compressorPath = path.join(componentsDir, "chairsidePhotoCompressor.ts");
+	const compressorPath = path.join(
+		componentsDir,
+		"chairsidePhotoCompressor.ts",
+	);
 	const pasteHookPath = path.join(componentsDir, "useClipboardPhotoPaste.ts");
 	const cameraModalPath = path.join(componentsDir, "IntraoralCameraModal.tsx");
 	const splitterPath = path.join(visitDir, "BeforeAfterSplitter.tsx");
-	const diaryUploadPath = path.resolve(__dirname, "../../VisitDiaryPhotoUpload.tsx");
+	const diaryUploadPath = path.resolve(
+		__dirname,
+		"../../VisitDiaryPhotoUpload.tsx",
+	);
+	const photoUploadDir = path.resolve(__dirname, "../../visit/photoUpload");
+	const modularUploadPath = path.join(
+		photoUploadDir,
+		"VisitDiaryPhotoUpload.tsx",
+	);
+	const toolbarPath = path.join(
+		photoUploadDir,
+		"VisitDiaryPhotoActionsToolbar.tsx",
+	);
+	const gridPath = path.join(
+		photoUploadDir,
+		"VisitDiaryPhotoThumbnailGrid.tsx",
+	);
+	const hookPath = path.join(
+		photoUploadDir,
+		"useVisitDiaryPhotoUploadState.ts",
+	);
 
 	it("1. Verifies all required files exist on disk and meet anti-monolith limit (<= 800 lines)", () => {
 		const filesToCheck = [
@@ -35,6 +58,10 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 			cameraModalPath,
 			splitterPath,
 			diaryUploadPath,
+			modularUploadPath,
+			toolbarPath,
+			gridPath,
+			hookPath,
 		];
 
 		for (const file of filesToCheck) {
@@ -49,7 +76,14 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 	});
 
 	it("2. Doctor Autonomy (Mandate 8e): Proves 0 disabled buttons across all chairside photo capture components", () => {
-		const filesToCheck = [cameraModalPath, splitterPath, diaryUploadPath];
+		const filesToCheck = [
+			cameraModalPath,
+			splitterPath,
+			diaryUploadPath,
+			modularUploadPath,
+			toolbarPath,
+			gridPath,
+		];
 
 		for (const file of filesToCheck) {
 			const content = fs.readFileSync(file, "utf8");
@@ -70,6 +104,10 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 			cameraModalPath,
 			splitterPath,
 			diaryUploadPath,
+			modularUploadPath,
+			toolbarPath,
+			gridPath,
+			hookPath,
 		];
 
 		const emojiRegex =
@@ -137,7 +175,8 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 
 		// Proves Spacebar / Enter capture trigger for chairside foot pedal / hands-free
 		assert.ok(
-			cameraContent.includes('e.key === " "') || cameraContent.includes("Spacebar"),
+			cameraContent.includes('e.key === " "') ||
+				cameraContent.includes("Spacebar"),
 			"Camera modal must support Spacebar capture trigger",
 		);
 
@@ -172,7 +211,8 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 		// Proves fullscreen patient presentation toggle
 		assert.ok(
 			splitterContent.includes("isFullscreen") &&
-				(splitterContent.includes("Maximize2") || splitterContent.includes("Minimize2")),
+				(splitterContent.includes("Maximize2") ||
+					splitterContent.includes("Minimize2")),
 			"Splitter must support fullscreen presentation mode for operatory monitors",
 		);
 
@@ -184,13 +224,20 @@ describe("Chairside Fast Photo Capture & Before/After Splitter (@dental/web)", (
 
 		// Proves keyboard navigation (Left/Right arrow support)
 		assert.ok(
-			splitterContent.includes("ArrowLeft") && splitterContent.includes("ArrowRight"),
+			splitterContent.includes("ArrowLeft") &&
+				splitterContent.includes("ArrowRight"),
 			"Splitter must support keyboard step navigation",
 		);
 	});
 
 	it("7. VisitDiaryPhotoUpload Integration Invariants", () => {
-		const uploadContent = fs.readFileSync(diaryUploadPath, "utf8");
+		const uploadContent = [
+			fs.readFileSync(diaryUploadPath, "utf8"),
+			fs.readFileSync(modularUploadPath, "utf8"),
+			fs.readFileSync(toolbarPath, "utf8"),
+			fs.readFileSync(gridPath, "utf8"),
+			fs.readFileSync(hookPath, "utf8"),
+		].join("\n");
 
 		// Proves hook is wired
 		assert.ok(
