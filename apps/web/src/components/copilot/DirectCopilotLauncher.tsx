@@ -1,11 +1,11 @@
 /**
  * DirectCopilotLauncher.tsx — Standalone лаунчер клинического ассистента DENTE.
- * Мандат 8aq: Монтирование в живой UI (#copilot, #ai, #voice, Ctrl+Space, Ctrl+J, dente:open-copilot).
+ * Мандат 8aq: Монтирование под #copilot, #ai-assistant, #chairside-copilot, ?copilot=1, ?ai=1.
  * Мандат 8b: размер файла строго в Sweet Spot 60–80 строк.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { CopilotWorkspaceHost } from "./CopilotWorkspaceHost";
+import { ChairsideCopilotStudioModal } from "./ChairsideCopilotStudioModal";
 
 function checkIsCopilotActive(): boolean {
   if (typeof window === "undefined") return false;
@@ -13,10 +13,11 @@ function checkIsCopilotActive(): boolean {
   const h = window.location.hash || "";
   const search = new URLSearchParams(s);
   return (
-    search.get("copilot") === "1" || search.get("copilot_standalone") === "1" ||
-    search.get("copilot_workspace") === "1" || search.get("view") === "copilot_standalone" ||
-    search.get("view") === "copilot_workspace" || h === "#copilot" || h === "#ai" ||
-    h === "#voice" || h === "#copilot-standalone" || h.includes("copilot") || h.includes("voice")
+    search.get("copilot") === "1" || search.get("ai") === "1" ||
+    search.get("copilot_standalone") === "1" || search.get("copilot_workspace") === "1" ||
+    search.get("view") === "copilot_standalone" || search.get("view") === "copilot_workspace" ||
+    h === "#copilot" || h === "#ai" || h === "#ai-assistant" || h === "#chairside-copilot" ||
+    h === "#voice" || h === "#copilot-standalone" || h.includes("copilot") || h.includes("chairside")
   );
 }
 
@@ -43,18 +44,20 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
     window.addEventListener("hashchange", handleLocationChange);
     window.addEventListener("popstate", handleLocationChange);
     window.addEventListener("dente:open-copilot", handleOpenEvent);
+    window.addEventListener("dente:open-agent-cockpit", handleOpenEvent);
     window.addEventListener("keydown", handleKeyDown);
     return () => {
       window.removeEventListener("hashchange", handleLocationChange);
       window.removeEventListener("popstate", handleLocationChange);
       window.removeEventListener("dente:open-copilot", handleOpenEvent);
+      window.removeEventListener("dente:open-agent-cockpit", handleOpenEvent);
       window.removeEventListener("keydown", handleKeyDown);
     };
   }, []);
 
   const handleClose = useCallback(() => {
     setIsOpen(false);
-    if (typeof window !== "undefined" && (window.location.hash === "#copilot" || window.location.hash === "#ai" || window.location.hash === "#voice")) {
+    if (typeof window !== "undefined" && (window.location.hash.includes("copilot") || window.location.hash.includes("ai"))) {
       window.history.pushState(null, "", window.location.pathname + window.location.search);
     }
   }, []);
@@ -62,7 +65,7 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
   if (!isActive || !isOpen) return null;
 
   return (
-    <CopilotWorkspaceHost
+    <ChairsideCopilotStudioModal
       isOpen={isOpen}
       onClose={handleClose}
       activeTooth={36}

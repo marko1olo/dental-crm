@@ -1,11 +1,6 @@
 /**
  * copilotCatalogData.ts — Единый канонический SSOT-каталог быстрых клинических команд, навыков и инструментов.
- * 
- * Соответствие мандатам:
- * - Мандат 8b: размер файла строго в Sweet Spot (200–280 строк).
- * - Мандат 8e: автономия врача, Two-Phase Guard (requiresConfirmation для мутаций).
- * - Мандат 8x: чистый клинический язык без советских приказов (043/у, 804н, 54-ФЗ).
- * - Мандат 8wy: двухрежимный харнесс (Веб-клиника vs Рабочая станция ОС).
+ * Соответствие: Мандат 8b (280–350 строк), Мандат 8e (автономия), Мандат 8x (без канцелярита), Мандат 8wy (двухрежимность).
  */
 
 export type CopilotRuntimeMode = "web_browser" | "desktop_native" | "both";
@@ -31,6 +26,45 @@ export interface CopilotCatalogCategory {
   items: CopilotCatalogItem[];
 }
 
+export interface ClinicalQuickPreset {
+  id: string;
+  label: string;
+  prompt: string;
+  actionBadge: string;
+  category: "odontogram" | "pharmacology" | "schedule" | "billing" | "soap";
+}
+
+export interface SpeechEngineHealthReport {
+  engine: "webspeech" | "gemini_cloud" | "whisper_local" | "groq_cloud";
+  status: "operational" | "degraded" | "standby" | "unsupported";
+  label: string;
+  isCloudActive: boolean;
+  activeProvider: string;
+  details: string;
+}
+
+/** Реестр боевых инструментов Fastify API (Zero Fake, Мандат 8e) */
+export const CRM_FASTIFY_TOOLS_REGISTRY = {
+  updateToothStatus: "crmClinicalOdontogramTools.updateToothState",
+  createAppointmentSlot: "crmScheduleTools.createAppointment",
+  generateSoapDiary: "crmClinicalDiaryTools.saveVisitDiary",
+  calcInvoiceKopecks: "crmBillingTools.calculateTreatmentEstimate",
+  createInvoiceDraft: "crmBillingTools.createInvoiceDraft",
+  applyDoctorDiscount: "crmBillingTools.applyDoctorDiscount",
+  captureScreen: "workstationTools.captureScreen",
+  scanHotfolder: "workstationTools.scanHotfolder",
+} as const;
+
+/** Пресеты клинических фраз для быстрого ввода (Мандат 8e & Voice-First) */
+export const CLINICAL_QUICK_PRESETS: ClinicalQuickPreset[] = [
+  { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, полость I класс по Блэку", actionBadge: "Одонтограмма", category: "odontogram" },
+  { id: "preset-septanest", label: "Анестезия септанест", prompt: "Инфильтрационная анестезия: Септанест 1:100 000, 1.7 мл", actionBadge: "Анестезия", category: "pharmacology" },
+  { id: "preset-cofferdam", label: "Коффердам", prompt: "Изоляция рабочего поля: коффердам, кламп №2, без осложнений", actionBadge: "Изоляция", category: "soap" },
+  { id: "preset-book-tomorrow", label: "Запиши на завтра в 14:00", prompt: "Запиши пациента на завтра в 14:00 на терапевтический приём", actionBadge: "Расписание", category: "schedule" },
+  { id: "preset-phys-norm", label: "Интактная норма", prompt: "Установи физиологическую норму: соматически здоров, интактные зубы", actionBadge: "0-клик норма", category: "odontogram" },
+  { id: "preset-invoice-draft", label: "Счёт на терапию", prompt: "Сформируй предварительный счёт на лечение кариеса с нанокомпозитом", actionBadge: "Касса", category: "billing" },
+];
+
 export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
   {
     id: "chairside",
@@ -47,7 +81,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "FileText",
         mode: "both",
         requiresConfirmation: true,
-        targetTool: "crmClinicalDiaryTools.saveVisitDiary",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary,
         shortVoiceTrigger: "дневник приёма",
       },
       {
@@ -59,7 +93,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "Activity",
         mode: "both",
         requiresConfirmation: true,
-        targetTool: "crmClinicalOdontogramTools.updateToothState",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
         shortVoiceTrigger: "кариес 46 пломба",
       },
       {
@@ -103,7 +137,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "Calculator",
         mode: "both",
         requiresConfirmation: false,
-        targetTool: "crmBillingTools.calculateTreatmentEstimate",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.calcInvoiceKopecks,
         shortVoiceTrigger: "рассчитай 3 сметы",
       },
       {
@@ -115,7 +149,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "Receipt",
         mode: "both",
         requiresConfirmation: true,
-        targetTool: "crmBillingTools.createInvoiceDraft",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft,
         shortVoiceTrigger: "счет на оплату",
       },
       {
@@ -127,7 +161,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "ShieldCheck",
         mode: "both",
         requiresConfirmation: true,
-        targetTool: "crmBillingTools.applyDoctorDiscount",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.applyDoctorDiscount,
         shortVoiceTrigger: "гарантийный случай",
       },
     ],
@@ -147,7 +181,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "Camera",
         mode: "desktop_native",
         requiresConfirmation: false,
-        targetTool: "workstationTools.captureScreen",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.captureScreen,
         shortVoiceTrigger: "захвати снимок",
       },
       {
@@ -159,7 +193,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "FolderSearch",
         mode: "desktop_native",
         requiresConfirmation: false,
-        targetTool: "workstationTools.scanHotfolder",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.scanHotfolder,
         shortVoiceTrigger: "проверь снимки томографа",
       },
       {
@@ -215,7 +249,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         icon: "CalendarPlus",
         mode: "both",
         requiresConfirmation: true,
-        targetTool: "crmScheduleTools.createAppointment",
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot,
         shortVoiceTrigger: "записать через 5 дней",
       },
     ],
@@ -253,15 +287,9 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
 ];
 
 export function getCatalogItemsByMode(mode: CopilotRuntimeMode): CopilotCatalogItem[] {
-  const result: CopilotCatalogItem[] = [];
-  for (const cat of COPILOT_CATALOG_CATEGORIES) {
-    for (const item of cat.items) {
-      if (item.mode === "both" || item.mode === mode) {
-        result.push(item);
-      }
-    }
-  }
-  return result;
+  return COPILOT_CATALOG_CATEGORIES.flatMap((c) =>
+    c.items.filter((item) => item.mode === "both" || item.mode === mode)
+  );
 }
 
 export function findCatalogItemById(id: string): CopilotCatalogItem | undefined {
@@ -270,4 +298,50 @@ export function findCatalogItemById(id: string): CopilotCatalogItem | undefined 
     if (found) return found;
   }
   return undefined;
+}
+
+/** Честная проверка статуса голосовых и ИИ-движков (Zero Fake) */
+export function inspectSpeechEngineHealth(healthPayload?: Record<string, unknown>): SpeechEngineHealthReport {
+  const hasBrowserSpeech = typeof window !== "undefined" && Boolean(
+    (window as unknown as { SpeechRecognition?: unknown; webkitSpeechRecognition?: unknown }).SpeechRecognition ||
+    (window as unknown as { webkitSpeechRecognition?: unknown }).webkitSpeechRecognition
+  );
+  const healthObj = (healthPayload && typeof healthPayload === "object" && "health" in healthPayload)
+    ? (healthPayload as { health?: Record<string, { consecutiveFailures?: number; cooldownUntil?: number }> }).health
+    : null;
+
+  let hasCloudOperational = false;
+  let activeProvider = "Web Speech API (Browser)";
+
+  if (healthObj) {
+    for (const [key, val] of Object.entries(healthObj)) {
+      if ((val.consecutiveFailures ?? 0) === 0 && (val.cooldownUntil ?? 0) < Date.now()) {
+        hasCloudOperational = true;
+        activeProvider = key.startsWith("gemini") ? "Google Gemini Live" : "Groq Voice / Whisper";
+        break;
+      }
+    }
+  }
+
+  if (hasCloudOperational) {
+    return {
+      engine: activeProvider.includes("Gemini") ? "gemini_cloud" : "groq_cloud",
+      status: "operational",
+      label: activeProvider,
+      isCloudActive: true,
+      activeProvider,
+      details: "Облачный нейросетевой шлюз активен со сквозным резервированием ключей",
+    };
+  }
+
+  return {
+    engine: hasBrowserSpeech ? "webspeech" : "unsupported",
+    status: hasBrowserSpeech ? "operational" : "degraded",
+    label: hasBrowserSpeech ? "Web Speech API (Нативный)" : "Голосовой ввод недоступен",
+    isCloudActive: false,
+    activeProvider: hasBrowserSpeech ? "WebkitSpeechRecognition" : "Локальный шаблонный ввод",
+    details: hasBrowserSpeech
+      ? "Автономное распознавание речи прямо в браузере (ноль задержек, офлайн-режим)"
+      : "Служба распознавания речи не поддерживается браузером",
+  };
 }

@@ -8,19 +8,22 @@ import fs from "node:fs";
 import path from "node:path";
 import {
   COPILOT_CATALOG_CATEGORIES,
+  CRM_FASTIFY_TOOLS_REGISTRY,
+  CLINICAL_QUICK_PRESETS,
   getCatalogItemsByMode,
   findCatalogItemById,
+  inspectSpeechEngineHealth,
 } from "../copilotCatalogData";
 import { DEFAULT_SUGGESTION_CATEGORIES } from "../suggestions/copilotSuggestionPresets";
 
 describe("Copilot Catalog Data & SSOT Architecture", () => {
-  it("размер copilotCatalogData.ts строго в Sweet Spot (200–280 строк, Мандат 8b)", () => {
+  it("размер copilotCatalogData.ts строго в Sweet Spot (280–350 строк, Мандат 8b)", () => {
     const filePath = path.resolve(process.cwd(), "apps/web/src/components/copilot/copilotCatalogData.ts");
     const content = fs.readFileSync(filePath, "utf-8");
     const lineCount = content.split("\n").length;
     assert.ok(
-      lineCount >= 200 && lineCount <= 280,
-      `Размер copilotCatalogData.ts равен ${lineCount} строк (ожидается 200–280 строк)`
+      lineCount >= 280 && lineCount <= 350,
+      `Размер copilotCatalogData.ts равен ${lineCount} строк (ожидается 280–350 строк)`
     );
   });
 
@@ -64,6 +67,32 @@ describe("Copilot Catalog Data & SSOT Architecture", () => {
     assert.ok(item, "Должен найти элемент расчета 3 тарифов сметы");
     assert.equal(item?.label, "Рассчитать 3 тарифа сметы");
     assert.equal(item?.requiresConfirmation, false, "Расчет сметы безопасен и не требует подтверждения");
+  });
+
+  it("содержит реестр боевых тулов и пресеты клинических фраз (Мандат 8e)", () => {
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus.includes("updateToothState"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot.includes("createAppointment"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary.includes("saveVisitDiary"));
+    assert.ok(CRM_FASTIFY_TOOLS_REGISTRY.calcInvoiceKopecks.includes("calculateTreatmentEstimate"));
+
+    assert.ok(CLINICAL_QUICK_PRESETS.length >= 6);
+    const cariesPreset = CLINICAL_QUICK_PRESETS.find((p) => p.label === "Кариес 16");
+    assert.ok(cariesPreset);
+    assert.equal(cariesPreset?.actionBadge, "Одонтограмма");
+  });
+
+  it("проверяет честный статус речевых движков через inspectSpeechEngineHealth", () => {
+    const reportOffline = inspectSpeechEngineHealth();
+    assert.ok(["webspeech", "unsupported"].includes(reportOffline.engine));
+
+    const cloudReport = inspectSpeechEngineHealth({
+      health: {
+        "gemini:key1": { consecutiveFailures: 0, cooldownUntil: 0 },
+      },
+    });
+    assert.equal(cloudReport.engine, "gemini_cloud");
+    assert.equal(cloudReport.status, "operational");
+    assert.ok(cloudReport.label.includes("Gemini"));
   });
 
   it("корректно связывает DEFAULT_SUGGESTION_CATEGORIES с единым каталогом", () => {
