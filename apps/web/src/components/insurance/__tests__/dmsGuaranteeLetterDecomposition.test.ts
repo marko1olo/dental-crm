@@ -46,17 +46,14 @@ const RAW_EMOJI_REGEX = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\
 
 describe("Insurance & Russian DMS SSOT Architecture & Clinical Invariants", () => {
 	it("1. Canonical modules are in healthy sweet spot range (200-450 lines)", () => {
-		const wsPath = path.resolve(insuranceDir, "InsuranceWorkspaceModal.tsx");
-		const splitCardPath = path.resolve(insuranceDir, "InsuranceBillSplitCard.tsx");
-		const dataPath = path.resolve(insuranceDir, "insuranceData.ts");
+		const studioPath = path.resolve(insuranceDir, "DmsStudioModal.tsx");
+		const catalogPath = path.resolve(insuranceDir, "dmsCatalogData.ts");
 
-		const wsLines = fs.readFileSync(wsPath, "utf-8").split("\n").length;
-		const splitLines = fs.readFileSync(splitCardPath, "utf-8").split("\n").length;
-		const dataLines = fs.readFileSync(dataPath, "utf-8").split("\n").length;
+		const studioLines = fs.readFileSync(studioPath, "utf-8").split("\n").length;
+		const catalogLines = fs.readFileSync(catalogPath, "utf-8").split("\n").length;
 
-		assert.ok(wsLines >= 300 && wsLines <= 500, `InsuranceWorkspaceModal sweet spot 300-500 lines, got ${wsLines}`);
-		assert.ok(splitLines >= 200 && splitLines <= 400, `InsuranceBillSplitCard sweet spot 200-400 lines, got ${splitLines}`);
-		assert.ok(dataLines >= 200 && dataLines <= 950, `insuranceData sweet spot 200-950 lines, got ${dataLines}`);
+		assert.ok(studioLines >= 380 && studioLines <= 480, `DmsStudioModal sweet spot 380-480 lines, got ${studioLines}`);
+		assert.ok(catalogLines >= 280 && catalogLines <= 350, `dmsCatalogData sweet spot 280-350 lines, got ${catalogLines}`);
 	});
 
 	it("2. Preserves 100% of public exports and Russian DMS top insurers", () => {

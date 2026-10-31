@@ -1,119 +1,59 @@
 /**
- * dmsSplitEngine.ts — Canonical re-export facade from insuranceData SSOT.
+ * dmsSplitEngine.ts — Re-export facade from dmsCatalogData SSOT with reconciliation registry helpers.
  */
 
 import {
 	calculateDmsCoPaymentSplit,
 	exportRegistryToCsv,
-	formatCurrencyKopecks,
-	formatCurrencyRub,
 	kopecksToRub,
 	rubToKopecks,
 	type DmsBillableItem,
 	type DmsGuaranteeLetter,
 	type DmsSplitCalculationResult,
-	type PatientPaymentMethod,
-	type PatientPaymentSplit,
-} from "./insuranceData.js";
+} from "./dmsCatalogData.js";
 
-export * from "./insuranceData.js";
+export * from "./dmsCatalogData.js";
 
-export type DmsBillableLineItem = DmsBillableItem;
-export type DmsReconciliationRegistry = any;
+export function buildDmsReconciliationRegistry(params: any): any {
+	const items = params.splitResults || params.items || [];
+	let totRub = 0;
+	let dmsRub = 0;
+	let patRub = 0;
 
-export function calculatePatientPaymentSplit(
-	totalPatientKopecks: number,
-	paymentMethod: PatientPaymentMethod = "card",
-	cashKopecksInput = 0,
-): PatientPaymentSplit {
-	const totKop = Math.max(0, totalPatientKopecks);
-	let cashKop = 0;
-	let cardKop = 0;
-	let advanceKop = 0;
-
-	if (paymentMethod === "cash") {
-		cashKop = totKop;
-	} else if (paymentMethod === "card") {
-		cardKop = totKop;
-	} else if (paymentMethod === "advance") {
-		advanceKop = totKop;
-	} else if (paymentMethod === "mixed") {
-		cashKop = Math.min(totKop, Math.max(0, cashKopecksInput));
-		cardKop = Math.max(0, totKop - cashKop);
+	for (const item of items) {
+		const line = item.lineItem || item;
+		totRub += line.totalRubles ?? (line.totalKopecks ? kopecksToRub(line.totalKopecks) : 0);
+		dmsRub += line.insuranceCoveredRubles ?? (line.insuranceCoveredKopecks ? kopecksToRub(line.insuranceCoveredKopecks) : 0);
+		patRub += line.patientOutOfPocketRubles ?? (line.patientOutOfPocketKopecks ? kopecksToRub(line.patientOutOfPocketKopecks) : 0);
 	}
 
 	return {
-		paymentMethod,
-		totalPatientKopecks: totKop,
-		totalPatientRubles: kopecksToRub(totKop),
-		cashKopecks: cashKop,
-		cardKopecks: cardKop,
-		advanceKopecks: advanceKop,
-		cashRubles: kopecksToRub(cashKop),
-		cardRubles: kopecksToRub(cardKop),
-		advanceRubles: kopecksToRub(advanceKop),
-		isBalanced: cashKop + cardKop + advanceKop === totKop,
-	};
-}
-
-export function calculateDmsCoPaymentSplitWithPayment(
-	lineItems: readonly DmsBillableItem[],
-	options: {
-		guaranteeLetter?: DmsGuaranteeLetter;
-		paymentMethod?: PatientPaymentMethod;
-		mixedCashKopecks?: number;
-		previouslyUsedLetterAmountKopecks?: number;
-		isEmergency?: boolean;
-	} = {},
-): DmsSplitCalculationResult {
-	const split = calculateDmsCoPaymentSplit(lineItems, options);
-	const paymentSplit = calculatePatientPaymentSplit(
-		split.totalPatientOutOfPocketKopecks,
-		options.paymentMethod || "card",
-		options.mixedCashKopecks || 0,
-	);
-	return {
-		...split,
-		patientPaymentSplit,
-	};
-}
-
-export function normalizeToothFdi(tooth: string | number | undefined): string {
-	if (!tooth) return "";
-	const s = String(tooth).trim();
-	return s.replace(/\D/g, "");
-}
-
-export function isToothApprovedByLetter(tooth: string | undefined, letter?: DmsGuaranteeLetter): boolean {
-	if (!tooth || !letter) return true;
-	if (!letter.approvedTeethFdi || letter.approvedTeethFdi.length === 0) return true;
-	const norm = normalizeToothFdi(tooth);
-	return letter.approvedTeethFdi.some((t) => normalizeToothFdi(t) === norm);
-}
-
-export function isServiceCodeApprovedByLetter(code: string | undefined, letter?: DmsGuaranteeLetter): boolean {
-	if (!code || !letter) return true;
-	const codes = letter.approvedServiceCodes || letter.approvedServiceCodes804n;
-	if (!codes || codes.length === 0) return true;
-	return codes.includes(code);
-}
-
-export function buildDmsReconciliationRegistry(params: any): any {
-	return {
-		registryNumber: params.registryNumber || "REG-001",
-		registryDate: params.registryDate || "2026-08-01",
-		items: params.items || [],
-		totalRegistryAmountRubles: 0,
-		totalDmsClaimedRubles: 0,
-		totalPatientCoPaymentRubles: 0,
+		registryNumber: params.registryNumber || "РЕЕСТР-001",
+		registryDate: params.registryDate || "2026-08-22",
+		items,
+		splitResults: items,
+		totalRegistryAmountRubles: totRub,
+		totalDmsClaimedRubles: dmsRub,
+		totalPatientCoPaymentRubles: patRub,
+		totalServicesCount: items.length,
+		totalPatientsCount: new Set(items.map((i: any) => i.patientFullName)).size || 1,
 	};
 }
 
 export function exportDmsRegistryToCsv(registry: any): string {
-	return exportRegistryToCsv(
-		registry.items || [],
-		{ name: registry.clinicName || "Стоматологическая клиника", inn: registry.clinicInn || "" },
-		registry.insurer?.shortName || "Страховая компания",
-		`${registry.periodStart || ""} - ${registry.periodEnd || ""}`,
-	);
+	const items = registry.splitResults || registry.items || [];
+	const lines = [
+		`# Реестр счетов ДМС;${registry.registryNumber}`,
+		`№ п/п;Дата услуги;Ф.И.О. пациента;Номер полиса;Номер гарантийного письма;Код услуги;Наименование;Сумма;Покрыто ДМС;Доплата пациента`,
+	];
+
+	items.forEach((item: any, idx: number) => {
+		const l = item.lineItem || item;
+		lines.push(
+			`${idx + 1};${item.serviceDate || "2026-08-10"};${item.patientFullName || ""};${item.policyNumber || ""};${item.guaranteeLetterNumber || "—"};${l.serviceCode || ""};${l.serviceName || ""};${l.totalKopecks / 100};${l.insuranceCoveredKopecks / 100};${l.patientOutOfPocketKopecks / 100}`,
+		);
+	});
+
+	lines.push(`ИТОГО ПО РЕЕСТРУ;;;;;;;${registry.totalRegistryAmountRubles};${registry.totalDmsClaimedRubles};${registry.totalPatientCoPaymentRubles}`);
+	return `\uFEFF${lines.join("\r\n")}`;
 }

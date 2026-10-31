@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { InsuranceWorkspaceModal } from "./InsuranceWorkspaceModal.js";
+import { DmsStudioModal } from "./DmsStudioModal.js";
 
 const DEMO_INSURANCE_PATIENT = {
 	id: "pat-dms-01",
@@ -79,7 +79,7 @@ export const DirectInsuranceLauncher: React.FC = () => {
 	};
 
 	return (
-		<InsuranceWorkspaceModal
+		<DmsStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			patient={DEMO_INSURANCE_PATIENT}

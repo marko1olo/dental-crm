@@ -1,7 +1,4 @@
 /**
- * insuranceMath.ts — Canonical re-export facade from insuranceData SSOT.
+ * insuranceMath.ts — Re-export facade from dmsCatalogData SSOT.
  */
-
-export * from "./insuranceData.js";
-export type DmsInsurerItem = import("./insuranceData.js").DmsInsurer;
-export type DmsExclusionDefinition = import("./insuranceData.js").DmsExclusionRule;
+export * from "./dmsCatalogData.js";
