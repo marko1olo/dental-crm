@@ -187,3 +187,10 @@ export const syncEmr043Tool: ToolDefinition<typeof syncEmr043Schema> = {
 		);
 	},
 };
+
+export const syncEmrClinicalNotesTool: ToolDefinition<typeof syncEmr043Schema> = {
+	...syncEmr043Tool,
+	name: "sync_emr_clinical_notes",
+	description:
+		"Синхронизация и сохранение дневника приёма по стандарту SOAP в электронную медицинскую карту пациента с тенантной изоляцией.",
+};

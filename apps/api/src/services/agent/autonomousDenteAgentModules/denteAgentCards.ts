@@ -195,7 +195,7 @@ export function formatTarsClinicalVerdict(params: {
 			? `• Анестезия: ${anestheticResult.drugName} — ${anestheticResult.recommendedCarpules} карп. (макс. ${anestheticResult.maxCarpules} карп. на ${anestheticResult.patientWeightKg} кг).`
 			: null,
 		`• Смета услуг: ${totalDueStr}${resolvedDiscount > 0 ? ` (скидка врача ${resolvedDiscount}%)` : ""}.`,
-		`• Форма 043/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК (врач правит только патологию).`,
+		`• Медицинская карта приёма: SOAP-дневник подготовлен со статусом ЧЕРНОВИК (врач правит только патологию).`,
 		consentResult ? `• ИДС: ${consentResult.consentCode} (${consentResult.consentTitle}) — готово к печати.` : null,
 		warehouseResult
 			? `• Склад: ${warehouseResult.itemName} (${warehouseResult.isSoftOverdraft ? `мягкий овердрафт, дефицит ${warehouseResult.deficitCount} шт.` : `в наличии ${warehouseResult.currentStock} шт.`}) — приём не заблокирован.`

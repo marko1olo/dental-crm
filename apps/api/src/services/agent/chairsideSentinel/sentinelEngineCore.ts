@@ -103,7 +103,7 @@ export class ChairsideSentinelEngine {
 		actionChain.push({
 			step: "generate_visit_diary",
 			description:
-				"Генерация проекта SOAP-дневника 043/у по клиническим протоколам СтАР",
+				"Генерация проекта SOAP-дневника медицинской карты по клиническим протоколам СтАР",
 			status: "completed",
 			timestamp: now,
 			details: {

@@ -542,7 +542,7 @@ describe("DENTE Autonomous AI Engine & Extended Tools Suite", () => {
 			expect(result.verdict).toContain("K04.0");
 			expect(result.verdict).toMatch(/Анестезия:/);
 			expect(result.verdict).toMatch(/Смета услуг:/);
-			expect(result.verdict).toMatch(/Форма 043\/у: SOAP-протокол подготовлен со статусом ЧЕРНОВИК/);
+			expect(result.verdict).toMatch(/Медицинская карта приёма: SOAP-дневник подготовлен со статусом ЧЕРНОВИК/);
 			expect(result.verdict).toMatch(/ИДС: IDS-03-ENDO/);
 			expect(result.verdict).toMatch(/Склад:/);
 		});

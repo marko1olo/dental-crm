@@ -8,6 +8,7 @@ export interface CopilotNudgesProps {
   onAct?: ((prompt: string) => void) | undefined;
   onAction?: ((nudge: CopilotNudge) => void) | undefined;
   onApplyClinicalDiary?: ((nudge: CopilotNudge) => void) | undefined;
+  onApplyMedicalCardDiary?: ((nudge: CopilotNudge) => void) | undefined;
   onApply043?: ((nudge: CopilotNudge) => void) | undefined;
   onDismiss: (id: string) => void;
 }
@@ -61,6 +62,8 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
 
     if (onApplyClinicalDiary) {
       onApplyClinicalDiary(nudge);
+    } else if (onApplyMedicalCardDiary) {
+      onApplyMedicalCardDiary(nudge);
     } else if (onApply043) {
       onApply043(nudge);
     }

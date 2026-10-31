@@ -23,6 +23,7 @@ import {
 import {
 	syncEmr043Schema,
 	syncEmr043Tool,
+	syncEmrClinicalNotesTool,
 } from "./clinicalNotes/emrSyncTool.js";
 import type { ToolRegistry } from "./registry.js";
 import type { ToolDefinition } from "./tool.js";
@@ -32,7 +33,11 @@ import {
 } from "./voiceDictationParser.js";
 
 export { renderForm043Diary, type SoapNoteStructure };
-export { syncEmr043Schema, syncEmr043Tool };
+export {
+	syncEmr043Schema,
+	syncEmr043Tool,
+	syncEmrClinicalNotesTool,
+};
 
 // ─── 1. TOOL: generate_soap_note ───────────────────────────────────────────
 
@@ -349,4 +354,5 @@ export function registerClinicalNotesTools(
 	registry.register(parseVoiceDictationTool, moduleName);
 	registry.register(getClinicalTemplatesTool, moduleName);
 	registry.register(syncEmr043Tool, moduleName);
+	registry.register(syncEmrClinicalNotesTool, moduleName);
 }

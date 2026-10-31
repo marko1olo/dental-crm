@@ -64,7 +64,11 @@ describe("DentalAgentCockpit Clinical Logic & Workstation Tools", () => {
 
 		const metaEmk = getHumanToolMeta("getPatientEmk043u");
 		assert.equal(metaEmk.isWorkstation, false);
-		assert.equal(metaEmk.title, "Анализ ЭМК и зубной формулы");
+		assert.equal(metaEmk.title, "Медицинская карта приёма");
+
+		const metaClinical = getHumanToolMeta("getPatientClinicalCard");
+		assert.equal(metaClinical.isWorkstation, false);
+		assert.equal(metaClinical.title, "Медицинская карта приёма");
 	});
 
 	it("should detect workstation environment safely", () => {
