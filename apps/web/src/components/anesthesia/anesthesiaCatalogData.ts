@@ -145,17 +145,17 @@ export const CLINICAL_FAST_PRESETS: readonly ClinicalFastPresetItem[] = [
 	},
 	{
 		drugId: "articaine_1_200k", shortLabelRu: "Артикаин 1:200 000", fullLabelRu: "Артикаин 1:200к (Ультракаин Д-С)",
-		subLabelRu: "1 карпула (1.7 мл)", count: 1.0, defaultTechnique: "infiltration", testId: "anesthesia-preset-articaine-200k",
+		subLabelRu: "1 карпула (1.7 мл)", count: 1.0, defaultTechnique: "infiltration", testId: "anesthesia-preset-infiltration-articaine-200k",
 		srOnlyText: "Артикаин 1:200 000 мягкий", clinicalScopeRu: "Мягкий вазоконстриктор для пациентов старшего возраста",
 	},
 	{
 		drugId: "mepivacaine_plain", shortLabelRu: "Мепивакаин 3% (без адреналина)", fullLabelRu: "Скандонест 3% (без адреналина)",
 		subLabelRu: "1 карпула (1.7 мл)", count: 1.0, defaultTechnique: "infiltration", isCardioRecommended: true,
-		testId: "anesthesia-preset-mepivacaine-plain", srOnlyText: "Мепивакаин 3% кардио", clinicalScopeRu: "Кардиориск, пожилые, астма, тиреотоксикоз, беременность",
+		testId: "anesthesia-preset-scandonest-cardio", srOnlyText: "Мепивакаин 3% кардио", clinicalScopeRu: "Кардиориск, пожилые, астма, тиреотоксикоз, беременность",
 	},
 	{
 		drugId: "none", shortLabelRu: "Без анестезии", fullLabelRu: "Без анестезии (отказ / не требуется)",
-		subLabelRu: "0 карпул", count: 0, testId: "anesthesia-preset-none",
+		subLabelRu: "0 карпул", count: 0, testId: "btn-anes-none",
 		srOnlyText: "Без анестезии", clinicalScopeRu: "Консультация, снятие швов, полировка или отказ пациента",
 	},
 ];
