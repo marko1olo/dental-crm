@@ -4,7 +4,18 @@
  * touch-first ergonomics, warehouse soft overdraft non-blocking operations.
  */
 
-export * from "./implantCatalogData";
+export * from "./implantologyCatalogData";
+export * from "./ImplantologyStudioModal";
+export * from "./DirectImplantologyLauncher";
+export {
+	NORMALIZED_IMPLANT_SYSTEMS,
+	TI_BASE_CATALOG_SSOT,
+	findImplantSystem,
+	resolveNormalizedBrand,
+	type NormalizedBrandId,
+	type NormalizedImplantSystem,
+	type TiBaseItemSSOT,
+} from "./implantCatalogData";
 export * from "./implantQuickPresets";
 export * from "./ImplantPassportCard";
 export * from "./ImplantPassportModal";
