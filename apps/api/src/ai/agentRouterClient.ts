@@ -13,6 +13,11 @@ export {
 	DEFAULT_AGENTROUTER_BASE_URL,
 	DEFAULT_AGENTROUTER_MODEL,
 	DEFAULT_AGENTROUTER_KEYS,
+	DEFAULT_GEMINI_BASE_URL,
+	DEFAULT_GEMINI_MODEL,
+	SUPPORTED_GEMINI_MODELS,
+	type SupportedGeminiModel,
+	type GeminiHealthCheckResult,
 	DEFAULT_TIMEOUT_MS,
 	MIN_REASONING_MAX_TOKENS,
 	DEFAULT_CLINICAL_TEMPERATURE,
@@ -48,6 +53,12 @@ export {
 export {
 	safeParseToolArguments,
 	buildChatPayload,
+	isGeminiModel,
+	getGeminiBaseUrl,
+	getGeminiApiKeyCandidates,
+	validateGeminiApiKeyLive,
+	resolveRequestEndpoint,
+	resolveEffectiveKeys,
 } from "./router/modelAdapters.js";
 
 export {

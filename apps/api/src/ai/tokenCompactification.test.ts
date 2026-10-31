@@ -57,16 +57,12 @@ describe("1. Token Counter — BPE Эвристики и Учет Метадан
 	it("1.1 estimateTextTokens: оценивает русский текст с плотностью ~2.4 символа на токен", () => {
 		const russianSentence = "Лечение глубокого кариеса зуба 16 светоотверждаемым композитом";
 		const tokens = estimateTextTokens(russianSentence);
-
-		// Длина строки ~62 символа. При ~2.4 симв/токен ожидается около 24-28 токенов
 		assert.ok(tokens >= 20 && tokens <= 35, `Ожидалось 20-35 токенов, получено ${tokens}`);
 	});
 
 	it("1.2 estimateTextTokens: оценивает английский текст и код с плотностью ~4 символа на токен", () => {
 		const englishCode = "function calculateAnesthesia(patientWeightKg: number): number { return weight * 7; }";
 		const tokens = estimateTextTokens(englishCode);
-
-		// Длина ~85 символов. При ~4 симв/токен ожидается около 20-25 токенов
 		assert.ok(tokens >= 18 && tokens <= 30, `Ожидалось 18-30 токенов, получено ${tokens}`);
 	});
 
@@ -79,9 +75,7 @@ describe("1. Token Counter — BPE Эвристики и Учет Метадан
 				arguments: JSON.stringify({ patientWeightKg: 70, hasCardioRisk: false }),
 			},
 		};
-
 		const tokens = estimateToolCallTokens(toolCall);
-		// Оверхед 12 + имя функции ~5 + json аргументов ~14 = ~31 токен
 		assert.ok(tokens >= 25 && tokens <= 40, `Ожидалось 25-40 токенов, получено ${tokens}`);
 	});
 
@@ -123,13 +117,7 @@ describe("1. Token Counter — BPE Эвристики и Учет Метадан
 			{ role: "user", content: "Привет, составь план лечения кариеса зуба 26" },
 			{ role: "assistant", content: "План лечения зуба 26 сформирован." },
 		];
-
-		const providerUsage = {
-			prompt_tokens: 38,
-			completion_tokens: 15,
-			total_tokens: 53,
-		};
-
+		const providerUsage = { prompt_tokens: 38, completion_tokens: 15, total_tokens: 53 };
 		const report = buildTokenUsageReport(messages, providerUsage);
 		assert.strictEqual(report.actualPromptTokens, 38);
 		assert.strictEqual(report.completionTokens, 15);

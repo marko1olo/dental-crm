@@ -5,6 +5,12 @@ import {
 	maskApiKey,
 	parseApiKeys,
 	safeParseToolArguments,
+	isGeminiModel,
+	getGeminiBaseUrl,
+	resolveRequestEndpoint,
+	validateGeminiApiKeyLive,
+	DEFAULT_GEMINI_BASE_URL,
+	DEFAULT_GEMINI_MODEL,
 	AgentRouterModelOverloadedError,
 	DEFAULT_AGENTROUTER_KEYS,
 	DEFAULT_AGENTROUTER_BASE_URL,
@@ -393,4 +399,99 @@ test("AgentRouterClient createStreamingChatCompletion streams SSE chunks, reason
 		firstToolCall,
 	);
 	assert.deepEqual(parsedArgs, { tooth: 16, code: "K02.1" });
+});
+
+test("Google Gemini pipeline: recognizes models, routes to OpenAI-compatible endpoint, sets x-goog-api-key", () => {
+	assert.equal(isGeminiModel("gemini-2.5-flash"), true);
+	assert.equal(isGeminiModel("gemini-2.5-pro"), true);
+	assert.equal(isGeminiModel("gemini-live"), true);
+	assert.equal(isGeminiModel("models/gemini-2.0-flash"), true);
+	assert.equal(isGeminiModel("deepseek-v4-flash"), false);
+	assert.equal(isGeminiModel(null), false);
+
+	const ep = resolveRequestEndpoint(
+		"gemini-2.5-flash",
+		DEFAULT_AGENTROUTER_BASE_URL,
+		"AIzaSyTestGeminiKey12345",
+		true,
+	);
+
+	assert.equal(ep.isGemini, true);
+	assert.equal(ep.url, `${DEFAULT_GEMINI_BASE_URL}/chat/completions`);
+	assert.equal(ep.headers["x-goog-api-key"], "AIzaSyTestGeminiKey12345");
+	assert.equal(ep.headers.Authorization, "Bearer AIzaSyTestGeminiKey12345");
+	assert.equal(ep.headers.Accept, "text/event-stream");
+});
+
+test("Google Gemini live health-check: probes endpoint and preserves key masking without leakage", async () => {
+	let capturedUrl = "";
+	let capturedHeaderKey = "";
+
+	const mockFetch: typeof fetch = async (url, init) => {
+		capturedUrl = String(url);
+		capturedHeaderKey = (init?.headers as Record<string, string>)?.["x-goog-api-key"] || "";
+		return new Response(
+			JSON.stringify({
+				choices: [{ message: { content: "pong" } }],
+			}),
+			{ status: 200, headers: { "Content-Type": "application/json" } },
+		);
+	};
+
+	const health = await validateGeminiApiKeyLive(
+		"AIzaSyRealSecretKey998877",
+		mockFetch,
+		"gemini-2.5-flash",
+	);
+
+	assert.equal(health.valid, true);
+	assert.equal(health.model, "gemini-2.5-flash");
+	assert.equal(health.keyMask, "agentrouter...98877");
+	assert.ok(!health.keyMask.includes("AIzaSyRealSecretKey"));
+	assert.equal(capturedUrl, `${DEFAULT_GEMINI_BASE_URL}/chat/completions`);
+	assert.equal(capturedHeaderKey, "AIzaSyRealSecretKey998877");
+});
+
+test("AgentRouterClient routes Gemini model call to Gemini endpoint with proper headers", async () => {
+	let calledUrl = "";
+	let calledHeaders: Record<string, string> = {};
+
+	const mockFetch: typeof fetch = async (url, init) => {
+		calledUrl = String(url);
+		calledHeaders = init?.headers as Record<string, string>;
+		return new Response(
+			JSON.stringify({
+				id: "chatcmpl-gemini-1",
+				object: "chat.completion",
+				created: 1728000000,
+				model: "gemini-2.5-flash",
+				choices: [
+					{
+						index: 0,
+						message: {
+							role: "assistant",
+							content: "Анализ снимка зуба 2.6: патологии периодонта не выявлено.",
+						},
+						finish_reason: "stop",
+					},
+				],
+			}),
+			{ status: 200, headers: { "Content-Type": "application/json" } },
+		);
+	};
+
+	const client = new AgentRouterClient({
+		apiKeys: ["AIzaSyKeyForGemini77777"],
+		fetchFn: mockFetch,
+	});
+
+	const res = await client.createChatCompletion({
+		model: "gemini-2.5-flash",
+		messages: [{ role: "user", content: "Опиши зуб 2.6" }],
+	});
+
+	assert.equal(calledUrl, `${DEFAULT_GEMINI_BASE_URL}/chat/completions`);
+	assert.equal(calledHeaders["x-goog-api-key"], "AIzaSyKeyForGemini77777");
+	assert.equal(calledHeaders.Authorization, "Bearer AIzaSyKeyForGemini77777");
+	assert.equal(res.choices[0]?.message.content, "Анализ снимка зуба 2.6: патологии периодонта не выявлено.");
 });

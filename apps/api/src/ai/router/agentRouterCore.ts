@@ -24,7 +24,11 @@ import {
 	maskApiKey,
 	parseApiKeys,
 } from "./keyPoolManager.js";
-import { buildChatPayload } from "./modelAdapters.js";
+import {
+	buildChatPayload,
+	isGeminiModel,
+	resolveRequestEndpoint,
+} from "./modelAdapters.js";
 import { readSseStream } from "./streamParser.js";
 
 export class AgentRouterClient {
@@ -132,20 +136,18 @@ export class AgentRouterClient {
 				const body = JSON.stringify(
 					buildChatPayload(params, this.defaultModel, false),
 				);
-				const response = await this.fetchFn(
-					`${this.baseUrl}/chat/completions`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${key}`,
-							Accept: "application/json",
-							"User-Agent": "opencode/1.18.25",
-						},
-						body,
-						signal: linkedSignal,
-					},
+				const endpoint = resolveRequestEndpoint(
+					targetModel,
+					this.baseUrl,
+					key,
+					false,
 				);
+				const response = await this.fetchFn(endpoint.url, {
+					method: "POST",
+					headers: endpoint.headers,
+					body,
+					signal: linkedSignal,
+				});
 
 				clearTimeout(timer);
 
@@ -314,20 +316,18 @@ export class AgentRouterClient {
 				const body = JSON.stringify(
 					buildChatPayload(params, this.defaultModel, true),
 				);
-				const response = await this.fetchFn(
-					`${this.baseUrl}/chat/completions`,
-					{
-						method: "POST",
-						headers: {
-							"Content-Type": "application/json",
-							Authorization: `Bearer ${key}`,
-							Accept: "text/event-stream",
-							"User-Agent": "opencode/1.18.25",
-						},
-						body,
-						signal: linkedSignal,
-					},
+				const endpoint = resolveRequestEndpoint(
+					targetModel,
+					this.baseUrl,
+					key,
+					true,
 				);
+				const response = await this.fetchFn(endpoint.url, {
+					method: "POST",
+					headers: endpoint.headers,
+					body,
+					signal: linkedSignal,
+				});
 
 				clearTimeout(timer);
 

@@ -26,6 +26,7 @@ export async function readSseStream(
 	let finishReason: string | null = null;
 	let fullContent = "";
 	let fullReasoning = "";
+	let capturedUsage: any = undefined;
 
 	// Tool calls accumulator indexed by tool call index
 	const toolCallsMap = new Map<
@@ -71,6 +72,7 @@ export async function readSseStream(
 				if (parsedChunk.id) responseId = parsedChunk.id;
 				if (parsedChunk.created) createdTime = parsedChunk.created;
 				if (parsedChunk.model) responseModel = parsedChunk.model;
+				if (parsedChunk.usage) capturedUsage = parsedChunk.usage;
 
 				const choice = parsedChunk.choices?.[0];
 				if (!choice) continue;
@@ -88,10 +90,12 @@ export async function readSseStream(
 					callbacks.onChunk?.(delta.content);
 				}
 
-				// 2. DeepSeek reasoning content delta
-				if (delta.reasoning_content) {
-					fullReasoning += delta.reasoning_content;
-					callbacks.onReasoningChunk?.(delta.reasoning_content);
+				// 2. Reasoning / Thinking delta (DeepSeek & Google Gemini 2.5 thinking)
+				const reasoningDelta =
+					delta.reasoning_content || delta.reasoning || delta.thinking;
+				if (reasoningDelta) {
+					fullReasoning += reasoningDelta;
+					callbacks.onReasoningChunk?.(reasoningDelta);
 				}
 
 				// 3. Tool call deltas
@@ -164,5 +168,6 @@ export async function readSseStream(
 				finish_reason: finishReason || "stop",
 			},
 		],
+		...(capturedUsage ? { usage: capturedUsage } : {}),
 	};
 }
