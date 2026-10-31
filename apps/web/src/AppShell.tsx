@@ -42,6 +42,8 @@ import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/Direct
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
+import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
+import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -262,6 +264,8 @@ export function AppShell() {
 			<DirectOdontogramLauncher />
 			<DirectTelephonyLauncher />
 			<DirectPublicBookingLauncher />
+			<DirectConsentLauncher />
+			<DirectEndodonticsLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

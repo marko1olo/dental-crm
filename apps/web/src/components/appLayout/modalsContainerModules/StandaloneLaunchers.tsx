@@ -33,6 +33,8 @@ import { DirectDentalLabLauncher } from "../../lab/DirectDentalLabLauncher";
 import { DirectAnalyticsLauncher } from "../../analytics/DirectAnalyticsLauncher";
 import { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
 import { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
+import { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
+import { DirectEndodonticsLauncher } from "../../endo/DirectEndodonticsLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -41,6 +43,42 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Endodontics & Root Canal Studio Launcher (#endo, #endodontics, #root-canals, ?endo=1, ?endodontics=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("endo=1") ||
+			window.location.search.includes("endodontics=1") ||
+			window.location.search.includes("root_canals=1") ||
+			window.location.search.includes("standalone=endo") ||
+			window.location.hash === "#endo" ||
+			window.location.hash.startsWith("#endo?") ||
+			window.location.hash.startsWith("#endo/") ||
+			window.location.hash === "#endodontics" ||
+			window.location.hash.startsWith("#endodontics?") ||
+			window.location.hash === "#root-canals" ||
+			window.location.hash.startsWith("#root-canals?") ||
+			window.location.hash === "#endo-studio")
+	) {
+		return <DirectEndodonticsLauncher />;
+	}
+
+	// 0. Direct Consents & Contracts Studio Standalone Launcher (#consents, #consent, #documents, ?consents=1, ?consent=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("consents=1") ||
+			window.location.search.includes("consent=1") ||
+			window.location.search.includes("standalone=consents") ||
+			window.location.hash === "#consents" ||
+			window.location.hash.startsWith("#consents?") ||
+			window.location.hash === "#consent" ||
+			window.location.hash.startsWith("#consent?") ||
+			window.location.hash === "#documents" ||
+			window.location.hash.startsWith("#documents?") ||
+			window.location.hash === "#consent-studio")
+	) {
+		return <DirectConsentLauncher />;
 	}
 
 	// 0. Direct Public Online Booking Studio Standalone Launcher (#booking, #online-booking, #public-booking, ?booking=1)
