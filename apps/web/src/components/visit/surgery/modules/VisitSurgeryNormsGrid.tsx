@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Zap, CheckCircle2 } from "lucide-react";
 import type { SurgicalOperationNorm } from "../../../surgery/surgeryProtocols";
 

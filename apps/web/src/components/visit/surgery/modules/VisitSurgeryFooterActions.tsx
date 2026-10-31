@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { FileCheck, Printer, PackageMinus, Plus, FileText } from "lucide-react";
 import { DentalImplant } from "../../../icons/DentalIcons";
 import {

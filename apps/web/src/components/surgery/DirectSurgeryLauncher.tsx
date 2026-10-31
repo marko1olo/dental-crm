@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { ChairsideSurgeryHubModal } from "./ChairsideSurgeryHubModal";
+import { SurgeryStudioModal } from "./SurgeryStudioModal";
 import type { SurgeryScenarioType } from "./surgeryCatalogData";
 
 const DEMO_SURGERY_PATIENT = {
@@ -20,7 +20,8 @@ export const DirectSurgeryLauncher: React.FC = () => {
 		const h = window.location.hash || "";
 		return (
 			(s.includes("surgery") && !s.includes("surgery-implant")) ||
-			(h.includes("surgery") && !h.includes("surgery-implant"))
+			(h.includes("surgery") && !h.includes("surgery-implant")) ||
+			h.includes("extraction") || s.includes("extraction")
 		);
 	};
 
@@ -60,7 +61,7 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	return (
-		<ChairsideSurgeryHubModal
+		<SurgeryStudioModal
 			isOpen={isOpen}
 			onClose={() => setIsOpen(false)}
 			patientName={DEMO_SURGERY_PATIENT.fullName}

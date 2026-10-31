@@ -62,6 +62,7 @@ export const SURGICAL_ANESTHETICS = [
 	{ id: "art_200", nameRu: "Обезболивание (Артикаин 1:200 000 1.7 мл)", shortTitle: "Артикаин 1:200к" },
 	{ id: "mepi_plain", nameRu: "Обезболивание (Мепивакаин 3% 1.7 мл)", shortTitle: "Мепивакаин без адреналина" },
 ] as const;
+export const SURGERY_ANESTHETICS = SURGICAL_ANESTHETICS;
 
 export const DENTAL_IMPLANTATION_NORM_TEXT = "Инфильтрационная анестезия Артикаин 1:100 000 1.7 мл. Разрез по гребню альвеолярного отростка, отслоен слизисто-надкостничный лоскут. Препарирование ложа фрезами с охлаждением физраствором. Установлен дентальный имплантат, первичная торк-стабильность 35 Н·см. Установлен формирователь десны / винт-заглушка. Ушивание раны шовным материалом ПГА 4-0. Гемостаз полный. Рекомендации даны.";
 export const SIMPLE_EXTRACTION_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Круговая связка зуба отслоена. Люксация элеватором и щипцами. Атравматичная тракция зуба из альвеолы. Тщательный кюретаж лунки острой ложкой, удаление грануляций. Антисептическая обработка 0.05% хлоргексидином. Местный гемостаз: гемостатическая губка Альвостаз. Наложены узловые швы Викрил 4-0. Гемостаз полный. Рекомендации даны.";
@@ -320,7 +321,7 @@ export function buildSurgicalPostOpMemoText(scenario: SurgeryScenarioType, param
 }
 
 export function buildSurgicalDiaryEntry(params: {
-	patientName?: string; doctorName?: string; toothFdi?: number; protocolText: string;
+	patientName?: string; patientId?: string; doctorName?: string; toothFdi?: number; protocolText: string;
 	recommendations?: string; implantDetails?: { brand: string; diameterMm: number; lengthMm: number; torqueNcm: number; lot?: string };
 }): string {
 	const toothStr = params.toothFdi ? `Зуб FDI #${params.toothFdi}` : "Область вмешательства";

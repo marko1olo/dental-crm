@@ -4,6 +4,7 @@
 
 export * from "./surgeryCatalogData";
 export * from "./ChairsideSurgeryHubModal";
+export * from "./SurgeryStudioModal";
 export * from "./DirectSurgeryLauncher";
 export * from "./surgeryProtocols";
 export * from "./surgeryNormsCatalog";

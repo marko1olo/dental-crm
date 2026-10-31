@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { VisitSurgeryExtractionBar } from "../VisitSurgeryExtractionBar";
 import { VisitSurgerySinusGbrBar } from "../VisitSurgerySinusGbrBar";
 import { VisitSurgeryImplantBar } from "../VisitSurgeryImplantBar";

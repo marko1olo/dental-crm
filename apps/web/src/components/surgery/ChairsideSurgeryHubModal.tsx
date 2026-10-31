@@ -449,4 +449,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 		: modalContent;
 };
 
+export const SurgeryStudioModal = ChairsideSurgeryHubModal;
+export type SurgeryStudioModalProps = ChairsideSurgeryHubModalProps;
+
 export default ChairsideSurgeryHubModal;

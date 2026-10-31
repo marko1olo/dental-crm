@@ -7,7 +7,7 @@
 import React, { useState, useMemo } from "react";
 import { Check, Copy, MessageCircle, Printer, Send, ShieldAlert, Sparkles } from "lucide-react";
 import { showToast } from "../../GlobalToast";
-import { buildPostImplantMemoText } from "../../surgery/protocols/surgeryPostOpMemo";
+import { buildPostImplantMemoText } from "../../surgery/surgeryCatalogData";
 import type { ImplantCapType } from "../implantQuickPresets";
 
 export interface PostOpMemoTabProps {

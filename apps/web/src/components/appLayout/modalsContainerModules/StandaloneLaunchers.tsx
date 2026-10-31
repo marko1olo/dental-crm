@@ -39,6 +39,7 @@ import { DirectOrthopedicsLauncher } from "../../orthopedics/DirectOrthopedicsLa
 import { DirectHygieneLauncher } from "../../hygiene/DirectHygieneLauncher";
 import { DirectInsuranceLauncher } from "../../insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "../../loyalty/DirectLoyaltyLauncher";
+import { DirectSurgeryLauncher } from "../../surgery/DirectSurgeryLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -120,6 +121,24 @@ export function renderStandaloneLaunchers(
 			window.location.hash === "#hygiene-studio")
 	) {
 		return <DirectHygieneLauncher />;
+	}
+
+	// 0. Direct Chairside Surgery & Implant Hub Standalone Launcher (#surgery, #extraction, #implant, ?surgery=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("surgery=1") ||
+			window.location.search.includes("extraction=1") ||
+			window.location.search.includes("implant=1") ||
+			window.location.search.includes("standalone=surgery") ||
+			window.location.hash === "#surgery" ||
+			window.location.hash.startsWith("#surgery?") ||
+			window.location.hash === "#extraction" ||
+			window.location.hash.startsWith("#extraction?") ||
+			window.location.hash === "#implant" ||
+			window.location.hash.startsWith("#implant?") ||
+			window.location.hash === "#surgery-studio")
+	) {
+		return <DirectSurgeryLauncher />;
 	}
 
 	// 0. Direct Consents & Contracts Studio Standalone Launcher (#consents, #consent, #documents, ?consents=1, ?consent=1)
