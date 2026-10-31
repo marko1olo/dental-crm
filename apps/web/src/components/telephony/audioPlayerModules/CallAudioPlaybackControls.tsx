@@ -1,2 +1,5 @@
-export { CallAudioPlaybackControls } from "../CallAudioPlayer";
-export type { CallAudioPlaybackControlsProps, PlaybackSpeed } from "../CallAudioPlayer";
+export { CallAudioPlaybackControls } from "../audioPlayer/CallAudioPlaybackControls";
+export type {
+	CallAudioPlaybackControlsProps,
+	PlaybackSpeed,
+} from "../audioPlayer/types";

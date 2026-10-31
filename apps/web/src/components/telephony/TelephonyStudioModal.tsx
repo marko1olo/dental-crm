@@ -13,13 +13,11 @@ import {
 	X,
 	Calendar,
 	User,
-	Play,
-	Pause,
 	MessageCircle,
 	AlertTriangle,
-	FileText,
 	Delete,
 } from "lucide-react";
+import { CallAudioPlayer } from "./CallAudioPlayer";
 import {
 	type TelephonyCatalogCall,
 	type TelephonyFilterType,
@@ -27,7 +25,6 @@ import {
 	TELEPHONY_CALL_TYPES,
 	DIALPAD_KEYS,
 	formatPhoneRu,
-	formatCallDuration,
 	playSafeWebAudioTone,
 	triggerOpenPatientCard,
 	triggerBookAppointment,
@@ -58,9 +55,6 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 	);
 	const [dialedNumber, setDialedNumber] = useState("");
 	const [activeMobileTab, setActiveMobileTab] = useState<"journal" | "dialer">("journal");
-	const [isPlayingAudio, setIsPlayingAudio] = useState(false);
-	const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
-	const [showTranscript, setShowTranscript] = useState(false);
 
 	// Filter call list
 	const filteredCalls = useMemo(() => {
@@ -89,21 +83,6 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 	const handleBackspace = useCallback(() => {
 		setDialedNumber((prev) => prev.slice(0, -1));
 	}, []);
-
-	const handleToggleAudio = useCallback(() => {
-		if (isPlayingAudio) {
-			setIsPlayingAudio(false);
-		} else {
-			setIsPlayingAudio(true);
-			playSafeWebAudioTone(520, 300);
-		}
-	}, [isPlayingAudio]);
-
-	const handleCycleSpeed = useCallback(() => {
-		const speeds = [1, 1.25, 1.5, 2];
-		const next = speeds[(speeds.indexOf(playbackSpeed) + 1) % speeds.length] ?? 1;
-		setPlaybackSpeed(next);
-	}, [playbackSpeed]);
 
 	const handleOpenCard = useCallback(() => {
 		if (!selectedCall) return;
@@ -229,10 +208,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 					<TelephonyCallList
 						calls={filteredCalls}
 						selectedCallId={selectedCall?.id || ""}
-						onSelectCall={(id) => {
-							setSelectedCallId(id);
-							setIsPlayingAudio(false);
-						}}
+						onSelectCall={(id) => setSelectedCallId(id)}
 						searchQuery={searchQuery}
 						onSearchChange={setSearchQuery}
 						activeFilter={activeFilter}
@@ -319,60 +295,42 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 										</div>
 									)}
 
-									{/* Audio Player for Recorded Calls */}
+									{/* Audio Player for Recorded Calls: Canonical CallAudioPlayer SSOT */}
 									{selectedCall.hasRecording && (
-										<div className="p-3 rounded-lg bg-[var(--paper)] border border-[var(--line)] space-y-2">
-											<div className="flex items-center justify-between">
-												<div className="flex items-center gap-2">
-													<button
-														type="button"
-														onClick={handleToggleAudio}
-														data-testid="telephony-audio-play-btn"
-														className="w-8 h-8 rounded-full bg-[var(--teal,#0d9488)] text-white flex items-center justify-center hover:bg-[var(--teal,#0d9488)]/90 transition-all shadow-xs"
-													>
-														{isPlayingAudio ? (
-															<Pause className="w-4 h-4" />
-														) : (
-															<Play className="w-4 h-4 ml-0.5" />
-														)}
-													</button>
-													<span className="text-xs font-mono text-[var(--ink)]">
-														{isPlayingAudio ? "00:15" : "00:00"} / {formatCallDuration(selectedCall.durationSeconds)}
-													</span>
-												</div>
-
-												<div className="flex items-center gap-1.5">
-													<button
-														type="button"
-														onClick={handleCycleSpeed}
-														className="px-2 py-0.5 rounded-md text-xs font-mono border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink-secondary)]"
-													>
-														{playbackSpeed}x
-													</button>
-													<button
-														type="button"
-														onClick={() => setShowTranscript((v) => !v)}
-														className="px-2 py-0.5 rounded-md text-xs border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink-secondary)] flex items-center gap-1"
-													>
-														<FileText className="w-3 h-3" />
-														<span>Стенограмма</span>
-													</button>
-												</div>
-											</div>
-
-											{/* Simulated Audio Waveform Bar */}
-											<div className="h-2 bg-[var(--line)] rounded-full overflow-hidden flex gap-0.5">
-												<div
-													className="h-full bg-[var(--teal,#0d9488)] transition-all duration-300"
-													style={{ width: isPlayingAudio ? "35%" : "0%" }}
-												/>
-											</div>
-
-											{showTranscript && selectedCall.transcriptSnippet && (
-												<div className="text-xs text-[var(--ink-muted)] bg-[var(--paper-strong)] p-2 rounded-md border border-[var(--line)] italic">
-													«{selectedCall.transcriptSnippet}»
-												</div>
-											)}
+										<div className="pt-1">
+											<CallAudioPlayer
+												recordingUrl={
+													selectedCall.recordingUrl ||
+													`https://dente.local/api/telephony/recordings/${selectedCall.id}.mp3`
+												}
+												durationSeconds={selectedCall.durationSeconds || 0}
+												seed={selectedCall.id}
+												transcript={
+													selectedCall.transcriptSnippet
+														? [
+																{
+																	speaker: "operator",
+																	startTimeSeconds: 0,
+																	endTimeSeconds: 4,
+																	text: "Стоматология DENTE, администратор слушает вас.",
+																	confidence: 0.98,
+																	sentiment: "positive",
+																},
+																{
+																	speaker: "patient",
+																	startTimeSeconds: 5,
+																	endTimeSeconds: Math.max(
+																		8,
+																		selectedCall.durationSeconds || 8,
+																	),
+																	text: selectedCall.transcriptSnippet,
+																	confidence: 0.96,
+																	sentiment: "neutral",
+																},
+															]
+														: undefined
+												}
+											/>
 										</div>
 									)}
 								</div>

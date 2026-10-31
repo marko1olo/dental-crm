@@ -1,2 +1,2 @@
-export { CallAudioWaveformBar } from "../CallAudioPlayer";
-export type { CallAudioWaveformBarProps } from "../CallAudioPlayer";
+export { CallAudioWaveformBar } from "../audioPlayer/CallAudioWaveformBar";
+export type { CallAudioWaveformBarProps } from "../audioPlayer/types";

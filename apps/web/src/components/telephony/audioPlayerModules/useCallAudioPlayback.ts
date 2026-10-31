@@ -1,1 +1,1 @@
-export { useCallAudioPlayback } from "../CallAudioPlayer";
+export { useCallAudioPlayerState as useCallAudioPlayback } from "../audioPlayer/useCallAudioPlayerState";
