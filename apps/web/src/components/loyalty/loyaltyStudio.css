@@ -1,0 +1,500 @@
+/**
+ * DENTE Dental CRM — Стили Студии Лояльности, Семейного Баланса и Сертификатов
+ * 100% Design Token Compliance (var(--paper), var(--ink), var(--teal), var(--line))
+ * Сенсорный минимум 44px, Apple HIG Bottom Sheet, 0px горизонтального скролла.
+ */
+
+.loyalty-modal-overlay {
+	position: fixed;
+	inset: 0;
+	background-color: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	z-index: 9999;
+	padding: 1rem;
+	animation: loyaltyFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes loyaltyFadeIn {
+	from { opacity: 0; transform: scale(0.98); }
+	to { opacity: 1; transform: scale(1); }
+}
+
+.loyalty-modal-container {
+	background-color: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+	width: 100%;
+	max-width: 68rem;
+	height: 90vh;
+	max-height: 92vh;
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.loyalty-modal-drag-handle {
+	display: none;
+}
+
+.loyalty-modal-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	flex-shrink: 0;
+}
+
+.loyalty-modal-title-wrap {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.loyalty-modal-icon {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.loyalty-modal-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	margin: 0;
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-modal-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin: 0;
+}
+
+.loyalty-close-btn {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 36px;
+	height: 36px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.loyalty-close-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-tabs-nav {
+	display: flex;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	background: var(--paper, #ffffff);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	overflow-x: auto;
+	flex-shrink: 0;
+}
+
+.loyalty-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.5rem 1rem;
+	border-radius: 10px;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: 1px solid transparent;
+	background: transparent;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	white-space: nowrap;
+	transition: all 0.15s ease;
+	min-height: 40px;
+}
+
+.loyalty-tab-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-tab-btn.active {
+	background: var(--teal-surface, rgba(13, 148, 136, 0.1));
+	color: var(--teal, #0d9488);
+	border-color: var(--teal, #0d9488);
+}
+
+.loyalty-modal-body {
+	flex: 1;
+	overflow-y: auto;
+	padding: 1.5rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1.25rem;
+}
+
+.loyalty-grid-2 {
+	display: grid;
+	grid-template-columns: 1fr 1fr;
+	gap: 1.25rem;
+}
+
+.loyalty-card {
+	background: var(--paper-soft, #f8fafc);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 16px;
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+}
+
+.loyalty-card-title {
+	font-size: 0.9375rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	margin: 0;
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+}
+
+.loyalty-hero-balance {
+	display: flex;
+	align-items: baseline;
+	gap: 0.5rem;
+}
+
+.loyalty-hero-points {
+	font-size: 2.25rem;
+	font-weight: 800;
+	color: var(--teal, #0d9488);
+	line-height: 1;
+}
+
+.loyalty-hero-unit {
+	font-size: 1rem;
+	font-weight: 600;
+	color: var(--muted, #64748b);
+}
+
+.loyalty-tier-badge {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	padding: 0.25rem 0.625rem;
+	border-radius: 9999px;
+	font-size: 0.75rem;
+	font-weight: 700;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.loyalty-progress-track {
+	width: 100%;
+	height: 8px;
+	background: var(--line, #e2e8f0);
+	border-radius: 9999px;
+	overflow: hidden;
+}
+
+.loyalty-progress-bar {
+	height: 100%;
+	background: var(--teal, #0d9488);
+	border-radius: 9999px;
+	transition: width 0.3s ease;
+}
+
+.loyalty-quick-row {
+	display: flex;
+	gap: 0.5rem;
+	flex-wrap: wrap;
+}
+
+.loyalty-quick-btn {
+	flex: 1;
+	min-width: 80px;
+	min-height: 40px;
+	padding: 0.5rem 0.75rem;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.loyalty-quick-btn:hover {
+	border-color: var(--teal, #0d9488);
+	color: var(--teal, #0d9488);
+}
+
+.loyalty-input-row {
+	display: flex;
+	gap: 0.75rem;
+	align-items: center;
+}
+
+.loyalty-input {
+	flex: 1;
+	height: 44px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	padding: 0 1rem;
+	font-size: 0.9375rem;
+	font-weight: 600;
+}
+
+.loyalty-input:focus {
+	outline: none;
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 3px var(--teal-surface, rgba(13, 148, 136, 0.1));
+}
+
+.loyalty-toggle-row {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+}
+
+.loyalty-toggle-label {
+	display: flex;
+	flex-direction: column;
+	gap: 0.125rem;
+}
+
+.loyalty-toggle-title {
+	font-size: 0.875rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-toggle-desc {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+}
+
+.loyalty-fiscal-box {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 12px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.loyalty-fiscal-row {
+	display: flex;
+	justify-content: space-between;
+	font-size: 0.875rem;
+	color: var(--muted, #64748b);
+}
+
+.loyalty-fiscal-row.total {
+	border-top: 1px dashed var(--line, #e2e8f0);
+	padding-top: 0.5rem;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+}
+
+.loyalty-primary-cta {
+	height: 48px;
+	padding: 0 1.5rem;
+	border-radius: 12px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 1rem;
+	font-weight: 700;
+	border: none;
+	cursor: pointer;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	box-shadow: 0 4px 6px -1px rgba(13, 148, 136, 0.2);
+	transition: background 0.15s ease;
+	width: 100%;
+}
+
+.loyalty-primary-cta:hover {
+	background: var(--teal-dark, #0f766e);
+}
+
+.loyalty-secondary-btn {
+	height: 44px;
+	padding: 0 1.25rem;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	font-weight: 600;
+	cursor: pointer;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	transition: all 0.15s ease;
+}
+
+.loyalty-secondary-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--muted, #64748b);
+}
+
+.loyalty-family-list {
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+}
+
+.loyalty-family-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 10px;
+	cursor: pointer;
+	transition: border-color 0.15s ease;
+}
+
+.loyalty-family-item.selected {
+	border-color: var(--teal, #0d9488);
+	background: var(--teal-surface, rgba(13, 148, 136, 0.05));
+}
+
+.loyalty-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.8125rem;
+}
+
+.loyalty-table th {
+	text-align: left;
+	padding: 0.625rem 0.75rem;
+	background: var(--paper-soft, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--muted, #64748b);
+	font-weight: 600;
+}
+
+.loyalty-table td {
+	padding: 0.625rem 0.75rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+}
+
+/* Apple HIG Mobile Sheet (<= 768px) */
+@media (max-width: 768px) {
+	.loyalty-modal-overlay {
+		padding: 0;
+		align-items: flex-end;
+	}
+
+	.loyalty-modal-container {
+		border-radius: 24px 24px 0 0;
+		max-height: 94vh;
+		height: 94vh;
+		border-bottom: none;
+		border-left: none;
+		border-right: none;
+		padding-bottom: env(safe-area-inset-bottom, 16px);
+		overflow-x: clip;
+		animation: loyaltySlideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+	}
+
+	.loyalty-modal-drag-handle {
+		display: block;
+		width: 36px;
+		height: 5px;
+		background: var(--line-strong, #94a3b8);
+		border-radius: 9999px;
+		margin: 8px auto 4px auto;
+		flex-shrink: 0;
+	}
+
+	.loyalty-modal-header {
+		padding: 0.75rem 1rem;
+		border-top-left-radius: 24px;
+		border-top-right-radius: 24px;
+	}
+
+	.loyalty-tabs-nav {
+		display: flex !important;
+		flex-wrap: nowrap !important;
+		overflow-x: auto !important;
+		gap: 8px !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+		padding: 0.5rem 1rem !important;
+	}
+
+	.loyalty-tab-btn {
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
+		min-height: 44px !important;
+		min-width: 44px !important;
+		padding: 10px 16px !important;
+		font-size: 0.8125rem;
+	}
+
+	.loyalty-modal-body {
+		padding: 0.75rem;
+		gap: 0.75rem;
+		overflow-x: clip;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.loyalty-card {
+		padding: 0.875rem;
+		gap: 0.75rem;
+	}
+
+	.loyalty-hero-points {
+		font-size: 1.875rem;
+	}
+
+	.loyalty-grid-2 {
+		grid-template-columns: 1fr;
+		gap: 0.75rem;
+	}
+
+	.loyalty-quick-btn {
+		min-height: 44px;
+	}
+
+	.loyalty-primary-cta {
+		min-height: 48px;
+	}
+}
+
+@keyframes loyaltySlideUp {
+	from { transform: translateY(100%); }
+	to { transform: translateY(0); }
+}

@@ -30,6 +30,7 @@ import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
+import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
@@ -255,6 +256,7 @@ export function AppShell() {
 			<DirectEmrLauncher />
 			<DirectCopilotLauncher />
 			<DirectInsuranceLauncher />
+			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />
 			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />

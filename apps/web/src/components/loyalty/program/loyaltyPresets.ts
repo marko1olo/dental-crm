@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Statutory Dental Loyalty, Bonus & Gift Certificate Studio Presets
- * Modular Architecture Facade (Mandate 8b, <= 120 lines)
+ * Приоритетная связь с лечащим врачом и прозрачные стандарты (Мандат 8b, Sweet Spot SSOT).
  */
 
-export * from "./presets/index";
+export * from "../loyaltyCatalogData";

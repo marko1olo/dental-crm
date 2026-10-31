@@ -41,10 +41,38 @@ export const DEFAULT_BILL_ITEMS_TO_SPLIT: readonly DmsBillableItem[] = [
 ];
 
 export const EXPRESS_GUARANTEE_LETTER_PRESETS = [
-	{ id: "express_therapy_basic", title: "Терапия Базовая", maxCoverageRub: 30000 },
-	{ id: "express_therapy_extended", title: "Терапия Расширенная", maxCoverageRub: 50000 },
-	{ id: "express_complex_surgery", title: "Комплекс с Хирургией", maxCoverageRub: 75000 },
-	{ id: "express_vip_full", title: "VIP Полное Покрытие", maxCoverageRub: 150000 },
+	{
+		id: "express_sogaz_therapy",
+		insurerKey: "sogaz",
+		title: "СОГАЗ Терапия и Профгигиена",
+		maxCoverageRub: 35000,
+		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.051", "A11.07.010"],
+		approvedDiagnosisMkb10: ["K02.1", "K04.0"],
+	},
+	{
+		id: "express_ingos_complex",
+		insurerKey: "ingosstrakh",
+		title: "Ингосстрах Комплекс",
+		maxCoverageRub: 50000,
+		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.002", "A11.07.010"],
+		approvedDiagnosisMkb10: ["K02.1", "K04.4"],
+	},
+	{
+		id: "express_alfa_therapy",
+		insurerKey: "alfastrakhovanie",
+		title: "АльфаСтрахование Базовый",
+		maxCoverageRub: 40000,
+		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.051", "A11.07.010"],
+		approvedDiagnosisMkb10: ["K02.1", "K05.1"],
+	},
+	{
+		id: "express_reso_full",
+		insurerKey: "reso_garantiya",
+		title: "РЕСО-Гарантия Полный",
+		maxCoverageRub: 75000,
+		approvedServiceCodes804n: ["A16.07.002.001", "A16.07.030.002", "A16.07.051", "A11.07.010"],
+		approvedDiagnosisMkb10: ["K02.1", "K04.0", "K04.4"],
+	},
 ] as const;
 
 export const STATUTORY_DMS_PROGRAMS: any = Object.assign(

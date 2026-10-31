@@ -1,18 +1,10 @@
 /**
- * DENTE Dental CRM — Statutory Dental Loyalty, Bonus & Gift Certificate Studio
- * Barrel export of Loyalty Program components, presets, types, and math engine
+ * DENTE Dental CRM — Loyalty Module Root
  */
 
-export * from "./loyaltyPresets";
-export * from "./loyaltyEngine";
+export * from "../loyaltyCatalogData";
+export * from "../LoyaltyStudioModal";
+export * from "../DirectLoyaltyLauncher";
 export * from "./LoyaltyProgramModal";
-export * from "./LoyaltyBalanceTab";
-export * from "./LoyaltyFamilyTab";
-export * from "./LoyaltyReferralsTab";
-export * from "./LoyaltyCertificatesTab";
-export * from "./LoyaltyPromosTab";
-export * from "./LoyaltyLedgerTab";
-export * from "./useLoyaltyCertificates";
-export * from "./useLoyaltyPromos";
-export * from "./useLoyaltyFamily";
-export * from "./modalModules";
+export * from "./loyaltyEngine";
+export * from "./loyaltyPresets";

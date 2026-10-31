@@ -1,8 +1,7 @@
 /**
  * DENTE Dental CRM — Statutory Dental Loyalty, Bonus & Gift Certificate Math Engine
- * Modular Architecture Facade (Mandate 8b, <= 120 lines)
+ * Modular Architecture Facade (Mandate 8b, Sweet Spot SSOT)
  */
 
-export * from "./engine/index";
-export * from "./presets/index";
-export type { LoyaltyTierDefinition } from "./presets/index";
+export * from "../loyaltyCatalogData";
+export type { LoyaltyTierDefinition } from "../loyaltyCatalogData";

@@ -38,6 +38,7 @@ import { DirectEndodonticsLauncher } from "../../endo/DirectEndodonticsLauncher"
 import { DirectOrthopedicsLauncher } from "../../orthopedics/DirectOrthopedicsLauncher";
 import { DirectHygieneLauncher } from "../../hygiene/DirectHygieneLauncher";
 import { DirectInsuranceLauncher } from "../../insurance/DirectInsuranceLauncher";
+import { DirectLoyaltyLauncher } from "../../loyalty/DirectLoyaltyLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -46,6 +47,24 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Loyalty & Family Balance Studio Standalone Launcher (#loyalty, #bonuses, ?loyalty=1, ?bonuses=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("loyalty=1") ||
+			window.location.search.includes("bonuses=1") ||
+			window.location.search.includes("standalone=loyalty") ||
+			window.location.search.includes("loyalty=direct") ||
+			window.location.hash === "#loyalty" ||
+			window.location.hash === "#bonuses" ||
+			window.location.hash === "#points" ||
+			window.location.hash === "#family-pool" ||
+			window.location.hash === "#loyalty-studio" ||
+			window.location.hash.startsWith("#loyalty?") ||
+			window.location.hash.startsWith("#loyalty/"))
+	) {
+		return <DirectLoyaltyLauncher />;
 	}
 
 	// 0. Direct Insurance & DMS Billing Studio Standalone Launcher (#insurance, #dms, ?insurance=1, ?dms=1)
