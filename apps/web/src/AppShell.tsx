@@ -205,7 +205,9 @@ function isStandaloneActive(): boolean {
 		s.includes("executive_studio") ||
 		h.includes("executive-studio") ||
 		s.includes("analytics=direct") ||
-		s.includes("dashboard=direct")
+		s.includes("dashboard=direct") ||
+		s.includes("reports") ||
+		h.includes("reports")
 	);
 }
 

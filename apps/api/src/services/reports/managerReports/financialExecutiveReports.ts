@@ -20,6 +20,7 @@ import {
 	users,
 	visits,
 } from "../../../db/schema.js";
+import { labOrders } from "../../../db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.js";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -59,7 +60,10 @@ export type DoctorPayrollRow = {
 	/** Списано материалов техкарт (руб.) */
 	readonly materialsCostRub: number;
 	readonly materialsCostKopecks: number;
-	/** Чистая выручка (Net Revenue) = servicesRendered - materialsCost */
+	/** Себестоимость зуботехнической лаборатории (руб.) */
+	readonly labCostRub?: number;
+	readonly labCostKopecks?: number;
+	/** Чистая выручка (Net Revenue) = servicesRendered - materialsCost - labCost */
 	readonly netRevenueRub: number;
 	readonly netRevenueKopecks: number;
 	/** Процентная ставка врача (%) */
@@ -78,6 +82,8 @@ export type DoctorPayrollReportData = {
 		readonly totalServicesRenderedKopecks: number;
 		readonly totalMaterialsCostRub: number;
 		readonly totalMaterialsCostKopecks: number;
+		readonly totalLabCostRub?: number;
+		readonly totalLabCostKopecks?: number;
 		readonly totalNetRevenueRub: number;
 		readonly totalNetRevenueKopecks: number;
 		readonly totalPayoutRub: number;
@@ -335,6 +341,27 @@ export async function doctorPayrollReport(
 		]),
 	);
 
+	// 4b. Расходы зуботехнической лаборатории (ЗТЛ) по выполненным нарядам за период
+	const labOrderRows = await db
+		.select({
+			doctorId: labOrders.doctorId,
+			labCostRub: sql<number>`coalesce(sum(case when ${labOrders.isWarranty} = false and ${labOrders.status} in ('completed', 'received', 'installed') then coalesce(${labOrders.labCostRub}, ${labOrders.priceRub} * 0.3) else 0 end), 0)::numeric(12,2)`,
+		})
+		.from(labOrders)
+		.where(
+			and(
+				eq(labOrders.organizationId, scope.organizationId),
+				gte(labOrders.completedAt, scope.from),
+				lte(labOrders.completedAt, scope.to),
+				isNotNull(labOrders.doctorId),
+			),
+		)
+		.groupBy(labOrders.doctorId);
+
+	const labCostsMap = new Map(
+		labOrderRows.map((l) => [l.doctorId, Number(l.labCostRub || 0)]),
+	);
+
 	// 5. Собираем всех уникальных врачей (из списка персонала + из выручки)
 	const allDoctorIds = Array.from(
 		new Set([
@@ -346,6 +373,7 @@ export async function doctorPayrollReport(
 	const rows: DoctorPayrollRow[] = [];
 	let totalServicesRenderedKopecks = 0;
 	let totalMaterialsCostKopecks = 0;
+	let totalLabCostKopecks = 0;
 	let totalNetRevenueKopecks = 0;
 	let totalPayoutKopecks = 0;
 	let totalAppointmentsCompleted = 0;
@@ -366,8 +394,13 @@ export async function doctorPayrollReport(
 				? st.materialsCostRub
 				: Math.round(revRub * 0.1); // Норматив расходных материалов по техкартам 10%
 
-		// Чистая выручка (Net Revenue)
-		const netRevenueRub = Math.max(0, revRub - materialsCostRub);
+		// Расходы ЗТЛ по заказам ортопедии
+		const labCostRub = labCostsMap.get(docId) ?? 0;
+		const labCostKopecks = Math.round(labCostRub * 100);
+
+		// Чистая выручка (Net Revenue) = выручка минус материалы техкарт минус расходы ЗТЛ
+		const directCostsRub = materialsCostRub + labCostRub;
+		const netRevenueRub = Math.max(0, revRub - directCostsRub);
 
 		// Процентная ставка: doctorCommissions -> statements -> дефолт 25%
 		const commissionPercent =
@@ -378,13 +411,14 @@ export async function doctorPayrollReport(
 		const materialsCostKopecks = Math.round(materialsCostRub * 100);
 		const netRevenueKopecks = Math.max(
 			0,
-			servicesRenderedKopecks - materialsCostKopecks,
+			servicesRenderedKopecks - materialsCostKopecks - labCostKopecks,
 		);
 		const payoutKopecks = Math.round((netRevenueKopecks * commissionPercent) / 100);
 		const payoutRub = Math.round(payoutKopecks / 100);
 
 		totalServicesRenderedKopecks += servicesRenderedKopecks;
 		totalMaterialsCostKopecks += materialsCostKopecks;
+		totalLabCostKopecks += labCostKopecks;
 		totalNetRevenueKopecks += netRevenueKopecks;
 		totalPayoutKopecks += payoutKopecks;
 		totalAppointmentsCompleted += completedCount;
@@ -397,6 +431,8 @@ export async function doctorPayrollReport(
 			servicesRenderedKopecks,
 			materialsCostRub: Math.round(materialsCostRub),
 			materialsCostKopecks,
+			labCostRub: Math.round(labCostRub),
+			labCostKopecks,
 			netRevenueRub: Math.round(netRevenueRub),
 			netRevenueKopecks,
 			commissionPercent,
@@ -420,6 +456,8 @@ export async function doctorPayrollReport(
 			totalServicesRenderedKopecks,
 			totalMaterialsCostRub: Math.round(totalMaterialsCostKopecks / 100),
 			totalMaterialsCostKopecks,
+			totalLabCostRub: Math.round(totalLabCostKopecks / 100),
+			totalLabCostKopecks,
 			totalNetRevenueRub: Math.round(totalNetRevenueKopecks / 100),
 			totalNetRevenueKopecks,
 			totalPayoutRub: Math.round(totalPayoutKopecks / 100),
