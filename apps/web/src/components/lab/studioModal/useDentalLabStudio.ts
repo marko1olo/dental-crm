@@ -18,10 +18,10 @@ import {
 import type { LabFilterTab } from "./LabOrdersRegistryView";
 
 export interface UseDentalLabStudioParams {
-	readonly initialToothFdi?: string | number;
-	readonly patientName?: string;
-	readonly doctorName?: string;
-	readonly onOrderCreated?: (order: DentalLabOrderEntry) => void;
+	readonly initialToothFdi?: string | number | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly onOrderCreated?: ((order: DentalLabOrderEntry) => void) | undefined;
 }
 
 export function useDentalLabStudio({
@@ -41,7 +41,7 @@ export function useDentalLabStudio({
 	const [selectedTeeth, setSelectedTeeth] = useState<number[]>([initialToothNum]);
 	const [selectedMaterialId, setSelectedMaterialId] = useState<string>("zirconia_multilayer");
 	const [selectedShade, setSelectedShade] = useState<string>("A2");
-	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0]);
+	const [selectedLab, setSelectedLab] = useState<string>(CLINIC_LABORATORIES[0] ?? "ЗТЛ «Мастер Дент»");
 	const [notes, setNotes] = useState("");
 	const [isUrgent, setIsUrgent] = useState(false);
 	const [feedbackToast, setFeedbackToast] = useState<string | null>(null);
@@ -55,10 +55,10 @@ export function useDentalLabStudio({
 	const defaultDueDate = useMemo(() => {
 		const target = new Date();
 		target.setDate(target.getDate() + (selectedMaterial?.defaultDurationDays || 5));
-		return target.toISOString().split("T")[0];
+		return target.toISOString().split("T")[0] ?? "";
 	}, [selectedMaterial]);
 
-	const [customDueDate, setCustomDueDate] = useState<string>(defaultDueDate);
+	const [customDueDate, setCustomDueDate] = useState<string>(defaultDueDate || "");
 
 	// Переключение зуба
 	const toggleTooth = useCallback((tooth: number) => {
@@ -72,7 +72,7 @@ export function useDentalLabStudio({
 		const teethToSave = selectedTeeth.length > 0 ? selectedTeeth : [16];
 		const materialToSave = selectedMaterialId || "zirconia_multilayer";
 		const shadeToSave = selectedShade || "A2";
-		const labToSave = selectedLab || CLINIC_LABORATORIES[0];
+		const labToSave = selectedLab || CLINIC_LABORATORIES[0] || "ЗТЛ «Мастер Дент»";
 		const matMeta = getMaterialMeta(materialToSave);
 
 		const count = teethToSave.length;
@@ -93,7 +93,7 @@ export function useDentalLabStudio({
 			patientPriceKopecks: totalPatientPrice,
 			laboratoryName: labToSave,
 			createdAt: new Date().toISOString(),
-			dueDate: customDueDate || defaultDueDate,
+			dueDate: customDueDate || defaultDueDate || new Date().toISOString().split("T")[0]!,
 			notes: notes.trim() || undefined,
 			isUrgent,
 		};
@@ -125,8 +125,8 @@ export function useDentalLabStudio({
 				if (ord.id !== orderId) return ord;
 				const currentIdx = CANONICAL_LAB_STAGES.findIndex((s) => s.id === ord.stage);
 				const nextStage =
-					currentIdx < CANONICAL_LAB_STAGES.length - 1
-						? CANONICAL_LAB_STAGES[currentIdx + 1].id
+					currentIdx >= 0 && currentIdx < CANONICAL_LAB_STAGES.length - 1
+						? (CANONICAL_LAB_STAGES[currentIdx + 1]?.id ?? ord.stage)
 						: ord.stage;
 				return { ...ord, stage: nextStage };
 			}),

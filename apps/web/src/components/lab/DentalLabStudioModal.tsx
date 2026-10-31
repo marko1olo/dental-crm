@@ -22,10 +22,10 @@ import {
 export interface DentalLabStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly initialToothFdi?: string | number;
-	readonly patientName?: string;
-	readonly doctorName?: string;
-	readonly onOrderCreated?: (order: DentalLabOrderEntry) => void;
+	readonly initialToothFdi?: string | number | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorName?: string | undefined;
+	readonly onOrderCreated?: ((order: DentalLabOrderEntry) => void) | undefined;
 }
 
 export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
