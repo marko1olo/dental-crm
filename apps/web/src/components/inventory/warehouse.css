@@ -1,0 +1,89 @@
+/**
+ * warehouse.css — Стили Студии склада и расходных материалов (SSOT).
+ * Токены: var(--paper), var(--ink), var(--line), var(--teal), var(--paper-strong).
+ * Apple HIG: нативный bottom sheet, drag handle, 0px горизонтального скролла.
+ */
+
+.warehouse-modal-backdrop {
+	background-color: rgba(0, 0, 0, 0.45);
+	backdrop-filter: blur(4px);
+	-webkit-backdrop-filter: blur(4px);
+}
+
+.warehouse-sheet-container {
+	background-color: var(--paper-strong, var(--paper, #ffffff));
+	color: var(--ink, #0f172a);
+	border-color: var(--line, rgba(0, 0, 0, 0.1));
+}
+
+.dark .warehouse-sheet-container {
+	background-color: var(--paper-strong, #131722);
+	color: var(--ink, #f1f5f9);
+	border-color: var(--line, rgba(255, 255, 255, 0.12));
+}
+
+.warehouse-drag-handle {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background-color: var(--line, rgba(148, 163, 184, 0.4));
+	margin: 8px auto;
+}
+
+.warehouse-primary-btn {
+	background-color: #0d9488 !important;
+	color: #ffffff !important;
+	border: 1px solid transparent;
+	font-weight: 600;
+	transition: background-color 0.15s ease, opacity 0.15s ease;
+}
+
+.warehouse-primary-btn:hover {
+	background-color: #0f766e !important;
+}
+
+.warehouse-secondary-btn {
+	background-color: transparent !important;
+	color: var(--ink, #0f172a) !important;
+	border: 1px solid var(--line, rgba(0, 0, 0, 0.15)) !important;
+	font-weight: 500;
+	transition: background-color 0.15s ease, border-color 0.15s ease;
+}
+
+.dark .warehouse-secondary-btn {
+	color: var(--ink, #f1f5f9) !important;
+	border: 1px solid var(--line, rgba(255, 255, 255, 0.15)) !important;
+}
+
+.warehouse-secondary-btn:hover {
+	background-color: rgba(148, 163, 184, 0.1) !important;
+}
+
+.warehouse-tab-active {
+	background-color: var(--paper, #ffffff);
+	color: #0d9488;
+	font-weight: 600;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+.dark .warehouse-tab-active {
+	background-color: rgba(255, 255, 255, 0.08);
+	color: #2dd4bf;
+}
+
+.warehouse-touch-target {
+	min-height: 44px;
+	min-width: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+.no-scrollbar {
+	-ms-overflow-style: none;
+	scrollbar-width: none;
+}
+
+.no-scrollbar::-webkit-scrollbar {
+	display: none;
+}

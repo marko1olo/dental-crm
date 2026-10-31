@@ -360,13 +360,16 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 					<table style={{ tableLayout: "fixed", width: "100%" }} className="w-full text-left text-sm border-collapse" data-testid="warehouse-stock-table">
 						<thead>
 							<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
-								<th style={{ width: "100px" }} className="py-3 px-3">Артикул</th>
 								<th className="py-3 px-3">Наименование</th>
 								<th style={{ width: "130px" }} className="py-3 px-3">Категория</th>
+								<th style={{ width: "160px" }} className="py-3 px-3">
+									<div>Срок годности</div>
+									<div className="text-[10px] opacity-75 font-normal tracking-normal">Партия / FEFO</div>
+								</th>
 								<th style={{ width: "90px" }} className="py-3 px-3 text-right font-semibold">Остаток</th>
-								<th style={{ width: "75px" }} className="py-3 px-3 text-center">Ед. изм.</th>
 								<th style={{ width: "95px" }} className="py-3 px-3 text-right font-semibold">Мин. запас</th>
-								<th style={{ width: "230px" }} className="py-3 px-3.5 text-center">Статус остатка</th>
+								<th style={{ width: "120px" }} className="py-3 px-3 text-right">Себестоимость</th>
+								<th style={{ width: "180px" }} className="py-3 px-3.5 text-center">Действия</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line-subtle)]">
