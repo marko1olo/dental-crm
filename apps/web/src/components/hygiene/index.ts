@@ -1,3 +1,28 @@
+/**
+ * @dental/web/components/hygiene/index.ts
+ *
+ * DENTE Dental CRM — Канонический экспорт модуля профессиональной гигиены и индекса OHI-S.
+ * Мандаты: 8b, 8e, 8n, 8am, 8ze.
+ */
+
+export { HygieneStudioModal, type HygieneStudioModalProps } from "./HygieneStudioModal";
+export { default as DirectHygieneLauncher, DirectHygieneLauncher as HygieneLauncher } from "./DirectHygieneLauncher";
+
+export {
+	OHI_S_PRESETS,
+	CLEANING_PROTOCOLS,
+	HOME_CARE_PLANS,
+	type OhiSLevel,
+	type OhiSPreset,
+	type CleaningProtocol,
+	type CleaningServiceItem,
+	type HomeCarePlan,
+	commitHygieneVisitProtocol,
+	printHygieneHomeCareMemo,
+	dispatchHygieneInvoiceAndServices,
+	deductWarehouseHygieneConsumables,
+} from "./hygieneCatalogData";
+
 export {
 	HygieneIndicesPanel,
 	type HygieneIndicesPanelProps,
@@ -19,38 +44,6 @@ export {
 } from "./HygieneIndicesPanel";
 
 export {
-	OhiSilnessCalculator,
-	type OhiSilnessCalculatorProps,
-} from "./OhiSilnessCalculator";
-
-export {
-	KpuBleedingIndicesCalculator,
-	type KpuBleedingIndicesCalculatorProps,
-	type BleedingScore,
-	type BleedingSiteState,
-} from "./KpuBleedingIndicesCalculator";
-
-export {
 	HygieneExpressPresetsStrip,
 	type HygieneExpressPresetsStripProps,
 } from "./HygieneExpressPresetsStrip";
-
-export {
-	HygieneHomeCareCard,
-	type HygieneHomeCareCardProps,
-	type HygieneHomeCareRecommendations,
-	DEFAULT_STANDARD_HOME_CARE,
-	CROWDING_ORTHO_HOME_CARE,
-	PERIODONTITIS_HOME_CARE,
-} from "./HygieneHomeCareCard";
-
-export {
-	HygieneBottomSheetDrawer,
-	type HygieneBottomSheetDrawerProps,
-} from "./HygieneBottomSheetDrawer";
-
-export {
-	PmaKpiSextantsGrid,
-	type PmaKpiSextantsGridProps,
-} from "./PmaKpiSextantsGrid";
-

@@ -35,6 +35,9 @@ import { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodontic
 import { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
 import { DirectEndodonticsLauncher } from "../../endo/DirectEndodonticsLauncher";
+import { DirectOrthopedicsLauncher } from "../../orthopedics/DirectOrthopedicsLauncher";
+import { DirectHygieneLauncher } from "../../hygiene/DirectHygieneLauncher";
+import { DirectInsuranceLauncher } from "../../insurance/DirectInsuranceLauncher";
 import { clearUrlTokens, hasUrlToken } from "./standalone/deepLinkUrl";
 
 export function renderStandaloneLaunchers(
@@ -43,6 +46,24 @@ export function renderStandaloneLaunchers(
 	// Guard: Standalone demo launchers and synthetic fixtures are strictly isolated to demo showcase mode or dev environment
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
+	}
+
+	// 0. Direct Insurance & DMS Billing Studio Standalone Launcher (#insurance, #dms, ?insurance=1, ?dms=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("insurance=1") ||
+			window.location.search.includes("dms=1") ||
+			window.location.search.includes("standalone=insurance") ||
+			window.location.search.includes("standalone=dms") ||
+			window.location.hash === "#insurance" ||
+			window.location.hash.startsWith("#insurance?") ||
+			window.location.hash.startsWith("#insurance/") ||
+			window.location.hash === "#dms" ||
+			window.location.hash.startsWith("#dms?") ||
+			window.location.hash === "#insurance-studio" ||
+			window.location.hash === "#dms-studio")
+	) {
+		return <DirectInsuranceLauncher />;
 	}
 
 	// 0. Direct Endodontics & Root Canal Studio Launcher (#endo, #endodontics, #root-canals, ?endo=1, ?endodontics=1)
@@ -62,6 +83,24 @@ export function renderStandaloneLaunchers(
 			window.location.hash === "#endo-studio")
 	) {
 		return <DirectEndodonticsLauncher />;
+	}
+
+	// 0. Direct Professional Hygiene & OHI-S Studio Launcher (#hygiene, #cleaning, ?hygiene=1, ?cleaning=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("hygiene=1") ||
+			window.location.search.includes("cleaning=1") ||
+			window.location.search.includes("standalone=hygiene") ||
+			window.location.hash === "#hygiene" ||
+			window.location.hash.startsWith("#hygiene?") ||
+			window.location.hash.startsWith("#hygiene/") ||
+			window.location.hash === "#cleaning" ||
+			window.location.hash.startsWith("#cleaning?") ||
+			window.location.hash === "#prophy" ||
+			window.location.hash.startsWith("#prophy?") ||
+			window.location.hash === "#hygiene-studio")
+	) {
+		return <DirectHygieneLauncher />;
 	}
 
 	// 0. Direct Consents & Contracts Studio Standalone Launcher (#consents, #consent, #documents, ?consents=1, ?consent=1)
@@ -119,6 +158,25 @@ export function renderStandaloneLaunchers(
 			window.location.hash.includes("dental_lab"))
 	) {
 		return <DirectDentalLabLauncher />;
+	}
+
+	// 0. Direct Orthopedics Studio, Crowns & Prosthetics Launcher (#orthopedics, #crowns, #ortho-studio, ?ortho=1, ?orthopedics=1, ?crowns=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.search.includes("ortho=1") ||
+			window.location.search.includes("orthopedics=1") ||
+			window.location.search.includes("crowns=1") ||
+			window.location.search.includes("standalone=orthopedics") ||
+			window.location.hash === "#orthopedics" ||
+			window.location.hash.startsWith("#orthopedics?") ||
+			window.location.hash.startsWith("#orthopedics/") ||
+			window.location.hash === "#crowns" ||
+			window.location.hash.startsWith("#crowns?") ||
+			window.location.hash === "#ortho-studio" ||
+			window.location.hash.startsWith("#ortho-studio?") ||
+			window.location.hash === "#crowns-studio")
+	) {
+		return <DirectOrthopedicsLauncher />;
 	}
 
 	// 0. Direct Orthodontics Studio & Activation Protocol Standalone Launcher (#orthodontics, #ortho-protocol, ?orthodontics=1)

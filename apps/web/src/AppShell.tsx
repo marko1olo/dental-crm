@@ -44,6 +44,9 @@ import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyL
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
 import { DirectEndodonticsLauncher } from "./components/endo/DirectEndodonticsLauncher";
+import { DirectOrthopedicsLauncher } from "./components/orthopedics/DirectOrthopedicsLauncher";
+import { DirectHygieneLauncher } from "./components/hygiene/DirectHygieneLauncher";
+import { DirectPediatricLauncher } from "./components/pediatric/DirectPediatricLauncher";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
 import { useThemeStore } from "./store/themeStore";
 import { ThemeBackground } from "./components/theme";
@@ -266,6 +269,9 @@ export function AppShell() {
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />
 			<DirectEndodonticsLauncher />
+			<DirectOrthopedicsLauncher />
+			<DirectHygieneLauncher />
+			<DirectPediatricLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />
