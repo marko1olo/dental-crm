@@ -24,5 +24,6 @@ export * from "./safetyMath";
 export * from "./DirectPatientCardLauncher";
 export * from "./patientCatalogData";
 export * from "./PatientStudioModal";
+export * from "./studioModal";
 export * from "./DirectPatientLauncher";
 
