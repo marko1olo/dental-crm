@@ -76,3 +76,16 @@
 	color: var(--ink);
 }
 
+@media (max-width: 639px) {
+	.anesthesia-desktop-memo-btn {
+		display: none !important;
+	}
+}
+
+@media (min-width: 640px) {
+	.anesthesia-mobile-memo-btn {
+		display: none !important;
+	}
+}
+
+

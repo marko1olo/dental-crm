@@ -6,6 +6,10 @@
 
 export { STANDARD_ANESTHESIA_NORM_PRESET_RU } from "../../lib/clinicalProtocolsReception";
 export {
+	AnesthesiaStudioModal,
+	type AnesthesiaStudioModalProps,
+} from "./AnesthesiaStudioModal";
+export {
 	ChairsideAnesthesiaQuickBar,
 	ChairsideAnesthesiaQuickBar as AnesthesiaQuickBar,
 	type ChairsideAnesthesiaQuickBarProps,
