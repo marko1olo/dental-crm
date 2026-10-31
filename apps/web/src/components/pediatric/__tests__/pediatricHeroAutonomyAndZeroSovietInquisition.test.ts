@@ -18,8 +18,8 @@ import {
 } from "../PediatricAnesthesiaCalculator";
 
 import {
-	PediatricHeroDiplomaModal,
-} from "../PediatricHeroDiplomaModal";
+	PediatricBraveryDiplomaModal as PediatricHeroDiplomaModal,
+} from "../PediatricBraveryDiplomaModal";
 
 import {
 	generateHeroDiplomaHtml,

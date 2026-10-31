@@ -20,6 +20,7 @@ import { StandaloneEndoHost } from "./StandaloneEndoHost";
 import { StandaloneClinicalBundlesHost } from "./StandaloneClinicalBundlesHost";
 import { VoiceDictationAssistantModal } from "../../../../voice/VoiceDictationAssistantModal";
 import { ToothContextDrawer } from "../../../../diagnostics/ToothContextDrawer";
+import { PediatricStudioModal } from "../../../../pediatric/PediatricStudioModal";
 import { clearUrlTokens, hasUrlToken } from "../deepLinkUrl";
 
 export function renderTherapyLaunchers(): React.ReactElement | null {
@@ -99,6 +100,15 @@ export function renderTherapyLaunchers(): React.ReactElement | null {
 				onClose={() => clearUrlTokens(["tooth-drawer", "tooth-card", "chairside-tooth"])}
 				toothNumber={16}
 				toothData={{ toothNumber: 16, state: "Healthy", surfaces: ["O", "M"], mobility: 0 }}
+			/>
+		);
+	}
+
+	if (hasUrlToken(["pediatric", "children", "pedodontics"])) {
+		return (
+			<PediatricStudioModal
+				isOpen={true}
+				onClose={() => clearUrlTokens(["pediatric", "children", "pedodontics"], ["pediatric", "children"])}
 			/>
 		);
 	}

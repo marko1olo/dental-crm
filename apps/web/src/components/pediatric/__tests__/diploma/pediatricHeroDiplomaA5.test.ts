@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
-import { PediatricHeroDiplomaModal } from "../../PediatricHeroDiplomaModal";
+import { PediatricBraveryDiplomaModal as PediatricHeroDiplomaModal } from "../../PediatricBraveryDiplomaModal";
 import { generateHeroDiplomaHtml } from "../../pediatricHeroDiplomaPrint";
 import { calculatePediatricAnesthesia, PEDIATRIC_ANESTHETIC_SPECS } from "../../PediatricAnesthesiaCalculator";
 

@@ -1,3 +1,6 @@
+export * from "./pediatricCatalogData";
+export * from "./PediatricStudioModal";
+export * from "./DirectPediatricLauncher";
 export * from "./FranklBehaviorBadge";
 export * from "./PediatricParentMemoModal";
 export * from "./VisitPediatricProtocolWidget";
@@ -8,7 +11,6 @@ export * from "./PediatricBraveryDiplomaModal";
 export * from "./PediatricVisitAdaptationTab";
 export * from "./PediatricAnesthesiaQuickSelector";
 export * from "./PediatricWeightQuickChips";
-export * from "./PediatricHeroDiplomaModal";
 export * from "./pediatricHeroDiplomaPrint";
 export * from "./pediatricAnesthesiaEngine";
 export * from "./usePediatricVisitLogic";
