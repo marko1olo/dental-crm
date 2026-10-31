@@ -150,7 +150,13 @@ describe("DENTE Dental Laboratory SSOT & Studio Red Team Suite", () => {
 
 	it("2.2. Validates Doctor Autonomy & Express Order 1-Click Form (Mandate 8e)", () => {
 		const modalPath = path.resolve(labDir, "DentalLabStudioModal.tsx");
-		const content = fs.readFileSync(modalPath, "utf-8");
+		const studioDir = path.resolve(labDir, "studioModal");
+		let content = fs.readFileSync(modalPath, "utf-8");
+		if (fs.existsSync(studioDir)) {
+			for (const file of fs.readdirSync(studioDir)) {
+				content += "\n" + fs.readFileSync(path.join(studioDir, file), "utf-8");
+			}
+		}
 
 		// Экспресс-создание наряда у кресла
 		assert.ok(

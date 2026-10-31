@@ -124,7 +124,7 @@ export const DirectDentalLabLauncher: React.FC = () => {
 					onClick={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
 					className="text-xs font-semibold px-2 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]"
 				>
-					{theme === "dark" ? "🌙 Dark" : "☀️ Light"}
+					{theme === "dark" ? "Dark" : "Light"}
 				</button>
 			</div>
 
