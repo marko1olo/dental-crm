@@ -29,6 +29,16 @@ export function getClinicalScreens(title: string): Record<string, BotSimulatorSc
 				[{ text: "« Назад в меню", action: "screen:root" }],
 			],
 		},
+		estimate: {
+			id: "estimate",
+			title: "План лечения и смета",
+			text: `План лечения и согласованная смета в «${title}»:\n\n• Этап 1: Профессиональная гигиена и диагностика — 6 000 ₽\n• Этап 2: Терапия зубов 16, 26 под микроскопом — 11 000 ₽\n• Этап 3: Керамическая реставрация — 25 000 ₽\n\nВсе материалы сертифицированы. Доступна оплата частями без переплат.`,
+			buttons: [
+				[{ text: "Согласовать план лечения", action: "action:approve_plan", isPrimary: true }],
+				[{ text: "Связаться с куратором", action: "action:call_concierge" }],
+				[{ text: "« Назад в меню", action: "screen:root" }],
+			],
+		},
 		reviews: {
 			id: "reviews",
 			title: "Сбор отзывов и NPS",

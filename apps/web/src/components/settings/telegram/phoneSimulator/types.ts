@@ -22,6 +22,23 @@ export interface ChannelConfig {
 	iconColor: string;
 }
 
+export interface ChatMessage {
+	id: string;
+	sender: "bot" | "user";
+	text: string;
+	time: string;
+	status?: "sent" | "delivered" | "read";
+	bannerUrl?: string;
+	buttons?: Array<Array<{
+		text: string;
+		action: string;
+		isPrimary?: boolean;
+		isDanger?: boolean;
+		webApp?: boolean;
+		url?: string;
+	}>>;
+}
+
 export const CHANNEL_CONFIGS: Record<BotChannelType, ChannelConfig> = {
 	telegram: {
 		name: "Telegram Bot",
