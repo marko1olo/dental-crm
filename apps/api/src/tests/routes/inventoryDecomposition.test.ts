@@ -6,6 +6,7 @@ import Fastify from "fastify";
 import {
 	calculateAlertsFromItems,
 	itemCatalogRoutes,
+	stornoRoutes,
 	supplierInvoiceRoutes,
 } from "../../routes/inventory.js";
 
@@ -159,6 +160,88 @@ describe("Inventory Routes Decomposition & Sweet Spot Architecture (Mandates 8b,
 			url: "/waybills",
 		});
 		assert.strictEqual(resWaybills.statusCode, 401);
+
+		await app.close();
+	});
+
+	test("Mandate 8b / 8zi: stornoRoutes monolith is split into Sweet Spot modules (< 400 lines) and router (< 200 lines)", () => {
+		const stornoFacade = path.resolve(cwd, "apps/api/src/routes/inventory/stornoRoutes.ts");
+		const stornoDir = path.resolve(cwd, "apps/api/src/routes/inventory/storno");
+
+		assert.ok(fs.existsSync(stornoFacade), "stornoRoutes.ts facade must exist");
+		const facadeLines = fs.readFileSync(stornoFacade, "utf-8").split("\n").length;
+		assert.ok(
+			facadeLines <= 200,
+			`stornoRoutes.ts router must be <= 200 lines (actual: ${facadeLines})`,
+		);
+
+		assert.ok(fs.existsSync(stornoDir), "storno directory must exist");
+		const stornoFiles = fs.readdirSync(stornoDir).filter((f) => f.endsWith(".ts"));
+		assert.ok(stornoFiles.length >= 2, `Expected at least 2 storno modules, found ${stornoFiles.length}`);
+
+		for (const file of stornoFiles) {
+			const fullPath = path.join(stornoDir, file);
+			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
+			assert.ok(
+				lineCount < 400,
+				`File ${file} has ${lineCount} lines, exceeding the 400 lines ceiling (Sweet Spot: 200-350 lines)`,
+			);
+		}
+	});
+
+	test("Mandate 8b / 8zi: inventory schema monolith is split into Sweet Spot modules (< 350 lines) and thin facade (< 30 lines)", () => {
+		const schemaFacade = path.resolve(cwd, "apps/api/src/db/schema/inventory.ts");
+		const schemaDir = path.resolve(cwd, "apps/api/src/db/schema/inventory");
+
+		assert.ok(fs.existsSync(schemaFacade), "schema/inventory.ts facade must exist");
+		const facadeLines = fs.readFileSync(schemaFacade, "utf-8").split("\n").length;
+		assert.ok(
+			facadeLines <= 30,
+			`schema/inventory.ts facade must be <= 30 lines (actual: ${facadeLines})`,
+		);
+
+		assert.ok(fs.existsSync(schemaDir), "schema/inventory directory must exist");
+		const schemaFiles = fs.readdirSync(schemaDir).filter((f) => f.endsWith(".ts"));
+		assert.ok(schemaFiles.length >= 3, `Expected at least 3 inventory schema modules, found ${schemaFiles.length}`);
+
+		for (const file of schemaFiles) {
+			const fullPath = path.join(schemaDir, file);
+			const lineCount = fs.readFileSync(fullPath, "utf-8").split("\n").length;
+			assert.ok(
+				lineCount < 350,
+				`Schema file ${file} has ${lineCount} lines, exceeding the 350 lines ceiling (Sweet Spot: 150-300 lines)`,
+			);
+		}
+	});
+
+	test("Fastify stornoRoutes registration and security: endpoints require resolved authentication", async () => {
+		const app = Fastify();
+		await app.register(stornoRoutes);
+		await app.ready();
+
+		// 1. POST /overdraft-alert requires auth
+		const resOverdraft = await app.inject({
+			method: "POST",
+			url: "/overdraft-alert",
+			payload: {},
+		});
+		assert.strictEqual(resOverdraft.statusCode, 401);
+
+		// 2. POST /storno requires auth
+		const resStorno = await app.inject({
+			method: "POST",
+			url: "/storno",
+			payload: {},
+		});
+		assert.strictEqual(resStorno.statusCode, 401);
+
+		// 3. POST /:orgId/storno requires auth
+		const resOrgStorno = await app.inject({
+			method: "POST",
+			url: "/11111111-1111-1111-1111-111111111111/storno",
+			payload: {},
+		});
+		assert.strictEqual(resOrgStorno.statusCode, 401);
 
 		await app.close();
 	});
