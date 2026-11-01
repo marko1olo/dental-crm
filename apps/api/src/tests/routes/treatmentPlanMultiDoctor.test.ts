@@ -50,7 +50,7 @@ describe("Multi-Doctor Consortium in Treatment Plans (PostgreSQL 18 & Odontogram
 			await db.insert(organizations).values({
 				id: ORG_ID,
 				name: "Клиника Мульти-Консилиум Стоматологии",
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(users).values([
 				{
@@ -77,14 +77,14 @@ describe("Multi-Doctor Consortium in Treatment Plans (PostgreSQL 18 & Odontogram
 					specialties: ["Ортопедия"],
 					isActive: true,
 				},
-			]);
+			]).onConflictDoNothing();
 
 			await db.insert(patients).values({
 				id: PATIENT_ID,
 				organizationId: ORG_ID,
 				fullName: "Консилиум Пациент Тестовый",
 				phone: "+79991112233",
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(serviceCatalogItems).values([
 				{
@@ -103,7 +103,7 @@ describe("Multi-Doctor Consortium in Treatment Plans (PostgreSQL 18 & Odontogram
 					basePriceRub: 35000,
 					priceRub: 35000,
 				},
-			]);
+			]).onConflictDoNothing();
 		});
 
 		staffToken = signToken(
