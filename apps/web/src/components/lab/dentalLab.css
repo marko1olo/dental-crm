@@ -6,6 +6,8 @@
  * 0px паразитного горизонтального скролла, Apple HIG адаптив (Мандаты 8b: Sweet Spot, 8am, 8ze).
  */
 
+@import "./styles/dentalLabStudio.css";
+
 /* 1. Изоляция контекста модального окна и 0px скролла */
 [data-testid="dental-lab-studio-modal-root"] {
 	overflow-x: clip;

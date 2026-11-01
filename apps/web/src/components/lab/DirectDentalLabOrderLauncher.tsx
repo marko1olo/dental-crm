@@ -4,5 +4,8 @@
  * DENTE Dental CRM — Канонический ре-экспорт лаунчера наряда в лабораторию.
  */
 
-export * from "./DirectLabLauncher";
-export { DirectLabLauncher as default } from "./DirectLabLauncher";
+export * from "./DirectDentalLabLauncher";
+export {
+	DirectDentalLabLauncher as default,
+	DirectDentalLabLauncher as DirectDentalLabOrderLauncher,
+} from "./DirectDentalLabLauncher";

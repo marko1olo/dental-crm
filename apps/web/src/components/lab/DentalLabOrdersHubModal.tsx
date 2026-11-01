@@ -44,6 +44,18 @@ import {
 } from "./hub/dentalLabHubModalTypes";
 
 export type { DentalLabOrdersHubModalProps, DentalLabHubModalProps };
+export interface DentalLabHubOrder {
+	readonly id: string;
+	readonly orderNumber: string;
+	readonly stageId: string;
+	readonly patientName: string;
+	readonly toothFdi: string | number;
+	readonly constructionTitle: string;
+	readonly shadeVita: string;
+	readonly shadeStump?: string | undefined;
+	readonly labName: string;
+	readonly labCostKopecks: number;
+}
 export { SAMPLE_LABS };
 
 if (typeof document !== "undefined") {
@@ -150,13 +162,13 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			patientName: currentPatientName,
 			doctorId: "doc_current",
 			doctorName: currentDoctorName,
-			workTypeId: selectedConstruction.id,
-			materialName: selectedConstruction.material,
+			workTypeId: selectedConstruction.id as any,
+			materialName: selectedConstruction.material || selectedConstruction.titleRu,
 			selectedTeeth: expressToothFdi.split(",").map((s) => parseInt(s.trim(), 10)).filter((n) => !isNaN(n)),
 			shadeCode: expressShadeVita,
 			labName: chosenLab.name,
 			currentStage: "sent_to_lab",
-			createdAt: new Date().toISOString(),
+			createdAtIso: new Date().toISOString(),
 			dueDate: calculatedDates.dueStr,
 			expectedLabDate: calculatedDates.dueStr,
 			trialDate: calculatedDates.trialStr,
@@ -167,7 +179,7 @@ export const DentalLabOrdersHubModal: React.FC<DentalLabOrdersHubModalProps> = (
 			doctorPercent: 25,
 			isWarranty: expressIsWarranty,
 			technologicalStages: [],
-		};
+		} as unknown as DentalLabWorkflowOrder;
 
 		actions.handleCreateOrder(createdOrder);
 		setShowExpressPanel(false);

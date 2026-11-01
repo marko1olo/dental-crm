@@ -91,6 +91,13 @@ export interface DentalLabWorkflowOrder {
 	readonly isWarrantyRework?: boolean | undefined;
 	readonly warrantyLiabilityType?: WarrantyLiabilityType | undefined;
 	readonly reworkReason?: string | undefined;
+	readonly dueDate?: string | undefined;
+	readonly expectedLabDate?: string | undefined;
+	readonly trialDate?: string | undefined;
+	readonly pricePerUnitRub?: number | undefined;
+	readonly costPerUnitRub?: number | undefined;
+	readonly totalPriceRub?: number | undefined;
+	readonly totalLabCostRub?: number | undefined;
 	readonly createdAtIso: string;
 	readonly updatedAtIso: string;
 }
