@@ -8,7 +8,7 @@
 import React, { useState, useMemo } from "react";
 import type { ServiceCatalogItem } from "@dental/shared";
 import { MobilePriceDrawer } from "./MobilePriceDrawer";
-import { ServicePricelistManagerModal } from "../../catalog/pricelist/ServicePricelistManagerModal";
+import { PricelistStudioModal } from "../../catalog/PricelistStudioModal";
 import { MobilePricesTopBar } from "./MobilePricesTopBar";
 import { MobilePricesSearchFilterBar } from "./MobilePricesSearchFilterBar";
 import { MobilePricesList } from "./MobilePricesList";
@@ -101,12 +101,10 @@ export const MobileSettingsPricesView: React.FC<MobileSettingsPricesViewProps> =
 				specialtyLabels={specialtyLabels}
 			/>
 
-			<ServicePricelistManagerModal
+			<PricelistStudioModal
 				isOpen={isServicePricelistModalOpen}
 				onClose={() => setIsServicePricelistModalOpen(false)}
 				clinicName={dashboard?.clinic?.name}
-				clinicAddress={dashboard?.clinic?.address}
-				clinicPhone={dashboard?.clinic?.phone}
 			/>
 		</div>
 	);

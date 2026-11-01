@@ -32,12 +32,49 @@ import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLaunc
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectLeadsLauncher } from "../../../leads/DirectLeadsLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
+import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLauncher";
+import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
 export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] =
 	[
+		// 0. Студия рецептов и медикаментозных назначений (SSOT)
+		{
+			id: "prescriptions-studio",
+			title: "Студия рецептов и медикаментозных назначений",
+			criteria: {
+				tokens: ["prescriptions", "prescription", "rx", "prescription-studio"],
+				searchIncludes: ["prescriptions=1", "prescription=1", "rx=1", "standalone=prescriptions"],
+				exactHashes: ["#prescriptions", "#prescription", "#rx", "#prescription-studio"],
+				hashPrefixes: ["#prescriptions?", "#prescription?", "#rx?", "#prescription-studio?"],
+			},
+			render: () => <DirectPrescriptionLauncher />,
+		},
+		// 0. Прейскурант услуг и каталог манипуляций (SSOT)
+		{
+			id: "pricelist-studio",
+			title: "Прейскурант услуг и каталог клиники",
+			criteria: {
+				tokens: ["pricelist", "prices", "services-catalog", "pricelist-studio"],
+				searchIncludes: [
+					"pricelist=1",
+					"prices=1",
+					"standalone=pricelist",
+					"services-catalog=1",
+				],
+				exactHashes: [
+					"#pricelist",
+					"#prices",
+					"#services-catalog",
+					"#pricelist-studio",
+				],
+				hashPrefixes: ["#pricelist?", "#prices?", "#services-catalog?"],
+			},
+			render: () => <DirectPricelistLauncher />,
+		},
+
 		// 1. Программа лояльности, бонусы и семейный баланс
 		{
 			id: "loyalty-studio",

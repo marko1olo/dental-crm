@@ -1,5 +1,5 @@
 import React from "react";
-import { ServicePricelistManagerModal } from "../../catalog/pricelist/ServicePricelistManagerModal";
+import { PricelistStudioModal } from "../../catalog/PricelistStudioModal";
 import { PriceImportModal } from "./PriceImportModal";
 import { PricesCatalogTable } from "./PricesCatalogTable";
 import { PricesFilterToolbar } from "./PricesFilterToolbar";
@@ -80,14 +80,12 @@ export const PricesCatalogSection: React.FC<Props> = ({ prices, serviceCategoryL
 				onOpenScannerDropzone={() => prices.setIsNativeScannerDropzoneOpen(true)}
 			/>
 
-			<ServicePricelistManagerModal
+			<PricelistStudioModal
 				isOpen={prices.isServicePricelistModalOpen}
 				onClose={() => prices.setIsServicePricelistModalOpen(false)}
 				initialItems={prices.modalInitialItems}
 				onSaveCatalog={prices.handleSaveCatalog}
 				clinicName={prices.dashboard?.clinic?.name}
-				clinicAddress={prices.dashboard?.clinic?.address}
-				clinicPhone={prices.dashboard?.clinic?.phone}
 			/>
 		</section>
 	);

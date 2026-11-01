@@ -6,7 +6,7 @@
 import React, { Suspense, useState } from "react";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { PriceListMappingDiffView, type IngestedMappingItem } from "../../../../catalog/mappingDiff";
-import { ServicePricelistManagerModal } from "../../../../catalog/pricelist/ServicePricelistManagerModal";
+import { PricelistStudioModal } from "../../../../catalog/PricelistStudioModal";
 import { CANONICAL_SERVICE_PRESETS } from "../../../../catalog/pricelist/servicePricelistPresets";
 
 const DEMO_DIFF_ITEMS: readonly IngestedMappingItem[] = [
@@ -160,9 +160,8 @@ export function renderPricelistStandaloneLauncher(): React.ReactElement | null {
 				<StandaloneDiffView onClose={handleClose} />
 			) : (
 				<div className="w-full h-full min-h-screen bg-[var(--paper)] text-[var(--ink)] flex items-center justify-center">
-					<ServicePricelistManagerModal
+					<PricelistStudioModal
 						isOpen={true}
-						initialItems={CANONICAL_SERVICE_PRESETS}
 						onClose={handleClose}
 						onSaveCatalog={handleClose}
 					/>

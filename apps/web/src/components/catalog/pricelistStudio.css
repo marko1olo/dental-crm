@@ -1,0 +1,672 @@
+/**
+ * apps/web/src/components/catalog/pricelistStudio.css
+ *
+ * Стили канонической студии прейскуранта DENTE CRM.
+ * Стандарты: Apple Human Interface Guidelines (Touch >= 44px, Natural Thumb Zone).
+ * Токены: CSS Variables (--paper, --ink, --teal, --line, --paper-soft).
+ * 0px паразитного горизонтального скролла.
+ */
+
+/* Оверлей диалогового окна */
+.pricelist-studio-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 9999;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	box-sizing: border-box;
+	overflow: hidden;
+	animation: pricelistFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes pricelistFadeIn {
+	from {
+		opacity: 0;
+		transform: scale(0.985);
+	}
+	to {
+		opacity: 1;
+		transform: scale(1);
+	}
+}
+
+/* Главный контейнер студии */
+.pricelist-studio-modal {
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	width: 100%;
+	max-width: 1180px;
+	height: 90vh;
+	max-height: 860px;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25), 0 0 0 1px rgba(0, 0, 0, 0.05);
+	overflow: hidden;
+	position: relative;
+	box-sizing: border-box;
+}
+
+/* Шапка студии */
+.pricelist-studio-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 1rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	flex-shrink: 0;
+}
+
+.pricelist-header-brand {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+}
+
+.pricelist-header-icon-box {
+	width: 40px;
+	height: 40px;
+	border-radius: 12px;
+	background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(20, 184, 166, 0.05));
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border: 1px solid rgba(13, 148, 136, 0.2);
+}
+
+.pricelist-header-title {
+	font-size: 1.125rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	line-height: 1.25;
+	margin: 0;
+}
+
+.pricelist-header-subtitle {
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+	margin-top: 2px;
+}
+
+.pricelist-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+/* Кнопки */
+.pricelist-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	padding: 0.5rem 1rem;
+	min-height: 40px;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	transition: all 0.15s ease;
+	user-select: none;
+	touch-action: manipulation;
+}
+
+.pricelist-btn:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: #cbd5e1;
+}
+
+.pricelist-btn-icon {
+	width: 40px;
+	height: 40px;
+	padding: 0;
+	border-radius: 10px;
+	color: var(--muted, #64748b);
+}
+
+.pricelist-btn-icon:hover {
+	color: var(--ink, #0f172a);
+	background: var(--paper-soft, #f8fafc);
+}
+
+/* Единственный Primary CTA по Мандату 8am */
+.pricelist-btn-primary {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: transparent;
+	font-weight: 600;
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+}
+
+.pricelist-btn-primary:hover {
+	background: #0f766e;
+	color: #ffffff;
+}
+
+/* Тулбар поиска и добавления */
+.pricelist-studio-toolbar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.875rem 1.5rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	gap: 1rem;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+}
+
+.pricelist-search-wrapper {
+	position: relative;
+	flex: 1;
+	min-width: 260px;
+	max-width: 480px;
+}
+
+.pricelist-search-icon {
+	position: absolute;
+	left: 0.75rem;
+	top: 50%;
+	transform: translateY(-50%);
+	color: var(--muted, #64748b);
+	pointer-events: none;
+}
+
+.pricelist-search-input {
+	width: 100%;
+	height: 40px;
+	padding: 0 2.25rem 0 2.25rem;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	outline: none;
+	transition: all 0.15s ease;
+	box-sizing: border-box;
+}
+
+.pricelist-search-input:focus {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper, #ffffff);
+	box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.15);
+}
+
+.pricelist-search-clear {
+	position: absolute;
+	right: 0.5rem;
+	top: 50%;
+	transform: translateY(-50%);
+	background: none;
+	border: none;
+	color: var(--muted, #64748b);
+	cursor: pointer;
+	padding: 4px;
+	display: flex;
+}
+
+/* Рабочая область: Сайдбар + Контент */
+.pricelist-studio-body {
+	display: flex;
+	flex: 1;
+	overflow: hidden;
+	position: relative;
+}
+
+/* Сайдбар категорий для десктопа */
+.pricelist-categories-sidebar {
+	width: 260px;
+	border-right: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	padding: 1rem 0.75rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.25rem;
+	overflow-y: auto;
+	flex-shrink: 0;
+	box-sizing: border-box;
+}
+
+.pricelist-category-item {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.625rem 0.875rem;
+	border-radius: 10px;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: var(--ink, #0f172a);
+	background: transparent;
+	border: none;
+	cursor: pointer;
+	text-align: left;
+	transition: all 0.15s ease;
+	width: 100%;
+}
+
+.pricelist-category-item:hover {
+	background: rgba(0, 0, 0, 0.04);
+}
+
+.pricelist-category-item.active {
+	background: rgba(13, 148, 136, 0.1);
+	color: var(--teal, #0d9488);
+	font-weight: 600;
+}
+
+.pricelist-category-count {
+	font-size: 0.75rem;
+	padding: 0.125rem 0.5rem;
+	border-radius: 9999px;
+	background: var(--paper, #ffffff);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.pricelist-category-item.active .pricelist-category-count {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: transparent;
+}
+
+/* Основной контент таблицы/списка */
+.pricelist-items-container {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	overflow-y: auto;
+	background: var(--paper, #ffffff);
+	box-sizing: border-box;
+}
+
+/* Десктопная таблица */
+.pricelist-table-view {
+	width: 100%;
+	border-collapse: collapse;
+	text-align: left;
+	font-size: 0.875rem;
+}
+
+.pricelist-table-view th {
+	padding: 0.75rem 1rem;
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	font-weight: 600;
+	font-size: 0.75rem;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	position: sticky;
+	top: 0;
+	z-index: 10;
+}
+
+.pricelist-table-row {
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	transition: background-color 0.15s ease;
+}
+
+.pricelist-table-row:hover {
+	background: rgba(0, 0, 0, 0.02);
+}
+
+.pricelist-table-row td {
+	padding: 0.875rem 1rem;
+	vertical-align: middle;
+}
+
+.pricelist-item-code-badge {
+	display: inline-block;
+	font-size: 0.75rem;
+	font-weight: 600;
+	padding: 0.2rem 0.5rem;
+	border-radius: 6px;
+	background: var(--paper-soft, #f8fafc);
+	color: var(--muted, #64748b);
+	border: 1px solid var(--line, #e2e8f0);
+}
+
+.pricelist-item-title {
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.pricelist-item-desc {
+	font-size: 0.75rem;
+	color: var(--muted, #64748b);
+	margin-top: 2px;
+}
+
+/* Инлайн редактирование цены за 1 клик */
+.pricelist-price-cell {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	font-weight: 700;
+	color: var(--ink, #0f172a);
+	font-variant-numeric: tabular-nums;
+	cursor: pointer;
+	padding: 0.35rem 0.6rem;
+	border-radius: 8px;
+	border: 1px solid transparent;
+	transition: all 0.15s ease;
+}
+
+.pricelist-price-cell:hover {
+	background: var(--paper-soft, #f8fafc);
+	border-color: var(--line, #e2e8f0);
+}
+
+.pricelist-price-input {
+	width: 110px;
+	height: 32px;
+	padding: 0 0.5rem;
+	border-radius: 6px;
+	border: 1px solid var(--teal, #0d9488);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.875rem;
+	font-weight: 700;
+	outline: none;
+	text-align: right;
+}
+
+/* Карточка на мобильном */
+.pricelist-mobile-card-list {
+	display: none;
+	flex-direction: column;
+	gap: 0.75rem;
+	padding: 0.875rem;
+}
+
+.pricelist-mobile-card {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 14px;
+	padding: 1rem;
+	display: flex;
+	flex-direction: column;
+	gap: 0.625rem;
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+/* Подвал студии */
+.pricelist-studio-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.875rem 1.5rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	flex-shrink: 0;
+	font-size: 0.8125rem;
+	color: var(--muted, #64748b);
+}
+
+/* Модалка / Bottom Sheet формы добавления */
+.pricelist-form-drawer-overlay {
+	position: fixed;
+	inset: 0;
+	background: rgba(15, 23, 42, 0.5);
+	backdrop-filter: blur(4px);
+	z-index: 10001;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 1rem;
+	box-sizing: border-box;
+}
+
+.pricelist-form-drawer {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	width: 100%;
+	max-width: 520px;
+	display: flex;
+	flex-direction: column;
+	box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+	overflow: hidden;
+}
+
+.pricelist-drag-handle {
+	width: 36px;
+	height: 5px;
+	background: #cbd5e1;
+	border-radius: 9999px;
+	margin: 0.625rem auto 0.25rem auto;
+}
+
+.pricelist-form-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.875rem 1.25rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+}
+
+.pricelist-form-body {
+	padding: 1.25rem;
+	display: flex;
+	flex-direction: column;
+	gap: 1rem;
+	overflow-y: auto;
+	max-height: 70vh;
+}
+
+.pricelist-field-group {
+	display: flex;
+	flex-direction: column;
+	gap: 0.375rem;
+}
+
+.pricelist-field-label {
+	font-size: 0.8125rem;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.pricelist-input {
+	height: 44px;
+	padding: 0 0.875rem;
+	border-radius: 10px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+	font-size: 0.9375rem;
+	outline: none;
+	box-sizing: border-box;
+}
+
+.pricelist-input:focus {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper, #ffffff);
+}
+
+.pricelist-form-footer {
+	display: flex;
+	align-items: center;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding: 1rem 1.25rem;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.pricelist-mobile-chips-bar {
+	display: none;
+}
+
+/* ==========================================================================
+   Apple HIG Mobile Mode (<= 768px): Нативный Bottom Sheet и Thumb Zone
+   ========================================================================== */
+@media (max-width: 768px) {
+	.pricelist-studio-overlay {
+		padding: 0;
+		align-items: flex-end;
+	}
+
+	.pricelist-studio-modal {
+		height: 90vh;
+		max-height: 90vh;
+		border-radius: 24px 24px 0 0;
+		border-bottom: none;
+		margin-top: auto;
+	}
+
+	.pricelist-studio-header {
+		padding: 0.5rem 1rem 0.75rem 1rem;
+	}
+
+	.pricelist-header-actions .pricelist-btn:not(.pricelist-btn-icon) {
+		display: none;
+	}
+
+	.pricelist-categories-sidebar {
+		display: none;
+	}
+
+	.pricelist-table-view {
+		display: none;
+	}
+
+	.pricelist-mobile-card-list {
+		display: flex;
+	}
+
+	.pricelist-mobile-card .pricelist-price-cell {
+		background: var(--paper-soft, #f8fafc);
+		border: 1px solid var(--line, #e2e8f0);
+		border-radius: 10px;
+		padding: 0.45rem 0.75rem;
+	}
+
+	.pricelist-mobile-chips-bar {
+		display: flex;
+		gap: 0.5rem;
+		padding: 0.625rem 0.875rem;
+		overflow-x: auto;
+		background: var(--paper-soft, #f8fafc);
+		border-bottom: 1px solid var(--line, #e2e8f0);
+		flex-shrink: 0;
+		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.pricelist-mobile-chips-bar::-webkit-scrollbar {
+		display: none;
+	}
+
+	.pricelist-chip-btn {
+		white-space: nowrap;
+		flex-shrink: 0;
+		padding: 0.45rem 0.875rem;
+		border-radius: 9999px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		border: 1px solid var(--line, #e2e8f0);
+		background: var(--paper, #ffffff);
+		color: var(--ink, #0f172a);
+		min-height: 38px;
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	.pricelist-chip-btn.active {
+		background: var(--teal, #0d9488);
+		color: #ffffff;
+		border-color: transparent;
+	}
+
+	.pricelist-floating-bottom-bar {
+		position: sticky;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		background: var(--paper-strong, rgba(255, 255, 255, 0.92));
+		backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px);
+		border-top: 1px solid var(--line, #e2e8f0);
+		padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)) 1rem;
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 0.75rem;
+		z-index: 50;
+	}
+
+	.pricelist-form-drawer-overlay {
+		padding: 0;
+		align-items: flex-end;
+	}
+
+	.pricelist-form-drawer {
+		border-radius: 24px 24px 0 0;
+		max-height: 85vh;
+	}
+}
+
+/* ==========================================================================
+   Dark Theme Overrides
+   ========================================================================== */
+html.dark .pricelist-studio-modal,
+[data-theme="dark"] .pricelist-studio-modal {
+	--paper: #0f172a;
+	--paper-soft: #1e293b;
+	--paper-strong: rgba(15, 23, 42, 0.94);
+	--ink: #f8fafc;
+	--muted: #94a3b8;
+	--line: #334155;
+	--teal: #14b8a6;
+}
+
+html.dark .pricelist-btn,
+[data-theme="dark"] .pricelist-btn {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+html.dark .pricelist-search-input,
+[data-theme="dark"] .pricelist-search-input {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+html.dark .pricelist-drag-handle,
+[data-theme="dark"] .pricelist-drag-handle {
+	background: #475569;
+}
+
+html.dark .pricelist-chip-btn,
+[data-theme="dark"] .pricelist-chip-btn {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+html.dark .pricelist-chip-btn.active,
+[data-theme="dark"] .pricelist-chip-btn.active {
+	background: var(--teal, #14b8a6);
+	color: #ffffff;
+	border-color: transparent;
+}
+
+html.dark .pricelist-mobile-card,
+[data-theme="dark"] .pricelist-mobile-card {
+	background: #1e293b;
+	border-color: #334155;
+}

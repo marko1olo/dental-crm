@@ -1,5 +1,13 @@
+/**
+ * apps/web/src/components/catalog/DirectPricelistLauncher.tsx
+ *
+ * Автономный маршрутизатор-лаунчер канонической студии прейскуранта DENTE (SSOT).
+ * Мандаты: 8b/8zi (60-80 строк Sweet Spot), 8aq (Монтирование в живой UI), 8am.
+ * Поддерживает: #pricelist, #prices, #services-catalog, ?pricelist=1, ?prices=1, ?catalog=1.
+ */
+
 import React, { useEffect, useState } from "react";
-import { ServicePricelistManagerModal } from "./ServicePricelistManagerModal";
+import { PricelistStudioModal } from "./PricelistStudioModal";
 
 export const DirectPricelistLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {
@@ -9,9 +17,13 @@ export const DirectPricelistLauncher: React.FC = () => {
 		if (s.includes("documents") || h.includes("documents")) return false;
 		return (
 			s.includes("pricelist") ||
+			s.includes("prices") ||
 			s.includes("catalog") ||
+			s.includes("services-catalog") ||
 			h.includes("pricelist") ||
-			h.includes("catalog")
+			h.includes("prices") ||
+			h.includes("catalog") ||
+			h.includes("services-catalog")
 		);
 	});
 
@@ -29,8 +41,13 @@ export const DirectPricelistLauncher: React.FC = () => {
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("pricelist");
+			url.searchParams.delete("prices");
 			url.searchParams.delete("catalog");
-			const cleanHash = window.location.hash.replace(/#pricelist|#catalog/g, "");
+			url.searchParams.delete("services-catalog");
+			const cleanHash = window.location.hash.replace(
+				/#pricelist|#prices|#services-catalog|#catalog/g,
+				"",
+			);
 			const newUrl =
 				url.pathname +
 				(url.search ? url.search : "") +
@@ -40,7 +57,7 @@ export const DirectPricelistLauncher: React.FC = () => {
 	};
 
 	return (
-		<ServicePricelistManagerModal
+		<PricelistStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			onSaveCatalog={() => {
