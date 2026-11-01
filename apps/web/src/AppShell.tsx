@@ -18,6 +18,7 @@ import { DirectVisiographLauncher } from "./components/visiograph/DirectVisiogra
 import { DirectFastCheckoutLauncher } from "./components/finance/DirectFastCheckoutLauncher";
 import { DirectCashboxSsotLauncher } from "./components/finance/DirectCashboxSsotLauncher";
 import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLauncher";
+import { DirectShiftLauncher } from "./components/shift/DirectShiftLauncher";
 import { DirectCashierLauncher } from "./components/finance/DirectCashierLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
@@ -39,6 +40,7 @@ import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
 import { DirectPatientLauncher } from "./components/patients/DirectPatientLauncher";
+import { DirectPatientStudioLauncher } from "./components/patients/DirectPatientStudioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
 import { DirectOrthoLauncher } from "./components/orthodontics/DirectOrthoLauncher";
@@ -273,6 +275,7 @@ export function AppShell() {
 			<DirectFastCheckoutLauncher />
 			<DirectCashboxSsotLauncher />
 			<DirectCashboxLauncher />
+			<DirectShiftLauncher />
 			<DirectCashierLauncher />
 			<DirectReportsLauncher />
 			<DirectDentalLabLauncher />
@@ -293,6 +296,7 @@ export function AppShell() {
 			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />
 			<DirectPatientLauncher />
+			<DirectPatientStudioLauncher />
 			<DirectRecallLauncher />
 			<DirectRecallsLauncher />
 			<DirectOrthoLauncher />

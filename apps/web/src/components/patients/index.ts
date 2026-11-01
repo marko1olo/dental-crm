@@ -26,4 +26,5 @@ export * from "./patientCatalogData";
 export * from "./PatientStudioModal";
 export * from "./studioModal";
 export * from "./DirectPatientLauncher";
+export * from "./DirectPatientStudioLauncher";
 

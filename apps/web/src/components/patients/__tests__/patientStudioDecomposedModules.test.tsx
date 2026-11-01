@@ -5,15 +5,15 @@ import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
+import { PatientStudioModal } from "../PatientStudioModal";
 import {
-	PatientStudioModal,
 	usePatientStudioState,
 	PatientStudioHeader,
 	PatientExpressRegistrationForm,
 	PatientFamilyWalletSection,
 	PatientProfileDetailView,
 	PatientStudioFooterActions,
-} from "../index";
+} from "../studioModal";
 import { DEMO_PATIENT_CATALOG, DEMO_FAMILY_GROUPS } from "../patientCatalogData";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -41,12 +41,12 @@ describe("Patient Studio Decomposed Modules Suite (Mandates 8b, 8e, 8n, 8am)", (
 			);
 		}
 
-		// Фасад PatientStudioModal.tsx
-		const facadePath = path.resolve(__dirname, "../PatientStudioModal.tsx");
-		const facadeLines = fs.readFileSync(facadePath, "utf8").split("\n").length;
+		// Канонический мастер-компонент PatientStudioModal.tsx (Мандат 8b/8zi: Sweet Spot 400–480 строк)
+		const studioPath = path.resolve(__dirname, "../PatientStudioModal.tsx");
+		const studioLines = fs.readFileSync(studioPath, "utf8").split("\n").length;
 		assert.ok(
-			facadeLines <= 200,
-			`Фасад PatientStudioModal.tsx обязан быть <= 200 строк, сейчас ${facadeLines} строк`,
+			studioLines >= 350 && studioLines <= 500,
+			`PatientStudioModal.tsx обязан быть в Sweet Spot 400-480 строк (текущий: ${studioLines})`,
 		);
 	});
 

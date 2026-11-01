@@ -26,6 +26,7 @@ import { PatientOmnichannelHubModal } from "../../../messaging/PatientOmnichanne
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectPatientLauncher } from "../../../patients/DirectPatientLauncher";
+import { DirectPatientStudioLauncher } from "../../../patients/DirectPatientStudioLauncher";
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
@@ -33,11 +34,24 @@ import { DirectLeadsLauncher } from "../../../leads/DirectLeadsLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
+import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
 export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] = [
+	// 0. Студия кассовой смены и Z-отчёт (SSOT)
+	{
+		id: "shift-studio",
+		title: "Студия кассовой смены и Z-отчёт",
+		criteria: {
+			tokens: ["shift", "cash-shift", "z-report", "shift-closing", "shift-studio", "shift_studio"],
+			searchIncludes: ["shift=1", "z_report=1", "shift_closing=1", "standalone=shift", "shift_studio=1"],
+			exactHashes: ["#shift", "#cash-shift", "#z-report", "#shift-closing", "#shift-studio", "#shift_studio"],
+			hashPrefixes: ["#shift?", "#cash-shift?", "#z-report?", "#shift-closing?", "#shift-studio?"],
+		},
+		render: () => <DirectShiftLauncher />,
+	},
 	// 0. Студия рецептов и назначений (SSOT)
 	{
 		id: "prescriptions-studio",
@@ -256,7 +270,7 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		criteria: {
 			tokens: ["patients", "patient-studio", "patient_studio", "express-patient", "express_patient"],
 		},
-		render: () => <DirectPatientLauncher />,
+		render: () => <DirectPatientStudioLauncher />,
 	},
 	// 16. Карточка пациента 360
 	{

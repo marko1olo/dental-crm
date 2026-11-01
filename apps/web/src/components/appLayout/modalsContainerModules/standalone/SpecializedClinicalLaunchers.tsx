@@ -3,7 +3,7 @@
  * Декомпозирован по направлениям: терапия, ортопедия, имплантация, ортодонтия, хирургия.
  */
 
-import type React from "react";
+import React from "react";
 import { isDemoShowcaseMode } from "../../../../lib/demoMode";
 import type { StandaloneLaunchersProps } from "../modalsContainerTypes";
 import { renderTherapyLaunchers } from "./clinical/TherapyLaunchers";
@@ -11,6 +11,7 @@ import { renderImplantologyLaunchers } from "./clinical/ImplantologyLaunchers";
 import { renderOrthodonticsLaunchers } from "./clinical/OrthodonticsLaunchers";
 import { renderSurgeryLaunchers } from "./clinical/SurgeryLaunchers";
 import { renderOrthopedicsLaunchers } from "./clinical/OrthopedicsLaunchers";
+import { DirectPatientStudioLauncher } from "../../../patients/DirectPatientStudioLauncher";
 
 export function renderSpecializedClinicalLaunchers(
 	props: StandaloneLaunchersProps,
@@ -39,5 +40,14 @@ export function renderSpecializedClinicalLaunchers(
 	const orthopedics = renderOrthopedicsLaunchers();
 	if (orthopedics) return orthopedics;
 
+	// 6. Экспресс-запись и картотека пациентов
+	if (typeof window !== "undefined") {
+		const hash = window.location.hash.toLowerCase();
+		if (hash.includes("patient-studio") || hash.includes("express-patient")) {
+			return <DirectPatientStudioLauncher />;
+		}
+	}
+
 	return null;
 }
+
