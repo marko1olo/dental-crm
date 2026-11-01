@@ -1,58 +1,64 @@
 /**
  * apps/web/src/components/documents/DirectDocumentsLauncher.tsx
  *
- * Автономный лаунчер канонической Студии документов DENTE CRM (SSOT).
- * Монтируется в AppShell.tsx и StandaloneLaunchers.tsx (Мандаты 8b, 8e, 8aq).
- * Обрабатывает deep-links: #documents, #contract, #tax-certificate, ?docs=1, ?documents=1
- * и системные события "dente:open-documents".
- * Диапазон строк: 70–90 строк.
+ * Канонический автономный лаунчер Студии документов и согласий DENTE CRM (SSOT).
+ * Смонтирован в AppShell.tsx, administrativeLaunchersRegistry.tsx и SpecializedAdministrativeLaunchers.tsx.
+ * Обрабатывает deep-links: #documents, #consents, #docs-studio, ?documents=1, ?consents=1.
+ * Мандаты 8b (60–80 строк Sweet Spot), 8e (Автономия врача), 8aq (Монтирование в живой UI).
  */
 
 import React, { useEffect, useState, useCallback } from "react";
 import { DocumentsStudioModal, type DocumentTemplateKey } from "./DocumentsStudioModal";
 
-const isDocumentsTarget = (): boolean => {
+export const isDocumentsOrConsentsTarget = (): boolean => {
 	if (typeof window === "undefined") return false;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
 	return (
 		h === "#documents" ||
+		h === "#consents" ||
+		h === "#docs-studio" ||
+		h === "#documents-studio" ||
 		h === "#contract" ||
 		h === "#tax-certificate" ||
 		h.startsWith("#documents?") ||
-		h.startsWith("#contract?") ||
-		h.startsWith("#tax-certificate?") ||
-		h === "#documents-studio" ||
-		s.includes("docs=1") ||
+		h.startsWith("#consents?") ||
+		h.startsWith("#docs-studio?") ||
 		s.includes("documents=1") ||
+		s.includes("consents=1") ||
+		s.includes("docs=1") ||
+		s.includes("consent=1") ||
 		s.includes("standalone=documents") ||
-		s.includes("tax_certificate=1")
+		s.includes("standalone=consents")
 	);
 };
 
-const getInitialTemplateFromUrl = (): DocumentTemplateKey => {
-	if (typeof window === "undefined") return "contract";
+export const getInitialTemplateFromUrl = (): DocumentTemplateKey => {
+	if (typeof window === "undefined") return "intake";
 	const h = window.location.hash || "";
 	const s = window.location.search || "";
-	if (h.includes("tax-certificate") || s.includes("tax_certificate=1")) return "tax_certificate";
-	if (h.includes("contract")) return "contract";
-	return "contract";
+	if (h.includes("consent") || s.includes("consent")) return "informed_consent";
+	if (h.includes("tax") || s.includes("tax")) return "tax_certificate";
+	if (h.includes("card") || s.includes("card")) return "card_extract";
+	return "intake";
 };
 
 export const DirectDocumentsLauncher: React.FC = () => {
-	const [isOpen, setIsOpen] = useState<boolean>(isDocumentsTarget);
+	const [isOpen, setIsOpen] = useState<boolean>(isDocumentsOrConsentsTarget);
 	const [initialTemplate, setInitialTemplate] = useState<DocumentTemplateKey>(getInitialTemplateFromUrl);
 
 	const handleOpen = useCallback((e?: Event) => {
 		const custom = (e as CustomEvent)?.detail;
 		if (custom?.template) {
 			setInitialTemplate(custom.template);
+		} else if (custom?.isConsent || e?.type === "dente:open-consents") {
+			setInitialTemplate("informed_consent");
 		}
 		setIsOpen(true);
 	}, []);
 
 	const handleHash = useCallback(() => {
-		if (isDocumentsTarget()) {
+		if (isDocumentsOrConsentsTarget()) {
 			setInitialTemplate(getInitialTemplateFromUrl());
 			setIsOpen(true);
 		}
@@ -60,10 +66,14 @@ export const DirectDocumentsLauncher: React.FC = () => {
 
 	useEffect(() => {
 		window.addEventListener("dente:open-documents", handleOpen);
+		window.addEventListener("dente:open-consents", handleOpen);
+		window.addEventListener("dente:open-consent", handleOpen);
 		window.addEventListener("hashchange", handleHash);
 
 		return () => {
 			window.removeEventListener("dente:open-documents", handleOpen);
+			window.removeEventListener("dente:open-consents", handleOpen);
+			window.removeEventListener("dente:open-consent", handleOpen);
 			window.removeEventListener("hashchange", handleHash);
 		};
 	}, [handleOpen, handleHash]);
@@ -74,9 +84,11 @@ export const DirectDocumentsLauncher: React.FC = () => {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("docs");
 			url.searchParams.delete("documents");
+			url.searchParams.delete("consent");
+			url.searchParams.delete("consents");
 			url.searchParams.delete("tax_certificate");
 			url.searchParams.delete("standalone");
-			const cleanHash = window.location.hash.replace(/#documents-studio|#tax-certificate|#documents|#contract/g, "");
+			const cleanHash = window.location.hash.replace(/#documents-studio|#docs-studio|#tax-certificate|#documents|#consents|#contract/g, "");
 			window.history.replaceState({}, "", url.pathname + (url.search || "") + cleanHash);
 		}
 	};
@@ -88,14 +100,6 @@ export const DirectDocumentsLauncher: React.FC = () => {
 			isOpen={isOpen}
 			onClose={handleClose}
 			initialTemplate={initialTemplate}
-			patientContext={{
-				fullName: "Смирнов Алексей Петрович",
-				birthDate: "12.04.1988",
-				passport: "серия 4512 № 654321 выдан ОВД Тверского р-на г. Москвы",
-				address: "г. Москва, ул. Тверская, д. 14, кв. 8",
-				phone: "+7 (916) 123-45-67",
-			}}
-			doctorFullName="Смирнова Елена Сергеевна"
 		/>
 	);
 };

@@ -1,0 +1,300 @@
+/**
+ * copilotStudio.css — Канонические стили кабинета ИИ-копайлота DENTE CRM.
+ * Архитектура: Мандат 8b (300–400 строк), Мандат 8am (1 Primary CTA), Apple HIG (сенсорный минимум 44px).
+ */
+
+.copilot-studio-overlay {
+  position: fixed; inset: 0; z-index: 99990;
+  display: flex; justify-content: flex-end; pointer-events: auto;
+}
+@media (max-width: 768px) {
+  .copilot-studio-overlay { align-items: flex-end; }
+}
+
+.copilot-studio-backdrop {
+  position: fixed; inset: 0;
+  background-color: rgba(0, 0, 0, 0.45);
+  backdrop-filter: blur(2px); -webkit-backdrop-filter: blur(2px);
+  transition: opacity 0.2s ease-in-out;
+}
+
+.copilot-studio-panel {
+  position: relative; z-index: 10;
+  display: flex; flex-direction: column;
+  width: 100%; max-width: 100vw;
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  overflow-x: clip;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (min-width: 769px) {
+  .copilot-studio-panel {
+    width: 480px; height: 100%;
+    border-left: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  }
+}
+@media (max-width: 768px) {
+  .copilot-studio-panel {
+    height: 90vh; height: 90dvh;
+    border-radius: 24px 24px 0 0;
+    border-top: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  }
+}
+
+/* Apple HIG тактильный хэндл для мобильного Bottom Sheet (36x5px) */
+.copilot-studio-drag-handle-wrap {
+  display: none; justify-content: center;
+  padding-top: 10px; padding-bottom: 6px; touch-action: none;
+}
+@media (max-width: 768px) {
+  .copilot-studio-drag-handle-wrap { display: flex; }
+}
+.copilot-studio-drag-handle {
+  width: 36px; height: 5px; border-radius: 9999px;
+  background-color: var(--line, rgba(15, 118, 110, 0.25));
+  touch-action: none;
+}
+
+/* Шапка кабинета */
+.copilot-studio-header {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; padding: 12px 20px;
+  border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  flex-shrink: 0;
+}
+.copilot-studio-brand {
+  display: flex; align-items: center; gap: 10px; min-width: 0;
+}
+.copilot-studio-icon-badge {
+  width: 34px; height: 34px; border-radius: 10px;
+  background-color: var(--teal-soft, rgba(13, 148, 136, 0.12));
+  border: 1px solid var(--teal, rgba(13, 148, 136, 0.3));
+  display: flex; align-items: center; justify-content: center;
+  color: var(--teal, #0d9488); flex-shrink: 0;
+}
+.copilot-studio-title-box { min-width: 0; }
+.copilot-studio-title-row { display: flex; align-items: center; gap: 8px; }
+.copilot-studio-heading {
+  font-size: 14px; font-weight: 700; letter-spacing: -0.01em;
+  color: var(--ink, #0f172a); margin: 0;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.copilot-pulse-dot {
+  width: 8px; height: 8px; border-radius: 9999px;
+  background-color: var(--emerald, #10b981);
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+}
+.copilot-studio-submeta {
+  display: flex; align-items: center; gap: 6px;
+  font-size: 11px; color: var(--muted, #64748b);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.copilot-engine-badge {
+  padding: 1px 6px; border-radius: 4px; font-size: 10px; font-weight: 500;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  color: var(--muted, #64748b);
+}
+.copilot-close-btn {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  border-radius: 10px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #64748b);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.copilot-close-btn:hover {
+  background-color: var(--line, rgba(15, 118, 110, 0.2));
+  color: var(--ink, #0f172a);
+}
+
+/* Переключатель режимов: Web CRM vs Desktop OS */
+.copilot-mode-selector-wrap { padding: 10px 20px 8px; flex-shrink: 0; }
+.copilot-mode-pill-track {
+  display: flex; align-items: center; padding: 3px; border-radius: 12px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+}
+.copilot-mode-pill-btn {
+  flex: 1; min-height: 36px; padding: 6px 12px; border-radius: 9px;
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 6px;
+  cursor: pointer; border: none; background-color: transparent;
+  color: var(--muted, #64748b); transition: all 0.15s ease;
+}
+.copilot-mode-pill-btn.active {
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+/* Вкладки навигации */
+.copilot-tabs-nav {
+  display: flex; gap: 16px; padding: 0 20px;
+  border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  font-size: 12px; font-weight: 600; flex-shrink: 0;
+}
+.copilot-tab-btn {
+  display: flex; align-items: center; gap: 6px;
+  min-height: 44px; padding: 8px 2px;
+  border: none; border-bottom: 2px solid transparent;
+  background-color: transparent; color: var(--muted, #64748b);
+  cursor: pointer; transition: all 0.15s ease;
+}
+.copilot-tab-btn.active {
+  border-bottom-color: var(--teal, #0d9488);
+  color: var(--teal, #0d9488); font-weight: 700;
+}
+
+/* Баннер записи голоса */
+.copilot-voice-banner {
+  margin: 10px 20px 0; padding: 10px 14px; border-radius: 12px;
+  background-color: var(--teal-soft, rgba(13, 148, 136, 0.1));
+  border: 1px solid var(--teal, #0d9488);
+  display: flex; align-items: center; justify-content: space-between;
+  font-size: 12px; flex-shrink: 0;
+}
+.copilot-voice-status {
+  display: flex; align-items: center; gap: 8px;
+  color: var(--teal, #0d9488); font-weight: 600;
+}
+
+/* Контейнер сообщений */
+.copilot-chat-messages-container {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 14px 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.copilot-message-bubble {
+  max-width: 92%; padding: 14px; border-radius: 16px;
+  font-size: 12px; line-height: 1.55;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+}
+.copilot-message-user {
+  align-self: flex-end;
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--ink, #0f172a);
+}
+.copilot-message-assistant {
+  align-self: flex-start;
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+/* Карточка Two-Phase Guard */
+.copilot-action-guard-card {
+  margin-top: 10px; padding: 10px 12px; border-radius: 12px;
+  background-color: var(--paper-soft, #f4f7f6);
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  display: flex; align-items: flex-start; gap: 8px; font-size: 11px;
+}
+.copilot-action-guard-title {
+  font-weight: 600; color: var(--ink, #0f172a);
+}
+.copilot-action-guard-note {
+  font-size: 10px; color: var(--muted, #64748b); margin-top: 2px;
+}
+
+/* Пресеты клинических фраз */
+.copilot-presets-track {
+  display: flex; align-items: center; gap: 8px; padding: 6px 20px;
+  overflow-x: auto; flex-shrink: 0; scrollbar-width: none;
+}
+.copilot-presets-track::-webkit-scrollbar { display: none; }
+.copilot-preset-chip {
+  flex-shrink: 0; padding: 6px 12px; border-radius: 8px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--ink, #0f172a);
+  font-size: 11px; font-weight: 500;
+  white-space: nowrap; cursor: pointer; transition: all 0.15s ease;
+}
+.copilot-preset-chip:hover {
+  background-color: var(--line, rgba(15, 118, 110, 0.2));
+}
+
+/* Нижняя панель ввода (Thumb Zone) */
+.copilot-bottom-composer {
+  padding: 8px 20px 20px;
+  border-top: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper, #ffffff);
+  flex-shrink: 0; display: flex; flex-direction: column; gap: 8px;
+}
+@media (max-width: 768px) {
+  .copilot-bottom-composer {
+    padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+  }
+}
+
+/* Единственная Primary CTA кнопка #0d9488 (Мандат 8am) */
+.copilot-primary-cta {
+  width: 100%; height: 44px; min-height: 44px; border-radius: 12px;
+  background-color: var(--teal, #0d9488); color: #ffffff;
+  font-size: 12px; font-weight: 700;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  border: none; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(13, 148, 136, 0.25);
+  transition: opacity 0.15s ease;
+}
+.copilot-primary-cta:hover { opacity: 0.95; }
+
+/* Поле ввода и кнопки отправки */
+.copilot-input-row { display: flex; align-items: center; gap: 8px; }
+.copilot-icon-btn {
+  width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+  border-radius: 12px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper-soft, #f4f7f6);
+  color: var(--muted, #64748b);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.copilot-icon-btn:hover { color: var(--ink, #0f172a); }
+.copilot-icon-btn.recording {
+  background-color: var(--rose, #e11d48);
+  border-color: #be123c; color: #ffffff;
+  animation: pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+.copilot-text-input {
+  flex: 1; height: 44px; min-height: 44px; padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper-soft, #f4f7f6);
+  font-size: 12px; color: var(--ink, #0f172a); outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+.copilot-text-input:focus {
+  border-color: var(--teal, #0d9488);
+  box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+.copilot-text-input::placeholder { color: var(--muted, #64748b); }
+
+/* Карточки быстрых действий */
+.copilot-actions-grid {
+  flex: 1; min-height: 0; overflow-y: auto; padding: 16px 20px;
+  display: flex; flex-direction: column; gap: 12px;
+}
+.copilot-action-item-card {
+  padding: 14px; border-radius: 12px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper-soft, #f4f7f6);
+  display: flex; flex-direction: column; gap: 8px;
+}
+.copilot-action-item-header { display: flex; align-items: center; justify-content: space-between; }
+.copilot-action-item-btn {
+  width: 100%; height: 44px; min-height: 44px; border-radius: 8px;
+  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
+  background-color: var(--paper, #ffffff);
+  color: var(--ink, #0f172a);
+  font-size: 12px; font-weight: 600;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.copilot-action-item-btn:hover { background-color: var(--line, rgba(15, 118, 110, 0.1)); }
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}

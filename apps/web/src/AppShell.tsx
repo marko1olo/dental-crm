@@ -146,6 +146,12 @@ function isStandaloneActive(): boolean {
 		h.includes("warehouse") ||
 		s.includes("inbound") ||
 		h.includes("inbound") ||
+		s.includes("documents") ||
+		h.includes("documents") ||
+		s.includes("consents") ||
+		h.includes("consents") ||
+		s.includes("docs-studio") ||
+		h.includes("docs-studio") ||
 		s.includes("documents_catalog") ||
 		s.includes("document_templates") ||
 		h.includes("documents-catalog") ||

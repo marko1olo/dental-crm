@@ -56,11 +56,11 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 		};
 
 		window.addEventListener("hashchange", handleHashChange);
-		window.addEventListener("dente:open-documents", handleCustomOpen);
+		window.addEventListener("dente:open-documents-catalog", handleCustomOpen);
 
 		return () => {
 			window.removeEventListener("hashchange", handleHashChange);
-			window.removeEventListener("dente:open-documents", handleCustomOpen);
+			window.removeEventListener("dente:open-documents-catalog", handleCustomOpen);
 		};
 	}, []);
 
@@ -120,7 +120,7 @@ export function DirectDocumentsCatalogLauncher(): React.ReactElement | null {
 	const isDocCatalogStandalone =
 		search.get("documents_catalog") === "1" ||
 		search.get("document_templates") === "1" ||
-		h === "#documents" ||
+		h === "#documents-catalog" ||
 		h.includes("documents-catalog") ||
 		h.includes("documents_catalog") ||
 		h.includes("document-templates") ||

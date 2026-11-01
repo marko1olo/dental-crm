@@ -1,6 +1,6 @@
 /**
  * copilotCatalogData.ts — Единый канонический SSOT-каталог быстрых клинических команд, навыков и инструментов.
- * Соответствие: Мандат 8b (280–350 строк), Мандат 8e (автономия), Мандат 8x (без канцелярита), Мандат 8wy (двухрежимность).
+ * Архитектура: Мандат 8b (300–350 строк), Мандат 8e (автономия), Мандат 8x (без канцелярита), Мандат 8wy.
  */
 
 export type CopilotRuntimeMode = "web_browser" | "desktop_native" | "both";
@@ -51,18 +51,21 @@ export const CRM_FASTIFY_TOOLS_REGISTRY = {
   calcInvoiceKopecks: "crmBillingTools.calculateTreatmentEstimate",
   createInvoiceDraft: "crmBillingTools.createInvoiceDraft",
   applyDoctorDiscount: "crmBillingTools.applyDoctorDiscount",
+  printConsentBlank: "crmDocumentTools.printDocument",
   captureScreen: "workstationTools.captureScreen",
   scanHotfolder: "workstationTools.scanHotfolder",
 } as const;
 
-/** Пресеты клинических фраз для быстрого ввода (Мандат 8e & Voice-First) */
+/** Реестр быстрых клинических промптов в 1 клик (Мандат 8e & Voice-First) */
 export const CLINICAL_QUICK_PRESETS: ClinicalQuickPreset[] = [
-  { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, полость I класс по Блэку", actionBadge: "Одонтограмма", category: "odontogram" },
-  { id: "preset-septanest", label: "Анестезия септанест", prompt: "Инфильтрационная анестезия: Септанест 1:100 000, 1.7 мл", actionBadge: "Анестезия", category: "pharmacology" },
-  { id: "preset-cofferdam", label: "Коффердам", prompt: "Изоляция рабочего поля: коффердам, кламп №2, без осложнений", actionBadge: "Изоляция", category: "soap" },
-  { id: "preset-book-tomorrow", label: "Запиши на завтра в 14:00", prompt: "Запиши пациента на завтра в 14:00 на терапевтический приём", actionBadge: "Расписание", category: "schedule" },
-  { id: "preset-phys-norm", label: "Интактная норма", prompt: "Установи физиологическую норму: соматически здоров, интактные зубы", actionBadge: "0-клик норма", category: "odontogram" },
-  { id: "preset-invoice-draft", label: "Счёт на терапию", prompt: "Сформируй предварительный счёт на лечение кариеса с нанокомпозитом", actionBadge: "Касса", category: "billing" },
+  { id: "preset-phys-norm", label: "Протокол осмотра (норма)", prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы", actionBadge: "0-клик норма", category: "soap" },
+  { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
+  { id: "preset-caries-16-full", label: "Лечение кариеса 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
+  { id: "preset-extraction-38", label: "Удаление дистопированного 38", prompt: "Протокол операции: атипичное удаление ретинированного дистопированного зуба 38", actionBadge: "Хирургия", category: "soap" },
+  { id: "preset-implant-turnkey", label: "Смета на имплантацию под ключ", prompt: "Сформируй комплексную смету на дентальную имплантацию под ключ с коронкой", actionBadge: "Касса и сметы", category: "billing" },
+  { id: "preset-septanest", label: "Анестезия септанест", prompt: "Инфильтрационная анестезия: Септанест 1:100 000, 1.7 мл, без осложнений", actionBadge: "Анестезия", category: "pharmacology" },
+  { id: "preset-cofferdam", label: "Коффердам", prompt: "Изоляция операционного поля коффердамом с клампом, фиксация надежная", actionBadge: "Изоляция", category: "soap" },
+  { id: "preset-book-tomorrow", label: "Запиши на завтра в 14:00", prompt: "Запиши пациента на завтра в 14:00 на контрольный осмотр и полировку", actionBadge: "Расписание", category: "schedule" },
 ];
 
 export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
@@ -75,7 +78,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       {
         id: "chairside-diary",
         label: "Заполнить дневник приёма",
-        prompt: "Заполни дневник приёма по текущему пациенту по стандарту SOAP",
+        prompt: "Заполни медицинскую карту приёма по текущему пациенту по стандарту SOAP",
         description: "Формирование протокола осмотра, жалоб и плана лечения в карту приёма",
         category: "Клинический приём у кресла",
         icon: "FileText",
@@ -87,7 +90,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       {
         id: "chairside-caries-stenograph",
         label: "Стенограф: кариес и пломба",
-        prompt: "Зафиксируй кариес дентина зуба 46 и световую реставрацию",
+        prompt: "Зафиксируй кариес дентина зуба 46 и нанокомпозитную реставрацию",
         description: "Быстрая разметка одонтограммы и назначение манипуляций голосом",
         category: "Клинический приём у кресла",
         icon: "Activity",
@@ -125,13 +128,13 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
   {
     id: "billing",
     title: "Финансы, сметы и касса",
-    description: "Расчет прозрачных смет, 3 тарифа лечения и оформление чеков",
+    description: "Расчет прозрачных смет, альтернативные планы лечения и оформление чеков",
     icon: "CreditCard",
     items: [
       {
         id: "billing-estimate-3-tiers",
         label: "Рассчитать 3 тарифа сметы",
-        prompt: "Рассчитай смету лечения на 3 тарифа: Эконом, Оптимум и Премиум",
+        prompt: "Рассчитай смету лечения на 3 тарифа: Базовый, Оптимальный и Премиум",
         description: "Параллельный расчет альтернативных планов для информированного выбора пациента",
         category: "Финансы, сметы и касса",
         icon: "Calculator",
@@ -142,7 +145,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       },
       {
         id: "billing-receipt-draft",
-        label: "Сформировать чек и пречек",
+        label: "Сформировать предварительный счёт",
         prompt: "Сформируй предварительный счет на оказанные услуги текущего визита",
         description: "Подготовка прозрачного счета без требования лишних персональных данных",
         category: "Финансы, сметы и касса",
@@ -187,8 +190,8 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       {
         id: "workstation-hotfolder-scan",
         label: "Снимок из папки автоимпорта",
-        prompt: "Проверь сетевую папку томографа (Hotfolder) на наличие новых снимков КЛКТ",
-        description: "Автоматический поиск и привязка свежих DICOM/RVG снимков пациента",
+        prompt: "Проверь сетевую папку томографа на наличие новых снимков исследования",
+        description: "Автоматический поиск и привязка свежих DICOM и RVG снимков пациента",
         category: "Рабочая станция ОС и снимки",
         icon: "FolderSearch",
         mode: "desktop_native",
@@ -200,7 +203,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         id: "workstation-launch-romexis",
         label: "Запустить Planmeca Romexis",
         prompt: "Открой 3D исследование пациента в Planmeca Romexis",
-        description: "Нативный запуск десктопного просмотрщика КЛКТ с карточкой пациента",
+        description: "Нативный запуск десктопного просмотрщика томограмм с карточкой пациента",
         category: "Рабочая станция ОС и снимки",
         icon: "ExternalLink",
         mode: "desktop_native",
@@ -211,7 +214,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       {
         id: "workstation-fiscal-printer",
         label: "Кассовый аппарат по COM/USB",
-        prompt: "Проверь статус фискального регистратора Атол / Штрих-М и состояние смены",
+        prompt: "Проверь статус фискального регистратора и состояние рабочей смены",
         description: "Прямой контроль печати чеков и соединения с кассовым регистратором",
         category: "Рабочая станция ОС и снимки",
         icon: "Receipt",
@@ -257,13 +260,13 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
   {
     id: "knowledge",
     title: "Стандарты и клинические протоколы",
-    description: "Клинические рекомендации СтАР, согласия и гарантийные нормативы",
+    description: "Клинические рекомендации СтАР, согласия на приём и протоколы лечения",
     icon: "BookOpen",
     items: [
       {
         id: "knowledge-star-guidelines",
-        label: "Протоколы СтАР по кариесу",
-        prompt: "Покажи клинические критерии препарирования и пломбирования по СтАР",
+        label: "Клинические рекомендации СтАР",
+        prompt: "Покажи клинические критерии препарирования и пломбирования по протоколам СтАР",
         description: "Клинические алгоритмы доказательной стоматологии без бюрократического канцелярита",
         category: "Стандарты и клинические протоколы",
         icon: "BookOpen",
@@ -273,13 +276,14 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
       },
       {
         id: "knowledge-consent-forms",
-        label: "Бланк согласия на приём",
+        label: "Печать информированного согласия",
         prompt: "Подготовь информированное согласие на эндодонтическое лечение для подписи",
         description: "Печать бланка согласия в 1 клик с предзаполненными рисками и диагнозом",
         category: "Стандарты и клинические протоколы",
         icon: "FileText",
         mode: "both",
         requiresConfirmation: false,
+        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.printConsentBlank,
         shortVoiceTrigger: "согласие на приём",
       },
     ],
@@ -299,7 +303,6 @@ export function findCatalogItemById(id: string): CopilotCatalogItem | undefined 
   }
   return undefined;
 }
-
 /** Честная проверка статуса голосовых и ИИ-движков (Zero Fake) */
 export function inspectSpeechEngineHealth(healthPayload?: Record<string, unknown>): SpeechEngineHealthReport {
   const hasBrowserSpeech = typeof window !== "undefined" && Boolean(

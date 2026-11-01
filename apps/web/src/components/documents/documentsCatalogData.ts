@@ -1,36 +1,38 @@
 /**
  * apps/web/src/components/documents/documentsCatalogData.ts
  *
- * Канонический SSOT документооборота, юридических шаблонов и расчета целочисленных копеек DENTE CRM.
+ * Канонический SSOT документооборота, информированных согласий и юридических справок DENTE CRM.
  * Мандаты 8e (Автономия врача), 8n (Соло-практика), 8x (Живой русский клинический язык), 8ap (Анти-вранье).
- * Диапазон строк: 300–350 строк (Sweet Spot).
+ * Целевой размер: 320–360 строк (Sweet Spot). 0 float-ошибок (Мандат 8wy).
  */
 
 import type { DocumentKind } from "@dental/shared";
 import type React from "react";
 import {
-	Award,
+	Building2,
 	ClipboardList,
 	FileCheck,
 	FileText,
 	Heart,
 	Receipt,
-	Scan,
-	ShieldAlert,
 	ShieldCheck,
 	Sparkles,
 	UserCheck,
 	Zap,
 } from "lucide-react";
 
-export type DocumentCatalogCategory =
-	| "all"
+export type DocumentPackageKey =
 	| "intake"
-	| "clinical"
-	| "finance_tax"
-	| "refusal"
-	| "pediatric"
-	| "registry";
+	| "informed_consent"
+	| "tax_certificate"
+	| "card_extract";
+
+export type ConsentSubKind =
+	| "therapy"
+	| "surgery"
+	| "implant"
+	| "orthopedics"
+	| "anesthesia";
 
 export interface ClinicRequisites {
 	readonly name: string;
@@ -58,7 +60,7 @@ export interface DoctorRequisites {
 export interface DocumentServiceItem {
 	readonly id: string;
 	readonly title: string;
-	readonly code804n?: string | undefined;
+	readonly code?: string | undefined;
 	readonly quantity: number;
 	readonly priceKopecks: number;
 	readonly amountKopecks: number;
@@ -76,6 +78,7 @@ export interface DocumentLegalContext {
 	readonly diagnosisRu?: string | undefined;
 	readonly anamnesisRu?: string | undefined;
 	readonly epicrisisRu?: string | undefined;
+	readonly consentSubKind?: ConsentSubKind | undefined;
 }
 
 export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
@@ -88,7 +91,7 @@ export const DEFAULT_CLINIC_REQUISITES: ClinicRequisites = {
 };
 
 /**
- * Целочисленное форматирование копеек в рубли (Мандат 8wy).
+ * Целочисленное форматирование копеек в рубли (Мандат 8wy, 0 float-ошибок).
  */
 export function formatKopecksToRubles(kopecks: number): string {
 	const safeKopecks = Math.max(0, Math.round(kopecks || 0));
@@ -105,7 +108,66 @@ export function sumKopecks(items: readonly { readonly amountKopecks: number }[])
 }
 
 // ---------------------------------------------------------------------------
-// КАНОНИЧЕСКИЕ ЮРИДИЧЕСКИЕ ШАБЛОНЫ (БЕЗ СОВЕТСКОГО КАНЦЕЛЯРИТА И БЕЗ ЭМОДЗИ)
+// 4 КАНОНИЧЕСКИХ ПАКЕТА КЛИНИКИ РФ (SSOT FIRST PRINCIPLES)
+// ---------------------------------------------------------------------------
+
+export interface ClinicalPackageMeta {
+	readonly id: DocumentPackageKey;
+	readonly titleRu: string;
+	readonly badgeRu: string;
+	readonly descriptionRu: string;
+	readonly includes: readonly string[];
+}
+
+export const CANONICAL_CLINIC_PACKAGES: readonly ClinicalPackageMeta[] = [
+	{
+		id: "intake",
+		titleRu: "Первичный приём",
+		badgeRu: "Пакет пациента",
+		descriptionRu: "Договор на стоматологические услуги, согласие на обработку данных и анкета здоровья",
+		includes: [
+			"Договор на оказание медицинских услуг",
+			"Согласие на обработку персональных данных",
+			"Анкета общего соматического здоровья пациента",
+		],
+	},
+	{
+		id: "informed_consent",
+		titleRu: "Информированное согласие на лечение",
+		badgeRu: "Клиническое ИДС",
+		descriptionRu: "Добровольное согласие на терапию, хирургию, имплантацию, ортопедию и анестезию",
+		includes: [
+			"План терапевтического / хирургического вмешательства",
+			"Информирование о возможных рисках и гарантиях",
+			"Согласие на местное обезболивание",
+		],
+	},
+	{
+		id: "tax_certificate",
+		titleRu: "Справка для налогового вычета",
+		badgeRu: "Налоговый вычет",
+		descriptionRu: "Справка об оплате медицинских услуг для ФНС с расчетом суммы в рублях и копейках",
+		includes: [
+			"Официальная справка для налоговых органов РФ",
+			"Подтверждение расходов на лечение (13% НДФЛ)",
+			"Реквизиты лицензии и плательщика",
+		],
+	},
+	{
+		id: "card_extract",
+		titleRu: "Медицинская карта приёма и выписка",
+		badgeRu: "Клиническая карта",
+		descriptionRu: "Дневник осмотра по стандарту SOAP, выполненные работы и гарантийный талон",
+		includes: [
+			"Клинический дневник осмотра (SOAP)",
+			"Акт выполненных стоматологических работ",
+			"Гарантийный талон и рекомендации врача",
+		],
+	},
+];
+
+// ---------------------------------------------------------------------------
+// ГЕНЕРАТОРЫ ШАБЛОНОВ БЕЗ СОВЕТСКОГО КАНЦЕЛЯРИТА (МАНДАТЫ 8x, 8ap)
 // ---------------------------------------------------------------------------
 
 export function generateContractTemplate(ctx: DocumentLegalContext): string {
@@ -127,6 +189,80 @@ export function generateContractTemplate(ctx: DocumentLegalContext): string {
 
 4. ПОДПИСИ СТОРОН
 Исполнитель: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${ctx.patient.fullName} /`;
+}
+
+export function generateInformedConsentTemplate(
+	ctx: DocumentLegalContext,
+	subKind: ConsentSubKind = "therapy",
+): string {
+	const titles: Record<ConsentSubKind, { label: string; desc: string; risks: string }> = {
+		therapy: {
+			label: "ТЕРАПЕВТИЧЕСКОЕ ЛЕЧЕНИЕ И ПЛОМБИРОВАНИЕ ЗУБОВ",
+			desc: "Препарирование кариозной полости, изоляция рабочего поля, адгезивная подготовка и послойная реставрация светоотверждаемым композитом.",
+			risks: "Кратковременная постпломбировочная чувствительность на температурные раздражители в течение 3–7 дней.",
+		},
+		surgery: {
+			label: "ХИРУРГИЧЕСКОЕ ЛЕЧЕНИЕ И УДАЛЕНИЕ ЗУБОВ",
+			desc: "Проведение инфильтрационной/проводниковой анестезии, атравматичное удаление зуба, ревизия лунки, гемостаз и наложение швов.",
+			risks: "Послеоперационный отек мягких тканей до 3 суток, болезненность при открывании рта, формирование кровяного сгустка.",
+		},
+		implant: {
+			label: "ДЕНТАЛЬНУЮ ИМПЛАНТАЦИЮ И ОСТЕОПЛАСТИКУ",
+			desc: "Формирование костного ложа с охлаждением физраствором, установка титанового имплантата с заглушкой или формирователем десны.",
+			risks: "Временный отек мягких тканей, необходимость щадящего жевательного режима и антибактериальной терапии.",
+		},
+		orthopedics: {
+			label: "ОРТОПЕДИЧЕСКОЕ ЛЕЧЕНИЕ И ПРОТЕЗИРОВАНИЕ",
+			desc: "Препарирование опорных зубов, снятие оптических/силиконовых оттисков, изготовление и постоянная фиксация коронок или виниров.",
+			risks: "Период привыкания к ортопедической конструкции (от 3 до 14 дней), необходимость контрольной коррекции окклюзии.",
+		},
+		anesthesia: {
+			label: "МЕСТНОЕ ОБЕЗБОЛИВАНИЕ В СТОМАТОЛОГИИ",
+			desc: "Введение современного карпульного анестетика артикаинового ряда с целью полного устранения болевых ощущений при лечении.",
+			risks: "Онемение мягких тканей губы, щеки и языка на 2–4 часа. Запрещается употребление горячей пищи до полного отхождения анестезии.",
+		},
+	};
+
+	const cur = titles[subKind] || titles.therapy;
+
+	return `ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА ${cur.label}
+К медицинской карте пациента: ${ctx.patient.fullName}
+
+г. Москва                                                              Дата: ${ctx.documentDate}
+
+Я, ${ctx.patient.fullName}, ${ctx.patient.birthDate} г.р., проживающий по адресу: ${ctx.patient.address},
+уполномочиваю клинику «${ctx.clinic.name}» и лечащего врача ${ctx.doctor.fullName} провести стоматологическое вмешательство.
+
+1. СУТЬ И ЦЕЛЬ ВМЕШАТЕЛЬСТВА:
+${cur.desc}
+
+2. ОСВЕДОМЛЕННОСТЬ О ВОЗМОЖНЫХ РИСКАХ И РЕАКЦИЯХ:
+${cur.risks}
+
+3. ОБЯЗАТЕЛЬСТВА ПАЦИЕНТА:
+Я обязуюсь строго выполнять клинические назначения врача, соблюдать рекомендации по уходу и являться на назначенные контрольные осмотры.
+
+Врач: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${ctx.patient.fullName} /`;
+}
+
+export function generateIntakePackageTemplate(ctx: DocumentLegalContext): string {
+	return `ПАКЕТ ДОКУМЕНТОВ ПЕРВИЧНОГО ПРИЁМА ПАЦИЕНТА
+Клиника: ${ctx.clinic.name}
+Пациент: ${ctx.patient.fullName} (${ctx.patient.birthDate} г.р.)
+Дата оформления: ${ctx.documentDate}
+
+[ДОКУМЕНТ 1: ДОГОВОР НА ОКАЗАНИЕ ПЛАТНЫХ СТОМАТОЛОГИЧЕСКИХ УСЛУГ]
+Договор регулирует взаимные права и обязанности сторон. Исполнитель оказывает качественную стоматологическую помощь, Пациент производит оплату согласно прейскуранту.
+
+[ДОКУМЕНТ 2: СОГЛАСИЕ НА ОБРАБОТКУ ПЕРСОНАЛЬНЫХ ДАННЫХ]
+Пациент разрешает клинике обработку персональных данных для ведения медицинской карты, координации приёма и сервисных напоминаний. Сведения защищены врачебной тайной.
+
+[ДОКУМЕНТ 3: АНКЕТА ОБЩЕГО СОМАТИЧЕСКОГО ЗДОРОВЬЯ]
+Аллергические реакции на препараты: не выявлены.
+Сопутствующие хронические заболевания: отрицает.
+Артериальное давление в норме. Противопоказаний к приёму не установлено.
+
+Подпись пациента: _________________ / ${ctx.patient.fullName} /          Подпись врача: _________________ / ${ctx.doctor.fullName} /`;
 }
 
 export function generateActTemplate(ctx: DocumentLegalContext): string {
@@ -189,17 +325,19 @@ export function generateCardExtractTemplate(ctx: DocumentLegalContext): string {
 3. Лечащий врач: ${ctx.doctor.fullName} (${ctx.doctor.specialty})
 4. Клинический диагноз: ${ctx.diagnosisRu || "К02.1 Кариес дентина зуба 4.6. Интактный зубной ряд."}
 5. Анамнез заболевания: ${ctx.anamnesisRu || "Пациент обратился с жалобами на кратковременные боли от температурных раздражителей. Аллергоанамнез не отягощен."}
-6. Проведенное лечение:
+6. Проведенное лечение (дневник SOAP):
 ${ctx.services.map((s, i) => `${i + 1}) ${s.title} (${s.quantity} ед.)`).join("\n") || "Препарирование кариозной полости, медикаментозная обработка, постановка светоотверждаемой пломбы."}
-7. Исход лечения и рекомендации: ${ctx.epicrisisRu || "Зуб восстановлен анатомически и функционально. Санация завершена. Контрольный осмотр через 6 месяцев."}
+7. Исход лечения, гарантия и рекомендации: ${ctx.epicrisisRu || "Зуб восстановлен анатомически и функционально. Санация завершена. Гарантия клиники: 12 месяцев. Контрольный осмотр через 6 месяцев."}
 
 Врач: _________________ / ${ctx.doctor.fullName} /          М.П. Клиники
 Дата: ${ctx.documentDate}`;
 }
 
 // ---------------------------------------------------------------------------
-// КАТАЛОГ БЛАНКОВ И ПЕРЕКЛЮЧАТЕЛЬ ШАБЛОНОВ
+// РЕЕСТР ИНДИВИДУАЛЬНЫХ БЛАНКОВ (СОВМЕСТИМОСТЬ И БЫСТРЫЙ ДОСТУП)
 // ---------------------------------------------------------------------------
+
+export type DocumentCatalogCategory = "all" | "intake" | "clinical" | "finance_tax" | "refusal" | "pediatric" | "registry";
 
 export interface DocumentCatalogItem {
 	readonly id: string;
@@ -319,17 +457,6 @@ export function getDocumentsCatalogData(
 			onQuickAction: () => handlers.onOpenA4Tab?.("treatment_plan"),
 		},
 		{
-			id: "doc_xray_referral",
-			kind: "xray_cbct_referral",
-			titleRu: "Направление на рентгенодиагностику и КТ",
-			category: "clinical",
-			descriptionRu: "Направление на прицельный снимок, ОПТГ или 3D КЛКТ",
-			badgeRu: "Рентген / КЛКТ",
-			icon: Scan,
-			printSupported: true,
-			onQuickAction: () => handlers.onOpenKind?.("xray_cbct_referral", "Направление на рентген и КТ"),
-		},
-		{
 			id: "doc_post_visit_recommendations",
 			kind: "post_visit_recommendations",
 			titleRu: "Рекомендации пациенту после приёма",
@@ -352,18 +479,6 @@ export function getDocumentsCatalogData(
 			onQuickAction: () => handlers.onOpenKind?.("payment_receipt", "Квитанция об оплате"),
 		},
 		{
-			id: "doc_medical_intervention_refusal",
-			kind: "medical_intervention_refusal",
-			titleRu: "Отказ от медицинского вмешательства",
-			category: "refusal",
-			descriptionRu: "Бланк отказа пациента от предложенного обследования или лечения",
-			badgeRu: "Бланк отказа",
-			icon: ShieldAlert,
-			isStatutory: true,
-			printSupported: true,
-			onQuickAction: () => handlers.onOpenKind?.("medical_intervention_refusal", "Отказ от медицинского вмешательства"),
-		},
-		{
 			id: "doc_pediatric_representative_consent",
 			kind: "minor_legal_representative_consent",
 			titleRu: "Согласие законного представителя ребёнка",
@@ -375,17 +490,6 @@ export function getDocumentsCatalogData(
 			isStatutory: true,
 			printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("informed_consent"),
-		},
-		{
-			id: "doc_pediatric_bravery_diploma",
-			titleRu: "Грамота за смелость (детский диплом)",
-			category: "pediatric",
-			descriptionRu: "Именной диплом маленькому пациенту за храбрость у кресла",
-			badgeRu: "Грамота",
-			icon: Award,
-			isPediatric: true,
-			printSupported: true,
-			onQuickAction: () => handlers.onOpenKind?.("treatment_plan", "Грамота за смелость"),
 		},
 	];
 }

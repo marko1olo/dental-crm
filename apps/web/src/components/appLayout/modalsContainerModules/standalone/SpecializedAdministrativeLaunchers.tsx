@@ -1,6 +1,6 @@
 /**
- * SpecializedAdministrativeLaunchers — Фасад административных и финансовых лаунчеров (Мандат 8b, <= 120 строк).
- * Декомпозирован по модулям: касса, склад, зарплата, отчеты, планы лечения.
+ * SpecializedAdministrativeLaunchers — Фасад административных и финансовых лаунчеров (Мандат 8b, <= 180 строк).
+ * Декомпозирован по модулям: касса, склад, зарплата, отчеты, планы лечения, документы и согласия.
  */
 
 import React from "react";
@@ -22,11 +22,48 @@ import { DirectAppointmentLauncher } from "../../../schedule/DirectAppointmentLa
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
+import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
+import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
+	// 0. Студия документов и согласий SSOT (#documents, #consents, #docs-studio, ?documents=1, ?consents=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#documents" ||
+			window.location.hash.startsWith("#documents?") ||
+			window.location.hash === "#consents" ||
+			window.location.hash.startsWith("#consents?") ||
+			window.location.hash === "#docs-studio" ||
+			window.location.hash.startsWith("#docs-studio?") ||
+			window.location.hash === "#documents-studio" ||
+			window.location.search.includes("documents=1") ||
+			window.location.search.includes("consents=1") ||
+			window.location.search.includes("docs=1") ||
+			window.location.search.includes("consent=1"))
+	) {
+		return <DirectDocumentsLauncher />;
+	}
+
+	// 0. Кабинет ИИ-копайлота и голосовой ассистент (?copilot=1, #copilot, #ai, #assistant)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#copilot" ||
+			window.location.hash.startsWith("#copilot?") ||
+			window.location.hash === "#ai" ||
+			window.location.hash.startsWith("#ai?") ||
+			window.location.hash === "#assistant" ||
+			window.location.hash.startsWith("#assistant?") ||
+			window.location.hash === "#chairside-copilot" ||
+			window.location.search.includes("copilot=1") ||
+			window.location.search.includes("ai=1") ||
+			window.location.search.includes("assistant=1"))
+	) {
+		return <DirectCopilotLauncher />;
+	}
 
 	// 0. Карточка приёма и быстрое бронирование (?appointment=1, #appointment, #quick-book)
 	if (

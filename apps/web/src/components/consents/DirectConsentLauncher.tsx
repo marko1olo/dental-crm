@@ -1,15 +1,16 @@
 /**
  * apps/web/src/components/consents/DirectConsentLauncher.tsx
  *
- * Автономный лаунчер студии согласий DENTE CRM (Мандаты 8b, 8e, 8aq).
- * Монтируется в AppShell.tsx и StandaloneLaunchers.tsx.
- * Обрабатывает deep-links #consent, #consents, ?consent=1 и события dente:open-consent.
+ * Перенаправлен на единый канонический SSOT Студии документов и согласий DENTE CRM.
+ * Монтируется в AppShell.tsx, StandaloneLaunchers.tsx и clinicalLaunchersRegistry.tsx.
+ * Открывает DocumentsStudioModal с первоначальным пакетом «Информированное согласие на лечение».
+ * Мандаты 8b (Sweet Spot 40–60 строк), 8e (Автономия врача), 8aq (Монтирование в живой UI).
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { ConsentStudioModal } from "./ConsentStudioModal";
+import { DocumentsStudioModal } from "../documents/DocumentsStudioModal";
 
-const isConsentTarget = (): boolean => {
+export const isConsentTarget = (): boolean => {
 	if (typeof window === "undefined") return false;
 	const s = window.location.search || "";
 	const h = window.location.hash || "";
@@ -39,14 +40,12 @@ export const DirectConsentLauncher: React.FC = () => {
 		window.addEventListener("dente:open-consent", handleOpen);
 		window.addEventListener("dente:open-consents", handleOpen);
 		window.addEventListener("dente-open-consents", handleOpen);
-		window.addEventListener("dente:open-documents", handleOpen);
 		window.addEventListener("hashchange", handleHash);
 
 		return () => {
 			window.removeEventListener("dente:open-consent", handleOpen);
 			window.removeEventListener("dente:open-consents", handleOpen);
 			window.removeEventListener("dente-open-consents", handleOpen);
-			window.removeEventListener("dente:open-documents", handleOpen);
 			window.removeEventListener("hashchange", handleHash);
 		};
 	}, [handleOpen, handleHash]);
@@ -66,15 +65,18 @@ export const DirectConsentLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	return (
-		<ConsentStudioModal
+		<DocumentsStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
+			initialTemplate="informed_consent"
 			patientContext={{
-				patientName: "Иванов Иван Иванович",
+				fullName: "Иванов Иван Иванович",
 				birthDate: "15.04.1985",
-				passport: "серия 4510 № 123456 выдан ОВД г. Москвы",
-				doctorName: "Смирнова Елена Сергеевна",
+				passport: "45 10 123456 выдан ОВД г. Москвы",
+				address: "г. Москва, ул. Ленина, д. 25, кв. 14",
+				phone: "+7 (916) 123-45-67",
 			}}
+			doctorFullName="Смирнова Елена Сергеевна"
 		/>
 	);
 };

@@ -1,0 +1,576 @@
+/**
+ * apps/web/src/components/documents/documentsStudio.css
+ *
+ * Единые стили Канонической студии документов и согласий DENTE CRM (SSOT).
+ * Мандаты 8e (Автономия врача), 8am (1 Primary CTA #0d9488), Apple HIG Touch Ergonomics.
+ * Сенсорный минимум >= 44x44px, Natural Thumb Zone, нативный Bottom Sheet на мобильных.
+ * Чистые токены темы, 0px горизонтального скролла, размер: 300–360 строк (Sweet Spot).
+ */
+
+/* ==========================================================================
+   1. БЭКДРОП И КОНТЕЙНЕР СТУДИИ (DESKTOP MODAL / MOBILE BOTTOM SHEET)
+   ========================================================================== */
+
+.dente-docs-studio-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 60;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	padding: 16px;
+	overflow-x: clip;
+	animation: denteFadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.dente-docs-studio-container {
+	position: relative;
+	width: 100%;
+	max-width: 1200px;
+	height: 90vh;
+	max-height: 900px;
+	display: flex;
+	flex-direction: column;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	border: 1px solid var(--line, #e2e8f0);
+	border-radius: 20px;
+	box-shadow: 0 25px 50px -12px rgba(15, 23, 42, 0.25), 0 0 0 1px var(--line, #e2e8f0);
+	overflow: hidden;
+	animation: denteSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes denteFadeIn {
+	from { opacity: 0; }
+	to { opacity: 1; }
+}
+
+@keyframes denteSlideUp {
+	from { transform: translateY(16px) scale(0.98); opacity: 0; }
+	to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+/* ==========================================================================
+   2. ШАПКА СТУДИИ (CANONICAL HEADER <= 52px)
+   ========================================================================== */
+
+.dente-docs-studio-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	height: 52px;
+	min-height: 52px;
+	padding: 0 16px;
+	background: var(--paper-strong, #f8fafc);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.dente-docs-header-branding {
+	display: flex;
+	align-items: center;
+	gap: 10px;
+	min-width: 0;
+}
+
+.dente-docs-header-icon {
+	width: 32px;
+	height: 32px;
+	border-radius: 10px;
+	background: rgba(13, 148, 136, 0.12);
+	color: var(--teal, #0d9488);
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-shrink: 0;
+}
+
+.dente-docs-header-title {
+	font-size: 15px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+	white-space: nowrap;
+	overflow: hidden;
+	text-overflow: ellipsis;
+}
+
+.dente-docs-header-badge {
+	font-size: 12px;
+	padding: 2px 8px;
+	border-radius: 9999px;
+	background: rgba(13, 148, 136, 0.15);
+	color: var(--teal-dark, #0f766e);
+	font-weight: 500;
+	display: inline-flex;
+	align-items: center;
+	gap: 4px;
+}
+
+.dente-docs-header-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+	flex-shrink: 0;
+}
+
+/* ==========================================================================
+   3. КНОПОЧНЫЙ СТАНДАРТ (ЕДИНАЯ PRIMARY CTA #0d9488 & NEUTRAL SECONDARY)
+   ========================================================================== */
+
+.dente-btn-primary-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	height: 44px;
+	min-height: 44px;
+	padding: 0 18px;
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 14px;
+	font-weight: 600;
+	border: 0;
+	border-radius: 12px;
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.2);
+	cursor: pointer;
+	transition: background 0.15s ease, transform 0.1s ease;
+	user-select: none;
+	touch-action: manipulation;
+}
+
+.dente-btn-primary-cta:hover {
+	background: #0f766e;
+}
+
+.dente-btn-primary-cta:active {
+	transform: scale(0.98);
+}
+
+.dente-btn-secondary {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	height: 38px;
+	min-height: 38px;
+	padding: 0 14px;
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 13px;
+	font-weight: 500;
+	border: 1px solid var(--line, #cbd5e1);
+	border-radius: 10px;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	touch-action: manipulation;
+}
+
+.dente-btn-secondary:hover {
+	background: var(--paper-soft, #f1f5f9);
+	border-color: var(--line-strong, #94a3b8);
+}
+
+.dente-btn-close {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	width: 44px;
+	height: 44px;
+	min-width: 44px;
+	min-height: 44px;
+	color: var(--ink-muted, #64748b);
+	background: transparent;
+	border: 0;
+	border-radius: 10px;
+	cursor: pointer;
+	transition: background 0.15s ease, color 0.15s ease;
+}
+
+.dente-btn-close:hover {
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+/* ==========================================================================
+   4. РАБОЧИЙ СТОЛ СТУДИИ (ДВУХКОЛОНОЧНЫЙ LAYOUT: ПАНЕЛЬ СЛЕВА, ЛИСТ А4 СПРАВА)
+   ========================================================================== */
+
+.dente-docs-studio-body {
+	display: flex;
+	flex: 1;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.dente-docs-studio-sidebar {
+	width: 380px;
+	min-width: 340px;
+	max-width: 420px;
+	display: flex;
+	flex-direction: column;
+	border-right: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	overflow-y: auto;
+	padding: 16px;
+	gap: 16px;
+}
+
+.dente-docs-section-label {
+	font-size: 11px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.05em;
+	color: var(--ink-muted, #64748b);
+	margin-bottom: 8px;
+}
+
+.dente-docs-package-list {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dente-docs-package-card {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	padding: 12px 14px;
+	border-radius: 14px;
+	border: 1px solid var(--line, #e2e8f0);
+	background: var(--paper, #ffffff);
+	text-align: left;
+	cursor: pointer;
+	transition: all 0.15s ease;
+	width: 100%;
+}
+
+.dente-docs-package-card:hover {
+	border-color: var(--teal, #0d9488);
+	background: var(--paper-soft, #f8fafc);
+}
+
+.dente-docs-package-card.is-active {
+	border-color: var(--teal, #0d9488);
+	background: rgba(13, 148, 136, 0.08);
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.dente-docs-package-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	width: 100%;
+	gap: 8px;
+}
+
+.dente-docs-package-title {
+	font-size: 14px;
+	font-weight: 600;
+	color: var(--ink, #0f172a);
+}
+
+.dente-docs-package-badge {
+	font-size: 11px;
+	font-weight: 500;
+	padding: 2px 6px;
+	border-radius: 6px;
+	background: var(--paper-soft, #f1f5f9);
+	color: var(--ink-muted, #64748b);
+	white-space: nowrap;
+}
+
+.dente-docs-package-card.is-active .dente-docs-package-badge {
+	background: rgba(13, 148, 136, 0.18);
+	color: var(--teal-dark, #0f766e);
+}
+
+.dente-docs-package-desc {
+	font-size: 12px;
+	color: var(--ink-muted, #64748b);
+	margin-top: 4px;
+	line-height: 1.35;
+}
+
+.dente-docs-subkind-chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin-top: 8px;
+}
+
+.dente-subkind-chip {
+	font-size: 12px;
+	font-weight: 500;
+	padding: 4px 10px;
+	border-radius: 8px;
+	border: 1px solid var(--line, #cbd5e1);
+	background: var(--paper, #ffffff);
+	color: var(--ink, #0f172a);
+	cursor: pointer;
+	min-height: 32px;
+	display: inline-flex;
+	align-items: center;
+}
+
+.dente-subkind-chip.is-active {
+	background: var(--teal, #0d9488);
+	color: #ffffff;
+	border-color: var(--teal, #0d9488);
+}
+
+/* ==========================================================================
+   5. ПАНЕЛЬ ПРЕДПРОСМОТРА А4 (A4 PAPER SHEET & TOUCH CANVAS)
+   ========================================================================== */
+
+.dente-docs-preview-area {
+	flex: 1;
+	background: var(--paper-soft, #f1f5f9);
+	overflow-y: auto;
+	padding: 24px;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.dente-a4-paper-sheet {
+	width: 100%;
+	max-width: 820px;
+	min-height: 980px;
+	background: #ffffff;
+	color: #0f172a;
+	padding: 40px 48px;
+	border-radius: 4px;
+	box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1), 0 0 0 1px rgba(0, 0, 0, 0.05);
+	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+	display: flex;
+	flex-direction: column;
+	justify-content: space-between;
+}
+
+.dente-a4-sheet-header {
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-start;
+	padding-bottom: 16px;
+	border-bottom: 2px solid #0f172a;
+	margin-bottom: 24px;
+}
+
+.dente-a4-clinic-name {
+	font-size: 16px;
+	font-weight: 700;
+	text-transform: uppercase;
+	letter-spacing: 0.02em;
+	color: #0f172a;
+}
+
+.dente-a4-clinic-sub {
+	font-size: 11px;
+	color: #475569;
+	margin-top: 4px;
+	line-height: 1.4;
+}
+
+.dente-a4-date-badge {
+	font-size: 12px;
+	font-weight: 600;
+	color: #0f172a;
+	text-align: right;
+}
+
+.dente-a4-text-body {
+	flex: 1;
+	font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+	font-size: 12.5px;
+	line-height: 1.65;
+	color: #1e293b;
+	white-space: pre-wrap;
+	word-break: break-word;
+}
+
+.dente-a4-sheet-footer {
+	margin-top: 32px;
+	padding-top: 16px;
+	border-top: 1px solid #cbd5e1;
+	display: flex;
+	justify-content: space-between;
+	align-items: flex-end;
+	font-size: 12px;
+	color: #334155;
+}
+
+/* ==========================================================================
+   6. ИНТЕРАКТИВНЫЙ БАР ПОДПИСИ И ЭКРАННОГО CANVAS
+   ========================================================================== */
+
+.dente-signature-pad-box {
+	margin-top: 16px;
+	padding: 12px;
+	background: var(--paper, #ffffff);
+	border: 1px dashed var(--line-strong, #94a3b8);
+	border-radius: 12px;
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.dente-signature-canvas {
+	width: 100%;
+	height: 90px;
+	background: var(--paper-soft, #f8fafc);
+	border-radius: 8px;
+	border: 1px solid var(--line, #e2e8f0);
+	touch-action: none;
+	cursor: crosshair;
+}
+
+/* ==========================================================================
+   7. APPLE HIG MOBILE ADAPTIVE (< 768px: BOTTOM SHEET, THUMB ZONE)
+   ========================================================================== */
+
+.dente-mobile-drag-handle {
+	width: 36px;
+	height: 5px;
+	background: var(--line, #cbd5e1);
+	border-radius: 3px;
+	margin: 8px auto 4px auto;
+	flex-shrink: 0;
+	display: none;
+}
+
+@media (max-width: 768px) {
+	.dente-docs-studio-backdrop {
+		align-items: flex-end;
+		padding: 0;
+	}
+
+	.dente-docs-studio-container {
+		height: 94vh;
+		max-height: 94vh;
+		border-radius: 24px 24px 0 0;
+		border-bottom: 0;
+		padding-bottom: 58px;
+	}
+
+	.dente-mobile-drag-handle {
+		display: block;
+	}
+
+	.dente-docs-studio-header {
+		height: 48px;
+		min-height: 48px;
+		padding: 0 12px;
+	}
+
+	.dente-docs-studio-header .dente-btn-secondary,
+	.dente-docs-studio-header .dente-docs-header-badge {
+		display: none !important;
+	}
+
+	.dente-docs-header-actions .dente-btn-primary-cta {
+		position: fixed;
+		bottom: 0;
+		left: 0;
+		right: 0;
+		width: 100%;
+		height: 52px;
+		min-height: 52px;
+		border-radius: 0;
+		z-index: 80;
+		font-size: 15px;
+		font-weight: 600;
+		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
+		padding-bottom: env(safe-area-inset-bottom, 0px);
+	}
+
+	.dente-docs-studio-body {
+		flex-direction: column;
+	}
+
+	.dente-docs-studio-sidebar {
+		width: 100%;
+		max-width: 100%;
+		min-width: 100%;
+		max-height: 40%;
+		border-right: 0;
+		border-bottom: 1px solid var(--line, #e2e8f0);
+		padding: 12px;
+		gap: 10px;
+	}
+
+	.dente-docs-preview-area {
+		padding: 12px;
+		overflow-x: clip;
+	}
+
+	.dente-a4-paper-sheet {
+		padding: 20px 16px;
+		min-height: auto;
+		font-size: 11px;
+	}
+
+	.dente-a4-text-body {
+		font-size: 11px;
+	}
+}
+
+/* ==========================================================================
+   8. ПЕЧАТНЫЕ СТИЛИ ДЛЯ БУМАГИ (@MEDIA PRINT)
+   ========================================================================== */
+
+@media print {
+	@page {
+		size: A4 portrait;
+		margin: 10mm 12mm;
+	}
+
+	body * {
+		visibility: hidden;
+	}
+
+	.dente-docs-studio-backdrop,
+	.dente-docs-studio-container {
+		position: static !important;
+		display: block !important;
+		background: transparent !important;
+		border: 0 !important;
+		box-shadow: none !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		width: 100% !important;
+		height: auto !important;
+		overflow: visible !important;
+	}
+
+	.dente-docs-studio-header,
+	.dente-docs-studio-sidebar,
+	.dente-mobile-drag-handle,
+	.dente-docs-footer-bar {
+		display: none !important;
+	}
+
+	.dente-docs-preview-area {
+		padding: 0 !important;
+		background: transparent !important;
+	}
+
+	.dente-a4-paper-sheet,
+	.dente-a4-paper-sheet * {
+		visibility: visible !important;
+	}
+
+	.dente-a4-paper-sheet {
+		position: absolute !important;
+		left: 0 !important;
+		top: 0 !important;
+		width: 100% !important;
+		min-height: auto !important;
+		padding: 0 !important;
+		box-shadow: none !important;
+		border: 0 !important;
+	}
+}
