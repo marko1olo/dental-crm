@@ -18,7 +18,12 @@
 import type { FastifyInstance } from "fastify";
 import { handleFiscalValidate } from "./receiptDraftHandlers.js";
 import { handleFiscalReceipt } from "./receiptFiscalizeHandlers.js";
-import { handleFiscalRefund } from "./receiptCorrectionHandlers.js";
+import {
+	handleFiscalCorrection,
+	handleFiscalPrescriptionCorrection,
+	handleFiscalRefund,
+	handleFiscalSelfCorrection,
+} from "./receiptCorrectionHandlers.js";
 import {
 	handleFiscalQueueAutoRetryStart,
 	handleFiscalQueueAutoRetryStop,
@@ -54,6 +59,12 @@ export async function registerFiscalReceiptRoutes(
 	// Fiscal refund generation & print
 	app.post("/api/fiscal/refund", handleFiscalRefund);
 	app.post("/api/finance/refund", handleFiscalRefund);
+
+	// 54-FZ Correction Receipts (self-initiated & tax authority prescription)
+	app.post("/api/fiscal/correction", handleFiscalCorrection);
+	app.post("/api/fiscal/correction/self-calculation", handleFiscalSelfCorrection);
+	app.post("/api/fiscal/correction/prescription", handleFiscalPrescriptionCorrection);
+	app.post("/api/finance/correction", handleFiscalCorrection);
 
 	// Offline buffer queue management & retries
 	app.get("/api/fiscal/queue", handleFiscalQueueList);
