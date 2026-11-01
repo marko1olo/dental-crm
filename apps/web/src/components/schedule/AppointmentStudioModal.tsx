@@ -3,7 +3,7 @@
  * DENTE Dental CRM — Модуль расписания для частной стоматологии РФ (1–5 кресел).
  *
  * Мандаты:
- * - 8b / 8zi: эталонный Sweet Spot (400–480 строк, ноль микро-шредера).
+ * - 8b / 8zi: эталонный Sweet Spot (200–260 строк, <350 строк, ноль микро-шредера).
  * - 8e / 8n: автономия врача и администратора, бронь за 5 секунд, ноль блокировок (disabled запрещены).
  * - 8am: единый дизайн-код, ровно ОДНА Primary CTA кнопка #0d9488 («Записать на приём»).
  * - 8ze / 8al / 8aq: Apple HIG, нативный Bottom Sheet на смартфонах (<= 768px), Drag Handle 36x5px.
@@ -11,15 +11,25 @@
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
+import { Flame } from "lucide-react";
 import {
-  Calendar, Clock, User, Phone, Flame, X, Check, Copy, Play, CalendarClock, Sparkles,
-} from "lucide-react";
-import {
-  CANONICAL_APPOINTMENT_STATUSES, CLINICAL_REASON_PRESETS, DEFAULT_DOCTORS_ROSTER,
-  DEFAULT_CHAIRS_ROSTER, PRIMARY_DURATION_MINUTES, formatSlotTimeRange,
-  getTodayDateString, generatePatientConfirmationMessage,
-  type CanonicalAppointmentStatusCode, type AppointmentStudioSlotData,
+  CLINICAL_REASON_PRESETS,
+  DEFAULT_DOCTORS_ROSTER,
+  DEFAULT_CHAIRS_ROSTER,
+  getTodayDateString,
+  generatePatientConfirmationMessage,
+  type CanonicalAppointmentStatusCode,
+  type AppointmentStudioSlotData,
 } from "./appointmentCatalogData";
+import { AppointmentStudioHeader } from "./appointmentStudio/AppointmentStudioHeader";
+import { AppointmentStudioFooter } from "./appointmentStudio/AppointmentStudioFooter";
+import { AppointmentStudioQuickActions } from "./appointmentStudio/AppointmentStudioQuickActions";
+import {
+  AppointmentStudioPatientFields,
+  type PatientSuggestionItem,
+} from "./appointmentStudio/AppointmentStudioPatientFields";
+import { AppointmentStudioStatusPicker } from "./appointmentStudio/AppointmentStudioStatusPicker";
+import { AppointmentStudioDateTimeFields } from "./appointmentStudio/AppointmentStudioDateTimeFields";
 import "./appointmentStudio.css";
 
 export type { AppointmentStudioSlotData };
@@ -34,7 +44,7 @@ export interface AppointmentStudioModalProps {
   chairs?: readonly { id: string; name: string }[];
 }
 
-const SAMPLE_PATIENTS = [
+const SAMPLE_PATIENTS: PatientSuggestionItem[] = [
   { id: "p-1", name: "Иванов Сергей Павлович", phone: "+7 (916) 123-45-67" },
   { id: "p-2", name: "Смирнова Анна Викторовна", phone: "+7 (925) 987-65-43" },
   { id: "p-3", name: "Кузнецов Дмитрий Олегович", phone: "+7 (903) 555-01-92" },
@@ -42,8 +52,13 @@ const SAMPLE_PATIENTS = [
 ];
 
 export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
-  isOpen, onClose, onSave, onStartVisit, initialData,
-  doctors = DEFAULT_DOCTORS_ROSTER, chairs = DEFAULT_CHAIRS_ROSTER,
+  isOpen,
+  onClose,
+  onSave,
+  onStartVisit,
+  initialData,
+  doctors = DEFAULT_DOCTORS_ROSTER,
+  chairs = DEFAULT_CHAIRS_ROSTER,
 }) => {
   const [patientName, setPatientName] = useState(() => initialData?.patientName || "");
   const [patientPhone, setPatientPhone] = useState(() => initialData?.patientPhone || "");
@@ -58,7 +73,7 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
   const [status, setStatus] = useState<CanonicalAppointmentStatusCode>(() => initialData?.status || "planned");
   const [isEmergency, setIsEmergency] = useState(() => Boolean(initialData?.isEmergency || initialData?.reason?.includes("Острая боль")));
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
-  const [patientSuggestions, setPatientSuggestions] = useState<typeof SAMPLE_PATIENTS>([]);
+  const [patientSuggestions, setPatientSuggestions] = useState<PatientSuggestionItem[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [isMobile, setIsMobile] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
@@ -103,7 +118,7 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
     }
   };
 
-  const handleSelectPatient = (p: typeof SAMPLE_PATIENTS[0]) => {
+  const handleSelectPatient = (p: PatientSuggestionItem) => {
     setPatientId(p.id);
     setPatientName(p.name);
     setPatientPhone(p.phone);
@@ -191,7 +206,9 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
       const nextM = String(d.getMonth() + 1).padStart(2, "0");
       const nextD = String(d.getDate()).padStart(2, "0");
       setDateKey(`${nextY}-${nextM}-${nextD}`);
-    } catch { /* fallback */ }
+    } catch {
+      /* fallback */
+    }
   };
 
   if (!isOpen) return null;
@@ -199,138 +216,43 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
   const modalContent = (
     <div
       className="appointment-studio-backdrop"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) onClose();
+      }}
       role="dialog"
       aria-modal="true"
       aria-label="Карточка записи на приём"
       data-testid="appointment-studio-modal"
     >
       <div className="appointment-studio-modal" ref={containerRef}>
-        {isMobile && (
-          <div className="studio-drag-handle-bar" aria-hidden="true">
-            <div className="studio-drag-handle-pill" />
-          </div>
-        )}
-
         {/* 1. ШАПКА СТУДИИ */}
-        <div className="appointment-studio-header">
-          <div className="flex items-center gap-3">
-            <div
-              className="p-2.5 rounded-xl border flex items-center justify-center shrink-0"
-              style={{
-                backgroundColor: isEmergency ? "rgba(225, 29, 72, 0.15)" : "rgba(13, 148, 136, 0.12)",
-                color: isEmergency ? "#e11d48" : "#0d9488",
-                borderColor: isEmergency ? "rgba(225, 29, 72, 0.3)" : "rgba(13, 148, 136, 0.25)",
-              }}
-            >
-              {isEmergency ? <Flame size={20} className="animate-pulse" /> : <Sparkles size={20} />}
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-[var(--ink,#0f172a)] m-0 leading-tight">
-                  {isEmergency ? "Срочная запись: острая боль" : "Карточка записи на приём"}
-                </h2>
-                {isEmergency && (
-                  <span className="px-2 py-0.5 rounded text-[10px] font-extrabold uppercase text-white bg-rose-600" data-testid="emergency-badge">
-                    CITO
-                  </span>
-                )}
-              </div>
-              <p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-                {formatSlotTimeRange(startTime, durationMinutes)} · {currentChair?.name}
-              </p>
-            </div>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer border-none bg-transparent"
-            aria-label="Закрыть студию записи"
-            data-testid="studio-close-btn"
-          >
-            <X size={20} />
-          </button>
-        </div>
+        <AppointmentStudioHeader
+          isMobile={isMobile}
+          isEmergency={isEmergency}
+          startTime={startTime}
+          durationMinutes={durationMinutes}
+          chairName={currentChair?.name}
+          onClose={onClose}
+        />
 
         {/* 2. ТЕЛО СТУДИИ */}
         <div className="appointment-studio-body">
           {/* СТАТУС ВИЗИТА */}
-          <div className="flex flex-col gap-1.5">
-            <span className="text-xs font-semibold text-[var(--muted,#64748b)]">Статус записи</span>
-            <div className="status-pills-row" role="radiogroup" aria-label="Статус визита">
-              {CANONICAL_APPOINTMENT_STATUSES.map((st) => {
-                const active = status === st.code;
-                return (
-                  <button
-                    key={st.code}
-                    type="button"
-                    onClick={() => setStatus(st.code)}
-                    className={`status-pill-btn ${active ? "is-active" : ""}`}
-                    style={{
-                      backgroundColor: active ? st.badgeBg : undefined,
-                      borderColor: active ? st.borderTone : undefined,
-                      color: active ? st.badgeText : undefined,
-                    }}
-                    data-testid={`status-pill-${st.code}`}
-                  >
-                    <span className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: st.dotColor }} />
-                    <span>{st.shortLabel}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+          <AppointmentStudioStatusPicker
+            status={status}
+            onStatusChange={setStatus}
+          />
 
           {/* ПАЦИЕНТ: ИМЯ И ТЕЛЕФОН */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 relative">
-            <div className="flex flex-col gap-1 relative">
-              <label htmlFor="patient-name-input" className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
-                <User size={13} />
-                <span>Пациент (ФИО)</span>
-              </label>
-              <input
-                id="patient-name-input"
-                type="text"
-                value={patientName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Иван Иванов"
-                className="studio-input-field"
-                data-testid="patient-name-input"
-                autoComplete="off"
-              />
-              {showSuggestions && (
-                <div className="absolute left-0 right-0 top-[68px] z-30 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl overflow-hidden py-1" data-testid="patient-suggestions-popup">
-                  {patientSuggestions.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleSelectPatient(p)}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center justify-between cursor-pointer border-none bg-transparent"
-                    >
-                      <span className="font-semibold text-[var(--ink,#0f172a)]">{p.name}</span>
-                      <span className="text-[var(--muted,#64748b)]">{p.phone}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label htmlFor="patient-phone-input" className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
-                <Phone size={13} />
-                <span>Номер телефона</span>
-              </label>
-              <input
-                id="patient-phone-input"
-                type="tel"
-                value={patientPhone}
-                onChange={(e) => setPatientPhone(e.target.value)}
-                placeholder="+7 (999) 000-00-00"
-                className="studio-input-field"
-                data-testid="patient-phone-input"
-              />
-            </div>
-          </div>
+          <AppointmentStudioPatientFields
+            patientName={patientName}
+            patientPhone={patientPhone}
+            showSuggestions={showSuggestions}
+            patientSuggestions={patientSuggestions}
+            onNameChange={handleNameChange}
+            onPhoneChange={setPatientPhone}
+            onSelectPatient={handleSelectPatient}
+          />
 
           {/* ВРАЧ (ВЫБОР В 1 КЛИК) */}
           <div className="flex flex-col gap-1.5">
@@ -347,7 +269,9 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
                     data-testid={`doctor-chip-${doc.id}`}
                   >
                     <span>{doc.name}</span>
-                    {doc.specialty && <span className="text-[10px] opacity-75 hidden sm:inline">({doc.specialty})</span>}
+                    {doc.specialty && (
+                      <span className="text-[10px] opacity-75 hidden sm:inline">({doc.specialty})</span>
+                    )}
                   </button>
                 );
               })}
@@ -355,57 +279,14 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
           </div>
 
           {/* ДАТА, ВРЕМЯ И СЕГМЕНТНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ДЛИТЕЛЬНОСТИ */}
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
-            <div className="flex flex-col gap-1">
-              <label htmlFor="slot-date-input" className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
-                <Calendar size={13} />
-                <span>Дата</span>
-              </label>
-              <input
-                id="slot-date-input"
-                type="date"
-                value={dateKey}
-                onChange={(e) => setDateKey(e.target.value)}
-                className="studio-input-field"
-                data-testid="slot-date-input"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <label htmlFor="slot-time-input" className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
-                <Clock size={13} />
-                <span>Время начала</span>
-              </label>
-              <input
-                id="slot-time-input"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                className="studio-input-field"
-                data-testid="slot-time-input"
-              />
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <span className="text-xs font-semibold text-[var(--muted,#64748b)]">Длительность</span>
-              <div className="duration-segment-control" role="radiogroup" aria-label="Длительность слота">
-                {PRIMARY_DURATION_MINUTES.map((min) => {
-                  const active = durationMinutes === min;
-                  return (
-                    <button
-                      key={min}
-                      type="button"
-                      onClick={() => setDurationMinutes(min)}
-                      className={`duration-segment-btn ${active ? "is-active" : ""}`}
-                      data-testid={`duration-btn-${min}`}
-                    >
-                      {min}м
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          </div>
+          <AppointmentStudioDateTimeFields
+            dateKey={dateKey}
+            startTime={startTime}
+            durationMinutes={durationMinutes}
+            onDateChange={setDateKey}
+            onStartTimeChange={setStartTime}
+            onDurationChange={setDurationMinutes}
+          />
 
           {/* БЫСТРЫЕ ТЕГИ ПРИЧИН ОБРАЩЕНИЯ */}
           <div className="flex flex-col gap-1.5">
@@ -431,7 +312,9 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
 
           {/* ПРИМЕЧАНИЕ / ЖАЛОБА */}
           <div className="flex flex-col gap-1">
-            <label htmlFor="slot-comment-input" className="text-xs font-semibold text-[var(--muted,#64748b)]">Примечание / Жалоба пациента</label>
+            <label htmlFor="slot-comment-input" className="text-xs font-semibold text-[var(--muted,#64748b)]">
+              Примечание / Жалоба пациента
+            </label>
             <input
               id="slot-comment-input"
               type="text"
@@ -444,55 +327,20 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
           </div>
 
           {/* КНОПКИ БЫСТРЫХ ДЕЙСТВИЙ */}
-          <div className="flex flex-wrap items-center gap-2 pt-1 border-t border-[var(--line,#e2e8f0)]">
-            <button
-              type="button"
-              onClick={handleStartVisitImmediately}
-              className="studio-secondary-btn"
-              data-testid="start-visit-quick-btn"
-              title="Перевести статус в «Приём идет» и сразу открыть прием"
-            >
-              <Play size={14} className="text-emerald-600" />
-              <span>Начать приём</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={handleCopySmsConfirmation}
-              className="studio-secondary-btn"
-              data-testid="sms-confirm-quick-btn"
-              title="Скопировать готовое SMS / WhatsApp сообщение для пациента"
-            >
-              <Copy size={14} className="text-teal-600" />
-              <span>{copyFeedback || "Подтвердить визит по SMS"}</span>
-            </button>
-
-            <button
-              type="button"
-              onClick={() => handleShiftDate(1)}
-              className="studio-secondary-btn"
-              data-testid="reschedule-quick-btn"
-              title="Перенести запись на следующий рабочий день (+1 день)"
-            >
-              <CalendarClock size={14} className="text-blue-600" />
-              <span>Перенести (+1 день)</span>
-            </button>
-          </div>
+          <AppointmentStudioQuickActions
+            copyFeedback={copyFeedback}
+            onStartVisitImmediately={handleStartVisitImmediately}
+            onCopySmsConfirmation={handleCopySmsConfirmation}
+            onShiftDate={handleShiftDate}
+          />
         </div>
 
         {/* 3. НИЖНЯЯ ПАНЕЛЬ: РОВНО ОДНА PRIMARY CTA КНОПКА #0d9488 */}
-        <div className="appointment-studio-footer">
-          <button
-            type="button"
-            disabled={false}
-            onClick={handleSaveAppointment}
-            className="appointment-studio-primary-cta"
-            data-testid="studio-save-appointment-btn"
-          >
-            <Check size={18} strokeWidth={2.5} />
-            <span>✓ Записать на приём ({formatSlotTimeRange(startTime, durationMinutes)})</span>
-          </button>
-        </div>
+        <AppointmentStudioFooter
+          startTime={startTime}
+          durationMinutes={durationMinutes}
+          onSave={handleSaveAppointment}
+        />
       </div>
     </div>
   );

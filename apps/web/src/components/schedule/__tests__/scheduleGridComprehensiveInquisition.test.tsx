@@ -861,7 +861,7 @@ describe("ScheduleGrid & QuickBookingDrawer Comprehensive Parity Inquisition (Ma
 		assert.ok(cancelBtn, "Cancel button must exist");
 		assert.ok(cancelBtn.className?.includes("min-h-[44px]"), "Cancel button must have min-h-[44px]");
 
-		const submitBtn = buttons.find((b) => b.textContent?.includes("Создать запись"));
+		const submitBtn = buttons.find((b) => b.attributes?.["data-testid"] === "quick-drawer-save-btn" || b.textContent?.includes("Создать запись") || b.textContent?.includes("Записать на приём"));
 		assert.ok(submitBtn, "Submit button must exist");
 		assert.ok(submitBtn.className?.includes("min-h-[44px]"), "Submit button must have min-h-[44px]");
 

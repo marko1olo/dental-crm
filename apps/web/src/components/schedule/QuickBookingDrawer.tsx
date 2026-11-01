@@ -156,10 +156,10 @@ export function QuickBookingDrawerFooter({
           {isSubmitting ? (
             "Сохраняю запись…"
           ) : hasCollision ? (
-            "✓ Записать на это время"
+            "Записать на это время"
           ) : (
             <>
-              ✓ Записать пациента
+              Записать на приём
               <span className="hidden sm:inline font-normal opacity-90"> (Ctrl+Enter)</span>
             </>
           )}

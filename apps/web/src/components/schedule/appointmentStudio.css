@@ -291,6 +291,10 @@
   background: var(--paper-soft, #f1f5f9);
 }
 
+.studio-drag-handle-bar {
+  display: none;
+}
+
 /* ─── МОБИЛЬНАЯ ЭРГОНОМИКА APPLE HIG (<= 768px) ─── */
 @media (max-width: 768px) {
   .appointment-studio-backdrop {
