@@ -1,7 +1,7 @@
 /**
  * DirectPayrollLauncher.tsx — Standalone Direct Mount for Doctor Payroll Studio
- * Mandate 8b (60–90 lines), Mandate 8e (Doctor Autonomy), Mandate 8aq (Mounted in UI Tree).
- * Reacts to window hashes #payroll, #doctor-payroll, #salary, #earnings, #doctor-payout and events dente:open-payroll.
+ * Mandate 8b (60–80 lines), Mandate 8e (Doctor Autonomy), Mandate 8aq (Mounted in UI Tree).
+ * Reacts to window hashes #payroll, #doctor-payroll, #salary, #commissions, and events dente:open-payroll.
  */
 
 import React, { useEffect, useState } from "react";
@@ -13,14 +13,10 @@ export const DirectPayrollLauncher: React.FC = () => {
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
 		return (
-			h.includes("#payroll") ||
-			h.includes("#doctor-payroll") ||
-			h.includes("#salary") ||
-			h.includes("#earnings") ||
-			h.includes("#doctor-payout") ||
-			s.includes("payroll=1") ||
-			s.includes("doctor-payroll=1") ||
-			s.includes("doctor-payout=1")
+			h.includes("#payroll") || h.includes("#doctor-payroll") ||
+			h.includes("#salary") || h.includes("#commissions") ||
+			s.includes("payroll=1") || s.includes("doctor-payroll=1") ||
+			s.includes("salary=1") || s.includes("commissions=1")
 		);
 	});
 
@@ -33,11 +29,8 @@ export const DirectPayrollLauncher: React.FC = () => {
 		const handleHashChange = () => {
 			const h = window.location.hash || "";
 			if (
-				h.includes("#payroll") ||
-				h.includes("#doctor-payroll") ||
-				h.includes("#salary") ||
-				h.includes("#earnings") ||
-				h.includes("#doctor-payout")
+				h.includes("#payroll") || h.includes("#doctor-payroll") ||
+				h.includes("#salary") || h.includes("#commissions")
 			) {
 				setIsOpen(true);
 			}
@@ -60,9 +53,10 @@ export const DirectPayrollLauncher: React.FC = () => {
 			const url = new URL(window.location.href);
 			url.searchParams.delete("payroll");
 			url.searchParams.delete("doctor-payroll");
-			url.searchParams.delete("doctor-payout");
+			url.searchParams.delete("salary");
+			url.searchParams.delete("commissions");
 			const cleanHash = window.location.hash.replace(
-				/#payroll|#doctor-payroll|#salary|#earnings|#doctor-payout/g,
+				/#payroll|#doctor-payroll|#salary|#commissions/g,
 				"",
 			);
 			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
@@ -70,12 +64,7 @@ export const DirectPayrollLauncher: React.FC = () => {
 		}
 	};
 
-	return (
-		<DoctorPayrollStudioModal
-			isOpen={isOpen}
-			onClose={handleClose}
-		/>
-	);
+	return <DoctorPayrollStudioModal isOpen={isOpen} onClose={handleClose} />;
 };
 
 export default DirectPayrollLauncher;

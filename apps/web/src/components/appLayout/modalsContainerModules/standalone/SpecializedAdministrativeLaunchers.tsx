@@ -25,6 +25,7 @@ import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescri
 import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
+import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
@@ -193,6 +194,23 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.search.includes("rx=1"))
 	) {
 		return <DirectPrescriptionLauncher />;
+	}
+
+	// 11. Студия зарплат и сдельной мотивации (?payroll=1, #payroll, #doctor-payroll, #salary, #commissions)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#payroll" ||
+			window.location.hash.startsWith("#payroll?") ||
+			window.location.hash === "#doctor-payroll" ||
+			window.location.hash.startsWith("#doctor-payroll?") ||
+			window.location.hash === "#salary" ||
+			window.location.hash.startsWith("#salary?") ||
+			window.location.hash === "#commissions" ||
+			window.location.hash.startsWith("#commissions?") ||
+			window.location.search.includes("payroll=1") ||
+			window.location.search.includes("doctor_payroll=1"))
+	) {
+		return <DirectPayrollLauncher />;
 	}
 
 	return null;

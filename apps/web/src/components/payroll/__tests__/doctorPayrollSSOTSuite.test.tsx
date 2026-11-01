@@ -70,7 +70,7 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 
 			// Scheme A: net_percentage (25% of 12 700 ₽ = 3 175 ₽)
 			const netSummary = calculateDoctorPayrollSummary({
-				orders: singleOrder, doctor: { ...therapist, id: singleOrder[0].doctorId },
+				orders: singleOrder, doctor: { ...therapist, id: singleOrder[0]!.doctorId },
 				schemeType: "net_percentage", percent: 25,
 			});
 			assert.equal(netSummary.totalGrossKopecks, 1450000);
@@ -79,14 +79,14 @@ describe("SSOT Suite: Doctor Payroll, Motivation Schemes & Chair Rental", () => 
 
 			// Scheme B: gross_percentage (20% of 14 500 ₽ = 2 900 ₽)
 			const grossSummary = calculateDoctorPayrollSummary({
-				orders: singleOrder, doctor: { ...therapist, id: singleOrder[0].doctorId },
+				orders: singleOrder, doctor: { ...therapist, id: singleOrder[0]!.doctorId },
 				schemeType: "gross_percentage", percent: 20,
 			});
 			assert.equal(grossSummary.doctorAccruedKopecks, 290000);
 
 			// Scheme C: fixed_shift (5 shifts * 4 000 ₽ = 20 000 ₽)
 			const shiftSummary = calculateDoctorPayrollSummary({
-				orders: singleOrder, doctor: { ...therapist, id: singleOrder[0].doctorId },
+				orders: singleOrder, doctor: { ...therapist, id: singleOrder[0]!.doctorId },
 				schemeType: "fixed_shift", shiftsCount: 5, shiftRateKop: 400000,
 			});
 			assert.equal(shiftSummary.doctorAccruedKopecks, 2000000);

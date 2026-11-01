@@ -1,20 +1,21 @@
 /**
- * DENTE Dental CRM — Doctor Payroll Studio Modal
- * Mandate 8b (Sweet Spot 350–480 lines), Mandate 8e (Doctor Autonomy & Non-blocking CTA),
- * Mandate 8n (Solo Practice Sovereignty: Net Revenue & Chair Rental), Mandate 8am (Single Primary CTA #0d9488),
- * Mandate 8ze (Apple Mobile HIG: 390x844 Touch Targets >= 44x44px, 0px Horizontal Drift).
+ * DENTE Dental CRM — Canonical Doctor Payroll Studio Modal
+ * Compliance: Mandate 8b (Sweet Spot 400–480 lines), Mandate 8e (Doctor Autonomy & 0 Disabled Buttons),
+ * Mandate 8n (Solo Practice & Net Revenue = Gross − Lab − Materials), Mandate 8am (Single Primary CTA #0d9488),
+ * Mandate 8ze (Apple Mobile HIG: 390x844 Touch Targets >= 44x44px, Natural Thumb Zone, 0px Horizontal Drift).
  */
 
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Check, Printer, Send, X, FileCheck, Coins } from "lucide-react";
+import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History } from "lucide-react";
 import {
-	type PayrollDoctorProfile, type PayrollPeriodPreset, type MotivationSchemeType,
-	type PayrollPayoutStatus, type DoctorPayrollSummary,
-	CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS, getQuickPeriodDates,
-	calculateDoctorPayrollSummary, generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
+	type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus,
+	type DoctorPayrollSummary, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS,
+	CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary,
+	generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
 } from "./payrollCatalogData";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
+import "./styles/doctorPayrollStudio.css";
 
 export interface DoctorPayrollStudioModalProps {
 	readonly isOpen: boolean;
@@ -23,14 +24,6 @@ export interface DoctorPayrollStudioModalProps {
 	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[] | undefined;
 	readonly initialDoctorId?: string | undefined;
 	readonly initialPeriodPreset?: PayrollPeriodPreset | undefined;
-}
-
-function formatDoctorShortName(fullName: string): string {
-	const clean = fullName.replace(/^Д-р\.?\s*/i, "").trim();
-	const parts = clean.split(/\s+/);
-	if (parts.length >= 3) return `${parts[0]} ${parts[1][0]}.${parts[2][0]}.`;
-	if (parts.length === 2) return `${parts[0]} ${parts[1][0]}.`;
-	return parts[0] || fullName;
 }
 
 export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> = ({
@@ -56,6 +49,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		return CANONICAL_PAYROLL_DOCTORS;
 	}, [doctorsList]);
 
+	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => initialDoctorId || (doctors[0]?.id ?? "doc-volkov"));
 	const [periodPreset, setPeriodPreset] = useState<PayrollPeriodPreset>(initialPeriodPreset);
 	const [shiftsCount, setShiftsCount] = useState<number>(12);
@@ -65,26 +59,36 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
-	const selectedDoctor = useMemo(() => {
-		return doctors.find((d) => d.id === selectedDoctorId) || doctors[0] || CANONICAL_PAYROLL_DOCTORS[0];
+	const selectedDoctor: PayrollDoctorProfile = useMemo(() => {
+		return doctors.find((d) => d.id === selectedDoctorId) || doctors[0] || CANONICAL_PAYROLL_DOCTORS[0]!;
 	}, [doctors, selectedDoctorId]);
 
 	const periodDates = useMemo(() => getQuickPeriodDates(periodPreset), [periodPreset]);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
 		return calculateDoctorPayrollSummary({
-			orders: CANONICAL_DEMO_ORDERS,
-			doctor: selectedDoctor,
-			percent: customPercent ?? undefined,
-			shiftsCount,
-			advanceKop: advanceRub * 100,
-			isRkoPaid: payoutStatus === "paid_rko",
+			orders: CANONICAL_DEMO_ORDERS, doctor: selectedDoctor, percent: customPercent ?? undefined,
+			shiftsCount, advanceKop: advanceRub * 100, isRkoPaid: payoutStatus === "paid_rko",
 		});
 	}, [selectedDoctor, customPercent, shiftsCount, advanceRub, payoutStatus]);
 
 	const doctorOrders = useMemo(() => {
 		return CANONICAL_DEMO_ORDERS.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz);
 	}, [selectedDoctor.id]);
+
+	const allDoctorsSummaries = useMemo(() => {
+		return doctors.map((doc) => ({
+			doctor: doc,
+			summary: calculateDoctorPayrollSummary({ orders: CANONICAL_DEMO_ORDERS, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
+		}));
+	}, [doctors, payoutStatus]);
+
+	const clinicTotals = useMemo(() => {
+		return allDoctorsSummaries.reduce((acc, item) => ({
+			gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
+			netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
+		}), { gross: 0, lab: 0, netBase: 0, payout: 0 });
+	}, [allDoctorsSummaries]);
 
 	const rub = (kop: number) => (Math.round(kop) / 100).toLocaleString("ru-RU") + " ₽";
 
@@ -102,15 +106,12 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		payoutStatus: summary.payoutStatus,
 	}), [summary, selectedDoctor, periodDates, customPercent]);
 
-	const handlePrintPayslip = () => {
-		const html = generateDoctorPayslipA5Html(calcCompat, selectedDoctor, clinicName);
+	const handlePrintPayslip = (customCalc?: any, customDoc?: any) => {
+		const targetCalc = customCalc || calcCompat;
+		const targetDoc = customDoc || selectedDoctor;
+		const html = generateDoctorPayslipA5Html(targetCalc, targetDoc, clinicName);
 		const win = window.open("", "_blank");
-		if (win) {
-			win.document.write(html);
-			win.document.close();
-			win.focus();
-			setTimeout(() => win.print(), 250);
-		}
+		if (win) { win.document.write(html); win.document.close(); win.focus(); setTimeout(() => win.print(), 250); }
 	};
 
 	const handleSendMessenger = () => {
@@ -150,32 +151,21 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="payroll-modal-overlay flex items-end sm:items-center justify-center p-0 sm:p-4 fixed inset-0 z-50 bg-black/60 backdrop-blur-xs" data-testid="doctor-payroll-studio-modal" role="dialog" aria-modal="true">
-			<div className="payroll-modal-container flex flex-col max-h-[92vh] sm:max-h-[90vh] w-full max-w-5xl rounded-t-3xl sm:rounded-2xl bg-[var(--paper)] text-[var(--ink)] shadow-2xl border border-[var(--line)] overflow-hidden">
-				{/* Apple HIG Drag Handle for Mobile */}
-				<div className="sm:hidden flex justify-center pt-2.5 pb-1 bg-[var(--paper-soft)] shrink-0">
-					<div className="w-9 h-1 bg-[var(--line-strong,var(--line))] rounded-full" />
-				</div>
-
-				{/* Header: Title, Clinic, Settlement Stamp, Close Button */}
-				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0">
-					<div className="flex items-center gap-2.5 min-w-0">
-						<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold text-sm shrink-0">
-							<Coins className="w-4 h-4" />
-						</div>
+		<div className="payroll-studio-overlay" data-testid="doctor-payroll-studio-modal" role="dialog" aria-modal="true">
+			<div className="payroll-studio-container">
+				<div className="payroll-studio-drag-handle"><div className="payroll-studio-drag-pill" /></div>
+				{/* Unified Header: Title, Clinic, Settlement Stamp, Close Button */}
+				<div className="payroll-studio-header">
+					<div className="payroll-studio-header-title">
+						<div className="payroll-studio-icon-badge"><Coins className="w-5 h-5" /></div>
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
-								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">
-									<span className="hidden sm:inline">Студия зарплат и сдельной мотивации</span>
-									<span className="sm:hidden">Зарплата врачей</span>
-								</h2>
+								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">Студия зарплат и сдельной мотивации</h2>
 								<button
 									type="button"
-									onClick={() => setPayoutStatus((prev) => (prev === "paid_rko" ? "accrued" : "paid_rko"))}
+									onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))}
 									className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${
-										payoutStatus === "paid_rko"
-											? "bg-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40"
-											: "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
+										payoutStatus === "paid_rko" ? "bg-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
 									}`}
 									title="Нажмите для переключения статуса выплаты"
 								>
@@ -186,56 +176,29 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 							<div className="text-xs text-[var(--muted)] truncate">{clinicName} • {periodDates.labelRu}</div>
 						</div>
 					</div>
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer shrink-0 ml-2"
-						aria-label="Закрыть"
-					>
-						<X className="w-4 h-4" />
-					</button>
+					<button type="button" onClick={onClose} className="payroll-studio-close-btn" aria-label="Закрыть"><X className="w-4 h-4" /></button>
 				</div>
 
-				{/* Doctor Selector & Quick Periods */}
-				<div className="px-4 sm:px-6 py-2.5 border-b border-[var(--line)] bg-[var(--paper)] flex flex-col gap-2 shrink-0">
-					<div className="flex items-center justify-between gap-2">
-						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Врач-специалист:</span>
-						<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0">
-							{(["shift", "current_month", "previous_month"] as const).map((preset) => {
-								const labels: Record<string, string> = { shift: "Смена", current_month: "Месяц", previous_month: "Прошлый" };
-								const active = periodPreset === preset;
-								return (
-									<button
-										key={preset}
-										type="button"
-										onClick={() => setPeriodPreset(preset)}
-										className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${
-											active
-												? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs"
-												: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper)]"
-										}`}
-									>
-										{labels[preset]}
-									</button>
-								);
-							})}
-						</div>
+				{/* Three SSOT Tabs: Summary, Details & Lab, Closed Periods */}
+				<div className="payroll-studio-tabs-bar">
+					<div className="payroll-studio-tabs-group">
+						<button type="button" onClick={() => setActiveTab("summary")} className={`payroll-studio-tab-btn ${activeTab === "summary" ? "active" : ""}`} data-testid="payroll-tab-summary">
+							<Users className="w-3.5 h-3.5" /><span className="hidden sm:inline">Сводная ведомость врачей</span><span className="sm:hidden">Сводная</span>
+						</button>
+						<button type="button" onClick={() => setActiveTab("details")} className={`payroll-studio-tab-btn ${activeTab === "details" ? "active" : ""}`} data-testid="payroll-tab-details">
+							<ListFilter className="w-3.5 h-3.5" /><span className="hidden sm:inline">Детализация по услугам и ЗТЛ</span><span className="sm:hidden">Услуги и ЗТЛ</span>
+						</button>
+						<button type="button" onClick={() => setActiveTab("closed_periods")} className={`payroll-studio-tab-btn ${activeTab === "closed_periods" ? "active" : ""}`} data-testid="payroll-tab-closed-periods">
+							<History className="w-3.5 h-3.5" /><span className="hidden sm:inline">Закрытые периоды и выплаты</span><span className="sm:hidden">Архив</span>
+						</button>
 					</div>
-					<div className="min-w-0 flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-nowrap">
-						{doctors.map((doc) => {
-							const isSelected = doc.id === selectedDoctor.id;
+					<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0">
+						{(["shift", "current_month", "previous_month"] as const).map((preset) => {
+							const labels: Record<string, string> = { shift: "Смена", current_month: "Месяц", previous_month: "Прошлый" };
+							const active = periodPreset === preset;
 							return (
-								<button
-									key={doc.id}
-									type="button"
-									onClick={() => { setSelectedDoctorId(doc.id); setCustomPercent(null); }}
-									className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
-										isSelected ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"
-									}`}
-								>
-									<span className="w-5 h-5 rounded-full bg-black/15 flex items-center justify-center text-[10px]">{doc.initials}</span>
-									<span>{formatDoctorShortName(doc.name)}</span>
-									<span className="text-[10px] opacity-80">({doc.payoutModel === "chair_rental" ? "Аренда" : `${doc.commissionPercent}%`})</span>
+								<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${active ? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+									{labels[preset]}
 								</button>
 							);
 						})}
@@ -243,190 +206,175 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				</div>
 
 				{/* Body Content */}
-				<div className="p-4 sm:p-6 overflow-y-auto flex-1 flex flex-col gap-4">
-					{/* KPI Cards: Gross, Lab, Materials, Net Base, Accrued (32px bold teal) */}
-					<div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-						<div className="payroll-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Выручка услуг (54-ФЗ)</span>
-							<span className="text-sm sm:text-base font-bold text-[var(--ink)]">{rub(summary.totalGrossKopecks)}</span>
-						</div>
-						<div className="payroll-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">ЗТЛ (Лаборатория)</span>
-							<span className="text-sm sm:text-base font-bold text-red-600 dark:text-red-400">− {rub(summary.totalLabCostKopecks)}</span>
-						</div>
-						<div className="payroll-stat-card">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Материалы (Импланты)</span>
-							<span className="text-sm sm:text-base font-bold text-amber-600 dark:text-amber-400">− {rub(summary.totalMaterialCostKopecks)}</span>
-						</div>
-						<div className="payroll-stat-card bg-[var(--paper-soft)]">
-							<span className="text-[11px] font-medium text-[var(--muted)]">Чистая расчетная база</span>
-							<span className="text-sm sm:text-base font-bold text-[var(--ink)]">{rub(summary.totalNetBaseKopecks)}</span>
-						</div>
-					</div>
-
-					{/* Primary KPI Hero: Accrued & Payout */}
-					<div className="p-4 rounded-xl bg-[var(--teal,#0d9488)]/10 border border-[var(--teal,#0d9488)]/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-						<div>
-							<div className="text-xs font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">Начислено врачу по ставке</div>
-							<div className="text-2xl sm:text-[32px] leading-tight font-black text-[var(--teal,#0d9488)] mt-0.5">
-								{rub(summary.doctorAccruedKopecks)}
-							</div>
-							<div className="text-[11px] text-[var(--muted)] mt-1">
-								{summary.schemeType === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? selectedDoctor.commissionPercent}% от чистой базы`}
-								{summary.minimumGuaranteeApplied && " • Применен минимальный гарантийный оклад"}
-							</div>
-						</div>
-						<div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--line)] w-full sm:w-auto">
-							<div className="text-xs text-[var(--muted)]">К выплате на руки (с учетом аванса и аренды):</div>
-							<div className="text-xl sm:text-2xl font-black text-[var(--ink)] mt-0.5">{rub(summary.payoutKopecks)}</div>
-						</div>
-					</div>
-
+				<div className="payroll-studio-body">
 					{feedbackMsg && (
 						<div className="p-3 rounded-xl bg-[var(--teal,#0d9488)]/15 border border-[var(--teal,#0d9488)]/30 text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-2">
-							<Check className="w-4 h-4 shrink-0" />
-							<span>{feedbackMsg}</span>
+							<Check className="w-4 h-4 shrink-0" /><span>{feedbackMsg}</span>
 						</div>
 					)}
 
-					{/* Model Tuning & Fast Controls */}
-					<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
-						<div className="flex flex-wrap items-center gap-3">
-							{selectedDoctor.payoutModel === "chair_rental" ? (
-								<div className="flex items-center gap-2">
-									<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
-									<span className="text-[var(--muted)]">{shiftsCount} смен × 4 000 ₽ = {rub(summary.chairRentalKopecks)}</span>
-									<button type="button" onClick={() => setShiftsCount((s) => Math.max(1, s - 1))} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">-</button>
-									<span className="font-bold">{shiftsCount}</span>
-									<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">+</button>
-								</div>
-							) : (
-								<div className="flex items-center gap-2">
-									<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
-									{[20, 25, 30, 35, 40].map((pct) => (
-										<button
-											key={pct}
-											type="button"
-											onClick={() => setCustomPercent(pct)}
-											className={`px-2 py-1 rounded text-xs cursor-pointer ${
-												(customPercent ?? selectedDoctor.commissionPercent) === pct ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"
-											}`}
-										>
-											{pct}%
-										</button>
-									))}
-								</div>
-							)}
+					{/* TAB 1: Сводная ведомость врачей */}
+					{activeTab === "summary" && (
+						<div className="flex flex-col gap-4">
+							<div className="payroll-studio-kpi-grid">
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка клиники (54-ФЗ)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.gross)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Затраты на ЗТЛ</span><span className="payroll-studio-kpi-value text-red-600 dark:text-red-400">− {rub(clinicTotals.lab)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Чистая база (Net Base)</span><span className="payroll-studio-kpi-value">{rub(clinicTotals.netBase)}</span></div>
+								<div className="payroll-studio-kpi-card bg-[var(--teal,#0d9488)]/10 border-[var(--teal,#0d9488)]/30"><span className="payroll-studio-kpi-label text-[var(--teal,#0d9488)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--teal,#0d9488)]">{rub(clinicTotals.payout)}</span></div>
+							</div>
 
-							<div className="flex items-center gap-1.5 ml-2">
-								<span className="text-[var(--muted)]">Аванс:</span>
-								<input
-									type="number"
-									value={advanceRub || ""}
-									placeholder="0 ₽"
-									onChange={(e) => setAdvanceRub(Number(e.target.value) || 0)}
-									className="w-20 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]"
-								/>
+							{/* Desktop Table View */}
+							<div className="hidden sm:block payroll-studio-table-container">
+								<table className="payroll-studio-table">
+									<thead>
+										<tr>
+											<th>Врач-специалист</th><th>Специальность</th><th className="text-right">Выручка 54-ФЗ</th><th className="text-right">ЗТЛ</th>
+											<th className="text-right">Чистая база</th><th className="text-right">Ставка</th><th className="text-right">К выплате</th><th className="text-center">Действие</th>
+										</tr>
+									</thead>
+									<tbody>
+										{allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
+											<tr key={doctor.id} className="hover:bg-[var(--paper-soft)]/50">
+												<td className="font-semibold text-[var(--ink)]"><div>{doctor.name}</div><div className="text-[10px] text-[var(--muted)]">{doctor.taxRegime === "self_employed" ? "Самозанятый (НПД)" : "Трудовой договор"}</div></td>
+												<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
+												<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td>
+												<td className="text-right text-red-600 dark:text-red-400">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
+												<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td>
+												<td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
+												<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</td>
+												<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+
+							{/* Mobile Grouped Cards View (Apple HIG) */}
+							<div className="sm:hidden flex flex-col gap-2">
+								{allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
+									<div key={doctor.id} className="payroll-studio-mobile-card">
+										<div className="payroll-studio-mobile-card-row">
+											<div>
+												<div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div>
+												<div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div>
+											</div>
+											<span className="font-bold text-sm text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</span>
+										</div>
+										<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1.5 border-t border-[var(--line)]">
+											<span>Выручка: {rub(docSummary.totalGrossKopecks)}</span>
+											<span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span>
+											<button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button>
+										</div>
+									</div>
+								))}
 							</div>
 						</div>
+					)}
 
-						<div className="flex items-center gap-2">
-							<button
-								type="button"
-								onClick={handlePrintPayslip}
-								className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer"
-								title="Распечатать расчетный листок (А5)"
-							>
-								<Printer className="w-3.5 h-3.5" />
-								<span>Листок А5</span>
-							</button>
-							<button
-								type="button"
-								onClick={handleSendMessenger}
-								className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer"
-								title="Отправить расчет в мессенджер"
-							>
-								<Send className="w-3.5 h-3.5" />
-								<span>В мессенджер</span>
-							</button>
-						</div>
-					</div>
+					{/* TAB 2: Детализация по услугам и ЗТЛ */}
+					{activeTab === "details" && (
+						<div className="flex flex-col gap-4">
+							<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-nowrap">
+								{doctors.map((doc) => {
+									const isSelected = doc.id === selectedDoctor.id;
+									return (
+										<button key={doc.id} type="button" onClick={() => { setSelectedDoctorId(doc.id); setCustomPercent(null); }} className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}>
+											<span className="w-5 h-5 rounded-full bg-black/15 flex items-center justify-center text-[10px]">{doc.initials}</span>
+											<span>{doc.name}</span>
+											<span className="text-[10px] opacity-80">({doc.payoutModel === "chair_rental" ? "Аренда" : `${doc.commissionPercent}%`})</span>
+										</button>
+									);
+								})}
+							</div>
 
-					{/* Service Orders Section */}
-					<div className="flex flex-col gap-2">
-						<div className="flex items-center justify-between">
-							<span className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
-								Наряды и выполненные работы ({doctorOrders.length})
-							</span>
-							<span className="text-xs text-[var(--muted)]">{selectedDoctor.name} • {selectedDoctor.specialtyTitleRu}</span>
-						</div>
+							<div className="payroll-studio-kpi-grid">
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка услуг (54-ФЗ)</span><span className="payroll-studio-kpi-value">{rub(summary.totalGrossKopecks)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">ЗТЛ (Лаборатория)</span><span className="payroll-studio-kpi-value text-red-600 dark:text-red-400">− {rub(summary.totalLabCostKopecks)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Расходные материалы</span><span className="payroll-studio-kpi-value text-amber-600 dark:text-amber-400">− {rub(summary.totalMaterialCostKopecks)}</span></div>
+								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Чистая база (Net Base)</span><span className="payroll-studio-kpi-value">{rub(summary.totalNetBaseKopecks)}</span></div>
+							</div>
 
-						{/* Desktop Table View */}
-						<div className="hidden sm:block rounded-xl border border-[var(--line)] overflow-hidden bg-[var(--paper)]">
-							<table className="w-full text-xs text-left border-collapse">
-								<thead>
-									<tr className="bg-[var(--paper-soft)] text-[var(--muted)] border-b border-[var(--line)]">
-										<th className="py-2.5 px-3 font-semibold">Наряд / Дата</th>
-										<th className="py-2.5 px-3 font-semibold">Пациент</th>
-										<th className="py-2.5 px-3 font-semibold">Услуга</th>
-										<th className="py-2.5 px-3 font-semibold text-right">Чек (54-ФЗ)</th>
-										<th className="py-2.5 px-3 font-semibold text-right">ЗТЛ</th>
-										<th className="py-2.5 px-3 font-semibold text-right">Материалы</th>
-										<th className="py-2.5 px-3 font-semibold text-right">Чистая база</th>
-										<th className="py-2.5 px-3 font-semibold text-right">Врачу</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-[var(--line)]">
-									{doctorOrders.length === 0 ? (
-										<tr><td colSpan={8} className="py-8 text-center text-[var(--muted)]">Нет подтвержденных приёмов за период</td></tr>
-									) : (
-										doctorOrders.map((ord) => {
-											const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-											const fee = selectedDoctor.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor.commissionPercent)) / 100);
-											return (
-												<tr key={ord.id} className="hover:bg-[var(--paper-soft)]/50 transition-colors">
-													<td className="py-2.5 px-3 font-mono font-medium text-[var(--ink)]">
-														<div>{ord.orderNumber}</div>
-														<div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div>
-													</td>
-													<td className="py-2.5 px-3 text-[var(--ink)] font-medium">
-														<div>{ord.patientName}</div>
-														<div className="text-[10px] text-[var(--muted)]">Карта: {ord.medicalCardNumber}</div>
-													</td>
-													<td className="py-2.5 px-3 text-[var(--ink)]">
-														<div className="truncate max-w-[220px]">{ord.serviceNameRu}</div>
-														<span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] text-[var(--muted)] font-medium">{ord.categoryLabelRu}</span>
-													</td>
-													<td className="py-2.5 px-3 text-right font-semibold text-[var(--ink)]">{rub(ord.grossKopecks)}</td>
-													<td className="py-2.5 px-3 text-right text-red-600 dark:text-red-400">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
-													<td className="py-2.5 px-3 text-right text-amber-600 dark:text-amber-400">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td>
-													<td className="py-2.5 px-3 text-right font-medium text-[var(--ink)]">{rub(netBase)}</td>
-													<td className="py-2.5 px-3 text-right font-bold text-[var(--teal,#0d9488)]">{rub(fee)}</td>
-												</tr>
-											);
-										})
-									)}
-								</tbody>
-							</table>
-						</div>
-
-						{/* Mobile Grouped Cards View (Apple HIG) */}
-						<div className="sm:hidden flex flex-col gap-2">
-							{doctorOrders.length === 0 ? (
-								<div className="p-6 text-center text-xs text-[var(--muted)] bg-[var(--paper)] rounded-xl border border-[var(--line)]">
-									Нет нарядов за выбранный период
+							<div className="payroll-studio-hero">
+								<div>
+									<div className="text-xs font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">Начислено врачу по ставке</div>
+									<div className="payroll-studio-hero-accrued mt-0.5">{rub(summary.doctorAccruedKopecks)}</div>
+									<div className="text-[11px] text-[var(--muted)] mt-1">{summary.schemeType === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? selectedDoctor.commissionPercent}% от чистой базы`}{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}</div>
 								</div>
-							) : (
-								doctorOrders.map((ord) => {
+								<div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--line)]">
+									<div className="text-xs text-[var(--muted)]">К выплате на руки (с учетом аванса и аренды):</div>
+									<div className="text-xl sm:text-2xl font-black text-[var(--ink)] mt-0.5">{rub(summary.payoutKopecks)}</div>
+								</div>
+							</div>
+
+							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
+								<div className="flex flex-wrap items-center gap-3">
+									{selectedDoctor.payoutModel === "chair_rental" ? (
+										<div className="flex items-center gap-2">
+											<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
+											<span className="text-[var(--muted)]">{shiftsCount} смен × 4 000 ₽ = {rub(summary.chairRentalKopecks)}</span>
+											<button type="button" onClick={() => setShiftsCount((s) => Math.max(1, s - 1))} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">-</button>
+											<span className="font-bold">{shiftsCount}</span>
+											<button type="button" onClick={() => setShiftsCount((s) => s + 1)} className="w-7 h-7 rounded border border-[var(--line)] bg-[var(--paper)] cursor-pointer">+</button>
+										</div>
+									) : (
+										<div className="flex items-center gap-2">
+											<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
+											{[20, 25, 30, 35, 40].map((pct) => (
+												<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? selectedDoctor.commissionPercent) === pct ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>
+													{pct}%
+												</button>
+											))}
+										</div>
+									)}
+									<div className="flex items-center gap-1.5 ml-2">
+										<span className="text-[var(--muted)]">Аванс:</span>
+										<input type="number" value={advanceRub || ""} placeholder="0 ₽" onChange={(e) => setAdvanceRub(Number(e.target.value) || 0)} className="w-20 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]" />
+									</div>
+								</div>
+								<div className="flex items-center gap-2">
+									<button type="button" onClick={() => handlePrintPayslip()} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать расчетный листок (А4)"><Printer className="w-3.5 h-3.5" /><span>Листок А4</span></button>
+									<button type="button" onClick={handleSendMessenger} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Отправить расчет в мессенджер"><Send className="w-3.5 h-3.5" /><span>В мессенджер</span></button>
+								</div>
+							</div>
+
+							<div className="hidden sm:block payroll-studio-table-container">
+								<table className="payroll-studio-table">
+									<thead>
+										<tr><th>Наряд / Дата</th><th>Пациент</th><th>Услуга</th><th className="text-right">Чек 54-ФЗ</th><th className="text-right">ЗТЛ</th><th className="text-right">Материалы</th><th className="text-right">Чистая база</th><th className="text-right">Врачу</th></tr>
+									</thead>
+									<tbody>
+										{doctorOrders.length === 0 ? (
+											<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет подтвержденных приёмов за период</td></tr>
+										) : (
+											doctorOrders.map((ord) => {
+												const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
+												const fee = selectedDoctor.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor.commissionPercent)) / 100);
+												return (
+													<tr key={ord.id}>
+														<td className="font-mono font-medium"><div>{ord.orderNumber}</div><div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div></td>
+														<td className="font-medium"><div>{ord.patientName}</div><div className="text-[10px] text-[var(--muted)]">Карта: {ord.medicalCardNumber}</div></td>
+														<td><div className="truncate max-w-[200px]">{ord.serviceNameRu}</div><span className="px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] text-[var(--muted)]">{ord.categoryLabelRu}</span></td>
+														<td className="text-right font-semibold">{rub(ord.grossKopecks)}</td>
+														<td className="text-right text-red-600 dark:text-red-400">{ord.labCostKopecks > 0 ? `− ${rub(ord.labCostKopecks)}` : "—"}</td>
+														<td className="text-right text-amber-600 dark:text-amber-400">{ord.materialCostKopecks > 0 ? `− ${rub(ord.materialCostKopecks)}` : "—"}</td>
+														<td className="text-right font-medium">{rub(netBase)}</td>
+														<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(fee)}</td>
+													</tr>
+												);
+											})
+										)}
+									</tbody>
+								</table>
+							</div>
+
+							<div className="sm:hidden flex flex-col gap-2">
+								{doctorOrders.map((ord) => {
 									const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
 									const fee = selectedDoctor.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor.commissionPercent)) / 100);
 									return (
-										<div key={ord.id} className="payroll-mobile-card">
-											<div className="payroll-mobile-card-header">
-												<div>
-													<div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div>
-													<div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div>
-												</div>
+										<div key={ord.id} className="payroll-studio-mobile-card">
+											<div className="payroll-studio-mobile-card-row">
+												<div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div>
 												<span className="font-bold text-xs text-[var(--teal,#0d9488)]">{rub(fee)}</span>
 											</div>
 											<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]">
@@ -436,31 +384,53 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 											</div>
 										</div>
 									);
-								})
-							)}
+								})}
+							</div>
 						</div>
-					</div>
+					)}
+
+					{/* TAB 3: Закрытые периоды и выплаты */}
+					{activeTab === "closed_periods" && (
+						<div className="flex flex-col gap-4">
+							<div className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Архив закрытых расчетных периодов и ордеров РКО</div>
+							<div className="payroll-studio-table-container">
+								<table className="payroll-studio-table">
+									<thead>
+										<tr>
+											<th>Период</th><th>Дата закрытия</th><th>Врач</th><th>Чек РКО</th>
+											<th className="text-right">Выручка</th><th className="text-right">ЗТЛ</th><th className="text-right">Чистая база</th><th className="text-right">Выплачено</th><th className="text-center">Печать</th>
+										</tr>
+									</thead>
+									<tbody>
+										{CANONICAL_CLOSED_PERIODS.map((period) => (
+											<tr key={period.id}>
+												<td className="font-semibold text-[var(--ink)]">{period.periodLabelRu}</td>
+												<td className="text-[var(--muted)]">{period.dateClosedIso}</td>
+												<td className="font-medium">{period.doctorName}</td>
+												<td className="font-mono text-xs text-[var(--teal,#0d9488)]">{period.rkoReceiptNumber}</td>
+												<td className="text-right">{rub(period.grossKopecks)}</td>
+												<td className="text-right text-red-600 dark:text-red-400">− {rub(period.labCostKopecks)}</td>
+												<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td>
+												<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(period.payoutKopecks)}</td>
+												<td className="text-center"><button type="button" onClick={() => handlePrintPayslip()} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Листок</button></td>
+											</tr>
+										))}
+									</tbody>
+								</table>
+							</div>
+						</div>
+					)}
 				</div>
 
-				{/* Footer: Exactly ONE Primary CTA Button #0d9488 (Mandate 8am & Mandate 8e: Never Disabled) */}
-				<div className="px-4 sm:px-6 py-3 border-t border-[var(--line)] bg-[var(--paper)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 shrink-0">
+				{/* Footer: Exactly ONE Primary CTA Button #0d9488 (Mandates 8am & 8e: Never Disabled) */}
+				<div className="payroll-studio-footer">
 					<div className="text-xs text-[var(--muted)] flex items-center justify-between sm:justify-start gap-2">
-						<span>Итого к выплате:</span>
-						<span className="text-sm font-bold text-[var(--ink)]">{rub(summary.payoutKopecks)}</span>
+						<span>Итого к выплате:</span><span className="text-base font-bold text-[var(--ink)]">{rub(summary.payoutKopecks)}</span>
 					</div>
-
 					<div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
-						<button type="button" onClick={onClose} className="dente-btn-secondary w-1/2 sm:w-auto min-h-[44px] px-4 whitespace-nowrap cursor-pointer">
-							Закрыть
-						</button>
-						<button
-							type="button"
-							onClick={handleCommitPayout}
-							className="dente-btn-primary w-1/2 sm:w-auto min-h-[44px] bg-[var(--teal,#0d9488)] text-white font-bold px-4 whitespace-nowrap shrink-0 cursor-pointer flex items-center justify-center gap-1.5"
-							data-testid="payroll-studio-primary-cta"
-						>
-							<Check className="w-4 h-4 shrink-0" />
-							<span>{isSaving ? "Фиксация..." : "Выдать чек РКО"}</span>
+						<button type="button" onClick={onClose} className="hidden sm:inline-flex payroll-studio-secondary-btn">Закрыть</button>
+						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--teal,#0d9488)]" data-testid="payroll-studio-primary-cta">
+							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : "✓ Утвердить расчет и выплатить"}</span>
 						</button>
 					</div>
 				</div>

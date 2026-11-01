@@ -35,11 +35,24 @@ import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher
 import { DirectPricelistLauncher } from "../../../catalog/DirectPricelistLauncher";
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
+import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
 
 export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] = [
+	// 0. Студия зарплат и сдельной мотивации врачей (SSOT)
+	{
+		id: "doctor-payroll-studio",
+		title: "Студия зарплат и сдельной мотивации врачей",
+		criteria: {
+			tokens: ["payroll", "doctor-payroll", "salary", "commissions", "doctor-payout", "payroll-studio"],
+			searchIncludes: ["payroll=1", "doctor-payroll=1", "salary=1", "commissions=1", "doctor-payout=1"],
+			exactHashes: ["#payroll", "#doctor-payroll", "#salary", "#commissions", "#doctor-payout", "#payroll-studio"],
+			hashPrefixes: ["#payroll?", "#doctor-payroll?", "#salary?", "#commissions?"],
+		},
+		render: () => <DirectPayrollLauncher />,
+	},
 	// 0. Студия кассовой смены и Z-отчёт (SSOT)
 	{
 		id: "shift-studio",

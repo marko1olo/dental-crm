@@ -1,6 +1,6 @@
 /**
  * DENTE Dental CRM — Canonical Payroll Catalog & Exact Kopeck Engine
- * Mandate 8b (Sweet Spot 250–350 lines), Mandate 8e (Doctor Autonomy), Mandate 8n (Solo Practice Sovereignty).
+ * Mandate 8b (Sweet Spot 300–380 lines), Mandate 8e (Doctor Autonomy), Mandate 8n (Solo Practice Sovereignty).
  * Formula: Net Revenue = Gross (54-FZ) − Dental Lab (ЗТЛ) − Direct Materials (Импланты).
  * Strict integer arithmetic in KOPECKS (1 RUB = 100 KOPECKS) eliminating float-drift.
  */
@@ -80,6 +80,22 @@ export interface DoctorPayrollSummary {
 	readonly minimumGuaranteeApplied: boolean;
 }
 
+export interface ClosedPayrollPeriodItem {
+	readonly id: string;
+	readonly periodLabelRu: string;
+	readonly dateClosedIso: string;
+	readonly doctorId: string;
+	readonly doctorName: string;
+	readonly specialtyTitleRu: string;
+	readonly grossKopecks: number;
+	readonly labCostKopecks: number;
+	readonly materialCostKopecks: number;
+	readonly netBaseKopecks: number;
+	readonly payoutKopecks: number;
+	readonly rkoReceiptNumber: string;
+	readonly isPaidRko: boolean;
+}
+
 export interface SoloRentalResult {
 	readonly grossRevenueKop: number;
 	readonly labCostKop: number;
@@ -153,14 +169,14 @@ export function calculateAssistantPiecework(params: {
 export function calculateDoctorPayrollSummary(params: {
 	orders: readonly PayrollServiceOrder[];
 	doctor: PayrollDoctorProfile;
-	schemeType?: MotivationSchemeType;
-	percent?: number;
-	shiftsCount?: number;
-	shiftRateKop?: number;
-	hourlyRateKop?: number;
-	hoursWorked?: number;
-	advanceKop?: number;
-	isRkoPaid?: boolean;
+	schemeType?: MotivationSchemeType | undefined;
+	percent?: number | undefined;
+	shiftsCount?: number | undefined;
+	shiftRateKop?: number | undefined;
+	hourlyRateKop?: number | undefined;
+	hoursWorked?: number | undefined;
+	advanceKop?: number | undefined;
+	isRkoPaid?: boolean | undefined;
 }): DoctorPayrollSummary {
 	const docOrders = params.orders.filter((o) => o.doctorId === params.doctor.id && o.isPaid54Fz);
 	const totalGrossKopecks = docOrders.reduce((sum, o) => sum + o.paidKopecks, 0);
@@ -189,7 +205,6 @@ export function calculateDoctorPayrollSummary(params: {
 		const rate = params.shiftRateKop ?? params.doctor.defaultShiftRateKop;
 		doctorAccruedKopecks = Math.round(shifts * rate);
 	} else {
-		// net_percentage (default)
 		doctorAccruedKopecks = calculateDoctorCommissionKopecks(totalNetBaseKopecks, effectivePercent);
 	}
 
@@ -293,7 +308,14 @@ export const CANONICAL_DEMO_ORDERS: readonly PayrollServiceOrder[] = [
 	{ id: "ord-7", orderNumber: "СОЛ-7701", dateIso: "2026-10-28", patientName: "Баранов Максим Юрьевич", medicalCardNumber: "043-550", serviceNameRu: "Комплексное терапевтическое лечение", category: "therapy", categoryLabelRu: "Терапия", grossKopecks: 3200000, labCostKopecks: 250000, materialCostKopecks: 350000, isPaid54Fz: true, paidKopecks: 3200000, doctorId: "doc-kuznetsov" },
 ];
 
-/** Printable Payslip A5 without bureaucratic Soviet labels (Mandate 8x) */
+/** Canonical Closed Settlement Periods with RKO Cash Receipts */
+export const CANONICAL_CLOSED_PERIODS: readonly ClosedPayrollPeriodItem[] = [
+	{ id: "cls-01", periodLabelRu: "Сентябрь 2026", dateClosedIso: "2026-10-01", doctorId: "doc-volkov", doctorName: "Д-р Волков Алексей Сергеевич", specialtyTitleRu: "Стоматолог-ортопед", grossKopecks: 8400000, labCostKopecks: 1850000, materialCostKopecks: 350000, netBaseKopecks: 6200000, payoutKopecks: 1618200, rkoReceiptNumber: "РКО-09/26-1", isPaidRko: true },
+	{ id: "cls-02", periodLabelRu: "Сентябрь 2026", dateClosedIso: "2026-10-01", doctorId: "doc-sokolova", doctorName: "Д-р Соколова Елена Владимировна", specialtyTitleRu: "Стоматолог-терапевт", grossKopecks: 4900000, labCostKopecks: 0, materialCostKopecks: 420000, netBaseKopecks: 4480000, payoutKopecks: 974400, rkoReceiptNumber: "РКО-09/26-2", isPaidRko: true },
+	{ id: "cls-03", periodLabelRu: "Сентябрь 2026", dateClosedIso: "2026-10-02", doctorId: "doc-morozov", doctorName: "Д-р Морозов Дмитрий Игоревич", specialtyTitleRu: "Стоматолог-хирург-имплантолог", grossKopecks: 9800000, labCostKopecks: 0, materialCostKopecks: 3200000, netBaseKopecks: 6600000, payoutKopecks: 2310000, rkoReceiptNumber: "РКО-09/26-3", isPaidRko: true },
+];
+
+/** Printable Payslip A4 / A5 without bureaucratic Soviet labels (Mandate 8x) */
 export function generateDoctorPayslipA5Html(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "Стоматологическая клиника DENTE"): string {
 	const rub = (kop: number) => (Math.round(kop) / 100).toLocaleString("ru-RU") + " ₽";
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Расчетный листок врача — ${doctor.name}</title>
@@ -302,6 +324,8 @@ export function generateDoctorPayslipA5Html(calc: DoctorPayrollCalculation, doct
 <table class="table"><tr><th>Показатель расчета</th><th style="text-align:right;">Сумма</th></tr><tr><td>Выручка по чекам 54-ФЗ (Gross)</td><td style="text-align:right;">${rub(calc.totalGrossKopecks)}</td></tr><tr><td>Удержание: зуботехническая лаборатория (ЗТЛ)</td><td style="text-align:right;">− ${rub(calc.totalLabCostKopecks)}</td></tr><tr><td>Удержание: дорогостоящие расходные материалы</td><td style="text-align:right;">− ${rub(calc.totalMaterialCostKopecks)}</td></tr><tr style="background:#f8fafc;font-weight:600;"><td>Чистая расчетная база (Net Base)</td><td style="text-align:right;">${rub(calc.totalNetBaseKopecks)}</td></tr>${calc.isChairRental ? `<tr><td>Аренда стоматологического кресла</td><td style="text-align:right;">− ${rub(calc.chairRentalKopecks)}</td></tr>` : `<tr><td>Процент врача (${calc.commissionPercent}%)</td><td style="text-align:right;">${rub(calc.earnedDoctorKopecks)}</td></tr>`}${calc.advanceKopecks > 0 ? `<tr><td>Выплаченный аванс</td><td style="text-align:right;">− ${rub(calc.advanceKopecks)}</td></tr>` : ""}${calc.ndfl13TaxKopecks > 0 ? `<tr><td>НДФЛ 13%</td><td style="text-align:right;">− ${rub(calc.ndfl13TaxKopecks)}</td></tr>` : ""}<tr class="total-row"><td>ИТОГО К ВЫПЛАТЕ ВРАЧУ (НА РУКИ)</td><td style="text-align:right;" class="highlight">${rub(calc.netPayoutToDoctorKopecks)}</td></tr></table>
 <div class="signatures"><div>Главный бухгалтер:<div class="sign-line">/ подпись /</div></div><div>Руководитель клиники:<div class="sign-line">/ подпись /</div></div><div>Врач-специалист:<div class="sign-line">/ подпись /</div></div></div></body></html>`;
 }
+
+export const generateDoctorPayslipA4Html = generateDoctorPayslipA5Html;
 
 /** Plaintext format for Messenger sharing (WhatsApp / Telegram) */
 export function generateDoctorPayslipMessengerText(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "DENTE Clinic"): string {
