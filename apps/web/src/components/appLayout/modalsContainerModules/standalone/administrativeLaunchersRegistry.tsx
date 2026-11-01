@@ -13,6 +13,7 @@ import { clearUrlTokens } from "./deepLinkUrl";
 import { DirectLoyaltyLauncher } from "../../../loyalty/DirectLoyaltyLauncher";
 import { DirectInsuranceLauncher } from "../../../insurance/DirectInsuranceLauncher";
 import { DirectPublicBookingLauncher } from "../../../booking/DirectPublicBookingLauncher";
+import { DirectAppointmentLauncher } from "../../../schedule/DirectAppointmentLauncher";
 import { DirectDentalLabLauncher } from "../../../lab/DirectDentalLabLauncher";
 import { DirectTelephonyLauncher } from "../../../telephony/DirectTelephonyLauncher";
 import { DirectRecallLauncher } from "../../../recalls/DirectRecallLauncher";
@@ -28,6 +29,7 @@ import { DocumentsView } from "../../../../DocumentsView";
 import { DirectPatientLauncher } from "../../../patients/DirectPatientLauncher";
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
+import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectLeadsLauncher } from "../../../leads/DirectLeadsLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
@@ -109,6 +111,34 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 				],
 			},
 			render: () => <DirectPublicBookingLauncher />,
+		},
+
+		// 3b. Карточка приёма и быстрое бронирование (SSOT)
+		{
+			id: "appointment-studio",
+			title: "Карточка приёма и быстрое бронирование слота",
+			criteria: {
+				tokens: ["appointment", "quick-book", "booking-modal", "appointment-studio"],
+				searchIncludes: [
+					"appointment=1",
+					"quick-book=1",
+					"booking-modal=1",
+					"standalone=appointment",
+				],
+				exactHashes: [
+					"#appointment",
+					"#quick-book",
+					"#booking-modal",
+					"#appointment-studio",
+				],
+				hashPrefixes: [
+					"#appointment?",
+					"#appointment/",
+					"#quick-book?",
+					"#booking-modal?",
+				],
+			},
+			render: () => <DirectAppointmentLauncher />,
 		},
 
 		// 4. Зуботехническая лаборатория и наряды
@@ -350,6 +380,19 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 				hashPrefixes: ["#leads?", "#leads/", "#crm-leads?", "#kanban?"],
 			},
 			render: () => <DirectLeadsLauncher />,
+		},
+
+		// 19. Маркетинг, акции и ROMI
+		{
+			id: "marketing-studio",
+			title: "Студия маркетинга, акций и ROMI",
+			criteria: {
+				tokens: ["marketing", "romi", "campaigns", "marketing-studio"],
+				searchIncludes: ["marketing=1", "romi=1", "standalone=marketing"],
+				exactHashes: ["#marketing", "#romi", "#campaigns", "#marketing-studio"],
+				hashPrefixes: ["#marketing?", "#marketing/", "#romi?", "#campaigns?"],
+			},
+			render: () => <DirectMarketingLauncher />,
 		},
 	];
 

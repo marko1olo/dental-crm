@@ -24,7 +24,9 @@ import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLaunche
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
+import { DirectAppointmentLauncher } from "./components/schedule/DirectAppointmentLauncher";
 import { DirectScheduleLauncher } from "./components/schedule/DirectScheduleLauncher";
+import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
 import { DirectMarketingRoiLauncher } from "./components/analytics/DirectMarketingRoiLauncher";
 import { DirectAnalyticsLauncher } from "./components/analytics/DirectAnalyticsLauncher";
 import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinicalBundlesLauncher";
@@ -121,6 +123,11 @@ function isStandaloneActive(): boolean {
 		s.includes("dental-chart") ||
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
+		h.includes("appointment") ||
+		s.includes("appointment") ||
+		h.includes("quick-book") ||
+		s.includes("quick-book") ||
+		h.includes("booking-modal") ||
 		h.includes("booking") ||
 		s.includes("booking") ||
 		h.includes("dental_lab") ||
@@ -260,7 +267,9 @@ export function AppShell() {
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
 			<DirectAppointmentBookingLauncher />
+			<DirectAppointmentLauncher />
 			<DirectScheduleLauncher />
+			<DirectMarketingLauncher />
 			<DirectMarketingRoiLauncher />
 			<DirectAnalyticsLauncher />
 			<DirectClinicalBundlesLauncher />

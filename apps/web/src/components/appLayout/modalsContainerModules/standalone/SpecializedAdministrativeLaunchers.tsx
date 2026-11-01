@@ -18,11 +18,26 @@ import { renderOmnichannelAndTelephonyLauncher } from "./administrative/Omnichan
 import { renderSanPinStandaloneLauncher } from "./administrative/SanPinStandaloneLauncher";
 import { renderLeadsStandaloneLauncher } from "./administrative/LeadsStandaloneLauncher";
 import { renderRecallsStandaloneLauncher } from "./administrative/RecallsStandaloneLauncher";
+import { DirectAppointmentLauncher } from "../../../schedule/DirectAppointmentLauncher";
+import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
+	// 0. Карточка приёма и быстрое бронирование (?appointment=1, #appointment, #quick-book)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#appointment" ||
+			window.location.hash.startsWith("#appointment?") ||
+			window.location.hash === "#quick-book" ||
+			window.location.hash.startsWith("#quick-book?") ||
+			window.location.hash === "#booking-modal" ||
+			window.location.search.includes("appointment=1"))
+	) {
+		return <DirectAppointmentLauncher />;
+	}
 
 	// 0. Повторные вызовы и диспансеризация (?recalls=1, #recalls, #prophylaxis)
 	const recalls = renderRecallsStandaloneLauncher();
@@ -71,6 +86,21 @@ export function renderSpecializedAdministrativeLaunchers(
 	// 7. Воронка первичных обращений и CRM Лиды (?leads=1, #leads, #crm-leads, #kanban)
 	const leads = renderLeadsStandaloneLauncher();
 	if (leads) return leads;
+
+	// 8. Маркетинг, акции и ROMI (?marketing=1, #marketing, #romi, #campaigns)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#marketing" ||
+			window.location.hash.startsWith("#marketing?") ||
+			window.location.hash === "#romi" ||
+			window.location.hash.startsWith("#romi?") ||
+			window.location.hash === "#campaigns" ||
+			window.location.hash.startsWith("#campaigns?") ||
+			window.location.search.includes("marketing=1") ||
+			window.location.search.includes("romi=1"))
+	) {
+		return <DirectMarketingLauncher />;
+	}
 
 	return null;
 }
