@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { DirectRecallLauncher } from "../../../recalls/DirectRecallLauncher";
+import { DirectRecallLauncher } from "../../../../recalls/DirectRecallLauncher";
 
 export function renderRecallsStandaloneLauncher(): React.ReactElement | null {
 	if (typeof window === "undefined") return null;

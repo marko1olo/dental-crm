@@ -131,6 +131,11 @@ export function exportImplantToDiary(
 }
 
 /**
+ * Экспорт дневника визита (Мандат 8x / Мандат 8ap — чистый клинический язык без советских номеров)
+ */
+export const exportImplantToVisitDiary = exportImplantToDiary;
+
+/**
  * Обратная совместимость для устаревших вызовов с суффиксом 043 (Мандат 8ap)
  */
 export const exportImplantToDiary043 = exportImplantToDiary;

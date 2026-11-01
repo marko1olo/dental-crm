@@ -24,16 +24,16 @@ export const CbctMprGridMobileNav: React.FC<CbctMprGridMobileNavProps> = ({
 	];
 
 	return (
-		<div className="flex md:hidden items-center justify-around bg-[var(--paper-strong)] border-b border-[var(--line)] p-1 z-20">
+		<div className="flex md:hidden items-center justify-around bg-[var(--paper-strong)] border-b border-[var(--line)] px-1 py-1.5 z-20 gap-1 overflow-x-auto">
 			{tabs.map((t) => (
 				<button
 					key={t.id}
 					type="button"
 					onClick={() => onSelectMobileTab(t.id)}
-					className={`px-2 py-1 text-xs font-medium rounded transition-colors ${
+					className={`min-h-[44px] min-w-[44px] px-2.5 py-2 text-xs font-semibold rounded-xl flex items-center justify-center transition-colors touch-manipulation ${
 						mobileActiveTab === t.id
-							? "bg-[var(--primary)] text-white"
-							: "text-[var(--text-muted)] hover:text-[var(--text)]"
+							? "bg-[var(--primary)] text-white shadow-xs"
+							: "text-[var(--text-muted)] hover:text-[var(--text)] hover:bg-[var(--line)]"
 					}`}
 				>
 					{t.label}
