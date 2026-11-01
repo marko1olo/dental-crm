@@ -1,31 +1,15 @@
-import crypto from "node:crypto";
-import { and, eq } from "drizzle-orm";
+/**
+ * apps/api/src/routes/auth/loginModules/staffPinAuthHandlers.ts
+ *
+ * DENTE Dental CRM — Staff PIN Authentication & Chairside Switch Facade.
+ * Mandates: 8b & 8zi (Sweet Spot <70 lines facade), 8e (Doctor Autonomy).
+ */
+
 import type { FastifyReply, FastifyRequest } from "fastify";
-import { withTenantCtx } from "../../../db/rls.js";
-import { auditEvents, users } from "../../../db/schema.js";
 import { resetRateLimit } from "../../../security/rateLimit.js";
+import { verifyToken } from "../../../utils/cryptoHelper.js";
+import { authFailureDelay, demoLoginAllowed, parseAuthPayload, TOKEN_SECRET } from "../tokenHelpers.js";
 import {
-	DEMO_ADMIN_ID,
-	DEMO_DOCTOR_1_ID,
-	DEMO_DOCTOR_2_ID,
-	DEMO_DOCTOR_ORTHOPEDIST_ID,
-	DEMO_DOCTOR_SURGEON_ID,
-	DEMO_OWNER_ID,
-	DEMO_SHOWCASE_ORG_ID,
-} from "../../../services/demo/deepDemoSeeder.js";
-import {
-	signToken,
-	verifyCredential,
-	verifyToken,
-} from "../../../utils/cryptoHelper.js";
-import {
-	authFailureDelay,
-	demoLoginAllowed,
-	parseAuthPayload,
-	TOKEN_SECRET,
-} from "../tokenHelpers.js";
-import {
-	checkStaffPinRateLimit,
 	getStaffPinRateLimitKey,
 	recordStaffPinFailure,
 	resetStaffPinRateLimit,
@@ -35,39 +19,24 @@ import {
 	staffUnlockBodySchema,
 	staffUnlockValidationMessage,
 } from "./loginValidationSchemas.js";
+import {
+	extractClinicPayload,
+	findStaffUserById,
+	validateRoleSwitchPin,
+	verifyAndMatchStaffUser,
+	verifyBruteForceLimit,
+} from "./pin/staffPinVerification.js";
+import {
+	handleDemoRoleSwitch,
+	issueStaffSessionToken,
+} from "./pin/staffPinSessionTokens.js";
 
-/**
- * Разрешение payload токена клиники из заголовка x-dente-clinic-token
- */
-export function extractClinicPayload(request: FastifyRequest): {
-	organizationId: string;
-} | null {
-	const clinicHeader = request.headers["x-dente-clinic-token"];
-	const clinicToken = Array.isArray(clinicHeader)
-		? clinicHeader[0]
-		: clinicHeader;
-
-	if (!clinicToken) return null;
-
-	if (
-		clinicToken.startsWith("demo-showcase-token") ||
-		clinicToken.startsWith("demo-showcase-clinic-token")
-	) {
-		return { organizationId: DEMO_SHOWCASE_ORG_ID };
-	}
-
-	const verified = verifyToken(clinicToken, TOKEN_SECRET());
-	if (verified && typeof verified.organizationId === "string") {
-		return { organizationId: verified.organizationId };
-	}
-
-	return null;
-}
+// Экспорт для обратной совместимости
+export { extractClinicPayload };
 
 /**
  * POST /api/auth/staff/unlock
- * Разблокировка сессии сотрудника по персональному 4-значному PIN-коду (МАНДАТ 8e: Doctor Autonomy).
- * Включает защиту от брутфорса (5 попыток -> 5 минут блокировки).
+ * Разблокировка сессии сотрудника по персональному 4-значному PIN-коду (МАНДАТ 8e).
  */
 export async function handleStaffUnlock(
 	request: FastifyRequest,
@@ -80,7 +49,6 @@ export async function handleStaffUnlock(
 			message: staffUnlockValidationMessage,
 		});
 	}
-	const { userId, pinCode } = input;
 
 	const clinicPayload = extractClinicPayload(request);
 	if (!clinicPayload?.organizationId) {
@@ -91,192 +59,48 @@ export async function handleStaffUnlock(
 	}
 
 	const orgId = clinicPayload.organizationId;
-	const rateLimitKey = getStaffPinRateLimitKey(orgId, userId || "chairside", request.ip);
-
-	// Проверка защиты от брутфорса
-	const limitStatus = checkStaffPinRateLimit(rateLimitKey);
-	if (!limitStatus.allowed) {
-		reply.header("Retry-After", String(limitStatus.retryAfterSeconds ?? 300));
+	const rateLimitCheck = verifyBruteForceLimit(orgId, input.userId, request.ip);
+	if (!rateLimitCheck.allowed) {
+		reply.header("Retry-After", String(rateLimitCheck.retryAfterSeconds ?? 300));
 		return reply.code(429).send({
 			error: "RateLimitExceeded",
-			message:
-				"Слишком много неудачных попыток ввода PIN. Доступ заблокирован на 5 минут.",
-			retryAfter: limitStatus.retryAfterSeconds ?? 300,
+			message: "Слишком много неудачных попыток ввода PIN. Доступ заблокирован на 5 минут.",
+			retryAfter: rateLimitCheck.retryAfterSeconds ?? 300,
 		});
 	}
 
-	// Поиск сотрудника в базе под RLS арендодателя
-	let user: typeof users.$inferSelect | undefined;
-	if (userId) {
-		try {
-			const results = await withTenantCtx(orgId, async (tx) => {
-				return tx
-					.select()
-					.from(users)
-					.where(
-						and(
-							eq(users.id, userId),
-							eq(users.organizationId, orgId),
-							eq(users.isActive, true),
-						),
-					)
-					.limit(1);
-			});
-			user = results[0];
-		} catch (dbErr) {
-			request.log.error({ dbErr }, "[STAFF_UNLOCK_DB_ERR] Ошибка поиска сотрудника");
-		}
-	}
-
-	// Поддержка демо-контура: если сотрудника ещё нет в базе, но активен демо-режим
-	if (!user && demoLoginAllowed() && orgId === DEMO_SHOWCASE_ORG_ID) {
-		if (!userId || userId === DEMO_DOCTOR_1_ID) {
-			user = {
-				id: DEMO_DOCTOR_1_ID,
-				organizationId: DEMO_SHOWCASE_ORG_ID,
-				fullName: "Д-р Соколов А. В.",
-				role: "doctor",
-				email: "doctor@clinic.com",
-				phone: "+7 (999) 111-22-33",
-				pinCodeHash: null,
-				isActive: true,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			} as unknown as typeof users.$inferSelect;
-		}
-	}
-
-	let isMatch = false;
-	if (user) {
-		const storedPinHash = user.pinCodeHash;
-		isMatch = storedPinHash
-			? await verifyCredential(pinCode, storedPinHash)
-			: demoLoginAllowed() && orgId === DEMO_SHOWCASE_ORG_ID && pinCode === "1234";
-	}
-
-	// МАНДАТ 8e: Быстрая смена врача у кресла по PIN-коду (Chairside Quick Switch).
-	// Если PIN не подошел целевому врачу или экран был заблокирован другим сотрудником,
-	// проверяем, принадлежит ли введенный PIN любому другому активному сотруднику клиники.
-	if (!isMatch) {
-		try {
-			const allClinicStaff = await withTenantCtx(orgId, async (tx) => {
-				return tx
-					.select()
-					.from(users)
-					.where(
-						and(
-							eq(users.organizationId, orgId),
-							eq(users.isActive, true),
-						),
-					);
-			});
-
-			for (const candidate of allClinicStaff) {
-				if (user && candidate.id === user.id) continue;
-				if (!candidate.pinCodeHash) continue;
-				const candidateMatched = await verifyCredential(pinCode, candidate.pinCodeHash);
-				if (candidateMatched) {
-					user = candidate;
-					isMatch = true;
-					break;
-				}
-			}
-		} catch (scanErr) {
-			request.log.error({ scanErr }, "[STAFF_UNLOCK_CHAIRSIDE_SCAN_ERR]");
-		}
-
-		if (!isMatch && demoLoginAllowed() && orgId === DEMO_SHOWCASE_ORG_ID && pinCode === "1234") {
-			const matchedDemoId = userId === DEMO_DOCTOR_2_ID ? DEMO_DOCTOR_1_ID : (userId || DEMO_DOCTOR_1_ID);
-			user = {
-				id: matchedDemoId,
-				organizationId: DEMO_SHOWCASE_ORG_ID,
-				fullName: matchedDemoId === DEMO_DOCTOR_2_ID ? "Д-р Морозова Е. И." : "Д-р Соколов А. В.",
-				role: "doctor",
-				email: "doctor@clinic.com",
-				phone: "+7 (999) 111-22-33",
-				pinCodeHash: null,
-				isActive: true,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			} as unknown as typeof users.$inferSelect;
-			isMatch = true;
-		}
-	}
+	const { user, isMatch } = await verifyAndMatchStaffUser({
+		orgId,
+		userId: input.userId,
+		pinCode: input.pinCode,
+		log: request.log,
+	});
 
 	if (!user || !isMatch) {
-		recordStaffPinFailure(rateLimitKey);
+		recordStaffPinFailure(rateLimitCheck.rateLimitKey);
 		await authFailureDelay();
-		return reply
-			.code(401)
-			.send({ error: "AuthError", message: "Неверный PIN-код." });
+		return reply.code(401).send({ error: "AuthError", message: "Неверный PIN-код." });
 	}
 
-	// Успешный ввод: сброс счётчиков блокировок
-	resetStaffPinRateLimit(rateLimitKey);
-	if (user.id !== userId) {
+	resetStaffPinRateLimit(rateLimitCheck.rateLimitKey);
+	if (user.id !== input.userId) {
 		resetStaffPinRateLimit(getStaffPinRateLimitKey(orgId, user.id, request.ip));
 	}
 	resetRateLimit(request);
 
-	const sessionId = crypto.randomUUID();
-
-	// Обновление ID сессии в БД
-	try {
-		await withTenantCtx(orgId, async (tx) => {
-			await tx
-				.update(users)
-				.set({ currentSessionId: sessionId })
-				.where(and(eq(users.id, user.id), eq(users.organizationId, orgId)));
-		});
-	} catch (sessErr) {
-		request.log.warn({ sessErr }, "[STAFF_SESSION_UPDATE_WARN]");
-	}
-
-	const staffToken = signToken(
-		{
-			userId: user.id,
-			fullName: user.fullName,
-			role: user.role,
-			organizationId: orgId,
-			sessionId,
-		},
-		TOKEN_SECRET(),
-		60 * 60 * 8, // 8 часов рабочей смены
-	);
-
-	// Аудит входа под контекстом арендатора
-	try {
-		await withTenantCtx(orgId, async (tx) => {
-			await tx.insert(auditEvents).values({
-				organizationId: orgId,
-				actorUserId: user.id,
-				entityType: "user",
-				entityId: user.id,
-				action: "staff_unlock_success",
-				reason: `Сотрудник ${user.fullName} начал сессию.`,
-			});
-		});
-	} catch (auditErr) {
-		request.log.warn({ auditErr }, "[STAFF_AUDIT_LOG_WARN]");
-	}
-
-	return reply.send({
-		ok: true,
-		staffToken,
-		user: {
-			id: user.id,
-			fullName: user.fullName,
-			role: user.role,
-			phone: user.phone,
-			email: user.email,
-		},
+	const result = await issueStaffSessionToken({
+		orgId,
+		user,
+		request,
+		actionType: "unlock",
 	});
+
+	return reply.send(result);
 }
 
 /**
  * POST /api/auth/staff/switch-role
  * Мгновенная смена клинической роли сотрудника у кресла (МАНДАТ 8e / МАНДАТ 8n).
- * Позволяет врачу переключиться на права управляющего или ассистента без разлогина.
  */
 export async function handleStaffSwitchRole(
 	request: FastifyRequest,
@@ -291,10 +115,7 @@ export async function handleStaffSwitchRole(
 	}
 
 	const staffHeader = request.headers["x-dente-staff-token"];
-	const staffToken = Array.isArray(staffHeader)
-		? staffHeader[0]
-		: staffHeader;
-
+	const staffToken = Array.isArray(staffHeader) ? staffHeader[0] : staffHeader;
 	if (!staffToken) {
 		return reply.code(401).send({
 			error: "AuthRequired",
@@ -310,63 +131,18 @@ export async function handleStaffSwitchRole(
 		});
 	}
 
-	const { targetRole, targetUserId } = parsed.data;
+	const { targetRole, targetUserId, pinCode } = parsed.data;
 	const orgId = clinicPayload.organizationId;
 
-	// Демо-контур: мгновенное переключение демо-профиля
+	// Демо-контур
 	if (
 		demoLoginAllowed() &&
-		(orgId === DEMO_SHOWCASE_ORG_ID ||
-			staffToken.startsWith("demo-showcase-staff-token") ||
-			staffToken.startsWith("demo-token-"))
+		(staffToken.startsWith("demo-showcase-staff-token") || staffToken.startsWith("demo-token-"))
 	) {
-		let userId = targetUserId || DEMO_DOCTOR_1_ID;
-		let fullName = "Д-р Соколов А. В.";
-
-		if (targetRole === "owner") {
-			userId = DEMO_OWNER_ID;
-			fullName = "Доктор Романов И. В. (Владелец)";
-		} else if (targetRole === "administrator" || targetRole === "receptionist") {
-			userId = DEMO_ADMIN_ID;
-			fullName = "Смирнова А. К. (Администратор)";
-		} else if (targetRole === "doctor") {
-			if (userId === DEMO_DOCTOR_ORTHOPEDIST_ID) {
-				fullName = "Д-р Орлов А. В. (Ортопед)";
-			} else if (userId === DEMO_DOCTOR_SURGEON_ID) {
-				fullName = "Д-р Громов К. Д. (Хирург)";
-			} else if (userId === DEMO_DOCTOR_2_ID) {
-				fullName = "Д-р Морозова Е. И. (Ортодонт)";
-			} else {
-				userId = DEMO_DOCTOR_1_ID;
-				fullName = "Д-р Соколов А. В. (Терапевт)";
-			}
-		}
-
-		const newStaffToken = signToken(
-			{
-				userId,
-				fullName,
-				role: targetRole,
-				organizationId: orgId,
-				sessionId: crypto.randomUUID(),
-			},
-			TOKEN_SECRET(),
-			60 * 60 * 8,
-		);
-
-		return reply.send({
-			ok: true,
-			staffToken: newStaffToken,
-			user: {
-				id: userId,
-				fullName,
-				role: targetRole,
-				email: "demo@dente.pro",
-			},
-		});
+		const demoResult = handleDemoRoleSwitch({ orgId, targetRole, targetUserId });
+		if (demoResult) return reply.send(demoResult);
 	}
 
-	// Прод-контур: верификация токена и пользователя в PostgreSQL 18
 	const staffPayload = verifyToken(staffToken, TOKEN_SECRET());
 	if (!staffPayload || staffPayload.organizationId !== orgId) {
 		return reply.code(401).send({
@@ -376,27 +152,7 @@ export async function handleStaffSwitchRole(
 	}
 
 	const activeUserId = targetUserId || (staffPayload.userId as string);
-
-	let dbUser: typeof users.$inferSelect | undefined;
-	try {
-		const results = await withTenantCtx(orgId, async (tx) => {
-			return tx
-				.select()
-				.from(users)
-				.where(
-					and(
-						eq(users.id, activeUserId),
-						eq(users.organizationId, orgId),
-						eq(users.isActive, true),
-					),
-				)
-				.limit(1);
-		});
-		dbUser = results[0];
-	} catch (dbErr) {
-		request.log.error({ dbErr }, "[SWITCH_ROLE_DB_ERR] Ошибка поиска пользователя");
-	}
-
+	const dbUser = await findStaffUserById(orgId, activeUserId, request.log);
 	if (!dbUser) {
 		return reply.code(404).send({
 			error: "UserNotFound",
@@ -404,98 +160,31 @@ export async function handleStaffSwitchRole(
 		});
 	}
 
-	/*
-	 * ЧТО БЫЛО. Дальше без единой проверки подписывался НОВЫЙ токен с ролью
-	 * targetRole, взятой ИЗ ТЕЛА ЗАПРОСА. Любой сотрудник клиники (хоть
-	 * ассистент) с действующим токеном мог отправить { targetRole: "owner" }
-	 * — и получить токен владельца. Или указать чужой targetUserId и войти
-	 * под любым коллегой без пароля и ПИН-кода. Это полная эскалация прав
-	 * одним curl-запросом.
-	 *
-	 * ЧТО ЗДЕСЬ. Два правила:
-	 *  1. Роль в новом токене — ТОЛЬКО из карточки сотрудника в базе.
-	 *     Просьба выдать роль, которой у сотрудника нет, отклоняется.
-	 *  2. Вход ЗА ДРУГОГО сотрудника подтверждается ЕГО ПИН-кодом (смена
-	 *     пилота у кресла: новый врач вводит свой ПИН). Без ПИН-кода у
-	 *     целевого сотрудника вход за него невозможен — владелец задаёт
-	 *     ПИН в настройках. Своя карточка (продление сессии) ПИН не требует.
-	 */
-	const dbRole = String(dbUser.role ?? "").toLowerCase();
-	if (dbRole !== targetRole) {
-		return reply.code(403).send({
-			error: "RoleMismatch",
-			message:
-				`Роль «${dbRole || "не задана"}» назначена сотруднику «${dbUser.fullName}» в настройках клиники. ` +
-				"Выдать себе другую роль через смену пользователя нельзя: её назначает владелец клиники в карточке сотрудника.",
-		});
-	}
-
-	const callerUserId =
-		typeof staffPayload.userId === "string" ? staffPayload.userId : null;
-	const isSwitchingToAnotherUser = callerUserId !== dbUser.id;
-	if (isSwitchingToAnotherUser) {
-		if (!dbUser.pinCodeHash) {
-			return reply.code(403).send({
-				error: "PinRequired",
-				message:
-					`У сотрудника «${dbUser.fullName}» не задан ПИН-код, поэтому войти за него нельзя. ` +
-					"Попросите владельца клиники задать ПИН-код в настройках сотрудника.",
-			});
-		}
-		const pinCode = parsed.data.pinCode;
-		const pinOk =
-			pinCode &&
-			dbUser.pinCodeHash &&
-			(await verifyCredential(pinCode, dbUser.pinCodeHash));
-		if (!pinOk) {
-			recordStaffPinFailure(getStaffPinRateLimitKey(orgId, dbUser.id, request.ip));
-			return reply.code(401).send({
-				error: "InvalidPin",
-				message: "Неверный ПИН-код сотрудника.",
-			});
-		}
-	}
-
-	const newSessionId = crypto.randomUUID();
-	const newStaffToken = signToken(
-		{
-			userId: dbUser.id,
-			fullName: dbUser.fullName,
-			role: dbUser.role,
-			organizationId: orgId,
-			sessionId: newSessionId,
-		},
-		TOKEN_SECRET(),
-		60 * 60 * 8,
-	);
-
-	// Логирование аудита смены роли
-	try {
-		await withTenantCtx(orgId, async (tx) => {
-			await tx.insert(auditEvents).values({
-				organizationId: orgId,
-				actorUserId: callerUserId ?? dbUser.id,
-				entityType: "user",
-				entityId: dbUser.id,
-				action: "staff_role_switch",
-				reason: isSwitchingToAnotherUser
-					? `Смена сотрудника у кресла: вход за «${dbUser.fullName}» (роль ${dbRole}) подтверждён ПИН-кодом.`
-					: `Сотрудник ${dbUser.fullName} продлил сессию в роли: ${dbRole}`,
-			});
-		});
-	} catch (auditErr) {
-		request.log.warn({ auditErr }, "[ROLE_SWITCH_AUDIT_WARN]");
-	}
-
-	return reply.send({
-		ok: true,
-		staffToken: newStaffToken,
-		user: {
-			id: dbUser.id,
-			fullName: dbUser.fullName,
-			role: dbUser.role,
-			phone: dbUser.phone,
-			email: dbUser.email,
-		},
+	const callerUserId = typeof staffPayload.userId === "string" ? staffPayload.userId : null;
+	const validation = await validateRoleSwitchPin({
+		orgId,
+		dbUser,
+		targetRole,
+		callerUserId,
+		pinCode,
+		ip: request.ip,
 	});
+
+	if (!validation.valid) {
+		return reply.code(validation.statusCode).send({
+			error: validation.error,
+			message: validation.message,
+		});
+	}
+
+	const result = await issueStaffSessionToken({
+		orgId,
+		user: dbUser,
+		request,
+		actionType: "role_switch",
+		isSwitchingToAnotherUser: callerUserId !== dbUser.id,
+		callerUserId,
+	});
+
+	return reply.send(result);
 }

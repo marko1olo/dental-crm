@@ -190,4 +190,74 @@ describe("Staff PIN Security, Rate Limiter & Role Switch Invariants", () => {
 			assert.strictEqual(verified, null);
 		});
 	});
+
+	describe("4. Decomposed PIN Modules & Fastify Facades (Wave 26)", () => {
+		it("extractClinicPayload correctly resolves demo tokens to DEMO_SHOWCASE_ORG_ID", async () => {
+			const { DEMO_SHOWCASE_ORG_ID } = await import(
+				"../../services/demo/deepDemoSeeder.js"
+			);
+			const { extractClinicPayload } = await import(
+				"../../routes/auth/loginModules/pin/staffPinVerification.js"
+			);
+			const req = {
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-token-12345",
+				},
+			} as any;
+
+			const payload = extractClinicPayload(req);
+			assert.ok(payload !== null);
+			assert.strictEqual(payload.organizationId, DEMO_SHOWCASE_ORG_ID);
+		});
+
+		it("verifyBruteForceLimit constructs proper key and allows fresh requests", async () => {
+			const { verifyBruteForceLimit } = await import(
+				"../../routes/auth/loginModules/pin/staffPinVerification.js"
+			);
+			const res = verifyBruteForceLimit("org-test", "user-doc-1", "127.0.0.1");
+			assert.strictEqual(res.allowed, true);
+			assert.ok(res.rateLimitKey.includes("org-test"));
+			assert.ok(res.rateLimitKey.includes("user-doc-1"));
+		});
+
+		it("handleDemoRoleSwitch produces signed tokens for demo roles", async () => {
+			const { handleDemoRoleSwitch } = await import(
+				"../../routes/auth/loginModules/pin/staffPinSessionTokens.js"
+			);
+			const res = handleDemoRoleSwitch({
+				orgId: "00000000-0000-0000-0000-000000000001",
+				targetRole: "owner",
+			});
+			assert.ok(res !== null);
+			assert.strictEqual(res.user.role, "owner");
+			assert.ok(res.user.fullName.includes("Романов"));
+			assert.ok(typeof res.staffToken === "string" && res.staffToken.length > 20);
+		});
+
+		it("validateRoleSwitchPin rejects role tampering when requested role does not match user DB role", async () => {
+			const { validateRoleSwitchPin } = await import(
+				"../../routes/auth/loginModules/pin/staffPinVerification.js"
+			);
+			const mockUser = {
+				id: "user-assistant-1",
+				fullName: "Иванова М. А.",
+				role: "assistant",
+				pinCodeHash: "somehash",
+			} as any;
+
+			const check = await validateRoleSwitchPin({
+				orgId: "org-1",
+				dbUser: mockUser,
+				targetRole: "owner", // Privilege escalation attempt
+				callerUserId: "user-assistant-1",
+				ip: "127.0.0.1",
+			});
+
+			assert.strictEqual(check.valid, false);
+			if (!check.valid) {
+				assert.strictEqual(check.statusCode, 403);
+				assert.strictEqual(check.error, "RoleMismatch");
+			}
+		});
+	});
 });
