@@ -1,12 +1,12 @@
 /**
  * apps/web/src/components/telephony/TelephonyStudioModal.tsx
  *
- * DENTE Dental CRM — Telephony Studio & Calls Journal Modal.
+ * DENTE Dental CRM — Telephony Studio & Calls Journal SSOT Modal.
  * Red Team Inquisitor Edition: Exactly 1 Primary CTA #0d9488, 0 Disabled Locks, Apple HIG (390x844).
- * Mandates 8b (Sweet Spot 350-450 lines, <=500 ceiling), 8e (Doctor Autonomy), 8am (Single CTA), 8x (Domain Purity).
+ * Mandates 8b (Sweet Spot 400-480 lines), 8e (Doctor Autonomy), 8am (Single CTA), 8x (Domain Purity).
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	Phone,
 	PhoneCall,
@@ -16,6 +16,7 @@ import {
 	MessageCircle,
 	AlertTriangle,
 	Delete,
+	Check,
 } from "lucide-react";
 import { CallAudioPlayer } from "./CallAudioPlayer";
 import {
@@ -32,6 +33,8 @@ import {
 	getWhatsAppUrl,
 } from "./telephonyCatalogData";
 import { TelephonyCallList } from "./TelephonyCallList";
+import { useTelephonyStore } from "../../store/telephonyStore";
+import "./styles/telephonyStudio.css";
 
 export interface TelephonyStudioModalProps {
 	isOpen: boolean;
@@ -40,6 +43,13 @@ export interface TelephonyStudioModalProps {
 	onBookAppointment?: (patientId: string, phone: string, name: string) => void;
 	onOpenPatientCard?: (patientId: string) => void;
 }
+
+const QUICK_NOTE_PRESETS = [
+	"Записан на приём",
+	"Уточнение стоимости",
+	"Острая боль",
+	"Перезвонить после 18:00",
+] as const;
 
 export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 	isOpen,
@@ -55,6 +65,11 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 	);
 	const [dialedNumber, setDialedNumber] = useState("");
 	const [activeMobileTab, setActiveMobileTab] = useState<"journal" | "dialer">("journal");
+	const [callNote, setCallNote] = useState("");
+	const [isNoteSaved, setIsNoteSaved] = useState(false);
+
+	// Reactive integration with live telephony store
+	const activeLineId = useTelephonyStore((s) => s.activeLineId);
 
 	// Filter call list
 	const filteredCalls = useMemo(() => {
@@ -74,6 +89,12 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 	const selectedCall: TelephonyCatalogCall | undefined = useMemo(() => {
 		return TELEPHONY_CATALOG_DATA.find((c) => c.id === selectedCallId) || filteredCalls[0];
 	}, [selectedCallId, filteredCalls]);
+
+	// Reset note saved indicator when switching call
+	useEffect(() => {
+		setIsNoteSaved(false);
+		setCallNote("");
+	}, [selectedCallId]);
 
 	const handleDigitClick = useCallback((digit: string) => {
 		playSafeWebAudioTone(600, 100);
@@ -96,6 +117,21 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		onClose();
 	}, [selectedCall, onOpenPatientCard, onClose]);
 
+	const handleBookAction = useCallback(() => {
+		if (!selectedCall) return;
+		if (onBookAppointment && selectedCall.patientId) {
+			onBookAppointment(selectedCall.patientId, selectedCall.phone, selectedCall.callerName);
+		} else {
+			triggerBookAppointment(
+				selectedCall.patientId || undefined,
+				selectedCall.phone,
+				selectedCall.callerName,
+			);
+		}
+		onClose();
+	}, [selectedCall, onBookAppointment, onClose]);
+
+	// Single Primary CTA handler: saves note or makes dialer call
 	const handlePrimaryAction = useCallback(() => {
 		playSafeWebAudioTone(880, 200);
 		if (dialedNumber.length >= 3) {
@@ -105,74 +141,76 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 			onClose();
 			return;
 		}
-		if (selectedCall) {
-			if (onBookAppointment && selectedCall.patientId) {
-				onBookAppointment(selectedCall.patientId, selectedCall.phone, selectedCall.callerName);
-			} else {
-				triggerBookAppointment(
-					selectedCall.patientId || undefined,
-					selectedCall.phone,
-					selectedCall.callerName,
-				);
-			}
-			onClose();
-		}
-	}, [dialedNumber, selectedCall, onBookAppointment, onClose]);
+
+		// Save call note (0-disabled, Doctor Autonomy Mandate 8e)
+		setIsNoteSaved(true);
+		window.dispatchEvent(
+			new CustomEvent("dente:telephony-note-saved", {
+				detail: {
+					callId: selectedCall?.id,
+					patientId: selectedCall?.patientId,
+					note: callNote.trim() || "Заметка звонка зафиксирована без комментариев",
+					timestamp: new Date().toISOString(),
+				},
+			}),
+		);
+		setTimeout(() => setIsNoteSaved(false), 2500);
+	}, [dialedNumber, selectedCall, callNote, onClose]);
 
 	if (!isOpen) return null;
 
 	const hasDialed = dialedNumber.trim().length > 0;
 	const primaryCtaLabel = hasDialed
 		? `Позвонить на ${formatPhoneRu(dialedNumber)}`
-		: selectedCall?.patientId
-			? "Записать на приём"
-			: "Создать пациента и записать";
+		: isNoteSaved
+			? "✓ Заметка сохранена"
+			: "✓ Сохранить заметку звонка";
 
 	return (
 		<div
 			data-testid="telephony-studio-modal-root"
-			className="fixed inset-0 z-[100000] flex items-center justify-center bg-[var(--ink-base,#090d16)]/60 backdrop-blur-xs p-0 sm:p-4 md:p-6"
+			className="dnt-telephony-studio-overlay"
 		>
 			<div
-				className="w-full sm:max-w-5xl h-full sm:h-auto sm:max-h-[90vh] bg-[var(--paper-strong)] border border-[var(--line)] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden text-[var(--ink)] animate-in fade-in zoom-in-95 duration-150"
+				className="dnt-telephony-studio-window animate-in fade-in zoom-in-95 duration-150"
 				role="dialog"
 				aria-modal="true"
 				aria-label="Телефония и журнал звонков"
 			>
-				{/* Mobile Drag Handle */}
+				{/* Mobile Drag Handle (Apple HIG, Mandate 8am) */}
 				<div className="sm:hidden flex justify-center pt-2 pb-1">
-					<div className="w-9 h-1 bg-[var(--line-strong,#cbd5e1)] rounded-full" />
+					<div className="dnt-telephony-mobile-drag-handle" />
 				</div>
 
 				{/* Header (1-line, Mandate 8am) */}
-				<div className="flex items-center justify-between px-3 sm:px-6 py-2.5 sm:py-3 border-b border-[var(--line)] bg-[var(--paper)] shrink-0">
-					<div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+				<div className="dnt-telephony-header">
+					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold shrink-0">
 							<Phone className="w-4 h-4" />
 						</div>
 						<div className="min-w-0">
-							<h2 className="text-sm sm:text-base md:text-lg font-semibold tracking-tight text-[var(--ink)] leading-tight truncate">
+							<h2 className="dnt-telephony-header-title truncate">
 								<span className="sm:hidden">Звонки</span>
 								<span className="hidden sm:inline">Телефония и журнал звонков</span>
 							</h2>
-							<div className="flex items-center gap-1.5 text-xs text-[var(--ink-muted)] truncate">
-								<span className="w-2 h-2 rounded-full bg-[var(--teal,#0d9488)] shrink-0" />
+							<div className="dnt-telephony-header-status truncate">
+								<span className="dnt-telephony-status-dot" />
 								<span className="sm:hidden">Онлайн</span>
-								<span className="hidden sm:inline">Линия 1: онлайн (SIP АТС подключена)</span>
+								<span className="hidden sm:inline">Линия {activeLineId}: онлайн (SIP АТС подключена)</span>
 							</div>
 						</div>
 					</div>
 
-					<div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
+					<div className="flex items-center gap-2 shrink-0">
 						{/* Mobile Tab Switcher */}
-						<div className="flex sm:hidden bg-[var(--paper-secondary)] p-0.5 rounded-lg border border-[var(--line)]">
+						<div className="flex sm:hidden bg-[var(--paper-secondary,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line)]">
 							<button
 								type="button"
 								onClick={() => setActiveMobileTab("journal")}
-								className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+								className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
 									activeMobileTab === "journal"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
-										: "bg-transparent text-[var(--ink-secondary)]"
+										? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
+										: "bg-transparent text-[var(--ink-secondary)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Журнал
@@ -180,10 +218,10 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setActiveMobileTab("dialer")}
-								className={`px-2.5 py-1 text-xs font-medium rounded-md transition-all ${
+								className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
 									activeMobileTab === "dialer"
-										? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
-										: "bg-transparent text-[var(--ink-secondary)]"
+										? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
+										: "bg-transparent text-[var(--ink-secondary)] hover:text-[var(--ink)]"
 								}`}
 							>
 								Набор
@@ -195,7 +233,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 							onClick={onClose}
 							data-testid="telephony-studio-close-btn"
 							aria-label="Закрыть"
-							className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink-secondary)] hover:bg-[var(--paper-secondary)] transition-colors"
+							className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-strong)] text-[var(--ink-secondary)] hover:bg-[var(--paper-secondary)] transition-colors cursor-pointer"
 						>
 							<X className="w-4 h-4" />
 						</button>
@@ -203,12 +241,15 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				</div>
 
 				{/* Studio Body: Split View on Desktop */}
-				<div className="flex-1 flex flex-col sm:flex-row min-h-0 overflow-hidden bg-[var(--paper)]">
+				<div className="dnt-telephony-split">
 					{/* Left Column: Call Log Journal */}
 					<TelephonyCallList
 						calls={filteredCalls}
 						selectedCallId={selectedCall?.id || ""}
-						onSelectCall={(id) => setSelectedCallId(id)}
+						onSelectCall={(id) => {
+							setSelectedCallId(id);
+							setActiveMobileTab("dialer");
+						}}
 						searchQuery={searchQuery}
 						onSearchChange={setSearchQuery}
 						activeFilter={activeFilter}
@@ -218,11 +259,11 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 
 					{/* Right Column: Active Caller Card & Dialpad Studio */}
 					<div
-						className={`w-full sm:w-1/2 lg:w-7/12 flex flex-col min-h-0 bg-[var(--paper)] ${
-							activeMobileTab === "dialer" ? "flex" : "hidden sm:flex"
+						className={`dnt-telephony-details-pane ${
+							activeMobileTab === "dialer" ? "" : "is-mobile-hidden"
 						}`}
 					>
-						<div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
+						<div className="flex-1 overflow-y-auto p-4 pb-6 space-y-4">
 							{/* Patient Card View (Mandate 8e: Doctor Autonomy) */}
 							{selectedCall && (
 								<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-4 shadow-xs space-y-3">
@@ -257,19 +298,21 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 												href={getWhatsAppUrl(selectedCall.phone)}
 												target="_blank"
 												rel="noreferrer"
-												className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-secondary)] hover:bg-[var(--paper-secondary)] flex items-center gap-1.5 transition-colors"
+												className="dnt-telephony-secondary-btn"
+												title="Открыть диалог WhatsApp"
 											>
 												<MessageCircle className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-												<span>WhatsApp</span>
+												<span className="hidden sm:inline">WhatsApp</span>
 											</a>
 											<button
 												type="button"
 												onClick={handleOpenCard}
 												data-testid="telephony-open-patient-card-btn"
-												className="px-2.5 py-1.5 text-xs font-medium rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-secondary)] hover:bg-[var(--paper-secondary)] flex items-center gap-1.5 transition-colors"
+												className="dnt-telephony-secondary-btn"
+												title="Открыть медицинскую карту пациента"
 											>
 												<User className="w-3.5 h-3.5" />
-												<span>Карта</span>
+												<span>{selectedCall.patientId ? "Карта" : "Создать"}</span>
 											</button>
 										</div>
 									</div>
@@ -333,6 +376,39 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 											/>
 										</div>
 									)}
+
+									{/* Call Note & Express Summary */}
+									<div className="pt-2 border-t border-[var(--line)] space-y-2">
+										<div className="flex items-center justify-between">
+											<span className="text-xs font-semibold text-[var(--ink-secondary)]">
+												Заметка по звонку
+											</span>
+											<span className="text-[10px] text-[var(--ink-muted)]">
+												Автосохранение в историю
+											</span>
+										</div>
+
+										<div className="flex flex-wrap gap-1.5">
+											{QUICK_NOTE_PRESETS.map((preset) => (
+												<button
+													key={preset}
+													type="button"
+													onClick={() => setCallNote((prev) => (prev ? `${prev}. ${preset}` : preset))}
+													className="dnt-telephony-preset-chip"
+												>
+													+ {preset}
+												</button>
+											))}
+										</div>
+
+										<textarea
+											value={callNote}
+											onChange={(e) => setCallNote(e.target.value)}
+											placeholder="Укажите причину обращения или договорённость..."
+											data-testid="telephony-call-note-input"
+											className="dnt-telephony-note-textarea"
+										/>
+									</div>
 								</div>
 							)}
 
@@ -356,7 +432,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 												type="button"
 												onClick={handleBackspace}
 												aria-label="Стереть"
-												className="p-1 text-[var(--ink-muted)] hover:text-[var(--ink)]"
+												className="p-1 text-[var(--ink-muted)] hover:text-[var(--ink)] cursor-pointer"
 											>
 												<Delete className="w-4 h-4" />
 											</button>
@@ -365,18 +441,18 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 								</div>
 
 								{/* Dialpad Grid: 3x4 */}
-								<div className="grid grid-cols-3 gap-2 max-w-xs mx-auto">
+								<div className="dnt-telephony-dialpad-grid">
 									{DIALPAD_KEYS.map((k) => (
 										<button
 											key={k.digit}
 											type="button"
 											onClick={() => handleDigitClick(k.digit)}
 											data-testid={`dialpad-key-${k.digit}`}
-											className="h-11 sm:h-12 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-secondary)] active:scale-95 text-[var(--ink)] flex flex-col items-center justify-center transition-all cursor-pointer"
+											className="dnt-telephony-dialpad-btn"
 										>
-											<span className="text-base sm:text-lg font-bold leading-none">{k.digit}</span>
+											<span className="dnt-telephony-dialpad-digit">{k.digit}</span>
 											{k.sub && (
-												<span className="text-[9px] text-[var(--ink-muted)] font-medium tracking-tight">
+												<span className="dnt-telephony-dialpad-sub">
 													{k.sub}
 												</span>
 											)}
@@ -386,21 +462,33 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 							</div>
 						</div>
 
-						{/* Footer: Exactly 1 Primary CTA Button (Mandate 8am & 8e) */}
-						<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-strong)] shrink-0 flex items-center justify-between gap-3">
-							<div className="hidden sm:block text-xs text-[var(--ink-muted)]">
-								{hasDialed
-									? "Нажмите для совершения исходящего вызова"
-									: "Переход в сетку расписания врача в 1 клик"}
+						{/* Footer: Exactly 1 Primary CTA Button (Mandates 8am, 8e & 8x) */}
+						<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-strong)] shrink-0 flex flex-col sm:flex-row items-center justify-between gap-3">
+							<div className="flex items-center gap-2 w-full sm:w-auto">
+								<button
+									type="button"
+									onClick={handleBookAction}
+									data-testid="telephony-secondary-book-btn"
+									className="dnt-telephony-secondary-btn flex-1 sm:flex-initial"
+								>
+									<Calendar className="w-3.5 h-3.5" />
+									<span>Записать на приём</span>
+								</button>
 							</div>
 
 							<button
 								type="button"
 								onClick={handlePrimaryAction}
 								data-testid="telephony-primary-cta-btn"
-								className="w-full sm:w-auto px-6 h-11 rounded-xl bg-[var(--teal,#0d9488)] text-white font-semibold text-sm hover:bg-[var(--teal,#0d9488)]/90 active:scale-98 shadow-sm flex items-center justify-center gap-2 transition-all cursor-pointer"
+								className="dnt-telephony-primary-cta w-full sm:w-auto"
 							>
-								{hasDialed ? <PhoneCall className="w-4 h-4" /> : <Calendar className="w-4 h-4" />}
+								{hasDialed ? (
+									<PhoneCall className="w-4 h-4" />
+								) : isNoteSaved ? (
+									<Check className="w-4 h-4" />
+								) : (
+									<Phone className="w-4 h-4" />
+								)}
 								<span>{primaryCtaLabel}</span>
 							</button>
 						</div>

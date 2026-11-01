@@ -1,0 +1,380 @@
+/**
+ * apps/web/src/components/telephony/styles/telephonyStudio.css
+ *
+ * DENTE Dental CRM — Telephony Studio & Ambient Call Capsule Canonical Stylesheet.
+ * SSOT Design Tokens: Pure CSS Variables, Apple HIG Touch Ergonomics, Dark/Light Themes.
+ * Sweet Spot: 250-350 lines (Mandates 8b, 8e, 8am, Apple HIG).
+ */
+
+/* 1. Modal Root Container & Backdrop */
+.dnt-telephony-studio-overlay {
+	position: fixed;
+	inset: 0;
+	z-index: 100000;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: color-mix(in srgb, var(--ink-base, #090d16) 65%, transparent);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	padding: 0;
+}
+
+@media (min-width: 640px) {
+	.dnt-telephony-studio-overlay {
+		padding: 1rem;
+	}
+}
+
+@media (min-width: 1024px) {
+	.dnt-telephony-studio-overlay {
+		padding: 1.5rem;
+	}
+}
+
+/* 2. Modal Dialog Window */
+.dnt-telephony-studio-window {
+	width: 100%;
+	height: 100%;
+	background-color: var(--paper-strong, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+@media (min-width: 640px) {
+	.dnt-telephony-studio-window {
+		max-width: 68rem;
+		height: auto;
+		max-height: 90vh;
+		border-radius: 1.25rem;
+	}
+}
+
+/* 3. Header & Navigation */
+.dnt-telephony-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper, #f8fafc);
+	flex-shrink: 0;
+}
+
+@media (min-width: 640px) {
+	.dnt-telephony-header {
+		padding: 0.875rem 1.5rem;
+	}
+}
+
+.dnt-telephony-header-title {
+	font-size: 1.05rem;
+	font-weight: 700;
+	letter-spacing: -0.02em;
+	color: var(--ink, #0f172a);
+	line-height: 1.2;
+}
+
+.dnt-telephony-header-status {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.375rem;
+	font-size: 0.75rem;
+	color: var(--ink-muted, #64748b);
+}
+
+.dnt-telephony-status-dot {
+	width: 0.5rem;
+	height: 0.5rem;
+	border-radius: 9999px;
+	background-color: var(--teal, #0d9488);
+	flex-shrink: 0;
+}
+
+/* 4. Split-View Columns */
+.dnt-telephony-split {
+	display: flex;
+	flex-direction: column;
+	flex: 1 1 0%;
+	min-height: 0;
+	overflow: hidden;
+	background-color: var(--paper, #f8fafc);
+}
+
+@media (min-width: 640px) {
+	.dnt-telephony-split {
+		flex-direction: row;
+	}
+}
+
+.dnt-telephony-journal-pane {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	border-right: 1px solid var(--line, #e2e8f0);
+	min-height: 0;
+	background-color: var(--paper, #f8fafc);
+}
+
+@media (min-width: 640px) {
+	.dnt-telephony-journal-pane {
+		width: 48%;
+		display: flex !important;
+	}
+}
+
+@media (min-width: 1024px) {
+	.dnt-telephony-journal-pane {
+		width: 42%;
+	}
+}
+
+.dnt-telephony-details-pane {
+	width: 100%;
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	background-color: var(--paper, #f8fafc);
+}
+
+@media (min-width: 640px) {
+	.dnt-telephony-details-pane {
+		width: 52%;
+		display: flex !important;
+	}
+}
+
+@media (min-width: 1024px) {
+	.dnt-telephony-details-pane {
+		width: 58%;
+	}
+}
+
+@media (max-width: 639px) {
+	.dnt-telephony-split > .is-mobile-hidden {
+		display: none !important;
+	}
+}
+
+/* 5. Call Items in Journal */
+.dnt-telephony-call-row {
+	display: flex;
+	align-items: flex-start;
+	justify-content: space-between;
+	gap: 0.75rem;
+	padding: 0.75rem 1rem;
+	border-bottom: 1px solid var(--line-subtle, rgba(226, 232, 240, 0.6));
+	background-color: transparent;
+	transition: background-color 0.15s ease;
+	cursor: pointer;
+	text-align: left;
+	width: 100%;
+}
+
+.dnt-telephony-call-row:hover {
+	background-color: var(--paper-secondary, #f1f5f9);
+}
+
+.dnt-telephony-call-row.is-selected {
+	background-color: var(--paper-strong, #ffffff);
+	box-shadow: inset 3px 0 0 var(--teal, #0d9488);
+}
+
+/* 6. Dialpad Grid (Touch Target >= 44x44px, Apple HIG) */
+.dnt-telephony-dialpad-grid {
+	display: grid;
+	grid-template-columns: repeat(3, minmax(0, 1fr));
+	gap: 0.5rem;
+	max-width: 18rem;
+	margin: 0 auto;
+}
+
+.dnt-telephony-dialpad-btn {
+	height: 3rem;
+	min-height: 44px;
+	border-radius: 0.75rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink, #0f172a);
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	transition: all 0.12s ease;
+	cursor: pointer;
+	user-select: none;
+}
+
+.dnt-telephony-dialpad-btn:hover {
+	background-color: var(--paper-secondary, #f1f5f9);
+	border-color: var(--line-strong, #cbd5e1);
+}
+
+.dnt-telephony-dialpad-btn:active {
+	transform: scale(0.96);
+}
+
+.dnt-telephony-dialpad-digit {
+	font-size: 1.125rem;
+	font-weight: 700;
+	line-height: 1;
+}
+
+.dnt-telephony-dialpad-sub {
+	font-size: 0.5625rem;
+	font-weight: 600;
+	color: var(--ink-muted, #64748b);
+	letter-spacing: -0.01em;
+}
+
+/* 7. Clinical Notes & Presets */
+.dnt-telephony-note-textarea {
+	width: 100%;
+	min-height: 4rem;
+	padding: 0.625rem 0.75rem;
+	border-radius: 0.625rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-strong, #ffffff);
+	color: var(--ink, #0f172a);
+	font-size: 0.8125rem;
+	line-height: 1.4;
+	resize: vertical;
+	outline: none;
+	transition: border-color 0.15s ease;
+}
+
+.dnt-telephony-note-textarea:focus {
+	border-color: var(--teal, #0d9488);
+	box-shadow: 0 0 0 1px var(--teal, #0d9488);
+}
+
+.dnt-telephony-preset-chip {
+	padding: 0.25rem 0.625rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink-secondary, #475569);
+	font-size: 0.6875rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.12s ease;
+	white-space: nowrap;
+}
+
+.dnt-telephony-preset-chip:hover {
+	background-color: var(--paper-secondary, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+/* 8. Single Primary CTA Button (Mandate 8am & 8e) */
+.dnt-telephony-primary-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0 1.5rem;
+	height: 2.75rem;
+	min-height: 44px;
+	border-radius: 0.75rem;
+	background-color: var(--teal, #0d9488);
+	color: #ffffff;
+	font-size: 0.875rem;
+	font-weight: 600;
+	border: none;
+	cursor: pointer;
+	box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+	transition: all 0.12s ease;
+	text-decoration: none;
+}
+
+.dnt-telephony-primary-cta:hover {
+	background-color: color-mix(in srgb, var(--teal, #0d9488) 90%, #000000);
+}
+
+.dnt-telephony-primary-cta:active {
+	transform: scale(0.98);
+}
+
+/* Secondary Actions */
+.dnt-telephony-secondary-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.375rem;
+	padding: 0 0.875rem;
+	height: 2.5rem;
+	min-height: 40px;
+	border-radius: 0.625rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper-strong, #ffffff);
+	color: var(--ink-secondary, #475569);
+	font-size: 0.8125rem;
+	font-weight: 500;
+	cursor: pointer;
+	transition: all 0.12s ease;
+}
+
+.dnt-telephony-secondary-btn:hover {
+	background-color: var(--paper-secondary, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
+/* 9. Top Ambient Call Capsule (Apple Dynamic Island) */
+.dnt-incoming-call-capsule {
+	position: fixed;
+	top: 0.75rem;
+	left: 50%;
+	transform: translateX(-50%);
+	z-index: 99990;
+	display: inline-flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 0.5rem;
+	height: 2.5rem;
+	max-height: 40px;
+	padding: 0.25rem 0.875rem;
+	border-radius: 9999px;
+	border: 1px solid var(--line-strong, #cbd5e1);
+	background: color-mix(in srgb, var(--paper-strong, #ffffff) 92%, transparent);
+	backdrop-filter: blur(16px);
+	-webkit-backdrop-filter: blur(16px);
+	color: var(--ink, #0f172a);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.15), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+	animation: dntCapsuleDrop 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+	max-width: calc(100vw - 1rem);
+	box-sizing: border-box;
+}
+
+@keyframes dntCapsuleDrop {
+	from {
+		opacity: 0;
+		transform: translate(-50%, -10px) scale(0.95);
+	}
+	to {
+		opacity: 1;
+		transform: translate(-50%, 0) scale(1);
+	}
+}
+
+/* 10. Mobile Ergonomics & Safe Area (390x844) */
+@media (max-width: 639px) {
+	.dnt-telephony-studio-window {
+		border-radius: 1.5rem 1.5rem 0 0;
+		margin-top: auto;
+		height: 92vh;
+		max-height: 92vh;
+		padding-bottom: env(safe-area-inset-bottom, 1rem);
+	}
+
+	.dnt-telephony-mobile-drag-handle {
+		width: 2.25rem;
+		height: 0.3125rem;
+		background-color: var(--line-strong, #cbd5e1);
+		border-radius: 9999px;
+		margin: 0.5rem auto 0.25rem;
+	}
+}

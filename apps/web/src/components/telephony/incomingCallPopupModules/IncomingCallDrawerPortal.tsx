@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { IncomingCallPopupController } from "./types";
 
 export interface IncomingCallDrawerPortalProps {
