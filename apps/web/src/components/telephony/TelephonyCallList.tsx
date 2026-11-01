@@ -52,14 +52,14 @@ export const TelephonyCallList: React.FC<TelephonyCallListProps> = ({
 			{/* Search & Filters */}
 			<div className="p-3 border-b border-[var(--line)] bg-[var(--paper-strong)] space-y-2 shrink-0">
 				<div className="relative flex items-center">
-					<Search className="absolute left-3 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" />
+					<Search className="absolute left-3.5 w-4 h-4 text-[var(--ink-muted)] pointer-events-none" />
 					<input
 						type="text"
 						value={searchQuery}
 						onChange={(e) => onSearchChange(e.target.value)}
 						placeholder="Поиск по номеру или ФИО..."
 						data-testid="telephony-search-input"
-						className="w-full pl-10 pr-3 h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:outline-hidden focus:ring-1 focus:ring-[var(--teal,#0d9488)] transition-all"
+						className="w-full pl-11 pr-3 h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-sm text-[var(--ink)] placeholder:text-[var(--ink-muted)] focus:outline-hidden focus:ring-1 focus:ring-[var(--teal,#0d9488)] transition-all"
 					/>
 				</div>
 
