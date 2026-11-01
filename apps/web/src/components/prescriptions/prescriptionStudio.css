@@ -132,6 +132,7 @@
 	display: inline-flex; align-items: center; min-height: 38px; padding: 0 12px;
 	font-size: 12px; font-weight: 600; border-radius: 20px; border: 1px solid var(--rx-line);
 	background: var(--rx-paper); color: var(--rx-ink-muted); white-space: nowrap; cursor: pointer; transition: all 0.15s ease;
+	flex-shrink: 0;
 }
 .rx-category-chip.active { background: var(--rx-teal); color: #ffffff; border-color: var(--rx-teal); }
 
@@ -220,6 +221,16 @@
 	.rx-header-meta { font-size: 11px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 	.rx-form-switcher { scale: 0.88; transform-origin: right center; }
 	.rx-mobile-tabs { display: block; }
+
+	.rx-allergy-strip {
+		flex-direction: column;
+		align-items: flex-start;
+		gap: 6px;
+		padding: 8px 14px;
+	}
+	.rx-allergy-badge-autonomy {
+		align-self: flex-start;
+	}
 
 	.rx-workbench-grid {
 		display: flex; flex-direction: column;

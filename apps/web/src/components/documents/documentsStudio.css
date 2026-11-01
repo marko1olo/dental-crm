@@ -429,6 +429,34 @@
 }
 
 /* ==========================================================================
+   6.5. ПОДВАЛ СТУДИИ (ЕДИНАЯ PRIMARY CTA #0d9488 — МАНДАТ 8am & APPLE HIG)
+   ========================================================================== */
+
+.dente-docs-footer-bar {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 12px 20px;
+	border-top: 1px solid var(--line, #e2e8f0);
+	background: var(--paper-strong, #f8fafc);
+	gap: 12px;
+	flex-shrink: 0;
+}
+
+.dente-docs-footer-secondary-actions {
+	display: flex;
+	align-items: center;
+	gap: 8px;
+}
+
+.dente-docs-footer-cta-container {
+	display: flex;
+	align-items: center;
+	gap: 12px;
+	margin-left: auto;
+}
+
+/* ==========================================================================
    7. APPLE HIG MOBILE ADAPTIVE (< 768px: BOTTOM SHEET, THUMB ZONE)
    ========================================================================== */
 
@@ -471,20 +499,45 @@
 		display: none !important;
 	}
 
-	.dente-docs-header-actions .dente-btn-primary-cta {
-		position: fixed;
+	.dente-docs-footer-bar {
+		position: sticky;
 		bottom: 0;
 		left: 0;
 		right: 0;
-		width: 100%;
-		height: 52px;
-		min-height: 52px;
-		border-radius: 0;
+		padding: 10px 14px calc(10px + env(safe-area-inset-bottom, 0px));
+		background: var(--paper-strong, #f8fafc);
+		border-top: 1px solid var(--line, #e2e8f0);
 		z-index: 80;
-		font-size: 15px;
-		font-weight: 600;
-		box-shadow: 0 -4px 16px rgba(0, 0, 0, 0.25);
-		padding-bottom: env(safe-area-inset-bottom, 0px);
+		display: flex;
+		flex-direction: column;
+		gap: 8px;
+	}
+
+	.dente-docs-footer-secondary-actions {
+		display: flex;
+		width: 100%;
+		gap: 8px;
+	}
+
+	.dente-docs-footer-secondary-actions .dente-btn-secondary {
+		flex: 1;
+		height: 44px;
+		min-height: 44px;
+		font-size: 13px;
+		justify-content: center;
+	}
+
+	.dente-docs-footer-cta-container {
+		width: 100%;
+	}
+
+	.dente-docs-footer-cta-container .dente-btn-primary-cta {
+		width: 100%;
+		height: 48px;
+		min-height: 48px;
+		font-size: 14px;
+		border-radius: 12px;
+		justify-content: center;
 	}
 
 	.dente-docs-studio-body {

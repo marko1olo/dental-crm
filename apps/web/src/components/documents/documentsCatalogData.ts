@@ -196,31 +196,11 @@ export function generateInformedConsentTemplate(
 	subKind: ConsentSubKind = "therapy",
 ): string {
 	const titles: Record<ConsentSubKind, { label: string; desc: string; risks: string }> = {
-		therapy: {
-			label: "ТЕРАПЕВТИЧЕСКОЕ ЛЕЧЕНИЕ И ПЛОМБИРОВАНИЕ ЗУБОВ",
-			desc: "Препарирование кариозной полости, изоляция рабочего поля, адгезивная подготовка и послойная реставрация светоотверждаемым композитом.",
-			risks: "Кратковременная постпломбировочная чувствительность на температурные раздражители в течение 3–7 дней.",
-		},
-		surgery: {
-			label: "ХИРУРГИЧЕСКОЕ ЛЕЧЕНИЕ И УДАЛЕНИЕ ЗУБОВ",
-			desc: "Проведение инфильтрационной/проводниковой анестезии, атравматичное удаление зуба, ревизия лунки, гемостаз и наложение швов.",
-			risks: "Послеоперационный отек мягких тканей до 3 суток, болезненность при открывании рта, формирование кровяного сгустка.",
-		},
-		implant: {
-			label: "ДЕНТАЛЬНУЮ ИМПЛАНТАЦИЮ И ОСТЕОПЛАСТИКУ",
-			desc: "Формирование костного ложа с охлаждением физраствором, установка титанового имплантата с заглушкой или формирователем десны.",
-			risks: "Временный отек мягких тканей, необходимость щадящего жевательного режима и антибактериальной терапии.",
-		},
-		orthopedics: {
-			label: "ОРТОПЕДИЧЕСКОЕ ЛЕЧЕНИЕ И ПРОТЕЗИРОВАНИЕ",
-			desc: "Препарирование опорных зубов, снятие оптических/силиконовых оттисков, изготовление и постоянная фиксация коронок или виниров.",
-			risks: "Период привыкания к ортопедической конструкции (от 3 до 14 дней), необходимость контрольной коррекции окклюзии.",
-		},
-		anesthesia: {
-			label: "МЕСТНОЕ ОБЕЗБОЛИВАНИЕ В СТОМАТОЛОГИИ",
-			desc: "Введение современного карпульного анестетика артикаинового ряда с целью полного устранения болевых ощущений при лечении.",
-			risks: "Онемение мягких тканей губы, щеки и языка на 2–4 часа. Запрещается употребление горячей пищи до полного отхождения анестезии.",
-		},
+		therapy: { label: "ТЕРАПЕВТИЧЕСКОЕ ЛЕЧЕНИЕ И ПЛОМБИРОВАНИЕ ЗУБОВ", desc: "Препарирование кариозной полости, изоляция рабочего поля, адгезивная подготовка и послойная реставрация светоотверждаемым композитом.", risks: "Кратковременная постпломбировочная чувствительность на температурные раздражители в течение 3–7 дней." },
+		surgery: { label: "ХИРУРГИЧЕСКОЕ ЛЕЧЕНИЕ И УДАЛЕНИЕ ЗУБОВ", desc: "Проведение инфильтрационной/проводниковой анестезии, атравматичное удаление зуба, ревизия лунки, гемостаз и наложение швов.", risks: "Послеоперационный отек мягких тканей до 3 суток, болезненность при открывании рта, формирование кровяного сгустка." },
+		implant: { label: "ДЕНТАЛЬНУЮ ИМПЛАНТАЦИЮ И ОСТЕОПЛАСТИКУ", desc: "Формирование костного ложа с охлаждением физраствором, установка титанового имплантата с заглушкой или формирователем десны.", risks: "Временный отек мягких тканей, необходимость щадящего жевательного режима и антибактериальной терапии." },
+		orthopedics: { label: "ОРТОПЕДИЧЕСКОЕ ЛЕЧЕНИЕ И ПРОТЕЗИРОВАНИЕ", desc: "Препарирование опорных зубов, снятие оптических/силиконовых оттисков, изготовление и постоянная фиксация коронок или виниров.", risks: "Период привыкания к ортопедической конструкции (от 3 до 14 дней), необходимость контрольной коррекции окклюзии." },
+		anesthesia: { label: "МЕСТНОЕ ОБЕЗБОЛИВАНИЕ В СТОМАТОЛОГИИ", desc: "Введение современного карпульного анестетика артикаинового ряда с целью полного устранения болевых ощущений при лечении.", risks: "Онемение мягких тканей губы, щеки и языка на 2–4 часа. Запрещается употребление горячей пищи до полного отхождения анестезии." },
 	};
 
 	const cur = titles[subKind] || titles.therapy;
@@ -346,6 +326,7 @@ export interface DocumentCatalogItem {
 	readonly category: DocumentCatalogCategory;
 	readonly descriptionRu: string;
 	readonly badgeRu: string;
+	readonly regulationRu: string;
 	readonly icon: React.ComponentType<{ className?: string; size?: number }>;
 	readonly isPediatric?: boolean | undefined;
 	readonly isStatutory?: boolean | undefined;
@@ -380,6 +361,7 @@ export function getDocumentsCatalogData(
 			category: "intake",
 			descriptionRu: "Договор с пациентом на оказание стоматологических услуг",
 			badgeRu: "Договор клиники",
+			regulationRu: "Правила платных медицинских услуг",
 			icon: FileText,
 			isStatutory: true,
 			printSupported: true,
@@ -392,6 +374,7 @@ export function getDocumentsCatalogData(
 			category: "finance_tax",
 			descriptionRu: "Финансовый акт оказанных услуг с подписями сторон",
 			badgeRu: "Акт услуг",
+			regulationRu: "Акт оказанных услуг",
 			icon: FileCheck,
 			isStatutory: true,
 			printSupported: true,
@@ -404,6 +387,7 @@ export function getDocumentsCatalogData(
 			category: "finance_tax",
 			descriptionRu: "Справка об оплате медуслуг для возврата 13% НДФЛ",
 			badgeRu: "Справка ФНС",
+			regulationRu: "Налоговый вычет на лечение",
 			icon: Zap,
 			isStatutory: true,
 			printSupported: true,
@@ -416,6 +400,7 @@ export function getDocumentsCatalogData(
 			category: "clinical",
 			descriptionRu: "Выписка диагнозов, анамнеза и проведённого лечения",
 			badgeRu: "Выписка из карты",
+			regulationRu: "Выписка из медицинской карты",
 			icon: ClipboardList,
 			isStatutory: true,
 			printSupported: true,
@@ -427,7 +412,8 @@ export function getDocumentsCatalogData(
 			titleRu: "Информированное согласие на лечение",
 			category: "intake",
 			descriptionRu: "Добровольное согласие на осмотр, диагностику и анестезию",
-			badgeRu: "Согласие",
+			badgeRu: "Согласие на лечение",
+			regulationRu: "Клинический стандарт согласия",
 			icon: ShieldCheck,
 			isStatutory: true,
 			printSupported: true,
@@ -439,7 +425,8 @@ export function getDocumentsCatalogData(
 			titleRu: "Согласие на обработку персональных данных",
 			category: "intake",
 			descriptionRu: "Согласие на ведение карты и сервисное информирование",
-			badgeRu: "Персданные",
+			badgeRu: "Согласие на обработку персональных данных",
+			regulationRu: "Защита персональных данных",
 			icon: UserCheck,
 			isStatutory: true,
 			printSupported: true,
@@ -452,6 +439,7 @@ export function getDocumentsCatalogData(
 			category: "clinical",
 			descriptionRu: "Поэтапный клинический график и финансовая смета",
 			badgeRu: "План и смета",
+			regulationRu: "План стоматологического лечения",
 			icon: FileText,
 			printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("treatment_plan"),
@@ -463,6 +451,7 @@ export function getDocumentsCatalogData(
 			category: "clinical",
 			descriptionRu: "Памятка по уходу после терапевтического или хирургического визита",
 			badgeRu: "Памятка",
+			regulationRu: "Рекомендации по уходу после приёма",
 			icon: Sparkles,
 			printSupported: true,
 			onQuickAction: () => handlers.onOpenKind?.("post_visit_recommendations", "Рекомендации после приёма"),
@@ -474,6 +463,7 @@ export function getDocumentsCatalogData(
 			category: "finance_tax",
 			descriptionRu: "Подтверждение оплаты услуг в кассе клиники",
 			badgeRu: "Касса и чек",
+			regulationRu: "Кассовый чек и оплата",
 			icon: Receipt,
 			printSupported: true,
 			onQuickAction: () => handlers.onOpenKind?.("payment_receipt", "Квитанция об оплате"),
@@ -485,6 +475,7 @@ export function getDocumentsCatalogData(
 			category: "pediatric",
 			descriptionRu: "Согласие родителя или опекуна на осмотр и лечение ребёнка",
 			badgeRu: "Педиатрия",
+			regulationRu: "Согласие законного представителя",
 			icon: Heart,
 			isPediatric: true,
 			isStatutory: true,
