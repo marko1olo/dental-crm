@@ -1,8 +1,8 @@
 /**
- * ============================================================================
- * SANPIN & STERILIZATION PRODUCTION CONTROL REGISTERS
- * Canonical 3-Tab Studio and Statutory Compliance System (СанПиН 3.3686-21)
- * ============================================================================
+ * apps/web/src/components/sanpin/index.ts
+ *
+ * Канонический фасад СанПиН, стерилизации и автоклавирования DENTE CRM.
+ * Единая точка входа SSOT: SanpinStudioModal и DirectSanpinLauncher.
  */
 
 export {
@@ -12,7 +12,9 @@ export {
 export * from "./sanpinCatalogData";
 export * from "./SanpinStudioModal";
 export * from "./SanpinSterilizationHubModal";
+export * from "./SterilizationHubModal";
 export * from "./DirectSanpinLauncher";
+export * from "./DirectSterilizationLauncher";
 export * from "./SanpinRegisters";
 export * from "./AutoclaveSterilizationJournalView";
 export * from "./SanpinCleaningAndDisinfectionView";

@@ -175,10 +175,7 @@ export const CLINICAL_BATCH_TEMPLATES = [
 ] as const;
 
 export const PSO_QUALITY_STANDARD: PsoQualityParameters = {
-	azopyramResult: "negative",
-	phenolphthaleinResult: "negative",
-	samplePercentage: 1,
-	minItemsCount: 3,
+	azopyramResult: "negative", phenolphthaleinResult: "negative", samplePercentage: 1, minItemsCount: 3,
 	azopyramDescription: "Отрицательная (окрашивание отсутствует, скрытые следы крови не обнаружены)",
 	phenolphthaleinDescription: "Отрицательная (розового окрашивания нет, щелочные моющие средства отмыты)",
 };
@@ -237,50 +234,28 @@ export function createOneClickShiftBatch(options?: {
 	const timeStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 	const count = options?.packagesCount ?? 14;
 	const operator = options?.operatorName || "Иванова Е. С., ассистент ЦСО";
-	const fallbackProgram: AutoclaveProgram = AUTOCLAVE_PROGRAMS[0]!;
-	const program: AutoclaveProgram = AUTOCLAVE_PROGRAMS.find((p) => p.id === options?.programId) ?? fallbackProgram;
-	const fallbackDevice: ClinicSterilizerDevice = CLINIC_STERILIZERS[0]!;
-	const device = options?.autoclaveName || fallbackDevice.model;
+	const program: AutoclaveProgram = AUTOCLAVE_PROGRAMS.find((p) => p.id === options?.programId) ?? AUTOCLAVE_PROGRAMS[0]!;
+	const device = options?.autoclaveName || CLINIC_STERILIZERS[0]!.model;
 
 	return {
 		sterilizationCycle: {
-			id: `cycle-${Date.now()}`,
-			cycleNumber: 1,
-			date: dateStr,
-			time: timeStr,
-			autoclaveId: "autoclave-01",
-			autoclaveName: device,
-			programId: program.id,
-			temperatureCelsius: program.temperatureCelsius,
-			pressureBar: program.pressureBar,
-			exposureMinutes: program.exposureMinutes,
-			packagesCount: count,
-			chemicalIndicatorVerdict: "ПРОЙДЕН",
-			operatorName: operator,
+			id: `cycle-${Date.now()}`, cycleNumber: 1, date: dateStr, time: timeStr,
+			autoclaveId: "autoclave-01", autoclaveName: device, programId: program.id,
+			temperatureCelsius: program.temperatureCelsius, pressureBar: program.pressureBar,
+			exposureMinutes: program.exposureMinutes, packagesCount: count,
+			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: operator,
 			itemsDescription: "Терапевтические и хирургические лотки, наконечники турбинные и угловые",
 			status: "completed",
 		},
 		psoRecord: {
-			id: `pso-${Date.now()}`,
-			date: dateStr,
-			time: timeStr,
-			totalProcessedItems: count * 4,
-			testedItemsCount: Math.max(3, Math.ceil(count * 0.05)),
-			azopyramResult: "negative",
-			phenolphthaleinResult: "negative",
-			operatorName: operator,
-			verdict: "ГОДНО",
+			id: `pso-${Date.now()}`, date: dateStr, time: timeStr, totalProcessedItems: count * 4,
+			testedItemsCount: Math.max(3, Math.ceil(count * 0.05)), azopyramResult: "negative",
+			phenolphthaleinResult: "negative", operatorName: operator, verdict: "ГОДНО",
 		},
 		bactericidalRecord: {
-			id: `uv-${Date.now()}`,
-			date: dateStr,
-			deviceId: "uv-01",
-			deviceName: "Рециркулятор Дезар-4",
-			roomName: "Кабинет терапевтической стоматологии №1",
-			durationMinutes: 120,
-			currentOperatingHours: 1422,
-			operatorName: operator,
-			airDisinfectionStatus: "ВЫПОЛНЕНО",
+			id: `uv-${Date.now()}`, date: dateStr, deviceId: "uv-01", deviceName: "Рециркулятор Дезар-4",
+			roomName: "Кабинет терапевтической стоматологии №1", durationMinutes: 120, currentOperatingHours: 1422,
+			operatorName: operator, airDisinfectionStatus: "ВЫПОЛНЕНО",
 		},
 		deductedStock: calculateBatchStockDeduction(count),
 	};
@@ -326,4 +301,33 @@ export function generateSanpinPrintHtml(records: readonly SterilizationBatchCycl
 <style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;}h1{font-size:18px;margin-bottom:4px;}p{font-size:12px;color:#64748b;margin:0 0 14px;}table{width:100%;border-collapse:collapse;font-size:11px;}th{background:#f1f5f9;padding:6px 8px;text-align:left;border-bottom:2px solid #cbd5e1;}</style></head>
 <body><h1>Журнал автоклавирования и контроля стерилизации инструментов</h1><p>Производственный контроль стоматологической клиники. Выгрузка: ${new Date().toLocaleDateString("ru-RU")}</p>
 <table><thead><tr><th style="text-align:center;">Дата/время</th><th style="text-align:center;">Цикл</th><th>Аппарат</th><th style="text-align:center;">Режим</th><th style="text-align:center;">Пакетов</th><th style="text-align:center;">Индикатор 5 кл.</th><th>Стерилизуемый материал</th><th>Ответственный</th></tr></thead><tbody>${rows || "<tr><td colspan='8' style='text-align:center;padding:16px;'>Записи циклов отсутствуют</td></tr>"}</tbody></table></body></html>`;
+}
+
+/** Генерация термоэтикеток для маркировки крафт-пакетов (58x40 мм) */
+export function generateKraftStickersHtml(cycle: SterilizationBatchCycleRecord, count = 6): string {
+	const expDate = new Date();
+	expDate.setDate(expDate.getDate() + 50);
+	const expStr = expDate.toLocaleDateString("ru-RU");
+
+	const stickers = Array.from({ length: count }, (_, idx) => `
+		<div style="width:58mm;height:40mm;border:1px dashed #94a3b8;padding:3mm;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;justify-content:space-between;font-family:sans-serif;">
+			<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #000;padding-bottom:1mm;">
+				<span style="font-size:9pt;font-weight:bold;">СТЕРИЛЬНО</span>
+				<span style="font-size:8pt;font-weight:bold;">№${cycle.cycleNumber} / ${idx + 1}</span>
+			</div>
+			<div style="font-size:7pt;line-height:1.2;margin:1mm 0;">
+				<div><b>Дата:</b> ${cycle.date} ${cycle.time}</div>
+				<div><b>Годен до:</b> ${expStr} (50 сут.)</div>
+				<div><b>Автоклав:</b> ${cycle.autoclaveName.split(" ")[0]} (${cycle.temperatureCelsius}°C/5м)</div>
+				<div><b>Индикатор:</b> ${cycle.chemicalIndicatorVerdict} (5 кл.)</div>
+				<div><b>Оператор:</b> ${cycle.operatorName.split(",")[0]}</div>
+			</div>
+			<div style="text-align:center;font-size:6pt;letter-spacing:1px;font-family:monospace;border-top:1px solid #ccc;padding-top:1mm;">
+				*DENTE-CYC${cycle.cycleNumber}-${idx + 1}*
+			</div>
+		</div>`).join("");
+
+	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Термоэтикетки крафт-пакетов</title>
+<style>@page{size:58mm 40mm;margin:0;}body{margin:0;padding:0;background:#fff;}</style></head>
+<body>${stickers}</body></html>`;
 }
