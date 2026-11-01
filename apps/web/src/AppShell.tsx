@@ -23,7 +23,6 @@ import { DirectReportsLauncher } from "./components/reports/DirectReportsLaunche
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
-import { DirectAppointmentBookingLauncher } from "./components/schedule/DirectAppointmentBookingLauncher";
 import { DirectAppointmentLauncher } from "./components/schedule/DirectAppointmentLauncher";
 import { DirectScheduleLauncher } from "./components/schedule/DirectScheduleLauncher";
 import { DirectMarketingLauncher } from "./components/marketing/DirectMarketingLauncher";
@@ -266,7 +265,6 @@ export function AppShell() {
 			<DirectDentalLabLauncher />
 			<DirectKnowledgeBaseLauncher />
 			<DirectWaitlistMatchesLauncher />
-			<DirectAppointmentBookingLauncher />
 			<DirectAppointmentLauncher />
 			<DirectScheduleLauncher />
 			<DirectMarketingLauncher />
