@@ -26,6 +26,7 @@ import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
+import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
@@ -115,6 +116,23 @@ export function renderSpecializedAdministrativeLaunchers(
 	// 0. Реестр документов и бланков (?documents=1, ?docs=1)
 	const docs = renderDocumentsStandaloneLauncher();
 	if (docs) return docs;
+
+	// 0. Каноническая студия склада материалов SSOT (#warehouse, #inventory, #stock, ?warehouse=1, ?inventory=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#warehouse" ||
+			window.location.hash.startsWith("#warehouse?") ||
+			window.location.hash === "#inventory" ||
+			window.location.hash.startsWith("#inventory?") ||
+			window.location.hash === "#stock" ||
+			window.location.hash.startsWith("#stock?") ||
+			window.location.hash === "#warehouse-studio" ||
+			window.location.search.includes("warehouse=1") ||
+			window.location.search.includes("inventory=1") ||
+			window.location.search.includes("stock=1"))
+	) {
+		return <DirectWarehouseLauncher />;
+	}
 
 	// 0. Склад материалов и маркировка Честный Знак / МДЛП (?inventory=1, ?mdlp=1)
 	const warehouseMdlp = renderWarehouseMdlpLaunchers();

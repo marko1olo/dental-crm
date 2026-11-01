@@ -1,7 +1,7 @@
 /**
  * warehouseCatalogData.ts — Canonical SSOT: Склад, номенклатура и Soft Negative Stock.
  * Мандаты: 8e (Автономия врача), 8n (Соло-практика, мягкий овердрафт без блокировок),
- * 8b (Sweet Spot: строго 300–350 строк), 8wy (Целочисленные копейки amountKopecks),
+ * 8b (Sweet Spot: строго 300–380 строк), 8wy (Целочисленные копейки amountKopecks),
  * 8x (Живой человеческий клинический язык без канцелярита и советских приказов).
  */
 
@@ -14,7 +14,7 @@ export interface WarehouseMaterialCategory {
 	readonly badgeColor: string;
 }
 
-export type StockUnit = "шт." | "упак." | "мл" | "набор" | "карп." | "шприц" | "флакон" | "компл." | "порц." | "пара";
+export type StockUnit = "шт." | "упак." | "мл" | "набор" | "карп." | "шприц" | "флакон" | "компл." | "порц." | "пара" | "пласт." | "капля";
 
 export interface WarehouseStockItem {
 	readonly id: string;
@@ -78,11 +78,11 @@ export interface WarehouseKpis {
 
 /** 5 Канонических категорий материалов стоматологической клиники (Мандат 8n) */
 export const WAREHOUSE_CATEGORIES: readonly WarehouseMaterialCategory[] = [
-	{ id: "anesthetics", nameRu: "Анестезия и карпулы", description: "Артикаин, карпульные иглы 30G/27G", badgeColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30" },
-	{ id: "therapy", nameRu: "Терапевтические композиты", description: "Световые композиты, адгезивы, бонды", badgeColor: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
+	{ id: "anesthetics", nameRu: "Анестетики и карпулы", description: "Артикаин, карпульные иглы 30G/27G", badgeColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30" },
+	{ id: "therapy", nameRu: "Пломбировочные материалы и композиты", description: "Световые композиты, коффердам, адгезивы, бонды", badgeColor: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
 	{ id: "surgery", nameRu: "Хирургия и шовный материал", description: "Шовный викрил, гемостатики, физраствор", badgeColor: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30" },
-	{ id: "orthopedics", nameRu: "Ортопедия и слепочные массы", description: "А-силиконы, С-силиконы, альгинаты", badgeColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30" },
-	{ id: "ppe", nameRu: "Дезинфекция и СИЗ", description: "Перчатки нитриловые, маски, слюноотсосы", badgeColor: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
+	{ id: "orthopedics", nameRu: "Оттискные и слепочные массы", description: "А-силиконы, С-силиконы, альгинаты", badgeColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30" },
+	{ id: "ppe", nameRu: "Дезинфекция и средства защиты", description: "Перчатки нитриловые, маски, слюноотсосы", badgeColor: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
 ] as const;
 
 /** Стартовый каталог складских запасов с демонстрацией Soft Negative Stock */
@@ -92,6 +92,7 @@ export const INITIAL_WAREHOUSE_STOCK: readonly WarehouseStockItem[] = [
 	{ id: "mat-needle-01", nameRu: "Иглы карпульные 30G короткие 0.3x21мм", category: "anesthetics", unit: "шт.", currentStock: -4, minStock: 30, unitCostKopecks: 850, supplierName: "МедСнаб Трейд", sku: "NDL-30G-21", needsReorder: true },
 	{ id: "mat-comp-01", nameRu: "Композит световой Filtek Ultimate A2 (4г)", category: "therapy", unit: "шприц", currentStock: 6, minStock: 2, unitCostKopecks: 385000, supplierName: "СтомТорг Комплект", sku: "FLT-ULT-A2", needsReorder: false },
 	{ id: "mat-comp-02", nameRu: "Композит световой Estelite Asteria A2 (4г)", category: "therapy", unit: "шприц", currentStock: 1, minStock: 2, unitCostKopecks: 410000, supplierName: "СтомТорг Комплект", sku: "EST-AST-A2", needsReorder: true },
+	{ id: "mat-coff-01", nameRu: "Коффердам латексный (пластины 15x15 см)", category: "therapy", unit: "пласт.", currentStock: 32, minStock: 10, unitCostKopecks: 6500, supplierName: "СтомТорг Комплект", sku: "KOF-LAT-15", needsReorder: false },
 	{ id: "mat-bond-01", nameRu: "Адгезив самопротравливающий Single Bond (5мл)", category: "therapy", unit: "флакон", currentStock: 3, minStock: 1, unitCostKopecks: 540000, supplierName: "СтомТорг Комплект", sku: "BND-UNIV-5ML", needsReorder: false },
 	{ id: "mat-surg-01", nameRu: "Шовный материал Викрил 4-0 с иглой 16мм", category: "surgery", unit: "шт.", currentStock: 18, minStock: 10, unitCostKopecks: 36000, supplierName: "МедСнаб Трейд", sku: "VIC-4-0-16K", needsReorder: false },
 	{ id: "mat-hemo-01", nameRu: "Гемостатическая губка Альвостаз (30 шт)", category: "surgery", unit: "банка", currentStock: 4, minStock: 1, unitCostKopecks: 98000, supplierName: "МедСнаб Трейд", sku: "ALV-SPONGE-30", needsReorder: false },
@@ -108,13 +109,14 @@ export const PROCEDURE_TECH_MAPS: readonly ProcedureTechMap[] = [
 	{
 		id: "proc-filling-light",
 		code: "THER-01",
-		titleRu: "Пломбирование кариеса световым композитом",
+		titleRu: "Лечение кариеса световым композитом",
 		category: "therapy",
-		descriptionRu: "1 карпула артикаина, игла 30G, порция композита Filtek, адгезив, слюноотсос",
+		descriptionRu: "1 анестетик + 1 порция композита + 1 коффердам (плюс игла, адгезив, слюноотсос)",
 		items: [
 			{ materialId: "mat-art-01", nameRu: "Артикаин 1:100 000 (1.7 мл)", quantity: 1, unit: "карп.", unitCostKopecks: 14500 },
-			{ materialId: "mat-needle-01", nameRu: "Иглы карпульные 30G короткие", quantity: 1, unit: "шт.", unitCostKopecks: 850 },
 			{ materialId: "mat-comp-01", nameRu: "Композит световой Filtek A2", quantity: 1, unit: "порц.", unitCostKopecks: 48000 },
+			{ materialId: "mat-coff-01", nameRu: "Коффердам латексный (пластина)", quantity: 1, unit: "пласт.", unitCostKopecks: 6500 },
+			{ materialId: "mat-needle-01", nameRu: "Иглы карпульные 30G короткие", quantity: 1, unit: "шт.", unitCostKopecks: 850 },
 			{ materialId: "mat-bond-01", nameRu: "Адгезив Single Bond Universal", quantity: 1, unit: "капля", unitCostKopecks: 27000 },
 			{ materialId: "mat-saliv-01", nameRu: "Слюноотсос одноразовый", quantity: 1, unit: "шт.", unitCostKopecks: 320 },
 		],
@@ -122,14 +124,14 @@ export const PROCEDURE_TECH_MAPS: readonly ProcedureTechMap[] = [
 	{
 		id: "proc-surgery-extract",
 		code: "SURG-01",
-		titleRu: "Простое удаление зуба",
+		titleRu: "Удаление зуба простое",
 		category: "surgery",
-		descriptionRu: "2 карпулы анестетика, игла, гемостатическая губка, шовный материал",
+		descriptionRu: "1 анестетик + 1 шовный набор (плюс игла, гемостатическая губка)",
 		items: [
-			{ materialId: "mat-art-01", nameRu: "Артикаин 1:100 000 (1.7 мл)", quantity: 2, unit: "карп.", unitCostKopecks: 29000 },
+			{ materialId: "mat-art-01", nameRu: "Артикаин 1:100 000 (1.7 мл)", quantity: 1, unit: "карп.", unitCostKopecks: 14500 },
+			{ materialId: "mat-surg-01", nameRu: "Шовный набор Викрил 4-0", quantity: 1, unit: "шт.", unitCostKopecks: 36000 },
 			{ materialId: "mat-needle-01", nameRu: "Иглы карпульные 30G короткие", quantity: 1, unit: "шт.", unitCostKopecks: 850 },
 			{ materialId: "mat-hemo-01", nameRu: "Гемостатическая губка Альвостаз", quantity: 1, unit: "шт.", unitCostKopecks: 3267 },
-			{ materialId: "mat-surg-01", nameRu: "Шовный материал Викрил 4-0", quantity: 1, unit: "шт.", unitCostKopecks: 36000 },
 		],
 	},
 	{
@@ -166,6 +168,7 @@ export const PROCEDURE_TECH_MAPS: readonly ProcedureTechMap[] = [
 		items: [
 			{ materialId: "mat-art-01", nameRu: "Артикаин 1:100 000 (1.7 мл)", quantity: 1, unit: "карп.", unitCostKopecks: 14500 },
 			{ materialId: "mat-needle-01", nameRu: "Иглы карпульные 30G", quantity: 1, unit: "шт.", unitCostKopecks: 850 },
+			{ materialId: "mat-coff-01", nameRu: "Коффердам латексный (пластина)", quantity: 1, unit: "пласт.", unitCostKopecks: 6500 },
 			{ materialId: "mat-saliv-01", nameRu: "Слюноотсос одноразовый", quantity: 1, unit: "шт.", unitCostKopecks: 320 },
 		],
 	},

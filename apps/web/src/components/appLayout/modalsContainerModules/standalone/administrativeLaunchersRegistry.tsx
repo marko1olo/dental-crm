@@ -199,12 +199,15 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		},
 		render: () => <DirectCashRegisterLauncher />,
 	},
-	// 9. Склад материалов и маркировка
+	// 9. Склад материалов и маркировка (SSOT)
 	{
 		id: "warehouse-inventory",
 		title: "Склад материалов и маркировка",
 		criteria: {
-			tokens: ["warehouse", "inventory-hub", "stock"],
+			tokens: ["warehouse", "inventory-hub", "stock", "warehouse-studio", "inventory"],
+			searchIncludes: ["warehouse=1", "inventory=1", "stock=1", "standalone=warehouse", "standalone=inventory"],
+			exactHashes: ["#warehouse", "#inventory", "#stock", "#warehouse-studio", "#inventory-hub"],
+			hashPrefixes: ["#warehouse?", "#inventory?", "#stock?"],
 		},
 		render: () => <DirectWarehouseLauncher />,
 	},

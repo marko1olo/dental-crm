@@ -1,8 +1,9 @@
 /**
  * WarehouseStudioModal.tsx — Каноническая модалка-студия склада и расходных материалов (SSOT).
  * Мандаты: 8e (Автономия врача, 0 disabled кнопок), 8n (Соло-практика, пакетное списание, мягкий овердрафт),
- * 8am (Ровно 1 Primary CTA кнопка #0d9488), 8ze/Apple HIG (Drag Handle 36x5px, Touch Target >= 44x44px),
- * 8b (Sweet Spot: строго 380–480 строк), 8wy (Целочисленные копейки amountKopecks).
+ * 8am (Ровно 1 Primary CTA кнопка #0d9488: «✓ Списать расходные материалы пакетом»),
+ * 8ze / Apple HIG (Drag Handle 36x5px, Touch Target >= 44x44px, Natural Thumb Zone),
+ * 8b (Sweet Spot: строго 400–480 строк), 8wy (Целочисленные копейки amountKopecks).
  */
 
 import React, { useState, useMemo, useCallback } from "react";
@@ -33,7 +34,7 @@ import {
 	quickOneClickInventoryAudit,
 	formatKopecksToRubles,
 } from "./warehouseCatalogData.js";
-import "./warehouse.css";
+import "./styles/warehouseStudio.css";
 
 export interface WarehouseStudioModalProps {
 	readonly isOpen: boolean;
@@ -71,7 +72,8 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 	const filteredItems = useMemo(() => {
 		return stockItems.filter((item) => {
 			const matchesCategory = selectedCategory === "all" || item.category === selectedCategory;
-			const matchesQuery = !searchQuery || item.nameRu.toLowerCase().includes(searchQuery.toLowerCase()) || item.sku.toLowerCase().includes(searchQuery.toLowerCase());
+			const q = searchQuery.toLowerCase().trim();
+			const matchesQuery = !q || item.nameRu.toLowerCase().includes(q) || item.sku.toLowerCase().includes(q);
 			return matchesCategory && matchesQuery;
 		});
 	}, [stockItems, selectedCategory, searchQuery]);
@@ -89,8 +91,8 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 		setStockItems(updatedItems);
 		onStockUpdated?.(updatedItems);
 		const overdrafts = deductions.filter((d) => d.isOverdraft);
-		const msg = `Списано расходников на смену: ${deductions.length} поз. на ${formatKopecksToRubles(totalCostKopecks)}` +
-			(overdrafts.length > 0 ? ` (мягкий овердрафт: ${overdrafts.length} поз.)` : "");
+		const msg = `Списано расходников пакетом: ${deductions.length} позиций на ${formatKopecksToRubles(totalCostKopecks)}` +
+			(overdrafts.length > 0 ? ` (тихий овердрафт: ${overdrafts.length} поз.)` : "");
 		setStatusFeedback(msg);
 	}, [stockItems, selectedTechMapId, procMultiplier, onStockUpdated]);
 
@@ -109,16 +111,16 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 		const { updatedItems, clearedDeficitCount } = quickOneClickInventoryAudit(stockItems);
 		setStockItems(updatedItems);
 		onStockUpdated?.(updatedItems);
-		setStatusFeedback(`Экспресс-инвентаризация завершена: нормализовано ${clearedDeficitCount} дефицитных позиций.`);
+		setStatusFeedback(`Сверка склада завершена в 1 клик: выровнено ${clearedDeficitCount} позиций.`);
 	}, [stockItems, onStockUpdated]);
 
 	if (!isOpen) return null;
 
 	return (
-		<div className="fixed inset-0 z-50 flex flex-col justify-end sm:justify-center items-center warehouse-modal-backdrop p-0 sm:p-4 overflow-x-clip" role="dialog" aria-modal="true">
-			<div className="warehouse-sheet-container w-full sm:max-w-4xl max-h-[92vh] sm:max-h-[88vh] rounded-t-[24px] sm:rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-[var(--line)]" data-testid="warehouse-studio-modal">
+		<div className="warehouse-modal-backdrop" role="dialog" aria-modal="true" aria-label="Склад материалов и списание расходников">
+			<div className="warehouse-sheet-container" data-testid="warehouse-studio-modal">
 				{/* Apple HIG Drag Handle для мобильных экранов 390x844 */}
-				<div className="warehouse-drag-handle sm:hidden shrink-0 cursor-grab" data-testid="mobile-drag-handle" aria-label="Сдвинуть для закрытия" />
+				<div className="warehouse-drag-handle sm:hidden" data-testid="mobile-drag-handle" aria-label="Сдвинуть для закрытия" />
 
 				{/* Шапка модалки */}
 				<header className="px-4 py-3 sm:px-6 sm:py-4 border-b border-[var(--line)] flex items-center justify-between shrink-0">
@@ -127,11 +129,11 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 							<Package className="w-5 h-5" />
 						</div>
 						<div className="min-w-0">
-							<h2 className="text-sm sm:text-lg font-bold text-[var(--ink)] leading-tight">
+							<h2 className="text-sm sm:text-lg font-bold text-[var(--ink)] leading-tight truncate">
 								<span className="hidden sm:inline">Склад и пакетное списание расходных материалов</span>
-								<span className="sm:hidden">Склад и расходные материалы</span>
+								<span className="sm:hidden">Склад материалов</span>
 							</h2>
-							<p className="text-xs text-[var(--ink)]/60 leading-tight">
+							<p className="text-xs text-[var(--ink)]/60 leading-tight truncate">
 								<span className="hidden sm:inline">Организация: {organizationId} • Учет в копейках • Мягкий овердрафт без блокировок</span>
 								<span className="sm:hidden">Организация: {organizationId} • Учет в копейках</span>
 							</p>
@@ -144,20 +146,20 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 
 				{/* Сводные KPI склада */}
 				<section className="px-4 py-2 sm:px-6 sm:py-3 bg-[var(--line)]/5 border-b border-[var(--line)] grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs shrink-0">
-					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]/60">
-						<span className="text-[var(--ink)]/60 block">Всего позиций</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)]/60 shadow-xs">
+						<span className="text-[var(--ink)]/60 block text-[11px]">Всего позиций</span>
 						<span className="text-sm font-bold text-[var(--ink)]">{kpis.totalPositions}</span>
 					</div>
-					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]/60">
-						<span className="text-[var(--ink)]/60 block">В дефиците</span>
-						<span className={`text-sm font-bold ${kpis.deficitCount > 0 ? "text-rose-600" : "text-emerald-600"}`}>{kpis.deficitCount}</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)]/60 shadow-xs">
+						<span className="text-[var(--ink)]/60 block text-[11px]">В дефиците</span>
+						<span className={`text-sm font-bold ${kpis.deficitCount > 0 ? "text-rose-600 dark:text-rose-400" : "text-emerald-600 dark:text-emerald-400"}`}>{kpis.deficitCount}</span>
 					</div>
-					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]/60">
-						<span className="text-[var(--ink)]/60 block">Требуют заказа</span>
-						<span className={`text-sm font-bold ${kpis.reorderCount > 0 ? "text-amber-600" : "text-emerald-600"}`}>{kpis.reorderCount}</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)]/60 shadow-xs">
+						<span className="text-[var(--ink)]/60 block text-[11px]">Требуют заказа</span>
+						<span className={`text-sm font-bold ${kpis.reorderCount > 0 ? "text-amber-600 dark:text-amber-400" : "text-emerald-600 dark:text-emerald-400"}`}>{kpis.reorderCount}</span>
 					</div>
-					<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]/60">
-						<span className="text-[var(--ink)]/60 block">Стоимость запасов</span>
+					<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)]/60 shadow-xs">
+						<span className="text-[var(--ink)]/60 block text-[11px]">Стоимость запасов</span>
 						<span className="text-sm font-bold text-[#0d9488]">{formatKopecksToRubles(kpis.totalValuationKopecks)}</span>
 					</div>
 				</section>
@@ -165,29 +167,29 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 				{/* Панель вкладок и быстрых действий */}
 				<div className="px-4 py-2 sm:px-6 sm:py-2.5 border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2 shrink-0">
 					<div className="inline-flex p-1 rounded-xl bg-[var(--line)]/10 text-xs">
-						<button type="button" onClick={() => setActiveTab("stock")} className={`px-3 py-1.5 rounded-lg transition-all warehouse-touch-target min-h-[36px] ${activeTab === "stock" ? "warehouse-tab-active" : "text-[var(--ink)]/70 hover:text-[var(--ink)]"}`}>
-							Остатки на складе
+						<button type="button" onClick={() => setActiveTab("stock")} className={`warehouse-tab-pill ${activeTab === "stock" ? "warehouse-tab-active" : ""}`}>
+							Остатки и склад
 						</button>
-						<button type="button" onClick={() => setActiveTab("deduct")} className={`px-3 py-1.5 rounded-lg transition-all warehouse-touch-target min-h-[36px] ${activeTab === "deduct" ? "warehouse-tab-active" : "text-[var(--ink)]/70 hover:text-[var(--ink)]"}`}>
-							Пакетное списание смены
+						<button type="button" onClick={() => setActiveTab("deduct")} className={`warehouse-tab-pill ${activeTab === "deduct" ? "warehouse-tab-active" : ""}`}>
+							Списание материалов по процедурам
 						</button>
-						<button type="button" onClick={() => setActiveTab("inbound")} className={`px-3 py-1.5 rounded-lg transition-all warehouse-touch-target min-h-[36px] ${activeTab === "inbound" ? "warehouse-tab-active" : "text-[var(--ink)]/70 hover:text-[var(--ink)]"}`}>
-							Приходная накладная
+						<button type="button" onClick={() => setActiveTab("inbound")} className={`warehouse-tab-pill ${activeTab === "inbound" ? "warehouse-tab-active" : ""}`}>
+							Поступления и накладные
 						</button>
 					</div>
 
 					<div className="flex items-center gap-2">
-						<button type="button" data-testid="btn-batch-deduct" onClick={() => setActiveTab("deduct")} className="warehouse-secondary-btn px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 warehouse-touch-target min-h-[36px]">
+						<button type="button" data-testid="btn-batch-deduct" onClick={() => setActiveTab("deduct")} className="warehouse-secondary-btn">
 							<MinusCircle className="w-3.5 h-3.5 text-amber-500" />
 							<span>Пакетный расход</span>
 						</button>
-						<button type="button" data-testid="btn-express-inbound" onClick={() => setActiveTab("inbound")} className="warehouse-secondary-btn px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 warehouse-touch-target min-h-[36px]">
+						<button type="button" data-testid="btn-express-inbound" onClick={() => setActiveTab("inbound")} className="warehouse-secondary-btn">
 							<Truck className="w-3.5 h-3.5 text-blue-500" />
-							<span>Приход</span>
+							<span>Поступление</span>
 						</button>
-						<button type="button" data-testid="btn-quick-inventory-audit" onClick={handleQuickAudit} className="warehouse-secondary-btn px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 warehouse-touch-target min-h-[36px]">
+						<button type="button" data-testid="btn-quick-inventory-audit" onClick={handleQuickAudit} className="warehouse-secondary-btn">
 							<RefreshCw className="w-3.5 h-3.5 text-[#0d9488]" />
-							<span className="hidden sm:inline">Инвентаризация в 1 клик</span>
+							<span className="hidden sm:inline">Сверка в 1 клик</span>
 							<span className="sm:hidden">Сверка</span>
 						</button>
 					</div>
@@ -218,7 +220,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 								</div>
 
 								{/* Категории фильтра */}
-								<div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs shrink-0 max-w-full">
+								<div className="flex gap-1.5 overflow-x-auto pb-1 sm:pb-0 text-xs shrink-0 max-w-full no-scrollbar">
 									<button type="button" onClick={() => setSelectedCategory("all")} className={`shrink-0 whitespace-nowrap px-3 py-1.5 rounded-lg border warehouse-touch-target min-h-[40px] ${selectedCategory === "all" ? "bg-[#0d9488]/15 border-[#0d9488] text-[#0d9488] font-semibold" : "border-[var(--line)] text-[var(--ink)]/70 hover:bg-[var(--line)]/10"}`}>
 										Все ({stockItems.length})
 									</button>
@@ -231,7 +233,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 							</div>
 
 							{/* Таблица остатков */}
-							<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
+							<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)] shadow-xs">
 								<div className="overflow-x-auto max-w-full">
 									<table className="w-full text-left text-xs border-collapse">
 										<thead>
@@ -255,7 +257,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 														</td>
 														<td className="p-3 text-[var(--ink)]/70">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</td>
 														<td className="p-3 text-right font-semibold">
-															<span className={item.currentStock < 0 ? "text-rose-600" : "text-[var(--ink)]"}>
+															<span className={item.currentStock < 0 ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}>
 																{item.currentStock} {item.unit}
 															</span>
 														</td>
@@ -274,7 +276,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 						</div>
 					)}
 
-					{/* Вкладка 2: Пакетное списание смены */}
+					{/* Вкладка 2: Списание материалов по процедурам */}
 					{activeTab === "deduct" && (
 						<div className="space-y-4">
 							<div className="p-4 rounded-xl bg-[var(--line)]/5 border border-[var(--line)] space-y-3">
@@ -283,7 +285,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 									Автоматическое списание по техкартам процедур (Мандат 8n)
 								</h3>
 								<p className="text-xs text-[var(--ink)]/70">
-									Списание расходников крупным пакетом за рабочую смену врача в 1 клик. Если остаток нулевой — применяется мягкий овердрафт без сбоев.
+									Списание расходников крупным пакетом за рабочую смену врача в 1 клик. Если остаток нулевой — применяется мягкий овердрафт без блокировок.
 								</p>
 
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
@@ -307,7 +309,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 							</div>
 
 							{/* Предварительный расчет материалов к списанию */}
-							<div className="border border-[var(--line)] rounded-xl p-4 bg-[var(--paper)] space-y-2">
+							<div className="border border-[var(--line)] rounded-xl p-4 bg-[var(--paper)] space-y-2 shadow-xs">
 								<h4 className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">
 									Расходные материалы по протоколу: {selectedTechMap.titleRu}
 								</h4>
@@ -317,7 +319,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 										const totalDeduct = mat.quantity * procMultiplier;
 										const nextStock = (currentItem?.currentStock ?? 0) - totalDeduct;
 										return (
-											<div key={mat.materialId} className="py-2 flex items-center justify-between text-xs">
+											<div key={mat.materialId} className="py-2.5 flex items-center justify-between text-xs">
 												<div>
 													<span className="font-medium text-[var(--ink)]">{mat.nameRu}</span>
 													<span className="text-[11px] text-[var(--ink)]/50 block">Норма на приём: {mat.quantity} {mat.unit}</span>
@@ -325,7 +327,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 												<div className="text-right">
 													<span className="font-bold text-[var(--ink)]">Списать: {totalDeduct} {mat.unit}</span>
 													<span className={`text-[11px] block ${nextStock < 0 ? "text-rose-500 font-semibold" : "text-[var(--ink)]/60"}`}>
-														Остаток после: {nextStock} {mat.unit} {nextStock < 0 ? "(овердрафт)" : ""}
+														Остаток после: {nextStock} {mat.unit} {nextStock < 0 ? "(мягкий овердрафт)" : ""}
 													</span>
 												</div>
 											</div>
@@ -336,7 +338,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 						</div>
 					)}
 
-					{/* Вкладка 3: Приходная накладная */}
+					{/* Вкладка 3: Поступления и накладные */}
 					{activeTab === "inbound" && (
 						<div className="space-y-4">
 							<div className="p-4 rounded-xl bg-[var(--line)]/5 border border-[var(--line)] space-y-3">
@@ -355,13 +357,13 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 								</div>
 							</div>
 
-							<div className="border border-[var(--line)] rounded-xl p-4 bg-[var(--paper)] space-y-3">
+							<div className="border border-[var(--line)] rounded-xl p-4 bg-[var(--paper)] space-y-3 shadow-xs">
 								<h4 className="text-xs font-bold text-[var(--ink)] uppercase tracking-wider">Позиции накладной поставщика:</h4>
 								<div className="space-y-2">
-									{stockItems.slice(0, 5).map((item) => {
+									{stockItems.slice(0, 6).map((item) => {
 										const currentQty = inboundQuantities[item.id] ?? 0;
 										return (
-											<div key={item.id} className="p-2 rounded-lg border border-[var(--line)] flex items-center justify-between gap-3 text-xs">
+											<div key={item.id} className="p-2.5 rounded-xl border border-[var(--line)] flex items-center justify-between gap-3 text-xs">
 												<div className="min-w-0">
 													<span className="font-medium text-[var(--ink)] truncate block">{item.nameRu}</span>
 													<span className="text-[10px] text-[var(--ink)]/50">Текущий остаток: {item.currentStock} {item.unit} • {formatKopecksToRubles(item.unitCostKopecks)}/ед.</span>
@@ -383,29 +385,29 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 				</main>
 
 				{/* Подвал с ровно одной Primary CTA кнопкой (Мандат 8am: #0d9488) и 0 disabled кнопками (Мандат 8e) */}
-				<footer className="p-4 sm:px-6 sm:py-3 border-t border-[var(--line)] bg-[var(--paper)] flex flex-col-reverse sm:flex-row items-stretch sm:items-center justify-between gap-2 shrink-0">
-					<button type="button" onClick={onClose} className="warehouse-secondary-btn px-4 py-2.5 rounded-xl text-xs warehouse-touch-target min-h-[44px]">
+				<footer className="warehouse-bottom-actions">
+					<button type="button" onClick={onClose} className="warehouse-secondary-btn min-h-[44px]">
 						Закрыть
 					</button>
 
 					{activeTab === "deduct" && (
-						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitBatchDeduction} className="warehouse-primary-btn px-5 py-2.5 rounded-xl text-xs bg-[#0d9488] text-white flex items-center justify-center gap-2 warehouse-touch-target min-h-[44px] shadow-sm">
+						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitBatchDeduction} className="warehouse-primary-btn">
 							<CheckCircle2 className="w-4 h-4" />
-							<span>✓ Списать расход смены</span>
+							<span>✓ Списать расходные материалы пакетом</span>
 						</button>
 					)}
 
 					{activeTab === "inbound" && (
-						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitIncomingInvoice} className="warehouse-primary-btn px-5 py-2.5 rounded-xl text-xs bg-[#0d9488] text-white flex items-center justify-center gap-2 warehouse-touch-target min-h-[44px] shadow-sm">
+						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitIncomingInvoice} className="warehouse-primary-btn">
 							<CheckCircle2 className="w-4 h-4" />
-							<span>✓ Оприходовать поставку</span>
+							<span>✓ Оприходовать накладную</span>
 						</button>
 					)}
 
 					{activeTab === "stock" && (
-						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={() => setActiveTab("deduct")} className="warehouse-primary-btn px-5 py-2.5 rounded-xl text-xs bg-[#0d9488] text-white flex items-center justify-center gap-2 warehouse-touch-target min-h-[44px] shadow-sm">
+						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={() => setActiveTab("deduct")} className="warehouse-primary-btn">
 							<CheckCircle2 className="w-4 h-4" />
-							<span>✓ Сохранить складские движения</span>
+							<span>✓ Списать расходные материалы пакетом</span>
 						</button>
 					)}
 				</footer>
