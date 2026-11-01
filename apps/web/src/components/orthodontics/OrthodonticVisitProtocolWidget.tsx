@@ -1,10 +1,10 @@
 /**
  * @dental/web/components/orthodontics/OrthodonticVisitProtocolWidget.tsx
- * DENTE Dental CRM — Протокол ортодонтического приёма и API-синхронизация (Мандаты 8b, 8e).
+ * DENTE Dental CRM — Протокол ортодонтического приёма и API-синхронизация (Мандаты 8b <= 120 строк, 8e).
  */
 
 import React, { useEffect, useCallback } from "react";
-import { OrthodonticStudioModal } from "./OrthodonticStudioModal";
+import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import type { OrthoProtocolState } from "./orthodonticsCatalogData";
 
@@ -31,7 +31,7 @@ export const OrthodonticVisitProtocolWidget: React.FC<OrthodonticVisitProtocolWi
 					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
 				});
 			} catch {
-				// Офлайн-автономия
+				// Офлайн-автономия врача (Мандат 8e)
 			}
 		};
 		fetchProgress();
@@ -43,29 +43,48 @@ export const OrthodonticVisitProtocolWidget: React.FC<OrthodonticVisitProtocolWi
 				await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({ setNumber: state.currentMonth }),
+					body: JSON.stringify({
+						alignerCount: state.alignerTracking.issuedSetsCount || 2,
+						wearDaysPerAligner: state.alignerTracking.wearDaysPerStep || 14,
+						totalAligners: state.alignerTracking.totalSteps || 24,
+						note: "Выдача комплекта элайнеров",
+					}),
 				});
 			} else {
+				const materialMap: Record<string, "NiTi" | "CuNiTi" | "SS" | "TMA"> = {
+					niti: "NiTi",
+					cuniti: "CuNiTi",
+					ss: "SS",
+					tma: "TMA",
+				};
 				await fetch(`/api/orthodontics/${patientId}/archwire-change`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({ upperAlloy: state.upperAlloy, upperSection: state.upperSection }),
+					body: JSON.stringify({
+						material: materialMap[state.upperAlloy] || "CuNiTi",
+						section: state.upperSection,
+						arch: "both",
+						note: "Плановая замена ортодонтической дуги",
+					}),
 				});
 				await fetch(`/api/orthodontics/${patientId}/ligatures-activate`, {
 					method: "POST",
 					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-					body: JSON.stringify({ actionIds: state.selectedActionIds }),
+					body: JSON.stringify({
+						powerChain: state.selectedActionIds.includes("power_chain"),
+						note: "Активация лигатур и эластиков",
+					}),
 				});
 			}
 		} catch {
-			// Офлайн-сохранение
+			// Офлайн-сохранение (Мандат 8e)
 		}
 	}, [patientId]);
 
 	if (!isOpen) return null;
 
 	return (
-		<OrthodonticStudioModal
+		<OrthodonticsStudioModal
 			isOpen={isOpen}
 			onClose={onClose}
 			onSaveProtocol={handleSave}

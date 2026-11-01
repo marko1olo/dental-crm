@@ -1,33 +1,24 @@
 /**
  * @dental/web/components/orthodontics/DirectOrthodonticsLauncher.tsx
- * DENTE Dental CRM — Автономный лаунчер ортодонтической студии (Мандаты 8b 70–90 строк, 8aq).
- * Deep Link Mount: #ortho, #orthodontics, ?ortho=1, ?orthodontics=1.
+ * DENTE Dental CRM — Автономный лаунчер ортодонтической студии (Мандаты 8b 60–80 строк, 8aq).
+ * Deep Link Mount: #ortho, #orthodontics, #ortho-studio, ?ortho=1, ?orthodontics=1.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { OrthodonticStudioModal } from "./OrthodonticStudioModal";
-import type { OrthoProtocolState } from "./orthodonticsCatalogData";
+import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
 
 function checkIsOrthoActive(): boolean {
 	if (typeof window === "undefined") return false;
 	const h = window.location.hash.toLowerCase();
 	const s = window.location.search.toLowerCase();
 	const p = new URLSearchParams(s);
-	return h === "#ortho" || h.includes("ortho") || p.get("ortho") === "1" || p.get("orthodontics") === "1";
+	if (h.includes("orthoped") || p.get("orthopedics") === "1") return false;
+	return h === "#ortho" || h.includes("orthodont") || h.includes("ortho-") || p.get("ortho") === "1" || p.get("orthodontics") === "1";
 }
 
 export const DirectOrthodonticsLauncher: React.FC = () => {
 	const [isActive, setIsActive] = useState<boolean>(checkIsOrthoActive);
 	const [isOpen, setIsOpen] = useState<boolean>(true);
-
-	const [theme] = useState<"light" | "dark">(() => {
-		if (typeof window !== "undefined") {
-			const s = window.location.search.toLowerCase();
-			const h = window.location.hash.toLowerCase();
-			if (s.includes("dark") || h.includes("dark") || document.documentElement.classList.contains("dark")) return "dark";
-		}
-		return "light";
-	});
 
 	useEffect(() => {
 		const handleLocationChange = () => {
@@ -35,7 +26,10 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 			setIsActive(active);
 			if (active) setIsOpen(true);
 		};
-		const handleOpenEvent = () => { setIsActive(true); setIsOpen(true); };
+		const handleOpenEvent = () => {
+			setIsActive(true);
+			setIsOpen(true);
+		};
 
 		window.addEventListener("hashchange", handleLocationChange);
 		window.addEventListener("popstate", handleLocationChange);
@@ -49,13 +43,6 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 			window.removeEventListener("dente:open-ortho", handleOpenEvent);
 		};
 	}, []);
-
-	useEffect(() => {
-		if (typeof document !== "undefined") {
-			document.documentElement.classList.toggle("dark", theme === "dark");
-			document.documentElement.classList.toggle("light", theme !== "dark");
-		}
-	}, [theme]);
 
 	const handleClose = useCallback(() => {
 		setIsOpen(false);
@@ -72,10 +59,13 @@ export const DirectOrthodonticsLauncher: React.FC = () => {
 	if (!isActive || !isOpen) return null;
 
 	return (
-		<OrthodonticStudioModal
+		<OrthodonticsStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			onSaveProtocol={() => { setIsOpen(false); setIsActive(false); }}
+			onSaveProtocol={() => {
+				setIsOpen(false);
+				setIsActive(false);
+			}}
 			patientName="Смирнова Екатерина Андреевна"
 			doctorName="Д-р Соколов А. В."
 		/>

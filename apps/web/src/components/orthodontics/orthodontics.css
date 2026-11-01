@@ -1,7 +1,9 @@
 /**
  * @dental/web/components/orthodontics/orthodontics.css
- * DENTE Dental CRM — Канонические стили ортодонтической студии и протокола визита (Мандаты 8b, 8e, 8am).
+ * DENTE Dental CRM — Модульный фасад стилей ортодонтии (Мандаты 8b, 8e, 8am).
  */
+
+@import "./styles/orthodonticsStudio.css";
 
 .ortho-studio-modal-backdrop {
 	background-color: rgba(0, 0, 0, 0.65);
@@ -45,13 +47,4 @@
 .ortho-touch-target {
 	min-height: 44px;
 	min-width: 44px;
-}
-
-@media (max-width: 640px) {
-	.ortho-studio-dialog {
-		border-bottom-left-radius: 0;
-		border-bottom-right-radius: 0;
-		border-top-left-radius: 24px;
-		border-top-right-radius: 24px;
-	}
 }

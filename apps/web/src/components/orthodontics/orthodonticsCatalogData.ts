@@ -1,10 +1,10 @@
 /**
  * @dental/web/components/orthodontics/orthodonticsCatalogData.ts
  *
- * Канонический единый SSOT ортодонтического каталога, классификатора прикуса по Энглю,
- * дуг, эластиков, аппаратуры и 1-клик протокола активации у кресла (Мандаты 8b, 8e, 8x, 8am).
+ * Канонический SSOT ортодонтического каталога, классификатора Энгля,
+ * дуг, эластиков, аппаратуры, фотопротокола и элайнеров (Мандаты 8b, 8e, 8x, 8am).
  *
- * Sweet Spot: 300–350 строк.
+ * Sweet Spot: 300–350 строк (Мандат 8b/8zi).
  */
 
 export type ApplianceCategory = "brackets" | "aligners" | "plate";
@@ -121,6 +121,32 @@ export const TRG_ANGLES_NORMS_SSOT: TrgAngleNorm[] = [
 	{ key: "fma", name: "Угол плоскости нижней челюсти", symbol: "FMA", normDeg: 25, toleranceDeg: 3, unit: "deg", author: "Tweed", interpretationRu: "Франкфуртская горизонталь к мандибулярной линии Go-Me. Тип роста." },
 ];
 
+export interface OrthoPhotoSlotDef {
+	id: "frontal_rest" | "frontal_smile" | "profile" | "occlusion_right" | "occlusion_center" | "occlusion_left";
+	titleRu: string;
+	category: "portrait" | "intraoral";
+	descriptionRu: string;
+}
+
+export const ORTHO_PHOTO_SLOTS_SSOT: OrthoPhotoSlotDef[] = [
+	{ id: "frontal_rest", titleRu: "Анфас в покое", category: "portrait", descriptionRu: "Симметрия лица, пропорции третей, смыкание губ" },
+	{ id: "frontal_smile", titleRu: "Анфас с улыбкой", category: "portrait", descriptionRu: "Линия улыбки, экспозиция резцов, щечные коридоры" },
+	{ id: "profile", titleRu: "Профиль лица", category: "portrait", descriptionRu: "Носогубный угол, профиль по Риккетсу, положение губ" },
+	{ id: "occlusion_right", titleRu: "Окклюзия справа", category: "intraoral", descriptionRu: "Класс смыкания по молярам и клыкам (16-46, 13-43)" },
+	{ id: "occlusion_center", titleRu: "Окклюзия по центру", category: "intraoral", descriptionRu: "Совпадение центральных линий, перекрытие резцов" },
+	{ id: "occlusion_left", titleRu: "Окклюзия слева", category: "intraoral", descriptionRu: "Класс смыкания по молярам и клыкам (26-36, 23-33)" },
+];
+
+export interface AlignerTrackingState {
+	currentStep: number;
+	totalSteps: number;
+	wearDaysPerStep: number;
+	issuedSetsCount: number;
+	nextPlannedDate: string;
+	iprCompleted: boolean;
+	attachmentsVerified: boolean;
+}
+
 export interface ChairsideActionItem {
 	id: string;
 	label: string;
@@ -130,7 +156,7 @@ export interface ChairsideActionItem {
 export const CHAIRSIDE_ACTIONS_CATALOG: ChairsideActionItem[] = [
 	{ id: "bracket_setup", label: "Установка брекет-системы", category: "setup" },
 	{ id: "archwire_replace", label: "Замена ортодонтической дуги", category: "archwire" },
-	{ id: "aligner_dispense", label: "Выдача кап элайнеров №1–4", category: "aligners" },
+	{ id: "aligner_dispense", label: "Выдача комплекта элайнеров", category: "aligners" },
 	{ id: "attachments_bonding", label: "Фиксация композитных аттачментов", category: "aligners" },
 	{ id: "elastics_prescription", label: "Назначение межчелюстных эластиков", category: "elastics" },
 	{ id: "change_ligatures", label: "Замена эластических лигатур", category: "archwire" },
@@ -196,19 +222,19 @@ export interface OrthoPatientMemoSection {
 export const ORTHO_PATIENT_MEMO_SECTIONS: OrthoPatientMemoSection[] = [
 	{
 		id: "hygiene", titleRu: "Гигиена полости рта при ортодонтическом лечении",
-		textRu: "Чистить зубы после каждого приема пищи в течение 3–4 минут. Обязательно использовать ортодонтическую щетку с V-образным углублением, монопучковую щетку для очистки вокруг каждого брекета и межзубные ершики. Ирригатор рекомендуется применять ежедневно вечером на минимальной или средней мощности со специализированной ортодонтической насадкой.",
+		textRu: "Чистить зубы после каждого приема пищи в течение 3–4 минут ортодонтической щеткой с V-образным пазом, монопучком и ершиками. Ирригатор рекомендуется применять ежедневно вечером со специализированной насадкой.",
 	},
 	{
 		id: "wax", titleRu: "Использование ортодонтического воска",
-		textRu: "В первые 7–10 дней после установки или смены дуги выступающие элементы брекетов могут вызывать дискомфорт слизистой оболочки губ и щек. Оторвите небольшой кусочек воска размером с горошину, разогрейте его чистыми пальцами и плотно прижмите к замку, натирающему слизистую. Перед приемом пищи воск необходимо снять.",
+		textRu: "В первые 7–10 дней после смены дуги выступающие замки могут натирать слизистую щек или губ. Оторвите шарик воска с горошину, согрейте чистыми пальцами и прижмите к замку. Перед приемом пищи воск необходимо снять.",
 	},
 	{
 		id: "diet", titleRu: "Ограничения в питании",
-		textRu: "Категорически запрещается откусывать передними зубами твердые продукты: яблоки, груши, морковь, мясо и тосты нарезайте тонкими кусочками. Полностью исключите из рациона орехи, сухарики, лед, ириски, леденцы и жевательную резинку. Употребление твердой или вязкой пищи приводит к отклейке замков брекетов и удлинению срока лечения.",
+		textRu: "Запрещается откусывать передними зубами жесткие продукты: яблоки, груши, морковь и тосты нарезайте тонкими кусочками. Исключите орехи, сухарики, ириски и жевательную резинку во избежание отклейки замков брекетов.",
 	},
 	{
 		id: "elastics_aligners", titleRu: "Режим ношения эластиков и кап",
-		textRu: "Межчелюстные эластики и элайнеры требуется носить не менее 22 часов в сутки. Снятие допускается строго во время чистки зубов и основного приема пищи. Замена тяг на свежую пару выполняется 2 раза в день (утром и вечером), так как латекс теряет терапевтическую силу за 12 часов. При утере или поломке капы незамедлительно свяжитесь с клиникой.",
+		textRu: "Межчелюстные эластики и элайнеры требуется носить не менее 22 часов в сутки. Снятие допускается строго во время еды и чистки зубов. Замена тяг выполняется дважды в день. При поломке капы немедленно свяжитесь с клиникой.",
 	},
 ];
 
@@ -228,6 +254,8 @@ export interface OrthoProtocolState {
 	selectedElasticId: string | null;
 	selectedActionIds: string[];
 	trgValues: Record<string, number>;
+	alignerTracking: AlignerTrackingState;
+	photoStatuses: Record<string, boolean>;
 	clinicalNotes: string;
 	savedAt?: string;
 }
@@ -249,6 +277,8 @@ export function createDefaultOrthoProtocolState(): OrthoProtocolState {
 		selectedElasticId: "c2_fox",
 		selectedActionIds: ["archwire_replace", "change_ligatures", "cinch_back"],
 		trgValues: { sna: 82.2, snb: 80.1, anb: 2.1, u1_na: 22.5, l1_nb: 25.1, fma: 24.8 },
+		alignerTracking: { currentStep: 6, totalSteps: 24, wearDaysPerStep: 14, issuedSetsCount: 2, nextPlannedDate: "24.11.2026", iprCompleted: true, attachmentsVerified: true },
+		photoStatuses: { frontal_rest: true, frontal_smile: true, profile: true, occlusion_right: true, occlusion_center: true, occlusion_left: true },
 		clinicalNotes: "Плановая активация брекет-системы. Динамика смыкания по I классу Энгля положительная. Рекомендовано ношение эластиков Fox 3.5 oz 22 ч/сут.",
 	};
 }
@@ -259,24 +289,12 @@ export function calculateSkeletalClassFromAnb(anbDeg: number): {
 	description: string;
 } {
 	if (anbDeg > 4.5) {
-		return {
-			skeletalClass: "II",
-			labelRu: "II Скелетный класс (Дистальный)",
-			description: "Ретрогнатия нижней челюсти или прогнатия верхней челюсти. Назначена тяга Class II.",
-		};
+		return { skeletalClass: "II", labelRu: "II Скелетный класс (Дистальный)", description: "Ретрогнатия нижней челюсти или прогнатия верхней челюсти. Назначена тяга Class II." };
 	}
 	if (anbDeg < 0.0) {
-		return {
-			skeletalClass: "III",
-			labelRu: "III Скелетный класс (Мезиальный)",
-			description: "Прогнатия нижней челюсти или мезиальное соотношение. Назначена тяга Class III.",
-		};
+		return { skeletalClass: "III", labelRu: "III Скелетный класс (Мезиальный)", description: "Прогнатия нижней челюсти или мезиальное соотношение. Назначена тяга Class III." };
 	}
-	return {
-		skeletalClass: "I",
-		labelRu: "I Скелетный класс (Норма)",
-		description: "Нейтральное сагиттальное соотношение апикальных базисов челюстей.",
-	};
+	return { skeletalClass: "I", labelRu: "I Скелетный класс (Норма)", description: "Нейтральное сагиттальное соотношение апикальных базисов челюстей." };
 }
 
 export function evaluateTrgAngleStatus(key: string, value: number): {
@@ -287,12 +305,8 @@ export function evaluateTrgAngleStatus(key: string, value: number): {
 	const norm = TRG_ANGLES_NORMS_SSOT.find((n) => n.key === key);
 	if (!norm) return { status: "normal", diff: 0, badgeLabelRu: "Норма" };
 	const diff = Math.round((value - norm.normDeg) * 10) / 10;
-	if (Math.abs(diff) <= norm.toleranceDeg) {
-		return { status: "normal", diff, badgeLabelRu: "В норме" };
-	}
-	if (diff > norm.toleranceDeg) {
-		return { status: "deviation_high", diff, badgeLabelRu: `+${diff}° выше нормы` };
-	}
+	if (Math.abs(diff) <= norm.toleranceDeg) return { status: "normal", diff, badgeLabelRu: "В норме" };
+	if (diff > norm.toleranceDeg) return { status: "deviation_high", diff, badgeLabelRu: `+${diff}° выше нормы` };
 	return { status: "deviation_low", diff, badgeLabelRu: `${diff}° ниже нормы` };
 }
 
@@ -301,16 +315,18 @@ export function formatOrthoProtocolSoapEntry(state: OrthoProtocolState): string 
 	const lowerAlloyObj = ARCHWIRE_ALLOYS_SSOT.find((a) => a.key === state.lowerAlloy)?.shortRu || state.lowerAlloy;
 	const elastic = ELASTICS_CATALOG.find((e) => e.id === state.selectedElasticId);
 	const angleObj = ANGLE_CLASSES_CATALOG.find((ac) => ac.key === state.angleClass);
-	const actionLabels = state.selectedActionIds
-		.map((id) => CHAIRSIDE_ACTIONS_CATALOG.find((a) => a.id === id)?.label)
-		.filter(Boolean);
+	const actionLabels = state.selectedActionIds.map((id) => CHAIRSIDE_ACTIONS_CATALOG.find((a) => a.id === id)?.label).filter(Boolean);
 
 	const parts: string[] = [
 		`[ПРОТОКОЛ ПРИЁМА ОРТОДОНТА — ${state.applianceName}]`,
 		`Диагноз окклюзии: ${angleObj?.titleRu || "I класс по Энглю"}.`,
 		`Этап ортодонтического лечения: месяц ${state.currentMonth} из ${state.totalMonths}.`,
-		`Дуга на верхней челюсти: ${state.upperSection} ${upperAlloyObj}; Дуга на нижней челюсти: ${state.lowerSection} ${lowerAlloyObj}.`,
 	];
+	if (state.applianceCategory === "aligners") {
+		parts.push(`Элайнеры: шаг ${state.alignerTracking.currentStep} из ${state.alignerTracking.totalSteps} (смена каждые ${state.alignerTracking.wearDaysPerStep} дн.). Выдано: ${state.alignerTracking.issuedSetsCount} компл. Плановый переход: ${state.alignerTracking.nextPlannedDate}.`);
+	} else {
+		parts.push(`Дуга на верхней челюсти: ${state.upperSection} ${upperAlloyObj}; Дуга на нижней челюсти: ${state.lowerSection} ${lowerAlloyObj}.`);
+	}
 	if (elastic) parts.push(`Межчелюстная тяга: ${elastic.classNameRu} (${elastic.animalName}, сила ${elastic.forceOz}), схема фиксации: ${elastic.hookSchemeRu}.`);
 	if (actionLabels.length > 0) parts.push(`Манипуляции у кресла: ${actionLabels.join("; ")}.`);
 	if (state.clinicalNotes) parts.push(`Клинические заметки: ${state.clinicalNotes}`);
