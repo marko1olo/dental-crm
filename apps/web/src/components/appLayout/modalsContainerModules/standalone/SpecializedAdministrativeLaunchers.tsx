@@ -21,6 +21,7 @@ import { renderRecallsStandaloneLauncher } from "./administrative/RecallsStandal
 import { DirectAppointmentLauncher } from "../../../schedule/DirectAppointmentLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
+import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
@@ -119,6 +120,21 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.search.includes("standalone=settings"))
 	) {
 		return <DirectSettingsLauncher />;
+	}
+
+	// 10. Студия рецептов и медикаментозных назначений (?prescriptions=1, ?rx=1, #prescriptions, #rx, #prescription-studio)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#prescriptions" ||
+			window.location.hash.startsWith("#prescriptions?") ||
+			window.location.hash === "#rx" ||
+			window.location.hash.startsWith("#rx?") ||
+			window.location.hash === "#prescription-studio" ||
+			window.location.hash.startsWith("#prescription-studio?") ||
+			window.location.search.includes("prescriptions=1") ||
+			window.location.search.includes("rx=1"))
+	) {
+		return <DirectPrescriptionLauncher />;
 	}
 
 	return null;

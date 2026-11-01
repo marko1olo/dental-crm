@@ -1,10 +1,11 @@
 /**
  * apps/web/src/components/prescriptions/index.ts
  *
- * Facade export for Statutory Medical Prescription Module.
+ * Facade export for Statutory Medical Prescription Module SSOT.
  */
 
 export * from "./generator";
+export * from "./PrescriptionStudioModal";
 export * from "./PrescriptionAllergyBanner";
 export * from "./PrescriptionCockpitModal";
 export * from "./PrescriptionDrugCatalogSelector";
@@ -21,6 +22,8 @@ export * from "./prescriptionDataSets";
 export {
 	CANONICAL_DENTAL_DRUGS,
 	CLINICAL_FAST_SETS,
+	DENTAL_PRESCRIPTION_CATEGORIES,
+	PATIENT_CARE_RECOMMENDATIONS,
 	findDrugById,
 	formatSoapPrescriptionText,
 	formatMessengerPatientMemo,

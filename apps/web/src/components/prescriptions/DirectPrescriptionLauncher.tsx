@@ -1,11 +1,11 @@
 /**
- * DirectPrescriptionLauncher.tsx — Standalone Direct Mount for Medical Prescriptions
- * Mandates: 8b (60–90 lines sweet spot), 8e (Doctor Autonomy), 8aq (Live UI Mount).
- * Listens to #prescriptions, #rx and custom event 'dente:open-prescriptions'.
+ * DirectPrescriptionLauncher.tsx — Standalone Direct Mount for Medical Prescriptions Studio SSOT
+ * Mandates: 8b (60–80 lines sweet spot), 8e (Doctor Autonomy), 8aq (Live UI Mount).
+ * Listens to #prescriptions, #rx, #prescription-studio, ?prescriptions=1, ?rx=1.
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { PrescriptionWorkspaceModal } from "./PrescriptionWorkspaceModal";
+import { PrescriptionStudioModal } from "./PrescriptionStudioModal";
 
 export const DirectPrescriptionLauncher: React.FC = () => {
 	const checkUrlTrigger = useCallback((): boolean => {
@@ -13,12 +13,12 @@ export const DirectPrescriptionLauncher: React.FC = () => {
 		const hash = window.location.hash.toLowerCase();
 		const search = window.location.search.toLowerCase();
 		return (
-			hash.includes("prescriptions") ||
-			hash.includes("#rx") ||
 			hash.includes("prescription") ||
-			search.includes("prescriptions") ||
-			search.includes("rx=1") ||
-			search.includes("prescription=1")
+			hash.includes("#rx") ||
+			hash.includes("rx-studio") ||
+			search.includes("prescriptions=1") ||
+			search.includes("prescription=1") ||
+			search.includes("rx=1")
 		);
 	}, []);
 
@@ -53,7 +53,7 @@ export const DirectPrescriptionLauncher: React.FC = () => {
 			url.searchParams.delete("rx");
 			url.searchParams.delete("prescription");
 			url.searchParams.delete("prescriptions");
-			const cleanHash = window.location.hash.replace(/#(prescriptions|rx|prescription)/gi, "");
+			const cleanHash = window.location.hash.replace(/#(prescriptions|rx|prescription|prescription-studio)/gi, "");
 			window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + cleanHash);
 		}
 	}, []);
@@ -61,7 +61,7 @@ export const DirectPrescriptionLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	return (
-		<PrescriptionWorkspaceModal
+		<PrescriptionStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			patientName="Иванова Мария Сергеевна"
@@ -73,10 +73,11 @@ export const DirectPrescriptionLauncher: React.FC = () => {
 			clinicOgrn="ОГРН 1157746123456"
 			diary={{
 				diagnosisIcd10: "K04.0 Острый пульпит",
-				notes: "Острый серозный пульпит зуба 46, показано эндодонтическое лечение и антибактериальная терапия.",
+				notes: "Острый пульпит зуба 46, показано медикаментозное прикрытие и памятка пациенту.",
 			}}
 		/>
 	);
 };
 
 DirectPrescriptionLauncher.displayName = "DirectPrescriptionLauncher";
+export default DirectPrescriptionLauncher;

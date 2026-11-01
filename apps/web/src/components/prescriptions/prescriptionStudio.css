@@ -1,0 +1,248 @@
+/**
+ * prescriptionStudio.css — Canonical Styling SSOT for Outpatient Dental Prescriptions
+ * DENTE Dental CRM (Doctor Autonomy Mandates 8e, 8n, 8x, 8y, 8am, 8ze & Apple HIG).
+ * Target: 300–400 lines Sweet Spot. Theme tokens & Apple touch targets >= 44px.
+ */
+
+:root {
+	--rx-paper: var(--paper, #ffffff);
+	--rx-paper-soft: var(--paper-soft, #f8fafc);
+	--rx-paper-strong: var(--paper-strong, #f1f5f9);
+	--rx-ink: var(--ink, #0f172a);
+	--rx-ink-muted: var(--muted, #64748b);
+	--rx-line: var(--line, #e2e8f0);
+	--rx-teal: var(--teal, #0d9488);
+	--rx-teal-hover: var(--teal-hover, #0f766e);
+	--rx-teal-subtle: rgba(13, 148, 136, 0.08);
+	--rx-amber: var(--amber, #f59e0b);
+	--rx-amber-subtle: rgba(245, 158, 11, 0.12);
+	--rx-amber-line: rgba(245, 158, 11, 0.3);
+}
+
+.dark {
+	--rx-paper: var(--paper, #0f172a);
+	--rx-paper-soft: var(--paper-soft, #1e293b);
+	--rx-paper-strong: var(--paper-strong, #334155);
+	--rx-ink: var(--ink, #f8fafc);
+	--rx-ink-muted: var(--muted, #94a3b8);
+	--rx-line: var(--line, #334155);
+	--rx-teal: var(--teal, #14b8a6);
+	--rx-teal-hover: var(--teal-hover, #0d9488);
+	--rx-teal-subtle: rgba(20, 184, 166, 0.15);
+	--rx-amber: var(--amber, #fbbf24);
+	--rx-amber-subtle: rgba(251, 191, 36, 0.15);
+	--rx-amber-line: rgba(251, 191, 36, 0.35);
+}
+
+/* Base Modal Overlay & Container */
+.rx-studio-overlay {
+	position: fixed; inset: 0; z-index: 1000000;
+	display: flex; align-items: center; justify-content: center;
+	padding: 16px; background: rgba(0, 0, 0, 0.65);
+	backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
+	overflow: hidden;
+}
+
+.rx-studio-shell {
+	display: flex; flex-direction: column; width: 100%;
+	max-width: 1240px; height: 92vh; max-height: 890px;
+	background: var(--rx-paper); border: 1px solid var(--rx-line);
+	border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden; color: var(--rx-ink);
+}
+
+.rx-drag-handle { display: none; }
+
+/* Header Bar & Actions */
+.rx-header-bar {
+	display: flex; flex-direction: column; gap: 8px;
+	padding: 12px 20px; background: var(--rx-paper-soft);
+	border-bottom: 1px solid var(--rx-line); shrink: 0;
+}
+.rx-header-row-1 { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; }
+.rx-header-row-2 { display: flex; align-items: center; justify-content: space-between; width: 100%; gap: 12px; flex-wrap: wrap; }
+.rx-header-title { font-size: 16px; font-weight: 700; color: var(--rx-ink); display: flex; align-items: center; gap: 8px; }
+.rx-header-meta { font-size: 13px; color: var(--rx-ink-muted); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+
+.rx-form-switcher { display: inline-flex; padding: 3px; background: var(--rx-paper); border: 1px solid var(--rx-line); border-radius: 10px; gap: 2px; }
+.rx-form-switch-btn {
+	min-height: 36px; padding: 0 12px; font-size: 12px; font-weight: 600;
+	border-radius: 8px; border: none; background: transparent; color: var(--rx-ink-muted);
+	cursor: pointer; transition: all 0.15s ease;
+}
+.rx-form-switch-btn.active { background: var(--rx-teal); color: #ffffff; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1); }
+
+.rx-icon-btn {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 44px; min-height: 44px; padding: 8px; border-radius: 12px;
+	border: 1px solid var(--rx-line); background: var(--rx-paper);
+	color: var(--rx-ink-muted); cursor: pointer; transition: all 0.15s ease;
+}
+.rx-icon-btn:hover { background: var(--rx-paper-strong); color: var(--rx-ink); }
+
+/* Passive Allergy & Safety Strip (Mandates 8y & 8e) */
+.rx-allergy-strip {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 8px 20px; background: var(--rx-amber-subtle);
+	border-bottom: 1px solid var(--rx-amber-line); font-size: 12px;
+	color: var(--rx-ink); gap: 12px; shrink: 0;
+}
+.rx-allergy-strip-content { display: flex; align-items: center; gap: 8px; font-weight: 500; }
+.rx-allergy-badge-autonomy {
+	font-size: 11px; font-weight: 600; color: var(--rx-amber);
+	background: rgba(245, 158, 11, 0.15); padding: 2px 8px; border-radius: 6px; white-space: nowrap;
+}
+
+/* Mobile Segmented Tab Bar */
+.rx-mobile-tabs { display: none; padding: 8px 16px; background: var(--rx-paper-soft); border-bottom: 1px solid var(--rx-line); shrink: 0; }
+.rx-mobile-tabs-grid { display: grid; grid-template-columns: 1fr 1fr; padding: 3px; background: var(--rx-paper); border: 1px solid var(--rx-line); border-radius: 12px; gap: 4px; width: 100%; }
+.rx-mobile-tab-btn {
+	min-height: 44px; padding: 0 12px; font-size: 13px; font-weight: 600;
+	border-radius: 8px; border: none; background: transparent; color: var(--rx-ink-muted);
+	cursor: pointer; transition: all 0.15s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.rx-mobile-tab-btn.active { background: var(--rx-teal); color: #ffffff; box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1); }
+
+/* Studio Workbench Two-Column Layout */
+.rx-workbench-grid { display: grid; grid-template-columns: 60% 40%; flex: 1; min-height: 0; overflow: hidden; }
+.rx-workbench-left { display: flex; flex-direction: column; border-right: 1px solid var(--rx-line); overflow-y: auto; padding: 16px 20px; gap: 16px; min-height: 0; }
+.rx-workbench-right { display: flex; flex-direction: column; background: var(--rx-paper-soft); overflow-y: auto; padding: 16px 20px; gap: 16px; min-height: 0; }
+
+.rx-section-header {
+	display: flex; align-items: center; justify-content: space-between;
+	font-size: 13px; font-weight: 700; text-transform: uppercase;
+	letter-spacing: 0.05em; color: var(--rx-ink-muted); margin-bottom: 8px;
+}
+
+/* Express Presets (4 Canonical RF Regimens) */
+.rx-express-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.rx-express-card {
+	display: flex; flex-direction: column; justify-content: space-between;
+	padding: 12px 14px; background: var(--rx-paper); border: 1px solid var(--rx-line);
+	border-radius: 12px; cursor: pointer; text-align: left; min-height: 72px; transition: all 0.15s ease;
+}
+.rx-express-card:hover { border-color: var(--rx-teal); background: var(--rx-teal-subtle); transform: translateY(-1px); }
+.rx-express-card-title { font-size: 13px; font-weight: 600; color: var(--rx-ink); line-height: 1.3; }
+.rx-express-card-desc { font-size: 11px; color: var(--rx-ink-muted); line-height: 1.3; margin-top: 4px; }
+
+/* Category Filter Chips */
+.rx-category-row { display: flex; align-items: center; gap: 6px; overflow-x: auto; padding-bottom: 4px; scrollbar-width: none; }
+.rx-category-row::-webkit-scrollbar { display: none; }
+.rx-category-chip {
+	display: inline-flex; align-items: center; min-height: 38px; padding: 0 12px;
+	font-size: 12px; font-weight: 600; border-radius: 20px; border: 1px solid var(--rx-line);
+	background: var(--rx-paper); color: var(--rx-ink-muted); white-space: nowrap; cursor: pointer; transition: all 0.15s ease;
+}
+.rx-category-chip.active { background: var(--rx-teal); color: #ffffff; border-color: var(--rx-teal); }
+
+/* Medication Selection Grid */
+.rx-drugs-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 8px; }
+.rx-drug-card {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 10px 12px; background: var(--rx-paper); border: 1px solid var(--rx-line);
+	border-radius: 10px; cursor: pointer; transition: all 0.15s ease; min-height: 52px;
+}
+.rx-drug-card:hover { border-color: var(--rx-teal); background: var(--rx-paper-soft); }
+.rx-drug-card.selected { border-color: var(--rx-teal); background: var(--rx-teal-subtle); }
+.rx-drug-card-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rx-drug-card-name { font-size: 13px; font-weight: 600; color: var(--rx-ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rx-drug-card-scheme { font-size: 11px; color: var(--rx-ink-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Active Items List (Rp) */
+.rx-active-list { display: flex; flex-direction: column; gap: 8px; background: var(--rx-paper-soft); padding: 12px; border-radius: 14px; border: 1px solid var(--rx-line); }
+.rx-active-item {
+	display: flex; align-items: flex-start; justify-content: space-between;
+	padding: 10px 12px; background: var(--rx-paper); border: 1px solid var(--rx-line);
+	border-radius: 10px; gap: 12px;
+}
+.rx-active-item-details { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rx-active-item-title { font-size: 13px; font-weight: 700; color: var(--rx-ink); }
+.rx-active-item-latin { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; color: var(--rx-teal); }
+.rx-active-item-scheme { font-size: 12px; color: var(--rx-ink-muted); }
+.rx-remove-btn {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-width: 44px; min-height: 44px; border: none; background: transparent;
+	color: var(--rx-ink-muted); border-radius: 8px; cursor: pointer; transition: all 0.15s ease;
+}
+.rx-remove-btn:hover { color: #ef4444; background: rgba(239, 68, 68, 0.1); }
+
+/* Patient Care Card (Home care rules) */
+.rx-care-card { padding: 14px; background: var(--rx-paper); border: 1px solid var(--rx-line); border-radius: 14px; display: flex; flex-direction: column; gap: 8px; }
+.rx-care-title { font-size: 13px; font-weight: 700; color: var(--rx-ink); display: flex; align-items: center; gap: 6px; }
+.rx-care-list { display: flex; flex-direction: column; gap: 4px; margin: 0; padding-left: 18px; font-size: 12px; color: var(--rx-ink-muted); line-height: 1.4; }
+
+/* Action Footer & Buttons */
+.rx-footer-bar {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 14px 20px; background: var(--rx-paper); border-top: 1px solid var(--rx-line);
+	gap: 12px; flex-wrap: wrap; shrink: 0;
+}
+.rx-footer-left-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.rx-footer-right-actions { display: flex; align-items: center; gap: 8px; }
+
+.rx-secondary-btn {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-height: 44px; padding: 0 16px; font-size: 13px; font-weight: 600;
+	border-radius: 12px; border: 1px solid var(--rx-line); background: var(--rx-paper-soft);
+	color: var(--rx-ink); cursor: pointer; transition: all 0.15s ease; gap: 6px; text-decoration: none;
+}
+.rx-secondary-btn:hover { background: var(--rx-paper-strong); border-color: var(--rx-ink-muted); }
+
+/* Primary CTA: Mandate 8am (Exactly ONE Primary CTA #0d9488) & Mandate 8e (Never Disabled) */
+.rx-primary-cta-btn {
+	display: inline-flex; align-items: center; justify-content: center;
+	min-height: 48px; padding: 0 24px; font-size: 14px; font-weight: 700;
+	border-radius: 12px; border: none; background: var(--rx-teal); color: #ffffff;
+	cursor: pointer; box-shadow: 0 2px 8px rgba(13, 148, 136, 0.3); transition: all 0.15s ease; gap: 8px;
+}
+.rx-primary-cta-btn:hover { background: var(--rx-teal-hover); transform: translateY(-1px); box-shadow: 0 4px 12px rgba(13, 148, 136, 0.4); }
+.rx-primary-cta-btn:active { transform: translateY(0); }
+
+/* =========================================================================
+   Apple HIG Mobile Adaptation (<= 768px): Native Bottom Sheet & Ergonomics
+   ========================================================================= */
+@media (max-width: 768px) {
+	.rx-studio-overlay { padding: 0; align-items: flex-end; }
+	.rx-studio-shell {
+		max-width: 100vw; height: 94vh; max-height: 96vh;
+		border-radius: 24px 24px 0 0; border-left: none; border-right: none;
+		border-bottom: none; overflow-x: clip;
+	}
+	.rx-drag-handle {
+		display: block; width: 36px; height: 5px;
+		background: var(--rx-line); border-radius: 3px;
+		margin: 8px auto 4px auto; shrink: 0;
+	}
+	.rx-header-bar { padding: 8px 14px; gap: 6px; }
+	.rx-header-row-1 { gap: 8px; }
+	.rx-header-row-2 { gap: 6px; flex-wrap: nowrap; }
+	.rx-header-title { font-size: 14px; }
+	.rx-header-meta { font-size: 11px; max-width: 170px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+	.rx-form-switcher { scale: 0.88; transform-origin: right center; }
+	.rx-mobile-tabs { display: block; }
+
+	.rx-workbench-grid {
+		display: flex; flex-direction: column;
+		overflow-y: auto; overflow-x: clip; max-width: 100vw;
+	}
+	.rx-workbench-left, .rx-workbench-right {
+		border-right: none; padding: 12px 14px; width: 100%;
+		max-width: 100vw; box-sizing: border-box;
+	}
+	.rx-workbench-left.hidden-mobile, .rx-workbench-right.hidden-mobile { display: none; }
+	.rx-express-grid { grid-template-columns: 1fr; }
+	.rx-drugs-grid { grid-template-columns: 1fr; }
+
+	/* Floating Bottom Bar with Safe Area Inset */
+	.rx-footer-bar {
+		position: sticky; bottom: 0; backdrop-filter: blur(20px);
+		-webkit-backdrop-filter: blur(20px); background: rgba(255, 255, 255, 0.92);
+		padding: 10px 14px; padding-bottom: max(12px, env(safe-area-inset-bottom));
+		border-top: 1px solid var(--rx-line); flex-direction: column; gap: 8px; z-index: 10;
+	}
+	.dark .rx-footer-bar { background: rgba(15, 23, 42, 0.92); }
+	.rx-footer-left-actions { width: 100%; display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+	.rx-footer-right-actions { width: 100%; }
+	.rx-secondary-btn { width: 100%; min-height: 44px; font-size: 12px; padding: 0 8px; }
+	.rx-primary-cta-btn { width: 100%; min-height: 50px; font-size: 15px; }
+}
