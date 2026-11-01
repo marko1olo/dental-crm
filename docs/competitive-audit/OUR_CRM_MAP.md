@@ -2,7 +2,7 @@
 
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [📋 Реестр Фич (FEATURES_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md)
-> ⚠️ **СТАТУС (2026-09-30 / WAVES 175–332 / ВОЛНА 332 ТОТАЛЬНАЯ ДЕКОМПОЗИЦИЯ МОНОЛИТА СКЛАДА И РАСХОДА МАТЕРИАЛОВ INVENTORYVIEW.TSX <= 800 СТРОК, ВЫНОС INVENTORYSTOCKTABLE, INVENTORYBATCHFEFOPANEL, INVENTORYINBOUNDINVOICEMODAL, INVENTORYSERVICEUSAGEPANEL, 100% РЕЭКСПОРТЫ): ВСЕ 63 КАНОНИЧЕСКИЕ ФИЧИ И 405 СИСТЕМНЫХ АДДЕНДУМ-ФИЧ (ВСЕГО 468 ФИЧ, ВСЕ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], ПАРИТЕТ 100%). ПОЛНАЯ ДОКАЗАТЕЛЬНАЯ БАЗА И ДОМЕННЫЙ РАЗБОР В ЧАСТИ IV BACKLOG.MD И FEATURES_REGISTRY.MD.**
+> ⚠️ **СТАТУС (2026-11-01 / WAVES 175–369 / ВОЛНА 367.2 ВЕРХОВНАЯ RED TEAM ИНКВИЗИЦИЯ И SSOT КАССОВОЙ СМЕНЫ, Z-ОТЧЁТА И ФИСКАЛЬНОГО КОНТРОЛЯ: ЕДИНЫЙ SSOT SHIFTCATALOGDATA, МОНОЛИТНАЯ СТУДИЯ SHIFTSTUDIOMODAL, 1-КЛИК ЗАКРЫТИЕ СМЕНЫ И Z-ОТЧЕТ БЕЗ БЛОКИРОВОК МАНДАТ 8E, РАСЧЕТ ЦЕЛОЧИСЛЕННЫХ КОПЕЕК AMOUNTKOPECKS БЕЗ FLOAT-ОШИБОК МАНДАТ 8WY, РОBHО 1 PRIMARY CTA КНОПКА #0d9488 МАНДАТ 8AM, ЛИКВИДАЦИЯ МИКРО-ШРЕДЕРА И ДУБЛИРОВАНИЯ ФАЙЛОВ МАНДАТ 8B/8ZI, ЛИКВИДАЦИЯ КАНЦЕЛЯРИТА 54-ФЗ МАНДАТ 8X/8AP, АВТОНОМНЫЙ ЛАУНЧЕР DIRECTSHIFTLAUNCHER, 4-СОСТОЯНЫЙ RED TEAM VISUAL PROOF GATE — ВСЕ ФИЧИ СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 ## 1. Общая структура монорепозитория
 - **Frontend App**: `apps/web` (Vite, **React 19**, TypeScript, TailwindCSS/Vanilla CSS).

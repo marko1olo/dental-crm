@@ -1,9 +1,29 @@
 /**
  * apps/web/src/components/shift/index.ts
  *
- * Implements Mandate 8s (Law of Single Indivisible Authority):
- * Unifies doctor shift control bar, callouts, and full doctor mobile shift cockpit.
+ * Implements Mandate 8s (Law of Single Indivisible Authority) & SSOT:
+ * Unifies doctor shift control bar, ShiftStudioModal, DirectShiftLauncher,
+ * and canonical cash register shift closing & Z-report views.
  */
+
+// Canonical SSOT Shift Studio & Fiscal Z-Report
+export {
+	ShiftStudioModal,
+	type ShiftStudioModalProps,
+} from "./ShiftStudioModal";
+export { DirectShiftLauncher } from "./DirectShiftLauncher";
+export * from "./shiftCatalogData";
+
+// Re-exports for Cash Shift Closing & Journal SSOT
+export {
+	CashShiftClosingModal,
+	type CashShiftClosingModalProps,
+} from "./CashShiftClosingModal";
+export {
+	CashShiftJournalView,
+	type CashShiftJournalViewProps,
+	type CashShiftItem,
+} from "./CashShiftJournalView";
 
 export type { ShiftCalloutProps } from "./ShiftCallout";
 export { ShiftCallout } from "./ShiftCallout";

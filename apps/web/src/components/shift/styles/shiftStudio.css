@@ -1,0 +1,361 @@
+/**
+ * apps/web/src/components/shift/styles/shiftStudio.css
+ *
+ * Design tokens and Apple HIG styling for ShiftStudioModal and Cashier Shift Management.
+ * Governed by:
+ * - Mandate 8e: Doctor & Cashier Autonomy.
+ * - Mandate 8am: Strict button styling, unified teal (#0d9488) Primary CTA.
+ * - Apple HIG: Native Mobile Bottom Sheet, 36x5px Drag Handle, >=44x44px touch targets.
+ * - Sweet Spot size: 250-350 lines.
+ */
+
+:root {
+	--shift-teal: var(--teal, #0d9488);
+	--shift-teal-hover: var(--teal-hover, #0f766e);
+	--shift-teal-subtle: color-mix(in srgb, var(--shift-teal) 12%, transparent);
+	--shift-paper: var(--paper, #ffffff);
+	--shift-paper-soft: var(--paper-soft, #f8fafc);
+	--shift-paper-strong: var(--paper-strong, #ffffff);
+	--shift-ink: var(--ink, #0f172a);
+	--shift-muted: var(--muted, #64748b);
+	--shift-line: var(--line, #e2e8f0);
+	--shift-line-subtle: var(--line-subtle, rgba(226, 232, 240, 0.7));
+	--shift-radius-modal: 20px;
+	--shift-radius-card: 14px;
+	--shift-radius-btn: 10px;
+}
+
+/* Base Modal Overlay & Backdrop */
+.shift-studio-backdrop {
+	position: fixed;
+	inset: 0;
+	z-index: 10050;
+	display: flex;
+	flex-direction: column;
+	justify-content: flex-end;
+	background: rgba(15, 23, 42, 0.65);
+	backdrop-filter: blur(8px);
+	-webkit-backdrop-filter: blur(8px);
+	overflow-x: clip;
+	max-width: 100vw;
+}
+
+@media (min-width: 768px) {
+	.shift-studio-backdrop {
+		align-items: center;
+		justify-content: center;
+		padding: 24px;
+	}
+}
+
+/* Modal Window Container */
+.shift-studio-modal {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	max-width: 100%;
+	background: var(--shift-paper);
+	color: var(--shift-ink);
+	box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+	overflow: hidden;
+	max-height: 92dvh;
+	border-top: 1px solid var(--shift-line);
+	border-radius: 24px 24px 0 0;
+	animation: shiftStudioSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@media (min-width: 768px) {
+	.shift-studio-modal {
+		max-width: 840px;
+		max-height: 88vh;
+		border-radius: var(--shift-radius-modal);
+		border: 1px solid var(--shift-line);
+		animation: shiftStudioFadeScale 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+	}
+}
+
+@keyframes shiftStudioSlideUp {
+	from {
+		transform: translateY(100%);
+		opacity: 0;
+	}
+	to {
+		transform: translateY(0);
+		opacity: 1;
+	}
+}
+
+@keyframes shiftStudioFadeScale {
+	from {
+		transform: scale(0.96);
+		opacity: 0;
+	}
+	to {
+		transform: scale(1);
+		opacity: 1;
+	}
+}
+
+/* Tactile Drag Handle (Apple HIG Mobile) */
+.shift-studio-drag-handle {
+	display: flex;
+	justify-content: center;
+	padding-top: 10px;
+	padding-bottom: 6px;
+	width: 100%;
+	touch-action: pan-y;
+}
+
+.shift-studio-drag-pill {
+	width: 36px;
+	height: 5px;
+	border-radius: 9999px;
+	background: var(--shift-line-subtle);
+}
+
+@media (min-width: 768px) {
+	.shift-studio-drag-handle {
+		display: none;
+	}
+}
+
+/* Header & Tabs */
+.shift-studio-header {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	padding: 14px 20px;
+	border-bottom: 1px solid var(--shift-line);
+	background: var(--shift-paper);
+	flex-shrink: 0;
+}
+
+.shift-studio-close-btn {
+	width: 36px;
+	height: 36px;
+	border-radius: 10px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	background: transparent !important;
+	color: var(--shift-muted) !important;
+	border: 1px solid var(--shift-line-subtle);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.shift-studio-close-btn:hover {
+	background: var(--shift-paper-soft) !important;
+	color: var(--shift-ink) !important;
+	border-color: var(--shift-line);
+}
+
+.shift-studio-nav-tabs {
+	display: flex;
+	gap: 6px;
+	padding: 8px 16px;
+	background: var(--shift-paper-soft);
+	border-bottom: 1px solid var(--shift-line-subtle);
+	overflow-x: auto;
+	scrollbar-width: none;
+	flex-shrink: 0;
+}
+
+.shift-studio-nav-tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.shift-studio-tab-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 6px;
+	min-height: 38px;
+	padding: 6px 14px;
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: 9px;
+	color: var(--shift-muted);
+	background: transparent;
+	border: 1px solid transparent;
+	transition: all 0.15s ease;
+	cursor: pointer;
+	white-space: nowrap;
+	flex-shrink: 0;
+}
+
+.shift-studio-tab-btn:hover {
+	color: var(--shift-ink);
+	background: var(--shift-paper);
+}
+
+.shift-studio-tab-btn.active {
+	color: var(--shift-teal);
+	background: var(--shift-paper);
+	border-color: var(--shift-line);
+	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+}
+
+@media (max-width: 640px) {
+	.shift-studio-nav-tabs {
+		padding: 6px 12px;
+		gap: 4px;
+	}
+	.shift-studio-tab-btn {
+		flex: 1 1 0%;
+		justify-content: center;
+		padding: 6px 8px;
+		font-size: 12px;
+		min-height: 40px;
+	}
+}
+
+/* Scrollable Content Body */
+.shift-studio-body {
+	flex: 1 1 auto;
+	overflow-y: auto;
+	padding: 16px 20px;
+	overscroll-behavior: contain;
+}
+
+/* Grouped Card Containers */
+.shift-card {
+	background: var(--shift-paper);
+	border: 1px solid var(--shift-line);
+	border-radius: var(--shift-radius-card);
+	padding: 16px;
+	box-shadow: 0 1px 2px rgba(0, 0, 0, 0.03);
+}
+
+/* Revenue Channels Grid */
+.shift-tenders-grid {
+	display: grid;
+	grid-template-columns: repeat(2, 1fr);
+	gap: 10px;
+}
+
+@media (min-width: 640px) {
+	.shift-tenders-grid {
+		grid-template-columns: repeat(4, 1fr);
+	}
+}
+
+.shift-tender-card {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	padding: 12px;
+	border-radius: 12px;
+	border: 1px solid var(--shift-line);
+	background: var(--shift-paper);
+}
+
+/* Touch Target Minimum (Apple HIG: >= 44x44px) */
+.shift-touch-target {
+	min-height: 44px;
+	min-width: 44px;
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+}
+
+/* Primary CTA Button (Mandate 8am: #0d9488 Teal) */
+.shift-primary-cta {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 8px;
+	min-height: 44px;
+	padding: 10px 20px;
+	background: var(--shift-teal);
+	color: #ffffff !important;
+	font-size: 14px;
+	font-weight: 700;
+	border-radius: var(--shift-radius-btn);
+	border: none;
+	box-shadow: 0 2px 4px rgba(13, 148, 136, 0.25);
+	cursor: pointer;
+	transition: all 0.15s ease;
+}
+
+.shift-primary-cta:hover {
+	background: var(--shift-teal-hover);
+	box-shadow: 0 4px 8px rgba(13, 148, 136, 0.35);
+}
+
+.shift-primary-cta:active {
+	transform: scale(0.98);
+}
+
+/* Secondary Button */
+.shift-secondary-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 6px;
+	min-height: 44px;
+	padding: 8px 16px;
+	background: var(--shift-paper);
+	color: var(--shift-ink);
+	font-size: 13px;
+	font-weight: 600;
+	border-radius: var(--shift-radius-btn);
+	border: 1px solid var(--shift-line);
+	cursor: pointer;
+	transition: background 0.15s ease;
+}
+
+.shift-secondary-btn:hover {
+	background: var(--shift-paper-soft);
+}
+
+/* Floating Bottom Thumb Zone Action Bar */
+.shift-studio-footer {
+	display: flex;
+	align-items: center;
+	justify-content: space-between;
+	gap: 12px;
+	padding: 14px 20px;
+	background: color-mix(in srgb, var(--shift-paper-strong) 94%, transparent);
+	backdrop-filter: blur(12px);
+	-webkit-backdrop-filter: blur(12px);
+	border-top: 1px solid var(--shift-line);
+	flex-shrink: 0;
+	padding-bottom: max(14px, env(safe-area-inset-bottom));
+}
+
+/* Dark Mode Tokens & Overrides */
+[data-theme="dark"] .shift-studio-modal,
+.dark .shift-studio-modal {
+	--shift-paper: var(--paper, #0f172a);
+	--shift-paper-soft: var(--paper-soft, #1e293b);
+	--shift-paper-strong: var(--paper-strong, #0f172a);
+	--shift-ink: var(--ink, #f8fafc);
+	--shift-muted: var(--muted, #94a3b8);
+	--shift-line: var(--line, #334155);
+	--shift-line-subtle: var(--line-subtle, rgba(51, 65, 85, 0.6));
+}
+
+/* Z-Report Paper Print Stylesheet (Clean A4 & Thermal 80mm) */
+@media print {
+	body * {
+		visibility: hidden;
+	}
+	.shift-z-report-printable,
+	.shift-z-report-printable * {
+		visibility: visible;
+	}
+	.shift-z-report-printable {
+		position: absolute;
+		left: 0;
+		top: 0;
+		width: 100%;
+		max-width: 80mm;
+		margin: 0 auto;
+		padding: 10px;
+		font-family: monospace;
+		font-size: 11px;
+		color: #000000;
+		background: #ffffff;
+	}
+}

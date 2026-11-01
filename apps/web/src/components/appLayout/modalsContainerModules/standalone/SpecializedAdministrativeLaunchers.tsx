@@ -24,11 +24,32 @@ import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
+import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 
 export function renderSpecializedAdministrativeLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) return null;
+
+	// 0. Студия кассовой смены и Z-отчёт SSOT (#shift, #cash-shift, #z-report, #shift-closing, ?shift=1, ?z_report=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#shift" ||
+			window.location.hash.startsWith("#shift?") ||
+			window.location.hash === "#cash-shift" ||
+			window.location.hash.startsWith("#cash-shift?") ||
+			window.location.hash === "#z-report" ||
+			window.location.hash.startsWith("#z-report?") ||
+			window.location.hash === "#shift-closing" ||
+			window.location.hash.startsWith("#shift-closing?") ||
+			window.location.hash === "#shift-studio" ||
+			window.location.hash.startsWith("#shift-studio?") ||
+			window.location.search.includes("shift=1") ||
+			window.location.search.includes("z_report=1") ||
+			window.location.search.includes("shift_closing=1"))
+	) {
+		return <DirectShiftLauncher />;
+	}
 
 	// 0. Студия документов и согласий SSOT (#documents, #consents, #docs-studio, ?documents=1, ?consents=1)
 	if (
