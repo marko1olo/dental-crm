@@ -21,6 +21,7 @@ import { DirectCashboxLauncher } from "./components/cashbox/DirectCashboxLaunche
 import { DirectCashierLauncher } from "./components/finance/DirectCashierLauncher";
 import { DirectReportsLauncher } from "./components/reports/DirectReportsLauncher";
 import { DirectDentalLabLauncher } from "./components/lab/DirectDentalLabLauncher";
+import { DirectSettingsLauncher } from "./components/settings/DirectSettingsLauncher";
 import { DirectKnowledgeBaseLauncher } from "./components/knowledge/DirectKnowledgeBaseLauncher";
 import { DirectWaitlistMatchesLauncher } from "./components/schedule/DirectWaitlistMatchesLauncher";
 import { DirectAppointmentLauncher } from "./components/schedule/DirectAppointmentLauncher";
@@ -221,7 +222,13 @@ function isStandaloneActive(): boolean {
 		s.includes("leads") ||
 		h.includes("leads") ||
 		h.includes("crm-leads") ||
-		h.includes("kanban")
+		h.includes("kanban") ||
+		s.includes("settings") ||
+		h.includes("settings") ||
+		s.includes("clinic-setup") ||
+		h.includes("clinic-setup") ||
+		s.includes("clinic-requisites") ||
+		h.includes("clinic-requisites")
 	);
 }
 
@@ -295,6 +302,7 @@ export function AppShell() {
 			<DirectHygieneLauncher />
 			<DirectPediatricLauncher />
 			<DirectLeadsLauncher />
+			<DirectSettingsLauncher />
 			<GlobalToast />
 			<Suspense fallback={null}>
 				<DiagnosticDrawer showTriggerButton={false} />

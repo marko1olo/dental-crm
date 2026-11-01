@@ -31,6 +31,7 @@ import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost"
 import { DirectAnalyticsLauncher } from "../../../analytics/DirectAnalyticsLauncher";
 import { DirectMarketingLauncher } from "../../../marketing/DirectMarketingLauncher";
 import { DirectLeadsLauncher } from "../../../leads/DirectLeadsLauncher";
+import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher";
 import { renderPayrollLauncher } from "./PayrollStandaloneLauncher";
 import { renderReportsStandaloneLauncher } from "./ReportsStandaloneLauncher";
 import { renderSpecializedAdministrativeLaunchers } from "./SpecializedAdministrativeLaunchers";
@@ -393,6 +394,34 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 				hashPrefixes: ["#marketing?", "#marketing/", "#romi?", "#campaigns?"],
 			},
 			render: () => <DirectMarketingLauncher />,
+		},
+
+		// 20. Студия настроек клиники и реквизитов (SSOT)
+		{
+			id: "settings-studio",
+			title: "Студия настроек клиники и реквизитов",
+			criteria: {
+				tokens: ["settings", "clinic-setup", "clinic-requisites", "settings-studio"],
+				searchIncludes: [
+					"settings=1",
+					"clinic_setup=1",
+					"standalone=settings",
+					"standalone=clinic_setup",
+				],
+				exactHashes: [
+					"#settings",
+					"#clinic-setup",
+					"#clinic-requisites",
+					"#settings-studio",
+				],
+				hashPrefixes: [
+					"#settings?",
+					"#settings/",
+					"#clinic-setup?",
+					"#clinic-requisites?",
+				],
+			},
+			render: () => <DirectSettingsLauncher />,
 		},
 	];
 

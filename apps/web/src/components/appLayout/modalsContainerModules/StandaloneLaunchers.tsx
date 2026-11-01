@@ -29,6 +29,7 @@ export { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodontic
 export { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
 export { DirectOdontogramLauncher } from "../../odontogram/DirectOdontogramLauncher";
 export { DirectLeadsLauncher } from "../../leads/DirectLeadsLauncher";
+export { DirectSettingsLauncher } from "../../settings/DirectSettingsLauncher";
 export { DirectAnalyticsLauncher };
 
 export function renderStandaloneLaunchers(
