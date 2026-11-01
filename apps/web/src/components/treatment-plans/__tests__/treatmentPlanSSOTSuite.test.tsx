@@ -19,17 +19,17 @@ import {
 import { TreatmentPlanStudioModal } from "../TreatmentPlanStudioModal";
 
 describe("Treatment Plan SSOT & 3-Tier Suite", () => {
-	it("1. Канонические тарифы: 3 уровня (Базовый, Оптимальный, Премиум) с гарантией и SSOT", () => {
+	it("1. Канонические тарифы: 3 уровня (Эконом, ★ Оптимум, Премиум) с гарантией и SSOT", () => {
 		assert.equal(CANONICAL_TIER_DEFINITIONS.length, 3, "Должно быть ровно 3 канонических тарифа");
 
 		const [economy, optimum, premium] = CANONICAL_TIER_DEFINITIONS;
 		assert.equal(economy.id, "economy");
-		assert.equal(economy.title, "Базовый");
+		assert.equal(economy.title, "Эконом");
 		assert.equal(economy.warrantyYears, 1);
 		assert.equal(economy.isRecommended, false);
 
 		assert.equal(optimum.id, "optimum");
-		assert.match(optimum.title, /Оптимальный/);
+		assert.match(optimum.title, /Оптимум/);
 		assert.equal(optimum.warrantyYears, 3);
 		assert.equal(optimum.isRecommended, true, "Оптимальный тариф обязан быть рекомендуемым стандартом");
 
@@ -39,17 +39,20 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 		assert.equal(premium.isRecommended, false);
 	});
 
-	it("2. Канонические этапы комплексного плана: 1. Санация, 2. Хирургия, 3. Ортопедия", () => {
-		assert.equal(CANONICAL_CLINICAL_STAGES.length, 3, "Комплексный план обязан содержать 3 базовых этапа");
+	it("2. Канонические этапы комплексного плана: 1. Санация, 2. Терапия, 3. Хирургия, 4. Ортопедия", () => {
+		assert.equal(CANONICAL_CLINICAL_STAGES.length, 4, "Комплексный план обязан содержать 4 базовых этапа");
 
-		const [therapy, surgery, orthopedics] = CANONICAL_CLINICAL_STAGES;
-		assert.equal(therapy.stageNumber, 1);
-		assert.match(therapy.title, /Санация и терапия/);
+		const [hygiene, therapy, surgery, orthopedics] = CANONICAL_CLINICAL_STAGES;
+		assert.equal(hygiene.stageNumber, 1);
+		assert.match(hygiene.title, /Санация и гигиена/);
 
-		assert.equal(surgery.stageNumber, 2);
+		assert.equal(therapy.stageNumber, 2);
+		assert.match(therapy.title, /Терапия и эндодонтия/);
+
+		assert.equal(surgery.stageNumber, 3);
 		assert.match(surgery.title, /Хирургия и имплантация/);
 
-		assert.equal(orthopedics.stageNumber, 3);
+		assert.equal(orthopedics.stageNumber, 4);
 		assert.match(orthopedics.title, /Ортопедия и протезирование/);
 	});
 
@@ -141,8 +144,8 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 		assert.ok(html.includes("Д-р Орлов А.В."));
 
 		// Проверяем 3 тарифа
-		assert.ok(html.includes("Базовый"));
-		assert.ok(html.includes("Оптимальный"));
+		assert.ok(html.includes("Эконом"));
+		assert.ok(html.includes("Оптимум"));
 		assert.ok(html.includes("Премиум"));
 
 		// Проверяем Primary CTA кнопку

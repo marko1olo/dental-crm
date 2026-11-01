@@ -1,10 +1,10 @@
 /**
  * TreatmentPlanStudioModal.tsx — Монолитная интерактивная студия планов лечения и кресельный презентер (SSOT).
- * Мандаты 8b, 8zi: Целевой размер 350–480 строк (Sweet Spot).
+ * Мандаты 8b, 8zi: Целевой размер 400–480 строк (Sweet Spot).
  * Мандат 8e: Автономия врача — свобода скидок до 100%, автосейв, кнопки НИКОГДА не блокируются (disabled=false).
  * Мандат 8am: Ровно 1 Primary CTA кнопка var(--teal) (#0d9488) на видимый экран.
  * Мандат 8n: Простота для соло-врача и клиники у кресла — выбор из 3 вариантов в 1 клик.
- * Мандат 8x: Человеческий клинический язык без бюрократических советских шифров в прод-UI.
+ * Мандат 8x: Человеческий клинический язык без советского канцелярита в прод-UI.
  * Apple HIG: Сенсорная зона >= 44x44px, сегментный свитчер на смартфонах (390x844), 0px горизонтального дрифта.
  */
 
@@ -35,6 +35,10 @@ import {
 	generateTreatmentPlanFromDiagnosis,
 } from "./treatmentPlanCatalogData";
 
+if (typeof window !== "undefined") {
+	void import("./styles/treatmentPlanStudio.css");
+}
+
 export interface TreatmentPlanStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -59,7 +63,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(CANONICAL_CLINICAL_STAGES);
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
 	const [isDiscountBarOpen, setIsDiscountBarOpen] = useState<boolean>(false);
-	const [expandedStageId, setExpandedStageId] = useState<string | null>("stage-1-therapy");
+	const [expandedStageId, setExpandedStageId] = useState<string | null>("stage-1-hygiene");
 	const [approvedSuccessMessage, setApprovedSuccessMessage] = useState<string | null>(null);
 
 	// Генерация 3 канонических тарифов с учетом текущих этапов и скидки врача
@@ -86,7 +90,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		}
 	}, []);
 
-	// Утверждение плана врачом / пациентом (Мандат 8e: всегда кликабельно)
+	// Утверждение плана врачом / пациентом (Мандат 8e: всегда кликабельно, 0 disabled)
 	const handleApprove = useCallback(() => {
 		if (onApprovePlan && activeTier) {
 			onApprovePlan(activeTier);
@@ -102,22 +106,22 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 
 	return (
 		<div
-			className={`fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/60 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip max-w-[100vw] h-full ${className}`}
+			className={`tp-studio-overlay fixed inset-0 z-50 flex flex-col justify-end sm:items-center sm:justify-center bg-black/65 backdrop-blur-xs p-0 sm:p-4 overflow-x-clip max-w-[100vw] h-full ${className}`}
 			data-testid="treatment-plan-studio-modal"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="treatment-studio-title"
 		>
 			<div
-				className="flex flex-col w-full max-w-5xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden h-[94dvh] sm:h-auto sm:max-h-[92vh] mt-auto sm:my-auto"
+				className="tp-studio-dialog flex flex-col w-full max-w-5xl bg-[var(--paper)] text-[var(--ink)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl shadow-2xl overflow-hidden h-[94dvh] sm:h-auto sm:max-h-[92vh] mt-auto sm:my-auto"
 			>
 				{/* 0. Тактильный Drag Handle для мобильных экранов по Apple HIG */}
-				<div className="sm:hidden flex justify-center pt-2.5 pb-1">
-					<div className="w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)]" />
+				<div className="tp-studio-drag-handle-wrap sm:hidden flex justify-center pt-2.5 pb-1">
+					<div className="tp-studio-drag-handle w-9 h-1 rounded-full bg-[var(--line-strong,#94a3b8)] opacity-60" />
 				</div>
 
 				{/* 1. ШАПКА СТУДИИ (Мандат 8am: 1 компактная строка, сенсорный закрывающий крестик >= 44x44px) */}
-				<header className="flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 min-h-[52px]">
+				<header className="tp-studio-header flex items-center justify-between gap-3 px-4 sm:px-6 py-3 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 min-h-[52px]">
 					<div className="flex items-center gap-2.5 min-w-0">
 						<div className="w-9 h-9 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
 							<Stethoscope className="w-5 h-5" />
@@ -139,11 +143,11 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					</div>
 
 					<div className="flex items-center gap-1.5 shrink-0">
-						{/* Скидка врача */}
+						{/* Скидка врача до 100% */}
 						<button
 							type="button"
 							onClick={() => setIsDiscountBarOpen((prev) => !prev)}
-							className={`min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
+							className={`tp-studio-header-btn min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-colors cursor-pointer ${
 								doctorDiscountPercent > 0
 									? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]"
 									: "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line-subtle)]"
@@ -161,8 +165,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={() => typeof window !== "undefined" && window.print()}
-							className="hidden sm:flex min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
-							title="Печать сметы"
+							className="tp-studio-header-btn hidden sm:flex min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
+							title="Печать сметы плана"
 							data-testid="print-plan-btn"
 						>
 							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
@@ -173,7 +177,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
+							className="tp-studio-header-btn min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center transition-colors cursor-pointer"
 							aria-label="Закрыть студию планов лечения"
 							data-testid="close-studio-btn"
 						>
@@ -245,7 +249,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						onClick={() => setStages(CANONICAL_CLINICAL_STAGES)}
 						className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 cursor-pointer transition-colors"
 					>
-						Полная реабилитация (3 этапа)
+						Полный комплекс (4 этапа)
 					</button>
 				</div>
 
@@ -260,9 +264,9 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					)}
 
 					{/* 4.1. МОБИЛЬНЫЙ СЕГМЕНТНЫЙ ПЕРЕКЛЮЧАТЕЛЬ ПО APPLE HIG (390x844) */}
-					<div className="sm:hidden w-full">
+					<div className="sm:hidden w-full space-y-3">
 						<div
-							className="grid grid-cols-3 gap-1 p-1 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl"
+							className="tp-segmented-control grid grid-cols-3 gap-1 p-1 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl"
 							role="tablist"
 						>
 							{computedTiers.map((tier) => {
@@ -274,14 +278,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 										role="tab"
 										aria-selected={isSelected}
 										onClick={() => setSelectedTierId(tier.tierId)}
-										className={`min-h-[44px] py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center ${
+										className={`tp-segmented-btn min-h-[44px] py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center ${
 											isSelected
-												? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+												? "is-selected bg-[var(--teal,#0d9488)] text-white shadow-xs"
 												: "text-[var(--ink)] hover:bg-[var(--paper)]"
 										}`}
 									>
 										<span className="truncate w-full text-center">
-											{tier.tierId === "economy" ? "Базовый" : tier.tierId === "optimum" ? "Оптимум" : "Премиум"}
+											{tier.tierId === "economy" ? "Эконом" : tier.tierId === "optimum" ? "Оптимум" : "Премиум"}
 										</span>
 										<span className="text-[10px] opacity-90 truncate w-full text-center">
 											{formatRubles(tier.totalRub)}
@@ -290,19 +294,49 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								);
 							})}
 						</div>
+
+						{/* Карточка выбранного тарифа на всю ширину для мобильного экрана */}
+						<div className="tp-mobile-selected-tier-card p-3 rounded-xl border-2 border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-xs">
+							<div className="flex items-center justify-between mb-1.5">
+								<span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)] text-white">
+									{activeTier.badge}
+								</span>
+								<span className="text-xs text-[var(--muted)] flex items-center gap-1">
+									<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
+									{activeTier.warrantyYears} {activeTier.warrantyYears === 1 ? "год" : activeTier.warrantyYears === 3 ? "года" : "лет"} гарантии
+								</span>
+							</div>
+							<div className="flex items-baseline justify-between gap-2 mt-1">
+								<h3 className="text-base font-black text-[var(--ink)] m-0">{activeTier.title}</h3>
+								<div className="text-xl font-black text-[var(--ink)] tracking-tight">
+									{formatRubles(activeTier.totalRub)}
+								</div>
+							</div>
+							<p className="text-xs text-[var(--muted)] mt-1 mb-2">
+								{activeTier.subtitle}
+							</p>
+							<ul className="space-y-1 text-xs text-[var(--muted)] pt-1.5 border-t border-[var(--line)]">
+								{activeTier.keyAdvantages.slice(0, 2).map((adv, idx) => (
+									<li key={idx} className="flex items-start gap-1.5">
+										<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
+										<span className="leading-tight">{adv}</span>
+									</li>
+								))}
+							</ul>
+						</div>
 					</div>
 
 					{/* 4.2. ДЕСКТОПНАЯ 3-УРОВНЕВАЯ СЕТКА ВАРИАНТОВ ПЛАНА (1-КЛИК ПЕРЕКЛЮЧЕНИЕ У КРЕСЛА) */}
-					<div className="hidden sm:grid sm:grid-cols-3 gap-4">
+					<div className="tp-tiers-grid hidden sm:grid sm:grid-cols-3 gap-4">
 						{computedTiers.map((tier) => {
 							const isSelected = tier.tierId === selectedTierId;
 							return (
 								<div
 									key={tier.tierId}
 									onClick={() => setSelectedTierId(tier.tierId)}
-									className={`flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
+									className={`tp-tier-card flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
 										isSelected
-											? "border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-md ring-2 ring-[var(--teal,#0d9488)]/20"
+											? "is-selected border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-md ring-2 ring-[var(--teal,#0d9488)]/20"
 											: "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong,#94a3b8)]"
 									}`}
 									data-testid={`tier-card-${tier.tierId}`}
@@ -331,14 +365,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 									</p>
 
 									<div className="mt-auto pt-2 border-t border-[var(--line)]">
-										<div className="text-2xl sm:text-[32px] font-black text-[var(--ink)] tracking-tight">
+										<div className="tp-tier-price text-2xl sm:text-[32px] font-black text-[var(--ink)] tracking-tight">
 											{formatRubles(tier.totalRub)}
 										</div>
 										<ul className="mt-3 space-y-1.5 text-xs text-[var(--muted)]">
 											{tier.keyAdvantages.slice(0, 3).map((adv, idx) => (
 												<li key={idx} className="flex items-start gap-1.5">
 													<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
-													<span className="line-clamp-1">{adv}</span>
+													<span className="leading-tight text-xs">{adv}</span>
 												</li>
 											))}
 										</ul>
@@ -365,15 +399,15 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								return (
 									<div
 										key={stage.id}
-										className="rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs"
+										className="tp-stage-card rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs"
 									>
 										<button
 											type="button"
 											onClick={() => setExpandedStageId(isExpanded ? null : (stage.id || null))}
-											className="w-full min-h-[52px] p-3 sm:p-4 flex items-center justify-between text-left hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
+											className="tp-stage-header-btn w-full min-h-[52px] p-3 sm:p-4 flex items-center justify-between text-left hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
 										>
 											<div className="flex items-center gap-3 min-w-0">
-												<div className="w-7 h-7 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] font-black text-xs flex items-center justify-center shrink-0">
+												<div className="tp-stage-badge w-7 h-7 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] font-black text-xs flex items-center justify-center shrink-0">
 													{stage.stageNumber}
 												</div>
 												<div className="min-w-0">
@@ -435,7 +469,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				</main>
 
 				{/* 5. ПОДВАЛ СТУДИИ (Мандат 8am: РОВНО ОДНА Primary CTA КНОПКА #0d9488, ВСЕГДА КЛИКАБЕЛЬНАЯ ПО МАНДАТУ 8e) */}
-				<footer className="sticky bottom-0 z-10 flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-3 pb-[max(12px,env(safe-area-inset-bottom))] bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shrink-0">
+				<footer className="tp-studio-footer sticky bottom-0 z-10 flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-3 pb-[max(12px,env(safe-area-inset-bottom))] bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] shrink-0">
 					<div className="flex flex-col min-w-0">
 						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">
 							Выбранный вариант:
@@ -449,7 +483,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<button
 							type="button"
 							onClick={handleApprove}
-							className="min-h-[52px] sm:min-h-[48px] w-full sm:w-auto px-6 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white"
+							className="tp-primary-cta-btn min-h-[52px] sm:min-h-[48px] w-full sm:w-auto px-6 sm:px-8 py-2.5 text-xs sm:text-sm font-black rounded-xl inline-flex items-center justify-center gap-2 shadow-sm transition-transform active:scale-95 cursor-pointer bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white"
 							data-testid="approve-treatment-plan-btn"
 						>
 							<CheckCircle2 className="w-5 h-5 shrink-0" />

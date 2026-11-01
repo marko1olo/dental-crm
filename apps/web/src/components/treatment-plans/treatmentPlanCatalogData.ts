@@ -1,18 +1,12 @@
 /**
  * treatmentPlanCatalogData.ts — Канонический SSOT планов лечения и 3-уровневых смет.
- * Мандаты 8b, 8zi: Целевой размер 250–350 строк (Sweet Spot).
- * Мандат 8e: Автономия врача — свобода скидок до 100%, авто-скрытие микро-расходников,
- *            истечение срока 30 дней НЕ блокирует приём оплат и оказание услуг.
- * Мандат 8n: Суверенитет клиники — 3 канонических уровня плана в 1 клик.
- * Мандат 8x: Чистый клинический язык — запрет советских регуляторных шифров в прод-UI.
+ * Мандаты 8b, 8zi: Целевой размер 300–380 строк (Sweet Spot).
+ * Мандат 8e: Автономия врача — скидки до 100%, фильтрация микро-расходников для пациента, 0 блокировок.
+ * Мандат 8n: Клиники РФ 1–5 кресел — 3 тарифа в 1 клик, 4 клинических этапа, точный BIGINT.
+ * Мандат 8x: Чистый клинический язык без советского канцелярита в прод-UI.
  */
 
-import type {
-	TreatmentPlanStage,
-	TreatmentPlanTier,
-	TreatmentPlanTierId,
-	TreatmentPlanItem,
-} from "./treatmentPlanTypes";
+import type { TreatmentPlanStage, TreatmentPlanTier, TreatmentPlanTierId } from "./treatmentPlanTypes";
 import { isMicroConsumable } from "./treatmentPlanConsumables";
 
 export interface TreatmentTierDefinition {
@@ -25,129 +19,107 @@ export interface TreatmentTierDefinition {
 	readonly keyAdvantages: readonly string[];
 	readonly totalRub: number;
 	readonly totalKopecks: number;
+	readonly amountKopecks: bigint;
 }
 
-/**
- * 3 канонических уровня плана лечения (Мандат 8n):
- * 1. Базовый (Эконом) — надежный минимум с гарантией 1 год.
- * 2. Оптимальный (Оптимум) — золотой стандарт клиники, микроскоп и диоксид циркония, гарантия 3 года.
- * 3. Премиум — швейцарские импланты Straumann и безметалловая керамика e.max, гарантия 10 лет.
- */
+/** 3 канонических тарифа планов лечения (РФ 1–5 кресел) */
 export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 	{
 		id: "economy",
-		title: "Базовый",
-		subtitle: "Качественные композитные материалы и надежное стандартное протезирование",
+		title: "Эконом",
+		subtitle: "Базовые сертифицированные материалы РФ и стандартное протезирование",
 		badge: "Базовый",
 		isRecommended: false,
 		warrantyYears: 1,
 		keyAdvantages: [
-			"Качественные светоотверждаемые композиты",
+			"Качественные композитные материалы РФ",
 			"Санация очагов кариеса и купирование воспаления",
 			"Стандартная металлокерамика и базовые импланты",
 			"Гарантийный срок клиники 1 год",
 		],
-		totalRub: 24500,
-		totalKopecks: 2450000,
+		totalRub: 35000,
+		totalKopecks: 3500000,
+		amountKopecks: 3500000n,
 	},
 	{
 		id: "optimum",
-		title: "★ Оптимальный",
+		title: "★ Оптимум",
 		subtitle: "Золотой стандарт клиники: наногибридный композит, микроскоп и диоксид циркония",
 		badge: "Рекомендуемый",
 		isRecommended: true,
 		warrantyYears: 3,
 		keyAdvantages: [
 			"Лечение корневых каналов под операционным микроскопом",
-			"Наногибридные реставрации Filtek / Estelite с сохранением эстетики",
-			"Коронки из диоксида циркония CAD/CAM анатомической формы",
-			"Дентальные имплантаты Dentium / Osstem с гидрофильной поверхностью",
+			"Наногибридные реставрации с сохранением эстетики",
+			"Анатомические коронки из диоксида циркония CAD/CAM",
+			"Дентальные имплантаты с гидрофильной поверхностью",
 			"Расширенная гарантия клиники 3 года",
 		],
-		totalRub: 98000,
-		totalKopecks: 9800000,
+		totalRub: 105000,
+		totalKopecks: 10500000,
+		amountKopecks: 10500000n,
 	},
 	{
 		id: "premium",
 		title: "Премиум",
-		subtitle: "Бескомпромиссная эстетика: швейцарские импланты Straumann и керамика IPS e.max",
+		subtitle: "Импортная эстетика и биоинженерия: швейцарские импланты и керамика e.max",
 		badge: "Премиум",
 		isRecommended: false,
 		warrantyYears: 10,
 		keyAdvantages: [
-			"Имплантационная система Straumann SLA Active (Швейцария)",
-			"Безметалловая ультратонкая прессованная керамика IPS e.max",
-			"Цифровой 3D-дизайн улыбки (Digital Smile Design)",
-			"Персональный клинический куратор и консилиум врачей",
-			"Пожизненная международная гарантия производителя на импланты",
+			"Швейцарская имплантационная система высшей категории",
+			"Ультратонкая прессованная безметалловая керамика IPS e.max",
+			"Цифровой 3D-дизайн улыбки и персональный куратор",
+			"Консилиум ведущих специалистов клиники",
+			"Расширенная гарантия производителя 10 лет",
 		],
-		totalRub: 175000,
-		totalKopecks: 17500000,
+		totalRub: 185000,
+		totalKopecks: 18500000,
+		amountKopecks: 18500000n,
 	},
 ];
 
-/**
- * 3 канонических клинических этапа комплексного плана лечения:
- * 1. Санация и терапия
- * 2. Хирургия и имплантация
- * 3. Ортопедия и протезирование
- */
+/** 4 канонических клинических этапа комплексного плана */
 export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 	{
-		id: "stage-1-therapy",
+		id: "stage-1-hygiene",
 		stageNumber: 1,
 		stageKind: "stage_1_therapy",
-		title: "Этап 1: Санация и терапия",
-		subtitle: "Профессиональная гигиена полости рта и эндодонтическое лечение",
-		clinicalGoal: "Ликвидация инфекционных очагов и подготовка пародонта к протезированию",
-		totalRub: 16500,
-		totalKopecks: 1650000,
-		estimatedVisits: 2,
+		title: "Этап 1: Санация и гигиена",
+		subtitle: "Профессиональная гигиена полости рта и пародонтологическая подготовка",
+		clinicalGoal: "Ликвидация биопленки, наддесневых и поддесневых отложений",
+		totalRub: 7500,
+		totalKopecks: 750000,
+		estimatedVisits: 1,
 		estimatedWeeks: 1,
 		status: "draft",
 		items: [
-			{
-				id: "proc-1-1",
-				toothNumber: 16,
-				code804n: "A16.07.002",
-				name: "Восстановление зуба пломбой с нарушением контактного пункта (кариес дентина)",
-				priceRub: 5500,
-				unitPriceRub: 5500,
-				discountRub: 0,
-				quantity: 1,
-				stageKind: "stage_1_therapy",
-				isCompleted: false,
-			},
-			{
-				id: "proc-1-2",
-				toothNumber: 26,
-				code804n: "A16.07.030",
-				name: "Инструментальная и медикаментозная обработка корневого канала под микроскопом",
-				priceRub: 6500,
-				unitPriceRub: 6500,
-				discountRub: 0,
-				quantity: 1,
-				stageKind: "stage_1_therapy",
-				isCompleted: false,
-			},
-			{
-				id: "proc-1-3",
-				code804n: "A16.07.051",
-				name: "Комплексная профессиональная гигиена полости рта (Air-Flow + ультразвук)",
-				priceRub: 4500,
-				unitPriceRub: 4500,
-				discountRub: 0,
-				quantity: 1,
-				stageKind: "stage_1_therapy",
-				isCompleted: false,
-			},
+			{ id: "proc-1-1", code804n: "A16.07.051", name: "Комплексная профессиональная гигиена полости рта (Air-Flow + ультразвук)", priceRub: 4500, unitPriceRub: 4500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+			{ id: "proc-1-2", code804n: "A16.07.053", name: "Глубокое фторирование эмали и реминерализующая терапия", priceRub: 3000, unitPriceRub: 3000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
 		],
 	},
 	{
-		id: "stage-2-surgery",
+		id: "stage-2-therapy",
 		stageNumber: 2,
+		stageKind: "stage_1_therapy",
+		title: "Этап 2: Терапия и эндодонтия",
+		subtitle: "Лечение кариеса и обработка каналов под микроскопом",
+		clinicalGoal: "Герметичная трехмерная обтурация каналов и восстановление культи",
+		totalRub: 16000,
+		totalKopecks: 1600000,
+		estimatedVisits: 2,
+		estimatedWeeks: 2,
+		status: "draft",
+		items: [
+			{ id: "proc-2-1", toothNumber: 16, code804n: "A16.07.002", name: "Анатомическое восстановление зуба нанокомпозитом светового отверждения", priceRub: 6000, unitPriceRub: 6000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+			{ id: "proc-2-2", toothNumber: 26, code804n: "A16.07.030", name: "Механическая и медикаментозная обработка корневых каналов под микроскопом", priceRub: 10000, unitPriceRub: 10000, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+		],
+	},
+	{
+		id: "stage-3-surgery",
+		stageNumber: 3,
 		stageKind: "stage_2_surgery",
-		title: "Этап 2: Хирургия и имплантация",
+		title: "Этап 3: Хирургия и имплантация",
 		subtitle: "Установка дентального имплантата в позиции отсутствующего зуба",
 		clinicalGoal: "Восстановление утраченной костной опоры без препарирования соседних зубов",
 		totalRub: 48000,
@@ -156,25 +128,14 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 		estimatedWeeks: 12,
 		status: "draft",
 		items: [
-			{
-				id: "proc-2-1",
-				toothNumber: 36,
-				code804n: "A16.07.054",
-				name: "Установка дентального имплантата с гидрофильной поверхностью SLA",
-				priceRub: 48000,
-				unitPriceRub: 48000,
-				discountRub: 0,
-				quantity: 1,
-				stageKind: "stage_2_surgery",
-				isCompleted: false,
-			},
+			{ id: "proc-3-1", toothNumber: 36, code804n: "A16.07.054", name: "Установка дентального имплантата с остеокондуктивной поверхностью", priceRub: 48000, unitPriceRub: 48000, discountRub: 0, quantity: 1, stageKind: "stage_2_surgery", isCompleted: false },
 		],
 	},
 	{
-		id: "stage-3-orthopedics",
-		stageNumber: 3,
+		id: "stage-4-orthopedics",
+		stageNumber: 4,
 		stageKind: "stage_3_orthopedics",
-		title: "Этап 3: Ортопедия и протезирование",
+		title: "Этап 4: Ортопедия и протезирование",
 		subtitle: "Индивидуальный циркониевый абатмент и коронка CAD/CAM",
 		clinicalGoal: "Восстановление окклюзии, анатомического экватора и жевательной функции",
 		totalRub: 33500,
@@ -183,27 +144,12 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 		estimatedWeeks: 2,
 		status: "draft",
 		items: [
-			{
-				id: "proc-3-1",
-				toothNumber: 36,
-				code804n: "A16.07.004",
-				name: "Установка коронки из диоксида циркония на индивидуальном абатменте CAD/CAM",
-				priceRub: 33500,
-				unitPriceRub: 33500,
-				discountRub: 0,
-				quantity: 1,
-				stageKind: "stage_3_orthopedics",
-				isCompleted: false,
-			},
+			{ id: "proc-4-1", toothNumber: 36, code804n: "A16.07.004", name: "Установка коронки из диоксида циркония на абатменте CAD/CAM", priceRub: 33500, unitPriceRub: 33500, discountRub: 0, quantity: 1, stageKind: "stage_3_orthopedics", isCompleted: false },
 		],
 	},
 ];
 
-/**
- * Фильтрация копеечных микро-расходников (Мандат 8e):
- * Пациент видит только чистые клинические номенклатурные услуги.
- * Расходные материалы списываются пакетом в бэке (Soft Negative Stock).
- */
+/** Фильтрация копеечных микро-расходников для пациента (Мандат 8e) */
 export function sanitizePatientPresentationStages(
 	stages: readonly TreatmentPlanStage[],
 ): readonly TreatmentPlanStage[] {
@@ -216,11 +162,7 @@ export function sanitizePatientPresentationStages(
 	});
 }
 
-/**
- * Расчет скидки врача до 100% (Мандат 8e):
- * Врач свободен предоставить скидку без ввода мастер-паролей директора.
- * Расчет ведется в точных копейках (BIGINT / integer math).
- */
+/** Расчет скидки врача до 100% (Мандат 8e, BIGINT/integer precision) */
 export function applyDoctorDiscountToTiers(
 	tiers: readonly TreatmentPlanTier[],
 	discountPercent: number,
@@ -258,9 +200,7 @@ export function applyDoctorDiscountToTiers(
 	});
 }
 
-/**
- * Генерация 3 канонических тарифов планов лечения по образцу клинических данных.
- */
+/** Сборка 3 канонических тарифов плана лечения (SSOT) */
 export function buildCanonical3TierPlans(
 	baseStages = CANONICAL_CLINICAL_STAGES,
 ): readonly TreatmentPlanTier[] {
@@ -283,7 +223,6 @@ export function buildCanonical3TierPlans(
 		});
 
 		const totalRub = tierStages.reduce((sum, s) => sum + s.totalRub, 0);
-
 		return {
 			tierId: def.id,
 			title: def.title,
@@ -299,17 +238,14 @@ export function buildCanonical3TierPlans(
 	});
 }
 
-/**
- * 1-клик генератор типовых планов лечения по диагнозу МКБ-10 (Мандат 8n).
- * Врач выбирает диагноз и мгновенно получает готовый 3-уровневый план.
- */
+/** 1-клик генератор типовых планов по диагнозу МКБ-10 (Мандат 8n) */
 export function generateTreatmentPlanFromDiagnosis(
 	diagnosisCode: string,
 	toothNumber = 16,
 ): readonly TreatmentPlanStage[] {
 	const cleanCode = diagnosisCode.trim().toUpperCase();
 
-	// 1. Кариес дентина (K02.1)
+	// 1. Кариес дентина (K02)
 	if (cleanCode.includes("K02") || cleanCode.includes("КАРИЕС")) {
 		return [
 			{
@@ -325,24 +261,13 @@ export function generateTreatmentPlanFromDiagnosis(
 				estimatedWeeks: 1,
 				status: "draft",
 				items: [
-					{
-						id: `item-caries-${toothNumber}`,
-						toothNumber,
-						code804n: "A16.07.002",
-						name: `Восстановление зуба ${toothNumber} светоотверждаемым нанокомпозитом`,
-						priceRub: 5500,
-						unitPriceRub: 5500,
-						discountRub: 0,
-						quantity: 1,
-						stageKind: "stage_1_therapy",
-						isCompleted: false,
-					},
+					{ id: `item-caries-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Восстановление зуба ${toothNumber} нанокомпозитом`, priceRub: 5500, unitPriceRub: 5500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
 				],
 			},
 		];
 	}
 
-	// 2. Пульпит / периодонтит (K04.0, K04.4)
+	// 2. Пульпит / эндодонтия (K04)
 	if (cleanCode.includes("K04") || cleanCode.includes("ПУЛЬПИТ") || cleanCode.includes("ПЕРИОДОНТИТ")) {
 		return [
 			{
@@ -358,36 +283,14 @@ export function generateTreatmentPlanFromDiagnosis(
 				estimatedWeeks: 2,
 				status: "draft",
 				items: [
-					{
-						id: `item-endo-prep-${toothNumber}`,
-						toothNumber,
-						code804n: "A16.07.030",
-						name: `Обработка корневых каналов зуба ${toothNumber} под микроскопом`,
-						priceRub: 7500,
-						unitPriceRub: 7500,
-						discountRub: 0,
-						quantity: 1,
-						stageKind: "stage_1_therapy",
-						isCompleted: false,
-					},
-					{
-						id: `item-endo-fill-${toothNumber}`,
-						toothNumber,
-						code804n: "A16.07.002",
-						name: `Постоянная реставрация коронковой части зуба ${toothNumber}`,
-						priceRub: 4500,
-						unitPriceRub: 4500,
-						discountRub: 0,
-						quantity: 1,
-						stageKind: "stage_1_therapy",
-						isCompleted: false,
-					},
+					{ id: `item-endo-prep-${toothNumber}`, toothNumber, code804n: "A16.07.030", name: `Обработка корневых каналов зуба ${toothNumber} под микроскопом`, priceRub: 7500, unitPriceRub: 7500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+					{ id: `item-endo-fill-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Реставрация коронковой части зуба ${toothNumber}`, priceRub: 4500, unitPriceRub: 4500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
 				],
 			},
 		];
 	}
 
-	// 3. Потеря зубов / адентия / имплантация (K08.1)
+	// 3. Адентия / имплантация (K08)
 	if (cleanCode.includes("K08") || cleanCode.includes("АДЕНТИЯ") || cleanCode.includes("ИМПЛАНТ")) {
 		return [
 			{
@@ -395,7 +298,7 @@ export function generateTreatmentPlanFromDiagnosis(
 				stageNumber: 1,
 				stageKind: "stage_2_surgery",
 				title: "Хирургический этап: дентальная имплантация",
-				subtitle: `Установка имплантата в позиции отсутствующего зуба ${toothNumber}`,
+				subtitle: `Установка имплантата в позиции зуба ${toothNumber}`,
 				clinicalGoal: "Остеоинтеграция дентального имплантата",
 				totalRub: 48000,
 				totalKopecks: 4800000,
@@ -403,18 +306,7 @@ export function generateTreatmentPlanFromDiagnosis(
 				estimatedWeeks: 12,
 				status: "draft",
 				items: [
-					{
-						id: `item-surg-impl-${toothNumber}`,
-						toothNumber,
-						code804n: "A16.07.054",
-						name: `Установка дентального имплантата в позиции зуба ${toothNumber}`,
-						priceRub: 48000,
-						unitPriceRub: 48000,
-						discountRub: 0,
-						quantity: 1,
-						stageKind: "stage_2_surgery",
-						isCompleted: false,
-					},
+					{ id: `item-surg-impl-${toothNumber}`, toothNumber, code804n: "A16.07.054", name: `Установка имплантата в позиции зуба ${toothNumber}`, priceRub: 48000, unitPriceRub: 48000, discountRub: 0, quantity: 1, stageKind: "stage_2_surgery", isCompleted: false },
 				],
 			},
 			{
@@ -430,31 +322,16 @@ export function generateTreatmentPlanFromDiagnosis(
 				estimatedWeeks: 2,
 				status: "draft",
 				items: [
-					{
-						id: `item-ortho-crown-${toothNumber}`,
-						toothNumber,
-						code804n: "A16.07.004",
-						name: `Коронка из диоксида циркония на имплантате в позиции ${toothNumber}`,
-						priceRub: 35000,
-						unitPriceRub: 35000,
-						discountRub: 0,
-						quantity: 1,
-						stageKind: "stage_3_orthopedics",
-						isCompleted: false,
-					},
+					{ id: `item-ortho-crown-${toothNumber}`, toothNumber, code804n: "A16.07.004", name: `Коронка из диоксида циркония на имплантате ${toothNumber}`, priceRub: 35000, unitPriceRub: 35000, discountRub: 0, quantity: 1, stageKind: "stage_3_orthopedics", isCompleted: false },
 				],
 			},
 		];
 	}
 
-	// По умолчанию возвращаем канонический комплексный 3-этапный план
 	return CANONICAL_CLINICAL_STAGES;
 }
 
-/**
- * Проверка срока действия плана (30 дней):
- * Истечение срока НЕ блокирует приём оплат и оказание помощи врачом (Мандат 8e).
- */
+/** Проверка срока действия плана (30 дней): истечение НЕ блокирует врача (Мандат 8e) */
 export function isTreatmentPlanExpired(createdAtIso?: string): {
 	readonly isExpired: boolean;
 	readonly daysElapsed: number;
@@ -463,15 +340,14 @@ export function isTreatmentPlanExpired(createdAtIso?: string): {
 	if (!createdAtIso) return { isExpired: false, daysElapsed: 0 };
 	const created = new Date(createdAtIso).getTime();
 	if (Number.isNaN(created)) return { isExpired: false, daysElapsed: 0 };
-	const now = Date.now();
-	const daysElapsed = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+	const daysElapsed = Math.floor((Date.now() - created) / (1000 * 60 * 60 * 24));
 	const isExpired = daysElapsed > 30;
 
 	return {
 		isExpired,
 		daysElapsed,
 		warningNotice: isExpired
-			? `Срок актуальности предварительной сметы (30 дней) истёк ${daysElapsed - 30} дн. назад. Врач сохраняет право согласовать продолжение лечения без изменения цен.`
+			? `Срок предварительной сметы (30 дней) истёк ${daysElapsed - 30} дн. назад. Врач сохраняет право согласовать продолжение лечения без изменения цен.`
 			: undefined,
 	};
 }

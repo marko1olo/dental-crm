@@ -1,8 +1,7 @@
 /**
  * DirectTreatmentPlanLauncher.tsx — Автономный лаунчер студии планов лечения (SSOT).
- * Мандаты 8b, 8aq: Монтирование в живой UI (AppShell.tsx), Sweet Spot (60–90 строк).
- * Реагирует на хэши #treatment-plans, #treatment-plan, #treatment-studio, #plans, #estimates
- * и CustomEvent("dente:open-treatment-plan").
+ * Мандаты 8b, 8aq: Монтирование в живой UI (AppShell, SpecializedClinicalLaunchers, Sweet Spot 60–80 строк).
+ * Реагирует на хэши #treatment-plans, #plans, #plan-presenter, ?plans=1 и событие "dente:open-treatment-plan".
  */
 
 import React, { useState, useEffect, useCallback } from "react";
@@ -18,16 +17,16 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		const hash = window.location.hash.toLowerCase();
 		const search = window.location.search.toLowerCase();
 		return (
-			hash.includes("treatment-plan") ||
 			hash.includes("treatment-plans") ||
+			hash.includes("treatment-plan") ||
 			hash.includes("treatment-studio") ||
+			hash.includes("plan-presenter") ||
 			hash.includes("#plans") ||
 			hash.includes("#estimates") ||
-			search.includes("treatment-plan") ||
-			search.includes("treatment_plan") ||
-			search.includes("treatment-studio") ||
+			search.includes("plans=1") ||
 			search.includes("plan=1") ||
-			search.includes("estimates=1")
+			search.includes("treatment-plan") ||
+			search.includes("treatment_plan")
 		);
 	}, []);
 
@@ -37,32 +36,24 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 
 	useEffect(() => {
 		const handleHashOrPop = () => {
-			if (checkUrlTrigger()) {
-				setIsOpen(true);
-			}
+			if (checkUrlTrigger()) setIsOpen(true);
 		};
 
 		const handleCustomOpen = (evt: Event) => {
-			const customEvt = evt as CustomEvent<{ patientName?: string; doctorFullName?: string }>;
-			if (customEvt.detail?.patientName) {
-				setPatientName(customEvt.detail.patientName);
-			}
-			if (customEvt.detail?.doctorFullName) {
-				setDoctorFullName(customEvt.detail.doctorFullName);
-			}
+			const d = (evt as CustomEvent<{ patientName?: string; doctorFullName?: string }>).detail;
+			if (d?.patientName) setPatientName(d.patientName);
+			if (d?.doctorFullName) setDoctorFullName(d.doctorFullName);
 			setIsOpen(true);
 		};
 
 		window.addEventListener("hashchange", handleHashOrPop);
 		window.addEventListener("popstate", handleHashOrPop);
 		window.addEventListener("dente:open-treatment-plan", handleCustomOpen);
-		window.addEventListener("dente-open-treatment-plan", handleCustomOpen);
 
 		return () => {
 			window.removeEventListener("hashchange", handleHashOrPop);
 			window.removeEventListener("popstate", handleHashOrPop);
 			window.removeEventListener("dente:open-treatment-plan", handleCustomOpen);
-			window.removeEventListener("dente-open-treatment-plan", handleCustomOpen);
 		};
 	}, [checkUrlTrigger]);
 
@@ -70,21 +61,11 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		setIsOpen(false);
 		if (typeof window !== "undefined") {
 			const url = new URL(window.location.href);
-			url.searchParams.delete("plan");
 			url.searchParams.delete("plans");
+			url.searchParams.delete("plan");
 			url.searchParams.delete("treatment-plan");
-			url.searchParams.delete("treatment_plan");
-			url.searchParams.delete("treatment-studio");
-			url.searchParams.delete("estimates");
-			const cleanHash = window.location.hash.replace(
-				/#(treatment-plans?|treatment-studio|plans|estimates)/gi,
-				"",
-			);
-			window.history.replaceState(
-				null,
-				"",
-				url.pathname + (url.search ? url.search : "") + cleanHash,
-			);
+			const cleanHash = window.location.hash.replace(/#(treatment-plans?|treatment-studio|plan-presenter|plans|estimates)/gi, "");
+			window.history.replaceState(null, "", url.pathname + (url.search ? url.search : "") + cleanHash);
 		}
 	}, []);
 
