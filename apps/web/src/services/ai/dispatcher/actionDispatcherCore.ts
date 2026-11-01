@@ -88,6 +88,10 @@ export function getActionTitleRu(toolName: string): string {
 		case "get_teeth_chart":
 		case "get_tooth_history":
 			return "Изменение статуса зуба в одонтограмме";
+		case "draft_clinical_soap_diary":
+		case "draftclinicalsoapdiary":
+		case "draft_soap_diary":
+		case "draftsoapdiary":
 		case "draft_043u_soap_diary":
 		case "draft043u_soap_diary":
 		case "draft_043_u_soap_diary":
@@ -100,15 +104,25 @@ export function getActionTitleRu(toolName: string): string {
 		case "use_clinical_protocol":
 		case "suggest_clinical_protocol":
 			return "Применение клинического протокола из каталога (1 142)";
+		case "calculate_treatment_estimate":
+		case "calculatetreatmentestimate":
+		case "calculate_services_estimate":
+		case "calculateservicesestimate":
 		case "calculate_804n_estimate":
 		case "calculate804n_estimate":
 		case "calculate_804_n_estimate":
 		case "create_treatment_plan":
 		case "suggest_treatment_plan":
 		case "calculate_plan_cost":
-		case "calculate_treatment_estimate":
 		case "add_treatment_stage":
 			return "Формирование клинической сметы";
+		case "get_patient_clinical_card":
+		case "getpatientclinicalcard":
+		case "get_patient_outpatient_record":
+		case "getpatientoutpatientrecord":
+		case "get_patient_emk_043u":
+		case "getpatientemk043u":
+			return "Получение медицинской карты приёма";
 		case "book_appointment":
 		case "book_chairside_appointment":
 		case "create_appointment":
@@ -141,9 +155,6 @@ export function getActionTitleRu(toolName: string): string {
 			return "Расходные материалы (автосписание)";
 		case "analyze_radiograph_vision":
 			return "Анализ дентального снимка";
-		case "verify_kraft_pack":
-		case "record_sterilization_test":
-			return "Контроль стерилизации СанПиН";
 		default:
 			return "Клиническое действие";
 	}

@@ -1,41 +1,20 @@
 /**
- * index.ts — SanPiN Sterilization and Infection Control Tools Module.
+ * index.ts — SanPiN Sterilization and Infection Control Module.
  *
- * Sweet Spot: ~35 lines.
+ * Mandate 8e, 8x, 8ap: Potemkin physical simulators, kraft pack barcoding,
+ * and autoclave interrogation excised. Sterilization and PSO processes are
+ * handled as 1-click batch back-office records without doctor chat obstruction.
  */
 
 import type { ToolRegistry } from "../registry.js";
-import {
-	verifyKraftPackSchema,
-	verifyKraftPackTool,
-	type KraftPackDetails,
-	type VerifyKraftPackInput,
-	type VerifyKraftPackResult,
-} from "./kraftPackVerificationTool.js";
-import {
-	recordSterilizationTestSchema,
-	recordSterilizationTestTool,
-	type RecordSterilizationTestInput,
-} from "./sterilizationTestTool.js";
-
-export {
-	verifyKraftPackSchema,
-	verifyKraftPackTool,
-	recordSterilizationTestSchema,
-	recordSterilizationTestTool,
-	type KraftPackDetails,
-	type VerifyKraftPackInput,
-	type VerifyKraftPackResult,
-	type RecordSterilizationTestInput,
-};
 
 /**
- * Registers all sterilization and infection control tools into the registry.
+ * Registers sterilization and infection control tools.
+ * Excision SSOT: Physical micro-tracking simulators removed; no-op preserved for registry stability.
  */
 export function registerSanpinTools(
-	registry: ToolRegistry,
-	moduleName = "sanpin",
+	_registry: ToolRegistry,
+	_moduleName = "sanpin",
 ): void {
-	registry.register(verifyKraftPackTool, moduleName);
-	registry.register(recordSterilizationTestTool, moduleName);
+	// Excision complete: zero chat-blocking interrogation or kraft pack micro-tracking.
 }

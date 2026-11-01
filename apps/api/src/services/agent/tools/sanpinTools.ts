@@ -1,18 +1,8 @@
 /**
  * sanpinTools.ts — Sterilization & Infection Control Tools Facade.
  *
- * Mandate 8b: Decomposed into ./sanpin/ sub-modules.
+ * Mandate 8e, 8x, 8ap: Physical simulation tools excised.
  * Retained for backwards compatibility across existing imports.
  */
 
-export {
-	verifyKraftPackSchema,
-	verifyKraftPackTool,
-	recordSterilizationTestSchema,
-	recordSterilizationTestTool,
-	type KraftPackDetails,
-	type VerifyKraftPackInput,
-	type VerifyKraftPackResult,
-	type RecordSterilizationTestInput,
-	registerSanpinTools,
-} from "./sanpin/index.js";
+export { registerSanpinTools } from "./sanpin/index.js";

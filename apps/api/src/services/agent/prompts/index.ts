@@ -10,7 +10,7 @@
 
 export * from "./denteClinicalConstitution.js";
 export * from "./pharmacologyAndSafetyPrompt.js";
-export * from "./billingAndPricing804nPrompt.js";
+export * from "./billingAndPricingServicesPrompt.js";
 export * from "./doctorAutonomyPrompt.js";
 
 import {
@@ -19,7 +19,7 @@ import {
 	DENTE_REACT_CYCLE_PROMPT,
 } from "./denteClinicalConstitution.js";
 import { PHARMACOLOGY_AND_SAFETY_PROMPT } from "./pharmacologyAndSafetyPrompt.js";
-import { BILLING_AND_PRICING_804N_PROMPT } from "./billingAndPricing804nPrompt.js";
+import { BILLING_AND_PRICING_SERVICES_PROMPT } from "./billingAndPricingServicesPrompt.js";
 import { DOCTOR_AUTONOMY_PROMPT } from "./doctorAutonomyPrompt.js";
 
 export interface BuildDenteAgentPromptOptions {
@@ -98,7 +98,7 @@ export function buildDenteAgentSystemPrompt(
 		DENTE_REACT_CYCLE_PROMPT,
 		DENTE_CLINICAL_STANDARDS_PROMPT,
 		PHARMACOLOGY_AND_SAFETY_PROMPT,
-		BILLING_AND_PRICING_804N_PROMPT,
+		BILLING_AND_PRICING_SERVICES_PROMPT,
 		DOCTOR_AUTONOMY_PROMPT,
 	];
 

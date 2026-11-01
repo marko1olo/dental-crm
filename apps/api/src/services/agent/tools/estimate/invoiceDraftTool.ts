@@ -2,7 +2,7 @@
  * invoiceDraftTool.ts — Treatment Estimate & Invoice Draft Tool.
  *
  * Implements calculate_treatment_estimate ToolDefinition:
- * - Resolves base prices strictly from clinic DB services table or canonical 804n catalog.
+ * - Resolves base prices strictly from clinic DB services table or canonical services catalog.
  * - Fails closed if price cannot be determined (Mandate 8e: AI never hallucinates pricing).
  * - Creates optional draft treatment plan with two-phase supervised confirmation.
  */

@@ -4,7 +4,7 @@
  * Decomposed under Mandate 8b into modular units:
  * - estimateDiscountEngine.ts (kopeck-exact arithmetic, discounts, installments)
  * - estimateTaxDeductionCalculator.ts (13% NDFL tax deduction Code 01 & 02)
- * - estimateTierCalculator.ts (Economy, Optimum, Premium 3-tier matrix, 804n catalog)
+ * - estimateTierCalculator.ts (Economy, Optimum, Premium 3-tier matrix, clinical services catalog)
  * - invoiceDraftTool.ts (calculate_treatment_estimate ToolDefinition & DB resolver)
  */
 

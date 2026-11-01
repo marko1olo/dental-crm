@@ -9,10 +9,6 @@ import { generateInformedConsentTool } from "../consentTool.js";
 import { calculateTreatmentEstimateTool } from "../estimateTool.js";
 import { draftLabWorkOrderTool } from "../labOrderTool.js";
 import type { ToolRegistry } from "../registry.js";
-import {
-	recordSterilizationTestTool,
-	verifyKraftPackTool,
-} from "../sanpinTools.js";
 import { analyzeRadiographVisionTool } from "../visionTool.js";
 import {
 	generateVisitDiaryTool,
@@ -90,9 +86,7 @@ export {
 	calculateTreatmentEstimateTool,
 	draftLabWorkOrderTool,
 	generateInformedConsentTool,
-	recordSterilizationTestTool,
 	searchPatientHistoryTool,
-	verifyKraftPackTool,
 };
 
 /**
@@ -140,10 +134,6 @@ export function registerClinicalTools(
 	registry.register(autoFillCancellationGapTool, moduleName);
 	registry.register(generateInformedConsentTool, moduleName);
 
-	// 8. SanPiN 3.3686-21 Sterilization & Infection Control Tools
-	registry.register(verifyKraftPackTool, moduleName);
-	registry.register(recordSterilizationTestTool, moduleName);
-
-	// 9. 5-Year Patient EHR Semantic Memory & RAG Search Tool
+	// 8. 5-Year Patient EHR Semantic Memory & RAG Search Tool
 	registry.register(searchPatientHistoryTool, moduleName);
 }

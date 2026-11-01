@@ -65,6 +65,10 @@ export class ToolRegistry {
 		return undefined;
 	}
 
+	public has(qualifiedName: string): boolean {
+		return Boolean(this.get(qualifiedName));
+	}
+
 	public list(): string[] {
 		return Array.from(this.tools.keys()).sort();
 	}
