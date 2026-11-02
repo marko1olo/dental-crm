@@ -1,10 +1,10 @@
 import { Check, CheckCircle2, Copy, Phone, Printer, RotateCcw } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useCallback, useId, useState } from "react";
 import { AuthArtBackground } from "../auth/AuthArtBackground";
 import type { AuthArtPack } from "../auth/authArtSelector";
 import type { BookingConfirmationData, BookingDoctorData, BookingSlotItem, ClinicBranch } from "./contracts/bookingContracts";
-import { BookingBoardingPass } from "./BookingBoardingPass";
+import { BookingElectronicTicket } from "./BookingElectronicTicket";
 import { BookingCalendarExport } from "./BookingCalendarExport";
 import { formatRussianDate } from "./engine/bookingCalendarUtils";
 import { generateGoogleCalendarUrl, generateIcsCalendarContent, generateYandexCalendarUrl } from "./engine/bookingCalendarExportUtils";
@@ -92,7 +92,7 @@ export const BookingConfirmationView: React.FC<BookingConfirmationViewProps> = (
 						{copiedTicket ? <Check size={18} className="text-green-600" /> : <Copy size={18} />}
 					</button>
 				</div>
-				<BookingBoardingPass reference={reference} isUnconfirmed={isUnconfirmed} dateStr={dateStr} timeStr={timeStr} cabinet={cabinet} doctorFullName={doctorFullName} branchName={branchName} branchAddress={branchAddress} patientDisplayName={patientDisplayName} patientDisplayPhone={patientDisplayPhone} />
+				<BookingElectronicTicket reference={reference} isUnconfirmed={isUnconfirmed} dateStr={dateStr} timeStr={timeStr} cabinet={cabinet} doctorFullName={doctorFullName} branchName={branchName} branchAddress={branchAddress} patientDisplayName={patientDisplayName} patientDisplayPhone={patientDisplayPhone} />
 				<BookingCalendarExport doctorFullName={doctorFullName} patientDisplayName={patientDisplayName} reference={reference} branchAddress={branchAddress} branchPhone={selectedBranch?.phone} dateStr={dateStr} timeStr={timeStr} startsAt={startsAt} endsAt={endsAt} />
 				<div className="flex items-center justify-between w-full pt-4 border-t border-slate-200 dark:border-slate-800 text-xs font-semibold text-slate-500 dark:text-slate-400 flex-wrap gap-2">
 					<button type="button" className="secondary-button flex items-center gap-1.5 hover:text-slate-900 dark:hover:text-slate-100 p-2 min-h-[44px]" onClick={() => window.print()}><Printer size={16} /><span>Распечатать талон</span></button>

@@ -1,7 +1,8 @@
 /* ==========================================================================
-   Floating Dental Boarding Pass (Mandates 8l, 8p)
+   Floating Dental Electronic Ticket (Mandates 8l, 8p, 8x, 8ap)
    ========================================================================== */
 
+.dbw-electronic-ticket.dbw-floating-pass,
 .dbw-boarding-pass.dbw-floating-pass {
 	position: relative;
 	z-index: 2;
@@ -16,6 +17,7 @@
 	overflow: hidden;
 }
 
+.dbw-electronic-ticket.dbw-floating-pass:hover,
 .dbw-boarding-pass.dbw-floating-pass:hover {
 	transform: translateY(-2px);
 	box-shadow: 0 24px 48px -10px rgba(15, 23, 42, 0.2),
@@ -23,8 +25,11 @@
 		0 0 0 1px rgba(226, 232, 240, 0.95);
 }
 
+.dark .dbw-electronic-ticket.dbw-floating-pass,
 .dark .dbw-boarding-pass.dbw-floating-pass,
+[data-theme="dark"] .dbw-electronic-ticket.dbw-floating-pass,
 [data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass,
+.dbw-confirmation-view-container[data-theme="dark"] .dbw-electronic-ticket.dbw-floating-pass,
 .dbw-confirmation-view-container[data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass {
 	background: var(--dbw-surface);
 	border: 1px solid rgba(45, 212, 191, 0.3);
@@ -34,8 +39,11 @@
 		0 0 32px rgba(45, 212, 191, 0.12);
 }
 
+.dark .dbw-electronic-ticket.dbw-floating-pass:hover,
 .dark .dbw-boarding-pass.dbw-floating-pass:hover,
+[data-theme="dark"] .dbw-electronic-ticket.dbw-floating-pass:hover,
 [data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass:hover,
+.dbw-confirmation-view-container[data-theme="dark"] .dbw-electronic-ticket.dbw-floating-pass:hover,
 .dbw-confirmation-view-container[data-theme="dark"] .dbw-boarding-pass.dbw-floating-pass:hover {
 	box-shadow: 0 30px 60px -12px rgba(0, 0, 0, 0.9),
 		0 12px 24px -5px rgba(0, 0, 0, 0.7),
@@ -43,7 +51,9 @@
 		0 0 40px rgba(45, 212, 191, 0.18);
 }
 
+[data-theme="night"] .dbw-electronic-ticket.dbw-floating-pass,
 [data-theme="night"] .dbw-boarding-pass.dbw-floating-pass,
+.dbw-confirmation-view-container[data-theme="night"] .dbw-electronic-ticket.dbw-floating-pass,
 .dbw-confirmation-view-container[data-theme="night"] .dbw-boarding-pass.dbw-floating-pass {
 	background: #121215;
 	border: 1px solid rgba(45, 212, 191, 0.35);
@@ -52,7 +62,9 @@
 		0 0 35px rgba(45, 212, 191, 0.15);
 }
 
+[data-theme="contrast"] .dbw-electronic-ticket.dbw-floating-pass,
 [data-theme="contrast"] .dbw-boarding-pass.dbw-floating-pass,
+.dbw-confirmation-view-container[data-theme="contrast"] .dbw-electronic-ticket.dbw-floating-pass,
 .dbw-confirmation-view-container[data-theme="contrast"] .dbw-boarding-pass.dbw-floating-pass {
 	background: #ffffff;
 	border: 2px solid #000000;

@@ -20,7 +20,7 @@ describe("BookingConfirmationView: Ambient Art Backdrop & Floating Pass", () => 
 		assert.ok(html.includes("dbw-confirmation-scrim"));
 	});
 
-	it("renders floating Dental Boarding Pass with elevated card classes", () => {
+	it("renders floating Electronic Boarding Pass with elevated card classes", () => {
 		const html = renderToStaticMarkup(
 			createElement(BookingConfirmationView, {
 				confirmationData: mockConfirmationData,
@@ -28,9 +28,9 @@ describe("BookingConfirmationView: Ambient Art Backdrop & Floating Pass", () => 
 			}),
 		);
 
-		assert.ok(html.includes("dbw-boarding-pass"));
+		assert.ok(html.includes("dbw-electronic-ticket"));
 		assert.ok(html.includes("dbw-floating-pass"));
-		assert.ok(html.includes("Dental Boarding Pass"));
+		assert.ok(html.includes("Электронный талон на приём"));
 		assert.ok(html.includes("Подтверждено"));
 		assert.ok(html.includes("dbw-pass-perforation"));
 	});

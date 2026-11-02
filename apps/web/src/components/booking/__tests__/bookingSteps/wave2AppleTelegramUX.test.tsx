@@ -69,10 +69,10 @@ describe("Booking Steps: Apple & Telegram Mini-App UX (Mandates 8c, 8e, 8n)", ()
 		assert.ok(html.includes("Telegram 1-тап запись"));
 	});
 
-	it("renders Dental Boarding Pass with barcode, QR section, Yandex Maps and WhatsApp links", () => {
+	it("renders Electronic Boarding Pass with barcode, QR section, Yandex Maps and WhatsApp links", () => {
 		const html = renderToStaticMarkup(createElement(PublicOnlineBookingWidget, { initialStep: 5 }));
-		assert.ok(html.includes("dbw-boarding-pass"));
-		assert.ok(html.includes("Dental Boarding Pass"));
+		assert.ok(html.includes("dbw-electronic-ticket"));
+		assert.ok(html.includes("Электронный талон на приём"));
 		assert.ok(html.includes("dbw-pass-perforation"));
 		assert.ok(html.includes("dbw-pass-barcode-section"));
 		assert.ok(html.includes("Открыть маршрут в Яндекс.Картах"));
