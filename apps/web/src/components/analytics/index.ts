@@ -7,6 +7,7 @@
 export * from "./analyticsCatalogData";
 export * from "./ExecutiveAnalyticsStudioModal";
 export * from "./DirectAnalyticsLauncher";
+export * from "./studio/index";
 export * from "./ExecutiveFinancialSummary";
 export * from "./DoctorPayrollReport";
 export * from "./ChairOccupancyReport";
