@@ -179,14 +179,14 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							type="button" data-testid="lab-modal-close-button" onClick={onClose}
 							className="w-8 h-8 rounded-full border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center font-bold text-sm cursor-pointer"
 							title="Закрыть (Esc)"
-						>✕</button>
+						>&#215;</button>
 					</div>
 				</header>
 
 				{feedbackToast && (
 					<div className="bg-[var(--teal)] text-white px-4 py-2 text-xs font-semibold flex items-center justify-between shadow-sm">
 						<span>✓ {feedbackToast}</span>
-						<button type="button" onClick={() => setFeedbackToast(null)} className="text-white font-bold opacity-80 hover:opacity-100">✕</button>
+						<button type="button" onClick={() => setFeedbackToast(null)} className="text-white font-bold opacity-80 hover:opacity-100">&#215;</button>
 					</div>
 				)}
 

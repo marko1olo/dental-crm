@@ -7,8 +7,7 @@ import { lazyWithRetry } from "../../../../../lib/lazyWithRetry";
 import { AppLoadingState } from "../../../../../AppBootState";
 import { isPatientPresentationRoute } from "../../../../photography/presentationSyncProtocol";
 import { OrthopedicsChairsidePanel } from "../../../../orthopedics/OrthopedicsChairsidePanel";
-import { DentalLabOrderModal } from "../../../../lab/DentalLabOrderModal";
-import { DentalLabOrdersHubModal } from "../../../../lab/DentalLabOrdersHubModal";
+import { DentalLabStudioModal } from "../../../../lab/DentalLabStudioModal";
 
 const PatientPresentationStandaloneView = lazyWithRetry(() =>
 	import("../../../../photography/PatientPresentationStandaloneView").then((m) => ({
@@ -29,7 +28,7 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 		hash.includes("lab_hub")
 	) {
 		return (
-			<DentalLabOrdersHubModal
+			<DentalLabStudioModal
 				isOpen={true}
 				onClose={() => {
 					window.location.hash = "";
@@ -45,7 +44,7 @@ export function renderOrthopedicsLaunchers(): React.ReactElement | null {
 		hash.includes("lab_order")
 	) {
 		return (
-			<DentalLabOrderModal
+			<DentalLabStudioModal
 				isOpen={true}
 				onClose={() => {
 					window.location.hash = "";

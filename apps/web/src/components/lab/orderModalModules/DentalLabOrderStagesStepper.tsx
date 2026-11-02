@@ -6,7 +6,7 @@ import { openWhatsAppChat } from "../../../store/telephonyClinical";
 import {
 	generateReadyInClinicWhatsAppTemplate,
 	generateReadyInClinicSmsTemplate,
-} from "../readyInClinicModules/ReadyInClinicTemplates";
+} from "../DentalLabReadyInClinicModal";
 
 export interface DentalLabOrderStagesStepperProps {
 	readonly currentStage: LabOrderStageKey;

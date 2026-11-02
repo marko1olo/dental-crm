@@ -200,7 +200,7 @@ export function OrthopedicsStudioModal({
 							aria-label="Закрыть окно ортопедии"
 							className="w-11 h-11 flex items-center justify-center rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-slate-500 text-lg font-bold"
 						>
-							✕
+							&#215;
 						</button>
 					</div>
 				</header>

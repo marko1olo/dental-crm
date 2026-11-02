@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { DentalLabStudioModal } from "./components/lab/DentalLabStudioModal";
 import { DentalLabOrderModal } from "./components/lab/DentalLabOrderModal";
 import { DentalLabOrdersHubModal } from "./components/lab/DentalLabOrdersHubModal";
 import { DentalLabOrdersKanbanBoard, CANONICAL_4_KANBAN_COLUMNS } from "./components/lab/DentalLabOrdersKanbanBoard";
@@ -22,11 +23,11 @@ import "./theme.css";
 function LabPreviewApp() {
 	const params = typeof window !== "undefined" ? new URLSearchParams(window.location.search) : new URLSearchParams();
 	const initialTheme = (params.get("theme") as "light" | "dark") || "light";
-	const initialView = (params.get("view") as "modal" | "kanban" | "schedule" | "hub") || "kanban";
+	const initialView = (params.get("view") as "modal" | "kanban" | "schedule" | "hub" | "studio") || "studio";
 	const initialTab = (params.get("tab") as "main" | "shades" | "stages" | "print") || "main";
 
 	const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
-	const [view, setView] = useState<"modal" | "kanban" | "schedule" | "hub">(initialView);
+	const [view, setView] = useState<"modal" | "kanban" | "schedule" | "hub" | "studio">(initialView);
 	const [modalTab, setModalTab] = useState<"main" | "shades" | "stages" | "print">(initialTab);
 	const [isModalOpen, setIsModalOpen] = useState(initialView === "modal");
 
@@ -296,6 +297,16 @@ function LabPreviewApp() {
 							</div>
 						</div>
 					</div>
+				)}
+
+				{view === "studio" && (
+					<DentalLabStudioModal
+						isOpen={true}
+						onClose={() => setView("kanban")}
+						patientName="Ковалев Дмитрий Сергеевич"
+						doctorName="Д-р Смирнова Е. В. (Ортопед)"
+						initialToothFdi="16"
+					/>
 				)}
 
 				{view === "hub" && (
