@@ -13,14 +13,15 @@ import "./styles/theme-overrides.css";
 import "./theme.css";
 import "./components/payroll/doctorPayroll.css";
 import { DoctorPayrollTab } from "./views/financeView/DoctorPayrollTab";
-import { DoctorPayrollModal } from "./components/payroll/DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "./components/payroll/DoctorPayrollStudioModal";
 import type { DoctorCompletedServiceItem } from "@dental/shared/payroll";
 
 const SAMPLE_DOCTORS = [
-	{ id: "doc-1", name: "Д-р Смирнов А.В.", specialtyId: "general_dentist" },
-	{ id: "doc-2", name: "Д-р Кузнецова Е.И.", specialtyId: "therapist" },
-	{ id: "doc-3", name: "Д-р Васильев Д.М.", specialtyId: "orthopedist" },
-	{ id: "doc-4", name: "Д-р Орлов С.П.", specialtyId: "surgeon_implantologist" },
+	{ id: "doc-volkov", name: "Д-р Волков Алексей Сергеевич", specialtyId: "orthopedics" },
+	{ id: "doc-sokolova", name: "Д-р Соколова Елена Владимировна", specialtyId: "therapy" },
+	{ id: "doc-morozov", name: "Д-р Морозов Дмитрий Игоревич", specialtyId: "surgery" },
+	{ id: "doc-smirnova", name: "Д-р Смирнова Анна Павловна", specialtyId: "hygiene" },
+	{ id: "doc-kuznetsov", name: "Д-р Кузнецов Иван Михайлович", specialtyId: "solo_rental" },
 ];
 
 const SAMPLE_SERVICES: DoctorCompletedServiceItem[] = [
@@ -128,13 +129,12 @@ function PayrollPreviewApp() {
 				/>
 			</main>
 
-			<DoctorPayrollModal
+			<DoctorPayrollStudioModal
 				isOpen={isModalOpen}
 				onClose={() => setIsModalOpen(false)}
 				clinicName="ООО «Денте Стоматология»"
 				doctorsList={SAMPLE_DOCTORS}
-				initialDoctorId="doc-1"
-				initialServices={SAMPLE_SERVICES}
+				initialDoctorId="doc-volkov"
 			/>
 		</div>
 	);

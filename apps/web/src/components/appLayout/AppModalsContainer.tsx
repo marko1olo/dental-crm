@@ -12,7 +12,7 @@ import { AdministrativeModalsSubcontainer } from "./modalsContainerModules/Admin
 import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModals";
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
-import { DoctorPayrollModal } from "../payroll/DoctorPayrollModal";
+import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -33,7 +33,7 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 			{renderStandaloneLaunchers(props)}
 
 			{isPayrollFromStore && (
-				<DoctorPayrollModal
+				<DoctorPayrollStudioModal
 					isOpen={true}
 					onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
 				/>

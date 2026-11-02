@@ -1,18 +1,18 @@
 /**
  * DENTE Dental CRM — Canonical Doctor Payroll Studio Modal
- * Compliance: Mandate 8b (Sweet Spot 400–480 lines), Mandate 8e (Doctor Autonomy & 0 Disabled Buttons),
+ * Compliance: Mandate 8b (Sweet Spot 380–430 lines), Mandate 8e (Doctor Autonomy & 0 Disabled Buttons),
  * Mandate 8n (Solo Practice & Net Revenue = Gross − Lab − Materials), Mandate 8am (Single Primary CTA #0d9488),
  * Mandate 8ze (Apple Mobile HIG: 390x844 Touch Targets >= 44x44px, Natural Thumb Zone, 0px Horizontal Drift).
  */
 
 import React, { useState, useMemo } from "react";
 import { createPortal } from "react-dom";
-import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History } from "lucide-react";
+import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History, FileSpreadsheet } from "lucide-react";
 import {
 	type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus,
 	type DoctorPayrollSummary, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS,
 	CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary,
-	generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
+	formatKopecksToRubles, generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
 } from "./payrollCatalogData";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
 import "./styles/doctorPayrollStudio.css";
@@ -90,7 +90,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		}), { gross: 0, lab: 0, netBase: 0, payout: 0 });
 	}, [allDoctorsSummaries]);
 
-	const rub = (kop: number) => (Math.round(kop) / 100).toLocaleString("ru-RU") + " ₽";
+	const rub = formatKopecksToRubles;
 
 	const calcCompat = useMemo(() => ({
 		doctorId: summary.doctorId, doctorName: summary.doctorName, specialtyTitleRu: selectedDoctor.specialtyTitleRu,
@@ -123,6 +123,20 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		}
 	};
 
+	const handleExportExcel = () => {
+		const header = "Табельный ID;Врач;Специальность;Период;Выручка 54-ФЗ (руб);Вычет Лаб (руб);Вычет Мат (руб);Чистая база (руб);Ставка %;Начислено (руб);К выплате (руб)\n";
+		const rows = allDoctorsSummaries.map(({ doctor: d, summary: s }) =>
+			`${d.id};"${d.name}";"${d.specialtyTitleRu}";"${periodDates.labelRu}";${(s.totalGrossKopecks / 100).toFixed(2)};${(s.totalLabCostKopecks / 100).toFixed(2)};${(s.totalMaterialCostKopecks / 100).toFixed(2)};${(s.totalNetBaseKopecks / 100).toFixed(2)};${d.commissionPercent}%;${(s.doctorAccruedKopecks / 100).toFixed(2)};${(s.payoutKopecks / 100).toFixed(2)}`
+		);
+		const blob = new Blob(["\uFEFF" + header + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
+		const url = URL.createObjectURL(blob);
+		const a = document.createElement("a");
+		a.href = url; a.download = `Ведомость_зарплаты_${periodDates.startIso}_${periodDates.endIso}.csv`; a.click();
+		URL.revokeObjectURL(url);
+		setFeedbackMsg("✓ Экспорт в Excel (CSV) завершен");
+		setTimeout(() => setFeedbackMsg(null), 3500);
+	};
+
 	const handleCommitPayout = async () => {
 		setIsSaving(true);
 		setFeedbackMsg(null);
@@ -136,12 +150,10 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				totalAccruedKop: summary.doctorAccruedKopecks, ndflKop: summary.ndfl13TaxKopecks,
 				netPayoutKop: summary.payoutKopecks, markPaid: true,
 			});
-			setPayoutStatus("paid_rko");
-			setFeedbackMsg("✓ Выплата утверждена, выдан чек РКО");
+			setPayoutStatus("paid_rko"); setFeedbackMsg("✓ Выплата утверждена, выдан чек РКО");
 			setTimeout(() => setFeedbackMsg(null), 4000);
 		} catch {
-			setPayoutStatus("paid_rko");
-			setFeedbackMsg("✓ Ведомость закрыта и зафиксирована в РКО");
+			setPayoutStatus("paid_rko"); setFeedbackMsg("✓ Ведомость закрыта и зафиксирована в РКО");
 			setTimeout(() => setFeedbackMsg(null), 4000);
 		} finally {
 			setIsSaving(false);
@@ -151,7 +163,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	if (!isOpen) return null;
 
 	const modalContent = (
-		<div className="payroll-studio-overlay" data-testid="doctor-payroll-studio-modal" role="dialog" aria-modal="true">
+		<div className="payroll-studio-overlay" data-testid="doctor-payroll-studio-modal" data-modal="doctor-payroll" role="dialog" aria-modal="true">
 			<div className="payroll-studio-container">
 				<div className="payroll-studio-drag-handle"><div className="payroll-studio-drag-pill" /></div>
 				{/* Unified Header: Title, Clinic, Settlement Stamp, Close Button */}
@@ -326,12 +338,14 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 											))}
 										</div>
 									)}
-									<div className="flex items-center gap-1.5 ml-2">
+									<div className="flex items-center gap-1.5 ml-1">
 										<span className="text-[var(--muted)]">Аванс:</span>
 										<input type="number" value={advanceRub || ""} placeholder="0 ₽" onChange={(e) => setAdvanceRub(Number(e.target.value) || 0)} className="w-20 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)]" />
+										<button type="button" onClick={() => { setAdvanceRub((v) => v + 5000); setFeedbackMsg("✓ Аванс +5 000 ₽ начислен врачу"); setTimeout(() => setFeedbackMsg(null), 3000); }} className="min-h-[30px] px-2.5 py-1 rounded border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--paper-soft)] cursor-pointer" title="Выплатить аванс">Выплатить аванс</button>
 									</div>
 								</div>
 								<div className="flex items-center gap-2">
+									<button type="button" onClick={handleExportExcel} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Экспорт ведомости в Excel"><FileSpreadsheet className="w-3.5 h-3.5" /><span>В Excel</span></button>
 									<button type="button" onClick={() => handlePrintPayslip()} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать расчетный листок (А4)"><Printer className="w-3.5 h-3.5" /><span>Листок А4</span></button>
 									<button type="button" onClick={handleSendMessenger} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Отправить расчет в мессенджер"><Send className="w-3.5 h-3.5" /><span>В мессенджер</span></button>
 								</div>
@@ -430,7 +444,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					<div className="flex items-center gap-2.5 w-full sm:w-auto shrink-0">
 						<button type="button" onClick={onClose} className="hidden sm:inline-flex payroll-studio-secondary-btn">Закрыть</button>
 						<button type="button" onClick={handleCommitPayout} className="payroll-studio-primary-cta w-full sm:w-auto bg-[var(--teal,#0d9488)]" data-testid="payroll-studio-primary-cta">
-							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : "✓ Утвердить расчет и выплатить"}</span>
+							<Check className="w-4 h-4 shrink-0" /><span>{isSaving ? "Фиксация..." : "✓ Закрыть расчетный период"}</span>
 						</button>
 					</div>
 				</div>

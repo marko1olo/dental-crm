@@ -5,9 +5,9 @@
 import React, { Suspense, useEffect, useState } from "react";
 import { lazyWithRetry } from "../../../lib/lazyWithRetry";
 
-const DoctorPayrollModal = lazyWithRetry(() =>
-	import("../../payroll/DoctorPayrollModal").then((module) => ({
-		default: module.DoctorPayrollModal,
+const DoctorPayrollStudioModal = lazyWithRetry(() =>
+	import("../../payroll/DoctorPayrollStudioModal").then((module) => ({
+		default: module.DoctorPayrollStudioModal,
 	})),
 );
 
@@ -54,13 +54,11 @@ export function GlobalDoctorPayrollModal({ clinicSettings }: { clinicSettings?: 
 
 	return (
 		<Suspense fallback={null}>
-			<DoctorPayrollModal
+			<DoctorPayrollStudioModal
 				isOpen={Boolean(globalDoctorPayroll)}
 				onClose={() => setGlobalDoctorPayroll(null)}
 				clinicName={clinicSettings?.name || "ООО «Денте Стоматология»"}
 				initialDoctorId={doc?.doctorUserId || globalDoctorPayroll.doctorId}
-				initialServices={initialServices}
-				initialBasePercentage={doc?.commissionPct ?? globalDoctorPayroll.basePercentage}
 				doctorsList={doctorsList}
 			/>
 		</Suspense>

@@ -315,9 +315,13 @@ export const CANONICAL_CLOSED_PERIODS: readonly ClosedPayrollPeriodItem[] = [
 	{ id: "cls-03", periodLabelRu: "Сентябрь 2026", dateClosedIso: "2026-10-02", doctorId: "doc-morozov", doctorName: "Д-р Морозов Дмитрий Игоревич", specialtyTitleRu: "Стоматолог-хирург-имплантолог", grossKopecks: 9800000, labCostKopecks: 0, materialCostKopecks: 3200000, netBaseKopecks: 6600000, payoutKopecks: 2310000, rkoReceiptNumber: "РКО-09/26-3", isPaidRko: true },
 ];
 
+export function formatKopecksToRubles(kopecks: number): string {
+	return (Math.round(kopecks) / 100).toLocaleString("ru-RU") + " ₽";
+}
+
 /** Printable Payslip A4 / A5 without bureaucratic Soviet labels (Mandate 8x) */
 export function generateDoctorPayslipA5Html(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "Стоматологическая клиника DENTE"): string {
-	const rub = (kop: number) => (Math.round(kop) / 100).toLocaleString("ru-RU") + " ₽";
+	const rub = formatKopecksToRubles;
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"><title>Расчетный листок врача — ${doctor.name}</title>
 <style>body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:24px;color:#0f172a;font-size:13px;line-height:1.4}.header{border-bottom:2px solid #0d9488;padding-bottom:12px;margin-bottom:16px;display:flex;justify-content:space-between;align-items:flex-end}.title{font-size:18px;font-weight:bold;margin:0}.clinic{font-size:12px;color:#64748b;margin-top:4px}.table{width:100%;border-collapse:collapse;margin:14px 0}.table th,.table td{padding:8px 10px;border:1px solid #e2e8f0;text-align:left}.table th{background:#f8fafc;font-weight:600;color:#475569}.total-row{font-weight:bold;background:#f0fdfa}.highlight{color:#0d9488;font-size:16px;font-weight:bold}.signatures{margin-top:32px;display:flex;justify-content:space-between;font-size:12px}.sign-line{border-top:1px solid #94a3b8;width:180px;margin-top:24px;text-align:center;padding-top:4px;color:#64748b}</style></head>
 <body><div class="header"><div><h1 class="title">РАСЧЕТНЫЙ ЛИСТОК ВРАЧА</h1><div class="clinic">${clinicName} • Период: ${calc.periodLabelRu}</div></div><div style="text-align:right;"><div style="font-weight:600;">${doctor.name}</div><div style="color:#64748b;font-size:11px;">${doctor.specialtyTitleRu}</div></div></div>
@@ -329,6 +333,6 @@ export const generateDoctorPayslipA4Html = generateDoctorPayslipA5Html;
 
 /** Plaintext format for Messenger sharing (WhatsApp / Telegram) */
 export function generateDoctorPayslipMessengerText(calc: DoctorPayrollCalculation, doctor: PayrollDoctorProfile, clinicName: string = "DENTE Clinic"): string {
-	const rub = (kop: number) => (Math.round(kop) / 100).toLocaleString("ru-RU") + " ₽";
+	const rub = formatKopecksToRubles;
 	return `📋 Расчетный листок врача: ${doctor.name}\n🏥 ${clinicName} • ${calc.periodLabelRu}\n━━━━━━━━━━━━━━━━━━\n💰 Выручка (54-ФЗ): ${rub(calc.totalGrossKopecks)}\n🔬 ЗТЛ (лаборатория): − ${rub(calc.totalLabCostKopecks)}\n📦 Материалы: − ${rub(calc.totalMaterialCostKopecks)}\n💎 Чистая база: ${rub(calc.totalNetBaseKopecks)}\n${calc.isChairRental ? `🪑 Аренда кресла: − ${rub(calc.chairRentalKopecks)}` : `📈 Ставка врача: ${calc.commissionPercent}% (${rub(calc.earnedDoctorKopecks)})`}\n${calc.advanceKopecks > 0 ? `💵 Аванс: − ${rub(calc.advanceKopecks)}\n` : ""}${calc.ndfl13TaxKopecks > 0 ? `🏛️ НДФЛ 13%: − ${rub(calc.ndfl13TaxKopecks)}\n` : ""}━━━━━━━━━━━━━━━━━━\n✅ К ВЫПЛАТЕ: ${rub(calc.netPayoutToDoctorKopecks)}`;
 }
