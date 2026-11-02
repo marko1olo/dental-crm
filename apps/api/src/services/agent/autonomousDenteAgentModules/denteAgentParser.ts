@@ -27,7 +27,7 @@ export interface AppointmentRequest {
 }
 
 export interface AutonomousDenteAgentInput {
-	patientId: string;
+	patientId?: string | undefined;
 	prompt?: string | undefined;
 	toothNumber?: number | string | undefined;
 	complaints?: string | undefined;

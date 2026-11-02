@@ -12,7 +12,9 @@ import { getRequestIdentity } from "../../security/identity.js";
 import { PERMISSIONS } from "../../security/permissions.js";
 import {
 	defaultToolRegistry,
+	defaultAutonomousDenteAgent,
 	type AgentContext,
+	type AutonomousDenteAgentInput,
 } from "../../services/agent/index.js";
 
 function createClinicalContext(
@@ -34,6 +36,124 @@ function createClinicalContext(
 export const clinicalToolRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
+	// POST /api/v1/copilot/agent/execute — Chairside autonomous ReAct Copilot execution
+	server.post<{ Body: AutonomousDenteAgentInput }>(
+		"/api/v1/copilot/agent/execute",
+		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot execute agent",
+			);
+			if (!resolvedOrgId) return;
+
+			const identity = getRequestIdentity(request);
+			const body = (request.body ?? {}) as AutonomousDenteAgentInput;
+
+			const input: AutonomousDenteAgentInput = {
+				...body,
+				patientId: body.patientId || "pat-chairside",
+				organizationId: resolvedOrgId,
+				userId: identity.userId ?? "system",
+			};
+
+			try {
+				const result = await defaultAutonomousDenteAgent.execute(input);
+
+				const toothAction = result.actions.find(
+					(a) => a.type === "apply_tooth_status",
+				);
+				const estimateAction = result.actions.find(
+					(a) =>
+						a.type === "apply_treatment_estimate" ||
+						a.type === "apply_estimate_804n" ||
+						a.type === "apply_services_estimate",
+				);
+				const soapAction = result.actions.find(
+					(a) => a.type === "apply_soap_diary",
+				);
+
+				const thoughts =
+					result.steps?.map((s, idx) => ({
+						id: `step-${s.iteration}-${idx}`,
+						stepNumber: s.iteration,
+						title:
+							String(s.thought || "").split("\n")[0] ||
+							`Шаг ${s.iteration}`,
+						status: "done" as const,
+						detail:
+							String(s.thought || "")
+								.split("\n")
+								.slice(1)
+								.join(" ") || undefined,
+					})) ?? [];
+
+				const toothProposal =
+					toothAction?.payload ??
+					(result.toothNumber
+						? {
+								toothNumber: result.toothNumber,
+								state: "C2",
+								stateLabel: "Кариес дентина (C2)",
+								surfaces: [],
+							}
+						: null);
+
+				const servicesProposal =
+					(estimateAction?.payload as any)?.items ??
+					result.estimateServices?.items ??
+					null;
+
+				const soapProposal = result.soapDiary
+					? {
+							complaint: result.soapDiary.subjective?.complaints || "",
+							anamnesis:
+								[
+									result.soapDiary.subjective?.anamnesisMorbi,
+									result.soapDiary.subjective?.anamnesisVitae,
+								]
+									.filter(Boolean)
+									.join(" ") || "",
+							objectiveStatus:
+								[
+									result.soapDiary.objective?.statusLocalis,
+									result.soapDiary.objective?.percussion,
+									result.soapDiary.objective?.coldTest,
+								]
+									.filter(Boolean)
+									.join(" ") || "",
+							diagnosis: result.soapDiary.assessment?.icd10Name || "",
+							treatmentPlan:
+								result.soapDiary.plan?.procedureProtocol || "",
+							recommendations:
+								result.soapDiary.plan?.recommendations || "",
+						}
+					: soapAction?.payload ?? null;
+
+				const safetyAlert = result.safetyAlerts?.[0] ?? null;
+
+				return reply.send({
+					ok: true,
+					data: {
+						...result,
+						verdict: result.verdict,
+						thoughts,
+						toothProposal,
+						servicesProposal,
+						soapProposal,
+						safetyAlert,
+					},
+				});
+			} catch (err: unknown) {
+				const errMsg = err instanceof Error ? err.message : String(err);
+				return reply.code(400).send({
+					ok: false,
+					error: "AutonomousAgentExecutionError",
+					message: errMsg,
+				});
+			}
+		},
+	);
 	// POST /api/v1/copilot/clinical/diary — Generate outpatient visit record / SOAP diary
 	server.post<{ Body: Record<string, unknown> }>(
 		"/api/v1/copilot/clinical/diary",

@@ -56,7 +56,7 @@ export async function executeCopilotAgentRequest(
     patientId,
     visitId,
     chairId,
-    patientAllergies = ["Пенициллины"],
+    patientAllergies = [],
     patientSomaticHistory,
   } = params;
 
@@ -91,11 +91,11 @@ export async function executeCopilotAgentRequest(
   }
 
   const requestBody = {
-    patientId: patientId || "pat-chairside-default",
+    patientId: patientId || undefined,
     prompt: text || undefined,
     toothNumber: activeTooth ?? undefined,
     complaints: text || undefined,
-    allergies: patientAllergies ? [...patientAllergies] : undefined,
+    allergies: patientAllergies && patientAllergies.length > 0 ? [...patientAllergies] : undefined,
     somaticHistory: Array.isArray(patientSomaticHistory)
       ? [...patientSomaticHistory]
       : typeof patientSomaticHistory === "string"

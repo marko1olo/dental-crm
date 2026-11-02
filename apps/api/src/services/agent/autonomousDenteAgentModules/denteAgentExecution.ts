@@ -143,6 +143,8 @@ export async function executeAutonomousReActCycle(
 		userId,
 	} = parsed;
 
+	const effectivePatientId = input.patientId?.trim() || "pat-chairside";
+
 	const ctx: AgentContext = {
 		organizationId: orgId,
 		clinicId: orgId,
@@ -180,7 +182,7 @@ export async function executeAutonomousReActCycle(
 	{
 		const thought1 = [
 			`[ИТЕРАЦИЯ 1/5: ПЕРВИЧНЫЙ КЛИНИЧЕСКИЙ АНАЛИЗ И ЛЕКАРСТВЕННАЯ СОВМЕСТИМОСТЬ]`,
-			`Пациент ID: ${input.patientId}. Зуб FDI: ${fdiToothFormatted}.`,
+			`Пациент ID: ${effectivePatientId}. Зуб FDI: ${fdiToothFormatted}.`,
 			`Жалобы: "${extractedComplaints || "Не указаны (физиологическая норма)"}".`,
 			`Анамнез: аллергии [${extractedAllergies.join(", ") || "отрицает"}], соматика [${extractedSomatic.join(", ") || "здоров"}].`,
 			`ДЕЙСТВИЕ: Вызов check_drug_interactions для проверки лекарственной совместимости и get_patient_clinical_card для открытия медицинской карты.`,
@@ -193,7 +195,7 @@ export async function executeAutonomousReActCycle(
 				: ["Артикаин 4% 1:100 000", "Амоксициллин 500 мг"];
 
 		const ddiObservation = await checkDrugInteractionsTool.handler(ctx, {
-			patientId: input.patientId,
+			patientId: effectivePatientId,
 			plannedDrugs,
 			knownAllergies: extractedAllergies,
 			somaticConditions: extractedSomatic,
@@ -207,7 +209,7 @@ export async function executeAutonomousReActCycle(
 			action: {
 				tool: "check_drug_interactions",
 				args: {
-					patientId: input.patientId,
+					patientId: effectivePatientId,
 					plannedDrugs,
 					knownAllergies: extractedAllergies,
 					somaticConditions: extractedSomatic,
@@ -218,7 +220,7 @@ export async function executeAutonomousReActCycle(
 		});
 
 		emkResult = await getPatientClinicalCardTool.handler(ctx, {
-			patientId: input.patientId,
+			patientId: effectivePatientId,
 			organizationId: orgId,
 		});
 		toolsInvoked.push("get_patient_clinical_card");
@@ -256,7 +258,7 @@ export async function executeAutonomousReActCycle(
 		fullThoughtTraces.push(thought2);
 
 		toothStatusResult = await updateToothStatusTool.handler(ctx, {
-			patientId: input.patientId,
+			patientId: effectivePatientId,
 			tooth: resolvedTooth,
 			status: clinicalStatus,
 			surfaces: ["O", "M"],
@@ -270,7 +272,7 @@ export async function executeAutonomousReActCycle(
 			action: {
 				tool: "update_tooth_status",
 				args: {
-					patientId: input.patientId,
+					patientId: effectivePatientId,
 					tooth: resolvedTooth,
 					status: clinicalStatus,
 					surfaces: ["O", "M"],
@@ -294,7 +296,7 @@ export async function executeAutonomousReActCycle(
 		fullThoughtTraces.push(thought3);
 
 		estimateResult = await calculateTreatmentEstimateTool.handler(ctx, {
-			patientId: input.patientId,
+			patientId: effectivePatientId,
 			toothNumber: resolvedTooth ?? undefined,
 			category: clinicalCategory as any,
 			discountPercent: resolvedDiscount,
@@ -307,7 +309,7 @@ export async function executeAutonomousReActCycle(
 			action: {
 				tool: "calculate_treatment_estimate",
 				args: {
-					patientId: input.patientId,
+					patientId: effectivePatientId,
 					toothNumber: resolvedTooth ?? undefined,
 					category: clinicalCategory,
 					discountPercent: resolvedDiscount,
@@ -333,7 +335,7 @@ export async function executeAutonomousReActCycle(
 		fullThoughtTraces.push(thought4);
 
 		diaryResult = await draftClinicalSoapDiaryTool.handler(ctx, {
-			patientId: input.patientId,
+			patientId: effectivePatientId,
 			toothNumber: resolvedTooth ?? undefined,
 			diagnosisCode: primaryIcd10,
 			complaints: extractedComplaints,
@@ -349,7 +351,7 @@ export async function executeAutonomousReActCycle(
 			action: {
 				tool: "draft_clinical_soap_diary",
 				args: {
-					patientId: input.patientId,
+					patientId: effectivePatientId,
 					toothNumber: resolvedTooth ?? undefined,
 					diagnosisCode: primaryIcd10,
 				},
@@ -362,7 +364,7 @@ export async function executeAutonomousReActCycle(
 
 		if (labReq && resolvedTooth) {
 			labOrderResult = await createDentalLabOrderTool.handler(ctx, {
-				patientId: input.patientId,
+				patientId: effectivePatientId,
 				toothCodes: [resolvedTooth],
 				workType: labReq.workType,
 				material: labReq.material,
@@ -377,7 +379,7 @@ export async function executeAutonomousReActCycle(
 
 		if (appReq) {
 			appointmentResult = await bookChairsideAppointmentTool.handler(ctx, {
-				patientId: input.patientId,
+				patientId: effectivePatientId,
 				doctorUserId: appReq.doctorUserId || userId,
 				startsAt: appReq.startsAt,
 				durationMinutes: appReq.durationMinutes || 30,
@@ -390,7 +392,7 @@ export async function executeAutonomousReActCycle(
 		}
 
 		const consentObservation = await generateInformedConsentIdsTool.handler(ctx, {
-			patientId: input.patientId,
+			patientId: effectivePatientId,
 			procedureType: clinicalCategory as any,
 			diagnosisCode: primaryIcd10,
 			serviceCodes: estimateResult?.items.map((it) => it.code) ?? [],
@@ -414,7 +416,7 @@ export async function executeAutonomousReActCycle(
 	// ─── ITERATION 5: FINAL CLINICAL VERDICT (T.A.R.S. 100%)
 	currentIteration = 5;
 	const verdict = formatTarsClinicalVerdict({
-		patientId: input.patientId,
+		patientId: effectivePatientId,
 		fdiToothFormatted,
 		primaryIcd10,
 		diagnosisName,
@@ -440,7 +442,7 @@ export async function executeAutonomousReActCycle(
 	const executionTimeMs = Math.round(performance.now() - startTime);
 
 	return {
-		patientId: input.patientId,
+		patientId: effectivePatientId,
 		toothNumber: resolvedTooth,
 		fdiToothFormatted,
 		mode: input.mode || "autonomous",

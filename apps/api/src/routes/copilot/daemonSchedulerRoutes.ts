@@ -13,12 +13,10 @@ import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import {
-	defaultAutonomousDenteAgent,
 	defaultChairsideSentinel,
 } from "../../services/agent/index.js";
 import { defaultDaemonScheduler } from "../../services/daemons/index.js";
 import {
-	autonomousAgentExecuteBodySchema,
 	chairsideSentinelAnalyzeBodySchema,
 	emrSaviorBodySchema,
 	gapFillerBodySchema,
@@ -184,32 +182,6 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 			const result = await defaultChairsideSentinel.analyzeVisitContext(
 				parsedBody.data,
 			);
-			return reply.send({ ok: true, data: result });
-		},
-	);
-
-	// POST /api/v1/copilot/agent/execute — Autonomous ReAct Clinical AI Engine
-	server.post(
-		"/api/v1/copilot/agent/execute",
-		async (request, reply) => {
-			const parsedBody = autonomousAgentExecuteBodySchema.safeParse(
-				request.body ?? {},
-			);
-			if (!parsedBody.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректный запрос к автономному агенту: patientId обязателен",
-					details: parsedBody.error.errors,
-				});
-			}
-
-			const identity = getRequestIdentity(request);
-			const userId = identity.userId ?? undefined;
-
-			const result = await defaultAutonomousDenteAgent.execute({
-				...parsedBody.data,
-				userId: parsedBody.data.organizationId ? undefined : userId,
-			});
 			return reply.send({ ok: true, data: result });
 		},
 	);

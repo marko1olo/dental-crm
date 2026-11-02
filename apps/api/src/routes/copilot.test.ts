@@ -437,4 +437,42 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 			assert.strictEqual(json.ok, true);
 		});
 	});
+
+	describe("POST /api/v1/copilot/agent/execute (Chairside Autonomous ReAct Agent)", () => {
+		test("returns 401 when unauthorized", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/v1/copilot/agent/execute",
+			});
+			assert.strictEqual(res.statusCode, 401);
+		});
+
+		test("executes autonomous ReAct cycle and returns structured clinical proposals without false penicillin allergy", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/v1/copilot/agent/execute",
+				headers: authHeaders(),
+				payload: {
+					patientId: "00000000-0000-7000-8000-000000000003",
+					prompt: "вылечили кариес 16 зуба, световая пломба, анестезия убистезин",
+					toothNumber: 16,
+					complaints: "Жалобы на боли от сладкого",
+					allergies: [],
+					mode: "autonomous",
+				},
+			});
+
+			assert.strictEqual(res.statusCode, 200);
+			const json = res.json();
+			assert.strictEqual(json.ok, true);
+			assert.ok(json.data, "Expected response data");
+			assert.ok(typeof json.data.verdict === "string", "Verdict must be string");
+			assert.ok(Array.isArray(json.data.thoughts), "Thoughts must be an array");
+			assert.ok(json.data.toothProposal, "Tooth proposal must be generated");
+			assert.strictEqual(json.data.toothProposal.toothNumber, 16);
+			assert.ok(Array.isArray(json.data.servicesProposal), "Services proposal must be an array");
+			assert.ok(json.data.soapProposal, "SOAP proposal must be generated");
+			assert.ok(json.data.soapProposal.diagnosis.length > 0, "SOAP must contain diagnosis");
+		});
+	});
 });

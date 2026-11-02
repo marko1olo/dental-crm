@@ -79,6 +79,16 @@ export function parseAgentApiResponse(
       recommendedAction: topAlert.safeAlternative,
       acknowledged: false,
     };
+  } else if (data.safetyAlert) {
+    const topAlert = data.safetyAlert;
+    result.safetyAlert = {
+      id: topAlert.id || `alert-${Date.now()}`,
+      severity: (topAlert.severity as "critical" | "warning" | "info") || "info",
+      title: topAlert.title || "Алерт безопасности",
+      description: topAlert.message || topAlert.description || "",
+      recommendedAction: topAlert.safeAlternative,
+      acknowledged: false,
+    };
   }
 
   // 4. Action proposals
@@ -146,6 +156,42 @@ export function parseAgentApiResponse(
   }
 
   // 5. Fallback for direct fields in data
+  if (data.toothProposal && !result.toothProposal) {
+    result.toothProposal = {
+      toothNumber: data.toothProposal.toothNumber || activeTooth,
+      state: data.toothProposal.state || data.toothProposal.statusCode || "C2",
+      stateLabel: data.toothProposal.stateLabel || data.toothProposal.diagnosisText || "Обновление статуса",
+      surfaces: Array.isArray(data.toothProposal.surfaces) ? data.toothProposal.surfaces : [],
+      applied: false,
+    };
+  }
+
+  if (Array.isArray(data.servicesProposal) && !result.servicesProposal) {
+    result.servicesProposal = data.servicesProposal.map((it: any, idx: number) => ({
+      id: it.id || `srv-${it.serviceCode || it.code || it.code804n || idx}-${idx}`,
+      serviceCode: it.serviceCode || it.code || it.code804n || "A16.07.001",
+      code804n: it.code804n || it.serviceCode || it.code || "A16.07.001",
+      title: it.title || "Услуга",
+      toothNumber: it.toothNumber || activeTooth,
+      quantity: it.quantity || 1,
+      priceRub: it.priceRub || 0,
+      discountPercent: it.discountPercent,
+      applied: false,
+    }));
+  }
+
+  if (data.soapProposal && !result.soapProposal) {
+    result.soapProposal = {
+      complaint: data.soapProposal.complaint || "",
+      anamnesis: data.soapProposal.anamnesis || "",
+      objectiveStatus: data.soapProposal.objectiveStatus || "",
+      diagnosis: data.soapProposal.diagnosis || "",
+      treatmentPlan: data.soapProposal.treatmentPlan || "",
+      recommendations: data.soapProposal.recommendations || "",
+      applied: false,
+    };
+  }
+
   if (data.soapDiary && !result.soapProposal) {
     const p = data.soapDiary;
     result.soapProposal = {
