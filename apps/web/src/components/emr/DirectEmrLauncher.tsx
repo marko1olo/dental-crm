@@ -5,11 +5,14 @@
  * Смонтирован в AppShell.tsx для 100% доступности и глубоких ссылок.
  * Реагирует на хэши: #medical-card, #emr, #visit-diary, #card-043, #outpatient-card
  * и кастомные события: dente:open-medical-card, dente:open-emr.
+ *
+ * Связан напрямую на канонический SSOT: MedicalRecordStudioModal (Волна 32.1).
  */
 
 import React, { useEffect, useState, useMemo, useCallback } from "react";
+import { MedicalRecordStudioModal } from "./MedicalRecordStudioModal";
 import { MedicalCardPrintModal } from "./MedicalCardPrintModal";
-import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalCardCatalogData";
+import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalRecordCatalogData";
 import type { MedicalRecordData } from "./outpatientRecordTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import type { Dashboard, Patient } from "@dental/shared";
@@ -156,7 +159,7 @@ export const DirectEmrLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	return (
-		<MedicalCardPrintModal
+		<MedicalRecordStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
 			initialData={initialCardData}
@@ -166,4 +169,5 @@ export const DirectEmrLauncher: React.FC = () => {
 	);
 };
 
+export { MedicalCardPrintModal };
 export default DirectEmrLauncher;

@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/emr/__tests__/medicalCardCatalogData.test.ts
  *
- * Red Team тест SSOT медицинской карты пациента, SOAP-дневников и каталога (Мандаты 8e, 8n, 8x, 8ap, 8am).
+ * Red Team тест SSOT медицинской карты приёма, SOAP-дневников и каталога (Мандаты 8e, 8n, 8x, 8ap, 8am).
  */
 
 import { describe, it } from "node:test";
@@ -83,6 +83,7 @@ describe("Medical Card & SOAP Diary SSOT (Mandates 8e, 8n, 8x, 8ap, 8am)", () =>
 		assert.ok(code.includes("emr"));
 		assert.ok(code.includes("card-043"));
 		assert.ok(code.includes("dente:open-medical-card"));
+		assert.ok(code.includes("MedicalRecordStudioModal"));
 		assert.ok(code.includes("MedicalCardPrintModal"));
 	});
 
@@ -100,5 +101,33 @@ describe("Medical Card & SOAP Diary SSOT (Mandates 8e, 8n, 8x, 8ap, 8am)", () =>
 
 		assert.ok(cssCode.includes("var(--teal, #0d9488)"));
 		assert.ok(!cssCode.includes("#0284c7")); // Sky blue eradicated in favor of canonical Teal
+	});
+
+	it("8. MedicalRecordStudioModal is canonical SSOT within Sweet Spot 380-450 lines (Mandates 8b, 8e)", () => {
+		const modalPath = path.resolve(__dirname, "../MedicalRecordStudioModal.tsx");
+		assert.ok(fs.existsSync(modalPath), "MedicalRecordStudioModal.tsx must exist");
+		const modalCode = fs.readFileSync(modalPath, "utf8");
+		const lineCount = modalCode.split("\n").length;
+
+		assert.ok(
+			lineCount >= 380 && lineCount <= 460,
+			`MedicalRecordStudioModal lines must be in Sweet Spot 380-450 (actual: ${lineCount})`,
+		);
+		assert.ok(modalCode.includes("emr-studio-modal"));
+		assert.ok(modalCode.includes("Медицинская карта приёма"));
+		assert.ok(modalCode.includes("emr-studio-bottom-bar"));
+		assert.ok(modalCode.includes("disabled={false}"));
+	});
+
+	it("9. medicalRecordCatalogData.ts exists and adheres to Sweet Spot 280-350 lines (Mandates 8b, 8x)", () => {
+		const catalogPath = path.resolve(__dirname, "../medicalCardCatalogData.ts");
+		assert.ok(fs.existsSync(catalogPath), "medicalCardCatalogData.ts must exist");
+		const catalogCode = fs.readFileSync(catalogPath, "utf8");
+		const lineCount = catalogCode.split("\n").length;
+
+		assert.ok(
+			lineCount >= 280 && lineCount <= 350,
+			`medicalCardCatalogData lines must be in Sweet Spot 280-350 (actual: ${lineCount})`,
+		);
 	});
 });

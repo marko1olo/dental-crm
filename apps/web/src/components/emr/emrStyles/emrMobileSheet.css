@@ -3,110 +3,72 @@
  * Mandate 8b: Micro-module strictly <= 120 lines.
  */
 
-.emr043-drag-handle {
-  width: 36px;
-  height: 5px;
-  background: var(--line-strong, #94a3b8);
-  border-radius: 9999px;
-  margin: 8px auto 4px auto;
-  flex-shrink: 0;
-  opacity: 0.7;
+.emr-studio-drag-handle, .emr043-drag-handle {
+  width: 36px; height: 5px;
+  background: var(--line-strong, #94a3b8); border-radius: 9999px;
+  margin: 10px auto 4px auto; flex-shrink: 0; opacity: 0.7;
+}
+
+.emr-studio-bottom-bar {
+  display: none;
 }
 
 @media (pointer: coarse), (max-width: 768px) {
-  .emr043-modal-backdrop {
-    padding: 0;
-    align-items: flex-end;
+  .emr-studio-backdrop, .emr043-modal-backdrop {
+    padding: 0; align-items: flex-end;
   }
 
-  .emr043-modal-window {
-    max-height: 94dvh;
-    height: 94dvh;
-    border-radius: 24px 24px 0 0;
-    border-bottom: none;
-    max-width: 100vw;
-    width: 100vw;
-    overflow-x: clip;
-    display: flex;
-    flex-direction: column;
+  .emr-studio-modal, .emr-studio-window, .emr043-modal-window {
+    max-height: 94dvh; height: 94dvh; margin: 0;
+    border-radius: 24px 24px 0 0; border-bottom: none;
+    max-width: 100vw; width: 100vw;
+    overflow-x: clip; display: flex; flex-direction: column;
   }
 
-  .emr043-header-toolbar {
-    padding: 8px 12px 6px 12px;
-    gap: 6px;
-    min-height: auto;
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-    position: relative;
-    overflow: visible;
+  .emr-studio-header, .emr043-header-toolbar {
+    padding: 6px 12px; gap: 6px; min-height: auto;
+    display: flex; flex-direction: row; align-items: center; justify-content: space-between;
+    position: relative; overflow: visible;
   }
 
-  .emr043-header-title-group {
-    display: flex;
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 2px;
-    padding-right: 48px;
-    width: 100%;
+  .emr-studio-title-group, .emr043-header-title-group {
+    display: flex; align-items: flex-start; flex-direction: column;
+    gap: 2px; padding-right: 8px; width: calc(100% - 48px);
   }
 
-  .emr043-header-title {
-    font-size: 15px;
-    line-height: 1.25;
-    font-weight: 700;
+  .emr-studio-title, .emr043-header-title {
+    font-size: 15px; line-height: 1.2; font-weight: 700;
   }
 
-  .emr043-header-actions {
-    display: flex;
-    align-items: center;
-    flex-wrap: nowrap;
-    gap: 6px;
-    width: 100%;
-    margin-left: 0;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-    padding-bottom: 2px;
-  }
-  .emr043-header-actions::-webkit-scrollbar {
-    display: none;
+  .emr-studio-btn-close, .emr043-btn-close {
+    width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+    padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 12px; flex-shrink: 0;
   }
 
-  .emr043-btn-close {
-    position: absolute;
-    top: 8px;
-    right: 12px;
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
-    padding: 0;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 12px;
-    z-index: 20;
-  }
-
-  .emr043-zoom-toolbar,
-  .emr043-btn-fullscreen {
+  /* На мобильных кнопка действий скрыта из шапки, так как они в нижней плашке */
+  .emr-studio-actions .emr-studio-btn:not(.emr-studio-btn-close),
+  .emr043-header-actions .emr043-btn:not(.emr043-btn-close),
+  .emr-studio-actions > div,
+  .emr043-header-actions > div {
     display: none !important;
   }
 
-  .emr043-btn {
-    min-height: 44px;
-    min-width: 44px;
-    padding: 8px 14px;
-    font-size: 13px;
-    touch-action: manipulation;
-    white-space: nowrap;
+  .emr-studio-btn, .emr043-btn {
+    min-height: 44px; min-width: 44px; padding: 8px 14px;
+    font-size: 14px; touch-action: manipulation; white-space: nowrap;
   }
 
-  .emr043-btn-icon-only {
-    width: 44px;
-    height: 44px;
-    min-width: 44px;
-    min-height: 44px;
+  .emr-studio-bottom-bar {
+    position: sticky; bottom: 0; width: 100%;
+    background: color-mix(in srgb, var(--paper-strong, #ffffff) 94%, transparent);
+    backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+    border-top: 1px solid var(--line, #cbd5e1);
+    padding: 10px 16px max(12px, env(safe-area-inset-bottom));
+    display: flex; align-items: center; gap: 8px; z-index: 40;
+  }
+  :is([data-theme="dark"], .dark) .emr-studio-bottom-bar {
+    background: color-mix(in srgb, var(--paper-strong, #0f172a) 94%, transparent);
+    border-top-color: var(--line, #334155);
   }
 }
