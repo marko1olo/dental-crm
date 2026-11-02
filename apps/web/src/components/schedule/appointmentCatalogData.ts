@@ -2,10 +2,10 @@
  * appointmentCatalogData.ts — Канонический каталог данных и пресетов записи на приём (SSOT)
  * DENTE Dental CRM — Модуль расписания и быстрого бронирования для стоматологии РФ (1–5 кресел).
  *
- * Соответствует:
- * - Мандат 8b / 8zi: эталонный Sweet Spot (300–350 строк, ноль микро-шредера).
- * - Мандат 8e / 8n: автономия соло-врача и администратора, 0 обязательных ассистентов, запись за 5 секунд.
- * - Мандат 8am: единый дизайн-код, цветовые токены и индикаторы.
+ * Мандаты:
+ * - 8b / 8zi: эталонный Sweet Spot (строго 250–350 строк, ноль микро-шредера).
+ * - 8e / 8n: автономия соло-врача и администратора, бронь за 5 секунд, ноль блокировок.
+ * - 8am: единый дизайн-код, цветовые токены и индикаторы.
  * - Чистые целочисленные расчеты времени: 0 float-ошибок.
  */
 
@@ -47,14 +47,6 @@ export interface AppointmentStatusMeta {
   readonly description: string;
 }
 
-/**
- * 5 канонических статусов записи для стоматологической практики РФ:
- * 1. Запланирован — запись внесена в график, ожидает звонка/подтверждения.
- * 2. Подтвержден — пациент подтвердил визит по SMS / звонку / мессенджеру.
- * 3. Пациент в клинике / На приёме — пациент у стойки либо уже сидит в кресле.
- * 4. Приём завершен — лечение проведено, медицинская карта приёма и счет переданы на кассу.
- * 5. Не явился / Отмена — визит отменен либо пациент не пришел.
- */
 export const CANONICAL_APPOINTMENT_STATUSES: readonly AppointmentStatusMeta[] = [
   {
     code: "planned",
@@ -69,7 +61,7 @@ export const CANONICAL_APPOINTMENT_STATUSES: readonly AppointmentStatusMeta[] = 
   {
     code: "confirmed",
     label: "Подтвержден",
-    shortLabel: "Подтвержден",
+    shortLabel: "Визит ОК",
     dotColor: "#0d9488",
     badgeBg: "rgba(13, 148, 136, 0.12)",
     badgeText: "#0f766e",
@@ -79,7 +71,7 @@ export const CANONICAL_APPOINTMENT_STATUSES: readonly AppointmentStatusMeta[] = 
   {
     code: "in_progress",
     label: "Пациент в клинике / На приёме",
-    shortLabel: "В клинике",
+    shortLabel: "В кресле",
     dotColor: "#2563eb",
     badgeBg: "rgba(37, 99, 235, 0.12)",
     badgeText: "#1d4ed8",
@@ -119,11 +111,10 @@ export function getAppointmentStatusMeta(
   if (normalized === "no_show") {
     return CANONICAL_APPOINTMENT_STATUSES[4]; // cancelled
   }
-  const found = CANONICAL_APPOINTMENT_STATUSES.find((s) => s.code === normalized);
-  return found ?? CANONICAL_APPOINTMENT_STATUSES[0];
+  return CANONICAL_APPOINTMENT_STATUSES.find((s) => s.code === normalized) ?? CANONICAL_APPOINTMENT_STATUSES[0];
 }
 
-// ─── 2. СТАНДАРТНЫЕ ИНТЕРВАЛЫ ВРЕМЕНИ (СЕГМЕНТНЫЙ ПЕРЕКЛЮЧАТЕЛЬ) ───────────
+// ─── 2. ИНТЕРВАЛЫ ВРЕМЕНИ (СЕГМЕНТНЫЙ ПЕРЕКЛЮЧАТЕЛЬ) ─────────────────────────
 
 export interface DurationSegmentOption {
   readonly minutes: number;
@@ -151,7 +142,7 @@ export function sanitizeDurationMinutes(minutes: number | undefined | null): num
   return rounded;
 }
 
-// ─── 3. ЧИСТЫЕ КЛИНИЧЕСКИЕ ПРЕСЕТЫ ПРИЧИН ОБРАЩЕНИЯ ──────────────────────────
+// ─── 3. КЛИНИЧЕСКИЕ ПРЕСЕТЫ ПРИЧИН ОБРАЩЕНИЯ ─────────────────────────────────
 
 export interface ClinicalReasonPreset {
   readonly id: string;
@@ -238,7 +229,7 @@ export const CLINICAL_REASON_PRESETS: readonly ClinicalReasonPreset[] = [
   },
 ] as const;
 
-// ─── 4. ДЕФОЛТНЫЕ ВРАЧИ И КРЕСЛА (ДЛЯ СОЛО И 1–5 КРЕСЕЛ) ────────────────────
+// ─── 4. РОСТЕР ВРАЧЕЙ И КРЕСЕЛ (1–5 КРЕСЕЛ И СОЛО-ПРАКТИКА) ─────────────────
 
 export interface DefaultStaffOption {
   readonly id: string;
@@ -249,27 +240,9 @@ export interface DefaultStaffOption {
 }
 
 export const DEFAULT_DOCTORS_ROSTER: readonly DefaultStaffOption[] = [
-  {
-    id: "doc-voronov",
-    name: "Д-р Воронов А. В.",
-    role: "Врач-стоматолог",
-    specialty: "Терапевт / Хирург",
-    defaultChairId: "chair-1",
-  },
-  {
-    id: "doc-sokolova",
-    name: "Д-р Соколова Е. Д.",
-    role: "Врач-стоматолог",
-    specialty: "Ортопед",
-    defaultChairId: "chair-2",
-  },
-  {
-    id: "doc-smirnov",
-    name: "Д-р Смирнов М. С.",
-    role: "Врач-стоматолог",
-    specialty: "Детский / Терапевт",
-    defaultChairId: "chair-3",
-  },
+  { id: "doc-voronov", name: "Д-р Воронов А. В.", role: "Врач-стоматолог", specialty: "Терапевт / Хирург", defaultChairId: "chair-1" },
+  { id: "doc-sokolova", name: "Д-р Соколова Е. Д.", role: "Врач-стоматолог", specialty: "Ортопед", defaultChairId: "chair-2" },
+  { id: "doc-smirnov", name: "Д-р Смирнов М. С.", role: "Врач-стоматолог", specialty: "Детский / Терапевт", defaultChairId: "chair-3" },
 ] as const;
 
 export interface DefaultChairOption {
@@ -285,13 +258,10 @@ export const DEFAULT_CHAIRS_ROSTER: readonly DefaultChairOption[] = [
   { id: "chair-3", name: "Кресло 3 (Гигиена)", roomNumber: "Каб. 3", colorTone: "emerald" },
 ] as const;
 
-// ─── 5. МАТЕМАТИКА ВРЕМЕНИ БЕЗ FLOAT (0 FLOAT ОШИБОК) ───────────────────────
+// ─── 5. ЦЕЛОЧИСЛЕННАЯ МАТЕМАТИКА ВРЕМЕНИ (0 FLOAT ОШИБОК) ───────────────────
 
-/**
- * Перевод времени "HH:MM" в целочисленное количество минут с начала суток.
- */
 export function timeStringToMinutes(time: string): number {
-  if (!time || typeof time !== "string") return 9 * 60; // 09:00 default
+  if (!time || typeof time !== "string") return 9 * 60;
   const parts = time.trim().split(":");
   const h = parts[0] ? Number.parseInt(parts[0], 10) : 0;
   const m = parts[1] ? Number.parseInt(parts[1], 10) : 0;
@@ -300,9 +270,6 @@ export function timeStringToMinutes(time: string): number {
   return safeH * 60 + safeM;
 }
 
-/**
- * Перевод целочисленных минут с начала суток в строку "HH:MM".
- */
 export function minutesToTimeString(minutes: number): string {
   const safeTotal = Math.max(0, Math.floor(minutes));
   const h = Math.floor(safeTotal / 60) % 24;
@@ -310,18 +277,12 @@ export function minutesToTimeString(minutes: number): string {
   return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
 }
 
-/**
- * Расчет времени окончания слота (целочисленные минуты).
- */
 export function calculateSlotEndTime(startTime: string, durationMinutes: number): string {
   const startMinutes = timeStringToMinutes(startTime);
   const endMinutes = startMinutes + sanitizeDurationMinutes(durationMinutes);
   return minutesToTimeString(endMinutes);
 }
 
-/**
- * Человекопонятный диапазон времени слота: "10:00 – 10:45 (45 мин)"
- */
 export function formatSlotTimeRange(startTime: string, durationMinutes: number): string {
   const safeDuration = sanitizeDurationMinutes(durationMinutes);
   const startStr = startTime ? startTime.slice(0, 5) : "10:00";
@@ -329,9 +290,6 @@ export function formatSlotTimeRange(startTime: string, durationMinutes: number):
   return `${startStr} – ${endStr} (${safeDuration} мин)`;
 }
 
-/**
- * Сегодняшняя дата в формате YYYY-MM-DD (локальное время).
- */
 export function getTodayDateString(): string {
   const now = new Date();
   const year = now.getFullYear();
@@ -340,9 +298,6 @@ export function getTodayDateString(): string {
   return `${year}-${month}-${day}`;
 }
 
-/**
- * Человекопонятная дата: "Понедельник, 15 мая 2026"
- */
 export function formatHumanDate(dateStr: string): string {
   if (!dateStr) return "";
   try {
@@ -360,10 +315,6 @@ export function formatHumanDate(dateStr: string): string {
   }
 }
 
-/**
- * Генерация готового шаблона подтверждения визита для отправки пациенту в WhatsApp/SMS.
- * Никакого канцелярского птичьего языка.
- */
 export function generatePatientConfirmationMessage(params: {
   patientName: string;
   doctorName?: string;

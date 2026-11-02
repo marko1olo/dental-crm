@@ -2,16 +2,18 @@
  * appointmentStudioSSOT.test.tsx — Red Team тестирование SSOT карточки приёма и студии быстрого бронирования
  *
  * Мандаты:
- * - 8b / 8zi: монолитный Sweet Spot без микро-шредера.
+ * - 8b / 8zi: монолитный Sweet Spot без микро-шредера (строго 320–420 строк в модалке, 250–350 в данных, 200–300 в CSS).
  * - 8e: Автономия врача и администратора — запись никогда не блокируется (ноль disabled кнопок).
  * - 8n: Суверенитет соло-практики — выбор врача в 1 клик, пресеты 15/30/45/60 мин.
  * - 8am: Единый дизайн-код, ровно ОДНА Primary CTA кнопка #0d9488.
  * - 8x: Живой русский язык без канцелярита и приказов.
- * - 8ze / 8al: Apple HIG сенсорная эргономика.
+ * - 8ze / 8al / 8aq: Apple HIG сенсорная эргономика, монтирование в UI, Drag Handle 36x5px.
  */
 
 import { describe, it, expect, vi } from "vitest";
 import React from "react";
+import fs from "node:fs";
+import path from "node:path";
 import { renderToString } from "react-dom/server";
 import {
   CANONICAL_APPOINTMENT_STATUSES,
@@ -30,7 +32,7 @@ import {
   AppointmentStudioModal,
   type AppointmentStudioModalProps,
 } from "../AppointmentStudioModal";
-import { DirectAppointmentLauncher } from "../DirectAppointmentLauncher";
+import { DirectAppointmentLauncher, DirectAppointmentStudioLauncher } from "../DirectAppointmentLauncher";
 
 describe("Appointment Studio SSOT Catalog & Math (appointmentCatalogData.ts)", () => {
   it("enforces exactly 5 canonical appointment statuses with Russian labels and no Soviet decrees (Mandate 8x)", () => {
@@ -150,6 +152,14 @@ describe("AppointmentStudioModal Architecture & Ergonomics (Mandates 8b, 8e, 8am
     expect(html).not.toMatch(/<button[^>]*data-testid="studio-save-appointment-btn"[^>]*disabled/);
   });
 
+  it("renders tactile Drag Handle 36x5px for mobile Apple HIG Bottom Sheet", () => {
+    const html = renderToString(
+      <AppointmentStudioModal isOpen={true} onClose={vi.fn()} />,
+    );
+    expect(html).toContain("studio-drag-handle-bar");
+    expect(html).toContain("studio-drag-handle-pill");
+  });
+
   it("renders all 4 primary duration buttons [15m, 30m, 45m, 60m] in segmented control", () => {
     const html = renderToString(
       <AppointmentStudioModal isOpen={true} onClose={vi.fn()} />,
@@ -187,9 +197,42 @@ describe("AppointmentStudioModal Architecture & Ergonomics (Mandates 8b, 8e, 8am
 });
 
 describe("DirectAppointmentLauncher Mounting & Deep Links (Mandate 8aq)", () => {
-  it("mounts safely without DOM crashes", () => {
+  it("mounts safely without DOM crashes and exports alias DirectAppointmentStudioLauncher", () => {
     const html = renderToString(<DirectAppointmentLauncher />);
-    // In server environment without active deep-link hash, returns null
     expect(typeof html).toBe("string");
+    expect(DirectAppointmentStudioLauncher).toBe(DirectAppointmentLauncher);
+  });
+});
+
+describe("Sweet Spot File Limits & Anti-Micro-Shredder Verification (Mandate 8b / 8zi)", () => {
+  const scheduleDir = path.resolve(__dirname, "..");
+
+  it("enforces AppointmentStudioModal.tsx strictly within 320–420 lines Sweet Spot", () => {
+    const modalPath = path.join(scheduleDir, "AppointmentStudioModal.tsx");
+    const content = fs.readFileSync(modalPath, "utf-8");
+    const lines = content.split("\n").length;
+    expect(lines).toBeGreaterThanOrEqual(320);
+    expect(lines).toBeLessThanOrEqual(420);
+  });
+
+  it("enforces appointmentCatalogData.ts strictly within 250–350 lines Sweet Spot", () => {
+    const dataPath = path.join(scheduleDir, "appointmentCatalogData.ts");
+    const content = fs.readFileSync(dataPath, "utf-8");
+    const lines = content.split("\n").length;
+    expect(lines).toBeGreaterThanOrEqual(250);
+    expect(lines).toBeLessThanOrEqual(350);
+  });
+
+  it("enforces appointmentStudio.css strictly within 200–300 lines Sweet Spot", () => {
+    const cssPath = path.join(scheduleDir, "appointmentStudio.css");
+    const content = fs.readFileSync(cssPath, "utf-8");
+    const lines = content.split("\n").length;
+    expect(lines).toBeGreaterThanOrEqual(200);
+    expect(lines).toBeLessThanOrEqual(300);
+  });
+
+  it("confirms appointmentStudio micro-files directory has been eradicated (Zero Micro-Shredder)", () => {
+    const subDirPath = path.join(scheduleDir, "appointmentStudio");
+    expect(fs.existsSync(subDirPath)).toBe(false);
   });
 });
