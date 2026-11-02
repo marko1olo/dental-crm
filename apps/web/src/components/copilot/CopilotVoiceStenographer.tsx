@@ -1,6 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from "react";
+/**
+ * CopilotVoiceStenographer.tsx — Сквозной голосовой стенограф приёма DENTE CRM.
+ * SSOT голосового контура с реальным VoiceEngine (Gemini STT + Web Speech fallback).
+ * Мандаты 8b (320-390 строк), 8e (автономия врача), 8am (единый дизайн-код).
+ */
+
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { Mic, MicOff, Check, RotateCcw, X, Search, MessageSquare, Stethoscope } from "lucide-react";
-import { extractFdiTeethNumbers } from "@dental/shared";
+import { useVoiceEngine, type ParsedClinicalSpeech } from "../voice/voiceEngine";
 import "./CopilotVoiceStenographer.css";
 
 export interface ParsedClinicalCommand {
@@ -34,204 +40,99 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
   onApplyTooth,
   className = "",
 }) => {
-  const [isListening, setIsListening] = useState(false);
-  const [finalTranscript, setFinalTranscript] = useState(initialTranscript);
-  const [interimTranscript, setInterimTranscript] = useState("");
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [parsedCommands, setParsedCommands] = useState<ParsedClinicalCommand[]>([]);
+  const [manualDraft, setManualDraft] = useState(initialTranscript);
+  const [isEditingManually, setIsEditingManually] = useState(false);
 
-  const recognitionRef = useRef<any>(null);
-  const isSpeechSupported = typeof window !== "undefined" && Boolean((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
+  const {
+    isListening,
+    interimText,
+    finalText,
+    fullText,
+    parsed,
+    error: voiceError,
+    toggleListening,
+    stopListening,
+    startListening,
+    clearTranscript,
+    appendText,
+  } = useVoiceEngine({ mode: "auto" });
 
-  // Parse spoken text into structured dental commands
-  const parseClinicalText = useCallback((text: string): ParsedClinicalCommand[] => {
-    if (!text.trim()) return [];
+  useEffect(() => {
+    if (initialTranscript && !finalText) {
+      appendText(initialTranscript);
+      setManualDraft(initialTranscript);
+    }
+  }, [initialTranscript, finalText, appendText]);
+
+  // SSOT: Преобразование клинически распознанной речи в команды врача
+  const parsedCommands = useMemo<ParsedClinicalCommand[]>(() => {
+    const textToAnalyze = isEditingManually ? manualDraft : (fullText || manualDraft);
+    if (!textToAnalyze.trim()) return [];
+
+    const currentParsed: ParsedClinicalSpeech | null = parsed;
     const commands: ParsedClinicalCommand[] = [];
-    const lower = text.toLowerCase();
 
-    // 1. FDI Tooth Extraction
-    const fdiTeeth = extractFdiTeethNumbers(lower);
-    const toothNum = fdiTeeth.length > 0 ? fdiTeeth[0] : activeTooth;
+    const toothNum = currentParsed?.teeth?.[0] || activeTooth || null;
+    const diagnosis = currentParsed?.diagnoses?.[0] || null;
+    let toothState: string | null = null;
 
-    // 2. Tooth State extraction
-    let detectedState: string | null = null;
-    let detectedDiagnosis: string | null = null;
-    if (lower.includes("кариес")) {
-      detectedState = "caries";
-      detectedDiagnosis = "K02.1 Кариес дентина";
-    } else if (lower.includes("пульпит")) {
-      detectedState = "pulpitis";
-      detectedDiagnosis = "K04.0 Пульпит";
-    } else if (lower.includes("периодонтит")) {
-      detectedState = "periodontitis";
-      detectedDiagnosis = "K04.4 Хронический апикальный периодонтит";
-    } else if (lower.includes("пломб") || lower.includes("реставрац")) {
-      detectedState = "filling";
-    } else if (lower.includes("коронк")) {
-      detectedState = "crown";
-    } else if (lower.includes("имплант")) {
-      detectedState = "implant";
-    } else if (lower.includes("удален") || lower.includes("отсутств")) {
-      detectedState = "missing";
-    } else if (lower.includes("интакт") || lower.includes("здоров")) {
-      detectedState = "healthy";
+    if (diagnosis) {
+      const lower = diagnosis.toLowerCase();
+      if (lower.includes("кариес")) toothState = "caries";
+      else if (lower.includes("пульпит")) toothState = "pulpitis";
+      else if (lower.includes("периодонтит")) toothState = "periodontitis";
     }
 
-    // 3. SOAP Sections detection
-    let detectedSoapSection: ParsedClinicalCommand["soapSection"] = null;
-    if (lower.includes("жалоб") || lower.includes("болит") || lower.includes("чувствительн")) {
-      detectedSoapSection = "complaint";
-    } else if (lower.includes("анамнез") || lower.includes("ранее") || lower.includes("со слов")) {
-      detectedSoapSection = "anamnesis";
-    } else if (lower.includes("осмотр") || lower.includes("объективно") || lower.includes("зондирован") || lower.includes("перкусси")) {
-      detectedSoapSection = "objectiveStatus";
-    } else if (lower.includes("лечение") || lower.includes("анестези") || lower.includes("препарирован") || lower.includes("коффердам")) {
-      detectedSoapSection = "treatmentPlan";
-    } else if (lower.includes("рекомендац") || lower.includes("назначен")) {
-      detectedSoapSection = "recommendations";
+    if (!toothState && currentParsed?.materials?.length) {
+      toothState = "filling";
     }
 
-    if (toothNum || detectedState || detectedDiagnosis || detectedSoapSection) {
+    let detectedSection: ParsedClinicalCommand["soapSection"] = null;
+    if (currentParsed?.soap?.subjective) detectedSection = "complaint";
+    else if (currentParsed?.soap?.plan) detectedSection = "treatmentPlan";
+    else if (currentParsed?.soap?.objective) detectedSection = "objectiveStatus";
+
+    if (toothNum || toothState || diagnosis || detectedSection) {
       commands.push({
-        toothNumber: toothNum ?? null,
-        toothState: detectedState,
-        diagnosis: detectedDiagnosis,
-        soapSection: detectedSoapSection,
-        text,
+        toothNumber: toothNum,
+        toothState,
+        diagnosis,
+        soapSection: detectedSection,
+        text: textToAnalyze,
       });
     }
 
     return commands;
-  }, [activeTooth]);
+  }, [fullText, manualDraft, isEditingManually, parsed, activeTooth]);
 
-  useEffect(() => {
-    if (initialTranscript) {
-      setFinalTranscript(initialTranscript);
-      setParsedCommands(parseClinicalText(initialTranscript));
-    }
-  }, [initialTranscript, parseClinicalText]);
-
-  // Handle SpeechRecognition Lifecycle
-  const startListening = useCallback(() => {
-    if (!isSpeechSupported) {
-      setErrorMessage("Браузерное распознавание речи не поддерживается. Используйте Web Speech API Chrome/Edge.");
-      return;
-    }
-
-    setErrorMessage(null);
-    try {
-      const SpeechClass = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
-      const rec = new SpeechClass();
-      rec.lang = "ru-RU";
-      rec.continuous = true;
-      rec.interimResults = true;
-
-      rec.onstart = () => {
-        setIsListening(true);
-      };
-
-      rec.onresult = (event: any) => {
-        let interim = "";
-        let finalStr = "";
-        for (let i = event.resultIndex; i < event.results.length; ++i) {
-          const trans = event.results[i][0].transcript;
-          if (event.results[i].isFinal) {
-            finalStr += `${trans} `;
-          } else {
-            interim += trans;
-          }
-        }
-
-        if (finalStr) {
-          setFinalTranscript((prev) => {
-            const updated = `${prev} ${finalStr}`.trim();
-            setParsedCommands(parseClinicalText(updated));
-            return updated;
-          });
-        }
-        setInterimTranscript(interim);
-      };
-
-      rec.onerror = (e: any) => {
-        if (e.error === "no-speech") {
-          return;
-        }
-        if (e.error === "not-allowed" || e.error === "service-not-allowed") {
-          setErrorMessage("Доступ к микрофону заблокирован в браузере. Разрешите микрофон в адресной строке.");
-        } else if (e.error === "audio-capture") {
-          setErrorMessage("Микрофон не обнаружен. Проверьте подключение гарнитуры или введите текст вручную.");
-        } else if (e.error === "network") {
-          setErrorMessage("Ошибка сети при обращении к голосовому сервису.");
-        } else {
-          setErrorMessage(`Сбой микрофона (${e.error}). Доступен ручной ввод.`);
-        }
-        setIsListening(false);
-      };
-
-      rec.onend = () => {
-        setIsListening(false);
-      };
-
-      recognitionRef.current = rec;
-      rec.start();
-    } catch (err: any) {
-      setErrorMessage(`Сбой микрофона: ${err?.message || "Не удалось запустить аудио"}`);
-      setIsListening(false);
-    }
-  }, [isSpeechSupported, parseClinicalText]);
-
-  const stopListening = useCallback(() => {
-    if (recognitionRef.current) {
-      try {
-        recognitionRef.current.stop();
-      } catch {
-        // Safe ignore
-      }
-    }
-    setIsListening(false);
-  }, []);
-
-  const toggleListening = () => {
-    if (isListening) stopListening();
-    else startListening();
-  };
-
-  const handleClear = () => {
-    setFinalTranscript("");
-    setInterimTranscript("");
-    setParsedCommands([]);
-    setErrorMessage(null);
-  };
-
-  // 1-Click apply to clinical diary & tooth formula
   const handleApplyAll = () => {
-    const fullText = `${finalTranscript} ${interimTranscript}`.trim();
-    if (!fullText) return;
+    const effectiveText = (isEditingManually ? manualDraft : (fullText || manualDraft)).trim();
+    if (!effectiveText) return;
 
-    // Apply Tooth State if parsed
     const lastToothCommand = [...parsedCommands].reverse().find((c) => c.toothNumber && c.toothState);
     if (lastToothCommand && lastToothCommand.toothNumber && lastToothCommand.toothState) {
-      if (onApplyTooth) {
-        onApplyTooth(lastToothCommand.toothNumber, lastToothCommand.toothState);
-      }
+      if (onApplyTooth) onApplyTooth(lastToothCommand.toothNumber, lastToothCommand.toothState);
       if (typeof window !== "undefined") {
-        window.dispatchEvent(new CustomEvent("dente:apply-tooth-state", {
-          detail: {
-            toothNumber: lastToothCommand.toothNumber,
-            toothState: lastToothCommand.toothState,
-            diagnosis: lastToothCommand.diagnosis,
-          },
-        }));
+        window.dispatchEvent(
+          new CustomEvent("dente:apply-tooth-state", {
+            detail: {
+              toothNumber: lastToothCommand.toothNumber,
+              toothState: lastToothCommand.toothState,
+              diagnosis: lastToothCommand.diagnosis,
+            },
+          }),
+        );
       }
     }
 
-    // Apply to SOAP Protocol
     const soapPatch: Record<string, string> = {};
-    const lastSoapCommand = [...parsedCommands].reverse().find((c) => c.soapSection);
-    if (lastSoapCommand?.soapSection) {
-      soapPatch[lastSoapCommand.soapSection] = fullText;
-    } else {
-      soapPatch.objectiveStatus = fullText;
+    if (parsed?.soap?.subjective) soapPatch.complaint = parsed.soap.subjective;
+    if (parsed?.soap?.objective) soapPatch.objectiveStatus = parsed.soap.objective;
+    if (parsed?.soap?.assessment) soapPatch.diagnosis = parsed.soap.assessment;
+    if (parsed?.soap?.plan) soapPatch.treatmentPlan = parsed.soap.plan;
+
+    if (Object.keys(soapPatch).length === 0) {
+      soapPatch.objectiveStatus = effectiveText;
     }
 
     if (onApplySoap) onApplySoap(soapPatch);
@@ -243,37 +144,27 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
     if (onClose && !embedded) onClose();
   };
 
-  // Передача текста в глобальный поиск Ctrl+K
+  const handleClear = () => {
+    clearTranscript();
+    setManualDraft("");
+    setIsEditingManually(false);
+  };
+
   const handleSendToSearch = () => {
-    const text = `${finalTranscript} ${interimTranscript}`.trim();
-    if (!text) return;
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dente:open-global-search", { detail: { query: text } }));
-      window.dispatchEvent(new CustomEvent("dente:global-search", { detail: { query: text } }));
-    }
+    const text = (isEditingManually ? manualDraft : (fullText || manualDraft)).trim();
+    if (!text || typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("dente:open-global-search", { detail: { query: text } }));
+    window.dispatchEvent(new CustomEvent("dente:global-search", { detail: { query: text } }));
   };
 
-  // Передача текста в чат Копайлота
   const handleSendToChat = () => {
-    const text = `${finalTranscript} ${interimTranscript}`.trim();
-    if (!text) return;
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dente:fill-copilot-input", { detail: { prompt: text } }));
-      window.dispatchEvent(new CustomEvent("dente:open-copilot"));
-    }
+    const text = (isEditingManually ? manualDraft : (fullText || manualDraft)).trim();
+    if (!text || typeof window === "undefined") return;
+    window.dispatchEvent(new CustomEvent("dente:fill-copilot-input", { detail: { prompt: text } }));
+    window.dispatchEvent(new CustomEvent("dente:open-copilot"));
   };
 
-  useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        try {
-          recognitionRef.current.abort();
-        } catch {
-          // Safe ignore
-        }
-      }
-    };
-  }, []);
+  const displayDraft = isEditingManually ? manualDraft : (fullText || manualDraft);
 
   if (!isOpen) return null;
 
@@ -289,10 +180,14 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
       {/* Header */}
       <header className="copilot-stenographer-header">
         <div className="copilot-stenographer-title-box">
-          <div className={`copilot-stenographer-status-dot ${isListening ? "copilot-stenographer-status-dot--listening" : "copilot-stenographer-status-dot--ready"}`} />
+          <div
+            className={`copilot-stenographer-status-dot ${isListening ? "copilot-stenographer-status-dot--listening" : "copilot-stenographer-status-dot--ready"}`}
+          />
           <div>
             <h3 className="copilot-stenographer-title">Голосовой стенограф приёма</h3>
-            <p className="copilot-stenographer-subtitle">{patientName} {activeTooth ? `• Зуб ${activeTooth}` : ""}</p>
+            <p className="copilot-stenographer-subtitle">
+              {patientName} {activeTooth ? `• Зуб ${activeTooth}` : ""}
+            </p>
           </div>
         </div>
 
@@ -312,7 +207,13 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         </div>
 
         {onClose && !embedded && (
-          <button type="button" onClick={onClose} className="copilot-stenographer-clear-btn" aria-label="Закрыть стенограф" data-testid="stenographer-close-btn">
+          <button
+            type="button"
+            onClick={onClose}
+            className="copilot-stenographer-clear-btn"
+            aria-label="Закрыть стенограф"
+            data-testid="stenographer-close-btn"
+          >
             <X size={16} />
           </button>
         )}
@@ -323,31 +224,40 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         <div
           className="copilot-stenographer-transcript-box"
           data-testid="stenographer-transcript-box"
-          contentEditable={!isListening}
+          contentEditable={true}
           suppressContentEditableWarning
+          onFocus={() => setIsEditingManually(true)}
           onBlur={(e) => {
-            const text = e.currentTarget.textContent || "";
-            setFinalTranscript(text.trim());
-            setParsedCommands(parseClinicalText(text.trim()));
+            const text = (e.currentTarget.textContent || "").trim();
+            setManualDraft(text);
+            appendText(text);
+            setIsEditingManually(false);
+          }}
+          onInput={(e) => {
+            setManualDraft((e.currentTarget.textContent || "").trim());
           }}
         >
-          {finalTranscript ? <span>{finalTranscript} </span> : null}
-          {interimTranscript ? <span className="copilot-stenographer-interim">{interimTranscript}</span> : null}
-          {!finalTranscript && !interimTranscript && (
+          {displayDraft ? <span>{displayDraft} </span> : null}
+          {interimText && !isEditingManually ? (
+            <span className="copilot-stenographer-interim">{interimText}</span>
+          ) : null}
+          {!displayDraft && !interimText && (
             <div className="copilot-stenographer-empty-hint">
-              {isListening ? "Слушаю врача... Продиктуйте дневник или команду (напр. «кариес 16», «жалобы на ноющие боли»)" : "Нажмите микрофон для начала клинической диктовки или введите текст"}
+              {isListening
+                ? "Слушаю врача... Продиктуйте дневник или команду (напр. «кариес 16», «жалобы на ноющие боли»)"
+                : "Нажмите микрофон для начала клинической диктовки или введите текст"}
             </div>
           )}
         </div>
 
-        {errorMessage && (
+        {voiceError && (
           <div className="text-xs text-[var(--bad,#ef4444)] px-2 py-1 bg-[var(--bad)]/10 rounded">
-            {errorMessage}
+            {voiceError}
           </div>
         )}
 
         {/* Quick routing pills: В поиск Ctrl+K / В чат Копайлота */}
-        {(finalTranscript || interimTranscript) && (
+        {(displayDraft || interimText) && (
           <div className="flex items-center gap-2 pt-1 text-xs">
             <span className="text-[11px] text-[var(--muted)]">Отправить:</span>
             <button
@@ -413,6 +323,7 @@ export const CopilotVoiceStenographer: React.FC<CopilotVoiceStenographerProps> =
         <button
           type="button"
           onClick={handleApplyAll}
+          disabled={false}
           className="copilot-stenographer-apply-btn"
           data-testid="stenographer-apply-btn"
         >

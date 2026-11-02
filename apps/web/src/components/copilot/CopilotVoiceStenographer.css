@@ -278,7 +278,7 @@
   height: 44px;
   min-height: 44px;
   padding: 0 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   border: none;
   background: var(--teal, #0d9488);
   color: #ffffff;
@@ -302,7 +302,7 @@
   min-height: 44px;
   min-width: 44px;
   padding: 0;
-  border-radius: 8px;
+  border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--paper);
   color: var(--muted);

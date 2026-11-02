@@ -61,6 +61,37 @@ describe("VoiceEngine & Clinical Terms Extraction", () => {
     engine.dispose();
   });
 
+  it("поддерживает двухрежимную архитектуру (mode: cloud | webspeech | auto) и события с mode", () => {
+    const cloudEngine = new VoiceEngine({ mode: "cloud" });
+    let lastEvent: any = null;
+    const unsubCloud = cloudEngine.subscribe((ev) => { lastEvent = ev; });
+    cloudEngine.appendManualText("зуб 11 интактен");
+    assert.ok(lastEvent);
+    assert.equal(lastEvent.mode, "cloud");
+    assert.equal(lastEvent.finalText, "зуб 11 интактен");
+    unsubCloud();
+    cloudEngine.dispose();
+
+    const webEngine = new VoiceEngine({ mode: "webspeech" });
+    const unsubWeb = webEngine.subscribe((ev) => { lastEvent = ev; });
+    webEngine.appendManualText("зуб 21 пломба");
+    assert.equal(lastEvent.mode, "webspeech");
+    unsubWeb();
+    webEngine.dispose();
+  });
+
+  it("Мандат 8e (Автономия врача): черновик диктовки сохраняется при сбое и ручном вводе", () => {
+    const engine = new VoiceEngine({ mode: "auto" });
+    engine.appendManualText("Жалобы на скол пломбы 36");
+    let receivedText = "";
+    engine.subscribe((ev) => { receivedText = ev.finalText; });
+    // Добавление ещё порции текста вручную не затирает предыдущий
+    engine.appendManualText("Осмотр: дефект пломбы на дистальной поверхности");
+    assert.ok(receivedText.includes("Жалобы на скол пломбы 36"));
+    assert.ok(receivedText.includes("дефект пломбы"));
+    engine.dispose();
+  });
+
   it("Мандат 8d pt 7: исходный код voiceEngine.ts содержит строго 0 cartoon emojis", () => {
     const filePath = path.join(__dirname, "../voiceEngine.ts");
     const content = fs.readFileSync(filePath, "utf-8");
