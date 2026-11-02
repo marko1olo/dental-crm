@@ -52,12 +52,15 @@ export interface CashRegisterStudioModalProps {
 	readonly onCloseShiftAction?: () => Promise<void> | void; readonly onCloseShift?: (zReportSummary?: any) => Promise<void> | void;
 	readonly onPrintXReportAction?: () => Promise<void> | void; readonly onPrintXReport?: () => Promise<void> | void;
 	readonly totalDueRub?: number; readonly totalDueKopecks?: bigint;
+	readonly amountRub?: number; readonly amountKopecks?: bigint | number;
 	readonly initialWarranty100?: boolean; readonly invoiceId?: string;
 	readonly patientId?: string; readonly patientName?: string; readonly patientPhone?: string;
 	readonly patientDepositRub?: number; readonly patientFamilyBalanceRub?: number;
 	readonly doctorFullName?: string; readonly serviceTitle?: string;
 	readonly defaultMethod?: CashboxTenderType; readonly onOpenSplitPayment?: () => void;
 	readonly onSuccess?: (result?: unknown) => void;
+	readonly onPaymentComplete?: () => void;
+	readonly onConfirmPayment?: (details?: unknown) => void;
 	readonly containerTestId?: string; readonly submitButtonTestId?: string; readonly title?: string;
 }
 
@@ -69,13 +72,14 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 		isShiftOpen: initialShiftOpen = true, netRevenueRub: propNetRevenue,
 		cashInDrawerRub: initialCashDrawer = 15000, cardSumRub: initialCardSum = 35000,
 		sbpSumRub: initialSbpSum = 7000, advanceOffsetRub: initialAdvanceSum = 2000,
-		totalDueRub = 8500, initialWarranty100 = false,
+		totalDueRub: propTotalDueRub, amountRub: propAmountRub, initialWarranty100 = false,
 		patientName = "Иванов Иван Иванович", patientPhone = "+7 (999) 111-22-33",
 		patientDepositRub = 3000, patientFamilyBalanceRub = 5000,
 		doctorFullName = "Д-р Смирнов А. В.", serviceTitle = "Лечение пульпита и реставрация",
 		defaultMethod = "card", containerTestId = "cash-register-studio-modal",
 		submitButtonTestId = "btn-confirm-checkout-payment", title = "Касса и чеки · Студия расчётов",
 	} = props;
+	const totalDueRub = propTotalDueRub ?? propAmountRub ?? 8500;
 
 	const modalTitleId = useId();
 	const normalizedTab: CashRegisterStudioTab =
@@ -120,7 +124,10 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 		if (isSubmitting) return;
 		setIsSubmitting(true);
 		try {
-			if (props.onSuccess) props.onSuccess({ success: true, effectiveTotalRub, method });
+			const paymentResult = { success: true, effectiveTotalRub, method };
+			if (props.onSuccess) props.onSuccess(paymentResult);
+			if (props.onPaymentComplete) props.onPaymentComplete();
+			if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
 			onClose();
 		} finally { setIsSubmitting(false); }
 	}, [isSubmitting, props, effectiveTotalRub, method, onClose]);
@@ -217,25 +224,28 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 								</div>
 							</div>
 
-							<div className="p-4 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-center sm:text-left">
+							<div className="p-3 sm:p-4 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-row items-center justify-between gap-3 text-left">
 								<div>
-									<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">К оплате:</span>
-									<div className="text-[32px] font-black font-mono text-[var(--ink)] leading-none mt-1" data-testid="checkout-total-amount">
+									<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">К оплате:</span>
+									<div className="text-2xl sm:text-[32px] font-black font-mono text-[var(--ink)] leading-tight mt-0.5" data-testid="checkout-total-amount">
 										<span data-testid="display-total-amount-due">{formatRubles(effectiveTotalRub)}</span>
 									</div>
 								</div>
 								{isWarranty ? (
-									<div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold">100% Гарантийный случай врача</div>
+									<div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold shrink-0">100% Гарантия врача</div>
 								) : (
-									<div className="text-xs text-[var(--muted)]">Без скрытых комиссий · 54-ФЗ чек формируется автоматически</div>
+									<div className="text-right text-[11px] sm:text-xs text-[var(--muted)] shrink-0">
+										<div>Без скрытых комиссий</div>
+										<div className="text-[10px] sm:text-[11px]">54-ФЗ чек автоматически</div>
+									</div>
 								)}
 							</div>
 
 							<div className="space-y-1">
 								<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Скидки врача:</span>
-								<div className="flex flex-wrap gap-1.5">
+								<div className="flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap scrollbar-none snap-x">
 									{DOCTOR_DISCOUNT_PRESETS.map((d) => (
-										<button key={d.label} type="button" onClick={() => { setIsWarranty(Boolean(d.isWarranty)); setDiscountPercent(d.percent); if (d.isWarranty) setCashReceivedRub(0); }} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border min-h-[36px] cursor-pointer transition-colors ${discountPercent === d.percent ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}>
+										<button key={d.label} type="button" onClick={() => { setIsWarranty(Boolean(d.isWarranty)); setDiscountPercent(d.percent); if (d.isWarranty) setCashReceivedRub(0); }} className={`px-3 py-1.5 rounded-lg text-xs font-semibold border min-h-[36px] shrink-0 snap-start cursor-pointer transition-colors ${discountPercent === d.percent ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}>
 											{d.label}
 										</button>
 									))}
@@ -244,11 +254,36 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 
 							<div className="space-y-1">
 								<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Плательщик (без допроса на ИНН):</span>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+								<div className="grid grid-cols-3 gap-2">
 									{PAYER_TYPE_PRESETS.map((p) => (
-										<button key={p.id} type="button" onClick={() => setPayerType(p.id)} className={`p-2 rounded-xl border text-left min-h-[44px] cursor-pointer transition-all ${payerType === p.id ? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal,#0d9488)] font-semibold" : "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"}`}>
-											<div className="text-xs font-bold text-[var(--ink)]">{p.label}</div>
-											<div className="text-[11px] text-[var(--muted)] mt-0.5 line-clamp-1">{p.helperText}</div>
+										<button
+											key={p.id}
+											type="button"
+											onClick={() => setPayerType(p.id)}
+											className={`flex flex-col items-start justify-center p-2.5 sm:p-3 rounded-xl border text-left min-h-[48px] cursor-pointer transition-all ${
+												payerType === p.id
+													? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal,#0d9488)] font-semibold shadow-2xs"
+													: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"
+											}`}
+										>
+											<div className="text-xs font-bold text-[var(--ink)] leading-snug">
+												<span className="hidden sm:inline">{p.label}</span>
+												<span className="sm:hidden">{p.id === "physical_person" ? "Физлицо" : p.id === "legal_entity" ? "Юрлицо" : "ИП"}</span>
+											</div>
+											<div className="text-[11px] text-[var(--muted)] mt-0.5 leading-snug hidden sm:block">
+												{p.id === "physical_person"
+													? "ИНН не требуется. Чек формируется авто."
+													: p.id === "legal_entity"
+														? "ИНН 10 цифр (безналичный расчёт)"
+														: "ИНН 12 цифр (для чека ИП)"}
+											</div>
+											<div className="text-[10px] text-[var(--muted)] mt-0.5 sm:hidden leading-none">
+												{p.id === "physical_person"
+													? "Без ИНН"
+													: p.id === "legal_entity"
+														? "ИНН 10 цифр"
+														: "ИНН 12 цифр"}
+											</div>
 										</button>
 									))}
 								</div>

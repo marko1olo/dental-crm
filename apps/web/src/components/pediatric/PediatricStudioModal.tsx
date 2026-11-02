@@ -8,7 +8,7 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { X, Award, FileText, Check, ShieldCheck, AlertCircle, Copy } from "lucide-react";
+import { X, Award, FileText, Check, ShieldCheck, AlertCircle, Copy, Sparkles } from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import {
@@ -131,7 +131,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 			else if (cond === "healthy" || cond === "sealed") store.setToothState(tooth, "healthy");
 			else if (cond === "extracted") store.setToothState(tooth, "missing");
 		});
-		showToast("✓ Детский приём успешно зафиксирован!", "success");
+		showToast("Детский приём успешно зафиксирован!", "success");
 		if (onSaved) onSaved();
 		onClose();
 	}, [activeFrankl, weightKg, anesthesiaSafety, carpules, teethConditions, onSaved, onClose]);
@@ -253,7 +253,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									}`}
 									data-testid={`frankl-chip-${item.rating}`}
 								>
-									<div className="flex items-center justify-between">
+									<div className="flex items-center justify-between gap-1.5">
 										<span className="text-sm font-black">{item.symbol}</span>
 										<span className="text-[10px] font-bold">Франкл {item.rating}</span>
 									</div>
@@ -261,8 +261,9 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 								</button>
 							))}
 						</div>
-						<div className="mt-1 text-xs p-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]">
-							💡 <strong className="text-[var(--ink,#0f172a)]">Тактика:</strong> {activeFrankl.clinicalTacticRu}
+						<div className="mt-1 text-xs p-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] flex items-center gap-1.5">
+							<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+							<span><strong className="text-[var(--ink,#0f172a)]">Тактика:</strong> {activeFrankl.clinicalTacticRu}</span>
 						</div>
 					</div>
 
@@ -446,10 +447,11 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 					<button
 						type="button"
 						onClick={handleCompleteVisit}
-						className="min-h-[44px] flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-[#0d9488] hover:bg-[#0f766e] active:scale-98 transition shadow-md flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+						className="min-h-[44px] flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] active:scale-98 transition shadow-md flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
 						data-testid="btn-save-pediatric-visit"
 					>
-						✓ Зафиксировать детский приём
+						<Check className="w-4 h-4 shrink-0 stroke-[2.5]" />
+						<span>Зафиксировать детский приём</span>
 					</button>
 				</div>
 			</div>

@@ -120,7 +120,7 @@ export const ChairScheduleStudioModal: React.FC<ChairScheduleStudioModalProps> =
         />
 
         {/* 3. ОСНОВНОЙ КОНТЕНТ: СЕТКА КРЕСЕЛ ИЛИ МОБИЛЬНАЯ АДЖЕНДА */}
-        <main className="flex-1 overflow-y-auto p-3 sm:p-6 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)]">
+        <main className="flex-1 overflow-y-auto p-3 sm:p-6 pb-32 sm:pb-6 bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)]">
           <ChairTimelineGrid
             activeTab={state.activeTab}
             currentDate={state.currentDate}

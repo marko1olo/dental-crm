@@ -150,7 +150,7 @@ describe("Treatment Plan SSOT & 3-Tier Suite", () => {
 
 		// Проверяем Primary CTA кнопку
 		assert.ok(html.includes("data-testid=\"approve-treatment-plan-btn\""));
-		assert.ok(html.includes("✓ Утвердить выбранный план"));
+		assert.ok(html.includes("Утвердить выбранный план"));
 
 		// Мандат 8e: кнопка утверждения НИКОГДА не заблокирована
 		assert.ok(!html.includes("disabled=\"\""), "Кнопки в студии планов лечения НИКОГДА не должны быть disabled");

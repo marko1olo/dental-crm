@@ -93,7 +93,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 
 		return (
 			<div
-				className="schedule-mobile-agenda w-full max-w-[100vw] overflow-x-clip min-h-screen bg-[var(--paper-soft)] pb-28 select-none"
+				className="schedule-mobile-agenda w-full max-w-[100vw] overflow-x-clip min-h-screen bg-[var(--paper-soft)] pb-36 select-none"
 				data-testid="schedule-mobile-agenda-view"
 				role="region"
 				aria-label="Расписание: мобильная повестка дня (Agenda View)"

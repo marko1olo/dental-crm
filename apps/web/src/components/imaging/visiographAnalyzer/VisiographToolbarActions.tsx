@@ -44,7 +44,7 @@ export const VisiographToolbarActions: React.FC<Props> = ({
 				style={getNormaButtonStyle(isNormaApplied)}
 			>
 				<CheckCircle2 size={13} className={isNormaApplied ? "text-[var(--teal)]" : "text-[var(--ink)]"} />
-				<span>{isNormaApplied ? "✓ Норма внесена" : "✓ Норма в протокол"}</span>
+				<span>{isNormaApplied ? "Норма внесена" : "Норма в протокол"}</span>
 			</button>
 
 			<button

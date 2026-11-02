@@ -50,11 +50,11 @@ export const PediatricProtocolTopBar: React.FC<PediatricProtocolTopBarProps> = (
 				</div>
 			</div>
 
-			<div className="flex items-center gap-1.5 shrink-0 overflow-x-auto no-scrollbar max-w-full py-0.5">
+			<div className="flex items-center gap-1.5 w-full sm:w-auto shrink-0 overflow-x-auto no-scrollbar max-w-full py-0.5 snap-x snap-mandatory pr-3">
 				<button
 					type="button"
 					onClick={onApplyPhysiologicalNorm}
-					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 touch-manipulation"
+					className="min-h-[48px] sm:min-h-0 sm:h-8 px-2.5 rounded-lg border border-emerald-500/40 bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/25 text-xs font-bold transition flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95 shrink-0 snap-start touch-manipulation"
 					title="Временный прикус интактен / физиологическая стираемость / тремы и диастемы"
 					data-testid="pediatric-one-click-norm-btn"
 				>

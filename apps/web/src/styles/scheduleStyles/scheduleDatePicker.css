@@ -34,6 +34,13 @@
 		min-width: 0 !important;
 		max-width: none !important;
 	}
+	.schedule-filter-strip input[type="date"].opacity-0,
+	.schedule-filter-strip input.schedule-date-input.opacity-0 {
+		opacity: 0 !important;
+		background: transparent !important;
+		border: none !important;
+		color: transparent !important;
+	}
 	.schedule-filter-strip > div:last-child {
 		margin-left: auto !important;
 		flex-shrink: 0 !important;

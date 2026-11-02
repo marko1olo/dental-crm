@@ -116,10 +116,10 @@ export function useChairScheduleStudioState({
 
   // Сетка временных отметок в зависимости от выбранной смены (шаг 30 мин)
   const timeHours = useMemo<readonly string[]>(() => {
-    const shift = CHAIR_SHIFT_OPTIONS.find((s) => s.id === selectedShift) || CHAIR_SHIFT_OPTIONS[2];
+    const shift = CHAIR_SHIFT_OPTIONS.find((s) => s.id === selectedShift) ?? CHAIR_SHIFT_OPTIONS[0];
     const list: string[] = [];
-    const start = shift.startHour;
-    const end = shift.endHour;
+    const start = shift?.startHour ?? 8;
+    const end = shift?.endHour ?? 20;
 
     for (let h = start; h < end; h++) {
       list.push(`${String(h).padStart(2, "0")}:00`);

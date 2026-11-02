@@ -80,7 +80,7 @@ export const PatientCardHeader: React.FC<PatientCardHeaderProps> = React.memo(
 							data-testid="btn-patient-card-somatic-norm"
 						>
 							<ShieldCheck className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-							<span>✓ Норма</span>
+							<span>Норма</span>
 						</button>
 
 						<button

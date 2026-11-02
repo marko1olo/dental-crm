@@ -250,7 +250,7 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 
 		assert.ok(html.includes("data-testid=\"approve-treatment-plan-btn\""));
 		assert.ok(html.includes("tp-primary-cta-btn"));
-		assert.ok(html.includes("✓ Утвердить выбранный план"));
+		assert.ok(html.includes("Утвердить выбранный план"));
 	});
 
 	it("13. Ноль заблокированных кнопок (Мандат 8e: disabled кнопки запрещены)", () => {

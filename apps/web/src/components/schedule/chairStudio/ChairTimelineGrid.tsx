@@ -26,6 +26,22 @@ export interface ChairTimelineGridProps {
   readonly onStatusChange: (id: string, newStatus: ScheduleStudioAppointment["status"]) => void;
 }
 
+function formatDateRu(isoDate: string): string {
+  if (!isoDate) return "";
+  const parts = isoDate.split("-");
+  if (parts.length !== 3) return isoDate;
+  return `${parts[2]}.${parts[1]}.${parts[0]}`;
+}
+
+function formatAppointmentsCount(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 19) return `${count} записей`;
+  if (mod10 === 1) return `${count} запись`;
+  if (mod10 >= 2 && mod10 <= 4) return `${count} записи`;
+  return `${count} записей`;
+}
+
 export const ChairTimelineGrid: React.FC<ChairTimelineGridProps> = ({
   activeTab,
   currentDate,
@@ -42,12 +58,12 @@ export const ChairTimelineGrid: React.FC<ChairTimelineGridProps> = ({
       <div className="space-y-3 max-w-xl mx-auto" data-testid="schedule-agenda-timeline">
         <div className="flex items-center justify-between px-1">
           <span className="text-xs font-medium text-[var(--muted)]">
-            Приёмы на {currentDate} ({appointments.length} записей)
+            Приёмы на {formatDateRu(currentDate)} ({formatAppointmentsCount(appointments.length)})
           </span>
           <button
             type="button"
             onClick={() => onSlotClick(selectedChairId === "all" ? "chair-1" : selectedChairId, "12:00")}
-            className="min-h-[44px] sm:min-h-0 px-3 py-1.5 text-xs rounded-lg font-medium bg-[var(--teal,#0d9488)] text-white hover:brightness-110 flex items-center gap-1.5 cursor-pointer shadow-xs"
+            className="min-h-[44px] sm:min-h-0 px-3 py-1.5 text-xs rounded-lg font-medium border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" /> Записать
           </button>

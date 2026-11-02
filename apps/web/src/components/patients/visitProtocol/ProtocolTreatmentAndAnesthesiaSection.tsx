@@ -47,7 +47,7 @@ export const ProtocolTreatmentAndAnesthesiaSection: React.FC<ProtocolTreatmentAn
 								className="px-2.5 py-1 text-xs font-bold rounded-lg bg-[var(--paper)] border border-[var(--glass-border)] hover:border-[var(--teal)] text-[var(--ink)] cursor-pointer transition-all min-h-[36px] inline-flex items-center gap-1"
 							>
 								{anes.key === "ultracain_ds_forte"
-									? "✓ Норма: Артикаин 1:100 000"
+									? "Норма: Артикаин 1:100 000"
 									: anes.key === "ultracain_ds"
 									? "Щадящий: Артикаин 1:200 000"
 									: "Кардио: Мепивакаин"}

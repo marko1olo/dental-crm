@@ -201,7 +201,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				)}
 
 				{/* 2. БЫСТРЫЕ ШАБЛОНЫ ПО ДИАГНОЗАМ В 1 КЛИК (Мандат 8n) */}
-				<div className="px-4 sm:px-6 py-2 bg-[var(--paper)] border-b border-[var(--line)] flex items-center gap-2 overflow-x-auto text-xs no-scrollbar shrink-0">
+				<div className="px-4 sm:px-6 py-2 bg-[var(--paper)] border-b border-[var(--line)] flex items-center gap-2 overflow-x-auto text-xs no-scrollbar shrink-0 pr-4 snap-x">
 					<span className="text-[var(--muted)] font-medium shrink-0 flex items-center gap-1">
 						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 						Типовые сметы:
@@ -211,17 +211,17 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						{ label: "Пульпит (Эндодонтия)", code: "K04" },
 						{ label: "Имплантация + Коронка", code: "K08" },
 					].map((p) => (
-						<button key={p.code} type="button" onClick={() => handleSelectDiagnosisPreset(p.code)} className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 cursor-pointer transition-colors">
+						<button key={p.code} type="button" onClick={() => handleSelectDiagnosisPreset(p.code)} className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 snap-start cursor-pointer transition-colors">
 							{p.label}
 						</button>
 					))}
-					<button type="button" onClick={() => setStages(CANONICAL_CLINICAL_STAGES)} className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 cursor-pointer transition-colors">
+					<button type="button" onClick={() => setStages(CANONICAL_CLINICAL_STAGES)} className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 snap-start cursor-pointer transition-colors">
 						Полный комплекс (4 этапа)
 					</button>
 				</div>
 
 				{/* 3. ОСНОВНОЕ ТЕЛО СТУДИИ: 3 ТАРИФА И КЛИНИЧЕСКИЕ ЭТАПЫ */}
-				<main className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6">
+				<main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-28 sm:pb-6 space-y-6">
 					{/* Индикатор успеха утверждения */}
 					{approvedSuccessMessage && (
 						<div className="p-3 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.15))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-2">
@@ -263,7 +263,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 								</span>
 							</div>
 							<div className="flex items-baseline justify-between gap-2 mt-1">
-								<h3 className="text-base font-black text-[var(--ink)] m-0">{activeTier.title}</h3>
+								<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
+									{activeTier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
+									<span>{sanitizedActiveTitle}</span>
+								</h3>
 								<div className="text-xl font-black text-[var(--ink)] tracking-tight">{formatRubles(activeTier.totalRub)}</div>
 							</div>
 							<p className="text-xs text-[var(--muted)] mt-1 mb-2">{activeTier.subtitle}</p>
@@ -282,6 +285,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					<div className="tp-tiers-grid hidden sm:grid sm:grid-cols-3 gap-4">
 						{computedTiers.map((tier) => {
 							const isSelected = tier.tierId === selectedTierId;
+							const tierTitleClean = tier.title.replace("★ ", "");
 							return (
 								<div
 									key={tier.tierId}
@@ -300,7 +304,10 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 											{tier.warrantyYears} {tier.warrantyYears === 1 ? "год" : tier.warrantyYears === 3 ? "года" : "лет"} гарантии
 										</span>
 									</div>
-									<h3 className="text-base font-black text-[var(--ink)] m-0">{tier.title}</h3>
+									<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
+										{tier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
+										<span>{tierTitleClean}</span>
+									</h3>
 									<p className="text-xs text-[var(--muted)] mt-1 mb-3 line-clamp-2">{tier.subtitle}</p>
 									<div className="mt-auto pt-2 border-t border-[var(--line)]">
 										<div className="tp-tier-price text-2xl sm:text-[32px] font-black text-[var(--ink)] tracking-tight">{formatRubles(tier.totalRub)}</div>
@@ -341,7 +348,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 												</div>
 												<div className="min-w-0">
 													<div className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">{stage.title}</div>
-													<div className="text-[11px] text-[var(--muted)] truncate">{stage.subtitle}</div>
+													<div className="text-[11px] text-[var(--muted)] line-clamp-2 leading-tight">{stage.subtitle}</div>
 												</div>
 											</div>
 
@@ -368,7 +375,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 																	№{item.toothNumber}
 																</span>
 															)}
-															<span className="text-[var(--ink)] truncate">{item.name}</span>
+															<span className="text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</span>
 														</div>
 														<span className="font-bold text-[var(--ink)] shrink-0">{formatRubles(item.priceRub)}</span>
 													</div>
@@ -383,7 +390,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 				</main>
 
 				{/* 4. ПОДВАЛ СТУДИИ (Мандат 8am: РОВНО ОДНА Primary CTA КНОПКА #0d9488, ВСЕГДА КЛИКАБЕЛЬНАЯ ПО МАНДАТУ 8e) */}
-				<footer className="tp-studio-footer sticky bottom-0 z-10 flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-3 pb-[max(12px,env(safe-area-inset-bottom))] bg-[var(--paper)] text-[var(--ink)] border-t border-[var(--line)] shrink-0">
+				<footer className="tp-studio-footer sticky bottom-0 z-10 flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-3 pb-[max(14px,env(safe-area-inset-bottom))] bg-[var(--paper)] text-[var(--ink)] border-t border-[var(--line)] shrink-0">
 					<div className="flex flex-col min-w-0">
 						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">Выбранный вариант:</span>
 						<span className="text-sm sm:text-lg font-black text-[var(--ink)] truncate">«{sanitizedActiveTitle}» — {formatRubles(activeTier.totalRub)}</span>
@@ -406,8 +413,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							data-testid="approve-treatment-plan-btn"
 						>
 							<CheckCircle2 className="w-5 h-5 shrink-0" />
-							<span className="hidden sm:inline">{`✓ Утвердить выбранный план («${sanitizedActiveTitle}»)`}</span>
-							<span className="sm:hidden">{`✓ Утвердить план (${formatRubles(activeTier.totalRub)})`}</span>
+							<span className="hidden sm:inline">{`Утвердить выбранный план («${sanitizedActiveTitle}»)`}</span>
+							<span className="sm:hidden">{`Утвердить план (${formatRubles(activeTier.totalRub)})`}</span>
 						</button>
 					</div>
 				</footer>

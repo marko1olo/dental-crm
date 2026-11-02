@@ -189,7 +189,7 @@ export const ScheduleMobileTimelineRow: React.FC<
 					<div className="schedule-mobile-card-header flex items-start justify-between gap-1.5 min-w-0">
 						<div className="flex items-center gap-1.5 min-w-0 flex-1 flex-wrap">
 							<span
-								className="text-[14px] font-semibold text-[var(--ink)] truncate max-w-full"
+								className="text-[14px] font-bold text-[var(--ink)] break-words leading-tight"
 								title={fullPatientName}
 							>
 								{pName}
@@ -203,12 +203,12 @@ export const ScheduleMobileTimelineRow: React.FC<
 
 						<div className="flex items-center gap-1 shrink-0 pt-0.5">
 							<span
-								className={`schedule-mobile-status-badge text-[11px] font-bold px-2 py-0.5 rounded-lg ${statusTheme.badgeBg} whitespace-nowrap`}
+								className={`schedule-mobile-status-badge text-[10px] font-bold px-2 py-0.5 rounded-lg ${statusTheme.badgeBg} whitespace-nowrap`}
 							>
 								{statusTheme.label}
 							</span>
 							<ChevronRightIcon
-								size={16}
+								size={15}
 								className="text-[var(--muted)] opacity-60 shrink-0"
 							/>
 						</div>
@@ -232,7 +232,7 @@ export const ScheduleMobileTimelineRow: React.FC<
 							{chair && (
 								<span className="flex items-center gap-1 shrink-0">
 									<Armchair size={11} className="shrink-0 text-[var(--muted)]" />
-									<span className="truncate">{chair.name}</span>
+									<span className="truncate">{chair.name.replace(/\s*\([^)]*\)/g, "")}</span>
 								</span>
 							)}
 							{balance !== null && balance !== 0 && (

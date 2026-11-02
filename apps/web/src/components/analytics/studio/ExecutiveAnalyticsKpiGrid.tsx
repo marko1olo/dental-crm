@@ -23,7 +23,7 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 
 	const chairBadgeLabel =
 		data.chairOccupancyStatus === "optimal"
-			? "✓ Норма 65–85%"
+			? "Норма 65–85%"
 			: data.chairOccupancyStatus === "high"
 				? "Высокая"
 				: "Резерв";

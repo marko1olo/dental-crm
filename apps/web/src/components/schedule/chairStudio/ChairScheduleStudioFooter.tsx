@@ -7,7 +7,7 @@
  */
 
 import React from "react";
-import { CheckCircle2, ShieldCheck, Sparkles, Clock } from "lucide-react";
+import { Check, ShieldCheck, Clock } from "lucide-react";
 
 export interface ChairScheduleStudioFooterProps {
   readonly currentDate: string;
@@ -27,7 +27,10 @@ export const ChairScheduleStudioFooter: React.FC<ChairScheduleStudioFooterProps>
   onQuickBookTrigger,
 }) => {
   return (
-    <footer className="flex-none flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3 border-t border-[var(--line)] bg-[var(--paper-strong)]">
+    <footer
+      className="flex-none flex flex-col sm:flex-row items-center justify-between gap-2 px-3 sm:px-6 py-2.5 sm:py-3 border-t border-[var(--line)] bg-[var(--paper-strong)]"
+      style={{ paddingBottom: "max(0.75rem, env(safe-area-inset-bottom))" }}
+    >
       {/* ЛЕВАЯ ЧАСТЬ: ИНФО-СТРОКА (МАНДАТ 8e: СТАТУС ВРАЧА И ПРИЁМОВ) */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-3 text-xs text-[var(--muted)]">
         <div className="flex items-center gap-1.5 font-medium text-[var(--ink)]">
@@ -55,8 +58,8 @@ export const ChairScheduleStudioFooter: React.FC<ChairScheduleStudioFooterProps>
           aria-label="Забронировать свободный слот"
           className="w-full sm:w-auto min-h-[44px] sm:min-h-0 py-2 sm:py-2 px-4 rounded-xl font-medium text-xs sm:text-sm text-white bg-[var(--teal,#0d9488)] hover:brightness-110 active:brightness-95 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
         >
-          <Sparkles className="w-4 h-4" />
-          <span>✓ Забронировать слот</span>
+          <Check className="w-4 h-4" />
+          <span>Забронировать слот</span>
         </button>
       </div>
     </footer>

@@ -69,11 +69,11 @@ export const RoadmapStageFooter: React.FC<FooterProps> = ({
 							className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-emerald-600 text-white text-[11px] font-black uppercase tracking-wider shadow-xs"
 							data-testid={`stage-paid-footer-badge-${stage.stageNumber}`}
 						>
-							✓ ОПЛАЧЕНО 100%
+							ОПЛАЧЕНО 100%
 						</span>
 						<span className="flex items-center gap-1 text-xs font-semibold text-emerald-700 dark:text-emerald-300">
 							<CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400" />
-							{`✓ Пройден на приеме ${todayRu || new Date().toLocaleDateString("ru-RU")}`}
+							{`Пройден на приеме ${todayRu || new Date().toLocaleDateString("ru-RU")}`}
 						</span>
 					</div>
 				) : (

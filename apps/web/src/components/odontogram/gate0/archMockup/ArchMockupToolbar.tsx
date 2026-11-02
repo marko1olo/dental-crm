@@ -4,6 +4,7 @@
  */
 
 import React from "react";
+import { Shuffle, ShieldCheck, MapPin } from "lucide-react";
 import { BADGE_SIZE_CONFIGS, type BadgePlacement, type BadgeSizeOption } from "./archMockupTypes";
 
 export interface ArchMockupToolbarProps {
@@ -65,24 +66,26 @@ export const ArchMockupToolbar: React.FC<ArchMockupToolbarProps> = ({
 					className="min-h-[44px] sm:min-h-0 sm:h-8 px-3 text-xs font-semibold rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1.5 shrink-0"
 					title="Случайно распределить 32 разных клинических состояния"
 				>
-					<span>🎲</span>
+					<Shuffle className="w-3.5 h-3.5" />
 					<span>Перемешать</span>
 				</button>
 				<button
 					type="button"
 					onClick={onResetIntact}
-					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0"
+					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1 shrink-0"
 					title="Сбросить все 32 зуба в норму (интактные)"
 				>
-					✓ Норма
+					<ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+					<span>Норма</span>
 				</button>
 				<button
 					type="button"
 					onClick={onTogglePlacement}
-					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0"
+					className="min-h-[44px] sm:min-h-0 sm:h-8 px-2.5 text-xs font-medium rounded-lg border border-current/15 hover:bg-black/5 dark:hover:bg-white/5 transition-colors flex items-center gap-1 shrink-0"
 					title="Переключить положение кружков"
 				>
-					{placement === "root_apex" ? "📍 У корней" : "📍 У коронок"}
+					<MapPin className="w-3.5 h-3.5" />
+					<span>{placement === "root_apex" ? "У корней" : "У коронок"}</span>
 				</button>
 				<button
 					type="button"

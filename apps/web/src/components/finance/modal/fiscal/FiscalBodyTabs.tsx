@@ -3,10 +3,10 @@ import { FiscalAuxTabs } from "./FiscalAuxTabs.js";
 import { FiscalPaymentTab } from "./FiscalPaymentTab.js";
 import { FiscalRefundTab } from "./FiscalRefundTab.js";
 import type { FiscalReceiptModalProps } from "./fiscalModalTypes.js";
-import type { useFiscalReceipt54FzLogic } from "./useFiscalReceipt54FzLogic.js";
+import type { useFiscalReceiptLogic } from "./useFiscalReceiptLogic.js";
 
 export interface FiscalBodyTabsProps {
-	readonly logic: ReturnType<typeof useFiscalReceipt54FzLogic>;
+	readonly logic: ReturnType<typeof useFiscalReceiptLogic>;
 	readonly props: FiscalReceiptModalProps;
 	readonly patientName: string;
 }

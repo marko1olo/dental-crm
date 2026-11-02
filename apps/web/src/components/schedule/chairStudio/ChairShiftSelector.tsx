@@ -38,36 +38,38 @@ export const ChairShiftSelector: React.FC<ChairShiftSelectorProps> = ({
   return (
     <div className="flex-none flex flex-col sm:flex-row sm:items-center justify-between gap-2 px-3 sm:px-6 py-2 border-b border-[var(--line)] bg-[var(--paper)]">
       {/* ЛИНИЯ КРЕСЕЛ (ГОРИЗОНТАЛЬНЫЙ СКРОЛЛ ЧИПОВ БЕЗ ВЫХОДА ЗА ЭКРАН) */}
-      <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar">
+      <div className="flex items-center gap-1.5 min-w-0 flex-1">
         <div className="flex items-center gap-1 text-xs font-medium text-[var(--muted)] mr-1 shrink-0">
           <Armchair className="w-3.5 h-3.5" />
           <span>Кресло:</span>
         </div>
-        <button
-          type="button"
-          onClick={() => onChairSelect("all")}
-          className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 cursor-pointer ${
-            selectedChairId === "all"
-              ? "bg-[var(--teal,#0d9488)] text-white font-medium shadow-xs"
-              : "bg-[var(--line)]/40 hover:bg-[var(--line)]/70 text-[var(--ink)]"
-          }`}
-        >
-          {`Все кресла (${chairs.length})`}
-        </button>
-        {chairs.map((chair) => (
+        <div className="flex items-center gap-1.5 overflow-x-auto py-0.5 no-scrollbar pr-3 snap-x min-w-0 flex-1">
           <button
-            key={chair.id}
             type="button"
-            onClick={() => onChairSelect(chair.id)}
-            className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 cursor-pointer ${
-              selectedChairId === chair.id
+            onClick={() => onChairSelect("all")}
+            className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 whitespace-nowrap snap-start cursor-pointer ${
+              selectedChairId === "all"
                 ? "bg-[var(--teal,#0d9488)] text-white font-medium shadow-xs"
                 : "bg-[var(--line)]/40 hover:bg-[var(--line)]/70 text-[var(--ink)]"
             }`}
           >
-            {`${chair.name} (${chair.specialty.split("/")[0]?.trim()})`}
+            {`Все кресла (${chairs.length})`}
           </button>
-        ))}
+          {chairs.map((chair) => (
+            <button
+              key={chair.id}
+              type="button"
+              onClick={() => onChairSelect(chair.id)}
+              className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 whitespace-nowrap snap-start cursor-pointer ${
+                selectedChairId === chair.id
+                  ? "bg-[var(--teal,#0d9488)] text-white font-medium shadow-xs"
+                  : "bg-[var(--line)]/40 hover:bg-[var(--line)]/70 text-[var(--ink)]"
+              }`}
+            >
+              {`${chair.name} (${chair.specialty.split("/")[0]?.trim()})`}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* ПРАВАЯ СЕКЦИЯ: СМЕНА И ДЕЖУРНЫЙ ВРАЧ (МАНДАТ 8n: СОЛО-ВРАЧ БЕЗ АССИСТЕНТОВ) */}

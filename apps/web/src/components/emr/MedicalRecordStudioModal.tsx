@@ -415,7 +415,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							className="emr-studio-btn emr-studio-btn-secondary flex-1"
 							onClick={handleApplyNorm}
 							disabled={false}
-							title="✓ Норма в 1 клик"
+							title="Норма в 1 клик"
 						>
 							<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
 							<span>Норма</span>

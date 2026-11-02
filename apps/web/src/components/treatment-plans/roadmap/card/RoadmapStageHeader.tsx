@@ -29,7 +29,7 @@ export const RoadmapStageHeader: React.FC<HeaderProps> = ({ stage, isExpanded, o
 					{stage.status === "completed" && (
 						<>
 							<CheckCircle2 className="w-3.5 h-3.5" />
-							<span>✓ Этап выполнен</span>
+							<span>Этап выполнен</span>
 						</>
 					)}
 					{stage.status === "in_progress" && (
@@ -47,7 +47,7 @@ export const RoadmapStageHeader: React.FC<HeaderProps> = ({ stage, isExpanded, o
 						data-testid={`stage-paid-badge-${stage.stageNumber}`}
 					>
 						<Check className="w-3 h-3 text-emerald-600 dark:text-emerald-400 stroke-[3]" />
-						<span>✓ ОПЛАЧЕНО 100%</span>
+						<span>ОПЛАЧЕНО 100%</span>
 					</span>
 				)}
 

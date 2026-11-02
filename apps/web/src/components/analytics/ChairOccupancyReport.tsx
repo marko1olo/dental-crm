@@ -242,9 +242,9 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 							}`}
 						>
 							{clinicStatus === "optimal"
-								? "✓ Норма 65–85%"
+								? "Норма 65–85%"
 								: clinicStatus === "high"
-									? "⚠️ Перегруз"
+									? "Перегруз"
 									: "Резерв"}
 						</span>
 					</div>
@@ -339,9 +339,9 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 												}`}
 											>
 												{chair.status === "optimal"
-													? "✓ Норма"
+													? "Норма"
 													: chair.status === "high"
-														? "⚠️ Перегруз"
+														? "Перегруз"
 														: "Резерв"}
 											</span>
 										</td>
@@ -386,7 +386,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 												: "bg-amber-500/10 text-amber-600"
 										}`}
 									>
-										{chair.status === "optimal" ? "✓ Норма" : "Резерв"}
+										{chair.status === "optimal" ? "Норма" : "Резерв"}
 									</span>
 									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-bold text-[var(--teal)]">
 										{chair.utilizationPercent}%

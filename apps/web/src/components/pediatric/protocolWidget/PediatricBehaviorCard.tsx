@@ -49,8 +49,8 @@ export const PediatricBehaviorCard: React.FC<PediatricBehaviorCardProps> = ({
 								<div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)] shrink-0">
 									<ItemIcon className="h-3.5 w-3.5" />
 								</div>
-								<div className="min-w-0">
-									<div className="text-xs font-extrabold truncate font-mono">
+								<div className="min-w-0 flex-1">
+									<div className="text-xs font-extrabold font-mono whitespace-nowrap">
 										Рейтинг {item.symbol}
 									</div>
 									<div className="text-[10px] text-[var(--muted,#64748b)] truncate hidden sm:block">

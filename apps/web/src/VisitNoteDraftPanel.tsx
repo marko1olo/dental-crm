@@ -345,7 +345,7 @@ export const VisitNoteDraftPanel: React.FC<VisitNoteDraftPanelProps> = ({
 								title="Зафиксировать статус «Соматически здоров / норма»"
 							>
 								<Check className="w-4 h-4 text-emerald-600 dark:text-emerald-400" aria-hidden="true" />
-								<span>✓ Норма</span>
+								<span>Норма</span>
 							</button>
 							<button
 								type="button"

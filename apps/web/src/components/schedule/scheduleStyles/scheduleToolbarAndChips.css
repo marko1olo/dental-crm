@@ -129,3 +129,16 @@
 	outline: none;
 	box-sizing: border-box;
 }
+
+.schedule-date-input.opacity-0,
+.schedule-date-picker-group input[type="date"].schedule-date-input {
+	opacity: 0 !important;
+	cursor: pointer;
+	position: absolute;
+	inset: 0;
+	width: 100% !important;
+	min-width: 0 !important;
+	height: 100% !important;
+	background: transparent !important;
+	border: none !important;
+}

@@ -22,22 +22,63 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 	const isPermanent = mode === "permanent";
 
 	return (
-		<div className="mb-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 border-b border-[var(--line,#e2e8f0)] pb-2.5">
-			<div className="flex items-center justify-between gap-2 min-w-0 w-full sm:w-auto">
-				<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)]">
-					Зубная формула (FDI):
-				</span>
-				<span className="rounded-md bg-teal-500/10 px-2 py-0.5 text-xs font-bold font-mono text-teal-700 dark:text-teal-300">
-					{isPermanent ? "Подростки (32)" : isMixed ? "Сменный (24)" : "Молочный (20)"}
-				</span>
+		<div className="mb-3 flex flex-col gap-2.5 border-b border-[var(--line,#e2e8f0)] pb-2.5">
+			<div className="flex flex-wrap items-center justify-between gap-2 min-w-0 w-full">
+				<div className="flex items-center gap-2 min-w-0">
+					<span className="text-xs font-black uppercase tracking-wider text-[var(--muted,#64748b)]">
+						Зубная формула (FDI):
+					</span>
+					<span className="rounded-md bg-teal-500/10 px-2 py-0.5 text-xs font-bold font-mono text-teal-700 dark:text-teal-300">
+						{isPermanent ? "Подростки (32)" : isMixed ? "Сменный (24)" : "Молочный (20)"}
+					</span>
+				</div>
+
+				<div className="flex items-center gap-1.5 shrink-0 flex-wrap">
+					{onSetAllHealthy && (
+						<button
+							type="button"
+							onClick={onSetAllHealthy}
+							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition hover:bg-emerald-100"
+							data-testid="pediatric-all-healthy-btn"
+						>
+							<ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
+							<span>Все интактны</span>
+						</button>
+					)}
+
+					{onApplyPhysiologicalResorption && (
+						<button
+							type="button"
+							onClick={onApplyPhysiologicalResorption}
+							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg border border-teal-500/40 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200 hover:bg-teal-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 touch-manipulation select-none active:scale-95 transition"
+							title="Физиологическая смена зубов по возрасту и резорбция корней (K08.8)"
+							data-testid="pediatric-resorption-norm-btn"
+						>
+							<ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
+							<span>Смена корней (K08.8)</span>
+						</button>
+					)}
+
+					{onApplyMixedDentitionPreset && (
+						<button
+							type="button"
+							onClick={onApplyMixedDentitionPreset}
+							className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg border border-sky-500/30 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 transition hover:bg-sky-100"
+							data-testid="pediatric-mixed-preset-btn"
+						>
+							<ToothDeciduous className="h-3.5 w-3.5 text-sky-600 shrink-0" />
+							<span>Смена резцов</span>
+						</button>
+					)}
+				</div>
 			</div>
 
-			<div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto no-scrollbar py-0.5">
-				<div role="group" aria-label="Режим детского прикуса" className="inline-flex rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-0.5 gap-1 shrink-0" data-testid="pediatric-dentition-mode-toggle">
+			<div className="flex items-center gap-1.5 w-full overflow-x-auto no-scrollbar py-0.5">
+				<div role="group" aria-label="Режим детского прикуса" className="inline-flex rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] p-0.5 gap-1 shrink-0 w-full sm:w-auto" data-testid="pediatric-dentition-mode-toggle">
 					<button
 						type="button"
 						onClick={() => onModeChange?.("primary")}
-						className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
+						className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap ${
 							mode === "primary" ? "bg-teal-600 text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="btn-mode-primary"
@@ -48,7 +89,7 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 					<button
 						type="button"
 						onClick={() => onModeChange?.("mixed")}
-						className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
+						className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap ${
 							mode === "mixed" ? "bg-sky-600 text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="btn-mode-mixed"
@@ -59,7 +100,7 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 					<button
 						type="button"
 						onClick={() => onModeChange?.("permanent")}
-						className={`min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center ${
+						className={`flex-1 sm:flex-initial min-h-[44px] sm:min-h-[32px] sm:h-7 px-3 rounded-lg text-xs font-bold transition-all cursor-pointer touch-manipulation flex items-center justify-center whitespace-nowrap ${
 							mode === "permanent" ? "bg-indigo-600 text-white shadow-xs" : "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
 						}`}
 						data-testid="mode-permanent-btn"
@@ -67,33 +108,6 @@ export const PediatricTeethHeader: React.FC<PediatricTeethHeaderProps> = ({
 						Подростки (11–48)
 					</button>
 				</div>
-
-				{onSetAllHealthy && (
-					<button type="button" onClick={onSetAllHealthy} className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-emerald-500/30 bg-emerald-50 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0" data-testid="pediatric-all-healthy-btn">
-						<ShieldCheck className="h-3.5 w-3.5 text-emerald-600 shrink-0" />
-						<span>Все интактны</span>
-					</button>
-				)}
-
-				{onApplyPhysiologicalResorption && (
-					<button
-						type="button"
-						onClick={onApplyPhysiologicalResorption}
-						className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2.5 rounded-lg border border-teal-500/40 bg-teal-50 text-teal-900 dark:bg-teal-950/40 dark:text-teal-200 hover:bg-teal-100 text-xs font-bold flex items-center gap-1.5 cursor-pointer shrink-0 touch-manipulation select-none active:scale-95"
-						title="Физиологическая смена зубов по возрасту и резорбция корней (K08.8)"
-						data-testid="pediatric-resorption-norm-btn"
-					>
-						<ShieldCheck className="h-3.5 w-3.5 text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Смена корней (K08.8)</span>
-					</button>
-				)}
-
-				{onApplyMixedDentitionPreset && (
-					<button type="button" onClick={onApplyMixedDentitionPreset} className="min-h-[44px] sm:min-h-[32px] sm:h-7 px-2 rounded-lg border border-sky-500/30 bg-sky-50 text-sky-800 dark:bg-sky-950/40 dark:text-sky-300 text-xs font-bold flex items-center gap-1 cursor-pointer shrink-0" data-testid="pediatric-mixed-preset-btn">
-						<ToothDeciduous className="h-3.5 w-3.5 text-sky-600 shrink-0" />
-						<span>Смена резцов</span>
-					</button>
-				)}
 			</div>
 		</div>
 	);

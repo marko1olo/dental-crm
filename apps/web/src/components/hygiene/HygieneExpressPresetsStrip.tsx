@@ -86,7 +86,7 @@ export const HygieneExpressPresetsStrip: React.FC<HygieneExpressPresetsStripProp
 					>
 						<div className="flex items-center gap-1">
 							<ShieldCheck size={14} className="text-emerald-600 dark:text-emerald-400 shrink-0" />
-							<span>✓ Норма</span>
+							<span>Норма</span>
 						</div>
 						<span className="text-[11px] font-mono font-bold shrink-0">OHI-S 0.0</span>
 					</button>
