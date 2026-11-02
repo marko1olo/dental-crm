@@ -232,8 +232,8 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 								</div>
 							</div>
 
-							{/* Таблица остатков */}
-							<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)] shadow-xs">
+							{/* Десктопная таблица остатков */}
+							<div className="hidden sm:block border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)] shadow-xs">
 								<div className="overflow-x-auto max-w-full">
 									<table className="w-full text-left text-xs border-collapse">
 										<thead>
@@ -272,6 +272,31 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 										</tbody>
 									</table>
 								</div>
+							</div>
+
+							{/* Мобильные Grouped List карточки (Apple HIG Mandate 8ze) */}
+							<div className="sm:hidden space-y-2">
+								{filteredItems.map((item) => {
+									const badge = getStockStatusBadge(item.currentStock, item.minStock);
+									return (
+										<div key={item.id} className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs space-y-1.5">
+											<div className="flex items-start justify-between gap-2">
+												<div className="min-w-0">
+													<span className="font-semibold text-xs text-[var(--ink)] block leading-tight">{item.nameRu}</span>
+													<span className="text-[10px] text-[var(--ink)]/50">{item.sku} • {item.supplierName}</span>
+												</div>
+												<div className="text-right shrink-0">
+													<span className={`text-xs font-bold ${item.currentStock < 0 ? "text-amber-600 dark:text-amber-400" : "text-[var(--ink)]"}`}>{item.currentStock} {item.unit}</span>
+													<span className="text-[10px] text-[var(--ink)]/50 block font-mono">{formatKopecksToRubles(item.unitCostKopecks)}</span>
+												</div>
+											</div>
+											<div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--line)]/40">
+												<span className="text-[var(--ink)]/60">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</span>
+												<span className={`px-2 py-0.5 rounded-full text-[10px] border ${badge.colorClass}`}>{badge.badgeLabel}</span>
+											</div>
+										</div>
+									);
+								})}
 							</div>
 						</div>
 					)}
