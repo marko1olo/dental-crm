@@ -8,11 +8,11 @@ import {
 	Check,
 	Tag,
 } from "lucide-react";
-import type { MedicalCardForm043uData, Form043VisitDiaryEntry } from "../../emr043Types";
+import type { MedicalRecordData, Form043VisitDiaryEntry } from "../../outpatientRecordTypes";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
 export interface Form043DiariesTabProps {
-	readonly formData: MedicalCardForm043uData;
+	readonly formData: MedicalRecordData;
 	readonly onOpenProtocolGenerator?: (() => void) | undefined;
 	readonly onOpenInternalProtocolGenerator: () => void;
 	readonly onAddDiary?: ((entry: Form043VisitDiaryEntry) => void) | undefined;

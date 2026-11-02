@@ -4,7 +4,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { DEFAULT_043_DATA } from "../../emr/Form043PrintModal.js";
-import { generatePrintableHtml043 } from "../../emr/emr043Math.js";
+import { generateMedicalRecordPrintHtml } from "../../emr/emr043Math.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -30,14 +30,14 @@ describe("Wave 42: Outpatient Doctor Autonomy & Blocker Eraser", () => {
 			assert.ok(!form043Source.includes('data-testid="btn-print-043-card"\n\t\t\t\t\t\t\t\tdisabled={true}'));
 		});
 
-		it("1.3. guarantees generatePrintableHtml043 produces ЧЕРНОВИК watermark when visit is draft", () => {
-			const draftHtml = generatePrintableHtml043(DEFAULT_043_DATA, { isLocked: false });
+		it("1.3. guarantees generateMedicalRecordPrintHtml produces ЧЕРНОВИК watermark when visit is draft", () => {
+			const draftHtml = generateMedicalRecordPrintHtml(DEFAULT_043_DATA, { isLocked: false });
 			assert.ok(draftHtml.includes('class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'));
 			assert.ok(!draftHtml.includes("ПОДПИСАНО ВРАЧОМ</div>"));
 		});
 
-		it("1.4. guarantees generatePrintableHtml043 produces ПОДПИСАНО ВРАЧОМ watermark when closed", () => {
-			const signedHtml = generatePrintableHtml043(DEFAULT_043_DATA, { isLocked: true });
+		it("1.4. guarantees generateMedicalRecordPrintHtml produces ПОДПИСАНО ВРАЧОМ watermark when closed", () => {
+			const signedHtml = generateMedicalRecordPrintHtml(DEFAULT_043_DATA, { isLocked: true });
 			assert.ok(signedHtml.includes("ПОДПИСАНО ВРАЧОМ</div>"));
 		});
 

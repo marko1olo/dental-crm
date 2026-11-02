@@ -1,17 +1,17 @@
 import React from "react";
 import { Activity, Sparkles } from "lucide-react";
-import type { MedicalCardForm043uData } from "../../emr043Types";
+import type { MedicalRecordData } from "../../outpatientRecordTypes";
 import type { calculateDmftIndex, calculateCpitnIndex } from "../../emr043Math";
 import { toothStatusCodeShortMap, dentalBiteTypeLabels } from "@dental/shared";
 
 export interface Form043OdontogramTabProps {
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 	dmft: ReturnType<typeof calculateDmftIndex>;
 	cpitn: ReturnType<typeof calculateCpitnIndex>;
 	onApplyNorm: () => void;
 }
 
-const renderTeethCells = (teeth: MedicalCardForm043uData["dentalStatus"]["odontogramTeeth"]) => {
+const renderTeethCells = (teeth: MedicalRecordData["dentalStatus"]["odontogramTeeth"]) => {
 	return teeth.map((t) => {
 		const isPath = t.statusCode !== "healthy" && t.statusCode !== "filled_satisfactory";
 		const isFilled = t.statusCode === "filled_satisfactory";

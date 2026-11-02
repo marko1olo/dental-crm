@@ -1,4 +1,4 @@
-import type { MedicalCardForm043uData, Form043PrintConfig } from "../../emr043Types";
+import type { MedicalRecordData, MedicalRecordPrintConfig } from "../../outpatientRecordTypes";
 import { escapeHtml } from "../../emr043Math";
 import { getMedicalRecordPrintStyles } from "./recordHtmlStyles";
 import { renderClinicHeaderHtml, renderCardTitleBlockHtml, renderPassportSectionHtml } from "./recordPassportHtml";
@@ -8,8 +8,8 @@ import { renderDiariesSectionHtml } from "./recordDiariesHtml";
 import { renderEpicrisisAndSignaturesHtml } from "./recordEpicrisisHtml";
 
 /** Главный сборщик HTML документа медицинской карты для печати на А4 */
-export function generateMedicalRecordPrintHtml(data: MedicalCardForm043uData, config?: Partial<Form043PrintConfig>): string {
-	const cfg: Form043PrintConfig = {
+export function generateMedicalRecordPrintHtml(data: MedicalRecordData, config?: Partial<MedicalRecordPrintConfig>): string {
+	const cfg: MedicalRecordPrintConfig = {
 		activeTab: "overview",
 		pageOrientation: "portrait",
 		includeClinicLogo: true,
@@ -29,16 +29,16 @@ export function generateMedicalRecordPrintHtml(data: MedicalCardForm043uData, co
 		cfg.isDraft ||
 		cfg.status === "draft" ||
 		cfg.isLocked === false ||
-		(data as any).isDraft ||
-		(data as any).status === "draft" ||
-		(data as any).isLocked === false,
+		(data as any)?.isDraft ||
+		(data as any)?.status === "draft" ||
+		(data as any)?.isLocked === false,
 	);
 
 	const watermarkHtml = isDocDraft
 		? '<div class="watermark-draft" aria-hidden="true">ЧЕРНОВИК</div>'
 		: '<div class="watermark-draft watermark-signed" aria-hidden="true" style="color: rgba(5, 150, 105, 0.06);">ПОДПИСАНО ВРАЧОМ</div>';
 
-	const revisionCount = (data as any).revisionCount ?? cfg.revisionCount ?? 0;
+	const revisionCount = (data as any)?.revisionCount ?? cfg.revisionCount ?? 0;
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -61,6 +61,3 @@ export function generateMedicalRecordPrintHtml(data: MedicalCardForm043uData, co
 </body>
 </html>`;
 }
-
-/** Совместимый фасад генератора формы */
-export const generatePrintableHtml043 = generateMedicalRecordPrintHtml;

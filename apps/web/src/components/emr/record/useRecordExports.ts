@@ -1,21 +1,21 @@
 import { useCallback } from "react";
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 import {
-	generatePrintableHtml043,
+	generateMedicalRecordPrintHtml,
 	generate043XmlCda,
 	generate043JsonExport,
 	generate043PlainText,
 } from "../emr043Math";
 
 interface UseRecordExportsParams {
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 	effectiveIsDraft: boolean;
 	setCopiedToast: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 export function useRecordExports({ formData, effectiveIsDraft, setCopiedToast }: UseRecordExportsParams) {
 	const handlePrint = useCallback(() => {
-		const html = generatePrintableHtml043(formData, {
+		const html = generateMedicalRecordPrintHtml(formData, {
 			scaleRatio: 1.0,
 			isLocked: !effectiveIsDraft,
 			isDraft: effectiveIsDraft,

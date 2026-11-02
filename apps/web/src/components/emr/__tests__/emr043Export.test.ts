@@ -6,17 +6,17 @@ import {
 	calculateOhiSScore,
 	formatPatientAge,
 	validateForm043uCompleteness,
-	generatePrintableHtml043,
+	generateMedicalRecordPrintHtml,
 	generate043XmlCda,
 	generate043JsonExport,
 	generate043PlainText,
 	escapeHtml,
 	escapeXml,
 } from "../emr043Math";
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 import type { FdiToothRecord } from "@dental/shared";
 
-const MOCK_CARD_DATA: MedicalCardForm043uData = {
+const MOCK_CARD_DATA: MedicalRecordData = {
 	formNumber: "043/у",
 	formOrderName: "Приказ Минздрава России от 15.12.2014 № 834н",
 	clinic: {
@@ -269,7 +269,7 @@ describe("Form 043/u Completeness Validation", () => {
 	});
 
 	it("detects missing required fields and marks isComplete as false", () => {
-		const incompleteData: MedicalCardForm043uData = {
+		const incompleteData: MedicalRecordData = {
 			...MOCK_CARD_DATA,
 			passport: {
 				...MOCK_CARD_DATA.passport,
@@ -290,7 +290,7 @@ describe("Form 043/u Completeness Validation", () => {
 
 describe("Form 043/u Document Generators", () => {
 	it("generates magazine-grade printable HTML conforming to Order 834n", () => {
-		const html = generatePrintableHtml043(MOCK_CARD_DATA);
+		const html = generateMedicalRecordPrintHtml(MOCK_CARD_DATA);
 		assert.ok(html.includes("МЕДИЦИНСКАЯ КАРТА ПРИЁМА"), "Contains Medical Card badge");
 		assert.ok(html.includes("Приказ Минздрава России от 15.12.2014 № 834н"), "References Order 834n");
 		assert.ok(html.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"), "Contains clinic legal name");

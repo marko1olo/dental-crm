@@ -11,7 +11,7 @@
 import type { FdiToothRecord } from "@dental/shared";
 import type {
 	ClinicRequisites043,
-	MedicalCardForm043uData,
+	MedicalRecordData,
 	Form043VisitDiaryEntry,
 } from "./outpatientRecordTypes";
 
@@ -52,7 +52,7 @@ export const DEFAULT_32_PERMANENT_TEETH: FdiToothRecord[] = [
 ];
 
 /** Канонические эталонные данные по умолчанию для медицинской карты пациента (Мандат 8x, 8ap) */
-export const DEFAULT_MEDICAL_CARD_DATA: MedicalCardForm043uData = {
+export const DEFAULT_MEDICAL_CARD_DATA: MedicalRecordData = {
 	formNumber: "Медицинская карта приёма",
 	formOrderName: "Медицинская карта стоматологического пациента",
 	clinic: {
@@ -215,7 +215,7 @@ export function resolveClinicRequisites(
  * 1-клик фиксация физиологической нормы соматического статуса и интактных зубов (Мандат 8e).
  * Врач у кресла лечит патологию, а норма заполняется мгновенно без 50 больничных чекбоксов.
  */
-export function applyMedicalCardPhysiologicalNorm(prev: MedicalCardForm043uData): MedicalCardForm043uData {
+export function applyMedicalCardPhysiologicalNorm(prev: MedicalRecordData): MedicalRecordData {
 	return {
 		...prev,
 		anamnesis: {

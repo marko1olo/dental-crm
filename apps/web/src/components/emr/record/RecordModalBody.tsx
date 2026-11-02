@@ -1,8 +1,8 @@
 import React from "react";
-import type { MedicalCardForm043uData, Form043VisitDiaryEntry } from "../emr043Types";
+import type { MedicalRecordData, Form043VisitDiaryEntry } from "../outpatientRecordTypes";
 import type { calculateDmftIndex, calculateCpitnIndex } from "../emr043Math";
 import type { RecordTabType } from "./recordModalTypes";
-import { generatePrintableHtml043 } from "../emr043HtmlPrint";
+import { generateMedicalRecordPrintHtml } from "../emr043HtmlPrint";
 import { Form043PassportTab } from "./tabs/RecordPassportTab";
 import { Form043AnamnesisTab } from "./tabs/RecordAnamnesisTab";
 import { Form043OdontogramTab } from "./tabs/RecordOdontogramTab";
@@ -11,7 +11,7 @@ import { Form043EpicrisisTab } from "./tabs/RecordEpicrisisTab";
 
 interface RecordModalBodyProps {
 	activeTab: RecordTabType;
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 	zoomScale: number;
 	effectiveIsDraft: boolean;
 	ageText: string;
@@ -35,7 +35,7 @@ export const RecordModalBody: React.FC<RecordModalBodyProps> = React.memo(functi
 						data-preserve-white="true"
 						style={{ transform: `scale(${props.zoomScale})`, transformOrigin: "top center" }}
 						dangerouslySetInnerHTML={{
-							__html: generatePrintableHtml043(props.formData, {
+							__html: generateMedicalRecordPrintHtml(props.formData, {
 								isLocked: !props.effectiveIsDraft,
 								isDraft: props.effectiveIsDraft,
 								status: props.effectiveIsDraft ? "draft" : "signed",

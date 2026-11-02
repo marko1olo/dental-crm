@@ -48,10 +48,10 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 		period, setPeriod, selectedAutoclave, setSelectedAutoclave,
 		searchQuery, setSearchQuery, isAutofilling, filteredCycles,
 		fetchCyclesFromDb, handleQuickBatchNorm,
-		handlePrintSterilizationLog, handlePrint257, handleExportCsv,
+		handlePrintSterilizationLog, handleExportCsv,
 	} = useSanPinJournalLogic({ initialFilterAutoclave });
 
-	const handlePrint = handlePrintSterilizationLog || handlePrint257;
+	const handlePrint = handlePrintSterilizationLog;
 
 	const handleShiftBatch1Click = useCallback(async () => {
 		if (isBatchSubmitting || isAutofilling) return;

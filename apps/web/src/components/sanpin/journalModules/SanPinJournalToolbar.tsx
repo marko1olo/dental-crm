@@ -10,7 +10,6 @@ export interface SanPinJournalToolbarProps {
 	readonly isAutofilling?: boolean;
 	readonly onAutofillNorms?: () => void;
 	readonly onPrintSterilizationLog?: (() => void) | undefined;
-	readonly onPrintForm257?: (() => void) | undefined;
 	readonly onExportCsv: () => void;
 	readonly onOpenEquipmentModal?: (() => void) | undefined;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
@@ -25,7 +24,7 @@ const BTN_SEC = "secondary-button sanpin-desktop-only-btn h-8 min-h-[32px] round
 export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 	selectedAutoclave, onSelectAutoclave, searchQuery, onSearchChange, onExportCsv,
 	onOpenEquipmentModal, onOpenNewCycleModal, period = "day", onPeriodChange,
-	onPrintForm257, onPrintSterilizationLog, onQuickBatchNorm,
+	onPrintSterilizationLog, onQuickBatchNorm,
 }) => (
 	<div className="sanpin-journal-toolbar flex items-center justify-between gap-2.5 flex-wrap p-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] max-w-full overflow-x-clip">
 		<div className="flex items-center gap-2 flex-wrap">
@@ -85,8 +84,8 @@ export const SanPinJournalToolbar: React.FC<SanPinJournalToolbarProps> = ({
 					<span>Оборудование</span>
 				</button>
 			)}
-			{(onPrintSterilizationLog || onPrintForm257) && (
-				<button type="button" onClick={onPrintSterilizationLog || onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Печать журнала">
+			{onPrintSterilizationLog && (
+				<button type="button" onClick={onPrintSterilizationLog} className={BTN_SEC} data-testid="print-sterilization-log-btn" title="Печать журнала">
 					<Printer size={13} />
 					<span>Печать журнала</span>
 				</button>

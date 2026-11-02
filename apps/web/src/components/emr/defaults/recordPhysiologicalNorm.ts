@@ -1,8 +1,8 @@
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 import { DEFAULT_32_PERMANENT_TEETH } from "./recordDefaultTeeth";
 
 /** Заполнение незаполненных полей анамнеза, осмотра и интактных зубов физиологической нормой в 1 клик (Мандат 8e) */
-export function applyForm043PhysiologicalNorm(prev: MedicalCardForm043uData): MedicalCardForm043uData {
+export function applyForm043PhysiologicalNorm(prev: MedicalRecordData): MedicalRecordData {
 	return {
 		...prev,
 		anamnesis: {

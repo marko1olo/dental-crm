@@ -1,7 +1,8 @@
-import type { MedicalCardForm043uData, Form043ValidationResult } from "../emr043Types";
+import type { Form043ValidationResult } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 
 /** Валидация полноты медицинской карты по Приказу Минздрава РФ № 834н */
-export function validateForm043uCompleteness(data: MedicalCardForm043uData): Form043ValidationResult {
+export function validateForm043uCompleteness(data: MedicalRecordData): Form043ValidationResult {
 	const missingFields: Form043ValidationResult["missingFields"] = [];
 	const warnings: string[] = [];
 

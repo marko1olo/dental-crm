@@ -7,12 +7,12 @@ import React, { useState } from "react";
 import { MedicalRecordPrintModal } from "../../../../emr/record/MedicalRecordPrintModal";
 import { DEFAULT_043_DATA } from "../../../../emr/clinicalDiaryDefaultData";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
-import type { MedicalCardForm043uData } from "../../../../emr/emr043Types";
+import type { MedicalRecordData } from "../../../../emr/outpatientRecordTypes";
 
 export const StandaloneEmrMedicalRecordHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
 	const patientName = useLauncherPatientName(patientId) || "Смирнова Екатерина Андреевна";
-	const [data, setData] = useState<MedicalCardForm043uData>(() => ({
+	const [data, setData] = useState<MedicalRecordData>(() => ({
 		...DEFAULT_043_DATA,
 		passport: {
 			...DEFAULT_043_DATA.passport,

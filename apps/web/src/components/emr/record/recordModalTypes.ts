@@ -1,12 +1,12 @@
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 
 export interface MedicalRecordPrintModalProps {
 	isOpen: boolean;
 	onClose: () => void;
-	initialData?: Partial<MedicalCardForm043uData> | undefined;
-	onSave?: ((data: MedicalCardForm043uData) => void) | undefined;
+	initialData?: Partial<MedicalRecordData> | undefined;
+	onSave?: ((data: MedicalRecordData) => void) | undefined;
 	readOnly?: boolean | undefined;
 	onOpenProtocolGenerator?: (() => void) | undefined;
 	isLocked?: boolean | undefined;

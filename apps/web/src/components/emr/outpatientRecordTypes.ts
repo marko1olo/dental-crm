@@ -6,3 +6,5 @@
  */
 
 export * from "./clinicalDiaryTypes";
+export type { MedicalRecordData } from "./types/recordDataTypes";
+export type { MedicalRecordPrintConfig } from "./types/recordConfigTypes";

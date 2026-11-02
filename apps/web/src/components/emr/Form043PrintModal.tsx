@@ -5,4 +5,6 @@
  */
 
 export * from "./MedicalCardPrintModal";
+export { DEFAULT_043_DATA } from "./medicalCardCatalogData";
+export { MedicalRecordPrintModal as Form043PrintModal } from "./record/MedicalRecordPrintModal";
 export { MedicalCardPrintModal as default } from "./MedicalCardPrintModal";

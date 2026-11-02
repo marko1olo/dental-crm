@@ -11,7 +11,6 @@ export interface SanPinJournalToolbarActionsProps {
 	readonly isAutofilling: boolean;
 	readonly onAutofillNorms: () => void;
 	readonly onPrintSterilizationLog?: (() => void) | undefined;
-	readonly onPrintForm257?: (() => void) | undefined;
 	readonly onExportCsv: () => void;
 	readonly onOpenEquipmentModal?: (() => void) | undefined;
 	readonly onOpenNewCycleModal?: (() => void) | undefined;
@@ -25,7 +24,6 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 	isAutofilling,
 	onAutofillNorms,
 	onPrintSterilizationLog,
-	onPrintForm257,
 	onExportCsv,
 	onOpenEquipmentModal,
 	onOpenNewCycleModal,
@@ -76,10 +74,12 @@ export const SanPinJournalToolbarActions: React.FC<SanPinJournalToolbarActionsPr
 					</button>
 				)}
 
-				<button type="button" onClick={onPrintSterilizationLog || onPrintForm257} className={BTN_SEC} data-testid="print-form-257-btn" title="Печать журнала работы стерилизаторов">
-					<Printer size={14} />
-					<span>Печать журнала</span>
-				</button>
+				{onPrintSterilizationLog && (
+					<button type="button" onClick={onPrintSterilizationLog} className={BTN_SEC} data-testid="print-sterilization-log-btn" title="Печать журнала работы стерилизаторов">
+						<Printer size={14} />
+						<span>Печать журнала</span>
+					</button>
+				)}
 
 				<button type="button" onClick={onExportCsv} className={BTN_SEC} data-testid="export-csv-btn" title="Экспорт в CSV">
 					<Download size={14} />

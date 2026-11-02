@@ -1,11 +1,11 @@
 import React from "react";
 import { Printer, Check, FileText, X, Maximize2, Minimize2, Sparkles, ZoomIn, ZoomOut, RotateCcw } from "lucide-react";
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 import type { RecordTabType } from "./recordModalTypes";
 import { RecordMoreMenu } from "./RecordMoreMenu";
 
 interface RecordModalHeaderProps {
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 	effectiveIsDraft: boolean;
 	ageText: string;
 	activeTab: RecordTabType;

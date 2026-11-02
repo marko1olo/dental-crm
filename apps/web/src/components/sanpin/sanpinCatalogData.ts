@@ -299,7 +299,7 @@ export function generateSanpinPrintHtml(records: readonly SterilizationBatchCycl
 
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Журнал автоклавирования и контроля стерилизации</title>
 <style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;}h1{font-size:18px;margin-bottom:4px;}p{font-size:12px;color:#64748b;margin:0 0 14px;}table{width:100%;border-collapse:collapse;font-size:11px;}th{background:#f1f5f9;padding:6px 8px;text-align:left;border-bottom:2px solid #cbd5e1;}</style></head>
-<body><h1>Журнал автоклавирования и контроля стерилизации инструментов</h1><p>Производственный контроль стоматологической клиники. Выгрузка: ${new Date().toLocaleDateString("ru-RU")}</p>
+<body><h1>Журнал контроля стерилизации инструментов (автоклавирование)</h1><p>Производственный контроль стоматологической клиники. Выгрузка: ${new Date().toLocaleDateString("ru-RU")}</p>
 <table><thead><tr><th style="text-align:center;">Дата/время</th><th style="text-align:center;">Цикл</th><th>Аппарат</th><th style="text-align:center;">Режим</th><th style="text-align:center;">Пакетов</th><th style="text-align:center;">Индикатор 5 кл.</th><th>Стерилизуемый материал</th><th>Ответственный</th></tr></thead><tbody>${rows || "<tr><td colspan='8' style='text-align:center;padding:16px;'>Записи циклов отсутствуют</td></tr>"}</tbody></table></body></html>`;
 }
 

@@ -6,8 +6,5 @@
  */
 
 export { handlePrintBatchPouches } from "./autoclaveBatchPouchesPrint.js";
-export {
-	handleGenerateMonthlySterilizationLog,
-	handleGenerateMonthlySterilizationLog as handleGenerateMonthlyForm257,
-} from "./autoclaveMonthlyJournalPrint.js";
+export { handleGenerateMonthlySterilizationLog } from "./autoclaveMonthlyJournalPrint.js";
 

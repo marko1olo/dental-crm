@@ -10,7 +10,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { MedicalCardPrintModal } from "./MedicalCardPrintModal";
 import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalCardCatalogData";
-import type { MedicalCardForm043uData } from "./outpatientRecordTypes";
+import type { MedicalRecordData } from "./outpatientRecordTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import type { Dashboard, Patient } from "@dental/shared";
 
@@ -48,7 +48,7 @@ function clearEmrDeepLink(): void {
 
 export const DirectEmrLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => checkEmrDeepLink());
-	const [customData, setCustomData] = useState<Partial<MedicalCardForm043uData> | null>(null);
+	const [customData, setCustomData] = useState<Partial<MedicalRecordData> | null>(null);
 	const [dashboard, setDashboard] = useState<Dashboard | null>(null);
 
 	// Подписка на изменение URL и кастомные ивенты
@@ -100,7 +100,7 @@ export const DirectEmrLauncher: React.FC = () => {
 			.catch(() => {});
 	}, [isOpen]);
 
-	const initialCardData: MedicalCardForm043uData = useMemo(() => {
+	const initialCardData: MedicalRecordData = useMemo(() => {
 		const patient: Patient | undefined = dashboard?.patients?.[0];
 		const staff = dashboard?.clinicSettings?.staff?.[0];
 		const clinicProfile = dashboard?.clinicSettings?.profile;
@@ -119,7 +119,7 @@ export const DirectEmrLauncher: React.FC = () => {
 			},
 			passport: {
 				...DEFAULT_MEDICAL_CARD_DATA.passport,
-				medicalCardNumber: patient?.cardNumber || "МК-001",
+				medicalCardNumber: (patient as any)?.cardNumber || "МК-001",
 				cardOpenedDate: patient?.createdAt ? new Date(patient.createdAt).toLocaleDateString("ru-RU") : "01.09.2026",
 				patientFullName: patient?.fullName || "Смирнова Екатерина Васильевна",
 				patientBirthDate: patient?.birthDate || "1988-04-12",
@@ -128,7 +128,7 @@ export const DirectEmrLauncher: React.FC = () => {
 				patientAddressRegistration: "г. Москва, ул. Арбат, д. 24, кв. 12",
 				patientAddressResidence: "г. Москва, ул. Арбат, д. 24, кв. 12",
 				attendingDoctorFullName: staff?.fullName || "Д-р Соколов А. В.",
-				attendingDoctorSpecialty: staff?.specialty || "Врач-стоматолог-терапевт",
+				attendingDoctorSpecialty: (staff as any)?.specialty || "Врач-стоматолог-терапевт",
 				primaryDiagnosisText: "K02.1 Кариес дентина зуба 16",
 				primaryDiagnosisIcd10: "K02.1",
 			},
@@ -142,7 +142,7 @@ export const DirectEmrLauncher: React.FC = () => {
 		clearEmrDeepLink();
 	}, []);
 
-	const handleSave = useCallback((updated: MedicalCardForm043uData) => {
+	const handleSave = useCallback((updated: MedicalRecordData) => {
 		try {
 			if (typeof sessionStorage !== "undefined") {
 				sessionStorage.setItem(

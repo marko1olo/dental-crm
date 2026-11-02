@@ -1,9 +1,9 @@
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 import { dentalBiteTypeLabels } from "@dental/shared";
 import { calculateDmftIndex, calculateCpitnIndex } from "../emr043Math";
 
 /** Генератор структурированного JSON экспорта */
-export function generate043JsonExport(data: MedicalCardForm043uData): string {
+export function generate043JsonExport(data: MedicalRecordData): string {
 	const payload = {
 		exportSchemaVersion: "1.0.0",
 		standardOrder: "Медицинская карта стоматологического пациента",
@@ -14,7 +14,7 @@ export function generate043JsonExport(data: MedicalCardForm043uData): string {
 }
 
 /** Генератор чистого текстового представления карты для буфера обмена */
-export function generate043PlainText(data: MedicalCardForm043uData): string {
+export function generate043PlainText(data: MedicalRecordData): string {
 	const p = data.passport;
 	const a = data.anamnesis;
 	const d = data.dentalStatus;

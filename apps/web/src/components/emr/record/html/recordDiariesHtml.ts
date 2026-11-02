@@ -1,8 +1,8 @@
-import type { Form043VisitDiaryEntry, Form043PrintConfig } from "../../emr043Types";
+import type { Form043VisitDiaryEntry, MedicalRecordPrintConfig } from "../../outpatientRecordTypes";
 import { escapeHtml } from "../../emr043Math";
 
 /** Рендерер 4-й секции: Дневники клинических приемов SOAP */
-export function renderDiariesSectionHtml(diaries: Form043VisitDiaryEntry[], cfg: Form043PrintConfig): string {
+export function renderDiariesSectionHtml(diaries: Form043VisitDiaryEntry[], cfg: MedicalRecordPrintConfig): string {
 	const diariesToRender = (diaries || []).filter((d) => {
 		if (!cfg.selectedDiaryIds || cfg.selectedDiaryIds.length === 0) return true;
 		return cfg.selectedDiaryIds.includes(d.id);

@@ -1,4 +1,4 @@
-import type { MedicalCardForm043uData } from "../emr043Types";
+import type { MedicalRecordData } from "../outpatientRecordTypes";
 import { dentalBiteTypeLabels } from "@dental/shared";
 import { calculateDmftIndex } from "../emr043Math";
 
@@ -9,7 +9,7 @@ export function escapeXml(str: unknown): string {
 }
 
 /** Генератор официального HL7 CDA R2 (СЭМД 834н) XML для интеграции с ЕГИСЗ */
-export function generate043XmlCda(data: MedicalCardForm043uData): string {
+export function generate043XmlCda(data: MedicalRecordData): string {
 	const p = data.passport;
 	const c = data.clinic;
 	const d = data.dentalStatus;

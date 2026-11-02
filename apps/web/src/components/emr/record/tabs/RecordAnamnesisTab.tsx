@@ -1,9 +1,9 @@
 import React from "react";
 import { AlertTriangle, HeartPulse, Sparkles } from "lucide-react";
-import type { MedicalCardForm043uData } from "../../emr043Types";
+import type { MedicalRecordData } from "../../outpatientRecordTypes";
 
 export interface Form043AnamnesisTabProps {
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 	onApplyNorm: () => void;
 }
 

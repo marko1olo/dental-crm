@@ -1,9 +1,9 @@
 import React from "react";
 import { Award } from "lucide-react";
-import type { MedicalCardForm043uData } from "../../emr043Types";
+import type { MedicalRecordData } from "../../outpatientRecordTypes";
 
 export interface Form043EpicrisisTabProps {
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 }
 
 export const Form043EpicrisisTab: React.FC<Form043EpicrisisTabProps> = React.memo(

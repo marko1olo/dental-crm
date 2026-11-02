@@ -18,7 +18,6 @@ export const MedicalCardPrintModal: React.FC<MedicalCardPrintModalProps> = Medic
 export {
 	MedicalRecordPrintModal,
 	MedicalRecordPrintModal as ClinicalDiaryPrintModal,
-	MedicalRecordPrintModal as Form043PrintModal,
 };
 
 export default MedicalCardPrintModal;

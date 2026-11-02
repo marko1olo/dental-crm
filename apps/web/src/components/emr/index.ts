@@ -2,7 +2,6 @@ export * from "./medicalCardCatalogData";
 export * from "./clinicalDiaryTypes";
 export * from "./clinicalDiaryMath";
 export * from "./clinicalDiaryDefaultData";
-export * from "./ClinicalDiaryPrintModal";
 export * from "./ClinicalDiaryTabSections";
 export * from "./outpatientRecordTypes";
 export * from "./outpatientRecordMath";
@@ -12,7 +11,7 @@ export * from "./outpatientRecordTabSections";
 export * from "./MedicalCardPrintModal";
 export * from "./emr043Types";
 export * from "./emr043Math";
-export * from "./Form043PrintModal";
+export { Form043PrintModal } from "./record/MedicalRecordPrintModal";
 export { MedicalRecordPrintModal } from "./record/MedicalRecordPrintModal";
 export * from "./templates";
 export {

@@ -1,4 +1,4 @@
-import type { Form043EpicrisisData, Form043PassportData, Form043PrintConfig } from "../../emr043Types";
+import type { Form043EpicrisisData, Form043PassportData, MedicalRecordPrintConfig } from "../../outpatientRecordTypes";
 import { escapeHtml } from "../../emr043Math";
 
 /** Рендерер 5-й секции: Эпикриз, план наблюдения, УКЭП и подписи */
@@ -6,7 +6,7 @@ export function renderEpicrisisAndSignaturesHtml(
 	epicrisis: Form043EpicrisisData,
 	passport: Form043PassportData,
 	generalTreatmentPlan: string,
-	cfg: Form043PrintConfig,
+	cfg: MedicalRecordPrintConfig,
 ): string {
 	return `
   <!-- Общий план лечения -->

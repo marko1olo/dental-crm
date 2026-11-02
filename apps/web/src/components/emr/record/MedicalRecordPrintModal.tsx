@@ -1,6 +1,7 @@
 import React from "react";
 import type { Form043VisitDiaryEntry } from "../emr043Types";
 import type { MedicalRecordPrintModalProps } from "./recordModalTypes";
+export type { MedicalRecordPrintModalProps } from "./recordModalTypes";
 import { useMedicalRecordModal } from "./useMedicalRecordModal";
 import { RecordModalHeader } from "./RecordModalHeader";
 import { RecordNavTabs } from "./RecordNavTabs";

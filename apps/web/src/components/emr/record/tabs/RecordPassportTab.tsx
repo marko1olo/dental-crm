@@ -1,9 +1,9 @@
 import React from "react";
 import { User } from "lucide-react";
-import type { MedicalCardForm043uData } from "../../emr043Types";
+import type { MedicalRecordData } from "../../outpatientRecordTypes";
 
 export interface Form043PassportTabProps {
-	formData: MedicalCardForm043uData;
+	formData: MedicalRecordData;
 	ageText: string;
 }
 

@@ -12,7 +12,7 @@ export interface ClinicRequisites043 {
 	chiefDoctorFullName: string;
 }
 
-export interface Form043PrintConfig {
+export interface MedicalRecordPrintConfig {
 	activeTab: "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 	pageOrientation: "portrait" | "landscape";
 	includeClinicLogo: boolean;
@@ -31,6 +31,9 @@ export interface Form043PrintConfig {
 	status?: "draft" | "signed" | string;
 	revisionCount?: number;
 }
+
+/** Алиас для обратной совместимости */
+export type Form043PrintConfig = MedicalRecordPrintConfig;
 
 export interface Form043ValidationResult {
 	isComplete: boolean;

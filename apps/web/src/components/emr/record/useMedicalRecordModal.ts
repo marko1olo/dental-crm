@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "../../../store/appStore";
-import type { MedicalCardForm043uData, Form043VisitDiaryEntry } from "../emr043Types";
+import type { MedicalRecordData, Form043VisitDiaryEntry } from "../outpatientRecordTypes";
 import type { MedicalRecordPrintModalProps, RecordTabType } from "./recordModalTypes";
 import { DEFAULT_043_DATA, resolveClinicRequisites, applyForm043PhysiologicalNorm } from "../emr043DefaultData";
 import {
@@ -33,7 +33,7 @@ export function useMedicalRecordModal({
 
 	const resolvedClinic = useMemo(() => resolveClinicRequisites(initialData?.clinic, profile, staff), [initialData?.clinic, profile, staff]);
 
-	const [formData, setFormData] = useState<MedicalCardForm043uData>(() => ({
+	const [formData, setFormData] = useState<MedicalRecordData>(() => ({
 		...DEFAULT_043_DATA,
 		...initialData,
 		clinic: { ...DEFAULT_043_DATA.clinic, ...resolvedClinic, ...(initialData?.clinic || {}) },
