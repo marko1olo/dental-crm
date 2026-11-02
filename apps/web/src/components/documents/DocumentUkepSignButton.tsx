@@ -87,9 +87,12 @@ export function DocumentUkepSignButton({
 
 			<button
 				type="button"
-				onClick={logic.handleSign}
-				disabled={logic.isSigning}
-				className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 w-full px-3 text-[13px] font-semibold rounded-lg flex items-center justify-center gap-1.5"
+				onClick={() => {
+					if (logic.isSigning) return;
+					logic.handleSign();
+				}}
+				aria-busy={logic.isSigning || undefined}
+				className="primary-button min-h-[44px] sm:min-h-8 sm:h-8 w-full px-3 text-[13px] font-semibold rounded-lg flex items-center justify-center gap-1.5 cursor-pointer"
 			>
 				{logic.isSigning ? (
 					<>

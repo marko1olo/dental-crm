@@ -45,9 +45,12 @@ export const FnsTaxCertificateHeader: React.FC<FnsTaxCertificateHeaderProps> = (
 			{patient?.id && (
 				<button
 					type="button"
-					onClick={onSaveToRegistry}
-					disabled={isIssuingDoc}
-					className="secondary-button hidden sm:inline-flex h-9 min-h-[36px] px-3 text-xs items-center gap-1.5 rounded-xl disabled:opacity-50 disabled:cursor-not-allowed bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20"
+					onClick={() => {
+						if (isIssuingDoc) return;
+						onSaveToRegistry();
+					}}
+					aria-busy={isIssuingDoc || undefined}
+					className="secondary-button hidden sm:inline-flex h-9 min-h-[36px] px-3 text-xs items-center gap-1.5 rounded-xl bg-teal-500/10 text-teal-700 dark:text-teal-300 border-teal-500/30 hover:bg-teal-500/20 cursor-pointer"
 					data-testid="tax-cert-save-registry-btn"
 					title="Зарегистрировать справку в реестре документов клиники"
 				>

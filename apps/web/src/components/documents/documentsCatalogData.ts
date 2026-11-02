@@ -3,13 +3,12 @@
  *
  * Канонический SSOT документооборота, информированных согласий и юридических справок DENTE CRM.
  * Мандаты 8e (Автономия врача), 8n (Соло-практика), 8x (Живой русский клинический язык), 8ap (Анти-вранье).
- * Целевой размер: 320–360 строк (Sweet Spot). 0 float-ошибок (Мандат 8wy).
+ * Целевой размер: 280–350 строк (Sweet Spot Mandate 8b). 0 float-ошибок (Мандат 8wy).
  */
 
 import type { DocumentKind } from "@dental/shared";
 import type React from "react";
 import {
-	Building2,
 	ClipboardList,
 	FileCheck,
 	FileText,
@@ -21,18 +20,8 @@ import {
 	Zap,
 } from "lucide-react";
 
-export type DocumentPackageKey =
-	| "intake"
-	| "informed_consent"
-	| "tax_certificate"
-	| "card_extract";
-
-export type ConsentSubKind =
-	| "therapy"
-	| "surgery"
-	| "implant"
-	| "orthopedics"
-	| "anesthesia";
+export type DocumentPackageKey = "intake" | "informed_consent" | "tax_certificate" | "card_extract";
+export type ConsentSubKind = "therapy" | "surgery" | "implant" | "orthopedics" | "anesthesia";
 
 export interface ClinicRequisites {
 	readonly name: string;
@@ -98,9 +87,7 @@ export function formatKopecksToRubles(kopecks: number): string {
 	const rubles = Math.floor(safeKopecks / 100);
 	const remainder = safeKopecks % 100;
 	const formattedRubles = rubles.toLocaleString("ru-RU").replace(/\u00A0/g, " ");
-	return remainder > 0
-		? `${formattedRubles},${remainder.toString().padStart(2, "0")} ₽`
-		: `${formattedRubles} ₽`;
+	return remainder > 0 ? `${formattedRubles},${remainder.toString().padStart(2, "0")} ₽` : `${formattedRubles} ₽`;
 }
 
 export function sumKopecks(items: readonly { readonly amountKopecks: number }[]): number {
@@ -125,44 +112,28 @@ export const CANONICAL_CLINIC_PACKAGES: readonly ClinicalPackageMeta[] = [
 		titleRu: "Первичный приём",
 		badgeRu: "Пакет пациента",
 		descriptionRu: "Договор на стоматологические услуги, согласие на обработку данных и анкета здоровья",
-		includes: [
-			"Договор на оказание медицинских услуг",
-			"Согласие на обработку персональных данных",
-			"Анкета общего соматического здоровья пациента",
-		],
+		includes: ["Договор на оказание медицинских услуг", "Согласие на обработку персональных данных", "Анкета общего соматического здоровья пациента"],
 	},
 	{
 		id: "informed_consent",
 		titleRu: "Информированное согласие на лечение",
 		badgeRu: "Клиническое ИДС",
 		descriptionRu: "Добровольное согласие на терапию, хирургию, имплантацию, ортопедию и анестезию",
-		includes: [
-			"План терапевтического / хирургического вмешательства",
-			"Информирование о возможных рисках и гарантиях",
-			"Согласие на местное обезболивание",
-		],
+		includes: ["План терапевтического / хирургического вмешательства", "Информирование о возможных рисках и гарантиях", "Согласие на местное обезболивание"],
 	},
 	{
 		id: "tax_certificate",
 		titleRu: "Справка для налогового вычета",
 		badgeRu: "Налоговый вычет",
 		descriptionRu: "Справка об оплате медицинских услуг для ФНС с расчетом суммы в рублях и копейках",
-		includes: [
-			"Официальная справка для налоговых органов РФ",
-			"Подтверждение расходов на лечение (13% НДФЛ)",
-			"Реквизиты лицензии и плательщика",
-		],
+		includes: ["Официальная справка для налоговых органов РФ", "Подтверждение расходов на лечение (13% НДФЛ)", "Реквизиты лицензии и плательщика"],
 	},
 	{
 		id: "card_extract",
 		titleRu: "Медицинская карта приёма и выписка",
 		badgeRu: "Клиническая карта",
 		descriptionRu: "Дневник осмотра по стандарту SOAP, выполненные работы и гарантийный талон",
-		includes: [
-			"Клинический дневник осмотра (SOAP)",
-			"Акт выполненных стоматологических работ",
-			"Гарантийный талон и рекомендации врача",
-		],
+		includes: ["Клинический дневник осмотра (SOAP)", "Акт выполненных стоматологических работ", "Гарантийный талон и рекомендации врача"],
 	},
 ];
 
@@ -202,7 +173,6 @@ export function generateInformedConsentTemplate(
 		orthopedics: { label: "ОРТОПЕДИЧЕСКОЕ ЛЕЧЕНИЕ И ПРОТЕЗИРОВАНИЕ", desc: "Препарирование опорных зубов, снятие оптических/силиконовых оттисков, изготовление и постоянная фиксация коронок или виниров.", risks: "Период привыкания к ортопедической конструкции (от 3 до 14 дней), необходимость контрольной коррекции окклюзии." },
 		anesthesia: { label: "МЕСТНОЕ ОБЕЗБОЛИВАНИЕ В СТОМАТОЛОГИИ", desc: "Введение современного карпульного анестетика артикаинового ряда с целью полного устранения болевых ощущений при лечении.", risks: "Онемение мягких тканей губы, щеки и языка на 2–4 часа. Запрещается употребление горячей пищи до полного отхождения анестезии." },
 	};
-
 	const cur = titles[subKind] || titles.therapy;
 
 	return `ИНФОРМИРОВАННОЕ ДОБРОВОЛЬНОЕ СОГЛАСИЕ НА ${cur.label}
@@ -276,8 +246,7 @@ export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): strin
 Отчётный налоговый период: ${year} год
 
 1. Сведения о медицинской организации:
-Наименование: ${ctx.clinic.name}
-ИНН: ${ctx.clinic.inn} | ОГРН: ${ctx.clinic.ogrn}
+Наименование: ${ctx.clinic.name} | ИНН: ${ctx.clinic.inn} | ОГРН: ${ctx.clinic.ogrn}
 Лицензия на медицинскую деятельность: ${ctx.clinic.license}
 Адрес местонахождения: ${ctx.clinic.address}
 
@@ -350,136 +319,86 @@ export const CATALOG_CATEGORIES: readonly { id: DocumentCatalogCategory; label: 
 	{ id: "registry", label: "Реестры" },
 ];
 
-export function getDocumentsCatalogData(
-	handlers: DocumentCatalogActionHandlers = {},
-): DocumentCatalogItem[] {
+export function getDocumentsCatalogData(handlers: DocumentCatalogActionHandlers = {}): DocumentCatalogItem[] {
 	return [
 		{
-			id: "doc_treatment_contract",
-			kind: "paid_medical_services_contract",
-			titleRu: "Договор платных медицинских услуг",
-			category: "intake",
+			id: "doc_treatment_contract", kind: "paid_medical_services_contract",
+			titleRu: "Договор платных медицинских услуг", category: "intake",
 			descriptionRu: "Договор с пациентом на оказание стоматологических услуг",
-			badgeRu: "Договор клиники",
-			regulationRu: "Правила платных медицинских услуг",
-			icon: FileText,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Договор клиники", regulationRu: "Правила платных медицинских услуг",
+			icon: FileText, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("contract"),
 		},
 		{
-			id: "doc_treatment_act_completed",
-			kind: "completed_works_act",
-			titleRu: "Акт выполненных стоматологических работ",
-			category: "finance_tax",
+			id: "doc_treatment_act_completed", kind: "completed_works_act",
+			titleRu: "Акт выполненных стоматологических работ", category: "finance_tax",
 			descriptionRu: "Финансовый акт оказанных услуг с подписями сторон",
-			badgeRu: "Акт услуг",
-			regulationRu: "Акт оказанных услуг",
-			icon: FileCheck,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Акт услуг", regulationRu: "Акт оказанных услуг",
+			icon: FileCheck, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("act"),
 		},
 		{
-			id: "doc_tax_deduction_certificate",
-			kind: "tax_deduction_certificate",
-			titleRu: "Справка для налогового вычета (ФНС)",
-			category: "finance_tax",
+			id: "doc_tax_deduction_certificate", kind: "tax_deduction_certificate",
+			titleRu: "Справка для налогового вычета (ФНС)", category: "finance_tax",
 			descriptionRu: "Справка об оплате медуслуг для возврата 13% НДФЛ",
-			badgeRu: "Справка ФНС",
-			regulationRu: "Налоговый вычет на лечение",
-			icon: Zap,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Справка ФНС", regulationRu: "Налоговый вычет на лечение",
+			icon: Zap, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenTaxModal?.("form"),
 		},
 		{
-			id: "doc_medical_card_extract",
-			kind: "dental_medical_card_043u",
-			titleRu: "Выписка из медицинской карты приёма",
-			category: "clinical",
+			id: "doc_medical_card_extract", kind: "dental_medical_card_043u",
+			titleRu: "Выписка из медицинской карты приёма", category: "clinical",
 			descriptionRu: "Выписка диагнозов, анамнеза и проведённого лечения",
-			badgeRu: "Выписка из карты",
-			regulationRu: "Выписка из медицинской карты",
-			icon: ClipboardList,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Выписка из карты", regulationRu: "Выписка из медицинской карты",
+			icon: ClipboardList, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("medical_card"),
 		},
 		{
-			id: "doc_informed_consent_general",
-			kind: "informed_consent",
-			titleRu: "Информированное согласие на лечение",
-			category: "intake",
+			id: "doc_informed_consent_general", kind: "informed_consent",
+			titleRu: "Информированное согласие на лечение", category: "intake",
 			descriptionRu: "Добровольное согласие на осмотр, диагностику и анестезию",
-			badgeRu: "Согласие на лечение",
-			regulationRu: "Клинический стандарт согласия",
-			icon: ShieldCheck,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Согласие на лечение", regulationRu: "Клинический стандарт согласия",
+			icon: ShieldCheck, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("informed_consent"),
 		},
 		{
-			id: "doc_personal_data_consent",
-			kind: "personal_data_processing_consent",
-			titleRu: "Согласие на обработку персональных данных",
-			category: "intake",
+			id: "doc_personal_data_consent", kind: "personal_data_processing_consent",
+			titleRu: "Согласие на обработку персональных данных", category: "intake",
 			descriptionRu: "Согласие на ведение карты и сервисное информирование",
-			badgeRu: "Согласие на обработку персональных данных",
-			regulationRu: "Защита персональных данных",
-			icon: UserCheck,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Согласие на обработку персональных данных", regulationRu: "Защита персональных данных",
+			icon: UserCheck, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("personal_data"),
 		},
 		{
-			id: "doc_treatment_plan",
-			kind: "treatment_plan",
-			titleRu: "План стоматологического лечения",
-			category: "clinical",
+			id: "doc_treatment_plan", kind: "treatment_plan",
+			titleRu: "План стоматологического лечения", category: "clinical",
 			descriptionRu: "Поэтапный клинический график и финансовая смета",
-			badgeRu: "План и смета",
-			regulationRu: "План стоматологического лечения",
-			icon: FileText,
-			printSupported: true,
+			badgeRu: "План и смета", regulationRu: "План стоматологического лечения",
+			icon: FileText, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("treatment_plan"),
 		},
 		{
-			id: "doc_post_visit_recommendations",
-			kind: "post_visit_recommendations",
-			titleRu: "Рекомендации пациенту после приёма",
-			category: "clinical",
+			id: "doc_post_visit_recommendations", kind: "post_visit_recommendations",
+			titleRu: "Рекомендации пациенту после приёма", category: "clinical",
 			descriptionRu: "Памятка по уходу после терапевтического или хирургического визита",
-			badgeRu: "Памятка",
-			regulationRu: "Рекомендации по уходу после приёма",
-			icon: Sparkles,
-			printSupported: true,
+			badgeRu: "Памятка", regulationRu: "Рекомендации по уходу после приёма",
+			icon: Sparkles, printSupported: true,
 			onQuickAction: () => handlers.onOpenKind?.("post_visit_recommendations", "Рекомендации после приёма"),
 		},
 		{
-			id: "doc_payment_receipt",
-			kind: "payment_receipt",
-			titleRu: "Квитанция и подтверждение оплаты",
-			category: "finance_tax",
+			id: "doc_payment_receipt", kind: "payment_receipt",
+			titleRu: "Квитанция и подтверждение оплаты", category: "finance_tax",
 			descriptionRu: "Подтверждение оплаты услуг в кассе клиники",
-			badgeRu: "Касса и чек",
-			regulationRu: "Кассовый чек и оплата",
-			icon: Receipt,
-			printSupported: true,
+			badgeRu: "Касса и чек", regulationRu: "Кассовый чек и оплата",
+			icon: Receipt, printSupported: true,
 			onQuickAction: () => handlers.onOpenKind?.("payment_receipt", "Квитанция об оплате"),
 		},
 		{
-			id: "doc_pediatric_representative_consent",
-			kind: "minor_legal_representative_consent",
-			titleRu: "Согласие законного представителя ребёнка",
-			category: "pediatric",
+			id: "doc_pediatric_representative_consent", kind: "minor_legal_representative_consent",
+			titleRu: "Согласие законного представителя ребёнка", category: "pediatric",
 			descriptionRu: "Согласие родителя или опекуна на осмотр и лечение ребёнка",
-			badgeRu: "Педиатрия",
-			regulationRu: "Согласие законного представителя",
-			icon: Heart,
-			isPediatric: true,
-			isStatutory: true,
-			printSupported: true,
+			badgeRu: "Педиатрия", regulationRu: "Согласие законного представителя",
+			icon: Heart, isPediatric: true, isStatutory: true, printSupported: true,
 			onQuickAction: () => handlers.onOpenA4Tab?.("informed_consent"),
 		},
 	];

@@ -20,21 +20,25 @@ export const DocumentVoidModalFooter: React.FC<DocumentVoidModalFooterProps> = (
 			<button
 				className="secondary-button"
 				type="button"
-				disabled={saving}
 				aria-busy={saving || undefined}
 				style={{ minHeight: "44px" }}
-				onClick={onClose}
+				onClick={() => {
+					if (saving) return;
+					onClose();
+				}}
 			>
 				Вернуться
 			</button>
 			<button
 				className="primary-button"
 				type="button"
-				disabled={saving}
 				aria-busy={saving || undefined}
 				aria-describedby={!ready ? guidanceId : undefined}
 				style={{ minHeight: "44px" }}
-				onClick={() => void onConfirm()}
+				onClick={() => {
+					if (saving) return;
+					void onConfirm();
+				}}
 			>
 				{saving ? "Аннулирую документ" : "Аннулировать с причиной"}
 			</button>

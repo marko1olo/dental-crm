@@ -139,9 +139,12 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						{patient?.id && (
 							<button
 								type="button"
-								onClick={state.handleCreateAndIssueTaxDocument}
-								disabled={state.isIssuingDoc}
-								className="secondary-button min-h-[44px] h-10 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50 active:scale-[0.98] transition-transform"
+								onClick={() => {
+									if (state.isIssuingDoc) return;
+									state.handleCreateAndIssueTaxDocument();
+								}}
+								aria-busy={state.isIssuingDoc || undefined}
+								className="secondary-button min-h-[44px] h-10 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] transition-transform"
 								data-testid="tax-cert-mobile-save-registry-btn"
 								title="Зарегистрировать справку в реестре документов клиники"
 							>
