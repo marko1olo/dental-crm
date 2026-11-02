@@ -7,6 +7,7 @@ import { registerPortalPatientProfileRoutes } from "./portalPatientProfileRoutes
 import { registerPortalPaymentsRoutes } from "./portalPaymentsRoutes.js";
 import { registerPortalMockStorageRoutes } from "./portalMockStorageRoutes.js";
 
+export type { SelfCheckinBody } from "./types.js";
 export * from "./types.js";
 export * from "./portalUtils.js";
 export * from "./portalAuthStore.js";
