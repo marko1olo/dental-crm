@@ -33,7 +33,6 @@ import {
 	getProviderKeyPoolSummary,
 } from "../speech/keyPool.js";
 import { getRequestIdentity } from "../security/identity.js";
-import { evaluateClinicalAccess } from "../security/medicalSecrecyWarden.js";
 
 /** Type helper for Fastify WebSocket route registration */
 type WebsocketRouteRegistrar = (
@@ -115,32 +114,11 @@ export async function registerSpeechLiveRoutes(
 			const model = query.model;
 			const apiKey = query.key;
 
-			// Extract tenant identity if headers are available
+			// Extract tenant identity if headers are available.
+			// Per Mandates 8e & 8n: Speech recognition (STT) is an input method, not a clinical secrecy release.
+			// All authorized clinic staff (doctors, assistants, receptionists, administrators, owners)
+			// have sovereign access to live speech dictation for Ctrl+K search, notes, copilot, and diaries.
 			const identity = getRequestIdentity(request);
-			if (identity.organizationId) {
-				const evalAccess = evaluateClinicalAccess(identity.role);
-				if (!evalAccess.hasClinicalAccess) {
-					request.log.warn(
-						{ role: identity.role, orgId: identity.organizationId },
-						"[speechLive] Blocked non-clinical staff attempt to access live speech dictation",
-					);
-					if (clientSocket.readyState === clientSocket.OPEN) {
-						clientSocket.send(
-							JSON.stringify({
-								type: "error",
-								error: "MedicalSpeechDictationForbidden",
-								permission: "speech.dictation.clinical",
-								role: identity.role,
-								message: "Голосовая диктовка доступна врачу на приёме.",
-								timestampMs: Date.now(),
-							}),
-						);
-					}
-					clientSocket.close(4403, "Forbidden");
-					return;
-				}
-			}
-
 			const orgId = identity.organizationId || "anonymous";
 
 			request.log.info(

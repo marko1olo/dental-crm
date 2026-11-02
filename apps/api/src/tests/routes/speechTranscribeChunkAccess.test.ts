@@ -232,6 +232,42 @@ describe("доступ к записи фрагмента диктовки", () 
 		);
 	});
 
+	test("с действующим токеном регистратора/администратора фрагмент диктовки сохраняется (Мандат 8e, 8n)", async (context) => {
+		if (!databaseAvailable) return context.skip("база недоступна");
+
+		const staffTokenReceptionist = signToken(
+			{
+				organizationId: ORG_A,
+				userId: fixtureUuid(FIXTURE, 7),
+				role: "receptionist",
+				clinicalRole: null,
+			},
+			TOKEN_SECRET(),
+		);
+
+		const response = await app.inject({
+			method: "POST",
+			url: "/api/speech/transcribe-chunk",
+			headers: {
+				"x-dente-clinic-token": tokenOrgA,
+				"x-dente-staff-token": staffTokenReceptionist,
+			},
+			payload: chunkPayload({
+				localTranscript: "Пациент записан на консультацию к терапевту.",
+			}),
+		});
+
+		assert.equal(
+			response.statusCode,
+			201,
+			`регистратор имеет право диктовать и сохранять фрагменты: ${response.body}`,
+		);
+		const body = JSON.parse(response.body);
+		assert.equal(body.chunk.status, "fallback_text");
+		assert.equal(body.chunk.organizationId, ORG_A);
+		assert.ok(body.chunk.transcript.includes("Пациент записан"));
+	});
+
 	test("токен чужой клиники не пишет в карту пациента по patientId", async (context) => {
 		if (!databaseAvailable) return context.skip("база недоступна");
 

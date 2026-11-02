@@ -6,8 +6,7 @@
  * Цель атаки:
  * 1. GET /api/ws/schedule — сокетный пентест маркетолога: блокировка клинических событий (SPEECH_TRANSCRIPT_FINAL,
  *    UPDATE_ODONTOGRAM) и маскирование персональных примечаний в общих событиях;
- * 2. GET /api/v1/speech/live — пентест живого речевого распознавания: неклинический персонал (маркетолог)
- *    получает ошибку MedicalSpeechDictationForbidden и разрыв соединения (4403);
+ * 2. GET /api/v1/speech/live — сквозное распознавание речи для всех сотрудников организации (Мандаты 8e, 8n);
  * 3. GET /api/v1/speech/lab-session — сокетный пентест лаборатории речи: неклинический персонал получает
  *    MedicalSpeechLabForbidden и разрыв соединения (4403);
  * 4. POST /api/v1/speech/lab-transcribe — REST-атака маркетолога на извлечение медицинских сущностей: 403 Forbidden;
@@ -310,9 +309,9 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 	});
 
 	// =========================================================================
-	// АТАКА 2: GET /api/v1/speech/live — ПЕНТЕСТ ЖИВОГО РАСПОЗНАВАНИЯ РЕЧИ
+	// АТАКА 2: GET /api/v1/speech/live — СКВОЗНОЙ ГОЛОС ДЛЯ ВСЕХ СОТРУДНИКОВ (МАНДАТЫ 8e, 8n)
 	// =========================================================================
-	await suite.test("ATTACK 2: Marketer blocked from live speech dictation WebSocket (4403 Forbidden)", async (t) => {
+	await suite.test("ATTACK 2: Marketer and staff granted access to live speech dictation WebSocket (Mandate 8e, 8n)", async (t) => {
 		if (!databaseReady || !serverPort) return t.skip("Сервер или БД недоступны");
 
 		const wsUrl = `ws://127.0.0.1:${serverPort}/api/v1/speech/live`;
@@ -327,11 +326,21 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 
 		let closedWithCode = 0;
 		let receivedError: any = null;
+		let openedSuccessfully = false;
 
 		await new Promise<void>((resolve) => {
+			marketerWs.on("open", () => {
+				openedSuccessfully = true;
+				marketerWs.send(JSON.stringify({ type: "ping" }));
+			});
 			marketerWs.on("message", (raw) => {
 				try {
-					receivedError = JSON.parse(raw.toString());
+					const msg = JSON.parse(raw.toString());
+					if (msg.type === "pong") {
+						marketerWs.close(1000, "Done");
+					} else {
+						receivedError = msg;
+					}
 				} catch {}
 			});
 			marketerWs.on("close", (code) => {
@@ -342,16 +351,18 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 		});
 
 		console.log(
-			"\n[RED-TEAM AUDIT 2: /api/v1/speech/live by Marketer]\nClosed code:",
+			"\n[RED-TEAM AUDIT 2: /api/v1/speech/live by Marketer]\nOpened successfully:",
+			openedSuccessfully,
+			"\nClosed code:",
 			closedWithCode,
-			"\nReceived error:",
+			"\nReceived message:",
 			receivedError,
 		);
 
-		assert.equal(closedWithCode, 4403, "Сокет должен закрыться с кодом 4403 Forbidden!");
-		assert.equal(receivedError?.error, "MedicalSpeechDictationForbidden");
+		assert.notEqual(closedWithCode, 4403, "Сокет НЕ должен закрываться с кодом 4403 Forbidden!");
+		assert.notEqual(receivedError?.error, "MedicalSpeechDictationForbidden", "Ошибка MedicalSpeechDictationForbidden запрещена по Мандату 8e!");
 
-		console.log("✔ АТАКА 2 ОТБИТА: Доступ маркетолога к живому речевому сокету диктовки заблокирован.");
+		console.log("✔ АТАКА 2 ПОДТВЕРЖДЕНА: Сквозной голосовой ввод доступен любому сотруднику клиники (Мандаты 8e, 8n).");
 	});
 
 

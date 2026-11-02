@@ -171,6 +171,10 @@ export class AudioStreamTransport {
 							const text = data.text || data.finalText || "";
 							if (text.trim()) this.host.onFinalSegment(text.trim());
 							this.host.onInterimTranscript("");
+						} else if (data.type === "reconnecting") {
+							console.info(`[DENTE Voice] Gemini Live reconnecting/rotating (attempt ${data.attempt}):`, data.reason);
+						} else if (data.type === "key_rotated") {
+							console.info("[DENTE Voice] Gemini Live key successfully rotated");
 						} else if (data.type === "error" || data.type === "provider_error") {
 							console.warn("Gemini Live server error:", data.message);
 							if (this.host.getOptions().autoFallback) {
