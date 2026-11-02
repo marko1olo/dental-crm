@@ -47,15 +47,21 @@ export async function* parseGeminiSseChunks(
 
 				if (part.functionCall) {
 					onEmitted?.();
-					const callId = `gemini_call_${Date.now()}_${toolCallIndex}`;
+					const callId = part.functionCall.id || `gemini_call_${Date.now()}_${toolCallIndex}`;
 					const fnName = part.functionCall.name;
 					const fnArgs = part.functionCall.args ?? {};
+					const thoughtSignature =
+						part.thoughtSignature ||
+						(part as any).thought_signature ||
+						(part.functionCall as any).thoughtSignature ||
+						(part.functionCall as any).thought_signature;
 
 					yield {
 						type: "tool_call_start",
 						id: callId,
 						name: fnName,
 						index: toolCallIndex,
+						thoughtSignature,
 					};
 
 					yield {
@@ -72,6 +78,7 @@ export async function* parseGeminiSseChunks(
 						name: fnName,
 						arguments: fnArgs,
 						index: toolCallIndex,
+						thoughtSignature,
 					};
 
 					toolCallIndex++;

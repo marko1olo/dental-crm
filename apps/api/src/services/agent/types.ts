@@ -14,6 +14,7 @@ export interface ToolUseBlock {
 	readonly id: string;
 	readonly name: string;
 	readonly input: Record<string, unknown>;
+	readonly thoughtSignature?: string | undefined;
 }
 
 export interface ToolResultBlock {
@@ -40,6 +41,7 @@ export interface ToolUse {
 	readonly id: string;
 	readonly name: string;
 	readonly input: Record<string, unknown>;
+	readonly thoughtSignature?: string | undefined;
 }
 
 export interface Usage {

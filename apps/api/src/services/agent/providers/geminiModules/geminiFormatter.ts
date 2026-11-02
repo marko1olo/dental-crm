@@ -19,14 +19,11 @@ export function cleanGeminiSchema(obj: unknown): unknown {
 
 export const DEFAULT_GEMINI_MODEL_CASCADE: readonly string[] = [
 	"gemini-3.5-flash-lite",
-	"gemini-3.1-flash-lite",
 	"gemini-3.8-flash",
+	"gemini-3.5-flash",
+	"gemini-3.1-flash-lite",
 	"gemini-3.7-flash",
 	"gemini-3.6-flash",
-	"gemini-3.5-flash",
-	"gemini-3.1-pro",
-	"gemini-3.1-pro-preview",
-	"gemini-2.5-flash",
 	"gemini-2.5-pro",
 	"gemini-2.0-flash",
 	"gemini-1.5-flash",
@@ -34,7 +31,8 @@ export const DEFAULT_GEMINI_MODEL_CASCADE: readonly string[] = [
 
 export interface GeminiContentPart {
 	text?: string;
-	functionCall?: { name: string; args: Record<string, unknown> };
+	thoughtSignature?: string;
+	functionCall?: { name: string; args: Record<string, unknown>; id?: string };
 	functionResponse?: { name: string; response: Record<string, unknown> };
 }
 
@@ -78,12 +76,17 @@ export function formatGeminiContents(messages: ProviderMessage[]): GeminiContent
 				if (block.type === "text") {
 					parts.push({ text: block.text });
 				} else if (block.type === "tool_use") {
-					parts.push({
+					const callPart: GeminiContentPart = {
 						functionCall: {
 							name: block.name,
 							args: block.input,
+							...(block.id ? { id: block.id } : {}),
 						},
-					});
+					};
+					if (block.thoughtSignature) {
+						callPart.thoughtSignature = block.thoughtSignature;
+					}
+					parts.push(callPart);
 				} else if (block.type === "tool_result") {
 					const fnName =
 						(block as any).toolName ||

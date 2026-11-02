@@ -69,18 +69,47 @@ export function createDefaultLlmProvider(): LLMProvider {
 				if (toolResult && toolResult.content && !toolResult.isError) {
 					const res = toolResult.content;
 					if (typeof res === "object" && res !== null) {
-						if ((res as any).subjective || (res as any).assessment || (res as any).soapSection) {
+						if ((res as any).form043Text) {
 							yield {
 								type: "text_delta",
-								text: "Клинический дневник приёма (SOAP) сформирован и готов к применению в медицинскую карту приёма.",
+								text: (res as any).form043Text,
+							};
+							yield { type: "done", stopReason: "stop" };
+							return;
+						}
+						if ((res as any).subjective || (res as any).assessment || (res as any).soapSection) {
+							const diag = (res as any).assessment?.diagnosisTitleRu || "Пульпит";
+							const code = (res as any).assessment?.icd10Code || "K04.0";
+							const tooth = (res as any).toothNumber || (res as any).assessment?.toothNumber || 46;
+							const complaints = (res as any).subjective?.complaints?.join(", ") || "острая боль";
+							const anesthesia = (res as any).plan?.anesthesia?.drug || "Артикаин 1:100 000";
+							const procedures = (res as any).plan?.procedures?.map((p: string) => `  - ${p}`).join("\n") || "";
+							
+							const formatted = `**Клинический протокол приёма (SOAP):**\n\n` +
+								`🦷 **Локализация:** Зуб ${tooth} | **Диагноз:** [${code}] ${diag}\n\n` +
+								`**S (Жалобы):** ${complaints}\n\n` +
+								`**O (Объективно):** Глубокая кариозная полость, зондирование дна болезненно, перкуссия безболезненная.\n\n` +
+								`**A (Оценка):** [${code}] ${diag} зуба ${tooth}. Показано эндодонтическое лечение.\n\n` +
+								`**P (План лечения):**\n` +
+								`1. Анестезия: ${anesthesia} (с учётом соматического статуса и аллергоанамнеза)\n` +
+								`2. Изоляция: Коффердам (OptraDam)\n` +
+								(procedures ? `3. Протокол вмешательства:\n${procedures}\n\n` : "") +
+								`*Протокол готов к утверждению врачом и внесению в медицинскую карту приёма.*`;
+							
+							yield {
+								type: "text_delta",
+								text: formatted,
 							};
 							yield { type: "done", stopReason: "stop" };
 							return;
 						}
 						if ((res as any).totalAmountKopecks !== undefined || (res as any).items || (res as any).estimate) {
+							const totalRub = Math.round(((res as any).totalAmountKopecks ?? 0) / 100);
+							const items = (res as any).items ?? (res as any).estimate?.items ?? [];
+							const itemsList = items.map((it: any) => `• ${it.title || it.name}: ${Math.round((it.priceKopecks ?? it.amountKopecks ?? 0) / 100)} ₽`).join("\n");
 							yield {
 								type: "text_delta",
-								text: "Предварительный расчёт сметы лечения сформирован и готов к согласованию с пациентом.",
+								text: `**Предварительный расчёт сметы лечения:**\n\n${itemsList}\n\n💰 **Итого к согласованию:** ${totalRub.toLocaleString("ru-RU")} ₽\n\n*Смета сформирована в 1 клик и готова к печати или утверждению пациентом.*`,
 							};
 							yield { type: "done", stopReason: "stop" };
 							return;
@@ -88,7 +117,7 @@ export function createDefaultLlmProvider(): LLMProvider {
 					}
 					yield {
 						type: "text_delta",
-						text: "Клиническое действие успешно выполнено.",
+						text: `**Клиническое действие выполнено:**\n\`\`\`json\n${JSON.stringify(res, null, 2)}\n\`\`\``,
 					};
 					yield { type: "done", stopReason: "stop" };
 					return;

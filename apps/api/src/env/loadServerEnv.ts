@@ -89,6 +89,8 @@ function baseEnvFiles(): string[] {
 			testCandidates.push(
 				path.resolve(process.cwd(), ".env.local"),
 				path.resolve(process.cwd(), ".env"),
+				path.resolve(process.cwd(), "..", ".env.local"),
+				path.resolve(process.cwd(), "..", ".env"),
 				path.resolve(process.cwd(), "..", "..", ".env.local"),
 				path.resolve(process.cwd(), "..", "..", ".env"),
 			);
@@ -98,6 +100,8 @@ function baseEnvFiles(): string[] {
 	return [
 		path.resolve(process.cwd(), ".env.local"),
 		path.resolve(process.cwd(), ".env"),
+		path.resolve(process.cwd(), "..", ".env.local"),
+		path.resolve(process.cwd(), "..", ".env"),
 		path.resolve(process.cwd(), "..", "..", ".env.local"),
 		path.resolve(process.cwd(), "..", "..", ".env"),
 	];

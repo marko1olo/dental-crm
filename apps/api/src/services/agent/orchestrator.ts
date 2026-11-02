@@ -313,6 +313,7 @@ export async function* runTurn(
 				id: tu.id,
 				name: tu.name,
 				input: redactor.resolveArgs(tu.input),
+				...(tu.thoughtSignature ? { thoughtSignature: tu.thoughtSignature } : {}),
 			} as ToolUseBlock);
 		}
 

@@ -496,6 +496,7 @@ export class OmniLlmGateway {
 								id: chunk.id,
 								name: chunk.name,
 								input: inputObj,
+								thoughtSignature: chunk.thoughtSignature,
 							};
 						} else if (chunk.type === "usage") {
 							yield {

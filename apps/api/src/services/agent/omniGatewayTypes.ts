@@ -27,6 +27,7 @@ export interface ToolCallStartChunk {
 	readonly id: string;
 	readonly name: string;
 	readonly index?: number | undefined;
+	readonly thoughtSignature?: string | undefined;
 }
 
 export interface ToolCallDeltaChunk {
@@ -43,6 +44,7 @@ export interface ToolCallEndChunk {
 	readonly name: string;
 	readonly arguments: Record<string, unknown> | string;
 	readonly index?: number | undefined;
+	readonly thoughtSignature?: string | undefined;
 }
 
 export interface UsageChunk {
@@ -201,8 +203,11 @@ export const DEFAULT_CIRCUIT_BREAKER_CONFIG: CircuitBreakerConfig = {
 };
 
 export const DEFAULT_FALLBACK_CHAIN: readonly LlmProviderId[] = [
-	"groq",
 	"gemini",
+	"groq",
+	"openai",
+	"deepseek",
+	"anthropic",
 ] as const;
 
 /**

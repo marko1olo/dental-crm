@@ -391,6 +391,7 @@ export class Redactor {
 					id: block.id,
 					name: block.name,
 					input: this.redactObj(block.input) as Record<string, unknown>,
+					...(block.thoughtSignature ? { thoughtSignature: block.thoughtSignature } : {}),
 				} as ToolUseBlock;
 			}
 			if (block.type === "tool_result") {
