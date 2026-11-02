@@ -26,7 +26,7 @@ import {
 const TEST_ORG_ID = "11111111-1111-1111-1111-111111111111";
 
 describe("Dental Tool Arsenal — CRM, База данных и Прейскурант услуг", () => {
-	test("search_clinic_services_and_prices: находит услуги по Номенклатуре 804н через мягкий фолбек", async () => {
+	test("search_clinic_services_and_prices: находит услуги по нормативному каталогу через мягкий фолбек", async () => {
 		const mockDb = {
 			select: () => ({
 				from: () => ({
@@ -43,10 +43,10 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 		);
 
 		assert.strictEqual(res.found, true);
-		assert.ok(res.results.some((r) => r.code === "A16.07.002"));
+		assert.ok(res.results.some((r) => r.code === "A16.07.002" || r.serviceCode === "A16.07.002"));
 		// В нормативном фолбеке цены честно null (без выдуманных хардкодов)
 		assert.strictEqual(res.results[0]?.priceRub, null);
-		assert.strictEqual(res.results[0]?.source, "order_804n_standard_catalog");
+		assert.strictEqual(res.results[0]?.source, "standard_catalog");
 	});
 
 	test("get_patient_emr_and_odontogram: при отсутствии пациента возвращает честное found: false", async () => {

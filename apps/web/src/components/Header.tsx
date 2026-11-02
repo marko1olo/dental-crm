@@ -5,6 +5,7 @@
  */
 
 import React from "react";
+import { TelephonyHeaderCapsule } from "./telephony/headerCapsule";
 import {
 	HeaderBranding,
 	HeaderGlobalSearch,
@@ -16,8 +17,6 @@ import type {
 	ClinicControlPillProps,
 	HeaderProps,
 } from "./headerModules";
-import "./Header.css";
-import "../styles/modules/header.css";
 
 // 100% AST Export Parity with original monolith
 export type { ClinicControlPillProps, AccessibilityModeButtonProps, HeaderProps };
@@ -72,6 +71,7 @@ export function Header({
 
 			{/* Right: Telephony/Cash/Sync Capsule + User Profile & Theme */}
 			<div className="flex items-center gap-2 shrink-0">
+				<TelephonyHeaderCapsule id="global-crm-header-telephony-capsule" />
 				<HeaderSystemStatus
 					onLockSession={onLockSession}
 					onOpenShiftModal={onOpenShiftModal}

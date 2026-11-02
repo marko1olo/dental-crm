@@ -41,13 +41,15 @@ export interface AnesthesiaResult {
 	technique: "infiltration" | "conduction" | "application" | "intraligamentary";
 	concentration?: string | undefined;
 	serviceCode?: string | undefined;
-	/** @deprecated use serviceCode */
+	regulatoryCode?: string | undefined;
+	/** @deprecated use serviceCode or regulatoryCode */
 	code804n?: string | undefined;
 }
 
 export interface ClinicalProcedureResult {
 	serviceCode: string;
-	/** @deprecated use serviceCode */
+	regulatoryCode?: string | undefined;
+	/** @deprecated use serviceCode or regulatoryCode */
 	code804n?: string | undefined;
 	name: string;
 	category: "therapy" | "surgery" | "endodontics" | "hygiene" | "orthopedics" | "anesthesia" | "isolation";

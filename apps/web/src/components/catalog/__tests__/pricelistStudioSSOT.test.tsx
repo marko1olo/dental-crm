@@ -11,6 +11,7 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "vitest";
 import {
+	CANONICAL_CLINICAL_BUNDLES,
 	CANONICAL_CLINICAL_CATEGORIES,
 	CANONICAL_PRICELIST_PRESETS,
 	calculateMarginKopecks,
@@ -21,7 +22,7 @@ import {
 	parseRublesToKopecks,
 	loadCanonicalPricelist,
 } from "../pricelistCatalogData";
-import { PricelistStudioModal } from "../PricelistStudioModal";
+import { ServicePriceListStudioModal, PricelistStudioModal } from "../ServicePriceListStudioModal";
 import { PricelistItemDrawer } from "../PricelistItemDrawer";
 import { DirectPricelistLauncher } from "../DirectPricelistLauncher";
 
@@ -84,6 +85,20 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 			assert.ok(titles.includes("Металлокерамическая коронка"));
 			assert.ok(titles.includes("Коронка из диоксида циркония"));
 			assert.ok(titles.includes("Имплантат под ключ"));
+		});
+
+		it("содержит готовые клинические пакеты «Под ключ» в 1 клик (Мандаты 8e, 8n)", () => {
+			assert.ok(CANONICAL_CLINICAL_BUNDLES.length >= 4);
+			const bundleTitles = CANONICAL_CLINICAL_BUNDLES.map((b) => b.shortTitle);
+			assert.ok(bundleTitles.includes("Кариес под ключ"));
+			assert.ok(bundleTitles.includes("Профгигиена под ключ"));
+			assert.ok(bundleTitles.includes("Удаление простое под ключ"));
+			assert.ok(bundleTitles.includes("Сложное удаление под ключ"));
+
+			for (const b of CANONICAL_CLINICAL_BUNDLES) {
+				assert.ok(b.priceKopecks > 0, "Цена пакета должна быть положительной");
+				assert.ok(b.items.length >= 3, "Пакет должен содержать минимум 3 манипуляции");
+			}
 		});
 
 		it("считает сводную статистику прейскуранта", () => {

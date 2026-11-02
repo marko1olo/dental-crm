@@ -5,6 +5,7 @@
  */
 
 export * from "./pricelistCatalogData";
+export * from "./ServicePriceListStudioModal";
 export * from "./PricelistStudioModal";
 export * from "./PricelistItemDrawer";
 export * from "./DirectPricelistLauncher";

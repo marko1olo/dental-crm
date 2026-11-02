@@ -216,6 +216,7 @@ export function extractDentalAnesthesia(text: string): AnesthesiaResult | null {
 		technique,
 		concentration: matchedConfig.concentration,
 		serviceCode,
+		regulatoryCode: serviceCode,
 		code804n: serviceCode,
 	};
 }
@@ -226,6 +227,8 @@ export function extractDentalAnesthesia(text: string): AnesthesiaResult | null {
 
 interface ManipulationRule {
 	readonly serviceCode?: string;
+	readonly regulatoryCode?: string;
+	/** @deprecated use serviceCode or regulatoryCode */
 	readonly code804n?: string;
 	readonly name: string;
 	readonly category: ClinicalProcedureResult["category"];
@@ -430,7 +433,7 @@ export function extractDentalProcedures(
 				name += ` (оттенок ${shade})`;
 			}
 
-			const code = rule.serviceCode || rule.code804n || "";
+			const code = rule.serviceCode || rule.regulatoryCode || rule.code804n || "";
 			let priceRub: number | undefined;
 			if (typeof priceResolver === "function") {
 				priceRub = priceResolver(code);
@@ -440,6 +443,7 @@ export function extractDentalProcedures(
 
 			results.push({
 				serviceCode: code,
+				regulatoryCode: rule.regulatoryCode || code,
 				code804n: code,
 				name,
 				category: rule.category,

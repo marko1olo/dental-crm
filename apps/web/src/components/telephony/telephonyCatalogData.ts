@@ -24,40 +24,24 @@ export interface TelephonyCallTypeConfig {
 
 export const TELEPHONY_CALL_TYPES: Record<TelephonyCallType, TelephonyCallTypeConfig> = {
 	incoming_answered: {
-		id: "incoming_answered",
-		label: "Входящий принятый",
-		shortLabel: "Входящий",
+		id: "incoming_answered", label: "Входящий принятый", shortLabel: "Входящий",
 		badgeClass: "bg-[var(--teal-soft,#0d94881a)] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]/20",
-		dotClass: "bg-[var(--teal,#0d9488)]",
-		isMissed: false,
-		isIncoming: true,
+		dotClass: "bg-[var(--teal,#0d9488)]", isMissed: false, isIncoming: true,
 	},
 	incoming_missed: {
-		id: "incoming_missed",
-		label: "Входящий пропущенный",
-		shortLabel: "Пропущен",
+		id: "incoming_missed", label: "Входящий пропущенный", shortLabel: "Пропущен",
 		badgeClass: "bg-[var(--danger-soft,#ef44441a)] text-[var(--danger,#ef4444)] border-[var(--danger,#ef4444)]/20",
-		dotClass: "bg-[var(--danger,#ef4444)]",
-		isMissed: true,
-		isIncoming: true,
+		dotClass: "bg-[var(--danger,#ef4444)]", isMissed: true, isIncoming: true,
 	},
 	outgoing_success: {
-		id: "outgoing_success",
-		label: "Исходящий успешный",
-		shortLabel: "Исходящий",
+		id: "outgoing_success", label: "Исходящий успешный", shortLabel: "Исходящий",
 		badgeClass: "bg-[var(--paper-secondary,#f1f5f9)] text-[var(--ink-secondary,#475569)] border-[var(--line,#e2e8f0)]",
-		dotClass: "bg-[var(--teal,#0d9488)]",
-		isMissed: false,
-		isIncoming: false,
+		dotClass: "bg-[var(--teal,#0d9488)]", isMissed: false, isIncoming: false,
 	},
 	outgoing_missed: {
-		id: "outgoing_missed",
-		label: "Исходящий неотвеченный",
-		shortLabel: "Не отвечен",
+		id: "outgoing_missed", label: "Исходящий неотвеченный", shortLabel: "Не отвечен",
 		badgeClass: "bg-[var(--paper-secondary,#f1f5f9)] text-[var(--ink-muted,#94a3b8)] border-[var(--line,#e2e8f0)]",
-		dotClass: "bg-[var(--ink-muted,#94a3b8)]",
-		isMissed: true,
-		isIncoming: false,
+		dotClass: "bg-[var(--ink-muted,#94a3b8)]", isMissed: true, isIncoming: false,
 	},
 };
 

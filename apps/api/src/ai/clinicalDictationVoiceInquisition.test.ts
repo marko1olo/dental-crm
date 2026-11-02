@@ -191,6 +191,8 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 			assert.strictEqual(an.volumeMl, 1.7);
 			assert.strictEqual(an.cartridgeCount, 1);
 			assert.strictEqual(an.technique, "infiltration");
+			assert.strictEqual(an.serviceCode, "A11.07.012");
+			assert.strictEqual(an.regulatoryCode, "A11.07.012");
 			assert.strictEqual(an.code804n, "A11.07.012");
 		});
 
@@ -200,6 +202,8 @@ describe("Red Team Inquisition: Dental Clinical Voice Dictation Parser (Mandate 
 			assert.strictEqual(an.drugKey, "ultracain_ds_forte");
 			assert.strictEqual(an.volumeMl, 1.7);
 			assert.strictEqual(an.technique, "conduction");
+			assert.strictEqual(an.serviceCode, "A11.07.013");
+			assert.strictEqual(an.regulatoryCode, "A11.07.013");
 			assert.strictEqual(an.code804n, "A11.07.013");
 		});
 

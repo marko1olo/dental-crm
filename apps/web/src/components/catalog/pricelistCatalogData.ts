@@ -75,6 +75,8 @@ export const CANONICAL_CLINICAL_CATEGORIES: readonly PricelistCategoryMeta[] = [
 export interface PricelistStudioItem {
 	readonly id: string;
 	readonly code: string;
+	readonly serviceCode?: string | undefined;
+	readonly regulatoryCode?: string | undefined;
 	readonly title: string;
 	readonly category: PricelistCategoryKey;
 	readonly priceKopecks: number;
@@ -82,7 +84,82 @@ export interface PricelistStudioItem {
 	readonly durationMin: number;
 	readonly isActive: boolean;
 	readonly tags?: readonly string[] | undefined;
+	readonly isBundle?: boolean | undefined;
 }
+
+export interface PricelistClinicalBundle {
+	readonly id: string;
+	readonly title: string;
+	readonly shortTitle: string;
+	readonly description: string;
+	readonly category: PricelistCategoryKey;
+	readonly priceKopecks: number;
+	readonly itemsCount: number;
+	readonly items: readonly string[];
+}
+
+export const CANONICAL_CLINICAL_BUNDLES: readonly PricelistClinicalBundle[] = [
+	{
+		id: "bundle-caries",
+		title: "Лечение глубокого кариеса под ключ",
+		shortTitle: "Кариес под ключ",
+		description: "Анестезия + коффердам + некрэктомия + световая пломба Estelite + полировка",
+		category: "therapy",
+		priceKopecks: 750000,
+		itemsCount: 5,
+		items: ["Анестезия инфильтрационная", "Коффердам", "Препарирование полости", "Световая пломба", "Шлифовка и полировка"],
+	},
+	{
+		id: "bundle-hygiene",
+		title: "Комплексная профгигиена Air-Flow + ультразвук",
+		shortTitle: "Профгигиена под ключ",
+		description: "Ультразвуковой скейлинг + Air-Flow + полировка пастой + глубокое фторирование",
+		category: "hygiene",
+		priceKopecks: 650000,
+		itemsCount: 4,
+		items: ["Ультразвуковое удаление камня", "Air-Flow чистка", "Полировка пастами", "Глубокое фторирование"],
+	},
+	{
+		id: "bundle-ext-simple",
+		title: "Удаление зуба простое с анестезией под ключ",
+		shortTitle: "Удаление простое под ключ",
+		description: "Анестезия + атравматичное удаление + кюретаж + гемостаз + Альвожиль",
+		category: "surgery",
+		priceKopecks: 680000,
+		itemsCount: 5,
+		items: ["Анестезия Ультракаин", "Атравматичное удаление", "Кюретаж лунки", "Первичный гемостаз", "Паста Альвожиль"],
+	},
+	{
+		id: "bundle-ext-complex",
+		title: "Удаление зуба сложное с анестезией под ключ",
+		shortTitle: "Сложное удаление под ключ",
+		description: "Проводниковая анестезия + сепарация корней + глубокий кюретаж + швы Vicryl",
+		category: "surgery",
+		priceKopecks: 850000,
+		itemsCount: 4,
+		items: ["Проводниковая анестезия", "Сепарация корней", "Кюретаж лунки", "Швы Vicryl"],
+	},
+	{
+		id: "bundle-endo",
+		title: "Эндодонтия моляра под ключ (3 канала)",
+		shortTitle: "Эндодонтия 3 канала под ключ",
+		description: "Анестезия + коффердам + машинная обработка 3 каналов + 3D обтурация + снимок",
+		category: "therapy",
+		priceKopecks: 1620000,
+		itemsCount: 5,
+		items: ["Анестезия проводниковая", "Коффердам на моляр", "NiTi обработка 3 каналов", "Пломбирование гуттаперчей", "Контрольная визиография"],
+	},
+	{
+		id: "bundle-implant",
+		title: "Дентальная имплантация под ключ",
+		shortTitle: "Имплантация под ключ",
+		description: "Анестезия + ложе + имплантат титановый + формирователь десны + снимок",
+		category: "surgery",
+		priceKopecks: 4150000,
+		itemsCount: 4,
+		items: ["Анестезия", "Установка имплантата Osstem", "Формирователь десны", "Рентген-контроль"],
+	},
+];
 
 /**
  * 0 float-ошибок: конвертация копеек в рубли и обратно

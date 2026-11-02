@@ -213,9 +213,9 @@
 }
 
 .dnt-telephony-dialpad-btn {
-	height: 3rem;
-	min-height: 44px;
-	border-radius: 0.75rem;
+	height: 2.35rem;
+	min-height: 36px;
+	border-radius: 0.625rem;
 	border: 1px solid var(--line, #e2e8f0);
 	background-color: var(--paper, #f8fafc);
 	color: var(--ink, #0f172a);
@@ -226,6 +226,14 @@
 	transition: all 0.12s ease;
 	cursor: pointer;
 	user-select: none;
+}
+
+@media (max-width: 639px) {
+	.dnt-telephony-dialpad-btn {
+		height: 3.25rem;
+		min-height: 48px;
+		border-radius: 0.75rem;
+	}
 }
 
 .dnt-telephony-dialpad-btn:hover {

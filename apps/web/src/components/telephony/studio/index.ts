@@ -2,20 +2,18 @@
  * apps/web/src/components/telephony/studio/index.ts
  *
  * DENTE Dental CRM — Telephony Studio Modular Architecture Facade.
+ * Clean transparent re-exports from SSOT TelephonyStudioModal.tsx.
  */
 
-export { TelephonyStudioHeader } from "./TelephonyStudioHeader";
-export type { TelephonyStudioHeaderProps } from "./TelephonyStudioHeader";
-
-export { TelephonySoftphoneDialpad } from "./TelephonySoftphoneDialpad";
-export type { TelephonySoftphoneDialpadProps } from "./TelephonySoftphoneDialpad";
-
 export {
+	TelephonyStudioHeader,
+	type TelephonyStudioHeaderProps,
+	TelephonySoftphoneDialpad,
+	type TelephonySoftphoneDialpadProps,
 	TelephonyCallHistoryList,
 	TelephonyCallHistoryCard,
+	type TelephonyCallHistoryListProps,
+	TelephonyStudioFooter,
+	type TelephonyStudioFooterProps,
 	QUICK_NOTE_PRESETS,
-} from "./TelephonyCallHistoryList";
-export type { TelephonyCallHistoryListProps } from "./TelephonyCallHistoryList";
-
-export { TelephonyStudioFooter } from "./TelephonyStudioFooter";
-export type { TelephonyStudioFooterProps } from "./TelephonyStudioFooter";
+} from "../TelephonyStudioModal";

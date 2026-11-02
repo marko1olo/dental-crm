@@ -110,8 +110,8 @@ export const TelephonySoftphoneDialpad: React.FC<TelephonySoftphoneDialpadProps>
 	}, [onDigitClick]);
 
 	return (
-		<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-3 sm:p-4 shadow-xs">
-			<div className="flex items-center justify-between mb-3 px-1">
+		<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-2.5 sm:p-3 shadow-xs">
+			<div className="flex items-center justify-between mb-2 px-1">
 				<span className="text-xs font-semibold text-[var(--ink-muted)] uppercase tracking-wider">Быстрый набор</span>
 				<div className="flex items-center gap-2">
 					<input
@@ -129,7 +129,7 @@ export const TelephonySoftphoneDialpad: React.FC<TelephonySoftphoneDialpadProps>
 					)}
 				</div>
 			</div>
-			<div className="grid grid-cols-3 gap-2 max-w-[280px] mx-auto">
+			<div className="grid grid-cols-3 gap-1.5 max-w-[280px] mx-auto">
 				{DIALPAD_KEYS.map((keyDef) => (
 					<button key={keyDef.digit} type="button" onClick={() => handlePress(keyDef.digit)} data-testid={`dialpad-key-${keyDef.digit}`} className="dnt-telephony-dialpad-btn">
 						<span className="dnt-telephony-dialpad-digit">{keyDef.digit}</span>
@@ -160,7 +160,7 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 	}
 
 	return (
-		<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-4 shadow-xs space-y-3">
+		<div className="bg-[var(--paper-strong)] border border-[var(--line)] rounded-xl p-3 sm:p-3.5 shadow-xs space-y-2.5">
 			<div className="flex items-start justify-between gap-3">
 				<div>
 					<div className="flex items-center gap-2 mb-1">
@@ -359,7 +359,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 						activeFilter={activeFilter} onFilterChange={setActiveFilter} activeMobileTab={activeMobileTab}
 					/>
 					<div className={`dnt-telephony-details-pane ${activeMobileTab === "dialer" ? "" : "is-mobile-hidden"}`}>
-						<div className="flex-1 overflow-y-auto p-4 pb-6 space-y-4">
+						<div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-2.5 space-y-2">
 							<TelephonyCallHistoryList selectedCall={selectedCall} callNote={callNote} onCallNoteChange={setCallNote} onOpenCard={handleOpenCard} />
 							<TelephonySoftphoneDialpad dialedNumber={dialedNumber} onDigitClick={handleDigitClick} onBackspace={handleBackspace} />
 						</div>

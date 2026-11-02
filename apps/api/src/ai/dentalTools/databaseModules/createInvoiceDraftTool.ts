@@ -16,7 +16,10 @@ export const createInvoiceDraftSchema = z.object({
 		title: z.string().describe("Наименование услуги"),
 		priceRub: z.number().min(0).describe("Цена в рублях"),
 		quantity: z.number().min(1).default(1).describe("Количество"),
-		code804n: z.string().optional().describe("Код в прейскуранте"),
+		serviceCode: z.string().optional().describe("Код услуги в прейскуранте"),
+		regulatoryCode: z.string().optional().describe("Регуляторный код услуги"),
+		/** @deprecated use serviceCode or regulatoryCode */
+		code804n: z.string().optional().describe("Устаревший код в прейскуранте"),
 		toothCode: z.string().optional().describe("Номер зуба"),
 	})).min(1, "Счет должен содержать хотя бы одну услугу").describe("Список оказанных услуг"),
 	discountRub: z.number().min(0).default(0).describe("Скидка врача в рублях (Мандат 8e: свобода скидок вплоть до 100%)"),

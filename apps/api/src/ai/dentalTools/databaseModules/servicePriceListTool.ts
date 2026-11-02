@@ -8,7 +8,7 @@ import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
 import { serviceCatalogItems, services } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
-import { STANDARD_804N_CATALOG } from "./serviceCatalogData.js";
+import { STANDARD_SERVICE_CATALOG, standardServiceCatalog } from "./serviceCatalogData.js";
 
 export * from "./serviceCatalogData.js";
 
@@ -19,16 +19,20 @@ export const searchServicesSchema = z.object({
 
 export type SearchServicesInput = z.infer<typeof searchServicesSchema>;
 
+export type ServiceCatalogSource = "clinic_pricelist" | "standard_catalog" | "order_804n_standard_catalog";
+
 export interface SearchServicesResult {
 	readonly found: boolean;
 	readonly query: string;
 	readonly totalCount: number;
 	readonly results: readonly {
 		readonly code: string;
+		readonly serviceCode: string;
+		readonly regulatoryCode?: string;
 		readonly title: string;
 		readonly category: string;
 		readonly priceRub: number | null;
-		readonly source: "clinic_pricelist" | "order_804n_standard_catalog";
+		readonly source: ServiceCatalogSource;
 	}[];
 }
 
@@ -51,7 +55,9 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 			query,
 			totalCount: clinicItems.length,
 			results: clinicItems.map((item) => ({
-				code: item.order804nCode || item.code,
+				code: item.code || item.order804nCode || "ПОЗ-1",
+				serviceCode: item.code || item.order804nCode || "ПОЗ-1",
+				regulatoryCode: item.order804nCode || item.code,
 				title: item.title,
 				category: item.category,
 				priceRub: item.priceRub,
@@ -74,6 +80,8 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 			totalCount: servicesItems.length,
 			results: servicesItems.map((item) => ({
 				code: item.code || "A16.07.000",
+				serviceCode: item.code || "A16.07.000",
+				regulatoryCode: item.code || "A16.07.000",
 				title: item.title,
 				category: item.category,
 				priceRub: item.basePriceRub,
@@ -82,9 +90,11 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 		};
 	}
 
-	// 3. Мягкий фолбек на нормативный справочник базовых стоматологических процедур
+	// 3. Мягкий фолбек на нормативный справочник базовых стоматологических процедур (Мандат 8ap)
 	const normQuery = query.toLowerCase();
-	const fallbackMatches = STANDARD_804N_CATALOG.filter((s) => s.code.toLowerCase().includes(normQuery) || s.title.toLowerCase().includes(normQuery));
+	const fallbackMatches = STANDARD_SERVICE_CATALOG.filter(
+		(s) => s.code.toLowerCase().includes(normQuery) || s.title.toLowerCase().includes(normQuery) || (s.regulatoryCode && s.regulatoryCode.toLowerCase().includes(normQuery)),
+	);
 
 	return {
 		found: fallbackMatches.length > 0,
@@ -92,10 +102,12 @@ export async function handleSearchServices(args: SearchServicesInput, context: D
 		totalCount: fallbackMatches.length,
 		results: fallbackMatches.map((m) => ({
 			code: m.code,
+			serviceCode: m.serviceCode,
+			regulatoryCode: m.regulatoryCode || m.serviceCode,
 			title: m.title,
 			category: m.category,
 			priceRub: null,
-			source: "order_804n_standard_catalog" as const,
+			source: "standard_catalog" as const,
 		})),
 	};
 }

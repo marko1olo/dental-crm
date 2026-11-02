@@ -110,7 +110,8 @@ describe("TelephonyStudioModal & SSOT Architecture", () => {
 		expect(getSmsUrl("+7 (999) 123-45-67")).toContain("sms:+79991234567");
 
 		// Audio helper does not throw even if Web Audio is mocked/unavailable
-		expect(() => playSafeWebAudioTone(500, 100)).not.toThrow();
+		expect(typeof playSafeWebAudioTone).toBe("function");
+		playSafeWebAudioTone(500, 100);
 	});
 
 	it("DirectTelephonyLauncher renders without error", () => {
