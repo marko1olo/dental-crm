@@ -1,6 +1,6 @@
 /**
  * treatmentPlanCatalogData.ts — Канонический SSOT планов лечения и 3-уровневых смет.
- * Мандаты 8b, 8zi: Целевой размер 300–380 строк (Sweet Spot).
+ * Мандаты 8b, 8zi: Целевой размер 250–320 строк (Sweet Spot).
  * Мандат 8e: Автономия врача — скидки до 100%, фильтрация микро-расходников для пациента, 0 блокировок.
  * Мандат 8n: Клиники РФ 1–5 кресел — 3 тарифа в 1 клик, 4 клинических этапа, точный BIGINT.
  * Мандат 8x: Чистый клинический язык без советского канцелярита в прод-UI.
@@ -31,12 +31,7 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		badge: "Базовый",
 		isRecommended: false,
 		warrantyYears: 1,
-		keyAdvantages: [
-			"Качественные композитные материалы РФ",
-			"Санация очагов кариеса и купирование воспаления",
-			"Стандартная металлокерамика и базовые импланты",
-			"Гарантийный срок клиники 1 год",
-		],
+		keyAdvantages: ["Качественные композитные материалы РФ", "Санация очагов кариеса и купирование воспаления", "Стандартная металлокерамика и базовые импланты", "Гарантийный срок клиники 1 год"],
 		totalRub: 35000,
 		totalKopecks: 3500000,
 		amountKopecks: 3500000n,
@@ -48,13 +43,7 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		badge: "Рекомендуемый",
 		isRecommended: true,
 		warrantyYears: 3,
-		keyAdvantages: [
-			"Лечение корневых каналов под операционным микроскопом",
-			"Наногибридные реставрации с сохранением эстетики",
-			"Анатомические коронки из диоксида циркония CAD/CAM",
-			"Дентальные имплантаты с гидрофильной поверхностью",
-			"Расширенная гарантия клиники 3 года",
-		],
+		keyAdvantages: ["Лечение корневых каналов под операционным микроскопом", "Наногибридные реставрации с сохранением эстетики", "Анатомические коронки из диоксида циркония CAD/CAM", "Дентальные имплантаты с гидрофильной поверхностью", "Расширенная гарантия клиники 3 года"],
 		totalRub: 105000,
 		totalKopecks: 10500000,
 		amountKopecks: 10500000n,
@@ -66,13 +55,7 @@ export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
 		badge: "Премиум",
 		isRecommended: false,
 		warrantyYears: 10,
-		keyAdvantages: [
-			"Швейцарская имплантационная система высшей категории",
-			"Ультратонкая прессованная безметалловая керамика IPS e.max",
-			"Цифровой 3D-дизайн улыбки и персональный куратор",
-			"Консилиум ведущих специалистов клиники",
-			"Расширенная гарантия производителя 10 лет",
-		],
+		keyAdvantages: ["Швейцарская имплантационная система высшей категории", "Ультратонкая прессованная безметалловая керамика IPS e.max", "Цифровой 3D-дизайн улыбки и персональный куратор", "Консилиум ведущих специалистов клиники", "Расширенная гарантия производителя 10 лет"],
 		totalRub: 185000,
 		totalKopecks: 18500000,
 		amountKopecks: 18500000n,
@@ -149,24 +132,16 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 	},
 ];
 
-/** Фильтрация копеечных микро-расходников для пациента (Мандат 8e) */
-export function sanitizePatientPresentationStages(
-	stages: readonly TreatmentPlanStage[],
-): readonly TreatmentPlanStage[] {
+/** Фильтрация копеечных микро-расходников для клиента (Мандат 8e) */
+export function sanitizePatientPresentationStages(stages: readonly TreatmentPlanStage[]): readonly TreatmentPlanStage[] {
 	return stages.map((stage) => {
 		const cleanItems = stage.items.filter((item) => !isMicroConsumable(item));
-		return {
-			...stage,
-			items: cleanItems.length > 0 ? cleanItems : stage.items,
-		};
+		return { ...stage, items: cleanItems.length > 0 ? cleanItems : stage.items };
 	});
 }
 
 /** Расчет скидки врача до 100% (Мандат 8e, BIGINT/integer precision) */
-export function applyDoctorDiscountToTiers(
-	tiers: readonly TreatmentPlanTier[],
-	discountPercent: number,
-): readonly TreatmentPlanTier[] {
+export function applyDoctorDiscountToTiers(tiers: readonly TreatmentPlanTier[], discountPercent: number): readonly TreatmentPlanTier[] {
 	const clampedDiscount = Math.max(0, Math.min(100, discountPercent));
 	if (clampedDiscount === 0) return tiers;
 
@@ -191,19 +166,12 @@ export function applyDoctorDiscountToTiers(
 		});
 
 		const totalRub = discountedStages.reduce((sum, s) => sum + s.totalRub, 0);
-		return {
-			...tier,
-			totalRub,
-			totalKopecks: totalRub * 100,
-			stages: discountedStages,
-		};
+		return { ...tier, totalRub, totalKopecks: totalRub * 100, stages: discountedStages };
 	});
 }
 
 /** Сборка 3 канонических тарифов плана лечения (SSOT) */
-export function buildCanonical3TierPlans(
-	baseStages = CANONICAL_CLINICAL_STAGES,
-): readonly TreatmentPlanTier[] {
+export function buildCanonical3TierPlans(baseStages = CANONICAL_CLINICAL_STAGES): readonly TreatmentPlanTier[] {
 	const sanitized = sanitizePatientPresentationStages(baseStages);
 
 	return CANONICAL_TIER_DEFINITIONS.map((def) => {
@@ -239,55 +207,48 @@ export function buildCanonical3TierPlans(
 }
 
 /** 1-клик генератор типовых планов по диагнозу МКБ-10 (Мандат 8n) */
-export function generateTreatmentPlanFromDiagnosis(
-	diagnosisCode: string,
-	toothNumber = 16,
-): readonly TreatmentPlanStage[] {
+export function generateTreatmentPlanFromDiagnosis(diagnosisCode: string, toothNumber = 16): readonly TreatmentPlanStage[] {
 	const cleanCode = diagnosisCode.trim().toUpperCase();
 
 	// 1. Кариес дентина (K02)
 	if (cleanCode.includes("K02") || cleanCode.includes("КАРИЕС")) {
-		return [
-			{
-				id: `stage-caries-${toothNumber}`,
-				stageNumber: 1,
-				stageKind: "stage_1_therapy",
-				title: "Терапевтическое лечение кариеса",
-				subtitle: `Анатомическая реставрация зуба ${toothNumber}`,
-				clinicalGoal: "Иссечение некротизированных тканей и восстановление формы зуба",
-				totalRub: 5500,
-				totalKopecks: 550000,
-				estimatedVisits: 1,
-				estimatedWeeks: 1,
-				status: "draft",
-				items: [
-					{ id: `item-caries-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Восстановление зуба ${toothNumber} нанокомпозитом`, priceRub: 5500, unitPriceRub: 5500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
-				],
-			},
-		];
+		return [{
+			id: `stage-caries-${toothNumber}`,
+			stageNumber: 1,
+			stageKind: "stage_1_therapy",
+			title: "Терапевтическое лечение кариеса",
+			subtitle: `Анатомическая реставрация зуба ${toothNumber}`,
+			clinicalGoal: "Иссечение некротизированных тканей и восстановление формы зуба",
+			totalRub: 5500,
+			totalKopecks: 550000,
+			estimatedVisits: 1,
+			estimatedWeeks: 1,
+			status: "draft",
+			items: [
+				{ id: `item-caries-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Восстановление зуба ${toothNumber} нанокомпозитом`, priceRub: 5500, unitPriceRub: 5500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+			],
+		}];
 	}
 
 	// 2. Пульпит / эндодонтия (K04)
 	if (cleanCode.includes("K04") || cleanCode.includes("ПУЛЬПИТ") || cleanCode.includes("ПЕРИОДОНТИТ")) {
-		return [
-			{
-				id: `stage-endo-${toothNumber}`,
-				stageNumber: 1,
-				stageKind: "stage_1_therapy",
-				title: "Эндодонтическое лечение каналов",
-				subtitle: `Механическая и медикаментозная обработка зуба ${toothNumber}`,
-				clinicalGoal: "Пломбирование корневых каналов гуттаперчей и герметизация",
-				totalRub: 12000,
-				totalKopecks: 1200000,
-				estimatedVisits: 2,
-				estimatedWeeks: 2,
-				status: "draft",
-				items: [
-					{ id: `item-endo-prep-${toothNumber}`, toothNumber, code804n: "A16.07.030", name: `Обработка корневых каналов зуба ${toothNumber} под микроскопом`, priceRub: 7500, unitPriceRub: 7500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
-					{ id: `item-endo-fill-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Реставрация коронковой части зуба ${toothNumber}`, priceRub: 4500, unitPriceRub: 4500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
-				],
-			},
-		];
+		return [{
+			id: `stage-endo-${toothNumber}`,
+			stageNumber: 1,
+			stageKind: "stage_1_therapy",
+			title: "Эндодонтическое лечение каналов",
+			subtitle: `Механическая и медикаментозная обработка зуба ${toothNumber}`,
+			clinicalGoal: "Пломбирование корневых каналов гуттаперчей и герметизация",
+			totalRub: 12000,
+			totalKopecks: 1200000,
+			estimatedVisits: 2,
+			estimatedWeeks: 2,
+			status: "draft",
+			items: [
+				{ id: `item-endo-prep-${toothNumber}`, toothNumber, code804n: "A16.07.030", name: `Обработка корневых каналов зуба ${toothNumber} под микроскопом`, priceRub: 7500, unitPriceRub: 7500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+				{ id: `item-endo-fill-${toothNumber}`, toothNumber, code804n: "A16.07.002", name: `Реставрация коронковой части зуба ${toothNumber}`, priceRub: 4500, unitPriceRub: 4500, discountRub: 0, quantity: 1, stageKind: "stage_1_therapy", isCompleted: false },
+			],
+		}];
 	}
 
 	// 3. Адентия / имплантация (K08)

@@ -39,3 +39,5 @@ export * from "./treatmentPlanMath";
 export * from "./PlanScenarioComparisonModal";
 export * from "./comparator";
 export * from "./TreatmentPlanPrintView";
+export * from "./TreatmentPlanStudioModal";
+export * from "./treatmentPlanCatalogData";

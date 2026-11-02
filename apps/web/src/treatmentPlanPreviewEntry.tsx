@@ -10,6 +10,7 @@ import {
 	TreatmentPlanTierSelector,
 	TreatmentPlanEditor,
 	TreatmentPlanPresenterModal,
+	TreatmentPlanStudioModal,
 	type TreatmentPlanTierId,
 	type TreatmentPlanTier,
 	type TreatmentPlanStage,
@@ -81,6 +82,7 @@ function TreatmentPlanPreviewApp() {
 	const [activeTab, setActiveTab] = useState<"selector" | "editor">("selector");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [isPresenterOpen, setIsPresenterOpen] = useState(params.get("presenter") === "1");
+	const [isStudioOpen, setIsStudioOpen] = useState(params.get("studio") === "1" || params.get("presenter") === "1" || window.location.hash.includes("treatment-studio"));
 	const [discountPercent, setDiscountPercent] = useState(0);
 
 	useEffect(() => {
@@ -142,6 +144,17 @@ function TreatmentPlanPreviewApp() {
 
 					<button
 						type="button"
+						onClick={() => setIsStudioOpen(true)}
+						className="min-h-[36px] px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+						data-testid="btn-open-studio-modal"
+					>
+						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+						<span className="hidden sm:inline">Студия планов лечения (SSOT)</span>
+						<span className="sm:hidden">Студия</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsPresenterOpen(true)}
 						className="min-h-[36px] px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
 						data-testid="btn-open-presenter-modal"
@@ -184,9 +197,19 @@ function TreatmentPlanPreviewApp() {
 				)}
 			</main>
 
+			{/* Каноническая студия планов лечения (SSOT) */}
+			<TreatmentPlanStudioModal
+				isOpen={isStudioOpen}
+				onClose={() => setIsStudioOpen(false)}
+				patientName="Смирнова Екатерина Васильевна"
+				patientId="PAT-2026-0891"
+				doctorFullName="Д-р Орлов А.В. (Главный врач)"
+				initialSelectedTierId="optimum"
+			/>
+
 			{/* Модалка презентации для пациента */}
 			<TreatmentPlanPresenterModal
-				isOpen={isPresenterOpen}
+				isOpen={isPresenterOpen && !isStudioOpen}
 				onClose={() => setIsPresenterOpen(false)}
 				patientName="Алексеева Анна Сергеевна"
 				patientId="PAT-2026-0891"
