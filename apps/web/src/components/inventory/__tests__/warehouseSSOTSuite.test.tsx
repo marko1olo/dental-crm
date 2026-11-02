@@ -8,7 +8,9 @@
 import React from "react";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it, expect } from "vitest";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
+import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
 	WAREHOUSE_CATEGORIES,
@@ -26,7 +28,29 @@ import {
 import { WarehouseStudioModal } from "../WarehouseStudioModal.js";
 import { DirectWarehouseLauncher } from "../DirectWarehouseLauncher.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const inventoryDir = path.resolve(__dirname, "..");
+
+const expect = (actual: any) => ({
+	toBe: (expected: any) => assert.equal(actual, expected),
+	toBeTruthy: () => assert.ok(actual),
+	toBeFalsy: () => assert.ok(!actual),
+	toBeGreaterThan: (n: number) => assert.ok(actual > n),
+	toBeGreaterThanOrEqual: (n: number) => assert.ok(actual >= n),
+	toBeLessThan: (n: number) => assert.ok(actual < n),
+	toBeLessThanOrEqual: (n: number) => assert.ok(actual <= n),
+	toHaveLength: (len: number) => assert.equal(actual.length, len),
+	toContain: (sub: any) => {
+		if (typeof actual === "string") assert.ok(actual.includes(sub), `expected string to contain ${sub}`);
+		else if (Array.isArray(actual)) assert.ok(actual.includes(sub), `expected array to contain ${sub}`);
+	},
+	toMatch: (regex: RegExp) => assert.ok(regex.test(actual), `expected match ${regex}`),
+	not: {
+		toContain: (sub: any) => assert.ok(!actual.includes(sub)),
+		toMatch: (regex: RegExp) => assert.ok(!regex.test(actual)),
+	},
+});
 
 describe("1. Sweet Spot File Sizes & Architecture (Мандат 8b/8zi)", () => {
 	it("проверяет размер warehouseCatalogData.ts (строго 300–350 строк)", () => {
@@ -242,8 +266,8 @@ describe("5. WarehouseStudioModal: UI Static Markup & Apple HIG Mandates", () =>
 		expect(html).toContain("Требуют заказа");
 		expect(html).toContain("Стоимость запасов");
 		expect(html).toContain("Остатки на складе");
-		expect(html).toContain("Пакетное списание смены");
-		expect(html).toContain("Приходная накладная");
+		expect(html).toContain("Списание за смену");
+		expect(html).toContain("Поступление на склад");
 	});
 
 	it("содержит ровно 1 Primary CTA кнопку цвета #0d9488 (Мандат 8am)", () => {

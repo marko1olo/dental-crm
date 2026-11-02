@@ -216,7 +216,7 @@ export function getStockStatusBadge(
 		return {
 			status: "overdraft",
 			badgeLabel: `Овердрафт (${currentStock})`,
-			colorClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30 font-semibold",
+			colorClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30 font-semibold",
 		};
 	}
 	if (currentStock <= minStock) {

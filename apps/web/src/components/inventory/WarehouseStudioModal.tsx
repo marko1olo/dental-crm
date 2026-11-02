@@ -168,13 +168,13 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 				<div className="px-4 py-2 sm:px-6 sm:py-2.5 border-b border-[var(--line)] flex flex-wrap items-center justify-between gap-2 shrink-0">
 					<div className="inline-flex p-1 rounded-xl bg-[var(--line)]/10 text-xs">
 						<button type="button" onClick={() => setActiveTab("stock")} className={`warehouse-tab-pill ${activeTab === "stock" ? "warehouse-tab-active" : ""}`}>
-							Остатки и склад
+							Остатки на складе
 						</button>
 						<button type="button" onClick={() => setActiveTab("deduct")} className={`warehouse-tab-pill ${activeTab === "deduct" ? "warehouse-tab-active" : ""}`}>
-							Списание материалов по процедурам
+							Списание за смену
 						</button>
 						<button type="button" onClick={() => setActiveTab("inbound")} className={`warehouse-tab-pill ${activeTab === "inbound" ? "warehouse-tab-active" : ""}`}>
-							Поступления и накладные
+							Поступление на склад
 						</button>
 					</div>
 
@@ -215,8 +215,8 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 						<div className="space-y-3">
 							<div className="flex flex-col sm:flex-row gap-2 justify-between items-stretch sm:items-center">
 								<div className="relative grow sm:max-w-xs">
-									<Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-[var(--ink)]/40 pointer-events-none" />
-									<input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по артикулу или названию..." className="w-full pl-9 pr-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] placeholder:text-[var(--ink)]/40 min-h-[44px]" />
+									<Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--ink)]/40 pointer-events-none" />
+									<input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Поиск по артикулу или названию..." style={{ paddingLeft: "44px" }} className="w-full pr-3 py-2 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--ink)] placeholder:text-[var(--ink)]/40 min-h-[44px]" />
 								</div>
 
 								{/* Категории фильтра */}
@@ -257,7 +257,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 														</td>
 														<td className="p-3 text-[var(--ink)]/70">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</td>
 														<td className="p-3 text-right font-semibold">
-															<span className={item.currentStock < 0 ? "text-rose-600 dark:text-rose-400" : "text-[var(--ink)]"}>
+															<span className={item.currentStock < 0 ? "text-amber-600 dark:text-amber-400" : "text-[var(--ink)]"}>
 																{item.currentStock} {item.unit}
 															</span>
 														</td>
@@ -391,23 +391,23 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 					</button>
 
 					{activeTab === "deduct" && (
-						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitBatchDeduction} className="warehouse-primary-btn">
+						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitBatchDeduction} className="warehouse-primary-btn bg-[#0d9488]">
 							<CheckCircle2 className="w-4 h-4" />
-							<span>✓ Списать расходные материалы пакетом</span>
+							<span>✓ Списать расходники смены по техкартам оказанных услуг</span>
 						</button>
 					)}
 
 					{activeTab === "inbound" && (
-						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitIncomingInvoice} className="warehouse-primary-btn">
+						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={handleCommitIncomingInvoice} className="warehouse-primary-btn bg-[#0d9488]">
 							<CheckCircle2 className="w-4 h-4" />
 							<span>✓ Оприходовать накладную</span>
 						</button>
 					)}
 
 					{activeTab === "stock" && (
-						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={() => setActiveTab("deduct")} className="warehouse-primary-btn">
+						<button type="button" data-testid="btn-primary-commit-warehouse" onClick={() => setActiveTab("deduct")} className="warehouse-primary-btn bg-[#0d9488]">
 							<CheckCircle2 className="w-4 h-4" />
-							<span>✓ Списать расходные материалы пакетом</span>
+							<span>✓ Списать расходники смены по техкартам оказанных услуг</span>
 						</button>
 					)}
 				</footer>
