@@ -5,7 +5,11 @@
  * Governed by Mandates 8e, 8n, 8am, 8ap, 8x.
  */
 
+export * from "./cashRegisterCatalogData.js";
 export * from "./cashboxCatalogData.js";
+
+export * from "./CashRegisterStudioModal.js";
+export { CashRegisterStudioModal } from "./CashRegisterStudioModal.js";
 
 export * from "./CashRegisterCheckoutModal.js";
 export { CashRegisterCheckoutModal as default } from "./CashRegisterCheckoutModal.js";

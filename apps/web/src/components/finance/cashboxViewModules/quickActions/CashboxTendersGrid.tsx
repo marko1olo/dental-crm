@@ -56,7 +56,7 @@ export function CashboxTendersGrid({
 				)}
 
 				<button type="button" className="secondary-button col-span-2 sm:col-span-4 min-h-[44px] sm:min-h-[36px] sm:h-10 px-3 rounded-xl border border-dashed border-[var(--line)] hover:border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--ink)] inline-flex items-center justify-center gap-2 font-semibold text-xs cursor-pointer transition-colors active:scale-[0.98]" onClick={() => onOpenPaymentWithMethod("split")} data-testid="btn-open-split-modal" title="Комбинированная смешанная оплата (несколько способов: нал + карта + СБП + депозит)">
-					<Layers className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" /><span>Смешанная оплата (сплит)</span>
+					<Layers className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0" /><span>Смешанная оплата (Терминал / Сплит)</span>
 					<span data-testid="btn-open-payment-modal" className="sr-only" aria-hidden="true" />
 				</button>
 			</div>

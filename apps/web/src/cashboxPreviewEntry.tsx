@@ -1,5 +1,5 @@
 /**
- * cashboxPreviewEntry.tsx — Preview entry for Cashbox SSOT (CashRegisterCheckoutModal & CashShiftJournalView).
+ * cashboxPreviewEntry.tsx — Preview entry for Cashbox SSOT (CashRegisterStudioModal & CashShiftJournalView).
  * Governed by Mandates 8e, 8n, 8am, Apple HIG.
  */
 
@@ -17,19 +17,19 @@ import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 import "./theme.css";
 import { applyThemeToRoot, resolveTheme } from "./lib/themeClasses";
-import { CashRegisterCheckoutModal } from "./components/cashbox/CashRegisterCheckoutModal";
+import { CashRegisterStudioModal } from "./components/cashbox/CashRegisterStudioModal";
 import { CashShiftJournalView } from "./components/cashbox/CashShiftJournalView";
 
 function CashboxPreviewApp() {
 	const params = new URLSearchParams(window.location.search);
 	const themeParam = params.get("theme") || "light";
-	const viewParam = params.get("view") || "checkout";
+	const viewParam = params.get("view") || "studio";
 	const isDark = themeParam === "dark" || themeParam === "night";
 
 	useEffect(() => {
 		applyThemeToRoot(
 			document.documentElement,
-			resolveTheme(isDark ? "dark" : "light", isDark)
+			resolveTheme(isDark ? "dark" : "light", isDark),
 		);
 	}, [isDark]);
 
@@ -63,7 +63,7 @@ function CashboxPreviewApp() {
 			<div className="w-full flex items-center justify-between mb-6 pb-4 border-b border-[var(--line,#e2e8f0)]">
 				<div>
 					<h1 className="text-xl sm:text-2xl font-bold text-[var(--ink,#0f172a)] tracking-tight">
-						Касса и чеки
+						Касса и чеки · Студия кассы 54-ФЗ
 					</h1>
 					<p className="text-xs text-[var(--muted,#64748b)]">
 						Журнал кассовых смен, приём оплаты и фискализация чеков
@@ -78,9 +78,11 @@ function CashboxPreviewApp() {
 					onOpenNewShift={() => {}}
 				/>
 			</div>
-			<CashRegisterCheckoutModal
+			<CashRegisterStudioModal
 				isOpen={true}
 				onClose={() => {}}
+				initialTab={viewParam === "shift" ? "shift" : "checkout"}
+				mode="studio"
 				totalDueRub={8500}
 				patientId="pat-1002"
 				patientName="Воронов Дмитрий Игоревич"
