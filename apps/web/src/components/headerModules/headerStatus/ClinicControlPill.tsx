@@ -5,14 +5,14 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import { ClinicControlPillView } from "./ClinicControlPillView.js";
+import { SidebarClinicControlPillView } from "./SidebarClinicControlPillView.js";
 import { ClinicControlCenterPopover } from "./ClinicControlCenterPopover.js";
 import { useClinicSystemStatus } from "./useClinicSystemStatus.js";
 import type { ClinicControlPillProps } from "./headerStatusTypes.js";
-import "../../../styles/modules/header.css";
-import "../../Header.css";
 
 export function ClinicControlPill({
 	className = "",
+	collapsed,
 	onLockSession,
 	onOpenShiftModal,
 }: ClinicControlPillProps) {
@@ -38,17 +38,31 @@ export function ClinicControlPill({
 		};
 	}, [isOpen]);
 
+	const isSidebar = className.includes("sidebar-control-pill");
+
 	return (
 		<div
 			ref={wrapperRef}
 			className={`dnt-clinic-control-wrapper ${className}`}
 			data-testid="clinic-control-center-wrapper"
 		>
-			<ClinicControlPillView
-				isOpen={isOpen}
-				status={status}
-				onToggleOpen={() => setIsOpen((prev) => !prev)}
-			/>
+			{isSidebar ? (
+				<SidebarClinicControlPillView
+					isOpen={isOpen}
+					status={status}
+					onToggleOpen={() => setIsOpen((prev) => !prev)}
+					className={className}
+					collapsed={collapsed}
+				/>
+			) : (
+				<ClinicControlPillView
+					isOpen={isOpen}
+					status={status}
+					onToggleOpen={() => setIsOpen((prev) => !prev)}
+					className={className}
+					collapsed={collapsed}
+				/>
+			)}
 			<ClinicControlCenterPopover
 				isOpen={isOpen}
 				status={status}

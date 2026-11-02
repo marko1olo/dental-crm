@@ -22,6 +22,7 @@ export interface HeaderUser {
 
 export interface ClinicControlPillProps {
 	className?: string | undefined;
+	collapsed?: boolean | undefined;
 	onLockSession?: (() => void) | undefined;
 	onOpenShiftModal?: (() => void) | undefined;
 }

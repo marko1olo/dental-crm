@@ -39,6 +39,7 @@ export interface ClinicControlPillViewProps {
 	readonly status: ClinicSystemStatus;
 	readonly onToggleOpen: () => void;
 	readonly className?: string | undefined;
+	readonly collapsed?: boolean | undefined;
 }
 
 export interface ClinicControlCenterPopoverProps {

@@ -257,10 +257,11 @@ html.dark .sidebar-quick-tool-badge,
 	min-width: 0 !important;
 }
 
+.sidebar-footer .sidebar-control-pill,
 .sidebar-footer .dnt-clinic-control-pill {
-	height: 30px !important;
-	min-height: 30px !important;
-	max-height: 30px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
 	padding: 0 8px !important;
 	gap: 6px !important;
 	border-radius: 8px !important;
@@ -272,10 +273,15 @@ html.dark .sidebar-quick-tool-badge,
 	-webkit-backdrop-filter: none !important;
 	transition: background 0.15s ease, border-color 0.15s ease !important;
 	width: 100% !important;
-	justify-content: center !important;
+	display: flex !important;
+	align-items: center !important;
+	justify-content: space-between !important;
 	box-sizing: border-box !important;
+	overflow: hidden !important;
+	white-space: nowrap !important;
 }
 
+.sidebar-footer .sidebar-control-pill:hover,
 .sidebar-footer .dnt-clinic-control-pill:hover {
 	background: var(--teal-surface, rgba(13, 148, 136, 0.08)) !important;
 	border-color: var(--teal, #0d9488) !important;
@@ -482,14 +488,31 @@ html.dark .sidebar-quick-tool-badge,
 	justify-content: center !important;
 }
 
+[data-collapsed="true"] .sidebar-footer .sidebar-control-pill,
+.sidebar[data-collapsed="true"] .sidebar-footer .sidebar-control-pill,
 [data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill,
 .sidebar[data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill {
-	padding: 0 4px !important;
-	gap: 4px !important;
-	width: 100% !important;
-	max-width: 64px !important;
+	padding: 0 !important;
+	gap: 0 !important;
+	width: 32px !important;
+	min-width: 32px !important;
+	max-width: 32px !important;
+	height: 32px !important;
+	min-height: 32px !important;
+	max-height: 32px !important;
 	justify-content: center !important;
+	align-items: center !important;
+	margin: 0 auto !important;
 	overflow: hidden !important;
+}
+
+[data-collapsed="true"] .sidebar-footer .sidebar-pill-label,
+.sidebar[data-collapsed="true"] .sidebar-footer .sidebar-pill-label,
+[data-collapsed="true"] .sidebar-footer .sidebar-pill-badges .px-1,
+.sidebar[data-collapsed="true"] .sidebar-footer .sidebar-pill-badges .px-1,
+[data-collapsed="true"] .sidebar-footer .sidebar-pill-badges svg:last-child,
+.sidebar[data-collapsed="true"] .sidebar-footer .sidebar-pill-badges svg:last-child {
+	display: none !important;
 }
 
 [data-collapsed="true"] .sidebar-footer .dnt-clinic-control-pill .dnt-pill-divider,

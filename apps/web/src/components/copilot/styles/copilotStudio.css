@@ -142,6 +142,9 @@
   border: none; border-bottom: 2px solid transparent;
   background-color: transparent; color: var(--muted, #64748b);
   cursor: pointer; transition: all 0.15s ease;
+  flex: 0 0 auto !important;
+  flex-shrink: 0 !important;
+  white-space: nowrap !important;
 }
 .copilot-tab-btn.active {
   border-bottom-color: var(--teal, #0d9488);

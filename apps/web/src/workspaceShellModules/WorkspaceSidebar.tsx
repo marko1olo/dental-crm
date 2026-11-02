@@ -16,8 +16,6 @@ import {
 	viewsHiddenByFeatureFlags,
 } from "./sidebarNavigationData";
 import type { WorkspaceSidebarProps } from "./types";
-import "../styles/modules/sidebar.css";
-import "../styles/workspace.css";
 
 export {
 	sidebarIcons,
@@ -83,7 +81,7 @@ export function WorkspaceSidebar({
 				</p>
 			)}
 			<div className="sidebar-footer max-w-full shrink-0 mt-auto flex flex-col gap-1.5 pt-2 pb-1 border-t border-[var(--line)]">
-				<div className="sidebar-footer-tier sidebar-footer-tier--top flex items-center justify-between gap-1 w-full">
+				<div className={`sidebar-footer-tier sidebar-footer-tier--top w-full ${collapsed ? "flex flex-col items-center justify-center gap-1.5" : "flex items-center justify-between gap-1"}`}>
 					<ThemeQuickAccessWidget variant="footer" collapsed={collapsed} />
 					<button
 						className="icon-button sidebar-collapse-button"
@@ -93,11 +91,11 @@ export function WorkspaceSidebar({
 						aria-pressed={collapsed}
 						onClick={onToggleCollapsed}
 					>
-						<ChevronsLeft aria-hidden="true" />
+						<ChevronsLeft aria-hidden="true" className={collapsed ? "rotate-180" : ""} />
 					</button>
 				</div>
 				<div className="sidebar-footer-tier sidebar-footer-tier--bottom flex items-center justify-center w-full">
-					<ClinicControlPill onLockSession={onLockSession} />
+					<ClinicControlPill onLockSession={onLockSession} className="sidebar-control-pill" collapsed={collapsed} />
 				</div>
 			</div>
 		</aside>
