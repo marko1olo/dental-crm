@@ -9,7 +9,7 @@ import { isUsablePercent, percentOfMoney, roundMoney } from "./math.js";
 import { percentFromDb } from "./dbParsers.js";
 
 export interface DoctorSpecialtyRateRow {
-	readonly userId: string;
+	readonly userId: string | null;
 	readonly serviceCategory?: string | null;
 	readonly specialty?: string | null;
 	readonly commissionPct: unknown;

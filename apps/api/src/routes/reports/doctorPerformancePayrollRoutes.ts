@@ -35,11 +35,7 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 	app.get("/api/reports/doctor-payroll", async (request, reply) => {
 		const resolved = await scopeForReport(request, reply, "report doctor payroll");
 		if (!resolved) return;
-		const report = await doctorPayrollReport(resolved.scope);
-		return {
-			period: { from: resolved.scope.from, to: resolved.scope.to },
-			...report,
-		};
+		return await doctorPayrollReport(resolved.scope);
 	});
 
 	/**

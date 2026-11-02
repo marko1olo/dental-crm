@@ -21,7 +21,7 @@ export interface StreamAgentRouterParams {
 	routerBaseUrl: string;
 	routerModel: string;
 	routerKeys: string[];
-	proxyUrl?: string | null;
+	proxyUrl?: string | null | undefined;
 	timeoutMs: number;
 }
 
@@ -45,7 +45,7 @@ export async function* streamDeepSeekAgentRouter(
 		baseUrl: routerBaseUrl,
 		defaultModel: routerModel,
 		apiKeys: routerKeys,
-		fetchFn: options.fetchFn ?? createProxiedFetch(proxyUrl),
+		fetchFn: options.fetchFn ?? createProxiedFetch(proxyUrl ?? undefined),
 	});
 
 	const routerTools: AgentRouterToolDefinition[] | undefined =
@@ -134,13 +134,15 @@ export async function* streamDeepSeekAgentRouter(
 			if (toolCalls && toolCalls.length > 0) {
 				for (let i = 0; i < toolCalls.length; i++) {
 					const tc = toolCalls[i];
+					if (!tc) continue;
+					const parsedArgs = safeParseToolArguments(tc) ?? {};
 					push({
 						kind: "chunk",
 						chunk: {
 							type: "tool_call_end",
 							id: tc.id || `call_${i}`,
 							name: tc.function?.name || "tool",
-							arguments: safeParseToolArguments(tc.function?.arguments),
+							arguments: parsedArgs,
 							index: i,
 						},
 					});

@@ -8,8 +8,8 @@ export interface StowSeriesInstanceParams {
 	seriesUid: string;
 	sopInstanceUid: string;
 	normalizedRelativePath: string;
-	rows?: number;
-	columns?: number;
+	rows?: number | undefined;
+	columns?: number | undefined;
 }
 
 export async function persistStowSeriesAndInstance(p: StowSeriesInstanceParams): Promise<{ seriesId: string; instanceId: string }> {

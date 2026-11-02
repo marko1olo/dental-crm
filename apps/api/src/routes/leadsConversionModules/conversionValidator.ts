@@ -32,13 +32,13 @@ export interface StructuredLeadAttribution {
  * Strict Mandate 8ap: Relational structured metadata is authoritative over text regexes.
  */
 export function resolveStructuredLeadAttribution(input?: {
-	source?: string | null;
-	metadata?: Record<string, unknown> | null;
-	utmSource?: string | null;
-	utmMedium?: string | null;
-	utmCampaign?: string | null;
-	utmContent?: string | null;
-	utmTerm?: string | null;
+	source?: string | null | undefined;
+	metadata?: Record<string, unknown> | null | undefined;
+	utmSource?: string | null | undefined;
+	utmMedium?: string | null | undefined;
+	utmCampaign?: string | null | undefined;
+	utmContent?: string | null | undefined;
+	utmTerm?: string | null | undefined;
 }): StructuredLeadAttribution {
 	const utmSource = input?.utmSource || (input?.metadata?.utm_source as string | undefined);
 	const utmMedium = input?.utmMedium || (input?.metadata?.utm_medium as string | undefined);

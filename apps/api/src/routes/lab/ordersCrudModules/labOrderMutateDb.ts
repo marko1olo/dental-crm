@@ -86,6 +86,10 @@ export async function updateLabOrderInDb(
 		.where(and(eq(labOrders.id, id), eq(labOrders.organizationId, orgId)))
 		.returning();
 
+	if (!updated) {
+		return { kind: "not_found" as const };
+	}
+
 	const enriched = {
 		...updated,
 		priceKopecks: Math.round(Number(updated.priceRub ?? 0) * 100),

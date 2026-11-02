@@ -51,7 +51,7 @@ function parseBookingDetails(text: string, lower: string) {
 	const timeMatch =
 		lower.match(/(?:в|на)\s*(\d{1,2})(?::(\d{2})|[-.](\d{2})|\s*(?:часов|час|утра|дня|вечера))?/i) ||
 		lower.match(/(\d{1,2}):(\d{2})/);
-	if (timeMatch) {
+	if (timeMatch && timeMatch[1]) {
 		const parsedHours = parseInt(timeMatch[1], 10);
 		const parsedMinutes = parseInt(timeMatch[2] || timeMatch[3] || "0", 10);
 		if (parsedHours >= 0 && parsedHours <= 23) {

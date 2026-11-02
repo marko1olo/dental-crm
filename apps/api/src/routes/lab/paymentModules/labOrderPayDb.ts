@@ -6,10 +6,10 @@ import { ensureOrganizationExpenseReasons } from "../../../db/seeds/seed_cash_an
 import { resolveAmountToPayKopecks, resolveTargetCashBox } from "./labOrderCashBoxFinder.js";
 
 export interface LabOrderPayInput {
-	readonly cashBoxId?: string;
-	readonly amountRub?: number;
-	readonly amountKopecks?: number | bigint;
-	readonly notes?: string;
+	readonly cashBoxId?: string | undefined;
+	readonly amountRub?: number | undefined;
+	readonly amountKopecks?: number | bigint | undefined;
+	readonly notes?: string | undefined;
 }
 
 export type LabOrderPayResult =

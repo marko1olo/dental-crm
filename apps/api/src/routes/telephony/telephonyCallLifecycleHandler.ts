@@ -119,7 +119,7 @@ export async function handleEndCall(
 				patientId: targetPatientId,
 				channel: "phone",
 				direction: body.direction === "outbound" ? "outbound" : "inbound",
-				status: isCompleted ? "completed" : "missed",
+				status: isCompleted ? "completed" : "needs_call",
 				message: body.notes
 					? `Звонок (${phoneStr}): ${body.notes} [call_id: ${callId}]`
 					: `Звонок (${phoneStr}) [call_id: ${callId}]`,

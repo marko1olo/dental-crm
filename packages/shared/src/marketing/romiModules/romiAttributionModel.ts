@@ -48,11 +48,11 @@ export function matchDenteMarketingChannel(rawSource?: string | null): string {
 export const matchStomxMarketingChannel = matchDenteMarketingChannel;
 
 export function aggregateCrmMarketingMetrics(params: {
-	patients: ReadonlyArray<{ id: string; source?: string | null; administrativeProfile?: any; notes?: string | null }>;
-	appointments: ReadonlyArray<{ id: string; patientId: string; status: string; costRub?: number }>;
-	payments: ReadonlyArray<{ id: string; patientId: string; amount?: number; amountRub?: number; amountKopecks?: number; status?: string }>;
-	communicationEvents?: ReadonlyArray<{ id: string; patientId?: string; type?: string; channel?: string; source?: string }>;
-	customBudgetsKopecks?: Record<string, number>;
+	patients: ReadonlyArray<{ id: string; source?: string | null | undefined; administrativeProfile?: any; notes?: string | null | undefined }>;
+	appointments: ReadonlyArray<{ id: string; patientId: string; status: string; costRub?: number | undefined }>;
+	payments: ReadonlyArray<{ id: string; patientId: string; amount?: number | undefined; amountRub?: number | undefined; amountKopecks?: number | undefined; status?: string | undefined }>;
+	communicationEvents?: ReadonlyArray<{ id: string; patientId?: string | undefined; type?: string | undefined; channel?: string | undefined; source?: string | undefined }> | undefined;
+	customBudgetsKopecks?: Record<string, number> | undefined;
 }): AdvertisingChannelInput[] {
 	const completedApptsByPatient = new Map<string, number>();
 	for (const a of params.appointments) {

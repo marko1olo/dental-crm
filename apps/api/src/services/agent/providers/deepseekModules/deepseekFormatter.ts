@@ -107,7 +107,7 @@ export function formatDeepSeekTools(
 
 	return tools.map((t) => {
 		if ("type" in t && t.type === "function") {
-			return t as FormattedDeepSeekTool;
+			return t as unknown as FormattedDeepSeekTool;
 		}
 		const agentTool = t as AgentTool;
 		let parameters = agentTool.parameters;

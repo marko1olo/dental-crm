@@ -42,11 +42,7 @@ export async function registerRevenueAndDebtReportsRoutes(app: FastifyInstance) 
 	app.get("/api/reports/financial-summary", async (request, reply) => {
 		const resolved = await scopeForReport(request, reply, "report financial summary");
 		if (!resolved) return;
-		const report = await financialExecutiveSummary(resolved.scope);
-		return {
-			period: { from: resolved.scope.from, to: resolved.scope.to },
-			...report,
-		};
+		return await financialExecutiveSummary(resolved.scope);
 	});
 
 	/**

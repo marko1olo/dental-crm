@@ -269,14 +269,14 @@ export function evaluateBirthDateScore(
  */
 export function calculateMatchScore(
 	dicom: {
-		dicomPatientName?: string | null;
-		dicomPatientId?: string | null;
-		dicomBirthDate?: string | null;
+		dicomPatientName?: string | null | undefined;
+		dicomPatientId?: string | null | undefined;
+		dicomBirthDate?: string | null | undefined;
 	},
 	patient: {
 		id: string;
 		fullName: string;
-		birthDate?: string | null;
+		birthDate?: string | null | undefined;
 	},
 ): ScoredMatch {
 	// 1. Проверка по DICOM PatientID (0010,0020)

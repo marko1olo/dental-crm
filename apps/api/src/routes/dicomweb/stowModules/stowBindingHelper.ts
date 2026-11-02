@@ -36,9 +36,9 @@ export async function resolveStowBinding(
 	}
 
 	const autoBindRes = await matchPatientForDicom(organizationId, {
-		dicomPatientName: parsed.dicomPatientName,
-		dicomPatientId: parsed.dicomPatientId,
-		dicomBirthDate: parsed.dicomBirthDate,
+		dicomPatientName: parsed.dicomPatientName ?? null,
+		dicomPatientId: parsed.dicomPatientId ?? null,
+		dicomBirthDate: parsed.dicomBirthDate ?? null,
 	});
 
 	return {

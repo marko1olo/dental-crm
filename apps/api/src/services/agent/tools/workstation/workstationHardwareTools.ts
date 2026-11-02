@@ -41,7 +41,7 @@ export const checkFiscalHardwarePortTool: ToolDefinition<
 	category: "read",
 	handler: async (
 		_ctx: AgentContext,
-		args: CheckFiscalHardwarePortInput,
+		args: z.input<typeof checkFiscalHardwarePortSchema>,
 	): Promise<Record<string, unknown>> => {
 		if (isCloudEnvironment()) {
 			return CLOUD_GUARD_DENIAL;

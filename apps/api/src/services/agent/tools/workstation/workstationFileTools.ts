@@ -113,7 +113,7 @@ export const searchWorkstationFilesTool: ToolDefinition<
 	category: "read",
 	handler: async (
 		_ctx: AgentContext,
-		args: SearchWorkstationFilesInput,
+		args: z.input<typeof searchWorkstationFilesSchema>,
 	): Promise<Record<string, unknown>> => {
 		if (isCloudEnvironment()) {
 			return CLOUD_GUARD_DENIAL;
@@ -199,7 +199,7 @@ export const readClinicalFileTool: ToolDefinition<
 	parameters: readClinicalFileSchema,
 	permissions: ["clinical.read"],
 	category: "read",
-	handler: async (_ctx: AgentContext, args: { filePath: string; maxBytes?: number }) => {
+	handler: async (_ctx: AgentContext, args: { filePath: string; maxBytes?: number | undefined }) => {
 		if (isCloudEnvironment()) {
 			return CLOUD_GUARD_DENIAL;
 		}

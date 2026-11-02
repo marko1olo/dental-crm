@@ -285,7 +285,7 @@ export async function doctorPayrollReport(
 	const commissionRateMap = new Map<string, number>();
 	for (const comm of commissions) {
 		const rate = Number(comm.commissionPercent);
-		if (!Number.isNaN(rate) && rate > 0) {
+		if (comm.doctorId && !Number.isNaN(rate) && rate > 0) {
 			commissionRateMap.set(comm.doctorId, rate);
 		}
 	}

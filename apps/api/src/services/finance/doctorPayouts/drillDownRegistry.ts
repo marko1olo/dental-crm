@@ -31,17 +31,17 @@ export interface DrillDownDetailsInput {
 		readonly paymentAmountRub: unknown;
 	}>;
 	readonly visitServices: Array<{
-		readonly visitId: string;
+		readonly visitId: string | null;
 		readonly id: string;
 		readonly title: string;
 		readonly order804nCode: string | null;
 		readonly category: string | null;
 		readonly toothCode: string | null;
 		readonly priceRub: unknown;
-		readonly quantity: number | null;
+		readonly quantity: unknown;
 	}>;
 	readonly visitMaterials: Array<{
-		readonly visitId: string;
+		readonly visitId: string | null;
 		readonly id: string;
 		readonly name: string | null;
 		readonly quantityChanged: unknown;
@@ -68,7 +68,7 @@ export interface DrillDownDetailsInput {
 		readonly material: string | null;
 	}>;
 	readonly organizationName: string;
-	readonly organizationInn: string | null;
+	readonly organizationInn: string | null | undefined;
 }
 
 /**

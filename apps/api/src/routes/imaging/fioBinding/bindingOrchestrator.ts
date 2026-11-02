@@ -22,9 +22,9 @@ import type {
 export async function matchPatientForDicom(
 	organizationId: string,
 	dicomData: {
-		dicomPatientName?: string | null;
-		dicomPatientId?: string | null;
-		dicomBirthDate?: string | null;
+		dicomPatientName?: string | null | undefined;
+		dicomPatientId?: string | null | undefined;
+		dicomBirthDate?: string | null | undefined;
 	},
 ): Promise<PatientFioBindingResult> {
 	// 1. Поиск по прямому PatientID (только если значение является валидным UUID)

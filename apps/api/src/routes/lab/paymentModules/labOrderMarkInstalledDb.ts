@@ -3,8 +3,8 @@ import { withTenantCtx } from "../../../db/rls.js";
 import { labOrderEvents, labOrders } from "../../../db/schema.js";
 
 export interface LabOrderMarkInstalledInput {
-	readonly clinicalNotes?: string;
-	readonly doctorId?: string;
+	readonly clinicalNotes?: string | undefined;
+	readonly doctorId?: string | undefined;
 }
 
 export type LabOrderMarkInstalledResult =

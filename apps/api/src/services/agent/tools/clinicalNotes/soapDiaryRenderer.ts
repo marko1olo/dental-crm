@@ -5,7 +5,7 @@
  * Formats clinical diary entries without Soviet bureaucracy jargon.
  */
 
-import type { DentalSpecialty } from "./clinicalNoteTemplates.js";
+import type { DentalSpecialty } from "../clinicalNoteTemplates.js";
 
 // ─── TYPES & INTERFACES ───────────────────────────────────────────────────
 

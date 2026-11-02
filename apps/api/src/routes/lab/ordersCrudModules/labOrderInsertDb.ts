@@ -123,6 +123,10 @@ export async function insertLabOrderInDb(
 		})
 		.returning();
 
+	if (!createdOrder) {
+		throw new Error("Не удалось создать заказ в лабораторию");
+	}
+
 	const enrichedOrder = {
 		...createdOrder,
 		priceKopecks: Math.round(Number(createdOrder.priceRub ?? 0) * 100),

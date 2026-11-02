@@ -235,7 +235,7 @@ export async function fetchDoctorPayoutDrillDownDetails(scope: DoctorPayoutScope
 		.where(eq(organizations.id, organizationId))
 		.limit(1);
 	const organizationName = orgRows[0]?.name ?? "Стоматологическая клиника";
-	const organizationInn = orgRows[0]?.inn ?? undefined;
+	const organizationInn = orgRows[0]?.inn ?? null;
 
 	const doctorSpecialtyRates = await db
 		.select({
