@@ -138,7 +138,10 @@ export default defineConfig({
 						return "boot-state";
 					if (normalizedId.endsWith("/apps/web/src/browserContinuity.ts"))
 						return "browser-continuity";
-					if (normalizedId.endsWith("/apps/web/src/workspacePreload.ts"))
+					if (
+						normalizedId.endsWith("/apps/web/src/workspacePreload.ts") ||
+						normalizedId.includes("/apps/web/src/workspacePreloadModules/")
+					)
 						return "workspace-preload";
 					if (normalizedId.endsWith("/apps/web/src/lib/lazyWithRetry.ts"))
 						return "lazy-with-retry";

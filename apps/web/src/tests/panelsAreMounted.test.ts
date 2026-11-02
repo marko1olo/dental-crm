@@ -1221,7 +1221,9 @@ test("каждый раздел из реестра отрисовывается
 });
 
 test("каждый раздел из реестра умеет предзагружаться", () => {
-	const preloadSource = readSource("workspacePreload.ts");
+	const preloadSource =
+		readSource("workspacePreload.ts") +
+		readSource("workspacePreloadModules/viewPreloadersMap.ts");
 	const missing = registeredAppViews().filter(
 		(view) =>
 			!new RegExp(`\\b${view}: \\(\\) => import\\(`).test(preloadSource),
@@ -1237,7 +1239,8 @@ test("каждый раздел из реестра умеет предзагр�
 });
 
 test("модуль каждого предзагружаемого раздела действительно существует", { timeout: 30000 }, () => {
-	const preloadSource = readSource("workspacePreload.ts");
+	const preloadFile = "workspacePreloadModules/viewPreloadersMap.ts";
+	const preloadSource = readSource(preloadFile);
 	const census = componentReachability();
 
 	const broken: string[] = [];
@@ -1246,9 +1249,11 @@ test("модуль каждого предзагружаемого раздел�
 	)) {
 		const view = match[1] as string;
 		const specifier = match[2] as string;
-		const target = path.posix.join(
-			path.posix.dirname("workspacePreload.ts"),
-			specifier.replace(/^\.\//, ""),
+		const target = path.posix.normalize(
+			path.posix.join(
+				path.posix.dirname(preloadFile),
+				specifier,
+			),
 		);
 		const exists = [
 			`${target}.tsx`,
