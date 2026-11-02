@@ -25,6 +25,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     const params = new URLSearchParams(window.location.search);
     if (params.get('copilot') === 'drawer' || window.location.hash === '#copilot-drawer') opts.openDrawer();
     if (params.get('hud') === 'open' || window.location.hash.includes('chairside-hud')) opts.openHud();
+    if (params.get('voice') === 'open' || window.location.hash.includes('voice-stenographer')) opts.openVoiceModal();
 
     (window as any).__denteCopilot = {
       open: opts.openDrawer,

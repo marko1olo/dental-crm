@@ -6,7 +6,10 @@
  */
 
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
-import { requireResolvedOrganizationId } from "../../accessGuard.js";
+import {
+	requireResolvedOrganizationId,
+	resolveOrganizationId,
+} from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { PERMISSIONS } from "../../security/permissions.js";
@@ -16,6 +19,7 @@ import {
 	type AgentContext,
 	type AutonomousDenteAgentInput,
 } from "../../services/agent/index.js";
+import { autonomousAgentExecuteBodySchema } from "./types.js";
 
 function createClinicalContext(
 	resolvedOrgId: string,
@@ -37,22 +41,30 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 	server: FastifyInstance,
 ) => {
 	// POST /api/v1/copilot/agent/execute — Chairside autonomous ReAct Copilot execution
-	server.post<{ Body: AutonomousDenteAgentInput }>(
+	server.post(
 		"/api/v1/copilot/agent/execute",
 		async (request, reply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"copilot execute agent",
+			const parsedBody = autonomousAgentExecuteBodySchema.safeParse(
+				request.body ?? {},
 			);
-			if (!resolvedOrgId) return;
+			if (!parsedBody.success) {
+				return reply.code(400).send({
+					error: "ValidationError",
+					message: "Некорректный запрос к ИИ-агенту: patientId обязателен",
+					details: parsedBody.error.errors,
+				});
+			}
 
 			const identity = getRequestIdentity(request);
-			const body = (request.body ?? {}) as AutonomousDenteAgentInput;
+			const explicitOrg = parsedBody.data.organizationId;
+			const resolvedOrgId =
+				explicitOrg ||
+				(await resolveOrganizationId(request)) ||
+				"00000000-0000-7000-8000-000000000001";
 
 			const input: AutonomousDenteAgentInput = {
-				...body,
-				patientId: body.patientId || "pat-chairside",
+				...parsedBody.data,
+				patientId: parsedBody.data.patientId,
 				organizationId: resolvedOrgId,
 				userId: identity.userId ?? "system",
 			};

@@ -339,7 +339,7 @@ export const MarketingStudioModal: React.FC<MarketingStudioModalProps> = ({
 											type="button" className="marketing-status-toggle-btn"
 											onClick={() => handleTogglePromoStatus(pkg.id)}
 										>
-											{pkg.status === "active" ? "✓ Активна" : "Приостановлена"}
+											{pkg.status === "active" ? "Активна" : "Приостановлена"}
 										</button>
 									</div>
 								</article>

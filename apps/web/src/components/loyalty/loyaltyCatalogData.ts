@@ -41,6 +41,11 @@ export function getTierDefinition(tierId: string): LoyaltyTierDefinition {
 	return LOYALTY_TIER_PRESETS.find((t) => t.id === tierId) ?? LOYALTY_TIER_PRESETS[0]!;
 }
 
+export function formatKopecksToRubles(kopecks: number): string {
+	const rub = Math.floor(Math.max(0, kopecks) / 100);
+	return `${rub.toLocaleString("ru-RU")} ₽`;
+}
+
 export interface TierProgressionResult {
 	readonly currentTier: LoyaltyTierDefinition; readonly nextTier: LoyaltyTierDefinition | null; readonly lifetimeSpentKop: number; readonly lifetimeSpentRub: number; readonly progressPercent: number; readonly remainingToNextTierKop: number; readonly remainingToNextTierRub: number;
 }
