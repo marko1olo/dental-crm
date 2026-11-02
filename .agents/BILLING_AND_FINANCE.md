@@ -208,6 +208,10 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 | **Семейный кошелек** | [`FamilyWalletModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FamilyWalletModal.tsx) | [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts) |
 | **Справка ФНС КНД 1151156**| [`TaxDeductionCertificateModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/TaxDeductionCertificateModal.tsx) | [`taxDeductionEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/taxDeductionEngine.ts) |
 | **Экспорт 1С CommerceML** | [`Billing1CExportModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/Billing1CExportModal.tsx) | [`commerceMl.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/commerceMl.ts) |
+| **Управленческая аналитика SSOT** | [`ExecutiveAnalyticsStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveAnalyticsStudioModal.tsx) | [`reports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/reports.ts) |
+| **Ведомость зарплат Net Revenue** | [`DoctorPayrollReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DoctorPayrollReport.tsx) | `GET /api/reports/doctor-payroll` |
+| **Загрузка кресел (Норма 65–85%)** | [`ChairOccupancyReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ChairOccupancyReport.tsx) | `GET /api/reports/chairs` |
+| **Лаунчер аналитики клиники** | [`DirectAnalyticsLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DirectAnalyticsLauncher.tsx) | Диплинки `#analytics`, `#dashboard`, `#executive-studio` |
 
 ---
 

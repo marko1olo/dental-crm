@@ -4,13 +4,17 @@
  * Прозрачная расчетная ведомость начисления заработной платы врачам (SSOT).
  *
  * ФОРМУЛА NET REVENUE:
- * 1. Оказано услуг на сумму (руб.) — валовая выручка по приёмам врача
+ * 1. Оказано услуг (руб.) — валовая выручка по приёмам врача
  * 2. Списано материалов техкарт (руб.) — нормативная себестоимость расходников
- * 3. Чистая выручка (Net Revenue) = Оказано услуг - Списано материалов
- * 4. Процентная ставка врача (%) — индивидуальный процент комиссии
- * 5. Итого к выплате (руб.) = Чистая выручка * (Ставка / 100)
+ * 3. Зуботехническая лаборатория ЗТЛ (руб.) — себестоимость ортопедических конструкций
+ * 4. Чистая выручка (Net Revenue) = Оказано услуг - Списано материалов - ЗТЛ
+ * 5. Процентная ставка врача (%) — индивидуальный процент комиссии
+ * 6. Итого к выплате (руб.) = Чистая выручка * (Ставка / 100)
  *
- * ВСЕ РАСЧЁТЫ В ЦЕЛОЧИСЛЕННЫХ КОПЕЙКАХ БЕЗ FLOAT-ОШИБОК.
+ * ВСЕ РАСЧЁТЫ В ЦЕЛОЧИСЛЕННЫХ КОПЕЙКАХ БЕЗ FLOAT-ОШИБОК (МАНДАТ 8wy).
+ * КНОПКИ НИКОГДА НЕ DISABLED (МАНДАТ 8e).
+ *
+ * Sweet Spot: 300–380 строк.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
@@ -18,6 +22,7 @@ import {
 	Calculator,
 	ChevronRight,
 	Download,
+	FlaskConical,
 	Percent,
 	Printer,
 	RefreshCw,
@@ -34,6 +39,8 @@ export interface DoctorPayrollItem {
 	readonly servicesRenderedKopecks: number;
 	readonly materialsCostRub: number;
 	readonly materialsCostKopecks: number;
+	readonly labCostRub: number;
+	readonly labCostKopecks: number;
 	readonly netRevenueRub: number;
 	readonly netRevenueKopecks: number;
 	readonly commissionPercent: number;
@@ -47,6 +54,8 @@ export interface DoctorPayrollTotals {
 	readonly totalServicesRenderedKopecks: number;
 	readonly totalMaterialsCostRub: number;
 	readonly totalMaterialsCostKopecks: number;
+	readonly totalLabCostRub: number;
+	readonly totalLabCostKopecks: number;
 	readonly totalNetRevenueRub: number;
 	readonly totalNetRevenueKopecks: number;
 	readonly totalPayoutRub: number;
@@ -93,7 +102,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 	const fetchPayroll = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/reports/doctor-payroll?period=${p}`);
+			const res = await fetch(`/api/reports/doctor-payroll?period=${encodeURIComponent(p)}`);
 			if (res.ok) {
 				const json = await res.json();
 				setRows(json.rows || []);
@@ -109,12 +118,14 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 			const demoRows: DoctorPayrollItem[] = [
 				{
 					doctorId: "doc-1",
-					doctorName: "Д-р Смирнов А.П.",
+					doctorName: "Д-р Смирнова Е.В.",
 					specialty: "Стоматолог-терапевт",
 					servicesRenderedRub: 580000,
 					servicesRenderedKopecks: 58000000,
 					materialsCostRub: 58000,
 					materialsCostKopecks: 5800000,
+					labCostRub: 0,
+					labCostKopecks: 0,
 					netRevenueRub: 522000,
 					netRevenueKopecks: 52200000,
 					commissionPercent: 28.0,
@@ -124,17 +135,19 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				},
 				{
 					doctorId: "doc-2",
-					doctorName: "Д-р Ковалёва Е.В.",
+					doctorName: "Д-р Иванов Д.С.",
 					specialty: "Стоматолог-ортопед",
 					servicesRenderedRub: 520000,
 					servicesRenderedKopecks: 52000000,
 					materialsCostRub: 52000,
 					materialsCostKopecks: 5200000,
-					netRevenueRub: 468000,
-					netRevenueKopecks: 46800000,
+					labCostRub: 68000,
+					labCostKopecks: 6800000,
+					netRevenueRub: 400000,
+					netRevenueKopecks: 40000000,
 					commissionPercent: 25.0,
-					payoutRub: 117000,
-					payoutKopecks: 11700000,
+					payoutRub: 100000,
+					payoutKopecks: 10000000,
 					appointmentsCompleted: 28,
 				},
 				{
@@ -145,11 +158,13 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 					servicesRenderedKopecks: 35000000,
 					materialsCostRub: 35000,
 					materialsCostKopecks: 3500000,
-					netRevenueRub: 315000,
-					netRevenueKopecks: 31500000,
+					labCostRub: 25000,
+					labCostKopecks: 2500000,
+					netRevenueRub: 290000,
+					netRevenueKopecks: 29000000,
 					commissionPercent: 30.0,
-					payoutRub: 94500,
-					payoutKopecks: 9450000,
+					payoutRub: 87000,
+					payoutKopecks: 8700000,
 					appointmentsCompleted: 19,
 				},
 			];
@@ -160,10 +175,12 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				totalServicesRenderedKopecks: 145000000,
 				totalMaterialsCostRub: 145000,
 				totalMaterialsCostKopecks: 14500000,
-				totalNetRevenueRub: 1305000,
-				totalNetRevenueKopecks: 130500000,
-				totalPayoutRub: 357660,
-				totalPayoutKopecks: 35766000,
+				totalLabCostRub: 93000,
+				totalLabCostKopecks: 9300000,
+				totalNetRevenueRub: 1212000,
+				totalNetRevenueKopecks: 121200000,
+				totalPayoutRub: 333160,
+				totalPayoutKopecks: 33316000,
 				totalAppointmentsCompleted: 89,
 			});
 		} else {
@@ -199,10 +216,10 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				</div>
 
 				<div className="flex items-center justify-end gap-2 shrink-0">
+					{/* Кнопка обновления НИКОГДА не блокируется (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={() => fetchPayroll(activePeriod)}
-						disabled={loading}
 						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
 						title="Обновить ведомость"
 					>
@@ -221,7 +238,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 			</div>
 
 			{/* Сводные плитки фонда оплаты труда (ФОТ) */}
-			<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+			<div className="grid grid-cols-1 sm:grid-cols-5 gap-3">
 				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
 					<div className="text-xs text-[var(--muted)] mb-1">Оказано услуг</div>
 					<div className="text-xl font-bold text-[var(--ink)]">
@@ -238,7 +255,17 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						{loading ? "..." : formatRub(totals?.totalMaterialsCostRub || 0)}
 					</div>
 					<div className="text-[11px] text-[var(--muted)] mt-0.5">
-						Материалы и лаборатория
+						Расходные материалы
+					</div>
+				</div>
+
+				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
+					<div className="text-xs text-[var(--muted)] mb-1">Лаборатория (ЗТЛ)</div>
+					<div className="text-xl font-bold text-[var(--ink)]">
+						{loading ? "..." : formatRub(totals?.totalLabCostRub || 0)}
+					</div>
+					<div className="text-[11px] text-[var(--muted)] mt-0.5">
+						Ортопедические наряды
 					</div>
 				</div>
 
@@ -248,7 +275,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						{loading ? "..." : formatRub(totals?.totalNetRevenueRub || 0)}
 					</div>
 					<div className="text-[11px] text-[var(--muted)] mt-0.5">
-						База для начисления комиссии
+						База для комиссии врача
 					</div>
 				</div>
 
@@ -258,7 +285,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						{loading ? "..." : formatRub(totals?.totalPayoutRub || 0)}
 					</div>
 					<div className="text-[11px] text-[var(--muted)] mt-0.5">
-						Начислено врачам клиники
+						Начислено врачам
 					</div>
 				</div>
 			</div>
@@ -273,6 +300,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 								<th className="py-2.5 px-3">Специализация</th>
 								<th className="py-2.5 px-3 text-right">Оказано услуг</th>
 								<th className="py-2.5 px-3 text-right">Списано техкарт</th>
+								<th className="py-2.5 px-3 text-right">Лаборатория (ЗТЛ)</th>
 								<th className="py-2.5 px-3 text-right">Чистая выручка (Net)</th>
 								<th className="py-2.5 px-3 text-right">Ставка %</th>
 								<th className="py-2.5 px-3 text-right font-semibold text-[var(--ink)]">
@@ -283,7 +311,7 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 						<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
 							{rows.length === 0 ? (
 								<tr>
-									<td colSpan={7} className="py-8 text-center text-[var(--muted)]">
+									<td colSpan={8} className="py-8 text-center text-[var(--muted)]">
 										{loading ? "Формирование ведомости..." : "Нет данных о начислениях за выбранный период"}
 									</td>
 								</tr>
@@ -297,6 +325,9 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 										</td>
 										<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
 											{formatRub(row.materialsCostRub)}
+										</td>
+										<td className="py-2.5 px-3 text-right tabular-nums text-[var(--muted)]">
+											{formatRub(row.labCostRub || 0)}
 										</td>
 										<td className="py-2.5 px-3 text-right tabular-nums font-medium">
 											{formatRub(row.netRevenueRub)}
@@ -337,14 +368,18 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 								</span>
 							</div>
 
-							<div className="grid grid-cols-2 gap-2 pt-2 border-t border-[var(--line-subtle)] text-xs">
+							<div className="grid grid-cols-3 gap-2 pt-2 border-t border-[var(--line-subtle)] text-xs">
 								<div>
 									<span className="text-[var(--muted)] block text-[11px]">Оказано:</span>
 									<span className="font-medium text-[var(--ink)]">{formatRub(row.servicesRenderedRub)}</span>
 								</div>
 								<div>
-									<span className="text-[var(--muted)] block text-[11px]">Расходники:</span>
+									<span className="text-[var(--muted)] block text-[11px]">Материалы:</span>
 									<span className="text-[var(--muted)]">{formatRub(row.materialsCostRub)}</span>
+								</div>
+								<div>
+									<span className="text-[var(--muted)] block text-[11px]">ЗТЛ:</span>
+									<span className="text-[var(--muted)]">{formatRub(row.labCostRub || 0)}</span>
 								</div>
 							</div>
 

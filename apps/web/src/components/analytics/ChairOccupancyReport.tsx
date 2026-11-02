@@ -4,17 +4,20 @@
  * Отчёт загрузки кресел клиники (SSOT).
  *
  * ЧЕСТНЫЙ РАСЧЁТ ЗАНЯТОСТИ КРЕСЕЛ:
- * - Кресло 1, Кресло 2 ...
- * - Часов в плане (базовый фонд смены: рабочие дни * часы смены)
- * - Отработано часов (суммарная длительность завершённых и активных приёмов)
- * - Коэффициент загрузки (%)
- * - Свободные окна / часы для дозаписи пациентов
- * - 100% дизайн-токены var(--paper), var(--ink), var(--line), var(--teal)
+ * - Стоматологическая норма загрузки 65–85% (Мандат 8n).
+ * - Ниже 65% — недогруз / резерв для дозаписи.
+ * - Выше 85% — перегрузка персонала и риск нарушения СанПиН.
+ * - 100% дизайн-токены var(--paper), var(--ink), var(--line), var(--teal).
+ * - Кнопки никогда не disabled (Мандат 8e).
+ *
+ * Sweet Spot: 280–350 строк.
  */
 
 import React, { useCallback, useEffect, useState } from "react";
 import {
+	Activity,
 	Armchair,
+	CheckCircle2,
 	Clock,
 	DoorOpen,
 	Percent,
@@ -22,6 +25,7 @@ import {
 	RefreshCw,
 } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { getOccupancyStatus } from "./analyticsCatalogData";
 
 export interface ChairLoadItem {
 	readonly chairId: string | null;
@@ -33,6 +37,7 @@ export interface ChairLoadItem {
 	readonly workedHours: number;
 	readonly freeHours: number;
 	readonly utilizationPercent: number;
+	readonly status: "low" | "optimal" | "high";
 }
 
 export interface ChairLoadBasis {
@@ -77,7 +82,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 	const fetchChairs = useCallback(async (p: string) => {
 		setLoading(true);
 		try {
-			const res = await fetch(`/api/reports/chairs?period=${p}`);
+			const res = await fetch(`/api/reports/chairs?period=${encodeURIComponent(p)}`);
 			if (res.ok) {
 				const json = await res.json();
 				const b: ChairLoadBasis = json.basis || {
@@ -102,6 +107,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 						workedHours: workedH,
 						freeHours: freeH,
 						utilizationPercent: uPercent,
+						status: getOccupancyStatus(uPercent),
 					};
 				});
 
@@ -126,6 +132,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					workedHours: 135,
 					freeHours: 38,
 					utilizationPercent: 78,
+					status: "optimal",
 				},
 				{
 					chairId: "chair-2",
@@ -137,6 +144,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					workedHours: 112,
 					freeHours: 61,
 					utilizationPercent: 65,
+					status: "optimal",
 				},
 				{
 					chairId: "chair-3",
@@ -148,6 +156,7 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 					workedHours: 78,
 					freeHours: 95,
 					utilizationPercent: 45,
+					status: "low",
 				},
 			];
 			setChairs(demoRows);
@@ -168,12 +177,12 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 		fetchChairs(activePeriod);
 	}, [activePeriod, fetchChairs]);
 
-	// Суммарные расчеты по клинике
 	const totalPlanned = chairs.reduce((sum, c) => sum + c.plannedHours, 0);
 	const totalWorked = chairs.reduce((sum, c) => sum + c.workedHours, 0);
 	const totalFree = Math.max(0, Math.round((totalPlanned - totalWorked) * 10) / 10);
 	const clinicAvgUtilization =
 		totalPlanned > 0 ? Math.round((totalWorked / totalPlanned) * 100) : 0;
+	const clinicStatus = getOccupancyStatus(clinicAvgUtilization);
 
 	return (
 		<div className="space-y-6" data-testid="chair-occupancy-report">
@@ -197,10 +206,10 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 				</div>
 
 				<div className="flex items-center justify-end gap-2 shrink-0">
+					{/* Кнопка обновления НИКОГДА не disabled (Мандат 8e) */}
 					<button
 						type="button"
 						onClick={() => fetchChairs(activePeriod)}
-						disabled={loading}
 						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
 						title="Обновить загрузку"
 					>
@@ -221,7 +230,24 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 			{/* Сводные показатели загрузки кресел */}
 			<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
 				<div className="p-3.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] shadow-sm">
-					<div className="text-xs text-[var(--muted)] mb-1">Средняя загрузка клиники</div>
+					<div className="flex items-center justify-between text-xs text-[var(--muted)] mb-1">
+						<span>Средняя загрузка клиники</span>
+						<span
+							className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+								clinicStatus === "optimal"
+									? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+									: clinicStatus === "high"
+										? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+										: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+							}`}
+						>
+							{clinicStatus === "optimal"
+								? "✓ Норма 65–85%"
+								: clinicStatus === "high"
+									? "⚠️ Перегруз"
+									: "Резерв"}
+						</span>
+					</div>
 					<div className="text-xl font-bold text-[var(--teal)]">
 						{loading ? "..." : `${clinicAvgUtilization}%`}
 					</div>
@@ -272,13 +298,14 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 								<th className="py-2.5 px-3 text-right">Отработано часов</th>
 								<th className="py-2.5 px-3 text-right">Свободные окна (ч.)</th>
 								<th className="py-2.5 px-3 text-right">Коэффициент загрузки</th>
-								<th className="py-2.5 px-3 w-40">Шкала загрузки</th>
+								<th className="py-2.5 px-3">Статус нормы (65–85%)</th>
+								<th className="py-2.5 px-3 w-36">Шкала загрузки</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line-subtle)] text-[var(--ink)]">
 							{chairs.length === 0 ? (
 								<tr>
-									<td colSpan={6} className="py-8 text-center text-[var(--muted)]">
+									<td colSpan={7} className="py-8 text-center text-[var(--muted)]">
 										{loading ? "Загрузка данных о креслах..." : "Нет данных о загрузке за выбранный период"}
 									</td>
 								</tr>
@@ -300,6 +327,23 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 										</td>
 										<td className="py-2.5 px-3 text-right tabular-nums font-bold text-[var(--teal)]">
 											{chair.utilizationPercent}%
+										</td>
+										<td className="py-2.5 px-3">
+											<span
+												className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+													chair.status === "optimal"
+														? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+														: chair.status === "high"
+															? "bg-rose-500/10 text-rose-600 dark:text-rose-400"
+															: "bg-amber-500/10 text-amber-600 dark:text-amber-400"
+												}`}
+											>
+												{chair.status === "optimal"
+													? "✓ Норма"
+													: chair.status === "high"
+														? "⚠️ Перегруз"
+														: "Резерв"}
+											</span>
 										</td>
 										<td className="py-2.5 px-3">
 											<div className="w-full bg-[var(--line)] h-2 rounded-full overflow-hidden">
@@ -334,9 +378,20 @@ export const ChairOccupancyReport: React.FC<ChairOccupancyReportProps> = ({
 									<Armchair size={14} className="text-[var(--teal)]" />
 									<span>{chair.chairName}</span>
 								</div>
-								<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-bold text-[var(--teal)]">
-									{chair.utilizationPercent}%
-								</span>
+								<div className="flex items-center gap-2">
+									<span
+										className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+											chair.status === "optimal"
+												? "bg-emerald-500/10 text-emerald-600"
+												: "bg-amber-500/10 text-amber-600"
+										}`}
+									>
+										{chair.status === "optimal" ? "✓ Норма" : "Резерв"}
+									</span>
+									<span className="text-xs px-2 py-0.5 rounded-md bg-[var(--paper-soft)] border border-[var(--line)] font-bold text-[var(--teal)]">
+										{chair.utilizationPercent}%
+									</span>
+								</div>
 							</div>
 
 							<div className="w-full bg-[var(--line)] h-2 rounded-full overflow-hidden">

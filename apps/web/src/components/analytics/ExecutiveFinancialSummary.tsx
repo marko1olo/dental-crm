@@ -197,7 +197,6 @@ export const ExecutiveFinancialSummary: React.FC<ExecutiveFinancialSummaryProps>
 					<button
 						type="button"
 						onClick={() => fetchSummary(activePeriod)}
-						disabled={loading}
 						className="h-8 w-8 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] hover:border-[var(--teal)] transition-colors cursor-pointer"
 						title="Обновить данные"
 					>

@@ -2,7 +2,7 @@
  * apps/web/src/components/analytics/DirectAnalyticsLauncher.tsx
  *
  * Автономный лаунчер управленческой аналитики и дашборда руководителя DENTE CRM.
- * Монтируется в AppShell & StandaloneLaunchers (Мандаты 8b <= 120 строк, 8e, 8aq).
+ * Монтируется в AppShell & StandaloneLaunchers (Мандаты 8b <= 100 строк, 8e, 8aq).
  */
 
 import React, { useEffect, useState } from "react";
@@ -13,17 +13,18 @@ export const DirectAnalyticsLauncher: React.FC = () => {
 		if (typeof window === "undefined") return false;
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
-		const match = (
+		return (
 			h === "#executive-studio" ||
 			h.includes("executive-studio") ||
 			h.includes("clinic-analytics") ||
 			h === "#analytics" ||
 			h === "#dashboard" ||
+			s.includes("analytics=1") ||
 			s.includes("analytics=direct") ||
+			s.includes("dashboard=1") ||
 			s.includes("dashboard=direct") ||
 			s.includes("executive_studio")
 		);
-		return match;
 	});
 
 	useEffect(() => {
@@ -37,7 +38,9 @@ export const DirectAnalyticsLauncher: React.FC = () => {
 				h.includes("clinic-analytics") ||
 				h === "#analytics" ||
 				h === "#dashboard" ||
+				s.includes("analytics=1") ||
 				s.includes("analytics=direct") ||
+				s.includes("dashboard=1") ||
 				s.includes("dashboard=direct") ||
 				s.includes("executive_studio")
 			) {
@@ -73,8 +76,7 @@ export const DirectAnalyticsLauncher: React.FC = () => {
 				/#analytics|#dashboard|#executive-studio|#clinic-analytics/g,
 				"",
 			);
-			const newUrl =
-				url.pathname + (url.search ? url.search : "") + cleanHash;
+			const newUrl = url.pathname + (url.search ? url.search : "") + cleanHash;
 			window.history.replaceState({}, "", newUrl);
 		}
 	};

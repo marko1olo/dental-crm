@@ -2,11 +2,11 @@
  * apps/web/src/components/analytics/ExecutiveAnalyticsStudioModal.tsx
  *
  * МОНОЛИТНАЯ СТУДИЯ УПРАВЛЕНЧЕСКОЙ АНАЛИТИКИ И ДАШБОРДА РУКОВОДИТЕЛЯ DENTE CRM
+ * (Мандат 8b & 8zi: Канонический монолит в Sweet Spot 420–480 строк, без микро-шредера).
  * (Мандат 8am: Единый дизайн-код, ровно 1 Primary CTA кнопка #0d9488).
- * (Мандат 8n: Суверенитет малой клиники 1–3 кресла, честная касса 54-ФЗ, загрузка кресел, Recall).
- * (Apple HIG: мобильная адаптация 390x844, 0px горизонтального скролла, сенсорный минимум >= 44x44px).
- *
- * Строгий Sweet Spot: 350–480 строк.
+ * (Мандат 8n: Малая клиника 1–3 кресла, честная касса 54-ФЗ, загрузка кресел, Recall).
+ * (Apple HIG: мобильный Bottom Sheet rounded-t-[24px], Drag Handle 36x5px, 0px горизонтального скролла).
+ * (Мандат 8e: Автономия врача, кнопки экспорта и печати никогда не блокируются).
  */
 
 import React, { useEffect, useId, useState } from "react";
@@ -16,10 +16,10 @@ import {
 	CheckCircle2,
 	ChevronRight,
 	Clock,
+	Copy,
 	CreditCard,
 	Download,
-	FileSpreadsheet,
-	HelpCircle,
+	MessageSquare,
 	Printer,
 	QrCode,
 	RefreshCw,
@@ -37,6 +37,7 @@ import {
 	exportAnalyticsToCsv,
 	fetchClinicAnalyticsSSOT,
 } from "./analyticsCatalogData";
+import "./styles/analyticsStudio.css";
 
 export interface ExecutiveAnalyticsStudioModalProps {
 	readonly isOpen: boolean;
@@ -56,6 +57,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 	);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [exportSuccess, setExportSuccess] = useState<boolean>(false);
+	const [copiedCohortKey, setCopiedCohortKey] = useState<string | null>(null);
 
 	useEffect(() => {
 		if (!isOpen) return;
@@ -110,18 +112,31 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 			});
 	};
 
+	const copyWhatsapp = (template: string, cohortKey: string) => {
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			navigator.clipboard.writeText(template).catch(() => {});
+		}
+		setCopiedCohortKey(cohortKey);
+		setTimeout(() => setCopiedCohortKey(null), 2500);
+	};
+
 	return (
 		<div
 			id="executive-analytics-studio-overlay"
-			className="fixed inset-0 z-[99999] flex flex-col items-center justify-start bg-black/70 backdrop-blur-sm overflow-y-auto overflow-x-hidden p-2 sm:p-4 md:p-6"
+			className="studio-overlay"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby={titleId}
 			data-testid="executive-analytics-studio-modal"
 		>
-			<div className="w-full max-w-5xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] rounded-2xl shadow-2xl flex flex-col overflow-hidden my-auto">
+			<div className="studio-modal-container">
+				{/* Apple HIG: Drag Handle для сенсорных смартфонов (<= 640px) */}
+				<div className="studio-drag-handle" aria-hidden="true">
+					<div className="studio-drag-handle-bar" />
+				</div>
+
 				{/* 1. Единая шапка экрана (Мандат 8am: ровно 1 строка, 48-56px) */}
-				<header className="h-12 sm:h-14 px-3 sm:px-5 border-b border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-2 shrink-0">
+				<header className="studio-header">
 					<div className="flex items-center gap-2 sm:gap-3 min-w-0">
 						<div className="w-8 h-8 rounded-lg bg-[var(--teal)]/10 text-[var(--teal)] flex items-center justify-center shrink-0">
 							<TrendingUp className="w-4 h-4" aria-hidden="true" />
@@ -129,7 +144,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 						<div className="flex items-center gap-2 min-w-0">
 							<h1
 								id={titleId}
-								className="text-sm sm:text-base font-bold tracking-tight text-[var(--ink)] truncate"
+								className="studio-header-title text-sm sm:text-base font-bold tracking-tight text-[var(--ink)] truncate"
 							>
 								<span className="sm:hidden">Аналитика клиники</span>
 								<span className="hidden sm:inline">Управленческая аналитика клиники</span>
@@ -142,9 +157,9 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 					</div>
 
 					<div className="flex items-center gap-2 shrink-0">
-						{/* Переключатель периода для десктопа (hidden sm:inline-flex) */}
+						{/* Переключатель периода для десктопа (min-width: 641px) */}
 						<div
-							className="hidden sm:inline-flex p-0.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]"
+							className="studio-period-pill-group"
 							role="tablist"
 							aria-label="Выбор периода аналитики"
 						>
@@ -157,11 +172,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 										role="tab"
 										aria-selected={isActive}
 										onClick={() => setPeriod(opt.key)}
-										className={`h-7 sm:h-8 px-2.5 sm:px-3 rounded-md text-xs font-medium transition-colors cursor-pointer flex items-center ${
-											isActive
-												? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
-												: "text-[var(--muted)] hover:text-[var(--ink)]"
-										}`}
+										className={`studio-period-pill ${isActive ? "is-active" : ""}`}
 									>
 										<span>{opt.label}</span>
 									</button>
@@ -212,6 +223,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 							})}
 						</div>
 					</div>
+
 					{/* Сетка 3 Доминантных KPI (Выручка, Загрузка кресел, Средний чек / Recall) */}
 					<section
 						className="grid grid-cols-1 md:grid-cols-3 gap-3"
@@ -219,7 +231,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 					>
 						{/* KPI 1: Выручка клиники (36px bold, крупная сумма) */}
 						<article
-							className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col justify-between"
+							className="studio-kpi-card"
 							data-testid="kpi-card-revenue"
 						>
 							<div>
@@ -231,7 +243,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 										{data.periodLabel}
 									</span>
 								</div>
-								<div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] mb-2">
+								<div className="studio-kpi-value text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] mb-2">
 									{data.revenueFormatted}
 								</div>
 							</div>
@@ -243,7 +255,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 
 						{/* KPI 2: Загрузка кресел (норма 65–85%) */}
 						<article
-							className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col justify-between"
+							className="studio-kpi-card"
 							data-testid="kpi-card-chairs"
 						>
 							<div>
@@ -252,13 +264,13 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 										Загрузка кресел ({data.totalChairsCount} шт)
 									</span>
 									<span
-										className={`text-[11px] font-semibold px-2 py-0.5 rounded-md ${
+										className={
 											data.chairOccupancyStatus === "optimal"
-												? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+												? "studio-badge-norm-optimal"
 												: data.chairOccupancyStatus === "high"
-													? "bg-amber-500/10 text-amber-600 dark:text-amber-400"
-													: "bg-blue-500/10 text-blue-600 dark:text-blue-400"
-										}`}
+													? "studio-badge-norm-overload"
+													: "studio-badge-norm-reserve"
+										}
 									>
 										{data.chairOccupancyStatus === "optimal"
 											? "✓ Норма 65–85%"
@@ -267,7 +279,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 												: "Резерв"}
 									</span>
 								</div>
-								<div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] mb-2">
+								<div className="studio-kpi-value text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] mb-2">
 									{data.chairOccupancyPercent}%
 								</div>
 							</div>
@@ -288,7 +300,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 
 						{/* KPI 3: Средний чек и Повторная явка (Recall) */}
 						<article
-							className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] flex flex-col justify-between"
+							className="studio-kpi-card"
 							data-testid="kpi-card-average-check"
 						>
 							<div>
@@ -300,7 +312,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 										Повторные {data.rebookingRatePercent}%
 									</span>
 								</div>
-								<div className="text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] mb-2">
+								<div className="studio-kpi-value text-2xl sm:text-3xl font-extrabold tracking-tight text-[var(--ink)] mb-2">
 									{data.averageCheckFormatted}
 								</div>
 							</div>
@@ -410,15 +422,69 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 							</div>
 						</div>
 					</div>
+
+					{/* Секция 3: Когорты удержания Recall (3, 6, 12 мес) и WhatsApp-приглашение */}
+					<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
+						<div className="flex items-center justify-between">
+							<div className="flex items-center gap-2">
+								<MessageSquare className="w-4 h-4 text-[var(--teal)]" />
+								<h2 className="text-xs font-bold uppercase tracking-wider text-[var(--ink)]">
+									Удержание и возвращаемость (Recall ≥ 70%)
+								</h2>
+							</div>
+							<span className="text-xs text-[var(--muted)]">
+								Когорты пациентов без визита
+							</span>
+						</div>
+
+						<div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+							{data.recallCohorts.map((cohort) => {
+								const isCopied = copiedCohortKey === cohort.key;
+								return (
+									<div
+										key={cohort.key}
+										className="p-3 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)]/60 flex flex-col justify-between gap-2.5 text-xs"
+									>
+										<div className="flex items-center justify-between">
+											<span className="font-bold text-[var(--ink)]">{cohort.title}</span>
+											<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal)]/10 text-[var(--teal)]">
+												{cohort.count} пац.
+											</span>
+										</div>
+										<p className="text-[11px] text-[var(--muted)] leading-relaxed line-clamp-2">
+											{cohort.suggestedWhatsappTemplate}
+										</p>
+										<button
+											type="button"
+											onClick={() => copyWhatsapp(cohort.suggestedWhatsappTemplate, cohort.key)}
+											className="min-h-[44px] sm:min-h-[36px] w-full px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+										>
+											{isCopied ? (
+												<>
+													<CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+													<span>Скопировано в буфер</span>
+												</>
+											) : (
+												<>
+													<Copy className="w-3.5 h-3.5 text-[var(--teal)]" />
+													<span>Скопировать для WhatsApp</span>
+												</>
+											)}
+										</button>
+									</div>
+								);
+							})}
+						</div>
+					</div>
 				</main>
 
 				{/* 3. Нижний тулбар: статус, печать и РОВНО ОДНА Primary CTA кнопка #0d9488 (Мандат 8am) */}
-				<footer className="h-14 sm:h-16 px-3 sm:px-5 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3 shrink-0">
+				<footer className="studio-footer">
 					<div className="flex items-center gap-2 min-w-0">
 						<button
 							type="button"
 							onClick={refreshData}
-							className="h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+							className="studio-secondary-btn"
 							title="Обновить показатели"
 						>
 							<RefreshCw className={`w-3.5 h-3.5 ${isLoading ? "animate-spin" : ""}`} />
@@ -428,7 +494,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 						<button
 							type="button"
 							onClick={handlePrint}
-							className="h-9 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] text-xs font-medium transition-colors cursor-pointer inline-flex items-center gap-1.5 shrink-0"
+							className="studio-secondary-btn"
 							title="Распечатать отчёт"
 						>
 							<Printer className="w-3.5 h-3.5" />
@@ -444,7 +510,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 					<button
 						type="button"
 						onClick={handleExport}
-						className="primary-button h-10 sm:h-11 px-4 sm:px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs sm:text-sm font-semibold transition-opacity cursor-pointer inline-flex items-center gap-2 shadow-sm shrink-0"
+						className="primary-button studio-primary-cta h-10 sm:h-11 px-4 sm:px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:opacity-90 text-white text-xs sm:text-sm font-semibold transition-opacity cursor-pointer inline-flex items-center gap-2 shadow-sm shrink-0"
 						data-testid="studio-primary-export-btn"
 					>
 						{exportSuccess ? (
@@ -455,7 +521,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 						) : (
 							<>
 								<Download className="w-4 h-4" />
-								<span>✓ Экспорт финансового отчета</span>
+								<span>✓ Экспорт управленческого отчёта</span>
 							</>
 						)}
 					</button>
