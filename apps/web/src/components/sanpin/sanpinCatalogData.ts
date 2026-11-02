@@ -2,16 +2,19 @@
  * apps/web/src/components/sanpin/sanpinCatalogData.ts
  *
  * Канонический SSOT санитарно-эпидемиологического контура клиники (Мандаты 8b, 8e, 8n, 8x, 8ap):
+ * - Единый источник правды (SSOT) для журналов автоклавирования и санитарного контроля.
  * - Программы автоклавирования: 134°C 2.1 бар 5 мин (Класс B) и 121°C 1.15 бар 20 мин (деликатная).
  * - Реестр оборудования: автоклавы класса B, термосвариватели пакетов и дезары-рециркуляторы.
- * - Контроль предстерилизационной очистки (ПСО): азопирамовая и фенолфталеиновая пробы (100% норма).
+ * - Контроль предстерилизационной очистки: азопирамовая и фенолфталеиновая пробы (100% норма).
  * - Журнал кварцевания: учет наработки ультрафиолетовых безозоновых бактерицидных ламп.
  * - Фоновое пакетное списание расходников со склада в 1 клик (Soft Negative Stock, Мандат 8n).
- * - Строгий диапазон: 300–350 строк (Мандат 8b/8zi). Человеческий клинический язык (Мандат 8x).
+ * - Строгий диапазон Sweet Spot: 250–320 строк (Мандат 8b/8zi). Человеческий клинический язык (Мандат 8x).
  */
 
+export type AutoclaveRegimeId = "standard_134" | "delicate_121" | "flash_134";
+
 export interface AutoclaveProgram {
-	readonly id: "standard_134" | "delicate_121" | "flash_134";
+	readonly id: AutoclaveRegimeId;
 	readonly name: string;
 	readonly description: string;
 	readonly temperatureCelsius: number;
@@ -75,7 +78,7 @@ export interface SterilizationBatchCycleRecord {
 	readonly time: string;
 	readonly autoclaveId: string;
 	readonly autoclaveName: string;
-	readonly programId: "standard_134" | "delicate_121" | "flash_134";
+	readonly programId: AutoclaveRegimeId;
 	readonly temperatureCelsius: number;
 	readonly pressureBar: number;
 	readonly exposureMinutes: number;
@@ -110,10 +113,12 @@ export interface BactericidalLogRecord {
 	readonly airDisinfectionStatus: "ВЫПОЛНЕНО" | "ТРЕБУЕТСЯ";
 }
 
+export const PRESET_PACK_COUNTS = [6, 12, 18, 24] as const;
+
 export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
 	{
 		id: "standard_134",
-		name: "134°C • Универсальная (Класс B)",
+		name: "134°C • 2.1 бар • 5 мин (Универсальная)",
 		description: "Стандартный цикл для наконечников, лотков и упакованных инструментов",
 		temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, dryingMinutes: 15,
 		indicatorClass: "Индикатор 5 класса (многопараметрический)",
@@ -121,7 +126,7 @@ export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
 	},
 	{
 		id: "delicate_121",
-		name: "121°C • Деликатная (Класс B)",
+		name: "121°C • 1.15 бар • 20 мин (Деликатная)",
 		description: "Бережный цикл для термолабильных изделий, оптики, силикона и пластмасс",
 		temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, dryingMinutes: 15,
 		indicatorClass: "Индикатор 5 класса (121°C/20 мин)",
@@ -129,7 +134,7 @@ export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
 	},
 	{
 		id: "flash_134",
-		name: "134°C • Экспресс без упаковки",
+		name: "134°C • 2.1 бар • 3 мин (Экспресс без упаковки)",
 		description: "Быстрый цикл для неотложной стерилизации монолитных стальных инструментов",
 		temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 3, dryingMinutes: 5,
 		indicatorClass: "Индикатор 4 класса",
@@ -138,21 +143,21 @@ export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
 ];
 
 export const CLINIC_STERILIZERS: readonly ClinicSterilizerDevice[] = [
-	{ id: "autoclave-01", model: "Melag Vacuklav 23 B+ (Класс B)", name: "Melag Vacuklav 23 B+ (Класс B)", autoclaveClass: "B", serialNumber: "ML-2024-8841", chamberVolumeLiters: 22, isCompliant: true, locationRoom: "ЦСО (Стерилизационная)" },
-	{ id: "autoclave-02", model: "W&H Lisa 500 (Класс B)", name: "W&H Lisa 500 (Класс B)", autoclaveClass: "B", serialNumber: "WH-2023-1102", chamberVolumeLiters: 17, isCompliant: true, locationRoom: "ЦСО (Стерилизационная)" },
-	{ id: "autoclave-03", model: "Euronda E9 Next (Класс B)", name: "Euronda E9 Next (Класс B)", autoclaveClass: "B", serialNumber: "ER-2025-0493", chamberVolumeLiters: 24, isCompliant: true, locationRoom: "Кабинет хирургии" },
-	{ id: "autoclave-04", model: "Dentsply Sirona DAC Universal", name: "Dentsply Sirona DAC Universal", autoclaveClass: "B", serialNumber: "DS-2024-7719", chamberVolumeLiters: 12, isCompliant: true, locationRoom: "ЦСО (Стерилизационная)" },
+	{ id: "autoclave-01", model: "Автоклав №1 (Melag Vacuklav 23 B+)", name: "Автоклав №1 (Melag Vacuklav 23 B+)", autoclaveClass: "B", serialNumber: "ML-2024-8841", chamberVolumeLiters: 22, isCompliant: true, locationRoom: "Стерилизационная" },
+	{ id: "autoclave-02", model: "Автоклав №2 (W&H Lisa 500)", name: "Автоклав №2 (W&H Lisa 500)", autoclaveClass: "B", serialNumber: "WH-2023-1102", chamberVolumeLiters: 17, isCompliant: true, locationRoom: "Стерилизационная" },
+	{ id: "autoclave-03", model: "Автоклав №3 (Euronda E9 Next)", name: "Автоклав №3 (Euronda E9 Next)", autoclaveClass: "B", serialNumber: "ER-2025-0493", chamberVolumeLiters: 24, isCompliant: true, locationRoom: "Кабинет хирургии" },
+	{ id: "autoclave-04", model: "Автоклав №4 (DAC Universal)", name: "Автоклав №4 (DAC Universal)", autoclaveClass: "B", serialNumber: "DS-2024-7719", chamberVolumeLiters: 12, isCompliant: true, locationRoom: "Стерилизационная" },
 ];
 
 export const CLINIC_SEALING_MACHINES: readonly SealingMachineDevice[] = [
-	{ id: "seal-01", model: "Euronda Euroseal 2001 Plus", seamWidthMm: 12, sealTemperatureCelsius: 180, locationRoom: "ЦСО Упаковочная зона" },
-	{ id: "seal-02", model: "Melag MELAseal 100+", seamWidthMm: 10, sealTemperatureCelsius: 185, locationRoom: "ЦСО Упаковочная зона" },
+	{ id: "seal-01", model: "Euronda Euroseal 2001 Plus", seamWidthMm: 12, sealTemperatureCelsius: 180, locationRoom: "Упаковочная зона" },
+	{ id: "seal-02", model: "Melag MELAseal 100+", seamWidthMm: 10, sealTemperatureCelsius: 185, locationRoom: "Упаковочная зона" },
 ];
 
 export const BACTERICIDAL_STANDARD_DEVICES: readonly BactericidalDeviceItem[] = [
-	{ id: "uv-01", name: "Рециркулятор Дезар-4", roomName: "Кабинет терапевтической стоматологии №1", lampModel: "Philips TUV 15W (безозоновая, 3 шт.)", operatingHours: 1420, maxResourceHours: 8000, isCompliant: true },
-	{ id: "uv-02", name: "Рециркулятор Дезар-7", roomName: "Центральное стерилизационное отделение (ЦСО)", lampModel: "Philips TUV 30W (безозоновая, 2 шт.)", operatingHours: 2150, maxResourceHours: 8000, isCompliant: true },
-	{ id: "uv-03", name: "Кронт УФ-Пегас", roomName: "Кабинет хирургической стоматологии", lampModel: "Osram HNS 15W OFR (2 шт.)", operatingHours: 980, maxResourceHours: 8000, isCompliant: true },
+	{ id: "uv-01", name: "Рециркулятор Дезар-4", roomName: "Кабинет терапии №1", lampModel: "Philips TUV 15W (безозоновая, 3 шт.)", operatingHours: 1420, maxResourceHours: 8000, isCompliant: true },
+	{ id: "uv-02", name: "Рециркулятор Дезар-7", roomName: "Стерилизационная (ЦСО)", lampModel: "Philips TUV 30W (безозоновая, 2 шт.)", operatingHours: 2150, maxResourceHours: 8000, isCompliant: true },
+	{ id: "uv-03", name: "Кронт УФ-Пегас", roomName: "Кабинет хирургии", lampModel: "Osram HNS 15W OFR (2 шт.)", operatingHours: 980, maxResourceHours: 8000, isCompliant: true },
 ];
 
 export const CHEMICAL_INDICATORS = [
@@ -193,7 +198,7 @@ export function calculateBatchStockDeduction(packagesCount: number): StockDeduct
 
 /** Валидация физических параметров цикла стерилизации */
 export function validateSterilizationCycleParameters(
-	programId: "standard_134" | "delicate_121" | "flash_134",
+	programId: AutoclaveRegimeId,
 	temperatureCelsius: number,
 	pressureBar: number,
 	exposureMinutes: number,
@@ -222,7 +227,7 @@ export function createOneClickShiftBatch(options?: {
 	packagesCount?: number;
 	operatorName?: string;
 	autoclaveName?: string;
-	programId?: "standard_134" | "delicate_121" | "flash_134";
+	programId?: AutoclaveRegimeId;
 }): {
 	sterilizationCycle: SterilizationBatchCycleRecord;
 	psoRecord: PsoBatchRecord;
@@ -233,7 +238,7 @@ export function createOneClickShiftBatch(options?: {
 	const dateStr = now.toLocaleDateString("ru-RU");
 	const timeStr = now.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
 	const count = options?.packagesCount ?? 14;
-	const operator = options?.operatorName || "Иванова Е. С., ассистент ЦСО";
+	const operator = options?.operatorName || "Иванова Е. С., дежурная медсестра";
 	const program: AutoclaveProgram = AUTOCLAVE_PROGRAMS.find((p) => p.id === options?.programId) ?? AUTOCLAVE_PROGRAMS[0]!;
 	const device = options?.autoclaveName || CLINIC_STERILIZERS[0]!.model;
 
@@ -254,7 +259,7 @@ export function createOneClickShiftBatch(options?: {
 		},
 		bactericidalRecord: {
 			id: `uv-${Date.now()}`, date: dateStr, deviceId: "uv-01", deviceName: "Рециркулятор Дезар-4",
-			roomName: "Кабинет терапевтической стоматологии №1", durationMinutes: 120, currentOperatingHours: 1422,
+			roomName: "Кабинет терапии №1", durationMinutes: 120, currentOperatingHours: 1422,
 			operatorName: operator, airDisinfectionStatus: "ВЫПОЛНЕНО",
 		},
 		deductedStock: calculateBatchStockDeduction(count),
@@ -268,39 +273,25 @@ export function getSanpinBatchRecords(isDemo = false): SterilizationBatchCycleRe
 	return [
 		{
 			id: "demo-cycle-1", cycleNumber: 1, date: today, time: "09:30",
-			autoclaveId: "autoclave-01", autoclaveName: "Melag Vacuklav 23 B+ (Класс B)", programId: "standard_134",
+			autoclaveId: "autoclave-01", autoclaveName: "Автоклав №1 (Melag Vacuklav 23 B+)", programId: "standard_134",
 			temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 5, packagesCount: 14,
-			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Иванова Е. С., ассистент ЦСО",
+			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Иванова Е. С., дежурная медсестра",
 			itemsDescription: "Наборы терапевтические (4 шт.), наборы смотровые (6 шт.), наконечники (4 шт.)", status: "completed",
 		},
 		{
 			id: "demo-cycle-2", cycleNumber: 2, date: today, time: "14:15",
-			autoclaveId: "autoclave-01", autoclaveName: "Melag Vacuklav 23 B+ (Класс B)", programId: "delicate_121",
+			autoclaveId: "autoclave-02", autoclaveName: "Автоклав №2 (W&H Lisa 500)", programId: "delicate_121",
 			temperatureCelsius: 121, pressureBar: 1.15, exposureMinutes: 20, packagesCount: 8,
-			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Иванова Е. С., ассистент ЦСО",
+			chemicalIndicatorVerdict: "ПРОЙДЕН", operatorName: "Иванова Е. С., дежурная медсестра",
 			itemsDescription: "Силиконовые оттискные ложки, пластиковые держатели снимков, оптика", status: "completed",
 		},
 	];
 }
 
-/** Генерация чистого HTML бланка журнала стерилизации для печати на А4 */
+/** Генерация чистого HTML бланка журнала автоклавирования для печати на А4 */
 export function generateSanpinPrintHtml(records: readonly SterilizationBatchCycleRecord[]): string {
-	const rows = records.map((r) => `
-		<tr style="border-bottom:1px solid #cbd5e1;">
-			<td style="padding:6px 8px;text-align:center;">${r.date} ${r.time}</td>
-			<td style="padding:6px 8px;text-align:center;font-weight:600;">№${r.cycleNumber}</td>
-			<td style="padding:6px 8px;">${r.autoclaveName}</td>
-			<td style="padding:6px 8px;text-align:center;">${r.temperatureCelsius}°C / ${r.pressureBar} бар / ${r.exposureMinutes} мин</td>
-			<td style="padding:6px 8px;text-align:center;font-weight:600;">${r.packagesCount} шт</td>
-			<td style="padding:6px 8px;text-align:center;color:#047857;font-weight:600;">${r.chemicalIndicatorVerdict}</td>
-			<td style="padding:6px 8px;">${r.itemsDescription}</td>
-			<td style="padding:6px 8px;">${r.operatorName}</td>
-		</tr>`).join("");
-
-	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Журнал автоклавирования и контроля стерилизации</title>
-<style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;}h1{font-size:18px;margin-bottom:4px;}p{font-size:12px;color:#64748b;margin:0 0 14px;}table{width:100%;border-collapse:collapse;font-size:11px;}th{background:#f1f5f9;padding:6px 8px;text-align:left;border-bottom:2px solid #cbd5e1;}</style></head>
-<body><h1>Журнал контроля стерилизации инструментов (автоклавирование)</h1><p>Производственный контроль стоматологической клиники. Выгрузка: ${new Date().toLocaleDateString("ru-RU")}</p>
-<table><thead><tr><th style="text-align:center;">Дата/время</th><th style="text-align:center;">Цикл</th><th>Аппарат</th><th style="text-align:center;">Режим</th><th style="text-align:center;">Пакетов</th><th style="text-align:center;">Индикатор 5 кл.</th><th>Стерилизуемый материал</th><th>Ответственный</th></tr></thead><tbody>${rows || "<tr><td colspan='8' style='text-align:center;padding:16px;'>Записи циклов отсутствуют</td></tr>"}</tbody></table></body></html>`;
+	const rows = records.map((r) => `<tr style="border-bottom:1px solid #cbd5e1;"><td style="padding:6px 8px;text-align:center;">${r.date} ${r.time}</td><td style="padding:6px 8px;text-align:center;font-weight:600;">№${r.cycleNumber}</td><td style="padding:6px 8px;">${r.autoclaveName}</td><td style="padding:6px 8px;text-align:center;">${r.temperatureCelsius}°C / ${r.pressureBar} бар / ${r.exposureMinutes} мин</td><td style="padding:6px 8px;text-align:center;font-weight:600;">${r.packagesCount} шт</td><td style="padding:6px 8px;text-align:center;color:#047857;font-weight:600;">${r.chemicalIndicatorVerdict}</td><td style="padding:6px 8px;">${r.itemsDescription}</td><td style="padding:6px 8px;">${r.operatorName}</td></tr>`).join("");
+	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Журнал автоклавирования и контроля стерилизации</title><style>@media print{body{-webkit-print-color-adjust:exact;print-color-adjust:exact;}}body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;padding:24px;color:#0f172a;}h1{font-size:18px;margin-bottom:4px;}p{font-size:12px;color:#64748b;margin:0 0 14px;}table{width:100%;border-collapse:collapse;font-size:11px;}th{background:#f1f5f9;padding:6px 8px;text-align:left;border-bottom:2px solid #cbd5e1;}</style></head><body><h1>Журнал контроля стерилизации инструментов (автоклавирование)</h1><p>Производственный контроль стоматологической клиники. Выгрузка: ${new Date().toLocaleDateString("ru-RU")}</p><table><thead><tr><th style="text-align:center;">Дата/время</th><th style="text-align:center;">Цикл</th><th>Аппарат</th><th style="text-align:center;">Режим</th><th style="text-align:center;">Пакетов</th><th style="text-align:center;">Индикатор 5 кл.</th><th>Стерилизуемый материал</th><th>Ответственный</th></tr></thead><tbody>${rows || "<tr><td colspan='8' style='text-align:center;padding:16px;'>Записи циклов отсутствуют</td></tr>"}</tbody></table></body></html>`;
 }
 
 /** Генерация термоэтикеток для маркировки крафт-пакетов (58x40 мм) */
@@ -308,26 +299,6 @@ export function generateKraftStickersHtml(cycle: SterilizationBatchCycleRecord, 
 	const expDate = new Date();
 	expDate.setDate(expDate.getDate() + 50);
 	const expStr = expDate.toLocaleDateString("ru-RU");
-
-	const stickers = Array.from({ length: count }, (_, idx) => `
-		<div style="width:58mm;height:40mm;border:1px dashed #94a3b8;padding:3mm;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;justify-content:space-between;font-family:sans-serif;">
-			<div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #000;padding-bottom:1mm;">
-				<span style="font-size:9pt;font-weight:bold;">СТЕРИЛЬНО</span>
-				<span style="font-size:8pt;font-weight:bold;">№${cycle.cycleNumber} / ${idx + 1}</span>
-			</div>
-			<div style="font-size:7pt;line-height:1.2;margin:1mm 0;">
-				<div><b>Дата:</b> ${cycle.date} ${cycle.time}</div>
-				<div><b>Годен до:</b> ${expStr} (50 сут.)</div>
-				<div><b>Автоклав:</b> ${cycle.autoclaveName.split(" ")[0]} (${cycle.temperatureCelsius}°C/5м)</div>
-				<div><b>Индикатор:</b> ${cycle.chemicalIndicatorVerdict} (5 кл.)</div>
-				<div><b>Оператор:</b> ${cycle.operatorName.split(",")[0]}</div>
-			</div>
-			<div style="text-align:center;font-size:6pt;letter-spacing:1px;font-family:monospace;border-top:1px solid #ccc;padding-top:1mm;">
-				*DENTE-CYC${cycle.cycleNumber}-${idx + 1}*
-			</div>
-		</div>`).join("");
-
-	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Термоэтикетки крафт-пакетов</title>
-<style>@page{size:58mm 40mm;margin:0;}body{margin:0;padding:0;background:#fff;}</style></head>
-<body>${stickers}</body></html>`;
+	const stickers = Array.from({ length: count }, (_, idx) => `<div style="width:58mm;height:40mm;border:1px dashed #94a3b8;padding:3mm;box-sizing:border-box;page-break-after:always;display:flex;flex-direction:column;justify-content:space-between;font-family:sans-serif;"><div style="display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid #000;padding-bottom:1mm;"><span style="font-size:9pt;font-weight:bold;">СТЕРИЛЬНО</span><span style="font-size:8pt;font-weight:bold;">№${cycle.cycleNumber} / ${idx + 1}</span></div><div style="font-size:7pt;line-height:1.2;margin:1mm 0;"><div><b>Дата:</b> ${cycle.date} ${cycle.time}</div><div><b>Годен до:</b> ${expStr} (50 сут.)</div><div><b>Автоклав:</b> ${cycle.autoclaveName.split(" ")[0]} (${cycle.temperatureCelsius}°C/5м)</div><div><b>Индикатор:</b> ${cycle.chemicalIndicatorVerdict} (5 кл.)</div><div><b>Оператор:</b> ${cycle.operatorName.split(",")[0]}</div></div><div style="text-align:center;font-size:6pt;letter-spacing:1px;font-family:monospace;border-top:1px solid #ccc;padding-top:1mm;">*DENTE-CYC${cycle.cycleNumber}-${idx + 1}*</div></div>`).join("");
+	return `<!DOCTYPE html><html lang="ru"><head><meta charset="utf-8"/><title>Термоэтикетки крафт-пакетов</title><style>@page{size:58mm 40mm;margin:0;}body{margin:0;padding:0;background:#fff;}</style></head><body>${stickers}</body></html>`;
 }

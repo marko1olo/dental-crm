@@ -28,7 +28,7 @@ import {
 	validateSterilizationCycleParameters,
 	getSanpinBatchRecords,
 	generateSanpinPrintHtml,
-} from "../sterilizationCatalogData";
+} from "../sanpinCatalogData";
 import { SterilizationHubModal } from "../SterilizationHubModal";
 import { DirectSterilizationLauncher } from "../DirectSterilizationLauncher";
 
@@ -36,13 +36,13 @@ const SANPIN_DIR = path.resolve(process.cwd(), "apps/web/src/components/sanpin")
 
 describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {
-		it("sterilizationCatalogData.ts является каноническим фасадом до 50 строк", () => {
-			const filePath = path.join(SANPIN_DIR, "sterilizationCatalogData.ts");
+		it("sanpinCatalogData.ts является единым SSOT в диапазоне 250–320 строк", () => {
+			const filePath = path.join(SANPIN_DIR, "sanpinCatalogData.ts");
 			const content = fs.readFileSync(filePath, "utf-8");
 			const lineCount = content.split("\n").length;
 			assert.ok(
-				lineCount <= 60,
-				`sterilizationCatalogData.ts содержит ${lineCount} строк (ожидался фасад до 60 по Мандату 8b)`,
+				lineCount >= 250 && lineCount <= 320,
+				`sanpinCatalogData.ts содержит ${lineCount} строк (ожидалось 250–320 по Мандату 8b)`,
 			);
 		});
 
