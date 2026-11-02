@@ -2,15 +2,25 @@
  * apps/web/src/components/consents/ConsentStudioModal.tsx
  *
  * Каноническая студия информированных согласий и медицинских договоров DENTE CRM (SSOT).
- * Декомпозирована на специализированные sweet-spot модули (Мандат 8b/8zi):
- *   - studio/ConsentSignaturePad.tsx — сенсорный холст подписи пальцем/стилусом (Apple HIG)
- *   - studio/ConsentDocumentViewer.tsx — окно предпросмотра бланка с хешем целостности
- *   - studio/ConsentBatchSignActions.tsx — панель реестра и пакетного выбора документов
- * Пакетная подпись в 1 клик (Мандаты 8e, 8n), ровно 1 Primary CTA кнопка (#0d9488, Мандат 8am).
+ * Единый консолидированный центр управления согласий (Sweet Spot 350–430 строк, Мандат 8b/8zi):
+ *   - 15 уставных бланков Минздрава РФ с фильтрацией и пакетным выбором
+ *   - Сенсорный планшетный холст подписи пациента стилусом/пальцем (Touch/Stylus Canvas)
+ *   - Резервный бумажный маршрут с фиксацией в 1 клик (Мандат 8e: Zero-Disabled Buttons)
+ *   - Ровно 1 Primary CTA кнопка #0d9488 (var(--teal), Мандат 8am)
+ *   - Нативная сенсорная эргономика Apple HIG: Bottom Sheet rounded-t-[24px], Drag Handle 36x5px
  */
 
 import React, { useState, useEffect } from "react";
-import { ShieldCheck, Printer, X, UserCheck } from "lucide-react";
+import {
+	ShieldCheck,
+	Printer,
+	X,
+	UserCheck,
+	FileText,
+	FileCheck2,
+	CheckCircle2,
+	AlertCircle,
+} from "lucide-react";
 import {
 	CANONICAL_CONSENT_CATALOG,
 	type ConsentDocumentId,
@@ -20,16 +30,27 @@ import {
 	generateConsentPrintHtml,
 	computeConsentIntegrityHash,
 } from "./consentCatalogData";
-import { ConsentSignaturePad } from "./studio/ConsentSignaturePad";
-import { ConsentDocumentViewer, type DocumentSignRecord } from "./studio/ConsentDocumentViewer";
 import { ConsentBatchSignActions } from "./studio/ConsentBatchSignActions";
+import { ConsentDocumentViewer, type DocumentSignRecord } from "./studio/ConsentDocumentViewer";
+import { ConsentSignaturePad } from "./studio/ConsentSignaturePad";
 
 export interface ConsentStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
 	readonly patientContext?: Partial<ConsentPartyContext>;
+	readonly patient?: {
+		readonly fullName?: string;
+		readonly birthDate?: string;
+		readonly passport?: string;
+		readonly phone?: string;
+		readonly snils?: string;
+		readonly cardNumber?: string;
+		readonly [key: string]: any;
+	};
+	readonly patientName?: string;
 	readonly initialDocId?: ConsentDocumentId;
 	readonly initialSelectedIds?: readonly ConsentDocumentId[];
+	readonly initialMode?: "single" | "batch";
 	readonly onDocumentSigned?: (payload: {
 		docIds: ConsentDocumentId[];
 		status: ConsentSignStatus;
@@ -37,19 +58,53 @@ export interface ConsentStudioModalProps {
 		signedAt: string;
 		integrityHash: string;
 	}) => void;
+	readonly onConsentSigned?: (payload: {
+		verificationMethod: string;
+		paperOriginalStored?: boolean;
+		docIds?: ConsentDocumentId[];
+		status?: ConsentSignStatus;
+		signedAt?: string;
+		integrityHash?: string;
+		patientName?: string;
+		[key: string]: any;
+	}) => void;
 }
 
 export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	isOpen,
 	onClose,
 	patientContext,
+	patient,
+	patientName,
 	initialDocId = "therapy",
 	initialSelectedIds,
+	initialMode = "batch",
 	onDocumentSigned,
+	onConsentSigned,
 }) => {
+	const effectivePatientName =
+		patientContext?.patientName ||
+		patient?.fullName ||
+		patientName ||
+		"Пациент клиники";
+
+	const effectiveContext: Partial<ConsentPartyContext> = {
+		patientName: effectivePatientName,
+		birthDate: patientContext?.birthDate || patient?.birthDate,
+		passport: patientContext?.passport || patient?.passport,
+		phone: patientContext?.phone || patient?.phone,
+		snils: patientContext?.snils || patient?.snils,
+		clinicName: patientContext?.clinicName || "Клиника «DENTE»",
+		doctorName: patientContext?.doctorName,
+		diagnosisText: patientContext?.diagnosisText,
+		plannedProcedures: patientContext?.plannedProcedures,
+	};
+
 	const defaultSelection: ConsentDocumentId[] = initialSelectedIds
 		? [...initialSelectedIds]
-		: ["therapy", "personal_data", "anesthesia", "paid_contract"];
+		: initialMode === "single"
+			? [initialDocId]
+			: ["therapy", "personal_data", "anesthesia", "paid_contract"];
 
 	const [selectedIds, setSelectedIds] = useState<Set<ConsentDocumentId>>(new Set(defaultSelection));
 	const [activeDocId, setActiveDocId] = useState<ConsentDocumentId>(initialDocId);
@@ -70,6 +125,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 	const activeDoc = getConsentDocumentById(activeDocId);
 	const currentRecord: DocumentSignRecord = signRecords[activeDocId] || { status: "pending" };
+	const isCurrentSigned = currentRecord.status !== "pending";
 
 	const handleBatchSign = () => {
 		const nowStr = new Date().toLocaleString("ru-RU", {
@@ -80,13 +136,17 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 			minute: "2-digit",
 		});
 		const status: ConsentSignStatus = isPaperChecked || !signatureSvg ? "signed_paper" : "signed_digital";
-		const pName = patientContext?.patientName || "Пациент клиники";
 		const targetDocs = selectedIds.size > 0 ? Array.from(selectedIds) : [activeDocId];
 		const updated = { ...signRecords };
 
 		for (const docId of targetDocs) {
-			const hash = computeConsentIntegrityHash(docId, pName, nowStr, signatureSvg || "PAPER-ARCHIVE");
-			updated[docId] = { status, signedAt: nowStr, signatureSvg: signatureSvg || undefined, integrityHash: hash };
+			const hash = computeConsentIntegrityHash(docId, effectivePatientName, nowStr, signatureSvg || "PAPER-ARCHIVE");
+			updated[docId] = {
+				status,
+				signedAt: nowStr,
+				signatureSvg: signatureSvg || undefined,
+				integrityHash: hash,
+			};
 		}
 		setSignRecords(updated);
 
@@ -99,6 +159,17 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 			integrityHash: firstHash,
 		});
 
+		onConsentSigned?.({
+			verificationMethod: status === "signed_paper" ? "paper_physical" : "digital_touch",
+			paperOriginalStored: status === "signed_paper",
+			docIds: targetDocs,
+			status,
+			signedAt: nowStr,
+			signatureSvg: signatureSvg || undefined,
+			integrityHash: firstHash,
+			patientName: effectivePatientName,
+		});
+
 		setToastMsg(
 			status === "signed_paper"
 				? `✓ Пакет из ${targetDocs.length} бланков зафиксирован на бумаге`
@@ -107,8 +178,52 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 		setTimeout(() => setToastMsg(null), 3500);
 	};
 
+	const handlePaperConfirm = () => {
+		const nowStr = new Date().toLocaleString("ru-RU", {
+			day: "2-digit",
+			month: "2-digit",
+			year: "numeric",
+			hour: "2-digit",
+			minute: "2-digit",
+		});
+		const targetDocs = selectedIds.size > 0 ? Array.from(selectedIds) : [activeDocId];
+		const updated = { ...signRecords };
+
+		for (const docId of targetDocs) {
+			const hash = computeConsentIntegrityHash(docId, effectivePatientName, nowStr, "PAPER-ORIGINAL-STORED");
+			updated[docId] = {
+				status: "signed_paper",
+				signedAt: nowStr,
+				integrityHash: hash,
+			};
+		}
+		setSignRecords(updated);
+		setIsPaperChecked(true);
+
+		const firstHash = updated[targetDocs[0]]?.integrityHash || "DENTE-SSOT-PAPER";
+		onDocumentSigned?.({
+			docIds: targetDocs,
+			status: "signed_paper",
+			signedAt: nowStr,
+			integrityHash: firstHash,
+		});
+
+		onConsentSigned?.({
+			verificationMethod: "paper_physical",
+			paperOriginalStored: true,
+			docIds: targetDocs,
+			status: "signed_paper",
+			signedAt: nowStr,
+			integrityHash: firstHash,
+			patientName: effectivePatientName,
+		});
+
+		setToastMsg(`✓ Пакет из ${targetDocs.length} бланков подтвержден на бумаге`);
+		setTimeout(() => setToastMsg(null), 3500);
+	};
+
 	const handlePrintDoc = () => {
-		const html = generateConsentPrintHtml(activeDoc, patientContext, currentRecord);
+		const html = generateConsentPrintHtml(activeDoc, effectiveContext, currentRecord);
 		const win = window.open("", "_blank");
 		if (win) {
 			win.document.write(html);
@@ -164,7 +279,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 								<span className="hidden md:inline">Студия информированных согласий и договоров</span>
 							</h1>
 							<p className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block truncate">
-								{patientContext?.patientName ? `Пациент: ${patientContext.patientName}` : "Пакетное электронное и бумажное подписание медицинских документов"}
+								Пациент: {effectivePatientName}
 							</p>
 						</div>
 					</div>
@@ -193,6 +308,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 				{/* 2-колоночный рабочий стол студии */}
 				<div className="flex-1 overflow-y-auto flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x divide-[var(--line,#e2e8f0)] min-h-0">
+					{/* Левая колонка: Реестр 15 бланков с пакетным выбором */}
 					<ConsentBatchSignActions
 						documents={CANONICAL_CONSENT_CATALOG}
 						activeDocId={activeDocId}
@@ -203,13 +319,35 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 						onToggleAll={toggleAllSelected}
 					/>
 
+					{/* Правая колонка: Просмотр текста и сенсорная подпись */}
 					<main className="flex-1 p-4 md:p-6 overflow-y-auto flex flex-col gap-5 min-h-0">
+						{/* Информационная плашка статуса */}
+						<div className="flex items-center justify-between p-3 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+							<div className="flex items-center gap-2">
+								<FileCheck2 size={16} className="text-[var(--teal,#0d9488)] shrink-0" />
+								<span className="text-xs text-[var(--ink-muted,#64748b)]">
+									Текущий документ: <strong className="text-[var(--ink,#0f172a)]">{activeDoc.title}</strong>
+								</span>
+							</div>
+							<span
+								className={`px-2 py-0.5 rounded-md text-[11px] font-semibold ${
+									isCurrentSigned
+										? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"
+										: "bg-amber-500/10 text-amber-700 dark:text-amber-400 border border-amber-500/20"
+								}`}
+							>
+								{isCurrentSigned ? "✓ Подписан" : "Ожидает"}
+							</span>
+						</div>
+
+						{/* Просмотр содержимого бланка */}
 						<ConsentDocumentViewer
 							doc={activeDoc}
 							record={currentRecord}
-							patientContext={patientContext}
+							patientContext={effectiveContext}
 						/>
 
+						{/* Сенсорный холст / бумажный выбор */}
 						<ConsentSignaturePad
 							isPaperChecked={isPaperChecked}
 							onPaperCheckChange={setIsPaperChecked}
@@ -217,11 +355,22 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							onSignatureChange={setSignatureSvg}
 							selectedCount={selectedIds.size}
 						/>
+
+						{/* Правовая памятка (Мандат 8e / 8x) */}
+						<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]/50 text-[11px] text-[var(--ink-muted,#64748b)] flex items-start gap-2">
+							<AlertCircle size={14} className="text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
+							<div>
+								<span>
+									Пакетная фиксация согласий соответствует ст. 20 Федерального закона № 323-ФЗ и Федеральному закону № 63-ФЗ.
+									При оформлении на бумаге оригинал передается в архив клиники.
+								</span>
+							</div>
+						</div>
 					</main>
 				</div>
 
-				{/* Floating Bottom Bar (Apple HIG Thumb Zone, ровно 1 Primary CTA кнопка #0d9488) */}
-				<footer className="sticky bottom-0 z-10 flex items-center justify-between px-4 md:px-6 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)]/95 backdrop-blur-md shrink-0">
+				{/* Floating Bottom Bar (Apple HIG Thumb Zone, ровно 1 Primary CTA #0d9488, Мандаты 8e, 8am) */}
+				<footer className="sticky bottom-0 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 md:px-6 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)]/95 backdrop-blur-md shrink-0">
 					<div className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block">
 						{toastMsg ? (
 							<span className="text-emerald-600 dark:text-emerald-400 font-medium">{toastMsg}</span>
@@ -230,7 +379,20 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 						)}
 					</div>
 
-					<div className="flex items-center gap-3 w-full sm:w-auto justify-end">
+					<div className="flex flex-col-reverse sm:flex-row items-center gap-2.5 w-full sm:w-auto justify-end">
+						{/* Кнопка мгновенного подтверждения бумажного подписания (Мандат 8e: Zero-Disabled) */}
+						<button
+							type="button"
+							data-testid="btn-confirm-paper-signed"
+							onClick={handlePaperConfirm}
+							className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] rounded-xl text-xs sm:text-sm font-medium border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-[var(--ink,#0f172a)] transition-colors cursor-pointer"
+							title="Зафиксировать подписание на бумаге в медкарте"
+						>
+							<FileText size={16} aria-hidden="true" />
+							<span>Подтвердить подписание на бумаге</span>
+						</button>
+
+						{/* Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am) */}
 						<button
 							type="button"
 							onClick={handleBatchSign}

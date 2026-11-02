@@ -1,13 +1,31 @@
 /**
  * apps/web/src/components/consents/consentIntegrityHash.ts
- * Cryptographic SHA-256 integrity hash engine for digital informed consents (FIPS 180-4).
- * Single Source of Truth / Compatibility facade (Mandates 8b, 8e).
+ *
+ * Криптографический модуль целостности информированных согласий (FIPS 180-4 SHA-256).
+ * Полная детерминированность без Math.random(), поддержка кириллицы (UTF-8),
+ * векторных штрихов стилуса, СМС-ПЭП по 63-ФЗ и бумажного архива (Мандаты 8e, 8zk).
  */
+
+export interface SignatureStrokePoint {
+	x: number;
+	y: number;
+	time: number;
+}
+
+export interface SignatureStrokeData {
+	points: SignatureStrokePoint[];
+	color?: string | undefined;
+	width?: number | undefined;
+}
 
 function rightRotate(value: number, amount: number): number {
 	return (value >>> amount) | (value << (32 - amount));
 }
 
+/**
+ * Детерминированный синхронный SHA-256 (FIPS 180-4).
+ * Корректно кодирует многобайтовую UTF-8 кириллицу.
+ */
 export function generateSha256(asciiString: string): string {
 	const maxWord = Math.pow(2, 32);
 
@@ -104,8 +122,12 @@ export interface ConsentIntegrityPayload {
 	timestamp: string | number;
 	verificationMethod?: "tablet_stylus" | "sms_otp" | "printed_scan" | "paper_physical" | undefined;
 	smsOtpCode?: string | null | undefined;
+	strokes?: SignatureStrokeData[] | undefined;
 }
 
+/**
+ * Формирование канонического хэша целостности подписанного документа (SHA-256).
+ */
 export function generateConsentIntegrityHash(payload: ConsentIntegrityPayload): {
 	hash: string;
 	canonicalPayload: string;
@@ -119,8 +141,93 @@ export function generateConsentIntegrityHash(payload: ConsentIntegrityPayload): 
 		? payload.patientInfo.trim().toUpperCase()
 		: (payload.patientInfo?.name || "").trim().toUpperCase();
 
-	const canonicalPayload = `DOC:${generateSha256(payload.documentText)}|PT:${ptName}|TS:${timestampIso}|METHOD:${payload.verificationMethod || "tablet_stylus"}`;
+	const ptId = typeof payload.patientInfo === "object" && payload.patientInfo !== null
+		? (payload.patientInfo.passportOrBirth || "").trim()
+		: "";
+
+	const ptPhone = typeof payload.patientInfo === "object" && payload.patientInfo !== null
+		? (payload.patientInfo.phone || "").trim()
+		: "";
+
+	const serializedStrokes = (payload.strokes || [])
+		.map((s, sIdx) => {
+			const pts = (s.points || [])
+				.map((p) => `${p.x.toFixed(1)},${p.y.toFixed(1)},${p.time}`)
+				.join(";");
+			return `S${sIdx}:[${pts}]`;
+		})
+		.join("|");
+
+	const canonicalLines = [
+		"--- CANONICAL DENTAL INFORMED CONSENT INTEGRITY RECORD ---",
+		`DOC_TEXT_HASH: ${generateSha256(payload.documentText)}`,
+		`PATIENT_NAME: ${ptName}`,
+		`PATIENT_ID: ${ptId}`,
+		`PATIENT_PHONE: ${ptPhone}`,
+		`TIMESTAMP: ${timestampIso}`,
+		`METHOD:${payload.verificationMethod || "tablet_stylus"}`,
+		payload.smsOtpCode ? `OTP_DIGEST: ${generateSha256(payload.smsOtpCode)}` : null,
+		serializedStrokes ? `STROKES_VECTOR: ${serializedStrokes}` : null,
+		"----------------------------------------------------------",
+	].filter(Boolean);
+
+	const canonicalPayload = canonicalLines.join("\n");
 	const hash = generateSha256(canonicalPayload);
 
 	return { hash, canonicalPayload, timestampIso };
 }
+
+/** Векторный штамп подписания на бумажном носителе */
+export function generatePaperSignatureSvg(options: {
+	patientFullName?: string;
+	cardNumber?: string;
+	timestampIso?: string;
+	doctorFullName?: string;
+	clinicName?: string;
+	width?: number;
+	height?: number;
+} = {}): string {
+	const w = options.width || 420;
+	const h = options.height || 120;
+	const patient = options.patientFullName || "Пациент";
+	const doctor = options.doctorFullName || "Лечащий врач";
+	const dt = options.timestampIso ? new Date(options.timestampIso) : new Date();
+	const dtFormatted = `${dt.toLocaleDateString("ru-RU")} ${dt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+  <rect width="100%" height="100%" fill="#f8fafc" stroke="#64748b" stroke-width="1.5" rx="8"/>
+  <text x="20" y="30" font-family="-apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f172a">✓ ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</text>
+  <text x="20" y="52" font-family="-apple-system, sans-serif" font-size="11" fill="#334155">Пациент: ${patient} • Врач: ${doctor}</text>
+  <text x="20" y="72" font-family="-apple-system, sans-serif" font-size="10" fill="#64748b">Оригинал подписан собственноручно и хранится в карте пациента</text>
+  <text x="20" y="92" font-family="-apple-system, sans-serif" font-size="9.5" fill="#0f766e">Дата оформления: ${dtFormatted} • Юридическая сила подтверждена</text>
+</svg>`;
+}
+
+/** Векторный штамп простой электронной подписи (ПЭП) */
+export function generateSmsPepSignatureSvg(options: {
+	patientFullName?: string;
+	phoneMasked?: string;
+	timestampIso?: string;
+	integrityHash?: string;
+	clinicName?: string;
+	width?: number;
+	height?: number;
+} = {}): string {
+	const w = options.width || 420;
+	const h = options.height || 120;
+	const patient = options.patientFullName || "Пациент";
+	const dt = options.timestampIso ? new Date(options.timestampIso) : new Date();
+	const dtFormatted = `${dt.toLocaleDateString("ru-RU")} ${dt.toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+	const hashShort = (options.integrityHash || "000000000000").slice(0, 16);
+
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="${w}" height="${h}">
+  <rect width="100%" height="100%" fill="#f0fdfa" stroke="#0d9488" stroke-width="1.5" rx="8"/>
+  <text x="20" y="30" font-family="-apple-system, sans-serif" font-size="12" font-weight="bold" fill="#0f766e">✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</text>
+  <text x="20" y="52" font-family="-apple-system, sans-serif" font-size="11" fill="#134e4a">Пациент: ${patient} • Время: ${dtFormatted}</text>
+  <text x="20" y="72" font-family="monospace" font-size="10" fill="#0d9488">Хеш: ${hashShort}... (ст. 5 63-ФЗ)</text>
+  <text x="20" y="92" font-family="-apple-system, sans-serif" font-size="9.5" fill="#64748b">Подписано на планшете клиники • Статус: подтверждено</text>
+</svg>`;
+}
+
+export const PAPER_SIGNATURE_FALLBACK_PNG =
+	"data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==";
