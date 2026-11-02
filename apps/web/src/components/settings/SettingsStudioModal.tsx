@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import {
 	loadClinicStudioSettings, saveClinicStudioSettings,
-	STANDARD_CLINIC_PRESET_RF, SOLO_DOCTOR_PRESET_RF,
+	STANDARD_CLINIC_PRESET_RF, SOLO_DOCTOR_PRESET_RF, ENTERPRISE_CLINIC_PRESET_RF,
 	ROLE_LABELS, SPECIALTY_LABELS, formatInnHint, validateRequisitesSoft,
 	type ClinicStudioSettings, type ClinicChair, type ClinicStaffMember,
 } from "./settingsCatalogData";
@@ -132,6 +132,13 @@ export const SettingsStudioModal: React.FC<SettingsStudioModalProps> = ({
 		showToast("✓ Применен профиль соло-врача (ИП)", "success");
 	}, []);
 
+	const applyEnterprisePreset = useCallback(() => {
+		setSettings({ ...ENTERPRISE_CLINIC_PRESET_RF });
+		saveClinicStudioSettings(ENTERPRISE_CLINIC_PRESET_RF);
+		setSaveFeedback("Пресет медцентра применен");
+		showToast("✓ Применен профиль стоматологического центра", "success");
+	}, []);
+
 	const handleExplicitSave = useCallback(() => {
 		saveClinicStudioSettings(settings);
 		setSaveFeedback("Настройки успешно сохранены");
@@ -151,17 +158,25 @@ export const SettingsStudioModal: React.FC<SettingsStudioModalProps> = ({
 					<div className="settings-studio-header-title">
 						<div className="settings-studio-header-icon" aria-hidden="true"><Building size={20} /></div>
 						<div className="settings-studio-header-text">
-							<h2>Настройки клиники и реквизиты</h2>
+							<div className="flex items-center gap-2">
+								<h2>Настройки клиники и реквизиты</h2>
+								<span className="settings-studio-scale-pill">
+									{settings.chairs.length === 1 ? "1 кресло · Соло" : settings.chairs.length <= 3 ? `${settings.chairs.length} кресла · Клиника` : `${settings.chairs.length} кресел · Сеть`}
+								</span>
+							</div>
 							<p>Юридический профиль, кресла, врачи и фискализация DENTE</p>
 						</div>
 					</div>
 					<div className="settings-studio-header-actions">
-						<button type="button" className="settings-studio-preset-btn" data-testid="btn-preset-standard-rf" onClick={applyStandardPreset} title="Заполнить стандартные реквизиты ООО для стоматологии РФ">
-							<Sparkles size={14} className="text-[var(--settings-teal)]" aria-hidden="true" />
-							<span>✓ Норма клиники РФ</span>
-						</button>
 						<button type="button" className="settings-studio-preset-btn" data-testid="btn-preset-solo-ip" onClick={applySoloPreset} title="Заполнить настройки соло-врача (ИП/аренда кресла)">
 							<span>Соло-врач (ИП)</span>
+						</button>
+						<button type="button" className="settings-studio-preset-btn" data-testid="btn-preset-standard-rf" onClick={applyStandardPreset} title="Заполнить стандартные реквизиты ООО для стоматологии РФ">
+							<Sparkles size={14} className="text-[var(--settings-teal)]" aria-hidden="true" />
+							<span>✓ Клиника РФ (3 кресла)</span>
+						</button>
+						<button type="button" className="settings-studio-preset-btn" data-testid="btn-preset-enterprise-rf" onClick={applyEnterprisePreset} title="Заполнить профиль стоматологического центра (5 кресел)">
+							<span>Сеть / Центр</span>
 						</button>
 						<button type="button" className="settings-studio-close-btn" onClick={onClose} aria-label="Закрыть настройки"><X size={18} aria-hidden="true" /></button>
 					</div>

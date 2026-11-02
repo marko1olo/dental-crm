@@ -20,6 +20,7 @@ import { fileURLToPath } from "node:url";
 import {
 	STANDARD_CLINIC_PRESET_RF,
 	SOLO_DOCTOR_PRESET_RF,
+	ENTERPRISE_CLINIC_PRESET_RF,
 	DEFAULT_CHAIRS_PRESET,
 	DEFAULT_STAFF_PRESET,
 	ROLE_LABELS,
@@ -129,6 +130,14 @@ describe("DENTE Clinic Settings & Requisites SSOT Suite", () => {
 			assert.ok(p.requisites.medicalLicenseNumber.startsWith("Л041-"), "License must follow Roszdravnadzor format");
 			assert.equal(p.requisites.bik, "044525225");
 			assert.equal(p.requisites.checkingAccount.length, 20, "Checking account must have 20 digits");
+		});
+
+		it("contains enterprise network clinical standard preset (5 chairs)", () => {
+			const ent = ENTERPRISE_CLINIC_PRESET_RF;
+			assert.equal(ent.requisites.clinicName, "Стоматологический центр ДЕНТЕ");
+			assert.equal(ent.chairs.length, 5, "Enterprise preset must configure 5 chairs");
+			assert.equal(ent.chairs[3].name, "Кресло 4 (Ортодонтия)");
+			assert.equal(ent.chairs[4].name, "Кресло 5 (Имплантация)");
 		});
 
 		it("contains standard 1-5 chairs configuration with equipment badges", () => {

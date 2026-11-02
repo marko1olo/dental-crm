@@ -307,3 +307,12 @@
 	color: var(--settings-teal);
 	font-size: 0.8125rem; font-weight: 500;
 }
+
+.settings-studio-scale-pill {
+	display: inline-flex; align-items: center;
+	padding: 2px 8px; border-radius: 9999px;
+	font-size: 0.75rem; font-weight: 600;
+	background: var(--teal-soft, rgba(13, 148, 136, 0.12));
+	color: var(--teal-dark, #0f766e);
+	border: 1px solid var(--line-subtle, rgba(0, 0, 0, 0.08));
+}

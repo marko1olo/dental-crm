@@ -274,6 +274,21 @@ export const SOLO_DOCTOR_PRESET_RF: ClinicStudioSettings = {
 	lastUpdatedIso: new Date().toISOString(),
 };
 
+export const ENTERPRISE_CLINIC_PRESET_RF: ClinicStudioSettings = {
+	...STANDARD_CLINIC_PRESET_RF,
+	requisites: {
+		...STANDARD_CLINIC_PRESET_RF.requisites,
+		clinicName: "Стоматологический центр ДЕНТЕ",
+		legalName: 'ООО "Денте Групп"',
+		inn: "7701998877",
+	},
+	chairs: [
+		...DEFAULT_CHAIRS_PRESET,
+		{ id: "chair-4", name: "Кресло 4 (Ортодонтия)", color: "#f59e0b", hasXraySensor: true, hasMicroscope: false, hasSurgeryKit: false, isActive: true },
+		{ id: "chair-5", name: "Кресло 5 (Имплантация)", color: "#ec4899", hasXraySensor: true, hasMicroscope: true, hasSurgeryKit: true, isActive: true },
+	],
+};
+
 const STORAGE_KEY = "dente_clinic_studio_settings";
 
 export function loadClinicStudioSettings(): ClinicStudioSettings {
