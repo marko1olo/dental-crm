@@ -1,13 +1,311 @@
 /**
- * voiceAssistant.css — Тонкий фасад голосового ассистента DENTE (Мандат 8b).
+ * voiceAssistant.css — Канонический стилевой модуль голосового ассистента DENTE.
+ * Мандаты: 8b (Sweet Spot 250–320 строк), 8am (единый дизайн-код), Apple HIG.
  */
-@import "./voiceStyles/voiceModal.css";
-@import "./voiceStyles/voiceHeader.css";
-@import "./voiceStyles/voiceStage.css";
-@import "./voiceStyles/voiceMeter.css";
-@import "./voiceStyles/voiceTranscript.css";
-@import "./voiceStyles/voiceCommands.css";
-@import "./voiceStyles/voiceBadges.css";
-@import "./voiceStyles/voiceSoapAndFallback.css";
-@import "./voiceStyles/voiceButtons.css";
-@import "./voiceStyles/voiceFooter.css";
+
+/* 1. Модальное окно и оверлей */
+.dnt-voice-modal-backdrop {
+	position: fixed; inset: 0; z-index: 9999;
+	background: rgba(15, 23, 42, 0.45); backdrop-filter: blur(4px);
+	display: flex; align-items: center; justify-content: center; padding: 16px;
+}
+@media (max-width: 768px) {
+	.dnt-voice-modal-backdrop { align-items: flex-end; padding: 0; }
+}
+
+.dnt-voice-modal-dialog {
+	background: var(--paper-strong); border: 1px solid var(--line);
+	border-radius: 20px; width: 100%; max-width: 680px; max-height: 90vh;
+	display: flex; flex-direction: column; box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+	overflow: hidden; animation: dntVoiceSlideIn 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (max-width: 768px) {
+	.dnt-voice-modal-dialog {
+		max-height: 85vh; border-radius: 24px 24px 0 0; border-bottom: none;
+	}
+}
+
+@keyframes dntVoiceSlideIn {
+	from { opacity: 0; transform: scale(0.96) translateY(10px); }
+	to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* 2. Apple HIG Drag Handle для мобильного Bottom Sheet (36x5px) */
+.dnt-voice-drag-handle {
+	display: none; width: 36px; height: 5px;
+	background: var(--line); border-radius: 3px; margin: 8px auto 0;
+}
+@media (max-width: 768px) {
+	.dnt-voice-drag-handle { display: block; }
+}
+
+/* 3. Шапка модального окна */
+.dnt-voice-modal-header {
+	padding: 18px 24px; border-bottom: 1px solid var(--line);
+	display: flex; align-items: center; justify-content: space-between; gap: 16px;
+}
+.dnt-voice-modal-title-group { display: flex; align-items: center; gap: 14px; }
+.dnt-voice-modal-icon-badge {
+	width: 44px; height: 44px; border-radius: 12px;
+	background: var(--teal-surface); color: var(--teal);
+	display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.dnt-voice-modal-title {
+	font-size: 17px; font-weight: 700; color: var(--ink); line-height: 1.3; margin: 0;
+}
+.dnt-voice-modal-subtitle {
+	font-size: 13px; color: var(--muted); margin-top: 2px;
+}
+.dnt-voice-modal-close-btn {
+	width: 44px; height: 44px; min-width: 44px; min-height: 44px;
+	border-radius: 10px; border: 1px solid var(--line); background: transparent;
+	color: var(--muted); display: flex; align-items: center; justify-content: center;
+	cursor: pointer; transition: all 0.15s ease;
+}
+.dnt-voice-modal-close-btn:hover {
+	background: var(--paper-soft); color: var(--ink);
+}
+
+/* 4. Тело модального окна и интерактивная сцена микрофона */
+.dnt-voice-modal-body {
+	flex: 1; overflow-y: auto; padding: 24px;
+	display: flex; flex-direction: column; gap: 20px;
+}
+@media (max-width: 768px) {
+	.dnt-voice-modal-body { padding: 16px; gap: 16px; }
+}
+
+.dnt-voice-rec-stage {
+	display: flex; flex-direction: column; align-items: center; justify-content: center;
+	padding: 24px 16px; background: var(--paper-soft); border: 1px solid var(--line);
+	border-radius: 14px; gap: 16px; position: relative; min-height: 200px;
+}
+.dnt-voice-mic-button {
+	position: relative; width: 72px; height: 72px; min-width: 72px; min-height: 72px;
+	border-radius: 50%; border: none; background: var(--teal); color: var(--paper-strong);
+	display: flex; align-items: center; justify-content: center; cursor: pointer;
+	transition: transform 0.2s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.2s ease, background 0.2s ease;
+	outline: none; z-index: 2;
+}
+@media (max-width: 768px) {
+	.dnt-voice-mic-button { width: 64px; height: 64px; min-width: 64px; min-height: 64px; }
+}
+.dnt-voice-mic-button:hover {
+	transform: scale(1.06); background: var(--teal-dark);
+}
+.dnt-voice-mic-button--listening {
+	background: var(--bad-fg); color: var(--paper-strong);
+	animation: dntVoicePulse 1.8s infinite;
+}
+@keyframes dntVoicePulse {
+	0% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0.6); }
+	70% { box-shadow: 0 0 0 22px rgba(239, 68, 68, 0); }
+	100% { box-shadow: 0 0 0 0 rgba(239, 68, 68, 0); }
+}
+.dnt-voice-mic-button--processing {
+	background: var(--info-fg); color: var(--paper-strong); cursor: wait;
+}
+.dnt-voice-rec-status-label {
+	font-size: 15px; font-weight: 600; color: var(--ink); text-align: center;
+}
+.dnt-voice-rec-status-sub {
+	font-size: 13px; color: var(--muted); text-align: center;
+}
+
+/* 5. Легковесный CSS VU-метр */
+.dnt-voice-vu-container {
+	width: 100%; display: flex; flex-direction: column; align-items: center; gap: 8px;
+}
+.dnt-voice-meter-bars {
+	display: flex; align-items: center; justify-content: center; gap: 4px; height: 32px; width: 180px;
+}
+.dnt-voice-meter-bar {
+	flex: 1; background: var(--line); border-radius: 2px; min-height: 4px;
+	transition: height 0.08s ease, background 0.15s ease;
+}
+.dnt-voice-meter-bar--active {
+	background: var(--teal);
+}
+
+/* 6. Карточка транскрипта */
+.dnt-voice-transcript-card {
+	padding: 16px 20px; background: var(--paper-strong); border: 1px solid var(--line);
+	border-radius: 12px; display: flex; flex-direction: column; gap: 8px;
+}
+.dnt-voice-transcript-head {
+	display: flex; align-items: center; justify-content: space-between;
+	font-size: 13px; font-weight: 700; color: var(--muted);
+	text-transform: uppercase; letter-spacing: 0.05em;
+}
+.dnt-voice-transcript-text {
+	font-size: 15px; line-height: 1.5; color: var(--ink); min-height: 24px; word-break: break-word;
+}
+.dnt-voice-transcript-placeholder {
+	color: var(--muted); font-style: italic;
+}
+
+/* 7. Клинические команды и чипы */
+.dnt-voice-commands-section {
+	display: flex; flex-direction: column; gap: 12px;
+}
+.dnt-voice-section-header {
+	display: flex; align-items: center; justify-content: space-between;
+}
+.dnt-voice-section-title {
+	font-size: 15px; font-weight: 700; color: var(--ink); display: flex; align-items: center; gap: 8px;
+}
+.dnt-voice-command-chips-list {
+	display: flex; flex-direction: column; gap: 8px;
+}
+.dnt-voice-chip-card {
+	display: flex; align-items: center; justify-content: space-between;
+	padding: 12px 16px; background: var(--paper); border: 1px solid var(--line);
+	border-radius: 10px; gap: 12px; transition: all 0.15s ease;
+}
+.dnt-voice-chip-card--high { border-left: 4px solid var(--ok-fg); }
+.dnt-voice-chip-card--review { border-left: 4px solid var(--warn-fg); }
+.dnt-voice-chip-card--applied { opacity: 0.65; background: var(--paper-soft); }
+.dnt-voice-chip-info {
+	display: flex; flex-direction: column; gap: 4px; flex: 1;
+}
+.dnt-voice-chip-meta {
+	display: flex; align-items: center; gap: 8px; flex-wrap: wrap;
+}
+.dnt-voice-chip-summary {
+	font-size: 14px; font-weight: 600; color: var(--ink);
+}
+.dnt-voice-chip-raw {
+	font-size: 12px; color: var(--muted); font-style: italic;
+}
+.dnt-voice-chip-actions {
+	display: flex; align-items: center; gap: 8px;
+}
+
+/* 8. Клинические бейджи */
+.dnt-voice-badge {
+	font-size: 12px; font-weight: 700; padding: 3px 8px; border-radius: 6px; line-height: 1.2;
+}
+.dnt-voice-badge--tooth { background: var(--teal); color: var(--paper-strong); }
+.dnt-voice-badge--high { background: var(--ok-bg); color: var(--ok-fg); border: 1px solid var(--ok-fg); }
+.dnt-voice-badge--review { background: var(--warn-bg); color: var(--warn-fg); border: 1px solid var(--warn-fg); }
+.dnt-voice-badge--soap { background: var(--info-bg); color: var(--info-fg); }
+.dnt-voice-badge--anesthesia,
+.dnt-voice-badge--consumable { background: var(--teal-surface); color: var(--teal); }
+
+/* 9. Дневник SOAP */
+.dnt-voice-soap-card {
+	padding: 16px 20px; background: var(--paper-soft); border: 1px solid var(--line);
+	border-radius: 12px; display: flex; flex-direction: column; gap: 12px;
+}
+.dnt-voice-soap-grid {
+	display: grid; grid-template-columns: 1fr; gap: 10px;
+}
+@media (min-width: 640px) {
+	.dnt-voice-soap-grid { grid-template-columns: 1fr 1fr; }
+}
+.dnt-voice-soap-item {
+	padding: 10px 14px; background: var(--paper); border: 1px solid var(--line); border-radius: 8px;
+}
+.dnt-voice-soap-item-label {
+	font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; margin-bottom: 4px;
+}
+.dnt-voice-soap-item-text {
+	font-size: 13px; color: var(--ink); line-height: 1.4;
+}
+
+/* 10. Резервный ввод и пресеты */
+.dnt-voice-fallback-bar {
+	display: flex; gap: 8px; align-items: center; padding-top: 12px; border-top: 1px solid var(--line);
+}
+.dnt-voice-input {
+	flex: 1; min-height: 44px; padding: 10px 14px; font-size: 14px;
+	border-radius: 8px; background: var(--paper); border: 1px solid var(--line);
+	color: var(--ink); outline: none;
+}
+.dnt-voice-input:focus {
+	border-color: var(--teal); box-shadow: 0 0 0 2px var(--teal-soft);
+}
+.dnt-voice-cheatsheet {
+	display: flex; flex-wrap: wrap; gap: 6px;
+}
+.dnt-voice-cheatsheet-pill {
+	font-size: 12px; padding: 6px 12px; border-radius: 20px;
+	background: var(--paper-soft); border: 1px solid var(--line); color: var(--muted);
+	cursor: pointer; transition: all 0.15s ease; min-height: 32px; display: inline-flex; align-items: center;
+}
+@media (pointer: coarse) {
+	.dnt-voice-cheatsheet-pill { min-height: 44px; padding: 8px 14px; }
+}
+.dnt-voice-cheatsheet-pill:hover {
+	background: var(--teal); color: var(--paper-strong); border-color: var(--teal);
+}
+
+/* 11. Кнопки действий */
+.voice-btn-apply,
+.dnt-voice-btn-apply {
+	min-height: 38px; min-width: 38px; padding: 8px 14px; font-size: 13px; font-weight: 700;
+	border-radius: 8px; border: none; background: var(--ok-fg); color: var(--paper-strong);
+	cursor: pointer; display: flex; align-items: center; gap: 6px; transition: background 0.15s ease;
+}
+.voice-btn-apply:hover,
+.dnt-voice-btn-apply:hover { opacity: 0.9; }
+
+.voice-btn-icon,
+.dnt-voice-btn-icon-only {
+	min-height: 38px; min-width: 38px; padding: 8px; border-radius: 8px;
+	border: 1px solid var(--line); background: transparent; color: var(--muted);
+	cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.voice-btn-icon:hover,
+.dnt-voice-btn-icon-only:hover {
+	background: var(--paper-soft); color: var(--ink);
+}
+
+.dnt-voice-fallback-bar .voice-btn-apply,
+.dnt-voice-fallback-bar .dnt-voice-btn-apply {
+	min-height: 44px; padding: 10px 18px; font-size: 14px; font-weight: 700;
+	border-radius: 8px; border: none; background: var(--teal); color: var(--paper-strong);
+	cursor: pointer; display: flex; align-items: center; gap: 6px; white-space: nowrap;
+}
+.dnt-voice-fallback-bar .voice-btn-apply:hover,
+.dnt-voice-fallback-bar .dnt-voice-btn-apply:hover {
+	background: var(--teal-dark);
+}
+
+.voice-btn-secondary,
+.dnt-voice-btn-secondary {
+	min-height: 44px; padding: 10px 18px; font-size: 14px; font-weight: 600;
+	border-radius: 8px; border: 1px solid var(--line); background: transparent;
+	color: var(--ink); cursor: pointer;
+}
+.voice-btn-secondary:hover,
+.dnt-voice-btn-secondary:hover {
+	background: var(--paper-soft);
+}
+
+/* Primary CTA кнопка #0d9488 (Мандат 8am) */
+.voice-btn-primary,
+.dnt-voice-btn-primary {
+	min-height: 44px; padding: 10px 20px; font-size: 14px; font-weight: 700;
+	border-radius: 8px; border: none; background: var(--teal); color: var(--paper-strong);
+	cursor: pointer; display: flex; align-items: center; gap: 8px;
+}
+.voice-btn-primary:hover,
+.dnt-voice-btn-primary:hover {
+	background: var(--teal-dark);
+}
+
+/* 12. Подвал модального окна */
+.dnt-voice-modal-footer {
+	padding: 16px 24px; border-top: 1px solid var(--line);
+	display: flex; align-items: center; justify-content: space-between; gap: 16px;
+	background: var(--paper-strong);
+}
+@media (max-width: 768px) {
+	.dnt-voice-modal-footer {
+		padding: 14px 16px calc(14px + env(safe-area-inset-bottom, 0px));
+	}
+}
+.dnt-voice-footer-actions {
+	display: flex; align-items: center; gap: 12px;
+}

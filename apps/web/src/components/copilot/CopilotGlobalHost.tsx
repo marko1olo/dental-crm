@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Sparkles } from 'lucide-react';
 import { useCopilot } from './useCopilot';
-import { CopilotDrawer } from './CopilotDrawer';
+import { CopilotStudioModal } from './CopilotStudioModal';
 import { useCopilotContextSync } from './CopilotContextSync';
 import type { CopilotUiMessage, PendingConfirmation } from './copilotTypes';
 import type { VisitNoteFieldsPatch, SpecialtyCategoryKey } from '../visit/clinicalCatalog/clinicalProtocolsCatalog';
@@ -79,25 +79,13 @@ export const CopilotGlobalHost: React.FC = () => {
 
   return (
     <>
-      <CopilotDrawer
+      <CopilotStudioModal
         isOpen={copilot.isOpen}
-        messages={effectiveMessages}
-        busy={copilot.busy}
-        phase={copilot.phase}
-        pending={effectivePending}
-        nameCache={copilot.nameCache}
-        nudges={copilot.nudges}
-        activeTab={copilot.activeTab}
-        onTabChange={copilot.setActiveTab}
         onClose={copilot.closeDrawer}
-        onSend={copilot.send}
-        onConfirm={(decision, reason) => {
-          if (effectivePending) {
-            void copilot.confirm(effectivePending.callId, decision, undefined, reason);
-          }
-        }}
-        onReset={copilot.reset}
-        onDismissNudge={copilot.dismissNudge}
+        activeTooth={numericActiveTooth}
+        patientId={uiContext.patientId}
+        patientName={uiContext.patientName}
+        initialTab="dialog"
       />
       <CopilotGlobalModals
         isHudOpen={isHudOpen}
