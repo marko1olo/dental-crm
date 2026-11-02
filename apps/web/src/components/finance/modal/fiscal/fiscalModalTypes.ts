@@ -59,3 +59,4 @@ export interface FiscalReceipt54FzModalProps {
 }
 
 export type FiscalReceiptModalProps = FiscalReceipt54FzModalProps;
+export type CashReceiptModalProps = FiscalReceipt54FzModalProps;

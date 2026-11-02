@@ -1,5 +1,5 @@
-import type React from "react";
-import { FiscalReceipt54FzModal } from "../finance/FiscalReceipt54FzModal";
+import React from "react";
+import { CashReceiptModal } from "../finance/CashReceiptModal.js";
 import { showToast } from "../GlobalToast";
 import type { LiveInvoiceItem } from "./odontogramLiveInvoiceCalculations";
 
@@ -18,7 +18,7 @@ export const LiveInvoiceFiscalBridge: React.FC<
 	if (!isOpen) return null;
 
 	return (
-		<FiscalReceipt54FzModal
+		<CashReceiptModal
 			isOpen={isOpen}
 			items={baseItems.map((it, idx) => ({
 				id: `live-inv-${idx}-${it.toothNumber}`,

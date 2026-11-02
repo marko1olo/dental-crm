@@ -5,14 +5,14 @@
  */
 
 import { useState } from "react";
-import type { FiscalModalTab, FiscalReceipt54FzModalProps } from "./fiscalModalTypes.js";
+import type { FiscalModalTab, CashReceiptModalProps, FiscalReceipt54FzModalProps } from "./fiscalModalTypes.js";
 import { useFiscalItemsAndDiscounts } from "./useFiscalItemsAndDiscounts.js";
 import { useFiscalTenderAllocation } from "./useFiscalTenderAllocation.js";
 import { useFiscalRefundAndAuxTabs } from "./useFiscalRefundAndAuxTabs.js";
 import { useFiscalAcquiringRecovery } from "./useFiscalAcquiringRecovery.js";
 import { useFiscalReceiptSubmit } from "./useFiscalReceiptSubmit.js";
 
-export function useFiscalReceiptLogic(props: FiscalReceipt54FzModalProps) {
+export function useFiscalReceiptLogic(props: CashReceiptModalProps) {
 	const {
 		items: propItems,
 		patientId = "00000000-0000-0000-0000-000000000001",

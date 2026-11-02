@@ -6,9 +6,9 @@ import React from "react";
 import { showToast } from "../../GlobalToast";
 import type { TreatmentPlanStage } from "../types";
 
-const FiscalReceipt54FzModal = React.lazy(() =>
-	import("../../finance/FiscalReceipt54FzModal").then((m) => ({
-		default: m.FiscalReceipt54FzModal,
+const CashReceiptModal = React.lazy(() =>
+	import("../../finance/CashReceiptModal.js").then((m) => ({
+		default: m.CashReceiptModal,
 	})),
 );
 
@@ -37,7 +37,7 @@ export const TreatmentPlanStagePaymentModal: React.FC<
 
 	return (
 		<React.Suspense fallback={null}>
-			<FiscalReceipt54FzModal
+			<CashReceiptModal
 				isOpen={true}
 				items={stage.items}
 				patientId={patientId}

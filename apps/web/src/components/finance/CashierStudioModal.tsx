@@ -220,8 +220,8 @@ export const CashierStudioModal: React.FC<CashierStudioModalProps> = ({
 		<div className="cashier-studio-overlay" role="dialog" aria-modal="true">
 			<div className="cashier-studio-modal">
 				<div className="cashier-drag-handle sm:hidden" />
-				<div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--line)]">
-					<div className="flex items-center gap-3">
+				<div className="flex items-center justify-between px-4 sm:px-5 py-3 border-b border-[var(--line)] bg-[var(--paper)]">
+					<div className="flex items-center gap-3 min-w-0">
 						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 text-[#0d9488] flex items-center justify-center font-bold shrink-0">
 							<Receipt className="w-5 h-5" />
 						</div>
@@ -230,11 +230,11 @@ export const CashierStudioModal: React.FC<CashierStudioModalProps> = ({
 							<p className="text-xs text-[var(--ink-muted,#64748b)] truncate">Кассир: {cashierFullName}</p>
 						</div>
 					</div>
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-2 shrink-0">
 						<div className="hidden sm:flex p-1 bg-[var(--paper-soft,#f1f5f9)] rounded-xl border border-[var(--line)]">
 							{renderTabButtons()}
 						</div>
-						<button type="button" onClick={onClose} className="cashier-secondary-btn p-2 rounded-xl text-[var(--ink-muted)] hover:text-[var(--ink)] min-w-[44px] min-h-[44px]" aria-label="Закрыть">
+						<button type="button" onClick={onClose} className="p-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] min-w-[40px] min-h-[40px] flex items-center justify-center shrink-0" aria-label="Закрыть">
 							<X className="w-5 h-5" />
 						</button>
 					</div>
@@ -409,29 +409,29 @@ export const CashierStudioModal: React.FC<CashierStudioModalProps> = ({
 					)}
 				</div>
 
-				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row items-center justify-between gap-3">
-					<div className="text-xs text-[var(--ink-muted)] flex items-center gap-2 w-full sm:w-auto">
-						<ShieldCheck className="w-4 h-4 text-[#0d9488]" />
-						<span>Бесшовная фискализация • 0 float errors</span>
+				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+					<div className="text-xs text-[var(--ink-muted)] flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
+						<ShieldCheck className="w-4 h-4 text-[#0d9488] shrink-0" />
+						<span className="truncate">Бесшовная фискализация • 0 float errors</span>
 					</div>
-					<div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-						<button type="button" onClick={onClose} className="cashier-secondary-btn flex-1 sm:flex-none">Отмена</button>
+					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto justify-end">
+						<button type="button" onClick={onClose} className="cashier-secondary-btn w-full sm:w-auto">Отмена</button>
 						{activeTab === "checkout" && (
-							<button type="button" onClick={handleCheckoutSubmit} className="cashier-primary-cta flex-1 sm:flex-none" data-testid="cashier-submit-btn">
-								<Printer className="w-4 h-4" />
-								<span>{isSubmitting ? "Пробиваем..." : "Провести оплату и напечатать чек"}</span>
+							<button type="button" onClick={handleCheckoutSubmit} className="cashier-primary-cta w-full sm:w-auto" data-testid="cashier-submit-btn">
+								<Printer className="w-4 h-4 shrink-0" />
+								<span className="truncate">{isSubmitting ? "Пробиваем..." : "Провести оплату и напечатать чек"}</span>
 							</button>
 						)}
 						{activeTab === "shift" && (
-							<button type="button" onClick={handleShiftAction} className="cashier-primary-cta flex-1 sm:flex-none" data-testid="cashier-shift-btn">
-								<Lock className="w-4 h-4" />
-								<span>{isShiftOpen ? "Закрыть смену и снять Z-отчёт" : "Открыть новую кассовую смену"}</span>
+							<button type="button" onClick={handleShiftAction} className="cashier-primary-cta w-full sm:w-auto" data-testid="cashier-shift-btn">
+								<Lock className="w-4 h-4 shrink-0" />
+								<span className="truncate">{isShiftOpen ? "Закрыть смену и снять Z-отчёт" : "Открыть новую кассовую смену"}</span>
 							</button>
 						)}
 						{activeTab === "history" && (
-							<button type="button" onClick={() => setActiveTab("checkout")} className="cashier-primary-cta flex-1 sm:flex-none">
-								<CreditCard className="w-4 h-4" />
-								<span>Перейти к чекауту</span>
+							<button type="button" onClick={() => setActiveTab("checkout")} className="cashier-primary-cta w-full sm:w-auto">
+								<CreditCard className="w-4 h-4 shrink-0" />
+								<span className="truncate">Перейти к чекауту</span>
 							</button>
 						)}
 					</div>

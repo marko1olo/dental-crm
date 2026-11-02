@@ -17,7 +17,6 @@ export * from "./ServiceReceiptPrintDocument.js";
 export * from "./TaxExemptionBanner.js";
 export * from "./PaymentSplitModal.js";
 export * from "./Billing1CExportModal.js";
-export * from "./FiscalReceipt54FzModal.js";
 export * from "./FinanceView.js";
 export * from "./FamilyWalletPanel.js";
 export * from "./OneCExportButton.js";

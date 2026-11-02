@@ -1,11 +1,12 @@
-import type React from "react";
+import React from "react";
 import type { TreatmentPlanItem } from "../treatment-plans/types";
-import { InvoiceTaxDecreeBanner } from "./InvoiceTaxDecreeBanner";
+import { TaxExemptionBanner } from "./TaxExemptionBanner.js";
 import { InvoiceItemsTable } from "./InvoiceItemsTable";
 import { InvoiceGenerationHeader } from "./InvoiceGenerationHeader";
 import { InvoiceGenerationFooter } from "./InvoiceGenerationFooter";
 import { useInvoiceGenerationState } from "./useInvoiceGenerationState";
 
+export { TaxExemptionBanner } from "./TaxExemptionBanner.js";
 export { InvoiceTaxDecreeBanner, InvoiceDecree659Banner } from "./InvoiceTaxDecreeBanner";
 export { InvoiceItemsTable } from "./InvoiceItemsTable";
 export { submitInvoiceFromPlan, createTaxAddendum, createDecree659Addendum } from "./invoiceGenerationOperations";
@@ -44,7 +45,7 @@ export const InvoiceGenerationModal: React.FC<InvoiceGenerationModalProps> = (pr
 			<div className={`w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper)] rounded-2xl shadow-2xl border border-[var(--line)] overflow-hidden ${className}`}>
 				<InvoiceGenerationHeader planNumber={planNumber} planTitle={planTitle} patientName={patientName} doctorFullName={doctorFullName} documentType={s.documentType} onSetDocumentType={s.setDocumentType} onLockAllPrices={s.handleLockAllPrices} onUpdateAllToCurrent={s.handleUpdateAllToCurrent} onClose={onClose} />
 				<div className="flex-1 overflow-y-auto p-6 min-h-0 flex flex-col">
-					<InvoiceTaxDecreeBanner unapprovedItems={s.unapprovedItems} isCreatingAddendum={s.isCreatingAddendum} onCreateAddendum={s.handleCreateAddendum} />
+					<TaxExemptionBanner unapprovedItems={s.unapprovedItems} isCreatingAddendum={s.isCreatingAddendum} onCreateAddendum={s.handleCreateAddendum} />
 					<InvoiceItemsTable report={s.report} adminOverrideAuthorized={s.adminOverrideAuthorized} unapprovedItemIds={s.unapprovedItemIds} onItemResolutionChange={(itemId, resolution) => s.setItemResolutions((prev) => ({ ...prev, [itemId]: resolution }))} onSelectAnalogue={s.handleSelectAnalogue} />
 				</div>
 				<InvoiceGenerationFooter report={s.report} adminOverrideAuthorized={s.adminOverrideAuthorized} adminStaffName={s.adminStaffName} onDoctorClinicalOverride={s.handleDoctorClinicalOverride} onCreateInvoice={s.handleCreateInvoice} isSubmitting={s.isSubmitting} isCreatingAddendum={s.isCreatingAddendum} unapprovedItemsCount={s.unapprovedItems.length} documentType={s.documentType} />

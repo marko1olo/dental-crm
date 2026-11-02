@@ -1,6 +1,6 @@
-import type React from "react";
+import React from "react";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
-import { FiscalReceipt54FzModal } from "../../finance/FiscalReceipt54FzModal";
+import { CashReceiptModal } from "../../finance/CashReceiptModal.js";
 import { showToast } from "../../GlobalToast.js";
 import { TreatmentEstimatorSignModal } from "../TreatmentEstimatorSignModal";
 import { PAPER_SIGNATURE_DATA_URL } from "./estimatorUiConstants";
@@ -33,7 +33,7 @@ export const TreatmentEstimatorModals: React.FC<TreatmentEstimatorModalsProps> =
 	return (
 		<>
 			{isFiscalModalOpen && (
-				<FiscalReceipt54FzModal
+				<CashReceiptModal
 					isOpen={isFiscalModalOpen}
 					items={cashierItems}
 					patientId={patientId}

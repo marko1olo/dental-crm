@@ -17,7 +17,7 @@ import { DirectTelephonyLauncher } from "../../../telephony/DirectTelephonyLaunc
 import { DirectRecallLauncher } from "../../../recalls/DirectRecallLauncher";
 import { DirectScheduleLauncher } from "../../../schedule/DirectScheduleLauncher";
 import { DirectTreatmentPlanLauncher } from "../../../treatment-plans/DirectTreatmentPlanLauncher";
-import { DirectCashRegisterLauncher } from "../../../billing/DirectCashRegisterLauncher";
+import { DirectCashierLauncher } from "../../../finance/DirectCashierLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
 import { DirectSanpinLauncher } from "../../../sanpin/DirectSanpinLauncher";
 import { DirectSterilizationLauncher } from "../../../sanpin/DirectSterilizationLauncher";
@@ -190,14 +190,17 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		},
 		render: () => <DirectTreatmentPlanLauncher />,
 	},
-	// 8. Касса, чеки и кассовый расчёт
+	// 8. Касса, чеки и кассовый расчёт (Cashier Studio SSOT)
 	{
 		id: "cash-register",
 		title: "Касса и чеки",
 		criteria: {
-			tokens: ["billing-checkout", "billing_checkout", "checkout-studio", "cashbox-studio"],
+			tokens: ["cashier", "cashier-studio", "kassa", "cashbox", "receipt", "checkout", "billing-checkout", "billing_checkout", "checkout-studio", "cashbox-studio"],
+			searchIncludes: ["cashier=1", "kassa=1", "checkout=1", "standalone=cashier"],
+			exactHashes: ["#cashier", "#kassa", "#cashier-studio", "#checkout", "#receipt"],
+			hashPrefixes: ["#cashier?", "#kassa?", "#checkout?"],
 		},
-		render: () => <DirectCashRegisterLauncher />,
+		render: () => <DirectCashierLauncher />,
 	},
 	// 9. Склад материалов и маркировка (SSOT)
 	{

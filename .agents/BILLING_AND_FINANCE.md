@@ -56,10 +56,11 @@ const shortageKopecks = Math.max(0, requiredCashKopecks - receivedCashKopecks);
 * Вместо «Постановление 659» -> **«Освобождение от НДС по медицинским услугам»**
 
 ### 2.0. Канонические компоненты Единого чекаута и кассы:
-1. **`CashReceiptModal.tsx`**: Каноническое модальное окно кассового чека, фискализации и приема платежей (ранее `FiscalReceipt54FzModal.tsx`).
-2. **`ServiceReceiptPrintDocument.tsx`**: Товарный чек / Акт оказанных стоматологических услуг и печать фискального чека (ранее `Order804nFiscalReceiptPrint.tsx`).
-3. **`TaxExemptionBanner.tsx`**: Информационный баннер освобождения от НДС медицинских услуг и согласования манипуляций у кресла (ранее `InvoiceDecree659Banner.tsx` / `InvoiceTaxDecreeBanner.tsx`).
-4. **Единый чекаут и запрет карнавала кнопок (Мандат 8am)**:
+1. **`CashierStudioModal.tsx` & `DirectCashierLauncher.tsx`**: Каноническая Студия кассы, чеков и смены DENTE CRM (Cashier Studio SSOT). Sweet Spot 400–480 строк (`CashierStudioModal.tsx`) + 70–90 строк (`DirectCashierLauncher.tsx`). Полноценный тест-сьют `cashierSSOTSuite.test.tsx` на нативном `node:test` (18/18 тестов зеленые).
+2. **`CashReceiptModal.tsx`**: Каноническое модальное окно кассового чека, фискализации и приема платежей (ранее `FiscalReceipt54FzModal.tsx`).
+3. **`ServiceReceiptPrintDocument.tsx`**: Товарный чек / Акт оказанных стоматологических услуг и печать фискального чека (ранее `Order804nFiscalReceiptPrint.tsx`).
+4. **`TaxExemptionBanner.tsx`**: Информационный баннер освобождения от НДС медицинских услуг и согласования манипуляций у кресла (ранее `InvoiceDecree659Banner.tsx` / `InvoiceTaxDecreeBanner.tsx`).
+5. **Единый чекаут и запрет карнавала кнопок (Мандат 8am)**:
    * Ровно **ОДНА Primary CTA кнопка** стиля `var(--teal, #0d9488)` в нижней трети экрана (Natural Thumb Zone).
    * Оплата принимается в 1 клик (Наличные, Терминал, СБП, Смешанная оплата) без обязательного требования ИНН с физлиц.
    * Свобода врача: скидки до 100% (гарантийные переделки, коллеги) без блокировки мастер-паролями (Мандат 8e).
