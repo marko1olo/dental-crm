@@ -31,11 +31,6 @@ function checkPort(port) {
 }
 
 async function findActivePort() {
-  for (const port of [5173, 5174, 5175, 5176]) {
-    if (await checkPort(port)) {
-      return port;
-    }
-  }
   return 5173;
 }
 
@@ -122,45 +117,33 @@ async function run() {
     fs.copyFileSync(pcDarkPath, path.join(OUT_DIR, "02_telephony_pc_dark.png"));
     const pcDarkSize = fs.statSync(pcDarkPath).size;
     console.log(`✓ Saved PC Dark: ${pcDarkPath} (${(pcDarkSize / 1024).toFixed(1)} KB)`);
-    await context.close();
-
     // -----------------------------------------------------------------
-    // 3. MOBILE (390x844 @2x Retina): MOBILE LIGHT
+    // 3. MOBILE (390x844): MOBILE LIGHT
     // -----------------------------------------------------------------
     console.log("\n[3/4] Capturing 03_telephony_mobile_light_390x844.png...");
-    const mobileContext = await browser.newContext({
-      viewport: { width: 390, height: 844 },
-      deviceScaleFactor: 2,
-      isMobile: true,
-      hasTouch: true,
-    });
-    const mobilePage = await mobileContext.newPage();
-    mobilePage.setDefaultTimeout(60000);
-    mobilePage.setDefaultNavigationTimeout(60000);
-    await mobilePage.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await mobilePage.waitForSelector('[data-testid="telephony-standalone-root"]', { state: "attached", timeout: 60000 });
-    await setTheme(mobilePage, "light");
-    await mobilePage.waitForTimeout(600);
+    await page.setViewportSize({ width: 390, height: 844 });
+    await setTheme(page, "light");
+    await page.waitForTimeout(800);
 
     const mobileLightPath = path.join(OUT_DIR, "03_telephony_mobile_light_390x844.png");
-    await mobilePage.screenshot({ path: mobileLightPath, fullPage: false });
+    await page.screenshot({ path: mobileLightPath, fullPage: false });
     fs.copyFileSync(mobileLightPath, path.join(OUT_DIR, "03_telephony_mobile_light.png"));
     const mobileLightSize = fs.statSync(mobileLightPath).size;
     console.log(`✓ Saved Mobile Light: ${mobileLightPath} (${(mobileLightSize / 1024).toFixed(1)} KB)`);
 
     // -----------------------------------------------------------------
-    // 4. MOBILE (390x844 @2x Retina): MOBILE DARK
+    // 4. MOBILE (390x844): MOBILE DARK
     // -----------------------------------------------------------------
     console.log("\n[4/4] Capturing 04_telephony_mobile_dark_390x844.png...");
-    await setTheme(mobilePage, "dark");
-    await mobilePage.waitForTimeout(600);
+    await setTheme(page, "dark");
+    await page.waitForTimeout(800);
 
     const mobileDarkPath = path.join(OUT_DIR, "04_telephony_mobile_dark_390x844.png");
-    await mobilePage.screenshot({ path: mobileDarkPath, fullPage: false });
+    await page.screenshot({ path: mobileDarkPath, fullPage: false });
     fs.copyFileSync(mobileDarkPath, path.join(OUT_DIR, "04_telephony_mobile_dark.png"));
     const mobileDarkSize = fs.statSync(mobileDarkPath).size;
     console.log(`✓ Saved Mobile Dark: ${mobileDarkPath} (${(mobileDarkSize / 1024).toFixed(1)} KB)`);
-    await mobileContext.close();
+    await context.close();
 
     console.log("\n=======================================================");
     console.log("ALL 4 TELEPHONY RED TEAM PROOFS CAPTURED SUCCESSFULLY!");

@@ -95,6 +95,25 @@
 	flex-shrink: 0;
 }
 
+.dnt-telephony-header-close-btn {
+	width: 2rem;
+	height: 2rem;
+	border-radius: 0.5rem;
+	border: 1px solid var(--line, #e2e8f0);
+	background-color: var(--paper, #f8fafc);
+	color: var(--ink-muted, #64748b);
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	cursor: pointer;
+	transition: all 0.12s ease;
+}
+
+.dnt-telephony-header-close-btn:hover {
+	background-color: var(--paper-secondary, #f1f5f9);
+	color: var(--ink, #0f172a);
+}
+
 /* 4. Split-View Columns */
 .dnt-telephony-split {
 	display: flex;
