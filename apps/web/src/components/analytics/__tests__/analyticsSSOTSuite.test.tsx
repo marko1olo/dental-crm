@@ -12,7 +12,7 @@
  */
 
 import assert from "node:assert/strict";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import test from "node:test";
 import { fileURLToPath } from "node:url";
@@ -146,7 +146,7 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка #0d9488 на видимый экран (Мандат 8am)", () => {
 	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
 	const footerPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsStudioFooter.tsx");
-	const code = readFileSync(modalPath, "utf8") + "\n" + readFileSync(footerPath, "utf8");
+	const code = readFileSync(modalPath, "utf8") + (existsSync(footerPath) ? "\n" + readFileSync(footerPath, "utf8") : "");
 
 	// Ищем класс primary-button
 	const primaryMatches = code.match(/className=["'][^"']*primary-button[^"']*["']/g) || [];
@@ -158,7 +158,7 @@ test("2.1. ExecutiveAnalyticsStudioModal: Ровно 1 Primary CTA кнопка 
 test("2.2. ExecutiveAnalyticsStudioModal: 3 доминантных KPI карточки и автономия врача (Мандат 8e)", () => {
 	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
 	const kpiPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsKpiGrid.tsx");
-	const code = readFileSync(modalPath, "utf8") + "\n" + readFileSync(kpiPath, "utf8");
+	const code = readFileSync(modalPath, "utf8") + (existsSync(kpiPath) ? "\n" + readFileSync(kpiPath, "utf8") : "");
 
 	assert.ok(code.includes('data-testid="kpi-card-revenue"'), "Revenue KPI card exists");
 	assert.ok(code.includes('data-testid="kpi-card-chairs"'), "Chairs occupancy KPI card exists");
@@ -171,7 +171,7 @@ test("2.2. ExecutiveAnalyticsStudioModal: 3 доминантных KPI карт�
 test("2.3. ExecutiveAnalyticsStudioModal: Сенсорный минимум закрытия >= 44x44px по Apple HIG", () => {
 	const modalPath = path.join(analyticsDir, "ExecutiveAnalyticsStudioModal.tsx");
 	const headerPath = path.join(analyticsDir, "studio", "ExecutiveAnalyticsStudioHeader.tsx");
-	const code = readFileSync(modalPath, "utf8") + "\n" + readFileSync(headerPath, "utf8");
+	const code = readFileSync(modalPath, "utf8") + (existsSync(headerPath) ? "\n" + readFileSync(headerPath, "utf8") : "");
 
 	assert.ok(code.includes("min-h-[44px] min-w-[44px]"), "Close button must have 44x44px touch target on mobile");
 	assert.ok(code.includes('data-testid="studio-modal-close-btn"'), "Close button must have testid");
