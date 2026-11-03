@@ -93,7 +93,7 @@ trigger: always_on
 4. **🩻 Vision / DICOM Specialist**: мультимодальный анализ RVG и 3D КЛКТ MPR, классификация по Хаунсфилду (D1–D4), трассировка `n. alveolaris inferior` и пазух.
 
 **Инварианты управления роем (строго по §5 глобального `config/rules/ai_assistant.md`):**
-- Изолированный контекст, `model: "inherit"`, Worker Auto-Purge, $\le 6$ активных субагентов.
+- Изолированный контекст, спавн СТРОГО с `TypeName: "self"` и `model: "inherit"` (только самые умные субагенты с полным набором инструментов, системным промптом и моделью родителя; запрет урезанных тиров `"flash"` / `"flash_lite"` / `"research"`), Worker Auto-Purge, $\le 6$ активных субагентов.
 - Эстафета транскрипта Deep Transcript Relay (`transcript.jsonl`).
 - Anti-Busy-Waiting Law: запрет циклического поллинга `status`, обязательный таймер `schedule DurationSeconds=30..120, TimerCondition="<task_id>"`, Yield Turn.
 - Two-Phase Guard: мутации БД требуют статуса `confirmation_required` и явного подтверждения врачом/кассиром.
