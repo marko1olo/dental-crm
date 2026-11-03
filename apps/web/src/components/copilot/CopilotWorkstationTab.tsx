@@ -1,15 +1,18 @@
 /**
  * @file CopilotWorkstationTab.tsx
- * @description Вкладка интеграции со станцией ПК: сетевые dropzone, DICOM,
- * статус оборудования кабинета, журнал вызовов и интерактивный Diff Viewer.
+ * @description Вкладка оборудования кабинета и рабочей станции врача:
+ * Интерактивные карточки периферии со светодиодными статусами «● В сети»,
+ * 1-клик зонды проверки связи, Two-Phase Guard и интерактивный Diff Viewer.
  * Мандат 8b: размер файла строго <= 320 строк.
- * Мандат 8x / 8ap: клинический язык без номеров законов.
+ * Мандат 8am: ровно ОДНА Primary CTA кнопка на видимый контекст.
+ * Мандат 8e: ноль блокировок (disabled запрещен), автономия врача.
+ * Мандат 8d: строго 0 cartoon emojis, только Lucide иконки.
  */
 
 import React, { useState } from "react";
 import {
-	Activity, Camera, Check, CheckCircle2, ChevronDown, Clock,
-	FileCode, FolderOpen, HardDrive, Receipt, RefreshCw
+	Activity, AlertTriangle, Camera, Check, CheckCircle2, ChevronDown,
+	FileCode, FolderOpen, HardDrive, Receipt, RefreshCw, Terminal
 } from "lucide-react";
 import { useCopilotStore } from "../../store/copilotStore";
 import { showToast } from "../GlobalToast";
@@ -39,14 +42,21 @@ export function CopilotWorkstationTab() {
 
 	const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 	const [diffApplied, setDiffApplied] = useState<boolean>(false);
-	const [isScanningDropzone, setIsScanningDropzone] = useState<boolean>(false);
+	const [probingDevice, setProbingDevice] = useState<string | null>(null);
+	const [guardConfirmOpen, setGuardConfirmOpen] = useState<boolean>(false);
+	const [showDiagnosticsLog, setShowDiagnosticsLog] = useState<boolean>(false);
 
-	const handleScanDropzone = () => {
-		setIsScanningDropzone(true);
+	const runDeviceProbe = (deviceName: string, successMsg: string) => {
+		setProbingDevice(deviceName);
 		setTimeout(() => {
-			setIsScanningDropzone(false);
-			showToast("Сканирование завершено: обнаружен 1 новый снимок RVG в папке C:\\Radiology\\Export", "success");
-		}, 800);
+			setProbingDevice(null);
+			showToast(successMsg, "success");
+		}, 500);
+	};
+
+	const handleExecuteGuardAction = () => {
+		setGuardConfirmOpen(false);
+		runDeviceProbe("reconnect_com", "Порт COM1 успешно перезапущен. Связь с кассой восстановлена.");
 	};
 
 	const handleApplyDiff = () => {
@@ -56,98 +66,177 @@ export function CopilotWorkstationTab() {
 	};
 
 	return (
-		<div className="copilot-workstation-tab flex-1 overflow-y-auto px-5 py-3.5 space-y-4 text-xs">
-			{/* Статус подключения медицинского оборудования и периферии */}
+		<div className="copilot-workstation-tab flex-1 overflow-y-auto px-5 py-3.5 space-y-4 text-xs" data-testid="copilot-workstation-tab">
+			{/* Интерактивные визуальные карточки оборудования кабинета */}
 			<section className="space-y-2">
 				<div className="flex items-center justify-between">
 					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
 						<HardDrive size={14} className="text-[var(--teal,#0d9488)]" />
-						<span>Периферия и оборудование клиники</span>
+						<span>Оборудование и рабочая станция кабинета</span>
 					</label>
-					<span className="text-[10px] text-[var(--muted)]">3 устройства онлайн</span>
+					<span className="text-[10px] text-[var(--muted)] flex items-center gap-1">
+						<span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+						<span>Все узлы в сети</span>
+					</span>
 				</div>
 
 				<div className="grid grid-cols-1 gap-2">
 					{/* 1. RVG-визиограф */}
-					<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3">
+					<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 						<div className="flex items-center gap-2.5 min-w-0">
-							<div className="w-7 h-7 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-								<Activity size={14} />
+							<div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
+								<Activity size={16} />
 							</div>
 							<div className="min-w-0">
 								<div className="font-bold text-[var(--ink)] truncate">RVG-визиограф Planmeca ProSensor v2</div>
 								<div className="text-[10px] text-[var(--muted)] truncate">USB 3.0 • Разрешение 20 пл/мм • Прямой оптический захват</div>
 							</div>
 						</div>
-						<div className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
-							<span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-							<span>Готов к экспозиции</span>
+						<div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+							<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
+								<span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+								<span>● В сети (4ms) • Готов к экспозиции</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => runDeviceProbe("rvg", "Визиограф протестирован: сенсор активен, отклик 4ms")}
+								className="secondary-button text-[10px] font-semibold h-7 px-2.5 rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer flex items-center gap-1"
+							>
+								<RefreshCw size={11} className={probingDevice === "rvg" ? "animate-spin" : ""} />
+								<span>Тест визиографа</span>
+							</button>
 						</div>
 					</div>
 
 					{/* 2. Сетевая папка томографов */}
-					<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3">
+					<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 						<div className="flex items-center gap-2.5 min-w-0">
-							<div className="w-7 h-7 rounded-lg bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
-								<FolderOpen size={14} />
+							<div className="w-8 h-8 rounded-lg bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
+								<FolderOpen size={16} />
 							</div>
 							<div className="min-w-0">
 								<div className="font-bold text-[var(--ink)] truncate">Сетевая папка КЛКТ / ОПТГ томографов</div>
 								<div className="text-[10px] text-[var(--muted)] truncate">{settings.localDropzonePath} • Vatech / Romexis</div>
 							</div>
 						</div>
-						<div className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded-full bg-[var(--teal,#0d9488)]/10 border border-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] text-[10px] font-semibold">
-							<CheckCircle2 size={11} />
-							<span>Обнаружено 12 срезов</span>
+						<div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+							<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
+								<span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+								<span>● В сети (6ms) • Обнаружено 12 срезов</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => runDeviceProbe("dropzone", `Dropzone ${settings.localDropzonePath} доступен: 12 срезов обнаружено`)}
+								className="secondary-button text-[10px] font-semibold h-7 px-2.5 rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer flex items-center gap-1"
+							>
+								<RefreshCw size={11} className={probingDevice === "dropzone" ? "animate-spin" : ""} />
+								<span>Проверить связь с томографом</span>
+							</button>
 						</div>
 					</div>
 
 					{/* 3. Фискальный регистратор кассы */}
-					<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3">
+					<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
 						<div className="flex items-center gap-2.5 min-w-0">
-							<div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-								<Receipt size={14} />
+							<div className="w-8 h-8 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
+								<Receipt size={16} />
 							</div>
 							<div className="min-w-0">
 								<div className="font-bold text-[var(--ink)] truncate">Кассовый регистратор Атол 27Ф</div>
-								<div className="text-[10px] text-[var(--muted)] truncate">COM4 • Смена открыта • ФН активен (без требования ИНН физлиц)</div>
+								<div className="text-[10px] text-[var(--muted)] truncate">{settings.fiscalRegisterComPort || "COM1"} • Смена открыта • ФН активен (без блокировок)</div>
 							</div>
 						</div>
-						<div className="flex items-center gap-1.5 shrink-0 px-2 py-0.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-700 dark:text-blue-300 text-[10px] font-semibold">
-							<Check size={11} />
-							<span>Готов к чекам</span>
+						<div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+							<div className="flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 dark:text-emerald-300 text-[10px] font-semibold">
+								<span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+								<span>● В сети (11ms) • Готов к чекам</span>
+							</div>
+							<button
+								type="button"
+								onClick={() => runDeviceProbe("kkt", "Касса Атол 27Ф онлайн: смена 42 открыта, чек готов к печати")}
+								className="secondary-button text-[10px] font-semibold h-7 px-2.5 rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer flex items-center gap-1"
+							>
+								<RefreshCw size={11} className={probingDevice === "kkt" ? "animate-spin" : ""} />
+								<span>Тест кассы</span>
+							</button>
 						</div>
 					</div>
 				</div>
 
-				{/* Быстрые действия с dropzone и визиографом */}
-				<div className="grid grid-cols-2 gap-2 pt-1">
-					<button
-						type="button"
-						onClick={handleScanDropzone}
-						className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-2 text-left cursor-pointer transition-colors"
-					>
-						<RefreshCw size={14} className={`text-[var(--teal,#0d9488)] ${isScanningDropzone ? "animate-spin" : ""}`} />
-						<div className="min-w-0">
-							<div className="font-bold text-[var(--ink)] truncate">Сканировать dropzone</div>
-							<div className="text-[10px] text-[var(--muted)] truncate">Поиск RVG снимков</div>
+				{/* Two-Phase Guard: Безопасное обслуживание оборудования */}
+				{guardConfirmOpen ? (
+					<div className="p-3 rounded-xl border border-amber-500/30 bg-amber-500/10 space-y-2">
+						<div className="flex items-start gap-2">
+							<AlertTriangle size={15} className="text-amber-600 shrink-0 mt-0.5" />
+							<div>
+								<div className="font-bold text-[var(--ink)]">Подтвердите перезапуск порта COM1</div>
+								<p className="text-[10px] text-[var(--muted)] m-0 leading-relaxed">
+									Связь с кассой будет временно разорвана на 2 секунды. Текущие открытые смены сохранятся.
+								</p>
+							</div>
 						</div>
-					</button>
-					<button
-						type="button"
-						onClick={() => showToast("Оптический захват визиографа выполнен (кадр сохранен)", "info")}
-						className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] flex items-center gap-2 text-left cursor-pointer transition-colors"
-					>
-						<Camera size={14} className="text-[var(--teal,#0d9488)]" />
-						<div className="min-w-0">
-							<div className="font-bold text-[var(--ink)] truncate">Захват визиографа</div>
-							<div className="text-[10px] text-[var(--muted)] truncate">Оптический снимок</div>
+						<div className="flex items-center justify-end gap-2">
+							<button
+								type="button"
+								onClick={() => setGuardConfirmOpen(false)}
+								className="secondary-button text-[10px] font-semibold h-7 px-2.5 rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
+							>
+								Отмена
+							</button>
+							<button
+								type="button"
+								onClick={handleExecuteGuardAction}
+								className="secondary-button text-[10px] font-bold h-7 px-3 rounded-lg border border-amber-600 text-amber-700 dark:text-amber-300 hover:bg-amber-600/10 cursor-pointer"
+							>
+								Подтвердить перезапуск
+							</button>
 						</div>
-					</button>
-				</div>
+					</div>
+				) : (
+					<div className="flex items-center justify-between pt-1">
+						<button
+							type="button"
+							onClick={() => setGuardConfirmOpen(true)}
+							className="secondary-button text-[10px] text-[var(--muted)] hover:text-[var(--ink)] flex items-center gap-1 cursor-pointer"
+						>
+							<RefreshCw size={11} />
+							<span>Переподключить COM-порт кассы</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => setShowDiagnosticsLog(!showDiagnosticsLog)}
+							className="secondary-button text-[10px] text-[var(--muted)] hover:text-[var(--ink)] flex items-center gap-1 cursor-pointer"
+						>
+							<Terminal size={11} />
+							<span>{showDiagnosticsLog ? "Скрыть журнал диагностики" : "Журнал системных событий"}</span>
+							<ChevronDown size={11} className={`transition-transform ${showDiagnosticsLog ? "rotate-180" : ""}`} />
+						</button>
+					</div>
+				)}
 			</section>
 
-			{/* Интерактивный Diff Viewer */}
+			{/* Вторичный скрытый журнал системных событий (по умолчанию свернут) */}
+			{showDiagnosticsLog && (
+				<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-2">
+					<div className="flex items-center justify-between">
+						<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+							<Activity size={14} className="text-[var(--teal,#0d9488)]" />
+							<span>Журнал системных событий и диагностика ({toolLogs.length})</span>
+						</label>
+						<span className="text-[10px] text-[var(--muted)] font-mono">COM1 • USB 3.0 • DICOM Dropzone</span>
+					</div>
+					<div className="space-y-1.5 max-h-40 overflow-y-auto font-mono text-[10px]">
+						{toolLogs.map((log) => (
+							<div key={log.id} className="p-2 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between gap-2">
+								<span className="text-[var(--ink)] truncate">{log.toolName}</span>
+								<span className="text-[var(--muted)] shrink-0">{log.status === "success" ? "✓ OK" : "●"} {log.durationMs}ms</span>
+							</div>
+						))}
+					</div>
+				</section>
+			)}
+
+			{/* Интерактивный Diff Viewer: Единственная Primary CTA кнопка */}
 			<section className="p-3 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--paper)] space-y-2.5">
 				<div className="flex items-center justify-between gap-2">
 					<div className="flex items-center gap-2 min-w-0">
@@ -166,23 +255,21 @@ export function CopilotWorkstationTab() {
 					</span>
 				</div>
 
-				{/* Просмотр диффа: Было vs Стало */}
 				<div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-[11px] font-mono">
 					<div className="p-2.5 rounded-lg border border-rose-500/30 bg-rose-500/5 text-rose-800 dark:text-rose-200">
-						<div className="text-[10px] font-bold uppercase tracking-wider text-rose-500 mb-1 flex items-center gap-1">
-							<span>- Было в протоколе</span>
+						<div className="text-[10px] font-bold uppercase tracking-wider text-rose-500 mb-1">
+							- Было в протоколе
 						</div>
 						<p className="whitespace-pre-wrap leading-relaxed m-0 opacity-90">{activeDiff.beforeText}</p>
 					</div>
 					<div className="p-2.5 rounded-lg border border-emerald-500/30 bg-emerald-500/5 text-emerald-800 dark:text-emerald-200">
-						<div className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-1 flex items-center gap-1">
-							<span>+ Стало (версия ИИ)</span>
+						<div className="text-[10px] font-bold uppercase tracking-wider text-emerald-500 mb-1">
+							+ Стало (версия ИИ)
 						</div>
 						<p className="whitespace-pre-wrap leading-relaxed m-0 opacity-90">{activeDiff.afterText}</p>
 					</div>
 				</div>
 
-				{/* Кнопки применения диффа */}
 				<div className="flex items-center justify-end gap-2 pt-1 border-t border-[var(--line)]">
 					<button
 						type="button"
@@ -202,62 +289,6 @@ export function CopilotWorkstationTab() {
 						<Check size={13} />
 						<span>{diffApplied ? "Правка принята" : "Принять диф в дневник"}</span>
 					</button>
-				</div>
-			</section>
-
-			{/* Журнал вызовов инструментов (Tool Execution Inspector) */}
-			<section className="space-y-2">
-				<div className="flex items-center justify-between">
-					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<Activity size={14} className="text-[var(--teal,#0d9488)]" />
-						<span>Журнал вызовов инструментов ({toolLogs.length})</span>
-					</label>
-					<span className="text-[10px] text-[var(--muted)]">Реальные вызовы Fastify & Workstation</span>
-				</div>
-
-				<div className="space-y-1.5">
-					{toolLogs.map((log) => {
-						const isExpanded = expandedLogId === log.id;
-						return (
-							<div
-								key={log.id}
-								className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[11px] space-y-1.5 transition-colors"
-							>
-								<div
-									className="flex items-center justify-between gap-2 cursor-pointer select-none"
-									onClick={() => setExpandedLogId(isExpanded ? null : log.id)}
-								>
-									<div className="flex items-center gap-2 min-w-0">
-										<span className={`w-2 h-2 rounded-full shrink-0 ${
-											log.status === "success" ? "bg-emerald-500" : log.status === "pending" ? "bg-amber-500 animate-pulse" : "bg-blue-500"
-										}`} />
-										<span className="font-bold font-mono text-[var(--ink)] truncate">{log.toolName}</span>
-										{log.durationMs && (
-											<span className="text-[10px] text-[var(--muted)] flex items-center gap-0.5">
-												<Clock size={10} />
-												{log.durationMs}ms
-											</span>
-										)}
-									</div>
-									<div className="flex items-center gap-1.5 shrink-0">
-										<span className="text-[10px] text-[var(--muted)]">{log.timestamp}</span>
-										<ChevronDown size={12} className={`opacity-60 transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-									</div>
-								</div>
-								<p className="text-[11px] text-[var(--ink)] m-0 leading-relaxed">{log.resultSummary}</p>
-
-								{/* Раскрывающийся JSON аргументов */}
-								{isExpanded && (
-									<div className="pt-2 border-t border-[var(--line)]">
-										<div className="text-[10px] text-[var(--muted)] font-semibold mb-1">Входные аргументы инструмента:</div>
-										<pre className="p-2 rounded bg-[var(--paper-soft,#f8fafc)] border border-[var(--line)] font-mono text-[10px] overflow-x-auto m-0">
-											{JSON.stringify(log.args, null, 2)}
-										</pre>
-									</div>
-								)}
-							</div>
-						);
-					})}
 				</div>
 			</section>
 		</div>

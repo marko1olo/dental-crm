@@ -110,7 +110,12 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	return (
 		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-			<div className="relative z-10 w-full max-w-2xl max-h-[92vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none border border-[var(--line)] shadow-2xl overflow-hidden">
+			<div className="relative z-10 w-full max-w-2xl max-h-[92vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
+				{/* Apple HIG тактильный Drag Handle на мобильных экранах */}
+				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
+					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
+				</div>
+
 				{/* Шапка */}
 				<header className="px-5 py-3 border-b border-[var(--line)] flex items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2.5 min-w-0">
@@ -125,10 +130,10 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={onClose}
-						className="icon-button w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
+						className="icon-button w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
 						aria-label="Закрыть"
 					>
-						<X size={15} />
+						<X size={16} />
 					</button>
 				</header>
 
@@ -159,12 +164,12 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				</div>
 
 				{/* Логические навигационные вкладки настроек */}
-				<div className="flex border-b border-[var(--line)] px-5 gap-2 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
+				<div className="flex border-b border-[var(--line)] px-5 gap-3 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
 					<button
 						type="button"
 						onClick={() => setActiveTab("intelligence")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "intelligence" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+							activeTab === "intelligence" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Brain size={13} />
@@ -173,8 +178,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={() => setActiveTab("equipment")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "equipment" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+							activeTab === "equipment" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<HardDrive size={13} />
@@ -183,8 +188,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={() => setActiveTab("voice_privacy")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "voice_privacy" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+							activeTab === "voice_privacy" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Mic size={13} />
@@ -193,8 +198,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={() => setActiveTab("memory")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "memory" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+							activeTab === "memory" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Sliders size={13} />
@@ -203,8 +208,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					<button
 						type="button"
 						onClick={() => setActiveTab("matrix")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "matrix" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+							activeTab === "matrix" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Table size={13} />

@@ -136,15 +136,15 @@ export function CopilotSettingsGeneralTab({
 								key={m.id}
 								type="button"
 								onClick={() => setModel(m.id)}
-								className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+								className={`p-2.5 rounded-xl border flex flex-col justify-center text-left transition-all cursor-pointer w-full ${
 									isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.08))]" : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
-								<div className="flex items-center justify-between">
+								<div className="flex items-center justify-between w-full">
 									<span className="font-bold text-[var(--ink)]">{m.label}</span>
-									{isSelected && <Check size={13} className="text-[var(--teal,#0d9488)]" />}
+									{isSelected && <Check size={13} className="text-[var(--teal,#0d9488)] shrink-0" />}
 								</div>
-								<p className="mt-0.5 text-[10px] text-[var(--muted)] truncate">{m.note}</p>
+								<p className="mt-0.5 text-[10px] text-[var(--muted)] truncate w-full">{m.note}</p>
 							</button>
 						);
 					})}

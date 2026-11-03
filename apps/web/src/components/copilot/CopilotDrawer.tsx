@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import {
   X, RotateCcw, Send, Mic, MicOff, Sparkles, Check, AlertTriangle,
   Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator,
-  Globe, Monitor, Camera, FolderSearch, Receipt
+  Globe, Monitor, Camera, FolderSearch, Receipt, Layers
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
@@ -16,6 +16,9 @@ import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
 import { CopilotMarkdown } from "./CopilotMarkdown";
 import { CopilotMessage } from "./CopilotMessage";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
+import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
+import { CopilotSwarmPanel } from "./swarm/CopilotSwarmPanel";
+import type { CopilotDrawerTab } from "./drawer/drawerTypes";
 import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./copilotTypes";
 import "./CopilotDrawer.css";
 
@@ -31,8 +34,8 @@ export interface CopilotDrawerProps {
   nudges?: ProactiveNudge[];
   proactiveAlerts?: any[];
   whatsappHitLCards?: any[];
-  activeTab: "chat" | "pending";
-  onTabChange: (tab: "chat" | "pending") => void;
+  activeTab: CopilotDrawerTab;
+  onTabChange: (tab: CopilotDrawerTab) => void;
   onClose: () => void;
   onSend: (text: string) => void;
   onConfirm: (decision: "confirm" | "reject", reason?: string) => void;
@@ -119,29 +122,20 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-    };
+    const handleResize = () => setIsMobile(window.innerWidth <= 768);
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
     if (typeof document === "undefined") return;
-    if (isOpen) {
-      document.body.classList.add("copilot-open");
-    } else {
-      document.body.classList.remove("copilot-open");
-    }
-    return () => {
-      document.body.classList.remove("copilot-open");
-    };
+    if (isOpen) document.body.classList.add("copilot-open");
+    else document.body.classList.remove("copilot-open");
+    return () => document.body.classList.remove("copilot-open");
   }, [isOpen]);
 
   const handleReset = () => {
-    if (dictation.isRecording) {
-      void dictation.stopDictation();
-    }
+    if (dictation.isRecording) void dictation.stopDictation();
     setInput("");
     safeLocalStorageRemoveItem("dente_copilot_draft_text");
     onReset();
@@ -154,9 +148,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
   const handleSubmit = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (dictation.isRecording) {
-      void dictation.stopDictation();
-    }
+    if (dictation.isRecording) void dictation.stopDictation();
     if (!input.trim() || busy) return;
     handleSendPrompt(input);
     setInput("");
@@ -323,6 +315,9 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           )}
         </div>
 
+        {/* Antigravity Context Telemetry Bar */}
+        <CopilotContextTelemetryBar patientName={uiContext.patientName} patientId={uiContext.patientId} activeTooth={uiContext.activeTooth} compact />
+
         {/* Tabs Bar */}
         <div className="copilot-tabs copilot-tabs-bar" role="tablist">
           <button
@@ -342,6 +337,16 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             className={`copilot-tab-btn ${activeTab === "pending" ? "copilot-tab-btn--active active" : ""}`}
           >
             Задачи {totalTasksCount > 0 && <span className="copilot-tab-badge copilot-tab-badge--alert">{totalTasksCount}</span>}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={activeTab === "swarm"}
+            onClick={() => onTabChange("swarm")}
+            className={`copilot-tab-btn ${activeTab === "swarm" ? "copilot-tab-btn--active active" : ""}`}
+          >
+            <Layers size={13} />
+            <span>Рой ИИ</span>
           </button>
         </div>
 
@@ -402,6 +407,8 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                 />
               )}
             </div>
+          ) : activeTab === "swarm" ? (
+            <CopilotSwarmPanel />
           ) : (
             <CopilotDrawerTasksTab
               totalEstimatesSumRub={totalEstimatesSumRub}

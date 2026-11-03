@@ -1,6 +1,6 @@
 /**
  * @file CopilotThinkingIndicator.tsx
- * @description Animated thinking process, typewriter pulse, EBM clinical radar & expandable CoT (Mandate 8b <= 120 lines).
+ * @description Extended Thinking (CoT) Stream with smooth accordion & monospace accents (Mandate 8b <= 120 lines).
  */
 
 import React, { useEffect, useState } from "react";
@@ -8,10 +8,10 @@ import { Brain, Check, ChevronDown, Sparkles } from "lucide-react";
 
 export interface CopilotThinkingIndicatorProps {
 	isThinking: boolean;
-	activeTooth?: number | null;
-	thoughtProcess?: string;
-	speedMode?: "turbo" | "deep_reasoning";
-	showThinkingProcess?: boolean;
+	activeTooth?: number | null | undefined;
+	thoughtProcess?: string | undefined;
+	speedMode?: "turbo" | "deep_reasoning" | undefined;
+	showThinkingProcess?: boolean | undefined;
 }
 
 export function CopilotThinkingIndicator({
@@ -38,27 +38,35 @@ export function CopilotThinkingIndicator({
 	if (!isThinking) return null;
 
 	return (
-		<div className="copilot-thinking-card my-2 p-3 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] animate-in fade-in duration-200 text-xs">
-			<div className="flex items-center justify-between gap-2">
-				<div className="flex items-center gap-2">
-					<div className="w-5 h-5 rounded-full bg-[var(--teal,#0d9488)]/20 flex items-center justify-center text-[var(--teal,#0d9488)] animate-pulse">
-						<Brain size={12} className="animate-spin" style={{ animationDuration: "3s" }} />
+		<div className="copilot-thinking-card my-2 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] transition-all duration-200 text-xs overflow-hidden">
+			{/* Аккордеон рассуждений модели (Antigravity & language_server CoT) */}
+			<button
+				type="button"
+				onClick={() => setIsExpanded((prev) => !prev)}
+				className="w-full p-3 flex items-center justify-between gap-2 text-left cursor-pointer hover:bg-[var(--teal,#0d9488)]/5 transition-colors select-none"
+				aria-expanded={isExpanded}
+			>
+				<div className="flex items-center gap-2 min-w-0">
+					<div className="w-5 h-5 rounded-full bg-[var(--teal,#0d9488)]/20 flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0 animate-pulse">
+						<Brain size={12} className={isThinking ? "animate-spin" : ""} style={{ animationDuration: "3s" }} />
 					</div>
-					<div className="font-semibold text-[var(--ink)] flex items-center gap-1.5">
-						<span>Обдумывание клинического решения</span>
-						<span className="font-mono text-[10px] text-[var(--muted)]">({elapsedSeconds}с)</span>
+					<div className="font-semibold text-[var(--ink)] flex items-center gap-1.5 truncate">
+						<span>{`Мышление модели (${elapsedSeconds}с) • ${isExpanded ? "Свернуть" : "Раскрыть"}`}</span>
 					</div>
 				</div>
-				<span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
-					{speedMode === "turbo" ? "Турбо-поток" : "Консилиум CoT"}
-				</span>
-			</div>
+				<div className="flex items-center gap-2 shrink-0">
+					<span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/20">
+						{speedMode === "turbo" ? "Турбо-поток" : "Консилиум CoT"}
+					</span>
+					<ChevronDown size={14} className={`text-[var(--muted)] transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
+				</div>
+			</button>
 
-			{/* Клинический радар шагов и индикатор набора текста */}
-			<div className="mt-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px]">
+			{/* Клинический радар шагов */}
+			<div className="px-3 pb-2.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px]">
 				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
 					<Check size={10} className="stroke-[2.5]" />
-					<span>FDI {activeTooth || 36}</span>
+					<span>{`FDI ${activeTooth || 36}`}</span>
 				</span>
 				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
 					<Check size={10} className="stroke-[2.5]" />
@@ -76,22 +84,12 @@ export function CopilotThinkingIndicator({
 				</span>
 			</div>
 
-			{/* Разворачиваемый ход мыслей (Chain-of-Thought) */}
-			{showThinkingProcess && (
-				<div className="mt-2 pt-2 border-t border-[var(--teal,#0d9488)]/15">
-					<button
-						type="button"
-						onClick={() => setIsExpanded((prev) => !prev)}
-						className="flex items-center gap-1 text-[11px] font-medium text-[var(--teal,#0d9488)] hover:underline cursor-pointer select-none"
-					>
-						<span>{isExpanded ? "Скрыть ход мыслей" : "Показать ход мыслей (CoT)"}</span>
-						<ChevronDown size={11} className={`transition-transform duration-200 ${isExpanded ? "rotate-180" : ""}`} />
-					</button>
-					{isExpanded && (
-						<p className="mt-1.5 p-2 rounded bg-[var(--paper)] text-[11px] leading-relaxed text-[var(--ink)] border border-[var(--line)] font-mono whitespace-pre-wrap">
-							{thoughtProcess}
-						</p>
-					)}
+			{/* Развернутый блок рассуждений CoT с моноширинными акцентами */}
+			{showThinkingProcess && isExpanded && (
+				<div className="p-3 pt-2.5 border-t border-[var(--teal,#0d9488)]/15 bg-[var(--paper,#ffffff)]/80">
+					<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[11px] font-mono leading-relaxed text-[var(--ink)] whitespace-pre-wrap selection:bg-[var(--teal,#0d9488)]/20">
+						{thoughtProcess}
+					</div>
 				</div>
 			)}
 		</div>

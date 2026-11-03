@@ -34,6 +34,7 @@ export const CopilotMessage: React.FC<CopilotMessageProps> = ({
         onSelectPatient={onSelectPatient}
         onSelectAppointment={onSelectAppointment}
         onBookSlot={onBookSlot}
+        onConfirm={onConfirm}
       />
     );
   }

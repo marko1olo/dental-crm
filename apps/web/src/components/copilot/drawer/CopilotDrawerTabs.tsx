@@ -1,9 +1,10 @@
 import React from "react";
-import { CheckSquare, MessageSquare } from "lucide-react";
+import { CheckSquare, MessageSquare, Layers } from "lucide-react";
+import type { CopilotDrawerTab } from "./drawerTypes";
 
 interface CopilotDrawerTabsProps {
-	activeTab: "chat" | "pending";
-	onTabChange: (tab: "chat" | "pending") => void;
+	activeTab: CopilotDrawerTab;
+	onTabChange: (tab: CopilotDrawerTab) => void;
 	messagesCount: number;
 	totalTasksCount: number;
 }
@@ -48,6 +49,14 @@ export const CopilotDrawerTabs: React.FC<CopilotDrawerTabsProps> = ({
 				{totalTasksCount > 0 && (
 					<span className="copilot-badge-count">{totalTasksCount}</span>
 				)}
+			</button>
+			<button
+				type="button"
+				onClick={() => onTabChange("swarm")}
+				className={`copilot-tab-btn ${activeTab === "swarm" ? "active" : ""}`}
+			>
+				<Layers size={16} />
+				<span>Рой ИИ</span>
 			</button>
 		</div>
 	);

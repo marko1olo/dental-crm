@@ -186,6 +186,8 @@ export const ActionConfirmButtons: React.FC<ActionConfirmButtonsProps> = ({
       ? 'Выписать рецепт'
       : rawName.includes('interaction') || rawName.includes('replace') || rawName.includes('drug')
       ? 'Заменить на безопасный препарат'
+      : rawName.includes('odontogram') || rawName.includes('tooth')
+      ? 'Применить в карту'
       : 'Подтвердить';
 
   return (

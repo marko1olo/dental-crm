@@ -12,9 +12,11 @@ export interface ToolUiMessage {
 	kind: "tool";
 	callId: string;
 	name: string;
-	status: "running" | "done" | "failed";
+	status: "running" | "done" | "failed" | "error" | "confirmation_required";
 	args?: Record<string, unknown> | undefined;
 	result?: unknown;
+	durationMs?: number | undefined;
+	error?: string | undefined;
 }
 
 export interface ConfirmUiMessage {

@@ -55,7 +55,7 @@ export function CopilotSettingsCapabilitiesTable({ runtimeMode }: CopilotSetting
 
 	return (
 		<div className="space-y-3 text-xs" data-testid="copilot-capabilities-matrix">
-			<div className="flex items-center justify-between gap-2">
+			<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
 				<div>
 					<h4 className="font-bold text-[var(--ink)]">Сравнительная матрица сред DENTE</h4>
 					<p className="text-[10px] text-[var(--muted)]">Честное разделение возможностей без скрытых эмуляций</p>

@@ -1,5 +1,10 @@
-import React, { useState } from 'react';
-import { Brain, ChevronUp, ChevronDown } from 'lucide-react';
+/**
+ * @file CopilotThinkingMessage.tsx
+ * @description In-feed Extended Thinking message with accordion & duration timer (Mandate 8b <= 90 lines).
+ */
+
+import React, { useState, useEffect } from 'react';
+import { Brain, ChevronDown } from 'lucide-react';
 import type { CopilotUiMessage } from '../copilotTypes';
 
 export interface CopilotThinkingMessageProps {
@@ -7,56 +12,44 @@ export interface CopilotThinkingMessageProps {
 }
 
 export const CopilotThinkingMessage: React.FC<CopilotThinkingMessageProps> = ({ message }) => {
-  const [expanded, setExpanded] = useState(true);
+  const [expanded, setExpanded] = useState(false);
   const isStreaming = Boolean(message.streaming);
+  const [elapsed, setElapsed] = useState<number>(() => {
+    if (message.durationMs) return Number((message.durationMs / 1000).toFixed(1));
+    return 0;
+  });
+
+  useEffect(() => {
+    if (!isStreaming) return;
+    const interval = setInterval(() => {
+      setElapsed((prev) => Number((prev + 0.1).toFixed(1)));
+    }, 100);
+    return () => clearInterval(interval);
+  }, [isStreaming]);
+
+  const durationText = message.durationMs
+    ? (message.durationMs / 1000).toFixed(1)
+    : elapsed.toFixed(1);
 
   return (
-    <div
-      className="copilot-thinking-box"
-      style={{
-        margin: '6px 0',
-        padding: '8px 12px',
-        borderRadius: '8px',
-        backgroundColor: 'var(--paper-soft, rgba(15, 118, 110, 0.04))',
-        border: '1px solid var(--line, rgba(15, 118, 110, 0.15))',
-        fontSize: '12px',
-        color: 'var(--ink, #0f172a)',
-      }}
-    >
-      <div
+    <div className="copilot-thinking-box my-1.5 rounded-xl border border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper-soft,rgba(15,118,110,0.04))] text-xs overflow-hidden transition-all duration-200">
+      <button
+        type="button"
         onClick={() => setExpanded(!expanded)}
-        style={{
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
-          cursor: 'pointer',
-          userSelect: 'none',
-        }}
+        className="w-full p-2.5 px-3 flex items-center justify-between text-left cursor-pointer hover:bg-[var(--teal,#0d9488)]/5 transition-colors select-none"
+        aria-expanded={expanded}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '6px', color: 'var(--teal-dark, #0f766e)', fontWeight: 600 }}>
-          <Brain size={14} className={isStreaming ? 'animate-pulse' : undefined} />
-          <span>{isStreaming ? 'Рассуждение ИИ (в процессе)...' : 'Ход рассуждения ИИ'}</span>
+        <div className="flex items-center gap-2 text-[var(--teal-dark,#0f766e)] font-semibold truncate">
+          <Brain size={13} className={isStreaming ? 'animate-pulse text-[var(--teal,#0d9488)]' : ''} />
+          <span>{`Мышление модели (${durationText}с) • ${expanded ? 'Свернуть' : 'Раскрыть'}`}</span>
         </div>
-        <span style={{ color: 'var(--muted)', display: 'flex', alignItems: 'center' }}>
-          {expanded ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-        </span>
-      </div>
+        <ChevronDown size={14} className={`text-[var(--muted,#64748b)] transition-transform duration-200 ${expanded ? 'rotate-180' : ''}`} />
+      </button>
 
       {expanded && (
-        <div
-          style={{
-            marginTop: '6px',
-            paddingTop: '6px',
-            borderTop: '1px dashed var(--line, rgba(15, 118, 110, 0.15))',
-            color: 'var(--muted, #64748b)',
-            lineHeight: 1.45,
-            whiteSpace: 'pre-wrap',
-            fontFamily: 'monospace',
-            fontSize: '11px',
-          }}
-        >
+        <div className="p-3 pt-2 border-t border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)]/80 text-[11px] font-mono leading-relaxed text-[var(--ink,#0f172a)] whitespace-pre-wrap">
           {message.text}
-          {isStreaming && <span className="copilot-streaming-cursor" />}
+          {isStreaming && <span className="inline-block w-1.5 h-3 ml-1 bg-[var(--teal,#0d9488)] animate-pulse align-middle" />}
         </div>
       )}
     </div>

@@ -31,7 +31,7 @@
 }
 @media (min-width: 769px) {
   .copilot-studio-panel {
-    width: 480px; height: 100%;
+    width: 540px; height: 100%;
     border-left: 1px solid var(--line, rgba(15, 118, 110, 0.15));
   }
 }
@@ -113,16 +113,17 @@
 
 /* Вкладки навигации */
 .copilot-tabs-nav {
-  display: flex; gap: 16px; padding: 0 20px;
+  display: flex; gap: 8px; padding: 0 16px;
   border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.15));
   font-size: 12px; font-weight: 600; flex-shrink: 0;
 }
 .copilot-tab-btn {
-  display: flex; align-items: center; gap: 6px;
-  min-height: 44px; padding: 8px 2px;
+  display: flex; align-items: center; gap: 5px;
+  min-height: 44px; padding: 8px 3px;
   border: none; border-bottom: 2px solid transparent;
   background-color: transparent; color: var(--muted, #64748b);
   cursor: pointer; transition: all 0.15s ease;
+  outline: none;
   flex: 0 0 auto !important;
   flex-shrink: 0 !important;
   white-space: nowrap !important;

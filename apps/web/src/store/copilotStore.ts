@@ -6,6 +6,13 @@
 
 import { create } from "zustand";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../lib/safeLocalStorage";
+import {
+	type SwarmAgentCard,
+	type SwarmAgentRole,
+	type ContextTelemetryData,
+	DEFAULT_SWARM_AGENTS,
+	DEFAULT_TELEMETRY,
+} from "../components/copilot/swarm/swarmTypes";
 
 export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
 export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
@@ -122,12 +129,16 @@ export interface CopilotStoreState {
 	activeDiff: ActiveDiff | null;
 	isSettingsOpen: boolean;
 	isHistoryOpen: boolean;
+	swarmAgents: SwarmAgentCard[];
+	telemetry: ContextTelemetryData;
 
 	// Actions
 	updateSettings: (patch: Partial<CopilotSettings>) => void;
 	setTrustLevel: (level: AiTrustLevel) => void;
 	setRuntimeMode: (mode: CopilotRuntimeEnvironment) => void;
 	refreshRuntimeEnvironment: () => CopilotRuntimeEnvironment;
+	triggerSwarmAudit: (agentId?: SwarmAgentRole) => void;
+	updateTelemetry: (patch: Partial<ContextTelemetryData>) => void;
 	addMemoryFact: (category: AiMemoryFact["category"], fact: string) => void;
 	removeMemoryFact: (id: string) => void;
 	clearMemory: () => void;
@@ -267,6 +278,8 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	activeDiff: null,
 	isSettingsOpen: false,
 	isHistoryOpen: false,
+	swarmAgents: DEFAULT_SWARM_AGENTS,
+	telemetry: DEFAULT_TELEMETRY,
 
 	updateSettings: (patch) => {
 		set((state) => {
@@ -288,6 +301,29 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		const detected = detectRuntimeEnvironment();
 		get().updateSettings({ runtimeMode: detected });
 		return detected;
+	},
+
+	triggerSwarmAudit: (agentId) => {
+		set((state) => ({
+			swarmAgents: state.swarmAgents.map((agent) => {
+				if (!agentId || agent.id === agentId) {
+					return {
+						...agent,
+						status: "completed" as const,
+						statusLabel: "Готово",
+						lastAuditAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+						inspectedRecordsCount: agent.inspectedRecordsCount + 1,
+					};
+				}
+				return agent;
+			}),
+		}));
+	},
+
+	updateTelemetry: (patch) => {
+		set((state) => ({
+			telemetry: { ...state.telemetry, ...patch },
+		}));
 	},
 
 	addMemoryFact: (category, fact) => {

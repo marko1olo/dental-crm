@@ -10,6 +10,8 @@ import type {
 	WhatsAppApprovalCard,
 } from "../copilotTypes";
 
+export type CopilotDrawerTab = "chat" | "pending" | "swarm";
+
 export interface CopilotDrawerProps {
 	isOpen: boolean;
 	messages: CopilotUiMessage[];
@@ -20,8 +22,8 @@ export interface CopilotDrawerProps {
 	nudges: CopilotNudge[];
 	proactiveAlerts?: ProactiveAlertCardData[] | undefined;
 	whatsappHitLCards?: WhatsAppApprovalCard[] | undefined;
-	activeTab: "chat" | "pending";
-	onTabChange: (tab: "chat" | "pending") => void;
+	activeTab: CopilotDrawerTab;
+	onTabChange: (tab: CopilotDrawerTab) => void;
 	onClose: () => void;
 	onSend: (text: string) => void;
 	onConfirm: ConfirmHandler;
