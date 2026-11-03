@@ -36,7 +36,7 @@ describe("Branch Transfer QR Code Act HTML & Transfer Execution", () => {
 			selectedComponents: {
 				demographics: true,
 				somaticAnamnesis: true,
-				odontogram043u: true,
+				odontogram: true,
 				visitDiaries: true,
 				treatmentPlans: true,
 				imagingArchive: false,
@@ -57,6 +57,9 @@ describe("Branch Transfer QR Code Act HTML & Transfer Execution", () => {
 		});
 
 		assert.equal(result.success, true, "Transfer must succeed");
+		assert.ok(result.snapshot.medicalHistory, "Snapshot must provide clean medicalHistory");
+		assert.equal(typeof result.snapshot.medicalHistory.totalVisitsCount, "number");
+		assert.ok(result.snapshot.odontogram, "Snapshot must provide clean odontogram");
 		assert.ok(result.qrDataUri.startsWith("data:image/svg+xml;utf8,"), "Must generate genuine QR data URI");
 
 		const decodedSvg = decodeURIComponent(result.qrDataUri.replace("data:image/svg+xml;utf8,", ""));

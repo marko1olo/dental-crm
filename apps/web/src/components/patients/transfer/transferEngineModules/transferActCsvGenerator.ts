@@ -19,7 +19,7 @@ export function generateTransferActCsv(snapshot: PatientClinicalSnapshot): strin
 		["Согласие на обработку данных", snapshot.consent152Fz.consentId],
 		["Тип подписи согласия", snapshot.consent152Fz.signatureType],
 		["Хеш подписи", snapshot.consent152Fz.signatureHash],
-		["Количество визитов в медкарте", snapshot.medicalHistory043u.totalVisitsCount.toString()],
+		["Количество визитов в медкарте", (snapshot.medicalHistory?.totalVisitsCount ?? snapshot.medicalHistory043u?.totalVisitsCount ?? 0).toString()],
 		["Исследований рентген/КЛКТ", snapshot.imagingArchive.studies.length.toString()],
 		["Суммарная доза (мкЗв)", snapshot.imagingArchive.totalAccumulatedDoseMicroSv.toString()],
 		["Активных нарядов ЗТЛ", snapshot.activeLabOrders.length.toString()],

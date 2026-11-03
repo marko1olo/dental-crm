@@ -317,7 +317,7 @@ describe("Chairside Tablet Consent Paper Autonomy Suite (Mandates 8e, 8i, 8k, 8n
 		passport: "Паспорт РФ 4512 № 789123",
 		phone: "+7 (926) 333-22-11",
 		snils: "145-678-901 22",
-		cardNumber: "043/у-5514",
+		cardNumber: "ЭМК-5514",
 	};
 
 	const mockDoctor: ChairsideDoctorProfile = {
@@ -361,10 +361,10 @@ describe("Chairside Tablet Consent Paper Autonomy Suite (Mandates 8e, 8i, 8k, 8n
 		expect(signedPkg.signature).toBeDefined();
 		expect(signedPkg.signature?.verificationMethod).toBe("paper_physical");
 		expect(signedPkg.signature?.legalStampText).toBe(
-			"ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736). Личная подпись пациента подшита в карту 043/у",
+			"Подписано на бумаге. Личная подпись пациента в медицинской карте",
 		);
 		expect(signedPkg.signature?.signedByFullName).toBe("Кузнецова Мария Викторовна");
-		expect(signedPkg.signature?.form043uRecordId).toBe("043/у-5514");
+		expect(signedPkg.signature?.form043uRecordId).toBe("ЭМК-5514");
 		expect(signedPkg.signature?.integrityHash).toMatch(/^[a-f0-9]{64}$/);
 	});
 

@@ -67,7 +67,7 @@ export function createTestSnapshot(overrides: Partial<Parameters<typeof buildPat
 		selectedComponents: {
 			demographics: true,
 			somaticAnamnesis: true,
-			odontogram043u: true,
+			odontogram: true,
 			visitDiaries: true,
 			treatmentPlans: true,
 			imagingArchive: true,

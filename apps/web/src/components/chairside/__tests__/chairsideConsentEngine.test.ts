@@ -11,8 +11,10 @@ import {
 	generateDocumentPackageIntegrityHash,
 	generateEstimateDocument,
 	generateIds1051nDocument,
+	generateInformedConsentDocument,
 	generateLegalPepStamp,
 	generatePdn152fzDocument,
+	generatePersonalDataConsentDocument,
 	generateSha256,
 	hashDoctorPin,
 	isValidPinFormat,
@@ -20,7 +22,10 @@ import {
 	maskRussianPhone,
 	renderChairsidePackageHtml,
 	sendChairsideSmsOtpToPatient,
+	signPackageWithInPersonConfirmation,
+	signPackageWithPaperPhysical,
 	signPackageWithSmsPep,
+	signPackageWithTouchSignature,
 	verifyChairsideSmsOtp,
 	verifyDoctorPin,
 	type ChairsidePatientProfile,
@@ -29,14 +34,14 @@ import {
 	type ChairsideSmsOtpState,
 } from "../chairsideConsentEngine.js";
 
-describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 1051н, 152-ФЗ, 804н)", () => {
+describe("Chairside Tablet Consent & Signing Engine Suite (Mandates 8e, 8x, 8ap)", () => {
 	const mockPatient: ChairsidePatientProfile = {
 		fullName: "Смирнова Елена Александровна",
 		birthDate: "12.08.1990",
 		passport: "Паспорт РФ 4515 № 654321",
 		phone: "+7 (916) 777-88-12",
 		snils: "112-233-445 95",
-		cardNumber: "043/у-9921",
+		cardNumber: "ЭМК-9921",
 	};
 
 	const mockDoctor: ChairsideDoctorProfile = {
@@ -111,9 +116,9 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 		});
 	});
 
-	// 2. Генерация документов пакета (1051н, 152-ФЗ, смета)
-	describe("2. Document Generation (1051n, 152-FZ, Treatment Estimate)", () => {
-		it("generateIds1051nDocument constructs statutory 1051n consent", () => {
+	// 2. Генерация документов пакета (ИДС, ПДН, смета) — Мандаты 8x, 8ap
+	describe("2. Document Generation (Clean Clinical Language, Mandate 8x & 8ap)", () => {
+		it("generateIds1051nDocument constructs clean clinical consent without raw ministerial codes", () => {
 			const doc = generateIds1051nDocument(
 				mockPatient,
 				mockDoctor,
@@ -122,28 +127,44 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 			);
 
 			assert.equal(doc.type, "ids_1051n");
-			assert.equal(doc.code, "ИДС-1051н");
-			assert.ok(doc.statutoryBasis.includes("1051н"));
-			assert.ok(doc.statutoryBasis.includes("323-ФЗ"));
+			assert.equal(doc.code, "ИДС-Базовое");
+			assert.ok(doc.statutoryBasis.includes("Согласие пациента"));
 			assert.equal(doc.isSigned, false);
 			assert.equal(doc.sections.length, 4);
 			assert.ok(doc.sections[0]?.content.includes("Смирнова Елена Александровна"));
 			assert.ok(doc.sections[1]?.content.includes("Барабаш Сергей Владимирович"));
 			assert.ok(doc.sections[1]?.content.includes("16, 17"));
 			assert.ok(doc.sections[1]?.content.includes("K04.0 Пульпит"));
+			assert.equal(doc.code.includes("1051н"), false, "Must not contain raw '1051н' in code");
 		});
 
-		it("generatePdn152fzDocument constructs 152-FZ consent for EGISZ", () => {
-			const doc = generatePdn152fzDocument(mockPatient, DEFAULT_CHAIRSIDE_CLINIC);
+		it("generateInformedConsentDocument alias matches generateIds1051nDocument", () => {
+			const doc = generateInformedConsentDocument(
+				mockPatient,
+				mockDoctor,
+				DEFAULT_CHAIRSIDE_CLINIC,
+				{ diagnosisIcd: "K02.1 Кариес дентина", teeth: ["24"] },
+			);
+			assert.equal(doc.code, "ИДС-Базовое");
+			assert.equal(doc.type, "ids_1051n");
+		});
+
+		it("generatePersonalDataConsentDocument constructs clean personal data consent", () => {
+			const doc = generatePersonalDataConsentDocument(mockPatient, DEFAULT_CHAIRSIDE_CLINIC);
 
 			assert.equal(doc.type, "pdn_152fz");
-			assert.equal(doc.code, "СОГЛ-152-ПДН");
-			assert.ok(doc.statutoryBasis.includes("152-ФЗ"));
-			assert.ok(doc.statutoryBasis.includes("140"));
+			assert.equal(doc.code, "СОГЛ-ПДН");
+			assert.ok(doc.statutoryBasis.includes("персональных данных"));
 			assert.equal(doc.isSigned, false);
 			assert.equal(doc.sections.length, 4);
 			assert.ok(doc.sections[0]?.content.includes("112-233-445 95"));
 			assert.ok(doc.sections[2]?.content.includes("ЕГИСЗ"));
+			assert.equal(doc.code.includes("152"), false, "Must not contain raw '152' in code");
+		});
+
+		it("generatePdn152fzDocument backwards compatibility alias works", () => {
+			const doc = generatePdn152fzDocument(mockPatient, DEFAULT_CHAIRSIDE_CLINIC);
+			assert.equal(doc.code, "СОГЛ-ПДН");
 		});
 
 		it("generateEstimateDocument constructs formal treatment plan and estimate", () => {
@@ -158,7 +179,6 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 
 			assert.equal(doc.type, "treatment_estimate");
 			assert.equal(doc.code, "СМЕТА-ПЛАН");
-			assert.ok(doc.statutoryBasis.includes("736"));
 			assert.equal(doc.isSigned, false);
 			assert.equal(doc.sections.length, 3);
 			assert.ok(doc.sections[1]?.content.includes("10 700,00 ₽"));
@@ -183,7 +203,7 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 	});
 
 	// 3. Жизненный цикл СМС-OTP и маскирование телефонов
-	describe("3. SMS-OTP Lifecycle & Phone Masking (63-ФЗ)", () => {
+	describe("3. SMS-OTP Lifecycle & Phone Masking", () => {
 		it("maskRussianPhone creates legal phone mask with last 2 digits visible", () => {
 			assert.equal(maskRussianPhone("+7 (916) 777-88-12"), "+7 (***) ***-**-12");
 			assert.equal(maskRussianPhone("89991234567"), "+7 (***) ***-**-67");
@@ -267,8 +287,8 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 		});
 	});
 
-	// 4. Криптографическая целостность SHA-256 и подписание ПЭП (63-ФЗ / 323-ФЗ)
-	describe("4. Cryptographic SHA-256 Integrity & 63-FZ PEP Signing", () => {
+	// 4. Криптографическая целостность SHA-256 и 4 метода подписания
+	describe("4. Cryptographic SHA-256 Integrity & Signing Protocols (SMS, Paper, Touch, In-Person)", () => {
 		it("generateSha256 produces deterministic 64-char hex string", () => {
 			const hash1 = generateSha256("DENTAL_CHAIRSIDE_TEST_PAYLOAD");
 			const hash2 = generateSha256("DENTAL_CHAIRSIDE_TEST_PAYLOAD");
@@ -285,14 +305,14 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 				signedAtFormatted: "28.08.2026 14:30",
 			});
 
-			assert.ok(stamp.includes("Документ подписан простой электронной подписью (ПЭП) в соответствии с 63-ФЗ"));
+			assert.ok(stamp.includes("Документ подписан простой электронной подписью (ПЭП)"));
 			assert.ok(stamp.includes("Код подтвержден: ****"));
 			assert.ok(stamp.includes("Хэш: SHA-256 (e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855)"));
 			assert.ok(stamp.includes("Телефон: +7 (***) ***-**-12"));
 			assert.ok(stamp.includes("Дата: 28.08.2026 14:30"));
 		});
 
-		it("generateDocumentPackageIntegrityHash computes canonical immutable hash", () => {
+		it("generateDocumentPackageIntegrityHash computes canonical immutable hash with EMK_CARD", () => {
 			const pkg = createChairsideConsentPackage({
 				patient: mockPatient,
 				doctor: mockDoctor,
@@ -307,14 +327,14 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 			);
 
 			assert.equal(hash.length, 64);
-			assert.ok(canonicalData.includes("CANONICAL DENTAL CHAIRSIDE PEP CONSENT RECORD (63-FZ / 323-FZ)"));
+			assert.ok(canonicalData.includes("CANONICAL DENTAL CHAIRSIDE PEP CONSENT RECORD"));
 			assert.ok(canonicalData.includes("PATIENT_FULL_NAME: СМИРНОВА ЕЛЕНА АЛЕКСАНДРОВНА"));
-			assert.ok(canonicalData.includes("FORM_043U_CARD: 043/у-9921"));
+			assert.ok(canonicalData.includes("EMK_CARD: ЭМК-9921"));
 			assert.ok(canonicalData.includes("ESTIMATE_TOTAL_KOPECKS: 1070000"));
-			assert.ok(canonicalData.includes("PEP_AUTH_METHOD: SMS_OTP_63FZ"));
+			assert.ok(canonicalData.includes("PEP_AUTH_METHOD: SMS_OTP"));
 		});
 
-		it("signPackageWithSmsPep signs package and updates documents to signed state", () => {
+		it("signPackageWithSmsPep signs package with clean clinical record ID and EMK prefix", () => {
 			const pkg = createChairsideConsentPackage({
 				patient: mockPatient,
 				doctor: mockDoctor,
@@ -325,7 +345,7 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 
 			const result = signPackageWithSmsPep(pkgWithSms, {
 				inputCode: "7842",
-				form043uChartNumber: "043/у-9921",
+				form043uChartNumber: "ЭМК-9921",
 				signedAtIso: "2026-08-28T14:30:00.000Z",
 			});
 
@@ -338,10 +358,75 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 			assert.equal(signed.signature?.verificationMethod, "sms_63fz_pep");
 			assert.equal(signed.signature?.phoneMasked, "+7 (***) ***-**-12");
 			assert.equal(signed.signature?.otpCodeConfirmed, "****");
-			assert.equal(signed.signature?.form043uRecordId, "043/у-9921");
-			assert.ok(signed.signature?.legalStampText.includes("63-ФЗ"));
+			assert.equal(signed.signature?.form043uRecordId, "ЭМК-9921");
+			assert.equal(signed.signature?.chartNumber, "ЭМК-9921");
+			assert.ok(signed.signature?.legalStampText.includes("простой электронной подписью"));
 			assert.equal(signed.documents.every((d) => d.isSigned), true);
 			assert.equal(signed.documents.every((d) => Boolean(d.integrityHash)), true);
+		});
+
+		it("signPackageWithPaperPhysical sets clean human stamp and EMK prefix (Item 1 & 4)", () => {
+			const pkgWithoutCard = createChairsideConsentPackage({
+				patient: { ...mockPatient, cardNumber: undefined },
+				doctor: mockDoctor,
+				treatmentItems: mockItems,
+			});
+
+			const signed = signPackageWithPaperPhysical(pkgWithoutCard);
+
+			assert.equal(signed.status, "signed");
+			assert.equal(signed.signature?.verificationMethod, "paper_physical");
+			// Item 1: clean human language
+			assert.equal(
+				signed.signature?.legalStampText,
+				"Подписано на бумаге. Личная подпись пациента в медицинской карте",
+			);
+			// Item 4: canonical ЭМК- prefix when no card number is provided
+			assert.ok(
+				signed.signature?.form043uRecordId.startsWith("ЭМК-"),
+				"Card number must start with canonical 'ЭМК-' prefix",
+			);
+			assert.ok(
+				signed.patient.cardNumber?.startsWith("ЭМК-"),
+				"Patient card number must start with canonical 'ЭМК-' prefix",
+			);
+		});
+
+		it("signPackageWithTouchSignature sets clean tablet stamp (Item 2)", () => {
+			const pkg = createChairsideConsentPackage({
+				patient: mockPatient,
+				doctor: mockDoctor,
+				treatmentItems: mockItems,
+			});
+
+			const signed = signPackageWithTouchSignature(pkg, {
+				signatureDataUrl: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=",
+			});
+
+			assert.equal(signed.status, "signed");
+			assert.equal(signed.signature?.verificationMethod, "touch_tablet_signature");
+			// Item 2: clean tablet stamp
+			assert.equal(
+				signed.signature?.legalStampText,
+				"Подписано на планшете врача (стилус / сенсорный экран)",
+			);
+		});
+
+		it("signPackageWithInPersonConfirmation sets clean chairside confirmation stamp", () => {
+			const pkg = createChairsideConsentPackage({
+				patient: mockPatient,
+				doctor: mockDoctor,
+				treatmentItems: mockItems,
+			});
+
+			const signed = signPackageWithInPersonConfirmation(pkg);
+
+			assert.equal(signed.status, "signed");
+			assert.equal(signed.signature?.verificationMethod, "chairside_in_person_confirmation");
+			assert.equal(
+				signed.signature?.legalStampText,
+				"Подтверждено лично пациентом у кресла",
+			);
 		});
 
 		it("signPackageWithSmsPep fails and increments attempts on invalid OTP", () => {
@@ -384,9 +469,9 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 		});
 	});
 
-	// 6. Генерация готового PDF/HTML документа
-	describe("6. PDF / HTML Document Rendering (Statutory 63-FZ Stamp)", () => {
-		it("renderChairsidePackageHtml generates complete valid HTML with PEP stamp when signed", () => {
+	// 6. Генерация готового PDF/HTML документа без бюрократического канцелярита
+	describe("6. Clean PDF / HTML Document Rendering (Zero Bureaucratic Slime)", () => {
+		it("renderChairsidePackageHtml generates clean HTML with electronic signature stamp", () => {
 			const pkg = createChairsideConsentPackage({
 				patient: mockPatient,
 				doctor: mockDoctor,
@@ -396,7 +481,7 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 			const pkgWithSms = sendChairsideSmsOtpToPatient(pkg, "+7 (916) 777-88-12", "7842");
 			const { signedPackage } = signPackageWithSmsPep(pkgWithSms, {
 				inputCode: "7842",
-				form043uChartNumber: "043/у-9921",
+				form043uChartNumber: "ЭМК-9921",
 				signedAtIso: "2026-08-28T14:30:00.000Z",
 			});
 
@@ -404,16 +489,35 @@ describe("Chairside Tablet Consent & SMS-PEP Engine Suite (63-ФЗ, 323-ФЗ, 10
 			assert.ok(html.includes("<!DOCTYPE html>"));
 			assert.ok(html.includes("Смирнова Елена Александровна"));
 			assert.ok(html.includes("Барабаш Сергей Владимирович"));
-			assert.ok(html.includes("ИДС-1051н"));
-			assert.ok(html.includes("СОГЛ-152-ПДН"));
+			assert.ok(html.includes("ИДС-Базовое"));
+			assert.ok(html.includes("СОГЛ-ПДН"));
 			assert.ok(html.includes("СМЕТА-ПЛАН"));
 			assert.ok(html.includes("10 700,00 ₽"));
 			assert.ok(html.includes("Десять тысяч семьсот рублей 00 копеек"));
-			assert.ok(html.includes("ДОКУМЕНТ ПОДПИСАН ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)"));
-			assert.ok(html.includes("63-ФЗ"));
-			assert.ok(html.includes("043/у-9921"));
+			assert.ok(html.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
+			assert.ok(html.includes("ЭМК-9921"));
 			assert.ok(html.includes(signedPackage!.signature!.integrityHash));
 			assert.ok(html.includes("+7 (***) ***-**-12"));
+			// Zero raw regulatory clutter
+			assert.equal(html.includes("ИДС-1051н"), false, "Must not contain 'ИДС-1051н'");
+			assert.equal(html.includes("043/у"), false, "Must not contain '043/у'");
+		});
+
+		it("renderChairsidePackageHtml generates clean HTML with paper signature stamp", () => {
+			const pkg = createChairsideConsentPackage({
+				patient: mockPatient,
+				doctor: mockDoctor,
+				treatmentItems: mockItems,
+			});
+
+			const signed = signPackageWithPaperPhysical(pkg, {
+				form043uChartNumber: "ЭМК-9921",
+			});
+
+			const html = renderChairsidePackageHtml(signed);
+			assert.ok(html.includes("ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ"));
+			assert.ok(html.includes("Подписано на бумаге. Личная подпись пациента в медицинской карте"));
+			assert.equal(html.includes("043/у"), false, "Must not contain '043/у'");
 		});
 
 		it("renderChairsidePackageHtml handles unsigned package with manual signature lines", () => {

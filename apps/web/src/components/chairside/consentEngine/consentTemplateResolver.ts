@@ -19,6 +19,7 @@ export {
 
 export {
 	generateIds1051nDocument,
+	generateInformedConsentDocument,
 	generatePersonalDataConsentDocument,
 	generatePdn152fzDocument,
 	generateEstimateDocument,

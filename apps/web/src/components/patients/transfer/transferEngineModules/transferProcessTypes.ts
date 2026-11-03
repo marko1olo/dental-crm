@@ -17,7 +17,9 @@ import type {
 export interface SelectedTransferComponents {
 	readonly demographics: boolean;
 	readonly somaticAnamnesis: boolean;
-	readonly odontogram043u: boolean;
+	readonly odontogram: boolean;
+	/** @deprecated алиас для обратной совместимости по Мандату 8ap */
+	readonly odontogram043u?: boolean;
 	readonly visitDiaries: boolean;
 	readonly treatmentPlans: boolean;
 	readonly imagingArchive: boolean;

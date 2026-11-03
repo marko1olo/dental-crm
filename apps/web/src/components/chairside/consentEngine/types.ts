@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * CHAIRSIDE CONSENT ENGINE - DOMAIN TYPES & DATA CONTRACTS (LAYER 0)
- * 323-ФЗ ст. 20 / 63-ФЗ / 1051н / 152-ФЗ / 804н / ПП РФ № 736
+ * Типы и контракты данных подсистемы согласий у кресла (Мандаты 8e, 8x, 8ap)
  * ============================================================================
  */
 
@@ -26,7 +26,7 @@ export interface ChairsidePatientProfile {
 	phone?: string | undefined;
 	snils?: string | undefined;
 	address?: string | undefined;
-	cardNumber?: string | undefined; // № медицинской карты 043/у
+	cardNumber?: string | undefined; // Номер медицинской карты (ЭМК / КМ)
 }
 
 export interface ChairsideDoctorProfile {
@@ -95,9 +95,10 @@ export interface ChairsidePepSignatureRecord {
 	signedAtIso: string;
 	signedAtFormatted: string; // DD.MM.YYYY HH:mm
 	signedByFullName: string;
-	form043uRecordId: string;
+	form043uRecordId: string; // Номер медицинской карты приёма
+	chartNumber?: string | undefined; // Семантический псевдоним номера карты (Мандат 8ap)
 	integrityHash: string; // SHA-256 отпечаток документа
-	legalStampText: string; // Текст юридического штампа 63-ФЗ
+	legalStampText: string; // Текст клинического штампа
 	legalBasis: string; // Ссылка на законодательную базу
 	documentsDigest: string;
 }

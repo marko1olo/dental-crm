@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * CHAIRSIDE CONSENT ENGINE - STORAGE BRIDGE & SIGNING PROTOCOLS (LAYER 2)
- * Подписание документов: ПЭП 63-ФЗ, Бумажный носитель 323-ФЗ, Стилус, Личное согласие
+ * Подписание документов: электронная подпись, бумага, стилус, личное согласие у кресла
  * ============================================================================
  */
 
@@ -128,7 +128,7 @@ export function signPackageWithSmsPep(
 		signedAtIso,
 	);
 
-	const cardNum = params.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+	const cardNum = params.form043uChartNumber || pkg.patient.cardNumber || ("ЭМК-" + pkg.packageId.slice(-6));
 	const legalStampText = generateLegalPepStamp({
 		otpCode: params.inputCode.trim(),
 		hash: integrity.hash,
@@ -148,9 +148,10 @@ export function signPackageWithSmsPep(
 		signedAtFormatted,
 		signedByFullName: pkg.patient.fullName,
 		form043uRecordId: cardNum,
+		chartNumber: cardNum,
 		integrityHash: integrity.hash,
 		legalStampText,
-		legalBasis: "Федеральный закон от 06.04.2011 № 63-ФЗ, ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н",
+		legalBasis: "Электронная подпись • Информированное добровольное согласие",
 		documentsDigest: docsDigest,
 	};
 
@@ -186,8 +187,8 @@ export function signPackageWithSmsPep(
 }
 
 /**
- * Подписание и оформление пакета документов на бумажном носителе (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736)
- * Обеспечивает полную автономность врача и клиники без блокировок по СМС.
+ * Подписание и оформление пакета документов на бумажном носителе
+ * Обеспечивает полную автономность врача и клиники без блокировок по СМС (Мандат 8e).
  */
 export function signPackageWithPaperPhysical(
 	pkg: ChairsideConsentPackage,
@@ -203,7 +204,7 @@ export function signPackageWithPaperPhysical(
 	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
 	const phoneMasked = targetPhone ? maskRussianPhone(targetPhone) : "Не указан";
 	const cardNum =
-		options?.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+		options?.form043uChartNumber || pkg.patient.cardNumber || ("ЭМК-" + pkg.packageId.slice(-6));
 
 	const docsDigests = pkg.documents
 		.map((d) => `${d.type}:${d.code}:${generateSha256(d.title + d.sections.map((s) => s.content).join(""))}`)
@@ -214,14 +215,14 @@ export function signPackageWithPaperPhysical(
 		.join(";");
 
 	const canonicalLines = [
-		"=== CANONICAL DENTAL CHAIRSIDE PAPER CONSENT RECORD (323-FZ / 152-FZ / 736-PP) ===",
+		"=== CANONICAL DENTAL CHAIRSIDE PAPER CONSENT RECORD ===",
 		"PACKAGE_ID: " + pkg.packageId,
 		"TIMESTAMP_ISO: " + signedAtIso,
 		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
 		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
 		"PATIENT_PASSPORT: " + (pkg.patient.passport || "").trim(),
 		"PATIENT_PHONE: " + targetPhone.trim(),
-		"FORM_043U_CARD: " + cardNum.trim(),
+		"EMK_CARD: " + cardNum.trim(),
 		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
 		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
 		"CLINIC_INN: " + pkg.clinic.inn.trim(),
@@ -236,7 +237,7 @@ export function signPackageWithPaperPhysical(
 	const integrityHash = generateSha256(canonicalData);
 
 	const legalStampText =
-		"ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ (ст. 20 323-ФЗ, 152-ФЗ, ПП РФ № 736). Личная подпись пациента подшита в карту 043/у";
+		"Подписано на бумаге. Личная подпись пациента в медицинской карте";
 
 	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
 
@@ -250,10 +251,10 @@ export function signPackageWithPaperPhysical(
 		signedAtFormatted,
 		signedByFullName: pkg.patient.fullName,
 		form043uRecordId: cardNum,
+		chartNumber: cardNum,
 		integrityHash,
 		legalStampText,
-		legalBasis:
-			"ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Федеральный закон от 27.07.2006 № 152-ФЗ, Постановление Правительства РФ от 11.05.2023 № 736",
+		legalBasis: "Письменная форма • Личная подпись пациента в медицинской карте",
 		documentsDigest: docsDigest,
 	};
 
@@ -277,7 +278,7 @@ export function signPackageWithPaperPhysical(
 }
 
 /**
- * Подписание согласий стилусом на экране планшета (touch_tablet_signature, 63-ФЗ)
+ * Подписание согласий стилусом на экране планшета (touch_tablet_signature)
  */
 export function signPackageWithTouchSignature(
 	pkg: ChairsideConsentPackage,
@@ -294,7 +295,7 @@ export function signPackageWithTouchSignature(
 	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
 	const phoneMasked = targetPhone ? maskRussianPhone(targetPhone) : "Не указан";
 	const cardNum =
-		options?.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+		options?.form043uChartNumber || pkg.patient.cardNumber || ("ЭМК-" + pkg.packageId.slice(-6));
 
 	const docsDigests = pkg.documents
 		.map((d) => `${d.type}:${d.code}:${generateSha256(d.title + d.sections.map((s) => s.content).join(""))}`)
@@ -305,12 +306,12 @@ export function signPackageWithTouchSignature(
 		.join(";");
 
 	const canonicalLines = [
-		"=== CANONICAL DENTAL CHAIRSIDE TOUCH SIGNATURE RECORD (63-FZ / 323-FZ / 1051N) ===",
+		"=== CANONICAL DENTAL CHAIRSIDE TOUCH SIGNATURE RECORD ===",
 		"PACKAGE_ID: " + pkg.packageId,
 		"TIMESTAMP_ISO: " + signedAtIso,
 		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
 		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
-		"FORM_043U_CARD: " + cardNum.trim(),
+		"EMK_CARD: " + cardNum.trim(),
 		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
 		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
 		"CLINIC_INN: " + pkg.clinic.inn.trim(),
@@ -326,7 +327,7 @@ export function signPackageWithTouchSignature(
 	const integrityHash = generateSha256(canonicalData);
 
 	const legalStampText =
-		"ПОДПИСАНО НА ПЛАНШЕТЕ ВРАЧА (стилус / сенсорный экран, 63-ФЗ, 323-ФЗ, Приказ МЗ РФ № 1051н)";
+		"Подписано на планшете врача (стилус / сенсорный экран)";
 
 	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
 
@@ -340,10 +341,10 @@ export function signPackageWithTouchSignature(
 		signedAtFormatted,
 		signedByFullName: pkg.patient.fullName,
 		form043uRecordId: cardNum,
+		chartNumber: cardNum,
 		integrityHash,
 		legalStampText,
-		legalBasis:
-			"ст. 2, 6 Федерального закона от 06.04.2011 № 63-ФЗ, ст. 20 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н",
+		legalBasis: "Подписано на планшете врача (стилус / сенсорный экран)",
 		documentsDigest: docsDigest,
 	};
 
@@ -383,7 +384,7 @@ export function signPackageWithInPersonConfirmation(
 	const targetPhone = pkg.smsOtp?.phone || pkg.patient.phone || "";
 	const phoneMasked = targetPhone ? maskRussianPhone(targetPhone) : "Не указан";
 	const cardNum =
-		options?.form043uChartNumber || pkg.patient.cardNumber || ("043/у-" + pkg.packageId.slice(-6));
+		options?.form043uChartNumber || pkg.patient.cardNumber || ("ЭМК-" + pkg.packageId.slice(-6));
 
 	const docsDigests = pkg.documents
 		.map((d) => `${d.type}:${d.code}:${generateSha256(d.title + d.sections.map((s) => s.content).join(""))}`)
@@ -394,12 +395,12 @@ export function signPackageWithInPersonConfirmation(
 		.join(";");
 
 	const canonicalLines = [
-		"=== CANONICAL DENTAL CHAIRSIDE IN-PERSON CONFIRMATION (323-FZ / 1051N / DOCTOR AUTONOMY) ===",
+		"=== CANONICAL DENTAL CHAIRSIDE IN-PERSON CONFIRMATION ===",
 		"PACKAGE_ID: " + pkg.packageId,
 		"TIMESTAMP_ISO: " + signedAtIso,
 		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
 		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
-		"FORM_043U_CARD: " + cardNum.trim(),
+		"EMK_CARD: " + cardNum.trim(),
 		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
 		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
 		"CLINIC_INN: " + pkg.clinic.inn.trim(),
@@ -414,7 +415,7 @@ export function signPackageWithInPersonConfirmation(
 	const integrityHash = generateSha256(canonicalData);
 
 	const legalStampText =
-		"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)";
+		"Подтверждено лично пациентом у кресла";
 
 	const docsDigest = pkg.documents.map((d) => d.code).join("; ");
 
@@ -428,10 +429,10 @@ export function signPackageWithInPersonConfirmation(
 		signedAtFormatted,
 		signedByFullName: pkg.patient.fullName,
 		form043uRecordId: cardNum,
+		chartNumber: cardNum,
 		integrityHash,
 		legalStampText,
-		legalBasis:
-			"ст. 20 Федерального закона от 21.11.2011 № 323-ФЗ, Приказ Минздрава РФ от 12.11.2021 № 1051н",
+		legalBasis: "Подтверждено лично пациентом у кресла",
 		documentsDigest: docsDigest,
 	};
 

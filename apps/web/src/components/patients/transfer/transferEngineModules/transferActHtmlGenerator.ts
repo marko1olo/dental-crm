@@ -24,7 +24,10 @@ export function generateTransferActHtml(
 
 	const teethList = Object.values(snapshot.odontogramAndPerio.teeth);
 	const teethCount = teethList.length;
-	const visitsCount = snapshot.medicalHistory043u.totalVisitsCount;
+	const visitsCount =
+		snapshot.medicalHistory?.totalVisitsCount ??
+		snapshot.medicalHistory043u?.totalVisitsCount ??
+		0;
 	const studiesCount = snapshot.imagingArchive.studies.length;
 	const labCount = snapshot.activeLabOrders.length;
 	const plansCount = snapshot.treatmentPlansAndEstimates.plans.length;

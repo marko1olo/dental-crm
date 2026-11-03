@@ -73,6 +73,13 @@ export interface PatientClinicalSnapshot {
 	readonly targetBranch: ClinicBranchInfo;
 	readonly demographics: PatientDemographicsSnapshot;
 	readonly somaticAnamnesis: SomaticAnamnesisSnapshot;
+	readonly odontogram?: {
+		// biome-ignore lint/suspicious/noExplicitAny: teeth map
+		readonly teeth: Record<number, any>;
+		readonly cariesTeethCount: number;
+		readonly filledTeethCount: number;
+		readonly implantsCount: number;
+	};
 	readonly odontogramAndPerio: {
 		// biome-ignore lint/suspicious/noExplicitAny: teeth map
 		readonly teeth: Record<number, any>;
@@ -80,7 +87,12 @@ export interface PatientClinicalSnapshot {
 		readonly filledTeethCount: number;
 		readonly implantsCount: number;
 	};
-	readonly medicalHistory043u: {
+	readonly medicalHistory: {
+		readonly totalVisitsCount: number;
+		readonly visits: readonly VisitDiaryEntrySnapshot[];
+	};
+	/** @deprecated алиас для обратной совместимости по Мандату 8ap */
+	readonly medicalHistory043u?: {
 		readonly totalVisitsCount: number;
 		readonly visits: readonly VisitDiaryEntrySnapshot[];
 	};

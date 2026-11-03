@@ -80,6 +80,16 @@ export function buildPatientClinicalSnapshot(params: {
 			filledTeethCount: 0,
 			implantsCount: 0,
 		},
+		odontogram: {
+			teeth,
+			cariesTeethCount: 0,
+			filledTeethCount: 0,
+			implantsCount: 0,
+		},
+		medicalHistory: {
+			totalVisitsCount: visits.length,
+			visits,
+		},
 		medicalHistory043u: {
 			totalVisitsCount: visits.length,
 			visits,

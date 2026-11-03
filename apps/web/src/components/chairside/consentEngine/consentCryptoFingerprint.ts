@@ -1,7 +1,7 @@
 /**
  * ============================================================================
  * CHAIRSIDE CONSENT ENGINE - CRYPTOGRAPHIC SHA-256 & INTEGRITY HASH (LAYER 2)
- * FIPS 180-4 / 63-ФЗ ПЭП / Неизменяемый хеш документа
+ * Неизменяемый криптографический отпечаток документа (FIPS 180-4)
  * ============================================================================
  */
 
@@ -168,7 +168,7 @@ export function isValidPinFormat(pin: string): boolean {
 }
 
 /**
- * Формирование официального юридического штампа ПЭП в строгом соответствии с 63-ФЗ
+ * Формирование официального клинического штампа ПЭП
  */
 export function generateLegalPepStamp(params: {
 	otpCode: string;
@@ -177,7 +177,7 @@ export function generateLegalPepStamp(params: {
 	signedAtFormatted: string;
 }): string {
 	const codeMasked = params.otpCode ? "****" : "****";
-	return `Документ подписан простой электронной подписью (ПЭП) в соответствии с 63-ФЗ. Код подтвержден: ${codeMasked}, Хэш: SHA-256 (${params.hash}), Телефон: ${params.phoneMasked}, Дата: ${params.signedAtFormatted}`;
+	return `Документ подписан простой электронной подписью (ПЭП). Код подтвержден: ${codeMasked}, Хэш: SHA-256 (${params.hash}), Телефон: ${params.phoneMasked}, Дата: ${params.signedAtFormatted}`;
 }
 
 /**
@@ -198,21 +198,21 @@ export function generateDocumentPackageIntegrityHash(
 		.join(";");
 
 	const canonicalLines = [
-		"=== CANONICAL DENTAL CHAIRSIDE PEP CONSENT RECORD (63-FZ / 323-FZ) ===",
+		"=== CANONICAL DENTAL CHAIRSIDE PEP CONSENT RECORD ===",
 		"PACKAGE_ID: " + pkg.packageId,
 		"TIMESTAMP_ISO: " + timestampIso,
 		"PATIENT_FULL_NAME: " + pkg.patient.fullName.trim().toUpperCase(),
 		"PATIENT_BIRTH_DATE: " + pkg.patient.birthDate.trim(),
 		"PATIENT_PASSPORT: " + (pkg.patient.passport || "").trim(),
 		"PATIENT_PHONE: " + (phone || pkg.patient.phone || "").trim(),
-		"FORM_043U_CARD: " + (pkg.patient.cardNumber || "").trim(),
+		"EMK_CARD: " + (pkg.patient.cardNumber || "").trim(),
 		"DOCTOR_FULL_NAME: " + pkg.doctor.fullName.trim().toUpperCase(),
 		"CLINIC_OGRN: " + pkg.clinic.ogrn.trim(),
 		"CLINIC_INN: " + pkg.clinic.inn.trim(),
 		"DOCUMENTS_DIGEST: " + docsDigests,
 		"ESTIMATE_TOTAL_KOPECKS: " + pkg.totalEstimateKopecks,
 		"ESTIMATE_DIGEST: " + estimateDigest,
-		"PEP_AUTH_METHOD: SMS_OTP_63FZ",
+		"PEP_AUTH_METHOD: SMS_OTP",
 		"OTP_DIGEST: " + generateSha256(otpCode),
 		"======================================================================",
 	];
