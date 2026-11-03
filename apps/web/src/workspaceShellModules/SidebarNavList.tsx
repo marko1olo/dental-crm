@@ -68,22 +68,30 @@ export function SidebarNavList({
 						<span className={navSlotClass}>
 							<SidebarIcon section={view} />
 							<span className="nav-copy min-w-0 overflow-hidden flex-1">
-								<span className="nav-label truncate min-w-0 flex items-center justify-between gap-1">
-									<span>{viewLabels[view]}</span>
-									{view === "inventory" && reorderItemsCount > 0 && (
-										<span
-											className="shrink-0 sidebar-nav-badge whitespace-nowrap"
-											data-testid="sidebar-inventory-reorder-badge"
-											title={`Требуется закупка: ${reorderItemsCount} позиций`}
-										>
-											{reorderItemsCount} поз.
-										</span>
-									)}
-								</span>
+								<span className="nav-label truncate min-w-0 block">{viewLabels[view]}</span>
 								<small className="nav-hint truncate min-w-0 block">{sidebarHints[view] || viewHints[view]}</small>
 							</span>
+							{!collapsed && view === "inventory" && reorderItemsCount > 0 && (
+								<span
+									className="sidebar-nav-badge shrink-0 ml-auto"
+									data-testid="sidebar-inventory-reorder-badge"
+									title={`Требуется закупка: ${reorderItemsCount} позиций`}
+								>
+									{reorderItemsCount}
+								</span>
+							)}
 							<span className={navCaptionClass}>
-								{view === "inventory" && reorderItemsCount > 0 ? `⚠️ ${reorderItemsCount}` : (collapsedNavLabels[view] || viewLabels[view])}
+								{view === "inventory" && reorderItemsCount > 0 ? (
+									<span
+										className="sidebar-nav-badge inline-flex text-[9px] px-1 py-0"
+										data-testid="sidebar-inventory-reorder-badge"
+										title={`Требуется закупка: ${reorderItemsCount} позиций`}
+									>
+										{reorderItemsCount}
+									</span>
+								) : (
+									collapsedNavLabels[view] || viewLabels[view]
+								)}
 							</span>
 						</span>
 					</a>
