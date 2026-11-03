@@ -31,3 +31,17 @@
   }
 }
 
+@media (max-width: 640px) {
+  .chairside-copilot-hud--floating {
+    right: 8px;
+    bottom: 8px;
+    left: 8px;
+    max-width: calc(100% - 16px);
+  }
+
+  .chairside-hud-capsule-actions .btn-chairside-hud-dock-toggle,
+  .chairside-hud-capsule-actions .btn-chairside-hud-minimize {
+    display: none;
+  }
+}
+

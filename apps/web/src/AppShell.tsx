@@ -34,6 +34,7 @@ import { DirectClinicalBundlesLauncher } from "./components/visit/DirectClinical
 import { DirectVisitLauncher } from "./components/visit/DirectVisitLauncher";
 import { DirectEmrLauncher } from "./components/emr/DirectEmrLauncher";
 import { DirectCopilotLauncher } from "./components/copilot/DirectCopilotLauncher";
+import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairsideHudLauncher";
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
@@ -179,6 +180,10 @@ function isStandaloneActive(): boolean {
 		h.includes("copilot-standalone") ||
 		s.includes("copilot_workspace") ||
 		h.includes("copilot-workspace") ||
+		h.includes("chairside-hud") ||
+		s.includes("chairside-hud") ||
+		h.includes("hud") ||
+		s.includes("hud") ||
 		h === "#copilot" ||
 		h === "#ai" ||
 		s.includes("copilot=1") ||
@@ -290,6 +295,7 @@ export function AppShell() {
 			<DirectVisitLauncher />
 			<DirectEmrLauncher />
 			<DirectCopilotLauncher />
+			<DirectChairsideHudLauncher />
 			<DirectInsuranceLauncher />
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />

@@ -1,5 +1,7 @@
 /* Quick Apply Tooth to Scheme Button (Mandate 8l: 1-click or Enter) */
-.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-capsule-btn-apply {
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-capsule-btn-apply,
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .chairside-hud-btn-quick-apply,
+.chairside-hud-panel:not(.chairside-hud-panel--compact) .btn-capsule-apply-scheme {
   display: none;
 }
 
