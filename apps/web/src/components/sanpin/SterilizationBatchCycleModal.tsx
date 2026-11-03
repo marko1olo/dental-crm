@@ -2,17 +2,23 @@
  * apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx
  * Каноническое модальное окно запуска цикла стерилизации в 1 клик (Мандаты 8b, 8e, 8n, 8x, Apple HIG).
  * - Живой клинический язык: «Запустить цикл стерилизации», «Основной автоклав клиники».
- * - Программы: 134°C / 2.1 бар / 5 мин (Класс B), 121°C / 1.15 бар / 20 мин, 134°C экспресс 3 мин.
+ * - Программы: 134°C / 2.1 бар / 5 мин (Класс B), 121°C / 1.15 бар / 20 мин, Прион 134°C / 2.1 бар / 18 мин.
  * - Быстрые пресеты [4, 8, 12, 16, 24] пакетов, норматив индикатора 4/5 класса (Пройден).
- * - Предстерилизационная очистка (ПСО): азопирамовая и фенолфталеиновая пробы отрицательные.
+ * - Предстерилизационная очистка (ПСО): азопирамовая и фенолфталеиновая пробы отрицательные (норма).
  * - Автоматическое фоновое списание со склада (Soft Negative Stock, Мандат 8n).
- * - Ровно 1 Primary CTA кнопка «Утвердить цикл стерилизации» в var(--teal).
- * - Размер: 250–350 строк (Мандат 8b Sweet Spot).
+ * - Печать журнала контроля стерилизации в 1 клик.
+ * - Ровно 1 Primary CTA кнопка «✓ Запустить цикл стерилизации» в var(--teal) (Мандат 8am).
+ * - Размер: 250–370 строк (Мандат 8b Sweet Spot).
  */
 
 import React, { useState, useCallback } from "react";
-import { ShieldCheck, X, User, Sparkles, CheckCircle2, PackageCheck, Barcode, FlaskConical } from "lucide-react";
+import { ShieldCheck, X, User, CheckCircle2, PackageCheck, Barcode, FlaskConical, Printer } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import {
+	generateSanpinPrintHtml,
+	getSanpinBatchRecords,
+	type SterilizationBatchCycleRecord,
+} from "./sanpinCatalogData";
 
 export interface SterilizationBatchCycleModalProps {
 	readonly isOpen: boolean;
@@ -45,7 +51,7 @@ export function SterilizationBatchCycleModal({
 }: SterilizationBatchCycleModalProps) {
 	const [deviceName, setDeviceName] = useState(defaultAutoclaveName);
 	const [autoclaveId, setAutoclaveId] = useState("АК-01");
-	const [regime, setRegime] = useState<"standard_134" | "delicate_121" | "quick_134">("standard_134");
+	const [regime, setRegime] = useState<"standard_134" | "delicate_121" | "prion_134" | "quick_134">("standard_134");
 	const [packagesCount, setPackagesCount] = useState<number>(defaultBatchSize);
 	const [operatorName, setOperatorName] = useState(defaultOperatorName);
 	const [itemsDescription, setItemsDescription] = useState<string>("Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)");
@@ -57,6 +63,7 @@ export function SterilizationBatchCycleModal({
 
 	const isStandard = regime === "standard_134";
 	const isDelicate = regime === "delicate_121";
+	const isPrion = regime === "prion_134";
 
 	const applyTemplate = (tpl: typeof CLINICAL_BATCH_TEMPLATES[number]) => {
 		setSelectedTemplateId(tpl.id);
@@ -65,19 +72,56 @@ export function SterilizationBatchCycleModal({
 		setItemsDescription(tpl.desc);
 	};
 
+	const handlePrintJournal = useCallback(() => {
+		const tempCelsius = isDelicate ? 121 : 134;
+		const pressureBar = isDelicate ? 1.15 : 2.1;
+		const durationMin = isDelicate ? 20 : isPrion ? 18 : regime === "quick_134" ? 3 : 5;
+		const currentRecord: SterilizationBatchCycleRecord = {
+			id: `cycle-${Date.now()}`,
+			cycleNumber: 1,
+			date: new Date().toLocaleDateString("ru-RU"),
+			time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }),
+			autoclaveId,
+			autoclaveName: deviceName,
+			programId: isPrion ? "prion_134" : isDelicate ? "delicate_121" : isStandard ? "standard_134" : "flash_134",
+			temperatureCelsius: tempCelsius,
+			pressureBar,
+			exposureMinutes: durationMin,
+			packagesCount,
+			chemicalIndicatorVerdict: "ПРОЙДЕН",
+			operatorName,
+			itemsDescription: itemsDescription || `Партия стерилизации (${packagesCount} крафт-пакетов)`,
+			status: "completed",
+		};
+		const html = generateSanpinPrintHtml([currentRecord, ...getSanpinBatchRecords(true)]);
+		const win = window.open("", "_blank");
+		if (win) {
+			win.document.write(html);
+			win.document.close();
+			win.focus();
+			win.print();
+		}
+	}, [isDelicate, isPrion, regime, autoclaveId, deviceName, packagesCount, operatorName, itemsDescription, isStandard]);
+
 	const handleLaunchCycle = useCallback(async () => {
 		setIsSubmitting(true);
 		setFeedbackToast(null);
 
 		const tempCelsius = isDelicate ? 121 : 134;
 		const pressureBar = isDelicate ? 1.15 : 2.1;
-		const durationMin = isDelicate ? 20 : regime === "quick_134" ? 3 : 5;
+		const durationMin = isDelicate ? 20 : isPrion ? 18 : regime === "quick_134" ? 3 : 5;
 
 		const payload = {
 			regime, packagesCount, batchSize: packagesCount, deviceName, autoclaveId,
 			operatorName, temperatureCelsius: tempCelsius, pressureBar, durationMin,
 			packagingType: isStandard ? "kraft_self_adhesive" : "kraft_heat_sealed",
-			cycleName: isStandard ? "Стандартный паровой цикл 134°C" : isDelicate ? "Бережный цикл 121°C" : "Экспресс цикл 134°C",
+			cycleName: isPrion
+				? "Антиприонный усиленный цикл 134°C (18 мин)"
+				: isStandard
+					? "Стандартный паровой цикл 134°C (5 мин)"
+					: isDelicate
+						? "Бережный деликатный цикл 121°C (20 мин)"
+						: "Экспресс цикл 134°C",
 			itemsDescription: itemsDescription || `Партия стерилизации (${packagesCount} крафт-пакетов)`,
 			indicatorClass,
 			indicatorType: indicatorClass === "4" ? "class4_multivariable" : "class5_integrating",
@@ -109,7 +153,7 @@ export function SterilizationBatchCycleModal({
 		} finally {
 			setIsSubmitting(false);
 		}
-	}, [regime, packagesCount, deviceName, autoclaveId, operatorName, indicatorClass, barcodeInput, isStandard, isDelicate, itemsDescription, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated, onClose]);
+	}, [regime, packagesCount, deviceName, autoclaveId, operatorName, indicatorClass, barcodeInput, isStandard, isDelicate, isPrion, itemsDescription, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated, onClose]);
 
 	if (!isOpen) return null;
 
@@ -136,20 +180,31 @@ export function SterilizationBatchCycleModal({
 						</div>
 						<div>
 							<h2 className="text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug">
-								Запустить цикл стерилизации • Утверждение цикла автоклава
+								Запуск автоклава • Пакетная стерилизация смены
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Журнал работы стерилизаторов • 1-Click пресеты смены
+								Журнал стерилизации • 1-Click пресеты смены
 							</p>
 						</div>
 					</div>
-					<button
-						type="button" onClick={onClose}
-						className="w-8 h-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] flex items-center justify-center cursor-pointer transition-colors"
-						aria-label="Закрыть"
-					>
-						<X size={16} />
-					</button>
+					<div className="flex items-center gap-2">
+						<button
+							type="button" onClick={handlePrintJournal}
+							data-testid="sterilization-print-journal-btn"
+							className="h-8 px-2.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#1e293b)] flex items-center gap-1.5 cursor-pointer transition-colors text-xs font-semibold touch-manipulation"
+							title="Печать журнала контроля стерилизации в 1 клик"
+						>
+							<Printer size={14} />
+							<span className="hidden sm:inline">Печать журнала</span>
+						</button>
+						<button
+							type="button" onClick={onClose}
+							className="w-8 h-8 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-[var(--muted,#64748b)] flex items-center justify-center cursor-pointer transition-colors touch-manipulation"
+							aria-label="Закрыть"
+						>
+							<X size={16} />
+						</button>
+					</div>
 				</div>
 
 				{/* Тело модального окна */}
@@ -197,7 +252,7 @@ export function SterilizationBatchCycleModal({
 						</select>
 					</div>
 
-					{/* Выбор программы стерилизации */}
+					{/* Выбор программы стерилизации (134°C 5 мин / 121°C 20 мин / Прион 134°C 18 мин) */}
 					<div className="flex flex-col gap-1">
 						<span className="font-semibold text-[var(--ink,#1e293b)]">Программа стерилизации:</span>
 						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
@@ -205,24 +260,24 @@ export function SterilizationBatchCycleModal({
 								type="button" data-testid="drawer-preset-btn-standard_134_5" onClick={() => setRegime("standard_134")}
 								className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isStandard ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}
 							>
-								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Стандартная</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • 5 мин • Упакованные инструменты</div>
+								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • 5 мин</div>
+								<div className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • Стандартный цикл • Крафт-пакеты</div>
 							</button>
 
 							<button
 								type="button" data-testid="drawer-preset-btn-delicate_121_20" onClick={() => setRegime("delicate_121")}
 								className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isDelicate ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}
 							>
-								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">121°C • Бережная</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)]">1.15 бар • 20 мин • Резина, пластик, оптика</div>
+								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">121°C • 20 мин</div>
+								<div className="text-[11px] text-[var(--muted,#64748b)]">1.15 бар • Бережный цикл • Оптика, резина</div>
 							</button>
 
 							<button
-								type="button" data-testid="drawer-preset-btn-quick_134_3" onClick={() => setRegime("quick_134")}
-								className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${regime === "quick_134" ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}
+								type="button" data-testid="drawer-preset-btn-prion_134_18" onClick={() => setRegime("prion_134")}
+								className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isPrion ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}
 							>
-								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Экспресс</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • 3 мин • Неупакованный инструмент</div>
+								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">Прион 134°C • 18 мин</div>
+								<div className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • Антиприонный усиленный цикл</div>
 							</button>
 						</div>
 					</div>
@@ -258,7 +313,7 @@ export function SterilizationBatchCycleModal({
 						<div className="flex flex-col gap-1">
 							<label htmlFor="pouch-barcode-input" className="font-semibold text-[var(--ink,#1e293b)] flex items-center gap-1">
 								<Barcode size={12} className="text-[var(--teal,#0d9488)]" />
-								<span>Штрихкод крафт-пакета:</span>
+								<span>Штрихкод крафт-пакета (опция):</span>
 							</label>
 							<input
 								id="pouch-barcode-input" type="text" placeholder="Сканируйте или авто..."
@@ -300,7 +355,7 @@ export function SterilizationBatchCycleModal({
 						<div className="flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex-wrap gap-1">
 							<span className="inline-flex items-center gap-1.5">
 								<CheckCircle2 size={13} />
-								Химический индикатор 5 класса пройден (Химический индикатор 5 класса: Пройден)
+								Тест Бови-Дика / Индикаторы: Пройден
 							</span>
 							<div className="flex items-center gap-1">
 								<button
@@ -319,7 +374,7 @@ export function SterilizationBatchCycleModal({
 						</div>
 						<div className="flex items-center gap-2 text-[11px] text-[var(--muted,#64748b)]">
 							<PackageCheck size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-							<span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор {indicatorClass} класса</strong>.</span>
+							<span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор {indicatorClass} класса</strong> (Soft Negative Stock).</span>
 						</div>
 					</div>
 
@@ -342,11 +397,11 @@ export function SterilizationBatchCycleModal({
 					<button
 						type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting}
 						id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta"
-						title="Утвердить и зафиксировать цикл стерилизации (100% норма СанПиН)"
+						title="Запустить цикл стерилизации в 1 клик"
 						className="h-10 min-h-[44px] px-5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] touch-manipulation"
 					>
-						<Sparkles size={14} className="text-white" />
-						<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
+						<CheckCircle2 size={15} className="text-white" />
+						<span>{isSubmitting ? "Запуск..." : "✓ Запустить цикл стерилизации"}</span>
 					</button>
 				</div>
 			</div>

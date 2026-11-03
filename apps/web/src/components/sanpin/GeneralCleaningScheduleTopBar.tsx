@@ -91,7 +91,7 @@ export const GeneralCleaningScheduleTopBar: React.FC<GeneralCleaningScheduleTopB
 			>
 				<Sparkles size={16} />
 				<span>
-					{isAutopilotLoading ? "Формирование графика..." : "Заполнить график генеральных уборок на месяц (по СанПиН каждые 7 дней)"}
+					{isAutopilotLoading ? "Формирование графика..." : "Заполнить график генеральных уборок на месяц (каждые 7 дней)"}
 				</span>
 			</button>
 		</div>

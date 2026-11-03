@@ -11,7 +11,7 @@
  * - Строгий диапазон Sweet Spot: 250–320 строк (Мандат 8b/8zi). Человеческий клинический язык (Мандат 8x).
  */
 
-export type AutoclaveRegimeId = "standard_134" | "delicate_121" | "flash_134";
+export type AutoclaveRegimeId = "standard_134" | "delicate_121" | "flash_134" | "prion_134";
 
 export interface AutoclaveProgram {
 	readonly id: AutoclaveRegimeId;
@@ -140,6 +140,14 @@ export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
 		indicatorClass: "Индикатор 4 класса",
 		suitableFor: "Неупакованный инструментарий для немедленного использования у кресла",
 	},
+	{
+		id: "prion_134",
+		name: "Прион 134°C • 2.1 бар • 18 мин (Усиленная)",
+		description: "Антиприонный цикл для хирургических и имплантологических инструментов",
+		temperatureCelsius: 134, pressureBar: 2.1, exposureMinutes: 18, dryingMinutes: 20,
+		indicatorClass: "Индикатор 5-6 класса (134°C/18 мин)",
+		suitableFor: "Хирургические наборы, распаторы, элеваторы, костные инструменты",
+	},
 ];
 
 export const CLINIC_STERILIZERS: readonly ClinicSterilizerDevice[] = [
@@ -218,6 +226,12 @@ export function validateSterilizationCycleParameters(
 	if (programId === "flash_134") {
 		if (temperatureCelsius < 132.0) return { valid: false, reason: "Температура экспресс-цикла ниже 132°C" };
 		if (exposureMinutes < 3.0) return { valid: false, reason: "Время экспресс-экспозиции меньше 3 минут" };
+	}
+	if (programId === "prion_134") {
+		if (temperatureCelsius < 132.0) return { valid: false, reason: "Температура антиприонного цикла ниже 134°C" };
+		if (pressureBar < 2.0) return { valid: false, reason: "Давление антиприонного цикла ниже 2.0 бар" };
+		if (exposureMinutes < 18.0) return { valid: false, reason: "Недостаточное время экспозиции антиприонного цикла (минимум 18 минут)" };
+		return { valid: true };
 	}
 	return { valid: true };
 }

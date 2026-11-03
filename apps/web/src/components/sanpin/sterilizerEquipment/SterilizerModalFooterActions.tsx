@@ -55,7 +55,7 @@ export function SterilizerModalFooterActions({
 						title="Сформировать печатный журнал автоклавирования"
 					>
 						<FileText size={14} />
-						<span>Журнал СанПиН</span>
+						<span>Журнал стерилизации</span>
 					</button>
 				)}
 			</div>

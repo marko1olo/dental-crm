@@ -1,5 +1,6 @@
 import { useCallback, useRef, useState } from "react";
 import type React from "react";
+import { parseAndValidateKraftBarcode } from "@dental/shared";
 import type { DiaryLoadState, DiaryState } from "./diaryLogicTypes";
 import { jsonObjectOrNull } from "./diaryLogicTypes";
 import { operatorReadableErrorDetail } from "../../../AppHelpers";
@@ -70,20 +71,9 @@ export function useVisitDiaryTrayHandlers({
 			});
 			if (!linkRes.ok) {
 				const rawBody = await linkRes.text();
+				// Мандаты 8e и 8n: тихо в фоне, без назойливых тостов и блокировок врача
 				logger.warn(
 					`[sterilization link non-blocking] ${linkRes.status} ${rawBody.slice(0, 300)}`,
-				);
-				const payload = jsonObjectOrNull(rawBody);
-				const detail = operatorReadableErrorDetail(
-					typeof payload?.message === "string" ? payload.message : null,
-				);
-				showToast(
-					detail ??
-						(linkRes.status === 400
-							? `Лоток ${trayBarcode} зафиксирован в медицинской карте (бумажный журнал учёта).`
-							: `Штрихкод лотка: ${requestFailureCause(linkRes.status)}. Подписание карты продолжено.`),
-					"warning",
-					8000,
 				);
 				return { ok: true, hash: fallbackHash ?? diaryHash };
 			}
@@ -96,12 +86,8 @@ export function useVisitDiaryTrayHandlers({
 			if (newHash) setDiaryHash(newHash);
 			return { ok: true, hash: newHash ?? fallbackHash ?? diaryHash };
 		} catch (e) {
+			// Мандаты 8e и 8n: тихо в фоне без всплывающего спама
 			logger.warn("[sterilization link] запрос не выполнен, продолжаем solo-подписание", e);
-			showToast(
-				`Штрихкод лотка зафиксирован локально: ${requestFailureCause(null)}. Подпись дневника продолжена.`,
-				"warning",
-				8000,
-			);
 			return { ok: true, hash: fallbackHash ?? diaryHash };
 		}
 	};
@@ -214,13 +200,14 @@ export function useVisitDiaryTrayHandlers({
 
 			// Мандат 8e: ноль навязанной бюрократии и микро-дрочи у кресла врача.
 			// Лоток фиксируется без принудительного засорения описания лечения.
+			let updatedTreatment = diary.treatmentDescription;
 			if (protocolTextToAppend && !diary.treatmentDescription.includes(code)) {
-				const nextTreatment = diary.treatmentDescription
+				updatedTreatment = diary.treatmentDescription
 					? `${diary.treatmentDescription}\n\n${protocolTextToAppend}`
 					: protocolTextToAppend;
 				setDiary((p) => ({
 					...p,
-					treatmentDescription: nextTreatment,
+					treatmentDescription: updatedTreatment,
 				}));
 			}
 
@@ -279,7 +266,7 @@ export function useVisitDiaryTrayHandlers({
 						statusLocalis: diary.statusLocalis,
 						diagnosisIcd10: diary.diagnosisIcd10,
 						diagnosisTooth: diary.diagnosisTooth,
-						treatmentDescription: nextTreatment,
+						treatmentDescription: updatedTreatment,
 						complications: diary.complications,
 						comorbidities: diary.comorbidities,
 					}),
@@ -316,12 +303,13 @@ export function useVisitDiaryTrayHandlers({
 					setLoadState({ phase: "ready" });
 				}
 				setLastSavedAt(new Date());
+				const parsed = parseAndValidateKraftBarcode(code);
 				showToast(
 					parsed.isExpired
-						? "ВНИМАНИЕ: Лоток привязан, но срок стерилизации истёк!"
-						: "Лоток привязан и запись стерилизации внесена в медкарту",
-					parsed.isExpired ? "error" : "success",
-					7000,
+						? "Внимание: лоток привязан, но расчетный срок стерилизации истёк."
+						: "Лоток привязан к приёму.",
+					parsed.isExpired ? "warning" : "success",
+					5000,
 				);
 			} catch (err) {
 				logger.error("[diary tray assign] запрос не выполнен", err);
