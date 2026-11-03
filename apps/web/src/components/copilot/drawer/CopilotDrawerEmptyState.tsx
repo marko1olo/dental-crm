@@ -5,8 +5,10 @@
 import React from "react";
 import { Sparkles, Camera, FolderSearch, Receipt, FileText, Calculator, ShieldAlert } from "lucide-react";
 
+import type { CopilotRuntimeEnvironment } from "../../../store/copilotStore";
+
 export interface CopilotDrawerEmptyStateProps {
-  runtimeMode: "web_browser" | "desktop_native";
+  runtimeMode: CopilotRuntimeEnvironment;
   onSendPrompt: (prompt: string) => void;
 }
 

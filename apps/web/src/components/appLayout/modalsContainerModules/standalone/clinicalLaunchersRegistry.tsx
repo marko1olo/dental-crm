@@ -23,6 +23,7 @@ import { DirectOrthodonticsLauncher } from "../../../orthodontics/DirectOrthodon
 import { DirectSurgeryLauncher } from "../../../surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "../../../hygiene/DirectHygieneLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
+import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
 import { renderSpecializedClinicalLaunchers } from "./SpecializedClinicalLaunchers";
 
 export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] =
@@ -269,6 +270,24 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				hashPrefixes: ["#consents?", "#consent?", "#documents?"],
 			},
 			render: () => <DirectConsentLauncher />,
+		},
+
+		// 14. Кресельный ИИ-Копилот HUD (DEF-COPILOT-01 & Mandate 8aq)
+		{
+			id: "chairside-hud",
+			title: "Кресельный ИИ-Копилот HUD",
+			criteria: {
+				tokens: ["chairside-hud", "hud"],
+				searchIncludes: ["hud=open", "chairside-hud=1"],
+				exactHashes: ["#chairside-hud", "#hud"],
+			},
+			render: () => (
+				<ChairsideCopilotHUD
+					initialOpen={true}
+					patientName="Иванов И.И."
+					activeTooth={16}
+				/>
+			),
 		},
 	];
 

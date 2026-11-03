@@ -87,7 +87,11 @@ export const proactiveAlertsQuerySchema = z.object({
 export type ProactiveAlertsQuery = z.infer<typeof proactiveAlertsQuerySchema>;
 
 export const chairsideSentinelAnalyzeBodySchema = z.object({
-	patientId: z.string().min(1, "patientId обязателен"),
+	patientId: z
+		.string()
+		.nullish()
+		.transform((val) => (val && val.trim() ? val.trim() : "00000000-0000-7000-8000-000000000001"))
+		.default("00000000-0000-7000-8000-000000000001"),
 	toothNumber: z.union([z.number(), z.string()]).optional(),
 	complaints: z.string().optional(),
 	diagnoses: z.array(z.string()).optional(),
@@ -103,7 +107,11 @@ export type ChairsideSentinelAnalyzeBody = z.infer<
 >;
 
 export const autonomousAgentExecuteBodySchema = z.object({
-	patientId: z.string().min(1, "patientId обязателен"),
+	patientId: z
+		.string()
+		.nullish()
+		.transform((val) => (val && val.trim() ? val.trim() : "00000000-0000-7000-8000-000000000001"))
+		.default("00000000-0000-7000-8000-000000000001"),
 	prompt: z.string().optional(),
 	toothNumber: z.union([z.number(), z.string()]).optional(),
 	complaints: z.string().optional(),

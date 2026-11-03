@@ -143,7 +143,7 @@ export async function executeAutonomousReActCycle(
 		userId,
 	} = parsed;
 
-	const effectivePatientId = input.patientId?.trim() || "pat-chairside";
+	const effectivePatientId = input.patientId?.trim() || "00000000-0000-7000-8000-000000000001";
 
 	const ctx: AgentContext = {
 		organizationId: orgId,

@@ -3,7 +3,34 @@
  * Архитектура: Мандат 8b (300–350 строк), Мандат 8e (автономия), Мандат 8x (без канцелярита), Мандат 8wy.
  */
 
-export type CopilotRuntimeMode = "web_browser" | "desktop_native" | "both";
+export type CopilotRuntimeMode = "web_browser" | "desktop_native" | "mobile_tablet" | "both" | "all";
+
+export type CapabilityStatus = "available" | "desktop_required" | "mobile_specific" | "unavailable";
+
+export interface EnvironmentCapability {
+  id: string;
+  name: string;
+  description: string;
+  web: CapabilityStatus;
+  desktop: CapabilityStatus;
+  mobile: CapabilityStatus;
+}
+
+export const ENVIRONMENT_CAPABILITIES_MATRIX: EnvironmentCapability[] = [
+  { id: "emr_diary", name: "Ведение дневников SOAP и медкарт", description: "Заполнение протоколов приёма по стандартам СтАР", web: "available", desktop: "available", mobile: "available" },
+  { id: "voice_web_speech", name: "Голосовая диктовка (Web Speech)", description: "Стенографирование жалоб и объективного статуса", web: "available", desktop: "available", mobile: "available" },
+  { id: "phi_masking", name: "Защита персональных данных", description: "Маскирование ФИО и телефонов перед отправкой в LLM", web: "available", desktop: "available", mobile: "available" },
+  { id: "rvg_capture", name: "Оптический захват визиографа", description: "Прямой захват активного окна снимков без экспорта", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "hotfolder_dropzone", name: "Сетевая папка томографа (Dropzone)", description: "Автоматический импорт RVG и 3D КЛКТ исследований", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "tomography_launch", name: "Запуск Romexis / Ez3D / Sidexis", description: "Интеграция с локальным медицинским софтом", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "fiscal_printer", name: "Касса и чеки по COM/USB", description: "Печать фискальных чеков без посредников", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "local_inference", name: "Локальная нейросеть (Ollama / R1)", description: "Автономная клиническая модель без интернета", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "global_hotkeys", name: "Системные горячие клавиши ОС", description: "Мгновенная диктовка поверх всех окон Windows", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "glove_mode", name: "Режим в перчатках (>= 48px)", description: "Увеличенные тач-таргеты для работы у кресла", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
+  { id: "screen_wake_lock", name: "Удержание экрана (Wake Lock)", description: "Защита от засыпания экрана во время манипуляций", web: "available", desktop: "unavailable", mobile: "mobile_specific" },
+  { id: "haptic_feedback", name: "Тактильный виброотклик (Haptic)", description: "Вибрация при успешной фиксации голосовой команды", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
+  { id: "auto_mic_open", name: "Авто-микрофон в карточке приёма", description: "Мгновенный старт записи при открытии визита", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
+];
 
 export interface CopilotCatalogItem {
   id: string;
@@ -76,51 +103,35 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
     icon: "Stethoscope",
     items: [
       {
-        id: "chairside-diary",
-        label: "Заполнить дневник приёма",
+        id: "chairside-diary", label: "Заполнить дневник приёма",
         prompt: "Заполни медицинскую карту приёма по текущему пациенту по стандарту SOAP",
         description: "Формирование протокола осмотра, жалоб и плана лечения в карту приёма",
-        category: "Клинический приём у кресла",
-        icon: "FileText",
-        mode: "both",
-        requiresConfirmation: true,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary,
+        category: "Клинический приём у кресла", icon: "FileText", mode: "both",
+        requiresConfirmation: true, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary,
         shortVoiceTrigger: "дневник приёма",
       },
       {
-        id: "chairside-caries-stenograph",
-        label: "Стенограф: кариес и пломба",
+        id: "chairside-caries-stenograph", label: "Стенограф: кариес и пломба",
         prompt: "Зафиксируй кариес дентина зуба 46 и нанокомпозитную реставрацию",
         description: "Быстрая разметка одонтограммы и назначение манипуляций голосом",
-        category: "Клинический приём у кресла",
-        icon: "Activity",
-        mode: "both",
-        requiresConfirmation: true,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
+        category: "Клинический приём у кресла", icon: "Activity", mode: "both",
+        requiresConfirmation: true, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
         shortVoiceTrigger: "кариес 46 пломба",
       },
       {
-        id: "chairside-anesthesia",
-        label: "Анестезия и расходники",
+        id: "chairside-anesthesia", label: "Анестезия и расходники",
         prompt: "Зафиксируй инфильтрационную анестезию Артикаин 1.7 мл и списание карпулы",
         description: "Автоматический учет анестетика с контролем сердечно-сосудистого риска",
-        category: "Клинический приём у кресла",
-        icon: "ShieldAlert",
-        mode: "both",
-        requiresConfirmation: false,
-        targetTool: "crmPharmacologyTools.registerAnesthesia",
+        category: "Клинический приём у кресла", icon: "ShieldAlert", mode: "both",
+        requiresConfirmation: false, targetTool: "crmPharmacologyTools.registerAnesthesia",
         shortVoiceTrigger: "анестезия артикаин",
       },
       {
-        id: "chairside-norm",
-        label: "Физиологическая норма в 1 клик",
+        id: "chairside-norm", label: "Физиологическая норма в 1 клик",
         prompt: "Установи норму: соматически здоров, интактные зубы без патологий",
         description: "0-клик заполнение физиологической нормы без излишней бюрократии",
-        category: "Клинический приём у кресла",
-        icon: "ShieldCheck",
-        mode: "both",
-        requiresConfirmation: false,
-        targetTool: "crmClinicalOdontogramTools.setPhysiologicalNorm",
+        category: "Клинический приём у кресла", icon: "ShieldCheck", mode: "both",
+        requiresConfirmation: false, targetTool: "crmClinicalOdontogramTools.setPhysiologicalNorm",
         shortVoiceTrigger: "интактная норма",
       },
     ],
@@ -132,39 +143,27 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
     icon: "CreditCard",
     items: [
       {
-        id: "billing-estimate-3-tiers",
-        label: "Рассчитать 3 тарифа сметы",
+        id: "billing-estimate-3-tiers", label: "Рассчитать 3 тарифа сметы",
         prompt: "Рассчитай смету лечения на 3 тарифа: Базовый, Оптимальный и Премиум",
         description: "Параллельный расчет альтернативных планов для информированного выбора пациента",
-        category: "Финансы, сметы и касса",
-        icon: "Calculator",
-        mode: "both",
-        requiresConfirmation: false,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.calcInvoiceKopecks,
+        category: "Финансы, сметы и касса", icon: "Calculator", mode: "both",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.calcInvoiceKopecks,
         shortVoiceTrigger: "рассчитай 3 сметы",
       },
       {
-        id: "billing-receipt-draft",
-        label: "Сформировать предварительный счёт",
+        id: "billing-receipt-draft", label: "Сформировать предварительный счёт",
         prompt: "Сформируй предварительный счет на оказанные услуги текущего визита",
         description: "Подготовка прозрачного счета без требования лишних персональных данных",
-        category: "Финансы, сметы и касса",
-        icon: "Receipt",
-        mode: "both",
-        requiresConfirmation: true,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft,
+        category: "Финансы, сметы и касса", icon: "Receipt", mode: "both",
+        requiresConfirmation: true, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft,
         shortVoiceTrigger: "счет на оплату",
       },
       {
-        id: "billing-warranty-discount",
-        label: "Скидка на гарантию до 100%",
+        id: "billing-warranty-discount", label: "Скидка на гарантию до 100%",
         prompt: "Примени гарантийную скидку 100% на перелечивание по гарантии",
         description: "Свобода врачебных решений при устранении осложнений",
-        category: "Финансы, сметы и касса",
-        icon: "ShieldCheck",
-        mode: "both",
-        requiresConfirmation: true,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.applyDoctorDiscount,
+        category: "Финансы, сметы и касса", icon: "ShieldCheck", mode: "both",
+        requiresConfirmation: true, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.applyDoctorDiscount,
         shortVoiceTrigger: "гарантийный случай",
       },
     ],
@@ -176,51 +175,35 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
     icon: "Monitor",
     items: [
       {
-        id: "workstation-rvg-capture",
-        label: "Оптический захват визиографа",
+        id: "workstation-rvg-capture", label: "Оптический захват визиографа",
         prompt: "Захвати активное окно визиографа и прикрепи снимок к зубу в карте",
         description: "Мгновенный оптический захват экрана без ручного сохранения и экспорта файлов",
-        category: "Рабочая станция ОС и снимки",
-        icon: "Camera",
-        mode: "desktop_native",
-        requiresConfirmation: false,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.captureScreen,
+        category: "Рабочая станция ОС и снимки", icon: "Camera", mode: "desktop_native",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.captureScreen,
         shortVoiceTrigger: "захвати снимок",
       },
       {
-        id: "workstation-hotfolder-scan",
-        label: "Снимок из папки автоимпорта",
+        id: "workstation-hotfolder-scan", label: "Снимок из папки автоимпорта",
         prompt: "Проверь сетевую папку томографа на наличие новых снимков исследования",
         description: "Автоматический поиск и привязка свежих DICOM и RVG снимков пациента",
-        category: "Рабочая станция ОС и снимки",
-        icon: "FolderSearch",
-        mode: "desktop_native",
-        requiresConfirmation: false,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.scanHotfolder,
+        category: "Рабочая станция ОС и снимки", icon: "FolderSearch", mode: "desktop_native",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.scanHotfolder,
         shortVoiceTrigger: "проверь снимки томографа",
       },
       {
-        id: "workstation-launch-romexis",
-        label: "Запустить Planmeca Romexis",
+        id: "workstation-launch-romexis", label: "Запустить Planmeca Romexis",
         prompt: "Открой 3D исследование пациента в Planmeca Romexis",
         description: "Нативный запуск десктопного просмотрщика томограмм с карточкой пациента",
-        category: "Рабочая станция ОС и снимки",
-        icon: "ExternalLink",
-        mode: "desktop_native",
-        requiresConfirmation: false,
-        targetTool: "workstationTools.launchViewer",
+        category: "Рабочая станция ОС и снимки", icon: "ExternalLink", mode: "desktop_native",
+        requiresConfirmation: false, targetTool: "workstationTools.launchViewer",
         shortVoiceTrigger: "открой ромексис",
       },
       {
-        id: "workstation-fiscal-printer",
-        label: "Кассовый аппарат по COM/USB",
+        id: "workstation-fiscal-printer", label: "Кассовый аппарат по COM/USB",
         prompt: "Проверь статус фискального регистратора и состояние рабочей смены",
         description: "Прямой контроль печати чеков и соединения с кассовым регистратором",
-        category: "Рабочая станция ОС и снимки",
-        icon: "Receipt",
-        mode: "desktop_native",
-        requiresConfirmation: false,
-        targetTool: "workstationTools.checkFiscalPrinter",
+        category: "Рабочая станция ОС и снимки", icon: "Receipt", mode: "desktop_native",
+        requiresConfirmation: false, targetTool: "workstationTools.checkFiscalPrinter",
         shortVoiceTrigger: "статус кассы",
       },
     ],
@@ -232,27 +215,19 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
     icon: "Calendar",
     items: [
       {
-        id: "schedule-free-slots",
-        label: "Свободные окна сегодня",
+        id: "schedule-free-slots", label: "Свободные окна сегодня",
         prompt: "Покажи все свободные слоты у терапевта на сегодня",
         description: "Мгновенный обзор доступных окон для экстренной или плановой записи",
-        category: "Расписание и запись",
-        icon: "Clock",
-        mode: "both",
-        requiresConfirmation: false,
-        targetTool: "crmScheduleTools.getAvailableSlots",
+        category: "Расписание и запись", icon: "Clock", mode: "both",
+        requiresConfirmation: false, targetTool: "crmScheduleTools.getAvailableSlots",
         shortVoiceTrigger: "свободные окна",
       },
       {
-        id: "schedule-book-appointment",
-        label: "Записать на повторный приём",
+        id: "schedule-book-appointment", label: "Записать на повторный приём",
         prompt: "Запиши пациента на следующий этап эндодонтии через 5 дней",
         description: "Бронирование кресла без обязательного ручного выбора начмедов и ассистентов",
-        category: "Расписание и запись",
-        icon: "CalendarPlus",
-        mode: "both",
-        requiresConfirmation: true,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot,
+        category: "Расписание и запись", icon: "CalendarPlus", mode: "both",
+        requiresConfirmation: true, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot,
         shortVoiceTrigger: "записать через 5 дней",
       },
     ],
@@ -264,26 +239,18 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
     icon: "BookOpen",
     items: [
       {
-        id: "knowledge-star-guidelines",
-        label: "Клинические рекомендации СтАР",
+        id: "knowledge-star-guidelines", label: "Клинические рекомендации СтАР",
         prompt: "Покажи клинические критерии препарирования и пломбирования по протоколам СтАР",
         description: "Клинические алгоритмы доказательной стоматологии без бюрократического канцелярита",
-        category: "Стандарты и клинические протоколы",
-        icon: "BookOpen",
-        mode: "both",
-        requiresConfirmation: false,
-        shortVoiceTrigger: "стандарты стар",
+        category: "Стандарты и клинические протоколы", icon: "BookOpen", mode: "both",
+        requiresConfirmation: false, shortVoiceTrigger: "стандарты стар",
       },
       {
-        id: "knowledge-consent-forms",
-        label: "Печать информированного согласия",
+        id: "knowledge-consent-forms", label: "Печать информированного согласия",
         prompt: "Подготовь информированное согласие на эндодонтическое лечение для подписи",
         description: "Печать бланка согласия в 1 клик с предзаполненными рисками и диагнозом",
-        category: "Стандарты и клинические протоколы",
-        icon: "FileText",
-        mode: "both",
-        requiresConfirmation: false,
-        targetTool: CRM_FASTIFY_TOOLS_REGISTRY.printConsentBlank,
+        category: "Стандарты и клинические протоколы", icon: "FileText", mode: "both",
+        requiresConfirmation: false, targetTool: CRM_FASTIFY_TOOLS_REGISTRY.printConsentBlank,
         shortVoiceTrigger: "согласие на приём",
       },
     ],
@@ -292,7 +259,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
 
 export function getCatalogItemsByMode(mode: CopilotRuntimeMode): CopilotCatalogItem[] {
   return COPILOT_CATALOG_CATEGORIES.flatMap((c) =>
-    c.items.filter((item) => item.mode === "both" || item.mode === mode)
+    c.items.filter((item) => item.mode === "both" || item.mode === "all" || item.mode === mode)
   );
 }
 

@@ -12,6 +12,9 @@ export type AiProvider = "gemini" | "openai" | "anthropic" | "local";
 export type AiSpeedMode = "turbo" | "deep_reasoning";
 export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "perio" | "pediatric";
 export type DiaryTemplate = "soap" | "form043" | "express";
+export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chairside_tablet" | "mobile_tablet";
+export type TomographyViewerApp = "planmeca_romexis" | "vatech_ez3d" | "sirona_sidexis" | "custom";
+export type WebSpeechSensitivity = "high" | "normal" | "low";
 
 export interface AiMemoryFact {
 	id: string;
@@ -59,10 +62,23 @@ export interface CopilotSettings {
 	showThinkingProcess: boolean;
 	clinicalSpecialization: ClinicalSpecialization;
 	diaryTemplate: DiaryTemplate;
-	runtimeMode: "web_browser" | "desktop_native";
+	runtimeMode: CopilotRuntimeEnvironment;
+	// Браузер (Web Browser API)
 	autoSaveDrafts: boolean;
+	webSpeechSensitivity: WebSpeechSensitivity;
+	maskPhiData: boolean;
 	apiKeyMasked?: string;
+	// Десктоп ПК (Workstation native)
 	localDropzonePath: string;
+	tomographyViewerApp: TomographyViewerApp;
+	fiscalRegisterComPort: string;
+	localInferenceServerUrl: string;
+	globalDictationHotkey: string;
+	// Мобилка / Планшет у кресла
+	gloveModeTouchTarget: boolean;
+	screenWakeLock: boolean;
+	hapticFeedbackEnabled: boolean;
+	autoMicOnAppointmentOpen: boolean;
 }
 
 export interface CopilotStoreState {
@@ -79,7 +95,7 @@ export interface CopilotStoreState {
 	// Actions
 	updateSettings: (patch: Partial<CopilotSettings>) => void;
 	setTrustLevel: (level: AiTrustLevel) => void;
-	setRuntimeMode: (mode: "web_browser" | "desktop_native") => void;
+	setRuntimeMode: (mode: CopilotRuntimeEnvironment) => void;
 	addMemoryFact: (category: AiMemoryFact["category"], fact: string) => void;
 	removeMemoryFact: (id: string) => void;
 	clearMemory: () => void;
@@ -106,8 +122,21 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	clinicalSpecialization: "therapy",
 	diaryTemplate: "soap",
 	runtimeMode: "web_browser",
+	// Браузер
 	autoSaveDrafts: true,
+	webSpeechSensitivity: "normal",
+	maskPhiData: true,
+	// Десктоп ПК
 	localDropzonePath: "C:\\Radiology\\Export",
+	tomographyViewerApp: "planmeca_romexis",
+	fiscalRegisterComPort: "COM1",
+	localInferenceServerUrl: "http://localhost:11434",
+	globalDictationHotkey: "F9",
+	// Мобилка / Планшет
+	gloveModeTouchTarget: true,
+	screenWakeLock: true,
+	hapticFeedbackEnabled: true,
+	autoMicOnAppointmentOpen: false,
 };
 
 const DEFAULT_MEMORY_FACTS: AiMemoryFact[] = [
@@ -194,7 +223,10 @@ const DEFAULT_TOOL_LOGS: ToolExecutionLog[] = [
 ];
 
 export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
-	settings: safeLocalStorageGetJson("dente_copilot_settings", DEFAULT_SETTINGS),
+	settings: {
+		...DEFAULT_SETTINGS,
+		...(safeLocalStorageGetJson("dente_copilot_settings", DEFAULT_SETTINGS) || {}),
+	},
 	memoryFacts: safeLocalStorageGetJson("dente_copilot_memory", DEFAULT_MEMORY_FACTS),
 	threads: safeLocalStorageGetJson("dente_copilot_threads", DEFAULT_THREADS),
 	activeThreadId: "thread-active",

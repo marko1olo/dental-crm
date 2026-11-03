@@ -10,12 +10,13 @@ function checkIsCopilotActive(): boolean {
   if (typeof window === "undefined") return false;
   const s = window.location.search || "";
   const h = window.location.hash || "";
+  if (h.includes("hud") || s.includes("hud")) return false;
   const search = new URLSearchParams(s);
   return (
     search.get("copilot") === "1" || search.get("ai") === "1" || search.get("assistant") === "1" ||
     search.get("copilot_standalone") === "1" || search.get("view") === "copilot_standalone" ||
     h === "#copilot" || h === "#ai" || h === "#assistant" || h === "#chairside-copilot" ||
-    h === "#voice" || h.includes("copilot") || h.includes("chairside")
+    h === "#voice" || (h.includes("copilot") && !h.includes("hud"))
   );
 }
 

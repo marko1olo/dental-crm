@@ -14,7 +14,7 @@ import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt,
   Monitor, Globe, Sparkles, BookOpen, Camera, AlertCircle,
-  Sliders, MessageSquare, Brain, HardDrive
+  Sliders, MessageSquare, Brain, HardDrive, TabletSmartphone, Sun
 } from "lucide-react";
 import "./styles/copilotStudio.css";
 import { useVoiceEngine } from "../voice/voiceEngine";
@@ -24,7 +24,7 @@ import {
   CLINICAL_QUICK_PRESETS, CRM_FASTIFY_TOOLS_REGISTRY,
   inspectSpeechEngineHealth, type SpeechEngineHealthReport,
 } from "./copilotCatalogData";
-import { useCopilotStore } from "../../store/copilotStore";
+import { useCopilotStore, type CopilotRuntimeEnvironment } from "../../store/copilotStore";
 import { CopilotSettingsModal } from "./CopilotSettingsModal";
 import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
@@ -100,10 +100,15 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     if (isOpen && activeTab === "dialog") messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen, activeTab]);
 
-  const handleModeChange = (mode: "web_browser" | "desktop_native") => {
+  const isChairside = runtimeMode === "chairside_tablet" || runtimeMode === "mobile_tablet";
+
+  const handleModeChange = (mode: CopilotRuntimeEnvironment) => {
     setRuntimeMode(mode);
     safeLocalStorageSetItem("dente_copilot_runtime_mode", mode);
-    showToast(mode === "desktop_native" ? "Рабочая станция ОС: томографы и периферия" : "Веб-ассистент: карта и расписание", "info");
+    const msg = (mode === "chairside_tablet" || mode === "mobile_tablet")
+      ? "Планшет врача: сенсорный режим у кресла (перчатки и WakeLock)"
+      : mode === "desktop_native" ? "Рабочая станция ОС: томографы и периферия" : "Веб-ассистент: карта и расписание";
+    showToast(msg, "info");
   };
 
   const handleInputChange = (val: string) => {
@@ -260,16 +265,17 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           </div>
         </header>
 
-        {/* Переключатель режима: Web CRM vs Desktop Native OS */}
+        {/* Трехпозиционный переключатель сред: Веб-ассистент | Станция ОС | Планшет врача */}
         <div className="copilot-mode-selector-wrap px-5 pt-2.5 pb-2 shrink-0">
-          <div className="copilot-mode-pill-track flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)]">
-            <button type="button" onClick={() => handleModeChange("web_browser")} className={`copilot-mode-pill-btn flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${runtimeMode === "web_browser" ? "active bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
-              <Globe size={13} className="text-[var(--teal,#0d9488)]" />
-              <span>Веб-ассистент</span>
+          <div className="copilot-mode-pill-track flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] gap-1">
+            <button type="button" onClick={() => handleModeChange("web_browser")} className={`copilot-mode-pill-btn flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${runtimeMode === "web_browser" ? "active bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm font-bold" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+              <Globe size={13} className="text-[var(--teal,#0d9488)] shrink-0" /><span className="truncate">Веб-ассистент</span>
             </button>
-            <button type="button" onClick={() => handleModeChange("desktop_native")} className={`copilot-mode-pill-btn flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${runtimeMode === "desktop_native" ? "active bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
-              <Monitor size={13} className="text-[var(--teal,#0d9488)]" />
-              <span>Станция ОС</span>
+            <button type="button" onClick={() => handleModeChange("desktop_native")} className={`copilot-mode-pill-btn flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${runtimeMode === "desktop_native" ? "active bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm font-bold" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+              <Monitor size={13} className="text-[var(--teal,#0d9488)] shrink-0" /><span className="truncate">Станция ОС</span>
+            </button>
+            <button type="button" onClick={() => handleModeChange("chairside_tablet")} className={`copilot-mode-pill-btn flex-1 py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer ${isChairside ? "active bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm font-bold" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+              <TabletSmartphone size={13} className="text-[var(--teal,#0d9488)] shrink-0" /><span className="truncate">Планшет врача</span>
             </button>
           </div>
         </div>
@@ -277,26 +283,31 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         {/* Навигационные вкладки */}
         <div className="copilot-tabs-nav flex border-b border-[var(--line)] px-5 gap-3 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar">
           <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "dialog" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
-            <BookOpen size={14} />
-            <span>Клинический диалог</span>
+            <BookOpen size={14} /><span>Клинический диалог</span>
           </button>
           <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "actions" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
-            <Activity size={14} />
-            <span>Быстрые действия</span>
+            <Activity size={14} /><span>Быстрые действия</span>
           </button>
           <button type="button" onClick={() => setActiveTab("workstation")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "workstation" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
-            <HardDrive size={14} />
-            <span>Станция ПК</span>
+            <HardDrive size={14} /><span>Станция ПК</span>
           </button>
           <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "memory" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
-            <Brain size={14} />
-            <span>Память ИИ</span>
+            <Brain size={14} /><span>Память ИИ</span>
           </button>
         </div>
 
         {/* ВКЛАДКА 1: КЛИНИЧЕСКИЙ ДИАЛОГ */}
         {activeTab === "dialog" && (
           <div className="flex-1 flex flex-col min-h-0">
+            {isChairside && (
+              <div className="copilot-wakelock-banner mx-5 mt-2.5 p-2 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-between text-xs shrink-0">
+                <div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-300 font-semibold">
+                  <Sun size={14} className="text-emerald-500 animate-pulse shrink-0" />
+                  <span className="truncate">WakeLock: Экран всегда активен у кресла</span>
+                </div>
+                <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-500/20 text-emerald-800 dark:text-emerald-200 shrink-0">Перчатки ON</span>
+              </div>
+            )}
             {voice.isListening && (
               <div className="copilot-voice-banner mx-5 mt-2.5 p-2.5 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.1))] border border-[var(--teal,#0d9488)] flex items-center justify-between text-xs shrink-0">
                 <div className="copilot-voice-status flex items-center gap-2.5 text-[var(--teal,#0d9488)] font-semibold"><Mic size={15} className="animate-bounce" /><span>Идёт распознавание речи...</span></div>
@@ -340,18 +351,23 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             {/* Пресеты клинических фраз */}
             <div className="copilot-presets-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar shrink-0 snap-x">
               {CLINICAL_QUICK_PRESETS.slice(0, 4).map((p) => (
-                <button key={p.id} type="button" onClick={() => handleSendMessage(p.prompt)} className="copilot-preset-chip shrink-0 px-2.5 sm:px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[10px] sm:text-[11px] font-medium text-[var(--ink)] whitespace-nowrap cursor-pointer snap-start">
+                <button
+                  key={p.id}
+                  type="button"
+                  onClick={() => handleSendMessage(p.prompt)}
+                  className={`copilot-preset-chip shrink-0 ${isChairside ? "h-10 min-h-[40px] px-3.5 text-xs font-semibold" : "px-2.5 sm:px-3 py-1 text-[10px] sm:text-[11px] font-medium"} rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--ink)] whitespace-nowrap cursor-pointer snap-start`}
+                >
                   {p.label}
                 </button>
               ))}
             </div>
 
             {/* Нижняя плашка: Ровно ОДНА Primary CTA кнопка #0d9488 */}
-            <div className="copilot-bottom-composer px-3 sm:px-5 pt-2 pb-5 max-md:pb-[calc(16px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2">
+            <div className={`copilot-bottom-composer px-3 sm:px-5 pt-2 ${isChairside ? "pb-6" : "pb-5"} max-md:pb-[calc(16px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2`}>
               <button
                 type="button"
                 onClick={handleApplyPrimaryAction}
-                className="copilot-primary-cta w-full h-11 min-h-[44px] rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-95 cursor-pointer"
+                className={`copilot-primary-cta w-full ${isChairside ? "h-12 min-h-[48px] text-xs sm:text-sm" : "h-11 min-h-[44px] text-xs"} rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-95 cursor-pointer`}
                 data-testid="copilot-primary-apply-cta"
               >
                 <Check size={16} /><span>{appliedStatus ? "Применено в карту приёма" : "Применить действие"}</span>
@@ -361,12 +377,19 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                 <button
                   type="button"
                   onClick={voice.toggleListening}
-                  className={`copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center cursor-pointer ${
+                  className={`copilot-icon-btn ${isChairside ? "min-h-[48px] min-w-[48px] h-12 px-3 w-auto" : "w-11 h-11 min-w-[44px] min-h-[44px]"} rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${
                     voice.isListening ? "recording bg-rose-500 text-white border-rose-600 animate-pulse" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"
                   }`}
                   aria-label="Голосовой ввод"
                 >
                   {voice.isListening ? <MicOff size={18} /> : <Mic size={18} />}
+                  {isChairside && (
+                    <div className="copilot-vu-meter flex items-end gap-0.5 h-3.5 px-0.5" aria-label="Индикатор звука">
+                      <span className={`w-0.5 rounded-full transition-all duration-75 ${voice.isListening ? "h-3 bg-white animate-pulse" : "h-1 bg-[var(--muted)]"}`} />
+                      <span className={`w-0.5 rounded-full transition-all duration-75 ${voice.isListening ? "h-3.5 bg-white animate-pulse [animation-delay:100ms]" : "h-2 bg-[var(--muted)]"}`} />
+                      <span className={`w-0.5 rounded-full transition-all duration-75 ${voice.isListening ? "h-2 bg-white animate-pulse [animation-delay:200ms]" : "h-1 bg-[var(--muted)]"}`} />
+                    </div>
+                  )}
                 </button>
                 <input
                   type="text"
@@ -374,9 +397,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }}
                   placeholder="Запрос или диктовка..."
-                  className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
+                  className={`copilot-text-input flex-1 ${isChairside ? "h-12 min-h-[48px] text-xs sm:text-sm" : "h-11 min-h-[44px] text-xs"} px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]`}
                 />
-                <button type="button" onClick={() => handleSendMessage()} className="copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Отправить запрос">
+                <button type="button" onClick={() => handleSendMessage()} className={`copilot-icon-btn ${isChairside ? "h-12 w-12 min-w-[48px] min-h-[48px]" : "w-11 h-11 min-w-[44px] min-h-[44px]"} rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer`} aria-label="Отправить запрос">
                   <Send size={16} />
                 </button>
               </div>

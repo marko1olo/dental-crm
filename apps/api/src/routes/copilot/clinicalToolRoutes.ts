@@ -44,28 +44,35 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 	server.post(
 		"/api/v1/copilot/agent/execute",
 		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot execute autonomous agent",
+			);
+			if (!resolvedOrgId) return;
+
 			const parsedBody = autonomousAgentExecuteBodySchema.safeParse(
 				request.body ?? {},
 			);
 			if (!parsedBody.success) {
 				return reply.code(400).send({
 					error: "ValidationError",
-					message: "Некорректный запрос к ИИ-агенту: patientId обязателен",
+					message: "Некорректный запрос к ИИ-агенту",
 					details: parsedBody.error.errors,
 				});
 			}
 
 			const identity = getRequestIdentity(request);
 			const explicitOrg = parsedBody.data.organizationId;
-			const resolvedOrgId =
+			const targetOrgId =
 				explicitOrg ||
-				(await resolveOrganizationId(request)) ||
+				resolvedOrgId ||
 				"00000000-0000-7000-8000-000000000001";
 
 			const input: AutonomousDenteAgentInput = {
 				...parsedBody.data,
 				patientId: parsedBody.data.patientId,
-				organizationId: resolvedOrgId,
+				organizationId: targetOrgId,
 				userId: identity.userId ?? "system",
 			};
 

@@ -297,7 +297,43 @@
 }
 .copilot-action-item-btn:hover { background-color: var(--line, rgba(15, 118, 110, 0.1)); }
 
+/* Режим «Планшет врача»: сенсорная эргономика у кресла и WakeLock */
+.copilot-wakelock-banner {
+  animation: fadeIn 0.2s ease-in-out;
+}
+.copilot-vu-meter {
+  display: flex;
+  align-items: flex-end;
+  gap: 2px;
+}
+.copilot-mode-pill-track {
+  gap: 4px;
+}
+.copilot-mode-pill-btn {
+  min-width: 0;
+  padding: 6px 8px;
+}
+.copilot-mode-pill-btn span {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+@media (max-width: 420px) {
+  .copilot-mode-pill-btn {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+}
+.copilot-workstation-tab {
+  scrollbar-width: thin;
+}
+
 @keyframes pulse {
   0%, 100% { opacity: 1; }
   50% { opacity: 0.5; }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
