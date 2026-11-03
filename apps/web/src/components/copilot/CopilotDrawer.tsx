@@ -3,10 +3,11 @@ import { createPortal } from "react-dom";
 import {
   X, RotateCcw, Send, Mic, MicOff, Sparkles, Check, AlertTriangle,
   Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator,
-  Globe, Monitor, Camera, FolderSearch, Receipt, Layers
+  Globe, Monitor, Camera, FolderSearch, Receipt, Layers, MessageSquare, Sliders
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
+import { useCopilotStore } from "../../store/copilotStore";
 import { useCopilotContextSync } from "./CopilotContextSync";
 import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
 import { CopilotConfirmActionCard } from "./drawer/CopilotConfirmActionCard";
@@ -15,6 +16,9 @@ import { CopilotDrawerEmptyState } from "./drawer/CopilotDrawerEmptyState";
 import { CopilotDictationBanner } from "./composer/CopilotDictationBanner";
 import { CopilotMarkdown } from "./CopilotMarkdown";
 import { CopilotMessage } from "./CopilotMessage";
+import { CopilotSettingsModal } from "./CopilotSettingsModal";
+import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
+import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
 import { CopilotSwarmPanel } from "./swarm/CopilotSwarmPanel";
@@ -54,12 +58,15 @@ export interface CopilotDrawerProps {
 export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   isOpen, messages, busy, phase, pending, nameCache, nudges = [],
   proactiveAlerts = [], whatsappHitLCards = [], activeTab, onTabChange, onClose, onSend,
-  onConfirm, onReset, onDismissNudge, onBookSlot,
-  onSelectPatient, onSelectAppointment,
+  onConfirm, onReset, onDismissNudge, onBookSlot, onSelectPatient, onSelectAppointment,
   onDismissProactiveAlert, onApproveWhatsApp, onRejectWhatsApp,
   isVoiceActive: isVoiceActiveProp, onToggleVoice,
 }) => {
   const { context: uiContext, enrichMessage } = useCopilotContextSync();
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+  const [isHistoryOpen, setIsHistoryOpen] = useState(false);
+  const copilotSettings = useCopilotStore((s) => s.settings);
+  const selectThread = useCopilotStore((s) => s.selectThread);
   const [runtimeMode, setRuntimeMode] = useState<"web_browser" | "desktop_native">(() => {
     const saved = safeLocalStorageGetItem("dente_copilot_runtime_mode");
     return saved === "desktop_native" ? "desktop_native" : "web_browser";
@@ -75,33 +82,25 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   };
 
   const dictation = useUnifiedDictation({
-    preferredMode: "gemini_live",
-    context: "chat",
-    specialty: "therapy",
+    preferredMode: "gemini_live", context: "chat", specialty: "therapy",
     patientId: uiContext.patientId ?? undefined,
     onResult: (accumulated) => {
       const base = baseTextRef.current.trim();
       const spoken = accumulated.trim();
-      const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
-      handleInputChange(combined);
+      handleInputChange(base ? (spoken ? `${base} ${spoken}` : base) : spoken);
     },
     onInterim: (interim) => {
       const base = baseTextRef.current.trim();
       const spoken = `${dictation.fullTranscript || ""} ${interim || ""}`.trim();
       const combined = base ? (spoken ? `${base} ${spoken}` : base) : spoken;
-      if (combined) {
-        setInput(combined);
-      }
+      if (combined) setInput(combined);
     },
   });
 
   const isVoiceRecording = dictation.isRecording || Boolean(isVoiceActiveProp);
 
   const toggleVoice = async () => {
-    if (onToggleVoice) {
-      onToggleVoice();
-      return;
-    }
+    if (onToggleVoice) { onToggleVoice(); return; }
     if (dictation.isRecording) {
       const finalRes = await dictation.stopDictation();
       const base = baseTextRef.current.trim();
@@ -115,9 +114,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
     }
   };
 
-  const [isMobile, setIsMobile] = useState(() => (
-    typeof window !== "undefined" ? window.innerWidth <= 768 : false
-  ));
+  const [isMobile, setIsMobile] = useState(() => (typeof window !== "undefined" ? window.innerWidth <= 768 : false));
   const feedRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -228,6 +225,26 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             >
               <Mic size={16} />
             </button>
+            <button
+              type="button"
+              onClick={() => setIsHistoryOpen(true)}
+              className="copilot-icon-btn"
+              title="История диалогов и сессий"
+              aria-label="История"
+              data-testid="copilot-open-history-btn"
+            >
+              <MessageSquare size={16} />
+            </button>
+            <button
+              type="button"
+              onClick={() => setIsSettingsOpen(true)}
+              className="copilot-icon-btn"
+              title="Настройки ИИ и Копайлота"
+              aria-label="Настройки"
+              data-testid="copilot-open-settings-btn"
+            >
+              <Sliders size={16} />
+            </button>
             {!isMobile && (
               <button
                 type="button"
@@ -265,10 +282,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           <button
             type="button"
             className={`copilot-mode-btn ${runtimeMode === "web_browser" ? "active" : ""}`}
-            onClick={() => {
-              setRuntimeMode("web_browser");
-              safeLocalStorageSetItem("dente_copilot_runtime_mode", "web_browser");
-            }}
+            onClick={() => { setRuntimeMode("web_browser"); safeLocalStorageSetItem("dente_copilot_runtime_mode", "web_browser"); }}
           >
             <Globe size={13} />
             <span>Веб-клиника</span>
@@ -276,10 +290,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           <button
             type="button"
             className={`copilot-mode-btn ${runtimeMode === "desktop_native" ? "active" : ""}`}
-            onClick={() => {
-              setRuntimeMode("desktop_native");
-              safeLocalStorageSetItem("dente_copilot_runtime_mode", "desktop_native");
-            }}
+            onClick={() => { setRuntimeMode("desktop_native"); safeLocalStorageSetItem("dente_copilot_runtime_mode", "desktop_native"); }}
           >
             <Monitor size={13} />
             <span>Рабочая станция (ПК)</span>
@@ -288,29 +299,17 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
         {/* Context Telemetry Bar */}
         <div className="copilot-context-bar" data-testid="copilot-context-bar">
-          <span className="copilot-context-chip active-view">
-            <span>{uiContext.viewLabel || uiContext.view || "Одонтограмма"}</span>
-          </span>
+          <span className="copilot-context-chip active-view"><span>{uiContext.viewLabel || uiContext.view || "Одонтограмма"}</span></span>
           {uiContext.activeTooth !== null && uiContext.activeTooth !== undefined && (
-            <span className="copilot-context-chip">
-              <span>{`Зуб #${uiContext.activeTooth}`}</span>
-            </span>
+            <span className="copilot-context-chip"><span>{`Зуб #${uiContext.activeTooth}`}</span></span>
           )}
           {uiContext.patientName && (
-            <span className="copilot-context-chip">
-              <User size={12} className="text-[var(--teal)] shrink-0" />
-              <span>{uiContext.patientName}</span>
-            </span>
+            <span className="copilot-context-chip"><User size={12} className="text-[var(--teal)] shrink-0" /><span>{uiContext.patientName}</span></span>
           )}
-          {uiContext.activeDoctor && (
-            <span className="copilot-context-chip doctor">
-              <span>{uiContext.activeDoctor}</span>
-            </span>
-          )}
+          {uiContext.activeDoctor && (<span className="copilot-context-chip doctor"><span>{uiContext.activeDoctor}</span></span>)}
           {uiContext.allergies && uiContext.allergies.length > 0 && (
             <span className="copilot-context-chip copilot-context-chip--warn" title={uiContext.allergies.join(", ")}>
-              <ShieldAlert size={12} />
-              <span>{`Аллергии (${uiContext.allergies.length})`}</span>
+              <ShieldAlert size={12} /><span>{`Аллергии (${uiContext.allergies.length})`}</span>
             </span>
           )}
         </div>
@@ -320,31 +319,16 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
         {/* Tabs Bar */}
         <div className="copilot-tabs copilot-tabs-bar" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "chat"}
-            onClick={() => onTabChange("chat")}
-            className={`copilot-tab-btn ${activeTab === "chat" ? "copilot-tab-btn--active active" : ""}`}
-          >
+          <button type="button" role="tab" aria-selected={activeTab === "chat"} onClick={() => onTabChange("chat")}
+            className={`copilot-tab-btn ${activeTab === "chat" ? "copilot-tab-btn--active active" : ""}`}>
             Чат {messages.length > 0 && <span className="copilot-tab-badge copilot-badge-count">{messages.length}</span>}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "pending"}
-            onClick={() => onTabChange("pending")}
-            className={`copilot-tab-btn ${activeTab === "pending" ? "copilot-tab-btn--active active" : ""}`}
-          >
+          <button type="button" role="tab" aria-selected={activeTab === "pending"} onClick={() => onTabChange("pending")}
+            className={`copilot-tab-btn ${activeTab === "pending" ? "copilot-tab-btn--active active" : ""}`}>
             Задачи {totalTasksCount > 0 && <span className="copilot-tab-badge copilot-tab-badge--alert">{totalTasksCount}</span>}
           </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={activeTab === "swarm"}
-            onClick={() => onTabChange("swarm")}
-            className={`copilot-tab-btn ${activeTab === "swarm" ? "copilot-tab-btn--active active" : ""}`}
-          >
+          <button type="button" role="tab" aria-selected={activeTab === "swarm"} onClick={() => onTabChange("swarm")}
+            className={`copilot-tab-btn ${activeTab === "swarm" ? "copilot-tab-btn--active active" : ""}`}>
             <Layers size={13} />
             <span>Рой ИИ</span>
           </button>
@@ -404,6 +388,17 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                   pending={pending}
                   nameCache={nameCache}
                   onConfirm={onConfirm}
+                />
+              )}
+
+              {/* CoT Extended Thinking Stream during model execution */}
+              {busy && (
+                <CopilotThinkingIndicator
+                  isThinking={busy}
+                  activeTooth={uiContext.activeTooth}
+                  thoughtProcess={phase || "Анализ клинической картины и формирование решения..."}
+                  speedMode={copilotSettings.speedMode}
+                  showThinkingProcess={copilotSettings.showThinkingProcess}
                 />
               )}
             </div>
@@ -473,6 +468,18 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           </div>
         </form>
       </aside>
+      <CopilotSettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+      />
+      <CopilotHistoryDrawer
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        onSelectThread={(tId) => {
+          selectThread(tId);
+          setIsHistoryOpen(false);
+        }}
+      />
     </>
   );
 

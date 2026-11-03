@@ -79,4 +79,49 @@ describe('CopilotDrawer Canonical SSOT & Responsive Rendering', () => {
     );
     assert.ok(html.includes('copilot-drawer-drag-handle'));
   });
+
+  it('renders action buttons for History and Settings in drawer header', () => {
+    const html = renderToString(
+      <CopilotDrawer
+        isOpen={true}
+        messages={[]}
+        busy={false}
+        phase={null}
+        pending={null}
+        nameCache={{}}
+        nudges={[]}
+        activeTab="chat"
+        onTabChange={() => {}}
+        onClose={() => {}}
+        onSend={() => {}}
+        onConfirm={() => {}}
+        onReset={() => {}}
+      />
+    );
+    assert.ok(html.includes('data-testid="copilot-open-history-btn"'), 'Missing History button in drawer header');
+    assert.ok(html.includes('data-testid="copilot-open-settings-btn"'), 'Missing Settings button in drawer header');
+    assert.ok(html.includes('data-testid="copilot-open-stenographer-btn"'), 'Missing Stenographer button in drawer header');
+  });
+
+  it('renders Extended Thinking Indicator (CoT) when model is busy in chat feed', () => {
+    const html = renderToString(
+      <CopilotDrawer
+        isOpen={true}
+        messages={[]}
+        busy={true}
+        phase="Формирование плана лечения..."
+        pending={null}
+        nameCache={{}}
+        nudges={[]}
+        activeTab="chat"
+        onTabChange={() => {}}
+        onClose={() => {}}
+        onSend={() => {}}
+        onConfirm={() => {}}
+        onReset={() => {}}
+      />
+    );
+    assert.ok(html.includes('copilot-thinking-card'), 'Missing copilot-thinking-card when busy');
+    assert.ok(html.includes('Формирование плана лечения'), 'Missing phase text in thinking stream');
+  });
 });

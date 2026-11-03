@@ -266,7 +266,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 					latencyMs: 11,
 					status: "В сети",
 					port: effectivePort,
-					device: "Кассовый регистратор Атол 27Ф (54-ФЗ)",
+					device: "Кассовый регистратор Атол 27Ф",
 					shiftOpen: true,
 					fnActive: true,
 					message: "Кассовый узел онлайн. Готов к фискализации чеков без блокировок.",
