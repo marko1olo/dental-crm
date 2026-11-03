@@ -32,6 +32,11 @@ const agentChatBodySchema = z.object({
 	compactThresholdTokens: z.number().int().positive().optional(),
 	slidingWindowRetainedTurns: z.number().int().positive().optional(),
 	initialSummary: z.string().optional(),
+	trustLevel: z.enum(["confirm_all", "balanced", "autonomous"]).optional(),
+	speedMode: z.enum(["turbo", "deep_reasoning"]).optional(),
+	activeTooth: z.number().int().min(11).max(85).nullable().optional(),
+	swarmRole: z.enum(["orchestrator", "triage", "odontogram_inquisitor", "billing_sentinel", "vision_specialist"]).optional(),
+	fallbackToDeterministicAgent: z.boolean().optional(),
 });
 
 function formatSseMessage(event: string, data: unknown): string {
@@ -191,108 +196,6 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 				tools,
 				count: tools.length,
 				runtimeMode,
-			});
-		},
-	);
-
-	// ─── POST /api/agent/workstation/probe ──────────────────────────────────────
-	server.post(
-		"/api/agent/workstation/probe",
-		{ config: { tenantTxSelfManaged: true } },
-		async (request: FastifyRequest, reply: FastifyReply) => {
-			const resolvedOrgId = await requireResolvedOrganizationId(
-				request,
-				reply,
-				"workstation probe",
-			);
-			if (!resolvedOrgId) return;
-
-			const probeSchema = z.object({
-				probeType: z.enum([
-					"ping_dropzone",
-					"fiscal_com_status",
-					"visiograph_bridge",
-					"custom_probe",
-				]),
-				targetPath: z.string().optional(),
-				comPort: z.string().optional(),
-				dangerousAction: z
-					.enum(["none", "reconnect_com", "clear_cache", "restart_service"])
-					.optional()
-					.default("none"),
-				confirmed: z.boolean().optional().default(false),
-			});
-
-			const parseResult = probeSchema.safeParse(request.body ?? {});
-			if (!parseResult.success) {
-				return reply.code(400).send({
-					error: "ValidationError",
-					message: "Некорректные параметры диагностического зонда",
-				});
-			}
-
-			const { probeType, targetPath, comPort, dangerousAction, confirmed } = parseResult.data;
-
-			// Two-Phase Guard: опасные действия требуют подтверждения врача
-			if (dangerousAction !== "none" && !confirmed) {
-				return reply.code(200).send({
-					success: false,
-					requiresConfirmation: true,
-					confirmationMessage: `Требуется подтверждение врача: операция '${dangerousAction}' временно прервет связь с оборудованием.`,
-					probeType,
-				});
-			}
-
-			if (probeType === "ping_dropzone") {
-				const effectivePath = targetPath || "C:\\Radiology\\Export";
-				return reply.code(200).send({
-					success: true,
-					isConnected: true,
-					probeType,
-					latencyMs: 6,
-					status: "В сети",
-					path: effectivePath,
-					device: "Сетевая папка КЛКТ / ОПТГ томографов",
-					message: "Каталог томограмм доступен. Обнаружено 12 срезов (Vatech / Romexis).",
-				});
-			}
-
-			if (probeType === "fiscal_com_status") {
-				const effectivePort = comPort || "COM1";
-				return reply.code(200).send({
-					success: true,
-					isConnected: true,
-					probeType,
-					latencyMs: 11,
-					status: "В сети",
-					port: effectivePort,
-					device: "Кассовый регистратор Атол 27Ф",
-					shiftOpen: true,
-					fnActive: true,
-					message: "Кассовый узел онлайн. Готов к фискализации чеков без блокировок.",
-				});
-			}
-
-			if (probeType === "visiograph_bridge") {
-				return reply.code(200).send({
-					success: true,
-					isConnected: true,
-					probeType,
-					latencyMs: 4,
-					status: "В сети",
-					device: "RVG-визиограф Planmeca ProSensor v2",
-					resolution: "20 пл/мм",
-					message: "Оптический мост TWAIN/Direct active. Готов к экспозиции.",
-				});
-			}
-
-			return reply.code(200).send({
-				success: true,
-				isConnected: true,
-				probeType,
-				latencyMs: 8,
-				status: "В сети",
-				message: "Диагностический зонд оборудования выполнен штатно.",
 			});
 		},
 	);

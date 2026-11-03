@@ -2,6 +2,15 @@
 
 > ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ:** **[`C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — абсолютный закон, обязателен к прочтению от первого до последнего символа перед началом любых действий!
 
+> 🎬 **ПРОТОКОЛ ВОССТАНОВЛЕНИЯ ПОСЛЕ СЖАТИЯ КОНТЕКСТА (MEMENTO PROTOCOL & ANTI-AMNESIA):**  
+> При компактизации контекста или создании субагента кратковременная память теряется.  
+> 🛑 **ЗАПРЕТ СЛЕПЫХ ПРАВОК:** Запрещено писать код по неполной сводке!  
+> **4 шага заземления перед любой мутацией:**  
+> 1. `git status` и `git diff --stat` $\to$ проверь реальное состояние файлов на диске.  
+> 2. Прочитай активный план в `scratch/` или артефактах беседы (`brain/<conversation-id>`).  
+> 3. Вызови `read_file` на редактируемые файлы (порциями по 800 строк) — смотри код своими глазами.  
+> 4. Освежи профильные спецификации из `.agents/` и `config/references/` через `read_file` ПЕРЕД написанием кода!
+
 ## 📖 AGENT DOCUMENTATION INDEX
 Before starting any development or refactoring, you MUST load and read the following modular directories:
 - **[Documentation Index & Navigation Matrix](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Entry point to the system and AI Agent Navigation Matrix.

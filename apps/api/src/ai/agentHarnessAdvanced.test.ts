@@ -13,11 +13,12 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { type AgentHarnessEvent, buildAgentSystemPrompt, runAgentHarness } from "./agentHarness.js";
-import type {
-	AgentRouterChatParams,
-	AgentRouterChatResponse,
-	AgentRouterClient,
-	AgentRouterStreamCallbacks,
+import {
+	type AgentRouterChatParams,
+	type AgentRouterChatResponse,
+	type AgentRouterClient,
+	type AgentRouterStreamCallbacks,
+	AgentRouterAllKeysExhaustedError,
 } from "./agentRouterClient.js";
 import type { DentalToolContext } from "./dentalTools.js";
 import { clearActivePlansStore } from "./dentalTools/taskPlanTools.js";
@@ -390,4 +391,31 @@ test("6. buildAgentSystemPrompt: Injects in-app multi-agent swarm role directive
 	assert.ok(visionPrompt.includes("[РОЛЬ РОЯ: 🩻 VISION / DICOM SPECIALIST]"));
 	assert.ok(visionPrompt.includes("Хаунсфилда (D1–D4)"));
 	assert.ok(visionPrompt.includes("DESKTOP_NATIVE"));
+});
+
+test("7. runAgentHarness: Fallback to deterministic ReAct cycle when API keys are exhausted", async () => {
+	const exhaustedClient: Partial<AgentRouterClient> = {
+		async createChatCompletion() {
+			throw new AgentRouterAllKeysExhaustedError("Все 0 ключей API исчерпали лимиты");
+		},
+		async createStreamingChatCompletion() {
+			throw new AgentRouterAllKeysExhaustedError("Все 0 ключей API исчерпали лимиты");
+		},
+	};
+
+	const events: AgentHarnessEvent[] = [];
+	const result = await runAgentHarness({
+		messages: [{ role: "user", content: "Пациент 46 зуб острая боль от сладкого, кариес эмали" }],
+		context: dummyContext,
+		client: exhaustedClient as AgentRouterClient,
+		trustLevel: "confirm_all",
+		onEvent: (e) => events.push(e),
+	});
+
+	assert.ok(result.text.length > 0, "Must return clinical verdict");
+	assert.ok(result.iterations >= 1, "Must execute iterations in deterministic ReAct cycle");
+	assert.ok(result.toolCalls.length >= 1, "Must execute tools in fallback ReAct cycle");
+	assert.ok(events.some((e) => e.type === "reasoning" && e.text.includes("СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК")));
+	assert.ok(events.some((e) => e.type === "confirmation_required"), "Must emit confirmation_required under confirm_all");
+	assert.ok(events.some((e) => e.type === "done"));
 });

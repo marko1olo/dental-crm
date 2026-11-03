@@ -9,14 +9,10 @@ import { create } from "zustand";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../lib/demoMode";
 import {
-	type SwarmAgentCard,
-	type SwarmAgentRole,
 	type ContextTelemetryData,
-	PRODUCTION_SWARM_AGENTS,
 	PRODUCTION_TELEMETRY,
-	SHOWCASE_SWARM_AGENTS,
 	SHOWCASE_TELEMETRY,
-} from "../components/copilot/swarm/swarmTypes";
+} from "../components/copilot/telemetry/telemetryTypes";
 import {
 	SHOWCASE_MEMORY_FACTS,
 	SHOWCASE_THREADS,
@@ -138,7 +134,6 @@ export interface CopilotStoreState {
 	activeDiff: ActiveDiff | null;
 	isSettingsOpen: boolean;
 	isHistoryOpen: boolean;
-	swarmAgents: SwarmAgentCard[];
 	telemetry: ContextTelemetryData;
 
 	// Actions
@@ -146,7 +141,6 @@ export interface CopilotStoreState {
 	setTrustLevel: (level: AiTrustLevel) => void;
 	setRuntimeMode: (mode: CopilotRuntimeEnvironment) => void;
 	refreshRuntimeEnvironment: () => CopilotRuntimeEnvironment;
-	triggerSwarmAudit: (agentId?: SwarmAgentRole) => void;
 	updateTelemetry: (patch: Partial<ContextTelemetryData>) => void;
 	addMemoryFact: (category: AiMemoryFact["category"], fact: string) => void;
 	removeMemoryFact: (id: string) => void;
@@ -200,7 +194,6 @@ export function getInitialCopilotState() {
 	const defaultThreads: CopilotThread[] = isDemo ? SHOWCASE_THREADS : [];
 	const defaultMemory: AiMemoryFact[] = isDemo ? SHOWCASE_MEMORY_FACTS : [];
 	const defaultLogs: ToolExecutionLog[] = isDemo ? SHOWCASE_TOOL_LOGS : [];
-	const defaultAgents: SwarmAgentCard[] = isDemo ? SHOWCASE_SWARM_AGENTS : PRODUCTION_SWARM_AGENTS;
 	const defaultTelemetry: ContextTelemetryData = isDemo ? SHOWCASE_TELEMETRY : PRODUCTION_TELEMETRY;
 
 	const threads = safeLocalStorageGetJson("dente_copilot_threads", defaultThreads) || [];
@@ -212,7 +205,6 @@ export function getInitialCopilotState() {
 		activeThreadId,
 		memoryFacts,
 		toolExecutionLogs: defaultLogs,
-		swarmAgents: defaultAgents,
 		telemetry: defaultTelemetry,
 	};
 }
@@ -233,7 +225,6 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	activeDiff: null,
 	isSettingsOpen: false,
 	isHistoryOpen: false,
-	swarmAgents: initialState.swarmAgents,
 	telemetry: initialState.telemetry,
 
 	updateSettings: (patch) => {
@@ -256,24 +247,6 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		const detected = detectRuntimeEnvironment();
 		get().updateSettings({ runtimeMode: detected });
 		return detected;
-	},
-
-	triggerSwarmAudit: (agentId) => {
-		set((state) => ({
-			swarmAgents: state.swarmAgents.map((agent) => {
-				if (!agentId || agent.id === agentId) {
-					const nowStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
-					return {
-						...agent,
-						status: "completed" as const,
-						statusLabel: "Готово",
-						lastAuditAt: nowStr,
-						inspectedRecordsCount: agent.inspectedRecordsCount + 1,
-					};
-				}
-				return agent;
-			}),
-		}));
 	},
 
 	updateTelemetry: (patch) => {

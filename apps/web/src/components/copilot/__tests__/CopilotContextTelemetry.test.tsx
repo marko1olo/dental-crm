@@ -1,12 +1,11 @@
 /**
- * @file CopilotSwarmTelemetry.test.tsx
- * @description Vitest/Node test suite for DENTE Context Telemetry Bar & In-App Multi-Agent Swarm Inspector.
+ * @file CopilotContextTelemetry.test.tsx
+ * @description Vitest/Node test suite for DENTE Context Telemetry Bar (Antigravity Language Server Standard).
  * Verifies:
  * 1. Context Telemetry Bar: patient info, model badge, response latency, token budget progress & soft compression markers (70% Pruning, 85% Sliding Window), gateway status.
- * 2. Multi-Agent Swarm Inspector: 4 canonical subagent roles (Triage Agent, Odontogram & Diary Inquisitor, Billing & Fiscal Sentinel, Vision & DICOM Specialist), status badges, audit metrics, single Primary CTA (Mandate 8am), non-disabled buttons (Mandate 8e).
- * 3. Mount in CopilotStudioModal and CopilotDrawer.
- * 4. Mandate 8wy: Strict Production vs Showcase isolation.
- * 5. Architectural invariants: file limits (Mandate 8b), strictly 0 cartoon emojis (Mandate 8d pt 7).
+ * 2. Mount in CopilotStudioModal (tabs: dialog, actions, memory) and CopilotDrawer (tabs: chat, pending).
+ * 3. Mandate 8wy: Strict Production vs Showcase isolation (no fake mockups in production).
+ * 4. Architectural invariants: file limits (Mandate 8b), strictly 0 cartoon emojis (Mandate 8d pt 7).
  */
 
 import { describe, it } from "node:test";
@@ -18,11 +17,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { CopilotContextTelemetryBar } from "../telemetry/CopilotContextTelemetryBar";
-import { CopilotSwarmPanel } from "../swarm/CopilotSwarmPanel";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { CopilotDrawer } from "../CopilotDrawer";
 import { useCopilotStore, getInitialCopilotState } from "../../../store/copilotStore";
-import { DEFAULT_SWARM_AGENTS } from "../swarm/swarmTypes";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -86,71 +83,26 @@ describe("DENTE Context Telemetry Bar (Antigravity Language Server Standard)", (
 	});
 });
 
-describe("DENTE In-App Multi-Agent Swarm Inspector (.agents/AI_ASSISTANT_SUBAGENT_SWARM.md)", () => {
-	it("1. отображает все 4 канонические роли субагентов клинического роя", () => {
-		const html = renderToString(<CopilotSwarmPanel />);
-		assert.ok(html.includes("Triage Agent"), "1. Triage Agent обязан присутствовать");
-		assert.ok(html.includes("Odontogram") && html.includes("Diary Inquisitor"), "2. Odontogram & Diary Inquisitor обязан присутствовать");
-		assert.ok(html.includes("Billing") && html.includes("Fiscal Sentinel"), "3. Billing & Fiscal Sentinel обязан присутствовать");
-		assert.ok(html.includes("Vision") && html.includes("DICOM Specialist"), "4. Vision & DICOM Specialist обязан присутствовать");
-
-		assert.ok(html.includes("Маршрутизация обращений"), "Роль триажа обязана описываться");
-		assert.ok(html.includes("Авто-аудит ЭМК"), "Роль инквизитора обязана описываться");
-		assert.ok(html.includes("Сверка копеек"), "Роль сентинела обязана описываться");
-		assert.ok(html.includes("Анализ RVG"), "Роль рентгенолога обязана описываться");
-	});
-
-	it("2. отображает статусы субагентов (Ожидание / В работе / Готово), последний аудит и количество проверенных записей", () => {
-		const html = renderToString(<CopilotSwarmPanel />);
-		assert.ok(html.includes("В работе") || html.includes("Готово") || html.includes("Ожидание"), "Статусы роя обязаны присутствовать");
-		assert.ok(html.includes("Последний аудит:"), "Время последнего аудита обязано отображаться");
-		assert.ok(html.includes("Проверено записей:"), "Счётчик проверенных записей обязан отображаться");
-		assert.ok(html.includes("обращений"), "Метрика обращений для триажа обязана быть");
-		assert.ok(html.includes("карт ЭМК"), "Метрика карт для инквизитора обязана быть");
-		assert.ok(html.includes("чеков"), "Метрика чеков для сентинела обязана быть");
-		assert.ok(html.includes("снимков КЛКТ"), "Метрика снимков для визиографа обязана быть");
-	});
-
-	it("3. Мандат 8am: ровно ОДНА Primary CTA кнопка («Запустить полный аудит роя»)", () => {
-		const html = renderToString(<CopilotSwarmPanel />);
-		assert.ok(html.includes("data-testid=\"swarm-run-all-cta\""), "Primary CTA обязан иметь data-testid");
-		assert.ok(html.includes("copilot-primary-cta"), "Primary CTA обязан использовать класс .copilot-primary-cta");
-		assert.ok(html.includes("Запустить полный аудит роя"), "Текст кнопки обязан быть 'Запустить полный аудит роя'");
-		const primaryMatches = html.match(/copilot-primary-cta/g) || [];
-		assert.equal(primaryMatches.length, 1, "Мандат 8am: ровно одна Primary CTA кнопка на видимый контекст");
-	});
-
-	it("4. Мандат 8e: кнопки проверки никогда не должны быть заблокированы (disabled запрещен)", () => {
-		const html = renderToString(<CopilotSwarmPanel />);
-		assert.equal(html.includes("disabled"), false, "Мандат 8e: кнопки врача никогда не блокируются");
-	});
-
-	it("5. triggerSwarmAudit интерактивно обновляет счетчики и статусы роя", () => {
-		const initialCount = useCopilotStore.getState().swarmAgents.find((a) => a.id === "triage")?.inspectedRecordsCount || 0;
-		useCopilotStore.getState().triggerSwarmAudit("triage");
-		const updatedCount = useCopilotStore.getState().swarmAgents.find((a) => a.id === "triage")?.inspectedRecordsCount || 0;
-		assert.equal(updatedCount, initialCount + 1, "triggerSwarmAudit обязан инкрементировать счетчик проверенных записей");
-	});
-});
-
-describe("Mounting into CopilotStudioModal & CopilotDrawer", () => {
-	it("1. CopilotStudioModal монтирует Context Telemetry Bar и вкладку «Клинический рой»", () => {
+describe("Clean Mounting into CopilotStudioModal & CopilotDrawer (Zero Mockup Leaks)", () => {
+	it("1. CopilotStudioModal монтирует Context Telemetry Bar и чистые клинические вкладки (dialog, actions, memory)", () => {
 		const html = renderToString(
 			<CopilotStudioModal
 				isOpen={true}
 				onClose={() => {}}
 				activeTooth={36}
 				patientName="Смирнов А.П."
-				initialTab="swarm"
+				initialTab="dialog"
 			/>
 		);
 		assert.ok(html.includes("data-testid=\"copilot-context-telemetry-bar\""), "Телеметрия контекста обязана присутствовать в студии");
-		assert.ok(html.includes("Клинический рой"), "Вкладка Клинический рой обязана отображаться в навигации");
-		assert.ok(html.includes("data-testid=\"copilot-swarm-panel\""), "Панель роя обязана рендериться при activeTab='swarm'");
-		assert.ok(html.includes("Triage Agent"), "Роли роя обязаны рендериться внутри студии");
+		assert.ok(html.includes("Клинический диалог"), "Вкладка 'Клинический диалог' обязана присутствовать");
+		assert.ok(html.includes("Быстрые действия"), "Вкладка 'Быстрые действия' обязана присутствовать");
+		assert.ok(html.includes("Память ИИ"), "Вкладка 'Память ИИ' обязана присутствовать");
+		assert.ok(!html.includes("Клинический рой"), "Бутафорская вкладка 'Клинический рой' обязана отсутствовать");
+		assert.ok(!html.includes("Triage Agent"), "Внутренние промпт-архетипы субагентов не должны просачиваться врачу");
 	});
 
-	it("2. CopilotDrawer монтирует Context Telemetry Bar и вкладку роя", () => {
+	it("2. CopilotDrawer монтирует Context Telemetry Bar и чистые вкладки (chat, pending)", () => {
 		const html = renderToString(
 			<CopilotDrawer
 				isOpen={true}
@@ -160,7 +112,7 @@ describe("Mounting into CopilotStudioModal & CopilotDrawer", () => {
 				pending={null}
 				nameCache={{}}
 				nudges={[]}
-				activeTab="swarm"
+				activeTab="chat"
 				onTabChange={() => {}}
 				onClose={() => {}}
 				onSend={() => {}}
@@ -170,8 +122,9 @@ describe("Mounting into CopilotStudioModal & CopilotDrawer", () => {
 			/>
 		);
 		assert.ok(html.includes("data-testid=\"copilot-context-telemetry-bar\""), "Телеметрия контекста обязана присутствовать в дровере");
-		assert.ok(html.includes("Рой ИИ"), "Таб 'Рой ИИ' обязан отображаться в табах дровера");
-		assert.ok(html.includes("data-testid=\"copilot-swarm-panel\""), "Панель роя обязана рендериться в дровере при activeTab='swarm'");
+		assert.ok(html.includes("Чат"), "Таб 'Чат' обязан отображаться в табах дровера");
+		assert.ok(html.includes("Задачи"), "Таб 'Задачи' обязан отображаться в табах дровера");
+		assert.ok(!html.includes("Рой ИИ"), "Бутафорский таб 'Рой ИИ' обязан отсутствовать");
 	});
 });
 
@@ -185,10 +138,6 @@ describe("Mandate 8wy: Production vs Showcase Isolation", () => {
 		assert.equal(prodState.telemetry.patientName, "", "В боевом режиме имя пациента обязано быть пустым");
 		assert.equal(prodState.telemetry.activeTooth, null, "В боевом режиме активный зуб обязан быть null");
 		assert.equal(prodState.telemetry.activeTokens, 0, "В боевом режиме токены обязаны быть 0");
-
-		assert.ok(prodState.swarmAgents.every((a) => a.status === "idle"), "Все агенты боевого роя обязаны иметь статус idle");
-		assert.ok(prodState.swarmAgents.every((a) => a.inspectedRecordsCount === 0), "Счетчик проверок обязан быть 0");
-		assert.ok(prodState.swarmAgents.every((a) => a.lastAuditAt === "Не проводился"), "Время последнего аудита обязано быть 'Не проводился'");
 	});
 
 	it("2. CopilotContextTelemetryBar в боевом режиме при пустом пациенте отображает «Пациент не выбран» и «0 / 128k токенов»", () => {
@@ -223,9 +172,6 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 		const studioLines = fs.readFileSync(path.join(__dirname, "../CopilotStudioModal.tsx"), "utf-8").split("\n").length;
 		assert.ok(studioLines >= 380 && studioLines <= 450, `CopilotStudioModal.tsx: ${studioLines} строк (ожидалось 380–450)`);
 
-		const swarmPanelLines = fs.readFileSync(path.join(__dirname, "../swarm/CopilotSwarmPanel.tsx"), "utf-8").split("\n").length;
-		assert.ok(swarmPanelLines >= 140 && swarmPanelLines <= 250, `CopilotSwarmPanel.tsx: ${swarmPanelLines} строк (ожидалось 140–250)`);
-
 		const telemetryLines = fs.readFileSync(path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"), "utf-8").split("\n").length;
 		assert.ok(telemetryLines >= 80 && telemetryLines <= 200, `CopilotContextTelemetryBar.tsx: ${telemetryLines} строк (ожидалось 80–200)`);
 
@@ -245,8 +191,8 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 			path.join(__dirname, "../CopilotStudioModal.tsx"),
 			path.join(__dirname, "../CopilotDrawer.tsx"),
 			path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"),
-			path.join(__dirname, "../swarm/CopilotSwarmPanel.tsx"),
-			path.join(__dirname, "../swarm/swarmTypes.ts"),
+			path.join(__dirname, "../telemetry/telemetryTypes.ts"),
+			path.join(__dirname, "../settings/CopilotSettingsEquipmentTab.tsx"),
 			path.join(__dirname, "../../../store/copilotStore.ts"),
 			path.join(__dirname, "../../../store/copilotShowcaseData.ts"),
 		];

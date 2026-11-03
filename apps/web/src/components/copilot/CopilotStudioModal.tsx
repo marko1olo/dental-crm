@@ -6,7 +6,7 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import {
   X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt,
-  Sparkles, BookOpen, Camera, Sliders, MessageSquare, Brain, HardDrive, Layers
+  Sparkles, BookOpen, Camera, Sliders, MessageSquare, Brain, HardDrive
 } from "lucide-react";
 import "./styles/copilotStudio.css";
 import { useVoiceEngine } from "../voice/voiceEngine";
@@ -21,9 +21,8 @@ import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
 import { CopilotWorkstationTab } from "./CopilotWorkstationTab";
 import { CopilotMemoryTab } from "./CopilotMemoryTab";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
-import { CopilotSwarmPanel } from "./swarm/CopilotSwarmPanel";
 
-export type CopilotStudioTab = "dialog" | "actions" | "swarm" | "workstation" | "memory";
+export type CopilotStudioTab = "dialog" | "actions" | "workstation" | "memory";
 
 export interface CopilotStudioModalProps {
   isOpen: boolean;
@@ -267,7 +266,6 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         <div className="copilot-tabs-nav flex border-b border-[var(--line)] px-4 gap-2 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar">
           <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "dialog" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><BookOpen size={14} /><span>Клинический диалог</span></button>
           <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "actions" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Activity size={14} /><span>Быстрые действия</span></button>
-          <button type="button" onClick={() => setActiveTab("swarm")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "swarm" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Layers size={14} /><span>Клинический рой</span></button>
           <button type="button" onClick={() => setActiveTab("workstation")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "workstation" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><HardDrive size={14} /><span>Станция ПК</span></button>
           <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "memory" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Brain size={14} /><span>Память ИИ</span></button>
         </div>
@@ -421,8 +419,6 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         {activeTab === "workstation" && <CopilotWorkstationTab />}
         {/* ВКЛАДКА 4: ПАМЯТЬ ИИ (LONG-TERM CLINICAL PREFERENCES) */}
         {activeTab === "memory" && <CopilotMemoryTab />}
-        {/* ВКЛАДКА 5: КЛИНИЧЕСКИЙ РОЙ (IN-APP MULTI-AGENT SWARM) */}
-        {activeTab === "swarm" && <CopilotSwarmPanel />}
         {/* Модальное окно настроек ИИ */}
         <CopilotSettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} onOpenMemoryTab={() => { setSettingsOpen(false); setActiveTab("memory"); }} />
 

@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import {
   X, RotateCcw, Send, Mic, MicOff, Sparkles, Check, AlertTriangle,
   Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator,
-  Globe, Monitor, Camera, FolderSearch, Receipt, Layers, MessageSquare, Sliders
+  Globe, Monitor, Camera, FolderSearch, Receipt, MessageSquare, Sliders
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
@@ -21,7 +21,6 @@ import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
-import { CopilotSwarmPanel } from "./swarm/CopilotSwarmPanel";
 import type { CopilotDrawerTab } from "./drawer/drawerTypes";
 import type { CopilotUiMessage, PendingConfirmation, ProactiveNudge } from "./copilotTypes";
 import "./CopilotDrawer.css";
@@ -327,11 +326,6 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             className={`copilot-tab-btn ${activeTab === "pending" ? "copilot-tab-btn--active active" : ""}`}>
             Задачи {totalTasksCount > 0 && <span className="copilot-tab-badge copilot-tab-badge--alert">{totalTasksCount}</span>}
           </button>
-          <button type="button" role="tab" aria-selected={activeTab === "swarm"} onClick={() => onTabChange("swarm")}
-            className={`copilot-tab-btn ${activeTab === "swarm" ? "copilot-tab-btn--active active" : ""}`}>
-            <Layers size={13} />
-            <span>Рой ИИ</span>
-          </button>
         </div>
 
         {/* Nudges Banner */}
@@ -402,8 +396,6 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                 />
               )}
             </div>
-          ) : activeTab === "swarm" ? (
-            <CopilotSwarmPanel />
           ) : (
             <CopilotDrawerTasksTab
               totalEstimatesSumRub={totalEstimatesSumRub}

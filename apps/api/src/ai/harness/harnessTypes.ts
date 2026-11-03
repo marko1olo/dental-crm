@@ -111,6 +111,11 @@ export interface AgentHarnessParams {
 	initialPlan?: TaskPlan | undefined;
 	// Multi-agent swarm role
 	swarmRole?: "orchestrator" | "triage" | "odontogram_inquisitor" | "billing_sentinel" | "vision_specialist" | undefined;
+	// Autonomy & trust level (Mandate 8e)
+	trustLevel?: "confirm_all" | "balanced" | "autonomous" | undefined;
+	speedMode?: "turbo" | "deep_reasoning" | undefined;
+	activeTooth?: number | null | undefined;
+	fallbackToDeterministicAgent?: boolean | undefined;
 }
 
 export interface AgentHarnessResult {

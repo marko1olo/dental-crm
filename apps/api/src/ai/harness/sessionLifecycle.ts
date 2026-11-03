@@ -8,10 +8,12 @@ import {
 	type AgentRouterChatResponse,
 	agentRouterClient,
 	maskApiKey,
+	AgentRouterAllKeysExhaustedError,
 } from "../agentRouterClient.js";
 import {
 	type DentalToolContext,
 	getDentalTools,
+	isDestructiveDentalTool,
 } from "../dentalTools.js";
 import {
 	compactConversationHistory,
@@ -29,6 +31,7 @@ import {
 } from "./harnessTypes.js";
 import { buildAgentSystemPrompt } from "./systemPromptBuilder.js";
 import { ToolDispatcher } from "./toolDispatcher.js";
+import { runDeterministicClinicalFallback } from "./reactFallbackRunner.js";
 
 /**
  * Runs the autonomous ReAct execution loop for the clinical dental assistant.
@@ -110,6 +113,7 @@ export async function runAgentHarness(
 		effectiveToolContext,
 		Boolean(params.requireConfirmationForDestructive),
 		onEvent,
+		params.trustLevel || "balanced",
 	);
 
 	const recordedToolCalls: Array<{
@@ -366,6 +370,30 @@ export async function runAgentHarness(
 				turnErr instanceof Error
 					? maskApiKey(turnErr.message)
 					: "Внутренняя ошибка выполнения модели";
+
+			// Fallback to high-IQ deterministic clinical ReAct engine when cloud LLM is unreachable or keys are exhausted
+			const isKeyOrAuthError =
+				turnErr instanceof AgentRouterAllKeysExhaustedError ||
+				(turnErr instanceof Error && (
+					turnErr.message.includes("AgentRouterAllKeysExhaustedError") ||
+					turnErr.message.includes("исчерпали лимиты") ||
+					turnErr.message.includes("Все 0 ключей") ||
+					turnErr.message.includes("Auth Error") ||
+					turnErr.message.includes("API key not valid") ||
+					turnErr.message.includes("ENOTFOUND") ||
+					turnErr.message.includes("fetch failed")
+				));
+
+			if (isKeyOrAuthError && params.fallbackToDeterministicAgent !== false) {
+				return await runDeterministicClinicalFallback(
+					params,
+					safeErrMsg,
+					recordedToolCalls,
+					activePlan,
+					hasCompacted,
+					currentSummary,
+				);
+			}
 
 			onEvent?.({
 				type: "error",

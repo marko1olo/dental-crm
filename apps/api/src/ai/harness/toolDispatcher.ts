@@ -29,6 +29,7 @@ export class ToolDispatcher {
 		private readonly effectiveToolContext: DentalToolContext,
 		private readonly requireConfirmationForDestructive = false,
 		private readonly onEvent?: (event: AgentHarnessEvent) => void | Promise<void>,
+		private readonly trustLevel: "confirm_all" | "balanced" | "autonomous" = "balanced",
 	) {}
 
 	/**
@@ -49,13 +50,17 @@ export class ToolDispatcher {
 			callId: call.id,
 		});
 
-		// 1. Two-phase execution guard: check if operation is destructive
+		// 1. Two-phase execution guard based on Trust Level (Mandate 8e: Doctor Autonomy)
 		const isDestructive = isDestructiveDentalTool(toolName);
-		if (
-			this.requireConfirmationForDestructive &&
-			isDestructive &&
-			!this.effectiveToolContext.allowLocalExecution
-		) {
+		const needsConfirmation =
+			this.trustLevel === "confirm_all"
+				? true
+				: this.trustLevel === "autonomous"
+					? false
+					: (this.requireConfirmationForDestructive || isDestructive) &&
+						!this.effectiveToolContext.allowLocalExecution;
+
+		if (needsConfirmation) {
 			const descRu = getToolDescriptionRu(toolName);
 			this.onEvent?.({
 				type: "confirmation_required",

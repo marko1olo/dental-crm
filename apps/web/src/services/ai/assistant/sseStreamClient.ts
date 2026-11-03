@@ -25,8 +25,9 @@ export async function requestAssistantStream(
 
 	const endpoints = [
 		`${apiBaseUrl}/api/v1/copilot/chat`,
-		`${apiBaseUrl}/api/v1/ai/stream`,
-		`${apiBaseUrl}/api/v1/ai/chat`,
+		`${apiBaseUrl}/api/agent/chat`,
+		`${apiBaseUrl}/api/copilot/chat`,
+		`${apiBaseUrl}/api/ai/chat`,
 	];
 
 	for (const url of endpoints) {
@@ -36,13 +37,20 @@ export async function requestAssistantStream(
 				headers: {
 					"Content-Type": "application/json",
 					Accept: "text/event-stream",
-					...(token ? { Authorization: `Bearer ${token}` } : {}),
+					...(token
+						? {
+								Authorization: `Bearer ${token}`,
+								"x-dente-clinic-token": token,
+								"x-dente-staff-token": token,
+							}
+						: {}),
 				},
 				body: JSON.stringify({
 					conversationId: sessionId,
 					sessionId,
 					message: promptWithContext,
 					prompt: promptWithContext,
+					messages: [{ role: "user", content: promptWithContext }],
 				}),
 				signal,
 			});

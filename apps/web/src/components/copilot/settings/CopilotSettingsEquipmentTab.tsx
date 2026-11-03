@@ -1,14 +1,13 @@
 /**
  * @file CopilotSettingsEquipmentTab.tsx
- * @description Cabinet equipment & hardware integration tab:
- * Tomography dropzones, DICOM viewers, fiscal register COM ports,
- * dictation hotkeys, and hardware ergonomics (Mandate 8b <= 250 lines).
+ * @description Cabinet workstation & ergonomics settings tab:
+ * Tomography viewer app, local DICOM export directory, global dictation hotkey,
+ * and chairside touch ergonomics (Mandate 8b <= 200 lines).
  */
 
-import React, { useState } from "react";
-import { HardDrive, Monitor, RefreshCw, Sliders, Smartphone, Vibrate } from "lucide-react";
+import React from "react";
+import { HardDrive, Monitor, Sliders, Vibrate } from "lucide-react";
 import type { TomographyViewerApp } from "../../../store/copilotStore";
-import { showToast } from "../../GlobalToast";
 
 export interface CopilotSettingsEquipmentTabProps {
 	localDropzonePath: string;
@@ -36,25 +35,6 @@ export function CopilotSettingsEquipmentTab({
 	screenWakeLock, setWakeLock,
 	hapticFeedbackEnabled, setHaptic,
 }: CopilotSettingsEquipmentTabProps) {
-	const [testingDropzone, setTestingDropzone] = useState(false);
-	const [testingCom, setTestingCom] = useState(false);
-
-	const handleTestDropzone = () => {
-		setTestingDropzone(true);
-		setTimeout(() => {
-			setTestingDropzone(false);
-			showToast(`Связь с Dropzone ${localDropzonePath} подтверждена: сетевой узел доступен (6ms)`, "success");
-		}, 400);
-	};
-
-	const handleTestCom = () => {
-		setTestingCom(true);
-		setTimeout(() => {
-			setTestingCom(false);
-			showToast(`Порт ${fiscalRegisterComPort} активен: кассовый аппарат готов к печати (11ms)`, "success");
-		}, 400);
-	};
-
 	return (
 		<div className="space-y-4 text-xs" data-testid="copilot-settings-equipment-tab">
 			<div className="p-3 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] flex items-start gap-2.5">
@@ -68,20 +48,10 @@ export function CopilotSettingsEquipmentTab({
 			</div>
 
 			<section className="space-y-1.5">
-				<div className="flex items-center justify-between">
-					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<HardDrive size={14} className="text-[var(--teal,#0d9488)]" />
-						<span>Сетевая папка визиографов и КЛКТ (ПК Dropzone)</span>
-					</label>
-					<button
-						type="button"
-						onClick={handleTestDropzone}
-						className="secondary-button text-[10px] font-semibold h-6 px-2 rounded border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer flex items-center gap-1"
-					>
-						<RefreshCw size={10} className={testingDropzone ? "animate-spin" : ""} />
-						<span>Проверить путь</span>
-					</button>
-				</div>
+				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+					<HardDrive size={14} className="text-[var(--teal,#0d9488)]" />
+					<span>Сетевая папка визиографов и КЛКТ (ПК Dropzone)</span>
+				</label>
 				<input
 					type="text"
 					value={localDropzonePath}
@@ -94,7 +64,10 @@ export function CopilotSettingsEquipmentTab({
 
 			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 				<section className="space-y-1.5">
-					<label className="font-bold text-[var(--ink)]">Просмотрщик томограмм</label>
+					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<Monitor size={14} className="text-[var(--teal,#0d9488)]" />
+						<span>Просмотрщик томограмм</span>
+					</label>
 					<select
 						value={tomographyViewerApp}
 						onChange={(e) => setTomographyViewer(e.target.value as TomographyViewerApp)}
@@ -107,17 +80,7 @@ export function CopilotSettingsEquipmentTab({
 					</select>
 				</section>
 				<section className="space-y-1.5">
-					<div className="flex items-center justify-between">
-						<label className="font-bold text-[var(--ink)]">COM-порт кассы и чеков</label>
-						<button
-							type="button"
-							onClick={handleTestCom}
-							className="secondary-button text-[10px] font-semibold h-5 px-1.5 rounded border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer flex items-center gap-1"
-						>
-							<RefreshCw size={9} className={testingCom ? "animate-spin" : ""} />
-							<span>Тест порта</span>
-						</button>
-					</div>
+					<label className="font-bold text-[var(--ink)]">COM-порт кассы и чеков</label>
 					<select
 						value={fiscalRegisterComPort}
 						onChange={(e) => setComPort(e.target.value)}
@@ -142,7 +105,7 @@ export function CopilotSettingsEquipmentTab({
 					placeholder="F9 или Ctrl+Shift+D"
 					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 				/>
-				<p className="text-[10px] text-[var(--muted)]">Активирует стенографист из любого окна рентгенографии или томографа.</p>
+				<p className="text-[10px] text-[var(--muted)]">Активирует распознавание речи при работе врача у кресла.</p>
 			</section>
 
 			<div className="pt-2 border-t border-[var(--line)] space-y-2">
