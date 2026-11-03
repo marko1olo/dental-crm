@@ -397,7 +397,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
         {activeTab === "actions" && (
           <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
             <p className="text-xs text-[var(--muted)] leading-normal">
-              Клинические инструменты прямого исполнения без блокировок врача (Мандат 8e):
+              Клинические инструменты прямого исполнения:
             </p>
 
             <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2.5">

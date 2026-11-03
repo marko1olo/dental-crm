@@ -36,10 +36,10 @@ export const HotFolderIntakeFooterActions: React.FC<HotFolderIntakeFooterActions
 				disabled={!activeItem}
 				className={`hfi-primary-attach-btn ${!activeItem ? "opacity-50 cursor-not-allowed" : ""}`}
 				data-testid="hfi-primary-attach-btn"
-				title={!activeItem ? "Выберите или загрузите снимок для прикрепления" : undefined}
+				title={!activeItem ? "Выберите или загрузите снимок для сохранения" : undefined}
 			>
 				<Check className="w-4 h-4" />
-				<span>Принять снимок в медицинскую карту</span>
+				<span>Сохранить в карту</span>
 			</button>
 
 			<div className="hfi-secondary-actions-row">

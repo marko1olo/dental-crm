@@ -24,7 +24,7 @@ export interface UseHotFolderScannerProps {
 
 export function useHotFolderScanner({
 	patientName = "Пациент",
-	patientCardNumber = "043/у-2026/891",
+	patientCardNumber = "Медицинская карта приёма № 2026/891",
 	onTeethDetected,
 }: UseHotFolderScannerProps) {
 	const [hotFolderItems, setHotFolderItems] = useState<HotFolderItem[]>(() =>

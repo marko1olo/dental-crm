@@ -474,5 +474,25 @@ describe("Copilot & Agent Subsystem Routes (E2E Integration)", () => {
 			assert.ok(json.data.soapProposal, "SOAP proposal must be generated");
 			assert.ok(json.data.soapProposal.diagnosis.length > 0, "SOAP must contain diagnosis");
 		});
+
+		test("executes autonomous ReAct cycle with omitted or undefined patientId (defaults to anonymous 00000000-0000-7000-8000-000000000001 context)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/v1/copilot/agent/execute",
+				headers: authHeaders(),
+				payload: {
+					// patientId is intentionally omitted
+					prompt: "пульпит 26 зуба", toothNumber: 26, mode: "autonomous",
+				},
+			});
+
+			assert.strictEqual(res.statusCode, 200);
+			const json = res.json();
+			assert.strictEqual(json.ok, true);
+			assert.ok(json.data, "Expected response data");
+			assert.strictEqual(json.data.patientId, "00000000-0000-7000-8000-000000000001");
+			assert.strictEqual(json.data.toothNumber, 26);
+			assert.ok(json.data.verdict, "Must return verdict");
+		});
 	});
 });

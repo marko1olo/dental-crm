@@ -4,7 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Brain, ChevronDown, Sparkles } from "lucide-react";
+import { Brain, Check, ChevronDown, Sparkles } from "lucide-react";
 
 export interface CopilotThinkingIndicatorProps {
 	isThinking: boolean;
@@ -54,17 +54,25 @@ export function CopilotThinkingIndicator({
 				</span>
 			</div>
 
-			{/* Клинический радар шагов */}
+			{/* Клинический радар шагов и индикатор набора текста */}
 			<div className="mt-2 flex items-center gap-1.5 overflow-x-auto no-scrollbar text-[10px]">
-				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
-					✓ FDI {activeTooth || 36}
+				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+					<Check size={10} className="stroke-[2.5]" />
+					<span>FDI {activeTooth || 36}</span>
 				</span>
-				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap">
-					✓ МКБ-10 K02.1
+				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
+					<Check size={10} className="stroke-[2.5]" />
+					<span>МКБ-10 K02.1</span>
 				</span>
 				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--teal,#0d9488)]/40 text-[var(--teal,#0d9488)] font-semibold whitespace-nowrap flex items-center gap-1 animate-pulse">
 					<Sparkles size={9} />
-					Сверка со стандартами СтАР
+					<span>Сверка со стандартами СтАР</span>
+				</span>
+				<span className="ml-auto inline-flex items-center gap-0.5 text-[var(--teal,#0d9488)] shrink-0 font-medium">
+					<span>Печатает</span>
+					<span className="w-1 h-1 rounded-full bg-[var(--teal,#0d9488)] animate-pulse" />
+					<span className="w-1 h-1 rounded-full bg-[var(--teal,#0d9488)] animate-pulse [animation-delay:150ms]" />
+					<span className="w-1 h-1 rounded-full bg-[var(--teal,#0d9488)] animate-pulse [animation-delay:300ms]" />
 				</span>
 			</div>
 

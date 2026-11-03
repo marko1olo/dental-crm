@@ -139,7 +139,7 @@ describe("Hot-Folder Intake & Radiology Integration Suite", () => {
 		assert.ok(sample.patientMatch);
 		assert.ok(sample.patientMatch.confidence >= 90);
 		assert.ok(sample.patientMatch.patientName.length > 0);
-		assert.ok(sample.patientMatch.cardNumber.includes("043/у"));
+		assert.ok(sample.patientMatch.cardNumber.includes("Медицинская карта") || sample.patientMatch.cardNumber.includes("2026/891"));
 		assert.ok(sample.sizeFormatted.includes("МБ"));
 	});
 

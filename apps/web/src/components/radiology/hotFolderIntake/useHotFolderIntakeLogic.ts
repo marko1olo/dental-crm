@@ -9,7 +9,7 @@ import { useHotFolderEmrDispatcher } from "./useHotFolderEmrDispatcher";
 export function useHotFolderIntakeLogic({
 	patientId = "PAT-001",
 	patientName = "Пациент",
-	patientCardNumber = "043/у-2026/891",
+	patientCardNumber = "Медицинская карта приёма № 2026/891",
 	doctorName = "Лечащий врач",
 	activeToothFdi,
 	flipV,

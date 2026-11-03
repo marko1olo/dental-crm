@@ -77,7 +77,7 @@ export function useHotFolderEmrDispatcher({
 				pixelSpacingMm: activeItem.metadata.pixelSpacingMm,
 				apparatusModel: activeItem.metadata.apparatusModel,
 			},
-			tags: ["HotFolder", "043/у", `Зуб_${selectedTeeth.join("_")}`],
+			tags: ["HotFolder", "Медицинская карта", `Зуб_${selectedTeeth.join("_")}`],
 		};
 
 		// Mark item as imported
@@ -176,7 +176,7 @@ export function useHotFolderEmrDispatcher({
 		}
 
 		showToast(
-			`Снимок (${activeItem.filename}) успешно прикреплен к карте пациента ${patientName} и протоколу ф. 043/у!`,
+			`Снимок (${activeItem.filename}) успешно прикреплен к медицинской карте пациента ${patientName}!`,
 			"success",
 		);
 	}, [

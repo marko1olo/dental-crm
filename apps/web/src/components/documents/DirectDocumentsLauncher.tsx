@@ -16,20 +16,15 @@ export const isDocumentsOrConsentsTarget = (): boolean => {
 	const h = window.location.hash || "";
 	return (
 		h === "#documents" ||
-		h === "#consents" ||
 		h === "#docs-studio" ||
 		h === "#documents-studio" ||
 		h === "#contract" ||
 		h === "#tax-certificate" ||
 		h.startsWith("#documents?") ||
-		h.startsWith("#consents?") ||
 		h.startsWith("#docs-studio?") ||
 		s.includes("documents=1") ||
-		s.includes("consents=1") ||
 		s.includes("docs=1") ||
-		s.includes("consent=1") ||
-		s.includes("standalone=documents") ||
-		s.includes("standalone=consents")
+		s.includes("standalone=documents")
 	);
 };
 

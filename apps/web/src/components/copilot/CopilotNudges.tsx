@@ -18,6 +18,7 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
   onAct,
   onAction,
   onApplyClinicalDiary,
+  onApplyMedicalCardDiary,
   onApply043,
   onDismiss,
 }) => {

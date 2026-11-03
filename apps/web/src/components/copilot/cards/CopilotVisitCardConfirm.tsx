@@ -225,4 +225,5 @@ export const CopilotVisitCardConfirm: React.FC<CopilotVisitCardConfirmProps> = (
 // Семантические алиасы и обратная совместимость
 export const CopilotSoapDiaryCard = CopilotVisitCardConfirm;
 export const CopilotExaminationProtocolCard = CopilotVisitCardConfirm;
+export const CopilotMedicalCardProtocolCard = CopilotVisitCardConfirm;
 export const CopilotProtocol043ConfirmCard = CopilotVisitCardConfirm;

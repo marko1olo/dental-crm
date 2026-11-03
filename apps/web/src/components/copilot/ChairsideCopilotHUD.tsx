@@ -14,6 +14,7 @@ import type {
   ChairsideConsentProposal, ChairsideSafetyAlert,
 } from "./chairside/chairsideTypes";
 import type { DentalVoiceIntent } from "../../services/voice";
+import { executeCopilotAgentRequest } from "./chairside/chairsideAgentExecutor";
 import "./ChairsideCopilotHUD.css";
 
 export {
@@ -25,23 +26,10 @@ export {
 
 export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) => {
   const {
-    initialOpen = true,
-    initialDocked = false,
-    initialCompact = false,
-    activeTooth = 16,
-    patientName = "Иванов И.И.",
-    patientAllergies = [],
-    onClose,
-    onApplyToothState,
-    onUpdateToothStatus,
-    onApplyServices,
-    onAddBillingItem,
-    onApplySoapNotes,
-    onApplySoapDiary,
-    onDisposeCarpule,
-    onPrintInformedConsent,
-    onApplyAll,
-    className = "",
+    initialOpen = true, initialDocked = false, initialCompact = false, activeTooth = 16,
+    patientName = "Иванов И.И.", patientAllergies = [], onClose, onApplyToothState,
+    onUpdateToothStatus, onApplyServices, onAddBillingItem, onApplySoapNotes,
+    onApplySoapDiary, onDisposeCarpule, onPrintInformedConsent, onApplyAll, className = "",
   } = props;
 
   const [isOpen, setIsOpen] = useState(initialOpen);
@@ -76,6 +64,14 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert | null>(activePreset.safetyAlert);
 
+  const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>([
+    { id: "step-1", stepNumber: 1, title: "1. Проверка аллергического статуса и лекарственной безопасности DDI", status: "done" },
+    { id: "step-2", stepNumber: 2, title: "2. Сверка диагноза МКБ-10: K02.1 Кариес дентина", status: "done" },
+    { id: "step-3", stepNumber: 3, title: "3. Расчет стоимости услуг по прейскуранту", status: "done" },
+    { id: "step-4", stepNumber: 4, title: "4. Формирование клинического протокола приёма", status: "done" },
+  ]);
+  const [isExecutingAgent, setIsExecutingAgent] = useState(false);
+
   const servicesTotalPrice = useMemo(
     () => servicesProposal.reduce((sum, s) => sum + s.priceRub * s.quantity, 0),
     [servicesProposal]
@@ -92,10 +88,45 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
     });
   }, []);
 
+  const handleExecutePrompt = useCallback(
+    async (textToExecute: string) => {
+      const text = textToExecute.trim();
+      if (!text) return;
+      setIsExecutingAgent(true);
+      try {
+        const result = await executeCopilotAgentRequest({
+          promptText: text,
+          activeTooth: activeTooth ?? 16,
+          patientId: props.patientId,
+          patientAllergies,
+        });
+
+        if (result.toothProposal) setToothProposal(result.toothProposal);
+        if (result.servicesProposal) setServicesProposal(result.servicesProposal);
+        if (result.soapProposal) setSoapProposal(result.soapProposal);
+        if (result.anestheticProposal !== undefined) setAnestheticProposal(result.anestheticProposal);
+        if (result.safetyAlert !== undefined) setSafetyAlert(result.safetyAlert);
+        if (result.thoughts && result.thoughts.length > 0) setThoughts(result.thoughts);
+        if (result.activePresetIndex !== undefined) setActivePresetIndex(result.activePresetIndex);
+      } catch (err) {
+        console.warn("[ChairsideCopilotHUD] Agent execution failed:", err);
+      } finally {
+        setIsExecutingAgent(false);
+      }
+    },
+    [activeTooth, props.patientId, patientAllergies]
+  );
+
   const { isListening, handleToggleVoice } = useChairsideVoiceEngine({
-    onTranscriptFinal: useCallback((text: string) => {
-      if (text) setPromptInput(text);
-    }, []),
+    onTranscriptFinal: useCallback(
+      (text: string) => {
+        if (text) {
+          setPromptInput(text);
+          void handleExecutePrompt(text);
+        }
+      },
+      [handleExecutePrompt]
+    ),
     onIntentParsed: handleIntentParsed,
   });
 
@@ -177,10 +208,10 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
 
   const handleSendPrompt = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new CustomEvent("dente:toggle-copilot"));
+    if (promptInput.trim()) {
+      void handleExecutePrompt(promptInput);
+      setPromptInput("");
     }
-    setPromptInput("");
   };
 
   if (!isOpen) return null;
@@ -362,13 +393,17 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
             <div className="chairside-thought-stream" data-testid="chairside-thought-stream">
               <div className="flex items-center justify-between text-xs font-semibold text-[var(--ink)] mb-1.5">
                 <span className="flex items-center gap-1.5"><Sparkles size={13} className="text-[var(--teal)]" /> Размышления ИИ</span>
-                <span className="text-[10px] text-[var(--ok-fg,var(--teal))] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded">завершено</span>
+                <span className="text-[10px] text-[var(--ok-fg,var(--teal))] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded">
+                  {isExecutingAgent ? "анализ..." : "завершено"}
+                </span>
               </div>
               <ol className="chairside-thought-steps space-y-1 text-xs text-[var(--ink)]">
-                <li>1. Проверка аллергического статуса и лекарственной безопасности DDI</li>
-                <li>2. Сверка диагноза МКБ-10: K02.1 Кариес дентина</li>
-                <li>3. Расчет стоимости услуг по прейскуранту</li>
-                <li>4. Формирование клинического протокола приёма</li>
+                {thoughts.map((s) => (
+                  <li key={s.id}>
+                    {s.title}
+                    {s.detail ? <span className="text-[var(--muted)]"> — {s.detail}</span> : null}
+                  </li>
+                ))}
               </ol>
             </div>
 
@@ -388,7 +423,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               onDismissSafetyAlert={() => setSafetyAlert(null)}
             />
 
-            {/* Quick Prompt Input (Mandate 8e: send button never disabled) */}
+            {/* Quick Prompt Input (Mandate 8e: send button never disabled; Mandate 8am: secondary styled) */}
             <form onSubmit={handleSendPrompt} className="chairside-hud-composer flex gap-1.5 pt-1">
               <input
                 type="text"
@@ -407,7 +442,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               </button>
               <button
                 type="submit"
-                className="btn-chairside-send px-3 py-1.5 rounded-lg bg-[var(--teal)] text-white text-xs font-semibold flex items-center gap-1"
+                className="btn-chairside-send px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] hover:text-[var(--teal)] hover:border-[var(--teal)] text-xs font-semibold flex items-center gap-1 transition-colors"
                 aria-label="Отправить"
               >
                 <Send size={12} />
@@ -417,7 +452,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
             {/* Mandate 8e Autonomy Footer */}
             <div className="chairside-hud-footer flex items-center justify-between pt-2 border-t border-[var(--line)]">
               <div className="chairside-autonomy-note text-[11px] text-[var(--muted)]" data-testid="chairside-autonomy-note">
-                Обратимые действия • Полный контроль врача (Мандат 8e)
+                Обратимые действия • Полный контроль врача
               </div>
               <div className="chairside-hud-apply-all-row flex items-center gap-1.5">
                 <button

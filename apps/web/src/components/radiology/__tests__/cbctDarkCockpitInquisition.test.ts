@@ -96,7 +96,11 @@ describe("CBCT Dark Cockpit & Anti-Blinding UI Inquisition", () => {
 	});
 
 	it("3. CbctTunerPlayground.tsx uses cbct-dark-cockpit and cbct-slider classes with zero blinding bg-zinc-800 blocks", () => {
-		const code = fs.readFileSync(tunerPath, "utf-8");
+		const studioDir = path.resolve(__dirname, "../tuner/studio");
+		const studioCode = fs.existsSync(studioDir)
+			? fs.readdirSync(studioDir).filter((f) => f.endsWith(".tsx")).map((f) => fs.readFileSync(path.join(studioDir, f), "utf-8")).join("\n")
+			: "";
+		const code = fs.readFileSync(tunerPath, "utf-8") + "\n" + studioCode;
 
 		// Imports modular styles
 		assert.ok(code.includes('import "./cbctTunerStyles.css"'), "Must import cbctTunerStyles.css");
@@ -225,6 +229,11 @@ describe("CBCT Dark Cockpit & Anti-Blinding UI Inquisition", () => {
 			path.resolve(__dirname, "../mpr/workspaces/PanoramicWorkspace.tsx"),
 			path.resolve(__dirname, "../mpr/workspaces/PanoramicCrossSectionGrid.tsx"),
 			tunerPath,
+			path.resolve(__dirname, "../tuner/studio/CbctTunerHeader.tsx"),
+			path.resolve(__dirname, "../tuner/studio/CbctViewportControls.tsx"),
+			path.resolve(__dirname, "../tuner/studio/CbctDensityPresetSelector.tsx"),
+			path.resolve(__dirname, "../tuner/studio/CbctHistogramPanel.tsx"),
+			path.resolve(__dirname, "../tuner/studio/CbctSlidersPanel.tsx"),
 			path.resolve(__dirname, "../CbctViewportHud.tsx"),
 			path.resolve(__dirname, "../CbctHotkeysStatusBar.tsx"),
 			path.resolve(__dirname, "../CbctImplantModal.tsx"),

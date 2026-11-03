@@ -499,16 +499,9 @@ export class OmniLlmGateway {
 								thoughtSignature: chunk.thoughtSignature,
 							};
 						} else if (chunk.type === "usage") {
-							yield {
-								type: "usage",
-								inputTokens: chunk.inputTokens,
-								outputTokens: chunk.outputTokens,
-							};
+							yield { type: "usage", inputTokens: chunk.inputTokens, outputTokens: chunk.outputTokens };
 						} else if (chunk.type === "done") {
-							yield {
-								type: "done",
-								stopReason: chunk.stopReason,
-							};
+							yield { type: "done", stopReason: chunk.stopReason };
 						}
 					}
 				}

@@ -8,7 +8,7 @@
  */
 
 import React, { useEffect, useState, useCallback } from "react";
-import { DocumentsStudioModal } from "../documents/DocumentsStudioModal";
+import { ConsentStudioModal } from "./ConsentStudioModal";
 
 export const isConsentTarget = (): boolean => {
 	if (typeof window === "undefined") return false;
@@ -65,18 +65,16 @@ export const DirectConsentLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	return (
-		<DocumentsStudioModal
+		<ConsentStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			initialTemplate="informed_consent"
+			initialDocId="therapy"
 			patientContext={{
-				fullName: "Иванов Иван Иванович",
+				patientName: "Иванов Иван Иванович",
 				birthDate: "15.04.1985",
 				passport: "45 10 123456 выдан ОВД г. Москвы",
-				address: "г. Москва, ул. Ленина, д. 25, кв. 14",
 				phone: "+7 (916) 123-45-67",
 			}}
-			doctorFullName="Смирнова Елена Сергеевна"
 		/>
 	);
 };

@@ -39,7 +39,7 @@ export function useChairsideCopilotState(props: ChairsideCopilotHUDProps) {
     patientId,
     visitId,
     chairId,
-    patientAllergies = ["Пенициллины"],
+    patientAllergies = [],
     patientSomaticHistory,
     onApplyToothState,
     onUpdateToothStatus,

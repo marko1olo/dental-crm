@@ -8,6 +8,7 @@
  * 4. Защита от эмодзи (строго векторные Lucide-иконки) и профессиональная русская локализация.
  */
 
+import "../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";

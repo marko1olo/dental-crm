@@ -370,7 +370,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 				</div>
 
 				{/* Floating Bottom Bar (Apple HIG Thumb Zone, ровно 1 Primary CTA #0d9488, Мандаты 8e, 8am) */}
-				<footer className="sticky bottom-0 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 md:px-6 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)]/95 backdrop-blur-md shrink-0">
+				<footer className="sticky bottom-0 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 md:px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)]/95 backdrop-blur-md shrink-0">
 					<div className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block">
 						{toastMsg ? (
 							<span className="text-emerald-600 dark:text-emerald-400 font-medium">{toastMsg}</span>
@@ -400,7 +400,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 							title="Утвердить и подписать выбранный пакет документов"
 						>
 							<UserCheck size={18} aria-hidden="true" />
-							<span>✓ Подписать пакет согласий</span>
+							<span>Подписать пакет согласий</span>
 						</button>
 					</div>
 				</footer>

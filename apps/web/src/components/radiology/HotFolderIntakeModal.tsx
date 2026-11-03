@@ -16,7 +16,7 @@ export * from "./hotFolderIntake";
 
 export const HotFolderIntakeModal: React.FC<HotFolderIntakeModalProps> = ({
 	isOpen, onClose, patientId = "PAT-001", patientName = "Пациент",
-	patientCardNumber = "043/у-2026/891", doctorName = "Лечащий врач",
+	patientCardNumber = "Медицинская карта приёма № 2026/891", doctorName = "Лечащий врач",
 	activeToothFdi, onAttachToEmr, onExportDicom, onSendToLab,
 }) => {
 	const modalId = useId();

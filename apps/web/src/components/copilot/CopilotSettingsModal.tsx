@@ -217,12 +217,12 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 								</span>
 								<p className="text-[10px] text-[var(--muted)]">Глубокое EBM рассуждение со скрытой цепочкой мыслей (CoT)</p>
 							</div>
-							<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+							<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line)]">
 								<button
 									type="button"
 									onClick={() => setSpeedModeState("turbo")}
 									className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-										speedMode === "turbo" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
+										speedMode === "turbo" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
 									}`}
 								>
 									Турбо
@@ -231,7 +231,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 									type="button"
 									onClick={() => setSpeedModeState("deep_reasoning")}
 									className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-										speedMode === "deep_reasoning" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
+										speedMode === "deep_reasoning" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
 									}`}
 								>
 									Консилиум
@@ -276,7 +276,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 								className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 							>
 								<option value="soap">SOAP (Субъективно, Объективно, Оценка, План)</option>
-								<option value="form043">Форма 043/у (Медицинская карта приёма)</option>
+								<option value="form043">Медицинская карта приёма</option>
 								<option value="express">Краткий экспресс-протокол приёма</option>
 							</select>
 						</section>

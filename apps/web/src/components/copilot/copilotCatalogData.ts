@@ -35,7 +35,7 @@ export interface ClinicalQuickPreset {
 }
 
 export interface SpeechEngineHealthReport {
-  engine: "webspeech" | "gemini_cloud" | "whisper_local" | "groq_cloud";
+  engine: "webspeech" | "gemini_cloud" | "whisper_local" | "groq_cloud" | "unsupported";
   status: "operational" | "degraded" | "standby" | "unsupported";
   label: string;
   isCloudActive: boolean;
@@ -115,7 +115,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         id: "chairside-norm",
         label: "Физиологическая норма в 1 клик",
         prompt: "Установи норму: соматически здоров, интактные зубы без патологий",
-        description: "0-клик заполнение физиологической нормы без излишней бюрократии (Мандат 8e)",
+        description: "0-клик заполнение физиологической нормы без излишней бюрократии",
         category: "Клинический приём у кресла",
         icon: "ShieldCheck",
         mode: "both",
@@ -159,7 +159,7 @@ export const COPILOT_CATALOG_CATEGORIES: CopilotCatalogCategory[] = [
         id: "billing-warranty-discount",
         label: "Скидка на гарантию до 100%",
         prompt: "Примени гарантийную скидку 100% на перелечивание по гарантии",
-        description: "Свобода врачебных решений при устранении осложнений (Мандат 8e)",
+        description: "Свобода врачебных решений при устранении осложнений",
         category: "Финансы, сметы и касса",
         icon: "ShieldCheck",
         mode: "both",

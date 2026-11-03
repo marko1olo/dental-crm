@@ -62,8 +62,8 @@ export const ConsentBatchSignActions: React.FC<ConsentBatchSignActionsProps> = (
 				</button>
 			</div>
 
-			{/* Список бланков (горизонтальный на мобилке, вертикальный на десктопе) */}
-			<div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none">
+			{/* Список бланков (горизонтальный на мобилке с iOS-snap, вертикальный на десктопе) */}
+			<div className="flex md:flex-col gap-2 overflow-x-auto md:overflow-x-visible pb-2 md:pb-0 scrollbar-none snap-x snap-mandatory">
 				{documents.map((doc) => {
 					const rec = signRecords[doc.id] || { status: "pending" };
 					const isSelected = doc.id === activeDocId;
@@ -74,7 +74,7 @@ export const ConsentBatchSignActions: React.FC<ConsentBatchSignActionsProps> = (
 						<div
 							key={doc.id}
 							onClick={() => onSelectDoc(doc.id)}
-							className={`group flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all shrink-0 w-[270px] md:w-full min-h-[48px] cursor-pointer ${
+							className={`group flex items-start gap-2.5 p-3 rounded-xl border text-left transition-all shrink-0 w-[82vw] sm:w-[280px] md:w-full snap-start min-h-[48px] cursor-pointer ${
 								isSelected
 									? "border-[var(--teal,#0d9488)] bg-[var(--paper,#ffffff)] shadow-xs ring-1 ring-[var(--teal,#0d9488)]/20"
 									: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)]"

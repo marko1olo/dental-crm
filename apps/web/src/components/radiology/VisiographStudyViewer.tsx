@@ -488,7 +488,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 						data-testid="btn-primary-attach"
 					>
 						<Check className="h-4 w-4 stroke-[2.5] shrink-0" />
-						<span className="whitespace-nowrap">{isSaved ? `✓ Привязано к зубу ${selectedTooth}` : `✓ Привязать к зубу ${selectedTooth}`}</span>
+						<span className="whitespace-nowrap">{isSaved ? `Привязано к зубу ${selectedTooth}` : `Привязать к зубу ${selectedTooth}`}</span>
 					</button>
 				</div>
 			</div>

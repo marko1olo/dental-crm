@@ -153,7 +153,7 @@ export function CopilotMemoryTab() {
 										removeMemoryFact(item.id);
 										showToast("Предпочтение удалено из памяти", "info");
 									}}
-									className="text-[var(--muted)] hover:text-rose-500 p-1 rounded-md opacity-60 group-hover:opacity-100 transition-opacity cursor-pointer shrink-0"
+									className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer shrink-0"
 									title="Удалить из памяти"
 								>
 									<Trash2 size={13} />
@@ -175,7 +175,7 @@ export function CopilotMemoryTab() {
 								showToast("Память ассистента очищена", "info");
 							}
 						}}
-						className="text-[11px] text-rose-500 hover:underline cursor-pointer"
+						className="text-[11px] text-rose-500 hover:text-rose-600 dark:text-rose-400 hover:underline cursor-pointer bg-transparent"
 					>
 						Очистить всю память
 					</button>

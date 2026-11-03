@@ -46,10 +46,10 @@ export interface CopilotChatMessage {
   id: string;
   role: "user" | "assistant";
   text: string;
-  citation?: string;
+  citation?: string | undefined;
   timestamp: string;
-  applied?: boolean;
-  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> };
+  applied?: boolean | undefined;
+  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined;
 }
 
 const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [
@@ -75,6 +75,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const setSettingsOpen = useCopilotStore((s) => s.setSettingsOpen);
   const isHistoryOpen = useCopilotStore((s) => s.isHistoryOpen);
   const setHistoryOpen = useCopilotStore((s) => s.setHistoryOpen);
+  const threads = useCopilotStore((s) => s.threads);
+  const selectThread = useCopilotStore((s) => s.selectThread);
   const addToolLog = useCopilotStore((s) => s.addToolLog);
 
   const [messages, setMessages] = useState<CopilotChatMessage[]>(DEFAULT_INITIAL_MESSAGES);
@@ -177,7 +179,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               }
             }
             if (accumulatedText) {
-              setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: accumulatedText, actionProposal: pendingAction ?? m.actionProposal } : m)));
+              setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: accumulatedText, actionProposal: pendingAction ?? m.actionProposal } : m)));
             }
           }
         }
@@ -239,9 +241,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                 <span className="copilot-pulse-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Движок активен" />
               </div>
               <div className="copilot-studio-submeta flex items-center gap-1.5 text-[11px] text-[var(--muted)] truncate">
-                <span>{patientName}</span>
-                {activeTooth ? <span>• Зуб {activeTooth}</span> : null}
-                <span className="copilot-engine-badge px-1.5 py-0.2 rounded text-[10px] bg-[var(--paper-soft)] border border-[var(--line)]">{speechReport.label}</span>
+                <span className="truncate">{patientName}</span>
+                {activeTooth ? <span className="shrink-0">• Зуб {activeTooth}</span> : null}
+                <span className="copilot-engine-badge px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 hidden sm:inline-block">{speechReport.label}</span>
               </div>
             </div>
           </div>
@@ -306,7 +308,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               {messages.map((m) => (
                 <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                   <div className={`copilot-message-bubble max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed ${m.role === "user" ? "copilot-message-user bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]" : "copilot-message-assistant bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"}`}>
-                    <p className="whitespace-pre-wrap m-0">{m.text || (isStreaming ? "Формирование ответа..." : "")}</p>
+                    <p className="whitespace-pre-wrap m-0">
+                      {m.text || (isStreaming ? "Формирование ответа..." : "")}
+                      {isStreaming && m.role === "assistant" && !m.text && (
+                        <span className="copilot-typing-cursor inline-block w-1.5 h-3 bg-[var(--teal,#0d9488)] animate-pulse ml-1 align-middle" />
+                      )}
+                    </p>
                     {m.actionProposal && !m.applied && (
                       <div className="copilot-action-guard-card mt-2.5 p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-start gap-2 text-[11px]">
                         <AlertCircle size={14} className="text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
@@ -331,16 +338,16 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             </div>
 
             {/* Пресеты клинических фраз */}
-            <div className="copilot-presets-track px-5 py-1.5 flex items-center gap-2 overflow-x-auto no-scrollbar shrink-0">
+            <div className="copilot-presets-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar shrink-0 snap-x">
               {CLINICAL_QUICK_PRESETS.slice(0, 4).map((p) => (
-                <button key={p.id} type="button" onClick={() => handleSendMessage(p.prompt)} className="copilot-preset-chip shrink-0 px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[11px] font-medium text-[var(--ink)] whitespace-nowrap cursor-pointer">
+                <button key={p.id} type="button" onClick={() => handleSendMessage(p.prompt)} className="copilot-preset-chip shrink-0 px-2.5 sm:px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[10px] sm:text-[11px] font-medium text-[var(--ink)] whitespace-nowrap cursor-pointer snap-start">
                   {p.label}
                 </button>
               ))}
             </div>
 
             {/* Нижняя плашка: Ровно ОДНА Primary CTA кнопка #0d9488 */}
-            <div className="copilot-bottom-composer px-5 pt-2 pb-5 max-md:pb-6 border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2">
+            <div className="copilot-bottom-composer px-3 sm:px-5 pt-2 pb-5 max-md:pb-[calc(16px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2">
               <button
                 type="button"
                 onClick={handleApplyPrimaryAction}
@@ -366,7 +373,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                   value={inputText}
                   onChange={(e) => handleInputChange(e.target.value)}
                   onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }}
-                  placeholder="Клинический запрос или диктовка..."
+                  placeholder="Запрос или диктовка..."
                   className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
                 />
                 <button type="button" onClick={() => handleSendMessage()} className="copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Отправить запрос">
@@ -421,7 +428,17 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         <CopilotHistoryDrawer
           isOpen={isHistoryOpen}
           onClose={() => setHistoryOpen(false)}
-          onSelectThread={() => { setHistoryOpen(false); setActiveTab("dialog"); }}
+          onSelectThread={(threadId) => {
+            selectThread(threadId);
+            const found = threads.find((t) => t.id === threadId);
+            if (found?.previewText) {
+              setMessages([
+                { id: `thread-init-${Date.now()}`, role: "assistant", text: found.previewText, timestamp: found.updatedAt, citation: "Клинический протокол СтАР" },
+              ]);
+            }
+            setHistoryOpen(false);
+            setActiveTab("dialog");
+          }}
         />
       </aside>
     </div>

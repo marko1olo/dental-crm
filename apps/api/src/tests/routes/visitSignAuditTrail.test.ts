@@ -493,21 +493,12 @@ describe("подписание приёма оставляет след в audit
 		 * дословная строка в пути без базы, потому что общей константы на два пути
 		 * в проекте нет (это долг).
 		 */
-		const sampleDataPath = path.resolve(
-			path.dirname(fileURLToPath(import.meta.url)),
-			"../../sampleData.ts",
-		);
-		assert.ok(
-			existsSync(sampleDataPath),
-			`путь без базы (${sampleDataPath}) переехал или удалён — сверьте форму записи журнала заново ` +
-				"и поправьте этот сторож: он охраняет совпадение имён действия у двух путей.",
-		);
-		const source = readFileSync(sampleDataPath, "utf8");
-		assert.ok(
-			source.includes(`action: "${AUDIT_ACTION}"`),
-			`путь без базы больше не пишет действие «${AUDIT_ACTION}». Имена действия у двух путей ` +
-				"разошлись: журнал приёма распадётся на две половины, и ни один запрос не соберёт историю " +
-				"целиком. Приведите оба пути к одному имени (db/visitsQuery.ts и sampleData.ts).",
-		);
+		const dir = path.dirname(fileURLToPath(import.meta.url));
+		const p1 = path.resolve(dir, "../../sampleData/visitDrafts.ts");
+		const p2 = path.resolve(dir, "../../sampleData.ts");
+		const target = existsSync(p1) ? p1 : p2;
+		assert.ok(existsSync(target), `путь без базы (${target}) не найден`);
+		const source = readFileSync(target, "utf8");
+		assert.ok(source.includes(`action: "${AUDIT_ACTION}"`), "имена действия разошлись");
 	});
 });

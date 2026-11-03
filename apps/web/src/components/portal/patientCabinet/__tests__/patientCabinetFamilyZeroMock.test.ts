@@ -15,8 +15,11 @@ import "../../../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
+import { resolve, dirname } from "node:path";
+import { fileURLToPath } from "node:url";
 import { createElement } from "react";
+
+const testDir = dirname(fileURLToPath(import.meta.url));
 import { renderToStaticMarkup } from "react-dom/server";
 import { PATIENT_CABINET_PRESET_ALEXEY } from "../patientCabinetPresets.js";
 import {
@@ -29,10 +32,7 @@ const { FamilyTab } = await import("../tabs/FamilyTab.js");
 
 describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 	it("1.1 File Purity: FamilyTab.tsx contains ZERO calls to Math.random()", () => {
-		const familyTabPath = resolve(
-			process.cwd(),
-			"apps/web/src/components/portal/patientCabinet/tabs/FamilyTab.tsx",
-		);
+		const familyTabPath = resolve(testDir, "../tabs/FamilyTab.tsx");
 		const content = readFileSync(familyTabPath, "utf8");
 		// Remove comments before asserting
 		const codeWithoutComments = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "");
@@ -44,10 +44,7 @@ describe("Zero-Mock Patient Portal & Family Ledger Inquisition", () => {
 	});
 
 	it("1.2 File Purity: FamilyWalletPanel.tsx contains ZERO calls to Math.random()", () => {
-		const walletPanelPath = resolve(
-			process.cwd(),
-			"apps/web/src/components/finance/FamilyWalletPanel.tsx",
-		);
+		const walletPanelPath = resolve(testDir, "../../../finance/FamilyWalletPanel.tsx");
 		const content = readFileSync(walletPanelPath, "utf8");
 		const codeWithoutComments = content.replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, "");
 		assert.equal(

@@ -15,7 +15,7 @@ import { showToast } from "../GlobalToast";
 const MOCK_SAMPLE_DIFF = {
 	id: "diff-sample-1",
 	title: "Дневник приёма SOAP: Зуб 36",
-	targetEntity: "Медицинская карта приёма (Форма 043/у)",
+	targetEntity: "Медицинская карта приёма",
 	beforeText: `Status localis:
 Зуб 36 — глубокая кариозная полость на жевательной поверхности.
 Дно плотное, зондирование болезненно по эмалево-дентинной границе.
@@ -71,12 +71,12 @@ export function CopilotWorkstationTab() {
 							: "Веб-ассистент: работа через защищенный API в браузере"}
 					</p>
 				</div>
-				<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
+				<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line)] shrink-0">
 					<button
 						type="button"
 						onClick={() => updateSettings({ runtimeMode: "web_browser" })}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-							!isDesktop ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+							!isDesktop ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
 						}`}
 					>
 						Веб
@@ -84,8 +84,8 @@ export function CopilotWorkstationTab() {
 					<button
 						type="button"
 						onClick={() => updateSettings({ runtimeMode: "desktop_native" })}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
-							isDesktop ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)]"
+						className={`px-3 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+							isDesktop ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
 						}`}
 					>
 						ПК Станция

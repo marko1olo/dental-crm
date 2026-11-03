@@ -73,12 +73,12 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 						<button
 							type="button"
 							onClick={() => togglePinThread(thread.id)}
-							className={`p-1 rounded hover:bg-[var(--line)] transition-colors cursor-pointer ${
-								thread.pinned ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)] opacity-50 hover:opacity-100"
+							className={`w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-[var(--line)] transition-colors cursor-pointer ${
+								thread.pinned ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							title={thread.pinned ? "Открепить" : "Закрепить"}
 						>
-							<Pin size={12} className={thread.pinned ? "fill-current" : ""} />
+							<Pin size={13} className={thread.pinned ? "fill-current" : ""} />
 						</button>
 						<button
 							type="button"
@@ -86,10 +86,10 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 								deleteThread(thread.id);
 								showToast("Диалог удален из истории", "info");
 							}}
-							className="p-1 rounded text-[var(--muted)] hover:text-rose-500 hover:bg-[var(--line)] opacity-50 hover:opacity-100 transition-colors cursor-pointer"
+							className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
 							title="Удалить диалог"
 						>
-							<Trash2 size={12} />
+							<Trash2 size={13} />
 						</button>
 					</div>
 				</div>

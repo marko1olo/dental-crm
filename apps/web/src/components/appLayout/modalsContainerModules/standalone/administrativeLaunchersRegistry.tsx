@@ -254,15 +254,15 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			</div>
 		),
 	},
-	// 14. Студия документов и согласий SSOT
+	// 14. Студия документов и договоров SSOT
 	{
 		id: "documents-studio",
-		title: "Студия документов и согласий",
+		title: "Студия документов и договоров",
 		criteria: {
-			tokens: ["documents", "consents", "docs-studio", "docs_studio", "documents-studio"],
-			searchIncludes: ["documents=1", "consents=1", "docs=1", "consent=1", "standalone=documents", "standalone=consents"],
-			exactHashes: ["#documents", "#consents", "#docs-studio", "#documents-studio", "#contract", "#tax-certificate"],
-			hashPrefixes: ["#documents?", "#consents?", "#docs-studio?", "#documents-studio?"],
+			tokens: ["documents", "docs-studio", "docs_studio", "documents-studio"],
+			searchIncludes: ["documents=1", "docs=1", "standalone=documents"],
+			exactHashes: ["#documents", "#docs-studio", "#documents-studio", "#contract", "#tax-certificate"],
+			hashPrefixes: ["#documents?", "#docs-studio?", "#documents-studio?"],
 		},
 		render: () => <DirectDocumentsLauncher />,
 	},

@@ -2,6 +2,7 @@
  * warehouseModularFacade.test.ts — Verification of Warehouse & Inventory Components (Mandate 8b <= 120 lines).
  */
 
+import "../../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import fs from "node:fs";

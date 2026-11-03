@@ -91,7 +91,7 @@ export async function executeCopilotAgentRequest(
   }
 
   const requestBody = {
-    patientId: patientId || undefined,
+    patientId: patientId?.trim() || "00000000-0000-7000-8000-000000000001",
     prompt: text || undefined,
     toothNumber: activeTooth ?? undefined,
     complaints: text || undefined,
