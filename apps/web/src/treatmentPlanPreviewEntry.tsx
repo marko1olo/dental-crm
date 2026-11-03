@@ -11,11 +11,13 @@ import {
 	TreatmentPlanEditor,
 	TreatmentPlanPresenterModal,
 	TreatmentPlanStudioModal,
+	TreatmentPlanContractPrint,
 	type TreatmentPlanTierId,
 	type TreatmentPlanTier,
 	type TreatmentPlanStage,
 } from "./components/treatment-plans";
-import { Sparkles, Sun, Moon, Eye } from "lucide-react";
+import { CANONICAL_CLINICAL_STAGES } from "./components/treatment-plans/treatmentPlanCatalogData";
+import { Sparkles, Sun, Moon, Eye, FileText } from "lucide-react";
 import "./styles/tailwind.css";
 import "./styles/main.css";
 import "./styles.css";
@@ -82,7 +84,11 @@ function TreatmentPlanPreviewApp() {
 	const [activeTab, setActiveTab] = useState<"selector" | "editor">("selector");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>("optimum");
 	const [isPresenterOpen, setIsPresenterOpen] = useState(params.get("presenter") === "1");
-	const [isStudioOpen, setIsStudioOpen] = useState(params.get("studio") === "1" || params.get("presenter") === "1" || window.location.hash.includes("treatment-studio"));
+	const [isStudioOpen, setIsStudioOpen] = useState(
+		(params.get("studio") === "1" || params.get("presenter") === "1" || window.location.hash.includes("treatment-studio")) &&
+		params.get("contract") !== "1"
+	);
+	const [isContractPrintOpen, setIsContractPrintOpen] = useState(params.get("contract") === "1");
 	const [discountPercent, setDiscountPercent] = useState(0);
 
 	useEffect(() => {
@@ -166,6 +172,21 @@ function TreatmentPlanPreviewApp() {
 
 					<button
 						type="button"
+						onClick={() => {
+							setIsStudioOpen(false);
+							setIsPresenterOpen(false);
+							setIsContractPrintOpen(true);
+						}}
+						className="min-h-[36px] px-2.5 sm:px-3.5 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center gap-1.5 cursor-pointer shrink-0"
+						data-testid="btn-open-contract-modal"
+					>
+						<FileText className="w-3.5 h-3.5 text-[var(--teal)] shrink-0" />
+						<span className="hidden sm:inline">Договор и смета</span>
+						<span className="sm:hidden">Договор</span>
+					</button>
+
+					<button
+						type="button"
 						onClick={() => setIsDark((prev) => !prev)}
 						className="w-9 h-9 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0"
 						title={isDark ? "Светлая тема" : "Тёмная тема"}
@@ -209,7 +230,7 @@ function TreatmentPlanPreviewApp() {
 
 			{/* Модалка презентации для пациента */}
 			<TreatmentPlanPresenterModal
-				isOpen={isPresenterOpen && !isStudioOpen}
+				isOpen={isPresenterOpen && !isStudioOpen && !isContractPrintOpen}
 				onClose={() => setIsPresenterOpen(false)}
 				patientName="Алексеева Анна Сергеевна"
 				patientId="PAT-2026-0891"
@@ -218,6 +239,20 @@ function TreatmentPlanPreviewApp() {
 				tiers={PREVIEW_TIERS}
 				initialSelectedTierId={selectedTierId}
 				onApproveAndSign={() => setIsPresenterOpen(false)}
+			/>
+
+			{/* Печатная форма договора и сметы с информированным согласием */}
+			<TreatmentPlanContractPrint
+				isOpen={isContractPrintOpen}
+				onClose={() => setIsContractPrintOpen(false)}
+				tier={PREVIEW_TIERS.find((t) => t.tierId === selectedTierId) || PREVIEW_TIERS[1]!}
+				stages={CANONICAL_CLINICAL_STAGES as any}
+				patientName="Смирнова Екатерина Васильевна"
+				patientId="PAT-2026-0891"
+				patientPhone="+7 (999) 000-11-22"
+				patientBirthDate="14.05.1988"
+				doctorFullName="Д-р Орлов А.В. (Главный врач)"
+				clinicName="Стоматологическая клиника DENTE"
 			/>
 		</div>
 	);

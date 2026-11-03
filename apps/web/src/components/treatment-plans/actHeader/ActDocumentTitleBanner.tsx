@@ -66,8 +66,7 @@ export const ActDocumentTitleBanner: React.FC<ActDocumentTitleBannerProps> = ({
 					{actData.stageTitle.replace(/^Этап\s*\d+\s*[:.—-]\s*/i, "")}»)
 				</div>
 				<p className="text-[10px] text-slate-500 mt-0.5">
-					Составлен во исполнение ст.&nbsp;779–783 ГК&nbsp;РФ, ст.&nbsp;20, 79
-					323-ФЗ и Постановления Правительства РФ от 11.05.2023 №&nbsp;736
+					Составлен в соответствии с правилами оказания платных медицинских услуг и планом лечения
 				</p>
 			</div>
 		</>

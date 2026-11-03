@@ -3,7 +3,7 @@ import { getStagePresetByKind } from "../stagePaymentPresets.js";
 import type { FiscalReceiptItem, MilestoneStage, StageFiscalReceipt54Fz } from "./types";
 
 /**
- * Формирование фискального чека 54-ФЗ для этапа оплаты
+ * Формирование кассового чека этапа
  */
 export function generate54FzStageFiscalReceipt(
 	stage: MilestoneStage,

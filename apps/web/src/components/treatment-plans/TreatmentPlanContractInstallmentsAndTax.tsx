@@ -56,11 +56,11 @@ export const TreatmentPlanContractInstallmentsAndTax: React.FC<TreatmentPlanCont
 							<ShieldCheck size={13} />
 							<span>Налоговый вычет 13% ({tier.ndflDetails?.code === "02" ? "Дорогостоящее лечение" : "Стандартное лечение"}):</span>
 						</div>
-						<span className="font-mono font-bold text-emerald-700 text-xs">+{tier.ndflRefundRub.toLocaleString("ru-RU")} ₽ к возврату</span>
+						<span className="font-mono font-bold text-emerald-700 text-xs">+{(tier.ndflRefundRub ?? Math.round(finalTotalRub * 0.13)).toLocaleString("ru-RU")} ₽ к возврату</span>
 					</div>
 					<div className="flex items-baseline justify-between text-[10.5px] text-slate-600">
 						<span>Чистая стоимость с учетом вычета:</span>
-						<strong className="font-mono text-slate-900 text-xs">{Math.max(0, finalTotalRub - tier.ndflRefundRub).toLocaleString("ru-RU")} ₽</strong>
+						<strong className="font-mono text-slate-900 text-xs">{Math.max(0, finalTotalRub - (tier.ndflRefundRub ?? Math.round(finalTotalRub * 0.13))).toLocaleString("ru-RU")} ₽</strong>
 					</div>
 					<p className="text-slate-500 text-[9.5px] m-0">
 						Справку об оплате медицинских услуг для налогового органа клиника оформляет и выдает бесплатно.

@@ -1,5 +1,5 @@
 /**
- * treatmentPlanBundlesTierAndInvoice.test.ts — применение пакетов к тарифу и касса 54-ФЗ.
+ * treatmentPlanBundlesTierAndInvoice.test.ts — применение пакетов к тарифу и кассовые чеки.
  * (Мандат 8b: строго <= 120 строк).
  */
 
@@ -13,7 +13,7 @@ import {
 } from "../treatmentPlanBundlesEngine";
 import { initialTestTier } from "./helpers/bundlesTestHelpers";
 
-describe("treatmentPlanBundlesEngine — Применение к тарифу и касса 54-ФЗ", () => {
+describe("treatmentPlanBundlesEngine — Применение к тарифу и кассовые чеки", () => {
 	test("пересчитывает общие суммы тарифа, вычет НДФЛ 13% и рассрочку 0%", () => {
 		const updatedTier = applyClinicalBundleToTier(initialTestTier, "implant_turnkey", 36);
 
@@ -55,7 +55,7 @@ describe("treatmentPlanBundlesEngine — Применение к тарифу и
 		}
 	});
 
-	test("createBundleInvoiceExport формирует полный пакет данных кассы 54-ФЗ с учетом скидки", () => {
+	test("createBundleInvoiceExport формирует полный пакет данных кассового чека с учетом скидки", () => {
 		const invoice = createBundleInvoiceExport("caries_turnkey", {
 			toothNumber: 16,
 			patientId: "pat-123",

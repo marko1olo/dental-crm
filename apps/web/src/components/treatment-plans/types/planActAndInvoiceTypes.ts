@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/treatment-plans/types/planActAndInvoiceTypes.ts
  *
- * Акты выполненных работ, экспорт счетов в кассу 54-ФЗ и цифровые подписи.
+ * Акты выполненных работ, экспорт счетов в кассу и цифровые подписи.
  */
 
 import type { Kopecks } from "@dental/shared";

@@ -68,7 +68,7 @@ describe("Treatment Plan — Студия сравнения и печать д�
 		assert.ok(html.includes("btn-comparator-empty-close"));
 	});
 
-	it("renders TreatmentPlanContractPrint with patient-friendly mode, messenger copy, and Order 1051n consent", () => {
+	it("renders TreatmentPlanContractPrint with patient-friendly mode, messenger copy, and patient informed consent", () => {
 		const html = renderToString(
 			<TreatmentPlanContractPrint
 				isOpen={true}
@@ -85,7 +85,8 @@ describe("Treatment Plan — Студия сравнения и печать д�
 		assert.ok(html.includes("data-testid=\"contract-view-patient-friendly-btn\""));
 		assert.ok(html.includes("data-testid=\"contract-view-official-btn\""));
 		assert.ok(html.includes("data-testid=\"contract-copy-messenger-btn\""));
-		assert.ok(html.includes("1051н"));
-		assert.ok(html.includes("323-ФЗ"));
+		assert.ok(html.includes("Информированное добровольное согласие на медицинское вмешательство и план лечения"));
+		assert.equal(html.includes("1051н"), false);
+		assert.equal(html.includes("323-ФЗ"), false);
 	});
 });

@@ -68,7 +68,7 @@ export const ThermalReceiptSlipPreview: React.FC<ThermalReceiptSlipPreviewProps>
 				</div>
 			) : (
 				<div className="w-full rounded-2xl border border-dashed border-[var(--line)] p-12 text-center text-xs text-[var(--muted)]">
-					Выберите этап и нажмите «Сформировать фискальный чек» для предпросмотра чека ККТ.
+					Выберите этап и нажмите «Сформировать кассовый чек» для предпросмотра чека.
 				</div>
 			)}
 		</div>

@@ -105,7 +105,7 @@ export const FiscalReceiptConfigPanel: React.FC<FiscalReceiptConfigPanelProps> =
 				className="stage-action-btn primary w-full"
 			>
 				<QrCode className="h-4 w-4" />
-				Сформировать фискальный чек
+				Сформировать кассовый чек
 			</button>
 		</div>
 	);

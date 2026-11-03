@@ -1,5 +1,5 @@
 /**
- * StagePaymentFiscalTab.tsx — Вкладка фискализации 54-ФЗ и кассовых чеков (DENTE CRM).
+ * StagePaymentFiscalTab.tsx — Кассовый чек и оплата этапа (DENTE CRM).
  */
 
 import React from "react";

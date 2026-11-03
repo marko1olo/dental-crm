@@ -105,7 +105,7 @@ export const AcceptanceSignatureDrawer: React.FC<AcceptanceSignatureDrawerProps>
 					/>
 					<span>С планом, рисками и стоимостью ознакомлен</span>
 				</label>
-				<span className="italic">ст. 20 № 323-ФЗ</span>
+				<span className="italic">Информированное согласие</span>
 			</div>
 		</div>
 	);
