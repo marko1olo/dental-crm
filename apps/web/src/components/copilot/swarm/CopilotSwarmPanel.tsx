@@ -6,7 +6,8 @@
  * 2. Odontogram & Diary Inquisitor (Авто-аудит ЭМК и K02-K08 перед проверками)
  * 3. Billing & Fiscal Sentinel (Сверка копеек, прейскуранта услуг и чеков кассы)
  * 4. Vision & DICOM Specialist (Анализ RVG и КЛКТ срезов)
- * Mandate 8b: <= 250 lines. Mandate 8am: 1 Primary CTA. Mandate 8e: 0 disabled buttons. Zero cartoon emojis.
+ * Mandate 8b: <= 250 lines (140..250). Mandate 8am: 1 Primary CTA. Mandate 8e: 0 disabled buttons. Zero cartoon emojis.
+ * Mandate 8wy: Honest Production zero-mock state (Ожидание аудита, 0 записей проверено).
  */
 
 import React, { useState } from "react";
@@ -79,7 +80,7 @@ export const CopilotSwarmPanel: React.FC = () => {
 		return (
 			<span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium bg-[var(--paper-soft,#f4f7f6)] text-[var(--muted,#64748b)] border border-[var(--line,rgba(15,118,110,0.2))]">
 				<Clock size={11} />
-				<span>Ожидание</span>
+				<span>{agent.inspectedRecordsCount === 0 ? "Ожидание аудита" : "Ожидание"}</span>
 			</span>
 		);
 	};
@@ -150,7 +151,9 @@ export const CopilotSwarmPanel: React.FC = () => {
 								<span>
 									Проверено записей:{" "}
 									<strong className="text-[var(--ink)] font-semibold">
-										{agent.inspectedRecordsCount} {agent.metricLabel}
+										{agent.inspectedRecordsCount === 0
+											? `0 ${agent.metricLabel}`
+											: `${agent.inspectedRecordsCount} ${agent.metricLabel}`}
 									</strong>
 								</span>
 								<span>•</span>

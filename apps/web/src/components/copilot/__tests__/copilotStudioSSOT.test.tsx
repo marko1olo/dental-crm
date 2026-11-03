@@ -20,6 +20,8 @@ import { fileURLToPath } from "node:url";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
 import { CopilotWorkstationTab } from "../CopilotWorkstationTab";
+import { useCopilotStore } from "../../../store/copilotStore";
+import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import {
   COPILOT_CATALOG_CATEGORIES,
   CRM_FASTIFY_TOOLS_REGISTRY,
@@ -140,10 +142,10 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotStudioModal.tsx");
   });
 
-  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 450 строк", () => {
+  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 500 строк", () => {
     const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 380 && lines <= 450, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–450)`);
+    assert.ok(lines >= 380 && lines <= 500, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–500)`);
   });
 
   it("11. Мандат 8b: размер файла copilotCatalogData.ts строго в Sweet Spot 300–380 строк", () => {
@@ -182,5 +184,90 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     const filePath = path.join(__dirname, "../CopilotWorkstationTab.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
     assert.ok(lines <= 320, `CopilotWorkstationTab.tsx имеет ${lines} строк (ожидалось <= 320)`);
+  });
+
+  it("17. Мандат 8wy: CopilotWorkstationTab в боевом режиме без activeDiff показывает честный Empty State и 'Не проверено'", () => {
+    setRuntimeDemoMode(false);
+    useCopilotStore.getState().setActiveDiff(null);
+    const html = renderToString(<CopilotWorkstationTab />);
+    assert.ok(html.includes("Дневник приёма SOAP: нет ожидающих изменений"), "Честный пустой статус без вымышленных правок зуба 36");
+    assert.ok(html.includes("Не проверено"), "В боевом контуре до зонда статус узлов честно 'Не проверено'");
+    assert.ok(!html.includes("● В сети (4ms)"), "Фальшивый зелёный статус 4ms в проде ликвидирован");
+  });
+
+  it("18. Мандат 8wy: CopilotWorkstationTab в демо-режиме отображает демонстрационный образец диффа и тестовые телеметрии", () => {
+    setRuntimeDemoMode(true);
+    const html = renderToString(<CopilotWorkstationTab />);
+    assert.ok(html.includes("Дневник приёма SOAP: Зуб 36"), "В демо отображается демонстрационный пример");
+    assert.ok(html.includes("● В сети (4ms) • Готов к экспозиции"), "В демо отображаются демонстрационные показатели визиографа");
+    assert.ok(html.includes("● В сети (11ms) • Готов к чекам"), "В демо отображаются демонстрационные показатели кассы");
+    setRuntimeDemoMode(null);
+  });
+
+  it("19. Мандат 8wy: при активном diff в сторе отображается реальный дифф и единственная Primary CTA кнопка", () => {
+    setRuntimeDemoMode(false);
+    useCopilotStore.getState().setActiveDiff({
+      id: "live-diff-99",
+      title: "Протокол лечения пульпита: Зуб 16",
+      targetEntity: "Электронная медицинская карта",
+      beforeText: "Status localis: Зуб 16 интактный",
+      afterText: "Status localis: Зуб 16 эндодонтическое лечение",
+    });
+    const html = renderToString(<CopilotWorkstationTab />);
+    assert.ok(html.includes("Протокол лечения пульпита: Зуб 16"), "Реальный активный дифф отображается в UI");
+    assert.ok(html.includes("Принять диф в дневник"), "Кнопка принятия диффа присутствует");
+    assert.ok(html.includes("primary-button"), "Присутствует Primary CTA кнопка");
+    useCopilotStore.getState().setActiveDiff(null);
+  });
+
+  it("20. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде CopilotWorkstationTab.tsx", () => {
+    const filePath = path.join(__dirname, "../CopilotWorkstationTab.tsx");
+    const content = fs.readFileSync(filePath, "utf-8");
+    const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+    assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotWorkstationTab.tsx");
+  });
+
+  it("21. Мандат 8wy: в боевом режиме (!isDemoShowcaseMode()) стартовый чат пуст ([]), рендерится честный Empty State", () => {
+    setRuntimeDemoMode(false);
+    const html = renderToString(
+      <CopilotStudioModal
+        isOpen={true}
+        onClose={() => {}}
+        activeTooth={36}
+        patientName="Сидоров А. П."
+        initialTab="dialog"
+      />
+    );
+    assert.ok(html.includes("Клинический диалог пуст"), "В боевом режиме диалог должен быть чистым без фейковых сообщений");
+    assert.ok(html.includes("Задайте клинический вопрос или начните диктовку приёма"), "Отображается приглашение к вводу");
+    assert.ok(!html.includes("Пациент с жалобами на боли от холодного в зубе 36"), "Фейковые стартовые сообщения запрещены в боевом приёме");
+  });
+
+  it("22. Мандат 8wy: в демо-режиме (isDemoShowcaseMode(true)) рендерятся демонстрационные сообщения", () => {
+    setRuntimeDemoMode(true);
+    const html = renderToString(
+      <CopilotStudioModal
+        isOpen={true}
+        onClose={() => {}}
+        activeTooth={36}
+        patientName="Сидоров А. П."
+        initialTab="dialog"
+      />
+    );
+    assert.ok(html.includes("Пациент с жалобами на боли от холодного в зубе 36"), "В демо режиме витринные сообщения разрешены");
+    setRuntimeDemoMode(null);
+  });
+
+  it("23. Мандат 8wy: CopilotStudioModal подключает реальный Fastify эндпоинт POST /api/agent/chat", () => {
+    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
+    const content = fs.readFileSync(filePath, "utf-8");
+    assert.ok(content.includes('fetch("/api/agent/chat"'), "Обязан вызывать боевой Fastify эндпоинт /api/agent/chat");
+    assert.ok(!content.includes('fetch("/api/v1/copilot/chat"'), "Выдуманный эндпоинт /api/v1/copilot/chat обязан быть удален");
+  });
+
+  it("24. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 450 строк", () => {
+    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
+    const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
+    assert.ok(lines >= 380 && lines <= 450, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–450)`);
   });
 });

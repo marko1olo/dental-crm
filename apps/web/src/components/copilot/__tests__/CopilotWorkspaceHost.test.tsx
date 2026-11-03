@@ -12,6 +12,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CopilotWorkspaceHost } from "../CopilotWorkspaceHost";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
+import { setRuntimeDemoMode } from "../../../utils/demoModeEngine";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -119,5 +120,33 @@ describe("CopilotWorkspaceHost Red Team Inquisition", () => {
     const html = renderToString(<DirectCopilotLauncher />);
     // В тестовом Node окружении без window.location search/hash возвращает null или компонент
     assert.equal(typeof html, "string");
+  });
+
+  it("11. Мандат 8wy: в боевом режиме (!isDemoShowcaseMode()) диалог чист и рендерит Empty State", () => {
+    setRuntimeDemoMode(false);
+    const html = renderToString(
+      <CopilotWorkspaceHost
+        isOpen={true}
+        onClose={() => {}}
+        initialTab="dialog"
+      />
+    );
+    assert.ok(html.includes("Диалог чист"));
+    assert.ok(html.includes("Пациент не выбран"));
+    assert.ok(html.includes("Задайте клинический вопрос, продиктуйте дневник приёма голосом или выберите быстрое действие."));
+  });
+
+  it("12. Мандат 8wy: в демо-режиме (isDemoShowcaseMode()) подгружаются дефолтные сообщения и Иванов Иван Иванович", () => {
+    setRuntimeDemoMode(true);
+    const html = renderToString(
+      <CopilotWorkspaceHost
+        isOpen={true}
+        onClose={() => {}}
+        initialTab="dialog"
+      />
+    );
+    assert.ok(html.includes("Иванов Иван Иванович"));
+    assert.ok(html.includes("Пациент с жалобами на боли от холодного"));
+    setRuntimeDemoMode(null);
   });
 });

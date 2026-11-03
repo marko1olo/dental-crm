@@ -1,18 +1,27 @@
 /**
  * @file copilotStore.ts
  * @description SSOT Zustand store for DENTE AI Copilot: Settings, Trust Levels,
- * Dialog History & Threads, Long-term Clinical Memory, Tool Execution Logs & Diffs (Mandate 8b <= 300 lines).
+ * Dialog History & Threads, Long-term Clinical Memory, Tool Execution Logs & Diffs (Mandate 8b <= 450 lines).
+ * Mandate 8wy: Strict Production vs Showcase separation via isDemoShowcaseMode().
  */
 
 import { create } from "zustand";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../lib/safeLocalStorage";
+import { isDemoShowcaseMode } from "../lib/demoMode";
 import {
 	type SwarmAgentCard,
 	type SwarmAgentRole,
 	type ContextTelemetryData,
-	DEFAULT_SWARM_AGENTS,
-	DEFAULT_TELEMETRY,
+	PRODUCTION_SWARM_AGENTS,
+	PRODUCTION_TELEMETRY,
+	SHOWCASE_SWARM_AGENTS,
+	SHOWCASE_TELEMETRY,
 } from "../components/copilot/swarm/swarmTypes";
+import {
+	SHOWCASE_MEMORY_FACTS,
+	SHOWCASE_THREADS,
+	SHOWCASE_TOOL_LOGS,
+} from "./copilotShowcaseData";
 
 export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
 export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
@@ -181,88 +190,34 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	autoMicOnAppointmentOpen: false,
 };
 
-const DEFAULT_MEMORY_FACTS: AiMemoryFact[] = [
-	{
-		id: "mem-1",
-		category: "materials",
-		fact: "Предпочтение наногибридного композита светового отверждения (Filtek Ultimate / Harmonize) и бонда 7 поколения",
-		createdAt: "2026-10-15",
-	},
-	{
-		id: "mem-2",
-		category: "anesthesia",
-		fact: "Инфильтрационная и проводниковая анестезия: Артикаин 1:200 000 по умолчанию, без вазоконстриктора при гипертонии",
-		createdAt: "2026-10-16",
-	},
-	{
-		id: "mem-3",
-		category: "equipment",
-		fact: "Рабочая станция кабинета №1: Визиограф Planmeca ProSensor, локальная dropzone C:\\Radiology\\Export",
-		createdAt: "2026-10-20",
-	},
-	{
-		id: "mem-4",
-		category: "protocols",
-		fact: "Формирование протокола SOAP: подробное обоснование диагноза по МКБ-10 с формулой FDI",
-		createdAt: "2026-10-25",
-	},
-];
+/**
+ * Инициализирует состояние стора с изоляцией Демо и Продакшн (Мандат 8wy).
+ * В боевом режиме (!isDemoShowcaseMode()): чистые пустые массивы и нулевой контекст.
+ * В демо-режиме (isDemoShowcaseMode()): витринные клинические примеры.
+ */
+export function getInitialCopilotState() {
+	const isDemo = isDemoShowcaseMode();
+	const defaultThreads: CopilotThread[] = isDemo ? SHOWCASE_THREADS : [];
+	const defaultMemory: AiMemoryFact[] = isDemo ? SHOWCASE_MEMORY_FACTS : [];
+	const defaultLogs: ToolExecutionLog[] = isDemo ? SHOWCASE_TOOL_LOGS : [];
+	const defaultAgents: SwarmAgentCard[] = isDemo ? SHOWCASE_SWARM_AGENTS : PRODUCTION_SWARM_AGENTS;
+	const defaultTelemetry: ContextTelemetryData = isDemo ? SHOWCASE_TELEMETRY : PRODUCTION_TELEMETRY;
 
-const DEFAULT_THREADS: CopilotThread[] = [
-	{
-		id: "thread-active",
-		title: "Приём: Осмотр и глубокий кариес 36",
-		updatedAt: "10:16",
-		pinned: true,
-		patientName: "Иванов Иван Иванович",
-		patientId: "pat-active",
-		messageCount: 4,
-		previewText: "Сформирован протокол приёма и план лечения зуба 36",
-	},
-	{
-		id: "thread-prev-1",
-		title: "Консультация ортопеда: All-on-4 нижняя челюсть",
-		updatedAt: "Вчера, 16:40",
-		pinned: false,
-		patientName: "Смирнова Елена Павловна",
-		patientId: "pat-smirnova",
-		messageCount: 6,
-		previewText: "Сформирована сравнительная смета: цирконий vs металлокерамика",
-	},
-	{
-		id: "thread-prev-2",
-		title: "Анализ снимка КЛКТ: Зуб 46 периапикальный очаг",
-		updatedAt: "28 окт, 14:10",
-		pinned: false,
-		patientName: "Кузнецов Алексей Сергеевич",
-		patientId: "pat-kuznetsov",
-		messageCount: 3,
-		previewText: "Обнаружен дополнительный дистально-язычный канал Radix Entomolaris",
-	},
-];
+	const threads = safeLocalStorageGetJson("dente_copilot_threads", defaultThreads) || [];
+	const memoryFacts = safeLocalStorageGetJson("dente_copilot_memory", defaultMemory) || [];
+	const activeThreadId = threads.length > 0 ? (threads[0]?.id || "") : "";
 
-const DEFAULT_TOOL_LOGS: ToolExecutionLog[] = [
-	{
-		id: "log-1",
-		toolName: "updateToothStatus",
-		category: "clinical",
-		status: "success",
-		durationMs: 42,
-		args: { tooth: 36, diagnosis: "K02.1" },
-		resultSummary: "Одонтограмма обновлена: K02.1 Кариес дентина (Зуб 36)",
-		timestamp: "10:16:02",
-	},
-	{
-		id: "log-2",
-		toolName: "generateSoapDiary",
-		category: "clinical",
-		status: "success",
-		durationMs: 120,
-		args: { tooth: 36, anesthesic: "Articaine 1.7ml", material: "Nano-composite" },
-		resultSummary: "Дневник приёма SOAP сформирован и готов к подписанию",
-		timestamp: "10:16:05",
-	},
-];
+	return {
+		threads,
+		activeThreadId,
+		memoryFacts,
+		toolExecutionLogs: defaultLogs,
+		swarmAgents: defaultAgents,
+		telemetry: defaultTelemetry,
+	};
+}
+
+const initialState = getInitialCopilotState();
 
 export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	settings: {
@@ -270,16 +225,16 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		...(safeLocalStorageGetJson("dente_copilot_settings", DEFAULT_SETTINGS) || {}),
 		runtimeMode: detectRuntimeEnvironment(),
 	},
-	memoryFacts: safeLocalStorageGetJson("dente_copilot_memory", DEFAULT_MEMORY_FACTS),
-	threads: safeLocalStorageGetJson("dente_copilot_threads", DEFAULT_THREADS),
-	activeThreadId: "thread-active",
+	memoryFacts: initialState.memoryFacts,
+	threads: initialState.threads,
+	activeThreadId: initialState.activeThreadId,
 	threadSearchQuery: "",
-	toolExecutionLogs: DEFAULT_TOOL_LOGS,
+	toolExecutionLogs: initialState.toolExecutionLogs,
 	activeDiff: null,
 	isSettingsOpen: false,
 	isHistoryOpen: false,
-	swarmAgents: DEFAULT_SWARM_AGENTS,
-	telemetry: DEFAULT_TELEMETRY,
+	swarmAgents: initialState.swarmAgents,
+	telemetry: initialState.telemetry,
 
 	updateSettings: (patch) => {
 		set((state) => {
@@ -307,11 +262,12 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		set((state) => ({
 			swarmAgents: state.swarmAgents.map((agent) => {
 				if (!agentId || agent.id === agentId) {
+					const nowStr = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 					return {
 						...agent,
 						status: "completed" as const,
 						statusLabel: "Готово",
-						lastAuditAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+						lastAuditAt: nowStr,
 						inspectedRecordsCount: agent.inspectedRecordsCount + 1,
 					};
 				}

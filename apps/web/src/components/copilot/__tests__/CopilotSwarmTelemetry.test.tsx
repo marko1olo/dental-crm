@@ -5,7 +5,8 @@
  * 1. Context Telemetry Bar: patient info, model badge, response latency, token budget progress & soft compression markers (70% Pruning, 85% Sliding Window), gateway status.
  * 2. Multi-Agent Swarm Inspector: 4 canonical subagent roles (Triage Agent, Odontogram & Diary Inquisitor, Billing & Fiscal Sentinel, Vision & DICOM Specialist), status badges, audit metrics, single Primary CTA (Mandate 8am), non-disabled buttons (Mandate 8e).
  * 3. Mount in CopilotStudioModal and CopilotDrawer.
- * 4. Architectural invariants: file limits (Mandate 8b), strictly 0 cartoon emojis (Mandate 8d pt 7).
+ * 4. Mandate 8wy: Strict Production vs Showcase isolation.
+ * 5. Architectural invariants: file limits (Mandate 8b), strictly 0 cartoon emojis (Mandate 8d pt 7).
  */
 
 import { describe, it } from "node:test";
@@ -20,8 +21,9 @@ import { CopilotContextTelemetryBar } from "../telemetry/CopilotContextTelemetry
 import { CopilotSwarmPanel } from "../swarm/CopilotSwarmPanel";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { CopilotDrawer } from "../CopilotDrawer";
-import { useCopilotStore } from "../../../store/copilotStore";
+import { useCopilotStore, getInitialCopilotState } from "../../../store/copilotStore";
 import { DEFAULT_SWARM_AGENTS } from "../swarm/swarmTypes";
+import { setRuntimeDemoMode } from "../../../lib/demoMode";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -173,6 +175,49 @@ describe("Mounting into CopilotStudioModal & CopilotDrawer", () => {
 	});
 });
 
+describe("Mandate 8wy: Production vs Showcase Isolation", () => {
+	it("1. В боевом режиме (!isDemoShowcaseMode()) начальное состояние строго пустое и чистое", () => {
+		setRuntimeDemoMode(false);
+		const prodState = getInitialCopilotState();
+		assert.equal(prodState.threads.length, 0, "В боевом режиме массив тредов обязан быть пустым");
+		assert.equal(prodState.memoryFacts.length, 0, "В боевом режиме массив фактов памяти обязан быть пустым");
+		assert.equal(prodState.toolExecutionLogs.length, 0, "В боевом режиме логи инструментов обязаны быть пустыми");
+		assert.equal(prodState.telemetry.patientName, "", "В боевом режиме имя пациента обязано быть пустым");
+		assert.equal(prodState.telemetry.activeTooth, null, "В боевом режиме активный зуб обязан быть null");
+		assert.equal(prodState.telemetry.activeTokens, 0, "В боевом режиме токены обязаны быть 0");
+
+		assert.ok(prodState.swarmAgents.every((a) => a.status === "idle"), "Все агенты боевого роя обязаны иметь статус idle");
+		assert.ok(prodState.swarmAgents.every((a) => a.inspectedRecordsCount === 0), "Счетчик проверок обязан быть 0");
+		assert.ok(prodState.swarmAgents.every((a) => a.lastAuditAt === "Не проводился"), "Время последнего аудита обязано быть 'Не проводился'");
+	});
+
+	it("2. CopilotContextTelemetryBar в боевом режиме при пустом пациенте отображает «Пациент не выбран» и «0 / 128k токенов»", () => {
+		useCopilotStore.getState().updateTelemetry({
+			patientName: "",
+			patientId: "",
+			activeTooth: null,
+			activeTokens: 0,
+			maxTokens: 128000,
+		});
+
+		const html = renderToString(<CopilotContextTelemetryBar />);
+		assert.ok(html.includes("Пациент не выбран"), "При пустом пациенте обязан выводиться честный текст 'Пациент не выбран'");
+		assert.ok(!html.includes("Иванов Иван Иванович"), "Фейковый Иванов не должен просачиваться в боевой прод");
+		assert.ok(!html.includes("copilot-telemetry-tooth-badge"), "При activeTooth=null бейдж зуба не должен рендериться");
+		assert.ok(html.includes("0 / 128k токенов"), "При 0 токенов обязан отображаться текст '0 / 128k токенов'");
+	});
+
+	it("3. В демо-режиме (isDemoShowcaseMode() === true) загружаются витринные данные", () => {
+		setRuntimeDemoMode(true);
+		const demoState = getInitialCopilotState();
+		assert.ok(demoState.threads.length > 0, "В демо-режиме треды обязаны загружаться");
+		assert.ok(demoState.memoryFacts.length > 0, "В демо-режиме факты памяти обязаны загружаться");
+		assert.ok(demoState.toolExecutionLogs.length > 0, "В демо-режиме логи инструментов обязаны загружаться");
+		assert.equal(demoState.telemetry.patientName, "Иванов Иван Иванович", "В демо-режиме витринный пациент Иванов");
+		setRuntimeDemoMode(false);
+	});
+});
+
 describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 	it("1. Мандат 8b: проверка размеров файлов компонентов (Sweet Spot)", () => {
 		const studioLines = fs.readFileSync(path.join(__dirname, "../CopilotStudioModal.tsx"), "utf-8").split("\n").length;
@@ -186,6 +231,12 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 
 		const drawerLines = fs.readFileSync(path.join(__dirname, "../CopilotDrawer.tsx"), "utf-8").split("\n").length;
 		assert.ok(drawerLines <= 500, `CopilotDrawer.tsx: ${drawerLines} строк (ожидалось <= 500)`);
+
+		const storeLines = fs.readFileSync(path.join(__dirname, "../../../store/copilotStore.ts"), "utf-8").split("\n").length;
+		assert.ok(storeLines <= 450, `copilotStore.ts: ${storeLines} строк (ожидалось <= 450)`);
+
+		const showcaseLines = fs.readFileSync(path.join(__dirname, "../../../store/copilotShowcaseData.ts"), "utf-8").split("\n").length;
+		assert.ok(showcaseLines <= 120, `copilotShowcaseData.ts: ${showcaseLines} строк (ожидалось <= 120)`);
 	});
 
 	it("2. Мандат 8d pt 7: строго 0 cartoon emojis в новых и обновленных файлах", () => {
@@ -196,6 +247,8 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 			path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"),
 			path.join(__dirname, "../swarm/CopilotSwarmPanel.tsx"),
 			path.join(__dirname, "../swarm/swarmTypes.ts"),
+			path.join(__dirname, "../../../store/copilotStore.ts"),
+			path.join(__dirname, "../../../store/copilotShowcaseData.ts"),
 		];
 
 		for (const file of filesToCheck) {

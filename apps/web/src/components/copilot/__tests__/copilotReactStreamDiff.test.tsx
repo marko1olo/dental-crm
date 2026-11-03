@@ -15,6 +15,7 @@ import { CopilotThinkingMessage } from "../message/CopilotThinkingMessage";
 import { CopilotToolMessage } from "../message/CopilotToolMessage";
 import { ActionConfirmDiffBox } from "../actionConfirm/ActionConfirmDiffBox";
 import { CopilotStudioModal } from "../CopilotStudioModal";
+import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import type { ToolUiMessage, ThinkingUiMessage } from "../copilotTypes";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -134,6 +135,7 @@ describe("Copilot ReAct Stream, Extended Thinking (CoT) & Two-Phase Diff Suite",
   });
 
   it("7. CopilotStudioModal renders structured Tool Execution Card with two-phase diff for action proposals", () => {
+    setRuntimeDemoMode(true);
     const html = cleanHtml(
       renderToString(
         <CopilotStudioModal
@@ -150,6 +152,7 @@ describe("Copilot ReAct Stream, Extended Thinking (CoT) & Two-Phase Diff Suite",
     assert.ok(html.includes("Применить в карту"), "Кнопка подтверждения действия 'Применить в карту' обязана присутствовать");
     assert.ok(html.includes("Отклонить"), "Кнопка 'Отклонить' обязана присутствовать");
     assert.equal(html.includes("disabled"), false, "Мандат 8e: кнопки врача никогда не должны быть disabled");
+    setRuntimeDemoMode(null);
   });
 
   it("8. Мандат 8d pt 7: строго 0 cartoon emojis во всех компонентах ReAct Stream & Diff", () => {

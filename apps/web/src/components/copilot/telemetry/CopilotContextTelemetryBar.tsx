@@ -2,15 +2,15 @@
  * @file CopilotContextTelemetryBar.tsx
  * @description Compact Antigravity-style Context Telemetry Bar for DENTE AI Copilot.
  * Displays:
- * - Active patient, ID and tooth formula FDI
- * - Active clinical model badge with latency indicator (~450ms)
+ * - Active patient, ID and tooth formula FDI (Honest Production: "Пациент не выбран" if empty)
+ * - Active clinical model badge with latency indicator
  * - Visual token budget progress bar with 70% ("Pruning") & 85% ("Sliding Window") threshold markers
  * - Gateway status: Cloud gateway (Active) vs Local deterministic (<5ms)
- * Mandate 8b: <= 200 lines. Zero cartoon emojis.
+ * Mandate 8b: <= 200 lines (80..200). Mandate 8wy: Zero mock leaks in production. Zero cartoon emojis.
  */
 
 import React from "react";
-import { User, Cpu, Globe, HardDrive, Sparkles, Activity } from "lucide-react";
+import { User, Cpu, Globe, HardDrive, Sparkles } from "lucide-react";
 import { useCopilotStore } from "../../../store/copilotStore";
 
 export interface CopilotContextTelemetryBarProps {
@@ -32,14 +32,14 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	const resolvedPatientId = propPatientId ?? telemetry.patientId;
 	const resolvedActiveTooth = propActiveTooth !== undefined ? propActiveTooth : telemetry.activeTooth;
 
-	const activeTokens = telemetry.activeTokens || 14250;
+	const activeTokens = typeof telemetry.activeTokens === "number" ? telemetry.activeTokens : 0;
 	const maxTokens = telemetry.maxTokens || 128000;
 	const tokenRatio = Math.min(1, Math.max(0, activeTokens / maxTokens));
 	const tokenPercent = Math.round(tokenRatio * 100);
 
 	const isLocal = settings.runtimeMode === "desktop_native" || telemetry.gatewayStatus === "local_deterministic";
 	const modelLabel = settings.model.includes("flash") ? "Gemini 2.5 Flash" : (settings.model || "Gemini 2.5 Flash");
-	const latencyLabel = isLocal ? "<5мс" : `~${telemetry.latencyMs || 450}мс`;
+	const latencyLabel = isLocal ? "<5мс" : telemetry.latencyMs > 0 ? `~${telemetry.latencyMs}мс` : "~0мс";
 
 	// Threshold status
 	const isSlidingWindow = tokenRatio >= 0.85;
@@ -62,7 +62,13 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 			<div className="flex items-center gap-2 flex-wrap min-w-0">
 				<div className="flex items-center gap-1.5 font-medium text-[var(--ink)]">
 					<User size={13} className="text-[var(--teal,#0d9488)] shrink-0" />
-					<span className="truncate">Пациент: {resolvedPatientName || "Не выбран"}</span>
+					<span className="truncate">
+						{resolvedPatientName ? (
+							<>Пациент: {resolvedPatientName}</>
+						) : (
+							<span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>
+						)}
+					</span>
 					{resolvedPatientId && (
 						<span className="text-[10px] text-[var(--muted,#64748b)]">{`#${resolvedPatientId}`}</span>
 					)}
@@ -93,7 +99,9 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				>
 					<Cpu size={11} className="text-[var(--muted,#64748b)] shrink-0" />
 					<span className="font-mono text-[10px] text-[var(--ink)]">
-						{activeTokens.toLocaleString("ru-RU")} / {maxTokens.toLocaleString("ru-RU")} ({tokenPercent}%)
+						{activeTokens === 0
+							? "0 / 128k токенов"
+							: `${activeTokens.toLocaleString("ru-RU")} / ${maxTokens.toLocaleString("ru-RU")} (${tokenPercent}%)`}
 					</span>
 					{/* Прогресс-бар токенов */}
 					<div className="w-14 h-1.5 rounded-full bg-[var(--line,rgba(15,118,110,0.2))] overflow-hidden flex shrink-0">

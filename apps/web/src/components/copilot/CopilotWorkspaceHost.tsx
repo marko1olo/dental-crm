@@ -14,6 +14,7 @@ import {
 import { useVoiceEngine } from "../voice/voiceEngine";
 import { showToast } from "../GlobalToast";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 
 export interface CopilotWorkspaceHostProps {
   isOpen: boolean;
@@ -39,14 +40,21 @@ const DEFAULT_MESSAGES: ChatMessage[] = [
 ];
 
 export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
-  isOpen, onClose, activeTooth = 36, patientId, patientName = "Иванов Иван Иванович", initialTab = "dialog",
+  isOpen, onClose, activeTooth = 36, patientId, patientName, initialTab = "dialog",
 }) => {
+  const isDemo = isDemoShowcaseMode();
+  const effectivePatientName = isDemo
+    ? (patientName || "Иванов Иван Иванович")
+    : (!patientName || patientName === "Иванов Иван Иванович" ? "Пациент не выбран" : patientName);
+
   const [activeTab, setActiveTab] = useState<"dialog" | "actions">(initialTab);
   const [runtimeMode, setRuntimeMode] = useState<"web_browser" | "desktop_native">(() => {
     const saved = safeLocalStorageGetItem("dente_copilot_runtime_mode");
     return saved === "desktop_native" ? "desktop_native" : "web_browser";
   });
-  const [messages, setMessages] = useState<ChatMessage[]>(DEFAULT_MESSAGES);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    return isDemoShowcaseMode() ? DEFAULT_MESSAGES : [];
+  });
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [, setIsExecuting] = useState<string | null>(null);
   const [appliedStatus, setAppliedStatus] = useState<boolean>(false);
@@ -102,12 +110,14 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
     voice.clearTranscript();
 
     try {
-      const res = await fetch("/api/v1/copilot/agent/execute", {
+      const res = await fetch("/api/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          prompt: text,
-          context: { activeTooth, patientId, patientName },
+          messages: [{ role: "user", content: text }],
+          patientId: patientId || undefined,
+          runtimeMode,
+          stream: false,
         }),
       });
 
@@ -116,7 +126,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
         const assistantMsg: ChatMessage = {
           id: `msg-${Date.now() + 1}`,
           role: "assistant",
-          text: json.response || json.result?.message || "Клинический запрос обработан по стандартам доказательной стоматологии (СтАР/ITI).",
+          text: json.text || json.response || "Клинический запрос обработан по стандартам доказательной стоматологии (СтАР/ITI).",
           citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
           timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           applied: false,
@@ -125,7 +135,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
         return;
       }
     } catch {
-      // Local fallback without blocking doctor autonomy
+      // Локальный клинический советник без блокировок врача (Мандат 8e)
     }
 
     const isToothQuery = /\b([1-4][1-8])\b/.test(text);
@@ -159,9 +169,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
         })
       );
     }
-    setMessages((prev) =>
-      prev.map((m) => (m.role === "assistant" ? { ...m, applied: true } : m))
-    );
+    setMessages((prev) => prev.map((m) => (m.role === "assistant" ? { ...m, applied: true } : m)));
   }, [activeTooth]);
 
   // Вызов реальных инструментов Fastify API (Мандат 8e)
@@ -188,21 +196,9 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div
-      className="fixed inset-0 z-[99990] flex justify-end max-md:items-end pointer-events-auto"
-      data-testid="copilot-workspace-host-root"
-    >
-      <div
-        className="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity"
-        onClick={onClose}
-        aria-hidden="true"
-        data-testid="copilot-host-backdrop"
-      />
-      <aside
-        className="relative z-10 flex flex-col w-full md:w-[460px] h-[88vh] md:h-full bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,rgba(15,118,110,0.15))] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip transition-transform duration-300 ease-out"
-        aria-label="Кабинет клинического копайлота"
-        data-testid="copilot-workspace-panel"
-      >
+    <div className="fixed inset-0 z-[99990] flex justify-end max-md:items-end pointer-events-auto" data-testid="copilot-workspace-host-root">
+      <div className="fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" onClick={onClose} aria-hidden="true" data-testid="copilot-host-backdrop" />
+      <aside className="relative z-10 flex flex-col w-full md:w-[460px] h-[88vh] md:h-full bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,rgba(15,118,110,0.15))] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip transition-transform duration-300 ease-out" aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel">
         {/* Apple HIG Drag Handle для мобильного Bottom Sheet */}
         <div className="md:hidden flex justify-center pt-2.5 pb-1">
           <div className="w-10 h-1.5 rounded-full bg-[var(--line,rgba(15,118,110,0.2))] touch-none" />
@@ -216,13 +212,11 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-bold tracking-tight text-[var(--ink)] truncate">
-                  ДЕНТА Копайлот
-                </h2>
+                <h2 className="text-sm font-bold tracking-tight text-[var(--ink)] truncate">ДЕНТА Копайлот</h2>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
               </div>
               <p className="text-[11px] text-[var(--muted)] truncate">
-                {patientName} {activeTooth ? `• Зуб ${activeTooth}` : ""}
+                {effectivePatientName} {activeTooth ? `• Зуб ${activeTooth}` : ""}
               </p>
             </div>
           </div>
@@ -243,9 +237,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
               type="button"
               onClick={() => handleModeChange("web_browser")}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                runtimeMode === "web_browser"
-                  ? "bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--ink)]"
+                runtimeMode === "web_browser" ? "bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]"
               }`}
             >
               <Globe size={13} className="text-[var(--teal)]" />
@@ -255,9 +247,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
               type="button"
               onClick={() => handleModeChange("desktop_native")}
               className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all ${
-                runtimeMode === "desktop_native"
-                  ? "bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm"
-                  : "text-[var(--muted)] hover:text-[var(--ink)]"
+                runtimeMode === "desktop_native" ? "bg-[var(--paper,#ffffff)] text-[var(--ink)] shadow-sm" : "text-[var(--muted)] hover:text-[var(--ink)]"
               }`}
             >
               <Monitor size={13} className="text-[var(--teal)]" />
@@ -272,9 +262,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
             type="button"
             onClick={() => setActiveTab("dialog")}
             className={`py-2.5 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === "dialog"
-                ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+              activeTab === "dialog" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
             }`}
           >
             <BookOpen size={14} />
@@ -284,9 +272,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
             type="button"
             onClick={() => setActiveTab("actions")}
             className={`py-2.5 border-b-2 flex items-center gap-1.5 transition-colors ${
-              activeTab === "actions"
-                ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold"
-                : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+              activeTab === "actions" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
             }`}
           >
             <Activity size={14} />
@@ -303,40 +289,45 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
                   <Mic size={14} />
                   <span>Идёт запись речи... Произнесите диагноз</span>
                 </div>
-                <button
-                  type="button"
-                  onClick={voice.stopListening}
-                  className="px-2.5 py-1 rounded bg-[var(--paper)] text-xs font-bold border border-[var(--line)]"
-                >
+                <button type="button" onClick={voice.stopListening} className="px-2.5 py-1 rounded bg-[var(--paper)] text-xs font-bold border border-[var(--line)]">
                   Стоп
                 </button>
               </div>
             )}
 
             <div className="flex-1 overflow-y-auto px-5 py-4 space-y-3.5">
-              {messages.map((m) => (
-                <div
-                  key={m.id}
-                  className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}
-                >
-                  <div
-                    className={`max-w-[90%] p-3.5 rounded-2xl text-xs leading-relaxed ${
-                      m.role === "user"
-                        ? "bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]"
-                        : "bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"
-                    }`}
-                  >
-                    <p className="whitespace-pre-wrap">{m.text}</p>
-                    {m.citation && (
-                      <div className="mt-2.5 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium">
-                        <BookOpen size={11} />
-                        <span>{m.citation}</span>
-                      </div>
-                    )}
+              {messages.length === 0 ? (
+                <div className="h-full min-h-[200px] flex flex-col items-center justify-center text-center p-6 space-y-2 text-[var(--muted)]" data-testid="copilot-empty-dialog">
+                  <div className="w-12 h-12 rounded-2xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] flex items-center justify-center text-[var(--teal,#0d9488)] mb-1">
+                    <Sparkles size={22} />
                   </div>
-                  <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
+                  <h3 className="text-sm font-bold text-[var(--ink)]">Диалог чист</h3>
+                  <p className="text-xs text-[var(--muted)] max-w-[280px] leading-relaxed">
+                    Задайте клинический вопрос, продиктуйте дневник приёма голосом или выберите быстрое действие.
+                  </p>
                 </div>
-              ))}
+              ) : (
+                messages.map((m) => (
+                  <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
+                    <div
+                      className={`max-w-[90%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                        m.role === "user"
+                          ? "bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]"
+                          : "bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"
+                      }`}
+                    >
+                      <p className="whitespace-pre-wrap">{m.text}</p>
+                      {m.citation && (
+                        <div className="mt-2.5 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium">
+                          <BookOpen size={11} />
+                          <span>{m.citation}</span>
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
+                  </div>
+                ))
+              )}
               <div ref={messagesEndRef} />
             </div>
 
