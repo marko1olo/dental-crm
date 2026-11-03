@@ -1,13 +1,13 @@
 /**
  * @file CopilotSettingsModal.tsx
- * @description Dedicated AI & Copilot settings modal: Tri-Environment Settings
- * (Web Browser, Desktop Workstation, Mobile Tablet), Capabilities Matrix,
- * Trust Levels, and Clinical Ergonomics (Mandate 8b <= 350 lines).
+ * @description Dedicated AI & Copilot settings modal: Logical categories
+ * (Intelligence & Model, Cabinet Equipment, Voice & Privacy, Clinical Memory, Capabilities Matrix),
+ * Auto device detection, Trust Levels, and Clinical Ergonomics (Mandate 8b <= 350 lines).
  */
 
 import React, { useState } from "react";
 import {
-	Globe, Monitor, Sliders, Smartphone, Table, X
+	Brain, Globe, HardDrive, Mic, Monitor, Sliders, Smartphone, Table, X
 } from "lucide-react";
 import {
 	useCopilotStore,
@@ -24,11 +24,9 @@ import {
 	AI_MODELS,
 	CopilotSettingsGeneralTab,
 } from "./settings/CopilotSettingsGeneralTab";
-import {
-	CopilotWebBrowserTab,
-	CopilotDesktopNativeTab,
-	CopilotMobileTabletTab,
-} from "./settings/CopilotSettingsEnvironmentTabs";
+import { CopilotSettingsEquipmentTab } from "./settings/CopilotSettingsEquipmentTab";
+import { CopilotSettingsVoicePrivacyTab } from "./settings/CopilotSettingsVoicePrivacyTab";
+import { CopilotSettingsMemoryTab } from "./settings/CopilotSettingsMemoryTab";
 import { CopilotSettingsCapabilitiesTable } from "./settings/CopilotSettingsCapabilitiesTable";
 
 export interface CopilotSettingsModalProps {
@@ -37,15 +35,14 @@ export interface CopilotSettingsModalProps {
 	onOpenMemoryTab?: () => void;
 }
 
-export type SettingsTab = "general" | "web_browser" | "desktop_native" | "mobile_tablet" | "matrix";
+export type SettingsTab = "intelligence" | "equipment" | "voice_privacy" | "memory" | "matrix";
 
 export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: CopilotSettingsModalProps) {
 	const settings = useCopilotStore((s) => s.settings);
 	const memoryCount = useCopilotStore((s) => s.memoryFacts.length);
 	const updateSettings = useCopilotStore((s) => s.updateSettings);
 
-	const [activeTab, setActiveTab] = useState<SettingsTab>("general");
-	const [runtimeMode, setRuntimeModeState] = useState<CopilotRuntimeEnvironment>(settings.runtimeMode);
+	const [activeTab, setActiveTab] = useState<SettingsTab>("intelligence");
 	const [trustLevel, setTrustLevelState] = useState<AiTrustLevel>(settings.trustLevel);
 	const [model, setModelState] = useState<string>(settings.model);
 	const [speedMode, setSpeedModeState] = useState<AiSpeedMode>(settings.speedMode);
@@ -53,23 +50,26 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [clinicalSpecialization, setSpecState] = useState<ClinicalSpecialization>(settings.clinicalSpecialization);
 	const [diaryTemplate, setDiaryTemplateState] = useState<DiaryTemplate>(settings.diaryTemplate);
 
-	// Среда: Браузер
+	// Голос и приватность
 	const [autoSaveDrafts, setAutoSaveDrafts] = useState<boolean>(settings.autoSaveDrafts);
 	const [webSpeechSensitivity, setSpeechSensitivity] = useState<WebSpeechSensitivity>(settings.webSpeechSensitivity || "normal");
 	const [maskPhiData, setMaskPhiData] = useState<boolean>(settings.maskPhiData ?? true);
+	const [autoMicOnAppointmentOpen, setAutoMic] = useState<boolean>(settings.autoMicOnAppointmentOpen ?? false);
 
-	// Среда: Десктоп ПК
+	// Оборудование кабинета
 	const [localDropzonePath, setDropzoneState] = useState<string>(settings.localDropzonePath);
 	const [tomographyViewerApp, setTomographyViewer] = useState<TomographyViewerApp>(settings.tomographyViewerApp || "planmeca_romexis");
 	const [fiscalRegisterComPort, setComPort] = useState<string>(settings.fiscalRegisterComPort || "COM1");
 	const [localInferenceServerUrl, setLocalInferenceUrl] = useState<string>(settings.localInferenceServerUrl || "http://localhost:11434");
 	const [globalDictationHotkey, setGlobalHotkey] = useState<string>(settings.globalDictationHotkey || "F9");
 
-	// Среда: Мобилка / Планшет
+	// Сенсорная эргономика под капотом
 	const [gloveModeTouchTarget, setGloveMode] = useState<boolean>(settings.gloveModeTouchTarget ?? true);
 	const [screenWakeLock, setWakeLock] = useState<boolean>(settings.screenWakeLock ?? true);
 	const [hapticFeedbackEnabled, setHaptic] = useState<boolean>(settings.hapticFeedbackEnabled ?? true);
-	const [autoMicOnAppointmentOpen, setAutoMic] = useState<boolean>(settings.autoMicOnAppointmentOpen ?? false);
+
+	const runtimeMode: CopilotRuntimeEnvironment = settings.runtimeMode;
+	const isChairside = runtimeMode === "chairside_tablet" || runtimeMode === "mobile_tablet";
 
 	React.useEffect(() => {
 		if (!isOpen) return;
@@ -85,7 +85,6 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const handleSave = () => {
 		const targetModel = AI_MODELS.find((m) => m.id === model);
 		updateSettings({
-			runtimeMode,
 			trustLevel,
 			model,
 			provider: targetModel?.provider || "gemini",
@@ -106,7 +105,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			hapticFeedbackEnabled,
 			autoMicOnAppointmentOpen,
 		});
-		showToast("Настройки ИИ и сред успешно сохранены", "success");
+		showToast("Настройки ИИ и оборудования успешно сохранены", "success");
 		onClose();
 	};
 
@@ -122,7 +121,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						</div>
 						<div className="min-w-0">
 							<h3 className="text-sm font-bold text-[var(--ink)] truncate">Настройки ИИ и Копайлота</h3>
-							<p className="text-[11px] text-[var(--muted)] truncate">Среды исполнения, уровень доверия и матрица возможностей</p>
+							<p className="text-[11px] text-[var(--muted)] truncate">Интеллект, оборудование кабинета, голос и приватность</p>
 						</div>
 					</div>
 					<button
@@ -135,93 +134,73 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					</button>
 				</header>
 
-				{/* Селектор активной рабочей среды */}
-				<div className="px-5 pt-3 pb-2 border-b border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
-					<div className="flex items-center justify-between gap-2 mb-1.5">
-						<span className="text-[11px] font-bold text-[var(--ink)]">Текущая рабочая среда врача:</span>
-						<span className="text-[10px] text-[var(--muted)]">Мгновенная адаптация интерфейса</span>
+				{/* Тихий индикатор обнаруженного устройства (без ручных селекторов) */}
+				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex items-center justify-between text-xs shrink-0">
+					<div className="flex items-center gap-2">
+						<span className="text-[11px] text-[var(--muted)]">Обнаружено устройство:</span>
+						<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]">
+							{runtimeMode === "desktop_native" ? (
+								<>
+									<Monitor size={13} className="text-[var(--teal,#0d9488)]" />
+									<span>Рабочая станция ОС</span>
+								</>
+							) : isChairside ? (
+								<>
+									<Smartphone size={13} className="text-[var(--teal,#0d9488)]" />
+									<span>Сенсорный планшет</span>
+								</>
+							) : (
+								<>
+									<Globe size={13} className="text-[var(--teal,#0d9488)]" />
+									<span>Веб-браузер</span>
+								</>
+							)}
+						</span>
 					</div>
-					<div className="grid grid-cols-3 gap-1.5 p-1 rounded-xl bg-[var(--paper)] border border-[var(--line)]">
-						<button
-							type="button"
-							onClick={() => setRuntimeModeState("web_browser")}
-							className={`py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-								runtimeMode === "web_browser"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							<Globe size={13} />
-							<span className="truncate">Веб-браузер</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setRuntimeModeState("desktop_native")}
-							className={`py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-								runtimeMode === "desktop_native"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							<Monitor size={13} />
-							<span className="truncate">Десктоп ПК</span>
-						</button>
-						<button
-							type="button"
-							onClick={() => setRuntimeModeState("mobile_tablet")}
-							className={`py-1.5 px-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 cursor-pointer transition-all ${
-								runtimeMode === "mobile_tablet"
-									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
-									: "text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
-							}`}
-						>
-							<Smartphone size={13} />
-							<span className="truncate">Планшет у кресла</span>
-						</button>
-					</div>
+					<span className="text-[10px] text-[var(--muted)] hidden sm:inline">Определяется автоматически</span>
 				</div>
 
-				{/* Навигационные вкладки настроек */}
+				{/* Логические навигационные вкладки настроек */}
 				<div className="flex border-b border-[var(--line)] px-5 gap-2 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar bg-[var(--paper)]">
 					<button
 						type="button"
-						onClick={() => setActiveTab("general")}
+						onClick={() => setActiveTab("intelligence")}
 						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "general" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "intelligence" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Brain size={13} />
+						<span>Интеллект и модель</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("equipment")}
+						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
+							activeTab === "equipment" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<HardDrive size={13} />
+						<span>Оборудование кабинета</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("voice_privacy")}
+						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
+							activeTab === "voice_privacy" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Mic size={13} />
+						<span>Голос и приватность</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("memory")}
+						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
+							activeTab === "memory" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
 						<Sliders size={13} />
-						<span>Общие</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("web_browser")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "web_browser" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-					>
-						<Globe size={13} />
-						<span>Браузер</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("desktop_native")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "desktop_native" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-					>
-						<Monitor size={13} />
-						<span>Десктоп ПК</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => setActiveTab("mobile_tablet")}
-						className={`py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${
-							activeTab === "mobile_tablet" ? "border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-					>
-						<Smartphone size={13} />
-						<span>Планшет</span>
+						<span>Память ИИ ({memoryCount})</span>
 					</button>
 					<button
 						type="button"
@@ -237,7 +216,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 
 				{/* Контент активной вкладки со скроллом */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
-					{activeTab === "general" && (
+					{activeTab === "intelligence" && (
 						<CopilotSettingsGeneralTab
 							trustLevel={trustLevel}
 							setTrustLevel={setTrustLevelState}
@@ -252,23 +231,12 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							diaryTemplate={diaryTemplate}
 							setDiaryTemplate={setDiaryTemplateState}
 							memoryCount={memoryCount}
-							onOpenMemory={() => { onClose(); onOpenMemoryTab?.(); }}
+							onOpenMemory={() => setActiveTab("memory")}
 						/>
 					)}
 
-					{activeTab === "web_browser" && (
-						<CopilotWebBrowserTab
-							webSpeechSensitivity={webSpeechSensitivity}
-							setSpeechSensitivity={setSpeechSensitivity}
-							autoSaveDrafts={autoSaveDrafts}
-							setAutoSaveDrafts={setAutoSaveDrafts}
-							maskPhiData={maskPhiData}
-							setMaskPhiData={setMaskPhiData}
-						/>
-					)}
-
-					{activeTab === "desktop_native" && (
-						<CopilotDesktopNativeTab
+					{activeTab === "equipment" && (
+						<CopilotSettingsEquipmentTab
 							localDropzonePath={localDropzonePath}
 							setDropzonePath={setDropzoneState}
 							tomographyViewerApp={tomographyViewerApp}
@@ -279,19 +247,31 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setLocalInferenceUrl={setLocalInferenceUrl}
 							globalDictationHotkey={globalDictationHotkey}
 							setGlobalHotkey={setGlobalHotkey}
-						/>
-					)}
-
-					{activeTab === "mobile_tablet" && (
-						<CopilotMobileTabletTab
 							gloveModeTouchTarget={gloveModeTouchTarget}
 							setGloveMode={setGloveMode}
 							screenWakeLock={screenWakeLock}
 							setWakeLock={setWakeLock}
 							hapticFeedbackEnabled={hapticFeedbackEnabled}
 							setHaptic={setHaptic}
+						/>
+					)}
+
+					{activeTab === "voice_privacy" && (
+						<CopilotSettingsVoicePrivacyTab
+							webSpeechSensitivity={webSpeechSensitivity}
+							setSpeechSensitivity={setSpeechSensitivity}
+							autoSaveDrafts={autoSaveDrafts}
+							setAutoSaveDrafts={setAutoSaveDrafts}
+							maskPhiData={maskPhiData}
+							setMaskPhiData={setMaskPhiData}
 							autoMicOnAppointmentOpen={autoMicOnAppointmentOpen}
 							setAutoMic={setAutoMic}
+						/>
+					)}
+
+					{activeTab === "memory" && (
+						<CopilotSettingsMemoryTab
+							onOpenFullMemory={() => { onClose(); onOpenMemoryTab?.(); }}
 						/>
 					)}
 
@@ -303,7 +283,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				{/* Нижняя панель действий */}
 				<footer className="px-5 py-3 border-t border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-2 shrink-0">
 					<div className="text-[11px] text-[var(--muted)]">
-						Среда: <strong className="text-[var(--ink)]">{runtimeMode === "web_browser" ? "Веб-браузер" : runtimeMode === "desktop_native" ? "Десктоп ПК" : "Планшет"}</strong>
+						Устройство: <strong className="text-[var(--ink)]">{runtimeMode === "desktop_native" ? "Рабочая станция ОС" : isChairside ? "Сенсорный планшет" : "Веб-браузер"}</strong>
 					</div>
 					<div className="flex items-center gap-2">
 						<button

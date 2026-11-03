@@ -16,6 +16,38 @@ export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chai
 export type TomographyViewerApp = "planmeca_romexis" | "vatech_ez3d" | "sirona_sidexis" | "custom";
 export type WebSpeechSensitivity = "high" | "normal" | "low";
 
+/**
+ * Автоматическое определение среды исполнения врача:
+ * 1. desktop_native: Electron / Tauri / Dente native wrapper
+ * 2. chairside_tablet: сенсорный планшет у кресла / экран <= 1024px / coarse pointer
+ * 3. web_browser: стандартный десктопный браузер
+ */
+export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
+	if (typeof window === "undefined") return "web_browser";
+	const w = window as unknown as Record<string, unknown>;
+	const ua = (typeof navigator !== "undefined" && navigator.userAgent) ? navigator.userAgent.toLowerCase() : "";
+	if (
+		Boolean(w.isElectron) ||
+		Boolean(w.__TAURI__) ||
+		Boolean(w.__TAURI_INTERNALS__) ||
+		Boolean(w.denteDesktop) ||
+		Boolean(w.denteNative) ||
+		ua.includes("electron") ||
+		ua.includes("tauri") ||
+		ua.includes("dente-desktop")
+	) {
+		return "desktop_native";
+	}
+	const isCoarse = typeof window.matchMedia === "function" && window.matchMedia("(pointer: coarse)").matches;
+	const isTouch = (typeof navigator !== "undefined" && Boolean(navigator.maxTouchPoints && navigator.maxTouchPoints > 0)) || ("ontouchstart" in window);
+	const isSmallScreen = typeof window.innerWidth === "number" && window.innerWidth <= 1024;
+
+	if (isCoarse || (isTouch && isSmallScreen)) {
+		return "chairside_tablet";
+	}
+	return "web_browser";
+}
+
 export interface AiMemoryFact {
 	id: string;
 	category: "materials" | "anesthesia" | "protocols" | "equipment" | "custom";
@@ -96,6 +128,7 @@ export interface CopilotStoreState {
 	updateSettings: (patch: Partial<CopilotSettings>) => void;
 	setTrustLevel: (level: AiTrustLevel) => void;
 	setRuntimeMode: (mode: CopilotRuntimeEnvironment) => void;
+	refreshRuntimeEnvironment: () => CopilotRuntimeEnvironment;
 	addMemoryFact: (category: AiMemoryFact["category"], fact: string) => void;
 	removeMemoryFact: (id: string) => void;
 	clearMemory: () => void;
@@ -121,7 +154,7 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	showThinkingProcess: true,
 	clinicalSpecialization: "therapy",
 	diaryTemplate: "soap",
-	runtimeMode: "web_browser",
+	runtimeMode: detectRuntimeEnvironment(),
 	// Браузер
 	autoSaveDrafts: true,
 	webSpeechSensitivity: "normal",
@@ -226,6 +259,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	settings: {
 		...DEFAULT_SETTINGS,
 		...(safeLocalStorageGetJson("dente_copilot_settings", DEFAULT_SETTINGS) || {}),
+		runtimeMode: detectRuntimeEnvironment(),
 	},
 	memoryFacts: safeLocalStorageGetJson("dente_copilot_memory", DEFAULT_MEMORY_FACTS),
 	threads: safeLocalStorageGetJson("dente_copilot_threads", DEFAULT_THREADS),
@@ -250,6 +284,12 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 
 	setRuntimeMode: (mode) => {
 		get().updateSettings({ runtimeMode: mode });
+	},
+
+	refreshRuntimeEnvironment: () => {
+		const detected = detectRuntimeEnvironment();
+		get().updateSettings({ runtimeMode: detected });
+		return detected;
 	},
 
 	addMemoryFact: (category, fact) => {
@@ -359,3 +399,17 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	setSettingsOpen: (open) => set({ isSettingsOpen: open }),
 	setHistoryOpen: (open) => set({ isHistoryOpen: open }),
 }));
+
+if (typeof window !== "undefined") {
+	let resizeDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+	window.addEventListener("resize", () => {
+		if (resizeDebounceTimer) clearTimeout(resizeDebounceTimer);
+		resizeDebounceTimer = setTimeout(() => {
+			const current = useCopilotStore.getState().settings.runtimeMode;
+			const detected = detectRuntimeEnvironment();
+			if (current !== detected) {
+				useCopilotStore.getState().setRuntimeMode(detected);
+			}
+		}, 150);
+	});
+}

@@ -1,0 +1,110 @@
+/**
+ * @file CopilotSettingsVoicePrivacyTab.tsx
+ * @description Voice recognition & clinical privacy settings:
+ * Web Speech sensitivity, SOAP autosave debouncing, PHI data masking,
+ * and automatic chairside microphone activation (Mandate 8b <= 200 lines).
+ */
+
+import React from "react";
+import { Mic, Shield, Volume2 } from "lucide-react";
+import type { WebSpeechSensitivity } from "../../../store/copilotStore";
+
+export interface CopilotSettingsVoicePrivacyTabProps {
+	webSpeechSensitivity: WebSpeechSensitivity;
+	setSpeechSensitivity: (v: WebSpeechSensitivity) => void;
+	autoSaveDrafts: boolean;
+	setAutoSaveDrafts: (v: boolean) => void;
+	maskPhiData: boolean;
+	setMaskPhiData: (v: boolean) => void;
+	autoMicOnAppointmentOpen: boolean;
+	setAutoMic: (v: boolean) => void;
+}
+
+export function CopilotSettingsVoicePrivacyTab({
+	webSpeechSensitivity, setSpeechSensitivity,
+	autoSaveDrafts, setAutoSaveDrafts,
+	maskPhiData, setMaskPhiData,
+	autoMicOnAppointmentOpen, setAutoMic,
+}: CopilotSettingsVoicePrivacyTabProps) {
+	return (
+		<div className="space-y-4 text-xs" data-testid="copilot-settings-voice-privacy-tab">
+			<div className="p-3 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] flex items-start gap-2.5">
+				<Mic size={18} className="text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
+				<div>
+					<div className="font-bold text-[var(--ink)]">Голосовое управление и безопасность данных</div>
+					<p className="text-[11px] text-[var(--muted)] leading-relaxed">
+						Распознавание речи у кресла пациента, локальная фильтрация шума и обезличивание медицинских данных.
+					</p>
+				</div>
+			</div>
+
+			<section className="space-y-1.5">
+				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+					<Volume2 size={14} className="text-[var(--teal,#0d9488)]" />
+					<span>Чувствительность распознавания речи Web Speech</span>
+				</label>
+				<select
+					value={webSpeechSensitivity}
+					onChange={(e) => setSpeechSensitivity(e.target.value as WebSpeechSensitivity)}
+					className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+				>
+					<option value="high">Высокая (у изголовья кресла, тихая диктовка)</option>
+					<option value="normal">Стандартная (сбалансированная фильтрация шума)</option>
+					<option value="low">Умеренная (подавление шума слюноотсоса и компрессора)</option>
+				</select>
+				<p className="text-[10px] text-[var(--muted)]">Адаптирует алгоритм порога уверенности аудиопотока браузера.</p>
+			</section>
+
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
+					<input
+						type="checkbox"
+						checked={autoSaveDrafts}
+						onChange={(e) => setAutoSaveDrafts(e.target.checked)}
+						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
+					/>
+					<span>Автосохранение черновиков дневников SOAP на лету</span>
+				</label>
+				<p className="text-[10px] text-[var(--muted)] pl-5">
+					Сохраняет набранный врачом текст при переключении вкладок с дебаунсом 500мс без риска потери данных.
+				</p>
+			</section>
+
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
+					<input
+						type="checkbox"
+						checked={maskPhiData}
+						onChange={(e) => setMaskPhiData(e.target.checked)}
+						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
+					/>
+					<span className="flex items-center gap-1.5">
+						<Shield size={13} className="text-[var(--teal,#0d9488)]" />
+						<span>Защита персональных данных пациента (Маскирование PHI)</span>
+					</span>
+				</label>
+				<p className="text-[10px] text-[var(--muted)] pl-5">
+					ФИО, телефоны и идентификаторы заменяются псевдонимами перед отправкой промптов в облачные LLM шлюзы.
+				</p>
+			</section>
+
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">
+					<input
+						type="checkbox"
+						checked={autoMicOnAppointmentOpen}
+						onChange={(e) => setAutoMic(e.target.checked)}
+						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
+					/>
+					<span className="flex items-center gap-1.5">
+						<Mic size={13} className="text-[var(--teal,#0d9488)]" />
+						<span>Автоматический переход к микрофону в карте приёма</span>
+					</span>
+				</label>
+				<p className="text-[10px] text-[var(--muted)] pl-5">
+					Сразу активирует голосовое стенографирование при переходе врача в активный визит.
+				</p>
+			</section>
+		</div>
+	);
+}

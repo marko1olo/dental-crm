@@ -1,6 +1,7 @@
 /**
  * copilotStudio.css — Канонические стили кабинета ИИ-копайлота DENTE CRM.
  * Архитектура: Мандат 8b (300–400 строк), Мандат 8am (1 Primary CTA), Apple HIG (сенсорный минимум 44px).
+ * Нативная touch-эргономика у кресла без клоунских баннеров и ручных переключателей.
  */
 
 .copilot-studio-overlay {
@@ -108,26 +109,6 @@
 .copilot-close-btn:hover {
   background-color: var(--line, rgba(15, 118, 110, 0.2));
   color: var(--ink, #0f172a);
-}
-
-/* Переключатель режимов: Web CRM vs Desktop OS */
-.copilot-mode-selector-wrap { padding: 10px 20px 8px; flex-shrink: 0; }
-.copilot-mode-pill-track {
-  display: flex; align-items: center; padding: 3px; border-radius: 12px;
-  background-color: var(--paper-soft, #f4f7f6);
-  border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
-}
-.copilot-mode-pill-btn {
-  flex: 1; min-height: 36px; padding: 6px 12px; border-radius: 9px;
-  font-size: 12px; font-weight: 600;
-  display: flex; align-items: center; justify-content: center; gap: 6px;
-  cursor: pointer; border: none; background-color: transparent;
-  color: var(--muted, #64748b); transition: all 0.15s ease;
-}
-.copilot-mode-pill-btn.active {
-  background-color: var(--paper, #ffffff);
-  color: var(--ink, #0f172a);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
 }
 
 /* Вкладки навигации */
@@ -297,35 +278,49 @@
 }
 .copilot-action-item-btn:hover { background-color: var(--line, rgba(15, 118, 110, 0.1)); }
 
-/* Режим «Планшет врача»: сенсорная эргономика у кресла и WakeLock */
-.copilot-wakelock-banner {
-  animation: fadeIn 0.2s ease-in-out;
-}
+/* Сенсорная эргономика у кресла и аудио-индикатор */
 .copilot-vu-meter {
   display: flex;
   align-items: flex-end;
   gap: 2px;
 }
-.copilot-mode-pill-track {
-  gap: 4px;
-}
-.copilot-mode-pill-btn {
-  min-width: 0;
-  padding: 6px 8px;
-}
-.copilot-mode-pill-btn span {
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-@media (max-width: 420px) {
-  .copilot-mode-pill-btn {
-    padding: 6px 4px;
-    font-size: 11px;
-  }
-}
 .copilot-workstation-tab {
   scrollbar-width: thin;
+}
+
+/* Нативная touch-эргономика для планшетов и сенсорных экранов у кресла (Apple HIG) */
+@media (pointer: coarse), (max-width: 1024px) {
+  .copilot-preset-chip {
+    min-height: 44px;
+    padding: 8px 14px;
+    font-size: 12px;
+  }
+  .copilot-primary-cta {
+    height: 48px;
+    min-height: 48px;
+    font-size: 13px;
+  }
+  .copilot-icon-btn {
+    width: 48px;
+    height: 48px;
+    min-width: 48px;
+    min-height: 48px;
+  }
+  .copilot-text-input {
+    height: 48px;
+    min-height: 48px;
+    font-size: 13px;
+  }
+  .copilot-tab-btn {
+    min-height: 48px;
+    padding: 10px 4px;
+    font-size: 13px;
+  }
+  .copilot-action-item-btn {
+    height: 48px;
+    min-height: 48px;
+    font-size: 13px;
+  }
 }
 
 @keyframes pulse {

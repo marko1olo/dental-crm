@@ -1,16 +1,17 @@
 /**
  * @file CopilotWorkstationTab.tsx
- * @description Workstation Desktop Agent tab: Local Dropzones & DICOM,
- * Tool Execution Logs Inspector, and Interactive Clinical Diff Viewer (Mandate 8b <= 380 lines).
+ * @description Вкладка интеграции со станцией ПК: сетевые dropzone, DICOM,
+ * статус оборудования кабинета, журнал вызовов и интерактивный Diff Viewer.
+ * Мандат 8b: размер файла строго <= 320 строк.
+ * Мандат 8x / 8ap: клинический язык без номеров законов.
  */
 
 import React, { useState } from "react";
 import {
-	Activity, Camera, Check, CheckCircle2, ChevronDown, Clock, Cpu,
-	Eye, FileCode, FolderOpen, Globe, HardDrive, Monitor, Receipt,
-	RefreshCw, TabletSmartphone, X
+	Activity, Camera, Check, CheckCircle2, ChevronDown, Clock,
+	FileCode, FolderOpen, HardDrive, Receipt, RefreshCw
 } from "lucide-react";
-import { useCopilotStore, type ToolExecutionLog } from "../../store/copilotStore";
+import { useCopilotStore } from "../../store/copilotStore";
 import { showToast } from "../GlobalToast";
 
 const MOCK_SAMPLE_DIFF = {
@@ -31,7 +32,6 @@ const MOCK_SAMPLE_DIFF = {
 
 export function CopilotWorkstationTab() {
 	const settings = useCopilotStore((s) => s.settings);
-	const updateSettings = useCopilotStore((s) => s.updateSettings);
 	const toolLogs = useCopilotStore((s) => s.toolExecutionLogs);
 	const activeDiff = useCopilotStore((s) => s.activeDiff) || MOCK_SAMPLE_DIFF;
 	const setActiveDiff = useCopilotStore((s) => s.setActiveDiff);
@@ -40,10 +40,6 @@ export function CopilotWorkstationTab() {
 	const [expandedLogId, setExpandedLogId] = useState<string | null>(null);
 	const [diffApplied, setDiffApplied] = useState<boolean>(false);
 	const [isScanningDropzone, setIsScanningDropzone] = useState<boolean>(false);
-
-	const mode = settings.runtimeMode;
-	const isDesktop = mode === "desktop_native";
-	const isTablet = mode === "chairside_tablet" || mode === "mobile_tablet";
 
 	const handleScanDropzone = () => {
 		setIsScanningDropzone(true);
@@ -61,55 +57,6 @@ export function CopilotWorkstationTab() {
 
 	return (
 		<div className="copilot-workstation-tab flex-1 overflow-y-auto px-5 py-3.5 space-y-4 text-xs">
-			{/* Трехпозиционный переключатель среды исполнения */}
-			<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-				<div>
-					<div className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-						<Cpu size={14} className="text-[var(--teal,#0d9488)]" />
-						<span>Среда исполнения ассистента</span>
-					</div>
-					<p className="text-[10px] text-[var(--muted)] m-0 mt-0.5">
-						{isDesktop
-							? "Десктопная станция врача: прямой доступ к файлам ПК, томографам и кассе"
-							: isTablet
-								? "Планшет у кресла: сенсорный слой в перчатках и активный экран"
-								: "Веб-ассистент: работа через защищенный облачный API в браузере"}
-					</p>
-				</div>
-				<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper-soft,#f1f5f9)] border border-[var(--line)] shrink-0 self-start sm:self-auto">
-					<button
-						type="button"
-						onClick={() => updateSettings({ runtimeMode: "web_browser" })}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
-							!isDesktop && !isTablet ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
-						}`}
-					>
-						<Globe size={12} />
-						<span>Веб</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => updateSettings({ runtimeMode: "desktop_native" })}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
-							isDesktop ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
-						}`}
-					>
-						<Monitor size={12} />
-						<span>ПК Станция</span>
-					</button>
-					<button
-						type="button"
-						onClick={() => updateSettings({ runtimeMode: "chairside_tablet" })}
-						className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer whitespace-nowrap shrink-0 flex items-center gap-1 ${
-							isTablet ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
-						}`}
-					>
-						<TabletSmartphone size={12} />
-						<span>Планшет</span>
-					</button>
-				</div>
-			</div>
-
 			{/* Статус подключения медицинского оборудования и периферии */}
 			<section className="space-y-2">
 				<div className="flex items-center justify-between">
@@ -155,14 +102,14 @@ export function CopilotWorkstationTab() {
 						</div>
 					</div>
 
-					{/* 3. Фискальный регистратор кассы 54-ФЗ */}
+					{/* 3. Фискальный регистратор кассы */}
 					<div className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex items-center justify-between gap-3">
 						<div className="flex items-center gap-2.5 min-w-0">
 							<div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
 								<Receipt size={14} />
 							</div>
 							<div className="min-w-0">
-								<div className="font-bold text-[var(--ink)] truncate">Кассовый регистратор Атол 27Ф (54-ФЗ)</div>
+								<div className="font-bold text-[var(--ink)] truncate">Кассовый регистратор Атол 27Ф</div>
 								<div className="text-[10px] text-[var(--muted)] truncate">COM4 • Смена открыта • ФН активен (без требования ИНН физлиц)</div>
 							</div>
 						</div>

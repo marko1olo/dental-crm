@@ -19,6 +19,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
+import { CopilotWorkstationTab } from "../CopilotWorkstationTab";
 import {
   COPILOT_CATALOG_CATEGORIES,
   CRM_FASTIFY_TOOLS_REGISTRY,
@@ -95,15 +96,17 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.ok(cssContent.includes("min-width: 44px"), "CSS обязан гарантировать min-width: 44px для кнопок управления");
   });
 
-  it("6. Мандат 8wy: Двухрежимный суверенный харнесс («Веб-ассистент» vs «Станция ОС»)", () => {
+  it("6. Автоматическое определение среды и тихий фоновый харнесс без ручных переключателей", () => {
     const html = renderToString(
       <CopilotStudioModal
         isOpen={true}
         onClose={() => {}}
       />
     );
-    assert.ok(html.includes("Веб-ассистент"), "Режим Веб-ассистент обязан присутствовать");
-    assert.ok(html.includes("Станция ОС"), "Режим Станция ОС обязан присутствовать");
+    assert.ok(!html.includes("copilot-mode-selector-wrap"), "Ручной переключатель сред обязан отсутствовать");
+    assert.ok(!html.includes("copilot-wakelock-banner"), "Клоунский баннер WakeLock обязан отсутствовать");
+    assert.ok(!html.includes("Перчатки ON"), "Клоунский бейдж Перчатки ON обязан отсутствовать");
+    assert.ok(html.includes("Станция ПК"), "Вкладка интеграции со станцией ПК обязана присутствовать");
   });
 
   it("7. Вкладка «Быстрые действия»: боевые Fastify инструменты без блокировок врача (Мандат 8e)", () => {
@@ -137,10 +140,10 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotStudioModal.tsx");
   });
 
-  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot 400–480 строк", () => {
+  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 450 строк", () => {
     const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 400 && lines <= 480, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 400–480)`);
+    assert.ok(lines >= 380 && lines <= 450, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–450)`);
   });
 
   it("11. Мандат 8b: размер файла copilotCatalogData.ts строго в Sweet Spot 300–380 строк", () => {
@@ -164,5 +167,20 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
   it("14. DirectCopilotLauncher монтируется и рендерится без падений SSR", () => {
     const html = renderToString(<DirectCopilotLauncher />);
     assert.equal(typeof html, "string");
+  });
+
+  it("15. CopilotWorkstationTab: чистое оборудование клиники, интерактивный дифф и ноль ручных переключателей", () => {
+    const html = renderToString(<CopilotWorkstationTab />);
+    assert.ok(html.includes("RVG-визиограф Planmeca ProSensor v2"), "Визиограф обязан отображаться");
+    assert.ok(html.includes("Сетевая папка КЛКТ"), "Dropzone КЛКТ обязана отображаться");
+    assert.ok(html.includes("Кассовый регистратор Атол 27Ф"), "Фискальный регистратор кассы обязан отображаться");
+    assert.ok(html.includes("Дневник приёма SOAP"), "Интерактивный Diff Viewer обязан присутствовать");
+    assert.ok(!html.includes("Среда исполнения ассистента"), "Ручной блок переключения сред обязан отсутствовать");
+  });
+
+  it("16. Мандат 8b: размер файла CopilotWorkstationTab.tsx строго <= 320 строк", () => {
+    const filePath = path.join(__dirname, "../CopilotWorkstationTab.tsx");
+    const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
+    assert.ok(lines <= 320, `CopilotWorkstationTab.tsx имеет ${lines} строк (ожидалось <= 320)`);
   });
 });
