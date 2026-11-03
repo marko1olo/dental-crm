@@ -20,7 +20,7 @@ export const AI_MODELS: Array<{ id: string; provider: AiProvider; label: string;
 	{ id: "gemini-2.5-pro", provider: "gemini", label: "Gemini 2.5 Pro", note: "Глубокий анализ КЛКТ патологий" },
 	{ id: "gpt-4o", provider: "openai", label: "OpenAI GPT-4o", note: "Мультимодальный клинический разбор" },
 	{ id: "claude-3-7-sonnet", provider: "anthropic", label: "Claude 3.7 Sonnet", note: "Гибридный Reasoner с CoT" },
-	{ id: "ollama-deepseek-r1", provider: "local", label: "Ollama / DeepSeek R1", note: "Локальный офлайн-контур на ПК" },
+	{ id: "deepseek-v3", provider: "deepseek", label: "DeepSeek V3 / R1", note: "Облачный клинический Reasoner" },
 ];
 
 export const TRUST_LEVELS: Array<{

@@ -51,7 +51,6 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 				localDropzonePath: "C:\\Radiology\\Export",
 				tomographyViewerApp: "planmeca_romexis",
 				fiscalRegisterComPort: "COM1",
-				localInferenceServerUrl: "http://localhost:11434",
 				globalDictationHotkey: "F9",
 				gloveModeTouchTarget: true,
 				screenWakeLock: true,
@@ -85,7 +84,6 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 		assert.ok(settings.localDropzonePath.includes("Export"));
 		assert.equal(settings.tomographyViewerApp, "planmeca_romexis");
 		assert.equal(settings.fiscalRegisterComPort, "COM1");
-		assert.ok(settings.localInferenceServerUrl.includes("11434"));
 		assert.equal(settings.globalDictationHotkey, "F9");
 
 		// Сенсорная эргономика под капотом
@@ -198,7 +196,7 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 		assert.ok(html.includes("Автоматический переход к микрофону в карте приёма"));
 	});
 
-	it("9. CopilotSettingsEquipmentTab рендерит сетевой путь dropzone, выбор Romexis/Ez3D, COM-порт, Ollama и аппаратную эргономику", () => {
+	it("9. CopilotSettingsEquipmentTab рендерит сетевой путь dropzone, выбор Romexis/Ez3D, COM-порт и аппаратную эргономику", () => {
 		const html = renderToString(
 			<CopilotSettingsEquipmentTab
 				localDropzonePath="C:\\Radiology\\Export"
@@ -207,8 +205,6 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 				setTomographyViewer={() => {}}
 				fiscalRegisterComPort="COM1"
 				setComPort={() => {}}
-				localInferenceServerUrl="http://localhost:11434"
-				setLocalInferenceUrl={() => {}}
 				globalDictationHotkey="F9"
 				setGlobalHotkey={() => {}}
 				gloveModeTouchTarget={true}
@@ -225,7 +221,6 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 		assert.ok(html.includes("Planmeca Romexis 3D / ProSensor"));
 		assert.ok(html.includes("Vatech Ez3D Plus / EzDent-i"));
 		assert.ok(html.includes("COM-порт кассы и чеков"));
-		assert.ok(html.includes("Сервер локальной нейросети"));
 		assert.ok(html.includes("Глобальный хоткей диктовки"));
 		assert.ok(html.includes("Сенсорная эргономика рабочего места"));
 		assert.ok(html.includes("Режим работы в перчатках"));

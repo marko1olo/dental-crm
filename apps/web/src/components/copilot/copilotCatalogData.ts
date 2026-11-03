@@ -24,7 +24,7 @@ export const ENVIRONMENT_CAPABILITIES_MATRIX: EnvironmentCapability[] = [
   { id: "hotfolder_dropzone", name: "Сетевая папка томографа (Dropzone)", description: "Автоматический импорт RVG и 3D КЛКТ исследований", web: "desktop_required", desktop: "available", mobile: "unavailable" },
   { id: "tomography_launch", name: "Запуск Romexis / Ez3D / Sidexis", description: "Интеграция с локальным медицинским софтом", web: "desktop_required", desktop: "available", mobile: "unavailable" },
   { id: "fiscal_printer", name: "Касса и чеки по COM/USB", description: "Печать фискальных чеков без посредников", web: "desktop_required", desktop: "available", mobile: "unavailable" },
-  { id: "local_inference", name: "Локальная нейросеть (Ollama / R1)", description: "Автономная клиническая модель без интернета", web: "desktop_required", desktop: "available", mobile: "unavailable" },
+  { id: "deterministic_nlp", name: "Детерминированные локальные эвристики", description: "Мгновенный разбор формулы FDI и протоколов (<5 мс, 0 ₽)", web: "available", desktop: "available", mobile: "available" },
   { id: "global_hotkeys", name: "Системные горячие клавиши ОС", description: "Мгновенная диктовка поверх всех окон Windows", web: "desktop_required", desktop: "available", mobile: "unavailable" },
   { id: "glove_mode", name: "Режим в перчатках (>= 48px)", description: "Увеличенные тач-таргеты для работы у кресла", web: "unavailable", desktop: "unavailable", mobile: "mobile_specific" },
   { id: "screen_wake_lock", name: "Удержание экрана (Wake Lock)", description: "Защита от засыпания экрана во время манипуляций", web: "available", desktop: "unavailable", mobile: "mobile_specific" },

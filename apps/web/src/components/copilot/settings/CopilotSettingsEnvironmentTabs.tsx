@@ -97,8 +97,6 @@ export interface CopilotDesktopNativeTabProps {
 	setTomographyViewer: (v: TomographyViewerApp) => void;
 	fiscalRegisterComPort: string;
 	setComPort: (v: string) => void;
-	localInferenceServerUrl: string;
-	setLocalInferenceUrl: (v: string) => void;
 	globalDictationHotkey: string;
 	setGlobalHotkey: (v: string) => void;
 }
@@ -107,7 +105,6 @@ export function CopilotDesktopNativeTab({
 	localDropzonePath, setDropzonePath,
 	tomographyViewerApp, setTomographyViewer,
 	fiscalRegisterComPort, setComPort,
-	localInferenceServerUrl, setLocalInferenceUrl,
 	globalDictationHotkey, setGlobalHotkey,
 }: CopilotDesktopNativeTabProps) {
 	return (
@@ -117,7 +114,7 @@ export function CopilotDesktopNativeTab({
 				<div>
 					<div className="font-bold text-[var(--ink)]">Среда «Десктоп ПК (Рабочая станция)»</div>
 					<p className="text-[11px] text-[var(--muted)] leading-relaxed">
-						Прямой доступ к локальной файловой системе, сетевым папкам томографов, кассовым COM-портам и локальному инференсу Ollama.
+						Прямой доступ к локальной файловой системе, сетевым папкам томографов и кассовым COM-портам.
 					</p>
 				</div>
 			</div>
@@ -168,28 +165,16 @@ export function CopilotDesktopNativeTab({
 				</section>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-				<section className="space-y-1.5">
-					<label className="font-bold text-[var(--ink)]">Сервер локальной нейросети</label>
-					<input
-						type="text"
-						value={localInferenceServerUrl}
-						onChange={(e) => setLocalInferenceUrl(e.target.value)}
-						placeholder="http://localhost:11434"
-						className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-					/>
-				</section>
-				<section className="space-y-1.5">
-					<label className="font-bold text-[var(--ink)]">Глобальный хоткей диктовки</label>
-					<input
-						type="text"
-						value={globalDictationHotkey}
-						onChange={(e) => setGlobalHotkey(e.target.value)}
-						placeholder="F9 или Ctrl+Shift+D"
-						className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-					/>
-				</section>
-			</div>
+			<section className="space-y-1.5">
+				<label className="font-bold text-[var(--ink)]">Глобальный хоткей диктовки</label>
+				<input
+					type="text"
+					value={globalDictationHotkey}
+					onChange={(e) => setGlobalHotkey(e.target.value)}
+					placeholder="F9 или Ctrl+Shift+D"
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+				/>
+			</section>
 		</div>
 	);
 }

@@ -60,7 +60,6 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [localDropzonePath, setDropzoneState] = useState<string>(settings.localDropzonePath);
 	const [tomographyViewerApp, setTomographyViewer] = useState<TomographyViewerApp>(settings.tomographyViewerApp || "planmeca_romexis");
 	const [fiscalRegisterComPort, setComPort] = useState<string>(settings.fiscalRegisterComPort || "COM1");
-	const [localInferenceServerUrl, setLocalInferenceUrl] = useState<string>(settings.localInferenceServerUrl || "http://localhost:11434");
 	const [globalDictationHotkey, setGlobalHotkey] = useState<string>(settings.globalDictationHotkey || "F9");
 
 	// Сенсорная эргономика под капотом
@@ -98,7 +97,6 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			localDropzonePath,
 			tomographyViewerApp,
 			fiscalRegisterComPort,
-			localInferenceServerUrl,
 			globalDictationHotkey,
 			gloveModeTouchTarget,
 			screenWakeLock,
@@ -243,8 +241,6 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setTomographyViewer={setTomographyViewer}
 							fiscalRegisterComPort={fiscalRegisterComPort}
 							setComPort={setComPort}
-							localInferenceServerUrl={localInferenceServerUrl}
-							setLocalInferenceUrl={setLocalInferenceUrl}
 							globalDictationHotkey={globalDictationHotkey}
 							setGlobalHotkey={setGlobalHotkey}
 							gloveModeTouchTarget={gloveModeTouchTarget}

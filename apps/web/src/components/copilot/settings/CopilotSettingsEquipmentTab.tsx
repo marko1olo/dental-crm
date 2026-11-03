@@ -2,7 +2,7 @@
  * @file CopilotSettingsEquipmentTab.tsx
  * @description Cabinet equipment & hardware integration tab:
  * Tomography dropzones, DICOM viewers, fiscal register COM ports,
- * local Ollama server, dictation hotkeys, and hardware ergonomics (Mandate 8b <= 250 lines).
+ * dictation hotkeys, and hardware ergonomics (Mandate 8b <= 250 lines).
  */
 
 import React from "react";
@@ -16,8 +16,6 @@ export interface CopilotSettingsEquipmentTabProps {
 	setTomographyViewer: (v: TomographyViewerApp) => void;
 	fiscalRegisterComPort: string;
 	setComPort: (v: string) => void;
-	localInferenceServerUrl: string;
-	setLocalInferenceUrl: (v: string) => void;
 	globalDictationHotkey: string;
 	setGlobalHotkey: (v: string) => void;
 	gloveModeTouchTarget: boolean;
@@ -32,7 +30,6 @@ export function CopilotSettingsEquipmentTab({
 	localDropzonePath, setDropzonePath,
 	tomographyViewerApp, setTomographyViewer,
 	fiscalRegisterComPort, setComPort,
-	localInferenceServerUrl, setLocalInferenceUrl,
 	globalDictationHotkey, setGlobalHotkey,
 	gloveModeTouchTarget, setGloveMode,
 	screenWakeLock, setWakeLock,
@@ -96,28 +93,17 @@ export function CopilotSettingsEquipmentTab({
 				</section>
 			</div>
 
-			<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-				<section className="space-y-1.5">
-					<label className="font-bold text-[var(--ink)]">Сервер локальной нейросети</label>
-					<input
-						type="text"
-						value={localInferenceServerUrl}
-						onChange={(e) => setLocalInferenceUrl(e.target.value)}
-						placeholder="http://localhost:11434"
-						className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-					/>
-				</section>
-				<section className="space-y-1.5">
-					<label className="font-bold text-[var(--ink)]">Глобальный хоткей диктовки</label>
-					<input
-						type="text"
-						value={globalDictationHotkey}
-						onChange={(e) => setGlobalHotkey(e.target.value)}
-						placeholder="F9 или Ctrl+Shift+D"
-						className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
-					/>
-				</section>
-			</div>
+			<section className="space-y-1.5">
+				<label className="font-bold text-[var(--ink)]">Глобальный хоткей диктовки</label>
+				<input
+					type="text"
+					value={globalDictationHotkey}
+					onChange={(e) => setGlobalHotkey(e.target.value)}
+					placeholder="F9 или Ctrl+Shift+D"
+					className="w-full h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-[11px] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+				/>
+				<p className="text-[10px] text-[var(--muted)]">Активирует стенографист из любого окна рентгенографии или томографа.</p>
+			</section>
 
 			<div className="pt-2 border-t border-[var(--line)] space-y-2">
 				<div className="font-bold text-[var(--ink)] flex items-center gap-1.5">

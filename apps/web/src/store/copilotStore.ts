@@ -8,7 +8,7 @@ import { create } from "zustand";
 import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../lib/safeLocalStorage";
 
 export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
-export type AiProvider = "gemini" | "openai" | "anthropic" | "local";
+export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
 export type AiSpeedMode = "turbo" | "deep_reasoning";
 export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "perio" | "pediatric";
 export type DiaryTemplate = "soap" | "form043" | "express";
@@ -104,7 +104,6 @@ export interface CopilotSettings {
 	localDropzonePath: string;
 	tomographyViewerApp: TomographyViewerApp;
 	fiscalRegisterComPort: string;
-	localInferenceServerUrl: string;
 	globalDictationHotkey: string;
 	// Мобилка / Планшет у кресла
 	gloveModeTouchTarget: boolean;
@@ -163,7 +162,6 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	localDropzonePath: "C:\\Radiology\\Export",
 	tomographyViewerApp: "planmeca_romexis",
 	fiscalRegisterComPort: "COM1",
-	localInferenceServerUrl: "http://localhost:11434",
 	globalDictationHotkey: "F9",
 	// Мобилка / Планшет
 	gloveModeTouchTarget: true,
