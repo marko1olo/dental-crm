@@ -16,7 +16,7 @@ import { renderToString } from "react-dom/server";
 
 import { validateBuyerInn54Fz } from "../cashboxOperations";
 import { PaymentModal } from "../PaymentModal";
-import { FiscalReceiptModal } from "../FiscalReceipt54FzModal";
+import { CashReceiptModal } from "../CashReceiptModal";
 import { WarehousePackageWriteOffBar } from "../../inventory/WarehousePackageWriteOffBar";
 import { AutoclaveLog257Modal } from "../../sanpin/autoclaveLog/AutoclaveLog257Modal";
 import {
@@ -113,10 +113,10 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 		});
 	});
 
-	describe("3. FiscalReceiptModal 54-FZ Cashier Autonomy", () => {
-		it("Renders FiscalReceiptModal with physical person INN optional hint and 1-click presets", () => {
+	describe("3. CashReceiptModal Cashier Autonomy", () => {
+		it("Renders CashReceiptModal with physical person INN optional hint and 1-click presets", () => {
 			const html = renderToString(
-				<FiscalReceiptModal
+				<CashReceiptModal
 					isOpen={true}
 					onClose={() => {}}
 					patientId="pat-003"
@@ -137,9 +137,9 @@ describe("Wave 42: Finance, Cashier, Warehouse & Sterilization Autonomy", () => 
 			assert.ok(!html.includes("btn-fiscalize-receipt\" disabled"), "Fiscalize button must not be disabled by default");
 		});
 
-		it("Displays non-blocking debt banner in FiscalReceiptModal when patient debt exists", () => {
+		it("Displays non-blocking debt banner in CashReceiptModal when patient debt exists", () => {
 			const html = renderToString(
-				<FiscalReceiptModal
+				<CashReceiptModal
 					isOpen={true}
 					onClose={() => {}}
 					patientId="pat-004"

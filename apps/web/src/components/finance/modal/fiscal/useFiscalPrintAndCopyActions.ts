@@ -50,7 +50,7 @@ export function useFiscalPrintAndCopyActions(p: UseFiscalPrintActionsParams) {
 			});
 			showToast("Товарный чек отправлен на печать (без фискализации)", "success", 3000);
 		} catch (printErr: unknown) {
-			console.warn("[FiscalReceipt54FzModal] Print tovarniy check failed:", printErr);
+			console.warn("[CashReceiptModal] Print tovarniy check failed:", printErr);
 			showToast("Ошибка отправки товарного чека на печать", "error");
 		}
 	};
@@ -106,7 +106,7 @@ export function useFiscalPrintAndCopyActions(p: UseFiscalPrintActionsParams) {
 			});
 			showToast("Акт выполненных работ отправлен на печать", "success", 3000);
 		} catch (err) {
-			console.warn("[FiscalReceipt54FzModal] Print act failed:", err);
+			console.warn("[CashReceiptModal] Print act failed:", err);
 			showToast("Ошибка отправки акта на печать", "error");
 		}
 	};
@@ -154,7 +154,7 @@ export function useFiscalPrintAndCopyActions(p: UseFiscalPrintActionsParams) {
 			});
 			showToast("Справка для налогового вычета отправлена на печать", "success", 3000);
 		} catch (err) {
-			console.warn("[FiscalReceipt54FzModal] Print tax certificate failed:", err);
+			console.warn("[CashReceiptModal] Print tax certificate failed:", err);
 			showToast("Ошибка отправки справки на печать", "error");
 		}
 	};

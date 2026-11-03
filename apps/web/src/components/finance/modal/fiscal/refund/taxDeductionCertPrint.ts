@@ -67,7 +67,7 @@ export async function printTaxDeductionCertHtml(p: PrintTaxCertInput): Promise<v
 		});
 		showToast("Справка для налогового вычета отправлена на печать", "success", 3000);
 	} catch (err) {
-		console.warn("[FiscalReceipt54FzModal] Print tax certificate failed:", err);
+		console.warn("[CashReceiptModal] Print tax certificate failed:", err);
 		showToast("Ошибка отправки справки на печать", "error");
 	}
 }

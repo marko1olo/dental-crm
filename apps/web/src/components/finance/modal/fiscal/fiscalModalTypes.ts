@@ -33,12 +33,14 @@ export type FiscalModalTab =
 	| "correction"
 	| "preview";
 
-export interface FiscalReceipt54FzModalProps {
+export interface CashReceiptModalProps {
 	readonly isOpen: boolean;
 	readonly items?: readonly (TreatmentPlanItem | FlexibleFiscalItem)[] | undefined;
 	readonly patientId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientPhone?: string | undefined;
+	readonly patientPhoneOrEmail?: string | undefined;
+	readonly patientEmail?: string | undefined;
 	readonly patientDepositRub?: number | undefined;
 	readonly patientFamilyBalanceRub?: number | undefined;
 	readonly familyPayerName?: string | undefined;
@@ -58,5 +60,5 @@ export interface FiscalReceipt54FzModalProps {
 	readonly defaultMethod?: any;
 }
 
-export type FiscalReceiptModalProps = FiscalReceipt54FzModalProps;
-export type CashReceiptModalProps = FiscalReceipt54FzModalProps;
+export type FiscalReceiptModalProps = CashReceiptModalProps;
+export type FiscalReceipt54FzModalProps = CashReceiptModalProps;

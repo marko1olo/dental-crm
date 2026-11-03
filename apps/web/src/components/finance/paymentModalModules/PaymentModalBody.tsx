@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { PaymentLogicResult, PaymentModalProps } from "./types.js";
 import { PaymentActiveMethodCockpit } from "./PaymentActiveMethodCockpit.js";
 import { PaymentBanners } from "./PaymentBanners.js";

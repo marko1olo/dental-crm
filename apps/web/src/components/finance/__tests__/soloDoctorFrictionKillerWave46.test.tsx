@@ -21,7 +21,7 @@ import { ShiftCloseZReportModal } from "../fiscal/ShiftCloseZReportModal.js";
 import { CashDayTally } from "../CashDayTally.js";
 import { PaymentModal } from "../PaymentModal.js";
 import { FastCheckoutModal } from "../FastCheckoutModal.js";
-import { FiscalReceipt54FzModal } from "../FiscalReceipt54FzModal.js";
+import { CashReceiptModal } from "../CashReceiptModal.js";
 import { PatientAdministrativeForm } from "../../patients/PatientAdministrativeForm.js";
 import { ClinicalWriteoffModal } from "../../inventory/writeoff/ClinicalWriteoffModal.js";
 import {
@@ -217,7 +217,7 @@ describe("Wave 46: 1-Click Carpule & Clinical Write-Offs without Commission (Man
 });
 
 describe("Wave 46: Strict Zero Emojis (Mandate 8d Item 7)", () => {
-	it("proves strict zero emojis (⚡) in PaymentModal, FastCheckoutModal, and FiscalReceipt54FzModal", () => {
+	it("proves strict zero emojis (⚡) in PaymentModal, FastCheckoutModal, and CashReceiptModal", () => {
 		const paymentHtml = renderToString(
 			React.createElement(PaymentModal, {
 				isOpen: true,
@@ -237,13 +237,13 @@ describe("Wave 46: Strict Zero Emojis (Mandate 8d Item 7)", () => {
 		assert.equal(fastCheckoutHtml.includes("⚡"), false, "FastCheckoutModal must not contain ⚡ emoji");
 
 		const fiscalModalHtml = renderToString(
-			React.createElement(FiscalReceipt54FzModal, {
+			React.createElement(CashReceiptModal, {
 				isOpen: true,
 				onClose: () => {},
 				patientId: "pat-1",
 			})
 		);
-		assert.equal(fiscalModalHtml.includes("⚡"), false, "FiscalReceipt54FzModal must not contain ⚡ emoji");
+		assert.equal(fiscalModalHtml.includes("⚡"), false, "CashReceiptModal must not contain ⚡ emoji");
 	});
 });
 

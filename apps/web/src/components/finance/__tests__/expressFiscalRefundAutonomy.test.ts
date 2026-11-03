@@ -16,13 +16,13 @@ import React from "react";
 import { renderToString } from "react-dom/server";
 import type { TreatmentPlanItem } from "../../treatment-plans/types";
 import {
-	FiscalReceipt54FzModal,
+	CashReceiptModal,
 	selectAllRefundItems,
 	deselectAllRefundItems,
 	calculateRefundActiveItems,
 	calculateRefundFiscalSummary,
-} from "../FiscalReceipt54FzModal";
-import { generateFiscalRefundReceipt54Fz } from "../fiscalReceiptEngine.js";
+} from "../CashReceiptModal";
+import { generateFiscalRefundReceipt } from "../fiscalReceiptEngine.js";
 
 const SAMPLE_TREATMENT_ITEMS: readonly TreatmentPlanItem[] = [
 	{
@@ -239,7 +239,7 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 				advancePurpose: "Возврат депозита пациенту",
 			});
 
-			const receipt = generateFiscalRefundReceipt54Fz({
+			const receipt = generateFiscalRefundReceipt({
 				items: advanceItems,
 				originalReceipt: {
 					receiptNumber: "CHK-2026-99012",
@@ -270,7 +270,7 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 	describe("Component UI Rendering (Mandate 8k & 8e visual proof)", () => {
 		it("renders express buttons and item checkboxes when treatment items exist", () => {
 			const html = renderToString(
-				React.createElement(FiscalReceipt54FzModal, {
+				React.createElement(CashReceiptModal, {
 					isOpen: true,
 					items: SAMPLE_TREATMENT_ITEMS,
 					patientId: "PAT-2026-100",
@@ -306,7 +306,7 @@ describe("54-FZ Express Refund Autonomy (Mandates 8e, 8k, 8n)", () => {
 
 		it("renders advance refund inputs when activeItems.length === 0 (zero dead-ends)", () => {
 			const html = renderToString(
-				React.createElement(FiscalReceipt54FzModal, {
+				React.createElement(CashReceiptModal, {
 					isOpen: true,
 					items: [],
 					patientDepositRub: 3500,

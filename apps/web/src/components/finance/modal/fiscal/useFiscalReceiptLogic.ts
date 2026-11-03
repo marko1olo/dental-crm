@@ -5,7 +5,7 @@
  */
 
 import { useState } from "react";
-import type { FiscalModalTab, CashReceiptModalProps, FiscalReceipt54FzModalProps } from "./fiscalModalTypes.js";
+import type { FiscalModalTab, CashReceiptModalProps } from "./fiscalModalTypes.js";
 import { useFiscalItemsAndDiscounts } from "./useFiscalItemsAndDiscounts.js";
 import { useFiscalTenderAllocation } from "./useFiscalTenderAllocation.js";
 import { useFiscalRefundAndAuxTabs } from "./useFiscalRefundAndAuxTabs.js";

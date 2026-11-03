@@ -8,13 +8,11 @@ import { RetailProductsModal } from "../billing/RetailProductsModal.js";
 import { FiscalBodyTabs } from "./modal/fiscal/FiscalBodyTabs.js";
 import { FiscalHeaderAndTabs } from "./modal/fiscal/FiscalHeaderAndTabs.js";
 import { FiscalReceiptFooter } from "./modal/fiscal/FiscalReceiptFooter.js";
-import type { FiscalReceiptModalProps } from "./modal/fiscal/fiscalModalTypes.js";
+import type { CashReceiptModalProps } from "./modal/fiscal/fiscalModalTypes.js";
 import { useFiscalReceiptLogic } from "./modal/fiscal/useFiscalReceiptLogic.js";
 
 export * from "./modal/fiscal/fiscalModalRefundLogic.js";
 export * from "./modal/fiscal/fiscalModalTypes.js";
-
-export type CashReceiptModalProps = FiscalReceiptModalProps;
 
 export const CashReceiptModal: React.FC<CashReceiptModalProps> = (props) => {
 	const { isOpen, onClose, patientName = "Пациент" } = props;
@@ -100,5 +98,5 @@ export const CashReceiptModal: React.FC<CashReceiptModalProps> = (props) => {
 	);
 };
 
-export { CashReceiptModal as FiscalReceiptModal, CashReceiptModal as FiscalReceipt54FzModal };
+export { CashReceiptModal as FiscalReceiptModal };
 export default CashReceiptModal;

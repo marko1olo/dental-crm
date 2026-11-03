@@ -3,7 +3,7 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
 import { OneCExportButton } from '../OneCExportButton';
-import { FiscalReceipt54FzModal } from '../FiscalReceipt54FzModal';
+import { CashReceiptModal } from '../CashReceiptModal';
 import { Billing1CExportModal } from '../Billing1CExportModal';
 import { generateOneCEnterpriseXml } from '@dental/shared';
 import type { TreatmentPlanItem } from '../../treatment-plans/types';
@@ -116,9 +116,9 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     assert.ok(xml.includes('5000.00'));
   });
 
-  it('renders FiscalReceipt54FzModal with 1C:Enterprise XML Export Tab', () => {
+  it('renders CashReceiptModal with 1C:Enterprise XML Export Tab', () => {
     const html = renderToString(
-      <FiscalReceipt54FzModal
+      <CashReceiptModal
         isOpen={true}
         onClose={() => {}}
         items={SAMPLE_ITEMS}
@@ -139,9 +139,9 @@ describe('1C:Enterprise XML Export Button & Engine', () => {
     assert.ok(html.includes('Предпросмотр XML-пакета CommerceML 2.09'));
   });
 
-  it('renders FiscalReceipt54FzModal header without ellipsis truncation classes', () => {
+  it('renders CashReceiptModal header without ellipsis truncation classes', () => {
     const html = renderToString(
-      <FiscalReceipt54FzModal
+      <CashReceiptModal
         isOpen={true}
         onClose={() => {}}
         items={SAMPLE_ITEMS}

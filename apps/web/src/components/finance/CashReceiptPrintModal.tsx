@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { FiscalReceiptPrintView } from "./FiscalReceiptPrintView.js";
+import { ServiceReceiptPrintDocument } from "./ServiceReceiptPrintDocument.js";
 import {
 	type CashReceiptPrintModalProps,
 	CashReceiptModalHeader,
@@ -48,7 +48,7 @@ export const CashReceiptPrintModal: React.FC<CashReceiptPrintModalProps> = (prop
 				<div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-[var(--paper-soft)] flex justify-center">
 					{format === "80mm" ? (
 						<div className="w-full max-w-sm">
-							<FiscalReceiptPrintView receipt={effectiveReceipt} />
+							<ServiceReceiptPrintDocument receipt={effectiveReceipt} />
 						</div>
 					) : (
 						<CashReceiptA4Document

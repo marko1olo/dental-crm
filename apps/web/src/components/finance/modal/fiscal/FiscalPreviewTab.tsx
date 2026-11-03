@@ -1,10 +1,10 @@
 import React from "react";
 import { Printer } from "lucide-react";
-import { FiscalReceiptPrintView } from "../../FiscalReceiptPrintView";
-import type { FiscalReceipt54FzResult } from "../../fiscalReceiptEngine";
+import { ServiceReceiptPrintDocument } from "../../ServiceReceiptPrintDocument.js";
+import type { FiscalReceiptResult, FiscalReceipt54FzResult } from "../../fiscalReceiptEngine.js";
 
 export interface FiscalPreviewTabProps {
-	fiscalReceipt: FiscalReceipt54FzResult;
+	fiscalReceipt: FiscalReceiptResult;
 }
 
 export const FiscalPreviewTab: React.FC<FiscalPreviewTabProps> = ({ fiscalReceipt }) => {
@@ -21,7 +21,7 @@ export const FiscalPreviewTab: React.FC<FiscalPreviewTabProps> = ({ fiscalReceip
 				</button>
 			</div>
 
-			<FiscalReceiptPrintView receipt={fiscalReceipt} />
+			<ServiceReceiptPrintDocument receipt={fiscalReceipt} />
 		</div>
 	);
 };

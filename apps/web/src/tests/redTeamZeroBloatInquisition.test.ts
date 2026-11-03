@@ -15,7 +15,7 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 import {
 	createDefaultPerioTeeth,
@@ -249,11 +249,11 @@ describe("🔴 RED TEAM ZERO-BLOAT & AUTONOMY INQUISITION (MANDATES 8d, 8e, 8i, 
 			assert.equal(emojiCount, 0, `В Form043PrintModal.tsx обнаружено ${emojiCount} эмодзи! Должно быть 0.`);
 		});
 
-		it("4.2. Order804nFiscalReceiptPrint.tsx, FiscalReceiptPrintView.tsx и FiscalReceipt54FzModal.tsx (Чеки 54-ФЗ) содержат 0 мультяшных эмодзи", () => {
+		it("4.2. ServiceReceiptPrintDocument.tsx, CashReceiptPrintModal.tsx и CashReceiptModal.tsx (Кассовые чеки) содержат 0 мультяшных эмодзи", () => {
 			const files = [
-				path.join(webSrcRoot, "components/finance/Order804nFiscalReceiptPrint.tsx"),
-				path.join(webSrcRoot, "components/finance/FiscalReceiptPrintView.tsx"),
-				path.join(webSrcRoot, "components/finance/FiscalReceipt54FzModal.tsx"),
+				path.join(webSrcRoot, "components/finance/ServiceReceiptPrintDocument.tsx"),
+				path.join(webSrcRoot, "components/finance/CashReceiptPrintModal.tsx"),
+				path.join(webSrcRoot, "components/finance/CashReceiptModal.tsx"),
 			];
 
 			for (const fp of files) {

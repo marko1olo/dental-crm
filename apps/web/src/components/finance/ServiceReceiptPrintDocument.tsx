@@ -8,7 +8,7 @@
 
 import React, { useMemo } from "react";
 import { generateQrCodeSvg } from "@dental/shared";
-import type { FiscalReceipt54FzResult } from "./fiscalReceiptEngine.js";
+import type { FiscalReceiptResult, FiscalReceipt54FzResult } from "./fiscalReceiptEngine.js";
 import {
 	ReceiptPrintHeader,
 	ReceiptPrintItems,
@@ -17,7 +17,7 @@ import {
 } from "./receiptPrintModules/index.js";
 
 export interface ServiceReceiptPrintDocumentProps {
-	readonly receipt: FiscalReceipt54FzResult;
+	readonly receipt: FiscalReceiptResult;
 	readonly className?: string | undefined;
 }
 

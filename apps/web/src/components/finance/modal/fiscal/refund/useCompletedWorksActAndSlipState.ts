@@ -72,7 +72,7 @@ export function useCompletedWorksActAndSlipState({
 			await hardwarePrinter.printHtmlWithPopupFallback(html, { title: `Товарный чек № ${docNum}`, downloadFilename: `tovarniy_check_${docNum}.html` });
 			showToast("Товарный чек отправлен на печать (без фискализации)", "success", 3000);
 		} catch (printErr: unknown) {
-			console.warn("[FiscalReceipt54FzModal] Print tovarniy check failed:", printErr);
+			console.warn("[CashReceiptModal] Print tovarniy check failed:", printErr);
 			showToast("Ошибка отправки товарного чека на печать", "error");
 		}
 	};
@@ -96,7 +96,7 @@ export function useCompletedWorksActAndSlipState({
 			await hardwarePrinter.printHtmlWithPopupFallback(html, { title: `Акт выполненных работ № ${actNumber}`, downloadFilename: `act_${actNumber}.html` });
 			showToast("Акт выполненных работ отправлен на печать", "success", 3000);
 		} catch (err) {
-			console.warn("[FiscalReceipt54FzModal] Print act failed:", err);
+			console.warn("[CashReceiptModal] Print act failed:", err);
 			showToast("Ошибка отправки акта на печать", "error");
 		}
 	};

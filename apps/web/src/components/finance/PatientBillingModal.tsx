@@ -1,6 +1,5 @@
 import React from "react";
 import { FastCheckoutModal } from "./FastCheckoutModal";
-import { FiscalReceiptModal as Fiscal54FzReceiptModal } from "./FiscalReceiptModal";
 import { RefundServiceModal } from "./refunds/RefundServiceModal";
 import { TaxDeductionCertificateModal } from "./TaxDeductionCertificateModal";
 import { PatientBillingDiscountsToolbar } from "./PatientBillingDiscountsToolbar";

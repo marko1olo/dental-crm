@@ -60,7 +60,7 @@ describe("PediatricMixedDentitionModal — Ergonomics & Root Resorption Hotkeys"
 	});
 });
 
-describe("FiscalReceipt54FzModal — Rapid Payment Method Presets & Remainder Allocation", () => {
+describe("CashReceiptModal — Rapid Payment Method Presets & Remainder Allocation", () => {
 	test("Быстрые клавиши выбора 100% оплаты (1 — Карта, 2 — СБП, 3 — Наличные, 4 — Депозит)", () => {
 		const totalKopecks = 2500000; // 25 000,00 ₽
 		const totalRub = 25000;

@@ -2,12 +2,12 @@ import type React from "react";
 import { FiscalAuxTabs } from "./FiscalAuxTabs.js";
 import { FiscalPaymentTab } from "./FiscalPaymentTab.js";
 import { FiscalRefundTab } from "./FiscalRefundTab.js";
-import type { FiscalReceiptModalProps } from "./fiscalModalTypes.js";
+import type { CashReceiptModalProps } from "./fiscalModalTypes.js";
 import type { useFiscalReceiptLogic } from "./useFiscalReceiptLogic.js";
 
 export interface FiscalBodyTabsProps {
 	readonly logic: ReturnType<typeof useFiscalReceiptLogic>;
-	readonly props: FiscalReceiptModalProps;
+	readonly props: CashReceiptModalProps;
 	readonly patientName: string;
 }
 
