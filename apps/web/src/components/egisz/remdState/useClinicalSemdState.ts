@@ -21,16 +21,25 @@ import {
 	runEgisz043uPreflight,
 } from "../egiszRemdEngine";
 
+const EMPTY_EGISZ_PATIENT: EgiszPatientInfo = {
+	patientId: "",
+	cardNumber: "",
+	patientFullName: "",
+	patientBirthDate: "",
+	patientGender: "male",
+};
+
 export function useClinicalSemdState(
 	effectivePayload?: Partial<EgiszDentalCdaPayload>,
 	doctorSig?: GostSignatureInfo,
 	moSig?: GostSignatureInfo,
 ) {
 	const isDemo = isDemoShowcaseMode();
+	const defaultPatient: EgiszPatientInfo = isDemo ? SAMPLE_043U_PATIENT_PRESET : EMPTY_EGISZ_PATIENT;
 	const [semdDocCode, setSemdDocCode] = useState<EgiszDentalSemdCode>((effectivePayload?.docTypeCode as EgiszDentalSemdCode) || "105");
 	const [clinic] = useState<EgiszClinicInfo>(effectivePayload?.clinic || DEFAULT_EGISZ_CLINIC_PRESET);
 	const [doctor, setDoctor] = useState<EgiszDoctorInfo>(effectivePayload?.doctor || DEFAULT_EGISZ_DOCTOR_PRESET);
-	const [patient, setPatient] = useState<EgiszPatientInfo>(effectivePayload?.patient || SAMPLE_043U_PATIENT_PRESET);
+	const [patient, setPatient] = useState<EgiszPatientInfo>(effectivePayload?.patient || defaultPatient);
 
 	const [complaints, setComplaints] = useState<string>(effectivePayload?.complaints || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.complaints : ""));
 	const [anamnesisMorbi, setAnamnesisMorbi] = useState<string>(effectivePayload?.anamnesisMorbi || (isDemo ? SAMPLE_DENTAL_SEMD_105_PRESET.anamnesisMorbi || "" : ""));

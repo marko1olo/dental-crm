@@ -39,11 +39,15 @@ export function PayrollTabHeader({
 							className="h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs focus:outline-none focus:ring-1 focus:ring-[var(--teal,var(--brand-primary))]"
 							aria-label="Выбор врача"
 						>
-							{doctorsList.map((doc) => (
-								<option key={doc.id} value={doc.id}>
-									{doc.name}
-								</option>
-							))}
+							{doctorsList.length === 0 ? (
+								<option value="">Врачи не зарегистрированы</option>
+							) : (
+								doctorsList.map((doc) => (
+									<option key={doc.id} value={doc.id}>
+										{doc.name}
+									</option>
+								))
+							)}
 						</select>
 					</div>
 

@@ -24,6 +24,7 @@ import { DirectSurgeryLauncher } from "../../../surgery/DirectSurgeryLauncher";
 import { DirectHygieneLauncher } from "../../../hygiene/DirectHygieneLauncher";
 import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
 import { ChairsideCopilotHUD } from "../../../copilot/ChairsideCopilotHUD";
+import { DemoCaseViewerModal } from "../../../demo/DemoCaseViewerModal";
 import { renderSpecializedClinicalLaunchers } from "./SpecializedClinicalLaunchers";
 
 export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<StandaloneLaunchersProps>[] =
@@ -287,6 +288,27 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 					patientName="Иванов И.И."
 					activeTooth={16}
 				/>
+			),
+		},
+
+		// 15. Клиническая демонстрационная витрина кейсов (Мандаты 8aq & 8wy)
+		{
+			id: "demo-cases-showcase",
+			title: "Клинические кейсы и демонстрационная витрина",
+			criteria: {
+				tokens: ["demo-case", "demo-cases", "case-viewer", "clinical-cases"],
+				searchIncludes: ["demo_case=1", "demo-case=1", "case=demo"],
+				exactHashes: ["#demo-case", "#demo-cases", "#case-viewer", "#clinical-cases"],
+				hashPrefixes: ["#demo-case?", "#demo-cases?", "#case-viewer?"],
+			},
+			render: () => (
+				<div style={{ minHeight: "100vh", background: "var(--paper-subtle, #0f172a)", padding: "16px" }}>
+					<DemoCaseViewerModal
+						isOpen={true}
+						activeRoleKey="surgeon"
+						onClose={() => clearUrlTokens(["demo-case", "demo-cases", "case-viewer", "clinical-cases"])}
+					/>
+				</div>
 			),
 		},
 	];

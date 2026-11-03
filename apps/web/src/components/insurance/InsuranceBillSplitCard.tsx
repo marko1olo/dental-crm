@@ -5,6 +5,7 @@
 
 import React, { useMemo, useState } from "react";
 import { Check, Split } from "lucide-react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import {
 	calculateDmsCoPaymentSplit,
 	formatCurrencyKopecks,
@@ -40,15 +41,18 @@ const DEFAULT_SAMPLE_BILL_ITEMS: readonly DmsBillableItem[] = [
 
 export const InsuranceBillSplitCard: React.FC<InsuranceBillSplitCardProps> = ({
 	letter,
-	billItems = DEFAULT_SAMPLE_BILL_ITEMS,
+	billItems,
 	onApplySplitToCashbox,
 }) => {
+	const effectiveBillItems = billItems !== undefined
+		? billItems
+		: (isDemoShowcaseMode() ? DEFAULT_SAMPLE_BILL_ITEMS : []);
 	const [franchisePercent, setFranchisePercent] = useState<number>(letter?.franchisePercent ?? 0);
 	const [paymentMethod, setPaymentMethod] = useState<PatientPaymentMethod>("card");
 
 	const splitResult = useMemo(() => {
-		return calculateDmsCoPaymentSplit(billItems, { guaranteeLetter: letter, franchisePercent });
-	}, [billItems, letter, franchisePercent]);
+		return calculateDmsCoPaymentSplit(effectiveBillItems, { guaranteeLetter: letter, franchisePercent });
+	}, [effectiveBillItems, letter, franchisePercent]);
 
 	const { totalBillKopecks, totalInsuranceCoveredKopecks, totalPatientOutOfPocketKopecks, lineItems, remainingLimitKopecks } = splitResult;
 	const patientDueRub = kopecksToRub(totalPatientOutOfPocketKopecks);
@@ -100,8 +104,14 @@ export const InsuranceBillSplitCard: React.FC<InsuranceBillSplitCardProps> = ({
 				</div>
 			</div>
 
+			{effectiveBillItems.length === 0 && (
+				<div data-testid="dms-empty-bill-items" style={{ padding: "10px 12px", marginBottom: "14px", borderRadius: "8px", background: "var(--paper-subtle, #f8fafc)", color: "var(--muted, #64748b)", fontSize: "12px", textAlign: "center" }}>
+					Нет позиций для распределения счёта
+				</div>
+			)}
+
 			<button type="button" onClick={handleApply} style={{ width: "100%", minHeight: "44px", borderRadius: "10px", border: "none", background: "var(--teal, #0d9488)", color: "#fff", fontWeight: 700, fontSize: "13px", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px", cursor: "pointer" }}>
-				<Check size={16} /> ✓ Утвердить ДМС-сплит
+				<Check size={16} /> Утвердить ДМС-сплит
 			</button>
 		</div>
 	);

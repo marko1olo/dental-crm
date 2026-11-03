@@ -136,18 +136,17 @@ export const DemoCaseHeaderBar: React.FC<DemoCaseHeaderBarProps> = ({
 						<div
 							style={{
 								display: "flex",
-								alignItems: "center",
-								gap: "12px",
+								flexDirection: "column",
+								gap: "3px",
 								marginTop: "6px",
 								fontSize: "12px",
-								flexWrap: "wrap",
+								lineHeight: "1.35",
 							}}
 						>
-							<span>
+							<div>
 								<strong>Пациент:</strong> {currentCase.patientName} ({currentCase.patientAge} лет)
-							</span>
-							<span style={{ color: "var(--line, #cbd5e1)" }}>•</span>
-							<span>
+							</div>
+							<div>
 								<strong>Диагноз:</strong> {currentCase.diagnosisText}{" "}
 								<span
 									style={{
@@ -158,7 +157,7 @@ export const DemoCaseHeaderBar: React.FC<DemoCaseHeaderBarProps> = ({
 								>
 									[{currentCase.diagnosisIcd10}]
 								</span>
-							</span>
+							</div>
 						</div>
 					</div>
 				</div>
@@ -171,11 +170,14 @@ export const DemoCaseHeaderBar: React.FC<DemoCaseHeaderBarProps> = ({
 						border: "none",
 						cursor: "pointer",
 						color: "var(--muted, #64748b)",
-						padding: "6px",
-						borderRadius: "6px",
+						minWidth: "44px",
+						minHeight: "44px",
+						padding: "10px",
+						borderRadius: "8px",
 						display: "inline-flex",
 						alignItems: "center",
 						justifyContent: "center",
+						flexShrink: 0,
 						transition: "background 0.15s ease",
 					}}
 					aria-label="Закрыть модальное окно"
@@ -184,17 +186,27 @@ export const DemoCaseHeaderBar: React.FC<DemoCaseHeaderBarProps> = ({
 				</button>
 			</div>
 
-			{/* Быстрые фильтры выбора демонстрационного кейса */}
+			{/* Быстрые фильтры выбора демонстрационного кейса (без сжатия и наездов) */}
 			<div
 				style={{
 					display: "flex",
 					alignItems: "center",
-					gap: "6px",
+					gap: "8px",
 					overflowX: "auto",
 					paddingTop: "2px",
+					paddingBottom: "2px",
+					WebkitOverflowScrolling: "touch",
+					scrollbarWidth: "none",
 				}}
 			>
-				<span style={{ fontSize: "11px", fontWeight: 600, color: "var(--muted, #64748b)" }}>
+				<span
+					style={{
+						fontSize: "11px",
+						fontWeight: 700,
+						color: "var(--muted, #64748b)",
+						flexShrink: 0,
+					}}
+				>
 					Кейсы:
 				</span>
 				{Object.values(DEMO_CLINICAL_CASES).map((c) => {
@@ -210,12 +222,18 @@ export const DemoCaseHeaderBar: React.FC<DemoCaseHeaderBarProps> = ({
 								}
 							}}
 							style={{
-								padding: "4px 10px",
+								flexShrink: 0,
+								minHeight: "32px",
+								padding: "4px 12px",
 								borderRadius: "6px",
-								fontSize: "11px",
+								fontSize: "12px",
 								fontWeight: 600,
-								border: isActive ? "1px solid var(--brand-accent, #6366f1)" : "1px solid var(--line, #e2e8f0)",
-								background: isActive ? "var(--brand-accent-bg, rgba(99, 102, 241, 0.1))" : "var(--paper-strong, #ffffff)",
+								border: isActive
+									? "1px solid var(--brand-accent, #6366f1)"
+									: "1px solid var(--line, #e2e8f0)",
+								background: isActive
+									? "var(--brand-accent-bg, rgba(99, 102, 241, 0.12))"
+									: "var(--paper-strong, #ffffff)",
 								color: isActive ? "var(--brand-accent, #6366f1)" : "var(--ink, #0f172a)",
 								cursor: "pointer",
 								whiteSpace: "nowrap",

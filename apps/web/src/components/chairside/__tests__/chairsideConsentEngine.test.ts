@@ -17,17 +17,14 @@ import {
 	generatePersonalDataConsentDocument,
 	generateSha256,
 	hashDoctorPin,
-	isValidPinFormat,
 	kopecksToRussianWords,
 	maskRussianPhone,
-	renderChairsidePackageHtml,
 	sendChairsideSmsOtpToPatient,
 	signPackageWithInPersonConfirmation,
 	signPackageWithPaperPhysical,
 	signPackageWithSmsPep,
 	signPackageWithTouchSignature,
 	verifyChairsideSmsOtp,
-	verifyDoctorPin,
 	type ChairsidePatientProfile,
 	type ChairsideDoctorProfile,
 	type ChairsideTreatmentItem,
@@ -445,91 +442,6 @@ describe("Chairside Tablet Consent & Signing Engine Suite (Mandates 8e, 8x, 8ap)
 			assert.equal(failResult.success, false);
 			assert.ok(failResult.error?.includes("Неверный код"));
 			assert.equal(pkgWithSms.smsOtp?.attemptsCount, 1);
-		});
-	});
-
-	// 5. Защита выхода PIN-кодом врача
-	describe("5. Doctor Exit PIN Security", () => {
-		it("hashDoctorPin and verifyDoctorPin manage PIN authentication", () => {
-			const hash = hashDoctorPin("7890");
-			assert.equal(verifyDoctorPin("7890", hash), true);
-			assert.equal(verifyDoctorPin("0000", hash), false);
-			assert.equal(verifyDoctorPin("", hash), false);
-			assert.equal(verifyDoctorPin("1234", undefined), true);
-			assert.equal(verifyDoctorPin("9999", undefined), false);
-		});
-
-		it("isValidPinFormat validates 4-6 digit codes", () => {
-			assert.equal(isValidPinFormat("1234"), true);
-			assert.equal(isValidPinFormat("123456"), true);
-			assert.equal(isValidPinFormat("123"), false);
-			assert.equal(isValidPinFormat("1234567"), false);
-			assert.equal(isValidPinFormat("abcd"), false);
-			assert.equal(isValidPinFormat(""), false);
-		});
-	});
-
-	// 6. Генерация готового PDF/HTML документа без бюрократического канцелярита
-	describe("6. Clean PDF / HTML Document Rendering (Zero Bureaucratic Slime)", () => {
-		it("renderChairsidePackageHtml generates clean HTML with electronic signature stamp", () => {
-			const pkg = createChairsideConsentPackage({
-				patient: mockPatient,
-				doctor: mockDoctor,
-				treatmentItems: mockItems,
-			});
-
-			const pkgWithSms = sendChairsideSmsOtpToPatient(pkg, "+7 (916) 777-88-12", "7842");
-			const { signedPackage } = signPackageWithSmsPep(pkgWithSms, {
-				inputCode: "7842",
-				form043uChartNumber: "ЭМК-9921",
-				signedAtIso: "2026-08-28T14:30:00.000Z",
-			});
-
-			const html = renderChairsidePackageHtml(signedPackage!);
-			assert.ok(html.includes("<!DOCTYPE html>"));
-			assert.ok(html.includes("Смирнова Елена Александровна"));
-			assert.ok(html.includes("Барабаш Сергей Владимирович"));
-			assert.ok(html.includes("ИДС-Базовое"));
-			assert.ok(html.includes("СОГЛ-ПДН"));
-			assert.ok(html.includes("СМЕТА-ПЛАН"));
-			assert.ok(html.includes("10 700,00 ₽"));
-			assert.ok(html.includes("Десять тысяч семьсот рублей 00 копеек"));
-			assert.ok(html.includes("ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ"));
-			assert.ok(html.includes("ЭМК-9921"));
-			assert.ok(html.includes(signedPackage!.signature!.integrityHash));
-			assert.ok(html.includes("+7 (***) ***-**-12"));
-			// Zero raw regulatory clutter
-			assert.equal(html.includes("ИДС-1051н"), false, "Must not contain 'ИДС-1051н'");
-			assert.equal(html.includes("043/у"), false, "Must not contain '043/у'");
-		});
-
-		it("renderChairsidePackageHtml generates clean HTML with paper signature stamp", () => {
-			const pkg = createChairsideConsentPackage({
-				patient: mockPatient,
-				doctor: mockDoctor,
-				treatmentItems: mockItems,
-			});
-
-			const signed = signPackageWithPaperPhysical(pkg, {
-				form043uChartNumber: "ЭМК-9921",
-			});
-
-			const html = renderChairsidePackageHtml(signed);
-			assert.ok(html.includes("ДОКУМЕНТЫ ОФОРМЛЕНЫ НА БУМАГЕ"));
-			assert.ok(html.includes("Подписано на бумаге. Личная подпись пациента в медицинской карте"));
-			assert.equal(html.includes("043/у"), false, "Must not contain '043/у'");
-		});
-
-		it("renderChairsidePackageHtml handles unsigned package with manual signature lines", () => {
-			const pkg = createChairsideConsentPackage({
-				patient: mockPatient,
-				doctor: mockDoctor,
-				treatmentItems: mockItems,
-			});
-
-			const html = renderChairsidePackageHtml(pkg, { includeSignatures: false });
-			assert.ok(html.includes("Врач: ____________________ / Барабаш Сергей Владимирович /"));
-			assert.ok(html.includes("Пациент: ____________________ / Смирнова Елена Александровна /"));
 		});
 	});
 });

@@ -1,7 +1,8 @@
-import { describe, it } from "node:test";
+import { describe, it, afterEach } from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createElement } from "react";
 import { renderToString } from "react-dom/server";
 import { EgiszCertificatesHubModal } from "../EgiszCertificatesHubModal";
@@ -13,8 +14,18 @@ import {
 	type MedicalRecordExtractPayload,
 } from "../egiszRemdPrintTemplates";
 import type { RemdDocumentRecord } from "../egiszJournalData";
+import { setRuntimeDemoMode } from "../../../lib/demoMode.js";
+import { InsuranceBillSplitCard } from "../../insurance/InsuranceBillSplitCard.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const egiszDir = path.resolve(__dirname, "..");
 
 describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & Apple HIG)", () => {
+	afterEach(() => {
+		setRuntimeDemoMode(null);
+	});
+
 	it("1.1 File size constraint: all 4 decomposed modules are strictly <= 120 lines", () => {
 		const files = [
 			"EgiszCertificatesHubModal.tsx",
@@ -22,10 +33,9 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 			"TaxDeductionCertificateDrawer.tsx",
 			"MedicalRecordExtractDrawer.tsx",
 		];
-		const baseDir = path.resolve(process.cwd(), "apps/web/src/components/egisz");
 		for (const file of files) {
-			const fullPath = path.join(baseDir, file);
-			assert.ok(fs.existsSync(fullPath), `File ${file} must exist`);
+			const fullPath = path.join(egiszDir, file);
+			assert.ok(fs.existsSync(fullPath), `File ${file} must exist at ${fullPath}`);
 			const content = fs.readFileSync(fullPath, "utf-8");
 			const lineCount = content.split("\n").length;
 			assert.ok(
@@ -42,10 +52,9 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 			"TaxDeductionCertificateDrawer.tsx",
 			"MedicalRecordExtractDrawer.tsx",
 		];
-		const baseDir = path.resolve(process.cwd(), "apps/web/src/components/egisz");
 		const emojiRegex = /[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		for (const file of files) {
-			const fullPath = path.join(baseDir, file);
+			const fullPath = path.join(egiszDir, file);
 			const content = fs.readFileSync(fullPath, "utf-8");
 			assert.ok(!emojiRegex.test(content), `File ${file} contains forbidden cartoon emojis`);
 		}
@@ -58,9 +67,8 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 			"TaxDeductionCertificateDrawer.tsx",
 			"MedicalRecordExtractDrawer.tsx",
 		];
-		const baseDir = path.resolve(process.cwd(), "apps/web/src/components/egisz");
 		for (const file of files) {
-			const fullPath = path.join(baseDir, file);
+			const fullPath = path.join(egiszDir, file);
 			const content = fs.readFileSync(fullPath, "utf-8");
 			assert.ok(
 				!content.includes("disabled={true}"),
@@ -132,6 +140,46 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		assert.ok(html.includes("770199887766"));
 	});
 
+	it("3.2 TaxDeductionCertificateDrawer in production mode renders honest empty state without leaks (Mandate 8wy)", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToString(
+			createElement(TaxDeductionCertificateDrawer, {
+				patientName: "Боевой Пациент",
+				patientInn: "770100000000",
+			}),
+		);
+		assert.ok(html.includes("Нет зарегистрированных оплат за выбранный период"), "Must show honest empty state in prod");
+		assert.ok(html.includes("0.00 ₽"), "Amount must be 0.00 ₽ when no payments exist");
+		assert.ok(!html.includes("97500.00"), "Must NOT leak demo 97 500 ₽ preset payments into production");
+		assert.ok(!html.includes("Брекет-система"), "Must NOT contain fake sample services in production");
+	});
+
+	it("3.3 TaxDeductionCertificateDrawer in demo mode uses sample preset payments (Mandate 8wy)", () => {
+		setRuntimeDemoMode(true);
+		const html = renderToString(
+			createElement(TaxDeductionCertificateDrawer, {
+				patientName: "Демо Пациент",
+			}),
+		);
+		assert.ok(html.includes("97500.50 ₽"), "Demo showcase must show demo preset sum");
+		assert.ok(html.includes("Терапевтическое лечение"), "Demo showcase must render sample payment items");
+		assert.ok(!html.includes("Нет зарегистрированных оплат за выбранный период"), "Demo mode must not show empty state");
+	});
+
+	it("3.4 EgiszCertificatesHubModal in production mode isolates tax deduction from demo leaks", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToString(
+			createElement(EgiszCertificatesHubModal, {
+				isOpen: true,
+				onClose: () => {},
+				initialSection: "tax_deduction",
+				patientName: "Боевой Пациент",
+			}),
+		);
+		assert.ok(html.includes("Нет зарегистрированных оплат за выбранный период"), "Modal in prod must show empty payments state");
+		assert.ok(!html.includes("97500.00"), "Modal in prod must NOT leak demo 97 500 ₽ preset");
+	});
+
 	it("4.1 MedicalRecordExtractDrawer renders statutory options and print button", () => {
 		const html = renderToString(
 			createElement(MedicalRecordExtractDrawer, {
@@ -159,5 +207,24 @@ describe("EGISZ & Official Certificates Hub Decomposition (Mandates 8e, 8n & App
 		assert.ok(html.includes("Алексеев Алексей Алексеевич"));
 		assert.ok(html.includes("Смирнов В.В."));
 		assert.ok(html.includes("ООО «ДЕНТЕ СТОМАТОЛОГИЯ»"));
+	});
+
+	it("5.1 InsuranceBillSplitCard in production mode renders honest empty state without leaks (Mandate 8wy)", () => {
+		setRuntimeDemoMode(false);
+		const html = renderToString(
+			createElement(InsuranceBillSplitCard, {}),
+		);
+		assert.ok(html.includes("Нет позиций для распределения счёта"), "Must render honest empty state notice in production");
+		assert.ok(html.includes("0 ₽"), "Amounts must be 0 ₽ when no bill items exist");
+		assert.ok(!html.includes("22 250"), "Must NOT calculate total of 22 250 ₽ from demo items in prod");
+	});
+
+	it("5.2 InsuranceBillSplitCard in demo mode uses sample bill items (Mandate 8wy)", () => {
+		setRuntimeDemoMode(true);
+		const html = renderToString(
+			createElement(InsuranceBillSplitCard, {}),
+		);
+		assert.ok(!html.includes("Нет позиций для распределения счёта"), "Demo mode must not show empty notice");
+		assert.ok(html.includes("СТРАХОВАЯ") && html.includes("ПАЦИЕНТ"));
 	});
 });

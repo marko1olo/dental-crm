@@ -6,12 +6,14 @@
  * - 8b / 8zi: эталонный Sweet Spot (строго 320–420 строк, ноль микро-шредера).
  * - 8e / 8n: автономия врача и администратора, бронь за 5 секунд, ноль блокировок (disabled запрещены).
  * - 8am: единый дизайн-код, ровно ОДНА Primary CTA кнопка #0d9488 («Записать на приём»).
+ * - 8wy: строгий двухрежимный закон — в боевом режиме ноль демо-мокапов, SAMPLE_PATIENTS строго за isDemoShowcaseMode.
  * - 8ze / 8al / 8aq: Apple HIG, нативный Bottom Sheet на смартфонах (<= 768px), Drag Handle 36x5px.
  */
 
 import React, { useState, useEffect, useMemo, useRef } from "react";
 import { createPortal } from "react-dom";
 import { Flame, Sparkles, X, User, Phone, Calendar, Clock, Play, Copy, CalendarClock, Check } from "lucide-react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
   CANONICAL_APPOINTMENT_STATUSES,
   CLINICAL_REASON_PRESETS,
@@ -42,14 +44,29 @@ export interface AppointmentStudioModalProps {
   initialData?: Partial<AppointmentStudioSlotData> | null;
   doctors?: readonly { id: string; name: string; specialty?: string }[];
   chairs?: readonly { id: string; name: string }[];
+  patients?: readonly PatientSuggestionItem[];
+  isDemoMode?: boolean;
 }
 
-const SAMPLE_PATIENTS: PatientSuggestionItem[] = [
+export const SAMPLE_PATIENTS: readonly PatientSuggestionItem[] = [
   { id: "p-1", name: "Иванов Сергей Павлович", phone: "+7 (916) 123-45-67" },
   { id: "p-2", name: "Смирнова Анна Викторовна", phone: "+7 (925) 987-65-43" },
   { id: "p-3", name: "Кузнецов Дмитрий Олегович", phone: "+7 (903) 555-01-92" },
   { id: "p-4", name: "Михайлова Екатерина Ильинична", phone: "+7 (985) 333-22-11" },
 ];
+
+export function filterPatientSuggestions(
+  query: string,
+  customPatients?: readonly PatientSuggestionItem[],
+  demoModeOverride?: boolean,
+): PatientSuggestionItem[] {
+  const q = query.trim().toLowerCase();
+  if (q.length < 2) return [];
+  const pool = (customPatients && customPatients.length > 0)
+    ? customPatients
+    : (isDemoShowcaseMode(demoModeOverride) ? SAMPLE_PATIENTS : []);
+  return pool.filter((p) => p.name.toLowerCase().includes(q) || p.phone.includes(q));
+}
 
 export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
   isOpen,
@@ -59,6 +76,8 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
   initialData,
   doctors = DEFAULT_DOCTORS_ROSTER,
   chairs = DEFAULT_CHAIRS_ROSTER,
+  patients,
+  isDemoMode,
 }) => {
   const [patientName, setPatientName] = useState(() => initialData?.patientName || "");
   const [patientPhone, setPatientPhone] = useState(() => initialData?.patientPhone || "");
@@ -98,14 +117,9 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
 
   const handleNameChange = (val: string) => {
     setPatientName(val);
-    if (val.trim().length >= 2) {
-      const q = val.toLowerCase();
-      const matched = SAMPLE_PATIENTS.filter((p) => p.name.toLowerCase().includes(q) || p.phone.includes(q));
-      setPatientSuggestions(matched);
-      setShowSuggestions(matched.length > 0);
-    } else {
-      setShowSuggestions(false);
-    }
+    const matched = filterPatientSuggestions(val, patients, isDemoMode);
+    setPatientSuggestions(matched);
+    setShowSuggestions(matched.length > 0);
   };
 
   const handleSelectPatient = (p: PatientSuggestionItem) => {
@@ -185,10 +199,7 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
   if (!isOpen) return null;
 
   const modalContent = (
-    <div
-      className="appointment-studio-backdrop fixed"
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-    >
+    <div className="appointment-studio-backdrop fixed" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div
         className="appointment-studio-modal"
         ref={containerRef}
@@ -231,13 +242,7 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
               </p>
             </div>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer border-none bg-transparent"
-            aria-label="Закрыть студию записи"
-            data-testid="studio-close-btn"
-          >
+          <button type="button" onClick={onClose} className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors cursor-pointer border-none bg-transparent" aria-label="Закрыть студию записи" data-testid="studio-close-btn">
             <X size={20} />
           </button>
         </div>
@@ -269,25 +274,11 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
               <label htmlFor="patient-name-input" className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
                 <User size={13} /><span>Пациент (ФИО)</span>
               </label>
-              <input
-                id="patient-name-input"
-                type="text"
-                value={patientName}
-                onChange={(e) => handleNameChange(e.target.value)}
-                placeholder="Иван Иванов"
-                className="studio-input-field"
-                data-testid="patient-name-input"
-                autoComplete="off"
-              />
+              <input id="patient-name-input" type="text" value={patientName} onChange={(e) => handleNameChange(e.target.value)} placeholder="Иван Иванов" className="studio-input-field" data-testid="patient-name-input" autoComplete="off" />
               {showSuggestions && (
                 <div className="absolute left-0 right-0 top-[68px] z-30 bg-[var(--paper,#ffffff)] border border-[var(--line,#e2e8f0)] rounded-xl shadow-xl overflow-hidden py-1" data-testid="patient-suggestions-popup">
                   {patientSuggestions.map((p) => (
-                    <button
-                      key={p.id}
-                      type="button"
-                      onClick={() => handleSelectPatient(p)}
-                      className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center justify-between cursor-pointer border-none bg-transparent"
-                    >
+                    <button key={p.id} type="button" onClick={() => handleSelectPatient(p)} className="w-full text-left px-3 py-2 text-xs hover:bg-[var(--paper-soft,#f1f5f9)] flex items-center justify-between cursor-pointer border-none bg-transparent">
                       <span className="font-semibold text-[var(--ink,#0f172a)]">{p.name}</span>
                       <span className="text-[var(--muted,#64748b)]">{p.phone}</span>
                     </button>
@@ -300,15 +291,7 @@ export const AppointmentStudioModal: React.FC<AppointmentStudioModalProps> = ({
               <label htmlFor="patient-phone-input" className="text-xs font-semibold text-[var(--muted,#64748b)] flex items-center gap-1">
                 <Phone size={13} /><span>Номер телефона</span>
               </label>
-              <input
-                id="patient-phone-input"
-                type="tel"
-                value={patientPhone}
-                onChange={(e) => setPatientPhone(e.target.value)}
-                placeholder="+7 (999) 000-00-00"
-                className="studio-input-field"
-                data-testid="patient-phone-input"
-              />
+              <input id="patient-phone-input" type="tel" value={patientPhone} onChange={(e) => setPatientPhone(e.target.value)} placeholder="+7 (999) 000-00-00" className="studio-input-field" data-testid="patient-phone-input" />
             </div>
           </div>
 

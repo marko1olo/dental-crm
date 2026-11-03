@@ -65,7 +65,7 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 		});
 	});
 
-	describe("3. Clinical Cases & Order 804н Nomenclature Verification", () => {
+	describe("3. Clinical Cases & Service Catalog Price Verification", () => {
 		it("validates All-on-4 clinical case integrity", () => {
 			const all4 = DEMO_CLINICAL_CASES.all_on_4;
 			assert.ok(all4, "All-on-4 case must exist");
@@ -79,7 +79,7 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 			assert.ok(ct, "Must contain CT slice item");
 			assert.ok(Number(ct.boneDensityHounsfield) > 0, "Must specify Hounsfield bone density");
 
-			// Проверка кодов 804н
+			// Проверка кодов номенклатуры клинических процедур
 			const codes = all4.financialItems.map((i) => i.code);
 			assert.ok(codes.includes("A16.07.054"), "Must contain Straumann implant code A16.07.054");
 			assert.ok(codes.includes("A16.07.055"), "Must contain multi-unit abutment code A16.07.055");
@@ -111,6 +111,13 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 			assert.ok(endo, "Endo case must exist");
 			assert.ok(endo.diagnosisIcd10.includes("K02.1"));
 			assert.ok(endo.diagnosisIcd10.includes("K04.0"));
+		});
+
+		it("ensures zero raw regulatory slang and Soviet order numbers in clinical cases", () => {
+			const rawCasesJson = JSON.stringify(DEMO_CLINICAL_CASES);
+			assert.ok(!rawCasesJson.includes("804н"), "Must not contain raw 804н in demo clinical cases");
+			assert.ok(!rawCasesJson.includes("1051н"), "Must not contain raw 1051н in demo clinical cases");
+			assert.ok(!rawCasesJson.includes("043/у"), "Must not contain raw 043/у in demo clinical cases");
 		});
 	});
 
@@ -197,7 +204,7 @@ describe("DemoCaseViewerModal Decomposition & Clinical Parity (Wave 24)", () => 
 			assert.ok(html.includes("A06.07.013"));
 		});
 
-		it("renders DemoCaseFinancialSummary with Order 804н table and SBP CTA", () => {
+		it("renders DemoCaseFinancialSummary with clinical services table and SBP CTA", () => {
 			const currentCase = DEMO_CLINICAL_CASES.all_on_4!;
 			const html = renderToString(
 				React.createElement(DemoCaseFinancialSummary, {

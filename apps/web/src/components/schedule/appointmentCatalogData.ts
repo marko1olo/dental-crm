@@ -336,5 +336,5 @@ export function generatePatientConfirmationMessage(params: {
   const timeRange = formatSlotTimeRange(startTime, durationMinutes);
   const salutation = patientName.trim() ? `Здравствуйте, ${patientName}!` : "Здравствуйте!";
 
-  return `${salutation}\nЖдем вас на приём в клинике «${clinicName}».\n📅 Дата: ${humanDate}\n⏰ Время: ${timeRange}\n👨‍⚕️ Врач: ${doctorName}\n\nЕсли потребуется перенести визит, пожалуйста, сообщите нам заранее. До встречи!`;
+  return `${salutation}\nЖдем вас на приём в клинике «${clinicName}».\nДата: ${humanDate}\nВремя: ${timeRange}\nВрач: ${doctorName}\n\nЕсли потребуется перенести визит, пожалуйста, сообщите нам заранее. До встречи!`;
 }

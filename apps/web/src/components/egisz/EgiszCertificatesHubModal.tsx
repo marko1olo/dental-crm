@@ -7,6 +7,8 @@ import { MedicalRecordExtractDrawer } from "./MedicalRecordExtractDrawer";
 import type { RemdDocumentRecord } from "./egiszJournalData";
 import { generateFnsTaxCertificatePrintHtml, generateMedicalRecordExtractPrintHtml } from "./egiszRemdPrintTemplates";
 import { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
+import type { FnsTaxPaymentItem } from "./cdaR2XmlBuilder";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import "./egiszRemd.css";
 
 export type EgiszHubSection = "queue" | "tax_deduction" | "extracts";
@@ -17,6 +19,7 @@ export interface EgiszCertificatesHubModalProps {
 	readonly initialSection?: EgiszHubSection;
 	readonly patientName?: string;
 	readonly patientInn?: string;
+	readonly payments?: readonly FnsTaxPaymentItem[];
 	readonly records?: readonly RemdDocumentRecord[];
 	readonly onRetryRecord?: (record: RemdDocumentRecord) => void;
 }
@@ -27,6 +30,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 	initialSection = "queue",
 	patientName = "Смирнова Елена Васильевна",
 	patientInn = "",
+	payments,
 	records = [
 		{ id: "remd-1", docTitle: "СЭМД 105: Протокол консультации", patientFullName: patientName, status: "accepted_by_egisz", createdAt: "2026-10-15T10:30:00Z" } as unknown as RemdDocumentRecord,
 		{ id: "remd-2", docTitle: "СЭМД 303: Протокол операции", patientFullName: patientName, status: "sent", createdAt: "2026-10-15T11:45:00Z" } as unknown as RemdDocumentRecord,
@@ -35,6 +39,8 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 }) => {
 	const [activeSection, setActiveSection] = useState<EgiszHubSection>(initialSection);
 	if (!isOpen) return null;
+
+	const effectivePayments = payments ?? (isDemoShowcaseMode() ? SAMPLE_FNS_TAX_1151156_PRESET.payments : []);
 
 	const openPrint = (html: string) => {
 		const w = window.open("", "_blank");
@@ -51,7 +57,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 			clinic: { name: "ООО «ДЕНТЕ КЛИНИК»", inn: "7701987654", ogrn: "1157746000000" },
 			taxpayer: { fullName: patientName, inn: patientInn || undefined },
 			patient: { fullName: patientName, relationshipCode: "1" },
-			payments: SAMPLE_FNS_TAX_1151156_PRESET.payments,
+			payments: effectivePayments,
 			signer: { fullName: "Главврач Клиники", position: "Главный врач" },
 		}));
 	};
@@ -75,31 +81,13 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 					</div>
 
 					<div className="egisz-hub-tabs" role="tablist">
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeSection === "queue"}
-							className={`egisz-hub-tab ${activeSection === "queue" ? "active" : ""}`}
-							onClick={() => setActiveSection("queue")}
-						>
+						<button type="button" role="tab" aria-selected={activeSection === "queue"} className={`egisz-hub-tab ${activeSection === "queue" ? "active" : ""}`} onClick={() => setActiveSection("queue")}>
 							<Archive size={15} /> Фоновый журнал
 						</button>
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeSection === "tax_deduction"}
-							className={`egisz-hub-tab ${activeSection === "tax_deduction" ? "active" : ""}`}
-							onClick={() => setActiveSection("tax_deduction")}
-						>
+						<button type="button" role="tab" aria-selected={activeSection === "tax_deduction"} className={`egisz-hub-tab ${activeSection === "tax_deduction" ? "active" : ""}`} onClick={() => setActiveSection("tax_deduction")}>
 							<Receipt size={15} /> Справка для налогового вычета
 						</button>
-						<button
-							type="button"
-							role="tab"
-							aria-selected={activeSection === "extracts"}
-							className={`egisz-hub-tab ${activeSection === "extracts" ? "active" : ""}`}
-							onClick={() => setActiveSection("extracts")}
-						>
+						<button type="button" role="tab" aria-selected={activeSection === "extracts"} className={`egisz-hub-tab ${activeSection === "extracts" ? "active" : ""}`} onClick={() => setActiveSection("extracts")}>
 							<FileText size={15} /> Выписки и справки
 						</button>
 					</div>
@@ -107,7 +95,7 @@ export const EgiszCertificatesHubModal: React.FC<EgiszCertificatesHubModalProps>
 
 				<div className="egisz-hub-body">
 					{activeSection === "queue" && <EgiszBackgroundQueueTable records={records} onRetryRecord={onRetryRecord} />}
-					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} patientInn={patientInn} payments={SAMPLE_FNS_TAX_1151156_PRESET.payments} onPrintCertificate={handlePrintFns} />}
+					{activeSection === "tax_deduction" && <TaxDeductionCertificateDrawer patientName={patientName} patientInn={patientInn} payments={effectivePayments} onPrintCertificate={handlePrintFns} />}
 					{activeSection === "extracts" && <MedicalRecordExtractDrawer patientName={patientName} onPrintExtract={(p) => openPrint(generateMedicalRecordExtractPrintHtml(p))} />}
 				</div>
 			</div>

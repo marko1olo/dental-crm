@@ -20,10 +20,17 @@ export const isDocumentsOrConsentsTarget = (): boolean => {
 		h === "#documents-studio" ||
 		h === "#contract" ||
 		h === "#tax-certificate" ||
+		h === "#consents" ||
+		h === "#consent" ||
 		h.startsWith("#documents?") ||
 		h.startsWith("#docs-studio?") ||
+		h.startsWith("#documents-studio?") ||
+		h.startsWith("#consents?") ||
+		h.startsWith("#consent?") ||
 		s.includes("documents=1") ||
 		s.includes("docs=1") ||
+		s.includes("consents=1") ||
+		s.includes("consent=1") ||
 		s.includes("standalone=documents")
 	);
 };

@@ -8,7 +8,7 @@ import { useDoctorPayrollTabData, DEFAULT_DOCTORS } from "./payrollTabModules/us
 
 export function DoctorPayrollTab({
 	clinicName = "ООО «Денте Стоматология»",
-	doctorsList = DEFAULT_DOCTORS,
+	doctorsList,
 	services = [],
 }: DoctorPayrollTabProps): React.JSX.Element {
 	const {
@@ -23,6 +23,7 @@ export function DoctorPayrollTab({
 		calculationResult,
 		handleExportCsv,
 		handlePrintPayslip,
+		doctors,
 	} = useDoctorPayrollTabData({ clinicName, doctorsList, services });
 
 	const paidServicesCount = effectiveServices.filter(
@@ -32,7 +33,7 @@ export function DoctorPayrollTab({
 	return (
 		<div className="flex flex-col gap-3 sm:gap-4 animate-in fade-in duration-150" data-testid="doctor-payroll-tab">
 			<PayrollTabHeader
-				doctorsList={doctorsList}
+				doctorsList={doctors}
 				selectedDoctorId={selectedDoctorId}
 				onSelectDoctorId={setSelectedDoctorId}
 				periodStart={periodStart}

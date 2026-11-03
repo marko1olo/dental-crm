@@ -32,7 +32,15 @@ import {
 	generateTaxCertificateTemplate,
 	sumKopecks,
 } from "../documentsCatalogData";
-import { DocumentsStudioModal } from "../DocumentsStudioModal";
+import {
+	disableDemoShowcaseMode,
+	enableDemoShowcaseMode,
+	isDemoShowcaseMode,
+} from "../../../lib/demoMode";
+import {
+	DocumentsStudioModal,
+	NO_PATIENT_SELECTED_PLACEHOLDER,
+} from "../DocumentsStudioModal";
 import { DirectDocumentsLauncher } from "../DirectDocumentsLauncher";
 import { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
 
@@ -222,5 +230,134 @@ describe("🏛️ Direct Launchers & Live UI Mounting (Mandate 8aq)", () => {
 		const registryContent = fs.readFileSync(registryPath, "utf-8");
 		assert.ok(registryContent.includes("DirectDocumentsLauncher"), "administrativeLaunchersRegistry обязан импортировать DirectDocumentsLauncher");
 		assert.ok(registryContent.includes("documents-studio"), "administrativeLaunchersRegistry обязан содержать запись documents-studio");
+	});
+});
+
+describe("🏛️ DocumentsStudioModal: Mandate 8wy Production & Demo Isolation", () => {
+	it("4.1. В боевом режиме (!isDemoShowcaseMode()) без переданного пациента: пустой пациент, 0 услуг, сумма 0 ₽, честный плейсхолдер", () => {
+		disableDemoShowcaseMode();
+		assert.equal(isDemoShowcaseMode(), false, "Режим должен быть боевым");
+
+		const html = renderToString(
+			<DocumentsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+			/>,
+		);
+
+		// Честный плейсхолдер в теле документа
+		assert.ok(
+			html.includes(NO_PATIENT_SELECTED_PLACEHOLDER),
+			"В теле документа обязан отображаться честный плейсхолдер отсутствия пациента",
+		);
+
+		// Нулевая сумма (с учетом возможного комментария React SSR <!-- -->)
+		assert.ok(
+			html.includes("0 ₽") && html.includes("Сумма:"),
+			"Сумма в боевом режиме без выбранного пациента должна быть 0 ₽",
+		);
+
+		// Полное отсутствие демо-мокапов (Мандат 8wy)
+		assert.ok(!html.includes("Смирнов Алексей Петрович"), "Мокап пациента 'Смирнов Алексей Петрович' запрещен в проде");
+		assert.ok(!html.includes("45 12 654321"), "Мокап паспорта запрещен в проде");
+		assert.ok(!html.includes("ул. Тверская, д. 14"), "Мокап адреса запрещен в проде");
+		assert.ok(!html.includes("Восстановление зуба 4.6"), "Мокап лечения 4.6 зуба запрещен в проде");
+		assert.ok(!html.includes("Кариес дентина зуба 4.6"), "Мокап диагноза запрещен в проде");
+		assert.ok(!html.includes("7 800 ₽"), "Демо-сумма 7 800 ₽ запрещена в проде");
+	});
+
+	it("4.2. В боевом режиме (!isDemoShowcaseMode()) с реальным пациентом: реквизиты пациента подставляются, фейковые услуги не примешиваются", () => {
+		disableDemoShowcaseMode();
+		assert.equal(isDemoShowcaseMode(), false, "Режим должен быть боевым");
+
+		const realPatient = {
+			id: "pat-prod-007",
+			fullName: "Васильева Анна Сергеевна",
+			birthDate: "05.11.1995",
+			passport: "45 18 998877 выдан ТП № 1",
+			address: "г. Москва, Ломоносовский пр-т, 23",
+			phone: "+7 (925) 777-88-99",
+		};
+
+		// 1. Проверяем первичный пакет (intake)
+		const intakeHtml = renderToString(
+			<DocumentsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTemplate="intake"
+				patientContext={realPatient}
+			/>,
+		);
+
+		// Реквизиты реального пациента в пакете приёма
+		assert.ok(intakeHtml.includes("Васильева Анна Сергеевна"), "Имя реального пациента должно отображаться");
+		assert.ok(intakeHtml.includes("05.11.1995"), "Дата рождения реального пациента должна отображаться");
+
+		// Плейсхолдер отсутствия пациента не должен выводиться
+		assert.ok(!intakeHtml.includes(NO_PATIENT_SELECTED_PLACEHOLDER), "При выбранном пациенте плейсхолдер не выводится");
+
+		// Фейковые демо-услуги и демо-пациент Смирнов отсутствуют
+		assert.ok(!intakeHtml.includes("Смирнов Алексей Петрович"), "Мокап пациента Смирнова запрещен");
+		assert.ok(!intakeHtml.includes("Восстановление зуба 4.6"), "Мокап услуги 4.6 зуба запрещен");
+		assert.ok(intakeHtml.includes("0 ₽") && intakeHtml.includes("Сумма:"), "Без назначенных услуг сумма должна быть 0 ₽");
+
+		// 2. Проверяем пакет с паспортными данными (tax_certificate)
+		const taxHtml = renderToString(
+			<DocumentsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTemplate="tax_certificate"
+				patientContext={realPatient}
+			/>,
+		);
+		assert.ok(taxHtml.includes("45 18 998877"), "Паспорт реального пациента должен отображаться в справке");
+
+		// 3. Проверяем пакет с адресом (informed_consent)
+		const consentHtml = renderToString(
+			<DocumentsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTemplate="informed_consent"
+				patientContext={realPatient}
+			/>,
+		);
+		assert.ok(consentHtml.includes("Ломоносовский пр-т, 23"), "Адрес реального пациента должен отображаться в согласии");
+
+		// 4. Проверяем выписку из карты приёма (card_extract)
+		const cardHtml = renderToString(
+			<DocumentsStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTemplate="card_extract"
+				patientContext={realPatient}
+			/>,
+		);
+		assert.ok(!cardHtml.includes("Восстановление зуба 4.6"), "В выписке не должно быть фейкового лечения 4.6 зуба");
+		assert.ok(!cardHtml.includes("К02.1 Кариес дентина"), "В выписке не должно быть фейкового диагноза кариеса 4.6");
+	});
+
+	it("4.3. В витринном демо-режиме (enableDemoShowcaseMode()): витринный пациент Смирнов, 3 демо-услуги и сумма 7 800 ₽", () => {
+		try {
+			enableDemoShowcaseMode();
+			assert.equal(isDemoShowcaseMode(), true, "Демо-режим должен быть активен");
+
+			const html = renderToString(
+				<DocumentsStudioModal
+					isOpen={true}
+					onClose={() => {}}
+					initialTemplate="card_extract"
+				/>,
+			);
+
+			// В демо-режиме отображается витринный пациент и услуги
+			assert.ok(html.includes("Смирнов Алексей Петрович"), "В демо-режиме должен быть витринный пациент Смирнов");
+			assert.ok(html.includes("Восстановление зуба 4.6"), "В демо-режиме должны быть витринные услуги");
+			assert.ok(html.includes("7 800 ₽") && html.includes("Сумма:"), "В демо-режиме сумма должна быть 7 800 ₽");
+			assert.ok(html.includes("К02.1 Кариес дентина зуба 4.6"), "В демо-режиме должен быть витринный диагноз");
+			assert.ok(!html.includes(NO_PATIENT_SELECTED_PLACEHOLDER), "В демо-режиме плейсхолдер отсутствия пациента не выводится");
+		} finally {
+			disableDemoShowcaseMode();
+			assert.equal(isDemoShowcaseMode(), false, "Демо-режим обязан быть сброшен после теста");
+		}
 	});
 });

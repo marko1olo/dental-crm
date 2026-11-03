@@ -3,6 +3,7 @@ import { calculateDoctorPeriodPayroll, type DoctorCompletedServiceItem, type Doc
 import type { PayrollDoctorOption } from "./types";
 import { mapEarningsApiServices } from "./mapEarningsApiServices";
 import { exportDoctorPayrollCsv, printDoctorPayslipHtml } from "./payrollTabExportUtils";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 
 export const DEFAULT_DOCTORS: readonly PayrollDoctorOption[] = [
 	{ id: "doc-1", name: "Д-р Смирнов А.В.", specialtyId: "general_dentist" },
@@ -10,6 +11,12 @@ export const DEFAULT_DOCTORS: readonly PayrollDoctorOption[] = [
 	{ id: "doc-3", name: "Д-р Васильев Д.М.", specialtyId: "orthopedist" },
 	{ id: "doc-4", name: "Д-р Орлов С.П.", specialtyId: "surgeon_implantologist" },
 ];
+
+const EMPTY_DOCTOR: PayrollDoctorOption = {
+	id: "",
+	name: "Врачи не зарегистрированы",
+	specialtyId: "general_dentist",
+};
 
 export interface UseDoctorPayrollTabDataParams {
 	readonly clinicName?: string | undefined;
@@ -30,14 +37,22 @@ export interface UseDoctorPayrollTabDataReturn {
 	readonly calculationResult: DoctorPayrollResult;
 	readonly handleExportCsv: () => void;
 	readonly handlePrintPayslip: () => void;
+	readonly doctors: readonly PayrollDoctorOption[];
 }
 
 export function useDoctorPayrollTabData({
 	clinicName = "ООО «Денте Стоматология»",
-	doctorsList = DEFAULT_DOCTORS,
+	doctorsList,
 	services = [],
 }: UseDoctorPayrollTabDataParams): UseDoctorPayrollTabDataReturn {
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(doctorsList[0]?.id || "doc-1");
+	const isDemo = isDemoShowcaseMode();
+	const doctors = useMemo<readonly PayrollDoctorOption[]>(() => {
+		if (doctorsList && doctorsList.length > 0) return doctorsList;
+		if (doctorsList && doctorsList.length === 0) return [];
+		return isDemo ? DEFAULT_DOCTORS : [];
+	}, [doctorsList, isDemo]);
+
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => doctors[0]?.id || "");
 	const [periodStart, setPeriodStart] = useState<string>(() => {
 		const now = new Date();
 		return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-01`;
@@ -53,10 +68,17 @@ export function useDoctorPayrollTabData({
 	const [apiServices, setApiServices] = useState<DoctorCompletedServiceItem[]>([]);
 	const [isLoading, setIsLoading] = useState<boolean>(false);
 
-	const activeDoctor = doctorsList.find((d) => d.id === selectedDoctorId) || doctorsList[0] || DEFAULT_DOCTORS[0]!;
+	const activeDoctor: PayrollDoctorOption = useMemo(() => {
+		if (doctors.length === 0) return EMPTY_DOCTOR;
+		return doctors.find((d) => d.id === selectedDoctorId) || doctors[0] || EMPTY_DOCTOR;
+	}, [doctors, selectedDoctorId]);
 
 	useEffect(() => {
 		if (services && services.length > 0) return;
+		if (!activeDoctor.id) {
+			setApiServices([]);
+			return;
+		}
 		let isCancelled = false;
 		setIsLoading(true);
 
@@ -109,5 +131,6 @@ export function useDoctorPayrollTabData({
 		calculationResult,
 		handleExportCsv,
 		handlePrintPayslip,
+		doctors,
 	};
 }

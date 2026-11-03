@@ -5,10 +5,12 @@
  * Объединяет клинические документы и согласия в неразрывный рабочий контур (Мандаты 8e, 8n, 8am).
  * Ровно 1 Primary CTA кнопка #0d9488 (Мандат 8am), ZERO disabled кнопок (Мандат 8e, Автономия врача).
  * Apple HIG: Bottom Sheet на тач-экранах, тактильный хэндл 36x5px, тач-таргеты >= 44x44px.
- * Целевой размер фасада: 300–350 строк (Sweet Spot Mandate 8b).
+ * Мандат 8wy: Полная изоляция боевого режима от демо-мокапов. В проде без пациента — чистый стейт.
+ * Целевой размер фасада: 320–360 строк (Sweet Spot Mandate 8b, строго <= 420 строк).
  */
 
 import React, { useState, useMemo, useCallback, useRef } from "react";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	DEFAULT_CLINIC_REQUISITES,
 	type ConsentSubKind,
@@ -17,7 +19,6 @@ import {
 	type DocumentServiceItem,
 	type PatientRequisites,
 	formatKopecksToRubles,
-	generateActTemplate,
 	generateCardExtractTemplate,
 	generateContractTemplate,
 	generateInformedConsentTemplate,
@@ -33,11 +34,7 @@ import {
 } from "./studio";
 import "./documentsStudio.css";
 
-export type DocumentTemplateKey =
-	| DocumentPackageKey
-	| "contract"
-	| "act"
-	| "consent";
+export type DocumentTemplateKey = DocumentPackageKey | "contract" | "act" | "consent";
 
 export interface DocumentsStudioModalProps {
 	readonly isOpen: boolean;
@@ -53,39 +50,32 @@ export interface DocumentsStudioModalProps {
 	};
 	readonly doctorFullName?: string;
 	readonly initialTemplate?: DocumentTemplateKey;
-	readonly onSigned?: (payload: {
-		packageKey: DocumentPackageKey;
-		signedAt: string;
-		isDigital: boolean;
-	}) => void;
+	readonly services?: readonly DocumentServiceItem[];
+	readonly diagnosisRu?: string;
+	readonly anamnesisRu?: string;
+	readonly epicrisisRu?: string;
+	readonly onSigned?: (payload: { packageKey: DocumentPackageKey; signedAt: string; isDigital: boolean }) => void;
 }
 
-const DEFAULT_SAMPLE_SERVICES: readonly DocumentServiceItem[] = [
-	{
-		id: "srv-01",
-		title: "Приём (осмотр, консультация) врача-стоматолога первичный",
-		code: "B01.065.001",
-		quantity: 1,
-		priceKopecks: 150000,
-		amountKopecks: 150000,
-	},
-	{
-		id: "srv-02",
-		title: "Восстановление зуба 4.6 пломбой световой полимеризации",
-		code: "A16.07.002.010",
-		quantity: 1,
-		priceKopecks: 550000,
-		amountKopecks: 550000,
-	},
-	{
-		id: "srv-03",
-		title: "Проводниковая анестезия (Артикаин с эпинефрином)",
-		code: "B01.003.004.004",
-		quantity: 1,
-		priceKopecks: 80000,
-		amountKopecks: 80000,
-	},
+const DEMO_SAMPLE_SERVICES: readonly DocumentServiceItem[] = [
+	{ id: "srv-01", title: "Приём (осмотр, консультация) врача-стоматолога первичный", code: "B01.065.001", quantity: 1, priceKopecks: 150000, amountKopecks: 150000 },
+	{ id: "srv-02", title: "Восстановление зуба 4.6 пломбой световой полимеризации", code: "A16.07.002.010", quantity: 1, priceKopecks: 550000, amountKopecks: 550000 },
+	{ id: "srv-03", title: "Проводниковая анестезия (Артикаин с эпинефрином)", code: "B01.003.004.004", quantity: 1, priceKopecks: 80000, amountKopecks: 80000 },
 ];
+
+const DEMO_SAMPLE_PATIENT: PatientRequisites = {
+	fullName: "Смирнов Алексей Петрович",
+	birthDate: "12.04.1988",
+	passport: "45 12 654321 выдан ОВД г. Москвы",
+	address: "г. Москва, ул. Тверская, д. 14, кв. 8",
+	phone: "+7 (916) 123-45-67",
+};
+
+const EMPTY_PATIENT_REQUISITES: PatientRequisites = { fullName: "", birthDate: "", passport: "", address: "", phone: "" };
+const EMPTY_SERVICES: readonly DocumentServiceItem[] = [];
+
+export const NO_PATIENT_SELECTED_PLACEHOLDER =
+	"[Пациент не выбран. Выберите пациента в CRM для автоматического заполнения договора и ИДС]";
 
 export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	isOpen,
@@ -93,9 +83,14 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	patientContext,
 	doctorFullName = "Смирнова Елена Сергеевна",
 	initialTemplate = "intake",
+	services,
+	diagnosisRu,
+	anamnesisRu,
+	epicrisisRu,
 	onSigned,
 }) => {
-	// Приведение initialTemplate к каноническому DocumentPackageKey
+	const isDemo = isDemoShowcaseMode();
+
 	const resolvedInitialPackage = useMemo<DocumentPackageKey>(() => {
 		if (initialTemplate === "contract") return "intake";
 		if (initialTemplate === "act") return "card_extract";
@@ -112,42 +107,59 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 	const canvasRef = useRef<HTMLCanvasElement | null>(null);
 	const isDrawingRef = useRef<boolean>(false);
 
-	const patient: PatientRequisites = useMemo(() => ({
-		fullName: patientContext?.fullName || "Смирнов Алексей Петрович",
-		birthDate: patientContext?.birthDate || "12.04.1988",
-		passport: patientContext?.passport || "45 12 654321 выдан ОВД г. Москвы",
-		address: patientContext?.address || "г. Москва, ул. Тверская, д. 14, кв. 8",
-		phone: patientContext?.phone || "+7 (916) 123-45-67",
-		...(patientContext?.inn ? { inn: patientContext.inn } : {}),
-	}), [patientContext]);
+	const patient: PatientRequisites = useMemo(() => {
+		if (patientContext) {
+			return {
+				fullName: patientContext.fullName || "",
+				birthDate: patientContext.birthDate || "",
+				passport: patientContext.passport || "",
+				address: patientContext.address || "",
+				phone: patientContext.phone || "",
+				...(patientContext.inn ? { inn: patientContext.inn } : {}),
+			};
+		}
+		return isDemo ? DEMO_SAMPLE_PATIENT : EMPTY_PATIENT_REQUISITES;
+	}, [patientContext, isDemo]);
 
 	const currentDate = useMemo(() => {
-		const now = new Date();
-		return now.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
+		return new Date().toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric" });
 	}, []);
 
-	const totalAmountKopecks = useMemo(() => sumKopecks(DEFAULT_SAMPLE_SERVICES), []);
+	const effectiveServices: readonly DocumentServiceItem[] = useMemo(() => {
+		if (services && services.length > 0) return services;
+		return isDemo ? DEMO_SAMPLE_SERVICES : EMPTY_SERVICES;
+	}, [services, isDemo]);
+
+	const totalAmountKopecks = useMemo(() => sumKopecks(effectiveServices), [effectiveServices]);
+
+	const clinicalTexts = useMemo(() => ({
+		diagnosis: diagnosisRu !== undefined ? diagnosisRu : (isDemo ? "К02.1 Кариес дентина зуба 4.6. Интактный зубной ряд." : ""),
+		anamnesis: anamnesisRu !== undefined ? anamnesisRu : (isDemo ? "Жалобы на кратковременные боли от температурных раздражителей. Аллергоанамнез чист." : ""),
+		epicrisis: epicrisisRu !== undefined ? epicrisisRu : (isDemo ? "Кариозная полость санирована, анатомия восстановлена. Гарантия клиники: 12 месяцев." : ""),
+	}), [diagnosisRu, anamnesisRu, epicrisisRu, isDemo]);
 
 	const legalContext: DocumentLegalContext = useMemo(() => ({
 		clinic: DEFAULT_CLINIC_REQUISITES,
 		patient,
-		doctor: {
-			fullName: doctorFullName,
-			specialty: "Врач-стоматолог терапевт",
-		},
-		documentNumber: "КЛ-2026/894",
+		doctor: { fullName: doctorFullName, specialty: "Врач-стоматолог терапевт" },
+		documentNumber: isDemo
+			? "КЛ-2026/894"
+			: (patientContext?.id ? `Д-2026/${patientContext.id.slice(0, 6)}` : "БЛ-2026/001"),
 		documentDate: currentDate,
 		taxYear: new Date().getFullYear(),
-		services: DEFAULT_SAMPLE_SERVICES,
+		services: effectiveServices,
 		totalAmountKopecks,
-		diagnosisRu: "К02.1 Кариес дентина зуба 4.6. Интактный зубной ряд.",
-		anamnesisRu: "Жалобы на кратковременные боли от температурных раздражителей. Аллергоанамнез чист.",
-		epicrisisRu: "Кариозная полость санирована, анатомия восстановлена. Гарантия клиники: 12 месяцев.",
+		diagnosisRu: clinicalTexts.diagnosis,
+		anamnesisRu: clinicalTexts.anamnesis,
+		epicrisisRu: clinicalTexts.epicrisis,
 		consentSubKind: activeConsentSubKind,
-	}), [patient, doctorFullName, currentDate, totalAmountKopecks, activeConsentSubKind]);
+	}), [patient, doctorFullName, isDemo, patientContext?.id, currentDate, effectiveServices, totalAmountKopecks, clinicalTexts, activeConsentSubKind]);
 
 	// Генерация текста текущего документа в зависимости от выбранного пакета
 	const renderedDocumentText = useMemo(() => {
+		if (!isDemo && !patient.fullName.trim()) {
+			return NO_PATIENT_SELECTED_PLACEHOLDER;
+		}
 		switch (activePackage) {
 			case "intake":
 				return generateIntakePackageTemplate(legalContext);
@@ -160,66 +172,61 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			default:
 				return generateIntakePackageTemplate(legalContext);
 		}
-	}, [activePackage, legalContext, activeConsentSubKind]);
+	}, [isDemo, patient.fullName, activePackage, legalContext, activeConsentSubKind]);
 
 	const showToast = useCallback((msg: string) => {
 		setToastNotice(msg);
 		setTimeout(() => setToastNotice(null), 3200);
 	}, []);
 
-	// Быстрые действия
-	const handlePrint = useCallback(() => {
-		window.print();
-		showToast("Отправлено на печать (А4)");
-	}, [showToast]);
-
 	const handleDownloadTxt = useCallback(() => {
 		const blob = new Blob([renderedDocumentText], { type: "text/plain;charset=utf-8" });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url;
-		a.download = `${activePackage}_${patient.fullName.replace(/\s+/g, "_")}.txt`;
+		const nameSlug = patient.fullName ? patient.fullName.replace(/\s+/g, "_") : "unspecified_patient";
+		a.download = `${activePackage}_${nameSlug}.txt`;
 		a.click();
 		URL.revokeObjectURL(url);
 		showToast("Документ экспортирован в файл");
 	}, [renderedDocumentText, activePackage, patient.fullName, showToast]);
 
 	const handleSendMessenger = useCallback(() => {
-		const text = encodeURIComponent(`Здравствуйте, ${patient.fullName}! Ваш пакет документов клиники «ДЕНТЕ»: готов к ознакомлению.`);
-		const phoneClean = patient.phone.replace(/\D/g, "");
-		const url = `https://wa.me/${phoneClean}?text=${text}`;
+		const nameGreeting = patient.fullName ? `, ${patient.fullName}` : "";
+		const text = encodeURIComponent(`Здравствуйте${nameGreeting}! Ваш пакет документов клиники «ДЕНТЕ»: готов к ознакомлению.`);
+		const phoneClean = (patient.phone || "").replace(/\D/g, "");
+		const url = phoneClean ? `https://wa.me/${phoneClean}?text=${text}` : `https://wa.me/?text=${text}`;
 		window.open(url, "_blank");
 		showToast("Ссылка сформирована для WhatsApp");
 	}, [patient.fullName, patient.phone, showToast]);
 
 	// Рисование на Canvas
-	const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+	const getCanvasCoords = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
 		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		isDrawingRef.current = true;
+		if (!canvas) return null;
 		const rect = canvas.getBoundingClientRect();
 		const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
 		const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-		ctx.beginPath();
-		ctx.moveTo(clientX - rect.left, clientY - rect.top);
+		return { x: clientX - rect.left, y: clientY - rect.top, ctx: canvas.getContext("2d") };
+	};
+
+	const startDrawing = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
+		const coords = getCanvasCoords(e);
+		if (!coords?.ctx) return;
+		isDrawingRef.current = true;
+		coords.ctx.beginPath();
+		coords.ctx.moveTo(coords.x, coords.y);
 	};
 
 	const draw = (e: React.MouseEvent<HTMLCanvasElement> | React.TouchEvent<HTMLCanvasElement>) => {
 		if (!isDrawingRef.current) return;
-		const canvas = canvasRef.current;
-		if (!canvas) return;
-		const ctx = canvas.getContext("2d");
-		if (!ctx) return;
-		const rect = canvas.getBoundingClientRect();
-		const clientX = "touches" in e ? e.touches[0].clientX : e.clientX;
-		const clientY = "touches" in e ? e.touches[0].clientY : e.clientY;
-		ctx.lineWidth = 2.5;
-		ctx.lineCap = "round";
-		ctx.strokeStyle = "#0d9488";
-		ctx.lineTo(clientX - rect.left, clientY - rect.top);
-		ctx.stroke();
+		const coords = getCanvasCoords(e);
+		if (!coords?.ctx) return;
+		coords.ctx.lineWidth = 2.5;
+		coords.ctx.lineCap = "round";
+		coords.ctx.strokeStyle = "#0d9488";
+		coords.ctx.lineTo(coords.x, coords.y);
+		coords.ctx.stroke();
 	};
 
 	const stopDrawing = () => {
@@ -235,7 +242,6 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 		setHasSigned(false);
 	};
 
-	// Главное действие (Primary CTA): Печать и подписание в 1 клик (Мандат 8am, 8e)
 	const handlePrimarySignAndPrint = useCallback(() => {
 		setHasSigned(true);
 		const nowStr = new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" });
@@ -269,7 +275,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 				{/* Каноническая шапка: 1 строка <= 52px */}
 				<DocumentsStudioHeader
-					patientFullName={patient.fullName}
+					patientFullName={patient.fullName || "Пациент не выбран"}
 					onDownloadTxt={handleDownloadTxt}
 					onSendMessenger={handleSendMessenger}
 					onClose={onClose}
@@ -346,7 +352,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 								<div className="text-right">
 									<div className="font-semibold text-slate-800">Пациент:</div>
-									<div className="text-slate-600">{patient.fullName}</div>
+									<div className="text-slate-600">{patient.fullName || "______________________"}</div>
 									<div className="mt-4 text-slate-400">
 										{hasSigned ? "Подписано электронной подписью [OK]" : "Подпись: ______________________"}
 									</div>

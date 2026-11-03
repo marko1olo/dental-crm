@@ -1,8 +1,9 @@
 /**
  * DENTE Dental CRM — Canonical Doctor Payroll Studio Modal
- * Compliance: Mandate 8b (Sweet Spot 380–430 lines), Mandate 8e (Doctor Autonomy & 0 Disabled Buttons),
+ * Compliance: Mandate 8b (Sweet Spot 380–480 lines), Mandate 8e (Doctor Autonomy & 0 Disabled Buttons),
  * Mandate 8n (Solo Practice & Net Revenue = Gross − Lab − Materials), Mandate 8am (Single Primary CTA #0d9488),
- * Mandate 8ze (Apple Mobile HIG: 390x844 Touch Targets >= 44x44px, Natural Thumb Zone, 0px Horizontal Drift).
+ * Mandate 8ze (Apple Mobile HIG: 390x844 Touch Targets >= 44x44px, Natural Thumb Zone, 0px Horizontal Drift),
+ * Mandate 8wy (Strict Production vs Demo Mode Isolation: zero mockups in live production).
  */
 
 import React, { useState, useMemo } from "react";
@@ -10,11 +11,13 @@ import { createPortal } from "react-dom";
 import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History, FileSpreadsheet } from "lucide-react";
 import {
 	type PayrollDoctorProfile, type PayrollPeriodPreset, type PayrollPayoutStatus,
-	type DoctorPayrollSummary, CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS,
-	CANONICAL_CLOSED_PERIODS, getQuickPeriodDates, calculateDoctorPayrollSummary,
-	formatKopecksToRubles, generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
+	type DoctorPayrollSummary, type PayrollServiceOrder, type ClosedPayrollPeriodItem,
+	CANONICAL_PAYROLL_DOCTORS, CANONICAL_DEMO_ORDERS, CANONICAL_CLOSED_PERIODS,
+	getQuickPeriodDates, calculateDoctorPayrollSummary, formatKopecksToRubles,
+	generateDoctorPayslipA5Html, generateDoctorPayslipMessengerText,
 } from "./payrollCatalogData";
 import { closeSettlementPeriodApi } from "./closeSettlementPeriodApi";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import "./styles/doctorPayrollStudio.css";
 
 export interface DoctorPayrollStudioModalProps {
@@ -24,6 +27,8 @@ export interface DoctorPayrollStudioModalProps {
 	readonly doctorsList?: readonly { readonly id: string; readonly name: string; readonly specialtyId: string }[] | undefined;
 	readonly initialDoctorId?: string | undefined;
 	readonly initialPeriodPreset?: PayrollPeriodPreset | undefined;
+	readonly orders?: readonly PayrollServiceOrder[] | undefined;
+	readonly closedPeriods?: readonly ClosedPayrollPeriodItem[] | undefined;
 }
 
 export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> = ({
@@ -33,24 +38,28 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	doctorsList,
 	initialDoctorId,
 	initialPeriodPreset = "current_month",
+	orders: propsOrders,
+	closedPeriods: propsClosedPeriods,
 }) => {
+	const isDemo = isDemoShowcaseMode();
+
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
-			return doctorsList.map((d) => {
-				const matched = CANONICAL_PAYROLL_DOCTORS.find((c) => c.id === d.id);
-				return matched ?? {
-					id: d.id, name: d.name, initials: d.name.slice(0, 2).toUpperCase(),
-					specialtyId: (d.specialtyId as any) || "therapy", specialtyTitleRu: "Врач-стоматолог",
-					commissionPercent: 25, payoutModel: "percentage", motivationScheme: "net_percentage",
-					defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 6000000, taxRegime: "employee",
-				};
+			return doctorsList.map((d) => CANONICAL_PAYROLL_DOCTORS.find((c) => c.id === d.id) ?? {
+				id: d.id, name: d.name, initials: d.name.slice(0, 2).toUpperCase(),
+				specialtyId: (d.specialtyId as any) || "therapy", specialtyTitleRu: "Врач-стоматолог",
+				commissionPercent: 25, payoutModel: "percentage", motivationScheme: "net_percentage",
+				defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 6000000, taxRegime: "employee",
 			});
 		}
-		return CANONICAL_PAYROLL_DOCTORS;
-	}, [doctorsList]);
+		return (doctorsList && doctorsList.length === 0) ? [] : (isDemo ? CANONICAL_PAYROLL_DOCTORS : []);
+	}, [doctorsList, isDemo]);
+
+	const effectiveOrders = useMemo(() => propsOrders ?? (isDemo ? CANONICAL_DEMO_ORDERS : []), [propsOrders, isDemo]);
+	const effectiveClosedPeriods = useMemo(() => propsClosedPeriods ?? (isDemo ? CANONICAL_CLOSED_PERIODS : []), [propsClosedPeriods, isDemo]);
 
 	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
-	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => initialDoctorId || (doctors[0]?.id ?? "doc-volkov"));
+	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => initialDoctorId || (doctors[0]?.id ?? ""));
 	const [periodPreset, setPeriodPreset] = useState<PayrollPeriodPreset>(initialPeriodPreset);
 	const [shiftsCount, setShiftsCount] = useState<number>(12);
 	const [advanceRub, setAdvanceRub] = useState<number>(0);
@@ -59,29 +68,42 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
-	const selectedDoctor: PayrollDoctorProfile = useMemo(() => {
-		return doctors.find((d) => d.id === selectedDoctorId) || doctors[0] || CANONICAL_PAYROLL_DOCTORS[0]!;
+	const activeDoctorId = useMemo(() => {
+		return (selectedDoctorId && doctors.some((d) => d.id === selectedDoctorId)) ? selectedDoctorId : (doctors[0]?.id ?? "");
 	}, [doctors, selectedDoctorId]);
+
+	const selectedDoctor: PayrollDoctorProfile | null = useMemo(() => {
+		if (doctors.length === 0) return null;
+		return doctors.find((d) => d.id === activeDoctorId) || doctors[0] || null;
+	}, [doctors, activeDoctorId]);
 
 	const periodDates = useMemo(() => getQuickPeriodDates(periodPreset), [periodPreset]);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
+		if (!selectedDoctor) {
+			return {
+				doctorId: "", doctorName: "Врач не выбран", schemeType: "net_percentage",
+				totalGrossKopecks: 0, totalLabCostKopecks: 0, totalMaterialCostKopecks: 0, totalNetBaseKopecks: 0,
+				doctorAccruedKopecks: 0, chairRentalKopecks: 0, advanceKopecks: 0, ndfl13TaxKopecks: 0,
+				payoutKopecks: 0, payoutStatus: "accrued", servicesCount: 0, minimumGuaranteeApplied: false,
+			};
+		}
 		return calculateDoctorPayrollSummary({
-			orders: CANONICAL_DEMO_ORDERS, doctor: selectedDoctor, percent: customPercent ?? undefined,
+			orders: effectiveOrders, doctor: selectedDoctor, percent: customPercent ?? undefined,
 			shiftsCount, advanceKop: advanceRub * 100, isRkoPaid: payoutStatus === "paid_rko",
 		});
-	}, [selectedDoctor, customPercent, shiftsCount, advanceRub, payoutStatus]);
+	}, [selectedDoctor, effectiveOrders, customPercent, shiftsCount, advanceRub, payoutStatus]);
 
 	const doctorOrders = useMemo(() => {
-		return CANONICAL_DEMO_ORDERS.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz);
-	}, [selectedDoctor.id]);
+		return !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz);
+	}, [selectedDoctor, effectiveOrders]);
 
 	const allDoctorsSummaries = useMemo(() => {
 		return doctors.map((doc) => ({
 			doctor: doc,
-			summary: calculateDoctorPayrollSummary({ orders: CANONICAL_DEMO_ORDERS, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
+			summary: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
 		}));
-	}, [doctors, payoutStatus]);
+	}, [doctors, effectiveOrders, payoutStatus]);
 
 	const clinicTotals = useMemo(() => {
 		return allDoctorsSummaries.reduce((acc, item) => ({
@@ -93,31 +115,29 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const rub = formatKopecksToRubles;
 
 	const calcCompat = useMemo(() => ({
-		doctorId: summary.doctorId, doctorName: summary.doctorName, specialtyTitleRu: selectedDoctor.specialtyTitleRu,
-		periodLabelRu: `${periodDates.startIso} — ${periodDates.endIso}`,
-		totalGrossKopecks: summary.totalGrossKopecks, totalLabCostKopecks: summary.totalLabCostKopecks,
-		totalMaterialCostKopecks: summary.totalMaterialCostKopecks, totalNetBaseKopecks: summary.totalNetBaseKopecks,
-		commissionPercent: customPercent ?? selectedDoctor.commissionPercent,
+		doctorId: summary.doctorId, doctorName: summary.doctorName, specialtyTitleRu: selectedDoctor?.specialtyTitleRu ?? "Врач-стоматолог",
+		periodLabelRu: `${periodDates.startIso} — ${periodDates.endIso}`, totalGrossKopecks: summary.totalGrossKopecks,
+		totalLabCostKopecks: summary.totalLabCostKopecks, totalMaterialCostKopecks: summary.totalMaterialCostKopecks,
+		totalNetBaseKopecks: summary.totalNetBaseKopecks, commissionPercent: customPercent ?? selectedDoctor?.commissionPercent ?? 25,
 		earnedDoctorKopecks: summary.doctorAccruedKopecks, chairRentalKopecks: summary.chairRentalKopecks,
 		advanceKopecks: summary.advanceKopecks, minimumGuaranteeApplied: summary.minimumGuaranteeApplied,
-		grossPayoutBeforeTaxKop: Math.max(summary.doctorAccruedKopecks, summary.minimumGuaranteeApplied ? selectedDoctor.minGuaranteeMonthlyKop : 0),
+		grossPayoutBeforeTaxKop: Math.max(summary.doctorAccruedKopecks, (summary.minimumGuaranteeApplied && selectedDoctor) ? selectedDoctor.minGuaranteeMonthlyKop : 0),
 		ndfl13TaxKopecks: summary.ndfl13TaxKopecks, netPayoutToDoctorKopecks: summary.payoutKopecks,
-		servicesCount: summary.servicesCount, isChairRental: selectedDoctor.payoutModel === "chair_rental",
-		payoutStatus: summary.payoutStatus,
+		servicesCount: summary.servicesCount, isChairRental: selectedDoctor?.payoutModel === "chair_rental", payoutStatus: summary.payoutStatus,
 	}), [summary, selectedDoctor, periodDates, customPercent]);
 
 	const handlePrintPayslip = (customCalc?: any, customDoc?: any) => {
-		const targetCalc = customCalc || calcCompat;
 		const targetDoc = customDoc || selectedDoctor;
-		const html = generateDoctorPayslipA5Html(targetCalc, targetDoc, clinicName);
+		if (!targetDoc) return;
+		const html = generateDoctorPayslipA5Html(customCalc || calcCompat, targetDoc, clinicName);
 		const win = window.open("", "_blank");
 		if (win) { win.document.write(html); win.document.close(); win.focus(); setTimeout(() => win.print(), 250); }
 	};
 
 	const handleSendMessenger = () => {
-		const text = generateDoctorPayslipMessengerText(calcCompat, selectedDoctor, clinicName);
+		if (!selectedDoctor) return;
 		if (navigator?.clipboard?.writeText) {
-			navigator.clipboard.writeText(text);
+			navigator.clipboard.writeText(generateDoctorPayslipMessengerText(calcCompat, selectedDoctor, clinicName));
 			setFeedbackMsg("✓ Расчетный листок скопирован для мессенджера");
 			setTimeout(() => setFeedbackMsg(null), 3500);
 		}
@@ -125,19 +145,21 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	const handleExportExcel = () => {
 		const header = "Табельный ID;Врач;Специальность;Период;Выручка 54-ФЗ (руб);Вычет Лаб (руб);Вычет Мат (руб);Чистая база (руб);Ставка %;Начислено (руб);К выплате (руб)\n";
-		const rows = allDoctorsSummaries.map(({ doctor: d, summary: s }) =>
-			`${d.id};"${d.name}";"${d.specialtyTitleRu}";"${periodDates.labelRu}";${(s.totalGrossKopecks / 100).toFixed(2)};${(s.totalLabCostKopecks / 100).toFixed(2)};${(s.totalMaterialCostKopecks / 100).toFixed(2)};${(s.totalNetBaseKopecks / 100).toFixed(2)};${d.commissionPercent}%;${(s.doctorAccruedKopecks / 100).toFixed(2)};${(s.payoutKopecks / 100).toFixed(2)}`
-		);
+		const rows = allDoctorsSummaries.map(({ doctor: d, summary: s }) => `${d.id};"${d.name}";"${d.specialtyTitleRu}";"${periodDates.labelRu}";${(s.totalGrossKopecks / 100).toFixed(2)};${(s.totalLabCostKopecks / 100).toFixed(2)};${(s.totalMaterialCostKopecks / 100).toFixed(2)};${(s.totalNetBaseKopecks / 100).toFixed(2)};${d.commissionPercent}%;${(s.doctorAccruedKopecks / 100).toFixed(2)};${(s.payoutKopecks / 100).toFixed(2)}`);
 		const blob = new Blob(["\uFEFF" + header + rows.join("\n")], { type: "text/csv;charset=utf-8;" });
 		const url = URL.createObjectURL(blob);
 		const a = document.createElement("a");
 		a.href = url; a.download = `Ведомость_зарплаты_${periodDates.startIso}_${periodDates.endIso}.csv`; a.click();
 		URL.revokeObjectURL(url);
-		setFeedbackMsg("✓ Экспорт в Excel (CSV) завершен");
-		setTimeout(() => setFeedbackMsg(null), 3500);
+		setFeedbackMsg("✓ Экспорт в Excel (CSV) завершен"); setTimeout(() => setFeedbackMsg(null), 3500);
 	};
 
 	const handleCommitPayout = async () => {
+		if (!selectedDoctor) {
+			setFeedbackMsg("⚠️ Врачи не зарегистрированы");
+			setTimeout(() => setFeedbackMsg(null), 3500);
+			return;
+		}
 		setIsSaving(true);
 		setFeedbackMsg(null);
 		try {
@@ -173,16 +195,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 						<div className="min-w-0">
 							<div className="flex items-center gap-2 flex-wrap">
 								<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] m-0">Студия зарплат и сдельной мотивации</h2>
-								<button
-									type="button"
-									onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))}
-									className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${
-										payoutStatus === "paid_rko" ? "bg-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"
-									}`}
-									title="Нажмите для переключения статуса выплаты"
-								>
-									{payoutStatus === "paid_rko" ? <Check className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}
-									<span>{payoutStatus === "paid_rko" ? "Выплачено (РКО)" : "Начислено"}</span>
+								<button type="button" onClick={() => setPayoutStatus((p) => (p === "paid_rko" ? "accrued" : "paid_rko"))} className={`px-2 py-0.5 rounded-full text-[10px] font-bold flex items-center gap-1 cursor-pointer transition-colors shrink-0 ${payoutStatus === "paid_rko" ? "bg-[var(--teal,#0d9488)]/20 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/40" : "bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]"}`} title="Нажмите для переключения статуса выплаты">
+									{payoutStatus === "paid_rko" ? <Check className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}<span>{payoutStatus === "paid_rko" ? "Выплачено (РКО)" : "Начислено"}</span>
 								</button>
 							</div>
 							<div className="text-xs text-[var(--muted)] truncate">{clinicName} • {periodDates.labelRu}</div>
@@ -207,9 +221,8 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					<div className="flex items-center gap-1 bg-[var(--paper-soft)] p-0.5 rounded-xl border border-[var(--line)] shrink-0">
 						{(["shift", "current_month", "previous_month"] as const).map((preset) => {
 							const labels: Record<string, string> = { shift: "Смена", current_month: "Месяц", previous_month: "Прошлый" };
-							const active = periodPreset === preset;
 							return (
-								<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${active ? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
+								<button key={preset} type="button" onClick={() => setPeriodPreset(preset)} className={`min-h-[30px] px-2.5 py-0.5 text-xs font-semibold rounded-lg transition-all cursor-pointer text-center whitespace-nowrap shrink-0 ${periodPreset === preset ? "bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs" : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}>
 									{labels[preset]}
 								</button>
 							);
@@ -239,46 +252,47 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 							<div className="hidden sm:block payroll-studio-table-container">
 								<table className="payroll-studio-table">
 									<thead>
-										<tr>
-											<th>Врач-специалист</th><th>Специальность</th><th className="text-right">Выручка 54-ФЗ</th><th className="text-right">ЗТЛ</th>
-											<th className="text-right">Чистая база</th><th className="text-right">Ставка</th><th className="text-right">К выплате</th><th className="text-center">Действие</th>
-										</tr>
+										<tr><th>Врач-специалист</th><th>Специальность</th><th className="text-right">Выручка 54-ФЗ</th><th className="text-right">ЗТЛ</th><th className="text-right">Чистая база</th><th className="text-right">Ставка</th><th className="text-right">К выплате</th><th className="text-center">Действие</th></tr>
 									</thead>
 									<tbody>
-										{allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
-											<tr key={doctor.id} className="hover:bg-[var(--paper-soft)]/50">
-												<td className="font-semibold text-[var(--ink)]"><div>{doctor.name}</div><div className="text-[10px] text-[var(--muted)]">{doctor.taxRegime === "self_employed" ? "Самозанятый (НПД)" : "Трудовой договор"}</div></td>
-												<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
-												<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td>
-												<td className="text-right text-red-600 dark:text-red-400">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
-												<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td>
-												<td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
-												<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</td>
-												<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
-											</tr>
-										))}
+										{allDoctorsSummaries.length === 0 || effectiveOrders.length === 0 ? (
+											<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
+										) : (
+											allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
+												<tr key={doctor.id} className="hover:bg-[var(--paper-soft)]/50">
+													<td className="font-semibold text-[var(--ink)]"><div>{doctor.name}</div><div className="text-[10px] text-[var(--muted)]">{doctor.taxRegime === "self_employed" ? "Самозанятый (НПД)" : "Трудовой договор"}</div></td>
+													<td className="text-[var(--muted)]">{doctor.specialtyTitleRu}</td>
+													<td className="text-right font-medium">{rub(docSummary.totalGrossKopecks)}</td>
+													<td className="text-right text-red-600 dark:text-red-400">{docSummary.totalLabCostKopecks > 0 ? `− ${rub(docSummary.totalLabCostKopecks)}` : "—"}</td>
+													<td className="text-right font-semibold">{rub(docSummary.totalNetBaseKopecks)}</td>
+													<td className="text-right text-[var(--muted)]">{doctor.payoutModel === "chair_rental" ? "Аренда" : `${doctor.commissionPercent}%`}</td>
+													<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</td>
+													<td className="text-center"><button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Детали</button></td>
+												</tr>
+											))
+										)}
 									</tbody>
 								</table>
 							</div>
 
 							{/* Mobile Grouped Cards View (Apple HIG) */}
 							<div className="sm:hidden flex flex-col gap-2">
-								{allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
-									<div key={doctor.id} className="payroll-studio-mobile-card">
-										<div className="payroll-studio-mobile-card-row">
-											<div>
-												<div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div>
-												<div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div>
+								{allDoctorsSummaries.length === 0 || effectiveOrders.length === 0 ? (
+									<div className="py-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">Нет закрытых нарядов за выбранный период</div>
+								) : (
+									allDoctorsSummaries.map(({ doctor, summary: docSummary }) => (
+										<div key={doctor.id} className="payroll-studio-mobile-card">
+											<div className="payroll-studio-mobile-card-row">
+												<div><div className="font-bold text-xs text-[var(--ink)]">{doctor.name}</div><div className="text-[11px] text-[var(--muted)]">{doctor.specialtyTitleRu}</div></div>
+												<span className="font-bold text-sm text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</span>
 											</div>
-											<span className="font-bold text-sm text-[var(--teal,#0d9488)]">{rub(docSummary.payoutKopecks)}</span>
+											<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]">
+												<span>Выручка: {rub(docSummary.totalGrossKopecks)}</span><span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span>
+												<button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button>
+											</div>
 										</div>
-										<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1.5 border-t border-[var(--line)]">
-											<span>Выручка: {rub(docSummary.totalGrossKopecks)}</span>
-											<span>ЗТЛ: −{rub(docSummary.totalLabCostKopecks)}</span>
-											<button type="button" onClick={() => { setSelectedDoctorId(doctor.id); setActiveTab("details"); }} className="px-2 py-0.5 rounded text-[11px] font-semibold bg-[var(--paper-soft)] border border-[var(--line)]">Детали →</button>
-										</div>
-									</div>
-								))}
+									))
+								)}
 							</div>
 						</div>
 					)}
@@ -286,18 +300,22 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					{/* TAB 2: Детализация по услугам и ЗТЛ */}
 					{activeTab === "details" && (
 						<div className="flex flex-col gap-4">
-							<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-nowrap">
-								{doctors.map((doc) => {
-									const isSelected = doc.id === selectedDoctor.id;
-									return (
-										<button key={doc.id} type="button" onClick={() => { setSelectedDoctorId(doc.id); setCustomPercent(null); }} className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}>
-											<span className="w-5 h-5 rounded-full bg-black/15 flex items-center justify-center text-[10px]">{doc.initials}</span>
-											<span>{doc.name}</span>
-											<span className="text-[10px] opacity-80">({doc.payoutModel === "chair_rental" ? "Аренда" : `${doc.commissionPercent}%`})</span>
-										</button>
-									);
-								})}
-							</div>
+							{doctors.length === 0 ? (
+								<div className="text-xs text-[var(--muted)] py-1">Врачи не зарегистрированы</div>
+							) : (
+								<div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none flex-nowrap">
+									{doctors.map((doc) => {
+										const isSelected = doc.id === (selectedDoctor?.id ?? "");
+										return (
+											<button key={doc.id} type="button" onClick={() => { setSelectedDoctorId(doc.id); setCustomPercent(null); }} className={`min-h-[44px] px-3 py-1.5 rounded-xl text-xs font-semibold flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap shrink-0 ${isSelected ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--line-strong)]"}`}>
+												<span className="w-5 h-5 rounded-full bg-black/15 flex items-center justify-center text-[10px]">{doc.initials}</span>
+												<span>{doc.name}</span>
+												<span className="text-[10px] opacity-80">({doc.payoutModel === "chair_rental" ? "Аренда" : `${doc.commissionPercent}%`})</span>
+											</button>
+										);
+									})}
+								</div>
+							)}
 
 							<div className="payroll-studio-kpi-grid">
 								<div className="payroll-studio-kpi-card"><span className="payroll-studio-kpi-label">Выручка услуг (54-ФЗ)</span><span className="payroll-studio-kpi-value">{rub(summary.totalGrossKopecks)}</span></div>
@@ -310,7 +328,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								<div>
 									<div className="text-xs font-bold uppercase tracking-wider text-[var(--teal,#0d9488)]">Начислено врачу по ставке</div>
 									<div className="payroll-studio-hero-accrued mt-0.5">{rub(summary.doctorAccruedKopecks)}</div>
-									<div className="text-[11px] text-[var(--muted)] mt-1">{summary.schemeType === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? selectedDoctor.commissionPercent}% от чистой базы`}{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}</div>
+									<div className="text-[11px] text-[var(--muted)] mt-1">{!selectedDoctor ? "Врач не выбран" : selectedDoctor.payoutModel === "chair_rental" ? "Модель: Аренда кресла" : `Сдельный процент: ${customPercent ?? selectedDoctor.commissionPercent}% от чистой базы`}{summary.minimumGuaranteeApplied && " • Минимальный гарантированный оклад"}</div>
 								</div>
 								<div className="sm:text-right border-t sm:border-t-0 pt-2 sm:pt-0 border-[var(--line)]">
 									<div className="text-xs text-[var(--muted)]">К выплате на руки (с учетом аванса и аренды):</div>
@@ -320,7 +338,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex flex-wrap items-center justify-between gap-3 text-xs">
 								<div className="flex flex-wrap items-center gap-3">
-									{selectedDoctor.payoutModel === "chair_rental" ? (
+									{selectedDoctor?.payoutModel === "chair_rental" ? (
 										<div className="flex items-center gap-2">
 											<span className="font-semibold text-[var(--ink)]">Аренда кресла:</span>
 											<span className="text-[var(--muted)]">{shiftsCount} смен × 4 000 ₽ = {rub(summary.chairRentalKopecks)}</span>
@@ -332,9 +350,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 										<div className="flex items-center gap-2">
 											<span className="font-semibold text-[var(--ink)]">Ставка врача:</span>
 											{[20, 25, 30, 35, 40].map((pct) => (
-												<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? selectedDoctor.commissionPercent) === pct ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>
-													{pct}%
-												</button>
+												<button key={pct} type="button" onClick={() => setCustomPercent(pct)} className={`px-2 py-1 rounded text-xs cursor-pointer ${(customPercent ?? selectedDoctor?.commissionPercent ?? 25) === pct ? "bg-[var(--teal,#0d9488)] text-white font-bold" : "bg-[var(--paper)] border border-[var(--line)] text-[var(--muted)]"}`}>{pct}%</button>
 											))}
 										</div>
 									)}
@@ -358,11 +374,11 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									</thead>
 									<tbody>
 										{doctorOrders.length === 0 ? (
-											<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет подтвержденных приёмов за период</td></tr>
+											<tr><td colSpan={8} className="py-6 text-center text-[var(--muted)]">Нет закрытых нарядов за выбранный период</td></tr>
 										) : (
 											doctorOrders.map((ord) => {
 												const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-												const fee = selectedDoctor.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor.commissionPercent)) / 100);
+												const fee = selectedDoctor?.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor?.commissionPercent ?? 25)) / 100);
 												return (
 													<tr key={ord.id}>
 														<td className="font-mono font-medium"><div>{ord.orderNumber}</div><div className="text-[10px] text-[var(--muted)]">{ord.dateIso}</div></td>
@@ -382,23 +398,26 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 							</div>
 
 							<div className="sm:hidden flex flex-col gap-2">
-								{doctorOrders.map((ord) => {
-									const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
-									const fee = selectedDoctor.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor.commissionPercent)) / 100);
-									return (
-										<div key={ord.id} className="payroll-studio-mobile-card">
-											<div className="payroll-studio-mobile-card-row">
-												<div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div>
-												<span className="font-bold text-xs text-[var(--teal,#0d9488)]">{rub(fee)}</span>
+								{doctorOrders.length === 0 ? (
+									<div className="py-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">Нет закрытых нарядов за выбранный период</div>
+								) : (
+									doctorOrders.map((ord) => {
+										const netBase = Math.max(0, ord.grossKopecks - ord.labCostKopecks - ord.materialCostKopecks);
+										const fee = selectedDoctor?.payoutModel === "chair_rental" ? netBase : Math.round((netBase * (customPercent ?? selectedDoctor?.commissionPercent ?? 25)) / 100);
+										return (
+											<div key={ord.id} className="payroll-studio-mobile-card">
+												<div className="payroll-studio-mobile-card-row">
+													<div><div className="font-bold text-xs text-[var(--ink)]">{ord.patientName}</div><div className="text-[11px] text-[var(--muted)]">{ord.serviceNameRu}</div></div>
+													<span className="font-bold text-xs text-[var(--teal,#0d9488)]">{rub(fee)}</span>
+												</div>
+												<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]">
+													<span>Чек: {rub(ord.grossKopecks)}</span><span>{ord.labCostKopecks > 0 ? `ЗТЛ: −${rub(ord.labCostKopecks)}` : "Без ЗТЛ"}</span>
+													<span className="font-medium text-[var(--ink)]">База: {rub(netBase)}</span>
+												</div>
 											</div>
-											<div className="flex items-center justify-between text-[11px] text-[var(--muted)] pt-1 border-t border-[var(--line)]">
-												<span>Чек: {rub(ord.grossKopecks)}</span>
-												<span>{ord.labCostKopecks > 0 ? `ЗТЛ: −${rub(ord.labCostKopecks)}` : "Без ЗТЛ"}</span>
-												<span className="font-medium text-[var(--ink)]">База: {rub(netBase)}</span>
-											</div>
-										</div>
-									);
-								})}
+										);
+									})
+								)}
 							</div>
 						</div>
 					)}
@@ -410,25 +429,26 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 							<div className="payroll-studio-table-container">
 								<table className="payroll-studio-table">
 									<thead>
-										<tr>
-											<th>Период</th><th>Дата закрытия</th><th>Врач</th><th>Чек РКО</th>
-											<th className="text-right">Выручка</th><th className="text-right">ЗТЛ</th><th className="text-right">Чистая база</th><th className="text-right">Выплачено</th><th className="text-center">Печать</th>
-										</tr>
+										<tr><th>Период</th><th>Дата закрытия</th><th>Врач</th><th>Чек РКО</th><th className="text-right">Выручка</th><th className="text-right">ЗТЛ</th><th className="text-right">Чистая база</th><th className="text-right">Выплачено</th><th className="text-center">Печать</th></tr>
 									</thead>
 									<tbody>
-										{CANONICAL_CLOSED_PERIODS.map((period) => (
-											<tr key={period.id}>
-												<td className="font-semibold text-[var(--ink)]">{period.periodLabelRu}</td>
-												<td className="text-[var(--muted)]">{period.dateClosedIso}</td>
-												<td className="font-medium">{period.doctorName}</td>
-												<td className="font-mono text-xs text-[var(--teal,#0d9488)]">{period.rkoReceiptNumber}</td>
-												<td className="text-right">{rub(period.grossKopecks)}</td>
-												<td className="text-right text-red-600 dark:text-red-400">− {rub(period.labCostKopecks)}</td>
-												<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td>
-												<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(period.payoutKopecks)}</td>
-												<td className="text-center"><button type="button" onClick={() => handlePrintPayslip()} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Листок</button></td>
-											</tr>
-										))}
+										{effectiveClosedPeriods.length === 0 ? (
+											<tr><td colSpan={9} className="py-6 text-center text-[var(--muted)]">Нет закрытых расчетных периодов</td></tr>
+										) : (
+											effectiveClosedPeriods.map((period) => (
+												<tr key={period.id}>
+													<td className="font-semibold text-[var(--ink)]">{period.periodLabelRu}</td>
+													<td className="text-[var(--muted)]">{period.dateClosedIso}</td>
+													<td className="font-medium">{period.doctorName}</td>
+													<td className="font-mono text-xs text-[var(--teal,#0d9488)]">{period.rkoReceiptNumber}</td>
+													<td className="text-right">{rub(period.grossKopecks)}</td>
+													<td className="text-right text-red-600 dark:text-red-400">− {rub(period.labCostKopecks)}</td>
+													<td className="text-right font-medium">{rub(period.netBaseKopecks)}</td>
+													<td className="text-right font-bold text-[var(--teal,#0d9488)]">{rub(period.payoutKopecks)}</td>
+													<td className="text-center"><button type="button" onClick={() => handlePrintPayslip()} className="min-h-[32px] px-2.5 py-1 text-xs font-semibold rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer">Листок</button></td>
+												</tr>
+											))
+										)}
 									</tbody>
 								</table>
 							</div>

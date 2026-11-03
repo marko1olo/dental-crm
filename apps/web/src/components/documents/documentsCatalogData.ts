@@ -218,7 +218,7 @@ export function generateIntakePackageTemplate(ctx: DocumentLegalContext): string
 export function generateActTemplate(ctx: DocumentLegalContext): string {
 	const itemsRows = ctx.services.length > 0
 		? ctx.services.map((s, idx) => `${idx + 1}. ${s.title} — ${s.quantity} шт. × ${formatKopecksToRubles(s.priceKopecks)} = ${formatKopecksToRubles(s.amountKopecks)}`).join("\n")
-		: "1. Стоматологический терапевтический приём и санация — 1 усл. = " + formatKopecksToRubles(ctx.totalAmountKopecks);
+		: (ctx.totalAmountKopecks > 0 ? `1. Стоматологический приём и санация — 1 усл. = ${formatKopecksToRubles(ctx.totalAmountKopecks)}` : "Перечень услуг пуст.");
 
 	return `АКТ ВЫПОЛНЕННЫХ УСЛУГ К ДОГОВОРУ № ${ctx.documentNumber}
 
@@ -266,17 +266,24 @@ ${ctx.patient.inn ? `ИНН налогоплательщика: ${ctx.patient.in
 }
 
 export function generateCardExtractTemplate(ctx: DocumentLegalContext): string {
+	const diagnosis = ctx.diagnosisRu ? ctx.diagnosisRu : "Не установлен";
+	const anamnesis = ctx.anamnesisRu ? ctx.anamnesisRu : "Не отягощен";
+	const servicesList = ctx.services.length > 0
+		? ctx.services.map((s, i) => `${i + 1}) ${s.title} (${s.quantity} ед.)`).join("\n")
+		: "Услуги не оказывались";
+	const epicrisis = ctx.epicrisisRu ? ctx.epicrisisRu : "Лечение завершено";
+
 	return `ВЫПИСКА ИЗ МЕДИЦИНСКОЙ КАРТЫ СТОМАТОЛОГИЧЕСКОГО ПРИЁМА
 Выписка № ${ctx.documentNumber} к карте пациента
 
 1. Пациент: ${ctx.patient.fullName}, ${ctx.patient.birthDate} г.р.
 2. Лечебное учреждение: ${ctx.clinic.name}
 3. Лечащий врач: ${ctx.doctor.fullName} (${ctx.doctor.specialty})
-4. Клинический диагноз: ${ctx.diagnosisRu || "К02.1 Кариес дентина зуба 4.6. Интактный зубной ряд."}
-5. Анамнез заболевания: ${ctx.anamnesisRu || "Пациент обратился с жалобами на кратковременные боли от температурных раздражителей. Аллергоанамнез не отягощен."}
+4. Клинический диагноз: ${diagnosis}
+5. Анамнез заболевания: ${anamnesis}
 6. Проведенное лечение (дневник SOAP):
-${ctx.services.map((s, i) => `${i + 1}) ${s.title} (${s.quantity} ед.)`).join("\n") || "Препарирование кариозной полости, медикаментозная обработка, постановка светоотверждаемой пломбы."}
-7. Исход лечения, гарантия и рекомендации: ${ctx.epicrisisRu || "Зуб восстановлен анатомически и функционально. Санация завершена. Гарантия клиники: 12 месяцев. Контрольный осмотр через 6 месяцев."}
+${servicesList}
+7. Исход лечения, гарантия и рекомендации: ${epicrisis}
 
 Врач: _________________ / ${ctx.doctor.fullName} /          М.П. Клиники
 Дата: ${ctx.documentDate}`;

@@ -1,7 +1,7 @@
 /**
  * @file DemoCaseTreatmentTimeline.tsx
  * @description Таймлайн этапов кейса: диагностика/терапия -> хирургия -> ортопедия -> финиш.
- * Интегрирует клинические протоколы (SOAP 043/у, наряд ЗТЛ, элайнеры, хирургия, дашборд главврача).
+ * Интегрирует клинические протоколы (дневник SOAP, наряд ЗТЛ, элайнеры, хирургия, дашборд главврача).
  * Layer 4: Презентационный компонент таймлайна (МАНДАТ 8y, МАНДАТ 8n).
  */
 
@@ -270,7 +270,7 @@ export const DemoCaseTreatmentTimeline: React.FC<DemoCaseTreatmentTimelineProps>
 						border: "1px solid var(--line, #e2e8f0)",
 					}}
 				>
-					{/* ТЕРАПЕВТ: SOAP 043/у */}
+					{/* ТЕРАПЕВТ: Дневник приёма SOAP */}
 					{activeRoleKey === "therapist" && clinicalDetails.soapDiary && (
 						<div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
 							<div style={{ fontWeight: 700, color: "var(--teal, #0d9488)", fontSize: "13px" }}>
@@ -348,7 +348,7 @@ export const DemoCaseTreatmentTimeline: React.FC<DemoCaseTreatmentTimelineProps>
 							<div><strong>Торк затяжки:</strong> {clinicalDetails.surgeonCase.insertionTorqueNcm} Н·см | ISQ: {clinicalDetails.surgeonCase.stabilityIsq} (кость: {clinicalDetails.surgeonCase.boneDensityMisch})</div>
 							<div><strong>Анестезия:</strong> {clinicalDetails.surgeonCase.anesthesiaProtocolRu}</div>
 							<div><strong>Ход операции:</strong> {clinicalDetails.surgeonCase.surgicalProtocolRu}</div>
-							<div><strong>ИДС:</strong> <span style={{ color: "var(--ok-fg, #10b981)", fontWeight: 700 }}>✓ Подписано (ИДС-ХИР-1051н)</span></div>
+							<div><strong>ИДС:</strong> <span style={{ color: "var(--ok-fg, #10b981)", fontWeight: 700 }}>✓ Подписано согласие на имплантацию</span></div>
 						</div>
 					)}
 

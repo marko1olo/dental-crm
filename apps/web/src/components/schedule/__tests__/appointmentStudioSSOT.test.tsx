@@ -6,15 +6,23 @@
  * - 8e: Автономия врача и администратора — запись никогда не блокируется (ноль disabled кнопок).
  * - 8n: Суверенитет соло-практики — выбор врача в 1 клик, пресеты 15/30/45/60 мин.
  * - 8am: Единый дизайн-код, ровно ОДНА Primary CTA кнопка #0d9488.
+ * - 8wy: Строгий двухрежимный закон — в проде ноль демо-мокапов, изоляция SAMPLE_PATIENTS.
  * - 8x: Живой русский язык без канцелярита и приказов.
+ * - 8d pt 7: Ровно 0 cartoon emojis.
  * - 8ze / 8al / 8aq: Apple HIG сенсорная эргономика, монтирование в UI, Drag Handle 36x5px.
  */
 
-import { describe, it, expect, vi } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import React from "react";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { renderToString } from "react-dom/server";
+import {
+  enableDemoShowcaseMode,
+  disableDemoShowcaseMode,
+  isDemoShowcaseMode,
+} from "../../../lib/demoMode";
 import {
   CANONICAL_APPOINTMENT_STATUSES,
   CLINICAL_REASON_PRESETS,
@@ -30,9 +38,15 @@ import {
 } from "../appointmentCatalogData";
 import {
   AppointmentStudioModal,
+  SAMPLE_PATIENTS,
+  filterPatientSuggestions,
   type AppointmentStudioModalProps,
+  type PatientSuggestionItem,
 } from "../AppointmentStudioModal";
 import { DirectAppointmentLauncher, DirectAppointmentStudioLauncher } from "../DirectAppointmentLauncher";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("Appointment Studio SSOT Catalog & Math (appointmentCatalogData.ts)", () => {
   it("enforces exactly 5 canonical appointment statuses with Russian labels and no Soviet decrees (Mandate 8x)", () => {
@@ -86,7 +100,7 @@ describe("Appointment Studio SSOT Catalog & Math (appointmentCatalogData.ts)", (
     expect(labels).toContain("Снятие швов");
   });
 
-  it("generates human, polite SMS/WhatsApp confirmation message without legal spam", () => {
+  it("generates human, polite SMS/WhatsApp confirmation message without legal spam or cartoon emojis (Mandates 8x, 8d pt 7)", () => {
     const text = generatePatientConfirmationMessage({
       patientName: "Алексей Смирнов",
       doctorName: "Д-р Воронов А. В.",
@@ -99,6 +113,90 @@ describe("Appointment Studio SSOT Catalog & Math (appointmentCatalogData.ts)", (
     expect(text).toContain("14:00 – 14:45 (45 мин)");
     expect(text).not.toContain("152-ФЗ");
     expect(text).not.toContain("обработка ПДн");
+    // Mandate 8d pt 7: strictly 0 cartoon emojis
+    expect(text).not.toMatch(/[\u{1F300}-\u{1F9FF}]/u);
+    expect(text).not.toContain("📅");
+    expect(text).not.toContain("⏰");
+    expect(text).not.toContain("👨‍⚕️");
+  });
+});
+
+describe("Production Isolation & Zero Demo Mockups (Mandate 8wy)", () => {
+  beforeEach(() => {
+    disableDemoShowcaseMode();
+  });
+
+  afterEach(() => {
+    disableDemoShowcaseMode();
+  });
+
+  it("strictly enforces zero mockup suggestions in production mode (!isDemoShowcaseMode)", () => {
+    disableDemoShowcaseMode();
+    expect(isDemoShowcaseMode()).toBe(false);
+
+    // В боевом режиме без переданных пациентов подсказки строго пусты
+    const suggestionsIvan = filterPatientSuggestions("Иван");
+    expect(suggestionsIvan).toEqual([]);
+
+    const suggestionsSmirnov = filterPatientSuggestions("Смирн");
+    expect(suggestionsSmirnov).toEqual([]);
+
+    const suggestionsPhone = filterPatientSuggestions("+7 (916)");
+    expect(suggestionsPhone).toEqual([]);
+
+    // Короткий ввод (<2 символов) также пуст
+    expect(filterPatientSuggestions("И")).toEqual([]);
+    expect(filterPatientSuggestions("")).toEqual([]);
+  });
+
+  it("allows real clinic patients to be suggested in production mode when passed via props", () => {
+    disableDemoShowcaseMode();
+    const realPatients: PatientSuggestionItem[] = [
+      { id: "real-101", name: "Иванов Константин Георгиевич", phone: "+7 (999) 777-66-55" },
+      { id: "real-102", name: "Петрова Мария Сергеевна", phone: "+7 (903) 111-22-33" },
+    ];
+
+    const matched = filterPatientSuggestions("Иван", realPatients);
+    expect(matched).toHaveLength(1);
+    expect(matched[0]?.id).toBe("real-101");
+    expect(matched[0]?.name).toBe("Иванов Константин Георгиевич");
+
+    // Поиск по номеру телефона реального пациента
+    const matchedPhone = filterPatientSuggestions("777-66", realPatients);
+    expect(matchedPhone).toHaveLength(1);
+    expect(matchedPhone[0]?.id).toBe("real-101");
+
+    // Несовпадающий запрос дает пустой массив без утечки демо-пациентов
+    const noMatch = filterPatientSuggestions("Кузнецов", realPatients);
+    expect(noMatch).toEqual([]);
+  });
+
+  it("activates SAMPLE_PATIENTS suggestions strictly in demo showcase mode (enableDemoShowcaseMode)", () => {
+    enableDemoShowcaseMode();
+    expect(isDemoShowcaseMode()).toBe(true);
+
+    const suggestionsIvan = filterPatientSuggestions("Иван");
+    expect(suggestionsIvan.length).toBeGreaterThan(0);
+    expect(suggestionsIvan[0]?.name).toBe("Иванов Сергей Павлович");
+
+    const suggestionsPhone = filterPatientSuggestions("+7 (925)");
+    expect(suggestionsPhone.length).toBe(1);
+    expect(suggestionsPhone[0]?.name).toBe("Смирнова Анна Викторовна");
+
+    // Немедленный возврат в боевой режим обнуляет демо-подсказки
+    disableDemoShowcaseMode();
+    expect(isDemoShowcaseMode()).toBe(false);
+    expect(filterPatientSuggestions("Иван")).toEqual([]);
+  });
+
+  it("supports explicit isDemoMode prop override in component without global mutation", () => {
+    disableDemoShowcaseMode();
+    const demoMatches = filterPatientSuggestions("Иван", undefined, true);
+    expect(demoMatches.length).toBeGreaterThan(0);
+    expect(demoMatches[0]?.name).toBe("Иванов Сергей Павлович");
+
+    const prodMatches = filterPatientSuggestions("Иван", undefined, false);
+    expect(prodMatches).toEqual([]);
   });
 });
 

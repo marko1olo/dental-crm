@@ -1,6 +1,6 @@
 /**
  * @file DemoCaseFinancialSummary.tsx
- * @description Смета клинического кейса: расчет по номенклатуре приказа 804н, материалы, экономия пациента.
+ * @description Смета клинического кейса: расчет по прейскуранту услуг, материалы, экономия пациента.
  * Layer 4: Презентационный компонент финансовых расчетов (МАНДАТ 8y, МАНДАТ 8n).
  */
 
@@ -95,7 +95,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 				</div>
 			</div>
 
-			{/* Таблица услуг по 804н */}
+			{/* Смета лечения и прейскурант процедур */}
 			<div
 				data-testid="demo-estimate-table"
 				style={{
@@ -183,7 +183,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 			<div
 				style={{
 					display: "grid",
-					gridTemplateColumns: "repeat(3, 1fr)",
+					gridTemplateColumns: "repeat(auto-fit, minmax(130px, 1fr))",
 					gap: "10px",
 				}}
 			>
@@ -247,15 +247,16 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 					gap: "8px",
 				}}
 			>
-				<div style={{ display: "flex", gap: "8px" }}>
+				<div style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
 					<button
 						type="button"
 						onClick={handlePaySbp}
 						disabled={paidViaSbp}
 						style={{
-							padding: "6px 12px",
-							borderRadius: "6px",
-							fontSize: "12px",
+							padding: "10px 16px",
+							minHeight: "44px",
+							borderRadius: "8px",
+							fontSize: "13px",
 							fontWeight: 600,
 							border: "none",
 							background: paidViaSbp ? "var(--ok-fg, #10b981)" : "var(--teal, #0d9488)",
@@ -267,7 +268,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 							transition: "background 0.15s ease",
 						}}
 					>
-						<QrCode size={14} />
+						<QrCode size={15} />
 						{paidViaSbp ? "Оплачено по СБП ✓" : "Симулировать оплату через СБП"}
 					</button>
 
@@ -275,9 +276,10 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 						type="button"
 						onClick={handleInstallment}
 						style={{
-							padding: "6px 12px",
-							borderRadius: "6px",
-							fontSize: "12px",
+							padding: "10px 16px",
+							minHeight: "44px",
+							borderRadius: "8px",
+							fontSize: "13px",
 							fontWeight: 600,
 							border: "1px solid var(--line, #e2e8f0)",
 							background: "var(--paper-strong, #ffffff)",
@@ -288,7 +290,7 @@ export const DemoCaseFinancialSummary: React.FC<DemoCaseFinancialSummaryProps> =
 							gap: "6px",
 						}}
 					>
-						<CreditCard size={14} />
+						<CreditCard size={15} />
 						Рассрочка 0-0-12
 					</button>
 				</div>

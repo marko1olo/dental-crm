@@ -38,7 +38,7 @@ export const DEMO_CLINICAL_ROLE_PROFILES: Record<string, DemoRoleProfile> = {
 		targetPatientId: "01a00000-0000-0000-0000-000000000001",
 		staffId: DEMO_DOCTOR_1_ID,
 		badge: "Клинический Hot Path",
-		description: "Лечение кариеса 16 (MOD), коффердам, реставрация Ceram.x, форма 043/у",
+		description: "Лечение кариеса 16 (MOD), коффердам, реставрация Ceram.x, медицинская карта приёма",
 	},
 	orthopedist: {
 		id: "orthopedist",
@@ -74,7 +74,7 @@ export const DEMO_CLINICAL_ROLE_PROFILES: Record<string, DemoRoleProfile> = {
 		targetPatientId: "01a00000-0000-0000-0000-000000000004",
 		staffId: DEMO_DOCTOR_SURGEON_ID,
 		badge: "Хирургия и шаблоны",
-		description: "Имплантация зуба 46 Straumann BLX 4.5x10, торк 35 Н·см, ИДС 1051н",
+		description: "Имплантация зуба 46 Straumann BLX 4.5x10, торк 35 Н·см, ИДС на имплантацию",
 	},
 	owner: {
 		id: "owner",
@@ -98,7 +98,7 @@ export const DEMO_CLINICAL_ROLE_PROFILES: Record<string, DemoRoleProfile> = {
 		targetPatientId: "01a00000-0000-0000-0000-000000000001",
 		staffId: DEMO_ADMIN_ID,
 		badge: "Ресепшен и касса",
-		description: "Плотная шахматка расписания, быстрый чек 54-ФЗ, звонки и WhatsApp",
+		description: "Плотная шахматка расписания, быстрый кассовый чек, звонки и WhatsApp",
 	},
 };
 

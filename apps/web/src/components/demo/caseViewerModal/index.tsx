@@ -107,7 +107,7 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 				alignItems: "center",
 				justifyContent: "center",
 				zIndex: 10000,
-				padding: "16px",
+				padding: "clamp(4px, 2vw, 16px)",
 			}}
 			onClick={onClose}
 		>
@@ -119,10 +119,10 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 				style={{
 					background: "var(--paper-strong, #ffffff)",
 					border: "1px solid var(--line, #e2e8f0)",
-					borderRadius: "12px",
+					borderRadius: "clamp(8px, 2vw, 12px)",
 					width: "100%",
 					maxWidth: "880px",
-					maxHeight: "92vh",
+					maxHeight: "95vh",
 					overflow: "hidden",
 					display: "flex",
 					flexDirection: "column",
@@ -143,15 +143,18 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 					profileDescription={profile.description}
 				/>
 
-				{/* 2. Навигационные вкладки модалки */}
+				{/* 2. Навигационные вкладки модалки (с защитой от сжатия и наездов) */}
 				<div
 					style={{
 						display: "flex",
 						gap: "8px",
-						padding: "10px 20px",
+						padding: "8px 16px",
 						borderBottom: "1px solid var(--line, #e2e8f0)",
 						background: "var(--paper, #f8fafc)",
 						overflowX: "auto",
+						scrollbarWidth: "none",
+						WebkitOverflowScrolling: "touch",
+						alignItems: "center",
 					}}
 				>
 					<button
@@ -159,12 +162,16 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						data-testid="demo-tab-case"
 						onClick={() => setActiveTab("case")}
 						style={{
-							padding: "6px 14px",
+							flexShrink: 0,
+							minHeight: "36px",
+							padding: "6px 12px",
 							borderRadius: "6px",
 							fontSize: "12px",
 							fontWeight: 600,
 							border: "none",
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
 							background:
 								activeTab === "case"
 									? "var(--brand-accent, #6366f1)"
@@ -182,12 +189,16 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						data-testid="demo-tab-media"
 						onClick={() => setActiveTab("media")}
 						style={{
-							padding: "6px 14px",
+							flexShrink: 0,
+							minHeight: "36px",
+							padding: "6px 12px",
 							borderRadius: "6px",
 							fontSize: "12px",
 							fontWeight: 600,
 							border: "none",
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
 							background:
 								activeTab === "media"
 									? "var(--brand-accent, #6366f1)"
@@ -205,12 +216,16 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						data-testid="demo-tab-estimate"
 						onClick={() => setActiveTab("estimate")}
 						style={{
-							padding: "6px 14px",
+							flexShrink: 0,
+							minHeight: "36px",
+							padding: "6px 12px",
 							borderRadius: "6px",
 							fontSize: "12px",
 							fontWeight: 600,
 							border: "none",
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
 							background:
 								activeTab === "estimate"
 									? "var(--brand-accent, #6366f1)"
@@ -228,12 +243,16 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						data-testid="demo-tab-diploma"
 						onClick={() => setActiveTab("diploma")}
 						style={{
-							padding: "6px 14px",
+							flexShrink: 0,
+							minHeight: "36px",
+							padding: "6px 12px",
 							borderRadius: "6px",
 							fontSize: "12px",
 							fontWeight: 600,
 							border: "none",
 							cursor: "pointer",
+							display: "inline-flex",
+							alignItems: "center",
 							background:
 								activeTab === "diploma"
 									? "var(--brand-accent, #6366f1)"
@@ -248,7 +267,7 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 				</div>
 
 				{/* 3. Рабочая область модалки */}
-				<div style={{ padding: "20px", overflowY: "auto", flex: 1, fontSize: "13px" }}>
+				<div style={{ padding: "clamp(12px, 2.5vw, 20px)", overflowY: "auto", flex: 1, fontSize: "13px" }}>
 					{/* Вкладка 1: Таймлайн этапов и клинический протокол */}
 					{activeTab === "case" && (
 						<DemoCaseTreatmentTimeline
@@ -263,7 +282,7 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						<DemoCaseMediaGallery media={currentCase.media} />
 					)}
 
-					{/* Вкладка 3: Смета и финансовый расчет по 804н */}
+					{/* Вкладка 3: Смета лечения и прейскурант процедур */}
 					{activeTab === "estimate" && (
 						<DemoCaseFinancialSummary
 							items={currentCase.financialItems}
@@ -355,7 +374,7 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 					)}
 				</div>
 
-				{/* 4. Подвал с интерактивными действиями (Zero Dead-Ends) */}
+				{/* 4. Подвал с интерактивными действиями (Zero Dead-Ends, Apple HIG Touch >= 44px) */}
 				<div
 					style={{
 						padding: "12px 20px",
@@ -364,6 +383,8 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						display: "flex",
 						alignItems: "center",
 						justifyContent: "space-between",
+						gap: "12px",
+						flexWrap: "wrap",
 					}}
 				>
 					<div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
@@ -372,22 +393,25 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 							onClick={handleSimulateStatusComplete}
 							disabled={statusUpdated}
 							style={{
+								minHeight: "44px",
 								background: statusUpdated
 									? "var(--ok-fg, #10b981)"
 									: "var(--brand-accent, #6366f1)",
 								color: "#ffffff",
 								border: "none",
-								borderRadius: "6px",
-								padding: "6px 14px",
-								fontSize: "12px",
+								borderRadius: "8px",
+								padding: "10px 18px",
+								fontSize: "13px",
 								fontWeight: 600,
 								cursor: "pointer",
 								display: "inline-flex",
 								alignItems: "center",
-								gap: "6px",
+								gap: "8px",
+								boxShadow: "0 1px 2px rgba(0, 0, 0, 0.05)",
+								transition: "all 0.15s ease",
 							}}
 						>
-							<CheckCircle size={14} />
+							<CheckCircle size={16} />
 							{statusUpdated ? "Приём завершён ✓" : "Симулировать: Завершить приём"}
 						</button>
 					</div>
@@ -396,14 +420,19 @@ export const DemoCaseViewerModal: React.FC<DemoCaseViewerModalProps> = ({
 						type="button"
 						onClick={onClose}
 						style={{
+							minHeight: "44px",
 							background: "var(--paper-strong, #ffffff)",
 							border: "1px solid var(--line, #e2e8f0)",
-							borderRadius: "6px",
-							padding: "6px 14px",
-							fontSize: "12px",
+							borderRadius: "8px",
+							padding: "10px 18px",
+							fontSize: "13px",
 							fontWeight: 600,
 							cursor: "pointer",
 							color: "var(--ink, #0f172a)",
+							display: "inline-flex",
+							alignItems: "center",
+							justifyContent: "center",
+							transition: "all 0.15s ease",
 						}}
 					>
 						Закрыть

@@ -3,6 +3,7 @@ import { CheckCircle2 } from "lucide-react";
 import type { FnsTaxPaymentItem } from "./cdaR2XmlBuilder";
 import { formatKopecksToRubles } from "./cdaR2XmlBuilder";
 import { SAMPLE_FNS_TAX_1151156_PRESET } from "./sampleFnsTaxPreset";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 
 export interface TaxDeductionCertificateDrawerProps {
 	readonly patientName: string;
@@ -14,13 +15,15 @@ export interface TaxDeductionCertificateDrawerProps {
 }
 
 export const TaxDeductionCertificateDrawer: React.FC<TaxDeductionCertificateDrawerProps> = ({
-	patientName, patientInn = "", payments = [], defaultYear = 2026, onPrintCertificate, onExportPdf,
+	patientName, patientInn = "", payments, defaultYear = 2026, onPrintCertificate, onExportPdf,
 }) => {
 	const [selectedYear, setSelectedYear] = useState<number>(defaultYear);
 	const [relationshipCode, setRelationshipCode] = useState<string>("1");
 	const years = [2026, 2025, 2024, 2023];
 
-	const effectivePayments = payments && payments.length > 0 ? payments : SAMPLE_FNS_TAX_1151156_PRESET.payments;
+	const effectivePayments = payments && payments.length > 0
+		? payments
+		: (isDemoShowcaseMode() ? SAMPLE_FNS_TAX_1151156_PRESET.payments : []);
 	const totalKopecks = effectivePayments.reduce((sum, p) => sum + (p.amountKopecks || 0), 0);
 	const code1Kopecks = effectivePayments.filter((p) => p.serviceCode === "1").reduce((sum, p) => sum + (p.amountKopecks || 0), 0);
 	const code2Kopecks = effectivePayments.filter((p) => p.serviceCode === "2").reduce((sum, p) => sum + (p.amountKopecks || 0), 0);

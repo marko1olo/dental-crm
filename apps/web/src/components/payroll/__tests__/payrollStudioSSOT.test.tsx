@@ -10,6 +10,8 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToString } from "react-dom/server";
 
 import {
 	computeNetBaseKopecks,
@@ -29,6 +31,8 @@ import { DoctorPayrollStudioModal } from "../DoctorPayrollStudioModal";
 import { DoctorPayrollModal } from "../DoctorPayrollModal";
 import { DoctorPayrollHubModal } from "../DoctorPayrollHubModal";
 import { DirectPayrollLauncher } from "../DirectPayrollLauncher";
+import { setRuntimeDemoMode } from "../../../lib/demoMode";
+import { useDoctorPayrollTabData } from "../../../views/financeView/payrollTabModules/useDoctorPayrollTabData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -255,6 +259,111 @@ describe("SSOT Suite: Canonical Doctor Payroll Studio & Net Revenue Invariants",
 			assert.ok(DoctorPayrollModal);
 			assert.ok(DoctorPayrollHubModal);
 			assert.ok(DirectPayrollLauncher);
+		});
+	});
+
+	describe("4. Production vs Demo Showcase Mode Isolation (Mandates 8wy, 8d pt 7, 8e)", () => {
+		function TestPayrollHookConsumer({ doctorsList }: { doctorsList?: any }) {
+			const data = useDoctorPayrollTabData({ doctorsList });
+			return (
+				<div data-testid="hook-info">
+					<span data-testid="doc-count">{data.doctors.length}</span>
+					<span data-testid="active-doc-id">{data.activeDoctor.id}</span>
+					<span data-testid="active-doc-name">{data.activeDoctor.name}</span>
+				</div>
+			);
+		}
+
+		it("4.1 Mandate 8d pt 7: strictly 0 cartoon emojis in payrollCatalogData.ts and messenger text", () => {
+			const emojiRegex = /[\u{1F300}-\u{1F9FF}]/u;
+			const catalogPath = path.join(baseDir, "payrollCatalogData.ts");
+			const catalogContent = fs.readFileSync(catalogPath, "utf8");
+
+			assert.ok(!emojiRegex.test(catalogContent), "payrollCatalogData.ts must not contain any cartoon emojis");
+
+			const volkov = CANONICAL_PAYROLL_DOCTORS.find((d) => d.id === "doc-volkov")!;
+			const summary = calculateDoctorPayrollSummary({ orders: CANONICAL_DEMO_ORDERS, doctor: volkov });
+			const calcCompat = {
+				doctorId: summary.doctorId, doctorName: summary.doctorName, specialtyTitleRu: volkov.specialtyTitleRu,
+				periodLabelRu: "Октябрь 2026", totalGrossKopecks: summary.totalGrossKopecks,
+				totalLabCostKopecks: summary.totalLabCostKopecks, totalMaterialCostKopecks: summary.totalMaterialCostKopecks,
+				totalNetBaseKopecks: summary.totalNetBaseKopecks, commissionPercent: volkov.commissionPercent,
+				earnedDoctorKopecks: summary.doctorAccruedKopecks, chairRentalKopecks: summary.chairRentalKopecks,
+				advanceKopecks: summary.advanceKopecks, minimumGuaranteeApplied: summary.minimumGuaranteeApplied,
+				grossPayoutBeforeTaxKop: summary.doctorAccruedKopecks, ndfl13TaxKopecks: summary.ndfl13TaxKopecks,
+				netPayoutToDoctorKopecks: summary.payoutKopecks, servicesCount: summary.servicesCount,
+				isChairRental: false, payoutStatus: summary.payoutStatus,
+			};
+
+			const messengerText = generateDoctorPayslipMessengerText(calcCompat, volkov, "Стоматология DENTE");
+			assert.ok(!emojiRegex.test(messengerText), "Messenger text must not contain any cartoon emojis");
+			assert.ok(messengerText.includes("[Расчетный листок]"), "Must include textual tag [Расчетный листок]");
+			assert.ok(messengerText.includes("Выручка (54-ФЗ):"), "Must include textual marker Выручка (54-ФЗ):");
+			assert.ok(messengerText.includes("ЗТЛ:"), "Must include textual marker ЗТЛ:");
+			assert.ok(messengerText.includes("Материалы:"), "Must include textual marker Материалы:");
+			assert.ok(messengerText.includes("ИТОГО К ВЫПЛАТЕ:"), "Must include textual marker ИТОГО К ВЫПЛАТЕ:");
+		});
+
+		it("4.2 Mandate 8wy: DoctorPayrollStudioModal in production mode strictly isolates mockups and shows honest Empty State", () => {
+			setRuntimeDemoMode(false);
+			try {
+				const prodHtml = renderToString(<DoctorPayrollStudioModal isOpen={true} onClose={() => {}} />);
+
+				// Zero mockup leakage
+				assert.ok(!prodHtml.includes("ОРТ-2401"), "Production mode must not leak CANONICAL_DEMO_ORDERS ОРТ-2401");
+				assert.ok(!prodHtml.includes("ХИР-3301"), "Production mode must not leak CANONICAL_DEMO_ORDERS ХИР-3301");
+				assert.ok(!prodHtml.includes("Волков"), "Production mode must not leak CANONICAL_PAYROLL_DOCTORS Волков");
+				assert.ok(!prodHtml.includes("РКО-09/26-1"), "Production mode must not leak CANONICAL_CLOSED_PERIODS");
+
+				// Honest empty state
+				assert.ok(prodHtml.includes("Нет закрытых нарядов за выбранный период"), "Production mode must show honest Empty State");
+				assert.ok(prodHtml.includes("0 ₽"), "Production mode with no orders must show 0 ₽ payout");
+
+				// Mandate 8e: Primary CTA button is never disabled
+				assert.ok(prodHtml.includes('data-testid="payroll-studio-primary-cta"'), "Primary CTA button must exist");
+				assert.ok(!prodHtml.includes("disabled"), "Buttons must never be disabled (Mandate 8e)");
+			} finally {
+				setRuntimeDemoMode(null);
+			}
+		});
+
+		it("4.3 Mandate 8wy: DoctorPayrollStudioModal in demo showcase mode renders rich demonstration data", () => {
+			setRuntimeDemoMode(true);
+			try {
+				const demoHtml = renderToString(<DoctorPayrollStudioModal isOpen={true} onClose={() => {}} />);
+
+				assert.ok(demoHtml.includes("Волков"), "Demo mode must showcase canonical doctor Волков");
+				assert.ok(!demoHtml.includes("Нет закрытых нарядов за выбранный период"), "Demo mode must not show empty state");
+			} finally {
+				setRuntimeDemoMode(null);
+			}
+		});
+
+		it("4.4 Mandate 8wy: useDoctorPayrollTabData isolates default doctors between prod and demo modes", () => {
+			// Production mode without doctorsList -> empty doctors list
+			setRuntimeDemoMode(false);
+			try {
+				const prodHtml = renderToString(<TestPayrollHookConsumer />);
+				assert.ok(prodHtml.includes('<span data-testid="doc-count">0</span>'), "Prod mode must return 0 doctors when none registered");
+				assert.ok(prodHtml.includes("Врачи не зарегистрированы"), "Prod mode must provide honest placeholder for active doctor");
+
+				// Explicit doctors list passed -> used as is
+				const explicitHtml = renderToString(<TestPayrollHookConsumer doctorsList={[{ id: "doc-custom", name: "Д-р Тестовый", specialtyId: "therapy" }]} />);
+				assert.ok(explicitHtml.includes('<span data-testid="doc-count">1</span>'), "Explicit doctors list must be respected");
+				assert.ok(explicitHtml.includes("doc-custom"), "Active doctor must reflect custom doctor");
+			} finally {
+				setRuntimeDemoMode(null);
+			}
+
+			// Demo mode without doctorsList -> showcases DEFAULT_DOCTORS
+			setRuntimeDemoMode(true);
+			try {
+				const demoHtml = renderToString(<TestPayrollHookConsumer />);
+				assert.ok(demoHtml.includes('<span data-testid="doc-count">4</span>'), "Demo mode must default to 4 showcase doctors");
+				assert.ok(demoHtml.includes("doc-1"), "Demo mode active doctor must be doc-1");
+			} finally {
+				setRuntimeDemoMode(null);
+			}
 		});
 	});
 });
