@@ -7,7 +7,7 @@
  */
 
 import React, { useState, useEffect } from "react";
-import { AutoclaveSterilizationLogModal, AutoclaveLog257Modal } from "./components/sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
+import { AutoclaveSterilizationLogModal } from "./components/sanpin/autoclaveLog/AutoclaveSterilizationLogModal";
 import { KraftPackageBarcodeModal } from "./components/sanpin/kraft/KraftPackageBarcodeModal";
 import { SanpinRegisters, SanpinRegisters as SanpinRegistersView } from "./components/sanpin/SanpinRegisters";
 import { DocumentCameraScannerModal } from "./components/scanner/DocumentCameraScannerModal";
@@ -83,7 +83,7 @@ export {
 	SanpinRegistersView,
 	KraftPackageBarcodeModal,
 	AutoclaveSterilizationLogModal,
-	AutoclaveLog257Modal,
+	AutoclaveSterilizationLogModal as AutoclaveLog257Modal,
 	DocumentCameraScannerModal,
 };
 export default ScannerView;

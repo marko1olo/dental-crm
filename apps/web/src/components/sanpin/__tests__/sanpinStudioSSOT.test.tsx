@@ -47,7 +47,9 @@ import { SanpinSterilizationHubModal } from "../SanpinSterilizationHubModal";
 import { SterilizationHubModal } from "../SterilizationHubModal";
 import { DirectSterilizationLauncher } from "../DirectSterilizationLauncher";
 
-const SANPIN_DIR = path.resolve(process.cwd(), "apps/web/src/components/sanpin");
+const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "apps/web/src/components/sanpin"))
+	? path.resolve(process.cwd(), "apps/web/src/components/sanpin")
+	: path.resolve(process.cwd(), "src/components/sanpin");
 
 describe("SANPIN STUDIO CANONICAL SSOT SUITE (FIRST PRINCIPLES РФ 1–5 КРЕСЕЛ)", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {

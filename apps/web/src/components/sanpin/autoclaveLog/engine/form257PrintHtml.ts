@@ -5,4 +5,5 @@
 export {
 	generateSterilizationLogPrintHtml,
 	generateSterilizationLogPrintHtml as generateForm257PrintHtml,
+	generateSterilizationLogPrintHtml as generateAutoclaveJournalPrintHtml,
 } from "./sterilizationLogPrintHtml";

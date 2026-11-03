@@ -55,12 +55,12 @@ export function useSanPinCyclesFetch(period: SanPinJournalPeriod) {
 	const fetchCyclesFromDb = useCallback(async (targetPeriod: SanPinJournalPeriod = period) => {
 		try {
 			setIsLoading(true);
-			let res = await fetch(`/api/sanpin/sterilization-cycles?period=${targetPeriod}`, {
+			let res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
 				headers: getDenteAuthHeaders(),
 			}).catch(() => null);
 
 			if (!res || !res.ok) {
-				res = await fetch(`/api/sanpin/sterilization?period=${targetPeriod}`, {
+				res = await fetch(`/api/sanpin/sterilization/cycles?period=${targetPeriod}`, {
 					headers: getDenteAuthHeaders(),
 				}).catch(() => null);
 			}

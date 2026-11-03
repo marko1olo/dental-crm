@@ -64,8 +64,8 @@ export const SanpinRegistersHeader: React.FC<SanpinRegistersHeaderProps> = ({
 					type="button"
 					onClick={() => printConsolidatedBinderAction(exportContext)}
 					className="secondary-button sanpin-btn-export-cta sanpin-desktop-only-btn h-9 min-h-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] px-3 text-[13px] font-medium inline-flex items-center justify-center gap-2 whitespace-nowrap transition-all cursor-pointer touch-manipulation"
-					data-testid="sanpin-print-form257-btn"
-					data-action="print-form257"
+					data-testid="sanpin-print-journal-btn"
+					data-action="print-journal"
 					title="Печать сводного журнала контроля автоклавирования"
 				>
 					<Printer size={14} className="shrink-0" />

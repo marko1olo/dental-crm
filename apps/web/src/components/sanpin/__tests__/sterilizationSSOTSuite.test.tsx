@@ -32,7 +32,9 @@ import {
 import { SterilizationHubModal } from "../SterilizationHubModal";
 import { DirectSterilizationLauncher } from "../DirectSterilizationLauncher";
 
-const SANPIN_DIR = path.resolve(process.cwd(), "apps/web/src/components/sanpin");
+const SANPIN_DIR = fs.existsSync(path.resolve(process.cwd(), "src/components/sanpin"))
+	? path.resolve(process.cwd(), "src/components/sanpin")
+	: path.resolve(process.cwd(), "apps/web/src/components/sanpin");
 
 describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 	describe("1. Архитектурные Sweet Spot инварианты (Мандат 8b/8zi)", () => {
@@ -68,11 +70,12 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 	});
 
 	describe("2. SSOT Каталог программ, автоклавов, индикаторов и упаковки", () => {
-		it("содержит 3 канонических режима автоклавирования", () => {
-			assert.equal(AUTOCLAVE_PROGRAMS.length, 3);
+		it("содержит 4 канонических режима автоклавирования", () => {
+			assert.equal(AUTOCLAVE_PROGRAMS.length, 4);
 			const standard = AUTOCLAVE_PROGRAMS.find((p) => p.id === "standard_134");
 			const delicate = AUTOCLAVE_PROGRAMS.find((p) => p.id === "delicate_121");
 			const flash = AUTOCLAVE_PROGRAMS.find((p) => p.id === "flash_134");
+			const prion = AUTOCLAVE_PROGRAMS.find((p) => p.id === "prion_134");
 
 			assert.ok(standard, "Отсутствует стандартная программа 134°C");
 			assert.equal(standard.temperatureCelsius, 134);
@@ -87,6 +90,11 @@ describe("STERILIZATION SSOT & AUTOCLAVE RED TEAM SUITE", () => {
 			assert.ok(flash, "Отсутствует экспресс-программа");
 			assert.equal(flash.temperatureCelsius, 134);
 			assert.equal(flash.exposureMinutes, 3);
+
+			assert.ok(prion, "Отсутствует антиприонный режим");
+			assert.equal(prion.temperatureCelsius, 134);
+			assert.equal(prion.pressureBar, 2.1);
+			assert.equal(prion.exposureMinutes, 18);
 		});
 
 		it("содержит предустановленный флот автоклавов класса B", () => {

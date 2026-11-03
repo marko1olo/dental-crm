@@ -54,4 +54,7 @@ export function exportSterilizationLogToCsv(records: readonly Form257Record[]): 
 	return BOM + rows.join("\r\n");
 }
 
-export { exportSterilizationLogToCsv as exportForm257ToCsv };
+export {
+	exportSterilizationLogToCsv as exportForm257ToCsv,
+	exportSterilizationLogToCsv as exportAutoclaveJournalToCsv,
+};

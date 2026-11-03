@@ -26,6 +26,7 @@ export interface SanpinHeaderOptionsMenuProps {
 	readonly onOpenRetroactiveBatchModal: () => void;
 	readonly onOpenKraftModal: () => void;
 	readonly onOpenSterilizationLogModal?: () => void;
+	/** @deprecated Alias to onOpenSterilizationLogModal */
 	readonly onOpenJournal257Modal?: () => void;
 	readonly exportContext: { auth?: any; appLogic?: any };
 }

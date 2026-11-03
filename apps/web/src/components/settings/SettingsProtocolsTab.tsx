@@ -19,7 +19,7 @@ import {
 import { useSettingsDerivations } from "../../useSettingsDerivations";
 import { EmptyState } from "../EmptyState";
 import { showToast } from "../GlobalToast";
-import { AutoclaveLog257Modal } from "../sanpin/autoclaveLog/AutoclaveLog257Modal.js";
+import { AutoclaveSterilizationLogModal } from "../sanpin/autoclaveLog/AutoclaveSterilizationLogModal.js";
 import "./SettingsProtocolsTab.css";
 import { logger } from "../../utils/logger";
 import {
@@ -511,10 +511,10 @@ export function SettingsProtocolsTab() {
 				</>
 			)}
 
-			<AutoclaveLog257Modal
+			<AutoclaveSterilizationLogModal
 				isOpen={isAutoclaveModalOpen}
 				onClose={() => setIsAutoclaveModalOpen(false)}
-				initialTab="journal_257"
+				initialTab="sterilization_log"
 			/>
 		</section>
 	);

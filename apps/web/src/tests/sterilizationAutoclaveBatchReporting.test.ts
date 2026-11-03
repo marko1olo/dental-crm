@@ -188,8 +188,8 @@ describe("Sterilization Form 257/u Batch Reporting & Backoffice Archival (Сан
 			"SettingsProtocolsTab должен содержать кнопку protocols-open-autoclave-log-btn",
 		);
 		assert.ok(
-			protocolsTabContent.includes("AutoclaveLog257Modal"),
-			"SettingsProtocolsTab должен монтировать AutoclaveLog257Modal",
+			protocolsTabContent.includes("AutoclaveSterilizationLogModal") || protocolsTabContent.includes("AutoclaveLog257Modal"),
+			"SettingsProtocolsTab должен монтировать AutoclaveSterilizationLogModal или AutoclaveLog257Modal",
 		);
 
 		// DocumentsCatalogView.tsx (or decomposed catalog/CatalogToolbar.tsx / CatalogToolbarActions.tsx) & DocumentsView.tsx

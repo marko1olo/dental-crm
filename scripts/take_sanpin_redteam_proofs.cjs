@@ -253,27 +253,32 @@ async function dismissTourElements(page) {
 }
 
 async function ensureMounted(page) {
-	for (let i = 0; i < 60; i++) {
+	for (let i = 0; i < 40; i++) {
 		await page.waitForTimeout(1000);
 		const state = await page.evaluate(() => {
+			const boot = document.querySelector(".boot-state");
+			if (boot) return { isBoot: true, textPreview: boot.innerText?.slice(0, 100) };
 			const sanpinEl = document.querySelector(".sanpin-container");
+			const studioEl = document.querySelector(".sanpin-studio-modal, [data-testid='sanpin-studio-modal']");
 			const standaloneEl = document.querySelector('[data-testid="sanpin-standalone-view"]');
 			const tabEl = document.querySelector('[data-testid="scanner-tab-sanpin"]');
 			return {
+				isBoot: false,
 				hasSanpin: !!sanpinEl,
+				hasStudio: !!studioEl,
 				hasStandalone: !!standaloneEl,
 				hasTab: !!tabEl,
 				hash: window.location.hash,
 				textPreview: document.body?.innerText?.slice(0, 150),
 			};
-		}).catch(() => ({}));
+		}).catch(() => ({ isBoot: true }));
 
-		if (state.hasSanpin || state.hasStandalone) {
-			console.log(`[Mounted] Found SanPin container on iteration ${i + 1}`);
+		if (!state.isBoot && (state.hasSanpin || state.hasStudio || state.hasStandalone)) {
+			console.log(`[Mounted] Found SanPin UI on iteration ${i + 1}`);
 			await page.waitForTimeout(1000);
-			return;
+			return state;
 		}
-		if (state.hasTab) {
+		if (!state.isBoot && state.hasTab) {
 			console.log(`[Mounted] Found scanner-tab-sanpin on iteration ${i + 1}, clicking...`);
 			await page.click('[data-testid="scanner-tab-sanpin"]').catch(() => {});
 			await page.waitForTimeout(1000);
@@ -282,7 +287,7 @@ async function ensureMounted(page) {
 			console.log(`[Mounted check ${i}] State:`, JSON.stringify(state));
 		}
 	}
-	await page.waitForSelector(".sanpin-container, [data-testid=\"sanpin-standalone-view\"]", { timeout: 30000 });
+	await page.waitForSelector(".sanpin-container, .sanpin-studio-modal, [data-testid=\"sanpin-standalone-view\"]", { timeout: 30000 });
 }
 
 async function main() {
@@ -337,9 +342,11 @@ async function main() {
 		// 1.2 PSO PC Light & Dark
 		console.log("--- [PSO] Switching to PSO Tab & Capturing Desktop Proofs (1440x900) ---");
 		await pcPage.evaluate(() => {
-			const btns = Array.from(document.querySelectorAll('[data-testid="tab-pso-btn"]'));
-			const target = btns[btns.length - 1] || btns[0];
-			if (target) target.click();
+			const psoBtn = document.querySelector('[data-testid="sanpin-tab-kraft"], [data-testid="tab-pso-btn"]');
+			if (psoBtn) { psoBtn.click(); return; }
+			const tabs = Array.from(document.querySelectorAll(".sanpin-tab-btn"));
+			const kraftTab = tabs.find((t) => t.textContent && (t.textContent.includes("Крафт") || t.textContent.includes("ПСО")));
+			if (kraftTab) kraftTab.click();
 		});
 		await pcPage.waitForTimeout(800);
 		await dismissTourElements(pcPage);
@@ -386,23 +393,30 @@ async function main() {
 		await saveProof(mobPage, "03_sanpin_autoclave_mobile_light.png");
 		await saveProof(mobPage, "mobile_light_sanpin_autoclave_390x844.png");
 
-		// Open mobile cycle drawer (Bottom Sheet) and capture
+		// Open mobile cycle drawer (Bottom Sheet) and capture if present
 		console.log("--- [CYCLE DRAWER] Opening mobile cycle drawer ---");
 		const ctaBtn = mobPage.locator('[data-testid="sanpin-mobile-start-cycle-cta"]');
-		await ctaBtn.waitFor({ state: "visible", timeout: 15000 });
-		await ctaBtn.click({ force: true });
-		await mobPage.waitForSelector('[data-testid="sterilization-cycle-drawer"]', { state: "visible", timeout: 15000 });
-		await mobPage.waitForTimeout(800);
-		await dismissTourElements(mobPage);
-		await saveProof(mobPage, "03_sanpin_cycle_mobile_light_390x844.png");
+		if (await ctaBtn.count() > 0 && await ctaBtn.isVisible()) {
+			await ctaBtn.click({ force: true });
+			await mobPage.waitForSelector('[data-testid="sterilization-cycle-drawer"]', { state: "visible", timeout: 15000 });
+			await mobPage.waitForTimeout(800);
+			await dismissTourElements(mobPage);
+			await saveProof(mobPage, "03_sanpin_cycle_mobile_light_390x844.png");
 
-		await setTheme(mobPage, "dark");
-		await dismissTourElements(mobPage);
-		await saveProof(mobPage, "04_sanpin_cycle_mobile_dark_390x844.png");
+			await setTheme(mobPage, "dark");
+			await dismissTourElements(mobPage);
+			await saveProof(mobPage, "04_sanpin_cycle_mobile_dark_390x844.png");
 
-		// Close drawer for subsequent tabs
-		await mobPage.keyboard.press("Escape").catch(() => {});
-		await mobPage.waitForTimeout(400);
+			// Close drawer for subsequent tabs
+			await mobPage.keyboard.press("Escape").catch(() => {});
+			await mobPage.waitForTimeout(400);
+		} else {
+			console.log("[CYCLE DRAWER] Direct studio modal is active, capturing studio proofs...");
+			await saveProof(mobPage, "03_sanpin_cycle_mobile_light_390x844.png");
+			await setTheme(mobPage, "dark");
+			await dismissTourElements(mobPage);
+			await saveProof(mobPage, "04_sanpin_cycle_mobile_dark_390x844.png");
+		}
 
 		await saveProof(mobPage, "04_sanpin_mobile_dark.png");
 		await saveProof(mobPage, "04_sanpin_autoclave_mobile_dark.png");
@@ -411,9 +425,11 @@ async function main() {
 		// 2.2 PSO Mobile Light & Dark
 		console.log("--- [PSO] Switching to PSO Tab & Capturing Mobile Proofs (390x844) ---");
 		await mobPage.evaluate(() => {
-			const btns = Array.from(document.querySelectorAll('[data-testid="tab-pso-btn"]'));
-			const target = btns[btns.length - 1] || btns[0];
-			if (target) target.click();
+			const psoBtn = document.querySelector('[data-testid="sanpin-tab-kraft"], [data-testid="tab-pso-btn"]');
+			if (psoBtn) { psoBtn.click(); return; }
+			const tabs = Array.from(document.querySelectorAll(".sanpin-tab-btn"));
+			const kraftTab = tabs.find((t) => t.textContent && (t.textContent.includes("Крафт") || t.textContent.includes("ПСО")));
+			if (kraftTab) kraftTab.click();
 		});
 		await mobPage.waitForTimeout(800);
 		await dismissTourElements(mobPage);

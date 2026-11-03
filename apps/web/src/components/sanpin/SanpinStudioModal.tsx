@@ -15,6 +15,8 @@
 
 import React, { useState, useEffect, useId, useCallback } from "react";
 import { CheckCircle, Printer, X, Thermometer, ShieldCheck, Sun, Flame, Box, Tag, CalendarCheck } from "lucide-react";
+import { isDemoShowcaseMode } from "../../lib/demoMode.js";
+import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import {
 	AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, BACTERICIDAL_STANDARD_DEVICES, STERILIZATION_PACKAGING,
 	PRESET_PACK_COUNTS, type SterilizationBatchCycleRecord, type AutoclaveRegimeId,
@@ -33,7 +35,7 @@ export interface SanpinStudioModalProps {
 }
 
 export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
-	isOpen, onClose, initialTab = "autoclave", isDemo = true, onCycleCreated, onCycleCompleted,
+	isOpen, onClose, initialTab = "autoclave", isDemo, onCycleCreated, onCycleCompleted,
 }) => {
 	const modalTitleId = useId();
 	const resolveTab = (t: string): SanpinStudioTab => {
@@ -48,7 +50,11 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 	const [packagesCount, setPackagesCount] = useState<number>(14);
 	const [operatorName] = useState<string>("Иванова Е. С., дежурная медсестра");
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
-	const [cycles, setCycles] = useState<SterilizationBatchCycleRecord[]>(() => getSanpinBatchRecords(isDemo));
+
+	const isEffectiveDemo = typeof isDemo === "boolean" ? isDemo : isDemoShowcaseMode();
+	const [cycles, setCycles] = useState<SterilizationBatchCycleRecord[]>(() =>
+		(isEffectiveDemo ? getSanpinBatchRecords(true) : [])
+	);
 
 	useEffect(() => { if (isOpen) setActiveTab(resolveTab(initialTab)); }, [isOpen, initialTab]);
 
@@ -58,12 +64,61 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 		return () => window.removeEventListener("keydown", handleKeyDown);
 	}, [isOpen, onClose]);
 
-	const handleRunCycle = useCallback(() => {
+	useEffect(() => {
+		if (!isOpen || isEffectiveDemo) return;
+		let active = true;
+		fetch("/api/sanpin/sterilization", { headers: getDenteAuthHeaders() })
+			.then((res) => (res.ok ? res.json() : []))
+			.then((data) => {
+				if (!active || !Array.isArray(data) || data.length === 0) return;
+				setCycles(data.map((item: any, idx: number) => ({
+					id: item.id || `cycle-${idx}`, cycleNumber: item.cycleNumber ?? idx + 1,
+					date: item.timestamp ? new Date(item.timestamp).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
+					time: item.timestamp ? new Date(item.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "",
+					autoclaveId: item.autoclaveId || "АК-01", autoclaveName: item.deviceName || selectedAutoclave,
+					programId: (item.regime || "standard_134") as AutoclaveRegimeId,
+					temperatureCelsius: Number(item.temperatureCelsius) || 134,
+					pressureBar: Number(item.pressureBar) || 2.1, exposureMinutes: Number(item.durationMin) || 5,
+					packagesCount: Number(item.packagesCount) || 1,
+					chemicalIndicatorVerdict: item.passedIndicator === false ? "ОТКЛОНЕН" : "ПРОЙДЕН",
+					operatorName: item.operatorName || "Дежурная медсестра",
+					itemsDescription: item.itemsDescription || "Партия стерилизации", status: "completed",
+				})));
+			}).catch(() => {});
+		return () => { active = false; };
+	}, [isOpen, isEffectiveDemo, selectedAutoclave]);
+
+	const handleRunCycle = useCallback(async () => {
 		const count = Math.max(1, packagesCount || 1);
+		const prog = AUTOCLAVE_PROGRAMS.find((p) => p.id === selectedProgramId) || AUTOCLAVE_PROGRAMS[0]!;
+		const isDelicate = selectedProgramId === "delicate_121";
+		const autoclaveId = selectedAutoclave.includes("АК-02") || selectedAutoclave.includes("Lina") ? "АК-02" : "АК-01";
+		const packagingType = isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive";
 		const batch = createOneClickShiftBatch({
 			packagesCount: count, operatorName: operatorName.trim() || "Дежурная медсестра",
 			autoclaveName: selectedAutoclave, programId: selectedProgramId,
 		});
+		const payload = {
+			deviceName: selectedAutoclave, autoclaveId, packagesCount: count, batchSize: count,
+			regime: selectedProgramId, operatorName: operatorName.trim() || "Дежурная медсестра",
+			packagingType, indicatorType: "class5_integrating", temperatureCelsius: prog.temperatureCelsius,
+			pressureBar: prog.pressureBar, durationMin: prog.exposureMinutes,
+			itemsDescription: `Партия стерилизации (${count} крафт-пакетов)`,
+		};
+		try {
+			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
+				method: "POST", headers: { ...getDenteAuthHeaders(), "Content-Type": "application/json" },
+				body: JSON.stringify(payload),
+			}).catch(() => null);
+			if (!res || !res.ok) {
+				await fetch("/api/sanpin/sterilization", {
+					method: "POST", headers: { ...getDenteAuthHeaders(), "Content-Type": "application/json" },
+					body: JSON.stringify({ ...payload, cycleNumber: batch.sterilizationCycle.cycleNumber, passedIndicator: true }),
+				}).catch(() => null);
+			}
+		} catch (err) {
+			console.warn("[SanPiN] Soft fallback on cycle submission:", err);
+		}
 		setCycles((prev) => [batch.sterilizationCycle, ...prev]);
 		if (onCycleCreated) onCycleCreated(batch.sterilizationCycle);
 		if (onCycleCompleted) onCycleCompleted(batch.sterilizationCycle);
@@ -129,20 +184,20 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 
 				{/* 3 канонические навигационные вкладки без советских номеров приказов */}
 				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] overflow-x-auto">
-					<button type="button" onClick={() => setActiveTab("autoclave")} className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "autoclave" ? "active" : ""}`}>
+					<button type="button" onClick={() => setActiveTab("autoclave")} data-testid="sanpin-tab-autoclave" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "autoclave" ? "active" : ""}`}>
 						<Flame className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
 						<span className="sm:hidden">Автоклав</span>
 						<span className="hidden sm:inline">Циклы стерилизации (Автоклав)</span>
 						<span className="sr-only">Журнал автоклавирования</span>
 						<span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-[var(--paper-canvas,#e2e8f0)] dark:bg-slate-700">{cycles.length}</span>
 					</button>
-					<button type="button" onClick={() => setActiveTab("kraft")} className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "kraft" ? "active" : ""}`}>
+					<button type="button" onClick={() => setActiveTab("kraft")} data-testid="sanpin-tab-kraft" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "kraft" ? "active" : ""}`}>
 						<Tag className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
 						<span className="sm:hidden">Крафт-пакеты</span>
 						<span className="hidden sm:inline">Крафт-пакеты и маркировка</span>
 						<span className="sr-only">Контроль очистки инструментов</span>
 					</button>
-					<button type="button" onClick={() => setActiveTab("cleaning")} className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "cleaning" ? "active" : ""}`}>
+					<button type="button" onClick={() => setActiveTab("cleaning")} data-testid="sanpin-tab-cleaning" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "cleaning" ? "active" : ""}`}>
 						<Sun className="w-4 h-4 shrink-0 text-amber-500" />
 						<span className="sm:hidden">Уборка и УФ</span>
 						<span className="hidden sm:inline">Журнал генеральных уборок и УФ</span>
@@ -252,14 +307,8 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 										<table className="sanpin-data-table">
 											<thead>
 												<tr>
-													<th>Дата и время</th>
-													<th>Цикл</th>
-													<th>Аппарат</th>
-													<th>Режим</th>
-													<th>Упаковок</th>
-													<th>Индикатор 5 кл.</th>
-													<th>Материал</th>
-													<th>Ответственный</th>
+													<th>Дата и время</th><th>Цикл</th><th>Аппарат</th><th>Режим</th>
+													<th>Упаковок</th><th>Индикатор 5 кл.</th><th>Материал</th><th>Ответственный</th>
 												</tr>
 											</thead>
 											<tbody>
@@ -310,10 +359,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 									<div key={pack.id} className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
 										<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">{pack.title}</span>
 										<p className="text-xs text-[var(--ink-muted,#64748b)] mt-1">Срок стерильности: {pack.shelfLifeDays} суток</p>
-										<div className="mt-2 text-xs font-medium text-teal-600 dark:text-teal-400 flex items-center gap-1">
-											<CheckCircle className="w-3.5 h-3.5" />
-											<span>С индикатором 5 класса</span>
-										</div>
+										<div className="mt-2 text-xs font-medium text-teal-600 dark:text-teal-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>С индикатором 5 класса</span></div>
 									</div>
 								))}
 							</div>
@@ -334,17 +380,11 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 									<div className="p-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
 										<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-slate-200">Азопирамовая проба (следы крови)</div>
-										<div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-											<CheckCircle className="w-3.5 h-3.5" />
-											<span>Отрицательная (Норма 100%)</span>
-										</div>
+										<div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>Отрицательная (Норма 100%)</span></div>
 									</div>
 									<div className="p-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
 										<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-slate-200">Фенолфталеиновая проба (моющие средства)</div>
-										<div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1">
-											<CheckCircle className="w-3.5 h-3.5" />
-											<span>Отрицательная (Остатки отсутствуют)</span>
-										</div>
+										<div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>Отрицательная (Остатки отсутствуют)</span></div>
 									</div>
 								</div>
 							</div>
@@ -356,15 +396,9 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
 								{BACTERICIDAL_STANDARD_DEVICES.map((dev) => (
 									<div key={dev.id} className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
-										<div className="flex items-center justify-between mb-1.5">
-											<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">{dev.name}</span>
-											<span className="sanpin-badge-info">В норме</span>
-										</div>
+										<div className="flex items-center justify-between mb-1.5"><span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">{dev.name}</span><span className="sanpin-badge-info">В норме</span></div>
 										<p className="text-xs text-[var(--ink-muted,#64748b)]">{dev.roomName}</p>
-										<div className="mt-2 text-xs">
-											<span className="text-[var(--ink-muted,#64748b)]">Наработка: </span>
-											<span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">{dev.operatingHours} / {dev.maxResourceHours} ч</span>
-										</div>
+										<div className="mt-2 text-xs"><span className="text-[var(--ink-muted,#64748b)]">Наработка: </span><span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">{dev.operatingHours} / {dev.maxResourceHours} ч</span></div>
 									</div>
 								))}
 							</div>

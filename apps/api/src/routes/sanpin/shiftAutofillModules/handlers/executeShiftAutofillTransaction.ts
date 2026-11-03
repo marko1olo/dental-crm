@@ -67,7 +67,7 @@ export async function executeShiftAutofillTransaction(
 			form257.map((f: any, idx: number) => ({
 				organizationId,
 				deviceName: f.sterilizerBrandModel || "Автоклав Euronda E9 Next (Класс B)",
-				autoclaveId: f.sterilizerId || "АК-01",
+				autoclaveId: f.sterilizerId || body.autoclaveId || "АК-01",
 				cycleNumber: Number(f.cycleNumber) || idx + 1,
 				itemsDescription:
 					f.itemsDescriptionRu || f.itemsDescription || f.sterilizedPacksSummary || "Стоматологический инструментарий смены",

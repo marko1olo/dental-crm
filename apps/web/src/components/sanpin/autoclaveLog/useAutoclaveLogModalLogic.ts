@@ -21,31 +21,62 @@ export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {
 			try {
 				const clinicToken = readDenteClinicToken();
 				const staffToken = readDenteStaffToken();
-				const res = await fetch("/api/sanpin/cycles", {
-					headers: { ...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}), ...(staffToken ? { "X-Staff-Token": staffToken } : {}) },
-				});
-				if (!res.ok) return;
+				const headers: Record<string, string> = {
+					...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
+					...(staffToken ? { "X-Staff-Token": staffToken } : {}),
+				};
+				let res = await fetch("/api/sanpin/sterilization/cycles", { headers }).catch(() => null);
+				if (!res || !res.ok) {
+					res = await fetch("/api/sanpin/sterilization", { headers }).catch(() => null);
+				}
+				if (!res || !res.ok) {
+					if (!isDemo && !cancelled) setRecords([]);
+					return;
+				}
 				const data = await res.json();
-				if (Array.isArray(data) && data.length > 0 && !cancelled) {
-					const mapped: Form257Record[] = data.map((item: any, idx: number) =>
-						createForm257Record({
-							date: item.timestamp ? item.timestamp.split("T")[0] : new Date().toISOString().split("T")[0],
-							cycleNumber: item.cycleNumber || (idx + 1),
-							sterilizerId: item.autoclaveId || "autoclave-melag-vacuklav-23b",
-							regimeId: item.temperatureCelsius >= 180 ? "dry_heat_180_60min" : "steam_134_5min",
-							sensors: { actualTemperatureCelsius: item.temperatureCelsius || 134, actualPressureBar: item.pressureBar || 2.1, actualExposureMinutes: item.durationMin || 5 },
+				if (cancelled) return;
+				if (Array.isArray(data) && data.length > 0) {
+					const mapped: Form257Record[] = data.map((item: any, idx: number) => {
+						const tempC = Number(item.temperatureCelsius) || 134;
+						const pressBar = Number(item.pressureBar) || 2.1;
+						const durMin = Number(item.durationMin) || 5;
+						const isPassed = item.status === "passed" || item.status === "sterile_passed" || item.passedIndicator !== false;
+						const autoId = item.autoclaveId || "autoclave-melag-vacuklav-23b";
+						const devName = item.deviceName || undefined;
+						const rec = createForm257Record({
+							date: item.timestamp ? String(item.timestamp).split("T")[0] : new Date().toISOString().split("T")[0],
+							cycleNumber: Number(item.cycleNumber) || (idx + 1),
+							sterilizerId: autoId,
+							sterilizerCode: autoId,
+							sterilizerBrandModel: devName,
+							regimeId: tempC >= 180 ? "dry_heat_180_60min" : "steam_134_5min",
+							sensors: { actualTemperatureCelsius: tempC, actualPressureBar: pressBar, actualExposureMinutes: durMin },
 							itemsDescriptionRu: item.itemsDescription || "Стоматологический инструментарий",
-							packsCount: 1, packagingType: "kraft_pouch_sealed",
-							chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", item.status === "passed"),
+							packsCount: Number(item.packsCount) || 1,
+							packagingType: item.packagingType === "kraft_heat_sealed" ? "kraft_heat_sealed" : "kraft_pouch_sealed",
+							chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", isPassed),
 							operatorStaffFullName: item.operatorName || "Сотрудник ЦСО",
 							operatorStaffPosition: "Сотрудник ЦСО / Врач",
-							isHeadNurseVerified: item.status === "passed",
+							isHeadNurseVerified: isPassed,
 							notes: item.notes || undefined,
-						})
-					);
+						});
+						const finalStatus = (item.status === "rejected_defect" || item.status === "failed")
+							? "rejected_defect"
+							: (item.status === "quarantine" ? "quarantine" : (isPassed ? "sterile_passed" : "rejected_defect"));
+						return {
+							...rec,
+							id: item.id || rec.id,
+							status: finalStatus,
+							isCyclePassed: isPassed,
+						};
+					});
 					setRecords(mapped);
+				} else if (!isDemo) {
+					setRecords([]);
 				}
-			} catch {}
+			} catch {
+				if (!isDemo && !cancelled) setRecords([]);
+			}
 		};
 		fetchLive();
 		return () => { cancelled = true; };
@@ -63,24 +94,33 @@ export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {
 				...(clinicToken ? { Authorization: `Bearer ${clinicToken}` } : {}),
 				...(staffToken ? { "X-Staff-Token": staffToken } : {}),
 			};
-			await fetch("/api/sanpin/sterilization", {
+			const payload = {
+				deviceName: newRec.sterilizerBrandModel || newRec.sterilizerId || "Melag Vacuklav 23 B+",
+				autoclaveId: newRec.sterilizerCode || newRec.sterilizerId || "АК-01",
+				cycleNumber: newRec.cycleNumber,
+				itemsDescription: newRec.itemsDescriptionRu || "Стоматологический инструментарий",
+				packagingType: newRec.packagingType === "kraft_pouch_sealed" ? "kraft_heat_sealed" : "kraft_self_adhesive",
+				temperatureCelsius: Number(newRec.actualTemperatureCelsius || newRec.sensors?.actualTemperatureCelsius || 134),
+				pressureBar: Number(newRec.actualPressureBar || newRec.sensors?.actualPressureBar || 2.1),
+				durationMin: Number(newRec.actualExposureMinutes || newRec.sensors?.actualExposureMinutes || 5),
+				indicatorType: "class5_integrating",
+				passedIndicator: true,
+				notes: newRec.notes || undefined,
+				barcode: newRec.barcode || undefined,
+			};
+			let res = await fetch("/api/sanpin/sterilization", {
 				method: "POST",
 				headers,
-				body: JSON.stringify({
-					deviceName: newRec.sterilizerId || "Melag Vacuklav 23 B+",
-					autoclaveId: newRec.sterilizerId || "АК-01",
-					cycleNumber: newRec.cycleNumber,
-					itemsDescription: newRec.itemsDescriptionRu || "Стоматологический инструментарий",
-					packagingType: newRec.packagingType === "kraft_pouch_sealed" ? "kraft_heat_sealed" : "kraft_self_adhesive",
-					temperatureCelsius: Number(newRec.actualTemperatureCelsius || newRec.sensors?.actualTemperatureCelsius || 134),
-					pressureBar: Number(newRec.actualPressureBar || newRec.sensors?.actualPressureBar || 2.1),
-					durationMin: Number(newRec.actualExposureMinutes || newRec.sensors?.actualExposureMinutes || 5),
-					indicatorType: "class5_integrating",
-					passedIndicator: true,
-					notes: newRec.notes || undefined,
-					barcode: newRec.barcode || undefined,
-				}),
-			});
+				body: JSON.stringify(payload),
+			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				await fetch("/api/sanpin/sterilization/cycles", {
+					method: "POST",
+					headers,
+					body: JSON.stringify(payload),
+				}).catch(() => null);
+			}
 		} catch (err) {
 			console.warn("Failed to persist autoclave cycle to backend", err);
 		}

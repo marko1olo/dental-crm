@@ -24,18 +24,69 @@ export function useSanPinBatchActions(
 		inFlightRef.current = true;
 		try {
 			setIsAutofilling(true);
-			const url = targetPeriod === "month" ? "/api/registers/autofill-month" : "/api/registers/sterilization/shift-batch";
-			// Честные данные: оператора сервер берёт из auth-токена (operatorId),
-			// автоклав — из реального списка смены, без выдуманных фамилий и моделей.
-			const shiftAutoclave = devices.find((dv) => dv?.id && dv.id !== "all") ?? devices[0];
-			const body = targetPeriod === "month"
-				? { year: new Date().getFullYear(), month: new Date().getMonth() + 1 }
-				: { cyclesCount: 3, deviceName: shiftAutoclave?.brandModelRu || "", autoclaveId: shiftAutoclave?.id || "", packagingType: "kraft_pouch", itemsDescription: "Инструментарий смены (134°C, 2.15 бар, 5 мин)" };
+			const isMonth = targetPeriod === "month";
+			const primaryUrl = isMonth ? "/api/registers/autofill-month" : "/api/registers/autofill-shift";
+			const fallbackUrl = isMonth ? "/api/sanpin/month-autofill" : "/api/sanpin/shift-autofill";
 
-			const res = await fetch(url, {
-				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+			const todayStr = new Date().toISOString().slice(0, 10);
+			const shiftAutoclave = devices.find((dv) => dv?.id && dv.id !== "all") ?? devices[0];
+			const autoId = shiftAutoclave?.id || "АК-01";
+			const autoModel = shiftAutoclave?.brandModelRu || "Автоклав Euronda E9 Next (Класс B)";
+
+			const body = isMonth
+				? { year: new Date().getFullYear(), month: new Date().getMonth() + 1 }
+				: {
+						shiftDate: todayStr,
+						date: todayStr,
+						autoclaveId: autoId,
+						forceOverwrite: true,
+						sterilizationRecords: [
+							{
+								sterilizerBrandModel: autoModel,
+								sterilizerId: autoId,
+								cycleNumber: 1,
+								temperatureC: 134,
+								actualTemperatureCelsius: "134",
+								pressureBar: 2.15,
+								actualPressureBar: "2.15",
+								exposureMinutes: 5,
+								actualExposureMinutes: 5,
+								packagingType: "kraft_pouch",
+								itemsDescriptionRu: "Терапевтический инструментарий смены (134°C, 2.15 бар, 5 мин)",
+								itemsDescription: "Терапевтический инструментарий смены (134°C, 2.15 бар, 5 мин)",
+								chemicalIndicatorControlPassed: true,
+							},
+							{
+								sterilizerBrandModel: autoModel,
+								sterilizerId: autoId,
+								cycleNumber: 2,
+								temperatureC: 134,
+								actualTemperatureCelsius: "134",
+								pressureBar: 2.15,
+								actualPressureBar: "2.15",
+								exposureMinutes: 5,
+								actualExposureMinutes: 5,
+								packagingType: "kraft_pouch",
+								itemsDescriptionRu: "Хирургический инструментарий смены (134°C, 2.15 бар, 5 мин)",
+								itemsDescription: "Хирургический инструментарий смены (134°C, 2.15 бар, 5 мин)",
+								chemicalIndicatorControlPassed: true,
+							},
+						],
+				  };
+
+			let res = await fetch(primaryUrl, {
+				method: "POST",
+				headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(body),
 			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				res = await fetch(fallbackUrl, {
+					method: "POST",
+					headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify(body),
+				}).catch(() => null);
+			}
 
 			if (res && res.ok) {
 				showToast("Журнал стерилизации заполнен по нормам: 134°C / 2.1 бар, индикатор 5 класса, предстерилизационная очистка — норма", "success");

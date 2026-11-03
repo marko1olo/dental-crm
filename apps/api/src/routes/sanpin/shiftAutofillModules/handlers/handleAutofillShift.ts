@@ -19,13 +19,13 @@ export async function handleAutofillShift(req: FastifyRequest, reply: FastifyRep
 		? parsed.data
 		: ((req.body as any) || {});
 	const now = new Date();
-	const todayStr = body.date || now.toISOString().slice(0, 10);
+	const todayStr = body.shiftDate || body.date || now.toISOString().slice(0, 10);
 
 	const { insertedPso, insertedSteril } = await withTenantCtx(organizationId, async (tx) => {
 		return executeShiftAutofillTransaction(tx, {
 			organizationId,
 			body,
-			operatorId: req.user?.id || null,
+			operatorId: body.operatorId || req.user?.id || null,
 			todayStr,
 		});
 	});

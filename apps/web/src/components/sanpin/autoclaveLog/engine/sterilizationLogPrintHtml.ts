@@ -99,4 +99,7 @@ export function generateSterilizationLogPrintHtml(
 </html>`;
 }
 
-export { generateSterilizationLogPrintHtml as generateForm257PrintHtml };
+export {
+	generateSterilizationLogPrintHtml as generateForm257PrintHtml,
+	generateSterilizationLogPrintHtml as generateAutoclaveJournalPrintHtml,
+};

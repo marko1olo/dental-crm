@@ -149,6 +149,12 @@ function isStandaloneActive(): boolean {
 		h.includes("warehouse") ||
 		s.includes("inbound") ||
 		h.includes("inbound") ||
+		s.includes("sanpin") ||
+		h.includes("sanpin") ||
+		s.includes("sterilization") ||
+		h.includes("sterilization") ||
+		s.includes("autoclave") ||
+		h.includes("autoclave") ||
 		s.includes("documents") ||
 		h.includes("documents") ||
 		s.includes("consents") ||

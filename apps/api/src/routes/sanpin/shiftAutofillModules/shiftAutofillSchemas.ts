@@ -28,6 +28,10 @@ export const sterilizationBatchItemSchema = z.object({
 export const autofillShiftSchema = z
 	.object({
 		date: z.string().optional(),
+		shiftDate: z.string().optional(),
+		operatorId: z.string().optional(),
+		forceOverwrite: z.boolean().optional(),
+		autoclaveId: z.string().optional(),
 		psoRecords: z.array(psoBatchItemSchema).optional(),
 		sterilizationRecords: z.array(sterilizationBatchItemSchema).optional(),
 		form257: z.array(z.any()).optional(),
