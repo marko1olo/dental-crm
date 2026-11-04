@@ -74,7 +74,7 @@ export const AnatomicalGate0FullArchView: React.FC<AnatomicalGate0FullArchViewPr
 			className={`anatomical-gate0-full-arch-view w-full overflow-x-auto touch-pan-x select-none py-2 px-1 ${className ?? ""}`}
 			data-testid="anatomical-gate0-full-arch-view"
 		>
-			<div className="min-w-[860px] flex flex-col items-center justify-center gap-1 mx-auto">
+			<div className="w-full max-w-[960px] flex flex-col items-center justify-center gap-1 mx-auto">
 				<AnatomicalGate0Row
 					isUpper={true}
 					leftTeeth={q1}

@@ -35,7 +35,9 @@
 body.copilot-open .copilot-trigger-btn,
 :has(.copilot-drawer.open) .copilot-trigger-btn,
 :has([data-testid="copilot-drawer"]) .copilot-trigger-btn,
-:has([data-testid="visiograph-studio-modal-root"]) .copilot-trigger-btn {
+:has([data-testid="visiograph-studio-modal-root"]) .copilot-trigger-btn,
+:has([data-testid="odontogram-studio-modal"]) .copilot-trigger-btn,
+:has([data-testid="direct-odontogram-launcher-root"]) .copilot-trigger-btn {
   display: none !important;
 }
 

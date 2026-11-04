@@ -28,8 +28,8 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 }) => {
 	const { telemetry, settings } = typeof window === "undefined" ? useCopilotStore.getState() : useCopilotStore();
 
-	const resolvedPatientName = propPatientName ?? telemetry.patientName;
-	const resolvedPatientId = propPatientId ?? telemetry.patientId;
+	const resolvedPatientName = propPatientName !== undefined ? propPatientName : telemetry.patientName;
+	const resolvedPatientId = propPatientId !== undefined ? propPatientId : telemetry.patientId;
 	const resolvedActiveTooth = propActiveTooth !== undefined ? propActiveTooth : telemetry.activeTooth;
 
 	const activeTokens = typeof telemetry.activeTokens === "number" ? telemetry.activeTokens : 0;
@@ -90,7 +90,8 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				title={`Активная клиническая модель: ${settings.modelRoutingMode === "custom_byok" ? settings.byokModel : "Google Gemini"} • ${modelLabel}`}
 			>
 				<Sparkles size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
-				<span>{modelLabel}</span>
+				<span className="hidden sm:inline">{modelLabel}</span>
+				<span className="sm:hidden">DENTE ИИ</span>
 				<span className="text-[10px] text-[var(--muted,#64748b)] font-normal">• {latencyLabel}</span>
 			</div>
 

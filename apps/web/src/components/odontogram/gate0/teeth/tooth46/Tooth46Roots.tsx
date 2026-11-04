@@ -22,8 +22,8 @@ export const Tooth46Roots: React.FC<Tooth46RootsProps> = ({
 	className,
 }) => {
 	const strokeColor = isDark
-		? "rgba(203, 213, 225, 0.55)"
-		: "rgba(71, 85, 105, 0.40)";
+		? "#94a3b8"
+		: "rgba(71, 85, 105, 0.45)";
 	const rootOpacity = "1.0";
 
 	return (

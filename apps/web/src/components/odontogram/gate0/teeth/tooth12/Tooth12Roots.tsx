@@ -20,9 +20,9 @@ export const Tooth12Roots: React.FC<Tooth12RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
-	const strokeColor = isDark ? "rgba(203, 213, 225, 0.55)" : "rgba(71, 85, 105, 0.40)";
-	const grooveStroke = isDark ? "rgba(203, 213, 225, 0.18)" : "rgba(100, 116, 139, 0.16)";
-	const cejStroke = isDark ? "rgba(203, 213, 225, 0.40)" : "rgba(100, 116, 139, 0.35)";
+	const strokeColor = isDark ? "#94a3b8" : "rgba(71, 85, 105, 0.45)";
+	const grooveStroke = isDark ? "rgba(148, 163, 184, 0.35)" : "rgba(100, 116, 139, 0.16)";
+	const cejStroke = isDark ? "#cbd5e1" : "rgba(100, 116, 139, 0.35)";
 	const g = TOOTH12_ROOTS_GEOMETRY;
 
 	return (

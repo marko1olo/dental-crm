@@ -20,7 +20,7 @@ export const Tooth18Roots: React.FC<Tooth18RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
-	const strokeColor = isDark ? "rgba(203, 213, 225, 0.55)" : "rgba(71, 85, 105, 0.40)";
+	const strokeColor = isDark ? "#94a3b8" : "rgba(71, 85, 105, 0.45)";
 	const g = TOOTH18_ROOTS_GEOMETRY;
 
 	return (

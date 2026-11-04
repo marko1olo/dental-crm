@@ -56,6 +56,18 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 	const [activeQuadrantMobile, setActiveQuadrantMobile] = useState<number>(1);
 	const [pendingEstimates, setPendingEstimates] = useState<Array<{ toothNum: number; serviceTitle: string; amountKopecks: number; code804n: string }>>([]);
 	const [saveNotification, setSaveNotification] = useState<string | null>(null);
+	const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+		return typeof document !== "undefined" && (document.documentElement.classList.contains("dark") || document.documentElement.getAttribute("data-theme") === "dark");
+	});
+
+	useEffect(() => {
+		if (typeof document === "undefined") return;
+		const updateDark = () => setIsDarkMode(document.documentElement.classList.contains("dark") || document.documentElement.getAttribute("data-theme") === "dark");
+		updateDark();
+		const observer = new MutationObserver(updateDark);
+		observer.observe(document.documentElement, { attributes: true, attributeFilter: ["class", "data-theme"] });
+		return () => observer.disconnect();
+	}, []);
 
 	useEffect(() => {
 		if (initialTeeth && Object.keys(initialTeeth).length > 0) setTeethData({ ...initialTeeth });
@@ -161,11 +173,17 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 		return `Приём № ${clean.slice(-4)}`;
 	}, [visitId]);
 
+	const shortPatientName = useMemo(() => {
+		if (!patientName) return "";
+		const m = patientName.match(/^([А-ЯЁ][а-яё]+)\s+([А-ЯЁ])[а-яё]+\s+([А-ЯЁ])[а-яё]+(\s*\([^)]+\))?/);
+		return m ? `${m[1]} ${m[2]}. ${m[3]}.${m[4] ? m[4].replace(" года", " г.").replace(" лет", " л.") : ""}` : patientName;
+	}, [patientName]);
+
 	if (!isOpen) return null;
 
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in" data-testid="odontogram-studio-modal">
-			<div className="flex flex-col w-full h-full sm:h-auto sm:max-h-[92vh] max-w-6xl bg-[var(--paper)] text-[var(--ink)] sm:rounded-2xl border border-[var(--line)] shadow-2xl overflow-hidden box-border">
+			<div className="flex flex-col w-full h-full sm:h-auto sm:max-h-[92vh] max-w-[1360px] bg-[var(--paper)] text-[var(--ink)] sm:rounded-2xl border border-[var(--line)] shadow-2xl overflow-hidden box-border">
 				{/* 1. Компактная шапка в 1 строку (Apple HIG, без многоточий) */}
 				<header className="flex items-center justify-between px-3.5 py-2.5 sm:px-4 sm:py-3 border-b border-[var(--line)] bg-[var(--paper-strong)] shrink-0 gap-2">
 					<div className="flex items-center gap-2 min-w-0 flex-1">
@@ -174,10 +192,11 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 						</div>
 						<div className="min-w-0">
 							<h2 className="text-sm sm:text-base font-semibold leading-tight whitespace-nowrap">
-								Зубная формула Wheeler 2.5D
+								Анатомическая зубная формула
 							</h2>
-							<p className="text-[11px] sm:text-xs text-[var(--ink-muted)] truncate">
-								{patientName} {formattedVisitNum ? `· ${formattedVisitNum}` : ""}
+							<p className="text-[11px] sm:text-xs text-[var(--ink-muted)]">
+								<span className="sm:hidden">{shortPatientName}</span>
+								<span className="hidden sm:inline">{patientName} {formattedVisitNum ? `· ${formattedVisitNum}` : ""}</span>
 							</p>
 						</div>
 					</div>
@@ -221,8 +240,8 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 					</div>
 				)}
 
-				{/* 2. Панель быстрых штампов (One-Touch Stamp Bar: 1 клик на штамп -> клик по зубу) */}
-				<div className="px-3 py-1.5 sm:px-4 sm:py-2 border-b border-[var(--line)] bg-[var(--paper)] flex items-center gap-1 sm:gap-1.5 overflow-x-auto shrink-0 scrollbar-none">
+				{/* 2. Панель быстрых штампов (One-Touch Stamp Bar: 1 клик на штамп -> клик по зубу, без срезки и клиппинга) */}
+				<div className="px-3 py-1.5 sm:px-4 sm:py-2 border-b border-[var(--line)] bg-[var(--paper)] flex items-center gap-1 sm:gap-1.5 flex-wrap shrink-0">
 					<span className="text-xs font-medium text-[var(--ink-muted)] mr-1 shrink-0">Штампы:</span>
 					{CLINICAL_STATUSES_SSOT.map((status) => {
 						const isSelected = activeStamp === status.key;
@@ -298,6 +317,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 											<AnatomicalTooth
 												toothNumber={num}
 												layers={flags}
+												isDark={isDarkMode}
 												zoom={0.34}
 												badgeRadius={14}
 											/>
@@ -313,8 +333,8 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 							})}
 						</div>
 
-						{/* Десктопный вид: каноническая анатомическая одонтограмма Wheeler 2.5D */}
-						<div className="hidden sm:flex flex-col gap-2 w-full max-w-5xl items-center">
+						{/* Десктопный вид: каноническая анатомическая одонтограмма Wheeler 2.5D (вся дуга 16 зубов видна целиком) */}
+						<div className="hidden sm:flex flex-col gap-2 w-full max-w-[1040px] items-center justify-center">
 							<AnatomicalGate0FullArchView
 								teethData={teethDataArray}
 								selectedTeeth={selectedToothNum ? [selectedToothNum] : []}
@@ -334,7 +354,8 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 									}
 								}}
 								activeStamp={activeStamp as ToothState | null}
-								zoom={0.54}
+								isDark={isDarkMode}
+								zoom={0.46}
 								className="py-1"
 							/>
 						</div>
@@ -418,7 +439,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 				{/* 4. Нижняя панель действий (Floating Bottom Bar / Apple HIG): РОВНО 1 PRIMARY CTA */}
 				<footer className="px-3.5 py-2.5 sm:px-4 sm:py-3 bg-[var(--paper-strong)] border-t border-[var(--line)] flex items-center justify-between shrink-0 gap-3">
 					<div className="text-xs text-[var(--ink-muted)] truncate hidden sm:block">
-						1-клик штампы · автономия врача · сохранение без блокировок
+						Выберите зуб для детального осмотра и фиксации патологий
 					</div>
 
 					<div className="flex items-center gap-2.5 w-full sm:w-auto justify-end">

@@ -40,6 +40,8 @@ async function suppressOverlays(page) {
 			[data-testid="demo-mode-banner"],
 			.shepherd-element,
 			.global-toast-container,
+			.copilot-trigger-btn,
+			[data-testid="copilot-floating-trigger"],
 			vite-error-overlay {
 				display: none !important;
 				pointer-events: none !important;

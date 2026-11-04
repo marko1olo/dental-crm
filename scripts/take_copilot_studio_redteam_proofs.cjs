@@ -2,7 +2,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "c8a35277-b5cf-4cab-9d05-e883361f0b14";
+const CONV_ID = process.env.CONV_ID || "07663fdc-eba5-48a1-bbb4-3c4b8f181006";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
@@ -42,19 +42,87 @@ async function setTheme(page, theme) {
 	await page.waitForTimeout(500);
 }
 
+async function provisionLiveSession() {
+	const API_BASE = "http://127.0.0.1:4100";
+	const uniqueId = Date.now();
+	try {
+		const initRes = await fetch(`${API_BASE}/api/auth/setup/init`, {
+			method: "POST",
+			headers: { "Content-Type": "application/json" },
+			body: JSON.stringify({
+				clinicName: "Стоматология ДЕНТЕ Премиум",
+				email: `doctor-studio-${uniqueId}@dente-clinic.ru`,
+				password: "Password123!",
+				ownerName: "Д-р Воронов Алексей Владимирович",
+				ownerPin: "1234",
+			}),
+		});
+		if (initRes.ok) {
+			const initData = await initRes.json();
+			const unlockRes = await fetch(`${API_BASE}/api/auth/staff/unlock`, {
+				method: "POST",
+				headers: { "Content-Type": "application/json", "x-dente-clinic-token": initData.clinicToken },
+				body: JSON.stringify({ userId: initData.ownerUserId, pinCode: "1234" }),
+			});
+			if (unlockRes.ok) {
+				const unlockData = await unlockRes.json();
+				return { clinicToken: initData.clinicToken, staffToken: unlockData.staffToken, ownerUserId: initData.ownerUserId, orgId: initData.organizationId };
+			}
+		}
+	} catch { /* skip */ }
+	return { clinicToken: "mock-token", staffToken: "mock-staff", ownerUserId: "user-1", orgId: "org-1" };
+}
+
+async function setupPageAuth(context) {
+	await context.addInitScript(() => {
+		localStorage.setItem("dente_theme_mode", "light");
+		localStorage.setItem("dente_onboarding_completed", "true");
+		localStorage.setItem("dente_tour_completed", "true");
+		localStorage.setItem("dente_tour_dismissed", "true");
+		localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
+		localStorage.setItem("dente_demo_banner_dismissed", "true");
+		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
+		localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
+			onboardingDismissed: true,
+			onboardingStep: "done",
+			onboardingDraftMode: false,
+		}));
+	});
+}
+
 async function run() {
 	console.log("[Studio Proof Runner] Launching Playwright Chrome for Copilot Studio Proofs...");
+
 	const browser = await chromium.launch({
 		headless: true,
-		executablePath: "C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe",
 		args: ["--no-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 	});
 
 	try {
 		// 1. PC 1440x900
 		const pcContext = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+		await setupPageAuth(pcContext);
+
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto("http://127.0.0.1:5173/?copilot=1&demo=1", { waitUntil: "domcontentloaded", timeout: 30000 });
+		await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 35000 });
+		for (let i = 0; i < 30; i++) {
+			await pcPage.waitForTimeout(400);
+			const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
+			if (!text.includes("Загрузка") && text.length > 200) break;
+		}
+		await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-grid-view"]', { timeout: 15000 }).catch(() => {});
+		await pcPage.waitForTimeout(800);
+
+		await pcPage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
+				detail: {
+					tooth: 36,
+					activeTooth: 36,
+					patientName: "Кузнецов Михаил Павлович",
+					patientId: "pat-36"
+				}
+			}));
+		});
 		await pcPage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
 		await pcPage.waitForTimeout(1000);
 
@@ -72,7 +140,7 @@ async function run() {
 		console.log("Capturing 09_copilot_actions_tab_pc_dark_1440x900.png...");
 		const actionsBtn = pcPage.locator('button:has-text("Быстрые действия")').first();
 		if (await actionsBtn.isVisible()) {
-			await actionsBtn.click();
+			await actionsBtn.click({ force: true });
 			await pcPage.waitForTimeout(500);
 			await saveProof(pcPage, "09_copilot_actions_tab_pc_dark_1440x900.png");
 		}
@@ -82,7 +150,7 @@ async function run() {
 		await setTheme(pcPage, "light");
 		const memoryBtn = pcPage.locator('button:has-text("Память")').first();
 		if (await memoryBtn.isVisible()) {
-			await memoryBtn.click();
+			await memoryBtn.click({ force: true });
 			await pcPage.waitForTimeout(500);
 			await saveProof(pcPage, "08_copilot_memory_tab_pc_light_1440x900.png");
 		}
@@ -90,14 +158,14 @@ async function run() {
 		// Dialog Empty Starters PC Light
 		console.log("Capturing 05_copilot_empty_starters_pc_light_1440x900.png...");
 		const dialogTabBtn = pcPage.locator('button:has-text("Клинический диалог")').first();
-		if (await dialogTabBtn.isVisible()) await dialogTabBtn.click();
+		if (await dialogTabBtn.isVisible()) await dialogTabBtn.click({ force: true });
 		const historyTrigger = pcPage.locator('[data-testid="copilot-history-trigger"]').first();
 		if (await historyTrigger.isVisible()) {
-			await historyTrigger.click();
+			await historyTrigger.click({ force: true });
 			await pcPage.waitForTimeout(400);
 			const newThreadBtn = pcPage.locator('button:has-text("Новый диалог")').first();
 			if (await newThreadBtn.isVisible()) {
-				await newThreadBtn.click();
+				await newThreadBtn.click({ force: true });
 				await pcPage.waitForTimeout(600);
 				await saveProof(pcPage, "05_copilot_empty_starters_pc_light_1440x900.png");
 			}
@@ -111,10 +179,24 @@ async function run() {
 			hasTouch: true,
 			userAgent: "Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile/15E148",
 		});
+		await setupPageAuth(mobileContext);
+
 		const mobilePage = await mobileContext.newPage();
-		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1&demo=1", { waitUntil: "domcontentloaded", timeout: 30000 });
+		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1&demo=true", { waitUntil: "domcontentloaded", timeout: 20000 });
 		await mobilePage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
-		await mobilePage.waitForTimeout(1000);
+		await mobilePage.waitForTimeout(600);
+
+		await mobilePage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
+				detail: {
+					tooth: 36,
+					activeTooth: 36,
+					patientName: "Кузнецов Михаил Павлович",
+					patientId: "pat-36"
+				}
+			}));
+		});
+		await mobilePage.waitForTimeout(600);
 
 		// Mobile Light
 		console.log("Capturing 03_copilot_studio_mobile_light_390x844.png...");
@@ -131,11 +213,11 @@ async function run() {
 		await setTheme(mobilePage, "light");
 		const mobHistoryTrigger = mobilePage.locator('[data-testid="copilot-history-trigger"]').first();
 		if (await mobHistoryTrigger.isVisible()) {
-			await mobHistoryTrigger.click();
+			await mobHistoryTrigger.click({ force: true });
 			await mobilePage.waitForTimeout(400);
 			const mobNewThreadBtn = mobilePage.locator('button:has-text("Новый диалог")').first();
 			if (await mobNewThreadBtn.isVisible()) {
-				await mobNewThreadBtn.click();
+				await mobNewThreadBtn.click({ force: true });
 				await mobilePage.waitForTimeout(600);
 				await saveProof(mobilePage, "06_copilot_empty_starters_mobile_light_390x844.png");
 			}

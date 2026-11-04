@@ -19,9 +19,9 @@ export const Tooth16Roots: React.FC<Tooth16RootsProps> = ({
 	isDark = false,
 	className,
 }) => {
-	const strokeColor = isDark ? "rgba(203, 213, 225, 0.55)" : "rgba(71, 85, 105, 0.40)";
-	const palatalStroke = isDark ? "rgba(203, 213, 225, 0.20)" : "rgba(71, 85, 105, 0.22)";
-	const grooveStroke = isDark ? "rgba(255, 255, 255, 0.10)" : "rgba(100, 116, 139, 0.10)";
+	const strokeColor = isDark ? "#94a3b8" : "rgba(71, 85, 105, 0.45)";
+	const palatalStroke = isDark ? "rgba(148, 163, 184, 0.45)" : "rgba(71, 85, 105, 0.22)";
+	const grooveStroke = isDark ? "rgba(148, 163, 184, 0.30)" : "rgba(100, 116, 139, 0.10)";
 	const g = TOOTH16_ROOTS_GEOMETRY;
 
 	return (

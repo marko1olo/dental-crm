@@ -42,7 +42,7 @@ const extractSuggestions = (text: string) => {
 
 const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [
   { id: "msg-init-1", role: "user", text: "Пациент с жалобами на боли от холодного в зубе 36. Сформируй протокол приёма и план лечения.", timestamp: "10:15" },
-  { id: "msg-init-2", role: "assistant", timestamp: "10:16", applied: false, text: "Диагноз: K02.1 Глубокий кариес дентина (Зуб 36). Назначено препарирование, изолирующая прокладка и реставрация нанокомпозитом под инфильтрационной анестезией Артикаин 1.7 мл.", citation: "Клинические рекомендации СтАР / ITI Consensus", actionProposal: { id: "act-init-1", toolName: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, description: "Запись протокола приёма и сметы в карту пациента", payload: { tooth: 36, diagnosis: "K02.1" } }, suggestedReplies: ["Изолирующая прокладка Ionosit", "Смета на реставрацию 36", "Контроль через 7 дней"] },
+  { id: "msg-init-2", role: "assistant", timestamp: "10:16", applied: false, text: "Диагноз: K02.1 Глубокий кариес дентина (Зуб 36). Назначено препарирование, изолирующая прокладка и реставрация нанокомпозитом под инфильтрационной анестезией Артикаин 1.7 мл.", citation: "Клинические рекомендации СтАР / ITI Consensus", actionProposal: { id: "act-init-1", toolName: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, description: "Запись протокола приёма и сметы в карту пациента", payload: { tooth: 36, diagnosis: "K02.1" } }, suggestedReplies: ["Прокладка Ionosit", "Смета на зуб 36", "Контроль 7 дн"] },
 ];
 
 const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((m, i) => {
@@ -93,8 +93,17 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     if (!isOpen) return;
     let s: WakeLockSentinel | null = null;
     if ("wakeLock" in navigator && typeof navigator.wakeLock?.request === "function") navigator.wakeLock.request("screen").then((l) => { s = l; }).catch(() => {});
-    return () => { s?.release().catch(() => {}); };
-  }, [isOpen]);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape" && !isSettingsOpen && !isHistoryOpen) {
+        handleClose();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      s?.release().catch(() => {});
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isOpen, isSettingsOpen, isHistoryOpen, handleClose]);
 
   useEffect(() => {
     baseDraftRef.current = inputText;
@@ -266,17 +275,15 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                 <span className="copilot-pulse-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Движок активен" />
               </div>
               <div className="copilot-studio-submeta flex items-center gap-1.5 text-xs text-[var(--muted)]">
-                <span className="font-semibold text-[var(--ink)] whitespace-nowrap sm:hidden">{patientName && patientName.trim().split(/\s+/).length >= 3 ? `${patientName.trim().split(/\s+/)[0]} ${patientName.trim().split(/\s+/)[1][0]}.${patientName.trim().split(/\s+/)[2][0]}.` : (patientName || "Пациент не выбран")}</span>
-                <span className="font-semibold text-[var(--ink)] whitespace-nowrap hidden sm:inline">{patientName || "Пациент не выбран"}</span>
-                {activeTooth ? <span className="shrink-0 whitespace-nowrap">• Зуб {activeTooth}</span> : null}
-                <span className="copilot-engine-badge px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 hidden sm:inline-block">{speechReport.label}</span>
+                <span className="copilot-engine-badge px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] border border-[var(--line)] font-medium text-[var(--muted)]">{speechReport.label}</span>
+                <span className="text-[10px] text-[var(--muted)] opacity-80 hidden sm:inline">Клинический ассистент</span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
             <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
             <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
-            <button type="button" onClick={handleClose} className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
+            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>
 
@@ -340,22 +347,25 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                         )}
                       </p>
                       {/* Агентная карточка инструмента и Contiguous Two-Phase Diff */}
-                      {m.actionProposal && !m.applied && (
-                        <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/30 space-y-2 text-[11px]">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Activity size={13} className="text-[var(--teal,#0d9488)]" /><span>Вызов: {m.actionProposal.toolName.split('.').pop() || m.actionProposal.toolName} (Зуб {activeTooth || 36})</span></div>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">Требуется подтверждение</span>
+                      {m.actionProposal && !m.applied && (() => {
+                        const proposalTooth = Number(m.actionProposal.payload?.tooth ?? m.actionProposal.payload?.toothNumber ?? (activeTooth || 36));
+                        return (
+                          <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/30 space-y-2 text-[11px]">
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Activity size={13} className="text-[var(--teal,#0d9488)]" /><span>Вызов: {m.actionProposal.toolName.split('.').pop() || m.actionProposal.toolName} (Зуб {proposalTooth})</span></div>
+                              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">Требуется подтверждение</span>
+                            </div>
+                            <div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] font-mono text-[10px] space-y-1">
+                              <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded"><span className="font-bold select-none">-</span><span className="line-through opacity-85">{`Зуб ${proposalTooth}: Без патологии / Интактный`}</span></div>
+                              <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium"><span className="font-bold select-none">+</span><span>{`Зуб ${proposalTooth}: ${m.actionProposal.description}`}</span></div>
+                            </div>
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              <button type="button" onClick={() => setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg))} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center">Отклонить</button>
+                              <button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)] hover:text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs transition-colors"><Check size={14} /><span>Применить в карту</span></button>
+                            </div>
                           </div>
-                          <div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] font-mono text-[10px] space-y-1">
-                            <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded"><span className="font-bold select-none">-</span><span className="line-through opacity-85">{`Зуб ${activeTooth || 36}: Без патологии / Интактный`}</span></div>
-                            <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium"><span className="font-bold select-none">+</span><span>{`Зуб ${activeTooth || 36}: ${m.actionProposal.description}`}</span></div>
-                          </div>
-                          <div className="flex items-center justify-end gap-2 pt-1">
-                            <button type="button" onClick={() => setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg))} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center">Отклонить</button>
-                            <button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] text-white hover:opacity-95 font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm"><Check size={14} /><span>Применить в карту</span></button>
-                          </div>
-                        </div>
-                      )}
+                        );
+                      })()}
                       {m.citation && (<div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium"><BookOpen size={11} /><span>{m.citation}</span></div>)}
                     </div>
                     <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>

@@ -189,7 +189,7 @@ export const CLINICAL_STATUSES_SSOT: readonly OdontogramClinicalStatus[] = Objec
 		key: "Retained",
 		codeRu: "Р",
 		labelRu: "Ретинированный зуб",
-		shortLabel: "Ретинирован",
+		shortLabel: "Ретинированный",
 		colorHex: "#d97706",
 		bgToken: "var(--amber-surface, rgba(217, 119, 6, 0.14))",
 		borderToken: "var(--amber, #d97706)",

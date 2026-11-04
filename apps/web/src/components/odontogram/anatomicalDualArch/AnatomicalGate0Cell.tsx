@@ -40,7 +40,7 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 			data-testid={`anatomical-tooth-cell-${toothNumber}`}
 			data-tooth-number={toothNumber}
 			onClick={handleClick}
-			className={`group relative flex flex-col items-center justify-center p-0.5 rounded-xl transition-all duration-150 cursor-pointer select-none min-w-[48px] sm:min-w-[54px] min-h-[110px] ${
+			className={`group relative flex flex-col items-center justify-center p-0.5 rounded-xl transition-all duration-150 cursor-pointer select-none min-w-[38px] sm:min-w-[44px] md:min-w-[48px] min-h-[104px] ${
 				isSelected
 					? "ring-2 ring-teal-500 bg-teal-500/10 dark:bg-teal-500/20 shadow-md shadow-teal-500/15"
 					: "hover:bg-slate-100/80 dark:hover:bg-slate-800/60 active:scale-95"
