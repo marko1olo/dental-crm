@@ -238,12 +238,13 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             </div>
             <div className="copilot-studio-title-box min-w-0">
               <div className="copilot-studio-title-row flex items-center gap-2">
-                <h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] truncate">ДЕНТА Копайлот</h2>
+                <h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)]">ДЕНТА Копайлот</h2>
                 <span className="copilot-pulse-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Движок активен" />
               </div>
-              <div className="copilot-studio-submeta flex items-center gap-1.5 text-[11px] text-[var(--muted)] truncate">
-                <span className="truncate">{patientName}</span>
-                {activeTooth ? <span className="shrink-0">• Зуб {activeTooth}</span> : null}
+              <div className="copilot-studio-submeta flex items-center gap-1.5 text-xs text-[var(--muted)]">
+                <span className="font-semibold text-[var(--ink)] whitespace-nowrap sm:hidden">{patientName && patientName.trim().split(/\s+/).length >= 3 ? `${patientName.trim().split(/\s+/)[0]} ${patientName.trim().split(/\s+/)[1][0]}.${patientName.trim().split(/\s+/)[2][0]}.` : (patientName || "Пациент не выбран")}</span>
+                <span className="font-semibold text-[var(--ink)] whitespace-nowrap hidden sm:inline">{patientName || "Пациент не выбран"}</span>
+                {activeTooth ? <span className="shrink-0 whitespace-nowrap">• Зуб {activeTooth}</span> : null}
                 <span className="copilot-engine-badge px-1.5 py-0.5 rounded text-[10px] bg-[var(--paper-soft)] border border-[var(--line)] shrink-0 hidden sm:inline-block">{speechReport.label}</span>
               </div>
             </div>
@@ -258,11 +259,19 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         {/* Компактный Antigravity Context Telemetry Bar */}
         <CopilotContextTelemetryBar patientName={patientName} patientId={patientId} activeTooth={activeTooth} compact />
 
-        {/* Навигационные вкладки кабинета (3 клинические вкладки) */}
-        <div className="copilot-tabs-nav flex border-b border-[var(--line)] px-3 gap-1.5 text-[11px] font-semibold shrink-0 overflow-x-auto no-scrollbar">
-          <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "dialog" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><BookOpen size={13} /><span>Клинический диалог</span></button>
-          <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "actions" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Activity size={13} /><span>Быстрые действия</span></button>
-          <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "memory" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Brain size={13} /><span>Память ИИ</span></button>
+        {/* Apple HIG Segmented Control: 3 клинические вкладки */}
+        <div className="copilot-tabs-segmented-wrapper px-4 py-2 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)] shrink-0">
+          <div className="copilot-tabs-segmented flex items-center p-1 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line,rgba(15,118,110,0.15))] gap-1">
+            <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeTab === "dialog" ? "active bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-transparent"}`}>
+              <BookOpen size={13} className="shrink-0" /><span className="hidden sm:inline">Клинический диалог</span><span className="sm:hidden">Диалог</span>
+            </button>
+            <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeTab === "actions" ? "active bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-transparent"}`}>
+              <Activity size={13} className="shrink-0" /><span className="hidden sm:inline">Быстрые действия</span><span className="sm:hidden">Действия</span>
+            </button>
+            <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${activeTab === "memory" ? "active bg-[var(--paper)] text-[var(--teal)] font-bold shadow-sm border border-[var(--line)]" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent border-transparent"}`}>
+              <Brain size={13} className="shrink-0" /><span className="hidden sm:inline">Память ИИ</span><span className="sm:hidden">Память</span>
+            </button>
+          </div>
         </div>
 
         {/* ВКЛАДКА 1: КЛИНИЧЕСКИЙ ДИАЛОГ */}
