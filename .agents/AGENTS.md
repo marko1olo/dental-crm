@@ -5,7 +5,7 @@
 > 
 > 🚨 **ЗАКОН О САБОТАЖЕ И ДИВЕРСИЯХ ДЛЯ ВСЕХ АГЕНТОВ И СУБАГЕНТОВ:**  
 > Любое действие ЛЮБОГО агента или субагента без предварительного вызова `read_file` на целевой код и перемещенный справочник является **ПРЯМОЙ ДИВЕРСИЕЙ И САБОТАЖЕМ**.  
-> Каждый агент и субагент ОБЯЗАН вызвать `read_file` перед началом работы:  
+> Каждый агент и субагент ОБЯЗАН вызвать `read_file` ПЕРВЫМ ДЕЙСТВИЕМ (Step 1) перед началом работы:  
 > - **Архитектура DENTE CRM (Мандаты 8d..8aq)**: [`.agents/CANONICAL_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)  
 > - **Высшая Конституция и философия**: [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)  
 > - **Доменные спецификации подсистем**: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) (`DATABASE.md`, `ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`, `BILLING_AND_FINANCE.md`, `WAREHOUSE_AND_SUPPLY.md`, `DOCUMENTS_LIFECYCLE.md`, `AI_ASSISTANT_RULES.md`, `MOBILE_DESIGN_APPLE_HIG.md`).  

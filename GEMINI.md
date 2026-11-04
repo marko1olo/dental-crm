@@ -9,14 +9,14 @@
 ## ⛔ ИЕРАРХИЯ АВТОРИТЕТОВ И СПРАВОЧНИКОВ (READ JIT)
 
 > 🚨 **НЕЧТЕНИЕ СПРАВОЧНИКОВ И ФАЙЛОВ ЛЮБЫМ АГЕНТОМ И СУБАГЕНТОМ — ПРЯМАЯ ДИВЕРСИЯ И САБОТАЖ!**  
-> Написание кода «из головы» или «по памяти» строжайше запрещено. Любой агент и субагент ОБЯЗАН вызвать `read_file` перед первой строчкой:
+> Любое действие ЛЮБОГО агента или субагента (анализ, аудит, проектирование, кодинг) без предварительного чтения — диверсия. Агент и субагент ОБЯЗАНЫ вызвать `read_file` ПЕРВЫМ ДЕЙСТВИЕМ (Step 1):
 
 1. **[CANONICAL ARCHITECTURE SPECIFICATION](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)** — **Канонический свод законов проекта (1432 строки)**. Мандаты 8d..8aq, 8 осей скриншотов, UTF-8, архитектурные слои.
 2. **[THE HAMMER MASTER PROMPT](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — **Высшая Конституция проекта (CTO Supremacy)**. Философия продукта, автономия врача у кресла, презумпция 100% брака.
 3. **[ДОМЕННЫЕ СПЕЦИФИКАЦИИ В .AGENTS/](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**:
    - База данных: [`DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) & [`DATABASE_SETUP.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md) (PostgreSQL 18 на `127.0.0.1:5432`, Drizzle ORM).
    - Анатомическая одонтограмма: [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md) (viewBox 100x218, Wheeler 2.5D, 120 FPS).
-   - Финансы и касса 54-ФЗ: [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) (`amountKopecks`, BIGINT, сплит-чеки, семейный баланс).
+   - Финансы и касса: [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) (`amountKopecks`, BIGINT, сплит-чеки, семейный баланс).
    - Склад и расходники: [`WAREHOUSE_AND_SUPPLY.md`](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md) (пакетное списание по техкартам, Soft Negative Stock).
    - Документооборот: [`DOCUMENTS_LIFECYCLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) (медицинская карта ЭМК, согласия ИДС, справки ФНС).
    - ИИ-Ассистент: [`AI_ASSISTANT_RULES.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) & [`AI_ASSISTANT_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md).
