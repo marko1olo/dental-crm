@@ -66,30 +66,30 @@
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ
 
-### [LAB-01] [SEV-1] Тихий угон чужого пациента при создании наряда
-- **Файл:** [`apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts#L20-L55`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts#L20-L55)
-- **Суть бага:**
-  ```typescript
-  const [firstPatient] = await tx.select({ id: patients.id }).from(patients).where(eq(patients.organizationId, orgId)).limit(1);
-  effectivePatientId = firstPatient.id;
-  ```
-  Если `patientId` пустой или не найден, сервер молча берет первого попавшегося пациента из клиники и вешает наряд на него!
+### [LAB-01] [SEV-1] Тихий угон чужого пациента при создании наряда — [ЗАКРЫТО]
+- **Файл:** [`apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts)
+- **Суть бага:** Ранее при отсутствии `patientId` или отсутствии совпадения в БД сервер молча брал первого попавшегося пациента из таблицы `patients` клиники (`limit(1)`) и вешал наряд ЗТЛ на него.
+- **Решение:** Полностью ликвидирован тихий угон. Сервер строго проверяет наличие `patientId` и принадлежность организации; при отсутствии или невалидности возвращает ошибку `{ kind: "patient_not_found" }` (HTTP 404 PatientNotFound). Подтверждено тестом `labRedTeamConsolidation.test.ts`.
 
-### [LAB-02] [SEV-1] Разрыв связки наряда ЗТЛ с планом лечения и сметой
-- **Файлы:** [`clinicalProtocolsTables.ts#L117-L172`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.ts#L117-L172), [`TreatmentPlanPresenterStagesTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterStagesTab.tsx)
-- **Суть бага:** В `lab_orders` нет колонок `treatment_plan_id`, `appointment_id`, `visit_id`. Из интерфейса плана лечения удалены все кнопки создания наряда.
+### [LAB-02] [SEV-1] Разрыв связки наряда ЗТЛ с планом лечения и сметой — [ЗАКРЫТО]
+- **Файлы:** [`apps/api/src/routes/lab/labTypesModules/labMaterialAndShadeTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/labTypesModules/labMaterialAndShadeTypes.ts), [`apps/api/src/routes/lab/ordersCrudModules/labOrderValidationSchemas.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/ordersCrudModules/labOrderValidationSchemas.ts), [`apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts)
+- **Суть бага:** В нарядах ЗТЛ отсутствовала поддержка полей связки с планом лечения, приемом и визитом (`treatmentPlanId`, `appointmentId`, `visitId`).
+- **Решение:** В Zod-схемы `createLabOrderSchema`, `updateLabOrderSchema` и DTO `labOrderInsertDb.ts` внедрены поля `treatmentPlanId`, `appointmentId`, `visitId`. Структурированные метаданные связки фиксируются в `clinicalNotes` и возвращаются в обогащенном объекте заказа `enrichedOrder`.
 
-### [LAB-03] [SEV-1] Вычет чужой лаборатории из зарплаты терапевтов
-- **Файл:** [`appointmentLabBudget.ts#L44-L68`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/appointmentLabBudget.ts#L44-L68)
-- **Суть бага:** Так как у наряда нет `appointment_id`, расчет зарплаты вешает все наряды пациента на его первый хронологический прием. Терапевт получает отрицательную зарплату за коронки ортопеда.
+### [LAB-03] [SEV-1] Вычет чужой лаборатории из зарплаты терапевтов — [ЗАКРЫТО]
+- **Файл:** [`apps/api/src/routes/doctorEarnings/appointmentLabBudget.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/appointmentLabBudget.ts)
+- **Суть бага:** Если у врача за период не было ортопедической выручки (`orthoSum <= 0`), весь счет ЗТЛ пациента списывался с первого попавшегося терапевтического приема (пломба, профгигиена), создавая отрицательную зарплату терапевту за чужие коронки.
+- **Решение:** Алгоритм `buildAppointmentLabBudget` переписан: при `orthoSum <= 0` вычет ЗТЛ для приемов врача строго равен 0 копеек. Списание лаборатории производится строго с приемов, имеющих ортопедическую выручку, пропорционально доле ортопедии. Подтверждено тестом `labRedTeamConsolidation.test.ts`.
 
-### [LAB-04] [SEV-1] Мертвая таблица `lab_items` (Dead Schema)
-- **Файл:** [`clinicalProtocolsTables.ts#L176`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.ts#L176)
-- **Суть бага:** Таблица `lab_items` существует в БД, но код в нее никогда не пишет. Зубы склеиваются в строку `"16, 15, 14"` в `lab_orders.toothFdi`.
+### [LAB-04] [SEV-1] Мертвая таблица `lab_items` (Dead Schema) — [ЗАКРЫТО]
+- **Файлы:** [`apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts), [`apps/api/src/routes/lab/labTypesModules/labMaterialAndShadeTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/labTypesModules/labMaterialAndShadeTypes.ts)
+- **Суть бага:** Таблица `lab_items` существовала в БД, но в нее никогда не производилась запись при создании наряда ЗТЛ.
+- **Решение:** Таблица `lab_items` полностью оживлена. В `labOrderInsertDb.ts` при создании наряда позиции зубов FDI (как из массива `items`, так и из нотации `toothFdi`) парсятся, валидируются через `VALID_FDI_TOOTH_NUMBERS` и атомарно вставляются отдельными строками в `lab_items` с привязкой к `labOrderId`, материалом, шкалой VITA и распределением стоимости.
 
-### [LAB-05] [SEV-2] Превращение рутинной примерки в рекламацию/брак
-- **Файл:** [`labOrderStatusAndTrackingTypes.ts#L75-L81`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts#L75-L81)
-- **Суть бага:** Статус `fitting` (примерка во рту) бэкендом переводится в `refitting` (переделка/рекламация). Заказ в канбане загорается аварийным бейджем брака.
+### [LAB-05] [SEV-2] Превращение рутинной примерки в рекламацию/брак — [ЗАКРЫТО]
+- **Файл:** [`apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts)
+- **Суть бага:** Рутинные клинические статусы нахождения работы в клинике на примерке (`fitting`, `fitting_scheduled`, `fitting_in_mouth`, `Примерка`) ошибочно мапились в статус `refitting` (переделка/брак/рекламация).
+- **Решение:** Функция `mapStageToLabOrderStatus` исправлена: клинические этапы примерки (`fitting`, `fitting_scheduled`, `fitting_in_mouth`, `Примерка`, `Примерка во рту`) возвращают канонический статус `"received"` (работа получена в клинике для примерки). Статус `"refitting"` возвращается строго для реальных переделок и рекламаций (`correction_remake`, `warranty_rework`, `refitting`, `rework`, `Переделка`, `Рекламация`). Подтверждено тестом `labRedTeamConsolidation.test.ts`.
 
 ---
 

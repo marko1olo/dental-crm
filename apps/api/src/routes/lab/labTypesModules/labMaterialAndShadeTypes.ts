@@ -16,6 +16,7 @@ export {
 
 export { CANONICAL_DENTAL_LAB_PRESETS } from "./labCanonicalPresetsData.js";
 export { createLabItemSchema } from "./labItemSchemas.js";
+import { createLabItemSchema } from "./labItemSchemas.js";
 
 export const labOrderPriceRubSchema = nonNegativeMoneyRubSchema
 	.refine((value) => value <= 100_000_000, {
@@ -66,6 +67,10 @@ export const createLabOrderSchema = z.object({
 		.optional()
 		.nullable()
 		.transform((val) => (val && val !== "pat_direct" && /^[0-9a-fA-F-]{36}$/.test(val) ? val : null)),
+	treatmentPlanId: z.string().uuid().optional().nullable(),
+	appointmentId: z.string().uuid().optional().nullable(),
+	visitId: z.string().uuid().optional().nullable(),
+	items: z.array(createLabItemSchema).optional().nullable(),
 	doctorId: z
 		.string()
 		.optional()

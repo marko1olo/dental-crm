@@ -22,6 +22,9 @@ export type LabOrdersQuery = z.infer<typeof labOrdersQuerySchema>;
 
 export const updateLabOrderSchema = z.object({
 	doctorId: z.string().uuid().optional().nullable(),
+	treatmentPlanId: z.string().uuid().optional().nullable(),
+	appointmentId: z.string().uuid().optional().nullable(),
+	visitId: z.string().uuid().optional().nullable(),
 	toothFdi: toothFdiSchema.optional().nullable(),
 	teethFdi: toothFdiSchema.optional().nullable(),
 	material: z.string().trim().optional().nullable(),

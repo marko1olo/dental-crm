@@ -1,3 +1,6 @@
+import { and, eq, ilike, or } from "drizzle-orm";
+import type { TenantDb } from "../../../db/rls.js";
+import { labItems, services } from "../../../db/schema.js";
 import { calculateBusinessDaysDueDate, CANONICAL_DENTAL_LAB_PRESETS } from "../types.js";
 import type {
 	LabOrderCostBreakdown,
@@ -12,7 +15,7 @@ export type {
 };
 
 /**
- * Standard business turnaround days map by construction/material type.
+ * Standard business turnaround days map by construction/material type (safe canonical fallback).
  */
 const MATERIAL_TURNAROUND_DAYS_MAP: Record<string, { standardDays: number; urgentDays: number; baseCostRub: number }> = {
 	crown_zirconia: { standardDays: 5, urgentDays: 3, baseCostRub: 7500 },
@@ -23,6 +26,108 @@ const MATERIAL_TURNAROUND_DAYS_MAP: Record<string, { standardDays: number; urgen
 	implant_abutment: { standardDays: 4, urgentDays: 2, baseCostRub: 6000 },
 	pmma_cad: { standardDays: 2, urgentDays: 1, baseCostRub: 2500 },
 };
+
+/**
+ * Честный запрос актуальной стоимости ЗТЛ из базы данных (прайс-лист клиники services и lab_items).
+ * Возвращает себестоимость лаборатории и цену для пациента с безопасным каноническим дефолтным фолбеком.
+ */
+export async function fetchLabPriceFromDb(
+	tx: TenantDb,
+	orgId: string,
+	materialOrConstruction: string,
+	laboratoryId?: string | null,
+): Promise<{ costRub: number; priceRub: number }> {
+	const normalizedKey = materialOrConstruction.toLowerCase().replace(/[-\s]/g, "_");
+
+	// 1. Поиск в каталоге услуг клиники (services) по категории ортопедии или совпадению названия/материала
+	try {
+		const foundServices = await tx
+			.select({
+				id: services.id,
+				title: services.title,
+				basePriceRub: services.basePriceRub,
+				materialsCostRub: services.materialsCostRub,
+				contractorId: services.contractorId,
+			})
+			.from(services)
+			.where(
+				and(
+					eq(services.organizationId, orgId),
+					eq(services.active, true),
+					or(
+						eq(services.category, "orthopedics"),
+						ilike(services.title, `%${materialOrConstruction}%`),
+					),
+				),
+			)
+			.limit(5);
+
+		if (foundServices.length > 0) {
+			const matched = laboratoryId
+				? foundServices.find((s) => s.contractorId === laboratoryId) ?? foundServices[0]!
+				: foundServices[0]!;
+
+			const basePrice = Number(matched.basePriceRub) || 0;
+			const materialsCost = Number(matched.materialsCostRub) || 0;
+			const resolvedCost = materialsCost > 0 ? materialsCost : Math.round(basePrice * 0.35);
+
+			if (resolvedCost > 0 && basePrice > 0) {
+				return { costRub: resolvedCost, priceRub: basePrice };
+			}
+		}
+	} catch {
+		// При сбоях запроса к services переходим к lab_items
+	}
+
+	// 2. Поиск в исторических позициях lab_items по типу материала
+	try {
+		const [historicalItem] = await tx
+			.select({
+				priceRub: labItems.priceRub,
+				material: labItems.material,
+			})
+			.from(labItems)
+			.where(
+				and(
+					eq(labItems.organizationId, orgId),
+					or(
+						eq(labItems.material, normalizedKey),
+						ilike(labItems.material, `%${materialOrConstruction}%`),
+					),
+				),
+			)
+			.orderBy(labItems.createdAt)
+			.limit(1);
+
+		if (historicalItem && historicalItem.priceRub) {
+			const parsedPrice = parseFloat(historicalItem.priceRub);
+			if (parsedPrice > 0) {
+				const estimatedCost = Math.round(parsedPrice * 0.35);
+				return { costRub: estimatedCost, priceRub: parsedPrice };
+			}
+		}
+	} catch {
+		// При сбоях запроса к lab_items переходим к каноническому фолбеку
+	}
+
+	// 3. Безопасный канонический фолбек по пресетам
+	const matchedPreset = CANONICAL_DENTAL_LAB_PRESETS.find(
+		(p) =>
+			p.constructionType === normalizedKey ||
+			p.id.includes(normalizedKey) ||
+			materialOrConstruction.toLowerCase().includes(p.shortTitle.toLowerCase()),
+	);
+
+	const defaultCostPerUnit = matchedPreset
+		? matchedPreset.suggestedCostRub
+		: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 7500);
+
+	const defaultPricePerUnit = matchedPreset
+		? matchedPreset.suggestedPriceRub
+		: Math.round(defaultCostPerUnit * 3.2);
+
+	return { costRub: defaultCostPerUnit, priceRub: defaultPricePerUnit };
+}
 
 /**
  * Calculates turnaround deadline in business days with optional urgent surcharge speed.
@@ -56,6 +161,7 @@ export function calculateLabOrderCostAndMarkup(params: {
 	materialOrConstruction: string;
 	priceRub?: number | null;
 	unitsCount?: number;
+	customCostPerUnit?: number | null;
 }): LabOrderCostBreakdown {
 	const units = Math.max(1, params.unitsCount ?? 1);
 	const normalizedKey = params.materialOrConstruction.toLowerCase().replace(/[-\s]/g, "_");
@@ -68,9 +174,11 @@ export function calculateLabOrderCostAndMarkup(params: {
 			params.materialOrConstruction.toLowerCase().includes(p.shortTitle.toLowerCase()),
 	);
 
-	const defaultCostPerUnit = matchedPreset
-		? matchedPreset.suggestedCostRub
-		: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 7500);
+	const defaultCostPerUnit = params.customCostPerUnit != null && params.customCostPerUnit > 0
+		? params.customCostPerUnit
+		: matchedPreset
+			? matchedPreset.suggestedCostRub
+			: (MATERIAL_TURNAROUND_DAYS_MAP[normalizedKey]?.baseCostRub ?? 7500);
 
 	const defaultPricePerUnit = matchedPreset
 		? matchedPreset.suggestedPriceRub
@@ -93,6 +201,34 @@ export function calculateLabOrderCostAndMarkup(params: {
 		grossMarginPercent,
 		unitsCount: units,
 	};
+}
+
+/**
+ * Асинхронный расчет стоимости и наценки с обращением к реальным ценам в БД
+ */
+export async function calculateLabOrderCostAndMarkupAsync(
+	tx: TenantDb,
+	orgId: string,
+	params: {
+		materialOrConstruction: string;
+		priceRub?: number | null;
+		unitsCount?: number;
+		laboratoryId?: string | null;
+	},
+): Promise<LabOrderCostBreakdown> {
+	const resolvedPrices = await fetchLabPriceFromDb(
+		tx,
+		orgId,
+		params.materialOrConstruction,
+		params.laboratoryId,
+	);
+
+	return calculateLabOrderCostAndMarkup({
+		materialOrConstruction: params.materialOrConstruction,
+		priceRub: params.priceRub ?? resolvedPrices.priceRub,
+		unitsCount: params.unitsCount,
+		customCostPerUnit: resolvedPrices.costRub,
+	});
 }
 
 /**

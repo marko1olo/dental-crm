@@ -48,10 +48,14 @@ export function buildAppointmentLabBudget(input: LiveCalculationInput): Map<stri
 		// Всем приемам пациента явно проставляется доля (в том числе 0),
 		// чтобы ни один наряд не был вычтен повторно по фолбэку.
 		const orthoSum = patientAptIds.reduce((sum, id) => sum + (aptOrthoGross.get(id) ?? 0), 0);
-		if (orthoSum <= 0 || patientAptIds.length === 1) {
-			// Один прием либо нет ортопедии: весь счет пациента уходит первому приему.
+		if (orthoSum <= 0) {
+			// Нет ортопедической выручки в приемах этого врача: наряд ЗТЛ НЕ списывается с терапевтических манипуляций ([LAB-03]).
+			for (const aptId of patientAptIds) budget.set(aptId, 0);
+			continue;
+		}
+		if (patientAptIds.length === 1) {
+			// Один прием и у него есть ортопедическая выручка: счет относится к нему.
 			budget.set(patientAptIds[0]!, (budget.get(patientAptIds[0]!) ?? 0) + labKopTotal);
-			for (const aptId of patientAptIds.slice(1)) budget.set(aptId, 0);
 			continue;
 		}
 		let remaining = labKopTotal;

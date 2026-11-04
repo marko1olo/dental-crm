@@ -7,8 +7,7 @@
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { DentalLabStudioModal } from "./DentalLabStudioModal";
-import type { DentalLabOrderEntry } from "./dentalLabCatalogData";
+import { DentalLabOrdersHubModal } from "./DentalLabOrdersHubModal";
 
 export function checkIsLabActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -65,10 +64,12 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	if (!isActive) return null;
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
-			<DentalLabStudioModal
-				isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi}
-				patientName="Ковалев Дмитрий Сергеевич (42 года)" doctorName="Д-р Смирнова Е. В. (Ортопед)"
-				onOrderCreated={(_ord: DentalLabOrderEntry) => {}}
+			<DentalLabOrdersHubModal
+				isOpen={isOpen}
+				onClose={handleClose}
+				currentToothNumber={initialToothFdi}
+				currentPatientName="Ковалев Дмитрий Сергеевич (42 года)"
+				currentDoctorName="Д-р Смирнова Е. В. (Ортопед)"
 			/>
 		</main>
 	);

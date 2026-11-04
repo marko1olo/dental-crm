@@ -1,0 +1,51 @@
+{
+  "role": "lab-ztl-consolidator",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-05T01:28:45Z",
+  "scope": {
+    "rootCauses": [
+      "LAB-01: Silent patient hijacking in labOrderInsertDb — CLOSED",
+      "LAB-02: Disconnected lab orders from treatment plan & billing — CLOSED",
+      "LAB-03: Lab cost deduction attribution to wrong doctor/appointment — CLOSED",
+      "LAB-04: Dead lab_items schema & unnormalized FDI teeth — CLOSED",
+      "LAB-05: Fitting stage misclassified as refitting/defect — CLOSED",
+      "Hardcoded lab prices in labOrderCostCalculator.ts replaced with DB lookup & safe fallback — CLOSED",
+      "Modal sprawl: 7 modals & 3 launchers consolidated into strictly 1 canonical Hub & 1 canonical Order Modal — CLOSED"
+    ],
+    "targetFiles": {
+      "web": [
+        "apps/web/src/components/lab/DentalLabOrdersHubModal.tsx",
+        "apps/web/src/components/lab/DentalLabOrderModal.tsx",
+        "apps/web/src/components/lab/DentalLabOrdersModal.tsx",
+        "apps/web/src/components/lab/DentalLabStudioModal.tsx",
+        "apps/web/src/components/lab/DirectDentalLabLauncher.tsx",
+        "apps/web/src/components/lab/hub/DentalLabHubHeader.tsx",
+        "apps/web/src/components/lab/dentalLab.css"
+      ],
+      "api": [
+        "apps/api/src/routes/lab/ordersCrudModules/labOrderCostCalculator.ts",
+        "apps/api/src/routes/lab/ordersCrudModules/labOrderInsertDb.ts",
+        "apps/api/src/routes/lab/ordersCrudModules/labOrderValidationSchemas.ts",
+        "apps/api/src/routes/lab/labTypesModules/labOrderStatusAndTrackingTypes.ts",
+        "apps/api/src/routes/lab/labTypesModules/labMaterialAndShadeTypes.ts",
+        "apps/api/src/routes/doctorEarnings/appointmentLabBudget.ts"
+      ]
+    }
+  },
+  "phases": {
+    "phase1_analysis_and_backend_fixes": "DONE",
+    "phase2_modal_consolidation": "DONE",
+    "phase3_tests_and_proofs": "DONE",
+    "phase4_docs_and_registry_sync": "DONE"
+  },
+  "proofs": [
+    "docs/proofs/lab/ztl_hub_pc_light.png",
+    "docs/proofs/lab/ztl_hub_pc_dark.png",
+    "docs/proofs/lab/ztl_order_modal_pc_light.png",
+    "docs/proofs/lab/ztl_order_modal_pc_dark.png",
+    "docs/proofs/lab/ztl_hub_mobile_light.png",
+    "docs/proofs/lab/ztl_hub_mobile_dark.png",
+    "docs/proofs/lab/ztl_order_modal_mobile_light.png",
+    "docs/proofs/lab/ztl_order_modal_mobile_dark.png"
+  ]
+}

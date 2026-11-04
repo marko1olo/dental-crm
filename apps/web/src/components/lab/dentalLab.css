@@ -7,6 +7,7 @@
  */
 
 @import "./styles/dentalLabStudio.css";
+@import "./styles/dentalLabPrintAndMobile.css";
 
 /* 1. Изоляция контекста модального окна и 0px скролла */
 [data-testid="dental-lab-studio-modal-root"] {

@@ -28,12 +28,12 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 		<header className="p-3 sm:p-4 bg-[var(--paper-strong)] border-b border-[var(--line)] flex flex-col gap-3 shrink-0">
 			{/* Верхняя строка: Заголовок и десктоп-действия */}
 			<div className="flex items-center justify-between gap-3">
-				<div className="flex items-center gap-2.5 min-w-0">
+				<div className="flex items-center gap-2.5 min-w-0 flex-1">
 					<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-[var(--teal-surface,#ccfbf1)] text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/25 flex items-center justify-center shrink-0">
 						<FlaskConical className="w-5 h-5" />
 					</div>
-					<div className="min-w-0">
-						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] leading-snug">
+					<div className="min-w-0 flex-1">
+						<h2 className="text-sm sm:text-base font-bold text-[var(--ink)] leading-snug truncate">
 							<span className="sm:hidden">Наряды в ЗТЛ</span>
 							<span className="hidden sm:inline">Наряды в зуботехническую лабораторию (ЗТЛ)</span>
 						</h2>
@@ -69,7 +69,7 @@ export const DentalLabHubHeader: React.FC<DentalLabHubHeaderProps> = ({
 
 					<button
 						type="button"
-						className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium shadow-2xs inline-flex items-center justify-center cursor-pointer transition-colors"
+						className="h-9 w-9 min-h-[36px] min-w-[36px] rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] font-medium shadow-2xs inline-flex items-center justify-center cursor-pointer transition-colors shrink-0"
 						onClick={onClose}
 						title="Закрыть окно"
 					>
