@@ -65,10 +65,10 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
   const [safetyAlert, setSafetyAlert] = useState<ChairsideSafetyAlert | null>(activePreset.safetyAlert);
 
   const [thoughts, setThoughts] = useState<ChairsideThoughtStep[]>([
-    { id: "step-1", stepNumber: 1, title: "1. Проверка аллергического статуса и лекарственной безопасности DDI", status: "done" },
-    { id: "step-2", stepNumber: 2, title: "2. Сверка диагноза МКБ-10: K02.1 Кариес дентина", status: "done" },
-    { id: "step-3", stepNumber: 3, title: "3. Расчет стоимости услуг по прейскуранту", status: "done" },
-    { id: "step-4", stepNumber: 4, title: "4. Формирование клинического протокола приёма", status: "done" },
+    { id: "step-1", stepNumber: 1, title: "Проверка аллергического статуса и лекарственной безопасности DDI", status: "done" },
+    { id: "step-2", stepNumber: 2, title: "Сверка диагноза МКБ-10: K02.1 Кариес дентина", status: "done" },
+    { id: "step-3", stepNumber: 3, title: "Расчет стоимости услуг по прейскуранту", status: "done" },
+    { id: "step-4", stepNumber: 4, title: "Формирование клинического протокола приёма", status: "done" },
   ]);
   const [isExecutingAgent, setIsExecutingAgent] = useState(false);
 
@@ -400,7 +400,7 @@ export const ChairsideCopilotHUD: React.FC<ChairsideCopilotHUDProps> = (props) =
               <ol className="chairside-thought-steps space-y-1 text-xs text-[var(--ink)]">
                 {thoughts.map((s) => (
                   <li key={s.id}>
-                    {s.title}
+                    {s.title.replace(/^\d+\.\s*/, "")}
                     {s.detail ? <span className="text-[var(--muted)]"> — {s.detail}</span> : null}
                   </li>
                 ))}

@@ -512,15 +512,40 @@
 
 ## 14. 📋 ПЛАНЫ ЛЕЧЕНИЯ, 3-УРОВНЕВЫЕ СМЕТЫ, КУРАТОРЫ И РАССРОЧКИ
 
-### [PLN-01] [SEV-1] Схлопывание 3 тарифов в одну минимальную цену (Коллизия кода 804н)
-- **Файл:** [`apps/web/src/components/treatment-plans/pricingEngine/pricingCatalogMatcher.ts#L36-L56`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/pricingEngine/pricingCatalogMatcher.ts#L36-L56)
-- **Суть бага:** Поиск в прейскуранте сначала идет строго по коду услуги 804н `targetCode`. Но по номенклатуре Минздрава установка бюджетного имплантата (Osstem) и премиального (Straumann Roxolid) имеют **один и тот же код** `A16.07.054.001`! Алгоритм отбирает первую попавшуюся бюджетную позицию, игнорируя ключевые слова («straumann», «nobel»). В итоге сметы «Стандарт» и «Премиум» стоят абсолютно одинаково!
-
-### [PLN-02] [SEV-1] Отсутствие связи счетов с планами лечения и фиктивная оплата этапа
+### [PLN-01] [ИСПРАВЛЕНО] Схлопывание 3 тарифов в одну минимальную цену и хардкод этапов
 - **Файлы:**
-  - [`apps/api/src/db/schema/billingModules/billingInvoicesSchema.ts#L16-L71`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/billingModules/billingInvoicesSchema.ts#L16-L71)
-  - [`apps/web/src/components/treatment-plans/TreatmentPlanExportModals.tsx#L89-L96`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanExportModals.tsx#L89-L96)
-- **Суть бага:** В таблице `patient_invoices` физически **нет колонок `treatment_plan_id` или `stage_id`**! При оплате этапа через кассу колбэк `onPaymentComplete` просто показывает Toast и закрывает модалку. В базу данных запрос на обновление статуса плана не уходит — этап остается неоплаченным, задолженность в CRM не гасится.
+  - [`TreatmentPlanPresenterDefaultStages.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/TreatmentPlanPresenterDefaultStages.ts)
+  - [`Presenter3TierGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/Presenter3TierGrid.tsx)
+  - [`TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
+- **Суть бага:** В презентере планов лечения этапы хардкодились обрывочно или схлопывались в минимальные цены. В тарифе «Базовый» был зашит единственный этап, отсутствовала сквозная связка с патологиями одонтограммы (кариес 16, отсутствующий 46, пульпит 25).
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Реализован сквозной клинический генератор `buildPresenterTiersFromTeeth(teeth)`: из живой одонтограммы или канонического кейса генерируются 3 логичных этапа реабилитации (Этап 1: Неотложная помощь и терапия, Этап 2: Хирургия и имплантация, Этап 3: Ортопедия и протезирование).
+  2. Сформированы 3 честных тарифа с дифференциацией материалов: Базовый (85 500 ₽ — металлокерамика Co-Cr, Osstem), Оптимальный (132 300 ₽ — нанокомпозит, цирконий Katana, микроскоп), Премиум (205 000 ₽ — IPS e.max Press, Straumann Roxolid SLActive, навигационный 3D-шаблон).
+  3. Все суммы строго в целых копейках (`amountKopecks`, BIGINT) без float drift.
+  4. В `Presenter3TierGrid.tsx` внедрена равная фиксированная высота карточек (`h-full items-stretch flex flex-col justify-between`) и бейдж беспроцентной рассрочки клиники 0% («3 платежа по XX XXX ₽»).
+
+### [PLN-02] [ИСПРАВЛЕНО] Отсутствие связи счетов с планами лечения и фиктивная оплата этапа
+- **Файлы:**
+  - [`TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
+  - [`apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/invoiceRoutes/handlers/generateInvoiceHandler.ts)
+  - [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterCheckoutModal.tsx)
+- **Суть бага:** Ранее колбэк `onPaymentComplete` при оплате этапа закрывал модалку без формирования счета в БД.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Нажатие «Оплатить этап» бесшовно вызывает бэкенд `POST /api/invoices/generate-from-plan` для фиксации черновика счета в `patient_invoices` со всеми валидациями заморозки цен (Price Lock).
+  2. Запускается нативный кассовый чекаут `CashRegisterCheckoutModal` с точной суммой в копейках `amountKopecks`, готовый к приему оплаты картой, наличными, QR СБП или сплитом.
+
+### [PLN-08] [ИСПРАВЛЕНО] Муляжи песочниц (*_preview.html), отсутствие кнопки отправки в мессенджер и дефекты автономии врача (Мандат 8e)
+- **Файлы:**
+  - [`DirectTreatmentPlanLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx)
+  - [`LiveTreatmentPlanPresenterLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher.tsx)
+  - [`PresenterHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/PresenterHeader.tsx)
+  - [`AppShell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/AppShell.tsx)
+- **Суть бага:** Презентер тестировался в изолированном файле `treatment_plan_preview.html`, отсутствовал в живом дереве `AppShell`, не имел прямой кнопки экспорта в WhatsApp / Telegram / SMS, а выбор тарифа и скидка врача сбрасывались при переключении окон.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Исключены любые `*_preview.html` песочницы: презентер смонтирован в живое дерево CRM через `DirectTreatmentPlanLauncher` и доступен по хэшу `#presenter` и `?presenter=1`.
+  2. В шапку и подвал добавлена кнопка «В мессенджер» (`presenter-send-messenger-btn`), формирующая красивую смету для WhatsApp / Telegram и копирующая расчет в буфер обмена в 1 клик.
+  3. Внедрен debounced autosave выбора тарифа и скидки врача в `localStorage` (`dente_presenter_draft_*`) с мгновенным восстановлением драфта при повторном открытии (Мандат 8e).
+  4. Пройден Red Team визуальный аудит по 8 осям на живом Chromium (1440x900 ☀️ Light, 1440x900 🌙 Dark, 390x844 📱 Light, 390x844 📱 Dark): zero clipping, ровно 1 Primary CTA (`#0d9488`), Apple HIG Bottom Sheet, 0px паразитного скролла. Доказательства сохранены в `docs/proofs/treatment_plans/`.
 
 ### [PLN-03] [SEV-1] Кассовая дыра при частичной оплате транша рассрочки (Потеря долга)
 - **Файлы:**

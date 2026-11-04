@@ -109,7 +109,7 @@ export const CopilotGlobalHost: React.FC = () => {
         patientAllergies={uiContext.allergies}
         activeTooth={numericActiveTooth}
       />
-      {!copilot.isOpen && (
+      {!copilot.isOpen && !isHudOpen && (
         <button
           type="button"
           onClick={copilot.openDrawer}

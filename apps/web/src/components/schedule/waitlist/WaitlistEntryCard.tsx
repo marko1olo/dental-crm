@@ -19,12 +19,12 @@ import {
 export interface WaitlistEntryCardProps {
   candidate: WaitlistCandidateItem;
   scoring: WaitlistScoringResult;
-  targetSlot?: TargetSlotInfo | null;
+  targetSlot?: TargetSlotInfo | null | undefined;
   clinicName: string;
   copiedId: string | null;
   onCopyOfferMessage: (candidate: WaitlistCandidateItem) => void;
   onBookCandidate: (candidate: WaitlistCandidateItem) => void;
-  onAssignDraft?: (candidate: WaitlistCandidateItem) => void;
+  onAssignDraft?: ((candidate: WaitlistCandidateItem) => void) | undefined;
 }
 
 export function WaitlistEntryCard(props: WaitlistEntryCardProps): ReactElement {

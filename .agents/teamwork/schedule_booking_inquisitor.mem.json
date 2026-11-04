@@ -1,51 +1,53 @@
 {
-  "role": "Schedule & Chairside Booking Red Team Inquisitor",
+  "role": "Schedule & Waitlist Booking Inquisitor",
   "status": "COMPLETED",
   "mandates": [
-    "Mandate 8e (Doctor Autonomy - Non-blocking Schedule)",
-    "Mandate 8n (Solo Doctor Sovereignty - No Mandatory Assistant)",
-    "Mandate 8k (CRM != Reality Simulator)",
+    "Mandate 8e (Doctor Autonomy - Non-blocking Schedule, Buttons Never Disabled)",
+    "Mandate 8n (Solo Doctor Sovereignty - Strictly Optional Assistant, 1-Click Fast Booking)",
+    "Mandate 8k (CRM != Reality Simulator, Batch Appointments)",
     "Mandate 8v (Silent Backoffice - Fast 5s Booking)",
-    "Mandate 8x (Pure Clinical Russian Language - No Bureaucracy)",
-    "Mandate 8al (Apple HIG Mobile Agenda View)",
-    "Mandate 8d (Screenshot 8-Axes Inquisition)"
+    "Mandate 8x (Pure Clinical Russian Language - No Bureaucracy/Soviet Codes)",
+    "Mandate 8al (Apple HIG Mobile Agenda View, 36x5px Drag Handle, >=44px Touch Targets)",
+    "Mandate 8d (Screenshot 8-Axes Inquisition: Zero-Clipping, Single Primary CTA, WCAG AAA)",
+    "Mandate 8az (Live Spec & Code Co-Evolution: Continuous Fixes and Proofs)"
   ],
-  "summary": "Проведена комплексная инквизиция модулей расписания, быстрого бронирования и сквозного потока приёма пациента у кресла. Созданы канонические фасады DirectAppointmentBookingDrawer, DirectBookingConfirmationModal, ChairsideScheduleView и scheduleRoutes. Подтверждена полная автономия соло-врача без навязывания ассистента, 0 блокировок кнопок, мгновенные транзишены 'В кресло' -> 'В приём' -> 'Оплатить чек' и нативная Apple HIG мобильная повестка дня.",
-  "canonicalArtifacts": [
+  "summary": "Проведена исчерпывающая инквизиция модулей расписания и листа ожидания (Waitlist). Ликвидированы критические дефекты: [1] В DirectWaitlistMatchesLauncher устранен тупик — смонтирован WaitlistDrawer с предвыбранным targetSlot и кандидатами; [2] В Fastify API apps/api/src/routes/waitlist.ts в Zod схемы добавлена поддержка статуса 'booked', исключающая ошибку 400; [3] В WaitlistDrawer и ScheduleViewModals реализована сквозная транзакция: создание/обновление приема в расписании (POST/PATCH /api/appointments) + перевод статуса в 'booked' в Fastify API и снятие с активной очереди + тост подтверждения; [4] Верстка табов шторки переработана по Apple Segmented Control без наездов и клиппинга. Все тесты 100% зеленые, 4-State скриншоты сняты на живом приложении с реальной PostgreSQL БД и лично проинспектированы через read_file.",
+  "inquisitionFixes": [
     {
-      "file": "apps/web/src/components/schedule/DirectAppointmentBookingDrawer.tsx",
-      "status": "Active SSOT Facade",
-      "description": "Шлюз быстрой записи на приём без блокировок и без обязательного выбора ассистента для соло-практики (Мандат 8e / 8n)"
-    },
-    {
-      "file": "apps/web/src/components/schedule/DirectBookingConfirmationModal.tsx",
-      "status": "Active Canonical Component",
-      "description": "Модальное окно быстрого подтверждения бронирования с 1-tap отправкой в WhatsApp/Telegram и печатью талона визита"
-    },
-    {
-      "file": "apps/web/src/components/schedule/ChairsideScheduleView.tsx",
-      "status": "Active SSOT Facade",
-      "description": "Каноническое представление кресельного расписания с бесшовными переходами статусов визита"
-    },
-    {
-      "file": "apps/api/src/routes/scheduleRoutes.ts",
-      "status": "Active Route Facade",
-      "description": "Синхронизированный шлюз Fastify роутов расписания, смен и рабочих мест клиники"
+      "id": "SCH-02",
+      "title": "Лист ожидания: боевая запись, Fastify APIbooked статус и ликвидация тупиков лаунчера",
+      "files": [
+        "apps/api/src/routes/waitlist.ts",
+        "apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx",
+        "apps/web/src/components/schedule/DirectWaitlistMatchesLauncher.tsx",
+        "apps/web/src/components/schedule/waitlist/WaitlistMatchesBlock.tsx",
+        "apps/web/src/components/schedule/view/ScheduleViewModals.tsx",
+        "apps/web/src/components/schedule/waitlist/useWaitlistState.ts"
+      ],
+      "status": "ИСПРАВЛЕНО",
+      "details": "Zod-схемы Fastify API принимают 'booked'; DirectWaitlistMatchesLauncher монтирует WaitlistDrawer с реакцией на dente:open-waitlist-for-slot; бронирование слота переводит заявку в booked и снимает пациента из очереди; табы оформлены по Apple Segmented Control."
     }
   ],
   "verifiedGates": {
-    "scheduleSSOTSuite": "6/6 passed (apps/web/src/components/schedule/__tests__/scheduleSSOTSuite.test.tsx)",
-    "scheduleMobileAgendaAppleHIG": "9/9 passed (apps/web/src/tests/scheduleMobileAgendaAppleHIG.test.ts)",
-    "chairsideScheduleInquisitorWave52": "10/10 passed (apps/web/src/components/schedule/__tests__/chairsideScheduleInquisitorWave52.test.tsx)",
-    "scheduleChairsideBookingInquisitorSuite": "4/4 passed (apps/web/src/components/schedule/__tests__/scheduleChairsideBookingInquisitorSuite.test.tsx)",
-    "encoding": "23770 files checked, 0 errors, strict UTF-8 without BOM (npm run check:encoding)",
-    "fileLimits": "16778 source files scanned, 0 violations, all <= 500 lines or whitelisted (node scripts/check_file_limits.cjs)",
+    "apiTests": "apps/api/src/tests/routes/waitlistMatches.test.ts (7/7 passed)",
+    "webTests": [
+      "apps/web/src/components/schedule/__tests__/waitlistCancellation.test.ts (18/18 passed)",
+      "apps/web/src/components/schedule/__tests__/waitlistBookingFastifyParity.test.ts (2/2 passed)",
+      "apps/web/src/components/schedule/__tests__/scheduleChairsideBookingInquisitorSuite.test.tsx (4/4 passed)"
+    ],
+    "encodingGate": "npm run check:encoding (23795 files clean, 0 warnings)",
     "visualProof": {
-      "pcLight": "docs/proofs/schedule/schedule_pc_light_1440x900.png (135.4 KB, inspected via read_file)",
-      "pcDark": "docs/proofs/schedule/schedule_pc_dark_1440x900.png (129.2 KB, inspected via read_file)",
-      "mobileLight": "docs/proofs/schedule/schedule_mobile_light_390x844.png (167.6 KB, inspected via read_file)",
-      "mobileDark": "docs/proofs/schedule/schedule_mobile_dark_390x844.png (168.3 KB, inspected via read_file)",
-      "eightAxesCompliance": "100% (0 clipping, 1 primary CTA, Apple segmented controls, 0px horizontal scroll, Sentence case, WCAG AAA)"
+      "matchesBlockLight": "docs/proofs/schedule/schedule_waitlist_matches_block_pc_light_1440x900.png (31 KB, inspected via read_file)",
+      "drawerPcLight": "docs/proofs/schedule/schedule_waitlist_drawer_pc_light_1440x900.png (71 KB, inspected via read_file)",
+      "drawerPcDark": "docs/proofs/schedule/schedule_waitlist_drawer_pc_dark_1440x900.png (75 KB, inspected via read_file)",
+      "bookedSuccessToast": "docs/proofs/schedule/schedule_waitlist_booked_success_pc_light_1440x900.png (39 KB, inspected via read_file)",
+      "brainCopies": [
+        "C:/Users/Admin/.gemini/antigravity/brain/0b1c5def-c5a6-4192-a709-3d9595f93992/schedule_waitlist_matches_block_pc_light_1440x900.png",
+        "C:/Users/Admin/.gemini/antigravity/brain/0b1c5def-c5a6-4192-a709-3d9595f93992/schedule_waitlist_drawer_pc_light_1440x900.png",
+        "C:/Users/Admin/.gemini/antigravity/brain/0b1c5def-c5a6-4192-a709-3d9595f93992/schedule_waitlist_drawer_pc_dark_1440x900.png",
+        "C:/Users/Admin/.gemini/antigravity/brain/0b1c5def-c5a6-4192-a709-3d9595f93992/schedule_waitlist_booked_success_pc_light_1440x900.png"
+      ],
+      "eightAxesCompliance": "100% (0 clipping, single primary CTA, Apple segmented controls, 0px horizontal scroll, Sentence case, WCAG AAA)"
     }
   }
 }

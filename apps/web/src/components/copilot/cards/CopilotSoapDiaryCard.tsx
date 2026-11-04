@@ -43,9 +43,11 @@ export const CopilotSoapDiaryCard: React.FC<CopilotSoapDiaryCardProps> = ({
     setIsEditing(false);
     try {
       const store = useVisitStore.getState();
-      const toothCode = String(formData.tooth || "36");
+      const toothCode = formData.tooth ? String(formData.tooth) : undefined;
       const diagStr = String(formData.diagnosis || "K02.1");
-      store.applyAiToothCodes([toothCode], "done", { [toothCode]: "treatment" }, { [toothCode]: diagStr });
+      if (toothCode) {
+        store.applyAiToothCodes([toothCode], "done", { [toothCode]: "treatment" }, { [toothCode]: diagStr });
+      }
       store.setVisitNoteForm((prev) => ({
         ...prev,
         complaint: String(formData.complaint || formData.complaints || prev.complaint),

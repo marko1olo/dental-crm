@@ -1,4 +1,4 @@
-export interface Clinical043Snapshot {
+export interface ClinicalEmkSnapshot {
 	complaints?: string | undefined;
 	anamnesis?: string | undefined;
 	objectiveStatus?: string | undefined;
@@ -6,6 +6,8 @@ export interface Clinical043Snapshot {
 	treatmentPlan?: string | undefined;
 	recommendations?: string | undefined;
 }
+
+export type Clinical043Snapshot = ClinicalEmkSnapshot;
 
 export interface CopilotUiContext {
 	/** Canonical view key (e.g. 'Odontogram', 'Schedule', 'Patients', 'Finance', 'Inventory') */
@@ -26,8 +28,10 @@ export interface CopilotUiContext {
 	toothFormula?: Record<string, string> | undefined;
 	/** Active diagnoses by tooth code (e.g. { "36": "K02.1 Кариес дентина (глубокий)" }) */
 	diagnosesByTooth?: Record<string, string> | undefined;
-	/** Active 043/u clinical diary form fields */
-	clinical043Context?: Clinical043Snapshot | undefined;
+	/** Active clinical diary form fields (EMK / SOAP) */
+	clinicalEmkContext?: ClinicalEmkSnapshot | undefined;
+	/** Deprecated alias for backwards compatibility */
+	clinical043Context?: ClinicalEmkSnapshot | undefined;
 	/** Optional additional context metadata */
 	additionalContext?: Record<string, unknown> | undefined;
 }

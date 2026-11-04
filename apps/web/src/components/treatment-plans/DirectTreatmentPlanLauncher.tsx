@@ -6,6 +6,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { TreatmentPlanStudioModal } from "./TreatmentPlanStudioModal";
+import { LiveTreatmentPlanPresenterLauncher } from "../appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher";
 
 export interface DirectTreatmentPlanLauncherProps {
 	readonly className?: string;
@@ -17,6 +18,7 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		const hash = window.location.hash.toLowerCase();
 		const search = window.location.search.toLowerCase();
 		return (
+			hash.includes("presenter") ||
 			hash.includes("treatment-plans") ||
 			hash.includes("treatment-plan") ||
 			hash.includes("treatment-studio") ||
@@ -70,6 +72,21 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 	}, []);
 
 	if (!isOpen) return null;
+
+	const hash = typeof window !== "undefined" ? window.location.hash.toLowerCase() : "";
+	const search = typeof window !== "undefined" ? window.location.search.toLowerCase() : "";
+	const isPresenterMode = hash.includes("presenter") || search.includes("presenter=1");
+
+	if (isPresenterMode) {
+		return (
+			<LiveTreatmentPlanPresenterLauncher
+				isOpen={isOpen}
+				onClose={handleClose}
+				patientId="pat-walkin"
+				planId="plan-active"
+			/>
+		);
+	}
 
 	return (
 		<TreatmentPlanStudioModal

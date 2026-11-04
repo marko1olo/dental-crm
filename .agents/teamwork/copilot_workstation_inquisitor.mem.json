@@ -1,28 +1,26 @@
 {
   "role": "Copilot & Workstation Red Team Inquisitor",
   "status": "COMPLETED",
-  "timestamp": "2026-11-04T11:07:00.000Z",
-  "conversationId": "da38d1c9-80dd-44cf-8785-4a3a787b3c94",
+  "timestamp": "2026-11-04T17:25:00.000Z",
+  "conversationId": "37f37e14-1e91-4b97-8be9-2c6bb0c99c89",
   "parentOrchestratorId": "07663fdc-eba5-48a1-bbb4-3c4b8f181006",
   "metrics": {
     "copilotDrawerLines": 473,
-    "copilotWorkstationTabLines": 309,
     "copilotStudioModalLines": 438,
     "copilotMemoryTabLines": 186,
     "copilotHistoryDrawerLines": 199,
     "copilotCashboxInvoiceCardLines": 139,
     "copilotSurgeryPassportCardLines": 133,
     "copilotSettingsModelRoutingLines": 204,
-    "clinicalModelRouterLines": 134,
-    "frontendTestsPass": 52,
+    "clinicalModelRouterLines": 137,
+    "frontendTestsPass": 72,
     "frontendTestsFail": 0,
-    "backendHarnessTestsPass": 17,
+    "backendHarnessTestsPass": 27,
     "backendHarnessTestsFail": 0,
-    "totalPassingTests": 69
+    "totalPassingTests": 99
   },
   "invariantsVerified": [
     "Mandate 8b: CopilotDrawer.tsx strictly <= 500 lines (473 lines achieved)",
-    "Mandate 8b: CopilotWorkstationTab.tsx strictly <= 320 lines (309 lines achieved)",
     "Mandate 8b: CopilotStudioModal.tsx strictly in Sweet Spot 380-450 lines (438 lines achieved)",
     "Mandate 8b: All copilot cards & settings within Sweet Spot (< 220 lines)",
     "Mandate 8e: Doctor autonomy - zero disabled buttons on primary CTA, cashbox invoice, and workstation probes",
@@ -30,7 +28,10 @@
     "Mandate 8wy: Zero mockups - honest two-phase ReAct fallback, real PostgreSQL & Fastify session",
     "Mandate 8x: Zero Soviet order numbers ('043/у', '804н', '54-ФЗ') in active UI, clean Russian clinical terminology",
     "Mandate 8d pt 7: Strictly 0 cartoon emojis in all updated copilot source files",
-    "Apple HIG: Touch targets >= 44x44px, bottom sheet drawer with tactile drag handle, Natural Thumb Zone"
+    "Apple HIG: Touch targets >= 44x44px, bottom sheet drawer with tactile drag handle, Natural Thumb Zone",
+    "Anti-Model-Selector: No model selectors in doctor chairside interface, strictly concise badge 'DENTE Интеллект • <300мс'",
+    "BYOK Advanced Routing: gemini-3.6-flash, gemini-3.5-flash-lite, gemini-3.5-flash, claude-3-5-sonnet, gpt-4o, deepseek-r1 with live validation via POST /api/agent/validate-key",
+    "AgentRouter Endpoint Fix: modelAdapters.ts preserves custom router base URL when routing to agentrouter.org"
   ],
   "verifiedProofs": [
     "docs/proofs/copilot/01_copilot_pc_light_1440x900.png",
@@ -43,20 +44,10 @@
     "docs/proofs/copilot/08_copilot_settings_byok_pc_dark_1440x900.png"
   ],
   "changedFiles": [
-    "apps/api/src/ai/clinicalModelRouter.ts",
     "apps/api/src/ai/router/modelAdapters.ts",
-    "apps/api/src/routes/agentRoutes.ts",
-    "apps/web/src/components/copilot/CopilotDrawer.tsx",
-    "apps/web/src/components/copilot/CopilotStudioModal.tsx",
-    "apps/web/src/components/copilot/CopilotWorkstationTab.tsx",
-    "apps/web/src/components/copilot/CopilotMemoryTab.tsx",
-    "apps/web/src/components/copilot/CopilotHistoryDrawer.tsx",
-    "apps/web/src/components/copilot/cards/CopilotCashboxInvoiceCard.tsx",
-    "apps/web/src/components/copilot/cards/CopilotSurgeryPassportCard.tsx",
-    "apps/web/src/components/copilot/settings/CopilotSettingsModelRouting.tsx",
-    "apps/web/src/components/copilot/resultCards/ResultClinicalAndReActSection.tsx",
-    "apps/web/src/components/copilot/resultCards/ResultFinancialAndGenericSection.tsx",
+    "apps/web/src/components/copilot/__tests__/copilotSotaAgentCapabilities.test.tsx",
     "scripts/capture_copilot_workstation_inquisitor_proofs.cjs",
-    "scripts/capture_copilot_settings_proofs.cjs"
+    "scripts/capture_copilot_settings_proofs.cjs",
+    ".agents/teamwork/copilot_workstation_inquisitor.mem.json"
   ]
 }

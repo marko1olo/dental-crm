@@ -14,16 +14,20 @@ import {
 } from "./waitlistTypes";
 
 export interface WaitlistMatchesBlockProps {
-  appointmentId: string;
+  appointmentId?: string;
+  initialSlot?: TargetSlotInfo | null;
   compact?: boolean;
   onBookCandidate?: (candidate: WaitlistCandidateItem) => void;
+  onOpenWaitlist?: (slot: TargetSlotInfo | null) => void;
   className?: string;
 }
 
 export function WaitlistMatchesBlock({
   appointmentId,
+  initialSlot,
   compact = false,
   onBookCandidate,
+  onOpenWaitlist,
   className = "",
 }: WaitlistMatchesBlockProps) {
   const ctx = useOptionalAppLogicContext();
@@ -51,7 +55,16 @@ export function WaitlistMatchesBlock({
         chairName: chair?.name || null,
         freedBecause: "Отмена приёма",
       }
-    : null;
+    : (initialSlot || null);
+
+  const handleOpenList = () => {
+    if (onOpenWaitlist) {
+      onOpenWaitlist(targetSlot);
+    }
+    window.dispatchEvent(
+      new CustomEvent("dente:open-waitlist-for-slot", { detail: targetSlot }),
+    );
+  };
 
   useEffect(() => {
     let isMounted = true;
@@ -101,12 +114,8 @@ export function WaitlistMatchesBlock({
         <span>Нет подходящих пациентов в листе ожидания</span>
         <button
           type="button"
-          onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent("dente:open-waitlist-for-slot", { detail: targetSlot }),
-            );
-          }}
-          className="text-[var(--teal,#0d9488)] font-semibold hover:underline"
+          onClick={handleOpenList}
+          className="text-[var(--teal,#0d9488)] font-semibold hover:underline cursor-pointer"
         >
           Открыть лист
         </button>
@@ -125,12 +134,8 @@ export function WaitlistMatchesBlock({
         </span>
         <button
           type="button"
-          onClick={() => {
-            window.dispatchEvent(
-              new CustomEvent("dente:open-waitlist-for-slot", { detail: targetSlot }),
-            );
-          }}
-          className="text-xs text-[var(--teal,#0d9488)] hover:underline font-medium"
+          onClick={handleOpenList}
+          className="text-xs text-[var(--teal,#0d9488)] hover:underline font-medium cursor-pointer"
         >
           Все ({ranked.length}) →
         </button>

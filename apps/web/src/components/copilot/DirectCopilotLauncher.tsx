@@ -8,7 +8,7 @@ import { CopilotStudioModal } from "./CopilotStudioModal";
 import { useAppStore } from "../../store/appStore";
 import { useVisitStore } from "../../store/visitStore";
 
-interface LaunchDetail { tooth?: number | null; activeTooth?: number | null; patientId?: string | null; patientName?: string | null; initialTab?: "dialog" | "actions" | "memory"; }
+interface LaunchDetail { tooth?: number | null; activeTooth?: number | null; patientId?: string | null; patientName?: string | null; initialTab?: "dialog" | "actions" | "memory"; isThinking?: boolean; thoughtProcess?: string; }
 
 function checkIsCopilotActive(): boolean {
   if (typeof window === "undefined") return false;
@@ -70,6 +70,17 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
   }, []);
 
   if (!isActive || !isOpen) return null;
-  return <CopilotStudioModal isOpen={isOpen} onClose={handleClose} activeTooth={activeTooth} patientId={patientId} patientName={patientName} initialTab={ctx?.initialTab || "dialog"} />;
+  return (
+    <CopilotStudioModal
+      isOpen={isOpen}
+      onClose={handleClose}
+      activeTooth={activeTooth}
+      patientId={patientId}
+      patientName={patientName}
+      initialTab={ctx?.initialTab || "dialog"}
+      isThinking={ctx?.isThinking}
+      thoughtProcess={ctx?.thoughtProcess}
+    />
+  );
 }
 export default DirectCopilotLauncher;

@@ -228,12 +228,13 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
       setPhase(null);
       setMessages((prev) =>
         prev.map((m) =>
-          m.kind === "text" && m.streaming ? { ...m, streaming: false } : m,
+          (m.kind === "text" || m.kind === "thinking") && m.streaming ? { ...m, streaming: false } : m,
         ),
       );
     } else if (event === "budget_exceeded") {
+      setPhase(null);
       setMessages((prev) => [
-        ...prev,
+        ...prev.map((m) => ((m.kind === "text" || m.kind === "thinking") && m.streaming ? { ...m, streaming: false } : m)),
         {
           kind: "text",
           role: "assistant",
@@ -242,8 +243,9 @@ export function createStreamEventHandler(params: StreamEventHandlerParams) {
         },
       ]);
     } else if (event === "error") {
+      setPhase(null);
       setMessages((prev) => [
-        ...prev,
+        ...prev.map((m) => ((m.kind === "text" || m.kind === "thinking") && m.streaming ? { ...m, streaming: false } : m)),
         {
           kind: "text",
           role: "assistant",

@@ -302,7 +302,7 @@ export async function registerWaitlistRoutes(
 						}),
 					)
 					.optional(),
-				status: z.enum(["active", "waiting", "fulfilled", "cancelled"]).optional(),
+				status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]).optional(),
 			});
 
 			const parsed = updateSchema.safeParse(request.body);
@@ -368,7 +368,7 @@ export async function registerWaitlistRoutes(
 
 			const { id } = request.params as { id: string };
 			const statusSchema = z.object({
-				status: z.enum(["active", "waiting", "fulfilled", "cancelled"]),
+				status: z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"]),
 			});
 
 			const parsed = statusSchema.safeParse(request.body);

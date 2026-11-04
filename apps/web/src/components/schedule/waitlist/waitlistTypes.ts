@@ -79,6 +79,8 @@ export interface CandidateScoreResult {
 }
 
 export type WaitlistMatchScore = CandidateScoreResult;
+export type WaitlistCandidateScoring = CandidateScoreResult;
+export type WaitlistScoringResult = CandidateScoreResult;
 
 export const URGENCY_CONFIG: Record<
   string,
@@ -173,10 +175,10 @@ export function formatDoctorSalutation(doctorName?: string | null): string {
  * Генерация вежливого предложения окна без раскрытия диагнозов (Медицинская тайна 323-ФЗ).
  */
 export function generateWaitlistOfferMessage(params: {
-  patientName?: string | null;
-  doctorName?: string | null;
-  startsAt?: string | null;
-  clinicName?: string | null;
+  patientName?: string | null | undefined;
+  doctorName?: string | null | undefined;
+  startsAt?: string | null | undefined;
+  clinicName?: string | null | undefined;
 }): string {
   const politeName = extractPatientPoliteName(params.patientName);
   const clinic = params.clinicName || "Стоматология DENTE";
@@ -205,10 +207,10 @@ export function generateWaitlistOfferMessage(params: {
 
 // Алиас для обратной совместимости
 export function generateWhatsAppOfferMessage(params: {
-  patientName?: string | null;
-  doctorName?: string | null;
-  slotStartsAt?: string | null;
-  clinicName?: string | null;
+  patientName?: string | null | undefined;
+  doctorName?: string | null | undefined;
+  slotStartsAt?: string | null | undefined;
+  clinicName?: string | null | undefined;
 }): string {
   const pName = params.patientName ? params.patientName.trim() : "Пациент";
   const clinic = params.clinicName || "Стоматология DENTE";

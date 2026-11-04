@@ -4,7 +4,7 @@ import type { TargetSlotInfo } from "../waitlistTypes";
 export interface WaitlistFilterBarProps {
 	searchQuery: string;
 	onSearchChange: (val: string) => void;
-	targetSlot?: TargetSlotInfo | null;
+	targetSlot?: TargetSlotInfo | null | undefined;
 	isSmartMatch: boolean;
 	sameDoctorOnly: boolean;
 	onSameDoctorOnlyChange: (val: boolean) => void;

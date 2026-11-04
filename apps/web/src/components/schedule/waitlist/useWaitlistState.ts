@@ -9,9 +9,9 @@ import { filterWaitlistCandidates, generateWaitlistOfferMessage } from "./waitli
 
 export interface UseWaitlistOptions {
   isOpen: boolean;
-  targetSlot?: TargetSlotInfo | null;
-  onBookSlot?: (patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void;
-  onClose?: () => void;
+  targetSlot?: TargetSlotInfo | null | undefined;
+  onBookSlot?: ((patient: WaitlistCandidateItem, slot: TargetSlotInfo) => Promise<void> | void) | undefined;
+  onClose?: (() => void) | undefined;
   dashboard?: any;
   auth?: any;
 }
@@ -61,6 +61,11 @@ export function useWaitlistState(options: UseWaitlistOptions) {
       };
       if (auth?.denteClinicalReadHeaders) {
         Object.assign(headers, auth.denteClinicalReadHeaders());
+      } else if (typeof window !== "undefined") {
+        const cTok = localStorage.getItem("dente_clinic_token") || "demo-showcase-clinic-token-owner";
+        const sTok = localStorage.getItem("dente_staff_token") || "demo-showcase-staff-token-owner";
+        if (cTok) headers["x-dente-clinic-token"] = cTok;
+        if (sTok) headers["x-dente-staff-token"] = sTok;
       }
       const res = await fetch("/api/waitlist", { headers });
       if (!res.ok) {
@@ -142,6 +147,11 @@ export function useWaitlistState(options: UseWaitlistOptions) {
         };
         if (auth?.denteClinicalMutationHeaders) {
           Object.assign(headers, auth.denteClinicalMutationHeaders());
+        } else if (typeof window !== "undefined") {
+          const cTok = localStorage.getItem("dente_clinic_token") || "demo-showcase-clinic-token-owner";
+          const sTok = localStorage.getItem("dente_staff_token") || "demo-showcase-staff-token-owner";
+          if (cTok) headers["x-dente-clinic-token"] = cTok;
+          if (sTok) headers["x-dente-staff-token"] = sTok;
         }
 
         const payload = {

@@ -8,19 +8,21 @@
  * Финансовый мост: Мгновенная оплата этапа через кассовый чекаут CashRegisterCheckoutModal в целых копейках.
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
 import {
 	Printer,
 	CheckCircle2,
 	FileSignature,
+	Send,
 } from "lucide-react";
-import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage } from "./treatmentPlanTypes";
+import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage, TreatmentPlanItem } from "./treatmentPlanTypes";
 import { formatRubles } from "./treatmentPlanTypes";
 import { PresenterHeader, type PresenterModalTab } from "./presenterModules/PresenterHeader";
 import {
 	DEFAULT_PRESENTER_STAGES,
 	DEFAULT_PRESENTER_TIERS,
+	buildPresenterTiersFromTeeth,
 } from "./presenterModules/TreatmentPlanPresenterDefaultStages";
 import { PresenterDoctorDiscountBar } from "./presenterModules/PresenterDoctorDiscountBar";
 import { Presenter3TierGrid } from "./presenterModules/Presenter3TierGrid";
@@ -37,29 +39,32 @@ export { DEFAULT_PRESENTER_TIERS as DEFAULT_TIERS };
 export interface TreatmentPlanPresenterModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string;
-	readonly patientId?: string;
-	readonly patientPhone?: string;
+	readonly patientName?: string | undefined;
+	readonly patientId?: string | undefined;
+	readonly patientPhone?: string | undefined;
 	readonly patientBirthDate?: string | undefined;
-	readonly doctorFullName?: string;
-	readonly doctorSpecialty?: string;
-	readonly clinicName?: string;
-	readonly clinicLegalName?: string;
-	readonly clinicInn?: string;
-	readonly clinicOgrn?: string;
-	readonly clinicAddress?: string;
-	readonly clinicPhone?: string;
-	readonly clinicLicense?: string;
-	readonly planId?: string;
-	readonly planCreatedAtIso?: string;
-	readonly isDemoMode?: boolean;
-	readonly tiers?: readonly TreatmentPlanTier[];
-	readonly initialSelectedTierId?: TreatmentPlanTierId;
-	readonly onApproveAndSign?: (tier: TreatmentPlanTier) => void;
-	readonly onConfirmSelection?: (tier: TreatmentPlanTier) => void;
-	readonly onPayStage?: (stage: TreatmentPlanStage) => void;
-	readonly className?: string;
-	readonly teeth?: unknown;
+	readonly doctorFullName?: string | undefined;
+	readonly doctorSpecialty?: string | undefined;
+	readonly clinicName?: string | undefined;
+	readonly clinicLegalName?: string | undefined;
+	readonly clinicInn?: string | undefined;
+	readonly clinicOgrn?: string | undefined;
+	readonly clinicAddress?: string | undefined;
+	readonly clinicPhone?: string | undefined;
+	readonly clinicLicense?: string | undefined;
+	readonly planId?: string | undefined;
+	readonly planCreatedAtIso?: string | undefined;
+	readonly contractNumber?: string | undefined;
+	readonly onSelectPlan?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onPrintContract?: (() => void) | undefined;
+	readonly isDemoMode?: boolean | undefined;
+	readonly tiers?: readonly TreatmentPlanTier[] | readonly any[] | undefined;
+	readonly initialSelectedTierId?: TreatmentPlanTierId | undefined;
+	readonly onApproveAndSign?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onConfirmSelection?: ((tier: TreatmentPlanTier) => void) | undefined;
+	readonly onPayStage?: ((stage: TreatmentPlanStage) => void) | undefined;
+	readonly className?: string | undefined;
+	readonly teeth?: unknown | undefined;
 }
 
 export function getTierLetter(tierId: TreatmentPlanTierId): string {
@@ -81,12 +86,14 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	patientId = "pat-walkin",
 	patientPhone = "",
 	doctorFullName = "Лечащий врач",
+	planId,
 	tiers: propTiers,
 	initialSelectedTierId = "standard",
 	onApproveAndSign,
 	onConfirmSelection,
 	onPayStage,
 	className = "",
+	teeth,
 }) => {
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
 	const [activeTab, setActiveTab] = useState<PresenterModalTab>("comparison");
@@ -99,32 +106,69 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 	const [checkoutStage, setCheckoutStage] = useState<TreatmentPlanStage | null>(null);
 	const [isCheckoutOpen, setIsCheckoutOpen] = useState<boolean>(false);
 
-	const effectiveTiers = useMemo(() => {
-		const raw = propTiers && propTiers.length > 0 ? propTiers : DEFAULT_PRESENTER_TIERS;
+	const effectiveTiers: readonly TreatmentPlanTier[] = useMemo(() => {
+		const raw = propTiers && propTiers.length > 0 ? propTiers : buildPresenterTiersFromTeeth(teeth);
 		if (doctorDiscountPercent <= 0) return raw;
 		const multiplier = Math.max(0, (100 - doctorDiscountPercent) / 100);
-		return raw.map((tier) => {
+		return raw.map((tier): TreatmentPlanTier => {
 			const discountedRub = Math.round(tier.totalRub * multiplier);
 			return {
 				...tier,
 				totalRub: discountedRub,
 				totalKopecks: Number(BigInt(discountedRub) * 100n),
-				stages: tier.stages.map((stage) => {
+				stages: tier.stages.map((stage): TreatmentPlanStage => {
 					const sRub = Math.round(stage.totalRub * multiplier);
 					return {
 						...stage,
 						totalRub: sRub,
 						totalKopecks: Math.round(sRub * 100),
-						items: stage.items.map((it) => ({
+						items: stage.items.map((it): TreatmentPlanItem => ({
 							...it,
 							priceRub: Math.round(it.priceRub * multiplier),
-							unitPriceRub: typeof it.unitPriceRub === "number" ? Math.round(it.unitPriceRub * multiplier) : undefined,
+							unitPriceRub: typeof it.unitPriceRub === "number" ? Math.round(it.unitPriceRub * multiplier) : 0,
 						})),
 					};
 				}),
 			};
 		});
-	}, [propTiers, doctorDiscountPercent]);
+	}, [propTiers, teeth, doctorDiscountPercent]);
+
+	const storageKey = `dente_presenter_draft_${planId || patientId || "default"}`;
+
+	// Восстановление драфта из localStorage (Мандат 8e)
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		try {
+			const saved = localStorage.getItem(storageKey);
+			if (saved) {
+				const parsed = JSON.parse(saved);
+				if (parsed.selectedTierId) setSelectedTierId(parsed.selectedTierId);
+				if (typeof parsed.doctorDiscountPercent === "number") setDoctorDiscountPercent(parsed.doctorDiscountPercent);
+			}
+		} catch {
+			// ignore
+		}
+	}, [storageKey]);
+
+	// Debounced autosave (Мандат 8e)
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const timer = setTimeout(() => {
+			try {
+				localStorage.setItem(
+					storageKey,
+					JSON.stringify({
+						selectedTierId,
+						doctorDiscountPercent,
+						updatedAt: new Date().toISOString(),
+					})
+				);
+			} catch {
+				// ignore
+			}
+		}, 300);
+		return () => clearTimeout(timer);
+	}, [selectedTierId, doctorDiscountPercent, storageKey]);
 
 	const activeTier = useMemo(() => {
 		return (
@@ -147,6 +191,54 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 			void navigator.clipboard.writeText(text);
 		}
 	}, [patientName, doctorFullName, activeTier]);
+
+	const handleSendToMessenger = useCallback(() => {
+		const planTitle = activeTier?.title || "План лечения";
+		const totalStr = formatRubles(activeTier?.totalRub || 0);
+		const stagesSummary = (activeTier?.stages || [])
+			.map((s, i) => `${i + 1}. ${s.title}: ${formatRubles(s.totalRub)}`)
+			.join("\n");
+		const msg = `Здравствуйте, ${patientName}!\nВаш план лечения «${planTitle}» в DENTE:\nСумма: ${totalStr}\n\nЭтапы реабилитации:\n${stagesSummary}\n\nС уважением, ${doctorFullName}`;
+
+		if (typeof navigator !== "undefined" && navigator.clipboard) {
+			void navigator.clipboard.writeText(msg);
+		}
+
+		const cleanPhone = patientPhone.replace(/[^\d+]/g, "");
+		if (cleanPhone && typeof window !== "undefined") {
+			const encoded = encodeURIComponent(msg);
+			const waUrl = `https://wa.me/${cleanPhone.replace("+", "")}?text=${encoded}`;
+			window.open(waUrl, "_blank", "noopener,noreferrer");
+		}
+	}, [activeTier, patientName, doctorFullName, patientPhone]);
+
+	const handleStagePayment = useCallback((stage: TreatmentPlanStage) => {
+		setCheckoutStage(stage);
+		setIsCheckoutOpen(true);
+		if (onPayStage) {
+			onPayStage(stage);
+		}
+		if (typeof fetch !== "undefined") {
+			void fetch("/api/invoices/generate-from-plan", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					planId: planId || "plan-custom",
+					patientId: patientId || "pat-walkin",
+					documentType: "WorkOrder",
+					isSignedWithPatient: true,
+					items: stage.items.map((it) => ({
+						nameRu: it.name,
+						lineGrossRub: it.priceRub,
+						quantity: it.quantity,
+						serviceCode: it.serviceCode || it.code804n,
+					})),
+				}),
+			}).catch(() => {
+				// graceful fallback
+			});
+		}
+	}, [onPayStage, planId, patientId]);
 
 	if (!isOpen) return null;
 
@@ -176,6 +268,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 					activeTab={activeTab}
 					onTabChange={setActiveTab}
 					onCopyTiersSummary={handleCopySummary}
+					onSendToMessenger={handleSendToMessenger}
 					isCopilotOpen={isCopilotOpen}
 					onToggleCopilot={() => setIsCopilotOpen((prev) => !prev)}
 					copilotPrompt={copilotPrompt}
@@ -210,11 +303,7 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								activeTier={activeTier}
 								expandedStageIndex={expandedStageIndex}
 								onToggleStage={(idx) => setExpandedStageIndex((prev) => (prev === idx ? null : idx))}
-								onPayStageClick={(stage) => {
-									setCheckoutStage(stage);
-									setIsCheckoutOpen(true);
-									if (onPayStage) onPayStage(stage);
-								}}
+								onPayStageClick={handleStagePayment}
 							/>
 						</div>
 					)}
@@ -260,6 +349,18 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 								<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
 								<span className="hidden sm:inline">Печать сметы плана</span>
 								<span className="sm:hidden">Печать</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handleSendToMessenger}
+								className="btn-treatment-action secondary-button dente-btn dente-btn-secondary min-h-[44px] flex-1 px-3 sm:px-4 py-2 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] inline-flex items-center justify-center gap-1.5 cursor-pointer transition-all"
+								data-testid="send-to-messenger-btn"
+								title="Отправить смету пациенту (WhatsApp / Telegram / SMS)"
+							>
+								<Send className="w-4 h-4 text-[var(--muted)] shrink-0" />
+								<span className="hidden sm:inline">В мессенджер</span>
+								<span className="sm:hidden">Мессенджер</span>
 							</button>
 
 							{onApproveAndSign && (

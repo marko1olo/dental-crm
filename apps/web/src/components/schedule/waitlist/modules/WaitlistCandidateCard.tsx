@@ -9,12 +9,12 @@ import {
 export interface WaitlistCandidateCardProps {
 	candidate: WaitlistCandidateItem;
 	scoring: WaitlistCandidateScoring;
-	targetSlot?: TargetSlotInfo | null;
+	targetSlot?: TargetSlotInfo | null | undefined;
 	clinicName: string;
 	copiedId: string | null;
 	onCopyOfferMessage: (candidate: WaitlistCandidateItem) => void;
 	onBookCandidate: (candidate: WaitlistCandidateItem) => void;
-	onAssignCandidate?: (candidate: WaitlistCandidateItem) => void;
+	onAssignCandidate?: ((candidate: WaitlistCandidateItem) => void) | undefined;
 }
 
 export function WaitlistCandidateCard({

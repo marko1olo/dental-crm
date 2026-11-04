@@ -3,25 +3,38 @@ import { useVisitStore } from '../../../store/visitStore';
 export function syncVisitStoreWithAction(rawName: string, finalArgs: Record<string, unknown>): void {
   try {
     const store = useVisitStore.getState();
+    const explicitTooth = finalArgs.tooth
+      ? String(finalArgs.tooth)
+      : (Array.isArray(finalArgs.teeth) && finalArgs.teeth.length > 0 && finalArgs.teeth[0]
+        ? String(finalArgs.teeth[0])
+        : null);
+
     if (rawName.includes('043') || rawName.includes('diary') || rawName.includes('note')) {
-      const toothCode = String(finalArgs.tooth || (Array.isArray(finalArgs.teeth) ? finalArgs.teeth[0] : '') || '36');
-      const diagStr = String(finalArgs.diagnosis || finalArgs.icd10 || 'K02.1');
-      if (toothCode) {
-        store.applyAiToothCodes([toothCode], 'done', { [toothCode]: 'treatment' }, { [toothCode]: diagStr });
+      const diagStr = finalArgs.diagnosis
+        ? String(finalArgs.diagnosis)
+        : (finalArgs.icd10 ? String(finalArgs.icd10) : undefined);
+
+      if (explicitTooth) {
+        store.applyAiToothCodes([explicitTooth], 'done', { [explicitTooth]: 'treatment' }, diagStr ? { [explicitTooth]: diagStr } : undefined);
       }
       store.setVisitNoteForm((prev) => ({
         ...prev,
-        complaint: String(finalArgs.complaint || finalArgs.complaints || prev.complaint),
-        anamnesis: String(finalArgs.anamnesis || prev.anamnesis),
-        objectiveStatus: String(finalArgs.objectiveStatus || finalArgs.objective || prev.objectiveStatus),
-        diagnosis: String(finalArgs.diagnosis || prev.diagnosis),
-        treatmentPlan: String(finalArgs.treatmentPlan || finalArgs.treatment || prev.treatmentPlan),
+        complaint: finalArgs.complaint || finalArgs.complaints ? String(finalArgs.complaint || finalArgs.complaints) : prev.complaint,
+        anamnesis: finalArgs.anamnesis ? String(finalArgs.anamnesis) : prev.anamnesis,
+        objectiveStatus: finalArgs.objectiveStatus || finalArgs.objective ? String(finalArgs.objectiveStatus || finalArgs.objective) : prev.objectiveStatus,
+        diagnosis: finalArgs.diagnosis ? String(finalArgs.diagnosis) : prev.diagnosis,
+        treatmentPlan: finalArgs.treatmentPlan || finalArgs.treatment ? String(finalArgs.treatmentPlan || finalArgs.treatment) : prev.treatmentPlan,
       }));
     } else if (rawName.includes('estimate') || rawName.includes('plan')) {
-      const teethList = Array.isArray(finalArgs.teeth) && finalArgs.teeth.length > 0 ? finalArgs.teeth.map(String) : ['36'];
-      const plannedMap: Record<string, 'planned'> = {};
-      teethList.forEach((t) => { plannedMap[t] = 'planned'; });
-      store.applyAiToothCodes(teethList, 'planned', plannedMap);
+      const teethList = Array.isArray(finalArgs.teeth) && finalArgs.teeth.length > 0
+        ? finalArgs.teeth.map(String)
+        : (finalArgs.tooth ? [String(finalArgs.tooth)] : []);
+
+      if (teethList.length > 0) {
+        const plannedMap: Record<string, 'planned'> = {};
+        teethList.forEach((t) => { plannedMap[t] = 'planned'; });
+        store.applyAiToothCodes(teethList, 'planned', plannedMap);
+      }
     }
   } catch {
     // resilient

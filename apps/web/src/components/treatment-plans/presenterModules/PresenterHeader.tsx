@@ -20,6 +20,7 @@ export interface PresenterHeaderProps {
 	readonly onPrint: () => void;
 	readonly onClose: () => void;
 	readonly onCopyTiersSummary: () => void;
+	readonly onSendToMessenger?: () => void;
 	readonly isCopilotOpen: boolean;
 	readonly onToggleCopilot: () => void;
 	readonly copilotPrompt: string;
@@ -39,6 +40,7 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 	onPrint,
 	onClose,
 	onCopyTiersSummary,
+	onSendToMessenger,
 	isCopilotOpen,
 	onToggleCopilot,
 	copilotPrompt,
@@ -96,6 +98,19 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 						<Copy className="w-4 h-4 text-[var(--muted)]" />
 						<span>Скопировать смету</span>
 					</button>
+
+					{onSendToMessenger && (
+						<button
+							type="button"
+							onClick={onSendToMessenger}
+							className="treatment-presenter-desktop-only min-h-[40px] px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line-subtle)] hidden md:inline-flex items-center gap-1.5 cursor-pointer"
+							title="Отправить смету пациенту (WhatsApp / Telegram / SMS)"
+							data-testid="presenter-send-messenger-btn"
+						>
+							<Send className="w-4 h-4 text-[var(--muted)]" />
+							<span>В мессенджер</span>
+						</button>
+					)}
 
 					<button
 						type="button"
