@@ -920,6 +920,36 @@ describe("readVolumeScalarData", () => {
 		assert.strictEqual(result.scalarData, scalarData);
 	});
 
+	test("both image cache and legacy accessor throwing returns volume_not_ready refusal without throwing", () => {
+		const result = readVolumeScalarData(
+			volume({
+				getCompleteScalarDataArray: () => {
+					throw new Error("cache read failure");
+				},
+				getScalarData: () => {
+					throw new Error("legacy read failure");
+				},
+			}),
+			decoded,
+		);
+		assert.strictEqual(result.status, "unavailable");
+		assert.strictEqual(result.reason, "volume_not_ready");
+	});
+
+	test("image cache throwing and legacy accessor returning undefined returns volume_not_ready refusal", () => {
+		const result = readVolumeScalarData(
+			volume({
+				getCompleteScalarDataArray: () => {
+					throw new Error("cache read failure");
+				},
+				getScalarData: () => undefined as unknown as ArrayLike<number>,
+			}),
+			decoded,
+		);
+		assert.strictEqual(result.status, "unavailable");
+		assert.strictEqual(result.reason, "volume_not_ready");
+	});
+
 	test("no volume, no voxel manager and unusable dimensions are all refusals", () => {
 		const cases: (VolumeScalarDataSource | null | undefined)[] = [
 			null,
