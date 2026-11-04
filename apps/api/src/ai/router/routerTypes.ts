@@ -84,6 +84,8 @@ export interface AgentRouterChatParams {
 	response_format?: { type: "text" | "json_object" } | undefined;
 	timeoutMs?: number | undefined; // default 120s
 	signal?: AbortSignal | undefined;
+	apiKey?: string | undefined;
+	baseUrl?: string | undefined;
 }
 
 export interface AgentRouterChoice {

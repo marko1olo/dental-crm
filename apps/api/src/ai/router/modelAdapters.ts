@@ -147,6 +147,113 @@ export async function validateGeminiApiKeyLive(
 	}
 }
 
+export interface UniversalKeyValidationResult {
+	valid: boolean;
+	provider: string;
+	model: string;
+	keyMask: string;
+	latencyMs: number;
+	baseUrl: string;
+	error?: string | undefined;
+}
+
+/**
+ * Universal live health-check probe for BYOK API keys (Gemini, OpenAI, DeepSeek, Custom).
+ */
+export async function validateUniversalApiKeyLive(
+	provider: string,
+	apiKey: string,
+	targetModel?: string,
+	customBaseUrl?: string,
+	fetchFn: typeof fetch = globalThis.fetch,
+): Promise<UniversalKeyValidationResult> {
+	const prov = (provider || "gemini").toLowerCase();
+	const keyMask = maskApiKey(apiKey);
+	const start = Date.now();
+
+	if (!apiKey || typeof apiKey !== "string" || !apiKey.trim()) {
+		return {
+			valid: false,
+			provider: prov,
+			model: targetModel || "default",
+			keyMask: "...none",
+			latencyMs: 0,
+			baseUrl: customBaseUrl || "",
+			error: "API-ключ не заполнен",
+		};
+	}
+
+	if (prov === "gemini") {
+		const res = await validateGeminiApiKeyLive(apiKey, fetchFn, targetModel || DEFAULT_GEMINI_MODEL);
+		return {
+			valid: res.valid,
+			provider: "gemini",
+			model: res.model,
+			keyMask: res.keyMask,
+			latencyMs: res.latencyMs,
+			baseUrl: res.baseUrl,
+			error: res.error,
+		};
+	}
+
+	const baseUrl = (customBaseUrl || (prov === "deepseek" ? "https://api.deepseek.com/v1" : "https://api.openai.com/v1")).replace(/\/+$/, "");
+	const model = targetModel || (prov === "deepseek" ? "deepseek-chat" : "gpt-4o-mini");
+
+	try {
+		const controller = new AbortController();
+		const timeout = setTimeout(() => controller.abort(), 8000);
+
+		const response = await fetchFn(`${baseUrl}/chat/completions`, {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				Authorization: `Bearer ${apiKey.trim()}`,
+			},
+			body: JSON.stringify({
+				model,
+				messages: [{ role: "user", content: "ping" }],
+				max_tokens: 1,
+			}),
+			signal: controller.signal,
+		});
+
+		clearTimeout(timeout);
+		const latencyMs = Date.now() - start;
+
+		if (response.ok) {
+			return {
+				valid: true,
+				provider: prov,
+				model,
+				keyMask,
+				latencyMs,
+				baseUrl,
+			};
+		}
+
+		const errBody = await response.text().catch(() => "");
+		return {
+			valid: false,
+			provider: prov,
+			model,
+			keyMask,
+			latencyMs,
+			baseUrl,
+			error: `HTTP ${response.status}: ${errBody.slice(0, 150)}`,
+		};
+	} catch (err) {
+		return {
+			valid: false,
+			provider: prov,
+			model,
+			keyMask,
+			latencyMs: Date.now() - start,
+			baseUrl,
+			error: err instanceof Error ? err.message : String(err),
+		};
+	}
+}
+
 /**
  * Resolves effective API keys based on the targeted model (e.g. Gemini vs AgentRouter).
  */

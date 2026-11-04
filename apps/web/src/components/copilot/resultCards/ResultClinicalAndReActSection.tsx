@@ -3,11 +3,45 @@ import type { Protocol043Data, ReactStepItem } from '../copilotTypes';
 import { CopilotReactTracker } from '../cards/CopilotReactTracker';
 import { CopilotClinicalProtocolCard } from '../cards/CopilotClinicalProtocolCard';
 import { CopilotSoapDiaryCard } from '../cards/CopilotSoapDiaryCard';
+import {
+  CopilotSurgeryPassportCard,
+  type CopilotSurgeryPassportData,
+} from '../cards/CopilotSurgeryPassportCard';
 import type { ClinicalProtocolCardData } from '../cards/types';
 
 type Obj = Record<string, unknown>;
 
 export function renderClinicalAndReActSection(tool: string, obj: Obj): React.ReactNode | null {
+  // Surgery & Implant Passport Card
+  if (
+    tool.includes('surgery') ||
+    tool.includes('implant') ||
+    obj.implantSystem !== undefined ||
+    obj.torqueNcm !== undefined
+  ) {
+    const passportData: CopilotSurgeryPassportData = {
+      toothNumber:
+        (obj.tooth as string | number) ??
+        (obj.toothNumber as string | number) ??
+        46,
+      procedureName: String(
+        obj.procedureName || obj.procedure || 'Дентальная имплантация'
+      ),
+      implantSystem: typeof obj.implantSystem === 'string' ? obj.implantSystem : undefined,
+      implantSize: typeof obj.implantSize === 'string' ? obj.implantSize : undefined,
+      torqueNcm: typeof obj.torqueNcm === 'number' ? obj.torqueNcm : undefined,
+      isqIndex: typeof obj.isqIndex === 'number' ? obj.isqIndex : undefined,
+      membrane: typeof obj.membrane === 'string' ? obj.membrane : undefined,
+      boneGraft: typeof obj.boneGraft === 'string' ? obj.boneGraft : undefined,
+      lotNumber: typeof obj.lotNumber === 'string' ? obj.lotNumber : undefined,
+      osteointegrationMonths:
+        typeof obj.osteointegrationMonths === 'number'
+          ? obj.osteointegrationMonths
+          : undefined,
+      isApplied: Boolean(obj.isApplied || obj.applied),
+    };
+    return <CopilotSurgeryPassportCard data={passportData} />;
+  }
   // ReAct Execution Tracker
   if (
     tool.includes('react') ||

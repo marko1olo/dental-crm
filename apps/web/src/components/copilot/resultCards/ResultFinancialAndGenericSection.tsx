@@ -1,10 +1,51 @@
 import React from 'react';
 import { CreditCard } from 'lucide-react';
 import { formatMoney } from '../useCopilotFormat';
+import {
+  CopilotCashboxInvoiceCard,
+  type CopilotCashboxInvoiceData,
+} from '../cards/CopilotCashboxInvoiceCard';
 
 type Obj = Record<string, unknown>;
 
 export function renderFinancialAndGenericSection(tool: string, obj: Obj, result: unknown): React.ReactNode {
+  // Cashbox & 54-FZ Invoice Action Card
+  if (
+    tool.includes('invoice') ||
+    tool.includes('cashbox') ||
+    tool.includes('createinvoicedraft') ||
+    obj.amountKopecks !== undefined ||
+    obj.totalKopecks !== undefined
+  ) {
+    const rawTotalKopecks = Number(
+      obj.amountKopecks ||
+        obj.totalKopecks ||
+        (typeof obj.total_rub === 'number' ? obj.total_rub * 100 : 0)
+    );
+    const rawItems = Array.isArray(obj.items)
+      ? obj.items.map((it: any) => ({
+          name: String(it.name || it.procedureName || 'Стоматологическая процедура'),
+          tooth: it.tooth,
+          priceRub: Number(
+            it.priceRub || (it.priceKopecks ? Math.round(it.priceKopecks / 100) : 0)
+          ),
+        }))
+      : [];
+
+    const invoiceData: CopilotCashboxInvoiceData = {
+      patientId: typeof obj.patientId === 'string' ? obj.patientId : undefined,
+      patientName: typeof obj.patientName === 'string' ? obj.patientName : undefined,
+      invoiceNumber: typeof obj.invoiceNumber === 'string' ? obj.invoiceNumber : undefined,
+      items: rawItems,
+      totalKopecks: rawTotalKopecks,
+      doctorDiscountPercent:
+        typeof obj.doctorDiscountPercent === 'number'
+          ? obj.doctorDiscountPercent
+          : undefined,
+      isFiscalized: Boolean(obj.isFiscalized || obj.paid),
+    };
+    return <CopilotCashboxInvoiceCard data={invoiceData} />;
+  }
   // Financial summary
   if (tool.includes('revenue') || tool.includes('debt') || tool.includes('finance') || typeof obj.total_rub === 'number' || typeof obj.total === 'number') {
     const total = typeof obj.total_rub === 'number' ? obj.total_rub : typeof obj.total === 'number' ? obj.total : null;

@@ -31,3 +31,11 @@ export {
 	ProactiveAlertCardView,
 	WhatsAppApprovalCardView,
 } from "./cards/ProactiveAndWhatsAppCards";
+export {
+	CopilotCashboxInvoiceCard,
+	type CopilotCashboxInvoiceData,
+} from "./cards/CopilotCashboxInvoiceCard";
+export {
+	CopilotSurgeryPassportCard,
+	type CopilotSurgeryPassportData,
+} from "./cards/CopilotSurgeryPassportCard";

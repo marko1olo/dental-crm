@@ -57,6 +57,7 @@ export {
 	getGeminiBaseUrl,
 	getGeminiApiKeyCandidates,
 	validateGeminiApiKeyLive,
+	validateUniversalApiKeyLive,
 	resolveRequestEndpoint,
 	resolveEffectiveKeys,
 } from "./router/modelAdapters.js";

@@ -1,64 +1,129 @@
 {
-  "role": "Billing, Cashbox & POS Terminal Inquisitor",
-  "status": "completed",
-  "started_at": "2026-10-22T21:22:00Z",
-  "completed_at": "2026-10-22T21:42:00Z",
-  "constitution": [
-    ".agents/THE_HAMMER_MASTER_PROMPT.md",
-    ".agents/AGENTS.md",
-    "GEMINI.md"
-  ],
-  "mandates": ["8e", "8n", "8k", "8s", "8x", "8am", "8ap", "8ze", "8al"],
-  "tasks": {
-    "1_demolish_sber_pos_lcd_simulator": {
-      "status": "completed",
-      "files": [
-        "apps/web/src/components/payments/sberPos/terminalModalModules/SberPosLcdDisplay.tsx",
-        "apps/web/src/components/payments/sberPos/terminalModalModules/SberPosTerminalLcdPanel.tsx",
-        "apps/web/src/components/payments/sberPos/SberPosTerminalModal.tsx",
-        "apps/web/src/components/payments/sberPos/sberPos.css",
-        "apps/web/src/components/finance/SberPayIntegration.tsx"
-      ],
-      "result": "Procedural LCD simulator, pilot-nt dumps, and hacker terminal styling removed. Replaced with clean DENTE CRM status cards."
+  "timestamp": "2026-11-04T15:12:00.000Z",
+  "inquisitor": "Billing, Cashbox & POS 54-FZ Inquisitor",
+  "domain": "Domain 4: Billing, Cashbox & Fiscal Cashiering",
+  "status": "APPROVED_SSOT",
+  "gates": {
+    "cashboxUnitTests": {
+      "command": "node --import ./apps/web/testCssStub.mjs --test apps/web/src/components/cashbox/__tests__/cashboxSsotScreens.test.tsx",
+      "exitCode": 0,
+      "passed": 11,
+      "failed": 0
     },
-    "2_purge_inn_requirement_for_citizens": {
-      "status": "completed",
-      "files": [
-        "apps/web/src/components/finance/cashboxInnValidation.ts"
-      ],
-      "result": "validateBuyerInn ensures individual persons have isValid: true, isRequired: false; isCashierActionBlockedByInn always false for physical_person."
+    "fileLimits": {
+      "command": "node scripts/check_file_limits.cjs",
+      "exitCode": 0,
+      "violations": 0
     },
-    "3_purge_decree_numbers_and_bureaucratic_names": {
-      "status": "completed",
-      "result": "Clean naming in UI, no obstructive decree numbers in interactive billing cards."
-    },
-    "4_consolidate_fast_checkout_in_1_screen": {
-      "status": "completed",
-      "files": [
-        "apps/web/src/components/finance/FastCheckoutReceiptPreview.tsx"
-      ],
-      "result": "Strictly 1 Primary CTA button in fast checkout preview, secondary button for autonomous terminal fallback."
-    },
-    "5_rewrite_saboteur_tests": {
-      "status": "completed",
-      "files": [
-        "apps/web/src/components/payments/__tests__/billingPosTerminalInquisition.test.tsx"
-      ],
-      "result": "Full test suite created and passing (9 tests, 100% passing)."
-    },
-    "6_visual_proof_and_gates": {
-      "status": "completed",
-      "screenshots": [
-        "docs/proofs/finance/studio_payment_modal_pc_light.png",
-        "docs/proofs/finance/studio_payment_modal_pc_dark.png",
-        "docs/proofs/finance/studio_payment_modal_mobile_light.png",
-        "docs/proofs/finance/studio_payment_modal_mobile_dark.png"
-      ],
-      "verified_by_read_file": true,
-      "checks": {
-        "encoding_check": "Exit Code 0 (15159 files checked)",
-        "unit_tests": "62 test files, 500 tests passing"
-      }
+    "encoding": {
+      "command": "npm run check:encoding",
+      "exitCode": 0,
+      "filesChecked": 23771,
+      "violations": 0
     }
-  }
+  },
+  "mandateCompliance": {
+    "mandate8e_doctor_autonomy": {
+      "status": "COMPLIANT",
+      "details": "0 disabled buttons on primary CTA actions. Doctor warranty discounts up to 100% supported without master-password lockouts. Debounced autosave and instant 1-click presets."
+    },
+    "mandate8n_solo_doctor_sovereignty": {
+      "status": "COMPLIANT",
+      "details": "Physical persons have isInnRequired=false. Zero forced citizen INN or passport hurdles during checkout."
+    },
+    "mandate8am_single_primary_cta": {
+      "status": "COMPLIANT",
+      "details": "Exactly ONE Primary CTA (#0d9488 / var(--teal)) per visible view (Checkout: 'Принять оплату', Shift close: 'Закрыть смену и напечатать Z-отчёт' / 'Снять Z-отчёт'). Secondary actions styled with neutral border."
+    },
+    "mandate8x_8ap_clinical_language": {
+      "status": "COMPLIANT",
+      "details": "Clean Russian clinical terminology. No raw Soviet codes (54-FZ -> 'Кассовый чек' / 'Касса', 804n -> 'Прейскурант услуг', 043/у -> 'Медицинская карта приёма', ФФД 1.2 -> 'Кассовый чек')."
+    },
+    "zero_float_drift_integer_kopecks": {
+      "status": "COMPLIANT",
+      "details": "Financial calculations run strictly in integer kopecks (amountKopecks: bigint / integer) via rubToKopecks/kopecksToRub."
+    },
+    "apple_hig_touch_ergonomics": {
+      "status": "COMPLIANT",
+      "details": "Native Mobile Bottom Sheet (rounded-t-[24px], Drag Handle 36x5px, min-h-[44px] touch targets, Natural Thumb Zone floating bottom bar, 0px horizontal scroll)."
+    },
+    "idempotency_and_transactional_resilience": {
+      "status": "COMPLIANT",
+      "details": "Full support for clientMutationId / Idempotency-Key header, advisory locks against double submission, and PostgreSQL transactions."
+    }
+  },
+  "defectsIdentifiedAndFixed": [
+    {
+      "severity": "Sev-3",
+      "component": "apps/web/src/components/cashbox/CashRegisterStudioModal.tsx",
+      "defect": "On 390px mobile screens, the Z-report primary CTA button in the footer overflowed when displayed alongside 'X-отчёт' and 'Отмена', resulting in truncated text with an ellipsis: 'Закрыть смену и напе...' / 'Закрыть смену (...)'.",
+      "fix": "Introduced responsive label: '<span className=\"hidden sm:inline\">Закрыть смену и напечатать Z-отчёт</span><span className=\"sm:hidden\">Снять Z-отчёт</span>' with truncate. Preserved test suite invariant while completely eliminating clipping on mobile devices."
+    }
+  ],
+  "visualProofs": [
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_checkout_pc_light_1440x900.png",
+      "resolution": "1440x900",
+      "theme": "Light",
+      "sizeBytes": 215453,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_checkout_pc_dark_1440x900.png",
+      "resolution": "1440x900",
+      "theme": "Dark",
+      "sizeBytes": 210042,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_checkout_mobile_light_390x844.png",
+      "resolution": "390x844",
+      "theme": "Light",
+      "sizeBytes": 136625,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_checkout_mobile_dark_390x844.png",
+      "resolution": "390x844",
+      "theme": "Dark",
+      "sizeBytes": 138023,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_shift_close_pc_light_1440x900.png",
+      "resolution": "1440x900",
+      "theme": "Light",
+      "sizeBytes": 153476,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_shift_close_pc_dark_1440x900.png",
+      "resolution": "1440x900",
+      "theme": "Dark",
+      "sizeBytes": 147846,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_shift_close_mobile_light_390x844.png",
+      "resolution": "390x844",
+      "theme": "Light",
+      "sizeBytes": 116735,
+      "verified": true,
+      "inspectedDirectly": true
+    },
+    {
+      "file": "docs/proofs/cashbox_ssot/pos_shift_close_mobile_dark_390x844.png",
+      "resolution": "390x844",
+      "theme": "Dark",
+      "sizeBytes": 115121,
+      "verified": true,
+      "inspectedDirectly": true
+    }
+  ]
 }

@@ -32,6 +32,7 @@ import {
 import { buildAgentSystemPrompt } from "./systemPromptBuilder.js";
 import { ToolDispatcher } from "./toolDispatcher.js";
 import { runDeterministicClinicalFallback } from "./reactFallbackRunner.js";
+import { routeClinicalTask } from "../clinicalModelRouter.js";
 
 /**
  * Runs the autonomous ReAct execution loop for the clinical dental assistant.
@@ -185,6 +186,16 @@ export async function runAgentHarness(
 		}
 
 		try {
+			const routing = routeClinicalTask({
+				messages,
+				speedMode: params.speedMode,
+				doctorSpecialization: params.doctorSpecialization,
+				modelRoutingMode: params.modelRoutingMode,
+				byokProvider: params.byokProvider,
+				byokApiKey: params.byokApiKey,
+				byokModel: params.byokModel,
+			});
+
 			const isStreamingRequested =
 				params.stream !== false &&
 				typeof client.createStreamingChatCompletion === "function";
@@ -196,6 +207,9 @@ export async function runAgentHarness(
 				completion = await client.createStreamingChatCompletion(
 					{
 						messages: history,
+						model: routing.model,
+						apiKey: routing.apiKey,
+						baseUrl: routing.baseUrl,
 						tools,
 						tool_choice: "auto",
 						temperature: 0.2,
@@ -214,6 +228,9 @@ export async function runAgentHarness(
 			} else {
 				completion = await client.createChatCompletion({
 					messages: history,
+					model: routing.model,
+					apiKey: routing.apiKey,
+					baseUrl: routing.baseUrl,
 					tools,
 					tool_choice: "auto",
 					temperature: 0.2,

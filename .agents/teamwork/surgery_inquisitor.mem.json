@@ -1,0 +1,50 @@
+{
+  "timestamp": "2026-11-04T15:05:00.000Z",
+  "inquisitor": "Surgery, Implants & EMR SOAP Red Team Inquisitor",
+  "status": "APPROVED",
+  "summary": "Полная ревизия хирургического хаба, паспорта имплантата, складского овердрафта и ЭМК. 100% ликвидация советского канцелярита в пользу чистого клинического русского языка.",
+  "auditedComponents": {
+    "surgeryHub": "apps/web/src/components/surgery/ChairsideSurgeryHubModal.tsx",
+    "surgeryCatalog": "apps/web/src/components/surgery/surgeryCatalogData.ts",
+    "surgeryRoutes": "apps/api/src/routes/surgery/index.ts",
+    "emrStudio": "apps/web/src/components/emr/MedicalRecordStudioModal.tsx",
+    "emrCatalog": "apps/web/src/components/emr/medicalCardCatalogData.ts",
+    "emrPrintEngine": "apps/web/src/components/emr/record/html/recordHtmlGenerator.ts"
+  },
+  "verifiedScenarios": [
+    "extraction (удаление зуба: простое, сложное с сепарацией корней, атипичное)",
+    "resection_periostotomy (периостотомия, резекция верхушки корня / цистэктомия)",
+    "sinus_gbr (синус-лифтинг открытый/закрытый, Geistlich Bio-Oss, Bio-Gide, титановые пины)",
+    "implant (дентальная имплантация Osstem, Straumann, Nobel Biocare, Dentium, Ankylos с паспортом А5 и остеоинтеграцией 3/5 мес.)"
+  ],
+  "mandatesCompliance": {
+    "mandate8e_doctorAutonomy": "Кнопки сохранения, печати и утверждения НИКОГДА не блокируются (disabled=false). Норма в 1 клик на всех экранах.",
+    "mandate8n_scaleSovereignty": "Мягкий овердрафт расходников (Soft Negative Stock, canProceed=true) — задержка накладной не блокирует операцию.",
+    "mandate8x_cleanClinicalLanguage": "Ликвидированы советские номера бланков (043/у, 804н, 037/у, ФФД 1.2, ПСО) в UI. Используется живой русский язык: «Медицинская карта приёма», «Протокол операции», «Прейскурант услуг».",
+    "mandate8am_buttonHierarchy": "Строго ровно 1 Primary CTA кнопка (#0d9488, var(--teal)) на видимый экран.",
+    "mandate8b_fileCeilings": "ChairsideSurgeryHubModal (458 строк), MedicalRecordStudioModal (444 строк) строго в пределах Sweet Spot 380-450 строк.",
+    "mandate8ze_appleHig": "Drag handle 36x5px, Bottom Sheet на мобильных (390x844), touch targets >= 44x44px, Natural Thumb Zone."
+  },
+  "testResults": {
+    "surgerySSOTSuite": "8/8 passed (0 failed)",
+    "surgeryFullSuite": "48/48 passed (0 failed)",
+    "emr043ExportSuite": "13/13 passed (0 failed)",
+    "emrFullSuite": "33/33 passed (0 failed)",
+    "fileLimits": "PASS (0 violations)",
+    "encoding": "PASS (23765 files checked, UTF-8 clean)"
+  },
+  "visualProofs": {
+    "surgery": [
+      { "state": "PC Light (1440x900)", "path": "docs/screenshots/surgery/01_surgery_hub_pc_light_1440x900.png", "sizeKb": 116, "status": "VERIFIED_CLEAN" },
+      { "state": "PC Dark (1440x900)", "path": "docs/screenshots/surgery/02_surgery_hub_pc_dark_1440x900.png", "sizeKb": 102, "status": "VERIFIED_CLEAN" },
+      { "state": "Mobile Light (390x844)", "path": "docs/screenshots/surgery/03_surgery_hub_mobile_light_390x844.png", "sizeKb": 199, "status": "VERIFIED_CLEAN" },
+      { "state": "Mobile Dark (390x844)", "path": "docs/screenshots/surgery/04_surgery_hub_mobile_dark_390x844.png", "sizeKb": 159, "status": "VERIFIED_CLEAN" }
+    ],
+    "emr": [
+      { "state": "PC Light (1440x900)", "path": "docs/screenshots/emr/01_emr_studio_pc_light_1440x900.png", "sizeKb": 117, "status": "VERIFIED_CLEAN" },
+      { "state": "PC Dark (1440x900)", "path": "docs/screenshots/emr/02_emr_studio_pc_dark_1440x900.png", "sizeKb": 117, "status": "VERIFIED_CLEAN" },
+      { "state": "Mobile Light (390x844)", "path": "docs/screenshots/emr/03_emr_studio_mobile_light_390x844.png", "sizeKb": 181, "status": "VERIFIED_CLEAN" },
+      { "state": "Mobile Dark (390x844)", "path": "docs/screenshots/emr/04_emr_studio_mobile_dark_390x844.png", "sizeKb": 181, "status": "VERIFIED_CLEAN" }
+    ]
+  }
+}

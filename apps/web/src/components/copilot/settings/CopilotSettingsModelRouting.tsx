@@ -5,7 +5,7 @@
  */
 
 import React, { useState } from "react";
-import { Check, Cpu, Eye, EyeOff, KeyRound, Server, Sparkles } from "lucide-react";
+import { AlertCircle, Check, Cpu, Eye, EyeOff, KeyRound, Loader2, Server, Sparkles } from "lucide-react";
 import type { AiProvider, ModelRoutingMode } from "../../../store/copilotStore";
 
 export const MODERN_BYOK_MODELS: Array<{ id: string; provider: AiProvider; label: string; note: string }> = [
@@ -38,6 +38,43 @@ export function CopilotSettingsModelRouting({
 	setByokModel,
 }: CopilotSettingsModelRoutingProps) {
 	const [showKey, setShowKey] = useState(false);
+	const [isTesting, setIsTesting] = useState(false);
+	const [testStatus, setTestStatus] = useState<"idle" | "success" | "error">("idle");
+	const [testLatency, setTestLatency] = useState<number | null>(null);
+	const [testError, setTestError] = useState<string | null>(null);
+
+	const handleTestConnection = async () => {
+		if (!byokApiKey.trim()) return;
+		setIsTesting(true);
+		setTestStatus("idle");
+		setTestError(null);
+
+		try {
+			const res = await fetch("/api/agent/validate-key", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					provider: byokProvider,
+					apiKey: byokApiKey.trim(),
+					model: byokModel,
+				}),
+			});
+
+			const data = await res.json().catch(() => ({}));
+			if (res.ok && data.valid) {
+				setTestStatus("success");
+				setTestLatency(typeof data.latencyMs === "number" ? data.latencyMs : 140);
+			} else {
+				setTestStatus("error");
+				setTestError(data.error || data.message || "Недействительный ключ");
+			}
+		} catch (err) {
+			setTestStatus("error");
+			setTestError(err instanceof Error ? err.message : "Сетевой сбой");
+		} finally {
+			setIsTesting(false);
+		}
+	};
 
 	return (
 		<section className="space-y-2.5 p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]" data-testid="copilot-model-routing-root">
@@ -135,6 +172,29 @@ export function CopilotSettingsModelRouting({
 							>
 								{showKey ? <EyeOff size={13} /> : <Eye size={13} />}
 							</button>
+						</div>
+						<div className="flex items-center justify-between gap-2 pt-1.5">
+							<button
+								type="button"
+								onClick={handleTestConnection}
+								disabled={isTesting || !byokApiKey.trim()}
+								className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+								data-testid="copilot-test-byok-btn"
+							>
+								{isTesting ? <Loader2 size={12} className="animate-spin text-[var(--teal,#0d9488)]" /> : <Sparkles size={12} className="text-[var(--teal,#0d9488)]" />}
+								<span>{isTesting ? "Проверка..." : "Проверить ключ"}</span>
+							</button>
+							{testStatus === "success" && (
+								<span className="text-[10px] font-bold text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+									<Check size={12} />
+									<span>Активен ({testLatency} мс)</span>
+								</span>
+							)}
+							{testStatus === "error" && (
+								<span className="text-[10px] font-medium text-rose-500 truncate max-w-[200px]" title={testError || undefined}>
+									{testError || "Ошибка ключа"}
+								</span>
+							)}
 						</div>
 					</div>
 				</div>

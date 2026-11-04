@@ -96,4 +96,40 @@ describe('Copilot Specialized Result Cards', () => {
     assert.ok(htmlFiles.includes('CT_36_3D.dcm'));
     assert.ok(htmlFiles.includes('Открыть папку томографа'));
   });
+
+  it('renders CopilotCashboxInvoiceCard with exact kopeck billing and 54-FZ status', () => {
+    const invoiceResult = {
+      patientName: 'Иванов И.И.',
+      totalKopecks: 650000,
+      items: [{ name: 'Лечение пульпита 26', tooth: 26, priceRub: 6500 }],
+      doctorDiscountPercent: 10,
+    };
+    const html = renderToString(
+      <CopilotResultCard name="createInvoiceDraftTool" result={invoiceResult} />
+    );
+    assert.ok(html.includes('Счёт: Иванов И.И.'));
+    assert.ok(html.includes('Без ИНН физлица'));
+    assert.ok(html.includes('6\u00A0500') || html.includes('6500'));
+    assert.ok(html.includes('Оплатить в кассе'));
+  });
+
+  it('renders CopilotSurgeryPassportCard with implant system, torque, and osteointegration timer', () => {
+    const surgeryResult = {
+      toothNumber: 46,
+      procedureName: 'Установка имплантата',
+      implantSystem: 'Straumann BLX',
+      implantSize: '4.0x10 мм',
+      torqueNcm: 45,
+      isqIndex: 78,
+      boneGraft: 'Bio-Oss 0.5g',
+    };
+    const html = renderToString(
+      <CopilotResultCard name="recordSurgeryProtocolTool" result={surgeryResult} />
+    );
+    assert.ok(html.includes('Хирургия: Зуб') && html.includes('46'));
+    assert.ok(html.includes('Straumann BLX'));
+    assert.ok(html.includes('45'));
+    assert.ok(html.includes('Таймер: 3 мес')); // Mandible is 3 months
+    assert.ok(html.includes('Внести в протокол'));
+  });
 });

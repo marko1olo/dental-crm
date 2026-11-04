@@ -58,7 +58,7 @@ For an exhaustive, machine-verified catalog of all 771 endpoints with method, pa
 1.  **Auth & Identity:** Staff credentials, PIN switch, sessions, and guest patient OTP portal (`routes/auth.ts`, `routes/portal.ts`, `routes/staff.ts`).
 2.  **Patients & CRM:** Full patient records, relations, duplicate merge queue, CRM leak detector (210-day churn), and loyalty/referral programs (`routes/patients.ts`, `routes/crmLeakDetector.ts`, `routes/loyalty.ts`).
 3.  **Schedule & Booking:** Chair calendar, appointments, morning confirmation queue (`routes/dayConfirmations.ts`), waitlist auto-matching (`routes/waitlistMatches.ts`), and public booking widgets.
-4.  **Clinical EHR & Odontogram:** 043/у diaries, versioned corrections ("исправленному верить"), pediatric/permanent tooth charts, anesthesia calculators, implant passports, and treatment plan bundles.
+4.  **Clinical EHR & Odontogram:** EHR diaries, versioned corrections ("исправленному верить"), pediatric/permanent tooth charts, anesthesia calculators, implant passports, and treatment plan bundles.
 5.  **Radiology & DICOM:** Direct RVG sensor capture (<50ms preview), DICOM study ingestion, DICOMweb (WADO-RS / QIDO-RS), 3D implant planning, and Diagnocat AI integration.
 6.  **Billing, Cash & 54-FZ:** Idempotent payment processing, 54-FZ fiscal receipt validation and generation, offline KKT retry queue, multi-cashbox shifts, P&L reporting, SBP dynamic QR, and Sber POS terminal webhooks.
 7.  **Warehouse & SanPiN:** 1-click nurse carpule disposal (no 3-person commission), soft overdraft on delayed supplier invoices, 5 canonical registers: 1) Autoclave journal, 2) Cleaning control, 3) UV lamps & disinfection, 4) Medical waste disposal (Class A/B), 5) Equipment fleet, with 1-click batch shift closure, and Chestny Znak (MDLP).
@@ -124,7 +124,7 @@ The frontend is a Single Page Application (SPA) built with **React 19** and Vite
 *   **Zustand Stores:** Dedicated stores for decoupled UI state:
     *   `appStore.ts` — Active view navigation (`currentView`), omnibar, global alerts.
     *   `patientStore.ts` — Selected patient profile, tooth status cache.
-    *   `visitStore.ts` — Active visit diary 043/у drafts, auto-save state.
+    *   `visitStore.ts` — Active visit diary EHR drafts, auto-save state.
     *   `scheduleStore.ts` — Calendar filter state, active chair views.
     *   `settingsStore.ts` — Clinic preferences and UI configuration.
     *   `imagingStore.ts` — Selected DICOM series, active viewer layout.

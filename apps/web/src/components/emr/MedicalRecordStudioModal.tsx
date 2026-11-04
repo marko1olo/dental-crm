@@ -207,7 +207,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								{effectiveIsDraft ? <FileText className="w-3 h-3 text-amber-600" /> : <Check className="w-3 h-3 text-emerald-600" />}
 								{effectiveIsDraft ? "ЧЕРНОВИК" : "ПОДПИСАНО ВРАЧОМ"}
 							</span>
-							<div className="min-w-0">
+							<div className="min-w-0 w-full">
 								<h2 className="emr-studio-title emr043-header-title truncate">
 									Медицинская карта приёма № {formData.passport.medicalCardNumber || "—"}
 								</h2>

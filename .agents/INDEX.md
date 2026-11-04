@@ -68,7 +68,7 @@
 15. **[AI_ASSISTANT_HARNESS_SPEC.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_HARNESS_SPEC.md)** — Спецификация ReAct харнесса ИИ: конечный автомат, потоковый SSE протокол, мгновенная отмена AbortSignal, Max Iterations Guard (6 итераций), двухфазный Guard подтверждения, маскирование API-ключей.
 16. **[AI_ASSISTANT_TOOL_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_TOOL_REGISTRY.md)** — Полный технический реестр 29 инструментов (13 Web CRM + 16 Desktop Native): Zod-схемы, JSON Schema, контракты ответов, деструктивные флаги и права доступа.
 17. **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Архитектура и инструментальный харнесс ИИ-ассистента: 3-уровневый контур, Dental Tool Arsenal (29 инструментов), Chairside Sentinel, речевой стенографист FDI, копайлот планов лечения, анализ снимков RVG/CBCT, телеметрия PostgreSQL 18.
-18. **[AI_ASSISTANT_CHAIRSIDE_SENTINEL.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_CHAIRSIDE_SENTINEL.md)** — Стенографист приёма, грамматика зубной формулы FDI (11–48 / 51–85), акустическая очистка шума турбины/слюноотсоса, синтез SOAP Формы 043/у и страж Chairside Sentinel.
+18. **[AI_ASSISTANT_CHAIRSIDE_SENTINEL.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_CHAIRSIDE_SENTINEL.md)** — Стенографист приёма, грамматика зубной формулы FDI (11–48 / 51–85), акустическая очистка шума турбины/слюноотсоса, синтез SOAP дневников приёма (ЭМК) и страж Chairside Sentinel.
 19. **[AI_ASSISTANT_DESKTOP_MCP.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md)** — Архитектура десктопного харнесса (.EXE / Windows), файловый движок клиники, фоновые задачи (schedule/manage_task), управление софтом томографов (Romexis, EzDent, Sidexis, 3Shape), оптический захват экрана визиографа и аппаратный MCP-мост (Атол, Штрих-М, Честный Знак, TWAIN).
 20. **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Drizzle ORM PostgreSQL 18.4 (`.data/pg18`, порт 5432), пул соединений, RLS, 20 модулей схемы, 209 таблиц `pgTable`, регламент миграций.
 20. **[DATABASE_SETUP.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md)** — Развёртывание PostgreSQL, обход ошибки `0040`, PL/pgSQL полифилл `uuidv7()`.
@@ -80,8 +80,8 @@
 
 ### 3. Функциональные Модули CRM (`.agents/`)
 17. **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры услуг и связывание с Мандатом 8e (Zero-Friction для врача).
-17. **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр протоколов 043/у (K02–K08), клинических пакетов услуг «под ключ» 804н, клинических протоколов и анестезии.
-18. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей по `clientMutationId`, касса 54-ФЗ без ИНН у физлиц, комбинированные оплаты, семейные кошельки, справка ФНС 1151156.
+17. **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр протоколов ЭМК (K02–K08), клинических пакетов услуг прейскуранта «под ключ», клинических протоколов и анестезии.
+18. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей по `clientMutationId`, касса без ИНН у физлиц, комбинированные оплаты, семейные кошельки, справка ФНС 1151156.
 19. **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учёт, техкарты процедур (BOM), 1-клик списание расходников без комиссий, мягкий овердрафт при задержке накладных.
 20. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл документов (draft / issued / voided), headless Chromium/Edge генератор PDF, SHA-256 подпись, водяной знак ЧЕРНОВИК, штампы УКЭП.
 21. **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки АТС Mango/Zadarma/UIS, тихий режим софтфона для врача, ambient-баннер для регистратуры, OTP-авторизация и PWA портал саморегистрации.
@@ -160,17 +160,17 @@
    - Софт обязан помогать врачу лечить людей, а не служить бюрократическим цербером.
    - Кнопки «Сохранить», «Завершить приём», «Добавить услугу», «Печать» НИКОГДА не блокируются (`disabled`) из-за незаполненных второстепенных полей.
    - Физиологическая норма («Соматически здоров / Осмотр в норме») заполняется в 1 клик.
-   - Свобода черновиков 043/у с debounced autosave. Смена вкладки или звонок никогда не уничтожают черновик.
+   - Свобода черновиков ЭМК с debounced autosave. Смена вкладки или звонок никогда не уничтожают черновик.
    - Печать документов в любой момент (незакрытый приём — штамп «ЧЕРНОВИК», закрытый — «ПОДПИСАНО ВРАЧОМ»).
    - Врач свободно применяет скидки до 100% на переделки и персонал без мастер-паролей администратора.
-   - Касса 54-ФЗ не требует ИНН с физических лиц при оплате налом/картой; принимает комбинированную оплату в 1 клик.
+   - Касса не требует ИНН с физических лиц при оплате налом/картой; принимает комбинированную оплату в 1 клик.
    - Списание ресурсов и расходников выполняется автоматически или в 1 клик без бюрократических комиссий.
 3. **Стандарты Эргономики и Верстки Apple & Mac (Studio Clinical HIG):**
-   - **80% Десктоп ПК:** Плотная профессиональная вёрстка (панель пилота), компактные тулбары 32–36px, быстрые хоткеи (`Cmd/Ctrl+K`, `Esc`), 150ms Hover HUD, 0-клик касса 54-ФЗ.
+   - **80% Десктоп ПК:** Плотная профессиональная вёрстка (панель пилота), компактные тулбары 32–36px, быстрые хоткеи (`Cmd/Ctrl+K`, `Esc`), 150ms Hover HUD, 0-клик касса клиники.
    - **10% Планшет у кресла:** Тач-таргеты строго >= 44x44px, нативный Segmented Control вместо 2500px скролла смет.
    - **10% Портал пациента:** Стандарт Apple Health, 1-тап запись, 1-клик справка 13% НДФЛ (ФНС КНД 1151156).
    - **Анти-Матрёшка:** Максимальная глубина модальных окон — СТРОГО 1. Никаких карточек внутри карточек.
-   - **Строгая медицинская типографика:** Никаких эмодзи в картах 043/у, актах, чеках — только векторные иконки Lucide.
+   - **Строгая медицинская типографика:** Никаких эмодзи в медицинских картах (ЭМК), актах, чеках — только векторные иконки Lucide.
 4. **Технологический Стек и Окружение:**
    - **Фронтенд:** React **19** (19.2.7) + Vite + Tailwind CSS. (Не React 18!).
    - **Бэкенд:** Node.js + Fastify 5+ (5.3.3) + TypeScript.

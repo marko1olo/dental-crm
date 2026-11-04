@@ -477,7 +477,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 						{activeTab === "shift" && (
 							<button type="button" data-testid={isShiftActive ? "btn-confirm-close-shift-z-report" : "btn-1click-open-shift"} onClick={handleToggleShift} aria-busy={isSubmitting} className="primary-button flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--teal, #0d9488)] hover:bg-[var(--teal-hover, #0f766e)] text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary">
 								<ShieldCheck className="w-4 h-4 shrink-0" />
-								<span data-testid="btn-1click-close-shift">{isShiftActive ? "Закрыть смену и напечатать Z-отчёт" : "Открыть кассовую смену"}</span>
+								<span data-testid="btn-1click-close-shift" className="truncate">{isShiftActive ? (<><span className="hidden sm:inline">Закрыть смену и напечатать Z-отчёт</span><span className="sm:hidden">Снять Z-отчёт</span></>) : "Открыть кассовую смену"}</span>
 							</button>
 						)}
 						{activeTab === "tape" && (

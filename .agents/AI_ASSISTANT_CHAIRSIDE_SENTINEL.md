@@ -1,7 +1,7 @@
 # 🎙️ СТЕНОГРАФИСТ ПРИЁМА, ГРАММАТИКА ЗУБНОЙ ФОРМУЛЫ И CHAIRSIDE SENTINEL
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🔨 ВЫСШАЯ КОНСТИТУЦИЯ (THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [📜 Конституция ИИ-Правил (.agents/AI_ASSISTANT_RULES.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) | [🏛️ Архитектура ИИ (.agents/AI_ASSISTANT_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md) | [🖥️ Десктопный Харнесс и MCP (.agents/AI_ASSISTANT_DESKTOP_MCP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md) | [🩺 Клинические Правила (.agents/CLINICAL_RULES.md)](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md) | [🎨 Стандарты UI (.agents/UI_STANDARDS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)  
-> **Канонический статус**: Центральный нормативно-технический документ подсистемы речевого ввода, грамматического разбора одонтограммы FDI (11–48 / 51–85), синтеза дневников Формы 043/у по стандарту SOAP и фонового клинического стража безопасности Chairside Sentinel в CRM-системе DENTE.  
+> **Канонический статус**: Центральный нормативно-технический документ подсистемы речевого ввода, грамматического разбора одонтограммы FDI (11–48 / 51–85), синтеза дневников приёма (ЭМК) по стандарту SOAP и фонового клинического стража безопасности Chairside Sentinel в CRM-системе DENTE.  
 > **Философия и высший мандат**: 100% честность, 0% симуляций и моков, суверенитет автономии врача (Мандат 8e) и приоритет соло-практики (Мандат 8n).
 
 ---
@@ -44,7 +44,7 @@ flowchart TD
     G --> H
     
     H --> I["ICD-10 & Nosology Matcher (K02-K08, S02.5)"]
-    I --> J["SOAP Form 043/u Synthesizer (S-O-A-P дневник)"]
+    I --> J["SOAP EMR Synthesizer (S-O-A-P дневник приёма)"]
     
     J --> K["Chairside Sentinel Engine (Аудит доз и рисков)"]
     K --> L["Предпросмотр на тач-HUD (Confidence Cards)"]
@@ -150,10 +150,10 @@ flowchart TD
 
 ---
 
-## 📝 5. ГЕНЕРАТОР КЛИНИЧЕСКОГО ДНЕВНИКА ФОРМЫ 043/У (SOAP RECORD SYNTHESIZER)
+## 📝 5. ГЕНЕРАТОР КЛИНИЧЕСКОГО ДНЕВНИКА ПРИЁМА (SOAP RECORD SYNTHESIZER)
 
 Модуль: `apps/api/src/ai/grammar/soapRecordSynthesizer.ts`.  
-При поступлении диктовки (например: *«Зуб 46 глубокий кариес, мезиальная полость, анестезия убистезин 1 карпула, коффердам, пломба световая Filtek»*) синтезатор формирует юридически выверенную запись Form 043/у:
+При поступлении диктовки (например: *«Зуб 46 глубокий кариес, мезиальная полость, анестезия убистезин 1 карпула, коффердам, пломба световая Filtek»*) синтезатор формирует юридически выверенную запись медицинской карты (ЭМК):
 
 ### Структура синтезированного SOAP-дневника:
 ```
@@ -170,7 +170,7 @@ flowchart TD
 │ A (Assessment / Диагноз):                                                              │
 │ «K02.1 Кариес дентина (глубокий кариес) зуба 46»                                       │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
-│ P (Plan & Treatment / Лечение по Номенклатуре 804н):                                   │
+│ P (Plan & Treatment / Прейскурант и план лечения):                                     │
 │ 1. Анестезия: Артикаин 4% с адреналином 1:200 000 (Убистезин) инфильтрационная 1.7 мл │
 │ 2. Изоляция рабочего поля коффердамом.                                                 │
 │ 3. Препарирование кариозной полости, некрэктомия твердых тканей (A16.07.002).          │
@@ -215,15 +215,15 @@ $$\text{SafeCarpules} = \left\lfloor \frac{\text{Dose}_{\text{calc}}}{\text{MgPe
 
 ---
 
-## 📦 7. ПОДБОР УСЛУГ ПО НОМЕНКЛАТУРЕ МИНЗДРАВА 804Н
+## 📦 7. ПОДБОР УСЛУГ ИЗ ПРЕЙСКУРАНТА КЛИНИКИ
 
-Парсер `extractDentalProcedures` автоматически связывает диктовку с официальными кодами медицинских услуг:
+Парсер `extractDentalProcedures` автоматически связывает диктовку с каталогом медицинских услуг клиники:
 
 ```
 Диктовка врача: «Анестезия инфильтрационная, коффердам, глубокий кариес 46, Filtek»
          │
          ▼
-Автоподбор Номенклатуры 804н:
+Автоподбор услуг из прейскуранта:
 • B01.003.004.001 — Местная анестезия (инфильтрационная)
 • A16.07.002     — Препарирование кариозной полости
 • A16.07.002.010 — Восстановление зуба пломбой световой полимеризации
@@ -244,10 +244,10 @@ $$\text{SafeCarpules} = \left\lfloor \frac{\text{Dose}_{\text{calc}}}{\text{MgPe
 ├──────────────────────────────────────────┼─────────────────────────────────────────────┤
 │ • updateToothStatusTool (Одонтограмма)   │ • readClinicalFileTool (Локальные DICOM/XML)│
 │ • createAppointmentTool (Расписание)     │ • writeClinicalFileTool (Выписки, бланки)   │
-│ • createInvoiceDraftTool (Касса 54-ФЗ)   │ • openPatientDropzoneFolderTool (Проводник) │
-│ • generateForm043Tool (Дневник SOAP)     │ • runWorkstationCommandTool (OS скрипты)    │
+│ • createInvoiceDraftTool (Касса и чеки)  │ • openPatientDropzoneFolderTool (Проводник) │
+│ • clinicalProtocolTool (Дневник SOAP)    │ • runWorkstationCommandTool (OS скрипты)    │
 │ • printDocumentTool (Печать ИДС)         │ • manageTaskTool (Фоновые тяжелые процессы) │
-│ • searchServicesTool (Прайс-лист 804н)   │ • scheduleTool (Внутренние таймеры и cron)  │
+│ • searchServicesTool (Прейскурант)       │ • scheduleTool (Внутренние таймеры и cron)  │
 │ • calculateAnesthesiaTool (Дозировки)    │ • launchWorkstationAppTool (Romexis, Ez3D)  │
 │ • checkSomaticRisksTool (Аллергии)       │ • captureWorkstationScreenTool (ROI датчика)│
 │ • chairsideEmergencyTool (Реанимация)    │ • callLocalMcpToolTool (Атол / Штрих-М / USB)│

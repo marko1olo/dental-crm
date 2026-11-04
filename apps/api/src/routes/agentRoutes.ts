@@ -12,7 +12,10 @@ import { requireResolvedOrganizationId } from "../accessGuard.js";
 import { getRequestIdentity } from "../security/identity.js";
 import { runAgentHarness, type AgentHarnessEvent } from "../ai/agentHarness.js";
 import { getDentalTools, type AgentRuntimeMode } from "../ai/dentalTools.js";
-import type { AgentRouterChatMessage } from "../ai/agentRouterClient.js";
+import {
+	validateUniversalApiKeyLive,
+	type AgentRouterChatMessage,
+} from "../ai/agentRouterClient.js";
 
 const chatMessageSchema = z.object({
 	role: z.enum(["system", "user", "assistant", "tool"]),
@@ -240,100 +243,43 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 		},
 	);
 
-	// ─── POST /api/agent/workstation/probe ─────────────────────────────────────
+	// ─── POST /api/agent/validate-key ──────────────────────────────────────────
 	server.post(
-		"/api/agent/workstation/probe",
+		"/api/agent/validate-key",
 		{ config: { tenantTxSelfManaged: true } },
 		async (request: FastifyRequest, reply: FastifyReply) => {
 			const resolvedOrgId = await requireResolvedOrganizationId(
 				request,
 				reply,
-				"workstation probe",
+				"validate byok key",
 			);
 			if (!resolvedOrgId) return;
 
-			const probeBodySchema = z.object({
-				probeType: z.enum(["visiograph_bridge", "ping_dropzone", "fiscal_com_status"]),
-				targetPath: z.string().optional(),
-				comPort: z.string().optional(),
-				dangerousAction: z.string().optional(),
-				confirmed: z.boolean().optional(),
+			const bodySchema = z.object({
+				provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom"]),
+				apiKey: z.string().min(1, "API-ключ обязателен"),
+				model: z.string().optional(),
+				baseUrl: z.string().optional(),
 			});
 
-			const parseResult = probeBodySchema.safeParse(request.body ?? {});
+			const parseResult = bodySchema.safeParse(request.body ?? {});
 			if (!parseResult.success) {
 				return reply.code(400).send({
-					success: false,
-					isConnected: false,
-					message: "Некорректные параметры диагностики оборудования",
+					valid: false,
+					message: "Некорректные параметры валидации API-ключа",
+					details: parseResult.error.format(),
 				});
 			}
 
-			const { probeType, targetPath, comPort, dangerousAction, confirmed } = parseResult.data;
+			const { provider, apiKey, model, baseUrl } = parseResult.data;
+			const validation = await validateUniversalApiKeyLive(
+				provider,
+				apiKey,
+				model,
+				baseUrl,
+			);
 
-			if (probeType === "visiograph_bridge") {
-				const startTime = Date.now();
-				return reply.code(200).send({
-					success: true,
-					isConnected: true,
-					device: "Planmeca ProSensor v2",
-					latencyMs: Math.max(2, Date.now() - startTime + 4),
-					message: "Визиограф онлайн. Готов к экспозиции (USB 3.0)",
-				});
-			}
-
-			if (probeType === "ping_dropzone") {
-				const pathToCheck = targetPath || "C:\\Radiology\\Export";
-				let exists = false;
-				try {
-					const fs = await import("fs");
-					exists = fs.existsSync(pathToCheck);
-				} catch {
-					exists = false;
-				}
-				return reply.code(200).send({
-					success: true,
-					isConnected: true,
-					path: pathToCheck,
-					exists,
-					latencyMs: 6,
-					message: exists ? "Обнаружено 12 срезов" : "Сетевая папка доступна (0 новых срезов)",
-				});
-			}
-
-			if (probeType === "fiscal_com_status") {
-				const port = comPort || "COM1";
-				if (dangerousAction === "reconnect_com") {
-					if (!confirmed) {
-						return reply.code(200).send({
-							success: false,
-							isConnected: true,
-							confirmationRequired: true,
-							message: `Требуется подтверждение перезапуска порта ${port}`,
-						});
-					}
-					return reply.code(200).send({
-						success: true,
-						isConnected: true,
-						reconnected: true,
-						latencyMs: 11,
-						message: `Порт ${port} перезапущен. Связь с кассой восстановлена.`,
-					});
-				}
-				return reply.code(200).send({
-					success: true,
-					isConnected: true,
-					port,
-					latencyMs: 11,
-					message: `Касса Атол 27Ф онлайн (${port}) • Готов к чекам`,
-				});
-			}
-
-			return reply.code(400).send({
-				success: false,
-				isConnected: false,
-				message: "Неизвестный тип диагностики",
-			});
+			return reply.code(200).send(validation);
 		},
 	);
 };

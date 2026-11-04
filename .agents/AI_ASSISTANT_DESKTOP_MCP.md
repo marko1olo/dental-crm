@@ -1,8 +1,8 @@
 # 🖥️ АРХИТЕКТУРА ДЕСКТОПНОГО ХАРНЕССА И АППАРАТНОГО MCP-МОСТА (DESKTOP NATIVE HARNESS & HARDWARE MCP BRIDGE)
 
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🔨 ВЫСШАЯ КОНСТИТУЦИЯ (THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [📜 Конституция ИИ-Правил (.agents/AI_ASSISTANT_RULES.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) | [🏛️ Архитектура ИИ (.agents/AI_ASSISTANT_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md) | [⚡ Спецификация Харнесса (.agents/AI_ASSISTANT_HARNESS_SPEC.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_HARNESS_SPEC.md) | [🛠️ Реестр 29 Инструментов (.agents/AI_ASSISTANT_TOOL_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_TOOL_REGISTRY.md) | [🐝 Мультиагентный рой (.agents/AI_ASSISTANT_SUBAGENT_SWARM.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_SUBAGENT_SWARM.md) | [🎙️ Стенографист и Sentinel (.agents/AI_ASSISTANT_CHAIRSIDE_SENTINEL.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_CHAIRSIDE_SENTINEL.md) | [🏗️ Общая Архитектура (.agents/ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md) | [🗄️ База Данных (.agents/DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)  
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🔨 ВЫСШАЯ КОНСТИТУЦИЯ (THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [📜 Конституция ИИ-Правил (.agents/AI_ASSISTANT_RULES.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) | [🏛️ Архитектура ИИ (.agents/AI_ASSISTANT_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md) | [⚡ Спецификация Харнесса (.agents/AI_ASSISTANT_HARNESS_SPEC.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_HARNESS_SPEC.md) | [🛠️ Реестр 29 Инструментов (.agents/AI_ASSISTANT_TOOL_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_TOOL_REGISTRY.md) | [🦷 Соло-копайлот DENTE (.agents/AI_ASSISTANT_SUBAGENT_SWARM.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_SUBAGENT_SWARM.md) | [🎙️ Стенографист и Sentinel (.agents/AI_ASSISTANT_CHAIRSIDE_SENTINEL.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_CHAIRSIDE_SENTINEL.md) | [🏗️ Общая Архитектура (.agents/ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md) | [🗄️ База Данных (.agents/DATABASE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)  
 > **Канонический статус**: Центральная системная и нормативная спецификация нативного десктопного харнесса операционной системы Windows (.EXE / Electron / Tauri) и локального аппаратного моста Model Context Protocol (MCP) для интеграции с медицинским и кассовым оборудованием стоматологической клиники DENTE.  
-> **Философия харнесса**: ИИ-ассистент DENTE на рабочей станции врача обладает инструментальной суверенностью и полнотой операционного контроля уровня передовых инженерных CLI/Desktop харнессов (Google Antigravity, Open-Interpreter, Claude Computer Use), адаптированных под жесткие клинические регламенты доказательной стоматологии, закон о защите персональных данных (152-ФЗ), фискальные стандарты (54-ФЗ / ФФД 1.2) и маркировку медикаментов Честный ЗНАК (МДЛП).
+> **Философия харнесса**: ИИ-ассистент DENTE на рабочей станции врача обладает инструментальной суверенностью и полнотой операционного контроля уровня передовых инженерных CLI/Desktop харнессов (Google Antigravity, Open-Interpreter, Claude Computer Use), адаптированных под жесткие клинические регламенты доказательной стоматологии, закон о защите персональных данных (152-ФЗ), фискальные стандарты (ФФД 1.2) и маркировку медикаментов Честный ЗНАК (МДЛП).
 
 ---
 
@@ -24,7 +24,7 @@
 │ • Зубная формула (updateToothStatus)      │ • Файловый I/O клиники (read/write/list)   │
 │ • Расписание визитов (createAppointment)  │ • Процессы и задачи (run_command, tasks)   │
 │ • Счета и сметы (createInvoiceDraft)      │ • Таймеры и cron-задачи (schedule)         │
-│ • Клинические протоколы 043/у (SOAP)      │ • Запуск томографов (Romexis, EzDent, etc) │
+│ • Клинические протоколы приёма (ЭМК SOAP) │ • Запуск томографов (Romexis, EzDent, etc) │
 │ • Печать бланков и ИДС (printDocument)    │ • Захват экрана визиографа (Vision ROI)    │
 │ • Калькуляторы анестезии и соматики       │ • Аппаратный MCP-мост (Атол, Штрих, TWAIN) │
 └───────────────────────────────────────────┴────────────────────────────────────────────┘
@@ -210,7 +210,7 @@ $$\text{BlockedExtensions} = \{ \text{.exe, .bat, .cmd, .ps1, .vbs, .vbe, .js, .
 ┌─────────────────────────────────────────────────────────────────────────────┐
 │                          LOCAL MCP BRIDGE MANAGER                           │
 ├─────────────────────┬─────────────────────┬───────────────────┬─────────────┤
-│ 1. ККТ 54-ФЗ        │ 2. ККТ ШТРИХ-М      │ 3. 2D СКАНЕР      │ 4. TWAIN    │
+│ 1. ККТ АТОЛ         │ 2. ККТ ШТРИХ-М      │ 3. 2D СКАНЕР      │ 4. TWAIN    │
 │    kkt_atol         │    shtrih_m         │ datamatrix_scanner│ twain_sensor│
 ├─────────────────────┼─────────────────────┼───────────────────┼─────────────┤
 │ • get_kkt_status    │ • get_device_metrics│ • parse_chestny_  │ • list_     │
@@ -220,10 +220,10 @@ $$\text{BlockedExtensions} = \{ \text{.exe, .bat, .cmd, .ps1, .vbs, .vbe, .js, .
 └─────────────────────┴─────────────────────┴───────────────────┴─────────────┘
 ```
 
-### 1. Сервер ККТ АТОЛ 54-ФЗ (`kkt_atol`)
+### 1. Сервер ККТ АТОЛ (`kkt_atol`)
 - **Интеграция**: Прямой протокол ДККТ 10 (Драйвер ККТ АТОЛ) по USB/COM/TCP.
 - **Инструмент `print_receipt`**:
-  * Соответствие ФФД 1.2 и Федеральному закону № 54-ФЗ.
+  * Соответствие ФФД 1.2 и кассовым стандартам.
   * **Целочисленные копейки (Mandate 8i)**: Сумма `totalKopecks` обязана быть неотрицательным целым числом (`Number.isInteger`). Запрещены плавающие точки (IEEE-754).
   * **Канонические типы оплат (`packages/shared/src/fiscal/tenderTypes.ts`)**: `cash` (наличные, тег 1031), `card` (банковская карта, тег 1081), `sbp` (СБП, тег 1081), `deposit` (аванс, тег 1215), `family_wallet` (семейный кошелек, тег 1215), `credit` (рассрочка, тег 1216).
   * **Мандат автономии врача (Mandate 8e)**: Запрещено требовать ИНН физического лица при приеме оплаты.
@@ -280,6 +280,6 @@ CREATE INDEX idx_workstation_device_audit ON workstation_device_audit_logs (orga
 - **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Раздел 3: Dental Tool Arsenal, системные вызовы рабочей станции, двухфазный Guard подтверждения.
 - **[ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/ARCHITECTURE.md)** — Раздел: Архитектура рабочих процессов и фоновых сервисов клиники.
 - **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Строка матрицы быстрого перехода: Десктопный системный харнесс и аппаратный MCP-мост.
-- **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Касса 54-ФЗ, целочисленные копейки `kopecksArithmetic.ts` и типы оплат `tenderTypes.ts`.
-- **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Автосписание медикаментов по Честному Знаку (МДЛП) при оказании услуг номенклатуры 804н.
+- **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Касса клиники, целочисленные копейки `kopecksArithmetic.ts` и типы оплат `tenderTypes.ts`.
+- **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Автосписание медикаментов по Честному Знаку (МДЛП) при оказании услуг из прейскуранта.
 - **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Изоляция тенантов Row-Level Security и хранилище PostgreSQL 18.

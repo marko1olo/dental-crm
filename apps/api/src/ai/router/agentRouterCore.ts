@@ -100,22 +100,27 @@ export class AgentRouterClient {
 			);
 		}
 
-		const attemptsLimit = Math.max(1, this.keyPool.getKeys().length);
+		const attemptsLimit = params.apiKey ? 1 : Math.max(1, this.keyPool.getKeys().length);
 		const errors: string[] = [];
 		const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		const effectiveBaseUrl = params.baseUrl || this.baseUrl;
 
 		for (let attempt = 0; attempt < attemptsLimit; attempt++) {
 			let key: string;
-			try {
-				const selected = this.keyPool.selectNextKey();
-				key = selected.key;
-			} catch (err) {
-				if (err instanceof AgentRouterAllKeysExhaustedError) {
-					throw err;
+			if (params.apiKey) {
+				key = params.apiKey;
+			} else {
+				try {
+					const selected = this.keyPool.selectNextKey();
+					key = selected.key;
+				} catch (err) {
+					if (err instanceof AgentRouterAllKeysExhaustedError) {
+						throw err;
+					}
+					throw new Error(
+						`Failed to select AgentRouter API key: ${(err as Error).message}`,
+					);
 				}
-				throw new Error(
-					`Failed to select AgentRouter API key: ${(err as Error).message}`,
-				);
 			}
 
 			const controller = new AbortController();
@@ -138,7 +143,7 @@ export class AgentRouterClient {
 				);
 				const endpoint = resolveRequestEndpoint(
 					targetModel,
-					this.baseUrl,
+					effectiveBaseUrl,
 					key,
 					false,
 				);
@@ -153,7 +158,7 @@ export class AgentRouterClient {
 
 				if (response.ok) {
 					const data = (await response.json()) as AgentRouterChatResponse;
-					this.keyPool.noteKeySuccess(key);
+					if (!params.apiKey) this.keyPool.noteKeySuccess(key);
 					return data;
 				}
 
@@ -277,25 +282,30 @@ export class AgentRouterClient {
 			throw err;
 		}
 
-		const attemptsLimit = Math.max(1, this.keyPool.getKeys().length);
+		const attemptsLimit = params.apiKey ? 1 : Math.max(1, this.keyPool.getKeys().length);
 		const errors: string[] = [];
 		const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		const effectiveBaseUrl = params.baseUrl || this.baseUrl;
 
 		for (let attempt = 0; attempt < attemptsLimit; attempt++) {
 			let key: string;
-			try {
-				const selected = this.keyPool.selectNextKey();
-				key = selected.key;
-			} catch (err) {
-				if (err instanceof AgentRouterAllKeysExhaustedError) {
-					callbacks.onError?.(err);
-					throw err;
+			if (params.apiKey) {
+				key = params.apiKey;
+			} else {
+				try {
+					const selected = this.keyPool.selectNextKey();
+					key = selected.key;
+				} catch (err) {
+					if (err instanceof AgentRouterAllKeysExhaustedError) {
+						callbacks.onError?.(err);
+						throw err;
+					}
+					const selectErr = new Error(
+						`Failed to select AgentRouter API key: ${(err as Error).message}`,
+					);
+					callbacks.onError?.(selectErr);
+					throw selectErr;
 				}
-				const selectErr = new Error(
-					`Failed to select AgentRouter API key: ${(err as Error).message}`,
-				);
-				callbacks.onError?.(selectErr);
-				throw selectErr;
 			}
 
 			const controller = new AbortController();
@@ -318,7 +328,7 @@ export class AgentRouterClient {
 				);
 				const endpoint = resolveRequestEndpoint(
 					targetModel,
-					this.baseUrl,
+					effectiveBaseUrl,
 					key,
 					true,
 				);

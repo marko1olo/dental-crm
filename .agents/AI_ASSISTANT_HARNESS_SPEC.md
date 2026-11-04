@@ -2,7 +2,7 @@
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [🔨 ВЫСШАЯ КОНСТИТУЦИЯ (THE_HAMMER_MASTER_PROMPT.md)](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) | [📜 Конституция Правил ИИ (.agents/AI_ASSISTANT_RULES.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) | [🛠️ Полный Реестр Инструментов (.agents/AI_ASSISTANT_TOOL_REGISTRY.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_TOOL_REGISTRY.md) | [🏗️ Общая Архитектура (.agents/AI_ASSISTANT_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md) | [🖥️ Десктопный Харнесс и MCP (.agents/AI_ASSISTANT_DESKTOP_MCP.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md)  
 > **Канонический статус**: Центральный технический эталон архитектуры автономного агентного харнесса, протокола ReAct (Reasoning + Acting), потоковой передачи Server-Sent Events (SSE), двухфазного подтверждения операций и отказоустойчивости когнитивного ядра DENTE Dental CRM.  
-> **Философия разработки**: Никаких мокапов, синтетических заглушек и процедурных симуляций. Агентный движок DENTE спроектирован по стандартам передовых открытых агентных платформ (Cline, OpenHands, Goose, Aider, Antigravity Harness) с бескомпромиссной специализацией на доказательной амбулаторной стоматологии РФ (СтАР, ЕГИСЗ, 804н, 54-ФЗ, FDI 11–48/51–85) и суверенитете врача (Мандаты 8e и 8n).
+> **Философия разработки**: Никаких мокапов, синтетических заглушек и процедурных симуляций. Агентный движок DENTE спроектирован по стандартам передовых открытых агентных платформ (Cline, OpenHands, Goose, Aider, Antigravity Harness) с бескомпромиссной специализацией на доказательной амбулаторной стоматологии РФ (СтАР, ЕГИСЗ, клинические протоколы, касса, FDI 11–48/51–85) и суверенитете врача (Мандаты 8e и 8n).
 
 ---
 
@@ -113,8 +113,8 @@ stateDiagram-v2
 │                        РЕЖИМ 1: WEB_BROWSER (ОБЛАЧНЫЙ КЛИЕНТ)                         │
 ├────────────────────────────────────────────────────────────────────────────────────────┤
 │ • Стандартный браузер (Chrome, Safari, Edge, Firefox).                                 │
-│ • Полный доступ к КОНТУРУ 1: Клинические калькуляторы (анестезия, соматика, 043/у)    │
-│   и CRM-транзакции (зубная формула FDI, расписание, сметы, прейскурант 804н).          │
+│ • Полный доступ к КОНТУРУ 1: Клинические калькуляторы (анестезия, соматика, ЭМК)      │
+│   и CRM-транзакции (зубная формула FDI, расписание, сметы, прейскурант клиники).       │
 │ • Прямое взаимодействие с PostgreSQL 18 через Fastify REST API.                        │
 │ • Аппаратный доступ к USB/COM портам и локальному диску Windows ЗАБЛОКИРОВАН.          │
 │ • При попытке вызова десктопных тулзов возвращается честный отказ `DESKTOP_DENIED`.   │
@@ -135,7 +135,7 @@ stateDiagram-v2
 │   3. Планировщик времени: таймеры и cron-задачи с досрочным выходом (schedule).        │
 │   4. Софт и Vision: запуск томографов Romexis, EzDent, Sidexis, 3Shape (launch_app),   │
 │      оптический захват экрана и ROI датчика визиографа (capture_screen).                │
-│   5. Аппаратный MCP-мост: кассы Атол/Штрих-М 54-ФЗ, 2D сканеры Честный Знак, TWAIN.   │
+│   5. Аппаратный MCP-мост: кассы Атол/Штрих-М, 2D сканеры Честный Знак, TWAIN.         │
 │   6. Настройка и миграция: системная конфигурация клиники (configure_clinic_setup),     │
 │      разбор и импорт файлов прайсов и выгрузок МИС (import_clinic_data_file).          │
 └────────────────────────────────────────────────────────────────────────────────────────┘
@@ -183,7 +183,7 @@ stateDiagram-v2
 | **Интеграция ReAct харнесса** | `apps/api/src/ai/agentHarness.test.ts` (11 тестов) | ReAct цикл, стриминг CoT, AbortSignal, maxIterations, 2-phase guard, `manage_task_plan`, автокомпактификация, псевдонимы ПК, stuck-детектор |
 | **Компактификатор контекста и токенайзер** | `packages/shared/src/ai/tokenCompactor.test.ts` (23 теста) | Мультискриптовый подсчет токенов (кириллица ~1.5 токена/слово), атомарность tool-call пар, sliding window, summary |
 | **Трекер плана задач (TaskPlanTracker)** | `packages/shared/src/ai/taskPlanTracker.test.ts` (10 тестов) | Граф зависимостей `blockedBy`, обнаружение циклов, `getNextActionableItems`, `isPlanComplete`, `formatPlanSummary` |
-| **Десктопные системные инструменты** | `apps/api/src/ai/desktopSystemTools.test.ts` (22 теста) | Файлы, процессы, фоновые задачи, таймеры, MCP-кассы 54-ФЗ, безопасность путей |
+| **Десктопные системные инструменты** | `apps/api/src/ai/desktopSystemTools.test.ts` (22 теста) | Файлы, процессы, фоновые задачи, таймеры, MCP-кассы, безопасность путей |
 | **Клинические инструменты CRM** | `apps/api/src/ai/dentalTools.test.ts` (22 теста) | Анестезия, соматика, медицинская карта, клинические рекомендации, FDI одонтограмма, касса |
 | **Сетевой клиент маршрутизатора** | `apps/api/src/ai/agentRouterClient.test.ts` (8 тестов) | Ротация ключей, 429 cooldown, 402 model ban, маскирование API-ключей, SSE стриминг |
 
