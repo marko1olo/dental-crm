@@ -108,31 +108,21 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		);
 	});
 
-	test("2. Verifies cascade priority order: Flash-Lite first, then Flash 3.x, then Pro, then legacy tails", () => {
+	test("2. Verifies cascade priority order: Flash 3.6/3.5 first, then Flash-Lite, then Pro", () => {
 		const adapter = new GeminiProviderAdapter();
-		assert.strictEqual(adapter.defaultModel, "gemini-3.5-flash-lite");
+		assert.strictEqual(adapter.defaultModel, "gemini-3.6-flash");
 
-		// Flash-Lite are 1st and 2nd
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[0], "gemini-3.5-flash-lite");
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[1], "gemini-3.1-flash-lite");
+		// Flash Smart tier are 1st and 2nd
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[0], "gemini-3.6-flash");
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[1], "gemini-3.5-flash");
 
-		// Flash 3.x are 3rd to 6th
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[2], "gemini-3.8-flash");
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[3], "gemini-3.7-flash");
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[4], "gemini-3.6-flash");
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[5], "gemini-3.5-flash");
+		// Flash-Lite are 3rd and 4th
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[2], "gemini-3.5-flash-lite");
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[3], "gemini-3.1-flash-lite");
 
-		// Pro models follow
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[6], "gemini-3.1-pro");
-
-		// Legacy tails at the end
-		assert.ok(DEFAULT_GEMINI_MODEL_CASCADE.includes("gemini-2.5-flash"));
-		assert.ok(DEFAULT_GEMINI_MODEL_CASCADE.includes("gemini-2.0-flash"));
-		assert.ok(DEFAULT_GEMINI_MODEL_CASCADE.includes("gemini-1.5-flash"));
-		assert.strictEqual(
-			DEFAULT_GEMINI_MODEL_CASCADE[DEFAULT_GEMINI_MODEL_CASCADE.length - 1],
-			"gemini-1.5-flash",
-		);
+		// 3.8 and Pro follow
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[4], "gemini-3.8-flash");
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[5], "gemini-3.1-pro");
 	});
 
 	test("3. Instant key swapping across HTTP 429 rate limits without dropping user request", async () => {
@@ -216,8 +206,8 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 			const model = modelMatch && modelMatch[1] ? modelMatch[1] : "unknown";
 			modelsAttempted.push(model);
 
-			// gemini-3.5-flash-lite returns 503 (The model is overloaded)
-			if (model === "gemini-3.5-flash-lite") {
+			// gemini-3.6-flash returns 503 (The model is overloaded)
+			if (model === "gemini-3.6-flash") {
 				return new Response(
 					JSON.stringify({
 						error: {
@@ -230,9 +220,9 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 				);
 			}
 
-			// Next model in cascade (gemini-3.1-flash-lite) succeeds!
+			// Next model in cascade (gemini-3.5-flash) succeeds!
 			const sseData = [
-				'data: {"candidates":[{"content":{"parts":[{"text":"Ответ от gemini-3.1-flash-lite"}]}}]}\n\n',
+				'data: {"candidates":[{"content":{"parts":[{"text":"Ответ от gemini-3.5-flash"}]}}]}\n\n',
 				'data: {"candidates":[{"finishReason":"STOP"}]}\n\n',
 			];
 			return createMockSseResponse(sseData);
@@ -248,31 +238,31 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		}
 
 		assert.ok(
-			modelsAttempted.includes("gemini-3.5-flash-lite"),
-			"Should have attempted gemini-3.5-flash-lite first",
+			modelsAttempted.includes("gemini-3.6-flash"),
+			"Should have attempted gemini-3.6-flash first",
 		);
 		assert.ok(
-			modelsAttempted.includes("gemini-3.1-flash-lite"),
-			"Should have cascaded to gemini-3.1-flash-lite upon 503",
+			modelsAttempted.includes("gemini-3.5-flash"),
+			"Should have cascaded to gemini-3.5-flash upon 503",
 		);
 		assert.strictEqual(
-			isModelBanned("gemini-3.5-flash-lite"),
+			isModelBanned("gemini-3.6-flash"),
 			true,
 			"Overloaded model must be banned to prevent hammering it",
 		);
 
 		const textChunk = chunks.find((c) => c.type === "text_delta");
 		assert.ok(textChunk && textChunk.type === "text_delta");
-		assert.strictEqual(textChunk.text, "Ответ от gemini-3.1-flash-lite");
+		assert.strictEqual(textChunk.text, "Ответ от gemini-3.5-flash");
 
 		// Active cascade should now automatically omit the banned model
 		const active = filterActiveModelCascade(DEFAULT_GEMINI_MODEL_CASCADE);
 		assert.strictEqual(
-			active.includes("gemini-3.5-flash-lite"),
+			active.includes("gemini-3.6-flash"),
 			false,
 			"Banned model must be filtered out of active cascade",
 		);
-		assert.strictEqual(active[0], "gemini-3.1-flash-lite");
+		assert.strictEqual(active[0], "gemini-3.5-flash");
 	});
 
 	test("5. Model ban recovery upon explicit success record", () => {

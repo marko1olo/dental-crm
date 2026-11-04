@@ -293,17 +293,15 @@ const DENTAL_AI_CASCADING_MODELS: Array<{
 	provider: SpeechPolishProvider;
 	model: string;
 }> = [
-	// Gemini
+	// Gemini SOTA cascade
+	{ provider: "gemini", model: "gemini-3.6-flash" },
+	{ provider: "gemini", model: "gemini-3.5-flash" },
 	{ provider: "gemini", model: "gemini-3.5-flash-lite" },
 	{ provider: "gemini", model: "gemini-3.1-flash-lite" },
 	{ provider: "gemini", model: "gemini-3.8-flash" },
-	{ provider: "gemini", model: "gemini-3.7-flash" },
-	{ provider: "gemini", model: "gemini-3.5-flash" },
-	{ provider: "gemini", model: "gemini-2.5-flash" },
 	// Groq
-	{ provider: "groq", model: "qwen/qwen3.8-27b" },
+	{ provider: "groq", model: "qwen/qwen3.6-27b" },
 	{ provider: "groq", model: "llama-3.3-70b-versatile" },
-	{ provider: "groq", model: "llama-3.1-8b-instant" },
 ];
 
 async function callOpenAiCompatibleVisitDraftWithKeyRotation(input: {

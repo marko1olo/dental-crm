@@ -73,7 +73,7 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 		let effectiveBaseUrl = byokBaseUrl;
 
 		if (provider === "anthropic") {
-			effectiveModel = byokModel || "claude-3-7-sonnet";
+			effectiveModel = byokModel || "claude-3-5-sonnet";
 		} else if (provider === "openai") {
 			effectiveModel = byokModel || "gpt-4o";
 			effectiveBaseUrl = byokBaseUrl || "https://api.openai.com/v1";

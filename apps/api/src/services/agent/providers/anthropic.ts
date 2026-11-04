@@ -1,6 +1,6 @@
 /**
  * anthropic.ts — Anthropic Claude LLM Provider Adapter.
- * Supports claude-3-7-sonnet-20250219, claude-3-5-sonnet, claude-3-5-haiku with native tool use and thinking blocks.
+ * Supports claude-3-5-sonnet, claude-3-5-haiku with native tool use and thinking blocks.
  */
 
 import type { ProviderMessage, TextBlock, ToolResultBlock, ToolUseBlock } from "../types.js";
@@ -25,11 +25,12 @@ import { createProxiedFetch, getGlobalProxyUrl } from "../proxyDispatcher.js";
 
 export class AnthropicProviderAdapter implements LlmProviderAdapter {
 	public readonly providerId: LlmProviderId = "anthropic";
-	public readonly defaultModel: string = "claude-3-7-sonnet-20250219";
+	public readonly defaultModel: string = "claude-3-5-sonnet-20241022";
 	public readonly supportedModels: readonly string[] = [
-		"claude-3-7-sonnet-20250219",
 		"claude-3-5-sonnet-20241022",
+		"claude-3-5-sonnet",
 		"claude-3-5-haiku-20241022",
+		"claude-3-5-haiku",
 		"claude-3-opus-20240229",
 	] as const;
 

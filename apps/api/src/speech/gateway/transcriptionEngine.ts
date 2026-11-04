@@ -274,7 +274,7 @@ export async function transcribeGeminiMultimodal(input: {
 	language: string;
 	prompt?: string | null;
 }): Promise<ProviderTranscript> {
-	const model = process.env.GOOGLE_SPEECH_MODEL ?? "gemini-2.5-flash";
+	const model = process.env.GOOGLE_SPEECH_MODEL ?? "gemini-3.6-flash";
 	const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${input.apiKey}`;
 
 	const baseMimeType = input.mimeType.split(";")[0] || "audio/webm";

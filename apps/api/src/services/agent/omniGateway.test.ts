@@ -128,10 +128,10 @@ describe("Omni-LLM Provider Adapters Suite", () => {
 		assert.ok(done && done.type === "done");
 	});
 
-	test("2. Anthropic Provider Adapter — Stream Claude 3.7 messages, thinking, and tool_use", async () => {
+	test("2. Anthropic Provider Adapter — Stream Claude 3.5 messages, thinking, and tool_use", async () => {
 		const adapter = new AnthropicProviderAdapter();
 		assert.strictEqual(adapter.providerId, "anthropic");
-		assert.strictEqual(adapter.defaultModel, "claude-3-7-sonnet-20250219");
+		assert.strictEqual(adapter.defaultModel, "claude-3-5-sonnet-20241022");
 
 		const mockSse = [
 			'event: message_start\ndata: {"type":"message_start","message":{"usage":{"input_tokens":30}}}\n\n',
@@ -222,7 +222,7 @@ describe("Omni-LLM Provider Adapters Suite", () => {
 	test("4. Google Gemini Provider Adapter — Native REST SSE & Function Calls", async () => {
 		const adapter = new GeminiProviderAdapter();
 		assert.strictEqual(adapter.providerId, "gemini");
-		assert.strictEqual(adapter.defaultModel, "gemini-3.5-flash-lite");
+		assert.strictEqual(adapter.defaultModel, "gemini-3.6-flash");
 
 		const mockSse = [
 			'data: {"candidates":[{"content":{"parts":[{"text":"Найдена карта пациента."}],"role":"model"}}],"usageMetadata":{"promptTokenCount":18,"candidatesTokenCount":12,"totalTokenCount":30}}\n\n',

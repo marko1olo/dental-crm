@@ -62,10 +62,10 @@ export const AI_MODEL_CASCADE: Array<{
 		keyProviderId: "google_speech",
 		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
 	},
-	// 7. Gemini 2.5 Flash
+	// 7. Gemini 3.6 Flash
 	{
 		provider: "gemini",
-		model: "gemini-2.5-flash",
+		model: "gemini-3.6-flash",
 		keyProviderId: "google_speech",
 		baseUrl: "https://generativelanguage.googleapis.com/v1beta/openai",
 	},

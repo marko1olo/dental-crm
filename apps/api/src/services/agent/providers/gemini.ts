@@ -1,6 +1,6 @@
 /**
  * gemini.ts — Google Gemini LLM Provider Adapter.
- * Supports gemini-2.5-flash, gemini-3.5-flash, gemini-3.6-flash, gemini-2.0-flash with native REST & SSE streaming.
+ * Supports gemini-3.6-flash, gemini-3.5-flash, gemini-3.5-flash-lite, gemini-3.1-flash-lite with native REST & SSE streaming.
  *
  * Mandate 8b: Monolith decomposed into geminiModules (<= 300 lines).
  */
@@ -45,10 +45,6 @@ export class GeminiProviderAdapter implements LlmProviderAdapter {
 		"gemini-3.5-flash-lite",
 		"gemini-3.1-flash-lite",
 		"gemini-3.1-pro",
-		"gemini-2.5-flash",
-		"gemini-2.5-pro",
-		"gemini-2.5-flash-lite",
-		"gemini-2.0-flash",
 	] as const;
 
 	public async *chatStream(

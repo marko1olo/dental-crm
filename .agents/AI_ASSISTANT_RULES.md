@@ -22,10 +22,10 @@
 ### 3. Реальные API-ключи, каскады моделей и распознавание голоса (Voice-First CRM Architecture)
 - **Живые API-ключи и боевой каскад моделей (Zero-Mock Production AI)**: 
   * Канонический каскад DENTE (архитектура stomchat / dvachbot):
-    1. **Google Gemini Flash (Smart Tier)**: `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-2.5-flash` — максимальный интеллект, томография КЛКТ, дифдиагноз, хирургические протоколы.
-    2. **Google Gemini Lite (Speed & High RPD Tier)**: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite` — сверхбыстрый отклик (<300 мс) у кресла врача для зубной формулы FDI, расписания и заметок (500 RPD free tier).
+    1. **Google Gemini Flash (Smart Tier)**: `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.8-flash` — максимальный интеллект, томография КЛКТ, дифдиагноз, хирургические протоколы.
+    2. **Google Gemini Lite (Speed & High RPD Tier)**: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` — сверхбыстрый отклик (<300 мс) у кресла врача для зубной формулы FDI, расписания и заметок (500 RPD free tier).
     3. **Groq High-Throughput**: `qwen/qwen3.6-27b`, `llama-3.3-70b-versatile` — отказоустойчивый резерв.
-    4. **BYOK Frontier Models**: `claude-3-7-sonnet` (гибридный CoT), `gpt-4o` / `gpt-5`, `deepseek-r1`.
+    4. **BYOK Frontier Models**: `claude-3-5-sonnet` (флагманский CoT Reasoner), `gpt-4o`, `deepseek-r1`.
   * Пул ротации ключей с кулдауном ошибок и 429 (`GOOGLE_API_KEYS`, `GROQ_API_KEYS`, `OPENAI_API_KEYS`, `keyPool.ts`). При исчерпании пула или сетевом сбое система бесшовно переходит на детерминированные локальные клинические шаблоны (Local First Fallback) без зависания интерфейса.
 - **Сквозное распознавание голоса (Voice Everywhere)**:
   * Голосовой стенографист дневников SOAP в медицинской карте приёма (ЭМК).

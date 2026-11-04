@@ -56,8 +56,8 @@ trigger: always_on
 ## 5. БОЕВОЙ КАСКАД МОДЕЛЕЙ И РОТАЦИЯ КЛЮЧЕЙ (DVACHBOT / STOMCHAT SOTA)
 
 1. **Каскад моделей DENTE:**
-   - **Smart Flash Tier (Основной интеллект)**: `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-2.5-flash` — томография КЛКТ, дифдиагноз, хирургия, протоколы.
-   - **Lite Tier (Сверхбыстрый chairside <300 мс)**: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite` — разметка зубной формулы FDI, расписание, заметки (квота 500 RPD).
+   - **Smart Flash Tier (Основной интеллект)**: `gemini-3.6-flash`, `gemini-3.5-flash`, `gemini-3.8-flash` — томография КЛКТ, дифдиагноз, хирургия, протоколы.
+   - **Lite Tier (Сверхбыстрый chairside <300 мс)**: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite` — разметка зубной формулы FDI, расписание, заметки (квота 500 RPD).
    - **Groq High-Throughput (Резерв)**: `qwen/qwen3.6-27b`, `llama-3.3-70b-versatile`.
-   - **BYOK Frontier Models (Продвинутый режим)**: `claude-3-7-sonnet` (CoT Reasoner), `gpt-4o`, `deepseek-r1`.
+   - **BYOK Frontier Models (Продвинутый режим)**: `claude-3-5-sonnet` (CoT Reasoner), `gpt-4o`, `deepseek-r1`.
 2. **Пул ключей и ротация:** `GOOGLE_API_KEYS`, `GROQ_API_KEYS`, `OPENAI_API_KEYS` через `keyPool.ts` с кулдауном 429 и мгновенным локальным фолбеком при исчерпании.
