@@ -280,10 +280,9 @@ CREATE TABLE ai_telemetry_logs (
 Данная архитектура напрямую связана со следующими документами проекта:
 - **[THE_HAMMER_MASTER_PROMPT.md](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Разделы VII, XI, XIV: Приоритет автономии врача, ЦРМ != симулятор реальности, суверенитет соло-врача.
 - **[AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md)** — Высшая конституция правил и 15 законов мышления модели.
-- **[AI_ASSISTANT_SUBAGENT_SWARM.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_SUBAGENT_SWARM.md)** — Архитектура мультиагентного роя (Triage, Inquisitor, Sentinel, Vision), жизненный цикл и IPC.
-- **[ai_assistant.md](file:///C:/Users/Admin/.gemini/config/rules/ai_assistant.md)** — Глобальные правила ИИ-ассистента и роя.
-- **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Клинический движок правил и номенклатура 804н.
-- **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр протоколов 043/у.
+- **[ai_assistant.md](file:///C:/Clinic_MVP/dental-crm/.agents/rules/ai_assistant.md)** — Проектные правила мудрого соло-ассистента DENTE у кресла врача.
+- **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Клинический движок правил и прейскурант медицинских услуг.
+- **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр клинических протоколов ЭМК (SOAP).
 - **[API_ROUTES_CATALOG.md](file:///C:/Clinic_MVP/dental-crm/.agents/API_ROUTES_CATALOG.md)** — Каталог Fastify-маршрутов домена `/api/ai/*`.
 - **[UI_STANDARDS.md](file:///C:/Clinic_MVP/dental-crm/.agents/UI_STANDARDS.md)** — Стандарты выкатных шторок (Drawers) и отсутствие блокирующих модалок.
 - **[DATABASE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md)** — Реестр таблиц `ai_recognition_jobs` и `imaging_annotations`.
