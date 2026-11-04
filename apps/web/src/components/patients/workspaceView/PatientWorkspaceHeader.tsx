@@ -53,7 +53,7 @@ export const PatientWorkspaceHeader: React.FC<PatientWorkspaceHeaderProps> = Rea
 			<>
 				<PatientDuplicateAlert patientId={patientId} />
 				<div className="flex items-center gap-2 min-w-0 flex-wrap">
-					<span className="text-sm md:text-base font-black text-[var(--ink)] truncate">
+					<span className="text-sm md:text-base font-black text-[var(--ink)] break-words whitespace-normal">
 						{patientName || "Карточка пациента"}
 					</span>
 					<span className="text-xs font-mono font-bold text-[var(--muted)] bg-[var(--paper-soft)] px-2 py-0.5 rounded-md border border-[var(--line)] shrink-0">

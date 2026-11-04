@@ -1065,3 +1065,33 @@
   - [`apps/api/src/routes/cryptoProNativeRoutes.ts#L1-L100`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts#L1-L100)
   - [`apps/api/src/crypto/cryptoProCliEngine.ts#L77-L177`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/crypto/cryptoProCliEngine.ts#L77-L177)
 - **Суть бага:** На бэкенде написан мощный CLI-мост прямого вызова `cryptcp.exe` и `csptest.exe`, но во фронтенде нет ни одного вызова этого API. Когда браузерный плагин не найден, система вместо нативного вызова падает в фальшивый ПИН-код.
+
+
+## 25. 👥 КАРТОТЕКА И КАРТОЧКА ПАЦИЕНТА (SSOT, АНТИ-КЛИППИНГ, ЛИКВИДАЦИЯ ЛЕГАСИ-ШИМОВ)
+
+### [PAT-01] [SEV-1] [ЗАКРЫТО] Дублирование 43 легаси-шимов папки patient/ и клиппинг ФИО/телефонов пациентов
+- **Файлы:**
+  - [`apps/web/src/components/patient/`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patient/)
+  - [`apps/web/src/components/patients/PatientCardModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientCardModal.tsx)
+  - [`apps/web/src/components/patients/PatientCardView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientCardView.tsx)
+  - [`apps/web/src/components/patients/PatientStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/PatientStudioModal.tsx)
+  - [`apps/web/src/components/patients/header/PatientTopHeaderIdentity.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/header/PatientTopHeaderIdentity.tsx)
+  - [`apps/web/src/components/patients/workspaceView/PatientWorkspaceHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/workspaceView/PatientWorkspaceHeader.tsx)
+  - [`apps/api/src/routes/patients/`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/)
+- **Суть бага:**
+  1. В `apps/web/src/components/patient/` находилось 43 файла-шима, дублирующих каноническую директорию `components/patients/`. 31 файл в подпапках `anamnesis/`, `detailsModal/`, `familyWalletModal/` представляли собой мертвые дубли, создававшие архитектурный шум и риск рассинхрона данных.
+  2. В шапках модалок карточки пациента (`PatientCardModal.tsx`, `PatientStudioModal.tsx`, `PatientTopHeaderIdentity.tsx`, `PatientWorkspaceHeader.tsx`) стили `truncate` и `max-w-full` обрезали длинные ФИО пациентов (например, «Константинопольский-Барабаш Станислав Владиславович») и телефоны многоточием (`...`), нарушая клиническую идентификацию.
+  3. В соматическом баннере предупреждений использовались ALL CAPS заголовки (`КРИТИЧЕСКИЙ СТОП-ФАКТОР`), нарушающие стандарты типографики Apple HIG / UI Standards.
+- **Статус исправления:** [ЗАКРЫТО]
+  1. Ликвидация легаси-шимов: Полностью удалены 31 мертвый дубликат из подпапок `patient/anamnesis/`, `patient/detailsModal/`, `patient/familyWalletModal/`. В `components/patient/` сохранены 8 ультракомпактных фасадных ре-экспортов и barrel `index.ts` для строгой обратной совместимости внешних контрактов. Все внешние ссылки (`anamnesisPreviewEntry.tsx`, `smoke-patients-usability-source.mjs`) переведены на канонический SSOT `components/patients/`.
+  2. Инвариант нулевого клиппинга: Во всех компонентах карточки пациента класс `truncate` на ФИО и контактах заменен на `break-words whitespace-normal leading-tight`, с адаптивным flex-wrap для контактных строк, дат рождения и номеров медицинских карт.
+  3. Типографика и эргономика: Заголовки соматических предупреждений приведены к чистому Sentence case («Критический стоп-фактор:», «Клиническое предупреждение:»). Ровно 1 Primary CTA кнопка (`var(--teal)`), non-blocking кнопки сохранения (Мандат 8e).
+  4. База данных PostgreSQL 18: Проверены реляционные индексы `idx_patients_search_tsv_gin` (GIN полнотекстовый поиск по ФИО и телефону) и `idx_patients_org_phone`, гарантирующие скорость выборки <100 мс.
+  5. Машинная верификация: 48+ таргетированных юнит-тестов (`patientSSOTSuite`, `patientCardTaxDeductionAutonomy`, `patientStudioSSOT`, `patientFamilyWalletAndDrawer`, `patientAnamnesisNorms`, `familyWalletCanonical`) пройдены со статусом PASS 100%.
+  6. Личный визуальный осмотр: Сняты и лично проинспектированы через `read_file` 4 обязательных скриншота на живом сервере:
+     - ☀️ `docs/proofs/patient-card/patient_card_pc_light_1440x900.png`
+     - 🌙 `docs/proofs/patient-card/patient_card_pc_dark_1440x900.png`
+     - 📱 `docs/proofs/patient-card/patient_card_mobile_light_390x844.png`
+     - 📱 `docs/proofs/patient-card/patient_card_mobile_dark_390x844.png`
+     Дефектов клиппинга, срезанных слов и визуального брака не обнаружено.
+

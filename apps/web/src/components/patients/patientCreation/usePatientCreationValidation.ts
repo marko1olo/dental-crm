@@ -78,6 +78,10 @@ export function usePatientCreationValidation({
 		fieldRequirements,
 	);
 
+	const patientNameReady = (newPatientName ?? "").trim().length > 0;
+	const patientCreatePhoneIssue =
+		(newPatientPhone ?? "").trim().length > 0 &&
+		(newPatientPhone ?? "").replace(/\D/g, "").length < 5;
 	const patientCreateReady = validationResult.isValid && !isPatientCreating;
 	const patientCreateGuidance = validationResult.guidanceMessage;
 
@@ -105,6 +109,6 @@ export function usePatientCreationValidation({
 	return {
 		duplicateConflict, setDuplicateConflict, potentialDuplicates, effectivePhone, effectiveBirthDate,
 		patientAge, isMinorUnder14, isMinorUnder18, isChild, validationResult,
-		patientCreateReady, patientCreateGuidance, quickIntakeValidationResult, quickActionReady,
+		patientNameReady, patientCreatePhoneIssue, patientCreateReady, patientCreateGuidance, quickIntakeValidationResult, quickActionReady,
 	};
 }

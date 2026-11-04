@@ -182,7 +182,7 @@ export const PatientStudioModal: React.FC<PatientStudioModalProps> = React.memo(
 								<div className="w-9 h-9 rounded-full bg-[var(--teal)]/15 text-[var(--teal)] flex items-center justify-center shrink-0"><User size={18} /></div>
 								<div className="min-w-0">
 									<div className="flex items-center gap-2">
-										<h2 id="patient-studio-title" className="text-sm sm:text-base font-semibold truncate leading-tight text-[var(--ink)]">
+										<h2 id="patient-studio-title" className="text-sm sm:text-base font-semibold break-words whitespace-normal leading-tight text-[var(--ink)]">
 											{mode === "create" ? "Экспресс-регистрация за 10 сек" : currentPatient?.fullName || "Карточка пациента"}
 										</h2>
 										{mode === "view" && currentPatient && (
@@ -196,7 +196,7 @@ export const PatientStudioModal: React.FC<PatientStudioModalProps> = React.memo(
 											</span>
 										)}
 									</div>
-									<p className="text-xs text-[var(--muted)] truncate mt-0.5">{mode === "create" ? "Только ФИО и телефон • Без бюрократии" : formatPhoneDisplay(currentPatient?.phone)}</p>
+									<p className="text-xs text-[var(--muted)] break-words whitespace-normal mt-0.5">{mode === "create" ? "Только ФИО и телефон • Без бюрократии" : formatPhoneDisplay(currentPatient?.phone)}</p>
 								</div>
 							</div>
 							<div className="flex items-center gap-2 shrink-0">

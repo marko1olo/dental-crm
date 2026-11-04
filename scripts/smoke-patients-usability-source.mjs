@@ -1,19 +1,22 @@
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
-const appSource =
-	readFileSync("apps/web/src/App.tsx", "utf8") +
-	"\n" +
-	readAppLogicSourceSync() +
-	"\n" +
-	readFileSync("apps/web/src/hooks/domains/usePatientLogic.ts", "utf8");
+const appSource = [
+	readFileSync("apps/web/src/App.tsx", "utf8"),
+	readAppLogicSourceSync(),
+	readFileSync("apps/web/src/hooks/domains/usePatientLogic.ts", "utf8"),
+	readFileSync(
+		"apps/web/src/components/appLayout/viewRouterModules/AdministrativeViewRouter.tsx",
+		"utf8",
+	),
+].join("\n");
 /*
  * Экран пациента — это PatientsView.tsx плюс вынесенные из него формы. Гейт
  * проверяет свойства ЭКРАНА (подписи, autoComplete, inputMode, pattern,
  * состояния кнопок), а не то, в каком файле они лежат: иначе первый же честный
  * вынос формы гасит проверку доступности целого блока, и никто этого не
  * замечает. Ровно так уже вышло с реквизитами: блок паспорта, ИНН, СНИЛС и
- * представителя вынесен в components/patient/PatientAdministrativeForm.tsx,
+ * представителя вынесен в components/patients/PatientAdministrativeForm.tsx,
  * и без этой склейки шесть требований ниже (pattern у ИНН и СНИЛС,
  * autoComplete у адресов и документов, состояние переключателей дней приема)
  * искались бы в файле, где их больше нет.
@@ -21,13 +24,18 @@ const appSource =
 const patientsSource = [
 	readFileSync("apps/web/src/PatientsView.tsx", "utf8"),
 	readFileSync(
-		"apps/web/src/components/patient/PatientAdministrativeForm.tsx",
+		"apps/web/src/components/patients/PatientAdministrativeForm.tsx",
 		"utf8",
 	),
 	readFileSync(
-		"apps/web/src/components/patients/CreatePatientModal.tsx",
+		"apps/web/src/components/patients/PatientCreationModal.tsx",
 		"utf8",
 	),
+	...readdirSync("apps/web/src/components/patients/patientCreation")
+		.filter((f) => f.endsWith(".ts") || f.endsWith(".tsx"))
+		.map((f) =>
+			readFileSync(`apps/web/src/components/patients/patientCreation/${f}`, "utf8"),
+		),
 ].join("\n");
 const cssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
 
@@ -39,8 +47,8 @@ function forbidIn(source, needle, message) {
 	if (source.includes(needle)) throw new Error(message);
 }
 
-if (!/lazy\(\s*\(\)\s*=>\s*import\(\s*["']\.\/PatientsView["']\s*\)/.test(appSource)) {
-	throw new Error("App.tsx must lazy-load PatientsView.");
+if (!/lazy(WithRetry)?\(\s*\(\)\s*=>\s*import\(\s*["'].*PatientsView["']/.test(appSource)) {
+	throw new Error("App.tsx/AdministrativeViewRouter.tsx must lazy-load PatientsView.");
 }
 requireIn(
 	appSource,

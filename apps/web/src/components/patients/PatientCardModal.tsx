@@ -156,25 +156,38 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 							<h2
 								id="patient-card-modal-title"
 								data-testid="patient-card-modal-title"
-								className="text-sm sm:text-base font-black text-[var(--ink)] m-0 truncate leading-tight"
+								className="text-sm sm:text-base font-black text-[var(--ink)] m-0 break-words whitespace-normal leading-tight"
 							>
 								{isCreateMode
 									? "Первичная регистрация пациента"
 									: patientData.fullName || "Медицинская карта пациента"}
 							</h2>
-							<p className="text-xs text-[var(--muted)] m-0 truncate leading-tight">
-								{isCreateMode
-									? "Быстрое оформление за 10 секунд без бюрократии"
-									: `${patientData.phone ? `Тел: ${patientData.phone}` : "Паспортная карточка и клинический статус"}${
-											patientData.birthDate ? ` • ${patientData.birthDate}` : ""
-										}${
-											patientData.medicalCardNumber || patientData.cardNumber
-												? ` • Карта: №${patientData.medicalCardNumber || patientData.cardNumber}`
-												: patientData.id && patientData.id.length <= 16
-													? ` • ID: ${patientData.id}`
-													: ""
-										}`}
-							</p>
+							<div className="text-xs text-[var(--muted)] m-0 mt-0.5 flex flex-wrap items-center gap-x-2 gap-y-0.5 leading-normal">
+								{isCreateMode ? (
+									<span>Быстрое оформление за 10 секунд без бюрократии</span>
+								) : (
+									<>
+										{patientData.phone ? (
+											<span className="font-mono font-medium text-[var(--ink)]">
+												Тел: {patientData.phone}
+											</span>
+										) : (
+											<span>Паспортная карточка и клинический статус</span>
+										)}
+										{patientData.birthDate && <span>• {patientData.birthDate}</span>}
+										{(patientData.medicalCardNumber || patientData.cardNumber) && (
+											<span>
+												• Карта: №{patientData.medicalCardNumber || patientData.cardNumber}
+											</span>
+										)}
+										{patientData.id && patientData.id.length <= 16 && (
+											<span className="font-mono text-[10px] text-[var(--muted)] opacity-80">
+												• ID: {patientData.id}
+											</span>
+										)}
+									</>
+								)}
+							</div>
 						</div>
 					</div>
 
@@ -271,8 +284,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								}`}
 							/>
 							<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-								<span className="text-[10px] font-black uppercase tracking-wider shrink-0">
-									{safetyEvaluation.hasCriticalStopFlags ? "КРИТИЧЕСКИЙ СТОП-ФАКТОР:" : "КЛИНИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ:"}
+								<span className="text-[11px] font-bold shrink-0">
+									{safetyEvaluation.hasCriticalStopFlags ? "Критический стоп-фактор:" : "Клиническое предупреждение:"}
 								</span>
 								<div className="flex items-center gap-1.5 flex-wrap">
 									{safetyEvaluation.activeFlags.map((flag) => (
@@ -434,7 +447,7 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 
 				{/* ── ФУТЕР МОДАЛКИ (ЕДИНЫЙ ДИЗАЙН-КОД: РОВНО 1 PRIMARY CTA КНОПКА) ── */}
 				<div className="flex items-center justify-between p-3 sm:p-4 border-t border-[var(--glass-border)] bg-[var(--paper-strong)] gap-2.5 print:hidden">
-					<span className="hidden sm:inline text-xs text-[var(--muted)] truncate">
+					<span className="hidden sm:inline text-xs text-[var(--muted)] whitespace-normal">
 						{isCreateMode
 							? "DENTE CRM • Создание карты пациента без обязательных бюрократических полей"
 							: "Медицинская карта пациента • Защита персональных данных"}

@@ -12,7 +12,7 @@ import "./styles/themes.css";
 import "./styles/theme-overrides.css";
 import "./theme.css";
 
-import { PatientAnamnesisTab } from "./components/patient/PatientAnamnesisTab";
+import { PatientAnamnesisTab } from "./components/patients/PatientAnamnesisTab";
 
 function AnamnesisPreviewApp() {
 	useEffect(() => {

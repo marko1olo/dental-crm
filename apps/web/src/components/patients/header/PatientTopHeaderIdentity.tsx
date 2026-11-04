@@ -40,7 +40,7 @@ export function PatientTopHeaderIdentity({
 			<div className="min-w-0 flex-1 flex flex-col gap-0.5">
 				<div className="flex items-center gap-2 flex-wrap min-w-0">
 					<h2
-						className="text-[20px] font-black text-[var(--ink)] leading-tight tracking-tight truncate max-w-full"
+						className="text-[20px] font-black text-[var(--ink)] leading-tight tracking-tight break-words whitespace-normal max-w-full"
 						title={fullName}
 					>
 						{fullName}
