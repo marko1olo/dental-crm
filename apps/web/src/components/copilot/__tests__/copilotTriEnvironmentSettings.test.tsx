@@ -1,8 +1,8 @@
 /**
  * @file copilotTriEnvironmentSettings.test.tsx
  * @description Red Team Inquisitor Test Suite: Auto-Detection Runtime Environment,
- * Logical Settings Categories (Intelligence, Equipment, Voice & Privacy, Memory, Matrix),
- * Mandate 8b file limits, Mandate 8e doctor autonomy, and Mandate 8x clinical language.
+ * 6 Logical Clinical Settings Categories (Intelligence, Trust & Autonomy, Doctor Persona, Voice & Privacy, Memory, Matrix),
+ * Mandate 8b file limits, Mandate 8e doctor autonomy, and Mandate 8x clinical language (Zero COM Ports / Hardware Cargo Cult).
  */
 
 import React from "react";
@@ -19,21 +19,19 @@ const __dirname = path.dirname(__filename);
 import {
 	useCopilotStore,
 	detectRuntimeEnvironment,
-	type CopilotRuntimeEnvironment,
 } from "../../../store/copilotStore";
 import {
 	ENVIRONMENT_CAPABILITIES_MATRIX,
-	type CapabilityStatus,
 } from "../copilotCatalogData";
 import { CopilotSettingsModal } from "../CopilotSettingsModal";
 import { CopilotSettingsCapabilitiesTable, renderCapabilityStatusBadge } from "../settings/CopilotSettingsCapabilitiesTable";
-import { CopilotWebBrowserTab, CopilotDesktopNativeTab, CopilotMobileTabletTab } from "../settings/CopilotSettingsEnvironmentTabs";
-import { CopilotSettingsEquipmentTab } from "../settings/CopilotSettingsEquipmentTab";
+import { CopilotSettingsIntelligenceTab } from "../settings/CopilotSettingsIntelligenceTab";
+import { CopilotSettingsTrustTab, TRUST_LEVELS } from "../settings/CopilotSettingsTrustTab";
+import { CopilotSettingsPersonaTab } from "../settings/CopilotSettingsPersonaTab";
 import { CopilotSettingsVoicePrivacyTab } from "../settings/CopilotSettingsVoicePrivacyTab";
 import { CopilotSettingsMemoryTab } from "../settings/CopilotSettingsMemoryTab";
-import { CopilotSettingsGeneralTab } from "../settings/CopilotSettingsGeneralTab";
 
-describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
+describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)", () => {
 	beforeEach(() => {
 		useCopilotStore.setState({
 			settings: {
@@ -41,18 +39,26 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 				trustLevel: "balanced",
 				provider: "gemini",
 				model: "gemini-2.5-flash",
+				modelRoutingMode: "server_managed",
 				speedMode: "turbo",
 				showThinkingProcess: true,
+				temperature: 0.2,
 				clinicalSpecialization: "therapy",
 				diaryTemplate: "soap",
+				customDoctorInstructions: "",
+				granularPermissions: {
+					autoApproveFileReads: true,
+					autoApproveFileWrites: false,
+					autoApproveClinicalMutations: true,
+					autoApproveFinancialDrafts: true,
+					autoApproveExternalSoftware: false,
+				},
 				runtimeMode: "web_browser",
 				autoSaveDrafts: true,
 				webSpeechSensitivity: "normal",
 				maskPhiData: true,
-				localDropzonePath: "C:\\Radiology\\Export",
-				tomographyViewerApp: "planmeca_romexis",
-				fiscalRegisterComPort: "COM1",
 				globalDictationHotkey: "F9",
+				localDropzonePath: "C:\\Radiology\\Export",
 				gloveModeTouchTarget: true,
 				screenWakeLock: true,
 				hapticFeedbackEnabled: true,
@@ -62,73 +68,73 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 	});
 
 	it("1. detectRuntimeEnvironment() автоматически определяет среду без ручного выбора", () => {
-		// В Node.js среде по умолчанию (нет window) возвращает web_browser
 		const env = detectRuntimeEnvironment();
 		assert.equal(env, "web_browser");
 
-		// Проверка метода стора refreshRuntimeEnvironment
 		const store = useCopilotStore.getState();
 		const refreshed = store.refreshRuntimeEnvironment();
 		assert.equal(refreshed, "web_browser");
 		assert.equal(useCopilotStore.getState().settings.runtimeMode, "web_browser");
 	});
 
-	it("2. copilotStore содержит параметры всех систем (оборудование, голос, сенсорика)", () => {
+	it("2. copilotStore содержит параметры клинического интеллекта, доверия и голоса (БЕЗ COM-портов)", () => {
 		const settings = useCopilotStore.getState().settings;
 
-		// Среда: Браузер и Голос
+		// Интеллект и доверие
+		assert.equal(settings.trustLevel, "balanced");
+		assert.equal(typeof settings.temperature, "number");
+		assert.equal(typeof settings.showThinkingProcess, "boolean");
+		assert.equal(typeof settings.granularPermissions.autoApproveClinicalMutations, "boolean");
+
+		// Клиническая персона
+		assert.equal(settings.clinicalSpecialization, "therapy");
+		assert.equal(settings.diaryTemplate, "soap");
+
+		// Голос и приватность (152-ФЗ)
 		assert.equal(typeof settings.autoSaveDrafts, "boolean");
 		assert.ok(["high", "normal", "low"].includes(settings.webSpeechSensitivity));
 		assert.equal(typeof settings.maskPhiData, "boolean");
-
-		// Оборудование кабинета
-		assert.ok(settings.localDropzonePath.includes("Export"));
-		assert.equal(settings.tomographyViewerApp, "planmeca_romexis");
-		assert.equal(settings.fiscalRegisterComPort, "COM1");
 		assert.equal(settings.globalDictationHotkey, "F9");
 
-		// Сенсорная эргономика под капотом
-		assert.equal(settings.gloveModeTouchTarget, true);
-		assert.equal(settings.screenWakeLock, true);
-		assert.equal(settings.hapticFeedbackEnabled, true);
-		assert.equal(settings.autoMicOnAppointmentOpen, false);
+		// Ликвидация аппаратного карго-культа (Мандат 8e / Завет Создателя)
+		assert.equal((settings as any).tomographyViewerApp, undefined, "tomographyViewerApp обязан быть полностью удален из стора");
+		assert.equal((settings as any).fiscalRegisterComPort, undefined, "fiscalRegisterComPort обязан быть полностью удален из стора");
 	});
 
-	it("3. updateSettings корректно обновляет параметры оборудования и голоса", () => {
+	it("3. updateSettings корректно обновляет параметры доверия, температуры и персоны", () => {
 		const store = useCopilotStore.getState();
 
 		store.updateSettings({
-			webSpeechSensitivity: "high",
-			tomographyViewerApp: "vatech_ez3d",
-			fiscalRegisterComPort: "COM3",
-			gloveModeTouchTarget: false,
-			screenWakeLock: true,
+			trustLevel: "autonomous",
+			temperature: 0.1,
+			clinicalSpecialization: "surgery",
+			globalDictationHotkey: "F10",
 		});
 
 		const updated = useCopilotStore.getState().settings;
-		assert.equal(updated.webSpeechSensitivity, "high");
-		assert.equal(updated.tomographyViewerApp, "vatech_ez3d");
-		assert.equal(updated.fiscalRegisterComPort, "COM3");
-		assert.equal(updated.gloveModeTouchTarget, false);
-		assert.equal(updated.screenWakeLock, true);
+		assert.equal(updated.trustLevel, "autonomous");
+		assert.equal(updated.temperature, 0.1);
+		assert.equal(updated.clinicalSpecialization, "surgery");
+		assert.equal(updated.globalDictationHotkey, "F10");
 	});
 
-	it("4. ENVIRONMENT_CAPABILITIES_MATRIX содержит честную раскладку возможностей", () => {
+	it("4. ENVIRONMENT_CAPABILITIES_MATRIX содержит честную клиническую раскладку возможностей", () => {
 		assert.ok(ENVIRONMENT_CAPABILITIES_MATRIX.length >= 10, "Матрица обязана содержать не менее 10 ключевых возможностей");
 
-		// RVG захват: требует десктопное приложение
-		const rvg = ENVIRONMENT_CAPABILITIES_MATRIX.find((c) => c.id === "rvg_capture");
-		assert.ok(rvg);
-		assert.equal(rvg?.web, "desktop_required");
-		assert.equal(rvg?.desktop, "available");
-		assert.equal(rvg?.mobile, "unavailable");
+		// Импорт DICOM: доступен во всех средах (дисковод, USB, локальный путь)
+		const dicom = ENVIRONMENT_CAPABILITIES_MATRIX.find((c) => c.id === "dicom_import");
+		assert.ok(dicom, "dicom_import обязан присутствовать в матрице");
+		assert.equal(dicom?.web, "available");
 
-		// Дневники SOAP: доступны во всех средах
+		// Касса и сметы
+		const kassa = ENVIRONMENT_CAPABILITIES_MATRIX.find((c) => c.id === "fiscal_kassa");
+		assert.ok(kassa, "fiscal_kassa обязан присутствовать в матрице");
+		assert.equal(kassa?.web, "available");
+
+		// Дневники SOAP: доступны везде
 		const diary = ENVIRONMENT_CAPABILITIES_MATRIX.find((c) => c.id === "emr_diary");
 		assert.ok(diary);
 		assert.equal(diary?.web, "available");
-		assert.equal(diary?.desktop, "available");
-		assert.equal(diary?.mobile, "available");
 	});
 
 	it("5. Мандат 8x: матрица возможностей не содержит номеров советских приказов и канцелярита", () => {
@@ -148,7 +154,7 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 		assert.ok(htmlDesk.includes("slate"));
 	});
 
-	it("7. CopilotSettingsModal рендерит тихий авто-индикатор устройства и 5 логических категорий (БЕЗ ручного селектора)", () => {
+	it("7. CopilotSettingsModal рендерит тихий авто-индикатор устройства и 6 логических клинических категорий", () => {
 		const html = renderToString(
 			<CopilotSettingsModal
 				isOpen={true}
@@ -164,19 +170,23 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 		// Запрет ручного селектора сред!
 		assert.ok(!html.includes("Текущая рабочая среда врача:"), "Ручной селектор сред обязан быть полностью удален!");
 
-		// 5 логических вкладок
+		// 6 логических вкладок
 		assert.ok(html.includes("Интеллект и модель"));
-		assert.ok(html.includes("Оборудование кабинета"));
+		assert.ok(html.includes("Уровень доверия"));
+		assert.ok(html.includes("Профиль врача"));
 		assert.ok(html.includes("Голос и приватность"));
 		assert.ok(html.includes("Память ИИ"));
 		assert.ok(html.includes("Матрица возможностей"));
+
+		// Ликвидация вкладки «Оборудование кабинета» (Мандат 8e)
+		assert.ok(!html.includes("Оборудование кабинета"), "Вкладка Оборудование кабинета обязана отсутствовать");
 
 		// Мандат 8e: кнопка Сохранить настройки не заблокирована
 		assert.ok(html.includes("Сохранить настройки"));
 		assert.ok(!html.includes("disabled"), "Кнопки сохранения не должны блокироваться атрибутом disabled (Мандат 8e)");
 	});
 
-	it("8. CopilotSettingsVoicePrivacyTab рендерит настройки Web Speech, автосейва и маскирования PHI", () => {
+	it("8. CopilotSettingsVoicePrivacyTab рендерит настройки Web Speech, автосейва, горячей клавиши и маскирования PHI", () => {
 		const html = renderToString(
 			<CopilotSettingsVoicePrivacyTab
 				webSpeechSensitivity="normal"
@@ -187,6 +197,8 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 				setMaskPhiData={() => {}}
 				autoMicOnAppointmentOpen={false}
 				setAutoMic={() => {}}
+				globalDictationHotkey="F9"
+				setGlobalHotkey={() => {}}
 			/>
 		);
 
@@ -194,61 +206,85 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 		assert.ok(html.includes("Чувствительность распознавания речи Web Speech"));
 		assert.ok(html.includes("Автосохранение черновиков дневников SOAP"));
 		assert.ok(html.includes("Защита персональных данных пациента"));
-		assert.ok(html.includes("Автоматический переход к микрофону в карте приёма"));
+		assert.ok(html.includes("Горячая клавиша быстрой диктовки"));
+		assert.ok(html.includes("F9"));
 	});
 
-	it("9. CopilotSettingsEquipmentTab рендерит сетевой путь dropzone, выбор Romexis/Ez3D, COM-порт и аппаратную эргономику", () => {
+	it("9. CopilotSettingsTrustTab рендерит 3 уровня доверия и гранулярные чекбоксы", () => {
 		const html = renderToString(
-			<CopilotSettingsEquipmentTab
-				localDropzonePath="C:\\Radiology\\Export"
-				setDropzonePath={() => {}}
-				tomographyViewerApp="planmeca_romexis"
-				setTomographyViewer={() => {}}
-				fiscalRegisterComPort="COM1"
-				setComPort={() => {}}
-				globalDictationHotkey="F9"
-				setGlobalHotkey={() => {}}
-				gloveModeTouchTarget={true}
-				setGloveMode={() => {}}
-				screenWakeLock={true}
-				setWakeLock={() => {}}
-				hapticFeedbackEnabled={true}
-				setHaptic={() => {}}
+			<CopilotSettingsTrustTab
+				trustLevel="balanced"
+				setTrustLevel={() => {}}
+				granularPermissions={{
+					autoApproveFileReads: true,
+					autoApproveFileWrites: false,
+					autoApproveClinicalMutations: true,
+					autoApproveFinancialDrafts: true,
+					autoApproveExternalSoftware: false,
+				}}
+				setGranularPermissions={() => {}}
 			/>
 		);
 
-		assert.ok(html.includes("Оборудование и рабочая станция кабинета"));
-		assert.ok(html.includes("Сетевая папка визиографов и КЛКТ (ПК Dropzone)"));
-		assert.ok(html.includes("Planmeca Romexis 3D / ProSensor"));
-		assert.ok(html.includes("Vatech Ez3D Plus / EzDent-i"));
-		assert.ok(html.includes("COM-порт кассы и чеков"));
-		assert.ok(html.includes("Глобальный хоткей диктовки"));
-		assert.ok(html.includes("Сенсорная эргономика рабочего места"));
-		assert.ok(html.includes("Режим работы в перчатках"));
-		assert.ok(html.includes("Удержание экрана включенным (Screen Wake Lock)"));
+		assert.ok(html.includes("Уровень доверия к действиям ИИ"));
+		assert.ok(html.includes("Максимальный контроль (Параноик)"));
+		assert.ok(html.includes("Сбалансированный (Копайлот)"));
+		assert.ok(html.includes("Высокая автономия (Суперагент)"));
+		assert.ok(html.includes("Гранулярные разрешения действий"));
+		assert.ok(html.includes("Разметка формулы и дневника ЭМК"));
 	});
 
-	it("10. CopilotSettingsMemoryTab рендерит правила и привычки врача с добавлением и удалением", () => {
+	it("10. CopilotSettingsPersonaTab рендерит 6 специализаций врача, шаблоны дневников и клинические пресеты", () => {
 		const html = renderToString(
-			<CopilotSettingsMemoryTab />
+			<CopilotSettingsPersonaTab
+				clinicalSpecialization="therapy"
+				setClinicalSpecialization={() => {}}
+				diaryTemplate="soap"
+				setDiaryTemplate={() => {}}
+				customInstructions=""
+				setCustomInstructions={() => {}}
+			/>
 		);
 
-		assert.ok(html.includes("Долгосрочная клиническая память врача"));
-		assert.ok(html.includes("Добавить клиническое предпочтение:"));
-		assert.ok(html.includes("Сохраненные правила и привычки"));
+		assert.ok(html.includes("Клинический профиль и стиль врача"));
+		assert.ok(html.includes("Специализация врача"));
+		assert.ok(html.includes("Терапевтическая стоматология"));
+		assert.ok(html.includes("Формат дневника приёма"));
+		assert.ok(html.includes("Индивидуальные инструкции и персональный стиль врача"));
+		assert.ok(html.includes("Микроскопист-эндодонтист"));
+		assert.ok(html.includes("Хирург-имплантолог"));
+		assert.ok(html.includes("Ортопед-гнатолог"));
+		assert.ok(html.includes("Детский стоматолог"));
 	});
 
-	it("11. CopilotSettingsCapabilitiesTable рендерит сравнительную матрицу сред DENTE", () => {
+	it("11. CopilotSettingsIntelligenceTab рендерит маршрутизацию модели, CoT консилиум и строгость ответа", () => {
 		const html = renderToString(
-			<CopilotSettingsCapabilitiesTable runtimeMode="web_browser" />
+			<CopilotSettingsIntelligenceTab
+				modelRoutingMode="server_managed"
+				setModelRoutingMode={() => {}}
+				byokProvider="gemini"
+				setByokProvider={() => {}}
+				byokApiKey=""
+				setByokApiKey={() => {}}
+				byokModel="gemini-2.5-flash"
+				setByokModel={() => {}}
+				speedMode="turbo"
+				setSpeedMode={() => {}}
+				showThinkingProcess={true}
+				setShowThinkingProcess={() => {}}
+				temperature={0.2}
+				setTemperature={() => {}}
+			/>
 		);
 
-		assert.ok(html.includes("Сравнительная матрица сред DENTE"));
-		assert.ok(html.includes("Текущая: Веб-браузер"));
-		assert.ok(html.includes("Оптический захват визиографа"));
+		assert.ok(html.includes("Интеллект и маршрутизация модели"));
+		assert.ok(html.includes("Режим клинического консилиума"));
+		assert.ok(html.includes("Турбо"));
+		assert.ok(html.includes("Консилиум"));
+		assert.ok(html.includes("Клиническая строгость ответа (Температура: 0.2)"));
 	});
 
-	it("12. Мандат 8b: проверка размеров всех файлов настроек Копайлота (Sweet Spot <= 350-450 строк)", () => {
+	it("12. Мандат 8b: проверка размеров всех файлов настроек Копайлота (Sweet Spot <= 350 строк)", () => {
 		const checkFile = (relPath: string, maxLines: number) => {
 			const fullPath = path.resolve(__dirname, relPath);
 			assert.ok(fs.existsSync(fullPath), `Файл ${relPath} обязан существовать`);
@@ -261,24 +297,24 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 
 		checkFile("../CopilotSettingsModal.tsx", 350);
 		checkFile("../../../store/copilotStore.ts", 450);
-		checkFile("../settings/CopilotSettingsGeneralTab.tsx", 260);
-		checkFile("../settings/CopilotSettingsEquipmentTab.tsx", 250);
+		checkFile("../settings/CopilotSettingsIntelligenceTab.tsx", 200);
+		checkFile("../settings/CopilotSettingsTrustTab.tsx", 200);
+		checkFile("../settings/CopilotSettingsPersonaTab.tsx", 200);
 		checkFile("../settings/CopilotSettingsVoicePrivacyTab.tsx", 200);
 		checkFile("../settings/CopilotSettingsMemoryTab.tsx", 200);
 		checkFile("../settings/CopilotSettingsCapabilitiesTable.tsx", 150);
-		checkFile("../settings/CopilotSettingsEnvironmentTabs.tsx", 350);
 	});
 
 	it("13. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде всех компонентов настроек", () => {
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		const files = [
 			"../CopilotSettingsModal.tsx",
-			"../settings/CopilotSettingsGeneralTab.tsx",
-			"../settings/CopilotSettingsEquipmentTab.tsx",
+			"../settings/CopilotSettingsIntelligenceTab.tsx",
+			"../settings/CopilotSettingsTrustTab.tsx",
+			"../settings/CopilotSettingsPersonaTab.tsx",
 			"../settings/CopilotSettingsVoicePrivacyTab.tsx",
 			"../settings/CopilotSettingsMemoryTab.tsx",
 			"../settings/CopilotSettingsCapabilitiesTable.tsx",
-			"../settings/CopilotSettingsEnvironmentTabs.tsx",
 		];
 
 		for (const rel of files) {

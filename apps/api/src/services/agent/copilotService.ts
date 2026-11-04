@@ -32,8 +32,8 @@ export {
 export function createDefaultLlmProvider(): LLMProvider {
 	const defaultOptions = process.env.AGENTROUTER_API_KEYS
 		? {
-				modelId: process.env.AGENTROUTER_MODEL || "deepseek-v4-flash",
-				fallbackChain: ["deepseek", "groq", "gemini"] as const,
+				modelId: process.env.AGENTROUTER_MODEL || "gemini-2.5-flash",
+				fallbackChain: ["gemini", "groq", "deepseek"] as const,
 		  }
 		: {};
 	const omniProvider = omniLlmGateway.asLlmProvider(defaultOptions);

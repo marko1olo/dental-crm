@@ -8,6 +8,7 @@ import {
 	copilotActionRunner,
 } from "../../../services/ai";
 import { useVisitStore } from "../../../store/visitStore";
+import { useCopilotStore } from "../../../store/copilotStore";
 import type {
 	ConfirmUiMessage,
 	CopilotNudge,
@@ -72,9 +73,15 @@ export function useCopilotActions({
 			const sessId = conversationId || `sess_${Date.now()}`;
 			if (!conversationId) setConversationId(sessId);
 
+			const settings = useCopilotStore.getState().settings;
 			await streamRequest("/api/v1/copilot/chat", {
 				conversationId: sessId,
 				message: text,
+				modelRoutingMode: settings.modelRoutingMode,
+				byokProvider: settings.byokProvider,
+				byokApiKey: settings.byokApiKey,
+				byokModel: settings.byokModel,
+				speedMode: settings.speedMode,
 			});
 			setBusy(false);
 			setPhase(null);

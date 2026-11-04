@@ -45,7 +45,7 @@ export function ImagingCbctActiveCard({
 							) : localImageIds?.length > 0 ? (
 								<span>Готово к просмотру: {localImageIds.length} срезов (аппаратное ускорение)</span>
 							) : (
-								<span>Профессиональный просмотр в нативном ПО томографа клиники или во встроенной 3D студии</span>
+								<span>Профессиональный просмотр во внешнем просмотрщике (Romexis, Ez3D, RadiAnt) или во встроенной 3D студии</span>
 							)}
 						</div>
 					</div>
@@ -65,8 +65,7 @@ export function ImagingCbctActiveCard({
 							type="button"
 							data-testid="btn-load-dicomweb-pacs"
 							onClick={onLoadFromDicomweb}
-							disabled={isDicomwebLoading}
-							className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all cursor-pointer disabled:opacity-60 inline-flex items-center gap-1.5 shadow-2xs"
+							className="secondary-button h-9 min-h-[36px] px-3 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] active:scale-95 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
 							title="Запросить срезы из локального архива DICOM PACS"
 						>
 							<RefreshCw size={14} className={`shrink-0 ${isDicomwebLoading ? "animate-spin" : ""}`} />

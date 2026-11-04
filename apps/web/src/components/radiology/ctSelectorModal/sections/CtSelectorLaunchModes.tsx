@@ -31,7 +31,7 @@ export const CtSelectorLaunchModes: React.FC<CtSelectorLaunchModesProps> = ({
 					{launchMode === "standalone_window"
 						? "Отдельное окно для второго монитора врача"
 						: launchMode === "external_app"
-							? "Нативный просмотрщик производителя томографа"
+							? "Внешний просмотрщик (Romexis, Ez3D-i, RadiAnt, 3Shape)"
 							: "Встроенный просмотрщик внутри медицинской карты"}
 				</span>
 			</div>
@@ -102,7 +102,7 @@ export const CtSelectorLaunchModes: React.FC<CtSelectorLaunchModesProps> = ({
 					</div>
 				</button>
 
-				{/* Режим 3: В приложении томографа (Picasso / Ez3D / Romexis) */}
+				{/* Режим 3: Внешний просмотрщик (Romexis / Ez3D / RadiAnt / 3Shape) */}
 				<button
 					type="button"
 					onClick={() => setLaunchMode("external_app")}
@@ -125,22 +125,22 @@ export const CtSelectorLaunchModes: React.FC<CtSelectorLaunchModesProps> = ({
 					<div className="min-w-0">
 						<div className="flex items-center gap-1.5">
 							<strong className="text-xs font-bold text-[var(--ink)]">
-								Вьюер томографа
+								Внешний вьюер
 							</strong>
 							<span className="text-[10px] font-semibold px-1 rounded bg-amber-500/20 text-amber-800 dark:text-amber-200">
-								Picasso/Ez3D
+								Romexis/Ez3D/RadiAnt
 							</span>
 						</div>
 						<span className="block text-[11px] text-[var(--muted)] leading-snug mt-0.5">
 							{isDesktop
-								? "Запуск нативного приложения производителя"
+								? "Запуск установленного внешнего просмотрщика"
 								: "Доступно в приложении DENTE Desktop (.exe)"}
 						</span>
 					</div>
 				</button>
 			</div>
 
-			{/* Выбор внешнего просмотрщика томографа при активном external_app */}
+			{/* Выбор внешнего просмотрщика при активном external_app */}
 			{launchMode === "external_app" && (
 				<div className="mt-1 p-3 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3 flex-wrap text-xs">
 					<div className="flex items-center gap-2">
@@ -156,11 +156,15 @@ export const CtSelectorLaunchModes: React.FC<CtSelectorLaunchModesProps> = ({
 							className="h-8 px-2.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] focus:outline-none focus:border-amber-500 cursor-pointer"
 							data-testid="select-external-ct-viewer"
 						>
-							<option value="picasso">Picasso Viewer (Vatech / E-WOO)</option>
-							<option value="ez3d">Ez3D-i / Ez3D2009 (Vatech)</option>
+							<option value="radiant">RadiAnt DICOM Viewer</option>
 							<option value="romexis">Planmeca Romexis 3D</option>
+							<option value="ez3d">Ez3D-i / Ez3D2009 (Vatech)</option>
+							<option value="sidexis">Dentsply Sirona Sidexis 4</option>
+							<option value="3shape">3Shape Dental System</option>
+							<option value="picasso">Picasso Viewer (E-WOO)</option>
 							<option value="ondemand3d">CyberMed OnDemand3D</option>
 							<option value="icat">i-CATVision</option>
+							<option value="explorer">Проводник папки (Windows)</option>
 						</select>
 					</div>
 				</div>

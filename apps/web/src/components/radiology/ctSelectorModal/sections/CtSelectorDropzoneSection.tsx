@@ -97,11 +97,10 @@ export const CtSelectorDropzoneSection: React.FC<CtSelectorDropzoneSectionProps>
 
 				<div>
 					<strong className="text-sm font-bold text-[var(--ink)] block">
-						Перетащите сюда архив КТ от Пикассо или папку со срезами
+						Перетащите сюда архив КТ, папку со срезами с CD/диска или файлы DICOM
 					</strong>
 					<span className="text-xs text-[var(--muted)] block mt-0.5 max-w-md">
-						Поддерживаются ZIP-архивы, папки DICOM, файлы срезов .dcm от томографов KaVo,
-						Vatech, Planmeca, Sirona, CyberMed
+						Поддерживаются ZIP-архивы с диска/флешки, папки DICOM со срезами с CD/DVD-дисковода или отдельные файлы .dcm (Planmeca, Vatech, KaVo, Sirona)
 					</span>
 				</div>
 
@@ -127,8 +126,7 @@ export const CtSelectorDropzoneSection: React.FC<CtSelectorDropzoneSectionProps>
 					<button
 						type="button"
 						onClick={() => zipInputRef.current?.click()}
-						disabled={isExtracting}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-bold rounded-lg bg-teal-600 hover:bg-teal-500 text-white shadow-xs transition-all active:scale-95 cursor-pointer"
 						data-testid="btn-pick-zip-archive"
 					>
 						<FileArchive size={14} />
@@ -138,8 +136,7 @@ export const CtSelectorDropzoneSection: React.FC<CtSelectorDropzoneSectionProps>
 					<button
 						type="button"
 						onClick={() => folderInputRef.current?.click()}
-						disabled={isExtracting}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer disabled:opacity-50"
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer"
 						data-testid="btn-pick-dicom-folder"
 					>
 						<Folder size={14} />
@@ -149,8 +146,7 @@ export const CtSelectorDropzoneSection: React.FC<CtSelectorDropzoneSectionProps>
 					<button
 						type="button"
 						onClick={() => filesInputRef.current?.click()}
-						disabled={isExtracting}
-						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer disabled:opacity-50"
+						className="inline-flex items-center gap-1.5 h-8 px-3 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer"
 						data-testid="btn-pick-dcm-files"
 					>
 						<Scan size={14} />

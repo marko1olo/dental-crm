@@ -22,6 +22,7 @@ import {
 } from "../../services/agent/index.js";
 import { extractDoctorScreenContext } from "./contextExtractor.js";
 import { messageBodySchema } from "./types.js";
+import { routeClinicalTask } from "../../ai/clinicalModelRouter.js";
 
 const DENTE_COPILOT_SYSTEM_PROMPT = buildDenteAgentSystemPrompt();
 
@@ -52,10 +53,11 @@ export const chatRoutes: FastifyPluginAsync = async (
 				});
 			}
 
+			const body = parsedBody.data;
 			const userText = (
-				parsedBody.data.content ??
-				parsedBody.data.message ??
-				parsedBody.data.text ??
+				body.content ??
+				body.message ??
+				body.text ??
 				""
 			).trim();
 
@@ -134,6 +136,18 @@ export const chatRoutes: FastifyPluginAsync = async (
 				doctorContext,
 			);
 
+			const routingDecision = routeClinicalTask({
+				messages: session.history.map((m) => ({
+					role: m.role as any,
+					content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+				})),
+				speedMode: body.speedMode,
+				modelRoutingMode: body.modelRoutingMode,
+				byokProvider: body.byokProvider,
+				byokApiKey: body.byokApiKey,
+				byokModel: body.byokModel,
+			});
+
 			try {
 				const stream = AgentOrchestrator.runTurnStream({
 					ctx,
@@ -142,6 +156,7 @@ export const chatRoutes: FastifyPluginAsync = async (
 					history: session.history,
 					toolNames: defaultToolRegistry.list(),
 					redactor: session.redactor,
+					model: routingDecision.model,
 				});
 
 				for await (const event of stream) {
@@ -204,6 +219,11 @@ export const chatRoutes: FastifyPluginAsync = async (
 		content?: string;
 		message?: string;
 		text?: string;
+		modelRoutingMode?: "server_managed" | "custom_byok";
+		byokProvider?: string;
+		byokApiKey?: string;
+		byokModel?: string;
+		speedMode?: "turbo" | "deep_reasoning";
 	}
 
 	const handleUnifiedChat = async (
@@ -292,6 +312,18 @@ export const chatRoutes: FastifyPluginAsync = async (
 				doctorContext,
 			);
 
+			const routingDecision = routeClinicalTask({
+				messages: session.history.map((m) => ({
+					role: m.role as any,
+					content: typeof m.content === "string" ? m.content : JSON.stringify(m.content),
+				})),
+				speedMode: body.speedMode,
+				modelRoutingMode: body.modelRoutingMode,
+				byokProvider: body.byokProvider,
+				byokApiKey: body.byokApiKey,
+				byokModel: body.byokModel,
+			});
+
 			try {
 				const stream = AgentOrchestrator.runTurnStream({
 					ctx,
@@ -300,6 +332,7 @@ export const chatRoutes: FastifyPluginAsync = async (
 					history: session.history,
 					toolNames: defaultToolRegistry.list(),
 					redactor: session.redactor,
+					model: routingDecision.model,
 				});
 
 				for await (const event of stream) {

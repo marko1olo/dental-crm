@@ -1,13 +1,14 @@
 /**
  * @file CopilotSettingsModal.tsx
- * @description Dedicated AI & Copilot settings modal: Logical categories
- * (Intelligence & Model, Cabinet Equipment, Voice & Privacy, Clinical Memory, Capabilities Matrix),
- * Auto device detection, Trust Levels, and Clinical Ergonomics (Mandate 8b <= 350 lines).
+ * @description Dedicated AI & Copilot settings modal: 6 logical clinical categories
+ * (Intelligence & Model, Trust & Autonomy, Doctor Persona, Voice & Privacy, Long-term Memory, Capabilities Matrix),
+ * Auto device detection, and Clinical Ergonomics (Mandate 8b <= 350 lines).
  */
 
 import React, { useState } from "react";
 import {
-	Brain, Globe, HardDrive, Mic, Monitor, Sliders, Smartphone, Table, X
+	Brain, Globe, Mic, Monitor, ShieldCheck, Sliders, Smartphone,
+	Sparkles, Stethoscope, Table, X
 } from "lucide-react";
 import {
 	useCopilotStore,
@@ -18,18 +19,16 @@ import {
 	type CopilotRuntimeEnvironment,
 	type DiaryTemplate,
 	type ModelRoutingMode,
-	type TomographyViewerApp,
 	type WebSpeechSensitivity,
 } from "../../store/copilotStore";
 import { showToast } from "../GlobalToast";
-import {
-	AI_MODELS,
-	CopilotSettingsGeneralTab,
-} from "./settings/CopilotSettingsGeneralTab";
-import { CopilotSettingsEquipmentTab } from "./settings/CopilotSettingsEquipmentTab";
+import { CopilotSettingsIntelligenceTab } from "./settings/CopilotSettingsIntelligenceTab";
+import { CopilotSettingsTrustTab } from "./settings/CopilotSettingsTrustTab";
+import { CopilotSettingsPersonaTab } from "./settings/CopilotSettingsPersonaTab";
 import { CopilotSettingsVoicePrivacyTab } from "./settings/CopilotSettingsVoicePrivacyTab";
 import { CopilotSettingsMemoryTab } from "./settings/CopilotSettingsMemoryTab";
 import { CopilotSettingsCapabilitiesTable } from "./settings/CopilotSettingsCapabilitiesTable";
+import { MODERN_BYOK_MODELS } from "./settings/CopilotSettingsModelRouting";
 
 export interface CopilotSettingsModalProps {
 	isOpen: boolean;
@@ -37,7 +36,7 @@ export interface CopilotSettingsModalProps {
 	onOpenMemoryTab?: () => void;
 }
 
-export type SettingsTab = "intelligence" | "equipment" | "voice_privacy" | "memory" | "matrix";
+export type SettingsTab = "intelligence" | "trust" | "persona" | "voice_privacy" | "memory" | "matrix";
 
 export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: CopilotSettingsModalProps) {
 	const settings = useCopilotStore((s) => s.settings);
@@ -53,6 +52,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [byokModel, setByokModel] = useState<string>(settings.byokModel || "gemini-2.5-flash");
 	const [speedMode, setSpeedModeState] = useState<AiSpeedMode>(settings.speedMode);
 	const [showThinkingProcess, setShowThinkingState] = useState<boolean>(settings.showThinkingProcess);
+	const [temperature, setTemperatureState] = useState<number>(settings.temperature ?? 0.2);
 	const [clinicalSpecialization, setSpecState] = useState<ClinicalSpecialization>(settings.clinicalSpecialization);
 	const [diaryTemplate, setDiaryTemplateState] = useState<DiaryTemplate>(settings.diaryTemplate);
 	const [customDoctorInstructions, setCustomDoctorInstructions] = useState<string>(settings.customDoctorInstructions || "");
@@ -64,22 +64,18 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 		autoApproveExternalSoftware: false,
 	});
 
-	// Голос и приватность
+	// Голос и приватность (152-ФЗ)
 	const [autoSaveDrafts, setAutoSaveDrafts] = useState<boolean>(settings.autoSaveDrafts);
 	const [webSpeechSensitivity, setSpeechSensitivity] = useState<WebSpeechSensitivity>(settings.webSpeechSensitivity || "normal");
 	const [maskPhiData, setMaskPhiData] = useState<boolean>(settings.maskPhiData ?? true);
 	const [autoMicOnAppointmentOpen, setAutoMic] = useState<boolean>(settings.autoMicOnAppointmentOpen ?? false);
-
-	// Оборудование кабинета
-	const [localDropzonePath, setDropzoneState] = useState<string>(settings.localDropzonePath);
-	const [tomographyViewerApp, setTomographyViewer] = useState<TomographyViewerApp>(settings.tomographyViewerApp || "planmeca_romexis");
-	const [fiscalRegisterComPort, setComPort] = useState<string>(settings.fiscalRegisterComPort || "COM1");
 	const [globalDictationHotkey, setGlobalHotkey] = useState<string>(settings.globalDictationHotkey || "F9");
 
-	// Сенсорная эргономика под капотом
-	const [gloveModeTouchTarget, setGloveMode] = useState<boolean>(settings.gloveModeTouchTarget ?? true);
-	const [screenWakeLock, setWakeLock] = useState<boolean>(settings.screenWakeLock ?? true);
-	const [hapticFeedbackEnabled, setHaptic] = useState<boolean>(settings.hapticFeedbackEnabled ?? true);
+	// Рабочая станция и сенсорная эргономика
+	const [localDropzonePath] = useState<string>(settings.localDropzonePath);
+	const [gloveModeTouchTarget] = useState<boolean>(settings.gloveModeTouchTarget ?? true);
+	const [screenWakeLock] = useState<boolean>(settings.screenWakeLock ?? true);
+	const [hapticFeedbackEnabled] = useState<boolean>(settings.hapticFeedbackEnabled ?? true);
 
 	const runtimeMode: CopilotRuntimeEnvironment = settings.runtimeMode;
 	const isChairside = runtimeMode === "chairside_tablet" || runtimeMode === "mobile_tablet";
@@ -96,7 +92,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	if (!isOpen) return null;
 
 	const handleSave = () => {
-		const targetModel = AI_MODELS.find((m) => m.id === (modelRoutingMode === "custom_byok" ? byokModel : model));
+		const targetModel = MODERN_BYOK_MODELS.find((m) => m.id === (modelRoutingMode === "custom_byok" ? byokModel : model));
 		updateSettings({
 			trustLevel,
 			model: modelRoutingMode === "custom_byok" ? byokModel : "server_managed",
@@ -107,6 +103,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			provider: modelRoutingMode === "custom_byok" ? byokProvider : (targetModel?.provider || "gemini"),
 			speedMode,
 			showThinkingProcess,
+			temperature,
 			clinicalSpecialization,
 			diaryTemplate,
 			customDoctorInstructions,
@@ -114,16 +111,14 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			autoSaveDrafts,
 			webSpeechSensitivity,
 			maskPhiData,
-			localDropzonePath,
-			tomographyViewerApp,
-			fiscalRegisterComPort,
 			globalDictationHotkey,
+			localDropzonePath,
 			gloveModeTouchTarget,
 			screenWakeLock,
 			hapticFeedbackEnabled,
 			autoMicOnAppointmentOpen,
 		});
-		showToast("Настройки ИИ и оборудования успешно сохранены", "success");
+		showToast("Настройки ИИ успешно сохранены", "success");
 		onClose();
 	};
 
@@ -144,7 +139,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						</div>
 						<div className="min-w-0">
 							<h3 className="text-sm font-bold text-[var(--ink)] truncate">Настройки ИИ и Копайлота</h3>
-							<p className="text-[11px] text-[var(--muted)] truncate">Интеллект, оборудование кабинета, голос и приватность</p>
+							<p className="text-[11px] text-[var(--muted)] truncate">Интеллект, уровни доверия, персона врача, голос и память</p>
 						</div>
 					</div>
 					<button
@@ -197,13 +192,23 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 					</button>
 					<button
 						type="button"
-						onClick={() => setActiveTab("equipment")}
+						onClick={() => setActiveTab("trust")}
 						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
-							activeTab === "equipment" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							activeTab === "trust" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<HardDrive size={13} />
-						<span>Оборудование кабинета</span>
+						<ShieldCheck size={13} />
+						<span>Уровень доверия</span>
+					</button>
+					<button
+						type="button"
+						onClick={() => setActiveTab("persona")}
+						className={`py-2.5 border-0 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap outline-none focus:outline-none shrink-0 ${
+							activeTab === "persona" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+					>
+						<Stethoscope size={13} />
+						<span>Профиль врача</span>
 					</button>
 					<button
 						type="button"
@@ -222,7 +227,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							activeTab === "memory" ? "border-b-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-b-transparent text-[var(--muted)] hover:text-[var(--ink)]"
 						}`}
 					>
-						<Sliders size={13} />
+						<Sparkles size={13} />
 						<span>Память ИИ ({memoryCount})</span>
 					</button>
 					<button
@@ -240,15 +245,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 				{/* Контент активной вкладки со скроллом */}
 				<div className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
 					{activeTab === "intelligence" && (
-						<CopilotSettingsGeneralTab
-							trustLevel={trustLevel}
-							setTrustLevel={setTrustLevelState}
-							granularPermissions={granularPermissions}
-							setGranularPermissions={setGranularPermissions}
-							customInstructions={customDoctorInstructions}
-							setCustomInstructions={setCustomDoctorInstructions}
-							model={model}
-							setModel={setModelState}
+						<CopilotSettingsIntelligenceTab
 							modelRoutingMode={modelRoutingMode}
 							setModelRoutingMode={setModelRoutingMode}
 							byokProvider={byokProvider}
@@ -261,31 +258,28 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setSpeedMode={setSpeedModeState}
 							showThinkingProcess={showThinkingProcess}
 							setShowThinkingProcess={setShowThinkingState}
+							temperature={temperature}
+							setTemperature={setTemperatureState}
+						/>
+					)}
+
+					{activeTab === "trust" && (
+						<CopilotSettingsTrustTab
+							trustLevel={trustLevel}
+							setTrustLevel={setTrustLevelState}
+							granularPermissions={granularPermissions}
+							setGranularPermissions={setGranularPermissions}
+						/>
+					)}
+
+					{activeTab === "persona" && (
+						<CopilotSettingsPersonaTab
 							clinicalSpecialization={clinicalSpecialization}
 							setClinicalSpecialization={setSpecState}
 							diaryTemplate={diaryTemplate}
 							setDiaryTemplate={setDiaryTemplateState}
-							memoryCount={memoryCount}
-							onOpenMemory={() => setActiveTab("memory")}
-						/>
-					)}
-
-					{activeTab === "equipment" && (
-						<CopilotSettingsEquipmentTab
-							localDropzonePath={localDropzonePath}
-							setDropzonePath={setDropzoneState}
-							tomographyViewerApp={tomographyViewerApp}
-							setTomographyViewer={setTomographyViewer}
-							fiscalRegisterComPort={fiscalRegisterComPort}
-							setComPort={setComPort}
-							globalDictationHotkey={globalDictationHotkey}
-							setGlobalHotkey={setGlobalHotkey}
-							gloveModeTouchTarget={gloveModeTouchTarget}
-							setGloveMode={setGloveMode}
-							screenWakeLock={screenWakeLock}
-							setWakeLock={setWakeLock}
-							hapticFeedbackEnabled={hapticFeedbackEnabled}
-							setHaptic={setHaptic}
+							customInstructions={customDoctorInstructions}
+							setCustomInstructions={setCustomDoctorInstructions}
 						/>
 					)}
 
@@ -299,6 +293,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setMaskPhiData={setMaskPhiData}
 							autoMicOnAppointmentOpen={autoMicOnAppointmentOpen}
 							setAutoMic={setAutoMic}
+							globalDictationHotkey={globalDictationHotkey}
+							setGlobalHotkey={setGlobalHotkey}
 						/>
 					)}
 

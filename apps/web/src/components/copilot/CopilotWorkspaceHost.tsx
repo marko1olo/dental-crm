@@ -122,6 +122,10 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
           trustLevel: copilotSettings.trustLevel,
           speedMode: copilotSettings.speedMode,
           activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
+          modelRoutingMode: copilotSettings.modelRoutingMode,
+          byokProvider: copilotSettings.byokProvider,
+          byokApiKey: copilotSettings.byokApiKey,
+          byokModel: copilotSettings.byokModel,
           stream: false,
         }),
       });

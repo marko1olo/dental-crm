@@ -18,11 +18,10 @@ import { useCopilotStore } from "../../store/copilotStore";
 import { CopilotSettingsModal } from "./CopilotSettingsModal";
 import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
-import { CopilotWorkstationTab } from "./CopilotWorkstationTab";
 import { CopilotMemoryTab } from "./CopilotMemoryTab";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
 
-export type CopilotStudioTab = "dialog" | "actions" | "workstation" | "memory";
+export type CopilotStudioTab = "dialog" | "actions" | "memory";
 
 export interface CopilotStudioModalProps {
   isOpen: boolean; onClose: () => void; activeTooth?: number | null | undefined;
@@ -259,11 +258,10 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         {/* Компактный Antigravity Context Telemetry Bar */}
         <CopilotContextTelemetryBar patientName={patientName} patientId={patientId} activeTooth={activeTooth} compact />
 
-        {/* Навигационные вкладки кабинета */}
+        {/* Навигационные вкладки кабинета (3 клинические вкладки) */}
         <div className="copilot-tabs-nav flex border-b border-[var(--line)] px-3 gap-1.5 text-[11px] font-semibold shrink-0 overflow-x-auto no-scrollbar">
           <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "dialog" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><BookOpen size={13} /><span>Клинический диалог</span></button>
           <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "actions" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Activity size={13} /><span>Быстрые действия</span></button>
-          <button type="button" onClick={() => setActiveTab("workstation")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "workstation" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><HardDrive size={13} /><span>Станция ПК</span></button>
           <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "memory" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Brain size={13} /><span>Память ИИ</span></button>
         </div>
 
@@ -401,7 +399,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               { title: "Бронирование слота", badge: "Расписание", desc: "Резерв следующего этапа терапии через 7 дней без обязательных начмедов.", btn: "Забронировать окно приёма", icon: <Calendar size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createAppointmentSlot, { patientId, tooth: activeTooth, service: "Терапия" }) },
               { title: "Зубная формула FDI", badge: "Одонтограмма", desc: `Фиксация кариеса дентина и пломбирования зуба ${activeTooth || 36}.`, btn: `Обновить статус зуба ${activeTooth || 36}`, icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, { tooth: activeTooth || 36, state: "C", diagnosis: "K02.1" }) },
               { title: "Выставление счёта", badge: "Касса и чеки", desc: "Пречек на препарирование и нанокомпозитную реставрацию: 6 500 руб.", btn: "Сформировать счёт (6 500 руб.)", icon: <Receipt size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft, { patientId, amountKopecks: 650000, serviceTitle: "Лечение кариеса" }) },
-              { title: "Захват визиографа", badge: runtimeMode === "desktop_native" ? "ОС Native" : "Эмуляция", desc: "Оптический захват снимка Romexis / Ez3D Plus без ручного экспорта файлов.", btn: "Захватить снимок визиографа", icon: <Camera size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.captureScreen, { targetApp: "Planmeca Romexis", tooth: activeTooth }) },
+              { title: "Протокол SOAP в карту", badge: "Медкарта", desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.", btn: "Сформировать протокол SOAP", icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, { patientId, tooth: activeTooth, diagnosis: "K02.1" }) },
             ].map((item, idx) => (
               <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">
                 <div className="copilot-action-item-header flex items-center justify-between"><div className="flex items-center gap-2">{item.icon}<span className="text-xs font-bold text-[var(--ink)]">{item.title}</span></div><span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">{item.badge}</span></div>
@@ -412,9 +410,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           </div>
         )}
 
-        {/* ВКЛАДКА 3: СТАНЦИЯ ПК (DESKTOP WORKSTATION, FILES & DIFFS) */}
-        {activeTab === "workstation" && <CopilotWorkstationTab />}
-        {/* ВКЛАДКА 4: ПАМЯТЬ ИИ (LONG-TERM CLINICAL PREFERENCES) */}
+        {/* ВКЛАДКА 3: ПАМЯТЬ ИИ (LONG-TERM CLINICAL PREFERENCES) */}
         {activeTab === "memory" && <CopilotMemoryTab />}
         {/* Модальное окно настроек ИИ */}
         <CopilotSettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} onOpenMemoryTab={() => { setSettingsOpen(false); setActiveTab("memory"); }} />

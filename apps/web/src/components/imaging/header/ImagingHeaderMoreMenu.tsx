@@ -48,7 +48,7 @@ export const ImagingHeaderMoreMenu: React.FC<Props> = ({
 					<Scan aria-hidden="true" size={16} className="text-[var(--primary)] shrink-0" />
 					<div className="flex flex-col">
 						<span>КТ / Снимки</span>
-						<span className="text-[10px] text-[var(--ink-muted)] font-normal">Выбор томографа и архивов</span>
+						<span className="text-[10px] text-[var(--ink-muted)] font-normal">Внешний просмотрщик и архивы КТ</span>
 					</div>
 				</button>
 			)}

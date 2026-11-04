@@ -73,7 +73,7 @@ export async function launchExternalCtViewer(params: LaunchCtViewerParams): Prom
 
 	return {
 		success: false,
-		error: "Для запуска нативного просмотрщика томографа используйте приложение DENTE Desktop (.EXE) на Windows.",
+		error: "Для прямого запуска установленного просмотрщика используйте приложение DENTE Desktop (.EXE) на Windows.",
 		canFallbackToInternalStudio: true,
 	};
 }

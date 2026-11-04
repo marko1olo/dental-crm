@@ -35,8 +35,7 @@ export const CtSelectorDownloadsSection: React.FC<CtSelectorDownloadsSectionProp
 					<button
 						type="button"
 						onClick={refreshDownloads}
-						disabled={isScanningDownloads}
-						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer disabled:opacity-50"
+						className="inline-flex items-center gap-1.5 h-8 px-2.5 text-xs font-semibold rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors cursor-pointer"
 						data-testid="btn-refresh-downloads"
 						title="Повторно проверить папку Загрузки на наличие новых архивов КТ"
 					>

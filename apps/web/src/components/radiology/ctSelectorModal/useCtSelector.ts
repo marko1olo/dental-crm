@@ -180,10 +180,10 @@ export function useCtSelector(props: CtSelectorModalProps) {
 					filePath: filePath || study?.storagePath,
 				});
 				if (res.success) {
-					showToast("КТ запущено во внешнем просмотрщике томографа", "success");
+					showToast("КТ запущено во внешнем просмотрщике", "success");
 					onClose();
 				} else {
-					showToast(res.error || "Не удалось запустить внешний просмотрщик томографа", "error");
+					showToast(res.error || "Не удалось запустить внешний просмотрщик", "error");
 				}
 			}
 		},

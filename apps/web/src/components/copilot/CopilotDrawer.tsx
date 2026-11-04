@@ -18,7 +18,6 @@ import { CopilotMessage } from "./CopilotMessage";
 import { CopilotSettingsModal } from "./CopilotSettingsModal";
 import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
-import { CopilotWorkstationTab } from "./CopilotWorkstationTab";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
 import type { CopilotDrawerTab } from "./drawer/drawerTypes";
@@ -316,13 +315,6 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             className={`copilot-tab-btn ${activeTab === "pending" ? "copilot-tab-btn--active active" : ""}`}>
             Задачи {totalTasksCount > 0 && <span className="copilot-tab-badge copilot-tab-badge--alert">{totalTasksCount}</span>}
           </button>
-          {runtimeMode === "desktop_native" && (
-            <button type="button" role="tab" aria-selected={activeTab === "workstation"} onClick={() => onTabChange("workstation")}
-              className={`copilot-tab-btn ${activeTab === "workstation" ? "copilot-tab-btn--active active" : ""}`}>
-              <HardDrive size={13} />
-              <span>Оборудование</span>
-            </button>
-          )}
         </div>
 
         {/* Nudges Banner */}
@@ -393,8 +385,6 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                 />
               )}
             </div>
-          ) : activeTab === "workstation" ? (
-            <CopilotWorkstationTab />
           ) : (
             <CopilotDrawerTasksTab
               totalEstimatesSumRub={totalEstimatesSumRub}

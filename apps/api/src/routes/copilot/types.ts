@@ -10,6 +10,11 @@ export const messageBodySchema = z.object({
 	text: z.string().optional(),
 	uiContext: z.record(z.unknown()).optional(),
 	context: z.record(z.unknown()).optional(),
+	speedMode: z.enum(["turbo", "deep_reasoning"]).optional(),
+	modelRoutingMode: z.enum(["server_managed", "custom_byok"]).optional(),
+	byokProvider: z.enum(["gemini", "openai", "anthropic", "deepseek", "groq"]).optional(),
+	byokApiKey: z.string().optional(),
+	byokModel: z.string().optional(),
 });
 
 export type MessageBody = z.infer<typeof messageBodySchema>;

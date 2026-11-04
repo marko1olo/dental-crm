@@ -26,7 +26,6 @@ export type ModelRoutingMode = "server_managed" | "custom_byok";
 export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "perio" | "pediatric";
 export type DiaryTemplate = "soap" | "form043" | "express";
 export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chairside_tablet" | "mobile_tablet";
-export type TomographyViewerApp = "planmeca_romexis" | "vatech_ez3d" | "sirona_sidexis" | "custom";
 export type WebSpeechSensitivity = "high" | "normal" | "low";
 
 export interface GranularAgentPermissions {
@@ -124,21 +123,19 @@ export interface CopilotSettings {
 	granularPermissions: GranularAgentPermissions;
 	temperature: number;
 	runtimeMode: CopilotRuntimeEnvironment;
-	// Браузер (Web Browser API)
+	// Браузер и Голос (Web Speech API, 152-ФЗ)
 	autoSaveDrafts: boolean;
 	webSpeechSensitivity: WebSpeechSensitivity;
 	maskPhiData: boolean;
 	apiKeyMasked?: string;
-	// Десктоп ПК (Workstation native)
-	localDropzonePath: string;
-	tomographyViewerApp: TomographyViewerApp;
-	fiscalRegisterComPort: string;
 	globalDictationHotkey: string;
+	autoMicOnAppointmentOpen: boolean;
+	// Рабочая станция (чтение снимков DICOM / экспорт)
+	localDropzonePath: string;
 	// Мобилка / Планшет у кресла
 	gloveModeTouchTarget: boolean;
 	screenWakeLock: boolean;
 	hapticFeedbackEnabled: boolean;
-	autoMicOnAppointmentOpen: boolean;
 }
 
 export interface CopilotStoreState {
@@ -200,20 +197,18 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	},
 	temperature: 0.2,
 	runtimeMode: detectRuntimeEnvironment(),
-	// Браузер
+	// Браузер и Голос (Web Speech, 152-ФЗ)
 	autoSaveDrafts: true,
 	webSpeechSensitivity: "normal",
 	maskPhiData: true,
-	// Десктоп ПК
-	localDropzonePath: "C:\\Radiology\\Export",
-	tomographyViewerApp: "planmeca_romexis",
-	fiscalRegisterComPort: "COM1",
 	globalDictationHotkey: "F9",
+	autoMicOnAppointmentOpen: false,
+	// Рабочая станция
+	localDropzonePath: "C:\\Radiology\\Export",
 	// Мобилка / Планшет
 	gloveModeTouchTarget: true,
 	screenWakeLock: true,
 	hapticFeedbackEnabled: true,
-	autoMicOnAppointmentOpen: false,
 };
 
 /**

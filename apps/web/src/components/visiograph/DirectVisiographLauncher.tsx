@@ -22,12 +22,10 @@ export const DirectVisiographLauncher: React.FC = () => {
 			s.includes("xray") ||
 			s.includes("radiology") ||
 			s.includes("rvg") ||
-			s.includes("imaging") ||
 			h.includes("visiograph") ||
 			h.includes("xray") ||
 			h.includes("radiology") ||
-			h.includes("rvg") ||
-			h.includes("imaging")
+			h.includes("rvg")
 		);
 	}, []);
 

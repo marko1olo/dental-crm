@@ -87,7 +87,7 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				{/* Клиническая модель и индикатор отклика */}
 				<div
 					className="flex items-center gap-1.5 px-2 py-0.5 rounded-md bg-[var(--paper,#ffffff)] border border-[var(--line,rgba(15,118,110,0.15))] text-[11px] font-semibold text-[var(--ink)]"
-					title="Активная клиническая модель и пинг"
+					title={`Активная клиническая модель: ${settings.modelRoutingMode === "custom_byok" ? settings.byokModel : "Google Gemini"} • ${modelLabel}`}
 				>
 					<Sparkles size={11} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span>{modelLabel}</span>

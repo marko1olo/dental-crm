@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { Mic, Shield, Volume2 } from "lucide-react";
+import { Command, Mic, Shield, Volume2 } from "lucide-react";
 import type { WebSpeechSensitivity } from "../../../store/copilotStore";
 
 export interface CopilotSettingsVoicePrivacyTabProps {
@@ -18,6 +18,8 @@ export interface CopilotSettingsVoicePrivacyTabProps {
 	setMaskPhiData: (v: boolean) => void;
 	autoMicOnAppointmentOpen: boolean;
 	setAutoMic: (v: boolean) => void;
+	globalDictationHotkey?: string;
+	setGlobalHotkey?: (v: string) => void;
 }
 
 export function CopilotSettingsVoicePrivacyTab({
@@ -25,6 +27,7 @@ export function CopilotSettingsVoicePrivacyTab({
 	autoSaveDrafts, setAutoSaveDrafts,
 	maskPhiData, setMaskPhiData,
 	autoMicOnAppointmentOpen, setAutoMic,
+	globalDictationHotkey = "F9", setGlobalHotkey,
 }: CopilotSettingsVoicePrivacyTabProps) {
 	return (
 		<div className="space-y-4 text-xs" data-testid="copilot-settings-voice-privacy-tab">
@@ -54,6 +57,25 @@ export function CopilotSettingsVoicePrivacyTab({
 				</select>
 				<p className="text-[10px] text-[var(--muted)]">Адаптирует алгоритм порога уверенности аудиопотока браузера.</p>
 			</section>
+
+			{setGlobalHotkey && (
+				<section className="space-y-1.5">
+					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<Command size={14} className="text-[var(--teal,#0d9488)]" />
+						<span>Горячая клавиша быстрой диктовки</span>
+					</label>
+					<div className="flex gap-2">
+						<input
+							type="text"
+							value={globalDictationHotkey}
+							onChange={(e) => setGlobalHotkey(e.target.value)}
+							placeholder="F9"
+							className="w-32 h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-xs focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+						/>
+						<span className="text-[10px] text-[var(--muted)] self-center">Нажатие F9 мгновенно активирует микрофон</span>
+					</div>
+				</section>
+			)}
 
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
 				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] font-semibold text-[var(--ink)]">

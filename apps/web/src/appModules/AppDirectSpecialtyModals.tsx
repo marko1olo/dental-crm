@@ -22,6 +22,9 @@ const ToothContextDrawer = lazyWithRetry(() =>
 const MedicalRecordStudioModal = lazyWithRetry(() =>
 	import("../components/emr/MedicalRecordStudioModal").then((m) => ({ default: m.MedicalRecordStudioModal })),
 );
+const CtSelectorModal = lazyWithRetry(() =>
+	import("../components/radiology/CtSelectorModal").then((m) => ({ default: m.CtSelectorModal })),
+);
 
 interface AppDirectSpecialtyModalsProps {
 	routing: AppHashRoutingState;
@@ -84,6 +87,16 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						} as any}
 						isLocked={false}
 						isDraft={true}
+					/>
+				</Suspense>
+			)}
+			{routing.isCtSelectorDirectModalOpen && (
+				<Suspense fallback={null}>
+					<CtSelectorModal
+						isOpen={true}
+						onClose={() => routing.setIsCtSelectorDirectModalOpen(false)}
+						patientName={patient?.fullName || patient?.name || "Захаров Иван Дмитриевич"}
+						cardNumber={patient?.cardNumber || patient?.cardId || "КТ-2026-0814"}
 					/>
 				</Suspense>
 			)}

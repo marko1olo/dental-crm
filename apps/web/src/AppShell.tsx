@@ -184,8 +184,6 @@ function isStandaloneActive(): boolean {
 		h.includes("visiograph") ||
 		s.includes("rvg") ||
 		h.includes("rvg") ||
-		s.includes("imaging") ||
-		h.includes("imaging") ||
 		s.includes("implant-passport") ||
 		h.includes("implant-passport") ||
 		s.includes("implants") ||

@@ -2,10 +2,10 @@
  * copilotStudioSSOT.test.tsx — Строгий SSOT Vitest сьют для ИИ-Копайлота и голосового контура DENTE CRM.
  * 
  * Архитектурные инварианты:
- * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 300–380, CopilotStudioModal 400–480, DirectCopilotLauncher 60–80, copilotStudio.css 300–400).
+ * - Мандат 8b: Sweet Spot размеров файлов (copilotCatalogData 300–380, CopilotStudioModal 380–450, DirectCopilotLauncher 60–80, copilotStudio.css 300–400).
  * - Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 (var(--teal)).
  * - Мандат 8e: автономия врача, ноль disabled кнопок у врача, Two-Phase Guard.
- * - Мандат 8wy: двухрежимный харнесс (Веб-ассистент Fastify API vs Станция ОС).
+ * - Мандат 8wy: честный продакшн без моков vs изолированная витрина.
  * - Apple HIG: нативный Drag Handle 36x5px для Bottom Sheet drawer на смартфонах, сенсорные зоны >= 44x44px.
  * - Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде.
  */
@@ -19,7 +19,9 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { CopilotStudioModal } from "../CopilotStudioModal";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
-import { CopilotWorkstationTab } from "../CopilotWorkstationTab";
+import { CopilotMemoryTab } from "../CopilotMemoryTab";
+import { CopilotHistoryDrawer } from "../CopilotHistoryDrawer";
+import { CopilotThinkingIndicator } from "../CopilotThinkingIndicator";
 import { useCopilotStore } from "../../../store/copilotStore";
 import { setRuntimeDemoMode } from "../../../lib/demoMode";
 import {
@@ -52,7 +54,7 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     );
   });
 
-  it("2. содержит обе канонические вкладки: «Клинический диалог» и «Быстрые действия»", () => {
+  it("2. содержит 3 канонические клинические вкладки: «Клинический диалог», «Быстрые действия» и «Память ИИ»", () => {
     const html = renderToString(
       <CopilotStudioModal
         isOpen={true}
@@ -62,6 +64,8 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     );
     assert.ok(html.includes("Клинический диалог"), "Вкладка Диалог обязана присутствовать");
     assert.ok(html.includes("Быстрые действия"), "Вкладка Быстрые действия обязана присутствовать");
+    assert.ok(html.includes("Память ИИ"), "Вкладка Память ИИ обязана присутствовать");
+    assert.ok(!html.includes("Станция ПК"), "Фейковая вкладка Станция ПК обязана быть полностью ликвидирована");
   });
 
   it("3. Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 («Применить действие»)", () => {
@@ -108,7 +112,7 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.ok(!html.includes("copilot-mode-selector-wrap"), "Ручной переключатель сред обязан отсутствовать");
     assert.ok(!html.includes("copilot-wakelock-banner"), "Клоунский баннер WakeLock обязан отсутствовать");
     assert.ok(!html.includes("Перчатки ON"), "Клоунский бейдж Перчатки ON обязан отсутствовать");
-    assert.ok(html.includes("Станция ПК"), "Вкладка интеграции со станцией ПК обязана присутствовать");
+    assert.ok(!html.includes("Станция ПК"), "Вкладка Станция ПК ликвидирована");
   });
 
   it("7. Вкладка «Быстрые действия»: боевые Fastify инструменты без блокировок врача (Мандат 8e)", () => {
@@ -122,7 +126,8 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.ok(html.includes("Бронирование слота"), "Инструмент бронирования слота обязан присутствовать");
     assert.ok(html.includes("Зубная формула FDI"), "Инструмент одонтограммы обязан присутствовать");
     assert.ok(html.includes("Выставление счёта"), "Инструмент кассы обязан присутствовать");
-    assert.ok(html.includes("Захват визиографа"), "Инструмент визиографа обязан присутствовать");
+    assert.ok(html.includes("Протокол SOAP в карту"), "Инструмент протокола SOAP обязан присутствовать");
+    assert.ok(!html.includes("Захват визиографа"), "Фейковый захват визиографа обязан отсутствовать");
     assert.equal(html.includes("disabled"), false, "Мандат 8e: кнопки врача никогда не должны быть disabled");
   });
 
@@ -142,10 +147,10 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotStudioModal.tsx");
   });
 
-  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 500 строк", () => {
+  it("10. Мандат 8b: размер файла CopilotStudioModal.tsx строго в Sweet Spot <= 450 строк", () => {
     const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 380 && lines <= 500, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–500)`);
+    assert.ok(lines >= 380 && lines <= 450, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–450)`);
   });
 
   it("11. Мандат 8b: размер файла copilotCatalogData.ts строго в Sweet Spot 300–380 строк", () => {
@@ -171,60 +176,69 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     assert.equal(typeof html, "string");
   });
 
-  it("15. CopilotWorkstationTab: чистое оборудование клиники, интерактивный дифф и ноль ручных переключателей", () => {
-    const html = renderToString(<CopilotWorkstationTab />);
-    assert.ok(html.includes("RVG-визиограф Planmeca ProSensor v2"), "Визиограф обязан отображаться");
-    assert.ok(html.includes("Сетевая папка КЛКТ"), "Dropzone КЛКТ обязана отображаться");
-    assert.ok(html.includes("Кассовый регистратор Атол 27Ф"), "Фискальный регистратор кассы обязан отображаться");
-    assert.ok(html.includes("Дневник приёма SOAP"), "Интерактивный Diff Viewer обязан присутствовать");
-    assert.ok(!html.includes("Среда исполнения ассистента"), "Ручной блок переключения сред обязан отсутствовать");
+  it("15. CopilotMemoryTab: управление долгосрочной клинической памятью врача", () => {
+    const html = renderToString(<CopilotMemoryTab />);
+    assert.ok(html.includes("Долговременная память ассистента"), "Заголовок памяти обязан отображаться");
+    assert.ok(html.includes("Добавить клиническое предпочтение"), "Форма добавления обязана присутствовать");
+    assert.ok(html.includes("Материалы"), "Категория Материалы обязана присутствовать");
+    assert.ok(html.includes("Анестезия"), "Категория Анестезия обязана присутствовать");
   });
 
-  it("16. Мандат 8b: размер файла CopilotWorkstationTab.tsx строго <= 320 строк", () => {
-    const filePath = path.join(__dirname, "../CopilotWorkstationTab.tsx");
+  it("16. Мандат 8b: размер файла CopilotMemoryTab.tsx строго <= 220 строк", () => {
+    const filePath = path.join(__dirname, "../CopilotMemoryTab.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines <= 320, `CopilotWorkstationTab.tsx имеет ${lines} строк (ожидалось <= 320)`);
+    assert.ok(lines <= 220, `CopilotMemoryTab.tsx имеет ${lines} строк (ожидалось <= 220)`);
   });
 
-  it("17. Мандат 8wy: CopilotWorkstationTab в боевом режиме без activeDiff показывает честный Empty State и 'Не проверено'", () => {
-    setRuntimeDemoMode(false);
-    useCopilotStore.getState().setActiveDiff(null);
-    const html = renderToString(<CopilotWorkstationTab />);
-    assert.ok(html.includes("Дневник приёма SOAP: нет ожидающих изменений"), "Честный пустой статус без вымышленных правок зуба 36");
-    assert.ok(html.includes("Не проверено"), "В боевом контуре до зонда статус узлов честно 'Не проверено'");
-    assert.ok(!html.includes("● В сети (4ms)"), "Фальшивый зелёный статус 4ms в проде ликвидирован");
+  it("17. CopilotStudioModal монтирует вкладку initialTab='memory'", () => {
+    const html = renderToString(
+      <CopilotStudioModal
+        isOpen={true}
+        onClose={() => {}}
+        initialTab="memory"
+      />
+    );
+    assert.ok(html.includes("Долговременная память ассистента"));
+    assert.ok(html.includes("Добавить клиническое предпочтение"));
   });
 
-  it("18. Мандат 8wy: CopilotWorkstationTab в демо-режиме отображает демонстрационный образец диффа и тестовые телеметрии", () => {
-    setRuntimeDemoMode(true);
-    const html = renderToString(<CopilotWorkstationTab />);
-    assert.ok(html.includes("Дневник приёма SOAP: Зуб 36"), "В демо отображается демонстрационный пример");
-    assert.ok(html.includes("● В сети (4ms) • Готов к экспозиции"), "В демо отображаются демонстрационные показатели визиографа");
-    assert.ok(html.includes("● В сети (11ms) • Готов к чекам"), "В демо отображаются демонстрационные показатели кассы");
-    setRuntimeDemoMode(null);
+  it("18. CopilotHistoryDrawer: история диалогов, треды и фильтрация", () => {
+    const html = renderToString(
+      <CopilotHistoryDrawer
+        isOpen={true}
+        onClose={() => {}}
+        onSelectThread={() => {}}
+      />
+    );
+    assert.ok(html.includes("История диалогов"));
+    assert.ok(html.includes("Новый диалог"));
   });
 
-  it("19. Мандат 8wy: при активном diff в сторе отображается реальный дифф и единственная Primary CTA кнопка", () => {
-    setRuntimeDemoMode(false);
-    useCopilotStore.getState().setActiveDiff({
-      id: "live-diff-99",
-      title: "Протокол лечения пульпита: Зуб 16",
-      targetEntity: "Электронная медицинская карта",
-      beforeText: "Status localis: Зуб 16 интактный",
-      afterText: "Status localis: Зуб 16 эндодонтическое лечение",
-    });
-    const html = renderToString(<CopilotWorkstationTab />);
-    assert.ok(html.includes("Протокол лечения пульпита: Зуб 16"), "Реальный активный дифф отображается в UI");
-    assert.ok(html.includes("Принять диф в дневник"), "Кнопка принятия диффа присутствует");
-    assert.ok(html.includes("primary-button"), "Присутствует Primary CTA кнопка");
-    useCopilotStore.getState().setActiveDiff(null);
+  it("19. CopilotThinkingIndicator: секундомер, волновые точки «Печатает ●●●» и аккордеон CoT", () => {
+    const html = renderToString(
+      <CopilotThinkingIndicator
+        isThinking={true}
+        activeTooth={36}
+        speedMode="turbo"
+        showThinkingProcess={true}
+      />
+    );
+    assert.ok(html.includes("Мышление модели"), "Заголовок мышления обязан отображаться");
+    assert.ok(html.includes("Печатает"), "Индикатор «Печатает» обязан отображаться");
+    assert.ok(html.includes("FDI 36"), "Зуб FDI обязан отображаться");
   });
 
-  it("20. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде CopilotWorkstationTab.tsx", () => {
-    const filePath = path.join(__dirname, "../CopilotWorkstationTab.tsx");
-    const content = fs.readFileSync(filePath, "utf-8");
+  it("20. Мандат 8d pt 7: строго 0 cartoon emojis в исходном коде CopilotMemoryTab.tsx и CopilotHistoryDrawer.tsx", () => {
+    const files = [
+      path.join(__dirname, "../CopilotMemoryTab.tsx"),
+      path.join(__dirname, "../CopilotHistoryDrawer.tsx"),
+      path.join(__dirname, "../CopilotThinkingIndicator.tsx"),
+    ];
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-    assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotWorkstationTab.tsx");
+    for (const f of files) {
+      const content = fs.readFileSync(f, "utf-8");
+      assert.equal(emojiRegex.test(content), false, `Обнаружены запрещенные cartoon emojis в ${path.basename(f)}`);
+    }
   });
 
   it("21. Мандат 8wy: в боевом режиме (!isDemoShowcaseMode()) стартовый чат пуст ([]), рендерится честный Empty State", () => {

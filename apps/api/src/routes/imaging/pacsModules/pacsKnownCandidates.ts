@@ -83,6 +83,15 @@ export const KNOWN_VIEWER_CANDIDATES = [
 		],
 	},
 	{
+		id: "radiant-dicom-viewer",
+		paths: [
+			"C:\\Program Files\\RadiAntViewer64bit\\RadiAntViewer.exe",
+			"C:\\Program Files (x86)\\RadiAntViewer\\RadiAntViewer.exe",
+			"C:\\RadiAnt\\RadiAntViewer.exe",
+			"C:\\Program Files\\RadiAnt DICOM Viewer\\RadiAntViewer.exe",
+		],
+	},
+	{
 		id: "explorer",
 		paths: ["C:\\Windows\\explorer.exe"],
 	},

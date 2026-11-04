@@ -18,7 +18,7 @@ export async function handleLaunchExternalViewer(request: FastifyRequest, reply:
 	}
 
 	if (process.platform !== "win32") {
-		return reply.send({ success: false, error: "Запуск нативного ПО томографа поддерживается на рабочей станции под управлением Windows.", canFallbackToInternalStudio: true });
+		return reply.send({ success: false, error: "Запуск внешнего просмотрщика КТ поддерживается на рабочей станции под управлением Windows.", canFallbackToInternalStudio: true });
 	}
 
 	let targetExe = exePath;
@@ -32,7 +32,7 @@ export async function handleLaunchExternalViewer(request: FastifyRequest, reply:
 	}
 
 	if (!targetExe || !fs.existsSync(targetExe)) {
-		return reply.send({ success: false, error: "Просмотрщик томографа не найден на локальном диске этой рабочей станции.", canFallbackToInternalStudio: true });
+		return reply.send({ success: false, error: "Внешний просмотрщик КТ не найден на локальном диске этой рабочей станции.", canFallbackToInternalStudio: true });
 	}
 
 	if (!targetExe.toLowerCase().endsWith(".exe")) {

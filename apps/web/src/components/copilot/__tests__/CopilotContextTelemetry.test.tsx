@@ -192,7 +192,9 @@ describe("Architectural & Quality Invariants (Mandates 8b, 8d pt 7)", () => {
 			path.join(__dirname, "../CopilotDrawer.tsx"),
 			path.join(__dirname, "../telemetry/CopilotContextTelemetryBar.tsx"),
 			path.join(__dirname, "../telemetry/telemetryTypes.ts"),
-			path.join(__dirname, "../settings/CopilotSettingsEquipmentTab.tsx"),
+			path.join(__dirname, "../settings/CopilotSettingsIntelligenceTab.tsx"),
+			path.join(__dirname, "../settings/CopilotSettingsTrustTab.tsx"),
+			path.join(__dirname, "../settings/CopilotSettingsPersonaTab.tsx"),
 			path.join(__dirname, "../../../store/copilotStore.ts"),
 			path.join(__dirname, "../../../store/copilotShowcaseData.ts"),
 		];
