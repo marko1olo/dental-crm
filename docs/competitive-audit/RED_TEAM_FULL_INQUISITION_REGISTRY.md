@@ -186,7 +186,15 @@
   3. Дебаг-сленг зачищен: все названия приведены к клиническим стандартам DENTE Wheeler 2.5D, ноль канцелярита и ноль дев-терминов в интерфейсе врача.
   4. В `DirectOdontogramLauncher.tsx` интегрирована гидратация из `loadTeethFromLocalCache` и сохранение через `OdontogramStudioModal` с отправкой на Fastify API `/api/odontogram/tooth-state` и IndexedDB.
   5. Прогон всех 87 тестовых файлов одонтограммы (750 тестов) — 100% GREEN.
-  6. Сняты и лично проинспектированы 4-state скриншоты:
+  6. Ликвидированы 7 дефектов первого инквизиционного аудита скриншотов:
+     - [Дефект 1]: Ликвидирован клиппинг штампа «• Р Ретинированный» (контейнер переведен на `flex-wrap`, ширина модалки расширена до 1360px).
+     - [Дефект 2]: Вся зубная дуга из 16 зубов (18..11 и 21..28) полностью и свободно помещается в видимой области без обрезки по краям (`zoom={0.46}`, ширина ячейки калибрована).
+     - [Дефект 3]: Контраст корней верхних зубов в Dark Mode повышен до WCAG AAA (`#94a3b8` stroke, контраст 7.6:1 на фоне `#0f172a`).
+     - [Дефект 4]: Дев-жаргон «Wheeler 2.5D» в шапке заменен на профессиональный клинический заголовок «Анатомическая зубная формула».
+     - [Дефект 5]: Хвастовство в футере заменено на клиническую подсказку: «Выберите зуб для детального осмотра и фиксации патологий».
+     - [Дефект 6]: Ликвидирован мобильный клиппинг ФИО пациента: компактный формат «Иванов С. П. (34 г.)» отображается без срезок и многоточий.
+     - [Дефект 7]: Ликвидирован плавающий кругляш-клякса Copilot FAB («✨») над кнопкой «Сохранить» по Apple HIG.
+  7. Сняты и лично проинспектированы эталонные 4-state скриншоты:
      - ☀️ PC Light 1440×900 (`docs/proofs/odontogram/01_odontogram_pc_light.png`)
      - 🌙 PC Dark 1440×900 (`docs/proofs/odontogram/02_odontogram_pc_dark.png`)
      - 📱 Mobile Light 390×844 (`docs/proofs/odontogram/03_odontogram_mobile_light.png`)
@@ -201,19 +209,35 @@
 - **Суть бага:** Блокировки кресел пишутся в `localStorage` конкретного браузера. Другие ПК видят слот свободным.
 - **Директива Создателя:** Данную механику принудительной блокировки кресел полностью ликвидировать (ЦРМ не диктует реальности какой быть).
 
-### [SCH-02] [ИСПРАВЛЕНО] Лист ожидания: фантомная запись без запроса в БД
+### [SCH-02] [ИСПРАВЛЕНО] Лист ожидания: фантомная запись без запроса в БД и тупики лаунчера
 - **Файлы:**
-  - [`WaitlistDrawer.tsx#L48-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx#L48-L75)
+  - [`apps/api/src/routes/waitlist.ts#L305-L375`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/waitlist.ts#L305-L375)
+  - [`WaitlistDrawer.tsx#L50-L130`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx#L50-L130)
+  - [`DirectWaitlistMatchesLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/DirectWaitlistMatchesLauncher.tsx)
+  - [`WaitlistMatchesBlock.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistMatchesBlock.tsx)
   - [`ScheduleViewModals.tsx#L143-L160`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/view/ScheduleViewModals.tsx#L143-L160)
-- **Суть бага:** Не передавался `onBookSlot`, в результате клик «Записать» просто закрывал шторку без отправки POST `/api/appointments`.
+- **Суть бага:**
+  1. В `DirectWaitlistMatchesLauncher.tsx` блок `WaitlistMatchesBlock` вел в тупик: при клике на «Открыть лист» событие `dente:open-waitlist-for-slot` никем не слушалось, шторка `WaitlistDrawer` не была смонтирована.
+  2. В Fastify API `apps/api/src/routes/waitlist.ts` Zod схемы (`updateSchema`, `statusSchema`) падали с ошибкой 400 при отправке статуса `booked`, так как принимали строго `["active", "waiting", "fulfilled", "cancelled"]`.
+  3. В `WaitlistDrawer.tsx` при отсутствии сетевого контекста клик «Записать» падал или не имел отказоустойчивого перехода на создание слота.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
-  1. В `ScheduleViewModals.tsx` реализован полноценный обработчик `handleBookWaitlistSlot(candidate, slot)`:
-     - При занятом слоте с `slot.appointmentId` отправляет `PATCH /api/appointments/${slot.appointmentId}` со статусом `planned`, `patientId`, `reason` и комментарием.
-     - При новом слоте отправляет `POST /api/appointments` (`patientId`, `doctorUserId`, `startsAt`, `endsAt`, `chairId`, `status: "planned"`).
-     - Вызывает `PATCH /api/waitlist/${candidate.id}/status` со статусом `fulfilled` (с отказоустойчивым фоллбеком на `PUT /api/waitlist/${candidate.id}`).
-     - Перезагружает дашборд расписания (`loadDashboard`) и выводит подтверждающий тост `showToast`.
-  2. В `WaitlistDrawer.tsx` обработчик `onBookSlot` проброшен напрямую; также встроен автономный боевой сетевой фоллбек к Fastify API (POST/PATCH `/api/appointments` + PATCH `/api/waitlist/:id/status`) вместо холостого закрытия в памяти.
-  3. Покрыто тестами паритета Fastify API `waitlistBookingFastifyParity.test.ts` (100% GREEN).
+  1. **Fastify API:** В `apps/api/src/routes/waitlist.ts` добавлена нативная поддержка статуса `"booked"` в Zod enum `updateSchema` и `statusSchema`: `z.enum(["active", "waiting", "fulfilled", "booked", "cancelled"])`.
+  2. **DirectWaitlistMatchesLauncher:** Полностью переработан по Мандату 8b (120 строк) и 8aq. Смонтирован `WaitlistDrawer`, добавлен слушатель `dente:open-waitlist-for-slot` и коллбек `onOpenWaitlist`. При клике на «Открыть лист» шторка плавно выдвигается сбоку с предвыбранным целевым слотом (`targetSlot`) и ранжированными кандидатами (Zero Dead-Ends).
+  3. **Боевое бронирование слота:** В `WaitlistDrawer.tsx` и `ScheduleViewModals.tsx` реализован двухфазный обработчик:
+     - При существующем слоте — отправляет `PATCH /api/appointments/${slot.appointmentId}` со статусом `planned`.
+     - При новом окне — отправляет `POST /api/appointments` с `doctorUserId`, `startsAt`, `endsAt`, `chairId`.
+     - Переводит статус заявки листа ожидания в `"booked"` через `PATCH /api/waitlist/${candidate.id}/status` и снимает пациента из очереди активных.
+     - Вызывает `loadDashboard()`, закрывает шторку и выводит toast-подтверждение.
+  4. **Apple HIG эргономика:** Табы переработаны в аккуратный Segmented Control `[ 🎯 Подбор ]`, `[ 📋 Все ]` с отдельной secondary кнопкой `[ + Добавить ]`. Тотальный запрет клиппинга, ровно 1 Primary CTA (`#0d9488`), WCAG AA/AAA Dark/Light.
+  5. **Тесты и 4-State Proofs:**
+     - `waitlistMatches.test.ts` (7/7 pass)
+     - `waitlistCancellation.test.ts` (18/18 pass)
+     - `waitlistBookingFastifyParity.test.ts` (2/2 pass)
+     - Скриншоты:
+       * `docs/proofs/schedule/schedule_waitlist_matches_block_pc_light_1440x900.png`
+       * `docs/proofs/schedule/schedule_waitlist_drawer_pc_light_1440x900.png`
+       * `docs/proofs/schedule/schedule_waitlist_drawer_pc_dark_1440x900.png`
+       * `docs/proofs/schedule/schedule_waitlist_booked_success_pc_light_1440x900.png`
 
 ### [SCH-03] [SEV-1] Клик по визиту убивает правый инспектор модальным оверлеем
 - **Файлы:** [`ScheduleGridDesktopLayout.tsx#L51-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleGridDesktopLayout.tsx#L51-L60), [`ScheduleViewBody.tsx#L359`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/view/ScheduleViewBody.tsx#L359)
@@ -619,17 +643,25 @@
   3. Автономия врача защищена (Мандат 8e): 0% потери введенных данных.
   4. Проверено автоматическими тестами `copilotAnatomyRemediation.test.ts` (8/8) и скриншотами 4-state visual proof: `docs/proofs/copilot/01_copilot_studio_pc_light_1440x900.png` и `02_copilot_studio_pc_dark_1440x900.png`.
 
-### [COP-03] [SEV-1] Самовольное искажение одонтограммы зуба 36 при подтверждении действий без указания зуба
+### [COP-03] [SEV-1] [ИСПРАВЛЕНО] Самовольное искажение одонтограммы зуба 36 при подтверждении действий без указания зуба
 - **Файлы:**
-  - [`apps/web/src/components/copilot/actionConfirm/actionConfirmStoreSync.ts#L7-L11`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/actionConfirm/actionConfirmStoreSync.ts#L7-L11)
-  - [`apps/web/src/services/ai/copilotActionRunner.ts#L162`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/ai/copilotActionRunner.ts#L162)
+  - [`apps/web/src/components/copilot/actionConfirm/actionConfirmStoreSync.ts#L7-L34`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/actionConfirm/actionConfirmStoreSync.ts#L7-L34)
+  - [`apps/web/src/services/ai/copilotActionRunner.ts#L160-L172`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/ai/copilotActionRunner.ts#L160-L172)
 - **Суть бага:** Если врач подтверждает действие, где модель не указала конкретный зуб, синхронизатор стейта подставляет захардкоженный дефолт `'36'` и диагноз `'K02.1'`. Любая общая консультация или осмотр без привязки к номеру зуба превращается в кариес зуба 36 в одонтограмме.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `actionConfirmStoreSync.ts` удален слепой fallback `'36'` и захардкоженный диагноз `'K02.1'`. Мутация одонтограммы (`applyAiToothCodes`) вызывается строго тогда, когда в `finalArgs` явно передан номер зуба (`tooth` или `teeth`). Общие консультации и дневники без локализации зуба обновляют поля `setVisitNoteForm` без искажения одонтограммы.
+  2. В `copilotActionRunner.ts` удален дефолт `"36"` при снятии снимка `previousStateSnapshot`. Снимок состояния зуба фиксируется исключительно при наличии реального `args.tooth` или `args.toothNumber`.
+  3. Проверено тестами `copilotEndToEndWiring.test.tsx` (10/10) и `CopilotDrawer.test.tsx` (5/5).
 
-### [COP-04] [SEV-2] Бесконечный таймер мышления при сбое стриминга
+### [COP-04] [SEV-2] [ИСПРАВЛЕНО] Бесконечный таймер мышления при сбое стриминга
 - **Файлы:**
-  - [`apps/web/src/components/copilot/useCopilotModules/copilotStreamEventHandler.ts#L244-L254`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/copilotStreamEventHandler.ts#L244-L254)
+  - [`apps/web/src/components/copilot/useCopilotModules/copilotStreamEventHandler.ts#L227-L256`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/copilotStreamEventHandler.ts#L227-L256)
   - [`apps/web/src/components/copilot/message/CopilotThinkingMessage.tsx#L22-L28`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/message/CopilotThinkingMessage.tsx#L22-L28)
 - **Суть бага:** При сетевой ошибке или HTTP 429 обработчик не сбрасывает `streaming: false` для блоков `thinking`. Таймер тикает бесконечно («Мышление модели 450.2с...»), вводя врача в ступор.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `copilotStreamEventHandler.ts` при событиях `done`, `finish`, `budget_exceeded` и `error` гарантированно сбрасывается флаг `streaming: false` для всех сообщений вида `text` и `thinking`.
+  2. Фаза рассуждений `setPhase(null)` обнуляется, таймер интервала в `CopilotThinkingMessage` останавливается (`if (!isStreaming) return;`).
+  3. Проверено 4-state visual proof: `docs/proofs/copilot/03_copilot_thinking_cot_pc_light_1440x900.png`.
 
 ### [COP-05] [SEV-2] Chairside Sentinel: Бэкенд-эндпоинт оторван от фронтенда
 - **Файлы:**
@@ -642,11 +674,17 @@
   - [`apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L105-L116`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L105-L116)
 - **Суть бага:** Подсистема `executeLocalFallback` привязана к классу `aiAssistantService`, который не используется компонентами шторки копайлота. При 429 чат выводит ошибку вместо перехода на локальные шаблоны.
 
-### [COP-07] [SEV-3] Просачивание советского канцелярита (`043`, `form043`) во внутренний код
+### [COP-07] [SEV-3] [ИСПРАВЛЕНО] Просачивание советского канцелярита (`043`, `form043`) во внутренний код
 - **Файлы:**
-  - [`apps/web/src/components/copilot/cards/CopilotSoapDiaryCard.tsx#L65-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/CopilotSoapDiaryCard.tsx#L65-L75)
-  - [`apps/web/src/components/copilot/contextSync/contextSyncTypes.ts#L1`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/contextSync/contextSyncTypes.ts#L1)
+  - [`apps/web/src/components/copilot/cards/CopilotSoapDiaryCard.tsx#L45-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/CopilotSoapDiaryCard.tsx#L45-L60)
+  - [`apps/web/src/components/copilot/contextSync/contextSyncTypes.ts#L1-L35`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/contextSync/contextSyncTypes.ts#L1-L35)
 - **Суть бага:** Нарушение Мандата 8x: классы `.copilot-043-confirm-card`, интерфейсы `Clinical043Snapshot`, `Protocol043Data`, `onApply043`.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Интерфейс контекста переименован в `ClinicalEmkSnapshot` с обратным псевдонимом `Clinical043Snapshot` для обратной совместимости.
+  2. В `CopilotSoapDiaryCard.tsx` устранен слепой дефолт на зуб 36 и диагноз K02.1. Пользовательский интерфейс использует чистые клинические термины: «Дневник приёма», «В медкарте», «Черновик дневника».
+  3. В `ChairsideCopilotHUD.tsx` ликвидировано дублирование нумерации шагов рассуждений ИИ («1. 1.» -> «1. »).
+  4. В `CopilotGlobalHost.tsx` плавающая кнопка вызова ИИ скрывается при открытом Chairside HUD, исключая визуальное перекрытие.
+  5. Зафиксировано 4-State скриншотами: `04_copilot_chairside_hud_pc_light_1440x900.png` и `05_copilot_chairside_hud_pc_dark_1440x900.png`.
 
 
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
