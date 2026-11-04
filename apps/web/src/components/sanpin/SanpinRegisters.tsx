@@ -94,6 +94,7 @@ function SanpinRegistersInner({
 				<AutoclaveJournalTab
 					key={`autoclave-view-${logic.refreshCounter}`}
 					initialFilterAutoclave={initialFilterAutoclave}
+					onOpenNewCycleModal={() => setIsDirectCycleModalOpen(true)}
 				/>
 			)}
 

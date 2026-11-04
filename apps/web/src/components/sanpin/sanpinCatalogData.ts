@@ -113,7 +113,7 @@ export interface BactericidalLogRecord {
 	readonly airDisinfectionStatus: "ВЫПОЛНЕНО" | "ТРЕБУЕТСЯ";
 }
 
-export const PRESET_PACK_COUNTS = [6, 12, 18, 24] as const;
+export const PRESET_PACK_COUNTS = [4, 8, 12, 16, 24] as const;
 
 export const AUTOCLAVE_PROGRAMS: readonly AutoclaveProgram[] = [
 	{

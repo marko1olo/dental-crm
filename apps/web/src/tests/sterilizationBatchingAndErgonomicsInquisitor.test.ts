@@ -160,14 +160,17 @@ describe("Red Team Inquisitor: Стерилизация и пакетное ав
 			assert.ok(!content.includes("disabled={"), "Никаких заблокированных кнопок (Мандат 8e)");
 		});
 
-		it("проверяет фасад SterilizationBatchCycleModal в директории components/sterilization", () => {
-			const facadePath = path.resolve(
+		it("проверяет ликвидацию папки-призрака components/sterilization/ и канонический SSOT в sanpin/", () => {
+			const ghostDirPath = path.resolve(
 				REPO_ROOT,
-				"apps/web/src/components/sterilization/SterilizationBatchCycleModal.tsx",
+				"apps/web/src/components/sterilization",
 			);
-			assert.ok(fs.existsSync(facadePath), "Фасад components/sterilization/SterilizationBatchCycleModal.tsx обязан существовать");
-			const content = fs.readFileSync(facadePath, "utf-8");
-			assert.ok(content.includes("export * from \"../sanpin/SterilizationBatchCycleModal\""));
+			assert.ok(!fs.existsSync(ghostDirPath), "Папка-призрак components/sterilization обязана быть ликвидирована (Анти-матрёшка)");
+			const canonicalPath = path.resolve(
+				REPO_ROOT,
+				"apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx",
+			);
+			assert.ok(fs.existsSync(canonicalPath), "Канонический SSOT SterilizationBatchCycleModal обязан находиться в components/sanpin/");
 		});
 	});
 

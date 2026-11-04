@@ -1,25 +1,32 @@
 {
   "role": "SanPiN & Sterilization Batch Inquisitor",
   "status": "COMPLETED",
-  "updatedAt": "2026-10-22T21:13:00+04:00",
-  "mandates": ["8e", "8n", "8k", "8s", "8x", "8am"],
+  "updatedAt": "2026-11-04T10:11:00+04:00",
+  "mandates": ["8b", "8e", "8n", "8k", "8s", "8x", "8am", "8zi"],
   "accomplishments": [
-    "Устранены процедурные симуляторы физики автоклавов (Canvas графики температуры и давления, расчеты капель азопирама, поштучные штрихкоды STERIL-).",
-    "Реализовано единое 1-кликовое действие медсестры в бэкофисе: кнопка «Зафиксировать цикл автоклавирования смены» (Primary CTA).",
-    "В 1 клик выполняется атомарная запись цикла автоклава (134°C, 2.15 бар, 5 мин), фиксация 100% нормы качества очистки инструментов (азопирам и фенолфталеин отрицательно) и списание дневного пакета расходников (крафт-пакеты, индикаторы 5 класса) со склада с Soft Negative Stock.",
-    "Выкошен советский канцелярит и номера приказов в UI («Форма 257/у» -> «Журнал автоклавирования», «ПСО» -> «Предстерилизационная очистка», «Форма 366/у» -> «Контроль качества очистки»).",
-    "Устранено наложение и усечение заголовка на экранах смартфонов 390x844: на mobile отображается «Журнал автоклава» и кнопка «Зафиксировать автоклавирование», 0px горизонтального скролла, полное соответствие Apple HIG (touch targets >= 44x44px).",
-    "Сняты реальные 4-состояные доказательства Red Team (PC Light 1440x900, PC Dark 1440x900, Mobile Light 390x844, Mobile Dark 390x844), проверены через read_file."
+    "Ликвидированы процедурные симуляторы физики автоклавов (Canvas графики, капли азопирама, поштучные штрихкоды STERIL- у кресла врача).",
+    "Реализовано единое 1-кликовое действие запуска цикла в бэкофисе: кнопка «Зафиксировать цикл автоклавирования» (Primary CTA, var(--teal)).",
+    "Канонические быстрые пресеты партий: [4, 8, 12, 16, 24] пакетов, нормативные программы 134°C (5 мин) и 121°C (20 мин), антиприонный режим 134°C (18 мин), индикаторы 4/5 класса «ПРОЙДЕН».",
+    "В 1 клик выполняется атомарная запись цикла автоклава, фиксация 100% нормы качества очистки инструментов (азопирам и фенолфталеин отрицательно) и списание дневного пакета расходников со склада с Soft Negative Stock (Мандат 8n).",
+    "Выкошен советский канцелярит и номера приказов в UI («Форма 257/у» -> «Журнал автоклавирования», «ПСО» -> «Контроль качества очистки инструментов»).",
+    "Устранен визуальный клиппинг в селекторах программ и аппаратов автоклавов (компактные лейблы без усечения).",
+    "Полное соответствие Apple HIG на экранах 390x844: сгруппированные карточки, 0px горизонтального скролла, тач-таргеты >= 44x44px, Floating Bottom Bar.",
+    "Сняты и лично осмотрены через read_file реальные 8-state визуальные доказательства Red Team (PC Light/Dark 1440x900, Mobile Light/Dark 390x844, Journal + Cycle Modal Execution)."
   ],
   "proofs": {
-    "pcLight": "docs/proofs/sterilization/sterilization_pc_light_1440x900.png",
-    "pcDark": "docs/proofs/sterilization/sterilization_pc_dark_1440x900.png",
-    "mobileLight": "docs/proofs/sterilization/sterilization_mobile_light_390x844.png",
-    "mobileDark": "docs/proofs/sterilization/sterilization_mobile_dark_390x844.png"
+    "pcJournalLight": "docs/screenshots/sanpin/01_sanpin_autoclave_pc_light_1440x900.png",
+    "pcJournalDark": "docs/screenshots/sanpin/02_sanpin_autoclave_pc_dark_1440x900.png",
+    "pcModalDark": "docs/screenshots/sanpin/03_sanpin_cycle_modal_pc_dark_1440x900.png",
+    "pcModalLight": "docs/screenshots/sanpin/04_sanpin_cycle_modal_pc_light_1440x900.png",
+    "mobileJournalLight": "docs/screenshots/sanpin/05_sanpin_autoclave_mobile_light_390x844.png",
+    "mobileJournalDark": "docs/screenshots/sanpin/06_sanpin_autoclave_mobile_dark_390x844.png",
+    "mobileModalLight": "docs/screenshots/sanpin/07_sanpin_cycle_modal_mobile_light_390x844.png",
+    "mobileModalDark": "docs/screenshots/sanpin/08_sanpin_cycle_modal_mobile_dark_390x844.png"
   },
   "tests": {
-    "vitest": "22 files passed, 275 passed, 0 failed",
-    "encoding": "15154 files checked, 100% UTF-8",
-    "cssTokens": "0 unresolved var() tokens"
+    "sterilizationSuites": "16 tests in 6 suites passed (100% pass, 0 fail)",
+    "sanpinComponentSuites": "30 tests in 13 suites passed (100% pass, 0 fail)",
+    "checkEncoding": "23,753 files checked, 100% UTF-8",
+    "checkDynamicImports": "527 dynamic imports verified, 0 broken paths"
   }
 }

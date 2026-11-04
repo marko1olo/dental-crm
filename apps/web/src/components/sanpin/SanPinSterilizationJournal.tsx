@@ -30,7 +30,7 @@ export type { SanPinCycleEntry, SanPinSterilizationJournalProps } from "./journa
 export { DEFAULT_CYCLES, useSanPinJournalLogic } from "./journalModules";
 
 type ActiveSubTab = "journal" | "cycle" | "equipment";
-const PRESET_PACK_COUNTS = [6, 12, 18, 24, 27] as const;
+const PRESET_PACK_COUNTS = [4, 8, 12, 16, 24] as const;
 
 export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProps> = ({
 	initialFilterAutoclave = "all", className = "", onOpenNewCycleModal,
@@ -69,10 +69,17 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 				passedIndicator: true, operatorName,
 				itemsDescription: itemsSummaryInput || `Смена стерилизации (${packagesCount} крафт-пакетов)`,
 			};
-			const res = await fetch("/api/sanpin/autoclave/cycles", {
+			let res = await fetch("/api/sanpin/sterilization/quick-norm", {
 				method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
 				body: JSON.stringify(payload),
 			}).catch(() => null);
+
+			if (!res || !res.ok) {
+				res = await fetch("/api/sanpin/autoclave/cycles", {
+					method: "POST", headers: getDenteAuthHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify(payload),
+				}).catch(() => null);
+			}
 
 			if (res && res.ok) {
 				showToast(`Цикл стерилизации смены зафиксирован: ${tempCelsius}°C, ${pressureBar} бар. Расходники списаны со склада.`, "success");
@@ -91,7 +98,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 		}
 	}, [isBatchSubmitting, isAutofilling, selectedAutoclaveId, selectedRegime, packagesCount, operatorName, itemsSummaryInput, period, fetchCyclesFromDb, handleQuickBatchNorm]);
 
-	const handleOpenNewCycle = onOpenNewCycleModal || (() => setActiveTab("cycle"));
+	const handleOpenNewCycle = onOpenNewCycleModal || (() => setIsCycleDrawerOpen(true));
 
 	return (
 		<div className={`sanpin-sterilization-journal autoclave-journal-tab flex flex-col gap-3.5 w-full max-w-full overflow-x-clip ${className}`} role="region" aria-label="Журнал стерилизации инструментов" data-testid="sanpin-sterilization-journal">
@@ -234,7 +241,7 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 										<div className="flex items-center justify-between"><div className="flex items-center gap-2"><span className="font-bold text-[15px] text-[var(--ink,#1e293b)]">{cyc.autoclaveCode}</span><span className="text-xs text-[var(--muted,#64748b)]">{cyc.autoclaveModel}</span></div><span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20"><CheckCircle2 size={12} /><span>Стерильно</span></span></div>
 										<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)]"><span>{cyc.date} • {cyc.time} • Цикл №{cyc.cycleNumber}</span><span className="inline-flex items-center gap-1 font-semibold text-[var(--teal,#0d9488)] bg-teal-500/10 px-2 py-0.5 rounded-md"><Layers size={11} /><span>{batchCount} наборов</span></span></div>
 										<div className="flex items-center justify-between p-2 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-soft,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] text-xs"><div className="flex items-center gap-2 font-semibold text-[var(--ink,#1e293b)]"><span className="inline-flex items-center gap-1 text-[var(--teal,#0d9488)]"><Thermometer size={12} />{cyc.temperatureC}°C</span><span>•</span><span className="inline-flex items-center gap-1 text-[var(--teal,#0d9488)]"><Gauge size={12} />{cyc.pressureBar} бар</span><span>•</span><span className="inline-flex items-center gap-1 text-[var(--teal,#0d9488)]"><Timer size={12} />{cyc.durationMin} мин</span></div><div className="flex items-center gap-1.5 text-[11px] font-semibold"><div className="w-2.5 h-2.5 rounded-full border border-black/15" style={{ background: cyc.colorBeforeHex }} /><ArrowRight size={9} className="text-[var(--muted,#64748b)]" /><div className="w-2.5 h-2.5 rounded-full border border-black/25" style={{ background: cyc.colorAfterHex }} /><span>{cyc.indicatorClass} кл. (Норма)</span></div></div>
-										<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)]"><div className="truncate pr-2"><div className="font-medium text-[var(--ink,#1e293b)] truncate">{cyc.itemsSummary}</div>{cyc.pouchCodes && cyc.pouchCodes.length > 0 && (<div className="text-[11px] text-[var(--muted,#64748b)] truncate">{cyc.pouchCodes.join(", ")}</div>)}</div><span className="shrink-0">{cyc.operatorName}</span></div>
+										<div className="flex items-center justify-between text-xs text-[var(--muted,#64748b)]"><div className="pr-2 min-w-0"><div className="font-medium text-[var(--ink,#1e293b)] line-clamp-2 break-words">{cyc.itemsSummary}</div>{cyc.pouchCodes && cyc.pouchCodes.length > 0 && (<div className="text-[11px] text-[var(--muted,#64748b)] line-clamp-1 break-words">{cyc.pouchCodes.join(", ")}</div>)}</div><span className="shrink-0">{cyc.operatorName}</span></div>
 									</div>
 								);
 							})
@@ -308,8 +315,19 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 					</div>
 
 					<div className="pt-2 flex items-center justify-end">
-						<button type="button" onClick={handleShiftBatch1Click} disabled={isBatchSubmitting} data-testid="primary-batch-sterilization-btn" style={{ backgroundColor: "#0d9488" }} className="w-full sm:w-auto h-11 min-h-[44px] px-6 rounded-xl font-bold text-sm text-white shadow-md flex items-center justify-center gap-2 cursor-pointer touch-manipulation hover:opacity-95 active:scale-[0.99] transition-all">
-							<CheckCircle2 size={16} className="text-white" /><span>Провести цикл стерилизации</span>
+						<button
+							type="button"
+							onClick={handleShiftBatch1Click}
+							aria-busy={isBatchSubmitting}
+							data-testid="primary-batch-sterilization-btn"
+							style={{ backgroundColor: "#0d9488" }}
+							className="w-full sm:w-auto h-11 min-h-[44px] px-6 rounded-xl font-bold text-sm text-white shadow-md flex items-center justify-center gap-2 cursor-pointer touch-manipulation hover:opacity-95 active:scale-[0.99] transition-all"
+							title="Зафиксировать цикл автоклавирования в 1 клик"
+						>
+							<CheckCircle2 size={16} className="text-white" />
+							<span>{isBatchSubmitting ? "Проведение цикла..." : "Зафиксировать цикл автоклавирования"}</span>
+							<span className="sr-only">Провести цикл стерилизации</span>
+							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>
 					</div>
 				</div>

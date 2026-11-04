@@ -280,20 +280,20 @@ export function SterilizationBatchCycleModal({
 						</div>
 					</div>
 
-					{/* Предстерилизационная очистка (ПСО): Азопирамовая и фенолфталеиновая пробы */}
+					{/* Предстерилизационная очистка: контроль скрытой крови и моющих средств */}
 					<div className="p-2.5 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[#334155] flex flex-col gap-1">
 						<div className="flex items-center justify-between text-xs">
 							<span className="font-bold text-[var(--ink,#1e293b)] inline-flex items-center gap-1.5">
 								<FlaskConical size={13} className="text-[var(--teal,#0d9488)]" />
-								Предстерилизационная очистка (ПСО):
+								Предстерилизационная очистка:
 							</span>
 							<span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border border-emerald-500/20">
 								<CheckCircle2 size={11} /> 100% норма
 							</span>
 						</div>
 						<div className="text-[11px] text-[var(--muted,#64748b)] flex flex-col gap-0.5">
-							<span className="text-emerald-700 dark:text-emerald-400 font-medium inline-flex items-center gap-1"><CheckCircle2 size={10} /> Азопирамовая проба отрицательная (фиолетовое окрашивание отсутствует)</span>
-							<span className="text-emerald-700 dark:text-emerald-400 font-medium inline-flex items-center gap-1"><CheckCircle2 size={10} /> Фенолфталеиновая проба отрицательная (розовое окрашивание отсутствует)</span>
+							<span className="text-emerald-700 dark:text-emerald-400 font-medium inline-flex items-center gap-1"><CheckCircle2 size={10} /> Контроль скрытой крови (азопирам): отрицательно</span>
+							<span className="text-emerald-700 dark:text-emerald-400 font-medium inline-flex items-center gap-1"><CheckCircle2 size={10} /> Контроль остатков моющих средств (фенолфталеин): отрицательно</span>
 						</div>
 					</div>
 

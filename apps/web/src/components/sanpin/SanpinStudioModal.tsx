@@ -71,19 +71,24 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 			.then((res) => (res.ok ? res.json() : []))
 			.then((data) => {
 				if (!active || !Array.isArray(data) || data.length === 0) return;
-				setCycles(data.map((item: any, idx: number) => ({
-					id: item.id || `cycle-${idx}`, cycleNumber: item.cycleNumber ?? idx + 1,
+				const mapped: SterilizationBatchCycleRecord[] = data.map((item: any, idx: number) => ({
+					id: String(item.id || `cycle-${idx}`),
+					cycleNumber: Number(item.cycleNumber) || idx + 1,
 					date: item.timestamp ? new Date(item.timestamp).toLocaleDateString("ru-RU") : new Date().toLocaleDateString("ru-RU"),
 					time: item.timestamp ? new Date(item.timestamp).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }) : "",
-					autoclaveId: item.autoclaveId || "АК-01", autoclaveName: item.deviceName || selectedAutoclave,
-					programId: (item.regime || "standard_134") as AutoclaveRegimeId,
+					autoclaveId: String(item.autoclaveId || "АК-01"),
+					autoclaveName: String(item.deviceName || selectedAutoclave),
+					programId: (item.regime === "delicate_121" || item.regime === "flash_134" ? item.regime : "standard_134") as AutoclaveRegimeId,
 					temperatureCelsius: Number(item.temperatureCelsius) || 134,
-					pressureBar: Number(item.pressureBar) || 2.1, exposureMinutes: Number(item.durationMin) || 5,
+					pressureBar: Number(item.pressureBar) || 2.1,
+					exposureMinutes: Number(item.durationMin) || 5,
 					packagesCount: Number(item.packagesCount) || 1,
-					chemicalIndicatorVerdict: item.passedIndicator === false ? "ОТКЛОНЕН" : "ПРОЙДЕН",
-					operatorName: item.operatorName || "Дежурная медсестра",
-					itemsDescription: item.itemsDescription || "Партия стерилизации", status: "completed",
-				})));
+					chemicalIndicatorVerdict: (item.passedIndicator === false ? "НЕ ПРОЙДЕН" : "ПРОЙДЕН") as "ПРОЙДЕН" | "НЕ ПРОЙДЕН",
+					operatorName: String(item.operatorName || "Дежурная медсестра"),
+					itemsDescription: String(item.itemsDescription || "Партия стерилизации"),
+					status: "completed" as const,
+				}));
+				setCycles(mapped);
 			}).catch(() => {});
 		return () => { active = false; };
 	}, [isOpen, isEffectiveDemo, selectedAutoclave]);
@@ -183,7 +188,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 				</div>
 
 				{/* 3 канонические навигационные вкладки без советских номеров приказов */}
-				<div className="flex items-center gap-1.5 px-3 sm:px-6 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] overflow-x-auto">
+				<div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-6 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] overflow-x-auto scrollbar-none">
 					<button type="button" onClick={() => setActiveTab("autoclave")} data-testid="sanpin-tab-autoclave" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "autoclave" ? "active" : ""}`}>
 						<Flame className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
 						<span className="sm:hidden">Автоклав</span>
@@ -193,14 +198,16 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 					</button>
 					<button type="button" onClick={() => setActiveTab("kraft")} data-testid="sanpin-tab-kraft" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "kraft" ? "active" : ""}`}>
 						<Tag className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
-						<span className="sm:hidden">Крафт-пакеты</span>
+						<span className="sm:hidden">Пакеты</span>
 						<span className="hidden sm:inline">Крафт-пакеты и маркировка</span>
+						<span className="sr-only">Крафт-пакеты</span>
 						<span className="sr-only">Контроль очистки инструментов</span>
 					</button>
 					<button type="button" onClick={() => setActiveTab("cleaning")} data-testid="sanpin-tab-cleaning" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "cleaning" ? "active" : ""}`}>
 						<Sun className="w-4 h-4 shrink-0 text-amber-500" />
-						<span className="sm:hidden">Уборка и УФ</span>
+						<span className="sm:hidden">Уборка</span>
 						<span className="hidden sm:inline">Журнал генеральных уборок и УФ</span>
+						<span className="sr-only">Уборка и УФ</span>
 						<span className="sr-only">Журнал кварцевания</span>
 					</button>
 				</div>
@@ -215,7 +222,11 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								onChange={(e) => setSelectedProgramId(e.target.value as AutoclaveRegimeId)}
 								className="w-full text-xs sm:text-sm h-10 min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
 							>
-								{AUTOCLAVE_PROGRAMS.map((p) => (<option key={p.id} value={p.id}>{p.name}</option>))}
+								{AUTOCLAVE_PROGRAMS.map((p) => (
+									<option key={p.id} value={p.id}>
+										{p.temperatureCelsius}°C • {p.exposureMinutes} мин ({p.id === "delicate_121" ? "Деликатная" : p.id === "prion_134" ? "Прион" : p.id === "flash_134" ? "Экспресс" : "Стандарт"})
+									</option>
+								))}
 							</select>
 						</div>
 
@@ -226,7 +237,11 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								onChange={(e) => setSelectedAutoclave(e.target.value)}
 								className="w-full text-xs sm:text-sm h-10 min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
 							>
-								{CLINIC_STERILIZERS.map((s) => (<option key={s.id} value={s.model}>{s.model}</option>))}
+								{CLINIC_STERILIZERS.map((s) => (
+									<option key={s.id} value={s.model}>
+										{s.name.replace(" (Melag Vacuklav 23 B+)", " (Melag 23B+)").replace(" (Euronda E9 Next)", " (Euronda E9)")}
+									</option>
+								))}
 							</select>
 						</div>
 
@@ -317,10 +332,10 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 														<td className="whitespace-nowrap font-medium">{c.date} {c.time}</td>
 														<td className="font-semibold text-center">№{c.cycleNumber}</td>
 														<td>{c.autoclaveName}</td>
-														<td className="text-xs">{c.temperatureCelsius}°C / {c.pressureBar} бар / {c.exposureMinutes}м</td>
+														<td className="text-xs">{c.temperatureCelsius}°C / {c.pressureBar} бар / {c.exposureMinutes} мин</td>
 														<td className="font-semibold text-center">{c.packagesCount} шт</td>
 														<td><span className="sanpin-badge-success"><CheckCircle className="w-3 h-3" />{c.chemicalIndicatorVerdict}</span></td>
-														<td className="text-xs text-[var(--ink-muted,#64748b)] max-w-xs truncate">{c.itemsDescription}</td>
+														<td className="text-xs text-[var(--ink-muted,#64748b)] max-w-sm" title={c.itemsDescription}>{c.itemsDescription}</td>
 														<td className="text-xs">{c.operatorName}</td>
 													</tr>
 												))}
@@ -341,7 +356,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 												<div className="text-xs text-[var(--ink-muted,#64748b)] space-y-1">
 													<div className="text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium">{c.autoclaveName}</div>
 													<div>{c.temperatureCelsius}°C • {c.pressureBar} бар • {c.exposureMinutes} мин • {c.packagesCount} пакетов</div>
-													<div className="truncate">{c.itemsDescription}</div>
+													<div className="text-[var(--ink,#0f172a)] dark:text-slate-200 line-clamp-2 break-words">{c.itemsDescription}</div>
 													<div className="pt-1 text-[11px] text-[var(--ink-muted,#64748b)]">Оператор: {c.operatorName}</div>
 												</div>
 											</div>

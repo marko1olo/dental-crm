@@ -43,8 +43,9 @@ export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {
 						const isPassed = item.status === "passed" || item.status === "sterile_passed" || item.passedIndicator !== false;
 						const autoId = item.autoclaveId || "autoclave-melag-vacuklav-23b";
 						const devName = item.deviceName || undefined;
+						const dateStr = item.timestamp ? String(item.timestamp).split("T")[0] : new Date().toISOString().split("T")[0];
 						const rec = createForm257Record({
-							date: item.timestamp ? String(item.timestamp).split("T")[0] : new Date().toISOString().split("T")[0],
+							date: dateStr || new Date().toISOString().slice(0, 10),
 							cycleNumber: Number(item.cycleNumber) || (idx + 1),
 							sterilizerId: autoId,
 							sterilizerCode: autoId,
@@ -53,7 +54,7 @@ export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {
 							sensors: { actualTemperatureCelsius: tempC, actualPressureBar: pressBar, actualExposureMinutes: durMin },
 							itemsDescriptionRu: item.itemsDescription || "Стоматологический инструментарий",
 							packsCount: Number(item.packsCount) || 1,
-							packagingType: item.packagingType === "kraft_heat_sealed" ? "kraft_heat_sealed" : "kraft_pouch_sealed",
+							packagingType: (item.packagingType === "kraft_heat_sealed" ? "kraft_pouch_sealed" : "kraft_pouch_self_seal") as PackagingTypeId,
 							chamberPoints: createDefault5ChamberPoints("intetest_v_134_5", isPassed),
 							operatorStaffFullName: item.operatorName || "Сотрудник ЦСО",
 							operatorStaffPosition: "Сотрудник ЦСО / Врач",

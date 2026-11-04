@@ -21,12 +21,13 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 
 	const body = (req.body as Record<string, unknown>) || {};
 	const isDelicate = body.regime === "delicate_121";
+	const isPrion = body.regime === "prion_134";
 	const batchSize = Math.max(1, Math.min(Number(body.batchSize ?? body.packagesCount) || 25, 100));
 	const deviceName = String(body.deviceName || "Melag Vacuklav 23 B+ (ЦСО №1)");
 	const autoclaveId = String(body.autoclaveId || "АК-01");
-	const temp = isDelicate ? "121.0" : "134.0";
-	const pressure = isDelicate ? "1.15" : "2.15";
-	const durationMin = isDelicate ? 20 : 5;
+	const temp = body.temperatureCelsius ? String(body.temperatureCelsius) : (isDelicate ? "121.0" : "134.0");
+	const pressure = body.pressureBar ? String(body.pressureBar) : (isDelicate ? "1.15" : "2.15");
+	const durationMin = isDelicate ? 20 : isPrion ? 18 : (Number(body.durationMin) || 5);
 	const packagingType = String(body.packagingType || (isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive"));
 	const now = new Date();
 
@@ -108,7 +109,7 @@ export async function handleQuickNormCycle(req: FastifyRequest, reply: FastifyRe
 		log,
 		batchSize,
 		cycleName: cycleTimeLabel,
-		regime: isDelicate ? "121°C / 1.15 бар (20 мин)" : "134°C / 2.15 бар (5 мин)",
+		regime: isDelicate ? "121°C / 1.15 бар (20 мин)" : isPrion ? "134°C / 2.15 бар (18 мин)" : "134°C / 2.15 бар (5 мин)",
 		psoStatus: "approved_100_percent_norm",
 		stockDeduction,
 		message: `Зафиксирован ${cycleTimeLabel.toLowerCase()} автоклавирования №${cycleNumber} (${batchSize} упаковок, ${temp}°C, ${pressure} бар, индикатор 5 класса норма). Очистка норма, расходники со склада списаны.`,
