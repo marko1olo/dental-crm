@@ -79,9 +79,10 @@ export function DentalLabExpressConfigurator(props: DentalLabExpressConfigurator
 							data-testid={`chairside-preset-${p.id}`}
 						>
 							<div className="font-bold text-xs text-[var(--ink)]">{p.shortTitle}</div>
-							<div className="mt-2 flex items-center justify-between text-[11px] font-semibold text-teal-700 dark:text-teal-300">
-								<span>Цвет: {p.shade}</span>
-								<span>+{p.days} раб. дн.</span>
+							<div className="mt-2 flex items-center justify-between gap-1.5 text-[11px] font-semibold text-teal-700 dark:text-teal-300">
+								<span className="shrink-0">Цвет: {p.shade}</span>
+								<span className="text-teal-400 dark:text-teal-600 font-normal">•</span>
+								<span className="shrink-0">+{p.days} раб. дн.</span>
 							</div>
 						</button>
 					);

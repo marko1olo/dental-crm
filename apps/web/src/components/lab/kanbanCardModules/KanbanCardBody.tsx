@@ -48,19 +48,19 @@ export function KanbanCardBody({ order, fittingUrgency, onRescheduleAppointment 
 				</div>
 			)}
 
-			<div className="ztl-card-dates-row">
-				<span>Срок: <strong>{formatRussianDate(order.expectedLabDateIso)}</strong></span>
-				<span>Примерка: <strong>{order.fittingDate ? formatRussianDate(order.fittingDate) : order.scheduledVisitDateIso ? formatRussianDate(order.scheduledVisitDateIso) : "—"}</strong></span>
+			<div className="ztl-card-dates-row flex items-center justify-between gap-2 flex-wrap">
+				<span className="shrink-0">Срок: <strong>{formatRussianDate(order.expectedLabDateIso)}</strong></span>
+				<span className="shrink-0">• Примерка: <strong>{order.fittingDate ? formatRussianDate(order.fittingDate) : order.scheduledVisitDateIso ? formatRussianDate(order.scheduledVisitDateIso) : "—"}</strong></span>
 			</div>
 
-			<div className="ztl-card-price-row">
-				<span style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined}>
+			<div className="ztl-card-price-row flex items-center justify-between gap-2">
+				<span style={order.isWarrantyRework ? { color: "var(--teal, #10b981)", fontWeight: 700 } : undefined} className="shrink-0">
 					{order.isWarrantyRework
-						? "0 руб (Гарантия)"
-						: `${(order.financials?.patientPriceTotalRub ?? (order as any).priceRub ?? 0).toLocaleString("ru-RU")} руб`}
+						? "0 руб. (Гарантия)"
+						: `${(order.financials?.patientPriceTotalRub ?? (order as any).priceRub ?? 0).toLocaleString("ru-RU")} руб.`}
 				</span>
-				<span style={{ color: "var(--muted, #64748b)", fontSize: "10px" }}>
-					Себест: {(order.financials?.labCostTotalRub ?? Math.round(((order as any).priceRub ?? 0) * 0.4)).toLocaleString("ru-RU")} руб
+				<span style={{ color: "var(--muted, #64748b)", fontSize: "10.5px" }} className="shrink-0">
+					• Себест: {(order.financials?.labCostTotalRub ?? Math.round(((order as any).priceRub ?? 0) * 0.4)).toLocaleString("ru-RU")} руб.
 				</span>
 			</div>
 		</>

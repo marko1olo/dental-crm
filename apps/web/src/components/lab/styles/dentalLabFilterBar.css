@@ -21,9 +21,9 @@
 
 .ztl-search-input-wrap {
 	position: relative;
-	flex: 1;
-	min-width: 160px;
-	max-width: 260px;
+	flex: 1 1 260px;
+	min-width: 180px;
+	max-width: 320px;
 }
 
 .ztl-search-icon {

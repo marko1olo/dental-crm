@@ -175,9 +175,9 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					onClose={props.onClose}
 				/>
 
-				{/* 2. Express Presets Bar (1-Click Orthopedic Presets) */}
-				<div className="px-4 sm:px-6 py-2 border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 flex items-center gap-2 overflow-x-auto scrollbar-none shrink-0">
-					<span className="hidden sm:inline-block text-[11px] font-bold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0 pr-1">
+				{/* 2. Express Presets Bar (1-Click Orthopedic Presets: Scrollable on mobile, flex-wrap on desktop) */}
+				<div className="px-3 sm:px-6 py-1.5 sm:py-2 border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 flex items-center gap-1.5 sm:gap-2 max-sm:overflow-x-auto max-sm:flex-nowrap sm:flex-wrap shrink-0 scrollbar-none">
+					<span className="text-[11px] font-bold text-[var(--muted,#64748b)] whitespace-nowrap shrink-0 pr-1">
 						Быстрый выбор:
 					</span>
 					{MODAL_EXPRESS_LAB_PRESETS.map((p) => (
@@ -193,12 +193,12 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					))}
 				</div>
 
-				{/* 3. Segmented Navigation Tabs */}
-				<nav className="flex items-center border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950 px-3 sm:px-6 overflow-x-auto scrollbar-none shrink-0 gap-1">
+				{/* 3. Segmented Navigation Tabs: 5 tabs guaranteed fit on 390px mobile */}
+				<nav className="flex items-center justify-between border-b border-[var(--line,#cbd5e1)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-950 px-1 sm:px-4 overflow-x-auto scrollbar-none shrink-0 gap-0.5 sm:gap-1">
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("main")}
-						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "main"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -210,31 +210,31 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("shades")}
-						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "shades"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
 						<Palette className="w-4 h-4 shrink-0" />
-						<span><span className="hidden sm:inline">Шкала расцветки VITA</span><span className="sm:hidden">Шкала VITA</span></span>
+						<span><span className="hidden sm:inline">Шкала расцветки VITA</span><span className="sm:hidden">VITA</span></span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("scans")}
-						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "scans"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
 						<Upload className="w-4 h-4 shrink-0" />
-						<span><span className="hidden sm:inline">3D-скан челюсти (STL / PLY)</span><span className="sm:hidden">3D-скан</span></span>
+						<span><span className="hidden sm:inline">3D-скан челюсти</span><span className="sm:hidden">3D-скан</span></span>
 					</button>
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("stages")}
-						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "stages"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -246,20 +246,20 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("print")}
-						className={`!bg-transparent dark:!bg-transparent py-2.5 sm:py-3 px-3 text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "print"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 						}`}
 					>
 						<FileText className="w-4 h-4 shrink-0" />
-						<span><span className="hidden sm:inline">Расчет и печать</span><span className="sm:hidden">Расчет</span></span>
+						<span><span className="hidden sm:inline">Расчет и печать</span><span className="sm:hidden">Печать</span></span>
 					</button>
 				</nav>
 
 				{/* 4. Tab Body Content */}
-				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4">
-					{/* Financial Gate Soft Warning Banner (Мандат 8e: Автономия врача, Zero-Block) */}
+				<div className="flex-1 min-h-0 overflow-y-auto p-4 sm:p-6 space-y-4 pb-28 max-sm:pb-36">
+					{/* Financial Gate Soft Warning Banner (Автономия врача, Zero-Block) */}
 					{form.financialGateResult?.isGatePassed === false && (
 						<div
 							className="p-3.5 rounded-xl border border-amber-500/40 bg-amber-500/10 text-xs text-amber-900 dark:text-amber-100 flex items-center justify-between gap-3 flex-wrap shadow-2xs"
@@ -268,7 +268,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 							<div className="flex items-center gap-2">
 								<AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
 								<span>
-									Предупреждение финансового шлюза: аванс пациента менее 50%. Врач вправе направить наряд в лабораторию (Мандат 8e: Автономия врача).
+									Аванс пациента менее 50%. Врач вправе направить наряд в лабораторию под клиническую ответственность.
 								</span>
 							</div>
 							<button
@@ -281,12 +281,12 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 										timestampIso: new Date().toISOString(),
 										reason: "Клиническое решение врача",
 									});
-									showToast("Клинический оверрайд врача применён", "info");
+									showToast("Наряд направлен под клиническую ответственность врача", "info");
 									await form.handleSaveOrder(undefined, true);
 								}}
 								className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs cursor-pointer shadow-2xs transition-colors"
 							>
-								Клинический оверрайд врача
+								Направить без аванса
 							</button>
 						</div>
 					)}

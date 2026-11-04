@@ -1,5 +1,5 @@
 import React from "react";
-import { AlertTriangle, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 
 export interface FilterBarSegmentedChipsProps {
 	selectedStage: string;
@@ -47,7 +47,7 @@ export function FilterBarSegmentedChips({
 					className={`ztl-chip alert-chip ${onlyDelayedFilter ? "active" : ""}`}
 					onClick={() => setOnlyDelayedFilter((prev) => !prev)}
 				>
-					<AlertTriangle size={12} />
+					<AlertCircle size={12} className="text-rose-500 shrink-0" />
 					<span>Задержки ({delayedCount})</span>
 				</button>
 				{hasActiveFilters && (

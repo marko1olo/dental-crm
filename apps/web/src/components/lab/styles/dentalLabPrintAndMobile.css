@@ -1,10 +1,6 @@
 /* dentalLabPrintAndMobile.css — Печатные стили и мобильный адаптив (Мандат 8b: <= 120 строк) */
 
 @media print {
-	body * {
-		visibility: hidden !important;
-	}
-
 	#printable-lab-order-sheet,
 	#printable-lab-order-sheet * {
 		visibility: visible !important;

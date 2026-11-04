@@ -9,10 +9,10 @@ export interface KanbanCardHeaderProps {
 export function KanbanCardHeader({ order }: KanbanCardHeaderProps) {
 	return (
 		<>
-			<div className="ztl-card-top-row">
-				<span className="ztl-card-order-num">{order.orderNumber}</span>
-				<span className="ztl-card-teeth-badge">
-					Зубы: {order.selectedTeeth?.join(", ") || (order as any).toothFdi || "челюсть"}
+			<div className="ztl-card-top-row flex items-center justify-between gap-2">
+				<span className="ztl-card-order-num shrink-0">{order.orderNumber}</span>
+				<span className="ztl-card-teeth-badge shrink-0">
+					• Зубы: {order.selectedTeeth?.join(", ") || (order as any).toothFdi || "челюсть"}
 				</span>
 			</div>
 

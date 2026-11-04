@@ -15,7 +15,7 @@ export function FilterBarSearchInput({
 			<input
 				type="text"
 				className="ztl-search-input"
-				placeholder="Поиск: номер наряда, пациент, врач, зуб, прием..."
+				placeholder="Поиск наряда, пациента..."
 				value={searchQuery}
 				onChange={(e) => setSearchQuery(e.target.value)}
 				style={{ paddingLeft: "38px" }}
