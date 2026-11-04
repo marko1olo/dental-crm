@@ -6,10 +6,13 @@
 
 ---
 
-## ⛔ ИЕРАРХИЯ АВТОРИТЕТОВ (READ JIT)
+## ⛔ ИЕРАРХИЯ АВТОРИТЕТОВ И СПРАВОЧНИКОВ (READ JIT)
 
-1. **[THE HAMMER MASTER PROMPT](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — Высшая Конституция проекта (CTO Supremacy, автономия врача, презумпция 100% брака, T.A.R.S.).  
-2. **[CANONICAL ARCHITECTURE SPECIFICATION](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)** — Канонический свод законов проекта (Мандаты 8d..8aq, 1432 строки).  
+> 🚨 **НЕЧТЕНИЕ СПРАВОЧНИКОВ ПРИРАВНЕНО К ПРЯМОЙ ДИВЕРСИИ И САБОТАЖУ!**  
+> Написание кода «из головы» или «по памяти» строжайше запрещено. Агент ОБЯЗАН вызвать `read_file` перед первой строчкой:
+
+1. **[CANONICAL ARCHITECTURE SPECIFICATION](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)** — **Канонический свод законов проекта (1432 строки)**. Мандаты 8d..8aq, 8 осей скриншотов, UTF-8, архитектурные слои.
+2. **[THE HAMMER MASTER PROMPT](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — **Высшая Конституция проекта (CTO Supremacy)**. Философия продукта, автономия врача у кресла, презумпция 100% брака.
 3. **[ДОМЕННЫЕ СПЕЦИФИКАЦИИ В .AGENTS/](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**:
    - База данных: [`DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) & [`DATABASE_SETUP.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md) (PostgreSQL 18 на `127.0.0.1:5432`, Drizzle ORM).
    - Анатомическая одонтограмма: [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md) (viewBox 100x218, Wheeler 2.5D, 120 FPS).
@@ -55,8 +58,8 @@
 28. **Мандат 8au (Чистота артефактов):** Разовые скрипты — СТРОГО в `scratch/`. Постоянные пруфы — в `docs/proofs/<domain>/`.
 29. **Мандат 8av (ТЗ субагентам):** Минимум 5 абзацев: роль, цитаты Создателя, скоуп, ловушки, стандарты сдачи.
 30. **Мандат 8aw (Фокус на десктопе):** Десктоп (1440/1920px) первичный. Мобильный — по остаточному принципу. Светлая и темная темы.
-31. **Мандат 8ax (Протокол Memento):** При сжатии контекста запрещены слепые правки! 4 шага заземления: `git status` + `git diff --stat` $\to$ план в `scratch/` $\to$ `read_file` кода $\to$ JIT-документация.
-32. **Мандат 8ay (Demoted Rules JIT):** При сообщении о превышении бюджета токенов — агент ОБЯЗАН открыть через `read_file` профильные правила до написания кода.
+31. **Мандат 8ax (Протокол Memento и анти-амнезия):** При сжатии контекста запрещены слепые правки! 4 шага заземления: `git status` + `git diff --stat` $\to$ план в `scratch/` $\to$ `read_file` кода $\to$ JIT-документация.
+32. **Мандат 8ay (Закон о саботаже и JIT-чтении):** Нечтение перемещенных справочников перед написанием кода ПРИРАВНЕНО К ПРЯМОЙ ДИВЕРСИИ И САБОТАЖУ! Агент ОБЯЗАН вызвать `read_file` на профильный справочник ([`CANONICAL_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md), [`frontend.md`](file:///C:/Users/Admin/.gemini/config/references/frontend.md), [`engineering.md`](file:///C:/Users/Admin/.gemini/config/references/engineering.md), [`DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md), etc.) ДО первого изменения кода!
 
 ---
 
