@@ -595,3 +595,286 @@
 - **Файлы:**
   - `ToothRadialPrimaryGrid.tsx#L47`: Класс `truncate` обрезает клинические названия («Периодонтит...», «Резорбция...») на кнопках радиального меню зуба.
   - `ScheduleMobileTimelineRow.tsx#L227`: Жесткий ограничитель `max-w-[130px]` с `truncate` обрезает фамилию врача при наличии свободного пространства в строке.
+
+
+## 19. 🔬 ЭНДОДОНТИЯ, КАНАЛОВАЯ ФОРМУЛА, АПЕКСЛОКАТОР И ОБТУРАЦИЯ
+
+### [END-01] [SEV-1] Ампутация анатомии каналов моляров у кресла врача
+- **Файл:** [`apps/web/src/components/endo/endodonticsCatalogData.ts#L137-L149`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/endodonticsCatalogData.ts#L137-L149)
+- **Суть бага:** В кресельном экспресс-баре функция `getChairsideDefaultCanals` для нижних моляров 46/36 возвращает всего 2 вымышленных канала «M» и «D» (вместо анатомических MB, ML, D по Wheeler). Для верхних моляров 16/26 канал MB2 (встречающийся в 70–90% случаев) полностью вырезан. При нажатии «Добавить канал» система генерирует безликое «К3», «К4». Врач вынужден писать в ЭМК анатомически безграмотную чушь, уничтожающую доказательную базу клиники при экспертизе качества медпомощи.
+
+### [END-02] [SEV-1] Юридический подлог дневника ЭМК при 2-м визите периодонтита (K04.5)
+- **Файл:** [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L41-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L41-L64)
+- **Суть бага:** Если во второй визит лечения периодонтита каналы обтурируются золотым стандартом AH Plus (эпоксидный силер с гуттаперчей), а не биокерамикой, срабатывает дефолтный фоллбек. Система вписывает в медицинскую карту пациента: **«Острый пульпит (K04.0), жалобы на острые боли, витальная экстирпация пульпы»**! В зубе, где пульпа была удалена 2 недели назад, программа оформляет её повторное удаление. 100% штраф страховой и статья за служебный подлог документации при судебном иске.
+
+### [END-03] [SEV-1] Отсутствие реляционной структуры эндо-замеров в БД (Помойка в notes)
+- **Файлы:**
+  - [`apps/api/src/routes/odontogram/endoRoutes.ts#L309-L392`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/endoRoutes.ts#L309-L392)
+  - [`apps/api/src/db/schema/clinical/odontogramSchema.ts#L61-L98`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/odontogramSchema.ts#L61-L98)
+- **Суть бага:** В PostgreSQL 18 нет таблиц `tooth_canals` или `endo_protocols`. Данные замеров каналов сериализуются через `JSON.stringify` и сбрасываются в текстовое поле `tooth_states.notes`. Если врач или ассистент запишет в карточке текстовое примечание («болезненность при накусывании»), JSON ломается, и вся эндодонтическая карта зуба бесследно стирается.
+
+### [END-04] [SEV-2] Фиктивный апекслокатор (Hardcoded Mock)
+- **Файлы:**
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx#L192, L275`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx#L192)
+  - [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L133`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L133)
+- **Суть бага:** Значение `apexLocator: "0.0 Apex"` намертво зашито в коде. В интерфейсе нет полей ввода показаний прибора по каждому каналу (-0.5, 0.0, +0.5 мм). Бейдж «Apex 0.0 активен» в UI — чистая декорация без связи с реальностью.
+
+### [END-05] [SEV-2] Слепое списание NiTi-файлов без учёта ресурса циклической усталости
+- **Файл:** [`packages/shared/src/clinical/endo/endoBillingAndMaterials.ts#L143-L152`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/endo/endoBillingAndMaterials.ts#L143-L152)
+- **Суть бага:** Ротационный машинный файл (ProTaper / WaveOne за 650 ₽) списывается в количестве 1 шт на каждый зуб. Отсутствует учёт ресурса инструмента (4–5 каналов), что ведёт к финансовому перекосу склада и риску отлома усталого инструмента (*broken instrument*) в апикальной трети канала.
+
+### [END-06] [SEV-2] Отсутствие пресета постоянной обтурации периодонтита в студии эндодонтии
+- **Файлы:**
+  - [`apps/web/src/components/endo/endodonticsCatalogData.ts#L173-L234`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/endodonticsCatalogData.ts#L173-L234)
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx#L260-L264`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx#L260-L264)
+- **Суть бага:** В модалке есть кнопки «Пульпит (1 визит)», «Периодонтит (Ca(OH)2)», «Распломбировка». Завершить 2-й визит периодонтита в 1 клик невозможно — врачу приходится вручную перенастраивать каждый канал.
+
+### [END-07] [SEV-2] Утечка 3D КЛКТ замеров каналов в LocalStorage
+- **Файл:** [`apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L369`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L369)
+- **Суть бага:** Замеры кривизны и длин каналов из томографа сохраняются в `window.localStorage` браузера вместо базы данных. При смене ПК или очистке кэша данные полностью исчезают.
+
+
+## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN) И МЕДИА-АРХИВ
+
+### [PHO-01] [SEV-1] Отсутствие мобильного QR-моста загрузки снимков с телефона врача
+- **Файлы:**
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62)
+  - [`apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L45-L68`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L45-L68)
+- **Суть бага:** В отличие от DentalPRO и IDENT, где врач наводит смартфон на динамический QR-код на экране монитора и снимки мгновенно падают в слоты карты пациента по WebSocket, в DENTE загрузка возможна **только через проводник Windows на ПК либо вставкой Ctrl+V**. Врачу у кресла в перчатках приходится отправлять фото себе в мессенджер, скачивать на рабочий стол ПК и перетаскивать мышью.
+
+### [PHO-02] [SEV-1] Бутафорский DSD (Digital Smile Design) и мертвый код эстетического анализа
+- **Файлы:**
+  - [`apps/web/src/components/photography/math/goldenProportionMath.ts#L19-L51`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/math/goldenProportionMath.ts#L19-L51)
+  - [`apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx#L19-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/IncisalAlignmentGuideOverlay.tsx#L19-L64)
+  - [`apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81)
+- **Суть бага:** Заявленный модуль DSD — бутафория. Математика золотого сечения (1:1.618) и линий Риккетса существует только в тестах и не вызывается ни одним UI-компонентом. Оверлей направляющих (`IncisalAlignmentGuideOverlay.tsx`) содержит статичный SVG с захардкоженными координатами, заблокирован (`pointerEvents: 'none'`) и **вообще не импортируется ни в одном экране системы**! Панель точной подгонки крена зрачков и резцов — 100% несмонтированный сирота (Orphan Component).
+
+### [PHO-03] [SEV-1] Сохранение фотопротокола в localStorage браузера мимо PostgreSQL 18
+- **Файлы:**
+  - [`apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L70-L85`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L70-L85)
+  - [`apps/web/src/components/patients/workspaceModals/PatientClinicalPhotoModals.tsx#L76-L88`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/workspaceModals/PatientClinicalPhotoModals.tsx#L76-L88)
+- **Суть бага:** В PostgreSQL 18 нет таблицы `photo_protocols`. При сохранении из карты пациента протокол записывается в `localStorage` конкретного компьютера (`dente_photo_protocol_${patientId}`). Если на следующий день врач открывает карту пациента в другом кабинете клиники — сетка фотопротокола полностью пуста! А при сохранении из визита протокол принудительно затирает текст дневника ЭМК (`treatmentDescription`).
+
+### [PHO-04] [SEV-2] Утечка памяти сырыми Base64-строками в ортодонтии (Фриз браузера)
+- **Файлы:**
+  - [`apps/web/src/components/diagnostics/orthoModal/useOrthoSlotActions.ts#L14-L35`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/orthoModal/useOrthoSlotActions.ts#L14-L35)
+  - [`apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx#L68-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx#L68-L82)
+- **Суть бага:** В ортодонтической модалке снимки читаются через `FileReader.readAsDataURL(file)` без сжатия. Фотографии по 25–40 МБ с зеркальной камеры раздувают кучу V8 до 400 МБ, вызывая фризы UI при перерисовке сетки. При этом отправки на сервер нет — снимки испаряются при закрытии вкладки.
+
+### [PHO-05] [SEV-2] Три разрозненных дубликата слайдера ДО/ПОСЛЕ без связи с планами лечения
+- **Файлы:**
+  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L16-L113`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L16-L113)
+  - [`apps/web/src/components/visit/BeforeAfterSplitter.tsx#L15-L100`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/BeforeAfterSplitter.tsx#L15-L100)
+  - [`apps/web/src/components/diagnostics/OrthoBeforeAfterComparison.tsx#L1-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthoBeforeAfterComparison.tsx#L1-L60)
+- **Суть бага:** В системе напложено 3 независимых слайдера сравнения До/После, и ни один из них не подключен к презентации плана лечения и сметам. Компоненты экспорта клинического коллажа `BeforeAfterExportModal.tsx` и `PhotoCollageExportSheet.tsx` нигде не смонтированы и являются мертвым кодом.
+
+### [PHO-06] [SEV-2] Карикатурные векторные желтые зубы в пустом состоянии слайдера
+- **Файлы:**
+  - [`apps/web/src/components/photography/patientPresentationDemoData.ts#L8-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/patientPresentationDemoData.ts#L8-L60)
+  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L29-L30`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L29-L30)
+- **Суть бага:** Если снимки еще не загружены, слайдер показывает пациенту на мониторе карикатурный желтый рисунок `DEMO_BEFORE_SMILE_SVG`. Нарушение Мандата 8c (Запрет моков и честный Empty State).
+
+### [PHO-07] [SEV-3] Жестко зашитые метаданные в экспорте фотопротокола
+- **Файл:** [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L27`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L27)
+- **Суть бага:** Если номер карты не передан, на экспортируемых в зуботехническую лабораторию фотоколлажах печатается чужой номер карты «К-8492» и чужой врач «Д-р Смирнова Е. В.».
+
+### [PHO-08] [SEV-3] Слепая привязка файлов по индексу массива со сдвигом всей сетки
+- **Файл:** [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62)
+- **Суть бага:** При пакетной загрузке файлы раскладываются строго по `slots[i % length]`. Любой лишний дубль фото сдвигает всю сетку: окклюзионные снимки попадают в профиль лица, а портрет — в макросъемку резцов.
+
+
+## 21. 🎁 ПРОГРАММА ЛОЯЛЬНОСТИ, БОНУСЫ, СЕМЕЙНЫЕ КОШЕЛЬКИ И RFM-МАРКЕТИНГ
+
+### [LOY-01] [SEV-1] Обход лимита списания бонусов (100% покрытие дорогостоящих услуг)
+- **Файлы:**
+  - [`apps/api/src/routes/loyaltyModules/loyaltySchemas.ts#L3-L12`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltySchemas.ts#L3-L12)
+  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L32-L36`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L32-L36)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L60-L65`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L60-L65)
+- **Суть бага:** В Zod-схеме списания бонусов флаг `allowFullCoverage` по умолчанию выставлен в `true`. Сервис `bonusRedemptionService.ts` даже не запрашивает лимит из таблицы `loyalty_programs` (где задан порог 30%), а при `allowFullCoverage = true` безусловно разрешает 100% списание. Пациент может оплатить 100% стоимости дорогостоящей имплантации или виниров бонусами, нанося прямой убыток клинике.
+
+### [LOY-02] [SEV-1] Фантомные бонусы в кассовом сплите: скидка даётся, но баллы не списываются
+- **Файлы:**
+  - [`apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts#L36-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts#L36-L82)
+  - [`apps/api/src/db/billing/paymentRecordExecutor.ts#L30-L75`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts#L30-L75)
+- **Суть бага:** В кассовом окне комбинированной оплаты сумма бонусов `splitBonusRub` вычитается из наличного долга пациента, но в API запрос отправляется **только текстовая приписка** `note: "бонусы 500 ₽"`. В теле запроса нет полей для бонусов, а эндпоинт `/api/loyalty/redeem` **вообще не вызывается**! Пациент получает скидку деньгами, а его бонусный баланс не уменьшается ни на один балл — бесконечный фантомный дисконт при каждом визите.
+
+### [LOY-03] [SEV-1] Неатомарность кассы и бонусов: потеря баллов и скидок при сбоях сети
+- **Файлы:**
+  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L57-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L57-L75)
+  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L43-L64`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L43-L64)
+- **Суть бага:** Списание бонусов оторвано от чека ККТ на несвязанные вызовы через `.catch(() => null)`. При сетевой ошибке после печати чека запрос на списание баллов молча глушится — пациент уходит со скидкой, не потратив баллы. Либо наоборот: если списать баллы до чека, а ККТ заклинило, баллы сгорают без фискализации услуги. В системе отсутствует обязательный паттерн **Two-Phase Hold/Commit** (блокировка баллов до ответа кассы).
+
+### [LOY-04] [SEV-2] Бессмертные бонусы (Отсутствие фонового сгорания баллов по TTL)
+- **Файлы:**
+  - [`apps/api/src/db/schema/patientsSchema/loyaltyModules/loyaltyBonusesTable.ts#L46-L135`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/patientsSchema/loyaltyModules/loyaltyBonusesTable.ts#L46-L135)
+  - [`apps/api/src/routes/loyaltyModules/bonusBalanceService.ts#L18-L62`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusBalanceService.ts#L18-L62)
+- **Суть бага:** В базе сохраняется поле `expiresAt` (на 180 дней), но во всем бэкенде **нет ни одного cron-задания или фонового воркера для сгорания баллов**. Колонка `lifetimeExpiredPoints` никогда не обновляется. Баллы пациентов живут вечно.
+
+### [LOY-05] [SEV-1] BOLA / IDOR уязвимость списания чужого семейного кошелька
+- **Файлы:**
+  - [`apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts#L20-L72`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts#L20-L72)
+  - [`apps/web/src/components/patients/family/familyWalletModal/useFamilySpendMutation.ts#L45-L71`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/family/familyWalletModal/useFamilySpendMutation.ts#L45-L71)
+- **Суть бага:** Если клиент передает параметр `payerPatientId = walletOwnerId`, условие проверки прав `!isAuthorizerPayer` становится ложным, и вся валидация прав `canSpendFamilyWallet` **полностью пропускается**! Фронтенд автоматически подставляет `headPatientId` в этот параметр, позволяя любому члену семьи (включая детей и дальних родственников с запретом на списание) списать любые суммы с чужого депозита.
+
+### [LOY-06] [SEV-1] Списание семейного депозита в кассе без проверки родства
+- **Файл:** [`apps/api/src/db/billing/paymentRecordExecutor.ts#L295-L359`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts#L295-L359)
+- **Суть бага:** В кассовом маршруте `/api/finance/payments` списание баланса семейной группы `deductFamilyWalletBalance` **вообще не обращается к таблице `patient_relationships`** и не проверяет полномочия плательщика.
+
+### [LOY-07] [SEV-1] Реферальные бонусы из воздуха (Опциональный платеж)
+- **Файл:** [`apps/api/src/routes/referrals.ts#L23-L27, L255-L284`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts#L23-L27)
+- **Суть бага:** Параметр `paymentId` в схеме `rewardFirstVisitBodySchema` объявлен как `.optional()`. Если он не передан, сумма `verifiedAmountRub` берется прямо из тела запроса без проверки платежа в базе данных! Сервер мгновенно начисляет 1000 баллов рефереру L1 и 300 баллов L2 из воздуха.
+
+### [LOY-08] [SEV-1] Захардкоженные моки в роутах рефералов
+- **Файл:** [`apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts#L34-L83`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts#L34-L83)
+- **Суть бага:** Маршрут `GET /api/loyalty/referrals/:patientId` возвращает статичный массив с фейковым именем «Друг / Семья», `POST /register` симулирует регистрацию без записи в БД, а `POST /credit` начисляет бонусы без проверки факта визита.
+
+### [LOY-09] [SEV-2] Коллизия 4-значных промокодов с падением в ошибку 500
+- **Файл:** [`apps/api/src/routes/referrals.ts#L29-L38, L74-L86`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts#L29-L38)
+- **Суть бага:** Реферальный код генерируется с 4 случайными цифрами (всего 9000 вариантов). При коллизии уникального индекса запрос падает с необработанным исключением 500 Internal Server Error (нет цикла ретрая). Диапазон позволяет мгновенно перебрать все коды клиники скриптом.
+
+### [LOY-10] [SEV-1] Статичные фейковые сегменты пациентов в маркетинговом дашборде
+- **Файлы:**
+  - [`apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx#L40-L73`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx#L40-L73)
+  - [`apps/web/src/components/marketing/marketingSegmentsPresets.ts#L8-L33`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/marketing/marketingSegmentsPresets.ts#L8-L33)
+- **Суть бага:** На экране маркетинга выводятся захардкоженные числа: «142 спящих пациента», «48 пропустили гигиену», «240 активная база». Компонент даже не делает запрос к серверу — фальшивая диорама вместо реальной сегментации базы.
+
+### [LOY-11] [SEV-2] Полное отсутствие трехмерной матрицы RFM (Frequency и Monetary)
+- **Файлы:**
+  - [`apps/api/src/services/patients/recallCandidates.ts#L140-L337`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/patients/recallCandidates.ts#L140-L337)
+  - [`apps/api/src/routes/marketing.ts#L69-L245`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketing.ts#L69-L245)
+- **Суть бага:** Алгоритм recall-кандидатов учитывает только Recency (давность визита). Измерения Frequency (частота визитов) и Monetary (выручка и маржинальность пациента) в коде отсутствуют на 100%. VIP-пациент с чеком 500 000 ₽ сваливается в одну кучу со случайным посетителем на осмотр.
+
+
+## 22. 👶 ДЕТСКАЯ СТОМАТОЛОГИЯ, МОЛОЧНЫЙ ПРИКУС (51–85) И ИНДЕКСЫ ГИГИЕНЫ
+
+### [PED-01] [SEV-1] Захардкоженный сменный прикус на 24 зуба (Выброшены постоянные резцы)
+- **Файлы:**
+  - [`packages/shared/src/clinical/dentalFormulaFdi.ts#L76-L86`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/dentalFormulaFdi.ts#L76-L86)
+  - [`apps/web/src/components/odontogram/chart/hooks/useToothChartDentition.ts#L71-L74`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/chart/hooks/useToothChartDentition.ts#L71-L74)
+  - [`apps/web/src/components/pediatric/PediatricTeethChart.tsx#L57`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/PediatricTeethChart.tsx#L57)
+- **Суть бага:** Массив сменного прикуса `MIXED_TOP_TEETH` / `MIXED_BOTTOM_TEETH` жестко зафиксирован ровно на 24 зуба: моляры 16, 26, 36, 46 и молочные 51–85. Постоянные резцы и премоляры (11–15, 21–25, 31–35, 41–45) у 7–11-летнего ребенка физически невозможно отобразить в сменном прикусе, поставить на них герметик или полечить кариес. В `PediatricTeethChart.tsx` выбор режима `permanent` схлопывает одонтограмму в пустой массив `[]`.
+
+### [PED-02] [SEV-1] Кнопки резорбции корней стирают кариес и объявляют зуб здоровым
+- **Файлы:**
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L35-L65`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L35-L65)
+  - [`apps/web/src/components/odontogram/ToothChart.tsx#L112`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothChart.tsx#L112)
+- **Суть бага:** Колбэк `onSelectState` в `ToothChart.tsx` принимает только `(state, surfs)`. Третий аргумент `subType` ("resorption_1", "resorption_2"), посылаемый кнопками резорбции, полностью отбрасывается. При клике `[Рез I]` зубу выставляется статус `"Healthy"`. Если у ребенка молочный зуб 54 был поражен кариесом или пульпитом, нажатие кнопки резорбции корня **стирает диагноз и объявляет зуб полностью здоровым**, а стадия резорбции корня бесследно теряется!
+
+### [PED-03] [SEV-2] Физиологическая смена зуба не активирует постоянный преемник
+- **Файлы:**
+  - [`packages/shared/src/clinical/pediatric/toothSuccession.ts#L6-L71`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/pediatric/toothSuccession.ts#L6-L71)
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L59-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L59-L64)
+- **Суть бага:** Функция `getPermanentSuccessor` не вызывается нигде во всем фронтенде и бэкенде. Нажатие кнопки `[Смена]` просто помечает молочный зуб 51 как `Missing`. Постоянный зуб 11 автоматически не прорезывается и не активируется на одонтограмме, оставляя пустую дыру.
+
+### [PED-04] [SEV-1] Фальшивый расчет OHI-S: 4 захардкоженные кнопки вместо 6 индексных зубов
+- **Файлы:**
+  - [`apps/web/src/components/hygiene/hygieneCatalogData.ts#L27-L72`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/hygiene/hygieneCatalogData.ts#L27-L72)
+  - [`apps/web/src/components/documents/forms/DentalMedicalCardIndicesTab.tsx#L70-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/forms/DentalMedicalCardIndicesTab.tsx#L70-L82)
+- **Суть бага:** По стандарту ВОЗ и Минздрава индекс Грина-Вермиллиона (OHI-S) рассчитывается по осмотру 6 индексных зубов (16, 11, 26, 31 вестибулярно; 36, 46 язычно) с раздельным учетом налета (DI) и камня (CI). В DENTE в «Студии гигиены» врачу подсовывают 4 кнопки-заглушки (0.0, 0.8, 1.8, 2.6). А в карте ЭМК расчет отсутствует — поле OHI-S представляет собой тупой текстовый `<input>`, заставляющий врача считать математику на калькуляторе в смартфоне.
+
+### [PED-05] [SEV-1] Индексы РМА (Парма) и Федорова-Володкиной — 100% мертвый код
+- **Файлы:**
+  - [`packages/shared/src/perio/hygienePma.ts#L22-L60`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/perio/hygienePma.ts#L22-L60)
+  - [`apps/web/src/components/hygiene/HygieneIndicesPanel.tsx#L11-L34`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/hygiene/HygieneIndicesPanel.tsx#L11-L34)
+- **Суть бага:** Функция `calculatePmaScore` не вызывается ни в одном компоненте фронтенда (0 упоминаний). А индекс Федорова-Володкиной (окрашивание 6 нижних фронтальных зубов 43..33 — главный детский гигиенический индекс в РФ по стандартам СтАР) импортирован в заголовок `HygieneIndicesPanel.tsx`, но в разметке компонента **нет ни табов, ни полей ввода, ни отображения результатов**!
+
+### [PED-06] [SEV-2] Искажение индекса интенсивности кариеса КПУ(з) у детей
+- **Файлы:**
+  - [`apps/web/src/components/odontogram/ClassicGostHeader.tsx#L80-L93`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ClassicGostHeader.tsx#L80-L93)
+  - [`packages/shared/src/documents/forms043u.ts#L282-L301`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/documents/forms043u.ts#L282-L301)
+- **Суть бага:** В шапке одонтограммы даже в детском режиме считается взрослый КПУ по зубам 11–48. Для ребенка с 10 кариозными молочными зубами шапка показывает: `Индекс КПУ: 0 (К=0, П=0, У=0)`. А формула тяжести Минздрава в `forms043u.ts` присваивает ребенку категорию «Очень низкий кариес (0–1.5)», полностью игнорируя поражения молочных зубов.
+
+### [PED-07] [SEV-1] Приём малолетнего ребенка (4 года) без родителя и свидетельства о рождении
+- **Файлы:**
+  - [`apps/web/src/components/pediatric/somatic/PediatricLegalRepresentativeSection.tsx#L66-L115`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/somatic/PediatricLegalRepresentativeSection.tsx#L66-L115)
+  - [`apps/api/src/routes/patients/helpers.ts#L205-L222`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/helpers.ts#L205-L222)
+  - [`apps/api/src/routes/documentTemplatesModules/templateRenderAndPreviewRoutes.ts#L213-L236`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documentTemplatesModules/templateRenderAndPreviewRoutes.ts#L213-L236)
+- **Суть бага:** По ст. 20 и 54 323-ФЗ и ст. 28 ГК РФ несовершеннолетние до 15 лет не имеют права самостоятельно подписывать ИДС. В DENTE:
+  1. Поле ФИО законного представителя помечено как `(необязательно)`.
+  2. Полей паспорта родителя и свидетельства о рождении ребенка в форме **нет вовсе**.
+  3. Кнопка «Подтвердить согласие» ставит галочку при пустых полях.
+  4. При пустом представителе в официальный договор и ИДС подставляется сам 4-летний ребенок в качестве лица, подписывающего согласие на медицинское вмешательство (ст. 238 УК РФ).
+
+
+## 23. 🏷️ ПРЕЙСКУРАНТ, НОМЕНКЛАТУРА 804н, ТЕХКАРТЫ (BOM) И СЕБЕСТОИМОСТЬ
+
+### [PRC-01] [SEV-1] Номенклатура 804н урезана на 85% и разорвана на два каталога
+- **Файлы:**
+  - [`packages/shared/src/pricelist/order804n/order804nCodeValidation.ts#L23-L27`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/pricelist/order804n/order804nCodeValidation.ts#L23-L27)
+  - [`apps/api/src/services/clinical/statutoryCatalogs/order804n.ts#L6-L100`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/clinical/statutoryCatalogs/order804n.ts#L6-L100)
+- **Суть бага:** В официальном классификаторе Минздрава 804н стоматологический блок насчитывает свыше 350 позиций. В DENTE в shared-библиотеке зашито всего 58 услуг, на бэкенде — 44 услуги, а базовый прейскурант содержит всего 30 позиций! Полностью отсутствуют пародонтологические лоскутные операции (`A16.07.038`), детские коронки и сложная ортодонтия (`A16.07.047`).
+
+### [PRC-02] [SEV-1] Официальные коды 804н выбрасываются из договоров и актов (ПП РФ № 736)
+- **Файл:** [`apps/api/src/documents/templates/contractAndActTemplates.ts#L280-L284`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/documents/templates/contractAndActTemplates.ts#L280-L284)
+- **Суть бага:** В шаблонах договоров и актов колонка кода услуги берется из внутреннего артикула клиники, а если его нет — тупо подставляется хардкод `"A16.07.001"`. Официальный код Номенклатуры Минздрава не печатается вовсе. Прямое нарушение п. 17 Постановления Правительства РФ № 736 от 11.05.2023, грозящее штрафами Росздравнадзора и отказами страховых по ДМС.
+
+### [PRC-03] [SEV-2] Фальсификация кодов 804н в кассовых чеках 54-ФЗ
+- **Файл:** [`apps/web/src/components/finance/fiscalEngine/receiptItemMapper.ts#L58-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalEngine/receiptItemMapper.ts#L58-L60)
+- **Суть бага:** При отсутствии у услуги `code804n` касса подставляет код наложения пломбы: `code804n: it.code804n || "A16.07.002"`. В налоговую и ОФД уходит чек на лечение кариеса, даже если проводилась имплантация или удаление зуба.
+
+### [PRC-04] [SEV-1] Таблица техкарт BOM — мертвая схема без API и интерфейса
+- **Файл:** [`apps/api/src/db/schema/inventory/inventoryTechCardsTable.ts#L54-L108`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/inventory/inventoryTechCardsTable.ts#L54-L108)
+- **Суть бага:** Таблицы `procedure_tech_cards` и `procedure_tech_card_items` созданы в PostgreSQL, но для них **НЕТ НИ ОДНОГО API-маршрута и НИ ОДНОГО экрана в UI**. Главврач и старшая медсестра лишены возможности настроить нормы расхода материалов для процедур клиники.
+
+### [PRC-05] [SEV-2] Дефолтный BOM покрывает всего 22 услуги и срывается на внутренних кодах
+- **Файл:** [`packages/shared/src/warehouse/bomModules/bomDeductionCalculator.ts#L19-L53`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/warehouse/bomModules/bomDeductionCalculator.ts#L19-L53)
+- **Суть бага:** Захардкоженный список техкарт содержит нормы расхода только для 22 услуг. Для всех остальных услуг клиники списание равно 0. Кроме того, поиск идет строго по коду 804н — если клиника использует свой артикул («ТР-05»), техкарта не находится, и списание отменяется.
+
+### [PRC-06] [SEV-2] Стоимость зуботехнической лаборатории labCostRub отбрасывается при сохранении
+- **Файл:** [`apps/web/src/components/catalog/pricelist/pricelistDbSync.ts#L191-L201`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/catalog/pricelist/pricelistDbSync.ts#L191-L201)
+- **Суть бага:** В форме прейскуранта есть поле «Лаборатория (₽)», но при отправке на бэкенд оно отбрасывается, так как в таблице `service_catalog_items` нет такой колонки.
+
+### [PRC-07] [SEV-1] Себестоимость материалов (COGS) полностью выброшена из отчетов прибыли
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/executiveDoctorsQuery.ts#L106-L113`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveDoctorsQuery.ts#L106-L113)
+  - [`apps/api/src/routes/analytics/utilizationRoutes.ts#L325-L330`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts#L325-L330)
+- **Суть бага:** В формуле прибыли клиники `revenue - labOrdersCostRub - doctorPayrollRub` стоимость списанных материалов (композиты, имплантаты, мембраны) **НЕ ВЫЧИТАЕТСЯ**. Если хирург потратил расходников на 150 000 ₽, система считает прибыль без учета этих затрат.
+
+### [PRC-08] [SEV-1] Категории цен (VIP, ДМС, Промо) живут только в памяти браузера
+- **Файлы:**
+  - [`apps/api/src/db/schema/clinical/treatmentPlans/treatmentPlanItemsTable.ts#L32-L77`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/treatmentPlans/treatmentPlanItemsTable.ts#L32-L77)
+  - [`apps/api/src/routes/settings/types.ts#L96-L132`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/settings/types.ts#L96-L132)
+- **Суть бага:** Во фронтенде есть переключатель тарифов VIP/ДМС, но в PostgreSQL таблице `service_catalog_items` нет полей для тарифов. Бэкенд их не принимает, и при F5 все цены VIP и ДМС стираются.
+
+
+## 24. 🏛️ ЕГИСЗ (РЭМД / ФРМР / ФРМО), МДЛП ЧЕСТНЫЙ ЗНАК И УКЭП (63-ФЗ)
+
+### [EGI-01] [SEV-1] Фальшивые номера регистрации РЭМД до реальной отправки в Минздрав
+- **Файлы:**
+  - [`apps/api/src/routes/egiszModules/egiszVimisSender.ts#L147-L159`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszVimisSender.ts#L147-L159)
+  - [`apps/web/src/components/egisz/packageSender/remdApiSubmissions.ts#L77-L78`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/egisz/packageSender/remdApiSubmissions.ts#L77-L78)
+- **Суть бага:** При постановке СЭМД в локальную очередь бэкенд немедленно фабрикует синтетический номер `РЭМД-77-2026-XXXX`. Фронтенд рапортует врачу: «Зарегистрировано в РЭМД», хотя документ еще даже не отправлялся в шлюз Минздрава! При остановке воркера или сбое сети документ в РЭМД отсутствует, а клиника уверена в обратном (риск отзыва лицензии по Приказу 911н).
+
+### [EGI-02] [SEV-2] Имитация проверки врача в ФРМР (Offline Regex вместо запроса в регистр)
+- **Файл:** [`apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/egiszModules/egiszAuthService.ts#L105-L132)
+- **Суть бага:** Функция `verifyDoctorSnilsForFrmr` проверяет только контрольную сумму 11 цифр СНИЛС по алгоритму ПФР. Запрос в реальный регистр медработников ФРМР Минздрава **не делается никогда**. Если врач лишен аккредитации или уволен, система рапортует `{ validForFrmr: true }`.
+
+### [EGI-03] [SEV-2] Хардкодный тестовый СНИЛС пациента "11223344595" в очереди РЭМД
+- **Файл:** [`apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/egisz/dispatcher/outboxQueueProcessor.ts#L327)
+- **Суть бага:** Если у пациента не введен СНИЛС, воркер автоматически подставляет тестовый СНИЛС `"11223344595"` и отправляет его в государственную систему РЭМД ЕГИСЗ (передача недостоверных персданных по 152-ФЗ).
+
+### [MDL-01] [SEV-1] Полное отсутствие отправки в Честный Знак и тупик со схемой 10560
+- **Файлы:**
+  - [`apps/api/src/services/mdlp/MdlpDisposalService.ts#L340-L517`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/mdlp/MdlpDisposalService.ts#L340-L517)
+  - [`apps/web/src/components/mdlp/mdlpModal/useMdlpXmlExport.ts#L30-L76`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpModal/useMdlpXmlExport.ts#L30-L76)
+- **Суть бага:** В системе нет ни коннектора к `api.mdlp.crpt.ru`, ни драйвера к аппаратному Регистратору Выбытия (РВ). Списание генерирует XML схемы 10560 и предлагает медсестре скачать его на рабочий стол. Но схема 10560 по закону принимается **только аппаратным РВ** — веб-интерфейс Честного Знака её отклоняет! Списанные карпулы анестетиков зависают на балансе клиники в Честном Знаке навсегда.
+
+### [MDL-02] [SEV-2] Захардкоженный «онлайн» статус ЦРПТ и фабрикация фейковых SGTIN
+- **Файл:** [`apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts#L25, L57-L61`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/mdlp/mdlpModal/useMdlpDisposalActions.ts#L25)
+- **Суть бага:** Индикатор связи с Честным Знаком захардкожен в React: `useState("online")`. Кнопка быстрого списания смены генерирует 10 вымышленных SGTIN, приводя к блокировке партии в ЦРПТ.
+
+### [CRY-01] [SEV-1] Подмена УКЭП врача на 4-значный ПИН с фальшивым синим штампом по ГОСТ
+- **Файлы:**
+  - [`apps/web/src/components/visit/cryptoProModules/useCryptoProSignerState.ts#L14`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/useCryptoProSignerState.ts#L14)
+  - [`apps/api/src/services/clinical/signingModules/signatureTypeVerifier.ts#L58-L76`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/clinical/signingModules/signatureTypeVerifier.ts#L58-L76)
+- **Суть бага:** В модалке подписания дефолтным типом подписи стоит `"pin"`. При вводе ПИН-кода бэкенд пишет строку `SIMPLE_PIN_EP|...`, а фронтенд рисует официальный синий штамп по ГОСТ Р 7.0.97-2016 «ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ»! По ч. 1 ст. 14 323-ФЗ и Приказу 947н использование ПИН-кодов (ПЭП) для врачей при подписании карт **ПРЯМО ЗАПРЕЩЕНО**. Документ юридически ничтожен.
+
+### [CRY-02] [SEV-1] Обход проверки хэша документа при наличии любого 32-байтного messageDigest
+- **Файл:** [`packages/shared/src/crypto/gostCmsPkcs7Engine.ts#L508-L525`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/crypto/gostCmsPkcs7Engine.ts#L508-L525)
+- **Суть бага:** Из-за несовпадения хэшей SHA-256 и ГОСТ Стрибог-256 в код вставлена лазейка: если подпись содержит любой 32-байтный `messageDigest`, проверка целостности считается пройденной! Любая подпись `.sig` от чужого документа (например, от счета за ЖКХ) принимается системой как подлинная подпись медицинской карты.
+
+### [CRY-03] [SEV-2] Забытый и не подключенный нативный CLI-мост КриптоПро (cryptcp.exe)
+- **Файлы:**
+  - [`apps/api/src/routes/cryptoProNativeRoutes.ts#L1-L100`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts#L1-L100)
+  - [`apps/api/src/crypto/cryptoProCliEngine.ts#L77-L177`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/crypto/cryptoProCliEngine.ts#L77-L177)
+- **Суть бага:** На бэкенде написан мощный CLI-мост прямого вызова `cryptcp.exe` и `csptest.exe`, но во фронтенде нет ни одного вызова этого API. Когда браузерный плагин не найден, система вместо нативного вызова падает в фальшивый ПИН-код.
