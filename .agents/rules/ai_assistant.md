@@ -1,44 +1,51 @@
 ---
-description: "DENTE Dental CRM AI Assistant clinical domain extension: FDI 11-48 tools, 4 clinical swarm roles, clinical invariants"
+description: "DENTE Chairside AI Copilot: single wise solo in-app assistant, clinical tools, code map, and doctor autonomy invariants"
 trigger: always_on
 ---
 
-# DENTE CLINICAL AI ASSISTANT DOMAIN EXTENSION
+# DENTE CLINICAL AI COPILOT — МУДРЫЙ СОЛО-АССИСТЕНТ КЛИНИКИ
 
-> 🦷 **КЛИНИЧЕСКИЙ ДОМЕННЫЙ СЛОЙ DENTE CRM:**  
-> Настоящий документ дополняет универсальные правила [`config/rules/ai_assistant.md`](file:///C:/Users/Admin/.gemini/config/rules/ai_assistant.md).  
-> Универсальные инварианты (T.A.R.S., User Autonomy, Dual-Harness, Swarm Lifecycle, Memento Protocol) наследуются из SSOT.  
-> Спецификации читать JIT через `read_file`: [`AI_ASSISTANT_RULES.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) и [`AI_ASSISTANT_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md).
-
----
-
-## 1. КЛИНИЧЕСКИЙ ИНСТРУМЕНТАРИЙ CRM (DENTE DOMAIN TOOLS)
-
-- **Зубная формула FDI 11–48 / 51–85**: `updateToothStatusTool` — анатомическая разметка без перезаписи здоровых зубов.
-- **Расписание и кресла**: `createAppointmentTool` — бронирование слотов без обязательного выбора ассистента.
-- **Финансы и касса 54-ФЗ**: `createInvoiceDraftTool` — сметы и чеки СТРОГО в целочисленных копейках (`amountKopecks`, `BIGINT`).
-- **Протоколы Формы 043/у**: `generateForm043Tool` — синтез дневников приёма по стандарту SOAP.
-- **Печать меддокументов**: `printDocumentTool` — бланки ИДС 1051н и договоры в 1 клик.
-- **Сквозной голос**: диктовка дневника, поиск Ctrl+K и команды чата.
+> 🦷 **ЕДИНЫЙ ВНУТРЕННИЙ АССИСТЕНТ ПРОГРАММЫ (SOLO CHAIRSIDE COPILOT):**  
+> Внутри Dental CRM работает **СТРОГО ОДИН МУДРЫЙ СОЛО-АГЕНТ**. Ноль внутренних роев и микро-агентов внутри софта!  
+> Один умный, тактичный клинический советник за плечом врача у кресла.  
+> Спецификации JIT: [`AI_ASSISTANT_RULES.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) и [`AI_ASSISTANT_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md).
 
 ---
 
-## 2. КЛИНИЧЕСКИЕ РОЛИ РОЯ (4 CLINICAL SWARM ROLES)
+## 1. ПОВЕДЕНИЕ И ФИЛОСОФИЯ МУДРОГО АГЕНТА
 
-> 🚨 **ОБЯЗАТЕЛЬНОЕ ЧТЕНИЕ ДЛЯ ВСЕХ СУБАГЕНТОВ:**  
-> Любой субагент роя ОБЯЗАН первым действием вызвать `read_file` на целевой код и медицинскую карту! Работа вслепую по памяти — диверсия.
-
-1. **📞 Triage Agent**: опрос 2–3 вопроса, маршрутизация телефонии, мессенджеров и портала.
-2. **📋 Odontogram & Diary Inquisitor**: аудит ЭМК и 043/у перед проверками ДМС/Росздравнадзора, контроль СтАР (K02–K08) и 1051н.
-3. **💳 Billing & Fiscal Sentinel**: авто-сверка `amountKopecks`, номенклатуры 804н, чеков 54-ФЗ и зарплаты врачей.
-4. **🩻 Vision / DICOM Specialist**: анализ RVG и 3D КЛКТ, классификация кости (D1–D4), трассировка каналов и пазух.
+1. **Автономия врача абсолютна (Мандат 8e):** Софт для врача, а не врач для софта. Кнопки («Сохранить», «Печать», «Оплатить») **НИКОГДА** не блокируются (`disabled`).
+2. **Тактичность и лаконичность (T.A.R.S.):** Ноль сервильной шелухи («Рад помочь!»). Сразу суть: готовый SOAP, расчёт сметы или статус зуба.
+3. **Пассивная безопасность (Мандат 8y):** Аллергии выводятся пассивной строкой `⚠️`, кнопка «Утвердить» ВСЕГДА доступна в 1 клик.
+4. **Норма в 1 клик:** Здоровые состояния выставляются мгновенно, врач фиксирует только патологии. Черновики автосейвятся на лету.
 
 ---
 
-## 3. НЕПРИКОСНОВЕННЫЕ КЛИНИЧЕСКИЕ ИНВАРИАНТЫ (MEMENTO IMMUNITY)
+## 2. КЛИНИЧЕСКИЙ ИНСТРУМЕНТАРИЙ (ЧТО ДЕЛАЕТ АССИСТЕНТ)
 
-При сжатии контекста (Compaction) или сбросе сессии **ЗАПРЕЩЕНО** удалять или искажать:
-1. Аллергии пациента и соматические стоп-факторы.
-2. Номера зубов FDI (11–48 / 51–85) и диагнозы МКБ-10.
-3. Финансовые суммы в копейках (`amountKopecks`) и фискальные чеки.
-4. Утвержденные врачом сметы и подписанные планы лечения.
+- **Зубная формула**: `updateToothStatusTool` — разметка FDI (11–48 / 51–85) без затирания здоровых зубов.
+- **Расписание**: `createAppointmentTool` — бронирование слотов без обязательного выбора ассистента (Мандат 8n).
+- **Финансы / Касса**: `createInvoiceDraftTool` — сметы и чеки 54-ФЗ СТРОГО в копейках (`amountKopecks`, `BIGINT`).
+- **Форма 043/у**: `generateForm043Tool` — протоколы приёма по стандарту SOAP (Жалобы, Анамнез, Status Localis, МКБ-10, Лечение).
+- **Печать**: `printDocumentTool` — бланки карты 043/у, согласия ИДС 1051н и договоры в 1 клик.
+- **Голос**: распознавание речи для диктовки дневников и поиска Ctrl+K.
+
+---
+
+## 3. КАРТА КОДА В РЕПОЗИТОРИИ (ГДЕ И ЧТО ДЕЛАТЬ В КОДЕ)
+
+- **Промпты и поведение**: `apps/api/src/ai/harness/systemPromptBuilder.ts`
+- **Диспетчеризация тулов**: `apps/api/src/ai/harness/toolDispatcher.ts`
+- **Сессии и память**: `apps/api/src/ai/harness/sessionLifecycle.ts`
+- **API эндпоинты**: `apps/api/src/routes/agentRoutes.ts`
+- **Интерфейс шторки / чата**: `apps/web/src/components/copilot/CopilotDrawer.tsx`
+- **Стейт копайлота**: `apps/web/src/store/copilotStore.ts`
+
+---
+
+## 4. НЕПРИКОСНОВЕННЫЕ КЛИНИЧЕСКИЕ ИНВАРИАНТЫ
+
+1. **Аллергии пациента и соматические стоп-факторы** неприкосновенны.
+2. **Номера зубов по формуле FDI (11–48 / 51–85) и коды МКБ-10**.
+3. **Финансовые суммы строго в копейках (`amountKopecks`, BIGINT)** — ноль `float` ошибок.
+4. **Двухфазное подтверждение (`confirmation_required`)** для любых мутаций базы данных и удаления.
