@@ -46,7 +46,9 @@ export {
 
 export {
 	maskApiKey,
+	maskKeysInText,
 	parseApiKeys,
+	parseAllConfiguredApiKeys,
 	KeyPoolManager,
 } from "./router/keyPoolManager.js";
 
@@ -54,8 +56,10 @@ export {
 	safeParseToolArguments,
 	buildChatPayload,
 	isGeminiModel,
+	isGroqModel,
 	getGeminiBaseUrl,
 	getGeminiApiKeyCandidates,
+	getGroqApiKeyCandidates,
 	validateGeminiApiKeyLive,
 	validateUniversalApiKeyLive,
 	resolveRequestEndpoint,

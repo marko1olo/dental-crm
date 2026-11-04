@@ -21,11 +21,11 @@ import {
 
 test("maskApiKey masks raw secrets preserving only last 5 characters", () => {
 	assert.equal(
-		maskApiKey("sk-6osQfoRXkSyFDuySQOAotuSU74uh75f4gGj69e2zqaVytT3u"),
+		maskApiKey("sk-mock-test-key-0000000000000000000000000000000ytT3u"),
 		"agentrouter...ytT3u",
 	);
 	assert.equal(
-		maskApiKey("sk-LhzyJtJxTfDf7enG1bbfrCmK1Aq73Sh9B188hwJNCXm2cENL"),
+		maskApiKey("sk-mock-test-key-00000000000000000000000000000002cENL"),
 		"agentrouter...2cENL",
 	);
 	assert.equal(maskApiKey("123"), "agentrouter...*****");
@@ -494,4 +494,100 @@ test("AgentRouterClient routes Gemini model call to Gemini endpoint with proper 
 	assert.equal(calledHeaders["x-goog-api-key"], "AIzaSyKeyForGemini77777");
 	assert.equal(calledHeaders.Authorization, "Bearer AIzaSyKeyForGemini77777");
 	assert.equal(res.choices[0]?.message.content, "Анализ снимка зуба 2.6: патологии периодонта не выявлено.");
+});
+
+test("maskKeysInText preserves error diagnostics while masking raw secrets (ROUTER-07)", () => {
+	const rawError =
+		"AgentRouter HTTP 401 error with key sk-6osQfoRXk998877665544332211: Invalid key or Bearer token Bearer 1234567890abcdef. Quota exceeded.";
+	const masked = maskApiKey(rawError);
+
+	assert.ok(!masked.includes("sk-6osQfoRXk998877665544332211"), "Must not leak secret sk- key");
+	assert.ok(masked.includes("sk-***2211"), "Must preserve safe masked key tail");
+	assert.ok(masked.includes("AgentRouter HTTP 401 error with key"), "Must preserve diagnostic prefix");
+	assert.ok(masked.includes("Quota exceeded."), "Must preserve error message suffix");
+	assert.ok(masked.includes("Bearer ***REDACTED***"), "Must redact raw bearer token");
+});
+
+test("AgentRouterClient does NOT contaminate key pool when BYOK params.apiKey fails (ROUTER-06)", async () => {
+	const mockFetch: typeof fetch = async () => {
+		return new Response("Unauthorized", { status: 401 });
+	};
+
+	const client = new AgentRouterClient({
+		apiKeys: ["sk-clinic-global-valid-key-11111"],
+		fetchFn: mockFetch,
+	});
+
+	const initialSnapshot = client.getKeyHealthSnapshot();
+	assert.equal(initialSnapshot.length, 1);
+	assert.equal(initialSnapshot[0]?.failures, 0);
+
+	await assert.rejects(
+		async () => {
+			await client.createChatCompletion({
+				messages: [{ role: "user", content: "test" }],
+				apiKey: "sk-doctor-personal-byok-key-99999",
+			});
+		},
+		/HTTP 401 Auth Error/,
+	);
+
+	const afterSnapshot = client.getKeyHealthSnapshot();
+	assert.equal(afterSnapshot.length, 1);
+	assert.equal(afterSnapshot[0]?.failures, 0, "Global clinic key pool must have 0 failures");
+	assert.ok(
+		!afterSnapshot.some((k) => k.keyMask.includes("99999")),
+		"Doctor personal key must NEVER be recorded into server pool",
+	);
+});
+
+test("AgentRouterClient connects and prioritizes GOOGLE_API_KEYS / GEMINI_API_KEYS for Gemini models (ROUTER-03)", async () => {
+	const prevGoogle = process.env.GOOGLE_API_KEYS;
+	const prevGemini = process.env.GEMINI_API_KEYS;
+
+	try {
+		process.env.GOOGLE_API_KEYS = "AIzaSyPoolGoogleKey111,AIzaSyPoolGoogleKey222";
+
+		let usedHeaderKey = "";
+		const mockFetch: typeof fetch = async (_url, init) => {
+			usedHeaderKey = (init?.headers as Record<string, string>)?.["x-goog-api-key"] || "";
+			return new Response(
+				JSON.stringify({
+					id: "chatcmpl-gemini-pool-1",
+					object: "chat.completion",
+					created: 1728000000,
+					model: "gemini-3.6-flash",
+					choices: [
+						{
+							index: 0,
+							message: {
+								role: "assistant",
+								content: "Клинический диагноз: средний кариес 1.6.",
+							},
+							finish_reason: "stop",
+						},
+					],
+				}),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		const client = new AgentRouterClient({
+			fetchFn: mockFetch,
+		});
+
+		const res = await client.createChatCompletion({
+			model: "gemini-3.6-flash",
+			messages: [{ role: "user", content: "Кариес 16" }],
+		});
+
+		assert.ok(
+			usedHeaderKey === "AIzaSyPoolGoogleKey111" || usedHeaderKey === "AIzaSyPoolGoogleKey222",
+			`Expected key from GOOGLE_API_KEYS pool, got: ${usedHeaderKey}`,
+		);
+		assert.ok(res.choices[0]?.message.content?.includes("средний кариес 1.6"));
+	} finally {
+		process.env.GOOGLE_API_KEYS = prevGoogle;
+		process.env.GEMINI_API_KEYS = prevGemini;
+	}
 });

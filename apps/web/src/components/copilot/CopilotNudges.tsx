@@ -52,12 +52,22 @@ export const CopilotNudges: React.FC<CopilotNudgesProps> = ({
       | undefined;
 
     if (note) {
-      useVisitStore.getState().setVisitNoteForm({
-        complaint: note.complaint || '',
-        anamnesis: note.anamnesis || '',
-        objectiveStatus: note.objectiveStatus || '',
-        diagnosis: note.diagnosis || '',
-        treatmentPlan: note.treatmentPlan || '',
+      useVisitStore.getState().setVisitNoteForm((prev) => {
+        const appendWithSeparator = (existing?: string, addition?: string) => {
+          if (!addition?.trim()) return existing || '';
+          if (!existing?.trim()) return addition.trim();
+          if (existing.includes(addition.trim())) return existing;
+          return `${existing.trim()}\n\n${addition.trim()}`;
+        };
+
+        return {
+          ...prev,
+          complaint: appendWithSeparator(prev.complaint, note.complaint),
+          anamnesis: appendWithSeparator(prev.anamnesis, note.anamnesis),
+          objectiveStatus: appendWithSeparator(prev.objectiveStatus, note.objectiveStatus),
+          diagnosis: appendWithSeparator(prev.diagnosis, note.diagnosis),
+          treatmentPlan: appendWithSeparator(prev.treatmentPlan, note.treatmentPlan),
+        };
       });
     }
 

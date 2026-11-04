@@ -18,10 +18,12 @@ export const SUPPORTED_GEMINI_MODELS = [
 ] as const;
 export type SupportedGeminiModel = (typeof SUPPORTED_GEMINI_MODELS)[number];
 
-export const DEFAULT_AGENTROUTER_KEYS: readonly string[] = Object.freeze([
-	"sk-6osQfoRXkSyFDuySQOAotuSU74uh75f4gGj69e2zqaVytT3u",
-	"sk-LhzyJtJxTfDf7enG1bbfrCmK1Aq73Sh9B188hwJNCXm2cENL",
-]);
+export const DEFAULT_AGENTROUTER_KEYS: readonly string[] = Object.freeze(
+	(process.env.AGENTROUTER_API_KEYS || process.env.GROQ_API_KEYS || "")
+		.split(",")
+		.map((k) => k.trim())
+		.filter((k) => k.length > 0),
+);
 
 export const DEFAULT_TIMEOUT_MS = 120_000; // 120 seconds for deep reasoning models
 export const MIN_REASONING_MAX_TOKENS = 4096;

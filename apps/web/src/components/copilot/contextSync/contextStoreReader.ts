@@ -43,7 +43,7 @@ export function getCurrentCopilotUiContext(): CopilotUiContext {
 		if (Array.isArray(found?.allergies) && found.allergies.length > 0) allergies = found.allergies;
 	}
 
-	const activeTooth = appStore.activeTooth ?? null;
+	const activeTooth = appStore.activeTooth ?? visitStore.activeToothNumber ?? null;
 	let activeDoctor: string | null = appStore.activeDoctorName ?? null;
 	if (!activeDoctor && appStore.dashboard?.clinicSettings?.staff) {
 		const staff = appStore.dashboard.clinicSettings.staff;

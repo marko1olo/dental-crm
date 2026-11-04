@@ -8,7 +8,9 @@ import {
 	type AgentRouterChatResponse,
 	agentRouterClient,
 	maskApiKey,
+	maskKeysInText,
 	AgentRouterAllKeysExhaustedError,
+	AgentRouterModelOverloadedError,
 } from "../agentRouterClient.js";
 import {
 	type DentalToolContext,
@@ -35,6 +37,41 @@ import { runDeterministicClinicalFallback } from "./reactFallbackRunner.js";
 import { routeClinicalTask } from "../clinicalModelRouter.js";
 
 /**
+ * Robustly matches all model overload, key exhaustion, rate limit, quota,
+ * or network errors to trigger seamless deterministic clinical fallback (<100ms).
+ */
+export function isCloudLlmFailoverError(turnErr: unknown): boolean {
+	if (!turnErr) return false;
+	if (
+		turnErr instanceof AgentRouterAllKeysExhaustedError ||
+		turnErr instanceof AgentRouterModelOverloadedError
+	) {
+		return true;
+	}
+	const errName = (turnErr as { name?: string })?.name || "";
+	if (
+		errName === "AgentRouterAllKeysExhaustedError" ||
+		errName === "AgentRouterModelOverloadedError"
+	) {
+		return true;
+	}
+	const msg = (turnErr instanceof Error ? turnErr.message : String(turnErr)).toLowerCase();
+	return (
+		msg.includes("agentrouterallkeysexhaustederror") ||
+		msg.includes("agentroutermodeloverloadederror") ||
+		msg.includes("exhausted all keys") ||
+		msg.includes("all agentrouter api keys are currently cooling down") ||
+		msg.includes("failed to select agentrouter api key") ||
+		msg.includes("model is currently in 402") ||
+		msg.includes("budget pool") ||
+		msg.includes("quota") ||
+		msg.includes("rate limit") ||
+		msg.includes("ratelimit") ||
+		/429|402|503|502|504|server error|auth error|401|403|unauthorized|forbidden|invalid api key|enotfound|econnrefused|etimedout|fetch failed|network|timed out|timeout|исчерпали лимиты|все 0 ключей/i.test(msg)
+	);
+}
+
+/**
  * Runs the autonomous ReAct execution loop for the clinical dental assistant.
  */
 export async function runAgentHarness(
@@ -54,9 +91,17 @@ export async function runAgentHarness(
 
 	let activePlan: TaskPlan | undefined = initialPlan;
 
+	const effectiveActiveTooth =
+		params.activeTooth !== undefined
+			? (params.activeTooth ?? undefined)
+			: context.activeTooth !== undefined
+				? (context.activeTooth ?? undefined)
+				: undefined;
+
 	const effectiveToolContext: DentalToolContext = {
 		...context,
 		runtimeMode,
+		activeTooth: effectiveActiveTooth,
 	};
 
 	const tools = getDentalTools(runtimeMode);
@@ -68,6 +113,9 @@ export async function runAgentHarness(
 		params.customInstructions,
 		params.memoryFacts,
 		params.doctorSpecialization,
+		effectiveActiveTooth,
+		effectiveToolContext.activeVisitId,
+		messages,
 	);
 
 	// Working history for this ReAct execution turn
@@ -389,21 +437,11 @@ export async function runAgentHarness(
 
 			const safeErrMsg =
 				turnErr instanceof Error
-					? maskApiKey(turnErr.message)
+					? maskKeysInText(turnErr.message)
 					: "Внутренняя ошибка выполнения модели";
 
 			// Fallback to high-IQ deterministic clinical ReAct engine when cloud LLM is unreachable or keys are exhausted
-			const isKeyOrAuthError =
-				turnErr instanceof AgentRouterAllKeysExhaustedError ||
-				(turnErr instanceof Error && (
-					turnErr.message.includes("AgentRouterAllKeysExhaustedError") ||
-					turnErr.message.includes("исчерпали лимиты") ||
-					turnErr.message.includes("Все 0 ключей") ||
-					turnErr.message.includes("Auth Error") ||
-					turnErr.message.includes("API key not valid") ||
-					turnErr.message.includes("ENOTFOUND") ||
-					turnErr.message.includes("fetch failed")
-				));
+			const isKeyOrAuthError = isCloudLlmFailoverError(turnErr);
 
 			if (isKeyOrAuthError && params.fallbackToDeterministicAgent !== false) {
 				return await runDeterministicClinicalFallback(

@@ -12,7 +12,9 @@ import { enrichMessageWithUiContext, syncCopilotContextToWindow } from "./contex
 
 export function useCopilotContextSync() {
 	const currentView = useAppStore((s) => s.currentView) ?? useAppStore.getState().currentView ?? "shift";
-	const activeTooth = useAppStore((s) => s.activeTooth) ?? useAppStore.getState().activeTooth ?? null;
+	const appActiveTooth = useAppStore((s) => s.activeTooth) ?? useAppStore.getState().activeTooth ?? null;
+	const visitActiveTooth = useVisitStore((s) => s.activeToothNumber) ?? useVisitStore.getState().activeToothNumber ?? null;
+	const activeTooth = appActiveTooth ?? visitActiveTooth ?? null;
 	const activeDoctorName = useAppStore((s) => s.activeDoctorName) ?? useAppStore.getState().activeDoctorName ?? null;
 	const appActivePatientId = useAppStore((s) => s.activePatientId) ?? useAppStore.getState().activePatientId ?? null;
 	const selectedPatientId = usePatientStore((s) => s.selectedPatientId) ?? usePatientStore.getState().selectedPatientId ?? null;
@@ -22,7 +24,11 @@ export function useCopilotContextSync() {
 	const aiDiagnoses = useVisitStore((s) => s.visitAiDiagnosesByCode) ?? useVisitStore.getState().visitAiDiagnosesByCode ?? {};
 	const visitNoteForm = useVisitStore((s) => s.visitNoteForm) ?? useVisitStore.getState().visitNoteForm ?? null;
 
-	const setActiveTooth = useAppStore((s) => s.setActiveTooth);
+	const setActiveAppTooth = useAppStore((s) => s.setActiveTooth);
+	const setActiveTooth = useCallback((tooth: number | null) => {
+		setActiveAppTooth(tooth);
+		useVisitStore.getState().setActiveToothNumber(tooth);
+	}, [setActiveAppTooth]);
 	const setActiveDoctorName = useAppStore((s) => s.setActiveDoctorName);
 	const setActivePatientId = useAppStore((s) => s.setActivePatientId);
 	const setSelectedPatientId = usePatientStore((s) => s.setSelectedPatientId);

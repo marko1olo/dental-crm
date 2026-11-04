@@ -19,6 +19,13 @@ import {
 	type AgentContext,
 	type AutonomousDenteAgentInput,
 } from "../../services/agent/index.js";
+import {
+	executeDentalTool,
+	getDentalToolEntry,
+	normalizeToolName,
+	type DentalToolContext,
+	type AgentRuntimeMode,
+} from "../../ai/dentalTools/index.js";
 import { autonomousAgentExecuteBodySchema } from "./types.js";
 
 function createClinicalContext(
@@ -326,7 +333,18 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 	);
 
 	// POST /api/v1/copilot/tools/execute — Universal direct execution of registered Fastify/PostgreSQL clinical tools
-	server.post<{ Body: { toolName?: string; arguments?: Record<string, unknown>; args?: Record<string, unknown> } }>(
+	server.post<{
+		Body: {
+			toolName?: string;
+			arguments?: Record<string, unknown>;
+			args?: Record<string, unknown>;
+			patientId?: string;
+			doctorId?: string;
+			activeVisitId?: string;
+			visitId?: string;
+			runtimeMode?: AgentRuntimeMode;
+		};
+	}>(
 		"/api/v1/copilot/tools/execute",
 		async (request, reply) => {
 			const resolvedOrgId = await requireResolvedOrganizationId(
@@ -338,7 +356,7 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 
 			const body = request.body ?? {};
 			const rawToolName = body.toolName?.trim();
-			const toolArgs = body.arguments ?? body.args ?? {};
+			const toolArgs = (body.arguments ?? body.args ?? {}) as Record<string, unknown>;
 
 			if (!rawToolName) {
 				return reply.code(400).send({
@@ -348,44 +366,88 @@ export const clinicalToolRoutes: FastifyPluginAsync = async (
 			}
 
 			const identity = getRequestIdentity(request);
-			const context = createClinicalContext(
-				resolvedOrgId,
-				identity.userId ?? "system",
-			);
+			const dentalContext: DentalToolContext = {
+				organizationId: resolvedOrgId,
+				userId: identity.userId ?? undefined,
+				doctorId: body.doctorId || (toolArgs.doctorId as string) || identity.userId || undefined,
+				patientId: body.patientId || (toolArgs.patientId as string) || undefined,
+				activeVisitId: body.activeVisitId || body.visitId || (toolArgs.visitId as string) || (toolArgs.activeVisitId as string) || undefined,
+				runtimeMode: body.runtimeMode || "web_browser",
+				db,
+			};
 
-			// Map human or namespaced tool names to canonical registered names
-			let targetTool = rawToolName;
-			if (rawToolName === "crmScheduleTools.createAppointment" || rawToolName === "createAppointment") {
-				targetTool = "book_appointment";
-			} else if (rawToolName === "crmClinicalOdontogramTools.updateToothState" || rawToolName === "updateToothState") {
-				targetTool = "update_odontogram";
-			} else if (rawToolName === "crmBillingTools.createInvoiceDraft" || rawToolName === "createInvoiceDraft") {
-				targetTool = "calculate_treatment_estimate";
-			} else if (rawToolName === "workstationTools.captureScreen" || rawToolName === "captureScreen") {
-				targetTool = "capture_workstation_screen";
-			} else if (rawToolName === "workstationTools.launchApp" || rawToolName === "launchApp") {
-				targetTool = "launch_workstation_app";
-			}
+			// 1. Проверяем стоматологический арсенал инструментов (реальные SQL-мутации в PostgreSQL и расчеты)
+			const canonicalDentalName = normalizeToolName(rawToolName);
+			const dentalToolEntry = getDentalToolEntry(canonicalDentalName) || getDentalToolEntry(rawToolName);
 
-			try {
-				const toolDef = defaultToolRegistry.get(targetTool) || defaultToolRegistry.get(rawToolName);
-				if (!toolDef) {
-					return reply.send({
-						success: true,
-						executed: true,
-						tool: rawToolName,
-						result: { message: `Действие ${rawToolName} успешно обработано в клиническом контуре приёма` },
+			if (dentalToolEntry) {
+				try {
+					const result = await executeDentalTool(dentalToolEntry.name, toolArgs, dentalContext);
+					if (result && typeof result === "object" && "success" in result && (result as { success: boolean }).success === false && "code" in result) {
+						const failure = result as unknown as { code: string; error: string; validationIssues?: unknown };
+						if (failure.code === "VALIDATION_FAILED") {
+							return reply.code(400).send({
+								error: "ValidationError",
+								message: failure.error,
+								issues: failure.validationIssues,
+							});
+						}
+						if (failure.code === "TOOL_NOT_FOUND") {
+							return reply.code(404).send({
+								error: "ToolNotFound",
+								message: failure.error,
+							});
+						}
+						if (failure.code === "DESKTOP_DENIED") {
+							return reply.code(403).send({
+								error: "DesktopAccessDenied",
+								message: failure.error,
+							});
+						}
+					}
+					return reply.send({ success: true, tool: dentalToolEntry.name, result });
+				} catch (err: unknown) {
+					const errMsg = err instanceof Error ? err.message : String(err);
+					return reply.code(400).send({
+						error: "ToolExecutionError",
+						message: errMsg,
 					});
 				}
-				const result = await defaultToolRegistry.call(context, toolDef.name, toolArgs);
-				return reply.send({ success: true, tool: toolDef.name, result });
-			} catch (err: unknown) {
-				const errMsg = err instanceof Error ? err.message : String(err);
-				return reply.code(400).send({
-					error: "ToolExecutionError",
-					message: errMsg,
-				});
 			}
+
+			// 2. Фолбек на модули defaultToolRegistry (legacy инструменты агента)
+			let legacyTool = rawToolName;
+			if (rawToolName === "crmScheduleTools.createAppointment" || rawToolName === "createAppointment") {
+				legacyTool = "book_appointment";
+			} else if (rawToolName === "crmClinicalOdontogramTools.updateToothState" || rawToolName === "updateToothState") {
+				legacyTool = "update_odontogram";
+			} else if (rawToolName === "crmBillingTools.createInvoiceDraft" || rawToolName === "createInvoiceDraft") {
+				legacyTool = "calculate_treatment_estimate";
+			}
+
+			const legacyDef = defaultToolRegistry.get(legacyTool) || defaultToolRegistry.get(rawToolName);
+			if (legacyDef) {
+				try {
+					const context = createClinicalContext(
+						resolvedOrgId,
+						identity.userId ?? "system",
+					);
+					const result = await defaultToolRegistry.call(context, legacyDef.name, toolArgs);
+					return reply.send({ success: true, tool: legacyDef.name, result });
+				} catch (err: unknown) {
+					const errMsg = err instanceof Error ? err.message : String(err);
+					return reply.code(400).send({
+						error: "ToolExecutionError",
+						message: errMsg,
+					});
+				}
+			}
+
+			// 3. Тотальный запрет потёмкинских деревень (Мандат 8e / AI-REV-01): честный 404
+			return reply.code(404).send({
+				error: "ToolNotFound",
+				message: `Инструмент '${rawToolName}' не найден в реестре инструментов DENTE`,
+			});
 		},
 	);
 };

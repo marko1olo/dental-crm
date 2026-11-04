@@ -22,8 +22,10 @@ export const clinicalCalculatorTools = [
 
 export const clinicalCalculatorSchemas = {
 	calculate_anesthesia: calculateAnesthesiaSchema,
+	check_somatic_risks: checkSomaticRisksSchema,
 	check_somatic_risks_and_contraindications: checkSomaticRisksSchema,
 	generate_form_043_entry: generateForm043Schema,
+	generate_clinical_protocol: generateForm043Schema,
 	multidisciplinary_concilium: multidisciplinaryConciliumSchema,
 	chairside_emergency_rescue: chairsideEmergencySchema,
 	translate_patient_complaint: translatePatientComplaintSchema,
@@ -32,8 +34,10 @@ export const clinicalCalculatorSchemas = {
 
 export const clinicalCalculatorToolsMap = {
 	calculate_anesthesia: calculateAnesthesiaTool,
+	check_somatic_risks: checkSomaticRisksTool,
 	check_somatic_risks_and_contraindications: checkSomaticRisksTool,
 	generate_form_043_entry: generateForm043Tool,
+	generate_clinical_protocol: generateForm043Tool,
 	multidisciplinary_concilium: multidisciplinaryConciliumTool,
 	chairside_emergency_rescue: chairsideEmergencyTool,
 	translate_patient_complaint: translatePatientComplaintTool,

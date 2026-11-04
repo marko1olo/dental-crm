@@ -144,22 +144,29 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
         return;
       }
     } catch {
-      // Локальный клинический советник без блокировок врача (Мандат 8e)
+      // Сетевой сбой или недоступность шлюза API
     }
 
-    const isToothQuery = /\b([1-4][1-8])\b/.test(text);
-    const matchedTooth = text.match(/\b([1-4][1-8])\b/)?.[1] || (activeTooth ? String(activeTooth) : "36");
-    const assistantMsg: ChatMessage = {
-      id: `msg-${Date.now() + 1}`,
-      role: "assistant",
-      text: isToothQuery
-        ? `Зуб ${matchedTooth}: Клинический статус обновлен в соответствии с протоколом СтАР. Проведена верификация аллергоанамнеза и анатомических ориентиров.`
-        : `Запрос обработан по стандартам доказательной стоматологии (СтАР/ITI). Подготовлены рекомендации и расчет клинических манипуляций.`,
-      citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
-      timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
-      applied: false,
-    };
-    setMessages((prev) => [...prev, assistantMsg]);
+    if (isDemoShowcaseMode()) {
+      const isToothQuery = /\b([1-4][1-8])\b/.test(text);
+      const matchedTooth = text.match(/\b([1-4][1-8])\b/)?.[1] || (activeTooth ? String(activeTooth) : "36");
+      const assistantMsg: ChatMessage = {
+        id: `msg-${Date.now() + 1}`, role: "assistant", applied: false,
+        text: isToothQuery
+          ? `[Демо-режим] Зуб ${matchedTooth}: Клинический статус обновлен в соответствии с протоколом СтАР. Проведена верификация ориентиров.`
+          : `[Демо-режим] Запрос обработан по стандартам СтАР/ITI. Подготовлены рекомендации и расчет клинических манипуляций.`,
+        citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, assistantMsg]);
+    } else {
+      const errorMsg: ChatMessage = {
+        id: `msg-${Date.now() + 1}`, role: "assistant", applied: false,
+        text: "Шлюз ИИ временно недоступен. Проверьте подключение к серверу или API-ключи.",
+        timestamp: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+      };
+      setMessages((prev) => [...prev, errorMsg]);
+    }
   };
 
   // Ровно ОДНА Primary CTA кнопка (#0d9488) в Клиническом Диалоге
@@ -167,39 +174,35 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
     setAppliedStatus(true);
     showToast("Протокол SOAP успешно применен в медицинскую карту приёма", "success");
     if (typeof window !== "undefined") {
-      window.dispatchEvent(
-        new CustomEvent("dente-apply-soap-protocol", {
-          detail: {
-            tooth: activeTooth,
-            complaint: "Кратковременные боли от термических раздражителей",
-            diagnosis: `K02.1 Кариес дентина (Зуб ${activeTooth})`,
-            treatmentPlan: "Анестезия Артикаин 1.7 мл, препарирование, нанокомпозитная реставрация",
-          },
-        })
-      );
+      const lastMsg = [...messages].reverse().find((m) => m.role === "assistant");
+      const cleanText = lastMsg?.text || "";
+      const isPulpitis = /пульпит|k04\.0|k04\.1/i.test(cleanText);
+      const isPeriodontitis = /периодонтит|k04\.4|k04\.5/i.test(cleanText);
+      const calculatedDiag = isPulpitis ? `K04.0 Пульпит (Зуб ${activeTooth || 36})` : isPeriodontitis ? `K04.5 Периодонтит (Зуб ${activeTooth || 36})` : activeTooth ? `Клинический статус (Зуб ${activeTooth})` : "Клинический статус приёма";
+      window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+        detail: {
+          tooth: activeTooth ?? undefined, toothNumber: activeTooth ?? undefined,
+          state: isPulpitis ? "pulpitis" : (isPeriodontitis ? "periodontitis" : "caries"),
+          complaint: lastMsg ? "Жалобы зафиксированы клиническим ассистентом" : "Кратковременные боли от раздражителей",
+          diagnosis: calculatedDiag, treatmentPlan: cleanText ? cleanText.slice(0, 160) : "Анестезия, препарирование, нанокомпозитная реставрация",
+        },
+      }));
     }
     setMessages((prev) => prev.map((m) => (m.role === "assistant" ? { ...m, applied: true } : m)));
-  }, [activeTooth]);
+  }, [activeTooth, messages]);
 
   // Вызов реальных инструментов Fastify API (Мандат 8e)
   const executeApiTool = async (toolKey: string, payload: Record<string, unknown>) => {
     setIsExecuting(toolKey);
     try {
       const res = await fetch("/api/v1/copilot/tools/execute", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+        method: "POST", headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ toolName: toolKey, arguments: payload }),
       });
-      if (!res.ok) {
-        showToast(`Инструмент ${toolKey} выполнен в локальном контуре приёма`, "info");
-      } else {
-        showToast(`Успешно: действие ${toolKey} зарегистрировано в системе`, "success");
-      }
+      showToast(res.ok ? `Успешно: действие ${toolKey} зарегистрировано в системе` : (isDemoShowcaseMode() ? `Инструмент ${toolKey} выполнен в демо-режиме` : `Сбой выполнения ${toolKey}`), res.ok ? "success" : (isDemoShowcaseMode() ? "info" : "error"));
     } catch {
-      showToast(`Локальное применение: данные синхронизированы с картой приёма`, "info");
-    } finally {
-      setIsExecuting(null);
-    }
+      showToast(isDemoShowcaseMode() ? `Демо-режим: данные сохранены локально` : `Ошибка сети при вызове инструмента ${toolKey}`, isDemoShowcaseMode() ? "info" : "error");
+    } finally { setIsExecuting(null); }
   };
 
   if (!isOpen) return null;

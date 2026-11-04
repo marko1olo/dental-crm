@@ -129,6 +129,32 @@ export function normalizeToolName(toolName: string): string {
 			return "search_workstation_files";
 		case "task_plan":
 			return "manage_task_plan";
+		case "check_somatic_risks":
+		case "somatic_screening":
+		case "check_somatic":
+		case "check_somatic_risks_and_contraindications":
+			return "check_somatic_risks_and_contraindications";
+		case "clinical_protocol":
+		case "generate_clinical_protocol":
+		case "generate_soap_entry":
+		case "generate_form_043":
+			return "generate_form_043_entry";
+		case "updateToothState":
+		case "crmClinicalOdontogramTools.updateToothState":
+		case "update_odontogram":
+			return "update_tooth_status";
+		case "createAppointment":
+		case "crmScheduleTools.createAppointment":
+			return "create_appointment";
+		case "createInvoiceDraft":
+		case "crmBillingTools.createInvoiceDraft":
+			return "create_invoice_draft";
+		case "captureScreen":
+		case "workstationTools.captureScreen":
+			return "capture_workstation_screen";
+		case "launchApp":
+		case "workstationTools.launchApp":
+			return "launch_workstation_app";
 		default:
 			return toolName;
 	}
@@ -278,12 +304,14 @@ export function getToolDescriptionRu(toolName: string): string {
 		case "calculate_anesthesia":
 			return "Расчёт безопасной дозировки анестетика";
 		case "check_somatic_risks":
+		case "check_somatic_risks_and_contraindications":
 			return "Скрининг соматических противопоказаний";
 		case "get_patient_emr_and_odontogram":
 			return "Запрос электронной медицинской карты";
 		case "search_clinic_services_and_prices":
 			return "Поиск услуг в прейскуранте";
 		case "generate_form_043_entry":
+		case "generate_clinical_protocol":
 			return "Синтез дневника амбулаторной карты приёма";
 		case "multidisciplinary_concilium":
 			return "Формирование консилиума специалистов";

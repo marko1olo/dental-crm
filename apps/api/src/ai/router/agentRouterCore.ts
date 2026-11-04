@@ -22,11 +22,14 @@ import {
 import {
 	KeyPoolManager,
 	maskApiKey,
+	maskKeysInText,
 	parseApiKeys,
+	parseAllConfiguredApiKeys,
 } from "./keyPoolManager.js";
 import {
 	buildChatPayload,
 	isGeminiModel,
+	resolveEffectiveKeys,
 	resolveRequestEndpoint,
 } from "./modelAdapters.js";
 import { readSseStream } from "./streamParser.js";
@@ -52,7 +55,7 @@ export class AgentRouterClient {
 		const keys =
 			config?.apiKeys && config.apiKeys.length > 0
 				? [...config.apiKeys]
-				: parseApiKeys(process.env.AGENTROUTER_API_KEYS);
+				: parseAllConfiguredApiKeys();
 
 		this.keyPool = new KeyPoolManager(keys);
 		this.fetchFn = config?.fetchFn || globalThis.fetch;
@@ -100,7 +103,11 @@ export class AgentRouterClient {
 			);
 		}
 
-		const attemptsLimit = params.apiKey ? 1 : Math.max(1, this.keyPool.getKeys().length);
+		const effectiveKeys = params.apiKey
+			? [params.apiKey]
+			: resolveEffectiveKeys(targetModel, this.keyPool.getKeys());
+
+		const attemptsLimit = params.apiKey ? 1 : Math.max(1, effectiveKeys.length);
 		const errors: string[] = [];
 		const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 		const effectiveBaseUrl = params.baseUrl || this.baseUrl;
@@ -111,7 +118,7 @@ export class AgentRouterClient {
 				key = params.apiKey;
 			} else {
 				try {
-					const selected = this.keyPool.selectNextKey();
+					const selected = this.keyPool.selectNextKey(effectiveKeys);
 					key = selected.key;
 				} catch (err) {
 					if (err instanceof AgentRouterAllKeysExhaustedError) {
@@ -186,7 +193,9 @@ export class AgentRouterClient {
 
 				// 429: Rate limit hit
 				if (status === 429 || lowerErr.includes("rate limit")) {
-					this.keyPool.noteKeyFailure(key, RATE_LIMIT_COOLDOWN_MS, `HTTP 429`);
+					if (!params.apiKey) {
+						this.keyPool.noteKeyFailure(key, RATE_LIMIT_COOLDOWN_MS, `HTTP 429`);
+					}
 					errors.push(
 						`Key ${maskApiKey(key)}: 429 Rate Limit (${errorText.slice(0, 100)})`,
 					);
@@ -195,22 +204,26 @@ export class AgentRouterClient {
 
 				// 401 / 403: Invalid or revoked API key
 				if (status === 401 || status === 403) {
-					this.keyPool.noteKeyFailure(
-						key,
-						AUTH_ERROR_COOLDOWN_MS,
-						`HTTP ${status} Auth Error`,
-					);
+					if (!params.apiKey) {
+						this.keyPool.noteKeyFailure(
+							key,
+							AUTH_ERROR_COOLDOWN_MS,
+							`HTTP ${status} Auth Error`,
+						);
+					}
 					errors.push(`Key ${maskApiKey(key)}: HTTP ${status} Auth Error`);
 					continue;
 				}
 
 				// 5xx: Server error
 				if (status >= 500) {
-					this.keyPool.noteKeyFailure(
-						key,
-						SERVER_ERROR_COOLDOWN_MS,
-						`HTTP ${status} Server Error`,
-					);
+					if (!params.apiKey) {
+						this.keyPool.noteKeyFailure(
+							key,
+							SERVER_ERROR_COOLDOWN_MS,
+							`HTTP ${status} Server Error`,
+						);
+					}
 					errors.push(
 						`Key ${maskApiKey(key)}: HTTP ${status} (${errorText.slice(0, 100)})`,
 					);
@@ -235,11 +248,13 @@ export class AgentRouterClient {
 				}
 
 				if (isAbort) {
-					this.keyPool.noteKeyFailure(
-						key,
-						SERVER_ERROR_COOLDOWN_MS,
-						`Timeout after ${timeoutMs}ms`,
-					);
+					if (!params.apiKey) {
+						this.keyPool.noteKeyFailure(
+							key,
+							SERVER_ERROR_COOLDOWN_MS,
+							`Timeout after ${timeoutMs}ms`,
+						);
+					}
 					errors.push(
 						`Key ${maskApiKey(key)}: Request timed out (${timeoutMs}ms)`,
 					);
@@ -247,11 +262,13 @@ export class AgentRouterClient {
 				}
 
 				const msg = (err as Error)?.message || String(err);
-				this.keyPool.noteKeyFailure(
-					key,
-					SERVER_ERROR_COOLDOWN_MS,
-					`Network error: ${msg}`,
-				);
+				if (!params.apiKey) {
+					this.keyPool.noteKeyFailure(
+						key,
+						SERVER_ERROR_COOLDOWN_MS,
+						`Network error: ${msg}`,
+					);
+				}
 				errors.push(`Key ${maskApiKey(key)}: Network error: ${msg}`);
 			}
 		}
@@ -282,7 +299,11 @@ export class AgentRouterClient {
 			throw err;
 		}
 
-		const attemptsLimit = params.apiKey ? 1 : Math.max(1, this.keyPool.getKeys().length);
+		const effectiveKeys = params.apiKey
+			? [params.apiKey]
+			: resolveEffectiveKeys(targetModel, this.keyPool.getKeys());
+
+		const attemptsLimit = params.apiKey ? 1 : Math.max(1, effectiveKeys.length);
 		const errors: string[] = [];
 		const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
 		const effectiveBaseUrl = params.baseUrl || this.baseUrl;
@@ -293,7 +314,7 @@ export class AgentRouterClient {
 				key = params.apiKey;
 			} else {
 				try {
-					const selected = this.keyPool.selectNextKey();
+					const selected = this.keyPool.selectNextKey(effectiveKeys);
 					key = selected.key;
 				} catch (err) {
 					if (err instanceof AgentRouterAllKeysExhaustedError) {
@@ -368,7 +389,9 @@ export class AgentRouterClient {
 					}
 
 					if (status === 429 || lowerErr.includes("rate limit")) {
-						this.keyPool.noteKeyFailure(key, RATE_LIMIT_COOLDOWN_MS, `HTTP 429`);
+						if (!params.apiKey) {
+							this.keyPool.noteKeyFailure(key, RATE_LIMIT_COOLDOWN_MS, `HTTP 429`);
+						}
 						errors.push(
 							`Key ${maskApiKey(key)}: 429 Rate Limit (${errorText.slice(0, 100)})`,
 						);
@@ -376,21 +399,25 @@ export class AgentRouterClient {
 					}
 
 					if (status === 401 || status === 403) {
-						this.keyPool.noteKeyFailure(
-							key,
-							AUTH_ERROR_COOLDOWN_MS,
-							`HTTP ${status} Auth Error`,
-						);
+						if (!params.apiKey) {
+							this.keyPool.noteKeyFailure(
+								key,
+								AUTH_ERROR_COOLDOWN_MS,
+								`HTTP ${status} Auth Error`,
+							);
+						}
 						errors.push(`Key ${maskApiKey(key)}: HTTP ${status} Auth Error`);
 						continue;
 					}
 
 					if (status >= 500) {
-						this.keyPool.noteKeyFailure(
-							key,
-							SERVER_ERROR_COOLDOWN_MS,
-							`HTTP ${status} Server Error`,
-						);
+						if (!params.apiKey) {
+							this.keyPool.noteKeyFailure(
+								key,
+								SERVER_ERROR_COOLDOWN_MS,
+								`HTTP ${status} Server Error`,
+							);
+						}
 						errors.push(
 							`Key ${maskApiKey(key)}: HTTP ${status} (${errorText.slice(0, 100)})`,
 						);
@@ -411,7 +438,7 @@ export class AgentRouterClient {
 					targetModel,
 					callbacks,
 				);
-				this.keyPool.noteKeySuccess(key);
+				if (!params.apiKey) this.keyPool.noteKeySuccess(key);
 				callbacks.onComplete?.(fullResponse);
 				return fullResponse;
 			} catch (err: unknown) {
@@ -429,11 +456,13 @@ export class AgentRouterClient {
 				}
 
 				if (isAbort) {
-					this.keyPool.noteKeyFailure(
-						key,
-						SERVER_ERROR_COOLDOWN_MS,
-						`Stream timed out after ${timeoutMs}ms`,
-					);
+					if (!params.apiKey) {
+						this.keyPool.noteKeyFailure(
+							key,
+							SERVER_ERROR_COOLDOWN_MS,
+							`Stream timed out after ${timeoutMs}ms`,
+						);
+					}
 					errors.push(
 						`Key ${maskApiKey(key)}: Stream timed out (${timeoutMs}ms)`,
 					);
@@ -441,11 +470,13 @@ export class AgentRouterClient {
 				}
 
 				const msg = (err as Error)?.message || String(err);
-				this.keyPool.noteKeyFailure(
-					key,
-					SERVER_ERROR_COOLDOWN_MS,
-					`Stream error: ${msg}`,
-				);
+				if (!params.apiKey) {
+					this.keyPool.noteKeyFailure(
+						key,
+						SERVER_ERROR_COOLDOWN_MS,
+						`Stream error: ${msg}`,
+					);
+				}
 				errors.push(`Key ${maskApiKey(key)}: Stream error: ${msg}`);
 			}
 		}

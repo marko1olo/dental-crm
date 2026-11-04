@@ -27,6 +27,7 @@ export interface DentalToolContext {
 	doctorId?: string | undefined;
 	patientId?: string | undefined;
 	activeVisitId?: string | undefined;
+	activeTooth?: number | null | undefined;
 	runtimeMode?: AgentRuntimeMode | undefined;
 	// biome-ignore lint/suspicious/noExplicitAny: Drizzle database instance
 	db?: any;

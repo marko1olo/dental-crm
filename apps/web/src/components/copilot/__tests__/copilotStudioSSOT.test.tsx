@@ -284,4 +284,12 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
     assert.ok(lines >= 380 && lines <= 450, `CopilotStudioModal.tsx имеет ${lines} строк (ожидалось 380–450)`);
   });
+
+  it("25. DEF-FRONT-02: CopilotStudioModal защищает ручной черновик врача от затирания голосом", () => {
+    const filePath = path.join(__dirname, "../CopilotStudioModal.tsx");
+    const content = fs.readFileSync(filePath, "utf-8");
+    assert.ok(content.includes("baseDraftRef"), "Обязан использовать baseDraftRef для удержания ручного ввода врача");
+    assert.ok(content.includes("${base} ${voice.fullText}"), "Обязан конкатенировать ручной черновик и распознанный текст без стирания");
+    assert.ok(!content.includes("setInputText(voice.fullText); safeLocalStorageSetItem"), "Слепое затирание набранного текста обязано отсутствовать");
+  });
 });

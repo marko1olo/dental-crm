@@ -10,6 +10,7 @@ import { parseClinicalVoiceSpeech } from "./voiceClinicalCommands";
 
 export type VoiceEngineMode = "cloud" | "webspeech" | "auto";
 export type VoiceEngineStatus = "idle" | "listening" | "processing" | "error";
+export type VoiceEngineListener = (event: VoiceEngineEvent) => void;
 
 export interface ClinicalTermMatch {
   type: "tooth" | "diagnosis" | "anesthetic" | "material" | "procedure" | "soap";
@@ -24,7 +25,6 @@ export interface VoiceEngineEvent {
   status: VoiceEngineStatus; mode: VoiceEngineMode; interimText: string; finalText: string;
   parsed: ParsedClinicalSpeech | null; error?: string | null; volume: number;
 }
-export type VoiceEngineListener = (event: VoiceEngineEvent) => void;
 export interface VoiceEngineOptions {
   mode?: VoiceEngineMode; lang?: string; continuous?: boolean;
   patientId?: string | null; visitId?: string | null; onEvent?: VoiceEngineListener;
@@ -51,31 +51,22 @@ export function extractClinicalTerms(text: string): ParsedClinicalSpeech {
     if (!teeth.includes(num)) teeth.push(num);
     terms.push({ type: "tooth", raw: match[0].trim(), normalized: `Зуб ${num}`, toothNumber: num });
   }
-  const anesthRe = new RegExp(DENTAL_TERMS_REGEX.anesthetics.source, "giu");
-  while ((match = anesthRe.exec(norm)) !== null) {
-    const drug = match[1].toLowerCase();
-    if (!anesthetics.includes(drug)) anesthetics.push(drug);
-    terms.push({ type: "anesthetic", raw: match[1], normalized: drug });
-  }
-  const diagRe = new RegExp(DENTAL_TERMS_REGEX.diagnoses.source, "giu");
-  while ((match = diagRe.exec(norm)) !== null) {
-    const d = match[1].toLowerCase();
-    if (!diagnoses.includes(d)) diagnoses.push(d);
-    terms.push({ type: "diagnosis", raw: match[1], normalized: d });
-  }
-  const matRe = new RegExp(DENTAL_TERMS_REGEX.materials.source, "giu");
-  while ((match = matRe.exec(norm)) !== null) {
-    const m = match[1].toLowerCase();
-    if (!materials.includes(m)) materials.push(m);
-    terms.push({ type: "material", raw: match[1], normalized: m });
+  const matchers: Array<{ re: RegExp; type: ClinicalTermMatch["type"]; list: string[] }> = [
+    { re: new RegExp(DENTAL_TERMS_REGEX.anesthetics.source, "giu"), type: "anesthetic", list: anesthetics },
+    { re: new RegExp(DENTAL_TERMS_REGEX.diagnoses.source, "giu"), type: "diagnosis", list: diagnoses },
+    { re: new RegExp(DENTAL_TERMS_REGEX.materials.source, "giu"), type: "material", list: materials },
+  ];
+  for (const { re, type, list } of matchers) {
+    while ((match = re.exec(norm)) !== null) {
+      const val = match[1].toLowerCase();
+      if (!list.includes(val)) list.push(val);
+      terms.push({ type, raw: match[1], normalized: val });
+    }
   }
 
   return {
     transcript: norm, teeth: teeth.sort((a, b) => a - b), diagnoses, anesthetics, materials, terms,
-    soap: {
-      subjective: legacy.soapNote.complaint, objective: legacy.soapNote.objectiveStatus,
-      assessment: legacy.soapNote.diagnosis, plan: legacy.soapNote.treatmentPlan,
-    },
+    soap: { subjective: legacy.soapNote.subjective, objective: legacy.soapNote.objective, assessment: legacy.soapNote.assessment, plan: legacy.soapNote.plan },
   };
 }
 
@@ -86,6 +77,7 @@ export class VoiceEngine {
   private recordingId = `rec_${Date.now()}`; private chunkIndex = 0;
   private mediaStream: MediaStream | null = null; private mediaRecorder: MediaRecorder | null = null;
   private recognition: any = null; private patientId?: string | null; private visitId?: string | null;
+  private restartAttempts = 0; private restartTimer: any = null; private currentError: string | null = null;
 
   constructor(options: VoiceEngineOptions = {}) {
     this.mode = options.mode || "auto"; this.lang = options.lang || "ru-RU";
@@ -100,11 +92,12 @@ export class VoiceEngine {
   }
 
   private emit(error?: string | null, volume = 0): void {
+    if (error !== undefined) this.currentError = error;
     const full = `${this.finalText} ${this.interimText}`.trim();
     const parsed = full ? extractClinicalTerms(full) : null;
     const event: VoiceEngineEvent = {
       status: this.status, mode: this.mode, interimText: this.interimText,
-      finalText: this.finalText, parsed, error, volume,
+      finalText: this.finalText, parsed, error: this.currentError, volume,
     };
     for (const listener of this.listeners) {
       try { listener(event); } catch { /* ignore */ }
@@ -119,7 +112,8 @@ export class VoiceEngine {
 
   public async start(): Promise<void> {
     if (this.status === "listening") return;
-    this.isIntentionalStop = false; this.interimText = ""; this.status = "processing"; this.emit();
+    this.isIntentionalStop = false; this.restartAttempts = 0; this.clearRestartTimer(); this.currentError = null;
+    this.interimText = ""; this.status = "processing"; this.emit();
     if (this.mode === "cloud" || this.mode === "auto") {
       const ok = await this.startCloudRecorder();
       if (ok) return;
@@ -136,9 +130,7 @@ export class VoiceEngine {
       this.mediaStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       const mime = typeof MediaRecorder !== "undefined" && MediaRecorder.isTypeSupported("audio/webm") ? "audio/webm" : "";
       this.mediaRecorder = mime ? new MediaRecorder(this.mediaStream, { mimeType: mime }) : new MediaRecorder(this.mediaStream);
-      this.mediaRecorder.ondataavailable = async (e) => {
-        if (e.data && e.data.size > 0 && !this.isIntentionalStop) await this.uploadAudioChunk(e.data);
-      };
+      this.mediaRecorder.ondataavailable = async (e) => { if (e.data && e.data.size > 0 && !this.isIntentionalStop) await this.uploadAudioChunk(e.data); };
       this.mediaRecorder.onstart = () => { this.status = "listening"; this.emit(null, 50); };
       this.mediaRecorder.onerror = () => this.fallbackToWebSpeech();
       this.mediaRecorder.start(3500);
@@ -155,20 +147,13 @@ export class VoiceEngine {
       });
       if (!b64) return;
       const res = await fetch("/api/speech/transcribe-chunk", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
-        body: JSON.stringify({
-          recordingId: this.recordingId, chunkIndex: this.chunkIndex++, mimeType: blob.type || "audio/webm",
-          audioBase64: b64, language: "ru", source: "visit", patientId: this.patientId, visitId: this.visitId,
-        }),
+        method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
+        body: JSON.stringify({ recordingId: this.recordingId, chunkIndex: this.chunkIndex++, mimeType: blob.type || "audio/webm", audioBase64: b64, language: "ru", source: "visit", patientId: this.patientId, visitId: this.visitId }),
       });
       if (res.ok) {
         const data = await res.json();
         const text = data?.chunk?.transcript?.trim();
-        if (text) {
-          this.finalText = this.finalText ? `${this.finalText} ${text}` : text;
-          this.emit(null, 65); void this.syncDictationBackend(this.finalText);
-        }
+        if (text) { this.finalText = this.finalText ? `${this.finalText} ${text}` : text; this.emit(null, 65); void this.syncDictationBackend(this.finalText); }
       } else if (this.mode === "auto") { this.fallbackToWebSpeech(); }
     } catch { if (this.mode === "auto") this.fallbackToWebSpeech(); }
   }
@@ -178,6 +163,10 @@ export class VoiceEngine {
     this.stopRecorderOnly(); this.startWebSpeech();
   }
 
+  private clearRestartTimer(): void {
+    if (this.restartTimer) { clearTimeout(this.restartTimer); this.restartTimer = null; }
+  }
+
   private startWebSpeech(): void {
     const w = window as any;
     const Cls = w.SpeechRecognition || w.webkitSpeechRecognition;
@@ -185,7 +174,7 @@ export class VoiceEngine {
     try {
       const rec = new Cls();
       rec.lang = this.lang; rec.continuous = this.continuous; rec.interimResults = true;
-      rec.onstart = () => { this.status = "listening"; this.emit(); };
+      rec.onstart = () => { this.status = "listening"; this.restartAttempts = 0; this.clearRestartTimer(); this.emit(); };
       rec.onresult = (ev: any) => {
         let interim = ""; let finalChunk = "";
         for (let i = ev.resultIndex; i < ev.results.length; ++i) {
@@ -199,13 +188,30 @@ export class VoiceEngine {
         this.interimText = interim.trim(); this.emit(null, interim ? 65 : 20);
       };
       rec.onerror = (e: any) => {
-        if (e.error === "no-speech" && !this.isIntentionalStop) return;
+        const err = e?.error || "unknown";
+        if (err === "no-speech" && !this.isIntentionalStop) return;
+        const fatal = ["not-allowed", "permission-denied", "service-not-allowed", "audio-capture", "language-not-supported", "bad-grammar"];
+        const isFatal = fatal.includes(err);
         this.status = this.isIntentionalStop ? "idle" : "error";
-        this.emit(e.error ? `Сбой микрофона: ${e.error}` : null);
+        if (isFatal) { this.isIntentionalStop = true; this.stopRecorderOnly(); }
+        const msg = isFatal && (err === "not-allowed" || err === "permission-denied")
+          ? "Доступ к микрофону заблокирован. Разрешите микрофон в настройках браузера."
+          : `Сбой микрофона: ${err}`;
+        this.emit(msg);
       };
       rec.onend = () => {
-        if (!this.isIntentionalStop && this.continuous) {
-          try { rec.start(); return; } catch { /* ignore */ }
+        this.clearRestartTimer();
+        if (this.isIntentionalStop || this.status === "error") {
+          if (this.status !== "error") this.status = "idle";
+          this.emit(); return;
+        }
+        if (this.continuous && this.restartAttempts < 3) {
+          const delay = Math.min(1000 * Math.pow(2, this.restartAttempts++), 4000);
+          this.restartTimer = setTimeout(() => {
+            if (this.isIntentionalStop || this.status === "error") return;
+            try { rec.start(); } catch { this.status = "error"; this.emit("Не удалось перезапустить микрофон"); }
+          }, delay);
+          return;
         }
         this.status = "idle"; this.emit();
       };
@@ -238,12 +244,13 @@ export class VoiceEngine {
   }
 
   public stop(): void {
-    this.isIntentionalStop = true; this.stopRecorderOnly();
+    this.isIntentionalStop = true; this.clearRestartTimer(); this.stopRecorderOnly();
     if (this.recognition) {
       try { this.recognition.stop(); } catch { /* noop */ }
       this.recognition = null;
     }
-    this.status = "idle"; this.emit();
+    if (this.status !== "error") this.status = "idle";
+    this.emit();
   }
 
   public clear(): void { this.interimText = ""; this.finalText = ""; this.emit(); }
@@ -255,7 +262,7 @@ export class VoiceEngine {
     this.emit(); void this.syncDictationBackend(this.finalText);
   }
 
-  public dispose(): void { this.stop(); this.listeners.clear(); }
+  public dispose(): void { this.clearRestartTimer(); this.stop(); this.listeners.clear(); }
 }
 
 export function useVoiceEngine(options: VoiceEngineOptions = {}) {

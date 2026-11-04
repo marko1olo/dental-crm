@@ -81,7 +81,7 @@ export async function handleGenerateForm043(args: GenerateForm043Input, _context
 	steps.push("8. Шлифовка, полировка реставрации полировочными головками и пастой. Коррекция по окклюзии.");
 
 	const recs = "Соблюдение индивидуальной гигиены полости рта. Не принимать твердую пищу в течение 2 часов. При сохранении дискомфорта — повторный осмотр. Профилактический осмотр через 6 месяцев.";
-	const fullText = `=== МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО БОЛЬНОГО (ФОРМА № 043/У) ===\nЗуб: ${tooth}\nДиагноз (МКБ-10): ${mkb}\n\nЖАЛОБЫ:\n${complaints}\n\nАНАМНЕЗ ЗАБОЛЕВАНИЯ:\n${tmpl.anam}\n\nДАННЫЕ ОБЪЕКТИВНОГО ИССЛЕДОВАНИЯ (STATUS LOCALIS):\n${tmpl.stat}\n\nЛЕЧЕНИЕ:\n${steps.join("\n")}\n\nРЕКОМЕНДАЦИИ:\n${recs}\n======================================================================`;
+	const fullText = `=== Медицинская карта приёма стоматологического пациента / Протокол приёма SOAP ===\nЗуб: ${tooth}\nДиагноз (МКБ-10): ${mkb}\n\nЖАЛОБЫ:\n${complaints}\n\nАНАМНЕЗ ЗАБОЛЕВАНИЯ:\n${tmpl.anam}\n\nДАННЫЕ ОБЪЕКТИВНОГО ИССЛЕДОВАНИЯ (STATUS LOCALIS):\n${tmpl.stat}\n\nЛЕЧЕНИЕ:\n${steps.join("\n")}\n\nРЕКОМЕНДАЦИИ:\n${recs}\n======================================================================`;
 
 	return { toothNumber: tooth, diagnosisMkb: mkb, complaints, anamnesis: tmpl.anam, statusLocalis: tmpl.stat, treatmentProtocol: steps.join("\n"), recommendations: recs, fullForm043Text: fullText };
 }
@@ -90,11 +90,20 @@ export const handleGenerateClinicalProtocol = handleGenerateForm043;
 
 export const generateForm043Tool: DentalToolEntry<typeof generateForm043Schema> = {
 	name: "generate_form_043_entry",
-	description: "Формирование клинического дневника в Медицинской карте приёма по стандартам СтАР и МКБ-10 (Жалобы, Анамнез, Status Localis, Протокол лечения, Рекомендации).",
+	description: "Формирование протокола приёма в Медицинской карте стоматологического пациента по стандартам СтАР, SOAP и МКБ-10 (Жалобы, Анамнез, Status Localis, Протокол лечения, Рекомендации).",
 	schema: generateForm043Schema,
 	supportedModes: ["web_browser", "desktop_native"],
-	definition: createOpenAIToolDefinition("generate_form_043_entry", "Генерация протокола приема в Медицинской карте по стандарту СтАР и МКБ-10.", generateForm043Schema),
+	definition: createOpenAIToolDefinition("generate_form_043_entry", "Генерация протокола приёма в Медицинской карте стоматологического пациента по стандартам СтАР, SOAP и МКБ-10.", generateForm043Schema),
 	handler: handleGenerateForm043,
 };
 
-export const clinicalProtocolTool = generateForm043Tool;
+export const generateClinicalProtocolTool: DentalToolEntry<typeof generateForm043Schema> = {
+	name: "generate_clinical_protocol",
+	description: "Формирование протокола приёма в Медицинской карте стоматологического пациента по стандартам СтАР, SOAP и МКБ-10 (Жалобы, Анамнез, Status Localis, Протокол лечения, Рекомендации).",
+	schema: generateForm043Schema,
+	supportedModes: ["web_browser", "desktop_native"],
+	definition: createOpenAIToolDefinition("generate_clinical_protocol", "Генерация протокола приёма в Медицинской карте стоматологического пациента по стандартам СтАР, SOAP и МКБ-10.", generateForm043Schema),
+	handler: handleGenerateForm043,
+};
+
+export const clinicalProtocolTool = generateClinicalProtocolTool;

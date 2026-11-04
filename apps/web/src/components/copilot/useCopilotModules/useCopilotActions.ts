@@ -191,12 +191,22 @@ export function useCopilotActions({
 			const f043 = nudge.payload?.form043 as Form043Note | undefined;
 
 			if (f043) {
-				useVisitStore.getState().setVisitNoteForm({
-					complaint: f043.complaint || "",
-					anamnesis: f043.anamnesis || "",
-					objectiveStatus: f043.objectiveStatus || "",
-					diagnosis: f043.diagnosis || "",
-					treatmentPlan: f043.treatmentPlan || "",
+				useVisitStore.getState().setVisitNoteForm((prev) => {
+					const appendWithSeparator = (existing?: string, addition?: string) => {
+						if (!addition?.trim()) return existing || "";
+						if (!existing?.trim()) return addition.trim();
+						if (existing.includes(addition.trim())) return existing;
+						return `${existing.trim()}\n\n${addition.trim()}`;
+					};
+
+					return {
+						...prev,
+						complaint: appendWithSeparator(prev.complaint, f043.complaint),
+						anamnesis: appendWithSeparator(prev.anamnesis, f043.anamnesis),
+						objectiveStatus: appendWithSeparator(prev.objectiveStatus, f043.objectiveStatus),
+						diagnosis: appendWithSeparator(prev.diagnosis, f043.diagnosis),
+						treatmentPlan: appendWithSeparator(prev.treatmentPlan, f043.treatmentPlan),
+					};
 				});
 			}
 

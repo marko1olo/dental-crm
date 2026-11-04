@@ -6,19 +6,22 @@
 
 import React, { useState } from "react";
 import { ArrowRight, CheckCircle2, Clock, FileSignature, Gauge, Layers, ShieldCheck } from "lucide-react";
+import { generateSystemSurgeryLot } from "../../surgery/surgeryCatalogData";
 
 export interface CopilotSurgeryPassportData {
 	toothNumber: number | string;
 	procedureName: string;
-	implantSystem?: string | undefined;
-	implantSize?: string | undefined;
-	torqueNcm?: number | undefined;
-	isqIndex?: number | undefined;
-	membrane?: string | undefined;
-	boneGraft?: string | undefined;
-	lotNumber?: string | undefined;
-	osteointegrationMonths?: number | undefined;
-	isApplied?: boolean | undefined;
+	implantSystem?: string;
+	implantSize?: string;
+	torqueNcm?: number;
+	isqIndex?: number;
+	membrane?: string;
+	boneGraft?: string;
+	lotNumber?: string;
+	osteointegrationMonths?: number;
+	isApplied?: boolean;
+	amountKopecks?: number;
+	materialsCostKopecks?: number;
 }
 
 export interface CopilotSurgeryPassportCardProps {
@@ -31,27 +34,46 @@ export const CopilotSurgeryPassportCard: React.FC<CopilotSurgeryPassportCardProp
 	onApplySurgeryProtocol,
 }) => {
 	const [applied, setApplied] = useState(Boolean(data.isApplied));
-	const toothNum = Number(data.toothNumber);
+	const primaryTooth = String(data.toothNumber).split(/[,;\s]+/)[0] || "46";
+	const toothNum = Number(primaryTooth);
 	const isMandible = toothNum >= 31 && toothNum <= 48;
 	const osteoMonths = data.osteointegrationMonths || (isMandible ? 3 : 5);
+	const effectiveLot = data.lotNumber || generateSystemSurgeryLot(data.toothNumber);
+	const idempotencyKey = `idemp-copilot-surg-${primaryTooth}-${Date.now().toString().slice(-6)}`;
 
 	const handleApply = () => {
 		setApplied(true);
+		const fullPassport: CopilotSurgeryPassportData = {
+			...data,
+			lotNumber: effectiveLot,
+			isApplied: true,
+		};
+
 		if (onApplySurgeryProtocol) {
-			onApplySurgeryProtocol(data);
+			onApplySurgeryProtocol(fullPassport);
 		} else if (typeof window !== "undefined") {
-			window.dispatchEvent(
-				new CustomEvent("dente:open-surgery-hub", {
-					detail: {
-						tooth: data.toothNumber,
-						procedure: data.procedureName,
-						implantSystem: data.implantSystem,
-						implantSize: data.implantSize,
-						torque: data.torqueNcm,
-						isq: data.isqIndex,
-					},
-				}),
-			);
+			const detailPayload = {
+				tooth: data.toothNumber,
+				toothFdi: toothNum,
+				procedure: data.procedureName,
+				scenario: data.procedureName.toLowerCase().includes("синус") ? "sinus_gbr" : "implant",
+				implantSystem: data.implantSystem || "Osstem",
+				implantSize: data.implantSize || "4.0x10 мм",
+				torque: data.torqueNcm || 40,
+				torqueNcm: data.torqueNcm || 40,
+				isq: data.isqIndex || 75,
+				isqIndex: data.isqIndex || 75,
+				boneGraft: data.boneGraft,
+				membrane: data.membrane,
+				lotNumber: effectiveLot,
+				osteointegrationMonths: osteoMonths,
+				idempotencyKey,
+			};
+			window.dispatchEvent(new CustomEvent("dente:open-surgery-hub", { detail: detailPayload }));
+			window.dispatchEvent(new CustomEvent("dente:open-surgery", { detail: detailPayload }));
+			window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", {
+				detail: { operationTitle: data.procedureName, toothFdi: toothNum, lotNumber: effectiveLot, isOverdraft: true, idempotencyKey, timestamp: new Date().toISOString() },
+			}));
 		}
 	};
 
@@ -102,13 +124,13 @@ export const CopilotSurgeryPassportCard: React.FC<CopilotSurgeryPassportCardProp
 					<span className="text-[10px] text-[var(--muted)] block">Торк / Стабильность</span>
 					<span className="font-semibold text-[var(--ink)] flex items-center gap-1">
 						<Gauge size={11} className="text-[var(--teal,#0d9488)]" />
-						<span>{data.torqueNcm || 40} Н·см • ISQ {data.isqIndex || 75}</span>
+						<span>{`${data.torqueNcm || 40} Н·см • ISQ ${data.isqIndex || 75}`}</span>
 					</span>
 				</div>
 				{data.boneGraft && (
 					<div className="col-span-2 flex items-center gap-1.5 text-[10px] text-[var(--muted)]">
 						<Layers size={11} className="text-[var(--teal,#0d9488)]" />
-						<span>Костная пластика: {data.boneGraft} {data.lotNumber ? `(Партия: ${data.lotNumber})` : ""}</span>
+						<span>Костная пластика: {data.boneGraft} (Партия: {effectiveLot})</span>
 					</div>
 				)}
 			</div>

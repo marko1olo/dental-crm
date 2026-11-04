@@ -255,7 +255,49 @@ export async function validateUniversalApiKeyLive(
 }
 
 /**
- * Resolves effective API keys based on the targeted model (e.g. Gemini vs AgentRouter).
+ * Checks whether the given model name belongs to Groq provider family.
+ */
+export function isGroqModel(model?: string | null): boolean {
+	if (!model || typeof model !== "string") return false;
+	const lower = model.toLowerCase();
+	return (
+		lower.includes("llama") ||
+		lower.includes("mixtral") ||
+		lower.includes("gemma") ||
+		lower.includes("qwen") ||
+		lower.includes("groq")
+	);
+}
+
+/**
+ * Collects Groq API key candidates from environment variables without throwing.
+ */
+export function getGroqApiKeyCandidates(explicitKey?: string | null): string[] {
+	if (explicitKey && typeof explicitKey === "string" && explicitKey.trim()) {
+		return [explicitKey.trim()];
+	}
+
+	const candidates: string[] = [];
+	const envKeys = [
+		process.env.GROQ_API_KEY,
+		process.env.GROQ_API_KEYS,
+	];
+
+	for (const envVal of envKeys) {
+		if (!envVal || typeof envVal !== "string") continue;
+		for (const k of envVal.split(",")) {
+			const trimmed = k.trim();
+			if (trimmed.length > 0 && !candidates.includes(trimmed)) {
+				candidates.push(trimmed);
+			}
+		}
+	}
+
+	return candidates;
+}
+
+/**
+ * Resolves effective API keys based on the targeted model (e.g. Gemini vs Groq vs AgentRouter).
  */
 export function resolveEffectiveKeys(
 	targetModel: string,
@@ -264,8 +306,14 @@ export function resolveEffectiveKeys(
 	if (isGeminiModel(targetModel)) {
 		const geminiKeys = getGeminiApiKeyCandidates();
 		if (geminiKeys.length > 0) return geminiKeys;
+		if (configuredKeys.length > 0) return [...configuredKeys];
+	} else if (isGroqModel(targetModel)) {
+		const groqKeys = getGroqApiKeyCandidates();
+		if (groqKeys.length > 0) return groqKeys;
+		if (configuredKeys.length > 0) return [...configuredKeys];
 	}
-	return [...configuredKeys];
+
+	return configuredKeys.length > 0 ? [...configuredKeys] : [];
 }
 
 export interface ResolvedEndpoint {

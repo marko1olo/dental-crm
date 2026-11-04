@@ -149,4 +149,17 @@ describe("CopilotWorkspaceHost Red Team Inquisition", () => {
     assert.ok(html.includes("Пациент с жалобами на боли от холодного"));
     setRuntimeDemoMode(null);
   });
+
+  it("13. DEF-FRONT-03: DirectCopilotLauncher не хардкодит зуб 36 и пациента Иванов в коде", () => {
+    const filePath = path.join(__dirname, "../DirectCopilotLauncher.tsx");
+    const content = fs.readFileSync(filePath, "utf-8");
+    assert.equal(content.includes("activeTooth={36}"), false, "Обнаружен захардкоженный activeTooth={36}");
+    assert.equal(content.includes('patientName="Иванов Иван Иванович"'), false, "Обнаружен захардкоженный пациент Иванов");
+  });
+
+  it("14. AI-REV-02: CopilotWorkspaceHost изолирует симуляцию обновления зуба под isDemoShowcaseMode()", () => {
+    const filePath = path.join(__dirname, "../CopilotWorkspaceHost.tsx");
+    const content = fs.readFileSync(filePath, "utf-8");
+    assert.ok(content.includes("if (isDemoShowcaseMode())"), "Ответ обновления зуба обязан проверяться через isDemoShowcaseMode()");
+  });
 });

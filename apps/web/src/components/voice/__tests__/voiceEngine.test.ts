@@ -92,6 +92,36 @@ describe("VoiceEngine & Clinical Terms Extraction", () => {
     engine.dispose();
   });
 
+  it("DEF-FRONT-01: при ошибке микрофона (not-allowed) автоматический перезапуск заблокирован и статус error", async () => {
+    let startCallCount = 0;
+    class MockSpeechRecognition {
+      lang = ""; continuous = false; interimResults = false;
+      onstart: (() => void) | null = null;
+      onerror: ((e: any) => void) | null = null;
+      onend: (() => void) | null = null;
+      start() {
+        startCallCount++;
+        if (this.onerror) this.onerror({ error: "not-allowed" });
+        if (this.onend) this.onend();
+      }
+      stop() {}
+    }
+    const originalWindow = (globalThis as any).window;
+    (globalThis as any).window = { SpeechRecognition: MockSpeechRecognition, navigator: {} };
+    try {
+      let lastEvent: any = null;
+      const engine = new VoiceEngine({ mode: "webspeech", continuous: true });
+      engine.subscribe((ev) => { lastEvent = ev; });
+      await engine.start();
+      assert.equal(startCallCount, 1, "start() не должен вызываться в бесконечном цикле при ошибке not-allowed");
+      assert.equal(lastEvent?.status, "error");
+      assert.ok(lastEvent?.error?.includes("Доступ к микрофону заблокирован"));
+      engine.dispose();
+    } finally {
+      (globalThis as any).window = originalWindow;
+    }
+  });
+
   it("Мандат 8d pt 7: исходный код voiceEngine.ts содержит строго 0 cartoon emojis", () => {
     const filePath = path.join(__dirname, "../voiceEngine.ts");
     const content = fs.readFileSync(filePath, "utf-8");

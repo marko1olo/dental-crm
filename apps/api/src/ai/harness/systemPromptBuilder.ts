@@ -7,6 +7,7 @@ import {
 	type TaskPlan,
 	formatPlanForSystemPrompt,
 } from "@dental/shared";
+import type { AgentRouterChatMessage } from "../agentRouterClient.js";
 import type {
 	AgentRuntimeMode,
 	DentalToolContext,
@@ -15,6 +16,120 @@ import {
 	type ClinicalSwarmRole,
 	getSwarmRoleDirective,
 } from "./swarmRoles.js";
+
+export type ClinicalProcedureDomain =
+	| "therapy"
+	| "endodontics"
+	| "surgery"
+	| "orthopedics"
+	| "periodontics";
+
+/**
+ * Detects the active clinical procedure domain from doctor specialization or recent chat context.
+ */
+export function detectClinicalProcedureDomain(
+	doctorSpecialization?: string,
+	messages?: AgentRouterChatMessage[],
+): ClinicalProcedureDomain | null {
+	const recentUserText = messages
+		? messages
+				.filter((m) => m.role === "user" && typeof m.content === "string")
+				.slice(-3)
+				.map((m) => m.content as string)
+				.join(" ")
+				.toLowerCase()
+		: "";
+
+	const spec = (doctorSpecialization || "").toLowerCase();
+
+	// Хирургия / Имплантация
+	if (
+		/удален|экстракц|имплант|синус[- ]?лифт|костн.*пластик|аугментац|лунк|альвеолит|резекци|mronj|бисфосфонат/i.test(
+			recentUserText,
+		) ||
+		/хирург|имплантол/i.test(spec)
+	) {
+		return "surgery";
+	}
+
+	// Эндодонтия
+	if (
+		/пульпит|периодонтит|канал|пульп[аеы]|апекс|протейпер|гуттаперч|силер|naocl|гипохлорит|ирригац|k04/i.test(
+			recentUserText,
+		) ||
+		/эндодонт/i.test(spec)
+	) {
+		return "endodontics";
+	}
+
+	// Ортопедия / Протезирование
+	if (
+		/коронк|вкладк|винир|мостовидн|протез|слепок|оттиск|сканирован|абатмент|феррул|бюгел/i.test(
+			recentUserText,
+		) ||
+		/ортопед|протезист/i.test(spec)
+	) {
+		return "orthopedics";
+	}
+
+	// Пародонтология
+	if (
+		/гингивит|пародонтит|пародонтоз|кюретаж|пародонтальн|вектор|k05/i.test(
+			recentUserText,
+		) ||
+		/пародонтол/i.test(spec)
+	) {
+		return "periodontics";
+	}
+
+	// Терапия / Кариесология
+	if (
+		/кариес|реставрац|пломб|композит|эмаль|клиновидн|эрози|отбеливан|профгигиен|айр[- ]?флоу|k02/i.test(
+			recentUserText,
+		) ||
+		/терапевт/i.test(spec)
+	) {
+		return "therapy";
+	}
+
+	return null;
+}
+
+function getDomainProtocolSection(domain: ClinicalProcedureDomain | null): string {
+	if (!domain) return "";
+	switch (domain) {
+		case "therapy":
+			return `\n\n=== КЛИНИЧЕСКИЙ ПРОТОКОЛ: ТЕРАПИЯ И ЭСТЕТИЧЕСКАЯ РЕСТАВРАЦИЯ (СТАНДАРТЫ СтАР / EBM) ===
+1. Абсолютная изоляция: применение коффердама обязательно при адгезивной фиксации композитов.
+2. Адгезивный протокол: селективное травление эмали 37% H3PO4 (15 сек), самопротравливающий праймер/бонд без пересушивания дентина.
+3. Полимеризационный стресс: послойное внесение композита порциями не более 2 мм, полимеризация с контролем С-фактора полости.
+4. Окклюзионная интеграция: финишная полировка и пришлифовка в центральной и боковых окклюзиях артикуляционной бумагой 12-40 мкм.`;
+		case "endodontics":
+			return `\n\n=== КЛИНИЧЕСКИЙ ПРОТОКОЛ: ЭНДОДОНТИЯ И ЛЕЧЕНИЕ КОРНЕВЫХ КАНАЛОВ (СТАНДАРТЫ ESE / СтАР) ===
+1. Изоляция: раббердам обязателен для предотвращения микробной реконтаминации и аспирации инструментов.
+2. Длина и проходимость: создание ковровой дорожки (Glide Path), определение рабочей длины апекслокатором с рентген-контролем (0.5-1.0 мм от апекса).
+3. Ирригационный протокол: 3% гипохлорит натрия (NaOCl) с ультразвуковой/звуковой активацией, нейтрализация физраствором, 17% ЭДТА для удаления смазанного слоя.
+4. Обтурация: трехмерная герметизация гуттаперчей с эпоксидным силером (AH Plus) без выведения материала за верхушку.`;
+		case "surgery":
+			return `\n\n=== КЛИНИЧЕСКИЙ ПРОТОКОЛ: АМБУЛАТОРНАЯ ХИРУРГИЯ И ДЕНТАЛЬНАЯ ИМПЛАНТАЦИЯ (СТАНДАРТЫ ITI / СтАР) ===
+1. Соматический контроль: обязательный скрининг антикоагулянтов (МНО 2.0-2.5), бисфосфонатов (профилактика MRONJ) и гипертонии.
+2. Атравматичность: сохранение кортикальной пластинки и межкорневых перегородок лунки (Socket Preservation).
+3. Надежный гемостаз: кюретаж грануляций, гемостатическая губка, атравматичное первичное ушивание раны.
+4. Постоперационное ведение: холод местно, антисептические ванночки (без полоскания лунки!), щадящий режим и анальгетики.`;
+		case "orthopedics":
+			return `\n\n=== КЛИНИЧЕСКИЙ ПРОТОКОЛ: ОРТОПЕДИЧЕСКАЯ СТОМАТОЛОГИЯ И МИКРОПРОТЕЗИРОВАНИЕ ===
+1. Феррул-эффект: высота сохранных стенок дентина >= 1.5-2.0 мм, толщина >= 1.0 мм обязательна перед протезированием коронкой.
+2. Препарирование: четкий круговой уступ (желобок / Chamfer 0.5-1.0 мм), щадящая атравматичная ретракция десны.
+3. Временная защита: немедленное закрытие препарированных витальных зубов провизорными коронками.
+4. Интеграция: выверенные окклюзионные контакты без суперконтактов на рабочей и балансирующей сторонах.`;
+		case "periodontics":
+			return `\n\n=== КЛИНИЧЕСКИЙ ПРОТОКОЛ: ПАРОДОНТОЛОГИЯ И ПРОФИЛАКТИКА (СТАНДАРТЫ EFP / СтАР) ===
+1. Пародонтальный скрининг: зондирование карманов (PPD), индекс кровоточивости (BOP), подвижность по Миллеру.
+2. Инструментальная обработка: поддесневой скейлинг и root planing ультразвуком и кюретами Грейси без повреждения цемента корня.
+3. Антисептическая обработка: антисептическая ирригация хлоргексидином 0.12-0.2% без создания избыточного давления.
+4. Обучение гигиене: индивидуальный подбор межзубных ершиков и монопучковых щеток, диспансерный контроль.`;
+	}
+}
 
 /**
  * Builds the clinical system prompt tailored to DENTE CRM standards,
@@ -28,6 +143,9 @@ export function buildAgentSystemPrompt(
 	customInstructions?: string,
 	memoryFacts?: string[],
 	doctorSpecialization?: string,
+	activeTooth?: number | null | undefined,
+	activeVisitId?: string | null | undefined,
+	messages?: AgentRouterChatMessage[],
 ): string {
 	const runtimeSpecificDirective =
 		runtimeMode === "desktop_native"
@@ -61,9 +179,31 @@ export function buildAgentSystemPrompt(
 Аппаратное прямое управление USB-датчиками, кассами и локальными папками Windows недоступно из браузера.
 Если врач просит прямой аппаратный запуск оборудования — объясни, что эта функция активируется в настольном приложении DENTE Desktop EXE, а в веб-версии снимок загружается через интерфейс.`;
 
+	const resolvedTooth =
+		activeTooth !== undefined
+			? (activeTooth ?? undefined)
+			: context?.activeTooth !== undefined
+				? (context?.activeTooth ?? undefined)
+				: undefined;
+
+	const resolvedVisitId =
+		activeVisitId !== undefined
+			? (activeVisitId ?? undefined)
+			: context?.activeVisitId !== undefined
+				? (context?.activeVisitId ?? undefined)
+				: undefined;
+
 	const patientContextInfo = context?.patientId
 		? `Активный пациент ID: ${context.patientId}. При необходимости используй инструменты 'get_patient_emr_and_odontogram' и 'update_tooth_status'.`
 		: "Активный пациент в контексте не выбран. Если вопрос касается конкретного пациента — запроси ID или ФИО.";
+
+	const toothContextLine = resolvedTooth
+		? `\nАКТИВНЫЙ ЗУБ ВРАЧА У КРЕСЛА: Zub #${resolvedTooth}. При любых клинических вопросах фокус строго на этом зубе, если врач явно не указал другой.`
+		: "";
+
+	const visitContextLine = resolvedVisitId
+		? `\nТЕКУЩИЙ ВИЗИТ: #${resolvedVisitId}. Все назначения, дневники приёма и манипуляции привязываются к контексту этого визита.`
+		: "";
 
 	const planSection = activePlan
 		? `\n\n=== АКТИВНЫЙ ПЛАН ВЫПОЛНЕНИЯ ЗАДАЧИ ===\n${formatPlanForSystemPrompt(activePlan)}`
@@ -71,12 +211,15 @@ export function buildAgentSystemPrompt(
 
 	const roleDirective = getSwarmRoleDirective(swarmRole);
 
+	const detectedDomain = detectClinicalProcedureDomain(doctorSpecialization, messages);
+	const procedureProtocolSection = getDomainProtocolSection(detectedDomain);
+
 	const doctorProfileSection =
 		doctorSpecialization || customInstructions || (memoryFacts && memoryFacts.length > 0)
 			? `\n\n=== ИНДИВИДУАЛЬНЫЙ КЛИНИЧЕСКИЙ ПРОФИЛЬ ВРАЧА И ПАМЯТЬ АССИСТЕНТА ===\nСпециализация: ${doctorSpecialization || "Стоматолог общей практики"}\n${customInstructions ? `Инструкции и стиль врача: ${customInstructions}\n` : ""}${memoryFacts && memoryFacts.length > 0 ? `Факты из долговременной памяти:\n${memoryFacts.map((f) => `• ${f}`).join("\n")}\n` : ""}`
 			: "";
 
-	return `Ты — Автономный Клинический Эксперт и Ассистент Врача-Стоматолога DENTE CRM.
+	return `Ты — Автономный Клинический Эксперт и Ассистент Врача-Стоматолога DENTE CRM (Solo Chairside Copilot).
 Твой статус: клинический Red Team соратник врача с презумпцией доказательности (EBM) 100%.
 
 ${MASTER_COGNITIVE_ARCHITECTURE_TEXT}
@@ -93,10 +236,10 @@ ${roleDirective}
    - 'search_workstation_files': глубокий поиск снимков, баз и документов на дисках ПК.
    - 'calculate_anesthesia': расчет безопасной дозы анестетика (артикаин, мепивакаин, лидокаин) по весу и кардиорискам.
    - 'get_patient_emr_and_odontogram': запрос электронной медицинской карты и зубной формулы.
-   - 'check_somatic_risks': проверка противопоказаний (гипертония, бисфосфонаты, антикоагулянты, аллергии).
+   - 'check_somatic_risks' (check_somatic_risks_and_contraindications): проверка противопоказаний (гипертония, бисфосфонаты, антикоагулянты, аллергии).
    - 'search_clinic_services_and_prices': поиск услуг и цен в прейскуранте клиники.
    - 'update_tooth_status': внесение диагноза или состояния зуба в одонтограмму.
-   - 'generate_form_043_entry': составление дневника приёма по стандарту SOAP.
+   - 'generate_form_043_entry' (generate_clinical_protocol): составление дневника приёма по стандарту SOAP.
    - 'create_appointment': добавление записи в расписание.
    - 'create_invoice_draft': формирование счёта на оплату.
    - 'print_document': отправка медицинской карты, согласий и актов на печать.
@@ -106,5 +249,7 @@ ${roleDirective}
 <<<SUGGESTIONS: ["Короткий вариант 1", "Короткий вариант 2"]>>>
 
 ${runtimeSpecificDirective}
-${patientContextInfo}${planSection}${doctorProfileSection}`;
+
+=== КЛИНИЧЕСКИЙ КОНТЕКСТ ТЕКУЩЕГО СЕАНСА ===
+${patientContextInfo}${toothContextLine}${visitContextLine}${procedureProtocolSection}${planSection}${doctorProfileSection}`;
 }

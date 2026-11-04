@@ -7,11 +7,11 @@ import { z } from "zod";
 import { db as defaultDb } from "../../../db/client.js";
 import { patientInvoices, treatmentItems } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
-import { rubToKopecks } from "./dbTypes.js";
+import { kopecksToRub, rubToKopecks } from "./dbTypes.js";
 
 export const createInvoiceDraftSchema = z.object({
-	patientId: z.string().uuid("Некорректный UUID пациента").describe("ID пациента"),
-	visitId: z.string().uuid("Некорректный UUID визита").optional().describe("ID завершенного визита"),
+	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
+	visitId: z.string().uuid("Некорректный UUID визита").optional().describe("ID визита"),
 	items: z.array(z.object({
 		title: z.string().describe("Наименование услуги"),
 		priceRub: z.number().min(0).describe("Цена в рублях"),
@@ -19,7 +19,7 @@ export const createInvoiceDraftSchema = z.object({
 		serviceCode: z.string().optional().describe("Код услуги в прейскуранте"),
 		regulatoryCode: z.string().optional().describe("Регуляторный код услуги"),
 		/** @deprecated use serviceCode or regulatoryCode */
-		code804n: z.string().optional().describe("Устаревший код в прейскуранте"),
+		code804n: z.string().optional().describe("Устаревший код услуги в прейскуранте"),
 		toothCode: z.string().optional().describe("Номер зуба"),
 	})).min(1, "Счет должен содержать хотя бы одну услугу").describe("Список оказанных услуг"),
 	discountRub: z.number().min(0).default(0).describe("Скидка врача в рублях (Мандат 8e: свобода скидок вплоть до 100%)"),
@@ -44,47 +44,71 @@ export interface CreateInvoiceDraftResult {
 export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, context: DentalToolContext): Promise<CreateInvoiceDraftResult> {
 	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
-
-	let subtotal = 0;
-	for (const item of args.items) {
-		subtotal += item.priceRub * (item.quantity ?? 1);
+	const patientId = args.patientId || context.patientId;
+	if (!patientId) {
+		throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент (patientId отсутствует в аргументах и контексте)");
 	}
 
-	const discount = args.discountRub ?? 0;
-	const total = Math.max(0, subtotal - discount);
-	const totalKopecks = rubToKopecks(total);
+	let subtotalKopecks = 0n;
+	const processedItems = args.items.map((item) => {
+		const qty = BigInt(Math.max(1, Math.round(item.quantity ?? 1)));
+		const unitKopecks = BigInt(Math.round(item.priceRub * 100));
+		const lineKopecks = unitKopecks * qty;
+		subtotalKopecks += lineKopecks;
+		return {
+			...item,
+			qtyNumber: Number(qty),
+			unitKopecks,
+			lineKopecks,
+		};
+	});
+
+	const discountKopecks = BigInt(Math.round((args.discountRub ?? 0) * 100));
+	const totalKopecks = subtotalKopecks > discountKopecks ? subtotalKopecks - discountKopecks : 0n;
+
+	const subtotalRub = kopecksToRub(subtotalKopecks);
+	const discountRub = kopecksToRub(discountKopecks);
+	const totalAmountRub = kopecksToRub(totalKopecks);
 
 	// 2-Phase Confirmation Guard (Мандат 8e)
 	if (args.confirmed === false || (context.requireConfirmation && args.confirmed !== true)) {
 		return {
 			success: false,
 			invoiceId: "",
-			patientId: args.patientId,
+			patientId,
 			itemsCount: args.items.length,
-			subtotalRub: subtotal,
-			discountRub: discount,
-			totalAmountRub: total,
+			subtotalRub,
+			discountRub,
+			totalAmountRub,
 			amountKopecks: Number(totalKopecks),
 			status: "confirmation_required",
-			message: `Требуется подтверждение выставления счёта на сумму ${total.toLocaleString("ru-RU")} ₽.`,
+			message: `Требуется подтверждение выставления счёта на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽.`,
 		};
 	}
 
 	const [inserted] = await activeDb
 		.insert(patientInvoices)
-		.values({ organizationId: orgId, patientId: args.patientId, visitId: args.visitId ?? null, totalAmountRub: total, discountAmountRub: discount, paidAmountRub: 0, status: "pending" })
+		.values({
+			organizationId: orgId,
+			patientId,
+			visitId: args.visitId ?? null,
+			totalAmountRub,
+			discountAmountRub: discountRub,
+			paidAmountRub: 0,
+			status: "pending",
+		})
 		.returning({ id: patientInvoices.id });
 
-	for (const item of args.items) {
+	for (const item of processedItems) {
 		await activeDb.insert(treatmentItems).values({
 			organizationId: orgId,
-			patientId: args.patientId,
+			patientId,
 			visitId: args.visitId ?? null,
 			title: item.title,
 			toothCode: item.toothCode ?? null,
-			quantity: String(item.quantity ?? 1),
-			priceRub: item.priceRub * (item.quantity ?? 1),
-			unitPriceRub: item.priceRub,
+			quantity: String(item.qtyNumber),
+			priceRub: kopecksToRub(item.lineKopecks),
+			unitPriceRub: kopecksToRub(item.unitKopecks),
 			discountRub: 0,
 			status: "completed",
 		});
@@ -93,14 +117,14 @@ export async function handleCreateInvoiceDraft(args: CreateInvoiceDraftInput, co
 	return {
 		success: true,
 		invoiceId: inserted.id,
-		patientId: args.patientId,
+		patientId,
 		itemsCount: args.items.length,
-		subtotalRub: subtotal,
-		discountRub: discount,
-		totalAmountRub: total,
+		subtotalRub,
+		discountRub,
+		totalAmountRub,
 		amountKopecks: Number(totalKopecks),
 		status: "draft_in_cashier",
-		message: `Счёт на сумму ${total.toLocaleString("ru-RU")} ₽ успешно создан и направлен на кассу клиники (готовность к 54-ФЗ).`,
+		message: `Счёт на сумму ${totalAmountRub.toLocaleString("ru-RU")} ₽ успешно создан и направлен в кассу клиники.`,
 	};
 }
 

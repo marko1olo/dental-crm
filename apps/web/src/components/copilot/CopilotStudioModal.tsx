@@ -4,10 +4,7 @@
  */
 
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import {
-  X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt,
-  Sparkles, BookOpen, Camera, Sliders, MessageSquare, Brain, HardDrive
-} from "lucide-react";
+import { X, Send, Mic, MicOff, Check, Calendar, Activity, Receipt, Sparkles, BookOpen, Sliders, MessageSquare, Brain } from "lucide-react";
 import "./styles/copilotStudio.css";
 import { useVoiceEngine } from "../voice/voiceEngine";
 import { showToast } from "../GlobalToast";
@@ -31,19 +28,16 @@ export interface CopilotStudioModalProps {
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 
 export interface CopilotChatMessage {
-  id: string; role: "user" | "assistant"; text: string; citation?: string | undefined;
-  timestamp: string; applied?: boolean | undefined;
+  id: string; role: "user" | "assistant"; text: string; citation?: string | undefined; timestamp: string; applied?: boolean | undefined;
   actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined;
   suggestedReplies?: string[] | undefined;
 }
 
 const extractSuggestions = (text: string) => {
-  const m = text.match(/<<<SUGGESTIONS:\s*(\[.*?\])\s*>>>/s);
-  if (!m) return { cleanText: text };
-  try {
-    const list = JSON.parse(m[1]);
-    return { cleanText: text.replace(/<<<SUGGESTIONS:\s*\[.*?\]\s*>>>/s, "").trim(), suggestions: Array.isArray(list) ? list.filter((s): s is string => typeof s === "string") : [] };
-  } catch { return { cleanText: text }; }
+  const m = text.match(/<<<SUGGESTIONS:\s*(\[[\s\S]*?\])\s*>>>/);
+  let suggestions: string[] | undefined;
+  if (m) { try { const list = JSON.parse(m[1]); if (Array.isArray(list)) suggestions = list.filter((s): s is string => typeof s === "string"); } catch { /* skip */ } }
+  return { cleanText: text.replace(/<<<SUGGESTIONS:[\s\S]*?(?:>>>|$)/g, "").trim(), suggestions };
 };
 
 const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [
@@ -58,18 +52,25 @@ const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((
 });
 
 export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
-  isOpen, onClose, activeTooth = 36, patientId = "pat-active", patientName = "Иванов Иван Иванович", activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess,
+  isOpen, onClose, activeTooth, patientId, patientName, activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess,
 }) => {
   const [activeTab, setActiveTab] = useState<CopilotStudioTab>((initialTab as CopilotStudioTab) || "dialog");
   const { settings, memoryFacts, activeThreadId, threadMessages, saveThreadMessages, setRuntimeMode, isSettingsOpen, setSettingsOpen, isHistoryOpen, setHistoryOpen, threads, selectThread, addToolLog } = useCopilotStore();
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
+  const threadKey = activeThreadId || "default-thread";
 
-  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (
-    initialMessages && initialMessages.length > 0 ? parseChatMsgs(initialMessages) : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : [])
-  ));
+  const [messages, setMessages] = useState<CopilotChatMessage[]>(() => {
+    if (initialMessages && initialMessages.length > 0) return parseChatMsgs(initialMessages);
+    const saved = threadMessages[threadKey];
+    return (saved && saved.length > 0) ? saved : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : []);
+  });
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
+  useEffect(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); }, [messages, threadKey, saveThreadMessages]);
+  const handleClose = useCallback(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); onClose(); }, [messages, threadKey, saveThreadMessages, onClose]);
+
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
+  const baseDraftRef = useRef<string>(inputText);
   const [appliedStatus, setAppliedStatus] = useState<boolean>(false);
   const [speechReport, setSpeechReport] = useState<SpeechEngineHealthReport>(() => inspectSpeechEngineHealth());
   const [, setIsExecuting] = useState<string | null>(null);
@@ -88,38 +89,45 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     else if (isTouch && runtimeMode !== "chairside_tablet" && runtimeMode !== "mobile_tablet") setRuntimeMode("chairside_tablet");
   }, [runtimeMode, setRuntimeMode]);
 
-  // Тихий фоновый WakeLock у кресла (удержание экрана активным без визуального мусора)
   useEffect(() => {
     if (!isOpen) return;
     let s: WakeLockSentinel | null = null;
-    if ("wakeLock" in navigator && typeof navigator.wakeLock?.request === "function") {
-      navigator.wakeLock.request("screen").then((l) => { s = l; }).catch(() => {});
-    }
+    if ("wakeLock" in navigator && typeof navigator.wakeLock?.request === "function") navigator.wakeLock.request("screen").then((l) => { s = l; }).catch(() => {});
     return () => { s?.release().catch(() => {}); };
   }, [isOpen]);
 
   useEffect(() => {
-    if (voice.fullText) { setInputText(voice.fullText); safeLocalStorageSetItem("dente_copilot_draft_text", voice.fullText); }
+    baseDraftRef.current = inputText;
+    if (!voice.isListening) voice.clearTranscript();
+  }, [voice.isListening]);
+
+  useEffect(() => {
+    if (!voice.fullText) return;
+    const base = (baseDraftRef.current || "").trim();
+    const combined = base ? `${base} ${voice.fullText}` : voice.fullText;
+    setInputText(combined); safeLocalStorageSetItem("dente_copilot_draft_text", combined);
   }, [voice.fullText]);
+
   useEffect(() => {
     if (isOpen && activeTab === "dialog") messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen, activeTab]);
 
-  const handleInputChange = (val: string) => { setInputText(val); safeLocalStorageSetItem("dente_copilot_draft_text", val); };
+  const handleInputChange = (val: string) => {
+    setInputText(val); if (!voice.isListening) baseDraftRef.current = val;
+    safeLocalStorageSetItem("dente_copilot_draft_text", val);
+  };
   const toValidUuid = (val?: string | null): string | undefined =>
     typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
 
   const parseSseEvents = (raw: string): Array<{ type: string; [k: string]: unknown }> => {
     const list: Array<{ type: string; [k: string]: unknown }> = [];
-    for (const b of raw.split("\n\n")) {
+    for (const b of raw.split(/\r?\n\r?\n/)) {
       const trimmed = b.trim(); if (!trimmed) continue;
       let eventType = "";
-      for (const l of trimmed.split("\n")) {
+      for (const l of trimmed.split(/\r?\n/)) {
         if (l.startsWith("event: ")) eventType = l.slice(7).trim();
         else if (l.startsWith("data: ")) {
-          try {
-            const p = JSON.parse(l.slice(6)); if (!p.type && eventType) p.type = eventType; list.push(p);
-          } catch { /* skip partial */ }
+          try { const p = JSON.parse(l.slice(6).trim()); if (!p.type && eventType) p.type = eventType; list.push(p); } catch { /* skip */ }
         }
       }
     }
@@ -134,7 +142,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     const nowTime = new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
     const userMsgId = `msg-${Date.now()}`;
     setMessages((prev) => [...prev, { id: userMsgId, role: "user", text: query, timestamp: nowTime }]);
-    setInputText(""); safeLocalStorageSetItem("dente_copilot_draft_text", ""); voice.clearTranscript(); setCurrentThought("");
+    setInputText(""); baseDraftRef.current = ""; safeLocalStorageSetItem("dente_copilot_draft_text", ""); voice.clearTranscript(); setCurrentThought("");
 
     const assistantMsgId = `msg-${Date.now() + 1}`;
     setMessages((prev) => [...prev, { id: assistantMsgId, role: "assistant", text: "", timestamp: nowTime, applied: false }]);
@@ -151,8 +159,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           messages: [{ role: "user", content: query }], patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId),
           stream: true, runtimeMode: apiRuntimeMode, trustLevel: settings.trustLevel, granularPermissions: settings.granularPermissions,
           customInstructions: settings.customDoctorInstructions, memoryFacts: memoryFacts.map((m) => m.fact),
-          doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode,
-          activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
+          doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode, activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
           modelRoutingMode: settings.modelRoutingMode, byokProvider: settings.byokProvider, byokApiKey: settings.byokApiKey, byokModel: settings.byokModel,
         }),
       });
@@ -163,17 +170,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         let accumulatedText = ""; let accumulatedThought = "";
         let pendingAction: CopilotChatMessage["actionProposal"] | undefined;
         let sseBuffer = "";
-
-        while (true) {
-          const { value, done } = await reader.read();
-          if (done) break;
-          sseBuffer += decoder.decode(value, { stream: true });
-          const lastSplit = sseBuffer.lastIndexOf("\n\n");
-          if (lastSplit === -1) continue;
-          const chunkToParse = sseBuffer.slice(0, lastSplit);
-          sseBuffer = sseBuffer.slice(lastSplit + 2);
-
-          for (const ev of parseSseEvents(chunkToParse)) {
+        const applySseEvents = (events: Array<{ type: string; [k: string]: unknown }>) => {
+          for (const ev of events) {
             if (ev.type === "token" && typeof ev.text === "string") accumulatedText += ev.text;
             else if ((ev.type === "thought" || ev.type === "thinking" || ev.type === "reasoning") && typeof ev.text === "string") {
               accumulatedThought += ev.text; setCurrentThought(accumulatedThought);
@@ -184,15 +182,25 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               const desc = typeof ev.descriptionRu === "string" ? ev.descriptionRu : `Подтверждение действия: ${toolName}`;
               pendingAction = { id: callId, toolName, description: desc, payload: args };
               addToolLog({ toolName, category: "clinical", status: "pending", args, resultSummary: desc });
-            } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) {
-              accumulatedText = ev.text;
-            }
+            } else if ((ev.type === "done" || ev.type === "final_answer") && typeof ev.text === "string" && !accumulatedText) accumulatedText = ev.text;
           }
           if (accumulatedText) {
             const { cleanText, suggestions } = extractSuggestions(accumulatedText);
-            setMessages((prev) => prev.map((m): CopilotChatMessage => (
-              m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: pendingAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions } : m
-            )));
+            setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: pendingAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions } : m)));
+          }
+        };
+
+        while (true) {
+          const { value, done } = await reader.read();
+          if (done) { sseBuffer += decoder.decode(); if (sseBuffer.trim()) applySseEvents(parseSseEvents(sseBuffer)); break; }
+          sseBuffer += decoder.decode(value, { stream: true });
+          const matches = [...sseBuffer.matchAll(/\r?\n\r?\n/g)];
+          if (matches.length > 0) {
+            const lastMatch = matches[matches.length - 1];
+            const splitPos = lastMatch.index ?? 0;
+            const chunkToParse = sseBuffer.slice(0, splitPos);
+            sseBuffer = sseBuffer.slice(splitPos + lastMatch[0].length);
+            applySseEvents(parseSseEvents(chunkToParse));
           }
         }
         if (accumulatedText.trim()) { setIsStreaming(false); return; }
@@ -208,12 +216,20 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     }
   };
 
-  const handleApplyPrimaryAction = useCallback(() => {
+  const handleApplyPrimaryAction = useCallback((action?: CopilotChatMessage["actionProposal"]) => {
     setAppliedStatus(true);
     showToast("Клиническое действие успешно применено в карту приёма", "success");
-    if (typeof window !== "undefined") window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: activeTooth, diagnosis: `K02.1 Кариес дентина (Зуб ${activeTooth})`, treatmentPlan: "Анестезия Артикаин, препарирование, нанокомпозит" } }));
+    if (typeof window !== "undefined") {
+      const act = action ?? [...messages].reverse().find((m) => m.role === "assistant" && m.actionProposal && !m.applied)?.actionProposal;
+      const targetTooth = Number(act?.payload?.tooth ?? act?.payload?.toothNumber ?? activeTooth) || undefined;
+      const targetDiag = (act?.payload?.diagnosis as string) || act?.description || (targetTooth ? `Клинический статус (Зуб ${targetTooth})` : "Клинический статус");
+      const targetPlan = (act?.payload?.treatmentPlan as string) || (act?.payload?.plan as string) || (act?.description ? `План: ${act.description}` : "План лечения согласно протоколу СтАР");
+      const targetState = (act?.payload?.state as string) || (act?.payload?.status as string) || undefined;
+      const targetIcd = (act?.payload?.diagnosisIcd10 as string) || (act?.payload?.icd10 as string) || undefined;
+      window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: targetTooth, toothNumber: targetTooth, state: targetState, diagnosis: targetDiag, diagnosisIcd10: targetIcd, treatmentPlan: targetPlan, finding: targetTooth ? { toothNumber: targetTooth, state: targetState || "caries", icd10Override: targetIcd } : undefined } }));
+    }
     setMessages((prev) => prev.map((m) => (m.role === "assistant" ? { ...m, applied: true } : m)));
-  }, [activeTooth]);
+  }, [activeTooth, messages]);
 
   const executeApiTool = async (toolKey: string, payload: Record<string, unknown>) => {
     setIsExecuting(toolKey);
@@ -221,10 +237,10 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     try {
       const res = await fetch("/api/v1/copilot/tools/execute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ toolName: toolKey, arguments: payload }) });
       addToolLog({ toolName: toolKey, category: "clinical", status: res.ok ? "success" : "pending", durationMs: Date.now() - startTime, args: payload, resultSummary: `Выполнен инструмент ${toolKey}` });
-      showToast(res.ok ? "Успешно: действие зарегистрировано в системе" : "Действие выполнено в локальном контуре приёма", res.ok ? "success" : "info");
+      showToast(res.ok ? "Успешно: действие зарегистрировано в системе" : (isDemoShowcaseMode() ? "Действие выполнено в демо-режиме" : `Сбой выполнения ${toolKey}`), res.ok ? "success" : (isDemoShowcaseMode() ? "info" : "error"));
     } catch {
-      addToolLog({ toolName: toolKey, category: "clinical", status: "success", durationMs: 40, args: payload, resultSummary: `Локальное применение: ${toolKey}` });
-      showToast("Локальное применение: данные сохранены в контуре приёма", "info");
+      addToolLog({ toolName: toolKey, category: "clinical", status: isDemoShowcaseMode() ? "success" : "error", durationMs: isDemoShowcaseMode() ? 40 : 0, args: payload, resultSummary: isDemoShowcaseMode() ? `Локальное применение: ${toolKey}` : `Сбой сети для ${toolKey}` });
+      showToast(isDemoShowcaseMode() ? "Локальное применение: данные сохранены в контуре приёма" : "Ошибка сети при вызове инструмента", isDemoShowcaseMode() ? "info" : "error");
     } finally { setIsExecuting(null); }
   };
 
@@ -232,7 +248,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
 
   return (
     <div className="copilot-studio-overlay fixed inset-0 z-[99990] flex justify-end max-md:items-end pointer-events-auto" data-testid="chairside-copilot-studio-root">
-      <div className="copilot-studio-backdrop fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" onClick={onClose} aria-hidden="true" data-testid="copilot-host-backdrop" />
+      <div className="copilot-studio-backdrop fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" onClick={handleClose} aria-hidden="true" data-testid="copilot-host-backdrop" />
       <aside className="copilot-studio-panel relative z-10 flex flex-col w-full md:w-[580px] lg:w-[620px] h-[88vh] md:h-full bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,rgba(15,118,110,0.15))] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip max-w-[100vw]" aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel">
         <div className="copilot-studio-drag-handle-wrap md:hidden flex justify-center pt-2.5 pb-1">
           <div className="copilot-studio-drag-handle w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
@@ -258,9 +274,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
-            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
-            <button type="button" onClick={onClose} className="copilot-close-btn w-11 h-11 sm:w-8 sm:h-8 min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
+            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
+            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
+            <button type="button" onClick={handleClose} className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>
 
@@ -288,7 +304,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             {voice.isListening && (
               <div className="copilot-voice-banner mx-5 mt-2.5 p-2.5 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.1))] border border-[var(--teal,#0d9488)] flex items-center justify-between text-xs shrink-0">
                 <div className="copilot-voice-status flex items-center gap-2.5 text-[var(--teal,#0d9488)] font-semibold"><Mic size={15} className="animate-bounce" /><span>Идёт распознавание речи...</span></div>
-                <button type="button" onClick={voice.stopListening} className="px-2.5 py-1 rounded bg-[var(--paper)] text-xs font-bold border border-[var(--line)] cursor-pointer">Стоп</button>
+                <button type="button" onClick={voice.stopListening} className="h-11 min-h-[44px] min-w-[44px] px-3.5 py-1.5 rounded-xl bg-[var(--paper)] text-xs font-bold border border-[var(--line)] cursor-pointer flex items-center justify-center hover:bg-[var(--line)]">Стоп</button>
               </div>
             )}
 
@@ -299,9 +315,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                     <Sparkles size={20} />
                   </div>
                   <h3 className="text-sm font-bold text-[var(--ink)] m-0">Клинический диалог пуст</h3>
-                  <p className="text-xs text-[var(--muted)] max-w-[320px] mt-1 mb-3 leading-relaxed">
-                    Задайте клинический вопрос или начните диктовку приёма:
-                  </p>
+                  <p className="text-xs text-[var(--muted)] max-w-[320px] mt-1 mb-3 leading-relaxed">Задайте клинический вопрос или начните диктовку приёма:</p>
                   <div className="grid grid-cols-2 gap-2 w-full max-w-[420px]" data-testid="copilot-empty-starters">
                     {[
                       { id: "st-norm", label: `Норма (Зуб ${activeTooth || 36})`, prompt: `Зафиксируй зуб ${activeTooth || 36}: норма, интактный, без патологии` },
@@ -309,7 +323,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                       { id: "st-anes", label: `Артикаин 1.7 мл (${activeTooth || 36})`, prompt: `Инфильтрационная анестезия: Артикаин 1:100 000, 1.7 мл (Зуб ${activeTooth || 36})` },
                       { id: "st-est", label: `Смета на зуб ${activeTooth || 36}`, prompt: `Сформируй смету на комплексное лечение зуба ${activeTooth || 36}` },
                     ].map((s) => (
-                      <button key={s.id} type="button" onClick={() => handleSendMessage(s.prompt)} className="p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-left text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
+                      <button key={s.id} type="button" onClick={() => handleSendMessage(s.prompt)} className="p-2.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-left text-xs font-semibold text-[var(--ink)] cursor-pointer transition-all flex items-center gap-1.5 shadow-2xs">
                         <Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" /><span className="whitespace-normal leading-tight">{s.label}</span>
                       </button>
                     ))}
@@ -329,29 +343,20 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                       {m.actionProposal && !m.applied && (
                         <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/30 space-y-2 text-[11px]">
                           <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]">
-                              <Activity size={13} className="text-[var(--teal,#0d9488)]" />
-                              <span>Вызов: {m.actionProposal.toolName.split('.').pop() || m.actionProposal.toolName} (Зуб {activeTooth || 36})</span>
-                            </div>
-                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">
-                              Требуется подтверждение
-                            </span>
+                            <div className="flex items-center gap-1.5 font-bold text-[var(--ink)]"><Activity size={13} className="text-[var(--teal,#0d9488)]" /><span>Вызов: {m.actionProposal.toolName.split('.').pop() || m.actionProposal.toolName} (Зуб {activeTooth || 36})</span></div>
+                            <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800">Требуется подтверждение</span>
                           </div>
                           <div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)] font-mono text-[10px] space-y-1">
                             <div className="flex items-center gap-1.5 text-rose-600 dark:text-rose-400 bg-rose-500/10 px-1.5 py-0.5 rounded"><span className="font-bold select-none">-</span><span className="line-through opacity-85">{`Зуб ${activeTooth || 36}: Без патологии / Интактный`}</span></div>
                             <div className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-1.5 py-0.5 rounded font-medium"><span className="font-bold select-none">+</span><span>{`Зуб ${activeTooth || 36}: ${m.actionProposal.description}`}</span></div>
                           </div>
-                          <div className="flex items-center justify-end gap-2 pt-0.5">
-                            <button type="button" onClick={() => setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg))} className="h-8 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-medium cursor-pointer text-[11px]">Отклонить</button>
-                            <button type="button" onClick={handleApplyPrimaryAction} className="h-8 px-3 rounded-lg bg-[var(--teal,#0d9488)] text-white hover:opacity-95 font-bold flex items-center gap-1 cursor-pointer text-[11px] shadow-sm"><Check size={13} /><span>Применить в карту</span></button>
+                          <div className="flex items-center justify-end gap-2 pt-1">
+                            <button type="button" onClick={() => setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg))} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center">Отклонить</button>
+                            <button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl bg-[var(--teal,#0d9488)] text-white hover:opacity-95 font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm"><Check size={14} /><span>Применить в карту</span></button>
                           </div>
                         </div>
                       )}
-                      {m.citation && (
-                        <div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium">
-                          <BookOpen size={11} /><span>{m.citation}</span>
-                        </div>
-                      )}
+                      {m.citation && (<div className="mt-2 pt-2 border-t border-[var(--line)] flex items-center gap-1.5 text-[10px] text-[var(--teal,#0d9488)] font-medium"><BookOpen size={11} /><span>{m.citation}</span></div>)}
                     </div>
                     <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
                   </div>
@@ -371,7 +376,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                 <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 snap-x" data-testid="copilot-smart-replies">
                   <span className="text-[10px] text-[var(--muted)] font-bold uppercase tracking-wider shrink-0 flex items-center gap-1"><Sparkles size={11} className="text-[var(--teal,#0d9488)]" />Подсказка:</span>
                   {replies.map((reply, i) => (
-                    <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-3 py-1 rounded-full border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.08))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.18))] text-[var(--teal,#0d9488)] text-[11px] font-semibold whitespace-nowrap cursor-pointer transition-all shadow-2xs snap-start">{reply}</button>
+                    <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-3.5 py-2 min-h-[40px] sm:min-h-[44px] rounded-full border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.08))] hover:bg-[var(--teal-soft,rgba(13,148,136,0.18))] text-[var(--teal,#0d9488)] text-xs font-semibold whitespace-nowrap cursor-pointer transition-all shadow-2xs snap-start flex items-center">{reply}</button>
                   ))}
                 </div>
               );
@@ -380,29 +385,19 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             {/* Нижняя плашка: Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am) */}
             <div className="copilot-bottom-composer px-3 sm:px-5 pt-2 pb-5 max-md:pb-[calc(16px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line)] bg-[var(--paper)] shrink-0 space-y-2">
               <button
-                type="button" onClick={handleApplyPrimaryAction}
+                type="button" onClick={() => handleApplyPrimaryAction()}
                 className="copilot-primary-cta w-full h-11 min-h-[44px] rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold flex items-center justify-center gap-2 shadow-sm hover:opacity-95 cursor-pointer text-xs"
                 data-testid="copilot-primary-apply-cta"
               >
                 <Check size={16} /><span>{appliedStatus ? "Применено в карту приёма" : "Применить действие"}</span>
               </button>
-
               <div className="copilot-input-row flex items-center gap-2">
                 <button type="button" onClick={voice.toggleListening} aria-label="Голосовой ввод" className={`copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border flex items-center justify-center gap-1.5 cursor-pointer ${voice.isListening ? "recording bg-rose-500 text-white border-rose-600 animate-pulse" : "bg-[var(--paper-soft)] border-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)]"}`}>
                   {voice.isListening ? <MicOff size={18} /> : <Mic size={18} />}
-                  {voice.isListening && (
-                    <div className="copilot-vu-meter flex items-end gap-0.5 h-3.5 px-0.5" aria-label="Индикатор звука"><span className="w-0.5 rounded-full h-3 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-3.5 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-2 bg-white animate-pulse" /></div>
-                  )}
+                  {voice.isListening && <div className="copilot-vu-meter flex items-end gap-0.5 h-3.5 px-0.5" aria-label="Индикатор звука"><span className="w-0.5 rounded-full h-3 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-3.5 bg-white animate-pulse" /><span className="w-0.5 rounded-full h-2 bg-white animate-pulse" /></div>}
                 </button>
-                <input
-                  type="text" value={inputText} onChange={(e) => handleInputChange(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }}
-                  placeholder="Запрос или диктовка..."
-                  className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]"
-                />
-                <button type="button" onClick={() => handleSendMessage()} className="copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Отправить запрос">
-                  <Send size={16} />
-                </button>
+                <input type="text" value={inputText} onChange={(e) => handleInputChange(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); handleSendMessage(); } }} placeholder="Запрос или диктовка..." className="copilot-text-input flex-1 h-11 min-h-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] text-xs text-[var(--ink)] placeholder:text-[var(--muted)] focus:outline-none focus:ring-1 focus:ring-[var(--teal)]" />
+                <button type="button" onClick={() => handleSendMessage()} className="copilot-icon-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Отправить запрос"><Send size={16} /></button>
               </div>
             </div>
           </div>
@@ -430,15 +425,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         {/* ВКЛАДКА 3: ПАМЯТЬ ИИ (LONG-TERM CLINICAL PREFERENCES) */}
         {activeTab === "memory" && <CopilotMemoryTab />}
         <CopilotSettingsModal isOpen={isSettingsOpen} onClose={() => setSettingsOpen(false)} onOpenMemoryTab={() => { setSettingsOpen(false); setActiveTab("memory"); }} />
-        <CopilotHistoryDrawer
-          isOpen={isHistoryOpen} onClose={() => setHistoryOpen(false)}
-          onSelectThread={(tId) => {
-            selectThread(tId); const saved = threadMessages[tId];
-            if (saved && saved.length > 0) setMessages(saved);
-            else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); }
-            setHistoryOpen(false); setActiveTab("dialog");
-          }}
-        />
+        <CopilotHistoryDrawer isOpen={isHistoryOpen} onClose={() => setHistoryOpen(false)} onSelectThread={(tId) => {
+          selectThread(tId); const saved = threadMessages[tId];
+          if (saved && saved.length > 0) setMessages(saved);
+          else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); }
+          setHistoryOpen(false); setActiveTab("dialog");
+        }} />
       </aside>
     </div>
   );

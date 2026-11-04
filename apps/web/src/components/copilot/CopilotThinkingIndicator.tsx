@@ -19,7 +19,7 @@ export function CopilotThinkingIndicator({
 	isThinking,
 	activeTooth,
 	icd10Code,
-	thoughtProcess = "Анализ клинической картины: жалобы на температурные раздражители. Проверка одонтограммы зуба, сопоставление со стандартами СтАР по кариесу дентина. Формирование плана препарирования и выбора нанокомпозита.",
+	thoughtProcess = "Анализ клинического контекста...",
 	speedMode = "turbo",
 	showThinkingProcess = true,
 }: CopilotThinkingIndicatorProps) {

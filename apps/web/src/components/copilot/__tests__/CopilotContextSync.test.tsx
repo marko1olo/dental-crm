@@ -13,6 +13,7 @@ import { CopilotDrawer } from '../CopilotDrawer';
 import { CopilotMessage } from '../CopilotMessage';
 import { useAppStore } from '../../../store/appStore';
 import { usePatientStore } from '../../../store/patientStore';
+import { useVisitStore } from '../../../store/visitStore';
 
 describe('CopilotContextSync Header Formatting & Parsing', () => {
   it('formats exact canonical UI context header with Odontogram, Patient, Tooth 36, Doctor', () => {
@@ -150,5 +151,18 @@ describe('Copilot UI Two-Way Context Integration', () => {
     assert.ok(html.includes('Удали этот зуб'));
     // Ensure raw header bracket syntax is not dumped into plain user text
     assert.ok(!html.includes("PatientId='uuid-123'"));
+  });
+
+  it('DEF-FRONT-04: reads active tooth from visitStore when appStore.activeTooth is null', () => {
+    useAppStore.setState({
+      activeTooth: null,
+      currentView: 'visit',
+    });
+    useVisitStore.setState({
+      activeToothNumber: 46,
+    });
+
+    const ctx = getCurrentCopilotUiContext();
+    assert.equal(ctx.activeTooth, 46, 'Копайлот обязан реактивно считывать активный зуб из visitStore.activeToothNumber');
   });
 });

@@ -10,12 +10,30 @@ import {
 } from "./routerTypes.js";
 
 /**
+ * Sanitizes arbitrary error text or logs, masking secret API keys
+ * (sk-..., AIza..., gsk_...) while fully preserving error diagnostic messages.
+ */
+export function maskKeysInText(text: string): string {
+	if (!text || typeof text !== "string") return "";
+	return text
+		.replace(/sk-[a-zA-Z0-9_-]{10,}/g, (match) => `sk-***${match.slice(-4)}`)
+		.replace(/AIza[0-9A-Za-z-_]{30,}/g, (match) => `AIza***${match.slice(-4)}`)
+		.replace(/gsk_[a-zA-Z0-9_-]{15,}/g, (match) => `gsk_***${match.slice(-4)}`)
+		.replace(/(Bearer\s+)[a-zA-Z0-9._-]{10,}/gi, "$1***REDACTED***");
+}
+
+/**
  * Mask raw API key to prevent secret leakage in logs or stacktraces.
- * Example: "agentrouter...T3u"
+ * If passed a multi-word message or text containing keys, preserves diagnostic context.
+ * Example single key: "agentrouter...T3u"
  */
 export function maskApiKey(key: string | null | undefined): string {
 	if (!key || typeof key !== "string") return "agentrouter...none";
 	const trimmed = key.trim();
+	if (trimmed.length === 0) return "agentrouter...none";
+	if (trimmed.includes(" ") || trimmed.includes("\n") || trimmed.includes("\t")) {
+		return maskKeysInText(trimmed);
+	}
 	if (trimmed.length <= 5) return "agentrouter...*****";
 	return `agentrouter...${trimmed.slice(-5)}`;
 }
@@ -32,6 +50,33 @@ export function parseApiKeys(envValue?: string | null): string[] {
 		.map((k) => k.trim())
 		.filter((k) => k.length > 0);
 	return parsed.length > 0 ? parsed : [...DEFAULT_AGENTROUTER_KEYS];
+}
+
+/**
+ * Parse comma-separated list of all known server API key environment variables.
+ */
+export function parseAllConfiguredApiKeys(): string[] {
+	const rawEnvSources = [
+		process.env.AGENTROUTER_API_KEYS,
+		process.env.AGENTROUTER_API_KEY,
+		process.env.GOOGLE_API_KEYS,
+		process.env.GEMINI_API_KEYS,
+		process.env.GOOGLE_API_KEY,
+		process.env.GEMINI_API_KEY,
+		process.env.GROQ_API_KEYS,
+		process.env.GROQ_API_KEY,
+	];
+	const collected: string[] = [];
+	for (const envVal of rawEnvSources) {
+		if (!envVal || typeof envVal !== "string") continue;
+		for (const k of envVal.split(",")) {
+			const trimmed = k.trim();
+			if (trimmed.length > 0 && !collected.includes(trimmed)) {
+				collected.push(trimmed);
+			}
+		}
+	}
+	return collected.length > 0 ? collected : [...DEFAULT_AGENTROUTER_KEYS];
 }
 
 export class KeyPoolManager {
@@ -92,9 +137,11 @@ export class KeyPoolManager {
 		}));
 	}
 
-	selectNextKey(): { key: string; isFallback: boolean } {
+	selectNextKey(candidateKeys?: readonly string[]): { key: string; isFallback: boolean } {
 		const now = Date.now();
-		const total = this.apiKeys.length;
+		const pool =
+			candidateKeys && candidateKeys.length > 0 ? candidateKeys : this.apiKeys;
+		const total = pool.length;
 		if (total === 0) {
 			throw new Error("AgentRouter key pool is empty. No API keys configured.");
 		}
@@ -102,7 +149,7 @@ export class KeyPoolManager {
 		// Try to find available key starting from roundRobinIndex
 		for (let i = 0; i < total; i++) {
 			const idx = (this.roundRobinIndex + i) % total;
-			const candidate = this.apiKeys[idx];
+			const candidate = pool[idx];
 			if (!candidate) continue;
 			const cd = this.keyCooldowns.get(candidate) || 0;
 			if (now >= cd) {
@@ -112,9 +159,9 @@ export class KeyPoolManager {
 		}
 
 		// All keys are on cooldown. Find key with nearest cooldown expiry.
-		let nearestKey = this.apiKeys[0] || "";
+		let nearestKey = pool[0] || "";
 		let minCd = this.keyCooldowns.get(nearestKey) || Infinity;
-		for (const k of this.apiKeys) {
+		for (const k of pool) {
 			const cd = this.keyCooldowns.get(k) || 0;
 			if (cd < minCd) {
 				minCd = cd;

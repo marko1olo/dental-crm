@@ -157,6 +157,111 @@ describe("CRM Database AI Tools — Two-Phase Confirmation Guard (Мандат 8
 	});
 });
 
+describe("CRM Database AI Tools — AI-REV-08: Мягкая валидация и контекст пациента/врача", () => {
+	const mockDb = {
+		select: () => ({ from: () => ({ where: () => ({ limit: async () => [] }) }) }),
+		insert: () => ({ values: () => ({ returning: async () => [{ id: "test-id" }] }) }),
+		update: () => ({ set: () => ({ where: async () => {} }) }),
+	};
+
+	test("update_tooth_status: берет patientId из context.patientId при отсутствии в args", async () => {
+		const res = await handleUpdateToothStatus(
+			{
+				toothNumber: 21,
+				state: "healthy",
+				confirmed: true,
+			},
+			{ organizationId: TEST_ORG_ID, patientId: "context-pat-123", db: mockDb as any },
+		);
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.toothNumber, 21);
+	});
+
+	test("update_tooth_status: выбрасывает MISSING_PATIENT_CONTEXT при отсутствии patientId в args и context", async () => {
+		await assert.rejects(
+			() => handleUpdateToothStatus(
+				{
+					toothNumber: 21,
+					state: "healthy",
+					confirmed: true,
+				},
+				{ organizationId: TEST_ORG_ID, db: mockDb as any },
+			),
+			/MISSING_PATIENT_CONTEXT/,
+		);
+	});
+
+	test("create_appointment: берет patientId и doctorId из context", async () => {
+		const res = await handleCreateAppointment(
+			{
+				startTime: "2026-11-01T14:00:00Z",
+				durationMinutes: 30,
+				confirmed: true,
+			},
+			{ organizationId: TEST_ORG_ID, patientId: "context-pat-123", doctorId: "context-doc-456", db: mockDb as any },
+		);
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.patientId, "context-pat-123");
+		assert.strictEqual(res.doctorId, "context-doc-456");
+	});
+
+	test("create_appointment: выбрасывает MISSING_PATIENT_CONTEXT при отсутствии patientId", async () => {
+		await assert.rejects(
+			() => handleCreateAppointment(
+				{
+					startTime: "2026-11-01T14:00:00Z",
+					durationMinutes: 30,
+					confirmed: true,
+				},
+				{ organizationId: TEST_ORG_ID, doctorId: "context-doc-456", db: mockDb as any },
+			),
+			/MISSING_PATIENT_CONTEXT/,
+		);
+	});
+});
+
+describe("CRM Database AI Tools — AI-REV-10: Расчет сметы строго в целочисленных копейках (Мандат 8n)", () => {
+	const mockDb = {
+		insert: () => ({ values: () => ({ returning: async () => [{ id: "inv-test-id" }] }) }),
+	};
+
+	test("create_invoice_draft: точный расчет в копейках без float погрешностей JS", async () => {
+		const res = await handleCreateInvoiceDraft(
+			{
+				patientId: "patient-rev-10",
+				items: [
+					{ title: "Терапевтическое восстановление зуба", priceRub: 1234.56, quantity: 3 },
+					{ title: "Изоляция коффердамом", priceRub: 89.99, quantity: 2 },
+				],
+				discountRub: 100.50,
+				confirmed: true,
+			},
+			{ organizationId: TEST_ORG_ID, db: mockDb as any },
+		);
+
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.itemsCount, 2);
+		assert.strictEqual(res.subtotalRub, 3883.66);
+		assert.strictEqual(res.discountRub, 100.50);
+		assert.strictEqual(res.totalAmountRub, 3783.16);
+		assert.strictEqual(res.amountKopecks, 378316);
+	});
+
+	test("create_invoice_draft: берет patientId из context.patientId при отсутствии в args", async () => {
+		const res = await handleCreateInvoiceDraft(
+			{
+				items: [{ title: "Консультация", priceRub: 1500, quantity: 1 }],
+				discountRub: 0,
+				confirmed: true,
+			},
+			{ organizationId: TEST_ORG_ID, patientId: "context-pat-inv", db: mockDb as any },
+		);
+		assert.strictEqual(res.success, true);
+		assert.strictEqual(res.patientId, "context-pat-inv");
+		assert.strictEqual(res.amountKopecks, 150000);
+	});
+});
+
 describe("CRM Database AI Tools — Поиск пациентов и парсинг CSV", () => {
 	test("patient_search: находит пациентов через mockDb", async () => {
 		const mockDb = {

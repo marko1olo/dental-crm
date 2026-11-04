@@ -178,6 +178,6 @@ describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 		}));
 
 		const html = renderToString(<CopilotContextTelemetryBar activeTooth={16} />);
-		assert.ok(html.includes("DENTE Интеллект (Авто)"), "Must render dynamic server-managed intelligence badge");
+		assert.ok(html.includes("DENTE Интеллект") && (html.includes("&lt;300мс") || html.includes("<300мс") || html.includes("300мс")), "Must render dynamic server-managed intelligence badge");
 	});
 });

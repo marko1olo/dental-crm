@@ -19,6 +19,7 @@ import {
 	type AgentRouterClient,
 	type AgentRouterStreamCallbacks,
 	AgentRouterAllKeysExhaustedError,
+	AgentRouterModelOverloadedError,
 } from "./agentRouterClient.js";
 import type { DentalToolContext } from "./dentalTools.js";
 import { clearActivePlansStore } from "./dentalTools/taskPlanTools.js";
@@ -374,21 +375,21 @@ test("5. runAgentHarness: Repetitive tool failure sentinel attaches stuckDetecti
 	assert.ok(result.text.includes("Зафиксирован повторный сбой"));
 });
 
-test("6. buildAgentSystemPrompt: Injects in-app multi-agent swarm role directives", () => {
+test("6. buildAgentSystemPrompt: Injects in-app clinical copilot role directives", () => {
 	const triagePrompt = buildAgentSystemPrompt("web_browser", dummyContext, undefined, "triage");
-	assert.ok(triagePrompt.includes("[РОЛЬ РОЯ: 📞 TRIAGE AGENT]"));
+	assert.ok(triagePrompt.includes("[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: МАРШРУТИЗАЦИЯ И ПЕРВИЧНЫЙ ТРИАЖ]"));
 	assert.ok(triagePrompt.includes("Socratic Triage"));
 
 	const inquisitorPrompt = buildAgentSystemPrompt("web_browser", dummyContext, undefined, "odontogram_inquisitor");
-	assert.ok(inquisitorPrompt.includes("[РОЛЬ РОЯ: 📋 ODONTOGRAM & DIARY INQUISITOR]"));
+	assert.ok(inquisitorPrompt.includes("[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: АУДИТ МЕДИЦИНСКОЙ КАРТЫ И ОДОНТОГРАММЫ]"));
 	assert.ok(inquisitorPrompt.includes("СтАР (K02–K08)"));
 
 	const billingPrompt = buildAgentSystemPrompt("web_browser", dummyContext, undefined, "billing_sentinel");
-	assert.ok(billingPrompt.includes("[РОЛЬ РОЯ: 💳 BILLING & FISCAL SENTINEL]"));
+	assert.ok(billingPrompt.includes("[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: ФИНАНСОВЫЙ КОНТРОЛЬ И КАССОВАЯ ДИСЦИПЛИНА]"));
 	assert.ok(billingPrompt.includes("amountKopecks"));
 
 	const visionPrompt = buildAgentSystemPrompt("desktop_native", dummyContext, undefined, "vision_specialist");
-	assert.ok(visionPrompt.includes("[РОЛЬ РОЯ: 🩻 VISION / DICOM SPECIALIST]"));
+	assert.ok(visionPrompt.includes("[КЛИНИЧЕСКАЯ СПЕЦИАЛИЗАЦИЯ: ЛУЧЕВАЯ ДИАГНОСТИКА И АНАЛИЗ СНИМКОВ]"));
 	assert.ok(visionPrompt.includes("Хаунсфилда (D1–D4)"));
 	assert.ok(visionPrompt.includes("DESKTOP_NATIVE"));
 });
@@ -418,6 +419,52 @@ test("7. runAgentHarness: Fallback to deterministic ReAct cycle when API keys ar
 	assert.ok(events.some((e) => e.type === "reasoning" && e.text.includes("СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК")));
 	assert.ok(events.some((e) => e.type === "confirmation_required"), "Must emit confirmation_required under confirm_all");
 	assert.ok(events.some((e) => e.type === "done"));
+});
+
+test("7b. runAgentHarness: Fallbacks when AgentRouter throws 'exhausted all keys' Error (AI-REV-03 & ROUTER-01)", async () => {
+	const exhaustedErrorClient: Partial<AgentRouterClient> = {
+		async createChatCompletion() {
+			throw new Error("AgentRouter exhausted all keys (2 attempts failed). Errors: [Key agentrouter...1111: 429 Rate Limit]");
+		},
+		async createStreamingChatCompletion() {
+			throw new Error("AgentRouter exhausted all keys for streaming (2 attempts failed). Errors: [Key agentrouter...1111: 429 Rate Limit]");
+		},
+	};
+
+	const events: AgentHarnessEvent[] = [];
+	const result = await runAgentHarness({
+		messages: [{ role: "user", content: "Пациент жалуется на ноющие боли в зубе 16 от холодного" }],
+		context: dummyContext,
+		client: exhaustedErrorClient as AgentRouterClient,
+		trustLevel: "confirm_all",
+		onEvent: (e) => { events.push(e); },
+	});
+
+	assert.ok(result.text.length > 0, "Must return clinical verdict via fallback");
+	assert.ok(result.iterations >= 1);
+	assert.ok(events.some((e) => e.type === "reasoning" && e.text.includes("СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК")));
+});
+
+test("7c. runAgentHarness: Fallbacks when AgentRouter throws AgentRouterModelOverloadedError HTTP 402", async () => {
+	const overloadedClient: Partial<AgentRouterClient> = {
+		async createChatCompletion() {
+			throw new AgentRouterModelOverloadedError("gemini-3.6-flash", 1800, "Quota has been exhausted");
+		},
+		async createStreamingChatCompletion() {
+			throw new AgentRouterModelOverloadedError("gemini-3.6-flash", 1800, "Quota has been exhausted");
+		},
+	};
+
+	const events: AgentHarnessEvent[] = [];
+	const result = await runAgentHarness({
+		messages: [{ role: "user", content: "Зуб 24 кариес дентина, поставить пломбу" }],
+		context: dummyContext,
+		client: overloadedClient as AgentRouterClient,
+		onEvent: (e) => { events.push(e); },
+	});
+
+	assert.ok(result.text.length > 0, "Must return clinical verdict via fallback");
+	assert.ok(events.some((e) => e.type === "reasoning" && e.text.includes("СУВЕРЕННЫЙ EBM КЛИНИЧЕСКИЙ ДВИЖОК")));
 });
 
 test("8. buildAgentSystemPrompt: Injects custom doctor instructions, clinical memory and specialization", () => {

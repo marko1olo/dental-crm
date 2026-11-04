@@ -92,4 +92,13 @@ export const checkSomaticRisksTool: DentalToolEntry<typeof checkSomaticRisksSche
 	handler: handleCheckSomaticRisks,
 };
 
+export const checkSomaticRisksShortTool: DentalToolEntry<typeof checkSomaticRisksSchema> = {
+	name: "check_somatic_risks",
+	description: "Экспертный скрининг соматических заболеваний и лекарственных взаимодействий (антикоагулянты, бисфосфонаты/MRONJ, гипертония, аллергии на пенициллин и НПВС).",
+	schema: checkSomaticRisksSchema,
+	supportedModes: ["web_browser", "desktop_native"],
+	definition: createOpenAIToolDefinition("check_somatic_risks", "Скрининг соматических патологий, антикоагулянтов, бисфосфонатов и лекарственных аллергий перед приемом.", checkSomaticRisksSchema),
+	handler: handleCheckSomaticRisks,
+};
+
 export const somaticScreeningTool = checkSomaticRisksTool;

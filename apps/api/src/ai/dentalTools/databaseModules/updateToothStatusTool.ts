@@ -11,7 +11,7 @@ import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinitio
 import { isValidFdiToothNumber } from "./dbTypes.js";
 
 export const updateToothStatusSchema = z.object({
-	patientId: z.string().uuid("Некорректный UUID пациента").describe("ID пациента"),
+	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
 	toothNumber: z.number().min(11).max(85).describe("Номер зуба по формуле FDI (11-48 постоянные, 51-85 молочные)"),
 	state: z
 		.enum(["healthy", "caries", "pulpitis", "periodontitis", "filling", "crown", "implant", "extracted", "missing", "root", "mobility"])
@@ -35,6 +35,11 @@ export interface UpdateToothStatusResult {
 }
 
 export async function handleUpdateToothStatus(args: UpdateToothStatusInput, context: DentalToolContext): Promise<UpdateToothStatusResult> {
+	const patientId = args.patientId || context.patientId;
+	if (!patientId) {
+		throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент (patientId отсутствует в аргументах и контексте)");
+	}
+
 	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const tooth = args.toothNumber;
@@ -60,7 +65,7 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 	const existing = await activeDb
 		.select()
 		.from(toothStates)
-		.where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, args.patientId), eq(toothStates.toothNumber, tooth)))
+		.where(and(eq(toothStates.organizationId, orgId), eq(toothStates.patientId, patientId), eq(toothStates.toothNumber, tooth)))
 		.limit(1);
 
 	const previousState = existing[0]?.state ?? null;
@@ -73,13 +78,13 @@ export async function handleUpdateToothStatus(args: UpdateToothStatusInput, cont
 			.where(eq(toothStates.id, existing[0].id));
 	} else {
 		await activeDb.insert(toothStates).values({
-			organizationId: orgId, patientId: args.patientId, toothNumber: tooth, state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, createdAt: now, updatedAt: now,
+			organizationId: orgId, patientId, toothNumber: tooth, state: args.state, surfaces: args.surfaces ?? null, notes: args.notes ?? null, createdAt: now, updatedAt: now,
 		});
 	}
 
 	// Аудит в историю зуба
 	await activeDb.insert(toothStateHistory).values({
-		organizationId: orgId, patientId: args.patientId, toothNumber: tooth, previousState, newState: args.state, previousSurfaces: existing[0]?.surfaces ?? null, newSurfaces: args.surfaces ?? null, changedByUserId: context.userId ?? null, reason: args.notes ?? "Обновление через клинический ИИ-ассистент", changedAt: now,
+		organizationId: orgId, patientId, toothNumber: tooth, previousState, newState: args.state, previousSurfaces: existing[0]?.surfaces ?? null, newSurfaces: args.surfaces ?? null, changedByUserId: context.userId ?? null, reason: args.notes ?? "Обновление через клинический ИИ-ассистент", changedAt: now,
 	});
 
 	return {

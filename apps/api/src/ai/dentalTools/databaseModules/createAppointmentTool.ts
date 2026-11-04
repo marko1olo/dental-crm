@@ -9,8 +9,8 @@ import { appointments } from "../../../db/schema.js";
 import { type DentalToolContext, type DentalToolEntry, createOpenAIToolDefinition } from "../types.js";
 
 export const createAppointmentSchema = z.object({
-	patientId: z.string().uuid("Некорректный UUID пациента").describe("ID пациента"),
-	doctorId: z.string().uuid("Некорректный UUID врача").describe("ID лечащего врача"),
+	patientId: z.string().optional().describe("ID пациента (если опущен, берется из контекста открытой карты)"),
+	doctorId: z.string().optional().describe("ID лечащего врача (если опущен, берется из контекста врача)"),
 	startTime: z.string().describe("Время начала приёма (ISO 8601 строка, например 2026-10-15T10:00:00Z)"),
 	durationMinutes: z.number().min(15, "Минимум 15 минут").max(240, "Максимум 4 часа").default(30).describe("Длительность приёма в минутах"),
 	chairId: z.string().uuid("Некорректный UUID кресла").optional().describe("ID стоматологической установки"),
@@ -34,6 +34,15 @@ export interface CreateAppointmentResult {
 }
 
 export async function handleCreateAppointment(args: CreateAppointmentInput, context: DentalToolContext): Promise<CreateAppointmentResult> {
+	const patientId = args.patientId || context.patientId;
+	if (!patientId) {
+		throw new Error("MISSING_PATIENT_CONTEXT: Не указан пациент (patientId отсутствует в аргументах и контексте)");
+	}
+	const doctorId = args.doctorId || context.doctorId || context.userId;
+	if (!doctorId) {
+		throw new Error("MISSING_DOCTOR_CONTEXT: Не указан врач (doctorId отсутствует в аргументах и контексте)");
+	}
+
 	const activeDb = context.db ?? defaultDb;
 	const orgId = context.organizationId;
 	const start = new Date(args.startTime);
@@ -49,8 +58,8 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		return {
 			success: false,
 			appointmentId: "",
-			patientId: args.patientId,
-			doctorId: args.doctorId,
+			patientId,
+			doctorId,
 			startTime: start.toISOString(),
 			endTime: end.toISOString(),
 			durationMinutes: duration,
@@ -63,8 +72,8 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 		.insert(appointments)
 		.values({
 			organizationId: orgId,
-			patientId: args.patientId,
-			doctorId: args.doctorId,
+			patientId,
+			doctorId,
 			chairId: args.chairId ?? null,
 			startTime: start,
 			endTime: end,
@@ -78,8 +87,8 @@ export async function handleCreateAppointment(args: CreateAppointmentInput, cont
 	return {
 		success: true,
 		appointmentId: inserted.id,
-		patientId: args.patientId,
-		doctorId: args.doctorId,
+		patientId,
+		doctorId,
 		startTime: start.toISOString(),
 		endTime: end.toISOString(),
 		durationMinutes: duration,

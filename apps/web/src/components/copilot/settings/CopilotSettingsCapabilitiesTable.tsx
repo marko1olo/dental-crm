@@ -65,7 +65,34 @@ export function CopilotSettingsCapabilitiesTable({ runtimeMode }: CopilotSetting
 				</div>
 			</div>
 
-			<div className="border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
+			{/* Мобильный вид (Apple HIG Grouped Cards, 0px горизонтального скролла) */}
+			<div className="sm:hidden space-y-2.5" data-testid="copilot-capabilities-mobile-cards">
+				{ENVIRONMENT_CAPABILITIES_MATRIX.map((cap) => (
+					<div key={cap.id} className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] space-y-2">
+						<div>
+							<div className="font-bold text-[var(--ink)] text-xs">{cap.name}</div>
+							<div className="text-[10px] text-[var(--muted)] mt-0.5 leading-tight">{cap.description}</div>
+						</div>
+						<div className="grid grid-cols-3 gap-1.5 pt-1 border-t border-[var(--line)]/60 text-[10px]">
+							<div className="flex flex-col items-center gap-1 text-center p-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]/40">
+								<span className="text-[9px] font-semibold text-[var(--muted)]">Браузер</span>
+								{renderCapabilityStatusBadge(cap.web)}
+							</div>
+							<div className="flex flex-col items-center gap-1 text-center p-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]/40">
+								<span className="text-[9px] font-semibold text-[var(--muted)]">Десктоп</span>
+								{renderCapabilityStatusBadge(cap.desktop)}
+							</div>
+							<div className="flex flex-col items-center gap-1 text-center p-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]/40">
+								<span className="text-[9px] font-semibold text-[var(--muted)]">Планшет</span>
+								{renderCapabilityStatusBadge(cap.mobile)}
+							</div>
+						</div>
+					</div>
+				))}
+			</div>
+
+			{/* Десктопная матрица (>640px) */}
+			<div className="hidden sm:block border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)]">
 				<div className="overflow-x-auto">
 					<table className="w-full text-left border-collapse text-[11px]">
 						<thead>
