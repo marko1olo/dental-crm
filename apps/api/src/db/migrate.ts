@@ -195,6 +195,7 @@ export async function runMigrations(
 					`INSERT INTO "${LEDGER_TABLE}" ("name", "checksum") VALUES ($1, $2)`,
 					[canonicalBaseline.name, canonicalBaseline.checksum],
 				);
+				ledger.set(canonicalBaseline.name, canonicalBaseline.checksum);
 
 				for (const m of migrations) {
 					if (m.name !== CANONICAL_BASELINE_FILE && m.migrationNumber <= SQUASHED_THRESHOLD) {
@@ -202,6 +203,7 @@ export async function runMigrations(
 							`INSERT INTO "${LEDGER_TABLE}" ("name", "checksum") VALUES ($1, $2) ON CONFLICT DO NOTHING`,
 							[m.name, m.checksum],
 						);
+						ledger.set(m.name, m.checksum);
 					}
 				}
 

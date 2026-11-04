@@ -1,5 +1,5 @@
 import type { DenteTelegramOutboxRuntimeScope } from "../../services/telegram/telegramLegacyMemoryStore.js";
-import { resolveTelegramRuntimeContext } from "./telegramRuntimeResolver.js";
+import { resolveTelegramRuntimeContext } from "./telegramRuntimeContext.js";
 import type { TelegramRuntimeContext } from "./types.js";
 import { parseTelegramOutboxRuntimeScopeQuery } from "./telegramUtils.js";
 
