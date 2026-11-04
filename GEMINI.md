@@ -18,7 +18,7 @@
    - Анатомическая одонтограмма: [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md) (viewBox 100x218, Wheeler 2.5D, 120 FPS).
    - Финансы и касса 54-ФЗ: [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) (`amountKopecks`, BIGINT, сплит-чеки, семейный баланс).
    - Склад и расходники: [`WAREHOUSE_AND_SUPPLY.md`](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md) (пакетное списание по техкартам, Soft Negative Stock).
-   - Документооборот: [`DOCUMENTS_LIFECYCLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) (карта 043/у, ИДС 1051н, справки ФНС).
+   - Документооборот: [`DOCUMENTS_LIFECYCLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md) (медицинская карта ЭМК, согласия ИДС, справки ФНС).
    - ИИ-Ассистент: [`AI_ASSISTANT_RULES.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md) & [`AI_ASSISTANT_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md).
    - Мобильный дизайн: [`MOBILE_DESIGN_APPLE_HIG.md`](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md) (тач $\ge 44\times 44$px, Bottom Sheets, 0px скролла).
    - Аудит конкурентов: [`docs/competitive-audit/FEATURES_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md).
@@ -40,7 +40,7 @@
 10. **Мандаты 8d / 8al / 8am (8 осей скриншотов):** Презумпция 100% брака: 0 клиппинга/многоточий, ровно 1 Primary CTA, Segmented Controls, 0px скролла, Sentence case без капслока, WCAG AAA контраст, темная тема без белых пятен, живой контейнер.
 11. **Мандат 8zg (Без дев-жаргона в UI):** Ноль утечек терминов («Мандат 8e», «без 10 чекбоксов», «modeFit»). Естественный русский язык.
 12. **Мандаты 8b / 8zi (Размер файлов):** 200–300 строк. Сложные — до 400–500 строк. Запрет микро-шредера. Декомпозиция монолитов по 6 гейтам `/decomposer`.
-13. **Мандаты 8e / 8n (ИИ DENTE):** Gemini, OpenAI, Anthropic, Whisper. Диктовка дневников SOAP 043/у, голос Ctrl+K. Легкий Web Copilot vs суверенный Desktop Native EXE (Romexis, Ez3D, Sidexis, 3Shape, COM-кассы, сетевые папки).
+13. **Мандаты 8e / 8n (ИИ DENTE):** Gemini, OpenAI, Anthropic, Whisper. Диктовка дневников SOAP в медкарту (ЭМК), голос Ctrl+K. Легкий Web Copilot vs суверенный Desktop Native EXE (Romexis, Ez3D, Sidexis, 3Shape, COM-кассы, сетевые папки).
 14. **Мандат 8e / JIT (Чтение по требованию):** Не читать всё подряд на старте. Читать через `read_file` целевой код. Документация — строго JIT.
 15. **Мандаты 8aq / 8al (Запрет сирот):** Компоненты смонтированы в `App.tsx`. Запрещены компоненты-сироты и изолированные `*_preview.html`.
 16. **Мандаты 8t / 8wx (Защита хоста):** Куча Node.js `--max-old-space-size=2048`. Таймауты тестов $\le 10$с. Единоличный `typecheck` запускает только L1 Оркестратор.
