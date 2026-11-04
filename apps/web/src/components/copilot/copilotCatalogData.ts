@@ -88,7 +88,7 @@ export const CLINICAL_QUICK_PRESETS: ClinicalQuickPreset[] = [
   { id: "preset-phys-norm", label: "Протокол осмотра (норма)", prompt: "Зафиксируй физиологическую норму: соматически здоров, зубные ряды санированы", actionBadge: "0-клик норма", category: "soap" },
   { id: "preset-caries-16", label: "Кариес 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
   { id: "preset-caries-16-full", label: "Лечение кариеса 16", prompt: "Зафиксируй кариес дентина зуба 16, препарирование полости I класс и нанокомпозит", actionBadge: "Одонтограмма", category: "odontogram" },
-  { id: "preset-extraction-38", label: "Удаление дистопированного 38", prompt: "Протокол операции: атипичное удаление ретинированного дистопированного зуба 38", actionBadge: "Хирургия", category: "soap" },
+  { id: "preset-extraction-38", label: "Удаление 38", prompt: "Протокол операции: атипичное удаление ретинированного дистопированного зуба 38", actionBadge: "Хирургия", category: "soap" },
   { id: "preset-implant-turnkey", label: "Смета на имплантацию под ключ", prompt: "Сформируй комплексную смету на дентальную имплантацию под ключ с коронкой", actionBadge: "Касса и сметы", category: "billing" },
   { id: "preset-septanest", label: "Анестезия септанест", prompt: "Инфильтрационная анестезия: Септанест 1:100 000, 1.7 мл, без осложнений", actionBadge: "Анестезия", category: "pharmacology" },
   { id: "preset-cofferdam", label: "Коффердам", prompt: "Изоляция операционного поля коффердамом с клампом, фиксация надежная", actionBadge: "Изоляция", category: "soap" },

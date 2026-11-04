@@ -11,11 +11,13 @@ import {
 } from "lucide-react";
 import {
 	useCopilotStore,
+	type AiProvider,
 	type AiSpeedMode,
 	type AiTrustLevel,
 	type ClinicalSpecialization,
 	type CopilotRuntimeEnvironment,
 	type DiaryTemplate,
+	type ModelRoutingMode,
 	type TomographyViewerApp,
 	type WebSpeechSensitivity,
 } from "../../store/copilotStore";
@@ -45,6 +47,10 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [activeTab, setActiveTab] = useState<SettingsTab>("intelligence");
 	const [trustLevel, setTrustLevelState] = useState<AiTrustLevel>(settings.trustLevel);
 	const [model, setModelState] = useState<string>(settings.model);
+	const [modelRoutingMode, setModelRoutingMode] = useState<ModelRoutingMode>(settings.modelRoutingMode || "server_managed");
+	const [byokProvider, setByokProvider] = useState<AiProvider>(settings.byokProvider || "gemini");
+	const [byokApiKey, setByokApiKey] = useState<string>(settings.byokApiKey || "");
+	const [byokModel, setByokModel] = useState<string>(settings.byokModel || "gemini-2.5-flash");
 	const [speedMode, setSpeedModeState] = useState<AiSpeedMode>(settings.speedMode);
 	const [showThinkingProcess, setShowThinkingState] = useState<boolean>(settings.showThinkingProcess);
 	const [clinicalSpecialization, setSpecState] = useState<ClinicalSpecialization>(settings.clinicalSpecialization);
@@ -90,11 +96,15 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	if (!isOpen) return null;
 
 	const handleSave = () => {
-		const targetModel = AI_MODELS.find((m) => m.id === model);
+		const targetModel = AI_MODELS.find((m) => m.id === (modelRoutingMode === "custom_byok" ? byokModel : model));
 		updateSettings({
 			trustLevel,
-			model,
-			provider: targetModel?.provider || "gemini",
+			model: modelRoutingMode === "custom_byok" ? byokModel : "server_managed",
+			modelRoutingMode,
+			byokProvider,
+			byokApiKey,
+			byokModel,
+			provider: modelRoutingMode === "custom_byok" ? byokProvider : (targetModel?.provider || "gemini"),
 			speedMode,
 			showThinkingProcess,
 			clinicalSpecialization,
@@ -120,7 +130,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	return (
 		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
-			<div className="relative z-10 w-full max-w-3xl max-h-[92vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
+			<div className="relative z-10 w-full max-w-4xl max-h-[92vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
 				{/* Apple HIG тактильный Drag Handle на мобильных экранах */}
 				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
 					<div className="w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
@@ -239,6 +249,14 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setCustomInstructions={setCustomDoctorInstructions}
 							model={model}
 							setModel={setModelState}
+							modelRoutingMode={modelRoutingMode}
+							setModelRoutingMode={setModelRoutingMode}
+							byokProvider={byokProvider}
+							setByokProvider={setByokProvider}
+							byokApiKey={byokApiKey}
+							setByokApiKey={setByokApiKey}
+							byokModel={byokModel}
+							setByokModel={setByokModel}
 							speedMode={speedMode}
 							setSpeedMode={setSpeedModeState}
 							showThinkingProcess={showThinkingProcess}

@@ -27,9 +27,8 @@ export type CopilotStudioTab = "dialog" | "actions" | "workstation" | "memory";
 export interface CopilotStudioModalProps {
   isOpen: boolean; onClose: () => void; activeTooth?: number | null;
   patientId?: string | null; patientName?: string | null; activeVisitId?: string | null;
-  initialTab?: CopilotStudioTab; initialMessages?: CopilotChatMessage[];
+  initialTab?: CopilotStudioTab; initialMessages?: CopilotChatMessage[]; isThinking?: boolean; thoughtProcess?: string;
 }
-
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 
 export interface CopilotChatMessage {
@@ -43,16 +42,20 @@ const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [
   { id: "msg-init-2", role: "assistant", timestamp: "10:16", applied: false, text: "Диагноз: K02.1 Глубокий кариес дентина (Зуб 36). Назначено препарирование, изолирующая прокладка и реставрация нанокомпозитом под инфильтрационной анестезией Артикаин 1.7 мл.", citation: "Клинические рекомендации СтАР / ITI Consensus", actionProposal: { id: "act-init-1", toolName: CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, description: "Запись протокола приёма и сметы в карту пациента", payload: { tooth: 36, diagnosis: "K02.1" } } },
 ];
 
+const parseChatMsgs = (list?: any[]): CopilotChatMessage[] => (list || []).map((m, i) => ({ id: m.id || m.callId || `msg-${i}`, role: m.role || (m.kind === "tool" ? "assistant" : "user"), text: m.text || m.content || (m.kind === "tool" ? `Выполнен инструмент: ${m.name}` : ""), timestamp: m.timestamp || "10:00", applied: m.applied, citation: m.citation, actionProposal: m.actionProposal }));
+
 export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
-  isOpen, onClose, activeTooth = 36, patientId = "pat-active", patientName = "Иванов Иван Иванович", activeVisitId, initialTab = "dialog", initialMessages,
+  isOpen, onClose, activeTooth = 36, patientId = "pat-active", patientName = "Иванов Иван Иванович", activeVisitId, initialTab = "dialog", initialMessages, isThinking, thoughtProcess,
 }) => {
   const [activeTab, setActiveTab] = useState<CopilotStudioTab>(initialTab);
   const { settings, memoryFacts, activeThreadId, threadMessages, saveThreadMessages, setRuntimeMode, isSettingsOpen, setSettingsOpen, isHistoryOpen, setHistoryOpen, threads, selectThread, addToolLog } = useCopilotStore();
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
 
   const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (
-    initialMessages ?? ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : [])
+    initialMessages && initialMessages.length > 0 ? parseChatMsgs(initialMessages) : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : [])
   ));
+  useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
+  useEffect(() => { if (initialTab) setActiveTab(initialTab); }, [initialTab]);
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const [appliedStatus, setAppliedStatus] = useState<boolean>(false);
   const [speechReport, setSpeechReport] = useState<SpeechEngineHealthReport>(() => inspectSpeechEngineHealth());
@@ -61,7 +64,6 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const [currentThought, setCurrentThought] = useState<string>("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const voice = useVoiceEngine({ lang: "ru-RU", continuous: true });
-
   useEffect(() => { setSpeechReport(inspectSpeechEngineHealth()); }, []);
 
   // Автоматическое определение среды исполнения без ручных переключателей
@@ -133,18 +135,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
-          messages: [{ role: "user", content: query }],
-          patientId: toValidUuid(patientId),
-          activeVisitId: toValidUuid(activeVisitId),
-          stream: true,
-          runtimeMode: apiRuntimeMode,
-          trustLevel: settings.trustLevel,
-          granularPermissions: settings.granularPermissions,
-          customInstructions: settings.customDoctorInstructions,
-          memoryFacts: memoryFacts.map((m) => m.fact),
-          doctorSpecialization: settings.clinicalSpecialization,
-          speedMode: settings.speedMode,
+          messages: [{ role: "user", content: query }], patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId),
+          stream: true, runtimeMode: apiRuntimeMode, trustLevel: settings.trustLevel, granularPermissions: settings.granularPermissions,
+          customInstructions: settings.customDoctorInstructions, memoryFacts: memoryFacts.map((m) => m.fact),
+          doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode,
           activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
+          modelRoutingMode: settings.modelRoutingMode, byokProvider: settings.byokProvider, byokApiKey: settings.byokApiKey, byokModel: settings.byokModel,
         }),
       });
 
@@ -341,7 +337,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                 ))
               )}
 
-              <CopilotThinkingIndicator isThinking={isStreaming} activeTooth={activeTooth} speedMode={speedMode} showThinkingProcess={showThinkingProcess} thoughtProcess={currentThought || undefined} />
+              <CopilotThinkingIndicator isThinking={isStreaming || Boolean(isThinking)} activeTooth={activeTooth} speedMode={speedMode} showThinkingProcess={showThinkingProcess} thoughtProcess={thoughtProcess || currentThought || undefined} />
               <div ref={messagesEndRef} />
             </div>
 

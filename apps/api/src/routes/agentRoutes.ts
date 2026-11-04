@@ -47,6 +47,10 @@ const agentChatBodySchema = z.object({
 	activeTooth: z.number().int().min(11).max(85).nullable().optional(),
 	swarmRole: z.enum(["orchestrator", "triage", "odontogram_inquisitor", "billing_sentinel", "vision_specialist"]).optional(),
 	fallbackToDeterministicAgent: z.boolean().optional(),
+	modelRoutingMode: z.enum(["server_managed", "custom_byok"]).optional(),
+	byokProvider: z.string().optional(),
+	byokApiKey: z.string().optional(),
+	byokModel: z.string().optional(),
 });
 
 function formatSseMessage(event: string, data: unknown): string {
@@ -138,6 +142,10 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 						activeTooth: body.activeTooth,
 						swarmRole: body.swarmRole,
 						fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
+						modelRoutingMode: body.modelRoutingMode,
+						byokProvider: body.byokProvider,
+						byokApiKey: body.byokApiKey,
+						byokModel: body.byokModel,
 						signal: abortController.signal,
 						onEvent: (event: AgentHarnessEvent) => {
 							if (!reply.raw.writableEnded) {
@@ -183,6 +191,10 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 					activeTooth: body.activeTooth,
 					swarmRole: body.swarmRole,
 					fallbackToDeterministicAgent: body.fallbackToDeterministicAgent,
+					modelRoutingMode: body.modelRoutingMode,
+					byokProvider: body.byokProvider,
+					byokApiKey: body.byokApiKey,
+					byokModel: body.byokModel,
 					signal: abortController.signal,
 				});
 

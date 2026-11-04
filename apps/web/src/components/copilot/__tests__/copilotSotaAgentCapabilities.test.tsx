@@ -19,6 +19,8 @@ import { CopilotSettingsGeneralTab } from "../settings/CopilotSettingsGeneralTab
 import { CopilotThinkingIndicator } from "../CopilotThinkingIndicator";
 import { CopilotHistoryDrawer } from "../CopilotHistoryDrawer";
 import { CopilotMemoryTab } from "../CopilotMemoryTab";
+import { CopilotSettingsModelRouting } from "../settings/CopilotSettingsModelRouting";
+import { CopilotContextTelemetryBar } from "../telemetry/CopilotContextTelemetryBar";
 import { buildAgentSystemPrompt } from "../../../../../api/src/ai/harness/systemPromptBuilder.js";
 
 describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
@@ -148,5 +150,53 @@ describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 
 		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
 		assert.strictEqual(emojiRegex.test(html), false, "Must contain strictly 0 cartoon emojis in CopilotMemoryTab");
+	});
+
+	it("8. CopilotSettingsModelRouting defaults to server managed routing and reveals BYOK controls only when requested", () => {
+		// Server managed view
+		const serverHtml = renderToString(
+			<CopilotSettingsModelRouting
+				modelRoutingMode="server_managed"
+				setModelRoutingMode={() => {}}
+				byokProvider="gemini"
+				setByokProvider={() => {}}
+				byokApiKey=""
+				setByokApiKey={() => {}}
+				byokModel="gemini-2.5-flash"
+				setByokModel={() => {}}
+			/>
+		);
+		assert.ok(serverHtml.includes("Умный серверный роутер DENTE активен"));
+		assert.ok(serverHtml.includes("Серверный роутинг"));
+		assert.strictEqual(serverHtml.includes("Персональный API-ключ"), false, "BYOK inputs must be hidden in server_managed mode");
+
+		// BYOK view
+		const byokHtml = renderToString(
+			<CopilotSettingsModelRouting
+				modelRoutingMode="custom_byok"
+				setModelRoutingMode={() => {}}
+				byokProvider="gemini"
+				setByokProvider={() => {}}
+				byokApiKey="test-key"
+				setByokApiKey={() => {}}
+				byokModel="gemini-2.5-flash"
+				setByokModel={() => {}}
+			/>
+		);
+		assert.ok(byokHtml.includes("Персональный API-ключ"));
+		assert.ok(byokHtml.includes("Провайдер ИИ"));
+	});
+
+	it("9. CopilotContextTelemetryBar renders intelligent server routing badge without hardcoded model strings", () => {
+		useCopilotStore.setState((s) => ({
+			...s,
+			settings: {
+				...s.settings,
+				modelRoutingMode: "server_managed",
+			},
+		}));
+
+		const html = renderToString(<CopilotContextTelemetryBar activeTooth={16} />);
+		assert.ok(html.includes("DENTE Интеллект (Авто)"), "Must render dynamic server-managed intelligence badge");
 	});
 });

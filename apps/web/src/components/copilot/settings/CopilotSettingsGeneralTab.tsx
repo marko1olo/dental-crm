@@ -14,16 +14,12 @@ import type {
 	ClinicalSpecialization,
 	DiaryTemplate,
 	GranularAgentPermissions,
+	ModelRoutingMode,
 } from "../../../store/copilotStore";
 import { CopilotSettingsGranularPermissions } from "./CopilotSettingsGranularPermissions";
+import { CopilotSettingsModelRouting, MODERN_BYOK_MODELS } from "./CopilotSettingsModelRouting";
 
-export const AI_MODELS: Array<{ id: string; provider: AiProvider; label: string; note: string }> = [
-	{ id: "gemini-2.5-flash", provider: "gemini", label: "Gemini 2.5 Flash", note: "Мгновенный отклик у кресла" },
-	{ id: "gemini-2.5-pro", provider: "gemini", label: "Gemini 2.5 Pro", note: "Глубокий анализ КЛКТ патологий" },
-	{ id: "gpt-4o", provider: "openai", label: "OpenAI GPT-4o", note: "Мультимодальный клинический разбор" },
-	{ id: "claude-3-7-sonnet", provider: "anthropic", label: "Claude 3.7 Sonnet", note: "Гибридный Reasoner с CoT" },
-	{ id: "deepseek-v3", provider: "deepseek", label: "DeepSeek V3 / R1", note: "Облачный клинический Reasoner" },
-];
+export const AI_MODELS = MODERN_BYOK_MODELS;
 
 export const TRUST_LEVELS: Array<{
 	id: AiTrustLevel;
@@ -60,6 +56,10 @@ export interface CopilotSettingsGeneralTabProps {
 	granularPermissions?: GranularAgentPermissions; setGranularPermissions?: (perms: GranularAgentPermissions) => void;
 	customInstructions?: string; setCustomInstructions?: (val: string) => void;
 	model: string; setModel: (m: string) => void;
+	modelRoutingMode?: ModelRoutingMode; setModelRoutingMode?: (mode: ModelRoutingMode) => void;
+	byokProvider?: AiProvider; setByokProvider?: (p: AiProvider) => void;
+	byokApiKey?: string; setByokApiKey?: (k: string) => void;
+	byokModel?: string; setByokModel?: (m: string) => void;
 	speedMode: AiSpeedMode; setSpeedMode: (mode: AiSpeedMode) => void;
 	showThinkingProcess: boolean; setShowThinkingProcess: (val: boolean) => void;
 	clinicalSpecialization: ClinicalSpecialization; setClinicalSpecialization: (spec: ClinicalSpecialization) => void;
@@ -70,6 +70,10 @@ export interface CopilotSettingsGeneralTabProps {
 export function CopilotSettingsGeneralTab({
 	trustLevel, setTrustLevel, granularPermissions, setGranularPermissions,
 	customInstructions, setCustomInstructions, model, setModel,
+	modelRoutingMode = "server_managed", setModelRoutingMode = () => {},
+	byokProvider = "gemini", setByokProvider = () => {},
+	byokApiKey = "", setByokApiKey = () => {},
+	byokModel = "gemini-2.5-flash", setByokModel = () => {},
 	speedMode, setSpeedMode, showThinkingProcess, setShowThinkingProcess,
 	clinicalSpecialization, setClinicalSpecialization, diaryTemplate, setDiaryTemplate,
 	memoryCount, onOpenMemory,
@@ -118,33 +122,16 @@ export function CopilotSettingsGeneralTab({
 				</div>
 			</section>
 
-			<section className="space-y-2">
-				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
-					<Cpu size={14} className="text-[var(--teal,#0d9488)]" />
-					<span>Клиническая языковая модель</span>
-				</label>
-				<div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-					{AI_MODELS.map((m) => {
-						const isSelected = model === m.id;
-						return (
-							<button
-								key={m.id}
-								type="button"
-								onClick={() => setModel(m.id)}
-								className={`p-2.5 rounded-xl border flex flex-col justify-center text-left transition-all cursor-pointer w-full ${
-									isSelected ? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.08))]" : "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
-								}`}
-							>
-								<div className="flex items-center justify-between w-full">
-									<span className="font-bold text-[var(--ink)]">{m.label}</span>
-									{isSelected && <Check size={13} className="text-[var(--teal,#0d9488)] shrink-0" />}
-								</div>
-								<p className="mt-0.5 text-[10px] text-[var(--muted)] truncate w-full">{m.note}</p>
-							</button>
-						);
-					})}
-				</div>
-			</section>
+			<CopilotSettingsModelRouting
+				modelRoutingMode={modelRoutingMode}
+				setModelRoutingMode={setModelRoutingMode}
+				byokProvider={byokProvider}
+				setByokProvider={setByokProvider}
+				byokApiKey={byokApiKey}
+				setByokApiKey={setByokApiKey}
+				byokModel={byokModel}
+				setByokModel={setByokModel}
+			/>
 
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5">
 				<div className="flex items-center justify-between gap-2">

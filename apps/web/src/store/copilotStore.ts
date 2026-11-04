@@ -22,6 +22,7 @@ import {
 export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
 export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
 export type AiSpeedMode = "turbo" | "deep_reasoning";
+export type ModelRoutingMode = "server_managed" | "custom_byok";
 export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "orthodontics" | "perio" | "pediatric";
 export type DiaryTemplate = "soap" | "form043" | "express";
 export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chairside_tablet" | "mobile_tablet";
@@ -110,6 +111,11 @@ export interface CopilotSettings {
 	trustLevel: AiTrustLevel;
 	provider: AiProvider;
 	model: string;
+	modelRoutingMode: ModelRoutingMode;
+	byokProvider: AiProvider;
+	byokApiKey: string;
+	byokModel: string;
+	byokBaseUrl?: string;
 	speedMode: AiSpeedMode;
 	showThinkingProcess: boolean;
 	clinicalSpecialization: ClinicalSpecialization;
@@ -175,7 +181,11 @@ export interface CopilotStoreState {
 const DEFAULT_SETTINGS: CopilotSettings = {
 	trustLevel: "balanced",
 	provider: "gemini",
-	model: "gemini-2.5-flash",
+	model: "server_managed",
+	modelRoutingMode: "server_managed",
+	byokProvider: "gemini",
+	byokApiKey: "",
+	byokModel: "gemini-2.5-flash",
 	speedMode: "turbo",
 	showThinkingProcess: true,
 	clinicalSpecialization: "therapy",

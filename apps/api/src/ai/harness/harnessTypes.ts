@@ -128,6 +128,10 @@ export interface AgentHarnessParams {
 	speedMode?: "turbo" | "deep_reasoning" | undefined;
 	activeTooth?: number | null | undefined;
 	fallbackToDeterministicAgent?: boolean | undefined;
+	modelRoutingMode?: "server_managed" | "custom_byok" | undefined;
+	byokProvider?: string | undefined;
+	byokApiKey?: string | undefined;
+	byokModel?: string | undefined;
 }
 
 export interface AgentHarnessResult {

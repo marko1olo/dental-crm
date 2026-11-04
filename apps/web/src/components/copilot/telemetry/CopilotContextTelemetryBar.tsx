@@ -38,7 +38,9 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	const tokenPercent = Math.round(tokenRatio * 100);
 
 	const isLocal = settings.runtimeMode === "desktop_native" || telemetry.gatewayStatus === "local_deterministic";
-	const modelLabel = settings.model.includes("flash") ? "Gemini 2.5 Flash" : (settings.model || "Gemini 2.5 Flash");
+	const modelLabel = settings.modelRoutingMode === "custom_byok"
+		? (settings.byokModel || settings.model || "Кастомная модель")
+		: "DENTE Интеллект (Авто)";
 	const latencyLabel = isLocal ? "<5мс" : telemetry.latencyMs > 0 ? `~${telemetry.latencyMs}мс` : "~0мс";
 
 	// Threshold status
