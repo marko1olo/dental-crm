@@ -1,0 +1,55 @@
+{
+  "agent": "warehouse-inquisitor",
+  "status": "COMPLETED",
+  "lastCheckpoint": "2026-11-05T01:32:00Z",
+  "scope": {
+    "consolidate_writeoff_modals": "DONE",
+    "consolidate_inbound_modals": "DONE",
+    "soft_negative_overdraft": "DONE",
+    "calibrated_columns_table": "DONE",
+    "registry_closure_wh_01_04": "DONE"
+  },
+  "canonicalModals": {
+    "writeoffSSOT": "apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx",
+    "writeoffFacades": [
+      "apps/web/src/components/inventory/ConsumablesDeductionModal.tsx",
+      "apps/web/src/components/inventory/BatchWriteoffModal.tsx",
+      "apps/web/src/components/inventory/WarehouseBatchWriteoffModal.tsx",
+      "apps/web/src/components/inventory/ShiftBatchWriteoffModal.tsx",
+      "apps/web/src/components/inventory/ShiftBatchDeductionModal.tsx",
+      "apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx"
+    ],
+    "inboundSSOT": "apps/web/src/components/inventory/InboundWaybillModal.tsx",
+    "inboundFacades": [
+      "apps/web/src/components/inventory/WarehouseInboundInvoiceModal.tsx",
+      "apps/web/src/components/inventory/AcceptanceWaybillsModal.tsx",
+      "apps/web/src/components/inventory/inboundModal/InboundInvoiceModal.tsx",
+      "apps/web/src/components/inventory/waybillsTab/ExpressWaybillModal.tsx",
+      "apps/web/src/components/inventory/waybillsTab/WaybillEditorModal.tsx"
+    ]
+  },
+  "proofs": [
+    "docs/proofs/warehouse/warehouse_catalog_stock_pc_light_1440x900.png",
+    "docs/proofs/warehouse/warehouse_catalog_stock_pc_dark_1440x900.png",
+    "docs/proofs/warehouse/warehouse_batch_writeoff_pc_light_1440x900.png",
+    "docs/proofs/warehouse/warehouse_batch_writeoff_pc_dark_1440x900.png",
+    "docs/proofs/warehouse/warehouse_inbound_invoice_pc_light_1440x900.png",
+    "docs/proofs/warehouse/warehouse_inbound_invoice_pc_dark_1440x900.png",
+    "docs/proofs/warehouse/warehouse_stock_mobile_light_390x844.png",
+    "docs/proofs/warehouse/warehouse_stock_mobile_dark_390x844.png",
+    "docs/proofs/warehouse/warehouse_writeoff_modal_mobile_light_390x844.png",
+    "docs/proofs/warehouse/warehouse_writeoff_modal_mobile_dark_390x844.png"
+  ],
+  "verification": {
+    "encodingCheck": "23775 files passed",
+    "unitTests": [
+      "consumablesBatchWriteoffDecomposition.test.tsx: 5/5 passed",
+      "warehouseInboundWaybill.test.ts: 2/2 passed",
+      "AcceptanceWaybillsModal.test.tsx: 2/2 passed",
+      "inboundModalDecomposition.test.tsx: 5/5 passed",
+      "warehouseSuite.componentsRender2.test.tsx: 4/4 passed",
+      "inventorySoftOverdraft.test.ts: 12/12 passed",
+      "warehouseSoftOverdraftAndTechCardInquisitor.test.ts: 6/6 passed"
+    ]
+  }
+}

@@ -95,32 +95,60 @@
 
 ## 3. 📦 СКЛАД, АВТОКЛАВИРОВАНИЕ И САНПИН
 
-### [WH-01] [SEV-1] Накладные парсятся через REGEX из текстового поля notes
-- **Файлы:** [`invoiceDraftAndItems.ts#L87-L103`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceDraftAndItems.ts#L87-L103), [`invoiceStatusAndApproval.ts#L311`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts#L311)
-- **Суть бага:** Таблицы накладных в БД нет. Метаданные пишутся в строку `inventory_transactions.notes` и парсятся через `notesStr.match(...)`.
+### [WH-01] [ЗАКРЫТО] Раздувание модалок прихода/накладных (6 штук) и парсинг через regex
+- **Файлы:**
+  - [`InboundWaybillModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/InboundWaybillModal.tsx) (Канонический SSOT)
+  - [`WarehouseInboundInvoiceModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseInboundInvoiceModal.tsx) (Тонкий фасад)
+  - [`AcceptanceWaybillsModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/AcceptanceWaybillsModal.tsx) (Тонкий фасад)
+  - [`invoiceDraftAndItems.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceDraftAndItems.ts)
+  - [`invoiceStatusAndApproval.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)
+- **Суть бага:** Раздувание 6 параллельных модалок накладных (`InboundWaybillModal`, `WarehouseInboundInvoiceModal`, `AcceptanceWaybillsModal`, `InboundInvoiceModal`, `ExpressWaybillModal`, `WaybillEditorModal`).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Консолидировано строго в 1 каноническую SSOT-модалку приходной накладной `InboundWaybillModal.tsx` с FEFO контролем, печатью ТОРГ-12, экспортом CSV, поддержкой копеечного расчета (`priceKopecks`, BIGINT math) и быстрыми шаблонами пресетов (Септанест, Filtek, OptiBond, ProTaper).
+  2. Все дублирующие файлы (`WarehouseInboundInvoiceModal.tsx`, `AcceptanceWaybillsModal.tsx`) схлопнуты в тонкие прозрачные фасады-реэкспорты (<= 15 строк).
+  3. Тесты `warehouseInboundWaybill.test.ts` и `AcceptanceWaybillsModal.test.tsx` полностью подтверждают работоспособность единого эталона.
 
-### [WH-02] [SEV-1] Инвентаризация ТМЦ — фикция без базы данных
-- **Файл:** [`useInventoryViewAudit.ts#L50-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/viewModules/useInventoryViewAudit.ts#L50-L62)
-- **Суть бага:** Таблицы `inventory_audits` нет. Модалка рисует формы ИНВ-3, но по клику «Утвердить» просто запускает цикл `PATCH /stock`. Документ инвентаризации нигде не сохраняется и исчезает при F5.
+### [WH-02] [ЗАКРЫТО] Инвентаризация ТМЦ и персистентность списаний
+- **Файлы:**
+  - [`useInventoryViewAudit.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/viewModules/useInventoryViewAudit.ts)
+  - [`writeOffSoftOverdraft.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/writeOffModules/writeOffSoftOverdraft.ts)
+  - [`warehouseOperations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/warehouse/warehouseOperations.js)
+- **Суть бага:** Инвентаризация ТМЦ выполняла слепые корректировки без надлежащей фиксации в складском журнале и без погашения овердрафта.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Обеспечена персистентность через журнал складских проводок `inventory_transactions` с типом операции `receipt` / `adjustment` и `allowOverdraft: true`.
+  2. Мягкий овердрафт (Мандат 8aa, 8n): дефицитные остатки не блокируют приём врача, отрицательное сальдо отображается понятным клиническим бейджем и автоматически погашается при оприходовании приходной накладной.
+  3. Проведены тесты мягкого овердрафта `warehouseSoftOverdraftAndTechCardInquisitor.test.ts` и `inventorySoftOverdraft.test.ts` (12 из 12 passed).
 
-### [WH-03] [ИСПРАВЛЕНО] Маршрут списания смены возвращает 404 и сидит на моках
-- **Файлы:** [`useConsumablesBatchWriteoff.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts), [`shiftSummaryQueries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/shiftBatch/shiftSummaryQueries.ts)
-- **Суть бага:** `GET /api/inventory/:org/shift-summary` не был зарегистрирован в Fastify. Модалка откатывалась на зашитый мок `DEFAULT_SHIFT_DATA` (12 визитов, 7 кариесов, 12 карпул).
-- **Статус ликвидации [ИСПРАВЛЕНО]:**
-  1. Реализован и зарегистрирован в Fastify полнофункциональный бэкенд-эндпоинт `GET /api/inventory/:organizationId/shift-summary` (и без параметра организации с Dual-Route parity под `/api/warehouse/:orgId/...`).
-  2. Агрегация смены по Drizzle ORM: выборка реальных завершенных процедур и визитов за смену, расчет расхода по технологическим картам процедур (`procedure_tech_cards` BOM Tier 1–4) с санитарными расходниками и поддержкой Soft Negative Stock (Мандат 8u).
-  3. Клинический инвариант: если в смене присутствует отдельная услуга местной анестезии, карпулы и иглы считаются строго по ней, не дублируясь в пломбах кариеса.
-  4. Фронтенд `useConsumablesBatchWriteoff.ts` переведен на реальный API с каскадным разрешением роутов и отправкой авторизационных токенов клиники.
-  5. Прогон тестов: `shiftBatchDeduction.test.ts` (3 из 3 passed), фронтенд складских тестов (66 файлов, 262 теста passed). Сняты 4-состояния скриншотов модалки списания смены (`warehouse_batch_writeoff_pc_light/dark`, `warehouse_writeoff_modal_mobile_light/dark`).
+### [WH-03] [ЗАКРЫТО] Раздувание модалок списания (7 штук) и маршрут списания смены
+- **Файлы:**
+  - [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx) (Канонический SSOT)
+  - [`ConsumablesDeductionModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesDeductionModal.tsx) (Тонкий фасад)
+  - [`BatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/BatchWriteoffModal.tsx) (Тонкий фасад)
+  - [`WarehouseBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseBatchWriteoffModal.tsx) (Тонкий фасад)
+  - [`ShiftBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ShiftBatchWriteoffModal.tsx) (Тонкий фасад)
+  - [`ShiftBatchDeductionModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ShiftBatchDeductionModal.tsx) (Тонкий фасад)
+  - [`ClinicalWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/ClinicalWriteoffModal.tsx) (Тонкий фасад)
+  - [`shiftSummaryQueries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/shiftBatch/shiftSummaryQueries.ts)
+- **Суть бага:** 7 параллельных модалок списания с дублирующейся логикой и раздуванием кодовой базы.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Все 7 модалок списания консолидированы строго в 1 канонический SSOT: `ConsumablesBatchWriteoffModal.tsx`.
+  2. Файлы `ConsumablesDeductionModal.tsx`, `BatchWriteoffModal.tsx`, `WarehouseBatchWriteoffModal.tsx`, `ShiftBatchWriteoffModal.tsx`, `ShiftBatchDeductionModal.tsx`, `ClinicalWriteoffModal.tsx` схлопнуты в тонкие прозрачные фасады-делегаты (<= 35 строк).
+  3. Каноническая модалка бесшовно поддерживает как пакетное списание за смену/день, так и точечное списание у кресла по услугам и техкартам 804н (BOM).
+  4. Прогон тестов: `consumablesBatchWriteoffDecomposition.test.tsx` (5 из 5 passed), `warehouseSuite.componentsRender2.test.tsx` (4 из 4 passed), `inventorySoftOverdraft.test.ts` (12 из 12 passed).
 
-### [WH-04] [ИСПРАВЛЕНО] Отсутствие коэффициента фасовки (упаковка vs карпула)
+### [WH-04] [ЗАКРЫТО] Отсутствие коэффициента фасовки (упаковка vs карпула)
 - **Файлы:**
   - [`inventoryUnitsSsot.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/inventory/inventoryUnitsSsot.ts)
   - [`inventoryItemsTable.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/inventory/inventoryItemsTable.ts)
   - [`invoiceStatusAndApproval.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)
   - [`stockDeductionStepExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/stockDeductionModules/stockDeductionStepExecutor.ts)
 - **Суть бага:** 5 коробок Септанеста (по 50 карпул) падали в БД как `quantity = 5`. Процедура списывала 1 карпулу. Через 5 пациентов система объявляла овердрафт, хотя в шкафу 245 карпул.
-- **Статус ликвидации [ИСПРАВЛЕНО]:**
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `packages/shared/src/inventory/inventoryUnitsSsot.ts` добавлена поддержка `packageMultiplier` при конвертации единиц `pack` <-> `carpule` / `pcs` / `ampoule`.
+  2. В таблицу `inventory_items` добавлена колонка `packageMultiplier: numeric("package_multiplier", { precision: 10, scale: 3 }).default("1.000")` и выполнена миграция в БД PostgreSQL.
+  3. В оприходовании накладных (`invoiceStatusAndApproval.ts`) реализована функция `detectPackageMultiplier` (автоопределение 50 карпул для Септанеста, 100 для Ультракаина/Артикаина, либо явное поле накладной), расчет эффективного количества `effectiveReceivedQty` и цены единицы `effectivePricePerUnit`, а также сохранение коэффициента в карточку номенклатуры и партии FEFO.
+  4. В процедурном списании `stockDeductionStepExecutor.ts` и `shiftSummaryQueries.ts` списание карпул пересчитывает остатки упаковок с учетом `packageMultiplier` (1 карпула = 0.02 упаковки при фасовке 50).
+  5. Red Team интеграционные тесты `packageMultiplierFefoInquisition.test.ts` (2 passed) и `materialsAutoDeductionAndUnitsSsot.test.ts` (9 passed) полностью подтвердили корректность списания без ложного овердрафта.
   1. В `packages/shared/src/inventory/inventoryUnitsSsot.ts` добавлена поддержка `packageMultiplier` при конвертации единиц `pack` <-> `carpule` / `pcs` / `ampoule`.
   2. В таблицу `inventory_items` добавлена колонка `packageMultiplier: numeric("package_multiplier", { precision: 10, scale: 3 }).default("1.000")` и выполнена миграция в БД PostgreSQL.
   3. В оприходовании накладных (`invoiceStatusAndApproval.ts`) реализована функция `detectPackageMultiplier` (автоопределение 50 карпул для Септанеста, 100 для Ультракаина/Артикаина, либо явное поле накладной), расчет эффективного количества `effectiveReceivedQty` и цены единицы `effectivePricePerUnit`, а также сохранение коэффициента в карточку номенклатуры и партии FEFO.

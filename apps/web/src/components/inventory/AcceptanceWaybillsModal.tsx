@@ -1,6 +1,8 @@
 /**
  * apps/web/src/components/inventory/AcceptanceWaybillsModal.tsx
- * Канонический реэкспорт SSOT WarehouseInboundInvoiceModal (Мандаты 8b, 8e, 8n).
+ *
+ * Канонический реэкспорт SSOT InboundWaybillModal (Мандаты 8b, 8e, 8n).
  */
-export * from "./WarehouseInboundInvoiceModal.js";
-export { default } from "./WarehouseInboundInvoiceModal.js";
+
+export * from "./InboundWaybillModal.js";
+export { default } from "./InboundWaybillModal.js";

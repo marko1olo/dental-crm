@@ -32,6 +32,7 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly organizationId?: string | undefined;
 	readonly onWriteoffCompleted?: (() => void | Promise<void>) | undefined;
 	readonly onDeductionComplete?: (() => void | Promise<void>) | undefined;
+	readonly onConfirmDeduction?: ((items?: any) => void | Promise<void>) | undefined;
 	readonly onConfirmWriteoff?: ((doc?: any) => void | Promise<void>) | undefined;
 	readonly warehouseItems?: readonly unknown[] | undefined;
 	readonly currentStockMap?: Record<string, number> | undefined;
@@ -40,8 +41,10 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly onTabChange?: ((tab: string) => void) | undefined;
 	readonly procedureTitle?: string | undefined;
 	readonly serviceCode?: string | undefined;
+	readonly service804nCode?: string | undefined;
+	readonly doctorName?: string | undefined;
 	readonly patientName?: string | undefined;
-	readonly toothNumber?: number | undefined;
+	readonly toothNumber?: number | string | null | undefined;
 	readonly visitId?: string | undefined;
 	readonly isDeducting?: boolean | undefined;
 	readonly initialServices?: readonly unknown[] | undefined;
@@ -53,6 +56,8 @@ export interface ConsumablesBatchWriteoffModalProps {
 	readonly assistantFullName?: string | undefined;
 	readonly cabinetId?: string | undefined;
 	readonly defaultFormType?: string | undefined;
+	readonly confirmTestId?: string | undefined;
+	readonly confirmLabel?: string | undefined;
 }
 
 export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffModalProps> = ({
@@ -61,12 +66,23 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 	organizationId = "",
 	onWriteoffCompleted,
 	onDeductionComplete,
+	onConfirmDeduction,
 	onConfirmWriteoff,
 	patientName,
 	initialServices,
+	procedureTitle,
+	serviceCode,
+	service804nCode,
+	doctorName,
+	toothNumber,
 	stockBatches,
 	getHeaders,
+	confirmTestId,
+	confirmLabel,
 }) => {
+	const effectiveConfirm = onConfirmWriteoff || onConfirmDeduction;
+	const effectiveDeductionComplete = onDeductionComplete || onConfirmDeduction;
+
 	const {
 		data,
 		isSubmitting,
@@ -77,20 +93,21 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 		handleQuickAnesthesiaPackage,
 		handleQuickTherapy,
 		handleQuickSurgery,
+		handleQuickHygiene,
 	} = useConsumablesBatchWriteoff({
 		isOpen,
 		organizationId,
 		getHeaders,
 		stockBatches,
 		onWriteoffCompleted,
-		onDeductionComplete,
-		onConfirmWriteoff,
+		onDeductionComplete: effectiveDeductionComplete,
+		onConfirmWriteoff: effectiveConfirm,
 		onClose,
 	});
 
 	if (!isOpen) return null;
 
-	const isClinicalMode = Boolean(patientName || initialServices);
+	const isClinicalMode = Boolean(patientName || initialServices || procedureTitle || serviceCode || service804nCode);
 	const isEmptyServices = Boolean(initialServices && initialServices.length === 0);
 
 	const content = (
@@ -107,7 +124,8 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 		>
 			<div
 				className="relative w-full max-w-3xl rounded-t-[24px] sm:rounded-2xl bg-[var(--paper,#ffffff)] border-t sm:border border-[var(--line,#e2e8f0)] shadow-2xl flex flex-col max-h-[92vh] sm:max-h-[85vh] overflow-hidden text-[var(--ink,#0f172a)] pb-[max(0.75rem,env(safe-area-inset-bottom))]"
-				data-testid="clinical-writeoff-modal"
+				data-testid="consumables-deduction-modal"
+				data-cy="clinical-writeoff-dialog"
 			>
 				{/* Apple HIG: тактильный Drag Handle 36x5px для смартфонов */}
 				<div className="w-9 h-1.5 rounded-full bg-slate-400/40 dark:bg-slate-500/60 mx-auto mt-2.5 mb-1 sm:hidden shrink-0" aria-hidden="true" />
@@ -121,21 +139,24 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 						<div>
 							<div className="flex items-center gap-2">
 								<h3 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
-									{isClinicalMode ? "Клиническое списание материалов" : "Списание расходников за смену"}
+									{isClinicalMode ? "Клиническое списание материалов (Расходные материалы приёма)" : "Списание расходников за смену"}
 								</h3>
 								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
 									1 клик по техкартам
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)]">
-								{patientName ? `Пациент: ${patientName}` : `Автоматический расчет по ${data.shiftStats.completedVisitsCount} завершенным приёмам`}
+								{procedureTitle
+									? `${procedureTitle} • Расходные материалы приёма${toothNumber ? ` • Зуб ${toothNumber}` : ""}`
+									: patientName
+									? `Пациент: ${patientName}${doctorName ? ` • Врач: ${doctorName}` : ""}`
+									: `Автоматический расчет по ${data.shiftStats.completedVisitsCount} завершенным приёмам`}
 							</p>
 						</div>
 					</div>
 					<button
 						type="button"
 						onClick={onClose}
-						disabled={isSubmitting}
 						className="secondary-button p-2 min-h-[44px] min-w-[44px] flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] rounded-lg"
 						aria-label="Закрыть"
 					>
@@ -157,6 +178,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 								onQuickAnesthesiaPackageWriteoff={handleQuickAnesthesiaPackage}
 								onQuickTherapyWriteoff={handleQuickTherapy}
 								onQuickSurgeryWriteoff={handleQuickSurgery}
+								onQuickHygieneWriteoff={handleQuickHygiene}
 							/>
 
 							{/* Сводные показатели смены и предупреждение о мягком овердрафте */}
@@ -180,6 +202,8 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 					onPrintAct={handlePrintAct}
 					onCancel={onClose}
 					onConfirm={handleConfirmWriteoff}
+					confirmTestId={confirmTestId || (isClinicalMode ? "btn-confirm-deduction" : "btn-confirm-shift-batch-deduction")}
+					confirmLabel={confirmLabel || (isClinicalMode ? "✓ Списать расходные материалы" : "✓ Списать расходники смены")}
 				/>
 			</div>
 		</div>

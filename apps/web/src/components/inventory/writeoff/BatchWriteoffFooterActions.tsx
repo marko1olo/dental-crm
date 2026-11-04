@@ -6,13 +6,15 @@
  */
 
 import React from "react";
-import { PackageCheck, Printer, Zap } from "lucide-react";
+import { Loader2, Printer, Zap } from "lucide-react";
 
 export interface BatchWriteoffFooterActionsProps {
 	readonly isSubmitting: boolean;
 	readonly onPrintAct: () => void;
 	readonly onCancel: () => void;
 	readonly onConfirm: () => void;
+	readonly confirmTestId?: string | undefined;
+	readonly confirmLabel?: string | undefined;
 }
 
 export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProps> = ({
@@ -20,6 +22,8 @@ export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProp
 	onPrintAct,
 	onCancel,
 	onConfirm,
+	confirmTestId,
+	confirmLabel,
 }) => {
 	return (
 		<div className="p-3 sm:p-4 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 sm:gap-3 shrink-0">
@@ -39,7 +43,6 @@ export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProp
 				<button
 					type="button"
 					onClick={onCancel}
-					disabled={isSubmitting}
 					className="secondary-button px-4 py-2 min-h-[44px] text-sm text-[var(--ink,#0f172a)] border border-[var(--line,#e2e8f0)] rounded-lg hover:bg-[var(--paper,#ffffff)] transition-colors shrink-0"
 				>
 					Отмена
@@ -47,20 +50,20 @@ export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProp
 				<button
 					type="button"
 					onClick={onConfirm}
-					disabled={isSubmitting}
-					className="primary-button btn-confirm-shift-batch-deduction px-5 py-2.5 min-h-[44px] text-sm font-semibold rounded-lg flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-xs whitespace-nowrap"
+					className="primary-button btn-confirm-shift-batch-deduction btn-confirm-deduction px-5 py-2.5 min-h-[44px] text-sm font-semibold rounded-lg flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-xs whitespace-nowrap cursor-pointer"
 					style={{ background: "var(--teal, #0d9488)", color: "#ffffff" }}
-					data-testid="btn-confirm-shift-batch-deduction"
+					data-testid={confirmTestId || "btn-confirm-shift-batch-deduction"}
+					data-cy="btn-confirm-deduction"
 				>
 					{isSubmitting ? (
 						<>
-							<PackageCheck className="animate-spin shrink-0" size={16} />
+							<Loader2 className="animate-spin shrink-0" size={16} />
 							<span>Списание расходников...</span>
 						</>
 					) : (
 						<>
 							<Zap size={16} className="shrink-0" />
-							<span className="whitespace-nowrap">✓ Списать расходники смены</span>
+							<span className="whitespace-nowrap">{confirmLabel || "✓ Списать расходники смены"}</span>
 						</>
 					)}
 				</button>

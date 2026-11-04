@@ -360,16 +360,13 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 					<table style={{ tableLayout: "fixed", width: "100%" }} className="w-full text-left text-sm border-collapse" data-testid="warehouse-stock-table">
 						<thead>
 							<tr className="border-b border-[var(--line)] bg-[var(--paper-soft)] text-[11px] font-semibold uppercase tracking-wider text-[var(--muted)]">
+								<th style={{ width: "110px" }} className="py-3 px-3">Артикул</th>
 								<th className="py-3 px-3">Наименование</th>
 								<th style={{ width: "130px" }} className="py-3 px-3">Категория</th>
-								<th style={{ width: "160px" }} className="py-3 px-3">
-									<div>Срок годности</div>
-									<div className="text-[10px] opacity-75 font-normal tracking-normal">Партия / FEFO</div>
-								</th>
 								<th style={{ width: "90px" }} className="py-3 px-3 text-right font-semibold">Остаток</th>
+								<th style={{ width: "70px" }} className="py-3 px-3 text-center font-semibold">Ед. изм.</th>
 								<th style={{ width: "95px" }} className="py-3 px-3 text-right font-semibold">Мин. запас</th>
-								<th style={{ width: "120px" }} className="py-3 px-3 text-right">Себестоимость</th>
-								<th style={{ width: "180px" }} className="py-3 px-3.5 text-center">Действия</th>
+								<th style={{ width: "220px" }} className="py-3 px-3.5 text-center">Себестоимость / Статус</th>
 							</tr>
 						</thead>
 						<tbody className="divide-y divide-[var(--line-subtle)]">
@@ -425,9 +422,12 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 											<td className="py-2.5 px-3 text-center text-xs text-[var(--muted)] font-medium">{unit}</td>
 											{/* 6. Мин. запас */}
 											<td className="py-2.5 px-3 text-right font-mono text-xs text-[var(--muted)] tabular-nums">{minStock}</td>
-											{/* 7. Статус остатка (Мандат 8n: В норме / Мало / Перерасход (овердрафт)) */}
+											{/* 7. Себестоимость и статус остатка (Мандат 8n: В норме / Мало / Перерасход) */}
 											<td className="py-2.5 px-3.5 text-center">
-												<div className="inline-flex items-center gap-1.5 justify-center flex-wrap">
+												<div className="inline-flex items-center gap-2 justify-center flex-wrap">
+													<span className="font-mono text-xs font-bold text-[var(--ink)] tabular-nums" title="Себестоимость за единицу">
+														{item.unitCostRub ? `${Number(item.unitCostRub).toLocaleString("ru-RU")} ₽` : "—"}
+													</span>
 													{isOverdraft || qty === 0 ? (
 														<span data-testid={`soft-overdraft-badge-${item.id}`} className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30" title="Списано под операцию (мягкий овердрафт)">
 															{qty < 0 ? `⚠️ Перерасход (${qty})` : "Ожидается поставка (мягкий овердрафт)"}

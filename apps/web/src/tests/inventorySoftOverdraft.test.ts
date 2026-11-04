@@ -3,6 +3,7 @@
  * Копеечный расчет себестоимости, мягкий овердрафт, заказы поставщикам при дефиците.
  */
 
+import "../../testCssStub.mjs";
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import { createElement } from "react";

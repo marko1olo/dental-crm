@@ -10,9 +10,10 @@ import React from "react";
 
 export interface ClinicalWriteoffQuickStripProps {
 	readonly onQuickCarpuleWriteoff: () => void;
-	readonly onQuickAnesthesiaPackageWriteoff: () => void;
+	readonly onQuickAnesthesiaPackageWriteoff?: (() => void) | undefined;
 	readonly onQuickTherapyWriteoff: () => void;
 	readonly onQuickSurgeryWriteoff: () => void;
+	readonly onQuickHygieneWriteoff?: (() => void) | undefined;
 }
 
 export const ClinicalWriteoffQuickStrip: React.FC<
@@ -22,6 +23,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 	onQuickAnesthesiaPackageWriteoff,
 	onQuickTherapyWriteoff,
 	onQuickSurgeryWriteoff,
+	onQuickHygieneWriteoff,
 }) => {
 	return (
 		<>
@@ -72,11 +74,12 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 					type="button"
 					onClick={onQuickTherapyWriteoff}
 					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
-					data-testid="btn-quick-therapy-writeoff"
-					title="Пакетное списание расходников терапии (анестезия + композит + расходники)"
+					data-testid="btn-quick-standard-kit"
+					data-cy="btn-quick-therapy-writeoff"
+					title="Пакетное списание расходников терапии (стандартный набор: анестезия + композит + расходники)"
 				>
 					<Layers size={16} className="text-[var(--teal)] shrink-0" />
-					<span>Пакет «Терапия»</span>
+					<span>✓ Списать стандартный набор терапевта</span>
 				</button>
 				<button
 					type="button"
@@ -88,6 +91,18 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 					<Sparkles size={16} className="text-purple-600 shrink-0" />
 					<span>Пакет «Хирургия»</span>
 				</button>
+				{onQuickHygieneWriteoff && (
+					<button
+						type="button"
+						onClick={onQuickHygieneWriteoff}
+						className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-emerald-500/40 text-emerald-800 dark:text-emerald-200 hover:bg-emerald-500/10 transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
+						data-testid="btn-quick-hygiene-writeoff"
+						title="Пакетное списание расходников профгигиены (порошок Air-Flow, паста, щетки)"
+					>
+						<Sparkles size={16} className="text-emerald-600 shrink-0" />
+						<span>Пакет «Гигиена»</span>
+					</button>
+				)}
 			</div>
 		</>
 	);
