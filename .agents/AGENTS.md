@@ -3,12 +3,13 @@
 > 🏛️ **SSOT & CANONICAL ARCHITECTURE ROUTER:**  
 > Все 32 мандата, протокол Memento и машинные гейты Definition of Done зафиксированы в корневом [`GEMINI.md`](file:///C:/Clinic_MVP/dental-crm/GEMINI.md).  
 > 
-> 🚨 **ЗАКОН О САБОТАЖЕ И ДИВЕРСИЯХ ДЛЯ ВСЕХ АГЕНТОВ И СУБАГЕНТОВ:**  
-> Любое действие ЛЮБОГО агента или субагента без предварительного вызова `read_file` на профильный справочник является **ПРЯМОЙ ДИВЕРСИЕЙ И САБОТАЖЕМ**.  
-> 🛑 **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО открывать файлы проекта (tsx, ts, css, py) ДО чтения стандарта!**  
-> Каждый агент и субагент ОБЯЗАН вызвать `read_file` ПЕРВЫМ ДЕЙСТВИЕМ (Инструмент №1):  
-> - **Архитектура DENTE CRM (Мандаты 8d..8aq)**: [`.agents/CANONICAL_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)  
-> - **Высшая Конституция и философия**: [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)  
-> - **Доменные спецификации подсистем**: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) (`DATABASE.md`, `ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`, `BILLING_AND_FINANCE.md`, `WAREHOUSE_AND_SUPPLY.md`, `DOCUMENTS_LIFECYCLE.md`, `AI_ASSISTANT_RULES.md`, `MOBILE_DESIGN_APPLE_HIG.md`).  
+> 🚨 **ЗАКОН О САБОТАЖЕ И ДИВЕРСИЯХ ДЛЯ ВСЕХ АГЕНТОВ И СУБАГЕНТОМ:**  
+> Любое действие ЛЮБОГО агента или субагента без предварительного вызова `read_file` на Конституцию (Хаммер/Core) является **ПРЯМОЙ ДИВЕРСИЕЙ И САБОТАЖЕМ**.  
+> 🛑 **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО открывать файлы проекта (tsx, ts, css, py) ДО чтения Конституции и профильного стандарта!**  
+> Каждый агент и субагент ОБЯЗАН совершить заземление:  
+> 1. **База №1 (ОБЯЗАТЕЛЬНА ДЛЯ ВСЕХ НА ШАГЕ 1):** Вызов `read_file` на Высшую Конституцию [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) (CTO Supremacy) или [`core.md`](file:///C:/Users/Admin/.gemini/config/references/core.md).  
+> 2. **База №2 (Профильный стандарт задачи на Шаге 2):** Вызов `read_file` на доменный стандарт задачи ([`CANONICAL_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md), [`INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md), [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md), [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md), [`WAREHOUSE_AND_SUPPLY.md`](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md), [`DOCUMENTS_LIFECYCLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md), [`MOBILE_DESIGN_APPLE_HIG.md`](file:///C:/Clinic_MVP/dental-crm/.agents/MOBILE_DESIGN_APPLE_HIG.md)).  
+> 3. **База №3:** `git status` и `git diff --stat`.  
+> 4. **База №4:** `read_file` на целевой файл проекта.  
 > 
 > 🎬 **MEMENTO PROTOCOL (POST-COMPACTION):** При сжатии контекста категорически запрещены слепые правки! Обязательное заземление: `git status` + `git diff --stat` $\to$ чтение плана в `scratch/` $\to$ `read_file` целевого кода $\to$ JIT-чтение доменных спецификаций.

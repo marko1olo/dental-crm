@@ -8,13 +8,18 @@
 
 ## ⛔ ИЕРАРХИЯ АВТОРИТЕТОВ И СПРАВОЧНИКОВ (READ JIT)
 
-> 🚨 **НЕЧТЕНИЕ СПРАВОЧНИКОВ И ФАЙЛОВ ЛЮБЫМ АГЕНТОМ И СУБАГЕНТОМ — ПРЯМАЯ ДИВЕРСИЯ И САБОТАЖ!**  
-> Любое действие ЛЮБОГО агента или субагента (анализ, аудит, проектирование, кодинг) без предварительного чтения — диверсия. Агент и субагент ОБЯЗАНЫ вызвать `read_file` ПЕРВЫМ ДЕЙСТВИЕМ (Step 1).  
-> 🛑 **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО открывать файлы проекта (tsx, ts, css, py) ДО вызова `read_file` на профильный стандарт!** Инструмент №1 в любой сессии — ВСЕГДА справочник:
+> 🚨 **НЕЧТЕНИЕ КОНСТИТУЦИИ (ХАММЕРА/CORE) ПРИРАВНЕНО К ДИВЕРСИИ И САБОТАЖУ!**  
+> 1. **База №1 (Высшая Конституция — ОБЯЗАТЕЛЬНО ДЛЯ ВСЕХ):** Любое действие ЛЮБОГО агента и субагента ОБЯЗАНО начинаться с вызова `read_file` на [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) (Высшая Конституция CTO Supremacy) или [`core.md`](file:///C:/Users/Admin/.gemini/config/references/core.md).  
+> 2. **База №2 (Профильный стандарт задачи):** Вторым шагом — `read_file` на профильный доменный документ:  
+>    - Архитектура и 32 мандата: [`.agents/CANONICAL_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)  
+>    - Доменная матрица: [`.agents/INDEX.md`](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)  
+> 3. **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО открывать файлы проекта (tsx, ts, css, py) ДО прочтения Хаммера/Core и профильного стандарта!**  
+> 4. Нечтение Хаммера и справочников перед кодингом — это **ПРЯМАЯ ДИВЕРСИЯ И САБОТАЖ**.
 
-1. **[CANONICAL ARCHITECTURE SPECIFICATION](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)** — **Канонический свод законов проекта (1432 строки)**. Мандаты 8d..8aq, 8 осей скриншотов, UTF-8, архитектурные слои.
-2. **[THE HAMMER MASTER PROMPT](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — **Высшая Конституция проекта (CTO Supremacy)**. Философия продукта, автономия врача у кресла, презумпция 100% брака.
-3. **[ДОМЕННЫЕ СПЕЦИФИКАЦИИ В .AGENTS/](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**:
+1. **[THE HAMMER MASTER PROMPT](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md)** — **Высшая Конституция проекта (CTO Supremacy)**. Философия продукта, автономия врача у кресла, презумпция 100% брака.
+2. **[CANONICAL ARCHITECTURE SPECIFICATION](file:///C:/Clinic_MVP/dental-crm/.agents/CANONICAL_ARCHITECTURE.md)** — **Канонический свод законов проекта (1432 строки)**. Мандаты 8d..8aq, 8 осей скриншотов, UTF-8, архитектурные слои.
+3. **[GLOBAL CORE REFERENCE](file:///C:/Users/Admin/.gemini/config/references/core.md)** — Глобальная инженерная доктрина Antigravity (Zero-Skimming, Zero-Mocks, T.A.R.S.).
+4. **[ДОМЕННЫЕ СПЕЦИФИКАЦИИ В .AGENTS/](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)**:
    - База данных: [`DATABASE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE.md) & [`DATABASE_SETUP.md`](file:///C:/Clinic_MVP/dental-crm/.agents/DATABASE_SETUP.md) (PostgreSQL 18 на `127.0.0.1:5432`, Drizzle ORM).
    - Анатомическая одонтограмма: [`ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/ODONTOGRAM_CLINICAL_ARTISTRY_BIBLE.md) (viewBox 100x218, Wheeler 2.5D, 120 FPS).
    - Финансы и касса: [`BILLING_AND_FINANCE.md`](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md) (`amountKopecks`, BIGINT, сплит-чеки, семейный баланс).
