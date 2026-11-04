@@ -3,6 +3,7 @@
  *
  * DENTE Dental CRM — Canonical Odontogram Studio Modal & Chairside Fast-Stamp Bar.
  * Unified FDI Dental Formula (11-48 / 51-85) with Instant Pathologies Stamps,
+ * Wheeler 2.5D Anatomical Vector Render (Roots, Enamel, Cusps, Fissures),
  * 1-Click Intact Teeth (Mandate 8e), and 1-Click Visit Estimate Recommendations.
  * Exactly ONE Primary CTA #0d9488 (Mandate 8am), Apple HIG (Mandate 8b: Sweet Spot 350-480 lines).
  */
@@ -21,6 +22,12 @@ import {
 	type OdontogramDentitionMode,
 	type OdontogramToothEntry,
 } from "./odontogramCatalogData";
+import { AnatomicalGate0FullArchView } from "./AnatomicalGate0FullArchView";
+import { AnatomicalTooth } from "./gate0/AnatomicalTooth";
+import { toothDataToGate0Flags } from "./gate0/gate0ToothAdapter";
+import type { ToothData, ToothState } from "./ToothChart";
+import { persistTeethLocally } from "./syncModules/odontogramIndexedDbSync";
+import { sendToothStatesBatch } from "./syncModules/odontogramApiBatchSync";
 
 export interface OdontogramStudioModalProps {
 	readonly isOpen: boolean;
@@ -109,15 +116,41 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 		});
 	}, [selectedToothNum]);
 
-	const handleSaveAndConfirm = useCallback(() => {
+	const handleSaveAndConfirm = useCallback(async () => {
 		onSaveTeeth?.(teethData, pendingEstimates.length);
+
+		const effectivePatientId = visitId || (patientName ? "current-patient" : "default-patient");
+		if (typeof window !== "undefined") {
+			const teethArray: ToothData[] = Object.values(teethData).map((t) => ({
+				toothNumber: t.toothNumber,
+				state: t.state as ToothState,
+				surfaces: t.surfaces,
+			}));
+			persistTeethLocally(effectivePatientId, teethArray);
+			window.dispatchEvent(
+				new CustomEvent("dente-odontogram-update", {
+					detail: { patientId: effectivePatientId, states: teethArray },
+				}),
+			);
+			for (const t of teethArray) {
+				if (t.state !== "Healthy") {
+					void sendToothStatesBatch(effectivePatientId, [t.toothNumber], t.state, t.surfaces);
+				}
+			}
+		}
 		onClose();
-	}, [teethData, pendingEstimates, onSaveTeeth, onClose]);
+	}, [teethData, pendingEstimates, onSaveTeeth, onClose, visitId, patientName]);
 
 	const activeTeethList = useMemo(() => (dentitionMode === "pediatric" ? PEDIATRIC_TEETH_SSOT : ADULT_TEETH_SSOT), [dentitionMode]);
-	const upperTeeth = useMemo(() => activeTeethList.filter(isUpperJawTooth), [activeTeethList]);
-	const lowerTeeth = useMemo(() => activeTeethList.filter((num) => !isUpperJawTooth(num)), [activeTeethList]);
 	const mobileQuadrantTeeth = useMemo(() => activeTeethList.filter((num) => Math.floor(num / 10) === activeQuadrantMobile), [activeTeethList, activeQuadrantMobile]);
+
+	const teethDataArray = useMemo((): ToothData[] => {
+		return Object.values(teethData).map((t) => ({
+			toothNumber: t.toothNumber,
+			state: t.state as ToothState,
+			surfaces: t.surfaces,
+		}));
+	}, [teethData]);
 
 	const selectedTooth = selectedToothNum ? teethData[selectedToothNum] : null;
 	const selectedStatusDef = selectedTooth ? getStatusDefinition(selectedTooth.state) : null;
@@ -130,54 +163,6 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 
 	if (!isOpen) return null;
 
-	const renderToothTile = (toothNum: number, isMobile = false) => {
-		const tooth = teethData[toothNum] || { toothNumber: toothNum, state: "Healthy", surfaces: [] };
-		const def = getStatusDefinition(tooth.state);
-		const isSelected = selectedToothNum === toothNum;
-
-		if (isMobile) {
-			return (
-				<button
-					key={toothNum}
-					type="button"
-					data-testid={`tooth-cell-${toothNum}`}
-					onClick={() => handleApplyStampToTooth(toothNum)}
-					className={`w-full min-h-[56px] p-1.5 rounded-xl border flex flex-col items-center justify-between transition-all ${
-						isSelected ? "ring-2 ring-[var(--teal)] border-[var(--teal)] shadow-xs" : "border-[var(--line)]"
-					}`}
-					style={{ backgroundColor: def.bgToken }}
-				>
-					<span className="text-sm font-bold leading-none">{toothNum}</span>
-					<span className="text-xs font-semibold px-1 rounded" style={{ color: def.colorHex }}>{def.codeRu}</span>
-					<span className="text-[10px] text-[var(--ink-muted)] truncate max-w-full">{tooth.surfaces.join("") || "норм"}</span>
-				</button>
-			);
-		}
-
-		return (
-			<button
-				key={toothNum}
-				type="button"
-				data-testid={`tooth-cell-${toothNum}`}
-				onClick={() => handleApplyStampToTooth(toothNum)}
-				title={`${toothNum}: ${def.labelRu}. Клик — нанести активный штамп.`}
-				className={`h-16 rounded-lg border flex flex-col items-center justify-between p-1 transition-all hover:scale-105 active:scale-95 ${
-					isSelected ? "ring-2 ring-[var(--teal)] border-[var(--teal)] shadow-md" : "border-[var(--line)]"
-				}`}
-				style={{ backgroundColor: def.bgToken }}
-			>
-				<span className="text-xs font-bold leading-none">{toothNum}</span>
-				<div
-					className="w-3.5 h-3.5 rounded-full flex items-center justify-center text-[9px] font-bold text-white shadow-2xs"
-					style={{ backgroundColor: def.colorHex }}
-				>
-					{def.codeRu.slice(0, 1)}
-				</div>
-				<span className="text-[9px] font-medium text-[var(--ink-muted)] truncate">{tooth.surfaces.join("") || "—"}</span>
-			</button>
-		);
-	};
-
 	return (
 		<div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm animate-fade-in" data-testid="odontogram-studio-modal">
 			<div className="flex flex-col w-full h-full sm:h-auto sm:max-h-[92vh] max-w-6xl bg-[var(--paper)] text-[var(--ink)] sm:rounded-2xl border border-[var(--line)] shadow-2xl overflow-hidden box-border">
@@ -189,7 +174,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 						</div>
 						<div className="min-w-0">
 							<h2 className="text-sm sm:text-base font-semibold leading-tight whitespace-nowrap">
-								Зубная формула
+								Зубная формула Wheeler 2.5D
 							</h2>
 							<p className="text-[11px] sm:text-xs text-[var(--ink-muted)] truncate">
 								{patientName} {formattedVisitNum ? `· ${formattedVisitNum}` : ""}
@@ -219,7 +204,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 							className="inline-flex items-center gap-1 px-2.5 py-1.5 sm:px-3 text-xs font-medium rounded-lg bg-[var(--emerald-surface)] text-[var(--emerald-ink)] border border-[var(--emerald)] hover:opacity-90 active:scale-95 transition-all shrink-0"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-[var(--emerald)]" />
-							<span className="hidden sm:inline">Все зубы интактны</span>
+							<span className="hidden sm:inline">Все зубы здоровы (Норма)</span>
 							<span className="sm:hidden">Норма</span>
 						</button>
 
@@ -269,9 +254,9 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 
 				{/* 3. Рабочая область: зубные дуги и панель быстрого инспектора */}
 				<div className="flex-1 flex flex-col lg:flex-row overflow-hidden bg-[var(--paper)]">
-					<div className="flex-1 p-3 sm:p-5 overflow-y-auto flex flex-col justify-start sm:justify-center items-center gap-3 sm:gap-4">
+					<div className="flex-1 p-2 sm:p-4 overflow-y-auto flex flex-col justify-start items-center gap-2 sm:gap-3">
 						{/* Мобильный селектор квадрантов по Apple HIG */}
-						<div className="flex sm:hidden w-full items-center justify-between gap-1">
+						<div className="flex sm:hidden w-full items-center justify-between gap-1 mb-1">
 							<span className="text-xs font-medium text-[var(--ink-muted)]">Квадрант:</span>
 							<div className="flex gap-1">
 								{[1, 2, 3, 4].map((q) => (
@@ -279,7 +264,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 										key={q}
 										type="button"
 										onClick={() => setActiveQuadrantMobile(q)}
-										className={`px-3 py-1.5 text-xs font-semibold rounded-lg border min-w-[44px] min-h-[44px] flex items-center justify-center ${activeQuadrantMobile === q ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-xs" : "bg-[var(--paper-subtle)] border-[var(--line)] text-[var(--ink)]"}`}
+										className={`px-3 py-1.5 text-xs font-semibold rounded-lg border min-w-[44px] min-h-[44px] flex items-center justify-center ${activeQuadrantMobile === q ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper-subtle)] border-[var(--line)] text-[var(--ink)]"}`}
 									>
 										Q{q}
 									</button>
@@ -287,28 +272,71 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 							</div>
 						</div>
 
-						{/* Мобильный вид: аккуратная сетка 4x2 для зубов квадранта (тач-зона >= 44x44px) */}
-						<div className="grid sm:hidden grid-cols-4 gap-1.5 w-full">
-							{mobileQuadrantTeeth.map((num) => renderToothTile(num, true))}
+						{/* Мобильный вид: аккуратная сетка 4x2 с реальными векторными зубами Wheeler 2.5D (тач-зона >= 44x44px) */}
+						<div className="grid sm:hidden grid-cols-4 gap-2 w-full">
+							{mobileQuadrantTeeth.map((num) => {
+								const tooth = teethData[num] || { toothNumber: num, state: "Healthy", surfaces: [] };
+								const flags = toothDataToGate0Flags({
+									toothNumber: num,
+									state: tooth.state as ToothState,
+									surfaces: tooth.surfaces,
+								});
+								const isSelected = selectedToothNum === num;
+								return (
+									<button
+										key={num}
+										type="button"
+										data-testid={`tooth-cell-${num}`}
+										onClick={() => handleApplyStampToTooth(num)}
+										className={`w-full min-h-[84px] p-1 rounded-xl border flex flex-col items-center justify-between transition-all ${
+											isSelected
+												? "ring-2 ring-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-sm"
+												: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
+										}`}
+									>
+										<div className="w-full flex items-center justify-center h-[54px] overflow-hidden">
+											<AnatomicalTooth
+												toothNumber={num}
+												layers={flags}
+												zoom={0.34}
+												badgeRadius={14}
+											/>
+										</div>
+										<div className="flex items-center justify-between w-full px-1 text-[11px] font-bold">
+											<span>{num}</span>
+											<span className="text-[10px] text-[var(--ink-muted)] truncate max-w-[36px]">
+												{tooth.surfaces.join("") || (tooth.state === "Healthy" ? "норм" : tooth.state.slice(0, 3))}
+											</span>
+										</div>
+									</button>
+								);
+							})}
 						</div>
 
-						{/* Десктопный вид: две анатомические дуги (верхняя и нижняя) */}
-						<div className="hidden sm:flex flex-col gap-5 w-full max-w-4xl">
-							<div className="flex flex-col gap-1 items-center">
-								<span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-muted)]">Верхняя челюсть</span>
-								<div className="grid grid-cols-16 gap-1 w-full">{upperTeeth.map((num) => renderToothTile(num, false))}</div>
-							</div>
-
-							<div className="w-full h-px bg-[var(--line)] relative my-1">
-								<span className="absolute left-1/2 -top-2 -translate-x-1/2 px-2 bg-[var(--paper)] text-[10px] font-medium text-[var(--ink-muted)]">
-									Окклюзионная линия
-								</span>
-							</div>
-
-							<div className="flex flex-col gap-1 items-center">
-								<div className="grid grid-cols-16 gap-1 w-full">{lowerTeeth.map((num) => renderToothTile(num, false))}</div>
-								<span className="text-xs font-semibold uppercase tracking-wider text-[var(--ink-muted)] mt-1">Нижняя челюсть</span>
-							</div>
+						{/* Десктопный вид: каноническая анатомическая одонтограмма Wheeler 2.5D */}
+						<div className="hidden sm:flex flex-col gap-2 w-full max-w-5xl items-center">
+							<AnatomicalGate0FullArchView
+								teethData={teethDataArray}
+								selectedTeeth={selectedToothNum ? [selectedToothNum] : []}
+								onToothClick={(_, num) => handleApplyStampToTooth(num)}
+								onQuickStateChange={(targets, state, surfs) => {
+									if (targets.length > 0) {
+										const target = targets[0];
+										setSelectedToothNum(target);
+										setTeethData((prev) => ({
+											...prev,
+											[target]: {
+												toothNumber: target,
+												state,
+												surfaces: surfs ? [...surfs] : [],
+											},
+										}));
+									}
+								}}
+								activeStamp={activeStamp as ToothState | null}
+								zoom={0.54}
+								className="py-1"
+							/>
 						</div>
 					</div>
 
@@ -340,7 +368,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 													type="button"
 													onClick={() => handleToggleSurface(surf.id)}
 													title={`${surf.nameRu} (${surf.description})`}
-													className={`py-1.5 px-1 text-xs font-bold rounded-md border text-center transition-colors ${isSelected ? "bg-[var(--teal)] text-white border-[var(--teal)] shadow-2xs" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-subtle)]"}`}
+													className={`py-1.5 px-1 text-xs font-bold rounded-md border text-center transition-colors ${isSelected ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-2xs" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-subtle)]"}`}
 												>
 													{surf.shortRu}
 												</button>
@@ -352,17 +380,17 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 								{selectedStatusDef.recommendedEstimate && (
 									<div className="p-2.5 sm:p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-1.5 sm:gap-2">
 										<div className="flex items-start gap-2">
-											<Sparkles className="w-4 h-4 text-[var(--teal)] shrink-0 mt-0.5" />
+											<Sparkles className="w-4 h-4 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
 											<div>
 												<span className="text-xs font-semibold block text-[var(--ink)]">Рекомендация в смету:</span>
 												<span className="text-xs text-[var(--ink-muted)] block leading-tight">{selectedStatusDef.recommendedEstimate.serviceTitle}</span>
 											</div>
 										</div>
 										<div className="flex items-center justify-between mt-1 pt-1.5 border-t border-[var(--line)]">
-											<span className="text-xs font-bold text-[var(--teal)]">
+											<span className="text-xs font-bold text-[var(--teal,#0d9488)]">
 												{(selectedStatusDef.recommendedEstimate.amountKopecks / 100).toLocaleString("ru-RU")} ₽
 											</span>
-											<span className="text-[10px] text-[var(--ink-muted)] font-mono">{selectedStatusDef.recommendedEstimate.code804n}</span>
+											<span className="text-[10px] text-[var(--ink-muted)] font-mono">Прейскурант клиники</span>
 										</div>
 									</div>
 								)}
@@ -372,7 +400,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 						) : (
 							<div className="flex flex-col items-center justify-center py-6 text-center text-[var(--ink-muted)]">
 								<AlertCircle className="w-8 h-8 mb-2 opacity-50" />
-								<p className="text-xs">Выберите зуб на схеме для детальной разметки поверхностей</p>
+								<p className="text-xs">Выберите зуб на анатомической одонтограмме для детальной разметки поверхностей</p>
 							</div>
 						)}
 

@@ -51,7 +51,7 @@ export const AnatomicalGate0Cell: React.FC<AnatomicalGate0CellProps> = React.mem
 				layers={flags}
 				isDark={isDark}
 				zoom={zoom}
-				badgeRadius={18.5}
+				badgeRadius={14}
 			/>
 		</div>
 	);

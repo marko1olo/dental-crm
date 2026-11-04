@@ -23,12 +23,12 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 				<h1 className="text-base sm:text-lg font-bold tracking-tight flex items-center gap-2">
 					<span>DENTE Gate 0 First Article</span>
 					<span className="text-[11px] sm:text-xs px-2 py-0.5 rounded-full bg-teal-500/20 text-teal-600 dark:text-teal-300 font-mono shrink-0">
-						{standMode === "arch32" ? "Мокап 32 зубов" : "Зуб 46 (Моляр 1)"}
+						{standMode === "arch32" ? "Анатомическая формула 32" : "Зуб 46 (Моляр 1)"}
 					</span>
 				</h1>
 				<p className="text-[11px] sm:text-xs opacity-70">
 					{standMode === "arch32"
-						? "Лаборатория размеров маркировочных кружков (S, M, L, XL, XXL) на челюсти"
+						? "Клиническая анатомическая одонтограмма Wheeler 2.5D"
 						: "FDI 46 · 2.5D Wheeler · 6 материалов · Эндо · Патология"}
 				</p>
 			</div>
@@ -58,7 +58,7 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 						}`}
 					>
 						<span>🏛️</span>
-						<span>Мокап 32</span>
+						<span>Формула 32</span>
 					</button>
 					<button
 						type="button"
@@ -70,7 +70,7 @@ export const Tooth46StandHeader: React.FC<Tooth46StandHeaderProps> = ({
 						}`}
 					>
 						<span>🦴</span>
-						<span>Челюсть 16</span>
+						<span>Нижняя челюсть</span>
 					</button>
 				</div>
 			)}

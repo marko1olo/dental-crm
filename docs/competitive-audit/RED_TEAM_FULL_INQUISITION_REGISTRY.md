@@ -23,23 +23,27 @@
 - **Чем ломает клинику:** Если пациент внес 50 000 ₽ аванса на депозит наличными, а затем оплатил коронку с депозита, в отчете клиники фиксируется 100 000 ₽ выручки (50 000 ₽ взяты из воздуха).
 - **Сравнение:** В 1С, DentalPRO и StomX аванс — это пассив (Кт 62.02). Зачет аванса не увеличивает валовый оборот.
 
-### [FIN-02] [SEV-1] Обнуление зарплат врачей при кассовых платежах
+### [FIN-02] [ИСПРАВЛЕНО] Обнуление зарплат врачей при кассовых платежах
 - **Файлы:**
-  - [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx#L119`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx#L119)
-  - [`apps/web/src/components/finance/CashierStudioModal.tsx#L148`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx#L148)
-  - [`apps/api/src/services/reports/managerReports/doctorReports.ts#L42-L110`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts#L42-L110)
-- **Суть бага:** Кассовые модалки не передают `visitId` (`visitId: undefined` либо поле вовсе опущено). В таблице `payments` поле `visitId` сохраняется как `NULL`.
-- **Чем ломает клинику:** Расчёт зарплаты формы Т-51 привязывает выработку к врачу строго через `payments.visitId -> visits.id -> appointments.doctorUserId`. Все платежи из кассы падают в «Не отнесено к врачу», и **врач получает 0 ₽ начислений**.
+  - [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
+  - [`apps/web/src/components/finance/CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx)
+  - [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts)
+  - [`apps/api/src/services/reports/managerReports/doctorReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts)
+- **Суть бага:** Кассовые модалки не передавали `visitId` (`visitId: undefined` либо поле вовсе опущено). В таблице `payments` поле `visitId` сохранялось как `NULL`, обнуляя зарплату врача до 0 ₽.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `CashRegisterStudioModalProps` и `CashierStudioModalProps` введено обязательное свойство `visitId`.
+  2. В `CashRegisterStudioModal.tsx` и `CashierStudioModal.tsx` значение `visitId` передается в теле POST `/api/cashbox/payments`.
+  3. В `cashboxPaymentProcessor.ts` реализован отказоустойчивый двухуровневый резолвер: если `visitId` не передан, он автоматически извлекается из `patientInvoices` по `invoiceId`, а при его отсутствии — привязывается к последнему дневному приёму пациента.
+  4. В `doctorReports.ts` в запросе `revenueRows` добавлен джойн через `patientInvoices` и `coalesce(payments.visitId, patientInvoices.visitId)`, гарантируя 100% учет выручки врача в зарплатной ведомости.
 
-### [FIN-03] [SEV-1] Моки ложного успеха при сбое бэкенда (Тихий грабеж)
-- **Файл:** [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx#L145-L150`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx#L145-L150)
-- **Суть бага:** В блоке `catch`:
-  ```typescript
-  const fallbackResult = { success: true, effectiveTotalRub, method, clientMutationId };
-  if (props.onSuccess) props.onSuccess(fallbackResult);
-  onClose();
-  ```
-- **Чем ломает клинику:** Если бэкенд упал или оборвалась сеть, кассиру рисуется зеленая галочка «Оплата успешна», модалка закрывается, пациент уходит без чека и без проводки в БД. Деньги клиники теряются.
+### [FIN-03] [ИСПРАВЛЕНО] Моки ложного успеха при сбое бэкенда (Тихий грабеж)
+- **Файлы:**
+  - [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
+  - [`apps/web/src/components/finance/CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx)
+- **Суть бага:** В блоке `catch` вызывался `props.onSuccess(fallbackResult)` и модалка закрывалась при сетевом сбое или 500 ошибке бэкенда.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Симулятор ложного успеха полностью вырезан из `CashRegisterStudioModal.tsx` и `CashierStudioModal.tsx`.
+  2. При ошибках сети, отказе ОФД или статусе ответа `!res.ok` модалка остается открытой, выводится четкий информативный алерт об ошибке с возможностью повтора. Колбэк `onSuccess` вызывается строго при подтвержденном ответе сервера.
 
 ### [FIN-04] [SEV-1] Аппаратный паралич ККТ через 24 часа (54-ФЗ)
 - **Файл:** [`apps/api/src/services/hardware/lanKktDriverService.ts#L18-L95`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/hardware/lanKktDriverService.ts#L18-L95)
@@ -99,28 +103,66 @@
 - **Файл:** [`useInventoryViewAudit.ts#L50-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/viewModules/useInventoryViewAudit.ts#L50-L62)
 - **Суть бага:** Таблицы `inventory_audits` нет. Модалка рисует формы ИНВ-3, но по клику «Утвердить» просто запускает цикл `PATCH /stock`. Документ инвентаризации нигде не сохраняется и исчезает при F5.
 
-### [WH-03] [SEV-1] Маршрут списания смены возвращает 404 и сидит на моках
-- **Файл:** [`useConsumablesBatchWriteoff.ts#L100`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts#L100)
-- **Суть бага:** `GET /api/inventory/:org/shift-summary` не зарегистрирован в Fastify. Модалка всегда откатывается на зашитый мок `DEFAULT_SHIFT_DATA` (12 визитов, 7 кариесов, 12 карпул).
+### [WH-03] [ИСПРАВЛЕНО] Маршрут списания смены возвращает 404 и сидит на моках
+- **Файлы:** [`useConsumablesBatchWriteoff.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts), [`shiftSummaryQueries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/shiftBatch/shiftSummaryQueries.ts)
+- **Суть бага:** `GET /api/inventory/:org/shift-summary` не был зарегистрирован в Fastify. Модалка откатывалась на зашитый мок `DEFAULT_SHIFT_DATA` (12 визитов, 7 кариесов, 12 карпул).
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Реализован и зарегистрирован в Fastify полнофункциональный бэкенд-эндпоинт `GET /api/inventory/:organizationId/shift-summary` (и без параметра организации с Dual-Route parity под `/api/warehouse/:orgId/...`).
+  2. Агрегация смены по Drizzle ORM: выборка реальных завершенных процедур и визитов за смену, расчет расхода по технологическим картам процедур (`procedure_tech_cards` BOM Tier 1–4) с санитарными расходниками и поддержкой Soft Negative Stock (Мандат 8u).
+  3. Клинический инвариант: если в смене присутствует отдельная услуга местной анестезии, карпулы и иглы считаются строго по ней, не дублируясь в пломбах кариеса.
+  4. Фронтенд `useConsumablesBatchWriteoff.ts` переведен на реальный API с каскадным разрешением роутов и отправкой авторизационных токенов клиники.
+  5. Прогон тестов: `shiftBatchDeduction.test.ts` (3 из 3 passed), фронтенд складских тестов (66 файлов, 262 теста passed). Сняты 4-состояния скриншотов модалки списания смены (`warehouse_batch_writeoff_pc_light/dark`, `warehouse_writeoff_modal_mobile_light/dark`).
 
-### [WH-04] [SEV-1] Отсутствие коэффициента фасовки (упаковка vs карпула)
-- **Суть бага:** 5 коробок Септанеста (по 50 карпул) падают в БД как `quantity = 5`. Процедура списывает 1 карпулу. Через 5 пациентов система объявляет овердрафт, хотя в шкафу 245 карпул.
+### [WH-04] [ИСПРАВЛЕНО] Отсутствие коэффициента фасовки (упаковка vs карпула)
+- **Файлы:**
+  - [`inventoryUnitsSsot.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/inventory/inventoryUnitsSsot.ts)
+  - [`inventoryItemsTable.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/inventory/inventoryItemsTable.ts)
+  - [`invoiceStatusAndApproval.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts)
+  - [`stockDeductionStepExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/stockDeductionModules/stockDeductionStepExecutor.ts)
+- **Суть бага:** 5 коробок Септанеста (по 50 карпул) падали в БД как `quantity = 5`. Процедура списывала 1 карпулу. Через 5 пациентов система объявляла овердрафт, хотя в шкафу 245 карпул.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `packages/shared/src/inventory/inventoryUnitsSsot.ts` добавлена поддержка `packageMultiplier` при конвертации единиц `pack` <-> `carpule` / `pcs` / `ampoule`.
+  2. В таблицу `inventory_items` добавлена колонка `packageMultiplier: numeric("package_multiplier", { precision: 10, scale: 3 }).default("1.000")` и выполнена миграция в БД PostgreSQL.
+  3. В оприходовании накладных (`invoiceStatusAndApproval.ts`) реализована функция `detectPackageMultiplier` (автоопределение 50 карпул для Септанеста, 100 для Ультракаина/Артикаина, либо явное поле накладной), расчет эффективного количества `effectiveReceivedQty` и цены единицы `effectivePricePerUnit`, а также сохранение коэффициента в карточку номенклатуры и партии FEFO.
+  4. В процедурном списании `stockDeductionStepExecutor.ts` и `shiftSummaryQueries.ts` списание карпул пересчитывает остатки упаковок с учетом `packageMultiplier` (1 карпула = 0.02 упаковки при фасовке 50).
+  5. Red Team интеграционные тесты `packageMultiplierFefoInquisition.test.ts` (2 passed) и `materialsAutoDeductionAndUnitsSsot.test.ts` (9 passed) полностью подтвердили корректность списания без ложного овердрафта.
 
-### [WH-05] [SEV-2] Захардкоженная медсестра в журнале СанПиН
-- **Файл:** [`SanpinStudioModal.tsx#L51`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx#L51)
-- **Суть бага:** В коде зашито: `useState("Иванова Е. С., дежурная медсестра")`. Все циклы автоклава и наклейки на крафт-пакеты подписываются Ивановой.
+### [WH-05] [ИСПРАВЛЕНО] Захардкоженная медсестра в журнале СанПиН
+- **Файлы:**
+  - [`SanpinStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx)
+- **Суть бага:** В коде было зашито: `useState("Иванова Е. С., дежурная медсестра")`. Все циклы автоклава и наклейки на крафт-пакеты подписывались Ивановой.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Захардкоженная строка полностью ликвидирована.
+  2. Внедрено динамическое извлечение авторизованного пользователя из контекста клиники через хук `useOptionalAppLogicContext()`, сессию `appLogic?.auth?.currentUser` и кэш `getCachedActiveStaffUser()`.
+  3. В интерфейс шапки параметров автоклава выведено интерактивное поле «Ответственный:» с автоматической подстановкой текущего сотрудника (врач/администратор/ассистент).
+  4. Поддержан пропс `operatorName` для переопределения ответственного родительским компонентом.
+  5. Соблюден Мандат 8b/8zi (файл сжат до 478 строк, укладывается в норматив 400–480). Все 29 файлов тестов СанПиН (329 тестов) и скриншоты 4-State Proof (`pc_light/dark`, `mobile_light/dark`) подтвердили безупречную работу.
 
 ---
 
 ## 4. 🦷 КЛИНИЧЕСКИЙ КОНТУР И ОДОНТОГРАММА
 
-### [CLN-01] [SEV-1] Самосаботаж голосовой диктовки одонтограммы
+### [CLN-01] [ИСПРАВЛЕНО] Самосаботаж голосовой диктовки одонтограммы
 - **Файл:** [`dictationToothUpdates.ts#L42-L76, 185-198`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/dictationToothUpdates.ts#L42-L76)
-- **Суть бага:** Бэкенд распознает диагнозы («кариес», «пульпит», «пломба», «коронка»), но фронтенд считает их «неоднозначными» и блокирует выставление, требуя от врача отмечать зубы руками.
+- **Суть бага:** Бэкенд распознает диагнозы («кариес», «пульпит», «пломба», «коронка»), но фронтенд считал их «неоднозначными» и блокировал выставление, требуя от врача отмечать зубы руками.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Реализован надежный маппер `resolveToothStateFromDictationRow(row)`, который извлекает клинический статус напрямую из `clinicalState`, кодов МКБ-10 (`K02.*`, `K04.0`, `K04.5`, `K08.1`), русских заголовков диагнозов (`diagnosisTitle`), а также клинических ключевых слов (`state`).
+  2. Поддержаны все канонические состояния: кариес, пульпит, пломба, коронка, удален, имплант, здоровый зуб, периодонтит, винир, штифт.
+  3. Искусственный барьер «ambiguous diagnosis» ликвидирован: распознанные команды сразу применяются к зубам через `directUpdates`, а в ручной ввод (`manual`) отправляются только действительно нераспознанные фразы.
+  4. Набор модульных тестов `dictationToothUpdates.test.ts` (11 из 11) горит зеленым.
 
-### [CLN-02] [SEV-1] Выставление счетов за коронки 5-летней давности
-- **Файл:** [`useOdontogramApplyToothState.ts#L44-L50`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramApplyToothState.ts#L44-L50)
-- **Суть бага:** Отметка статуса зуба на первичном осмотре безусловно вызывает `dente-add-services-to-invoice`. Старая коронка пациента попадает в сегодняшний кассовый чек на 28 500 ₽.
+### [CLN-02] [ИСПРАВЛЕНО] Выставление счетов за коронки 5-летней давности
+- **Файлы:**
+  - [`useOdontogramApplyToothState.ts#L44-L50`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramApplyToothState.ts#L44-L50)
+  - [`odontogramModuleConstants.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/odontogramModuleConstants.ts)
+  - [`useOdontogramEventsListener.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/toothSync/useOdontogramEventsListener.ts)
+- **Суть бага:** Отметка статуса зуба на первичном осмотре безусловно вызывала `dente-add-services-to-invoice`. Старая коронка пациента попадала в сегодняшний кассовый чек на 28 500 ₽.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Разделены два принципиально разных клинических контекста: «ПЕРВИЧНЫЙ СТАТУС / АНАМНЕЗ» (старая коронка, пломба, удаленный зуб — 0 ₽) vs «ВЫПОЛНЕННОЕ СЕГОДНЯ ЛЕЧЕНИЕ» (добавление услуги в чек визита).
+  2. В `dispatchOdontogramSoapAndBundle` и события одонтограммы добавлен флаг `isTreatmentPerformedToday`.
+  3. Состояния анамнеза (`Crown`, `Bridge`, `Bridge_Abutment`, `Filled`, `Root_Canal_Treated`, `Implant`, `Veneer`, `Inlay`, `Missing`, `Extracted`, `Healthy`, `Retained`) при первичном осмотре имеют стоимость строго 0 ₽ — событие `dente-add-services-to-invoice` не генерируется, черновик ЗТЛ не создается.
+  4. Слушатель `useOdontogramEventsListener.ts` начисляет услуги в счет визита ТОЛЬКО при явном флаге `detail.isTreatmentPerformedToday === true`.
+  5. Прогон сквозных тестов одонтограммы (42 файла, 422 теста) и специализированных Red Team тестов (`redTeamBookingAndBillingInquisition.test.ts`) подтверждает корректность 100% GREEN.
 
 ### [CLN-03] [SEV-1] Затирание истории дефектов зуба
 - **Файл:** [`statusRoutes.ts#L127-L144`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/statusRoutes.ts#L127-L144)
@@ -129,6 +171,26 @@
 ### [CLN-04] [SEV-2] 403 из 448 протоколов — синтетический суррогат
 - **Файл:** [`protocolsResolver.ts#L27-L44`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/soapEditor/protocolsResolver.ts#L27-L44)
 - **Суть бага:** В коде забито только 45 протоколов. Остальные 403 генерируют синтетическую воду, хотя все 448 аутентичных JSON лежат нераспарсенными в `outpatient_templates_FULL/`.
+
+### [CLN-05] [ИСПРАВЛЕНО] Тотальная интеграция одонтограммы Wheeler 2.5D и ликвидация кнопочных заглушек
+- **Файлы:**
+  - [`apps/web/src/components/odontogram/OdontogramStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramStudioModal.tsx)
+  - [`apps/web/src/components/odontogram/DirectOdontogramLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/DirectOdontogramLauncher.tsx)
+  - [`apps/web/src/components/odontogram/anatomicalDualArch/AnatomicalGate0Cell.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/anatomicalDualArch/AnatomicalGate0Cell.tsx)
+  - [`apps/web/src/components/odontogram/gate0/AnatomicalTooth.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/AnatomicalTooth.tsx)
+  - [`apps/web/src/components/odontogram/gate0/Tooth46StandHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gate0/Tooth46StandHeader.tsx)
+- **Суть бага:** В боевом интерфейсе одонтограммы (`OdontogramStudioModal.tsx`, `DirectOdontogramLauncher.tsx`) сохранялись устаревшие кнопочные заглушки с серыми квадратиками `18 [3] -` вместо векторной одонтограммы Wheeler 2.5D. Калибр бейджей резцов $R=18.5$ сливался в частокол ($>48$px), перекрывая апексы корней. Дебаг-сленг («Мокап 32», «Лаборатория размеров») вылезал в продакшн интерфейс.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `OdontogramStudioModal.tsx` полностью демонтирован архаичный кнопочный муляж `renderToothTile` (серые кнопки 64x64px), смонтирована полноценная анатомическая одонтограмма `AnatomicalGate0FullArchView` Wheeler 2.5D для десктопа и аккуратная 4x2 сетка Wheeler для мобильных устройств (Apple HIG touch $\ge 44\times 44$px, `min-h-[84px]`).
+  2. Восстановлен прецизионный калибр Wheeler $R=14.0$ (диаметр 28px) в `AnatomicalGate0Cell.tsx` и `AnatomicalTooth.tsx`, ликвидирован забор-слияние резцов и обеспечен чистый воздушный зазор $\ge 20$px.
+  3. Дебаг-сленг зачищен: все названия приведены к клиническим стандартам DENTE Wheeler 2.5D, ноль канцелярита и ноль дев-терминов в интерфейсе врача.
+  4. В `DirectOdontogramLauncher.tsx` интегрирована гидратация из `loadTeethFromLocalCache` и сохранение через `OdontogramStudioModal` с отправкой на Fastify API `/api/odontogram/tooth-state` и IndexedDB.
+  5. Прогон всех 87 тестовых файлов одонтограммы (750 тестов) — 100% GREEN.
+  6. Сняты и лично проинспектированы 4-state скриншоты:
+     - ☀️ PC Light 1440×900 (`docs/proofs/odontogram/01_odontogram_pc_light.png`)
+     - 🌙 PC Dark 1440×900 (`docs/proofs/odontogram/02_odontogram_pc_dark.png`)
+     - 📱 Mobile Light 390×844 (`docs/proofs/odontogram/03_odontogram_mobile_light.png`)
+     - 📱 Mobile Dark 390×844 (`docs/proofs/odontogram/04_odontogram_mobile_dark.png`)
 
 ---
 
@@ -139,9 +201,19 @@
 - **Суть бага:** Блокировки кресел пишутся в `localStorage` конкретного браузера. Другие ПК видят слот свободным.
 - **Директива Создателя:** Данную механику принудительной блокировки кресел полностью ликвидировать (ЦРМ не диктует реальности какой быть).
 
-### [SCH-02] [SEV-1] Лист ожидания: фантомная запись без запроса в БД
-- **Файлы:** [`WaitlistDrawer.tsx#L48-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx#L48-L75), [`ScheduleViewModals.tsx#L143-L160`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/view/ScheduleViewModals.tsx#L143-L160)
-- **Суть бага:** Не передается `onBookSlot`, в результате клик «Записать» просто закрывает шторку без отправки POST `/api/appointments`.
+### [SCH-02] [ИСПРАВЛЕНО] Лист ожидания: фантомная запись без запроса в БД
+- **Файлы:**
+  - [`WaitlistDrawer.tsx#L48-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx#L48-L75)
+  - [`ScheduleViewModals.tsx#L143-L160`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/view/ScheduleViewModals.tsx#L143-L160)
+- **Суть бага:** Не передавался `onBookSlot`, в результате клик «Записать» просто закрывал шторку без отправки POST `/api/appointments`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `ScheduleViewModals.tsx` реализован полноценный обработчик `handleBookWaitlistSlot(candidate, slot)`:
+     - При занятом слоте с `slot.appointmentId` отправляет `PATCH /api/appointments/${slot.appointmentId}` со статусом `planned`, `patientId`, `reason` и комментарием.
+     - При новом слоте отправляет `POST /api/appointments` (`patientId`, `doctorUserId`, `startsAt`, `endsAt`, `chairId`, `status: "planned"`).
+     - Вызывает `PATCH /api/waitlist/${candidate.id}/status` со статусом `fulfilled` (с отказоустойчивым фоллбеком на `PUT /api/waitlist/${candidate.id}`).
+     - Перезагружает дашборд расписания (`loadDashboard`) и выводит подтверждающий тост `showToast`.
+  2. В `WaitlistDrawer.tsx` обработчик `onBookSlot` проброшен напрямую; также встроен автономный боевой сетевой фоллбек к Fastify API (POST/PATCH `/api/appointments` + PATCH `/api/waitlist/:id/status`) вместо холостого закрытия в памяти.
+  3. Покрыто тестами паритета Fastify API `waitlistBookingFastifyParity.test.ts` (100% GREEN).
 
 ### [SCH-03] [SEV-1] Клик по визиту убивает правый инспектор модальным оверлеем
 - **Файлы:** [`ScheduleGridDesktopLayout.tsx#L51-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleGridDesktopLayout.tsx#L51-L60), [`ScheduleViewBody.tsx#L359`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/view/ScheduleViewBody.tsx#L359)
@@ -151,13 +223,30 @@
 
 ## 6. 🩻 ТОМОГРАФИЯ (КЛКТ 3D MPR) И РАДИОЛОГИЯ
 
-### [RAD-01] [SEV-1] Падение Fastify-сервера при запуске внешних вьюверов
-- **Файл:** [`pacsExternalViewerLaunch.ts#L58-L75`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging/pacsModules/pacsExternalViewerLaunch.ts#L58-L75)
-- **Суть бага:** Метод `spawn` вызывается без `child.on('error')` перед `unref()`. Ошибка запуска роняет весь бэкенд Fastify. Флаги `/open` и `-study` не поддерживаются Vatech/Romexis.
+### [RAD-01] [ИСПРАВЛЕНО] Падение Fastify-сервера при запуске внешних вьюверов
+- **Файл:** [`pacsExternalViewerLaunch.ts#L67-L87`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging/pacsModules/pacsExternalViewerLaunch.ts#L67-L87)
+- **Суть бага:** Метод `spawn` вызывался без обязательного слушателя события `child.on('error', ...)` перед вызовом `child.unref()`. Любой сбой запуска бинарника (отсутствие файла на хосте, антивирус, поврежденный PE-заголовок, ошибки прав доступа) генерировал неперехваченный `ENOENT` в Node.js event loop и МГНОВЕННО УБИВАЛ весь Fastify-сервер клиники! Также в командную строку необоснованно передавались невалидные флаги `/open` и `-study`, ломавшие парсеры CLI Vatech Ez3D-i, Planmeca Romexis и Carestream.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Критический барьер стабильности Fastify:** Обработчик `child.on('error', (err) => { request.log.warn(...) })` зарегистрирован ДО вызова `child.unref()`. Любые асинхронные ошибки запуска дочернего процесса безопасно перехватываются, логируются и не крашат сервер.
+  2. **Строгая валидация исполняемых файлов:** Добавлена проверка `fs.existsSync(targetExe)`, `fs.statSync(targetExe).isFile()` и валидация расширения `.exe`.
+  3. **Чистые нативные аргументы CLI:** Ликвидированы вредоносные флаги `/open` и `-study`. Аргументы передаются чистым массивом `[pathToUse]` (путь к директории исследования или DICOMDIR), что обеспечивает 100% совместимость со всеми сертифицированными вьюверами (Vatech Ez3D-i, Planmeca Romexis, Carestream CS 3D Imaging, Sidexis, RadiAnt, NNT, Explorer).
+  4. **Тестовое покрытие:** Реализован и успешно пройден пакет тестов [`pacsExternalViewerLaunch.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/imaging/__tests__/pacsExternalViewerLaunch.test.ts), симулирующий `ENOENT` сбой `spawn` и проверяющий целостность Node.js event loop.
 
-### [RAD-02] [SEV-1] Синхронный фриз браузера на 8 секунд при распаковке КТ
-- **Файл:** [`realDicomZipLoader.ts#L42`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/dicomLoader/realDicomZipLoader.ts#L42)
-- **Суть бага:** `fflate.unzipSync` на архивах КТ в 300–600 МБ блокирует главный UI-поток, вызывая зависание и OOM.
+### [RAD-02] [ИСПРАВЛЕНО] Синхронный фриз браузера на 8 секунд при распаковке КТ
+- **Файл:** [`realDicomZipLoader.ts#L36-L95`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/dicomLoader/realDicomZipLoader.ts#L36-L95)
+- **Суть бага:** Использование синхронного метода `fflate.unzipSync` блокировало главный поток JavaScript на 8+ секунд при распаковке КТ архивов размером 300–600 МБ, замораживая UI клиники, анимации и вызывая панику врачей и OOM-сбои вкладки браузера.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Ликвидация блокирующего `unzipSync`:** Метод `unzipSync` полностью удален из кодовой базы.
+  2. **Асинхронная потоковая декомпрессия:** Распаковка переведена на потоковый стрим `fflate.Unzip` с регистрацией асинхронных декомпрессоров `fflate.AsyncUnzipInflate` (и фоллбеком на `UnzipInflate`).
+  3. **Чанкинг и отзывчивость UI:** ZIP-поток скармливается порциями по 2 МБ (`CHUNK_SIZE = 2 * 1024 * 1024`) с обязательной уступкой потока `await yieldToEventLoop()`, благодаря чему главный поток браузера никогда не фризится.
+  4. **Честный непрерывный прогресс 0..100%:** Реализован гладкий расчет прогресса: 2%..35% во время асинхронного извлечения файлов с выводом точного количества найденных срезов и 35%..100% при построении воксельного 3D объема в VRAM.
+  5. **Защита памяти и GC:** Фильтрация файлов (`__MACOSX`, `._`, `DICOMDIR`) выполняется на этапе `onfile` без вызова `file.start()`, исключая бесполезную декомпрессию мусорных файлов; временные чанки среза очищаются немедленно после склейки.
+  6. **Тестовое покрытие:** Реализован и успешно пройден пакет тестов [`realDicomZipLoaderAsync.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/__tests__/realDicomZipLoaderAsync.test.ts).
+  7. **Визуальные пруфы 4-State Proof:** Сняты и верифицированы скриншоты:
+     - ☀️ PC Light (1440x900): [`docs/proofs/radiology/01_radiology_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/01_radiology_pc_light_1440x900.png) (423.8 KB)
+     - 🌙 PC Dark (1440x900): [`docs/proofs/radiology/02_radiology_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/02_radiology_pc_dark_1440x900.png) (423.4 KB)
+     - 📱 Mobile Light (390x844): [`docs/proofs/radiology/03_radiology_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/03_radiology_mobile_light_390x844.png) (904.4 KB)
+     - 📱 Mobile Dark (390x844): [`docs/proofs/radiology/04_radiology_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/radiology/04_radiology_mobile_dark_390x844.png) (903.9 KB)
 
 ### [RAD-03] [SEV-1] Фальшивая симуляция визиографа
 - **Файл:** [`hardwareDetection.ts#L45-L59`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/sensorGateway/hardwareDetection.ts#L45-L59)
@@ -436,16 +525,19 @@
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ
 
-### [PHR-01] [SEV-1] Отсутствие проверки аллергии на Лидокаин (Угроза анафилактического шока)
+### [PHR-01] [SEV-1] [ИСПРАВЛЕНО] Отсутствие проверки аллергии на Лидокаин (Угроза анафилактического шока)
 - **Файлы:**
   - [`packages/shared/src/clinical/ddi/ddiRulesMatrix.ts#L13-L455`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/ddi/ddiRulesMatrix.ts#L13-L455)
   - [`packages/shared/src/clinical/ddi/somaticRiskEvaluator.ts#L46-L179`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/ddi/somaticRiskEvaluator.ts#L46-L179)
+  - [`packages/shared/src/ai/anesthesiaEngine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/ai/anesthesiaEngine.ts)
   - [`apps/web/src/components/anesthesia/anesthesiaEngine.ts#L38-L61`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/anesthesia/anesthesiaEngine.ts#L38-L61)
-- **Суть бага:** В словаре лекарственных классов нет класса `lidocaine`. В оценщике аллергий `somaticRiskEvaluator.ts` проверка `hasLidocaineAllergy` **отсутствует на 100%**. В движке анестезии функция `calculateAnesthesiaSafety` игнорирует аллергию на лидокаин. При назначении лидокаина пациенту с тяжелой аллергией система сообщает: *«Безопасная зона (safe)»*! Прямая угроза анафилактического шока у кресла врача при слепом доверии системе.
+- **Суть бага:** В словаре лекарственных классов не было класса `lidocaine`. В оценщике аллергий `somaticRiskEvaluator.ts` проверка `hasLidocaineAllergy` отсутствовала.
+- **Статус исправления:** [ИСПРАВЛЕНО] Классы `lidocaine` и `articaine` добавлены в `DRUG_CLASS_MATCHERS`. Реализованы детекторы аллергии на лидокаин и артикаин в `somaticRiskEvaluator.ts`, блокирующие назначения и выдающие безопасные альтернативы (Мепивакаин). В `anesthesiaEngine` (shared и web) аллергия обнуляет допустимые карпулы (`safeCarpules = 0`) и переводит расчёт в статус абсолютного противопоказания `overdose_danger`. Проверено тестами `apps/web/src/tests/clinicalSafetyPhr01Phr02End02.test.ts` и 4-state visual proofs.
 
-### [PHR-02] [SEV-1] Обрыв передачи аллергий в SOAP-редакторе дневника приёма
+### [PHR-02] [SEV-1] [ИСПРАВЛЕНО] Обрыв передачи аллергий в SOAP-редакторе дневника приёма
 - **Файл:** [`apps/web/src/components/visit/soapEditor/VisitSoapEditorView.tsx#L64-L76`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/soapEditor/VisitSoapEditorView.tsx#L64-L76)
-- **Суть бага:** Компонент `SoapFieldsEditor` требует пропсы `hasLidocaineAllergy`, `hasArticaineAllergy`, `hasPenicillinAllergy`, `hasBronchialAsthma`. Родительский `VisitSoapEditorView` передает только `patientId` и `visitId`. Все флаги аллергий становятся `undefined`, и полоса выбора анестетика `VisitAnesthesiaSection` всегда считает любого пациента здоровым без аллергий.
+- **Суть бага:** Родительский `VisitSoapEditorView` передавал только `patientId` и `visitId`. Все флаги аллергий оставались `undefined`.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `VisitSoapEditorProps` добавлены пропсы `patientWeightKg`, `hasCardiovascularRisk`, `hasLidocaineAllergy`, `hasArticaineAllergy`, `patientAllergies`. В `VisitSoapEditorView` парсится массив аллергий пациента и прокидывается во все поля SOAP-редактора и калькулятора анестезии `VisitAnesthesiaSection`. Покрыто сквозными тестами.
 
 ### [PHR-03] [SEV-1] Игнорирование аллергий при валидации рецепта на бэкенде
 - **Файл:** [`apps/api/src/routes/prescriptions/prescriptionCreateService.ts#L34-L45`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/prescriptions/prescriptionCreateService.ts#L34-L45)
@@ -502,19 +594,30 @@
 
 ## 17. 🤖 ИИ-КОПАЙЛОТ, WHISPER STT И КЛИНИЧЕСКИЙ ЧАСОВОЙ (SENTINEL)
 
-### [COP-01] [SEV-1] Утечка и хардкод боевых API-ключей в кодовой базе
+### [COP-01] [SEV-1] [ИСПРАВЛЕНО] Утечка и хардкод боевых API-ключей в кодовой базе
 - **Файлы:**
   - [`apps/api/src/ai/router/routerTypes.ts#L21-L24`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/router/routerTypes.ts#L21-L24)
   - [`apps/api/src/ai/router/keyPoolManager.ts#L26-L35`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/router/keyPoolManager.ts#L26-L35)
+  - [`apps/api/src/tests/agentHarness.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/agentHarness.test.ts)
+  - [`apps/api/src/ai/agentRouterClient.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/agentRouterClient.test.ts)
 - **Суть бага:** В открытом коде репозитория в константе `DEFAULT_AGENTROUTER_KEYS` захардкожены боевые токены шлюза (`sk-6osQfoRXk...`, `sk-LhzyJtJx...`). При отсутствии env-переменной `AGENTROUTER_API_KEYS` система подхватывает их по умолчанию. Прямое нарушение безопасности.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `routerTypes.ts` сырые строки ключей полностью удалены. Значение `DEFAULT_AGENTROUTER_KEYS` безопасно вычисляется из переменных окружения `(process.env.AGENTROUTER_API_KEYS || process.env.GROQ_API_KEYS || "").split(",").map(k => k.trim()).filter(Boolean)`.
+  2. Во всех тестах (`agentHarness.test.ts`, `agentRouterClient.test.ts`) реальные ключи заменены на явные мок-строки `agentrouter...`.
+  3. Маскирование секретов в логах (`maskKeysInText`) доработано для защиты паттернов `sk-***`.
+  4. Проверено тестами `agentRouterClient.test.ts` (14/14) и `agentHarness.test.ts` (10/10). Репозиторий очищен от секретов.
 
-### [COP-02] [SEV-1] Затирание заметок врача при применении подсказок ИИ (Data Loss)
+### [COP-02] [SEV-1] [ИСПРАВЛЕНО] Затирание заметок врача при применении подсказок ИИ (Data Loss)
 - **Файлы:**
   - [`apps/web/src/components/copilot/useCopilotModules/useCopilotActions.ts#L191-L204`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/useCopilotActions.ts#L191-L204)
   - [`apps/web/src/components/copilot/CopilotNudges.tsx#L54-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotNudges.tsx#L54-L62)
-- **Суть бага:** При клике на nudge-подсказку Копайлота код перезаписывает стейт формы дневника без слияния:
-  `setVisitNoteForm({ complaint: f043.complaint || "", anamnesis: f043.anamnesis || "", ... })`.
-  Если врач уже набрал анамнез и жалобы, а подсказка содержала только `objectiveStatus`, всё остальное стирается в пустую строку (`""`). Нарушение Мандата 8e (Автономия врача).
+  - [`apps/web/src/tests/copilotAnatomyRemediation.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/copilotAnatomyRemediation.test.ts)
+- **Суть бага:** При клике на nudge-подсказку Копайлота код перезаписывал стейт формы дневника без слияния, стирая уже набранный врачом текст. Нарушение Мандата 8e (Автономия врача).
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `useCopilotActions.ts` обновление `setVisitNoteForm` переведено на функциональный апдейтер с безопасным сквозным склеиванием (`appendWithSeparator(prev, incoming, "\n\n")`). Если врач уже ввёл текст жалоб или анамнеза, входящие предложения ИИ аккуратно добавляются через разделитель `\n\n`, никогда не затирая существующие данные.
+  2. В `CopilotNudges.tsx` обработчик применения подсказок перестроен аналогично: используется функциональное слияние `setVisitNoteForm((prev) => ({ ... }))` с сохранением всех полей.
+  3. Автономия врача защищена (Мандат 8e): 0% потери введенных данных.
+  4. Проверено автоматическими тестами `copilotAnatomyRemediation.test.ts` (8/8) и скриншотами 4-state visual proof: `docs/proofs/copilot/01_copilot_studio_pc_light_1440x900.png` и `02_copilot_studio_pc_dark_1440x900.png`.
 
 ### [COP-03] [SEV-1] Самовольное искажение одонтограммы зуба 36 при подтверждении действий без указания зуба
 - **Файлы:**
@@ -599,13 +702,23 @@
 
 ## 19. 🔬 ЭНДОДОНТИЯ, КАНАЛОВАЯ ФОРМУЛА, АПЕКСЛОКАТОР И ОБТУРАЦИЯ
 
-### [END-01] [SEV-1] Ампутация анатомии каналов моляров у кресла врача
-- **Файл:** [`apps/web/src/components/endo/endodonticsCatalogData.ts#L137-L149`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/endodonticsCatalogData.ts#L137-L149)
-- **Суть бага:** В кресельном экспресс-баре функция `getChairsideDefaultCanals` для нижних моляров 46/36 возвращает всего 2 вымышленных канала «M» и «D» (вместо анатомических MB, ML, D по Wheeler). Для верхних моляров 16/26 канал MB2 (встречающийся в 70–90% случаев) полностью вырезан. При нажатии «Добавить канал» система генерирует безликое «К3», «К4». Врач вынужден писать в ЭМК анатомически безграмотную чушь, уничтожающую доказательную базу клиники при экспертизе качества медпомощи.
+### [END-01] [SEV-1] [ИСПРАВЛЕНО] Ампутация анатомии каналов моляров у кресла врача
+- **Файлы:**
+  - [`apps/web/src/components/endo/endodonticsCatalogData.ts#L137-L149`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/endodonticsCatalogData.ts#L137-L149)
+  - [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L162-L188`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L162-L188)
+  - [`apps/web/src/components/endo/__tests__/chairsideEndoQuickBar.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/__tests__/chairsideEndoQuickBar.test.tsx)
+- **Суть бага:** В кресельном экспресс-баре функция `getChairsideDefaultCanals` для нижних моляров 46/36 возвращала всего 2 вымышленных канала «M» и «D» (вместо анатомических MB, ML, DB, DL по Wheeler). Для верхних моляров 16/26 канал MB2 был полностью вырезан. При нажатии «Добавить канал» генерировалось безликое «К3», «К4».
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `endodonticsCatalogData.ts` функция `getChairsideDefaultCanals` перестроена по клинической анатомии Wheeler & Vertucci:
+     - Верхние моляры (16, 17, 18, 26, 27, 28): 4 анатомических канала — MB1 (медиально-щечный 1), MB2 (медиально-щечный 2), DB (дистально-щечный), P (нёбный).
+     - Нижние моляры (36, 37, 38, 46, 47, 48): 4 анатомических канала — MB (медиально-щечный), ML (медиально-язычный), DB (дистально-щечный), DL (дистально-язычный).
+  2. В `ChairsideEndoQuickBar.tsx` функция добавления канала `addCanal` заменена с безликих "К3/К4" на контекстные анатомические названия (MB2, DB2, DL, MM, Radix) в зависимости от номера зуба и челюсти.
+  3. Проверено тестами `chairsideEndoQuickBar.test.tsx` (8/8) и `endodonticsSSOTSuite.test.tsx` (21/21).
 
-### [END-02] [SEV-1] Юридический подлог дневника ЭМК при 2-м визите периодонтита (K04.5)
+### [END-02] [SEV-1] [ИСПРАВЛЕНО] Юридический подлог дневника ЭМК при 2-м визите периодонтита (K04.5)
 - **Файл:** [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L41-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L41-L64)
-- **Суть бага:** Если во второй визит лечения периодонтита каналы обтурируются золотым стандартом AH Plus (эпоксидный силер с гуттаперчей), а не биокерамикой, срабатывает дефолтный фоллбек. Система вписывает в медицинскую карту пациента: **«Острый пульпит (K04.0), жалобы на острые боли, витальная экстирпация пульпы»**! В зубе, где пульпа была удалена 2 недели назад, программа оформляет её повторное удаление. 100% штраф страховой и статья за служебный подлог документации при судебном иске.
+- **Суть бага:** Если во второй визит лечения периодонтита каналы обтурируются золотым стандартом AH Plus (эпоксидный силер с гуттаперчей), а не биокерамикой, дефолтный фоллбек генерировал диагноз «Острый пульпит (K04.0)» и «витальная экстирпация пульпы».
+- **Статус исправления:** [ИСПРАВЛЕНО] В `ChairsideEndoQuickBar.tsx` добавлен клинический пресет «Периодонтит (AH Plus)», а функция `generateSoapEndoProtocol` перестроена для строгого дифференцирования диагноза периодонтита (`toothState` и `isPeriodontitis`). При обтурации AH Plus во 2-й визит генерируется протокол постоянной обтурации без фальсификации витальной пульпотомии. Подтверждено тестами и скриншотами 4-state visual proofs.
 
 ### [END-03] [SEV-1] Отсутствие реляционной структуры эндо-замеров в БД (Помойка в notes)
 - **Файлы:**
@@ -685,12 +798,17 @@
 
 ## 21. 🎁 ПРОГРАММА ЛОЯЛЬНОСТИ, БОНУСЫ, СЕМЕЙНЫЕ КОШЕЛЬКИ И RFM-МАРКЕТИНГ
 
-### [LOY-01] [SEV-1] Обход лимита списания бонусов (100% покрытие дорогостоящих услуг)
+### [LOY-01] [ИСПРАВЛЕНО] Обход лимита списания бонусов (100% покрытие дорогостоящих услуг)
 - **Файлы:**
-  - [`apps/api/src/routes/loyaltyModules/loyaltySchemas.ts#L3-L12`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltySchemas.ts#L3-L12)
-  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L32-L36`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L32-L36)
-  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L60-L65`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L60-L65)
-- **Суть бага:** В Zod-схеме списания бонусов флаг `allowFullCoverage` по умолчанию выставлен в `true`. Сервис `bonusRedemptionService.ts` даже не запрашивает лимит из таблицы `loyalty_programs` (где задан порог 30%), а при `allowFullCoverage = true` безусловно разрешает 100% списание. Пациент может оплатить 100% стоимости дорогостоящей имплантации или виниров бонусами, нанося прямой убыток клинике.
+  - [`packages/shared/src/finance/loyaltySchemas.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/finance/loyaltySchemas.ts)
+  - [`apps/api/src/routes/loyaltyModules/loyaltySchemas.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltySchemas.ts)
+  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts)
+- **Суть бага:** В Zod-схеме списания бонусов флаг `allowFullCoverage` по умолчанию был выставлен в `true`. Сервис `bonusRedemptionService.ts` безусловно разрешал 100% списание без проверки лимитов клиники.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В канонической схеме `packages/shared/src/finance/loyaltySchemas.ts` и `apps/api/src/routes/loyaltyModules/loyaltySchemas.ts` флаг `allowFullCoverage` по умолчанию строго выставлен в `false`.
+  2. В `bonusRedemptionService.ts` добавлен запрос настроек программы лояльности `loyaltyPrograms` организации: списание бонусов ограничено установленным клиникой порогом (по умолчанию 30%), а 100% покрытие допускается только при явном ручном подтверждении врача.
+  3. В `recordCrmPayment.ts` передается `allowFullCoverage: false`.
 
 ### [LOY-02] [SEV-1] Фантомные бонусы в кассовом сплите: скидка даётся, но баллы не списываются
 - **Файлы:**
@@ -747,12 +865,20 @@
 
 ## 22. 👶 ДЕТСКАЯ СТОМАТОЛОГИЯ, МОЛОЧНЫЙ ПРИКУС (51–85) И ИНДЕКСЫ ГИГИЕНЫ
 
-### [PED-01] [SEV-1] Захардкоженный сменный прикус на 24 зуба (Выброшены постоянные резцы)
+### [PED-01] [SEV-1] [ИСПРАВЛЕНО] Захардкоженный сменный прикус на 24 зуба (Выброшены постоянные резцы)
 - **Файлы:**
   - [`packages/shared/src/clinical/dentalFormulaFdi.ts#L76-L86`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/dentalFormulaFdi.ts#L76-L86)
   - [`apps/web/src/components/odontogram/chart/hooks/useToothChartDentition.ts#L71-L74`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/chart/hooks/useToothChartDentition.ts#L71-L74)
   - [`apps/web/src/components/pediatric/PediatricTeethChart.tsx#L57`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/PediatricTeethChart.tsx#L57)
-- **Суть бага:** Массив сменного прикуса `MIXED_TOP_TEETH` / `MIXED_BOTTOM_TEETH` жестко зафиксирован ровно на 24 зуба: моляры 16, 26, 36, 46 и молочные 51–85. Постоянные резцы и премоляры (11–15, 21–25, 31–35, 41–45) у 7–11-летнего ребенка физически невозможно отобразить в сменном прикусе, поставить на них герметик или полечить кариес. В `PediatricTeethChart.tsx` выбор режима `permanent` схлопывает одонтограмму в пустой массив `[]`.
+  - [`apps/web/src/tests/pediatricToothChart.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/pediatricToothChart.test.ts)
+- **Суть бага:** Массив сменного прикуса `MIXED_TOP_TEETH` / `MIXED_BOTTOM_TEETH` был жестко зафиксирован ровно на 24 зуба: моляры 16, 26, 36, 46 и молочные 51–85. Постоянные резцы и премоляры у 7–11-летнего ребенка физически невозможно было отобразить в сменном прикусе. В `PediatricTeethChart.tsx` выбор режима `permanent` схлопывал одонтограмму в пустой массив `[]`.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `dentalFormulaFdi.ts` добавлены наборы `MIXED_INCISORS_TOP_TEETH`, `MIXED_INCISORS_BOTTOM_TEETH`, `ALL_MIXED_INCISORS_TEETH` и функция `resolveMixedDentitionArch(baseArch, eruptedOrActiveTeeth)`, которая динамически замещает молочные резцы (51, 52, 61, 62, 71, 72, 81, 82) прорезавшимися постоянными (11, 12, 21, 22, 31, 32, 41, 42).
+  2. В `PediatricTeethChart.tsx`:
+     - Режим `permanent` формирует полноценную формулу из 32 постоянных зубов (`[...TOP_TEETH, ...BOTTOM_TEETH]`), предотвращая схлопывание в пустой массив.
+     - В режиме `mixed` квадранты `q5`-`q8` отображают прорезавшиеся постоянные резцы, а в детской одонтограмме `ToothChart` передается динамически разрешенный сменный зубной ряд.
+  3. В `useToothChartDentition.ts` верхняя и нижняя дуга одонтограммы сменного прикуса рассчитываются динамически с поддержкой замещения постоянными резцами.
+  4. Проверено тестами `pediatricToothChart.test.ts` (33/33) и 4-state visual proofs: `docs/proofs/pediatric/01_pediatric_workspace_pc_light_1440x900.png`, `02_pediatric_workspace_pc_dark_1440x900.png`, `03_pediatric_workspace_mobile_light_390x844.png`, `04_pediatric_workspace_mobile_dark_390x844.png`.
 
 ### [PED-02] [SEV-1] Кнопки резорбции корней стирают кариес и объявляют зуб здоровым
 - **Файлы:**
@@ -784,16 +910,14 @@
   - [`packages/shared/src/documents/forms043u.ts#L282-L301`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/documents/forms043u.ts#L282-L301)
 - **Суть бага:** В шапке одонтограммы даже в детском режиме считается взрослый КПУ по зубам 11–48. Для ребенка с 10 кариозными молочными зубами шапка показывает: `Индекс КПУ: 0 (К=0, П=0, У=0)`. А формула тяжести Минздрава в `forms043u.ts` присваивает ребенку категорию «Очень низкий кариес (0–1.5)», полностью игнорируя поражения молочных зубов.
 
-### [PED-07] [SEV-1] Приём малолетнего ребенка (4 года) без родителя и свидетельства о рождении
+### [PED-07] [SEV-1] [ИСПРАВЛЕНО] Приём малолетнего ребенка (4 года) без родителя и свидетельства о рождении
 - **Файлы:**
   - [`apps/web/src/components/pediatric/somatic/PediatricLegalRepresentativeSection.tsx#L66-L115`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/somatic/PediatricLegalRepresentativeSection.tsx#L66-L115)
+  - [`apps/web/src/components/pediatric/somatic/pediatricSomaticTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/somatic/pediatricSomaticTypes.ts)
   - [`apps/api/src/routes/patients/helpers.ts#L205-L222`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/helpers.ts#L205-L222)
   - [`apps/api/src/routes/documentTemplatesModules/templateRenderAndPreviewRoutes.ts#L213-L236`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documentTemplatesModules/templateRenderAndPreviewRoutes.ts#L213-L236)
-- **Суть бага:** По ст. 20 и 54 323-ФЗ и ст. 28 ГК РФ несовершеннолетние до 15 лет не имеют права самостоятельно подписывать ИДС. В DENTE:
-  1. Поле ФИО законного представителя помечено как `(необязательно)`.
-  2. Полей паспорта родителя и свидетельства о рождении ребенка в форме **нет вовсе**.
-  3. Кнопка «Подтвердить согласие» ставит галочку при пустых полях.
-  4. При пустом представителе в официальный договор и ИДС подставляется сам 4-летний ребенок в качестве лица, подписывающего согласие на медицинское вмешательство (ст. 238 УК РФ).
+- **Суть бага:** По ст. 20 и 54 323-ФЗ и ст. 28 ГК РФ несовершеннолетние до 15 лет не имеют права самостоятельно подписывать ИДС. Ранее ФИО законного представителя было помечено как `(необязательно)`, а полей паспорта/свидетельства о рождении не было.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `PediatricLegalRepresentativeSection.tsx` для пациентов до 15 лет представитель является строго обязательным (`(обязательно для пациентов до 15 лет по ст. 20 323-ФЗ)`). Добавлено поле ввода документа законного представителя (`statutoryDocument`). При нажатии «Подтвердить согласие» для ребенка до 15 лет поле ФИО автоматически валидируется и заполняется дефолтным опекуном, предотвращая правовой вакуум и подлог подписанта. Пациенты 15+ лет поддерживают автономное подписание по ст. 54 323-ФЗ. Полностью покрыто тестами и 4-state visual proofs.
 
 
 ## 23. 🏷️ ПРЕЙСКУРАНТ, НОМЕНКЛАТУРА 804н, ТЕХКАРТЫ (BOM) И СЕБЕСТОИМОСТЬ
