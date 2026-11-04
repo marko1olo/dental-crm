@@ -1,4 +1,4 @@
-import type { ClinicRequisites043 } from "../emr043Types";
+import type { ClinicRequisites043, ClinicRequisitesData } from "../types/recordDataTypes";
 import { DEFAULT_043_DATA } from "./recordDefaultSchema";
 
 export function resolveClinicRequisites(

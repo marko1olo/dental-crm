@@ -45,7 +45,9 @@ import {
 function createMockContext(overrides?: Partial<AgentContext>): AgentContext {
 	return {
 		organizationId: "00000000-0000-7000-8000-000000000001",
+		clinicId: "00000000-0000-7000-8000-000000000003",
 		userId: "00000000-0000-7000-8000-000000000002",
+		sessionId: "00000000-0000-7000-8000-000000000004",
 		mode: "supervised",
 		role: "doctor",
 		permissions: [

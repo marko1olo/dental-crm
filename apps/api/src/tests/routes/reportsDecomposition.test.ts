@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import fastify from "fastify";
 import {
 	registerReportRoutes,
@@ -37,7 +38,7 @@ describe("Reports Decomposition & Submodule Integrity (Mandate 8b / SSOT)", () =
 		];
 
 		for (const path of expectedPaths) {
-			expect(registeredRoutes).toContain(path);
+			assert.ok(registeredRoutes.includes(path), `Expected route ${path} to be registered`);
 		}
 		await app.close();
 	});
@@ -52,11 +53,11 @@ describe("Reports Decomposition & Submodule Integrity (Mandate 8b / SSOT)", () =
 		await registerRevenueAndDebtReportsRoutes(app);
 		await app.ready();
 
-		expect(registeredRoutes).toContain("/api/reports/revenue");
-		expect(registeredRoutes).toContain("/api/reports/financial-summary");
-		expect(registeredRoutes).toContain("/api/reports/receivables");
-		expect(registeredRoutes).toContain("/api/reports/summary");
-		expect(registeredRoutes).not.toContain("/api/reports/chairs");
+		assert.ok(registeredRoutes.includes("/api/reports/revenue"));
+		assert.ok(registeredRoutes.includes("/api/reports/financial-summary"));
+		assert.ok(registeredRoutes.includes("/api/reports/receivables"));
+		assert.ok(registeredRoutes.includes("/api/reports/summary"));
+		assert.strictEqual(registeredRoutes.includes("/api/reports/chairs"), false);
 		await app.close();
 	});
 
@@ -70,12 +71,12 @@ describe("Reports Decomposition & Submodule Integrity (Mandate 8b / SSOT)", () =
 		await registerClinicalWorkloadReportsRoutes(app);
 		await app.ready();
 
-		expect(registeredRoutes).toContain("/api/reports/chairs");
-		expect(registeredRoutes).toContain("/api/reports/appointments");
-		expect(registeredRoutes).toContain("/api/reports/reminder-effect");
-		expect(registeredRoutes).toContain("/api/reports/patient-flow");
-		expect(registeredRoutes).toContain("/api/reports/schedule-load");
-		expect(registeredRoutes).not.toContain("/api/reports/revenue");
+		assert.ok(registeredRoutes.includes("/api/reports/chairs"));
+		assert.ok(registeredRoutes.includes("/api/reports/appointments"));
+		assert.ok(registeredRoutes.includes("/api/reports/reminder-effect"));
+		assert.ok(registeredRoutes.includes("/api/reports/patient-flow"));
+		assert.ok(registeredRoutes.includes("/api/reports/schedule-load"));
+		assert.strictEqual(registeredRoutes.includes("/api/reports/revenue"), false);
 		await app.close();
 	});
 
@@ -89,61 +90,61 @@ describe("Reports Decomposition & Submodule Integrity (Mandate 8b / SSOT)", () =
 		await registerDoctorPerformancePayrollRoutes(app);
 		await app.ready();
 
-		expect(registeredRoutes).toContain("/api/reports/doctors");
-		expect(registeredRoutes).toContain("/api/reports/doctor-payroll");
-		expect(registeredRoutes).toContain("/api/reports/services");
-		expect(registeredRoutes).not.toContain("/api/reports/chairs");
+		assert.ok(registeredRoutes.includes("/api/reports/doctors"));
+		assert.ok(registeredRoutes.includes("/api/reports/doctor-payroll"));
+		assert.ok(registeredRoutes.includes("/api/reports/services"));
+		assert.strictEqual(registeredRoutes.includes("/api/reports/chairs"), false);
 		await app.close();
 	});
 
 	describe("resolvePeriodBoundary date math & timezone protection", () => {
 		it("correctly resolves calendar date start (from)", () => {
 			const res = resolvePeriodBoundary("2026-07-01", "from", "Europe/Moscow");
-			expect(res).not.toBeNull();
-			expect(res instanceof Date).toBe(true);
+			assert.notStrictEqual(res, null);
+			assert.ok(res instanceof Date);
 			// 2026-07-01 00:00:00 MSK is 2026-06-30 21:00:00 UTC
-			expect(res?.toISOString()).toBe("2026-06-30T21:00:00.000Z");
+			assert.strictEqual(res?.toISOString(), "2026-06-30T21:00:00.000Z");
 		});
 
 		it("correctly resolves calendar date end (to) including the full day", () => {
 			const res = resolvePeriodBoundary("2026-07-01", "to", "Europe/Moscow");
-			expect(res).not.toBeNull();
+			assert.notStrictEqual(res, null);
 			// 2026-07-01 23:59:59.999 MSK is 2026-07-01 20:59:59.999 UTC
-			expect(res?.toISOString()).toBe("2026-07-01T20:59:59.999Z");
+			assert.strictEqual(res?.toISOString(), "2026-07-01T20:59:59.999Z");
 		});
 
 		it("rejects non-existent dates (Feb 30, Month 13)", () => {
-			expect(resolvePeriodBoundary("2026-02-30", "from", "Europe/Moscow")).toBeNull();
-			expect(resolvePeriodBoundary("2026-13-01", "from", "Europe/Moscow")).toBeNull();
-			expect(resolvePeriodBoundary("invalid-date", "from", "Europe/Moscow")).toBeNull();
+			assert.strictEqual(resolvePeriodBoundary("2026-02-30", "from", "Europe/Moscow"), null);
+			assert.strictEqual(resolvePeriodBoundary("2026-13-01", "from", "Europe/Moscow"), null);
+			assert.strictEqual(resolvePeriodBoundary("invalid-date", "from", "Europe/Moscow"), null);
 		});
 
 		it("allows full ISO strings with timezone offsets", () => {
 			const iso = "2026-07-01T00:00:00.000+03:00";
 			const res = resolvePeriodBoundary(iso, "from", "Europe/Moscow");
-			expect(res).not.toBeNull();
-			expect(res?.toISOString()).toBe("2026-06-30T21:00:00.000Z");
+			assert.notStrictEqual(res, null);
+			assert.strictEqual(res?.toISOString(), "2026-06-30T21:00:00.000Z");
 		});
 	});
 
 	describe("resolvePeriod range validation and presets", () => {
 		it("resolves day preset cleanly", () => {
 			const result = resolvePeriod({ period: "day" }, "Europe/Moscow");
-			expect(result.ok).toBe(true);
+			assert.strictEqual(result.ok, true);
 			if (result.ok) {
-				expect(result.from).toBeInstanceOf(Date);
-				expect(result.to).toBeInstanceOf(Date);
-				expect(result.from.getTime()).toBeLessThan(result.to.getTime());
+				assert.ok(result.from instanceof Date);
+				assert.ok(result.to instanceof Date);
+				assert.ok(result.from.getTime() < result.to.getTime());
 			}
 		});
 
 		it("resolves week preset cleanly", () => {
 			const result = resolvePeriod({ period: "week" }, "Europe/Moscow");
-			expect(result.ok).toBe(true);
+			assert.strictEqual(result.ok, true);
 			if (result.ok) {
-				expect(result.from).toBeInstanceOf(Date);
-				expect(result.to).toBeInstanceOf(Date);
-				expect(result.from.getTime()).toBeLessThan(result.to.getTime());
+				assert.ok(result.from instanceof Date);
+				assert.ok(result.to instanceof Date);
+				assert.ok(result.from.getTime() < result.to.getTime());
 			}
 		});
 
@@ -152,9 +153,9 @@ describe("Reports Decomposition & Submodule Integrity (Mandate 8b / SSOT)", () =
 				{ from: "2026-07-15", to: "2026-07-01" },
 				"Europe/Moscow",
 			);
-			expect(result.ok).toBe(false);
+			assert.strictEqual(result.ok, false);
 			if (!result.ok) {
-				expect(result.message).toContain("позже его конца");
+				assert.ok(result.message.includes("позже его конца"));
 			}
 		});
 
@@ -163,9 +164,9 @@ describe("Reports Decomposition & Submodule Integrity (Mandate 8b / SSOT)", () =
 				{ from: "2024-01-01", to: "2026-01-01" },
 				"Europe/Moscow",
 			);
-			expect(result.ok).toBe(false);
+			assert.strictEqual(result.ok, false);
 			if (!result.ok) {
-				expect(result.message).toContain(`${MAX_PERIOD_DAYS} дней`);
+				assert.ok(result.message.includes(`${MAX_PERIOD_DAYS} дней`));
 			}
 		});
 	});

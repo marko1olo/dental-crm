@@ -4,7 +4,7 @@
  * 4 canonical drugs in Russian clinical practice, carpule volumes, 1-click presets & soft negative stock writeoff.
  */
 
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 
 export type AnestheticDrugId =
 	| "articaine_1_100k"

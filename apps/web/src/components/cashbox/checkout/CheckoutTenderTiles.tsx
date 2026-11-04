@@ -41,9 +41,9 @@ export interface CheckoutTenderTilesProps {
 	readonly setBuyerInn: (val: string) => void;
 	readonly method: CashboxTenderType;
 	readonly setMethod: (m: CashboxTenderType) => void;
-	readonly onSelectCash?: () => void;
-	readonly onSelectSplit?: () => void;
-	readonly onOpenSplitPayment?: () => void;
+	readonly onSelectCash?: (() => void) | undefined;
+	readonly onSelectSplit?: (() => void) | undefined;
+	readonly onOpenSplitPayment?: (() => void) | undefined;
 }
 
 export const CheckoutTenderTiles: React.FC<CheckoutTenderTilesProps> = ({

@@ -13,9 +13,9 @@ export interface CheckoutFooterProps {
 	readonly totalDue: number;
 	readonly isWarranty: boolean;
 	readonly isSubmitting: boolean;
-	readonly submitButtonTestId?: string;
+	readonly submitButtonTestId?: string | undefined;
 	readonly onClose: () => void;
-	readonly onExecutePayment: () => void;
+	readonly onExecutePayment: () => void | Promise<void>;
 }
 
 export const CheckoutFooter: React.FC<CheckoutFooterProps> = ({

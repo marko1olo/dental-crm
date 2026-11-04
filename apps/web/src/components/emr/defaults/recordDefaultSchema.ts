@@ -1,7 +1,7 @@
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 import { DEFAULT_32_PERMANENT_TEETH } from "./recordDefaultTeeth";
 
-export const DEFAULT_043_DATA: MedicalRecordData = {
+export const DEFAULT_MEDICAL_RECORD_DATA: MedicalRecordData = {
 	formNumber: "Медицинская карта приёма",
 	formOrderName: "Медицинская карта стоматологического пациента",
 	clinic: {
@@ -105,3 +105,6 @@ export const DEFAULT_043_DATA: MedicalRecordData = {
 		attendingDoctorFullName: "",
 	},
 };
+
+export const DEFAULT_043_DATA = DEFAULT_MEDICAL_RECORD_DATA;
+

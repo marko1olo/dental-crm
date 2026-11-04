@@ -15,6 +15,8 @@ export const CopilotGlobalHost: React.FC = () => {
 
   const [customMessages, setCustomMessages] = useState<CopilotUiMessage[] | null>(null);
   const [customPending, setCustomPending] = useState<PendingConfirmation | null>(null);
+  const [customBusy, setCustomBusy] = useState<boolean>(false);
+  const [customPhase, setCustomPhase] = useState<string | null>(null);
   const [isHudOpen, setIsHudOpen] = useState(false);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
   const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
@@ -66,6 +68,8 @@ export const CopilotGlobalHost: React.FC = () => {
     closeTreatmentPlanCopilot,
     setCustomMessages,
     setCustomPending,
+    setCustomBusy,
+    setCustomPhase,
     onOpenCatalog: handleOpenCatalog,
   });
 
@@ -85,7 +89,10 @@ export const CopilotGlobalHost: React.FC = () => {
         activeTooth={numericActiveTooth}
         patientId={uiContext.patientId}
         patientName={uiContext.patientName}
-        initialTab="dialog"
+        initialTab={copilot.activeTab === 'pending' ? 'actions' : 'dialog'}
+        initialMessages={effectiveMessages && effectiveMessages.length > 0 ? (effectiveMessages as any) : undefined}
+        isThinking={customBusy || copilot.busy}
+        thoughtProcess={customPhase || copilot.phase || undefined}
       />
       <CopilotGlobalModals
         isHudOpen={isHudOpen}

@@ -1,8 +1,8 @@
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 import { DEFAULT_32_PERMANENT_TEETH } from "./recordDefaultTeeth";
 
 /** Заполнение незаполненных полей анамнеза, осмотра и интактных зубов физиологической нормой в 1 клик (Мандат 8e) */
-export function applyForm043PhysiologicalNorm(prev: MedicalRecordData): MedicalRecordData {
+export function applyMedicalRecordPhysiologicalNorm(prev: MedicalRecordData): MedicalRecordData {
 	return {
 		...prev,
 		anamnesis: {
@@ -60,3 +60,6 @@ export function applyForm043PhysiologicalNorm(prev: MedicalRecordData): MedicalR
 		},
 	};
 }
+
+export const applyForm043PhysiologicalNorm = applyMedicalRecordPhysiologicalNorm;
+

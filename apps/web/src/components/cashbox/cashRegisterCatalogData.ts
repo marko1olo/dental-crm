@@ -95,7 +95,7 @@ export function formatRubles(rub: number): string {
 	if (!Number.isFinite(rub)) return "0 ₽";
 	const rounded = Math.round(rub * 100) / 100;
 	const parts = rounded.toFixed(rounded % 1 === 0 ? 0 : 2).split(".");
-	const integerPart = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
+	const integerPart = (parts[0] ?? "0").replace(/\B(?=(\d{3})+(?!\d))/g, "\u00A0");
 	return parts.length > 1 ? `${integerPart},${parts[1]} ₽` : `${integerPart} ₽`;
 }
 

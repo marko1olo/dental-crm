@@ -154,13 +154,14 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 				{/* Поиск по диалогам */}
 				<div className="px-5 py-2.5 border-b border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] shrink-0">
 					<div className="relative">
-						<Search size={13} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[var(--muted)]" />
+						<Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" />
 						<input
 							type="text"
 							value={searchQuery}
 							onChange={(e) => setSearchQuery(e.target.value)}
 							placeholder="Поиск по диалогам и пациентам..."
-							className="w-full h-8 pl-8 pr-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
+							style={{ paddingLeft: "38px" }}
+							className="w-full h-8 pl-10 pr-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[11px] text-[var(--ink)] focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 						/>
 					</div>
 				</div>

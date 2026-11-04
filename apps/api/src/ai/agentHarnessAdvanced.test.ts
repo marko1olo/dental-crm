@@ -396,10 +396,10 @@ test("6. buildAgentSystemPrompt: Injects in-app multi-agent swarm role directive
 test("7. runAgentHarness: Fallback to deterministic ReAct cycle when API keys are exhausted", async () => {
 	const exhaustedClient: Partial<AgentRouterClient> = {
 		async createChatCompletion() {
-			throw new AgentRouterAllKeysExhaustedError("Все 0 ключей API исчерпали лимиты");
+			throw new AgentRouterAllKeysExhaustedError(10000);
 		},
 		async createStreamingChatCompletion() {
-			throw new AgentRouterAllKeysExhaustedError("Все 0 ключей API исчерпали лимиты");
+			throw new AgentRouterAllKeysExhaustedError(10000);
 		},
 	};
 
@@ -409,7 +409,7 @@ test("7. runAgentHarness: Fallback to deterministic ReAct cycle when API keys ar
 		context: dummyContext,
 		client: exhaustedClient as AgentRouterClient,
 		trustLevel: "confirm_all",
-		onEvent: (e) => events.push(e),
+		onEvent: (e) => { events.push(e); },
 	});
 
 	assert.ok(result.text.length > 0, "Must return clinical verdict");
@@ -451,6 +451,7 @@ test("9. ToolDispatcher: Granular permissions auto-approve file and clinical act
 					index: 0,
 					message: {
 						role: "assistant",
+						content: null,
 						tool_calls: [
 							{
 								id: "call-1",
@@ -487,7 +488,7 @@ test("9. ToolDispatcher: Granular permissions auto-approve file and clinical act
 		client: mockClient,
 		trustLevel: "confirm_all",
 		granularPermissions: { autoApproveFileReads: true },
-		onEvent: (e) => events.push(e),
+		onEvent: (e) => { events.push(e); },
 	});
 
 	assert.ok(result.text.includes("Файл успешно прочитан"));

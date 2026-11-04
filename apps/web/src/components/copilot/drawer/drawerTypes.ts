@@ -10,7 +10,7 @@ import type {
 	WhatsAppApprovalCard,
 } from "../copilotTypes";
 
-export type CopilotDrawerTab = "chat" | "pending";
+export type CopilotDrawerTab = "chat" | "pending" | "workstation";
 
 export interface CopilotDrawerProps {
 	isOpen: boolean;

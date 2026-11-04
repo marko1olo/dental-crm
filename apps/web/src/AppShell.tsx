@@ -1,5 +1,5 @@
 import { Stethoscope } from "lucide-react";
-import { lazy, Suspense, useEffect } from "react";
+import { lazy, Suspense, useEffect, useState } from "react";
 import { BootErrorBoundary } from "./bootErrorBoundary";
 import { GlobalToast } from "./components/GlobalToast";
 import { DirectMedicalInsertLauncher } from "./components/documents/DirectMedicalInsertLauncher";
@@ -120,6 +120,14 @@ function isStandaloneActive(): boolean {
 	return (
 		s.includes("standalone") ||
 		h.includes("standalone") ||
+		h.includes("cashbox") ||
+		s.includes("cashbox") ||
+		h.includes("checkout") ||
+		s.includes("checkout") ||
+		h.includes("cashier") ||
+		s.includes("cashier") ||
+		h.includes("kassa") ||
+		s.includes("kassa") ||
 		h.includes("odontogram") ||
 		s.includes("odontogram") ||
 		h.includes("dental-chart") ||
@@ -182,6 +190,10 @@ function isStandaloneActive(): boolean {
 		h.includes("implant-passport") ||
 		s.includes("implants") ||
 		h.includes("implants") ||
+		s.includes("surgery") ||
+		h.includes("surgery") ||
+		s.includes("extraction") ||
+		h.includes("extraction") ||
 		s.includes("copilot_standalone") ||
 		h.includes("copilot-standalone") ||
 		s.includes("copilot_workspace") ||
@@ -252,7 +264,17 @@ function isStandaloneActive(): boolean {
 }
 
 export function AppShell() {
-	const standalone = isStandaloneActive();
+	const [standalone, setStandalone] = useState<boolean>(() => isStandaloneActive());
+
+	useEffect(() => {
+		const update = () => setStandalone(isStandaloneActive());
+		window.addEventListener("hashchange", update);
+		window.addEventListener("popstate", update);
+		return () => {
+			window.removeEventListener("hashchange", update);
+			window.removeEventListener("popstate", update);
+		};
+	}, []);
 	return (
 		<BootErrorBoundary audience="clinic">
 			<ThemeController />

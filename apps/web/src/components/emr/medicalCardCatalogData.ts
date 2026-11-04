@@ -13,7 +13,7 @@ import type {
 	ClinicRequisites043,
 	MedicalRecordData,
 	Form043VisitDiaryEntry,
-} from "./outpatientRecordTypes";
+} from "./types/recordDataTypes";
 
 /** Канонический набор 32 постоянных зубов по формуле FDI (11–48) */
 export const DEFAULT_32_PERMANENT_TEETH: FdiToothRecord[] = [

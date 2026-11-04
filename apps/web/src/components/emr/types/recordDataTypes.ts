@@ -1,3 +1,10 @@
+/**
+ * apps/web/src/components/emr/types/recordDataTypes.ts
+ *
+ * Единый канонический SSOT-модуль типов медицинской карты приёма и клинических дневников DENTE CRM.
+ * Мандаты 8e (Автономия врача), 8n (Соло-врач), 8x/8ap (Единый предметный язык без бюрократических номеров приказов).
+ */
+
 import type {
 	FdiToothRecord,
 	DmftIndex,
@@ -5,7 +12,61 @@ import type {
 	DentalBiteType,
 	OralMucosaStatus,
 } from "@dental/shared";
-import type { ClinicRequisites043 } from "./recordConfigTypes";
+
+export interface ClinicRequisitesData {
+	clinicName: string;
+	clinicLegalName: string;
+	clinicAddress: string;
+	clinicPhone: string;
+	clinicOgrn: string;
+	clinicInn: string;
+	clinicKpp: string;
+	licenseNumber: string;
+	licenseDate: string;
+	licenseIssuer: string;
+	chiefDoctorFullName: string;
+}
+
+/** Алиас для обратной совместимости */
+export type ClinicRequisites043 = ClinicRequisitesData;
+
+export interface MedicalRecordPrintConfig {
+	activeTab: "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
+	pageOrientation: "portrait" | "landscape";
+	includeClinicLogo: boolean;
+	includeClinicRequisites: boolean;
+	includeUkepStamp: boolean;
+	includeDoctorStampSeal: boolean;
+	includePatientSignatureBlock: boolean;
+	includeXrayThumbnails: boolean;
+	includeFullSoapDiaries: boolean;
+	selectedDiaryIds?: string[];
+	fontSizePt: number;
+	scaleRatio: number;
+	themeMode: "light" | "dark";
+	isLocked?: boolean;
+	isDraft?: boolean;
+	status?: "draft" | "signed" | string;
+	revisionCount?: number;
+}
+
+/** Алиас для обратной совместимости */
+export type Form043PrintConfig = MedicalRecordPrintConfig;
+
+export interface MedicalRecordValidationResult {
+	isComplete: boolean;
+	completenessScore: number;
+	missingFields: {
+		fieldKey: string;
+		label: string;
+		category: "passport" | "anamnesis" | "dental_status" | "diaries" | "epicrisis";
+		severity: "critical" | "warning";
+	}[];
+	warnings: string[];
+}
+
+/** Алиас для обратной совместимости */
+export type Form043ValidationResult = MedicalRecordValidationResult;
 
 export interface HygieneIndexOhiS {
 	score?: number | undefined;
@@ -17,7 +78,7 @@ export interface HygieneIndexOhiS {
 	calculusScore?: number | undefined;
 }
 
-export interface Form043PassportData {
+export interface ClinicalPassportData {
 	medicalCardNumber: string;
 	cardOpenedDate: string;
 	patientFullName: string;
@@ -39,7 +100,9 @@ export interface Form043PassportData {
 	attendingDoctorSnils: string;
 }
 
-export interface Form043AnamnesisData {
+export type Form043PassportData = ClinicalPassportData;
+
+export interface ClinicalAnamnesisData {
 	chiefComplaint: string;
 	historyOfPresentIllness: string;
 	medicalHistoryVitae: string;
@@ -51,7 +114,9 @@ export interface Form043AnamnesisData {
 	occupationalHazardsAndHabits: string;
 }
 
-export interface Form043DentalStatusData {
+export type Form043AnamnesisData = ClinicalAnamnesisData;
+
+export interface ClinicalDentalStatusData {
 	odontogramTeeth: FdiToothRecord[];
 	dmftIndex: DmftIndex;
 	cpitnIndex: CpitnIndex;
@@ -63,7 +128,9 @@ export interface Form043DentalStatusData {
 	xrayRadiationDoseMsv: number;
 }
 
-export interface Form043VisitDiaryEntry {
+export type Form043DentalStatusData = ClinicalDentalStatusData;
+
+export interface ClinicalVisitDiaryEntry {
 	id: string;
 	entryDate: string;
 	entryTime: string | null;
@@ -89,7 +156,10 @@ export interface Form043VisitDiaryEntry {
 	probingPocketDepthMm?: number | null | undefined;
 }
 
-export interface Form043EpicrisisData {
+export type Form043VisitDiaryEntry = ClinicalVisitDiaryEntry;
+export type VisitDiaryEntry043 = ClinicalVisitDiaryEntry;
+
+export interface ClinicalEpicrisisData {
 	treatmentSummary: string;
 	treatmentOutcome: "cured_complete" | "improvement_remission" | "without_change" | "deterioration" | "treatment_in_progress" | "complete_cure";
 	treatmentOutcomeLabel: string;
@@ -102,14 +172,16 @@ export interface Form043EpicrisisData {
 	attendingDoctorFullName: string;
 }
 
+export type Form043EpicrisisData = ClinicalEpicrisisData;
+
 export interface MedicalRecordData {
-	formNumber: "043/у" | "Медицинская карта приёма" | string;
-	formOrderName: "Приказ Минздрава СССР от 04.10.1980 № 1030" | "Приказ Минздрава России от 15.12.2014 № 834н" | "Медицинская карта стоматологического пациента" | "Медицинская карта приёма" | string;
-	clinic: ClinicRequisites043;
-	passport: Form043PassportData;
-	anamnesis: Form043AnamnesisData;
-	dentalStatus: Form043DentalStatusData;
+	formNumber: "Медицинская карта приёма" | "043/у" | string;
+	formOrderName: "Медицинская карта приёма" | "Медицинская карта стоматологического пациента" | "Приказ Минздрава России от 15.12.2014 № 834н" | "Приказ Минздрава СССР от 04.10.1980 № 1030" | string;
+	clinic: ClinicRequisitesData;
+	passport: ClinicalPassportData;
+	anamnesis: ClinicalAnamnesisData;
+	dentalStatus: ClinicalDentalStatusData;
 	generalTreatmentPlan: string;
-	visitDiaries: Form043VisitDiaryEntry[];
-	epicrisis: Form043EpicrisisData;
+	visitDiaries: ClinicalVisitDiaryEntry[];
+	epicrisis: ClinicalEpicrisisData;
 }

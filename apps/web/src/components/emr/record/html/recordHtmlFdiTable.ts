@@ -1,5 +1,5 @@
 import { type FdiToothRecord, toothStatusCodeShortMap } from "@dental/shared";
-import { escapeHtml } from "../../emr043Math";
+import { escapeHtml } from "../../math/recordMathFormatting";
 
 /** Рендерер таблицы зубной формулы FDI (все 32 постоянных зуба + расшифровка) */
 export function renderFdiFormulaTableHtml(odontogramTeeth: FdiToothRecord[]): string {

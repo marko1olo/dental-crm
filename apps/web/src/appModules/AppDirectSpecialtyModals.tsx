@@ -19,8 +19,8 @@ const OrthodonticVisitScreen = lazyWithRetry(() =>
 const ToothContextDrawer = lazyWithRetry(() =>
 	import("../components/diagnostics/ToothContextDrawer").then((m) => ({ default: m.ToothContextDrawer })),
 );
-const Form043PrintModal = lazyWithRetry(() =>
-	import("../components/emr/Form043PrintModal").then((m) => ({ default: m.Form043PrintModal })),
+const MedicalRecordStudioModal = lazyWithRetry(() =>
+	import("../components/emr/MedicalRecordStudioModal").then((m) => ({ default: m.MedicalRecordStudioModal })),
 );
 
 interface AppDirectSpecialtyModalsProps {
@@ -70,7 +70,7 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 			)}
 			{routing.isEmrCardDirectModalOpen && (
 				<Suspense fallback={null}>
-					<Form043PrintModal
+					<MedicalRecordStudioModal
 						isOpen={true}
 						onClose={() => routing.setIsEmrCardDirectModalOpen(false)}
 						initialData={{

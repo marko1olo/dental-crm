@@ -21,7 +21,7 @@ import {
 	getExtractionSurgicalServices,
 	computeOsteointegrationExpectedDate,
 } from "../surgeryCatalogData";
-import { SurgeryStudioModal, ChairsideSurgeryHubModal } from "../SurgeryStudioModal";
+import { SurgeryStudioModal, ChairsideSurgeryHubModal } from "../ChairsideSurgeryHubModal";
 import { DirectSurgeryLauncher } from "../DirectSurgeryLauncher";
 
 describe("Surgery Studio SSOT & Clinical Sovereignty Suite", () => {

@@ -19,7 +19,7 @@ export interface SurgeryScenarioDefinition {
 	readonly id: string; readonly type: SurgeryScenarioType; readonly titleRu: string; readonly subtitleRu: string; readonly defaultToothFdi: number; readonly icd10: string; readonly icd10Label: string; readonly serviceCode: string; readonly serviceNameRu: string; readonly defaultPriceRub: number; readonly defaultProtocolRu: string; readonly defaultRecommendationsRu: string; readonly standardMaterials: readonly SurgeryMaterialItem[];
 }
 export interface SurgeryImplantSystemSpec {
-	readonly id: string; readonly brandName: string; readonly popularLines: readonly string[]; readonly platformName: string; readonly screwdriverType: string; readonly screwdriverAliasRu: string; readonly minTorqueNcm: number; readonly defaultTorqueNcm: number; readonly maxSafeTorqueNcm: number; readonly isqOptimalRange: string; readonly standardDiametersMm: readonly number[]; readonly standardLengthsMm: readonly number[]; readonly defaultDiameterMm: number; readonly defaultLengthMm: number; readonly defaultArticle: string; readonly defaultLotNumber: string; readonly defaultSerialNumber: string; readonly defaultExpirationDate: string;
+	readonly id: string; readonly brandName: string; readonly unitCostRub: number; readonly popularLines: readonly string[]; readonly platformName: string; readonly screwdriverType: string; readonly screwdriverAliasRu: string; readonly minTorqueNcm: number; readonly defaultTorqueNcm: number; readonly maxSafeTorqueNcm: number; readonly isqOptimalRange: string; readonly standardDiametersMm: readonly number[]; readonly standardLengthsMm: readonly number[]; readonly defaultDiameterMm: number; readonly defaultLengthMm: number; readonly defaultArticle: string; readonly defaultLotNumber: string; readonly defaultSerialNumber: string; readonly defaultExpirationDate: string;
 }
 export interface SurgeryWarehouseBatchItem {
 	readonly id: string; readonly brand: string; readonly model: string; readonly sku: string; readonly lotNumber: string; readonly serialNumber: string; readonly diameterMm: number; readonly lengthMm: number; readonly availableQuantity: number; readonly expirationDate: string;
@@ -74,11 +74,11 @@ export const PERIOSTOTOMY_NORM_TEXT = "Инфильтрационная анес
 export const APICOECTOMY_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Трапециевидный разрез слизистой в проекции верхушки корня, отслоен лоскут. Трепанация кортикальной пластинки шаровидным бором. Резекция верхушки корня на 3 мм под углом 90°. Цистэктомия очага. Ретроградное пломбирование МТА (ProRoot). Контроль гемостаза. Ушивание раны узловыми швами Монофиламент 5-0. Рекомендации даны.";
 export const PERICORONITIS_NORM_TEXT = "Инфильтрационная анестезия Sol. Articaini 4% 1:100 000 — 1.7 мл. Иссечение воспаленного слизистого капюшона над коронкой ретинированного зуба скальпелем. Промывание антисептиками (хлоргексидин 0.05%), йодоформная турунда. Гемостаз полный. Рекомендации даны.";
 export const SURGERY_IMPLANT_SYSTEMS: readonly SurgeryImplantSystemSpec[] = [
-	{ id: "osstem", brandName: "Osstem", popularLines: ["TS III SA", "TS III SOI", "TS IV"], platformName: "Внутренний конус Морзе 11° с шестигранником", screwdriverType: "Hex 1.2 mm", screwdriverAliasRu: "Шестигранник 1.2 мм (Osstem)", minTorqueNcm: 25, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "65–85", standardDiametersMm: [3.5, 4.0, 4.5, 5.0], standardLengthsMm: [8.5, 10.0, 11.5, 13.0], defaultDiameterMm: 4.0, defaultLengthMm: 10.0, defaultArticle: "TS3S4010S", defaultLotNumber: "24C1208", defaultSerialNumber: "SN-884210", defaultExpirationDate: "2029-06-30" },
-	{ id: "straumann", brandName: "Straumann", popularLines: ["BLX", "Bone Level SLA", "SLActive"], platformName: "CrossFit / TorcFit", screwdriverType: "Torx / SCS 1.25 mm", screwdriverAliasRu: "Torx SCS 1.25 мм (Straumann)", minTorqueNcm: 25, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "70–85", standardDiametersMm: [3.3, 3.75, 4.1, 4.8], standardLengthsMm: [8.0, 10.0, 12.0, 14.0], defaultDiameterMm: 4.1, defaultLengthMm: 10.0, defaultArticle: "021.2310", defaultLotNumber: "24B0812", defaultSerialNumber: "SN-102944", defaultExpirationDate: "2029-03-31" },
-	{ id: "nobel_biocare", brandName: "Nobel Biocare", popularLines: ["NobelActive", "NobelReplace CC", "NobelParallel"], platformName: "Conical Connection (конусное соединение)", screwdriverType: "Unigrip", screwdriverAliasRu: "Отвертка Unigrip (Nobel)", minTorqueNcm: 30, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "70–85", standardDiametersMm: [3.5, 4.3, 5.0], standardLengthsMm: [8.5, 10.0, 11.5, 13.0], defaultDiameterMm: 4.3, defaultLengthMm: 10.0, defaultArticle: "NP-35115", defaultLotNumber: "24A9914", defaultSerialNumber: "SN-551042", defaultExpirationDate: "2028-12-31" },
-	{ id: "dentium", brandName: "Dentium", popularLines: ["SuperLine", "SimpleLine II", "Implantium"], platformName: "Внутренний конус 11° с шестигранником 1.27 мм", screwdriverType: "Hex 1.27 mm", screwdriverAliasRu: "Шестигранник 1.27 мм (Dentium)", minTorqueNcm: 30, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "68–85", standardDiametersMm: [3.6, 4.0, 4.5, 5.0], standardLengthsMm: [8.0, 10.0, 12.0, 14.0], defaultDiameterMm: 4.0, defaultLengthMm: 10.0, defaultArticle: "FX4010", defaultLotNumber: "24D0415", defaultSerialNumber: "SN-304198", defaultExpirationDate: "2029-08-31" },
-	{ id: "ankylos", brandName: "Ankylos", popularLines: ["C/X TissueCare"], platformName: "Конус Морзе 5.7° без микрозазора", screwdriverType: "Hex 1.0 mm", screwdriverAliasRu: "Шестигранник 1.0 мм (Ankylos)", minTorqueNcm: 25, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "70–85", standardDiametersMm: [3.5, 4.5, 5.5], standardLengthsMm: [8.0, 9.5, 11.0, 14.0], defaultDiameterMm: 4.5, defaultLengthMm: 11.0, defaultArticle: "A-B110-CX", defaultLotNumber: "24E0119", defaultSerialNumber: "SN-772019", defaultExpirationDate: "2029-01-31" },
+	{ id: "osstem", brandName: "Osstem", unitCostRub: 12500, popularLines: ["TS III SA", "TS III SOI", "TS IV"], platformName: "Внутренний конус Морзе 11° с шестигранником", screwdriverType: "Hex 1.2 mm", screwdriverAliasRu: "Шестигранник 1.2 мм (Osstem)", minTorqueNcm: 25, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "65–85", standardDiametersMm: [3.5, 4.0, 4.5, 5.0], standardLengthsMm: [8.5, 10.0, 11.5, 13.0], defaultDiameterMm: 4.0, defaultLengthMm: 10.0, defaultArticle: "TS3S4010S", defaultLotNumber: "24C1208", defaultSerialNumber: "SN-884210", defaultExpirationDate: "2029-06-30" },
+	{ id: "straumann", brandName: "Straumann", unitCostRub: 28000, popularLines: ["BLX", "Bone Level SLA", "SLActive"], platformName: "CrossFit / TorcFit", screwdriverType: "Torx / SCS 1.25 mm", screwdriverAliasRu: "Torx SCS 1.25 мм (Straumann)", minTorqueNcm: 25, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "70–85", standardDiametersMm: [3.3, 3.75, 4.1, 4.8], standardLengthsMm: [8.0, 10.0, 12.0, 14.0], defaultDiameterMm: 4.1, defaultLengthMm: 10.0, defaultArticle: "021.2310", defaultLotNumber: "24B0812", defaultSerialNumber: "SN-102944", defaultExpirationDate: "2029-03-31" },
+	{ id: "nobel_biocare", brandName: "Nobel Biocare", unitCostRub: 24500, popularLines: ["NobelActive", "NobelReplace CC", "NobelParallel"], platformName: "Conical Connection (конусное соединение)", screwdriverType: "Unigrip", screwdriverAliasRu: "Отвертка Unigrip (Nobel)", minTorqueNcm: 30, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "70–85", standardDiametersMm: [3.5, 4.3, 5.0], standardLengthsMm: [8.5, 10.0, 11.5, 13.0], defaultDiameterMm: 4.3, defaultLengthMm: 10.0, defaultArticle: "NP-35115", defaultLotNumber: "24A9914", defaultSerialNumber: "SN-551042", defaultExpirationDate: "2028-12-31" },
+	{ id: "dentium", brandName: "Dentium", unitCostRub: 13500, popularLines: ["SuperLine", "SimpleLine II", "Implantium"], platformName: "Внутренний конус 11° с шестигранником 1.27 мм", screwdriverType: "Hex 1.27 mm", screwdriverAliasRu: "Шестигранник 1.27 мм (Dentium)", minTorqueNcm: 30, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "68–85", standardDiametersMm: [3.6, 4.0, 4.5, 5.0], standardLengthsMm: [8.0, 10.0, 12.0, 14.0], defaultDiameterMm: 4.0, defaultLengthMm: 10.0, defaultArticle: "FX4010", defaultLotNumber: "24D0415", defaultSerialNumber: "SN-304198", defaultExpirationDate: "2029-08-31" },
+	{ id: "ankylos", brandName: "Ankylos", unitCostRub: 22000, popularLines: ["C/X TissueCare"], platformName: "Конус Морзе 5.7° без микрозазора", screwdriverType: "Hex 1.0 mm", screwdriverAliasRu: "Шестигранник 1.0 мм (Ankylos)", minTorqueNcm: 25, defaultTorqueNcm: 35, maxSafeTorqueNcm: 45, isqOptimalRange: "70–85", standardDiametersMm: [3.5, 4.5, 5.5], standardLengthsMm: [8.0, 9.5, 11.0, 14.0], defaultDiameterMm: 4.5, defaultLengthMm: 11.0, defaultArticle: "A-B110-CX", defaultLotNumber: "24E0119", defaultSerialNumber: "SN-772019", defaultExpirationDate: "2029-01-31" },
 ];
 export const SURGERY_DEFAULT_BATCHES: readonly SurgeryWarehouseBatchItem[] = [
 	{ id: "inv-oss-4010", brand: "Osstem", model: "TS III SA", sku: "TS3S4010S", lotNumber: "24C1208", serialNumber: "SN-884210", diameterMm: 4.0, lengthMm: 10.0, availableQuantity: 8, expirationDate: "2029-06-30" },
@@ -126,6 +126,59 @@ export function computeOsteointegrationExpectedDate(dateIso = new Date().toISOSt
 	const isMandible = toothFdi >= 31 && toothFdi <= 48;
 	base.setMonth(base.getMonth() + (isMandible ? 3 : 5));
 	return base.toISOString().split("T")[0]!;
+}
+
+export interface SurgeryFinancialBreakdown {
+	readonly operationPriceRub: number;
+	readonly implantCostRub: number;
+	readonly consumablesCostRub: number;
+	readonly doctorGrossMarginRub: number;
+	readonly netDoctorIncomeRub: number;
+}
+
+export function calculateSurgeryFinancials(params: {
+	scenario: SurgeryScenarioType;
+	implantBrand?: string;
+	graftName?: string;
+	membraneName?: string;
+	sutureName?: string;
+}): SurgeryFinancialBreakdown {
+	const scenario = SURGERY_SCENARIOS[params.scenario];
+	const priceRub = scenario?.defaultPriceRub ?? 45000;
+	if (params.scenario === "implant") {
+		const sys = getImplantSystemById(params.implantBrand || "Osstem");
+		const implantCostRub = sys.unitCostRub || 12500;
+		const suture = SURGERY_SUTURE_CATALOG.find((s) => s.name === params.sutureName);
+		const sutureCost = suture?.unitPriceRub ?? 950;
+		const baseKitCost = 1550;
+		const consumablesCostRub = sutureCost + baseKitCost;
+		const totalDirectCost = implantCostRub + consumablesCostRub;
+		const doctorGrossMarginRub = Math.max(0, priceRub - totalDirectCost);
+		return {
+			operationPriceRub: priceRub,
+			implantCostRub,
+			consumablesCostRub,
+			doctorGrossMarginRub,
+			netDoctorIncomeRub: doctorGrossMarginRub,
+		};
+	}
+	let consumablesCostRub = 1200;
+	if (params.scenario === "sinus_gbr") {
+		const graft = SURGERY_GRAFT_CATALOG.find((g) => g.name === params.graftName) || SURGERY_GRAFT_CATALOG[0];
+		const membrane = SURGERY_MEMBRANE_CATALOG.find((m) => m.name === params.membraneName) || SURGERY_MEMBRANE_CATALOG[0];
+		const suture = SURGERY_SUTURE_CATALOG.find((s) => s.name === params.sutureName);
+		consumablesCostRub = (graft?.unitPriceRub ?? 8500) + (membrane?.unitPriceRub ?? 9800) + (suture?.unitPriceRub ?? 950) + 1500;
+	} else if (params.scenario === "resection_periostotomy") {
+		consumablesCostRub = 1400;
+	}
+	const doctorGrossMarginRub = Math.max(0, priceRub - consumablesCostRub);
+	return {
+		operationPriceRub: priceRub,
+		implantCostRub: 0,
+		consumablesCostRub,
+		doctorGrossMarginRub,
+		netDoctorIncomeRub: doctorGrossMarginRub,
+	};
 }
 
 export function createDefaultPassportRecord(params: {

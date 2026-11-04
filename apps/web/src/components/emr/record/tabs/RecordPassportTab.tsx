@@ -1,21 +1,30 @@
+/**
+ * apps/web/src/components/emr/record/tabs/RecordPassportTab.tsx
+ *
+ * Паспортная часть медицинской карты приёма DENTE CRM.
+ * Мандаты 8e (Автономия врача), 8x/8ap (Чистый живой доменный язык).
+ */
+
 import React from "react";
 import { User } from "lucide-react";
-import type { MedicalRecordData } from "../../outpatientRecordTypes";
+import type { MedicalRecordData } from "../../types/recordDataTypes";
 
-export interface Form043PassportTabProps {
+export interface RecordPassportTabProps {
 	formData: MedicalRecordData;
 	ageText: string;
 }
 
-export const Form043PassportTab: React.FC<Form043PassportTabProps> = React.memo(
-	function Form043PassportTab({ formData, ageText }) {
+export type Form043PassportTabProps = RecordPassportTabProps;
+
+export const RecordPassportTab: React.FC<RecordPassportTabProps> = React.memo(
+	function RecordPassportTab({ formData, ageText }) {
 		const p = formData.passport;
 		return (
 			<div>
-				<div className="emr043-section-card">
-					<h3 className="emr043-section-card-title">
+				<div className="emr-studio-card emr043-section-card">
+					<h3 className="emr-studio-card-title emr043-section-card-title flex items-center gap-2">
 						<User className="w-4 h-4 text-sky-600" />
-						1. Паспортная часть и данные пациента
+						<span>1. Паспортная часть и данные пациента</span>
 					</h3>
 					<div className="emr043-grid-2">
 						<div>
@@ -81,4 +90,4 @@ export const Form043PassportTab: React.FC<Form043PassportTabProps> = React.memo(
 	},
 );
 
-export const RecordPassportTab = Form043PassportTab;
+export const Form043PassportTab = RecordPassportTab;

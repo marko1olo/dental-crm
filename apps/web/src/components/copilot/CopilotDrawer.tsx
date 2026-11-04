@@ -1,9 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, RotateCcw, Send, Mic, MicOff, Sparkles, Check, AlertTriangle,
-  Columns, User, Calendar, FileText, CheckCircle2, AlertCircle, ShieldAlert, Calculator,
-  Globe, Monitor, Camera, FolderSearch, Receipt, MessageSquare, Sliders
+  X, RotateCcw, Send, Mic, MicOff, AlertTriangle, Columns, User,
+  ShieldAlert, Globe, Monitor, MessageSquare, Sliders, HardDrive
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
@@ -19,6 +18,7 @@ import { CopilotMessage } from "./CopilotMessage";
 import { CopilotSettingsModal } from "./CopilotSettingsModal";
 import { CopilotHistoryDrawer } from "./CopilotHistoryDrawer";
 import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
+import { CopilotWorkstationTab } from "./CopilotWorkstationTab";
 import { useUnifiedDictation } from "../../hooks/useUnifiedDictation";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
 import type { CopilotDrawerTab } from "./drawer/drawerTypes";
@@ -28,30 +28,15 @@ import "./CopilotDrawer.css";
 export type { ProactiveNudge };
 
 export interface CopilotDrawerProps {
-  isOpen: boolean;
-  messages: CopilotUiMessage[];
-  busy: boolean;
-  phase: string | null;
-  pending: PendingConfirmation | null;
-  nameCache: Record<string, string>;
-  nudges?: ProactiveNudge[];
-  proactiveAlerts?: any[];
-  whatsappHitLCards?: any[];
-  activeTab: CopilotDrawerTab;
-  onTabChange: (tab: CopilotDrawerTab) => void;
-  onClose: () => void;
-  onSend: (text: string) => void;
-  onConfirm: (decision: "confirm" | "reject", reason?: string) => void;
-  onReset: () => void;
-  onDismissNudge?: (id: string) => void;
-  onDismissProactiveAlert?: (id: string) => void;
-  onApproveWhatsApp?: (id: string) => void;
-  onRejectWhatsApp?: (id: string) => void;
-  onSelectPatient?: (patientId: string) => void;
-  onSelectAppointment?: (appointmentId: string) => void;
-  onBookSlot?: (slot: any) => void;
-  isVoiceActive?: boolean;
-  onToggleVoice?: () => void;
+  isOpen: boolean; messages: CopilotUiMessage[]; busy: boolean; phase: string | null;
+  pending: PendingConfirmation | null; nameCache: Record<string, string>; nudges?: ProactiveNudge[];
+  proactiveAlerts?: any[]; whatsappHitLCards?: any[]; activeTab: CopilotDrawerTab;
+  onTabChange: (tab: CopilotDrawerTab) => void; onClose: () => void; onSend: (text: string) => void;
+  onConfirm: (decision: "confirm" | "reject", reason?: string) => void; onReset: () => void;
+  onDismissNudge?: (id: string) => void; onDismissProactiveAlert?: (id: string) => void;
+  onApproveWhatsApp?: (id: string) => void; onRejectWhatsApp?: (id: string) => void;
+  onSelectPatient?: (patientId: string) => void; onSelectAppointment?: (appointmentId: string) => void;
+  onBookSlot?: (slot: any) => void; isVoiceActive?: boolean; onToggleVoice?: () => void;
 }
 
 export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
@@ -314,7 +299,12 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         </div>
 
         {/* Antigravity Context Telemetry Bar */}
-        <CopilotContextTelemetryBar patientName={uiContext.patientName} patientId={uiContext.patientId} activeTooth={uiContext.activeTooth} compact />
+        <CopilotContextTelemetryBar
+          patientName={uiContext.patientName}
+          patientId={uiContext.patientId}
+          activeTooth={typeof uiContext.activeTooth === "number" ? uiContext.activeTooth : (uiContext.activeTooth ? parseInt(String(uiContext.activeTooth), 10) || null : null)}
+          compact
+        />
 
         {/* Tabs Bar */}
         <div className="copilot-tabs copilot-tabs-bar" role="tablist">
@@ -326,6 +316,13 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
             className={`copilot-tab-btn ${activeTab === "pending" ? "copilot-tab-btn--active active" : ""}`}>
             Задачи {totalTasksCount > 0 && <span className="copilot-tab-badge copilot-tab-badge--alert">{totalTasksCount}</span>}
           </button>
+          {runtimeMode === "desktop_native" && (
+            <button type="button" role="tab" aria-selected={activeTab === "workstation"} onClick={() => onTabChange("workstation")}
+              className={`copilot-tab-btn ${activeTab === "workstation" ? "copilot-tab-btn--active active" : ""}`}>
+              <HardDrive size={13} />
+              <span>Оборудование</span>
+            </button>
+          )}
         </div>
 
         {/* Nudges Banner */}
@@ -366,7 +363,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
 
               {messages.map((msg, idx) => (
                 <CopilotMessage
-                  key={msg.id || idx}
+                  key={(msg as any).id || (msg as any).callId || idx}
                   message={msg}
                   nameCache={nameCache}
                   onConfirm={(callId, decision, modifiedArgs, reason) => onConfirm(decision, reason)}
@@ -389,13 +386,15 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               {busy && (
                 <CopilotThinkingIndicator
                   isThinking={busy}
-                  activeTooth={uiContext.activeTooth}
+                  activeTooth={typeof uiContext.activeTooth === "number" ? uiContext.activeTooth : (uiContext.activeTooth ? parseInt(String(uiContext.activeTooth), 10) || undefined : undefined)}
                   thoughtProcess={phase || "Анализ клинической картины и формирование решения..."}
                   speedMode={copilotSettings.speedMode}
                   showThinkingProcess={copilotSettings.showThinkingProcess}
                 />
               )}
             </div>
+          ) : activeTab === "workstation" ? (
+            <CopilotWorkstationTab />
           ) : (
             <CopilotDrawerTasksTab
               totalEstimatesSumRub={totalEstimatesSumRub}
@@ -405,7 +404,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
               nameCache={nameCache}
               whatsappHitLCards={whatsappHitLCards}
               proactiveAlerts={proactiveAlerts}
-              onConfirm={onConfirm}
+              onConfirm={(_callId, decision, _args, reason) => onConfirm(decision, reason)}
               onBookSlot={onBookSlot}
               onSendPrompt={handleSendPrompt}
               onDismissProactiveAlert={onDismissProactiveAlert || onDismissNudge}

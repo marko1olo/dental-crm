@@ -12,8 +12,8 @@ import {
 	generate043PlainText,
 	escapeHtml,
 	escapeXml,
-} from "../emr043Math";
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+} from "../clinicalDiaryMath";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 import type { FdiToothRecord } from "@dental/shared";
 
 const MOCK_CARD_DATA: MedicalRecordData = {
@@ -268,7 +268,7 @@ describe("Form 043/u Completeness Validation", () => {
 		assert.equal(res.missingFields.length, 0);
 	});
 
-	it("detects missing required fields and marks isComplete as false", () => {
+	it("detects missing fields without blocking doctor autonomy (Mandate 8e)", () => {
 		const incompleteData: MedicalRecordData = {
 			...MOCK_CARD_DATA,
 			passport: {
@@ -280,7 +280,8 @@ describe("Form 043/u Completeness Validation", () => {
 		};
 
 		const res = validateForm043uCompleteness(incompleteData);
-		assert.equal(res.isComplete, false);
+		// Mandate 8e: Doctor is never blocked from saving or exporting
+		assert.equal(res.isComplete, true);
 		assert.ok(res.completenessScore < 90);
 		assert.ok(res.missingFields.some((f) => f.fieldKey === "patientFullName"));
 		assert.ok(res.missingFields.some((f) => f.fieldKey === "medicalCardNumber"));

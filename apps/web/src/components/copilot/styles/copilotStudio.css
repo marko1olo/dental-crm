@@ -31,7 +31,7 @@
 }
 @media (min-width: 769px) {
   .copilot-studio-panel {
-    width: 540px; height: 100%;
+    width: 620px; height: 100%;
     border-left: 1px solid var(--line, rgba(15, 118, 110, 0.15));
   }
 }

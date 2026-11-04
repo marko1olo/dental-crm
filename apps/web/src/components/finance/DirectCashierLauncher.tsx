@@ -26,8 +26,8 @@ export const DirectCashierLauncher: React.FC = () => {
 		if (typeof window === "undefined") return;
 		const h = window.location.hash.toLowerCase();
 		const s = window.location.search.toLowerCase();
-		const hasCashier = h.includes("cashier") || h.includes("checkout") || h.includes("receipt") || h.includes("kassa");
-		const hasQuery = s.includes("cashier=1") || s.includes("checkout=1") || s.includes("kassa=1");
+		const hasCashier = h.includes("cashier") || h.includes("receipt") || h.includes("kassa");
+		const hasQuery = s.includes("cashier=1") || s.includes("kassa=1");
 
 		if (hasCashier || hasQuery) {
 			if (h.includes("shift") || s.includes("shift")) setActiveTab("shift");
@@ -50,12 +50,10 @@ export const DirectCashierLauncher: React.FC = () => {
 			setIsOpen(true);
 		};
 		window.addEventListener("dente:open-cashier", handleCustomOpen);
-		window.addEventListener("dente:open-checkout", handleCustomOpen);
 		return () => {
 			window.removeEventListener("hashchange", inspectUrl);
 			window.removeEventListener("popstate", inspectUrl);
 			window.removeEventListener("dente:open-cashier", handleCustomOpen);
-			window.removeEventListener("dente:open-checkout", handleCustomOpen);
 		};
 	}, [inspectUrl]);
 

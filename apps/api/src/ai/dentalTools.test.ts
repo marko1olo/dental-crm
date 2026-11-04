@@ -92,6 +92,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 		const validRes = await handleUpdateToothStatus(
 			{
 				patientId: "22222222-2222-2222-2222-222222222222",
+				confirmed: true,
 				toothNumber: 26,
 				state: "filling",
 				surfaces: ["O", "M"],
@@ -107,6 +108,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 			await handleUpdateToothStatus(
 				{
 					patientId: "22222222-2222-2222-2222-222222222222",
+					confirmed: true,
 					toothNumber: 99,
 					state: "caries",
 				},
@@ -127,6 +129,7 @@ describe("Dental Tool Arsenal — CRM, База данных и Прейскур
 		const res = (await createInvoiceDraftTool.handler(
 			{
 				patientId: "22222222-2222-2222-2222-222222222222",
+				confirmed: true,
 				items: [
 					{ title: "Анестезия инфильтрационная", priceRub: 800, quantity: 1 },
 					{ title: "Лечение кариеса зуба 16", priceRub: 4500, quantity: 1 },

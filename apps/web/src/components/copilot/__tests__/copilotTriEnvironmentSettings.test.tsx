@@ -37,6 +37,7 @@ describe("Copilot Auto-Detection & Logical Settings (Wave 36.2)", () => {
 	beforeEach(() => {
 		useCopilotStore.setState({
 			settings: {
+				...useCopilotStore.getState().settings,
 				trustLevel: "balanced",
 				provider: "gemini",
 				model: "gemini-2.5-flash",

@@ -25,16 +25,16 @@ import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryB
 export type CopilotStudioTab = "dialog" | "actions" | "workstation" | "memory";
 
 export interface CopilotStudioModalProps {
-  isOpen: boolean; onClose: () => void; activeTooth?: number | null;
-  patientId?: string | null; patientName?: string | null; activeVisitId?: string | null;
-  initialTab?: CopilotStudioTab; initialMessages?: CopilotChatMessage[]; isThinking?: boolean; thoughtProcess?: string;
+  isOpen: boolean; onClose: () => void; activeTooth?: number | null | undefined;
+  patientId?: string | null | undefined; patientName?: string | null | undefined; activeVisitId?: string | null | undefined;
+  initialTab?: CopilotStudioTab | undefined; initialMessages?: CopilotChatMessage[] | undefined; isThinking?: boolean | undefined; thoughtProcess?: string | undefined;
 }
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 
 export interface CopilotChatMessage {
-  id: string; role: "user" | "assistant"; text: string; citation?: string;
-  timestamp: string; applied?: boolean;
-  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> };
+  id: string; role: "user" | "assistant"; text: string; citation?: string | undefined;
+  timestamp: string; applied?: boolean | undefined;
+  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined;
 }
 
 const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [

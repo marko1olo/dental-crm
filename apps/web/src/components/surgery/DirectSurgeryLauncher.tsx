@@ -3,9 +3,10 @@
  * Монтируется в корневой AppShell, слушает хэш #surgery и событие dente:open-surgery.
  */
 
-import React, { useEffect, useState, useCallback } from "react";
-import { SurgeryStudioModal } from "./SurgeryStudioModal";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
+import { ChairsideSurgeryHubModal } from "./ChairsideSurgeryHubModal";
 import type { SurgeryScenarioType } from "./surgeryCatalogData";
+import { useAppStore } from "../../store/appStore";
 
 const DEMO_SURGERY_PATIENT = {
 	id: "pat-surgery-canonical",
@@ -26,8 +27,39 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	};
 
 	const [isOpen, setIsOpen] = useState<boolean>(checkUrlMatches);
-	const [initialScenario, setInitialScenario] = useState<SurgeryScenarioType>("extraction");
+	const [initialScenario, setInitialScenario] = useState<SurgeryScenarioType>(() => {
+		if (typeof window !== "undefined") {
+			const h = window.location.hash || "";
+			const s = window.location.search || "";
+			if (h.includes("extraction") || s.includes("extraction")) return "extraction";
+			if (h.includes("resection") || s.includes("resection")) return "resection_periostotomy";
+			if (h.includes("sinus") || s.includes("sinus")) return "sinus_gbr";
+		}
+		return "implant";
+	});
 	const [initialTooth, setInitialTooth] = useState<number>(46);
+
+	const storeActivePatient = useAppStore((s) => {
+		const activeId = s.activePatientId;
+		return (
+			s.dashboard?.patients?.find((p) => p.id === activeId) ||
+			s.dashboard?.activeVisit?.patientId
+				? s.dashboard?.patients?.find((p) => p.id === s.dashboard?.activeVisit?.patientId)
+				: s.dashboard?.patients?.[0]
+		);
+	});
+	const storeDoctorName = useAppStore((s) => s.activeDoctorName);
+
+	const effectivePatient = useMemo(() => {
+		if (storeActivePatient) {
+			return {
+				id: storeActivePatient.id,
+				fullName: storeActivePatient.fullName,
+				doctorName: storeDoctorName || DEMO_SURGERY_PATIENT.doctorName,
+			};
+		}
+		return DEMO_SURGERY_PATIENT;
+	}, [storeActivePatient, storeDoctorName]);
 
 	const handleOpenEvent = useCallback((e: Event) => {
 		const detail = (e as CustomEvent<{ scenario?: SurgeryScenarioType; toothFdi?: number }>).detail;
@@ -43,7 +75,11 @@ export const DirectSurgeryLauncher: React.FC = () => {
 		const handleHash = () => {
 			if (checkUrlMatches()) {
 				const h = window.location.hash || "";
-				if (h.includes("extraction")) setInitialScenario("extraction");
+				const s = window.location.search || "";
+				if (h.includes("extraction") || s.includes("extraction")) setInitialScenario("extraction");
+				else if (h.includes("resection") || s.includes("resection")) setInitialScenario("resection_periostotomy");
+				else if (h.includes("sinus") || s.includes("sinus")) setInitialScenario("sinus_gbr");
+				else setInitialScenario("implant");
 				setIsOpen(true);
 			}
 		};
@@ -61,17 +97,19 @@ export const DirectSurgeryLauncher: React.FC = () => {
 	if (!isOpen) return null;
 
 	return (
-		<SurgeryStudioModal
+		<ChairsideSurgeryHubModal
 			isOpen={isOpen}
 			onClose={() => setIsOpen(false)}
-			patientName={DEMO_SURGERY_PATIENT.fullName}
-			patientId={DEMO_SURGERY_PATIENT.id}
-			doctorName={DEMO_SURGERY_PATIENT.doctorName}
+			patientName={effectivePatient.fullName}
+			patientId={effectivePatient.id}
+			doctorName={effectivePatient.doctorName}
 			initialTooth={initialTooth}
 			initialScenario={initialScenario}
 			inventoryOverdraftActive={true}
 		/>
 	);
 };
+
+export const SurgeryStudioLauncher = DirectSurgeryLauncher;
 
 export default DirectSurgeryLauncher;

@@ -1,5 +1,5 @@
-import type { Form043VisitDiaryEntry, MedicalRecordPrintConfig } from "../../outpatientRecordTypes";
-import { escapeHtml } from "../../emr043Math";
+import type { ClinicalVisitDiaryEntry, Form043VisitDiaryEntry, MedicalRecordPrintConfig } from "../../types/recordDataTypes";
+import { escapeHtml } from "../../math/recordMathFormatting";
 
 /** Рендерер 4-й секции: Дневники клинических приемов SOAP */
 export function renderDiariesSectionHtml(diaries: Form043VisitDiaryEntry[], cfg: MedicalRecordPrintConfig): string {

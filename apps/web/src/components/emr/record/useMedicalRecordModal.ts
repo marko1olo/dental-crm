@@ -1,14 +1,15 @@
 import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { useAppStore } from "../../../store/appStore";
-import type { MedicalRecordData, Form043VisitDiaryEntry } from "../outpatientRecordTypes";
+import type { MedicalRecordData, Form043VisitDiaryEntry, ClinicalVisitDiaryEntry } from "../types/recordDataTypes";
 import type { MedicalRecordPrintModalProps, RecordTabType } from "./recordModalTypes";
-import { DEFAULT_043_DATA, resolveClinicRequisites, applyForm043PhysiologicalNorm } from "../emr043DefaultData";
+import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites, applyMedicalCardPhysiologicalNorm } from "../medicalCardCatalogData";
 import {
+	validateMedicalRecordCompleteness,
 	validateForm043uCompleteness,
 	formatPatientAge,
 	calculateDmftIndex,
 	calculateCpitnIndex,
-} from "../emr043Math";
+} from "../clinicalDiaryMath";
 import { useRecordExports } from "./useRecordExports";
 
 export function useMedicalRecordModal({
@@ -34,13 +35,13 @@ export function useMedicalRecordModal({
 	const resolvedClinic = useMemo(() => resolveClinicRequisites(initialData?.clinic, profile, staff), [initialData?.clinic, profile, staff]);
 
 	const [formData, setFormData] = useState<MedicalRecordData>(() => ({
-		...DEFAULT_043_DATA,
+		...DEFAULT_MEDICAL_CARD_DATA,
 		...initialData,
-		clinic: { ...DEFAULT_043_DATA.clinic, ...resolvedClinic, ...(initialData?.clinic || {}) },
-		passport: { ...DEFAULT_043_DATA.passport, ...(initialData?.passport || {}) },
-		anamnesis: { ...DEFAULT_043_DATA.anamnesis, ...(initialData?.anamnesis || {}) },
-		dentalStatus: { ...DEFAULT_043_DATA.dentalStatus, ...(initialData?.dentalStatus || {}) },
-		epicrisis: { ...DEFAULT_043_DATA.epicrisis, ...(initialData?.epicrisis || {}) },
+		clinic: { ...DEFAULT_MEDICAL_CARD_DATA.clinic, ...resolvedClinic, ...(initialData?.clinic || {}) },
+		passport: { ...DEFAULT_MEDICAL_CARD_DATA.passport, ...(initialData?.passport || {}) },
+		anamnesis: { ...DEFAULT_MEDICAL_CARD_DATA.anamnesis, ...(initialData?.anamnesis || {}) },
+		dentalStatus: { ...DEFAULT_MEDICAL_CARD_DATA.dentalStatus, ...(initialData?.dentalStatus || {}) },
+		epicrisis: { ...DEFAULT_MEDICAL_CARD_DATA.epicrisis, ...(initialData?.epicrisis || {}) },
 	}));
 
 	const [activeTab, setActiveTab] = useState<RecordTabType>("overview");
@@ -80,7 +81,7 @@ export function useMedicalRecordModal({
 
 	const handleApplyNorm = useCallback(() => {
 		setFormData((prev) => {
-			const updated = applyForm043PhysiologicalNorm(prev);
+			const updated = applyMedicalCardPhysiologicalNorm(prev);
 			onSave?.(updated);
 			return updated;
 		});

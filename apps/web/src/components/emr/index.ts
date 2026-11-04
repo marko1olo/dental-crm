@@ -1,21 +1,33 @@
+/**
+ * apps/web/src/components/emr/index.ts
+ *
+ * Канонический входной фасад подсистемы ЭМК, дневников приёма и медицинских карт DENTE CRM.
+ * Мандаты 8e (Автономия врача), 8n (Соло-врач), 8x/8ap (Чистый живой доменный язык).
+ */
+
 export * from "./medicalRecordCatalogData";
 export * from "./medicalCardCatalogData";
 export * from "./MedicalRecordStudioModal";
-export * from "./clinicalDiaryTypes";
-export * from "./clinicalDiaryMath";
-export * from "./clinicalDiaryDefaultData";
-export * from "./ClinicalDiaryTabSections";
-export * from "./outpatientRecordTypes";
-export * from "./outpatientRecordMath";
-export * from "./outpatientRecordDefaultData";
-export * from "./outpatientRecordExportEngines";
-export * from "./outpatientRecordTabSections";
 export * from "./MedicalCardPrintModal";
-export * from "./emr043Types";
-export * from "./emr043Math";
-export { Form043PrintModal } from "./Form043PrintModal";
-export { MedicalRecordPrintModal } from "./MedicalCardPrintModal";
+export * from "./types/recordDataTypes";
+export * from "./types/recordConfigTypes";
+export * from "./clinicalDiaryMath";
 export * from "./templates";
+
+// Секции вкладок медицинской карты
+export * from "./record/tabs/RecordPassportTab";
+export * from "./record/tabs/RecordAnamnesisTab";
+export * from "./record/tabs/RecordOdontogramTab";
+export * from "./record/tabs/RecordDiariesTab";
+export * from "./record/tabs/RecordEpicrisisTab";
+
+// Обратная совместимость имен компонентов
+export {
+	MedicalRecordStudioModal as Form043PrintModal,
+	MedicalRecordStudioModal as ClinicalDiaryPrintModal,
+} from "./MedicalRecordStudioModal";
+
+// Протоколы и генераторы клинических дневников
 export {
 	synthesizeClinicalDiary,
 	synthesizeDiariesFromOdontogram,

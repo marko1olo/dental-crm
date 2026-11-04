@@ -5,17 +5,17 @@
 
 import React, { useState } from "react";
 import { MedicalRecordPrintModal } from "../../../../emr/record/MedicalRecordPrintModal";
-import { DEFAULT_043_DATA } from "../../../../emr/clinicalDiaryDefaultData";
+import { DEFAULT_MEDICAL_CARD_DATA } from "../../../../emr/medicalCardCatalogData";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
-import type { MedicalRecordData } from "../../../../emr/outpatientRecordTypes";
+import type { MedicalRecordData } from "../../../../emr/types/recordDataTypes";
 
 export const StandaloneEmrMedicalRecordHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {
 	const patientId = readPatientIdFromUrl();
 	const patientName = useLauncherPatientName(patientId) || "Смирнова Екатерина Андреевна";
 	const [data, setData] = useState<MedicalRecordData>(() => ({
-		...DEFAULT_043_DATA,
+		...DEFAULT_MEDICAL_CARD_DATA,
 		passport: {
-			...DEFAULT_043_DATA.passport,
+			...DEFAULT_MEDICAL_CARD_DATA.passport,
 			patientFullName: patientName,
 			patientBirthDate: "1990-05-14",
 			patientPhone: "+7 (926) 555-12-34",

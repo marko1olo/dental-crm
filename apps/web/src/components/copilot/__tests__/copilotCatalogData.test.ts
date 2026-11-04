@@ -99,6 +99,7 @@ describe("Copilot Catalog Data & SSOT Architecture", () => {
   it("корректно связывает DEFAULT_SUGGESTION_CATEGORIES с единым каталогом", () => {
     assert.ok(DEFAULT_SUGGESTION_CATEGORIES.length >= 4, "Должно быть не менее 4 категорий предложений");
     const firstCategory = DEFAULT_SUGGESTION_CATEGORIES[0];
+    assert.ok(firstCategory, "Категория должна быть определена");
     assert.equal(firstCategory.category, "Клинический приём у кресла");
     assert.ok(firstCategory.items.length >= 3, "Первая категория содержит клинические действия");
   });

@@ -1,6 +1,6 @@
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 import { dentalBiteTypeLabels } from "@dental/shared";
-import { calculateDmftIndex, calculateCpitnIndex } from "../emr043Math";
+import { calculateDmftIndex, calculateCpitnIndex } from "../clinicalDiaryMath";
 
 /** Генератор структурированного JSON экспорта */
 export function generate043JsonExport(data: MedicalRecordData): string {

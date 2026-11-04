@@ -1,34 +1,43 @@
+/**
+ * apps/web/src/components/emr/record/tabs/RecordAnamnesisTab.tsx
+ *
+ * Жалобы и соматический анамнез медицинской карты приёма DENTE CRM.
+ * Мандаты 8e (Автономия врача), 8x/8ap (Чистый живой доменный язык).
+ */
+
 import React from "react";
 import { AlertTriangle, HeartPulse, Sparkles } from "lucide-react";
-import type { MedicalRecordData } from "../../outpatientRecordTypes";
+import type { MedicalRecordData } from "../../types/recordDataTypes";
 
-export interface Form043AnamnesisTabProps {
+export interface RecordAnamnesisTabProps {
 	formData: MedicalRecordData;
 	onApplyNorm: () => void;
 }
 
-export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.memo(
-	function Form043AnamnesisTab({ formData, onApplyNorm }) {
+export type Form043AnamnesisTabProps = RecordAnamnesisTabProps;
+
+export const RecordAnamnesisTab: React.FC<RecordAnamnesisTabProps> = React.memo(
+	function RecordAnamnesisTab({ formData, onApplyNorm }) {
 		const a = formData.anamnesis;
 		return (
 			<div>
-				<div className="emr043-section-card">
+				<div className="emr-studio-card emr043-section-card">
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
-						<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
+						<h3 className="emr-studio-card-title emr043-section-card-title flex items-center gap-2" style={{ margin: 0 }}>
 							<HeartPulse className="w-4 h-4 text-sky-600" />
-							2. Анамнез жизни и заболевания
+							<span>2. Жалобы и соматический анамнез</span>
 						</h3>
 						<button
 							type="button"
 							onClick={onApplyNorm}
 							disabled={false}
 							data-testid="btn-043-anamnesis-norm"
-							className="emr043-btn emr043-btn-secondary"
+							className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary"
 							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
 							title="Заполнить незаполненные графы анамнеза физиологической нормой"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-amber-500" />
-							<span>Норма анамнеза</span>
+							<span>Норма в 1 клик</span>
 						</button>
 					</div>
 					<div className="emr043-grid-2">
@@ -78,4 +87,4 @@ export const Form043AnamnesisTab: React.FC<Form043AnamnesisTabProps> = React.mem
 	},
 );
 
-export const RecordAnamnesisTab = Form043AnamnesisTab;
+export const Form043AnamnesisTab = RecordAnamnesisTab;

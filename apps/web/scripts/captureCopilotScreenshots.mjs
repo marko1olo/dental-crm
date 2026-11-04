@@ -8,11 +8,9 @@ import { spawn } from 'node:child_process';
 import { chromium } from 'playwright';
 
 const PROOFS_DIR = 'C:/Clinic_MVP/dental-crm/docs/proofs/copilot';
-const BRAIN_PARENT = 'C:/Users/Admin/.gemini/antigravity/brain/0284cf50-cf45-4b19-be4c-f6f53b03120f';
-const BRAIN_CURRENT = 'C:/Users/Admin/.gemini/antigravity/brain/660c4f4b-44ee-49d6-b275-35bfe7c31ff7';
-const BRAIN_THIS_SESSION = 'C:/Users/Admin/.gemini/antigravity/brain/3ecb1380-062d-4e0e-b732-907ecfc7dc48';
+const BRAIN_THIS_SESSION = 'C:/Users/Admin/.gemini/antigravity/brain/44bbc679-c31c-4905-9c0b-3bfc8be4108e';
 
-const TARGET_DIRS = [PROOFS_DIR, BRAIN_PARENT, BRAIN_CURRENT, BRAIN_THIS_SESSION];
+const TARGET_DIRS = [PROOFS_DIR, BRAIN_THIS_SESSION];
 for (const dir of TARGET_DIRS) {
   if (!existsSync(dir)) {
     mkdirSync(dir, { recursive: true });
@@ -218,12 +216,21 @@ async function setupPageMocks(page, theme) {
   });
 
   await page.addInitScript(({ themeName, mockUser }) => {
+    localStorage.setItem('dente_organization_id', 'org-1');
     localStorage.setItem('dente_clinic_token', 'test-clinic-token-123');
     localStorage.setItem('dente_staff_token', 'test-staff-token-456');
+    localStorage.setItem('dente_active_session_token', 'mock-session-token');
+    localStorage.setItem('dente_user_role', 'doctor');
+    localStorage.setItem('dente_user_name', 'Д-р Иванов И.И.');
+    localStorage.setItem('dente_active_user', JSON.stringify(mockUser));
+    localStorage.setItem('dente_offline_mode', 'true');
+    localStorage.setItem('dente_offline_readiness_banner_dismissed_v1', 'true');
+    localStorage.setItem('dental-crm:onboarding:v1', JSON.stringify({ dismissed: true, step: 'done' }));
+    localStorage.setItem('dente_onboarding_completed', 'true');
+    localStorage.setItem('dente_demo_mode', 'true');
     localStorage.setItem('dente_theme_mode', themeName);
     localStorage.setItem('dente_active_view', 'schedule');
     localStorage.setItem('dente_ui_preferences_v1', JSON.stringify({ theme: themeName, onboardingDismissed: true }));
-    localStorage.setItem('dental-crm:onboarding:v1', JSON.stringify({ dismissed: true }));
 
     const applyTheme = () => {
       if (document.documentElement) {
@@ -241,7 +248,10 @@ async function setupPageMocks(page, theme) {
     window.addEventListener('DOMContentLoaded', applyTheme);
   }, { themeName: theme, mockUser: MOCK_USER });
 
-  await page.route('**/api/**', async (route) => {
+  await page.route((url) => {
+    const pathname = url.pathname;
+    return pathname.startsWith('/api/') && !pathname.endsWith('.ts') && !pathname.endsWith('.tsx') && !pathname.endsWith('.js') && !pathname.endsWith('.mjs');
+  }, async (route) => {
     const url = route.request().url();
     const method = route.request().method();
 
@@ -313,6 +323,7 @@ async function ensureWorkspaceUnlocked(page) {
         await page.waitForTimeout(50);
       }
       await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
     }
   } catch {}
 
@@ -321,6 +332,7 @@ async function ensureWorkspaceUnlocked(page) {
     if (await demoBtn.isVisible({ timeout: 1200 })) {
       await demoBtn.click();
       await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
     }
   } catch {}
 }
@@ -338,28 +350,32 @@ async function waitForCopilotReady(page) {
   // 3. Wait until window.__denteCopilot is mounted and operational
   await page.waitForFunction(() => typeof window !== 'undefined' && Boolean(window.__denteCopilot), { timeout: 30000 });
   await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
 }
 
-async function openCopilot(page, { messages, pending, tab = 'chat' } = {}) {
-  await page.evaluate(({ msgs, pend, activeTab }) => {
+async function openCopilot(page, { messages, pending, tab = 'chat', busy = false, phase = null } = {}) {
+  await page.evaluate(({ msgs, pend, activeTab, isBusy, ph }) => {
     if (window.__denteCopilot) {
-      if (msgs) window.__denteCopilot.setMessages(msgs);
-      if (pend) window.__denteCopilot.setPending(pend);
-      window.__denteCopilot.setActiveTab(activeTab);
-      window.__denteCopilot.open();
+      if (msgs && typeof window.__denteCopilot.setMessages === 'function') window.__denteCopilot.setMessages(msgs);
+      if (pend && typeof window.__denteCopilot.setPending === 'function') window.__denteCopilot.setPending(pend);
+      if (typeof isBusy === 'boolean' && typeof window.__denteCopilot.setBusy === 'function') window.__denteCopilot.setBusy(isBusy);
+      if (ph && typeof window.__denteCopilot.setPhase === 'function') window.__denteCopilot.setPhase(ph);
+      if (typeof window.__denteCopilot.setActiveTab === 'function') window.__denteCopilot.setActiveTab(activeTab);
+      if (typeof window.__denteCopilot.open === 'function') window.__denteCopilot.open();
     }
-  }, { msgs: messages, pend: pending, activeTab: tab });
+  }, { msgs: messages, pend: pending, activeTab: tab, isBusy: busy, ph: phase });
 
   for (let i = 0; i < 30; i++) {
-    const isOpen = await page.locator('.copilot-drawer.open').isVisible().catch(() => false);
+    const isOpen = await page.locator('.copilot-drawer.open, [data-testid="chairside-copilot-studio-root"]').first().isVisible().catch(() => false);
     if (isOpen) break;
     await page.evaluate(() => {
-      if (window.__denteCopilot) window.__denteCopilot.open();
+      if (window.__denteCopilot && typeof window.__denteCopilot.open === 'function') window.__denteCopilot.open();
     }).catch(() => {});
     await page.waitForTimeout(500);
   }
-  await page.waitForSelector('.copilot-drawer.open', { state: 'visible', timeout: 25000 });
+  await page.waitForSelector('.copilot-drawer.open, [data-testid="chairside-copilot-studio-root"]', { state: 'visible', timeout: 25000 });
   await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
 }
 
 const capturedFiles = [];
@@ -374,7 +390,7 @@ const capturedFiles = [];
   });
   const page = await context.newPage();
   await setupPageMocks(page, 'dark');
-  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitForCopilotReady(page);
   await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
@@ -394,7 +410,7 @@ const capturedFiles = [];
   });
   const page = await context.newPage();
   await setupPageMocks(page, 'light');
-  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitForCopilotReady(page);
   await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
@@ -414,10 +430,10 @@ const capturedFiles = [];
   });
   const page = await context.newPage();
   await setupPageMocks(page, 'dark');
-  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitForCopilotReady(page);
   await openCopilot(page, { pending: MOCK_PENDING, tab: 'pending' });
-  await page.waitForSelector('.copilot-action-confirm-card', { state: 'visible', timeout: 8000 });
+  await page.waitForSelector('.copilot-action-confirm-card, .copilot-tool-execution-card, .copilot-studio-panel', { state: 'visible', timeout: 8000 });
 
   const outPath = path.join(PROOFS_DIR, '02_copilot_confirm_action_card_pc_dark_1440.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
@@ -436,7 +452,7 @@ const capturedFiles = [];
   });
   const page = await context.newPage();
   await setupPageMocks(page, 'dark');
-  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitForCopilotReady(page);
   await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
@@ -457,13 +473,87 @@ const capturedFiles = [];
   });
   const page = await context.newPage();
   await setupPageMocks(page, 'light');
-  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 15000 });
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
   await waitForCopilotReady(page);
   await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
 
   const outPath = path.join(PROOFS_DIR, '03_copilot_drawer_mobile_light_390.png');
   await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
   capturedFiles.push('03_copilot_drawer_mobile_light_390.png');
+  await context.close();
+}
+
+// 6. PC Light Mode — CoT Thinking & Typing Indicator
+{
+  console.log('[6/8] Capturing 04_copilot_thinking_pc_light_1440.png...');
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+    isMobile: false,
+  });
+  const page = await context.newPage();
+  await setupPageMocks(page, 'light');
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await waitForCopilotReady(page);
+  await openCopilot(page, {
+    messages: [MOCK_MESSAGES[0]],
+    tab: 'chat',
+    busy: true,
+    phase: 'Анализ одонтограммы зуба 36: сверка со стандартами СтАР по глубокому кариесу дентина...'
+  });
+  await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
+
+  const outPath = path.join(PROOFS_DIR, '04_copilot_thinking_pc_light_1440.png');
+  await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
+  capturedFiles.push('04_copilot_thinking_pc_light_1440.png');
+  await context.close();
+}
+
+// 7. PC Light Mode — AI Settings Modal (Trust Levels, Models, Privacy)
+{
+  console.log('[7/8] Capturing 05_copilot_settings_pc_light_1440.png...');
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+    isMobile: false,
+  });
+  const page = await context.newPage();
+  await setupPageMocks(page, 'light');
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await waitForCopilotReady(page);
+  await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
+  await page.locator('[data-testid="copilot-settings-trigger"], [data-testid="copilot-open-settings-btn"]').first().click();
+  await page.waitForSelector('[data-testid="copilot-settings-general-tab"]', { state: 'visible', timeout: 8000 });
+  await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
+
+  const outPath = path.join(PROOFS_DIR, '05_copilot_settings_pc_light_1440.png');
+  await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
+  capturedFiles.push('05_copilot_settings_pc_light_1440.png');
+  await context.close();
+}
+
+// 8. PC Dark Mode — History Drawer (Sessions, Search, Switcher)
+{
+  console.log('[8/8] Capturing 06_copilot_history_pc_dark_1440.png...');
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+    isMobile: false,
+  });
+  const page = await context.newPage();
+  await setupPageMocks(page, 'dark');
+  await page.goto(`${DEV_URL}/#schedule`, { waitUntil: 'domcontentloaded', timeout: 30000 });
+  await waitForCopilotReady(page);
+  await openCopilot(page, { messages: MOCK_MESSAGES, tab: 'chat' });
+  await page.locator('[data-testid="copilot-history-trigger"], [data-testid="copilot-open-history-btn"]').first().click();
+  await page.waitForTimeout(600);
+  await page.waitForSelector('.copilot-thinking-indicator, .copilot-thinking, [data-testid="copilot-thinking-indicator"]', { state: 'visible', timeout: 5000 }).catch(() => {});
+
+  const outPath = path.join(PROOFS_DIR, '06_copilot_history_pc_dark_1440.png');
+  await page.screenshot({ path: outPath, timeout: 8000, animations: 'disabled' });
+  capturedFiles.push('06_copilot_history_pc_dark_1440.png');
   await context.close();
 }
 

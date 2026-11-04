@@ -1,6 +1,6 @@
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 import { dentalBiteTypeLabels } from "@dental/shared";
-import { calculateDmftIndex } from "../emr043Math";
+import { calculateDmftIndex } from "../clinicalDiaryMath";
 
 /** Экранирование специальных символов XML */
 export function escapeXml(str: unknown): string {

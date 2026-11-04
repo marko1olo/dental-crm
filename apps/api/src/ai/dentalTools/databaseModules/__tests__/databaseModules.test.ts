@@ -177,7 +177,7 @@ describe("CRM Database AI Tools — Поиск пациентов и парси�
 			}),
 		};
 
-		const res = await handlePatientSearch({ query: "Иванов" }, { organizationId: TEST_ORG_ID, db: mockDb as any });
+		const res = await handlePatientSearch({ query: "Иванов", limit: 10 }, { organizationId: TEST_ORG_ID, db: mockDb as any });
 		assert.strictEqual(res.found, true);
 		assert.strictEqual(res.totalCount, 1);
 		assert.strictEqual(res.patients[0]?.fullName, "Иванов Иван Иванович");

@@ -1,14 +1,14 @@
 import React from "react";
 import { ShieldCheck } from "lucide-react";
-import type { Form043ValidationResult } from "../emr043Types";
+import type { Form043ValidationResult, MedicalRecordValidationResult } from "../types/recordDataTypes";
 
 interface RecordCompletenessBarProps {
-	validation: Form043ValidationResult;
+	validation: MedicalRecordValidationResult;
 	onApplyNorm: () => void;
 }
 
 export const RecordCompletenessBar: React.FC<RecordCompletenessBarProps> = React.memo(function RecordCompletenessBar({ validation, onApplyNorm }) {
-	const progressColor = validation.completenessScore >= 90 ? "green" : validation.completenessScore >= 60 ? "yellow" : "red";
+	const progressColor = validation.completenessScore >= 80 ? "green" : "yellow";
 
 	return (
 		<div className="emr043-completeness-bar emr043-non-printable">

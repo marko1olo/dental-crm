@@ -412,7 +412,7 @@ export const CashierStudioModal: React.FC<CashierStudioModalProps> = ({
 				<div className="p-4 border-t border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
 					<div className="text-xs text-[var(--ink-muted)] flex items-center gap-2 w-full sm:w-auto justify-center sm:justify-start">
 						<ShieldCheck className="w-4 h-4 text-[#0d9488] shrink-0" />
-						<span className="truncate">Бесшовная фискализация • 0 float errors</span>
+						<span className="truncate">Бесшовная фискализация · Точный расчёт 54-ФЗ</span>
 					</div>
 					<div className="flex flex-col-reverse sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto justify-end">
 						<button type="button" onClick={onClose} className="cashier-secondary-btn w-full sm:w-auto">Отмена</button>

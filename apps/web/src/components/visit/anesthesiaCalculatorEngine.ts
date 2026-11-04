@@ -189,6 +189,3 @@ export function formatClinicalChairsideEntry(params: {
 	const toothArea = params.toothNumber ? ` в области зуба ${params.toothNumber}` : "";
 	return `${tech} анестезия препаратом ${drugName} ${vol} мл (${count} карп.)${toothArea}. Аспирационная проба отрицательная. Обезболивание глубокое, без осложнений.`;
 }
-
-export * from "../anesthesia/anesthesiaCatalog.js";
-export * from "../anesthesia/anesthesiaEngine.js";

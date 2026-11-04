@@ -1,21 +1,30 @@
+/**
+ * apps/web/src/components/emr/record/tabs/RecordEpicrisisTab.tsx
+ *
+ * Эпикриз, результаты лечения и диспансерное наблюдение медицинской карты приёма DENTE CRM.
+ * Мандаты 8e (Автономия врача), 8x/8ap (Чистый живой доменный язык).
+ */
+
 import React from "react";
 import { Award } from "lucide-react";
-import type { MedicalRecordData } from "../../outpatientRecordTypes";
+import type { MedicalRecordData } from "../../types/recordDataTypes";
 
-export interface Form043EpicrisisTabProps {
+export interface RecordEpicrisisTabProps {
 	formData: MedicalRecordData;
 }
 
-export const Form043EpicrisisTab: React.FC<Form043EpicrisisTabProps> = React.memo(
-	function Form043EpicrisisTab({ formData }) {
+export type Form043EpicrisisTabProps = RecordEpicrisisTabProps;
+
+export const RecordEpicrisisTab: React.FC<RecordEpicrisisTabProps> = React.memo(
+	function RecordEpicrisisTab({ formData }) {
 		const e = formData.epicrisis;
 		return (
 			<div>
-				<div className="emr043-section-card">
+				<div className="emr-studio-card emr043-section-card">
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexWrap: "wrap", gap: "8px" }}>
-						<h3 className="emr043-section-card-title" style={{ margin: 0 }}>
+						<h3 className="emr-studio-card-title emr043-section-card-title flex items-center gap-2" style={{ margin: 0 }}>
 							<Award className="w-4 h-4 text-sky-600" />
-							5. Эпикриз, результаты лечения и план контрольного наблюдения
+							<span>5. Эпикриз, результаты лечения и план наблюдения</span>
 						</h3>
 					</div>
 					<div className="emr043-grid-2">
@@ -50,4 +59,4 @@ export const Form043EpicrisisTab: React.FC<Form043EpicrisisTabProps> = React.mem
 	},
 );
 
-export const RecordEpicrisisTab = Form043EpicrisisTab;
+export const Form043EpicrisisTab = RecordEpicrisisTab;

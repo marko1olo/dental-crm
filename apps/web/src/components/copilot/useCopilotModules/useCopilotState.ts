@@ -47,6 +47,8 @@ export function useCopilotState(options: UseCopilotOptions = {}) {
 				toggle: () => setIsOpen((prev) => !prev),
 				setMessages: (msgs: CopilotUiMessage[]) => setMessages(msgs),
 				setPending: (pend: PendingConfirmation | null) => setPending(pend),
+				setBusy: (b: boolean) => setBusy(b),
+				setPhase: (p: CopilotPhase) => setPhase(p),
 				setActiveTab: (tab: "chat" | "pending") => setActiveTab(tab),
 				setProactiveAlerts: (alerts: ProactiveAlertCardData[]) => setProactiveAlerts(alerts),
 				setWhatsappHitLCards: (cards: WhatsAppApprovalCard[]) => setWhatsappHitLCards(cards),

@@ -13,22 +13,26 @@ import {
 	User, HeartPulse, Activity, Calendar, Award, ShieldCheck, MoreHorizontal, Download, Copy,
 } from "lucide-react";
 import { useAppStore } from "../../store/appStore";
-import type { MedicalRecordData, Form043VisitDiaryEntry } from "./outpatientRecordTypes";
+import type { MedicalRecordData, ClinicalVisitDiaryEntry } from "./types/recordDataTypes";
 import {
 	DEFAULT_MEDICAL_CARD_DATA,
 	resolveClinicRequisites,
 	applyMedicalCardPhysiologicalNorm,
 } from "./medicalRecordCatalogData";
 import {
-	validateForm043uCompleteness, formatPatientAge, calculateDmftIndex, calculateCpitnIndex, generateMedicalRecordPrintHtml,
-} from "./emr043Math";
+	validateMedicalRecordCompleteness,
+	formatPatientAge,
+	calculateDmftIndex,
+	calculateCpitnIndex,
+	generateMedicalRecordPrintHtml,
+} from "./clinicalDiaryMath";
 import { useRecordExports } from "./record/useRecordExports";
 import { EmrProtocolGeneratorModal } from "./protocolGenerator/EmrProtocolGeneratorModal";
-import { Form043PassportTab } from "./record/tabs/RecordPassportTab";
-import { Form043AnamnesisTab } from "./record/tabs/RecordAnamnesisTab";
-import { Form043OdontogramTab } from "./record/tabs/RecordOdontogramTab";
-import { Form043DiariesTab } from "./record/tabs/RecordDiariesTab";
-import { Form043EpicrisisTab } from "./record/tabs/RecordEpicrisisTab";
+import { RecordPassportTab } from "./record/tabs/RecordPassportTab";
+import { RecordAnamnesisTab } from "./record/tabs/RecordAnamnesisTab";
+import { RecordOdontogramTab } from "./record/tabs/RecordOdontogramTab";
+import { RecordDiariesTab } from "./record/tabs/RecordDiariesTab";
+import { RecordEpicrisisTab } from "./record/tabs/RecordEpicrisisTab";
 import "./emr043Styles.css";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
@@ -49,7 +53,7 @@ const RECORD_TABS: Array<{ id: RecordTabType; label: string; icon: React.FC<{ cl
 	{ id: "overview", label: "Обзор и печать A4", icon: FileText },
 	{ id: "passport", label: "1. Паспортная часть", icon: User },
 	{ id: "anamnesis", label: "2. Жалобы и Анамнез", icon: HeartPulse },
-	{ id: "odontogram", label: "3. Осмотр и Зубная формула", icon: Activity },
+	{ id: "odontogram", label: "3. Зубная формула", icon: Activity },
 	{ id: "diaries", label: "4. Дневники визитов", icon: Calendar },
 	{ id: "epicrisis", label: "5. Эпикриз и наблюдение", icon: Award },
 ];
@@ -91,7 +95,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 		const [isProtocolGeneratorOpen, setIsProtocolGeneratorOpen] = useState<boolean>(false);
 		const moreMenuRef = useRef<HTMLDivElement>(null);
 
-		const validation = useMemo(() => validateForm043uCompleteness(formData), [formData]);
+		const validation = useMemo(() => validateMedicalRecordCompleteness(formData), [formData]);
 		const dmft = useMemo(() => calculateDmftIndex(formData.dentalStatus.odontogramTeeth), [formData.dentalStatus.odontogramTeeth]);
 		const cpitn = useMemo(() => calculateCpitnIndex(formData.dentalStatus.cpitnIndex), [formData.dentalStatus.cpitnIndex]);
 		const ageText = useMemo(
@@ -138,7 +142,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 		const handleSaveForm = useCallback(() => onSave?.(formData), [onSave, formData]);
 
-		const handleAddDiary = useCallback((newDiary: Form043VisitDiaryEntry) => {
+		const handleAddDiary = useCallback((newDiary: ClinicalVisitDiaryEntry) => {
 			setFormData((prev) => {
 				const updated = { ...prev, visitDiaries: [newDiary, ...prev.visitDiaries] };
 				onSave?.(updated);
@@ -167,10 +171,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					doctorFullName={formData.passport.attendingDoctorFullName}
 					doctorSpecialty={formData.passport.attendingDoctorSpecialty}
 					odontogramTeeth={formData.dentalStatus.odontogramTeeth}
-					onApplyDiary={(newDiary) => { handleAddDiary(newDiary as Form043VisitDiaryEntry); setIsProtocolGeneratorOpen(false); }}
+					onApplyDiary={(newDiary) => { handleAddDiary(newDiary as ClinicalVisitDiaryEntry); setIsProtocolGeneratorOpen(false); }}
 					onApplyBatchDiaries={(newDiaries) => {
 						setFormData((prev) => {
-							const updated = { ...prev, visitDiaries: [...(newDiaries as Form043VisitDiaryEntry[]), ...prev.visitDiaries] };
+							const updated = { ...prev, visitDiaries: [...(newDiaries as ClinicalVisitDiaryEntry[]), ...prev.visitDiaries] };
 							onSave?.(updated);
 							return updated;
 						});
@@ -201,7 +205,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								}`}
 							>
 								{effectiveIsDraft ? <FileText className="w-3 h-3 text-amber-600" /> : <Check className="w-3 h-3 text-emerald-600" />}
-								{effectiveIsDraft ? "ЧЕРНОВИК" : "ПОДПИСАНО"}
+								{effectiveIsDraft ? "ЧЕРНОВИК" : "ПОДПИСАНО ВРАЧОМ"}
 							</span>
 							<div className="min-w-0">
 								<h2 className="emr-studio-title emr043-header-title truncate">
@@ -351,14 +355,14 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						<div className="text-xs font-semibold">Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
 						<div className="emr043-progress-track">
 							<div
-								className={`emr043-progress-fill ${validation.completenessScore >= 90 ? "green" : validation.completenessScore >= 60 ? "yellow" : "red"}`}
+								className={`emr043-progress-fill ${validation.completenessScore >= 80 ? "green" : "yellow"}`}
 								style={{ width: `${validation.completenessScore}%` }}
 							/>
 						</div>
 						{validation.missingFields.length > 0 && (
 							<div className="flex items-center gap-2 flex-wrap">
 								<span className="text-[11px] text-[var(--muted,#64748b)]">
-									Не заполнено: {validation.missingFields.map((m) => m.label).join(", ")}
+									Рекомендации: {validation.missingFields.map((m) => m.label).join(", ")}
 								</span>
 								<button
 									type="button"
@@ -368,7 +372,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 									className="text-[11px] text-[var(--teal,#0d9488)] bg-transparent border-none underline cursor-pointer font-semibold p-0"
 									title="Заполнить незаполненные показатели физиологической нормой"
 								>
-									Заполнить нормой
+									Норма в 1 клик
 								</button>
 							</div>
 						)}
@@ -393,11 +397,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								/>
 							</div>
 						)}
-						{activeTab === "passport" && <Form043PassportTab formData={formData} ageText={ageText} />}
-						{activeTab === "anamnesis" && <Form043AnamnesisTab formData={formData} onApplyNorm={handleApplyNorm} />}
-						{activeTab === "odontogram" && <Form043OdontogramTab formData={formData} dmft={dmft} cpitn={cpitn} onApplyNorm={handleApplyNorm} />}
+						{activeTab === "passport" && <RecordPassportTab formData={formData} ageText={ageText} />}
+						{activeTab === "anamnesis" && <RecordAnamnesisTab formData={formData} onApplyNorm={handleApplyNorm} />}
+						{activeTab === "odontogram" && <RecordOdontogramTab formData={formData} dmft={dmft} cpitn={cpitn} onApplyNorm={handleApplyNorm} />}
 						{activeTab === "diaries" && (
-							<Form043DiariesTab
+							<RecordDiariesTab
 								formData={formData}
 								onOpenProtocolGenerator={onOpenProtocolGenerator}
 								onOpenInternalProtocolGenerator={() => setIsProtocolGeneratorOpen(true)}
@@ -405,7 +409,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								onDeleteDiary={handleDeleteDiary}
 							/>
 						)}
-						{activeTab === "epicrisis" && <Form043EpicrisisTab formData={formData} />}
+						{activeTab === "epicrisis" && <RecordEpicrisisTab formData={formData} />}
 					</main>
 
 					{/* Мобильная нижняя плашка в Natural Thumb Zone (Apple HIG) */}

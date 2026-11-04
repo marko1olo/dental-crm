@@ -3,6 +3,7 @@ import { isDemoShowcaseMode } from "../../../lib/demoMode.js";
 import { readDenteClinicToken, readDenteStaffToken } from "../../../lib/safeLocalStorage";
 import { INITIAL_FORM257_RECORDS } from "./autoclaveLogSeedRecords";
 import { createDefault5ChamberPoints, createForm257Record, type Form257Record } from "./autoclaveLogEngine.js";
+import type { PackagingTypeId } from "./autoclaveLogPresets.js";
 import type { AutoclaveModalTab } from "./AutoclaveLogModalTabs";
 
 export function useAutoclaveLogModalLogic(isOpen: boolean, initialTab: string) {

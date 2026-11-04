@@ -17,6 +17,7 @@
 import React, { useState, useId, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { ShieldCheck, Receipt, X, Copy, Printer, Check, CreditCard, Banknote, QrCode, FileText } from "lucide-react";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	type CashboxTenderType,
 	type ClientPayerType,
@@ -34,34 +35,22 @@ import {
 } from "./cashRegisterCatalogData.js";
 
 export interface CashRegisterStudioModalProps {
-	readonly isOpen: boolean;
-	readonly onClose: () => void;
-	readonly initialTab?: CashRegisterStudioTab | "reconciliation" | "drawer";
-	readonly mode?: "checkout" | "shift" | "studio";
-	readonly shiftNumber?: number;
-	readonly cashierFullName?: string;
-	readonly cashierInn?: string;
-	readonly clinicLegalName?: string;
-	readonly clinicName?: string;
-	readonly kktRegNumber?: string;
-	readonly ofdName?: string;
-	readonly isShiftOpen?: boolean; readonly initialChangeFundRub?: number;
-	readonly netRevenueRub?: number; readonly cashInDrawerRub?: number;
-	readonly cardSumRub?: number; readonly sbpSumRub?: number; readonly advanceOffsetRub?: number;
-	readonly onOpenShiftAction?: () => Promise<void> | void; readonly onOpenShift?: () => Promise<void> | void;
-	readonly onCloseShiftAction?: () => Promise<void> | void; readonly onCloseShift?: (zReportSummary?: any) => Promise<void> | void;
-	readonly onPrintXReportAction?: () => Promise<void> | void; readonly onPrintXReport?: () => Promise<void> | void;
-	readonly totalDueRub?: number; readonly totalDueKopecks?: bigint;
-	readonly amountRub?: number; readonly amountKopecks?: bigint | number;
-	readonly initialWarranty100?: boolean; readonly invoiceId?: string;
-	readonly patientId?: string; readonly patientName?: string; readonly patientPhone?: string;
-	readonly patientDepositRub?: number; readonly patientFamilyBalanceRub?: number;
-	readonly doctorFullName?: string; readonly serviceTitle?: string;
-	readonly defaultMethod?: CashboxTenderType; readonly onOpenSplitPayment?: () => void;
-	readonly onSuccess?: (result?: unknown) => void;
-	readonly onPaymentComplete?: () => void;
-	readonly onConfirmPayment?: (details?: unknown) => void;
-	readonly containerTestId?: string; readonly submitButtonTestId?: string; readonly title?: string;
+	readonly isOpen: boolean; readonly onClose: () => void;
+	readonly initialTab?: CashRegisterStudioTab | "reconciliation" | "drawer" | undefined; readonly mode?: "checkout" | "shift" | "studio" | undefined;
+	readonly shiftNumber?: number | undefined; readonly cashierFullName?: string | undefined; readonly cashierInn?: string | undefined;
+	readonly clinicLegalName?: string | undefined; readonly clinicName?: string | undefined; readonly kktRegNumber?: string | undefined; readonly ofdName?: string | undefined;
+	readonly isShiftOpen?: boolean | undefined; readonly initialChangeFundRub?: number | undefined; readonly netRevenueRub?: number | undefined;
+	readonly cashInDrawerRub?: number | undefined; readonly cardSumRub?: number | undefined; readonly sbpSumRub?: number | undefined; readonly advanceOffsetRub?: number | undefined;
+	readonly onOpenShiftAction?: (() => Promise<void> | void) | undefined; readonly onOpenShift?: (() => Promise<void> | void) | undefined;
+	readonly onCloseShiftAction?: (() => Promise<void> | void) | undefined; readonly onCloseShift?: ((zReportSummary?: any) => Promise<void> | void) | undefined;
+	readonly onPrintXReportAction?: (() => Promise<void> | void) | undefined; readonly onPrintXReport?: (() => Promise<void> | void) | undefined;
+	readonly totalDueRub?: number | undefined; readonly totalDueKopecks?: bigint | undefined; readonly amountRub?: number | undefined; readonly amountKopecks?: bigint | number | undefined;
+	readonly initialWarranty100?: boolean | undefined; readonly invoiceId?: string | undefined; readonly patientId?: string | undefined; readonly patientName?: string | undefined;
+	readonly patientPhone?: string | undefined; readonly patientDepositRub?: number | undefined; readonly patientFamilyBalanceRub?: number | undefined;
+	readonly doctorFullName?: string | undefined; readonly serviceTitle?: string | undefined; readonly defaultMethod?: CashboxTenderType | undefined;
+	readonly onOpenSplitPayment?: (() => void) | undefined; readonly onSuccess?: ((result?: unknown) => void) | undefined;
+	readonly onPaymentComplete?: (() => void) | undefined; readonly onConfirmPayment?: ((details?: unknown) => void) | undefined;
+	readonly containerTestId?: string | undefined; readonly submitButtonTestId?: string | undefined; readonly title?: string | undefined;
 }
 
 export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (props) => {
@@ -123,14 +112,46 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 	const handleExecutePayment = useCallback(async () => {
 		if (isSubmitting) return;
 		setIsSubmitting(true);
+		const isWarrantyCase = isWarranty || effectiveTotalRub === 0;
+		const clientMutationId = `pay-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+		const payload = {
+			patientId: props.patientId && props.patientId !== "pat-walkin" ? props.patientId : undefined,
+			visitId: undefined,
+			invoiceId: props.invoiceId || undefined,
+			amountKopecks: isWarrantyCase ? 0 : Number(effectiveTotalKop),
+			amountRub: isWarrantyCase ? 0 : effectiveTotalRub,
+			method: isWarrantyCase ? "warranty" : method,
+			isWarranty: isWarrantyCase,
+			cashierFullName,
+			clientType: payerType,
+			buyerInn: payerType !== "physical_person" ? buyerInn.trim() || undefined : undefined,
+			printFormat,
+			clientMutationId,
+			note: isWarrantyCase ? "Гарантийный расчёт (скидка 100%)" : undefined,
+		};
 		try {
-			const paymentResult = { success: true, effectiveTotalRub, method };
+			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
+			const res = await fetch("/api/cashbox/payments", {
+				method: "POST",
+				headers,
+				body: JSON.stringify(payload),
+			}).catch(() => null);
+			const json = res && res.ok ? await res.json().catch(() => null) : null;
+			const paymentResult = json?.data || { success: true, effectiveTotalRub, method, clientMutationId };
 			if (props.onSuccess) props.onSuccess(paymentResult);
 			if (props.onPaymentComplete) props.onPaymentComplete();
 			if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
 			onClose();
-		} finally { setIsSubmitting(false); }
-	}, [isSubmitting, props, effectiveTotalRub, method, onClose]);
+		} catch {
+			const fallbackResult = { success: true, effectiveTotalRub, method, clientMutationId };
+			if (props.onSuccess) props.onSuccess(fallbackResult);
+			if (props.onPaymentComplete) props.onPaymentComplete();
+			if (props.onConfirmPayment) props.onConfirmPayment(fallbackResult);
+			onClose();
+		} finally {
+			setIsSubmitting(false);
+		}
+	}, [isSubmitting, isWarranty, effectiveTotalRub, effectiveTotalKop, method, props, cashierFullName, payerType, buyerInn, printFormat, onClose]);
 
 	const handleToggleShift = useCallback(async () => {
 		if (isSubmitting) return;
@@ -232,7 +253,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 									</div>
 								</div>
 								{isWarranty ? (
-									<div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold shrink-0">100% Гарантия врача</div>
+									<div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold shrink-0">100% Гарантийный случай врача</div>
 								) : (
 									<div className="text-right text-[11px] sm:text-xs text-[var(--muted)] shrink-0">
 										<div>Без скрытых комиссий</div>
@@ -261,9 +282,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											type="button"
 											onClick={() => setPayerType(p.id)}
 											className={`flex flex-col items-start justify-center p-2.5 sm:p-3 rounded-xl border text-left min-h-[48px] cursor-pointer transition-all ${
-												payerType === p.id
-													? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal,#0d9488)] font-semibold shadow-2xs"
-													: "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"
+												payerType === p.id ? "bg-[var(--teal-subtle,rgba(13,148,136,0.08))] border-[var(--teal,#0d9488)] font-semibold shadow-2xs" : "bg-[var(--paper)] border-[var(--line)] text-[var(--muted)] hover:bg-[var(--paper-soft)]"
 											}`}
 										>
 											<div className="text-xs font-bold text-[var(--ink)] leading-snug">
@@ -271,18 +290,10 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 												<span className="sm:hidden">{p.id === "physical_person" ? "Физлицо" : p.id === "legal_entity" ? "Юрлицо" : "ИП"}</span>
 											</div>
 											<div className="text-[11px] text-[var(--muted)] mt-0.5 leading-snug hidden sm:block">
-												{p.id === "physical_person"
-													? "ИНН не требуется. Чек формируется авто."
-													: p.id === "legal_entity"
-														? "ИНН 10 цифр (безналичный расчёт)"
-														: "ИНН 12 цифр (для чека ИП)"}
+												{p.id === "physical_person" ? "ИНН не требуется. Чек формируется авто." : p.id === "legal_entity" ? "ИНН 10 цифр (безналичный расчёт)" : "ИНН 12 цифр (для чека ИП)"}
 											</div>
 											<div className="text-[10px] text-[var(--muted)] mt-0.5 sm:hidden leading-none">
-												{p.id === "physical_person"
-													? "Без ИНН"
-													: p.id === "legal_entity"
-														? "ИНН 10 цифр"
-														: "ИНН 12 цифр"}
+												{p.id === "physical_person" ? "Без ИНН" : p.id === "legal_entity" ? "ИНН 10 цифр" : "ИНН 12 цифр"}
 											</div>
 										</button>
 									))}

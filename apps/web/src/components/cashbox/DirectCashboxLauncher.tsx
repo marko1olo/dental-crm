@@ -21,32 +21,29 @@ interface CashboxLauncherDetail {
 	readonly cashierFullName?: string;
 }
 
+function parseCashboxUrl(): { isOpen: boolean; view: "checkout" | "hub" } {
+	if (typeof window === "undefined") return { isOpen: false, view: "hub" };
+	const h = window.location.hash.toLowerCase();
+	const s = window.location.search.toLowerCase();
+	if (h.includes("cashbox_ssot") || s.includes("cashbox_ssot")) return { isOpen: false, view: "hub" };
+	if (h.includes("checkout") || h.includes("payment") || s.includes("checkout") || s.includes("payment")) {
+		return { isOpen: true, view: "checkout" };
+	}
+	if (h.includes("cashbox") || h.includes("cash-register") || h.includes("cash_register") || s.includes("cashbox")) {
+		return { isOpen: true, view: "hub" };
+	}
+	return { isOpen: false, view: "hub" };
+}
+
 export const DirectCashboxLauncher: React.FC = () => {
-	const [isOpen, setIsOpen] = useState<boolean>(false);
-	const [activeView, setActiveView] = useState<"checkout" | "hub">("hub");
+	const [isOpen, setIsOpen] = useState<boolean>(() => parseCashboxUrl().isOpen);
+	const [activeView, setActiveView] = useState<"checkout" | "hub">(() => parseCashboxUrl().view);
 	const [customData, setCustomData] = useState<CashboxLauncherDetail | null>(null);
 
 	const checkUrl = useCallback(() => {
-		if (typeof window === "undefined") return;
-		const h = window.location.hash.toLowerCase();
-		const s = window.location.search.toLowerCase();
-
-		// Avoid collision when CashierFinanceLaunchers mounts StandaloneCashboxSsotHost
-		if (h.includes("cashbox_ssot") || s.includes("cashbox_ssot")) {
-			setIsOpen(false);
-			return;
-		}
-
-		const isCheckout = h.includes("checkout") || h.includes("payment") || s.includes("checkout") || s.includes("payment");
-		const isHub = h.includes("cashbox") || h.includes("cash-register") || h.includes("cash_register") || s.includes("cashbox");
-
-		if (isCheckout) {
-			setActiveView("checkout");
-			setIsOpen(true);
-		} else if (isHub) {
-			setActiveView("hub");
-			setIsOpen(true);
-		}
+		const parsed = parseCashboxUrl();
+		setActiveView(parsed.view);
+		setIsOpen(parsed.isOpen);
 	}, []);
 
 	useEffect(() => {

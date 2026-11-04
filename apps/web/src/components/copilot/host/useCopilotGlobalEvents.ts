@@ -17,6 +17,8 @@ export interface UseCopilotGlobalEventsOptions {
   closeTreatmentPlanCopilot: () => void;
   setCustomMessages: (msgs: CopilotUiMessage[]) => void;
   setCustomPending: (pend: PendingConfirmation | null) => void;
+  setCustomBusy?: (busy: boolean) => void;
+  setCustomPhase?: (phase: string | null) => void;
   onOpenCatalog: (tooth?: number, category?: SpecialtyCategoryKey) => void;
 }
 
@@ -44,6 +46,8 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       },
       setMessages: (msgs) => opts.setCustomMessages(msgs),
       setPending: (pend) => opts.setCustomPending(pend),
+      setBusy: (b: boolean) => opts.setCustomBusy?.(b),
+      setPhase: (p: string | null) => opts.setCustomPhase?.(p),
       setActiveTab: (tab) => opts.setActiveTab(tab),
     };
 

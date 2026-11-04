@@ -1,5 +1,5 @@
-import type { Form043AnamnesisData } from "../../emr043Types";
-import { escapeHtml } from "../../emr043Math";
+import type { ClinicalAnamnesisData, Form043AnamnesisData } from "../../types/recordDataTypes";
+import { escapeHtml } from "../../math/recordMathFormatting";
 
 /** Рендерер 2-й секции: Анамнез жизни и заболевания */
 export function renderAnamnesisSectionHtml(anamnesis: Form043AnamnesisData): string {

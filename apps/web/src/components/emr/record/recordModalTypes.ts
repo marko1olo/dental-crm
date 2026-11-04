@@ -1,4 +1,4 @@
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 

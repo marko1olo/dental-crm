@@ -10,9 +10,9 @@ import { ShieldCheck, X } from "lucide-react";
 
 export interface CheckoutHeaderProps {
 	readonly titleId: string;
-	readonly title?: string;
-	readonly patientName?: string;
-	readonly doctorFullName?: string;
+	readonly title?: string | undefined;
+	readonly patientName?: string | undefined;
+	readonly doctorFullName?: string | undefined;
 	readonly onClose: () => void;
 }
 

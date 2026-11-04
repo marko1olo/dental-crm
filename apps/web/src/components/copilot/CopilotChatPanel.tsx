@@ -11,7 +11,7 @@ import { CopilotDrawerFeed } from "./drawer/CopilotDrawerFeed";
 import { CopilotDrawerTasksTab } from "./drawer/CopilotDrawerTasksTab";
 import { CopilotDrawerPlaybooks } from "./drawer/CopilotDrawerPlaybooks";
 import { useCopilotDrawerDebts } from "./drawer/useCopilotDrawerDebts";
-import type { CopilotDrawerProps } from "./drawer/drawerTypes";
+import type { CopilotDrawerProps, CopilotDrawerTab } from "./drawer/drawerTypes";
 
 export type CopilotChatPanelProps = Omit<CopilotDrawerProps, "isOpen" | "onClose" | "activeTab" | "onTabChange"> & {
 	embedMode?: boolean;
@@ -26,7 +26,7 @@ export const CopilotChatPanel: React.FC<CopilotChatPanelProps> = ({
 	embedMode = false,
 }) => {
 	const { context: uiContext, enrichMessage } = useCopilotContextSync();
-	const [activeTab, setActiveTab] = useState<"chat" | "pending">("chat");
+	const [activeTab, setActiveTab] = useState<CopilotDrawerTab>("chat");
 	const [input, setInput] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
 	const feedRef = useRef<HTMLDivElement>(null);
 

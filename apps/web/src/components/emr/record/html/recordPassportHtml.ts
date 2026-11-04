@@ -1,5 +1,5 @@
-import type { ClinicRequisites043, Form043PassportData } from "../../emr043Types";
-import { escapeHtml, formatPatientAge } from "../../emr043Math";
+import type { ClinicRequisites043, Form043PassportData, ClinicRequisitesData, ClinicalPassportData } from "../../types/recordDataTypes";
+import { escapeHtml, formatPatientAge } from "../../math/recordMathFormatting";
 
 /** Рендерер шапки клиники и реквизитов медицинской карты */
 export function renderClinicHeaderHtml(clinic: ClinicRequisites043, formOrderName?: string): string {

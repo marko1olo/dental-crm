@@ -4,16 +4,16 @@
  * Autonomy, 1-click somatic status, passive safety warnings, clean Latin SOAP diary and live Fastify sync.
  */
 
-import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders.js";
 import {
 	DENTAL_ANESTHETICS,
 	type AnestheticDrugId,
 	type AnestheticDrugInfo,
 	type InjectionTechniqueId,
 	type NeedleGaugeType,
-} from "./anesthesiaCatalogData";
+} from "./anesthesiaCatalogData.js";
 
-export { postEmergencyAntishockWriteoff, postQuickCarpuleWriteoff } from "./anesthesiaCatalogData";
+export { postEmergencyAntishockWriteoff, postQuickCarpuleWriteoff } from "./anesthesiaCatalogData.js";
 
 export type AsaPhysicalStatus = "asa_1" | "asa_2" | "asa_3" | "asa_4";
 export type PatientAgeCategory = "adult" | "pediatric" | "geriatric";

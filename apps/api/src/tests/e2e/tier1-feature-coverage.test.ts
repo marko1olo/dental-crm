@@ -41,7 +41,7 @@ import {
 	rubToKopecks,
 	setGlobalClockSkew,
 } from "@dental/shared";
-import { getToothAnatomicalNameRu } from "../../../../web/src/lib/clinicalProtocols.js";
+import { getToothAnatomicalNameRu } from "../../../../web/src/lib/protocols/fdiAnatomy.js";
 import {
 	appointmentLabels,
 	documentLabels,
@@ -99,9 +99,9 @@ import { createTenantTestApp } from "../support/tenantTestApp.js";
 import {
 	PATIENT_RECOMMENDATIONS,
 	type DiaryState,
-	generateSoapFromOdontogramFinding,
-	mergeSoapDiaryState,
-} from "../../../../web/src/lib/clinicalProtocols.js";
+} from "../../../../web/src/lib/protocols/protocolTypes.js";
+import { generateSoapFromOdontogramFinding } from "../../../../web/src/lib/protocols/odontogramSoapAggregator.js";
+import { mergeSoapDiaryState } from "../../../../web/src/lib/protocols/protocolMerge.js";
 
 const EMPTY_DIARY: DiaryState = {
 	anamnesis: "",

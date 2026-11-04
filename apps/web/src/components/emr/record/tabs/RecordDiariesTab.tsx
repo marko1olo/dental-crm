@@ -1,3 +1,10 @@
+/**
+ * apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx
+ *
+ * Дневники клинических приёмов (SOAP) медицинской карты приёма DENTE CRM.
+ * Мандаты 8e (Автономия врача), 8n (Соло-врач), 8x/8ap (Чистый живой доменный язык).
+ */
+
 import React, { useState, useCallback, useEffect, useRef } from "react";
 import {
 	Calendar,
@@ -8,21 +15,23 @@ import {
 	Check,
 	Tag,
 } from "lucide-react";
-import type { MedicalRecordData, Form043VisitDiaryEntry } from "../../outpatientRecordTypes";
+import type { MedicalRecordData, ClinicalVisitDiaryEntry, Form043VisitDiaryEntry } from "../../types/recordDataTypes";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
 
-export interface Form043DiariesTabProps {
+export interface RecordDiariesTabProps {
 	readonly formData: MedicalRecordData;
 	readonly onOpenProtocolGenerator?: (() => void) | undefined;
 	readonly onOpenInternalProtocolGenerator: () => void;
-	readonly onAddDiary?: ((entry: Form043VisitDiaryEntry) => void) | undefined;
+	readonly onAddDiary?: ((entry: ClinicalVisitDiaryEntry) => void) | undefined;
 	readonly onDeleteDiary?: ((index: number) => void) | undefined;
 }
 
+export type Form043DiariesTabProps = RecordDiariesTabProps;
+
 const COMMON_TEETH = [16, 26, 36, 46, 11, 21, 14, 24] as const;
 
-export const Form043DiariesTab: React.FC<Form043DiariesTabProps> = React.memo(
-	function Form043DiariesTab({
+export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
+	function RecordDiariesTab({
 		formData,
 		onOpenProtocolGenerator,
 		onOpenInternalProtocolGenerator,
@@ -141,7 +150,7 @@ export const Form043DiariesTab: React.FC<Form043DiariesTabProps> = React.memo(
 			const entryDate = now.toISOString().slice(0, 10);
 			const entryTime = now.toTimeString().slice(0, 5);
 
-			const newEntry: Form043VisitDiaryEntry = {
+			const newEntry: ClinicalVisitDiaryEntry = {
 				id: `diary_${Date.now()}`,
 				entryDate,
 				entryTime,
@@ -179,7 +188,7 @@ export const Form043DiariesTab: React.FC<Form043DiariesTabProps> = React.memo(
 			handleClearDraft,
 		]);
 
-		const handleCopyDiaryText = useCallback((diary: Form043VisitDiaryEntry, idx: number) => {
+		const handleCopyDiaryText = useCallback((diary: ClinicalVisitDiaryEntry, idx: number) => {
 			const text = `Визит от ${diary.entryDate} ${diary.entryTime ? `в ${diary.entryTime}` : ""}, Зуб FDI: ${diary.toothNumber || "общий"}
 Врач: ${diary.doctorFullName}
 S: ${diary.subjectiveComplaints}
@@ -198,17 +207,17 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 
 		return (
 			<div className="max-w-full overflow-x-clip">
-				<div className="emr043-section-card">
+				<div className="emr-studio-card emr043-section-card">
 					{/* Header toolbar */}
 					<div className="flex justify-between items-center mb-3.5 flex-wrap gap-2">
-						<h3 className="emr043-section-card-title m-0 flex items-center gap-2">
+						<h3 className="emr-studio-card-title emr043-section-card-title m-0 flex items-center gap-2">
 							<Calendar className="w-4 h-4 text-sky-600" />
-							<span>4. Дневники клинических приёмов (Медицинская карта приёма)</span>
+							<span>4. Дневники визитов (Медицинская карта приёма)</span>
 						</h3>
 						<div className="flex items-center gap-2 flex-wrap">
 							<button
 								type="button"
-								className="emr043-btn emr043-btn-secondary touch-manipulation min-h-[44px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+								className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
 								onClick={() => setIsFormOpen((prev) => !prev)}
 								data-testid="btn-toggle-inline-diary-form"
 							>
@@ -218,7 +227,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 
 							<button
 								type="button"
-								className="emr043-btn emr043-btn-secondary touch-manipulation min-h-[44px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+								className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
 								onClick={() => (onOpenProtocolGenerator ? onOpenProtocolGenerator() : onOpenInternalProtocolGenerator())}
 								data-testid="form043-synthesize-diary-btn"
 								title="Сформировать дневник по МКБ-10 и шаблонам СтАР"
@@ -297,17 +306,17 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 								</div>
 							</div>
 							<div className="mb-1.5 text-xs">
-								<span className="font-bold text-[var(--teal,#0d9488)]">S (Subjective):</span> {diary.subjectiveComplaints}
+								<span className="font-bold text-[var(--teal,#0d9488)]">S (Жалобы):</span> {diary.subjectiveComplaints}
 							</div>
 							<div className="mb-1.5 text-xs">
-								<span className="font-bold text-[var(--teal,#0d9488)]">O (Objective):</span> {diary.objectiveStatusLocalis}
+								<span className="font-bold text-[var(--teal,#0d9488)]">O (Осмотр):</span> {diary.objectiveStatusLocalis}
 								{diary.eodMicroamperes ? ` [ЭОД: ${diary.eodMicroamperes} мкА]` : ""}
 							</div>
 							<div className="mb-1.5 text-xs">
-								<span className="font-bold text-[var(--teal,#0d9488)]">A (Assessment):</span> <strong>{diary.assessmentDiagnosisText}</strong> [{diary.assessmentIcd10Code}]
+								<span className="font-bold text-[var(--teal,#0d9488)]">A (Диагноз):</span> <strong>{diary.assessmentDiagnosisText}</strong> [{diary.assessmentIcd10Code}]
 							</div>
 							<div className="mb-1.5 text-xs">
-								<span className="font-bold text-[var(--teal,#0d9488)]">P (Plan & Protocol):</span> {diary.procedureProtocol}
+								<span className="font-bold text-[var(--teal,#0d9488)]">P (Лечение):</span> {diary.procedureProtocol}
 							</div>
 							{diary.anesthesiaDetails && (
 								<div className="text-[11px] text-[var(--muted,#64748b)] mb-1">• Анестезия: {diary.anesthesiaDetails}</div>
@@ -318,7 +327,7 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 							{diary.digitalSignatureHash && (
 								<div className="mt-2 text-[11px] text-[var(--ok-fg,#15803d)] flex items-center gap-1">
 									<ShieldCheck className="w-3.5 h-3.5" />
-									<span>Заверено УКЭП (ГОСТ Р 34.10): {diary.digitalSignatureHash.slice(0, 20)}…</span>
+									<span>Заверено УКЭП: {diary.digitalSignatureHash.slice(0, 20)}…</span>
 								</div>
 							)}
 						</div>
@@ -337,4 +346,4 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 	},
 );
 
-export const RecordDiariesTab = Form043DiariesTab;
+export const Form043DiariesTab = RecordDiariesTab;

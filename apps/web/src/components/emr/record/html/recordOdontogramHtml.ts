@@ -1,6 +1,7 @@
-import type { Form043DentalStatusData } from "../../emr043Types";
+import type { ClinicalDentalStatusData, Form043DentalStatusData } from "../../types/recordDataTypes";
 import { dentalBiteTypeLabels } from "@dental/shared";
-import { escapeHtml, calculateDmftIndex, calculateCpitnIndex } from "../../emr043Math";
+import { escapeHtml } from "../../math/recordMathFormatting";
+import { calculateDmftIndex, calculateCpitnIndex } from "../../math/recordMathIndices";
 import { renderFdiFormulaTableHtml } from "./recordHtmlFdiTable";
 
 /** Рендерер 3-й секции: Стоматологический статус, формула FDI и индексы */

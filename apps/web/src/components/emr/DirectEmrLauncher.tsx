@@ -13,7 +13,7 @@ import React, { useEffect, useState, useMemo, useCallback } from "react";
 import { MedicalRecordStudioModal } from "./MedicalRecordStudioModal";
 import { MedicalCardPrintModal } from "./MedicalCardPrintModal";
 import { DEFAULT_MEDICAL_CARD_DATA, resolveClinicRequisites } from "./medicalRecordCatalogData";
-import type { MedicalRecordData } from "./outpatientRecordTypes";
+import type { MedicalRecordData } from "./types/recordDataTypes";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import type { Dashboard, Patient } from "@dental/shared";
 

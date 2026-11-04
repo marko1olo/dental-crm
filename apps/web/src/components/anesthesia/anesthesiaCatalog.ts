@@ -3,4 +3,4 @@
  * Facade Re-export for SSOT Anesthesia Catalog (Mandate 8b <= 50 lines)
  */
 
-export * from "./anesthesiaCatalogData";
+export * from "./anesthesiaCatalogData.js";

@@ -1,5 +1,5 @@
-import type { MedicalRecordData, MedicalRecordPrintConfig } from "../../outpatientRecordTypes";
-import { escapeHtml } from "../../emr043Math";
+import type { MedicalRecordData, MedicalRecordPrintConfig } from "../../types/recordDataTypes";
+import { escapeHtml } from "../../math/recordMathFormatting";
 import { getMedicalRecordPrintStyles } from "./recordHtmlStyles";
 import { renderClinicHeaderHtml, renderCardTitleBlockHtml, renderPassportSectionHtml } from "./recordPassportHtml";
 import { renderAnamnesisSectionHtml } from "./recordAnamnesisHtml";

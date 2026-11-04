@@ -1,11 +1,11 @@
 import { useCallback } from "react";
-import type { MedicalRecordData } from "../outpatientRecordTypes";
+import type { MedicalRecordData } from "../types/recordDataTypes";
 import {
 	generateMedicalRecordPrintHtml,
 	generate043XmlCda,
 	generate043JsonExport,
 	generate043PlainText,
-} from "../emr043Math";
+} from "../clinicalDiaryMath";
 
 interface UseRecordExportsParams {
 	formData: MedicalRecordData;

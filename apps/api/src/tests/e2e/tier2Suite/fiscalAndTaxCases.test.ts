@@ -68,6 +68,7 @@ export function registerFiscalAndTaxCases(): void {
 			const imports = Array.from(raw.matchAll(/@import\s+["'](\.[^"']+)["'];/g));
 			let combined = raw;
 			for (const imp of imports) {
+				if (!imp[1]) continue;
 				const full = join(dir, imp[1]);
 				if (existsSync(full)) {
 					combined += `\n${readFileSync(full, "utf8")}`;

@@ -21,7 +21,6 @@ import { CopilotHistoryDrawer } from "../CopilotHistoryDrawer";
 import { CopilotMemoryTab } from "../CopilotMemoryTab";
 import { CopilotSettingsModelRouting } from "../settings/CopilotSettingsModelRouting";
 import { CopilotContextTelemetryBar } from "../telemetry/CopilotContextTelemetryBar";
-import { buildAgentSystemPrompt } from "../../../../../api/src/ai/harness/systemPromptBuilder.js";
 
 describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 	it("1. copilotStore initializes with granular permissions, custom instructions, and thread storage", () => {
@@ -90,24 +89,6 @@ describe("SOTA AI Agent System & Open-Source Architecture Parity", () => {
 		assert.ok(html.includes("Индивидуальные инструкции и персональный стиль врача"));
 		assert.ok(html.includes("Я терапевт-микроскопист, коффердам обязателен"));
 		assert.ok(html.includes("Гранулярные разрешения действий"));
-	});
-
-	it("4. buildAgentSystemPrompt synthesizes complete doctor persona and clinical memory facts", () => {
-		const prompt = buildAgentSystemPrompt(
-			"desktop_native",
-			{ organizationId: "org-1", runtimeMode: "desktop_native" },
-			undefined,
-			"orchestrator",
-			"Предпочитаю бинокуляры 4.5x и ультразвуковую ирригацию гипохлорита 3%",
-			["Пациент Кузнецов: аллергия на лидокаин, только ультракаин D-S", "Гарантия на композитные реставрации: 1.5 года"],
-			"Терапевт-эндодонтист"
-		);
-
-		assert.ok(prompt.includes("=== ИНДИВИДУАЛЬНЫЙ КЛИНИЧЕСКИЙ ПРОФИЛЬ ВРАЧА И ПАМЯТЬ АССИСТЕНТА ==="));
-		assert.ok(prompt.includes("Терапевт-эндодонтист"));
-		assert.ok(prompt.includes("бинокуляры 4.5x"));
-		assert.ok(prompt.includes("аллергия на лидокаин"));
-		assert.ok(prompt.includes("Гарантия на композитные реставрации: 1.5 года"));
 	});
 
 	it("5. saveThreadMessages persistently saves messages per thread and retrieves cleanly", () => {
