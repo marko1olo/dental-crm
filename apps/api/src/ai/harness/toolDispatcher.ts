@@ -11,7 +11,7 @@ import {
 	getToolDescriptionRu,
 	isDestructiveDentalTool,
 } from "../dentalTools.js";
-import type { AgentHarnessEvent } from "./harnessTypes.js";
+import type { AgentHarnessEvent, GranularAgentPermissions } from "./harnessTypes.js";
 
 export interface ToolDispatchResult {
 	toolName: string;
@@ -30,6 +30,7 @@ export class ToolDispatcher {
 		private readonly requireConfirmationForDestructive = false,
 		private readonly onEvent?: (event: AgentHarnessEvent) => void | Promise<void>,
 		private readonly trustLevel: "confirm_all" | "balanced" | "autonomous" = "balanced",
+		private readonly granularPermissions?: GranularAgentPermissions,
 	) {}
 
 	/**
@@ -50,15 +51,32 @@ export class ToolDispatcher {
 			callId: call.id,
 		});
 
-		// 1. Two-phase execution guard based on Trust Level (Mandate 8e: Doctor Autonomy)
+		// 1. Two-phase execution guard based on Trust Level & Fine-Grained Permissions
+		let isAutoApprovedByGranular = false;
+		if (this.granularPermissions) {
+			if (this.granularPermissions.autoApproveFileReads && ["search_workstation_files", "read_clinical_file", "list_patient_study_directory", "open_patient_dropzone_folder"].includes(toolName)) {
+				isAutoApprovedByGranular = true;
+			} else if (this.granularPermissions.autoApproveFileWrites && ["write_clinical_file", "replace_file_content"].includes(toolName)) {
+				isAutoApprovedByGranular = true;
+			} else if (this.granularPermissions.autoApproveClinicalMutations && ["update_tooth_status", "generate_form_043_entry"].includes(toolName)) {
+				isAutoApprovedByGranular = true;
+			} else if (this.granularPermissions.autoApproveFinancialDrafts && toolName === "create_invoice_draft") {
+				isAutoApprovedByGranular = true;
+			} else if (this.granularPermissions.autoApproveExternalSoftware && toolName === "launch_workstation_app") {
+				isAutoApprovedByGranular = true;
+			}
+		}
+
 		const isDestructive = isDestructiveDentalTool(toolName);
 		const needsConfirmation =
 			this.trustLevel === "confirm_all"
-				? true
+				? !isAutoApprovedByGranular
 				: this.trustLevel === "autonomous"
 					? false
-					: (this.requireConfirmationForDestructive || isDestructive) &&
-						!this.effectiveToolContext.allowLocalExecution;
+					: isAutoApprovedByGranular
+						? false
+						: (this.requireConfirmationForDestructive || isDestructive) &&
+							!this.effectiveToolContext.allowLocalExecution;
 
 		if (needsConfirmation) {
 			const descRu = getToolDescriptionRu(toolName);

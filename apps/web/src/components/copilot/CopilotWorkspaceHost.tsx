@@ -15,6 +15,7 @@ import { useVoiceEngine } from "../voice/voiceEngine";
 import { showToast } from "../GlobalToast";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem } from "../../lib/safeLocalStorage";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { useCopilotStore } from "../../store/copilotStore";
 
 export interface CopilotWorkspaceHostProps {
   isOpen: boolean;
@@ -47,6 +48,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
     ? (patientName || "Иванов Иван Иванович")
     : (!patientName || patientName === "Иванов Иван Иванович" ? "Пациент не выбран" : patientName);
 
+  const copilotSettings = useCopilotStore((s) => s.settings);
   const [activeTab, setActiveTab] = useState<"dialog" | "actions">(initialTab);
   const [runtimeMode, setRuntimeMode] = useState<"web_browser" | "desktop_native">(() => {
     const saved = safeLocalStorageGetItem("dente_copilot_runtime_mode");
@@ -117,6 +119,9 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
           messages: [{ role: "user", content: text }],
           patientId: patientId || undefined,
           runtimeMode,
+          trustLevel: copilotSettings.trustLevel,
+          speedMode: copilotSettings.speedMode,
+          activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
           stream: false,
         }),
       });

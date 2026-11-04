@@ -64,6 +64,9 @@ export async function runAgentHarness(
 		effectiveToolContext,
 		activePlan,
 		swarmRole,
+		params.customInstructions,
+		params.memoryFacts,
+		params.doctorSpecialization,
 	);
 
 	// Working history for this ReAct execution turn
@@ -114,6 +117,7 @@ export async function runAgentHarness(
 		Boolean(params.requireConfirmationForDestructive),
 		onEvent,
 		params.trustLevel || "balanced",
+		params.granularPermissions,
 	);
 
 	const recordedToolCalls: Array<{

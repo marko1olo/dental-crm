@@ -419,3 +419,77 @@ test("7. runAgentHarness: Fallback to deterministic ReAct cycle when API keys ar
 	assert.ok(events.some((e) => e.type === "confirmation_required"), "Must emit confirmation_required under confirm_all");
 	assert.ok(events.some((e) => e.type === "done"));
 });
+
+test("8. buildAgentSystemPrompt: Injects custom doctor instructions, clinical memory and specialization", () => {
+	const prompt = buildAgentSystemPrompt(
+		"desktop_native",
+		dummyContext,
+		undefined,
+		"orchestrator",
+		"Всегда использовать микроскоп и коффердам",
+		["Любимый композит: Filtek Ultimate A2", "Анестетик первого выбора: Убистезин форте 1:100 000"],
+		"Терапевт-эндодонтист",
+	);
+
+	assert.ok(prompt.includes("=== ИНДИВИДУАЛЬНЫЙ КЛИНИЧЕСКИЙ ПРОФИЛЬ ВРАЧА И ПАМЯТЬ АССИСТЕНТА ==="));
+	assert.ok(prompt.includes("Терапевт-эндодонтист"));
+	assert.ok(prompt.includes("Всегда использовать микроскоп и коффердам"));
+	assert.ok(prompt.includes("Любимый композит: Filtek Ultimate A2"));
+	assert.ok(prompt.includes("Убистезин форте 1:100 000"));
+});
+
+test("9. ToolDispatcher: Granular permissions auto-approve file and clinical actions even in balanced mode", async () => {
+	const events: AgentHarnessEvent[] = [];
+	const mockClient = createMockClient([
+		{
+			id: "resp-1",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "mock-model",
+			choices: [
+				{
+					index: 0,
+					message: {
+						role: "assistant",
+						tool_calls: [
+							{
+								id: "call-1",
+								type: "function",
+								function: {
+									name: "read_clinical_file",
+									arguments: JSON.stringify({ filePath: "test.txt" }),
+								},
+							},
+						],
+					},
+					finish_reason: "tool_calls",
+				},
+			],
+		},
+		{
+			id: "resp-2",
+			object: "chat.completion",
+			created: Date.now(),
+			model: "mock-model",
+			choices: [
+				{
+					index: 0,
+					message: { role: "assistant", content: "Файл успешно прочитан без блокировок" },
+					finish_reason: "stop",
+				},
+			],
+		},
+	]);
+
+	const result = await runAgentHarness({
+		messages: [{ role: "user", content: "Прочитай файл снимка" }],
+		context: dummyContext,
+		client: mockClient,
+		trustLevel: "confirm_all",
+		granularPermissions: { autoApproveFileReads: true },
+		onEvent: (e) => events.push(e),
+	});
+
+	assert.ok(result.text.includes("Файл успешно прочитан"));
+	assert.strictEqual(events.some((e) => e.type === "confirmation_required"), false, "Must auto-approve file read when granular permission is set");
+});

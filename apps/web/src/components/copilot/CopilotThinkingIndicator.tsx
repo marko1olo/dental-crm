@@ -9,6 +9,7 @@ import { Brain, Check, ChevronDown, Sparkles } from "lucide-react";
 export interface CopilotThinkingIndicatorProps {
 	isThinking: boolean;
 	activeTooth?: number | null | undefined;
+	icd10Code?: string | null | undefined;
 	thoughtProcess?: string | undefined;
 	speedMode?: "turbo" | "deep_reasoning" | undefined;
 	showThinkingProcess?: boolean | undefined;
@@ -16,8 +17,9 @@ export interface CopilotThinkingIndicatorProps {
 
 export function CopilotThinkingIndicator({
 	isThinking,
-	activeTooth = 36,
-	thoughtProcess = "Анализ клинической картины: жалобы на температурные раздражители. Проверка одонтограммы зуба 36, сопоставление со стандартами СтАР по глубокому кариесу (K02.1). Формирование плана препарирования и выбора нанокомпозита.",
+	activeTooth,
+	icd10Code,
+	thoughtProcess = "Анализ клинической картины: жалобы на температурные раздражители. Проверка одонтограммы зуба, сопоставление со стандартами СтАР по кариесу дентина. Формирование плана препарирования и выбора нанокомпозита.",
 	speedMode = "turbo",
 	showThinkingProcess = true,
 }: CopilotThinkingIndicatorProps) {
@@ -70,17 +72,19 @@ export function CopilotThinkingIndicator({
 				</span>
 				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--line)] text-emerald-600 dark:text-emerald-400 font-medium whitespace-nowrap flex items-center gap-1">
 					<Check size={10} className="stroke-[2.5]" />
-					<span>МКБ-10 K02.1</span>
+					<span>{icd10Code ? `МКБ-10 ${icd10Code}` : "МКБ-10 K02.1"}</span>
 				</span>
 				<span className="px-1.5 py-0.5 rounded bg-[var(--paper)] border border-[var(--teal,#0d9488)]/40 text-[var(--teal,#0d9488)] font-semibold whitespace-nowrap flex items-center gap-1 animate-pulse">
 					<Sparkles size={9} />
-					<span>Сверка со стандартами СтАР</span>
+					<span>EBM Решение</span>
 				</span>
-				<span className="ml-auto inline-flex items-center gap-0.5 text-[var(--teal,#0d9488)] shrink-0 font-medium">
+				<span className="ml-auto inline-flex items-center gap-1 text-[var(--teal,#0d9488)] shrink-0 font-medium">
 					<span>Печатает</span>
-					<span className="w-1 h-1 rounded-full bg-[var(--teal,#0d9488)] animate-pulse" />
-					<span className="w-1 h-1 rounded-full bg-[var(--teal,#0d9488)] animate-pulse [animation-delay:150ms]" />
-					<span className="w-1 h-1 rounded-full bg-[var(--teal,#0d9488)] animate-pulse [animation-delay:300ms]" />
+					<span className="inline-flex gap-0.5 items-center">
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)] animate-pulse" />
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)] animate-pulse [animation-delay:150ms]" />
+						<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal,#0d9488)] animate-pulse [animation-delay:300ms]" />
+					</span>
 				</span>
 			</div>
 

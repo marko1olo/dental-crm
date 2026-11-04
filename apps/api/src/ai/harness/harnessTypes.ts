@@ -93,6 +93,14 @@ export type AgentHarnessEvent =
 	| AgentHarnessEventDone
 	| AgentHarnessEventError;
 
+export interface GranularAgentPermissions {
+	autoApproveFileReads?: boolean | undefined;
+	autoApproveFileWrites?: boolean | undefined;
+	autoApproveClinicalMutations?: boolean | undefined;
+	autoApproveFinancialDrafts?: boolean | undefined;
+	autoApproveExternalSoftware?: boolean | undefined;
+}
+
 export interface AgentHarnessParams {
 	messages: AgentRouterChatMessage[];
 	context: DentalToolContext;
@@ -113,6 +121,10 @@ export interface AgentHarnessParams {
 	swarmRole?: "orchestrator" | "triage" | "odontogram_inquisitor" | "billing_sentinel" | "vision_specialist" | undefined;
 	// Autonomy & trust level (Mandate 8e)
 	trustLevel?: "confirm_all" | "balanced" | "autonomous" | undefined;
+	granularPermissions?: GranularAgentPermissions | undefined;
+	customInstructions?: string | undefined;
+	memoryFacts?: string[] | undefined;
+	doctorSpecialization?: string | undefined;
 	speedMode?: "turbo" | "deep_reasoning" | undefined;
 	activeTooth?: number | null | undefined;
 	fallbackToDeterministicAgent?: boolean | undefined;

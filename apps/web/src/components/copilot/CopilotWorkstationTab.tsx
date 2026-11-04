@@ -162,7 +162,7 @@ export function CopilotWorkstationTab() {
 			iconBg: "bg-[var(--teal,#0d9488)]/10 text-[var(--teal,#0d9488)]",
 			state: dropzoneState,
 			defaultDetail: "Обнаружено 12 срезов",
-			btnText: "Проверить связь с томографом",
+			btnText: "Тест томографа",
 			onProbe: () => runProbe("dropzone", { probeType: "ping_dropzone", targetPath: settings.localDropzonePath }, "Dropzone доступен (6ms)", "Обнаружено 12 срезов"),
 		},
 		{

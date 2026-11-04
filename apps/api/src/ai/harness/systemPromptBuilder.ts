@@ -25,6 +25,9 @@ export function buildAgentSystemPrompt(
 	context?: DentalToolContext,
 	activePlan?: TaskPlan,
 	swarmRole?: ClinicalSwarmRole,
+	customInstructions?: string,
+	memoryFacts?: string[],
+	doctorSpecialization?: string,
 ): string {
 	const runtimeSpecificDirective =
 		runtimeMode === "desktop_native"
@@ -68,6 +71,11 @@ export function buildAgentSystemPrompt(
 
 	const roleDirective = getSwarmRoleDirective(swarmRole);
 
+	const doctorProfileSection =
+		doctorSpecialization || customInstructions || (memoryFacts && memoryFacts.length > 0)
+			? `\n\n=== ИНДИВИДУАЛЬНЫЙ КЛИНИЧЕСКИЙ ПРОФИЛЬ ВРАЧА И ПАМЯТЬ АССИСТЕНТА ===\nСпециализация: ${doctorSpecialization || "Стоматолог общей практики"}\n${customInstructions ? `Инструкции и стиль врача: ${customInstructions}\n` : ""}${memoryFacts && memoryFacts.length > 0 ? `Факты из долговременной памяти:\n${memoryFacts.map((f) => `• ${f}`).join("\n")}\n` : ""}`
+			: "";
+
 	return `Ты — Автономный Клинический Эксперт и Ассистент Врача-Стоматолога DENTE CRM.
 Твой статус: клинический Red Team соратник врача с презумпцией доказательности (EBM) 100%.
 
@@ -96,5 +104,5 @@ ${roleDirective}
 4. СТИЛЬ: Лаконичный, профессиональный, медицинский русский язык. Никакой пустой любезности и воды. Сразу к клинической сути.
 
 ${runtimeSpecificDirective}
-${patientContextInfo}${planSection}`;
+${patientContextInfo}${planSection}${doctorProfileSection}`;
 }

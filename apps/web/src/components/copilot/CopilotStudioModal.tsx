@@ -25,26 +25,17 @@ import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryB
 export type CopilotStudioTab = "dialog" | "actions" | "workstation" | "memory";
 
 export interface CopilotStudioModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  activeTooth?: number | null;
-  patientId?: string | null;
-  patientName?: string | null;
-  activeVisitId?: string | null;
-  initialTab?: CopilotStudioTab;
-  initialMessages?: CopilotChatMessage[];
+  isOpen: boolean; onClose: () => void; activeTooth?: number | null;
+  patientId?: string | null; patientName?: string | null; activeVisitId?: string | null;
+  initialTab?: CopilotStudioTab; initialMessages?: CopilotChatMessage[];
 }
 
 export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 
 export interface CopilotChatMessage {
-  id: string;
-  role: "user" | "assistant";
-  text: string;
-  citation?: string | undefined;
-  timestamp: string;
-  applied?: boolean | undefined;
-  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined;
+  id: string; role: "user" | "assistant"; text: string; citation?: string;
+  timestamp: string; applied?: boolean;
+  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> };
 }
 
 const DEFAULT_INITIAL_MESSAGES: CopilotChatMessage[] = [
@@ -56,7 +47,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   isOpen, onClose, activeTooth = 36, patientId = "pat-active", patientName = "Иванов Иван Иванович", activeVisitId, initialTab = "dialog", initialMessages,
 }) => {
   const [activeTab, setActiveTab] = useState<CopilotStudioTab>(initialTab);
-  const { settings, setRuntimeMode, isSettingsOpen, setSettingsOpen, isHistoryOpen, setHistoryOpen, threads, selectThread, addToolLog } = useCopilotStore();
+  const { settings, memoryFacts, activeThreadId, threadMessages, saveThreadMessages, setRuntimeMode, isSettingsOpen, setSettingsOpen, isHistoryOpen, setHistoryOpen, threads, selectThread, addToolLog } = useCopilotStore();
   const { runtimeMode, speedMode, showThinkingProcess } = settings;
 
   const [messages, setMessages] = useState<CopilotChatMessage[]>(() => (
@@ -143,7 +134,17 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
           messages: [{ role: "user", content: query }],
-          patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId), stream: true, runtimeMode: apiRuntimeMode,
+          patientId: toValidUuid(patientId),
+          activeVisitId: toValidUuid(activeVisitId),
+          stream: true,
+          runtimeMode: apiRuntimeMode,
+          trustLevel: settings.trustLevel,
+          granularPermissions: settings.granularPermissions,
+          customInstructions: settings.customDoctorInstructions,
+          memoryFacts: memoryFacts.map((m) => m.fact),
+          doctorSpecialization: settings.clinicalSpecialization,
+          speedMode: settings.speedMode,
+          activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
         }),
       });
 
@@ -229,7 +230,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   return (
     <div className="copilot-studio-overlay fixed inset-0 z-[99990] flex justify-end max-md:items-end pointer-events-auto" data-testid="chairside-copilot-studio-root">
       <div className="copilot-studio-backdrop fixed inset-0 bg-black/40 backdrop-blur-[2px] transition-opacity" onClick={onClose} aria-hidden="true" data-testid="copilot-host-backdrop" />
-      <aside className="copilot-studio-panel relative z-10 flex flex-col w-full md:w-[540px] lg:w-[560px] h-[88vh] md:h-full bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,rgba(15,118,110,0.15))] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip max-w-[100vw]" aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel">
+      <aside className="copilot-studio-panel relative z-10 flex flex-col w-full md:w-[580px] lg:w-[620px] h-[88vh] md:h-full bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] border-t md:border-t-0 md:border-l border-[var(--line,rgba(15,118,110,0.15))] rounded-t-[24px] md:rounded-t-0 shadow-2xl overflow-x-clip max-w-[100vw]" aria-label="Кабинет клинического копайлота" data-testid="copilot-workspace-panel">
         <div className="copilot-studio-drag-handle-wrap md:hidden flex justify-center pt-2.5 pb-1">
           <div className="copilot-studio-drag-handle w-9 h-1.5 touch-none rounded-full bg-[var(--line,rgba(15,118,110,0.25))]" />
         </div>
@@ -263,11 +264,11 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         <CopilotContextTelemetryBar patientName={patientName} patientId={patientId} activeTooth={activeTooth} compact />
 
         {/* Навигационные вкладки кабинета */}
-        <div className="copilot-tabs-nav flex border-b border-[var(--line)] px-4 gap-2 text-xs font-semibold shrink-0 overflow-x-auto no-scrollbar">
-          <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "dialog" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><BookOpen size={14} /><span>Клинический диалог</span></button>
-          <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "actions" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Activity size={14} /><span>Быстрые действия</span></button>
-          <button type="button" onClick={() => setActiveTab("workstation")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "workstation" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><HardDrive size={14} /><span>Станция ПК</span></button>
-          <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn py-2.5 border-b-2 flex items-center gap-1.5 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "memory" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Brain size={14} /><span>Память ИИ</span></button>
+        <div className="copilot-tabs-nav flex border-b border-[var(--line)] px-3 gap-1.5 text-[11px] font-semibold shrink-0 overflow-x-auto no-scrollbar">
+          <button type="button" onClick={() => setActiveTab("dialog")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "dialog" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><BookOpen size={13} /><span>Клинический диалог</span></button>
+          <button type="button" onClick={() => setActiveTab("actions")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "actions" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Activity size={13} /><span>Быстрые действия</span></button>
+          <button type="button" onClick={() => setActiveTab("workstation")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "workstation" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><HardDrive size={13} /><span>Станция ПК</span></button>
+          <button type="button" onClick={() => setActiveTab("memory")} className={`copilot-tab-btn py-2.5 px-2 border-b-2 flex items-center gap-1 cursor-pointer bg-transparent whitespace-nowrap ${activeTab === "memory" ? "active border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold" : "border-transparent text-[var(--muted)] hover:text-[var(--ink)]"}`}><Brain size={13} /><span>Память ИИ</span></button>
         </div>
 
         {/* ВКЛАДКА 1: КЛИНИЧЕСКИЙ ДИАЛОГ */}
@@ -427,9 +428,11 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           isOpen={isHistoryOpen} onClose={() => setHistoryOpen(false)}
           onSelectThread={(threadId) => {
             selectThread(threadId);
-            const found = threads.find((t) => t.id === threadId);
-            if (found?.previewText) {
-              setMessages([{ id: `thread-init-${Date.now()}`, role: "assistant", text: found.previewText, timestamp: found.updatedAt, citation: "Клинический протокол СтАР" }]);
+            const saved = threadMessages[threadId];
+            if (saved && saved.length > 0) setMessages(saved);
+            else {
+              const found = threads.find((t) => t.id === threadId);
+              setMessages(found?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: found.previewText, timestamp: found.updatedAt, citation: "Клинический протокол СтАР" }] : []);
             }
             setHistoryOpen(false); setActiveTab("dialog");
           }}

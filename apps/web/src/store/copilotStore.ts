@@ -28,6 +28,14 @@ export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chai
 export type TomographyViewerApp = "planmeca_romexis" | "vatech_ez3d" | "sirona_sidexis" | "custom";
 export type WebSpeechSensitivity = "high" | "normal" | "low";
 
+export interface GranularAgentPermissions {
+	autoApproveFileReads: boolean;
+	autoApproveFileWrites: boolean;
+	autoApproveClinicalMutations: boolean;
+	autoApproveFinancialDrafts: boolean;
+	autoApproveExternalSoftware: boolean;
+}
+
 /**
  * Автоматическое определение среды исполнения врача:
  * 1. desktop_native: Electron / Tauri / Dente native wrapper
@@ -106,6 +114,9 @@ export interface CopilotSettings {
 	showThinkingProcess: boolean;
 	clinicalSpecialization: ClinicalSpecialization;
 	diaryTemplate: DiaryTemplate;
+	customDoctorInstructions: string;
+	granularPermissions: GranularAgentPermissions;
+	temperature: number;
 	runtimeMode: CopilotRuntimeEnvironment;
 	// Браузер (Web Browser API)
 	autoSaveDrafts: boolean;
@@ -132,6 +143,7 @@ export interface CopilotStoreState {
 	threadSearchQuery: string;
 	toolExecutionLogs: ToolExecutionLog[];
 	activeDiff: ActiveDiff | null;
+	threadMessages: Record<string, any[]>;
 	isSettingsOpen: boolean;
 	isHistoryOpen: boolean;
 	telemetry: ContextTelemetryData;
@@ -151,6 +163,7 @@ export interface CopilotStoreState {
 	togglePinThread: (id: string) => void;
 	renameThread: (id: string, title: string) => void;
 	setThreadSearchQuery: (query: string) => void;
+	saveThreadMessages: (threadId: string, messages: any[]) => void;
 	addToolLog: (log: Omit<ToolExecutionLog, "id" | "timestamp">) => void;
 	setActiveDiff: (diff: ActiveDiff | null) => void;
 	applyActiveDiff: () => void;
@@ -167,6 +180,15 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	showThinkingProcess: true,
 	clinicalSpecialization: "therapy",
 	diaryTemplate: "soap",
+	customDoctorInstructions: "",
+	granularPermissions: {
+		autoApproveFileReads: true,
+		autoApproveFileWrites: false,
+		autoApproveClinicalMutations: true,
+		autoApproveFinancialDrafts: true,
+		autoApproveExternalSoftware: false,
+	},
+	temperature: 0.2,
 	runtimeMode: detectRuntimeEnvironment(),
 	// Браузер
 	autoSaveDrafts: true,
@@ -220,6 +242,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 	memoryFacts: initialState.memoryFacts,
 	threads: initialState.threads,
 	activeThreadId: initialState.activeThreadId,
+	threadMessages: safeLocalStorageGetJson("dente_copilot_thread_messages", {}) || {},
 	threadSearchQuery: "",
 	toolExecutionLogs: initialState.toolExecutionLogs,
 	activeDiff: null,
@@ -332,6 +355,14 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 
 	setThreadSearchQuery: (query) => {
 		set({ threadSearchQuery: query });
+	},
+
+	saveThreadMessages: (threadId, messages) => {
+		set((state) => {
+			const next = { ...state.threadMessages, [threadId]: messages };
+			safeLocalStorageSetJson("dente_copilot_thread_messages", next);
+			return { threadMessages: next };
+		});
 	},
 
 	addToolLog: (log) => {

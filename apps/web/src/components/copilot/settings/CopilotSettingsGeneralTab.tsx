@@ -13,7 +13,9 @@ import type {
 	AiTrustLevel,
 	ClinicalSpecialization,
 	DiaryTemplate,
+	GranularAgentPermissions,
 } from "../../../store/copilotStore";
+import { CopilotSettingsGranularPermissions } from "./CopilotSettingsGranularPermissions";
 
 export const AI_MODELS: Array<{ id: string; provider: AiProvider; label: string; note: string }> = [
 	{ id: "gemini-2.5-flash", provider: "gemini", label: "Gemini 2.5 Flash", note: "Мгновенный отклик у кресла" },
@@ -54,29 +56,22 @@ export const TRUST_LEVELS: Array<{
 ];
 
 export interface CopilotSettingsGeneralTabProps {
-	trustLevel: AiTrustLevel;
-	setTrustLevel: (lvl: AiTrustLevel) => void;
-	model: string;
-	setModel: (m: string) => void;
-	speedMode: AiSpeedMode;
-	setSpeedMode: (mode: AiSpeedMode) => void;
-	showThinkingProcess: boolean;
-	setShowThinkingProcess: (val: boolean) => void;
-	clinicalSpecialization: ClinicalSpecialization;
-	setClinicalSpecialization: (spec: ClinicalSpecialization) => void;
-	diaryTemplate: DiaryTemplate;
-	setDiaryTemplate: (tmpl: DiaryTemplate) => void;
-	memoryCount: number;
-	onOpenMemory: () => void;
+	trustLevel: AiTrustLevel; setTrustLevel: (lvl: AiTrustLevel) => void;
+	granularPermissions?: GranularAgentPermissions; setGranularPermissions?: (perms: GranularAgentPermissions) => void;
+	customInstructions?: string; setCustomInstructions?: (val: string) => void;
+	model: string; setModel: (m: string) => void;
+	speedMode: AiSpeedMode; setSpeedMode: (mode: AiSpeedMode) => void;
+	showThinkingProcess: boolean; setShowThinkingProcess: (val: boolean) => void;
+	clinicalSpecialization: ClinicalSpecialization; setClinicalSpecialization: (spec: ClinicalSpecialization) => void;
+	diaryTemplate: DiaryTemplate; setDiaryTemplate: (tmpl: DiaryTemplate) => void;
+	memoryCount: number; onOpenMemory: () => void;
 }
 
 export function CopilotSettingsGeneralTab({
-	trustLevel, setTrustLevel,
-	model, setModel,
-	speedMode, setSpeedMode,
-	showThinkingProcess, setShowThinkingProcess,
-	clinicalSpecialization, setClinicalSpecialization,
-	diaryTemplate, setDiaryTemplate,
+	trustLevel, setTrustLevel, granularPermissions, setGranularPermissions,
+	customInstructions, setCustomInstructions, model, setModel,
+	speedMode, setSpeedMode, showThinkingProcess, setShowThinkingProcess,
+	clinicalSpecialization, setClinicalSpecialization, diaryTemplate, setDiaryTemplate,
 	memoryCount, onOpenMemory,
 }: CopilotSettingsGeneralTabProps) {
 	return (
@@ -200,12 +195,11 @@ export function CopilotSettingsGeneralTab({
 						onChange={(e) => setClinicalSpecialization(e.target.value as ClinicalSpecialization)}
 						className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 					>
-						<option value="therapy">Терапевтическая стоматология</option>
-						<option value="orthopedics">Ортопедическая стоматология</option>
-						<option value="surgery">Хирургия и имплантология</option>
-						<option value="orthodontics">Ортодонтия</option>
-						<option value="perio">Пародонтология</option>
-						<option value="pediatric">Детская стоматология</option>
+						{[
+							["therapy", "Терапевтическая стоматология"], ["orthopedics", "Ортопедическая стоматология"],
+							["surgery", "Хирургия и имплантология"], ["orthodontics", "Ортодонтия"],
+							["perio", "Пародонтология"], ["pediatric", "Детская стоматология"]
+						].map(([val, lbl]) => (<option key={val} value={val}>{lbl}</option>))}
 					</select>
 				</section>
 				<section className="space-y-1.5">
@@ -221,6 +215,29 @@ export function CopilotSettingsGeneralTab({
 					</select>
 				</section>
 			</div>
+
+			{granularPermissions && setGranularPermissions && (
+				<CopilotSettingsGranularPermissions
+					granularPermissions={granularPermissions}
+					setGranularPermissions={setGranularPermissions}
+				/>
+			)}
+
+			{setCustomInstructions && (
+				<section className="space-y-1.5">
+					<label className="font-bold text-[var(--ink)] flex items-center justify-between">
+						<span>Индивидуальные инструкции и персональный стиль врача</span>
+						<span className="text-[10px] text-[var(--muted)]">Промпт врача</span>
+					</label>
+					<textarea
+						value={customInstructions || ""}
+						onChange={(e) => setCustomInstructions(e.target.value)}
+						placeholder="Например: Врач-микроскопист. При эндодонтии обязательный коффердам и ультразвук. Анестетик: Убистезин форте 1:100 000. Временная пломба: Каласепт..."
+						rows={2}
+						className="w-full p-2.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs leading-relaxed focus:ring-1 focus:ring-[var(--teal,#0d9488)] outline-none resize-none"
+					/>
+				</section>
+			)}
 
 			<div className="p-3 rounded-xl border border-[var(--line)] flex items-center justify-between gap-3">
 				<div>
