@@ -9,7 +9,7 @@ import { routeClinicalTask } from "./clinicalModelRouter.js";
 import { validateUniversalApiKeyLive } from "./router/modelAdapters.js";
 
 describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
-	test("1. Server-Managed: routes short chairside queries to chairside_fast (<400ms)", () => {
+	test("1. Server-Managed: routes short chairside queries to chairside_fast (<300ms, 500 RPD)", () => {
 		const result = routeClinicalTask({
 			messages: [
 				{ role: "user", content: "Запиши пациента на завтра в 14:00" },
@@ -18,7 +18,7 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "chairside_fast");
-		assert.equal(result.model, "gemini-2.5-flash");
+		assert.equal(result.model, "gemini-3.5-flash-lite");
 		assert.ok(result.rationale.includes("chairside"));
 	});
 
@@ -34,7 +34,7 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "clinical_reasoning");
-		assert.equal(result.model, "gemini-2.5-pro");
+		assert.equal(result.model, "gemini-3.6-flash");
 		assert.ok(result.rationale.includes("мышление"));
 	});
 
@@ -46,7 +46,7 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		});
 
 		assert.equal(result.tier, "clinical_vision");
-		assert.equal(result.model, "gemini-2.5-flash");
+		assert.equal(result.model, "gemini-3.6-flash");
 		assert.ok(result.rationale.includes("рентгенологических"));
 	});
 

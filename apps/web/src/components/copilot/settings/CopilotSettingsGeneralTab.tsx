@@ -73,7 +73,7 @@ export function CopilotSettingsGeneralTab({
 	modelRoutingMode = "server_managed", setModelRoutingMode = () => {},
 	byokProvider = "gemini", setByokProvider = () => {},
 	byokApiKey = "", setByokApiKey = () => {},
-	byokModel = "gemini-2.5-flash", setByokModel = () => {},
+	byokModel = "gemini-3.6-flash", setByokModel = () => {},
 	speedMode, setSpeedMode, showThinkingProcess, setShowThinkingProcess,
 	clinicalSpecialization, setClinicalSpecialization, diaryTemplate, setDiaryTemplate,
 	memoryCount, onOpenMemory,

@@ -32,7 +32,7 @@ export {
 export function createDefaultLlmProvider(): LLMProvider {
 	const defaultOptions = process.env.AGENTROUTER_API_KEYS
 		? {
-				modelId: process.env.AGENTROUTER_MODEL || "gemini-2.5-flash",
+				modelId: process.env.AGENTROUTER_MODEL || "gemini-3.6-flash",
 				fallbackChain: ["gemini", "groq", "deepseek"] as const,
 		  }
 		: {};

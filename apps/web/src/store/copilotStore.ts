@@ -182,7 +182,7 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	modelRoutingMode: "server_managed",
 	byokProvider: "gemini",
 	byokApiKey: "",
-	byokModel: "gemini-2.5-flash",
+	byokModel: "gemini-3.6-flash",
 	speedMode: "turbo",
 	showThinkingProcess: true,
 	clinicalSpecialization: "therapy",

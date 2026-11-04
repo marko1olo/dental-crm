@@ -9,8 +9,9 @@ import { AlertCircle, Check, Cpu, Eye, EyeOff, KeyRound, Loader2, Server, Sparkl
 import type { AiProvider, ModelRoutingMode } from "../../../store/copilotStore";
 
 export const MODERN_BYOK_MODELS: Array<{ id: string; provider: AiProvider; label: string; note: string }> = [
-	{ id: "gemini-2.5-flash", provider: "gemini", label: "Gemini 2.5 Flash", note: "Сверхбыстрый отклик (<500 мс)" },
-	{ id: "gemini-2.5-pro", provider: "gemini", label: "Gemini 2.5 Pro", note: "Глубокий анализ КЛКТ и патологий" },
+	{ id: "gemini-3.6-flash", provider: "gemini", label: "Gemini 3.6 Flash", note: "Основная рабочая модель (быстрая и точная)" },
+	{ id: "gemini-3.5-flash-lite", provider: "gemini", label: "Gemini 3.5 Flash-Lite", note: "Сверхбыстрый chairside-отклик (<300 мс, 500 RPD)" },
+	{ id: "gemini-3.5-flash", provider: "gemini", label: "Gemini 3.5 Flash", note: "Сбалансированный клинический разбор" },
 	{ id: "claude-3-7-sonnet", provider: "anthropic", label: "Claude 3.7 Sonnet", note: "Гибридный Reasoner с CoT" },
 	{ id: "gpt-4o", provider: "openai", label: "OpenAI GPT-4o", note: "Мультимодальный клинический разбор" },
 	{ id: "deepseek-r1", provider: "deepseek", label: "DeepSeek R1", note: "Глубокая цепочка клинических рассуждений" },

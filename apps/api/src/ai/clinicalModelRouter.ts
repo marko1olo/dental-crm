@@ -69,7 +69,7 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 	// 1. Custom BYOK Routing (Advanced doctor mode)
 	if (modelRoutingMode === "custom_byok" && byokApiKey && byokApiKey.trim().length > 0) {
 		const provider = (byokProvider || "gemini").toLowerCase();
-		let effectiveModel = byokModel || "gemini-2.5-flash";
+		let effectiveModel = byokModel || "gemini-3.6-flash";
 		let effectiveBaseUrl = byokBaseUrl;
 
 		if (provider === "anthropic") {
@@ -77,11 +77,14 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 		} else if (provider === "openai") {
 			effectiveModel = byokModel || "gpt-4o";
 			effectiveBaseUrl = byokBaseUrl || "https://api.openai.com/v1";
+		} else if (provider === "groq") {
+			effectiveModel = byokModel || "llama-3.3-70b-versatile";
+			effectiveBaseUrl = byokBaseUrl || "https://api.groq.com/openai/v1";
 		} else if (provider === "deepseek") {
 			effectiveModel = byokModel || "deepseek-r1";
 			effectiveBaseUrl = byokBaseUrl || "https://api.deepseek.com/v1";
 		} else if (provider === "gemini") {
-			effectiveModel = byokModel || "gemini-2.5-flash";
+			effectiveModel = byokModel || "gemini-3.6-flash";
 		}
 
 		return {
@@ -94,7 +97,7 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 		};
 	}
 
-	// 2. Server-Managed Routing: Task classification
+	// 2. Server-Managed Routing: Task classification (dvachbot/stomchat SOTA cascade)
 	const lastUserMessage = [...messages].reverse().find((m) => m.role === "user");
 	const text = (lastUserMessage?.content || "").toLowerCase();
 
@@ -102,7 +105,7 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 	const isVisionTask = VISION_KEYWORDS.some((kw) => text.includes(kw));
 	if (isVisionTask) {
 		return {
-			model: "gemini-2.5-flash",
+			model: "gemini-3.6-flash",
 			tier: "clinical_vision",
 			provider: "google",
 			rationale: "Мультимодальный анализ рентгенологических данных и фотопротокола",
@@ -117,18 +120,18 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 
 	if (isReasoningTask) {
 		return {
-			model: "gemini-2.5-pro",
+			model: "gemini-3.6-flash",
 			tier: "clinical_reasoning",
 			provider: "google",
 			rationale: "Глубокое клиническое мышление, хирургические протоколы и фискальные расчеты",
 		};
 	}
 
-	// Tier C: Ultra-Fast Chairside (<400ms)
+	// Tier C: Ultra-Fast Chairside (<300ms, 500 RPD)
 	return {
-		model: "gemini-2.5-flash",
+		model: "gemini-3.5-flash-lite",
 		tier: "chairside_fast",
 		provider: "google",
-		rationale: "Сверхбыстрый chairside-отклик (<400 мс) у кресла врача",
+		rationale: "Сверхбыстрый chairside-отклик (<300 мс, 500 RPD) у кресла врача",
 	};
 }
