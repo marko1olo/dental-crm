@@ -186,7 +186,7 @@ export async function syncServiceItemToBackend(
 			{ "Content-Type": "application/json" },
 			adminSecret,
 		);
-		const url = isNew ? "/api/settings/catalog" : `/api/settings/catalog/${item.id}`;
+		const url = isNew ? "/api/pricelist" : `/api/pricelist/${item.id}`;
 		const method = isNew ? "POST" : "PUT";
 		const body = {
 			code: item.statutoryCode || item.code804n,
@@ -196,14 +196,26 @@ export async function syncServiceItemToBackend(
 			basePriceRub: item.basePriceRub,
 			durationMinutes: item.estimatedDurationMin,
 			materialsCostRub: item.materialCostRub ?? 0,
+			labCostRub: item.labCostRub ?? 0,
+			tierPrices: item.tierPrices ?? {},
+			order804nCode: item.code804n || null,
 			taxDeductible: true,
 			active: item.isActive,
 		};
-		const res = await fetch(url, {
+		let res = await fetch(url, {
 			method,
 			headers,
 			body: JSON.stringify(body),
 		});
+		// Фолбэк на легаси адрес /api/settings/catalog при необходимости
+		if (!res.ok && res.status === 404) {
+			const fallbackUrl = isNew ? "/api/settings/catalog" : `/api/settings/catalog/${item.id}`;
+			res = await fetch(fallbackUrl, {
+				method,
+				headers,
+				body: JSON.stringify(body),
+			});
+		}
 		return res.ok;
 	} catch {
 		return false;

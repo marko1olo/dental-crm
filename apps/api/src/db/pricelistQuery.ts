@@ -205,6 +205,9 @@ export function projectServiceCatalogRows(
 			active: row.isActive,
 			order804nCode: row.order804nCode ?? (row as any).order_804n_code ?? null,
 			materialsCostRub: row.materialsCostRub !== null && row.materialsCostRub !== undefined ? Number(row.materialsCostRub) : 0,
+			labCostRub: (row as any).labCostRub !== null && (row as any).labCostRub !== undefined ? Number((row as any).labCostRub) : 0,
+			tierPrices: ((row as any).tierPrices && typeof (row as any).tierPrices === "object") ? (row as any).tierPrices : {},
+			priceKopecks: Math.round(basePriceRub * 100),
 		});
 
 		if (!parsed.success) {
@@ -281,6 +284,8 @@ export interface ServiceCatalogItemInput {
 	readonly active: boolean;
 	readonly order804nCode?: string | null | undefined;
 	readonly materialsCostRub?: number | null | undefined;
+	readonly labCostRub?: number | null | undefined;
+	readonly tierPrices?: Record<string, number> | null | undefined;
 }
 
 /**
@@ -395,6 +400,8 @@ export async function createServiceCatalogItemInDb(
 			isActive: input.active,
 			order804nCode: input.order804nCode ?? null,
 			materialsCostRub: input.materialsCostRub !== undefined && input.materialsCostRub !== null ? input.materialsCostRub : 0,
+			labCostRub: input.labCostRub !== undefined && input.labCostRub !== null ? input.labCostRub : 0,
+			tierPrices: input.tierPrices ?? {},
 		})
 		.returning();
 	if (!row)
@@ -430,6 +437,10 @@ export async function updateServiceCatalogItemInDb(
 		updates.order804nCode = patch.order804nCode;
 	if (patch.materialsCostRub !== undefined)
 		updates.materialsCostRub = patch.materialsCostRub !== null ? patch.materialsCostRub : 0;
+	if (patch.labCostRub !== undefined)
+		updates.labCostRub = patch.labCostRub !== null ? patch.labCostRub : 0;
+	if (patch.tierPrices !== undefined)
+		updates.tierPrices = patch.tierPrices ?? {};
 
 	const [row] = await db
 		.update(schema.serviceCatalogItems)
@@ -665,5 +676,305 @@ export async function batchRepriceServicesInDb(
 		items: updatedItems,
 	};
 }
+
+export async function getSingleServiceCatalogItemFromDb(
+	organizationId: string,
+	serviceId: string,
+): Promise<ServiceCatalogItem | null> {
+	if (useInMemory()) return null;
+	const row = await selectOwnedRow(organizationId, serviceId);
+	if (!row) return null;
+	return projectSingleRow(row);
+}
+
+export interface ServiceBomItemPayload {
+	readonly id?: string | undefined;
+	readonly inventoryItemId: string;
+	readonly materialName?: string | undefined;
+	readonly quantity: number;
+	readonly unit?: string | undefined;
+	readonly isMdlpRequired?: boolean | undefined;
+	readonly notes?: string | null | undefined;
+	readonly costRub?: number | undefined;
+}
+
+export interface ServiceBomDetails {
+	readonly serviceId: string;
+	readonly techCardId?: string | undefined;
+	readonly title: string;
+	readonly status: string;
+	readonly description?: string | null | undefined;
+	readonly items: ServiceBomItemPayload[];
+	readonly totalMaterialsCostRub: number;
+}
+
+export async function getServiceBomFromDb(
+	organizationId: string,
+	serviceId: string,
+): Promise<ServiceBomDetails | null> {
+	if (useInMemory()) return null;
+	const service = await selectOwnedRow(organizationId, serviceId);
+	if (!service) return null;
+
+	const [techCard] = await db
+		.select()
+		.from(schema.procedureTechCards)
+		.where(
+			and(
+				eq(schema.procedureTechCards.organizationId, organizationId),
+				eq(schema.procedureTechCards.serviceId, serviceId),
+			),
+		)
+		.limit(1);
+
+	if (techCard) {
+		const cardItems = await db
+			.select({
+				id: schema.procedureTechCardItems.id,
+				inventoryItemId: schema.procedureTechCardItems.inventoryItemId,
+				quantity: schema.procedureTechCardItems.quantity,
+				unit: schema.procedureTechCardItems.unit,
+				isMdlpRequired: schema.procedureTechCardItems.isMdlpRequired,
+				notes: schema.procedureTechCardItems.notes,
+				itemName: schema.inventoryItems.name,
+				pricePerUnit: schema.inventoryItems.pricePerUnit,
+				unitCostRub: schema.inventoryItems.unitCostRub,
+			})
+			.from(schema.procedureTechCardItems)
+			.leftJoin(
+				schema.inventoryItems,
+				eq(schema.procedureTechCardItems.inventoryItemId, schema.inventoryItems.id),
+			)
+			.where(eq(schema.procedureTechCardItems.techCardId, techCard.id));
+
+		let totalCost = 0;
+		const items: ServiceBomItemPayload[] = cardItems.map((ci) => {
+			const qty = Number(ci.quantity) || 1;
+			const unitCost = Number(ci.pricePerUnit ?? ci.unitCostRub ?? 0);
+			totalCost += qty * unitCost;
+			return {
+				id: ci.id,
+				inventoryItemId: ci.inventoryItemId,
+				materialName: ci.itemName || undefined,
+				quantity: qty,
+				unit: ci.unit,
+				isMdlpRequired: ci.isMdlpRequired,
+				notes: ci.notes,
+				costRub: Math.round(qty * unitCost * 100) / 100,
+			};
+		});
+
+		return {
+			serviceId,
+			techCardId: techCard.id,
+			title: techCard.title,
+			status: techCard.status,
+			description: techCard.description,
+			items,
+			totalMaterialsCostRub: Math.round(totalCost * 100) / 100,
+		};
+	}
+
+	const rules = await db
+		.select()
+		.from(schema.procedureMaterialRules)
+		.where(
+			and(
+				eq(schema.procedureMaterialRules.organizationId, organizationId),
+				eq(schema.procedureMaterialRules.serviceId, serviceId),
+			),
+		);
+
+	if (rules.length > 0) {
+		const items: ServiceBomItemPayload[] = rules.map((r) => ({
+			id: r.id,
+			inventoryItemId: (r.inventoryItemId || r.materialItemId || serviceId),
+			materialName: r.materialName || undefined,
+			quantity: Number(r.quantityToDeduct || r.requiredQty || 1),
+			unit: r.unit || "шт",
+			isMdlpRequired: Boolean(r.isMdlpRequired),
+			costRub: 0,
+		}));
+
+		return {
+			serviceId,
+			title: `Техкарта: ${service.title}`,
+			status: "active",
+			description: "Автоматическая спецификация по правилам списания",
+			items,
+			totalMaterialsCostRub: 0,
+		};
+	}
+
+	return {
+		serviceId,
+		title: `Техкарта: ${service.title}`,
+		status: "draft",
+		description: null,
+		items: [],
+		totalMaterialsCostRub: 0,
+	};
+}
+
+export async function upsertServiceBomInDb(
+	organizationId: string,
+	serviceId: string,
+	input: {
+		title?: string;
+		description?: string | null;
+		status?: string;
+		items: Array<{
+			inventoryItemId: string;
+			quantity: number;
+			unit?: string;
+			isMdlpRequired?: boolean;
+			notes?: string | null;
+		}>;
+	},
+): Promise<ServiceBomDetails> {
+	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
+
+	const service = await selectOwnedRow(organizationId, serviceId);
+	if (!service) throw new ServiceCatalogItemNotFoundError();
+
+	return await db.transaction(async (tx) => {
+		let [techCard] = await tx
+			.select()
+			.from(schema.procedureTechCards)
+			.where(
+				and(
+					eq(schema.procedureTechCards.organizationId, organizationId),
+					eq(schema.procedureTechCards.serviceId, serviceId),
+				),
+			)
+			.limit(1);
+
+		const title = input.title?.trim() || `Техкарта: ${service.title}`;
+		const status = input.status || "active";
+		const description = input.description !== undefined ? input.description : (techCard?.description ?? null);
+
+		if (techCard) {
+			const [updated] = await tx
+				.update(schema.procedureTechCards)
+				.set({
+					title,
+					status,
+					description,
+					updatedAt: new Date(),
+				})
+				.where(eq(schema.procedureTechCards.id, techCard.id))
+				.returning();
+			techCard = updated!;
+			await tx
+				.delete(schema.procedureTechCardItems)
+				.where(eq(schema.procedureTechCardItems.techCardId, techCard.id));
+		} else {
+			const [inserted] = await tx
+				.insert(schema.procedureTechCards)
+				.values({
+					organizationId,
+					serviceId,
+					serviceCode: service.code,
+					title,
+					status,
+					description,
+				})
+				.returning();
+			techCard = inserted!;
+		}
+
+		let totalCost = 0;
+		const insertedItems: ServiceBomItemPayload[] = [];
+
+		for (const item of input.items) {
+			const qty = Number(item.quantity) > 0 ? Number(item.quantity) : 1;
+			const unit = item.unit || "шт";
+			const isMdlpRequired = Boolean(item.isMdlpRequired);
+			const notes = item.notes || null;
+
+			const [insertedItem] = await tx
+				.insert(schema.procedureTechCardItems)
+				.values({
+					techCardId: techCard.id,
+					inventoryItemId: item.inventoryItemId,
+					quantity: String(qty),
+					unit,
+					isMdlpRequired,
+					notes,
+				})
+				.returning();
+
+			let itemPrice = 0;
+			try {
+				const [inv] = await tx
+					.select({
+						pricePerUnit: schema.inventoryItems.pricePerUnit,
+						unitCostRub: schema.inventoryItems.unitCostRub,
+						name: schema.inventoryItems.name,
+					})
+					.from(schema.inventoryItems)
+					.where(eq(schema.inventoryItems.id, item.inventoryItemId))
+					.limit(1);
+				if (inv) {
+					itemPrice = Number(inv.pricePerUnit ?? inv.unitCostRub ?? 0);
+					insertedItems.push({
+						id: insertedItem.id,
+						inventoryItemId: item.inventoryItemId,
+						materialName: inv.name,
+						quantity: qty,
+						unit,
+						isMdlpRequired,
+						notes,
+						costRub: Math.round(qty * itemPrice * 100) / 100,
+					});
+				} else {
+					insertedItems.push({
+						id: insertedItem.id,
+						inventoryItemId: item.inventoryItemId,
+						quantity: qty,
+						unit,
+						isMdlpRequired,
+						notes,
+						costRub: 0,
+					});
+				}
+			} catch {
+				insertedItems.push({
+					id: insertedItem.id,
+					inventoryItemId: item.inventoryItemId,
+					quantity: qty,
+					unit,
+					isMdlpRequired,
+					notes,
+					costRub: 0,
+				});
+			}
+
+			totalCost += qty * itemPrice;
+		}
+
+		const calculatedMaterialsCost = Math.round(totalCost * 100) / 100;
+		await tx
+			.update(schema.serviceCatalogItems)
+			.set({ materialsCostRub: calculatedMaterialsCost })
+			.where(
+				and(
+					eq(schema.serviceCatalogItems.id, serviceId),
+					eq(schema.serviceCatalogItems.organizationId, organizationId),
+				),
+			);
+
+		return {
+			serviceId,
+			techCardId: techCard.id,
+			title: techCard.title,
+			status: techCard.status,
+			description: techCard.description,
+			items: insertedItems,
+			totalMaterialsCostRub: calculatedMaterialsCost,
+		};
+	});
+}
+
 
 

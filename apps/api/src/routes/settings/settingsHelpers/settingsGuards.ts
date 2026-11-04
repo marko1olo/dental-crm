@@ -5,6 +5,7 @@ import * as schema from "../../../db/schema.js";
 import { getRequestIdentity } from "../../../security/identity.js";
 import {
 	enforcePermissionWhenStaffKnown,
+	roleHasPermission,
 	type Permission,
 } from "../../../security/permissions.js";
 import { timingSafeSecretEqual } from "../../../utils/timingSafeSecretEqual.js";
@@ -170,6 +171,48 @@ export async function requireSettingsMutationAccess(
 ): Promise<string | null> {
 	if (!enforcePermissionWhenStaffKnown(request, reply, "settings.write")) {
 		return null;
+	}
+	return requireSettingsAccess(request, reply);
+}
+
+/**
+ * Барьер изменения каталога услуг и прейскуранта:
+ * В отличие от общих настроек клиники (requireSettingsMutationAccess / settings.write),
+ * прейскурант и клинический каталог услуг ДОЛЖЕН быть доступен врачу у кресла
+ * (Мандаты 8e / 8n / Автономия врача). Врач имеет право создавать разовые клинические позиции,
+ * корректировать услуги и спецификации процедур без блокировки 403 Forbidden.
+ * Разрешено: owner, admin, manager, administrator, doctor (или любое право из clinical.write / finance.write / settings.write).
+ * Запрещено: assistant, curator и неавторизованные роли.
+ */
+export async function requireCatalogMutationAccess(
+	request: FastifyRequest,
+	reply: FastifyReply,
+): Promise<string | null> {
+	const identity = getRequestIdentity(request);
+	if (identity.userId && identity.role) {
+		const allowedRoles = new Set([
+			"owner",
+			"admin",
+			"manager",
+			"administrator",
+			"doctor",
+		]);
+		const hasAccess =
+			allowedRoles.has(identity.role) ||
+			roleHasPermission(identity.role, "clinical.write") ||
+			roleHasPermission(identity.role, "finance.write") ||
+			roleHasPermission(identity.role, "settings.write");
+
+		if (!hasAccess) {
+			reply.code(403).send({
+				error: "PermissionDenied",
+				permission: "catalog.write",
+				role: identity.role,
+				message:
+					"Для изменения прейскуранта и каталога услуг требуются полномочия врача, администратора или руководства клиники.",
+			});
+			return null;
+		}
 	}
 	return requireSettingsAccess(request, reply);
 }

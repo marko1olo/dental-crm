@@ -28,10 +28,38 @@ export const DirectPricelistLauncher: React.FC = () => {
 	});
 
 	useEffect(() => {
+		const checkRequested = () => {
+			const s = window.location.search || "";
+			const h = window.location.hash || "";
+			if (s.includes("documents") || h.includes("documents")) {
+				setIsOpen(false);
+				return;
+			}
+			const requested =
+				s.includes("pricelist") ||
+				s.includes("prices") ||
+				s.includes("catalog") ||
+				s.includes("services-catalog") ||
+				h.includes("pricelist") ||
+				h.includes("prices") ||
+				h.includes("catalog") ||
+				h.includes("services-catalog");
+			if (requested) {
+				setIsOpen(true);
+			}
+		};
+
 		const handleOpenEvent = () => setIsOpen(true);
 		window.addEventListener("dente-open-pricelist", handleOpenEvent);
-		return () =>
+		window.addEventListener("dente:open-pricelist", handleOpenEvent);
+		window.addEventListener("hashchange", checkRequested);
+		window.addEventListener("popstate", checkRequested);
+		return () => {
 			window.removeEventListener("dente-open-pricelist", handleOpenEvent);
+			window.removeEventListener("dente:open-pricelist", handleOpenEvent);
+			window.removeEventListener("hashchange", checkRequested);
+			window.removeEventListener("popstate", checkRequested);
+		};
 	}, []);
 
 	if (!isOpen) return null;

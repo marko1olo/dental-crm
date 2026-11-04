@@ -73,6 +73,12 @@ export const serviceCatalogItems = pgTable(
 			scale: 2,
 			mode: "number",
 		}).default(0),
+		labCostRub: numeric("lab_cost_rub", {
+			precision: 12,
+			scale: 2,
+			mode: "number",
+		}).default(0),
+		tierPrices: jsonb("tier_prices").default(sql`'{}'::jsonb`),
 		isActive: boolean("is_active").notNull().default(true),
 	},
 	(t) => ({

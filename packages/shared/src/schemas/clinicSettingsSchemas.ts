@@ -118,6 +118,9 @@ export const serviceCatalogItemSchema = z.object({
 	active: z.boolean(),
 	order804nCode: z.string().optional().nullable(),
 	materialsCostRub: z.number().optional().nullable(),
+	labCostRub: z.number().optional().nullable(),
+	tierPrices: z.record(z.string(), z.number()).optional().nullable(),
+	priceKopecks: z.number().int().optional().nullable(),
 });
 
 export type ServiceCatalogItem = z.infer<typeof serviceCatalogItemSchema>;

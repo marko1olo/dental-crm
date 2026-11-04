@@ -1,0 +1,86 @@
+{
+  "agent": "pricelist-catalog-inquisitor",
+  "status": "COMPLETED",
+  "task": "Ликвидация архитектурного раскола роутов прейскуранта, снятие блокировки 403 Forbidden для врачей у кресла и интеграция с техкартами BOM [PRC-01..PRC-08]",
+  "timestamp": "2026-11-05T03:02:00+04:00",
+  "checkpoints": {
+    "grounding": {
+      "hammer_constitution_read_lines": 1771,
+      "billing_and_finance_read_lines": 175,
+      "canonical_architecture_read_lines": 1157,
+      "warehouse_and_supply_read_lines": 139,
+      "status": "PASSED"
+    },
+    "root_cause_analysis": {
+      "bug_ids": [
+        "PRC-01",
+        "PRC-02",
+        "PRC-03",
+        "PRC-04",
+        "PRC-05",
+        "PRC-06",
+        "PRC-07",
+        "PRC-08"
+      ],
+      "findings": [
+        "Архитектурный раскол роутов: чтение прейскуранта происходило через GET /api/pricelists, а мутации были упрятаны в apps/api/src/routes/settings/serviceCatalogRoutes.ts (/api/settings/catalog/:id)",
+        "Ловушка 403 Forbidden: жесткий guard requireSettingsMutationAccess требовал права settings.write и блокировал врачей у кресла (role=doctor) с ошибкой 403 при формировании услуг на приёме",
+        "Мертвая схема BOM: таблицы procedure_tech_cards и procedure_tech_card_items не имели API и не позволяли привязать расходники к услугам прейскуранта",
+        "Потери данных в PostgreSQL: labCostRub и tierPrices (VIP, ДМС, Промо) сбрасывались из-за отсутствия колонок в service_catalog_items",
+        "Списание материалов без мягкого овердрафта: риск остановки лечения при нулевом остатке на складе"
+      ],
+      "status": "RESOLVED"
+    },
+    "implementation": {
+      "canonical_crud_consolidation": "Объединен канонический CRUD прейскуранта в apps/api/src/routes/pricelist/handlersCatalogCrud.ts и зарегистрирован в apps/api/src/routes/pricelist/routeHandlers.ts (POST /api/pricelist, POST /api/pricelist/items, GET /api/pricelist/:serviceId, PUT /api/pricelist/:serviceId, PATCH /api/pricelist/:serviceId, DELETE /api/pricelist/:serviceId)",
+      "backwards_compatible_proxy": "apps/api/src/routes/settings/serviceCatalogRoutes.ts рефакторен в прозрачный прокси/фасад, делегирующий вызовы в handlersCatalogCrud.ts",
+      "doctor_autonomy_guard": "Создан guard requireCatalogMutationAccess в apps/api/src/routes/settings/settingsHelpers/settingsGuards.ts, разрешающий мутации прейскуранта ролям doctor, owner, admin, manager, administrator и блокирующий assistant с 403 (Мандат 8e / 8n)",
+      "bom_and_cogs_integration": "Реализованы маршруты GET /api/pricelist/:serviceId/bom и PUT /api/pricelist/:serviceId/bom. Функции getServiceBomFromDb и upsertServiceBomInDb в транзакции сохраняют техкарту и автоматически пересчитывают себестоимость материалов (materialsCostRub) по складским ценам единицы (inventoryItems.unitCostRub / pricePerUnit)",
+      "database_migration": "Добавлены колонки lab_cost_rub numeric(12,2) DEFAULT 0 и tier_prices jsonb DEFAULT '{}'::jsonb в таблицу service_catalog_items в PostgreSQL 18; обновлена схема Drizzle treatmentPlanItemsTable.ts и Zod-схема serviceCatalogItemSchema в @dental/shared",
+      "money_precision": "Цены и тарифы строго поддерживают целочисленные копейки priceKopecks / BIGINT (Мандат 8aa)",
+      "status": "DONE"
+    },
+    "test_verification": {
+      "total_tests": 35,
+      "passed": 35,
+      "failed": 0,
+      "suites": [
+        "pricelistCatalogInquisition.test.ts (8/8 pass)",
+        "serviceCatalogRoutes.test.ts (4/4 pass)",
+        "pricelist.test.ts (23/23 pass)"
+      ],
+      "encoding_check": "23 781 files clean (exit 0)",
+      "status": "PASSED"
+    },
+    "visual_proof_audit": {
+      "total_proofs": 8,
+      "read_file_inspection": "100% лично просмотрены все 8 PNG-файлов",
+      "proofs": [
+        "docs/proofs/pricelist/pricelist_pc_light_1440x900.png (276.7 KB) — обзор каталога в светлой теме",
+        "docs/proofs/pricelist/pricelist_pc_dark_1440x900.png (317.7 KB) — обзор каталога в тёмной теме (100% тёмные токены)",
+        "docs/proofs/pricelist/pricelist_editor_pc_light_1440x900.png (262.8 KB) — модальное окно добавления услуги (светлая тема)",
+        "docs/proofs/pricelist/pricelist_editor_pc_dark_1440x900.png (290.4 KB) — модальное окно добавления услуги (тёмная тема)",
+        "docs/proofs/pricelist/pricelist_mobile_light_390x844.png (170.0 KB) — мобильный вид (Apple HIG Grouped Cards, горизонтальный скролл чипов, плавающий bottom bar)",
+        "docs/proofs/pricelist/pricelist_mobile_dark_390x844.png (183.8 KB) — мобильный вид в тёмной теме",
+        "docs/proofs/pricelist/pricelist_editor_mobile_light_390x844.png (128.1 KB) — нативный мобильный Bottom Sheet со скруглением 24px и drag handle 36x5px",
+        "docs/proofs/pricelist/pricelist_editor_mobile_dark_390x844.png (127.5 KB) — нативный мобильный Bottom Sheet в тёмной теме"
+      ],
+      "status": "PASSED"
+    },
+    "registry_update": {
+      "registry": "docs/competitive-audit/RED_TEAM_FULL_INQUISITION_REGISTRY.md",
+      "section": "23. ПРЕЙСКУРАНТ, НОМЕНКЛАТУРА 804н, ТЕХКАРТЫ (BOM) И СЕБЕСТОИМОСТЬ",
+      "items": [
+        "PRC-01 (ЗАКРЫТО)",
+        "PRC-02 (ЗАКРЫТО)",
+        "PRC-03 (ЗАКРЫТО)",
+        "PRC-04 (ЗАКРЫТО)",
+        "PRC-05 (ЗАКРЫТО)",
+        "PRC-06 (ЗАКРЫТО)",
+        "PRC-07 (ЗАКРЫТО)",
+        "PRC-08 (ЗАКРЫТО)"
+      ],
+      "status": "UPDATED"
+    }
+  }
+}
