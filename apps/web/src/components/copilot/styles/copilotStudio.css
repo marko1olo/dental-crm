@@ -318,10 +318,27 @@
   scrollbar-width: thin;
 }
 
+/* Умные контекстные подсказки нейросети (Smart Replies) */
+.copilot-smart-replies-track {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+.copilot-smart-replies-track::-webkit-scrollbar { display: none; }
+
+.copilot-smart-reply-chip {
+  transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.copilot-smart-reply-chip:hover {
+  transform: translateY(-1px);
+}
+.copilot-smart-reply-chip:active {
+  transform: translateY(0);
+}
+
 /* Нативная touch-эргономика для планшетов и сенсорных экранов у кресла (Apple HIG) */
 @media (pointer: coarse), (max-width: 1024px) {
-  .copilot-preset-chip {
-    min-height: 44px;
+  .copilot-smart-reply-chip {
+    min-height: 40px;
     padding: 8px 14px;
     font-size: 12px;
   }
