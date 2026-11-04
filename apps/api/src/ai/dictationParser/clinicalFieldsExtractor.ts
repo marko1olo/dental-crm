@@ -196,7 +196,7 @@ export function extractTime(text: string): string | null {
 		}
 	}
 
-	// Fix explicit word matching 'в 10 утра' / 'в 5 часов'
+	// Parse explicit word matching 'в 10 утра' / 'в 5 часов'
 	const matches = text.matchAll(
 		/(?:в|на)\s*(\d{1,2}|[а-яё]+)(?:\s*(?:часов|часа|час|утра|дня|вечера))?(?!\s*\d)/gi,
 	);
