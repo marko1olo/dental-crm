@@ -11,8 +11,16 @@ export interface CopilotThinkingIndicatorProps {
 	activeTooth?: number | null | undefined;
 	icd10Code?: string | null | undefined;
 	thoughtProcess?: string | undefined;
+	thoughtLog?: string | undefined;
 	speedMode?: "turbo" | "deep_reasoning" | undefined;
 	showThinkingProcess?: boolean | undefined;
+}
+
+export function getClinicalThinkingPhase(elapsed: number): string {
+	if (elapsed < 0.8) return "ИИ формирует клинический протокол...";
+	if (elapsed < 1.8) return "Дифференциальный диагноз по МКБ-10...";
+	if (elapsed < 2.8) return "Проверка противопоказаний и СтАР...";
+	return "Синтез рекомендаций и сметы...";
 }
 
 export function CopilotThinkingIndicator({
@@ -20,9 +28,11 @@ export function CopilotThinkingIndicator({
 	activeTooth,
 	icd10Code,
 	thoughtProcess = "Анализ клинического контекста...",
+	thoughtLog,
 	speedMode = "turbo",
 	showThinkingProcess = true,
 }: CopilotThinkingIndicatorProps) {
+	const resolvedThought = thoughtLog || thoughtProcess;
 	const [elapsedSeconds, setElapsedSeconds] = useState<number>(0);
 	const [isExpanded, setIsExpanded] = useState<boolean>(false);
 
@@ -39,8 +49,10 @@ export function CopilotThinkingIndicator({
 
 	if (!isThinking) return null;
 
+	const thinkingPhase = getClinicalThinkingPhase(elapsedSeconds);
+
 	return (
-		<div className="copilot-thinking-card my-2 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] transition-all duration-200 text-xs overflow-hidden">
+		<div className="copilot-thinking-card my-2 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] transition-all duration-200 text-xs overflow-hidden" data-testid="copilot-thinking-indicator">
 			{/* Аккордеон рассуждений модели (Antigravity & language_server CoT) */}
 			<button
 				type="button"
@@ -52,8 +64,14 @@ export function CopilotThinkingIndicator({
 					<div className="w-5 h-5 rounded-full bg-[var(--teal,#0d9488)]/20 flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0 animate-pulse">
 						<Brain size={12} className={isThinking ? "animate-spin" : ""} style={{ animationDuration: "3s" }} />
 					</div>
-					<div className="font-semibold text-[var(--ink)] flex items-center gap-1.5 truncate">
-						<span>{`Мышление модели (${elapsedSeconds}с) • ${isExpanded ? "Свернуть" : "Раскрыть"}`}</span>
+					<div className="min-w-0">
+						<div className="font-semibold text-[var(--ink)] flex items-center gap-1.5 truncate">
+							<span>{`Мышление модели (${elapsedSeconds}с) • Ход клинических рассуждений • ${isExpanded ? "Свернуть" : "Раскрыть"}`}</span>
+						</div>
+						<div className="flex items-center gap-1 text-[10px] text-[var(--teal,#0d9488)] font-medium">
+							<span>{thinkingPhase}</span>
+							<span className="inline-block w-1 h-2.5 bg-[var(--teal,#0d9488)] animate-pulse" />
+						</div>
 					</div>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
@@ -89,10 +107,11 @@ export function CopilotThinkingIndicator({
 			</div>
 
 			{/* Развернутый блок рассуждений CoT с моноширинными акцентами */}
+			<div className="sr-only" data-testid="copilot-thought-log">{resolvedThought}</div>
 			{showThinkingProcess && isExpanded && (
 				<div className="p-3 pt-2.5 border-t border-[var(--teal,#0d9488)]/15 bg-[var(--paper,#ffffff)]/80">
 					<div className="p-2.5 rounded-lg bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[11px] font-mono leading-relaxed text-[var(--ink)] whitespace-pre-wrap selection:bg-[var(--teal,#0d9488)]/20">
-						{thoughtProcess}
+						{resolvedThought}
 					</div>
 				</div>
 			)}

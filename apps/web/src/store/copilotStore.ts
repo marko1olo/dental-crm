@@ -70,7 +70,7 @@ export function detectRuntimeEnvironment(): CopilotRuntimeEnvironment {
 
 export interface AiMemoryFact {
 	id: string;
-	category: "materials" | "anesthesia" | "protocols" | "equipment" | "custom";
+	category: "materials" | "anesthesia" | "protocols" | "equipment" | "diagnosis" | "custom";
 	fact: string;
 	createdAt: string;
 }
@@ -79,6 +79,7 @@ export interface CopilotThread {
 	id: string;
 	title: string;
 	updatedAt: string;
+	createdAt?: string;
 	pinned?: boolean;
 	patientName?: string;
 	patientId?: string;
@@ -122,6 +123,7 @@ export interface CopilotSettings {
 	customDoctorInstructions: string;
 	granularPermissions: GranularAgentPermissions;
 	temperature: number;
+	contextLimitTokens?: number;
 	runtimeMode: CopilotRuntimeEnvironment;
 	// Браузер и Голос (Web Speech API, 152-ФЗ)
 	autoSaveDrafts: boolean;
@@ -158,11 +160,13 @@ export interface CopilotStoreState {
 	refreshRuntimeEnvironment: () => CopilotRuntimeEnvironment;
 	updateTelemetry: (patch: Partial<ContextTelemetryData>) => void;
 	addMemoryFact: (category: AiMemoryFact["category"], fact: string) => void;
+	updateMemoryFact: (id: string, fact: string, category?: AiMemoryFact["category"]) => void;
 	removeMemoryFact: (id: string) => void;
 	clearMemory: () => void;
 	createThread: (patientName?: string, title?: string) => string;
 	selectThread: (id: string) => void;
 	deleteThread: (id: string) => void;
+	clearThreads: () => void;
 	togglePinThread: (id: string) => void;
 	renameThread: (id: string, title: string) => void;
 	setThreadSearchQuery: (query: string) => void;
@@ -196,6 +200,7 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 		autoApproveExternalSoftware: false,
 	},
 	temperature: 0.2,
+	contextLimitTokens: 32768,
 	runtimeMode: detectRuntimeEnvironment(),
 	// Браузер и Голос (Web Speech, 152-ФЗ)
 	autoSaveDrafts: true,
@@ -297,6 +302,14 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 		});
 	},
 
+	updateMemoryFact: (id, fact, category) => {
+		set((state) => {
+			const next = state.memoryFacts.map((f) => (f.id === id ? { ...f, fact: fact.trim(), ...(category ? { category } : {}) } : f));
+			safeLocalStorageSetJson("dente_copilot_memory", next);
+			return { memoryFacts: next };
+		});
+	},
+
 	removeMemoryFact: (id) => {
 		set((state) => {
 			const next = state.memoryFacts.filter((f) => f.id !== id);
@@ -318,6 +331,7 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			id: newId,
 			title,
 			updatedAt: new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+			createdAt: new Date().toISOString(),
 			patientName,
 			messageCount: 0,
 		};
@@ -339,6 +353,14 @@ export const useCopilotStore = create<CopilotStoreState>((set, get) => ({
 			safeLocalStorageSetJson("dente_copilot_threads", next);
 			const activeId = state.activeThreadId === id ? (next[0]?.id || "") : state.activeThreadId;
 			return { threads: next, activeThreadId: activeId };
+		});
+	},
+
+	clearThreads: () => {
+		set(() => {
+			safeLocalStorageSetJson("dente_copilot_threads", []);
+			safeLocalStorageSetJson("dente_copilot_thread_messages", {});
+			return { threads: [], activeThreadId: "", threadMessages: {} };
 		});
 	},
 

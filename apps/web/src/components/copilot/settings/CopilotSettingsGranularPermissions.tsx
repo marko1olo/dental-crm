@@ -62,6 +62,15 @@ export function CopilotSettingsGranularPermissions({
 					/>
 					<span>Запись и экспорт файлов на диск</span>
 				</label>
+				<label className="flex items-center gap-2 cursor-pointer select-none text-[11px] text-[var(--ink)] sm:col-span-2">
+					<input
+						type="checkbox"
+						checked={granularPermissions.autoApproveExternalSoftware}
+						onChange={(e) => setGranularPermissions({ ...granularPermissions, autoApproveExternalSoftware: e.target.checked })}
+						className="rounded text-[var(--teal,#0d9488)]"
+					/>
+					<span>Запуск внешнего стоматологического ПО (Romexis, Ez3D Plus)</span>
+				</label>
 			</div>
 		</section>
 	);

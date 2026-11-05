@@ -451,7 +451,7 @@ export const CopilotWorkspaceHost: React.FC<CopilotWorkspaceHostProps> = ({
             <div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2.5">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2"><Camera size={16} className="text-[var(--teal,#0d9488)]" /><span className="text-xs font-bold text-[var(--ink)]">Захват визиографа</span></div>
-                <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">{runtimeMode === "desktop_native" ? "ОС Native" : "Эмуляция"}</span>
+                <span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">{runtimeMode === "desktop_native" ? "Рабочая станция ОС" : "Веб-режим (API)"}</span>
               </div>
               <p className="text-xs text-[var(--muted)]">Оптический захват снимка Romexis / Ez3D Plus без ручного экспорта.</p>
               <button

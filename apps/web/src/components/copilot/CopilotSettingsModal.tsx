@@ -53,6 +53,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	const [speedMode, setSpeedModeState] = useState<AiSpeedMode>(settings.speedMode);
 	const [showThinkingProcess, setShowThinkingState] = useState<boolean>(settings.showThinkingProcess);
 	const [temperature, setTemperatureState] = useState<number>(settings.temperature ?? 0.2);
+	const [contextLimitTokens, setContextLimitTokensState] = useState<number>(settings.contextLimitTokens ?? 32768);
 	const [clinicalSpecialization, setSpecState] = useState<ClinicalSpecialization>(settings.clinicalSpecialization);
 	const [diaryTemplate, setDiaryTemplateState] = useState<DiaryTemplate>(settings.diaryTemplate);
 	const [customDoctorInstructions, setCustomDoctorInstructions] = useState<string>(settings.customDoctorInstructions || "");
@@ -104,6 +105,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			speedMode,
 			showThinkingProcess,
 			temperature,
+			contextLimitTokens,
 			clinicalSpecialization,
 			diaryTemplate,
 			customDoctorInstructions,
@@ -260,6 +262,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 							setShowThinkingProcess={setShowThinkingState}
 							temperature={temperature}
 							setTemperature={setTemperatureState}
+							contextLimitTokens={contextLimitTokens}
+							setContextLimitTokens={setContextLimitTokensState}
 						/>
 					)}
 

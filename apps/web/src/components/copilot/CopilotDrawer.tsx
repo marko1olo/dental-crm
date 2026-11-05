@@ -1,8 +1,8 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, RotateCcw, Send, Mic, MicOff, AlertTriangle, Columns, User,
-  ShieldAlert, Globe, Monitor, MessageSquare, Sliders, HardDrive
+  X, RotateCcw, Send, Mic, MicOff, AlertTriangle, Columns,
+  Globe, Monitor, MessageSquare, Sliders, HardDrive
 } from "lucide-react";
 import { safeLocalStorageGetItem, safeLocalStorageSetItem, safeLocalStorageRemoveItem } from "../../lib/safeLocalStorage";
 import { useAppStore } from "../../store/appStore";
@@ -280,28 +280,14 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
           </button>
         </div>
 
-        {/* Context Telemetry Bar */}
-        <div className="copilot-context-bar" data-testid="copilot-context-bar">
-          <span className="copilot-context-chip active-view"><span>{uiContext.viewLabel || uiContext.view || "Одонтограмма"}</span></span>
-          {uiContext.activeTooth !== null && uiContext.activeTooth !== undefined && (
-            <span className="copilot-context-chip"><span>{`Зуб #${uiContext.activeTooth}`}</span></span>
-          )}
-          {uiContext.patientName && (
-            <span className="copilot-context-chip"><User size={12} className="text-[var(--teal)] shrink-0" /><span>{uiContext.patientName}</span></span>
-          )}
-          {uiContext.activeDoctor && (<span className="copilot-context-chip doctor"><span>{uiContext.activeDoctor}</span></span>)}
-          {uiContext.allergies && uiContext.allergies.length > 0 && (
-            <span className="copilot-context-chip copilot-context-chip--warn" title={uiContext.allergies.join(", ")}>
-              <ShieldAlert size={12} /><span>{`Аллергии (${uiContext.allergies.length})`}</span>
-            </span>
-          )}
-        </div>
-
-        {/* Antigravity Context Telemetry Bar */}
+        {/* Canonical Antigravity Context Telemetry Bar (Zero-Duplicate Height Protection) */}
         <CopilotContextTelemetryBar
+          activeView={uiContext.viewLabel || uiContext.view || "Одонтограмма"}
           patientName={uiContext.patientName}
           patientId={uiContext.patientId}
           activeTooth={typeof uiContext.activeTooth === "number" ? uiContext.activeTooth : (uiContext.activeTooth ? parseInt(String(uiContext.activeTooth), 10) || null : null)}
+          activeDoctor={uiContext.activeDoctor}
+          allergies={uiContext.allergies}
           compact
         />
 

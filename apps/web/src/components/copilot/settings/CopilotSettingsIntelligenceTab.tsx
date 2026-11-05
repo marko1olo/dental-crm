@@ -6,7 +6,7 @@
  */
 
 import React from "react";
-import { Brain, Cpu, Sparkles } from "lucide-react";
+import { Brain, Cpu, Layers, Sparkles, Zap } from "lucide-react";
 import type { AiProvider, AiSpeedMode, ModelRoutingMode } from "../../../store/copilotStore";
 import { CopilotSettingsModelRouting } from "./CopilotSettingsModelRouting";
 
@@ -25,6 +25,8 @@ export interface CopilotSettingsIntelligenceTabProps {
 	setShowThinkingProcess: (val: boolean) => void;
 	temperature: number;
 	setTemperature: (val: number) => void;
+	contextLimitTokens?: number;
+	setContextLimitTokens?: (val: number) => void;
 }
 
 export function CopilotSettingsIntelligenceTab({
@@ -42,6 +44,8 @@ export function CopilotSettingsIntelligenceTab({
 	setShowThinkingProcess,
 	temperature,
 	setTemperature,
+	contextLimitTokens = 32768,
+	setContextLimitTokens,
 }: CopilotSettingsIntelligenceTabProps) {
 	return (
 		<div className="space-y-4 text-xs" data-testid="copilot-settings-intelligence-tab" data-legacy-tab="copilot-settings-general-tab">
@@ -56,15 +60,15 @@ export function CopilotSettingsIntelligenceTab({
 				setByokModel={setByokModel}
 			/>
 
-			{/* Режим клинического консилиума и цепочка рассуждений */}
+			{/* Режим скорости и консилиума: Chairside Flash (<300 мс) vs CoT Reasoning */}
 			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2.5">
 				<div className="flex items-center justify-between gap-2">
 					<div>
 						<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
 							<Brain size={14} className="text-[var(--teal,#0d9488)]" />
-							<span>Режим клинического консилиума</span>
+							<span>Режим клинического консилиума и скорость отклика</span>
 						</span>
-						<p className="text-[10px] text-[var(--muted)]">Глубокое EBM рассуждение со скрытой цепочкой мыслей (CoT)</p>
+						<p className="text-[10px] text-[var(--muted)]">Быстрый Chairside Flash (&lt;300 мс) или глубокий CoT Reasoning</p>
 					</div>
 					<div className="flex items-center gap-1 p-0.5 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
 						<button
@@ -73,8 +77,9 @@ export function CopilotSettingsIntelligenceTab({
 							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
 								speedMode === "turbo" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
 							}`}
+							title="Chairside Flash <300 мс"
 						>
-							Турбо
+							Турбо (&lt;300 мс)
 						</button>
 						<button
 							type="button"
@@ -82,8 +87,9 @@ export function CopilotSettingsIntelligenceTab({
 							className={`px-2.5 py-1 rounded-md text-[11px] font-semibold transition-all cursor-pointer ${
 								speedMode === "deep_reasoning" ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--muted)] hover:text-[var(--ink)] bg-transparent"
 							}`}
+							title="Экспертный CoT Reasoning"
 						>
-							Консилиум
+							Консилиум CoT
 						</button>
 					</div>
 				</div>
@@ -96,6 +102,39 @@ export function CopilotSettingsIntelligenceTab({
 					/>
 					<span>Показывать блок цепочки рассуждений (CoT) при формировании ответа</span>
 				</label>
+			</section>
+
+			{/* Лимиты контекстного окна (Мандат 8ab & Token Budget Law) */}
+			<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
+				<div className="flex items-center justify-between">
+					<span className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<Layers size={14} className="text-[var(--teal,#0d9488)]" />
+						<span>Лимит контекстного окна (Token Budget)</span>
+					</span>
+					<span className="text-[10px] text-[var(--teal,#0d9488)] font-semibold">
+						{contextLimitTokens <= 8192 ? "8k (Быстрый)" : contextLimitTokens <= 32768 ? "32k" : "128k"}
+					</span>
+				</div>
+				<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+					{[
+						{ val: 8192, label: "8k", sub: "Быстрый Chairside" },
+						{ val: 32768, label: "32k", sub: "Стандарт визита" },
+						{ val: 131072, label: "128k", sub: "Архив и КЛКТ 3D" },
+					].map((tier) => (
+						<button
+							key={tier.val}
+							type="button"
+							onClick={() => setContextLimitTokens?.(tier.val)}
+							className={`p-2 rounded-lg border text-left cursor-pointer transition-all ${
+								contextLimitTokens === tier.val
+									? "border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--ink)] shadow-xs font-bold"
+									: "border-[var(--line)] bg-[var(--paper)]/50 text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+						>
+							<div className="flex sm:flex-col items-center sm:items-start justify-between sm:justify-start gap-1"><div className="text-[11px] font-semibold">{tier.label}</div><div className="text-[10px] sm:text-[9px] text-[var(--muted)]">{tier.sub}</div></div>
+						</button>
+					))}
+				</div>
 			</section>
 
 			{/* Температура и клиническая строгость инференса */}

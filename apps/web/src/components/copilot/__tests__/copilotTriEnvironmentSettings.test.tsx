@@ -30,6 +30,9 @@ import { CopilotSettingsTrustTab, TRUST_LEVELS } from "../settings/CopilotSettin
 import { CopilotSettingsPersonaTab } from "../settings/CopilotSettingsPersonaTab";
 import { CopilotSettingsVoicePrivacyTab } from "../settings/CopilotSettingsVoicePrivacyTab";
 import { CopilotSettingsMemoryTab } from "../settings/CopilotSettingsMemoryTab";
+import { CopilotThinkingIndicator, getClinicalThinkingPhase } from "../CopilotThinkingIndicator";
+import { CopilotHistoryDrawer, getThreadDateCategory } from "../CopilotHistoryDrawer";
+import { CopilotMemoryTab as CopilotMemoryMainTab, MEMORY_QUICK_PRESETS } from "../CopilotMemoryTab";
 
 describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)", () => {
 	beforeEach(() => {
@@ -315,6 +318,138 @@ describe("Copilot Auto-Detection & Logical Settings (Zero Hardware Cargo Cult)",
 			"../settings/CopilotSettingsVoicePrivacyTab.tsx",
 			"../settings/CopilotSettingsMemoryTab.tsx",
 			"../settings/CopilotSettingsCapabilitiesTable.tsx",
+		];
+
+		for (const rel of files) {
+			const full = path.resolve(__dirname, rel);
+			const code = fs.readFileSync(full, "utf-8");
+			assert.ok(!emojiRegex.test(code), `Файл ${rel} содержит запрещенные cartoon emoji!`);
+		}
+	});
+
+	it("14. CopilotSettingsGranularPermissions содержит 5-е разрешение для внешнего ПО (Romexis, Ez3D)", () => {
+		const html = renderToString(
+			<CopilotSettingsTrustTab
+				trustLevel="balanced"
+				setTrustLevel={() => {}}
+				granularPermissions={{
+					autoApproveFileReads: true,
+					autoApproveFileWrites: false,
+					autoApproveClinicalMutations: true,
+					autoApproveFinancialDrafts: true,
+					autoApproveExternalSoftware: true,
+				}}
+				setGranularPermissions={() => {}}
+			/>
+		);
+
+		assert.ok(html.includes("Запуск внешнего стоматологического ПО (Romexis, Ez3D Plus)"));
+	});
+
+	it("15. CopilotSettingsIntelligenceTab рендерит селектор лимита контекста (contextLimitTokens)", () => {
+		const html = renderToString(
+			<CopilotSettingsIntelligenceTab
+				modelRoutingMode="server_managed"
+				setModelRoutingMode={() => {}}
+				byokProvider="gemini"
+				setByokProvider={() => {}}
+				byokApiKey=""
+				setByokApiKey={() => {}}
+				byokModel="gemini-2.5-flash"
+				setByokModel={() => {}}
+				speedMode="turbo"
+				setSpeedMode={() => {}}
+				showThinkingProcess={true}
+				setShowThinkingProcess={() => {}}
+				temperature={0.2}
+				setTemperature={() => {}}
+				contextLimitTokens={32768}
+				setContextLimitTokens={() => {}}
+			/>
+		);
+
+		assert.ok(html.includes("Лимит контекстного окна (Token Budget)"));
+		assert.ok(html.includes("32k"));
+		assert.ok(html.includes("128k"));
+	});
+
+	it("16. CopilotThinkingIndicator отображает живой секундомер, фазы размышления и CoT", () => {
+		// Тест фаз размышления
+		assert.equal(getClinicalThinkingPhase(0.5), "ИИ формирует клинический протокол...");
+		assert.equal(getClinicalThinkingPhase(1.2), "Дифференциальный диагноз по МКБ-10...");
+		assert.equal(getClinicalThinkingPhase(2.0), "Проверка противопоказаний и СтАР...");
+		assert.equal(getClinicalThinkingPhase(3.5), "Синтез рекомендаций и сметы...");
+
+		const html = renderToString(
+			<CopilotThinkingIndicator
+				isThinking={true}
+				thoughtProcess="Анализ зуба 36: кариес дентина K02.1. Рекомендована нанокомпозитная реставрация."
+			/>
+		);
+
+		assert.ok(html.includes("Ход клинических рассуждений"));
+		assert.ok(html.includes("K02.1"));
+	});
+
+	it("17. getThreadDateCategory и CopilotHistoryDrawer группируют треды по датам", () => {
+		const now = new Date();
+		const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+		const older = new Date(now.getTime() - 72 * 60 * 60 * 1000);
+
+		assert.equal(getThreadDateCategory({ id: "1", title: "Тест", createdAt: now.toISOString(), updatedAt: "12:00" }), "today");
+		assert.equal(getThreadDateCategory({ id: "2", title: "Тест", createdAt: yesterday.toISOString(), updatedAt: "вчера 15:30" }), "yesterday");
+		assert.equal(getThreadDateCategory({ id: "3", title: "Тест", createdAt: older.toISOString(), updatedAt: "22.10.2024" }), "earlier");
+
+		const html = renderToString(
+			<CopilotHistoryDrawer
+				isOpen={true}
+				onClose={() => {}}
+				onSelectThread={() => {}}
+			/>
+		);
+
+		assert.ok(html.includes("История диалогов"));
+		assert.ok(html.includes("Очистить"));
+	});
+
+	it("18. CopilotMemoryMainTab отображает клинические пресеты, категорию диагнозов и сброс", () => {
+		assert.ok(MEMORY_QUICK_PRESETS.length >= 4);
+		const hasDiagnosis = MEMORY_QUICK_PRESETS.some((p) => p.category === "diagnosis");
+		assert.ok(hasDiagnosis, "MEMORY_QUICK_PRESETS обязан содержать пресет категории diagnosis");
+
+		const html = renderToString(
+			<CopilotMemoryMainTab />
+		);
+
+		assert.ok(html.includes("Долговременная память ассистента"));
+		assert.ok(html.includes("Быстрые пресеты"));
+		assert.ok(html.includes("Диагнозы"));
+	});
+
+	it("19. Мандат 8b: проверка размеров всех файлов индикатора, истории и памяти", () => {
+		const checkFile = (relPath: string, maxLines: number) => {
+			const fullPath = path.resolve(__dirname, relPath);
+			assert.ok(fs.existsSync(fullPath), `Файл ${relPath} обязан существовать`);
+			const lines = fs.readFileSync(fullPath, "utf-8").split("\n").length;
+			assert.ok(
+				lines <= maxLines,
+				`Файл ${relPath} имеет ${lines} строк (лимит: <= ${maxLines} строк, Мандат 8b)`
+			);
+		};
+
+		checkFile("../CopilotThinkingIndicator.tsx", 150);
+		checkFile("../CopilotHistoryDrawer.tsx", 300);
+		checkFile("../CopilotMemoryTab.tsx", 240);
+		checkFile("../settings/CopilotSettingsGranularPermissions.tsx", 120);
+	});
+
+	it("20. Мандат 8d pt 7: строго 0 cartoon emojis в индикаторе, истории и памяти", () => {
+		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
+		const files = [
+			"../CopilotThinkingIndicator.tsx",
+			"../CopilotHistoryDrawer.tsx",
+			"../CopilotMemoryTab.tsx",
+			"../settings/CopilotSettingsGranularPermissions.tsx",
 		];
 
 		for (const rel of files) {
