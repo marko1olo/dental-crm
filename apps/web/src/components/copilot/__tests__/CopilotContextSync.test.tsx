@@ -130,7 +130,7 @@ describe('Copilot UI Two-Way Context Integration', () => {
 
     assert.ok(html.includes('copilot-context-bar'));
     assert.ok(html.includes('Одонтограмма') || html.includes('Смена') || html.includes('Shift'));
-    assert.ok(html.includes('Зуб #36'));
+    assert.ok(html.includes('Зуб 36') || html.includes('Зуб #36'));
     assert.ok(html.includes('Dr. Иванов'));
   });
 

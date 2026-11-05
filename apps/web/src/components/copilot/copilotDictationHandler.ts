@@ -27,6 +27,62 @@ export function handleClinicalSpeechOrText(
 			? intent.teethUpdates.map((u) => u.toothNumber)
 			: intent.detectedTeeth;
 
+	const isFullSanitation = /санирован|вся\s+формул|вся\s+полость|все\s+зубы\s+норм/i.test(query);
+	if (isFullSanitation && targetNumbers.length === 0) {
+		const ADULT_TEETH = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28, 38, 37, 36, 35, 34, 33, 32, 31, 41, 42, 43, 44, 45, 46, 47, 48];
+		const nextVisitStates: Record<string, VisitToothUiState> = {};
+		for (const tNum of ADULT_TEETH) {
+			const code = String(tNum);
+			nextVisitStates[code] = "idle";
+			useVisitStore.getState().setVisitToothRecord(code, {
+				toothNumber: tNum,
+				state: "idle",
+				diagnosis: "Полость рта санирована (Z01.2)",
+				diagnosisIcd10: "Z01.2",
+				treatmentPlan: "Интактный зуб, норма",
+			});
+		}
+		useVisitStore.getState().setVisitToothStateByCode((prev) => ({ ...prev, ...nextVisitStates }));
+
+		if (patientId) {
+			const nowIso = new Date().toISOString();
+			const sanitizedTeeth = ADULT_TEETH.map((tNum) => ({
+				toothNumber: tNum,
+				state: "Healthy" as ToothState,
+				updatedAt: nowIso,
+			}));
+			saveStoredTeethData(patientId, sanitizedTeeth, true);
+			if (typeof window !== "undefined") {
+				window.dispatchEvent(
+					new CustomEvent("dente-odontogram-update", {
+						detail: { patientId, states: sanitizedTeeth, teeth: sanitizedTeeth },
+					}),
+				);
+			}
+		}
+
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						tooth: 11,
+						toothNumber: 11,
+						state: "idle",
+						diagnosis: "Полость рта санирована, зубы интактны (Z01.2)",
+						diagnosisIcd10: "Z01.2",
+						treatmentPlan: "Профилактический осмотр. Полость рта санирована, патологий не выявлено. Контрольный осмотр через 6 месяцев.",
+					},
+				}),
+			);
+		}
+
+		return {
+			intent,
+			fallbackText: "Вся полость рта санирована. Все 32 зуба зафиксированы как интактные (норма). Дневник приёма обновлен.",
+			fallbackProposalTooth: 11,
+		};
+	}
+
 	if (
 		targetNumbers.length > 0 ||
 		intent.teethUpdates.length > 0 ||
@@ -98,24 +154,42 @@ export function handleClinicalSpeechOrText(
 
 		// Диспатчим SOAP протокол и услуги в смету
 		if (typeof window !== "undefined") {
-			const firstTooth =
-				targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : 36);
-			window.dispatchEvent(
-				new CustomEvent("dente-apply-soap-protocol", {
-					detail: {
-						tooth: firstTooth,
-						toothNumber: firstTooth,
-						state: intent.teethUpdates[0]?.state || "caries",
-						diagnosis:
-							intent.teethUpdates[0]?.icd10Title || "Кариес дентина (K02.1)",
-						diagnosisIcd10: intent.teethUpdates[0]?.icd10Code || "K02.1",
-						treatmentPlan: intent.summary || "Лечение по стандартам СтАР",
-						soapNotes: intent.soapNotes,
-						anesthesia: intent.anesthesia,
-					},
-				}),
-			);
+			for (const tNum of targetNumbers) {
+				const u = intent.teethUpdates.find((tu) => tu.toothNumber === tNum);
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							tooth: tNum,
+							toothNumber: tNum,
+							state: u?.state || "caries",
+							diagnosis: u?.icd10Title || "Кариес дентина (K02.1)",
+							diagnosisIcd10: u?.icd10Code || "K02.1",
+							treatmentPlan: intent.summary || "Лечение по стандартам СтАР",
+							soapNotes: intent.soapNotes,
+							anesthesia: intent.anesthesia,
+						},
+					}),
+				);
+			}
+			if (targetNumbers.length === 0) {
+				const fallbackTooth = typeof activeTooth === "number" ? activeTooth : 36;
+				window.dispatchEvent(
+					new CustomEvent("dente-apply-soap-protocol", {
+						detail: {
+							tooth: fallbackTooth,
+							toothNumber: fallbackTooth,
+							state: intent.teethUpdates[0]?.state || "caries",
+							diagnosis: intent.teethUpdates[0]?.icd10Title || "Кариес дентина (K02.1)",
+							diagnosisIcd10: intent.teethUpdates[0]?.icd10Code || "K02.1",
+							treatmentPlan: intent.summary || "Лечение по стандартам СтАР",
+							soapNotes: intent.soapNotes,
+							anesthesia: intent.anesthesia,
+						},
+					}),
+				);
+			}
 
+			const firstTooth = targetNumbers[0] || (typeof activeTooth === "number" ? activeTooth : 36);
 			const billableServices = [];
 			if (intent.procedures804n && intent.procedures804n.length > 0) {
 				for (const p of intent.procedures804n) {

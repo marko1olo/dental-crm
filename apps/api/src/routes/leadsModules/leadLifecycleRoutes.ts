@@ -1,5 +1,5 @@
 import { and, desc, eq, inArray } from "drizzle-orm";
-import type { FastifyInstance } from "fastify";
+import type { FastifyInstance, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import {
 	DEMO_SHOWCASE_ORG_ID,
@@ -26,7 +26,7 @@ import {
 } from "./types.js";
 
 export async function registerLeadLifecycleRoutes(app: FastifyInstance): Promise<void> {
-	app.get("/api/leads", async (req, reply) => {
+	app.get("/api/leads", async (req: FastifyRequest, reply: FastifyReply) => {
 		const organizationId = await requireResolvedOrganizationId(
 			req,
 			reply,

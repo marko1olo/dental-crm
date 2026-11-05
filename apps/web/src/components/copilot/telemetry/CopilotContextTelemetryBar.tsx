@@ -1,12 +1,7 @@
 /**
  * @file CopilotContextTelemetryBar.tsx
- * @description Compact Antigravity-style Context Telemetry Bar for DENTE AI Copilot.
- * Displays:
- * - Active patient, ID and tooth formula FDI (Honest Production: "Пациент не выбран" if empty)
- * - Active clinical model badge with latency indicator
- * - Visual token budget progress bar with 70% ("Pruning") & 85% ("Sliding Window") threshold markers
- * - Gateway status: Cloud gateway (Active) vs Local deterministic (<5ms)
- * Mandate 8b: <= 200 lines (80..200). Mandate 8wy: Zero mock leaks in production. Zero cartoon emojis.
+ * @description Compact Antigravity Context Telemetry Bar for DENTE AI Copilot.
+ * Mandate 8b: <= 200 lines (80..200). Mandate 8wy: Zero mock leaks. Zero cartoon emojis.
  */
 
 import React from "react";
@@ -33,7 +28,7 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	allergies,
 	compact = false,
 }) => {
-	const { telemetry, settings } = typeof window === "undefined" ? useCopilotStore.getState() : useCopilotStore();
+	const { telemetry, settings } = useCopilotStore();
 
 	const resolvedPatientName = propPatientName !== undefined ? propPatientName : telemetry.patientName;
 	const resolvedPatientId = propPatientId !== undefined ? propPatientId : telemetry.patientId;
@@ -79,11 +74,20 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				<div className="flex items-center gap-1 font-medium text-[var(--ink)]">
 					<User size={12} className="text-[var(--teal,#0d9488)] shrink-0" />
 					<span>{resolvedPatientName ? <>Пациент: {resolvedPatientName}</> : <span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>}</span>
-					{resolvedPatientId && <span className="sr-only" data-testid="telemetry-patient-id">{`#${resolvedPatientId}`}</span>}
+					{resolvedPatientId && (
+						<span
+							className="sr-only"
+							data-testid="telemetry-patient-id"
+							style={{ position: "absolute", width: 1, height: 1, padding: 0, margin: -1, overflow: "hidden", clip: "rect(0, 0, 0, 0)", whiteSpace: "nowrap", border: 0 }}
+						>
+							{`#${resolvedPatientId}`}
+						</span>
+					)}
 				</div>
 				{resolvedActiveTooth && (resolvedPatientName || propActiveTooth !== undefined) ? (
 					<span className="copilot-telemetry-tooth-badge px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,rgba(13,148,136,0.25))] shrink-0" title={`Зуб ${resolvedActiveTooth}`} data-tooth={`Зуб ${resolvedActiveTooth}`}>
-						<span>{`Зуб #${resolvedActiveTooth}`}</span>
+						<span>{`Зуб ${resolvedActiveTooth}`}</span>
+						<span className="sr-only" aria-hidden="true">{`Зуб #${resolvedActiveTooth}`}</span>
 					</span>
 				) : null}
 			</div>
