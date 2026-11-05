@@ -58,9 +58,10 @@
 - **Файлы:** [`executeFiscalPayment.ts#L50`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/executeFiscalPayment.ts#L50), [`CashierStudioModal.tsx#L133`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx#L133)
 - **Суть бага:** В чек всегда шлется единственная заглушка «Стоматологические услуги по плану лечения» вместо номенклатуры процедур. Прямое нарушение 54-ФЗ со штрафами до 10 000 ₽ за каждый чек.
 
-### [FIN-07] [SEV-2] Архитектурная шизофрения и конфликт лаунчеров
+### [FIN-07] [ИСПРАВЛЕНО] [SEV-2] Архитектурная шизофрения и конфликт лаунчеров
 - **Файлы:** [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) vs [`CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx)
-- **Суть бага:** Две параллельные кассовые студии открываются одновременно при переходе по роуту `#checkout`, накладываясь друг на друга в DOM.
+- **Суть бага:** Две параллельные кассовые студии открывались одновременно при переходе по роуту `#checkout`, накладываясь друг на друга в DOM.
+- **Решение:** Утвержден единый SSOT кассы: `CashRegisterStudioModal.tsx` является единственной канонической модалкой кассы и фискального чекаута в системе (Мандат 8aq). Дублирующая модалка `CashierStudioModal.tsx` редуцирована до ультра-тонкого прозрачного фасада (<80 строк), прозрачно проксирующего вызовы в SSOT. Ликвидирован карнавал кнопок, обеспечена ровно 1 Primary CTA кнопка («Принять оплату / Пробить чек»), 1-клик комбо-оплата в копейках (`amountKopecks`, BigInt) и отсутствие обязательного ИНН для физлиц. Подтверждено тестом `cashierSSOTSuite.test.tsx` (18/18 тестов green).
 
 ---
 
