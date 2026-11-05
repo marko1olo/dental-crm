@@ -17,6 +17,7 @@ export const DirectPatientCardLauncher: React.FC = () => {
 		if (typeof window === "undefined") return false;
 		const hash = window.location.hash.toLowerCase();
 		const search = window.location.search.toLowerCase();
+		if (hash.includes("outpatient") || search.includes("outpatient")) return false;
 		return (
 			hash.includes("patient-card") ||
 			hash.includes("patient_card") ||

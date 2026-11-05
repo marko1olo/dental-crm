@@ -35,9 +35,7 @@ export const PatientCardModalHeader: React.FC<PatientCardModalHeaderProps> = ({
 					{patientData.birthDate ? ` • ${patientData.birthDate}` : ""}
 					{patientData.medicalCardNumber || patientData.cardNumber
 						? ` • Карта: №${patientData.medicalCardNumber || patientData.cardNumber}`
-						: patientData.id && patientData.id.length <= 16
-							? ` • ID: ${patientData.id}`
-							: ""}
+						: ""}
 				</p>
 			</div>
 		</div>

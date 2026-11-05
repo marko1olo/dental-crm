@@ -40,7 +40,6 @@ import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLaunche
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
 import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
-import { DirectPatientLauncher } from "./components/patients/DirectPatientLauncher";
 import { DirectPatientStudioLauncher } from "./components/patients/DirectPatientStudioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
 import { DirectRecallsLauncher } from "./components/recalls/DirectRecallsLauncher";
@@ -49,6 +48,7 @@ import { DirectOrthodonticsLauncher } from "./components/orthodontics/DirectOrth
 import { DirectPayrollLauncher } from "./components/payroll/DirectPayrollLauncher";
 import { DirectTreatmentPlanLauncher } from "./components/treatment-plans/DirectTreatmentPlanLauncher";
 import { DirectOdontogramLauncher } from "./components/odontogram/DirectOdontogramLauncher";
+import { DirectGate0InspectionLauncher } from "./components/odontogram/DirectGate0InspectionLauncher";
 import { DirectTelephonyLauncher } from "./components/telephony/DirectTelephonyLauncher";
 import { DirectPublicBookingLauncher } from "./components/booking/DirectPublicBookingLauncher";
 import { DirectConsentLauncher } from "./components/consents/DirectConsentLauncher";
@@ -132,6 +132,11 @@ function isStandaloneActive(): boolean {
 		s.includes("odontogram") ||
 		h.includes("dental-chart") ||
 		s.includes("dental-chart") ||
+		h.includes("odontogram-gate0") ||
+		h.includes("odontogram-32") ||
+		h.includes("odontogram-mandible") ||
+		h.includes("arch32") ||
+		s.includes("stand=arch32") ||
 		h.includes("appointment_booking") ||
 		h.includes("quick_booking") ||
 		h.includes("appointment") ||
@@ -234,6 +239,8 @@ function isStandaloneActive(): boolean {
 		s.includes("appointments") ||
 		h.includes("appointments") ||
 		h.includes("chair-schedule") ||
+		s.includes("presenter") ||
+		h.includes("presenter") ||
 		s.includes("treatment-plan") ||
 		h.includes("treatment-plan") ||
 		s.includes("treatment-plans") ||
@@ -327,7 +334,6 @@ export function AppShell() {
 			<DirectPerioLauncher />
 			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />
-			<DirectPatientLauncher />
 			<DirectPatientStudioLauncher />
 			<DirectRecallLauncher />
 			<DirectRecallsLauncher />
@@ -336,6 +342,7 @@ export function AppShell() {
 			<DirectPayrollLauncher />
 			<DirectTreatmentPlanLauncher />
 			<DirectOdontogramLauncher />
+			<DirectGate0InspectionLauncher />
 			<DirectTelephonyLauncher />
 			<DirectPublicBookingLauncher />
 			<DirectConsentLauncher />

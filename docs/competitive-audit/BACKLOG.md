@@ -12103,3 +12103,41 @@
 - **8. 100% Верификационные гейты**:
   - Тесты: `analyticsSSOTSuite.test.tsx` (9 тестов) и `executiveSsotReports.test.tsx` (9 тестов) — 18/18 PASS, Exit Code 0;
   - Проверка кодировок: `npm run check:encoding` — 23 623 файла проверено, 0 замечаний (PASS).
+
+
+---
+
+### ВОЛНА 499: Картотека пациентов, Ликвидация болезни клонов (Multi-Card Clone Sickness), Семейный баланс и Соматическая безопасность — Red Team Инквизиция, суб-100мс поиск PostgreSQL 18, Apple HIG Touch Ergonomics и 4-State Visual Proof
+
+- **1. Ликвидация «болезни клонов» карточки пациента (Multi-Card Clone Sickness, Мандаты 8b, 8ak, 8aq)**:
+  - Искоренена критическая коллизия параллельных модалок в `AppShell.tsx`: удален паразитный дублирующий вызов `<DirectPatientLauncher />` (являвшийся идентичным клоном `DirectPatientStudioLauncher`).
+  - Разделена и изолирована маршрутизация триггеров: `DirectPatientStudioLauncher` отвечает за `#patients`, `#patient-studio`, `#patient_studio`, `#express-patient`, `dente:open-patients`, `dente:open-patient-studio`, а `DirectPatientCardLauncher` изолирован строго под `#patient-card` и `dente:open-patient-card`. Устранено одновременное открытие 2-3 модалок поверх друг друга при навигации.
+  - Канонический SSOT картотеки закреплен за `PatientStudioModal.tsx` (модальная студия экспресс-регистрации за 10 сек и семейного кошелька) и `PatientWorkspaceView.tsx` (полноэкранный рабочий режим пациента с одонтограммой, планами и снимками).
+- **2. Тотальное искоренение утечки сырых технических ID и UUID (Мандат 8ap)**:
+  - Из `PatientCardModal.tsx` и `PatientCardModalHeader.tsx` вырезана утечка технических машинных идентификаторов `• ID: #pat-36` / сырых UUID.
+  - В `DuplicateComparisonCard.tsx` сырой ID заменен на понятный врачу и администратору текст `Карта пациента`.
+  - В интерфейсе отображается только человеческий номер амбулаторной карты (`• Карта: №...`) либо понятные клинические реквизиты.
+- **3. Суб-100мс Fuzzy Search по ФИО, телефону и дате рождения (PostgreSQL 18)**:
+  - В `apps/api/src/routes/patients/patientSearchFilter.ts` и `apps/api/src/db/patientsQueryModules/patientSearchCore.ts` добавлена полноценная поддержка поиска по дате рождения (`birthDate`), году рождения (`1985`, `1992`), цифрам даты, опечаткам раскладки QWERTY и транслитерации.
+  - Запросы поддержаны составными индексами и GIN to_tsvector в `patientIndexes.ts`.
+- **4. Автономия врача и физиологическая соматическая норма в 1 клик (Мандат 8e)**:
+  - Соматический статус по умолчанию выставляется нормой в 1 клик («✓ Соматически здоров / Интактно»).
+  - Лекарственные аллергии и риски выводятся компактной пассивной строкой `⚠️` без принудительных блокировок.
+  - Все кнопки сохранения («✓ Зарегистрировать пациента», «✓ Сохранить карту пациента») строго активны (`disabled={false}`).
+- **5. Семейный баланс и кошелек родственников (Мандат 8n)**:
+  - Расчет семейного сальдо строго в целочисленных копейках (`amountKopecks`, BIGINT) с нулевой погрешностью float.
+  - 1-клик покрытие задолженности одного члена семьи за счет аванса родственника без бюрократии.
+- **6. Apple HIG Touch Ergonomics (390×844, Мандаты 8am, 8ze)**:
+  - На смартфонах карточка преобразуется в нативный Bottom Sheet со скруглением `rounded-t-[24px]`, тактильным Drag Handle 36×5px, сенсорными зонами $\ge 44\times 44$px и 0px горизонтального паразитного скролла (`overflow-x: clip; max-width: 100vw;`).
+  - Ликвидированы белые пятна на кнопке закрытия и неактивных вкладках в тёмной теме (`data-theme="dark"`).
+- **7. 4-состоятельный Red Team Visual Proof Gate**:
+  - В `docs/proofs/patient_studio/` сохранены и лично отсмотрены через `read_file` 5 скриншотов на живом dev-сервере Vite 5173:
+    - `01_patient_studio_pc_light_1440x900.png` (1440×900, светлая тема десктоп);
+    - `02_patient_studio_pc_dark_1440x900.png` (1440×900, тёмная тема десктоп, 0 белых пятен, WCAG AAA);
+    - `03_patient_studio_mobile_light_390x844.png` (390×844, Apple HIG Bottom Sheet, светлая тема);
+    - `04_patient_studio_mobile_dark_390x844.png` (390×844, Apple HIG Bottom Sheet, тёмная тема);
+    - `05_patient_studio_express_create_pc_light.png` (1440×900, форма экспресс-регистрации за 10 сек).
+- **8. 100% Верификационные гейты**:
+  - Точечные наборы тестов: `patientStudioSSOT.test.tsx` (15 тестов), `patientStudioDecomposedModules.test.tsx` (5 тестов), `patientSSOTSuite.test.tsx` (6 тестов) — 26/26 PASS, Exit Code 0;
+  - Тест фильтрации и триграммного поиска: `scratch/testPatientFilter.ts` — ALL FILTER TESTS PASSED;
+  - Проверка кодировок: `npm run check:encoding` — 23 820 файлов проверено, 0 замечаний (PASS).

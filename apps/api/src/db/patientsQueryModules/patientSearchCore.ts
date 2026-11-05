@@ -182,7 +182,14 @@ export async function getPatientsFromDb(
 
 				const pEmail = typeof p.email === "string" ? p.email : "";
 				const emailMatch = pEmail.toLowerCase().includes(qLower);
-				return Boolean(nameMatch || phoneMatch || emailMatch);
+
+				const pBirth = typeof p.birthDate === "string" ? p.birthDate : "";
+				const birthMatch =
+					pBirth.length > 0 &&
+					(pBirth.toLowerCase().includes(qLower) ||
+						(searchDigits.length >= 4 && pBirth.replace(/\D/g, "").includes(searchDigits)));
+
+				return Boolean(nameMatch || phoneMatch || emailMatch || birthMatch);
 			});
 		}
 		if (options.offset !== undefined && options.offset > 0) {
@@ -210,6 +217,7 @@ export async function getPatientsFromDb(
 				ilike(schema.patients.fullName, s),
 				ilike(schema.patients.phone, s),
 				ilike(schema.patients.email, s),
+				ilike(schema.patients.birthDate, s),
 			];
 			if (qwerty !== raw) {
 				searchOr.push(ilike(schema.patients.fullName, `%${qwerty}%`));
@@ -219,6 +227,7 @@ export async function getPatientsFromDb(
 			}
 			if (rawDigits.length >= 4) {
 				searchOr.push(ilike(schema.patients.phone, `%${rawDigits}%`));
+				searchOr.push(ilike(schema.patients.birthDate, `%${rawDigits}%`));
 			}
 			conditions.push(or(...searchOr)!);
 		}

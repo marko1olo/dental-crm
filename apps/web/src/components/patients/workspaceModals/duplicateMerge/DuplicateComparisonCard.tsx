@@ -25,8 +25,8 @@ export const DuplicateComparisonCard: React.FC<
 				<p className="text-sm font-bold text-[var(--ink)]">
 					{patientName || "Текущий пациент"}
 				</p>
-				<p className="text-[11px] text-[var(--muted)] font-mono">
-					ID: {patientId.slice(0, 13)}...
+				<p className="text-[11px] text-[var(--muted)]">
+					Карта пациента
 				</p>
 			</div>
 

@@ -8,7 +8,7 @@ import {
  * Фильтрация массива пациентов по поисковому запросу с учетом опечаток QWERTY,
  * транслитерации и нормализации телефонных номеров.
  */
-export function filterPatientsBySearchQuery<T extends { fullName?: unknown; phone?: unknown; email?: unknown }>(
+export function filterPatientsBySearchQuery<T extends { fullName?: unknown; phone?: unknown; email?: unknown; birthDate?: unknown }>(
 	patients: T[],
 	searchRaw: string
 ): T[] {
@@ -37,6 +37,13 @@ export function filterPatientsBySearchQuery<T extends { fullName?: unknown; phon
 
 		const pEmail = typeof p.email === "string" ? p.email : "";
 		const emailMatch = pEmail.toLowerCase().includes(qLower);
-		return Boolean(nameMatch || phoneMatch || emailMatch);
+
+		const pBirth = typeof p.birthDate === "string" ? p.birthDate : "";
+		const birthMatch =
+			pBirth.length > 0 &&
+			(pBirth.toLowerCase().includes(qLower) ||
+				(searchDigits.length >= 4 && pBirth.replace(/\D/g, "").includes(searchDigits)));
+
+		return Boolean(nameMatch || phoneMatch || emailMatch || birthMatch);
 	});
 }

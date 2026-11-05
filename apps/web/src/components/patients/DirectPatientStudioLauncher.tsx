@@ -13,7 +13,7 @@ export const DirectPatientStudioLauncher: React.FC = () => {
 		const hash = window.location.hash.toLowerCase();
 		const search = window.location.search.toLowerCase();
 		const isCreate = hash.includes("patient-create") || hash.includes("express-patient") || search.includes("patient_create") || search.includes("express_patient");
-		const isOpen = isCreate || hash.includes("patients") || hash.includes("patient-studio") || hash.includes("patient_studio") || hash.includes("patient-card") || hash.includes("patient_card") || search.includes("patients=1") || search.includes("patient_studio=1") || search.includes("patient_card=1");
+		const isOpen = isCreate || hash.includes("patients") || hash.includes("patient-studio") || hash.includes("patient_studio") || search.includes("patients=1") || search.includes("patient_studio=1") || search.includes("express_patient=1");
 		return { open: isOpen, mode: isCreate ? "create" : "view" };
 	}, []);
 
@@ -33,22 +33,20 @@ export const DirectPatientStudioLauncher: React.FC = () => {
 		window.addEventListener("popstate", handleHashOrPop);
 		window.addEventListener("dente:open-patients", handleCustomOpen);
 		window.addEventListener("dente:open-patient-studio", handleCustomOpen);
-		window.addEventListener("dente:open-patient-card", handleCustomOpen);
 
 		return () => {
 			window.removeEventListener("hashchange", handleHashOrPop);
 			window.removeEventListener("popstate", handleHashOrPop);
 			window.removeEventListener("dente:open-patients", handleCustomOpen);
 			window.removeEventListener("dente:open-patient-studio", handleCustomOpen);
-			window.removeEventListener("dente:open-patient-card", handleCustomOpen);
 		};
 	}, [checkUrlTrigger]);
 
 	const handleClose = useCallback(() => {
 		setTriggerState({ open: false });
 		clearUrlTokens(
-			["patients", "patient_studio", "patient-studio", "patient_card", "patient-card", "express_patient"],
-			["#patients", "#patient-studio", "#patient_studio", "#patient-card", "#patient_card", "#express-patient"],
+			["patients", "patient_studio", "patient-studio", "express_patient"],
+			["#patients", "#patient-studio", "#patient_studio", "#express-patient"],
 		);
 	}, []);
 
