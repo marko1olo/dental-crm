@@ -22,12 +22,14 @@ import {
 	computeOsteointegrationExpectedDate,
 	calculateSurgeryFinancials,
 	buildSurgicalPostOpMemoText,
+	generateSystemSurgeryLot,
 	type SurgeryScenarioType,
 	type SurgeryCapType,
 	type MischBoneDensity,
 } from "./surgeryCatalogData";
 import { resolveEffectiveSurgeryPatientId } from "./resolveSurgeryPatient";
 import { SurgeryPostOpMemoSection } from "./SurgeryPostOpMemoSection";
+import { SurgeryImplantParametersSection } from "./SurgeryImplantParametersSection";
 import { ImplantPassportCard } from "../implants/ImplantPassportCard";
 import type { FastImplantPassportData } from "../implants/implantQuickPresets";
 import "./surgeryHub.css";
@@ -37,53 +39,62 @@ export type SurgeryHubTab = "protocol" | "diary" | "passport" | "memo";
 export interface ChairsideSurgeryHubModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientName?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly doctorId?: string | undefined;
-	readonly initialTooth?: number | undefined;
-	readonly initialScenario?: SurgeryScenarioType | undefined;
-	readonly initialTab?: SurgeryHubTab | undefined;
-	readonly inventoryOverdraftActive?: boolean | undefined;
-	readonly onSaveProtocol?: ((data: any) => void) | undefined;
-	readonly onInsertIntoDiary?: ((diaryText: string) => void) | undefined;
-	readonly className?: string | undefined;
+	readonly patientName?: string;
+	readonly patientId?: string;
+	readonly doctorName?: string;
+	readonly doctorId?: string;
+	readonly initialTooth?: number;
+	readonly initialScenario?: SurgeryScenarioType;
+	readonly initialTab?: SurgeryHubTab;
+	readonly inventoryOverdraftActive?: boolean;
+	readonly initialBrand?: string;
+	readonly initialDiameterMm?: number;
+	readonly initialLengthMm?: number;
+	readonly initialTorqueNcm?: number;
+	readonly initialLotNumber?: string;
+	readonly initialBoneGraft?: string;
+	readonly initialMembrane?: string;
+	readonly initialSuture?: string;
+	readonly initialTeeth?: readonly number[];
+	readonly onSaveProtocol?: (data: any) => void;
+	readonly onInsertIntoDiary?: (diaryText: string) => void;
+	readonly className?: string;
 }
 
 const FREQUENT_SURGERY_TEETH = [16, 26, 36, 46, 11, 21, 14, 24, 34, 44, 18, 28, 38, 48] as const;
 
 export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> = ({
-	isOpen,
-	onClose,
-	patientName = "Иванов Иван Иванович",
-	patientId = "PAT-DEMO-01",
-	doctorName = "Д-р Воронов А. В.",
-	doctorId = "DOC-SURG-01",
-	initialTooth = 46,
-	initialScenario = "implant",
-	initialTab = "protocol",
+	isOpen, onClose,
+	patientName = "Иванов Иван Иванович", patientId = "PAT-DEMO-01",
+	doctorName = "Д-р Воронов А. В.", doctorId = "DOC-SURG-01",
+	initialTooth = 46, initialScenario = "implant", initialTab = "protocol",
 	inventoryOverdraftActive = false,
-	onSaveProtocol,
-	onInsertIntoDiary,
-	className = "",
+	initialBrand, initialDiameterMm, initialLengthMm, initialTorqueNcm,
+	initialLotNumber, initialBoneGraft, initialMembrane, initialSuture, initialTeeth,
+	onSaveProtocol, onInsertIntoDiary, className = "",
 }) => {
 	const titleId = useId();
 	const [activeScenario, setActiveScenario] = useState<SurgeryScenarioType>(initialScenario);
 	const [activeTab, setActiveTab] = useState<SurgeryHubTab>(initialTab);
 	const [toothFdi, setToothFdi] = useState<number>(initialTooth);
+	const [selectedTeeth, setSelectedTeeth] = useState<number[]>(() =>
+		initialTeeth && initialTeeth.length > 0 ? [...initialTeeth] : [initialTooth],
+	);
 	const [isOverdraftNoticeDismissed, setIsOverdraftNoticeDismissed] = useState<boolean>(false);
-	const [selectedBrand, setSelectedBrand] = useState<string>("Osstem");
-	const [diameterMm, setDiameterMm] = useState<number>(4.0);
-	const [lengthMm, setLengthMm] = useState<number>(10.0);
-	const [torqueNcm, setTorqueNcm] = useState<number>(35);
+	const [selectedBrand, setSelectedBrand] = useState<string>(initialBrand || "Osstem");
+	const [diameterMm, setDiameterMm] = useState<number>(initialDiameterMm || 4.0);
+	const [lengthMm, setLengthMm] = useState<number>(initialLengthMm || 10.0);
+	const [torqueNcm, setTorqueNcm] = useState<number>(initialTorqueNcm || 35);
 	const [boneDensity, setBoneDensity] = useState<MischBoneDensity>("D2");
 	const [capType, setCapType] = useState<SurgeryCapType>("fdm");
-	const [lotNumber, setLotNumber] = useState<string>("24C1208");
+	const [lotNumber, setLotNumber] = useState<string>(
+		() => initialLotNumber || generateSystemSurgeryLot(initialTooth),
+	);
 	const [serialNumber, setSerialNumber] = useState<string>("SN-884210");
 	const [catalogArticle, setCatalogArticle] = useState<string>("TS3S4010S");
-	const [selectedGraft] = useState<string>(SURGERY_GRAFT_CATALOG[0].name);
-	const [selectedMembrane] = useState<string>(SURGERY_MEMBRANE_CATALOG[0].name);
-	const [selectedSuture] = useState<string>(SURGERY_SUTURE_CATALOG[0].name);
+	const [selectedGraft] = useState<string>(initialBoneGraft || SURGERY_GRAFT_CATALOG[0].name);
+	const [selectedMembrane] = useState<string>(initialMembrane || SURGERY_MEMBRANE_CATALOG[0].name);
+	const [selectedSuture] = useState<string>(initialSuture || SURGERY_SUTURE_CATALOG[0].name);
 
 	const scenarioConfig = SURGERY_SCENARIOS[activeScenario];
 	const currentSystem = useMemo(() => getImplantSystemById(selectedBrand), [selectedBrand]);
@@ -99,13 +110,13 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	const handleApplyPhysiologicalNorm = useCallback(() => {
 		if (activeScenario === "implant") {
 			setTorqueNcm(35); setCapType("fdm"); setBoneDensity("D2");
-			showToast("Норма имплантации: 35 Н·см, ФДМ, плотность кости D2", "success");
+			showToast("✓ Стандартный протокол имплантации без осложнений: 35 Н·см, ФДМ, D2", "success");
 		} else if (activeScenario === "extraction") {
-			showToast("Норма простого удаления: кюретаж, гемостаз, швы Викрил 4-0", "success");
+			showToast("✓ Стандартное атравматичное удаление: кюретаж, гемостаз, швы Викрил 4-0", "success");
 		} else if (activeScenario === "sinus_gbr") {
-			showToast("Норма синус-лифтинга: Bio-Oss 0.5 г + мембрана Bio-Gide 16×22", "success");
+			showToast("✓ Стандартный синус-лифтинг: Bio-Oss 0.5 г + мембрана Bio-Gide 16×22", "success");
 		} else {
-			showToast("Норма периостотомии: разрез по переходной складке, ленточный дренаж", "success");
+			showToast("✓ Стандартная периостотомия: разрез по переходной складке, дренаж", "success");
 		}
 	}, [activeScenario]);
 
@@ -130,10 +141,11 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 
 	const passportData: FastImplantPassportData = useMemo(() => {
 		const dateIso = new Date().toISOString();
+		const effectiveLot = lotNumber || generateSystemSurgeryLot(toothFdi, dateIso);
 		return {
 			passportId: `IMP-SSOT-${toothFdi}-${Date.now().toString().slice(-6)}`,
 			toothFdi, brand: currentSystem.brandName, model: currentSystem.popularLines[0] || "Standard",
-			catalogArticle, diameterMm, lengthMm, torqueNcm, lotNumber, serialNumber, boneDensity,
+			catalogArticle, diameterMm, lengthMm, torqueNcm, lotNumber: effectiveLot, serialNumber, boneDensity,
 			isqDay0: 72, capType, patientName, patientId, doctorName, doctorId, dateIso,
 			osteointegrationExpectedDate: computeOsteointegrationExpectedDate(dateIso, toothFdi),
 			isWarehouseOverdraft: Boolean(inventoryOverdraftActive),
@@ -144,67 +156,115 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 			consumablesCostRub: financials.consumablesCostRub,
 			doctorGrossMarginRub: financials.doctorGrossMarginRub,
 			netDoctorIncomeRub: financials.netDoctorIncomeRub,
+			operationPriceKopecks: financials.operationPriceKopecks,
+			implantCostKopecks: financials.implantCostKopecks,
+			consumablesCostKopecks: financials.consumablesCostKopecks,
+			doctorGrossMarginKopecks: financials.doctorGrossMarginKopecks,
+			netDoctorIncomeKopecks: financials.netDoctorIncomeKopecks,
 			isImmediateLoadingFeasible: torqueNcm >= 35,
 			boneGraftMaterial: selectedGraft, membraneUsed: selectedMembrane, sutureMaterial: selectedSuture,
 		};
 	}, [toothFdi, currentSystem, catalogArticle, diameterMm, lengthMm, torqueNcm, lotNumber, serialNumber, boneDensity, capType, patientName, patientId, doctorName, doctorId, inventoryOverdraftActive, selectedBrand, financials, selectedGraft, selectedMembrane, selectedSuture]);
 
 	const handleSaveOperationAndCommit = useCallback(async () => {
-		onSaveProtocol?.({ activeScenario, toothFdi, passportData, diaryText });
+		onSaveProtocol?.({ activeScenario, toothFdi, passportData, diaryText, selectedTeeth });
 		onInsertIntoDiary?.(diaryText);
+
+		const teethToProcess = selectedTeeth.length > 0 ? selectedTeeth : [toothFdi];
+		const dateIso = new Date().toISOString();
+		const baseLot = lotNumber || generateSystemSurgeryLot(toothFdi, dateIso);
 
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(new CustomEvent("dente-quick-writeoff-surgical-materials", {
-				detail: { operationTitle: scenarioConfig.titleRu, toothFdi, materials: scenarioConfig.standardMaterials, isOverdraft: Boolean(inventoryOverdraftActive), timestamp: new Date().toISOString() },
+				detail: {
+					operationTitle: scenarioConfig.titleRu,
+					toothFdi,
+					teeth: teethToProcess,
+					materials: scenarioConfig.standardMaterials,
+					isOverdraft: Boolean(inventoryOverdraftActive),
+					lotNumber: baseLot,
+					timestamp: dateIso,
+				},
 			}));
 			window.dispatchEvent(new CustomEvent("dente:cart-add-items", {
-				detail: { items: [{ code: scenarioConfig.serviceCode, name: `${scenarioConfig.serviceNameRu} (#${toothFdi})`, priceRub: scenarioConfig.defaultPriceRub, quantity: 1 }] },
+				detail: {
+					items: teethToProcess.map((t) => ({
+						code: scenarioConfig.serviceCode,
+						name: `${scenarioConfig.serviceNameRu} (#${t})`,
+						priceRub: scenarioConfig.defaultPriceRub,
+						quantity: 1,
+					})),
+				},
 			}));
-			window.dispatchEvent(new CustomEvent("dente:diary-update", { detail: { diaryText, toothFdi, scenario: activeScenario } }));
+			window.dispatchEvent(new CustomEvent("dente:diary-update", { detail: { diaryText, toothFdi, teeth: teethToProcess, scenario: activeScenario } }));
 		}
 
 		if (typeof fetch === "function") {
 			const targetId = await resolveEffectiveSurgeryPatientId(patientId, patientName);
-			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
 			try {
 				if (targetId) {
-					if (activeScenario === "implant") {
-						await fetch("/api/clinical/implants/installations", {
-							method: "POST", headers,
-							body: JSON.stringify({
-								patientId: targetId, toothNumberFdi: toothFdi, implantBrand: currentSystem.id,
-								implantDiameterMm: diameterMm, implantLengthMm: lengthMm, lotNumber, serialNumber,
+					for (const currentTooth of teethToProcess) {
+						const toothLot = teethToProcess.length > 1 ? `${baseLot}-T${currentTooth}` : baseLot;
+						const idempKey = `idemp-surg-${targetId}-T${currentTooth}-${Date.now().toString().slice(0, 8)}`;
+						const headers = denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+							"X-Idempotency-Key": idempKey,
+						});
+
+						if (activeScenario === "implant") {
+							const implantPayload = JSON.stringify({
+								patientId: targetId, toothNumberFdi: currentTooth, implantBrand: currentSystem.id,
+								implantDiameterMm: diameterMm, implantLengthMm: lengthMm, lotNumber: toothLot, serialNumber,
 								boneDensityClass: boneDensity, finalInsertionTorqueNcm: torqueNcm, baselineIsqMesiodistal: 72,
 								baselineIsqBuccolingual: 72, boneGraftMaterial: selectedGraft, membraneUsed: selectedMembrane,
 								sutureMaterial: selectedSuture, operationPriceRub: financials.operationPriceRub, notes: diaryText,
-							}),
-						});
-						await fetch("/api/surgery/materials/quick-deduct", {
-							method: "POST", headers,
-							body: JSON.stringify({ bundleType: "implant", notes: `Списание расходников: Имплантация ${selectedBrand} #${toothFdi}` }),
-						});
-					} else {
-						await fetch("/api/surgery/protocols", {
-							method: "POST", headers,
-							body: JSON.stringify({
-								patientId: targetId, normId: scenarioConfig.id, toothNumberFdi: toothFdi, protocolText: diaryText,
-								services: [{ code: scenarioConfig.serviceCode, nameRu: `${scenarioConfig.serviceNameRu} (#${toothFdi})`, name: scenarioConfig.serviceNameRu, priceRub: scenarioConfig.defaultPriceRub, quantity: 1, toothNumber: toothFdi }],
-								materialsUsed: scenarioConfig.standardMaterials.map((m) => ({ name: m.name, unit: m.unit, quantity: m.quantity, isWarehouseCritical: Boolean(m.isWarehouseCritical) })),
-								isOverdraftActive: Boolean(inventoryOverdraftActive), notes: scenarioConfig.defaultRecommendationsRu,
-							}),
-						});
-						await fetch("/api/surgery/materials/quick-deduct", {
-							method: "POST", headers,
-							body: JSON.stringify({ bundleType: activeScenario === "sinus_gbr" ? "sinus_gbr" : "surgery", notes: `Списание расходников: ${scenarioConfig.titleRu} #${toothFdi}` }),
-						});
+								idempotencyKey: idempKey,
+							});
+							const apiRes = await fetch("/api/v1/surgery/implants", {
+								method: "POST", headers,
+								body: implantPayload,
+							});
+							if (!apiRes.ok) {
+								await fetch("/api/clinical/implants/installations", {
+									method: "POST", headers,
+									body: implantPayload,
+								});
+							}
+							await fetch("/api/surgery/materials/quick-deduct", {
+								method: "POST", headers,
+								body: JSON.stringify({
+									bundleType: "implant",
+									toothNumberFdi: currentTooth,
+									notes: `Списание по техкарте: Имплантация ${selectedBrand} #${currentTooth} (LOT: ${toothLot})`,
+								}),
+							});
+						} else {
+							await fetch("/api/surgery/protocols", {
+								method: "POST", headers,
+								body: JSON.stringify({
+									patientId: targetId, normId: scenarioConfig.id, toothNumberFdi: currentTooth, protocolText: diaryText,
+									services: [{ code: scenarioConfig.serviceCode, nameRu: `${scenarioConfig.serviceNameRu} (#${currentTooth})`, name: scenarioConfig.serviceNameRu, priceRub: scenarioConfig.defaultPriceRub, quantity: 1, toothNumber: currentTooth }],
+									materialsUsed: scenarioConfig.standardMaterials.map((m) => ({ name: m.name, unit: m.unit, quantity: m.quantity, isWarehouseCritical: Boolean(m.isWarehouseCritical) })),
+									isOverdraftActive: Boolean(inventoryOverdraftActive), notes: scenarioConfig.defaultRecommendationsRu,
+								}),
+							});
+							await fetch("/api/surgery/materials/quick-deduct", {
+								method: "POST", headers,
+								body: JSON.stringify({
+									bundleType: activeScenario === "sinus_gbr" ? "sinus_gbr" : "surgery",
+									toothNumberFdi: currentTooth,
+									notes: `Списание по техкарте: ${scenarioConfig.titleRu} #${currentTooth}`,
+								}),
+							});
+						}
 					}
 				}
 			} catch { /* Офлайн автономия врача (Мандат 8e) */ }
 		}
 
-		showToast(`✓ Операция «${scenarioConfig.titleRu} #${toothFdi}» зафиксирована в карте приёма`, "success");
+		showToast(`✓ Операция «${scenarioConfig.titleRu} #${teethToProcess.join(", #")}» зафиксирована в карте приёма`, "success");
 		onClose();
-	}, [onSaveProtocol, activeScenario, toothFdi, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, diameterMm, lengthMm, lotNumber, serialNumber, boneDensity, torqueNcm, selectedGraft, selectedMembrane, selectedSuture, financials.operationPriceRub, selectedBrand, patientId, patientName, onClose]);
+	}, [onSaveProtocol, activeScenario, toothFdi, selectedTeeth, passportData, diaryText, onInsertIntoDiary, scenarioConfig, inventoryOverdraftActive, currentSystem.id, diameterMm, lengthMm, lotNumber, serialNumber, boneDensity, torqueNcm, selectedGraft, selectedMembrane, selectedSuture, financials, selectedBrand, patientId, patientName, onClose]);
 
 	const memoText = useMemo((): string => {
 		return buildSurgicalPostOpMemoText(activeScenario, {
@@ -254,8 +314,8 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 						</div>
 						<div className="min-w-0 flex-1 overflow-hidden">
 							<h2 id={titleId}>
-								<span>Хирургический хаб &amp; Паспорт изделия</span>
-								<span className="text-xs px-2 py-0.5 rounded-lg font-mono font-bold bg-[var(--teal,#0d9488)] text-white shrink-0">{`#${toothFdi}`}</span>
+								<span>Хирургический хаб &amp; Паспорт имплантации</span>
+								<span className="text-xs px-2 py-0.5 rounded-lg font-mono font-bold bg-[var(--teal,#0d9488)] text-white shrink-0">{selectedTeeth.length > 1 ? `#${selectedTeeth.join(", #")}` : `#${toothFdi}`}</span>
 							</h2>
 							<p className="text-[11px] sm:text-xs text-[var(--muted)] leading-tight" title={`${patientName} · ${doctorName}`}>{patientName} · {doctorName}</p>
 						</div>
@@ -336,81 +396,101 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 									</div>
 									<div className="text-[11px] text-[var(--muted)] leading-tight mt-0.5">{scenarioConfig.subtitleRu}</div>
 								</div>
-								<button type="button" onClick={handleApplyPhysiologicalNorm} className="min-h-[44px] px-3.5 text-xs font-semibold rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] hover:border-[var(--teal,#0d9488)] cursor-pointer shrink-0 flex items-center gap-1.5 transition-colors" data-testid="btn-apply-physio-norm">
-									<Check size={15} className="text-[var(--teal,#0d9488)] shrink-0" /><span>Норма в 1 клик</span>
+								<button
+									type="button"
+									onClick={handleApplyPhysiologicalNorm}
+									className="min-h-[44px] px-3.5 text-xs font-semibold rounded-xl border border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal-surface,rgba(13,148,136,0.1))] cursor-pointer shrink-0 flex items-center gap-1.5 transition-colors"
+									data-testid="btn-standard-implant-protocol"
+									id="btn-apply-physio-norm"
+									title="Применить стандартный протокол операции без осложнений в 1 клик"
+								>
+									<Check size={15} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<span className="hidden sm:inline">✓ Стандартная операция без осложнений</span>
+									<span className="sm:hidden">✓ Стандартная норма</span>
 								</button>
 							</div>
 
+							{activeScenario === "implant" && (
+								<div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs" data-testid="implant-protocol-phases">
+									<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+										<span className="text-[10px] font-bold text-[var(--muted)] uppercase">1. Анестезия</span>
+										<span className="font-semibold text-[var(--ink)] truncate">Articaini 4% 1:100k</span>
+										<span className="text-[10px] text-[var(--muted)]">1.7 мл инфильтр.</span>
+									</div>
+									<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+										<span className="text-[10px] font-bold text-[var(--muted)] uppercase">2. Разрез</span>
+										<span className="font-semibold text-[var(--ink)] truncate">По гребню альвеолы</span>
+										<span className="text-[10px] text-[var(--muted)]">лоскут отслоен</span>
+									</div>
+									<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+										<span className="text-[10px] font-bold text-[var(--muted)] uppercase">3. Костное ложе</span>
+										<span className="font-semibold text-[var(--ink)] truncate">Фрезы NaCl 0.9%</span>
+										<span className="text-[10px] text-[var(--muted)]">кость {boneDensity} (Misch)</span>
+									</div>
+									<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+										<span className="text-[10px] font-bold text-[var(--muted)] uppercase">4. Имплантат</span>
+										<span className="font-semibold text-[var(--teal,#0d9488)] truncate">{selectedBrand} Ø{diameterMm}×{lengthMm}</span>
+										<span className="text-[10px] font-mono text-[var(--muted)]">{catalogArticle}</span>
+									</div>
+									<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+										<span className="text-[10px] font-bold text-[var(--muted)] uppercase">5. Торк &amp; ISQ</span>
+										<span className="font-semibold text-[var(--ink)] truncate">{torqueNcm} Н·см · ISQ 72</span>
+										<span className="text-[10px] text-[var(--teal,#0d9488)]">зеленая зона</span>
+									</div>
+									<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] flex flex-col gap-0.5">
+										<span className="text-[10px] font-bold text-[var(--muted)] uppercase">6. Ушивание</span>
+										<span className="font-semibold text-[var(--ink)] truncate">{capType === "fdm" ? "ФДМ" : "Заглушка"}</span>
+										<span className="text-[10px] text-[var(--muted)] truncate">{selectedSuture}</span>
+									</div>
+								</div>
+							)}
+
 							<div className="flex flex-col gap-1.5">
-								<div className="text-xs font-bold text-[var(--ink)]">Зуб по формуле FDI:</div>
+								<div className="text-xs font-bold text-[var(--ink)] flex items-center justify-between">
+									<span>Зуб по формуле FDI:</span>
+									{selectedTeeth.length > 1 && (
+										<span className="text-[11px] font-semibold text-[var(--teal,#0d9488)]">
+											{`Выбрано: ${selectedTeeth.join(", ")}`}
+										</span>
+									)}
+								</div>
 								<div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
-									{FREQUENT_SURGERY_TEETH.map((t) => (
-										<button key={t} type="button" onClick={() => setToothFdi(t)} className={`min-h-[44px] min-w-[44px] px-2 text-xs font-mono font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center ${toothFdi === t ? "bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`} data-testid={`tooth-fdi-${t}`}>{t}</button>
-									))}
+									{FREQUENT_SURGERY_TEETH.map((t) => {
+										const isSelected = selectedTeeth.includes(t) || toothFdi === t;
+										return (
+											<button
+												key={t}
+												type="button"
+												onClick={() => {
+													setToothFdi(t);
+													setSelectedTeeth([t]);
+												}}
+												className={`min-h-[44px] min-w-[44px] px-2 text-xs font-mono font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center ${isSelected ? "bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)] shadow-xs" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper-soft)]"}`}
+												data-testid={`tooth-fdi-${t}`}
+											>
+												{t}
+											</button>
+										);
+									})}
 								</div>
 							</div>
 
 							{activeScenario === "implant" && (
-								<div className="flex flex-col gap-3 p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)]">
-									<div className="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-										<Wrench size={14} className="text-[var(--teal,#0d9488)]" /><span>Имплантационная система &amp; параметры изделия:</span>
-									</div>
-									<div className="flex items-center gap-1.5 flex-wrap">
-										{SURGERY_IMPLANT_SYSTEMS.map((sys) => (
-											<button key={sys.id} type="button" onClick={() => handleSelectBrand(sys.brandName)} className={`min-h-[44px] px-3.5 text-xs font-bold rounded-xl border transition-all cursor-pointer flex items-center justify-center ${selectedBrand === sys.brandName ? "bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--paper)]/80"}`} data-testid={`brand-${sys.id}`}>
-												{sys.brandName}
-											</button>
-										))}
-									</div>
-
-									<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-										<div className="flex flex-col gap-1">
-											<span className="text-[11px] font-semibold text-[var(--muted)]">Диаметр (мм):</span>
-											<div className="flex items-center gap-1">
-												{[3.5, 4.0, 4.5, 5.0].map((d) => (
-													<button key={d} type="button" onClick={() => setDiameterMm(d)} className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${diameterMm === d ? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"}`}>Ø {d}</button>
-												))}
-											</div>
-										</div>
-										<div className="flex flex-col gap-1">
-											<span className="text-[11px] font-semibold text-[var(--muted)]">Длина (мм):</span>
-											<div className="flex items-center gap-1">
-												{[8.5, 10.0, 11.5, 13.0].map((l) => (
-													<button key={l} type="button" onClick={() => setLengthMm(l)} className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${lengthMm === l ? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"}`}>{l}</button>
-												))}
-											</div>
-										</div>
-										<div className="flex flex-col gap-1">
-											<span className="text-[11px] font-semibold text-[var(--muted)]">Торк стабильности:</span>
-											<div className="flex items-center gap-1">
-												{[25, 35, 45].map((t) => (
-													<button key={t} type="button" onClick={() => setTorqueNcm(t)} className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${torqueNcm === t ? "bg-[var(--teal-surface,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"}`} data-testid={`torque-${t}`}>{t} Н·см</button>
-												))}
-											</div>
-										</div>
-									</div>
-
-									<div className="flex items-center gap-2 pt-1 border-t border-[var(--line)]">
-										<span className="text-[11px] font-semibold text-[var(--muted)] shrink-0">Заглушка/ФДМ:</span>
-										<button type="button" onClick={() => setCapType("fdm")} className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${capType === "fdm" ? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"}`} data-testid="cap-fdm">Формирователь десны (ФДМ)</button>
-										<button type="button" onClick={() => setCapType("plug")} className={`flex-1 min-h-[44px] text-xs font-bold rounded-xl border ${capType === "plug" ? "bg-[var(--teal-surface,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"}`} data-testid="cap-plug">Винт-заглушка (наглухо)</button>
-									</div>
-
-									<div className="grid grid-cols-3 gap-2 text-xs pt-1">
-										<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-											<div className="text-[10px] text-[var(--muted)]">АРТИКУЛ (REF)</div>
-											<div className="font-mono font-bold">{catalogArticle}</div>
-										</div>
-										<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-											<div className="text-[10px] text-[var(--muted)]">ПАРТИЯ (LOT)</div>
-											<div className="font-mono font-bold">{lotNumber}</div>
-										</div>
-										<div className="p-2 rounded-lg bg-[var(--paper)] border border-[var(--line)]">
-											<div className="text-[10px] text-[var(--muted)]">СЕРИЙНЫЙ (SN)</div>
-											<div className="font-mono font-bold">{serialNumber}</div>
-										</div>
-									</div>
-								</div>
+								<SurgeryImplantParametersSection
+									selectedBrand={selectedBrand}
+									onSelectBrand={handleSelectBrand}
+									diameterMm={diameterMm}
+									onSelectDiameter={setDiameterMm}
+									lengthMm={lengthMm}
+									onSelectLength={setLengthMm}
+									torqueNcm={torqueNcm}
+									onSelectTorque={setTorqueNcm}
+									capType={capType}
+									onSelectCapType={setCapType}
+									catalogArticle={catalogArticle}
+									lotNumber={lotNumber}
+									serialNumber={serialNumber}
+								/>
 							)}
 
 							<div className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] flex flex-col gap-2">

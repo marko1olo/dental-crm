@@ -167,4 +167,6 @@ export function registerInstallationRoute(app: FastifyInstance) {
 
 	app.post("/api/clinical/implants/installations", handleInstallation);
 	app.post("/api/implants/protocol", handleInstallation);
+	app.post("/api/v1/surgery/implants", handleInstallation);
+	app.post("/api/surgery/implants", handleInstallation);
 }

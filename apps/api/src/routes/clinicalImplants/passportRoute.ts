@@ -11,7 +11,7 @@ import {
 } from "../../db/schema.js";
 
 export function registerPassportRoute(app: FastifyInstance) {
-	app.get("/api/clinical/implants/:installationId/passport", async (request, reply) => {
+	const handlePassport = async (request: any, reply: any) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
@@ -76,5 +76,9 @@ export function registerPassportRoute(app: FastifyInstance) {
 		};
 
 		return reply.send({ success: true, passport: passportData });
-	});
+	};
+
+	app.get("/api/clinical/implants/:installationId/passport", handlePassport);
+	app.get("/api/v1/surgery/implants/:installationId/passport", handlePassport);
+	app.get("/api/surgery/implants/:installationId/passport", handlePassport);
 }

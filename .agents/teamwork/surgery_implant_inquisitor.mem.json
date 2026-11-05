@@ -1,0 +1,42 @@
+{
+  "agent": "SURGERY & IMPLANTOLOGY INQUISITOR",
+  "wave": 503,
+  "status": "COMPLETED",
+  "timestamp": "2026-11-06T00:47:30+04:00",
+  "mandates_verified": [
+    "Mandate 8e (Doctor Autonomy & Unblocked Buttons)",
+    "Mandate 8n (Solo Doctor & Small Clinic Sovereignty)",
+    "Mandate 8x (Clean Clinical Language, Zero Regulatory Jargon)",
+    "Mandate 8aa (Soft Negative Stock & Silent Background Deduction)",
+    "Mandate 8z (Zero Hardcoded Cases, Dynamic Systems Catalog)",
+    "Mandate 8al (Apple HIG, 44x44px Touch, Bottom Sheet, Zero Potemkin)",
+    "Mandate 8am (Single Primary CTA #0d9488)",
+    "Mandate 8an (Dirty Worktree Invariant & Per-file Git Add)"
+  ],
+  "deliverables": {
+    "facade_modal": "apps/web/src/components/surgery/SurgeryStudioModal.tsx",
+    "chairside_hub": "apps/web/src/components/surgery/ChairsideSurgeryHubModal.tsx",
+    "passport_modal": "apps/web/src/components/implants/ImplantPassportModal.tsx",
+    "fastify_endpoints": [
+      "POST /api/v1/surgery/implants",
+      "GET /api/v1/surgery/implants",
+      "GET /api/v1/surgery/implants/:installationId/passport",
+      "POST /api/surgery/implants",
+      "GET /api/surgery/implants",
+      "GET /api/surgery/implants/:installationId/passport"
+    ],
+    "tests_passed": [
+      "apps/web/src/components/surgery/__tests__/surgerySSOTSuite.test.tsx (8/8)",
+      "apps/web/src/components/surgery/__tests__/chairsideSurgeryHub.test.tsx (12/12)",
+      "apps/web/src/components/implants/__tests__/implantPassportModal.test.tsx (9/9)",
+      "apps/web/src/components/surgery/__tests__/surgeryStockInquisition.test.tsx (7/7)",
+      "apps/api/src/tests/webCallsExistingRoutes.test.ts (9/9)"
+    ],
+    "visual_proofs": {
+      "pc_light": "docs/proofs/surgery/surgery_pc_light.png (119 KB)",
+      "pc_dark": "docs/proofs/surgery/surgery_pc_dark.png (105 KB)",
+      "mobile_light": "docs/proofs/surgery/surgery_mobile_light.png (195 KB)",
+      "mobile_dark": "docs/proofs/surgery/surgery_mobile_dark.png (155 KB)"
+    }
+  }
+}
