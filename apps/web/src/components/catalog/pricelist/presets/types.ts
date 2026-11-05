@@ -18,8 +18,9 @@ export type ServiceCategory =
 	| "package"
 	| "other";
 
+export type ServiceStatutoryCategory = ServiceCategory;
 /** Backwards-compatible alias for Mandate 8x/8ap */
-export type Order804nCategory = ServiceCategory;
+export type Order804nCategory = ServiceStatutoryCategory;
 
 export type DoctorSpecialty =
 	| "therapist"
@@ -43,10 +44,10 @@ export interface ServicePricelistItem {
 	readonly id: string;
 	readonly statutoryCode?: string;
 	/** Backwards-compatible alias */
-	readonly code804n: string;
+	readonly code804n?: string;
 	readonly statutoryTitle?: string;
 	/** Backwards-compatible alias */
-	readonly statutoryTitle804n: string;
+	readonly statutoryTitle804n?: string;
 	readonly commercialTitle: string;
 	readonly category: ServiceCategory;
 	readonly specialty: DoctorSpecialty;

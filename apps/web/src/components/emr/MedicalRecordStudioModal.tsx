@@ -2,7 +2,7 @@
  * apps/web/src/components/emr/MedicalRecordStudioModal.tsx
  *
  * Канонический SSOT-модуль медицинской карты приёма и клинического дневника DENTE CRM.
- * Мандаты 8e (Автономия врача), 8n (Соло-врач), 8am (Единый дизайн-код), 8ze/8al (Apple Mobile HIG), 8ap/8x (Живой язык).
+ * Автономия врача, Соло-врач, Единый дизайн-код Apple Mobile HIG, Живой русский язык.
  *
  * Sweet Spot: строго 380-450 строк.
  */
@@ -33,7 +33,7 @@ import { RecordAnamnesisTab } from "./record/tabs/RecordAnamnesisTab";
 import { RecordOdontogramTab } from "./record/tabs/RecordOdontogramTab";
 import { RecordDiariesTab } from "./record/tabs/RecordDiariesTab";
 import { RecordEpicrisisTab } from "./record/tabs/RecordEpicrisisTab";
-import "./emr043Styles.css";
+import "./emrStudioStyles.css";
 
 export type RecordTabType = "overview" | "passport" | "anamnesis" | "odontogram" | "diaries" | "epicrisis";
 
@@ -103,7 +103,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 			[formData.passport.patientBirthDate, formData.passport.cardOpenedDate],
 		);
 
-		// Debounced автосейв всей карты на лету (Мандат 8e: Zero Keystroke Loss)
+		// Debounced автосейв всей карты на лету (Zero Keystroke Loss)
 		const autosaveRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 		useEffect(() => {
 			if (autosaveRef.current) clearTimeout(autosaveRef.current);
@@ -191,13 +191,13 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					style={{ maxWidth: isFullscreen ? "100%" : "1240px", height: isFullscreen ? "98vh" : "94vh" }}
 				>
 					{/* Нативный Drag Handle для шторки смартфона (Apple HIG) */}
-					<div className="emr-studio-drag-handle emr043-drag-handle sm:hidden" aria-hidden="true" />
+					<div className="emr-studio-drag-handle sm:hidden" aria-hidden="true" />
 
 					{/* 1-строчная профессиональная шапка */}
-					<header className="emr-studio-header emr043-header-toolbar">
-						<div className="emr-studio-title-group emr043-header-title-group">
+					<header className="emr-studio-header">
+						<div className="emr-studio-title-group">
 							<span
-								data-testid="badge-043-draft-status"
+								data-testid="badge-emr-draft-status"
 								className={`px-2 py-0.5 rounded border text-[11px] font-bold tracking-wider uppercase flex items-center gap-1 shrink-0 ${
 									effectiveIsDraft
 										? "border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300"
@@ -208,7 +208,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								{effectiveIsDraft ? "ЧЕРНОВИК" : "ПОДПИСАНО ВРАЧОМ"}
 							</span>
 							<div className="min-w-0 w-full">
-								<h2 className="emr-studio-title emr043-header-title truncate">
+								<h2 className="emr-studio-title truncate">
 									Медицинская карта приёма № {formData.passport.medicalCardNumber || "—"}
 								</h2>
 								<div className="truncate text-xs text-[var(--muted,#64748b)]">
@@ -219,9 +219,9 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 						</div>
 
 						{/* Действия десктопной шапки */}
-						<div className="emr-studio-actions emr043-header-actions">
+						<div className="emr-studio-actions">
 							{activeTab === "overview" && (
-								<div className="emr-studio-zoom-toolbar emr043-zoom-toolbar inline-flex items-center gap-1 border border-[var(--glass-border,#cbd5e1)] rounded-md px-1.5 py-0.5 bg-[var(--paper,#f8fafc)] h-8">
+								<div className="emr-studio-zoom-toolbar inline-flex items-center gap-1 border border-[var(--glass-border,#cbd5e1)] rounded-md px-1.5 py-0.5 bg-[var(--paper,#f8fafc)] h-8">
 									<button
 										type="button"
 										onClick={() => setZoomScale((v) => Math.max(0.5, Number((v - 0.1).toFixed(1))))}
@@ -251,11 +251,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 							<button
 								type="button"
-								className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary"
+								className="emr-studio-btn emr-studio-btn-secondary"
 								onClick={handleApplyNorm}
 								disabled={false}
-								data-testid="btn-form043-apply-norm"
-								title="Заполнить физиологической нормой / Интактные зубы (Мандат 8e)"
+								data-testid="btn-emr-apply-norm"
+								title="Заполнить физиологической нормой / Интактные зубы"
 							>
 								<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" />
 								<span>Норма в 1 клик</span>
@@ -263,10 +263,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 
 							<button
 								type="button"
-								className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary"
+								className="emr-studio-btn emr-studio-btn-secondary"
 								onClick={handlePrint}
 								disabled={false}
-								data-testid="btn-print-043-card"
+								data-testid="btn-emr-print-card"
 								title="Печать или экспорт в PDF (A4)"
 							>
 								<Printer className="w-4 h-4 shrink-0 text-slate-600 dark:text-slate-300" />
@@ -278,10 +278,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							<div className="relative inline-flex items-center" ref={moreMenuRef}>
 								<button
 									type="button"
-									className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary emr043-btn-icon-only"
+									className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only"
 									onClick={() => setIsMoreMenuOpen((v) => !v)}
 									title="Дополнительные действия"
-									data-testid="btn-043-more-actions"
+									data-testid="btn-emr-more-actions"
 								>
 									<MoreHorizontal className="w-4 h-4" />
 								</button>
@@ -307,10 +307,10 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 							{/* Ровно ОДНА Primary CTA кнопка (#0d9488, var(--teal), НИКОГДА не disabled) */}
 							<button
 								type="button"
-								className="emr-studio-btn emr043-btn emr-studio-btn-primary emr043-btn-primary"
+								className="emr-studio-btn emr-studio-btn-primary"
 								onClick={handleSaveForm}
 								disabled={false}
-								data-testid="btn-form043-save-card"
+								data-testid="btn-emr-save-card"
 								title="Сохранить и подписать медицинскую карту приёма"
 							>
 								<Check className="w-4 h-4 shrink-0" />
@@ -318,17 +318,17 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								<span className="sm:hidden">Сохранить</span>
 							</button>
 
-							<button type="button" className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary emr043-btn-icon-only emr-studio-btn-fullscreen emr043-btn-fullscreen" onClick={() => setIsFullscreen((v) => !v)} title={isFullscreen ? "Свернуть" : "На весь экран"}>
+							<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-fullscreen" onClick={() => setIsFullscreen((v) => !v)} title={isFullscreen ? "Свернуть" : "На весь экран"}>
 								{isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
 							</button>
-							<button type="button" className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary emr043-btn-icon-only emr-studio-btn-close emr043-btn-close" onClick={onClose} title="Закрыть окно">
+							<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-close" onClick={onClose} title="Закрыть окно">
 								<X className="w-5 h-5" />
 							</button>
 						</div>
 					</header>
 
 					{/* Навигационные табы приёма */}
-					<nav className="emr-studio-nav emr043-nav-tabs" style={{ flexWrap: "nowrap", width: "100%", padding: "4px 16px", gap: "6px", overflowX: "auto" }}>
+					<nav className="emr-studio-nav" style={{ flexWrap: "nowrap", width: "100%", padding: "4px 16px", gap: "6px", overflowX: "auto" }}>
 						{RECORD_TABS.map((tab) => {
 							const Icon = tab.icon;
 							const isActive = activeTab === tab.id;
@@ -336,7 +336,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 								<button
 									key={tab.id}
 									type="button"
-									className={`emr-studio-tab-btn emr043-tab-btn ${isActive ? "active" : ""}`}
+									className={`emr-studio-tab-btn ${isActive ? "active" : ""}`}
 									onClick={() => setActiveTab(tab.id)}
 								>
 									<Icon className="w-3.5 h-3.5 shrink-0" />
@@ -350,12 +350,12 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					</nav>
 
 					{/* Шкала полноты карты приёма */}
-					<div className="emr-studio-completeness emr043-completeness-bar emr043-non-printable">
+					<div className="emr-studio-completeness emr-studio-non-printable">
 						<ShieldCheck className={`w-5 h-5 ${validation.isComplete ? "text-emerald-600" : "text-amber-500"}`} />
 						<div className="text-xs font-semibold">Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
-						<div className="emr043-progress-track">
+						<div className="emr-studio-progress-track">
 							<div
-								className={`emr043-progress-fill ${validation.completenessScore >= 80 ? "green" : "yellow"}`}
+								className={`emr-studio-progress-fill ${validation.completenessScore >= 80 ? "green" : "yellow"}`}
 								style={{ width: `${validation.completenessScore}%` }}
 							/>
 						</div>
@@ -368,7 +368,7 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 									type="button"
 									onClick={handleApplyNorm}
 									disabled={false}
-									data-testid="btn-043-completeness-norm"
+									data-testid="btn-emr-completeness-norm"
 									className="text-[11px] text-[var(--teal,#0d9488)] bg-transparent border-none underline cursor-pointer font-semibold p-0"
 									title="Заполнить незаполненные показатели физиологической нормой"
 								>
@@ -379,11 +379,11 @@ export const MedicalRecordStudioModal: React.FC<MedicalRecordStudioModalProps> =
 					</div>
 
 					{/* Тело активной вкладки */}
-					<main className="emr-studio-body emr043-body">
+					<main className="emr-studio-body">
 						{activeTab === "overview" && (
-							<div className="emr043-preview-container flex flex-col items-center">
+							<div className="emr-studio-preview-container flex flex-col items-center">
 								<div
-									className="emr043-a4-sheet print-paper-sheet pro-a4-physical-sheet"
+									className="emr-studio-a4-sheet print-paper-sheet pro-a4-physical-sheet"
 									data-paper-sheet="true"
 									data-preserve-white="true"
 									style={{ transform: `scale(${zoomScale})`, transformOrigin: "top center" }}

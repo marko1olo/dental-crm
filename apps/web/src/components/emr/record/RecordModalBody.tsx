@@ -1,5 +1,5 @@
 import React from "react";
-import type { MedicalRecordData, ClinicalVisitDiaryEntry, Form043VisitDiaryEntry } from "../types/recordDataTypes";
+import type { MedicalRecordData, ClinicalVisitDiaryEntry } from "../types/recordDataTypes";
 import type { calculateDmftIndex, calculateCpitnIndex } from "../clinicalDiaryMath";
 import type { RecordTabType } from "./recordModalTypes";
 import { generateMedicalRecordPrintHtml } from "../clinicalDiaryMath";
@@ -26,11 +26,11 @@ interface RecordModalBodyProps {
 
 export const RecordModalBody: React.FC<RecordModalBodyProps> = React.memo(function RecordModalBody(props) {
 	return (
-		<main className="emr-studio-body emr043-body">
+		<main className="emr-studio-body">
 			{props.activeTab === "overview" && (
-				<div className="emr043-preview-container" style={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+				<div className="emr-studio-preview-container flex flex-col items-center">
 					<div
-						className="emr043-a4-sheet print-paper-sheet pro-a4-physical-sheet"
+						className="emr-studio-a4-sheet print-paper-sheet pro-a4-physical-sheet"
 						data-paper-sheet="true"
 						data-preserve-white="true"
 						style={{ transform: `scale(${props.zoomScale})`, transformOrigin: "top center" }}

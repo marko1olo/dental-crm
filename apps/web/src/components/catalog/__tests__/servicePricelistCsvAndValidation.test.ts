@@ -18,7 +18,9 @@ import {
 describe("Service Pricelist Engine: CSV & Validation Tests", () => {
 	const sampleService: ServicePricelistItem = {
 		id: "test-srv-1",
+		statutoryCode: "A16.07.002.001",
 		code804n: "A16.07.002.001",
+		statutoryTitle: "Восстановление зуба пломбой",
 		statutoryTitle804n: "Восстановление зуба пломбой",
 		commercialTitle: "Лечение кариеса эмали/дентина",
 		category: "therapy",
@@ -59,7 +61,7 @@ describe("Service Pricelist Engine: CSV & Validation Tests", () => {
 			assert.equal(res.validItems[1]?.category, "surgery");
 		});
 
-		it("allows multiple distinct services with the same Minzdrav 804n code", () => {
+		it("allows multiple distinct services with the same statutory service code", () => {
 			const csvData = [
 				"Код услуги;Наименование;Цена;Категория",
 				"A16.07.002;Лечение кариеса 1 поверхности;3000;Терапия",

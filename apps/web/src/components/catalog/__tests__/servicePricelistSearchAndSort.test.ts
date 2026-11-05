@@ -10,7 +10,9 @@ import type { ServicePricelistItem } from "../pricelist/servicePricelistPresets"
 describe("Service Pricelist Engine: Search & Sort Tests", () => {
 	const sampleService: ServicePricelistItem = {
 		id: "test-srv-1",
+		statutoryCode: "A16.07.002.001",
 		code804n: "A16.07.002.001",
+		statutoryTitle: "Восстановление зуба пломбой I, V, VI класс по Блэку",
 		statutoryTitle804n: "Восстановление зуба пломбой I, V, VI класс по Блэку",
 		commercialTitle: "Лечение кариеса эмали/дентина (композит светового отверждения)",
 		category: "therapy",
@@ -32,7 +34,9 @@ describe("Service Pricelist Engine: Search & Sort Tests", () => {
 		sampleService,
 		{
 			id: "test-srv-2",
+			statutoryCode: "A16.07.008.001",
 			code804n: "A16.07.008.001",
+			statutoryTitle: "Пломбирование корневого канала зуба пастой",
 			statutoryTitle804n: "Пломбирование корневого канала зуба пастой",
 			commercialTitle: "Эндодонтическое лечение пульпита (1 канал)",
 			category: "therapy",
@@ -49,7 +53,9 @@ describe("Service Pricelist Engine: Search & Sort Tests", () => {
 		},
 		{
 			id: "test-srv-3",
+			statutoryCode: "A06.07.007",
 			code804n: "A06.07.007",
+			statutoryTitle: "Прицельная внутриротовая контактная рентгенография",
 			statutoryTitle804n: "Прицельная внутриротовая контактная рентгенография",
 			commercialTitle: "Радиовизиография прицельная (RVG снимок)",
 			category: "radiology",
@@ -67,7 +73,7 @@ describe("Service Pricelist Engine: Search & Sort Tests", () => {
 	];
 
 	describe("Clinical Search & Synonym Expansion", () => {
-		it("finds therapy service by Order 804n code", () => {
+		it("finds therapy service by statutory code", () => {
 			const res = searchPricelistItems(catalog, "A16.07.002");
 			assert.equal(res.length, 1);
 			assert.equal(res[0]?.id, "test-srv-1");
@@ -88,9 +94,9 @@ describe("Service Pricelist Engine: Search & Sort Tests", () => {
 
 	describe("Sorting Catalog Items", () => {
 		const items: ServicePricelistItem[] = [
-			{ ...sampleService, id: "1", code804n: "B01.065.001", basePriceRub: 1000, commercialTitle: "Консультация" },
-			{ ...sampleService, id: "2", code804n: "A16.07.001", basePriceRub: 3500, commercialTitle: "Удаление зуба" },
-			{ ...sampleService, id: "3", code804n: "A16.07.054", basePriceRub: 35000, commercialTitle: "Имплантация Osstem" },
+			{ ...sampleService, id: "1", statutoryCode: "B01.065.001", code804n: "B01.065.001", basePriceRub: 1000, commercialTitle: "Консультация" },
+			{ ...sampleService, id: "2", statutoryCode: "A16.07.001", code804n: "A16.07.001", basePriceRub: 3500, commercialTitle: "Удаление зуба" },
+			{ ...sampleService, id: "3", statutoryCode: "A16.07.054", code804n: "A16.07.054", basePriceRub: 35000, commercialTitle: "Имплантация Osstem" },
 		];
 
 		it("sorts by price ascending and descending", () => {
@@ -103,10 +109,10 @@ describe("Service Pricelist Engine: Search & Sort Tests", () => {
 			assert.equal(desc[2]?.id, "1");
 		});
 
-		it("sorts by statutory Order 804n code", () => {
+		it("sorts by statutory service code", () => {
 			const asc = sortPricelistItems(items, "code", "asc", "standard");
-			assert.equal(asc[0]?.code804n, "A16.07.001");
-			assert.equal(asc[2]?.code804n, "B01.065.001");
+			assert.equal(asc[0]?.statutoryCode ?? asc[0]?.code804n, "A16.07.001");
+			assert.equal(asc[2]?.statutoryCode ?? asc[2]?.code804n, "B01.065.001");
 		});
 	});
 });

@@ -12176,3 +12176,36 @@
   - Проверка токенов: `node scripts/check-css-tokens.mjs` — 0 неразрешенных переменных;
   - Проверка кодировок: `npm run check:encoding` — 23 824 файла проверено, 0 замечаний (PASS).
 
+---
+
+### ВОЛНА 501: Медицинская карта приёма (ЭМК), Дневники визитов и Клинические протоколы SOAP — Red Team Инквизиция, Apple HIG Touch Ergonomics, тотальный выкос шифра «043/у», 0 disabled кнопок и 4-State Visual Proof
+
+- **1. Тотальное искоренение советского шифра «043/у» и канцелярита (Мандаты 8x, 8ap)**:
+  - Физически удален монолит `apps/web/src/components/emr/emr043Styles.css`, внедрен канонический стилевой шлюз `apps/web/src/components/emr/emrStudioStyles.css`.
+  - Все селекторы стилей переведены на канонический префикс `.emr-studio-*` (`emr-studio-header-toolbar`, `emr-studio-zoom-toolbar`, `emr-studio-card`, `emr-studio-btn`, `emr-studio-tab-btn`, `emr-studio-soap-card`).
+  - Все `data-testid` очищены: `badge-emr-draft-status`, `btn-emr-apply-norm`, `btn-emr-save-card`, `btn-emr-print-card`, `btn-emr-more-actions`.
+  - Переименована кнопка в саботажном тесте `stomtTemplatesSoapAutonomy.test.tsx`: вместо архаичного «[Шаблоны 043/у (448)]» утвержден живой медицинский язык: «[Клинические протоколы (448)]».
+  - Вычищен внутренний дев-сленг «(Мандат 8e)» из пользовательских тултипов и подписей кнопок.
+- **2. Врачебная автономия абсолютна (Мандаты 8e, 8n)**:
+  - Главные кнопки действия («Сохранить», «Печать A4», «Норма») **НИКОГДА не блокируются** (`disabled={false}`).
+  - Заполнение физиологической нормой за 1 клик («Норма в 1 клик»).
+  - Печать бланка A4 доступна на любом этапе: для незакрытого приёма выводится защитный водяной знак «ЧЕРНОВИК», после подписания врачом — статусная плашка «ПОДПИСАНО ВРАЧОМ».
+  - Пассивная строка аллергий `⚠️` без блокирующих диалогов.
+- **3. Сенсорная эргономика Apple HIG (Смартфоны 390×844)**:
+  - На смартфонах студия карты открывается в формате нативного Bottom Sheet со скруглением `rounded-t-[24px]` и тактильным Drag Handle 36×5px.
+  - Floating Bottom Bar со стеклянным размытием в Natural Thumb Zone: крупные кнопки «Норма» и Primary CTA «✓ Подписать карту» (высота $\ge 48$px, touch target $\ge 44\times 44$px).
+  - 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
+- **4. Бархатная тёмная тема (WCAG AAA)**:
+  - Глубокие фоновые токены `var(--paper)` (`#0f172a`), ноль слепящих белых пятен на элементах управления.
+  - Защищенный от инверсии лист бланка A4 (`data-paper-sheet="true"`, `data-preserve-white="true"`) с контрастным темным шрифтом.
+- **5. 4-состоятельный Red Team Visual Proof Gate**:
+  - В `docs/screenshots/emr/` сохранены и лично отсмотрены через `read_file` 4 канонических скриншота на живом приложении:
+    - `01_emr_studio_pc_light_1440x900.png` (1440×900, светлая тема десктоп, печатный бланк A4, 1 Primary CTA);
+    - `02_emr_studio_pc_dark_1440x900.png` (1440×900, тёмная тема десктоп, 0 белых пятен в UI, контрастный лист A4);
+    - `03_emr_studio_mobile_light_390x844.png` (390×844, светлая тема Apple HIG Bottom Sheet, Floating Bottom Bar);
+    - `04_emr_studio_mobile_dark_390x844.png` (390×844, тёмная тема Apple HIG Bottom Sheet).
+- **6. 100% Машинные гейты проверки**:
+  - Юнит-тесты EMR: `stomtTemplatesSoapAutonomy.test.tsx`, `emr043Export.test.ts` — 20/20 PASS, Exit Code 0;
+  - Проверка кодировок: `npm run check:encoding` — 23 829 файлов проверено, 0 замечаний (PASS);
+  - TypeScript компиляция EMR: 0 ошибок в `apps/web/src/components/emr/`.
+

@@ -102,16 +102,17 @@
 	gap: 0.5rem;
 }
 
-/* Кнопки */
+/* Кнопки: десктоп 36px по Apple Mac Studio HIG и Мандату 8am */
 .pricelist-btn {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
 	gap: 0.5rem;
-	font-size: 0.875rem;
+	font-size: 0.8125rem;
 	font-weight: 500;
-	padding: 0.5rem 1rem;
-	min-height: 40px;
+	padding: 0 0.875rem;
+	height: 36px;
+	min-height: 36px;
 	border-radius: 10px;
 	border: 1px solid var(--line, #e2e8f0);
 	background: var(--paper, #ffffff);
@@ -128,8 +129,8 @@
 }
 
 .pricelist-btn-icon {
-	width: 40px;
-	height: 40px;
+	width: 36px;
+	height: 36px;
 	padding: 0;
 	border-radius: 10px;
 	color: var(--muted, #64748b);
@@ -193,8 +194,6 @@
 	font-weight: 600;
 	color: var(--muted, #64748b);
 	white-space: nowrap;
-	text-transform: uppercase;
-	letter-spacing: 0.04em;
 	flex-shrink: 0;
 }
 
@@ -377,9 +376,7 @@
 	background: var(--paper-soft, #f8fafc);
 	color: var(--muted, #64748b);
 	font-weight: 600;
-	font-size: 0.75rem;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
+	font-size: 0.8125rem;
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	position: sticky;
 	top: 0;
@@ -704,16 +701,15 @@
 		bottom: 0;
 		left: 0;
 		right: 0;
-		background: var(--paper-strong, rgba(255, 255, 255, 0.92));
-		backdrop-filter: blur(20px);
-		-webkit-backdrop-filter: blur(20px);
+		background: var(--paper, #ffffff);
 		border-top: 1px solid var(--line, #e2e8f0);
 		padding: 0.75rem 1rem calc(0.75rem + env(safe-area-inset-bottom, 0px)) 1rem;
 		display: flex;
 		align-items: center;
-		justify-content: space-between;
+		justify-content: stretch;
 		gap: 0.75rem;
 		z-index: 50;
+		box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.08);
 	}
 
 	.pricelist-form-drawer-overlay {

@@ -4,7 +4,7 @@
  */
 
 @media (pointer: coarse), (max-width: 768px) {
-  .emr043-nav-tabs {
+  :is(.emr-studio-nav, .emr043-nav-tabs) {
     padding: 6px 10px;
     gap: 6px;
     overflow-x: auto;
@@ -13,11 +13,11 @@
     touch-action: pan-x;
   }
 
-  .emr043-nav-tabs::-webkit-scrollbar {
+  :is(.emr-studio-nav, .emr043-nav-tabs)::-webkit-scrollbar {
     display: none;
   }
 
-  .emr043-tab-btn {
+  :is(.emr-studio-tab-btn, .emr043-tab-btn) {
     min-height: 44px;
     height: 44px;
     padding: 8px 14px;
@@ -26,7 +26,7 @@
     touch-action: manipulation;
   }
 
-  .emr043-body {
+  :is(.emr-studio-body, .emr043-body) {
     padding: 12px;
     padding-bottom: calc(20px + env(safe-area-inset-bottom, 0px));
     flex: 1 1 auto;
@@ -35,33 +35,33 @@
     max-width: 100vw;
   }
 
-  .emr043-preview-container {
+  :is(.emr-studio-preview-container, .emr043-preview-container) {
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding: 4px;
     max-width: 100%;
   }
 
-  .emr043-a4-sheet {
+  :is(.emr-studio-a4-sheet, .emr043-a4-sheet) {
     max-width: 100% !important;
     padding: 16px 14px !important;
     font-size: 8pt !important;
     overflow-x: auto;
   }
 
-  .emr043-section-card {
+  :is(.emr-studio-card, .emr-studio-section-card, .emr043-section-card) {
     padding: 14px;
     border-radius: 16px;
     margin-bottom: 12px;
   }
 
-  .emr043-grid-2,
-  .emr043-grid-3 {
+  :is(.emr-studio-grid-2, .emr043-grid-2),
+  :is(.emr-studio-grid-3, .emr043-grid-3) {
     grid-template-columns: 1fr;
     gap: 10px;
   }
 
-  .emr043-tooth-cell {
+  :is(.emr-studio-tooth-cell, .emr043-tooth-cell) {
     min-width: 44px;
     min-height: 44px;
     display: flex;
@@ -70,7 +70,7 @@
     align-items: center;
   }
 
-  .emr043-completeness-bar {
+  :is(.emr-studio-completeness, .emr043-completeness-bar) {
     flex-wrap: wrap;
     padding: 10px 12px;
     gap: 8px;

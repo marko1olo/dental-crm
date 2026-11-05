@@ -3,6 +3,7 @@
  * Mandate 8b: Micro-module strictly <= 120 lines. Touch Target >= 44x44px.
  */
 
+.emr-studio-formula-matrix,
 .emr043-formula-matrix {
   display: grid;
   grid-template-columns: repeat(16, minmax(36px, 1fr));
@@ -13,6 +14,7 @@
   -webkit-overflow-scrolling: touch;
 }
 
+.emr-studio-tooth-cell,
 .emr043-tooth-cell {
   border: 1px solid var(--line, #cbd5e1);
   background: var(--paper, #ffffff);
@@ -34,12 +36,13 @@
   [data-theme="cyber_xray"],
   html.dark,
   .dark
-) .emr043-tooth-cell {
+) :is(.emr-studio-tooth-cell, .emr043-tooth-cell) {
   background: var(--paper, #0f172a);
   border-color: var(--line, #334155);
   color: var(--ink, #f8fafc);
 }
 
+.emr-studio-tooth-cell.pathology,
 .emr043-tooth-cell.pathology {
   border-color: var(--rust, #ef4444);
   background: var(--rust-soft, #fef2f2);
@@ -54,12 +57,13 @@
   [data-theme="cyber_xray"],
   html.dark,
   .dark
-) .emr043-tooth-cell.pathology {
+) :is(.emr-studio-tooth-cell.pathology, .emr043-tooth-cell.pathology) {
   background: var(--rust-soft, #450a0a);
   border-color: var(--rust, #dc2626);
   color: var(--ink);
 }
 
+.emr-studio-tooth-cell.filled,
 .emr043-tooth-cell.filled {
   border-color: var(--teal, #10b981);
   background: var(--teal-soft, #f0fdf4);
@@ -74,12 +78,13 @@
   [data-theme="cyber_xray"],
   html.dark,
   .dark
-) .emr043-tooth-cell.filled {
+) :is(.emr-studio-tooth-cell.filled, .emr043-tooth-cell.filled) {
   background: var(--teal-soft, #064e3b);
   border-color: var(--teal, #059669);
   color: var(--ink);
 }
 
+.emr-studio-objective-status-row,
 .emr043-objective-status-row {
   display: flex;
   align-items: center;
@@ -90,6 +95,6 @@
   margin-top: 8px;
 }
 
-:is([data-theme="dark"], .dark) .emr043-objective-status-row {
+:is([data-theme="dark"], .dark) :is(.emr-studio-objective-status-row, .emr043-objective-status-row) {
   background: var(--paper, #1e293b);
 }

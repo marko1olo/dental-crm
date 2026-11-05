@@ -148,7 +148,7 @@ describe("Канонический SSOT прейскуранта DENTE CRM", () 
 			);
 			assert.ok(html.includes("Прейскурант услуг"));
 			assert.ok(html.includes("Поиск по названию, коду или процедуре..."));
-			assert.ok(html.includes("+ Добавить услугу"));
+			assert.ok(html.includes("Добавить услугу"));
 			assert.ok(html.includes("Все категории"));
 			assert.ok(html.includes("Печать A4"));
 			assert.ok(html.includes("Экспорт"));

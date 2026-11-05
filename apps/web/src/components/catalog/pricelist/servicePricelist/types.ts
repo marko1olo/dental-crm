@@ -4,6 +4,7 @@ import type {
 	PriceTierKind,
 	ServiceCategory,
 	ServicePricelistItem,
+	ServiceStatutoryCategory,
 } from "../servicePricelistPresets";
 
 // =============================================================================
@@ -101,4 +102,4 @@ export type PricelistSortField =
 	| "margin"
 	| "duration";
 export type PricelistSortDirection = "asc" | "desc";
-export type { Order804nCategory };
+export type { Order804nCategory, ServiceStatutoryCategory };

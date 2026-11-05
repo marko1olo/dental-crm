@@ -2,7 +2,7 @@
  * apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx
  *
  * Дневники клинических приёмов (SOAP) медицинской карты приёма DENTE CRM.
- * Мандаты 8e (Автономия врача), 8n (Соло-врач), 8x/8ap (Чистый живой доменный язык).
+ * Автономия врача, Соло-врач, Чистый живой доменный язык.
  */
 
 import React, { useState, useCallback, useEffect, useRef } from "react";
@@ -53,7 +53,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 
 		const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-		// Восстановление черновика при монтировании (Мандат 8e: Zero Keystroke Loss)
+		// Восстановление черновика при монтировании (Zero Keystroke Loss)
 		useEffect(() => {
 			try {
 				if (typeof sessionStorage !== "undefined") {
@@ -76,7 +76,7 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 			}
 		}, [draftStorageKey]);
 
-		// Debounced автосохранение черновика на лету (Мандат 8e)
+		// Debounced автосохранение черновика на лету
 		const triggerAutosave = useCallback(
 			(state: {
 				subjective: string;
@@ -207,17 +207,17 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 
 		return (
 			<div className="max-w-full overflow-x-clip">
-				<div className="emr-studio-card emr043-section-card">
+				<div className="emr-studio-card emr-studio-section-card">
 					{/* Header toolbar */}
 					<div className="flex justify-between items-center mb-3.5 flex-wrap gap-2">
-						<h3 className="emr-studio-card-title emr043-section-card-title m-0 flex items-center gap-2">
+						<h3 className="emr-studio-card-title emr-studio-section-card-title m-0 flex items-center gap-2">
 							<Calendar className="w-4 h-4 text-sky-600" />
 							<span>4. Дневники визитов (Медицинская карта приёма)</span>
 						</h3>
 						<div className="flex items-center gap-2 flex-wrap">
 							<button
 								type="button"
-								className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+								className="emr-studio-btn emr-studio-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
 								onClick={() => setIsFormOpen((prev) => !prev)}
 								data-testid="btn-toggle-inline-diary-form"
 							>
@@ -227,9 +227,9 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 
 							<button
 								type="button"
-								className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
+								className="emr-studio-btn emr-studio-btn-secondary touch-manipulation min-h-[36px] px-3.5 py-1.5 text-xs inline-flex items-center gap-1.5"
 								onClick={() => (onOpenProtocolGenerator ? onOpenProtocolGenerator() : onOpenInternalProtocolGenerator())}
-								data-testid="form043-synthesize-diary-btn"
+								data-testid="btn-emr-synthesize-diary"
 								title="Сформировать дневник по МКБ-10 и шаблонам СтАР"
 							>
 								<Sparkles className="w-4 h-4 text-amber-500" />
@@ -280,10 +280,10 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 
 					{/* Список уже существующих записей визитов */}
 					{formData.visitDiaries.map((diary, index) => (
-						<div key={diary.id || index} className="emr043-soap-card">
+						<div key={diary.id || index} className="emr-studio-soap-card">
 							<div className="flex justify-between items-center mb-2.5 pb-1.5 border-b border-[var(--glass-border,#e2e8f0)] flex-wrap gap-2">
 								<div className="flex items-center gap-2 flex-wrap">
-									<span className="emr043-soap-badge">Визит #{formData.visitDiaries.length - index}</span>
+									<span className="emr-studio-soap-badge">Визит #{formData.visitDiaries.length - index}</span>
 									<strong>{diary.entryDate}</strong> {diary.entryTime ? `в ${diary.entryTime}` : ""}
 									{diary.toothNumber && (
 										<span className="inline-flex items-center gap-1 font-semibold text-[var(--teal,#0d9488)] text-xs ml-1">

@@ -28,29 +28,29 @@ interface RecordModalHeaderProps {
 
 export const RecordModalHeader: React.FC<RecordModalHeaderProps> = React.memo(function RecordModalHeader(props) {
 	return (
-		<header className="emr043-header-toolbar">
-			<div className="emr043-header-title-group">
-				<span className="emr043-header-badge hidden sm:inline-flex"><FileText className="w-3.5 h-3.5" />Медицинская карта пациента</span>
+		<header className="emr-studio-header-toolbar emr043-header-toolbar">
+			<div className="emr-studio-header-title-group emr043-header-title-group">
+				<span className="emr-studio-header-badge emr043-header-badge hidden sm:inline-flex"><FileText className="w-3.5 h-3.5" />Медицинская карта пациента</span>
 				{props.effectiveIsDraft ? (
-					<span data-testid="badge-043-draft-status" className="px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
+					<span data-testid="badge-emr-draft-status" data-legacy-testid="badge-043-draft-status" className="px-2.5 py-0.5 rounded border border-amber-600/40 bg-amber-500/10 text-amber-700 dark:text-amber-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
 						<FileText className="w-3 h-3 text-amber-600" />ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)
 					</span>
 				) : (
-					<span data-testid="badge-043-draft-status" className="px-2.5 py-0.5 rounded border border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
+					<span data-testid="badge-emr-draft-status" data-legacy-testid="badge-043-draft-status" className="px-2.5 py-0.5 rounded border border-emerald-600/40 bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 text-[11px] font-bold tracking-wider uppercase flex items-center gap-1">
 						<Check className="w-3 h-3 text-emerald-600" />ПОДПИСАНО ВРАЧОМ
 					</span>
 				)}
 				<div className="min-w-0">
-					<h2 className="emr043-header-title truncate">Медицинская карта № {props.formData.passport.medicalCardNumber}</h2>
+					<h2 className="emr-studio-header-title emr043-header-title truncate">Медицинская карта № {props.formData.passport.medicalCardNumber}</h2>
 					<div className="truncate" style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 						Пациент: <strong>{props.formData.passport.patientFullName}</strong> ({props.ageText}) • Врач: <strong>{props.formData.passport.attendingDoctorFullName}</strong>
 					</div>
 				</div>
 			</div>
 
-			<div className="emr043-header-actions">
+			<div className="emr-studio-header-actions emr043-header-actions">
 				{props.activeTab === "overview" && (
-					<div className="emr043-zoom-toolbar" style={{ display: "inline-flex", alignItems: "center", gap: "3px", border: "1px solid var(--glass-border, #cbd5e1)", borderRadius: "6px", padding: "2px 6px", background: "var(--paper, #f8fafc)", height: "32px" }}>
+					<div className="emr-studio-zoom-toolbar emr043-zoom-toolbar" style={{ display: "inline-flex", alignItems: "center", gap: "3px", border: "1px solid var(--glass-border, #cbd5e1)", borderRadius: "6px", padding: "2px 6px", background: "var(--paper, #f8fafc)", height: "32px" }}>
 						<button type="button" onClick={() => props.setZoomScale((v) => Math.max(0.5, Number((v - 0.1).toFixed(1))))} disabled={props.zoomScale <= 0.5} title="Уменьшить масштаб" style={{ background: "transparent", border: "none", cursor: props.zoomScale <= 0.5 ? "not-allowed" : "pointer", padding: "2px", opacity: props.zoomScale <= 0.5 ? 0.35 : 1 }}>
 							<ZoomOut className="w-3.5 h-3.5" />
 						</button>
@@ -66,17 +66,17 @@ export const RecordModalHeader: React.FC<RecordModalHeaderProps> = React.memo(fu
 					</div>
 				)}
 
-				<button type="button" className="emr043-btn emr043-btn-secondary" onClick={props.onApplyNorm} disabled={false} data-testid="btn-form043-apply-norm" title="Заполнить физиологической нормой / Интактные зубы (Мандат 8e)">
+				<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr043-btn emr043-btn-secondary" onClick={props.onApplyNorm} disabled={false} data-testid="btn-emr-apply-norm" data-legacy-testid="btn-form043-apply-norm" title="Заполнить физиологической нормой / Интактные зубы">
 					<Sparkles className="w-4 h-4 text-emerald-600 shrink-0" /><span>Норма</span>
 				</button>
 
 				{props.hasOnSave && (
-					<button type="button" className="emr043-btn emr043-btn-secondary" onClick={props.onSaveForm} disabled={false} data-testid="btn-form043-save-card" title="Сохранить карту">
+					<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr043-btn emr043-btn-secondary" onClick={props.onSaveForm} disabled={false} data-testid="btn-emr-save-card" data-legacy-testid="btn-form043-save-card" title="Сохранить карту">
 						<Check className="w-4 h-4 text-emerald-600 shrink-0" /><span>Сохранить</span>
 					</button>
 				)}
 
-				<button type="button" className="emr043-btn emr043-btn-primary" onClick={props.onPrint} disabled={false} data-testid="btn-print-043-card" title="Печать или экспорт в PDF (A4)">
+				<button type="button" className="emr-studio-btn emr-studio-btn-primary emr043-btn emr043-btn-primary" onClick={props.onPrint} disabled={false} data-testid="btn-emr-print-card" data-legacy-testid="btn-print-043-card" title="Печать или экспорт в PDF (A4)">
 					<Printer className="w-4 h-4 shrink-0" /><span className="hidden sm:inline">Печать / PDF (A4)</span><span className="sm:hidden">Печать / PDF</span>
 				</button>
 
@@ -92,10 +92,10 @@ export const RecordModalHeader: React.FC<RecordModalHeaderProps> = React.memo(fu
 					onCopyText={props.onCopyText}
 				/>
 
-				<button type="button" className="emr043-btn emr043-btn-secondary emr043-btn-icon-only emr043-btn-fullscreen" onClick={() => props.setIsFullscreen((v) => !v)} title={props.isFullscreen ? "Свернуть" : "На весь экран"}>
+				<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-fullscreen emr043-btn emr043-btn-secondary emr043-btn-icon-only emr043-btn-fullscreen" onClick={() => props.setIsFullscreen((v) => !v)} title={props.isFullscreen ? "Свернуть" : "На весь экран"}>
 					{props.isFullscreen ? <Minimize2 className="w-4 h-4" /> : <Maximize2 className="w-4 h-4" />}
 				</button>
-				<button type="button" className="emr043-btn emr043-btn-secondary emr043-btn-icon-only emr043-btn-close" onClick={props.onClose} title="Закрыть окно">
+				<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr-studio-btn-close emr043-btn emr043-btn-secondary emr043-btn-icon-only emr043-btn-close" onClick={props.onClose} title="Закрыть окно">
 					<X className="w-5 h-5" />
 				</button>
 			</div>

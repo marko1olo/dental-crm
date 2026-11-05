@@ -3,12 +3,14 @@
  * Mandate 8b: Micro-module strictly <= 120 lines. Touch Target >= 44x44px.
  */
 
+.emr-studio-periodontal-panel,
 .emr043-periodontal-panel {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
+.emr-studio-index-metric-box,
 .emr043-index-metric-box {
   display: flex;
   flex-direction: column;
@@ -18,11 +20,12 @@
   border-radius: 8px;
 }
 
-:is([data-theme="dark"], .dark) .emr043-index-metric-box {
+:is([data-theme="dark"], .dark) :is(.emr-studio-index-metric-box, .emr043-index-metric-box) {
   background: var(--paper-strong, #1e293b);
   border-color: var(--line, #334155);
 }
 
+.emr-studio-index-value-huge,
 .emr043-index-value-huge {
   font-size: 20px;
   font-weight: 800;
@@ -31,10 +34,11 @@
   line-height: 1.2;
 }
 
-:is([data-theme="dark"], .dark) .emr043-index-value-huge {
+:is([data-theme="dark"], .dark) :is(.emr-studio-index-value-huge, .emr043-index-value-huge) {
   color: #2dd4bf;
 }
 
+.emr-studio-pocket-depth-badge,
 .emr043-pocket-depth-badge {
   display: inline-flex;
   align-items: center;
@@ -50,18 +54,21 @@
   border: 1px solid var(--line, #cbd5e1);
 }
 
+.emr-studio-pocket-depth-badge.warning,
 .emr043-pocket-depth-badge.warning {
   background: rgba(245, 158, 11, 0.15);
   color: #b45309;
   border-color: #f59e0b;
 }
 
+.emr-studio-pocket-depth-badge.danger,
 .emr043-pocket-depth-badge.danger {
   background: rgba(239, 68, 68, 0.15);
   color: #dc2626;
   border-color: #ef4444;
 }
 
+.emr-studio-cpitn-grid,
 .emr043-cpitn-grid {
   display: grid;
   grid-template-columns: repeat(6, 1fr);
@@ -69,6 +76,7 @@
   margin-top: 6px;
 }
 
+.emr-studio-cpitn-sextant,
 .emr043-cpitn-sextant {
   text-align: center;
   padding: 6px 2px;
@@ -78,7 +86,7 @@
   font-size: 11px;
 }
 
-:is([data-theme="dark"], .dark) .emr043-cpitn-sextant {
+:is([data-theme="dark"], .dark) :is(.emr-studio-cpitn-sextant, .emr043-cpitn-sextant) {
   background: var(--paper, #0f172a);
   border-color: var(--line, #334155);
 }

@@ -89,7 +89,7 @@ describe("Wave 108: StomX 448 Templates & 1-Tap SOAP Integrator Suite", () => {
 		assert.ok(mkbK04.length > 0, "Поиск по коду МКБ K04 находит шаблоны пульпита/периодонтита");
 	});
 
-	it("5. VisitSoapEditor renders with 1-click button [Шаблоны 043/у (448)], norm button and FDI tooth selector", () => {
+	it("5. VisitSoapEditor renders with 1-click button [Клинические протоколы (448)], norm button and FDI tooth selector", () => {
 		const html = renderToStaticMarkup(
 			createElement(VisitSoapEditor, {
 				activeTooth: 46,

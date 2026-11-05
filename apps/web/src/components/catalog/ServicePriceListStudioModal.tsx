@@ -218,7 +218,7 @@ export const ServicePriceListStudioModal: React.FC<ServicePriceListStudioModalPr
 							<Download size={16} /><span className="hidden sm:inline">Экспорт</span>
 						</button>
 						<button type="button" className="pricelist-btn pricelist-btn-primary" onClick={handleOpenCreate}>
-							<Plus size={16} /><span>+ Добавить услугу</span>
+							<Plus size={16} /><span>Добавить услугу</span>
 						</button>
 						<button type="button" className="pricelist-btn pricelist-btn-icon" onClick={onClose} aria-label="Закрыть">
 							<X size={18} />
@@ -398,9 +398,8 @@ export const ServicePriceListStudioModal: React.FC<ServicePriceListStudioModalPr
 
 				{/* Плавающая нижняя панель на мобильном (Thumb Zone) */}
 				<div className="pricelist-floating-bottom-bar sm:hidden">
-					<div className="pricelist-toolbar-stats text-xs text-[var(--muted)]">{filteredItems.length} позиций</div>
-					<button type="button" className="pricelist-btn pricelist-btn-primary" style={{ flex: 1, maxWidth: "220px", height: "46px" }} onClick={handleOpenCreate}>
-						<Plus size={18} /><span>+ Добавить услугу</span>
+					<button type="button" className="pricelist-btn pricelist-btn-primary" style={{ width: "100%", height: "48px", minHeight: "48px", fontSize: "0.9375rem" }} onClick={handleOpenCreate}>
+						<Plus size={18} /><span>Добавить услугу</span>
 					</button>
 				</div>
 

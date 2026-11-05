@@ -2,7 +2,7 @@
  * apps/web/src/components/emr/record/tabs/RecordOdontogramTab.tsx
  *
  * Зубная формула, клинические индексы (КПУ, CPITN) и стоматологический статус DENTE CRM.
- * Мандаты 8e (Автономия врача), 8x/8ap (Чистый живой доменный язык).
+ * Автономия врача, Чистый живой доменный язык.
  */
 
 import React from "react";
@@ -39,28 +39,29 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 				extracted_absent: "Missing",
 				missing: "Missing",
 				implant: "Implant",
-				root: "Radix",
-				radix: "Radix",
+				root: "Root",
+				radix: "Root",
 			};
 			return (d.odontogramTeeth || []).map((t) => ({
 				toothNumber: t.toothNumber,
 				state: (codeMap[t.statusCode] || "Healthy") as ToothState,
 				surfaces: (t.surfaces || []).map((s) => {
-					if (s === "occlusal") return "Occ";
-					if (s === "vestibular") return "V";
-					if (s === "lingual") return "L";
-					if (s === "medial") return "M";
-					if (s === "distal") return "D";
-					return String(s);
+					const str = String(s);
+					if (str === "occlusal") return "Occ";
+					if (str === "vestibular") return "V";
+					if (str === "oral" || str === "lingual") return "L";
+					if (str === "mesial" || str === "medial") return "M";
+					if (str === "distal") return "D";
+					return str;
 				}),
 			}));
 		}, [d.odontogramTeeth]);
 
 		return (
 			<div>
-				<div className="emr-studio-card emr043-section-card">
+				<div className="emr-studio-card emr-studio-section-card">
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
-						<h3 className="emr-studio-card-title emr043-section-card-title flex items-center gap-2" style={{ margin: 0 }}>
+						<h3 className="emr-studio-card-title emr-studio-section-card-title flex items-center gap-2" style={{ margin: 0 }}>
 							<Activity className="w-4 h-4 text-sky-600" />
 							<span>3. Стоматологический статус, зубная формула FDI и клинические индексы</span>
 						</h3>
@@ -68,8 +69,8 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 							type="button"
 							onClick={onApplyNorm}
 							disabled={false}
-							data-testid="btn-043-status-norm"
-							className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary"
+							data-testid="btn-emr-status-norm"
+							className="emr-studio-btn emr-studio-btn-secondary"
 							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
 							title="Зафиксировать физиологическую норму слизистой оболочки и прикуса"
 						>
@@ -88,9 +89,9 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 						/>
 					</div>
 
-					<div className="emr043-grid-3" style={{ marginTop: "16px" }}>
-						<div className="emr-studio-card emr043-section-card" style={{ padding: "12px" }}>
-							<div className="emr043-field-label">Индекс интенсивности КПУ(з):</div>
+					<div className="emr-studio-grid-3" style={{ marginTop: "16px" }}>
+						<div className="emr-studio-card emr-studio-section-card" style={{ padding: "12px" }}>
+							<div className="emr-studio-field-label">Индекс интенсивности КПУ(з):</div>
 							<div style={{ fontSize: "18px", fontWeight: 800, color: "var(--teal)" }}>КПУ = {dmft.totalDmft}</div>
 							<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 								К = {dmft.decayed}, П = {dmft.filled}, У = {dmft.missing}<br />
@@ -98,14 +99,14 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 							</div>
 						</div>
 
-						<div className="emr-studio-card emr043-section-card" style={{ padding: "12px" }}>
-							<div className="emr043-field-label">Пародонтальный статус (CPITN):</div>
+						<div className="emr-studio-card emr-studio-section-card" style={{ padding: "12px" }}>
+							<div className="emr-studio-field-label">Пародонтальный статус (CPITN):</div>
 							<div style={{ fontSize: "14px", fontWeight: 700 }}>{cpitn.treatmentNeedLabel}</div>
 							<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>{cpitn.treatmentRecommendations}</div>
 						</div>
 
-						<div className="emr-studio-card emr043-section-card" style={{ padding: "12px" }}>
-							<div className="emr043-field-label">Индекс гигиены и прикус:</div>
+						<div className="emr-studio-card emr-studio-section-card" style={{ padding: "12px" }}>
+							<div className="emr-studio-field-label">Индекс гигиены и прикус:</div>
 							<div style={{ fontSize: "13px", fontWeight: 600 }}>{d.hygieneIndexOhiS.ratingText}</div>
 							<div style={{ fontSize: "12px", color: "var(--muted, #64748b)" }}>
 								Прикус: {dentalBiteTypeLabels[d.biteType] || d.biteDescription}
@@ -114,15 +115,15 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 					</div>
 
 					<div style={{ marginTop: "14px" }}>
-						<div className="emr043-field-label">Состояние СОПР, лимфоузлов и ВНЧС:</div>
-						<div className="emr043-field-value">
+						<div className="emr-studio-field-label">Состояние СОПР, лимфоузлов и ВНЧС:</div>
+						<div className="emr-studio-field-value">
 							Слизистая: {d.oralMucosaStatus.color === "pale_pink_normal" ? "бледно-розовая, умеренно влажная" : "гиперемирована"}. Язык: {d.oralMucosaStatus.tongueStatus}. Лимфоузлы: {d.oralMucosaStatus.regionalLymphNodes}. ВНЧС: {d.oralMucosaStatus.tmjFunction}.
 						</div>
 					</div>
 
 					<div style={{ marginTop: "14px" }}>
-						<div className="emr043-field-label">Рентгенологическое обследование:</div>
-						<div className="emr043-field-value">
+						<div className="emr-studio-field-label">Рентгенологическое обследование:</div>
+						<div className="emr-studio-field-value">
 							{d.xrayFindingsDescription}
 							{d.xrayRadiationDoseMsv ? ` (Лучевая нагрузка: ${d.xrayRadiationDoseMsv} мЗв)` : ""}
 						</div>

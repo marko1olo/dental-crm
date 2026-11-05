@@ -2,7 +2,7 @@
  * apps/web/src/components/emr/record/tabs/RecordAnamnesisTab.tsx
  *
  * Жалобы и соматический анамнез медицинской карты приёма DENTE CRM.
- * Мандаты 8e (Автономия врача), 8x/8ap (Чистый живой доменный язык).
+ * Автономия врача, Чистый живой доменный язык.
  */
 
 import React from "react";
@@ -21,9 +21,9 @@ export const RecordAnamnesisTab: React.FC<RecordAnamnesisTabProps> = React.memo(
 		const a = formData.anamnesis;
 		return (
 			<div>
-				<div className="emr-studio-card emr043-section-card">
+				<div className="emr-studio-card emr-studio-section-card">
 					<div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "8px" }}>
-						<h3 className="emr-studio-card-title emr043-section-card-title flex items-center gap-2" style={{ margin: 0 }}>
+						<h3 className="emr-studio-card-title emr-studio-section-card-title flex items-center gap-2" style={{ margin: 0 }}>
 							<HeartPulse className="w-4 h-4 text-sky-600" />
 							<span>2. Жалобы и соматический анамнез</span>
 						</h3>
@@ -31,8 +31,8 @@ export const RecordAnamnesisTab: React.FC<RecordAnamnesisTabProps> = React.memo(
 							type="button"
 							onClick={onApplyNorm}
 							disabled={false}
-							data-testid="btn-043-anamnesis-norm"
-							className="emr-studio-btn emr043-btn emr-studio-btn-secondary emr043-btn-secondary"
+							data-testid="btn-emr-anamnesis-norm"
+							className="emr-studio-btn emr-studio-btn-secondary"
 							style={{ fontSize: "11px", padding: "4px 8px", height: "28px" }}
 							title="Заполнить незаполненные графы анамнеза физиологической нормой"
 						>
@@ -40,26 +40,26 @@ export const RecordAnamnesisTab: React.FC<RecordAnamnesisTabProps> = React.memo(
 							<span>Норма в 1 клик</span>
 						</button>
 					</div>
-					<div className="emr043-grid-2">
+					<div className="emr-studio-grid-2">
 						<div style={{ gridColumn: "1 / -1" }}>
-							<div className="emr043-field-label">Жалобы при обращении:</div>
-							<div className="emr043-field-value">{a.chiefComplaint}</div>
+							<div className="emr-studio-field-label">Жалобы при обращении:</div>
+							<div className="emr-studio-field-value">{a.chiefComplaint}</div>
 						</div>
 						<div style={{ gridColumn: "1 / -1" }}>
-							<div className="emr043-field-label">История настоящего заболевания:</div>
-							<div className="emr043-field-value">{a.historyOfPresentIllness}</div>
+							<div className="emr-studio-field-label">История настоящего заболевания:</div>
+							<div className="emr-studio-field-value">{a.historyOfPresentIllness}</div>
 						</div>
 						<div style={{ gridColumn: "1 / -1" }}>
-							<div className="emr043-field-label">Анамнез жизни:</div>
-							<div className="emr043-field-value">{a.medicalHistoryVitae}</div>
+							<div className="emr-studio-field-label">Анамнез жизни:</div>
+							<div className="emr-studio-field-value">{a.medicalHistoryVitae}</div>
 						</div>
 						<div>
-							<div className="emr043-field-label">Аллергологический статус:</div>
-							<div className="emr043-field-value">
+							<div className="emr-studio-field-label">Аллергологический статус:</div>
+							<div className="emr-studio-field-value">
 								{a.allergologicalHistory &&
 								!a.allergologicalHistory.toLowerCase().includes("не отягощен") &&
 								!a.allergologicalHistory.toLowerCase().includes("нет") ? (
-									<span className="emr043-allergy-warning-inline inline-flex items-center gap-1">
+									<span className="emr-studio-allergy-warning-inline inline-flex items-center gap-1">
 										<AlertTriangle className="w-3.5 h-3.5 text-amber-500 shrink-0" />
 										{a.allergologicalHistory}
 									</span>
@@ -69,16 +69,16 @@ export const RecordAnamnesisTab: React.FC<RecordAnamnesisTabProps> = React.memo(
 							</div>
 						</div>
 						<div>
-							<div className="emr043-field-label">Сопутствующие соматические патологии:</div>
-							<div className="emr043-field-value">{a.concomitantSomaticDiseases}</div>
+							<div className="emr-studio-field-label">Сопутствующие соматические патологии:</div>
+							<div className="emr-studio-field-value">{a.concomitantSomaticDiseases}</div>
 						</div>
 						<div>
-							<div className="emr043-field-label">Постоянный прием медикаментов:</div>
-							<div className="emr043-field-value">{a.currentSystemicMedications}</div>
+							<div className="emr-studio-field-label">Постоянный прием медикаментов:</div>
+							<div className="emr-studio-field-value">{a.currentSystemicMedications}</div>
 						</div>
 						<div>
-							<div className="emr043-field-label">Переносимость анестезии и стоматологических вмешательств:</div>
-							<div className="emr043-field-value">{a.pastDentalInterventions}</div>
+							<div className="emr-studio-field-label">Переносимость анестезии и стоматологических вмешательств:</div>
+							<div className="emr-studio-field-value">{a.pastDentalInterventions}</div>
 						</div>
 					</div>
 				</div>

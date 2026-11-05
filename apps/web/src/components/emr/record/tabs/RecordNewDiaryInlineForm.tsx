@@ -1,3 +1,10 @@
+/**
+ * apps/web/src/components/emr/record/tabs/RecordNewDiaryInlineForm.tsx
+ *
+ * Быстрая форма добавления записи приёма (SOAP) в медицинскую карту.
+ * Автономия врача, Чистый живой доменный язык.
+ */
+
 import React from "react";
 import { Sparkles, Plus, RotateCcw } from "lucide-react";
 
@@ -76,9 +83,9 @@ export const RecordNewDiaryInlineForm: React.FC<RecordNewDiaryInlineFormProps> =
 					<button
 						type="button"
 						onClick={onApplyNorm}
-						className="emr043-btn emr043-btn-secondary min-h-[36px] text-xs px-2.5 py-1 inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300"
+						className="emr-studio-btn emr-studio-btn-secondary min-h-[36px] text-xs px-2.5 py-1 inline-flex items-center gap-1 text-emerald-700 dark:text-emerald-300"
 						data-testid="btn-inline-diary-norm"
-						title="Заполнить физиологической нормой в 1 клик (Мандат 8e)"
+						title="Заполнить физиологической нормой в 1 клик / Интактные зубы"
 					>
 						<Sparkles className="w-3.5 h-3.5 text-emerald-600" />
 						<span>Норма в 1 клик / Интактные зубы</span>
@@ -152,12 +159,12 @@ export const RecordNewDiaryInlineForm: React.FC<RecordNewDiaryInlineFormProps> =
 					/>
 				</div>
 
-				{/* Ровно ОДНА Primary CTA кнопка (Мандат 8am) */}
+				{/* Ровно ОДНА Primary CTA кнопка */}
 				<div className="flex items-center justify-between flex-wrap gap-2 pt-2 border-t border-teal-500/20">
 					<button
 						type="button"
 						onClick={onClear}
-						className="emr043-btn emr043-btn-secondary min-h-[44px] text-xs px-3 inline-flex items-center gap-1"
+						className="emr-studio-btn emr-studio-btn-secondary min-h-[44px] text-xs px-3 inline-flex items-center gap-1"
 					>
 						<RotateCcw className="w-3.5 h-3.5 text-slate-500" />
 						<span>Очистить черновик</span>
@@ -166,7 +173,7 @@ export const RecordNewDiaryInlineForm: React.FC<RecordNewDiaryInlineFormProps> =
 					<button
 						type="button"
 						onClick={onSave}
-						className="emr043-btn emr043-btn-primary min-h-[44px] px-5 py-2 text-xs font-bold inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg shadow-sm"
+						className="emr-studio-btn emr-studio-btn-primary min-h-[44px] px-5 py-2 text-xs font-bold inline-flex items-center gap-2 bg-gradient-to-r from-teal-600 to-emerald-600 text-white rounded-lg shadow-sm"
 						data-testid="btn-save-inline-diary"
 					>
 						<Plus className="w-4 h-4" />

@@ -11,11 +11,11 @@ export const RecordCompletenessBar: React.FC<RecordCompletenessBarProps> = React
 	const progressColor = validation.completenessScore >= 80 ? "green" : "yellow";
 
 	return (
-		<div className="emr043-completeness-bar emr043-non-printable">
+		<div className="emr-studio-completeness emr-studio-non-printable">
 			<ShieldCheck className={`w-5 h-5 ${validation.isComplete ? "text-emerald-600" : "text-amber-500"}`} />
 			<div style={{ fontSize: "12px", fontWeight: 600 }}>Заполненность карты: <strong>{validation.completenessScore}%</strong></div>
-			<div className="emr043-progress-track">
-				<div className={`emr043-progress-fill ${progressColor}`} style={{ width: `${validation.completenessScore}%` }} />
+			<div className="emr-studio-progress-track">
+				<div className={`emr-studio-progress-fill ${progressColor}`} style={{ width: `${validation.completenessScore}%` }} />
 			</div>
 			{validation.missingFields.length > 0 && (
 				<div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap" }}>
@@ -26,11 +26,11 @@ export const RecordCompletenessBar: React.FC<RecordCompletenessBarProps> = React
 						type="button"
 						onClick={onApplyNorm}
 						disabled={false}
-						data-testid="btn-043-completeness-norm"
+						data-testid="btn-emr-completeness-norm"
 						style={{ fontSize: "11px", color: "var(--teal, #0d9488)", background: "transparent", border: "none", textDecoration: "underline", cursor: "pointer", fontWeight: 600, padding: 0 }}
 						title="Заполнить незаполненные показатели физиологической нормой"
 					>
-						Заполнить нормой
+						Норма в 1 клик
 					</button>
 				</div>
 			)}

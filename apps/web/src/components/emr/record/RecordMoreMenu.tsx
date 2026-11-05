@@ -27,16 +27,16 @@ export const RecordMoreMenu: React.FC<RecordMoreMenuProps> = React.memo(function
 
 	return (
 		<div className="relative inline-flex items-center" ref={moreMenuRef}>
-			<button type="button" className="emr043-btn emr043-btn-secondary emr043-btn-icon-only" onClick={() => props.setIsOpen((v) => !v)} title="Дополнительные действия" data-testid="btn-043-more-actions">
+			<button type="button" className="emr-studio-btn emr-studio-btn-secondary emr-studio-btn-icon-only emr043-btn emr043-btn-secondary emr043-btn-icon-only" onClick={() => props.setIsOpen((v) => !v)} title="Дополнительные действия" data-testid="btn-emr-more-actions" data-legacy-testid="btn-043-more-actions">
 				<MoreHorizontal className="w-4 h-4" />
 			</button>
 			{props.isOpen && (
 				<div className="absolute right-0 top-full mt-1 w-56 bg-[var(--paper-strong,#ffffff)] dark:bg-slate-900 border border-[var(--glass-border,#cbd5e1)] dark:border-slate-700 rounded-lg shadow-xl z-50 py-1 text-xs text-[var(--ink,#0f172a)] dark:text-slate-100" style={{ minWidth: "210px" }}>
-					<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { props.onApplyNorm(); props.setIsOpen(false); }} data-testid="btn-043-more-apply-norm">
+					<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { props.onApplyNorm(); props.setIsOpen(false); }} data-testid="btn-emr-more-apply-norm" data-legacy-testid="btn-043-more-apply-norm">
 						<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" /><span>Физиологическая норма</span>
 					</button>
 					{props.hasOnSave && (
-						<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { props.onSaveForm(); props.setIsOpen(false); }} data-testid="btn-043-more-save">
+						<button type="button" className="w-full text-left px-3 py-2 hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center gap-2 cursor-pointer" onClick={() => { props.onSaveForm(); props.setIsOpen(false); }} data-testid="btn-emr-more-save" data-legacy-testid="btn-043-more-save">
 							<Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" /><span>Сохранить карту</span>
 						</button>
 					)}
