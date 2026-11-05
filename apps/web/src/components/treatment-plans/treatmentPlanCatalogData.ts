@@ -22,45 +22,44 @@ export interface TreatmentTierDefinition {
 	readonly amountKopecks: bigint;
 }
 
-/** 3 канонических тарифа планов лечения (РФ 1–5 кресел) */
-export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
-	{
-		id: "economy",
-		title: "Эконом",
-		subtitle: "Базовые сертифицированные материалы РФ и стандартное протезирование",
-		badge: "Базовый",
-		isRecommended: false,
-		warrantyYears: 1,
-		keyAdvantages: ["Качественные композитные материалы РФ", "Санация очагов кариеса и купирование воспаления", "Стандартная металлокерамика и базовые импланты", "Гарантийный срок клиники 1 год"],
-		totalRub: 35000,
-		totalKopecks: 3500000,
-		amountKopecks: 3500000n,
-	},
-	{
-		id: "optimum",
-		title: "★ Оптимум",
-		subtitle: "Золотой стандарт клиники: наногибридный композит, микроскоп и диоксид циркония",
-		badge: "Рекомендуемый",
-		isRecommended: true,
-		warrantyYears: 3,
-		keyAdvantages: ["Лечение корневых каналов под операционным микроскопом", "Наногибридные реставрации с сохранением эстетики", "Анатомические коронки из диоксида циркония CAD/CAM", "Дентальные имплантаты с гидрофильной поверхностью", "Расширенная гарантия клиники 3 года"],
-		totalRub: 105000,
-		totalKopecks: 10500000,
-		amountKopecks: 10500000n,
-	},
-	{
-		id: "premium",
-		title: "Премиум",
-		subtitle: "Импортная эстетика и биоинженерия: швейцарские импланты и керамика e.max",
-		badge: "Премиум",
-		isRecommended: false,
-		warrantyYears: 10,
-		keyAdvantages: ["Швейцарская имплантационная система высшей категории", "Ультратонкая прессованная безметалловая керамика IPS e.max", "Цифровой 3D-дизайн улыбки и персональный куратор", "Консилиум ведущих специалистов клиники", "Расширенная гарантия производителя 10 лет"],
-		totalRub: 185000,
-		totalKopecks: 18500000,
-		amountKopecks: 18500000n,
-	},
-];
+/** Расчет динамической суммы этапов в копейках и рублях */
+export function computeStagesKopecks(stages: readonly TreatmentPlanStage[], multiplier = 1.0): {
+	readonly totalRub: number;
+	readonly totalKopecks: number;
+	readonly amountKopecks: bigint;
+	readonly stages: readonly TreatmentPlanStage[];
+} {
+	const mappedStages = stages.map((stg) => {
+		const mappedItems = stg.items.map((it) => {
+			const itemPriceKopecks = BigInt(Math.round(it.priceRub * 100));
+			const scaledKopecks = (itemPriceKopecks * BigInt(Math.round(multiplier * 100))) / 100n;
+			const scaledRub = Number(scaledKopecks / 100n);
+			return {
+				...it,
+				priceRub: scaledRub,
+				unitPriceRub: typeof it.unitPriceRub === "number" ? scaledRub : undefined,
+			};
+		});
+
+		const stageTotalRub = mappedItems.reduce((sum, it) => sum + it.priceRub, 0);
+		const stageTotalKopecks = stageTotalRub * 100;
+		return {
+			...stg,
+			totalRub: stageTotalRub,
+			totalKopecks: stageTotalKopecks,
+			items: mappedItems,
+		};
+	});
+
+	const totalRub = mappedStages.reduce((sum, s) => sum + s.totalRub, 0);
+	const totalKopecks = totalRub * 100;
+	return {
+		totalRub,
+		totalKopecks,
+		amountKopecks: BigInt(totalKopecks),
+		stages: mappedStages,
+	};
+}
 
 /** 4 канонических клинических этапа комплексного плана */
 export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
@@ -132,6 +131,50 @@ export const CANONICAL_CLINICAL_STAGES: readonly TreatmentPlanStage[] = [
 	},
 ];
 
+/** 3 канонических тарифа планов лечения (динамический расчет из номенклатуры РФ 1–5 кресел) */
+const initialEconomyTotals = computeStagesKopecks(CANONICAL_CLINICAL_STAGES, 0.75);
+const initialOptimumTotals = computeStagesKopecks(CANONICAL_CLINICAL_STAGES, 1.0);
+const initialPremiumTotals = computeStagesKopecks(CANONICAL_CLINICAL_STAGES, 1.45);
+
+export const CANONICAL_TIER_DEFINITIONS: readonly TreatmentTierDefinition[] = [
+	{
+		id: "economy",
+		title: "Эконом",
+		subtitle: "Базовые сертифицированные материалы РФ и стандартное протезирование",
+		badge: "Базовый",
+		isRecommended: false,
+		warrantyYears: 1,
+		keyAdvantages: ["Качественные композитные материалы РФ", "Санация очагов кариеса и купирование воспаления", "Стандартная металлокерамика и базовые импланты", "Гарантийный срок клиники 1 год"],
+		totalRub: initialEconomyTotals.totalRub,
+		totalKopecks: initialEconomyTotals.totalKopecks,
+		amountKopecks: initialEconomyTotals.amountKopecks,
+	},
+	{
+		id: "optimum",
+		title: "★ Оптимум",
+		subtitle: "Золотой стандарт клиники: наногибридный композит, микроскоп и диоксид циркония",
+		badge: "Рекомендуемый",
+		isRecommended: true,
+		warrantyYears: 3,
+		keyAdvantages: ["Лечение корневых каналов под операционным микроскопом", "Наногибридные реставрации с сохранением эстетики", "Анатомические коронки из диоксида циркония CAD/CAM", "Дентальные имплантаты с гидрофильной поверхностью", "Расширенная гарантия клиники 3 года"],
+		totalRub: initialOptimumTotals.totalRub,
+		totalKopecks: initialOptimumTotals.totalKopecks,
+		amountKopecks: initialOptimumTotals.amountKopecks,
+	},
+	{
+		id: "premium",
+		title: "Премиум",
+		subtitle: "Импортная эстетика и биоинженерия: швейцарские импланты и керамика e.max",
+		badge: "Премиум",
+		isRecommended: false,
+		warrantyYears: 10,
+		keyAdvantages: ["Швейцарская имплантационная система высшей категории", "Ультратонкая прессованная безметалловая керамика IPS e.max", "Цифровой 3D-дизайн улыбки и персональный куратор", "Консилиум ведущих специалистов клиники", "Расширенная гарантия производителя 10 лет"],
+		totalRub: initialPremiumTotals.totalRub,
+		totalKopecks: initialPremiumTotals.totalKopecks,
+		amountKopecks: initialPremiumTotals.amountKopecks,
+	},
+];
+
 /** Фильтрация копеечных микро-расходников для клиента (Мандат 8e) */
 export function sanitizePatientPresentationStages(stages: readonly TreatmentPlanStage[]): readonly TreatmentPlanStage[] {
 	return stages.map((stage) => {
@@ -166,7 +209,14 @@ export function applyDoctorDiscountToTiers(tiers: readonly TreatmentPlanTier[], 
 		});
 
 		const totalRub = discountedStages.reduce((sum, s) => sum + s.totalRub, 0);
-		return { ...tier, totalRub, totalKopecks: totalRub * 100, stages: discountedStages };
+		const totalKopecks = totalRub * 100;
+		return {
+			...tier,
+			totalRub,
+			totalKopecks,
+			amountKopecks: BigInt(totalKopecks),
+			stages: discountedStages,
+		};
 	});
 }
 
@@ -191,6 +241,7 @@ export function buildCanonical3TierPlans(baseStages = CANONICAL_CLINICAL_STAGES)
 		});
 
 		const totalRub = tierStages.reduce((sum, s) => sum + s.totalRub, 0);
+		const totalKopecks = totalRub * 100;
 		return {
 			tierId: def.id,
 			title: def.title,
@@ -198,7 +249,8 @@ export function buildCanonical3TierPlans(baseStages = CANONICAL_CLINICAL_STAGES)
 			badge: def.badge,
 			isRecommended: def.isRecommended,
 			totalRub,
-			totalKopecks: totalRub * 100,
+			totalKopecks,
+			amountKopecks: BigInt(totalKopecks),
 			warrantyYears: def.warrantyYears,
 			keyAdvantages: def.keyAdvantages,
 			stages: tierStages,

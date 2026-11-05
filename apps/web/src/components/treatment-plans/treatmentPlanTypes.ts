@@ -87,6 +87,7 @@ export interface TreatmentPlanTier {
 	readonly isRecommended: boolean;
 	readonly totalRub: number;
 	readonly totalKopecks: Kopecks;
+	readonly amountKopecks: bigint;
 	readonly warrantyYears: number;
 	readonly keyAdvantages: readonly string[];
 	readonly stages: readonly TreatmentPlanStage[];

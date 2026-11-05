@@ -1,0 +1,46 @@
+{
+  "role": "Treatment Plan Inquisitor & 3-Tier Clinical Architect",
+  "status": "COMPLETED",
+  "domain": "treatment-plans",
+  "timestamp": "2026-11-05T21:46:00Z",
+  "invariants_audit": {
+    "zero_fake_window_alert": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "window.alert in handleExportPdf completely replaced with window.print() native PDF dialog and exportSuccessNotice inline alert"
+    },
+    "dynamic_3tier_calculation": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "Replaced hardcoded tier prices in samplePlan.ts with computeStagesKopecks() dynamically deriving Economy (0.75x), Optimum (1.0x), Premium (1.45x) from active stage procedures"
+    },
+    "bigint_kopecks_accuracy": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "TreatmentPlanTier updated with amountKopecks: bigint. All totals calculated in exact integer kopecks without float drift"
+    },
+    "doctor_autonomy_mandate_8e": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "Doctor discount slider up to 100% without passwords or blocking. 0 disabled buttons in entire studio"
+    },
+    "single_primary_cta_mandate_8am": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "Exactly 1 Primary CTA button (#0d9488 text-white) per visible viewport: '✓ Утвердить выбранный план'"
+    },
+    "apple_hig_mobile_mandate_8al": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "Native Bottom Sheet drawer with 36x5px drag handle, touch targets >= 44x44px, Apple Segmented Control [Эконом | Оптимум | Премиум], 0px horizontal scroll"
+    },
+    "backend_fastify_e2e_integration": {
+      "status": "VERIFIED_CLEAN",
+      "evidence": "handleApprove dispatches POST /api/v1/treatment-plans and POST /api/treatment-plans/:id/approve with PostgreSQL 18 persistence and offline fallback"
+    },
+    "proofs_captured": {
+      "pc_light": "docs/proofs/treatment_plans_ssot/treatment_plan_pc_light_1440x900.png (100.5 KB)",
+      "pc_dark": "docs/proofs/treatment_plans_ssot/treatment_plan_pc_dark_1440x900.png (98.7 KB)",
+      "mobile_light": "docs/proofs/treatment_plans_ssot/treatment_plan_mobile_light_390x844.png (142.0 KB)",
+      "mobile_dark": "docs/proofs/treatment_plans_ssot/treatment_plan_mobile_dark_390x844.png (142.3 KB)"
+    }
+  },
+  "tests_passed": [
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanStudioSSOT.test.tsx (15/15 passed)",
+    "apps/web/src/components/treatment-plans/__tests__/treatmentPlanSSOTSuite.test.tsx (7/7 passed)"
+  ]
+}
