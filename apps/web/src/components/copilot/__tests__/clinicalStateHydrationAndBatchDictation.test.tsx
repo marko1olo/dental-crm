@@ -125,4 +125,36 @@ describe("Red Team: Clinical State Hydration & Batch Dictation Suite", () => {
 		assert.ok(stored?.some((t) => t.toothNumber === 36), "Зуб 36 должен быть в сохраненной одонтограмме");
 		assert.ok(stored?.some((t) => t.toothNumber === 16), "Зуб 16 должен быть в сохраненной одонтограмме");
 	});
+
+	it("6. Dictation handler with trustLevel: 'supervised' defers mutation and returns pendingAction with execute callback", () => {
+		const dictation = "46 глубокий кариес дентина";
+		const res = handleClinicalSpeechOrText(dictation, testPatientId, 46, { trustLevel: "supervised" });
+
+		assert.equal(res.appliedImmediately, false, "В режиме supervised мутация НЕ должна применяться сразу");
+		assert.ok(res.pendingAction, "Должно быть возвращено отложенное действие pendingAction");
+		assert.equal(res.pendingAction?.toolName, "crm.updateToothStatus");
+		assert.ok(res.pendingAction?.description.includes("46"));
+
+		// Проверяем, что в store изменения ЕЩЕ не записались
+		const beforeStates = useVisitStore.getState().visitToothStateByCode;
+		assert.equal(beforeStates["46"], undefined, "До подтверждения врача статус зуба 46 не должен меняться");
+
+		// Врач нажимает Primary CTA «Применить в карту»
+		res.pendingAction?.execute();
+
+		// После выполнения execute изменения применились
+		const afterStates = useVisitStore.getState().visitToothStateByCode;
+		assert.equal(afterStates["46"], "caries", "После execute статус зуба 46 должен стать caries");
+	});
+
+	it("7. Dictation handler with trustLevel: 'autonomous' applies immediately", () => {
+		const dictation = "24 пульпит, анестезия";
+		const res = handleClinicalSpeechOrText(dictation, testPatientId, 24, { trustLevel: "autonomous" });
+
+		assert.equal(res.appliedImmediately, true, "В режиме autonomous действие применяется мгновенно");
+		assert.equal(res.pendingAction, undefined, "В режиме autonomous отложенное действие не блокирует интерфейс");
+
+		const visitStates = useVisitStore.getState().visitToothStateByCode;
+		assert.equal(visitStates["24"], "pulpitis", "Статус зуба 24 должен быть зафиксирован как pulpitis");
+	});
 });

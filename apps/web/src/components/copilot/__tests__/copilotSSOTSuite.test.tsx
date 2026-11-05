@@ -17,7 +17,7 @@ import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CopilotStudioModal } from "../CopilotStudioModal";
+import { CopilotStudioModal, DEFAULT_INITIAL_MESSAGES } from "../CopilotStudioModal";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
 import {
   COPILOT_CATALOG_CATEGORIES,
@@ -67,10 +67,11 @@ describe("Copilot Studio SSOT & Voice Suite", () => {
         isOpen={true}
         onClose={() => {}}
         initialTab="dialog"
+        initialMessages={DEFAULT_INITIAL_MESSAGES}
       />
     );
     assert.ok(html.includes('data-testid="copilot-primary-apply-cta"'), "Primary CTA кнопка обязана присутствовать с data-testid");
-    assert.ok(html.includes("Применить действие") || html.includes("Применено"), "Текст кнопки должен быть клиническим");
+    assert.ok(html.includes("Применить в карту") || html.includes("Применить действие") || html.includes("Применено"), "Текст кнопки должен быть клиническим");
     assert.ok(html.includes("var(--teal,#0d9488)") || html.includes("bg-[var(--teal,#0d9488)]"), "Цвет кнопки обязан быть #0d9488 (var(--teal))");
   });
 

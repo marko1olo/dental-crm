@@ -96,16 +96,10 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     }
     let s: WakeLockSentinel | null = null;
     if ("wakeLock" in navigator && typeof navigator.wakeLock?.request === "function") navigator.wakeLock.request("screen").then((l) => { s = l; }).catch(() => {});
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === "Escape" && !isSettingsOpen && !isHistoryOpen) {
-        handleClose();
-      }
-    };
+    const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape" && !isSettingsOpen && !isHistoryOpen) handleClose(); };
     window.addEventListener("keydown", handleKeyDown);
     return () => {
-      if (typeof document !== "undefined") {
-        document.body.classList.remove("copilot-open", "copilot-studio-open");
-      }
+      if (typeof document !== "undefined") document.body.classList.remove("copilot-open", "copilot-studio-open");
       s?.release().catch(() => {});
       window.removeEventListener("keydown", handleKeyDown);
     };
@@ -164,7 +158,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     setIsStreaming(true);
 
     // [CLN-DICTATION]: Локальный клинический парсер речи и текста для одонтограммы, SOAP и сметы
-    const { intent, fallbackText, fallbackProposalTooth } = handleClinicalSpeechOrText(query, patientId, activeTooth);
+    const { fallbackText, fallbackProposalTooth, pendingAction: localPendingAction } = handleClinicalSpeechOrText(query, patientId, activeTooth, { trustLevel: settings.trustLevel });
 
     const token = readDenteClinicToken() || readDenteStaffToken() || "";
     const apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
@@ -204,7 +198,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           }
           if (accumulatedText) {
             const { cleanText, suggestions } = extractSuggestions(accumulatedText);
-            setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: pendingAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions } : m)));
+            const effectiveAction = pendingAction ?? (localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined);
+            setMessages((prev) => prev.map((m): CopilotChatMessage => (m.id === assistantMsgId ? { ...m, text: cleanText, actionProposal: effectiveAction ?? m.actionProposal, citation: m.citation ?? "Клинический протокол СтАР", suggestedReplies: suggestions } : m)));
           }
         };
 
@@ -226,12 +221,13 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     } catch { /* Сетевой сбой или недоступность шлюза */ }
 
     setIsStreaming(false);
+    const localProposal = localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined;
     if (isDemoShowcaseMode()) {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? {
         ...m,
         text: m.text.trim() ? m.text : fallbackText,
         citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
-        actionProposal: m.actionProposal ?? {
+        actionProposal: m.actionProposal ?? localProposal ?? {
           id: `act-${Date.now()}`,
           toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
           description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`,
@@ -239,15 +235,17 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         }
       } : m)));
     } else {
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: undefined, actionProposal: undefined } : m)));
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackText || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: undefined, actionProposal: m.actionProposal ?? localProposal } : m)));
     }
   };
 
   const handleApplyPrimaryAction = useCallback((action?: CopilotChatMessage["actionProposal"]) => {
     setAppliedStatus(true);
     showToast("Клиническое действие успешно применено в карту приёма", "success");
-    if (typeof window !== "undefined") {
-      const act = action ?? [...messages].reverse().find((m) => m.role === "assistant" && m.actionProposal && !m.applied)?.actionProposal;
+    const act = action ?? [...messages].reverse().find((m) => m.role === "assistant" && m.actionProposal && !m.applied)?.actionProposal;
+    if (act?.payload && typeof (act.payload as any).execute === "function") {
+      (act.payload as any).execute();
+    } else if (typeof window !== "undefined") {
       const targetTooth = Number(act?.payload?.tooth ?? act?.payload?.toothNumber ?? activeTooth) || undefined;
       const targetDiag = (act?.payload?.diagnosis as string) || act?.description || (targetTooth ? `Клинический статус (Зуб ${targetTooth})` : "Клинический статус");
       const targetPlan = (act?.payload?.treatmentPlan as string) || (act?.payload?.plan as string) || (act?.description ? `План: ${act.description}` : "План лечения согласно протоколу СтАР");
@@ -282,25 +280,25 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         </div>
 
         {/* Компактная шапка кабинета с кнопками Настроек и Истории */}
-        <header className="copilot-studio-header pl-5 pr-8 sm:pr-10 md:pr-12 py-3 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-3 shrink-0">
-          <div className="copilot-studio-brand flex items-center gap-2.5 min-w-0">
+        <header className="copilot-studio-header px-4 sm:px-6 py-2.5 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-2.5 shrink-0">
+          <div className="copilot-studio-brand flex items-center gap-2.5 min-w-0 flex-1">
             <div className="copilot-studio-icon-badge w-8 h-8 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,rgba(13,148,136,0.3))] flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0">
               <Sparkles size={16} />
             </div>
-            <div className="copilot-studio-title-box min-w-0">
+            <div className="copilot-studio-title-box min-w-0 flex-1 truncate">
               <div className="copilot-studio-title-row flex items-center gap-2">
-                <h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)]">ДЕНТА Копайлот</h2>
-                <span className="copilot-pulse-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse" title="Движок активен" />
+                <h2 className="copilot-studio-heading text-sm font-bold tracking-tight text-[var(--ink)] truncate">ДЕНТА Копайлот</h2>
+                <span className="copilot-pulse-dot w-2 h-2 rounded-full bg-emerald-500 animate-pulse shrink-0" title="Движок активен" />
               </div>
-              <div className="copilot-studio-submeta flex items-center gap-1.5 text-xs text-[var(--muted)]">
+              <div className="copilot-studio-submeta flex items-center gap-1.5 text-xs text-[var(--muted)] truncate">
                 <span className="text-[11px] text-[var(--muted)] font-medium truncate"><span className="hidden sm:inline">Клинический ассистент врача</span><span className="sm:hidden">Ассистент</span></span>
               </div>
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
-            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
-            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
+            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
+            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer shrink-0" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
+            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer shrink-0" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>
 
@@ -417,6 +415,10 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               { title: "Зубная формула FDI", badge: "Одонтограмма", desc: `Фиксация кариеса дентина и пломбирования зуба ${activeTooth || 36}.`, btn: `Обновить статус зуба ${activeTooth || 36}`, icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, { tooth: activeTooth || 36, state: "C", diagnosis: "K02.1" }) },
               { title: "Выставление счёта", badge: "Касса и чеки", desc: "Пречек на препарирование и нанокомпозитную реставрацию: 6 500 руб.", btn: "Сформировать счёт (6 500 руб.)", icon: <Receipt size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft, { patientId, amountKopecks: 650000, serviceTitle: "Лечение кариеса" }) },
               { title: "Протокол SOAP в карту", badge: "Медкарта", desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.", btn: "Сформировать протокол SOAP", icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, { patientId, tooth: activeTooth, diagnosis: "K02.1" }) },
+              ...(runtimeMode === "desktop_native" ? [
+                { title: "Захват визиографа (ROI)", badge: "Workstation", desc: "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.captureVisigraphRoi", { roi: "visigraph_window", tooth: activeTooth || 36 }) },
+                { title: "Поиск КЛКТ на диске", badge: "Локальный I/O", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.scanDicomDropzone", { patientId }) },
+              ] : []),
             ].map((item, idx) => (
               <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">
                 <div className="copilot-action-item-header flex items-center justify-between"><div className="flex items-center gap-2">{item.icon}<span className="text-xs font-bold text-[var(--ink)]">{item.title}</span></div><span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">{item.badge}</span></div>

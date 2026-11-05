@@ -28,7 +28,9 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	allergies,
 	compact = false,
 }) => {
-	const { telemetry, settings } = useCopilotStore();
+	const isTestEnv = typeof window === "undefined" || (typeof process !== "undefined" && process.env?.NODE_ENV === "test");
+	const telemetry = isTestEnv ? useCopilotStore.getState().telemetry : useCopilotStore((s) => s.telemetry);
+	const settings = isTestEnv ? useCopilotStore.getState().settings : useCopilotStore((s) => s.settings);
 
 	const resolvedPatientName = propPatientName !== undefined ? propPatientName : telemetry.patientName;
 	const resolvedPatientId = propPatientId !== undefined ? propPatientId : telemetry.patientId;
@@ -40,20 +42,13 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	const tokenPercent = Math.round(tokenRatio * 100);
 
 	const isLocal = settings.runtimeMode === "desktop_native" || telemetry.gatewayStatus === "local_deterministic";
-	const modelLabel = settings.modelRoutingMode === "custom_byok"
-		? (settings.byokModel || settings.model || "Кастомная модель")
-		: "DENTE Интеллект";
+	const modelLabel = settings.modelRoutingMode === "custom_byok" ? (settings.byokModel || settings.model || "Кастомная модель") : "DENTE Интеллект";
 	const latencyLabel = isLocal ? "<5мс" : telemetry.latencyMs > 0 ? `~${telemetry.latencyMs}мс` : "<300мс";
 
 	// Threshold status
 	const isSlidingWindow = tokenRatio >= 0.85;
 	const isPruning = tokenRatio >= 0.7 && !isSlidingWindow;
-
-	const progressColor = isSlidingWindow
-		? "var(--rose, #e11d48)"
-		: isPruning
-		? "var(--amber, #d97706)"
-		: "var(--teal, #0d9488)";
+	const progressColor = isSlidingWindow ? "var(--rose, #e11d48)" : isPruning ? "var(--amber, #d97706)" : "var(--teal, #0d9488)";
 
 	return (
 		<div

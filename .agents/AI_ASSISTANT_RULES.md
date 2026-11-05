@@ -152,6 +152,7 @@
 1. **Файловая система клиники и рабочей станции (Local File I/O Engine)**:
    - `read_clinical_file(path)`: Чтение любых файлов на ПК, сырых протоколов исследований, экспортных отчетов и DICOM-манифестов со срезом строк (`startLine`, `endLine`).
    - `write_clinical_file(path, content)`: Безопасное сохранение сформированных выписок, бланков, дампов и бинарных файлов.
+   - `replace_file_content(path, target, replacement, startLine, endLine)`: Хирургическая точечная замена блоков в файлах на ПК (с верификацией уникальности вхождения, контролем строк и белым списком безопасных расширений).
    - `search_workstation_files(searchPath, pattern, regex, extensions)`: Глубокий рекурсивный поиск файлов, снимков, дампов и логов оборудования на ПК по маске, regex и дате.
    - `open_patient_dropzone_folder(patientId)`: Мгновенное открытие проводника Windows в папке снимков пациента.
 2. **Исполнение системных команд и фоновые задачи (OS Process & Background Task Engine)**:
