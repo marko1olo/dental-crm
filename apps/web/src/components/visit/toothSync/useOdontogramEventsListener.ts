@@ -14,12 +14,16 @@ export function useOdontogramEventsListener(patientId: string | null | undefined
 			const detail = (e as CustomEvent<{
 				patientId?: string;
 				states?: Array<{ toothNumber: number; state: string; surfaces?: string[] }>;
+				teethData?: Array<{ toothNumber: number; state: string; surfaces?: string[] }>;
+				teeth?: Array<{ toothNumber: number; state: string; surfaces?: string[] }>;
 			}>).detail;
-			if (!detail || !Array.isArray(detail.states)) return;
+			if (!detail) return;
+			const list = detail.states || detail.teethData || detail.teeth;
+			if (!list || !Array.isArray(list)) return;
 			if (detail.patientId && patientId && detail.patientId !== patientId) return;
 
 			const nextStates: Record<string, VisitToothUiState> = {};
-			for (const t of detail.states) {
+			for (const t of list) {
 				const uiState = toVisitToothUiState(t.state);
 				nextStates[String(t.toothNumber)] = uiState;
 				if (uiState !== "idle") {
@@ -47,7 +51,10 @@ export function useOdontogramEventsListener(patientId: string | null | undefined
 
 		const handleSingleToothUpdate = (e: Event) => {
 			const detail = (e as CustomEvent<{
-				toothNumber: number | string; state: string; surfaces?: string[];
+				toothNumber: number | string;
+				state: string;
+				surfaces?: string[];
+				isTreatmentPerformedToday?: boolean;
 			}>).detail;
 			if (!detail?.toothNumber || !detail?.state) return;
 			const code = String(detail.toothNumber);
@@ -63,20 +70,24 @@ export function useOdontogramEventsListener(patientId: string | null | undefined
 					diagnosisIcd10: soap.diagnosisIcd10, treatmentPlan: soap.treatmentDescription,
 				});
 
-				const matching = inferProcedureServiceFromStamp(detail.state, num);
-				if (matching) {
-					window.dispatchEvent(
-						new CustomEvent("dente-add-services-to-invoice", {
-							detail: {
-								services: [{
-									id: matching.id, name: matching.title, title: matching.title,
-									code: matching.code804n, code804n: matching.code804n,
-									price: matching.priceRub, priceRub: matching.priceRub,
-									toothNumber: num, toothCode: String(num),
-								}],
-							},
-						}),
-					);
+				// [CLN-02]: Добавляем услугу в счёт ТОЛЬКО если это выполненное сегодня лечение,
+				// а не первичный осмотр и фиксация анамнеза (старые пломбы и коронки — 0 ₽)
+				if (detail.isTreatmentPerformedToday) {
+					const matching = inferProcedureServiceFromStamp(detail.state, num);
+					if (matching) {
+						window.dispatchEvent(
+							new CustomEvent("dente-add-services-to-invoice", {
+								detail: {
+									services: [{
+										id: matching.id, name: matching.title, title: matching.title,
+										code: matching.code804n, code804n: matching.code804n,
+										price: matching.priceRub, priceRub: matching.priceRub,
+										toothNumber: num, toothCode: String(num),
+									}],
+								},
+							}),
+						);
+					}
 				}
 			} else {
 				useVisitStore.getState().clearVisitToothRecord(code);

@@ -1,6 +1,7 @@
 import { useAppStore } from "../../../store/appStore";
 import { usePatientStore } from "../../../store/patientStore";
 import { useVisitStore } from "../../../store/visitStore";
+import { loadStoredTeethData } from "../../odontogram/odontogramStorage";
 import { type Clinical043Snapshot, type CopilotUiContext, getCanonicalViewName } from "./contextSyncTypes";
 import { formatCopilotUiContextHeader } from "./contextHeaderFormatter";
 
@@ -43,7 +44,7 @@ export function getCurrentCopilotUiContext(): CopilotUiContext {
 		if (Array.isArray(found?.allergies) && found.allergies.length > 0) allergies = found.allergies;
 	}
 
-	const activeTooth = appStore.activeTooth ?? visitStore.activeToothNumber ?? null;
+	const activeTooth = patientId ? (appStore.activeTooth ?? visitStore.activeToothNumber ?? null) : null;
 	let activeDoctor: string | null = appStore.activeDoctorName ?? null;
 	if (!activeDoctor && appStore.dashboard?.clinicSettings?.staff) {
 		const staff = appStore.dashboard.clinicSettings.staff;
@@ -55,6 +56,18 @@ export function getCurrentCopilotUiContext(): CopilotUiContext {
 	if (visitStore.visitToothStateByCode) {
 		for (const [code, state] of Object.entries(visitStore.visitToothStateByCode)) {
 			if (state && state !== "idle") toothFormula[code] = state;
+		}
+	}
+	if (patientId) {
+		const stored = loadStoredTeethData(patientId);
+		if (stored && Array.isArray(stored)) {
+			for (const t of stored) {
+				if (!t || !t.toothNumber) continue;
+				const st = String(t.state || "");
+				if (st && st !== "Healthy" && st !== "idle" && st !== "0" && !toothFormula[String(t.toothNumber)]) {
+					toothFormula[String(t.toothNumber)] = st;
+				}
+			}
 		}
 	}
 

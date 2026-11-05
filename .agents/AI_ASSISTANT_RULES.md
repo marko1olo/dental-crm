@@ -271,3 +271,19 @@
    - ☀️ **Вкладка Профиля Врача (Persona Tab)**: `docs/proofs/copilot/copilot_settings_persona_tab_pc_light_1440x900.png`
    - ☀️ **История диалогов PC Light**: `docs/proofs/copilot/copilot_history_pc_light_1440x900.png`
    - 🌙 **История диалогов PC Dark**: `docs/proofs/copilot/copilot_history_pc_dark_1440x900.png`
+
+---
+
+## 🛑 РАЗДЕЛ XI: РЕАКТИВНАЯ МУЛЬТИ-ИСТОЧНИКОВАЯ ГИДРАТАЦИЯ И ПАКЕТНАЯ ДИКТОВКА (MANDATE 8av & 8e)
+
+1. **Два канонических сценария работы врача у кресла**:
+   - **Сценарий А («Пакетный осмотр зубов»)**: Врач сначала отмечает зубы на одонтограмме Wheeler 2.5D (или просматривает КТ/ОПТГ), фиксируя ряд находок (например, 16 кариес, 36 пульпит, 47 дефект пломбы). При открытии Копайлот мгновенно подтягивает ВСЕ зубы сразу — выводит сводный дайджест находок с МКБ-10, суммами и ОДНОЙ главной Primary CTA кнопкой: `⚡ Оформить приём по всем зубам (SOAP + Смета)` в 1 клик!
+   - **Сценарий Б («Свободная диктовка голосом или текстом»)**: Врач диктует в микрофон или вводит фразу целиком («36 глубокий кариес, анестезия септанест, биодентин, пломба эстелайт а3, зуб 16 кариес в план»). Копайлот через `copilotDictationHandler.ts` честно парсит зубы FDI, обновляет одонтограмму и в визите (`useVisitStore`), и в постоянном хранилище (`saveStoredTeethData`), формирует протокол SOAP и добавляет услуги в смету кассы.
+2. **Мульти-источниковая гидратация состояния**:
+   - Слияние оперативного состояния визита (`useVisitStore.getState().visitToothStateByCode` и `visitToothRecordsByCode`) с долговременным состоянием одонтограммы пациента (`loadStoredTeethData(patientId)`).
+   - Реактивная подписка на события `dente-odontogram-update` и `dente-update-tooth-state` с поддержкой всех вариантов пейлоада (`states`, `teethData`, `teeth`).
+3. **Честный продакшн без мокапов и 4-State Proofs (Ноябрь 2026)**:
+   - ☀️ **Пакетный дайджест PC Light (1440×900)**: `docs/proofs/copilot/01_copilot_batch_digest_pc_light_1440x900.png`
+   - 🌙 **Пакетный дайджест PC Dark (1440×900)**: `docs/proofs/copilot/02_copilot_batch_digest_pc_dark_1440x900.png`
+   - ☀️ **Диктовка в чате PC Light (1440×900)**: `docs/proofs/copilot/03_copilot_dictation_applied_pc_light_1440x900.png`
+   - 🌙 **Диктовка в чате PC Dark (1440×900)**: `docs/proofs/copilot/04_copilot_dictation_applied_pc_dark_1440x900.png`

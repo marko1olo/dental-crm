@@ -63,6 +63,32 @@
 - **Суть бага:** Две параллельные кассовые студии открывались одновременно при переходе по роуту `#checkout`, накладываясь друг на друга в DOM.
 - **Решение:** Утвержден единый SSOT кассы: `CashRegisterStudioModal.tsx` является единственной канонической модалкой кассы и фискального чекаута в системе (Мандат 8aq). Дублирующая модалка `CashierStudioModal.tsx` редуцирована до ультра-тонкого прозрачного фасада (<80 строк), прозрачно проксирующего вызовы в SSOT. Ликвидирован карнавал кнопок, обеспечена ровно 1 Primary CTA кнопка («Принять оплату / Пробить чек»), 1-клик комбо-оплата в копейках (`amountKopecks`, BigInt) и отсутствие обязательного ИНН для физлиц. Подтверждено тестом `cashierSSOTSuite.test.tsx` (18/18 тестов green).
 
+### [FIN-08] [ИСПРАВЛЕНО] [SEV-1] Ликвидация зоопарка из 7 модалок оплаты в Единый Канонический Чекаут DENTE CRM
+- **Файлы:**
+  - SSOT: [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
+  - Фасады: [`CashRegisterCheckoutModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterCheckoutModal.tsx), [`CashCheckoutStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashCheckoutStudioModal.tsx), [`PaymentFiscalModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentFiscalModal.tsx), [`PaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/PaymentModal.tsx), [`SplitPaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/SplitPaymentModal.tsx), [`CashRegisterDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterDrawer.tsx), [`CashRegisterPaymentPane.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/CashRegisterPaymentPane.tsx)
+- **Суть бага:** В `components/billing/` исторически расплодили 7 параллельных модалок с дублированием логики оплат, несовместимыми сигнатурами пропсов и риском расхождения финансовых проводок.
+- **Решение:**
+  1. Консолидация в единый полиморфный чекаут на базе `CashRegisterStudioModal.tsx` с чистым API, проксирующими фасадами (<30 строк) для сохранения обратной совместимости call sites.
+  2. Крупная итоговая сумма по центру (36px bold): `checkout-total-amount` в рублях.
+  3. Мгновенный выбор 7 тендеров: [ Наличные | Терминал (Карта) | СБП QR | Рассрочка | Гарантия 100% (0 ₽) | Сплит-оплата | Депозит / аванс ].
+  4. Строгая копеечная математика: `amountKopecks: bigint`, ноль float-ошибок.
+  5. Автономия врача (Мандат 8e, 8n): гарантийные переделки со скидкой 100% оформляются в 1 клик с суммой 0 ₽ без ошибки `ZeroAmountPayment` и без принудительного фискального чека.
+  6. Пассивная безопасность: аллергии отображаются аккуратным бейджем `⚠️` строго при их наличии в карте.
+  7. Apple HIG: на мобильных устройствах нативный Bottom Sheet со скруглением `rounded-t-[24px]`, тактильным Drag Handle 36x5px и широкой кнопкой подтверждения $\ge 48$px в Natural Thumb Zone.
+  8. Устранены слепящие белые пятна табов и кнопок в тёмной теме (100% dark mode hygiene).
+- **Машинные пруфы:**
+  - `billingSSOTSuite.test.tsx` + тесты биллинга: 9 файлов, 77 тестов PASSED (Exit Code 0).
+  - `cashbox.test.ts`: 2/2 бэкенд теста PASSED (Exit Code 0).
+  - **4-State Proof скриншоты (Live App на `http://127.0.0.1:5173/?checkout=1` без песочниц, Мандат 8al & Правило 23):**
+    * ☀️ PC Light: [`docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png) (88 KB)
+    * 🌙 PC Dark: [`docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png) (84 KB)
+    * 📱 Mobile Light: [`docs/proofs/cashbox/05_cashbox_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/05_cashbox_studio_mobile_light_390x844.png) (137 KB)
+    * 🌙 Mobile Dark: [`docs/proofs/cashbox/06_cashbox_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/06_cashbox_studio_mobile_dark_390x844.png) (133 KB)
+    * Дополнительные табы смены и чековой ленты:
+      - 🌙 Смена и Z-отчёт: [`docs/proofs/cashbox/03_cashbox_shift_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/03_cashbox_shift_pc_dark_1440x900.png) (50 KB)
+      - ☀️ Контрольная лента: [`docs/proofs/cashbox/04_cashbox_tape_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/04_cashbox_tape_pc_light_1440x900.png) (42 KB)
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ
@@ -797,6 +823,28 @@
   3. В `ChairsideCopilotHUD.tsx` ликвидировано дублирование нумерации шагов рассуждений ИИ («1. 1.» -> «1. »).
   4. В `CopilotGlobalHost.tsx` плавающая кнопка вызова ИИ скрывается при открытом Chairside HUD, исключая визуальное перекрытие.
   5. Зафиксировано 4-State скриншотами: `04_copilot_chairside_hud_pc_light_1440x900.png` и `05_copilot_chairside_hud_pc_dark_1440x900.png`.
+
+### [COP-08] [SEV-1] [ИСПРАВЛЕНО] Отрыв Копайлота от одонтограммы: отсутствие мульти-зубной гидратации и диктовки
+- **Файлы:**
+  - [`apps/web/src/components/copilot/CopilotVisitClinicalDigest.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotVisitClinicalDigest.tsx)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
+  - [`apps/web/src/components/copilot/copilotDictationHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/copilotDictationHandler.ts)
+  - [`apps/web/src/components/copilot/contextSync/contextStoreReader.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/contextSync/contextStoreReader.ts)
+  - [`apps/web/src/components/visit/toothSync/useOdontogramEventsListener.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/toothSync/useOdontogramEventsListener.ts)
+  - [`apps/web/src/components/copilot/__tests__/clinicalStateHydrationAndBatchDictation.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/__tests__/clinicalStateHydrationAndBatchDictation.test.tsx)
+- **Суть бага:** При осмотре полости рта или изучении снимков ОПТГ врач отмечает множество зубов на одонтограмме Wheeler 2.5D (например, 16 кариес, 36 пульпит, 47 дефект пломбы). При открытии Копайлота данные не подтягивались, либо скрывались при появлении сообщений (`messages.length > 0`), заставляя врача заниматься микро-кликами («выбрал зуб -> открыл шторку -> кликнул -> закрыл»). Также отсутствовала реактивная обработка клинической диктовки с одновременным обновлением зубной формулы, протокола SOAP и сметы кассы. В `useOdontogramEventsListener.ts` события `dente-odontogram-update` с полезной нагрузкой `teethData` молча отбрасывались из-за проверки только поля `states`.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Реализована сквозная мульти-источниковая реактивная гидратация в `CopilotVisitClinicalDigest.tsx`: слияние состояний из `useVisitStore.getState().visitToothStateByCode`, `visitToothRecordsByCode` и постоянного хранилища одонтограммы `loadStoredTeethData(patientId)`.
+  2. Добавлен реактивный слушатель `dente-odontogram-update` и `dente-update-tooth-state`, обновляющий дайджест при любых изменениях зубов.
+  3. В `useOdontogramEventsListener.ts` поддержаны все варианты формата событий (`detail.states || detail.teethData || detail.teeth`).
+  4. Создан выделенный модуль `copilotDictationHandler.ts`: диктовка врача распознает зубы, обновляет `useVisitStore`, персистирует данные в `saveStoredTeethData(patientId)` и диспатчит события SOAP и сметы.
+  5. В `CopilotStudioModal.tsx` дайджест находок закреплен вверху диалога при наличии патологий, обеспечивая 1-клик выполнение Primary CTA `⚡ Оформить приём по всем зубам (SOAP + Смета)` в любое время.
+  6. Проверено тестами: `clinicalStateHydrationAndBatchDictation.test.tsx` (5/5 passing) и `copilotSSOTSuite.test.tsx` (13/13 passing).
+  7. Подтверждено живыми Playwright-доказательствами в высоком разрешении (1440×900 Light/Dark):
+     - `docs/proofs/copilot/01_copilot_batch_digest_pc_light_1440x900.png`
+     - `docs/proofs/copilot/02_copilot_batch_digest_pc_dark_1440x900.png`
+     - `docs/proofs/copilot/03_copilot_dictation_applied_pc_light_1440x900.png`
+     - `docs/proofs/copilot/04_copilot_dictation_applied_pc_dark_1440x900.png`
 
 
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG

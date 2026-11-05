@@ -18,6 +18,7 @@ import { CopilotThinkingIndicator } from "./CopilotThinkingIndicator";
 import { CopilotMemoryTab } from "./CopilotMemoryTab";
 import { CopilotContextTelemetryBar } from "./telemetry/CopilotContextTelemetryBar";
 import { CopilotVisitClinicalDigest } from "./CopilotVisitClinicalDigest";
+import { handleClinicalSpeechOrText } from "./copilotDictationHandler";
 
 export type CopilotStudioTab = "dialog" | "actions" | "memory";
 
@@ -162,6 +163,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     setMessages((prev) => [...prev, { id: assistantMsgId, role: "assistant", text: "", timestamp: nowTime, applied: false }]);
     setIsStreaming(true);
 
+    // [CLN-DICTATION]: Локальный клинический парсер речи и текста для одонтограммы, SOAP и сметы
+    const { intent, fallbackText, fallbackProposalTooth } = handleClinicalSpeechOrText(query, patientId, activeTooth);
+
     const token = readDenteClinicToken() || readDenteStaffToken() || "";
     const apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 
@@ -223,8 +227,17 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
 
     setIsStreaming(false);
     if (isDemoShowcaseMode()) {
-      const fallbackText = `Клинический протокол для зуба ${activeTooth || 36}: проведена оценка статуса, сформирован проект протокола приёма и сметы по стандартам СтАР.`;
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() ? m.text : fallbackText, citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)", actionProposal: m.actionProposal ?? { id: `act-${Date.now()}`, toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, description: `Обновление одонтограммы для зуба ${activeTooth || 36}`, payload: { tooth: Number(activeTooth || 36) } } } : m)));
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? {
+        ...m,
+        text: m.text.trim() ? m.text : fallbackText,
+        citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
+        actionProposal: m.actionProposal ?? {
+          id: `act-${Date.now()}`,
+          toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
+          description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`,
+          payload: { tooth: fallbackProposalTooth }
+        }
+      } : m)));
     } else {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: undefined, actionProposal: undefined } : m)));
     }
@@ -269,7 +282,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
         </div>
 
         {/* Компактная шапка кабинета с кнопками Настроек и Истории */}
-        <header className="copilot-studio-header px-5 py-3 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-3 shrink-0">
+        <header className="copilot-studio-header pl-5 pr-8 sm:pr-10 md:pr-12 py-3 border-b border-[var(--line,rgba(15,118,110,0.15))] flex items-center justify-between gap-3 shrink-0">
           <div className="copilot-studio-brand flex items-center gap-2.5 min-w-0">
             <div className="copilot-studio-icon-badge w-8 h-8 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,rgba(13,148,136,0.3))] flex items-center justify-center text-[var(--teal,#0d9488)] shrink-0">
               <Sparkles size={16} />
@@ -285,9 +298,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
-            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
-            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
+            <button type="button" onClick={() => setHistoryOpen(true)} data-testid="copilot-history-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="История диалогов" aria-label="История диалогов"><MessageSquare size={15} /></button>
+            <button type="button" onClick={() => setSettingsOpen(true)} data-testid="copilot-settings-trigger" className="icon-button w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] flex items-center justify-center rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer" title="Настройки ИИ" aria-label="Настройки ИИ"><Sliders size={15} /></button>
+            <button type="button" onClick={handleClose} data-testid="copilot-studio-close-btn" className="copilot-close-btn w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-xl sm:rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] text-[var(--muted)] hover:text-[var(--ink)] flex items-center justify-center cursor-pointer" aria-label="Закрыть кабинет копайлота"><X size={16} /></button>
           </div>
         </header>
 
@@ -320,14 +333,8 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
             )}
 
             <div className="copilot-chat-messages-container flex-1 overflow-y-auto px-5 py-3.5 space-y-3">
-              {messages.length === 0 ? (
-                <CopilotVisitClinicalDigest
-                  activeTooth={activeTooth}
-                  patientId={patientId}
-                  onSendMessage={(prompt) => handleSendMessage(prompt)}
-                />
-              ) : (
-                messages.map((m) => (
+              <CopilotVisitClinicalDigest activeTooth={activeTooth} patientId={patientId} onSendMessage={(prompt) => handleSendMessage(prompt)} showEmptyStateIfNoFindings={messages.length === 0} />
+              {messages.map((m) => (
                   <div key={m.id} className={`flex flex-col ${m.role === "user" ? "items-end" : "items-start"}`}>
                     <div className={`copilot-message-bubble max-w-[92%] p-3.5 rounded-2xl text-xs leading-relaxed ${m.role === "user" ? "copilot-message-user bg-[var(--paper-soft,#f4f7f6)] border border-[var(--line)] text-[var(--ink)]" : "copilot-message-assistant bg-[var(--paper,#ffffff)] border border-[var(--line)] shadow-sm text-[var(--ink)]"}`}>
                       <p className="whitespace-pre-wrap m-0">
@@ -366,8 +373,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                     </div>
                     <span className="text-[10px] text-[var(--muted)] mt-1 px-1">{m.timestamp}</span>
                   </div>
-                ))
-              )}
+                ))}
 
               <CopilotThinkingIndicator isThinking={isStreaming || Boolean(isThinking)} activeTooth={activeTooth} speedMode={speedMode} showThinkingProcess={showThinkingProcess} thoughtProcess={thoughtProcess || currentThought || undefined} />
               <div ref={messagesEndRef} />

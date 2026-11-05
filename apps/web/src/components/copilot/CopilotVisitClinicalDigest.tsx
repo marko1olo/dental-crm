@@ -3,20 +3,22 @@
  * Мандаты:
  * - Мандат 8e: Автономия врача, отсутствие блокировок, 0-клик сценарии.
  * - Мандат 8am: Строго 1 Primary CTA на видимый контекст.
- * - Мандат 8wy: Честный продакшн, чтение реального состояния одонтограммы из useVisitStore.
+ * - Мандат 8wy: Честный продакшн, чтение реального состояния одонтограммы из useVisitStore и одонтограммы пациента.
  * - Apple HIG: Сенсорные таргеты >= 44px на мобильных, плотные 36px на десктопе, аккуратная типографика без капслока.
  */
 
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { Sparkles, CheckCircle2, Activity, Receipt, FileText, Zap } from "lucide-react";
 import { useVisitStore } from "../../store/visitStore";
 import { showToast } from "../GlobalToast";
+import { loadStoredTeethData } from "../odontogram/odontogramStorage";
 import type { ToothState } from "../../store/visit/types";
 
 interface CopilotVisitClinicalDigestProps {
 	activeTooth?: number | null | undefined;
 	patientId?: string | null | undefined;
 	onSendMessage: (prompt: string) => void;
+	showEmptyStateIfNoFindings?: boolean;
 }
 
 interface FindingItem {
@@ -28,6 +30,20 @@ interface FindingItem {
 	treatmentSummary: string;
 	priceKopecks: number;
 }
+
+export const normalizeToothStateKey = (st: string): string => {
+	const s = (st || "").toLowerCase().trim();
+	if (s.includes("caries") || s.includes("кариес")) return "caries";
+	if (s.includes("pulpit") || s.includes("пульпит")) return "pulpitis";
+	if (s.includes("periodont") || s.includes("периодонтит")) return "periodontitis";
+	if (s.includes("crown") || s.includes("коронк") || s.includes("протез")) return "crown";
+	if (s.includes("implant") || s.includes("имплант")) return "implant";
+	if (s.includes("missing") || s.includes("отсутств") || s.includes("удал") || s.includes("extract")) return "missing";
+	if (s.includes("defect") || s.includes("дефект")) return "defective_restoration";
+	if (s.includes("fill") || s.includes("пломб") || s.includes("done") || s.includes("санир")) return "done";
+	if (s.includes("treatment") || s.includes("лечен")) return "treatment";
+	return s;
+};
 
 const TOOTH_STATE_NAMES: Record<string, { title: string; icd10: string; treatment: string; priceKopecks: number }> = {
 	caries: {
@@ -66,6 +82,12 @@ const TOOTH_STATE_NAMES: Record<string, { title: string; icd10: string; treatmen
 		treatment: "Дентальная имплантация, установка формирователя десны",
 		priceKopecks: 4500000,
 	},
+	defective_restoration: {
+		title: "Дефект пломбы",
+		icd10: "K02.1",
+		treatment: "Удаление несостоятельной реставрации, повторное пломбирование нанокомпозитом",
+		priceKopecks: 550000,
+	},
 	missing: {
 		title: "Отсутствует",
 		icd10: "K08.1",
@@ -84,22 +106,88 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 	activeTooth,
 	patientId,
 	onSendMessage,
+	showEmptyStateIfNoFindings = true,
 }) => {
-	const visitToothStateByCode = useVisitStore((s) => s.visitToothStateByCode);
-	const visitToothRecordsByCode = useVisitStore((s) => s.visitToothRecordsByCode);
+	const storeToothStates = useVisitStore((s) => s.visitToothStateByCode);
+	const storeToothRecords = useVisitStore((s) => s.visitToothRecordsByCode);
 	const storeActiveTooth = useVisitStore((s) => s.activeToothNumber);
 
-	const effectiveTooth = activeTooth ?? storeActiveTooth ?? null;
+	// Поддержка реактивного хука и прямого снимка getState() (включая SSR и тесты)
+	const visitToothStateByCode =
+		storeToothStates && Object.keys(storeToothStates).length > 0
+			? storeToothStates
+			: useVisitStore.getState().visitToothStateByCode;
+	const visitToothRecordsByCode =
+		storeToothRecords && Object.keys(storeToothRecords).length > 0
+			? storeToothRecords
+			: useVisitStore.getState().visitToothRecordsByCode;
+	const effectiveTooth =
+		activeTooth ??
+		storeActiveTooth ??
+		useVisitStore.getState().activeToothNumber ??
+		null;
 
-	// Извлекаем все активные находки осмотра
+	const [digestVersion, setDigestVersion] = useState(0);
+
+	// Реактивная подписка на обновления одонтограммы из любых источников
+	useEffect(() => {
+		if (typeof window === "undefined") return;
+		const onUpdate = () => setDigestVersion((v) => v + 1);
+		window.addEventListener("dente-odontogram-update", onUpdate);
+		window.addEventListener("dente-update-tooth-state", onUpdate);
+		return () => {
+			window.removeEventListener("dente-odontogram-update", onUpdate);
+			window.removeEventListener("dente-update-tooth-state", onUpdate);
+		};
+	}, []);
+
+	// Извлекаем все активные находки осмотра из одонтограммы пациента и useVisitStore
 	const findings: FindingItem[] = useMemo(() => {
-		const list: FindingItem[] = [];
+		const map = new Map<number, FindingItem>();
+
+		// 1. Читаем постоянное состояние одонтограммы пациента (если задан patientId)
+		if (patientId) {
+			const stored = loadStoredTeethData(patientId);
+			if (stored && Array.isArray(stored)) {
+				for (const t of stored) {
+					if (!t || !t.toothNumber) continue;
+					const st = String(t.state || "");
+					const normKey = normalizeToothStateKey(st);
+					if (normKey === "healthy" || normKey === "idle" || normKey === "0" || normKey === "") continue;
+
+					const meta = TOOTH_STATE_NAMES[normKey] || {
+						title: `Статус: ${st}`,
+						icd10: "K02.1",
+						treatment: "Лечение по протоколу СтАР",
+						priceKopecks: 500000,
+					};
+
+					map.set(t.toothNumber, {
+						tooth: t.toothNumber,
+						state: normKey as ToothState,
+						stateTitle: meta.title,
+						icd10: meta.icd10,
+						diagnosisLabel: `${meta.title} (${meta.icd10})`,
+						treatmentSummary: meta.treatment,
+						priceKopecks: meta.priceKopecks,
+					});
+				}
+			}
+		}
+
+		// 2. Накладываем оперативное состояние визита из useVisitStore
 		for (const [codeStr, state] of Object.entries(visitToothStateByCode)) {
-			if (!state || state === "healthy" || state === "idle") continue;
+			if (!state) continue;
+			const normKey = normalizeToothStateKey(state);
 			const toothNum = parseInt(codeStr, 10);
 			if (Number.isNaN(toothNum)) continue;
 
-			const meta = TOOTH_STATE_NAMES[state] || {
+			if (normKey === "healthy" || normKey === "idle") {
+				map.delete(toothNum);
+				continue;
+			}
+
+			const meta = TOOTH_STATE_NAMES[normKey] || {
 				title: `Статус: ${state}`,
 				icd10: "K02.1",
 				treatment: "Лечение по протоколу СтАР",
@@ -107,9 +195,9 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 			};
 			const rec = visitToothRecordsByCode[codeStr];
 
-			list.push({
+			map.set(toothNum, {
 				tooth: toothNum,
-				state,
+				state: normKey as ToothState,
 				stateTitle: rec?.diagnosis || meta.title,
 				icd10: rec?.diagnosisIcd10 || meta.icd10,
 				diagnosisLabel: `${rec?.diagnosis || meta.title} (${rec?.diagnosisIcd10 || meta.icd10})`,
@@ -117,8 +205,9 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				priceKopecks: meta.priceKopecks,
 			});
 		}
-		return list.sort((a, b) => a.tooth - b.tooth);
-	}, [visitToothStateByCode, visitToothRecordsByCode]);
+
+		return Array.from(map.values()).sort((a, b) => a.tooth - b.tooth);
+	}, [visitToothStateByCode, visitToothRecordsByCode, patientId, digestVersion]);
 
 	// Комплексное применение по всем найденным зубам (1-клик мандат 8e)
 	const handleBatchApplyAllTeeth = () => {
@@ -380,6 +469,11 @@ export const CopilotVisitClinicalDigest: React.FC<CopilotVisitClinicalDigestProp
 				</div>
 			</div>
 		);
+	}
+
+	// Если находок нет и показ пустого состояния отключен (например, внутри идущего чата)
+	if (!showEmptyStateIfNoFindings) {
+		return null;
 	}
 
 	// СЦЕНАРИЙ В: Чистая одонтограмма (ничего еще не отмечено, пациент только сел)
