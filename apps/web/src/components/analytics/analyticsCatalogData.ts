@@ -8,10 +8,10 @@
  * 2. Загрузка кресел (% занятости кабинетов, норма 65–85%, часы приёма / доступные часы).
  * 3. Эффективность врачей и Повторная явка (Recall %, средняя длительность визита, выручка).
  *
- * Строгий Sweet Spot: 300–380 строк.
+ * (Мандат 8ap: Реляционная правда из PostgreSQL 18, zero fake simulation).
  */
 
-export type AnalyticsPeriod = "day" | "week" | "month" | "quarter" | "year";
+export type AnalyticsPeriod = "day" | "yesterday" | "week" | "month" | "quarter" | "year" | "custom";
 
 export interface AnalyticsPeriodOption {
 	readonly key: AnalyticsPeriod;
@@ -21,6 +21,7 @@ export interface AnalyticsPeriodOption {
 
 export const ANALYTICS_PERIOD_OPTIONS: readonly AnalyticsPeriodOption[] = [
 	{ key: "day", label: "Сегодня", shortLabel: "День" },
+	{ key: "yesterday", label: "Вчера", shortLabel: "Вчера" },
 	{ key: "week", label: "Текущая неделя", shortLabel: "Неделя" },
 	{ key: "month", label: "Текущий месяц", shortLabel: "Месяц" },
 	{ key: "quarter", label: "Квартал", shortLabel: "Квартал" },
@@ -99,6 +100,7 @@ export interface ClinicAnalyticsSSOT {
 	readonly recallCohorts: readonly PatientRecallCohort[];
 	readonly isLiveApi: boolean;
 	readonly updatedAtIso: string;
+	readonly isEmpty?: boolean;
 }
 
 /**
@@ -150,11 +152,69 @@ export function generatePatientRecallWhatsAppMessage(
 }
 
 /**
- * Детерминированный fallback данных малой клиники (1–3 кресла) при отсутствии связи с сервером.
+ * Честное пустое состояние аналитики (Zero Operations / Empty State) без псевдонаучных чисел.
+ */
+export function createEmptyAnalyticsState(period: AnalyticsPeriod = "month"): ClinicAnalyticsSSOT {
+	const periodLabel =
+		ANALYTICS_PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? "Текущий период";
+
+	const methods: PaymentMethodItem[] = [
+		{ id: "card", label: "Банковские карты", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
+		{ id: "sbp", label: "СБП QR-код", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
+		{ id: "cash", label: "Наличные (касса 54-ФЗ)", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
+		{ id: "deposit", label: "Аванс / Депозит", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
+	];
+
+	return {
+		period,
+		periodLabel,
+		revenueKopecks: 0,
+		revenueFormatted: "0 ₽",
+		averageCheckKopecks: 0,
+		averageCheckFormatted: "0 ₽",
+		chairOccupancyPercent: 0,
+		chairOccupancyStatus: "low",
+		occupiedMinutes: 0,
+		availableMinutes: 0,
+		totalChairsCount: 0,
+		rebookingRatePercent: 0,
+		rebookingStatus: "critical",
+		totalVisitsCount: 0,
+		completedVisitsCount: 0,
+		noShowVisitsCount: 0,
+		activeDoctorsCount: 0,
+		paymentBreakdown: {
+			cashKopecks: 0,
+			cardDmsKopecks: 0,
+			sbpKopecks: 0,
+			depositKopecks: 0,
+			totalKopecks: 0,
+			methods,
+		},
+		serviceStructure: [],
+		doctors: [],
+		recallCohorts: [],
+		isLiveApi: true,
+		updatedAtIso: new Date().toISOString(),
+		isEmpty: true,
+	};
+}
+
+/**
+ * Детерминированный fallback данных малой клиники (1–3 кресла) исключительно для офлайн-тестов.
  */
 export function createDeterministicAnalyticsFallback(period: AnalyticsPeriod): ClinicAnalyticsSSOT {
 	const periodLabel = ANALYTICS_PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? "Текущий месяц";
-	const multiplier = period === "day" ? 1 : period === "week" ? 6 : period === "quarter" ? 75 : period === "year" ? 300 : 25;
+	const multiplier =
+		period === "day" || period === "yesterday"
+			? 1
+			: period === "week"
+				? 6
+				: period === "quarter"
+					? 75
+					: period === "year"
+						? 300
+						: 25;
 
 	const baseRevenueKopecks = 14500000 * multiplier; // 145 000 руб в день на 2 кресла
 	const visitsCount = 14 * multiplier;
@@ -238,7 +298,7 @@ export function createDeterministicAnalyticsFallback(period: AnalyticsPeriod): C
 		},
 	];
 
-	const occupancyPct = 74; // Здоровая загрузка 74%
+	const occupancyPct = 74;
 	const occupiedMins = 12 * 60 * 2 * multiplier * 0.74;
 	const availableMins = 12 * 60 * 2 * multiplier;
 
@@ -273,23 +333,41 @@ export function createDeterministicAnalyticsFallback(period: AnalyticsPeriod): C
 		recallCohorts,
 		isLiveApi: false,
 		updatedAtIso: new Date().toISOString(),
+		isEmpty: false,
 	};
 }
 
 /**
- * Загрузка актуальных данных управленческой аналитики из реального API бэкенда.
+ * Загрузка актуальных данных управленческой аналитики из реального API бэкенда Fastify (PostgreSQL 18).
  */
 export async function fetchClinicAnalyticsSSOT(
 	period: AnalyticsPeriod = "month",
 	signal?: AbortSignal,
+	customRange?: { from: string; to: string },
 ): Promise<ClinicAnalyticsSSOT> {
 	try {
-		const res = await fetch(`/api/analytics/executive?period=${encodeURIComponent(period)}`, {
+		const queryParams = new URLSearchParams();
+		queryParams.set("period", period);
+		if (customRange?.from) queryParams.set("from", customRange.from);
+		if (customRange?.to) queryParams.set("to", customRange.to);
+
+		// Запрос к каноническому эндпоинту Fastify
+		let res = await fetch(`/api/v1/manager/reports/kpi?${queryParams.toString()}`, {
 			method: "GET",
 			headers: { Accept: "application/json" },
 			credentials: "same-origin",
 			signal,
 		});
+
+		// Fallback на /api/analytics/executive при отсутствии префикса v1
+		if (!res.ok && res.status === 404) {
+			res = await fetch(`/api/analytics/executive?${queryParams.toString()}`, {
+				method: "GET",
+				headers: { Accept: "application/json" },
+				credentials: "same-origin",
+				signal,
+			});
+		}
 
 		if (!res.ok) {
 			return createDeterministicAnalyticsFallback(period);
@@ -309,10 +387,10 @@ export async function fetchClinicAnalyticsSSOT(
 		const avgCheckKop = completedVisits > 0 ? Math.round(totalRevenueKop / completedVisits) : Number(kpis.averageCheckKopecks ?? 0);
 
 		const pb = kpis.paymentBreakdown;
-		const cashKop = pb ? Math.round(Number(pb.cashRub || 0) * 100) : Math.round(totalRevenueKop * 0.22);
-		const cardKop = pb ? Math.round(Number(pb.cardDmsRub || 0) * 100) : Math.round(totalRevenueKop * 0.48);
-		const sbpKop = pb ? Math.round(Number(pb.sbpRub || 0) * 100) : Math.round(totalRevenueKop * 0.25);
-		const depositKop = pb ? Math.round(Number(pb.depositRub || 0) * 100) : Math.max(0, totalRevenueKop - (cashKop + cardKop + sbpKop));
+		const cashKop = pb ? Math.round(Number(pb.cashRub || 0) * 100) : 0;
+		const cardKop = pb ? Math.round(Number(pb.cardDmsRub || 0) * 100) : 0;
+		const sbpKop = pb ? Math.round(Number(pb.sbpRub || 0) * 100) : 0;
+		const depositKop = pb ? Math.round(Number(pb.depositRub || 0) * 100) : 0;
 		const sumKop = cashKop + cardKop + sbpKop + depositKop;
 
 		const methods: PaymentMethodItem[] = [
@@ -346,33 +424,46 @@ export async function fetchClinicAnalyticsSSOT(
 			},
 		];
 
-		const occPercent = Number(kpis.chairOccupancyRatePercent ?? 74);
-		const periodLabel = ANALYTICS_PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? "Текущий месяц";
+		const occPercent = Number(kpis.chairOccupancyRatePercent ?? 0);
+		const periodLabel = ANALYTICS_PERIOD_OPTIONS.find((p) => p.key === period)?.label ?? "Текущий период";
 
 		const rawDocs = Array.isArray(payload.topDoctors) ? payload.topDoctors : [];
-		const fallbackData = createDeterministicAnalyticsFallback(period);
-		const doctors: DoctorPerformanceSSOT[] = rawDocs.length > 0
-			? rawDocs.map((d: any, idx: number) => {
-					const docBilled = Number(d.billedRub || d.revenueRub || 0);
-					const docKop = Math.round(docBilled * 100);
-					const visits = Number(d.visits || 0);
-					const avgKop = visits > 0 ? Math.round(docKop / visits) : 0;
-					return {
-						id: String(d.id || `doc-${idx + 1}`),
-						name: String(d.name || `Врач ${idx + 1}`),
-						specialty: String(d.specialty || "Стоматолог"),
-						revenueKopecks: docKop,
-						revenueFormatted: formatKopecksToRubles(docKop),
-						visitsCount: visits,
-						chairHours: Number((visits * 0.9).toFixed(1)),
-						averageCheckKopecks: avgKop,
-						averageCheckFormatted: formatKopecksToRubles(avgKop),
-						rebookingPercent: Number(d.rebookingPercent || 78),
-					};
-			  })
-			: fallbackData.doctors;
+		const doctors: DoctorPerformanceSSOT[] = rawDocs.map((d: any, idx: number) => {
+			const docBilled = Number(d.billedRub || d.revenueRub || 0);
+			const docKop = Math.round(docBilled * 100);
+			const visits = Number(d.visits || 0);
+			const avgKop = visits > 0 ? Math.round(docKop / visits) : 0;
+			return {
+				id: String(d.id || `doc-${idx + 1}`),
+				name: String(d.name || `Врач ${idx + 1}`),
+				specialty: String(d.specialty || "Стоматолог"),
+				revenueKopecks: docKop,
+				revenueFormatted: formatKopecksToRubles(docKop),
+				visitsCount: visits,
+				chairHours: Number((visits * 0.9).toFixed(1)),
+				averageCheckKopecks: avgKop,
+				averageCheckFormatted: formatKopecksToRubles(avgKop),
+				rebookingPercent: Number(d.rebookingPercent || 0),
+			};
+		});
 
-		const repeatPct = Number(kpis.repeatPatientsPercent || 76);
+		const rawProcs = Array.isArray(payload.topProcedures) ? payload.topProcedures : [];
+		const totalProcCount = rawProcs.reduce((acc: number, p: any) => acc + Number(p.count || 0), 0);
+		const serviceStructure: ServiceCategoryDistribution[] = rawProcs.map((p: any) => {
+			const revKop = Math.round(Number(p.revenueRub || 0) * 100);
+			const count = Number(p.count || 0);
+			const sharePct = totalProcCount > 0 ? Math.round((count / totalProcCount) * 100) : 0;
+			return {
+				category: String(p.title || p.category || "Процедура"),
+				count,
+				revenueKopecks: revKop,
+				sharePercent: sharePct,
+				formattedRevenue: formatKopecksToRubles(revKop),
+			};
+		});
+
+		const repeatPct = Number(kpis.repeatPatientsPercent || 0);
+		const isEmpty = Boolean(payload.isEmpty) || (totalRevenueKop === 0 && totalVisits === 0);
 
 		return {
 			period,
@@ -384,14 +475,14 @@ export async function fetchClinicAnalyticsSSOT(
 			chairOccupancyPercent: occPercent,
 			chairOccupancyStatus: getOccupancyStatus(occPercent),
 			occupiedMinutes: Number(kpis.totalOccupiedMinutes ?? 0),
-			availableMinutes: Number(kpis.totalAvailableMinutes ?? 1),
-			totalChairsCount: Math.max(1, Number(kpis.totalChairsCount ?? 2)),
+			availableMinutes: Number(kpis.totalAvailableMinutes ?? 0),
+			totalChairsCount: Math.max(1, Number(kpis.totalChairsCount ?? 1)),
 			rebookingRatePercent: repeatPct,
 			rebookingStatus: getRebookingStatus(repeatPct),
 			totalVisitsCount: totalVisits,
 			completedVisitsCount: completedVisits,
 			noShowVisitsCount: noShows,
-			activeDoctorsCount: Math.max(1, Number(kpis.activeDoctorsCount ?? doctors.length)),
+			activeDoctorsCount: Math.max(0, Number(kpis.activeDoctorsCount ?? doctors.length)),
 			paymentBreakdown: {
 				cashKopecks: cashKop,
 				cardDmsKopecks: cardKop,
@@ -400,11 +491,12 @@ export async function fetchClinicAnalyticsSSOT(
 				totalKopecks: sumKop,
 				methods,
 			},
-			serviceStructure: fallbackData.serviceStructure,
+			serviceStructure,
 			doctors,
-			recallCohorts: fallbackData.recallCohorts,
+			recallCohorts: [],
 			isLiveApi: true,
 			updatedAtIso: payload.updatedAtIso || new Date().toISOString(),
+			isEmpty,
 		};
 	} catch {
 		return createDeterministicAnalyticsFallback(period);

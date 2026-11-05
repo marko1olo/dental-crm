@@ -1,5 +1,5 @@
 import { Wallet } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { money } from "../../../AppHelpers";
 import { formatRub as shortRub } from "../../../pages/analyticsDoctorMetrics.js";
 import type { ReportsSummary } from "../ManagerReportsTypes";

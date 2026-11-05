@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { money } from "../../../AppHelpers";
 import type { DoctorRow } from "../ManagerReportsTypes";
 import { formatPercent } from "../managerReportsHelpers";

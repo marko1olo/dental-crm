@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { ReportsKpiAverageTicketCard } from "./ReportsKpiAverageTicketCard";
 import { ReportsKpiFlowCard } from "./ReportsKpiFlowCard";
 import { ReportsKpiReceivablesCard } from "./ReportsKpiReceivablesCard";

@@ -82,6 +82,7 @@ import { registerPublicBookingRoutes } from "../routes/publicBooking.js";
 import { registerPublicEstimatesRoutes } from "../routes/publicEstimates.js";
 import { registerReferralRoutes } from "../routes/referrals.js";
 import { registerReportRoutes } from "../routes/reports.js";
+import { registerManagerReportsRoutes } from "../routes/managerReportsRoutes.js";
 import { registerSberbankRoutes } from "../routes/sberbank.js";
 import { registerSberPosWebhookRoutes } from "../routes/payments/sberPosWebhookRoute.js";
 import { registerFiscalReceiptRoutes } from "../routes/fiscal/fiscalReceiptRoutes.js";
@@ -90,6 +91,8 @@ import { registerScheduleRoutes } from "../routes/schedule.js";
 import { registerSettingsRoutes } from "../routes/settings.js";
 import { registerDoctorPreferencesRoutes } from "../routes/doctorPreferencesRoutes.js";
 import { registerDoctorEarningsRoutes } from "../routes/doctorEarningsRoutes.js";
+import { registerPayrollRoutes } from "../routes/payroll.js";
+import { registerDoctorReportsRoutes } from "../routes/doctorReports.js";
 import { registerChairRentalRoutes } from "../routes/chairRentalRoutes.js";
 import { registerStaffRoutes } from "../routes/staff.js";
 import { registerStaffChatRoutes } from "../routes/staffChat.js";
@@ -219,6 +222,8 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	await registerSettingsRoutes(app);
 	await registerDoctorPreferencesRoutes(app);
 	await registerDoctorEarningsRoutes(app);
+	await registerPayrollRoutes(app);
+	await registerDoctorReportsRoutes(app);
 	await registerChairRentalRoutes(app);
 	await registerStaffRoutes(app);
 	await registerStaffChatRoutes(app);
@@ -287,6 +292,7 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 
 	// Отчёты руководителю.
 	await registerReportRoutes(app);
+	await registerManagerReportsRoutes(app);
 
 	// Квитанции о доставке от провайдеров.
 	await registerCommunicationReceiptRoutes(app);

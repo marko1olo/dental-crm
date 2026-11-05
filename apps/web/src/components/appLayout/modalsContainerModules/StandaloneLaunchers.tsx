@@ -11,6 +11,7 @@
  * - #consents, ?consents=1: DirectConsentLauncher
  * - #booking, #online-booking: DirectPublicBookingLauncher
  * - #analytics", #dashboard": DirectAnalyticsLauncher
+ * - #endo, ?endo=1, #root-canals: DirectEndodonticsLauncher
  */
 
 import type React from "react";
@@ -28,6 +29,7 @@ export { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLa
 export { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
 export { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
 export { DirectOdontogramLauncher } from "../../odontogram/DirectOdontogramLauncher";
+export { DirectEndodonticsLauncher } from "../../endo/DirectEndodonticsLauncher";
 export { DirectLeadsLauncher } from "../../leads/DirectLeadsLauncher";
 export { DirectSettingsLauncher } from "../../settings/DirectSettingsLauncher";
 export { DirectAnalyticsLauncher };
@@ -40,10 +42,14 @@ export function renderStandaloneLaunchers(
 		return null;
 	}
 
-	// 0. Прямой SSOT-роут аналитики (#analytics", #dashboard")
+	// 0. Прямой SSOT-роут аналитики (#analytics, #dashboard)
 	if (
 		typeof window !== "undefined" &&
-		(window.location.hash === '#analytics"' ||
+		(window.location.hash === "#analytics" ||
+			window.location.hash === "#dashboard" ||
+			window.location.hash.startsWith("#analytics") ||
+			window.location.hash.startsWith("#dashboard") ||
+			window.location.hash === '#analytics"' ||
 			window.location.hash === '#dashboard"')
 	) {
 		return <DirectAnalyticsLauncher />;

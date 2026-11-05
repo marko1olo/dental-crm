@@ -1,3 +1,4 @@
+import React from "react";
 import { Download, Printer, RefreshCw, TrendingUp } from "lucide-react";
 import type { CalendarPeriod } from "../ManagerReportsTypes";
 

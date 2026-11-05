@@ -1,5 +1,5 @@
 import { Clock } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { ScheduleLoadReport } from "../ManagerReportsTypes";
 import { formatHours } from "../managerReportsHelpers";
 import { safePercentWidth } from "../reportsCsvExport";

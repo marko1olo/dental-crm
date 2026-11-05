@@ -12209,3 +12209,35 @@
   - Проверка кодировок: `npm run check:encoding` — 23 829 файлов проверено, 0 замечаний (PASS);
   - TypeScript компиляция EMR: 0 ошибок в `apps/web/src/components/emr/`.
 
+---
+
+### ВОЛНА 502: Управленческая аналитика клиники (Executive Analytics Studio SSOT), Отчеты руководителя, Кассовая выручка 54-ФЗ, Загрузка кресел 65–85%, Тотальная ликвидация моков и синтетических заглушек (Zero Mock Fallback) — Fastify API, Apple HIG и 4-State Visual Proof
+
+- **1. Консолидация аналитического контура и ликвидация мок-заглушек (Мандаты 8z, 8aq, 8ak)**:
+  - Тотально ликвидирована фальсификация метрик (`createDeterministicAnalyticsFallback` больше не подмешивает 145 000 ₽ при пустой БД или офлайне).
+  - Внедрен честный пустой стейт (`createEmptyAnalyticsState`): при отсутствии операций («За выбранный период операций не зафиксировано») и информативный баннер при сетевой ошибке с кнопкой повтора.
+  - Канонический SSOT центр: `ExecutiveAnalyticsStudioModal.tsx` полностью покрывает все управленческие KPI; в `ReportsDashboard.tsx` встроен прямой шлюз-баннер в Executive Студию (`dente:open-analytics`).
+- **2. Боевые Fastify эндпоинты управленческих отчетов (`managerReportsRoutes.ts`)**:
+  - `GET /api/v1/manager/reports/financial` — кассовая выручка 54-ФЗ в целочисленных копейках с разбивкой по методам: Наличные, Банковские карты POS, QR СБП, Депозиты.
+  - `GET /api/v1/manager/reports/chair-occupancy` — загрузка кресел клиники (Occupancy Rate % = занятые часы / доступные часы кресел, норма 65–85%).
+  - `GET /api/v1/manager/reports/kpi` — сводный дашборд руководителя: конверсия воронки, средний чек, выработка врачей, повторная явка (Recall).
+  - Каноническая регистрация в `apps/api/src/serverModules/routeRegistrar.ts`.
+- **3. Клинический реализм и точность финансовых расчетов (Мандаты 8e, 8n, 8ap)**:
+  - 100% целочисленные копейки (`amountKopecks: number | bigint`), нулевая терпимость к погрешностям IEEE 754.
+  - Устранена сырая LaTeX разметка в заголовках (`(Recall $\ge 70\%$)` -> `(Recall ≥ 70%)`).
+- **4. Сенсорная адаптивность Apple HIG (390×844) и 1 Primary CTA (Мандаты 8am, 8ze, 8al)**:
+  - Ровно 1 Primary CTA: кнопка «Экспорт управленческого отчёта» (`bg-[var(--primary)] text-white`).
+  - Сегментированный переключатель периодов откалиброван под мобильный экран (короткие читаемые метки: `День`, `Вчера`, `Неделя`, `Месяц`, `Квартал`, `Год` с размером `text-[11px]`).
+  - 0px паразитного горизонтального скролла.
+- **5. 4-состоятельный Red Team Visual Proof**:
+  - В `docs/proofs/reports/` и артефактах зафиксированы и лично осмотрены через `read_file` 4 скриншота на живом дев-сервере:
+    - `executive_analytics_pc_light.png` (1440×900 PC Light, реальная база PostgreSQL 18, 38 500 ₽ выручки, 343 KB);
+    - `executive_analytics_pc_dark.png` (1440×900 PC Dark, бархатная темная тема, 0 белых пятен, 435 KB);
+    - `executive_analytics_mobile_light.png` (390×844 Mobile Light, Apple HIG Segmented Control, 132 KB);
+    - `executive_analytics_mobile_dark.png` (390×844 Mobile Dark, Apple HIG Bottom Sheet, 141 KB).
+- **6. 100% Машинные гейты верификации**:
+  - Юнит-тесты бэкенда: `apps/api/src/tests/routes/managerReportsRoutes.test.ts` — 2/2 PASS;
+  - Юнит-тесты фронтенда: `apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx` (13 тестов), `doctorShiftCloseModalAndReportsDashboard.test.tsx` (6 тестов) — 19/19 PASS;
+  - Машинные гейты: `check:encoding` (23 839 файлов), `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` — 0 ошибок (Exit Code 0).
+
+

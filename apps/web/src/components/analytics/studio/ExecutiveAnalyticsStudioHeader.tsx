@@ -91,7 +91,7 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 			{/* Полоса периодов для мобильных устройств (sm:hidden) */}
 			<div className="sm:hidden px-3 pt-3">
 				<div
-					className="grid grid-cols-5 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]"
+					className="grid grid-cols-6 p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-0.5"
 					role="tablist"
 					aria-label="Выбор периода аналитики"
 				>
@@ -104,7 +104,7 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 								role="tab"
 								aria-selected={isActive}
 								onClick={() => onPeriodChange(opt.key)}
-								className={`h-9 rounded-lg text-xs font-medium transition-colors cursor-pointer flex items-center justify-center ${
+								className={`h-8 rounded-lg text-[11px] font-medium transition-colors cursor-pointer flex items-center justify-center px-1 ${
 									isActive
 										? "bg-[var(--paper)] text-[var(--ink)] font-bold shadow-xs"
 										: "text-[var(--muted)] hover:text-[var(--ink)]"
