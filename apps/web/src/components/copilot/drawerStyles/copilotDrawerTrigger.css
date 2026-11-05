@@ -51,6 +51,9 @@ body:has([data-testid="direct-odontogram-launcher-root"]) .copilot-trigger-btn,
 :has([data-testid="odontogram-studio-modal"]) .copilot-trigger-btn,
 :has([data-testid="direct-odontogram-launcher-root"]) .copilot-trigger-btn {
   display: none !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  visibility: hidden !important;
 }
 
 /* Mobile ergonomics: lift above mobile bottom tabbar (56px) and schedule action bar */

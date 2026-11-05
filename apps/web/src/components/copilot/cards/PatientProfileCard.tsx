@@ -10,13 +10,13 @@ import {
   MapPin,
   Phone,
   ShieldAlert,
-  ShieldCheck,
   Sparkles,
   User,
   Users,
 } from "lucide-react";
 import type { PatientProfileCardProps } from "./types";
 import { formatDateTime, formatMoney } from "../useCopilotFormat";
+import { isNegativeAllergyStatement } from "../../../utils/somaticNorm";
 
 export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
 	patient,
@@ -61,7 +61,7 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
 	const isPositive = rawBalance >= 0;
 	const statusLower = (patient.status || "active").toLowerCase();
 
-	const allergiesList = patient.allergies || [];
+	const allergiesList = (patient.allergies || []).filter((a) => !isNegativeAllergyStatement(a));
 	const hasAllergies = allergiesList.length > 0;
 
 	return (
@@ -140,7 +140,7 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
 				)}
 			</div>
 
-			{/* Allergy & Safety Alert */}
+			{/* Allergy & Safety Alert: strictly zero pixels when clean (Zero-Allergy-Bloat) */}
 			{hasAllergies ? (
 				<div className="copilot-pp-allergy-alert danger">
 					<ShieldAlert size={15} style={{ flexShrink: 0 }} />
@@ -148,15 +148,7 @@ export const PatientProfileCard: React.FC<PatientProfileCardProps> = ({
 						<strong>Аллергический статус:</strong> {allergiesList.join(", ")}
 					</span>
 				</div>
-			) : (
-				<div className="copilot-pp-allergy-alert clean">
-					<ShieldCheck
-						size={14}
-						style={{ flexShrink: 0, color: "var(--green, #15803d)" }}
-					/>
-					<span>Аллергоанамнез не отягощен</span>
-				</div>
-			)}
+			) : null}
 
 			{/* Clinical History & Next Visit */}
 			{(patient.lastVisitDate ||

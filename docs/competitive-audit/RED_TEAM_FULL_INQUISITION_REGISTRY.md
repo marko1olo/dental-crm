@@ -847,6 +847,34 @@
      - `docs/proofs/copilot/04_copilot_dictation_applied_pc_dark_1440x900.png`
 
 
+### [COP-09] [UX-05] [SEV-1] [ИСПРАВЛЕНО] Ликвидация аллергического блоата (Zero-Allergy-Bloat), наезда кнопки закрытия в шапке и очистка технических идентификаторов в телеметрии (Мандаты 8e, 8y, 8am, Apple HIG)
+- **Файлы:**
+  - [`apps/web/src/components/copilot/cards/PatientProfileCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/PatientProfileCard.tsx)
+  - [`apps/web/src/components/copilot/telemetry/CopilotContextTelemetryBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/telemetry/CopilotContextTelemetryBar.tsx)
+  - [`apps/web/src/components/copilot/actionConfirm/ActionConfirmHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/actionConfirm/ActionConfirmHeader.tsx)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
+  - [`apps/web/src/components/copilot/styles/copilotStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/styles/copilotStudio.css)
+  - [`apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css)
+  - [`apps/web/src/components/copilot/__tests__/CopilotClinicalCards.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/__tests__/CopilotClinicalCards.test.tsx)
+- **Суть бага:**
+  1. **Аллергический блоат:** У 99% здоровых пациентов без лекарственных аллергий рендерился раздутый зеленый щит «Аллергоанамнез не отягощен» (`.copilot-pp-allergy-alert.clean`), создававший 35px визуального бюрократического шума. Также чипы аллергий отображались при отрицательных формулировках («не отягощен», «отрицает», «нет»).
+  2. **Наезд в правом верхнем углу:** В шапке студии Копайлота кнопка закрытия `✕` (`copilot-studio-close-btn`) находилась вплотную к правому краю (`px-5`, 20px), из-за чего накладывалась на системные контролы PWA/браузера (три точки / системные кнопки окна). Кроме того, отсутствовала десктопная адаптация кнопок (36px desktop vs >=44px mobile).
+  3. **Технические идентификаторы в UI:** В полосе контекста телеметрии рендерились сырые идентификаторы `#pat-active` и `#pat-36`, нарушая профессиональный клинический облик системы.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `PatientProfileCard.tsx` полностью удален блок `.copilot-pp-allergy-alert.clean`. Добавлена фильтрация `isNegativeAllergyStatement`. Если аллергий нет — рендерится строго `null` (ровно 0px визуального шума). При реальных подтвержденных аллергенах (пенициллин, новокаин) выводится лаконичный красный пассивный бейдж `⚠️ Аллергический статус: ...`, при этом кнопки сохранения и утверждения никогда не блокируются (`disabled = false` по Мандатам 8e и 8y).
+  2. В `CopilotContextTelemetryBar.tsx` и `ActionConfirmHeader.tsx` чипы аллергии выводятся только для подтвержденных позитивных аллергенов (`!isNegativeAllergyStatement`). Сырые технические ID карты скрыты в доступный слой `sr-only` (`data-testid="telemetry-patient-id"`).
+  3. В `CopilotStudioModal.tsx` и `copilotStudio.css` шапка получила защитный отступ `pr-8 sm:pr-10 md:pr-12` и `padding-right: max(40px, env(safe-area-inset-right, 40px))` на десктопе, исключающий любые наложения системных контролов или кнопок меню. На десктопе кнопки оптимизированы до 36px (`w-9 h-9 min-w-[36px] min-h-[36px]`), а на мобильных устройствах сохранен сенсорный минимум Apple HIG >= 44x44px.
+  4. В `copilotDrawerTrigger.css` для плавающего триггера при открытой студии Копайлота зафиксировано полное скрытие: `display: none !important; opacity: 0 !important; pointer-events: none !important; visibility: hidden !important;`.
+  5. Проверено 4-State Playwright скриншотами и автоматическими тестами:
+     - `docs/proofs/copilot/01_copilot_studio_pc_light_1440x900.png`
+     - `docs/proofs/copilot/02_copilot_studio_pc_dark_1440x900.png`
+     - `docs/proofs/copilot/05_copilot_empty_starters_pc_light_1440x900.png`
+     - `docs/proofs/copilot/03_copilot_studio_mobile_light_390x844.png`
+     - `docs/proofs/copilot/04_copilot_studio_mobile_dark_390x844.png`
+     - `docs/proofs/copilot/06_copilot_empty_starters_mobile_light_390x844.png`
+     - `docs/proofs/copilot/08_copilot_memory_tab_pc_light_1440x900.png`
+     - `docs/proofs/copilot/09_copilot_actions_tab_pc_dark_1440x900.png`
+
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
 ### [MOB-01] [SEV-1] Каскадное отравление сенсорного минимума

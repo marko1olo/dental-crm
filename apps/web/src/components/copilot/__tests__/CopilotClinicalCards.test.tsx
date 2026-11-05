@@ -17,6 +17,27 @@ describe('Copilot Clinical Cards', () => {
     assert.ok(html.includes('Пенициллин') && html.includes('Лидокаин') && html.includes('Открыть карту'));
   });
 
+  it('renders PatientProfileCard with strictly 0px allergy bloat when patient has no allergies or negative statements', () => {
+    // 1. Пациент вообще без аллергий
+    const cleanPatient = {
+      id: 'p-101', fullName: 'Иванов Иван Иванович', birthDate: '10.02.1992', phone: '+7 (999) 000-11-22',
+      cardNumber: 'МК-101', status: 'active', balanceRub: 0,
+      allergies: [], lastVisitDate: '10.05.2026',
+    };
+    const htmlClean = renderToString(<PatientProfileCard patient={cleanPatient} onOpenCard={() => {}} />);
+    assert.equal(htmlClean.includes('copilot-pp-allergy-alert'), false, 'Блок аллергии не должен рендериться при отсутствии аллергий (0px)');
+    assert.equal(htmlClean.includes('Аллергоанамнез не отягощен'), false, 'Плашка «Аллергоанамнез не отягощен» запрещена (Zero Allergy Bloat)');
+
+    // 2. Пациент с отрицательной записью («не отягощен», «отрицает»)
+    const negativePatient = {
+      id: 'p-102', fullName: 'Петров Петр Петрович', birthDate: '01.01.1980',
+      allergies: ['Аллергоанамнез не отягощен', 'отрицает'],
+    };
+    const htmlNegative = renderToString(<PatientProfileCard patient={negativePatient} onOpenCard={() => {}} />);
+    assert.equal(htmlNegative.includes('copilot-pp-allergy-alert'), false, 'Отрицательные утверждения обязаны давать ровно 0 пикселей');
+    assert.equal(htmlNegative.includes('Аллергический статус'), false);
+  });
+
   it('renders ScheduleSlotPickerCard with doctor info, date chips, and 1-click booking', () => {
     const scheduleData = {
       doctorId: 'doc-1', doctorName: 'Д-р Иванов Петр Сергеевич', doctorSpecialty: 'Стоматолог-ортопед',

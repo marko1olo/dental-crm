@@ -60,9 +60,14 @@
 /* Шапка кабинета */
 .copilot-studio-header {
   display: flex; align-items: center; justify-content: space-between;
-  gap: 12px; padding: 12px 20px;
+  gap: 12px; padding: 12px max(32px, env(safe-area-inset-right, 32px)) 12px 20px;
   border-bottom: 1px solid var(--line, rgba(15, 118, 110, 0.15));
   flex-shrink: 0;
+}
+@media (min-width: 769px) {
+  .copilot-studio-header {
+    padding-right: max(40px, env(safe-area-inset-right, 40px));
+  }
 }
 .copilot-studio-brand {
   display: flex; align-items: center; gap: 10px; min-width: 0;
@@ -97,6 +102,7 @@
   border: 1px solid var(--line, rgba(15, 118, 110, 0.15));
   color: var(--muted, #64748b);
 }
+.copilot-studio-header .icon-button,
 .copilot-close-btn {
   width: 44px; height: 44px; min-width: 44px; min-height: 44px;
   border-radius: 10px;
@@ -106,9 +112,17 @@
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; transition: all 0.15s ease;
 }
+.copilot-studio-header .icon-button:hover,
 .copilot-close-btn:hover {
   background-color: var(--line, rgba(15, 118, 110, 0.2));
   color: var(--ink, #0f172a);
+}
+@media (min-width: 769px) {
+  .copilot-studio-header .icon-button,
+  .copilot-close-btn {
+    width: 36px; height: 36px; min-width: 36px; min-height: 36px;
+    border-radius: 8px;
+  }
 }
 
 /* Apple HIG Сегментные вкладки навигации */

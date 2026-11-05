@@ -1,5 +1,6 @@
 import React from 'react';
 import { AlertTriangle, Check, Edit3, ShieldAlert, X } from 'lucide-react';
+import { isNegativeAllergyStatement } from '../../../utils/somaticNorm';
 
 interface ActionConfirmHeaderProps {
   actionTitle: string;
@@ -61,7 +62,7 @@ export const ActionConfirmHeader: React.FC<ActionConfirmHeaderProps> = ({
         </div>
       </div>
 
-      {allergyWarningText && (
+      {allergyWarningText && !isNegativeAllergyStatement(allergyWarningText) && (
         <div
           className="copilot-action-confirm-allergy-badge"
           style={{

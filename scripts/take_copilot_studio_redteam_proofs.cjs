@@ -104,7 +104,7 @@ async function run() {
 		await setupPageAuth(pcContext);
 
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 35000 });
+		await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 60000 });
 		for (let i = 0; i < 30; i++) {
 			await pcPage.waitForTimeout(400);
 			const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
@@ -182,7 +182,7 @@ async function run() {
 		await setupPageAuth(mobileContext);
 
 		const mobilePage = await mobileContext.newPage();
-		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1&demo=true", { waitUntil: "domcontentloaded", timeout: 20000 });
+		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1&demo=true", { waitUntil: "domcontentloaded", timeout: 60000 });
 		await mobilePage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
 		await mobilePage.waitForTimeout(600);
 

@@ -12,6 +12,7 @@
 import React from "react";
 import { User, Cpu, Globe, HardDrive, Sparkles, ShieldAlert } from "lucide-react";
 import { useCopilotStore } from "../../../store/copilotStore";
+import { isNegativeAllergyStatement } from "../../../utils/somaticNorm";
 
 export interface CopilotContextTelemetryBarProps {
 	patientName?: string | null;
@@ -87,16 +88,20 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 				) : null}
 			</div>
 
-			{/* Клинические аллергии */}
-			{allergies && allergies.length > 0 && (
-				<span
-					className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/25 flex items-center gap-1 shrink-0"
-					title={allergies.join(", ")}
-				>
-					<ShieldAlert size={11} className="shrink-0" />
-					<span>{`Аллергии (${allergies.length})`}</span>
-				</span>
-			)}
+			{/* Клинические аллергии — СТРОГО при подтвержденных аллергиях (ноль шума при норме) */}
+			{(() => {
+				const realAllergies = (allergies || []).filter((a) => !isNegativeAllergyStatement(a));
+				if (realAllergies.length === 0) return null;
+				return (
+					<span
+						className="copilot-context-chip copilot-context-chip--warn px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-500/10 text-rose-600 border border-rose-500/25 flex items-center gap-1 shrink-0"
+						title={realAllergies.join(", ")}
+					>
+						<ShieldAlert size={11} className="shrink-0" />
+						<span>{`Аллергии (${realAllergies.length})`}</span>
+					</span>
+				);
+			})()}
 
 			{/* Врач на смене */}
 			{activeDoctor && (
