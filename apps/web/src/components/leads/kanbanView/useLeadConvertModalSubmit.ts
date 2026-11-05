@@ -64,10 +64,9 @@ export function useLeadConvertModalSubmit(opts: ConvertSubmitOptions) {
 			});
 			const activeLead = opts.leads.find((l) => l.id === opts.convertingLeadId);
 			const src = activeLead?.source ? ` (источник: ${activeLead.source})` : "";
-			const consent = options?.consentMarketing ? " [рассылки: разрешены]" : " [рассылки: отключены]";
 			const msg = activeLead?.existingPatient
-				? `Обращение записано на прием к пациенту (${activeLead.existingPatient.fullName})${src}${consent}`
-				: `Обращение записано на прием, создана карта пациента${src}${consent}`;
+				? `Пациент ${activeLead.existingPatient.fullName} записан на приём`
+				: `Пациент успешно записан на приём, создана карта`;
 			showToast(msg, "success");
 			opts.setIsConvertOpen(false);
 			opts.setConvertingLeadId(null);

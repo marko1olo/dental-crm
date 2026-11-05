@@ -430,11 +430,11 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		],
 	},
 	{
-		title: "Послеоперационный опрос 043/у (Telegram)",
+		title: "Послеоперационный опрос о самочувствии (Telegram)",
 		channel: "telegram",
 		intent: "post_op_checkup_043",
 		templateText:
-			"Здравствуйте, {patient_first_name}!\n\nВрач {doctor_name} и команда клиники «{clinic_name}» заботятся о вашем самочувствии после недавнего визита.\n\nПожалуйста, ответьте на пару вопросов о вашем состоянии в короткой анкете 043/у: {portal_link}\n\nЕсли вас беспокоит боль, отёк или дискомфорт — сразу свяжитесь с нами: {clinic_phone}.",
+			"Здравствуйте, {patient_first_name}!\n\nВрач {doctor_name} и команда клиники «{clinic_name}» заботятся о вашем самочувствии после недавнего визита.\n\nПожалуйста, ответьте на пару вопросов о вашем состоянии в короткой анкете о самочувствии: {portal_link}\n\nЕсли вас беспокоит боль, отёк или дискомфорт — сразу свяжитесь с нами: {clinic_phone}.",
 		variables: [
 			"patient_first_name",
 			"doctor_name",
@@ -444,7 +444,7 @@ export const DEFAULT_MESSAGE_TEMPLATES: readonly DefaultTemplateSeed[] = [
 		],
 	},
 	{
-		title: "Послеоперационный опрос 043/у (WhatsApp)",
+		title: "Послеоперационный опрос о самочувствии (WhatsApp)",
 		channel: "whatsapp",
 		intent: "post_op_checkup_043",
 		templateText:

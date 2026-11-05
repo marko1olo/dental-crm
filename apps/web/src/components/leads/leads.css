@@ -17,7 +17,9 @@
 	--leads-line-strong: var(--line-strong, #cbd5e1);
 }
 
-.dark {
+.dark,
+[data-theme="dark"],
+[data-theme="night"] {
 	--leads-paper: var(--paper, #0b1120);
 	--leads-paper-card: var(--paper-card, #111827);
 	--leads-paper-subtle: var(--paper-subtle, #1e293b);
@@ -90,6 +92,8 @@
 	align-items: center;
 	justify-content: center;
 	box-sizing: border-box;
+	background-color: transparent;
+	border: none;
 }
 
 /* Мобильный Bottom Sheet адаптив (<= 768px) */

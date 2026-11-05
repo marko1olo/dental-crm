@@ -50,9 +50,10 @@ export const LeadsKanbanBoardGrid: React.FC<LeadsKanbanBoardGridProps> = ({
 	onQuickSchedule,
 	onOpenPatientCard,
 }) => {
+	const isFunnel = activeColumns.length <= 4;
 	return (
 		<div
-			className="leads-kanban-board leads-kanban-board--funnel"
+			className={`leads-kanban-board ${isFunnel ? "leads-kanban-board--funnel" : "leads-kanban-board--all"}`}
 			data-testid="leads-kanban-board"
 		>
 			{activeColumns.map((col) => {

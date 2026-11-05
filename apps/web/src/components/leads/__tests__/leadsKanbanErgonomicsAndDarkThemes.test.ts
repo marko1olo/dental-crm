@@ -37,8 +37,8 @@ describe("Leads Kanban Ergonomics, Dark Themes & 1-Click Conversion Verification
 				CORE_FUNNEL_COLUMNS.map((c) => c.label),
 				[
 					"Новые",
-					"Квалифицированы",
-					"Консультация",
+					"В работе",
+					"Записан",
 					"Дошли",
 				],
 			);

@@ -37,13 +37,13 @@ export const CORE_FUNNEL_COLUMNS: readonly [
 	},
 	{
 		id: "contacted",
-		label: "Квалифицированы",
+		label: "В работе",
 		color: "var(--teal-soft)",
 		icon: React.createElement(PhoneCall, { size: 15 }),
 	},
 	{
 		id: "consult_booked",
-		label: "Консультация",
+		label: "Записан",
 		color: "var(--teal-soft)",
 		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
@@ -96,8 +96,8 @@ export const ALL_KANBAN_COLUMNS: readonly [
 
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
 	new: "«Новые»",
-	contacted: "«Квалифицированы»",
-	consult_booked: "«Консультация»",
+	contacted: "«В работе»",
+	consult_booked: "«Записан»",
 	showed_up: "«Дошли»",
 	converted: "«Дошли»",
 	no_answer: "«Недозвон»",
@@ -110,9 +110,9 @@ export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
 export const NEXT_STAGE_MAP: Partial<
 	Record<LeadStatus, { status: LeadStatus; label: string }>
 > = {
-	new: { status: "contacted", label: "Квалифицировать →" },
+	new: { status: "contacted", label: "В работу →" },
 	contacted: { status: "consult_booked", label: "Записать на приём →" },
-	consult_booked: { status: "showed_up", label: "Отметить визит (прибыл) →" },
+	consult_booked: { status: "showed_up", label: "Отметить визит (дошел) →" },
 	showed_up: { status: "trash", label: "В архив →" },
 	converted: { status: "trash", label: "В архив →" },
 	no_answer: { status: "new", label: "Вернуть в новые →" },

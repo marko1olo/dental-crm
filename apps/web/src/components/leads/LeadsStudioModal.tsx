@@ -19,7 +19,6 @@ import {
 	calculateFunnelSummary, calculateChannelStats, getTrafficChannelDef, getFunnelStageDef,
 	formatRubles, normalizeRuPhone,
 } from "./leadsCatalogData";
-import "./leads.css";
 
 export interface LeadsStudioModalProps {
 	isOpen: boolean;
@@ -126,31 +125,31 @@ export const LeadsStudioModal: React.FC<LeadsStudioModalProps> = ({
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2">
+					<div className="flex items-center gap-1.5 sm:gap-2 flex-wrap sm:flex-nowrap w-full sm:w-auto justify-between sm:justify-end">
 						<div className="inline-flex p-1 rounded-xl bg-[var(--leads-paper-subtle)] border border-[var(--leads-line)]">
 							<button
 								type="button"
 								onClick={() => setActiveTab("kanban")}
-								className={`leads-touch-target px-3 py-1.5 rounded-lg text-xs font-semibold transition-all gap-1.5 ${
+								className={`leads-touch-target px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all gap-1.5 ${
 									activeTab === "kanban"
 										? "bg-[var(--leads-paper)] text-[var(--leads-teal)] shadow-xs"
-										: "text-[var(--leads-muted)] hover:text-[var(--leads-text)]"
+										: "bg-transparent text-[var(--leads-muted)] hover:text-[var(--leads-text)]"
 								}`}
 								data-testid="tab-kanban-button"
 							>
-								<Kanban size={14} /> Канбан-доска
+								<Kanban size={14} /> Канбан
 							</button>
 							<button
 								type="button"
 								onClick={() => setActiveTab("analytics")}
-								className={`leads-touch-target px-3 py-1.5 rounded-lg text-xs font-semibold transition-all gap-1.5 ${
+								className={`leads-touch-target px-2.5 sm:px-3 py-1.5 rounded-lg text-xs font-semibold transition-all gap-1.5 ${
 									activeTab === "analytics"
 										? "bg-[var(--leads-paper)] text-[var(--leads-teal)] shadow-xs"
-										: "text-[var(--leads-muted)] hover:text-[var(--leads-text)]"
+										: "bg-transparent text-[var(--leads-muted)] hover:text-[var(--leads-text)]"
 								}`}
 								data-testid="tab-analytics-button"
 							>
-								<BarChart3 size={14} /> Сводка каналов рекламы
+								<BarChart3 size={14} /> Каналы
 							</button>
 						</div>
 
@@ -158,16 +157,16 @@ export const LeadsStudioModal: React.FC<LeadsStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setIsCreateOpen(true)}
-							className="leads-touch-target px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--leads-teal)] hover:bg-[var(--leads-teal-hover)] shadow-xs flex items-center gap-1.5 transition-all"
+							className="leads-touch-target px-2.5 sm:px-3.5 py-2 rounded-xl text-xs font-bold text-white bg-[var(--leads-teal)] hover:bg-[var(--leads-teal-hover)] shadow-xs flex items-center gap-1.5 transition-all shrink-0"
 							data-testid="create-lead-trigger-btn"
 						>
-							<Plus size={16} /> <span>+ Новый лид</span>
+							<Plus size={16} /> <span className="hidden sm:inline">Новый лид</span>
 						</button>
 
 						<button
 							type="button"
 							onClick={onClose}
-							className="leads-touch-target w-9 h-9 rounded-xl hover:bg-[var(--leads-paper-subtle)] text-[var(--leads-muted)] hover:text-[var(--leads-text)] transition-colors"
+							className="leads-touch-target w-9 h-9 min-w-[36px] rounded-xl bg-transparent hover:bg-[var(--leads-paper-subtle)] text-[var(--leads-muted)] hover:text-[var(--leads-text)] transition-colors shrink-0"
 							aria-label="Закрыть"
 							data-testid="leads-modal-close-btn"
 						>

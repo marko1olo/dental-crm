@@ -17,13 +17,16 @@ export function useLeadsMobileFeedState(leads: Lead[]) {
 		const c: Record<string, number> = {
 			all: leads.length,
 			new: 0,
+			contacted: 0,
 			consult_booked: 0,
 			showed_up: 0,
 			trash: 0,
 		};
 		for (const l of leads) {
-			if (l.status === "new" || l.status === "contacted") {
+			if (l.status === "new") {
 				c.new = (c.new || 0) + 1;
+			} else if (l.status === "contacted") {
+				c.contacted = (c.contacted || 0) + 1;
 			} else if (l.status === "consult_booked") {
 				c.consult_booked = (c.consult_booked || 0) + 1;
 			} else if (l.status === "showed_up" || l.status === "converted") {
@@ -48,12 +51,8 @@ export function useLeadsMobileFeedState(leads: Lead[]) {
 	const visibleLeads = useMemo(
 		() =>
 			leads.filter((l) => {
-				if (
-					activeTab === "new" &&
-					l.status !== "new" &&
-					l.status !== "contacted"
-				)
-					return false;
+				if (activeTab === "new" && l.status !== "new") return false;
+				if (activeTab === "contacted" && l.status !== "contacted") return false;
 				if (activeTab === "consult_booked" && l.status !== "consult_booked")
 					return false;
 				if (
@@ -71,6 +70,7 @@ export function useLeadsMobileFeedState(leads: Lead[]) {
 				if (
 					activeTab !== "all" &&
 					activeTab !== "new" &&
+					activeTab !== "contacted" &&
 					activeTab !== "consult_booked" &&
 					activeTab !== "showed_up" &&
 					activeTab !== "trash"

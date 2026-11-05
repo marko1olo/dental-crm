@@ -17,9 +17,10 @@ interface LeadsMobileSegmentedBarProps {
 const TABS: { id: LeadStatus | "all"; label: string; testId: string }[] = [
 	{ id: "all", label: "Все", testId: "mobile-tab-all" },
 	{ id: "new", label: "Новые", testId: "mobile-tab-new" },
+	{ id: "contacted", label: "В работе", testId: "mobile-tab-contacted" },
 	{
 		id: "consult_booked",
-		label: "Записаны",
+		label: "Записан",
 		testId: "mobile-tab-consult_booked",
 	},
 	{ id: "showed_up", label: "Дошли", testId: "mobile-tab-showed_up" },
