@@ -13,7 +13,7 @@ export function QuickAssistantSelector({
   setAssistantUserId,
   assistants,
 }: QuickAssistantSelectorProps) {
-  if (isSoloClinic) return null;
+  if (isSoloClinic || !assistants || assistants.length === 0) return null;
 
   return (
     <div className="sm:col-span-2">

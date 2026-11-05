@@ -280,7 +280,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                     : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
                 }`}
               >
-                <span>🎯 Подбор</span>
+                <span>Подбор на окно</span>
                 <span className="opacity-80 text-[10px]">({state.rankedCandidates.length})</span>
               </button>
             )}
@@ -293,7 +293,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                   : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
               }`}
             >
-              <span>📋 Все ({state.items.length})</span>
+              <span>Все в очереди ({state.items.length})</span>
             </button>
           </div>
 
@@ -306,7 +306,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
                 : "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"
             }`}
           >
-            <span className="hidden sm:inline">+ Добавить</span>
+            <span className="hidden sm:inline">+ Добавить пациента</span>
             <span className="sm:hidden">+</span>
           </button>
         </div>

@@ -47,7 +47,7 @@ export const ChairShiftSelector: React.FC<ChairShiftSelectorProps> = ({
           <button
             type="button"
             onClick={() => onChairSelect("all")}
-            className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 whitespace-nowrap snap-start cursor-pointer ${
+            className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 whitespace-nowrap snap-start cursor-pointer border-none ${
               selectedChairId === "all"
                 ? "bg-[var(--teal,#0d9488)] text-white font-medium shadow-xs"
                 : "bg-[var(--line)]/40 hover:bg-[var(--line)]/70 text-[var(--ink)]"
@@ -60,7 +60,7 @@ export const ChairShiftSelector: React.FC<ChairShiftSelectorProps> = ({
               key={chair.id}
               type="button"
               onClick={() => onChairSelect(chair.id)}
-              className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 whitespace-nowrap snap-start cursor-pointer ${
+              className={`min-h-[32px] px-2.5 py-1 text-xs rounded-full transition-colors shrink-0 whitespace-nowrap snap-start cursor-pointer border-none ${
                 selectedChairId === chair.id
                   ? "bg-[var(--teal,#0d9488)] text-white font-medium shadow-xs"
                   : "bg-[var(--line)]/40 hover:bg-[var(--line)]/70 text-[var(--ink)]"
@@ -83,10 +83,10 @@ export const ChairShiftSelector: React.FC<ChairShiftSelectorProps> = ({
               type="button"
               onClick={() => onShiftSelect(shift.id)}
               title={shift.hours}
-              className={`px-2 py-0.5 rounded-md transition-colors text-[11px] font-medium cursor-pointer ${
+              className={`px-2 py-0.5 rounded-md transition-colors text-[11px] font-medium cursor-pointer border-none ${
                 selectedShift === shift.id
                   ? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs"
-                  : "text-[var(--muted)] hover:text-[var(--ink)]"
+                  : "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
               }`}
             >
               {shift.label}

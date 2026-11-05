@@ -63,7 +63,7 @@ export const ChairTimelineGrid: React.FC<ChairTimelineGridProps> = ({
           <button
             type="button"
             onClick={() => onSlotClick(selectedChairId === "all" ? "chair-1" : selectedChairId, "12:00")}
-            className="min-h-[44px] sm:min-h-0 px-3 py-1.5 text-xs rounded-lg font-medium border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
+            className="min-h-[44px] sm:min-h-0 px-3 py-1.5 text-xs rounded-lg font-medium border border-[var(--teal,#0d9488)] bg-transparent text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/10 flex items-center gap-1.5 cursor-pointer shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" /> Записать
           </button>
@@ -208,7 +208,7 @@ export const ChairTimelineGrid: React.FC<ChairTimelineGridProps> = ({
                     key={time}
                     type="button"
                     onClick={() => onSlotClick(chair.id, time)}
-                    className="w-full py-2 px-3 rounded-lg border border-dashed border-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--muted)] hover:text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/5 flex items-center justify-between text-xs transition-colors group cursor-pointer"
+                    className="w-full py-2 px-3 rounded-lg border border-dashed border-[var(--line)] bg-transparent hover:border-[var(--teal,#0d9488)] text-[var(--muted)] hover:text-[var(--teal,#0d9488)] hover:bg-[var(--teal,#0d9488)]/5 flex items-center justify-between text-xs transition-colors group cursor-pointer"
                   >
                     <span className="font-mono text-[var(--ink)] font-medium">{time}</span>
                     <span className="flex items-center gap-1 group-hover:underline">

@@ -1,7 +1,8 @@
 import type { Patient } from "@dental/shared";
 import { AlertCircle, AlertTriangle, Check, CreditCard, ShieldCheck, Sparkles, X } from "lucide-react";
-import React from "react";
+import React, { useMemo } from "react";
 import type { PatientReliabilityAssessment } from "../patientReliabilityScore";
+import { getPatientAllergyAlert } from "../appointmentCard/patientAlerts";
 
 export interface SelectedPatientCardProps {
   selectedPatient: Patient;
@@ -16,6 +17,9 @@ export function SelectedPatientCard({
   patientReliability,
   hasActivePatientVisit,
 }: SelectedPatientCardProps) {
+  const allergyAlert = useMemo(() => {
+    return getPatientAllergyAlert(selectedPatient);
+  }, [selectedPatient]);
   return (
     <div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-3" data-testid="selected-patient-card">
       <div className="flex items-center justify-between">
@@ -25,9 +29,19 @@ export function SelectedPatientCard({
           </div>
           <div className="min-w-0">
             <h4 className="text-sm font-bold text-[var(--ink)] m-0 leading-snug truncate">{selectedPatient.fullName}</h4>
-            <div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5">
+            <div className="text-xs text-[var(--muted)] flex gap-2 mt-0.5 items-center flex-wrap">
               {selectedPatient.phone && <span>{selectedPatient.phone}</span>}
               {selectedPatient.birthDate && <span>д.р. {selectedPatient.birthDate}</span>}
+              {allergyAlert && (
+                <span
+                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-700 dark:text-amber-300 bg-amber-500/10 px-1.5 py-0.5 rounded-md border border-amber-500/20"
+                  data-testid="selected-patient-allergy-alert"
+                  title={allergyAlert}
+                >
+                  <AlertTriangle size={12} className="text-amber-600 dark:text-amber-400 shrink-0" />
+                  <span className="truncate max-w-[200px]">{allergyAlert.replace(/^Внимание:\s*/, "")}</span>
+                </span>
+              )}
             </div>
           </div>
         </div>

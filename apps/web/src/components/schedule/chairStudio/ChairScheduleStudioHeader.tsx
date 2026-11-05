@@ -59,7 +59,7 @@ export const ChairScheduleStudioHeader: React.FC<ChairScheduleStudioHeaderProps>
             onClick={() => onDateShift(-1)}
             title="Предыдущий день"
             aria-label="Предыдущий день"
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-[var(--line)]/40 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-transparent border-none hover:bg-[var(--line)]/40 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
@@ -80,7 +80,7 @@ export const ChairScheduleStudioHeader: React.FC<ChairScheduleStudioHeaderProps>
             onClick={() => onDateShift(1)}
             title="Следующий день"
             aria-label="Следующий день"
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-[var(--line)]/40 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-transparent border-none hover:bg-[var(--line)]/40 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
           >
             <ChevronRight className="w-4 h-4" />
           </button>
@@ -92,8 +92,8 @@ export const ChairScheduleStudioHeader: React.FC<ChairScheduleStudioHeaderProps>
             <button
               type="button"
               onClick={() => onTabChange("grid")}
-              className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                activeTab === "grid" ? "bg-[var(--paper)] font-semibold shadow-xs" : "text-[var(--muted)]"
+              className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors border-none ${
+                activeTab === "grid" ? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs" : "bg-transparent text-[var(--muted)]"
               }`}
             >
               Сетка
@@ -101,8 +101,8 @@ export const ChairScheduleStudioHeader: React.FC<ChairScheduleStudioHeaderProps>
             <button
               type="button"
               onClick={() => onTabChange("agenda")}
-              className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors ${
-                activeTab === "agenda" ? "bg-[var(--paper)] font-semibold shadow-xs" : "text-[var(--muted)]"
+              className={`px-2 py-1 rounded-md text-[11px] font-medium transition-colors border-none ${
+                activeTab === "agenda" ? "bg-[var(--paper)] text-[var(--ink)] font-semibold shadow-xs" : "bg-transparent text-[var(--muted)]"
               }`}
             >
               Лента
@@ -114,7 +114,7 @@ export const ChairScheduleStudioHeader: React.FC<ChairScheduleStudioHeaderProps>
             data-testid="schedule-studio-close-btn"
             title="Закрыть расписание"
             aria-label="Закрыть расписание"
-            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
+            className="w-8 h-8 sm:w-9 sm:h-9 flex items-center justify-center rounded-lg bg-transparent border-none hover:bg-[var(--line)]/50 text-[var(--muted)] hover:text-[var(--ink)] transition-colors cursor-pointer"
           >
             <X className="w-4 h-4 sm:w-5 sm:h-5" />
           </button>

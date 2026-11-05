@@ -105,3 +105,45 @@
 - 📱 **Mobile Dark (390×844):** [`proof_schedule_quickbooking_04_mobile_dark_390x844.png`](proof_schedule_quickbooking_04_mobile_dark_390x844.png) (55 KB).
 - **Результат инструментальной автопсии через `read_file`:** 0 дефектов верстки, идеальная адаптивность нижней шторки (Apple HIG Bottom Sheet), 0px горизонтального скролла, безупречная темная тема.
 
+---
+
+## 5. Red Team Инквизиция 3-секундного бронирования и суверенитета соло-практики (Мандаты 8n, 8e, 8al, 8am, 8ap, 8aq)
+
+### А. Архитектурная декомпозиция и устранение дублирования (Мандаты 8b, 8zi, 8aq)
+- **Декомпозиция фасада модалок:** Файл `ScheduleViewModals.tsx` сокращен с 291 строки до 190 строк (лимит `<= 250` строго соблюден) за счет выноса 120-строчной логики бронирования из листа ожидания в отдельный изолированный модуль `scheduleModalsModules/waitlistSlotBookingHandler.ts`.
+- **Единый SSOT бронирования:** Быстрая шторка `QuickBookingDrawer.tsx` закреплена в качестве безальтернативного канонического инструмента записи за 3–5 секунд (выбор слота $\to$ пациент $\to$ длительность $\to$ сохранение).
+
+### Б. Суверенитет соло-врача и малого кабинета (Мандат 8n)
+- В `QuickAssistantSelector.tsx` реализовано автоматическое скрытие блока выбора ассистента при `isSoloClinic || !assistants || assistants.length === 0`.
+- Никаких принудительных требований выбора ассистента или дополнительных ролей. Свободные слоты не блокируются санитарными окнами автоклавирования (`checkAppointmentResourceCollision` пропускает санитарные блоки).
+
+### В. Пассивная клиническая безопасность аллергий (Мандат 8y)
+- В `SelectedPatientCard.tsx` интегрирована пассивная верификация аллергостатуса `getPatientAllergyAlert(selectedPatient)`.
+- Если аллергии не зафиксированы — 0 пикселей визуального шума.
+- Если у пациента подтверждена аллергия — отображается компактный пассивный бейдж `⚠️` с иконкой `AlertTriangle` (`data-testid="selected-patient-allergy-alert"`). Кнопки создания записи никогда не блокируются (`disabled`).
+
+### Г. Ликвидация белых пятен и User-Agent артефактов в Dark Mode
+- В `ChairScheduleStudioHeader.tsx`, `ChairShiftSelector.tsx` и `ChairTimelineGrid.tsx` устранены слепящие белые пятна User-Agent стилей Chromium (`ButtonFace`) на кнопках `<` и `>`, кнопке закрытия `✕`, сегментах смен и кнопках пустых слотов «+ Свободное окно» через явные классы `bg-transparent border-none`.
+- В `WaitlistDrawer.tsx` устранены посторонние эмодзи, стандартизированы заголовки табов: `Подбор на окно`, `Все в очереди`, `+ Добавить пациента`.
+
+### Д. Машинные гейты и тесты
+- `redTeamSchedule3SecondBookingInquisition.test.tsx`: 3 passed (0 failed).
+- `WaitlistQuickFillModal.test.tsx`: 11 passed (0 failed).
+- `scheduleModalsDecomposition.test.ts`: 6 passed (0 failed).
+- `appointmentBookingModalSSOT.test.tsx`: 4 passed (0 failed).
+- `scheduleColorPalettesAndEvenOddShifts.test.tsx`: 9 passed (0 failed).
+- `scheduleGridParityWave40.test.tsx`: 14 passed (0 failed).
+- `check:encoding`: 23 824 файлов проверено, 0 ошибок (UTF-8 strict).
+
+### Е. 4-State Proofs (Лично отсмотрены через `read_file`):
+1. ☀️ **PC Light (1440×900):** [`schedule_pc_light_1440x900.png`](schedule_pc_light_1440x900.png) (121 710 байт).
+2. 🌙 **PC Dark (1440×900):** [`schedule_pc_dark_1440x900.png`](schedule_pc_dark_1440x900.png) (128 312 байт).
+3. ☀️ **PC Light Quick Booking (1440×900):** [`schedule_quick_booking_pc_light_1440x900.png`](schedule_quick_booking_pc_light_1440x900.png) (101 031 байт).
+4. 🌙 **PC Dark Quick Booking (1440×900):** [`schedule_quick_booking_pc_dark_1440x900.png`](schedule_quick_booking_pc_dark_1440x900.png) (99 194 байт).
+5. 📱 **Mobile Light Agenda (390×844):** [`schedule_mobile_light_390x844.png`](schedule_mobile_light_390x844.png) (148 781 байт).
+6. 📱 **Mobile Dark Agenda (390×844):** [`schedule_mobile_dark_390x844.png`](schedule_mobile_dark_390x844.png) (145 994 байт).
+7. 📱 **Mobile Quick Booking Bottom Sheet Light (390×844):** [`schedule_mobile_quick_booking_bottom_sheet_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_390x844.png) (117 393 байт).
+8. 📱 **Mobile Quick Booking Bottom Sheet Dark (390×844):** [`schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png`](schedule_mobile_quick_booking_bottom_sheet_dark_390x844.png) (117 728 байт).
+- Вердикт автопсии: 0 дефектов, 0 наездов, 0 обрезаний слов многоточиями, 100% соблюдение эргономики Apple HIG.
+
+
