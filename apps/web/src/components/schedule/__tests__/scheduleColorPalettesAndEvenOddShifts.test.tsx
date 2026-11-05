@@ -380,12 +380,11 @@ describe("Feature 191: Even/Odd Month Shifts & Chair Technical Breaks", () => {
 			/>,
 		);
 
-		assert.ok(html.includes('data-testid="btn-chair-maintenance-chair-1"'), "renders maintenance button in chair 1 header");
-		assert.ok(html.includes('data-testid="chair-maintenance-block-chair-1"'), "renders maintenance block in cell");
-		assert.ok(html.includes("Санитарная обработка"), "displays reason label");
+		// Mandate 8i: CRM does not dictate reality. Zero artificial chair maintenance lock buttons in header.
+		assert.ok(!html.includes('data-testid="btn-chair-maintenance-chair-1"'), "does not render artificial maintenance lock button in chair header");
 	});
 
-	it("checkAppointmentResourceCollision blocks booking that overlaps with chair sanitation block", () => {
+	it("Mandate 8i: checkAppointmentResourceCollision permits booking without artificial sanitation blocks", () => {
 		const maintenanceBlocks: ChairMaintenanceBlock[] = [
 			{
 				id: "maint-1",
@@ -411,8 +410,8 @@ describe("Feature 191: Even/Odd Month Shifts & Chair Technical Breaks", () => {
 			},
 		);
 
-		assert.strictEqual(result.hasCollision, true);
-		assert.strictEqual(result.conflictType, "chair");
-		assert.ok(result.message?.includes("санитарная обработка"));
+		// Mandate 8i: Sanitation must never block the doctor or administrator
+		assert.strictEqual(result.hasCollision, false);
+		assert.strictEqual(result.conflictType, null);
 	});
 });

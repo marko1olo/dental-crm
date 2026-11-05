@@ -44,11 +44,6 @@ export const ScheduleChairHeaderTopBar: React.FC<ScheduleChairHeaderTopBarProps>
       </div>
 
       <div className="flex items-center gap-0.5 shrink-0">
-        <button type="button" onClick={(e) => { e.stopPropagation(); setActiveHeaderMaintenanceChairId((prev) => (prev === chair.id ? null : chair.id)); }}
-          className="min-h-[22px] h-[22px] w-[22px] p-0 rounded hover:bg-[var(--line)]/50 text-[var(--muted)] flex items-center justify-center cursor-pointer shrink-0 transition-colors"
-          title={`Санобработка / Техперерыв для «${chair.name}»`} aria-label={`Санобработка и техперерыв для ${chair.name}`} data-testid={`btn-chair-maintenance-${chair.id}`}>
-          <Clock size={12} className="opacity-80 hover:opacity-100 text-amber-500" />
-        </button>
         {onEditChair && chair.id !== DEFAULT_SOLO_CHAIR.id && (
           <button type="button" onClick={(e) => {
             e.stopPropagation();

@@ -1,7 +1,6 @@
 import React from "react";
 import { getWorkplaceChairPalette } from "@dental/shared";
 import { ScheduleChairDoctorPopover } from "./ScheduleChairDoctorPopover";
-import { ScheduleChairMaintenancePopover } from "./ScheduleChairMaintenancePopover";
 import { ScheduleChairDutySection } from "./ScheduleChairDutySection";
 import { ScheduleChairHeaderTopBar } from "./ScheduleChairHeaderTopBar";
 import { ScheduleChairHeaderHiddenButtons } from "./ScheduleChairHeaderHiddenButtons";
@@ -79,13 +78,6 @@ export function ScheduleChairHeader(props: ScheduleChairHeaderProps) {
           handleQuickSubstituteDoctor={handleQuickSubstituteDoctor}
           handleBindDoctorToChair={handleBindDoctorToChair} handleUnassignDoctor={handleUnassignDoctor}
           openAssignModal={openAssignModal}
-        />
-      )}
-
-      {activeHeaderMaintenanceChairId === chair.id && (
-        <ScheduleChairMaintenancePopover
-          chair={chair} onClose={() => setActiveHeaderMaintenanceChairId(null)}
-          handleAddMaintenance={handleAddMaintenance}
         />
       )}
     </div>

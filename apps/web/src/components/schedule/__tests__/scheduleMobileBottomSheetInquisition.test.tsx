@@ -1,6 +1,8 @@
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import type { Appointment, Dashboard } from "@dental/shared";
+import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { describe, expect, it, vi } from "vitest";
 import { ScheduleMobileBottomSheet } from "../grid/ScheduleMobileBottomSheet";
 
 describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
@@ -43,9 +45,10 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 		},
 	} as unknown as Dashboard;
 
+	const noop = () => {};
 	const mockProps = {
 		selectedMobileAppt: mockAppointment,
-		onClose: vi.fn(),
+		onClose: noop,
 		patientName: () => "Иванов Иван Иванович",
 		dashboard: mockDashboard,
 		timezone: "Europe/Moscow",
@@ -61,13 +64,13 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 		} as Record<Appointment["status"], string>,
 		effectiveChairs: [{ id: "chair-1", name: "Кабинет 1", color: "#0d9488" }],
 		doctors: [{ id: "doc-1", fullName: "Доктор Смирнов А. В." }],
-		onAppointmentClick: vi.fn(),
-		onQuickStatusChange: vi.fn(),
-		handleAdjustAppointmentDuration: vi.fn(),
-		handleShiftAppointmentLateness: vi.fn(),
-		handleReassignAppointmentChair: vi.fn(),
-		handleReassignAppointmentDoctor: vi.fn(),
-		handleFreeSlotToWaitlist: vi.fn(),
+		onAppointmentClick: noop,
+		onQuickStatusChange: noop,
+		handleAdjustAppointmentDuration: noop,
+		handleShiftAppointmentLateness: noop,
+		handleReassignAppointmentChair: noop,
+		handleReassignAppointmentDoctor: noop,
+		handleFreeSlotToWaitlist: noop,
 	};
 
 	it("1. Renders mobile sheet with patient details, balance, phone, and doctor", () => {
@@ -75,11 +78,11 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 			<ScheduleMobileBottomSheet {...mockProps} />,
 		);
 
-		expect(html).toContain("Иванов Иван Иванович");
-		expect(html).toContain("+79991234567");
-		expect(html).toMatch(/Депозит: \+1[\s\u00a0]500 ₽/);
-		expect(html).toContain("Доктор Смирнов А. В.");
-		expect(html).toContain('data-testid="schedule-grid-mobile-bottom-sheet"');
+		assert.ok(html.includes("Иванов Иван Иванович"));
+		assert.ok(html.includes("+79991234567"));
+		assert.match(html, /Депозит: \+1[\s\u00a0]500 ₽/);
+		assert.ok(html.includes("Доктор Смирнов А. В."));
+		assert.ok(html.includes('data-testid="schedule-grid-mobile-bottom-sheet"'));
 	});
 
 	it("2. Features 1-click clinical entry CTA and separates appointment edit drawer", () => {
@@ -88,16 +91,16 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 		);
 
 		// Primary 1-click clinical entrance to EMR / visit diary
-		expect(html).toContain(
-			'data-testid="mobile-sheet-open-visit-appt-mobile-1"',
+		assert.ok(
+			html.includes('data-testid="mobile-sheet-open-visit-appt-mobile-1"'),
 		);
-		expect(html).toContain("Начать приём в кресле");
+		assert.ok(html.includes("Начать приём в кресле"));
 
 		// Secondary edit drawer
-		expect(html).toContain(
-			'data-testid="mobile-sheet-edit-appt-appt-mobile-1"',
+		assert.ok(
+			html.includes('data-testid="mobile-sheet-edit-appt-appt-mobile-1"'),
 		);
-		expect(html).toContain("Изменить запись в расписании");
+		assert.ok(html.includes("Изменить запись в расписании"));
 	});
 
 	it("3. Renders full suite of 1-click status triggers", () => {
@@ -105,15 +108,15 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 			<ScheduleMobileBottomSheet {...mockProps} />,
 		);
 
-		expect(html).toContain(
-			'data-testid="mobile-status-confirmed-appt-mobile-1"',
+		assert.ok(
+			html.includes('data-testid="mobile-status-confirmed-appt-mobile-1"'),
 		);
-		expect(html).toContain('data-testid="mobile-status-arrived-appt-mobile-1"');
-		expect(html).toContain(
-			'data-testid="mobile-status-in-treatment-appt-mobile-1"',
+		assert.ok(html.includes('data-testid="mobile-status-arrived-appt-mobile-1"'));
+		assert.ok(
+			html.includes('data-testid="mobile-status-in-treatment-appt-mobile-1"'),
 		);
-		expect(html).toContain(
-			'data-testid="mobile-status-completed-appt-mobile-1"',
+		assert.ok(
+			html.includes('data-testid="mobile-status-completed-appt-mobile-1"'),
 		);
 	});
 
@@ -123,7 +126,7 @@ describe("ScheduleMobileBottomSheet Red Team Inquisition", () => {
 		);
 
 		// Buttons have min-h-[44px] or min-h-[48px]
-		expect(html).toContain("min-h-[48px]");
-		expect(html).toContain("min-h-[44px]");
+		assert.ok(html.includes("min-h-[48px]"));
+		assert.ok(html.includes("min-h-[44px]"));
 	});
 });

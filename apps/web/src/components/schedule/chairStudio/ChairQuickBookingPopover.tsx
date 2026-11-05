@@ -37,8 +37,12 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
   return (
     <div
       data-testid="quick-booking-popover"
-      className="absolute inset-x-0 bottom-0 sm:inset-auto sm:right-6 sm:bottom-6 sm:w-96 bg-[var(--paper)] border-t sm:border border-[var(--line)] sm:rounded-2xl p-4 sm:p-5 shadow-2xl z-50 flex flex-col gap-3"
+      className="absolute inset-x-0 bottom-0 sm:inset-auto sm:right-6 sm:bottom-6 sm:w-96 bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl p-4 sm:p-5 shadow-2xl z-50 flex flex-col gap-3 animate-in slide-in-from-bottom duration-200"
     >
+      {/* APPLE HIG: ТАКТИЛЬНЫЙ ХЭНДЛ 36x5px ДЛЯ МОБИЛЬНОЙ ШТОРКИ */}
+      <div className="sm:hidden flex items-center justify-center -mt-1 pb-1" aria-hidden="true">
+        <div className="w-[36px] h-[5px] rounded-full bg-[var(--line-strong,var(--line))]" />
+      </div>
       <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
         <div>
           <h2 className="text-sm font-semibold text-[var(--ink)] flex items-center gap-1.5">

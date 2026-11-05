@@ -194,9 +194,9 @@ export const ChairTimelineGrid: React.FC<ChairTimelineGridProps> = ({
                       <div className="text-sm font-medium text-[var(--ink)] leading-tight">
                         {appt.patientName}
                       </div>
-                      <div className="text-xs text-[var(--muted)] flex items-center justify-between">
-                        <span className="truncate">{appt.reason}</span>
-                        <span className="shrink-0">{appt.patientPhone}</span>
+                      <div className="text-xs text-[var(--muted)] flex flex-col gap-0.5">
+                        <span className="text-[var(--ink-secondary,#475569)] dark:text-slate-300 leading-snug">{appt.reason}</span>
+                        <span className="text-[11px] font-mono text-[var(--muted)]">{appt.patientPhone}</span>
                       </div>
                     </div>
                   );

@@ -22,16 +22,8 @@ export function useGridDisplaySettings(
   const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(() => gridStepMinutes ?? 30);
   const gridStep = gridStepMinutes ?? internalGridStep;
 
-  const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>(() => {
-    try {
-      const raw = safeLocalStorageGetItem("dente_schedule_chair_maintenance_blocks");
-      if (raw) {
-        const parsed = JSON.parse(raw);
-        if (Array.isArray(parsed)) return parsed;
-      }
-    } catch {}
-    return [];
-  });
+  // Mandate 8i: CRM is not a reality simulator. Zero artificial chair sanitation locks in localStorage.
+  const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
   const effectiveMaintenanceBlocks = chairMaintenanceBlocks ?? internalMaintenanceBlocks;
 
   const [showRevenue, setShowRevenue] = useState<boolean>(() => {
@@ -72,13 +64,7 @@ export function useGridDisplaySettings(
       if (onAddChairMaintenance) {
         onAddChairMaintenance(newBlock);
       } else {
-        setInternalMaintenanceBlocks((prev) => {
-          const next = [...prev, newBlock];
-          try {
-            safeLocalStorageSetItem("dente_schedule_chair_maintenance_blocks", JSON.stringify(next));
-          } catch {}
-          return next;
-        });
+        setInternalMaintenanceBlocks((prev) => [...prev, newBlock]);
       }
       const label = reason === "sanitation" ? "Санитарная обработка" : "Технический перерыв";
       showToast(`${label} (${durationMinutes} мин) запланирована на ${startTimeStr}`, "success", 3000);
@@ -91,13 +77,7 @@ export function useGridDisplaySettings(
       if (onRemoveChairMaintenance) {
         onRemoveChairMaintenance(blockId);
       } else {
-        setInternalMaintenanceBlocks((prev) => {
-          const next = prev.filter((b) => b.id !== blockId);
-          try {
-            safeLocalStorageSetItem("dente_schedule_chair_maintenance_blocks", JSON.stringify(next));
-          } catch {}
-          return next;
-        });
+        setInternalMaintenanceBlocks((prev) => prev.filter((b) => b.id !== blockId));
       }
       showToast("Техобслуживание завершено, кресло доступно", "success", 2500);
     },

@@ -66,7 +66,7 @@ export const ChairShiftSelector: React.FC<ChairShiftSelectorProps> = ({
                   : "bg-[var(--line)]/40 hover:bg-[var(--line)]/70 text-[var(--ink)]"
               }`}
             >
-              {`${chair.name} (${chair.specialty.split("/")[0]?.trim()})`}
+              {`${chair.name} (${chair.roomNumber})`}
             </button>
           ))}
         </div>
