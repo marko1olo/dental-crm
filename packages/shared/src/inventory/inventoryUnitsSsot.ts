@@ -133,6 +133,7 @@ export function isFractionalQuantityAllowed(raw: string | null | undefined): boo
 
 export interface UnitConversionOptions {
 	readonly carpulesPerPack?: number | undefined;
+	readonly packageMultiplier?: number | undefined;
 	readonly gramsPerSyringe?: number | undefined;
 	readonly mlPerBottle?: number | undefined;
 	readonly dosesPerMl?: number | undefined;
@@ -154,17 +155,20 @@ export function convertInventoryUnit(
 	const toUnit = normalizeInventoryUnit(toRawUnit);
 	if (fromUnit === toUnit) return amount;
 
-	const carpulesPerPack = options.carpulesPerPack ?? 100;
+	const carpulesPerPack = options.packageMultiplier ?? options.carpulesPerPack ?? 100;
+	const itemsPerPack = options.packageMultiplier ?? 1;
 	const gramsPerSyringe = options.gramsPerSyringe ?? 4.0;
 	const mlPerBottle = options.mlPerBottle ?? 5.0;
 	const dosesPerMl = options.dosesPerMl ?? 20;
 	const mlPerCanister = options.mlPerCanister ?? 5000;
 
-	if (fromUnit === "pack" && (toUnit === "carpule" || toUnit === "pcs")) {
-		return Number((amount * carpulesPerPack).toFixed(4));
+	if (fromUnit === "pack" && (toUnit === "carpule" || toUnit === "pcs" || toUnit === "ampoule" || toUnit === "pair" || toUnit === "dose" || toUnit === "set" || Boolean(options.packageMultiplier))) {
+		const factor = (toUnit === "carpule" || toUnit === "ampoule") ? carpulesPerPack : (options.packageMultiplier ?? 1);
+		return Number((amount * factor).toFixed(4));
 	}
-	if ((fromUnit === "carpule" || fromUnit === "pcs") && toUnit === "pack") {
-		return Number((amount / carpulesPerPack).toFixed(4));
+	if ((fromUnit === "carpule" || fromUnit === "pcs" || fromUnit === "ampoule" || fromUnit === "pair" || fromUnit === "dose" || fromUnit === "set" || Boolean(options.packageMultiplier)) && toUnit === "pack") {
+		const factor = (fromUnit === "carpule" || fromUnit === "ampoule") ? carpulesPerPack : (options.packageMultiplier ?? 1);
+		return Number((amount / factor).toFixed(4));
 	}
 	if (fromUnit === "syringe_g" && toUnit === "gram") {
 		return Number((amount * gramsPerSyringe).toFixed(4));

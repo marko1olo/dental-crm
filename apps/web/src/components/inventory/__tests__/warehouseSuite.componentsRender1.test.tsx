@@ -22,6 +22,7 @@ describe("Warehouse Suite: Components Rendering (Part 1)", () => {
 		const html = renderToStaticMarkup(
 			<WarehouseStockAlertsBar
 				items={SAMPLE_ITEMS}
+				referenceDate="2026-10-07"
 				onOpenWaybills={() => {}}
 				onOpenBatchTracking={() => {}}
 				onOpenInventoryAudit={() => {}}

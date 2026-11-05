@@ -53,7 +53,7 @@
 @media (min-width: 640px) {
 	.warehouse-sheet-container {
 		border-radius: 1rem;
-		max-width: 56rem;
+		max-width: 72rem;
 		max-height: 88vh;
 		animation: warehousePopCenter 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 	}

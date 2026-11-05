@@ -7,7 +7,7 @@
 import React, { useEffect, useState, useCallback } from "react";
 import { WarehouseStudioModal } from "./WarehouseStudioModal.js";
 
-const WAREHOUSE_PATTERN = /(#|\?)(warehouse|inventory|stock|warehouse-studio|inventory-hub|warehouse-hub)/i;
+const WAREHOUSE_PATTERN = /(#|\?|&)(warehouse|inventory|stock|warehouse-studio|inventory-hub|warehouse-hub)/i;
 
 export const DirectWarehouseLauncher: React.FC = () => {
 	const [isOpen, setIsOpen] = useState<boolean>(() => {

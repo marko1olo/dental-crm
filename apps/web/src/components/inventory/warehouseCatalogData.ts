@@ -26,6 +26,8 @@ export interface WarehouseStockItem {
 	readonly unitCostKopecks: number;
 	readonly supplierName: string;
 	readonly sku: string;
+	readonly expirationDate?: string;
+	readonly packageMultiplier?: number;
 	needsReorder?: boolean;
 }
 
@@ -78,30 +80,30 @@ export interface WarehouseKpis {
 
 /** 5 Канонических категорий материалов стоматологической клиники (Мандат 8n) */
 export const WAREHOUSE_CATEGORIES: readonly WarehouseMaterialCategory[] = [
-	{ id: "anesthetics", nameRu: "Анестетики и карпулы", description: "Артикаин, карпульные иглы 30G/27G", badgeColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30" },
-	{ id: "therapy", nameRu: "Пломбировочные материалы и композиты", description: "Световые композиты, коффердам, адгезивы, бонды", badgeColor: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
-	{ id: "surgery", nameRu: "Хирургия и шовный материал", description: "Шовный викрил, гемостатики, физраствор", badgeColor: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30" },
-	{ id: "orthopedics", nameRu: "Оттискные и слепочные массы", description: "А-силиконы, С-силиконы, альгинаты", badgeColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30" },
-	{ id: "ppe", nameRu: "Дезинфекция и средства защиты", description: "Перчатки нитриловые, маски, слюноотсосы", badgeColor: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
+	{ id: "anesthetics", nameRu: "Анестетики", description: "Артикаин, карпульные иглы 30G/27G", badgeColor: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/30" },
+	{ id: "therapy", nameRu: "Терапия", description: "Световые композиты, коффердам, адгезивы, бонды", badgeColor: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border-emerald-500/30" },
+	{ id: "surgery", nameRu: "Хирургия", description: "Шовный викрил, гемостатики, физраствор", badgeColor: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/30" },
+	{ id: "orthopedics", nameRu: "Ортопедия", description: "А-силиконы, С-силиконы, альгинаты", badgeColor: "bg-purple-500/15 text-purple-700 dark:text-purple-300 border-purple-500/30" },
+	{ id: "ppe", nameRu: "СИЗ и дезинфекция", description: "Перчатки нитриловые, маски, слюноотсосы", badgeColor: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/30" },
 ] as const;
 
 /** Стартовый каталог складских запасов с демонстрацией Soft Negative Stock */
 export const INITIAL_WAREHOUSE_STOCK: readonly WarehouseStockItem[] = [
-	{ id: "mat-art-01", nameRu: "Артикаин 1:100 000 (карпулы 1.7 мл)", category: "anesthetics", unit: "карп.", currentStock: 48, minStock: 20, unitCostKopecks: 14500, supplierName: "Дентал-Маркет", sku: "ART-100-FR", needsReorder: false },
-	{ id: "mat-art-02", nameRu: "Ультракаин Д-С форте (карпулы 1.7 мл)", category: "anesthetics", unit: "карп.", currentStock: 12, minStock: 15, unitCostKopecks: 18500, supplierName: "Дентал-Маркет", sku: "ULT-DS-FR", needsReorder: true },
-	{ id: "mat-needle-01", nameRu: "Иглы карпульные 30G короткие 0.3x21мм", category: "anesthetics", unit: "шт.", currentStock: -4, minStock: 30, unitCostKopecks: 850, supplierName: "МедСнаб Трейд", sku: "NDL-30G-21", needsReorder: true },
-	{ id: "mat-comp-01", nameRu: "Композит световой Filtek Ultimate A2 (4г)", category: "therapy", unit: "шприц", currentStock: 6, minStock: 2, unitCostKopecks: 385000, supplierName: "СтомТорг Комплект", sku: "FLT-ULT-A2", needsReorder: false },
-	{ id: "mat-comp-02", nameRu: "Композит световой Estelite Asteria A2 (4г)", category: "therapy", unit: "шприц", currentStock: 1, minStock: 2, unitCostKopecks: 410000, supplierName: "СтомТорг Комплект", sku: "EST-AST-A2", needsReorder: true },
-	{ id: "mat-coff-01", nameRu: "Коффердам латексный (пластины 15x15 см)", category: "therapy", unit: "пласт.", currentStock: 32, minStock: 10, unitCostKopecks: 6500, supplierName: "СтомТорг Комплект", sku: "KOF-LAT-15", needsReorder: false },
-	{ id: "mat-bond-01", nameRu: "Адгезив самопротравливающий Single Bond (5мл)", category: "therapy", unit: "флакон", currentStock: 3, minStock: 1, unitCostKopecks: 540000, supplierName: "СтомТорг Комплект", sku: "BND-UNIV-5ML", needsReorder: false },
-	{ id: "mat-surg-01", nameRu: "Шовный материал Викрил 4-0 с иглой 16мм", category: "surgery", unit: "шт.", currentStock: 18, minStock: 10, unitCostKopecks: 36000, supplierName: "МедСнаб Трейд", sku: "VIC-4-0-16K", needsReorder: false },
-	{ id: "mat-hemo-01", nameRu: "Гемостатическая губка Альвостаз (30 шт)", category: "surgery", unit: "банка", currentStock: 4, minStock: 1, unitCostKopecks: 98000, supplierName: "МедСнаб Трейд", sku: "ALV-SPONGE-30", needsReorder: false },
-	{ id: "mat-impl-01", nameRu: "Стерильный хирургический халат + простыня", category: "surgery", unit: "компл.", currentStock: 8, minStock: 5, unitCostKopecks: 125000, supplierName: "МедСнаб Трейд", sku: "SURG-DRAPE-ST", needsReorder: false },
-	{ id: "mat-saline-01", nameRu: "Физраствор стерильный для ирригации 500мл", category: "surgery", unit: "флакон", currentStock: 15, minStock: 10, unitCostKopecks: 24000, supplierName: "МедСнаб Трейд", sku: "NACL-09-500", needsReorder: false },
-	{ id: "mat-algin-01", nameRu: "Альгинатная слепочная масса Hydrogum 5 (453г)", category: "orthopedics", unit: "упак.", currentStock: 5, minStock: 2, unitCostKopecks: 112000, supplierName: "Дентал-Маркет", sku: "ZHM-HYDR-453", needsReorder: false },
-	{ id: "mat-silic-01", nameRu: "А-силикон база + корректор Silagum Putty/Light", category: "orthopedics", unit: "компл.", currentStock: 2, minStock: 2, unitCostKopecks: 620000, supplierName: "Дентал-Маркет", sku: "DMG-SILAGUM", needsReorder: false },
-	{ id: "mat-glove-01", nameRu: "Перчатки нитриловые неопудренные размер M", category: "ppe", unit: "упак.", currentStock: -2, minStock: 5, unitCostKopecks: 65000, supplierName: "СтомТорг Комплект", sku: "GLV-NIT-M-100", needsReorder: true },
-	{ id: "mat-saliv-01", nameRu: "Слюноотсосы одноразовые с фильтром (100 шт)", category: "ppe", unit: "упак.", currentStock: 14, minStock: 4, unitCostKopecks: 32000, supplierName: "СтомТорг Комплект", sku: "ASP-SLV-100", needsReorder: false },
+	{ id: "mat-art-01", nameRu: "Артикаин 1:100 000 (карпулы 1.7 мл)", category: "anesthetics", unit: "карп.", currentStock: 48, minStock: 20, unitCostKopecks: 14500, supplierName: "Дентал-Маркет", sku: "ART-100-FR", expirationDate: "2027-10-15", packageMultiplier: 50, needsReorder: false },
+	{ id: "mat-art-02", nameRu: "Ультракаин Д-С форте (карпулы 1.7 мл)", category: "anesthetics", unit: "карп.", currentStock: 12, minStock: 15, unitCostKopecks: 18500, supplierName: "Дентал-Маркет", sku: "ULT-DS-FR", expirationDate: "2026-11-20", packageMultiplier: 50, needsReorder: true },
+	{ id: "mat-needle-01", nameRu: "Иглы карпульные 30G короткие 0.3x21мм", category: "anesthetics", unit: "шт.", currentStock: -4, minStock: 30, unitCostKopecks: 850, supplierName: "МедСнаб Трейд", sku: "NDL-30G-21", expirationDate: "2028-05-01", packageMultiplier: 100, needsReorder: true },
+	{ id: "mat-comp-01", nameRu: "Композит световой Filtek Ultimate A2 (4г)", category: "therapy", unit: "шприц", currentStock: 6, minStock: 2, unitCostKopecks: 385000, supplierName: "СтомТорг Комплект", sku: "FLT-ULT-A2", expirationDate: "2027-04-12", packageMultiplier: 1, needsReorder: false },
+	{ id: "mat-comp-02", nameRu: "Композит световой Estelite Asteria A2 (4г)", category: "therapy", unit: "шприц", currentStock: 1, minStock: 2, unitCostKopecks: 410000, supplierName: "СтомТорг Комплект", sku: "EST-AST-A2", expirationDate: "2026-11-18", packageMultiplier: 1, needsReorder: true },
+	{ id: "mat-coff-01", nameRu: "Коффердам латексный (пластины 15x15 см)", category: "therapy", unit: "пласт.", currentStock: 32, minStock: 10, unitCostKopecks: 6500, supplierName: "СтомТорг Комплект", sku: "KOF-LAT-15", expirationDate: "2027-08-20", packageMultiplier: 36, needsReorder: false },
+	{ id: "mat-bond-01", nameRu: "Адгезив самопротравливающий Single Bond (5мл)", category: "therapy", unit: "флакон", currentStock: 3, minStock: 1, unitCostKopecks: 540000, supplierName: "СтомТорг Комплект", sku: "BND-UNIV-5ML", expirationDate: "2026-08-10", packageMultiplier: 1, needsReorder: false },
+	{ id: "mat-surg-01", nameRu: "Шовный материал Викрил 4-0 с иглой 16мм", category: "surgery", unit: "шт.", currentStock: 18, minStock: 10, unitCostKopecks: 36000, supplierName: "МедСнаб Трейд", sku: "VIC-4-0-16K", expirationDate: "2028-01-15", packageMultiplier: 12, needsReorder: false },
+	{ id: "mat-hemo-01", nameRu: "Гемостатическая губка Альвостаз (30 шт)", category: "surgery", unit: "банка", currentStock: 4, minStock: 1, unitCostKopecks: 98000, supplierName: "МедСнаб Трейд", sku: "ALV-SPONGE-30", expirationDate: "2027-06-30", packageMultiplier: 30, needsReorder: false },
+	{ id: "mat-impl-01", nameRu: "Стерильный хирургический халат + простыня", category: "surgery", unit: "компл.", currentStock: 8, minStock: 5, unitCostKopecks: 125000, supplierName: "МедСнаб Трейд", sku: "SURG-DRAPE-ST", expirationDate: "2027-11-10", packageMultiplier: 1, needsReorder: false },
+	{ id: "mat-saline-01", nameRu: "Физраствор стерильный для ирригации 500мл", category: "surgery", unit: "флакон", currentStock: 15, minStock: 10, unitCostKopecks: 24000, supplierName: "МедСнаб Трейд", sku: "NACL-09-500", expirationDate: "2027-09-01", packageMultiplier: 1, needsReorder: false },
+	{ id: "mat-algin-01", nameRu: "Альгинатная слепочная масса Hydrogum 5 (453г)", category: "orthopedics", unit: "упак.", currentStock: 5, minStock: 2, unitCostKopecks: 112000, supplierName: "Дентал-Маркет", sku: "ZHM-HYDR-453", expirationDate: "2027-12-01", packageMultiplier: 1, needsReorder: false },
+	{ id: "mat-silic-01", nameRu: "А-силикон база + корректор Silagum Putty/Light", category: "orthopedics", unit: "компл.", currentStock: 2, minStock: 2, unitCostKopecks: 620000, supplierName: "Дентал-Маркет", sku: "DMG-SILAGUM", expirationDate: "2027-05-20", packageMultiplier: 1, needsReorder: false },
+	{ id: "mat-glove-01", nameRu: "Перчатки нитриловые неопудренные размер M", category: "ppe", unit: "упак.", currentStock: -2, minStock: 5, unitCostKopecks: 65000, supplierName: "СтомТорг Комплект", sku: "GLV-NIT-M-100", expirationDate: "2028-10-01", packageMultiplier: 100, needsReorder: true },
+	{ id: "mat-saliv-01", nameRu: "Слюноотсосы одноразовые с фильтром (100 шт)", category: "ppe", unit: "упак.", currentStock: 14, minStock: 4, unitCostKopecks: 32000, supplierName: "СтомТорг Комплект", sku: "ASP-SLV-100", expirationDate: "2029-01-01", packageMultiplier: 100, needsReorder: false },
 ] as const;
 
 /** Техкарты процедур для автосписания расходников крупными батчами в 1 клик */

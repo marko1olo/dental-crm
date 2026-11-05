@@ -36,6 +36,22 @@ import {
 } from "./warehouseCatalogData.js";
 import "./styles/warehouseStudio.css";
 
+function formatFefoDateRu(exp?: string | null): { text: string; badgeClass: string } {
+	if (!exp || !exp.trim()) return { text: "—", badgeClass: "text-[var(--ink)]/40" };
+	const trimmed = exp.trim();
+	const expires = /^\d{4}-\d{2}-\d{2}$/.test(trimmed)
+		? new Date(`${trimmed}T00:00:00Z`)
+		: /^\d{2}\.\d{2}\.\d{4}$/.test(trimmed)
+			? new Date(`${trimmed.split(".")[2]}-${trimmed.split(".")[1]}-${trimmed.split(".")[0]}T00:00:00Z`)
+			: new Date(trimmed);
+	if (Number.isNaN(expires.getTime())) return { text: trimmed, badgeClass: "text-[var(--ink)]/40" };
+	const diffDays = Math.round((expires.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+	const dateText = `${String(expires.getUTCDate()).padStart(2, "0")}.${String(expires.getUTCMonth() + 1).padStart(2, "0")}.${expires.getUTCFullYear()}`;
+	if (diffDays <= 0) return { text: `${dateText} (просрочен)`, badgeClass: "text-rose-600 dark:text-rose-400 font-semibold bg-rose-500/10 border border-rose-500/25 px-1.5 py-0.5 rounded-md text-[11px]" };
+	if (diffDays < 30) return { text: `${dateText} (${diffDays} дн.)`, badgeClass: "text-amber-600 dark:text-amber-400 font-semibold bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded-md text-[11px]" };
+	return { text: dateText, badgeClass: "text-[var(--ink)]/60 text-xs" };
+}
+
 export interface WarehouseStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
@@ -209,7 +225,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 				)}
 
 				{/* Основное содержимое вкладок */}
-				<main className="p-4 sm:p-6 overflow-y-auto grow space-y-4">
+				<main className="p-4 sm:p-6 overflow-y-auto grow space-y-4 pb-28 sm:pb-6">
 					{/* Вкладка 1: Остатки на складе */}
 					{activeTab === "stock" && (
 						<div className="space-y-3">
@@ -232,39 +248,51 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 								</div>
 							</div>
 
-							{/* Десктопная таблица остатков */}
+							{/* Десктопная калиброванная таблица остатков из 7 колонок */}
 							<div className="hidden sm:block border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--paper)] shadow-xs">
 								<div className="overflow-x-auto max-w-full">
 									<table className="w-full text-left text-xs border-collapse">
 										<thead>
 											<tr className="border-b border-[var(--line)] bg-[var(--line)]/5 text-[var(--ink)]/60 font-medium">
-												<th className="p-3">Материал и артикул</th>
-												<th className="p-3">Категория</th>
-												<th className="p-3 text-right">Текущий остаток</th>
-												<th className="p-3 text-right">Мин. норма</th>
-												<th className="p-3 text-right">Цена за ед.</th>
-												<th className="p-3">Статус</th>
+												<th className="p-3 min-w-[240px]">Наименование</th>
+												<th style={{ width: "130px" }} className="p-3">Категория</th>
+												<th style={{ width: "95px" }} className="p-3">Артикул</th>
+												<th style={{ width: "115px" }} className="p-3 text-right">Остаток</th>
+												<th style={{ width: "140px" }} className="p-3 text-center">Срок годности FEFO</th>
+												<th style={{ width: "110px" }} className="p-3 text-right">Себестоимость</th>
+												<th style={{ width: "95px" }} className="p-3 text-center">Действия</th>
 											</tr>
 										</thead>
 										<tbody className="divide-y divide-[var(--line)]">
 											{filteredItems.map((item) => {
-												const badge = getStockStatusBadge(item.currentStock, item.minStock);
+												const fefo = formatFefoDateRu(item.expirationDate);
 												return (
 													<tr key={item.id} className="hover:bg-[var(--line)]/5 transition-colors">
-														<td className="p-3">
-															<span className="font-medium text-[var(--ink)] block">{item.nameRu}</span>
-															<span className="text-[10px] text-[var(--ink)]/50">{item.sku} • {item.supplierName}</span>
+														<td className="p-3 min-w-[240px]">
+															<span className="font-medium text-[var(--ink)] block leading-snug">{item.nameRu}</span>
+															<span className="text-[10px] text-[var(--ink)]/50 block leading-tight">{item.supplierName}{item.packageMultiplier ? ` • Упак.: ${item.packageMultiplier} ${item.unit}` : ""}</span>
 														</td>
-														<td className="p-3 text-[var(--ink)]/70">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</td>
+														<td className="p-3 text-[var(--ink)]/70 truncate">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</td>
+														<td className="p-3 font-mono text-[11px] text-[var(--ink)]/60 truncate">{item.sku}</td>
 														<td className="p-3 text-right font-semibold">
-															<span className={item.currentStock < 0 ? "text-amber-600 dark:text-amber-400" : "text-[var(--ink)]"}>
-																{item.currentStock} {item.unit}
-															</span>
+															{item.currentStock < 0 ? (
+																<div>
+																	<span className="text-amber-600 dark:text-amber-400 font-bold block">{item.currentStock} {item.unit}</span>
+																	<span className="text-[10px] text-amber-600/80 dark:text-amber-400/80 block">овердрафт</span>
+																</div>
+															) : (
+																<span className="text-[var(--ink)]">{item.currentStock} {item.unit}</span>
+															)}
 														</td>
-														<td className="p-3 text-right text-[var(--ink)]/60">{item.minStock} {item.unit}</td>
-														<td className="p-3 text-right text-[var(--ink)]/80 font-mono">{formatKopecksToRubles(item.unitCostKopecks)}</td>
-														<td className="p-3">
-															<span className={`inline-block px-2 py-0.5 rounded-full text-[11px] border ${badge.colorClass}`}>{badge.badgeLabel}</span>
+														<td className="p-3 text-center">
+															<span className={fefo.badgeClass}>{fefo.text}</span>
+														</td>
+														<td className="p-3 text-right text-[var(--ink)] font-mono">{formatKopecksToRubles(item.unitCostKopecks)}</td>
+														<td className="p-3 text-center">
+															<button type="button" onClick={() => setActiveTab("deduct")} className="h-7 px-2 rounded-lg border border-[var(--line)] hover:bg-[var(--line)]/10 text-xs font-medium inline-flex items-center gap-1 transition-colors text-[var(--ink)]" title={`Списать ${item.nameRu}`}>
+																<MinusCircle className="w-3.5 h-3.5 text-amber-500" />
+																<span>Списать</span>
+															</button>
 														</td>
 													</tr>
 												);
@@ -278,6 +306,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 							<div className="sm:hidden space-y-2">
 								{filteredItems.map((item) => {
 									const badge = getStockStatusBadge(item.currentStock, item.minStock);
+									const fefo = formatFefoDateRu(item.expirationDate);
 									return (
 										<div key={item.id} className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-2xs space-y-1.5">
 											<div className="flex items-start justify-between gap-2">
@@ -291,8 +320,8 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 												</div>
 											</div>
 											<div className="flex items-center justify-between text-[11px] pt-1 border-t border-[var(--line)]/40">
-												<span className="text-[var(--ink)]/60">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</span>
-												<span className={`px-2 py-0.5 rounded-full text-[10px] border ${badge.colorClass}`}>{badge.badgeLabel}</span>
+												<span className="text-[var(--ink)]/60 truncate">{WAREHOUSE_CATEGORIES.find((c) => c.id === item.category)?.nameRu ?? item.category}</span>
+												<span className={fefo.badgeClass}>{fefo.text}</span>
 											</div>
 										</div>
 									);
@@ -307,7 +336,7 @@ export const WarehouseStudioModal: React.FC<WarehouseStudioModalProps> = ({
 							<div className="p-4 rounded-xl bg-[var(--line)]/5 border border-[var(--line)] space-y-3">
 								<h3 className="text-sm font-semibold text-[var(--ink)] flex items-center gap-2">
 									<Sparkles className="w-4 h-4 text-[#0d9488]" />
-									Автоматическое списание по техкартам процедур (Мандат 8n)
+									Автоматическое списание по техкартам процедур
 								</h3>
 								<p className="text-xs text-[var(--ink)]/70">
 									Списание расходников крупным пакетом за рабочую смену врача в 1 клик. Если остаток нулевой — применяется мягкий овердрафт без блокировок.
