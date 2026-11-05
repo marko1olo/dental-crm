@@ -38,7 +38,6 @@ import { DirectChairsideHudLauncher } from "./components/copilot/DirectChairside
 import { DirectInsuranceLauncher } from "./components/insurance/DirectInsuranceLauncher";
 import { DirectLoyaltyLauncher } from "./components/loyalty/DirectLoyaltyLauncher";
 import { DirectPerioLauncher } from "./components/perio/DirectPerioLauncher";
-import { DirectAnesthesiaLauncher } from "./components/anesthesia/DirectAnesthesiaLauncher";
 import { DirectPatientCardLauncher } from "./components/patients/DirectPatientCardLauncher";
 import { DirectPatientStudioLauncher } from "./components/patients/DirectPatientStudioLauncher";
 import { DirectRecallLauncher } from "./components/recalls/DirectRecallLauncher";
@@ -332,7 +331,6 @@ export function AppShell() {
 			<DirectInsuranceLauncher />
 			<DirectLoyaltyLauncher />
 			<DirectPerioLauncher />
-			<DirectAnesthesiaLauncher />
 			<DirectPatientCardLauncher />
 			<DirectPatientStudioLauncher />
 			<DirectRecallLauncher />
