@@ -23,6 +23,26 @@ export function resolveEffectiveStudiesHistory(
 	activeImageUrl: string,
 ): readonly (RadiologyStudy | RadiologyFilmstripItem)[] {
 	if (studiesHistory && studiesHistory.length > 0) return studiesHistory;
+	const isDemo = isDemoShowcaseMode() || isDemoPatientId((activeStudy as any)?.patientId);
+	if (!isDemo) {
+		if (activeImageUrl || activeStudy) {
+			return [
+				{
+					id: activeStudy?.id || "study-current",
+					title:
+						(activeStudy as any)?.title ||
+						(effectiveTooth ? `Прицельный снимок зуба #${effectiveTooth}` : "Прицельный снимок RVG"),
+					modality: "intraoral_rvg",
+					modalityLabel: "IO-СЕНСОР",
+					studyDate: activeStudy?.studyDate || new Date().toLocaleString("ru-RU"),
+					teethFdi: effectiveTooth ? [effectiveTooth] : [],
+					imageUrl: activeImageUrl,
+					effectiveDoseMicrosv: 3.0,
+				},
+			];
+		}
+		return [];
+	}
 	const curImg = activeImageUrl || "/radiology/sample_rvg_tooth16.jpg";
 	return [
 		{

@@ -211,13 +211,12 @@ export const VisiographHotFolderToast: React.FC<VisiographHotFolderToastProps> =
 						<span>Во вьюере</span>
 					</button>
 
-					{/* Вторичное действие: Добавить в чек кассы */}
+					{/* Вторичное действие: Добавить в чек кассы (Мандат 8e: 0 блокировок) */}
 					<button
 						type="button"
 						onClick={handleAddToInvoice}
-						disabled={isBilled}
 						data-testid="btn-toast-add-bill"
-						className="flex flex-1 sm:flex-initial items-center justify-center gap-1 rounded-lg text-[11px] sm:text-[12px] font-medium px-2 transition-colors border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] whitespace-nowrap"
+						className="flex flex-1 sm:flex-initial items-center justify-center gap-1 rounded-lg text-[11px] sm:text-[12px] font-medium px-2 transition-colors border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] text-[var(--ink)] whitespace-nowrap active:scale-95"
 						style={{ height: "32px", minHeight: "32px" }}
 						title="Добавить услугу снимка в кассовый чек"
 					>

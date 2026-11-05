@@ -40,6 +40,8 @@ test("состояния, которые пишутся в карту, суще�
 	const chart =
 		readSource("components/odontogram/chart/toothChartTypes.ts") +
 		"\n" +
+		readSource("components/odontogram/chart/types/toothStateUnion.ts") +
+		"\n" +
 		readFileSync(
 			path.join(
 				webSrcRoot,

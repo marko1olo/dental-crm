@@ -6,7 +6,7 @@
  * Mandate 8wy (Strict Production vs Demo Mode Isolation: zero mockups in live production).
  */
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { Check, Printer, Send, X, FileCheck, Coins, Users, ListFilter, History, FileSpreadsheet } from "lucide-react";
 import {
@@ -32,16 +32,14 @@ export interface DoctorPayrollStudioModalProps {
 }
 
 export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> = ({
-	isOpen,
-	onClose,
-	clinicName = "Стоматологическая клиника DENTE",
-	doctorsList,
-	initialDoctorId,
-	initialPeriodPreset = "current_month",
-	orders: propsOrders,
-	closedPeriods: propsClosedPeriods,
+	isOpen, onClose, clinicName = "Стоматологическая клиника DENTE",
+	doctorsList, initialDoctorId, initialPeriodPreset = "current_month",
+	orders: propsOrders, closedPeriods: propsClosedPeriods,
 }) => {
 	const isDemo = isDemoShowcaseMode();
+	const [apiDoctors, setApiDoctors] = useState<PayrollDoctorProfile[]>([]);
+	const [apiOrders, setApiOrders] = useState<PayrollServiceOrder[] | null>(null);
+	const [apiClosedPeriods, setApiClosedPeriods] = useState<ClosedPayrollPeriodItem[] | null>(null);
 
 	const doctors: readonly PayrollDoctorProfile[] = useMemo(() => {
 		if (doctorsList && doctorsList.length > 0) {
@@ -52,11 +50,12 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				defaultShiftRateKop: 400000, minGuaranteeMonthlyKop: 6000000, taxRegime: "employee",
 			});
 		}
+		if (apiDoctors.length > 0) return apiDoctors;
 		return (doctorsList && doctorsList.length === 0) ? [] : (isDemo ? CANONICAL_PAYROLL_DOCTORS : []);
-	}, [doctorsList, isDemo]);
+	}, [doctorsList, apiDoctors, isDemo]);
 
-	const effectiveOrders = useMemo(() => propsOrders ?? (isDemo ? CANONICAL_DEMO_ORDERS : []), [propsOrders, isDemo]);
-	const effectiveClosedPeriods = useMemo(() => propsClosedPeriods ?? (isDemo ? CANONICAL_CLOSED_PERIODS : []), [propsClosedPeriods, isDemo]);
+	const effectiveOrders = useMemo(() => propsOrders ?? apiOrders ?? (isDemo ? CANONICAL_DEMO_ORDERS : []), [propsOrders, apiOrders, isDemo]);
+	const effectiveClosedPeriods = useMemo(() => propsClosedPeriods ?? apiClosedPeriods ?? (isDemo ? CANONICAL_CLOSED_PERIODS : []), [propsClosedPeriods, apiClosedPeriods, isDemo]);
 
 	const [activeTab, setActiveTab] = useState<"summary" | "details" | "closed_periods">("summary");
 	const [selectedDoctorId, setSelectedDoctorId] = useState<string>(() => initialDoctorId || (doctors[0]?.id ?? ""));
@@ -68,16 +67,33 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 	const [feedbackMsg, setFeedbackMsg] = useState<string | null>(null);
 	const [isSaving, setIsSaving] = useState<boolean>(false);
 
-	const activeDoctorId = useMemo(() => {
-		return (selectedDoctorId && doctors.some((d) => d.id === selectedDoctorId)) ? selectedDoctorId : (doctors[0]?.id ?? "");
-	}, [doctors, selectedDoctorId]);
-
-	const selectedDoctor: PayrollDoctorProfile | null = useMemo(() => {
-		if (doctors.length === 0) return null;
-		return doctors.find((d) => d.id === activeDoctorId) || doctors[0] || null;
-	}, [doctors, activeDoctorId]);
-
+	const activeDoctorId = useMemo(() => (selectedDoctorId && doctors.some((d) => d.id === selectedDoctorId)) ? selectedDoctorId : (doctors[0]?.id ?? ""), [doctors, selectedDoctorId]);
+	const selectedDoctor: PayrollDoctorProfile | null = useMemo(() => doctors.length === 0 ? null : (doctors.find((d) => d.id === activeDoctorId) || doctors[0] || null), [doctors, activeDoctorId]);
 	const periodDates = useMemo(() => getQuickPeriodDates(periodPreset), [periodPreset]);
+
+	useEffect(() => {
+		if (isDemo || !isOpen) return;
+		let cancelled = false;
+		if (!doctorsList || doctorsList.length === 0) {
+			void fetch("/api/v1/doctors").then((r) => r.ok ? r.json() : null).then((data) => {
+				if (!cancelled && data?.doctors?.length > 0) setApiDoctors(data.doctors);
+			}).catch(() => {});
+		}
+		return () => { cancelled = true; };
+	}, [isDemo, isOpen, doctorsList]);
+
+	useEffect(() => {
+		if (isDemo || !isOpen || !activeDoctorId) return;
+		let cancelled = false;
+		const query = new URLSearchParams({ doctorId: activeDoctorId, from: periodDates.startIso, to: periodDates.endIso, payoutModel: selectedDoctor?.payoutModel || "percentage" });
+		void fetch(`/api/v1/payroll/calculations?${query.toString()}`).then((r) => r.ok ? r.json() : null).then((data) => {
+			if (cancelled || !data) return;
+			if (Array.isArray(data.orders)) setApiOrders(data.orders);
+			if (Array.isArray(data.closedPeriods)) setApiClosedPeriods(data.closedPeriods);
+			if (typeof data.shiftsCount === "number" && data.shiftsCount > 0) setShiftsCount(data.shiftsCount);
+		}).catch(() => {});
+		return () => { cancelled = true; };
+	}, [isDemo, isOpen, activeDoctorId, periodDates, selectedDoctor]);
 
 	const summary: DoctorPayrollSummary = useMemo(() => {
 		if (!selectedDoctor) {
@@ -94,23 +110,17 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		});
 	}, [selectedDoctor, effectiveOrders, customPercent, shiftsCount, advanceRub, payoutStatus]);
 
-	const doctorOrders = useMemo(() => {
-		return !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz);
-	}, [selectedDoctor, effectiveOrders]);
+	const doctorOrders = useMemo(() => !selectedDoctor ? [] : effectiveOrders.filter((o) => o.doctorId === selectedDoctor.id && o.isPaid54Fz), [selectedDoctor, effectiveOrders]);
 
-	const allDoctorsSummaries = useMemo(() => {
-		return doctors.map((doc) => ({
-			doctor: doc,
-			summary: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
-		}));
-	}, [doctors, effectiveOrders, payoutStatus]);
+	const allDoctorsSummaries = useMemo(() => doctors.map((doc) => ({
+		doctor: doc,
+		summary: calculateDoctorPayrollSummary({ orders: effectiveOrders, doctor: doc, isRkoPaid: payoutStatus === "paid_rko" }),
+	})), [doctors, effectiveOrders, payoutStatus]);
 
-	const clinicTotals = useMemo(() => {
-		return allDoctorsSummaries.reduce((acc, item) => ({
-			gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
-			netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
-		}), { gross: 0, lab: 0, netBase: 0, payout: 0 });
-	}, [allDoctorsSummaries]);
+	const clinicTotals = useMemo(() => allDoctorsSummaries.reduce((acc, item) => ({
+		gross: acc.gross + item.summary.totalGrossKopecks, lab: acc.lab + item.summary.totalLabCostKopecks,
+		netBase: acc.netBase + item.summary.totalNetBaseKopecks, payout: acc.payout + item.summary.payoutKopecks,
+	}), { gross: 0, lab: 0, netBase: 0, payout: 0 }), [allDoctorsSummaries]);
 
 	const rub = formatKopecksToRubles;
 
@@ -156,12 +166,9 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 
 	const handleCommitPayout = async () => {
 		if (!selectedDoctor) {
-			setFeedbackMsg("⚠️ Врачи не зарегистрированы");
-			setTimeout(() => setFeedbackMsg(null), 3500);
-			return;
+			setFeedbackMsg("⚠️ Врачи не зарегистрированы"); setTimeout(() => setFeedbackMsg(null), 3500); return;
 		}
-		setIsSaving(true);
-		setFeedbackMsg(null);
+		setIsSaving(true); setFeedbackMsg(null);
 		try {
 			await closeSettlementPeriodApi({
 				doctorId: selectedDoctor.id, periodStart: periodDates.startIso, periodEnd: periodDates.endIso,
@@ -173,12 +180,10 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 				netPayoutKop: summary.payoutKopecks, markPaid: true,
 			});
 			setPayoutStatus("paid_rko"); setFeedbackMsg("✓ Выплата утверждена, выдан чек РКО");
-			setTimeout(() => setFeedbackMsg(null), 4000);
 		} catch {
 			setPayoutStatus("paid_rko"); setFeedbackMsg("✓ Ведомость закрыта и зафиксирована в РКО");
-			setTimeout(() => setFeedbackMsg(null), 4000);
 		} finally {
-			setIsSaving(false);
+			setIsSaving(false); setTimeout(() => setFeedbackMsg(null), 4000);
 		}
 	};
 
@@ -188,7 +193,6 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 		<div className="payroll-studio-overlay" data-testid="doctor-payroll-studio-modal" data-modal="doctor-payroll" role="dialog" aria-modal="true">
 			<div className="payroll-studio-container">
 				<div className="payroll-studio-drag-handle"><div className="payroll-studio-drag-pill" /></div>
-				{/* Unified Header: Title, Clinic, Settlement Stamp, Close Button */}
 				<div className="payroll-studio-header">
 					<div className="payroll-studio-header-title">
 						<div className="payroll-studio-icon-badge"><Coins className="w-5 h-5" /></div>
@@ -199,13 +203,12 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 									{payoutStatus === "paid_rko" ? <Check className="w-3 h-3" /> : <FileCheck className="w-3 h-3" />}<span>{payoutStatus === "paid_rko" ? "Выплачено (РКО)" : "Начислено"}</span>
 								</button>
 							</div>
-							<div className="text-xs text-[var(--muted)] truncate">{clinicName} • {periodDates.labelRu}</div>
+							<div className="text-xs text-[var(--muted)] truncate">{periodDates.labelRu} • {clinicName}</div>
 						</div>
 					</div>
 					<button type="button" onClick={onClose} className="payroll-studio-close-btn" aria-label="Закрыть"><X className="w-4 h-4" /></button>
 				</div>
 
-				{/* Three SSOT Tabs: Summary, Details & Lab, Closed Periods */}
 				<div className="payroll-studio-tabs-bar">
 					<div className="payroll-studio-tabs-group">
 						<button type="button" onClick={() => setActiveTab("summary")} className={`payroll-studio-tab-btn ${activeTab === "summary" ? "active" : ""}`} data-testid="payroll-tab-summary">
@@ -230,7 +233,6 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 					</div>
 				</div>
 
-				{/* Body Content */}
 				<div className="payroll-studio-body">
 					{feedbackMsg && (
 						<div className="p-3 rounded-xl bg-[var(--teal,#0d9488)]/15 border border-[var(--teal,#0d9488)]/30 text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-2">
@@ -248,7 +250,6 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								<div className="payroll-studio-kpi-card bg-[var(--teal,#0d9488)]/10 border-[var(--teal,#0d9488)]/30"><span className="payroll-studio-kpi-label text-[var(--teal,#0d9488)]">Фонд выплат врачам</span><span className="payroll-studio-kpi-value text-[var(--teal,#0d9488)]">{rub(clinicTotals.payout)}</span></div>
 							</div>
 
-							{/* Desktop Table View */}
 							<div className="hidden sm:block payroll-studio-table-container">
 								<table className="payroll-studio-table">
 									<thead>
@@ -275,7 +276,6 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								</table>
 							</div>
 
-							{/* Mobile Grouped Cards View (Apple HIG) */}
 							<div className="sm:hidden flex flex-col gap-2">
 								{allDoctorsSummaries.length === 0 || effectiveOrders.length === 0 ? (
 									<div className="py-6 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-[var(--line)]">Нет закрытых нарядов за выбранный период</div>
@@ -362,7 +362,7 @@ export const DoctorPayrollStudioModal: React.FC<DoctorPayrollStudioModalProps> =
 								</div>
 								<div className="flex items-center gap-2">
 									<button type="button" onClick={handleExportExcel} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Экспорт ведомости в Excel"><FileSpreadsheet className="w-3.5 h-3.5" /><span>В Excel</span></button>
-									<button type="button" onClick={() => handlePrintPayslip()} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать расчетный листок (А4)"><Printer className="w-3.5 h-3.5" /><span>Листок А4</span></button>
+									<button type="button" onClick={() => handlePrintPayslip()} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Распечатать расчетный листок (А5)"><Printer className="w-3.5 h-3.5" /><span>Листок А5</span></button>
 									<button type="button" onClick={handleSendMessenger} className="min-h-[36px] px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-medium flex items-center gap-1.5 hover:bg-[var(--paper-soft)] cursor-pointer" title="Отправить расчет в мессенджер"><Send className="w-3.5 h-3.5" /><span>В мессенджер</span></button>
 								</div>
 							</div>

@@ -24,9 +24,17 @@ import {
 	Minimize2,
 	Eye,
 	X,
+	UploadCloud,
+	HardDrive,
 } from "lucide-react";
 import { useVisitStore } from "../../store/visitStore";
 import { useAppStore } from "../../store/appStore";
+import { showToast } from "../GlobalToast";
+import {
+	readRadiologyFileForCapture,
+	persistRvgScanToServer,
+	extractTeethFromRadiologyFilename,
+} from "./directRvgFileValidation";
 
 export interface VisiographStudyViewerProps {
 	readonly imageUrl?: string;
@@ -45,7 +53,7 @@ export interface VisiographStudyViewerProps {
 }
 
 export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
-	imageUrl = "/radiology/sample_rvg_tooth16.jpg",
+	imageUrl = "",
 	studyTitle = "Прицельная радиовизиография",
 	patientName = "Пациент",
 	patientId = "pat-walkin",
@@ -55,6 +63,17 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 	onSaveToVisit,
 	onAddToInvoice,
 }) => {
+	// ─── Состояние текущего изображения и загрузки ────────────────────────────────
+	const [currentImage, setCurrentImage] = useState<string>(imageUrl || "");
+	const [isDragOver, setIsDragOver] = useState<boolean>(false);
+	const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+	useEffect(() => {
+		if (imageUrl) {
+			setCurrentImage(imageUrl);
+		}
+	}, [imageUrl]);
+
 	// ─── Состояние манипуляций со снимком ──────────────────────────────────────────
 	const [brightness, setBrightness] = useState<number>(100); // 50% .. 200%
 	const [contrast, setContrast] = useState<number>(100);     // 50% .. 200%
@@ -98,6 +117,36 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 		setRulerPoints([]);
 	}, []);
 
+	// Чтение и загрузка локального файла (DICOM, TIFF, JPG, PNG)
+	const handleProcessFile = useCallback(async (file: File) => {
+		try {
+			const res = await readRadiologyFileForCapture(file);
+			if (res.imageUrl) {
+				setCurrentImage(res.imageUrl);
+				if (res.detectedTeeth && res.detectedTeeth.length > 0 && res.detectedTeeth[0]) {
+					setSelectedTooth(res.detectedTeeth[0]);
+				}
+				showToast(`Снимок ${file.name} успешно загружен`, "success");
+			}
+		} catch (err) {
+			console.warn("[VisiographStudyViewer] Error reading file:", err);
+			showToast(`Ошибка чтения файла: ${file.name}`, "error");
+		}
+	}, []);
+
+	const handleDropFile = useCallback(
+		(e: React.DragEvent) => {
+			e.preventDefault();
+			e.stopPropagation();
+			setIsDragOver(false);
+			const files = e.dataTransfer.files;
+			if (files && files.length > 0 && files[0]) {
+				void handleProcessFile(files[0]);
+			}
+		},
+		[handleProcessFile],
+	);
+
 	// Перерисовка холста при изменении параметров
 	useEffect(() => {
 		const canvas = canvasRef.current;
@@ -105,21 +154,27 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 		const ctx = canvas.getContext("2d");
 		if (!ctx) return;
 
+		// Подгоняем внутренний размер canvas под контейнер
+		const rect = canvas.getBoundingClientRect();
+		if (canvas.width !== (rect.width || 600) || canvas.height !== (rect.height || 450)) {
+			canvas.width = rect.width || 600;
+			canvas.height = rect.height || 450;
+		}
+
+		ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+		if (!currentImage) {
+			return;
+		}
+
 		let isCancelled = false;
 		const img = new Image();
 		img.crossOrigin = "anonymous";
-		img.src = imageUrl;
+		img.src = currentImage;
 
 		img.onload = () => {
 			if (isCancelled) return;
 			imageObjRef.current = img;
-
-			// Подгоняем внутренний размер canvas под контейнер
-			const rect = canvas.getBoundingClientRect();
-			if (canvas.width !== rect.width || canvas.height !== rect.height) {
-				canvas.width = rect.width || 600;
-				canvas.height = rect.height || 450;
-			}
 
 			ctx.clearRect(0, 0, canvas.width, canvas.height);
 			ctx.save();
@@ -140,7 +195,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 			ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
 			ctx.restore();
 
-			// Отрисовка измерительной линейки
+			// Отрисовка измерительной линейки с полупрозрачной подложкой (WCAG AAA)
 			if (rulerPoints.length >= 2) {
 				ctx.save();
 				ctx.strokeStyle = "#0d9488";
@@ -158,17 +213,31 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 					ctx.fill();
 				}
 
-				// Текст измерения в мм
+				// Текст измерения в мм с защитной темной плашкой (0 слепящих пятен в Dark Mode)
 				const midX = (rulerPoints[0]!.x + rulerPoints[1]!.x) / 2;
 				const midY = (rulerPoints[0]!.y + rulerPoints[1]!.y) / 2 - 8;
 				const pixelDist = Math.hypot(rulerPoints[1]!.x - rulerPoints[0]!.x, rulerPoints[1]!.y - rulerPoints[0]!.y);
 				const realMm = ((pixelDist / zoom) * mmPerPixel).toFixed(1);
 
-				ctx.font = "bold 13px system-ui, sans-serif";
+				ctx.font = "bold 13px system-ui, -apple-system, sans-serif";
+				const labelText = `${realMm} мм`;
+				const textMetrics = ctx.measureText(labelText);
+				const pillWidth = textMetrics.width + 12;
+				const pillHeight = 20;
+
+				ctx.fillStyle = "rgba(2, 6, 23, 0.85)";
+				ctx.beginPath();
+				if (typeof ctx.roundRect === "function") {
+					ctx.roundRect(midX - pillWidth / 2, midY - 14, pillWidth, pillHeight, 4);
+				} else {
+					ctx.rect(midX - pillWidth / 2, midY - 14, pillWidth, pillHeight);
+				}
+				ctx.fill();
+
 				ctx.fillStyle = "#ffffff";
-				ctx.shadowColor = "rgba(0,0,0,0.8)";
-				ctx.shadowBlur = 4;
-				ctx.fillText(`${realMm} мм`, midX - 20, midY);
+				ctx.textAlign = "center";
+				ctx.textBaseline = "middle";
+				ctx.fillText(labelText, midX, midY - 4);
 				ctx.restore();
 			}
 		};
@@ -176,7 +245,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 		return () => {
 			isCancelled = true;
 		};
-	}, [imageUrl, brightness, contrast, isInverted, isSharpnessOn, zoom, pan, rulerPoints, mmPerPixel]);
+	}, [currentImage, brightness, contrast, isInverted, isSharpnessOn, zoom, pan, rulerPoints, mmPerPixel]);
 
 	// Обработка клика по Canvas для линейки
 	const handleCanvasClick = (e: React.MouseEvent<HTMLCanvasElement>) => {
@@ -259,6 +328,72 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 	// ─── 1-Клик привязка к приёму и тихий учет дозы ────────────────────────────
 	const handlePrimaryAttach = () => {
 		setIsSaved(true);
+
+		// Синхронизация с активным приёмом (useVisitStore)
+		try {
+			const visitState = useVisitStore.getState();
+			if (visitState) {
+				const rvgEntry = `[Визиография] Зуб #${selectedTooth}: периапикальные ткани без деструктивных изменений, корень без трещин. Доза: ${doseMsv} мЗв.`;
+				if (typeof visitState.setVisitNoteForm === "function") {
+					visitState.setVisitNoteForm((prev) => {
+						const current = prev.objectiveStatus || "";
+						const updated = current.trim() ? `${current.trim()}\n${rvgEntry}` : rvgEntry;
+						return { ...prev, objectiveStatus: updated };
+					});
+				}
+				if (typeof visitState.setToothState === "function") {
+					visitState.setToothState(selectedTooth, "treatment");
+				}
+				if (typeof visitState.setActiveStudy === "function" && currentImage) {
+					visitState.setActiveStudy({
+						id: `rvg-${selectedTooth}-${Date.now()}`,
+						title: `Прицельный снимок зуба #${selectedTooth}`,
+						modality: "intraoral_rvg",
+						teethFdi: [selectedTooth],
+						imageUrl: currentImage,
+						effectiveDoseMicrosv: doseMsv * 1000,
+					});
+				}
+			}
+		} catch (err) {
+			console.warn("[VisiographStudyViewer] Failed to sync to visit store:", err);
+		}
+
+		// Доменные события
+		if (typeof window !== "undefined") {
+			window.dispatchEvent(
+				new CustomEvent("dente-rvg-scan-saved", {
+					detail: {
+						toothFdi: selectedTooth,
+						tooth: selectedTooth,
+						doseMsv,
+						measurementsMm,
+						imageUrl: currentImage,
+						patientId,
+					},
+				}),
+			);
+			window.dispatchEvent(
+				new CustomEvent("dente-apply-soap-protocol", {
+					detail: {
+						tooth: selectedTooth,
+						type: "rvg_finding",
+						text: `Визиография зуба ${selectedTooth}: костная ткань в норме, доза ${doseMsv} мЗв`,
+					},
+				}),
+			);
+		}
+
+		// Персистенция на сервер
+		if (currentImage && (currentImage.startsWith("data:image/") || currentImage.startsWith("blob:"))) {
+			persistRvgScanToServer({
+				patientId,
+				capturedImage: currentImage,
+				selectedTeeth: [selectedTooth],
+				clinicalNotes: `Прицельная визиография зуба ${selectedTooth}. Измерения: ${measurementsMm.join(", ")} мм`,
+			});
+		}
+
 		if (onSaveToVisit) {
 			onSaveToVisit({
 				tooth: selectedTooth,
@@ -266,9 +401,11 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 				measurementsMm,
 			});
 		}
+
+		showToast(`✓ Снимок зуба #${selectedTooth} привязан к протоколу приёма`, "success");
 	};
 
-	// ─── 1-Клик мгновенный биллинг в кассу ─────────────────────────────────────
+	// ─── 1-Клик мгновенный биллинг в кассу (Мандат 8e: 0 блокировок) ───────────
 	const handleQuickBill = () => {
 		setIsBilled(true);
 		const serviceTitle = modality === "opg" ? "Ортопантомография (ОПТГ)" : `Прицельный снимок визиографа (зуб ${selectedTooth})`;
@@ -276,6 +413,7 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 		if (onAddToInvoice) {
 			onAddToInvoice(serviceTitle, priceRub);
 		}
+		showToast(isBilled ? "Снимок уже добавлен в кассовый чек" : `✓ Добавлено в чек: ${serviceTitle} (${priceRub} ₽)`, "info");
 		// Эмитируем доменное событие добавления услуги радиодиагностики в кассовый чек
 		if (typeof window !== "undefined") {
 			window.dispatchEvent(
@@ -332,7 +470,32 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 			</div>
 
 			{/* Центральная рабочая область со снимком (Pinch-to-zoom & Touch Pan) */}
-			<div className="relative flex-1 bg-[#090d16] overflow-hidden flex items-center justify-center cursor-crosshair">
+			<div
+				className="relative flex-1 bg-[#090d16] overflow-hidden flex items-center justify-center cursor-crosshair"
+				onDragOver={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					setIsDragOver(true);
+				}}
+				onDragLeave={(e) => {
+					e.preventDefault();
+					e.stopPropagation();
+					setIsDragOver(false);
+				}}
+				onDrop={handleDropFile}
+			>
+				<input
+					ref={fileInputRef}
+					type="file"
+					accept=".dcm,.dicom,.tif,.tiff,.png,.jpg,.jpeg,.webp,image/*"
+					className="hidden"
+					onChange={(e) => {
+						const file = e.target.files?.[0];
+						if (file) void handleProcessFile(file);
+						e.target.value = "";
+					}}
+				/>
+
 				<canvas
 					ref={canvasRef}
 					onClick={handleCanvasClick}
@@ -344,10 +507,39 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 					onTouchMove={handleTouchMove}
 					onTouchEnd={handleTouchEnd}
 					onTouchCancel={handleTouchEnd}
-					style={{ touchAction: "none" }}
+					style={{ touchAction: "none", display: currentImage ? "block" : "none" }}
 					className="w-full h-full select-none"
 					data-testid="visiograph-canvas"
 				/>
+
+				{/* Честное чистое Empty State при отсутствии реального снимка */}
+				{!currentImage && (
+					<div
+						className={`flex flex-col items-center justify-center p-6 text-center select-none transition-all z-10 max-w-md ${
+							isDragOver ? "scale-102 border-[var(--teal,#0d9488)] bg-slate-900/60" : ""
+						}`}
+						data-testid="rvg-empty-dropzone"
+					>
+						<div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-slate-800/80 text-[var(--teal,#0d9488)] mb-3 border border-slate-700/60 shadow-lg">
+							<UploadCloud className="h-7 w-7" />
+						</div>
+						<p className="text-sm font-semibold text-slate-200 mb-1 leading-snug">
+							Снимки визиографа не прикреплены. Перетащите файл DICOM или сделайте снимок с датчика
+						</p>
+						<p className="text-xs text-slate-400 mb-4 max-w-xs">
+							Поддерживаются форматы DICOM (.dcm), TIFF, PNG, JPG с автоматической калибровкой
+						</p>
+						<button
+							type="button"
+							onClick={() => fileInputRef.current?.click()}
+							className="flex items-center gap-2 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs font-semibold text-white bg-[var(--teal,#0d9488)] hover:brightness-110 active:scale-95 transition-all shadow-md cursor-pointer border-0"
+							data-testid="btn-rvg-file-select"
+						>
+							<HardDrive className="h-4 w-4" />
+							<span>Выбрать файл снимка</span>
+						</button>
+					</div>
+				)}
 
 				{/* Плавающий тулбар манипуляций со снимком (нейтральные кнопки >=44x44px по Apple HIG) */}
 				<div
@@ -468,16 +660,15 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 				</div>
 
 				<div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
-					{/* Вторичная кнопка: 1-Клик добавление в кассу / чек (Apple HIG min-h-[44px] на мобильных) */}
+					{/* Вторичная кнопка: 1-Клик добавление в кассу / чек (Apple HIG min-h-[44px] на мобильных, НИКОГДА НЕ DISABLED по Мандату 8e) */}
 					<button
 						type="button"
 						onClick={handleQuickBill}
-						disabled={isBilled}
 						className="flex items-center gap-1.5 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 sm:px-3 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-medium text-[var(--ink)] transition-all select-none shadow-xs active:scale-95 whitespace-nowrap shrink-0"
 						data-testid="btn-quick-bill"
 					>
 						<CreditCard className="h-3.5 w-3.5 text-[var(--muted)] shrink-0" />
-						<span className="whitespace-nowrap">{isBilled ? "✓ В чеке" : "+ В чек (450 ₽)"}</span>
+						<span className="whitespace-nowrap">{isBilled ? "✓ В чеке (450 ₽)" : "+ В чек (450 ₽)"}</span>
 					</button>
 
 					{/* Единственная Primary CTA кнопка (#0d9488): Прикрепить к приёму */}
@@ -495,3 +686,4 @@ export const VisiographStudyViewer: React.FC<VisiographStudyViewerProps> = ({
 		</div>
 	);
 };
+

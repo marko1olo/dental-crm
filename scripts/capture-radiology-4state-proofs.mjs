@@ -2,7 +2,7 @@ import { mkdirSync, statSync, copyFileSync } from "node:fs";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const CURRENT_CONV_ID = "c7bd8513-e728-4b46-86df-54740b24e458";
+const CURRENT_CONV_ID = "c34b9953-0c3b-4d79-a5d8-85f4e1952564";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CURRENT_CONV_ID}/screenshots`;
 const OUT_DOCS = "C:/Clinic_MVP/dental-crm/docs/proofs/radiology";
 const API_URL = "http://127.0.0.1:4100";

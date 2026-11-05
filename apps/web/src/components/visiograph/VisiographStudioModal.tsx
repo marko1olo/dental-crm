@@ -76,11 +76,16 @@ export const VisiographStudioModal: React.FC<VisiographStudioModalProps> = ({
 
 	useEffect(() => {
 		if (!isOpen) return;
-		const timer = setTimeout(() => {
-			setHotfolderNotice(detectLatestHotfolderStudy("Planmeca Romexis", patientName, activeTooth));
-		}, 900);
-		return () => clearTimeout(timer);
-	}, [isOpen, patientName, activeTooth]);
+		const handleHotfolderNotice = (e: CustomEvent<DetectedHotfolderStudy>) => {
+			if (e.detail) {
+				setHotfolderNotice(e.detail);
+			}
+		};
+		window.addEventListener("dente-hotfolder-scan" as any, handleHotfolderNotice as any);
+		return () => {
+			window.removeEventListener("dente-hotfolder-scan" as any, handleHotfolderNotice as any);
+		};
+	}, [isOpen]);
 
 	useEffect(() => {
 		if (!isOpen) return;
