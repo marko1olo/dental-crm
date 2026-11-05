@@ -8,7 +8,7 @@ import {
 export const scanSchema = z.object({
 	barcode: z.string().trim().optional().nullable().default(""),
 	autoclaveId: z.string().trim().optional().nullable().default("АК-01"),
-	operatorId: z.string().uuid("Некорректный ID оператора стерилизации.").optional().nullable(),
+	operatorId: z.string().optional().nullable(),
 	status: z.enum(["passed", "failed", "quarantined"]).default("passed"),
 	deviceName: z.string().trim().max(120).optional().nullable(),
 	cycleNumber: z.number().int().min(1).optional().nullable(),
@@ -42,13 +42,13 @@ export const unsealBodySchema = z.object({
 });
 
 export const quickNormCycleSchema = z.object({
-	regime: z.enum(["standard_134", "delicate_121", "prion_134"]).default("standard_134").optional(),
+	regime: z.enum(["standard_134", "delicate_121", "prion_134", "quick_134", "flash_134"]).default("standard_134").optional(),
 	autoclaveId: z.string().optional(),
 	deviceName: z.string().optional(),
 	packagingType: packagingTypeSchema.default("kraft_heat_sealed").optional(),
 	itemsDescription: z.string().optional(),
 	packagesCount: z.number().int().min(1).max(50).default(1).optional(),
-	operatorId: z.string().uuid().optional().nullable(),
+	operatorId: z.string().nullable().optional(),
 });
 
 export const sanpinCycleCreateSchema = z
@@ -80,8 +80,8 @@ export const sterilizationShiftBatchSchema = z
 		autoclaveId: z.string().optional(),
 		packagingType: z.string().optional(),
 		itemsDescription: z.string().optional(),
-		regime: z.enum(["standard_134", "delicate_121", "prion_134"]).optional(),
-		operatorId: z.string().uuid().nullable().optional(),
+		regime: z.enum(["standard_134", "delicate_121", "prion_134", "quick_134", "flash_134"]).optional(),
+		operatorId: z.string().nullable().optional(),
 		operatorName: z.string().optional(),
 	})
 	.passthrough();

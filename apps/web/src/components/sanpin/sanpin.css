@@ -151,6 +151,16 @@
 	background-color: var(--paper-soft, #f8fafc);
 }
 
+.dark .sanpin-secondary-btn {
+	background-color: var(--paper, #1e293b);
+	color: var(--ink, #f1f5f9);
+	border-color: var(--line, #334155);
+}
+
+.dark .sanpin-secondary-btn:hover {
+	background-color: var(--paper-soft, #334155);
+}
+
 .sanpin-table-wrapper {
 	width: 100%;
 	overflow-x: auto;

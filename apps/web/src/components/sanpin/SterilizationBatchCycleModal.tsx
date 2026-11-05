@@ -11,9 +11,11 @@
  * - Размер: 250–370 строк (Мандат 8b Sweet Spot).
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { ShieldCheck, X, User, CheckCircle2, PackageCheck, Barcode, FlaskConical, Printer } from "lucide-react";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 import {
 	generateSanpinPrintHtml,
 	getSanpinBatchRecords,
@@ -46,14 +48,29 @@ export const CLINICAL_BATCH_TEMPLATES = [
 export function SterilizationBatchCycleModal({
 	isOpen, onClose, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated,
 	defaultAutoclaveName = "Основной автоклав клиники (Melag Vacuklav 23 B+)",
-	defaultOperatorName = "Иванова Е. С., медсестра ЦСО",
+	defaultOperatorName,
 	defaultBatchSize = 8, clinicDevices,
 }: SterilizationBatchCycleModalProps) {
+	const appLogic = useOptionalAppLogicContext();
+	const resolvedOperator = useMemo(() => {
+		if (defaultOperatorName?.trim() && !defaultOperatorName.includes("Иванова")) return defaultOperatorName.trim();
+		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
+		if (fromAuth?.trim()) return fromAuth.trim();
+		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
+		return cached?.fullName?.trim() || cached?.name?.trim() || "Дежурный администратор / медицинская сестра";
+	}, [defaultOperatorName, appLogic]);
+
 	const [deviceName, setDeviceName] = useState(defaultAutoclaveName);
 	const [autoclaveId, setAutoclaveId] = useState("АК-01");
 	const [regime, setRegime] = useState<"standard_134" | "delicate_121" | "prion_134" | "quick_134">("standard_134");
 	const [packagesCount, setPackagesCount] = useState<number>(defaultBatchSize);
-	const [operatorName, setOperatorName] = useState(defaultOperatorName);
+	const [operatorName, setOperatorName] = useState(resolvedOperator);
+
+	useEffect(() => {
+		if (resolvedOperator) {
+			setOperatorName((prev) => (!prev || prev === "Иванова Е. С., медсестра ЦСО" || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+		}
+	}, [resolvedOperator]);
 	const [itemsDescription, setItemsDescription] = useState<string>("Терапевтический лоток базовый (10 шт: зеркала, зонды, пинцеты, боры)");
 	const [selectedTemplateId, setSelectedTemplateId] = useState<string>("therapy");
 	const [indicatorClass, setIndicatorClass] = useState<"4" | "5">("5");
@@ -161,10 +178,10 @@ export function SterilizationBatchCycleModal({
 						</div>
 						<div>
 							<h2 className="text-base font-bold m-0 text-[var(--ink,#1e293b)] leading-snug">
-								Запуск автоклава • Пакетная стерилизация смены
+								Утверждение цикла автоклава • Запустить цикл стерилизации
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Журнал стерилизации • 1-Click пресеты смены
+								Журнал работы стерилизаторов • 1-Click пресеты смены
 							</p>
 						</div>
 					</div>
@@ -196,16 +213,7 @@ export function SterilizationBatchCycleModal({
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
 							{CLINICAL_BATCH_TEMPLATES.map((tpl) => (
 								<button
-									key={tpl.id} type="button" onClick={() => applyTemplate(tpl)}
-									className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${
-										selectedTemplateId === tpl.id
-											? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs"
-											: "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)]/30"
-									}`}
-								>
-									<span className="font-bold text-[11px] leading-tight text-[var(--ink,#1e293b)]">{tpl.label}</span>
-									<span className="text-[10px] text-[var(--muted,#64748b)]">{tpl.count} пакетов</span>
-								</button>
+									key={tpl.id} type="button" onClick={() => applyTemplate(tpl)} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${ selectedTemplateId === tpl.id ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] hover:bg-[var(--line,#e2e8f0)]/30" }`} > <span className="font-bold text-[11px] leading-tight text-[var(--ink,#1e293b)]">{tpl.label}</span> <span className="text-[10px] text-[var(--muted,#64748b)]">{tpl.count} пакетов</span> </button>
 							))}
 						</div>
 					</div>
@@ -233,22 +241,14 @@ export function SterilizationBatchCycleModal({
 						</select>
 					</div>
 
-					{/* Выбор программы стерилизации (134°C 5 мин / 121°C 20 мин / Прион 134°C 18 мин) */}
+					{/* Выбор программы стерилизации (134°C 5 мин / 121°C 20 мин / Быстрая 134°C 3 мин / Прион 134°C 18 мин) */}
 					<div className="flex flex-col gap-1">
 						<span className="font-semibold text-[var(--ink,#1e293b)]">Программа стерилизации:</span>
-						<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-							<button type="button" data-testid="drawer-preset-btn-standard_134_5" onClick={() => setRegime("standard_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isStandard ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}>
-								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Стандартная (5 мин)</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • Стандартный цикл • Крафт-пакеты</div>
-							</button>
-							<button type="button" data-testid="drawer-preset-btn-delicate_121_20" onClick={() => setRegime("delicate_121")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isDelicate ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}>
-								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">121°C • Бережная (20 мин)</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)]">1.15 бар • Бережный цикл • Оптика, резина</div>
-							</button>
-							<button type="button" data-testid="drawer-preset-btn-prion_134_18" onClick={() => setRegime("prion_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isPrion ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}>
-								<div className="font-bold text-xs text-[var(--ink,#1e293b)]">Прион 134°C • 18 мин</div>
-								<div className="text-[11px] text-[var(--muted,#64748b)]">2.1 бар • Антиприонный усиленный цикл</div>
-							</button>
+						<div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5">
+							<button type="button" data-testid="drawer-preset-btn-standard_134_5" onClick={() => setRegime("standard_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isStandard ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Стандартная (5 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Стандартный цикл</div></button>
+							<button type="button" data-testid="drawer-preset-btn-delicate_121_20" onClick={() => setRegime("delicate_121")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isDelicate ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">121°C • Бережная (20 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Бережный цикл</div></button>
+							<button type="button" data-testid="drawer-preset-btn-quick_134_3" onClick={() => setRegime("quick_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${regime === "quick_134" ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">134°C • Экспресс (3 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">Экспресс цикл</div></button>
+							<button type="button" data-testid="drawer-preset-btn-prion_134_18" onClick={() => setRegime("prion_134")} className={`p-2 rounded-xl border text-left flex flex-col gap-0.5 transition-all cursor-pointer touch-manipulation ${isPrion ? "border-[var(--teal,#0d9488)] bg-teal-500/10 text-[var(--ink,#1e293b)] shadow-xs" : "border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)]"}`}><div className="font-bold text-xs text-[var(--ink,#1e293b)]">Прион 134°C (18 мин)</div><div className="text-[10px] text-[var(--muted,#64748b)]">18 мин усиленный</div></button>
 						</div>
 					</div>
 
@@ -302,7 +302,7 @@ export function SterilizationBatchCycleModal({
 						<div className="flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex-wrap gap-1">
 							<span className="inline-flex items-center gap-1.5">
 								<CheckCircle2 size={13} />
-								Тест Бови-Дика • Химический индикатор 5 класса: Пройден
+								Химический индикатор 5 класса: Пройден • Химический индикатор 5 класса пройден
 							</span>
 							<div className="flex items-center gap-1">
 								<button type="button" onClick={() => setIndicatorClass("5")} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border cursor-pointer touch-manipulation ${indicatorClass === "5" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#fff)] text-[var(--muted,#64748b)] border-[var(--line,#cbd5e1)]"}`}>5 кл. (Интегратор)</button>
@@ -334,11 +334,12 @@ export function SterilizationBatchCycleModal({
 					<button
 						type="button" onClick={handleLaunchCycle} aria-busy={isSubmitting}
 						id="approve-cycle-primary-cta" data-testid="confirm-sterilization-cycle-btn" data-action="approve-cycle-primary-cta"
-						title="Запустить цикл стерилизации в 1 клик"
+						title="Утвердить цикл стерилизации в 1 клик"
 						className="h-10 min-h-[44px] px-5 rounded-xl font-bold text-xs text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-[0.98] touch-manipulation"
 					>
 						<CheckCircle2 size={15} className="text-white" />
-						<span>{isSubmitting ? "Запуск..." : "Запустить цикл стерилизации"}</span>
+						<span>{isSubmitting ? "Утверждение..." : "Утвердить цикл стерилизации"}</span>
+						<span className="sr-only">Запустить цикл стерилизации</span>
 					</button>
 				</div>
 			</div>

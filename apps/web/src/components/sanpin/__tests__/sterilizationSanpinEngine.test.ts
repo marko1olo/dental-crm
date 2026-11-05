@@ -769,8 +769,8 @@ describe("SanPiN 3.3686-21 — Sterilization & PSO Quality Control Auto-Generato
 			});
 			assert.ok(html.includes("ДОСЬЕ ПРОИЗВОДСТВЕННОГО САНИТАРНОГО КОНТРОЛЯ"));
 			assert.ok(html.includes("Август 2026 г."));
-			assert.ok(html.includes("Форма № 257/у"));
-			assert.ok(html.includes("Форма № 366/у"));
+			assert.ok(html.includes("Журнал автоклавирования"));
+			assert.ok(html.includes("предстерилизационной очистки"));
 			assert.ok(html.includes("Главный врач"));
 		});
 	});

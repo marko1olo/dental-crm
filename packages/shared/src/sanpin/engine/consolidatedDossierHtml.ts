@@ -529,7 +529,7 @@ export function generateSanpinConsolidatedInspectionHtml(data: ConsolidatedSanpi
 	<div class="page-break"></div>
 
 	<!-- ===================================================================== -->
-	<!-- 2. РАЗДЕЛ 1: ЖУРНАЛ ПСО (ФОРМА № 366/у)                                -->
+	<!-- 2. РАЗДЕЛ 1: ЖУРНАЛ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ                     -->
 	<!-- ===================================================================== -->
 	<div class="section-header">
 		<div class="section-number">Раздел 1 • СанПиН 3.3686-21 (п. 3584)</div>

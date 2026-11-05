@@ -309,7 +309,7 @@ export function createForm257Link(
 
 	return {
 		recordId,
-		journalTitleRu: "Журнал контроля работы стерилизаторов (автоклавов) Форма № 257/у",
+		journalTitleRu: "Журнал автоклавирования (контроль работы стерилизаторов)",
 		digitalStampHash,
 		isLinked: true,
 		sanpinClauseRu: "СанПиН 3.3686-21 п. 3630, 3632 (Таблица 3.12)",
@@ -367,7 +367,7 @@ export function formatPouch043FullDiaryText(params: {
 	const autoPart = `${auto.autoclaveModel} (${auto.regimeName}, ${auto.autoclaveCode}, ${auto.shiftName})`;
 	const integrity = params.packagingIntegrityPreserved !== false ? "Целостность упаковки сохранена." : "Внимание: целостность упаковки под вопросом.";
 
-	return `${snippet}${trayPart} ${integrity} Параметры: ${autoPart}. Контроль индикатора: ${params.indicator.colorStatusText}. [СанПиН 3.3686-21, Форма 257/у: ${params.form257Link.recordId}]. Ответственная медсестра ЦСО: ${auto.operatorName}.`;
+	return `${snippet}${trayPart} ${integrity} Параметры: ${autoPart}. Контроль индикатора: ${params.indicator.colorStatusText}. [Журнал автоклавирования: ${params.form257Link.recordId}]. Ответственная медсестра ЦСО: ${auto.operatorName}.`;
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

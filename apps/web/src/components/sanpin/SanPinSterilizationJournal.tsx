@@ -11,7 +11,7 @@
  * - Размер строго 350–500 строк (Мандат 8b/8zi Sweet Spot).
  */
 
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import {
 	ShieldCheck, CheckCircle2, Plus, Search, Printer, Download,
 	Thermometer, Gauge, Timer, Layers, ArrowRight, Sparkles,
@@ -25,6 +25,8 @@ import { SterilizationBatchCycleModal } from "./SterilizationBatchCycleModal";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { showToast } from "../GlobalToast";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 
 export type { SanPinCycleEntry, SanPinSterilizationJournalProps } from "./journalModules";
 export { DEFAULT_CYCLES, useSanPinJournalLogic } from "./journalModules";
@@ -41,7 +43,24 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 	const [selectedAutoclaveId, setSelectedAutoclaveId] = useState("АК-01");
 	const [selectedRegime, setSelectedRegime] = useState<"standard_134" | "delicate_121" | "quick_134">("standard_134");
 	const [packagesCount, setPackagesCount] = useState<number>(12);
-	const [operatorName, setOperatorName] = useState<string>("Иванова Е. С., медсестра ЦСО");
+	const appLogic = useOptionalAppLogicContext();
+	const resolvedOperator = useMemo(() => {
+		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
+		if (fromAuth && fromAuth.trim()) return fromAuth.trim();
+		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
+		if (cached?.fullName?.trim()) return cached.fullName.trim();
+		if (cached?.name?.trim()) return cached.name.trim();
+		return "Дежурный администратор / медицинская сестра";
+	}, [appLogic]);
+
+	const [operatorName, setOperatorName] = useState<string>(resolvedOperator);
+
+	useEffect(() => {
+		if (resolvedOperator) {
+			setOperatorName((prev) => (!prev || prev === "Иванова Е. С., медсестра ЦСО" || prev === "Дежурный администратор / медицинская сестра" ? resolvedOperator : prev));
+		}
+	}, [resolvedOperator]);
+
 	const [itemsSummaryInput, setItemsSummaryInput] = useState<string>("Смена Утро — 12 крафт-пакетов (лотки, зеркала, зонды, пинцеты, боры)");
 
 	const {

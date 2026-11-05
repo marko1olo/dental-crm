@@ -21,7 +21,7 @@ const DEFAULT_PSO_DEMO_LOGS: PsoCleaningLog[] = [
 		isAzopyramNegative: true,
 		isPhenolphthaleinNegative: true,
 		detergentBrand: "Биолот 0.5% + Аламинол 1%",
-		operatorName: "Иванова А. С. (ЦСО)",
+		operatorName: "Дежурный администратор / медицинская сестра",
 		notes: "Азопирамовая и фенолфталеиновая пробы отрицательны. Норма 100%.",
 	},
 	{
@@ -38,7 +38,7 @@ const DEFAULT_PSO_DEMO_LOGS: PsoCleaningLog[] = [
 		isAzopyramNegative: true,
 		isPhenolphthaleinNegative: true,
 		detergentBrand: "Биолот 0.5% + Аламинол 1%",
-		operatorName: "Иванова А. С. (ЦСО)",
+		operatorName: "Дежурный администратор / медицинская сестра",
 		notes: "Проба на скрытую кровь отрицательна. Допущено к автоклавированию.",
 	},
 	{

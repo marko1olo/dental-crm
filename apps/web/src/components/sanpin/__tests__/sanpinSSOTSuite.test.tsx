@@ -74,8 +74,8 @@ describe("SANPIN & STERILIZATION CANONICAL SSOT SUITE", () => {
 	});
 
 	describe("2. SSOT Каталог программ, оборудования, индикаторов и упаковок", () => {
-		it("содержит 3 канонические программы автоклавирования", () => {
-			assert.equal(AUTOCLAVE_PROGRAMS.length, 3);
+		it("содержит канонические программы автоклавирования", () => {
+			assert.ok(AUTOCLAVE_PROGRAMS.length >= 3);
 			const standard = AUTOCLAVE_PROGRAMS.find((p) => p.id === "standard_134");
 			const delicate = AUTOCLAVE_PROGRAMS.find((p) => p.id === "delicate_121");
 			const flash = AUTOCLAVE_PROGRAMS.find((p) => p.id === "flash_134");

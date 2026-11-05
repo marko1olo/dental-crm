@@ -62,7 +62,7 @@ export function validateSterilizationCycleParameters(
 	const isValid = errors.length === 0;
 	const complianceVerdictRu = isValid
 		? (warnings.length === 0
-			? `Параметры цикла в норме (${regime.shortLabelRu}). Стерилизация подтверждена.`
+			? `Параметры цикла в норме, полностью соответствует нормативам (${regime.shortLabelRu}). Стерилизация подтверждена.`
 			: `Параметры в допуске: ${warnings.join("; ")}`)
 		: "БРАК СТЕРИЛИЗАЦИИ: параметры нарушают требования норм. Все пакеты подлежат повторной очистке и стерилизации.";
 

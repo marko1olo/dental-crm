@@ -29,18 +29,14 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 	}
 	const data = scanParsed.data;
 
+	let verifiedOperatorId: string | null = null;
 	if (data.operatorId) {
 		const [operator] = await db
 			.select({ id: users.id })
 			.from(users)
 			.where(and(eq(users.id, data.operatorId), eq(users.organizationId, organizationId)))
 			.limit(1);
-		if (!operator) {
-			return reply.code(400).send({
-				error: "OperatorNotFound",
-				message: "Оператор стерилизации не найден в этой клинике. Выберите сотрудника из списка персонала клиники.",
-			});
-		}
+		verifiedOperatorId = operator?.id || null;
 	}
 
 	const now = new Date();
@@ -63,7 +59,7 @@ export async function handleScanSterilization(req: FastifyRequest, reply: Fastif
 			temperatureCelsius: data.temperatureCelsius ? String(data.temperatureCelsius) : null,
 			pressureBar: data.pressureBar ? String(data.pressureBar) : null,
 			itemsDescription: data.itemsDescription || null,
-			operatorId: data.operatorId || null,
+			operatorId: verifiedOperatorId,
 			status: data.status,
 			passedIndicator,
 			packagingType: data.packagingType || null,

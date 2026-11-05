@@ -47,7 +47,7 @@ export function generateCombinedInspectionDossierHtml(params: {
 		<div>Лицензия на осуществление медицинской деятельности: ${clinic.licenseNumber}</div>
 		<div>Адрес места осуществления деятельности: ${clinic.address}</div>
 		<div class="cover-title">ДОСЬЕ ПРОИЗВОДСТВЕННОГО САНИТАРНОГО КОНТРОЛЯ</div>
-		<div class="cover-sub">Журналы стерилизации (Форма № 257/у) и качества ПСО (Форма № 366/у) за ${params.monthFormattedRu}</div>
+		<div class="cover-sub">Журнал автоклавирования и журнал предстерилизационной очистки за ${params.monthFormattedRu}</div>
 		<div class="cover-box">
 			<div><b>Нормативное основание:</b> ${SANPIN_REGULATORY_META.standardRu}, ${SANPIN_REGULATORY_META.guidelinePsoRu}</div>
 			<div style="margin-top: 5px;"><b>Всего циклов стерилизации:</b> ${params.cycles.length}</div>
@@ -65,7 +65,7 @@ export function generateCombinedInspectionDossierHtml(params: {
 	</div>
 
 	<div class="page-break">
-		<div class="table-title">1. Журнал работы стерилизаторов воздушного, парового (Форма № 257/у)</div>
+		<div class="table-title">1. Журнал автоклавирования и стерилизации инструментария</div>
 		<table class="main-table">
 			<thead>
 				<tr>
@@ -88,7 +88,7 @@ export function generateCombinedInspectionDossierHtml(params: {
 	</div>
 
 	<div class="page-break">
-		<div class="table-title">2. Журнал учета качества предстерилизационной очистки (Форма № 366/у)</div>
+		<div class="table-title">2. Журнал предстерилизационной очистки инструментария</div>
 		<table class="main-table">
 			<thead>
 				<tr>

@@ -197,8 +197,8 @@ describe("Retroactive SanPiN 3.3686-21 Engine (Decomposed Architecture)", () => 
 			assert.ok(html.includes("<!DOCTYPE html>"));
 			assert.ok(html.includes("СВОДНОЕ ДОСЬЕ ПРОИЗВОДСТВЕННОГО КОНТРОЛЯ И РЕЕСТРЫ САНПИН"));
 			assert.ok(html.includes("СанПиН 3.3686-21"));
-			assert.ok(html.includes("Форма № 257/у"));
-			assert.ok(html.includes("Форма № 366/у"));
+			assert.ok(html.includes("Журнал автоклавирования"));
+			assert.ok(html.includes("предстерилизационной очистки"));
 			assert.ok(html.includes("ООО «Стоматологическая клиника ДЕНТЕ»"));
 		});
 

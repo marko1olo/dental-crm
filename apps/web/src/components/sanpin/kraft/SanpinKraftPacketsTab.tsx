@@ -51,7 +51,7 @@ export function SanpinKraftPacketsTab() {
 	};
 
 	const handlePrintBatchSticker = () => {
-		const sampleRecord = createStandardTrayKraftPackageRecord("therapy", "Иванова А. С. (ЦСО)");
+		const sampleRecord = createStandardTrayKraftPackageRecord("therapy", "Дежурный администратор / медицинская сестра");
 		const html = generateThermalStickerHtml(sampleRecord, { size: "58x40" });
 		const w = window.open("", "_blank");
 		if (w) { w.document.write(html); w.document.close(); w.print(); }

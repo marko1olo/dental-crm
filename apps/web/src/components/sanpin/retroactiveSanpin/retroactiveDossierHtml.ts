@@ -54,7 +54,7 @@ export function generateRetroactiveDossierPrintHtml(
 
 	<div class="page-break">
 		<div class="section-header">
-			<div class="section-title">1. Журнал стерилизации (Форма № 257/у) и предстерилизационной очистки ПСО (Форма № 366/у)</div>
+			<div class="section-title">1. Журнал автоклавирования и предстерилизационной очистки инструментария</div>
 			<div class="section-law">СанПиН 3.3686-21 п. 3624 / ГОСТ ISO 11140-1</div>
 		</div>
 		<table class="sanpin-print-table">

@@ -1,22 +1,13 @@
 /**
- * apps/web/src/components/sanpin/SanpinStudioModal.tsx
- *
- * Каноническая студия автоклавирования и санитарного контроля DENTE CRM (Мандаты 8b, 8e, 8n, 8am, 8aq, 8x, Apple HIG):
- * - Вкладки: «Циклы стерилизации (Автоклав)», «Крафт-пакеты и маркировка», «Журнал генеральных уборок и УФ».
- * - Тихий фоновый журнал медсестры в 2 клика: выбор автоклава (Автоклав №1 / №2), режим (134°C / 2 атм / 5 мин).
- * - Ровно ОДНА Primary CTA кнопка #0d9488 («Зафиксировать цикл автоклавирования», Мандат 8am).
- * - Пакетное списание крафт-пакетов и индикаторов со склада (Soft Negative Stock, Мандат 8n) без микро-дрочи.
- * - История циклов: плотная таблица на десктопе и карточки Grouped List Cards на смартфонах (Apple HIG).
- * - 0 заблокированных кнопок (Мандат 8e): кнопки никогда не disabled. 0px паразитного горизонтального скролла.
- * - Apple HIG: нативный Bottom Sheet на смартфонах (<=768px), Drag Handle 36x5px, тач-таргеты >= 44x44px.
- * - Чистый клинический русский язык без советского канцелярита и номеров приказов (Мандат 8x).
- * - Строгий диапазон Sweet Spot: 350–420 строк (Мандат 8b/8zi).
+ * apps/web/src/components/sanpin/SanpinStudioModal.tsx — Каноническая студия автоклавирования и санитарного контроля DENTE CRM (Мандаты 8b, 8e, 8n, 8am, 8aq, 8x, Apple HIG).
  */
 
-import React, { useState, useEffect, useId, useCallback } from "react";
-import { CheckCircle, Printer, X, Thermometer, ShieldCheck, Sun, Flame, Box, Tag, CalendarCheck } from "lucide-react";
+import React, { useState, useEffect, useId, useCallback, useMemo } from "react";
+import { CheckCircle, Printer, X, Thermometer, ShieldCheck, Sun, Flame, Box, Tag, CalendarCheck, User } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
+import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
+import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 import {
 	AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, BACTERICIDAL_STANDARD_DEVICES, STERILIZATION_PACKAGING,
 	PRESET_PACK_COUNTS, type SterilizationBatchCycleRecord, type AutoclaveRegimeId,
@@ -30,31 +21,43 @@ export interface SanpinStudioModalProps {
 	readonly onClose: () => void;
 	readonly initialTab?: SanpinStudioTab | string | undefined;
 	readonly isDemo?: boolean | undefined;
+	readonly operatorName?: string | undefined;
 	readonly onCycleCreated?: ((cycle: SterilizationBatchCycleRecord) => void) | undefined;
 	readonly onCycleCompleted?: ((result?: unknown) => void) | undefined;
 }
 
 export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
-	isOpen, onClose, initialTab = "autoclave", isDemo, onCycleCreated, onCycleCompleted,
+	isOpen, onClose, initialTab = "autoclave", isDemo, operatorName: propOperatorName, onCycleCreated, onCycleCompleted,
 }) => {
 	const modalTitleId = useId();
-	const resolveTab = (t: string): SanpinStudioTab => {
-		if (t === "kraft" || t === "packages" || t === "pso") return "kraft";
-		if (t === "cleaning" || t === "uv" || t === "bactericidal") return "cleaning";
-		return "autoclave";
-	};
+	const appLogic = useOptionalAppLogicContext();
+
+	// [WH-05] Динамическое получение имени авторизованного сотрудника клиники
+	const resolvedInitialOperator = useMemo(() => {
+		if (propOperatorName && propOperatorName.trim()) return propOperatorName.trim();
+		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
+		if (fromAuth && fromAuth.trim()) return fromAuth.trim();
+		const cached = getCachedActiveStaffUser() as { fullName?: string; name?: string; role?: string } | null;
+		if (cached?.fullName?.trim()) return cached.fullName.trim();
+		if (cached?.name?.trim()) return cached.name.trim();
+		return "Дежурный администратор / медицинская сестра";
+	}, [propOperatorName, appLogic]);
+
+	const resolveTab = (t: string): SanpinStudioTab => (t === "kraft" || t === "packages" || t === "pso" ? "kraft" : t === "cleaning" || t === "uv" || t === "bactericidal" ? "cleaning" : "autoclave");
 
 	const [activeTab, setActiveTab] = useState<SanpinStudioTab>(() => resolveTab(initialTab));
 	const [selectedProgramId, setSelectedProgramId] = useState<AutoclaveRegimeId>("standard_134");
 	const [selectedAutoclave, setSelectedAutoclave] = useState<string>(CLINIC_STERILIZERS[0]!.model);
 	const [packagesCount, setPackagesCount] = useState<number>(14);
-	const [operatorName] = useState<string>("Иванова Е. С., дежурная медсестра");
+	const [operatorName, setOperatorName] = useState<string>(resolvedInitialOperator);
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+	useEffect(() => {
+		if (resolvedInitialOperator) setOperatorName((prev) => (prev && prev !== "Иванова Е. С., дежурная медсестра" ? prev : resolvedInitialOperator));
+	}, [resolvedInitialOperator]);
+
 	const isEffectiveDemo = typeof isDemo === "boolean" ? isDemo : isDemoShowcaseMode();
-	const [cycles, setCycles] = useState<SterilizationBatchCycleRecord[]>(() =>
-		(isEffectiveDemo ? getSanpinBatchRecords(true) : [])
-	);
+	const [cycles, setCycles] = useState<SterilizationBatchCycleRecord[]>(() => (isEffectiveDemo ? getSanpinBatchRecords(true) : []));
 
 	useEffect(() => { if (isOpen) setActiveTab(resolveTab(initialTab)); }, [isOpen, initialTab]);
 
@@ -84,14 +87,14 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 					exposureMinutes: Number(item.durationMin) || 5,
 					packagesCount: Number(item.packagesCount) || 1,
 					chemicalIndicatorVerdict: (item.passedIndicator === false ? "НЕ ПРОЙДЕН" : "ПРОЙДЕН") as "ПРОЙДЕН" | "НЕ ПРОЙДЕН",
-					operatorName: String(item.operatorName || "Дежурная медсестра"),
+					operatorName: String(item.operatorName || resolvedInitialOperator),
 					itemsDescription: String(item.itemsDescription || "Партия стерилизации"),
 					status: "completed" as const,
 				}));
 				setCycles(mapped);
 			}).catch(() => {});
 		return () => { active = false; };
-	}, [isOpen, isEffectiveDemo, selectedAutoclave]);
+	}, [isOpen, isEffectiveDemo, selectedAutoclave, resolvedInitialOperator]);
 
 	const handleRunCycle = useCallback(async () => {
 		const count = Math.max(1, packagesCount || 1);
@@ -99,15 +102,12 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 		const isDelicate = selectedProgramId === "delicate_121";
 		const autoclaveId = selectedAutoclave.includes("АК-02") || selectedAutoclave.includes("Lina") ? "АК-02" : "АК-01";
 		const packagingType = isDelicate ? "kraft_heat_sealed" : "kraft_self_adhesive";
-		const batch = createOneClickShiftBatch({
-			packagesCount: count, operatorName: operatorName.trim() || "Дежурная медсестра",
-			autoclaveName: selectedAutoclave, programId: selectedProgramId,
-		});
+		const effectiveOp = operatorName.trim() || resolvedInitialOperator;
+		const batch = createOneClickShiftBatch({ packagesCount: count, operatorName: effectiveOp, autoclaveName: selectedAutoclave, programId: selectedProgramId });
 		const payload = {
 			deviceName: selectedAutoclave, autoclaveId, packagesCount: count, batchSize: count,
-			regime: selectedProgramId, operatorName: operatorName.trim() || "Дежурная медсестра",
-			packagingType, indicatorType: "class5_integrating", temperatureCelsius: prog.temperatureCelsius,
-			pressureBar: prog.pressureBar, durationMin: prog.exposureMinutes,
+			regime: selectedProgramId, operatorName: effectiveOp, packagingType, indicatorType: "class5_integrating",
+			temperatureCelsius: prog.temperatureCelsius, pressureBar: prog.pressureBar, durationMin: prog.exposureMinutes,
 			itemsDescription: `Партия стерилизации (${count} крафт-пакетов)`,
 		};
 		try {
@@ -181,7 +181,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 							<Printer className="w-4 h-4 text-[var(--ink-muted,#64748b)]" />
 							<span className="hidden sm:inline">Печать журнала</span>
 						</button>
-						<button type="button" onClick={onClose} className="w-9 h-9 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] transition-colors" aria-label="Закрыть">
+						<button type="button" onClick={onClose} className="w-9 h-9 min-h-[44px] min-w-[44px] rounded-lg flex items-center justify-center bg-transparent text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)] dark:text-slate-400 dark:hover:text-slate-100 dark:hover:bg-slate-800 transition-colors" aria-label="Закрыть">
 							<X className="w-5 h-5" />
 						</button>
 					</div>
@@ -254,7 +254,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 											key={cnt}
 											type="button"
 											onClick={() => setPackagesCount(cnt)}
-											className={`px-1.5 py-0.5 min-h-[28px] text-[11px] rounded border ${packagesCount === cnt ? "border-teal-500 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 font-semibold" : "border-[var(--line,#e2e8f0)] text-[var(--ink-muted,#64748b)]"}`}
+											className={`px-1.5 py-0.5 min-h-[28px] text-[11px] rounded border ${packagesCount === cnt ? "border-teal-500 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 font-semibold" : "border-[var(--line,#e2e8f0)] text-[var(--ink-muted,#64748b)] bg-[var(--paper,#ffffff)] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"}`}
 										>
 											{cnt}
 										</button>
@@ -288,10 +288,24 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 						</div>
 					</div>
 
-					<div className="flex items-center gap-2 mt-2 text-xs text-[var(--ink-muted,#64748b)]">
-						<Thermometer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-						<span>{currentProgram.temperatureCelsius}°C • {currentProgram.pressureBar} бар • {currentProgram.exposureMinutes} мин экспозиция</span>
-						<span className="hidden sm:inline">• Индикатор 5 кл.: норма • Авто-списание со склада</span>
+					<div className="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-[var(--ink-muted,#64748b)]">
+						<div className="flex items-center gap-2">
+							<Thermometer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>{currentProgram.temperatureCelsius}°C • {currentProgram.pressureBar} бар • {currentProgram.exposureMinutes} мин экспозиция</span>
+							<span className="hidden sm:inline">• Индикатор 5 кл.: норма • Авто-списание со склада</span>
+						</div>
+						<div className="flex items-center gap-1.5 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200">
+							<User className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
+							<span>Ответственный:</span>
+							<input
+								type="text"
+								value={operatorName}
+								onChange={(e) => setOperatorName(e.target.value)}
+								data-testid="sanpin-operator-input"
+								aria-label="Ответственный сотрудник / медицинская сестра"
+								className="h-7 px-2 text-xs rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-500 max-w-[200px] truncate"
+							/>
+						</div>
 					</div>
 				</div>
 

@@ -35,7 +35,7 @@ export function generateShiftSanpinDossierPrintHtml(
 		</div>
 	</div>
 
-	<div class="sec-title">1. СТЕРИЛИЗАЦИЯ ИНСТРУМЕНТОВ (ФОРМА № 257/у)</div>
+	<div class="sec-title">1. ЖУРНАЛ АВТОКЛАВИРОВАНИЯ И СТЕРИЛИЗАЦИИ ИНСТРУМЕНТОВ</div>
 	<table>
 		<thead>
 			<tr>
@@ -46,7 +46,7 @@ export function generateShiftSanpinDossierPrintHtml(
 		<tbody>${f257Rows}</tbody>
 	</table>
 
-	<div class="sec-title">2. КОНТРОЛЬ ПРЕДСТЕРИЛИЗАЦИОННОЙ ОЧИСТКИ (ФОРМА № 366/у)</div>
+	<div class="sec-title">2. ПРЕДСТЕРИЛИЗАЦИОННАЯ ОЧИСТКА (АЗОПИРАМ, ФЕНОЛФТАЛЕИН)</div>
 	<table>
 		<thead>
 			<tr>
