@@ -207,10 +207,11 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 							type="button"
 							onClick={() => onOpenPrintOrder(order)}
 							className="secondary-button min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1 text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-							title="Распечатать бланк наряд-заказа ЗТЛ-1"
+							title="Печать заказа (Бланк ЗТЛ-1)"
+							aria-label="Печать заказа (Бланк ЗТЛ-1)"
 						>
 							<Printer className="w-3.5 h-3.5 text-[var(--muted)]" />
-							<span>Бланк ЗТЛ-1</span>
+							<span>Печать заказа</span>
 						</button>
 					)}
 
@@ -219,7 +220,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 							type="button"
 							onClick={() => onCopyPortalLink(order.secureToken)}
 							className="secondary-button min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1 text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-							title="Скопировать ссылку для зуботехнической лаборатории"
+							title="Скопировать ссылку для лаборатории"
 						>
 							<ExternalLink className="w-3.5 h-3.5 text-[var(--muted)]" />
 							<span className="hidden sm:inline">Ссылка технику</span>
@@ -232,7 +233,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 							type="button"
 							onClick={() => onOpenTracking(order)}
 							className="secondary-button min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1 text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-							title="Открыть этапы и таймлайн наряда ЗТЛ"
+							title="Открыть этапы и таймлайн заказа"
 						>
 							<Eye className="w-3.5 h-3.5 text-[var(--muted)]" />
 							<span>Этапы</span>
@@ -245,7 +246,7 @@ export const LabOrderCardItem: React.FC<LabOrderCardItemProps> = ({
 						type="button"
 						onClick={() => onOpenEditOrder(order)}
 						className="secondary-button min-h-[34px] px-2.5 py-1 text-xs font-medium rounded-lg inline-flex items-center gap-1 text-[var(--ink)] border border-[var(--line)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer ml-auto"
-						title="Редактировать наряд в ЗТЛ"
+						title="Редактировать заказ в лабораторию"
 					>
 						<Edit2 className="w-3 h-3 text-[var(--muted)]" />
 						<span>Изменить</span>

@@ -26,7 +26,7 @@ export function useOdontogramApplyToothState({
 	setMenuConfig,
 }: UseOdontogramApplyToothStateParams) {
 	return useCallback(
-		(state: ToothState) => {
+		(state: ToothState, opts?: { isTreatmentPerformedToday?: boolean }) => {
 			setMenuConfig((prev) => {
 				if (!prev) return null;
 				const num = prev.toothNumber;
@@ -41,11 +41,16 @@ export function useOdontogramApplyToothState({
 					toothSurfaces && toothSurfaces.length > 0
 						? { toothNumber: num, state, surfaces: toothSurfaces }
 						: { toothNumber: num, state };
+
+				// [CLN-02]: Первичный осмотр и фиксация анамнеза пациента (0 ₽).
+				// Автоматическое выставление счетов в сегодняшний чек происходит ТОЛЬКО
+				// если это выполненное сегодня лечение (opts?.isTreatmentPerformedToday === true).
 				dispatchOdontogramSoapAndBundle({
 					targets,
 					state,
 					findings: [findingPayload],
 					patientId,
+					isTreatmentPerformedToday: opts?.isTreatmentPerformedToday ?? false,
 				});
 				return null;
 			});

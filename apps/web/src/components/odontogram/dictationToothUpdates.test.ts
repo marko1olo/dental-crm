@@ -55,24 +55,42 @@ test("разбор языковой моделью кладёт строки в 
 	assert.deepEqual(plan.applied, [{ toothNumber: 48, state: "Missing" }]);
 });
 
-test("неоднозначное слово диктовки не превращается в диагноз", () => {
-	// "treatment" — это и кариес, и пульпит, и пломба: сервер повод не сохраняет.
+test("[CLN-01]: разблокировано прямое распознавание диагнозов («кариес», «пульпит», «пломба», «коронка»)", () => {
 	const plan = dictationApplyPlanFromResponseBody(
 		localVisitBody([
-			{ code: "26", state: "treatment" },
-			{ code: "27", state: "done" },
-			{ code: "28", state: "prosthetics" },
-			{ code: "35", state: "watch" },
-			{ code: "37", state: "calculus" },
+			{ code: "26", state: "caries" },
+			{ code: "27", state: "pulpitis" },
+			{ code: "28", state: "crown" },
+			{ code: "35", state: "filled" },
+			{ code: "37", state: "missing" },
 		]),
 	);
 	assert.ok(plan !== null);
-	assert.deepEqual(plan.applied, [], "диагноз наугад ставить нельзя");
-	assert.equal(plan.manual.length, 5);
-	assert.deepEqual(
-		plan.manual.map((item) => item.toothNumber),
-		[26, 27, 28, 35, 37],
+	assert.deepEqual(plan.applied, [
+		{ toothNumber: 26, state: "Caries" },
+		{ toothNumber: 27, state: "Pulpitis" },
+		{ toothNumber: 28, state: "Crown" },
+		{ toothNumber: 35, state: "Filled" },
+		{ toothNumber: 37, state: "Missing" },
+	]);
+	assert.equal(plan.manual.length, 0);
+});
+
+test("[CLN-01]: распознавание по clinicalState и кодам МКБ-10", () => {
+	const plan = dictationApplyPlanFromResponseBody(
+		localVisitBody([
+			{ code: "16", clinicalState: "Pulpitis", diagnosisCode: "K04.0" },
+			{ code: "46", state: "prosthetics", diagnosisTitle: "Коронка ортопедическая" },
+			{ code: "47", state: "treatment", diagnosisTitle: "Кариес дентина глубокий" },
+		]),
 	);
+	assert.ok(plan !== null);
+	assert.deepEqual(plan.applied, [
+		{ toothNumber: 16, state: "Pulpitis" },
+		{ toothNumber: 46, state: "Crown" },
+		{ toothNumber: 47, state: "Caries" },
+	]);
+	assert.equal(plan.manual.length, 0);
 });
 
 test("нечитаемый номер зуба назван, а не выброшен молча", () => {
@@ -91,13 +109,11 @@ test("нечитаемый номер зуба назван, а не выбро�
 	assert.deepEqual(plan.unreadableCodes, ["верхний", "99", "26абв"]);
 });
 
-test("незнакомое состояние не пишется в формулу", () => {
+test("незнакомое состояние отправляется на ручное заполнение", () => {
 	const plan = dictationApplyPlanFromResponseBody(
-		localVisitBody([{ code: "26", state: "caries" }]),
+		localVisitBody([{ code: "26", state: "abracadabra_unknown" }]),
 	);
 	assert.ok(plan !== null);
-	// "caries" — не слово диктовки и не состояние схемы. Прежний код ставил
-	// именно его: `state || "caries"`.
 	assert.deepEqual(plan.applied, []);
 	assert.equal(plan.manual.length, 1);
 });
@@ -170,7 +186,7 @@ test("зелёным — только когда на схеме действи�
 	const partial = dictationApplyPlanFromResponseBody(
 		localVisitBody([
 			{ code: "26", state: "missing" },
-			{ code: "27", state: "treatment" },
+			{ code: "27", state: "unknown_anomaly" },
 		]),
 	);
 	assert.ok(partial !== null);

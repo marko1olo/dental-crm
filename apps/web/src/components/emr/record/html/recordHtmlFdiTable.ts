@@ -1,6 +1,74 @@
 import { type FdiToothRecord, toothStatusCodeShortMap } from "@dental/shared";
 import { escapeHtml } from "../../math/recordMathFormatting";
 
+function resolvePrintIndex(code: string): { symbol: string; isMissing: boolean; isCrown: boolean; isImplant: boolean } {
+	const c = (code || "healthy").toLowerCase();
+	if (c === "extracted_absent" || c === "missing" || c === "o" || c === "0") return { symbol: "O", isMissing: true, isCrown: false, isImplant: false };
+	if (c === "implant" || c === "planned_implant" || c === "и") return { symbol: "И", isMissing: false, isCrown: false, isImplant: true };
+	if (c.startsWith("crown") || c === "к") return { symbol: "К", isMissing: false, isCrown: true, isImplant: false };
+	if (c === "filled_satisfactory" || c === "filled" || c === "п") return { symbol: "П", isMissing: false, isCrown: false, isImplant: false };
+	if (c === "caries" || c.startsWith("c")) return { symbol: "C", isMissing: false, isCrown: false, isImplant: false };
+	if (c === "pulpitis" || c === "p") return { symbol: "P", isMissing: false, isCrown: false, isImplant: false };
+	if (c === "periodontitis" || c === "pt") return { symbol: "Pt", isMissing: false, isCrown: false, isImplant: false };
+	if (c === "root" || c === "radix" || c === "r") return { symbol: "R", isMissing: false, isCrown: false, isImplant: false };
+	return { symbol: "—", isMissing: false, isCrown: false, isImplant: false };
+}
+
+function renderVectorArchSvgHtml(teethMap: Map<number, FdiToothRecord>): string {
+	const upper = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
+	const lower = [48, 47, 46, 45, 44, 43, 42, 41, 31, 32, 33, 34, 35, 36, 37, 38];
+	const startX = 18;
+	const step = 45;
+
+	const renderTooth = (num: number, x: number, isUpper: boolean) => {
+		const rec = teethMap.get(num);
+		const { symbol, isMissing, isCrown, isImplant } = resolvePrintIndex(rec?.statusCode || "healthy");
+		const yCrown = isUpper ? 34 : 88;
+		const yRoot = isUpper ? 8 : 134;
+		const yNum = isUpper ? 64 : 82;
+		const yIndex = isUpper ? 46 : 100;
+
+		const rootPath = !isMissing && !isImplant
+			? isUpper
+				? `<path d="M ${x + 6} ${yCrown} C ${x + 8} ${yRoot + 12}, ${x + 12} ${yRoot + 4}, ${x + 16} ${yRoot} C ${x + 20} ${yRoot + 4}, ${x + 24} ${yRoot + 12}, ${x + 26} ${yCrown}" fill="none" stroke="#000000" stroke-width="1"/>`
+				: `<path d="M ${x + 6} ${yCrown + 24} C ${x + 8} ${yRoot - 12}, ${x + 12} ${yRoot - 4}, ${x + 16} ${yRoot} C ${x + 20} ${yRoot - 4}, ${x + 24} ${yRoot - 12}, ${x + 26} ${yCrown + 24}" fill="none" stroke="#000000" stroke-width="1"/>`
+			: "";
+
+		const cross = isMissing
+			? `<line x1="${x + 3}" y1="${yCrown}" x2="${x + 29}" y2="${yCrown + 22}" stroke="#000000" stroke-width="1.2"/><line x1="${x + 29}" y1="${yCrown}" x2="${x + 3}" y2="${yCrown + 22}" stroke="#000000" stroke-width="1.2"/>`
+			: "";
+
+		return `
+			<g>
+				${rootPath}
+				<rect x="${x + 3}" y="${yCrown}" width="26" height="22" rx="3" fill="${isCrown ? "#f1f5f9" : "#ffffff"}" stroke="#000000" stroke-width="1"/>
+				${cross}
+				<text x="${x + 16}" y="${yNum}" text-anchor="middle" font-size="8.5" font-weight="bold" fill="#000000">${num}</text>
+				<text x="${x + 16}" y="${yIndex}" text-anchor="middle" font-size="9" font-weight="900" fill="#000000">${escapeHtml(symbol)}</text>
+			</g>
+		`;
+	};
+
+	const upperSvg = upper.map((t, i) => renderTooth(t, i < 8 ? startX + i * step : startX + i * step + 10, true)).join("");
+	const lowerSvg = lower.map((t, i) => renderTooth(t, i < 8 ? startX + i * step : startX + i * step + 10, false)).join("");
+
+	return `
+		<div style="width:100%; margin:4px 0; text-align:center;">
+			<svg viewBox="0 0 760 148" style="width:100%; max-width:100%; height:auto; display:block; margin:0 auto;" class="a4-print-vector-arch">
+				<rect x="8" y="4" width="744" height="140" fill="#ffffff" stroke="#000000" stroke-width="1"/>
+				<line x1="380" y1="4" x2="380" y2="144" stroke="#000000" stroke-width="1.2" stroke-dasharray="3 2"/>
+				<line x1="8" y1="74" x2="752" y2="74" stroke="#000000" stroke-width="1.2"/>
+				<text x="22" y="72" font-size="7" font-weight="bold" fill="#000000">ПРАВО (R)</text>
+				<text x="704" y="72" font-size="7" font-weight="bold" fill="#000000">ЛЕВО (L)</text>
+				<text x="380" y="14" font-size="7.5" font-weight="bold" text-anchor="middle" fill="#000000">Верхняя челюсть (Maxilla 18–28)</text>
+				<text x="380" y="140" font-size="7.5" font-weight="bold" text-anchor="middle" fill="#000000">Нижняя челюсть (Mandible 48–38)</text>
+				${upperSvg}
+				${lowerSvg}
+			</svg>
+		</div>
+	`;
+}
+
 /** Рендерер таблицы зубной формулы FDI (все 32 постоянных зуба + расшифровка) */
 export function renderFdiFormulaTableHtml(odontogramTeeth: FdiToothRecord[]): string {
 	const upperTeeth = [18, 17, 16, 15, 14, 13, 12, 11, 21, 22, 23, 24, 25, 26, 27, 28];
@@ -49,7 +117,10 @@ export function renderFdiFormulaTableHtml(odontogramTeeth: FdiToothRecord[]): st
 	const upperCells = upperTeeth.map((t, idx) => renderCell(t, idx === 7)).join("");
 	const lowerCells = lowerTeeth.map((t, idx) => renderCell(t, idx === 7)).join("");
 
+	const vectorArchHtml = renderVectorArchSvgHtml(teethMap);
+
 	return `
+    ${vectorArchHtml}
     <table class="data-table-dense" style="width:100%; border:1pt solid #0f172a; margin:4px 0 6px 0;">
       <thead>
         <tr>

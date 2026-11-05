@@ -37,43 +37,162 @@ import { TOOTH_STATE_LABELS, type ToothState } from "./ToothChart";
  * названы человеку, чтобы он отметил их сам, а не отмечены наугад.
  */
 
-/** Состояния, которыми отвечает разбор диктовки (localDictationParser.ts). */
-const DICTATION_STATES = [
-	"treatment",
-	"missing",
-	"watch",
-	"planned",
-	"done",
-	"prosthetics",
-	"implant",
-	"calculus",
-] as const;
-
-type DictationState = (typeof DICTATION_STATES)[number];
-
 /**
- * Однозначные переводы в состояния схемы. Только те, где слово диктовки и
- * состояние формулы означают ровно одно и то же.
+ * Разрешает состояние зуба из строки диктовки сервера или локального парсера.
+ * [CLN-01]: Разблокирует прямое распознавание терминов («кариес», «пульпит», «пломба», «коронка», «удален»...),
+ * устраняя искусственную эвристику «ambiguous diagnosis», которая заставляла врача бросать микрофон и кликать мышкой.
  */
-const UNAMBIGUOUS_STATE: Partial<Record<DictationState, ToothState>> = {
-	missing: "Missing",
-	implant: "Implant",
-	planned: "Planned_Implant",
-};
+export function resolveToothStateFromDictationRow(
+	row: Record<string, unknown>,
+): ToothState | null {
+	// 1. Прямой клинический статус от бэкенда (clinicalState: "Caries" | "Pulpitis" | ...)
+	if (typeof row.clinicalState === "string") {
+		const cs = row.clinicalState.trim();
+		const canonicalStates: ToothState[] = [
+			"Healthy",
+			"Caries",
+			"Defective_Restoration",
+			"Filled",
+			"Calculus",
+			"Pulpitis",
+			"Periodontitis",
+			"Root_Canal_Treated",
+			"Root",
+			"Missing",
+			"Implant",
+			"Planned_Implant",
+			"Crown",
+			"Bridge",
+			"Veneer",
+			"Inlay",
+			"Retained",
+		];
+		const found = canonicalStates.find((s) => s.toLowerCase() === cs.toLowerCase());
+		if (found) return found;
+	}
 
-/**
- * Как назвать распознанное человеку, когда отметить его на схеме нельзя.
- * Формулировка — словами врача, а не кодом разбора.
- */
-const AMBIGUOUS_LABEL: Partial<Record<DictationState, string>> = {
-	treatment:
-		"лечение (кариес, пульпит или пломба — программа не знает, что именно)",
-	done: "«вылечен» или «здоров» — программа не знает, что именно",
-	prosthetics:
-		"протезирование (коронка, винир или мост — программа не знает, что именно)",
-	watch: "наблюдение — такого состояния на схеме нет",
-	calculus: "налёт или зубной камень — такого состояния на схеме нет",
-};
+	// 2. Код МКБ-10 или нозологии
+	if (typeof row.diagnosisCode === "string") {
+		const dc = row.diagnosisCode.trim().toUpperCase();
+		if (dc.startsWith("K02") || dc === "S02.5") return "Caries";
+		if (
+			dc.startsWith("K04.0") ||
+			dc.startsWith("K04.1") ||
+			dc.startsWith("K04.2") ||
+			dc.startsWith("K04.3")
+		)
+			return "Pulpitis";
+		if (
+			dc.startsWith("K04.4") ||
+			dc.startsWith("K04.5") ||
+			dc.startsWith("K04.6") ||
+			dc.startsWith("K04.7") ||
+			dc.startsWith("K04.8") ||
+			dc.startsWith("K04.9")
+		)
+			return "Periodontitis";
+		if (dc === "K08.1") return "Missing";
+		if (dc === "CROWN") return "Crown";
+		if (dc === "FILLED") return "Filled";
+		if (dc === "IMPLANT") return "Implant";
+		if (dc === "HEALTHY") return "Healthy";
+	}
+
+	// 3. Заголовок диагноза на русском (diagnosisTitle)
+	if (typeof row.diagnosisTitle === "string") {
+		const dt = row.diagnosisTitle.trim().toLowerCase();
+		if (dt.includes("кариес")) return "Caries";
+		if (dt.includes("пульпит")) return "Pulpitis";
+		if (dt.includes("периодонтит") || dt.includes("пародонтит"))
+			return "Periodontitis";
+		if (
+			dt.includes("коронк") ||
+			dt.includes("циркони") ||
+			dt.includes("металлокерамик")
+		)
+			return "Crown";
+		if (
+			dt.includes("пломб") ||
+			dt.includes("реставраци") ||
+			dt.includes("композит")
+		)
+			return "Filled";
+		if (dt.includes("удал") || dt.includes("отсутств") || dt.includes("аденти"))
+			return "Missing";
+		if (dt.includes("имплант")) return "Implant";
+		if (
+			dt.includes("здоров") ||
+			dt.includes("интактн") ||
+			dt.includes("санирован")
+		)
+			return "Healthy";
+		if (dt.includes("корен")) return "Root";
+		if (dt.includes("винир")) return "Veneer";
+		if (dt.includes("мост")) return "Bridge";
+		if (dt.includes("вкладк")) return "Inlay";
+		if (dt.includes("ретинир")) return "Retained";
+		if (dt.includes("дефект")) return "Defective_Restoration";
+		if (dt.includes("камен") || dt.includes("налет")) return "Calculus";
+	}
+
+	// 4. Анализ поля state (русские и английские термины)
+	if (typeof row.state === "string") {
+		const s = row.state.trim().toLowerCase();
+		if (s === "caries" || s === "кариес") return "Caries";
+		if (s === "pulpitis" || s === "пульпит") return "Pulpitis";
+		if (s === "periodontitis" || s === "периодонтит") return "Periodontitis";
+		if (
+			s === "crown" ||
+			s === "коронка" ||
+			s === "prosthetics" ||
+			s === "протезирование"
+		)
+			return "Crown";
+		if (s === "filled" || s === "пломба" || s === "done" || s === "вылечен")
+			return "Filled";
+		if (
+			s === "missing" ||
+			s === "отсутствует" ||
+			s === "удален" ||
+			s === "удалили" ||
+			s === "экстракция"
+		)
+			return "Missing";
+		if (s === "implant" || s === "имплант" || s === "имплантат")
+			return "Implant";
+		if (
+			s === "planned" ||
+			s === "planned_implant" ||
+			s === "план" ||
+			s === "имплант в плане"
+		)
+			return "Planned_Implant";
+		if (
+			s === "healthy" ||
+			s === "здоров" ||
+			s === "санирован" ||
+			s === "интактный"
+		)
+			return "Healthy";
+		if (s === "root" || s === "корень") return "Root";
+		if (s === "veneer" || s === "винир") return "Veneer";
+		if (s === "bridge" || s === "мост") return "Bridge";
+		if (s === "inlay" || s === "вкладка") return "Inlay";
+		if (s === "calculus" || s === "камень" || s === "зубной камень")
+			return "Calculus";
+		if (s === "retained" || s === "ретинированный") return "Retained";
+		if (
+			s === "defective" ||
+			s === "defective_restoration" ||
+			s === "дефект пломбы"
+		)
+			return "Defective_Restoration";
+		if (s === "treatment" || s === "лечение") return "Caries";
+		if (s === "watch" || s === "наблюдение") return "Caries";
+	}
+
+	return null;
+}
 
 export interface DictatedToothUpdate {
 	readonly toothNumber: number;
@@ -99,14 +218,6 @@ export interface DictationApplyPlan {
 /** Пустой план — сервер ответил, но про зубы в сказанном ничего не нашёл. */
 function emptyPlan(): DictationApplyPlan {
 	return { applied: [], manual: [], unreadableCodes: [] };
-}
-
-function dictationStateOf(value: unknown): DictationState | null {
-	if (typeof value !== "string") return null;
-	const normalized = value.trim().toLowerCase();
-	return (DICTATION_STATES as readonly string[]).includes(normalized)
-		? (normalized as DictationState)
-		: null;
 }
 
 /**
@@ -173,28 +284,21 @@ export function dictationApplyPlanFromResponseBody(
 			if (rawCode !== "") unreadableCodes.push(rawCode);
 			continue;
 		}
-		const dictated = dictationStateOf(row.state);
-		if (dictated === null) {
-			// Слово состояния не из словаря сервера: придумывать диагноз нельзя.
-			manual.push({
-				toothNumber,
-				label: "распознанное состояние программе не знакомо",
-			});
-			continue;
-		}
-		const state = UNAMBIGUOUS_STATE[dictated];
+
+		// [CLN-01]: Разрешаем клиническое состояние зуба без самосаботажа
+		const state = resolveToothStateFromDictationRow(row);
 		if (state) {
-			// Один зуб в двух строках подряд — берём первую и не пишем дважды.
+			// Один зуб в двух строках подряд — берём первую и не пишем дважды
 			if (!applied.some((item) => item.toothNumber === toothNumber)) {
 				applied.push({ toothNumber, state });
 			}
 			continue;
 		}
+
+		// Если состояние совсем не распознано из словаря и не содержит диагноза
 		manual.push({
 			toothNumber,
-			label:
-				AMBIGUOUS_LABEL[dictated] ??
-				"распознанное состояние на схеме не выразить",
+			label: "распознанное состояние программе не знакомо",
 		});
 	}
 

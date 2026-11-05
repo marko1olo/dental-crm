@@ -101,8 +101,9 @@ export function dispatchOdontogramSoapAndBundle(params: {
 	state: ToothState;
 	findings: Array<{ toothNumber: number; state: ToothState; surfaces?: readonly string[] }>;
 	patientId: string;
+	isTreatmentPerformedToday?: boolean;
 }): void {
-	const { targets, state, findings, patientId } = params;
+	const { targets, state, findings, patientId, isTreatmentPerformedToday } = params;
 	if (findings.length === 0) return;
 	try {
 		// 1. Вся зубная формула санирована / интактна (Мандат 8e / 8k)
@@ -147,41 +148,65 @@ export function dispatchOdontogramSoapAndBundle(params: {
 			);
 		}
 
-		// 2. Предварительная смета услуг по номенклатуре 804н
-		targets.forEach((tNum) => {
-			const bundle = getClinicalBundleForToothState(state, tNum);
-			if (bundle) {
-				window.dispatchEvent(
-					new CustomEvent("dente-add-services-to-invoice", {
-						detail: {
-							bundleId: bundle.id,
-							bundleTitle: bundle.title,
-							toothNumber: tNum,
-							toothCode: String(tNum),
-							patientId,
-							source: "odontogram_bundle",
-							services: bundle.services.map((s, idx) => ({
-								id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
-								code: s.code804n,
-								code804n: s.code804n,
-								title: s.title,
-								price: s.priceRub,
-								priceRub: s.priceRub,
-								priceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
-								unitPriceRub: s.priceRub,
-								unitPriceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
-								quantity: 1,
-								toothCode: String(tNum),
+		// [CLN-02]: Разделение ПЕРВИЧНЫЙ СТАТУС / АНАМНЕЗ (0 ₽) vs ВЫПОЛНЕННОЕ СЕГОДНЯ ЛЕЧЕНИЕ
+		// Старые коронки, пломбы, ранее леченные каналы и отсутствующие зубы пациента — это анамнез!
+		// За них НИКОГДА автоматически не навязывается оплата в сегодняшний кассовый чек.
+		const isAnamnesisState =
+			state === "Crown" ||
+			state === "Bridge" ||
+			state === "Bridge_Abutment" ||
+			state === "Filled" ||
+			state === "Root_Canal_Treated" ||
+			state === "Implant" ||
+			state === "Veneer" ||
+			state === "Inlay" ||
+			state === "Missing" ||
+			state === "Extracted" ||
+			state === "Healthy" ||
+			state === "Retained";
+
+		const shouldAddToInvoice =
+			isTreatmentPerformedToday === true ||
+			(isTreatmentPerformedToday === undefined && !isAnamnesisState && state !== "Healthy");
+
+		// 2. Предварительная смета услуг по номенклатуре 804н (СТРОГО ПРИ ЛЕЧЕНИИ СЕГОДНЯ)
+		if (shouldAddToInvoice) {
+			targets.forEach((tNum) => {
+				const bundle = getClinicalBundleForToothState(state, tNum);
+				if (bundle) {
+					window.dispatchEvent(
+						new CustomEvent("dente-add-services-to-invoice", {
+							detail: {
+								bundleId: bundle.id,
+								bundleTitle: bundle.title,
 								toothNumber: tNum,
-							})),
-						},
-					}),
-				);
-			}
-		});
+								toothCode: String(tNum),
+								patientId,
+								source: "odontogram_bundle",
+								services: bundle.services.map((s, idx) => ({
+									id: `srv_${patientId || "pat"}_tooth_${tNum}_${bundle.id}_${s.code804n}_${idx}`,
+									code: s.code804n,
+									code804n: s.code804n,
+									title: s.title,
+									price: s.priceRub,
+									priceRub: s.priceRub,
+									priceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
+									unitPriceRub: s.priceRub,
+									unitPriceKopecks: s.priceKopecks ?? Math.round(s.priceRub * 100),
+									quantity: 1,
+									toothCode: String(tNum),
+									toothNumber: tNum,
+								})),
+							},
+						}),
+					);
+				}
+			});
+		}
 
 		// 2.1. Автоматическая подготовка ортопедического черновика наряда ЗТЛ
-		if (state === "Crown" || state === "Bridge" || state === "Veneer" || state === "Inlay") {
+		// СТРОГО ЕСЛИ ЭТО НОВОЕ ЛЕЧЕНИЕ СЕГОДНЯ (а не осмотр существующей старой коронки)
+		if (shouldAddToInvoice && (state === "Crown" || state === "Bridge" || state === "Veneer" || state === "Inlay")) {
 			try {
 				const draft = {
 					toothFdi: targets.join(", "),
@@ -215,6 +240,7 @@ export function dispatchOdontogramSoapAndBundle(params: {
 						toothNumber: tNum,
 						state,
 						surfaces: toothFinding.surfaces ? [...toothFinding.surfaces] : undefined,
+						isTreatmentPerformedToday: shouldAddToInvoice,
 					},
 				}),
 			);

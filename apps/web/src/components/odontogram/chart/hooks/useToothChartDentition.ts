@@ -3,7 +3,7 @@ import { loadStoredTeethData } from "../../odontogramStorage";
 import {
 	type ToothData, type ToothState, type DentitionMode, type OdontogramQuadrantId,
 	TOP_TEETH, BOTTOM_TEETH, PEDIATRIC_TOP_TEETH, PEDIATRIC_BOTTOM_TEETH,
-	MIXED_TOP_TEETH, MIXED_BOTTOM_TEETH, splitArchAtMidline, getQuadrantTeeth, isQuadrantTop,
+	MIXED_TOP_TEETH, MIXED_BOTTOM_TEETH, resolveMixedDentitionArch, splitArchAtMidline, getQuadrantTeeth, isQuadrantTop,
 } from "../toothChartTypes";
 
 export function useToothChartDentition(
@@ -68,8 +68,20 @@ export function useToothChartDentition(
 		return () => window.removeEventListener("resize", handleViewportResize);
 	}, [isPediatricEffective, controlledQuadrant]);
 
-	const defaultTopTeeth = isMixedEffective ? MIXED_TOP_TEETH : isPediatricEffective ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
-	const defaultBottomTeeth = isMixedEffective ? MIXED_BOTTOM_TEETH : isPediatricEffective ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
+	const defaultTopTeeth = useMemo(() => {
+		if (isMixedEffective) {
+			return resolveMixedDentitionArch(MIXED_TOP_TEETH, toothDataMap.keys());
+		}
+		return isPediatricEffective ? PEDIATRIC_TOP_TEETH : TOP_TEETH;
+	}, [isMixedEffective, isPediatricEffective, toothDataMap]);
+
+	const defaultBottomTeeth = useMemo(() => {
+		if (isMixedEffective) {
+			return resolveMixedDentitionArch(MIXED_BOTTOM_TEETH, toothDataMap.keys());
+		}
+		return isPediatricEffective ? PEDIATRIC_BOTTOM_TEETH : BOTTOM_TEETH;
+	}, [isMixedEffective, isPediatricEffective, toothDataMap]);
+
 	const topTeethList = Array.isArray(customTopTeeth) && customTopTeeth.length > 0 ? customTopTeeth : defaultTopTeeth;
 	const bottomTeethList = Array.isArray(customBottomTeeth) && customBottomTeeth.length > 0 ? customBottomTeeth : defaultBottomTeeth;
 

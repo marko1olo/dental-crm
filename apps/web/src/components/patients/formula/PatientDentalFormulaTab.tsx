@@ -4,8 +4,8 @@
  * Интерактивная одонтограмма FDI пациента (Мандаты 8e, 8b, 8k)
  */
 
-import React from "react";
-import { ToothChart } from "../../odontogram/ToothChart";
+import React, { useState } from "react";
+import { WheelerToothArch } from "../../odontogram/WheelerToothArch";
 import { ToothRadialMenu } from "../../odontogram/ToothRadialMenu";
 import type { PatientDentalFormulaTabProps } from "./formulaTypes";
 import { FormulaHeaderBar } from "./FormulaHeaderBar";
@@ -67,21 +67,22 @@ export const PatientDentalFormulaTab: React.FC<PatientDentalFormulaTabProps> = R
 				/>
 
 				<div className="w-full overflow-x-auto py-2">
-					<ToothChart
+					<WheelerToothArch
 						patientId={patientId}
 						teethData={teethData}
-						dentitionMode={dentitionMode}
-						pediatricMode={isPediatric}
-						mixedDentition={isMixed}
 						selectedTeeth={selectedTeeth}
+						mode="history"
+						dentitionMode={dentitionMode}
 						activeStamp={activeStamp}
-						useSurfaces={true}
-						onToothClick={handleToothClick}
-						onSurfacesChange={handleSurfacesChange}
+						onToothClick={(e, num) => {
+							if (num) {
+								handleToothClick(e as React.MouseEvent, num);
+							}
+						}}
 						onQuickStateChange={(targets, state, surfs) => {
 							void commitToothChanges(targets, state, surfs);
 						}}
-						hideQuadrantSwitcher={false}
+						showHistoryChronicleOnSelect={!activeStamp}
 					/>
 				</div>
 

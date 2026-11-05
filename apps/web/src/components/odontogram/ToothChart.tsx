@@ -22,6 +22,7 @@ export * from "./chart/ToothSvg";
 export * from "./chart/ToothChartToolbar";
 export * from "./chart/ToothArchGrid";
 export * from "./MobileQuadrantTabs";
+export * from "./WheelerToothArch";
 
 /** Supported scale invariant for 320px/375px viewports */
 export const MIN_ARCH_SCALE = 0.35;

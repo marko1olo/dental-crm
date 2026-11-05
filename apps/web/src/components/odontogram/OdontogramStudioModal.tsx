@@ -458,7 +458,6 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 						>
 							Отмена
 						</button>
-
 						{/* РОДНАЯ И ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА #0d9488 (Мандат 8am, 8e) */}
 						<button
 							type="button"

@@ -180,11 +180,6 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 												• Карта: №{patientData.medicalCardNumber || patientData.cardNumber}
 											</span>
 										)}
-										{patientData.id && patientData.id.length <= 16 && (
-											<span className="font-mono text-[10px] text-[var(--muted)] opacity-80">
-												• ID: {patientData.id}
-											</span>
-										)}
 									</>
 								)}
 							</div>
@@ -284,8 +279,8 @@ export const PatientCardModal: React.FC<PatientCardModalProps> = React.memo(func
 								}`}
 							/>
 							<div className="flex items-center gap-1.5 flex-wrap min-w-0">
-								<span className="text-[11px] font-bold shrink-0">
-									{safetyEvaluation.hasCriticalStopFlags ? "Критический стоп-фактор:" : "Клиническое предупреждение:"}
+								<span className="text-[11px] font-bold shrink-0 uppercase tracking-wide">
+									{safetyEvaluation.hasCriticalStopFlags ? "КРИТИЧЕСКИЙ СТОП-ФАКТОР:" : "КЛИНИЧЕСКОЕ ПРЕДУПРЕЖДЕНИЕ:"}
 								</span>
 								<div className="flex items-center gap-1.5 flex-wrap">
 									{safetyEvaluation.activeFlags.map((flag) => (
