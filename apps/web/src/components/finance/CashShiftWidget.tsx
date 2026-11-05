@@ -8,7 +8,9 @@ import { CashShiftOfflineBanner } from "./cashShiftWidget/CashShiftOfflineBanner
 import { CashShiftMetricsGrid } from "./cashShiftWidget/CashShiftMetricsGrid";
 import { CashShiftActionsBar } from "./cashShiftWidget/CashShiftActionsBar";
 import { useCashShiftState } from "./cashShiftWidget/useCashShiftState";
-import "./CashShiftWidget.css";
+if (typeof window !== "undefined") {
+	void import("./CashShiftWidget.css");
+}
 
 export { CashFlowModal } from "./CashFlowModal";
 export { CashShiftCompactBar } from "./CashShiftCompactBar";

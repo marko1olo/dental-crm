@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { FiscalAuxTabs } from "./FiscalAuxTabs.js";
 import { FiscalPaymentTab } from "./FiscalPaymentTab.js";
 import { FiscalRefundTab } from "./FiscalRefundTab.js";

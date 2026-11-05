@@ -1,5 +1,5 @@
 import { ShieldCheck, User } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { PaymentLogicResult } from "./types.js";
 
 export interface PaymentBuyerRequisitesSectionProps {

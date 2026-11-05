@@ -1,5 +1,5 @@
 import { Check, FileText, ShieldCheck } from "lucide-react";
-import type React from "react";
+import React from "react";
 import type { FiscalReceiptFooterProps } from "./FiscalReceiptFooter.js";
 import { formatMoneyRu } from "./fiscalModalRefundLogic.js";
 

@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import type { FiscalReceiptFooterProps } from "./FiscalReceiptFooter.js";
 import { FiscalFooterOneCAndDocs } from "./FiscalFooterOneCAndDocs.js";
 import { FiscalFooterRefundCorrection } from "./FiscalFooterRefundCorrection.js";

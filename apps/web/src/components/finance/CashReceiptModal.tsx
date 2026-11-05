@@ -3,7 +3,7 @@
  * Clean Orchestrator Facade (<100 lines) in strict compliance with Mandate 8b & 8x (без птичьего языка законов).
  */
 
-import type React from "react";
+import React from "react";
 import { RetailProductsModal } from "../billing/RetailProductsModal.js";
 import { FiscalBodyTabs } from "./modal/fiscal/FiscalBodyTabs.js";
 import { FiscalHeaderAndTabs } from "./modal/fiscal/FiscalHeaderAndTabs.js";

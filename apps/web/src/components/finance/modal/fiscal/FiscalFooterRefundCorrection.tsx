@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Printer, RotateCcw, ShieldCheck } from "lucide-react";
 import { formatMoneyRu } from "./fiscalModalRefundLogic.js";
 import type { FiscalReceiptFooterProps } from "./FiscalReceiptFooter.js";

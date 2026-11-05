@@ -60,7 +60,7 @@ export async function recordCrmPayment(params: RecordCrmPaymentParams): Promise<
 			if (patientId && effectiveLoyaltyRub > 0) {
 				await fetch("/api/loyalty/redeem", {
 					method: "POST", headers,
-					body: JSON.stringify({ patientId, invoiceAmountRub: targetBillRub, pointsToRedeem: effectiveLoyaltyRub, allowFullCoverage: true, clientMutationId: `${compositeIdempotencyKey}-loyalty`, description: `Списание бонусов в кассе: ${effectiveLoyaltyRub} б.` }),
+					body: JSON.stringify({ patientId, invoiceAmountRub: targetBillRub, pointsToRedeem: effectiveLoyaltyRub, allowFullCoverage: false, clientMutationId: `${compositeIdempotencyKey}-loyalty`, description: `Списание бонусов в кассе: ${effectiveLoyaltyRub} б.` }),
 				}).catch(() => null);
 			}
 

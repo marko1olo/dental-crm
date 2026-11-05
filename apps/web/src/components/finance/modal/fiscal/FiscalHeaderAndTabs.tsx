@@ -1,5 +1,5 @@
 import { AlertTriangle, CheckCircle2, Printer, Receipt, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { useFiscalOperations } from "../../../../hooks/useFiscalOperations";
 import { formatMoneyRu } from "./fiscalModalRefundLogic";
 import type { FiscalModalTab } from "./fiscalModalTypes";

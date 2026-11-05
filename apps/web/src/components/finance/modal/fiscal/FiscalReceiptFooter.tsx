@@ -1,5 +1,5 @@
 import type { OneCDocumentType } from "@dental/shared";
-import type React from "react";
+import React from "react";
 import { showToast } from "../../../GlobalToast.js";
 import type { OneCExportItem } from "../../OneCExportButton.js";
 import type { FiscalReceipt54FzResult } from "../../fiscalReceiptEngine.js";

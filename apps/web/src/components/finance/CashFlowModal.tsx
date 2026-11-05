@@ -3,7 +3,7 @@
  * Полностью декомпозирован согласно Мандату 8b (<= 120 строк).
  */
 
-import type React from "react";
+import React from "react";
 import {
 	CashFlowCatalogPresets,
 	CashFlowFormInputs,

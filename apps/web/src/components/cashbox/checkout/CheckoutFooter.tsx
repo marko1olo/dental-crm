@@ -47,8 +47,8 @@ export const CheckoutFooter: React.FC<CheckoutFooterProps> = ({
 				<button
 					type="button"
 					data-testid={ctaTestId}
-					onClick={onExecutePayment}
-					disabled={isSubmitting}
+					onClick={() => { if (!isSubmitting) void onExecutePayment(); }}
+					aria-busy={isSubmitting}
 					className="flex-1 sm:flex-initial min-h-[48px] sm:min-h-[44px] px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs sm:text-sm font-bold shadow-md transition-all flex items-center justify-center gap-2 cursor-pointer active:scale-[0.98]"
 					style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
 				>

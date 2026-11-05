@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Copy, FileText } from "lucide-react";
 import { OneCExportButton } from "../../OneCExportButton.js";
 import { formatMoneyRu } from "./fiscalModalRefundLogic.js";

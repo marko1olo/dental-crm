@@ -26,7 +26,8 @@ export * from "./invoiceEngine.js";
 export * from "./cashDaySummary.js";
 export * from "./cashboxOperations.js";
 
-// Disambiguate duplicate exports between cashShift, fiscalReceiptEngine and taxDeductionEngine
+// Disambiguate duplicate exports between cashShift, cashierCatalogData, fiscalReceiptEngine and taxDeductionEngine
+export { type FastTenderPreset, calculateShiftTotals } from "./cashierCatalogData.js";
 export { calculateDenominationsTotalRub } from "./cashShift/index.js";
 export {
 	ANNUAL_TAX_DEDUCTION_LIMIT_RUB,

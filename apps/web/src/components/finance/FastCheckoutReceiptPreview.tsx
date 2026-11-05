@@ -52,17 +52,17 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 						<button type="button" onClick={p.onClose} data-testid="btn-close-fast-checkout" className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs cursor-pointer select-none transition-colors">Закрыть</button>
 					</div>
 
-					<button type="button" data-testid="btn-autonomous-terminal-checkout" onClick={() => void p.onAcceptPaymentOfflineFallback()} disabled={p.isPrinting} className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed">
+					<button type="button" data-testid="btn-autonomous-terminal-checkout" onClick={() => void p.onAcceptPaymentOfflineFallback()} aria-busy={p.isPrinting} className="secondary-button min-h-[44px] sm:min-h-[36px] sm:h-9 px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--paper-soft)] font-semibold text-xs inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer select-none active:scale-[0.98]">
 						<WifiOff size={15} className="shrink-0 text-[var(--muted,#64748b)]" /> <span className="truncate sm:hidden">Автономно</span><span className="truncate hidden sm:inline">Автономный терминал</span>
 					</button>
-					<button type="button" data-testid="btn-offline-checkout-fallback" onClick={() => void p.onAcceptPaymentOfflineFallback()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Принять оплату (чек пробить позже)</button>
+					<button type="button" data-testid="btn-offline-checkout-fallback" onClick={() => void p.onAcceptPaymentOfflineFallback()} tabIndex={-1} aria-hidden="true" className="sr-only">Принять оплату (чек пробить позже)</button>
 
 					<button
 						type="button"
 						data-testid="execute-fast-checkout-btn"
 						onClick={() => void p.onExecutePayment()}
-						disabled={p.isPrinting}
-						className="primary-button w-full sm:w-auto min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-[0.98] text-white font-bold text-xs sm:text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer select-none disabled:opacity-50 disabled:cursor-not-allowed"
+						aria-busy={p.isPrinting}
+						className="primary-button w-full sm:w-auto min-h-[44px] h-11 sm:min-h-[36px] sm:h-9 px-5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-[0.98] text-white font-bold text-xs sm:text-xs flex items-center justify-center gap-2 shadow-xs transition-all cursor-pointer select-none"
 					>
 						{p.isPrinting ? (
 							<>
@@ -85,10 +85,10 @@ export const FastCheckoutReceiptPreview: React.FC<FastCheckoutReceiptPreviewProp
 							</>
 						)}
 					</button>
-					<button type="button" data-testid="btn-submit-fast-checkout" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Выбить чек</button>
-					<button type="button" data-testid="btn-cash-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить наличными</button>
-					<button type="button" data-testid="btn-split-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить сплит</button>
-					{(p.activeMethod === "sbp_qr" || p.activeMethod === "sbp") && <button type="button" data-testid="btn-sbp-submit-footer" onClick={() => void p.onExecutePayment()} disabled={p.isPrinting} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить СБП</button>}
+					<button type="button" data-testid="btn-submit-fast-checkout" onClick={() => void p.onExecutePayment()} tabIndex={-1} aria-hidden="true" className="sr-only">Выбить чек</button>
+					<button type="button" data-testid="btn-cash-submit-footer" onClick={() => void p.onExecutePayment()} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить наличными</button>
+					<button type="button" data-testid="btn-split-submit-footer" onClick={() => void p.onExecutePayment()} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить сплит</button>
+					{(p.activeMethod === "sbp_qr" || p.activeMethod === "sbp") && <button type="button" data-testid="btn-sbp-submit-footer" onClick={() => void p.onExecutePayment()} tabIndex={-1} aria-hidden="true" className="sr-only">Оплатить СБП</button>}
 				</div>
 			</div>
 		</>

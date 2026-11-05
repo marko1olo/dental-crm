@@ -3,7 +3,7 @@ import {
 	CASH_RECEIPT_CATALOG,
 } from "@dental/shared";
 import { Check } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 interface CashFlowCatalogPresetsProps {
 	readonly cashFlowMode: "cash_in" | "cash_out";

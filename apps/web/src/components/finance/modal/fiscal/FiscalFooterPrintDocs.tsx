@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Copy, Printer } from "lucide-react";
 import type { FiscalReceiptFooterProps } from "./FiscalReceiptFooter.js";
 

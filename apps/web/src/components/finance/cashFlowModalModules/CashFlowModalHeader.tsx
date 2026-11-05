@@ -1,5 +1,5 @@
 import { MinusCircle, PlusCircle, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 interface CashFlowModalHeaderProps {
 	readonly cashFlowMode: "cash_in" | "cash_out";
