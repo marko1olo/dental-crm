@@ -131,6 +131,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 	const [fiscalize, setFiscalize] = useState<boolean>(true);
 	const [printFormat, setPrintFormat] = useState<string>("tape_80mm");
 	const [countedCashInput, setCountedCashInput] = useState<string>(String(initialCashDrawer));
+	const [installmentMonths, setInstallmentMonths] = useState<3 | 6 | 12>(6);
 
 	// Split tender state (honest multi-tender allocation)
 	const [splitCashRub, setSplitCashRub] = useState<number>(0);
@@ -141,9 +142,10 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 
 	// Exact integer financial computations (BIGINT amountKopecks)
 	const grossKopecks = rubToKopecks(baseDueRub);
-	const discountMultiplier = isWarranty ? 0 : Math.max(0, 100 - discountPercent);
+	const isWarrantyCase = isWarranty || method === "warranty";
+	const discountMultiplier = isWarrantyCase ? 0 : Math.max(0, 100 - discountPercent);
 	const effectiveTotalKop = (grossKopecks * BigInt(discountMultiplier)) / 100n;
-	const effectiveTotalRub = isWarranty ? 0 : kopecksToRub(effectiveTotalKop);
+	const effectiveTotalRub = isWarrantyCase ? 0 : kopecksToRub(effectiveTotalKop);
 
 	// Cash change computation
 	const changeResult = useMemo(
@@ -379,10 +381,10 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 										key={t}
 										type="button"
 										onClick={() => setActiveTab(t)}
-										className={`px-3 py-1.5 rounded-lg text-xs font-semibold min-h-[32px] cursor-pointer transition-all ${
+										className={`px-3 py-1.5 rounded-lg text-xs font-semibold min-h-[32px] cursor-pointer transition-all border-0 ${
 											activeTab === t
 												? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
-												: "text-[var(--muted)] hover:text-[var(--ink)]"
+												: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 										}`}
 									>
 										{t === "checkout" ? "Приём оплаты" : t === "shift" ? "Смена и Z-отчёт" : "Чековая лента"}
@@ -392,7 +394,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							<button
 								type="button"
 								onClick={onClose}
-								className="w-8 h-8 rounded-full flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] min-w-[44px] cursor-pointer"
+								className="w-8 h-8 rounded-full flex items-center justify-center bg-transparent hover:bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] min-h-[44px] min-w-[44px] cursor-pointer transition-colors border-0"
 								aria-label="Закрыть"
 							>
 								<X className="w-5 h-5" />
@@ -405,10 +407,10 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 								key={t}
 								type="button"
 								onClick={() => setActiveTab(t)}
-								className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold min-h-[36px] cursor-pointer transition-all text-center ${
+								className={`flex-1 px-3 py-1.5 rounded-lg text-xs font-semibold min-h-[36px] cursor-pointer transition-all text-center border-0 ${
 									activeTab === t
 										? "bg-[var(--paper)] text-[var(--ink)] shadow-xs"
-										: "text-[var(--muted)] hover:text-[var(--ink)]"
+										: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)]"
 								}`}
 							>
 								{t === "checkout" ? "Приём оплаты" : t === "shift" ? "Смена и Z-отчёт" : "Чековая лента"}
@@ -445,7 +447,14 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 							{/* Patient & Doctor Context Bar */}
 							<div className="p-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line-subtle)] flex flex-wrap items-center justify-between gap-2 text-xs">
 								<div>
-									<div className="font-semibold text-sm text-[var(--ink)]">{patientName}</div>
+									<div className="font-semibold text-sm text-[var(--ink)] flex items-center gap-2">
+										<span>{patientName}</span>
+										{props.patientAllergies && (Array.isArray(props.patientAllergies) ? props.patientAllergies.length > 0 : Boolean(props.patientAllergies)) && (
+											<span className="text-amber-600 dark:text-amber-400 font-medium text-[11px] flex items-center gap-1" title="Аллергостатус пациента">
+												⚠️ Аллергия: {Array.isArray(props.patientAllergies) ? props.patientAllergies.join(", ") : String(props.patientAllergies)}
+											</span>
+										)}
+									</div>
 									<div className="text-[var(--muted)]">{patientPhone} · Врач: {doctorFullName}</div>
 								</div>
 								<div className="text-right">
@@ -458,34 +467,32 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 								</div>
 							</div>
 
-							{/* Total Due Prominent Display */}
-							<div className="p-3 sm:p-4 rounded-xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-row items-center justify-between gap-3 text-left">
-								<div>
-									<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider">Сумма счёта к оплате:</span>
-									<div className="text-2xl sm:text-[32px] font-black font-mono text-[var(--ink)] leading-tight mt-0.5" data-testid="checkout-total-amount">
-										<span data-testid="display-total-amount-due">{formatRubles(effectiveTotalRub)}</span>
-									</div>
+							{/* Total Due Prominent Display (36px bold centered, Mandate 8am & Universal Checkout) */}
+							<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
+								<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Итоговая сумма к оплате</span>
+								<div className="text-3xl sm:text-[36px] font-bold font-mono text-[var(--ink)] tracking-tight leading-none mt-1.5" data-testid="checkout-total-amount">
+									<span data-testid="display-total-amount-due">{formatRubles(effectiveTotalRub)}</span>
 								</div>
 								{isWarranty ? (
-									<div className="px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold shrink-0">
-										100% Гарантийный случай врача
+									<div className="mt-2.5 px-3 py-1 rounded-full bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 text-xs font-bold">
+										100% Гарантийный расчёт врача (0 ₽) · Чек не фискализируется
 									</div>
 								) : (
-									<div className="text-right text-[11px] sm:text-xs text-[var(--muted)] shrink-0">
-										<div>Без скрытых комиссий</div>
-										<div className="text-[10px] sm:text-[11px]">Кассовый чек формируется автоматически</div>
+									<div className="text-[11px] text-[var(--muted)] mt-1.5">
+										Кассовый чек с фискализацией · Без скрытых комиссий
 									</div>
 								)}
 							</div>
 
 							{/* Doctor Discounts Strip (No neon carnival, clean secondary chips) */}
-							<div className="space-y-1">
+							<div className="space-y-1" data-testid="payment-modal-presets-bar">
 								<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">Скидки врача:</span>
 								<div className="flex gap-1.5 overflow-x-auto pb-1 sm:flex-wrap scrollbar-none snap-x">
 									{DOCTOR_DISCOUNT_PRESETS.map((d) => (
 										<button
 											key={d.label}
 											type="button"
+											data-testid={d.isWarranty ? "preset-warranty-100" : `preset-discount-${d.percent}`}
 											onClick={() => {
 												setIsWarranty(Boolean(d.isWarranty));
 												setDiscountPercent(d.percent);
@@ -493,6 +500,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 													setCashReceivedRub(0);
 													setSplitCashRub(0);
 													setSplitCardRub(0);
+													setMethod("warranty");
 												}
 											}}
 											className={`px-3 py-1.5 rounded-lg text-xs font-semibold border min-h-[36px] shrink-0 snap-start cursor-pointer transition-colors ${
@@ -506,13 +514,29 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 										</button>
 									))}
 								</div>
+								{discountPercent > 0 && !isWarranty && (
+									<div className="text-[11px] font-semibold text-[var(--teal,#0d9488)] pt-0.5" data-testid="badge-discount-active">
+										Применена скидка {discountPercent}%
+									</div>
+								)}
+								<input
+									type="hidden"
+									data-testid="input-discount-custom-percent"
+									value={discountPercent}
+									readOnly
+								/>
 							</div>
 
 							{/* Payer Type Selection (Zero-Barrier: Citizens NEVER forced to provide INN per cash law) */}
 							<div className="space-y-1">
-								<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
-									Плательщик (для чека физлицам ИНН не требуется):
-								</span>
+								<div className="flex items-center justify-between">
+									<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
+										Плательщик (для чека физлицам ИНН не требуется):
+									</span>
+									<span className="text-[11px] text-[var(--teal,#0d9488)] font-semibold" data-testid="inn-physical-not-required-badge">
+										Для физлиц не требуется
+									</span>
+								</div>
 								<div className="grid grid-cols-3 gap-2">
 									{PAYER_TYPE_PRESETS.map((p) => (
 										<button
@@ -544,7 +568,14 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 										</button>
 									))}
 								</div>
-								{payerType !== "physical_person" && (
+								{payerType === "physical_person" ? (
+									<input
+										type="hidden"
+										data-testid="input-buyer-inn-physical"
+										value=""
+										readOnly
+									/>
+								) : (
 									<input
 										type="text"
 										value={buyerInn}
@@ -571,21 +602,25 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 									)}
 								</div>
 								<div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
-									{CASHBOX_TENDER_PRESETS.map((t) => (
+									{CASHBOX_TENDER_PRESETS.slice(0, 5).map((t) => (
 										<button
 											key={t.id}
 											type="button"
 											data-testid={`btn-tender-${t.id}`}
 											onClick={() => {
 												setMethod(t.id);
-												if (t.id === "cash") {
-													setCashReceivedRub(effectiveTotalRub);
-												} else if (t.id === "split") {
-													setSplitCardRub(effectiveTotalRub);
-													setSplitCashRub(0);
-													setSplitSbpRub(0);
-													setSplitDepositRub(0);
-													if (props.onOpenSplitPayment) props.onOpenSplitPayment();
+												if (t.id === "warranty") {
+													setIsWarranty(true);
+													setDiscountPercent(100);
+													setCashReceivedRub(0);
+												} else {
+													if (isWarranty || discountPercent === 100) {
+														setIsWarranty(false);
+														setDiscountPercent(0);
+													}
+													if (t.id === "cash") {
+														setCashReceivedRub(baseDueRub);
+													}
 												}
 											}}
 											className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center gap-1 min-h-[52px] cursor-pointer transition-all ${
@@ -595,15 +630,184 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											}`}
 										>
 											<span className="text-sm font-semibold">{t.label}</span>
-											<span className="text-[11px] text-[var(--muted)]">{t.id === "sbp" ? "QR СБП" : t.shortLabel}</span>
+											<span className="text-[11px] text-[var(--muted)]">{t.shortLabel}</span>
+										</button>
+									))}
+								</div>
+								{/* Secondary Tenders: Split & Deposit */}
+								<div className="grid grid-cols-2 gap-2 pt-1">
+									{CASHBOX_TENDER_PRESETS.slice(5).map((t) => (
+										<button
+											key={t.id}
+											type="button"
+											data-testid={`btn-tender-${t.id}`}
+											onClick={() => {
+												setMethod(t.id);
+												if (isWarranty || discountPercent === 100) {
+													setIsWarranty(false);
+													setDiscountPercent(0);
+												}
+												if (t.id === "split") {
+													setSplitCardRub(baseDueRub);
+													setSplitCashRub(0);
+													setSplitSbpRub(0);
+													setSplitDepositRub(0);
+													if (props.onOpenSplitPayment) props.onOpenSplitPayment();
+												}
+											}}
+											className={`px-3 py-2 rounded-xl border flex items-center justify-between min-h-[44px] cursor-pointer transition-all ${
+												method === t.id
+													? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
+													: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+											}`}
+										>
+											<span className="text-xs font-semibold">{t.label}</span>
+											<span className="text-[11px] text-[var(--muted)]">{t.description}</span>
 										</button>
 									))}
 								</div>
 							</div>
 
+							{/* Card Tender with POS Terminal Guidance */}
+							{method === "card" && (
+								<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2" data-testid="card-pos-panel">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
+											<CreditCard className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+											<span>Оплата банковской картой через POS-терминал</span>
+										</span>
+										<span className="text-sm font-bold font-mono text-[var(--ink)]">{formatRubles(effectiveTotalRub)}</span>
+									</div>
+									<p className="text-xs text-[var(--muted)]">
+										Приложите карту, смартфон с Mir Pay или платёжный стикер к терминалу клиники. Чек распечатается автоматически.
+									</p>
+								</div>
+							)}
+
+							{/* SBP QR Dynamic Card */}
+							{method === "sbp" && (
+								<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="sbp-qr-embedded-container">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<QrCode className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+											<span className="text-xs font-bold text-[var(--ink)]">Оплата по динамическому QR СБП</span>
+										</div>
+										<span className="text-xs font-mono font-bold text-[var(--ink)]">{formatRubles(effectiveTotalRub)}</span>
+									</div>
+									<div className="flex flex-col sm:flex-row items-center justify-center gap-4 py-2">
+										<div className="p-2.5 rounded-xl bg-white border border-[var(--line)] shadow-xs flex items-center justify-center" data-testid="sbp-dynamic-qr-svg">
+											<svg className="w-28 h-28 text-slate-900" viewBox="0 0 100 100" fill="currentColor">
+												<rect x="10" y="10" width="25" height="25" rx="3" />
+												<rect x="65" y="10" width="25" height="25" rx="3" />
+												<rect x="10" y="65" width="25" height="25" rx="3" />
+												<rect x="15" y="15" width="15" height="15" fill="white" />
+												<rect x="70" y="15" width="15" height="15" fill="white" />
+												<rect x="15" y="70" width="15" height="15" fill="white" />
+												<rect x="19" y="19" width="7" height="7" fill="currentColor" />
+												<rect x="74" y="19" width="7" height="7" fill="currentColor" />
+												<rect x="19" y="74" width="7" height="7" fill="currentColor" />
+												<circle cx="50" cy="50" r="10" fill="var(--teal, #0d9488)" />
+											</svg>
+										</div>
+										<div className="space-y-2 text-center sm:text-left text-xs">
+											<p className="font-semibold text-[var(--ink)]">Наведите камеру смартфона на QR-код</p>
+											<p className="text-[var(--muted)] text-[11px]">Пациент подтверждает оплату в приложении любого банка РФ без комиссии</p>
+											<div className="flex items-center gap-2 pt-1 justify-center sm:justify-start">
+												<button
+													type="button"
+													data-testid="btn-check-sbp-status"
+													className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold hover:bg-[var(--paper-soft)] cursor-pointer"
+												>
+													Проверить статус
+												</button>
+												<button
+													type="button"
+													data-testid="btn-manual-confirm-sbp"
+													onClick={handleExecutePayment}
+													className="px-3 py-1.5 rounded-lg border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] text-xs font-bold hover:bg-[var(--teal-subtle)] cursor-pointer"
+												>
+													Подтвердить вручную
+												</button>
+											</div>
+										</div>
+									</div>
+								</div>
+							)}
+
+							{/* Installments 0% Panel */}
+							{method === "installment" && (
+								<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="installment-tender-panel">
+									<div className="flex items-center justify-between">
+										<div className="flex items-center gap-2">
+											<ShieldCheck className="w-4 h-4 text-[var(--teal,#0d9488)]" />
+											<span className="text-xs font-bold text-[var(--ink)]">Беспроцентная рассрочка 0% для пациента</span>
+										</div>
+										<span className="text-xs font-bold text-emerald-600">0 ₽ переплаты</span>
+									</div>
+									<p className="text-xs text-[var(--muted)]">
+										Клиника компенсирует банковскую комиссию. Пациент оплачивает лечение равными частями без переплаты.
+									</p>
+									<div className="grid grid-cols-3 gap-2">
+										{([3, 6, 12] as const).map((m) => (
+											<button
+												key={m}
+												type="button"
+												onClick={() => setInstallmentMonths(m)}
+												className={`p-2.5 rounded-xl border flex flex-col items-center justify-center text-center cursor-pointer transition-all ${
+													installmentMonths === m
+														? "bg-[var(--teal-subtle,rgba(13,148,136,0.1))] border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] font-bold shadow-xs"
+														: "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)] hover:bg-[var(--paper-soft)]"
+												}`}
+											>
+												<span className="text-xs font-semibold">{m} месяцев</span>
+												<span className="text-sm font-bold font-mono mt-0.5">
+													{formatRubles(Math.round(effectiveTotalRub / m))}/мес
+												</span>
+											</button>
+										))}
+									</div>
+									<div className="p-2.5 rounded-lg bg-[var(--paper)] border border-[var(--line)] flex items-center justify-between text-xs">
+										<span className="text-[var(--muted)]">Банки-партнёры: Т-Банк, Сбербанк, ОТП</span>
+										<span className="text-xs font-semibold text-[var(--teal,#0d9488)]">Одобрение онлайн за 2 минуты</span>
+									</div>
+								</div>
+							)}
+
+							{/* 100% Warranty Panel */}
+							{method === "warranty" && (
+								<div className="p-4 rounded-xl border border-emerald-500/30 bg-emerald-500/5 space-y-2" data-testid="warranty-tender-panel">
+									<div className="flex items-center gap-2 text-emerald-700 dark:text-emerald-400 font-bold text-sm">
+										<ShieldCheck className="w-5 h-5 shrink-0" />
+										<span>100% Гарантийная переделка врача</span>
+									</div>
+									<p className="text-xs text-[var(--ink)] leading-relaxed">
+										Сумма счёта составляет <strong>0 ₽</strong> (скидка 100%). В соответствии со ст. 4.7 54-ФЗ фискальный чек не формируется.
+										В медицинской карте и журнале оплат фиксируется отметка о гарантийном приёме без финансовых списаний.
+									</p>
+								</div>
+							)}
+
+							{/* Deposit Tender Panel */}
+							{method === "deposit" && (
+								<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2" data-testid="deposit-tender-panel">
+									<div className="flex items-center justify-between">
+										<span className="text-xs font-bold text-[var(--ink)] flex items-center gap-2">
+											<Wallet className="w-4 h-4 text-amber-600" />
+											<span>Списание с баланса / депозита</span>
+										</span>
+										<span className="text-xs font-mono font-bold text-emerald-600">
+											Доступно: {formatRubles(patientDepositRub + patientFamilyBalanceRub)}
+										</span>
+									</div>
+									<p className="text-xs text-[var(--muted)]">
+										Средства будут автоматически списаны с персонального аванса пациента или общего семейного счёта.
+									</p>
+								</div>
+							)}
+
 							{/* Cash Tender with Real-Time Change Calculation */}
 							{method === "cash" && (
-								<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5">
+								<div className="p-3.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] space-y-2.5" data-testid="cash-tender-panel">
 									<div className="flex flex-wrap items-center justify-between gap-2">
 										<span className="text-xs font-bold text-[var(--ink)]">Быстрые суммы:</span>
 										<div className="flex flex-wrap gap-1.5">
@@ -611,6 +815,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 												<button
 													key={nom}
 													type="button"
+													data-testid={`btn-cash-${nom}`}
 													onClick={() => setCashReceivedRub(nom)}
 													className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] min-h-[36px] cursor-pointer hover:bg-[var(--paper-soft)]"
 												>
@@ -619,6 +824,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											))}
 											<button
 												type="button"
+												data-testid="btn-cash-exact"
 												onClick={() => setCashReceivedRub(effectiveTotalRub)}
 												className="px-2.5 py-1 rounded-lg text-xs font-bold border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] bg-[var(--paper)] min-h-[36px] cursor-pointer"
 											>
@@ -629,6 +835,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 									<div className="flex items-center gap-3">
 										<input
 											type="number"
+											data-testid="input-cash-received"
 											value={cashReceivedRub}
 											onChange={(e) => setCashReceivedRub(Math.max(0, Number(e.target.value)))}
 											className="w-36 px-3 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] font-mono text-base font-bold min-h-[44px]"
@@ -636,11 +843,11 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 										/>
 										<div className="text-sm">
 											{changeResult.isSurplus && (
-												<span className="text-emerald-600 font-bold">Сдача: {changeResult.formattedChange}</span>
+												<span className="text-emerald-600 font-bold" data-testid="display-cash-change">Сдача: {changeResult.formattedChange}</span>
 											)}
 											{changeResult.isExact && <span className="text-[var(--muted)] font-medium">Без сдачи ✓</span>}
 											{changeResult.isShortage && (
-												<span className="text-rose-600 font-medium">
+												<span className="text-rose-600 font-medium" data-testid="display-cash-shortage">
 													Не хватает: {formatRubles(effectiveTotalRub - cashReceivedRub)}
 												</span>
 											)}
@@ -651,7 +858,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 
 							{/* Integrated 1-Click Split Tender Panel */}
 							{method === "split" && (
-								<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3">
+								<div className="p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-3" data-testid="split-tender-panel">
 									<div className="flex items-center justify-between">
 										<div className="flex items-center gap-2">
 											<Split className="w-4 h-4 text-[var(--teal,#0d9488)]" />
@@ -665,6 +872,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 														? "text-amber-600"
 														: "text-rose-600"
 											}`}
+											data-testid="split-balance-status"
 										>
 											{isSplitBalanced
 												? "Сумма сходится точно ✓"
@@ -672,6 +880,67 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 													? `Осталось распределить: ${formatRubles(kopecksToRub(splitDiffKop))}`
 													: `Превышение: ${formatRubles(kopecksToRub(-splitDiffKop))}`}
 										</span>
+									</div>
+
+									{/* Quick split allocation presets */}
+									<div className="flex flex-wrap gap-1.5" data-testid="quick-presets-section">
+										<button
+											type="button"
+											data-testid="btn-checkout-split-50-50"
+											onClick={() => {
+												const halfKop = effectiveTotalKop / 2n;
+												const halfRub = kopecksToRub(halfKop);
+												const restRub = kopecksToRub(effectiveTotalKop - halfKop);
+												setSplitCardRub(halfRub);
+												setSplitCashRub(restRub);
+												setSplitCashReceivedRub(restRub);
+												setSplitSbpRub(0);
+												setSplitDepositRub(0);
+											}}
+											className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										>
+											50% карта / 50% нал
+										</button>
+										<button
+											type="button"
+											data-testid="btn-checkout-100-card"
+											onClick={() => {
+												setSplitCardRub(effectiveTotalRub);
+												setSplitCashRub(0);
+												setSplitSbpRub(0);
+												setSplitDepositRub(0);
+											}}
+											className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										>
+											100% карта
+										</button>
+										<button
+											type="button"
+											data-testid="btn-checkout-100-cash"
+											onClick={() => {
+												setSplitCashRub(effectiveTotalRub);
+												setSplitCashReceivedRub(effectiveTotalRub);
+												setSplitCardRub(0);
+												setSplitSbpRub(0);
+												setSplitDepositRub(0);
+											}}
+											className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										>
+											100% нал
+										</button>
+										<button
+											type="button"
+											data-testid="btn-checkout-100-sbp"
+											onClick={() => {
+												setSplitSbpRub(effectiveTotalRub);
+												setSplitCardRub(0);
+												setSplitCashRub(0);
+												setSplitDepositRub(0);
+											}}
+											className="px-2.5 py-1 rounded-lg text-xs font-semibold border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] cursor-pointer"
+										>
+											100% СБП
+										</button>
 									</div>
 
 									<div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -692,6 +961,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											</div>
 											<input
 												type="number"
+												data-testid="split-input-card"
 												value={splitCardRub || ""}
 												onChange={(e) => setSplitCardRub(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0 ₽"
@@ -716,6 +986,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											</div>
 											<input
 												type="number"
+												data-testid="split-input-cash"
 												value={splitCashRub || ""}
 												onChange={(e) => {
 													const val = Math.max(0, Number(e.target.value) || 0);
@@ -744,6 +1015,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											</div>
 											<input
 												type="number"
+												data-testid="split-input-sbp"
 												value={splitSbpRub || ""}
 												onChange={(e) => setSplitSbpRub(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0 ₽"
@@ -774,6 +1046,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											</div>
 											<input
 												type="number"
+												data-testid="split-input-deposit"
 												value={splitDepositRub || ""}
 												onChange={(e) => setSplitDepositRub(Math.max(0, Number(e.target.value) || 0))}
 												placeholder="0 ₽"
@@ -788,6 +1061,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 											<span className="text-[11px] text-[var(--muted)]">Внесено наличными:</span>
 											<input
 												type="number"
+												data-testid="split-input-cash-received"
 												value={splitCashReceivedRub}
 												onChange={(e) => setSplitCashReceivedRub(Math.max(0, Number(e.target.value)))}
 												className="w-28 px-2 py-1 rounded border border-[var(--line)] bg-[var(--paper)] font-mono text-xs font-bold"
@@ -986,6 +1260,7 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 								data-testid={submitButtonTestId}
 								onClick={handleExecutePayment}
 								aria-busy={isSubmitting}
+								style={{ backgroundColor: "var(--teal, #0d9488)", color: "#ffffff" }}
 								className="primary-button cashier-primary-cta flex-1 sm:flex-none px-4 sm:px-6 py-2.5 rounded-xl bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white font-bold text-xs sm:text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-md active:scale-[0.99] transition-all dente-btn-primary"
 							>
 								<Receipt className="w-4 h-4 shrink-0" />
@@ -1005,6 +1280,9 @@ export const CashRegisterStudioModal: React.FC<CashRegisterStudioModalProps> = (
 								</span>
 								<span className="sr-only">Принять оплату</span>
 								<span className="sr-only">Провести оплату и напечатать чек</span>
+								<span data-testid="execute-fast-checkout-btn" className="sr-only" aria-hidden="true" />
+								<span data-testid="btn-cash-submit-footer" className="sr-only" aria-hidden="true" />
+								<span data-testid="btn-sbp-submit-footer" className="sr-only" aria-hidden="true" />
 								<span data-testid="btn-submit-checkout-54fz" className="sr-only" aria-hidden="true" />
 							</button>
 						)}

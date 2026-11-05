@@ -10,7 +10,7 @@
  * - Sweet Spot size: 280-350 lines.
  */
 
-export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty";
+export type CashboxTenderType = "card" | "cash" | "sbp" | "deposit" | "split" | "warranty" | "installment";
 export type ClientPayerType = "physical_person" | "legal_entity" | "sole_proprietor";
 export type ReceiptDeliveryChannel = "print" | "sms" | "email" | "electronic_only";
 export type ReceiptPrintFormat = "tape_58mm" | "tape_80mm" | "act_a4";
@@ -130,17 +130,10 @@ export function calculateExactCashChange(receivedRub: number, totalDueRub: numbe
 /* ========================================================================= */
 
 /**
- * Canonical 5 Payment Tenders: 0 raw regulatory jargon, 0 cartoon emojis.
+ * Canonical Payment Tenders: Instant selection, 0 raw regulatory jargon, 0 cartoon emojis.
+ * Matches: [ Наличные | Терминал (Карта) | СБП QR | Рассрочка | Гарантия 100% (0 ₽) ] + Сплит + Депозит.
  */
 export const CASHBOX_TENDER_PRESETS: readonly CashboxTenderPreset[] = [
-	{
-		id: "card",
-		label: "Банковская карта",
-		shortLabel: "Карта",
-		description: "Оплата через POS-терминал клиники",
-		isInstant: true,
-		testId: "tender-method-card",
-	},
 	{
 		id: "cash",
 		label: "Наличные",
@@ -150,28 +143,52 @@ export const CASHBOX_TENDER_PRESETS: readonly CashboxTenderPreset[] = [
 		testId: "tender-method-cash",
 	},
 	{
+		id: "card",
+		label: "Терминал (Карта)",
+		shortLabel: "Карта",
+		description: "Оплата банковской картой через POS-терминал",
+		isInstant: true,
+		testId: "tender-method-card",
+	},
+	{
 		id: "sbp",
-		label: "СБП по QR-коду",
+		label: "СБП QR",
 		shortLabel: "СБП QR",
-		description: "Мгновенный перевод через Систему быстрых платежей",
+		description: "Оплата по динамическому QR-коду СБП телефоном",
 		isInstant: false,
 		testId: "tender-method-sbp",
 	},
 	{
-		id: "deposit",
-		label: "Аванс / депозит",
-		shortLabel: "Депозит",
-		description: "Списание с личного или семейного баланса",
+		id: "installment",
+		label: "Рассрочка",
+		shortLabel: "Рассрочка",
+		description: "Банковская рассрочка 0% без переплаты",
+		isInstant: false,
+		testId: "tender-method-installment",
+	},
+	{
+		id: "warranty",
+		label: "Гарантия 100% (0 ₽)",
+		shortLabel: "Гарантия 100%",
+		description: "Гарантийная переделка врача без фискализации чека",
 		isInstant: true,
-		testId: "tender-method-deposit",
+		testId: "tender-method-warranty",
 	},
 	{
 		id: "split",
-		label: "Сплит / раздельно",
+		label: "Сплит-оплата",
 		shortLabel: "Сплит",
 		description: "Разделение чека на несколько источников оплаты",
 		isInstant: false,
 		testId: "tender-method-split",
+	},
+	{
+		id: "deposit",
+		label: "Депозит / аванс",
+		shortLabel: "Депозит",
+		description: "Списание с личного или семейного баланса",
+		isInstant: true,
+		testId: "tender-method-deposit",
 	},
 ];
 

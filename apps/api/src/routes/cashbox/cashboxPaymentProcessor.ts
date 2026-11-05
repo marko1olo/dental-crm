@@ -10,7 +10,7 @@
  * - Idempotency & Financial Resilience: clientMutationId & idempotencyKey.
  */
 
-import { and, eq } from "drizzle-orm";
+import { and, desc, eq, gte } from "drizzle-orm";
 import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
@@ -149,17 +149,56 @@ export async function processCashboxPayment(
 		}
 		const resolvedPatientId = requestedPatientId;
 
+		// [FIN-02] Связывание платежа с приёмом врача (visitId)
+		let effectiveVisitId = body.visitId || null;
+		if (!effectiveVisitId && body.invoiceId) {
+			const [inv] = await tx
+				.select({ visitId: patientInvoices.visitId })
+				.from(patientInvoices)
+				.where(
+					and(
+						eq(patientInvoices.id, body.invoiceId),
+						eq(patientInvoices.organizationId, orgId),
+					),
+				)
+				.limit(1);
+			if (inv?.visitId) {
+				effectiveVisitId = inv.visitId;
+			}
+		}
+
+		if (!effectiveVisitId && resolvedPatientId) {
+			const today = new Date();
+			today.setHours(0, 0, 0, 0);
+			const [latestVisit] = await tx
+				.select({ id: visits.id })
+				.from(visits)
+				.where(
+					and(
+						eq(visits.patientId, resolvedPatientId),
+						eq(visits.organizationId, orgId),
+						gte(visits.createdAt, today),
+					),
+				)
+				.orderBy(desc(visits.createdAt))
+				.limit(1);
+			if (latestVisit?.id) {
+				effectiveVisitId = latestVisit.id;
+			}
+		}
+
 		// Генерируем номер кассового чека (при гарантии 100% чек не пробивается)
 		const receiptNumber = isWarrantyPayment ? null : `ФД-${Date.now().toString().slice(-6)}`;
 		const issuedAt = isWarrantyPayment ? null : new Date().toISOString();
 
-		// 1. Фиксация платежа в таблице payments
+		// 1. Фиксация платежа в таблице payments с обязательным visitId и documentId
 		const [newPayment] = await tx
 			.insert(payments)
 			.values({
 				organizationId: orgId,
 				patientId: resolvedPatientId,
-				visitId: body.visitId || null,
+				visitId: effectiveVisitId,
+				documentId: body.invoiceId || null,
 				clientMutationId: effectiveMutationId,
 				amountRub: amountRubNumber,
 				method: normalizePaymentMethod(body.method),
@@ -196,7 +235,7 @@ export async function processCashboxPayment(
 						),
 					);
 			}
-			if (body.visitId) {
+			if (effectiveVisitId) {
 				await tx
 					.update(patientInvoices)
 					.set({
@@ -205,7 +244,7 @@ export async function processCashboxPayment(
 					})
 					.where(
 						and(
-							eq(patientInvoices.visitId, body.visitId),
+							eq(patientInvoices.visitId, effectiveVisitId),
 							eq(patientInvoices.organizationId, orgId),
 						),
 					);
@@ -213,7 +252,7 @@ export async function processCashboxPayment(
 				await tx
 					.update(visits)
 					.set({ updatedAt: new Date() })
-					.where(and(eq(visits.id, body.visitId), eq(visits.organizationId, orgId)));
+					.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)));
 			}
 
 			return {
@@ -244,7 +283,7 @@ export async function processCashboxPayment(
 					),
 				);
 		}
-		if (body.visitId) {
+		if (effectiveVisitId) {
 			await tx
 				.update(patientInvoices)
 				.set({
@@ -253,7 +292,7 @@ export async function processCashboxPayment(
 				})
 				.where(
 					and(
-						eq(patientInvoices.visitId, body.visitId),
+						eq(patientInvoices.visitId, effectiveVisitId),
 						eq(patientInvoices.organizationId, orgId),
 					),
 				);
@@ -261,7 +300,7 @@ export async function processCashboxPayment(
 			await tx
 				.update(visits)
 				.set({ updatedAt: new Date() })
-				.where(and(eq(visits.id, body.visitId), eq(visits.organizationId, orgId)));
+				.where(and(eq(visits.id, effectiveVisitId), eq(visits.organizationId, orgId)));
 		}
 
 		// 3. Инициализируем и находим кассовые счета клиники

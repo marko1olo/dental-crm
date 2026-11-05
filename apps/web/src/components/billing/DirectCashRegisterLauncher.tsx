@@ -25,6 +25,7 @@ import {
 	CheckCircle,
 } from "lucide-react";
 import { CashCheckoutStudioModal } from "./CashCheckoutStudioModal.js";
+import type { CashboxTenderType } from "../cashbox/cashRegisterCatalogData.js";
 import {
 	getBillingDemoInvoice,
 	formatRubles,
@@ -43,7 +44,7 @@ export const DirectCashRegisterLauncher: React.FC<DirectCashRegisterLauncherProp
 	const demoInvoice = getBillingDemoInvoice();
 	const [isModalOpen, setIsModalOpen] = useState<boolean>(initialOpen);
 	const [activeAmountRub, setActiveAmountRub] = useState<number>(demoInvoice.amountRub);
-	const [activeMethod, setActiveMethod] = useState<string>("card");
+	const [activeMethod, setActiveMethod] = useState<CashboxTenderType>("card");
 	const [recentReceipt, setRecentReceipt] = useState<any | null>(null);
 
 	// Deep link hash & search listener
@@ -87,7 +88,7 @@ export const DirectCashRegisterLauncher: React.FC<DirectCashRegisterLauncherProp
 							<span>Касса и чеки · Экспресс-оплата</span>
 						</h1>
 						<p className="text-xs text-[var(--muted,#64748b)] mt-0.5">
-							Фискализация 54-ФЗ, прием платежей (нал, карта, СБП, сплит) и семейный баланс
+							Кассовые чеки, прием платежей (нал, карта, СБП, сплит) и семейный баланс
 						</p>
 					</div>
 				</div>
@@ -156,7 +157,7 @@ export const DirectCashRegisterLauncher: React.FC<DirectCashRegisterLauncherProp
 									key={t.id}
 									type="button"
 									onClick={() => {
-										setActiveMethod(t.id);
+										setActiveMethod(t.id as CashboxTenderType);
 										setIsModalOpen(true);
 									}}
 									className={`min-h-[44px] p-2 rounded-xl border text-xs font-semibold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
@@ -188,8 +189,8 @@ export const DirectCashRegisterLauncher: React.FC<DirectCashRegisterLauncherProp
 								<span className="font-semibold text-[var(--ink)]">Администратор</span>
 							</div>
 							<div className="flex justify-between text-[var(--muted)]">
-								<span>ФР / Терминал:</span>
-								<span className="font-semibold text-[var(--ink)]">Онлайн (54-ФЗ)</span>
+								<span>Кассовый аппарат:</span>
+								<span className="font-semibold text-[var(--ink)]">Онлайн-касса</span>
 							</div>
 							<div className="flex justify-between text-[var(--muted)] pt-2 border-t border-[var(--line)]">
 								<span>Семейный баланс:</span>
