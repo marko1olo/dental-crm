@@ -129,7 +129,7 @@ export interface CashierReceiptItem {
 	quantity: number;
 	priceKopecks: number;
 	totalKopecks: number;
-	vatRate?: string;
+	vatRate?: string | undefined;
 }
 
 export interface CashierReceiptRecord {
@@ -145,16 +145,16 @@ export interface CashierReceiptRecord {
 	items: CashierReceiptItem[];
 	totalDueKopecks: number;
 	paymentMethod: PaymentMethodId;
-	splitTenders?: Partial<SplitTenders>;
-	fiscalSign?: string;
-	fnsUrl?: string;
-	widthMm?: 58 | 80;
+	splitTenders?: Partial<SplitTenders> | undefined;
+	fiscalSign?: string | undefined;
+	fnsUrl?: string | undefined;
+	widthMm?: 58 | 80 | undefined;
 }
 
 export interface CashierShiftSummary {
 	shiftNumber: number;
 	openedAt: string;
-	closedAt?: string;
+	closedAt?: string | undefined;
 	cashierFullName: string;
 	cashBoxName: string;
 	startingCashKopecks: number;
@@ -165,8 +165,8 @@ export interface CashierShiftSummary {
 	refundTotalKopecks: number;
 	netRevenueKopecks: number;
 	expectedCashInDrawerKopecks: number;
-	actualCashInDrawerKopecks?: number;
-	differenceKopecks?: number;
+	actualCashInDrawerKopecks?: number | undefined;
+	differenceKopecks?: number | undefined;
 	totalReceiptsCount: number;
 	isClosed: boolean;
 }
@@ -241,6 +241,7 @@ export function generateThermalReceiptText(receipt: CashierReceiptRecord, widthM
 
 	for (let i = 0; i < receipt.items.length; i++) {
 		const item = receipt.items[i];
+		if (!item) continue;
 		lines.push(`${i + 1}. ${item.name}`);
 		const qtyPrice = `${item.quantity} x ${formatKopecks(item.priceKopecks)}`;
 		lines.push(padBetween(`   ${qtyPrice}`, formatKopecks(item.totalKopecks)));

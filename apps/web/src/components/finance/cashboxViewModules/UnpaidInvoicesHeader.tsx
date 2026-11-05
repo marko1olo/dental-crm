@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { Clock, RotateCw, User } from "lucide-react";
 
 export interface UnpaidInvoicesHeaderProps {

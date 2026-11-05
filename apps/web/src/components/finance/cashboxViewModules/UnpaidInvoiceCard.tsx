@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { FileText, CreditCard } from "lucide-react";
 import type { PendingInvoiceItem } from "./types.js";
 

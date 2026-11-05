@@ -5,7 +5,7 @@
  * Manages CashShiftWidget integration and summary indicators.
  */
 
-import type React from "react";
+import React from "react";
 import { CashShiftWidget } from "../CashShiftWidget.js";
 import type { CashBoxSummary } from "./types.js";
 

@@ -4,7 +4,7 @@
  * Mandates: 8b (size <= 120 lines), 8e (doctor & cashier autonomy), 8c (Hot Path).
  */
 
-import type React from "react";
+import React from "react";
 import { createPortal } from "react-dom";
 import { CashboxModalsContainer } from "./cashboxViewModules/CashboxModalsContainer.js";
 import { CashboxOperationsTable } from "./cashboxViewModules/CashboxOperationsTable.js";

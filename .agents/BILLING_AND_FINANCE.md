@@ -12,14 +12,14 @@
 > 🎯 **ДО БОЛЬШИХ СЕТЕВЫХ КЛИНИК НАМ ЕЩЁ РАСТИ И РАСТИ!**
 > 
 > Наш главный пользователь — **соло-врач на аренде кресла (ИП, самозанятый)** и **небольшая частная клиника на 1–3 кресла**.
-> 1. Полная финансовая автономия врача: 1-клик касса 54-ФЗ без ввода ИНН физлица, мгновенный приём нал/карта/СБП, свобода применения персональных скидок (до 100% на переделки и персонал) без согласований с администратором.
+> 1. Полная финансовая автономия врача: 1-клик касса клиники без ввода ИНН физлица, мгновенный приём нал/карта/СБП, свобода применения персональных скидок (до 100% на переделки и персонал) без согласований с администратором.
 > 2. Закон отсутствия тупиков (Zero Dead-Ends): программа никогда не блокирует оплату или закрытие чека из-за отсутствия необязательных полей. Сетевые модули (филиальные счета, сложная инкассация) закладываются «на вырост» без тупиков.
 
 ---
 
 ## 📐 1. Точные математические правила: целочисленные копейки (Zero Float Drift)
 
-Все финансовые операции, начисления, скидки, остатки счетов, кассовые чеки 54-ФЗ и расчеты вычетов в DENTE ведутся **строго в целочисленных копейках** (`integer` в TypeScript / `bigint` / `numeric` в PostgreSQL). Использование чисел с плавающей запятой (`float` / `double`) для хранения и сложения денег **категорически запрещено** (Мандат 8b, The Hammer Часть 8 п. 2).
+Все финансовые операции, начисления, скидки, остатки счетов, кассовые чеки и расчеты вычетов в DENTE ведутся **строго в целочисленных копейках** (`integer` в TypeScript / `bigint` / `numeric` в PostgreSQL). Использование чисел с плавающей запятой (`float` / `double`) для хранения и сложения денег **категорически запрещено** (Мандат 8b, The Hammer Часть 8 п. 2).
 
 ### 1.1. Базовые функции конвертации (`@dental/shared`):
 * `rubToKopecks(rub: number): number => Math.round(rub * 100)`
@@ -187,7 +187,7 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 * **Счет 51** — Расчетные счета (безналичная оплата от юридических лиц и СБП).
 * **Счет 62.01 / 62.02** — Расчеты с покупателями / Авансы полученные (учет предоплат пациентов).
 * **Счет 10.01 / 10.06 -> 20.01** — Списание медикаментов, анестетиков и расходников со склада в производство.
-* **Счета 70, 68.01, 69** — Начисление заработной платы врачам (форма Т-51), удержание НДФЛ и страховые взносы.
+* **Счета 70, 68.01, 69** — Начисление заработной платы врачам (расчёт сдельной оплаты), удержание НДФЛ и страховые взносы.
 
 ### 5.2. Налоговая льгота по НДС:
 Все медицинские услуги в пакете CommerceML помечаются признаком **«Без НДС»** на основании **пп. 2 п. 2 ст. 149 Налогового кодекса РФ** (медицинские услуги, оказываемые медицинскими организациями, не подлежат налогообложению НДС).
@@ -203,7 +203,9 @@ export function classifyTaxDeduction804n(code804n: string): "1" | "2" {
 
 | Назначение | Frontend компонент | Backend маршрут |
 | :--- | :--- | :--- |
-| **Кассовый чек 54-ФЗ** | [`FiscalReceipt54FzModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FiscalReceipt54FzModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
+| **Кассовый чек (54-ФЗ)** | [`FiscalReceipt54FzModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FiscalReceipt54FzModal.tsx) | [`fiscalReceiptRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/fiscal/fiscalReceiptRoutes.ts) |
+| **Единый SSOT Кассы (Кассовая студия)** | [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) | `POST /api/fiscal/receipts`, `POST /api/cashbox/receipts` |
+| **Прокси устаревшей модалки (Мандат 8aq)** | [`CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx) | Делегирует в `CashRegisterStudioModal` (<100 строк) |
 | **1-Клик касса / Split** | [`CashRegisterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashRegisterModal.tsx) | `POST /api/fiscal/receipts` |
 | **Fast Checkout Engine** | [`fastCheckoutEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.ts) | `POST /api/billing/payments` |
 | **Семейный кошелек** | [`FamilyWalletModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/FamilyWalletModal.tsx) | [`finance_family.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/finance_family.ts) |

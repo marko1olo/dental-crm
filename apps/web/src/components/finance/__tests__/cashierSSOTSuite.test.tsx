@@ -82,15 +82,16 @@ describe("Cashier Studio & Fiscal Checkout SSOT Suite (Native node:test)", () =>
 		);
 	});
 
-	// ТЕСТ 2: Sweet Spot CashierStudioModal.tsx (400-480 строк)
-	it("2. CashierStudioModal.tsx satisfies Sweet Spot line count constraint (400-480 lines)", () => {
+	// ТЕСТ 2: CashierStudioModal.tsx — тонкий прозрачный фасад (< 100 строк) к канонической CashRegisterStudioModal.tsx
+	it("2. CashierStudioModal.tsx is a lean transparent proxy (< 100 lines) delegating to canonical SSOT", () => {
 		const filePath = path.join(financeDir, "CashierStudioModal.tsx");
 		const content = fs.readFileSync(filePath, "utf-8");
 		const lines = content.split("\n").length;
 		assert.ok(
-			lines >= 400 && lines <= 480,
-			`CashierStudioModal.tsx must be in 400-480 lines range (Sweet Spot), got ${lines} lines`,
+			lines <= 100,
+			`CashierStudioModal.tsx must be a lean proxy (< 100 lines per Mandate 8aq), got ${lines} lines`,
 		);
+		assert.ok(content.includes("CashRegisterStudioModal"), "Must delegate to canonical CashRegisterStudioModal SSOT");
 	});
 
 	// ТЕСТ 3: Sweet Spot DirectCashierLauncher.tsx (70-90 строк)

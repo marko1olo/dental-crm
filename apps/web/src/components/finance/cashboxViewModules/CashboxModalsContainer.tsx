@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { RetailProductsModal } from "../../billing/RetailProductsModal.js";
 import { showToast } from "../../GlobalToast.js";
 import { CashRegisterCheckoutModal } from "../../billing/CashRegisterCheckoutModal.js";

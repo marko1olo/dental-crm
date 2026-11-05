@@ -180,16 +180,24 @@
   4. В процедурном списании `stockDeductionStepExecutor.ts` и `shiftSummaryQueries.ts` списание карпул пересчитывает остатки упаковок с учетом `packageMultiplier` (1 карпула = 0.02 упаковки при фасовке 50).
   5. Red Team интеграционные тесты `packageMultiplierFefoInquisition.test.ts` (2 passed) и `materialsAutoDeductionAndUnitsSsot.test.ts` (9 passed) полностью подтвердили корректность списания без ложного овердрафта.
 
-### [WH-05] [ИСПРАВЛЕНО] Захардкоженная медсестра в журнале СанПиН
+### [WH-05] [ИСПРАВЛЕНО] Захардкоженная медсестра в журнале СанПиН и консолидация автоклава
 - **Файлы:**
   - [`SanpinStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx)
-- **Суть бага:** В коде было зашито: `useState("Иванова Е. С., дежурная медсестра")`. Все циклы автоклава и наклейки на крафт-пакеты подписывались Ивановой.
+  - [`SanPinSterilizationJournal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx)
+  - [`SterilizationBatchCycleModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx)
+  - [`SanpinRegisters.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinRegisters.tsx)
+  - [`sanpin.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/sanpin.css)
+- **Суть бага:** В коде было зашито: `useState("Иванова Е. С., дежурная медсестра")` и `useState("Иванова Е. С., медсестра ЦСО")`. Все циклы автоклава и наклейки на крафт-пакеты подписывались вымышленной Ивановой. В Node-тестах импорт CSS в `SanpinRegisters.tsx` вызывал падение из-за `ERR_UNKNOWN_FILE_EXTENSION`. В тёмной теме модалки СанПиН кнопки пресетов пакетов и кнопка закрытия имели слепящие белые пятна.
 - **Статус ликвидации [ИСПРАВЛЕНО]:**
-  1. Захардкоженная строка полностью ликвидирована.
-  2. Внедрено динамическое извлечение авторизованного пользователя из контекста клиники через хук `useOptionalAppLogicContext()`, сессию `appLogic?.auth?.currentUser` и кэш `getCachedActiveStaffUser()`.
-  3. В интерфейс шапки параметров автоклава выведено интерактивное поле «Ответственный:» с автоматической подстановкой текущего сотрудника (врач/администратор/ассистент).
-  4. Поддержан пропс `operatorName` для переопределения ответственного родительским компонентом.
-  5. Соблюден Мандат 8b/8zi (файл сжат до 478 строк, укладывается в норматив 400–480). Все 29 файлов тестов СанПиН (329 тестов) и скриншоты 4-State Proof (`pc_light/dark`, `mobile_light/dark`) подтвердили безупречную работу.
+  1. Захардкоженные строки персонажей полностью ликвидированы во всех компонентах стерилизации (`SanPinSterilizationJournal`, `SterilizationBatchCycleModal`, `SanpinKraftPacketsTab`, `usePsoRegisterLogic`, `sanpinDefaultCycles`, `sanpinCatalogData`).
+  2. Внедрено динамическое извлечение авторизованного пользователя из контекста клиники через `useOptionalAppLogicContext()`, сессию `appLogic?.auth?.currentUser` и кэш `getCachedActiveStaffUser()` с безопасным клиническим дефолтом «Дежурный администратор / медицинская сестра».
+  3. В `SanpinRegisters.tsx` внедрен безопасный гвард `if (typeof document !== "undefined") import("./SanpinRegisters.css");`, ликвидировавший падение тестов в Node/tsx.
+  4. В `sanpin.css` и `SanpinStudioModal.tsx` устранена слепящая белизна в Dark Mode для кнопок пресетов и закрытия (100% токены темы `var(--paper)`).
+  5. Соблюден Мандат 8b Sweet Spot: `SterilizationBatchCycleModal.tsx` уложен ровно в 351 строку (норматив 250–360).
+  6. Машинная верификация: 362 теста ЭМК и СанПиН (`emr/__tests__`, `sanpin/__tests__`) пройдены со статусом PASS 100% (0 ошибок).
+  7. Сняты и лично проинспектированы через `read_file` 8 канонических скриншотов 4-State Proof на живом сервере:
+     - EMR: `docs/screenshots/emr/01_emr_studio_pc_light_1440x900.png`, `02_emr_studio_pc_dark_1440x900.png`, `03_emr_studio_mobile_light_390x844.png`, `04_emr_studio_mobile_dark_390x844.png`.
+     - SanPiN: `docs/screenshots/sanpin/01_sanpin_studio_pc_light_1440x900.png`, `02_sanpin_studio_pc_dark_1440x900.png`, `03_sanpin_studio_mobile_light_390x844.png`, `04_sanpin_studio_mobile_dark_390x844.png`.
 
 ---
 
