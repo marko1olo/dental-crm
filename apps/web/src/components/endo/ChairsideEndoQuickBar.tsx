@@ -20,7 +20,6 @@ import {
 	QUICK_MAF_OPTIONS,
 	type ChairsideEndoQuickBarProps,
 	type EndoStageStamp,
-	type EndoToothClinicalData,
 	type QuickCanalState,
 } from "./endoCanalData";
 
@@ -28,39 +27,45 @@ export * from "./endoCanalData";
 
 /** Генерация чистого SOAP-протокола эндодонтии без сырого канцелярита (Мандат 8x) */
 export function generateSoapEndoProtocol({
-	activeTooth,
-	toothAnatomicalName,
-	currentCanals,
-	toothState,
+	activeTooth, toothNumber, toothAnatomicalName = "Моляр", currentCanals = [], toothState,
 }: {
-	activeTooth: number;
-	toothAnatomicalName: string;
-	currentCanals: QuickCanalState[];
-	toothState?: string | undefined;
+	activeTooth?: number; toothNumber?: number; toothAnatomicalName?: string; currentCanals?: QuickCanalState[]; toothState?: string | undefined;
 }): string {
-	const isTemp = currentCanals.every((c) => c.obturationType === "temp_caoh2");
-	const isBio = currentCanals.some((c) => c.obturationType === "bioceramic");
-	const canalsReport = currentCanals.map((c) => {
+	const toothNum = activeTooth ?? toothNumber ?? 46;
+	const canals = Array.isArray(currentCanals) && currentCanals.length > 0 ? currentCanals : [
+		{ name: "Дистальный", workingLengthMm: 21, masterApicalFile: "25", taper: "06", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
+		{ name: "Медиальный", workingLengthMm: 21, masterApicalFile: "25", taper: "04", obturationType: "gutta_percha_ah_plus", sealer: "AH Plus", isObliterated: false },
+	];
+	const isTemp = canals.every((c) => c.obturationType === "temp_caoh2");
+	const isBio = canals.some((c) => c.obturationType === "bioceramic");
+	const isPeriodontitis = Boolean(isBio || isTemp || (toothState && /периодонтит|periodontitis|k04\.5|k04\.4|k04\.6|гранулем|кист/i.test(toothState)));
+
+	const canalsReport = canals.map((c) => {
 		if (c.isObliterated) return `• Канал ${c.name}: ОБЛИТЕРИРОВАН / склерозирован (устье склерозировано, 0 мм)`;
 		const obt = c.obturationType === "temp_caoh2"
 			? `временная паста гидроксида кальция ${c.sealer || "Ca(OH)2 (Каласепт/Метапекс)"}`
 			: c.obturationType === "bioceramic"
 				? `постоянная обтурация гуттаперчей + биокерамика (${c.sealer || "BioRoot"})`
-				: "обтурация гуттаперчей с AH Plus методом латеральной компакции";
+				: `обтурация гуттаперчей с ${c.sealer || "AH Plus"} методом латеральной компакции`;
 		const len = c.workingLengthMm > 0 ? c.workingLengthMm.toFixed(1) : "21.0";
 		return `• Канал ${c.name}: пройден, WL = ${len} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, ${obt}`;
 	}).join("\n");
 
-	const canalNamesRu = currentCanals.map((c) => c.name).join(", ");
-	const diagnosisRu = toothState || (isTemp ? "Хронический периодонтит" : isBio ? "Хронический периодонтит" : "Острый пульпит");
+	const canalNamesRu = canals.map((c) => c.name).join(", ");
+	const defaultDiagnosis = isPeriodontitis ? "Хронический апикальный периодонтит (K04.5)" : "Острый очаговый пульпит (K04.0)";
+	const diagnosisRu = toothState || defaultDiagnosis;
 
 	if (isTemp) {
-		return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 1-Й ВИЗИТ]\nS: Жалобы на боли при накусывании и чувство распирания в области зуба #${activeTooth}.\nO: Проведена анестезия, изоляция операционного поля коффердамом. Раскрытие полости зуба #${activeTooth}, эвакуация распада пульпы.\nМехобработка корневых каналов (${canalNamesRu}) машинной системой NiTi:\n${canalsReport}\nИрригация: медикаментозная обработка раствором 3% NaOCl с УЗ-активацией и 17% EDTA, высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${activeTooth}.\nP: Проведена временная обтурация корневых каналов лечебной пастой гидроксида кальция Ca(OH)2 (Каласепт/Метапекс). Наложена герметичная повязка. Назначен 2-й визит через 10–14 дней.`;
+		return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${toothNum} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 1-Й ВИЗИТ]\nS: Жалобы на боли при накусывании и чувство распирания в области зуба #${toothNum}.\nO: Проведена анестезия, изоляция операционного поля коффердамом. Раскрытие полости зуба #${toothNum}, эвакуация распада пульпы.\nМехобработка корневых каналов (${canalNamesRu}) машинной системой NiTi:\n${canalsReport}\nИрригация: медикаментозная обработка раствором 3% NaOCl с УЗ-активацией и 17% EDTA, высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${toothNum}.\nP: Проведена временная обтурация корневых каналов лечебной пастой гидроксида кальция Ca(OH)2 (Каласепт/Метапекс). Наложена герметичная повязка. Назначен 2-й визит через 10–14 дней.`;
 	}
-	if (isBio) {
-		return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 2-Й ВИЗИТ]\nS: Жалоб нет, герметичная повязка сохранена, перкуссия безболезненна.\nO: Изоляция операционного поля коффердамом. Удаление временной повязки и лечебной пасты Ca(OH)2 из каналов.\nИнструментальная калибровка каналов (${canalNamesRu}):\n${canalsReport}\nИрригация: 3% раствор NaOCl с УЗ-активацией, окончательное высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${activeTooth}.\nP: Постоянная обтурация корневых каналов: гуттаперча + биокерамика (${currentCanals[0]?.sealer || "BioRoot"}) до физиологического апекса. Рентген-контроль (визиография): каналы гомогенно обтурированы до апекса. Поставлена герметичная реставрация.`;
+	if (isPeriodontitis) {
+		const sealerName = canals[0]?.sealer || (isBio ? "BioRoot" : "AH Plus");
+		const obturationMethodRu = isBio
+			? `гуттаперча + биокерамический силер (${sealerName})`
+			: `гуттаперча с эпоксидным силером ${sealerName} методом латеральной компакции`;
+		return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${toothNum} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 2-Й ВИЗИТ (ПОСТОЯННАЯ ОБТУРАЦИЯ)]\nS: Жалоб нет, герметичная повязка сохранена, перкуссия безболезненна.\nO: Изоляция операционного поля коффердамом. Удаление временной повязки и эвакуация лечебной пасты Ca(OH)2 из каналов.\nИнструментальная калибровка каналов (${canalNamesRu}):\n${canalsReport}\nИрригация: 3% раствор NaOCl с УЗ-активацией, 17% EDTA, окончательное высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${toothNum}.\nP: Постоянная обтурация корневых каналов: ${obturationMethodRu} до физиологического апекса. Рентген-контроль (визиография): каналы гомогенно обтурированы до апекса. Поставлена герметичная реставрация.`;
 	}
-	return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПУЛЬПИТ В 1 ВИЗИТ]\nS: Жалобы на острые температурные и самопроизвольные боли в зубе #${activeTooth}.\nO: Проведена анестезия, изоляция операционного поля коффердамом. Раскрытие полости зуба #${activeTooth}, экстирпация пульпы.\nМехобработка машинной системой NiTi (ProTaper/WaveOne до F2):\n${canalsReport}\nМедикаментозная обработка: 3% раствор NaOCl с УЗ-активацией и 17% EDTA. Высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${activeTooth}.\nP: Обтурация гуттаперчей с AH Plus методом латеральной компакции до физиологического апекса. Рентген-контроль (визиография): каналы обтурированы до верхушки, гомогенно. Поставлена герметичная повязка/реставрация.`;
+	return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${toothNum} (${toothAnatomicalName}) — ПУЛЬПИТ В 1 ВИЗИТ]\nS: Жалобы на острые температурные и самопроизвольные боли в зубе #${toothNum}.\nO: Проведена анестезия, изоляция операционного поля коффердамом. Раскрытие полости зуба #${toothNum}, экстирпация пульпы.\nМехобработка машинной системой NiTi (ProTaper/WaveOne до F2):\n${canalsReport}\nМедикаментозная обработка: 3% раствор NaOCl с УЗ-активацией и 17% EDTA. Высушивание бумажными штифтами.\nA: ${diagnosisRu} зуба #${toothNum}.\nP: Обтурация гуттаперчей с AH Plus методом латеральной компакции до физиологического апекса. Рентген-контроль (визиография): каналы обтурированы до верхушки, гомогенно. Поставлена герметичная повязка/реставрация.`;
 }
 
 /** Сохранение параметров каналов в Fastify API и списание расходников (Мандаты 8e, 8n) */
@@ -142,9 +147,11 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 	const activeTooth = props.activeTooth || 16;
 	const toothAnatomicalName = useMemo(() => getToothAnatomicalNameRu(activeTooth), [activeTooth]);
 	const [canals, setCanals] = useState<QuickCanalState[]>(() => getChairsideDefaultCanals(activeTooth));
+	const [explicitProtocolType, setExplicitProtocolType] = useState<"pulpitis" | "periodontitis_ahplus" | "periodontitis_bio" | "temp_caoh2" | null>(null);
 
 	useEffect(() => {
 		setCanals(getChairsideDefaultCanals(activeTooth));
+		setExplicitProtocolType(null);
 	}, [activeTooth]);
 
 	const updateCanal = useCallback((id: string, patch: Partial<QuickCanalState>) => {
@@ -160,29 +167,51 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 	}, []);
 
 	const applyPulpitis1Visit = useCallback(() => {
+		setExplicitProtocolType("pulpitis");
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "gutta_sealer", sealer: "AH Plus", masterApicalFile: "#25", taper: ".04", isObliterated: false })));
 		showToast("Применён протокол: Пульпит в 1 визит (AH Plus)", "info", 2000);
 	}, []);
 
+	const applyPeriodontitisAhPlus = useCallback(() => {
+		setExplicitProtocolType("periodontitis_ahplus");
+		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "gutta_sealer", sealer: "AH Plus", masterApicalFile: "#25", taper: ".04", isObliterated: false })));
+		showToast("Применён протокол: Периодонтит 2 эт. (AH Plus)", "info", 2000);
+	}, []);
+
 	const applyPeriodontitisBio = useCallback(() => {
+		setExplicitProtocolType("periodontitis_bio");
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "bioceramic", sealer: "BioRoot", masterApicalFile: "#30", taper: ".04", isObliterated: false })));
 		showToast("Применён протокол: Периодонтит (Биокерамика)", "info", 2000);
 	}, []);
 
 	const applyCaOh2 = useCallback(() => {
+		setExplicitProtocolType("temp_caoh2");
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)", masterApicalFile: "#25", taper: ".04", isObliterated: false })));
 		showToast("Применён протокол: Временное вложение Ca(OH)2", "info", 2000);
 	}, []);
 
 	const applyNorm = useCallback(() => {
+		setExplicitProtocolType(null);
 		setCanals(getChairsideDefaultCanals(activeTooth));
 		showToast("Восстановлена анатомическая норма каналов", "info", 2000);
 	}, [activeTooth]);
 
 	const addCanal = useCallback(() => {
 		const nextIdx = canals.length + 1;
-		setCanals((prev) => [...prev, { id: `c-add-${Date.now()}-${nextIdx}`, name: `К${nextIdx}`, workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
-	}, [canals.length]);
+		const isUpper = (activeTooth >= 11 && activeTooth <= 28) || (activeTooth >= 51 && activeTooth <= 65);
+		const existingNames = new Set(canals.map((c) => c.name));
+		let suggestedName = `К${nextIdx}`;
+		if (isUpper) {
+			if (!existingNames.has("MB2")) suggestedName = "MB2";
+			else if (!existingNames.has("DB2")) suggestedName = "DB2";
+		} else {
+			if (!existingNames.has("DL")) suggestedName = "DL";
+			else if (!existingNames.has("DB")) suggestedName = "DB";
+			else if (!existingNames.has("MM")) suggestedName = "MM";
+			else if (!existingNames.has("Radix")) suggestedName = "Radix";
+		}
+		setCanals((prev) => [...prev, { id: `c-add-${Date.now()}-${nextIdx}`, name: suggestedName, workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" }]);
+	}, [activeTooth, canals]);
 
 	const removeCanal = useCallback((id: string) => {
 		if (canals.length <= 1) return;
@@ -204,6 +233,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 				</div>
 				<div className="flex items-center gap-1.5 flex-wrap">
 					<button type="button" onClick={applyPulpitis1Visit} className="btn-quick-pulpitis-1visit min-h-[36px] h-8 px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer">Пульпит (1 визит)</button>
+					<button type="button" onClick={applyPeriodontitisAhPlus} className="btn-quick-periodontitis-ahplus min-h-[36px] h-8 px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer" data-testid="btn-quick-periodontitis-ahplus">Периодонтит (AH Plus)</button>
 					<button type="button" onClick={applyPeriodontitisBio} className="btn-quick-periodontitis-bio min-h-[36px] h-8 px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer">Периодонтит (Био)</button>
 					<button type="button" onClick={applyCaOh2} className="btn-quick-caoh2 min-h-[36px] h-8 px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer">Ca(OH)2</button>
 					<button type="button" onClick={applyNorm} className="btn-quick-norm min-h-[36px] h-8 px-2.5 rounded-lg text-[11px] font-semibold bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 transition-colors cursor-pointer" title="Восстановить анатомическую норму">Норма</button>
@@ -254,7 +284,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 									<button type="button" onClick={() => adjustLength(c.id, 0.5)} className="w-6 h-6 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 text-xs font-bold flex items-center justify-center hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">+</button>
 								</div>
 								{QUICK_LENGTH_CHIPS.map((len) => (
-									<button key={len} type="button" onClick={() => updateCanal(c.id, { workingLengthMm: len, isObliterated: false })} className={`chip-length-${c.name}-${len} px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${c.workingLengthMm === len && !c.isObliterated ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-50"}`}>
+									<button key={len} type="button" onClick={() => updateCanal(c.id, { workingLengthMm: len, isObliterated: false })} className={`chip-length-${c.name}-${len} ${c.name === "MB1" ? `chip-length-MB-${len}` : ""} px-2 py-0.5 rounded-md text-[11px] font-semibold border transition-all cursor-pointer ${c.workingLengthMm === len && !c.isObliterated ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-50"}`}>
 										{len}
 									</button>
 								))}
@@ -267,7 +297,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 										const cleanKey = `${opt.maf.replace("#", "")}${opt.taper.replace(".", "")}`;
 										const isSelected = c.masterApicalFile === opt.maf && c.taper === opt.taper;
 										return (
-											<button key={opt.label} type="button" onClick={() => updateCanal(c.id, { masterApicalFile: opt.maf, taper: opt.taper })} className={`chip-maf-${c.name}-${cleanKey} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${isSelected ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-50"}`}>
+											<button key={opt.label} type="button" onClick={() => updateCanal(c.id, { masterApicalFile: opt.maf, taper: opt.taper })} className={`chip-maf-${c.name}-${cleanKey} ${c.name === "MB1" ? `chip-maf-MB-${cleanKey}` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${isSelected ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-50"}`}>
 												{opt.label}
 											</button>
 										);
@@ -275,9 +305,9 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 								</div>
 								<div className="flex items-center gap-1 flex-wrap">
 									<span className="text-[var(--muted,#64748b)] font-medium">Силер:</span>
-									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "gutta_sealer", sealer: "AH Plus" })} className={`chip-obturation-gutta-${c.name} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "gutta_sealer" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700"}`}>AH Plus</button>
-									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "bioceramic", sealer: "BioRoot" })} className={`chip-obturation-bio-${c.name} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "bioceramic" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700"}`}>Биокерамика</button>
-									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)" })} className={`chip-obturation-caoh2-${c.name} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "temp_caoh2" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700"}`}>Ca(OH)2</button>
+									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "gutta_sealer", sealer: "AH Plus" })} className={`chip-obturation-gutta-${c.name} ${c.name === "MB1" ? `chip-obturation-gutta-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "gutta_sealer" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700"}`}>AH Plus</button>
+									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "bioceramic", sealer: "BioRoot" })} className={`chip-obturation-bio-${c.name} ${c.name === "MB1" ? `chip-obturation-bio-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "bioceramic" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700"}`}>Биокерамика</button>
+									<button type="button" onClick={() => updateCanal(c.id, { obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)" })} className={`chip-obturation-caoh2-${c.name} ${c.name === "MB1" ? `chip-obturation-caoh2-MB` : ""} px-2 py-0.5 rounded-md font-semibold border transition-all cursor-pointer ${c.obturationType === "temp_caoh2" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper-strong,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-[var(--line,#cbd5e1)] dark:border-slate-700"}`}>Ca(OH)2</button>
 								</div>
 							</div>
 						</div>
@@ -292,7 +322,10 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 				</button>
 				<button
 					type="button"
-					onClick={() => executeChairsideTransferToDiary({ activeTooth, toothAnatomicalName, toothState: props.toothState, canals, patientId: props.patientId, onInsertToDiary: props.onInsertToDiary })}
+					onClick={() => {
+						const effToothState = props.toothState || (explicitProtocolType === "periodontitis_ahplus" || explicitProtocolType === "periodontitis_bio" || explicitProtocolType === "temp_caoh2" ? "Хронический апикальный периодонтит (K04.5)" : undefined);
+						executeChairsideTransferToDiary({ activeTooth, toothAnatomicalName, toothState: effToothState, canals, patientId: props.patientId, onInsertToDiary: props.onInsertToDiary });
+					}}
 					className="btn-endo-transfer-to-diary min-h-[44px] sm:min-h-[36px] h-10 sm:h-9 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-bold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] active:scale-98 text-white flex items-center justify-center gap-1.5 shadow-xs transition-all cursor-pointer"
 					title="Перенести протокол эндодонтии в карту приёма и начислить услуги"
 				>

@@ -48,9 +48,7 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
     };
     const handleToggle = () => { setIsActive((p) => !p); setIsOpen((p) => !p); };
     const handleKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && ["k", "K", "j", "J"].includes(e.key)) {
-        e.preventDefault(); setIsActive((p) => !p); setIsOpen((p) => !p);
-      }
+      if ((e.ctrlKey || e.metaKey) && ["k", "K", "j", "J"].includes(e.key)) { e.preventDefault(); setIsActive((p) => !p); setIsOpen((p) => !p); }
     };
     window.addEventListener("hashchange", handleLoc); window.addEventListener("popstate", handleLoc);
     window.addEventListener("dente:open-copilot", handleOpen); window.addEventListener("dente:toggle-copilot", handleToggle);
@@ -72,14 +70,8 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
   if (!isActive || !isOpen) return null;
   return (
     <CopilotStudioModal
-      isOpen={isOpen}
-      onClose={handleClose}
-      activeTooth={activeTooth}
-      patientId={patientId}
-      patientName={patientName}
-      initialTab={ctx?.initialTab || "dialog"}
-      isThinking={ctx?.isThinking}
-      thoughtProcess={ctx?.thoughtProcess}
+      isOpen={isOpen} onClose={handleClose} activeTooth={activeTooth} patientId={patientId}
+      patientName={patientName} initialTab={ctx?.initialTab || "dialog"} isThinking={ctx?.isThinking} thoughtProcess={ctx?.thoughtProcess}
     />
   );
 }

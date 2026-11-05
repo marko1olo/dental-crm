@@ -17,6 +17,7 @@ export const CopilotGlobalHost: React.FC = () => {
   const [customPending, setCustomPending] = useState<PendingConfirmation | null>(null);
   const [customBusy, setCustomBusy] = useState<boolean>(false);
   const [customPhase, setCustomPhase] = useState<string | null>(null);
+  const [customContext, setCustomContext] = useState<{ patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null>(null);
   const [isHudOpen, setIsHudOpen] = useState(false);
   const [isCatalogModalOpen, setIsCatalogModalOpen] = useState(false);
   const [catalogTooth, setCatalogTooth] = useState<number | null>(null);
@@ -68,6 +69,7 @@ export const CopilotGlobalHost: React.FC = () => {
     closeTreatmentPlanCopilot,
     setCustomMessages,
     setCustomPending,
+    setCustomContext,
     setCustomBusy,
     setCustomPhase,
     onOpenCatalog: handleOpenCatalog,
@@ -81,14 +83,24 @@ export const CopilotGlobalHost: React.FC = () => {
       ? Number(uiContext.activeTooth)
       : null;
 
+  const effectiveActiveTooth = customContext?.activeTooth !== undefined
+    ? customContext.activeTooth
+    : numericActiveTooth;
+  const effectivePatientId = customContext?.patientId !== undefined
+    ? customContext.patientId
+    : uiContext.patientId;
+  const effectivePatientName = customContext?.patientName !== undefined
+    ? customContext.patientName
+    : uiContext.patientName;
+
   return (
     <>
       <CopilotStudioModal
         isOpen={copilot.isOpen}
         onClose={copilot.closeDrawer}
-        activeTooth={numericActiveTooth}
-        patientId={uiContext.patientId}
-        patientName={uiContext.patientName}
+        activeTooth={effectiveActiveTooth}
+        patientId={effectivePatientId}
+        patientName={effectivePatientName}
         initialTab={copilot.activeTab === 'pending' ? 'actions' : 'dialog'}
         initialMessages={effectiveMessages && effectiveMessages.length > 0 ? (effectiveMessages as any) : undefined}
         isThinking={customBusy || copilot.busy}

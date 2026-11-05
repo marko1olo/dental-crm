@@ -77,21 +77,12 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 			<div className="flex items-center gap-1.5 shrink-0">
 				<div className="flex items-center gap-1 font-medium text-[var(--ink)]">
 					<User size={12} className="text-[var(--teal,#0d9488)] shrink-0" />
-					<span>
-						{resolvedPatientName ? (
-							<>Пациент: {resolvedPatientName}</>
-						) : (
-							<span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>
-						)}
-					</span>
-					{resolvedPatientId && (
-						<span className="text-[10px] text-[var(--muted,#64748b)] opacity-60">{`#${resolvedPatientId}`}</span>
-					)}
+					<span>{resolvedPatientName ? <>Пациент: {resolvedPatientName}</> : <span className="text-[var(--muted,#64748b)] font-normal">Пациент не выбран</span>}</span>
+					{resolvedPatientId && <span className="sr-only" data-testid="telemetry-patient-id">{`#${resolvedPatientId}`}</span>}
 				</div>
 				{resolvedActiveTooth && (resolvedPatientName || propActiveTooth !== undefined) ? (
-					<span className="copilot-telemetry-tooth-badge px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,rgba(13,148,136,0.25))] shrink-0">
+					<span className="copilot-telemetry-tooth-badge px-1.5 py-0.5 rounded text-[10px] font-bold bg-[var(--teal-soft,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal,rgba(13,148,136,0.25))] shrink-0" title={`Зуб ${resolvedActiveTooth}`} data-tooth={`Зуб ${resolvedActiveTooth}`}>
 						<span>{`Зуб #${resolvedActiveTooth}`}</span>
-						<span className="sr-only">{`Зуб ${resolvedActiveTooth}`}</span>
 					</span>
 				) : null}
 			</div>

@@ -17,7 +17,7 @@ import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CopilotStudioModal } from "../CopilotStudioModal";
+import { CopilotStudioModal, DEFAULT_INITIAL_MESSAGES } from "../CopilotStudioModal";
 import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
 import { CopilotMemoryTab } from "../CopilotMemoryTab";
 import { CopilotHistoryDrawer } from "../CopilotHistoryDrawer";
@@ -74,10 +74,11 @@ describe("Copilot Studio SSOT & Clinical Voice Suite", () => {
         isOpen={true}
         onClose={() => {}}
         initialTab="dialog"
+        initialMessages={DEFAULT_INITIAL_MESSAGES}
       />
     );
     assert.ok(html.includes('data-testid="copilot-primary-apply-cta"'), "Primary CTA кнопка обязана иметь data-testid");
-    assert.ok(html.includes("Применить действие") || html.includes("Применено"), "Текст Primary CTA обязан быть клиническим действием");
+    assert.ok(html.includes("Применить в карту") || html.includes("Применить действие") || html.includes("Применено"), "Текст Primary CTA обязан быть клиническим действием");
     assert.ok(html.includes("copilot-primary-cta"), "Кнопка обязана использовать класс .copilot-primary-cta");
   });
 

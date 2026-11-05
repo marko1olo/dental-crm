@@ -14,19 +14,19 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("ChairsideEndoQuickBar — First Principles Chairside Protocol (Mandates 8e, 8n, 8l)", () => {
-	it("1. Upper molar (16) has anatomical canals MB, DB, P", () => {
+	it("1. Upper molar (16) has anatomical canals MB1, MB2, DB, P", () => {
 		const canals16 = getChairsideDefaultCanals(16);
-		assert.deepEqual(canals16.map((c) => c.name), ["MB", "DB", "P"], "Molar 16 has MB, DB, P");
+		assert.deepEqual(canals16.map((c) => c.name), ["MB1", "MB2", "DB", "P"], "Molar 16 has MB1, MB2, DB, P");
 		const html = renderToStaticMarkup(createElement(ChairsideEndoQuickBar, { activeTooth: 16 }));
-		assert.ok(html.includes("MB") && html.includes("DB") && html.includes("P"), "Renders canals");
+		assert.ok(html.includes("MB1") && html.includes("MB2") && html.includes("DB") && html.includes("P"), "Renders canals");
 		assert.ok(html.includes("Зуб #16"), "Renders tooth 16");
 	});
 
-	it("2. Lower molar (46) has anatomical canals M, D", () => {
+	it("2. Lower molar (46) has anatomical canals MB, ML, DB, DL", () => {
 		const canals46 = getChairsideDefaultCanals(46);
-		assert.deepEqual(canals46.map((c) => c.name), ["M", "D"], "Molar 46 has M, D");
+		assert.deepEqual(canals46.map((c) => c.name), ["MB", "ML", "DB", "DL"], "Molar 46 has MB, ML, DB, DL");
 		const html = renderToStaticMarkup(createElement(ChairsideEndoQuickBar, { activeTooth: 46 }));
-		assert.ok(html.includes("Канал M") && html.includes("Канал D"), "Renders canals M, D");
+		assert.ok(html.includes("Канал MB") && html.includes("Канал ML") && html.includes("Канал DB") && html.includes("Канал DL"), "Renders canals MB, ML, DB, DL");
 	});
 
 	it("3. Premolar (14) has B, P and incisor (21) has single main canal", () => {
