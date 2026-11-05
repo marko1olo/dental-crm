@@ -123,7 +123,10 @@
 | Назначение | Frontend компонент | Backend маршрут |
 | :--- | :--- | :--- |
 | **АТС Webhook & Events** | [`telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts) | `POST /api/telephony/:orgId/webhook` |
-| **Ambient Call Popup** | [`IncomingCallPopup.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/IncomingCallPopup.tsx) | `ws://localhost:4100/api/ws/schedule` |
+| **Поиск пациента по номеру E.164 (CTI)** | [`useServerCallerLookup.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/incomingCallDataModules/useServerCallerLookup.ts) | `GET /api/v1/telephony/lookup` / `GET /api/telephony/lookup-caller` |
+| **Top Ambient Header Capsule** | [`TelephonyHeaderCapsule.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/headerCapsule/TelephonyHeaderCapsule.tsx) | `useTelephonyStore.ts` |
+| **Студия телефонии и журнал звонков** | [`TelephonyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx) | `DirectTelephonyLauncher.tsx` (`#telephony`) |
+| **Ambient Call Popup (Регистратура)** | [`IncomingCallPopup.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/IncomingCallPopup.tsx) | `ws://localhost:4100/api/ws/telephony` |
 | **SIP Софтфон Capsule** | [`TelephonyFloatingWidget.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyFloatingWidget.tsx) | `useTelephonyStore.ts` |
 | **Self-Checkin Portal** | [`MobileSelfCheckinModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/MobileSelfCheckinModal.tsx) | `POST /api/portal/auth/verify-otp` |
 | **Соматическая норма** | [`SomaticQuestionnaireEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/selfCheckin/SomaticQuestionnaireEngine.ts) | `evaluateSomaticRisks()` |

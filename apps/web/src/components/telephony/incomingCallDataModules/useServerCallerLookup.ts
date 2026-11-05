@@ -38,12 +38,19 @@ export function useServerCallerLookup(
 				if (clinicToken) headers["x-dente-clinic-token"] = clinicToken;
 				if (staffToken) headers["x-dente-staff-token"] = staffToken;
 
-				const res = await fetch(`/api/telephony/lookup-caller?${params.toString()}`, {
+				let res = await fetch(`/api/v1/telephony/lookup?${params.toString()}`, {
 					headers,
 					signal: controller.signal,
-				});
+				}).catch(() => null);
 
-				if (!res.ok) return;
+				if (!res || !res.ok) {
+					res = await fetch(`/api/telephony/lookup-caller?${params.toString()}`, {
+						headers,
+						signal: controller.signal,
+					}).catch(() => null);
+				}
+
+				if (!res || !res.ok) return;
 				const data: CallerLookupResult = await res.json();
 				if (isMounted && data) {
 					setServerLookup(data);

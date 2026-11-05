@@ -27,6 +27,17 @@ describe("Telephony Ambient Header Capsule & Dynamic Island Suite (Mandates 8e, 
 		assert.ok(html.includes("00:35") || html.includes("Иванов") || html.includes("animate-pulse"), "Must show active call duration or info");
 	});
 
+	it("2b. TelephonyHeaderCapsule provides 1-click answer & reject buttons on incoming ringing call", () => {
+		const ringingCall = {
+			id: "call-ringing-1", phone: "+7 (999) 777-66-55", patientName: "Смирнова Е.В.",
+			status: "ringing" as const,
+		};
+		const html = renderToString(<TelephonyHeaderCapsule activeCall={ringingCall} />);
+		assert.ok(html.includes('data-testid="header-capsule-answer-btn"'), "Must provide 1-click answer button");
+		assert.ok(html.includes('data-testid="header-capsule-reject-btn"'), "Must provide 1-click reject button");
+		assert.ok(html.includes("Смирнова Е.В."), "Must display caller name in capsule");
+	});
+
 	it("3. TelephonySoftphonePopover provides line controls, dialpad, and recent calls", () => {
 		useTelephonyStore.setState({ activeCall: null, agentState: "online", activeLineId: 1, callHistory: [] });
 		const html = renderToString(<TelephonySoftphonePopover onClose={() => {}} isMobile={false} />);

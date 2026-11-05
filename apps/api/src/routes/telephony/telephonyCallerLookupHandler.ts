@@ -38,6 +38,16 @@ export const telephonyCallerLookupHandlerRoutes: FastifyPluginAsync = async (ser
 	server.get<{
 		Params: { organizationId: string };
 		Querystring: { phone?: string; patientId?: string };
+	}>("/:organizationId/lookup", telephonyLookupCallerHandler);
+
+	server.get<{
+		Params: { organizationId?: string };
+		Querystring: { phone?: string; patientId?: string; organizationId?: string };
+	}>("/lookup", telephonyLookupCallerHandler);
+
+	server.get<{
+		Params: { organizationId: string };
+		Querystring: { phone?: string; patientId?: string };
 	}>("/:organizationId/lookup-caller", telephonyLookupCallerHandler);
 
 	server.get<{

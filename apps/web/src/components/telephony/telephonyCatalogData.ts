@@ -112,43 +112,12 @@ export function formatCallDuration(seconds: number): string {
 }
 
 /**
- * Safe Web Audio Fallback Controller.
- * Never throws, safely synthesizes gentle acoustic confirmation if WAV file is missing.
+ * Safe Audio Confirmation Controller.
+ * Mandate 8s (Pillar II): Procedural AudioContext oscillators are eradicated from the hot runtime path.
+ * Retains safe no-op signature for API parity without noise.
  */
-let sharedAudioContext: AudioContext | null = null;
-
-export function playSafeWebAudioTone(frequency = 520, durationMs = 250): void {
-	if (typeof window === "undefined") return;
-	try {
-		const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
-		if (!AudioCtx) return;
-		if (!sharedAudioContext || sharedAudioContext.state === "closed") {
-			sharedAudioContext = new AudioCtx();
-		}
-		if (sharedAudioContext.state === "suspended") {
-			sharedAudioContext.resume().catch(() => {});
-		}
-		const ctx = sharedAudioContext;
-		const osc = ctx.createOscillator();
-		const gain = ctx.createGain();
-
-		osc.type = "sine";
-		osc.frequency.setValueAtTime(frequency, ctx.currentTime);
-
-		// Gentle attack & release curve, volume capped at 0.06
-		const now = ctx.currentTime;
-		gain.gain.setValueAtTime(0.001, now);
-		gain.gain.linearRampToValueAtTime(0.06, now + 0.03);
-		gain.gain.exponentialRampToValueAtTime(0.001, now + durationMs / 1000);
-
-		osc.connect(gain);
-		gain.connect(ctx.destination);
-
-		osc.start(now);
-		osc.stop(now + durationMs / 1000 + 0.05);
-	} catch {
-		// Silent non-blocking fallback
-	}
+export function playSafeWebAudioTone(_frequency = 520, _durationMs = 250): void {
+	// Silent non-blocking fallback (0 procedural noise)
 }
 
 /**

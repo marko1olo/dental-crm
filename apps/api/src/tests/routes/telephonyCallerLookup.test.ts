@@ -113,6 +113,7 @@ describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", (
 
 		app = createTenantTestApp();
 		await app.register(telephonyRoutes, { prefix: "/api/telephony" });
+		await app.register(telephonyRoutes, { prefix: "/api/v1/telephony" });
 		await app.ready();
 	});
 
@@ -154,6 +155,19 @@ describe("CTI Telephony /api/telephony/lookup-caller and CallerLookupService", (
 		assert.equal(json.patient.fullName, "Кузнецов Алексей Петрович");
 		assert.ok(json.somaticAlerts.length > 0, "Must extract somatic alerts from patient notes");
 		assert.ok(json.somaticAlerts.some((a: { label: string }) => a.label.includes("лидокаин")));
+
+		// Mandate 8s: Also verify GET /api/v1/telephony/lookup route alias
+		const v1Response = await app.inject({
+			method: "GET",
+			url: "/api/v1/telephony/lookup?phone=%2B79998881122",
+			headers: {
+				"x-dente-staff-token": staffTokenA,
+			},
+		});
+		assert.equal(v1Response.statusCode, 200);
+		const v1Json = JSON.parse(v1Response.body);
+		assert.equal(v1Json.found, true);
+		assert.equal(v1Json.patient.id, PATIENT_A_ID);
 	});
 
 	test("3. Resolves caller via parameterized orgId route /api/telephony/:organizationId/lookup-caller", async () => {
