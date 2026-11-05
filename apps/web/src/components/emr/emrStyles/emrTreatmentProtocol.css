@@ -75,7 +75,6 @@
 
 /* Dedicated Magazine-Grade @media print Rules */
 @media print {
-  body * { visibility: hidden; }
   .emr043-modal-backdrop {
     position: static; inset: auto; background: transparent; padding: 0; overflow: visible;
   }

@@ -1,7 +1,6 @@
 /**
  * printStyles/printMediaOptimization.css
- * Print Media Optimization (@media print) & Page Geometry
- * Mandate 8b SSOT <= 120 lines
+ * Print Media Optimization (@media print) & Page Geometry (Mandate 8b <= 120 lines)
  */
 
 @media print {
@@ -10,38 +9,68 @@
 		margin: 15mm 10mm 15mm 20mm;
 	}
 
-	html,
-	body {
+	html, body, #root {
 		background: #ffffff !important;
 		color: #000000 !important;
 		color-scheme: light !important;
 		height: auto !important;
+		min-height: 0 !important;
 		overflow: visible !important;
 		margin: 0 !important;
 		padding: 0 !important;
 	}
 
-	body > *:not(.print-layer):not(.pro-a4-viewport) {
+	/* 1. Скрытие служебных элементов каркаса CRM */
+	.no-print, .print\:hidden, [data-no-print], .pro-a4-toolbar,
+	.fast-print-header, .fast-print-subbar, .fast-print-landlord-drawer,
+	.fast-print-mobile-handle-wrap, .fast-print-mobile-bottom-bar, .fast-print-no-print,
+	.dente-docs-studio-header, .dente-docs-studio-sidebar, .dente-mobile-drag-handle,
+	.dente-docs-footer-bar, .clinical-diary-print-toolbar, .vde-043-print-toolbar,
+	.clinical-diary-print-footer, .vde-043-print-footer, .app-sidebar, .app-header,
+	.app-navbar, .topbar, .control-center, .help-drawer, .toast-container,
+	.global-toast, [role="tooltip"], aside, nav,
+	[role="dialog"] header:not(.a4-header):not(.dente-a4-sheet-header),
+	[role="dialog"] footer:not(.a4-running-footer):not(.dente-a4-sheet-footer),
+	[role="dialog"] [data-testid="tax-cert-mobile-thumb-bar"] {
 		display: none !important;
 	}
 
-	.no-print,
-	.pro-a4-toolbar {
-		display: none !important;
-	}
-
-	.pro-a4-viewport {
+	/* 2. Де-модализация: оверлеи становятся плоскими и прозрачными */
+	[role="dialog"], .fixed.inset-0, .fast-print-modal-backdrop,
+	.dente-docs-studio-backdrop, .clinical-diary-print-overlay, .vde-043-print-overlay,
+	[role="dialog"] > div, .fast-print-modal-container, .dente-docs-studio-container,
+	.clinical-diary-print-sheet, .vde-043-print-sheet {
+		position: static !important;
+		inset: auto !important;
+		width: 100% !important;
+		max-width: none !important;
+		height: auto !important;
+		max-height: none !important;
 		background: transparent !important;
+		backdrop-filter: none !important;
+		-webkit-backdrop-filter: none !important;
 		padding: 0 !important;
 		margin: 0 !important;
-	}
-
-	.pro-a4-paper-container {
-		padding: 0 !important;
-		margin: 0 !important;
+		box-shadow: none !important;
+		border: none !important;
+		border-radius: 0 !important;
+		overflow: visible !important;
 		display: block !important;
-		overflow: visible !important;
+	}
+
+	/* 3. Печатные вьюпорты и контейнеры */
+	[role="dialog"] main, .pro-a4-viewport, .pro-a4-paper-container,
+	.dente-docs-preview-area, .fast-print-preview-scroll, .print-layer, .printable-area {
 		background: transparent !important;
+		padding: 0 !important;
+		margin: 0 !important;
+		width: 100% !important;
+		max-width: none !important;
+		height: auto !important;
+		overflow: visible !important;
+		display: block !important;
+		box-shadow: none !important;
+		border: none !important;
 	}
 
 	.pro-a4-sheet-stack {
@@ -51,39 +80,45 @@
 		gap: 0 !important;
 	}
 
-	.pro-a4-physical-sheet,
-	.pro-a4-page-sheet {
+	/* 4. Листы формата А4 (210×297 мм) */
+	.pro-a4-physical-sheet, .pro-a4-page-sheet, .dente-a4-paper-sheet,
+	.fast-print-a4-sheet, .partisan-insert-sheet, .premium-doc-sheet {
 		width: 100% !important;
 		min-height: 297mm !important;
-		height: 297mm !important;
+		height: auto !important;
 		max-width: none !important;
 		box-shadow: none !important;
 		margin: 0 !important;
-		margin-bottom: 0 !important;
 		padding: 15mm 10mm 15mm 20mm !important;
 		border: none !important;
+		background: #ffffff !important;
+		color: #000000 !important;
 		page-break-after: always !important;
 		break-after: page !important;
+		box-sizing: border-box !important;
 	}
 
-	.pro-a4-page-sheet:last-child,
-	.pro-a4-physical-sheet:last-child {
+	:is(.pro-a4-page-sheet, .pro-a4-physical-sheet, .dente-a4-paper-sheet, .fast-print-a4-sheet, .premium-doc-sheet):last-child {
 		page-break-after: auto !important;
 		break-after: auto !important;
 	}
 
-	.a4-sign-grid {
+	/* 5. Защита от разрыва таблиц, блоков подписей и штампов */
+	.a4-sign-grid, .doc-sign-zone, .signature-block, .signatures,
+	.dente-a4-sheet-footer, .sign-block, .stamp-box, .gost-digital-stamp,
+	.total-words-box, .executive-requisites, .meta, .notice, .dmft-box,
+	.a4-table tr, table tr, .meta-table tr {
 		page-break-inside: avoid !important;
 		break-inside: avoid !important;
 	}
 
-	.a4-table thead {
+	.a4-header, .header, .header-grid, h1, h2, h3, .a4-section-heading {
+		page-break-after: avoid !important;
+		break-after: avoid !important;
+	}
+
+	.a4-table thead, table thead {
 		display: table-header-group !important;
-	}
-
-	.a4-table tr {
-		page-break-inside: avoid !important;
-		break-inside: avoid !important;
 	}
 
 	* {

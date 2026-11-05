@@ -147,6 +147,10 @@ export interface A4DocumentMedicalCardData {
 	readonly materialsUsed?: string | null | undefined;
 	readonly recommendations: string;
 	readonly nextVisitDate?: string | null | undefined;
+	readonly isDraft?: boolean | undefined;
+	readonly isClosedOrSigned?: boolean | undefined;
+	readonly watermarkText?: string | undefined;
+	readonly revisionCount?: number | undefined;
 }
 
 export interface A4DocumentInformedConsentData {

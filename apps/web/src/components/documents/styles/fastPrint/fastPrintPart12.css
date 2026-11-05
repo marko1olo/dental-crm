@@ -5,17 +5,14 @@
 	}
 
 	html,
-	body {
-		background: var(--paper) !important;
+	body,
+	#root {
+		background: #ffffff !important;
 		color: #000000 !important;
 		height: auto !important;
 		overflow: visible !important;
 		margin: 0 !important;
 		padding: 0 !important;
-	}
-
-	body > *:not(.fast-print-portal) {
-		display: none !important;
 	}
 
 	.fast-print-modal-backdrop {

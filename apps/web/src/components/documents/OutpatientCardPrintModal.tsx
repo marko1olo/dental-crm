@@ -30,8 +30,14 @@ export const OutpatientCardPrintModal: React.FC<OutpatientCardPrintModalProps> =
 	const doctor = doctorFullName || cl.directorFullName || "Лечащий врач";
 
 	const cardData: A4DocumentMedicalCardData = useMemo(() => {
-		return buildCompleteCardData(cl, pt, doctor, todayRu, customCardData);
-	}, [cl, pt, doctor, todayRu, customCardData]);
+		const base = buildCompleteCardData(cl, pt, doctor, todayRu, customCardData);
+		return {
+			...base,
+			isClosedOrSigned,
+			isDraft: !isClosedOrSigned,
+			watermarkText: isClosedOrSigned ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК",
+		};
+	}, [cl, pt, doctor, todayRu, customCardData, isClosedOrSigned]);
 
 	const handlePrint = () => {
 		setIsPrinting(true);

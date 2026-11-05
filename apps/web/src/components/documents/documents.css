@@ -324,8 +324,12 @@
 
 /* Каноническая печать формата A4 */
 @media print {
-	body * {
-		visibility: hidden !important;
+	.no-print,
+	.dente-document-actions,
+	.dente-category-tabs,
+	.dente-quick-role-scenarios,
+	.dente-patient-contracts {
+		display: none !important;
 	}
 
 	.dente-a4-paper,

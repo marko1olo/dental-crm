@@ -53,7 +53,7 @@ export function IntakePackageFooter({
 						type="button"
 						onClick={onPrintBlank}
 						className="secondary-button w-full sm:w-auto min-h-[44px] px-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs font-semibold text-[var(--ink,#0f172a)] hover:border-[var(--teal,#0d9488)] transition cursor-pointer text-center"
-						title="Распечатать чистый бланк пакета с линиями для ручного заполнения шариковой ручкой (Мандат 8e)"
+						title="Распечатать чистый бланк пакета с линиями для ручного заполнения шариковой ручкой"
 						data-testid="btn-print-blank-intake-package"
 					>
 						<Printer size={16} className="mr-1.5 shrink-0 inline" />

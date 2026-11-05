@@ -338,9 +338,6 @@
 
 /* Z-Report Paper Print Stylesheet (Clean A4 & Thermal 80mm) */
 @media print {
-	body * {
-		visibility: hidden;
-	}
 	.shift-z-report-printable,
 	.shift-z-report-printable * {
 		visibility: visible;

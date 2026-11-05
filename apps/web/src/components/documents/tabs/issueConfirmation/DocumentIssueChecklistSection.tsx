@@ -69,7 +69,7 @@ export const DocumentIssueChecklistSection: React.FC<DocumentIssueChecklistSecti
 				{allChecked ? (
 					<div className="flex items-center gap-1.5 text-[11px] text-[var(--teal)] font-medium pt-1 border-t border-[var(--line)]">
 						<CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-						<span>Все 4 пункта аттестованы автоматически (Мандат 8e: мгновенная выдача)</span>
+						<span>Все 4 пункта аттестованы автоматически</span>
 					</div>
 				) : null}
 				{!attestationReady && missingSteps?.length ? (

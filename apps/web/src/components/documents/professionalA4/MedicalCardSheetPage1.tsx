@@ -8,8 +8,54 @@ export function MedicalCardSheetPage1({
 }: {
 	medicalCardData: A4DocumentMedicalCardData;
 }): React.JSX.Element {
+	const isClosed = medicalCardData.isClosedOrSigned ?? false;
+	const isDraft = medicalCardData.isDraft ?? !isClosed;
+
 	return (
 		<section className="pro-a4-page-sheet" data-testid="pro-a4-physical-sheet">
+			{isDraft ? (
+				<div
+					style={{
+						position: "absolute",
+						top: "40%",
+						left: "10%",
+						width: "80%",
+						textAlign: "center",
+						fontSize: "48pt",
+						fontWeight: "bold",
+						color: "rgba(148, 163, 184, 0.16)",
+						transform: "rotate(-32deg)",
+						pointerEvents: "none",
+						userSelect: "none",
+						zIndex: 5,
+						letterSpacing: "0.1em",
+					}}
+					data-testid="watermark-draft"
+				>
+					ЧЕРНОВИК
+				</div>
+			) : (
+				<div
+					style={{
+						position: "absolute",
+						top: "40%",
+						left: "10%",
+						width: "80%",
+						textAlign: "center",
+						fontSize: "38pt",
+						fontWeight: "bold",
+						color: "rgba(13, 148, 136, 0.12)",
+						transform: "rotate(-32deg)",
+						pointerEvents: "none",
+						userSelect: "none",
+						zIndex: 5,
+						letterSpacing: "0.08em",
+					}}
+					data-testid="watermark-signed"
+				>
+					ПОДПИСАНО ВРАЧОМ
+				</div>
+			)}
 			<div className="a4-sheet-body">
 				<header className="a4-header">
 					<div className="a4-clinic-name">
@@ -26,6 +72,25 @@ export function MedicalCardSheetPage1({
 						{medicalCardData.clinic.licenseNumber}
 					</div>
 				</header>
+
+				{isDraft && (
+					<div
+						style={{
+							border: "1.5pt solid #cbd5e1",
+							color: "#475569",
+							background: "#f8fafc",
+							fontSize: "8pt",
+							fontWeight: "bold",
+							textAlign: "center",
+							padding: "3px 8px",
+							marginBottom: "8px",
+							borderRadius: "4px",
+							letterSpacing: "0.04em",
+						}}
+					>
+						ЧЕРНОВИК (ПРИЁМ НЕ ЗАКРЫТ)
+					</div>
+				)}
 
 				<h1 className="a4-doc-title">
 					МЕДИЦИНСКАЯ КАРТА СТОМАТОЛОГИЧЕСКОГО ПАЦИЕНТА / ДНЕВНИК ПРИЁМА

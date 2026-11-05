@@ -581,10 +581,6 @@
 		margin: 10mm 12mm;
 	}
 
-	body * {
-		visibility: hidden;
-	}
-
 	.dente-docs-studio-backdrop,
 	.dente-docs-studio-container {
 		position: static !important;

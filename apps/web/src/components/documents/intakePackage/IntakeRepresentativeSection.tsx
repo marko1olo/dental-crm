@@ -65,7 +65,7 @@ export function IntakeRepresentativeSection({
 								? "bg-emerald-500/10 text-emerald-700 dark:text-emerald-400 border-emerald-500/30"
 								: "border-[var(--line,#e2e8f0)] text-[var(--ink,#0f172a)] bg-[var(--paper,#ffffff)] hover:border-[var(--teal,#0d9488)]"
 						}`}
-						title="Установить соматическую норму: соматически здоров, интактные зубы (Мандат 8e)"
+						title="Установить соматическую норму: соматически здоров, интактные зубы"
 						data-testid="btn-toggle-somatic-norm-1click"
 					>
 						<CheckCircle2

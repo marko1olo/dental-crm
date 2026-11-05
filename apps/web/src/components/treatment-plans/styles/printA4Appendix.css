@@ -11,10 +11,6 @@
 		print-color-adjust: exact !important;
 	}
 
-	body * {
-		visibility: hidden;
-	}
-
 	.treatment-appendix-print-doc,
 	.treatment-appendix-print-doc * {
 		visibility: visible;

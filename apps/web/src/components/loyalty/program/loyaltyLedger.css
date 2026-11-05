@@ -69,9 +69,6 @@
 
 /* Print Styles */
 @media print {
-	body * {
-		visibility: hidden;
-	}
 	.loyalty-certificate-printable,
 	.loyalty-certificate-printable * {
 		visibility: visible;

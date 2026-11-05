@@ -38,9 +38,6 @@
 }
 
 @media print {
-	body * {
-		visibility: hidden;
-	}
 	.kraft-printable-area,
 	.kraft-printable-area * {
 		visibility: visible;

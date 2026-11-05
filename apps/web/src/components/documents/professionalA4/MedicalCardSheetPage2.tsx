@@ -69,6 +69,39 @@ export function MedicalCardSheetPage2({
 							/ {medicalCardData.doctorFullName} /{" "}
 							<span className="stamp-box">М.П.</span>
 						</div>
+						{medicalCardData.isClosedOrSigned ? (
+							<div
+								style={{
+									display: "inline-block",
+									marginTop: "6px",
+									padding: "3px 8px",
+									border: "1.5px solid #166534",
+									borderRadius: "4px",
+									color: "#166534",
+									fontSize: "8pt",
+									fontWeight: "bold",
+									textTransform: "uppercase",
+									letterSpacing: "0.05em",
+								}}
+							>
+								✓ Подписано врачом (ЭМК зафиксирована)
+							</div>
+						) : (
+							<div
+								style={{
+									display: "inline-block",
+									marginTop: "6px",
+									padding: "2px 6px",
+									border: "1px dashed #d97706",
+									borderRadius: "3px",
+									color: "#b45309",
+									fontSize: "7.5pt",
+									fontWeight: "600",
+								}}
+							>
+								Черновик протокола · Требуется завершение приёма
+							</div>
+						)}
 					</div>
 					<div className="a4-sign-col">
 						<strong>ПАЦИЕНТ:</strong>

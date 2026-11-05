@@ -116,7 +116,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 						data-testid="tax-cert-mobile-print-btn"
 						title={
 							state.aggregated.totalNetRub === 0
-								? "Распечатать бланк справки со строками _______ (Мандат 8e)"
+								? "Распечатать бланк справки со строками _______"
 								: "Распечатать справку для налогового вычета"
 						}
 					>
@@ -130,7 +130,7 @@ export const FnsTaxCertificateModal: React.FC<FnsTaxCertificateModalProps> = ({
 							onClick={handleDownloadPdf}
 							className="secondary-button min-h-[44px] h-10 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] text-[var(--ink)] font-semibold text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-[0.98] transition-transform"
 							data-testid="tax-cert-mobile-pdf-btn"
-							title={state.aggregated.totalNetRub === 0 ? "Экспорт бланка справки в PDF (Мандат 8e)" : "Экспорт в PDF"}
+							title={state.aggregated.totalNetRub === 0 ? "Экспорт бланка справки в PDF" : "Экспорт в PDF"}
 						>
 							<Download size={14} aria-hidden="true" />
 							<span>PDF</span>
