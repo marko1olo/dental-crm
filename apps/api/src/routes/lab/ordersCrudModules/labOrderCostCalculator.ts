@@ -55,7 +55,7 @@ export async function fetchLabPriceFromDb(
 					eq(services.organizationId, orgId),
 					eq(services.active, true),
 					or(
-						eq(services.category, "orthopedics"),
+						eq(services.category, "prosthetics"),
 						ilike(services.title, `%${materialOrConstruction}%`),
 					),
 				),
@@ -223,12 +223,21 @@ export async function calculateLabOrderCostAndMarkupAsync(
 		params.laboratoryId,
 	);
 
-	return calculateLabOrderCostAndMarkup({
+	const resolvedOptions: {
+		materialOrConstruction: string;
+		priceRub?: number | null;
+		unitsCount?: number;
+		customCostPerUnit?: number | null;
+	} = {
 		materialOrConstruction: params.materialOrConstruction,
 		priceRub: params.priceRub ?? resolvedPrices.priceRub,
-		unitsCount: params.unitsCount,
 		customCostPerUnit: resolvedPrices.costRub,
-	});
+	};
+	if (params.unitsCount !== undefined) {
+		resolvedOptions.unitsCount = params.unitsCount;
+	}
+
+	return calculateLabOrderCostAndMarkup(resolvedOptions);
 }
 
 /**

@@ -19,6 +19,7 @@ import {
 	patients,
 	treatmentItems,
 	users,
+	visits,
 } from "../db/schema.js";
 import { getRequestIdentity } from "../security/identity.js";
 import {
@@ -26,6 +27,59 @@ import {
 	findPayrollStatement,
 	resolveDoctorUserUuid,
 } from "./doctorEarnings/settlementPeriodDbQueries.js";
+
+interface PayrollOrderDto {
+	id: string;
+	orderNumber: string;
+	dateIso: string;
+	patientName: string;
+	medicalCardNumber: string;
+	serviceNameRu: string;
+	category: string;
+	categoryLabelRu: string;
+	grossKopecks: number;
+	labCostKopecks: number;
+	materialCostKopecks: number;
+	doctorId: string;
+	isPaid54Fz: boolean;
+}
+
+interface PayrollCalculationsQuery {
+	doctorId?: string;
+	from?: string;
+	to?: string;
+	startDateIso?: string;
+	endDateIso?: string;
+	percent?: string | number;
+	payoutModel?: "percentage" | "chair_rental";
+	shiftRateKop?: string | number;
+	advanceRub?: string | number;
+	taxRegime?: "employee" | "self_employed";
+}
+
+interface CloseSettlementBody {
+	doctorId?: string;
+	periodStart?: string;
+	periodEnd?: string;
+	grossRevenueKop?: number;
+	grossRevenueRub?: number;
+	labCostKop?: number;
+	labCostRub?: number;
+	materialCostKop?: number;
+	materialsCostRub?: number;
+	netBaseKop?: number;
+	netBaseRevenueRub?: number;
+	netPayoutKop?: number;
+	netPayoutRub?: number;
+	totalAccruedKop?: number;
+	totalAccruedRub?: number;
+	payoutModel?: "percentage" | "chair_rental";
+	categoryPercent?: number;
+	chairRentalRub?: number;
+	ndflKop?: number;
+	ndfl13Rub?: number;
+	markPaid?: boolean;
+}
 
 const SPECIALTY_TITLES: Record<string, string> = {
 	therapy: "Врач-стоматолог-терапевт",
@@ -85,7 +139,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 			});
 
 			return reply.send({ ok: true, doctors: mapped });
-		} catch (err: any) {
+		} catch (err: unknown) {
 			request.log.error(err, "Failed to fetch doctors list");
 			return reply.send({ ok: true, doctors: [] });
 		}
@@ -95,7 +149,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	 * GET /api/v1/payroll/calculations — Расчет начислений в целочисленных копейках
 	 */
 	app.get("/api/v1/payroll/calculations", async (request: FastifyRequest, reply: FastifyReply) => {
-		const q = request.query as any;
+		const q = (request.query || {}) as PayrollCalculationsQuery;
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
 		const rawDocId = q.doctorId || identity.userId || "";
@@ -159,31 +213,42 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 		let totalGrossKop = 0;
 		let totalLabKop = 0;
 		let totalMaterialKop = 0;
-		const orders: any[] = [];
+		const orders: PayrollOrderDto[] = [];
 
 		if (appts.length > 0) {
 			const apptIds = appts.map((a) => a.id);
-			const treats = await db
-				.select()
-				.from(treatmentItems)
-				.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.appointmentId, apptIds)));
+			const clinicVisits = await db
+				.select({ id: visits.id, appointmentId: visits.appointmentId })
+				.from(visits)
+				.where(and(eq(visits.organizationId, orgId), inArray(visits.appointmentId, apptIds)));
+
+			const visitIds = clinicVisits.map((v) => v.id);
+			const visitToAppt = new Map(clinicVisits.map((v) => [v.id, v.appointmentId]));
+
+			const treats = visitIds.length > 0
+				? await db
+					.select()
+					.from(treatmentItems)
+					.where(and(eq(treatmentItems.organizationId, orgId), inArray(treatmentItems.visitId, visitIds)))
+				: [];
 
 			for (const t of treats) {
-				const grossKop = t.priceKopecks ? Number(t.priceKopecks) : Math.round(Number(t.priceRub || 0) * 100);
-				const labKop = t.labCostKopecks ? Number(t.labCostKopecks) : 0;
-				const matKop = t.materialCostKopecks ? Number(t.materialCostKopecks) : 0;
+				const grossKop = Math.round(Number(t.priceRub || 0) * 100);
+				const labKop = 0;
+				const matKop = 0;
 				totalGrossKop += grossKop;
 				totalLabKop += labKop;
 				totalMaterialKop += matKop;
 
-				const appt = appts.find((a) => a.id === t.appointmentId);
+				const linkedApptId = t.visitId ? visitToAppt.get(t.visitId) : undefined;
+				const appt = appts.find((a) => a.id === linkedApptId);
 				orders.push({
 					id: t.id,
 					orderNumber: `ОРД-${t.id.slice(0, 6).toUpperCase()}`,
 					dateIso: appt?.startsAt ? appt.startsAt.toISOString().slice(0, 10) : fromStr.slice(0, 10),
 					patientName: appt?.patientName || "Пациент",
 					medicalCardNumber: appt?.cardNumber || "—",
-					serviceNameRu: t.nameRu || "Стоматологическая услуга",
+					serviceNameRu: t.title || "Стоматологическая услуга",
 					category: "therapy",
 					categoryLabelRu: "Терапия",
 					grossKopecks: grossKop,
@@ -257,7 +322,7 @@ export async function registerPayrollRoutes(app: FastifyInstance): Promise<void>
 	app.post("/api/payroll/close-settlement", async (request: FastifyRequest, reply: FastifyReply) => {
 		const identity = getRequestIdentity(request);
 		const orgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
-		const body = request.body as any;
+		const body = (request.body || {}) as CloseSettlementBody;
 
 		if (!body?.doctorId || !body?.periodStart || !body?.periodEnd) {
 			return reply.code(400).send({ error: "ValidationError", message: "Не указаны обязательные поля периода" });

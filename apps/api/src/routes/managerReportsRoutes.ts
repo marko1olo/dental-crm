@@ -93,10 +93,9 @@ export async function registerManagerReportsRoutes(app: FastifyInstance): Promis
 				timeZone,
 			};
 
-			const options = {
-				minutesPerDay: query.minutesPerDay,
-				workingDaysPerWeek: query.workingDaysPerWeek,
-			};
+			const options: { minutesPerDay?: number; workingDaysPerWeek?: number } = {};
+			if (typeof query.minutesPerDay === "number") options.minutesPerDay = query.minutesPerDay;
+			if (typeof query.workingDaysPerWeek === "number") options.workingDaysPerWeek = query.workingDaysPerWeek;
 
 			const report = await chairLoad(scope, options);
 

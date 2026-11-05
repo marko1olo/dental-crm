@@ -816,21 +816,23 @@ export async function getServiceBomFromDb(
 	};
 }
 
+export interface UpsertServiceBomInput {
+	title?: string | undefined;
+	description?: string | null | undefined;
+	status?: "active" | "draft" | "archived" | string | undefined;
+	items: Array<{
+		inventoryItemId: string;
+		quantity: number;
+		unit?: string | undefined;
+		isMdlpRequired?: boolean | undefined;
+		notes?: string | null | undefined;
+	}>;
+}
+
 export async function upsertServiceBomInDb(
 	organizationId: string,
 	serviceId: string,
-	input: {
-		title?: string;
-		description?: string | null;
-		status?: string;
-		items: Array<{
-			inventoryItemId: string;
-			quantity: number;
-			unit?: string;
-			isMdlpRequired?: boolean;
-			notes?: string | null;
-		}>;
-	},
+	input: UpsertServiceBomInput,
 ): Promise<ServiceBomDetails> {
 	if (useInMemory()) throw new ServiceCatalogStorageDisabledError();
 
@@ -903,6 +905,10 @@ export async function upsertServiceBomInDb(
 					notes,
 				})
 				.returning();
+
+			if (!insertedItem) {
+				continue;
+			}
 
 			let itemPrice = 0;
 			try {

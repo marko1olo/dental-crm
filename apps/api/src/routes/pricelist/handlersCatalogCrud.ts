@@ -285,7 +285,18 @@ export async function handleUpdateServiceBom(
 		const updatedBom = await upsertServiceBomInDb(
 			orgId,
 			params.serviceId,
-			parseResult.data,
+			{
+				...(parseResult.data.title !== undefined ? { title: parseResult.data.title } : {}),
+				...(parseResult.data.description !== undefined ? { description: parseResult.data.description } : {}),
+				...(parseResult.data.status !== undefined ? { status: parseResult.data.status } : {}),
+				items: parseResult.data.items.map((item) => ({
+					inventoryItemId: item.inventoryItemId,
+					quantity: item.quantity,
+					...(item.unit !== undefined ? { unit: item.unit } : {}),
+					...(item.isMdlpRequired !== undefined ? { isMdlpRequired: item.isMdlpRequired } : {}),
+					...(item.notes !== undefined ? { notes: item.notes } : {}),
+				})),
+			},
 		);
 		reply.code(200);
 		return {
