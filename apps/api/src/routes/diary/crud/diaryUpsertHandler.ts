@@ -83,7 +83,13 @@ export async function handleDiaryUpsertPost(req: FastifyRequest, reply: FastifyR
 				return reply.code(422).send({ error: err.code, message: err.message });
 			}
 			if (err.code === "InsufficientStock") {
-				return reply.code(400).send({ error: "TransactionFailed", message: err.message });
+				req.log.warn({ err }, "Складской овердрафт при сохранении дневника приёма — разрешён мягкий минус (Мандаты 8e, 8v, 8aa)");
+				return reply.send({
+					success: true,
+					id: data.visitId,
+					warning: "InsufficientStockOverdraft",
+					message: "Дневник приёма сохранён. Склад переведён в режим мягкого овердрафта.",
+				});
 			}
 			if (err.code === "PinRejected") {
 				return reply.code(403).send({ error: "PinRejected", message: err.message });

@@ -175,8 +175,8 @@ export interface ClinicalEpicrisisData {
 export type Form043EpicrisisData = ClinicalEpicrisisData;
 
 export interface MedicalRecordData {
-	formNumber: "Медицинская карта приёма" | "043/у" | string;
-	formOrderName: "Медицинская карта приёма" | "Медицинская карта стоматологического пациента" | "Приказ Минздрава России от 15.12.2014 № 834н" | "Приказ Минздрава СССР от 04.10.1980 № 1030" | string;
+	formNumber: "Медицинская карта приёма" | string;
+	formOrderName: "Медицинская карта приёма" | "Медицинская карта стоматологического пациента" | string;
 	clinic: ClinicRequisitesData;
 	passport: ClinicalPassportData;
 	anamnesis: ClinicalAnamnesisData;
