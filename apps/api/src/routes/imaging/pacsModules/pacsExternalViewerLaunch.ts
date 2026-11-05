@@ -7,10 +7,26 @@ import { KNOWN_VIEWER_CANDIDATES } from "./pacsKnownCandidates.js";
 
 export { KNOWN_VIEWER_CANDIDATES };
 
+export type ProcessSpawner = typeof spawn;
+let processSpawner: ProcessSpawner = spawn;
+
+export function setProcessSpawnerForTesting(spawner: ProcessSpawner | null): void {
+	processSpawner = spawner || spawn;
+}
+
+function cleanViewerCliArgs(rawArgs: string[]): string[] {
+	const invalidFlags = new Set(["/open", "-study", "--study", "/study", "-open", "--open"]);
+	return rawArgs.filter((arg) => {
+		if (!arg || typeof arg !== "string") return false;
+		const trimmed = arg.trim();
+		return !invalidFlags.has(trimmed.toLowerCase());
+	});
+}
+
 export async function handleLaunchExternalViewer(request: FastifyRequest, reply: FastifyReply) {
 	if (!(await requireClinicalReadAccess(request, reply, "launch external viewer"))) return;
 
-	const body = (request.body || {}) as { viewerId?: string; exePath?: string; studyPath?: string };
+	const body = (request.body || {}) as { viewerId?: string; exePath?: string; studyPath?: string; args?: string[] };
 	const { viewerId, exePath, studyPath } = body;
 
 	if (viewerId === "dente-cbct-studio" || exePath === "internal://cbct-studio") {
@@ -31,8 +47,17 @@ export async function handleLaunchExternalViewer(request: FastifyRequest, reply:
 		}
 	}
 
-	if (!targetExe || !fs.existsSync(targetExe)) {
+	if (!targetExe || typeof targetExe !== "string" || !fs.existsSync(targetExe)) {
 		return reply.send({ success: false, error: "Внешний просмотрщик КТ не найден на локальном диске этой рабочей станции.", canFallbackToInternalStudio: true });
+	}
+
+	try {
+		const stat = fs.statSync(targetExe);
+		if (!stat.isFile()) {
+			return reply.code(400).send({ success: false, error: "Указанный путь не является исполняемым файлом.", canFallbackToInternalStudio: true });
+		}
+	} catch {
+		return reply.send({ success: false, error: "Не удалось получить доступ к исполняемому файлу просмотрщика.", canFallbackToInternalStudio: true });
 	}
 
 	if (!targetExe.toLowerCase().endsWith(".exe")) {
@@ -40,7 +65,7 @@ export async function handleLaunchExternalViewer(request: FastifyRequest, reply:
 	}
 
 	let dicomDirTarget: string | null = null;
-	if (studyPath && fs.existsSync(studyPath)) {
+	if (studyPath && typeof studyPath === "string" && fs.existsSync(studyPath)) {
 		try {
 			if (fs.statSync(studyPath).isDirectory()) {
 				const files = fs.readdirSync(studyPath);
@@ -52,30 +77,30 @@ export async function handleLaunchExternalViewer(request: FastifyRequest, reply:
 		}
 	}
 
-	const pathToUse = dicomDirTarget || studyPath;
-	let args: string[] = [];
-	if (pathToUse) {
-		const lowerId = (viewerId || "").toLowerCase();
-		const baseExe = path.basename(targetExe).toLowerCase();
-		if (lowerId === "explorer" || baseExe === "explorer.exe") {
-			args = [pathToUse];
-		} else if (lowerId.includes("romexis") || baseExe.includes("romexis") || lowerId.includes("newtom") || baseExe.includes("nnt")) {
-			args = ["-study", pathToUse];
-		} else if (lowerId.includes("ez3d-i") || lowerId.includes("vatech") || baseExe.includes("ez3d-i") || lowerId.includes("sidexis") || baseExe.includes("sidexis") || lowerId.includes("carestream") || baseExe.includes("cs 3d imaging")) {
-			args = ["/open", pathToUse];
-		} else if (lowerId.includes("ondemand3d") || baseExe.includes("ondemand3d")) {
-			args = dicomDirTarget ? ["-dicomdir", dicomDirTarget] : ["-f", studyPath!];
-		} else {
-			args = [pathToUse];
-		}
-	}
+	const pathToUse = dicomDirTarget || (studyPath && typeof studyPath === "string" ? studyPath : null);
+	const initialArgs: string[] = pathToUse ? [pathToUse] : [];
+	const combinedArgs = Array.isArray(body.args) ? [...initialArgs, ...body.args] : initialArgs;
+	const args: string[] = cleanViewerCliArgs(combinedArgs);
 
 	try {
-		const child = spawn(targetExe, args, { cwd: path.dirname(targetExe), detached: true, stdio: "ignore", windowsHide: false });
+		const child = processSpawner(targetExe, args, {
+			cwd: path.dirname(targetExe),
+			detached: true,
+			stdio: "ignore",
+			windowsHide: false,
+		});
+
+		// ‼️ КРИТИЧЕСКИЙ БАРЬЕР СТАБИЛЬНОСТИ NODE.JS: перехват 'error' ОБЯЗАТЕЛЬНО ДО child.unref()
+		// Предотвращает неперехваченный ENOENT в event loop, убивающий весь Fastify-сервер!
+		child.on("error", (err) => {
+			request.log.warn({ err, targetExe, args }, "External viewer process spawn error trapped safely");
+		});
+
 		child.unref();
 		return reply.send({ success: true, pid: child.pid, viewerName: path.basename(targetExe) });
 	} catch (err: unknown) {
 		const message = err instanceof Error ? err.message : String(err);
+		request.log.warn({ err, targetExe }, "Synchronous spawn error for external viewer");
 		return reply.send({ success: false, error: `Ошибка запуска процесса: ${message}`, canFallbackToInternalStudio: true });
 	}
 }

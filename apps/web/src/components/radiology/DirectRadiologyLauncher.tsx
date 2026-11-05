@@ -18,8 +18,8 @@ export const DirectRadiologyLauncher: React.FC = () => {
 		const s = window.location.search || "";
 		const h = window.location.hash || "";
 		return (
-			s.includes("radiology") ||
-			h.includes("radiology")
+			s.includes("radiology-standalone") ||
+			h.includes("radiology-standalone")
 		);
 	});
 
@@ -32,8 +32,8 @@ export const DirectRadiologyLauncher: React.FC = () => {
 			const s = window.location.search || "";
 			const h = window.location.hash || "";
 			if (
-				s.includes("radiology") ||
-				h.includes("radiology")
+				s.includes("radiology-standalone") ||
+				h.includes("radiology-standalone")
 			) {
 				setIsOpen(true);
 			}

@@ -188,11 +188,11 @@ export const VisiographStudioModal: React.FC<VisiographStudioModalProps> = ({
 				{/* ─── Шапка модального окна (Строго 1 строка 44–48px) ─── */}
 				<header className="flex items-center justify-between px-3 sm:px-4 py-2 border-b border-[var(--line)] bg-[var(--paper-soft)] shrink-0 gap-2 min-h-[44px]">
 					<div className="flex items-center gap-2 min-w-0">
-						<div className="w-7 h-7 rounded-lg bg-[var(--line)] flex items-center justify-center text-[var(--ink)] shrink-0">
+						<div className="w-7 h-7 rounded-lg bg-[var(--line)] hidden sm:flex items-center justify-center text-[var(--ink)] shrink-0">
 							<Camera size={16} />
 						</div>
 						<div className="min-w-0">
-							<div className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate max-w-[110px] sm:max-w-none">{patientName}</div>
+							<div className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate max-w-[80px] sm:max-w-none">{patientName}</div>
 							<div className="text-[10px] sm:text-xs text-[var(--muted)] hidden sm:flex items-center gap-1.5">
 								<span>{MODALITY_CATALOG[activeModality].shortName}</span>
 								<span>•</span>

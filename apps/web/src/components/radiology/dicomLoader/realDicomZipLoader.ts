@@ -1,5 +1,5 @@
 /**
- * realDicomZipLoader.ts — Загрузка серий DICOM из файлов и распаковка ZIP-архивов (Мандат 8b).
+ * realDicomZipLoader.ts — Асинхронная потоковая распаковка ZIP-архивов и серий DICOM (Мандат 8b <= 120 строк).
  */
 
 import * as fflate from "fflate";
@@ -20,17 +20,16 @@ export async function buildVolumeFromDicomFiles(
 	for (let i = 0; i < total; i += concurrency) {
 		const chunk = files.slice(i, i + concurrency);
 		const bufs = await Promise.all(chunk.map((f) => f.arrayBuffer()));
-		for (let j = 0; j < bufs.length; j++) {
-			items[i + j] = { buffer: bufs[j]!, fileName: chunk[j]!.name };
-		}
-		if (onProgress) {
-			const pct = Math.round(((i + chunk.length) / total) * 35);
-			onProgress(pct, `Параллельное чтение срезов КТ (${i + chunk.length}/${total})...`);
-		}
+		for (let j = 0; j < bufs.length; j++) items[i + j] = { buffer: bufs[j]!, fileName: chunk[j]!.name };
+		if (onProgress) onProgress(Math.round(((i + chunk.length) / total) * 35), `Параллельное чтение срезов КТ (${i + chunk.length}/${total})...`);
 		await yieldToEventLoop();
 	}
-
 	return buildVolumeFromDicomBuffers(items, options);
+}
+
+function isDicomEntry(name: string): boolean {
+	const l = name.toLowerCase();
+	return !l.includes("__macosx") && !l.startsWith("._") && !name.toUpperCase().includes("DICOMDIR") && (l.endsWith(".dcm") || l.endsWith(".dicom") || !l.includes("."));
 }
 
 export async function buildVolumeFromDicomZip(
@@ -38,25 +37,59 @@ export async function buildVolumeFromDicomZip(
 	options?: ((percent: number, message: string) => void) | DicomVolumeIngestionOptions,
 ): Promise<CbctVoxelVolume> {
 	const onProgress = typeof options === "function" ? options : options?.onProgress;
-	onProgress?.(5, "Распаковка ZIP-архива КЛКТ в памяти...");
-	const unzipped = fflate.unzipSync(new Uint8Array(zipBuffer), {
-		filter: (file) => {
-			const lower = file.name.toLowerCase();
-			return (
-				!lower.includes("__macosx") &&
-				!lower.startsWith("._") &&
-				!file.name.toUpperCase().includes("DICOMDIR") &&
-				(lower.endsWith(".dcm") || lower.endsWith(".dicom") || !lower.includes("."))
-			);
-		},
-	});
-	const fileKeys = Object.keys(unzipped);
-	if (fileKeys.length === 0) throw new Error("В переданном ZIP-архиве не найдено файлов DICOM (.dcm)");
+	onProgress?.(2, "Подготовка асинхронного потока распаковки КТ...");
+
+	const zipBytes = new Uint8Array(zipBuffer);
+	const totalBytes = zipBytes.length;
 	const items: Array<{ buffer: ArrayBuffer; fileName: string }> = [];
-	for (const key of fileKeys) {
-		const u8 = unzipped[key]!;
-		items.push({ buffer: u8.buffer, fileName: key });
-		delete unzipped[key];
-	}
-	return buildVolumeFromDicomBuffers(items, options);
+
+	await new Promise<void>((resolve, reject) => {
+		const unzipper = new fflate.Unzip();
+		try { unzipper.register(fflate.AsyncUnzipInflate); } catch { unzipper.register(fflate.UnzipInflate); }
+
+		let activeFiles = 0;
+		let streamEnded = false;
+		const checkDone = () => { if (streamEnded && activeFiles === 0) resolve(); };
+
+		unzipper.onfile = (file) => {
+			if (!isDicomEntry(file.name)) return;
+			activeFiles++;
+			let chunks: Uint8Array[] = [];
+			file.ondata = (err, chunk, final) => {
+				if (err) { activeFiles--; reject(err); return; }
+				if (chunk?.length) chunks.push(chunk);
+				if (final) {
+					let totalLen = chunks.reduce((acc, c) => acc + c.length, 0);
+					const u8 = new Uint8Array(totalLen);
+					let offset = 0;
+					for (const c of chunks) { u8.set(c, offset); offset += c.length; }
+					items.push({ buffer: u8.buffer, fileName: file.name });
+					chunks = [];
+					activeFiles--;
+					checkDone();
+				}
+			};
+			file.start();
+		};
+
+		const CHUNK_SIZE = 2 * 1024 * 1024;
+		(async () => {
+			for (let offset = 0; offset < totalBytes; offset += CHUNK_SIZE) {
+				const end = Math.min(offset + CHUNK_SIZE, totalBytes);
+				unzipper.push(zipBytes.subarray(offset, end), end >= totalBytes);
+				if (onProgress) onProgress(Math.round(5 + (offset / totalBytes) * 30), `Распаковка архива КТ (${Math.round((offset / totalBytes) * 100)}%, срезов: ${items.length})...`);
+				await yieldToEventLoop();
+			}
+			streamEnded = true;
+			checkDone();
+		})().catch(reject);
+	});
+
+	if (items.length === 0) throw new Error("В переданном ZIP-архиве не найдено файлов DICOM (.dcm)");
+	onProgress?.(35, `Распаковано ${items.length} срезов КТ. Построение 3D объема...`);
+
+	const chainedOptions: DicomVolumeIngestionOptions = typeof options === "object" && options !== null ? { ...options } : {};
+	chainedOptions.onProgress = (subPct, msg) => onProgress?.(Math.round(35 + (subPct / 100) * 65), msg);
+
+	return buildVolumeFromDicomBuffers(items, chainedOptions);
 }
