@@ -4,8 +4,8 @@
  * Мандаты 8b (Sweet Spot <= 90 строк), 8aq (Монтирование в живой UI), 8ar (Wheeler 2.5D).
  */
 
-import React, { useState, useEffect, useCallback } from "react";
-import { Tooth46InspectionStand } from "./gate0/Tooth46InspectionStand";
+import React, { useState, useEffect } from "react";
+import { DirectOdontogramLauncher } from "./DirectOdontogramLauncher";
 
 function checkIsGate0Active(): boolean {
 	if (typeof window === "undefined") return false;
@@ -40,14 +40,7 @@ export const DirectGate0InspectionLauncher: React.FC = () => {
 
 	if (!isActive) return null;
 
-	return (
-		<div
-			className="fixed inset-0 z-50 overflow-y-auto bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)]"
-			data-testid="direct-gate0-inspection-launcher"
-		>
-			<Tooth46InspectionStand />
-		</div>
-	);
+	return <DirectOdontogramLauncher />;
 };
 
 DirectGate0InspectionLauncher.displayName = "DirectGate0InspectionLauncher";

@@ -11,14 +11,17 @@ import { loadTeethFromLocalCache } from "./syncModules/odontogramIndexedDbSync";
 
 function checkIsOdontogramActive(): boolean {
 	if (typeof window === "undefined") return false;
-	const h = window.location.hash || "";
-	const s = window.location.search || "";
+	const h = (window.location.hash || "").toLowerCase();
+	const s = (window.location.search || "").toLowerCase();
 	const params = new URLSearchParams(s);
-	if (h.includes("odontogram-gate0") || h.includes("odontogram-32") || h.includes("odontogram-mandible") ||
-		s.includes("odontogram-gate0") || s.includes("odontogram-32") || s.includes("odontogram-mandible")) {
-		return false;
-	}
-	return h.includes("odontogram") || h.includes("dental-chart") || params.get("odontogram") === "1" || params.get("dental_chart") === "1";
+	return (
+		h.includes("odontogram") ||
+		h.includes("dental-chart") ||
+		h.includes("arch32") ||
+		params.get("odontogram") === "1" ||
+		params.get("dental_chart") === "1" ||
+		params.get("stand") === "arch32"
+	);
 }
 
 export const DirectOdontogramLauncher: React.FC = () => {

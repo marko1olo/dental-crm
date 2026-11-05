@@ -4,8 +4,7 @@
  */
 
 import React, { useEffect, useState } from "react";
-import { Tooth46FullArchMockup } from "./archMockup/Tooth46FullArchMockup";
-import type { BadgeSizeOption } from "./archMockup/archMockupTypes";
+import { AnatomicalGate0FullArchView } from "../AnatomicalGate0FullArchView";
 import { ToothMandibleFullArch } from "./mandible/ToothMandibleFullArch";
 import { TOOTH46_PRESETS } from "./Tooth46ClinicalPresets";
 import { Tooth46SingleView } from "./Tooth46SingleView";
@@ -40,7 +39,6 @@ export const Tooth46InspectionStand: React.FC = () => {
 		}
 		return "single";
 	});
-	const initialBadgeSize = (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("size") as BadgeSizeOption) || "l";
 
 	useEffect(() => {
 		document.documentElement.setAttribute("data-theme", isDark ? "dark" : "light");
@@ -98,7 +96,9 @@ export const Tooth46InspectionStand: React.FC = () => {
 					<ToothMandibleFullArch isDark={isDark} zoom={0.74} badgeRadius={14} />
 				</div>
 			) : standMode === "arch32" ? (
-				<Tooth46FullArchMockup isDark={isDark} initialSize={initialBadgeSize} />
+				<div className="w-full max-w-[1040px] flex justify-center py-4 bg-[var(--paper,#ffffff)] rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] shadow-xs">
+					<AnatomicalGate0FullArchView isDark={isDark} zoom={0.52} />
+				</div>
 			) : (
 				<Tooth46SingleView
 					isDark={isDark}

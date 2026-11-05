@@ -9,7 +9,9 @@ import React from "react";
 import { Activity, Sparkles } from "lucide-react";
 import type { MedicalRecordData } from "../../types/recordDataTypes";
 import type { calculateDmftIndex, calculateCpitnIndex } from "../../clinicalDiaryMath";
-import { toothStatusCodeShortMap, dentalBiteTypeLabels } from "@dental/shared";
+import { dentalBiteTypeLabels } from "@dental/shared";
+import { AnatomicalGate0FullArchView } from "../../../odontogram/AnatomicalGate0FullArchView";
+import type { ToothData, ToothState } from "../../../odontogram/ToothChart";
 
 export interface RecordOdontogramTabProps {
 	formData: MedicalRecordData;
@@ -20,25 +22,40 @@ export interface RecordOdontogramTabProps {
 
 export type Form043OdontogramTabProps = RecordOdontogramTabProps;
 
-const renderTeethCells = (teeth: MedicalRecordData["dentalStatus"]["odontogramTeeth"]) => {
-	return teeth.map((t) => {
-		const isPath = t.statusCode !== "healthy" && t.statusCode !== "filled_satisfactory";
-		const isFilled = t.statusCode === "filled_satisfactory";
-		const shortCode = (t.statusCode && t.statusCode in toothStatusCodeShortMap
-			? toothStatusCodeShortMap[t.statusCode as keyof typeof toothStatusCodeShortMap]
-			: null) || "Norm";
-		return (
-			<div key={t.toothNumber} className={`emr043-tooth-cell ${isPath ? "pathology" : isFilled ? "filled" : ""}`}>
-				<div style={{ fontWeight: "bold" }}>{t.toothNumber}</div>
-				<div style={{ fontSize: "10px", marginTop: "2px" }}>{shortCode}</div>
-			</div>
-		);
-	});
-};
-
 export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.memo(
 	function RecordOdontogramTab({ formData, dmft, cpitn, onApplyNorm }) {
 		const d = formData.dentalStatus;
+
+		const teethData: ToothData[] = React.useMemo(() => {
+			const codeMap: Record<string, ToothState> = {
+				healthy: "Healthy",
+				caries: "Caries",
+				pulpitis: "Pulpitis",
+				periodontitis: "Periodontitis",
+				filled_satisfactory: "Filled",
+				filled_defective: "Filled",
+				crown: "Crown",
+				artificial_crown: "Crown",
+				extracted_absent: "Missing",
+				missing: "Missing",
+				implant: "Implant",
+				root: "Radix",
+				radix: "Radix",
+			};
+			return (d.odontogramTeeth || []).map((t) => ({
+				toothNumber: t.toothNumber,
+				state: (codeMap[t.statusCode] || "Healthy") as ToothState,
+				surfaces: (t.surfaces || []).map((s) => {
+					if (s === "occlusal") return "Occ";
+					if (s === "vestibular") return "V";
+					if (s === "lingual") return "L";
+					if (s === "medial") return "M";
+					if (s === "distal") return "D";
+					return String(s);
+				}),
+			}));
+		}, [d.odontogramTeeth]);
+
 		return (
 			<div>
 				<div className="emr-studio-card emr043-section-card">
@@ -61,9 +78,15 @@ export const RecordOdontogramTab: React.FC<RecordOdontogramTabProps> = React.mem
 						</button>
 					</div>
 
-					<div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "8px" }}>Зубная формула постоянного прикуса (FDI 11–48):</div>
-					<div className="emr043-formula-matrix">{renderTeethCells(d.odontogramTeeth.slice(0, 16))}</div>
-					<div className="emr043-formula-matrix">{renderTeethCells(d.odontogramTeeth.slice(16, 32))}</div>
+					<div style={{ fontWeight: 700, fontSize: "13px", marginBottom: "8px" }}>
+						Зубная формула постоянного прикуса (FDI 11–48) · Wheeler 2.5D:
+					</div>
+					<div className="w-full bg-[var(--paper-strong,#f8fafc)] dark:bg-[var(--paper-subtle,#0f172a)] border border-[var(--line,#e2e8f0)] dark:border-[var(--line,#334155)] rounded-2xl p-2 sm:p-4 my-2 overflow-x-auto flex justify-center">
+						<AnatomicalGate0FullArchView
+							teethData={teethData}
+							zoom={0.44}
+						/>
+					</div>
 
 					<div className="emr043-grid-3" style={{ marginTop: "16px" }}>
 						<div className="emr-studio-card emr043-section-card" style={{ padding: "12px" }}>

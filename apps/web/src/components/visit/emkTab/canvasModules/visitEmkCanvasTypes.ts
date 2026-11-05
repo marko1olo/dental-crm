@@ -8,7 +8,7 @@ export interface VisitEmkInteractiveStageProps {
 	visitNoteForm: Record<string, any>;
 	updateVisitNoteField: (field: string, value: any) => void;
 	isLocked: boolean;
-	effectiveActiveTooth: number;
+	effectiveActiveTooth: number | null;
 	activePatient?: any;
 	dashboard?: any;
 	openVisitId: string;

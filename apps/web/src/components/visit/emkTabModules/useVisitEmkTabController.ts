@@ -116,8 +116,9 @@ export function useVisitEmkTabController(props: VisitEmkTabProps) {
 		[],
 	);
 
+	const hasActivePatient = Boolean(activePatient?.id ?? dashboard?.activeVisit?.patientId);
 	const effectiveActiveTooth =
-		selectedInlineTooth ?? dashboard?.activeVisit?.diagnosisTooth ?? 16;
+		hasActivePatient ? (selectedInlineTooth ?? dashboard?.activeVisit?.diagnosisTooth ?? 16) : null;
 
 	const {
 		saveState: soloAutosaveState,

@@ -367,7 +367,7 @@ export function VisitEmkOdontogramBar({
 						</span>
 					</span>
 					<span className="text-[11px] font-mono px-1.5 sm:px-2 py-0.5 rounded-md bg-[var(--teal-soft)] text-[var(--teal-dark,var(--teal))] font-bold shrink-0 whitespace-nowrap">
-						<span className="hidden sm:inline">Активный зуб: </span>Зуб {effectiveActiveTooth}
+						<span className="hidden sm:inline">Активный зуб: </span>{effectiveActiveTooth ? `Зуб ${effectiveActiveTooth}` : "Не выбран"}
 					</span>
 				</div>
 				<div className="flex items-center gap-1.5 shrink-0">

@@ -35,7 +35,7 @@ export interface VisitEmkOdontogramBarProps {
 	} | Array<{ toothNumber?: number | string; code?: string; state?: string }> | null;
 	visitNoteForm: Record<string, any>;
 	updateVisitNoteField: (field: string, value: any) => void;
-	effectiveActiveTooth: number;
+	effectiveActiveTooth: number | null;
 	visitToothStateByCode?: Record<string, VisitToothUiState | undefined>;
 	draft?: any;
 }
@@ -92,7 +92,7 @@ export interface VisitEmkServicesBillingProps {
 	isLocked: boolean;
 	activePatient?: any;
 	dashboard?: any;
-	effectiveActiveTooth: number;
+	effectiveActiveTooth: number | null;
 }
 
 export interface VisitEmkCanvasProps {
@@ -100,7 +100,7 @@ export interface VisitEmkCanvasProps {
 	visitNoteForm: Record<string, any>;
 	updateVisitNoteField: (field: string, value: any) => void;
 	isLocked: boolean;
-	effectiveActiveTooth: number;
+	effectiveActiveTooth: number | null;
 	activePatient?: any;
 	dashboard?: any;
 	openVisitId: string;

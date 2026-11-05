@@ -52,7 +52,13 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 	});
 
 	const [activeStamp, setActiveStamp] = useState<string | null>("Caries");
-	const [selectedToothNum, setSelectedToothNum] = useState<number | null>(16);
+	const [selectedToothNum, setSelectedToothNum] = useState<number | null>(() => {
+		if (initialTeeth && Object.keys(initialTeeth).length > 0 && visitId) {
+			const firstWithState = Object.values(initialTeeth).find((t) => t.state !== "Healthy");
+			return firstWithState ? firstWithState.toothNumber : null;
+		}
+		return null;
+	});
 	const [activeQuadrantMobile, setActiveQuadrantMobile] = useState<number>(1);
 	const [pendingEstimates, setPendingEstimates] = useState<Array<{ toothNum: number; serviceTitle: string; amountKopecks: number; code804n: string }>>([]);
 	const [saveNotification, setSaveNotification] = useState<string | null>(null);
@@ -82,6 +88,7 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 	const handleResetAllIntact = useCallback(() => {
 		setTeethData(createIntactDentition(dentitionMode));
 		setPendingEstimates([]);
+		setSelectedToothNum(null);
 		setSaveNotification("Все зубы отмечены как здоровые (интактные)");
 		setTimeout(() => setSaveNotification(null), 3000);
 	}, [dentitionMode]);
@@ -190,11 +197,12 @@ export const OdontogramStudioModal: React.FC<OdontogramStudioModalProps> = ({
 						<div className="w-8 h-8 rounded-lg bg-[var(--teal-subtle)] text-[var(--teal)] flex items-center justify-center shrink-0">
 							<ShieldCheck className="w-4 h-4" />
 						</div>
-						<div className="min-w-0">
-							<h2 className="text-sm sm:text-base font-semibold leading-tight whitespace-nowrap">
-								Анатомическая зубная формула
+						<div className="min-w-0 flex-1">
+							<h2 className="text-sm sm:text-base font-semibold leading-tight whitespace-nowrap truncate">
+								<span className="sm:hidden">Зубная формула Wheeler</span>
+								<span className="hidden sm:inline">Анатомическая зубная формула Wheeler 2.5D</span>
 							</h2>
-							<p className="text-[11px] sm:text-xs text-[var(--ink-muted)]">
+							<p className="text-[11px] sm:text-xs text-[var(--ink-muted)] truncate">
 								<span className="sm:hidden">{shortPatientName}</span>
 								<span className="hidden sm:inline">{patientName} {formattedVisitNum ? `· ${formattedVisitNum}` : ""}</span>
 							</p>

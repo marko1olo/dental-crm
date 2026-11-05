@@ -98,28 +98,20 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			),
 		},
 
-		// 5. Тестовый стенд одонтограммы зуба 46 и зубного ряда
-		{
-			id: "odontogram-gate0",
-			title: "Стенд одонтограммы зуба 46",
-			criteria: {
-				tokens: ["odontogram-gate0", "odontogram-32", "odontogram-mandible"],
-			},
-			render: () => <Tooth46InspectionStand />,
-		},
-
-		// 6. Одонтограмма и зубная формула FDI 11–48 / 51–85
+		// 5. Анатомическая одонтограмма Wheeler 2.5D и зубная формула FDI 11–48 / 51–85
 		{
 			id: "odontogram-studio",
-			title: "Интерактивная зубная формула FDI",
+			title: "Анатомическая зубная формула Wheeler 2.5D",
 			criteria: {
 				tokens: [
 					"odontogram",
 					"dental-chart",
 					"dental_chart",
 					"odontogram-studio",
+					"odontogram-gate0",
+					"odontogram-32",
+					"odontogram-mandible",
 				],
-				exclude: ["odontogram-gate0"],
 			},
 			render: () => <DirectOdontogramLauncher />,
 		},
