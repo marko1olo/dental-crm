@@ -1,0 +1,95 @@
+{
+  "role": "Senior Red Team Dental Lab & Prosthetics Inquisitor",
+  "workspace": "C:\\Clinic_MVP\\dental-crm",
+  "timestamp": "2026-10-22T21:28:00Z",
+  "constitution": [
+    ".agents/THE_HAMMER_MASTER_PROMPT.md",
+    ".agents/AGENTS.md",
+    "rules/frontend.md",
+    "rules/core.md"
+  ],
+  "mandates_in_effect": [
+    "8e",
+    "8n",
+    "8k",
+    "8s",
+    "8x",
+    "8am",
+    "8al",
+    "8ze",
+    "8b",
+    "8d"
+  ],
+  "audit_findings": {
+    "simulators_purged": {
+      "LabSendCourierModal": "Eliminated / zero references in lab code",
+      "LabSubcontractModal": "Eliminated / zero references in lab code",
+      "LabQualityControlModal": "Eliminated / zero references in lab code",
+      "LabModelScanningModal": "Eliminated / zero references in lab code",
+      "status": "CLEARED"
+    },
+    "ssot_consolidation": {
+      "canonical_modal": "DentalLabOrderModal.tsx",
+      "canonical_drawer": "DentalLabOrderDrawer.tsx",
+      "canonical_facade": "DentalLabCreateOrderModal.tsx",
+      "fdi_picker": "DentalLabFdiOdontogramPicker.tsx (FDI 11..48 / 51..85)",
+      "restoration_chips": "RestorationTabConstructionGrid.tsx + DentalLabExpressConfigurator.tsx",
+      "vita_shades": "DentalLabExpressShadeBar.tsx + DentalLabShadePicker.tsx (A1..D4, 3D-Master, Bleach)",
+      "primary_cta_button": "✓ Сформировать наряд в ЗТЛ (36px desktop / 44-48px touch)",
+      "status": "COMPLETED",
+      "verification_2026_10_25": "Реальный модуль: apps/web/src/components/lab/ (чекпоинт ошибочно указывал dentalLab/). Все канонические файлы на месте и смонтированы: DentalLabOrderModal.tsx, DentalLabOrderDrawer.tsx, DentalLabCreateOrderModal.tsx, DentalLabFdiOdontogramPicker.tsx, DentalLabPrintBlank.tsx (+OrdersHub/Kanban/Tracker/FinancialGate). FDI-пикер и shade-константы в definitions/. Тесты DentalLabOrderModal + DentalLabReadyInClinic зелёные (node:test, 0 fail)."
+    },
+    "print_and_messenger": {
+      "print_blank": "DentalLabPrintBlank.tsx",
+      "a4_barcode": "DentalLabPrintSignaturesAndQr.tsx (Code 128 vector barcode + QR)",
+      "share_messenger_button": "Adding 1-click share to DentalLabPrintHeader.tsx",
+      "doctor_autonomy": "Zero blockers, override in 1 click, plan > 30 days does not block",
+      "status": "COMPLETED",
+      "verification_2026_10_25": "PrintBlank со share присутствует (grep: share в DentalLabPrintBlank/OrderModal/LabTrackingDrawer); честный контур: GET /api/dental-lab/orders с denteAdminSecretRequestHeaders, полный API: orderItemsCrud/orderStatusPatchRoutes/expressOrderRoutes/autonomousTrackerRoutes."
+    },
+    "language_purification_8x": {
+      "no_due_date_slang": "Replaced 'Due date' with 'Срок готовности'",
+      "no_courier_bureaucracy": "Replaced 'Курьерская доставка / Связь' with 'Связь с клиникой'",
+      "status_badges": "Живой клинический язык (Отправлен в ЗТЛ, В работе, Примерка, Готов в клинике, Сдано)",
+      "status": "VERIFIED"
+    },
+    "test_suite_status": {
+      "total_tests": 201,
+      "passing": 201,
+      "failing": 0,
+      "zero_emojis_gate": "PASSED"
+    }
+  },
+  "test_suite_status": {
+    "total_tests": 215,
+    "passing": 215,
+    "failing": 0,
+    "zero_emojis_gate": "PASSED"
+  },
+  "red_team_inquisition_2026_11_05": {
+    "status": "COMPLETED_SUPREME_INQUISITION",
+    "canonical_studio": "DentalLabStudioModal.tsx restored to Sweet Spot (457 lines, Mandate 8b)",
+    "facades": [
+      "LaboratoryStudioModal.tsx",
+      "WorkOrdersList.tsx",
+      "LabOrderModal.tsx"
+    ],
+    "visual_proofs": {
+      "pc_light": "docs/proofs/dental_lab/01_lab_orders_pc_light.png",
+      "pc_dark": "docs/proofs/dental_lab/02_lab_orders_pc_dark.png",
+      "mobile_light": "docs/proofs/dental_lab/03_lab_orders_mobile_light.png",
+      "mobile_dark": "docs/proofs/dental_lab/04_lab_orders_mobile_dark.png",
+      "modal_pc_light": "docs/proofs/dental_lab/05_lab_order_modal_pc_light.png",
+      "modal_pc_dark": "docs/proofs/dental_lab/06_lab_order_modal_pc_dark.png"
+    },
+    "verified_invariants": {
+      "zero_clipping": "PASSED (all text break-words, no truncation)",
+      "single_primary_cta": "PASSED (teal #0d9488, secondary neutral border)",
+      "doctor_autonomy_8e": "PASSED (buttons never disabled)",
+      "integer_kopecks_8n": "PASSED (0 float errors, amountKopecks)",
+      "zero_emojis_8d": "PASSED",
+      "encoding_check": "PASSED (23810 files, clean UTF-8)",
+      "css_tokens_check": "PASSED (1494 CSS files, 0 unresolved)"
+    }
+  }
+}

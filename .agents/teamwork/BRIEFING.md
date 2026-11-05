@@ -1,9 +1,9 @@
-# BRIEFING — 2026-10-20T06:36:00Z
+# BRIEFING вЂ” 2026-10-20T06:36:00Z
 
 ## Mission
 Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fallbacks, and orphaned stub components across DENTE Dental CRM, integrating all standalone features into the real production UI and PostgreSQL 18 backend.
 
-## 🔒 My Identity
+## рџ”’ My Identity
 - Archetype: sentinel
 - Working directory: C:\Clinic_MVP\dental-crm\.agents\teamwork
 - Orchestrator: 6d15d988-47c3-4836-97b3-58f3eb0d6502
@@ -13,7 +13,7 @@ Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fal
 - Active Orchestrator: 987018df-6f5f-4542-ab02-ae4ce2a9f05f (teamwork_preview_orchestrator_2)
 - Cron 1 (Progress Reporting): task-22 (*/8 * * * *)
 - Cron 2 (Liveness Check): task-24 (*/10 * * * *)
-- Active Victory Auditor: [annulled — awaiting Creator approval]
+- Active Victory Auditor: [annulled вЂ” awaiting Creator approval]
 - Cron 1 (Progress Reporting): task-457 (*/8 * * * *) [CANCELLED]
 - Cron 2 (Liveness Check): task-459 (*/10 * * * *) [CANCELLED]
 - Cron 1 (Progress Reporting): task-666 (*/8 * * * *) [CANCELLED per L1 directive]
@@ -36,8 +36,8 @@ Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fal
 - Cron 1 (Progress Reporting): task-345 (*/8 * * * *) [ACTIVE post-restart 5]
 - Cron 2 (Liveness Check): task-347 (*/10 * * * *) [ACTIVE post-restart 5]
 
-## 🔒 Key Constraints
-- No technical decisions — relay only
+## рџ”’ Key Constraints
+- No technical decisions вЂ” relay only
 - Victory Audit is MANDATORY before reporting completion
 - Must not write code, analyze problems, or make technical decisions
 - Strictly use Model: "inherit" for all subagents
@@ -49,9 +49,9 @@ Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fal
 - Gate 0 (First Article Inspection): Render STRICTLY tooth 46 (lower 1st molar 2.5D, 5 cusps, 2 divergent roots, 3 canals with gutta-percha, Apple HIG shader) and verify via high-res screenshots (Light/Dark) before producing remaining 31 teeth.
 - Monolithic Anatomical Sculpture Mandate: Ban on patchwork/stained-glass surfaces (O, M, D, V, L). Tooth 46 must be a unified organic sculpture (5 cusps, natural fissure grooves, 2 roots with interradicular space and longitudinal groove, 3 canals MB/ML/D).
 - Authentic Anatomical Vectors: Strict ban on fabricated Bezier coordinates from thin air. Coordinates must derive from authentic anatomical vector references (Wheeler's Dental Anatomy, Open Dental CAD, Wikimedia Medical SVG).
-- Iteration 3 Remediation Mandate: (1) Pulp/nerve is an INTERNAL structure with translucent radiological x-ray shader (opacity: 0.35–0.50, neurovascular mesh, hidden by default under enamel); (2) Caries: strict ban on `<circle r="..." />`! Dendritic fissure demineralization with chalky white halo, amber-brown softened dentin branching, dark chocolate central cavitation depth; (3) Crown & cusps: volumetric organic hills with ambient occlusion central basin, no wireframe fissures; (4) Stand default state: clean natural tooth (enamel + roots + relief), pathologies toggled on via neat clinical layers.
+- Iteration 3 Remediation Mandate: (1) Pulp/nerve is an INTERNAL structure with translucent radiological x-ray shader (opacity: 0.35вЂ“0.50, neurovascular mesh, hidden by default under enamel); (2) Caries: strict ban on `<circle r="..." />`! Dendritic fissure demineralization with chalky white halo, amber-brown softened dentin branching, dark chocolate central cavitation depth; (3) Crown & cusps: volumetric organic hills with ambient occlusion central basin, no wireframe fissures; (4) Stand default state: clean natural tooth (enamel + roots + relief), pathologies toggled on via neat clinical layers.
 - 5 Surgical Fixes Mandate (Gate 0 Masterpiece): (1) Replace harsh grey diamond in root bifurcation with smooth radial shadow (dente-furcation-shadow); (2) Clip or flare canal orifices at CEJ under root boundary (clipPath="url(#tooth46-root-clip)"); (3) Shift apical canal dots 1.5px up inside anatomical root tip; (4) Soften top-left boundary of dendritic caries lesion to flow naturally out of central fissure; (5) Zero-lag performance via clean SVG gradients without heavy filter recursion (120 FPS target).
-- Iteration 4 Sculpt Master Mandate: (1) Eradicate brown caries tongue on buccal margin; true organic dendritic caries along Y-5 fissure with micro-cavities; (2) Remove artificial oval in occlusal basin; build 5 sculpted cusps with triangular ridges and pearlescent specular highlights; (3) Deepen longitudinal anatomical groove on mesial root (Wheeler Ch. 11) with distal apical curve; (4) Implement full spectrum of clinical states (Intact, Caries, Pulpitis, Periodontitis, Endo, Restoration/Filling, Crown); (5) Absolute ban on premature victory declarations — work proceeds until unconditional visual approval by Creator.
+- Iteration 4 Sculpt Master Mandate: (1) Eradicate brown caries tongue on buccal margin; true organic dendritic caries along Y-5 fissure with micro-cavities; (2) Remove artificial oval in occlusal basin; build 5 sculpted cusps with triangular ridges and pearlescent specular highlights; (3) Deepen longitudinal anatomical groove on mesial root (Wheeler Ch. 11) with distal apical curve; (4) Implement full spectrum of clinical states (Intact, Caries, Pulpitis, Periodontitis, Endo, Restoration/Filling, Crown); (5) Absolute ban on premature victory declarations вЂ” work proceeds until unconditional visual approval by Creator.
 - Anti-Potemkin Mandate: Complete purge of standalone *_preview.html files and main.tsx bypass query parameters; zero synthetic mock fallbacks in production views; real backend wiring for lab uploads and button actions; all verification proofs strictly via http://127.0.0.1:5173/ root app.
 
 ## Routing Decision
@@ -76,9 +76,9 @@ Eradicate all Potemkin villages, fake preview sandboxes, hardcoded mock data fal
 - **Retry count**: 0
 
 ## Artifact Index
-- C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md — Authoritative user requests log
-- C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md — Supreme constitutional law
-- C:\Clinic_MVP\dental-crm\.agents\AGENTS.md — Canonical architectural mandates
-- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\ — Active Orchestrator workspace
-- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\progress.md — Active Orchestrator liveness ledger
-- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\GATE_STATUS.md — Gate verdicts
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\ORIGINAL_REQUEST.md вЂ” Authoritative user requests log
+- C:\Clinic_MVP\dental-crm\.agents\THE_HAMMER_MASTER_PROMPT.md вЂ” Supreme constitutional law
+- C:\Clinic_MVP\dental-crm\.agents\AGENTS.md вЂ” Canonical architectural mandates
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\ вЂ” Active Orchestrator workspace
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\progress.md вЂ” Active Orchestrator liveness ledger
+- C:\Clinic_MVP\dental-crm\.agents\teamwork\teamwork_preview_orchestrator_4\GATE_STATUS.md вЂ” Gate verdicts

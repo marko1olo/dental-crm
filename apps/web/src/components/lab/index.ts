@@ -35,6 +35,19 @@ export {
 	type DentalLabStudioModalProps,
 } from "./DentalLabStudioModal";
 export {
+	LaboratoryStudioModal,
+} from "./LaboratoryStudioModal";
+export {
+	WorkOrdersList,
+} from "./WorkOrdersList";
+export {
+	LabStudioModal,
+	type LabStudioModalProps,
+} from "./LabStudioModal";
+export {
+	LabOrderModal,
+} from "./LabOrderModal";
+export {
 	CANONICAL_LAB_STAGES,
 	CANONICAL_LAB_MATERIALS,
 	VITA_SHADES_SSOT,
