@@ -30,7 +30,8 @@ export function useVisitSave(options: UseVisitSaveOptions): UseVisitSaveReturn {
 	currentFormRef.current = effectiveVisitNoteForm; currentTranscriptRef.current = transcript;
 	const setServerDraftSyncState = useVisitStore((s) => s.setServerDraftSyncState);
 	const setLastServerDraftSavedAt = useVisitStore((s) => s.setLastServerDraftSavedAt);
-	const selectedSpecialty = options.selectedSpecialty ?? useVisitStore((s) => s.selectedSpecialty);
+	const storeSelectedSpecialty = useVisitStore((s) => s.selectedSpecialty);
+	const selectedSpecialty = options.selectedSpecialty ?? storeSelectedSpecialty;
 	const activeVisit = useAppStore((s) => s.dashboard?.activeVisit);
 	const effectiveVisitId = visitId || activeVisit?.id;
 

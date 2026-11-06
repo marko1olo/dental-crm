@@ -1,4 +1,3 @@
-import { useRef } from "react";
 import { showToast } from "../../../GlobalToast.js";
 import { logger } from "../../../../utils/logger.js";
 import { savePlanToPostgres } from "../../treatmentPlanNetworkSync.js";
@@ -12,7 +11,7 @@ export function createPlanDatabaseAndWriteOffHandlers(ctx: PlanPersistenceAndSyn
 		setIsActPrintOpen, setIsExecutingWriteOff,
 	} = ctx;
 
-	const saveInFlightRef = useRef(false);
+	let saveInFlight = false;
 
 	const handleStatusTransition = (newStatus: TreatmentPlanStatus) => {
 		setPlanStatus(newStatus);
@@ -33,11 +32,11 @@ export function createPlanDatabaseAndWriteOffHandlers(ctx: PlanPersistenceAndSyn
 	};
 
 	const handleSavePlanToDatabase = async () => {
-		if (isSaving || saveInFlightRef.current) {
+		if (isSaving || saveInFlight) {
 			showToast("Сохранение плана уже выполняется...", "info");
 			return;
 		}
-		saveInFlightRef.current = true;
+		saveInFlight = true;
 		setIsSaving(true);
 		try {
 			const savedId = await savePlanToPostgres({
@@ -47,7 +46,7 @@ export function createPlanDatabaseAndWriteOffHandlers(ctx: PlanPersistenceAndSyn
 			if (savedId) setCurrentPlanId(savedId);
 		} finally {
 			setIsSaving(false);
-			setTimeout(() => { saveInFlightRef.current = false; }, 350);
+			setTimeout(() => { saveInFlight = false; }, 350);
 		}
 	};
 

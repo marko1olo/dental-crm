@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { GeneratedDocument } from "@dental/shared";
 import { renderForm043uHtml } from "@dental/shared";
-import { useAppLogicContext } from "../../../contexts/AppLogicContext";
+import { useOptionalAppLogicContext } from "../../../contexts/AppLogicContext";
 import {
 	DEFAULT_DOM_PAGE_SIZE,
 	sliceDomList,
@@ -17,13 +17,7 @@ export function useOutpatientArchiveState({
 	onOpenBlankMedicalCard,
 	onOpenBlankForm043,
 }: DocumentsOutpatientArchiveProps) {
-	// biome-ignore lint/suspicious/noExplicitAny: app logic context
-	let appLogic: any = null;
-	try {
-		appLogic = useAppLogicContext();
-	} catch {
-		// safe fallback when outside context
-	}
+	const appLogic = useOptionalAppLogicContext();
 
 	const [searchQuery, setSearchQuery] = useState("");
 	const [statusFilter, setStatusFilter] = useState<"all" | "draft" | "issued" | "voided">("all");

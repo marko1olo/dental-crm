@@ -21,7 +21,8 @@ export function ShiftView(rawProps?: Partial<ShiftViewProps>) {
 	const logicContext = useAppLogicContext();
 	const props = { ...logicContext, ...rawProps } as ReturnType<typeof useAppLogicContext> & ShiftViewProps;
 	const { visibleRecommendedActions, recommendedActionPriorityLabels, staffRoleLabels, dashboard, activeQueueRole, setError, mostLoadedResource, setSelectedPatientId, forceMobile } = props;
-	const isMobile = forceMobile ?? useIsMobile(768);
+	const detectedMobile = useIsMobile(768);
+	const isMobile = forceMobile ?? detectedMobile;
 	const userRole = (props as any).selectedWorkspaceRole || "doctor";
 
 	const shiftData = useDoctorShiftData({ dashboard });

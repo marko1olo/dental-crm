@@ -29,6 +29,8 @@
     "check:limits": "node scripts/check_file_limits.cjs",
     "check:sandboxes": "node scripts/sandbox_hunter.cjs",
     "check:encoding": "node --max-old-space-size=2048 scripts/check-encoding.mjs",
+    "check:migration-drift": "node --max-old-space-size=2048 scripts/check-migration-drift.mjs",
+    "check:react-hooks": "node --max-old-space-size=2048 scripts/check-react-hooks.mjs",
     "check:css-tokens": "node --max-old-space-size=2048 scripts/check-css-tokens.mjs",
     "check:buttons": "node --max-old-space-size=2048 scripts/check-button-styles.mjs",
     "check:tracked-ignored": "node --max-old-space-size=2048 scripts/check-tracked-ignored.mjs",

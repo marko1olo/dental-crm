@@ -51,18 +51,8 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 		initialShowRapidWizard,
 	} = props;
 
-	// Detect if we are inside a React render context with active dispatcher (React 19)
-	const hasDispatcher = Boolean(
-		// biome-ignore lint/suspicious/noExplicitAny: React internal hook dispatcher check
-		(React as any).__CLIENT_INTERNALS_DO_NOT_USE_OR_WARN_USERS_THEY_CANNOT_UPGRADE?.H ||
-		// biome-ignore lint/suspicious/noExplicitAny: React 18 backward compat
-		(React as any).__SECRET_INTERNALS_DO_NOT_USE_OR_YOU_WILL_BE_FIRED?.ReactCurrentDispatcher?.current,
-	);
-
-	const [showRapidWizard, setShowRapidWizard] = hasDispatcher
-		// eslint-disable-next-line react-hooks/rules-of-hooks
-		? React.useState(Boolean(initialShowRapidWizard))
-		: [Boolean(initialShowRapidWizard), (_val: boolean) => {}];
+	// Canonical React 19 state
+	const [showRapidWizard, setShowRapidWizard] = React.useState(Boolean(initialShowRapidWizard));
 
 	if (showRapidWizard) {
 		return (
@@ -117,17 +107,17 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 
 	const renderActiveStep = () => {
 		switch (onboardingStep) {
-			case "intro": return !hasDispatcher ? WizardIntroStep({}) : <WizardIntroStep />;
-			case "role": return !hasDispatcher ? WizardRoleStep(props) : <WizardRoleStep {...props} />;
-			case "clinic": return !hasDispatcher ? WizardClinicStep(props) : <WizardClinicStep {...props} />;
-			case "legal": return !hasDispatcher ? WizardLegalStep(props) : <WizardLegalStep {...props} />;
+			case "intro": return <WizardIntroStep />;
+			case "role": return <WizardRoleStep {...props} />;
+			case "clinic": return <WizardClinicStep {...props} />;
+			case "legal": return <WizardLegalStep {...props} />;
 			case "team": {
 				const teamProps = { ...props, handleAddStaff, handleAddChair };
-				return !hasDispatcher ? WizardTeamStep(teamProps) : <WizardTeamStep {...teamProps} />;
+				return <WizardTeamStep {...teamProps} />;
 			}
-			case "sources": return !hasDispatcher ? WizardSourcesStep(props) : <WizardSourcesStep {...props} />;
-			case "telegram": return !hasDispatcher ? WizardTelegramStep(props) : <WizardTelegramStep {...props} />;
-			case "done": return !hasDispatcher ? WizardDoneStep(props) : <WizardDoneStep {...props} />;
+			case "sources": return <WizardSourcesStep {...props} />;
+			case "telegram": return <WizardTelegramStep {...props} />;
+			case "done": return <WizardDoneStep {...props} />;
 			default: return null;
 		}
 	};
@@ -208,7 +198,7 @@ export function OnboardingWizardModal(props: OnboardingWizardModalProps) {
 					</button>
 				</section>
 
-				{!hasDispatcher ? WizardStepperNav(props) : <WizardStepperNav {...props} />}
+				<WizardStepperNav {...props} />
 
 				{renderActiveStep()}
 
