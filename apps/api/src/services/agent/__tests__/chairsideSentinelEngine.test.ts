@@ -309,66 +309,93 @@ describe("ChairsideSentinelEngine — Autonomous Proactive Chairside Sentinel", 
 	describe("5. Fastify Route: POST /api/v1/copilot/sentinel/analyze", () => {
 		test("processes HTTP request and returns proactive sentinel verdict", async () => {
 			const app = Fastify();
-			await app.register(copilotRoutes);
+			try {
+				await app.register(copilotRoutes);
 
-			const response = await app.inject({
-				method: "POST",
-				url: "/api/v1/copilot/sentinel/analyze",
-				payload: {
-					patientId: "00000000-0000-7000-8000-000000000001",
-					toothNumber: "2.6",
-					diagnoses: ["2.6 K04.0 Пульпит"],
-					allergies: ["Пенициллин"],
-					activeServices: ["Амоксициллин 500 мг"],
-					mode: "autonomous",
-				},
-			});
+				const response = await app.inject({
+					method: "POST",
+					url: "/api/v1/copilot/sentinel/analyze",
+					headers: {
+						"x-dente-clinic-token": "demo-showcase-clinic-token",
+					},
+					payload: {
+						patientId: "00000000-0000-7000-8000-000000000001",
+						toothNumber: "2.6",
+						diagnoses: ["2.6 K04.0 Пульпит"],
+						allergies: ["Пенициллин"],
+						activeServices: ["Амоксициллин 500 мг"],
+						mode: "autonomous",
+					},
+				});
 
-			assert.strictEqual(response.statusCode, 200);
-			const json = JSON.parse(response.body);
-			assert.strictEqual(json.ok, true);
-			assert.ok(json.data);
+				assert.strictEqual(response.statusCode, 200);
+				const json = JSON.parse(response.body);
+				assert.strictEqual(json.ok, true);
+				assert.ok(json.data);
 
-			const data = json.data;
-			assert.strictEqual(data.toothNumber, 26);
-			assert.strictEqual(data.status, "auto_approved_draft");
-			assert.strictEqual(data.autoApprovedDraft, true);
+				const data = json.data;
+				assert.strictEqual(data.toothNumber, 26);
+				assert.strictEqual(data.status, "auto_approved_draft");
+				assert.strictEqual(data.autoApprovedDraft, true);
 
-			// Alert check
-			const conflict = data.alerts.find(
-				(a: { alertType: string }) => a.alertType === "drug_allergy_conflict",
-			);
-			assert.ok(conflict, "Must contain drug conflict in route response");
-			assert.match(conflict.safeAlternative, /клиндамицин 300 мг/i);
+				// Alert check
+				const conflict = data.alerts.find(
+					(a: { alertType: string }) => a.alertType === "drug_allergy_conflict",
+				);
+				assert.ok(conflict, "Must contain drug conflict in route response");
+				assert.match(conflict.safeAlternative, /клиндамицин 300 мг/i);
 
-			// Services check
-			const codes = data.order804n.services.map(
-				(s: { code: string }) => s.code,
-			);
-			assert.ok(codes.includes("A16.07.030"));
-			assert.ok(codes.includes("A16.07.082"));
-			assert.ok(codes.includes("A16.07.030.003"));
-
-			await app.close();
+				// Services check
+				const codes = data.order804n.services.map(
+					(s: { code: string }) => s.code,
+				);
+				assert.ok(codes.includes("A16.07.030"));
+				assert.ok(codes.includes("A16.07.082"));
+				assert.ok(codes.includes("A16.07.030.003"));
+			} finally {
+				await app.close();
+			}
 		});
 
-		test("validates request payload and rejects missing patientId with 400", async () => {
+		test("defaults missing patientId without blocking doctor (Mandate 8e/8n) and rejects invalid types with 400", async () => {
 			const app = Fastify();
-			await app.register(copilotRoutes);
+			try {
+				await app.register(copilotRoutes);
 
-			const response = await app.inject({
-				method: "POST",
-				url: "/api/v1/copilot/sentinel/analyze",
-				payload: {
-					toothNumber: "2.6",
-				},
-			});
+				// 1. Mandate 8e: omitting patientId does not block analysis
+				const validResponse = await app.inject({
+					method: "POST",
+					url: "/api/v1/copilot/sentinel/analyze",
+					headers: {
+						"x-dente-clinic-token": "demo-showcase-clinic-token",
+					},
+					payload: {
+						toothNumber: "2.6",
+						diagnoses: ["2.6 K04.0 Пульпит"],
+					},
+				});
+				assert.strictEqual(validResponse.statusCode, 200);
+				const validJson = JSON.parse(validResponse.body);
+				assert.strictEqual(validJson.ok, true);
 
-			assert.strictEqual(response.statusCode, 400);
-			const json = JSON.parse(response.body);
-			assert.strictEqual(json.error, "ValidationError");
-
-			await app.close();
+				// 2. Strict Zod validation: invalid non-array diagnoses rejects with 400 ValidationError
+				const invalidResponse = await app.inject({
+					method: "POST",
+					url: "/api/v1/copilot/sentinel/analyze",
+					headers: {
+						"x-dente-clinic-token": "demo-showcase-clinic-token",
+					},
+					payload: {
+						toothNumber: "2.6",
+						diagnoses: 12345 as any,
+					},
+				});
+				assert.strictEqual(invalidResponse.statusCode, 400);
+				const invalidJson = JSON.parse(invalidResponse.body);
+				assert.strictEqual(invalidJson.error, "ValidationError");
+			} finally {
+				await app.close();
+			}
 		});
 	});
 });

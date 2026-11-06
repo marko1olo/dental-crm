@@ -1215,6 +1215,44 @@
      - 📱 Mobile Light Drawer: `docs/proofs/copilot/05_copilot_mobile_drawer_light_390x844.png` (33.1 KB)
      - 🌙 Mobile Dark Drawer: `docs/proofs/copilot/06_copilot_mobile_drawer_dark_390x844.png` (32.9 KB)
 
+### [COP-11] [SEV-1] [ИСПРАВЛЕНО] Суверенный двухрежимный харнесс рабочей станции DENTE, Fastify ReAct-роуты с токеном клиники и 4-State Visual Proof студии Копайлота
+- **Файлы:**
+  - [`apps/api/src/services/agent/__tests__/chairsideSentinelEngine.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/__tests__/chairsideSentinelEngine.test.ts)
+  - [`apps/api/src/services/agent/__tests__/autonomousAgentReActAndRoute.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/agent/__tests__/autonomousAgentReActAndRoute.test.ts)
+  - [`apps/api/src/tests/workstationToolsAndAgentRouter.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/workstationToolsAndAgentRouter.test.ts)
+  - [`apps/api/src/tests/agentHarness.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/agentHarness.test.ts)
+  - [`apps/api/src/speech/geminiLiveStt.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/speech/geminiLiveStt.test.ts)
+  - [`scripts/take_copilot_studio_redteam_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/take_copilot_studio_redteam_proofs.cjs)
+- **Суть задачи Создателя и выявленных дефектов:**
+  1. **Ликвидация бутафории и симуляций:** Тотальный запрет на захардкоженные ответы и `setTimeout(..., 1500)`. Реальный цикл ReAct: принят промпт $\to$ вызван инструмент Fastify $\to$ мутация данных в PostgreSQL 18 $\to$ вывод результата.
+  2. **Двухрежимный суверенный харнесс DENTE:** Режим 1 (Web-браузер) и Режим 2 (Desktop Native OS Workstation — снимки DICOM/RVG, сторонние просмотрщики Romexis/Ez3D/Sidexis, буфер обмена, запуск локальных процессов) с автоматическим определением среды без ручного переключения.
+  3. **Сквозной голос:** Приоритет Google Gemini (`gemini-3.6-flash`, `gemini-3.5-flash-lite`, Whisper) с бесшовным переключением на нативный Web Speech API браузера при отсутствии внешнего ключа.
+  4. **Настройки доверия:** 3 уровня доверия [ Максимальный контроль (Параноик) | Сбалансированный (Копайлот) | Высокая автономия (Суперагент) ] и 5 гранулярных чекбоксов Auto-Approve.
+  5. **Аутентификация в тестах Fastify API:** В роутах `/api/v1/copilot/sentinel/analyze` и `/api/v1/copilot/agent/execute` вызовы `app.inject` падали с 401 из-за отсутствия токена авторизованной организации клиники.
+  6. **Zod валидация схемы в `autonomousAgentExecuteBodySchema`:** Исправлен тест на отклонение невалидных данных (HTTP 400 ValidationError при невалидном `discountPercent: 150`), гарантируя свободу вызова без принудительного `patientId` (анонимный контекст по Мандату 8e/8n).
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `chairsideSentinelEngine.test.ts` и `autonomousAgentReActAndRoute.test.ts` внедрен авторизационный заголовок `"x-dente-clinic-token": "demo-showcase-clinic-token"`. Все 20 тестов ReAct и Sentinel движка проходят со 100% успехом (20/20 GREEN).
+  2. В `autonomousAgentReActAndRoute.test.ts` обновлен тест валидации схемы с проверкой `discountPercent: 150` $\to$ HTTP 400 `ValidationError`.
+  3. Все тесты речевого сервиса (`geminiLiveStt.test.ts`, `whisperCascade.test.ts`) — 32/32 GREEN.
+  4. Все тесты настроек, истории и студии копайлота (`apps/web/src/components/copilot/`) — 58/58 GREEN.
+  5. Пройдена проверка кодировки: `npm run check:encoding` (24 045 файлов, Exit Code 0).
+  6. Сняты и лично проинспектированы через `read_file` эталонные 4-State скриншоты в `docs/proofs/copilot/`:
+     - ☀️ PC Light: `01_copilot_studio_pc_light_1440x900.png` (58.5 KB)
+     - 🌙 PC Dark: `02_copilot_studio_pc_dark_1440x900.png` (46.8 KB)
+     - 📱 Mobile Light: `03_copilot_studio_mobile_light_390x844.png` (44.6 KB)
+     - 🌙 Mobile Dark: `04_copilot_studio_mobile_dark_390x844.png` (53.3 KB)
+     - Дополнительные клинические состояния:
+       * ☀️ PC Light Memory: `08_copilot_memory_tab_pc_light_1440x900.png` (93.0 KB)
+       * 🌙 PC Dark Actions: `09_copilot_actions_tab_pc_dark_1440x900.png` (56.2 KB)
+       * 🌙 PC Dark Thinking CoT: `copilot_thinking_indicator_pc_dark_1440x900.png` (57.7 KB)
+       * ☀️ PC Light Thinking CoT: `copilot_thinking_indicator_pc_light_1440x900.png` (59.3 KB)
+       * ☀️ PC Light Empty Starters: `05_copilot_empty_starters_pc_light_1440x900.png` (47.4 KB)
+       * 📱 Mobile Light Empty Starters: `06_copilot_empty_starters_mobile_light_390x844.png` (39.7 KB)
+       * ☀️ PC Light Trust Settings: `01_copilot_trust_settings_pc_light_1440x900.png` (76.7 KB)
+       * 🌙 PC Dark Trust Settings: `02_copilot_trust_settings_pc_dark_1440x900.png` (75.4 KB)
+       * 📱 Mobile Light Trust Settings: `13_copilot_settings_trust_mobile_light_390x844.png` (53.6 KB)
+       * 🌙 Mobile Dark Trust Settings: `14_copilot_settings_trust_mobile_dark_390x844.png` (53.7 KB)
+
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
 ### [MOB-01] [SEV-1] [ИСПРАВЛЕНО] Каскадное отравление сенсорного минимума

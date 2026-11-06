@@ -195,6 +195,9 @@ describe("DENTE Autonomous AI Engine — ReAct Cycle & API Routes", () => {
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/v1/copilot/agent/execute",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+				},
 				payload: {
 					patientId: "00000000-0000-7000-8000-000000000001",
 					toothNumber: "2.6",
@@ -223,15 +226,19 @@ describe("DENTE Autonomous AI Engine — ReAct Cycle & API Routes", () => {
 			await app.close();
 		});
 
-		it("rejects invalid request payload with missing patientId (400)", async () => {
+		it("rejects invalid request payload with invalid discountPercent (400)", async () => {
 			const app = Fastify();
 			await app.register(copilotRoutes);
 
 			const response = await app.inject({
 				method: "POST",
 				url: "/api/v1/copilot/agent/execute",
+				headers: {
+					"x-dente-clinic-token": "demo-showcase-clinic-token",
+				},
 				payload: {
 					toothNumber: "2.6",
+					discountPercent: 150,
 				},
 			});
 

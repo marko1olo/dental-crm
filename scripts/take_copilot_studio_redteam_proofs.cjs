@@ -2,7 +2,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = process.env.CONV_ID || "07663fdc-eba5-48a1-bbb4-3c4b8f181006";
+const CONV_ID = process.env.CONV_ID || "7219639d-8eec-43c0-8d1c-98785e9eafd2";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
@@ -75,14 +75,24 @@ async function provisionLiveSession() {
 
 async function setupPageAuth(context) {
 	await context.addInitScript(() => {
+		localStorage.setItem("dente_organization_id", "org-1");
+		localStorage.setItem("dente_clinic_token", "test-clinic-token-123");
+		localStorage.setItem("dente_staff_token", "test-staff-token-456");
+		localStorage.setItem("dente_active_session_token", "mock-session-token");
+		localStorage.setItem("dente_user_role", "doctor");
+		localStorage.setItem("dente_user_name", "Д-р Воронов Алексей Владимирович");
+		localStorage.setItem("dente_offline_mode", "true");
+		localStorage.setItem("dente_offline_readiness_banner_dismissed_v1", "true");
 		localStorage.setItem("dente_theme_mode", "light");
 		localStorage.setItem("dente_onboarding_completed", "true");
 		localStorage.setItem("dente_tour_completed", "true");
 		localStorage.setItem("dente_tour_dismissed", "true");
 		localStorage.setItem("dente_guide_tour_dismissed_v2", "true");
 		localStorage.setItem("dente_demo_banner_dismissed", "true");
-		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true }));
+		localStorage.setItem("dente_demo_mode", "true");
+		localStorage.setItem("dental-crm:onboarding:v1", JSON.stringify({ completed: true, dismissed: true, step: "done" }));
 		localStorage.setItem("dente_ui_preferences_v1", JSON.stringify({
+			theme: "light",
 			onboardingDismissed: true,
 			onboardingStep: "done",
 			onboardingDraftMode: false,
@@ -104,14 +114,9 @@ async function run() {
 		await setupPageAuth(pcContext);
 
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto("http://127.0.0.1:5173/?demo=true#schedule", { waitUntil: "domcontentloaded", timeout: 60000 });
-		for (let i = 0; i < 30; i++) {
-			await pcPage.waitForTimeout(400);
-			const text = await pcPage.evaluate(() => document.body ? document.body.innerText : "");
-			if (!text.includes("Загрузка") && text.length > 200) break;
-		}
-		await pcPage.waitForSelector('[data-testid="schedule-view"], [data-testid="schedule-grid-view"]', { timeout: 15000 }).catch(() => {});
-		await pcPage.waitForTimeout(800);
+		await pcPage.goto("http://127.0.0.1:5173/?copilot=1&demo=true", { waitUntil: "domcontentloaded", timeout: 60000 });
+		await pcPage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
+		await pcPage.waitForTimeout(600);
 
 		await pcPage.evaluate(() => {
 			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
@@ -123,41 +128,26 @@ async function run() {
 				}
 			}));
 		});
-		await pcPage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
-		await pcPage.waitForTimeout(1000);
+		await pcPage.waitForTimeout(600);
 
-		// PC Light
+		// 1. PC Light
 		console.log("Capturing 01_copilot_studio_pc_light_1440x900.png...");
 		await setTheme(pcPage, "light");
 		await saveProof(pcPage, "01_copilot_studio_pc_light_1440x900.png");
 
-		// PC Dark
-		console.log("Capturing 02_copilot_studio_pc_dark_1440x900.png...");
-		await setTheme(pcPage, "dark");
-		await saveProof(pcPage, "02_copilot_studio_pc_dark_1440x900.png");
-
-		// Actions Tab PC Dark
-		console.log("Capturing 09_copilot_actions_tab_pc_dark_1440x900.png...");
-		const actionsBtn = pcPage.locator('button:has-text("Быстрые действия")').first();
-		if (await actionsBtn.isVisible()) {
-			await actionsBtn.click({ force: true });
-			await pcPage.waitForTimeout(500);
-			await saveProof(pcPage, "09_copilot_actions_tab_pc_dark_1440x900.png");
-		}
-
 		// Memory Tab PC Light
 		console.log("Capturing 08_copilot_memory_tab_pc_light_1440x900.png...");
-		await setTheme(pcPage, "light");
-		const memoryBtn = pcPage.locator('button:has-text("Память")').first();
+		const memoryBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Память")').first();
 		if (await memoryBtn.isVisible()) {
 			await memoryBtn.click({ force: true });
-			await pcPage.waitForTimeout(500);
+			await pcPage.waitForSelector('[data-testid="copilot-memory-tab-root"]', { state: "visible", timeout: 5000 }).catch(() => {});
+			await pcPage.waitForTimeout(600);
 			await saveProof(pcPage, "08_copilot_memory_tab_pc_light_1440x900.png");
 		}
 
 		// Dialog Empty Starters PC Light
 		console.log("Capturing 05_copilot_empty_starters_pc_light_1440x900.png...");
-		const dialogTabBtn = pcPage.locator('button:has-text("Клинический диалог")').first();
+		const dialogTabBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Диалог")').first();
 		if (await dialogTabBtn.isVisible()) await dialogTabBtn.click({ force: true });
 		const historyTrigger = pcPage.locator('[data-testid="copilot-history-trigger"]').first();
 		if (await historyTrigger.isVisible()) {
@@ -170,6 +160,46 @@ async function run() {
 				await saveProof(pcPage, "05_copilot_empty_starters_pc_light_1440x900.png");
 			}
 		}
+
+		// 2. PC Dark
+		console.log("Capturing 02_copilot_studio_pc_dark_1440x900.png...");
+		await setTheme(pcPage, "dark");
+		await pcPage.waitForTimeout(500);
+		await saveProof(pcPage, "02_copilot_studio_pc_dark_1440x900.png");
+
+		// Actions Tab PC Dark
+		console.log("Capturing 09_copilot_actions_tab_pc_dark_1440x900.png...");
+		const actionsBtn = pcPage.locator('.copilot-tabs-segmented button:has-text("Действия")').first();
+		if (await actionsBtn.isVisible()) {
+			await actionsBtn.click({ force: true });
+			await pcPage.waitForSelector('.copilot-actions-grid', { state: "visible", timeout: 5000 }).catch(() => {});
+			await pcPage.waitForTimeout(500);
+			await saveProof(pcPage, "09_copilot_actions_tab_pc_dark_1440x900.png");
+		}
+
+		// Thinking CoT Indicator PC Dark & Light
+		console.log("Capturing copilot_thinking_indicator_pc_dark_1440x900.png...");
+		const dialogTabDark = pcPage.locator('.copilot-tabs-segmented button:has-text("Диалог")').first();
+		if (await dialogTabDark.isVisible()) await dialogTabDark.click({ force: true });
+		await pcPage.evaluate(() => {
+			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
+				detail: {
+					tooth: 36,
+					patientName: "Кузнецов Михаил Павлович",
+					patientId: "pat-36",
+					isThinking: true,
+					thoughtProcess: "1. Клинический аудит снимка: кариозное поражение в пределах околопульпарного дентина.\n2. Дифференциальный диагноз: исключен пульпит К04.0.\n3. Синтез протокола: препарирование, OptiBond FL, Estelite Asteria."
+				}
+			}));
+		});
+		await pcPage.waitForSelector('.copilot-thinking-card, .copilot-thinking-indicator, [data-testid="copilot-thinking-indicator"]', { state: "visible", timeout: 5000 }).catch(() => {});
+		await pcPage.waitForTimeout(600);
+		await saveProof(pcPage, "copilot_thinking_indicator_pc_dark_1440x900.png");
+
+		await setTheme(pcPage, "light");
+		await pcPage.waitForTimeout(500);
+		await saveProof(pcPage, "copilot_thinking_indicator_pc_light_1440x900.png");
+
 		await pcContext.close();
 
 		// 2. Mobile 390x844
@@ -182,9 +212,9 @@ async function run() {
 		await setupPageAuth(mobileContext);
 
 		const mobilePage = await mobileContext.newPage();
-		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1&demo=true", { waitUntil: "domcontentloaded", timeout: 60000 });
-		await mobilePage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 20000 });
-		await mobilePage.waitForTimeout(600);
+		await mobilePage.goto("http://127.0.0.1:5173/?copilot=1&demo=true", { waitUntil: "commit", timeout: 60000 });
+		await mobilePage.waitForLoadState("domcontentloaded");
+		await mobilePage.waitForTimeout(1000);
 
 		await mobilePage.evaluate(() => {
 			window.dispatchEvent(new CustomEvent("dente:open-copilot", {
@@ -196,6 +226,7 @@ async function run() {
 				}
 			}));
 		});
+		await mobilePage.waitForSelector('[data-testid="chairside-copilot-studio-root"]', { state: "visible", timeout: 30000 });
 		await mobilePage.waitForTimeout(600);
 
 		// Mobile Light
