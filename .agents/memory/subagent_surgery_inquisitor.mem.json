@@ -1,0 +1,49 @@
+{
+  "subagent": "Surgery & Implants Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-06T11:02:40+04:00",
+  "scope": [
+    "apps/web/src/components/surgery/ChairsideSurgeryHubModal.tsx",
+    "apps/web/src/components/surgery/SurgeryStudioModal.tsx",
+    "apps/web/src/components/surgery/DirectSurgeryLauncher.tsx",
+    "apps/web/src/components/surgery/SurgeryPostOpMemoSection.tsx",
+    "apps/web/src/components/surgery/surgeryCatalogData.ts",
+    "apps/web/src/components/surgery/surgeryHub.css",
+    "apps/web/src/components/surgery/__tests__/surgeryBars.test.tsx",
+    "apps/web/src/components/surgery/__tests__/surgerySSOTSuite.test.tsx",
+    "scripts/capture_surgery_canonical_4proofs.cjs",
+    "docs/proofs/surgery/01_surgery_hub_pc_light_1440x900.png",
+    "docs/proofs/surgery/02_surgery_hub_pc_dark_1440x900.png",
+    "docs/proofs/surgery/03_surgery_hub_mobile_light_390x844.png",
+    "docs/proofs/surgery/04_surgery_hub_mobile_dark_390x844.png"
+  ],
+  "remediated_defects": {
+    "potemkin_demolition": "Eliminated hardcoded 'Иванов Иван Иванович' and 'Д-р Воронов А. В.' from default states in ChairsideSurgeryHubModal and DirectSurgeryLauncher. Replaced with reactive hydration from usePatientStore (selectedPatientId, patientCoreDraft) and useAppStore (activePatientId, activeDoctorName, dashboard.patients, dashboard.activeVisit) with clean human fallbacks ('Пациент не выбран', 'Врач-хирург').",
+    "canonical_ssot": "Ensured canonical SSOT reference equality in SurgeryStudioModal (export const SurgeryStudioModal = ChairsideSurgeryHubModal).",
+    "primary_cta_invariant": "Guaranteed exactly ONE Primary CTA button (#0d9488) on all views ('✓ Зафиксировать операцию и внести в карту приёма').",
+    "mobile_apple_hig": "Verified native Apple iOS Bottom Sheet on smartphones (390x844) with Drag Handle 36x5px, touch targets >= 44x44px, Natural Thumb Zone sticky bottom bar, and 0px horizontal scroll.",
+    "kopeck_financial_accuracy": "Added all integer kopeck fields (operationPriceKopecks, implantCostKopecks, consumablesCostKopecks, doctorGrossMarginKopecks, netDoctorIncomeKopecks) to surgeryCatalogData.ts calculation breakdown.",
+    "clinical_diary_integration": "Connected dente-apply-soap-protocol CustomEvent with mode: 'smart_append' on commit, preserving doctor's prior notes without overwriting.",
+    "one_click_printing": "Added 1-click memo print in SurgeryPostOpMemoSection and unified document printing in ChairsideSurgeryHubModal."
+  },
+  "verification": {
+    "vitest": {
+      "command": "npx vitest run apps/web/src/components/surgery/ apps/web/src/components/implants/",
+      "test_files_passed": 17,
+      "tests_passed": 108,
+      "failures": 0
+    },
+    "dod_machine_gates": {
+      "check_encoding": "PASS (0 errors, 23981 files)",
+      "check_stub_overrides": "PASS (0 errors)",
+      "check_fetch_response": "PASS (0 errors, 14423 files)",
+      "check_dynamic_imports": "PASS (0 errors, 529 imports)"
+    },
+    "visual_proofs": {
+      "01_surgery_hub_pc_light_1440x900.png": { "size_bytes": 109045, "inspected": true },
+      "02_surgery_hub_pc_dark_1440x900.png": { "size_bytes": 110384, "inspected": true },
+      "03_surgery_hub_mobile_light_390x844.png": { "size_bytes": 176100, "inspected": true },
+      "04_surgery_hub_mobile_dark_390x844.png": { "size_bytes": 166156, "inspected": true }
+    }
+  }
+}
