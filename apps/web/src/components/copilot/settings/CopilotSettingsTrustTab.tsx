@@ -61,7 +61,8 @@ export function CopilotSettingsTrustTab({
 				</label>
 				<div className="grid grid-cols-1 gap-2">
 					{TRUST_LEVELS.map((lvl) => {
-						const isSelected = trustLevel === lvl.id;
+						const normalizedActive = trustLevel === "supervised" ? "balanced" : (trustLevel === "cautious" ? "confirm_all" : trustLevel);
+						const isSelected = normalizedActive === lvl.id;
 						const Icon = lvl.icon;
 						return (
 							<button
