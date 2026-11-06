@@ -422,9 +422,10 @@ describe("Wave 125: Tooth Setup & Prosthetically-Driven Implant Planning Engine"
 
 		it("anglesFromWorldAxis returns finite angles for edge-case unit vectors", () => {
 			const frame: ArchFrame = {
-				tangent: [1, 0, 0],
-				normal: [0, 1, 0],
-				up: [0, 0, 1],
+				s: 0,
+				point: [0, 0],
+				tangent: [1, 0],
+				normal: [0, 1],
 			};
 			const angles1 = anglesFromWorldAxis(frame, [0, 0, -1]);
 			assert.ok(Number.isFinite(angles1.angleBLDeg));

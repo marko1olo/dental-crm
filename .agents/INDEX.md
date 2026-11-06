@@ -97,6 +97,7 @@
 30. **[CLINICAL_EMR_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md)** — Реестр жизненного цикла ЭМК: протоколы SOAP, дебаунс-автосейв черновиков (Мандат 8e), ПЭП криптохеш SHA-256, аудит «Исправленному верить», печать A4.
 31. **[WEB_COMPONENTS_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md)** — Реестр поведенческих тестов React 19 и Zustand: изоляция сессий пациентов, реактивная гидратация 0-F5, тач-таргеты Apple HIG $\ge 44\times 44$px.
 32. **[TEST_SUITES_INQUISITION_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)** — Реестр очищения тестовой базы: ликвидация псевдотестов с `fs.readFileSync` и проглоченных `catch {}`.
+33. **[RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md)** — Реестр тестирования радиологии (DICOM / RVG PACS), денситометрии HU (Misch D1..D5) и жизненного цикла нарядов ЗТЛ (шкала VITA, копейки BigInt).
 
 ### 4. Реестр Конкурентного Аудита и Реверс-Инжиниринг (`docs/competitive-audit/`)
 19. **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — Таблица 63 канонических фич конкурентов (IDENT, DentalPRO, iStom) с оценкой ценности и строками доказательств.
