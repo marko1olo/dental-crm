@@ -25,8 +25,6 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
 	principalAxis,
 	anglesFromWorldAxis,
@@ -388,35 +386,53 @@ describe("Wave 125: Tooth Setup & Prosthetically-Driven Implant Planning Engine"
 		});
 	});
 
-	// ── 5. Absence of Cartoon Emojis ─────────────────────────────
+	// ── 5. Geometric Robustness & Clinical Edge Cases ───────────
 
-	describe("5. Zero Cartoon Emojis (Mandate 8d, item 7)", () => {
-		it("strictly contains zero cartoon emojis in toothSetupEngine.ts", () => {
-			const sourceCode = readFileSync(
-				resolve(import.meta.dirname, "../toothSetupEngine.ts"),
-				"utf-8",
-			);
-			const emojiRegex =
-				/[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/u;
-			assert.strictEqual(
-				emojiRegex.test(sourceCode),
-				false,
-				"toothSetupEngine.ts must not contain cartoon emojis",
-			);
+	describe("5. Geometric Robustness & Clinical Edge Cases", () => {
+		it("handles coplanar 2D point clouds without NaN or numerical singularity", () => {
+			// Planar triangle in Z = 5 plane
+			const coplanarPts = [
+				-10, 0, 5,
+				10, 0, 5,
+				0, 20, 5,
+			];
+			const res = principalAxis(coplanarPts);
+			assert.ok(res !== null, "Result should not be null for 3 non-collinear coplanar points");
+			assert.ok(!Number.isNaN(res.centroid[0]) && !Number.isNaN(res.centroid[1]) && !Number.isNaN(res.centroid[2]));
+			assert.ok(Math.abs(res.centroid[2] - 5) < 1e-5, "Centroid Z must be 5");
+			assert.ok(!Number.isNaN(res.axis[0]) && !Number.isNaN(res.axis[1]) && !Number.isNaN(res.axis[2]));
+			// Extent should be a positive finite number (max - min projection)
+			assert.ok(Number.isFinite(res.extent) && res.extent > 0);
 		});
 
-		it("strictly contains zero cartoon emojis in wave125ToothSetup.test.ts", () => {
-			const testCode = readFileSync(
-				resolve(import.meta.dirname, "wave125ToothSetup.test.ts"),
-				"utf-8",
-			);
-			const emojiRegex =
-				/[\u{1F300}-\u{1F5FF}\u{1F600}-\u{1F64F}\u{1F680}-\u{1F6FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1F900}-\u{1F9FF}\u{1F1E0}-\u{1F1FF}]/u;
-			assert.strictEqual(
-				emojiRegex.test(testCode),
-				false,
-				"wave125ToothSetup.test.ts must not contain cartoon emojis",
-			);
+		it("maintains translational invariance under extreme coordinate offsets", () => {
+			const offset = 100_000;
+			const pts: number[] = [];
+			for (let z = -5; z <= 5; z++) {
+				pts.push(offset, offset, z + offset);
+			}
+			const res = principalAxis(pts);
+			assert.ok(res !== null);
+			assert.ok(Math.abs(res.centroid[0] - offset) < 1e-4);
+			assert.ok(Math.abs(res.centroid[1] - offset) < 1e-4);
+			assert.ok(Math.abs(res.centroid[2] - offset) < 1e-4);
+			// Principal axis should remain purely aligned with Z ([0, 0, 1] or [0, 0, -1])
+			assert.ok(Math.abs(Math.abs(res.axis[2]) - 1) < 1e-4);
+		});
+
+		it("anglesFromWorldAxis returns finite angles for edge-case unit vectors", () => {
+			const frame: ArchFrame = {
+				tangent: [1, 0, 0],
+				normal: [0, 1, 0],
+				up: [0, 0, 1],
+			};
+			const angles1 = anglesFromWorldAxis(frame, [0, 0, -1]);
+			assert.ok(Number.isFinite(angles1.angleBLDeg));
+			assert.ok(Number.isFinite(angles1.angleMDDeg));
+
+			const angles2 = anglesFromWorldAxis(frame, [1, 0, 0]);
+			assert.ok(Number.isFinite(angles2.angleBLDeg));
+			assert.ok(Number.isFinite(angles2.angleMDDeg));
 		});
 	});
 });

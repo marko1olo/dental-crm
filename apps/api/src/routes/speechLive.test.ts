@@ -76,7 +76,9 @@ describe("SpeechLive Fastify Routes (/api/v1/speech/live)", () => {
 					} else if (msg.type === "error") {
 						receivedError = msg;
 					}
-				} catch {}
+				} catch (err) {
+					receivedError = err;
+				}
 			});
 			ws.on("close", (code) => {
 				closedCode = code;
@@ -124,6 +126,8 @@ describe("SpeechLive Fastify Routes (/api/v1/speech/live)", () => {
 		let receivedPong = false;
 		let closedCode = 0;
 
+		let parseError: unknown = null;
+
 		await new Promise<void>((resolve) => {
 			ws.on("open", () => {
 				opened = true;
@@ -136,7 +140,9 @@ describe("SpeechLive Fastify Routes (/api/v1/speech/live)", () => {
 						receivedPong = true;
 						ws.close(1000, "Normal closure");
 					}
-				} catch {}
+				} catch (err) {
+					parseError = err;
+				}
 			});
 			ws.on("close", (code) => {
 				closedCode = code;
@@ -146,6 +152,7 @@ describe("SpeechLive Fastify Routes (/api/v1/speech/live)", () => {
 		});
 
 		assert.equal(opened, true, "WebSocket /api/speech/live должен открываться для администратора");
+		assert.equal(parseError, null, "Не должно быть ошибок парсинга сообщений");
 		assert.notEqual(closedCode, 4403, "WebSocket НЕ должен быть закрыт с кодом 4403 Forbidden");
 
 		await app.close();

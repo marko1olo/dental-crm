@@ -17,8 +17,6 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
 	roiStats,
 	lineProfileHU,
@@ -306,25 +304,40 @@ describe("Wave 123: CBCT Measure Stats, HU Line Profile & Densitometry Engine", 
 		});
 	});
 
-	// ── 5. Zero Emojis Compliance ────────────────────────────────
+	// ── 5. Clinical Robustness: Degenerate Geometry & Sub-Voxel Profiles ──
 
-	describe("5. Zero Emojis Compliance (Mandate 8d item 7)", () => {
-		it("verifies 100% absence of cartoon emojis in measureStatsEngine.ts source code", () => {
-			const sourcePath = resolve(
-				import.meta.dirname,
-				"../measureStatsEngine.ts",
-			);
-			const source = readFileSync(sourcePath, "utf8");
+	describe("5. Clinical Robustness: Degenerate Geometry & Boundary Conditions", () => {
+		it("handles zero-length vector in angleDeg returning 0 safely without NaN", () => {
+			const a: [number, number] = [10, 10];
+			const b: [number, number] = [10, 10]; // Same point (zero length)
+			const c: [number, number] = [20, 20];
+			const deg = angleDeg(a, b, c);
+			assert.strictEqual(deg, 0);
+			assert.ok(!Number.isNaN(deg));
+		});
 
-			// Matches unicode emoji blocks
-			const emojiRegex =
-				/[\u{1F300}-\u{1F6FF}\u{1F900}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
-			const match = emojiRegex.exec(source);
-			assert.strictEqual(
-				match,
-				null,
-				`Found forbidden emoji character: ${match?.[0]}`,
-			);
+		it("handles zero-length bed (crest == apex) in calculateImplantBedDensitometry safely", () => {
+			const vol = createSyntheticVolume(() => 500);
+			const pt: Vec3 = [15, 15, 15];
+			const result = calculateImplantBedDensitometry(vol, pt, pt, 5);
+
+			assert.strictEqual(result.boneClass, "D3");
+			assert.strictEqual(result.stats.count, 5);
+			assert.strictEqual(result.stats.mean, 500);
+			assert.ok(!Number.isNaN(result.stats.stdDev));
+		});
+
+		it("lineProfileHU samples AIR_HU outside volume bounding box", () => {
+			const vol = createSyntheticVolume(() => 800);
+			// Start well outside bounds in negative coordinates
+			const start: Vec3 = [-20, -20, -20];
+			const end: Vec3 = [-10, -10, -10];
+			const samples = lineProfileHU(vol, start, end, 3);
+
+			assert.strictEqual(samples.length, 3);
+			for (const val of samples) {
+				assert.strictEqual(val, AIR_HU);
+			}
 		});
 	});
 });

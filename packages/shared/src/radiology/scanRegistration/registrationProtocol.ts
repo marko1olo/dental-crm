@@ -147,9 +147,12 @@ export function formatScanRegistrationA4Protocol(
  */
 export function formatRegistrationA4Protocol(
 	result: RegistrationProtocolInput,
-	patientName: string,
-	doctorName: string,
+	patientName: string = "Не указан",
+	doctorName: string = "Врач-стоматолог",
 ): string {
+	const pName = (patientName ?? "").trim() || "Не указан";
+	const dName = (doctorName ?? "").trim() || "Врач-стоматолог";
+
 	const statusText = result.isClinicallyAcceptable
 		? "[ДОПУЩЕНО К КЛИНИЧЕСКОМУ ИСПОЛЬЗОВАНИЮ]"
 		: "[ВНИМАНИЕ: ТРЕБУЕТСЯ ПОВТОРНАЯ КАЛИБРОВКА]";
@@ -164,8 +167,8 @@ export function formatRegistrationA4Protocol(
 		"               (CBCT <-> INTRAORAL OPTICAL SCAN REGISTRATION REPORT)            ",
 		"================================================================================",
 		"",
-		`Пациент: ${patientName.trim() || "Не указан"}`,
-		`Лечащий врач: ${doctorName.trim() || "Не указан"}`,
+		`Пациент: ${pName}`,
+		`Лечащий врач: ${dName}`,
 		`Дата формирования: ${new Date().toISOString().slice(0, 10)}`,
 		"Стандарт протокола: Форма 043/у / Предоперационное 3D-планирование",
 		"",
@@ -194,7 +197,7 @@ export function formatRegistrationA4Protocol(
 		"Протокол проверен врачом-стоматологом у кресла в соответствии с клиническими",
 		"рекомендациями Стоматологической Ассоциации России (СтАР).",
 		"",
-		`Врач-стоматолог (подпись): ____________________ / ${doctorName.trim() || "Врач-клиницист"} /`,
+		`Врач-стоматолог (подпись): ____________________ / ${dName} /`,
 		"",
 		"Подпись ответственного лица: ____________________",
 		"",

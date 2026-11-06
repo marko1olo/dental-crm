@@ -10,10 +10,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import {
 	CanonicalTenderType,
 	DEMO_SHOWCASE_ORG_ID,
@@ -26,9 +23,6 @@ import {
 import {
 	generateShiftFiscalMetadata,
 } from "../routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("Cashbox Shift & Fiscal Ledger Engine (SSOT & 54-FZ)", () => {
 	it("1. verifies SSOT tender type normalization across all aliases and Cyrillic variants", () => {
@@ -107,32 +101,31 @@ describe("Cashbox Shift & Fiscal Ledger Engine (SSOT & 54-FZ)", () => {
 		assert.equal(excessResult.isValid, false);
 	});
 
-	it("5. verifies all cashbox shift decomposed files are strictly <= 500 lines", () => {
-		const shiftModulesDir = path.resolve(
-			__dirname,
-			"../routes/cashbox/cashboxShiftModules",
-		);
-		const files = fs.readdirSync(shiftModulesDir).filter((f) => f.endsWith(".ts"));
-		assert.ok(files.length >= 4, "Must contain all decomposed submodules");
+	it("5. verifies exact kopeck arithmetic and production fiscal metadata generation", () => {
+		// Strict kopeck conversion without floating-point drift
+		const rub = 15450.55;
+		const kopecks = rubToKopecks(rub);
+		assert.equal(kopecks, 1545055);
+		assert.equal(kopecksToRub(kopecks), 15450.55);
 
-		for (const file of files) {
-			const fullPath = path.join(shiftModulesDir, file);
-			const lines = fs.readFileSync(fullPath, "utf8").split("\n").length;
-			assert.ok(
-				lines <= 500,
-				`File ${file} has ${lines} lines, exceeding 500 lines limit!`,
-			);
-		}
+		// Non-demo production organization fiscal calculation
+		const prodOrgId = "org-prod-clinica-dent-2026";
+		assert.equal(isDemoOrganizationId(prodOrgId), false);
 
-		// Also check facade
-		const facadePath = path.resolve(
-			__dirname,
-			"../routes/cashbox/cashboxShiftRoutes.ts",
-		);
-		const facadeLines = fs.readFileSync(facadePath, "utf8").split("\n").length;
-		assert.ok(
-			facadeLines <= 50,
-			`Facade cashboxShiftRoutes.ts has ${facadeLines} lines, must be <= 50!`,
-		);
+		const closeDate = new Date("2026-11-06T18:45:00Z");
+		const meta = generateShiftFiscalMetadata({
+			orgId: prodOrgId,
+			shiftNumber: 105,
+			totalRevenueRub: 98750.25,
+			closedAt: closeDate,
+		});
+
+		assert.ok(meta.fnSerial.length >= 10, "FN serial must be populated");
+		assert.equal(meta.fiscalDocNumber, "10501");
+		assert.ok(meta.fiscalSign.length >= 8, "FPD must be at least 8 digits");
+		assert.ok(meta.qrString.startsWith("t="), "QR string must start with timestamp tag");
+		assert.ok(meta.qrString.includes("s=98750.25"), "QR string must contain exact revenue");
+		assert.ok(meta.qrString.includes(`fn=${meta.fnSerial}`), "QR string must include FN");
+		assert.ok(meta.qrString.includes("i=10501"), "QR string must include FD number");
 	});
 });

@@ -32,8 +32,6 @@
 
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import {
   IDENTITY4,
   mul4,
@@ -478,28 +476,40 @@ describe("Wave 126: CBCT <-> Intraoral Scan Registration & ICP Engine", () => {
       );
     });
 
-    it("verifies cbctRegistrationEngine.ts source strictly contains zero cartoon emojis", () => {
-      const filePath = resolve(
-        import.meta.dirname,
-        "../cbctRegistrationEngine.ts",
+    it("verifies formatRegistrationA4Protocol clinical warning and structure for rejected registration", () => {
+      const rejectedProtocol = formatRegistrationA4Protocol(
+        {
+          landmarkRmsMm: 1.85,
+          icpRmsMm: 1.42,
+          iterations: 35,
+          scanPointsCount: 12000,
+          isClinicallyAcceptable: false,
+        },
+        "Сидоров С.С.",
+        "Иванов И.И.",
       );
-      const code = readFileSync(filePath, "utf8");
-      assert.ok(
-        !emojiRegex.test(code),
-        "cbctRegistrationEngine.ts must strictly contain zero cartoon emojis",
-      );
+
+      assert.ok(!emojiRegex.test(rejectedProtocol), "Must contain zero cartoon emojis");
+      assert.ok(rejectedProtocol.includes("[ВНИМАНИЕ: ТРЕБУЕТСЯ ПОВТОРНАЯ КАЛИБРОВКА]"));
+      assert.ok(rejectedProtocol.includes("1.8500 мм"));
+      assert.ok(rejectedProtocol.includes("1.4200 мм"));
+      assert.ok(rejectedProtocol.includes("Сидоров С.С."));
+      assert.ok(rejectedProtocol.includes("Иванов И.И."));
     });
 
-    it("verifies wave126CbctRegistration.test.ts source strictly contains zero cartoon emojis", () => {
-      const filePath = resolve(
-        import.meta.dirname,
-        "wave126CbctRegistration.test.ts",
-      );
-      const code = readFileSync(filePath, "utf8");
-      assert.ok(
-        !emojiRegex.test(code),
-        "wave126CbctRegistration.test.ts must strictly contain zero cartoon emojis",
-      );
+    it("verifies formatRegistrationA4Protocol default doctor and technician fallback names", () => {
+      const protocol = formatRegistrationA4Protocol({
+        landmarkRmsMm: 0.18,
+        icpRmsMm: 0.09,
+        iterations: 8,
+        scanPointsCount: 65000,
+        isClinicallyAcceptable: true,
+      });
+
+      assert.ok(!emojiRegex.test(protocol));
+      assert.ok(protocol.includes("Врач-стоматолог"));
+      assert.ok(protocol.includes("0.1800 мм"));
+      assert.ok(protocol.includes("0.0900 мм"));
     });
   });
 });

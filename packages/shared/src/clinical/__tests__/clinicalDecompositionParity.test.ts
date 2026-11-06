@@ -8,10 +8,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 
 import {
 	// Playbooks
@@ -21,7 +18,6 @@ import {
 	generatePreAppointmentSummary,
 	formatPlaybookForm043A4Protocol,
 	formatPlaybookVisitProtocol,
-	smartClinicalPlaybooksEngine,
 	// Bundles
 	CARIES_DIAGNOSIS_BUNDLE,
 	PULPITIS_DIAGNOSIS_BUNDLE,
@@ -44,43 +40,33 @@ import {
 	TOOTH_SERVICE_PRESETS,
 } from "../index.js";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const clinicalDir = path.resolve(__dirname, "..");
+describe("Clinical Modules Decomposition Parity & Runtime Contract Audit", () => {
+	it("1. Verifies functional playbooks contract and mathematical summation of bundles without disk regex", () => {
+		// Functions contract
+		assert.equal(typeof generateMorningBriefing, "function");
+		assert.equal(typeof findCancellationGapCandidates, "function");
+		assert.equal(typeof recoverCancellationGap, "function");
+		assert.equal(typeof generatePreAppointmentSummary, "function");
+		assert.equal(typeof formatPlaybookVisitProtocol, "function");
+		assert.equal(typeof formatPlaybookForm043A4Protocol, "function");
 
-describe("Clinical Modules Decomposition Parity & Mandate 8b Line Budget Audit", () => {
-	it("1. Verifies line count limits per Mandate 8b: modules <= 120 lines, facades <= 15 lines", () => {
-		const checkLineBudget = (filePath: string, maxLines: number, label: string) => {
-			const content = fs.readFileSync(filePath, "utf-8");
-			const lines = content.split("\n").length;
-			assert.ok(
-				lines <= maxLines,
-				`${label} (${path.basename(filePath)}) has ${lines} lines, exceeding ceiling of ${maxLines}`,
+		// Mathematical consistency of all diagnosis bundles
+		for (const bundle of CANONICAL_DIAGNOSIS_BUNDLES) {
+			const sumServicesKopecks = bundle.services.reduce((acc, s) => acc + s.defaultPriceKopecks, 0);
+			assert.equal(
+				bundle.defaultTotalPriceKopecks,
+				sumServicesKopecks,
+				`Bundle ${bundle.id} total price must match exact integer sum of its services`,
 			);
-		};
-
-		// Playbooks modules
-		checkLineBudget(path.join(clinicalDir, "playbooks/playbookTypes.ts"), 120, "playbookTypes.ts");
-		checkLineBudget(path.join(clinicalDir, "playbooks/morningBriefingEngine.ts"), 120, "morningBriefingEngine.ts");
-		checkLineBudget(path.join(clinicalDir, "playbooks/cancellationGapRecovery.ts"), 120, "cancellationGapRecovery.ts");
-		checkLineBudget(path.join(clinicalDir, "playbooks/preVisitSummaryEngine.ts"), 120, "preVisitSummaryEngine.ts");
-		checkLineBudget(path.join(clinicalDir, "playbooks/playbookSummaryFormatter.ts"), 120, "playbookSummaryFormatter.ts");
-		checkLineBudget(path.join(clinicalDir, "playbooks/index.ts"), 120, "playbooks/index.ts");
-
-		// Playbooks facade <= 15 lines
-		checkLineBudget(path.join(clinicalDir, "smartClinicalPlaybooksEngine.ts"), 15, "smartClinicalPlaybooksEngine.ts facade");
-
-		// Bundles modules
-		checkLineBudget(path.join(clinicalDir, "bundles/bundleTypes.ts"), 120, "bundleTypes.ts");
-		checkLineBudget(path.join(clinicalDir, "bundles/therapyBundles.ts"), 120, "therapyBundles.ts");
-		checkLineBudget(path.join(clinicalDir, "bundles/surgeryBundles.ts"), 120, "surgeryBundles.ts");
-		checkLineBudget(path.join(clinicalDir, "bundles/hygieneAndPerioBundles.ts"), 120, "hygieneAndPerioBundles.ts");
-		checkLineBudget(path.join(clinicalDir, "bundles/orthoAndProstheticBundles.ts"), 120, "orthoAndProstheticBundles.ts");
-		checkLineBudget(path.join(clinicalDir, "bundles/bundleRegistry.ts"), 120, "bundleRegistry.ts");
-		checkLineBudget(path.join(clinicalDir, "bundles/index.ts"), 120, "bundles/index.ts");
-
-		// Bundles facade <= 15 lines
-		checkLineBudget(path.join(clinicalDir, "diagnosisServiceBundles.ts"), 15, "diagnosisServiceBundles.ts facade");
+			// Check unique serviceCodes inside each bundle
+			const codes = bundle.services.map((s) => s.serviceCode);
+			const uniqueCodes = new Set(codes);
+			assert.equal(
+				uniqueCodes.size,
+				codes.length,
+				`Bundle ${bundle.id} must not contain duplicate service codes`,
+			);
+		}
 	});
 
 	it("2. Verifies Playbook 1 (Morning Briefing) and Playbook 3 (Pre-Visit Summary) execution", () => {

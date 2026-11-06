@@ -1,9 +1,11 @@
 import assert from "node:assert";
-import fs from "node:fs";
-import path from "node:path";
+import crypto from "node:crypto";
 import { describe, it } from "node:test";
 import { buildFnsKnd1151156Xml } from "../fnsKnd1151156Builder.js";
 import { renderDocumentHtml } from "../../../documents/renderDocument.js";
+import { parsePassportFromString } from "../../../routes/documentTemplatesModules/defaultStatutoryTemplates.js";
+import { PublicEstimatesService, type StoredPublicEstimate } from "../../publicEstimatesService.js";
+import { verifySberPosWebhookChecksum } from "../../../routes/payments/sberPosWebhookRoute.js";
 import type { GeneratedDocument, Patient } from "@dental/shared";
 
 describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
@@ -72,98 +74,75 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 		assert(xmlContent.includes('Отчество="Петрович"'), "XML must contain real IP patronymic");
 	});
 
-	it("documentTemplates.ts does not contain hardcoded mock INN or address", () => {
-		const repoRoot = process.cwd().includes("apps")
-			? path.resolve(process.cwd(), "../..")
-			: process.cwd();
-		const filePath = path.resolve(
-			repoRoot,
-			"apps/api/src/routes/documentTemplates.ts",
-		);
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert(
-			!content.includes("7701234567"),
-			"documentTemplates.ts must not contain hardcoded INN 7701234567",
-		);
-		assert(
-			!content.includes("ул. Стоматологов"),
-			"documentTemplates.ts must not contain mock address 'ул. Стоматологов'",
-		);
-		assert(
-			content.includes("organizations.id"),
-			"documentTemplates.ts must query organizations table dynamically",
-		);
+	it("parsePassportFromString dynamically parses series and number without hardcoded mocks", () => {
+		const parsed1 = parsePassportFromString("Паспорт РФ 4510 №123456 выдан ТП №1");
+		assert.equal(parsed1.series, "4510");
+		assert.equal(parsed1.number, "123456");
+
+		const parsed2 = parsePassportFromString("45 15 987654");
+		assert.equal(parsed2.series, "4515");
+		assert.equal(parsed2.number, "987654");
+
+		const parsedEmpty = parsePassportFromString("");
+		assert.deepEqual(parsedEmpty, {});
 	});
 
-	it("publicEstimatesService.ts does not contain synthetic demo patient Алексей with PIN 1234", () => {
-		const repoRoot = process.cwd().includes("apps")
-			? path.resolve(process.cwd(), "../..")
-			: process.cwd();
-		const filePath = path.resolve(
-			repoRoot,
-			"apps/api/src/services/publicEstimatesService.ts",
-		);
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert(
-			!content.includes('patientFirstName: "Алексей"'),
-			"publicEstimatesService.ts must not contain synthetic demo patient 'Алексей'",
-		);
-		assert(
-			!content.includes('pin: "1234"'),
-			"publicEstimatesService.ts must not contain synthetic PIN '1234'",
-		);
+	it("PublicEstimatesService registers and returns realistic estimate metadata in runtime", () => {
+		const testToken = "test-token-wave108-" + Date.now();
+		const estimate: StoredPublicEstimate = {
+			id: "est-108",
+			organizationId: "org-108",
+			patientId: "pat-108",
+			publicToken: testToken,
+			estimateNumber: "СМ-2026-0042",
+			status: "pending",
+			validFrom: "2026-03-01",
+			validUntil: null,
+			clinicName: "Клиника Денте",
+			clinicPhone: "+7 (495) 123-45-67",
+			clinicEmail: "info@dente.ru",
+			clinicAddress: "Москва, ул. Ленина, 1",
+			clinicCurrency: "RUB",
+			patientFirstName: "Елена",
+			failedAttempts: 0,
+			totalFailures: 0,
+			isLocked: false,
+			patientNotes: null,
+			items: [],
+		};
+
+		PublicEstimatesService.registerEstimate(estimate);
+		const meta = PublicEstimatesService.getMeta(testToken);
+
+		assert(meta !== null, "Meta must be returned for registered estimate");
+		assert.equal(meta.patient_first_name, "Елена");
+		assert.equal(meta.estimate_number, "СМ-2026-0042");
+		assert.equal(meta.clinic_name, "Клиника Денте");
 	});
 
-	it("sberPosWebhookRoute.ts does not contain hardcoded clinic INN or address", () => {
-		const repoRoot = process.cwd().includes("apps")
-			? path.resolve(process.cwd(), "../..")
-			: process.cwd();
-		const filePath = path.resolve(
-			repoRoot,
-			"apps/api/src/routes/payments/sberPosWebhookRoute.ts",
-		);
-		const content = fs.readFileSync(filePath, "utf-8");
-		assert(
-			!content.includes('clinicInn: "7701234567"'),
-			"sberPosWebhookRoute.ts must not contain hardcoded clinic INN",
-		);
-		assert(
-			!content.includes("Ломоносовский пр-т, 24"),
-			"sberPosWebhookRoute.ts must not contain hardcoded Lomonosovsky address",
-		);
-		assert(
-			content.includes("eq(organizations.id, orgId)"),
-			"sberPosWebhookRoute.ts must query organizations table dynamically",
-		);
+	it("verifySberPosWebhookChecksum validates HMAC-SHA256 signatures in runtime without disk regex", () => {
+		const secret = "secret-key-sber-12345";
+		const payload = {
+			orderNumber: "ORD-999",
+			amount: "15000",
+			status: "deposited",
+		};
+
+		// Standard format: orderNumber;ORD-999;amount;15000;status;deposited;
+		const sorted = "amount;15000;orderNumber;ORD-999;status;deposited;";
+		const validHmac = crypto.createHmac("sha256", secret).update(sorted).digest("hex");
+
+		const isValid = verifySberPosWebhookChecksum(payload, secret, validHmac);
+		assert.equal(isValid, true, "Valid HMAC must be accepted");
+
+		const isInvalid = verifySberPosWebhookChecksum(payload, secret, "invalid-hmac-hash");
+		assert.equal(isInvalid, false, "Invalid HMAC must be rejected");
+
+		const isEmpty = verifySberPosWebhookChecksum({}, secret, validHmac);
+		assert.equal(isEmpty, false, "Empty payload must be rejected");
 	});
 
-	it("renderDocument.ts has purged Form 025/u hospital bloat and enforces dental Form 043/u outpatient sovereignty (Mandate 8i)", () => {
-		const repoRoot = process.cwd().includes("apps")
-			? path.resolve(process.cwd(), "../..")
-			: process.cwd();
-		const filePath = path.resolve(
-			repoRoot,
-			"apps/api/src/documents/renderDocument.ts",
-		);
-		const content = fs.readFileSync(filePath, "utf-8");
-
-		assert(
-			!content.includes("hospitalizationRows"),
-			"renderDocument.ts must not contain hospitalizationRows",
-		);
-		assert(
-			!content.includes("departmentHeadConsultations"),
-			"renderDocument.ts must not contain departmentHeadConsultations",
-		);
-		assert(
-			!content.includes("stayUrbanRuralCode"),
-			"renderDocument.ts must not contain stayUrbanRuralCode",
-		);
-		assert(
-			content.includes("outpatient_medical_card_025u: dentalMedicalCard043u(document, patient)"),
-			"renderDocument.ts must map outpatient_medical_card_025u to dentalMedicalCard043u for outpatient sovereignty",
-		);
-
+	it("renderDocumentHtml enforces dental Form 043/u outpatient sovereignty (Mandate 8i)", () => {
 		const mockPatient = {
 			id: "a0000000-0000-0000-0000-000000000001",
 			organizationId: "o0000000-0000-0000-0000-000000000001",
@@ -264,5 +243,8 @@ describe("Wave 108 — API Mock Purity & Outpatient Sovereignty Gates", () => {
 			html.includes("К04.0 Начальный пульпит"),
 			"Rendered HTML must preserve outpatient clinical diagnosis",
 		);
+		// Enforce no hospital inpatient bloat in rendered output
+		assert(!html.includes("Госпитализация"), "Must not contain hospital admission rows");
+		assert(!html.includes("Отделение стационара"), "Must not contain hospital department rows");
 	});
 });

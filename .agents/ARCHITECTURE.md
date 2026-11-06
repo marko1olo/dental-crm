@@ -33,6 +33,7 @@ This document describes the structure, data flows, and architectural conventions
 * 🧠 **[AI_ASSISTANT_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_RULES.md)** — Высшая конституция, правила поведения и T.A.R.S. протокол ИИ-ассистента DENTE.
 * 🏛️ **[AI_ASSISTANT_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_ARCHITECTURE.md)** — Архитектура ИИ-ассистента, 3 контура взаимодействия, Dual-Harness (Web vs Desktop) и 26 инструментов.
 * 🖥️ **[AI_ASSISTANT_DESKTOP_MCP.md](file:///C:/Clinic_MVP/dental-crm/.agents/AI_ASSISTANT_DESKTOP_MCP.md)** — Архитектура десктопного харнесса (.EXE / Windows), файловый движок, фоновые задачи (schedule/manage_task), управление софтом томографов и аппаратный MCP-мост оборудования.
+* 🛡️ **[TEST_SUITES_INQUISITION_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)** — Реестр Red Team инквизиции тестов, искоренение regex-проверок исходников (Ось №7 Мандата 8aj), ликвидация глотания ошибок и честный рантайм.
 
 ---
 

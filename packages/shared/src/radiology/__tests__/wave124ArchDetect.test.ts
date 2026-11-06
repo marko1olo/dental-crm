@@ -10,10 +10,7 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
 import { describe, it } from "node:test";
-import { fileURLToPath } from "node:url";
 import {
 	detectArchControlPoints,
 	smoothPolyline,
@@ -24,9 +21,6 @@ import {
 	type Point2,
 	type VolumeSamplingData,
 } from "../cprMath.js";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 describe("Wave 124: CBCT Automatic Arch Detection Engine", () => {
 	const DIMS: [number, number, number] = [120, 120, 24];
@@ -204,23 +198,40 @@ describe("Wave 124: CBCT Automatic Arch Detection Engine", () => {
 		assert.deepEqual(smoothPolyline(single), single);
 	});
 
-	it("Test 8: confirms zero emojis in archDetectEngine.ts and test file", () => {
-		const enginePath = path.resolve(__dirname, "../archDetectEngine.ts");
-		const engineContent = fs.readFileSync(enginePath, "utf-8");
-		const testContent = fs.readFileSync(__filename, "utf-8");
+	it("Test 8: handles anisotropic voxel spacing and shifted coordinate origin in LPS world space", () => {
+		// Volume with anisotropic spacing: 0.5 mm in XY and 1.5 mm in Z, shifted origin [10, -20, 5]
+		const anisoSpacing: [number, number, number] = [0.5, 0.5, 1.5];
+		const shiftedOrigin: [number, number, number] = [10, -20, 5];
+		const anisoDims: [number, number, number] = [160, 160, 30];
 
-		// Regex matching unicode emoji ranges
-		const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}\u{1FA00}-\u{1FAFF}]/u;
+		const anisoVol = createVolume(
+			(i, j) => {
+				const dx = i - 80;
+				const dy = j - 80;
+				const r = Math.hypot(dx / 40, dy / 32);
+				const phi = Math.atan2(dx, -dy);
+				if (Math.abs(r - 1.0) < 0.12 && Math.abs(phi) <= SPAN_RAD) {
+					return 1100;
+				}
+				return 40;
+			},
+			anisoDims,
+			shiftedOrigin,
+			anisoSpacing,
+		);
 
-		assert.equal(
-			emojiRegex.test(engineContent),
-			false,
-			"archDetectEngine.ts must contain strictly 0 emojis",
-		);
-		assert.equal(
-			emojiRegex.test(testContent),
-			false,
-			"wave124ArchDetect.test.ts must contain strictly 0 emojis",
-		);
+		const cps = detectArchControlPoints(anisoVol);
+		assert.ok(cps !== null, "Detection must succeed on anisotropic volume");
+		assert.equal(cps.length, 9);
+
+		// LPS world coordinates must properly incorporate origin and spacing
+		for (let i = 0; i < cps.length; i++) {
+			const [wx, wy] = cps[i]!;
+			// Index coordinates: ix = (wx - origin[0]) / spacing[0]
+			const ix = (wx - shiftedOrigin[0]) / anisoSpacing[0];
+			const iy = (wy - shiftedOrigin[1]) / anisoSpacing[1];
+			assert.ok(ix >= 0 && ix < anisoDims[0], `Index X (${ix}) must be within bounds`);
+			assert.ok(iy >= 0 && iy < anisoDims[1], `Index Y (${iy}) must be within bounds`);
+		}
 	});
 });

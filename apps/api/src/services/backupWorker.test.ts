@@ -66,9 +66,13 @@ describe("BackupWorker start/stop", () => {
 		if (originalPath) process.env.PATH = originalPath;
 		if (originalKey === undefined) delete process.env.CLINIC_ENCRYPTION_KEY;
 		else process.env.CLINIC_ENCRYPTION_KEY = originalKey;
-		try {
-			fs.rmSync(tempDir, { recursive: true, force: true });
-		} catch {}
+		if (fs.existsSync(tempDir)) {
+			try {
+				fs.rmSync(tempDir, { recursive: true, force: true });
+			} catch (cleanupErr) {
+				if (process.env.DEBUG) console.warn("Temp cleanup deferred:", cleanupErr);
+			}
+		}
 	});
 
 	test("daemon starts, schedules, and stops", async (t) => {

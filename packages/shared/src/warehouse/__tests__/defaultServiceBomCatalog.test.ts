@@ -4,9 +4,6 @@
  */
 
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
 	calculateBatchBomDeduction,
@@ -66,26 +63,27 @@ describe("defaultServiceBomCatalog & bomModules Test Suite", () => {
 		assert.equal(carpuleItem.totalCostPriceKopecks, 29000); // 14500 * 2 = 29000 kopecks
 	});
 
-	it("4. Mandate 8b file limits (submodules <= 120 lines, facades <= 15 lines)", () => {
-		const currentDir = path.dirname(fileURLToPath(import.meta.url));
-		const bomModulesDir = path.resolve(currentDir, "../bomModules");
-		const moduleFiles = fs.readdirSync(bomModulesDir).filter((f) => f.endsWith(".ts"));
-
-		for (const file of moduleFiles) {
-			const filePath = path.join(bomModulesDir, file);
-			const lineCount = fs.readFileSync(filePath, "utf-8").split("\n").length;
-			assert.ok(
-				lineCount <= 120,
-				`bomModules/${file} has ${lineCount} lines (limit: <= 120 lines)`,
-			);
+	it("4. Catalog structural validity and edge cases of batch deduction", () => {
+		// Validates all catalog links at runtime
+		for (const link of DEFAULT_SERVICE_CONSUMABLE_LINKS) {
+			assert.ok(link.service804nCode.length > 0, "Service code must not be empty");
+			assert.ok(link.inventoryItemId.length > 0, "Inventory item ID must not be empty");
+			assert.ok(link.quantityPerService > 0, "Quantity per service must be > 0");
+			assert.ok(link.costPriceKopecks > 0, "Cost price must be > 0 in integer kopecks");
+			assert.ok(Number.isInteger(link.costPriceKopecks), "Cost price must be an integer (no floats)");
 		}
 
-		const facadePath = path.resolve(currentDir, "../defaultServiceBomCatalog.ts");
-		const facadeLines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
-		assert.ok(facadeLines <= 15, `defaultServiceBomCatalog.ts has ${facadeLines} lines (limit: <= 15)`);
+		// Empty batch deduction
+		const emptyResult = calculateBatchBomDeduction([]);
+		assert.equal(emptyResult.totalServicesCount, 0);
+		assert.equal(emptyResult.items.length, 0);
+		assert.equal(emptyResult.totalCostPriceKopecks, 0);
 
-		const legacyFacadePath = path.resolve(currentDir, "../default804nBomCatalog.ts");
-		const legacyLines = fs.readFileSync(legacyFacadePath, "utf-8").split("\n").length;
-		assert.ok(legacyLines <= 10, `default804nBomCatalog.ts has ${legacyLines} lines (limit: <= 10)`);
+		// Non-existent service code returns empty deduction
+		const unknownResult = calculateBatchBomDeduction([
+			{ serviceCode: "UNKNOWN-999-CODE", quantity: 5 },
+		]);
+		assert.equal(unknownResult.items.length, 0);
+		assert.equal(unknownResult.totalCostPriceKopecks, 0);
 	});
 });

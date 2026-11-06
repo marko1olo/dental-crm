@@ -1,6 +1,4 @@
 import assert from "node:assert/strict";
-import fs from "node:fs";
-import { fileURLToPath } from "node:url";
 import test, { describe } from "node:test";
 import {
 	labWorkTypeSchema,
@@ -27,6 +25,7 @@ import {
 	mapTo5StageLabStatus,
 	FORM_ZTL_1_METADATA,
 	generateProstheticWarrantyPassport,
+	prostheticWarrantyPassportSchema,
 } from "./labOrders.js";
 
 describe("Shared Dental Lab — Zod Validation Schemas", () => {
@@ -266,18 +265,55 @@ describe("Shared Dental Lab — 5-Stage Pipeline & Warranty Passport", () => {
 		assert.ok(FORM_ZTL_1_METADATA.warrantyGostRu.includes("ГОСТ Р 51087-97"));
 	});
 
-	test("Zero-Mocks: packages/shared/src/lab/labOrders.ts strictly contains zero Math.random() calls", () => {
-		const filePath = fileURLToPath(new URL("./labOrders.ts", import.meta.url));
-		const content = fs.readFileSync(filePath, "utf-8");
-		const lines = content.split("\n");
-		const mathRandomLines = lines.filter(
-			(l) => !l.trim().startsWith("//") && !l.trim().startsWith("*") && l.includes("Math.random()")
-		);
-		assert.equal(
-			mathRandomLines.length,
-			0,
-			`Found Math.random() calls in labOrders.ts: ${mathRandomLines.join(", ")}`
-		);
+	test("generateProstheticWarrantyPassport runtime entropy, leap-year calculation and Zod validation", () => {
+		const baseParams = {
+			orderNumber: "ЛО-2026/09-0099",
+			patientFullName: "Смирнова Анна Сергеевна",
+			doctorFullName: "Ковалев А.В.",
+			toothFdi: "16",
+			restorationType: "Циркониевая коронка Prettau",
+			frameworkMaterial: "Диоксид циркония ZrO₂ Multilayer",
+			shade: "A3",
+			fixationDate: "2024-02-29", // Leap year edge case
+			warrantyYears: 2,
+		};
+
+		const passport1 = generateProstheticWarrantyPassport(baseParams);
+		const passport2 = generateProstheticWarrantyPassport(baseParams);
+
+		// Zod runtime schema check
+		const validated = prostheticWarrantyPassportSchema.parse(passport1);
+		assert.equal(validated.orderNumber, baseParams.orderNumber);
+		assert.equal(validated.fixationDate, "2024-02-29");
+		// 2024-02-29 + 2 years in JS Date -> 2026-03-01
+		assert.equal(validated.expirationDate, "2026-03-01");
+		assert.equal(validated.warrantyYears, 2);
+
+		// Batch codes must be distinct and non-empty (crypto entropy)
+		assert.match(passport1.batchCode, /^LOT-2024-[A-Z0-9]{6}$/);
+		assert.match(passport2.batchCode, /^LOT-2024-[A-Z0-9]{6}$/);
+		assert.notEqual(passport1.batchCode, passport2.batchCode);
+
+		// When explicit batchCode is supplied, it must be preserved without mutation
+		const explicit = generateProstheticWarrantyPassport({
+			...baseParams,
+			batchCode: "LOT-CUSTOM-777",
+		});
+		assert.equal(explicit.batchCode, "LOT-CUSTOM-777");
+
+		// Validation failure on invalid warranty period
+		assert.throws(() => {
+			prostheticWarrantyPassportSchema.parse({
+				...passport1,
+				warrantyYears: 0,
+			});
+		});
+		assert.throws(() => {
+			prostheticWarrantyPassportSchema.parse({
+				...passport1,
+				warrantyYears: 15,
+			});
+		});
 	});
 });
 
