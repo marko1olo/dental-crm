@@ -98,7 +98,8 @@ export function EditorStatusSection({
 							updateAppointmentScheduleDraft(appointment.id, "comment", updated);
 						}
 					}}
-					disabled={appointmentSaveState === "saving"}
+					disabled={false}
+					aria-busy={appointmentSaveState === "saving" || undefined}
 				/>
 			</div>
 			{appointmentHasOpenVisit && (
@@ -107,7 +108,7 @@ export function EditorStatusSection({
 					className="status-blocker-note appointment-handoff-note text-xs mt-1 font-medium p-2 rounded break-words"
 				>
 					По этой записи сейчас открыт активный приём у врача.
-					Завершите или закройте приём в рабочем месте врача перед изменением статуса записи.
+					Завершите или закройте прием перед закрывающим статусом записи.
 				</div>
 			)}
 		</div>

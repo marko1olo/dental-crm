@@ -50,12 +50,15 @@ export function QuickActionStatusButtons({
 					<button
 						key={action.key}
 						type="button"
-						disabled={disabled || isLocked}
+						disabled={false}
+						aria-busy={disabled || undefined}
+						aria-disabled={isLocked || undefined}
 						onClick={(e) => {
 							e.stopPropagation();
+							if (disabled || isLocked) return;
 							onActionClick(action.targetStatus, action.noteAppend);
 						}}
-						className={`quick-action-pill min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none ${
+						className={`quick-action-pill min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-xl border text-xs font-medium flex items-center justify-center gap-1.5 transition-all duration-150 cursor-pointer select-none active:scale-95 aria-busy:opacity-50 aria-disabled:opacity-50 aria-disabled:cursor-not-allowed focus:ring-2 focus:ring-[var(--teal)] focus:outline-none ${
 							isCurrent
 								? action.activeClass
 								: "border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:border-[var(--teal,var(--brand-primary))] hover:text-[var(--teal,var(--brand-primary))] hover:bg-[var(--paper-soft)]"

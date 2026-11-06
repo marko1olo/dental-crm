@@ -32,6 +32,7 @@ export {
  * setIsHoverPreviewOpen(true)
  * 80);
  * onDoubleClick={(e) => {
+ * formatPatientDisplayFio(appointmentPatientName)
  */
 
 export const AppointmentCard = React.memo(

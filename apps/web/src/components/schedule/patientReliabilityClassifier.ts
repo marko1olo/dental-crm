@@ -21,6 +21,7 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 		isInsightHighRisk,
 	} = params;
 
+	// 1. Первичный / новый пациент (0 завершённых визитов)
 	if (totalFinished === 0) {
 		const badge: PatientReliabilityBadge = {
 			category: "new",
@@ -42,8 +43,8 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 		};
 	}
 
+	// 2. Риск неявки (2+ неявки подряд или 3+ неявки суммарно)
 	if (consecutiveNoShows >= 2 || noShowCount >= 3 || (maxConsecutiveNoShows >= 2 && attendanceRatePercent < 60) || (isInsightHighRisk && noShowCount >= 2)) {
-		const score = Math.max(0, Math.min(45, 100 - noShowCount * 30 - consecutiveNoShows * 15 - lateCount * 10));
 		const summary = consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд.` : `${noShowCount} неявок из ${totalFinished} визитов.`;
 		const badge: PatientReliabilityBadge = {
 			category: "risk",
@@ -59,14 +60,14 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 		return {
 			category: "risk",
 			status: "high_risk",
-			score,
+			score: Math.max(0, 100 - noShowCount * 25),
 			badge,
 			receptionistAlert: `[Внимание] У пациента в истории ${consecutiveNoShows >= 2 ? `${consecutiveNoShows} неявки подряд` : `${noShowCount} неявок`}. Запись не блокируется.`,
 		};
 	}
 
+	// 3. Зона внимания (единичные пропуски, опоздания или отмены)
 	if (noShowCount >= 1 || lateCount >= 2 || (lateCount === 1 && noShowCount === 1) || attendanceRatePercent < 90 || onTimeRatePercent < 90 || cancelledCount >= 3) {
-		const score = Math.max(46, Math.min(80, 100 - noShowCount * 25 - lateCount * 15 - cancelledCount * 8));
 		const reasonParts: string[] = [];
 		if (noShowCount > 0) reasonParts.push(`${noShowCount} пропуск(а)`);
 		if (lateCount > 0) reasonParts.push(`${lateCount} опоздани(е/й) >15м`);
@@ -86,13 +87,13 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 		return {
 			category: "attention",
 			status: "attention",
-			score,
+			score: 75,
 			badge,
 			receptionistAlert: `Рекомендуется контрольный звонок накануне: ${summary}.`,
 		};
 	}
 
-	const score = Math.min(100, Math.max(90, 95 + completedCount));
+	// 4. Постоянный надёжный пациент
 	const badge: PatientReliabilityBadge = {
 		category: "reliable",
 		status: "reliable",
@@ -104,5 +105,5 @@ export function classifyReliability(params: ClassifierParams): ClassifierResult 
 		badgeClass: "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border-emerald-500/40",
 		requiresTwoHourConfirmation: false,
 	};
-	return { category: "reliable", status: "reliable", score, badge };
+	return { category: "reliable", status: "reliable", score: 100, badge };
 }

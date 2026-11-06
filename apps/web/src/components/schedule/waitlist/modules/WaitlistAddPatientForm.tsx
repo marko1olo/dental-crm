@@ -45,8 +45,16 @@ export function WaitlistAddPatientForm({
 	onNotesChange,
 	onCancel,
 }: WaitlistAddPatientFormProps) {
+	const handleFormSubmit = (e: React.FormEvent) => {
+		if (isSubmitting) {
+			e.preventDefault();
+			return;
+		}
+		onSubmit(e);
+	};
+
 	return (
-		<form onSubmit={onSubmit} className="space-y-4 pt-1">
+		<form onSubmit={handleFormSubmit} className="space-y-4 pt-1">
 			<div>
 				<label className="block text-xs font-semibold text-[var(--text,#0f172a)] mb-1">
 					Пациент клиники *
@@ -169,8 +177,9 @@ export function WaitlistAddPatientForm({
 				</button>
 				<button
 					type="submit"
-					disabled={isSubmitting}
-					className="px-5 py-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer"
+					disabled={false}
+					aria-busy={isSubmitting || undefined}
+					className="px-5 py-2.5 rounded-lg bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-hover,#0f766e)] text-white text-xs font-semibold shadow-sm transition-all cursor-pointer aria-busy:opacity-60"
 				>
 					{isSubmitting ? "Сохранение..." : "Добавить в лист ожидания"}
 				</button>

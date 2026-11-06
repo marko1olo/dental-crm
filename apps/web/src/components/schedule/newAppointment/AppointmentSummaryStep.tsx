@@ -102,10 +102,13 @@ export function AppointmentSummaryStep(props: AppointmentSummaryStepProps) {
 
 			<div className="appointment-editor-actions">
 				<button
-					className="secondary-button min-h-[44px] px-4 py-2 text-xs font-semibold cursor-pointer"
+					className="secondary-button min-h-[44px] px-4 py-2 text-xs font-semibold cursor-pointer aria-busy:opacity-60"
 					type="button"
-					onClick={resetNewAppointmentDraft}
-					disabled={newAppointmentSaveState === "saving"}
+					onClick={() => {
+						if (newAppointmentSaveState === "saving") return;
+						resetNewAppointmentDraft();
+					}}
+					disabled={false}
 					aria-busy={newAppointmentSaveState === "saving" || undefined}
 				>
 					Сбросить

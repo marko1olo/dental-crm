@@ -950,6 +950,33 @@
      * ☀️ 7. `09_call_audio_player_pc_light_1440x900.png` (214 KB) — плеер записей разговоров с расшифровкой.
      * Все скриншоты лично просмотрены через `read_file` и очищены от дефектов.
 
+### 10a. Фича #479: Schedule & Fast Booking Red Team Overhaul, Native Mobile Agenda View & HIG Touch Ergonomics
+
+1. **Ликвидация блокировок кнопок действий (Мандат 8e: Автономия врача)**:
+   - В компонентах расписания (`QuickActionStatusButtons.tsx`, `WaitlistAddPatientForm.tsx`, `EditorFooterActions.tsx`, `AppointmentSummaryStep.tsx`, `EditorStatusSection.tsx`) полностью ликвидированы все искусственные `disabled={...}` атрибуты.
+   - Заменены на неблокирующий debounced submission и индикацию состояния `aria-busy={...}`. Кнопки «Забронировать слот», «Сохранить запись», «Начать приём» и добавление в лист ожидания всегда доступны для клика врача.
+2. **Суверенитет соло-врача и 5-секундный флоу записи (Мандат 8n)**:
+   - Быстрое резервирование слота за 5 секунд без навязывания обязательного выбора ассистента или кабинета.
+   - Слот выбирается в 1 клик -> ввод номера/фамилии -> процедура -> запись сохраняется мгновенно.
+3. **Мобильная эргономика Apple HIG (390×844) и нативный Agenda View (Мандат 8ze)**:
+   - Ликвидировано сплющивание 8 колонок десктопа на смартфонах (Anti-Desktop-Squeeze).
+   - Внедрен нативный Agenda View (`ScheduleMobileAgendaView.tsx`, `useScheduleMobileAgendaState.ts`):
+     * Полоса дней с Apple Segmented Day Control: `[ Сегодня | Завтра | + День ]`.
+     * Вертикальный таймлайн карточек приёма с тач-зоной $\ge 44\times 44$px.
+     * Карточка отображает крупное время, статус-пилл (`Приём идет`, `Пациент в клинике`, `Подтвержден`), ФИО пациента, процедуру и прямой переход в карту.
+     * Нативный Bottom Sheet с тактильным Drag Handle $36\times 5$px по центру.
+     * 0px паразитного горизонтального скролла (`overflow-x: clip; max-width: 100vw;`).
+     * Floating Bottom Bar с единственной Primary CTA кнопкой `#0d9488` (`✓ Забронировать слот`).
+4. **100% покрытие тестами и доказательная база (Red Team 4-State Visual Proof)**:
+   - 66 тестов в 17 сьютах расписания (`quickBookingSoloDoctor.test.tsx`, `scheduleGridSSOT.test.tsx`, `appointmentQuickActionsAutonomyWave49.test.tsx`, `scheduleMobileBottomSheetInquisition.test.tsx` и др.) проходят со 100% PASS.
+   - `npm run check:encoding` проверил 23 923 файла (0 ошибок, UTF-8 без BOM).
+   - Доказательная база реальных скриншотов из живого браузера (:5173) в `docs/proofs/schedule/`:
+     * ☀️ 1. `01_schedule_pc_light_1440x900.png` (122 KB) — 3-колоночная сетка кресел, свободные окна и карточки приёмов в светлой теме.
+     * 🌙 2. `02_schedule_pc_dark_1440x900.png` (123 KB) — расписание в темной теме (100% тёмные токены, WCAG AAA).
+     * 📱 3. `03_schedule_mobile_light_390x844.png` (165 KB) — мобильный Agenda View Apple HIG в светлой теме.
+     * 📱 4. `04_schedule_mobile_dark_390x844.png` (166 KB) — мобильный Agenda View в темной теме.
+     * Все скриншоты лично просмотрены через `read_file` и очищены от дефектов.
+
 ### 11. Фича #481: Treatment Plans, 3-Tier Estimates (Economy, Optimum, Premium), Single-Row Toolbar (32–36px), 1-Click Cashier Handoff & Apple HIG Touch Ergonomics
 
 1. **Компактный 1-строчный тулбар 32–36px (`TreatmentPlanToolbar.tsx`)**:

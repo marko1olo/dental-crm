@@ -1,11 +1,14 @@
 import React from "react";
-import { describe, it, expect, vi } from "vitest";
+import { describe, it } from "node:test";
+import assert from "node:assert/strict";
 import { renderToString } from "react-dom/server";
 import { QuickBookingDrawer } from "../QuickBookingDrawer";
 import { QuickAssistantSelector } from "../quickBookingService/QuickAssistantSelector";
 import { SelectedPatientCard } from "../quickBookingPatient/SelectedPatientCard";
 import { ScheduleMobileAgendaView } from "../mobile/ScheduleMobileAgendaView";
 import type { Patient } from "@dental/shared";
+
+const noop = () => {};
 
 describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n, Apple HIG)", () => {
   it("1. Solo Doctor Sovereignty: Assistant selector is physically hidden when isSoloClinic or no assistants", () => {
@@ -14,34 +17,34 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
       <QuickAssistantSelector
         isSoloClinic={true}
         assistantUserId={null}
-        setAssistantUserId={vi.fn()}
+        setAssistantUserId={noop}
         assistants={[]}
       />
     );
-    expect(htmlSolo).toBe("");
+    assert.strictEqual(htmlSolo, "");
 
     // Multi-chair clinic but no assistants rostered
     const htmlNoAssistants = renderToString(
       <QuickAssistantSelector
         isSoloClinic={false}
         assistantUserId={null}
-        setAssistantUserId={vi.fn()}
+        setAssistantUserId={noop}
         assistants={[]}
       />
     );
-    expect(htmlNoAssistants).toBe("");
+    assert.strictEqual(htmlNoAssistants, "");
 
     // Non-solo with assistants present: renders non-blocking selector with default solo option
     const htmlWithAssistants = renderToString(
       <QuickAssistantSelector
         isSoloClinic={false}
         assistantUserId={null}
-        setAssistantUserId={vi.fn()}
+        setAssistantUserId={noop}
         assistants={[{ id: "asst-1", fullName: "Иванова Мария (Ассистент)" }]}
       />
     );
-    expect(htmlWithAssistants).toContain('data-testid="select-booking-assistant"');
-    expect(htmlWithAssistants).toContain("-- Без ассистента (соло-приём) --");
+    assert.ok(htmlWithAssistants.includes('data-testid="select-booking-assistant"'));
+    assert.ok(htmlWithAssistants.includes("-- Без ассистента (соло-приём) --"));
   });
 
   it("2. Passive Allergy Safety: ⚠️ allergy warning renders ONLY when patient has real allergy (0px noise otherwise)", () => {
@@ -56,14 +59,14 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
     const cleanHtml = renderToString(
       <SelectedPatientCard
         selectedPatient={cleanPatient}
-        onClearPatient={vi.fn()}
+        onClearPatient={noop}
         patientReliability={null}
         hasActivePatientVisit={false}
       />
     );
     // When no allergy: 0 pixels, no badge, zero visual noise
-    expect(cleanHtml).not.toContain('data-testid="selected-patient-allergy-alert"');
-    expect(cleanHtml).not.toContain("Аллергия");
+    assert.ok(!cleanHtml.includes('data-testid="selected-patient-allergy-alert"'));
+    assert.ok(!cleanHtml.includes("Аллергия"));
 
     // Patient with real recorded allergy
     const allergyPatient: Patient = {
@@ -78,14 +81,14 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
     const allergyHtml = renderToString(
       <SelectedPatientCard
         selectedPatient={allergyPatient}
-        onClearPatient={vi.fn()}
+        onClearPatient={noop}
         patientReliability={null}
         hasActivePatientVisit={false}
       />
     );
     // Passive warning with amber badge
-    expect(allergyHtml).toContain('data-testid="selected-patient-allergy-alert"');
-    expect(allergyHtml).toContain("Лидокаин, Новокаин");
+    assert.ok(allergyHtml.includes('data-testid="selected-patient-allergy-alert"'));
+    assert.ok(allergyHtml.includes("Лидокаин, Новокаин"));
   });
 
   it("3. Mobile Schedule Agenda View (Apple HIG): renders vertical timeline with dedicated floating action bar", () => {
@@ -108,18 +111,18 @@ describe("Red Team Schedule & 3-Second Booking Inquisitor Suite (Mandates 8e, 8n
         dashboard={mockDashboard as any}
         dateKey="2026-11-05"
         appointments={[]}
-        onDateChange={vi.fn()}
-        onSlotClick={vi.fn()}
+        onDateChange={noop}
+        onSlotClick={noop}
         patientName={() => "Пациент"}
         formatTime={(t) => t}
         toDateTimeLocalValue={(t) => t}
       />
     );
 
-    expect(html).toContain('data-testid="schedule-mobile-agenda-view"');
-    expect(html).toContain('data-testid="schedule-mobile-add-btn"');
-    expect(html).toContain("Новая запись");
+    assert.ok(html.includes('data-testid="schedule-mobile-agenda-view"'));
+    assert.ok(html.includes('data-testid="schedule-mobile-add-btn"'));
+    assert.ok(html.includes("Новая запись"));
     // Strictly zero horizontal drift
-    expect(html).toContain("overflow-x-clip");
+    assert.ok(html.includes("overflow-x-clip"));
   });
 });

@@ -492,6 +492,7 @@ async function main() {
 		fs.copyFileSync(pcLight.path, path.join(proofDir, "pc_schedule_light_1440x900.png"));
 		fs.copyFileSync(pcLight.path, path.join(legacyProofDir, "pc_schedule_light_1440x900.png"));
 		fs.copyFileSync(pcLight.path, path.join(proofDir, "pc_light_1440x900.png"));
+		fs.copyFileSync(pcLight.path, path.join(proofDir, "01_schedule_pc_light_1440x900.png"));
 
 		// PC Dark
 		console.log("  -> Switching to Dark theme...");
@@ -500,6 +501,7 @@ async function main() {
 		fs.copyFileSync(pcDark.path, path.join(proofDir, "pc_schedule_dark_1440x900.png"));
 		fs.copyFileSync(pcDark.path, path.join(legacyProofDir, "pc_schedule_dark_1440x900.png"));
 		fs.copyFileSync(pcDark.path, path.join(proofDir, "pc_dark_1440x900.png"));
+		fs.copyFileSync(pcDark.path, path.join(proofDir, "02_schedule_pc_dark_1440x900.png"));
 
 		await pcContext.close();
 
@@ -544,6 +546,7 @@ async function main() {
 		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_schedule_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(legacyProofDir, "mobile_schedule_light_390x844.png"));
 		fs.copyFileSync(mobLight.path, path.join(proofDir, "mobile_light_390x844.png"));
+		fs.copyFileSync(mobLight.path, path.join(proofDir, "03_schedule_mobile_light_390x844.png"));
 
 		// Mobile Dark
 		console.log("  -> Switching to Mobile Dark theme...");
@@ -552,6 +555,7 @@ async function main() {
 		fs.copyFileSync(mobDark.path, path.join(proofDir, "mobile_schedule_dark_390x844.png"));
 		fs.copyFileSync(mobDark.path, path.join(legacyProofDir, "mobile_schedule_dark_390x844.png"));
 		fs.copyFileSync(mobDark.path, path.join(proofDir, "mobile_dark_390x844.png"));
+		fs.copyFileSync(mobDark.path, path.join(proofDir, "04_schedule_mobile_dark_390x844.png"));
 
 		await mobileContext.close();
 

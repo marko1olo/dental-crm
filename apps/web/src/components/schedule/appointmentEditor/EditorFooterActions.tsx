@@ -63,19 +63,25 @@ export function EditorFooterActions({
 									: "Изменений нет"}
 				</span>
 				<button
-					className="secondary-button min-h-[44px] min-w-[44px] px-4 py-2 text-xs font-semibold cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors inline-flex items-center justify-center"
+					className="secondary-button min-h-[44px] min-w-[44px] px-4 py-2 text-xs font-semibold cursor-pointer shrink-0 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] transition-colors inline-flex items-center justify-center aria-busy:opacity-60"
 					type="button"
-					disabled={appointmentSaveState === "saving"}
+					disabled={false}
 					aria-busy={appointmentSaveState === "saving" || undefined}
-					onClick={() => closeAppointmentEditor(appointment.id)}
+					onClick={() => {
+						if (appointmentSaveState === "saving") return;
+						closeAppointmentEditor(appointment.id);
+					}}
 				>
 					Закрыть
 				</button>
 				<button
-					className="primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center"
+					className="primary-button min-h-[44px] min-w-[44px] px-4.5 py-2 text-xs font-bold cursor-pointer shrink-0 rounded-lg bg-[var(--teal-dark)] text-white hover:brightness-110 active:scale-95 transition-all shadow-2xs border border-transparent inline-flex items-center justify-center aria-busy:opacity-60"
 					type="button"
-					onClick={() => void saveAppointmentSchedule(appointment.id)}
-					disabled={appointmentSaveState === "saving"}
+					onClick={() => {
+						if (appointmentSaveState === "saving") return;
+						void saveAppointmentSchedule(appointment.id);
+					}}
+					disabled={false}
 					aria-busy={appointmentSaveState === "saving" || undefined}
 					aria-describedby={
 						collision.hasCollision

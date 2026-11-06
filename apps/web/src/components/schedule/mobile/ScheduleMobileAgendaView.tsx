@@ -69,10 +69,12 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 			selectedMobileAppt,
 			setSelectedMobileAppt,
 			todayKey,
+			tomorrowKey,
 			effectiveDateKey,
 			weekDays,
 			monthHeaderTitle,
 			handleShiftWeek,
+			handleShiftDay,
 			doctors,
 			chairs,
 			timelineItems,
@@ -132,6 +134,55 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							title="Неделя вперёд"
 						>
 							<ChevronRight size={20} />
+						</button>
+					</div>
+				</div>
+
+				{/* 1.1 Apple HIG Segmented Day Control: [ Сегодня | Завтра | + День ] */}
+				<div className="schedule-mobile-segmented-bar px-3 py-1.5 bg-[var(--paper)] border-b border-[var(--line-subtle)] flex items-center justify-center">
+					<div
+						className="flex w-full max-w-sm p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 shadow-2xs"
+						role="group"
+						aria-label="Быстрый выбор дня"
+					>
+						<button
+							type="button"
+							onClick={() => {
+								useScheduleStore.getState().setScheduleDateFilter(todayKey);
+								onDateChange(todayKey);
+							}}
+							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+								effectiveDateKey === todayKey
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
+									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+							data-testid="schedule-mobile-segment-today"
+						>
+							Сегодня
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								useScheduleStore.getState().setScheduleDateFilter(tomorrowKey);
+								onDateChange(tomorrowKey);
+							}}
+							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+								effectiveDateKey === tomorrowKey
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
+									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+							data-testid="schedule-mobile-segment-tomorrow"
+						>
+							Завтра
+						</button>
+						<button
+							type="button"
+							onClick={() => handleShiftDay(1)}
+							className="flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer text-[var(--ink)] hover:bg-[var(--paper)] active:scale-95 flex items-center justify-center gap-1"
+							data-testid="schedule-mobile-segment-plus-day"
+							title="Сдвиг на +1 день вперед"
+						>
+							<span>+ День</span>
 						</button>
 					</div>
 				</div>

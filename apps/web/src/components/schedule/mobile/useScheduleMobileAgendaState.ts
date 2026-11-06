@@ -26,7 +26,20 @@ export function useScheduleMobileAgendaState(props: ScheduleMobileAgendaViewProp
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
   }, []);
 
+  const tomorrowKey = useMemo(() => {
+    const d = new Date();
+    d.setDate(d.getDate() + 1);
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }, []);
+
   const effectiveDateKey = dateKey || todayKey;
+
+  const handleShiftDay = useCallback((deltaDays: number) => {
+    const parts = effectiveDateKey.split("-").map(Number);
+    const d = new Date(parts[0] ?? 2026, (parts[1] ?? 1) - 1, (parts[2] ?? 1) + deltaDays);
+    const nextKey = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+    onDateChange(nextKey);
+  }, [effectiveDateKey, onDateChange]);
 
   const weekDays = useMobileWeekDays({
     effectiveDateKey,
@@ -79,10 +92,12 @@ export function useScheduleMobileAgendaState(props: ScheduleMobileAgendaViewProp
 
   return {
     todayKey,
+    tomorrowKey,
     effectiveDateKey,
     weekDays,
     monthHeaderTitle,
     handleShiftWeek,
+    handleShiftDay,
     doctors,
     chairs,
     timelineItems,
