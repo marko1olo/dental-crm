@@ -17,6 +17,7 @@ import {
 	requireClinicOrganizationId,
 	sendPatientNotFound,
 	sendPatientRouteValidationError,
+	PATIENT_ID_UUID_PATTERN,
 } from "./helpers.js";
 import {
 	type PatientArchiveRowLike,
@@ -82,7 +83,9 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 			if (!orgId) return reply;
 
 			const params = request.params as { patientId?: string };
-			if (!params.patientId) return sendPatientRouteValidationError(reply);
+			if (!params.patientId || !PATIENT_ID_UUID_PATTERN.test(params.patientId)) {
+				return sendPatientRouteValidationError(reply);
+			}
 			const input = parsePatientPayload(
 				updatePatientAdministrativeProfileSchema,
 				request.body,
@@ -186,7 +189,9 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		const orgId = requireClinicOrganizationId(request, reply);
 		if (!orgId) return reply;
 		const { patientId } = request.params as { patientId?: string };
-		if (!patientId) return sendPatientRouteValidationError(reply);
+		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+			return sendPatientRouteValidationError(reply);
+		}
 
 		try {
 			// Карточка чужого или удалённого пациента раньше отвечала пустым списком,
@@ -228,7 +233,9 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 			const orgId = requireClinicOrganizationId(request, reply);
 			if (!orgId) return reply;
 			const { patientId } = request.params as { patientId?: string };
-			if (!patientId) return sendPatientRouteValidationError(reply);
+			if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+				return sendPatientRouteValidationError(reply);
+			}
 
 			const parsedBody = patientArchiveStatusBodySchema.safeParse(
 				request.body ?? {},
@@ -355,7 +362,9 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		}
 
 		const { patientId } = request.params as { patientId?: string };
-		if (!patientId) return sendPatientRouteValidationError(reply);
+		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+			return sendPatientRouteValidationError(reply);
+		}
 
 		const parsedBody = patientArchiveBodySchema.safeParse(request.body ?? {});
 		if (!parsedBody.success) {
@@ -466,7 +475,9 @@ export function registerPatientAdministrativeRoutes(app: FastifyInstance) {
 		}
 
 		const { patientId } = request.params as { patientId?: string };
-		if (!patientId) return sendPatientRouteValidationError(reply);
+		if (!patientId || !PATIENT_ID_UUID_PATTERN.test(patientId)) {
+			return sendPatientRouteValidationError(reply);
+		}
 
 		const { PatientArchiveReasonService } = await import(
 			"../../services/patients/PatientArchiveReasonService.js"

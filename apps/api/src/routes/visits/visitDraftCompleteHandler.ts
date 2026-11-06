@@ -13,6 +13,9 @@ import {
 	visitDraftNotFoundMessage,
 } from "./visitErrors.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function handleCompleteVisit(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -30,11 +33,21 @@ export async function handleCompleteVisit(
 		return { ok: true, status: "completed", visitId: visitId || null };
 	}
 
+	const trimmedVisitId = visitId.trim();
+	if (!UUID_PATTERN.test(trimmedVisitId)) {
+		reply.code(404);
+		return {
+			error: "VisitNotFound",
+			reason: "visit_not_found",
+			message: visitDraftNotFoundMessage,
+		};
+	}
+
 	try {
 		const [existingVisit] = await database
 			.select()
 			.from(visits)
-			.where(and(eq(visits.id, visitId), eq(visits.organizationId, orgId)))
+			.where(and(eq(visits.id, trimmedVisitId), eq(visits.organizationId, orgId)))
 			.limit(1);
 
 		if (!existingVisit) {

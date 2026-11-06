@@ -54,3 +54,6 @@ export const ARRIVAL_INTERCOM_CHANNEL_SLUGS = [
 	"reception",
 	"intercom_assistants",
 ] as const;
+
+export const APPOINTMENT_ID_UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;

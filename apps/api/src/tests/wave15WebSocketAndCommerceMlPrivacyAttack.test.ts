@@ -32,6 +32,7 @@ import { wsBroker } from "../services/websocketBroker.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
+	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
@@ -180,7 +181,7 @@ test("RED-TEAM HAMMER: WAVE 15 — WebSocket Channels, Speech Dictation & Commer
 			});
 			databaseReady = true;
 		} catch (e) {
-			console.error("[Wave 15 Seed Failed]:", e);
+			if (!isDatabaseUnavailable(e)) throw e;
 		}
 	});
 

@@ -33,6 +33,7 @@ import { registerMedicalSecrecyPayloadStripping } from "../security/medicalSecre
 import { signToken } from "../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
+	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
@@ -230,7 +231,7 @@ test("RED-TEAM HAMMER: WAVE 11 — Schedule, Leads & Communications Inbox Privac
 			});
 			databaseReady = true;
 		} catch (e) {
-			console.error("[Wave 11 Seed Failed]:", e);
+			if (!isDatabaseUnavailable(e)) throw e;
 		}
 	});
 

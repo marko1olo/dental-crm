@@ -10,6 +10,9 @@ import { openVisitForAppointmentInDb } from "../../db/visitsQuery.js";
 import { wsBroker } from "../../services/websocketBroker.js";
 import { sendVisitOpenError } from "./visitOpenErrors.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function registerVisitOpenRoutes(app: FastifyInstance) {
 	app.register(async (scope) => {
 		scope.addContentTypeParser("application/json", { parseAs: "string" }, (_req, body, done) => {
@@ -31,11 +34,11 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 			const orgId = context.organizationId;
 			const { appointmentId } = request.params as { appointmentId?: string };
 
-			if (!appointmentId) {
+			if (!appointmentId || !UUID_PATTERN.test(appointmentId.trim())) {
 				reply.code(400);
 				return {
 					error: "VisitValidationError",
-					message: "Не передан идентификатор записи на приём.",
+					message: "Не передан или некорректен идентификатор записи на приём.",
 				};
 			}
 
@@ -44,7 +47,7 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				.from(visits)
 				.where(
 					and(
-						eq(visits.appointmentId, appointmentId),
+						eq(visits.appointmentId, appointmentId.trim()),
 						eq(visits.organizationId, orgId),
 					),
 				)
@@ -75,10 +78,10 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 			const orgId = context.organizationId;
 			const { appointmentId } = request.params as { appointmentId?: string };
 
-			if (!appointmentId) {
+			if (!appointmentId || !UUID_PATTERN.test(appointmentId.trim())) {
 				reply.code(400);
 				return {
-					error: "VisitOpenValidationError",
+					error: "VisitValidationError",
 					message:
 						"Прием не открыт: не передана запись расписания. Откройте строку расписания и повторите.",
 				};
@@ -86,13 +89,13 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 
 			try {
 				const result = await database.transaction(async (tx) => {
-					const res = await openVisitForAppointmentInDb(orgId, appointmentId, tx);
+					const res = await openVisitForAppointmentInDb(orgId, appointmentId.trim(), tx);
 					await tx
 						.update(appointments)
 						.set({ status: "in_treatment" })
 						.where(
 							and(
-								eq(appointments.id, appointmentId),
+								eq(appointments.id, appointmentId.trim()),
 								eq(appointments.organizationId, orgId),
 							),
 						);
@@ -102,7 +105,7 @@ export function registerVisitOpenRoutes(app: FastifyInstance) {
 				wsBroker.broadcastToOrganization(orgId, {
 					type: "APPOINTMENT_UPDATED",
 					payload: {
-						appointmentId,
+						appointmentId: appointmentId.trim(),
 						visitId: result.visit.id,
 						status: "in_treatment",
 					},

@@ -27,6 +27,7 @@ import {
 	sendDashboardResponseAfterCreate,
 } from "./appointmentsQueryRoutes.js";
 import {
+	APPOINTMENT_ID_UUID_PATTERN,
 	appointmentCreateValidationMessage,
 	appointmentRejectionResponse,
 	appointmentUpdateValidationMessage,
@@ -137,7 +138,7 @@ export const updateAppointmentHandler = async (
 ) => {
 	const params = request.params as AppointmentOptionalIdParams;
 	const appointmentId = params?.appointmentId || params?.id;
-	if (!appointmentId) {
+	if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: "Запись не выбрана.",
@@ -270,7 +271,7 @@ export const createNextStageAppointmentHandler = async (
 
 	const params = request.params as AppointmentOptionalIdParams;
 	const appointmentId = params?.appointmentId || params?.id;
-	if (!appointmentId) {
+	if (!appointmentId || !APPOINTMENT_ID_UUID_PATTERN.test(appointmentId)) {
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: "Не указан ID родительского приёма",

@@ -363,7 +363,12 @@ export function registerPatientCrudRoutes(app: FastifyInstance) {
 		if (!orgId) return reply;
 
 		const params = request.params as { patientId?: string };
-		if (!params.patientId) return sendPatientRouteValidationError(reply);
+		if (
+			!params.patientId ||
+			!PATIENT_ID_UUID_PATTERN.test(params.patientId.trim())
+		) {
+			return sendPatientRouteValidationError(reply);
+		}
 		const input = parsePatientPayload(updatePatientSchema, request.body);
 		if (!input) {
 			return reply.code(400).send({

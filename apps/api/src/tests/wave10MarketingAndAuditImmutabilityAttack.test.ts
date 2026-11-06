@@ -39,6 +39,7 @@ import { registerMedicalSecrecyPayloadStripping } from "../security/medicalSecre
 import { signToken } from "../utils/cryptoHelper.js";
 import {
 	fixtureUuid,
+	isDatabaseUnavailable,
 	purgeFixtureOrganizations,
 	withFixtureTenant,
 } from "./support/fixtureOrganizations.js";
@@ -264,7 +265,7 @@ test("RED-TEAM HAMMER: WAVE 10 — Marketing Attribution, Files & Audit Immutabi
 			});
 			databaseReady = true;
 		} catch (e) {
-			console.error("[Wave 10 Seed Failed]:", e);
+			if (!isDatabaseUnavailable(e)) throw e;
 		}
 	});
 

@@ -31,7 +31,7 @@ import {
 	validScheduleTimeZone,
 } from "./scheduleTimeHelpers.js";
 
-function assertAppointmentReferenceExists(input: UpdateAppointmentInput): void {
+export function assertAppointmentReferenceExists(input: UpdateAppointmentInput): void {
 	if (input.patientId !== undefined && input.patientId !== null) {
 		const patient = patients.find(
 			(candidate) =>
@@ -86,7 +86,7 @@ function mergedAppointmentTimes(
 }
 
 
-function assertActiveVisitAppointmentStatusChangeIsSafe(
+export function assertActiveVisitAppointmentStatusChangeIsSafe(
 	appointment: Appointment,
 	input: UpdateAppointmentInput,
 ): void {
@@ -226,12 +226,12 @@ function assertAppointmentWithinOperationalHours(candidate: Appointment): void {
 	}
 }
 
-function assertAppointmentCanBeScheduled(candidate: Appointment): void {
+export function assertAppointmentCanBeScheduled(candidate: Appointment): void {
 	assertAppointmentWithinOperationalHours(candidate);
 	assertNoAppointmentResourceOverlap(candidate);
 }
 
-function assertStaffWorkingHoursCoverExistingAppointments(
+export function assertStaffWorkingHoursCoverExistingAppointments(
 	member: StaffMember,
 	workingHours: StaffWorkingHours,
 ): void {
@@ -255,7 +255,7 @@ function assertStaffWorkingHoursCoverExistingAppointments(
 	}
 }
 
-function assertChairWorkingHoursCoverExistingAppointments(
+export function assertChairWorkingHoursCoverExistingAppointments(
 	chair: Chair,
 	workingHours: StaffWorkingHours,
 ): void {
@@ -274,7 +274,7 @@ function assertChairWorkingHoursCoverExistingAppointments(
 	}
 }
 
-function assertClinicScheduleDefaultsCoverExistingAppointments(
+export function assertClinicScheduleDefaultsCoverExistingAppointments(
 	scheduleDefaults: ClinicScheduleDefaults,
 	timezone: string,
 ): void {
@@ -296,4 +296,8 @@ function assertClinicScheduleDefaultsCoverExistingAppointments(
 }
 
 
-export { assertActiveVisitAppointmentStatusChangeIsSafe, assertAppointmentReferenceExists, assertAppointmentCanBeScheduled, assertAppointmentWithinOperationalHours, assertNoAppointmentResourceOverlap, mergedAppointmentTimes, assertChairWorkingHoursCoverExistingAppointments, assertClinicScheduleDefaultsCoverExistingAppointments, assertStaffWorkingHoursCoverExistingAppointments };
+export {
+	assertAppointmentWithinOperationalHours,
+	assertNoAppointmentResourceOverlap,
+	mergedAppointmentTimes,
+};

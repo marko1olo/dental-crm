@@ -4,6 +4,7 @@ import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { getAppointmentByIdInDb } from "../../db/appointmentsQuery.js";
 import { db } from "../../db/client.js";
 import { appointments, chairs, patients, users } from "../../db/schema.js";
+import { APPOINTMENT_ID_UUID_PATTERN } from "./appointmentsSchemas.js";
 
 // Ре-экспорт вспомогательных резолверов и подготовителей тела запроса
 export {
@@ -171,7 +172,7 @@ export async function handleGetAppointmentById(
 		id?: string;
 	};
 	const targetId = appointmentId || id;
-	if (!targetId) {
+	if (!targetId || !APPOINTMENT_ID_UUID_PATTERN.test(targetId)) {
 		return reply.code(400).send({
 			code: "AppointmentValidationError",
 			message: "Не указан ID приёма",
