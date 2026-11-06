@@ -5,7 +5,7 @@
 
 import React from "react";
 import type { PerioChartSummary, PerioToothRecord } from "@dental/shared";
-import { PerioWorkspaceModal } from "./PerioWorkspaceModal";
+import { PerioStudioModal } from "./PerioStudioModal";
 
 export interface PerioChartModalProps {
 	readonly isOpen: boolean;
@@ -24,7 +24,7 @@ export interface PerioChartModalProps {
 
 export const PerioChartModal: React.FC<PerioChartModalProps> = React.memo((props) => {
 	if (!props.isOpen) return null;
-	return <PerioWorkspaceModal {...props} isModal={true} />;
+	return <PerioStudioModal {...props} isModal={true} />;
 });
 
 PerioChartModal.displayName = "PerioChartModal";

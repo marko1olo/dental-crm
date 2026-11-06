@@ -6,6 +6,7 @@ import {
 import { getRequestIdentity } from "../../security/identity.js";
 import {
 	fetchPatientLatestPeriodontogram,
+	resolvePerioPatientId,
 	upsertPatientFullPeriodontogram,
 } from "../../services/periodontogramService.js";
 import {
@@ -13,22 +14,20 @@ import {
 	getHygienePlanText,
 } from "../../services/periodontogramIndices.js";
 
-const UUID_REGEX =
-	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
 export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) {
 	const handleGet = async (request: FastifyRequest, reply: FastifyReply) => {
 		const orgId = await requireResolvedOrganizationId(request, reply);
 		if (!orgId) return;
 
-		const { patientId } = request.params as { patientId: string };
-		if (!UUID_REGEX.test(patientId)) {
+		const { patientId: rawPatientId } = request.params as { patientId: string };
+		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
 
+		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
 		const data = await fetchPatientLatestPeriodontogram(orgId, patientId);
 		if (!data) {
 			return reply.send({ success: true, data: null });
@@ -44,6 +43,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			success: true,
 			data: {
 				...data,
+				patientId,
 				psrCode,
 				hygieneRecommendations,
 				hygienePlan,
@@ -59,14 +59,15 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 		);
 		if (!orgId) return;
 
-		const { patientId } = request.params as { patientId: string };
-		if (!UUID_REGEX.test(patientId)) {
+		const { patientId: rawPatientId } = request.params as { patientId: string };
+		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
 
+		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
 		const body = (request.body as Record<string, unknown>) || {};
 		const identity = getRequestIdentity(request);
 		const recordedByUserId = identity.userId ?? null;
@@ -92,6 +93,7 @@ export async function registerPatientPeriodontogramRoutes(app: FastifyInstance) 
 			success: true,
 			data: {
 				...result,
+				patientId,
 				psrCode,
 				hygieneRecommendations,
 				hygienePlan,

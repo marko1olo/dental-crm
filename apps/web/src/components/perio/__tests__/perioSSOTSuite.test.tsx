@@ -121,7 +121,7 @@ describe("Канонический SSOT пародонтологии и эксп
 
 		assert.ok(html.includes("data-testid=\"perio-save-draft-btn\""));
 		assert.ok(html.includes("bg-[#0d9488]"));
-		assert.ok(html.includes("✓ Зафиксировать пародонтальный статус"));
+		assert.ok(html.includes("Сохранить пародонтограмму"));
 	});
 
 	it("7. Apple HIG: На смартфонах рендерится Bottom Sheet хэндл и плавающая нижняя плашка", () => {

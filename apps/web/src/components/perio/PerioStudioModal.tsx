@@ -97,11 +97,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const psrSummary = useMemo(() => computePsrSummary(screeningMap), [screeningMap]);
 
 	useEffect(() => {
-		if (!patientId || !UUID_REGEX.test(patientId)) return;
+		if (!patientId?.trim()) return;
 		let isCancelled = false;
 		async function fetchPerio() {
 			try {
-				const res = await fetch(`/api/perio/${patientId}`, { headers: { ...denteAdminSecretRequestHeaders() } });
+				const res = await fetch(`/api/perio/${encodeURIComponent(patientId!)}`, { headers: { ...denteAdminSecretRequestHeaders() } });
 				if (!res.ok) return;
 				const json = await res.json();
 				if (isCancelled || !json.success || !json.data) return;
@@ -162,14 +162,14 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 	const handleSave = useCallback(async () => {
 		setSyncStatus("saving");
 		try {
-			if (patientId && UUID_REGEX.test(patientId)) {
+			if (patientId?.trim()) {
 				const sepaTeeth = convertPerioDentitionToSepa(teeth);
 				const allSites = sepaTeeth.flatMap((t) => (t.sites || []).map((s) => ({
 					toothNumber: t.toothNumber, siteCode: s.siteCode, probingDepthMm: s.probingDepthMm,
 					gingivalMarginMm: s.gingivalMarginMm, bleedingOnProbing: Boolean(s.bleedingOnProbing),
 					plaque: Boolean(s.plaque), calculus: Boolean(s.calculus), suppuration: Boolean(s.suppuration),
 				})));
-				await fetch(`/api/perio/${patientId}`, {
+				await fetch(`/api/perio/${encodeURIComponent(patientId)}`, {
 					method: "POST", headers: { "Content-Type": "application/json", ...denteAdminSecretRequestHeaders() },
 					body: JSON.stringify({
 						teeth: sepaTeeth.map((t) => ({ toothNumber: t.toothNumber, isPresent: t.isPresent, isImplant: t.isImplant, mobility: t.mobility, furcationBuccal: t.furcationBuccal, furcationLingual: t.furcationLingual })),
@@ -182,11 +182,11 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			setLastSavedAt(new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
 			setSyncStatus("saved");
 			if (onSave) onSave(teeth, summary);
-			showToast("✓ Статус пародонта зафиксирован в ЭМК", "success");
+			showToast("✓ Пародонтограмма сохранена в ЭМК", "success");
 			if (isModal && onClose) onClose();
 		} catch {
 			setSyncStatus("saved");
-			showToast("✓ Статус пародонта сохранен локально", "success");
+			showToast("✓ Пародонтограмма сохранена локально", "success");
 			if (isModal && onClose) onClose();
 		}
 	}, [patientId, teeth, psrSummary, summary, onSave, isModal, onClose]);
@@ -230,9 +230,9 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 						<Activity className="w-4 h-4" />
 					</div>
 					<div>
-						<h2 className="text-sm font-bold text-[var(--ink)] leading-tight flex items-center gap-2">
+						<h2 className="text-sm font-bold text-[var(--ink)] leading-tight flex flex-wrap items-center gap-2">
 							Студия пародонтологии и гигиены
-							<span className="text-xs px-2 py-0.5 rounded font-bold bg-[#0d9488]/15 text-[#0d9488] border border-[#0d9488]/30">
+							<span className="text-xs px-2 py-0.5 rounded font-bold bg-[#0d9488]/15 text-[#0d9488] border border-[#0d9488]/30 whitespace-nowrap shrink-0">
 								{psrSummary.psrFormula}
 							</span>
 						</h2>
@@ -261,11 +261,13 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 					</button>
 
 					{/* Ровно ОДНА Primary CTA кнопка на десктопе */}
-					<button type="button" onClick={handleSave} data-testid="perio-save-draft-btn" title="Сохранить периодонтограмму" className="hidden sm:inline-flex min-h-[36px] h-9 px-3.5 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] text-xs font-bold items-center gap-1.5 shadow-xs cursor-pointer transition-all">
-						<Check className="w-3.5 h-3.5" />
-						✓ Зафиксировать пародонтальный статус
-						<span className="sr-only">Сохранить периодонтограмму</span>
-					</button>
+					<div className="hidden sm:inline-flex">
+						<button type="button" onClick={handleSave} data-testid="perio-save-draft-btn" title="Сохранить пародонтограмму" className="min-h-[36px] h-9 px-3.5 rounded-lg bg-[#0d9488] text-white hover:bg-[#0f766e] text-xs font-bold inline-flex items-center gap-1.5 shadow-xs cursor-pointer transition-all">
+							<Check className="w-3.5 h-3.5" />
+							Сохранить пародонтограмму
+							<span className="sr-only">Сохранить периодонтограмму</span>
+						</button>
+					</div>
 
 					{isModal && onClose && (
 						<button type="button" onClick={onClose} data-testid="perio-modal-close-btn" className="min-h-[36px] min-w-[36px] h-8 w-8 rounded-lg bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line)] flex items-center justify-center cursor-pointer transition-colors ml-auto sm:ml-0" aria-label="Закрыть">
@@ -289,11 +291,14 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 
 			{/* Быстрые 1-клик кнопки */}
 			<div className="flex flex-wrap items-center gap-2 p-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)]">
-				<button type="button" onClick={handleSetAllIntact} data-testid="perio-toolbar-norm-1click-btn" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer transition-colors">
+				<button type="button" onClick={handleSetAllIntact} data-testid="perio-toolbar-norm-1click-btn" data-preset-card="perio-preset-norm-card" className="min-h-[44px] px-3 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer transition-colors">
 					<span data-testid="psr-all-intact-btn" className="flex items-center gap-1.5">
 						<Check className="w-3.5 h-3.5" /> 1-клик: Здоровый пародонт (Норма)
 						<span className="sr-only">Норма (PSR 0) Пародонт в норме</span>
 					</span>
+				</button>
+				<button type="button" onClick={() => handleApplyPreset("gingivitis_express")} data-testid="psr-gingivitis-preset-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-amber-600 dark:text-amber-400 font-semibold text-xs border border-[var(--line)] hover:border-amber-500 flex items-center gap-1.5 cursor-pointer transition-colors">
+					Гингивит (PSR 1–2)
 				</button>
 				<button type="button" onClick={() => handleApplyPreset("pro_hygiene_express")} data-testid="perio-toolbar-prophy-1click-btn" className="min-h-[36px] sm:h-8 px-3 rounded-lg bg-[var(--paper)] text-sky-600 dark:text-sky-400 font-semibold text-xs border border-[var(--line)] hover:border-sky-500 flex items-center gap-1.5 cursor-pointer transition-colors">
 					<span data-testid="psr-hygiene-preset-btn" className="flex items-center gap-1.5">
@@ -350,7 +355,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 						return (
 							<button key={proto.id} type="button" onClick={() => handleSelectProtocol(proto)} className={`p-2.5 rounded-lg text-left text-xs border cursor-pointer transition-all flex flex-col justify-between gap-1.5 ${isSelected ? "bg-[#0d9488]/10 text-[var(--ink)] border-[#0d9488] ring-1 ring-[#0d9488]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:border-[var(--line-strong)]"}`}>
 								<div>
-									<div className="font-bold line-clamp-1">{proto.titleRu}</div>
+									<div className="font-bold text-xs leading-tight line-clamp-2 min-h-[30px]">{proto.titleRu}</div>
 									<div className="text-[11px] text-[var(--muted)] line-clamp-2 pt-0.5">{proto.descriptionRu}</div>
 								</div>
 								<div className="flex items-center justify-between pt-1 border-t border-[var(--line)]">
@@ -429,7 +434,7 @@ export const PerioStudioModal: React.FC<PerioStudioModalProps> = React.memo(({
 			<div className="perio-mobile-floating-bar fixed bottom-0 left-0 right-0 p-3 bg-[var(--paper)]/95 backdrop-blur-md border-t border-[var(--line)] z-50 flex sm:hidden">
 				<button type="button" onClick={handleSave} data-testid="perio-save-mobile-btn" className="w-full min-h-[48px] h-12 rounded-xl bg-[#0d9488] text-white font-bold text-sm flex items-center justify-center gap-2 shadow-md cursor-pointer active:scale-[0.99] transition-all">
 					<Check className="w-4 h-4" />
-					✓ Зафиксировать пародонтальный статус
+					Сохранить пародонтограмму
 				</button>
 			</div>
 		</div>

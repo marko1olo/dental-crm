@@ -1,0 +1,49 @@
+{
+  "role": "Periodontics & Perio-Chart Inquisitor",
+  "status": "COMPLETED",
+  "verdict": "ПРОВЕРЕНО: ЧИСТО",
+  "updatedAt": "2026-11-06T09:29:40+04:00",
+  "scope": {
+    "frontend": "apps/web/src/components/perio/PerioStudioModal.tsx",
+    "facades": [
+      "apps/web/src/components/perio/PerioChartModal.tsx",
+      "apps/web/src/components/perio/PeriodontogramChart.tsx",
+      "apps/web/src/components/perio/PeriodontalPocketDepthModal.tsx",
+      "apps/web/src/components/perio/PerioWorkspaceModal.tsx"
+    ],
+    "backend": [
+      "apps/api/src/routes/perio.ts",
+      "apps/api/src/routes/periodontogram/routesPatient.ts",
+      "apps/api/src/routes/periodontogram/routesSnapshots.ts",
+      "apps/api/src/services/periodontogramService.ts"
+    ],
+    "purged_potemkin_and_orphans": [
+      "apps/web/perio-preview.html",
+      "apps/web/src/perioPreviewEntry.tsx",
+      "apps/web/src/components/perio/workspaceModal/*"
+    ]
+  },
+  "invariants_verified": {
+    "mandate_8e_doctor_autonomy": "1-click presets: '✓ Здоровый пародонт (Норма)', 'Гингивит (PSR 1–2)', 'Профгигиена AirFlow + УЗ', 'Пародонтит легкий', 'Пародонтит тяжелый'. Buttons never disabled.",
+    "mandate_8am_single_primary_cta": "Exactly ONE Primary CTA '#0d9488' ('Сохранить пародонтограмму'): in header on desktop, in Floating Bottom Bar on mobile. Zero duplicate CTA.",
+    "apple_hig_mobile": ">= 44x44px touch targets, iOS Bottom Sheet drawer drag handle (36x5px), 0px horizontal scroll, Natural Thumb Zone.",
+    "clean_clinical_russian": "Zero bureaucratic codes ('043/у', '804н'), human clinical language ('Дневник приёма', 'Медицинская карта приёма', 'Сохранить пародонтограмму'). Zero 3rd party brands ('Florida Probe', 'DentalPRO').",
+    "acid_database_persistence": "Unified resolution of non-UUID / demo patient IDs via resolvePerioPatientId with dual write to periodontogram_snapshots and perio_charts in PostgreSQL 18.",
+    "visual_proof_8_axes": "4-State proof verified via personal read_file: PC Light (309 KB), PC Dark (315 KB), Mobile Light (184 KB), Mobile Dark (189 KB)."
+  },
+  "proofs": [
+    "docs/proofs/perio/01_perio_studio_pc_light_1440x900.png",
+    "docs/proofs/perio/02_perio_studio_pc_dark_1440x900.png",
+    "docs/proofs/perio/03_perio_studio_mobile_light_390x844.png",
+    "docs/proofs/perio/04_perio_studio_mobile_dark_390x844.png"
+  ],
+  "gates": {
+    "encoding": "PASS",
+    "stub_overrides": "PASS",
+    "fetch_response": "PASS",
+    "dynamic_imports": "PASS",
+    "tests_api": "27/27 PASS",
+    "tests_web": "50/50 PASS",
+    "tests_shared": "38/38 PASS"
+  }
+}

@@ -10,6 +10,7 @@ import { getRequestIdentity } from "../../security/identity.js";
 import {
 	createDraftWithInitialTeeth,
 	fetchSnapshotTeethAndSites,
+	resolvePerioPatientId,
 } from "../../services/periodontogramService.js";
 
 const UUID_REGEX =
@@ -23,24 +24,14 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 	app.get("/api/periodontogram/patients/:patientId/snapshots", async (req, reply) => {
 		const orgId = await requireResolvedOrganizationId(req, reply);
 		if (!orgId) return;
-		const { patientId } = req.params as { patientId: string };
-		if (!UUID_REGEX.test(patientId)) {
+		const { patientId: rawPatientId } = req.params as { patientId: string };
+		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
-		const [patient] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-			.limit(1);
-		if (!patient) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден",
-			});
-		}
+		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
 
 		const snapshots = await db
 			.select()
@@ -63,13 +54,14 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 	app.get("/api/periodontogram/patients/:patientId/draft", async (req, reply) => {
 		const orgId = await requireResolvedOrganizationId(req, reply);
 		if (!orgId) return;
-		const { patientId } = req.params as { patientId: string };
-		if (!UUID_REGEX.test(patientId)) {
+		const { patientId: rawPatientId } = req.params as { patientId: string };
+		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
+		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
 		const [draft] = await db
 			.select()
 			.from(periodontogramSnapshots)
@@ -97,24 +89,14 @@ export async function registerSnapshotPeriodontogramRoutes(app: FastifyInstance)
 			"periodontogram draft create",
 		);
 		if (!orgId) return;
-		const { patientId } = req.params as { patientId: string };
-		if (!UUID_REGEX.test(patientId)) {
+		const { patientId: rawPatientId } = req.params as { patientId: string };
+		if (!rawPatientId || typeof rawPatientId !== "string" || !rawPatientId.trim()) {
 			return reply.code(400).send({
 				error: "InvalidPatientId",
 				message: "Некорректный идентификатор пациента",
 			});
 		}
-		const [patient] = await db
-			.select({ id: patients.id })
-			.from(patients)
-			.where(and(eq(patients.id, patientId), eq(patients.organizationId, orgId)))
-			.limit(1);
-		if (!patient) {
-			return reply.code(404).send({
-				error: "PatientNotFound",
-				message: "Пациент не найден",
-			});
-		}
+		const patientId = await resolvePerioPatientId(orgId, rawPatientId);
 
 		const [existing] = await db
 			.select()

@@ -175,10 +175,10 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(json.error, "AuthRequired");
 	});
 
-	it("GET /api/periodontogram/patients/:patientId/snapshots rejects malformed UUID (400)", async () => {
+	it("GET /api/periodontogram/patients/:patientId/snapshots rejects empty patientId (400)", async () => {
 		const res = await app.inject({
 			method: "GET",
-			url: "/api/periodontogram/patients/invalid-uuid/snapshots",
+			url: "/api/periodontogram/patients/%20/snapshots",
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 			},
@@ -186,6 +186,19 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 400);
 		const json = JSON.parse(res.body);
 		assert.equal(json.error, "InvalidPatientId");
+	});
+
+	it("GET /api/periodontogram/patients/:patientId/snapshots supports demo non-UUID patient ID cleanly", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/periodontogram/patients/demo_perio_patient/snapshots",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
+		});
+		assert.equal(res.statusCode, 200);
+		const json = JSON.parse(res.body);
+		assert.equal(json.success, true);
 	});
 
 	it("POST /api/periodontogram/patients/:patientId/draft rejects non-staff call (401)", async () => {
@@ -326,10 +339,10 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(json.error, "CannotDiscardClosedSnapshot");
 	});
 
-	it("GET /api/periodontogram/:patientId rejects malformed UUID (400)", async () => {
+	it("GET /api/periodontogram/:patientId rejects empty patientId (400)", async () => {
 		const res = await app.inject({
 			method: "GET",
-			url: "/api/periodontogram/invalid-uuid",
+			url: "/api/periodontogram/%20",
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 			},
@@ -338,6 +351,20 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 400);
 		const json = JSON.parse(res.body);
 		assert.equal(json.error, "InvalidPatientId");
+	});
+
+	it("GET /api/periodontogram/:patientId and /api/perio/:patientId support demo non-UUID without 400", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: "/api/perio/demo_perio_patient",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const json = JSON.parse(res.body);
+		assert.equal(json.success, true);
 	});
 
 	it("POST /api/periodontogram/:patientId rejects non-staff call (401)", async () => {
@@ -355,10 +382,10 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 401);
 	});
 
-	it("POST /api/periodontogram/:patientId rejects malformed UUID (400)", async () => {
+	it("POST /api/periodontogram/:patientId rejects empty patientId (400)", async () => {
 		const res = await app.inject({
 			method: "POST",
-			url: "/api/periodontogram/invalid-uuid",
+			url: "/api/periodontogram/%20",
 			headers: {
 				[CLINIC_TOKEN_HEADER]: clinicToken,
 				[STAFF_TOKEN_HEADER]: staffToken,
@@ -371,5 +398,23 @@ describe("Periodontogram Fastify Routes Integration (/api/periodontogram/*)", ()
 		assert.equal(res.statusCode, 400);
 		const json = JSON.parse(res.body);
 		assert.equal(json.error, "InvalidPatientId");
+	});
+
+	it("POST /api/perio/:patientId supports demo non-UUID patient ID cleanly", async () => {
+		const res = await app.inject({
+			method: "POST",
+			url: "/api/perio/demo_perio_patient",
+			headers: {
+				[CLINIC_TOKEN_HEADER]: clinicToken,
+				[STAFF_TOKEN_HEADER]: staffToken,
+			},
+			payload: {
+				notes: "Клинический осмотр пародонта",
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const json = JSON.parse(res.body);
+		assert.equal(json.success, true);
 	});
 });

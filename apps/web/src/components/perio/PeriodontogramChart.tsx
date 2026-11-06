@@ -7,12 +7,12 @@
  */
 
 import React from "react";
-import { PerioWorkspaceModal, type PerioWorkspaceModalProps } from "./PerioWorkspaceModal";
+import { PerioStudioModal, type PerioStudioModalProps } from "./PerioStudioModal";
 
-export type PeriodontogramChartProps = PerioWorkspaceModalProps;
+export type PeriodontogramChartProps = PerioStudioModalProps;
 
 export const PeriodontogramChart: React.FC<PeriodontogramChartProps> = React.memo((props) => {
-	return <PerioWorkspaceModal {...props} />;
+	return <PerioStudioModal {...props} />;
 });
 
 PeriodontogramChart.displayName = "PeriodontogramChart";

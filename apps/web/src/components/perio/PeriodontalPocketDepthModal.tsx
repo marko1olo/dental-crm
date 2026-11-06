@@ -5,7 +5,7 @@
 
 import React, { useMemo } from "react";
 import type { PerioToothRecord } from "@dental/shared";
-import { PerioWorkspaceModal } from "./PerioWorkspaceModal";
+import { PerioStudioModal } from "./PerioStudioModal";
 
 export interface PeriodontalPocketDepthModalProps {
 	readonly isOpen: boolean;
@@ -31,7 +31,7 @@ export const PeriodontalPocketDepthModal: React.FC<PeriodontalPocketDepthModalPr
 	if (!isOpen) return null;
 
 	return (
-		<PerioWorkspaceModal
+		<PerioStudioModal
 			isOpen={isOpen}
 			isModal={true}
 			onClose={onClose}
