@@ -1,4 +1,5 @@
-import { describe, it, expect } from 'vitest';
+import assert from 'node:assert/strict';
+import { describe, it } from 'node:test';
 import { AuditTrailHubModal } from '../AuditTrailHubModal';
 import {
 	mapRawToAuditEntryParams,
@@ -14,7 +15,7 @@ import {
 
 describe('AuditTrailHubModal Decomposed Module Parity', () => {
 	it('exports AuditTrailHubModal as a valid functional component', () => {
-		expect(typeof AuditTrailHubModal).toBe('function');
+		assert.strictEqual(typeof AuditTrailHubModal, 'function');
 	});
 
 	it('maps raw audit events accurately to 152-FZ parameters', () => {
@@ -25,10 +26,10 @@ describe('AuditTrailHubModal Decomposed Module Parity', () => {
 			createdAt: '2026-10-11T10:00:00.000Z',
 		};
 		const mapped = mapRawToAuditEntryParams(rawCardEvent);
-		expect(mapped.eventType).toBe('view_patient_card');
-		expect(mapped.eventCategory).toBe('patient_pii');
-		expect(mapped.actor.fullName).toBe('Др. Иванов');
-		expect(mapped.actor.userId).toBe('doc-1');
+		assert.strictEqual(mapped.eventType, 'view_patient_card');
+		assert.strictEqual(mapped.eventCategory, 'patient_pii');
+		assert.strictEqual(mapped.actor.fullName, 'Др. Иванов');
+		assert.strictEqual(mapped.actor.userId, 'doc-1');
 	});
 
 	it('maps refund events to critical financial severity', () => {
@@ -38,24 +39,24 @@ describe('AuditTrailHubModal Decomposed Module Parity', () => {
 			createdAt: '2026-10-11T11:00:00.000Z',
 		};
 		const mapped = mapRawToAuditEntryParams(rawRefund);
-		expect(mapped.eventType).toBe('delete_bill');
-		expect(mapped.eventCategory).toBe('financial');
-		expect(mapped.severity).toBe('critical');
+		assert.strictEqual(mapped.eventType, 'delete_bill');
+		assert.strictEqual(mapped.eventCategory, 'financial');
+		assert.strictEqual(mapped.severity, 'critical');
 	});
 
 	it('formats timestamps and truncates cryptographic hashes cleanly', () => {
 		const hash = 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
 		const truncated = truncateHash(hash, 8, 4);
-		expect(truncated).toBe('e3b0c442...b855');
+		assert.strictEqual(truncated, 'e3b0c442...b855');
 
 		const formattedTime = formatAuditTimeShort('2026-10-11T12:30:00.000Z');
-		expect(typeof formattedTime).toBe('string');
-		expect(formattedTime.length).toBeGreaterThan(0);
+		assert.strictEqual(typeof formattedTime, 'string');
+		assert.ok(formattedTime.length > 0);
 	});
 
 	it('provides comprehensive filter options for 152-FZ compliance', () => {
-		expect(AUDIT_EVENT_TYPE_OPTIONS.length).toBeGreaterThanOrEqual(10);
-		expect(AUDIT_SEVERITY_OPTIONS.length).toBeGreaterThanOrEqual(5);
-		expect(AUDIT_STATUS_OPTIONS.length).toBeGreaterThanOrEqual(4);
+		assert.ok(AUDIT_EVENT_TYPE_OPTIONS.length >= 10);
+		assert.ok(AUDIT_SEVERITY_OPTIONS.length >= 5);
+		assert.ok(AUDIT_STATUS_OPTIONS.length >= 4);
 	});
 });

@@ -45,6 +45,8 @@
     "smoke:browser-boot": "node --max-old-space-size=2048 scripts/smoke-browser-boot.mjs",
     "lint": "npm run check:limits && npm run check:sandboxes && npm run check:encoding && npm run check:tracked-ignored && npm run check:dynamic-imports && npm run check:env-contract && npm run typecheck",
     "test": "npm run check:limits && npm run check:sandboxes && npm run test -w @dental/shared && npm run test -w @dental/api && npm run test -w @dental/web",
+    "test:unit": "npm run test -w @dental/shared && npm run test -w @dental/api",
+    "test:infra": "node --max-old-space-size=2048 --test scripts/tests/check-declared-guards.test.mjs scripts/tests/theme-contrast-guard.test.mjs scripts/tests/check-migration-drift.test.mjs scripts/tests/check-react-hooks.test.mjs scripts/tests/check-button-styles.test.mjs scripts/tests/check-css-tokens.test.mjs scripts/tests/boot-retry-patterns.test.mjs scripts/tests/run-chain-proofs.test.mjs scripts/tests/denteCli.test.mjs",
     "smoke:all": "node --max-old-space-size=2048 scripts/run-smoke-suite.mjs",
     "smoke:wave6": "node --max-old-space-size=2048 scripts/test-edge-cases-wave6.mjs",
     "smoke:wave7": "node --max-old-space-size=2048 scripts/test-edge-cases-wave7.mjs",

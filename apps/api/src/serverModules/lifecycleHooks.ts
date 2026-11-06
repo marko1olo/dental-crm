@@ -80,6 +80,13 @@ export function publicApiErrorMessage(error: unknown, statusCode: number): strin
  */
 export function registerLifecycleHooks(app: FastifyInstance): void {
 	app.addHook("onRequest", async (request, reply) => {
+		const originalSend = reply.send;
+		(reply as unknown as Record<string, unknown>)._sendInitiated = false;
+		reply.send = function (payload?: unknown) {
+			(reply as unknown as Record<string, unknown>)._sendInitiated = true;
+			return originalSend.call(this, payload);
+		};
+
 		reply.header("X-Content-Type-Options", "nosniff");
 		reply.header("X-Frame-Options", "DENY");
 		reply.header("X-XSS-Protection", "0"); // Устаревший фильтр сам был источником уязвимостей; актуальная защита — CSP.
@@ -112,19 +119,36 @@ export function registerLifecycleHooks(app: FastifyInstance): void {
 			routeOptions.handler = async function (request, reply) {
 				const _req = request as unknown as Record<string, unknown>;
 				const tenantId = _req.tenantId;
+				let res: unknown;
 				if (typeof tenantId === "string" && tenantId.length > 0) {
 					// Динамический импорт, чтобы избежать циклических зависимостей при старте
 					const { withTenantCtx } = await import("../db/rls.js");
-					return withTenantCtx(tenantId, async () => {
+					res = await withTenantCtx(tenantId, async () => {
 						return originalHandler.call(this, request, reply);
 					});
+				} else {
+					res = await originalHandler.call(this, request, reply);
 				}
-				return originalHandler.call(this, request, reply);
+				if (
+					res === undefined &&
+					(reply as unknown as Record<string, unknown>)._sendInitiated
+				) {
+					return reply;
+				}
+				return res;
 			};
 		}
 	});
 
 	app.setErrorHandler((error, request, reply) => {
+		if (reply.sent) {
+			request.log.error(
+				{ err: error, url: request.url, method: request.method },
+				"Ошибка после отправки ответа клиенту",
+			);
+			return;
+		}
+
 		request.log.error(
 			{ err: error, url: request.url, method: request.method },
 			"Необработанная ошибка запроса",

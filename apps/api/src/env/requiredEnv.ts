@@ -185,9 +185,13 @@ function isDevelopmentEnvironment(
 export function isAutomatedRun(env: NodeJS.ProcessEnv = process.env): boolean {
 	if (typeof env.NODE_TEST_CONTEXT === "string" && env.NODE_TEST_CONTEXT.trim())
 		return true;
+	if (Boolean(env.VITEST))
+		return true;
 	const entry = process.argv[1]?.replace(/\\/g, "/") ?? "";
 	return (
-		/\/scripts\/[^/]*\.mjs$/.test(entry) || /\.test\.(ts|js|mjs)$/.test(entry)
+		/\/scripts\/[^/]*\.mjs$/.test(entry) ||
+		/\.test\.(ts|js|mjs)$/.test(entry) ||
+		/vitest/.test(entry)
 	);
 }
 

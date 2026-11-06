@@ -306,6 +306,7 @@ export function verifyAuditLogChain(
 
 /**
  * Verifies the unbroken cryptographic chain across all rows for a given organization in the database.
+ * guard-callers: none — Интеграционная проверка цепочки в БД для фонового комплаенс-аудитора ЕГИСЗ и судебной экспертизы
  *
  * @guard requireClinicalReadAccess / requireClinicalReadContext / requireSettingsAccess
  * @caller EGISZ audit reporting endpoints, compliance integrity auditors, forensic verification routines

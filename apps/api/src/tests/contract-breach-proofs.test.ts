@@ -30,19 +30,33 @@
  */
 
 import assert from "node:assert/strict";
-import { test } from "node:test";
+import { after, test } from "node:test";
 import type { InjectOptions } from "fastify";
 import { createDenteApiApp } from "../server.js";
 import { routeNotFoundMessage } from "../utils/routeNotFound.js";
 
+let sharedApp: Awaited<ReturnType<typeof createDenteApiApp>> | null = null;
+
 /** Приложение без фоновых воркеров: нужна только таблица маршрутов. */
-async function realApp() {
-	return createDenteApiApp({
-		startTelegramWorker: false,
-		startCommunicationWorker: false,
-		startMigrationWorker: false,
-	});
+async function getSharedApp() {
+	if (!sharedApp) {
+		sharedApp = await createDenteApiApp({
+			startTelegramWorker: false,
+			startCommunicationWorker: false,
+			startMigrationWorker: false,
+			startEgiszWorker: false,
+			startDaemonScheduler: false,
+		});
+	}
+	return sharedApp;
 }
+
+after(async () => {
+	if (sharedApp) {
+		await sharedApp.close();
+		sharedApp = null;
+	}
+});
 
 /**
  * Отсутствие маршрута отличается от отказа охранника ТОЛЬКО так.
@@ -75,31 +89,19 @@ async function assertRouteIsServed(
 	url: string,
 	payload?: Record<string, unknown>,
 ) {
-	const app = await realApp();
-	try {
-		/*
-		 * Опции собираются ОДНИМ объявленным объектом, а не условным спредом в
-		 * аргументе. При `exactOptionalPropertyTypes: true` спред давал
-		 * `payload?: {} | null`, что не сходится с `InjectPayload`, перегрузка
-		 * `inject` разрешалась в цепочечную (`Chain`), и `response.statusCode`
-		 * переставал существовать. Тип — не украшение: без него тест собирал
-		 * цепочку вместо ответа и не проверял ничего.
-		 */
-		const options: InjectOptions = { method, url };
-		if (payload !== undefined) {
-			options.headers = { "content-type": "application/json" };
-			options.payload = payload;
-		}
-		const response = await app.inject(options);
-		assert.ok(
-			!routeIsUnserved(response),
-			`${method} ${url} не обслуживается сервером: ответ ${response.statusCode}, тело ${response.body.slice(0, 200)}. ` +
-				"Этот адрес зовёт интерфейс, значит пользователь получает 404 на нажатие кнопки. " +
-				"Отказ охранника (401/403) или доменный 404 этот тест ПРОХОДИТ — проверяется существование маршрута, а не доступ.",
-		);
-	} finally {
-		await app.close();
+	const app = await getSharedApp();
+	const options: InjectOptions = { method, url };
+	if (payload !== undefined) {
+		options.headers = { "content-type": "application/json" };
+		options.payload = payload;
 	}
+	const response = await app.inject(options);
+	assert.ok(
+		!routeIsUnserved(response),
+		`${method} ${url} не обслуживается сервером: ответ ${response.statusCode}, тело ${response.body.slice(0, 200)}. ` +
+			"Этот адрес зовёт интерфейс, значит пользователь получает 404 на нажатие кнопки. " +
+			"Отказ охранника (401/403) или доменный 404 этот тест ПРОХОДИТ — проверяется существование маршрута, а не доступ.",
+	);
 }
 
 /* ═══ (A) МАРШРУТА НЕТ, А ФУНКЦИЯ НУЖНА ═══════════════════════════════════════
@@ -169,22 +171,18 @@ test("(C) PATCH /api/communications/templates/:id обслуживается —
 });
 
 test("(C) PUT на тот же адрес НЕ обслуживается — доказательство, что прежний вызов уходил в никуда", async () => {
-	const app = await realApp();
-	try {
-		const response = await app.inject({
-			method: "PUT",
-			url: "/api/communications/templates/00000000-0000-0000-0000-000000000000",
-			headers: { "content-type": "application/json" },
-			payload: { name: "x" },
-		});
-		assert.ok(
-			routeIsUnserved(response),
-			`PUT обязан быть необслуженным: сервер держит только PATCH. Получено ${response.statusCode}, тело ${response.body.slice(0, 300)}. ` +
-				"Если PUT вдруг обслуживается, кто-то добавил его на сервере, и правку фронта надо пересмотреть.",
-		);
-	} finally {
-		await app.close();
-	}
+	const app = await getSharedApp();
+	const response = await app.inject({
+		method: "PUT",
+		url: "/api/communications/templates/00000000-0000-0000-0000-000000000000",
+		headers: { "content-type": "application/json" },
+		payload: { name: "x" },
+	});
+	assert.ok(
+		routeIsUnserved(response),
+		`PUT обязан быть необслуженным: сервер держит только PATCH. Получено ${response.statusCode}, тело ${response.body.slice(0, 300)}. ` +
+			"Если PUT вдруг обслуживается, кто-то добавил его на сервере, и правку фронта надо пересмотреть.",
+	);
 });
 
 test("(C) PUT /api/communications/settings ЗАКОННЫЙ — соседний PUT в том же файле фронта трогать было нельзя", async () => {

@@ -201,6 +201,7 @@
 }
 
 [data-theme="dark"] .sanpin-btn-primary-cta,
+[data-theme="night"] .sanpin-btn-primary-cta,
 .dark .sanpin-btn-primary-cta {
 	background: #0d9488;
 	border-color: #0d9488;
@@ -208,6 +209,7 @@
 }
 
 [data-theme="dark"] .sanpin-btn-primary-cta:hover,
+[data-theme="night"] .sanpin-btn-primary-cta:hover,
 .dark .sanpin-btn-primary-cta:hover {
 	background: #14b8a6;
 	border-color: #14b8a6;

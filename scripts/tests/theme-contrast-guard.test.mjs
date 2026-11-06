@@ -336,14 +336,29 @@ function collectDarkWithoutNight(rules) {
 	return hits;
 }
 
-const allRules = readdirSync(stylesDirectory)
-	.filter((name) => name.endsWith(".css"))
-	.flatMap((name) =>
-		parseRules(
-			blankComments(readFileSync(join(stylesDirectory, name), "utf8")),
-			name,
-		),
-	);
+function getCssFiles(dir, base = "") {
+	const entries = readdirSync(dir, { withFileTypes: true });
+	const files = [];
+	for (const entry of entries) {
+		const fullPath = join(dir, entry.name);
+		const relPath = base ? `${base}/${entry.name}` : entry.name;
+		if (entry.isDirectory()) {
+			files.push(...getCssFiles(fullPath, relPath));
+		} else if (entry.isFile() && entry.name.endsWith(".css")) {
+			files.push({ fullPath, relPath });
+		}
+	}
+	return files;
+}
+
+const allCssFiles = getCssFiles(stylesDirectory);
+
+const allRules = allCssFiles.flatMap(({ fullPath, relPath }) =>
+	parseRules(
+		blankComments(readFileSync(fullPath, "utf8")),
+		relPath,
+	),
+);
 
 test("правила, переведённые на токены, не возвращают светлый литерал", () => {
 	const { offenders, missing } = scanGuarded(allRules, GUARDED_SELECTORS);
@@ -396,18 +411,16 @@ test("--teal-glow с двумя типами: теневое использов�
 	const shadowTyped = [];
 	/** Использование, требующее ЦВЕТА: перед var(--teal-glow) в значении стоят длины. */
 	const colorTyped = [];
-	for (const name of readdirSync(stylesDirectory).filter((file) =>
-		file.endsWith(".css"),
-	)) {
+	for (const { fullPath, relPath } of allCssFiles) {
 		const source = blankComments(
-			readFileSync(join(stylesDirectory, name), "utf8"),
+			readFileSync(fullPath, "utf8"),
 		);
 		source.split("\n").forEach((line, index) => {
 			const match = /^\s*box-shadow\s*:\s*(.+?)\s*;?\s*$/.exec(line);
 			if (!match || !match[1].includes("var(--teal-glow")) return;
 			const value = match[1].replace(/\s*!important\s*$/, "").trim();
 			(value.startsWith("var(--teal-glow") ? shadowTyped : colorTyped).push(
-				`${name}:${index + 1}  ${value}`,
+				`${relPath}:${index + 1}  ${value}`,
 			);
 		});
 	}

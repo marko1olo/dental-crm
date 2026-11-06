@@ -308,6 +308,9 @@ export function buildWadoFrameUrl(
 	return `${instanceUrl}/frames/${Math.max(1, Math.floor(frameNumber))}`;
 }
 
+/**
+ * guard-callers: none — Заготовка для проверки RLS организации при запросах фреймов DICOM WADO-RS, эндпоинт подключается на следующем этапе
+ */
 export function validateClinicRlsAccess(req: WadoFrameRequest): boolean {
 	if (!req.organizationId || typeof req.organizationId !== "string") {
 		return false;

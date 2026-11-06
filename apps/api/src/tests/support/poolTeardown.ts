@@ -7,6 +7,7 @@ process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_MUTATIONS =
 process.env.DENTAL_SPEECH_KEY_HEALTH_FILE = "off";
 
 import dotenv from "dotenv";
+import { endPool } from "../../db/client.js";
 
 // Intercept dotenv so unexpected calls to dotenv.config() in test modules do not load .env files
 const originalDotenvConfig = dotenv.config;
@@ -33,3 +34,12 @@ export function purgeLiveApiKeys(env: NodeJS.ProcessEnv = process.env): void {
 
 // Purge live API keys and proxy configuration immediately on import
 purgeLiveApiKeys();
+
+// Automatically close postgres client pool when process completes
+if (typeof process.once === "function") {
+	process.once("beforeExit", () => {
+		void endPool();
+	});
+}
+
+export { endPool };
