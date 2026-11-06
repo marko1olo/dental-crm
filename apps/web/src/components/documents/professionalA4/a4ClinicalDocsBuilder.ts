@@ -41,20 +41,20 @@ export function buildA4MedicalCardData(
 		patient: pt,
 		cardNumber: pt.cardNumber,
 		visitDate: todayRu,
-		doctorFullName: doctor,
-		doctorSpecialty: "Врач-стоматолог-терапевт",
+		doctorFullName: doctor || "____________________________________",
+		doctorSpecialty: "Врач-стоматолог",
 		allergyStatus:
-			"Не отягощен (со слов пациента аллергические реакции на медикаменты отрицает)",
+			"Не отягощен (со слов пациента аллергические реакции отрицает)",
 		somaticStatus:
-			"Соматически здоров. Артериальное давление 120/80 мм рт. ст., пульс 72 уд/мин.",
+			"Соматически здоров.",
 		complaints:
-			"Жалоб на момент осмотра не предъявляет / Профилактический осмотр.",
+			"Жалоб на момент осмотра не предъявляет / Плановый осмотр.",
 		anamnesisMorbi:
 			"Ранее за стоматологической помощью обращался в плановом порядке.",
 		statusLocalis:
-			"Слизистая оболочка полости рта бледно-розового цвета, умеренно увлажнена, без патологических изменений. Прикус физиологический.",
+			"Слизистая оболочка полости рта без видимых патологических изменений.",
 		teethFormulaSummary:
-			"Зубные ряды непрерывные, интактные / Требуется плановая санация.",
+			"Зубные ряды интактные / Требуется плановая санация.",
 		teethFormulaMap: {},
 		diagnosisIcd10: "Z01.2",
 		diagnosisDescription: "Стоматологическое обследование / Первичный осмотр",
@@ -79,18 +79,18 @@ export function buildA4ConsentData(
 	customConsentData?: Partial<A4DocumentInformedConsentData>,
 ): A4DocumentInformedConsentData {
 	return {
-		consentNumber: `ИДС-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+		consentNumber: `ИДС-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "____"}`,
 		consentDate: todayRu,
 		clinic: cl,
 		patient: pt,
-		doctorFullName: doctor,
-		doctorSpecialty: "Врач-стоматолог-терапевт",
+		doctorFullName: doctor || "____________________________________",
+		doctorSpecialty: "Врач-стоматолог",
 		interventionName:
-			"Комплексное терапевтическое лечение, местная инфильтрационная анестезия и реставрация зубов",
-		toothOrArea: "16",
-		diagnosisSummary: "K02.1 Кариес дентина (глубокий кариес 16 зуба)",
-		contractNumber,
-		contractDate,
+			"Медицинское вмешательство в соответствии с утвержденным планом лечения",
+		toothOrArea: "—",
+		diagnosisSummary: "Стоматологическое обследование / Санация",
+		contractNumber: contractNumber || "____________________",
+		contractDate: contractDate || todayRu,
 		patientQuestionsAnswered: true,
 		...customConsentData,
 	};
@@ -103,7 +103,7 @@ export function buildA4PersonalDataConsent(
 	customPersonalDataConsent?: Partial<A4DocumentPersonalDataConsentData>,
 ): A4DocumentPersonalDataConsentData {
 	return {
-		consentNumber: `ПД-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+		consentNumber: `ПД-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "____"}`,
 		consentDate: todayRu,
 		clinic: cl,
 		patient: pt,

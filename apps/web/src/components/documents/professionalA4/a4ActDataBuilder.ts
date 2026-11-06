@@ -29,7 +29,7 @@ export function buildA4ActData(
 		patient: pt,
 		actNumber:
 			liveActNum ||
-			`А-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+			`А-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "____"}`,
 		actDate: todayRu,
 		contractNumber,
 		contractDate,

@@ -46,38 +46,53 @@ async function main() {
 		});
 		const page = await context.newPage();
 
-		console.log("Navigating to live public booking page...");
-		await page.goto(`${WEB_BASE}/#/book`, {
+		console.log("Navigating to live public booking page with demo mode enabled...");
+		await page.addInitScript(() => {
+			try {
+				localStorage.setItem("dente_demo_showcase", "true");
+			} catch (_) {}
+		});
+		await page.goto(`${WEB_BASE}/#/book?demo=true`, {
 			waitUntil: "commit",
 			timeout: 20000,
 		});
 
 		await page.waitForFunction(() => {
-			const text = document.body ? document.body.innerText : "";
-			return !text.includes("Загрузка системы...");
-		}, { timeout: 30000 }).catch(() => {});
+			const text = document.body ? document.body.innerText.trim() : "";
+			return text.length > 20 && !text.includes("Загрузка системы...");
+		}, { timeout: 30000 });
 
 		await page.waitForTimeout(1000);
 
 		// Switch to Cabinet Mode tab if available
-		const cabinetTabBtn = await page.$('button:has-text("Личный кабинет")');
+		console.log("Looking for 'Личный кабинет' tab...");
+		const cabinetTabBtn = await page.waitForSelector('button:has-text("Личный кабинет")', { timeout: 15000 });
 		if (cabinetTabBtn) {
+			console.log("Clicking 'Личный кабинет' tab...");
 			await cabinetTabBtn.click();
-			await page.waitForTimeout(600);
+			await page.waitForTimeout(1000);
 		}
 
-		// Click open test-drive / demo cabinet button
-		const openCabinetBtn = await page.$('[data-testid="open-demo-cabinet-btn"]');
-		if (openCabinetBtn) {
-			await openCabinetBtn.click();
-			await page.waitForTimeout(800);
+		// Check if modal opened immediately (when patientData is set)
+		let modal = await page.$(".patient-cabinet-modal, .patient-cabinet-body, [data-testid='patient-cabinet-modal'], .patient-cabinet-backdrop");
+		if (!modal) {
+			// Click open test-drive / demo cabinet button if present
+			console.log("Modal not open yet, looking for open demo cabinet button...");
+			const openCabinetBtn = await page.$('[data-testid="open-demo-cabinet-btn"], button:has-text("Открыть кабинет пациента (Тест-драйв)")');
+			if (openCabinetBtn) {
+				console.log("Clicking 'Открыть кабинет пациента (Тест-драйв)' button...");
+				await openCabinetBtn.click();
+				await page.waitForTimeout(1500);
+			}
 		}
 
 		// Wait for patient cabinet modal
-		await page.waitForSelector(".patient-cabinet-modal, .patient-cabinet-body, [data-testid='patient-cabinet-modal']", {
+		console.log("Waiting for .patient-cabinet-modal...");
+		modal = await page.waitForSelector(".patient-cabinet-modal, .patient-cabinet-body, [data-testid='patient-cabinet-modal'], .patient-cabinet-backdrop", {
 			state: "visible",
 			timeout: 10000,
-		}).catch(() => {});
+		});
+		console.log("Patient cabinet modal visible:", !!modal);
 
 		// 1. PC Light (1440x900)
 		console.log("Capturing 01_patient_cabinet_pc_light.png...");

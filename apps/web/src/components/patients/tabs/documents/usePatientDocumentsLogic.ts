@@ -24,7 +24,7 @@ export function usePatientDocumentsLogic(patient: Patient) {
 		docStore.setDocumentIssueRecipientSigned(true);
 		docStore.setDocumentIssueClinicSigned(true);
 		docStore.setDocumentIssueNote(`Подписано ПЭП на планшете. Хэш SHA-256: ${sigData.sha256Fingerprint?.slice(0, 16)}...`);
-		await appLogic.confirmDocumentIssue(true);
+		await appLogic.confirmDocumentIssue(true, sigData.signatureSvg, sigData.pepCode);
 		setTabletSignDoc(null);
 	};
 

@@ -29,40 +29,40 @@ export function buildA4ClinicRequisites(clinicProfileDraft: any) {
 		name:
 			draft.clinicName ||
 			draft.name ||
-			'ООО "Стоматологическая клиника ДЕНТЕ Премиум"',
+			'ООО "Стоматологическая клиника"',
 		legalName:
 			draft.legalName ||
 			draft.clinicName ||
-			'ООО "Стоматологическая клиника ДЕНТЕ Премиум"',
-		shortName: draft.shortName || 'ООО "ДЕНТЕ Премиум"',
+			'ООО "Стоматологическая клиника"',
+		shortName: draft.shortName || draft.clinicName || 'ООО "Стоматологическая клиника"',
 		address:
 			draft.legalAddress ||
 			draft.address ||
-			"127006, г. Москва, ул. Тверская, д. 12, стр. 2",
+			"________________________________________________________",
 		actualAddress:
 			draft.actualAddress ||
 			draft.address ||
-			"127006, г. Москва, ул. Тверская, д. 12, стр. 2",
-		inn: draft.inn || "7710984521",
-		kpp: draft.kpp || "771001001",
-		ogrn: draft.ogrn || "1217700456123",
+			"________________________________________________________",
+		inn: draft.inn || "____________",
+		kpp: draft.kpp || "_________",
+		ogrn: draft.ogrn || "_____________",
 		licenseNumber:
 			draft.medicalLicenseNumber ||
 			draft.licenseNumber ||
-			"ЛО41-01137-77/00645892",
+			"ЛО-___-______",
 		licenseDate:
-			draft.medicalLicenseIssuedAt || draft.licenseDate || "15.04.2022",
+			draft.medicalLicenseIssuedAt || draft.licenseDate || "«___» _________ _____ г.",
 		licenseIssuer:
-			draft.medicalLicenseIssuer || "Департамент здравоохранения города Москвы",
-		phone: draft.phone || "+7 (495) 123-45-67",
-		email: draft.email || "info@dente-clinic.ru",
-		bankName: draft.bankName || 'ПАО "Сбербанк"',
-		bik: draft.bik || "044525225",
-		checkingAccount: draft.checkingAccount || "40702810938000123456",
-		correspondentAccount: draft.correspondentAccount || "30101810400000000225",
-		directorTitle: draft.directorTitle || "Генеральный директор",
-		directorFullName: draft.directorFullName || "Воронов Алексей Владимирович",
-		city: draft.city || "г. Москва",
+			draft.medicalLicenseIssuer || "________________________________________________",
+		phone: draft.phone || "+7 (___) ___-__-__",
+		email: draft.email || "info@clinic.ru",
+		bankName: draft.bankName || "________________________",
+		bik: draft.bik || "_________",
+		checkingAccount: draft.checkingAccount || "____________________",
+		correspondentAccount: draft.correspondentAccount || "____________________",
+		directorTitle: draft.directorTitle || "Руководитель",
+		directorFullName: draft.directorFullName || "____________________________________",
+		city: draft.city || "г. ____________",
 	};
 }
 

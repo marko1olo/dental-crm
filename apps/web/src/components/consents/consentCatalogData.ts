@@ -278,7 +278,7 @@ export const CANONICAL_CONSENT_CATALOG: readonly ConsentDocumentItem[] = [
 export function normalizeConsentDocId(rawId: string): ConsentDocumentId {
 	if (!rawId) return "therapy";
 	const lower = String(rawId).toLowerCase().trim();
-	if (lower.includes("implant") || lower.includes("имплант") || lower.includes("синус") || lower.includes("osteoplast")) return "implant";
+	if (lower.includes("implant") || lower.includes("имплант") || lower.includes("синус") || lower.includes("sinus") || lower.includes("osteoplast") || lower.includes("osteo")) return "implant";
 	if (lower.includes("surg") || lower.includes("удален") || lower.includes("хирург") || lower.includes("extraction")) return "surgery";
 	if (lower.includes("orthodont") || lower.includes("ортодонт") || lower.includes("брекет") || lower.includes("aligner") || lower.includes("элайн")) return "orthodontics";
 	if (lower.includes("orthoped") || lower.includes("ортопед") || lower.includes("протез") || lower.includes("коронк") || lower.includes("винир") || lower.includes("prosthet")) return "orthopedics";
@@ -289,9 +289,10 @@ export function normalizeConsentDocId(rawId: string): ConsentDocumentId {
 	if (lower.includes("personal") || lower.includes("персональн") || lower.includes("152")) return "personal_data";
 	if (lower.includes("periodont") || lower.includes("пародонт")) return "periodontics";
 	if (lower.includes("sedat") || lower.includes("седац")) return "sedation";
-	if (lower.includes("contract") || lower.includes("договор")) return "paid_contract";
-	if (lower.includes("refus") || lower.includes("отказ")) return "refusal";
+	if (lower.includes("contract") || lower.includes("договор") || lower.includes("paid_medical_services")) return "paid_contract";
+	if (lower.includes("refus") || lower.includes("отказ") || lower.includes("egisz_refusal")) return "refusal";
 	if (lower.includes("endo") || lower.includes("пульпит") || lower.includes("канал")) return "endodontics";
+	if (lower.includes("inspection") || lower.includes("1051") || lower.includes("осмотр") || lower.includes("informed_consent")) return "therapy";
 	if (lower.includes("therap") || lower.includes("терап") || lower.includes("кариес")) return "therapy";
 
 	const directMatch = CANONICAL_CONSENT_CATALOG.find((item) => item.id.toLowerCase() === lower);

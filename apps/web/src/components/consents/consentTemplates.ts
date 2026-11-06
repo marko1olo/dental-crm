@@ -24,7 +24,21 @@ export type ConsentTemplateKey =
 	| "CONSENT_ANESTHESIA"
 	| "CONSENT_PERSONAL_DATA"
 	| "CONSENT_INSPECTION_1051N"
-	| "CONSENT_PEDIATRIC";
+	| "CONSENT_PEDIATRIC"
+	| "CONSENT_PERIODONTICS"
+	| "CONSENT_SURGERY_EXTRACTION"
+	| "CONSENT_IMPLANTOLOGY"
+	| "CONSENT_SINUS_LIFT"
+	| "CONSENT_OSTEOINTEGRATION_RISKS"
+	| "CONSENT_ORTHO_HYGIENE"
+	| "CONSENT_SEDATION"
+	| "CONSENT_TREATMENT_REFUSAL"
+	| "CONSENT_EGISZ_REFUSAL"
+	| "CONSENT_WARRANTY_PASSPORT"
+	| "CONSENT_WARRANTY_POLICY"
+	| "CONSENT_PHOTOPROTOCOL"
+	| "CONSENT_HEALTH_QUESTIONNAIRE"
+	| "CONSENT_PAID_CONTRACT";
 
 export interface ConsentSection {
 	id: string;
@@ -419,6 +433,228 @@ export const CONSENT_PEDIATRIC: ConsentTemplate = {
 	alternativeTreatments: ["Лечение с применением седации ЗАКС"],
 };
 
+export const CONSENT_PERIODONTICS: ConsentTemplate = {
+	key: "CONSENT_PERIODONTICS",
+	title: "Информированное добровольное согласие на пародонтологическое лечение",
+	subtitle: "Консервативная и хирургическая пародонтология, вектор-терапия, закрытый кюретаж",
+	category: "periodontics",
+	statutoryBasis: "Клинические рекомендации СтАР по пародонтологии",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента", "Ф.И.О. лечащего врача"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Суть и цели пародонтологического вмешательства",
+			content: "Устранение поддесневой микробной биопленки, минерализованных зубных отложений и грануляций для купирования воспалительного процесса в тканях пародонта.",
+			bullets: [
+				"Ультразвуковой поддесневой скейлинг и Vector-полировка корней;",
+				"Медикаментозная антисептическая обработка пародонтальных карманов;",
+				"Обучение гигиене и подбор индивидуальных средств ухода.",
+			],
+		},
+		{
+			id: "s2",
+			title: "2. Возможные реакции и необходимость диспансерного наблюдения",
+			content: "Возможна кратковременная гиперестезия шеек зубов и незначительная ретракция десневого края. Хронический пародонтит требует поддерживающей терапии каждые 3–4 месяца.",
+		},
+	],
+	aftercareInstructions: [
+		"Использовать антисептические ополаскиватели по назначению врача.",
+		"Соблюдать атравматичную технику чистки мягкой щеткой.",
+		"Явиться на контрольный осмотр через 14 дней.",
+	],
+	riskFactors: ["Повышенная чувствительность шеек зубов", "Рецессия десны при убыли костной ткани"],
+	alternativeTreatments: ["Хирургическое лоскутное вмешательство при глубоких карманах"],
+};
+
+export const CONSENT_SURGERY_EXTRACTION: ConsentTemplate = {
+	key: "CONSENT_SURGERY_EXTRACTION",
+	title: "Информированное добровольное согласие на хирургическую операцию удаления зуба",
+	subtitle: "Простое, сложное или атипичное удаление зуба, резекция верхушки корня",
+	category: "surgery",
+	statutoryBasis: "Клинические рекомендации СтАР по хирургической стоматологии",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента", "Ф.И.О. лечащего врача"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Показания и характер хирургического вмешательства",
+			content: "Атравматичное удаление зуба по медицинским показаниям с сохранением костных стенок альвеолы.",
+			bullets: [
+				"Местная проводниковая или инфильтрационная анестезия;",
+				"Бережная люксация корней без компрессии кости;",
+				"Ревизия лунки, медикаментозная обработка и наложение швов при необходимости.",
+			],
+		},
+		{
+			id: "s2",
+			title: "2. Послеоперационный режим и риски",
+			content: "Возможен послеоперационный отек мягких тканей до 3 суток, болезненность и гематома. Категорически запрещено полоскать рот в первые сутки во избежание вымывания сгустка.",
+		},
+	],
+	aftercareInstructions: [
+		"Не принимать пищу 2 часа после операции, не пить горячее в день удаления.",
+		"Не полоскать полость рта, не прогревать область вмешательства.",
+		"Принимать назначенные врачом препараты.",
+	],
+	riskFactors: ["Послеоперационный отек и болезненность", "Риск альвеолита при раннем вымывании сгустка"],
+	alternativeTreatments: ["Попытка зубосохраняющего эндодонтического перелечивания (если допустимо)"],
+};
+
+export const CONSENT_IMPLANTOLOGY: ConsentTemplate = {
+	...CONSENT_SURGERY_IMPLANT,
+	key: "CONSENT_IMPLANTOLOGY",
+	title: "Информированное добровольное согласие на дентальную имплантацию",
+};
+
+export const CONSENT_SINUS_LIFT: ConsentTemplate = {
+	...CONSENT_SURGERY_IMPLANT,
+	key: "CONSENT_SINUS_LIFT",
+	title: "Информированное добровольное согласие на операцию синус-лифтинга и костной пластики",
+	subtitle: "Открытый или закрытый субантральный аугментационный протокол",
+};
+
+export const CONSENT_OSTEOINTEGRATION_RISKS: ConsentTemplate = {
+	...CONSENT_SURGERY_IMPLANT,
+	key: "CONSENT_OSTEOINTEGRATION_RISKS",
+	title: "Информированное согласие с разъяснением рисков остеоинтеграции имплантатов",
+};
+
+export const CONSENT_ORTHO_HYGIENE: ConsentTemplate = {
+	...CONSENT_HYGIENE_BLEACHING,
+	key: "CONSENT_ORTHO_HYGIENE",
+	title: "Информированное добровольное согласие на профессиональную гигиену при ортодонтическом лечении",
+};
+
+export const CONSENT_SEDATION: ConsentTemplate = {
+	key: "CONSENT_SEDATION",
+	title: "Информированное добровольное согласие на проведение ингаляционной седации (ЗАКС)",
+	subtitle: "Снятие эмоционального напряжения смесью закиси азота и кислорода",
+	category: "anesthesia",
+	statutoryBasis: "Стандарты безопасности седации в амбулаторной стоматологии",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента", "Ф.И.О. лечащего врача"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Суть методики седации закисью азота",
+			content: "Ингаляционная подача смеси через носовую маску. Пациент находится в полном сознании, сохраняя защитные рефлексы и способность контакта с врачом.",
+		},
+		{
+			id: "s2",
+			title: "2. Быстрое восстановление",
+			content: "Препарат полностью элиминируется легкими в течение 5 минут дыхания 100% кислородом в завершении процедуры.",
+		},
+	],
+	aftercareInstructions: ["Пациент может вернуться к обычному распорядку сразу после окончания приема."],
+	riskFactors: ["Легкое головокружение в первые минуты"],
+	alternativeTreatments: ["Лечение под местной анестезией без седации"],
+};
+
+export const CONSENT_TREATMENT_REFUSAL: ConsentTemplate = {
+	key: "CONSENT_TREATMENT_REFUSAL",
+	title: "Отказ от медицинского вмешательства",
+	subtitle: "Информированный отказ пациента или законного представителя от предложенного объема лечения",
+	category: "legal",
+	statutoryBasis: "Статья 20 Федерального закона от 21.11.2011 № 323-ФЗ",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента", "Ф.И.О. лечащего врача"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Осознанный отказ",
+			content: "Мне в доступной форме разъяснены диагноз, цели и характер медицинского вмешательства, а также возможные риски и последствия отказа от него.",
+		},
+		{
+			id: "s2",
+			title: "2. Риски прогрессирования заболевания",
+			content: "Я предупрежден, что отказ от лечения может повлечь развитие острых гнойно-воспалительных процессов, разрушение зуба и его последующую утрату.",
+		},
+	],
+	aftercareInstructions: ["При возникновении боли незамедлительно обратиться в клинику."],
+	riskFactors: ["Прогрессирование заболевания", "Потеря зуба", "Одонтогенные осложнения"],
+	alternativeTreatments: ["Проведение рекомендованного врачом лечения"],
+};
+
+export const CONSENT_EGISZ_REFUSAL: ConsentTemplate = {
+	...CONSENT_TREATMENT_REFUSAL,
+	key: "CONSENT_EGISZ_REFUSAL",
+	title: "Отказ от передачи сведений в ЕГИСЗ",
+	subtitle: "Заявление о запрете передачи персональных медицинских данных в сторонние информационные системы",
+};
+
+export const CONSENT_WARRANTY_PASSPORT: ConsentTemplate = {
+	...CONSENT_THERAPY,
+	key: "CONSENT_WARRANTY_PASSPORT",
+	title: "Гарантийный паспорт стоматологического пациента",
+	subtitle: "Условия и сроки сохранения гарантии на выполненные ортопедические и терапевтические конструкции",
+	category: "legal",
+};
+
+export const CONSENT_WARRANTY_POLICY: ConsentTemplate = {
+	...CONSENT_WARRANTY_PASSPORT,
+	key: "CONSENT_WARRANTY_POLICY",
+	title: "Положение о гарантийных обязательствах клиники",
+};
+
+export const CONSENT_PHOTOPROTOCOL: ConsentTemplate = {
+	key: "CONSENT_PHOTOPROTOCOL",
+	title: "Согласие на проведение диагностического фотопротокола",
+	subtitle: "Дентальная фото- и видеосъемка этапов лечения для контроля качества и консилиумов",
+	category: "legal",
+	statutoryBasis: "Статья 152.1 Гражданского кодекса РФ",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента", "Ф.И.О. лечащего врача"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Цели фотопротокола",
+			content: "Проведение внутриротовой и портретной фотосъемки до, в процессе и после завершения лечения для оценки динамики и планирования реставраций.",
+		},
+	],
+	aftercareInstructions: [],
+	riskFactors: [],
+	alternativeTreatments: [],
+};
+
+export const CONSENT_HEALTH_QUESTIONNAIRE: ConsentTemplate = {
+	key: "CONSENT_HEALTH_QUESTIONNAIRE",
+	title: "Анкета о состоянии соматического здоровья пациента",
+	subtitle: "Опросник общего анамнеза, хронических заболеваний и сопутствующей фармакотерапии",
+	category: "legal",
+	statutoryBasis: "Приказ Минздрава России № 804н",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Полнота и достоверность сведений",
+			content: "Пациент подтверждает достоверность сообщенных сведений об аллергических реакциях, перенесенных операциях и принимаемых лекарствах.",
+		},
+	],
+	aftercareInstructions: ["Своевременно информировать врача об изменении состояния здоровья."],
+	riskFactors: [],
+	alternativeTreatments: [],
+};
+
+export const CONSENT_PAID_CONTRACT: ConsentTemplate = {
+	key: "CONSENT_PAID_CONTRACT",
+	title: "Согласие с условиями договора на оказание платных медицинских услуг",
+	subtitle: "Договор с клиникой, порядок расчетов, гарантии и налоговый вычет",
+	category: "legal",
+	statutoryBasis: "Постановление Правительства РФ от 11.05.2023 № 736",
+	mandatoryPlaceholders: ["Ф.И.О. пациента", "Дата рождения пациента"],
+	sections: [
+		{
+			id: "s1",
+			title: "1. Порядок оказания и оплаты услуг",
+			content: "Клиника оказывает медицинские услуги, соответствующие стандартам, а Пациент оплачивает их согласно прейскуранту с выдачей кассового чека.",
+		},
+		{
+			id: "s2",
+			title: "2. Налоговый вычет",
+			content: "По заявлению пациента клиника выдает комплект документов и справку об оплате медицинских услуг по форме КНД 1151156 для ФНС.",
+		},
+	],
+	aftercareInstructions: ["Сохранять чеки и договор для оформления социального налогового вычета."],
+	riskFactors: [],
+	alternativeTreatments: [],
+};
+
 export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
 	CONSENT_THERAPY,
 	CONSENT_SURGERY_IMPLANT,
@@ -429,6 +665,20 @@ export const CONSENT_TEMPLATES: Record<ConsentTemplateKey, ConsentTemplate> = {
 	CONSENT_PERSONAL_DATA,
 	CONSENT_INSPECTION_1051N,
 	CONSENT_PEDIATRIC,
+	CONSENT_PERIODONTICS,
+	CONSENT_SURGERY_EXTRACTION,
+	CONSENT_IMPLANTOLOGY,
+	CONSENT_SINUS_LIFT,
+	CONSENT_OSTEOINTEGRATION_RISKS,
+	CONSENT_ORTHO_HYGIENE,
+	CONSENT_SEDATION,
+	CONSENT_TREATMENT_REFUSAL,
+	CONSENT_EGISZ_REFUSAL,
+	CONSENT_WARRANTY_PASSPORT,
+	CONSENT_WARRANTY_POLICY,
+	CONSENT_PHOTOPROTOCOL,
+	CONSENT_HEALTH_QUESTIONNAIRE,
+	CONSENT_PAID_CONTRACT,
 };
 
 export function getAllConsentTemplates(): ConsentTemplate[] {
@@ -449,10 +699,18 @@ export function getConsentTemplate(key: string): ConsentTemplate {
 	if (key in CONSENT_TEMPLATES) {
 		return CONSENT_TEMPLATES[key as ConsentTemplateKey];
 	}
-	const match = getAllConsentTemplates().find(
-		(t) => t.key.toLowerCase().includes(key.toLowerCase()) || key.toLowerCase().includes(t.category),
+	const lower = String(key || "").toLowerCase();
+	const all = Object.values(CONSENT_TEMPLATES);
+	const exactMatch = all.find((t) => t.key.toLowerCase() === lower);
+	if (exactMatch) return exactMatch;
+
+	const partialMatch = all.find(
+		(t) =>
+			t.key.toLowerCase().includes(lower) ||
+			lower.includes(t.key.toLowerCase().replace("consent_", "")) ||
+			lower.includes(t.category),
 	);
-	return match || CONSENT_THERAPY;
+	return partialMatch || CONSENT_THERAPY;
 }
 
 export function getMissingRequiredPlaceholders(

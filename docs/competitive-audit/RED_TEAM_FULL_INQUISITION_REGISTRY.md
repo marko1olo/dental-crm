@@ -611,10 +611,10 @@
   - `docs/proofs/booking/02_booking_pc_dark.png` (814 KB) — Онлайн-запись PC Dark (1440x900, 100% темные токены).
   - `docs/proofs/booking/03_booking_mobile_light.png` (66 KB) — Онлайн-запись Mobile Light (390x844, Apple HIG, плавающий CTA в зоне большого пальца).
   - `docs/proofs/booking/04_booking_mobile_dark.png` (88 KB) — Онлайн-запись Mobile Dark (390x844, 0px горизонтального скролла).
-  - `docs/proofs/portal/01_patient_cabinet_pc_light.png` (278 KB) — Личный кабинет PC Light (1440x900).
-  - `docs/proofs/portal/02_patient_cabinet_pc_dark.png` (842 KB) — Личный кабинет PC Dark (1440x900).
-  - `docs/proofs/portal/03_patient_cabinet_mobile_light.png` (71 KB) — Личный кабинет Mobile Light (390x844).
-  - `docs/proofs/portal/04_patient_cabinet_mobile_dark.png` (91 KB) — Личный кабинет Mobile Dark (390x844).
+  - `docs/proofs/portal/01_patient_cabinet_pc_light.png` (814 KB) — Личный кабинет PC Light (1440x900).
+  - `docs/proofs/portal/02_patient_cabinet_pc_dark.png` (510 KB) — Личный кабинет PC Dark (1440x900).
+  - `docs/proofs/portal/03_patient_cabinet_mobile_light.png` (66 KB) — Личный кабинет Mobile Light (390x844).
+  - `docs/proofs/portal/04_patient_cabinet_mobile_dark.png` (67 KB) — Личный кабинет Mobile Dark (390x844).
   - `docs/proofs/portal/05_kiosk_pc_light.png` (803 KB) — Терминал самочекина PC Light (1440x900).
   - `docs/proofs/portal/06_kiosk_pc_dark.png` (1106 KB) — Терминал самочекина PC Dark (1440x900).
   - `docs/proofs/portal/07_kiosk_mobile_light.png` (66 KB) — Терминал самочекина Mobile Light (390x844).
@@ -731,14 +731,17 @@
 ### [DOC-03] [SEV-1] [ИСПРАВЛЕНО] Бесследная потеря подписи пациента с планшета
 - **Файлы:**
   - [`apps/web/src/hooks/domains/documents/useTreatmentContractActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/documents/useTreatmentContractActions.ts)
+  - [`apps/web/src/components/patients/tabs/documents/usePatientDocumentsLogic.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/tabs/documents/usePatientDocumentsLogic.ts)
   - [`apps/api/src/routes/documents/signature.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/signature.ts)
-  - [`apps/api/src/routes/documents.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents.ts)
-- **Суть бага:** Пациент расписывался стилусом/пальцем на планшете, но поле `signatureSvg` отсекалось и бэкенд записывал `NULL`.
+  - [`apps/api/src/routes/documents/issue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/issue.ts)
+  - [`apps/api/src/db/documentQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/documentQuery.ts)
+- **Суть бага:** Пациент расписывался стилусом/пальцем на планшете, но вызов `confirmDocumentIssue` в `usePatientDocumentsLogic` опускал аргументы подписи `signatureSvg` и `pepCode`, из-за чего бэкенд записывал `NULL` в `generated_documents.signature_svg`.
 - **Архитектурное исправление:**
   1. Создан Fastify эндпоинт `POST /api/documents/:id/signature`, сохраняющий `signature_svg` в `generated_documents` и синхронизирующий статус в `patient_consents`.
   2. В `useTreatmentContractActions.ts` реализован метод `signDocumentWithTablet` и сквозная передача подписи в API.
-  3. Фиксация юридического аудит-следа в `audit_events` (IP, User-Agent, таймстамп).
-- **Верификация:** Проверено ручным e2e пайплайном и тестом `consentSSOTSuite.test.tsx`.
+  3. В `usePatientDocumentsLogic.ts` обеспечена гарантированная передача `(true, sigData.signatureSvg, sigData.pepCode)` при подтверждении выдачи.
+  4. Фиксация юридического аудит-следа в `audit_events` (IP, User-Agent, таймстамп).
+- **Верификация:** Проверено ручным e2e пайплайном и тестами `consentSSOTSuite.test.tsx` (10/10) и `documents.test.ts` (8/8).
 
 ### [DOC-04] [SEV-1] [ИСПРАВЛЕНО] Симуляция ПЭП по 63-ФЗ в экспресс-пакете первичного приёма
 - **Файлы:**
@@ -752,13 +755,15 @@
 - **Файлы:**
   - [`apps/web/src/components/documents/professionalA4/a4ClinicPatientDefaults.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ClinicPatientDefaults.ts)
   - [`apps/web/src/components/documents/professionalA4/a4ClinicalDocsBuilder.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ClinicalDocsBuilder.ts)
+  - [`apps/web/src/components/documents/professionalA4/a4ContractDataBuilder.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ContractDataBuilder.ts)
+  - [`apps/web/src/components/documents/professionalA4/a4ActDataBuilder.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ActDataBuilder.ts)
   - [`apps/web/src/components/documents/__tests__/professionalA4PrintComponents.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/__tests__/professionalA4PrintComponents.test.tsx)
 - **Суть бага:** При отсутствии данных пациента печатались хардкодные ФИО «Ковалёв Роман Станиславович», паспорт 4515 892341, кариес 16 зуба и аллергия на амидопирин.
 - **Архитектурное исправление:**
-  1. Вырезаны все хардкодные моковые данные физлиц и клиник.
+  1. Вырезаны все хардкодные моковые данные физлиц и клиник (фиктивные адреса, ИНН, ОГРН, банковские реквизиты).
   2. Внедрена юридическая норма (Мандаты 8e/8n): подстановка реальных данных пациента, а при их отсутствии — пустых полей с подчеркиваниями `___________________` для ручного заполнения шариковой ручкой на стойке администратора.
   3. Клинические дефолты заменены на реальные данные приёма.
-- **Верификация:** 8/8 тестов `professionalA4PrintComponents.test.tsx` пройдены успешно без моков.
+- **Верификация:** 8/8 тестов `professionalA4PrintComponents.test.tsx` пройдены успешно без моков. 4-State Visual Proofs зафиксированы в `docs/proofs/documents/01_documents_studio_pc_light_1440x900.png`–`04_documents_studio_mobile_dark_390x844.png`.
 
 ### [DOC-06] [SEV-2] [ИСПРАВЛЕНО] Симуляция СМС-кода через Math.random() прямо в UI
 - **Файлы:**

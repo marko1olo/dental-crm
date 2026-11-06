@@ -26,7 +26,7 @@ export function buildA4ContractData(
 		patient: pt,
 		contractNumber:
 			liveDocNum ||
-			`Д-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "418"}`,
+			`Д-${new Date().getFullYear()}/${pt.cardNumber.replace(/\D/g, "") || "____"}`,
 		contractDate: todayRu,
 		estimatedTotalRub:
 			customContractData?.estimatedTotalRub || liveAmount || 18500,
