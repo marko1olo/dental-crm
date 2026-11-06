@@ -65,6 +65,34 @@ The project uses `npm` workspaces. Run these commands from the root directory:
 
 ---
 
+## 🧪 Testing Suites & Registries (SSOT)
+
+> 🔬 **КАНОНИЧЕСКАЯ АРХИТЕКТУРА ТЕСТИРОВАНИЯ:** [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md).  
+> Все тесты монорепозитория разбиты на 6 эшелонов и зафиксированы в доменных реестрах `docs/testing/`.
+
+### 🧭 Доменные реестры тестирования:
+- **Мастер-Архитектура (SSOT)**: [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md)
+- **Сквозной E2E Master Lifecycle**: [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md)
+- **Сетевой хаос и идемпотентность (UUIDv7)**: [`docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md)
+- **Контракты роутов Fastify & CWE-209**: [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md)
+- **ACID-транзакции и дедлоки Postgres 18**: [`docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md)
+- **Фаззинг формулы FDI и копеек**: [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md)
+- **Жизненный цикл ЭМК, дневников и ПЭП**: [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md)
+- **React 19 & Zustand сторы**: [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md)
+- **Реестр очищения тестов**: [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)
+
+### 🎯 Быстрые тестовые команды (время прогона $\le 5$ с):
+- `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` — E2E мастер-цикл приёма
+- `npx tsx --test packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` — 10k фаззинг формулы FDI
+- `npx tsx --test apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` — шторм идемпотентности
+- `npx tsx --test apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts` — контракты Fastify
+- `node --import tsx --import ./src/tests/support/poolTeardown.ts --test apps/api/src/tests/concurrency/acidTransactionStress.test.ts` — ACID стресс
+- `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` — ЭМК и ПЭП
+- `npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts` — сторы и гидратация
+- `npm run test:infra` — проверка базовой тестовой инфраструктуры
+
+---
+
 ## 🧪 Smoke Testing Suite (`scripts/`)
 
 DENTE has a comprehensive end-to-end smoke testing system built with Playwright and Puppeteer. These tests check UI rendering, API integrations, and database state invariants.

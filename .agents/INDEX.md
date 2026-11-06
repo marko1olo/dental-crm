@@ -80,12 +80,23 @@
 
 ### 3. Функциональные Модули CRM (`.agents/`)
 17. **[CLINICAL_RULES.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_RULES.md)** — Движок клинических правил, проверка противопоказаний, триггеры услуг и связывание с Мандатом 8e (Zero-Friction для врача).
-17. **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр протоколов ЭМК (K02–K08), клинических пакетов услуг прейскуранта «под ключ», клинических протоколов и анестезии.
-18. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей по `clientMutationId`, касса без ИНН у физлиц, комбинированные оплаты, семейные кошельки, справка ФНС 1151156.
-19. **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учёт, техкарты процедур (BOM), 1-клик списание расходников без комиссий, мягкий овердрафт при задержке накладных.
-20. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл документов (draft / issued / voided), headless Chromium/Edge генератор PDF, SHA-256 подпись, водяной знак ЧЕРНОВИК, штампы УКЭП.
-21. **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки АТС Mango/Zadarma/UIS, тихий режим софтфона для врача, ambient-баннер для регистратуры, OTP-авторизация и PWA портал саморегистрации.
-22. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — WhatsApp Cloud API WABA, VK MAX bot, маршруты и конфигурации каналов связи.
+18. **[CLINICAL_PROTOCOLS_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/.agents/CLINICAL_PROTOCOLS_REGISTRY.md)** — Реестр протоколов ЭМК (K02–K08), клинических пакетов услуг прейскуранта «под ключ», клинических протоколов и анестезии.
+19. **[BILLING_AND_FINANCE.md](file:///C:/Clinic_MVP/dental-crm/.agents/BILLING_AND_FINANCE.md)** — Идемпотентность платежей по `clientMutationId`, касса без ИНН у физлиц, комбинированные оплаты, семейные кошельки, справка ФНС 1151156.
+20. **[WAREHOUSE_AND_SUPPLY.md](file:///C:/Clinic_MVP/dental-crm/.agents/WAREHOUSE_AND_SUPPLY.md)** — Складской учёт, техкарты процедур (BOM), 1-клик списание расходников без комиссий, мягкий овердрафт при задержке накладных.
+21. **[DOCUMENTS_LIFECYCLE.md](file:///C:/Clinic_MVP/dental-crm/.agents/DOCUMENTS_LIFECYCLE.md)** — Жизненный цикл документов (draft / issued / voided), headless Chromium/Edge генератор PDF, SHA-256 подпись, водяной знак ЧЕРНОВИК, штампы УКЭП.
+22. **[TELEPHONY_AND_PORTAL.md](file:///C:/Clinic_MVP/dental-crm/.agents/TELEPHONY_AND_PORTAL.md)** — Вебхуки АТС Mango/Zadarma/UIS, тихий режим софтфона для врача, ambient-баннер для регистратуры, OTP-авторизация и PWA портал саморегистрации.
+23. **[MESSENGERS.md](file:///C:/Clinic_MVP/dental-crm/.agents/MESSENGERS.md)** — WhatsApp Cloud API WABA, VK MAX bot, маршруты и конфигурации каналов связи.
+
+### 4. Реестры Архитектуры Тестирования и Инженерной Верификации (`docs/testing/`)
+24. **[MASTER_TESTING_ARCHITECTURE.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md)** — **Канонический SSOT архитектуры тестирования DENTE CRM**: 6 эшелонов тестов, 9 машинных гейтов DoD, CLI-команды и каталог всех тест-сьютов.
+25. **[E2E_CLINICAL_TESTING_STANDARD.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md)** — Сквозной E2E Master Lifecycle (`master-clinical-lifecycle.spec.ts`) и кросс-модульные тесты кассы, склада и одонтограммы.
+26. **[CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md)** — Реестр хаос-тестов идемпотентности (20-поточный шторм UUIDv7, Double-Spend defense, FIFO офлайн-очередь, CRDT LWW).
+27. **[API_ROUTES_INQUISITION_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md)** — Реестр контрактов Fastify API: защита от CWE-209 и SQL 22P02, валидация параметров UUID.
+28. **[ACID_CONCURRENCY_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md)** — Реестр стресс-тестов PostgreSQL 18: 20-поточный захват слотов расписания, дебет семейного депозита с `SELECT ... FOR UPDATE`, дедлок-иммунитет склада через `ORDER BY id ASC`.
+29. **[CLINICAL_MATH_FUZZING_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md)** — Реестр фаззинга: 10 000 мутаций ввода FDI, нормализация поверхностей Wheeler, 10 000 сплитов и скидок Мандата 8e (`sum === totalKopecks`).
+30. **[CLINICAL_EMR_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md)** — Реестр жизненного цикла ЭМК: протоколы SOAP, дебаунс-автосейв черновиков (Мандат 8e), ПЭП криптохеш SHA-256, аудит «Исправленному верить», печать A4.
+31. **[WEB_COMPONENTS_TEST_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md)** — Реестр поведенческих тестов React 19 и Zustand: изоляция сессий пациентов, реактивная гидратация 0-F5, тач-таргеты Apple HIG $\ge 44\times 44$px.
+32. **[TEST_SUITES_INQUISITION_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)** — Реестр очищения тестовой базы: ликвидация псевдотестов с `fs.readFileSync` и проглоченных `catch {}`.
 
 ### 4. Реестр Конкурентного Аудита и Реверс-Инжиниринг (`docs/competitive-audit/`)
 19. **[FEATURES_REGISTRY.md](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/FEATURES_REGISTRY.md)** — Таблица 63 канонических фич конкурентов (IDENT, DentalPRO, iStom) с оценкой ценности и строками доказательств.
