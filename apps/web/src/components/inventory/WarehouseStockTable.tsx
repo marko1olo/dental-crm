@@ -216,11 +216,11 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 				<div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 shrink-0 bg-[var(--paper)] p-2.5 rounded-xl border border-[var(--line)]">
 					<div className="relative flex-1 min-w-[220px]">
 						<Search className="absolute left-3 top-1/2 -translate-y-1/2 text-[var(--muted)] pointer-events-none" size={16} />
-						<input ref={searchInputRef} type="text" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Поиск по артикулу, названию или категории (Ctrl+K)..." className="w-full !pl-9 pr-3 !h-9 !min-h-[36px] text-sm bg-[var(--paper-soft)] text-[var(--ink)] rounded-lg border border-[var(--line-subtle)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] transition-colors" data-testid="warehouse-search-input" />
+						<input ref={searchInputRef} type="text" value={localSearch} onChange={(e) => setLocalSearch(e.target.value)} placeholder="Поиск по артикулу, названию или категории (Ctrl+K)..." className="w-full !pl-10 pr-3 !h-9 !min-h-[36px] text-sm bg-[var(--paper-soft)] text-[var(--ink)] rounded-lg border border-[var(--line-subtle)] focus:outline-hidden focus:border-[var(--primary,#0d9488)] transition-colors" data-testid="warehouse-search-input" />
 					</div>
 					<div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar py-0.5">
 						{CATEGORY_TABS.map((tab) => (
-							<button key={tab.id} type="button" onClick={() => setActiveCategory(tab.id)} className={`px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 transition-colors whitespace-nowrap ${activeCategory === tab.id ? "bg-[var(--teal,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line-subtle)]"}`} data-testid={`warehouse-tab-${tab.id}`}>
+							<button key={tab.id} type="button" onClick={() => setActiveCategory(tab.id)} className={`px-3 py-1.5 text-xs font-medium rounded-lg shrink-0 transition-colors whitespace-nowrap ${activeCategory === tab.id ? "bg-[var(--primary,#0d9488)] text-white shadow-xs" : "bg-[var(--paper-soft)] text-[var(--muted)] hover:text-[var(--ink)] border border-[var(--line-subtle)]"}`} data-testid={`warehouse-tab-${tab.id}`}>
 								{tab.label}
 							</button>
 						))}
@@ -231,11 +231,11 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 								<button
 									type="button"
 									onClick={onOpenShiftDeduction}
-									className="secondary-button h-9 min-h-[36px] px-3 text-xs sm:text-sm font-medium rounded-xl inline-flex items-center gap-1.5 text-[var(--ink)] border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper-strong)] transition-colors shrink-0 shadow-xs whitespace-nowrap"
+									className="primary-button h-9 min-h-[36px] px-3.5 text-xs sm:text-sm font-semibold rounded-xl inline-flex items-center gap-1.5 text-white bg-[var(--primary,#0d9488)] hover:opacity-95 transition-opacity shrink-0 shadow-xs whitespace-nowrap cursor-pointer"
 									data-testid="btn-warehouse-shift-deduction"
 									title="Списать расходники за смену (1 клик)"
 								>
-									<Zap size={14} className="text-[var(--teal,#0d9488)] shrink-0" />
+									<Zap size={14} className="shrink-0" />
 									<span>Списать смену</span>
 								</button>
 							)}
@@ -297,7 +297,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 									<div className="flex items-start justify-between gap-2">
 										<div className="flex-1 min-w-0">
 											<span className="text-[11px] font-mono text-[var(--muted)]">#{sku}</span>
-											<h4 className="font-semibold text-sm text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</h4>
+											<h4 className="font-semibold text-sm text-[var(--ink)] break-words leading-snug">{item.name}</h4>
 											<div className="flex items-center gap-2 mt-0.5 flex-wrap">
 												<span className="text-xs text-[var(--muted)]">{getCategoryBadge(item.category || "").label}</span>
 												{item.expirationDate && (
@@ -390,7 +390,7 @@ export const WarehouseStockTable: React.FC<WarehouseStockTableProps> = ({
 											<td className="py-2.5 px-3 font-mono text-xs text-[var(--muted)] truncate" title={sku}>{sku}</td>
 											{/* 2. Наименование */}
 											<td className="py-2.5 px-3">
-												<div className="font-medium text-[var(--ink)] truncate" title={item.name}>{item.name}</div>
+												<div className="font-medium text-[var(--ink)] break-words leading-snug" title={item.name}>{item.name}</div>
 												{item.expirationDate && (
 													<div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
 														<span className={`inline-flex px-1.5 py-0.2 rounded font-medium text-[10px] border ${traffic.className}`}>{traffic.badgeTextRu}</span>

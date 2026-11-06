@@ -128,12 +128,12 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 				data-cy="clinical-writeoff-dialog"
 			>
 				{/* Apple HIG: тактильный Drag Handle 36x5px для смартфонов */}
-				<div className="w-9 h-1.5 rounded-full bg-slate-400/40 dark:bg-slate-500/60 mx-auto mt-2.5 mb-1 sm:hidden shrink-0" aria-hidden="true" />
+				<div className="w-9 h-1.5 rounded-full bg-neutral-400/50 dark:bg-neutral-500/50 mx-auto mt-2.5 mb-1 sm:hidden shrink-0" aria-hidden="true" />
 
 				{/* Шапка модалки */}
 				<div className="p-3.5 sm:p-4 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between shrink-0 bg-[var(--paper-soft,#f8fafc)]">
 					<div className="flex items-center gap-3">
-						<div className="w-9 h-9 rounded-xl bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center shrink-0">
+						<div className="w-9 h-9 rounded-xl bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] flex items-center justify-center shrink-0">
 							<PackageCheck size={20} />
 						</div>
 						<div>
@@ -141,7 +141,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 								<h3 className="text-base sm:text-lg font-bold text-[var(--ink,#0f172a)]">
 									{isClinicalMode ? "Клиническое списание материалов (Расходные материалы приёма)" : "Списание расходников за смену"}
 								</h3>
-								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
+								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--primary,#0d9488)]/15 text-[var(--primary,#0d9488)] border border-[var(--primary,#0d9488)]/30">
 									{isClinicalMode ? "Норма расхода (1 клик по техкартам)" : "1 клик по техкартам"}
 								</span>
 							</div>

@@ -45,6 +45,7 @@ export async function registerSoftOverdraftRoutes(server: FastifyInstance): Prom
 			quantityDeducted: parsed.data.quantity,
 			newStock: result.newStock,
 			isOverdraft: result.isOverdraft,
+			allowOverdraft: true,
 			deficit: result.deficit,
 			warning: result.isOverdraft ? "soft_overdraft" : undefined,
 			warningMessage: result.isOverdraft

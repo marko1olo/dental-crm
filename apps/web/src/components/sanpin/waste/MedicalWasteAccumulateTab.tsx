@@ -52,6 +52,8 @@ export function MedicalWasteAccumulateTab(props: MedicalWasteAccumulateTabProps)
 				grossWeightInput={props.grossWeightInput}
 				setGrossWeightInput={props.setGrossWeightInput}
 				currentWeights={props.currentWeights}
+				onApplyShiftDefault={props.handleQuickShiftWaste}
+				onSelectClass={props.handleClassChange}
 			/>
 			<MedicalWasteStorageAndSealForm
 				decontamMethod={props.decontamMethod}

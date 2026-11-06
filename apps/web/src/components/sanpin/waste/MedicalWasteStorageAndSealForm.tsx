@@ -62,30 +62,33 @@ export const MedicalWasteStorageAndSealForm: React.FC<MedicalWasteStorageAndSeal
 				</div>
 
 				<div>
-					<label htmlFor="waste-seal-number" className="text-xs font-semibold text-muted block mb-1">
-						Номер бирки / Пломбы-стяжки
+					<label htmlFor="waste-seal-number" className="text-xs font-semibold text-[var(--muted,#64748b)] block mb-1">
+						Маркировка / Бирка пакета (опционально)
 					</label>
 					<input
 						id="waste-seal-number"
 						type="text"
 						value={sealNumber}
 						onChange={(e) => setSealNumber(e.target.value)}
-						className="w-full h-10 px-3 rounded-lg border border-line bg-paper text-ink text-sm font-mono font-bold focus:outline-none focus:ring-2 focus:ring-focus-ring"
+						placeholder="Смена / Номер бирки (опция)"
+						className="w-full h-10 px-3 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] text-xs sm:text-sm font-medium focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 					/>
 				</div>
 			</div>
 
-			<div className="p-4 rounded-xl border border-line bg-paper-soft flex items-center justify-between flex-wrap gap-3">
-				<div className="flex items-center gap-3">
-					<Barcode size={28} className="text-[var(--teal,#0d9488)]" />
-					<div>
-						<div className="text-xs text-muted">Сгенерированный штрихкод маркировки</div>
-						<div className="font-mono font-bold text-ink text-sm">{barcode}</div>
-					</div>
+			<div className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong,#0f172a)] flex items-center justify-between flex-wrap gap-3">
+				<div className="text-xs text-[var(--muted,#64748b)]">
+					Журнал отходов формируется без обязательного штрихкодирования мешков по СанПиН 2.1.3684-21
 				</div>
 
-				<button type="button" onClick={onAddRecord} className="waste-btn waste-btn-primary">
-					<CheckCircle2 size={18} /> Зафиксировать в журнале
+				<button
+					type="button"
+					onClick={onAddRecord}
+					className="min-h-[44px] px-5 py-2 rounded-xl text-xs sm:text-sm font-bold text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-600,#0f766e)] shadow-md inline-flex items-center gap-2 cursor-pointer touch-manipulation transition-all"
+					data-testid="waste-save-record-primary-btn"
+				>
+					<CheckCircle2 size={16} />
+					<span>Зафиксировать в журнале</span>
 				</button>
 			</div>
 		</div>

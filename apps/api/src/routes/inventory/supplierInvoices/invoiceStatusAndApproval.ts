@@ -19,6 +19,25 @@ import { acceptanceWaybillBodySchema } from "../types.js";
 // ACCEPTANCE WAYBILLS & SUPPLIER BATCH RECEIPT (Мандаты 8e, 8k, 8n, 8s)
 // =========================================================================
 
+export function detectPackageMultiplier(name: string, unit?: string | null): number {
+	const n = (name || "").toLowerCase();
+	const u = (unit || "").toLowerCase();
+
+	const carpuleMatch = n.match(/(\d+)\s*(?:карпул|карп|ампул|доз|шт)/i);
+	if (carpuleMatch && carpuleMatch[1]) {
+		const parsed = parseInt(carpuleMatch[1], 10);
+		if (Number.isFinite(parsed) && parsed > 0) return parsed;
+	}
+
+	if (n.includes("септанест") && (u.includes("уп") || u.includes("пач") || u.includes("box") || u.includes("pack"))) {
+		return 50;
+	}
+	if ((n.includes("ультракаин") || n.includes("артикаин") || n.includes("убистезин")) && (u.includes("уп") || u.includes("пач") || u.includes("box") || u.includes("pack"))) {
+		return 100;
+	}
+	return 1;
+}
+
 export const handleAcceptanceWaybillRequest = async (
 	targetOrgId: string,
 	rawBody: unknown,
@@ -164,6 +183,8 @@ export const handleAcceptanceWaybillRequest = async (
 			}
 
 			for (const item of data.items) {
+				const multiplier = item.packageMultiplier ?? detectPackageMultiplier(item.name, item.unit);
+				const effectiveReceivedQty = Math.round(item.quantity * multiplier);
 				totalQuantity += item.quantity;
 				const pricePerUnitRub =
 					item.purchasePricePerUnit != null
@@ -180,6 +201,7 @@ export const handleAcceptanceWaybillRequest = async (
 				const vatRate = item.vatRate ?? 0;
 				const itemVatKopecks = Math.round((itemSubtotalKopecks * vatRate) / 100);
 				const itemTotalKopecks = itemSubtotalKopecks + itemVatKopecks;
+				const effectivePricePerUnit = Number((pricePerUnitRub / multiplier).toFixed(2));
 
 				totalCostKopecks += itemTotalKopecks;
 				totalVatKopecks += itemVatKopecks;
@@ -204,11 +226,12 @@ export const handleAcceptanceWaybillRequest = async (
 							name: item.name.trim(),
 							category: item.category || "material",
 							unit: item.unit || "шт",
+							packageMultiplier: String(multiplier),
 							stockQuantity: "0",
 							currentQty: "0",
 							criticalThreshold: "5",
-							unitCostRub: String(pricePerUnitRub),
-							pricePerUnit: String(pricePerUnitRub),
+							unitCostRub: String(effectivePricePerUnit),
+							pricePerUnit: String(effectivePricePerUnit),
 							lotNumber: item.batchNumber || item.lotNumber || null,
 							expirationDate:
 								normalizeDateToIso(item.expirationDate) ||
@@ -238,7 +261,7 @@ export const handleAcceptanceWaybillRequest = async (
 				}
 				const remainingInBatch = Math.max(
 					0,
-					Number((item.quantity - deficit).toFixed(3)),
+					Number((effectiveReceivedQty - deficit).toFixed(3)),
 				);
 				const isDepletedByDeficit = remainingInBatch <= 0;
 
@@ -259,19 +282,19 @@ export const handleAcceptanceWaybillRequest = async (
 						batchNumber,
 						expirationDate,
 						manufactureDate: manufactureDate ?? null,
-						initialQty: String(item.quantity),
+						initialQty: String(effectiveReceivedQty),
 						remainingQty: String(remainingInBatch),
-						purchasePricePerUnit: String(pricePerUnitRub),
+						purchasePricePerUnit: String(effectivePricePerUnit),
 						status: isDepletedByDeficit ? "depleted" : "active",
 						barcode: item.barcode?.trim() || null,
 					})
 					.returning();
 
 				// 4. Обновляем остаток в карточке номенклатуры
-				const calculatedNewStock = Number((currentStock + item.quantity).toFixed(3));
+				const calculatedNewStock = Number((currentStock + effectiveReceivedQty).toFixed(3));
 				const newStock = Number.isFinite(calculatedNewStock)
 					? calculatedNewStock
-					: item.quantity;
+					: effectiveReceivedQty;
 				const shouldUpdateCardDate =
 					!existingItem.expirationDate ||
 					expirationDate < existingItem.expirationDate;
@@ -281,8 +304,9 @@ export const handleAcceptanceWaybillRequest = async (
 					.set({
 						stockQuantity: String(newStock),
 						currentQty: String(newStock),
-						unitCostRub: String(pricePerUnitRub),
-						pricePerUnit: String(pricePerUnitRub),
+						packageMultiplier: String(multiplier),
+						unitCostRub: String(effectivePricePerUnit),
+						pricePerUnit: String(effectivePricePerUnit),
 						...(shouldUpdateCardDate ? { expirationDate } : {}),
 						...(item.barcode ? { barcode: item.barcode.trim() } : {}),
 						...(item.sku ? { sku: item.sku.trim() } : {}),
@@ -303,9 +327,9 @@ export const handleAcceptanceWaybillRequest = async (
 					inventoryItemId: targetItemId,
 					batchId: createdBatch?.id ?? null,
 					warehouseId: data.warehouseId ?? null,
-					quantityChanged: String(item.quantity),
-					qty: String(item.quantity),
-					unitCostRub: String(pricePerUnitRub),
+					quantityChanged: String(effectiveReceivedQty),
+					qty: String(effectiveReceivedQty),
+					unitCostRub: String(effectivePricePerUnit),
 					transactionType: "receipt",
 					isOverdraft: false,
 					notes: `Накладная №${data.waybillNumber} от ${data.supplierName}${data.supplierInn ? ` (ИНН ${data.supplierInn})` : ""} • Партия ${batchNumber} [FEFO]`,

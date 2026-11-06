@@ -55,6 +55,10 @@ export const inventoryItems = pgTable(
 		 */
 		lotNumber: text("lot_number"),
 		expirationDate: date("expiration_date", { mode: "string" }),
+		packageMultiplier: numeric("package_multiplier", {
+			precision: 10,
+			scale: 3,
+		}).default("1.000"),
 		updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
 		createdAt: timestamp("created_at", { withTimezone: true })
 			.notNull()

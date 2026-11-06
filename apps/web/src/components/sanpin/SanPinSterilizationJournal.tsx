@@ -341,10 +341,10 @@ export const SanPinSterilizationJournal: React.FC<SanPinSterilizationJournalProp
 							data-testid="primary-batch-sterilization-btn"
 							style={{ backgroundColor: "#0d9488" }}
 							className="w-full sm:w-auto h-11 min-h-[44px] px-6 rounded-xl font-bold text-sm text-white shadow-md flex items-center justify-center gap-2 cursor-pointer touch-manipulation hover:opacity-95 active:scale-[0.99] transition-all"
-							title="Зафиксировать цикл автоклавирования в 1 клик"
+							title="Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)"
 						>
 							<CheckCircle2 size={16} className="text-white" />
-							<span>{isBatchSubmitting ? "Проведение цикла..." : "Зафиксировать цикл автоклавирования"}</span>
+							<span>{isBatchSubmitting ? "Проведение смены..." : "Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)"}</span>
 							<span className="sr-only">Провести цикл стерилизации</span>
 							<span className="sr-only">Запустить цикл стерилизации</span>
 						</button>

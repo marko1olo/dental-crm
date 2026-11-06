@@ -415,25 +415,24 @@ export const InboundWaybillModal: React.FC<InboundWaybillModalProps> = ({
 					</div>
 				</div>
 
-				{/* Футер: ровно 1 Primary CTA кнопка var(--teal), остальные вторичные */}
+				{/* Футер: ровно 1 Primary CTA кнопка var(--primary), остальные вторичные */}
 				<div className="p-3.5 sm:p-4 border-t border-[var(--line)] bg-[var(--paper-soft)] flex flex-wrap sm:flex-nowrap items-center justify-between gap-3 shrink-0">
 					<div className="flex items-center gap-2 flex-wrap shrink-0">
 						<span className="text-sm font-medium text-[var(--muted)]">Итого по накладной:</span>
 						<strong className="text-base font-bold text-[var(--ink)] font-mono tabular-nums">{totalRub.toLocaleString("ru-RU")} ₽</strong>
-						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1" title="ТОРГ-12" data-testid="print-waybill">
+						<button type="button" onClick={() => window.print?.()} className="secondary-button px-2.5 py-1 text-xs font-medium ml-1 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="ТОРГ-12" data-testid="print-waybill">
 							Печать накладной
 						</button>
-						<button type="button" onClick={handleExportCsv} className="secondary-button px-2.5 py-1 text-xs font-medium cursor-pointer" title="Экспорт накладной в CSV" data-testid="btn-export-invoice-csv">CSV</button>
+						<button type="button" onClick={handleExportCsv} className="secondary-button px-2.5 py-1 text-xs font-medium cursor-pointer rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]" title="Экспорт накладной в CSV" data-testid="btn-export-invoice-csv">CSV</button>
 					</div>
-					<div className="flex items-center gap-2.5 shrink-0 ml-auto">
-						<button type="button" onClick={onClose} className="secondary-button px-4 py-2 text-sm">
+					<div className="flex items-center gap-2.5 shrink-0 ml-auto w-full sm:w-auto justify-end">
+						<button type="button" onClick={onClose} className="secondary-button px-4 py-2 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] text-xs sm:text-sm rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)]">
 							Отмена
 						</button>
 						<button
 							type="button"
 							onClick={handlePostInvoice}
-							className="primary-button px-4 py-2 text-sm font-semibold flex items-center justify-center gap-2 shadow-xs whitespace-nowrap shrink-0"
-							style={{ background: "var(--teal, #0d9488)", color: "#ffffff", height: "auto", minHeight: "36px" }}
+							className="primary-button px-4 py-2 h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] text-sm font-semibold flex items-center justify-center gap-2 shadow-xs whitespace-nowrap shrink-0 rounded-xl text-white bg-[var(--primary,#0d9488)] hover:opacity-95 transition-opacity"
 							data-testid="btn-post-acceptance-waybill"
 							data-cy="btn-post-inbound-invoice"
 						>

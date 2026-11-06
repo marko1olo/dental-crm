@@ -5,6 +5,7 @@
 import {
 	categorizeInventoryExpiry,
 	convertInventoryUnit,
+	normalizeInventoryUnit,
 } from "@dental/shared";
 import { fefoStockService } from "../../inventory/fefoStockService.js";
 import type { DbExecutor } from "../types.js";
@@ -34,8 +35,24 @@ export async function executeFefoDeductionStep(
 	const inv = entry.item;
 	const ruleUnit = entry.ruleUnit || inv.unit || "pcs";
 	const invUnit = inv.unit || "pcs";
+	const rawMultiplier = Number(inv.packageMultiplier ?? 1);
+	const packageMultiplier = Number.isFinite(rawMultiplier) && rawMultiplier > 0 ? rawMultiplier : undefined;
 
-	const convertedRequiredQty = convertInventoryUnit(entry.requiredQty, ruleUnit, invUnit);
+	let convertedRequiredQty: number;
+	if (packageMultiplier && packageMultiplier > 1 && normalizeInventoryUnit(invUnit) === "pack") {
+		// При наличии коэффициента фасовки складской запас в БД уже хранится в первичных дозах (карпулы/штуки).
+		const targetDispensingUnit =
+			normalizeInventoryUnit(ruleUnit) === "carpule" || inv.category === "anesthesia"
+				? "carpule"
+				: "pcs";
+		convertedRequiredQty = convertInventoryUnit(entry.requiredQty, ruleUnit, targetDispensingUnit, {
+			packageMultiplier,
+		});
+	} else {
+		convertedRequiredQty = convertInventoryUnit(entry.requiredQty, ruleUnit, invUnit, {
+			packageMultiplier,
+		});
+	}
 	if (convertedRequiredQty <= 0) {
 		return { deduction: null, warnings: [], isOverdraft: false };
 	}

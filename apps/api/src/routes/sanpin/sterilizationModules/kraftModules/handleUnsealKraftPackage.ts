@@ -6,6 +6,7 @@ import { sterilizationLogs } from "../../../../db/schema.js";
 import { executeSterilizationConsumablesDeduction } from "../handlers/sterilizationConsumablesDeduction.js";
 import { buildUnsealKraftPackageResponse } from "../sterilizationHelpers.js";
 import { unsealBodySchema } from "../sterilizationSchemas.js";
+import { executeLinkDiaryTransaction } from "./sterilizationLinkTransaction.js";
 
 export async function handleUnsealKraftPackage(req: FastifyRequest, reply: FastifyReply) {
 	const organizationId = await requireResolvedStaffOrAdminOrganizationId(
@@ -27,7 +28,7 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 	const now = new Date();
 	const effectiveBarcode =
 		(data.barcode || "").trim() ||
-		`BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`;
+		(data.visitId ? `TRAY-VISIT-${data.visitId}` : `BATCH-SHIFT-${now.toISOString().slice(0, 10).replace(/-/g, "")}`);
 
 	if (data.barcode && data.barcode.trim()) {
 		const existingLog = await db
@@ -54,6 +55,18 @@ export async function handleUnsealKraftPackage(req: FastifyRequest, reply: Fasti
 					),
 				);
 		}
+	}
+
+	// Если передан visitId — привязываем стерильный лоток к визиту у кресла в 1 клик
+	if (data.visitId) {
+		await executeLinkDiaryTransaction({
+			organizationId,
+			visitId: data.visitId,
+			trimmedBarcode: effectiveBarcode,
+			doctorUserId: data.operatorId || null,
+			isEmergencyAdmission: false,
+			emergencyAdmissionNote: "",
+		}).catch(() => null);
 	}
 
 	void executeSterilizationConsumablesDeduction({

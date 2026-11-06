@@ -88,6 +88,7 @@ export const acceptanceWaybillItemSchema = z.object({
 	name: z.string().min(1, "Наименование материала обязательно"),
 	category: z.string().optional(),
 	unit: z.string().default("шт"),
+	packageMultiplier: z.number().finite().positive().optional(),
 	batchNumber: z.string().optional().default(""),
 	lotNumber: z.string().optional(),
 	expirationDate: z.string().optional().default(""),

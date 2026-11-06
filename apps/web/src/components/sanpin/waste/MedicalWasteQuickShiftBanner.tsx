@@ -22,10 +22,10 @@ export const MedicalWasteQuickShiftBanner: React.FC<MedicalWasteQuickShiftBanner
 				<div>
 					<div style={{ display: "flex", alignItems: "center", gap: "0.4rem", fontWeight: 800, fontSize: "0.95rem", color: "var(--ink, #0f172a)" }}>
 						<Sparkles size={18} color="var(--teal, #0d9488)" />
-						<span>Экспресс-учет отходов смены</span>
+						<span>Экспресс-учет отходов смены (СанПиН 2.1.3684-21)</span>
 					</div>
 					<div style={{ fontSize: "0.775rem", color: "var(--muted, #64748b)", marginTop: "2px" }}>
-						Автоматическое формирование двух регламентных записей: мягкие отходы (желтый пакет 2.5 кг) + острые отходы (контейнер игл 0.8 кг)
+						Автоматическая регистрация отходов смены: Класс Б (желтый пакет 10 л / 1.5 кг) + контейнер игл (0.8 кг)
 					</div>
 				</div>
 
@@ -40,11 +40,15 @@ export const MedicalWasteQuickShiftBanner: React.FC<MedicalWasteQuickShiftBanner
 						cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "0.5rem",
 						boxShadow: "0 2px 8px rgba(13, 148, 136, 0.35)", whiteSpace: "nowrap",
 					}}
-					title="Сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"
+					title="Зарегистрировать отходы смены (Класс Б, 1 желтый пакет 10 л / 1.5 кг)"
 					data-testid="waste-quick-shift-btn"
 				>
 					<Sparkles size={18} />
-					<span>{isSubmittingQuickShift ? "Оформление смены..." : "Сдать отходы смены (пакет 2.5 кг + контейнер игл 0.8 кг)"}</span>
+					<span>
+						{isSubmittingQuickShift
+							? "Оформление смены..."
+							: "Зарегистрировать отходы смены (Класс Б, 1 желтый пакет 10 л / 1.5 кг)"}
+					</span>
 				</button>
 			</div>
 		</div>

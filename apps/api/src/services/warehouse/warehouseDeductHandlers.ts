@@ -80,6 +80,7 @@ export async function handleWarehouseDeductRequest(
 		const hasOverdraft = deductionResults.some((r) => r.isOverdraft);
 		return reply.status(200).send({
 			success: true, count: deductionResults.length, items: deductionResults, hasOverdraft, isOverdraft: hasOverdraft,
+			allowOverdraft: true,
 			message: hasOverdraft ? `Списано по FEFO: ${deductionResults.length} (мягкий овердрафт)` : `Списано по FEFO: ${deductionResults.length}`,
 		});
 	} catch (error) {
@@ -90,6 +91,7 @@ export async function handleWarehouseDeductRequest(
 			const avail = Number(e.availableStock ?? 0);
 			return reply.status(200).send({
 				success: true, count: 1, hasOverdraft: true, isOverdraft: true, is_overdraft: true,
+				allowOverdraft: true,
 				items: [{ inventoryItemId: e.inventoryItemId ?? "unknown", inventoryItemName: e.inventoryItemName ?? "Материал", requiredQty: req, deductedQty: req, isOverdraft: true, deficitQty: req - avail }],
 				message: `Списание со склада проведено (зафиксирован мягкий овердрафт: дефицит ${req - avail} ед.).`,
 			});

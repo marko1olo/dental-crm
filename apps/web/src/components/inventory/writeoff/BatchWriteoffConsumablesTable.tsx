@@ -28,7 +28,7 @@ export const BatchWriteoffConsumablesTable: React.FC<BatchWriteoffConsumablesTab
 						className="p-2.5 sm:p-3 flex items-center justify-between gap-3 text-xs hover:bg-[var(--paper-soft,#f8fafc)]/60 transition-colors"
 					>
 						<div className="flex-1 min-w-0">
-							<div className="font-medium text-[var(--ink,#0f172a)] truncate">
+							<div className="font-medium text-[var(--ink,#0f172a)] break-words leading-snug">
 								{item.itemName}
 							</div>
 							{item.category && (

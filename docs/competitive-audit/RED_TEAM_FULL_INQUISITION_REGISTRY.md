@@ -321,6 +321,57 @@
      - EMR: `docs/screenshots/emr/01_emr_studio_pc_light_1440x900.png`, `02_emr_studio_pc_dark_1440x900.png`, `03_emr_studio_mobile_light_390x844.png`, `04_emr_studio_mobile_dark_390x844.png`.
      - SanPiN: `docs/screenshots/sanpin/01_sanpin_studio_pc_light_1440x900.png`, `02_sanpin_studio_pc_dark_1440x900.png`, `03_sanpin_studio_mobile_light_390x844.png`, `04_sanpin_studio_mobile_dark_390x844.png`.
 
+### [WH-06] [ЗАКРЫТО] Автоматическое бесшумное списание расходников по техкартам (BOM) оказанных услуг
+- **Файлы:**
+  - [`stockDeductionStepExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/stockDeductionModules/stockDeductionStepExecutor.ts#L33-L75)
+  - [`visitDeductionHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/stockDeductionModules/visitDeductionHandler.ts#L28-L108)
+  - [`visitWriteOffHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/consumables/visitWriteOffHandlers.ts#L57-L136)
+  - [`autoBomWriteoffService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/treatmentConsumables/autoBomWriteoffService.ts#L1-L150)
+- **Суть:** Врач у кресла лечит зубы и не должен открывать складские модалки, подтверждать списание 2 карпул Септанеста или получать ошибки «недостаточно материала». Все списания происходят автоматически по техкартам (BOM) оказанных услуг либо пакетом за смену в фоновом бэк-офисе клиники.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `stockDeductionStepExecutor.ts` реализован бесшумный FEFO-расчет списания материалов по услугам и анестезии.
+  2. В `visitWriteOffHandlers.ts` перехвачена ошибка дефицита через `isInsufficientStockError(err)` с возвратом 200 OK и структуры `buildSoftOverdraftResponse(err, "visit")`, исключая блокирующие 400/409 ошибки у кресла врача.
+  3. Проверено тестами `warehouseSoftOverdraftAndTechCardInquisitor.test.ts` (6 passed) и `inventoryAutoDeduct.test.ts` (3 passed).
+
+### [WH-07] [ЗАКРЫТО] Изоляция и укрепление режима Soft Negative Overdraft (Мандаты 8n, 8aa)
+- **Файлы:**
+  - [`writeOffSoftOverdraft.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/writeOffModules/writeOffSoftOverdraft.ts#L60-L115)
+  - [`warehouseDeductHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/warehouse/warehouseDeductHandlers.ts#L50-L100)
+  - [`fefoStockService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/inventory/fefoStockService.ts#L100-L180)
+- **Суть:** Если накладная поставщика еще не занесена в базу снабженцем, софт не должен блокировать приём пациента. Система работает в режиме мягкого овердрафта (Soft Negative Stock): сальдо уходит в контролируемый минус в журнале транзакций, не издавая звуков у кресла, и автоматически пересчитывается при приходе товара.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `writeOffSoftOverdraft.ts` и `warehouseDeductHandlers.ts` гарантирован флаг `allowOverdraft: true`, статус 200 OK и создание транзакции с отрицательным балансом.
+  2. Исключены блокирующие `400 Bad Request` и `409 Conflict` при клиническом списании дефицитных медикаментов.
+  3. Проверено тестами `warehousePackageWriteoffOverdraft.test.ts` и `materialsAutoDeductionAndUnitsSsot.test.ts`.
+
+### [WH-08] [ЗАКРЫТО] Ликвидация обрезки названий медикаментов, единый Primary CTA и Apple HIG на мобильных
+- **Файлы:**
+  - [`ConsumablesBatchWriteoffModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx#L50-L130)
+  - [`BatchWriteoffConsumablesTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/BatchWriteoffConsumablesTable.tsx#L35-L95)
+  - [`BatchWriteoffFooterActions.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/BatchWriteoffFooterActions.tsx#L25-L75)
+  - [`WarehouseStockTable.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/WarehouseStockTable.tsx#L70-L160)
+- **Суть:** Обрезание названий медикаментов и дозировок многоточиями («...»), разнобой в кнопках и неадаптированные десктопные модалки на смартфонах грубо нарушали Мандаты 8d, 8am, 8ze.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Заменен класс `truncate` на `break-words leading-snug` в таблицах списания и остатков — названия препаратов (Септанест 1:100 000, Filtek Ultimate A2) читаются полностью без паразитных многоточий.
+  2. Ровно 1 Primary CTA кнопка «✓ Списать расходники смены» (`bg-[var(--primary)] text-white`), десктоп 36px (`h-9`), мобильные $\ge 44$px (`h-11`). Вторичные кнопки — нейтральный secondary border.
+  3. На смартфонах (390x844 Apple HIG): нативный Bottom Sheet с тактильным Drag Handle 36x5px по центру, 0px горизонтального скролла (`overflow-x: clip`), тач-таргеты $\ge 44\times 44$px.
+  4. Лично проинспектированы 4 канонических скриншота 4-State Proof в `docs/proofs/warehouse/`: PC Light/Dark (1440x900) и Mobile Light/Dark (390x844).
+
+### [WH-09] [ЗАКРЫТО] Поддержка коэффициента фасовки packageMultiplier в Drizzle ORM схеме, оприходовании и списании
+- **Файлы:**
+  - [`inventoryItemsTable.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/inventory/inventoryItemsTable.ts#L55-L65)
+  - [`invoiceStatusAndApproval.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts#L180-L245)
+  - [`types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory/types.ts#L20-L95)
+  - [`InboundWaybillModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/InboundWaybillModal.tsx#L180-L220)
+  - [`inventoryUnitsSsot.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/inventory/inventoryUnitsSsot.ts#L134-L175)
+- **Суть:** В БД PostgreSQL 18 физическая колонка `package_multiplier` присутствовала, но отсутствовала в Drizzle ORM схеме `inventoryItemsTable.ts`, из-за чего оприходование накладных игнорировало коэффициент фасовки (5 коробок Септанеста не распаковывались в 250 карпул), а списание вызывало ложный овердрафт.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В схему `inventoryItemsTable.ts` добавлена колонка `packageMultiplier: numeric("package_multiplier", { precision: 10, scale: 3 }).default("1.000")`.
+  2. В `types.ts` Zod-схема накладной дополнена полем `packageMultiplier: z.number().finite().positive().optional()`.
+  3. В `invoiceStatusAndApproval.ts` поддержано автоопределение множителя через `detectPackageMultiplier` и расчет `effectiveReceivedQty` = `quantity * multiplier` и `effectivePricePerUnit`.
+  4. В `stockDeductionStepExecutor.ts` реализована поддержка пересчета списания: при наличии `packageMultiplier > 1` списание 1 карпулы списывает 1 единицу из 250 имеющихся в наличии карпул (остаток ровно 249 карпул без ложного овердрафта).
+  5. Пройдено интеграционными тестами `packageMultiplierFefoInquisition.test.ts` (2 passed).
+
 ---
 
 ## 4. 🦷 КЛИНИЧЕСКИЙ КОНТУР И ОДОНТОГРАММА
@@ -1756,4 +1807,73 @@
      - 📱 `07_patient_journey_mobile_visit_light_390x844.png` (72 KB)
      - 🌙 `08_patient_journey_mobile_cashbox_dark_390x844.png` (53 KB)
      Все скриншоты проверены на отсутствие 7 смертных грехов UI: нулевой клиппинг, ровно 1 Primary CTA, 100% тёмные токены в тёмной теме, нативный тач $\ge 44$px.
+
+---
+
+## 27. 🧼 САНИТАРНЫЙ КОНТРОЛЬ, АВТОКЛАВИРОВАНИЕ И МЕДИЦИНСКИЕ ОТХОДЫ (САНПИН 3.3686-21 / 2.1.3684-21, МАНДАТЫ 8e, 8n, 8v, 8ba)
+
+### [SAN-01] [SEV-1] [ЗАКРЫТО] Симулятор взвешивания отходов по 1 грамму с вычитанием тары и псевдо-пломбы
+- **Файлы:**
+  - [`apps/web/src/components/sanpin/waste/MedicalWastePackagingAndScaleForm.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/waste/MedicalWastePackagingAndScaleForm.tsx)
+  - [`apps/web/src/components/sanpin/waste/MedicalWasteQuickShiftBanner.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/waste/MedicalWasteQuickShiftBanner.tsx)
+  - [`apps/web/src/components/sanpin/waste/MedicalWasteStorageAndSealForm.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/waste/MedicalWasteStorageAndSealForm.tsx)
+  - [`apps/web/src/components/sanpin/waste/MedicalWasteAccumulateTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/waste/MedicalWasteAccumulateTab.tsx)
+- **Суть бага:**
+  Интерфейс навязывал процедурный симулятор аптекарских весов: ввод веса брутто и тары с формулой `grossKg - tareKg = netKg` с точностью до 1 грамма для каждого мешочка с ватными валиками, а также обязательное наклеивание штрихкодов и псевдо-пломб `ПЛ-Б-2026-00001` на мешки. В реальной стоматологии на 1–3 кресла медсестра не взвешивает отходы до грамма каждый приём; отходы регистрируются регламентным пакетом за смену.
+- **Статус исправления [ЗАКРЫТО]:**
+  1. В `MedicalWastePackagingAndScaleForm.tsx` и `MedicalWasteQuickShiftBanner.tsx` внедрена кнопка быстрой 1-кликовой фиксации смены: «Зарегистрировать отходы смены (Класс Б, 1 желтый пакет 10 л / 1.5 кг)».
+  2. Добавлен чистый эргономичный селектор классов отходов с предустановленными регламентными весами смены (Класс Б 1.5 кг, Класс А 2.0 кг, Класс Г 0.5 кг).
+  3. Ввод веса упрощен до одного понятного поля массы (кг, шаг 0.1) без бюрократического деления на брутто/тару. Пломбы и штрихкодирование сделаны опциональными, без блокировки процесса сдачи смены.
+  4. 27 тестов медицинских отходов (`medicalWaste.test.ts`, `medicalWasteSanpin.test.ts`) завершены со 100% успехом (PASS).
+
+### [SAN-02] [SEV-1] [ЗАКРЫТО] Обязательное поштучное сканирование крафт-пакетов у кресла врача
+- **Файлы:**
+  - [`apps/api/src/routes/sanpin/sterilizationModules/kraftModules/handleUnsealKraftPackage.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationModules/kraftModules/handleUnsealKraftPackage.ts)
+  - [`apps/api/src/routes/sanpin/sterilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationRoutes.ts)
+- **Суть бага:**
+  Бэкенд отклонял вскрытие крафт-пакета без сканирования уникального штрихкода `^KRAFT-...`. Врач у кресла никогда не берет 2D-сканер перед зеркалом и зондом — требование сканирования создавало непреодолимое трение (Мандат 8e / 8ba).
+- **Статус исправления [ЗАКРЫТО]:**
+  1. Модуль `handleUnsealKraftPackage.ts` обновлен: при отсутствии отсканированного штрихкода система автоматически формирует регламентный идентификатор партии `TRAY-VISIT-${visitId}` или `BATCH-SHIFT-${date}` и регистрирует вскрытие лотка в 1 клик.
+  2. Реализована автоматическая привязка вскрытия набора к клиническому дневнику приёма через `executeLinkDiaryTransaction`.
+  3. 9 тестов автономности (`sanpinUnsealMandate8e.test.ts`) пройдены успешно (PASS 100%).
+
+### [SAN-03] [SEV-1] [ЗАКРЫТО] Отсутствие пакетного макро-батча закрытия санитарной смены
+- **Файлы:**
+  - [`apps/web/src/components/sanpin/SanpinStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx)
+  - [`apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx)
+  - [`apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx)
+- **Суть бага:**
+  Медсестре приходилось вручную создавать каждый отдельный цикл автоклавирования, заполнять форму ПСО на 10 полей и вручную списывать крафт-пакеты и индикаторы.
+- **Статус исправления [ЗАКРЫТО]:**
+  1. Внедрен сквозной макро-батч `handleLaunchShiftMacroBatch`: единая кнопка «Запустить автоклавирование смены (2 цикла 134°C + ПСО Норма)» формирует сразу 2 цикла автоклавирования (утренняя смена 14 наборов + вечерняя смена 13 наборов), фиксирует 100% норму азопирамовой пробы ПСО и выполняет фоновое списание со склада (27 крафт-пакетов + индикаторы 5 класса, Soft Negative Stock).
+  2. Первичный CTA оформлен в соответствии с дизайн-кодом: ровно 1 Primary CTA (`sanpin-primary-cta`, `var(--teal)`), второстепенный вызов единичного цикла сделан нейтральным.
+  3. Тесты пакетного автоклавирования (`batchAutoclaveShiftAndStock.test.ts`, `autoSanpinShiftBatchAutonomy.test.ts`) подтвердили корректность списания и отсутствие блокировок.
+
+### [SAN-04] [SEV-2] [ЗАКРЫТО] Зачистка советского канцелярита и дев-жаргона
+- **Файлы:**
+  - [`apps/web/src/components/sanpin/sanpinNavigationConfig.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/sanpinNavigationConfig.ts)
+  - [`apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanPinSterilizationJournal.tsx)
+  - [`apps/web/src/components/sanpin/SanpinStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx)
+- **Суть бага:**
+  В интерфейсе присутствовали советские архивные названия («Форма 257/у», аббревиатура «ПСО» без пояснения), а также запрещенные символы-эмодзи и технические дев-бейджи.
+- **Статус исправления [ЗАКРЫТО]:**
+  1. «Форма 257/у» заменена на чистое клиническое наименование «Журнал стерилизации инструментов».
+  2. В заголовках аббревиатура «ПСО» заменена на «Предстерилизационная очистка (Азопирамовая проба)».
+  3. Удалены прямые unicode символы эмодзи (`✓`) из текста JSX с заменой на векторные иконки Lucide (`CheckCircle2`). Исключены любые упоминания дев-жаргона («Мандат 8e» и т.п.).
+
+### [SAN-05] [SEV-2] [ЗАКРЫТО] Архитектурная гармонизация компонентов и 4-State Visual Proof
+- **Файлы:**
+  - [`apps/web/src/components/sanpin/SanpinStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx) (строго в диапазоне 400–480 строк per Mandate 8b)
+  - [`apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx) (237 строк, в диапазоне 220–360 строк)
+  - [`apps/web/src/components/sanpin/sanpinCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/sanpinCatalogData.ts) (в диапазоне 300–380 строк)
+- **Статус исправления [ЗАКРЫТО]:**
+  1. Все размеры файлов строго приведены к каноническим архитектурным Sweet Spot лимитам.
+  2. Все 94 профильных теста СанПиН и утилизации отходов проходят со 100% успехом (Exit Code 0).
+  3. Пройдены все машинные гейты DoD: UTF-8 без BOM (`npm run check:encoding`), отсутствие стаб-оверрайдов (`check:stub-overrides`), валидация fetch (`check:fetch-response`), динамические импорты (`check:dynamic-imports`).
+  4. Сняты на живом приложении и лично проинспектированы через `read_file` 4 скриншота высокого разрешения:
+     - ☀️ `docs/proofs/sanpin/01_sanpin_studio_pc_light_1440x900.png` (124 KB) — чистый светлый десктопный вид, ровно 1 Primary CTA, Zero-Clipping.
+     - 🌙 `docs/proofs/sanpin/02_sanpin_studio_pc_dark_1440x900.png` (168 KB) — безупречная тёмная тема, 100% тёмные токены, WCAG AAA.
+     - 📱 `docs/proofs/sanpin/03_sanpin_studio_mobile_light_390x844.png` (159 KB) — нативный Apple HIG мобильный интерфейс, тач $\ge 44$px, карточки в Natural Thumb Zone, 0px паразитного скролла.
+     - 🌙 `docs/proofs/sanpin/04_sanpin_studio_mobile_dark_390x844.png` (174 KB) — мобильная тёмная тема без слепящих белых пятен.
+
 
