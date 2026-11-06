@@ -50,6 +50,15 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const copilotSettings = useCopilotStore((s) => s.settings);
   const selectThread = useCopilotStore((s) => s.selectThread);
+  const activeThreadId = useCopilotStore((s) => s.activeThreadId);
+  const saveThreadMessages = useCopilotStore((s) => s.saveThreadMessages);
+  const threadMessages = useCopilotStore((s) => s.threadMessages);
+
+  useEffect(() => {
+    if (activeThreadId && messages.length > 0) {
+      saveThreadMessages(activeThreadId, messages);
+    }
+  }, [activeThreadId, messages, saveThreadMessages]);
   const [runtimeMode, setRuntimeMode] = useState<"web_browser" | "desktop_native">(() => {
     const saved = safeLocalStorageGetItem("dente_copilot_runtime_mode");
     return saved === "desktop_native" ? "desktop_native" : "web_browser";
@@ -445,6 +454,10 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
         onSelectThread={(tId) => {
           selectThread(tId);
           setIsHistoryOpen(false);
+          const saved = threadMessages[tId];
+          if (typeof window !== "undefined" && (window as any).__denteCopilot?.setMessages) {
+            (window as any).__denteCopilot.setMessages(saved || []);
+          }
         }}
       />
     </>

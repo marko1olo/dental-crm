@@ -31,8 +31,7 @@ export type ChairsideCopilotStudioModalProps = CopilotStudioModalProps;
 
 export interface CopilotChatMessage {
   id: string; role: "user" | "assistant"; text: string; citation?: string | undefined; timestamp: string; applied?: boolean | undefined;
-  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined;
-  suggestedReplies?: string[] | undefined;
+  actionProposal?: { id: string; toolName: string; description: string; payload: Record<string, unknown> } | undefined; suggestedReplies?: string[] | undefined;
 }
 
 const extractSuggestions = (text: string) => {
@@ -67,14 +66,21 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     return (saved && saved.length > 0) ? saved : ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? DEFAULT_INITIAL_MESSAGES : []);
   });
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
+  useEffect(() => {
+    const saved = threadMessages[threadKey];
+    if (saved && saved.length > 0) {
+      setMessages(saved);
+    } else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) {
+      setMessages([]);
+    }
+  }, [threadKey]);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
   useEffect(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); }, [messages, threadKey, saveThreadMessages]);
   const handleClose = useCallback(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); onClose(); }, [messages, threadKey, saveThreadMessages, onClose]);
 
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
-  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [, setIsExecuting] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
+  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
   const voice = useVoiceEngine({ lang: "ru-RU", continuous: true });
 
   // Автоматическое определение среды исполнения без ручных переключателей
@@ -120,8 +126,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     setInputText(val); if (!voice.isListening) baseDraftRef.current = val;
     safeLocalStorageSetItem("dente_copilot_draft_text", val);
   };
-  const toValidUuid = (val?: string | null): string | undefined =>
-    typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
+  const toValidUuid = (val?: string | null): string | undefined => typeof val === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(val) ? val : undefined;
 
   const parseSseEvents = (raw: string): Array<{ type: string; [k: string]: unknown }> => {
     const list: Array<{ type: string; [k: string]: unknown }> = [];
@@ -130,9 +135,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
       let eventType = "";
       for (const l of trimmed.split(/\r?\n/)) {
         if (l.startsWith("event: ")) eventType = l.slice(7).trim();
-        else if (l.startsWith("data: ")) {
-          try { const p = JSON.parse(l.slice(6).trim()); if (!p.type && eventType) p.type = eventType; list.push(p); } catch { /* skip */ }
-        }
+        else if (l.startsWith("data: ")) { try { const p = JSON.parse(l.slice(6).trim()); if (!p.type && eventType) p.type = eventType; list.push(p); } catch { /* skip */ } }
       }
     }
     return list;
@@ -158,12 +161,16 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     const token = readDenteClinicToken() || readDenteStaffToken() || "";
     const apiRuntimeMode = runtimeMode === "desktop_native" ? "desktop_native" : "web_browser";
 
+    // Скользящее окно многошаговой памяти диалога (AI-REV-06): последние 10 сообщений + текущий запрос
+    const historyWindow = messages.filter((m) => m.text && m.text.trim().length > 0).slice(-10).map((m) => ({ role: m.role === "assistant" ? ("assistant" as const) : ("user" as const), content: m.text }));
+    const outboundMessages = [...historyWindow, { role: "user" as const, content: query }];
+
     try {
       const res = await fetch("/api/agent/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...(token ? { Authorization: `Bearer ${token}` } : {}) },
         body: JSON.stringify({
-          messages: [{ role: "user", content: query }], patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId),
+          messages: outboundMessages, patientId: toValidUuid(patientId), activeVisitId: toValidUuid(activeVisitId),
           stream: true, runtimeMode: apiRuntimeMode, trustLevel: settings.trustLevel, granularPermissions: settings.granularPermissions,
           customInstructions: settings.customDoctorInstructions, memoryFacts: memoryFacts.map((m) => m.fact),
           doctorSpecialization: settings.clinicalSpecialization, speedMode: settings.speedMode, activeTooth: typeof activeTooth === "number" ? activeTooth : undefined,
@@ -219,15 +226,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     const localProposal = localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined;
     if (isDemoShowcaseMode()) {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? {
-        ...m,
-        text: m.text.trim() ? m.text : fallbackText,
+        ...m, text: m.text.trim() ? m.text : fallbackText,
         citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
-        actionProposal: m.actionProposal ?? localProposal ?? {
-          id: `act-${Date.now()}`,
-          toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus,
-          description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`,
-          payload: { tooth: fallbackProposalTooth }
-        }
+        actionProposal: m.actionProposal ?? localProposal ?? { id: `act-${Date.now()}`, toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`, payload: { tooth: fallbackProposalTooth } }
       } : m)));
     } else {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackText || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: undefined, actionProposal: m.actionProposal ?? localProposal } : m)));
@@ -297,8 +298,12 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           </div>
         </header>
 
-        {/* Компактный Antigravity Context Telemetry Bar */}
-        <CopilotContextTelemetryBar patientName={patientName ?? ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? "Кузнецов М.П." : null)} patientId={patientId ?? ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? "pat-36" : null)} activeTooth={activeTooth ?? ((isDemoShowcaseMode() || isDemoPatientId(patientId)) ? 36 : null)} compact />
+        {/* Компактный Antigravity Context Telemetry Bar (DEF-FRONT-07: честный Empty State без вымышленных Ивановых в бою) */}
+        {(() => {
+          const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId);
+          const effectiveName = (patientName && patientName !== "Иванов Иван Иванович") ? patientName : (isDemo ? (patientName || "Кузнецов М.П.") : null);
+          return <CopilotContextTelemetryBar patientName={effectiveName} patientId={patientId || (isDemo ? "pat-36" : null)} activeTooth={typeof activeTooth === "number" ? activeTooth : (isDemo ? 36 : null)} compact />;
+        })()}
 
         {/* Apple HIG Segmented Control: 3 клинические вкладки */}
         <div className="copilot-tabs-segmented-wrapper px-4 py-2 border-b border-[var(--line,rgba(15,118,110,0.15))] bg-[var(--paper,#ffffff)] shrink-0">
@@ -424,7 +429,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                 <button type="button" onClick={item.fn} className="copilot-action-item-btn w-full h-11 min-h-[44px] rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs font-semibold text-[var(--ink)] hover:bg-[var(--line)] flex items-center justify-center gap-2 cursor-pointer"><span>{item.btn}</span></button>
               </div>
             ))}
-          </div>
+        </div>
         )}
 
         {/* ВКЛАДКА 3: ПАМЯТЬ ИИ (LONG-TERM CLINICAL PREFERENCES) */}
@@ -440,6 +445,4 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     </div>
   );
 };
-
-export const ChairsideCopilotStudioModal = CopilotStudioModal;
-export default CopilotStudioModal;
+export const ChairsideCopilotStudioModal = CopilotStudioModal; export default CopilotStudioModal;

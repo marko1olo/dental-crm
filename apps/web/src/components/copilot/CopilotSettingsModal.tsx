@@ -19,6 +19,7 @@ import {
 	type CopilotRuntimeEnvironment,
 	type DiaryTemplate,
 	type ModelRoutingMode,
+	type SpeechEngine,
 	type WebSpeechSensitivity,
 } from "../../store/copilotStore";
 import { showToast } from "../GlobalToast";
@@ -66,6 +67,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 	});
 
 	// Голос и приватность (152-ФЗ)
+	const [speechEngine, setSpeechEngine] = useState<SpeechEngine>(settings.speechEngine || "gemini_live");
 	const [autoSaveDrafts, setAutoSaveDrafts] = useState<boolean>(settings.autoSaveDrafts);
 	const [webSpeechSensitivity, setSpeechSensitivity] = useState<WebSpeechSensitivity>(settings.webSpeechSensitivity || "normal");
 	const [maskPhiData, setMaskPhiData] = useState<boolean>(settings.maskPhiData ?? true);
@@ -110,6 +112,7 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 			diaryTemplate,
 			customDoctorInstructions,
 			granularPermissions,
+			speechEngine,
 			autoSaveDrafts,
 			webSpeechSensitivity,
 			maskPhiData,
@@ -289,6 +292,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 
 					{activeTab === "voice_privacy" && (
 						<CopilotSettingsVoicePrivacyTab
+							speechEngine={speechEngine}
+							setSpeechEngine={setSpeechEngine}
 							webSpeechSensitivity={webSpeechSensitivity}
 							setSpeechSensitivity={setSpeechSensitivity}
 							autoSaveDrafts={autoSaveDrafts}

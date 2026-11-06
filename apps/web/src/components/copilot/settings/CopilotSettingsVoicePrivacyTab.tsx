@@ -1,15 +1,17 @@
 /**
  * @file CopilotSettingsVoicePrivacyTab.tsx
  * @description Voice recognition & clinical privacy settings:
- * Web Speech sensitivity, SOAP autosave debouncing, PHI data masking,
- * and automatic chairside microphone activation (Mandate 8b <= 200 lines).
+ * Engine selection (Gemini Live / Whisper / Web Speech), sensitivity,
+ * SOAP autosave debouncing, PHI data masking, and chairside microphone (Mandate 8b <= 200 lines).
  */
 
 import React from "react";
-import { Command, Mic, Shield, Volume2 } from "lucide-react";
-import type { WebSpeechSensitivity } from "../../../store/copilotStore";
+import { Command, Mic, Radio, Shield, Volume2 } from "lucide-react";
+import type { SpeechEngine, WebSpeechSensitivity } from "../../../store/copilotStore";
 
 export interface CopilotSettingsVoicePrivacyTabProps {
+	speechEngine?: SpeechEngine;
+	setSpeechEngine?: (e: SpeechEngine) => void;
 	webSpeechSensitivity: WebSpeechSensitivity;
 	setSpeechSensitivity: (v: WebSpeechSensitivity) => void;
 	autoSaveDrafts: boolean;
@@ -23,11 +25,18 @@ export interface CopilotSettingsVoicePrivacyTabProps {
 }
 
 export function CopilotSettingsVoicePrivacyTab({
-	webSpeechSensitivity, setSpeechSensitivity,
-	autoSaveDrafts, setAutoSaveDrafts,
-	maskPhiData, setMaskPhiData,
-	autoMicOnAppointmentOpen, setAutoMic,
-	globalDictationHotkey = "F9", setGlobalHotkey,
+	speechEngine = "gemini_live",
+	setSpeechEngine,
+	webSpeechSensitivity,
+	setSpeechSensitivity,
+	autoSaveDrafts,
+	setAutoSaveDrafts,
+	maskPhiData,
+	setMaskPhiData,
+	autoMicOnAppointmentOpen,
+	setAutoMic,
+	globalDictationHotkey = "F9",
+	setGlobalHotkey,
 }: CopilotSettingsVoicePrivacyTabProps) {
 	return (
 		<div className="space-y-4 text-xs" data-testid="copilot-settings-voice-privacy-tab">
@@ -40,6 +49,37 @@ export function CopilotSettingsVoicePrivacyTab({
 					</p>
 				</div>
 			</div>
+
+			{setSpeechEngine && (
+				<section className="space-y-1.5">
+					<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
+						<Radio size={14} className="text-[var(--teal,#0d9488)]" />
+						<span>Движок распознавания речи</span>
+					</label>
+					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+						{[
+							{ id: "gemini_live" as SpeechEngine, label: "Gemini Live", note: "Потоковый диалог" },
+							{ id: "whisper" as SpeechEngine, label: "Whisper Cascade", note: "Медицинский словарь" },
+							{ id: "web_speech" as SpeechEngine, label: "Web Speech", note: "Встроенный в браузер" },
+						].map((item) => (
+							<button
+								key={item.id}
+								type="button"
+								onClick={() => setSpeechEngine(item.id)}
+								className={`p-2 rounded-lg border text-left cursor-pointer transition-all ${
+									speechEngine === item.id
+										? "border-[var(--teal,#0d9488)] bg-[var(--paper)] text-[var(--ink)] shadow-xs font-bold"
+										: "border-[var(--line)] bg-[var(--paper)]/50 text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								data-testid={`copilot-speech-engine-${item.id}`}
+							>
+								<div className="text-[11px] font-semibold">{item.label}</div>
+								<div className="text-[9px] text-[var(--muted)]">{item.note}</div>
+							</button>
+						))}
+					</div>
+				</section>
+			)}
 
 			<section className="space-y-1.5">
 				<label className="font-bold text-[var(--ink)] flex items-center gap-1.5">
@@ -55,7 +95,6 @@ export function CopilotSettingsVoicePrivacyTab({
 					<option value="normal">Стандартная (сбалансированная фильтрация шума)</option>
 					<option value="low">Умеренная (подавление шума слюноотсоса и компрессора)</option>
 				</select>
-				<p className="text-[10px] text-[var(--muted)]">Адаптирует алгоритм порога уверенности аудиопотока браузера.</p>
 			</section>
 
 			{setGlobalHotkey && (
@@ -72,7 +111,7 @@ export function CopilotSettingsVoicePrivacyTab({
 							placeholder="F9"
 							className="w-32 h-9 px-3 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] font-mono text-xs focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 						/>
-						<span className="text-[10px] text-[var(--muted)] self-center">Нажатие F9 мгновенно активирует микрофон</span>
+						<span className="text-[10px] text-[var(--muted)] self-center">Нажатие {globalDictationHotkey || "F9"} мгновенно активирует микрофон</span>
 					</div>
 				</section>
 			)}
@@ -85,7 +124,7 @@ export function CopilotSettingsVoicePrivacyTab({
 						onChange={(e) => setAutoSaveDrafts(e.target.checked)}
 						className="rounded text-[var(--teal,#0d9488)] focus:ring-[var(--teal,#0d9488)]"
 					/>
-					<span>Автосохранение черновиков дневников SOAP на лету</span>
+					<span>Автосохранение черновиков дневников SOAP</span>
 				</label>
 				<p className="text-[10px] text-[var(--muted)] pl-5">
 					Сохраняет набранный врачом текст при переключении вкладок с дебаунсом 500мс без риска потери данных.

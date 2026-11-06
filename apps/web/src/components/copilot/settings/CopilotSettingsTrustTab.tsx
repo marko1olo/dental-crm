@@ -1,6 +1,6 @@
 /**
  * @file CopilotSettingsTrustTab.tsx
- * @description Trust Level & Autonomy settings tab: 3 trust tiers (confirm_all, balanced, autonomous)
+ * @description Trust Level & Autonomy settings tab: 3 trust tiers (cautious, supervised, autonomous)
  * and fine-grained agent tool auto-approve permissions (Mandate 8b <= 200 lines, Mandate 8e).
  */
 
@@ -17,24 +17,24 @@ export const TRUST_LEVELS: Array<{
 	icon: React.ComponentType<{ size?: number; className?: string }>;
 }> = [
 	{
-		id: "confirm_all",
-		title: "Строгий контроль — Максимальный контроль (Параноик)",
+		id: "cautious",
+		title: "Максимальный контроль (Параноик)",
 		badge: "100% подтверждений",
-		description: "Двухфазное подтверждение каждого действия и мутации базы данных (одонтограмма, расписание, списание, чтение файлов).",
+		description: "Двухфазное подтверждение каждого вызова инструмента и мутации БД (зубная формула, расписание, списание, чтение файлов).",
 		icon: Lock,
 	},
 	{
-		id: "balanced",
+		id: "supervised",
 		title: "Сбалансированный (Копайлот)",
 		badge: "Рекомендуемый",
-		description: "Авто-запись дневников SOAP и смет, подтверждение только деструктивных операций и удаления.",
+		description: "Авто-запись дневников SOAP и смет, свободное чтение снимков и разметка формулы; подтверждение только деструктивных мутаций и удаления.",
 		icon: ShieldCheck,
 	},
 	{
 		id: "autonomous",
-		title: "Автономный ассистент — Высокая автономия (Суперагент)",
+		title: "Высокая автономия (Суперагент)",
 		badge: "Мандат 8e",
-		description: "Применение готовых планов в 1 клик по Мандату 8e без лишних преград с возможностью быстрой отмены.",
+		description: "Применение готовых планов и клинических протоколов в 1 клик по Мандату 8e без лишних преград с возможностью быстрой отмены.",
 		icon: Zap,
 	},
 ];
@@ -46,12 +46,20 @@ export interface CopilotSettingsTrustTabProps {
 	setGranularPermissions: (perms: GranularAgentPermissions) => void;
 }
 
+export function normalizeTrustLevel(level: AiTrustLevel): "cautious" | "supervised" | "autonomous" {
+	if (level === "confirm_all" || level === "cautious") return "cautious";
+	if (level === "balanced" || level === "supervised") return "supervised";
+	return "autonomous";
+}
+
 export function CopilotSettingsTrustTab({
 	trustLevel,
 	setTrustLevel,
 	granularPermissions,
 	setGranularPermissions,
 }: CopilotSettingsTrustTabProps) {
+	const normalizedActive = normalizeTrustLevel(trustLevel);
+
 	return (
 		<div className="space-y-4 text-xs" data-testid="copilot-settings-trust-tab">
 			<section className="space-y-2">
@@ -61,7 +69,6 @@ export function CopilotSettingsTrustTab({
 				</label>
 				<div className="grid grid-cols-1 gap-2">
 					{TRUST_LEVELS.map((lvl) => {
-						const normalizedActive = trustLevel === "supervised" ? "balanced" : (trustLevel === "cautious" ? "confirm_all" : trustLevel);
 						const isSelected = normalizedActive === lvl.id;
 						const Icon = lvl.icon;
 						return (
@@ -74,6 +81,7 @@ export function CopilotSettingsTrustTab({
 										? "border-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.08))] shadow-sm"
 										: "border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)]"
 								}`}
+								data-testid={`copilot-trust-level-${lvl.id}`}
 							>
 								<div className={`w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 ${
 									isSelected ? "bg-[var(--teal,#0d9488)] text-white" : "bg-[var(--paper-soft)] text-[var(--muted)]"

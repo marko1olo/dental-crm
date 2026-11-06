@@ -27,6 +27,7 @@ export type ClinicalSpecialization = "therapy" | "orthopedics" | "surgery" | "or
 export type DiaryTemplate = "soap" | "form043" | "express";
 export type CopilotRuntimeEnvironment = "web_browser" | "desktop_native" | "chairside_tablet" | "mobile_tablet";
 export type WebSpeechSensitivity = "high" | "normal" | "low";
+export type SpeechEngine = "gemini_live" | "whisper" | "web_speech";
 
 export interface GranularAgentPermissions {
 	autoApproveFileReads: boolean;
@@ -126,6 +127,7 @@ export interface CopilotSettings {
 	contextLimitTokens?: number;
 	runtimeMode: CopilotRuntimeEnvironment;
 	// Браузер и Голос (Web Speech API, 152-ФЗ)
+	speechEngine?: SpeechEngine;
 	autoSaveDrafts: boolean;
 	webSpeechSensitivity: WebSpeechSensitivity;
 	maskPhiData: boolean;
@@ -203,6 +205,7 @@ const DEFAULT_SETTINGS: CopilotSettings = {
 	contextLimitTokens: 32768,
 	runtimeMode: detectRuntimeEnvironment(),
 	// Браузер и Голос (Web Speech, 152-ФЗ)
+	speechEngine: "gemini_live",
 	autoSaveDrafts: true,
 	webSpeechSensitivity: "normal",
 	maskPhiData: true,

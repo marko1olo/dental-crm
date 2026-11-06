@@ -16,6 +16,7 @@ import {
 	validateUniversalApiKeyLive,
 	type AgentRouterChatMessage,
 } from "../ai/agentRouterClient.js";
+import { registerAgentSessionRoutes } from "./agentSessionRoutes.js";
 
 const chatMessageSchema = z.object({
 	role: z.enum(["system", "user", "assistant", "tool"]),
@@ -256,7 +257,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			if (!resolvedOrgId) return;
 
 			const bodySchema = z.object({
-				provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom"]),
+				provider: z.enum(["gemini", "openai", "anthropic", "deepseek", "custom", "groq"]),
 				apiKey: z.string().min(1, "API-ключ обязателен"),
 				model: z.string().optional(),
 				baseUrl: z.string().optional(),
@@ -282,4 +283,7 @@ export const registerAgentRoutes: FastifyPluginAsync = async (
 			return reply.code(200).send(validation);
 		},
 	);
+
+	// ─── REGISTER SESSION & DIALOGUE HISTORY ROUTES ────────────────────────────
+	await registerAgentSessionRoutes(server);
 };
