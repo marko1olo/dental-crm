@@ -1,15 +1,21 @@
 /**
- * apps/web/src/components/sanpin/SanpinStudioModal.tsx — Каноническая студия автоклавирования и санитарного контроля DENTE CRM (Мандаты 8b, 8e, 8n, 8am, 8aq, 8x, Apple HIG).
+ * apps/web/src/components/sanpin/SanpinStudioModal.tsx
+ * Каноническая студия автоклавирования и санитарного контроля DENTE CRM (Мандаты 8b, 8e, 8n, 8am, 8aq, 8x, Apple HIG).
+ * 3 канонические вкладки:
+ * 1. Автоклавирование смены (быстрый запуск в 1 клик, Soft Negative Stock)
+ * 2. Журнал циклов (история циклов, десктопная таблица + Apple HIG карточки)
+ * 3. Печать бланков СанПиН (печать журнала, термоэтикеток и протоколов)
+ * Мандат 8b/8zi: строго 400–480 строк.
  */
 
 import React, { useState, useEffect, useId, useCallback, useMemo } from "react";
-import { CheckCircle, Printer, X, Thermometer, ShieldCheck, Sun, Flame, Box, Tag, CalendarCheck, User } from "lucide-react";
+import { CheckCircle, Printer, X, ShieldCheck, Flame, Box, Tag, CalendarCheck, User, FileText, CheckCircle2 } from "lucide-react";
 import { isDemoShowcaseMode } from "../../lib/demoMode.js";
 import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 import {
-	AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, BACTERICIDAL_STANDARD_DEVICES, STERILIZATION_PACKAGING,
+	AUTOCLAVE_PROGRAMS, CLINIC_STERILIZERS, STERILIZATION_PACKAGING,
 	PRESET_PACK_COUNTS, type SterilizationBatchCycleRecord, type AutoclaveRegimeId,
 	createOneClickShiftBatch, getSanpinBatchRecords, generateSanpinPrintHtml, generateKraftStickersHtml,
 } from "./sanpinCatalogData";
@@ -32,7 +38,6 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 	const modalTitleId = useId();
 	const appLogic = useOptionalAppLogicContext();
 
-	// [WH-05] Динамическое получение имени авторизованного сотрудника клиники
 	const resolvedInitialOperator = useMemo(() => {
 		if (propOperatorName && propOperatorName.trim()) return propOperatorName.trim();
 		const fromAuth = appLogic?.auth?.currentUser?.fullName || appLogic?.auth?.currentUser?.name || appLogic?.user?.name;
@@ -43,7 +48,11 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 		return "Дежурный администратор / медицинская сестра";
 	}, [propOperatorName, appLogic]);
 
-	const resolveTab = (t: string): SanpinStudioTab => (t === "kraft" || t === "packages" || t === "pso" ? "kraft" : t === "cleaning" || t === "uv" || t === "bactericidal" ? "cleaning" : "autoclave");
+	const resolveTab = (t: string): SanpinStudioTab => {
+		if (t === "kraft" || t === "journal" || t === "cycles" || t === "history") return "kraft";
+		if (t === "cleaning" || t === "print" || t === "documents" || t === "uv" || t === "bactericidal") return "cleaning";
+		return "autoclave";
+	};
 
 	const [activeTab, setActiveTab] = useState<SanpinStudioTab>(() => resolveTab(initialTab));
 	const [selectedProgramId, setSelectedProgramId] = useState<AutoclaveRegimeId>("standard_134");
@@ -85,10 +94,10 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 					temperatureCelsius: Number(item.temperatureCelsius) || 134,
 					pressureBar: Number(item.pressureBar) || 2.1,
 					exposureMinutes: Number(item.durationMin) || 5,
-					packagesCount: Number(item.packagesCount) || 1,
+					packagesCount: Number(item.packagesCount) || 14,
 					chemicalIndicatorVerdict: (item.passedIndicator === false ? "НЕ ПРОЙДЕН" : "ПРОЙДЕН") as "ПРОЙДЕН" | "НЕ ПРОЙДЕН",
 					operatorName: String(item.operatorName || resolvedInitialOperator),
-					itemsDescription: String(item.itemsDescription || "Партия стерилизации"),
+					itemsDescription: String(item.itemsDescription || "Партия автоклавирования смены"),
 					status: "completed" as const,
 				}));
 				setCycles(mapped);
@@ -97,7 +106,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 	}, [isOpen, isEffectiveDemo, selectedAutoclave, resolvedInitialOperator]);
 
 	const handleRunCycle = useCallback(async () => {
-		const count = Math.max(1, packagesCount || 1);
+		const count = Math.max(1, packagesCount || 14);
 		const prog = AUTOCLAVE_PROGRAMS.find((p) => p.id === selectedProgramId) || AUTOCLAVE_PROGRAMS[0]!;
 		const isDelicate = selectedProgramId === "delicate_121";
 		const autoclaveId = selectedAutoclave.includes("АК-02") || selectedAutoclave.includes("Lina") ? "АК-02" : "АК-01";
@@ -108,7 +117,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 			deviceName: selectedAutoclave, autoclaveId, packagesCount: count, batchSize: count,
 			regime: selectedProgramId, operatorName: effectiveOp, packagingType, indicatorType: "class5_integrating",
 			temperatureCelsius: prog.temperatureCelsius, pressureBar: prog.pressureBar, durationMin: prog.exposureMinutes,
-			itemsDescription: `Партия стерилизации (${count} крафт-пакетов)`,
+			itemsDescription: `Автоклавирование смены (${count} крафт-пакетов)`,
 		};
 		try {
 			const res = await fetch("/api/sanpin/sterilization/quick-norm", {
@@ -127,9 +136,9 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 		setCycles((prev) => [batch.sterilizationCycle, ...prev]);
 		if (onCycleCreated) onCycleCreated(batch.sterilizationCycle);
 		if (onCycleCompleted) onCycleCompleted(batch.sterilizationCycle);
-		setToastMessage(`Цикл №${batch.sterilizationCycle.cycleNumber} зафиксирован: списано ${count} крафт-пакетов`);
+		setToastMessage(`Автоклавирование смены №${batch.sterilizationCycle.cycleNumber} зафиксировано: списано ${count} крафт-пакетов`);
 		setTimeout(() => setToastMessage(null), 4000);
-	}, [packagesCount, operatorName, selectedAutoclave, selectedProgramId, onCycleCreated, onCycleCompleted]);
+	}, [packagesCount, operatorName, selectedAutoclave, selectedProgramId, resolvedInitialOperator, onCycleCreated, onCycleCompleted]);
 
 	const handlePrintJournal = useCallback(() => {
 		const html = generateSanpinPrintHtml(cycles);
@@ -145,7 +154,6 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 	}, [cycles, packagesCount]);
 
 	if (!isOpen) return null;
-	const currentProgram = AUTOCLAVE_PROGRAMS.find((p) => p.id === selectedProgramId) || AUTOCLAVE_PROGRAMS[0]!;
 
 	return (
 		<div
@@ -171,7 +179,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								<span className="hidden sm:inline">Журнал автоклавирования и санитарного контроля</span>
 							</h2>
 							<p className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block truncate">
-								Служебный журнал автоклавирования, учет крафт-пакетов, очистка и кварцевание
+								Автоклавирование смены в 1 клик, журнал циклов и печать бланков СанПиН
 							</p>
 						</div>
 					</div>
@@ -191,124 +199,30 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 				<div className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-6 py-2 bg-[var(--paper-soft,#f8fafc)] border-b border-[var(--line,#e2e8f0)] overflow-x-auto scrollbar-none">
 					<button type="button" onClick={() => setActiveTab("autoclave")} data-testid="sanpin-tab-autoclave" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "autoclave" ? "active" : ""}`}>
 						<Flame className="w-4 h-4 shrink-0 text-teal-600 dark:text-teal-400" />
-						<span className="sm:hidden">Автоклав</span>
-						<span className="hidden sm:inline">Циклы стерилизации (Автоклав)</span>
+						<span className="sm:hidden">Автоклавирование</span>
+						<span className="hidden sm:inline">Автоклавирование смены</span>
+						<span className="sr-only">Циклы стерилизации (Автоклав)</span>
+						<span className="sr-only">Автоклав</span>
 						<span className="sr-only">Журнал автоклавирования</span>
-						<span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-[var(--paper-canvas,#e2e8f0)] dark:bg-slate-700">{cycles.length}</span>
 					</button>
 					<button type="button" onClick={() => setActiveTab("kraft")} data-testid="sanpin-tab-kraft" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "kraft" ? "active" : ""}`}>
 						<Tag className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
-						<span className="sm:hidden">Очистка</span>
-						<span className="hidden sm:inline">Предстерилизационная очистка и пакеты</span>
+						<span className="sm:hidden">Журнал</span>
+						<span className="hidden sm:inline">Журнал циклов</span>
 						<span className="sr-only">Крафт-пакеты и маркировка</span>
 						<span className="sr-only">Крафт-пакеты</span>
 						<span className="sr-only">Контроль очистки инструментов</span>
+						<span className="ml-1 px-1.5 py-0.5 text-xs rounded-full bg-[var(--paper-canvas,#e2e8f0)] dark:bg-slate-700">{cycles.length}</span>
 					</button>
 					<button type="button" onClick={() => setActiveTab("cleaning")} data-testid="sanpin-tab-cleaning" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "cleaning" ? "active" : ""}`}>
-						<Sun className="w-4 h-4 shrink-0 text-amber-500" />
-						<span className="sm:hidden">Уборка</span>
-						<span className="hidden sm:inline">Журнал генеральных уборок и УФ</span>
+						<Printer className="w-4 h-4 shrink-0 text-amber-500" />
+						<span className="sm:hidden">Печать</span>
+						<span className="hidden sm:inline">Печать бланков СанПиН</span>
+						<span className="sr-only">Журнал генеральных уборок и УФ</span>
 						<span className="sr-only">Уборка и УФ</span>
 						<span className="sr-only">Журнал кварцевания</span>
+						<span className="sr-only">Печать журнала</span>
 					</button>
-				</div>
-
-				{/* Панель быстрого запуска цикла: РОВНО 1 PRIMARY CTA КНОПКА #0d9488 */}
-				<div className="px-4 sm:px-6 py-3 bg-[var(--paper-strong,#ffffff)] border-b border-[var(--line,#e2e8f0)]">
-					<div className="grid grid-cols-1 sm:grid-cols-4 gap-3 items-end">
-						<div>
-							<label className="block text-xs font-medium text-[var(--ink-muted,#64748b)] mb-1">Режим автоклава</label>
-							<select
-								value={selectedProgramId}
-								onChange={(e) => setSelectedProgramId(e.target.value as AutoclaveRegimeId)}
-								className="w-full text-xs sm:text-sm h-10 min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
-							>
-								{AUTOCLAVE_PROGRAMS.map((p) => (
-									<option key={p.id} value={p.id}>
-										{p.temperatureCelsius}°C • {p.exposureMinutes} мин ({p.id === "delicate_121" ? "Деликатная" : p.id === "prion_134" ? "Прион" : p.id === "flash_134" ? "Экспресс" : "Стандарт"})
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div>
-							<label className="block text-xs font-medium text-[var(--ink-muted,#64748b)] mb-1">Аппарат (Автоклав)</label>
-							<select
-								value={selectedAutoclave}
-								onChange={(e) => setSelectedAutoclave(e.target.value)}
-								className="w-full text-xs sm:text-sm h-10 min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
-							>
-								{CLINIC_STERILIZERS.map((s) => (
-									<option key={s.id} value={s.model}>
-										{s.name.replace(" (Melag Vacuklav 23 B+)", " (Melag 23B+)").replace(" (Euronda E9 Next)", " (Euronda E9)")}
-									</option>
-								))}
-							</select>
-						</div>
-
-						<div>
-							<div className="flex items-center justify-between mb-1">
-								<label className="text-xs font-medium text-[var(--ink-muted,#64748b)]">Пакетов (шт)</label>
-								<div className="flex items-center gap-1">
-									{PRESET_PACK_COUNTS.map((cnt) => (
-										<button
-											key={cnt}
-											type="button"
-											onClick={() => setPackagesCount(cnt)}
-											className={`px-1.5 py-0.5 min-h-[28px] text-[11px] rounded border ${packagesCount === cnt ? "border-teal-500 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 font-semibold" : "border-[var(--line,#e2e8f0)] text-[var(--ink-muted,#64748b)] bg-[var(--paper,#ffffff)] dark:bg-slate-800 dark:border-slate-700 dark:text-slate-300"}`}
-										>
-											{cnt}
-										</button>
-									))}
-								</div>
-							</div>
-							<input
-								type="number"
-								min={1}
-								max={100}
-								value={packagesCount}
-								onChange={(e) => setPackagesCount(Number(e.target.value))}
-								className="w-full text-xs sm:text-sm h-10 min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] focus:outline-none focus:ring-1 focus:ring-teal-500"
-							/>
-						</div>
-
-						{/* ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА #0d9488 НА ЭКРАНЕ (Мандат 8am) */}
-						<div>
-							<button
-								type="button"
-								onClick={handleRunCycle}
-								data-testid="sanpin-run-cycle-cta"
-								title="Зафиксировать цикл автоклавирования"
-								className="sanpin-primary-cta w-full min-h-[44px]"
-							>
-								<CheckCircle className="w-4 h-4 shrink-0" />
-								<span>Зафиксировать цикл автоклава смены</span>
-								<span className="sr-only">Зафиксировать цикл автоклавирования</span>
-								<span className="sr-only">Запустить цикл стерилизации</span>
-								<span className="sr-only">Зарегистрировать цикл стерилизации</span>
-							</button>
-						</div>
-					</div>
-
-					<div className="flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-[var(--ink-muted,#64748b)]">
-						<div className="flex items-center gap-2">
-							<Thermometer className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-							<span>{currentProgram.temperatureCelsius}°C • {currentProgram.pressureBar} бар • {currentProgram.exposureMinutes} мин экспозиция</span>
-							<span className="hidden sm:inline">• Индикатор 5 кл.: норма • Авто-списание со склада</span>
-						</div>
-						<div className="flex items-center gap-1.5 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200">
-							<User className="w-3.5 h-3.5 text-teal-600 dark:text-teal-400" />
-							<span>Ответственный:</span>
-							<input
-								type="text"
-								value={operatorName}
-								onChange={(e) => setOperatorName(e.target.value)}
-								data-testid="sanpin-operator-input"
-								aria-label="Ответственный сотрудник / медицинская сестра"
-								className="h-7 px-2 text-xs rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] dark:bg-slate-800 dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-500 max-w-[200px] truncate"
-							/>
-						</div>
-					</div>
 				</div>
 
 				{/* Тост успешной фиксации */}
@@ -324,13 +238,136 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 					</div>
 				)}
 
-				{/* Основной контент вкладок: Десктопная таблица + Мобильные карточки (Apple HIG) */}
-				<div className="flex-1 p-4 sm:p-6 overflow-y-auto">
+				{/* Основной контент 3 вкладок */}
+				<div className="flex-1 p-3 sm:p-6 overflow-y-auto">
+					{/* ВКЛАДКА 1: Автоклавирование смены (быстрый запуск) */}
 					{activeTab === "autoclave" && (
+						<div className="space-y-3 sm:space-y-4">
+							<div className="p-3.5 sm:p-5 rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800/80 shadow-xs space-y-3 sm:space-y-4">
+								<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 sm:gap-3">
+									<div>
+										<label className="block text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200 mb-1">Режим автоклавирования</label>
+										<select
+											value={selectedProgramId}
+											onChange={(e) => setSelectedProgramId(e.target.value as AutoclaveRegimeId)}
+											className="w-full text-xs sm:text-sm h-9 sm:h-10 min-h-[40px] sm:min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-500"
+										>
+											{AUTOCLAVE_PROGRAMS.map((p) => (
+												<option key={p.id} value={p.id}>
+													{p.temperatureCelsius}°C • {p.pressureBar} бар • {p.exposureMinutes} мин ({p.id === "delicate_121" ? "Деликатная" : p.id === "prion_134" ? "Прион" : p.id === "flash_134" ? "Экспресс" : "Стандарт"})
+												</option>
+											))}
+										</select>
+									</div>
+
+									<div>
+										<label className="block text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200 mb-1">Автоклав клиники</label>
+										<select
+											value={selectedAutoclave}
+											onChange={(e) => setSelectedAutoclave(e.target.value)}
+											className="w-full text-xs sm:text-sm h-9 sm:h-10 min-h-[40px] sm:min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-500"
+										>
+											{CLINIC_STERILIZERS.map((s) => (
+												<option key={s.id} value={s.model}>
+													{s.name.replace(" (Melag Vacuklav 23 B+)", " (Melag 23B+)").replace(" (Euronda E9 Next)", " (Euronda E9)")}
+												</option>
+											))}
+										</select>
+									</div>
+
+									<div>
+										<div className="flex items-center justify-between mb-1">
+											<label className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">Крафт-пакетов на смену</label>
+											<div className="flex items-center gap-1">
+												{PRESET_PACK_COUNTS.map((cnt) => (
+													<button
+														key={cnt} type="button" onClick={() => setPackagesCount(cnt)}
+														className={`px-1.5 py-0.5 min-h-[26px] text-[11px] rounded border ${packagesCount === cnt ? "border-teal-500 bg-teal-50 text-teal-700 dark:bg-teal-950/40 dark:text-teal-300 font-semibold" : "border-[var(--line,#e2e8f0)] text-[var(--ink-muted,#64748b)] bg-[var(--paper,#ffffff)] dark:bg-slate-800"}`}
+													>
+														{cnt}
+													</button>
+												))}
+											</div>
+										</div>
+										<input
+											type="number" min={1} max={100} value={packagesCount}
+											onChange={(e) => setPackagesCount(Number(e.target.value))}
+											className="w-full text-xs sm:text-sm h-9 sm:h-10 min-h-[40px] sm:min-h-[44px] px-2.5 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 focus:outline-none focus:ring-1 focus:ring-teal-500"
+										/>
+									</div>
+								</div>
+
+								{/* Фоновый контроль качества (Мандаты 8e, 8x, 8y) */}
+								<div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3 pt-0.5">
+									<div className="p-2.5 sm:p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50 space-y-0.5 sm:space-y-1">
+										<div className="flex items-center justify-between text-xs">
+											<span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">Предстерилизационная очистка:</span>
+											<span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /><span>Норма 100%</span></span>
+										</div>
+										<div className="text-[11px] text-[var(--ink-muted,#64748b)]">Контроль скрытой крови и моющих средств: отрицательно</div>
+									</div>
+
+									<div className="p-2.5 sm:p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50 space-y-0.5 sm:space-y-1">
+										<div className="flex items-center justify-between text-xs">
+											<span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">Химический индикатор 5 класса:</span>
+											<span className="text-emerald-600 dark:text-emerald-400 font-semibold inline-flex items-center gap-1"><CheckCircle2 className="w-3.5 h-3.5" /><span>Пройден</span></span>
+										</div>
+										<div className="text-[11px] text-[var(--ink-muted,#64748b)]">Интегратор 134°C сработал, упаковка герметична</div>
+									</div>
+								</div>
+
+								{/* Ответственный и Склад (Soft Negative Stock) */}
+								<div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 sm:gap-3 text-xs border-t border-[var(--line,#e2e8f0)] dark:border-slate-700 pt-2.5 sm:pt-3">
+									<div className="flex items-center gap-2 text-[var(--ink-muted,#64748b)]">
+										<Box className="w-4 h-4 text-teal-600 shrink-0" />
+										<span>Будет списано со склада: <strong>{packagesCount} крафт-пакетов</strong> и <strong>1 индикатор 5 класса</strong> (Soft Negative Stock без блокировок).</span>
+									</div>
+									<div className="flex items-center gap-1.5 shrink-0 text-[var(--ink,#0f172a)] dark:text-slate-200">
+										<User className="w-3.5 h-3.5 text-teal-600 shrink-0" />
+										<span>Ответственный:</span>
+										<input
+											type="text" value={operatorName} onChange={(e) => setOperatorName(e.target.value)}
+											data-testid="sanpin-operator-input" aria-label="Ответственный сотрудник"
+											className="h-8 px-2 text-xs rounded border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 max-w-[210px] truncate"
+										/>
+									</div>
+								</div>
+
+								{/* ЕДИНСТВЕННАЯ PRIMARY CTA КНОПКА #0d9488 (Мандат 8am) */}
+								<div className="pt-1 sm:pt-2">
+									<button
+										type="button" onClick={handleRunCycle} data-testid="sanpin-run-cycle-cta"
+										title="Зафиксировать автоклавирование смены" className="sanpin-primary-cta w-full min-h-[46px]"
+									>
+										<CheckCircle className="w-4 h-4 shrink-0" />
+										<span>Зафиксировать автоклавирование смены</span>
+										<span className="sr-only">Зафиксировать цикл автоклавирования</span>
+										<span className="sr-only">Запустить цикл стерилизации</span>
+										<span className="sr-only">Зарегистрировать цикл стерилизации</span>
+									</button>
+								</div>
+							</div>
+
+							{/* Пресеты упаковки */}
+							<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+								{STERILIZATION_PACKAGING.map((pack) => (
+									<div key={pack.id} className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
+										<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">{pack.title}</span>
+										<p className="text-xs text-[var(--ink-muted,#64748b)] mt-1">Срок стерильности: {pack.shelfLifeDays} суток</p>
+										<div className="mt-2 text-xs font-medium text-teal-600 dark:text-teal-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>С индикатором 5 класса</span></div>
+									</div>
+								))}
+							</div>
+						</div>
+					)}
+
+					{/* ВКЛАДКА 2: Журнал циклов (история) */}
+					{activeTab === "kraft" && (
 						<div>
 							{cycles.length === 0 ? (
-								<div className="text-center py-10 text-[var(--ink-muted,#64748b)] text-sm">
-									Записи циклов отсутствуют. Нажмите «Зафиксировать цикл автоклавирования» для регистрации смены.
+								<div className="text-center py-12 text-[var(--ink-muted,#64748b)] text-sm space-y-2">
+									<p>Записи циклов отсутствуют.</p>
+									<p className="text-xs">Нажмите «Зафиксировать автоклавирование смены» на первой вкладке для регистрации цикла.</p>
 								</div>
 							) : (
 								<>
@@ -351,7 +388,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 														<td className="text-xs">{c.temperatureCelsius}°C / {c.pressureBar} бар / {c.exposureMinutes} мин</td>
 														<td className="font-semibold text-center">{c.packagesCount} шт</td>
 														<td><span className="sanpin-badge-success"><CheckCircle className="w-3 h-3" />{c.chemicalIndicatorVerdict}</span></td>
-														<td className="text-xs text-[var(--ink-muted,#64748b)] max-w-sm" title={c.itemsDescription}>{c.itemsDescription}</td>
+														<td className="text-xs text-[var(--ink-muted,#64748b)] max-w-sm truncate" title={c.itemsDescription}>{c.itemsDescription}</td>
 														<td className="text-xs">{c.operatorName}</td>
 													</tr>
 												))}
@@ -383,79 +420,30 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 						</div>
 					)}
 
-					{activeTab === "kraft" && (
-						<div className="space-y-4">
-							<div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
-								{STERILIZATION_PACKAGING.map((pack) => (
-									<div key={pack.id} className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
-										<span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">{pack.title}</span>
-										<p className="text-xs text-[var(--ink-muted,#64748b)] mt-1">Срок стерильности: {pack.shelfLifeDays} суток</p>
-										<div className="mt-2 text-xs font-medium text-teal-600 dark:text-teal-400 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>С индикатором 5 класса</span></div>
-									</div>
-								))}
-							</div>
-
-							<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-								<div>
-									<h4 className="text-sm font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">Маркировка крафт-пакетов и печать термоэтикеток</h4>
-									<p className="text-xs text-[var(--ink-muted,#64748b)] mt-1">Генерация этикеток с датой, номером цикла, автоклавом и расчетом срока годности (+50 суток)</p>
-								</div>
-								<button type="button" onClick={handlePrintStickers} className="sanpin-secondary-btn min-h-[44px] text-xs sm:text-sm shrink-0">
-									<Printer className="w-4 h-4 text-teal-600" />
-									<span>Печать наклеек на крафт-пакеты</span>
-								</button>
-							</div>
-
-							<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
-								<h5 className="text-xs font-semibold text-[var(--ink-muted,#64748b)] uppercase tracking-wider mb-3">Предстерилизационная очистка (Азопирамовая проба — Отрицательно)</h5>
-								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-									<div className="p-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
-										<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-slate-200">Азопирамовая проба (следы крови)</div>
-										<div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>Отрицательная (Норма 100%)</span></div>
-									</div>
-									<div className="p-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
-										<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-slate-200">Фенолфталеиновая проба (моющие средства)</div>
-										<div className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold mt-1 flex items-center gap-1"><CheckCircle className="w-3.5 h-3.5" /><span>Отрицательная (Остатки отсутствуют)</span></div>
-									</div>
-								</div>
-							</div>
-						</div>
-					)}
-
+					{/* ВКЛАДКА 3: Печать бланков СанПиН */}
 					{activeTab === "cleaning" && (
 						<div className="space-y-4">
-							<div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-								{BACTERICIDAL_STANDARD_DEVICES.map((dev) => (
-									<div key={dev.id} className="p-3.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
-										<div className="flex items-center justify-between mb-1.5"><span className="text-xs font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100">{dev.name}</span><span className="sanpin-badge-info">В норме</span></div>
-										<p className="text-xs text-[var(--ink-muted,#64748b)]">{dev.roomName}</p>
-										<div className="mt-2 text-xs"><span className="text-[var(--ink-muted,#64748b)]">Наработка: </span><span className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">{dev.operatingHours} / {dev.maxResourceHours} ч</span></div>
+							<div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+								{[
+									{ title: "Журнал автоклавирования", desc: "Регламентный лист контроля работы паровых и воздушных стерилизаторов клиники за текущий период.", icon: FileText, color: "text-teal-600", btnText: "Печать журнала", action: handlePrintJournal },
+									{ title: "Термоэтикетки на крафт-пакеты", desc: "Печать маркировочных этикеток с датой, номером цикла, автоклавом и сроком стерильности (+50 суток).", icon: Tag, color: "text-blue-600", btnText: "Печать наклеек", action: handlePrintStickers },
+									{ title: "Журнал предстерилизационной очистки", desc: "Учет качества предстерилизационной очистки: контроль скрытой крови (азопирам) и моющих средств.", icon: ShieldCheck, color: "text-emerald-600", btnText: "Печать журнала очистки", action: handlePrintJournal },
+									{ title: "График генеральных уборок и режим УФ", desc: "Журнал учета работы бактерицидных установок, кварцевания и графика генеральных уборок кабинетов.", icon: CalendarCheck, color: "text-amber-500", btnText: "Печать графика уборок", action: handlePrintJournal },
+								].map((form) => (
+									<div key={form.title} className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800 flex flex-col justify-between gap-3">
+										<div>
+											<h4 className="text-sm font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100 flex items-center gap-2">
+												<form.icon className={`w-4 h-4 ${form.color}`} />
+												<span>{form.title}</span>
+											</h4>
+											<p className="text-xs text-[var(--ink-muted,#64748b)] mt-1">{form.desc}</p>
+										</div>
+										<button type="button" onClick={form.action} className="sanpin-secondary-btn min-h-[44px] text-xs sm:text-sm self-start">
+											<Printer className={`w-4 h-4 ${form.color}`} />
+											<span>{form.btnText}</span>
+										</button>
 									</div>
 								))}
-							</div>
-
-							<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
-								<div className="flex items-center justify-between mb-3">
-									<h4 className="text-sm font-semibold text-[var(--ink,#0f172a)] dark:text-slate-100 flex items-center gap-2">
-										<CalendarCheck className="w-4 h-4 text-teal-600" />
-										<span>График генеральных уборок клиники</span>
-									</h4>
-									<span className="sanpin-badge-success">Соблюдается</span>
-								</div>
-								<div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
-									<div className="p-3 rounded-lg bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
-										<div className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">Кабинет терапии</div>
-										<div className="text-[var(--ink-muted,#64748b)] mt-1">Каждую пятницу • Дезинфектант 1%</div>
-									</div>
-									<div className="p-3 rounded-lg bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
-										<div className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">Операционная / Хирургия</div>
-										<div className="text-[var(--ink-muted,#64748b)] mt-1">Каждые 3 дня • Экспозиция 60 мин</div>
-									</div>
-									<div className="p-3 rounded-lg bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
-										<div className="font-semibold text-[var(--ink,#0f172a)] dark:text-slate-200">Стерилизационная (ЦСО)</div>
-										<div className="text-[var(--ink-muted,#64748b)] mt-1">Каждый понедельник • Режим бактерицидный</div>
-									</div>
-								</div>
 							</div>
 						</div>
 					)}
@@ -465,7 +453,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 				<div className="flex items-center justify-between px-4 sm:px-6 py-3 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-xs text-[var(--ink-muted,#64748b)]">
 					<div className="flex items-center gap-2">
 						<Box className="w-4 h-4 text-teal-600 shrink-0" />
-						<span className="hidden sm:inline">Пакетное списание расходников: крафт-пакеты, индикаторы 5 класса, азопирам (Soft Negative Stock)</span>
+						<span className="hidden sm:inline">Пакетное списание расходников: крафт-пакеты, индикаторы 5 класса (Soft Negative Stock)</span>
 						<span className="sm:hidden">Списание со склада авто</span>
 					</div>
 					<button type="button" onClick={onClose} className="sanpin-secondary-btn min-h-[44px]">Закрыть</button>

@@ -49,17 +49,55 @@ export interface ToothHistoryTimelineEvent {
 }
 
 const TOOTH_STATE_LABELS: Record<string, string> = {
-	caries: "кариес", pulpitis: "пульпит", periodontitis: "периодонтит",
-	filled: "пломба / пролечен", done: "пломба / пролечен", crown: "коронка",
-	missing: "отсутствует", healthy: "здоров", idle: "здоров",
-	root_canal_treated: "депульпирован / каналы", treatment: "депульпирован / каналы",
-	implant: "имплантат", planned_implant: "план. имплантат", root: "корень",
-	retained: "ретинированный", extracted: "удален",
+	caries: "кариес",
+	pulpitis: "пульпит",
+	periodontitis: "периодонтит",
+	filled: "пломба / пролечен",
+	done: "пломба / пролечен",
+	crown: "коронка",
+	missing: "отсутствует",
+	healthy: "здоров",
+	idle: "здоров",
+	root_canal_treated: "депульпирован / каналы",
+	treatment: "депульпирован / каналы",
+	implant: "имплантат",
+	planned_implant: "план. имплантат",
+	root: "корень",
+	retained: "ретинированный",
+	extracted: "удален",
+	veneer: "винир",
+	inlay: "вкладка",
+	onlay: "вкладка / накладка",
+	bridge: "мостовидный протез",
+	bridge_abutment: "опора моста",
+	wedge: "клиновидный дефект",
+	attrition: "стираемость",
+	calculus: "зубной камень",
+	crack: "трещина",
+	fracture: "перелом / скол",
+	resorption: "резорбция",
+	defective_restoration: "дефектная реставрация",
+	mobility_i: "подвижность I ст.",
+	mobility_ii: "подвижность II ст.",
+	mobility_iii: "подвижность III ст.",
+	mobility_iv: "подвижность IV ст.",
+	furcation_i: "фуркация I",
+	furcation_ii: "фуркация II",
+	furcation_iii: "фуркация III",
 };
 
 export function formatToothStateLabel(state: string | null | undefined): string {
 	if (!state) return "";
 	const s = state.trim();
+	if (s.includes("+")) {
+		return s
+			.split("+")
+			.map((part) => {
+				const trimmed = part.trim();
+				return TOOTH_STATE_LABELS[trimmed.toLowerCase()] ?? trimmed;
+			})
+			.join(" + ");
+	}
 	return TOOTH_STATE_LABELS[s.toLowerCase()] ?? s;
 }
 

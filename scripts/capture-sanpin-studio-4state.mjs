@@ -171,15 +171,14 @@ async function waitForRealUI(page) {
 		await page.waitForFunction(
 			() => {
 				const text = document.body.innerText || "";
+				const isLoading = text.includes("Загрузка системы") || text.includes("Подготовка модулей");
+				if (isLoading) return false;
 				return (
 					document.querySelector('[data-testid="sanpin-studio-modal"]') ||
-					document.querySelector('[data-testid="direct-sanpin-launcher"]') ||
 					document.querySelector(".sanpin-studio-backdrop") ||
-					(!text.includes("Загрузка системы") &&
-						!text.includes("Подготовка модулей") &&
-						(document.querySelector(".workspace-shell") ||
-							document.querySelector(".topbar") ||
-							document.querySelector("#root")))
+					document.querySelector(".workspace-shell") ||
+					document.querySelector(".topbar") ||
+					document.querySelector("nav")
 				);
 			},
 			{ timeout: 35000 },
@@ -193,20 +192,26 @@ async function waitForRealUI(page) {
 }
 
 async function openSanpinModal(page) {
-	let modal = page.locator('[data-testid="sanpin-studio-modal"], .sanpin-studio-backdrop').first();
-	for (let i = 0; i < 5; i++) {
+	const modal = page.locator('[data-testid="sanpin-studio-modal"], .sanpin-studio-backdrop').first();
+	for (let i = 0; i < 10; i++) {
 		if (await modal.isVisible().catch(() => false)) return;
 		await page.evaluate(() => {
 			window.location.hash = "sanpin";
 			window.dispatchEvent(new CustomEvent("dente:open-sanpin"));
 			window.dispatchEvent(new CustomEvent("dente:open-autoclave"));
+			window.dispatchEvent(new CustomEvent("dente:open-sanpin-studio"));
 		});
 		await sleep(1000);
 	}
-	await modal.waitFor({ state: "visible", timeout: 15000 });
+	await modal.waitFor({ state: "visible", timeout: 20000 });
 }
 
 async function captureAndSave(page, filename) {
+	const modal = page.locator('[data-testid="sanpin-studio-modal"], .sanpin-studio-backdrop').first();
+	const isVisible = await modal.isVisible().catch(() => false);
+	if (!isVisible) {
+		throw new Error(`Sanpin modal is NOT visible before capturing ${filename}! Refusing to take fake screenshot.`);
+	}
 	const targetPath = path.join(OUT_DOCS, filename);
 	await page.screenshot({ path: targetPath, fullPage: false });
 	copyFileSync(targetPath, path.join(OUT_CONV, filename));

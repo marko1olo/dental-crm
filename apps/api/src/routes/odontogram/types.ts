@@ -138,7 +138,7 @@ export function parseClinicalDataFromNotes(
 	if (!trimmed.startsWith("{") || !trimmed.endsWith("}")) return null;
 	try {
 		const parsed = JSON.parse(trimmed);
-		if (parsed && typeof parsed === "object" && Array.isArray(parsed.canals)) {
+		if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
 			return parsed as EndoToothClinicalData;
 		}
 	} catch {

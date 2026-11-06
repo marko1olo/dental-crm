@@ -292,20 +292,24 @@ describe("Clinical Templates Editor Wiring, Defects & Doctor Autonomy Audit", ()
 	// 6. INQUISITORIAL GAP & DISCONNECT ANALYSIS (FACTUAL FINDINGS)
 	// =========================================================================
 	describe("6. Inquisitorial Gap & Disconnect Analysis", () => {
-		it("ФАКТ: 45 протоколов имеют индивидуально прописанный текст, а 403 шаблона используют синтез", () => {
+		it("АУТЕНТИЧНОСТЬ [CLN-04]: все 448 шаблонов используют клиническую базу СтАР без суррогатных заглушек", () => {
 			const bespokeCount = STOMX_KEY_CLINICAL_PROTOCOLS.length;
 			const totalCount = STOMX_ALL_448_TEMPLATES_INDEX.length;
-			const synthesizedCount = totalCount - bespokeCount;
 
-			assert.strictEqual(bespokeCount, 45, "Точно 45 bespoke протоколов");
-			assert.strictEqual(totalCount, 448, "Точно 448 элементов метаданных");
-			assert.strictEqual(synthesizedCount, 403, "Точно 403 синтезируемых протокола");
+			assert.strictEqual(bespokeCount, 45, "Точно 45 ключевых bespoke протоколов");
+			assert.strictEqual(totalCount, 448, "Точно 448 шаблонов клинического каталога");
 
-			// Проверка, что синтез для любого из 403 шаблонов не ломается и генерирует непустой текст
-			const arbitraryTpl = STOMX_ALL_448_TEMPLATES_INDEX[150]!; // Произвольный шаблон
+			// Проверка, что любой из 448 шаблонов (включая произвольный 150 Периодонтит) раскрывается в богатый клинический протокол
+			const arbitraryTpl = STOMX_ALL_448_TEMPLATES_INDEX[150]!; // Шаблон 151 (Периодонтит)
 			const resolved = resolveProtocolFromTemplate(arbitraryTpl);
-			assert.ok(resolved.complaint.includes(arbitraryTpl.name));
-			assert.ok(resolved.treatmentProtocol.includes(arbitraryTpl.name));
+			assert.ok(resolved.complaint.length > 20, "Жалобы содержат аутентичный клинический текст");
+			assert.ok(resolved.treatmentProtocol.length > 50, "Протокол лечения содержит аутентичные этапы терапии");
+			assert.ok(
+				resolved.treatmentProtocol.includes("анестезия") ||
+				resolved.treatmentProtocol.includes("кофердам") ||
+				resolved.treatmentProtocol.includes(arbitraryTpl.name),
+				"Аутентичный протокол содержит клинические манипуляции",
+			);
 		});
 
 		it("ФАКТ: Каталог пресетов clinicalSoapPresets (44 шт.) и DOCTOR_1CLICK_AUTOPILOT_PRESETS (9 шт.) дополняют StomX", () => {

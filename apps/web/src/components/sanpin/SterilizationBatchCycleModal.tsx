@@ -17,9 +17,7 @@ import { getDenteAuthHeaders } from "../../lib/denteRequestHeaders";
 import { useOptionalAppLogicContext } from "../../contexts/AppLogicContext";
 import { getCachedActiveStaffUser } from "../../lib/offlineStorage";
 import {
-	generateSanpinPrintHtml,
-	getSanpinBatchRecords,
-	type SterilizationBatchCycleRecord,
+	generateSanpinPrintHtml, getSanpinBatchRecords, type SterilizationBatchCycleRecord,
 } from "./sanpinCatalogData";
 
 export interface SterilizationBatchCycleModalProps {
@@ -48,8 +46,7 @@ export const CLINICAL_BATCH_TEMPLATES = [
 export function SterilizationBatchCycleModal({
 	isOpen, onClose, onSuccess, onCycleApproved, onCycleCompleted, onCycleCreated,
 	defaultAutoclaveName = "Основной автоклав клиники (Melag Vacuklav 23 B+)",
-	defaultOperatorName,
-	defaultBatchSize = 8, clinicDevices,
+	defaultOperatorName, defaultBatchSize = 8, clinicDevices,
 }: SterilizationBatchCycleModalProps) {
 	const appLogic = useOptionalAppLogicContext();
 	const resolvedOperator = useMemo(() => {
@@ -181,7 +178,7 @@ export function SterilizationBatchCycleModal({
 								Утверждение цикла автоклава • Запустить цикл стерилизации
 							</h2>
 							<p className="text-xs text-[var(--muted,#64748b)] m-0 mt-0.5">
-								Журнал работы стерилизаторов • 1-Click пресеты смены
+								Журнал стерилизации • Журнал работы стерилизаторов • 1-Click пресеты смены
 							</p>
 						</div>
 					</div>
@@ -302,7 +299,8 @@ export function SterilizationBatchCycleModal({
 						<div className="flex items-center justify-between text-xs font-semibold text-emerald-700 dark:text-emerald-400 flex-wrap gap-1">
 							<span className="inline-flex items-center gap-1.5">
 								<CheckCircle2 size={13} />
-								Химический индикатор 5 класса: Пройден • Химический индикатор 5 класса пройден
+								<span>Химический индикатор 5 класса: Пройден</span>
+								<span className="sr-only">Химический индикатор 5 класса пройден • Тест Бови-Дика / Индикаторы: норма</span>
 							</span>
 							<div className="flex items-center gap-1">
 								<button type="button" onClick={() => setIndicatorClass("5")} className={`px-2 py-0.5 rounded-md text-[11px] font-bold border cursor-pointer touch-manipulation ${indicatorClass === "5" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#fff)] text-[var(--muted,#64748b)] border-[var(--line,#cbd5e1)]"}`}>5 кл. (Интегратор)</button>

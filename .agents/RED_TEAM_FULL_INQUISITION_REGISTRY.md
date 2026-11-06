@@ -379,13 +379,45 @@
   4. Слушатель `useOdontogramEventsListener.ts` начисляет услуги в счет визита ТОЛЬКО при явном флаге `detail.isTreatmentPerformedToday === true`.
   5. Прогон сквозных тестов одонтограммы (42 файла, 422 теста) и специализированных Red Team тестов (`redTeamBookingAndBillingInquisition.test.ts`) подтверждает корректность 100% GREEN.
 
-### [CLN-03] [SEV-1] Затирание истории дефектов зуба
-- **Файл:** [`statusRoutes.ts#L127-L144`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/statusRoutes.ts#L127-L144)
-- **Суть бага:** Фронтенд пишет в `tooth_states` со строковым полем `state: text`. Если у зуба с коронкой появился пришеечный кариес, выбор кариеса стирает коронку из БД.
+### [CLN-03] [ИСПРАВЛЕНО] [SEV-1] Затирание истории дефектов зуба (мульти-статус и сохранение ортопедического базиса)
+- **Файлы:**
+  - [`apps/api/src/routes/odontogram/statusRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/statusRoutes.ts)
+  - [`apps/api/src/routes/odontogram/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/types.ts)
+  - [`apps/api/src/routes/toothHistory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/toothHistory.ts)
+  - [`apps/api/src/tests/routes/toothDefectHistoryPreservation.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/toothDefectHistoryPreservation.test.ts)
+  - [`apps/web/src/components/odontogram/ToothHistoryChronicle.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothHistoryChronicle.tsx)
+- **Суть бага:** Фронтенд пишет в `tooth_states` со строковым полем `state: text`. Если у зуба с коронкой появлялся пришеечный кариес K02.1 или клиновидный дефект K03.1, выбор нового статуса стирал коронку из базы данных, а `parseClinicalDataFromNotes` возвращал `null` для любых JSON без массива `canals`.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `statusRoutes.ts` реализована архитектура мульти-статуса и сохранения ортопедического/анатомического базиса (`Crown`, `Bridge`, `Bridge_Abutment`, `Implant`, `Veneer`, `Inlay`, `Root_Canal_Treated`): при наложении сопутствующей патологии (`Caries`, `Pulpitis`, `Periodontitis`, `Wedge`, `Attrition`) конструкция не затирается, а сохраняется в структурированном JSON в `notes` (`baseState`, `hasCrown: true`, `conditions: [...]`, `hasSecondaryCaries: true`, `condition: "defective"`).
+  2. В журнал аудита `tooth_state_history` записывается полный композитный переход: `previousState: "Crown", newState: "Crown + Caries"` с понятной клинической причиной (`"Выявлена сопутствующая патология: Caries на конструкции Crown (базис сохранен)"`).
+  3. В `toothHistory.ts` функция `formatToothStateLabel` переводит составные состояния на клинический русский (`"Crown + Caries"` -> `"коронка + кариес"`), формируя в `ToothHistoryChronicle` читаемую строку: `Статус зуба: коронка → коронка + кариес`.
+  4. При установке новой реставрации или коронки ранее зафиксированные дефекты переносятся в архив излеченных (`curedConditions`).
+  5. В `types.ts` функция `parseClinicalDataFromNotes` расширена для чтения любых валидных JSON-объектов клинических данных без жесткой привязки к `canals`.
+  6. Написан и подтвержден автоматический тест `apps/api/src/tests/routes/toothDefectHistoryPreservation.test.ts` (4 теста, 100% GREEN).
+  7. Сняты и лично отсмотрены 4-state скриншоты одонтограммы Wheeler 2.5D с мульти-статусом:
+     - ☀️ PC Light 1440×900 (`docs/proofs/clinical/05_clinical_odontogram_history_pc_light_1440x900.png`)
+     - 🌙 PC Dark 1440×900 (`docs/proofs/clinical/06_clinical_odontogram_history_pc_dark_1440x900.png`)
+     - 📱 Mobile Light 390×844 (`docs/proofs/clinical/07_clinical_odontogram_history_mobile_light_390x844.png`)
+     - 📱 Mobile Dark 390×844 (`docs/proofs/clinical/08_clinical_odontogram_history_mobile_dark_390x844.png`)
 
-### [CLN-04] [SEV-2] 403 из 448 протоколов — синтетический суррогат
-- **Файл:** [`protocolsResolver.ts#L27-L44`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/soapEditor/protocolsResolver.ts#L27-L44)
-- **Суть бага:** В коде забито только 45 протоколов. Остальные 403 генерируют синтетическую воду, хотя все 448 аутентичных JSON лежат нераспарсенными в `outpatient_templates_FULL/`.
+### [CLN-04] [ИСПРАВЛЕНО] [SEV-2] 403 из 448 протоколов — синтетический суррогат (подключение аутентичной базы СтАР)
+- **Файлы:**
+  - [`packages/shared/src/outpatient/stomtAuthenticRawTemplates.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/outpatient/stomtAuthenticRawTemplates.ts)
+  - [`packages/shared/src/outpatient/stomtAuthenticProtocolsParser.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/outpatient/stomtAuthenticProtocolsParser.ts)
+  - [`packages/shared/src/outpatient/index.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/outpatient/index.ts)
+  - [`apps/web/src/components/visit/soapEditor/protocolsResolver.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/soapEditor/protocolsResolver.ts)
+  - [`apps/web/src/components/visit/__tests__/clinicalTemplatesEditorWiring.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/__tests__/clinicalTemplatesEditorWiring.test.ts)
+- **Суть бага:** В `protocolsResolver.ts` было зашито только 45 хардкодных протоколов, а остальные 403 позиции генерировали синтетический плейсхолдер («Жалобы по протоколу...»), игнорируя реальную базу из 448 клинических шаблонов СтАР.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `@dental/shared` смонтирована аутентичная база текстов `STOMX_AUTHENTIC_TEMPLATE_TEXTS` со всеми 448 шаблонами клинического приёма.
+  2. Реализован парсер `stomtAuthenticProtocolsParser.ts`, извлекающий секции SOAP (`${Жалобы}`, `${Анамнез}`, `${Осмотр}`, `${Диагноз}`, `${Протокол лечения}`, `${Рекомендации}`) из аутентичного текста или структурирующий текст по клиническим категориям СтАР.
+  3. В `protocolsResolver.ts` подключен `buildAuthenticProtocolTemplate`, заменяющий синтетический суррогат на аутентичный клинический текст для всех 448 шаблонов с сохранением 0ms RAM-кэша.
+  4. Обновлен и подтвержден тест `clinicalTemplatesEditorWiring.test.ts` (17 тестов, 100% GREEN).
+  5. Сняты и лично отсмотрены 4-state скриншоты дневников визитов ЭМК SOAP:
+     - ☀️ PC Light 1440×900 (`docs/proofs/clinical/01_clinical_soap_pc_light_1440x900.png`)
+     - 🌙 PC Dark 1440×900 (`docs/proofs/clinical/02_clinical_soap_pc_dark_1440x900.png`)
+     - 📱 Mobile Light 390×844 (`docs/proofs/clinical/03_clinical_soap_mobile_light_390x844.png`)
+     - 📱 Mobile Dark 390×844 (`docs/proofs/clinical/04_clinical_soap_mobile_dark_390x844.png`)
 
 ### [CLN-05] [ИСПРАВЛЕНО] Тотальная интеграция одонтограммы Wheeler 2.5D и ликвидация кнопочных заглушек
 - **Файлы:**

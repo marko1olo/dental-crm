@@ -8,11 +8,6 @@
  */
 
 import type { FastifyInstance } from "fastify";
-import {
-	handleGenerateBarcode,
-	handleSterilizationLink,
-	handleUnsealKraftPackage,
-} from "./sterilizationModules/sterilizationKraftHandlers.js";
 import { registerSterilizationLegacyRoutes } from "./sterilizationModules/sterilizationLegacyRoutes.js";
 import {
 	handleCreateDailyTest,
@@ -23,7 +18,6 @@ import {
 	handleGetSterilizationLogs,
 	handlePsoQuickNorm,
 	handleQuickNormCycle,
-	handleScanSterilization,
 	handleSterilizationShiftBatch,
 } from "./sterilizationModules/sterilizationLogHandlers.js";
 import {
@@ -71,12 +65,6 @@ export function registerSanpinSterilizationRoutes(app: FastifyInstance): void {
 	// Ежедневный контроль автоклавов (Bowie-Dick, Вакуум-тест)
 	app.get("/api/sanpin/sterilization/daily-tests", handleGetDailyTests);
 	app.post("/api/sanpin/sterilization/daily-tests", handleCreateDailyTest);
-
-	// Сканирование крафт-пакетов и привязка к визиту
-	app.post("/api/sanpin/sterilization/scan", handleScanSterilization);
-	app.post("/api/sanpin/sterilization/link", handleSterilizationLink);
-	app.post("/api/sanpin/sterilization/generate-barcode", handleGenerateBarcode);
-	app.post("/api/sanpin/sterilization/unseal", handleUnsealKraftPackage);
 
 	// Парк стерилизаторов и автоклавов (оборудование ЦСО)
 	app.get(

@@ -107,6 +107,142 @@ async function applyToothStateMutation(
 				(incomingTime === prevTime && incomingVersion >= prevVersion);
 
 			if (incomingWins) {
+				const prevClinical = parseClinicalDataFromNotes(prev?.notes) as Record<string, unknown> | null;
+				const prevStateRaw = prev?.state ?? null;
+				const prevStateLower = (prevStateRaw ?? "").toLowerCase();
+
+				const isOrthopedicBase =
+					prevStateLower === "crown" ||
+					prevStateLower === "temporary_crown" ||
+					prevStateLower === "planned_crown" ||
+					prevStateLower === "bridge" ||
+					prevStateLower === "bridge_abutment" ||
+					prevStateLower === "implant" ||
+					prevStateLower === "planned_implant" ||
+					prevStateLower === "veneer" ||
+					prevStateLower === "inlay" ||
+					prevStateLower === "onlay" ||
+					prevStateLower === "root_canal_treated" ||
+					Boolean(prevClinical?.hasCrown) ||
+					Boolean(prevClinical?.hasImplant) ||
+					Boolean(prevClinical?.baseState);
+
+				const incomingLower = data.state.toLowerCase();
+				const isPathologyDefect =
+					incomingLower === "caries" ||
+					incomingLower === "pulpitis" ||
+					incomingLower === "periodontitis" ||
+					incomingLower === "wedge" ||
+					incomingLower === "attrition" ||
+					incomingLower === "calculus" ||
+					incomingLower === "crack" ||
+					incomingLower === "fracture" ||
+					incomingLower === "resorption" ||
+					incomingLower.startsWith("mobility") ||
+					incomingLower.startsWith("furcation");
+
+				let effectiveNotes: string | null =
+					serializedClinicalNotes !== undefined
+						? serializedClinicalNotes
+						: (prev?.notes ?? null);
+
+				let historyNewState = data.state;
+				let historyReason = data.clinicalData
+					? "Эндодонтический протокол / обработка каналов"
+					: (data.reason || null);
+
+				if (isOrthopedicBase && isPathologyDefect) {
+					// Наложение сопутствующей патологии на зуб с ортопедическим базисом [CLN-03]
+					const baseStateName =
+						(prevClinical?.baseState as string) ||
+						(prevStateLower === "crown" || prevClinical?.hasCrown
+							? "Crown"
+							: prevStateLower === "implant" || prevClinical?.hasImplant
+								? "Implant"
+								: prevStateLower === "bridge" || prevStateLower === "bridge_abutment"
+									? "Bridge"
+									: prevStateLower === "veneer"
+										? "Veneer"
+										: prevStateLower === "inlay" || prevStateLower === "onlay"
+											? "Inlay"
+											: prevStateLower === "root_canal_treated"
+												? "Root_Canal_Treated"
+												: prevStateRaw || "Crown");
+
+					const existingConditions: string[] = Array.isArray(prevClinical?.conditions)
+						? [...(prevClinical.conditions as string[])]
+						: [];
+					if (!existingConditions.includes(data.state)) {
+						existingConditions.push(data.state);
+					}
+
+					const compositeClinicalData = {
+						...(prevClinical || {}),
+						...(data.clinicalData || {}),
+						baseState: baseStateName,
+						hasCrown:
+							prevStateLower === "crown" ||
+							Boolean(prevClinical?.hasCrown) ||
+							baseStateName === "Crown",
+						hasImplant:
+							prevStateLower === "implant" ||
+							Boolean(prevClinical?.hasImplant) ||
+							baseStateName === "Implant",
+						hasTreatedCanals:
+							prevStateLower === "root_canal_treated" ||
+							Boolean(prevClinical?.hasTreatedCanals),
+						hasSecondaryCaries:
+							incomingLower === "caries"
+								? true
+								: Boolean(prevClinical?.hasSecondaryCaries),
+						condition: incomingLower === "caries" ? "defective" : (prevClinical?.condition || "adequate"),
+						conditions: existingConditions,
+						defectSurfaces: data.surfaces || prevClinical?.defectSurfaces || null,
+						lastPathology: data.state,
+						lastPathologyAt: incomingUpdatedAt.toISOString(),
+					};
+
+					effectiveNotes = JSON.stringify(compositeClinicalData);
+					historyNewState = `${baseStateName} + ${data.state}`;
+					historyReason =
+						data.reason ||
+						`Выявлена сопутствующая патология: ${data.state} на конструкции ${baseStateName} (базис сохранен)`;
+				} else if (
+					!isPathologyDefect &&
+					(incomingLower === "crown" ||
+						incomingLower === "implant" ||
+						incomingLower === "filled" ||
+						incomingLower === "veneer" ||
+						incomingLower === "inlay")
+				) {
+					// Установка новой ортопедической конструкции или пломбы
+					const prevConditions = Array.isArray(prevClinical?.conditions)
+						? (prevClinical.conditions as string[])
+						: [];
+					const cured = [...prevConditions];
+					if (prevStateRaw && isPathologyDefect && !cured.includes(prevStateRaw)) {
+						cured.push(prevStateRaw);
+					}
+
+					const compositeClinicalData = {
+						...(prevClinical || {}),
+						...(data.clinicalData || {}),
+						baseState: data.state,
+						hasCrown: incomingLower === "crown",
+						hasImplant: incomingLower === "implant",
+						hasSecondaryCaries: false,
+						condition: "adequate",
+						conditions: [],
+						curedConditions: cured,
+						restoredAt: incomingUpdatedAt.toISOString(),
+					};
+
+					effectiveNotes = JSON.stringify(compositeClinicalData);
+					historyReason =
+						data.reason ||
+						`Восстановление / ортопедическое лечение (${data.state})`;
+				}
+
 				// 1. Record transition into append-only tooth state history audit log
 				historyToInsert.push({
 					organizationId,
@@ -114,22 +250,15 @@ async function applyToothStateMutation(
 					visitId: data.visitId ?? null,
 					toothNumber,
 					previousState: prev?.state ?? null,
-					newState: data.state,
+					newState: historyNewState,
 					previousSurfaces: prev?.surfaces ?? null,
 					newSurfaces: data.surfaces || null,
 					changedByUserId: actorUserId,
-					reason: data.clinicalData
-						? "Эндодонтический протокол / обработка каналов"
-						: (data.reason || null),
+					reason: historyReason,
 					changedAt: incomingUpdatedAt,
 				});
 
 				teethToDelete.push(toothNumber);
-
-				const effectiveNotes =
-					serializedClinicalNotes !== undefined
-						? serializedClinicalNotes
-						: (prev?.notes ?? null);
 
 				statesToInsert.push({
 					organizationId,
