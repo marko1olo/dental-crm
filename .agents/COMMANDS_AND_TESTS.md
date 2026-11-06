@@ -79,10 +79,14 @@ The project uses `npm` workspaces. Run these commands from the root directory:
 - **Фаззинг формулы FDI и копеек**: [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md)
 - **Жизненный цикл ЭМК, дневников и ПЭП**: [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md)
 - **React 19 & Zustand сторы**: [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md)
+- **Касса 54-ФЗ, сплит и Soft Negative Stock**: [`docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md)
+- **Радиология, DICOM и ЗТЛ наряды**: [`docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md)
+- **Омниканальная телефония, мессенджеры и Outbox**: [`docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md)
 - **ИИ-Копайлот и Workstation-Харнесс**: [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md)
 - **Реестр очищения тестов**: [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)
 
 ### 🎯 Быстрые тестовые команды (время прогона $\le 5$ с):
+- `npx tsx --test apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts` — 17 тестов радиологии (DICOM/RVG), денситометрии HU (шкала Миша D1..D5) и нарядов ЗТЛ VITA
 - `npx tsx --test apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` — 17 тестов ИИ-ассистента и харнесса (ротация ключей, 3 уровня доверия, FDI, откат)
 - `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` — E2E мастер-цикл приёма
 - `npx tsx --test packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` — 10k фаззинг формулы FDI
@@ -91,6 +95,8 @@ The project uses `npm` workspaces. Run these commands from the root directory:
 - `node --import tsx --import ./src/tests/support/poolTeardown.ts --test apps/api/src/tests/concurrency/acidTransactionStress.test.ts` — ACID стресс
 - `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` — ЭМК и ПЭП
 - `npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts` — сторы и гидратация
+- `npx tsx --test apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts` — касса 54-ФЗ без ИНН физлиц, сплит-чекаут (карта+нал+семейный баланс) без float-дрифта, Soft Negative Stock склада
+- `npx tsx --test apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts` — 20 тестов омниканальной телефонии, транзакционного Outbox, тихого режима врача (Мандат 8v) и вебхуков мессенджеров (3.8 с)
 - `npm run test:infra` — проверка базовой тестовой инфраструктуры
 
 ---

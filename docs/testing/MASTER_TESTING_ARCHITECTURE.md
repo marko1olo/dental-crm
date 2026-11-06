@@ -33,6 +33,9 @@ graph TD
 | **Фаззинг формулы FDI и копеек** | [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md) | `packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` | 10 000 мутаций ввода FDI (0 крашей), анатомические поверхности Wheeler, 10 000 сплитов и скидок Мандата 8e (`sum === totalKopecks`). |
 | **Жизненный цикл ЭМК и дневников** | [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md) | `apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` | Дневники SOAP, автосохранение черновиков (Мандат 8e), ПЭП криптохеш SHA-256, аудит «Исправленному верить», печать A4. |
 | **Планы лечения, 3 тарифа и ПЭП** | [`docs/testing/TREATMENT_PLANS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TREATMENT_PLANS_TEST_REGISTRY.md) | `apps/api/src/tests/routes/treatmentPlanStudioAndPep.test.ts`<br>`treatmentPlanMultiTierAndSigning.test.ts` | 3 тарифа (Эконом/Оптимум/Премиум), скрытие микро-расходников, копеечная математика рассрочки 0%, вычет 13% НДФЛ, ПЭП SHA-256, 30-дней без блокировок (Мандат 8e). |
+| **Касса 54-ФЗ, сплит и склад** | [`docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md) | `apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts` | 54-ФЗ без ИНН физлиц (Мандат 8n), сплит (карта+нал+депозит) без float-дрифта, Soft Negative Stock при 0 остатке (Мандат 8aa), 100% гарантийный акт. |
+| **Радиология, DICOM и ЗТЛ наряды** | [`docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md) | `apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts` | Быстрый визиограф <50мс, DICOM парсинг, калибровка линейки (35/40 мкм), плотность HU (Misch D1-D5), ЗТЛ наряды-заказы FDI, шкала VITA, копейки BigInt. |
+| **Омниканальная телефония и Outbox** | [`docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md) | `apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts`<br>`apps/api/src/services/telephony/__tests__/omnichannelOutboxAndTelephony.test.ts` | Транзакционный Outbox, тихий режим софтфона врача (Мандат 8v), экспоненциальный backoff, DLQ, Meta HMAC-SHA256, Telegram 24h, маскирование 152-ФЗ, SSRF защита. |
 | **React 19 & Zustand сторы** | [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md) | `appStoreBehavioral.test.ts`<br>`clinicalWorkflowStateHydration.test.tsx` | Изоляция сессий пациентов (ноль утечек данных), 0-F5 реактивная гидратация, Apple HIG $\ge 44\times 44$px. |
 | **Расписание и быстрая запись (3 сек)** | [`docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md) | `redTeamSchedule3SecondBookingInquisition.test.tsx`<br>`quickBookingSoloDoctor.test.tsx` | 3-сек запись без ассистента (Мандат 8n), `disabled={false}`, UUIDv7 Idempotency-Key, Apple HIG Agenda View. |
 | **ИИ-Копайлот и Workstation-Харнесс** | [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md) | `apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` | 3 уровня доверия (cautious/supervised/autonomous), ротация ключей и 429 cooldown, чистый клинический язык (Мандат 8x), изоляция Web vs Desktop. |
@@ -60,6 +63,7 @@ graph TD
     - `warehouseSoftOverdraftAndTechCardInquisitor.test.ts`, `warehouseStockEndpoint.test.ts` — автоматическое фоновое списание по техкартам с мягким овердрафтом (Soft Negative Stock, Мандат 8aa).
     - `splitPaymentTreatmentConsumablesE2E.test.ts` — одновременный чекаут и списание расходников.
     - `telephonyCallerLookup.test.ts`, `telephonyCallLifecycle.test.ts` — софтфон без блокирующих модалок для врача (Мандат 8v).
+    - `omnichannelTelephonyAndOutbox.test.ts` — 20 комплексных тестов коммуникационного контура: транзакционный Outbox, тихий режим софтфона врача (`doctor` / `VisitView` ➔ `null`), экспоненциальный backoff с монотонным jitter, DLQ на 5-й попытке, Meta WhatsApp HMAC-SHA256 и Telegram вебхуки, маскирование номеров 152-ФЗ, SSRF защита аудиозаписей.
   * **Высококонкурентные стресс-тесты (`apps/api/src/tests/concurrency/`)**:
     - `acidTransactionStress.test.ts` — 20 параллельных потоков на слот расписания, дебет семейного депозита с `SELECT ... FOR UPDATE`, дедлок-иммунитет склада через сортировку `ORDER BY id ASC`.
     - `billingDoubleSpendDefense.test.ts` — защита от двойного списания при быстрых кликах.
@@ -69,6 +73,8 @@ graph TD
     - `idempotencyAndOfflineStorm.test.ts` — 20 одновременных POST с одинаковым `Idempotency-Key` (UUIDv7) выполняются ровно 1 раз (1x 201 + 19x 409), офлайн FIFO очередь, CRDT LWW одонтограммы.
   * **Клинический жизненный цикл ЭМК (`apps/api/src/tests/clinical/`)**:
     - `clinicalEmrLifecycle.test.ts` — валидация номеров FDI постоянного (11..48) и молочного (51..85) прикуса, связывание с МКБ-10, соматическая безопасность (аллергии, кардиориски), debounced autosave черновика (Мандат 8e), ПЭП подпись с SHA-256 хешем и ревизии «Исправленному верить».
+  * **Радиология, визиография (RVG/DICOM PACS) и зуботехническая лаборатория ЗТЛ (`apps/api/src/tests/routes/`)**:
+    - `radiologyAndLabOrdersLifecycle.test.ts` — парсинг DICOM заголовков (<50мс), 1000 итераций бенчмарк (<0.05мс), эндодонтическая линейка (35/40 мкм), плотность кости HU (Misch D1..D5), протоколы совмещения КЛКТ без эмодзи (Форма 043/у), наряды ЗТЛ по шкале VITA (A1..D4, BL1..BL4), этапы изготовления и копейки BigInt.
   * **Планы лечения, 3 тарифа и электронная подпись ПЭП (`apps/api/src/tests/routes/`, `apps/api/src/services/`)**:
     - `treatmentPlanStudioAndPep.test.ts` — интеграционный CRUD планов, 3-тарифное сравнение, скрытие микро-расходников, точная копеечная математика (`amountKopecks`), 30-дневная автономия врача (Мандат 8e), SMS OTP ПЭП подписание с SHA-256 хешем и валидация статусов.
     - `treatmentPlanMultiTierAndSigning.test.ts` — доменная математика тарифов, расчет 13% налогового вычета НДФЛ (КНД 1151156, коды 01 и 02), SHA-256 Frozen Snapshot и генерация бланка A4 в 1 клик.
@@ -148,6 +154,17 @@ npm run test:infra
 # 10. Планы лечения, 3 тарифа, копеечная математика и ПЭП (5.3 с):
 npx tsx --test apps/api/src/tests/routes/treatmentPlanStudioAndPep.test.ts
 npx tsx --test apps/api/src/services/treatmentPlan/__tests__/treatmentPlanMultiTierAndSigning.test.ts
+
+# 11. Радиология (DICOM/RVG PACS), шкала Миша D1..D5 и наряды ЗТЛ VITA (3.97 с):
+npx tsx --test apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts
+
+# 12. Касса 54-ФЗ, мульти-тендерный сплит и Soft Negative Stock склада (1.17 с):
+npx tsx --test apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts
+npx tsx --test apps/api/src/services/billing/__tests__/cashboxSplitAndWarehouseDeduction.test.ts
+
+# 13. Омниканальная телефония, мессенджеры и транзакционный Outbox (3.8 с):
+npx tsx --test apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts
+npx tsx --test apps/api/src/services/telephony/__tests__/omnichannelOutboxAndTelephony.test.ts
 ```
 
 ### Комплексные гейты монорепозитория (строго единолично L1 Оркестратор):
