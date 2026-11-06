@@ -388,6 +388,15 @@ that ships without them is a tenant leak, and 0160 is the receipt for what that 
 
 Начиная с ноября 2026 в контур бэкенда внедрен выделенный сьют высококонкурентных стресс-тестов на реальном PostgreSQL 18 (`apps/api/src/tests/concurrency/`) без моков изоляции данных:
 
+0. **ACID Multi-Domain & Deadlock Stress Suite** (`acidTransactionStress.test.ts`):
+   * Комплексный 20-поточный стресс-тест транзакционной надежности ядра:
+     - 20 параллельных транзакций на слот расписания: ровно 1 успешный `201 Created`, ровно 19 отказов `409 Conflict` со структурированным предложением альтернативных окон (`suggestedSlots`), 0 дублей в `appointments`.
+     - 15 параллельных списаний по 3 000 ₽ с семейного баланса 10 000 ₽: ровно 3 успешных списания, ровно 12 отказов `402 Insufficient Funds`, остаток в БД строго 1 000.00 ₽ (100 000 копеек), подтверждая `FOR UPDATE` блокировку.
+     - Ликвидация взаимных блокировок (Deadlock Immunity): одновременное списание нескольких материалов в противоположных порядках (`[A, B, C]` vs `[C, B, A]`) с сортировкой `.orderBy(asc(inventoryItems.id))` исключает ошибки `40P01 deadlock detected`.
+     - Чистота отката транзакций (Rollback Cleanliness): искусственный сбой посреди создания плана лечения/сметы откатывает 100% изменений, оставляя ровно 0 сиротских строк в `treatment_plans`, `treatment_plan_stages`, `treatment_plan_items_new`.
+     - Безопасность пула соединений: `allowExitOnIdle: true` и `endPool()` предотвращают зависание Node.js test runner.
+   * Детальный реестр зафиксирован в [`docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md).
+
 1. **Schedule Slot Lock & Anti-Double-Booking Defense** (`scheduleSlotLockConcurrency.test.ts`):
    * Эмуляция 15 одновременных параллельных запросов (`Promise.all`) на бронирование одного временного слота у одного врача, в одном кресле, для одного пациента или с одним ассистентом.
    * Ровно **1 запрос** возвращает `201 Created`, ровно **14 запросов** детерминированно получают `409 Conflict` (`AppointmentCreateRejected`, `reason: resource_overlap`).

@@ -2,7 +2,7 @@
  * inventoryItemLocker.ts — Locks inventory items in sorted UUID order and prepares ResolvedItemEntry.
  */
 
-import { and, eq, inArray } from "drizzle-orm";
+import { and, asc, eq, inArray } from "drizzle-orm";
 import { inventoryItems } from "../../../db/schema.js";
 import type { DbExecutor } from "../types.js";
 import type { AggregatedRawMaterial } from "./inventoryItemMatcher.js";
@@ -29,6 +29,7 @@ export async function lockAndAggregateInventoryItems(
 				inArray(inventoryItems.id, distinctResolvedUuids),
 			),
 		)
+		.orderBy(asc(inventoryItems.id))
 		.for("update");
 
 	const lockedById = new Map(lockedRows.map((row) => [row.id, row]));
