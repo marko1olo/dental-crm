@@ -69,7 +69,7 @@ export const InboundWaybillFooter: React.FC<InboundWaybillFooterProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					disabled={isPosting}
+					aria-busy={isPosting}
 					className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-[var(--ink)] text-xs font-semibold transition cursor-pointer"
 				>
 					Отмена
@@ -78,8 +78,12 @@ export const InboundWaybillFooter: React.FC<InboundWaybillFooterProps> = ({
 				{/* Primary CTA: ровно 1 по Мандату 8am */}
 				<button
 					type="button"
-					onClick={onPostWaybill}
-					disabled={isPosting}
+					onClick={() => {
+						if (!isPosting) {
+							onPostWaybill();
+						}
+					}}
+					aria-busy={isPosting}
 					className="h-11 sm:h-9 min-h-[44px] sm:min-h-[36px] px-4 rounded-xl bg-[var(--primary)] text-white hover:brightness-110 active:scale-95 font-semibold text-xs sm:text-sm inline-flex items-center gap-1.5 shadow-xs transition cursor-pointer"
 					data-testid="btn-post-inbound-waybill"
 				>

@@ -66,10 +66,10 @@ export const InventoryStockAdjustForm: React.FC<InventoryStockAdjustFormProps> =
 
 			<button
 				type="submit"
-				disabled={isAdjusting}
+				aria-busy={isAdjusting}
 				className={`h-9 rounded-lg text-xs font-bold text-white cursor-pointer transition-all ${
 					adjustType === "in" ? "bg-[var(--teal)]" : "bg-rose-600 hover:bg-rose-700"
-				} disabled:opacity-50`}
+				}`}
 			>
 				{isAdjusting
 					? "Сохраняем..."

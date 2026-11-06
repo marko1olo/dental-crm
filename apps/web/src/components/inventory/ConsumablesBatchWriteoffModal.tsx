@@ -116,7 +116,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 			className="fixed inset-0 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs overflow-y-auto animate-in fade-in duration-150"
 			role="dialog"
 			aria-modal="true"
-			data-testid="consumables-batch-writeoff-modal"
+			data-testid={isClinicalMode ? "clinical-writeoff-modal" : "consumables-batch-writeoff-modal"}
 			data-cy="clinical-writeoff-modal"
 			onClick={(e) => {
 				if (e.target === e.currentTarget && !isSubmitting) onClose();
@@ -142,7 +142,7 @@ export const ConsumablesBatchWriteoffModal: React.FC<ConsumablesBatchWriteoffMod
 									{isClinicalMode ? "Клиническое списание материалов (Расходные материалы приёма)" : "Списание расходников за смену"}
 								</h3>
 								<span className="px-2 py-0.5 rounded-full text-[11px] font-semibold bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] border border-[var(--teal,#0d9488)]/30">
-									1 клик по техкартам
+									{isClinicalMode ? "Норма расхода (1 клик по техкартам)" : "1 клик по техкартам"}
 								</span>
 							</div>
 							<p className="text-xs text-[var(--muted,#64748b)]">

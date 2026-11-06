@@ -33,7 +33,6 @@ export const InboundWaybillHeader: React.FC<InboundWaybillHeaderProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					disabled={isPosting}
 					className="w-10 h-10 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line)]/10 transition cursor-pointer"
 					aria-label="Закрыть окно"
 				>

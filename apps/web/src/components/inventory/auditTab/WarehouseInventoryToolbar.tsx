@@ -104,8 +104,12 @@ export const WarehouseInventoryToolbar: React.FC<WarehouseInventoryToolbarProps>
 
 				<button
 					type="button"
-					onClick={onApplyAuditDoc}
-					disabled={isApplying}
+					onClick={() => {
+						if (!isApplying) {
+							onApplyAuditDoc();
+						}
+					}}
+					aria-busy={isApplying}
 					className="primary-button h-8 min-h-[32px] px-3 rounded-xl bg-[var(--primary)] text-white font-semibold text-xs hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 shadow-xs cursor-pointer shrink-0 whitespace-nowrap"
 					data-testid="btn-apply-audit"
 				>

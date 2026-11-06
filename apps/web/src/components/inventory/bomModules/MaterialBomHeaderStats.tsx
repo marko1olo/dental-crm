@@ -50,8 +50,12 @@ export function MaterialBomHeaderStats({
 					<button
 						type="button"
 						className="material-boms-btn material-boms-btn-secondary"
-						onClick={onRefresh}
-						disabled={isLoading}
+						onClick={() => {
+							if (!isLoading) {
+								onRefresh();
+							}
+						}}
+						aria-busy={isLoading}
 						title="Обновить данные"
 					>
 						<RefreshCw size={16} className={isLoading ? "animate-spin" : ""} />
@@ -61,8 +65,12 @@ export function MaterialBomHeaderStats({
 					<button
 						type="button"
 						className="material-boms-btn material-boms-btn-secondary"
-						onClick={onSeedDefaults}
-						disabled={isSeeding}
+						onClick={() => {
+							if (!isSeeding) {
+								onSeedDefaults();
+							}
+						}}
+						aria-busy={isSeeding}
 						title="Загрузить типовые клинические нормы расхода"
 					>
 						<Sparkles size={16} />

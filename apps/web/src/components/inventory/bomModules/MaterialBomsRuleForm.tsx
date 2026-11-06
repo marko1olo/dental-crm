@@ -72,7 +72,7 @@ export const MaterialBomsRuleForm: React.FC<MaterialBomsRuleFormProps> = ({
 				<button
 					type="submit"
 					className="material-boms-btn material-boms-btn-primary"
-					disabled={isSaving}
+					aria-busy={isSaving}
 				>
 					{isSaving ? "Сохраняем..." : "Сохранить норму"}
 				</button>

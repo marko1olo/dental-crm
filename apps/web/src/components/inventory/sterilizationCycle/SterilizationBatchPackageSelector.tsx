@@ -46,10 +46,13 @@ export function SterilizationBatchPackageSelector({
 						<div className="flex items-center gap-1.5 shrink-0">
 							<button
 								type="button"
-								onClick={() => onUpdateCount(pkg.id, -1)}
-								disabled={pkg.count <= 0}
+								onClick={() => {
+									if (pkg.count > 0) {
+										onUpdateCount(pkg.id, -1);
+									}
+								}}
 								aria-label={`Уменьшить ${pkg.name}`}
-								className="w-9 h-9 min-w-[36px] min-h-[36px] sm:w-8 sm:h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] disabled:opacity-40 disabled:cursor-not-allowed flex items-center justify-center transition-colors cursor-pointer touch-manipulation"
+								className="w-9 h-9 min-w-[36px] min-h-[36px] sm:w-8 sm:h-8 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] flex items-center justify-center transition-colors cursor-pointer touch-manipulation"
 							>
 								<Minus size={14} />
 							</button>

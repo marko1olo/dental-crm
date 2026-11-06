@@ -1,4 +1,4 @@
-import { CheckCircle2, Download, Printer } from "lucide-react";
+import { CheckCircle2, Download, Loader2, Printer } from "lucide-react";
 import type React from "react";
 import { type AcceptanceWaybillDocument, formatRubCurrency } from "../acceptanceWaybillsEngine.js";
 
@@ -74,12 +74,16 @@ export const AcceptanceWaybillsFooter: React.FC<AcceptanceWaybillsFooterProps> =
 				<button
 					type="button"
 					className="acceptance-btn-primary"
-					onClick={onPostWaybill}
-					disabled={isPosting}
+					onClick={() => {
+						if (!isPosting) {
+							onPostWaybill();
+						}
+					}}
+					aria-busy={isPosting}
 					data-testid="btn-post-acceptance-waybill"
 					aria-label="Оприходовать накладную"
 				>
-					<CheckCircle2 size={16} />
+					{isPosting ? <Loader2 size={16} className="animate-spin" /> : <CheckCircle2 size={16} />}
 					<span>{isPosting ? "Оприходование..." : "✓ Оприходовать накладную"}</span>
 				</button>
 			</div>

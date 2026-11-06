@@ -111,10 +111,18 @@ export const InboundWaybillItemsTable: React.FC<InboundWaybillItemsTableProps> =
 								</div>
 								<button
 									type="button"
-									onClick={() => onRemoveLine(line.id)}
-									disabled={lines.length <= 1}
-									className="p-1.5 text-[var(--muted)] hover:text-red-500 disabled:opacity-30 rounded-lg"
-									aria-label="Удалить строку"
+									onClick={() => {
+										if (lines.length > 1) {
+											onRemoveLine(line.id);
+										} else {
+											onUpdateLine(line.id, "name", "");
+											onUpdateLine(line.id, "quantity", 1);
+											onUpdateLine(line.id, "unitCostRub", 0);
+										}
+									}}
+									className="p-1.5 text-[var(--muted)] hover:text-red-500 rounded-lg transition-colors cursor-pointer"
+									aria-label="Удалить или очистить строку"
+									title={lines.length <= 1 ? "Очистить строку" : "Удалить строку"}
 								>
 									<Trash2 size={16} />
 								</button>

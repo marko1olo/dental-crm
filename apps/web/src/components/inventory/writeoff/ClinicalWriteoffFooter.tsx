@@ -76,8 +76,12 @@ export const ClinicalWriteoffFooter: React.FC<ClinicalWriteoffFooterProps> = ({
 							? "cw-btn-secondary opacity-60"
 							: "cw-btn-primary"
 					}`}
-					onClick={onConfirm}
-					disabled={isDeducting}
+					onClick={() => {
+						if (!isDeducting) {
+							onConfirm();
+						}
+					}}
+					aria-busy={isDeducting}
 					title={
 						!isValid
 							? `Внимание: ${validationError || "Требуется заполнить обязательные поля"}`

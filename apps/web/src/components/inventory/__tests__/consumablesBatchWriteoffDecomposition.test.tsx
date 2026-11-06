@@ -80,7 +80,7 @@ describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 
 		assert.ok(html.includes("Отмена"), "Кнопка отмены наличествует");
 	});
 
-	it("5. BatchWriteoffFooterActions: при isSubmitting = true кнопка блокируется и показывает спиннер", () => {
+	it("5. BatchWriteoffFooterActions: при isSubmitting = true кнопка показывает спиннер и aria-busy (Мандат 8e: ноль disabled)", () => {
 		const html = renderToString(
 			<BatchWriteoffFooterActions
 				isSubmitting={true}
@@ -90,7 +90,8 @@ describe("Consumables Batch Writeoff Decomposed Modules Suite (Mandates 8e, 8n, 
 			/>,
 		);
 
-		assert.ok(html.includes("disabled"), "При отправке кнопка блокируется от повторных кликов");
+		assert.ok(!html.includes("disabled"), "Кнопка НЕ должна иметь атрибут disabled даже при отправке (Мандат 8e)");
+		assert.ok(html.includes("aria-busy=\"true\""), "При отправке кнопка имеет статус aria-busy");
 		assert.ok(html.includes("Списание расходников..."), "Текст состояния отправки");
 	});
 });

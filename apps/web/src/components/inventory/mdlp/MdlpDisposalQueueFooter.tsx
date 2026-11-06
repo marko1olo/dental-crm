@@ -26,7 +26,6 @@ export const MdlpDisposalQueueFooter: React.FC<
 					className="mdlp-btn mdlp-btn-secondary min-h-[44px]"
 					style={{ minHeight: "44px" }}
 					onClick={onOpenActModal}
-					disabled={false}
 					title="Сформировать и утвердить Акт списания карпул (бумажный журнал учтён, старшая медсестра опциональна)"
 					data-testid="print-disposal-act-btn"
 				>
@@ -59,8 +58,12 @@ export const MdlpDisposalQueueFooter: React.FC<
 					type="button"
 					className="mdlp-btn mdlp-btn-primary min-h-[44px]"
 					style={{ minHeight: "44px" }}
-					onClick={onConfirmDisposal}
-					disabled={false}
+					onClick={() => {
+						if (!isDisposing) {
+							onConfirmDisposal();
+						}
+					}}
+					aria-busy={isDisposing}
 					data-testid="confirm-disposal-btn"
 				>
 					{isDisposing ? (

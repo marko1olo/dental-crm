@@ -1,4 +1,4 @@
-import { Check, Syringe } from "lucide-react";
+import { Check, Loader2, Syringe } from "lucide-react";
 import React from "react";
 import { money } from "../../../AppHelpers.js";
 import type { DeductionTotals } from "./deductionModalTypes.js";
@@ -52,8 +52,12 @@ export const DeductionModalFooter: React.FC<DeductionModalFooterProps> = ({
 				</button>
 				<button
 					type="button"
-					onClick={onConfirm}
-					disabled={isSubmitting}
+					onClick={() => {
+						if (!isSubmitting) {
+							onConfirm();
+						}
+					}}
+					aria-busy={isSubmitting}
 					className={`h-9 min-h-[36px] px-4 rounded-xl font-bold text-xs shadow-md flex items-center justify-center gap-1.5 cursor-pointer transition-all active:scale-98 whitespace-nowrap text-white border border-transparent ${
 						totals.hasOverdraft
 							? "bg-[var(--warning)] hover:brightness-105"
@@ -66,7 +70,11 @@ export const DeductionModalFooter: React.FC<DeductionModalFooterProps> = ({
 							: "Подтвердить списание расходных материалов по протоколу"
 					}
 				>
-					<Check size={16} className="shrink-0" />
+					{isSubmitting ? (
+						<Loader2 size={16} className="animate-spin shrink-0" />
+					) : (
+						<Check size={16} className="shrink-0" />
+					)}
 					<span className="whitespace-nowrap">
 						{isSubmitting
 							? "Списание..."

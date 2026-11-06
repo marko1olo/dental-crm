@@ -86,7 +86,7 @@ export const MobileInboundFormBody: React.FC<MobileInboundFormBodyProps> = ({
 			<div className="mobile-inventory-drawer-footer">
 				<button
 					type="submit"
-					disabled={isSubmittingInbound}
+					aria-busy={isSubmittingInbound}
 					className="mobile-inventory-drawer-submit"
 					data-testid="drawer-btn-submit"
 				>

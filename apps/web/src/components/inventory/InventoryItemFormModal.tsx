@@ -173,14 +173,13 @@ export const InventoryItemFormModal: React.FC<InventoryItemFormModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							disabled={isSaving}
-							className="secondary-button px-4 py-2 text-xs font-medium"
+							className="secondary-button px-4 py-2 text-xs font-medium cursor-pointer"
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
-							disabled={isSaving}
+							aria-busy={isSaving}
 							className="primary-button px-5 py-2 rounded-lg text-xs font-bold cursor-pointer transition-all flex items-center justify-center gap-1.5 shadow-xs"
 							style={{ background: "var(--teal, #0d9488)", color: "#ffffff", height: "36px" }}
 							data-testid="btn-save-inventory-item"

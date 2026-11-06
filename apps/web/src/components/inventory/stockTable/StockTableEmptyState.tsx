@@ -37,8 +37,12 @@ export const StockTableEmptyState: React.FC<StockTableEmptyStateProps> = ({
 						{onRetry && (
 							<button
 								type="button"
-								onClick={onRetry}
-								disabled={isLoading}
+								onClick={() => {
+									if (!isLoading) {
+										onRetry();
+									}
+								}}
+								aria-busy={isLoading}
 								className="secondary-button h-8 px-4 rounded-lg text-xs font-bold inline-flex items-center justify-center cursor-pointer"
 								style={{ height: 32, minHeight: 32, borderRadius: 8 }}
 							>

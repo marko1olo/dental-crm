@@ -97,8 +97,13 @@ export const MobileInventoryItemCard: React.FC<MobileInventoryItemCardProps> = (
 			<button
 				type="button"
 				className="mobile-inventory-quick-deduct-btn"
-				disabled={isDeducting}
-				onClick={(e) => onQuickDeduct(e, item)}
+				aria-busy={isDeducting}
+				onClick={(e) => {
+					e.stopPropagation();
+					if (!isDeducting) {
+						onQuickDeduct(e, item);
+					}
+				}}
 				aria-label={`Списать 1 единицу ${item.name}`}
 				title={`Быстро списать 1 ${item.unit || "шт."} прямо у кресла`}
 				data-testid={`btn-quick-deduct-${item.id}`}

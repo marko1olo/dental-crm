@@ -71,8 +71,12 @@ export function MaterialBomListTable({
 					<button
 						type="button"
 						className="material-boms-btn material-boms-btn-primary"
-						onClick={onSeedDefaults}
-						disabled={isSeeding}
+						onClick={() => {
+							if (!isSeeding) {
+								onSeedDefaults();
+							}
+						}}
+						aria-busy={isSeeding}
 					>
 						<Sparkles size={16} />
 						Загрузить типовые нормы расхода

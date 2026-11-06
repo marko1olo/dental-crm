@@ -47,7 +47,7 @@ export const InboundInvoiceTotalsFooter: React.FC<InboundInvoiceTotalsFooterProp
 
 				<button
 					type="submit"
-					disabled={isPosting}
+					aria-busy={isPosting}
 					className="primary-button h-9 px-4 text-xs font-bold inline-flex items-center gap-1.5 rounded-xl shadow-xs cursor-pointer"
 					data-testid="btn-post-inbound-invoice"
 				>

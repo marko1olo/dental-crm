@@ -35,10 +35,14 @@ export const ShiftBatchPackageCard: React.FC<ShiftBatchPackageCardProps> = ({
 			</div>
 			<button
 				type="button"
-				onClick={() => onPackageClick(packageId)}
-				disabled={isSubmitting}
+				onClick={() => {
+					if (!isSubmitting) {
+						onPackageClick(packageId);
+					}
+				}}
+				aria-busy={isSubmitting}
 				data-testid={testId}
-				className={`${buttonClassName} h-11 min-h-[44px] px-4 rounded-xl border active:scale-98 transition-all font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs disabled:opacity-50`}
+				className={`${buttonClassName} h-11 min-h-[44px] px-4 rounded-xl border active:scale-98 transition-all font-bold text-xs flex items-center justify-center gap-2 cursor-pointer shadow-xs`}
 			>
 				{icon}
 				<span>{isSubmitting ? "Списание..." : buttonLabel}</span>
