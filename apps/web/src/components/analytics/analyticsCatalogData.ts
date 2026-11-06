@@ -4,7 +4,7 @@
  * ЕДИНЫЙ SSOT АНАЛИТИКИ КЛИНИКИ, ВЫРУЧКИ И ДАШБОРДА РУКОВОДИТЕЛЯ (Мандат 8n & Мандат 8ap).
  *
  * 3 КЛЮЧЕВЫХ СТОЛПА УПРАВЛЕНЧЕСКОГО КОНТРОЛЯ:
- * 1. Выручка и Касса 54-ФЗ (Наличные, Безнал, СБП, Аванс; Средний чек; точные целочисленные копейки).
+ * 1. Выручка и Касса (Наличные, Безнал, СБП, Аванс; Средний чек; точные целочисленные копейки).
  * 2. Загрузка кресел (% занятости кабинетов, норма 65–85%, часы приёма / доступные часы).
  * 3. Эффективность врачей и Повторная явка (Recall %, средняя длительность визита, выручка).
  *
@@ -161,7 +161,7 @@ export function createEmptyAnalyticsState(period: AnalyticsPeriod = "month"): Cl
 	const methods: PaymentMethodItem[] = [
 		{ id: "card", label: "Банковские карты", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
 		{ id: "sbp", label: "СБП QR-код", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
-		{ id: "cash", label: "Наличные (касса 54-ФЗ)", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
+		{ id: "cash", label: "Наличные (касса)", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
 		{ id: "deposit", label: "Аванс / Депозит", amountKopecks: 0, percent: 0, formatted: "0 ₽" },
 	];
 
@@ -230,7 +230,7 @@ export function createDeterministicAnalyticsFallback(period: AnalyticsPeriod): C
 	const methods: PaymentMethodItem[] = [
 		{ id: "card", label: "Банковские карты", amountKopecks: cardKop, percent: 48, formatted: formatKopecksToRubles(cardKop) },
 		{ id: "sbp", label: "СБП QR-код", amountKopecks: sbpKop, percent: 25, formatted: formatKopecksToRubles(sbpKop) },
-		{ id: "cash", label: "Наличные (касса 54-ФЗ)", amountKopecks: cashKop, percent: 22, formatted: formatKopecksToRubles(cashKop) },
+		{ id: "cash", label: "Наличные (касса)", amountKopecks: cashKop, percent: 22, formatted: formatKopecksToRubles(cashKop) },
 		{ id: "deposit", label: "Аванс / Депозит", amountKopecks: depositKop, percent: 5, formatted: formatKopecksToRubles(depositKop) },
 	];
 
@@ -410,7 +410,7 @@ export async function fetchClinicAnalyticsSSOT(
 			},
 			{
 				id: "cash",
-				label: "Наличные (касса 54-ФЗ)",
+				label: "Наличные (касса)",
 				amountKopecks: cashKop,
 				percent: sumKop > 0 ? Math.round((cashKop / sumKop) * 100) : 0,
 				formatted: formatKopecksToRubles(cashKop),
@@ -521,7 +521,7 @@ export function exportAnalyticsToCsv(data: ClinicAnalyticsSSOT): void {
 		`"Завершенных приёмов:",${data.completedVisitsCount}`,
 		`"Неявок (No-Show):",${data.noShowVisitsCount}`,
 		"",
-		`"СТРУКТУРА ОПЛАТ (КАССА 54-ФЗ)"`,
+		`"СТРУКТУРА ОПЛАТ (КАССА)"`,
 		`"Способ оплаты","Сумма (₽)","Доля (%)"`,
 		...data.paymentBreakdown.methods.map(
 			(m) => `"${m.label}",${Math.round(m.amountKopecks / 100)},${m.percent}`,

@@ -307,7 +307,7 @@ export function recordInstallmentPayment(
 	// Тег 1214: Признак способа расчета (2 — предоплата, 4 — полный расчет при закрытии последнего взноса)
 	const isLastPayment = input.plan.schedule.filter((s, idx) => idx !== targetItemIndex && s.paidKopecks < s.amountKopecks).length === 0 && isFullyPaid;
 	const tag1214 = isLastPayment ? 4 : 2;
-	const tag1214NameRu = isLastPayment ? "Полный расчет (54-ФЗ)" : "Аванс / Взнос по рассрочке (54-ФЗ)";
+	const tag1214NameRu = isLastPayment ? "Полный расчет" : "Аванс / Взнос по рассрочке";
 
 	const qrPayload = `t=${currentIso.replace(/[-:]/g, "").slice(0, 15)}&s=${(payAmountKop / 100).toFixed(2)}&fn=999907890001&i=${docNum}&fp=${fpd}&n=1`;
 

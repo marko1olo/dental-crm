@@ -2,7 +2,7 @@
  * apps/web/src/components/analytics/studio/ExecutiveAnalyticsKpiGrid.tsx
  *
  * Сетка ключевых показателей эффективности клиники (KPI)
- * (Мандат 8n: Малая клиника 1–3 кресла, честная касса 54-ФЗ, загрузка кресел, Recall >= 70%).
+ * (Мандат 8n: Малая клиника 1–3 кресла, честная касса, загрузка кресел, Recall >= 70%).
  * (Мандат 8e: Автономия врача, отсутствие искусственных ограничений).
  */
 
@@ -40,12 +40,12 @@ export const ExecutiveAnalyticsKpiGrid: React.FC<ExecutiveAnalyticsKpiGridProps>
 			className="grid grid-cols-1 md:grid-cols-3 gap-3"
 			aria-label="Ключевые показатели эффективности"
 		>
-			{/* KPI 1: Выручка клиники (36px bold, крупная сумма, касса 54-ФЗ) */}
+			{/* KPI 1: Выручка клиники (36px bold, крупная сумма, касса) */}
 			<article className="studio-kpi-card" data-testid="kpi-card-revenue">
 				<div>
 					<div className="flex items-center justify-between gap-2 mb-1.5">
 						<span className="text-xs font-semibold text-[var(--muted)] uppercase tracking-wider">
-							Выручка кассы (54-ФЗ)
+							Выручка кассы
 						</span>
 						<span className="text-[11px] font-medium px-2 py-0.5 rounded-md bg-[var(--teal)]/10 text-[var(--teal)]">
 							{data.periodLabel}

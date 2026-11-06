@@ -390,7 +390,7 @@ export function validatePlanToInvoice(
 			discrepancyType = "INVALID_PRICE";
 			severity = "BLOCKED";
 			statusDesc = isExcessiveDiscount
-				? `Скидка (${formatKopecksRu(planDiscount)}) превышает 100% стоимости услуги (${formatKopecksRu(planGross)}). Предоставление скидки сверх стоимости запрещено (54-ФЗ / ПП РФ №659)`
+				? `Скидка (${formatKopecksRu(planDiscount)}) превышает 100% стоимости услуги (${formatKopecksRu(planGross)}). Предоставление скидки сверх стоимости услуги невозможно.`
 				: "Нулевая или недействительная цена услуги в смете или прейскуранте";
 			suggestedResolution = "UPDATE_TO_CURRENT_PRICE";
 			requiresAdminOverride = true;

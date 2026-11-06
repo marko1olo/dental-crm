@@ -48,7 +48,7 @@ export const ExecutiveAnalyticsStudioFooter: React.FC<ExecutiveAnalyticsStudioFo
 				</button>
 
 				<span className="text-[11px] text-[var(--muted)] truncate hidden md:inline">
-					Данные синхронизированы с кассой 54-ФЗ
+					Данные синхронизированы с кассой
 				</span>
 			</div>
 

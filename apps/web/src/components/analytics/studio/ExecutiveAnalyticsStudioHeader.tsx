@@ -46,7 +46,7 @@ export const ExecutiveAnalyticsStudioHeader: React.FC<ExecutiveAnalyticsStudioHe
 						</h1>
 						<span className="hidden md:inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-full bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--muted)] shrink-0">
 							<span className="w-1.5 h-1.5 rounded-full bg-[var(--teal)]" />
-							Касса 54-ФЗ
+							Касса клиники
 						</span>
 					</div>
 				</div>

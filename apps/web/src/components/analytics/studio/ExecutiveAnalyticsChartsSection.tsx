@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/analytics/studio/ExecutiveAnalyticsChartsSection.tsx
  *
- * Секции аналитики: Структура оплат (54-ФЗ), Услуги по направлениям, Рейтинг врачей и Когорты Recall
+ * Секции аналитики: Структура оплат (Касса), Услуги по направлениям, Рейтинг врачей и Когорты Recall
  * (Мандат 8e: Автономия врача, Мандат 8n: Малая клиника, честные расчеты).
  */
 
@@ -33,12 +33,12 @@ export const ExecutiveAnalyticsChartsSection: React.FC<ExecutiveAnalyticsChartsS
 		<div className="space-y-4">
 			{/* 2 Секции: Способы оплаты кассы & Рейтинг врачей */}
 			<div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-				{/* Секция 1: Структура оплат кассы (54-ФЗ) */}
+				{/* Секция 1: Структура оплат кассы */}
 				<div className="p-3.5 sm:p-4 rounded-xl border border-[var(--line)] bg-[var(--paper)] space-y-3">
 					<div className="flex items-center justify-between">
 						<h2 className="text-xs font-bold uppercase tracking-wider text-[var(--muted)] flex items-center gap-1.5">
 							<Wallet className="w-3.5 h-3.5 text-[var(--teal)]" />
-							Структура оплат (Касса 54-ФЗ)
+							Структура оплат (Касса)
 						</h2>
 						<span className="text-xs font-medium text-[var(--muted)]">
 							Итого: {data.revenueFormatted}

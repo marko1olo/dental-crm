@@ -1,7 +1,7 @@
 /**
  * apps/web/src/components/analytics/__tests__/analyticsSSOTSuite.test.tsx
  *
- * Исчерпывающий тестовый набор управленческой аналитики и SSOT кассы 54-ФЗ.
+ * Исчерпывающий тестовый набор управленческой аналитики и SSOT кассы.
  * Проверяет:
  * 1. Целочисленный расчет выручки и кассы без float-погрешностей.
  * 2. Загрузку кресел (норма 65–85%) и Recall.
@@ -134,7 +134,7 @@ test("1.6. exportAnalyticsToCsv формирует валидный CSV с UTF-8
 
 		assert.ok(blobContent.startsWith("\uFEFF"), "CSV must start with UTF-8 BOM");
 		assert.ok(blobContent.includes("DENTE CRM — УПРАВЛЕНЧЕСКАЯ АНАЛИТИКА"), "Must contain header");
-		assert.ok(blobContent.includes("СТРУКТУРА ОПЛАТ (КАССА 54-ФЗ)"), "Must contain payment section");
+		assert.ok(blobContent.includes("СТРУКТУРА ОПЛАТ (КАССА)"), "Must contain payment section");
 		assert.ok(blobContent.includes("РЕЙТИНГ ВРАЧЕЙ КЛИНИКИ"), "Must contain doctors rating");
 		assert.ok(downloadAttr.includes("Dente_Analytics_month_"), "File name must include period");
 	} finally {

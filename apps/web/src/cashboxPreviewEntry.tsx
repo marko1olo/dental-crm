@@ -63,7 +63,7 @@ function CashboxPreviewApp() {
 			<div className="w-full flex items-center justify-between mb-6 pb-4 border-b border-[var(--line,#e2e8f0)]">
 				<div>
 					<h1 className="text-xl sm:text-2xl font-bold text-[var(--ink,#0f172a)] tracking-tight">
-						Касса и чеки · Студия кассы 54-ФЗ
+						Касса и чеки · Студия расчётов
 					</h1>
 					<p className="text-xs text-[var(--muted,#64748b)]">
 						Журнал кассовых смен, приём оплаты и фискализация чеков

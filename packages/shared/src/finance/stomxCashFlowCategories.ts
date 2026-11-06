@@ -297,7 +297,7 @@ export const payerPartySchema = z.object({
 	if (data.partyType !== "individual" && (!data.inn || data.inn.length === 0)) {
 		ctx.addIssue({
 			code: z.ZodIssueCode.custom,
-			message: "Для юрлиц и ИП по 54-ФЗ требуется указание ИНН",
+			message: "Для организаций и ИП требуется указание ИНН",
 			path: ["inn"],
 		});
 	}

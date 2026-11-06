@@ -4,7 +4,7 @@
  * ОРКЕСТРАТОР СТУДИИ УПРАВЛЕНЧЕСКОЙ АНАЛИТИКИ И ДАШБОРДА РУКОВОДИТЕЛЯ DENTE CRM
  * (Мандат 8b & 8zi: Компактный оркестратор в Sweet Spot 140–180 строк).
  * (Мандат 8am: Единый дизайн-код, ровно 1 Primary CTA кнопка #0d9488).
- * (Мандат 8n: Малая клиника 1–3 кресла, честная касса 54-ФЗ, загрузка кресел, Recall).
+ * (Мандат 8n: Малая клиника 1–3 кресла, честная касса, загрузка кресел, Recall).
  * (Apple HIG: мобильный Bottom Sheet rounded-t-[24px], Drag Handle 36x5px, 0px горизонтального скролла).
  * (Мандат 8e: Автономия врача, кнопки экспорта и печати никогда не блокируются).
  * (Мандат 8ap: Zero fake mock simulation. Честный Empty State при нулевых данных).
@@ -178,7 +178,7 @@ export const ExecutiveAnalyticsStudioModal: React.FC<ExecutiveAnalyticsStudioMod
 					{/* Сетка 3 Доминантных KPI (Выручка, Загрузка кресел, Средний чек / Recall) */}
 					<ExecutiveAnalyticsKpiGrid data={data} />
 
-					{/* Секции: Структура оплат 54-ФЗ, Услуги, Рейтинг врачей и Когорты Recall */}
+					{/* Секции: Структура оплат кассы, Услуги, Рейтинг врачей и Когорты Recall */}
 					<ExecutiveAnalyticsChartsSection
 						data={data}
 						activeWhatsappCohort={activeWhatsappCohort}

@@ -86,7 +86,7 @@ export function FiscalDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-fiscal-receipt-number">
-							Номер чека (можно пусто, если есть ФД/ФПД)
+							Номер чека (можно оставить пустым при наличии номера документа)
 						</label>
 					</div>
 					<div className="smart-field no-float">
@@ -109,7 +109,7 @@ export function FiscalDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-fiscal-fn">
-							ФН (номер фискального накопителя)
+							Номер фискального накопителя (ФН)
 						</label>
 					</div>
 					<div className="smart-field">
@@ -121,7 +121,7 @@ export function FiscalDetails({
 							placeholder=" "
 						/>
 						<label htmlFor="payment-fiscal-fd">
-							ФД (номер фискального документа)
+							Номер фискального документа (ФД)
 						</label>
 					</div>
 					<div className="smart-field">
@@ -132,7 +132,7 @@ export function FiscalDetails({
 							onChange={onFiscalFpdChange}
 							placeholder=" "
 						/>
-						<label htmlFor="payment-fiscal-fpd">ФПД (фискальный признак)</label>
+						<label htmlFor="payment-fiscal-fpd">Фискальный признак документа (ФПД)</label>
 					</div>
 					<div className="smart-field">
 						<input
@@ -187,7 +187,7 @@ export function PaymentFiscalCashierBar({
 }: PaymentFiscalCashierBarProps) {
 	return (
 		<>
-			{/* Информативный бейдж очереди офлайн-фискализации 54-ФЗ (Mandates 8e, 8n) */}
+			{/* Информативный бейдж очереди офлайн-фискализации (Mandates 8e, 8n) */}
 			{pendingCount > 0 && (
 				<div
 					className="offline-fiscal-queue-badge flex items-center justify-between gap-2 px-3 py-1.5 rounded-lg bg-[var(--teal-soft)] border border-[var(--teal)]/30 text-[var(--ink)] text-xs font-bold mb-2 select-none"

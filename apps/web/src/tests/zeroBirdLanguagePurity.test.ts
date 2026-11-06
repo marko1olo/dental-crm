@@ -187,7 +187,9 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 	});
 
 	it("15. Orthodontics & Cephalometrics: purged '043/у' from interactive buttons & headers", () => {
-		const cephModalCode = readComponent("components/radiology/CephalometricAnalysisModal.tsx");
+		const cephModalCode =
+			readComponent("components/radiology/CephalometricAnalysisModal.tsx") +
+			readComponent("components/radiology/cephModal/CephalometricAnalysisModalUI.tsx");
 		assert.ok(cephModalCode.includes("В медицинскую карту"), "CephalometricAnalysisModal must have clean 'В медицинскую карту'");
 		assert.ok(!cephModalCode.includes("В карту 043/у"), "CephalometricAnalysisModal must not have 'В карту 043/у'");
 
@@ -320,6 +322,29 @@ describe("Zero Bird Language & Clinical UI Purity Inquisitor Gate", () => {
 
 		const outpatientPrintCode = readComponent("components/documents/OutpatientCardPrintModal.tsx");
 		assert.ok(!outpatientPrintCode.includes("-043/"), "OutpatientCardPrintModal must not contain '-043/' in document prefixes");
+	});
+
+	it("21. Executive Analytics & Cash Register Studio: zero '54-ФЗ' in charts, KPI grid, studio headers & cashier bar (Mandates 8x, 8ap, 8n)", () => {
+		const chartsCode = readComponent("components/analytics/studio/ExecutiveAnalyticsChartsSection.tsx");
+		assert.ok(!chartsCode.includes("54-ФЗ"), "ExecutiveAnalyticsChartsSection must not cite '54-ФЗ'");
+		assert.ok(chartsCode.includes("Структура оплат (Касса)"), "Charts section must say 'Структура оплат (Касса)'");
+
+		const kpiCode = readComponent("components/analytics/studio/ExecutiveAnalyticsKpiGrid.tsx");
+		assert.ok(!kpiCode.includes("54-ФЗ"), "ExecutiveAnalyticsKpiGrid must not cite '54-ФЗ'");
+		assert.ok(kpiCode.includes("Выручка кассы"), "KPI grid must say 'Выручка кассы'");
+
+		const headerCode = readComponent("components/analytics/studio/ExecutiveAnalyticsStudioHeader.tsx");
+		assert.ok(!headerCode.includes("54-ФЗ"), "ExecutiveAnalyticsStudioHeader must not cite '54-ФЗ'");
+		assert.ok(headerCode.includes("Касса клиники"), "Header must say 'Касса клиники'");
+
+		const footerCode = readComponent("components/analytics/studio/ExecutiveAnalyticsStudioFooter.tsx");
+		assert.ok(!footerCode.includes("54-ФЗ"), "ExecutiveAnalyticsStudioFooter must not cite '54-ФЗ'");
+
+		const cashboxStudioCode = readComponent("components/cashbox/CashRegisterStudioModal.tsx");
+		assert.ok(!cashboxStudioCode.includes("54-ФЗ"), "CashRegisterStudioModal must not cite '54-ФЗ' in warranty panel");
+
+		const cashierBarCode = readComponent("PaymentFiscalCashierBar.tsx");
+		assert.ok(!cashierBarCode.includes("54-ФЗ"), "PaymentFiscalCashierBar must not cite '54-ФЗ'");
 	});
 });
 
