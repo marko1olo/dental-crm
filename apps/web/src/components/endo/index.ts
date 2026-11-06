@@ -10,7 +10,6 @@ export * from "./DirectEndodonticsLauncher";
 export { default as DirectEndodonticsLauncher } from "./DirectEndodonticsLauncher";
 
 // Backward Compatibility Aliases & Facades
-export * from "./EndoCanalLogModal";
-export { default as EndoCanalLogModal } from "./EndoCanalLogModal";
+export { EndodonticStudioModal as EndoCanalLogModal } from "./EndodonticStudioModal";
 export * from "./ChairsideEndoQuickBar";
 export { default as ChairsideEndoQuickBar } from "./ChairsideEndoQuickBar";

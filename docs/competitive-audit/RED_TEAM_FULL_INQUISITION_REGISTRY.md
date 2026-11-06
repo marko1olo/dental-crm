@@ -1036,6 +1036,23 @@
 - **Суть бага:** Замеры кривизны и длин каналов из томографа ранее сохранялись только в `window.localStorage` браузера вместо базы данных. При смене ПК или очистке кэша данные полностью исчезали.
 - **Статус исправления:** [ИСПРАВЛЕНО] В `endoClinicalIntegrationBridge.ts` интегрирована отправка структурированных параметров каналов `{ canalName, workingLengthMm, referencePoint, apexLocatorReading, masterFile, masterCone, taper, sealer, obturationTechnique }` через Fastify API `POST /api/odontogram/status`, что гарантирует персистенцию в PostgreSQL 18 в колонку `canal_measurements jsonb`. `localStorage` сохранен в качестве ультрабыстрого локального офлайн-кэша.
 
+### [END-08] [SEV-2] [ИСПРАВЛЕНО] Монолитное раздувание EndodonticStudioModal.tsx и декомпозиция в Sweet Spot (380–450 строк)
+- **Файлы:**
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx)
+  - [`apps/web/src/components/endo/studioModules/EndoCanalsTableSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/studioModules/EndoCanalsTableSection.tsx)
+  - [`apps/web/src/components/endo/studioModules/EndoStudioToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/studioModules/EndoStudioToolbar.tsx)
+  - [`apps/web/src/components/endo/studioModules/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/studioModules/index.ts)
+- **Суть бага:** Файл `EndodonticStudioModal.tsx` разросся до 570 строк, нарушая канонический лимит Sweet Spot (380–480 строк, Мандат 8b/8zi), что приводило к падению теста `endodonticsSSOTSuite.test.tsx`.
+- **Статус исправления:** [ИСПРАВЛЕНО] Монолит декомпозирован на чистые архитектурные сабмодули в подпапке `studioModules/`: выделены `EndoStudioToolbar.tsx` (кнопки протоколов и пресетов) и `EndoCanalsTableSection.tsx` (таблица и мобильные карточки каналов по Apple HIG). Файл `EndodonticStudioModal.tsx` приведен строго к 443 строкам (Sweet Spot 380–450 строк). Тест `endodonticsSSOTSuite.test.tsx` проходит с Exit Code 0 (21 из 21 passed).
+
+### [END-09] [SEV-2] [ИСПРАВЛЕНО] Нарушение Мандата 8d п. 7: мультяшные эмодзи в разметке и текстах эндодонтической студии
+- **Файлы:**
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx)
+  - [`apps/web/src/components/endo/studioModules/EndoStudioToolbar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/studioModules/EndoStudioToolbar.tsx)
+  - [`apps/web/src/components/endo/studioModules/EndoCanalsTableSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/studioModules/EndoCanalsTableSection.tsx)
+- **Суть бага:** В разметке кнопки «Каналы запломбированы в 1 клик (норма)» и в тостах присутствовал символ `✓` (Unicode 0x2713), который попадал под регулярное выражение запрета мультяшных эмодзи `emojiRegex`, приводя к падению теста `Zero cartoon emojis in modal markup`.
+- **Статус исправления:** [ИСПРАВЛЕНО] Символы эмодзи и дингбаты полностью выкошены из разметки и текстов. Вся визуальная индикация заменена на строгие векторные иконки Lucide (`Check`, `SlidersHorizontal`, `FileText`, `Printer`, `Copy`, `Plus`, `Trash2`). Ровно 1 Primary CTA кнопка `#0d9488` («Зафиксировать протокол каналов»). Проверено инструментально через `renderToString` и личный мультимодальный осмотр 4-State скриншотов.
+
 
 ## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN) И МЕДИА-АРХИВ
 

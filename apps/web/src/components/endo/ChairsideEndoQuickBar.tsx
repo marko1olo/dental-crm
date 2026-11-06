@@ -266,6 +266,7 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 									<span className="font-bold text-xs text-[var(--ink,#0f172a)] dark:text-white">Канал {c.name}</span>
 									<span className="text-[11px] font-semibold text-[var(--teal,#0d9488)]">{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm.toFixed(1)} мм`}</span>
 									<div className="flex items-center gap-1">
+										<span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-semibold" title="Apex 0.0">Apex 0.0</span>
 										{(["-0.5", "0.0", "+0.5"] as const).map((ap) => (
 											<button key={ap} type="button" onClick={() => updateCanal(c.id, { apexLocatorReading: `${ap} Apex` })} className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${(c.apexLocatorReading || "0.0 Apex").startsWith(ap) ? "bg-emerald-600 text-white border-emerald-600 font-bold" : "bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-slate-500 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>{ap}</button>
 										))}

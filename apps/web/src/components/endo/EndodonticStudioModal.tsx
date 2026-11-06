@@ -3,41 +3,42 @@
  * apps/web/src/components/endo/EndodonticStudioModal.tsx
  *
  * Монолитная студия эндодонтии и обработки корневых каналов (Мандаты 8e, 8n, 8am, 8wy).
- * Ровно ОДНА Primary CTA кнопка #0d9488 («✓ Зафиксировать протокол каналов»).
+ * Ровно ОДНА Primary CTA кнопка #0d9488 («Зафиксировать протокол каналов»).
  * Автономия врача: кнопки сохранения и печати НИКОГДА не disabled.
  * Мобильная сенсорная эргономика Apple HIG (Bottom Sheet 36x5px, Natural Thumb Zone >= 44px).
  */
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { createPortal } from "react-dom";
-import { Activity, Check, ChevronDown, Copy, FileText, Plus, Printer, SlidersHorizontal, Trash2, X } from "lucide-react";
+import { Activity, Check, ChevronDown, Copy, FileText, Printer, X } from "lucide-react";
 import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
 import { getToothAnatomicalNameRu } from "../../lib/clinicalProtocols";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import {
-	CANONICAL_ENDO_PROTOCOLS, CANONICAL_IRRIGATION_SOLUTIONS, CANONICAL_MAF_SIZES,
-	CURATED_ISO_MAF_OPTIONS, CURATED_SEALERS, NITI_SYSTEM_OPTIONS,
-	calculateEndoTreatmentCostKopecks, formatEndoPatientMemo, formatWorkingLengthDisplay,
-	generateEndoProtocol043, getAnatomicalWorkingLength, getDefaultCanalsForTooth,
-	sanitizeCanalsForSubmission, type EndoProtocolPresetId, type EndoStageStamp, type QuickCanalState,
+	CANONICAL_ENDO_PROTOCOLS, CANONICAL_IRRIGATION_SOLUTIONS, NITI_SYSTEM_OPTIONS,
+	calculateEndoBillingAndMaterialsEstimate, calculateEndoTreatmentCostKopecks,
+	formatEndoPatientMemo, formatEndoClinicalDiaryProtocol, getDefaultCanalsForTooth,
+	getAnatomicalWorkingLength, sanitizeCanalsForSubmission,
+	type EndoProtocolPresetId, type EndoStageStamp, type QuickCanalState,
 } from "./endodonticsCatalogData";
+import { EndoStudioToolbar, EndoCanalsTableSection } from "./studioModules";
 
 export interface EndodonticStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly toothNumber?: number | undefined;
-	readonly toothState?: string | undefined;
-	readonly patientId?: string | undefined;
-	readonly patientName?: string | undefined;
-	readonly doctorName?: string | undefined;
-	readonly clinicName?: string | undefined;
-	readonly clinicPhone?: string | undefined;
-	readonly initialCanals?: readonly EndoCanalData[] | undefined;
-	readonly initialIrrigation?: string | undefined;
-	readonly initialRotarySystem?: string | undefined;
-	readonly initialRadiologyControl?: string | undefined;
+	readonly toothNumber?: number;
+	readonly toothState?: string;
+	readonly patientId?: string;
+	readonly patientName?: string;
+	readonly doctorName?: string;
+	readonly clinicName?: string;
+	readonly clinicPhone?: string;
+	readonly initialCanals?: readonly EndoCanalData[];
+	readonly initialIrrigation?: string;
+	readonly initialRotarySystem?: string;
+	readonly initialRadiologyControl?: string;
 	readonly onInsertToProtocol?: (protocolText: string, canals: EndoCanalData[]) => void;
 	readonly onSaveCanals?: (canals: EndoCanalData[], clinicalData: EndoToothClinicalData) => Promise<void> | void;
 	readonly onSave?: (savedCanals: EndoCanalData[], noteText?: string) => void;
@@ -83,9 +84,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					if (data.clinicalData.radiologyControl) setRadiologyControl(data.clinicalData.radiologyControl);
 					if (data.clinicalData.stageStamp) setStageStamp(data.clinicalData.stageStamp);
 				}
-			})
-			.catch(() => {})
-			.finally(() => { if (!cancelled) setIsLoadingFromDb(false); });
+			}).catch(() => {}).finally(() => { if (!cancelled) setIsLoadingFromDb(false); });
 		return () => { cancelled = true; };
 	}, [props.isOpen, props.patientId, activeTooth, props.initialCanals]);
 
@@ -93,10 +92,23 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		setCanals((prev) => prev.map((c) => (c.id === id ? { ...c, [field]: val } : c)));
 	}, []);
 
+	const updateCanalLength = useCallback((id: string, rawVal: number | string) => {
+		setCanals((prev) => prev.map((c) => {
+			if (c.id !== id) return c;
+			if (c.isObliterated) return { ...c, workingLengthMm: 0 };
+			const num = typeof rawVal === "number" ? rawVal : Number.parseFloat(String(rawVal || ""));
+			if (Number.isNaN(num) || !Number.isFinite(num)) {
+				return { ...c, workingLengthMm: 21.0 };
+			}
+			const safeWl = Math.max(10, Math.min(35, Math.round(num * 2) / 2));
+			return { ...c, workingLengthMm: safeWl };
+		}));
+	}, []);
+
 	const adjustLength = useCallback((id: string, delta: number) => {
 		setCanals((prev) => prev.map((c) => {
 			if (c.id !== id) return c;
-			const cur = typeof c.workingLengthMm === "number" ? c.workingLengthMm : 21.0;
+			const cur = typeof c.workingLengthMm === "number" && !Number.isNaN(c.workingLengthMm) && c.workingLengthMm > 0 ? c.workingLengthMm : 21.0;
 			return { ...c, workingLengthMm: Math.max(10, Math.min(35, Math.round((cur + delta) * 2) / 2)), isObliterated: false };
 		}));
 	}, []);
@@ -114,7 +126,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		setCanals((prev) => [...prev, {
 			id: `canal-${Date.now()}-${nextNum}`, canalName: `К${nextNum}`, referencePoint: "Бугор зуба",
 			workingLengthMm: 21.0, masterApicalFile: "#25.04", taper: ".04 (Конусность 4%)",
-			obturationTechnique: "Гуттаперча + Силер (AH Plus)", sealer: "AH Plus (эпоксидный герметик)",
+			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально", sealer: "AH Plus (эпоксидный герметик)",
 		}]);
 	}, [canals.length]);
 
@@ -143,6 +155,27 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		showToast(`Восстановлена анатомическая норма зуба #${activeTooth}`, "info", 1800);
 	}, [activeTooth]);
 
+	const applyOneClickObturationNorm = useCallback(() => {
+		const defaultAnatomicalCanals = getDefaultCanalsForTooth(activeTooth);
+		const updated: EndoCanalData[] = defaultAnatomicalCanals.map((c) => ({
+			...c,
+			isObliterated: false,
+			workingLengthMm: Math.max(10, Math.min(35, Math.round((Number(c.workingLengthMm) || getAnatomicalWorkingLength(activeTooth, c.canalName) || 21.0) * 2) / 2)),
+			masterApicalFile: "#25.04",
+			taper: ".04 (Конусность 4%)",
+			obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
+			sealer: "AH Plus (эпоксидный герметик)",
+			apexLocatorReading: "0.0 (Apex)",
+			referencePoint: c.referencePoint || "Бугор зуба",
+		}));
+		setCanals(updated);
+		setStageStamp("COMPLETED");
+		setIrrigation("NaOCl 3% + EDTA 17% (УЗ-активация)");
+		setRotarySystem("WaveOne Gold / ProTaper Next (Dentsply)");
+		setActiveProtocolId("pulpitis_1visit");
+		showToast(`Каналы зуба #${activeTooth} запломбированы в 1 клик (норма)!`, "success", 2000);
+	}, [activeTooth]);
+
 	const applyAllCanalsApex00 = useCallback(() => {
 		setCanals((prev) => prev.map((c) => ({ ...c, apexLocatorReading: "0.0 (Apex)" })));
 		showToast("Все каналы откалиброваны: 0.0 (Apex)", "success", 1800);
@@ -159,7 +192,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const generatedProtocolText = useMemo(() => {
 		const protoDef = CANONICAL_ENDO_PROTOCOLS[activeProtocolId];
 		if (protoDef) return protoDef.generateSoapNote({ activeTooth, toothAnatomicalName, canals: quickCanalsState });
-		return generateEndoProtocol043({
+		return formatEndoClinicalDiaryProtocol({
 			toothNumber: activeTooth,
 			toothTitle: `Зуб FDI: #${activeTooth} ${toothAnatomicalName} [${stageStamp === "TEMP_CAOH2" ? "ВРЕМЕННАЯ ОБТУРАЦИЯ Ca(OH)2" : "ПОЛНАЯ ОБТУРАЦИЯ ДО АПЕКСА"}]`,
 			canals, irrigation, rotarySystem, radiologyControl, notes: "",
@@ -223,6 +256,59 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 			}
 		} catch { /* soft */ }
 
+		// Сквозная связка протокола каналов со списанием расходных материалов на складе по мягкому овердрафту (Soft Negative Stock, Мандат 8aa)
+		const materialsEstimate = calculateEndoBillingAndMaterialsEstimate({
+			toothNumber: activeTooth,
+			canals: sanitized,
+			stageStamp,
+			obturationTechnique: sanitized[0]?.obturationTechnique,
+			sealer: sanitized[0]?.sealer,
+		});
+
+		try {
+			if (typeof window !== "undefined" && materialsEstimate.materials.length > 0) {
+				window.dispatchEvent(new CustomEvent("dente-warehouse-material-deducted", {
+					detail: {
+						toothNumber: activeTooth,
+						stageStamp,
+						materials: materialsEstimate.materials,
+						allowSoftOverdraft: true,
+						reason: `Обтурация каналов зуба #${activeTooth} (Мандат 8aa Soft Negative Stock)`,
+					},
+				}));
+				window.dispatchEvent(new CustomEvent("dente-inventory-writeoff-batch", {
+					detail: {
+						toothNumber: activeTooth,
+						stageStamp,
+						materials: materialsEstimate.materials,
+						allowSoftOverdraft: true,
+						reason: `Эндодонтический протокол #${activeTooth} (${stageStamp === "COMPLETED" ? "постоянная обтурация" : "временная паста"})`,
+					},
+				}));
+			}
+		} catch { /* soft */ }
+
+		if (materialsEstimate.materials.length > 0) {
+			fetch("/api/inventory/soft-overdraft-deduct", {
+				method: "POST",
+				headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+				body: JSON.stringify({
+					toothNumber: activeTooth,
+					patientId: props.patientId,
+					stageStamp,
+					allowSoftOverdraft: true,
+					materials: materialsEstimate.materials.map((m) => ({
+						itemId: m.itemId,
+						itemName: m.itemName,
+						quantity: m.quantity,
+						unit: m.unit,
+						costPriceKopecks: m.costPriceKopecks,
+					})),
+					notes: `Автоматическое списание материалов (гуттаперча, силер AH Plus) для зуба #${activeTooth} (Soft Negative Stock)`,
+				}),
+			}).catch(() => { /* Soft: фоновая сеть не блокирует работу врача у кресла */ });
+		}
+
 		if (props.onSaveCanals) { try { await props.onSaveCanals(sanitized, clinicalData); } catch { /* ignore */ } }
 		if (props.patientId) {
 			fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
@@ -263,140 +349,25 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 				</header>
 
 				<div className="p-3.5 sm:p-5 overflow-y-auto flex-1 space-y-3.5">
-					<div className="flex flex-wrap items-center justify-between gap-2 p-2.5 rounded-xl bg-[var(--surface,#f8fafc)] dark:bg-slate-800/40 border border-[var(--line,#e2e8f0)] dark:border-slate-800">
-						<div className="flex items-center gap-1.5 flex-wrap">
-							<button type="button" onClick={() => applyCanonicalProtocol("pulpitis_1visit")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "pulpitis_1visit" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Пульпит (1 визит)</button>
-							<button type="button" onClick={() => applyCanonicalProtocol("periodontitis_temp")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "periodontitis_temp" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Периодонтит (Ca(OH)2)</button>
-							<button type="button" onClick={() => applyCanonicalProtocol("periodontitis_permanent_ahplus")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Периодонтит (AH Plus)</button>
-							<button type="button" onClick={() => applyCanonicalProtocol("retreatment_unsealing")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "retreatment_unsealing" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Распломбировка</button>
-							<button type="button" data-testid="btn-endo-anatomical-autofill" onClick={applyAnatomicalNorm} className="btn-endo-anatomical-autofill min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 cursor-pointer" title="Восстановить анатомическую норму каналов по FDI">Норма (FDI)</button>
-						</div>
-						<button type="button" onClick={addCanal} className="min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--teal,#0d9488)] border border-[var(--line,#cbd5e1)] dark:border-slate-700 flex items-center gap-1.5 cursor-pointer"><Plus size={14} /> Добавить канал</button>
-					</div>
+					<EndoStudioToolbar
+						activeTooth={activeTooth}
+						activeProtocolId={activeProtocolId}
+						onApplyOneClickObturationNorm={applyOneClickObturationNorm}
+						onApplyCanonicalProtocol={applyCanonicalProtocol}
+						onApplyAnatomicalNorm={applyAnatomicalNorm}
+						onAddCanal={addCanal}
+					/>
 
-					<div className="border border-[var(--line,#e2e8f0)] dark:border-slate-800 rounded-2xl bg-[var(--paper,#ffffff)] dark:bg-slate-900/50 overflow-hidden shadow-xs">
-						<div className="p-3 bg-[var(--surface,#f8fafc)] dark:bg-slate-800/60 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 flex items-center justify-between">
-							<div className="flex items-center gap-2">
-								<SlidersHorizontal size={14} className="text-[var(--teal,#0d9488)]" />
-								<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white">Корневые каналы зуба #{activeTooth}</span>
-								<span className="text-[11px] text-[var(--muted,#64748b)]">({canals.length} {canals.length === 1 ? "канал" : "канала"})</span>
-							</div>
-							<div className="flex items-center gap-2">
-								<button type="button" onClick={applyAllCanalsApex00} data-testid="btn-endo-all-apex-00" className="btn-endo-all-apex-00 min-h-[36px] sm:min-h-[28px] h-8 sm:h-7 px-2.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 flex items-center gap-1.5 transition-colors cursor-pointer" title="Выставить 0.0 Apex на все каналы в 1 клик">
-									<Check size={13} className="text-emerald-600 dark:text-emerald-400" />
-									<span>Все 0.0 (Apex)</span>
-								</button>
-							</div>
-						</div>
-
-						{/* Desktop View */}
-						<div className="hidden sm:block overflow-x-auto">
-							<table className="w-full text-left border-collapse text-xs">
-								<thead>
-									<tr className="border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 text-[var(--muted,#64748b)]">
-										<th className="p-2.5 font-bold">Канал</th><th className="p-2.5 font-bold">Склероз</th><th className="p-2.5 font-bold">Длина WL</th>
-										<th className="p-2.5 font-bold">Апекс</th><th className="p-2.5 font-bold">Мастер-файл MAF</th><th className="p-2.5 font-bold">Конусность</th><th className="p-2.5 font-bold">Обтурация и силер</th>
-										<th className="p-2.5 text-center font-bold">Удалить</th>
-									</tr>
-								</thead>
-								<tbody className="divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800">
-									{canals.map((c) => (
-										<tr key={c.id} className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30">
-											<td className="p-2.5 font-bold text-[var(--ink,#0f172a)] dark:text-white">
-												<input type="text" value={c.canalName} onChange={(e) => updateCanal(c.id, "canalName", e.target.value)} className="w-16 px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs font-bold" />
-											</td>
-											<td className="p-2.5">
-												<label className="inline-flex items-center gap-1 cursor-pointer">
-													<input type="checkbox" checked={Boolean(c.isObliterated)} onChange={() => toggleObliteration(c.id)} className="rounded text-[var(--teal,#0d9488)] cursor-pointer" />
-													<span className="text-[11px] text-[var(--muted,#64748b)]">Облит.</span>
-												</label>
-											</td>
-											<td className="p-2.5">
-												<div className="flex items-center gap-1">
-													<button type="button" onClick={() => adjustLength(c.id, -0.5)} className="w-6 h-6 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">-</button>
-													<input type="number" step="0.5" min="0" max="35" value={c.workingLengthMm || 0} onChange={(e) => updateCanal(c.id, "workingLengthMm", parseFloat(e.target.value) || 0)} className="w-14 px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs text-center font-bold" />
-													<button type="button" onClick={() => adjustLength(c.id, 0.5)} className="w-6 h-6 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">+</button>
-												</div>
-											</td>
-											<td className="p-2.5">
-												<select value={c.apexLocatorReading || "0.0 (Apex)"} onChange={(e) => updateCanal(c.id, "apexLocatorReading", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer">
-													<option value="0.0 (Apex)">0.0 Apex</option><option value="-0.5 мм">-0.5 мм</option><option value="+0.5 мм">+0.5 мм</option><option value="-1.0 мм">-1.0 мм</option><option value="За апексом">За апексом</option>
-												</select>
-											</td>
-											<td className="p-2.5">
-												<select value={c.masterApicalFile} onChange={(e) => updateCanal(c.id, "masterApicalFile", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[130px] truncate cursor-pointer">
-													{CANONICAL_MAF_SIZES.map((opt) => <option key={opt.label} value={opt.label}>{opt.label} ({opt.system})</option>)}
-													{CURATED_ISO_MAF_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-												</select>
-											</td>
-											<td className="p-2.5">
-												<select value={c.taper} onChange={(e) => updateCanal(c.id, "taper", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[110px] truncate cursor-pointer">
-													<option value=".04 (Конусность 4%)">.04 (4%)</option><option value=".06 (Конусность 6%)">.06 (6%)</option><option value=".02 (Конусность 2%)">.02 (2%)</option>
-												</select>
-											</td>
-											<td className="p-2.5">
-												<select value={c.sealer || "AH Plus (эпоксидный герметик)"} onChange={(e) => updateCanal(c.id, "sealer", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[150px] truncate cursor-pointer">
-													{CURATED_SEALERS.map((s) => <option key={s} value={s}>{s}</option>)}
-												</select>
-											</td>
-											<td className="p-2.5 text-center">
-												{canals.length > 1 && (<button type="button" onClick={() => removeCanal(c.id)} className="w-7 h-7 rounded-lg text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 inline-flex items-center justify-center cursor-pointer" title="Удалить"><Trash2 size={13} /></button>)}
-											</td>
-										</tr>
-									))}
-								</tbody>
-							</table>
-						</div>
-
-						{/* Mobile Grouped Cards View (Apple HIG) */}
-						<div className="sm:hidden p-3 divide-y divide-[var(--line,#e2e8f0)] dark:divide-slate-800 space-y-3">
-							{canals.map((c) => (
-								<div key={c.id} className="pt-3 first:pt-0 space-y-2.5">
-									<div className="flex items-center justify-between">
-										<div className="flex items-center gap-2">
-											<input type="text" value={c.canalName} onChange={(e) => updateCanal(c.id, "canalName", e.target.value)} className="w-16 px-2 py-1 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-xs font-bold" />
-											<span className="text-xs font-bold text-[var(--teal,#0d9488)]">{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm} мм`}</span>
-										</div>
-										<div className="flex items-center gap-2">
-											<label className="flex items-center gap-1 text-[11px] text-[var(--muted,#64748b)]">
-												<input type="checkbox" checked={Boolean(c.isObliterated)} onChange={() => toggleObliteration(c.id)} className="rounded text-[var(--teal,#0d9488)]" /><span>Склероз</span>
-											</label>
-											{canals.length > 1 && (<button type="button" onClick={() => removeCanal(c.id)} className="w-9 h-9 rounded-lg text-rose-500 hover:bg-rose-50 flex items-center justify-center cursor-pointer"><Trash2 size={14} /></button>)}
-										</div>
-									</div>
-									<div className="flex items-center gap-2">
-										<span className="text-[11px] text-[var(--muted,#64748b)] w-14">Длина:</span>
-										<div className="flex items-center gap-1 flex-1">
-											<button type="button" onClick={() => adjustLength(c.id, -0.5)} className="min-h-[44px] w-11 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold text-sm bg-[var(--paper,#ffffff)] dark:bg-slate-800 flex items-center justify-center cursor-pointer">-</button>
-											<input type="number" step="0.5" value={c.workingLengthMm || 0} onChange={(e) => updateCanal(c.id, "workingLengthMm", parseFloat(e.target.value) || 0)} className="min-h-[44px] flex-1 px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-center font-bold text-sm" />
-											<button type="button" onClick={() => adjustLength(c.id, 0.5)} className="min-h-[44px] w-11 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 font-bold text-sm bg-[var(--paper,#ffffff)] dark:bg-slate-800 flex items-center justify-center cursor-pointer">+</button>
-										</div>
-									</div>
-									<div className="grid grid-cols-2 gap-2">
-										<div>
-											<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Апекслокатор:</span>
-											<select value={c.apexLocatorReading || "0.0 (Apex)"} onChange={(e) => updateCanal(c.id, "apexLocatorReading", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-												<option value="0.0 (Apex)">0.0 Apex</option><option value="-0.5 мм">-0.5 мм</option><option value="+0.5 мм">+0.5 мм</option><option value="-1.0 мм">-1.0 мм</option><option value="За апексом">За апексом</option>
-											</select>
-										</div>
-										<div>
-											<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Мастер-файл MAF:</span>
-											<select value={c.masterApicalFile} onChange={(e) => updateCanal(c.id, "masterApicalFile", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium">
-												{CANONICAL_MAF_SIZES.map((opt) => <option key={opt.label} value={opt.label}>{opt.label}</option>)}
-												{CURATED_ISO_MAF_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
-											</select>
-										</div>
-									</div>
-									<div>
-										<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Силер / герметик:</span>
-										<select value={c.sealer || "AH Plus (эпоксидный герметик)"} onChange={(e) => updateCanal(c.id, "sealer", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium">
-											{CURATED_SEALERS.map((s) => <option key={s} value={s}>{s}</option>)}
-										</select>
-									</div>
-								</div>
-							))}
-						</div>
-					</div>
+					<EndoCanalsTableSection
+						activeTooth={activeTooth}
+						canals={canals}
+						onApplyAllCanalsApex00={applyAllCanalsApex00}
+						onUpdateCanal={updateCanal}
+						onToggleObliteration={toggleObliteration}
+						onAdjustLength={adjustLength}
+						onUpdateCanalLength={updateCanalLength}
+						onRemoveCanal={removeCanal}
+					/>
 
 					{/* Клинические параметры */}
 					<div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
@@ -438,7 +409,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 					</details>
 				</div>
 
-				{/* 3. Footer — Ровно ОДНА Primary CTA кнопка #0d9488 («✓ Зафиксировать протокол каналов») */}
+				{/* 3. Footer — Ровно ОДНА Primary CTA кнопка #0d9488 («Зафиксировать протокол каналов») */}
 				<footer className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5 p-3 sm:p-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--surface,#f8fafc)] dark:bg-slate-900/90 shrink-0">
 					<div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
 						<div className="grid grid-cols-2 sm:flex items-center gap-2">
@@ -466,4 +437,6 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	return typeof document !== "undefined" ? createPortal(modalContent, document.body) : modalContent;
 }
 
+export { EndodonticStudioModal as EndoCanalLogModal };
+export type { EndodonticStudioModalProps as EndoCanalLogModalProps };
 export default EndodonticStudioModal;

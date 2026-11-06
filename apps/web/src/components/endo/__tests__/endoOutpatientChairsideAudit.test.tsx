@@ -5,19 +5,19 @@ import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { EndodonticStudioModal as EndoCanalLogModal } from "../EndodonticStudioModal";
 import {
-	EndoCanalLogModal,
 	applyExpressApicalEndoProtocol,
 	generateEndoProtocol043,
 	getDefaultCanalsForTooth,
-} from "../EndoCanalLogModal";
+} from "../endodonticsCatalogData";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 describe("Chairside Endodontics Outpatient Audit — Part 1 (Mandates 8e, 8k)", () => {
 	it("1. Mandate 8k Anti-Simulator Law: No physical procedural simulation of file breakage or stress tensors", () => {
-		const modalSource = fs.readFileSync(path.resolve(__dirname, "../EndoCanalLogModal.tsx"), "utf8");
+		const modalSource = fs.readFileSync(path.resolve(__dirname, "../EndodonticStudioModal.tsx"), "utf8");
 		const forbiddenSimulatorTerms = [
 			"stress_tensor",
 			"fracture_sim",

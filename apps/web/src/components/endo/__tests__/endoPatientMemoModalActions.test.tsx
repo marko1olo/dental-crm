@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { EndoCanalLogModal } from "../EndoCanalLogModal";
+import { EndodonticStudioModal as EndoCanalLogModal } from "../EndodonticStudioModal";
 
 describe("Endo Patient Memo Modal Actions & Touch Targets (Mandate 8c, 8e)", () => {
 	it("1. renders copy patient memo button and print worksheet button when modal is open", () => {

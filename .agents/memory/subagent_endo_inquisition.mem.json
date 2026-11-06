@@ -1,8 +1,8 @@
 {
   "subagent": "Red Team Endo Inquisition & Clinical Architecture",
   "status": "COMPLETED",
-  "timestamp": "2026-11-06T13:03:00.000Z",
-  "scope": "[END-03..07]",
+  "timestamp": "2026-11-06T15:58:00.000Z",
+  "scope": "[END-03..09]",
   "completedDefects": [
     {
       "code": "END-03",
@@ -13,7 +13,7 @@
     {
       "code": "END-04",
       "severity": "SEV-2",
-      "summary": "Ликвидация захардкоженного мока apexLocator: '0.0 Apex'. Внедрены поля показаний прибора по каждому каналу (-0.5, 0.0, +0.5 мм, За апексом) и макро-кнопка '✓ Все 0.0 (Apex)' в EndodonticStudioModal и ChairsideEndoQuickBar.",
+      "summary": "Ликвидация захардкоженного мока apexLocator: '0.0 Apex'. Внедрены поля показаний прибора по каждому каналу (-0.5, 0.0, +0.5 мм, За апексом) и макро-кнопка 'Все 0.0 (Apex)' в EndodonticStudioModal и ChairsideEndoQuickBar.",
       "tests": ["apps/web/src/components/endo/__tests__/chairsideEndoQuickBar.test.tsx", "apps/web/src/components/endo/__tests__/endodonticsSSOTSuite.test.tsx"]
     },
     {
@@ -31,19 +31,34 @@
     {
       "code": "END-07",
       "severity": "SEV-2",
-      "summary": "Устранена утечка 3D КЛКТ замеров каналов: в endoClinicalIntegrationBridge.ts добавлена отправка структурированных каналов в Fastify API POST /api/odontogram/status с записью в PostgreSQL 18. Автономия врача: кнопки сохранения/печати никогда не disabled. Touch targets >= 44x44px Apple HIG, 0px горизонтального скролла.",
+      "summary": "Устранена утечка 3D КЛКТ замеров каналов: в endoClinicalIntegrationBridge.ts добавлена отправка структурированных каналов в Fastify API POST /api/odontogram/status с записью в PostgreSQL 18.",
       "proofs": [
         "docs/proofs/endo/01_endo_studio_pc_light_1440x900.png",
         "docs/proofs/endo/02_endo_studio_pc_dark_1440x900.png",
         "docs/proofs/endo/03_endo_studio_mobile_light_390x844.png",
         "docs/proofs/endo/04_endo_studio_mobile_dark_390x844.png"
       ]
+    },
+    {
+      "code": "END-08",
+      "severity": "SEV-2",
+      "summary": "Декомпозиция монолита EndodonticStudioModal.tsx из 570 строк в чистый Sweet Spot: ровно 443 строки (диапазон 380–450 строк). Выделены аккуратные модули в apps/web/src/components/endo/studioModules/: EndoStudioToolbar.tsx и EndoCanalsTableSection.tsx.",
+      "tests": ["apps/web/src/components/endo/__tests__/endodonticsSSOTSuite.test.tsx"]
+    },
+    {
+      "code": "END-09",
+      "severity": "SEV-2",
+      "summary": "Искоренение мультяшных эмодзи и дингбатов (Unicode 0x2713) из разметки и текстов эндодонтической студии. Замена на строгие векторные иконки Lucide (Check, SlidersHorizontal, FileText, Printer, Copy, Plus, Trash2). Ровно одна Primary CTA кнопка цвета #0d9488 («Зафиксировать протокол каналов»).",
+      "tests": ["apps/web/src/components/endo/__tests__/endodonticsSSOTSuite.test.tsx"]
     }
   ],
   "gatesVerified": {
-    "encoding": "PASS (npm run check:encoding: 23984 files OK)",
-    "unitAndIntegrationTests": "PASS (45/45 passed: endoBillingAndMaterials 7/7, endoCanalJsonbPersistence 1/1, chairsideEndoQuickBar 8/8, endodonticsSSOTSuite 29/29)",
-    "visual4StateProof": "PASS (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 personally inspected)",
-    "documentationSync": "PASS (RED_TEAM_FULL_INQUISITION_REGISTRY.md updated)"
+    "encoding": "PASS (npm run check:encoding: 24010 files OK, Exit Code 0)",
+    "stubOverrides": "PASS (npm run check:stub-overrides: 139 properties, 27 modules OK, Exit Code 0)",
+    "fetchResponse": "PASS (npm run check:fetch-response: 14410 files OK, Exit Code 0)",
+    "dynamicImports": "PASS (npm run check:dynamic-imports: 18226 files, 531 imports OK, Exit Code 0)",
+    "unitAndIntegrationTests": "PASS (apps/web/src/components/endo/__tests__/: 7 test files, 49/49 passed, Exit Code 0)",
+    "visual4StateProof": "PASS (01_endo_studio_pc_light_1440x900.png, 02_endo_studio_pc_dark_1440x900.png, 03_endo_studio_mobile_light_390x844.png, 04_endo_studio_mobile_dark_390x844.png personally inspected via read_file)",
+    "documentationSync": "PASS (RED_TEAM_FULL_INQUISITION_REGISTRY.md updated with END-08 and END-09)"
   }
 }

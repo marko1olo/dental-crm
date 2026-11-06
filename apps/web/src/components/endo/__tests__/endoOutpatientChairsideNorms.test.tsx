@@ -13,7 +13,7 @@ import {
 	getAnatomicalWorkingLength,
 	formatWorkingLengthDisplay,
 	formatEndoPatientMemo,
-} from "../EndoCanalLogModal";
+} from "../endodonticsCatalogData";
 
 describe("Chairside Endodontics Outpatient Audit — Part 2 (Mandates 8e, 8k)", () => {
 	it("1. 1-Click Clinical Presets (Mandate 8e, 8k) provide immediate norms without manual friction", () => {

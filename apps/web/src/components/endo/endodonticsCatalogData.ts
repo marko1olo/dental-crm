@@ -14,7 +14,7 @@ export {
 	applyPrimaryEndoProtocol, applyPulpitisObturationProtocol, applyPulpitisProtocol, applyPulpitisVisit1Protocol,
 	applyRetreatmentEndoProtocol, applyStandardEndoProtocol, CANAL_NAME_OPTIONS, CAOH2_ENDO_PRESET, ENDO_SEALER_OPTIONS,
 	EXPRESS_APICAL_OBTURATION_PRESET, EXTENDED_MAF_ISO_OPTIONS, formatEndoCanalsTable043, formatEndoPatientMemo,
-	generateEndoCanalsTable043, generateEndoProtocol043, getAnatomicalWorkingLength, getDefaultCanalsForTooth,
+	formatEndoClinicalDiaryProtocol, generateEndoCanalsTable043, generateEndoProtocol043, getAnatomicalWorkingLength, getDefaultCanalsForTooth,
 	getIsoEndoColorInfo, ISO_ENDO_COLORS, ISO_ENDO_COLORS_MAP, MAF_ISO_OPTIONS, OBTURATION_PERMANENT_PRESET,
 	OBTURATION_TECHNIQUE_OPTIONS, PERIODONTITIS_DESTRUCTIVE_PRESET, PERIODONTITIS_TEMP_PRESET, PRIMARY_ENDO_PRESET,
 	PULPITIS_COMPLETE_PRESET, PULPITIS_OBTURATION_PRESET, PULPITIS_VISIT1_PRESET, QUICK_LENGTH_PRESETS,
@@ -302,13 +302,14 @@ export function sanitizeCanalsForSubmission(
 		let safeWl: number | string = c.workingLengthMm;
 		if (c.isObliterated) {
 			safeWl = 0;
-		} else if (typeof safeWl === "number") {
-			safeWl = Number.isNaN(safeWl) || !Number.isFinite(safeWl) || safeWl <= 0 ? getAnatomicalWl(activeTooth, c.canalName) : Math.round(safeWl * 2) / 2;
-		} else if (typeof safeWl === "string" && safeWl.trim()) {
-			const parsed = Number.parseFloat(safeWl);
-			safeWl = !Number.isNaN(parsed) && Number.isFinite(parsed) && parsed > 0 ? Math.round(parsed * 2) / 2 : getAnatomicalWl(activeTooth, c.canalName);
 		} else {
-			safeWl = getAnatomicalWl(activeTooth, c.canalName);
+			const fallbackWl = getAnatomicalWl(activeTooth, c.canalName) || 21.0;
+			let num = typeof safeWl === "number" ? safeWl : Number.parseFloat(String(safeWl || ""));
+			if (Number.isNaN(num) || !Number.isFinite(num) || num <= 0) {
+				num = fallbackWl;
+			}
+			// Валидация строго в физиологическом диапазоне 10–35 мм с шагом 0.5 мм без NaN
+			safeWl = Math.max(10, Math.min(35, Math.round(num * 2) / 2));
 		}
 
 		return {

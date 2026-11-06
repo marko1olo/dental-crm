@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { formatEndoPatientMemo } from "../EndoCanalLogModal";
+import { formatEndoPatientMemo } from "../endodonticsCatalogData";
 
 describe("Wave 54 / Feature 243: Endo Patient Memo Pure Function (Mandate 8k, 8n)", () => {
 	it("formats structured patient endo memo for permanent obturation", () => {
