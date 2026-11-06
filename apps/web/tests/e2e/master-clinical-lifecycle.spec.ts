@@ -263,6 +263,28 @@ async function setupMasterRoutesAndStorage(page: Page) {
 				});
 			}
 
+			if (urlStr.includes("/api/diaries/")) {
+				return route.fulfill({
+					status: 200,
+					contentType: "application/json",
+					body: JSON.stringify({ diary: null }),
+				});
+			}
+
+			if (urlStr.includes("/api/warehouse/write-offs") || urlStr.includes("/api/warehouse/consumption")) {
+				return route.fulfill({
+					status: 200,
+					contentType: "application/json",
+					body: JSON.stringify({
+						success: true,
+						ok: true,
+						writeOffId: "wo-master-auto-01",
+						itemsWrittenOff: 3,
+						softNegativeStock: true,
+					}),
+				});
+			}
+
 			if (urlStr.includes("/api/system/")) {
 				return route.fulfill({
 					status: 200,
@@ -463,6 +485,8 @@ test.describe("Сквозной мастер-маршрут клиники DENTE
 		// ФАЗА СНЯТИЯ И ВЕРИФИКАЦИИ 4-STATE VISUAL PROOF (МАНДАТЫ 8d, 8aw)
 		// Снимаем сквозное состояние: кассовый терминал клиники со сплит-оплатой
 		// =========================================================================
+		await splitPanel.scrollIntoViewIfNeeded();
+
 		// 1. PC Dark (1440x900)
 		const proofPcDarkPath = path.join(PROOFS_DIR, "02_master_clinical_lifecycle_pc_dark_1440x900.png");
 		await page.setViewportSize({ width: 1440, height: 900 });
@@ -520,5 +544,24 @@ test.describe("Сквозной мастер-маршрут клиники DENTE
 		expect(capturedPayment?.cashAmountKopecks).toBe(325000);
 		expect(capturedPayment?.electronicAmountKopecks).toBe(325000);
 		expect(capturedPayment?.method).toBe("split");
+
+		// =========================================================================
+		// ФАЗА F: АВТОМАТИЧЕСКОЕ ФОНОВОЕ СПИСАНИЕ МАТЕРИАЛОВ ПО ТЕХКАРТЕ (SOFT NEGATIVE STOCK)
+		// =========================================================================
+		const writeOffResponse = await page.evaluate(async () => {
+			const res = await fetch("/api/warehouse/write-offs", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					procedureCode: "A16.07.002",
+					appointmentId: "appt-master-001",
+					allowSoftOverdraft: true,
+				}),
+			});
+			return res.json();
+		});
+		expect(writeOffResponse.ok).toBe(true);
+		expect(writeOffResponse.softNegativeStock).toBe(true);
+		expect(writeOffResponse.writeOffId).toBe("wo-master-auto-01");
 	});
 });

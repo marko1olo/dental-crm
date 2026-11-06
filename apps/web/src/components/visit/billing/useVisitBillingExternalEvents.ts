@@ -40,8 +40,10 @@ export function useVisitBillingExternalEvents({
 						prev.every((item, idx) => item.id === DEFAULT_CHAIRSIDE_SERVICES[idx]?.id));
 				const shouldReplace = Boolean(detail.replaceExisting) || isPlaceholder;
 				const next = shouldReplace ? newItems : [...prev, ...newItems];
-				syncBillingItemsToVisitStore(next);
-				onServicesChange?.(next);
+				queueMicrotask(() => {
+					syncBillingItemsToVisitStore(next);
+					onServicesChange?.(next);
+				});
 				return next;
 			});
 
@@ -72,8 +74,10 @@ export function useVisitBillingExternalEvents({
 				const exists = !isPlaceholder && prev.some((s) => String(s.toothCode || "") === String(newItem.toothCode || "") && ((s.code804n && newItem.code804n && s.code804n === newItem.code804n) || (s.title && newItem.title && s.title.trim().toLowerCase() === newItem.title.trim().toLowerCase())));
 				if (exists) return prev;
 				const next = isPlaceholder ? [newItem] : [...prev, newItem];
-				syncBillingItemsToVisitStore(next);
-				onServicesChange?.(next);
+				queueMicrotask(() => {
+					syncBillingItemsToVisitStore(next);
+					onServicesChange?.(next);
+				});
 				return next;
 			});
 			onAddBillingItem?.(item);
@@ -85,8 +89,10 @@ export function useVisitBillingExternalEvents({
 			const targets = detail.items || [detail.item || detail];
 			setServices((prev) => {
 				const next = prev.filter((s) => !targets.some((t: any) => typeof t === "string" ? s.code804n === t || s.title === t : (t.code804n && s.code804n === t.code804n) || (t.title && s.title === t.title)));
-				syncBillingItemsToVisitStore(next);
-				onServicesChange?.(next);
+				queueMicrotask(() => {
+					syncBillingItemsToVisitStore(next);
+					onServicesChange?.(next);
+				});
 				return next;
 			});
 		};

@@ -25,7 +25,7 @@ graph TD
 
 | Направление тестирования | Канонический реестр документации | Основные тестовые файлы | Ключевые проверяемые инварианты |
 | :--- | :--- | :--- | :--- |
-| **Сквозной E2E Master Flow** | [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md) | `apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` | 5-сек бронь ➔ 0-клик норма ➔ Wheeler 36 [O] ➔ Смета ➔ Сплит 50/50 ➔ Чек 54-ФЗ. |
+| **Сквозной E2E Master Flow** | [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md) | `apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` | 5-сек бронь ➔ 0-клик норма ➔ Wheeler 36 [O] ➔ Смета ➔ Сплит 50/50 ➔ Чек 54-ФЗ ➔ Склад Soft Negative Stock. |
 | **Кросс-модульные сценарии E2E** | [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md) | `cashbox-billing-flow.spec.ts`<br>`warehouse-consumption-flow.spec.ts`<br>`odontogram-multiselect-flow.spec.ts` | Сплит-оплата в копейках, списание по техкартам (Soft Negative Stock), мультиселект одонтограммы. |
 | **Сетевой хаос и идемпотентность** | [`docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md) | `apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` | 20-поточный шторм `Idempotency-Key` (UUIDv7), Double-Spend defense, FIFO офлайн-очередь, CRDT LWW зубов. |
 | **Контракты роутов Fastify** | [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md) | `apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts` | Защита CWE-209 & SQL 22P02, валидация UUID, строгие коды 400/404/409/422 вместо 500 краша. |
@@ -95,7 +95,7 @@ graph TD
 - **Путь**: `apps/web/tests/e2e/`
 - **Команда запуска**: `npx playwright test apps/web/tests/e2e/<filename>.spec.ts`
 - **Ключевые сьюты**:
-  * `master-clinical-lifecycle.spec.ts` (524 строки) — 5-фазный мастер-цикл: бронирование за 5 секунд без ассистента ➔ приём врача с 1-клик нормой ➔ разметка кариеса 36 [O] K02.0 ➔ смета в копейках ➔ чекаут сплитом 50% карта / 50% нал.
+  * `master-clinical-lifecycle.spec.ts` — 6-фазный мастер-цикл: бронирование за 5 секунд без ассистента ➔ приём врача с 1-клик нормой ➔ одонтограмма Wheeler 2.5D (зуб 36 [O] K02.0) ➔ прозрачная смета без микро-расходников ➔ чекаут сплитом 50% карта / 50% нал с чеком 54-ФЗ ➔ автоматическое фоновое списание материалов по техкарте (Soft Negative Stock).
   * `cashbox-billing-flow.spec.ts` — проведение фискального чека 54-ФЗ, сплит-оплата.
   * `warehouse-consumption-flow.spec.ts` — автосписание анестетика и пломбировочного материала.
   * `odontogram-multiselect-flow.spec.ts` — пакетное выделение зубов и применение статусов.

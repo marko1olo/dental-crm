@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useAppStore } from '../../../store/appStore';
 import type { CopilotUiMessage, PendingConfirmation } from '../copilotTypes';
 import type { SpecialtyCategoryKey } from '../../visit/clinicalCatalog/clinicalProtocolsCatalog';
@@ -24,6 +24,9 @@ export interface UseCopilotGlobalEventsOptions {
 }
 
 export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): void {
+  const optsRef = useRef(opts);
+  optsRef.current = opts;
+
   useEffect(() => {
     const checkAndTrigger = () => {
       const params = new URLSearchParams(window.location.search);
@@ -37,50 +40,50 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
         params.get('assistant') === '1' ||
         ['#copilot', '#copilot-drawer', '#copilot-studio', '#ai', '#assistant', '#chairside-copilot'].includes(hash);
 
-      if (isCopilotRequested) opts.openDrawer();
-      if (params.get('hud') === 'open' || hash.includes('chairside-hud')) opts.openHud();
-      if (params.get('voice') === 'open' || hash.includes('voice-stenographer')) opts.openVoiceModal();
+      if (isCopilotRequested) optsRef.current.openDrawer();
+      if (params.get('hud') === 'open' || hash.includes('chairside-hud')) optsRef.current.openHud();
+      if (params.get('voice') === 'open' || hash.includes('voice-stenographer')) optsRef.current.openVoiceModal();
     };
 
     checkAndTrigger();
 
     (window as any).__denteCopilot = {
-      open: opts.openDrawer,
-      close: opts.closeDrawer,
-      toggle: opts.toggle,
-      openHud: opts.openHud,
-      closeHud: opts.closeHud,
-      toggleHud: opts.toggleHud,
-      openVoiceModal: opts.openVoiceModal,
-      closeVoiceModal: opts.closeVoiceModal,
-      openTreatmentPlanCopilot: opts.openTreatmentPlanCopilot,
-      closeTreatmentPlanCopilot: opts.closeTreatmentPlanCopilot,
+      open: () => optsRef.current.openDrawer(),
+      close: () => optsRef.current.closeDrawer(),
+      toggle: () => optsRef.current.toggle(),
+      openHud: () => optsRef.current.openHud(),
+      closeHud: () => optsRef.current.closeHud(),
+      toggleHud: () => optsRef.current.toggleHud(),
+      openVoiceModal: () => optsRef.current.openVoiceModal(),
+      closeVoiceModal: () => optsRef.current.closeVoiceModal(),
+      openTreatmentPlanCopilot: () => optsRef.current.openTreatmentPlanCopilot(),
+      closeTreatmentPlanCopilot: () => optsRef.current.closeTreatmentPlanCopilot(),
       openAiSettings: () => {
         useAppStore.getState().setCurrentView('settings');
         useAppStore.getState().setSettingsTab('ai');
       },
-      setContext: (ctx: { patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null) => opts.setCustomContext?.(ctx),
-      setMessages: (msgs) => opts.setCustomMessages(msgs),
-      setPending: (pend) => opts.setCustomPending(pend),
-      setBusy: (b: boolean) => opts.setCustomBusy?.(b),
-      setPhase: (p: string | null) => opts.setCustomPhase?.(p),
-      setActiveTab: (tab) => opts.setActiveTab(tab),
+      setContext: (ctx: { patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null) => optsRef.current.setCustomContext?.(ctx),
+      setMessages: (msgs: CopilotUiMessage[]) => optsRef.current.setCustomMessages(msgs),
+      setPending: (pend: PendingConfirmation | null) => optsRef.current.setCustomPending(pend),
+      setBusy: (b: boolean) => optsRef.current.setCustomBusy?.(b),
+      setPhase: (p: string | null) => optsRef.current.setCustomPhase?.(p),
+      setActiveTab: (tab: 'chat' | 'pending') => optsRef.current.setActiveTab(tab),
     };
 
-    const handleCustomToggle = () => opts.toggle();
-    const handleToggleHud = () => opts.toggleHud();
+    const handleCustomToggle = () => optsRef.current.toggle();
+    const handleToggleHud = () => optsRef.current.toggleHud();
     const handleOpenCatalog = (e: Event) => {
       const customEvent = e as CustomEvent<{ tooth?: number; query?: string; category?: SpecialtyCategoryKey }>;
       if (customEvent.detail) {
-        opts.onOpenCatalog(customEvent.detail.tooth, customEvent.detail.category);
+        optsRef.current.onOpenCatalog(customEvent.detail.tooth, customEvent.detail.category);
       } else {
-        opts.onOpenCatalog();
+        optsRef.current.onOpenCatalog();
       }
     };
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey && e.shiftKey && e.key.toLowerCase() === 'c') || (e.altKey && e.key.toLowerCase() === 'c')) {
         e.preventDefault();
-        opts.toggleHud();
+        optsRef.current.toggleHud();
       }
     };
 
@@ -95,19 +98,19 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
         patientName?: string | null;
       }>;
       if (customEvent?.detail) {
-        if (customEvent.detail.messages) opts.setCustomMessages(customEvent.detail.messages);
-        if (customEvent.detail.pending !== undefined) opts.setCustomPending(customEvent.detail.pending);
-        if (customEvent.detail.activeTab) opts.setActiveTab(customEvent.detail.activeTab);
+        if (customEvent.detail.messages) optsRef.current.setCustomMessages(customEvent.detail.messages);
+        if (customEvent.detail.pending !== undefined) optsRef.current.setCustomPending(customEvent.detail.pending);
+        if (customEvent.detail.activeTab) optsRef.current.setActiveTab(customEvent.detail.activeTab);
         const tooth = customEvent.detail.activeTooth ?? customEvent.detail.tooth;
         if (tooth !== undefined || customEvent.detail.patientId !== undefined || customEvent.detail.patientName !== undefined) {
-          opts.setCustomContext?.({
+          optsRef.current.setCustomContext?.({
             patientName: customEvent.detail.patientName,
             patientId: customEvent.detail.patientId,
             activeTooth: tooth,
           });
         }
       }
-      opts.openDrawer();
+      optsRef.current.openDrawer();
     };
 
     window.addEventListener('hashchange', checkAndTrigger);
@@ -116,16 +119,16 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     window.addEventListener('dente:toggle-copilot', handleCustomToggle);
     window.addEventListener('dente:open-copilot', handleOpenCopilot);
     window.addEventListener('dente-open-copilot', handleOpenCopilot);
-    window.addEventListener('dente:close-copilot', opts.closeDrawer);
-    window.addEventListener('dente-close-copilot', opts.closeDrawer);
+    window.addEventListener('dente:close-copilot', () => optsRef.current.closeDrawer());
+    window.addEventListener('dente-close-copilot', () => optsRef.current.closeDrawer());
     window.addEventListener('dente:open-agent-cockpit', handleOpenCopilot);
     window.addEventListener('dente:toggle-chairside-hud', handleToggleHud);
-    window.addEventListener('dente:open-chairside-hud', opts.openHud);
-    window.addEventListener('dente:close-chairside-hud', opts.closeHud);
-    window.addEventListener('dente:open-voice-dictation', opts.openVoiceModal);
-    window.addEventListener('dente:close-voice-dictation', opts.closeVoiceModal);
-    window.addEventListener('dente:open-treatment-plan-copilot', opts.openTreatmentPlanCopilot);
-    window.addEventListener('dente:close-treatment-plan-copilot', opts.closeTreatmentPlanCopilot);
+    window.addEventListener('dente:open-chairside-hud', () => optsRef.current.openHud());
+    window.addEventListener('dente:close-chairside-hud', () => optsRef.current.closeHud());
+    window.addEventListener('dente:open-voice-dictation', () => optsRef.current.openVoiceModal());
+    window.addEventListener('dente:close-voice-dictation', () => optsRef.current.closeVoiceModal());
+    window.addEventListener('dente:open-treatment-plan-copilot', () => optsRef.current.openTreatmentPlanCopilot());
+    window.addEventListener('dente:close-treatment-plan-copilot', () => optsRef.current.closeTreatmentPlanCopilot());
     window.addEventListener('dente:open-protocols-catalog', handleOpenCatalog);
     window.addEventListener('keydown', handleKeyDown);
 
@@ -135,19 +138,19 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
       window.removeEventListener('dente:toggle-copilot', handleCustomToggle);
       window.removeEventListener('dente:open-copilot', handleOpenCopilot);
       window.removeEventListener('dente-open-copilot', handleOpenCopilot);
-      window.removeEventListener('dente:close-copilot', opts.closeDrawer);
-      window.removeEventListener('dente-close-copilot', opts.closeDrawer);
+      window.removeEventListener('dente:close-copilot', () => optsRef.current.closeDrawer());
+      window.removeEventListener('dente-close-copilot', () => optsRef.current.closeDrawer());
       window.removeEventListener('dente:open-agent-cockpit', handleOpenCopilot);
       window.removeEventListener('dente:toggle-chairside-hud', handleToggleHud);
-      window.removeEventListener('dente:open-chairside-hud', opts.openHud);
-      window.removeEventListener('dente:close-chairside-hud', opts.closeHud);
-      window.removeEventListener('dente:open-voice-dictation', opts.openVoiceModal);
-      window.removeEventListener('dente:close-voice-dictation', opts.closeVoiceModal);
-      window.removeEventListener('dente:open-treatment-plan-copilot', opts.openTreatmentPlanCopilot);
-      window.removeEventListener('dente:close-treatment-plan-copilot', opts.closeTreatmentPlanCopilot);
+      window.removeEventListener('dente:open-chairside-hud', () => optsRef.current.openHud());
+      window.removeEventListener('dente:close-chairside-hud', () => optsRef.current.closeHud());
+      window.removeEventListener('dente:open-voice-dictation', () => optsRef.current.openVoiceModal());
+      window.removeEventListener('dente:close-voice-dictation', () => optsRef.current.closeVoiceModal());
+      window.removeEventListener('dente:open-treatment-plan-copilot', () => optsRef.current.openTreatmentPlanCopilot());
+      window.removeEventListener('dente:close-treatment-plan-copilot', () => optsRef.current.closeTreatmentPlanCopilot());
       window.removeEventListener('dente:open-protocols-catalog', handleOpenCatalog);
       window.removeEventListener('keydown', handleKeyDown);
       delete (window as any).__denteCopilot;
     };
-  }, [opts]);
+  }, []);
 }

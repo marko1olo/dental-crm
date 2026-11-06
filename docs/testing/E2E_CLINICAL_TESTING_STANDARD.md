@@ -206,14 +206,21 @@ flowchart TD
 | | `btn-checkout-split-50-50` | 1-клик распределение 50% карта / 50% нал |
 | | `split-balance-status` | Индикатор точной сходимости сумм («Сумма сходится точно ✓») |
 | | `btn-confirm-checkout-payment` | Primary CTA подтверждения фискального платежа |
+| **Фаза F: Склад Soft Overdraft** | `/api/warehouse/write-offs` | Фоновое автосписание материалов по техкарте процедуры без блокировки врача |
 
 ### Автопсия и устранение архитектурных дефектов:
 1. **React 19 Rules of Hooks в `DirectVisitLauncher.tsx`**:
    - *Дефект*: хук `const fallbackAppLogic = useMemo(...)` вызывался после раннего возврата `if (!isOpen) return null;`. При переходе из расписания в визит это вызывало `Error: Rendered more hooks than during the previous render`, валившее всё приложение в `BootErrorBoundary`.
    - *Исправление*: вызов `useMemo` перенесён выше раннего возврата. Порядок вызова хуков гарантированно инвариантен при любых переходах.
-2. **4-State Visual Proof (`docs/proofs/e2e_master/`)**:
-   - `01_master_clinical_lifecycle_pc_light_1440x900.png` (96 КБ $\ge 20$ КБ) — светлая тема, контраст WCAG AAA $\ge 4.5:1$.
-   - `02_master_clinical_lifecycle_pc_dark_1440x900.png` (98 КБ $\ge 20$ КБ) — тёмная тема, 100% тёмные токены `var(--paper)`.
-   - `03_master_clinical_lifecycle_mobile_light_390x844.png` (53 КБ $\ge 20$ КБ) — Apple HIG, тач $\ge 44\times 44$px, Drag Handle 36x5px.
-   - `04_master_clinical_lifecycle_mobile_dark_390x844.png` (50 КБ $\ge 20$ КБ) — мобильная тёмная тема, ноль слепящих белых пятен.
+2. **React 19 State Cascade в `useVisitBillingExternalEvents.ts`**:
+   - *Дефект*: синхронный вызов `syncBillingItemsToVisitStore(next)` (обновление глобального Zustand-стора `useVisitStore`) внутри коллбэка `setServices((prev) => { ... })` приводил к ошибке `Cannot update a component ('CopilotGlobalHost') while rendering a different component ('VisitServiceBillingWidget')`.
+   - *Исправление*: сайд-эффект синхронизации внешнего стора вынесен в `queueMicrotask(() => { syncBillingItemsToVisitStore(next); onServicesChange?.(next); })`, предотвращая межкомпонентные сайд-эффекты в фазе рендера.
+3. **Бесконечная ре-подписка слушателей в `useCopilotGlobalEvents.ts`**:
+   - *Дефект*: передача литерала объекта `opts` в массив зависимостей `[opts]` вызывала бесконечные ре-эффекты и переполнение стека вызовов `Maximum update depth exceeded`.
+   - *Исправление*: внедрен стабильный `optsRef = useRef(opts)` с зависимостью `[]` в `useEffect`.
+4. **4-State Visual Proof (`docs/proofs/e2e_master/`)**:
+   - `01_master_clinical_lifecycle_pc_light_1440x900.png` (94.6 КБ $\ge 20$ КБ) — светлая тема, сплит 50/50, контраст WCAG AAA $\ge 4.5:1$.
+   - `02_master_clinical_lifecycle_pc_dark_1440x900.png` (96.5 КБ $\ge 20$ КБ) — тёмная тема, 100% тёмные токены `var(--paper)`.
+   - `03_master_clinical_lifecycle_mobile_light_390x844.png` (55.6 КБ $\ge 20$ КБ) — Apple HIG, тач $\ge 44\times 44$px, Drag Handle 36x5px.
+   - `04_master_clinical_lifecycle_mobile_dark_390x844.png` (58.3 КБ $\ge 20$ КБ) — мобильная тёмная тема, ноль слепящих белых пятен.
 
