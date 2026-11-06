@@ -381,3 +381,22 @@ that ships without them is a tenant leak, and 0160 is the receipt for what that 
     2026-08-06 it does have real protection — the clear is scoped to one tenant, a non-empty tenant
     requires `DENTAL_ALLOW_DESTRUCTIVE_DB_RESET="YES"`, and `NODE_ENV=production` is refused
     unconditionally — but protection is not permission. See "Seeding / reset" above.
+
+---
+
+## 🧪 ACID Concurrency & Stress Testing Suite (Red Team Invariants)
+
+Начиная с ноября 2026 в контур бэкенда внедрен выделенный сьют высококонкурентных стресс-тестов на реальном PostgreSQL 18 (`apps/api/src/tests/concurrency/`) без моков изоляции данных:
+
+1. **Schedule Slot Lock & Anti-Double-Booking Defense** (`scheduleSlotLockConcurrency.test.ts`):
+   * Эмуляция 15 одновременных параллельных запросов (`Promise.all`) на бронирование одного временного слота у одного врача, в одном кресле, для одного пациента или с одним ассистентом.
+   * Ровно **1 запрос** возвращает `201 Created`, ровно **14 запросов** детерминированно получают `409 Conflict` (`AppointmentCreateRejected`, `reason: resource_overlap`).
+   * В базе данных создается строго одна запись (Zero Double-Booking).
+2. **Billing Double-Spend Defense & Exact Kopeck Arithmetic** (`billingDoubleSpendDefense.test.ts`):
+   * 15 параллельных одновременных списаний по 4 000 ₽ с депозита 10 000 ₽: пессимистическая блокировка `FOR UPDATE` пропускает ровно **2 списания (200 OK)** и отклоняет **13 запросов (402 Insufficient Funds)**. Остаток в PostgreSQL строго 2 000.00 ₽ (200 000 копеек), ровно 2 строки в `payments`.
+   * **Multi-Tap Replay Storm**: 20 параллельных запросов с идентичным `clientMutationId` исполняют ровно 1 списание (19 идемпотентных реплеев), остаток 0.00 ₽, ровно 1 строка в `payments`.
+   * **Exact Kopeck Integrity**: 20 параллельных дробных пополнений по 133.37 ₽ дают ровно 2 667.40 ₽ (266 740 копеек) без float drift.
+3. **Inventory Stock Deduction & Deadlock Avoidance** (`inventoryStockDeductionStress.test.ts`):
+   * 15 одновременных завершений визитов списывают материалы по техкартам: упорядочивание строк по `id ASC` полностью устраняет дедлоки PostgreSQL (`deadlock detected`), остатки списываются строго на 15 * qty, создается ровно 30 записей в `inventory_transactions`.
+   * **Soft Negative Stock (Мандат 8n)**: 20 одновременных списаний при дефиците 3 единиц никогда не блокируют врача (все 20 возвращают 200 OK), остаток детерминированно уходит в овердрафт -17.000.
+   * **Bidirectional Mutations**: 10 одновременных приходов (+4) и 10 списаний (-2) гарантируют отсутствие Lost Update аномалий с итоговым балансом +20.000.

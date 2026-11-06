@@ -138,6 +138,10 @@ const idempotencyKey = `${orgId}:${orderId}:${totalKopecks}:${timestamp}`;
   2. Проверка доступного остатка: списание суммы `amountRub`.
   3. Создание платежа в таблице `payments` с привязкой к конкретному члену семьи.
   4. Моментальная рассылка события по WebSocket через `wsBroker.broadcastToOrganization` для обновления кассовых экранов регистратуры.
+* **Red Team ACID Concurrency Proof (`apps/api/src/tests/concurrency/billingDoubleSpendDefense.test.ts`)**:
+  - Защита от Double-Spend: 15 параллельных запросов по 4 000 ₽ при балансе 10 000 ₽ дают ровно 2 успешных списания и 13 отказов `402 Insufficient Funds`, остаток в БД строго 2 000.00 ₽ (200 000 копеек).
+  - Multi-Tap Storm: 20 параллельных запросов с одинаковым `clientMutationId` исполняют ровно 1 списание, 19 идемпотентных повторов.
+  - Exact Kopecks: 20 параллельных пополнений по 133.37 ₽ дают точную сумму 2 667.40 ₽ без ошибок floating-point.
 
 ---
 
