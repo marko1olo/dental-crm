@@ -25,6 +25,7 @@ import {
 } from "./syncModules/odontogramIndexedDbSync";
 import {
 	fetchToothStatesFromServer,
+	flushPendingOdontogramMutations,
 	sendToothStatesBatch,
 } from "./syncModules/odontogramApiBatchSync";
 import { attachOdontogramEventListeners } from "./syncModules/odontogramEventListeners";
@@ -235,6 +236,15 @@ export function useOdontogramSync({
 				return;
 			}
 			try {
+				// Flush any pending offline mutations first so server DB has latest data
+				if (typeof navigator !== "undefined" && navigator.onLine) {
+					try {
+						await flushPendingOdontogramMutations(patientId);
+					} catch {
+						// proceed with fetch even if flush encountered individual item error
+					}
+				}
+
 				const { states, status, rawBody } = await fetchToothStatesFromServer(patientId, controller.signal);
 				if (cancelled) return;
 				if (states === null) {
@@ -256,6 +266,17 @@ export function useOdontogramSync({
 		};
 		void loadTeeth();
 
+		const handleOnline = () => {
+			void flushPendingOdontogramMutations(patientId).then((res) => {
+				if (res.syncedCount > 0) {
+					setTeethReloadToken((t) => t + 1);
+				}
+			});
+		};
+		if (typeof window !== "undefined") {
+			window.addEventListener("online", handleOnline);
+		}
+
 		const detachListeners = attachOdontogramEventListeners({
 			patientId,
 			onUpdateToothState: (teeth, state) => updateToothStateRef.current(teeth, state),
@@ -268,6 +289,9 @@ export function useOdontogramSync({
 			cancelled = true;
 			controller.abort();
 			detachListeners();
+			if (typeof window !== "undefined") {
+				window.removeEventListener("online", handleOnline);
+			}
 		};
 	}, [patientId, teethReloadToken, pediatricMode, setAiPendingProposal]);
 

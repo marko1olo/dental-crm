@@ -1009,22 +1009,45 @@
 
 ## 16. 📡 ОФФЛАЙН-РЕЖИМ, LOCAL-FIRST SYNC И СЕТЕВАЯ РЕПЛИКАЦИЯ LAN
 
-### [OFF-01] [SEV-1] Тихий дроп платежа при обрыве сети в CashRegisterStudioModal
+### [OFF-01] [SEV-1] [ИСПРАВЛЕНО] Тихий дроп платежа при обрыве сети в CashRegisterStudioModal
 - **Файлы:**
-  - [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx#L134-L153`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx#L134-L153)
-- **Суть бага:** В кассовой модалке вызов `fetch("/api/cashbox/payments")` обёрнут в блок `.catch(() => null)`. При ошибке сети или обрыве интернета подсовывается фиктивный объект `{ success: true, effectiveTotalRub, ... }`, вызывается `onPaymentComplete()`, и модалка радостно закрывается! Платёж **НЕ попадает** ни в `offlinePaymentQueue`, ни в IndexedDB. Деньги с пациента взяты, кассир уверен, что всё прошло, а в базе данных клиники ноль записей. После перезагрузки долг пациента не погашен.
+  - [`apps/web/src/components/cashbox/CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx)
+  - [`apps/web/src/components/cashbox/studioModules/useCashRegisterStudioState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/studioModules/useCashRegisterStudioState.ts)
+  - [`apps/web/src/offline/offlinePaymentQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/offline/offlinePaymentQueue.ts)
+  - [`apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts)
+- **Суть бага:** В кассовой модалке вызов `fetch("/api/cashbox/payments")` обёрнут в блок `.catch(() => null)`. При ошибке сети или обрыве интернета подсовывался фиктивный объект `{ success: true, effectiveTotalRub, ... }`, вызывался `onPaymentComplete()`, и модалка радостно закрывалась! Платёж **НЕ попадал** ни в `offlinePaymentQueue`, ни в IndexedDB. Деньги с пациента взяты, кассир уверен, что всё прошло, а в базе данных клиники ноль записей. После перезагрузки долг пациента не погашен.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Позорный симулятор `catch(() => null)` полностью ликвидирован. В `useCashRegisterStudioState.ts` внедрен честный перехват сетевых сбоев (`!navigator.onLine`, `TypeError: Failed to fetch`, сетевые таймауты, HTTP-статусы 502/503/504).
+  2. При обрыве связи платёж гарантированно сохраняется в персистентную очередь `offlinePaymentQueue` (IndexedDB `dente_offline_outbox` / `localStorage`) с точной суммой в копейках (`amountKopecks`), уникальным `idempotencyKey` (UUIDv7) и статусом `queued` / `pending_network_sync`.
+  3. Кассиру выводится понятный тост: «Платёж сохранён в локальной очереди кассы. Будет синхронизирован с сервером при восстановлении связи». Модалка корректно завершает приём (`onSuccess`, `onPaymentComplete`, `onConfirmPayment` с флагом `isOfflineQueued: true`) без зависания интерфейса.
+  4. В `offlinePaymentQueue.ts` реализована функция `flushOfflinePaymentsToServer()` с фоновой отправкой очереди на `/api/cashbox/payments` и автосинхронизацией по событию `window.addEventListener('online')` (`initOfflinePaymentAutoSync()`).
+  5. Проверено тестами `offlineQueueResilienceOff01Off02Off03.test.ts` (5/5 PASS), `cashboxSsotScreens.test.tsx` (11/11 PASS), `offlineSubsystem.test.ts` (13/13 PASS) и скриншотами живого приложения (`docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png`, `02_cashbox_studio_pc_dark_1440x900.png`, `05_cashbox_studio_mobile_light_390x844.png`, `06_cashbox_studio_mobile_dark_390x844.png`).
 
-### [OFF-02] [SEV-1] Неотправка офлайн-правок одонтограммы на сервер после восстановления связи
+### [OFF-02] [SEV-1] [ИСПРАВЛЕНО] Неотправка офлайн-правок одонтограммы на сервер после восстановления связи
 - **Файлы:**
-  - [`apps/web/src/components/odontogram/syncModules/odontogramApiBatchSync.ts#L75-L92`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/syncModules/odontogramApiBatchSync.ts#L75-L92)
-  - [`apps/web/src/components/odontogram/useOdontogramSync.ts#L237-L251`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramSync.ts#L237-L251)
-- **Суть бага:** При обрыве сети статус зубов пишется в изолированную IndexedDB `dente_odontogram_db` (`persistTeethLocally`), но мутация **НЕ добавляется в Outbox-очередь (`idbSyncQueue`)**. При появлении сети хук обновляет локальный кэш с сервера, но **НИКОГДА не отправляет накопленные офлайн-изменения обратно в PostgreSQL**! Вся работа врача за время отсутствия интернета остаётся на одном локальном браузере и никогда не попадает в общую базу.
+  - [`apps/web/src/components/odontogram/syncModules/odontogramApiBatchSync.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/syncModules/odontogramApiBatchSync.ts)
+  - [`apps/web/src/components/odontogram/useOdontogramSync.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useOdontogramSync.ts)
+  - [`apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts)
+- **Суть бага:** При обрыве сети статус зубов писался в изолированную IndexedDB `dente_odontogram_db` (`persistTeethLocally`), но мутация **НЕ добавлялась в Outbox-очередь (`idbSyncQueue`)**. При появлении сети хук обновлял локальный кэш с сервера, но **НИКОГДА не отправлял накопленные офлайн-изменения обратно в PostgreSQL**! Вся работа врача за время отсутствия интернета оставалась на одном локальном браузере и никогда не попадала в общую базу.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `odontogramApiBatchSync.ts` при сбое сети или офлайне (`!navigator.onLine`, `fetch error`, 502/503/504) мутация сохраняется не только в кэш зубов, но и ставится в персистентную Outbox-очередь `enqueueOfflineMutation({ entityType: "ODONTOGRAM_STATUS", patientId, payload: { ... } })` с идемпотентным UUIDv7.
+  2. Реализована функция пакетного сброса `flushPendingOdontogramMutations(patientId?)`, которая извлекает накопленные мутации одонтограммы из Outbox, группирует их и отправляет батчем в Fastify/PostgreSQL 18 на `/api/odontogram/tooth-state` (или `/api/dental-chart/batch`), безопасно удаляя синхронизированные записи через `removeOfflineMutation`.
+  3. В `useOdontogramSync.ts` при старте синхронизации и в функции `loadTeeth` перед запросом свежих данных сервер сначала вызывает `flushPendingOdontogramMutations`, предотвращая перезапись локального клинического труда врача.
+  4. Подключен фоновый слушатель `initOdontogramAutoSync()` и хук `window.addEventListener('online')`, который автоматически прокачивает Outbox при восстановлении канала связи.
+  5. Проверено сквозным тестом `offlineQueueResilienceOff01Off02Off03.test.ts` (Outbox persistence & batch flush, 5/5 PASS), `odontogramDecompositionAndSync.test.ts` (11/11 PASS) и 4-State Proof скриншотами живого стенда (`docs/proofs/offline/07_odontogram_chairside_pc_light_1440x900.png`, `08_odontogram_chairside_pc_dark_1440x900.png`, `09_odontogram_mobile_light_390x844.png`, `10_odontogram_mobile_dark_390x844.png`).
 
-### [OFF-03] [SEV-1] Фатальное несовпадение схемы DTO в очереди фискализации
+### [OFF-03] [SEV-1] [ИСПРАВЛЕНО] Фатальное несовпадение схемы DTO в очереди фискализации
 - **Файлы:**
-  - [`apps/web/src/hooks/useFiscalOperations.ts#L44-L51`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/useFiscalOperations.ts#L44-L51)
-  - [`apps/api/src/routes/sbp/handlers/sbpFiscalRouteHandlers.ts#L23-L30`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sbp/handlers/sbpFiscalRouteHandlers.ts#L23-L30)
-- **Суть бага:** Фронтенд оборачивает тело в `{ paymentId, visitId, payload: receipt.payload, idempotencyKey }`. Серверный валидатор `createFiscalReceiptPayloadSchema` ожидает поля (`patientId`, `customerContact`, `items`) непосредственно в корне `request.body`. Результат: сервер стабильно отвечает `400 FiscalReceiptValidationError`, после 5 автоматических попыток чек навсегда помечается как безнадёжно `failed`.
+  - [`apps/api/src/routes/sbp/handlers/sbpFiscalRouteHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sbp/handlers/sbpFiscalRouteHandlers.ts)
+  - [`apps/web/src/hooks/useFiscalOperations.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/useFiscalOperations.ts)
+  - [`packages/shared/src/fiscal/validation.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/fiscal/validation.ts)
+  - [`apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts)
+- **Суть бага:** Фронтенд оборачивал тело в `{ paymentId, visitId, payload: receipt.payload, idempotencyKey }`. Серверный валидатор `createFiscalReceiptPayloadSchema` ожидал поля (`patientId`, `customerContact`, `items`) непосредственно в корне `request.body`. Результат: сервер стабильно отвечал `400 FiscalReceiptValidationError`, после 5 автоматических попыток чек навсегда помечался как безнадёжно `failed`.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `sbpFiscalRouteHandlers.ts` создана надежная функция нормализации DTO `normalizeFiscalReceiptBody(rawBody)`: если клиент шлёт вложенную обертку `{ payload: { ... }, paymentId, visitId, idempotencyKey }`, бэкенд бесшовно извлекает и склеивает поля в корневой DTO, распределяет тендеры (`cashKopecks`, `electronicCardKopecks`) и нормализует массив `items`. Валидатор `createFiscalReceiptPayloadSchema` получает 100% валидный вход.
+  2. В `useFiscalOperations.ts` отправка чеков `sendReceiptToServer()` перестроена на формирование чистого плоского корневого DTO с обязательными полями `patientId`, `customerContact`, `items`, `totalKopecks` и заголовком `Idempotency-Key: idempotencyKey`.
+  3. Обеспечена 100% обратная совместимость и симметрия клиент-сервер: и плоский, и вложенный payload гарантированно проходят валидацию без 400 ошибок.
+  4. Проверено тестами `packages/shared/src/fiscal/validation.test.ts` (20/20 PASS), `fiscalDecompositionSmoke.test.ts` (2/2 PASS), `fiscalQueueDisconnectionStress.test.ts` (5/5 PASS) и `offlineQueueResilienceOff01Off02Off03.test.ts` (DTO alignment 5/5 PASS).
 
 ### [OFF-04] [SEV-1] Симулятор P2P LAN репликации (битые роуты и мертвый UDP-демон)
 - **Файлы:**

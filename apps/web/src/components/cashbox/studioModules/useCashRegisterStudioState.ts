@@ -12,6 +12,7 @@
 import { useState, useMemo, useCallback } from "react";
 import { showToast } from "../../GlobalToast.js";
 import { denteAdminSecretRequestHeaders } from "../../../lib/denteRequestHeaders.js";
+import { enqueueOfflinePayment } from "../../../offline/offlinePaymentQueue.js";
 import {
 	type CashboxTenderType,
 	type ClientPayerType,
@@ -22,6 +23,25 @@ import {
 	generateFiscalTapeText,
 } from "../cashRegisterCatalogData.js";
 import type { CashRegisterStudioModalProps } from "../CashRegisterStudioModal.js";
+
+function isNetworkFailure(err: unknown, status?: number): boolean {
+	if (status && [502, 503, 504].includes(status)) return true;
+	if (typeof navigator !== "undefined" && !navigator.onLine) return true;
+	if (err instanceof TypeError && err.message.toLowerCase().includes("fetch")) return true;
+	if (err instanceof Error) {
+		const msg = err.message.toLowerCase();
+		return (
+			msg.includes("network") ||
+			msg.includes("failed to fetch") ||
+			msg.includes("abort") ||
+			msg.includes("timeout") ||
+			msg.includes("offline") ||
+			msg.includes("econnrefused") ||
+			msg.includes("connection")
+		);
+	}
+	return false;
+}
 
 export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) {
 	const {
@@ -205,6 +225,64 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			payload.depositAmountKopecks = Number(splitDepositKop);
 		}
 
+		// Fast offline-first path: if network is already down, enqueue immediately without freeze
+		if (typeof navigator !== "undefined" && !navigator.onLine) {
+			try {
+				const queuedItem = await enqueueOfflinePayment({
+					patientId: props.patientId && props.patientId !== "pat-walkin" ? props.patientId : "pat-walkin",
+					patientName: props.patientName || "Пациент клиники",
+					visitId: effectiveVisitId,
+					invoiceId: props.invoiceId || undefined,
+					totalKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),
+					paymentType: isWarrantyCaseFinal ? "cash" : method === "split" ? "mixed" : (method as any),
+					splitDetails:
+						method === "split" && !isWarrantyCaseFinal
+							? {
+									cashKopecks: Number(splitCashKop),
+									cardKopecks: Number(splitCardKop),
+									sbpKopecks: Number(splitSbpKop),
+									depositKopecks: Number(splitDepositKop),
+								}
+							: undefined,
+					items: [
+						{
+							name: props.serviceTitle || "Стоматологические услуги",
+							priceKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),
+							quantity: 1,
+						},
+					],
+					cashierName: cashierFullName,
+					doctorName: props.doctorFullName,
+					patientPhoneOrEmail: props.patientPhone,
+					printFiscalReceipt: fiscalize,
+				});
+
+				showToast(
+					"Платёж сохранён в локальной очереди кассы. Будет синхронизирован с сервером при восстановлении связи",
+					"info",
+					7000,
+				);
+
+				const paymentResult = {
+					success: true,
+					effectiveTotalRub,
+					method,
+					clientMutationId,
+					visitId: effectiveVisitId,
+					isOfflineQueued: true,
+					queueId: queuedItem.id,
+				};
+
+				if (props.onSuccess) props.onSuccess(paymentResult);
+				if (props.onPaymentComplete) props.onPaymentComplete();
+				if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
+				onClose();
+				return;
+			} catch (offlineErr) {
+				// Continue to network fetch if local queueing failed
+			}
+		}
+
 		try {
 			const headers = denteAdminSecretRequestHeaders({ "Content-Type": "application/json" });
 			const res = await fetch("/api/cashbox/payments", {
@@ -213,6 +291,11 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 				body: JSON.stringify(payload),
 			});
 			if (!res.ok) {
+				if ([502, 503, 504].includes(res.status)) {
+					const netErr = new Error(`Сервер кассы временно недоступен (код ${res.status})`);
+					(netErr as unknown as { status: number }).status = res.status;
+					throw netErr;
+				}
 				const errorJson = await res.json().catch(() => null);
 				const errorText =
 					errorJson?.message || errorJson?.error || `Сбой проведения платежа сервером кассы (код ${res.status})`;
@@ -242,6 +325,65 @@ export function useCashRegisterStudioState(props: CashRegisterStudioModalProps) 
 			if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
 			onClose();
 		} catch (err: unknown) {
+			const status = (err as { status?: number })?.status;
+			if (isNetworkFailure(err, status)) {
+				// Resilient Offline Queue (Mandates 8e & 8n: Solo Doctor & Small Clinic Resilience)
+				try {
+					const queuedItem = await enqueueOfflinePayment({
+						patientId: props.patientId && props.patientId !== "pat-walkin" ? props.patientId : "pat-walkin",
+						patientName: props.patientName || "Пациент клиники",
+						visitId: effectiveVisitId,
+						invoiceId: props.invoiceId || undefined,
+						totalKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),
+						paymentType: isWarrantyCaseFinal ? "cash" : method === "split" ? "mixed" : (method as any),
+						splitDetails:
+							method === "split" && !isWarrantyCaseFinal
+								? {
+										cashKopecks: Number(splitCashKop),
+										cardKopecks: Number(splitCardKop),
+										sbpKopecks: Number(splitSbpKop),
+										depositKopecks: Number(splitDepositKop),
+									}
+								: undefined,
+						items: [
+							{
+								name: props.serviceTitle || "Стоматологические услуги",
+								priceKopecks: isWarrantyCaseFinal ? 0 : Number(effectiveTotalKop),
+								quantity: 1,
+							},
+						],
+						cashierName: cashierFullName,
+						doctorName: props.doctorFullName,
+						patientPhoneOrEmail: props.patientPhone,
+						printFiscalReceipt: fiscalize,
+					});
+
+					showToast(
+						"Платёж сохранён в локальной очереди кассы. Будет синхронизирован с сервером при восстановлении связи",
+						"info",
+						7000,
+					);
+
+					const paymentResult = {
+						success: true,
+						effectiveTotalRub,
+						method,
+						clientMutationId,
+						visitId: effectiveVisitId,
+						isOfflineQueued: true,
+						queueId: queuedItem.id,
+					};
+
+					if (props.onSuccess) props.onSuccess(paymentResult);
+					if (props.onPaymentComplete) props.onPaymentComplete();
+					if (props.onConfirmPayment) props.onConfirmPayment(paymentResult);
+					onClose();
+					return;
+				} catch (queueErr) {
+					// Fallthrough to standard error reporting if queueing fails
+				}
+			}
+
 			const errorMsg =
 				err instanceof Error
 					? err.message

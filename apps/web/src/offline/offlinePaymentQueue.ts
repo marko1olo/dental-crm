@@ -303,6 +303,78 @@ export async function syncOfflinePaymentQueue(
 }
 
 /**
+ * Standard server dispatcher to flush offline payments to /api/cashbox/payments.
+ */
+export async function flushOfflinePaymentsToServer(): Promise<{ syncedCount: number; failedCount: number }> {
+	return syncOfflinePaymentQueue(async (payment) => {
+		const payload: Record<string, unknown> = {
+			patientId: payment.patientId && payment.patientId !== "pat-walkin" ? payment.patientId : undefined,
+			visitId: payment.visitId,
+			invoiceId: payment.invoiceId,
+			amountKopecks: payment.totalKopecks,
+			amountRub: payment.totalRub,
+			method: payment.paymentType === "mixed" ? "split" : payment.paymentType,
+			isWarranty: payment.paymentType === "cash" && payment.totalKopecks === 0,
+			cashierFullName: payment.cashierName || "Кассир",
+			clientType: "physical_person",
+			clientMutationId: payment.idempotencyKey || payment.id,
+			note: "Синхронизация из офлайн-очереди кассы DENTE",
+		};
+
+		if (payment.splitDetails) {
+			if (payment.splitDetails.cashKopecks !== undefined) {
+				payload.cashAmountKopecks = payment.splitDetails.cashKopecks;
+			}
+			if (payment.splitDetails.cardKopecks !== undefined || payment.splitDetails.sbpKopecks !== undefined) {
+				payload.electronicAmountKopecks = (payment.splitDetails.cardKopecks || 0) + (payment.splitDetails.sbpKopecks || 0);
+			}
+			if (payment.splitDetails.depositKopecks !== undefined) {
+				payload.depositAmountKopecks = payment.splitDetails.depositKopecks;
+			}
+		}
+
+		const res = await fetch("/api/cashbox/payments", {
+			method: "POST",
+			headers: {
+				"Content-Type": "application/json",
+				"X-Dente-Admin-Secret": "dente-core-secret-2026",
+			},
+			body: JSON.stringify(payload),
+		});
+
+		if (res.ok) {
+			const data = (await res.json().catch(() => null)) as { success?: boolean; paymentId?: string } | null;
+			return { success: true, serverPaymentId: data?.paymentId };
+		}
+		if (res.status === 409) {
+			// Idempotency duplicate — already registered on server
+			return { success: true };
+		}
+		return { success: false };
+	});
+}
+
+/**
+ * Online event listener for automatic offline payment flushing.
+ */
+let isPaymentOnlineListenerInit = false;
+export function initOfflinePaymentAutoSync(): void {
+	if (typeof window !== "undefined" && !isPaymentOnlineListenerInit) {
+		window.addEventListener("online", () => {
+			void flushOfflinePaymentsToServer().then((result) => {
+				if (result.syncedCount > 0) {
+					logger.info(`[offlinePaymentQueue] Synced ${result.syncedCount} queued payments to server on network restore.`);
+				}
+			});
+		});
+		isPaymentOnlineListenerInit = true;
+	}
+}
+
+// Auto-initialize online sync listener
+initOfflinePaymentAutoSync();
+
+/**
  * Clears in-memory payment cache (useful during testing or logout).
  */
 export function clearPaymentMemoryCache(): void {

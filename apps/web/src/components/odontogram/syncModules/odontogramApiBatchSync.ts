@@ -10,6 +10,11 @@ import type { ToothData, ToothState } from "../ToothChart";
 import { denteAdminSecretRequestHeaders } from "../../../AppHelpers";
 import { showToast } from "../../GlobalToast";
 import { logger } from "../../../utils/logger";
+import {
+	enqueueOfflineMutation,
+	getPendingOfflineMutations,
+	removeOfflineMutation,
+} from "../../../services/offline/offlineStorage";
 
 export interface ToothBatchPayload {
 	toothNumbers: number[];
@@ -19,8 +24,9 @@ export interface ToothBatchPayload {
 
 /**
  * Sends a batch update of tooth states to the backend API.
- * In case of network errors or server downtime, safely logs error and
- * displays an informational offline toast.
+ * In case of network errors or server downtime, safely logs error,
+ * enqueues the mutation to the offline Outbox queue (IndexedDB)
+ * and displays an informational offline toast.
  */
 export async function sendToothStatesBatch(
 	patientId: string,
@@ -37,6 +43,26 @@ export async function sendToothStatesBatch(
 		state,
 		...(surfaces && surfaces.length > 0 ? { surfaces } : {}),
 	};
+
+	// Fast offline check: if network is already down, persist directly into Outbox
+	if (typeof navigator !== "undefined" && !navigator.onLine) {
+		try {
+			await enqueueOfflineMutation({
+				entityType: "ODONTOGRAM_STATUS",
+				entityId: `${patientId}_tooth_${toothNumbers.join("_")}_${Date.now()}`,
+				action: "update",
+				payload,
+			});
+			showToast(
+				"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
+				"info",
+				8000,
+			);
+			return false;
+		} catch (e) {
+			// fallback
+		}
+	}
 
 	try {
 		let res = await fetch("/api/odontogram/tooth-state", {
@@ -72,6 +98,16 @@ export async function sendToothStatesBatch(
 			logger.error(
 				`[tooth states status mutation] ${res.status} ${rawBody.slice(0, 300)}`,
 			);
+			try {
+				await enqueueOfflineMutation({
+					entityType: "ODONTOGRAM_STATUS",
+					entityId: `${patientId}_tooth_${toothNumbers.join("_")}_${Date.now()}`,
+					action: "update",
+					payload,
+				});
+			} catch (queueErr) {
+				logger.warn("[odontogramApiBatchSync] Failed to enqueue into offline storage:", queueErr);
+			}
 			showToast(
 				"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
 				"info",
@@ -83,6 +119,16 @@ export async function sendToothStatesBatch(
 		return true;
 	} catch (err) {
 		logger.error("[tooth states status mutation] запрос не выполнен", err);
+		try {
+			await enqueueOfflineMutation({
+				entityType: "ODONTOGRAM_STATUS",
+				entityId: `${patientId}_tooth_${toothNumbers.join("_")}_${Date.now()}`,
+				action: "update",
+				payload,
+			});
+		} catch (queueErr) {
+			logger.warn("[odontogramApiBatchSync] Failed to enqueue into offline storage:", queueErr);
+		}
 		showToast(
 			"Отметка сохранена локально на диск (офлайн). Данные в безопасности и синхронизируются при связи",
 			"info",
@@ -91,6 +137,131 @@ export async function sendToothStatesBatch(
 		return false;
 	}
 }
+
+/**
+ * Flushes all queued offline tooth state mutations to backend API when connection is restored.
+ */
+export async function flushPendingOdontogramMutations(
+	targetPatientId?: string,
+): Promise<{ syncedCount: number; failedCount: number }> {
+	try {
+		const mutations = await getPendingOfflineMutations({ entityType: "ODONTOGRAM_STATUS" });
+		if (!mutations || mutations.length === 0) {
+			return { syncedCount: 0, failedCount: 0 };
+		}
+
+		let syncedCount = 0;
+		let failedCount = 0;
+
+		for (const mut of mutations) {
+			const payload = mut.payload as {
+				patientId: string;
+				toothNumber?: number;
+				toothNumbers?: number[];
+				state: ToothState;
+				surfaces?: string[];
+			} | undefined;
+
+			if (!payload || !payload.patientId) {
+				await removeOfflineMutation(mut.mutationId);
+				continue;
+			}
+
+			if (targetPatientId && payload.patientId !== targetPatientId) {
+				continue;
+			}
+
+			const toothNums = payload.toothNumbers || (payload.toothNumber ? [payload.toothNumber] : []);
+			if (toothNums.length === 0) {
+				await removeOfflineMutation(mut.mutationId);
+				continue;
+			}
+
+			try {
+				let res = await fetch("/api/odontogram/tooth-state", {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({
+						"Content-Type": "application/json",
+					}),
+					body: JSON.stringify({
+						patientId: payload.patientId,
+						toothNumber: toothNums[0],
+						toothNumbers: toothNums,
+						state: payload.state,
+						...(payload.surfaces && payload.surfaces.length > 0 ? { surfaces: payload.surfaces } : {}),
+					}),
+				});
+
+				if (!res.ok) {
+					res = await fetch("/api/odontogram/status", {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							patientId: payload.patientId,
+							toothNumber: toothNums[0],
+							toothNumbers: toothNums,
+							state: payload.state,
+							...(payload.surfaces && payload.surfaces.length > 0 ? { surfaces: payload.surfaces } : {}),
+						}),
+					});
+				}
+
+				if (!res.ok) {
+					res = await fetch(`/api/patients/${payload.patientId}/tooth-states/batch`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({
+							"Content-Type": "application/json",
+						}),
+						body: JSON.stringify({
+							patientId: payload.patientId,
+							toothNumber: toothNums[0],
+							toothNumbers: toothNums,
+							state: payload.state,
+							...(payload.surfaces && payload.surfaces.length > 0 ? { surfaces: payload.surfaces } : {}),
+						}),
+					});
+				}
+
+				if (res.ok) {
+					await removeOfflineMutation(mut.mutationId);
+					syncedCount++;
+				} else {
+					failedCount++;
+				}
+			} catch (err) {
+				logger.warn(`[odontogramApiBatchSync] Failed to sync offline tooth mutation ${mut.mutationId}:`, err);
+				failedCount++;
+			}
+		}
+
+		if (syncedCount > 0) {
+			showToast(`Синхронизировано отметок одонтограммы из офлайн-очереди: ${syncedCount}`, "success", 4000);
+		}
+
+		return { syncedCount, failedCount };
+	} catch (err) {
+		logger.error("[odontogramApiBatchSync] Error flushing pending odontogram mutations:", err);
+		return { syncedCount: 0, failedCount: 0 };
+	}
+}
+
+/**
+ * Online event listener for automatic odontogram offline sync.
+ */
+let isOdontogramOnlineListenerInit = false;
+export function initOdontogramAutoSync(): void {
+	if (typeof window !== "undefined" && !isOdontogramOnlineListenerInit) {
+		window.addEventListener("online", () => {
+			void flushPendingOdontogramMutations();
+		});
+		isOdontogramOnlineListenerInit = true;
+	}
+}
+
+// Auto-initialize online sync listener
+initOdontogramAutoSync();
 
 export interface FetchToothStatesResult {
 	states: ToothData[] | null;

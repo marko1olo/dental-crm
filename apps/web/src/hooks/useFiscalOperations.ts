@@ -39,21 +39,129 @@ export interface FiscalOperationResult {
 
 async function sendReceiptToServer(receipt: OfflineFiscalReceipt): Promise<boolean | { success: boolean; error?: string }> {
 	try {
+		const payload = typeof receipt.payload === "object" && receipt.payload !== null ? receipt.payload : {};
+		const totalKop =
+			payload.totalKopecks ??
+			(payload.totalRub
+				? Math.round(Number(payload.totalRub) * 100)
+				: undefined);
+
+		const rawItems = Array.isArray(payload.items) ? payload.items : [];
+		const normalizedItems = rawItems.length > 0
+			? rawItems.map((it: any) => {
+					const priceKop =
+						it.priceKopecks !== undefined
+							? Number(it.priceKopecks)
+							: it.priceRub !== undefined
+								? Math.round(Number(it.priceRub) * 100)
+								: 0;
+					const qty = Number(it.quantity || 1);
+					const amountKop =
+						it.amountKopecks !== undefined
+							? Number(it.amountKopecks)
+							: priceKop * qty;
+					return {
+						name: String(it.name || "Стоматологические услуги"),
+						priceKopecks: priceKop,
+						quantity: qty,
+						amountKopecks: amountKop,
+						method: it.method || "full_payment",
+						subject: it.subject || "service",
+						vatRate: it.vatRate || "vat_none",
+						measure: it.measure || "piece",
+					};
+				})
+			: [
+					{
+						name: "Стоматологические услуги",
+						priceKopecks: totalKop ?? 0,
+						quantity: 1,
+						amountKopecks: totalKop ?? 0,
+						method: "full_payment",
+						subject: "service",
+						vatRate: "vat_none",
+						measure: "piece",
+					},
+				];
+
+		const computedTotalKop =
+			totalKop !== undefined
+				? totalKop
+				: normalizedItems.reduce(
+						(acc: number, it: any) => acc + (it.amountKopecks || 0),
+						0,
+					);
+
+		const paymentType = payload.paymentType || "card";
+		let cashKopecks = Number(payload.cashKopecks ?? 0);
+		let electronicCardKopecks = Number(payload.electronicCardKopecks ?? 0);
+		let sbpKopecks = Number(payload.sbpKopecks ?? 0);
+		let prepaidKopecks = Number(payload.prepaidKopecks ?? 0);
+		const creditKopecks = Number(payload.creditKopecks ?? 0);
+
+		if (
+			cashKopecks +
+				electronicCardKopecks +
+				sbpKopecks +
+				prepaidKopecks +
+				creditKopecks ===
+				0 &&
+			computedTotalKop > 0
+		) {
+			if (paymentType === "cash") {
+				cashKopecks = computedTotalKop;
+			} else if (paymentType === "sbp") {
+				sbpKopecks = computedTotalKop;
+			} else if (paymentType === "deposit" || paymentType === "family_wallet") {
+				prepaidKopecks = computedTotalKop;
+			} else {
+				electronicCardKopecks = computedTotalKop;
+			}
+		}
+
+		const normalizedDto = {
+			...payload,
+			patientId: receipt.patientId || payload.patientId,
+			visitId: receipt.visitId || payload.visitId,
+			invoiceId: payload.invoiceId,
+			clientMutationId: receipt.idempotencyKey || payload.clientMutationId,
+			customerContact:
+				payload.customerContact ||
+				payload.patientPhoneOrEmail ||
+				"+79990000000",
+			customerName:
+				payload.customerName || payload.patientName || "Пациент клиники",
+			cashierFullName:
+				payload.cashierName ||
+				payload.cashierFullName ||
+				"Кассир-администратор",
+			items: normalizedItems,
+			totalKopecks: computedTotalKop,
+			cashKopecks,
+			electronicCardKopecks,
+			sbpKopecks,
+			prepaidKopecks,
+			creditKopecks,
+		};
+
+		const headers: Record<string, string> = { "Content-Type": "application/json" };
+		if (receipt.idempotencyKey) {
+			headers["Idempotency-Key"] = receipt.idempotencyKey;
+		}
+
 		const res = await fetch("/api/billing/fiscalize-receipt", {
 			method: "POST",
-			headers: { "Content-Type": "application/json" },
-			body: JSON.stringify({
-				paymentId: receipt.paymentId,
-				visitId: receipt.visitId,
-				payload: receipt.payload,
-				idempotencyKey: receipt.idempotencyKey,
-			}),
+			headers,
+			body: JSON.stringify(normalizedDto),
 		});
 		if (res.ok) {
 			return true;
 		}
-		const data = (await res.json().catch(() => null)) as { error?: string } | null;
-		return { success: false, error: data?.error || `HTTP ${res.status}` };
+		const data = (await res.json().catch(() => null)) as {
+			error?: string;
+			message?: string;
+		} | null;
+		return { success: false, error: data?.message || data?.error || `HTTP ${res.status}` };
 	} catch (err: unknown) {
 		return {
 			success: false,
