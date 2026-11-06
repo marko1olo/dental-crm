@@ -103,16 +103,19 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 			>
 				<div className="flex items-center justify-between gap-2">
 					<span className="font-bold text-[var(--ink)] truncate min-w-0">{thread.title}</span>
-					<div className="flex items-center gap-1 shrink-0" onClick={(e) => e.stopPropagation()}>
+					<div className="flex items-center gap-0.5 shrink-0" onClick={(e) => e.stopPropagation()}>
 						<button
 							type="button"
 							onClick={() => togglePinThread(thread.id)}
-							className={`w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-[var(--line)] transition-colors cursor-pointer ${
+							className={`min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-[var(--line)] transition-colors cursor-pointer ${
 								thread.pinned ? "text-[var(--teal,#0d9488)]" : "text-[var(--muted)] hover:text-[var(--ink)]"
 							}`}
 							title={thread.pinned ? "Открепить" : "Закрепить"}
+							aria-label={thread.pinned ? "Открепить" : "Закрепить"}
 						>
-							<Pin size={13} className={thread.pinned ? "fill-current" : ""} />
+							<span className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent">
+								<Pin size={14} className={thread.pinned ? "fill-current" : ""} />
+							</span>
 						</button>
 						<button
 							type="button"
@@ -120,10 +123,13 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 								deleteThread(thread.id);
 								showToast("Диалог удален из истории", "info");
 							}}
-							className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
+							className="min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl bg-transparent hover:bg-rose-500/10 text-[var(--muted)] hover:text-rose-500 transition-colors cursor-pointer"
 							title="Удалить диалог"
+							aria-label="Удалить диалог"
 						>
-							<Trash2 size={13} />
+							<span className="w-7 h-7 flex items-center justify-center rounded-lg bg-transparent">
+								<Trash2 size={14} />
+							</span>
 						</button>
 					</div>
 				</div>
@@ -150,7 +156,7 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 	};
 
 	return (
-		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer-root">
+		<div className="fixed inset-0 z-[99995] flex items-center justify-center p-3 max-md:p-0 max-md:items-end" data-testid="copilot-history-drawer">
 			<div className="fixed inset-0 bg-black/40 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
 			<div className="relative z-10 w-full max-w-md max-h-[88vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-2xl max-md:rounded-b-none max-md:rounded-t-[24px] border border-[var(--line)] shadow-2xl overflow-hidden">
 				<div className="md:hidden flex justify-center pt-2.5 pb-1 shrink-0">
@@ -175,10 +181,10 @@ export function CopilotHistoryDrawer({ isOpen, onClose, onSelectThread }: Copilo
 						<button
 							type="button"
 							onClick={onClose}
-							className="icon-button w-8 h-8 flex items-center justify-center rounded-lg border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
+							className="icon-button min-w-[44px] min-h-[44px] w-9 h-9 md:w-8 md:h-8 flex items-center justify-center rounded-xl border border-[var(--line)] hover:bg-[var(--line)] cursor-pointer"
 							aria-label="Закрыть"
 						>
-							<X size={15} />
+							<X size={16} />
 						</button>
 					</div>
 				</header>

@@ -83,12 +83,12 @@ export function CopilotSettingsPersonaTab({
 				<section className="space-y-1.5">
 					<label className="font-bold text-[var(--ink)]">Формат дневника приёма</label>
 					<select
-						value={diaryTemplate}
+						value={diaryTemplate === "form043" ? "treatment_diary" : diaryTemplate}
 						onChange={(e) => setDiaryTemplate(e.target.value as DiaryTemplate)}
 						className="w-full h-9 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs cursor-pointer focus:ring-1 focus:ring-[var(--teal,#0d9488)]"
 					>
 						<option value="soap">SOAP (Субъективно, Объективно, Оценка, План)</option>
-						<option value="form043">Медицинская карта приёма</option>
+						<option value="treatment_diary">Медицинская карта приёма</option>
 						<option value="express">Краткий экспресс-протокол приёма</option>
 					</select>
 				</section>

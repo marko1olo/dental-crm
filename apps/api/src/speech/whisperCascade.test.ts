@@ -9,7 +9,7 @@ import {
 } from "./whisperCascade.js";
 
 const SPEECH_ENV_PATTERN =
-	/^(DENTAL_SPEECH_|DENTAL_WHISPER_|GROQ_|OPENAI_|CLOUDFLARE_|LOCAL_WHISPER_|WHISPER_CPP_)/;
+	/^(DENTAL_SPEECH_|DENTAL_WHISPER_|GROQ_|OPENAI_|CLOUDFLARE_|LOCAL_WHISPER_|WHISPER_CPP_|GOOGLE_|GEMINI_)/;
 
 describe("whisperCascade", () => {
 	let originalEnv: NodeJS.ProcessEnv;
@@ -96,6 +96,48 @@ describe("whisperCascade", () => {
 	});
 
 	describe("transcribeWhisperCascade execution", () => {
+		it("succeeds on first provider (Google Gemini Batch) when Google key is present", async () => {
+			process.env.GOOGLE_API_KEY = "test-gemini-happy-key";
+
+			globalThis.fetch = async (input: any) => {
+				const url = String(input);
+				if (url.includes("generativelanguage.googleapis.com")) {
+					return new Response(
+						JSON.stringify({
+							candidates: [
+								{
+									content: {
+										parts: [{ text: "Анестезия Убистезин 1.7 мл, зуб 46 обработан." }],
+									},
+								},
+							],
+						}),
+						{
+							status: 200,
+							headers: { "Content-Type": "application/json" },
+						},
+					);
+				}
+				return new Response("Not found", { status: 404 });
+			};
+
+			const result = await transcribeWhisperCascade({
+				audio: Buffer.from("test-audio"),
+				mimeType: "audio/wav",
+				language: "ru",
+			});
+
+			assert.strictEqual(result.provider, "gemini_batch");
+			assert.strictEqual(
+				result.text,
+				"Анестезия Убистезин 1.7 мл, зуб 46 обработан.",
+			);
+			assert.strictEqual(result.fallbackOccurred, false);
+			assert.strictEqual(result.attempts.length, 1);
+			assert.strictEqual(result.attempts[0]?.provider, "gemini_batch");
+			assert.strictEqual(result.attempts[0]?.success, true);
+		});
+
 		it("succeeds on first provider (Groq Whisper) in happy path", async () => {
 			process.env.GROQ_API_KEY = "test-groq-happy-key";
 

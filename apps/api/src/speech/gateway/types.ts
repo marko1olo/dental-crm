@@ -46,13 +46,13 @@ export class SpeechChunkPayloadError extends Error {
 }
 
 export const wiredServerProviders: SpeechProviderKind[] = [
+	"google_speech",
+	"gemini_transcribe_live",
 	"groq_whisper",
 	"openai_transcribe",
 	"deepgram_streaming",
 	"assemblyai_async",
 	"cloudflare_whisper",
-	"google_speech",
-	"gemini_transcribe_live",
 ];
 
 export const localSpeechProviders: SpeechProviderKind[] = [

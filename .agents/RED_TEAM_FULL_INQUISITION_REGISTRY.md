@@ -1113,6 +1113,36 @@
      - `docs/proofs/copilot/08_copilot_memory_tab_pc_light_1440x900.png`
      - `docs/proofs/copilot/09_copilot_actions_tab_pc_dark_1440x900.png`
 
+### [COP-10] [SEV-1] [ИСПРАВЛЕНО] Сквозной голосовой каскад Google Gemini, Apple HIG тач-таргеты истории и зачистка дев-сленга в настройках доверия Копайлота
+- **Файлы:**
+  - [`apps/api/src/speech/whisperCascade.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/speech/whisperCascade.ts)
+  - [`apps/api/src/speech/whisperCascade.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/speech/whisperCascade.test.ts)
+  - [`apps/api/src/speech/gateway/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/speech/gateway/types.ts)
+  - [`apps/web/src/components/copilot/settings/CopilotSettingsTrustTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/settings/CopilotSettingsTrustTab.tsx)
+  - [`apps/web/src/components/copilot/CopilotHistoryDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotHistoryDrawer.tsx)
+  - [`apps/web/src/store/copilotStore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/copilotStore.ts)
+  - [`apps/web/src/components/copilot/settings/CopilotSettingsPersonaTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/settings/CopilotSettingsPersonaTab.tsx)
+  - [`apps/web/src/components/copilot/settings/CopilotSettingsGeneralTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/settings/CopilotSettingsGeneralTab.tsx)
+  - [`apps/web/src/components/copilot/__tests__/copilotSettingsAndHistoryInquisition.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/__tests__/copilotSettingsAndHistoryInquisition.test.tsx)
+- **Суть бага:**
+  1. **Утечка дев-сленга:** Во вкладке доверия `CopilotSettingsTrustTab.tsx` для режима высокой автономии отображался бейдж с внутренним номером правила `badge: "Мандат 8e"`, а описание содержало дев-жаргон.
+  2. **Нарушение Apple HIG в истории диалогов:** В `CopilotHistoryDrawer.tsx` кнопки закрепления пина и удаления сессии имели размер `w-7 h-7` (28x28px), нарушая сенсорный минимум Apple HIG ($\ge 44\times 44$px) и Закон Фиттса.
+  3. **Голосовой приоритет Google Gemini:** В серверном каскаде Whisper `whisperCascade.ts` провайдер `gemini_batch` отсутствовал в цепочке первого эшелона, фоллбечась на сторонние сервисы без приоритетной утилизации Gemini Batch с пулом ключей `GOOGLE_API_KEYS`.
+  4. **Устаревший идентификатор дневника:** В типах шаблонов дневника использовался устаревший бюрократический ключ `form043` вместо канонического `treatment_diary` («Медицинская карта приёма»).
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `CopilotSettingsTrustTab.tsx` бейдж заменен на `«В 1 клик»`, описание зачищено на живой клинический язык врача: *«Применение готовых планов и клинических протоколов в 1 клик без лишних преград с возможностью быстрой отмены.»*.
+  2. В `CopilotHistoryDrawer.tsx` кнопки пина и удаления обернуты в сенсорные контейнеры `min-w-[44px] min-h-[44px]` с центрированием иконки, кнопка закрытия в шапке получила размер `min-w-[44px] min-h-[44px]`.
+  3. В `whisperCascade.ts` внедрен вызов `callGeminiBatchWhisper` через `geminiBatchTranscribe.ts` с ротацией ключей `google_speech` (`GOOGLE_API_KEYS` / `GEMINI_API_KEY`) как приоритетного эшелона №1. Реализована чистая фильтрация неконфигурированных сред без ложного срабатывания фоллбека. В `gateway/types.ts` `google_speech` установлен первым в списке проводных провайдеров.
+  4. В `copilotStore.ts` внедрен канонический тип `treatment_diary`, в селекторах настроек (`CopilotSettingsPersonaTab.tsx` и `CopilotSettingsGeneralTab.tsx`) внедрена автонормализация `form043` $\to$ `treatment_diary`.
+  5. Покрыто 10/10 тестами в `apps/api/src/speech/whisperCascade.test.ts` и 5/5 тестами в `apps/web/src/components/copilot/__tests__/copilotSettingsAndHistoryInquisition.test.tsx` (100% green).
+  6. Сняты и лично проинспектированы через `read_file` 6 эталонных скриншотов высокого разрешения:
+     - ☀️ PC Light Trust Settings: `docs/proofs/copilot/01_copilot_trust_settings_pc_light_1440x900.png` (76.7 KB)
+     - 🌙 PC Dark Trust Settings: `docs/proofs/copilot/02_copilot_trust_settings_pc_dark_1440x900.png` (75.4 KB)
+     - ☀️ PC Light History Drawer: `docs/proofs/copilot/03_copilot_history_drawer_pc_light_1440x900.png` (33.0 KB)
+     - 🌙 PC Dark History Drawer: `docs/proofs/copilot/04_copilot_history_drawer_pc_dark_1440x900.png` (41.1 KB)
+     - 📱 Mobile Light Drawer: `docs/proofs/copilot/05_copilot_mobile_drawer_light_390x844.png` (33.1 KB)
+     - 🌙 Mobile Dark Drawer: `docs/proofs/copilot/06_copilot_mobile_drawer_dark_390x844.png` (32.9 KB)
+
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
 ### [MOB-01] [SEV-1] [ИСПРАВЛЕНО] Каскадное отравление сенсорного минимума

@@ -1,11 +1,14 @@
 import { Buffer } from "node:buffer";
 import type { DentalSpecialty, SpeechTranscriptionSource } from "@dental/shared";
+import { postProcessDentalSpeech } from "@dental/shared";
 import { buildDentalSttPrompt } from "./dentalPrompt.js";
+import { transcribeGeminiBatch } from "./geminiBatchTranscribe.js";
 import {
 	fetchWithProviderTimeout,
 	keyRetryLimit,
 	numberFromEnv,
 	providerHttpError,
+	providerKeyCount,
 	recordProviderKeyFailure,
 	recordProviderKeySuccess,
 	selectProviderKey,
@@ -14,6 +17,7 @@ import {
 } from "./keyPool.js";
 
 export type WhisperProviderId =
+	| "gemini_batch"
 	| "groq_whisper"
 	| "openai_transcribe"
 	| "cloudflare_whisper"
@@ -192,6 +196,34 @@ function getLocalWhisperUrl(): string | null {
 	return `${clean}/inference`;
 }
 
+// 0. Google Gemini Batch provider call (Priority Tier 1 Provider)
+async function callGeminiBatchWhisper(
+	audio: Buffer,
+	mimeType: string,
+	language: string,
+	prompt: string | null,
+	specialty?: DentalSpecialty | null,
+	timeoutMs?: number,
+): Promise<{ text: string; confidence: number | null; keyFingerprint?: string | undefined }> {
+	const result = await transcribeGeminiBatch({
+		audio,
+		mimeType,
+		language,
+		specialty,
+		customPrompt: prompt,
+		speechBiasing: true,
+		diarization: false,
+		wordTimestamps: false,
+		timeoutMs,
+	});
+
+	return {
+		text: result.text,
+		confidence: result.confidence,
+		keyFingerprint: result.keyFingerprint,
+	};
+}
+
 // 1. Groq Whisper provider call
 async function callGroqWhisper(
 	audio: Buffer,
@@ -210,7 +242,7 @@ async function callGroqWhisper(
 		triedFingerprints.add(keyCandidate.fingerprint);
 
 		const model =
-			process.env.GROQ_WHISPER_MODEL?.trim() || "whisper-large-v3";
+			process.env.GROQ_WHISPER_MODEL?.trim() || "whisper-large-v3-turbo";
 		const endpoint = "https://api.groq.com/openai/v1/audio/transcriptions";
 
 		const form = new FormData();
@@ -500,6 +532,7 @@ export async function transcribeWhisperCascade(
 		input.timeoutMs ?? numberFromEnv("DENTAL_WHISPER_CASCADE_TIMEOUT_MS", 30_000);
 
 	const defaultCascade: WhisperProviderId[] = [
+		"gemini_batch",
 		"groq_whisper",
 		"openai_transcribe",
 		"cloudflare_whisper",
@@ -533,7 +566,19 @@ export async function transcribeWhisperCascade(
 				keyFingerprint?: string | undefined;
 			};
 
-			if (providerId === "groq_whisper") {
+			if (providerId === "gemini_batch") {
+				if (!input.preferredProviders?.includes("gemini_batch") && providerKeyCount("google_speech") === 0) {
+					continue;
+				}
+				result = await callGeminiBatchWhisper(
+					audioBuf,
+					mimeType,
+					language,
+					prompt,
+					input.specialty,
+					timeoutMs,
+				);
+			} else if (providerId === "groq_whisper") {
 				result = await callGroqWhisper(
 					audioBuf,
 					mimeType,
@@ -602,17 +647,18 @@ export async function transcribeWhisperCascade(
 			}
 
 			// Successful transcription!
+			const finalCleanText = postProcessDentalSpeech(trimmedText).text;
 			attempts.push({
 				provider: providerId,
 				success: true,
 				durationMs: duration,
-				textPreview: trimmedText.slice(0, 80),
+				textPreview: finalCleanText.slice(0, 80),
 				...(result.keyFingerprint
 					? { keyFingerprint: result.keyFingerprint }
 					: {}),
 			});
 
-			const fallbackOccurred = i > 0;
+			const fallbackOccurred = attempts.filter((a) => !a.success).length > 0;
 			if (fallbackOccurred) {
 				warnings.push(
 					`Успешно распознано через резервный провайдер ${providerId} (уровень каскада ${i + 1}).`,
@@ -620,7 +666,7 @@ export async function transcribeWhisperCascade(
 			}
 
 			return {
-				text: trimmedText,
+				text: finalCleanText,
 				confidence: result.confidence,
 				provider: providerId,
 				attempts,
