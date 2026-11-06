@@ -6,6 +6,7 @@ import {
 	DEFAULT_AGENTROUTER_BASE_URL,
 	DEFAULT_AGENTROUTER_MODEL,
 	DEFAULT_TIMEOUT_MS,
+	DEFAULT_CHAIRSIDE_TIMEOUT_MS,
 	RATE_LIMIT_COOLDOWN_MS,
 	SERVER_ERROR_COOLDOWN_MS,
 	AUTH_ERROR_COOLDOWN_MS,
@@ -109,7 +110,9 @@ export class AgentRouterClient {
 
 		const attemptsLimit = params.apiKey ? 1 : Math.max(1, effectiveKeys.length);
 		const errors: string[] = [];
-		const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		const isFastModel = targetModel.includes("lite") || targetModel.includes("fast");
+		const defaultTimeout = isFastModel ? DEFAULT_CHAIRSIDE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+		const timeoutMs = params.timeoutMs ?? defaultTimeout;
 		const effectiveBaseUrl = params.baseUrl || this.baseUrl;
 
 		for (let attempt = 0; attempt < attemptsLimit; attempt++) {
@@ -305,7 +308,9 @@ export class AgentRouterClient {
 
 		const attemptsLimit = params.apiKey ? 1 : Math.max(1, effectiveKeys.length);
 		const errors: string[] = [];
-		const timeoutMs = params.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+		const isFastModel = targetModel.includes("lite") || targetModel.includes("fast");
+		const defaultTimeout = isFastModel ? DEFAULT_CHAIRSIDE_TIMEOUT_MS : DEFAULT_TIMEOUT_MS;
+		const timeoutMs = params.timeoutMs ?? defaultTimeout;
 		const effectiveBaseUrl = params.baseUrl || this.baseUrl;
 
 		for (let attempt = 0; attempt < attemptsLimit; attempt++) {

@@ -28,6 +28,7 @@ export const DEFAULT_AGENTROUTER_KEYS: readonly string[] = Object.freeze(
 );
 
 export const DEFAULT_TIMEOUT_MS = 120_000; // 120 seconds for deep reasoning models
+export const DEFAULT_CHAIRSIDE_TIMEOUT_MS = 5000; // 5000ms SLA for chairside fast operations
 export const MIN_REASONING_MAX_TOKENS = 4096;
 export const DEFAULT_CLINICAL_TEMPERATURE = 0.2;
 

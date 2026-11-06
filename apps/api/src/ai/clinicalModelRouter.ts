@@ -11,7 +11,61 @@ import {
 } from "./router/routerTypes.js";
 import {
 	isGeminiModel,
+	isGroqModel,
 } from "./router/modelAdapters.js";
+import { agentRouterClient } from "./agentRouterClient.js";
+
+export const SOTA_SMART_CASCADE: readonly string[] = [
+	"gemini-3.6-flash",
+	"gemini-3.5-flash",
+	"gemini-3.8-flash",
+	"llama-3.3-70b-versatile",
+	"qwen/qwen3.6-27b",
+];
+
+export const SOTA_FAST_CASCADE: readonly string[] = [
+	"gemini-3.5-flash-lite",
+	"gemini-3.1-flash-lite",
+	"gemini-2.5-flash-lite",
+	"llama-3.3-70b-versatile",
+];
+
+function resolveCascadeModel(
+	cascade: readonly string[],
+	isModelBannedFn?: (m: string) => boolean,
+): { model: string; provider: string; baseUrl?: string; isFallback: boolean } {
+	const checkBanned =
+		isModelBannedFn ??
+		((m: string) => {
+			try {
+				return agentRouterClient.isModelBanned(m);
+			} catch {
+				return false;
+			}
+		});
+
+	for (let i = 0; i < cascade.length; i++) {
+		const candidate = cascade[i]!;
+		if (!checkBanned(candidate)) {
+			const isGroq = isGroqModel(candidate);
+			return {
+				model: candidate,
+				provider: isGroq ? "groq" : "google",
+				baseUrl: isGroq ? "https://api.groq.com/openai/v1" : undefined,
+				isFallback: i > 0,
+			};
+		}
+	}
+
+	const fallback = cascade[cascade.length - 1] || "llama-3.3-70b-versatile";
+	const isGroq = isGroqModel(fallback);
+	return {
+		model: fallback,
+		provider: isGroq ? "groq" : "google",
+		baseUrl: isGroq ? "https://api.groq.com/openai/v1" : undefined,
+		isFallback: true,
+	};
+}
 
 export type ClinicalTaskTier =
 	| "chairside_fast"
@@ -37,6 +91,7 @@ export interface ClinicalRoutingParams {
 	byokApiKey?: string | undefined;
 	byokModel?: string | undefined;
 	byokBaseUrl?: string | undefined;
+	isModelBanned?: ((model: string) => boolean) | undefined;
 }
 
 const VISION_KEYWORDS = [
@@ -104,11 +159,15 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 	// Tier A: Multimodal Vision
 	const isVisionTask = VISION_KEYWORDS.some((kw) => text.includes(kw));
 	if (isVisionTask) {
+		const selected = resolveCascadeModel(SOTA_SMART_CASCADE, params.isModelBanned);
 		return {
-			model: "gemini-3.6-flash",
+			model: selected.model,
 			tier: "clinical_vision",
-			provider: "google",
-			rationale: "Мультимодальный анализ рентгенологических данных и фотопротокола",
+			provider: selected.provider,
+			baseUrl: selected.baseUrl,
+			rationale: selected.isFallback
+				? `Каскад SOTA: резервный выбор ${selected.model} (основная модель на кулдауне)`
+				: "Мультимодальный анализ рентгенологических данных и фотопротокола",
 		};
 	}
 
@@ -119,19 +178,27 @@ export function routeClinicalTask(params: ClinicalRoutingParams): ClinicalRoutin
 		text.length > 300;
 
 	if (isReasoningTask) {
+		const selected = resolveCascadeModel(SOTA_SMART_CASCADE, params.isModelBanned);
 		return {
-			model: "gemini-3.6-flash",
+			model: selected.model,
 			tier: "clinical_reasoning",
-			provider: "google",
-			rationale: "Глубокое клиническое мышление, хирургические протоколы и фискальные расчеты",
+			provider: selected.provider,
+			baseUrl: selected.baseUrl,
+			rationale: selected.isFallback
+				? `Каскад SOTA: резервный выбор ${selected.model} (основная модель на кулдауне)`
+				: "Глубокое клиническое мышление, хирургические протоколы и фискальные расчеты",
 		};
 	}
 
 	// Tier C: Ultra-Fast Chairside (<300ms, 500 RPD)
+	const selected = resolveCascadeModel(SOTA_FAST_CASCADE, params.isModelBanned);
 	return {
-		model: "gemini-3.5-flash-lite",
+		model: selected.model,
 		tier: "chairside_fast",
-		provider: "google",
-		rationale: "Сверхбыстрый chairside-отклик (<300 мс, 500 RPD) у кресла врача",
+		provider: selected.provider,
+		baseUrl: selected.baseUrl,
+		rationale: selected.isFallback
+			? `Каскад SOTA: резервный выбор ${selected.model} (основная модель на кулдауне)`
+			: "Сверхбыстрый chairside-отклик (<300 мс, 500 RPD) у кресла врача",
 	};
 }

@@ -93,4 +93,91 @@ describe("DENTE Clinical Model Router & Task Classifier Suite", () => {
 		assert.equal(result.provider, "openai");
 		assert.ok(result.latencyMs >= 0);
 	});
+
+	test("7. SOTA Cascade: cascades gemini-3.6-flash -> gemini-3.5-flash when primary model is banned/cooldown", () => {
+		const bannedSet = new Set(["gemini-3.6-flash"]);
+		const result = routeClinicalTask({
+			messages: [
+				{
+					role: "user",
+					content: "Сформируй протокол операции: имплантация зуба 46, остеоинтеграция",
+				},
+			],
+			isModelBanned: (m) => bannedSet.has(m),
+		});
+
+		assert.equal(result.tier, "clinical_reasoning");
+		assert.equal(result.model, "gemini-3.5-flash");
+		assert.ok(result.rationale.includes("Каскад SOTA"));
+	});
+
+	test("8. SOTA Cascade: cascades to Groq llama-3.3-70b-versatile when all Gemini models are on cooldown", () => {
+		const bannedSet = new Set([
+			"gemini-3.6-flash",
+			"gemini-3.5-flash",
+			"gemini-3.8-flash",
+		]);
+		const result = routeClinicalTask({
+			messages: [
+				{ role: "user", content: "КТ снимок 16 зуба, деструкция костной ткани" },
+			],
+			isModelBanned: (m) => bannedSet.has(m),
+		});
+
+		assert.equal(result.tier, "clinical_vision");
+		assert.equal(result.model, "llama-3.3-70b-versatile");
+		assert.equal(result.provider, "groq");
+		assert.equal(result.baseUrl, "https://api.groq.com/openai/v1");
+		assert.ok(result.rationale.includes("Каскад SOTA"));
+	});
+
+	test("9. Universal Key Validator: validates Groq keys via api.groq.com/openai/v1", async () => {
+		let capturedUrl = "";
+		const mockFetch: typeof fetch = async (url) => {
+			capturedUrl = String(url);
+			return new Response(
+				JSON.stringify({ choices: [{ message: { content: "pong" } }] }),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		const result = await validateUniversalApiKeyLive(
+			"groq",
+			"gsk_mock_valid_key",
+			"llama-3.3-70b-versatile",
+			undefined,
+			mockFetch,
+		);
+
+		assert.equal(result.valid, true);
+		assert.equal(result.provider, "groq");
+		assert.ok(capturedUrl.startsWith("https://api.groq.com/openai/v1"));
+	});
+
+	test("10. Universal Key Validator: validates Anthropic keys via api.anthropic.com/v1/messages with x-api-key", async () => {
+		let capturedUrl = "";
+		let capturedHeaderKey = "";
+		const mockFetch: typeof fetch = async (url, init) => {
+			capturedUrl = String(url);
+			const headers = (init?.headers as Record<string, string>) || {};
+			capturedHeaderKey = headers["x-api-key"] || "";
+			return new Response(
+				JSON.stringify({ content: [{ text: "pong" }] }),
+				{ status: 200, headers: { "Content-Type": "application/json" } },
+			);
+		};
+
+		const result = await validateUniversalApiKeyLive(
+			"anthropic",
+			"sk-ant-test-mock-key",
+			"claude-3-5-sonnet-20241022",
+			undefined,
+			mockFetch,
+		);
+
+		assert.equal(result.valid, true);
+		assert.equal(result.provider, "anthropic");
+		assert.ok(capturedUrl.startsWith("https://api.anthropic.com/v1/messages"));
+		assert.equal(capturedHeaderKey, "sk-ant-test-mock-key");
+	});
 });

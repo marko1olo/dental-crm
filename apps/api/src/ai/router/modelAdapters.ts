@@ -196,8 +196,80 @@ export async function validateUniversalApiKeyLive(
 		};
 	}
 
-	const baseUrl = (customBaseUrl || (prov === "deepseek" ? "https://api.deepseek.com/v1" : "https://api.openai.com/v1")).replace(/\/+$/, "");
-	const model = targetModel || (prov === "deepseek" ? "deepseek-chat" : "gpt-4o-mini");
+	if (prov === "anthropic") {
+		const anthropicBaseUrl = (customBaseUrl || "https://api.anthropic.com/v1").replace(/\/+$/, "");
+		const model = targetModel || "claude-3-5-sonnet-20241022";
+		try {
+			const controller = new AbortController();
+			const timeout = setTimeout(() => controller.abort(), 8000);
+
+			const response = await fetchFn(`${anthropicBaseUrl}/messages`, {
+				method: "POST",
+				headers: {
+					"Content-Type": "application/json",
+					"x-api-key": apiKey.trim(),
+					"anthropic-version": "2023-06-01",
+				},
+				body: JSON.stringify({
+					model,
+					max_tokens: 1,
+					messages: [{ role: "user", content: "ping" }],
+				}),
+				signal: controller.signal,
+			});
+
+			clearTimeout(timeout);
+			const latencyMs = Date.now() - start;
+
+			if (response.ok) {
+				return {
+					valid: true,
+					provider: "anthropic",
+					model,
+					keyMask,
+					latencyMs,
+					baseUrl: anthropicBaseUrl,
+				};
+			}
+
+			const errBody = await response.text().catch(() => "");
+			return {
+				valid: false,
+				provider: "anthropic",
+				model,
+				keyMask,
+				latencyMs,
+				baseUrl: anthropicBaseUrl,
+				error: `HTTP ${response.status}: ${errBody.slice(0, 150)}`,
+			};
+		} catch (err) {
+			return {
+				valid: false,
+				provider: "anthropic",
+				model,
+				keyMask,
+				latencyMs: Date.now() - start,
+				baseUrl: anthropicBaseUrl,
+				error: err instanceof Error ? err.message : String(err),
+			};
+		}
+	}
+
+	const baseUrl = (
+		customBaseUrl ||
+		(prov === "deepseek"
+			? "https://api.deepseek.com/v1"
+			: prov === "groq"
+				? "https://api.groq.com/openai/v1"
+				: "https://api.openai.com/v1")
+	).replace(/\/+$/, "");
+	const model =
+		targetModel ||
+		(prov === "deepseek"
+			? "deepseek-chat"
+			: prov === "groq"
+				? "llama-3.3-70b-versatile"
+				: "gpt-4o-mini");
 
 	try {
 		const controller = new AbortController();

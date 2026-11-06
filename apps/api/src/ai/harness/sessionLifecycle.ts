@@ -11,6 +11,8 @@ import {
 	maskKeysInText,
 	AgentRouterAllKeysExhaustedError,
 	AgentRouterModelOverloadedError,
+	DEFAULT_CHAIRSIDE_TIMEOUT_MS,
+	DEFAULT_TIMEOUT_MS,
 } from "../agentRouterClient.js";
 import {
 	type DentalToolContext,
@@ -248,6 +250,12 @@ export async function runAgentHarness(
 				params.stream !== false &&
 				typeof client.createStreamingChatCompletion === "function";
 
+			const effectiveTimeoutMs =
+				params.timeoutMs ??
+				(routing.tier === "chairside_fast"
+					? DEFAULT_CHAIRSIDE_TIMEOUT_MS
+					: DEFAULT_TIMEOUT_MS);
+
 			let completion: AgentRouterChatResponse;
 			let streamEmittedTokens = false;
 
@@ -262,6 +270,7 @@ export async function runAgentHarness(
 						tool_choice: "auto",
 						temperature: 0.2,
 						signal,
+						timeoutMs: effectiveTimeoutMs,
 					},
 					{
 						onChunk: (chunk) => {
@@ -283,6 +292,7 @@ export async function runAgentHarness(
 					tool_choice: "auto",
 					temperature: 0.2,
 					signal,
+					timeoutMs: effectiveTimeoutMs,
 				});
 
 				const reasoning = completion.choices[0]?.message?.reasoning_content;
