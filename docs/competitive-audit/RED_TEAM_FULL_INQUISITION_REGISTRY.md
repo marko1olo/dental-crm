@@ -17,11 +17,20 @@
 
 ## 1. 💰 ФИНАНСОВЫЙ КОНТУР, БИЛЛИНГ И КАССА
 
-### [FIN-01] [SEV-1] Двойной учёт выручки (Фантомные миллионы)
-- **Файл:** [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L102-L150`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L102-L150)
-- **Суть бага:** В расчёте валовой выручки суммируются все входящие транзакции: `cashRub + cardRub + sbpRub + depositRub`.
-- **Чем ломает клинику:** Если пациент внес 50 000 ₽ аванса на депозит наличными, а затем оплатил коронку с депозита, в отчете клиники фиксируется 100 000 ₽ выручки (50 000 ₽ взяты из воздуха).
-- **Сравнение:** В 1С, DentalPRO и StomX аванс — это пассив (Кт 62.02). Зачет аванса не увеличивает валовый оборот.
+### [FIN-01] [ИСПРАВЛЕНО] [SEV-1] Двойной учёт выручки (Фантомные миллионы)
+- **Файлы:**
+  - [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts)
+  - [`apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/ExecutiveFinancialSummary.tsx)
+  - Интеграционный тест: [`apps/api/src/tests/routes/financialExecutiveSummaryIntegrity.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/financialExecutiveSummaryIntegrity.test.ts)
+- **Суть бага:** В расчёте валовой выручки суммировались все входящие транзакции: `cashRub + cardRub + sbpRub + depositRub`. Если пациент вносил 50 000 ₽ аванса на депозит наличными, а затем списывал его на лечение, клиника видела 100 000 ₽ фантомной выручки.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Выручка и реальный денежный приток строго разделены на три независимых математических показателя:
+     - `cashInflowRub` / `cashInflowKopecks` (`cashRub + cardRub + sbpRub`) — чистый физический денежный приток в кассу и банк за период (ДДС).
+     - `depositRealizedRub` / `depositRealizedKopecks` (`depositRub`) — реализация услуг через списание ранее внесённых авансов / депозитов (зачёт аванса).
+     - `totalRevenueRub` / `totalRevenueKopecks` — фактическая выручка от оказания стоматологических услуг за период по нарядам и актам (`totalInvoicedRub`), либо сумма прямых оплат и зачёта депозита при отсутствии нарядов, исключая повторный учет внесенного ранее аванса.
+  2. В `invoicesSummary` исключены аннулированные (`voided`) и отмененные (`cancelled`) наряды.
+  3. Структура `FinancialExecutiveSummaryReport` и фронтенд-компонент `ExecutiveFinancialSummary.tsx` синхронизированы без нарушения обратной совместимости.
+  4. Покрыто интеграционным тестом в `financialExecutiveSummaryIntegrity.test.ts` (2/2 passing).
 
 ### [FIN-02] [ИСПРАВЛЕНО] Обнуление зарплат врачей при кассовых платежах
 - **Файлы:**
@@ -50,9 +59,17 @@
 - **Суть бага:** В драйвере ККТ нет методов `closeShift`, `openShift`, `printZReport`. В `shiftReconciliationEngine.ts` фискальные номера синтезируются формулой. Команда на физический АТОЛ/Штрих-М не шлется.
 - **Чем ломает клинику:** По 54-ФЗ через 24 часа фискальный накопитель блокируется аппаратно («Смена превысила 24 часа») и прекращает печать любых чеков.
 
-### [FIN-05] [SEV-1] Оплата несуществующим депозитом
-- **Файл:** [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts#L280-L345`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts#L280-L345)
-- **Суть бага:** Метод `deposit` не проверяет и не уменьшает баланс пациента. Пациент с нулевым балансом может «оплатить» миллион рублей, и сервер ответит 200 OK.
+### [FIN-05] [ИСПРАВЛЕНО] [SEV-1] Оплата несуществующим депозитом
+- **Файл:** [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts)
+- **Интеграционный тест:** [`apps/api/src/tests/routes/cashboxDepositPaymentIntegrity.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/cashboxDepositPaymentIntegrity.test.ts)
+- **Суть бага:** Метод `deposit` не проверял и не уменьшал баланс пациента. Пациент с нулевым балансом мог «оплатить» миллион рублей, и сервер отвечал 200 OK.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `cashboxPaymentProcessor.ts` внедрен строгий барьер верификации депозита: при оплате методом `deposit`, `family_wallet` или сплит-оплате с `depositAmountKopecks > 0` сервер вычисляет реальный доступный баланс пациента по каноническим источникам (семейная группа `familyGroups.balance`, нераспределенные авансы `advanceDepositTaggings` и реестр оплат `buildPatientLedger` / `clinicOwesPatientKopecks`).
+  2. Если доступный баланс меньше требуемой суммы списания, транзакция блокируется со статусом HTTP 400 Bad Request, ошибкой `InsufficientDepositBalance` и сообщением на русском языке с указанием доступной и требуемой суммы в рублях.
+  3. При достаточных средствах списание происходит атомарно в рамках PostgreSQL транзакции: остаток списывается из `advanceDepositTaggings` (с переводом в статус `spent` или уменьшением суммы) и/или из `familyGroups.balance`.
+  4. Операция зачёта аванса протоколируется в журнале кассового аудита `cashOperations` с основанием «Зачёт аванса/депозита пациента: оплата стоматологических услуг».
+  5. Для гарантийных визитов (Мандат 8e, скидки до 100%, 0 ₽) списание депозита не требуется и операция проходит беспрепятственно.
+  6. Покрыто 5 интеграционными тестами в `cashboxDepositPaymentIntegrity.test.ts` (5/5 passing).
 
 ### [FIN-06] [SEV-1] Нарушение 54-ФЗ (Тег 1030 — Наименование предмета расчета)
 - **Файлы:** [`executeFiscalPayment.ts#L50`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/executeFiscalPayment.ts#L50), [`CashierStudioModal.tsx#L133`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx#L133)

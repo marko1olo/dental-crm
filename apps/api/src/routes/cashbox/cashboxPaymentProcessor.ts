@@ -10,17 +10,21 @@
  * - Idempotency & Financial Resilience: clientMutationId & idempotencyKey.
  */
 
-import { and, desc, eq, gte } from "drizzle-orm";
+import { and, desc, eq, gte, inArray } from "drizzle-orm";
 import { kopecksToRub, normalizePaymentMethod, rubToKopecks } from "@dental/shared";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	advanceDepositTaggings,
 	cashBoxes,
 	cashOperations,
+	familyGroups,
 	patientInvoices,
 	payments,
 	patients,
+	treatmentItems,
 	visits,
 } from "../../db/schema.js";
+import { buildPatientLedger, clinicOwesPatientKopecks } from "../../money/patientDebt.js";
 import { ensureOrganizationCashBoxes } from "../../db/seeds/seed_cash_and_reasons.js";
 import { cashboxPaymentRequestSchema } from "./cashboxSchemas.js";
 
@@ -95,6 +99,14 @@ export async function processCashboxPayment(
 		totalKopecks = 0n;
 	}
 
+	// [FIN-05] Вычисление требуемой суммы списания с депозита
+	let requiredDepositKopecks = 0n;
+	if (body.method === "deposit" || body.method === "family_wallet") {
+		requiredDepositKopecks = totalKopecks;
+	} else if (body.depositAmountKopecks !== undefined && body.depositAmountKopecks > 0) {
+		requiredDepositKopecks = BigInt(body.depositAmountKopecks);
+	}
+
 	// Честная атрибуция: платеж проводится строго на выбранного пациента.
 	// Молчаливое списание на «первого попавшегося» пациента клиники запрещено.
 	if (!body.patientId) {
@@ -136,18 +148,180 @@ export async function processCashboxPayment(
 		}
 
 		// Проверка существования пациента в этой клинике: при отсутствии — честный 400
-		const [patientExists] = await tx
-			.select({ id: patients.id })
+		const [patientRow] = await tx
+			.select({
+				id: patients.id,
+				fullName: patients.fullName,
+				familyGroupId: patients.familyGroupId,
+			})
 			.from(patients)
 			.where(and(eq(patients.id, requestedPatientId), eq(patients.organizationId, orgId)))
 			.limit(1);
 
-		if (!patientExists) {
+		if (!patientRow) {
 			return {
 				kind: "patient_not_found" as const,
 			};
 		}
-		const resolvedPatientId = requestedPatientId;
+		const resolvedPatientId = patientRow.id;
+
+		// [FIN-05] Проверка и блокировка несанкционированного списания с несуществующего депозита
+		let lockedFamilyGroup: typeof familyGroups.$inferSelect | null = null;
+		let advanceRows: (typeof advanceDepositTaggings.$inferSelect)[] = [];
+		let familyBalanceKop = 0n;
+
+		if (requiredDepositKopecks > 0n && !isWarrantyPayment) {
+			// 1. Поиск и блокировка семейного баланса familyGroups
+			let targetFamilyGroupId = patientRow.familyGroupId || null;
+			if (!targetFamilyGroupId) {
+				const [headFamily] = await tx
+					.select({ id: familyGroups.id })
+					.from(familyGroups)
+					.where(
+						and(
+							eq(familyGroups.headPatientId, resolvedPatientId),
+							eq(familyGroups.organizationId, orgId),
+						),
+					)
+					.limit(1);
+				if (headFamily) {
+					targetFamilyGroupId = headFamily.id;
+				}
+			}
+
+			if (targetFamilyGroupId) {
+				const [fg] = await tx
+					.select()
+					.from(familyGroups)
+					.where(
+						and(
+							eq(familyGroups.id, targetFamilyGroupId),
+							eq(familyGroups.organizationId, orgId),
+						),
+					)
+					.for("update")
+					.limit(1);
+				lockedFamilyGroup = fg ?? null;
+			}
+			familyBalanceKop = lockedFamilyGroup
+				? BigInt(rubToKopecks(Number(lockedFamilyGroup.balance || 0)))
+				: 0n;
+
+			// 2. Поиск и блокировка целевых авансов advanceDepositTaggings
+			advanceRows = await tx
+				.select()
+				.from(advanceDepositTaggings)
+				.where(
+					and(
+						eq(advanceDepositTaggings.organizationId, orgId),
+						eq(advanceDepositTaggings.patientName, patientRow.fullName),
+						inArray(advanceDepositTaggings.allocationStatus, [
+							"unallocated",
+							"pinned",
+							"active",
+						]),
+					),
+				)
+				.for("update");
+
+			let advanceTotalKop = 0n;
+			for (const adv of advanceRows) {
+				advanceTotalKop += BigInt(rubToKopecks(Number(adv.depositAmountRub || 0)));
+			}
+
+			// 3. Расчёт фактического сальдо лицевого счета (переплата / авансы по леджеру)
+			const [patientCharges, patientPayments] = await Promise.all([
+				tx
+					.select({
+						patientId: treatmentItems.patientId,
+						status: treatmentItems.status,
+						unitPriceRub: treatmentItems.unitPriceRub,
+						quantity: treatmentItems.quantity,
+						discountRub: treatmentItems.discountRub,
+					})
+					.from(treatmentItems)
+					.where(
+						and(
+							eq(treatmentItems.organizationId, orgId),
+							eq(treatmentItems.patientId, resolvedPatientId),
+						),
+					),
+				tx
+					.select({
+						patientId: payments.patientId,
+						status: payments.status,
+						amountRub: payments.amountRub,
+					})
+					.from(payments)
+					.where(
+						and(
+							eq(payments.organizationId, orgId),
+							eq(payments.patientId, resolvedPatientId),
+						),
+					),
+			]);
+			const ledger = buildPatientLedger(
+				resolvedPatientId,
+				patientCharges,
+				patientPayments,
+				{
+					organizationId: orgId,
+				},
+			);
+			const ledgerOverpaidKop = BigInt(clinicOwesPatientKopecks(ledger));
+
+			const personalAvailableKop =
+				advanceTotalKop > ledgerOverpaidKop ? advanceTotalKop : ledgerOverpaidKop;
+			const totalAvailableDepositKop = personalAvailableKop + familyBalanceKop;
+
+			if (totalAvailableDepositKop < requiredDepositKopecks) {
+				const availableRub = (Number(totalAvailableDepositKop) / 100).toFixed(2);
+				const requiredRub = (Number(requiredDepositKopecks) / 100).toFixed(2);
+				return {
+					kind: "insufficient_deposit" as const,
+					availableRub,
+					requiredRub,
+				};
+			}
+
+			// Списание с депозита: сначала с размеченных авансов
+			let remainingToDeductKop = requiredDepositKopecks;
+			for (const adv of advanceRows) {
+				if (remainingToDeductKop <= 0n) break;
+				const advKop = BigInt(rubToKopecks(Number(adv.depositAmountRub || 0)));
+				if (advKop <= remainingToDeductKop) {
+					remainingToDeductKop -= advKop;
+					await tx
+						.update(advanceDepositTaggings)
+						.set({ allocationStatus: "spent" })
+						.where(eq(advanceDepositTaggings.id, adv.id));
+				} else {
+					const nextAdvKop = advKop - remainingToDeductKop;
+					remainingToDeductKop = 0n;
+					await tx
+						.update(advanceDepositTaggings)
+						.set({ depositAmountRub: (Number(nextAdvKop) / 100).toFixed(2) })
+						.where(eq(advanceDepositTaggings.id, adv.id));
+				}
+			}
+
+			// Если осталась сумма для списания, списываем из семейного баланса familyGroups
+			if (remainingToDeductKop > 0n && lockedFamilyGroup) {
+				const deductFromFamilyKop =
+					remainingToDeductKop <= familyBalanceKop
+						? remainingToDeductKop
+						: familyBalanceKop;
+				const newFamilyBalKop = familyBalanceKop - deductFromFamilyKop;
+				remainingToDeductKop -= deductFromFamilyKop;
+				await tx
+					.update(familyGroups)
+					.set({
+						balance: (Number(newFamilyBalKop) / 100).toFixed(2),
+						updatedAt: new Date(),
+					})
+					.where(eq(familyGroups.id, lockedFamilyGroup.id));
+			}
+		}
 
 		// [FIN-02] Связывание платежа с приёмом врача (visitId)
 		let effectiveVisitId = body.visitId || null;
@@ -379,6 +553,22 @@ export async function processCashboxPayment(
 				.where(eq(cashBoxes.id, cashlessBox.id));
 		}
 
+		if (requiredDepositKopecks > 0n && cashDeskBox) {
+			const depositRub = Number(requiredDepositKopecks) / 100;
+			await tx.insert(cashOperations).values({
+				organizationId: orgId,
+				cashBoxId: cashDeskBox.id,
+				operationType: "income",
+				amountRub: depositRub,
+				balanceBeforeRub: cashDeskBox.balanceRub || 0,
+				balanceAfterRub: cashDeskBox.balanceRub || 0,
+				patientId: resolvedPatientId,
+				kkmDocNumber: receiptNumber,
+				reasonText: `Зачёт аванса/депозита пациента: оплата стоматологических услуг (${receiptNumber || "б/н"})`,
+				operatorName: body.cashierFullName || "Кассир",
+			});
+		}
+
 		return {
 			id: newPayment.id,
 			amountKopecks: Number(totalKopecks),
@@ -396,6 +586,16 @@ export async function processCashboxPayment(
 			body: {
 				error: "PatientNotFound",
 				message: "Пациент не найден в этой клинике — платёж не проведён.",
+			},
+		};
+	}
+
+	if ("kind" in result && result.kind === "insufficient_deposit") {
+		return {
+			statusCode: 400,
+			body: {
+				error: "InsufficientDepositBalance",
+				message: `Недостаточно средств на депозите пациента. Доступно: ${result.availableRub} ₽, требуется: ${result.requiredRub} ₽`,
 			},
 		};
 	}

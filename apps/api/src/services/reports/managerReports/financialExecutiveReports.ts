@@ -34,8 +34,15 @@ export type PaymentMethodBreakdown = {
 
 export type FinancialExecutiveSummaryReport = {
 	readonly period: { readonly from: string; readonly to: string };
+	/** Валовая выручка от реализации медицинских услуг за период (без задвоения авансов) */
 	readonly totalRevenueRub: number;
 	readonly totalRevenueKopecks: number;
+	/** Реальный денежный приток в кассу и банк (ДДС: Наличные + Карты + СБП) */
+	readonly cashInflowRub: number;
+	readonly cashInflowKopecks: number;
+	/** Реализация медицинских услуг через погашение авансов и депозитов */
+	readonly depositRealizedRub: number;
+	readonly depositRealizedKopecks: number;
 	readonly invoicesCount: number;
 	readonly totalInvoicedRub: number;
 	readonly totalInvoicedKopecks: number;
@@ -150,25 +157,11 @@ export async function financialExecutiveSummary(
 		}
 	}
 
-	const totalRevenueRub = cashRub + cardRub + sbpRub + depositRub;
-	const totalRevenueKopecks = Math.round(totalRevenueRub * 100);
-
-	const cashPercent =
-		totalRevenueRub > 0 ? Number(((cashRub / totalRevenueRub) * 100).toFixed(1)) : 0;
-	const cardPercent =
-		totalRevenueRub > 0 ? Number(((cardRub / totalRevenueRub) * 100).toFixed(1)) : 0;
-	const sbpPercent =
-		totalRevenueRub > 0 ? Number(((sbpRub / totalRevenueRub) * 100).toFixed(1)) : 0;
-	const depositPercent =
-		totalRevenueRub > 0
-			? Number(((depositRub / totalRevenueRub) * 100).toFixed(1))
-			: 0;
-
 	// 2. Оформленные наряды за период (invoices / patient_invoices)
 	const [invoicesSummary] = await db
 		.select({
 			invoicesCount: sql<number>`count(*)::int`,
-			totalInvoicedRub: sql<number>`coalesce(sum(${invoices.totalAmountRub}), 0)::numeric(12,2)`,
+			totalInvoicedRub: sql<number>`coalesce(sum(case when ${invoices.status} != 'voided' and ${invoices.status} != 'cancelled' then coalesce(${invoices.totalAmountRub}, ${invoices.totalRub}) else 0 end), 0)::numeric(12,2)`,
 		})
 		.from(invoices)
 		.where(
@@ -182,6 +175,36 @@ export async function financialExecutiveSummary(
 	const invoicesCount = Number(invoicesSummary?.invoicesCount || 0);
 	const totalInvoicedRub = Number(invoicesSummary?.totalInvoicedRub || 0);
 	const totalInvoicedKopecks = Math.round(totalInvoicedRub * 100);
+
+	// [FIN-01] Ликвидация двойного учёта выручки:
+	// (а) Реальный денежный приток в кассу и банк (ДДС): физические поступления средств за период (нал + карты + СБП).
+	const cashInflowRub = cashRub + cardRub + sbpRub;
+	const cashInflowKopecks = Math.round(cashInflowRub * 100);
+
+	// (б) Реализация услуг через погашение авансов / депозитов.
+	const depositRealizedRub = depositRub;
+	const depositRealizedKopecks = Math.round(depositRealizedRub * 100);
+
+	// (в) Итоговая выручка от реализации услуг за период:
+	// Рассчитывается по фактически выполненным нарядам и актам (invoicesSummary.invoicesTotalRub),
+	// либо (если наряды не выставлялись отдельно) как сумма прямых платежей за оказанные услуги плюс зачет депозита,
+	// исключая повторный учет внесенного ранее аванса!
+	const totalRevenueRub =
+		totalInvoicedRub > 0 ? totalInvoicedRub : cashInflowRub + depositRealizedRub;
+	const totalRevenueKopecks = Math.round(totalRevenueRub * 100);
+
+	// Общий объем платежных проводок за период (для долевого распределения в breakdown)
+	const paymentTurnoverRub = cashInflowRub + depositRealizedRub;
+	const cashPercent =
+		paymentTurnoverRub > 0 ? Number(((cashRub / paymentTurnoverRub) * 100).toFixed(1)) : 0;
+	const cardPercent =
+		paymentTurnoverRub > 0 ? Number(((cardRub / paymentTurnoverRub) * 100).toFixed(1)) : 0;
+	const sbpPercent =
+		paymentTurnoverRub > 0 ? Number(((sbpRub / paymentTurnoverRub) * 100).toFixed(1)) : 0;
+	const depositPercent =
+		paymentTurnoverRub > 0
+			? Number(((depositRub / paymentTurnoverRub) * 100).toFixed(1))
+			: 0;
 
 	const averageCheckRub =
 		invoicesCount > 0
@@ -198,6 +221,10 @@ export async function financialExecutiveSummary(
 		},
 		totalRevenueRub: Math.round(totalRevenueRub),
 		totalRevenueKopecks,
+		cashInflowRub: Math.round(cashInflowRub),
+		cashInflowKopecks,
+		depositRealizedRub: Math.round(depositRealizedRub),
+		depositRealizedKopecks,
 		invoicesCount,
 		totalInvoicedRub: Math.round(totalInvoicedRub),
 		totalInvoicedKopecks,
@@ -237,7 +264,7 @@ export async function financialExecutiveSummary(
 				count: depositCount,
 			},
 		},
-		isEmpty: totalRevenueRub === 0 && invoicesCount === 0,
+		isEmpty: totalRevenueRub === 0 && invoicesCount === 0 && cashInflowRub === 0,
 	};
 }
 

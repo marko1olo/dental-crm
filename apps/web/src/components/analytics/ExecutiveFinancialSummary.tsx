@@ -36,6 +36,10 @@ export interface PaymentBreakdownItem {
 export interface FinancialSummaryData {
 	readonly totalRevenueRub: number;
 	readonly totalRevenueKopecks: number;
+	readonly cashInflowRub?: number;
+	readonly cashInflowKopecks?: number;
+	readonly depositRealizedRub?: number;
+	readonly depositRealizedKopecks?: number;
 	readonly invoicesCount: number;
 	readonly totalInvoicedRub: number;
 	readonly totalInvoicedKopecks: number;

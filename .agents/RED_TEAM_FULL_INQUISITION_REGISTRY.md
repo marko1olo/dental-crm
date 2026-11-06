@@ -97,3 +97,13 @@
 1. **DEF-FRONT-11** [ИСПРАВЛЕНО]: Довести все кнопки подтверждения и контролов до $\ge 44\times 44$px.
 2. **AI-REV-11 & AI-REV-12** [ИСПРАВЛЕНО]: Заменить «Верховный Оркестратор L1» на «Единый клинический советник», вырезать мультяшные эмодзи и канцелярит («043/у», «54-ФЗ»).
 3. **DEF-FRONT-12** [ИСПРАВЛЕНО]: Трансформировать 4-колоночную матрицу возможностей в карточки на экранах $\le 640$px, убрать фейковый CoT текст.
+
+---
+
+## РАЗДЕЛ IV: ФИНАНСОВЫЙ КОНТУР, БИЛЛИНГ И ДЕПОЗИТЫ (FINANCIAL & DEPOSIT INTEGRITY)
+
+| ID | Область | Sev | Описание дефекта | Файл и строки |
+|---|---|---|---|---|
+| **FIN-01** | Revenue Accounting | **Sev 1** | **[ИСПРАВЛЕНО] Двойной учёт выручки (Фантомные миллионы)**: Разделены чистый денежный приток (`cashInflowRub = cashRub + cardRub + sbpRub`), погашение авансов (`depositRealizedRub = depositRub`) и фактическая выручка за период (`totalRevenueRub = totalInvoicedRub`, либо прямые платежи + депозит без повторного учета внесенного ранее аванса). Исключены отмененные/аннулированные наряды. | [`financialExecutiveReports.ts#L179-L215`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L179-L215), [`financialExecutiveSummaryIntegrity.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/financialExecutiveSummaryIntegrity.test.ts) |
+| **FIN-05** | Deposit Integrity | **Sev 1** | **[ИСПРАВЛЕНО] Оплата несуществующим депозитом**: Внедрен барьер верификации депозита (`familyGroups.balance` + `advanceDepositTaggings` + `buildPatientLedger` / `clinicOwesPatientKopecks`). При нехватке средств — возврат 400 Bad Request `InsufficientDepositBalance` с суммой в рублях. При наличии — атомарное списание остатка и фиксация в кассовом аудите `cashOperations`. Гарантийные расчеты (Мандат 8e, 0 ₽) проходят без блокировок. | [`cashboxPaymentProcessor.ts#L70-L168,L415-L485`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts#L70-L168), [`cashboxDepositPaymentIntegrity.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/cashboxDepositPaymentIntegrity.test.ts) |
+
