@@ -14,10 +14,11 @@ import type { RecallCategoryFilter } from "./marketingRecallsTypes";
 export interface MarketingRecallsHubProps {
 	readonly clinicName?: string;
 	readonly onBookAppointment?: (patientId: string) => void;
+	readonly initialCategory?: RecallCategoryFilter;
 }
 
-export function MarketingRecallsHub({ clinicName = "Стоматология ДЕНТЕ", onBookAppointment }: MarketingRecallsHubProps) {
-	const { candidates, allCount, loading, error, activeCategory, setActiveCategory, searchQuery, setSearchQuery, calledIds, markCalled, stats, reload } = useMarketingRecallsData();
+export function MarketingRecallsHub({ clinicName = "Стоматология ДЕНТЕ", onBookAppointment, initialCategory }: MarketingRecallsHubProps) {
+	const { candidates, allCount, loading, error, activeCategory, setActiveCategory, searchQuery, setSearchQuery, calledIds, markCalled, stats, reload } = useMarketingRecallsData(initialCategory);
 
 	const handleOpenOmnichannelChat = () => {
 		window.dispatchEvent(new CustomEvent("dente:open-chat-panel"));

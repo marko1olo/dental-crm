@@ -36,6 +36,7 @@ import {
 	ONLINE_CHANNEL_DEFS,
 	CHANNEL_NAMES_RU_MAP,
 } from "./marketingModules/marketingAnalyticsEngine.js";
+import { calculateRealMarketingCohorts } from "../services/marketing/marketingCohortService.js";
 import {
 	handleGetMarketingReports,
 	handleGetPatientFieldRequirements,
@@ -273,6 +274,29 @@ export async function registerMarketingRoutes(app: FastifyInstance) {
 			return reply.code(500).send({
 				error: "InternalServerError",
 				message: "Не удалось сформировать воронку онлайн-самозаписи",
+			});
+		}
+	});
+
+	/**
+	 * GET /api/marketing/cohort-segments
+	 * Честные когорты пациентов и 3D RFM матрица из реальной базы PostgreSQL 18 ([LOY-10 & LOY-11]).
+	 */
+	app.get("/api/marketing/cohort-segments", async (request: FastifyRequest, reply: FastifyReply) => {
+		const readAllowed = await requireClinicalReadAccess(request, reply, "marketing cohort segments");
+		if (!readAllowed) return;
+
+		const orgId = await requireResolvedOrganizationId(request, reply, "marketing cohort segments");
+		if (!orgId) return;
+
+		try {
+			const report = await calculateRealMarketingCohorts(orgId);
+			return reply.code(200).send(report);
+		} catch (err) {
+			request.log.error({ err }, "[Marketing] Error calculating cohort segments");
+			return reply.code(500).send({
+				error: "InternalServerError",
+				message: "Не удалось рассчитать когортные сегменты и RFM матрицу",
 			});
 		}
 	});

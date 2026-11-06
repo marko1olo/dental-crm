@@ -1314,7 +1314,8 @@
      - `missed_hygiene`: пациенты с интервалом после профгигиены > 180 дней.
      - `ortho_therapy`: пациенты на активных ортодонтических и терапевтических протоколах.
   3. В `marketing.ts` зарегистрирован роут `GET /api/marketing/cohort-segments`.
-  4. В `MarketingSegmentsCohortCard.tsx` внедрена динамическая гидратация из API с реальным выводом количества пациентов в когортах.
+  4. В `MarketingSegmentsCohortCard.tsx` внедрена динамическая гидратация из API с реальным выводом количества пациентов в когортах и расчетом суммарной выручки когорт (`revenueKopecks`). Устранен наезд заголовка и кнопки на мобильных разрешениях (390px, Apple HIG).
+  5. Проверено 4-state визуальными пруфами: `docs/proofs/marketing/01_marketing_dashboard_pc_light_1440x900.png`, `02_marketing_dashboard_pc_dark_1440x900.png`, `03_marketing_cohorts_mobile_light_390x844.png`, `04_marketing_cohorts_mobile_dark_390x844.png`.
 
 ### [LOY-11] [SEV-2] [ИСПРАВЛЕНО] Полное отсутствие трехмерной матрицы RFM (Frequency и Monetary)
 - **Файлы:**

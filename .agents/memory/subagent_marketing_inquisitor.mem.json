@@ -1,0 +1,57 @@
+{
+  "role": "subagent_marketing_inquisitor",
+  "mandate": "Marketing & Retention Studio Inquisition, Live Patient Cohorts & 3D RFM Matrix",
+  "updatedAt": "2026-11-06T17:23:00.000Z",
+  "status": "COMPLETED",
+  "findingsAndFixes": [
+    {
+      "id": "LOY-10",
+      "severity": "SEV-1",
+      "description": "Static hardcoded mock numbers in patient cohorts replaced with live PostgreSQL 18 SQL aggregations and cohort revenue in kopecks.",
+      "status": "FIXED",
+      "files": [
+        "apps/api/src/services/marketing/marketingCohortService.ts",
+        "apps/api/src/routes/marketing.ts",
+        "apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx",
+        "apps/web/src/components/marketing/marketingSegmentsPresets.ts"
+      ]
+    },
+    {
+      "id": "LOY-11",
+      "severity": "SEV-2",
+      "description": "3D RFM matrix (Recency, Frequency, Monetary) fully hydrated and surfaced in MarketingSegmentsCohortCard (VIP, Base, Sleeping).",
+      "status": "FIXED",
+      "files": [
+        "apps/api/src/services/marketing/marketingCohortService.ts",
+        "apps/api/src/services/patients/recallCandidates.ts",
+        "packages/shared/src/recalls/recallCandidates.ts"
+      ]
+    },
+    {
+      "id": "MKT-MOBILE-OVERLAP",
+      "severity": "SEV-2",
+      "description": "Mobile 390x844 layout defect: Return rate button overlapped RFM heading in MarketingSegmentsCohortCard and top channel banner truncated ROMI value.",
+      "status": "FIXED",
+      "files": [
+        "apps/web/src/pages/marketingStyles/marketingDashboardMobile.css",
+        "apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx",
+        "apps/web/src/pages/marketingDashboardModules/MarketingRoiAdCard.tsx"
+      ]
+    }
+  ],
+  "visualProofs": [
+    "docs/proofs/marketing/01_marketing_dashboard_pc_light_1440x900.png",
+    "docs/proofs/marketing/02_marketing_dashboard_pc_dark_1440x900.png",
+    "docs/proofs/marketing/03_marketing_cohorts_mobile_light_390x844.png",
+    "docs/proofs/marketing/04_marketing_cohorts_mobile_dark_390x844.png"
+  ],
+  "testCoverage": {
+    "vitest": "55/55 passed (100% Exit Code 0)",
+    "dodGates": {
+      "encoding": "OK (0 errors across 24014 files)",
+      "stubOverrides": "OK (0 overrides)",
+      "fetchResponse": "OK (0 errors)",
+      "dynamicImports": "OK (0 missing across 531 imports)"
+    }
+  }
+}

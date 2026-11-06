@@ -28,14 +28,20 @@ function deriveBadge(reason: string, band: string, months: number | null): { typ
 	return { type: "general", text: "Плановый профосмотр • 6 мес" };
 }
 
-export function useMarketingRecallsData() {
+export function useMarketingRecallsData(initialCategory: RecallCategoryFilter = "all") {
 	const appLogic = useOptionalAppLogicContext();
 	const [candidates, setCandidates] = useState<readonly MarketingRecallCandidate[]>([]);
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string | null>(null);
-	const [activeCategory, setActiveCategory] = useState<RecallCategoryFilter>("all");
+	const [activeCategory, setActiveCategory] = useState<RecallCategoryFilter>(initialCategory);
 	const [searchQuery, setSearchQuery] = useState("");
 	const [calledIds, setCalledIds] = useState<Set<string>>(new Set());
+
+	useEffect(() => {
+		if (initialCategory) {
+			setActiveCategory(initialCategory);
+		}
+	}, [initialCategory]);
 
 	const load = useCallback(async () => {
 		setLoading(true);

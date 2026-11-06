@@ -72,6 +72,12 @@
 		font-size: 1.15rem;
 	}
 
+	.marketing-section-card-header {
+		flex-wrap: wrap;
+		gap: 8px;
+		align-items: center;
+	}
+
 	.marketing-header-csv-btn,
 	.marketing-header-promo-btn,
 	.marketing-cohort-action,

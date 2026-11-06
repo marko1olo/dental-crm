@@ -65,9 +65,9 @@ export function MarketingRoiAdCard({ summary, topChannel }: MarketingRoiAdCardPr
 			</div>
 
 			{topChannel && (
-				<div className="marketing-best-channel-box">
-					<Flame size={15} className="shrink-0" />
-					<span className="truncate">
+				<div className="marketing-best-channel-box flex items-center gap-2 flex-wrap sm:flex-nowrap">
+					<Flame size={15} className="shrink-0 text-amber-500" />
+					<span className="text-xs leading-normal">
 						Лидер по окупаемости: <strong>{topChannel.channelLabel}</strong> ({topChannel.romiPercent}% ROMI)
 					</span>
 				</div>

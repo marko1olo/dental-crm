@@ -24,7 +24,7 @@ export type {
  */
 export interface MarketingDashboardViewProps {
 	readonly clinicName?: string;
-	readonly onNavigateToRecalls?: () => void;
+	readonly onNavigateToRecalls?: (category?: string) => void;
 	readonly embedded?: boolean;
 }
 
@@ -69,6 +69,6 @@ export interface MarketingRoiAndSegmentsPanelProps {
 	readonly summary: MarketingMetricsSummary;
 	readonly topChannel?: ChannelFunnelMetric | undefined;
 	readonly onOpenLeakDetector: () => void;
-	readonly onNavigateToRecalls?: (() => void) | undefined;
+	readonly onNavigateToRecalls?: ((category?: string) => void) | undefined;
 }
 
