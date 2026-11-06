@@ -56,16 +56,20 @@
 	display: flex;
 	flex-direction: column;
 	min-width: 0;
+	flex: 1;
 }
 
 .mobile-chat-patient-name {
-	font-size: 14px;
+	font-size: 13px;
 	font-weight: 600;
 	color: var(--ink);
-	white-space: nowrap;
+	white-space: normal;
+	line-height: 1.2;
+	display: -webkit-box;
+	-webkit-line-clamp: 2;
+	-webkit-box-orient: vertical;
 	overflow: hidden;
-	text-overflow: ellipsis;
-	line-height: 1.25;
+	word-break: break-word;
 }
 
 .mobile-chat-patient-sub {

@@ -515,12 +515,13 @@
   1. Хардкод полностью удален. Клик по скрепке открывает нативный диалог операционной системы `<input type="file" accept="image/*,.pdf,.dcm,application/dicom" />`.
   2. Реализована обработка реального выбранного файла (имя, размер в КБ/МБ, тип данных).
   3. В `mobileMessengerChatView.css` скорректирован z-index полноэкранного чата (`z-index: 10005`), исключив перекрытие панели ввода нижним таб-баром (`MobileTabBar`).
-  4. В `WhatsAppChatHeader.tsx` и `WhatsAppQuickBar.tsx` добавлены CSS-классы `bg-transparent text-inherit`, ликвидировав белые слепящие прямоугольники в темной теме.
+  4. Ликвидирован дефект клиппинга ФИО пациента в шапке мобильного чата: `.mobile-chat-patient-name` переведен на двухстрочный перенос `line-clamp: 2` с `break-word`, гарантируя 100% читаемость длинных ФИО (например, «Смирнов Алексей Викторович») без паразитного `...`.
+  5. В `WhatsAppChatHeader.tsx` и `WhatsAppQuickBar.tsx` добавлены CSS-классы `bg-transparent text-inherit`, ликвидировав белые слепящие прямоугольники в темной теме.
 - **Визуальные пруфы (4-State Visual Proof):**
   - `docs/proofs/communications/01_patient_chat_pc_light_1440x900.png` (178 KB) — PC Light.
   - `docs/proofs/communications/02_patient_chat_pc_dark_1440x900.png` (177 KB) — PC Dark (100% темные токены, 0 белых пятен).
-  - `docs/proofs/communications/03_mobile_messenger_mobile_light_390x844.png` (39 KB) — Mobile Light (нативный ввод в нижней трети, скрепка, без наездов таб-бара).
-  - `docs/proofs/communications/04_mobile_messenger_mobile_dark_390x844.png` (40 KB) — Mobile Dark (Apple HIG, 0px горизонтального скролла).
+  - `docs/proofs/communications/03_patient_chat_mobile_light_390x844.png` / `03_mobile_messenger_mobile_light_390x844.png` (40 KB) — Mobile Light (нативный ввод в нижней трети, скрепка, без наездов таб-бара, полное ФИО без клиппинга).
+  - `docs/proofs/communications/04_patient_chat_mobile_dark_390x844.png` / `04_mobile_messenger_mobile_dark_390x844.png` (41 KB) — Mobile Dark (Apple HIG, 0px горизонтального скролла, идеальный контраст WCAG AAA).
 
 
 ## 8. 🌐 ПАЦИЕНТСКИЙ ПОРТАЛ (PWA) И ОНЛАЙН-ЗАПИСЬ
