@@ -46,17 +46,54 @@ export async function handleEndedEvent(p: HandleEndedParams) {
 		}
 	}
 
-	if (p.matchedPatient) {
-		await db.insert(communicationEvents).values({
-			organizationId: p.resolvedOrgId,
-			patientId: p.matchedPatient.id,
-			channel: "phone",
-			direction: "inbound",
-			status: "completed",
-			message: p.callId ? `Звонок завершён (call_id: ${p.callId})` : "Звонок завершён (запись приложена)",
-			recordingUrl: verifiedRecUrl,
-			durationSeconds: p.durationSeconds > 0 ? p.durationSeconds : null,
-		});
+	await db.insert(communicationEvents).values({
+		organizationId: p.resolvedOrgId,
+		patientId: p.matchedPatient?.id || null,
+		callerPhone: p.callerPhone.e164,
+		channel: "phone",
+		direction: "inbound",
+		status: "completed",
+		message: p.callId
+			? `Звонок завершён (call_id: ${p.callId}${!p.matchedPatient ? ", первичный звонок" : ""})`
+			: `Звонок завершён (запись приложена${!p.matchedPatient ? ", первичный звонок" : ""})`,
+		recordingUrl: verifiedRecUrl,
+		durationSeconds: p.durationSeconds > 0 ? p.durationSeconds : null,
+	});
+
+	if (!p.matchedPatient && p.callerPhone.national10.length >= 7) {
+		try {
+			const existingLead = await db
+				.select({ id: crmLeads.id })
+				.from(crmLeads)
+				.where(
+					and(
+						eq(crmLeads.organizationId, p.resolvedOrgId),
+						or(
+							eq(crmLeads.phone, p.callerPhone.e164),
+							ilike(crmLeads.phone, `%${p.callerPhone.national10}%`),
+						),
+					),
+				)
+				.limit(1);
+
+			if (existingLead.length === 0) {
+				await db.insert(crmLeads).values({
+					organizationId: p.resolvedOrgId,
+					name: `Входящий звонок ${p.callerPhone.e164}`,
+					patientName: `Первичный звонок ${p.callerPhone.e164}`,
+					phone: p.callerPhone.e164,
+					source: "telephony",
+					status: "new",
+					notes: `Автоматический лид из входящего звонка телефонии. ${p.callId ? `call_id: ${p.callId}.` : ""}${p.durationSeconds > 0 ? ` Длительность: ${p.durationSeconds}с.` : ""}`,
+					audioRecordUrl: verifiedRecUrl || null,
+					transcriptionSnippet: p.transcriptionSnippet || null,
+					stageEnteredAt: new Date(),
+					priority: "normal",
+				});
+			}
+		} catch (leadErr) {
+			p.request.log.warn({ leadErr, orgId: p.resolvedOrgId }, "[Telephony] Auto lead creation warning");
+		}
 	}
 
 	if (verifiedRecUrl || p.transcriptionSnippet) {

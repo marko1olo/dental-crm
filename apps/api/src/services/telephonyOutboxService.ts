@@ -370,10 +370,50 @@ export class TelephonyOutboxService {
 		reply: FastifyReply,
 	): Promise<void> {
 		try {
+			let resolvedOrgId: string | null = null;
 			const routeOrgId = request.params.organizationId;
+			if (routeOrgId && UUID_REGEX.test(routeOrgId)) {
+				resolvedOrgId = routeOrgId;
+			} else {
+				const body = (request.body && typeof request.body === "object" ? request.body : {}) as Record<string, unknown>;
+				const targetRaw = String(body.to || body.called_did || body.called_number || body.CalledIdNum || body.to_number || "");
+				const targetPhone = normalizePhoneNumber(targetRaw);
+				if (targetPhone.isValid) {
+					const matchedClinic = await withSuperuserBypass(async (tx) => {
+						return tx
+							.select({ organizationId: clinics.organizationId })
+							.from(clinics)
+							.where(
+								or(
+									eq(clinics.phone, targetPhone.e164),
+									ilike(clinics.phone, `%${targetPhone.national10}%`),
+									sql`regexp_replace(coalesce(${clinics.phone}, ''), '[^0-9]', '', 'g') LIKE ${`%${targetPhone.national10}%`}`,
+								),
+							)
+							.limit(1);
+					});
+					resolvedOrgId = matchedClinic[0]?.organizationId || null;
+				}
+			}
+
+			if (!resolvedOrgId) {
+				return reply.code(404).send({
+					error: "OrganizationNotFound",
+					message: "Could not identify tenant organization for this call webhook",
+				});
+			}
+
+			const isAuth = await authenticatePbxWebhook(
+				request,
+				reply,
+				resolvedOrgId,
+				(request.body as Record<string, unknown>) || {},
+			);
+			if (!isAuth) return;
+
 			const ack = await this.enqueuePbxWebhook({
 				rawPayload: request.body,
-				routeOrganizationId: routeOrgId,
+				routeOrganizationId: resolvedOrgId,
 			});
 
 			return reply.code(200).send({
@@ -584,19 +624,54 @@ export class TelephonyOutboxService {
 					}
 				}
 
-				if (matchedPatient) {
-					await db.insert(communicationEvents).values({
-						organizationId,
-						patientId: matchedPatient.id,
-						channel: "phone",
-						direction: "inbound",
-						status: "completed",
-						message: callId
-							? `Звонок завершён (call_id: ${callId})`
-							: "Звонок завершён (запись приложена)",
-						recordingUrl: verifiedRecUrl,
-						durationSeconds: durationSeconds > 0 ? durationSeconds : null,
-					});
+				await db.insert(communicationEvents).values({
+					organizationId,
+					patientId: matchedPatient?.id || null,
+					callerPhone: callerPhone.e164,
+					channel: "phone",
+					direction: "inbound",
+					status: "completed",
+					message: callId
+						? `Звонок завершён (call_id: ${callId}${!matchedPatient ? ", первичный звонок" : ""})`
+						: `Звонок завершён (запись приложена${!matchedPatient ? ", первичный звонок" : ""})`,
+					recordingUrl: verifiedRecUrl,
+					durationSeconds: durationSeconds > 0 ? durationSeconds : null,
+				});
+
+				if (!matchedPatient && callerPhone.national10.length >= 7) {
+					try {
+						const existingLead = await db
+							.select({ id: crmLeads.id })
+							.from(crmLeads)
+							.where(
+								and(
+									eq(crmLeads.organizationId, organizationId),
+									or(
+										eq(crmLeads.phone, callerPhone.e164),
+										ilike(crmLeads.phone, `%${callerPhone.national10}%`),
+									),
+								),
+							)
+							.limit(1);
+
+						if (existingLead.length === 0) {
+							await db.insert(crmLeads).values({
+								organizationId,
+								name: `Входящий звонок ${callerPhone.e164}`,
+								patientName: `Первичный звонок ${callerPhone.e164}`,
+								phone: callerPhone.e164,
+								source: detectedMarketingChannel || "telephony",
+								status: "new",
+								notes: `Автоматический лид из входящего звонка телефонии (${detectedProvider}). ${callId ? `call_id: ${callId}.` : ""}${durationSeconds > 0 ? ` Длительность: ${durationSeconds}с.` : ""}`,
+								audioRecordUrl: verifiedRecUrl || null,
+								transcriptionSnippet: transcriptionSnippet || null,
+								stageEnteredAt: new Date(),
+								priority: "normal",
+							});
+						}
+					} catch (leadErr) {
+						console.warn("[TelephonyOutbox] Auto lead creation warning:", leadErr);
+					}
 				}
 
 				if (verifiedRecUrl || transcriptionSnippet) {

@@ -18,6 +18,8 @@ import {
 import { TelephonyCallList } from "./TelephonyCallList";
 import { CallAudioPlayer } from "./CallAudioPlayer";
 import { useTelephonyStore } from "../../store/telephonyStore";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
 import "./styles/telephonyStudio.css";
 
 export const QUICK_NOTE_PRESETS = [
@@ -270,7 +272,8 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 }) => {
 	const [searchQuery, setSearchQuery] = useState("");
 	const [activeFilter, setActiveFilter] = useState<TelephonyFilterType>("all");
-	const [selectedCallId, setSelectedCallId] = useState<string>(initialSelectedCallId || TELEPHONY_CATALOG_DATA[0]?.id || "");
+	const [dbCalls, setDbCalls] = useState<TelephonyCatalogCall[]>([]);
+	const [selectedCallId, setSelectedCallId] = useState<string>(initialSelectedCallId || "");
 	const [dialedNumber, setDialedNumber] = useState("");
 	const [activeMobileTab, setActiveMobileTab] = useState<"journal" | "dialer">("journal");
 	const [callNote, setCallNote] = useState("");
@@ -278,8 +281,91 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 
 	const activeLineId = useTelephonyStore((s) => s.activeLineId);
 
+	useEffect(() => {
+		if (!isOpen) return;
+		if (isDemoShowcaseMode()) {
+			setDbCalls(TELEPHONY_CATALOG_DATA);
+			if (!selectedCallId && TELEPHONY_CATALOG_DATA[0]) {
+				setSelectedCallId(TELEPHONY_CATALOG_DATA[0].id);
+			}
+			return;
+		}
+
+		let isMounted = true;
+		const staffToken = readDenteStaffToken();
+		const clinicToken = readDenteClinicToken();
+
+		fetch("/api/telephony/calls", {
+			headers: {
+				...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+				...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+			},
+		})
+			.then((res) => (res.ok ? res.json() : null))
+			.then((data: { success?: boolean; calls?: any[] } | null) => {
+				if (!isMounted) return;
+				if (data?.calls && Array.isArray(data.calls)) {
+					const mapped: TelephonyCatalogCall[] = data.calls.map((c) => {
+						const isIncoming = c.direction === "inbound";
+						const isMissed = c.status === "needs_call" || (c.durationSeconds === 0 && isIncoming);
+						const callType: TelephonyCallType = isIncoming
+							? isMissed ? "incoming_missed" : "incoming_answered"
+							: isMissed ? "outgoing_missed" : "outgoing_success";
+						const phone = c.patientPhone || c.callerPhone || "";
+						const callerName = c.patientName || (phone ? `Абонент ${formatPhoneRu(phone)}` : "Неизвестный номер");
+						const dateObj = c.createdAt ? new Date(c.createdAt) : new Date();
+						const timestampText = dateObj.toLocaleDateString("ru-RU", {
+							day: "numeric",
+							month: "short",
+							hour: "2-digit",
+							minute: "2-digit",
+						});
+
+						return {
+							id: String(c.id),
+							callType,
+							phone,
+							callerName,
+							patientId: c.patientId ? String(c.patientId) : null,
+							patientCategory: c.patientId ? "Постоянный" : "Первичный",
+							balanceRub: 0,
+							lastVisitDate: null,
+							attendingDoctor: null,
+							clinicalNote: c.message || undefined,
+							somaticAlert: null,
+							durationSeconds: c.durationSeconds || 0,
+							timestampText,
+							hasRecording: Boolean(c.recordingUrl),
+							recordingUrl: c.recordingUrl || undefined,
+							transcriptSnippet: undefined,
+						};
+					});
+					setDbCalls(mapped);
+					if (!selectedCallId && mapped[0]) {
+						setSelectedCallId(mapped[0].id);
+					}
+				} else {
+					setDbCalls([]);
+				}
+			})
+			.catch(() => {
+				if (isMounted) setDbCalls([]);
+			});
+
+		return () => {
+			isMounted = false;
+		};
+	}, [isOpen, selectedCallId]);
+
+	const isDemo = isDemoShowcaseMode() || typeof window === "undefined";
+
+	const baseCalls = useMemo(() => {
+		if (dbCalls.length > 0) return dbCalls;
+		return isDemo ? TELEPHONY_CATALOG_DATA : [];
+	}, [dbCalls, isDemo]);
+
 	const filteredCalls = useMemo(() => {
-		return TELEPHONY_CATALOG_DATA.filter((call) => {
+		return baseCalls.filter((call) => {
 			if (activeFilter === "missed" && !TELEPHONY_CALL_TYPES[call.callType].isMissed) return false;
 			if (activeFilter === "recorded" && !call.hasRecording) return false;
 			if (!searchQuery.trim()) return true;
@@ -290,11 +376,11 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 				(call.attendingDoctor && call.attendingDoctor.toLowerCase().includes(q))
 			);
 		});
-	}, [activeFilter, searchQuery]);
+	}, [baseCalls, activeFilter, searchQuery]);
 
 	const selectedCall: TelephonyCatalogCall | undefined = useMemo(() => {
-		return TELEPHONY_CATALOG_DATA.find((c) => c.id === selectedCallId) || filteredCalls[0];
-	}, [selectedCallId, filteredCalls]);
+		return baseCalls.find((c) => c.id === selectedCallId) || filteredCalls[0];
+	}, [baseCalls, selectedCallId, filteredCalls]);
 
 	useEffect(() => {
 		setIsNoteSaved(false);

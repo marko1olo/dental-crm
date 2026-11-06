@@ -14,6 +14,7 @@ import { telephonyRecordingRoutes } from "./telephonyRecordingRoutes.js";
 import { telephonySipRoutes } from "./telephonySipRoutes.js";
 import {
 	telephonyCallLifecycleRoutes,
+	telephonyCallsListHandler,
 	telephonyMissedCallsHandler,
 	telephonyOutboundHandler,
 	telephonySmsHandler,
@@ -54,6 +55,10 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	// Missed calls SLA
 	server.get<{ Params: { organizationId?: string }; Querystring: { page?: number; limit?: number; onlyOpen?: boolean } }>("/missed-calls", telephonyMissedCallsHandler);
 	server.get<{ Params: { organizationId: string }; Querystring: { page?: number; limit?: number; onlyOpen?: boolean } }>("/:organizationId/missed-calls", telephonyMissedCallsHandler);
+
+	// Telephony Calls List (GET /api/telephony/calls)
+	server.get<{ Params: { organizationId?: string } }>("/calls", telephonyCallsListHandler);
+	server.get<{ Params: { organizationId: string } }>("/:organizationId/calls", telephonyCallsListHandler);
 
 	// 1-Click Outbound call (Mandate 8e: Doctor Autonomy)
 	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound-call", telephonyOutboundHandler);

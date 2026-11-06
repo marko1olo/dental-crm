@@ -9,3 +9,4 @@ export * from "./telephonyMissedCallsHandler.js";
 export * from "./telephonySmsHandler.js";
 export * from "./telephonyOutboundHandler.js";
 export * from "./telephonyCallLifecycleHandler.js";
+export * from "./telephonyCallsListHandler.js";

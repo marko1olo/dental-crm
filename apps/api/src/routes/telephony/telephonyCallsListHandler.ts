@@ -1,0 +1,61 @@
+import { and, desc, eq } from "drizzle-orm";
+import type { FastifyReply, FastifyRequest } from "fastify";
+import {
+	requireClinicalReadAccess,
+	requireResolvedOrganizationId,
+} from "../../accessGuard.js";
+import { db } from "../../db/client.js";
+import { communicationEvents, patients } from "../../db/schema.js";
+
+export async function telephonyCallsListHandler(
+	request: FastifyRequest<{ Params: { organizationId?: string } }>,
+	reply: FastifyReply,
+) {
+	if (
+		!(await requireClinicalReadAccess(
+			request,
+			reply,
+			"list telephony calls",
+		))
+	) {
+		return;
+	}
+
+	const orgId = await requireResolvedOrganizationId(
+		request,
+		reply,
+		"list telephony calls",
+	);
+	if (!orgId) return;
+
+	const calls = await db
+		.select({
+			id: communicationEvents.id,
+			patientId: communicationEvents.patientId,
+			channel: communicationEvents.channel,
+			direction: communicationEvents.direction,
+			status: communicationEvents.status,
+			message: communicationEvents.message,
+			recordingUrl: communicationEvents.recordingUrl,
+			durationSeconds: communicationEvents.durationSeconds,
+			callerPhone: communicationEvents.callerPhone,
+			createdAt: communicationEvents.createdAt,
+			patientName: patients.fullName,
+			patientPhone: patients.phone,
+		})
+		.from(communicationEvents)
+		.leftJoin(patients, eq(patients.id, communicationEvents.patientId))
+		.where(
+			and(
+				eq(communicationEvents.organizationId, orgId),
+				eq(communicationEvents.channel, "phone"),
+			),
+		)
+		.orderBy(desc(communicationEvents.createdAt))
+		.limit(50);
+
+	return reply.send({
+		success: true,
+		calls,
+	});
+}

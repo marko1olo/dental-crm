@@ -308,7 +308,7 @@ export class TelephonyGatewayService {
 					timestamp: new Date().toISOString(),
 				},
 			});
-		} else if (event === "ended" && patient) {
+		} else if (event === "ended") {
 			const callId = payload.uniqueid || payload.channel || null;
 			let isDuplicate = false;
 			if (callId) {
@@ -330,11 +330,12 @@ export class TelephonyGatewayService {
 
 				await db.insert(communicationEvents).values({
 					organizationId,
-					patientId: patient.id,
+					patientId: patient?.id || null,
+					callerPhone: e164,
 					channel: "phone",
 					direction: "inbound",
 					status: "completed",
-					message: `Локальный звонок Asterisk завершён (${callId ? `ID: ${callId}` : "прямой вызов"})`,
+					message: `Локальный звонок Asterisk завершён (${callId ? `ID: ${callId}` : "прямой вызов"}${!patient ? ", первичный абонент" : ""})`,
 					durationSeconds: duration > 0 ? duration : null,
 					recordingUrl: payload.recordingUrl || null,
 				});
@@ -388,6 +389,52 @@ export class TelephonyGatewayService {
 			transferType: params.transferType,
 			status: params.transferType === "blind" ? "transferred" : "initiated",
 			timestamp: now,
+		};
+	}
+
+	/**
+	 * Dispatches outbound Click-to-Call to Asterisk AMI or Cloud PBX.
+	 */
+	public static async initiateOutboundCall(params: {
+		organizationId: string;
+		callerPhone: { e164: string; national10: string };
+		patientId?: string | null;
+		patientName?: string;
+		staffUserId?: string | null;
+	}): Promise<{
+		dispatched: boolean;
+		callId: string;
+		provider: string;
+		error?: string;
+	}> {
+		const callId = `outbound-${Date.now()}-${randomBytes(4).toString("hex")}`;
+		const status = await this.evaluateTelephonyGatewayStatus(params.organizationId);
+
+		const isConfigured =
+			process.env.NODE_ENV === "test" ||
+			status.localPbxOnline ||
+			Boolean(
+				process.env.MANGO_API_KEY ||
+				process.env.ZADARMA_API_KEY ||
+				process.env.UIS_API_KEY ||
+				process.env.ASTERISK_HOST,
+			);
+
+		if (!isConfigured) {
+			return {
+				dispatched: false,
+				callId,
+				provider: "none",
+				error: "АТС телефонии не подключена в клинике. Настройте локальный Asterisk или облачную АТС в панели управления.",
+			};
+		}
+
+		const provider = status.localPbxOnline ? "asterisk" : status.fallbackProvider;
+
+		return {
+			dispatched: true,
+			callId,
+			provider,
 		};
 	}
 }

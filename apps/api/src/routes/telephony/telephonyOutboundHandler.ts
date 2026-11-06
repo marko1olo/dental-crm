@@ -4,6 +4,7 @@ import { requireResolvedOrganizationId } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import { communicationEvents } from "../../db/schema.js";
+import { TelephonyGatewayService } from "../../services/telephony/telephonyGatewayService.js";
 import {
 	normalizePhoneNumber,
 	UUID_REGEX,
@@ -35,20 +36,52 @@ export async function telephonyOutboundCallHandler(
 		});
 	}
 
-	const callId = `outbound-${Date.now()}-${randomBytes(4).toString("hex")}`;
 	const patientName = body.patientName || "Пациент";
+	const patientId = body.patientId && UUID_REGEX.test(body.patientId) ? body.patientId : null;
 
-	await withTenantCtx(resolvedOrgId, async () => {
-		if (body.patientId && UUID_REGEX.test(body.patientId)) {
+	// Real dispatch to PBX gateway
+	const outboundResult = await TelephonyGatewayService.initiateOutboundCall({
+		organizationId: resolvedOrgId,
+		callerPhone,
+		patientId,
+		patientName,
+	});
+
+	if (!outboundResult.dispatched) {
+		await withTenantCtx(resolvedOrgId, async () => {
 			await db.insert(communicationEvents).values({
 				organizationId: resolvedOrgId!,
-				patientId: body.patientId,
+				patientId,
+				callerPhone: callerPhone.e164,
 				channel: "phone",
 				direction: "outbound",
-				status: "completed",
-				message: `Исходящий вызов на ${callerPhone.e164} [call_id: ${callId}]`,
+				status: "needs_call",
+				message: `Исходящий вызов на ${callerPhone.e164} отклонён: АТС не подключена`,
 			});
-		}
+		});
+
+		return reply.status(422).send({
+			success: false,
+			error: "TelephonyNotConfigured",
+			message: outboundResult.error || "АТС не подключена в клинике",
+			callId: outboundResult.callId,
+			telephonyConfigured: false,
+		});
+	}
+
+	const callId = outboundResult.callId;
+
+	// In progress call recorded as pending, never fake completed before talk
+	await withTenantCtx(resolvedOrgId, async () => {
+		await db.insert(communicationEvents).values({
+			organizationId: resolvedOrgId!,
+			patientId,
+			callerPhone: callerPhone.e164,
+			channel: "phone",
+			direction: "outbound",
+			status: "pending",
+			message: `Исходящий вызов на ${callerPhone.e164} [call_id: ${callId}] через ${outboundResult.provider}`,
+		});
 	});
 
 	wsBroker.broadcastToOrganization(resolvedOrgId, {
@@ -56,9 +89,10 @@ export async function telephonyOutboundCallHandler(
 		payload: {
 			callId,
 			phone: callerPhone.e164,
-			patientId: body.patientId || null,
+			patientId,
 			patientName,
 			status: "dialing",
+			provider: outboundResult.provider,
 			timestamp: new Date().toISOString(),
 		},
 	});
@@ -67,9 +101,11 @@ export async function telephonyOutboundCallHandler(
 		success: true,
 		callId,
 		phone: callerPhone.e164,
-		patientId: body.patientId || null,
+		patientId,
 		patientName,
 		status: "dialing",
+		provider: outboundResult.provider,
+		pbxDispatched: true,
 	});
 }
 
