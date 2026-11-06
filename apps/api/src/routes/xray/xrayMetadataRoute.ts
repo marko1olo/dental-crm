@@ -11,7 +11,7 @@ import { requireClinicalMutationAccess } from "../../accessGuard.js";
 import { db } from "../../db/client.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { scanToResponse } from "../xraySchemas.js";
+import { scanToResponse, UUID_REGEX } from "../xraySchemas.js";
 
 const updateXrayScanSchema = z.object({
 	aiReport: z.string().max(50000).nullable().optional(),
@@ -45,6 +45,9 @@ export async function registerXrayMetadataRoute(app: FastifyInstance): Promise<v
 		}
 
 		const { id } = request.params as { id: string };
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+		}
 		const parsed = updateXrayScanSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
 			reply.code(400);
@@ -91,6 +94,9 @@ export async function registerXrayMetadataRoute(app: FastifyInstance): Promise<v
 		if (!organizationId) return;
 
 		const { id } = request.params as { id: string };
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+		}
 		const parsed = bindToothSchema.safeParse(request.body ?? {});
 		if (!parsed.success) {
 			reply.code(400);

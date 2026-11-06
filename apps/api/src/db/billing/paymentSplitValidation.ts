@@ -3,9 +3,10 @@
  *
  * Implements:
  * - Integer kopecks parsing and non-negativity checks
- * - Multi-tender split calculation (Cash, Card/Electronic, Insurance/DMS, Family Deposit)
+ * - Multi-tender split calculation (Cash, Card/Electronic, Insurance/DMS, Family Deposit, Bonus)
  * - Remainder auto-balancing across cash and electronic tenders
  * - 100% warranty discount and free doctor care detection (Mandates 8e п. 7, 8n)
+ * - Atomic bonus redemption support ([LOY-02 & LOY-03])
  */
 
 import {
@@ -20,11 +21,13 @@ export interface ResolvedPaymentSplit {
 	readonly rawElectronicKop: number;
 	readonly rawDmsKop: number;
 	readonly rawDepositKop: number;
+	readonly rawBonusKop: number;
 	readonly isSplit: boolean;
 	readonly resolvedCashKop: number;
 	readonly resolvedElectronicKop: number;
 	readonly resolvedDmsKop: number;
 	readonly resolvedDepositKop: number;
+	readonly resolvedBonusKop: number;
 	readonly isWarrantyOrFullDiscount: boolean;
 }
 
@@ -55,6 +58,13 @@ export function validateAndResolvePaymentSplit(
 			: input.familyDepositAmountRub != null
 				? Math.round(input.familyDepositAmountRub * 100)
 				: 0);
+	const rawBonusKop =
+		(input as any).bonusAmountKopecks ??
+		((input as any).bonusAmountRub != null
+			? Math.round((input as any).bonusAmountRub * 100)
+			: (input as any).pointsToRedeem != null
+				? Math.round((input as any).pointsToRedeem * 100)
+				: 0);
 	const rawCertificateKop =
 		(input.certificateAmountKopecks ??
 			(input.certificateAmountRub != null ? Math.round(input.certificateAmountRub * 100) : 0)) +
@@ -63,8 +73,9 @@ export function validateAndResolvePaymentSplit(
 
 	const isSplit =
 		(rawCashKop > 0 && rawElectronicKop > 0) ||
-		(rawDmsKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDepositKop > 0)) ||
-		(rawDepositKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDmsKop > 0)) ||
+		(rawDmsKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDepositKop > 0 || rawBonusKop > 0)) ||
+		(rawDepositKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDmsKop > 0 || rawBonusKop > 0)) ||
+		(rawBonusKop > 0 && (rawCashKop > 0 || rawElectronicKop > 0 || rawDmsKop > 0 || rawDepositKop > 0)) ||
 		rawCertificateKop > 0 ||
 		input.method === "split" ||
 		input.method === "mixed";
@@ -73,9 +84,10 @@ export function validateAndResolvePaymentSplit(
 	let resolvedElectronicKop = rawElectronicKop;
 	let resolvedDmsKop = rawDmsKop;
 	let resolvedDepositKop = rawDepositKop;
+	let resolvedBonusKop = rawBonusKop;
 
 	if (isSplit) {
-		const nonCashElectronicKop = resolvedDmsKop + resolvedDepositKop + rawCertificateKop;
+		const nonCashElectronicKop = resolvedDmsKop + resolvedDepositKop + resolvedBonusKop + rawCertificateKop;
 		const netIncomingKop = incomingPaymentKopecks - nonCashElectronicKop;
 
 		if (resolvedCashKop === 0 && resolvedElectronicKop > 0 && resolvedElectronicKop < netIncomingKop) {
@@ -84,17 +96,18 @@ export function validateAndResolvePaymentSplit(
 			resolvedElectronicKop = netIncomingKop - resolvedCashKop;
 		}
 
-		if (resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop + rawCertificateKop !== incomingPaymentKopecks) {
+		const totalAllocatedKop = resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop + resolvedBonusKop + rawCertificateKop;
+		if (totalAllocatedKop !== incomingPaymentKopecks) {
 			const hasOtherMentionedTenders = Boolean(
 				input.note && /(аванс|депозит|family|сертификат|бонус|дмс|dms)/i.test(input.note),
 			);
 			if (!hasOtherMentionedTenders) {
 				throw new Error(
-					`Сумма частей смешанной оплаты (${formatKopecksRu(resolvedCashKop + resolvedElectronicKop + resolvedDmsKop + resolvedDepositKop + rawCertificateKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
+					`Сумма частей смешанной оплаты (${formatKopecksRu(totalAllocatedKop)}) не совпадает с общей суммой (${formatKopecksRu(incomingPaymentKopecks)}).`,
 				);
 			}
 		}
-		if (resolvedCashKop < 0 || resolvedElectronicKop < 0 || resolvedDmsKop < 0 || resolvedDepositKop < 0) {
+		if (resolvedCashKop < 0 || resolvedElectronicKop < 0 || resolvedDmsKop < 0 || resolvedDepositKop < 0 || resolvedBonusKop < 0) {
 			throw new Error("Части смешанной оплаты не могут быть отрицательными.");
 		}
 	}
@@ -123,11 +136,13 @@ export function validateAndResolvePaymentSplit(
 		rawElectronicKop,
 		rawDmsKop,
 		rawDepositKop,
+		rawBonusKop,
 		isSplit,
 		resolvedCashKop,
 		resolvedElectronicKop,
 		resolvedDmsKop,
 		resolvedDepositKop,
+		resolvedBonusKop,
 		isWarrantyOrFullDiscount,
 	};
 }

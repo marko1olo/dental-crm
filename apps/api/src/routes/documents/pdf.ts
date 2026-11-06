@@ -41,6 +41,15 @@ export async function register(app: FastifyInstance) {
 		{ config: { tenantTxSelfManaged: true } },
 		async (request, reply) => {
 			const { id } = request.params;
+			const UUID_REGEX =
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			if (!id || !UUID_REGEX.test(id)) {
+				return reply
+					.code(400)
+					.send(
+						apiError("Некорректный идентификатор документа (ожидается UUID)"),
+					);
+			}
 			// БЫЛО: при отсутствии/невалидности токена подставлялась строка "mock-org".
 			// Все проверки принадлежности сравнивали подделку саму с собой и сходились,
 			// а в uuid-колонку уходило "mock-org" → 500 на каждом маршруте документов.
@@ -163,6 +172,15 @@ export async function register(app: FastifyInstance) {
 			const orgId = requireOrganizationId(request, reply);
 			if (!orgId) return;
 			const { id } = request.params;
+			const UUID_REGEX =
+				/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+			if (!id || !UUID_REGEX.test(id)) {
+				return reply
+					.code(400)
+					.send(
+						apiError("Некорректный идентификатор документа (ожидается UUID)"),
+					);
+			}
 			const document = await withTenantCtx(orgId, () =>
 				getDocumentById(orgId, id),
 			);

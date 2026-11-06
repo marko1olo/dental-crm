@@ -2,11 +2,17 @@ import assert from "node:assert";
 import { after, before, describe, test } from "node:test";
 import Fastify, { type FastifyInstance } from "fastify";
 import { TOKEN_SECRET } from "../../routes/auth.js";
+import { registerAnesthesiaRoutes } from "../../routes/anesthesia.js";
 import { registerBillingRoutes } from "../../routes/billing.js";
+import { registerConsentRoutes } from "../../routes/consents.js";
+import { registerDocumentRoutes } from "../../routes/documents.js";
+import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { inventoryRoutes } from "../../routes/inventory.js";
+import { registerLabRoutes } from "../../routes/lab.js";
 import { registerScheduleRoutes } from "../../routes/schedule.js";
 import { registerStaffRoutes } from "../../routes/staff.js";
 import { registerVisitRoutes } from "../../routes/visits.js";
+import { registerXrayRoutes } from "../../routes/xray.js";
 import { getRequestIdentity } from "../../security/identity.js";
 import { signToken } from "../../utils/cryptoHelper.js";
 
@@ -35,6 +41,12 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 		await registerScheduleRoutes(app);
 		await app.register(inventoryRoutes, { prefix: "/api/inventory" });
 		await registerStaffRoutes(app);
+		await registerDocumentRoutes(app);
+		await registerConsentRoutes(app);
+		await registerFamilyFinanceRoutes(app);
+		await registerLabRoutes(app);
+		await registerXrayRoutes(app);
+		await registerAnesthesiaRoutes(app);
 
 		await app.ready();
 
@@ -364,6 +376,286 @@ describe("Fastify API Route Contracts & Error Hardening (CWE-209 & SQL 22P02 Def
 			const body = JSON.parse(res.body);
 			assert.strictEqual(body.error, "ValidationError");
 			assert.match(body.message, /Некорректный идентификатор сотрудника/);
+		});
+	});
+
+	// ==========================================
+	// 6. Documents & Invoicing SQL 22P02 Defense
+	// ==========================================
+	describe("6. Documents & Invoicing SQL 22P02 Defense", () => {
+		test("POST /api/documents/not-a-uuid/issue returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/documents/not-a-uuid/issue",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.match(body.message, /Некорректный идентификатор документа/);
+		});
+
+		test("POST /api/documents/not-a-uuid/void returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/documents/not-a-uuid/void",
+				headers: staffHeaders,
+				payload: { reason: "Ошибочно оформленный документ" },
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.match(body.message, /Некорректный идентификатор документа/);
+		});
+
+		test("GET /api/documents/not-a-uuid/pdf returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/documents/not-a-uuid/pdf",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.match(body.message, /Некорректный идентификатор документа/);
+		});
+	});
+
+	// ==========================================
+	// 7. Informed Consents SQL 22P02 Defense
+	// ==========================================
+	describe("7. Informed Consents SQL 22P02 Defense", () => {
+		test("GET /api/patients/not-a-uuid/consents returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/patients/not-a-uuid/consents",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор пациента/);
+		});
+
+		test("POST /api/patients/not-a-uuid/consents returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/patients/not-a-uuid/consents",
+				headers: staffHeaders,
+				payload: {
+					templateId: "general_treatment",
+				},
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор пациента/);
+		});
+	});
+
+	// ==========================================
+	// 8. Family Finance SQL 22P02 Defense
+	// ==========================================
+	describe("8. Family Finance SQL 22P02 Defense", () => {
+		test("GET /api/finance/family/patient/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/finance/family/patient/not-a-uuid",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор пациента/);
+		});
+
+		test("GET /api/finance/family/not-a-uuid/history returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/finance/family/not-a-uuid/history",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор семейной группы/);
+		});
+	});
+
+	// ==========================================
+	// 9. Lab Orders & ZTL SQL 22P02 Defense
+	// ==========================================
+	describe("9. Lab Orders & ZTL SQL 22P02 Defense", () => {
+		test("PUT /api/clinical/lab-orders/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "PUT",
+				url: "/api/clinical/lab-orders/not-a-uuid",
+				headers: staffHeaders,
+				payload: {
+					patientId: USER_ID,
+					prosthesisType: "crown_zirconia",
+					toothNumbers: [16],
+				},
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор заказа ЗТЛ/);
+		});
+
+		test("PATCH /api/clinical/lab-orders/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "PATCH",
+				url: "/api/clinical/lab-orders/not-a-uuid",
+				headers: staffHeaders,
+				payload: {
+					stage: "model_cast",
+				},
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор заказа ЗТЛ/);
+		});
+
+		test("DELETE /api/clinical/lab-orders/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "DELETE",
+				url: "/api/clinical/lab-orders/not-a-uuid",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор заказа ЗТЛ/);
+		});
+	});
+
+	// ==========================================
+	// 10. X-Ray & Imaging PACS SQL 22P02 Defense
+	// ==========================================
+	describe("10. X-Ray & Imaging PACS SQL 22P02 Defense", () => {
+		test("GET /api/xray/scans/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/xray/scans/not-a-uuid",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор снимка/);
+		});
+
+		test("GET /api/xray/scans/not-a-uuid/file returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/xray/scans/not-a-uuid/file",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор снимка/);
+		});
+
+		test("POST /api/xray/scans/not-a-uuid/analyze returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/xray/scans/not-a-uuid/analyze",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор снимка/);
+		});
+
+		test("PUT /api/xray/scans/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "PUT",
+				url: "/api/xray/scans/not-a-uuid",
+				headers: staffHeaders,
+				payload: { notes: "Контрольный снимок" },
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор снимка/);
+		});
+
+		test("POST /api/xray/scans/not-a-uuid/bind-tooth returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/xray/scans/not-a-uuid/bind-tooth",
+				headers: staffHeaders,
+				payload: { toothCode: "16" },
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор снимка/);
+		});
+	});
+
+	// ==========================================
+	// 11. Anesthesia Protocols SQL 22P02 Defense
+	// ==========================================
+	describe("11. Anesthesia Protocols SQL 22P02 Defense", () => {
+		test("GET /api/anesthesia/patients/not-a-uuid/logs returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "GET",
+				url: "/api/anesthesia/patients/not-a-uuid/logs",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор пациента/);
+		});
+
+		test("DELETE /api/anesthesia/logs/not-a-uuid returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "DELETE",
+				url: "/api/anesthesia/logs/not-a-uuid",
+				headers: staffHeaders,
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор записи анестезии/);
+		});
+
+		test("POST /api/anesthesia/patients/not-a-uuid/logs returns 400 (not 500 SQL 22P02)", async () => {
+			const res = await app.inject({
+				method: "POST",
+				url: "/api/anesthesia/patients/not-a-uuid/logs",
+				headers: staffHeaders,
+				payload: {
+					technique: "infiltration",
+					drug: "articaine",
+					carpulesAdministered: 1.0,
+				},
+			});
+
+			assert.strictEqual(res.statusCode, 400);
+			const body = JSON.parse(res.body);
+			assert.strictEqual(body.error, "ValidationError");
+			assert.match(body.message, /Некорректный идентификатор пациента/);
 		});
 	});
 });

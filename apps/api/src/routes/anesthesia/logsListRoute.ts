@@ -11,6 +11,7 @@ import { anesthesiaLogs } from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { UUID_REGEX } from "./schemas.js";
 
 export function registerLogsListRoute(app: FastifyInstance): void {
 	app.get("/api/anesthesia/patients/:patientId/logs", async (request, reply) => {
@@ -30,6 +31,12 @@ export function registerLogsListRoute(app: FastifyInstance): void {
 		}
 
 		const { patientId } = request.params as { patientId: string };
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID).",
+			});
+		}
 
 		return withTenantCtx(orgId, async () => {
 			const rows = await db

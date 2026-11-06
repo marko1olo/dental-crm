@@ -12,7 +12,7 @@ import { anesthesiaLogs, patients, serviceCatalogItems, treatmentItems, users, v
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
 import { TreatmentConsumablesService } from "../../services/treatmentConsumablesService.js";
-import { calculateSafetyBodySchema, createAnesthesiaLogBodySchema } from "./schemas.js";
+import { calculateSafetyBodySchema, createAnesthesiaLogBodySchema, UUID_REGEX } from "./schemas.js";
 
 export function registerLogsCreateRoute(app: FastifyInstance): void {
 	app.post("/api/anesthesia/calculate-safety", async (request, reply) => {
@@ -46,6 +46,12 @@ export function registerLogsCreateRoute(app: FastifyInstance): void {
 		}
 		const data = parsed.data;
 		const reqPatientId = (request.params as { patientId?: string })?.patientId || data.patientId;
+		if (reqPatientId && !UUID_REGEX.test(reqPatientId)) {
+			return reply.status(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID).",
+			});
+		}
 
 		return withTenantCtx(orgId, async () => {
 			let patientId = reqPatientId;

@@ -5,6 +5,9 @@ import { fetchPatientConsentsList, recordPatientConsentEntry } from "./queries.j
 import { generateConsentShareLink } from "./shareLink.js";
 import { saveConsentBodySchema, shareConsentLinkSchema } from "./types.js";
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function register(app: FastifyInstance) {
 	app.get("/api/patients/:patientId/consents", async (request: FastifyRequest, reply: FastifyReply) => {
 		if (!(await requireClinicalReadAccess(request, reply, "consents read"))) return;
@@ -12,6 +15,12 @@ export async function register(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { patientId } = request.params as { patientId: string };
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID)",
+			});
+		}
 		const consents = await fetchPatientConsentsList(orgId, patientId);
 		return reply.send({ consents });
 	});
@@ -22,6 +31,12 @@ export async function register(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { patientId } = request.params as { patientId: string };
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID)",
+			});
+		}
 		const parsed = saveConsentBodySchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({
@@ -41,6 +56,12 @@ export async function register(app: FastifyInstance) {
 		if (!orgId) return;
 
 		const { patientId } = request.params as { patientId: string };
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID)",
+			});
+		}
 		const parsed = shareConsentLinkSchema.safeParse(request.body);
 		if (!parsed.success) {
 			return reply.code(400).send({

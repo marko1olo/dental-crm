@@ -133,10 +133,17 @@ export async function getDocumentsByPatientId(
 	return records.map(mapDocument);
 }
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getDocumentById(
 	organizationId: string,
 	id: string,
 ): Promise<GeneratedDocument | null> {
+	if (!id || !UUID_REGEX.test(id)) {
+		return null;
+	}
+
 	if (useInMemory()) {
 		return (
 			inMemoryDocuments.find(

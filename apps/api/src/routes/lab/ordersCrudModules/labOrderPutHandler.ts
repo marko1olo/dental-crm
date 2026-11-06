@@ -35,6 +35,14 @@ export async function putLabOrderHandler(request: FastifyRequest, reply: Fastify
 	}
 
 	const { id } = request.params as { id: string };
+	const UUID_REGEX =
+		/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+	if (!id || !UUID_REGEX.test(id)) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректный идентификатор заказа ЗТЛ (ожидается UUID).",
+		});
+	}
 
 	const parsed = updateLabOrderSchema.safeParse(request.body);
 	if (!parsed.success) {

@@ -12,7 +12,7 @@ import { db } from "../../db/client.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { startDetachedXrayAnalysis, xrayAnalysisStaleMs } from "../xraySchemas.js";
+import { startDetachedXrayAnalysis, UUID_REGEX, xrayAnalysisStaleMs } from "../xraySchemas.js";
 
 export async function registerXrayExportRoute(app: FastifyInstance): Promise<void> {
 	app.get("/api/xray/scans/:id/file", async (request, reply) => {
@@ -28,6 +28,9 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 		}
 
 		const { id } = request.params as { id: string };
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+		}
 		const [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
 		if (!scan) {
 			reply.code(404);
@@ -68,6 +71,9 @@ export async function registerXrayExportRoute(app: FastifyInstance): Promise<voi
 		if (!organizationId) return;
 
 		const { id } = request.params as { id: string };
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+		}
 		const [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
 		if (!scan) {
 			reply.code(404);

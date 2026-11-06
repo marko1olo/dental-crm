@@ -11,6 +11,7 @@ import { anesthesiaLogs } from "../../db/schema.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
+import { UUID_REGEX } from "./schemas.js";
 
 export function registerLogsDeleteRoute(app: FastifyInstance): void {
 	app.delete("/api/anesthesia/logs/:logId", async (request, reply) => {
@@ -30,6 +31,12 @@ export function registerLogsDeleteRoute(app: FastifyInstance): void {
 		}
 
 		const { logId } = request.params as { logId: string };
+		if (!logId || !UUID_REGEX.test(logId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор записи анестезии (ожидается UUID).",
+			});
+		}
 
 		return withTenantCtx(orgId, async () => {
 			const deleted = await db

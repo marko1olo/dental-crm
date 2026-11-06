@@ -32,6 +32,15 @@ export async function register(app: FastifyInstance) {
 		const orgId = requireOrganizationId(request, reply);
 		if (!orgId) return;
 		const { id } = request.params as { id: string };
+		const UUID_REGEX =
+			/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+		if (!id || !UUID_REGEX.test(id)) {
+			return reply
+				.code(400)
+				.send(
+					apiError("Некорректный идентификатор документа (ожидается UUID)"),
+				);
+		}
 		const existing = await getDocumentById(orgId, id);
 		if (!existing) {
 			return reply.code(404).send(apiError("Документ не найден"));

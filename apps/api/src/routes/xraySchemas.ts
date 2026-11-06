@@ -9,6 +9,8 @@ import { transactionStorage } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
 import { imagingStudies, xrayScans } from "../db/schema.js";
 
+export const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 // Schemas
 
 export const createXrayScanSchema = z.object({

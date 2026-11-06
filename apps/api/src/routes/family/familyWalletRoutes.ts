@@ -12,6 +12,9 @@ import {
 import { getFamilyHistoryRecords } from "./familyBalanceService.js";
 import { familyPaymentSchema } from "./familyFinanceTypes.js";
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function registerFamilyWalletRoutes(app: FastifyInstance) {
 	// GET /api/finance/family/:familyGroupId/history
 	app.get("/api/finance/family/:familyGroupId/history", async (req, reply) => {
@@ -21,6 +24,12 @@ export function registerFamilyWalletRoutes(app: FastifyInstance) {
 		const { familyGroupId } = req.params as { familyGroupId: string };
 		if (familyGroupId === "patient" || familyGroupId === "pay" || familyGroupId === "topup" || familyGroupId === "refund") {
 			return reply.code(404).send({ error: "Family group not found" });
+		}
+		if (!UUID_REGEX.test(familyGroupId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор семейной группы (ожидается UUID)",
+			});
 		}
 
 		const records = await getFamilyHistoryRecords(familyGroupId, organizationId);

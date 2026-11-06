@@ -36,6 +36,7 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
 import {
+	familyGroups,
 	fiscalReceiptQueue,
 	idempotencyKeys,
 	organizations,
@@ -53,6 +54,7 @@ import {
 	clearInMemoryIdempotencyCache,
 	idempotencyPlugin,
 } from "../../plugins/idempotencyPlugin.js";
+import { registerFamilyFinanceRoutes } from "../../routes/finance_family.js";
 import { registerSyncRoutes } from "../../routes/sync/index.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { FiscalQueueRetryWorker } from "../../services/hardware/fiscalReceiptQueueService.js";
@@ -71,6 +73,7 @@ const ORG_ID = fixtureUuid(TEST_NS, 1);
 const DOCTOR_ID = fixtureUuid(TEST_NS, 2);
 const PATIENT_ID = fixtureUuid(TEST_NS, 3);
 const VISIT_ID = fixtureUuid(TEST_NS, 4);
+const FAMILY_GROUP_ID = fixtureUuid(TEST_NS, 5);
 
 describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/8e/8n/8zp)", () => {
 	let app: FastifyInstance;
@@ -117,6 +120,17 @@ describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/
 					.onConflictDoNothing();
 
 				await tx
+					.insert(familyGroups)
+					.values({
+						id: FAMILY_GROUP_ID,
+						organizationId: ORG_ID,
+						name: "Семейный депозит Кузнецова",
+						balance: "7000.00", // 7 000 ₽ = 700 000 копеек
+						headPatientId: PATIENT_ID,
+					})
+					.onConflictDoNothing();
+
+				await tx
 					.insert(patients)
 					.values({
 						id: PATIENT_ID,
@@ -124,6 +138,7 @@ describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/
 						fullName: "Кузнецов Василий Петрович",
 						phone: "+7 (999) 888-77-66",
 						birthDate: "1985-06-15",
+						familyGroupId: FAMILY_GROUP_ID,
 						notes: "Пациент для стресс-тестирования двойного списания",
 					})
 					.onConflictDoNothing();
@@ -150,7 +165,12 @@ describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/
 
 		staffHeaders = {
 			"x-dente-staff-token": signToken(
-				{ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" },
+				{
+					organizationId: ORG_ID,
+					userId: DOCTOR_ID,
+					role: "doctor",
+					permissions: ["finance.write", "finance.read", "payments.write", "clinical.write"],
+				},
 				authTokenSecret(),
 			),
 			"x-organization-id": ORG_ID,
@@ -173,6 +193,7 @@ describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/
 		});
 
 		await registerSyncRoutes(app);
+		await registerFamilyFinanceRoutes(app);
 
 		// High-value payment checkout endpoint protected by idempotencyPlugin
 		app.post("/api/finance/payments/chaos-checkout", async (request, reply) => {
@@ -935,5 +956,247 @@ describe("Chaos, Concurrency & Offline Survivability Suite (Red Team Mandate 8d/
 		);
 		assert.equal(warrantyItem.retryCount, 0);
 		assert.equal(warrantyItem.lastError, null);
+	});
+
+	// =========================================================================
+	// 5. CONCURRENCY STORM: ATOMIC PATIENT DEPOSIT DOUBLE-SPEND DEFENSE
+	// =========================================================================
+	test("5. Concurrency Storm: 15 simultaneous debits on patient deposit execute with atomic SELECT ... FOR UPDATE (zero overdraft)", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		// Initial setup: Family deposit has 7,000.00 ₽ (700,000 kopecks)
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.update(familyGroups)
+				.set({ balance: "7000.00" })
+				.where(eq(familyGroups.id, FAMILY_GROUP_ID));
+		});
+
+		// 15 parallel debit requests of 2,500.00 ₽ (250,000 kopecks) each:
+		// Total requested: 37,500 ₽. Available: 7,000 ₽.
+		// Exactly 2 requests must succeed (2 * 2500 = 5000 ₽).
+		// Exactly 13 requests must be rejected with 402 InsufficientFunds.
+		// Ending balance in PostgreSQL must strictly equal 2000.00 ₽ (200,000 kopecks).
+		const debitPromises = Array.from({ length: 15 }, () =>
+			app.inject({
+				method: "POST",
+				url: "/api/finance/family/pay",
+				headers: staffHeaders,
+				payload: {
+					familyGroupId: FAMILY_GROUP_ID,
+					patientId: PATIENT_ID,
+					amountRub: 2500,
+					clientMutationId: generateUuidV7(),
+				},
+			}),
+		);
+
+		const responses = await Promise.all(debitPromises);
+
+		const successes = responses.filter((r) => r.statusCode === 200);
+		const rejected = responses.filter((r) => r.statusCode === 402);
+
+		assert.equal(
+			successes.length,
+			2,
+			`Expected exactly 2 successful debits (5,000 ₽), got ${successes.length}`,
+		);
+		assert.equal(
+			rejected.length,
+			13,
+			`Expected exactly 13 rejected debits due to insufficient funds, got ${rejected.length}`,
+		);
+
+		for (const rej of rejected) {
+			const body = rej.json();
+			assert.equal(body.error, "InsufficientFunds");
+		}
+
+		// Verify database state: exact 2,000.00 ₽ (200,000 kopecks)
+		const [familyRow] = await withFixtureTenant(ORG_ID, async (tx) =>
+			tx
+				.select()
+				.from(familyGroups)
+				.where(eq(familyGroups.id, FAMILY_GROUP_ID)),
+		);
+
+		assert.ok(familyRow);
+		assert.equal(Number(familyRow.balance), 2000);
+		const kopecksRemaining = parseKopecks(familyRow.balance);
+		assert.equal(
+			kopecksRemaining,
+			200000,
+			"Ending balance in DB must be exactly 200,000 kopecks without float drift",
+		);
+	});
+
+	// =========================================================================
+	// 6. ODONTOGRAM SURFACE-LEVEL CRDT LWW (SURFACES MODVL RESOLUTION)
+	// =========================================================================
+	test("6. Odontogram Surface-Level CRDT LWW: Mesial/Occlusal/Distal anatomical resolution preserves newer surfaces", async (context) => {
+		if (!databaseAvailable) return context.skip("Database unavailable");
+
+		const toothNumber = 46;
+
+		// 1. Clean previous state for Tooth 46
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.delete(toothStates)
+				.where(
+					and(
+						eq(toothStates.organizationId, ORG_ID),
+						eq(toothStates.patientId, PATIENT_ID),
+						eq(toothStates.toothNumber, toothNumber),
+					),
+				);
+		});
+
+		// 2. Client 1 records caries on Occlusal surface at 11:00:00
+		const client1Payload = {
+			patientId: PATIENT_ID,
+			toothNumber,
+			state: "caries",
+			surfaces: ["occlusal"],
+			notes: "Кариес фиссур",
+		};
+		const client1MutationId = generateUuidV7();
+
+		const batch1: SyncPushBatchRequest = {
+			syncBatchId: generateUuidV7(),
+			clientId: "chairside-tablet-alpha",
+			sentAt: new Date().toISOString(),
+			mutations: [
+				{
+					mutationId: client1MutationId,
+					idempotencyKey: createCompositeIdempotencyKey(client1MutationId, client1Payload),
+					payloadHash: computePayloadHash(client1Payload),
+					entityKind: "odontogram_state",
+					entityId: `${PATIENT_ID}:${toothNumber}`,
+					action: "update",
+					payload: client1Payload,
+					updatedAt: "2026-11-06T11:00:00.000Z",
+				},
+			],
+		};
+
+		const res1 = await app.inject({
+			method: "POST",
+			url: "/api/sync/gateway",
+			headers: clinicHeaders,
+			payload: batch1,
+		});
+
+		assert.equal(res1.statusCode, 200);
+		const body1 = res1.json() as SyncPushBatchResponse;
+		assert.ok(
+			body1.results[0]?.status === "applied" || body1.results[0]?.status === "merged",
+			"Batch 1 mutation must be applied or merged",
+		);
+
+		// 3. Client 2 records composite restoration covering MOD surfaces at 11:15:00
+		const client2Payload = {
+			patientId: PATIENT_ID,
+			toothNumber,
+			state: "composite_restoration",
+			surfaces: ["mesial", "occlusal", "distal"],
+			notes: "МОД-пломбирование наногибридным композитом",
+		};
+		const client2MutationId = generateUuidV7();
+
+		const batch2: SyncPushBatchRequest = {
+			syncBatchId: generateUuidV7(),
+			clientId: "chairside-pc-beta",
+			sentAt: new Date().toISOString(),
+			mutations: [
+				{
+					mutationId: client2MutationId,
+					idempotencyKey: createCompositeIdempotencyKey(client2MutationId, client2Payload),
+					payloadHash: computePayloadHash(client2Payload),
+					entityKind: "odontogram_state",
+					entityId: `${PATIENT_ID}:${toothNumber}`,
+					action: "update",
+					payload: client2Payload,
+					updatedAt: "2026-11-06T11:15:00.000Z", // Newer by 15 minutes!
+				},
+			],
+		};
+
+		const res2 = await app.inject({
+			method: "POST",
+			url: "/api/sync/gateway",
+			headers: clinicHeaders,
+			payload: batch2,
+		});
+
+		assert.equal(res2.statusCode, 200);
+		const body2 = res2.json() as SyncPushBatchResponse;
+		assert.ok(
+			body2.results[0]?.status === "applied" || body2.results[0]?.status === "merged",
+		);
+
+		// 4. Stale Retry from Client 1 with older timestamp (11:00:00) attempting to overwrite MOD surfaces
+		const staleBatch: SyncPushBatchRequest = {
+			syncBatchId: generateUuidV7(),
+			clientId: "chairside-tablet-alpha-retry",
+			sentAt: new Date().toISOString(),
+			mutations: [
+				{
+					mutationId: generateUuidV7(),
+					idempotencyKey: createCompositeIdempotencyKey(generateUuidV7(), client1Payload),
+					payloadHash: computePayloadHash(client1Payload),
+					entityKind: "odontogram_state",
+					entityId: `${PATIENT_ID}:${toothNumber}`,
+					action: "update",
+					payload: client1Payload,
+					updatedAt: "2026-11-06T11:00:00.000Z", // Stale!
+				},
+			],
+		};
+
+		const resStale = await app.inject({
+			method: "POST",
+			url: "/api/sync/gateway",
+			headers: clinicHeaders,
+			payload: staleBatch,
+		});
+
+		assert.equal(resStale.statusCode, 200);
+		const bodyStale = resStale.json() as SyncPushBatchResponse;
+		assert.equal(bodyStale.results[0]?.status, "conflict_resolved");
+		assert.equal(bodyStale.results[0]?.conflictDetails?.[0]?.winner, "server");
+
+		// 5. Database Verification: Tooth 46 has composite_restoration and all 3 MOD surfaces preserved
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			const [tooth46] = await tx
+				.select()
+				.from(toothStates)
+				.where(
+					and(
+						eq(toothStates.organizationId, ORG_ID),
+						eq(toothStates.patientId, PATIENT_ID),
+						eq(toothStates.toothNumber, toothNumber),
+					),
+				);
+
+			assert.ok(tooth46);
+			assert.equal(tooth46.state, "composite_restoration");
+			const surfaces = tooth46.surfaces as string[];
+			assert.ok(Array.isArray(surfaces));
+			assert.deepEqual(surfaces.sort(), ["distal", "mesial", "occlusal"]);
+
+			// History trail contains both changes
+			const history = await tx
+				.select()
+				.from(toothStateHistory)
+				.where(
+					and(
+						eq(toothStateHistory.organizationId, ORG_ID),
+						eq(toothStateHistory.patientId, PATIENT_ID),
+						eq(toothStateHistory.toothNumber, toothNumber),
+					),
+				);
+
+			assert.ok(history.length >= 2, "Must contain full audit history for tooth 46 surfaces");
+		});
 	});
 });

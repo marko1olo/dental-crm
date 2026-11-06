@@ -13,7 +13,7 @@ import { db } from "../../db/client.js";
 import { getRequestIdentity, requireOrganizationId } from "../../security/identity.js";
 import { auditMedicalAccessFromRequest } from "../../security/medicalAuditTrail.js";
 import { evaluateClinicalAccess } from "../../security/medicalSecrecyWarden.js";
-import { scanToResponse } from "../xraySchemas.js";
+import { scanToResponse, UUID_REGEX } from "../xraySchemas.js";
 
 const querySchema = z.object({
 	patientId: z.string().uuid({ message: "Параметр patientId должен быть валидным UUID." }),
@@ -60,6 +60,9 @@ export async function registerXraySeriesRoute(app: FastifyInstance): Promise<voi
 		}
 
 		const { id } = request.params as { id: string };
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+		}
 		const [scan] = await db.select().from(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId))).limit(1);
 		if (!scan) {
 			reply.code(404);
@@ -93,6 +96,9 @@ export async function registerXraySeriesRoute(app: FastifyInstance): Promise<voi
 		}
 
 		const { id } = request.params as { id: string };
+		if (!UUID_REGEX.test(id)) {
+			return reply.code(400).send({ error: "ValidationError", message: "Некорректный идентификатор снимка (ожидается UUID)." });
+		}
 		const [deleted] = await db.delete(xrayScans).where(and(eq(xrayScans.id, id), eq(xrayScans.organizationId, organizationId)))
 			.returning({ id: xrayScans.id, storagePath: xrayScans.storagePath });
 		if (!deleted) {

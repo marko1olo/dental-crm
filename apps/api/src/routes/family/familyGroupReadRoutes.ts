@@ -8,6 +8,9 @@ import {
 	familyMembersForOrganization,
 } from "./familyBalanceService.js";
 
+const UUID_REGEX =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 	// GET /api/finance/family - search families
 	app.get("/api/finance/family", async (req, reply) => {
@@ -61,6 +64,12 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		if (!organizationId) return;
 
 		const { patientId } = req.params as { patientId: string };
+		if (!patientId || !UUID_REGEX.test(patientId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID)",
+			});
+		}
 		const [patient] = await db
 			.select({ familyGroupId: patients.familyGroupId })
 			.from(patients)
@@ -94,6 +103,12 @@ export function registerFamilyGroupReadRoutes(app: FastifyInstance) {
 		const { familyGroupId } = req.params as { familyGroupId: string };
 		if (familyGroupId === "patient" || familyGroupId === "pay" || familyGroupId === "topup") {
 			return reply.code(404).send({ error: "Family group not found" });
+		}
+		if (!UUID_REGEX.test(familyGroupId)) {
+			return reply.code(400).send({
+				error: "ValidationError",
+				message: "Некорректный идентификатор семейной группы (ожидается UUID)",
+			});
 		}
 
 		const family = await familyGroupForOrganization(familyGroupId, organizationId);
