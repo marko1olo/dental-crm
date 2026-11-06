@@ -1,5 +1,6 @@
 import type React from "react";
 import { useCallback } from "react";
+import { resolveTeethRange } from "@dental/shared";
 import { useAppStore } from "../../store/appStore";
 import {
 	calculateToothMenuCoordinates,
@@ -28,6 +29,7 @@ export function useOdontogramToothClickHandler({
 			arg1: number | React.MouseEvent,
 			arg2?: DOMRect | number,
 			surface?: string,
+			eventOrModifier?: React.MouseEvent | boolean,
 		) => {
 			const { num: toothNumber, safeRect: rect } = getSafeBoundingRect(
 				arg1,
@@ -38,7 +40,43 @@ export function useOdontogramToothClickHandler({
 
 			const coords = calculateToothMenuCoordinates(rect, toothNumber);
 
-			if (isMultiSelectMode) {
+			const mouseEv =
+				typeof arg1 === "object" &&
+				arg1 &&
+				("shiftKey" in arg1 || "ctrlKey" in arg1 || "metaKey" in arg1)
+					? (arg1 as React.MouseEvent)
+					: typeof eventOrModifier === "object" &&
+							eventOrModifier &&
+							("shiftKey" in eventOrModifier ||
+								"ctrlKey" in eventOrModifier ||
+								"metaKey" in eventOrModifier)
+						? (eventOrModifier as React.MouseEvent)
+						: null;
+
+			const isShift = Boolean(mouseEv?.shiftKey);
+			const isCtrlOrMeta = Boolean(
+				mouseEv?.ctrlKey || mouseEv?.metaKey || eventOrModifier === true,
+			);
+
+			if (isShift) {
+				const lastTooth =
+					selectedTeeth.length > 0
+						? selectedTeeth[selectedTeeth.length - 1]
+						: toothNumber;
+				if (lastTooth && lastTooth !== toothNumber) {
+					const range = resolveTeethRange(lastTooth, toothNumber);
+					const combined = Array.from(new Set([...selectedTeeth, ...range]));
+					setSelectedTeeth(combined);
+					setMenuConfig({
+						toothNumber,
+						...coords,
+						surfaces: activeSurfaces,
+					});
+					return;
+				}
+			}
+
+			if (isMultiSelectMode || isCtrlOrMeta) {
 				const next = selectedTeeth.includes(toothNumber)
 					? selectedTeeth.filter((t) => t !== toothNumber)
 					: [...selectedTeeth, toothNumber];

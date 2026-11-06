@@ -112,7 +112,7 @@ export const WheelerToothArch: React.FC<WheelerToothArchProps> = React.memo(({
 				</div>
 			)}
 
-			<div className="w-full max-w-[980px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto">
+			<div className="w-full max-w-[980px] flex flex-col items-center justify-center gap-1 mx-auto py-1 overflow-x-auto touch-pan-x">
 				<AnatomicalGate0Row
 					isUpper={true}
 					leftTeeth={q1}

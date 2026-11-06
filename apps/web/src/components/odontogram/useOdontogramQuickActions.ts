@@ -1,5 +1,10 @@
 import { useCallback, useEffect } from "react";
 import {
+	FRONTAL_HYGIENE_SECTOR_ADULT,
+	FRONTAL_HYGIENE_SECTOR_PEDIATRIC,
+	resolveSafeSanitationTargets,
+} from "@dental/shared";
+import {
 	ALL_ADULT_TEETH_NUMBERS,
 	PEDIATRIC_TOP_TEETH,
 	PEDIATRIC_BOTTOM_TEETH,
@@ -63,16 +68,43 @@ export function useOdontogramQuickActions({
 				: isPediatricMode
 					? [...PEDIATRIC_TOP_TEETH, ...PEDIATRIC_BOTTOM_TEETH]
 					: [...ALL_ADULT_TEETH_NUMBERS];
-		void updateToothState(allTeeth, "Healthy", []);
+
+		const currentTeeth =
+			teethDataRef.current.length > 0 ? teethDataRef.current : teethData;
+		const stateMap = new Map<number, string>();
+		for (const t of currentTeeth) {
+			stateMap.set(t.toothNumber, t.state);
+		}
+		const { sanitizedTargets, preservedSurgicalCount } =
+			resolveSafeSanitationTargets(allTeeth, stateMap);
+
+		void updateToothState(sanitizedTargets, "Healthy", []);
 		SoundFeedbackService.getInstance().playActionSuccess();
 		const toastMessage =
-			dentitionMode === "mixed"
-				? "Санация: сменный прикус (24 зуба) отмечен как норма"
-				: isPediatricMode
-					? "Санация: молочный прикус (20 зубов) отмечен как норма"
-					: "Санация: вся зубная формула отмечена как норма";
+			preservedSurgicalCount > 0
+				? `Санация: ${sanitizedTargets.length} зубов отмечено нормой (сохранено хирургических/ортопедических статусов: ${preservedSurgicalCount})`
+				: dentitionMode === "mixed"
+					? "Санация: сменный прикус (24 зуба) отмечен как норма"
+					: isPediatricMode
+						? "Санация: молочный прикус (20 зубов) отмечен как норма"
+						: "Санация: вся зубная формула отмечена как норма";
 		showToast(toastMessage, "success", 4000);
-	}, [dentitionMode, isPediatricMode, updateToothState]);
+	}, [dentitionMode, isPediatricMode, updateToothState, teethData, teethDataRef]);
+
+	const handleFrontalHygiene = useCallback(() => {
+		const targets = isPediatricMode
+			? [...FRONTAL_HYGIENE_SECTOR_PEDIATRIC]
+			: [...FRONTAL_HYGIENE_SECTOR_ADULT];
+		void updateToothState(targets, "Healthy", []);
+		SoundFeedbackService.getInstance().playActionSuccess();
+		showToast(
+			isPediatricMode
+				? "Пакетная профгигиена: фронт 53–63 и 83–73 очищен"
+				: "Пакетная профгигиена: фронтальный сектор 13–23 и 33–43 очищен (налет и камень сняты)",
+			"success",
+			4000,
+		);
+	}, [isPediatricMode, updateToothState]);
 
 	const handleMarkWisdomMissing = useCallback(() => {
 		const wisdomTeeth = [18, 28, 38, 48];
@@ -228,6 +260,7 @@ export function useOdontogramQuickActions({
 
 	return {
 		handleMarkAllHealthy,
+		handleFrontalHygiene,
 		handleMarkWisdomMissing,
 		handleInvertSelection,
 		handleClearSelection,

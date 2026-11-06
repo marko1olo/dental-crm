@@ -1,6 +1,7 @@
 import type React from "react";
 import { useCallback } from "react";
 import {
+	markFrontalHygieneAction,
 	markIntactDentitionAction,
 	markWisdomTeethMissingAction,
 } from "./batchSanitationActions";
@@ -10,7 +11,7 @@ import {
 	invertSelectionAction,
 	triggerQuickStateAction,
 } from "./batchSelectionActions";
-import type { ToothState } from "./ToothChart";
+import type { ToothData, ToothState } from "./ToothChart";
 import {
 	ALL_ADULT_TEETH_NUMBERS,
 	PEDIATRIC_BOTTOM_TEETH,
@@ -35,6 +36,8 @@ export interface UseOdontogramContainerBatchActionsParams {
 	readonly onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
 	readonly onMarkIntactDentition?: (() => void) | undefined;
 	readonly onMarkWisdomTeethMissing?: (() => void) | undefined;
+	readonly onMarkFrontalHygiene?: (() => void) | undefined;
+	readonly teethData?: readonly ToothData[] | undefined;
 }
 
 export function useOdontogramContainerBatchActions({
@@ -47,6 +50,8 @@ export function useOdontogramContainerBatchActions({
 	onSelectTeethGroup,
 	onMarkIntactDentition,
 	onMarkWisdomTeethMissing,
+	onMarkFrontalHygiene,
+	teethData,
 }: UseOdontogramContainerBatchActionsParams) {
 	const getAllTeeth = useCallback(() => {
 		return isMixedEffective
@@ -62,8 +67,19 @@ export function useOdontogramContainerBatchActions({
 				getAllTeeth,
 				onQuickStateChange,
 				onMarkIntactDentition,
+				teethData,
 			),
-		[getAllTeeth, onQuickStateChange, onMarkIntactDentition],
+		[getAllTeeth, onQuickStateChange, onMarkIntactDentition, teethData],
+	);
+
+	const handleMarkFrontalHygiene = useCallback(
+		() =>
+			markFrontalHygieneAction(
+				isPediatricEffective,
+				onQuickStateChange,
+				onMarkFrontalHygiene,
+			),
+		[isPediatricEffective, onQuickStateChange, onMarkFrontalHygiene],
 	);
 
 	const handleMarkWisdomTeethMissing = useCallback(
@@ -110,6 +126,7 @@ export function useOdontogramContainerBatchActions({
 
 	return {
 		handleMarkIntactDentition,
+		handleMarkFrontalHygiene,
 		handleMarkWisdomTeethMissing,
 		handleInvertSelection,
 		handleClearSelection,

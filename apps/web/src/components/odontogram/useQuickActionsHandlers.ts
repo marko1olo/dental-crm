@@ -17,6 +17,7 @@ export interface UseQuickActionsHandlersParams {
 		| undefined;
 	readonly handleMarkIntactDentition: () => void;
 	readonly handleMarkWisdomTeethMissing: () => void;
+	readonly handleMarkFrontalHygiene?: (() => void) | undefined;
 	readonly handleBatchSelectGroup: (teeth: number[]) => void;
 	readonly onInvertSelection?: (() => void) | undefined;
 	readonly onClearSelection?: (() => void) | undefined;
@@ -29,14 +30,18 @@ export function useQuickActionsHandlers({
 	onQuickStateChange,
 	handleMarkIntactDentition,
 	handleMarkWisdomTeethMissing,
+	handleMarkFrontalHygiene,
 	handleBatchSelectGroup,
 	onInvertSelection,
 	onClearSelection,
 }: UseQuickActionsHandlersParams) {
 	const handleSanitizeAll = useCallback(() => {
-		onQuickStateChange?.(allDentitionTeeth, "Healthy", []);
 		handleMarkIntactDentition();
-	}, [allDentitionTeeth, onQuickStateChange, handleMarkIntactDentition]);
+	}, [handleMarkIntactDentition]);
+
+	const handleFrontalHygiene = useCallback(() => {
+		handleMarkFrontalHygiene?.();
+	}, [handleMarkFrontalHygiene]);
 
 	const handleWisdomMissing = useCallback(() => {
 		onQuickStateChange?.([18, 28, 38, 48], "Missing", []);
@@ -94,6 +99,7 @@ export function useQuickActionsHandlers({
 
 	return {
 		handleSanitizeAll,
+		handleFrontalHygiene,
 		handleWisdomMissing,
 		handleInvert,
 		handleClear,

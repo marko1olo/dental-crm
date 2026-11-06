@@ -103,4 +103,5 @@ export * from "./informedConsentEngine.js";
 export * from "./prescriptionCatalog.js";
 export * from "./stenographer/index.js";
 export * from "./touchErgonomics.js";
+export * from "./dentalFormulaTextParser.js";
 export * from "../anesthesia/index.js";

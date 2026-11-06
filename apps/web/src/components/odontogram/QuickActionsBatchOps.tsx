@@ -1,4 +1,4 @@
-import { ArrowLeftRight, ShieldCheck, X } from "lucide-react";
+import { ArrowLeftRight, ShieldCheck, Sparkles, X } from "lucide-react";
 import type React from "react";
 
 export interface QuickActionsBatchOpsProps {
@@ -7,6 +7,7 @@ export interface QuickActionsBatchOpsProps {
 	readonly onWisdomMissing: () => void;
 	readonly onInvert: () => void;
 	readonly onClear: () => void;
+	readonly onFrontalHygiene?: (() => void) | undefined;
 }
 
 export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
@@ -15,6 +16,7 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 	onWisdomMissing,
 	onInvert,
 	onClear,
+	onFrontalHygiene,
 }) => {
 	const closeDetails = (e: React.MouseEvent) => {
 		const details = e.currentTarget.closest("details");
@@ -59,6 +61,30 @@ export const QuickActionsBatchOps: React.FC<QuickActionsBatchOpsProps> = ({
 					</button>
 				)}
 			</div>
+			{onFrontalHygiene && (
+				<div className="mb-1.5">
+					<button
+						type="button"
+						onClick={(e) => {
+							closeDetails(e);
+							onFrontalHygiene();
+						}}
+						className="w-full h-7 px-2 rounded-lg text-xs font-black bg-teal-500/15 hover:bg-teal-500/25 text-teal-800 dark:text-teal-200 border border-teal-500/30 transition-all cursor-pointer shadow-xs flex items-center justify-center gap-1.5 active:scale-98"
+						title={
+							pediatricMode
+								? "Пакетная профгигиена фронтального сектора (53–63, 83–73)"
+								: "Пакетная профгигиена фронтального сектора (13–23, 33–43): снятие налета и зубного камня"
+						}
+						data-testid="mark-frontal-hygiene-btn"
+					>
+						<Sparkles
+							size={13}
+							className="text-teal-600 dark:text-teal-400 shrink-0"
+						/>
+						<span>Пакетная гигиена (13–23, 33–43)</span>
+					</button>
+				</div>
+			)}
 			<div className="flex items-center gap-1.5">
 				<button
 					type="button"

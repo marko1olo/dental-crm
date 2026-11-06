@@ -47,6 +47,7 @@ export const OdontogramModuleMainView: React.FC<
 			selectedTeeth={sync.selectedTeeth}
 			onToothClick={handleToothClick}
 			onMarkIntactDentition={quickActions.handleMarkAllHealthy}
+			onMarkFrontalHygiene={quickActions.handleFrontalHygiene}
 			onMarkWisdomTeethMissing={quickActions.handleMarkWisdomMissing}
 			onQuickStateChange={sync.updateToothState}
 			useSurfaces={odontogramUseSurfaces}

@@ -40,6 +40,7 @@ export function buildToolbarProps(
 		onInvertSelection: batch.handleInvertSelection,
 		onClearSelection: batch.handleClearSelection,
 		handleMarkIntactDentition: batch.handleMarkIntactDentition,
+		handleMarkFrontalHygiene: batch.handleMarkFrontalHygiene,
 		handleMarkWisdomTeethMissing: batch.handleMarkWisdomTeethMissing,
 		onSyncAllToDiary: props.onSyncAllToDiary,
 		liveGrossTotalRub: props.liveGrossTotalRub,

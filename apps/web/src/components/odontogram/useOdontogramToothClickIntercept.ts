@@ -72,7 +72,14 @@ export function useOdontogramToothClickIntercept({
 			}
 
 			if (onToothClickRef.current) {
-				onToothClickRef.current(num, safeRect, effectiveSurface);
+				const originalEvent =
+					typeof arg1 === "object" && arg1 !== null ? arg1 : undefined;
+				(onToothClickRef.current as any)(
+					num,
+					safeRect,
+					effectiveSurface,
+					originalEvent,
+				);
 				return;
 			}
 

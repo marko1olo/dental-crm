@@ -3,6 +3,7 @@ import type React from "react";
 import { AnatomicalGate0FullArchView } from "./AnatomicalGate0FullArchView";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
+import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
 import { ToothChart, type ToothData, type ToothState } from "./ToothChart";
 
@@ -69,13 +70,21 @@ export const OdontogramActiveViewSlot: React.FC<
 				)}
 
 				{onQuickStateChange && (
-					<OdontogramStampPalette
-						activeStampTool={activeStampTool}
-						setActiveStampTool={setActiveStampTool}
-						onQuickStateChange={onQuickStateChange}
-						handleQuickTriggerState={handleQuickTriggerState}
-						selectedTeeth={selectedTeeth}
-					/>
+					<>
+						<OdontogramStampPalette
+							activeStampTool={activeStampTool}
+							setActiveStampTool={setActiveStampTool}
+							onQuickStateChange={onQuickStateChange}
+							handleQuickTriggerState={handleQuickTriggerState}
+							selectedTeeth={selectedTeeth}
+						/>
+						<OdontogramQuickTextInput
+							onApplyBatch={(targets, state, surfaces) => {
+								onQuickStateChange(targets, state, surfaces);
+							}}
+							dentitionMode={sharedViewProps.dentitionMode as any}
+						/>
+					</>
 				)}
 			</div>
 

@@ -72,6 +72,7 @@ export const OdontogramQuickBar: React.FC<OdontogramQuickBarProps> = React.memo(
 			selectedTeeth: props.selectedTeeth,
 			onQuickStateChange: props.onQuickStateChange,
 			handleMarkIntactDentition: props.handleMarkIntactDentition,
+			handleMarkFrontalHygiene: props.handleMarkFrontalHygiene,
 			handleMarkWisdomTeethMissing: props.handleMarkWisdomTeethMissing,
 			handleBatchSelectGroup: props.handleBatchSelectGroup,
 			onInvertSelection: props.onInvertSelection,
@@ -184,6 +185,7 @@ export const OdontogramQuickBar: React.FC<OdontogramQuickBarProps> = React.memo(
 								<QuickActionsBatchOps
 									pediatricMode={props.pediatricMode}
 									onSanitizeAll={handlers.handleSanitizeAll}
+									onFrontalHygiene={handlers.handleFrontalHygiene}
 									onWisdomMissing={handlers.handleWisdomMissing}
 									onInvert={handlers.handleInvert}
 									onClear={handlers.handleClear}

@@ -48,6 +48,8 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> =
 			onSelectTeethGroup: props.onSelectTeethGroup,
 			onMarkIntactDentition: props.onMarkIntactDentition,
 			onMarkWisdomTeethMissing: props.onMarkWisdomTeethMissing,
+			onMarkFrontalHygiene: props.onMarkFrontalHygiene,
+			teethData: props.teethData,
 		});
 
 		const { handleToothClickIntercept } = useOdontogramToothClickIntercept({
@@ -83,7 +85,7 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> =
 		);
 		const modalsProps = useMemo(() => buildModalsProps(props, st), [props, st]);
 		const cls =
-			`odontogram-view-container flex flex-col gap-1.5 w-full relative ${props.className ?? ""}`.trim();
+			`odontogram-view-container flex flex-col gap-1.5 w-full relative overflow-x-clip max-w-[100vw] ${props.className ?? ""}`.trim();
 
 		return (
 			<div

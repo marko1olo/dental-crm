@@ -91,6 +91,7 @@ export interface OdontogramViewContainerProps {
 	onToggleMultiSelect?: ((enabled: boolean) => void) | undefined;
 	onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
 	onMarkIntactDentition?: (() => void) | undefined;
+	onMarkFrontalHygiene?: (() => void) | undefined;
 	onMarkWisdomTeethMissing?: (() => void) | undefined;
 	patientId?: string | undefined;
 	onSyncAllToDiary?: (() => void) | undefined;

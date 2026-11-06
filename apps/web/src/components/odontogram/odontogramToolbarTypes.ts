@@ -25,6 +25,7 @@ export interface OdontogramToolbarProps {
 	isPediatricEffective: boolean;
 	handleMarkIntactDentition: () => void;
 	handleMarkWisdomTeethMissing: () => void;
+	handleMarkFrontalHygiene?: (() => void) | undefined;
 	onSyncAllToDiary?: (() => void) | undefined;
 	liveGrossTotalRub?: number | undefined;
 	onOpenFastCheckout?: (() => void) | undefined;
