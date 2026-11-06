@@ -17,7 +17,6 @@ export function useChairDutyModals(
 	const [isInternalAddChairModalOpen, setIsInternalAddChairModalOpen] = useState(false);
 	const [isQuickAddDoctorOpen, setIsQuickAddDoctorOpen] = useState(false);
 	const [activeHeaderDoctorPopoverChairId, setActiveHeaderDoctorPopoverChairId] = useState<string | null>(null);
-	const [activeHeaderMaintenanceChairId, setActiveHeaderMaintenanceChairId] = useState<string | null>(null);
 
 	const handleOpenAddChair = useCallback(() => {
 		if (typeof onOpenAddChair === "function") {
@@ -67,8 +66,6 @@ export function useChairDutyModals(
 		setIsQuickAddDoctorOpen,
 		activeHeaderDoctorPopoverChairId,
 		setActiveHeaderDoctorPopoverChairId,
-		activeHeaderMaintenanceChairId,
-		setActiveHeaderMaintenanceChairId,
 		openAssignModal,
 	};
 }

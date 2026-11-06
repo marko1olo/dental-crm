@@ -48,8 +48,6 @@ export function ScheduleGridChairsHeaderRow({
           currentHour={currentHour}
           activeHeaderDoctorPopoverChairId={duty.activeHeaderDoctorPopoverChairId}
           setActiveHeaderDoctorPopoverChairId={duty.setActiveHeaderDoctorPopoverChairId}
-          activeHeaderMaintenanceChairId={duty.activeHeaderMaintenanceChairId}
-          setActiveHeaderMaintenanceChairId={duty.setActiveHeaderMaintenanceChairId}
           onEditChair={onEditChair}
           openAssignModal={duty.openAssignModal}
           handleConfirmAssignDoctor={duty.handleConfirmAssignDoctor}

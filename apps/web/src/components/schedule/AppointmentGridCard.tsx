@@ -43,7 +43,7 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 		densityMode, appointment: a, chair, effectiveChairs, doctors, patientLookupMap,
 		staffLookupMap, collisionMap, patientNameFn, getPatientName, dashboard, timezone,
 		toDateTimeLocalValue, appointmentLabels, isHovered, isStatusPickerOpen, isMenuOpen,
-		isNearBottom, isNearRightEdge, onAppointmentClick, onSelectMobileAppt, onQuickStatusChange,
+		isNearBottom, isNearRightEdge, onAppointmentClick, onAppointmentDoubleClick, onSelectMobileAppt, onQuickStatusChange,
 		onAdjustDuration, onShiftLateness, onReassignChair, onReassignDoctor, onFreeSlotToWaitlist,
 		onMouseEnter, onMouseLeave, onKeepHovered, onToggleStatusPicker, onToggleMenu,
 		onCloseStatusPicker, onCloseMenu,
@@ -199,7 +199,9 @@ export const AppointmentGridCard = memo(function AppointmentGridCard(props: Grid
 				}}
 				onDoubleClick={(e) => {
 					e.stopPropagation();
-					if (a.patientId) {
+					if (onAppointmentDoubleClick) {
+						onAppointmentDoubleClick(a);
+					} else if (a.patientId) {
 						usePatientStore.getState().setSelectedPatientId(a.patientId);
 						if (typeof window !== "undefined") window.location.hash = "#visit";
 						useAppStore.getState().setCurrentView("visit");

@@ -318,10 +318,24 @@
 
 ## 5. 📅 РАСПИСАНИЕ И СЕТКА КРЕСЕЛ
 
-### [SCH-01] [SEV-1] Санобработка и блокировка кресел в localStorage
-- **Файл:** [`useGridDisplaySettings.ts#L75-L81`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/interactionModules/useGridDisplaySettings.ts#L75-L81)
-- **Суть бага:** Блокировки кресел пишутся в `localStorage` конкретного браузера. Другие ПК видят слот свободным.
-- **Директива Создателя:** Данную механику принудительной блокировки кресел полностью ликвидировать (ЦРМ не диктует реальности какой быть).
+### [SCH-01] [ИСПРАВЛЕНО] Санобработка и блокировка кресел в localStorage
+- **Файлы:**
+  - [`apps/web/src/components/schedule/grid/interactionModules/useGridDisplaySettings.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/interactionModules/useGridDisplaySettings.ts)
+  - [`apps/web/src/components/schedule/grid/ScheduleChairMaintenancePopover.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleChairMaintenancePopover.tsx) *(физически удален из репозитория)*
+  - [`apps/web/src/components/schedule/grid/chairDuty/useChairDutyModals.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/chairDuty/useChairDutyModals.ts)
+  - [`apps/web/src/components/schedule/grid/ScheduleGridChairsHeaderRow.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleGridChairsHeaderRow.tsx)
+  - [`apps/web/src/components/schedule/grid/ScheduleChairHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleChairHeader.tsx)
+  - [`apps/web/src/components/schedule/grid/ScheduleChairHeaderTopBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleChairHeaderTopBar.tsx)
+  - [`apps/web/src/utils/scheduleCollisionUtils.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/scheduleCollisionUtils.ts)
+- **Суть бага:** Симуляция реальности и тайм-локи: принудительная блокировка кресел и санобработка сохранялись в `localStorage` конкретного браузера, блокируя реальную запись пациентов и парализуя работу администраторов и врачей.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Ликвидация механизма блокировок (Мандат 8i / 8n):** Полностью вырезано локальное состояние `internalMaintenanceBlocks` и его запись в `localStorage` из `useGridDisplaySettings.ts`. Метод `handleAddMaintenance` нейтрализован в безопасный no-op.
+  2. **Физический снос мертвого кода:** Поповер `ScheduleChairMaintenancePopover.tsx` удален из репозитория через `git rm`. Очищены все рудиментарные стейты `activeHeaderMaintenanceChairId` и пропсы `onAddMaintenanceBlock`.
+  3. **Снятие коллизий при записи (Мандат 8e):** В `apps/web/src/utils/scheduleCollisionUtils.ts` методы `isIntervalFree` и `checkAppointmentResourceCollision` обновлены: блоки санитарной обработки (`reason === "sanitation"` или `"disinfection"`) больше никогда не препятствуют созданию или переносу клинических приёмов.
+  4. **Автоматизированная верификация:** 
+     - Юнит-тест `apps/web/src/components/schedule/__tests__/scheduleAutonomyAndInspectorClick.test.tsx` (PASS, 0 коллизий при санобработке).
+     - Регрессионный тест `apps/web/src/tests/scheduleStressAndSanitation.test.ts` (PASS, 16/16).
+  5. **Визуальный пруф:** `docs/proofs/schedule/schedule_pc_light_1440x900.png` и `schedule_pc_dark_1440x900.png` подтверждают отсутствие блокировок слотов.
 
 ### [SCH-02] [ИСПРАВЛЕНО] Лист ожидания: фантомная запись без запроса в БД и тупики лаунчера
 - **Файлы:**
@@ -353,9 +367,21 @@
        * `docs/proofs/schedule/schedule_waitlist_drawer_pc_dark_1440x900.png`
        * `docs/proofs/schedule/schedule_waitlist_booked_success_pc_light_1440x900.png`
 
-### [SCH-03] [SEV-1] Клик по визиту убивает правый инспектор модальным оверлеем
-- **Файлы:** [`ScheduleGridDesktopLayout.tsx#L51-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleGridDesktopLayout.tsx#L51-L60), [`ScheduleViewBody.tsx#L359`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/view/ScheduleViewBody.tsx#L359)
-- **Суть бага:** Одинарный клик по карточке распахивает полноэкранный `QuickBookingDrawer` (`z-[10005]`), перекрывая 0-клик инспектор.
+### [SCH-03] [ИСПРАВЛЕНО] Клик по визиту убивает правый инспектор модальным оверлеем
+- **Файлы:**
+  - [`apps/web/src/components/schedule/grid/ScheduleGridDesktopLayout.tsx#L51-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/ScheduleGridDesktopLayout.tsx#L51-L60)
+  - [`apps/web/src/components/schedule/AppointmentGridCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/AppointmentGridCard.tsx)
+  - [`apps/web/src/components/schedule/appointmentCardModules/appointmentCardTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/appointmentCardModules/appointmentCardTypes.ts)
+  - [`apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackCardOverlay.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/AppointmentTrackCardOverlay.tsx)
+  - [`apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/grid/scheduleAppointmentTrackModules/types.ts)
+- **Суть бага:** Одинарный клик по карточке визита немедленно распахивал полноэкранный модальный оверлей `QuickBookingDrawer` (`z-[10005]`), моментально перекрывая 0-клик инспектор визита в правой панели и вынуждая пользователя совершать лишние клики для закрытия шторки.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Изоляция одинарного клика (0-Click Inspector):** В `ScheduleGridDesktopLayout.tsx` функция `handleAppointmentClick` отвязана от вызова `onAppointmentClick(appt)`. Теперь одиночный клик строго устанавливает `selectedInspectorAppt` и открывает контекстный правый инспектор (`setIsInspectorOpen(true)`), оставляя рабочую сетку интерактивной и видимой.
+  2. **Двойной клик для тяжелой модалки:** Добавлен явный обработчик `handleAppointmentDoubleClick` и прокинут проп `onAppointmentDoubleClick` через `AppointmentGridCard` и `AppointmentTrackCardOverlay`. Модальная шторка редактирования `QuickBookingDrawer` открывается строго по двойному клику либо по кнопке «Изменить» в правом инспекторе.
+  3. **Автоматизированная верификация:** 
+     - Юнит-тест `apps/web/src/components/schedule/__tests__/scheduleAutonomyAndInspectorClick.test.tsx` (PASS, изоляция одинарного и двойного кликов подтверждена).
+     - Сюита `apps/web/src/components/schedule/__tests__/scheduleAppointmentInspector.test.tsx` (PASS, 34/34).
+  4. **Визуальный пруф:** `docs/proofs/schedule/schedule_grid_inspector_pc_light_1440x900.png` и `schedule_grid_inspector_pc_dark_1440x900.png`.
 
 ---
 

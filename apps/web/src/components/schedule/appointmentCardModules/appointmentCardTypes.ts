@@ -51,6 +51,7 @@ export interface GridAppointmentCardProps {
 	isNearBottom: boolean;
 	isNearRightEdge: boolean;
 	onAppointmentClick: (appt: Appointment) => void;
+	onAppointmentDoubleClick?: ((appt: Appointment) => void) | undefined;
 	onSelectMobileAppt: (appt: Appointment) => void;
 	onQuickStatusChange?: ((id: string, status: any) => void) | undefined;
 	onAdjustDuration: (appt: Appointment, deltaMinutes: number) => void;

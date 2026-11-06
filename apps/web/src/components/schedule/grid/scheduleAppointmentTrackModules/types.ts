@@ -44,6 +44,7 @@ export interface ScheduleAppointmentTrackProps {
   activeStatusPickerApptId: string | null;
   activeMenuApptId: string | null;
   onAppointmentClick: (appointment: Appointment) => void;
+  onAppointmentDoubleClick?: ((appointment: Appointment) => void) | undefined;
   handleSelectMobileAppt: (appt: Appointment) => void;
   onQuickStatusChange?:
     | ((appointmentId: string, status: Appointment["status"]) => void)

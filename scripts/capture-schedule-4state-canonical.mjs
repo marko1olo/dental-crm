@@ -19,7 +19,7 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = "879917df-7e62-4ec0-afe1-166116b09208";
+const CONV_ID = "8dc3a61d-f5c6-4072-bd1e-86fa5f439064";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/schedule");
 

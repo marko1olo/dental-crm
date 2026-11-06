@@ -13,11 +13,9 @@ export function ScheduleChairHeader(props: ScheduleChairHeaderProps) {
   const {
     chair, chairIndex, effectiveChairAssignments, doctors, suggestedDoctor, isSoloDoctor,
     dateKey, dashboard, isToday, currentHour, activeHeaderDoctorPopoverChairId,
-    setActiveHeaderDoctorPopoverChairId, activeHeaderMaintenanceChairId,
-    setActiveHeaderMaintenanceChairId, onEditChair, openAssignModal,
+    setActiveHeaderDoctorPopoverChairId, onEditChair, openAssignModal,
     handleConfirmAssignDoctor, handleUnassignDoctor, handleAssignDoctorWeek,
     handleAssignDoctorMonth, handleQuickSubstituteDoctor, handleBindDoctorToChair,
-    handleAddMaintenance,
   } = props;
 
   const assignment = effectiveChairAssignments[chair.id];
@@ -36,7 +34,6 @@ export function ScheduleChairHeader(props: ScheduleChairHeaderProps) {
         chair={chair} chairAccentColor={chairAccentColor} chairPalette={chairPalette}
         doctors={doctors} hasDoctor={hasDoctor} assignment={assignment}
         activeHeaderDoctorPopoverChairId={activeHeaderDoctorPopoverChairId}
-        setActiveHeaderMaintenanceChairId={setActiveHeaderMaintenanceChairId}
         setActiveHeaderDoctorPopoverChairId={setActiveHeaderDoctorPopoverChairId}
         onEditChair={onEditChair} handleConfirmAssignDoctor={handleConfirmAssignDoctor}
       />

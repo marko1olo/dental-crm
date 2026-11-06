@@ -240,7 +240,7 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 		assert.ok(res.message?.includes("временно заблокировано"));
 	});
 
-	it("blocks booking during scheduled sanitation windows (санитарная обработка)", () => {
+	it("permits booking without artificial sanitation blocks (Mandate 8i & [SCH-01])", () => {
 		const sanitationBlocks: ChairMaintenanceBlock[] = [
 			{
 				id: "maint-1",
@@ -252,7 +252,7 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 			},
 		];
 
-		// Attempting to book inside sanitation block
+		// Mandate 8i & [SCH-01]: Booking inside sanitation window is permitted (zero artificial locks)
 		const insideCheck = checkAppointmentResourceCollision(
 			{
 				startsAt: "2026-08-21T13:15:00.000Z",
@@ -268,10 +268,8 @@ describe("Chair Maintenance, Deactivation & Sanitation Blocking Suite", () => {
 			},
 		);
 
-		assert.equal(insideCheck.hasCollision, true);
-		assert.equal(insideCheck.conflictType, "chair");
-		assert.ok(insideCheck.message?.includes("санитарная обработка"));
-		assert.ok(insideCheck.message?.includes("Кабинет 1"));
+		assert.equal(insideCheck.hasCollision, false);
+		assert.equal(insideCheck.conflictType, null);
 
 		// Booking immediately before sanitation block (12:00-13:00) -> Allowed
 		const beforeCheck = checkAppointmentResourceCollision(

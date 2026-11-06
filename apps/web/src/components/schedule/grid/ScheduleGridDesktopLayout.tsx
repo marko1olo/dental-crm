@@ -50,8 +50,17 @@ export function ScheduleGridDesktopLayout({
 
   const handleAppointmentClick = React.useCallback(
     (appt: Appointment) => {
+      // Mandate [SCH-03]: Single click opens 0-click inspector in the right panel WITHOUT opening QuickBookingDrawer modal overlay.
       setSelectedInspectorAppt(appt);
       setIsInspectorOpen(true);
+    },
+    [],
+  );
+
+  const handleAppointmentDoubleClick = React.useCallback(
+    (appt: Appointment) => {
+      // Mandate [SCH-03]: Detailed editing drawer opens strictly via double click or "Edit" button in inspector.
+      setSelectedInspectorAppt(appt);
       if (onAppointmentClick) {
         onAppointmentClick(appt);
       }
@@ -134,6 +143,7 @@ export function ScheduleGridDesktopLayout({
             activeStatusPickerApptId={interactions.activeStatusPickerApptId}
             activeMenuApptId={interactions.activeMenuApptId}
             onAppointmentClick={handleAppointmentClick}
+            onAppointmentDoubleClick={handleAppointmentDoubleClick}
             handleSelectMobileAppt={interactions.handleSelectMobileAppt}
             onQuickStatusChange={onQuickStatusChange}
             handleAdjustAppointmentDuration={interactions.handleAdjustAppointmentDuration}

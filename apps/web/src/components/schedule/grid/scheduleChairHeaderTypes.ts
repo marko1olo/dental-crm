@@ -16,8 +16,8 @@ export interface ScheduleChairHeaderProps {
   currentHour: number;
   activeHeaderDoctorPopoverChairId: string | null;
   setActiveHeaderDoctorPopoverChairId: (id: string | null) => void;
-  activeHeaderMaintenanceChairId: string | null;
-  setActiveHeaderMaintenanceChairId: (id: string | null | ((prev: string | null) => string | null)) => void;
+  activeHeaderMaintenanceChairId?: string | null | undefined;
+  setActiveHeaderMaintenanceChairId?: ((id: string | null | ((prev: string | null) => string | null)) => void) | undefined;
   onEditChair?: ((chairData: QuickAddChairData) => void) | undefined;
   openAssignModal: (chairId: string) => void;
   handleConfirmAssignDoctor: (chairId: string, docId: string, shiftPreset: any, eveningDocId?: string) => void;
@@ -26,5 +26,5 @@ export interface ScheduleChairHeaderProps {
   handleAssignDoctorMonth: (chairId: string, docId: string) => void;
   handleQuickSubstituteDoctor: (chairId: string, newDoctorId?: string) => void;
   handleBindDoctorToChair: (chairId: string, doctorId: string) => void;
-  handleAddMaintenance: (chairId: string, reason: string, durationMinutes: number, startTimeStr?: string) => void;
+  handleAddMaintenance?: ((chairId: string, reason: string, durationMinutes: number, startTimeStr?: string) => void) | undefined;
 }

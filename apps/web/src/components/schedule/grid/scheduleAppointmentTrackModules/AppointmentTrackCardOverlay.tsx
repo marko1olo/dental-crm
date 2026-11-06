@@ -92,6 +92,7 @@ export function TrackAppointmentCard({
       isNearBottom={isNearBottom}
       isNearRightEdge={isNearRightEdge}
       onAppointmentClick={props.onAppointmentClick}
+      onAppointmentDoubleClick={props.onAppointmentDoubleClick}
       onSelectMobileAppt={props.handleSelectMobileAppt}
       onQuickStatusChange={props.onQuickStatusChange}
       onAdjustDuration={props.handleAdjustAppointmentDuration}

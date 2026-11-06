@@ -1,5 +1,7 @@
 /**
- * useGridDisplaySettings.ts — Hook managing grid time step, chair maintenance blocks, and revenue visibility.
+ * useGridDisplaySettings.ts — Hook managing grid time step and revenue visibility.
+ * Mandate 8i & [SCH-01]: CRM is not a reality simulator. Zero artificial chair sanitation
+ * locks or forced maintenance blocks in localStorage.
  */
 
 import { useCallback, useState } from "react";
@@ -9,22 +11,20 @@ import {
   safeLocalStorageGetItem,
   safeLocalStorageSetItem,
 } from "../../../../lib/safeLocalStorage";
-import { safeBuildSlotIso } from "../gridSlotMath";
 
 export function useGridDisplaySettings(
-  dateKey: string,
+  _dateKey: string,
   gridStepMinutes?: 15 | 30 | 60,
   onGridStepChange?: (step: 15 | 30 | 60) => void,
   chairMaintenanceBlocks?: ChairMaintenanceBlock[],
-  onAddChairMaintenance?: (block: ChairMaintenanceBlock) => void,
+  _onAddChairMaintenance?: (block: ChairMaintenanceBlock) => void,
   onRemoveChairMaintenance?: (blockId: string) => void,
 ) {
   const [internalGridStep, setInternalGridStep] = useState<15 | 30 | 60>(() => gridStepMinutes ?? 30);
   const gridStep = gridStepMinutes ?? internalGridStep;
 
-  // Mandate 8i: CRM is not a reality simulator. Zero artificial chair sanitation locks in localStorage.
-  const [internalMaintenanceBlocks, setInternalMaintenanceBlocks] = useState<ChairMaintenanceBlock[]>([]);
-  const effectiveMaintenanceBlocks = chairMaintenanceBlocks ?? internalMaintenanceBlocks;
+  // [SCH-01]: Zero artificial chair sanitation locks in localStorage. Clean schedule grid.
+  const effectiveMaintenanceBlocks = chairMaintenanceBlocks ?? [];
 
   const [showRevenue, setShowRevenue] = useState<boolean>(() => {
     return safeLocalStorageGetItem("dente_schedule_show_revenue") === "true";
@@ -44,42 +44,24 @@ export function useGridDisplaySettings(
     onGridStepChange?.(step);
   }, [onGridStepChange]);
 
+  // [SCH-01]: Clean no-op to eliminate artificial chair maintenance blocks and time-locks
   const handleAddMaintenance = useCallback(
     (
-      chairId: string,
-      reason: "sanitation" | "tech_break" | "maintenance" | string,
-      durationMinutes: number,
-      startTimeStr = "13:00",
+      _chairId: string,
+      _reason: "sanitation" | "tech_break" | "maintenance" | string,
+      _durationMinutes: number,
+      _startTimeStr = "13:00",
     ) => {
-      const { startIso, endIso } = safeBuildSlotIso(dateKey, startTimeStr, durationMinutes);
-      const newBlock: ChairMaintenanceBlock = {
-        id: `maint-${chairId}-${dateKey}-${startTimeStr.replace(":", "")}-${Date.now()}`,
-        chairId,
-        startsAt: startIso,
-        endsAt: endIso,
-        reason,
-        note: reason === "sanitation" ? "Санитарная обработка" : "Технический перерыв",
-      };
-
-      if (onAddChairMaintenance) {
-        onAddChairMaintenance(newBlock);
-      } else {
-        setInternalMaintenanceBlocks((prev) => [...prev, newBlock]);
-      }
-      const label = reason === "sanitation" ? "Санитарная обработка" : "Технический перерыв";
-      showToast(`${label} (${durationMinutes} мин) запланирована на ${startTimeStr}`, "success", 3000);
+      // Intentionally no-op: CRM does not dictate artificial reality via time-locks
     },
-    [dateKey, onAddChairMaintenance],
+    [],
   );
 
   const handleRemoveMaintenance = useCallback(
     (blockId: string) => {
       if (onRemoveChairMaintenance) {
         onRemoveChairMaintenance(blockId);
-      } else {
-        setInternalMaintenanceBlocks((prev) => prev.filter((b) => b.id !== blockId));
       }
-      showToast("Техобслуживание завершено, кресло доступно", "success", 2500);
     },
     [onRemoveChairMaintenance],
   );

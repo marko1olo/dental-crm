@@ -94,10 +94,11 @@ export function findNearestAvailableSlot(
 	});
 
 	const isIntervalFree = (startMs: number, endMs: number): boolean => {
-		// 1. Chair maintenance blocks
+		// 1. Chair maintenance blocks (Mandate 8i & [SCH-01]: sanitation never blocks booking)
 		if (draft.chairId && options.chairMaintenanceBlocks?.length) {
 			for (const block of options.chairMaintenanceBlocks) {
 				if (block.chairId !== draft.chairId) continue;
+				if (block.reason === "sanitation" || block.reason === "disinfection") continue;
 				const bStart = Date.parse(block.startsAt);
 				const bEnd = Date.parse(block.endsAt);
 				if (!Number.isFinite(bStart) || !Number.isFinite(bEnd)) continue;
@@ -301,10 +302,11 @@ export function checkAppointmentResourceCollision(
 		}
 	}
 
-	// 2. Check scheduled maintenance / sanitation time windows
+	// 2. Check scheduled maintenance time windows (Mandate 8i & [SCH-01]: sanitation never blocks)
 	if (draft.chairId && options.chairMaintenanceBlocks?.length) {
 		for (const block of options.chairMaintenanceBlocks) {
 			if (block.chairId !== draft.chairId) continue;
+			if (block.reason === "sanitation" || block.reason === "disinfection") continue;
 			const blockStart = Date.parse(block.startsAt);
 			const blockEnd = Date.parse(block.endsAt);
 			if (!Number.isFinite(blockStart) || !Number.isFinite(blockEnd)) continue;
