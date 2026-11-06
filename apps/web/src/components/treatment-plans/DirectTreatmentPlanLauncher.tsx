@@ -4,9 +4,11 @@
  * Реагирует на хэши #treatment-plans, #plans, #plan-presenter, ?plans=1 и событие "dente:open-treatment-plan".
  */
 
-import React, { useState, useEffect, useCallback } from "react";
+import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { TreatmentPlanStudioModal } from "./TreatmentPlanStudioModal";
 import { LiveTreatmentPlanPresenterLauncher } from "../appLayout/modalsContainerModules/standalone/LiveTreatmentPlanPresenterLauncher";
+import { usePatientStore } from "../../store/patientStore";
+import { useAppStore } from "../../store/appStore";
 
 export interface DirectTreatmentPlanLauncherProps {
 	readonly className?: string;
@@ -33,8 +35,35 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 	}, []);
 
 	const [isOpen, setIsOpen] = useState<boolean>(checkUrlTrigger);
-	const [patientName, setPatientName] = useState<string>("Смирнова Екатерина Васильевна");
-	const [doctorFullName, setDoctorFullName] = useState<string>("Д-р Орлов А.В. (Главный врач)");
+	const [customPatientName, setCustomPatientName] = useState<string | null>(null);
+	const [customDoctorFullName, setCustomDoctorFullName] = useState<string | null>(null);
+	const [customPatientId, setCustomPatientId] = useState<string | null>(null);
+
+	// Реактивная гидратация из zustand сторов (usePatientStore, useAppStore)
+	const storePatientId = usePatientStore((s) => s.selectedPatientId);
+	const storePatientCore = usePatientStore((s) => s.patientCoreDraft);
+	const dashboard = useAppStore((s) => s.dashboard);
+	const storeActiveDoctorName = useAppStore((s) => s.activeDoctorName);
+
+	const resolvedPatientId = customPatientId || storePatientId || dashboard?.activeVisit?.patientId || "pat-walkin";
+
+	const resolvedPatientName = useMemo(() => {
+		if (customPatientName?.trim()) return customPatientName.trim();
+		if (storePatientCore?.fullName?.trim()) return storePatientCore.fullName.trim();
+		const found = dashboard?.patients?.find((p) => p.id === resolvedPatientId);
+		if (found?.fullName?.trim()) return found.fullName.trim();
+		if (dashboard?.activeVisit?.patientName?.trim()) return dashboard.activeVisit.patientName.trim();
+		return "Пациент первичного приёма";
+	}, [customPatientName, storePatientCore?.fullName, dashboard?.patients, dashboard?.activeVisit?.patientName, resolvedPatientId]);
+
+	const resolvedDoctorFullName = useMemo(() => {
+		if (customDoctorFullName?.trim()) return customDoctorFullName.trim();
+		if (storeActiveDoctorName?.trim()) return storeActiveDoctorName.trim();
+		const found = dashboard?.doctors?.find((d) => d.name === storeActiveDoctorName || d.id === dashboard?.activeVisit?.doctorId);
+		if (found?.name?.trim()) return found.name.trim();
+		if (dashboard?.activeVisit?.doctorName?.trim()) return dashboard.activeVisit.doctorName.trim();
+		return "Лечащий врач";
+	}, [customDoctorFullName, storeActiveDoctorName, dashboard?.doctors, dashboard?.activeVisit?.doctorId, dashboard?.activeVisit?.doctorName]);
 
 	useEffect(() => {
 		const handleHashOrPop = () => {
@@ -42,9 +71,10 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		};
 
 		const handleCustomOpen = (evt: Event) => {
-			const d = (evt as CustomEvent<{ patientName?: string; doctorFullName?: string }>).detail;
-			if (d?.patientName) setPatientName(d.patientName);
-			if (d?.doctorFullName) setDoctorFullName(d.doctorFullName);
+			const d = (evt as CustomEvent<{ patientName?: string; doctorFullName?: string; patientId?: string }>).detail;
+			if (d?.patientName) setCustomPatientName(d.patientName);
+			if (d?.doctorFullName) setCustomDoctorFullName(d.doctorFullName);
+			if (d?.patientId) setCustomPatientId(d.patientId);
 			setIsOpen(true);
 		};
 
@@ -82,7 +112,7 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 			<LiveTreatmentPlanPresenterLauncher
 				isOpen={isOpen}
 				onClose={handleClose}
-				patientId="pat-walkin"
+				patientId={resolvedPatientId}
 				planId="plan-active"
 			/>
 		);
@@ -92,8 +122,9 @@ export const DirectTreatmentPlanLauncher: React.FC<DirectTreatmentPlanLauncherPr
 		<TreatmentPlanStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			patientName={patientName}
-			doctorFullName={doctorFullName}
+			patientId={resolvedPatientId}
+			patientName={resolvedPatientName}
+			doctorFullName={resolvedDoctorFullName}
 			initialSelectedTierId="optimum"
 		/>
 	);

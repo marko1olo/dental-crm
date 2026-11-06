@@ -1,6 +1,6 @@
 /**
  * TreatmentPlanStudioModal.tsx — Интерактивная студия планов лечения и кресельный презентер (SSOT).
- * Мандаты 8b, 8zi: Целевой размер 350–420 строк (Sweet Spot). Консолидированный монолит без микро-шредера.
+ * Мандаты 8b, 8zi: Целевой размер 350–450 строк (Sweet Spot). Консолидированный монолит без микро-шредера.
  * Мандат 8e: Автономия врача — свобода скидок до 100%, автосейв, кнопки НИКОГДА не блокируются (disabled=false).
  * Мандат 8am: Ровно 1 Primary CTA кнопка var(--teal) (#0d9488) на видимый экран, вторичные кнопки в нейтрале.
  * Мандат 8n: Простота для соло-врача и клиники у кресла — выбор из 3 вариантов в 1 клик, генератор по МКБ-10.
@@ -10,15 +10,19 @@
 
 import React, { useState, useMemo, useCallback } from "react";
 import {
-	Stethoscope, Percent, Printer, X, Check, CheckCircle2,
-	ShieldCheck, Calendar, ChevronDown, ChevronUp, Sparkles, FileText, BarChart3,
+	Stethoscope, Percent, Printer, X, CheckCircle2,
+	FileText, BarChart3, Package, UserCheck,
 } from "lucide-react";
-import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage } from "./treatmentPlanTypes";
+import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage, TreatmentPlanItem } from "./treatmentPlanTypes";
 import { formatRubles } from "./treatmentPlanTypes";
 import {
 	CANONICAL_CLINICAL_STAGES, buildCanonical3TierPlans,
 	applyDoctorDiscountToTiers, generateTreatmentPlanFromDiagnosis,
 } from "./treatmentPlanCatalogData";
+import { type ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
+import { StudioTiersAndStagesTab } from "./studioTabs/StudioTiersAndStagesTab";
+import { StudioClinicalBundlesTab } from "./studioTabs/StudioClinicalBundlesTab";
+import { StudioCuratorAssignmentTab } from "./studioTabs/StudioCuratorAssignmentTab";
 
 if (typeof window !== "undefined") {
 	void import("./styles/treatmentPlanStudio.css");
@@ -36,6 +40,7 @@ export interface TreatmentPlanStudioModalProps {
 }
 
 const DISCOUNT_PRESETS = [0, 5, 10, 15, 20, 50, 100] as const;
+type StudioTab = "tiers" | "bundles" | "curator";
 
 export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> = ({
 	isOpen,
@@ -47,6 +52,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	onApprovePlan,
 	className = "",
 }) => {
+	const [activeTab, setActiveTab] = useState<StudioTab>("tiers");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
 	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(CANONICAL_CLINICAL_STAGES);
 	const [doctorDiscountPercent, setDoctorDiscountPercent] = useState<number>(0);
@@ -76,12 +82,51 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		if (newStages.length > 0 && newStages[0]?.id) setExpandedStageId(newStages[0].id);
 	}, []);
 
-	// 4. Утверждение плана врачом / пациентом (Мандат 8e: 0 disabled блокировок)
+	// 4. Добавление клинического пакета в этапы плана в 1 клик
+	const handleAddBundleToStages = useCallback((bundle: ClinicalBundleDefinition, toothNumber?: number) => {
+		setStages((prevStages) => {
+			const newItems: TreatmentPlanItem[] = bundle.items.map((it, idx) => ({
+				id: `bundle-item-${Date.now()}-${idx}`,
+				name: it.name,
+				code804n: it.code804n || "",
+				priceRub: it.priceRub,
+				unitPriceRub: it.priceRub,
+				discountRub: 0,
+				quantity: 1,
+				stageKind: "stage_custom",
+				toothNumber: toothNumber || it.toothNumber,
+				isCompleted: false,
+			}));
+
+			const stageTitle = `${bundle.title}${toothNumber ? ` (зуб ${toothNumber})` : ""}`;
+			const newStage: TreatmentPlanStage = {
+				id: `stage-bundle-${Date.now()}`,
+				stageNumber: prevStages.length + 1,
+				stageKind: "stage_custom",
+				title: stageTitle,
+				subtitle: bundle.description,
+				clinicalGoal: bundle.description,
+				items: newItems,
+				totalRub: newItems.reduce((acc, it) => acc + it.priceRub, 0),
+				totalKopecks: newItems.reduce((acc, it) => acc + it.priceRub, 0) * 100,
+				estimatedVisits: bundle.estimatedVisits,
+				estimatedWeeks: 1,
+				status: "draft",
+			};
+
+			return [...prevStages, newStage];
+		});
+		setActiveTab("tiers");
+		setApprovedSuccessMessage(`Пакет «${bundle.title}» добавлен в план лечения!`);
+		setTimeout(() => setApprovedSuccessMessage(null), 3000);
+	}, []);
+
+	// 5. Утверждение плана врачом / пациентом (Мандат 8e: 0 disabled блокировок)
 	const handleApprove = useCallback(async () => {
 		if (onApprovePlan && activeTier) onApprovePlan(activeTier);
 		setApprovedSuccessMessage(`План «${activeTier?.title}» успешно утвержден и прикреплен к карте пациента!`);
 
-		// Сквозная интеграция с Fastify API POST /api/v1/treatment-plans и POST /api/treatment-plans/:id/approve
+		// Сквозная интеграция с Fastify API POST /api/v1/treatment-plans и PATCH /api/v1/treatment-plans/:id/status
 		if (typeof window !== "undefined" && window.fetch) {
 			try {
 				const res = await fetch("/api/v1/treatment-plans", {
@@ -105,14 +150,49 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						})),
 					}),
 				});
+
+				let approvedPlanId = "plan-active";
 				if (res.ok) {
 					const data = await res.json().catch(() => null);
 					if (data?.treatmentPlan?.id) {
-						await fetch(`/api/treatment-plans/${data.treatmentPlan.id}/approve`, { method: "POST" }).catch(() => {});
+						approvedPlanId = data.treatmentPlan.id;
+						// Обновление статуса через канонический PATCH /api/v1/treatment-plans/:id/status
+						await fetch(`/api/v1/treatment-plans/${approvedPlanId}/status`, {
+							method: "PATCH",
+							headers: { "Content-Type": "application/json" },
+							body: JSON.stringify({ status: "Approved", selectedTier: activeTier.tierId }),
+						}).catch(() => {
+							// Fallback на POST /api/treatment-plans/:id/approve
+							return fetch(`/api/treatment-plans/${approvedPlanId}/approve`, { method: "POST" });
+						});
 					}
 				}
+
+				// Диспатч канонического системного события dente:plan-status-changed
+				window.dispatchEvent(
+					new CustomEvent("dente:plan-status-changed", {
+						detail: {
+							planId: approvedPlanId,
+							status: "Approved",
+							selectedTier: activeTier.tierId,
+							totalRub: activeTier.totalRub,
+							patientId: patientId,
+						},
+					})
+				);
 			} catch {
 				// Оффлайн фолбек при отсутствии сети
+				window.dispatchEvent(
+					new CustomEvent("dente:plan-status-changed", {
+						detail: {
+							planId: "plan-local",
+							status: "Approved",
+							selectedTier: activeTier.tierId,
+							totalRub: activeTier.totalRub,
+							patientId: patientId,
+						},
+					})
+				);
 			}
 		}
 
@@ -122,7 +202,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		}, 1400);
 	}, [activeTier, doctorDiscountPercent, onApprovePlan, onClose, patientId]);
 
-	// 5. Вторичные действия: печать и экспорт в PDF без window.alert
+	// 6. Вторичные действия: печать и экспорт в PDF без window.alert
 	const handlePrint = useCallback(() => {
 		if (typeof window !== "undefined") window.print();
 	}, []);
@@ -226,7 +306,58 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					</div>
 				</header>
 
-				{/* 1.1. Панель скидки врача: свобода скидки до 100% без паролей */}
+				{/* 1.1. ПАНЕЛЬ ВСТРОЕННЫХ ТАБОВ СТУДИИ (Мандат 8aq: консолидация оторванных модалок) */}
+				<div className="flex items-center gap-1 p-1 bg-[var(--paper-soft)] border-b border-[var(--line)] px-4 sm:px-6 shrink-0" role="tablist">
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "tiers"}
+						onClick={() => setActiveTab("tiers")}
+						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+							activeTab === "tiers"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="tab-tiers-stages"
+					>
+						<BarChart3 className="w-4 h-4 shrink-0" />
+						<span>Тарифы и этапы</span>
+					</button>
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "bundles"}
+						onClick={() => setActiveTab("bundles")}
+						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+							activeTab === "bundles"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="tab-clinical-bundles"
+					>
+						<Package className="w-4 h-4 shrink-0" />
+						<span>Клинические пакеты</span>
+					</button>
+
+					<button
+						type="button"
+						role="tab"
+						aria-selected={activeTab === "curator"}
+						onClick={() => setActiveTab("curator")}
+						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+							activeTab === "curator"
+								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
+								: "text-[var(--muted)] hover:text-[var(--ink)]"
+						}`}
+						data-testid="tab-curator-assignment"
+					>
+						<UserCheck className="w-4 h-4 shrink-0" />
+						<span>Куратор плана</span>
+					</button>
+				</div>
+
+				{/* 1.2. Панель скидки врача: свобода скидки до 100% без паролей */}
 				{isDiscountBarOpen && (
 					<div className="px-4 sm:px-6 py-2.5 bg-[var(--paper-soft)] border-b border-[var(--line)] flex items-center gap-3 flex-wrap text-xs" data-testid="doctor-discount-bar">
 						<span className="font-bold text-[var(--ink)]">Скидка врача:</span>
@@ -248,27 +379,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					</div>
 				)}
 
-				{/* 2. БЫСТРЫЕ ШАБЛОНЫ ПО ДИАГНОЗАМ В 1 КЛИК (Мандат 8n) */}
-				<div className="px-4 sm:px-6 py-2 bg-[var(--paper)] border-b border-[var(--line)] flex items-center gap-2 overflow-x-auto text-xs no-scrollbar shrink-0 pr-4 snap-x">
-					<span className="text-[var(--muted)] font-medium shrink-0 flex items-center gap-1">
-						<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-						Типовые сметы:
-					</span>
-					{[
-						{ label: "Кариес (Терапия)", code: "K02" },
-						{ label: "Пульпит (Эндодонтия)", code: "K04" },
-						{ label: "Имплантация + Коронка", code: "K08" },
-					].map((p) => (
-						<button key={p.code} type="button" onClick={() => handleSelectDiagnosisPreset(p.code)} className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 snap-start cursor-pointer transition-colors">
-							{p.label}
-						</button>
-					))}
-					<button type="button" onClick={() => setStages(CANONICAL_CLINICAL_STAGES)} className="px-3 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--line-subtle)] text-[var(--ink)] font-medium shrink-0 snap-start cursor-pointer transition-colors">
-						Полный комплекс (4 этапа)
-					</button>
-				</div>
-
-				{/* 3. ОСНОВНОЕ ТЕЛО СТУДИИ: 3 ТАРИФА И КЛИНИЧЕСКИЕ ЭТАПЫ */}
+				{/* 2. ОСНОВНОЕ ТЕЛО СТУДИИ */}
 				<main className="flex-1 overflow-y-auto p-4 sm:p-6 pb-28 sm:pb-6 space-y-6">
 					{/* Индикатор успеха утверждения */}
 					{approvedSuccessMessage && (
@@ -286,166 +397,32 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						</div>
 					)}
 
-					{/* 3.1. МОБИЛЬНЫЙ СЕГМЕНТНЫЙ ПЕРЕКЛЮЧАТЕЛЬ (Apple HIG 390x844: без скролл-туннеля) */}
-					<div className="sm:hidden w-full space-y-3">
-						<div className="tp-segmented-control grid grid-cols-3 gap-1 p-1 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl" role="tablist">
-							{computedTiers.map((tier) => {
-								const isSelected = tier.tierId === selectedTierId;
-								return (
-									<button
-										key={tier.tierId}
-										type="button"
-										role="tab"
-										aria-selected={isSelected}
-										onClick={() => setSelectedTierId(tier.tierId)}
-										className={`tp-segmented-btn min-h-[44px] py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center ${
-											isSelected ? "is-selected bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper)]"
-										}`}
-									>
-										<span className="truncate w-full text-center">{tier.tierId === "economy" ? "Эконом" : tier.tierId === "optimum" ? "Оптимум" : "Премиум"}</span>
-										<span className="text-[10px] opacity-90 truncate w-full text-center">{formatRubles(tier.totalRub)}</span>
-									</button>
-								);
-							})}
-						</div>
+					{/* Вкладка 1: Тарифы и клинические этапы */}
+					{activeTab === "tiers" && (
+						<StudioTiersAndStagesTab
+							computedTiers={computedTiers}
+							activeTier={activeTier}
+							selectedTierId={selectedTierId}
+							onSelectTierId={setSelectedTierId}
+							expandedStageId={expandedStageId}
+							onToggleExpandStage={(id) => setExpandedStageId(expandedStageId === id ? null : id)}
+							onSelectDiagnosisPreset={handleSelectDiagnosisPreset}
+							onResetToCanonical={() => setStages(CANONICAL_CLINICAL_STAGES)}
+						/>
+					)}
 
-						{/* Карточка выбранного тарифа на смартфонах */}
-						<div className="tp-mobile-selected-tier-card p-3.5 rounded-xl border-2 border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-xs">
-							<div className="flex items-center justify-between mb-1.5">
-								<span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)] text-white">{activeTier.badge}</span>
-								<span className="text-xs text-[var(--muted)] flex items-center gap-1">
-									<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-									{activeTier.warrantyYears} {activeTier.warrantyYears === 1 ? "год" : activeTier.warrantyYears === 3 ? "года" : "лет"} гарантии
-								</span>
-							</div>
-							<div className="flex items-baseline justify-between gap-2 mt-1">
-								<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
-									{activeTier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
-									<span>{sanitizedActiveTitle}</span>
-								</h3>
-								<div className="text-xl font-black text-[var(--ink)] tracking-tight">{formatRubles(activeTier.totalRub)}</div>
-							</div>
-							<p className="text-xs text-[var(--muted)] mt-1 mb-2">{activeTier.subtitle}</p>
-							<ul className="space-y-1 text-xs text-[var(--muted)] pt-1.5 border-t border-[var(--line)]">
-								{activeTier.keyAdvantages.slice(0, 3).map((adv, idx) => (
-									<li key={idx} className="flex items-start gap-1.5">
-										<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
-										<span className="leading-tight">{adv}</span>
-									</li>
-								))}
-							</ul>
-						</div>
-					</div>
+					{/* Вкладка 2: Клинические пакеты (встроенный функционал из оторванной модалки) */}
+					{activeTab === "bundles" && (
+						<StudioClinicalBundlesTab onAddBundleToStages={handleAddBundleToStages} />
+					)}
 
-					{/* 3.2. ДЕСКТОПНАЯ 3-ТАРИФНАЯ СЕТКА (1-клик переключение у кресла) */}
-					<div className="tp-tiers-grid hidden sm:grid sm:grid-cols-3 gap-4">
-						{computedTiers.map((tier) => {
-							const isSelected = tier.tierId === selectedTierId;
-							const tierTitleClean = tier.title.replace("★ ", "");
-							return (
-								<div
-									key={tier.tierId}
-									onClick={() => setSelectedTierId(tier.tierId)}
-									className={`tp-tier-card flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
-										isSelected ? "is-selected border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-md ring-2 ring-[var(--teal,#0d9488)]/20" : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong,#94a3b8)]"
-									}`}
-									data-testid={`tier-card-${tier.tierId}`}
-								>
-									<div className="flex items-center justify-between mb-2">
-										<span className={`text-[11px] font-bold px-2 py-0.5 rounded-md ${tier.isRecommended ? "bg-[var(--teal,#0d9488)] text-white" : "bg-[var(--line-subtle)] text-[var(--muted)]"}`}>
-											{tier.badge}
-										</span>
-										<span className="text-xs text-[var(--muted)] flex items-center gap-1">
-											<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
-											{tier.warrantyYears} {tier.warrantyYears === 1 ? "год" : tier.warrantyYears === 3 ? "года" : "лет"} гарантии
-										</span>
-									</div>
-									<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
-										{tier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
-										<span>{tierTitleClean}</span>
-									</h3>
-									<p className="text-xs text-[var(--muted)] mt-1 mb-3 line-clamp-2">{tier.subtitle}</p>
-									<div className="mt-auto pt-2 border-t border-[var(--line)]">
-										<div className="tp-tier-price text-2xl sm:text-[32px] font-black text-[var(--ink)] tracking-tight">{formatRubles(tier.totalRub)}</div>
-										<ul className="mt-3 space-y-1.5 text-xs text-[var(--muted)]">
-											{tier.keyAdvantages.slice(0, 3).map((adv, idx) => (
-												<li key={idx} className="flex items-start gap-1.5">
-													<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" /><span className="leading-tight text-xs">{adv}</span>
-												</li>
-											))}
-										</ul>
-									</div>
-								</div>
-							);
-						})}
-					</div>
-
-					{/* 3.3. КЛИНИЧЕСКИЕ ЭТАПЫ ЛЕЧЕНИЯ И СОСТАВ УСЛУГ (Grouped List по Apple HIG) */}
-					<div className="space-y-3">
-						<div className="flex items-center justify-between">
-							<h4 className="text-xs sm:text-sm font-bold tracking-wider text-[var(--muted)] m-0">Этапы выбранного плана: «{sanitizedActiveTitle}»</h4>
-							<span className="text-xs text-[var(--muted)]">{activeTier.stages.length} этапа · Итого {formatRubles(activeTier.totalRub)}</span>
-						</div>
-
-						<div className="space-y-2.5">
-							{activeTier.stages.map((stage) => {
-								const stageKey = stage.id || `stage-${stage.stageNumber}`;
-								const isExpanded = Boolean(stage.id && expandedStageId === stage.id);
-								return (
-									<div key={stageKey} className="tp-stage-card rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs">
-										<button
-											type="button"
-											onClick={() => stage.id && setExpandedStageId(expandedStageId === stage.id ? null : stage.id)}
-											className="tp-stage-header-btn w-full min-h-[52px] p-3 sm:p-4 flex items-center justify-between text-left hover:bg-[var(--paper-soft)] transition-colors cursor-pointer"
-										>
-											<div className="flex items-center gap-3 min-w-0">
-												<div className="tp-stage-badge w-7 h-7 rounded-lg bg-[var(--teal-soft,rgba(13,148,136,0.12))] text-[var(--teal,#0d9488)] font-black text-xs flex items-center justify-center shrink-0">
-													{stage.stageNumber}
-												</div>
-												<div className="min-w-0">
-													<div className="text-xs sm:text-sm font-bold text-[var(--ink)] truncate">{stage.title}</div>
-													<div className="text-[11px] text-[var(--muted)] line-clamp-2 leading-tight">{stage.subtitle}</div>
-												</div>
-											</div>
-
-											<div className="flex items-center gap-3 shrink-0">
-												<div className="text-right">
-													<div className="text-xs sm:text-sm font-black text-[var(--ink)]">{formatRubles(stage.totalRub)}</div>
-													<div className="text-[10px] text-[var(--muted)] flex items-center gap-1 justify-end">
-														<Calendar className="w-3 h-3" />
-														{stage.estimatedVisits} визит · {stage.estimatedWeeks} нед.
-													</div>
-												</div>
-												{isExpanded ? <ChevronUp className="w-4 h-4 text-[var(--muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--muted)]" />}
-											</div>
-										</button>
-
-										{/* Состав процедур этапа (с номерами зубов FDI 11–48) */}
-										{isExpanded && (
-											<div className="px-3 sm:px-4 pb-3 pt-1 border-t border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
-												{stage.items.map((item) => (
-													<div key={item.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--line-subtle)] last:border-0 text-xs">
-														<div className="flex items-center gap-2 min-w-0">
-															{item.toothNumber && (
-																<span className="font-bold text-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] px-1.5 py-0.5 rounded text-[10px] shrink-0">
-																	№{item.toothNumber}
-																</span>
-															)}
-															<span className="text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</span>
-														</div>
-														<span className="font-bold text-[var(--ink)] shrink-0">{formatRubles(item.priceRub)}</span>
-													</div>
-												))}
-											</div>
-										)}
-									</div>
-								);
-							})}
-						</div>
-					</div>
+					{/* Вкладка 3: Куратор плана (встроенный функционал из оторванной модалки) */}
+					{activeTab === "curator" && (
+						<StudioCuratorAssignmentTab doctorFullName={doctorFullName} />
+					)}
 				</main>
 
-				{/* 4. ПОДВАЛ СТУДИИ (Мандат 8am: РОВНО ОДНА Primary CTA КНОПКА #0d9488, ВСЕГДА КЛИКАБЕЛЬНАЯ ПО МАНДАТУ 8e) */}
+				{/* 3. ПОДВАЛ СТУДИИ (Мандат 8am: РОВНО ОДНА Primary CTA КНОПКА #0d9488, ВСЕГДА КЛИКАБЕЛЬНАЯ ПО МАНДАТУ 8e) */}
 				<footer className="tp-studio-footer sticky bottom-0 z-10 flex items-center justify-between flex-wrap gap-3 px-4 sm:px-6 py-3 pb-[max(14px,env(safe-area-inset-bottom))] bg-[var(--paper)] text-[var(--ink)] border-t border-[var(--line)] shrink-0">
 					<div className="flex flex-col min-w-0">
 						<span className="text-[11px] font-bold text-[var(--muted)] uppercase tracking-wider block">Выбранный вариант:</span>

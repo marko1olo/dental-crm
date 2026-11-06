@@ -331,4 +331,36 @@ describe("Treatment Plan CRUD & PEP (SMS/QR) Digital Signature API", () => {
 		assert.equal(approveBody.plan.status, "Approved");
 		assert.ok(approveBody.plan.approvedAt);
 	});
+
+	test("7. PATCH /api/v1/treatment-plans/:id/status updates status directly", async () => {
+		if (!databaseReady) return;
+
+		const createRes = await app.inject({
+			method: "POST",
+			url: "/api/treatment-plans",
+			headers: testHeaders,
+			payload: {
+				patientId: PATIENT_ID,
+				name: "План для смены статуса",
+			},
+		});
+		assert.equal(createRes.statusCode, 201);
+		const planId = JSON.parse(createRes.body).treatmentPlan.id;
+
+		const patchStatusRes = await app.inject({
+			method: "PATCH",
+			url: `/api/v1/treatment-plans/${planId}/status`,
+			headers: testHeaders,
+			payload: {
+				status: "Approved",
+				selectedTier: "optimum",
+			},
+		});
+
+		assert.equal(patchStatusRes.statusCode, 200);
+		const patchStatusBody = JSON.parse(patchStatusRes.body);
+		assert.equal(patchStatusBody.success, true);
+		assert.equal(patchStatusBody.plan.status, "Approved");
+		assert.ok(patchStatusBody.plan.approvedAt);
+	});
 });

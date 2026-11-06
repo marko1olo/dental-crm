@@ -1,0 +1,67 @@
+{
+  "subagent": "Treatment Plans & 3-Tier Estimates Inquisitor",
+  "wave": 505,
+  "role": "Red Team Inquisitor",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-06T09:48:00+04:00",
+  "scope": {
+    "domain": "treatment_plans",
+    "target_files": [
+      "apps/web/src/components/treatment-plans/TreatmentPlanStudioModal.tsx",
+      "apps/web/src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx",
+      "apps/web/src/components/treatment-plans/studioTabs/StudioTiersAndStagesTab.tsx",
+      "apps/web/src/components/treatment-plans/studioTabs/StudioClinicalBundlesTab.tsx",
+      "apps/web/src/components/treatment-plans/studioTabs/StudioCuratorAssignmentTab.tsx",
+      "apps/api/src/routes/treatmentPlan/crud/planUpdater.ts",
+      "apps/api/src/routes/treatmentPlanRoutes.ts",
+      "apps/api/src/tests/routes/treatmentPlanCrudAndPepSignature.test.ts",
+      "apps/web/src/components/treatment-plans/__tests__/treatmentPlanStudioSSOT.test.tsx"
+    ]
+  },
+  "invariants_enforced": {
+    "mandate_8e_doctor_autonomy": "100% скидки врача без паролей, 0 disabled кнопок, дебаунс автосейв",
+    "mandate_8n_scale_sovereignty": "Соло-врач как куратор (самокурация), 1-клик типовые сметы МКБ-10",
+    "mandate_8aa_soft_warehouse": "Фоновое списание по техкартам, Soft Negative Stock без алертов у кресла",
+    "mandate_8am_button_hierarchy": "Ровно 1 Primary CTA teal #0d9488 на экран (52px на мобилках)",
+    "apple_hig_mobile": "Нативный Segmented Switcher тарифов 390x844 вместо 2500px скролла, Drag Handle 36x5px, touch >= 44x44px",
+    "anti_hardcode": "Полная ликвидация Смирновой Е.В. и Орлова из DirectTreatmentPlanLauncher, реактивная гидратация из usePatientStore и useAppStore",
+    "anti_orphan_consolidation": "Встраивание функционала модалок-сирот (CuratorPlanAssignmentModal, ClinicalServiceBundlesModal) в нативные табы канонической студии"
+  },
+  "backend_endpoints": {
+    "patch_status": "PATCH /api/v1/treatment-plans/:id/status (Fastify) обновляет статус на Approved/Active и диспатчит системный аудит",
+    "dom_event": "dente:plan-status-changed с detail { planId, status, selectedTier, totalRub, patientId }"
+  },
+  "machine_gates": {
+    "check_encoding": "PASS (0 errors, UTF-8 clean)",
+    "check_stub_overrides": "PASS (0 overrides)",
+    "check_fetch_response": "PASS (0 errors)",
+    "check_dynamic_imports": "PASS (0 broken imports)",
+    "treatment_plan_tests": "PASS (19/19 in treatmentPlanStudioSSOT.test.tsx, 7/7 in treatmentPlanCrudAndPepSignature.test.ts, 8/8 in bundles/curator)"
+  },
+  "visual_4state_proofs": [
+    {
+      "name": "01_treatment_plan_pc_light_1440x900.png",
+      "path": "docs/proofs/treatment_plans/01_treatment_plan_pc_light_1440x900.png",
+      "size_bytes": 102333,
+      "verified": true
+    },
+    {
+      "name": "02_treatment_plan_pc_dark_1440x900.png",
+      "path": "docs/proofs/treatment_plans/02_treatment_plan_pc_dark_1440x900.png",
+      "size_bytes": 106393,
+      "verified": true
+    },
+    {
+      "name": "03_treatment_plan_mobile_light_390x844.png",
+      "path": "docs/proofs/treatment_plans/03_treatment_plan_mobile_light_390x844.png",
+      "size_bytes": 141833,
+      "verified": true
+    },
+    {
+      "name": "04_treatment_plan_mobile_dark_390x844.png",
+      "path": "docs/proofs/treatment_plans/04_treatment_plan_mobile_dark_390x844.png",
+      "size_bytes": 148344,
+      "verified": true
+    }
+  ]
+}

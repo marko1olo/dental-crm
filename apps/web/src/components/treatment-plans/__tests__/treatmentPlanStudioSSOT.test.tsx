@@ -289,4 +289,56 @@ describe("TreatmentPlanStudioModal & SSOT Architecture Invariants", () => {
 		assert.ok(html.includes("min-h-[52px]"), "Primary CTA обязан иметь комфортную высоту 52px");
 		assert.ok(html.includes("safe-area-inset-bottom"), "Подвал обязан учитывать безопасную зону iPhone Home Bar");
 	});
+
+	it("16. Наличие 3 встроенных табов студии (Мандат 8aq: ликвидация оторванных модалок)", () => {
+		const html = renderToString(
+			<TreatmentPlanStudioModal
+				isOpen={true}
+				onClose={() => {}}
+			/>
+		);
+
+		assert.ok(html.includes("data-testid=\"tab-tiers-stages\""), "Таб тарифов и этапов");
+		assert.ok(html.includes("data-testid=\"tab-clinical-bundles\""), "Таб клинических пакетов");
+		assert.ok(html.includes("data-testid=\"tab-curator-assignment\""), "Таб куратора плана");
+		assert.ok(html.includes("Тарифы и этапы"));
+		assert.ok(html.includes("Клинические пакеты"));
+		assert.ok(html.includes("Куратор плана"));
+	});
+
+	it("17. Рендеринг таба клинических пакетов StudioClinicalBundlesTab: категории и кнопки включения", async () => {
+		const { StudioClinicalBundlesTab } = await import("../studioTabs/StudioClinicalBundlesTab");
+		const html = renderToString(
+			<StudioClinicalBundlesTab onAddBundleToStages={() => {}} />
+		);
+
+		assert.ok(html.includes("data-testid=\"studio-clinical-bundles-tab\""));
+		assert.ok(html.includes("Все пакеты"));
+		assert.ok(html.includes("Терапия"));
+		assert.ok(html.includes("Хирургия"));
+		assert.ok(html.includes("+ Включить в план"));
+	});
+
+	it("18. Рендеринг таба куратора StudioCuratorAssignmentTab: выбор куратора и этапы воронки", async () => {
+		const { StudioCuratorAssignmentTab } = await import("../studioTabs/StudioCuratorAssignmentTab");
+		const html = renderToString(
+			<StudioCuratorAssignmentTab doctorFullName="Д-р Орлов А.В." />
+		);
+
+		assert.ok(html.includes("data-testid=\"studio-curator-assignment-tab\""));
+		assert.ok(html.includes("Ответственный куратор плана"));
+		assert.ok(html.includes("Веду сам (Д-р Орлов А.В.)"));
+		assert.ok(html.includes("Текущий этап воронки"));
+	});
+
+	it("19. DirectTreatmentPlanLauncher: ликвидация захардкоженных ФИО и реактивная гидратация", async () => {
+		const fs = await import("node:fs");
+		const launcherPath = "apps/web/src/components/treatment-plans/DirectTreatmentPlanLauncher.tsx";
+		const code = fs.readFileSync(launcherPath, "utf-8");
+
+		assert.ok(!code.includes('"Смирнова Екатерина Васильевна"'), "Захардкоженное имя Смирновой должно быть вырезано");
+		assert.ok(!code.includes('"Д-р Орлов А.В. (Главный врач)"'), "Захардкоженное имя врача должно быть вырезано");
+		assert.ok(code.includes("usePatientStore"), "Должен использовать usePatientStore");
+		assert.ok(code.includes("useAppStore"), "Должен использовать useAppStore");
+	});
 });

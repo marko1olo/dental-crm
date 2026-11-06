@@ -116,3 +116,63 @@ export async function handleApproveTreatmentPlan(
 		plan: approvedPlan,
 	});
 }
+
+export async function handleUpdateTreatmentPlanStatus(
+	request: FastifyRequest<{ Params: { id: string } }>,
+	reply: FastifyReply,
+	organizationId: string,
+) {
+	const { id } = request.params;
+	const body = request.body as { status?: string; selectedTier?: string } | undefined;
+	const status = body?.status || "Approved";
+
+	const [existing] = await db
+		.select()
+		.from(treatmentPlans)
+		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+		.limit(1);
+
+	if (!existing) {
+		return reply.code(404).send({
+			error: "TreatmentPlanNotFound",
+			message: "План лечения не найден.",
+		});
+	}
+
+	const isApproved = status.toLowerCase() === "approved";
+	const [updatedPlan] = await db
+		.update(treatmentPlans)
+		.set({
+			status,
+			...(isApproved ? { approvedAt: new Date() } : {}),
+			updatedAt: new Date(),
+		})
+		.where(and(eq(treatmentPlans.id, id), eq(treatmentPlans.organizationId, organizationId)))
+		.returning();
+
+	if (!updatedPlan) {
+		return reply.code(500).send({
+			error: "UpdateStatusFailed",
+			message: "Не удалось обновить статус плана лечения.",
+		});
+	}
+
+	try {
+		await db.insert(auditEvents).values({
+			organizationId,
+			actorUserId: null,
+			entityType: "treatment_plan",
+			entityId: id,
+			action: isApproved ? "TREATMENT_PLAN_APPROVED" : "TREATMENT_PLAN_STATUS_CHANGED",
+			reason: `Статус плана лечения «${updatedPlan.name || updatedPlan.title}» изменен на «${status}»`,
+		});
+	} catch (auditErr) {
+		request.log.warn({ err: auditErr }, "Не удалось записать аудит смены статуса плана лечения");
+	}
+
+	return reply.code(200).send({
+		success: true,
+		plan: updatedPlan,
+	});
+}
+

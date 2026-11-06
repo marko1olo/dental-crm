@@ -11,6 +11,7 @@ import {
 	handleCreateTreatmentPlan,
 	handleListTreatmentPlans,
 	handleUpdateTreatmentPlan,
+	handleUpdateTreatmentPlanStatus,
 	handleUpdateTreatmentPlanStage,
 } from "./treatmentPlan/treatmentPlanCrudHandlers.js";
 import {
@@ -140,6 +141,15 @@ export const treatmentPlanRoutes: FastifyPluginAsync = async (server) => {
 	};
 	server.patch<{ Params: { id: string } }>("/api/treatment-plans/:id", updatePlanHandler);
 	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id", updatePlanHandler);
+
+	// 6b. PATCH /api/treatment-plans/:id/status — Обновление статуса плана лечения
+	const updatePlanStatusHandler = async (request: any, reply: any) => {
+		const context = await requireClinicalMutationContext(request, reply, "update treatment plan status");
+		if (!context) return;
+		return handleUpdateTreatmentPlanStatus(request, reply, context.organizationId);
+	};
+	server.patch<{ Params: { id: string } }>("/api/treatment-plans/:id/status", updatePlanStatusHandler);
+	server.patch<{ Params: { id: string } }>("/api/v1/treatment-plans/:id/status", updatePlanStatusHandler);
 
 	// 7. POST /api/treatment-plans/:id/approve — Утверждение плана лечения
 	const approvePlanHandler = async (request: any, reply: any) => {

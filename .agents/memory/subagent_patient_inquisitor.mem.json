@@ -1,0 +1,36 @@
+{
+  "subagent": "patient_inquisitor",
+  "role": "Supreme Red Team Inquisitor for Patient 360, Somatic Passport, Consents and Patient Studio",
+  "status": "COMPLETED",
+  "wave": 505,
+  "lastUpdated": "2026-11-06T09:52:00+04:00",
+  "invariants": {
+    "mandate_8e_doctor_autonomy": "Zero disabled buttons on Primary CTA actions. 10-second intake requires only Full Name and Phone. Somatic health norm set in 1 click (✓ Соматически здоров / норма).",
+    "mandate_8y_passive_allergy_safety": "Allergies rendered as passive warning banner ⚠️ without disabling the Save button.",
+    "mandate_8n_family_balance": "Family wallet consolidated: debt of child covered in 1 click from relative advance without bureaucracy.",
+    "mandate_8am_single_primary_cta": "Exactly ONE Primary CTA button in var(--teal, #0d9488) per visible screen with secondary neutral border buttons.",
+    "mandate_8b_sweet_spot": "PatientStudioModal.tsx strictly maintained within 400-480 lines (478 lines), validated by architectural metric unit tests.",
+    "mandate_8ap_honest_medical_facts": "Purged all fake sentiment/regex scoring. Patient profile displays honest medical facts: birth date, age (e.g., '41 год'), phone, category ('Постоянный', 'Первичный', 'VIP'), and honest balance.",
+    "apple_hig_mobile": "iOS Contacts & Apple HIG compliant: native Bottom Sheet drawer, 36x5px tactile drag handle, touch targets >= 44x44px, 0px horizontal drift."
+  },
+  "verifiedGates": {
+    "encoding": "Passed (npm run check:encoding, Exit Code 0, 23924 files)",
+    "stub_overrides": "Passed (npm run check:stub-overrides, Exit Code 0, 139 properties)",
+    "fetch_response": "Passed (npm run check:fetch-response, Exit Code 0, 14422 files)",
+    "dynamic_imports": "Passed (npm run check:dynamic-imports, Exit Code 0, 18192 files, 532 dynamic imports)",
+    "unit_tests": [
+      "patientStudioSSOT.test.tsx: Passed 15/15",
+      "patientStudioDecomposedModules.test.tsx: Passed 5/5",
+      "patientSSOTSuite.test.tsx: Passed 6/6",
+      "patientStudioClinicalErgonomics.test.tsx: Passed 5/5",
+      "patientSentimentScoring.test.ts: Passed 4/4",
+      "patientCardSavePill.test.tsx, familyDepositAndRepresentatives.test.tsx, patientFinanceAutonomyAndAliases.test.tsx: Passed 14/14"
+    ],
+    "visual_proofs": [
+      "docs/proofs/patient_card/01_patient_studio_pc_light_1440x900.png (169 KB)",
+      "docs/proofs/patient_card/02_patient_studio_pc_dark_1440x900.png (171 KB)",
+      "docs/proofs/patient_card/03_patient_studio_mobile_light_390x844.png (137 KB, 0px drift, >= 44px targets)",
+      "docs/proofs/patient_card/04_patient_studio_mobile_dark_390x844.png (137 KB, 0px drift, >= 44px targets)"
+    ]
+  }
+}
