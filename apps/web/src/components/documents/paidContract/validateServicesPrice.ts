@@ -11,12 +11,13 @@ export function validateServicesPrice(
 ): { missing: PaidContractMissingField[]; warnings: string[] } {
 	const missing: PaidContractMissingField[] = [];
 	const warnings: string[] = [];
-	const allowBlank = Boolean(options?.allowBlankForPrint || options?.isCito);
+	const isPrimaryContractWithoutPlan = !contract.services || contract.services.length === 0;
+	const allowBlank = Boolean(options?.allowBlankForPrint || options?.isCito || isPrimaryContractWithoutPlan);
 
 	const hasCost = typeof contract.totalAmountKopecks === "number" && contract.totalAmountKopecks > 0;
 	if (!hasCost) {
 		if (allowBlank) {
-			warnings.push("Сумма договора не указана: сформирован бланк с прочерками для согласования сметы.");
+			warnings.push("Сумма договора не указана (0 ₽): первичный договор оформлен с открытой ценой по прейскуранту клиники и строками прочерков для ручного согласования плана лечения.");
 		} else {
 			missing.push({
 				section: "Стоимость и порядок расчетов",

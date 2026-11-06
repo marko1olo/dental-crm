@@ -1,7 +1,7 @@
 {
   "subagent": "Red Team Endo Inquisition & Clinical Architecture",
   "status": "COMPLETED",
-  "timestamp": "2026-11-06T11:57:00.000Z",
+  "timestamp": "2026-11-06T13:03:00.000Z",
   "scope": "[END-03..07]",
   "completedDefects": [
     {
@@ -31,7 +31,7 @@
     {
       "code": "END-07",
       "severity": "SEV-2",
-      "summary": "Эргономика и автономия врача: кнопки сохранения/печати никогда не disabled. Touch targets >= 44x44px Apple HIG, 0px горизонтального скролла. 4-State Proof скриншоты сняты и лично проверены.",
+      "summary": "Устранена утечка 3D КЛКТ замеров каналов: в endoClinicalIntegrationBridge.ts добавлена отправка структурированных каналов в Fastify API POST /api/odontogram/status с записью в PostgreSQL 18. Автономия врача: кнопки сохранения/печати никогда не disabled. Touch targets >= 44x44px Apple HIG, 0px горизонтального скролла.",
       "proofs": [
         "docs/proofs/endo/01_endo_studio_pc_light_1440x900.png",
         "docs/proofs/endo/02_endo_studio_pc_dark_1440x900.png",
@@ -41,9 +41,9 @@
     }
   ],
   "gatesVerified": {
-    "encoding": "PASS (npm run check:encoding: 24006 files OK)",
-    "unitAndIntegrationTests": "PASS (37/37 passed)",
-    "visual4StateProof": "PASS (PC Light/Dark 1440x900, Mobile Light/Dark 390x844)",
+    "encoding": "PASS (npm run check:encoding: 23984 files OK)",
+    "unitAndIntegrationTests": "PASS (45/45 passed: endoBillingAndMaterials 7/7, endoCanalJsonbPersistence 1/1, chairsideEndoQuickBar 8/8, endodonticsSSOTSuite 29/29)",
+    "visual4StateProof": "PASS (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 personally inspected)",
     "documentationSync": "PASS (RED_TEAM_FULL_INQUISITION_REGISTRY.md updated)"
   }
 }

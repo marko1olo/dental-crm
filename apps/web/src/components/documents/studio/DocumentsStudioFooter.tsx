@@ -8,13 +8,15 @@
  */
 
 import React from "react";
-import { Download, Printer, Send } from "lucide-react";
+import { Download, Printer, Send, Zap } from "lucide-react";
+import type { DocumentPackageKey } from "../documentsCatalogData";
 
 export interface DocumentsStudioFooterProps {
 	readonly onPrimarySignAndPrint: () => void;
 	readonly onDownloadTxt?: () => void;
 	readonly onSendMessenger?: () => void;
 	readonly hasSigned?: boolean;
+	readonly activePackage?: DocumentPackageKey;
 }
 
 export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
@@ -22,7 +24,10 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 	onDownloadTxt,
 	onSendMessenger,
 	hasSigned,
+	activePackage,
 }) => {
+	const isTax = activePackage === "tax_certificate";
+
 	return (
 		<footer className="dente-docs-footer-bar" data-testid="documents-studio-footer">
 			<div className="dente-docs-footer-secondary-actions">
@@ -58,13 +63,18 @@ export const DocumentsStudioFooter: React.FC<DocumentsStudioFooterProps> = ({
 					onClick={onPrimarySignAndPrint}
 					className="dente-btn-primary-cta"
 					data-testid="primary-batch-print-cta"
+					title={isTax ? "Сформировать справку ФНС (КНД 1151156) для налогового вычета 13% НДФЛ" : "Распечатать комплект документов и утвердить"}
 				>
-					<Printer size={16} />
+					{isTax ? <Zap size={16} /> : <Printer size={16} />}
 					<span className="hidden sm:inline">
-						{hasSigned ? "✓ Распечатать подписанный пакет" : "✓ Распечатать пакет приёма и подписать"}
+						{isTax
+							? "✓ Сформировать справку ФНС"
+							: hasSigned
+								? "✓ Распечатать подписанный пакет приёма"
+								: "✓ Распечатать пакет приёма и подписать"}
 					</span>
 					<span className="sm:hidden">
-						{hasSigned ? "✓ Распечатать пакет" : "✓ Распечатать и подписать"}
+						{isTax ? "✓ Справка ФНС" : "✓ Распечатать пакет"}
 					</span>
 				</button>
 			</div>

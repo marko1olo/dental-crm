@@ -14,7 +14,7 @@
 .dente-docs-studio-backdrop {
 	position: fixed;
 	inset: 0;
-	z-index: 60;
+	z-index: 100000;
 	display: flex;
 	align-items: center;
 	justify-content: center;
@@ -404,6 +404,69 @@
 }
 
 /* ==========================================================================
+   5.5. DARK MODE ДЛЯ ЛИСТА А4 (МАНДАТ 8am: НОЛЬ СЛЕПЯЩИХ БЕЛЫХ ПЯТЕН)
+   ========================================================================== */
+
+.dark .dente-docs-preview-area,
+[data-theme="dark"] .dente-docs-preview-area {
+	background: var(--paper, #0f172a);
+}
+
+.dark .dente-a4-paper-sheet,
+[data-theme="dark"] .dente-a4-paper-sheet {
+	background: var(--paper-strong, #1e293b);
+	color: var(--ink, #f8fafc);
+	border: 1px solid var(--line, #334155);
+	box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 0 0 1px var(--line, #334155);
+}
+
+.dark .dente-a4-sheet-header,
+[data-theme="dark"] .dente-a4-sheet-header {
+	border-bottom: 2px solid var(--line-strong, #475569);
+}
+
+.dark .dente-a4-clinic-name,
+[data-theme="dark"] .dente-a4-clinic-name {
+	color: var(--ink, #f8fafc);
+}
+
+.dark .dente-a4-clinic-sub,
+[data-theme="dark"] .dente-a4-clinic-sub {
+	color: var(--ink-muted, #94a3b8);
+}
+
+.dark .dente-a4-date-badge,
+[data-theme="dark"] .dente-a4-date-badge {
+	color: var(--ink, #f8fafc);
+}
+
+.dark .dente-a4-text-body,
+[data-theme="dark"] .dente-a4-text-body {
+	color: var(--ink, #e2e8f0);
+}
+
+.dark .dente-a4-sheet-footer,
+[data-theme="dark"] .dente-a4-sheet-footer {
+	border-top: 1px solid var(--line, #334155);
+	color: var(--ink-muted, #94a3b8);
+}
+
+.dark .dente-a4-sheet-footer .font-semibold,
+[data-theme="dark"] .dente-a4-sheet-footer .font-semibold {
+	color: var(--ink, #f8fafc) !important;
+}
+
+.dark .dente-a4-sheet-footer .text-slate-600,
+[data-theme="dark"] .dente-a4-sheet-footer .text-slate-600 {
+	color: var(--ink, #cbd5e1) !important;
+}
+
+.dark .dente-a4-sheet-footer .text-slate-400,
+[data-theme="dark"] .dente-a4-sheet-footer .text-slate-400 {
+	color: var(--ink-muted, #94a3b8) !important;
+}
+
+/* ==========================================================================
    6. ИНТЕРАКТИВНЫЙ БАР ПОДПИСИ И ЭКРАННОГО CANVAS
    ========================================================================== */
 
@@ -481,7 +544,7 @@
 		max-height: 94vh;
 		border-radius: 24px 24px 0 0;
 		border-bottom: 0;
-		padding-bottom: 58px;
+		padding-bottom: 0;
 	}
 
 	.dente-mobile-drag-handle {

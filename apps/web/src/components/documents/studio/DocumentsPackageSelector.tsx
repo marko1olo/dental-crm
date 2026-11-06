@@ -17,6 +17,8 @@ export interface DocumentsPackageSelectorProps {
 	readonly onSelectPackage: (pkgKey: DocumentPackageKey) => void;
 	readonly activeConsentSubKind: ConsentSubKind;
 	readonly onSelectConsentSubKind: (subKind: ConsentSubKind) => void;
+	readonly taxYear?: number;
+	readonly onSelectTaxYear?: (year: number) => void;
 }
 
 const CONSENT_SUB_KINDS: readonly { id: ConsentSubKind; label: string }[] = [
@@ -32,6 +34,8 @@ export const DocumentsPackageSelector: React.FC<DocumentsPackageSelectorProps> =
 	onSelectPackage,
 	activeConsentSubKind,
 	onSelectConsentSubKind,
+	taxYear = 2026,
+	onSelectTaxYear,
 }) => {
 	return (
 		<div>
@@ -73,6 +77,26 @@ export const DocumentsPackageSelector: React.FC<DocumentsPackageSelectorProps> =
 											className={`dente-subkind-chip ${activeConsentSubKind === sub.id ? "is-active" : ""}`}
 										>
 											{sub.label}
+										</button>
+									))}
+								</div>
+							)}
+
+							{/* Экспресс-выбор налогового периода (год 2025/2026) для справки ФНС (Мандат 8n) */}
+							{pkg.id === "tax_certificate" && isActive && (
+								<div className="dente-docs-subkind-chips" data-testid="tax-year-chips">
+									{[2025, 2026].map((yr) => (
+										<button
+											key={yr}
+											type="button"
+											onClick={(e) => {
+												e.stopPropagation();
+												onSelectTaxYear?.(yr);
+											}}
+											className={`dente-subkind-chip ${taxYear === yr ? "is-active" : ""}`}
+											title={`Сформировать справку ФНС за ${yr} год`}
+										>
+											{yr} год
 										</button>
 									))}
 								</div>

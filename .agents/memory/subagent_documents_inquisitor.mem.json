@@ -1,0 +1,60 @@
+{
+  "subagent": "subagent_documents_inquisitor",
+  "domain": "documents_and_consents_lifecycle",
+  "status": "COMPLETED",
+  "completedAt": "2026-11-06T13:03:00+04:00",
+  "mandates": ["8b", "8e", "8n", "8x", "8am", "8ap", "8ze", "8wy"],
+  "testSuite": {
+    "command": "npx vitest run apps/web/src/components/documents/__tests__/ apps/web/src/components/consents/__tests__/",
+    "passedFiles": 24,
+    "totalFiles": 24,
+    "passedTests": 220,
+    "totalTests": 220,
+    "exitCode": 0
+  },
+  "visualProofs": [
+    {
+      "file": "docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png",
+      "resolution": "1440x900",
+      "theme": "light",
+      "sizeBytes": 143175,
+      "inspectedVia": "read_file",
+      "verdict": "PASS: 0 clipping, 1 Primary CTA #0d9488, A4 sheet preview, crisp fonts"
+    },
+    {
+      "file": "docs/proofs/documents/02_documents_catalog_pc_dark_1440x900.png",
+      "resolution": "1440x900",
+      "theme": "dark",
+      "sizeBytes": 136482,
+      "inspectedVia": "read_file",
+      "verdict": "PASS: 0 white blinding patches, deep dark tokens var(--paper), contrast WCAG AAA"
+    },
+    {
+      "file": "docs/proofs/documents/03_documents_catalog_mobile_light_390x844.png",
+      "resolution": "390x844",
+      "theme": "light",
+      "sizeBytes": 56244,
+      "inspectedVia": "read_file",
+      "verdict": "PASS: Apple iOS HIG Bottom Sheet, drag handle 36x5px, compact CTA '✓ Распечатать пакет' without clipping"
+    },
+    {
+      "file": "docs/proofs/documents/04_documents_catalog_mobile_dark_390x844.png",
+      "resolution": "390x844",
+      "theme": "dark",
+      "sizeBytes": 48184,
+      "inspectedVia": "read_file",
+      "verdict": "PASS: Mobile dark mode, z-index 100000 overlay, no floating button collisions"
+    }
+  ],
+  "featureDelivered": {
+    "id": 491,
+    "name": "документооборот::каноническая_студия_документов_идс_и_справки_фнс_1151156",
+    "keyAchievements": [
+      "Печать первичного рамочного договора с открытой ценой (0 ₽) до приёма и плана лечения (Мандат 8e/8n)",
+      "Справка об оплате медуслуг для ФНС (КНД 1151156) в 1 клик с агрегацией чеков и кодов 1/2",
+      "Искоренение советского канцелярита 043/у -> Медицинская карта приёма",
+      "Консолидация в SSOT DocumentsStudioModal.tsx и DirectDocumentsLauncher.tsx",
+      "Единый Primary CTA #0d9488 без карнавала разноцветных кнопок"
+    ]
+  }
+}

@@ -142,24 +142,34 @@ export const CANONICAL_CLINIC_PACKAGES: readonly ClinicalPackageMeta[] = [
 // ---------------------------------------------------------------------------
 
 export function generateContractTemplate(ctx: DocumentLegalContext): string {
+	const patientName = ctx.patient.fullName.trim() || "________________________________________________";
+	const patientBirthDate = ctx.patient.birthDate.trim() || "«___» _________ _____ г.";
+	const patientPassport = ctx.patient.passport.trim() || "паспорт: серия ____ № ______ выдан ________________________________";
+	const patientPhone = ctx.patient.phone.trim() || "+7 (___) ___-__-__";
+	const patientAddress = ctx.patient.address.trim() || "________________________________________________";
+
+	const costSection = ctx.totalAmountKopecks > 0
+		? `3.1. Предварительная стоимость услуг по согласованному плану лечения составляет: ${formatKopecksToRubles(ctx.totalAmountKopecks)}.`
+		: "3.1. Предварительная стоимость услуг: 0 ₽ (открытая цена по действующему прейскуранту клиники; окончательная сумма согласовывается сторонами в плане лечения). Сметная стоимость: ____________________ руб. (________________________________________).";
+
 	return `ДОГОВОР НА ОКАЗАНИЕ ПЛАТНЫХ МЕДИЦИНСКИХ УСЛУГ № ${ctx.documentNumber}
 
 г. Москва                                                              Дата: ${ctx.documentDate}
 
 1. СТОРОНЫ ДОГОВОРА
 Исполнитель: ${ctx.clinic.name}, ОГРН ${ctx.clinic.ogrn}, ИНН ${ctx.clinic.inn}, адрес: ${ctx.clinic.address}, лицензия: ${ctx.clinic.license}.
-Заказчик (Пациент): ${ctx.patient.fullName}, дата рождения: ${ctx.patient.birthDate}, паспорт: ${ctx.patient.passport}, телефон: ${ctx.patient.phone}, адрес: ${ctx.patient.address}.
+Заказчик (Пациент): ${patientName}, дата рождения: ${patientBirthDate}, ${patientPassport}, телефон: ${patientPhone}, адрес: ${patientAddress}.
 
 2. ПРЕДМЕТ ДОГОВОРА
 2.1. Исполнитель обязуется оказать Пациенту квалифицированные стоматологические услуги в соответствии с медицинскими показаниями и стандартами качества, а Пациент обязуется оплатить оказанные услуги.
 2.2. Лечащий врач: ${ctx.doctor.fullName} (${ctx.doctor.specialty}).
 
 3. СТОИМОСТЬ И ПОРЯДОК ОПЛАТЫ
-3.1. Предварительная стоимость услуг по согласованному плану лечения составляет: ${formatKopecksToRubles(ctx.totalAmountKopecks)}.
-3.2. Оплата производится в кассу или на расчетный счет Исполнителя в день оказания услуг.
+${costSection}
+3.2. Оплата производится в кассу или на расчетный счет Исполнителя в день оказания услуг с обязательной выдачей кассового чека.
 
 4. ПОДПИСИ СТОРОН
-Исполнитель: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${ctx.patient.fullName} /`;
+Исполнитель: _________________ / ${ctx.doctor.fullName} /          Пациент: _________________ / ${patientName} /`;
 }
 
 export function generateInformedConsentTemplate(
@@ -241,24 +251,30 @@ ${itemsRows}
 
 export function generateTaxCertificateTemplate(ctx: DocumentLegalContext): string {
 	const year = ctx.taxYear || new Date().getFullYear();
-	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ
+	const refund13Kopecks = Math.round(ctx.totalAmountKopecks * 0.13);
+
+	return `СПРАВКА ОБ ОПЛАТЕ МЕДИЦИНСКИХ УСЛУГ ДЛЯ НАЛОГОВЫХ ОРГАНОВ РФ (ФОРМА ПО КНД 1151156)
 Номер справки: ${ctx.documentNumber}
 Отчётный налоговый период: ${year} год
+Штрихкод формы: 1151156 | В соответствии с Приказом ФНС России от 08.11.2023 № ЕА-7-11/824@
 
 1. Сведения о медицинской организации:
 Наименование: ${ctx.clinic.name} | ИНН: ${ctx.clinic.inn} | ОГРН: ${ctx.clinic.ogrn}
 Лицензия на медицинскую деятельность: ${ctx.clinic.license}
-Адрес местонахождения: ${ctx.clinic.address}
+Адрес местонахождения: ${ctx.clinic.address} · Телефон: ${ctx.clinic.phone}
 
 2. Сведения о налогоплательщике и пациенте:
-Пациент: ${ctx.patient.fullName}, дата рождения: ${ctx.patient.birthDate}
-Документ, удостоверяющий личность: ${ctx.patient.passport}
-${ctx.patient.inn ? `ИНН налогоплательщика: ${ctx.patient.inn}` : "ИНН налогоплательщика: не указан (для физлиц не обязателен)"}
+Пациент: ${ctx.patient.fullName || "________________________________________________"}, дата рождения: ${ctx.patient.birthDate || "«___» _________ _____ г."}
+Документ, удостоверяющий личность: ${ctx.patient.passport || "серия ____ № ______ выдан ________________________________"}
+${ctx.patient.inn ? `ИНН налогоплательщика: ${ctx.patient.inn}` : "ИНН налогоплательщика: не указан (для физических лиц не обязателен)"}
 
-3. Сведения об оплате стоматологических услуг:
+3. Сведения об оплате стоматологических услуг за ${year} год:
 Код услуги 1 (обычное лечение): ${formatKopecksToRubles(ctx.totalAmountKopecks)}
 Код услуги 2 (дорогостоящее лечение): 0 ₽
 ИТОГО подтверждённая сумма расходов: ${formatKopecksToRubles(ctx.totalAmountKopecks)}
+Расчетная сумма социального налогового вычета (13% НДФЛ к возврату): ${formatKopecksToRubles(refund13Kopecks)}
+
+[QR-код верификации ФНС: https://lkfl2.nalog.ru/lkfl/deduction/verify?knd=1151156&year=${year}&inn=${ctx.clinic.inn}&sum=${(ctx.totalAmountKopecks / 100).toFixed(2)}]
 
 Справка выдана для предоставления в налоговые органы РФ с целью получения социального налогового вычета.
 Уполномоченное лицо клиники: _________________ / Главный врач / М.П.

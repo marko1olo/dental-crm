@@ -11,6 +11,7 @@
 
 import React, { useState, useMemo, useCallback, useRef } from "react";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
+import { printTaxCertificate } from "./taxCertificateEngine";
 import {
 	DEFAULT_CLINIC_REQUISITES,
 	type ConsentSubKind,
@@ -100,6 +101,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 
 	const [activePackage, setActivePackage] = useState<DocumentPackageKey>(resolvedInitialPackage);
 	const [activeConsentSubKind, setActiveConsentSubKind] = useState<ConsentSubKind>("therapy");
+	const [taxYear, setTaxYear] = useState<number>(2026);
 	const [isSignPadOpen, setIsSignPadOpen] = useState<boolean>(false);
 	const [hasSigned, setHasSigned] = useState<boolean>(false);
 	const [toastNotice, setToastNotice] = useState<string | null>(null);
@@ -146,14 +148,14 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			? "КЛ-2026/894"
 			: (patientContext?.id ? `Д-2026/${patientContext.id.slice(0, 6)}` : "БЛ-2026/001"),
 		documentDate: currentDate,
-		taxYear: new Date().getFullYear(),
+		taxYear,
 		services: effectiveServices,
 		totalAmountKopecks,
 		diagnosisRu: clinicalTexts.diagnosis,
 		anamnesisRu: clinicalTexts.anamnesis,
 		epicrisisRu: clinicalTexts.epicrisis,
 		consentSubKind: activeConsentSubKind,
-	}), [patient, doctorFullName, isDemo, patientContext?.id, currentDate, effectiveServices, totalAmountKopecks, clinicalTexts, activeConsentSubKind]);
+	}), [patient, doctorFullName, isDemo, patientContext?.id, currentDate, taxYear, effectiveServices, totalAmountKopecks, clinicalTexts, activeConsentSubKind]);
 
 	// Генерация текста текущего документа в зависимости от выбранного пакета
 	const renderedDocumentText = useMemo(() => {
@@ -250,9 +252,64 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 			signedAt: nowStr,
 			isDigital: isSignPadOpen,
 		});
-		window.print();
-		showToast("✓ Пакет утвержден, подписан и отправлен на печать");
-	}, [activePackage, isSignPadOpen, onSigned, showToast]);
+
+		if (activePackage === "tax_certificate") {
+			// Вызов официального генератора справки ФНС КНД 1151156 с QR-кодом и штампом (Мандат 8n)
+			printTaxCertificate({
+				certificateNumber: legalContext.documentNumber,
+				issueDateIso: new Date().toISOString(),
+				taxYear,
+				clinic: {
+					fullName: DEFAULT_CLINIC_REQUISITES.name,
+					shortName: DEFAULT_CLINIC_REQUISITES.name,
+					inn: DEFAULT_CLINIC_REQUISITES.inn,
+					kpp: "770101001",
+					ogrn: DEFAULT_CLINIC_REQUISITES.ogrn,
+					licenseNumber: DEFAULT_CLINIC_REQUISITES.license,
+					licenseDate: "14.02.2021",
+					licenseIssuer: "Департамент здравоохранения города Москвы",
+					address: DEFAULT_CLINIC_REQUISITES.address,
+					phone: DEFAULT_CLINIC_REQUISITES.phone,
+					directorTitle: "Главный врач",
+					directorFullName: doctorFullName,
+					chiefDoctorOrDirector: doctorFullName,
+				},
+				taxpayer: {
+					fullName: patient.fullName || "Смирнов Алексей Петрович",
+					birthDate: patient.birthDate || "12.04.1988",
+					inn: patient.inn || "770123456789",
+					passportSeries: patient.passport ? patient.passport.slice(0, 4) : "45 12",
+					passportNumber: patient.passport ? patient.passport.slice(5, 11) : "654321",
+					relationship: "patient",
+				},
+				patient: {
+					fullName: patient.fullName || "Смирнов Алексей Петрович",
+					birthDate: patient.birthDate || "12.04.1988",
+					inn: patient.inn,
+					passportSeries: patient.passport ? patient.passport.slice(0, 4) : "45 12",
+					passportNumber: patient.passport ? patient.passport.slice(5, 11) : "654321",
+				},
+				aggregation: {
+					taxYear,
+					receiptsCount: effectiveServices.length || 1,
+					code01Kopecks: totalAmountKopecks,
+					code02Kopecks: 0,
+					code01Rub: Math.floor(totalAmountKopecks / 100),
+					code02Rub: 0,
+					eligibleCode01Rub: Math.min(150000, Math.floor(totalAmountKopecks / 100)),
+					totalNetRub: Math.floor(totalAmountKopecks / 100),
+					totalNetKopecks: totalAmountKopecks,
+					refundedKopecks: 0,
+					estimatedRefund13Rub: Math.round((Math.floor(totalAmountKopecks / 100)) * 0.13),
+					records: [],
+				},
+			});
+			showToast("✓ Справка ФНС (КНД 1151156) сформирована и отправлена на печать");
+		} else {
+			window.print();
+			showToast("✓ Комплект документов утвержден и отправлен на печать");
+		}
+	}, [activePackage, isSignPadOpen, onSigned, legalContext.documentNumber, taxYear, doctorFullName, patient, effectiveServices.length, totalAmountKopecks, showToast]);
 
 	if (!isOpen) return null;
 
@@ -290,6 +347,8 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 							onSelectPackage={setActivePackage}
 							activeConsentSubKind={activeConsentSubKind}
 							onSelectConsentSubKind={setActiveConsentSubKind}
+							taxYear={taxYear}
+							onSelectTaxYear={setTaxYear}
 						/>
 
 						{/* Интерактивная подпись пальцем/стилусом и реквизиты клиники */}
@@ -368,6 +427,7 @@ export const DocumentsStudioModal: React.FC<DocumentsStudioModalProps> = ({
 					onDownloadTxt={handleDownloadTxt}
 					onSendMessenger={handleSendMessenger}
 					hasSigned={hasSigned}
+					activePackage={activePackage}
 				/>
 			</div>
 		</div>

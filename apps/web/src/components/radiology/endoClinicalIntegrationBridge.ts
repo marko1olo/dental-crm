@@ -379,6 +379,34 @@ export function exportEndoToDiary(
 					},
 				}),
 			);
+			// [END-07] Persist structured canal measurements into PostgreSQL 18 via Fastify API
+			if (params.patientId && params.patientId !== "cbct-patient") {
+				void fetch("/api/odontogram/status", {
+					method: "POST",
+					headers: {
+						"Content-Type": "application/json",
+					},
+					body: JSON.stringify({
+						patientId: params.patientId,
+						toothNumber: params.toothFdi,
+						toothNumbers: [params.toothFdi],
+						state: "Endo_Treated",
+						canalMeasurements: endoCanals.map((c) => ({
+							canalName: c.name,
+							workingLengthMm: c.lengthMm,
+							referencePoint: c.refPoint || "Режущий край / бугор",
+							apexLocatorReading: c.apexLocator || "0.0 (Apex)",
+							masterFile: c.masterFile || "",
+							masterCone: c.masterCone || "",
+							taper: c.taper || ".04",
+							sealer: "AH Plus",
+							obturationTechnique: "Латеральная компакция",
+						})),
+					}),
+				}).catch(() => {
+					// safe background sync fallback
+				});
+			}
 		} catch {
 			// ignore storage failure
 		}

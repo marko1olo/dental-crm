@@ -973,9 +973,10 @@
 - **Суть бага:** В модалке отсутствовал пресет для 2-го визита периодонтита (AH Plus + гуттаперча), что заставляло врача вручную перенастраивать каналы.
 - **Статус исправления:** [ИСПРАВЛЕНО] В канонический справочник `endodonticsCatalogData.ts` и в тулбар `EndodonticStudioModal.tsx` добавлен пресет `periodontitis_permanent_ahplus` («Периодонтит (AH Plus)»). В 1 клик выставляется постоянная обтурация гуттаперчей с AH Plus, ирригация NaOCl 3% + EDTA 17% с УЗ-активацией и генерируется дневник постоянной обтурации периодонтита (K04.5) без ложного диагноза пульпита. Подтверждено тестом `endodonticsSSOTSuite.test.tsx`.
 
-### [END-07] [SEV-2] Утечка 3D КЛКТ замеров каналов в LocalStorage
-- **Файл:** [`apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L369`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L369)
-- **Суть бага:** Замеры кривизны и длин каналов из томографа сохраняются в `window.localStorage` браузера вместо базы данных. При смене ПК или очистке кэша данные полностью исчезают.
+### [END-07] [SEV-2] [ИСПРАВЛЕНО] Утечка 3D КЛКТ замеров каналов в LocalStorage
+- **Файл:** [`apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L415`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L415)
+- **Суть бага:** Замеры кривизны и длин каналов из томографа ранее сохранялись только в `window.localStorage` браузера вместо базы данных. При смене ПК или очистке кэша данные полностью исчезали.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `endoClinicalIntegrationBridge.ts` интегрирована отправка структурированных параметров каналов `{ canalName, workingLengthMm, referencePoint, apexLocatorReading, masterFile, masterCone, taper, sealer, obturationTechnique }` через Fastify API `POST /api/odontogram/status`, что гарантирует персистенцию в PostgreSQL 18 в колонку `canal_measurements jsonb`. `localStorage` сохранен в качестве ультрабыстрого локального офлайн-кэша.
 
 
 ## 20. 📸 КЛИНИЧЕСКИЙ ФОТОПРОТОКОЛ, DSD (DIGITAL SMILE DESIGN) И МЕДИА-АРХИВ
