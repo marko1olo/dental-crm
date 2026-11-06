@@ -61,9 +61,6 @@ export const DirectPediatricLauncher: React.FC = () => {
 		<PediatricStudioModal
 			isOpen={isOpen}
 			onClose={handleClose}
-			patientName="Артём Смирнов"
-			patientAgeYears={6}
-			patientWeightKg={20}
 			initialToothNumber={54}
 			doctorName="Д-р Смирнова Е.В."
 			clinicName="Клиника DENTE"

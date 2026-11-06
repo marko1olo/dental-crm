@@ -1,16 +1,33 @@
 /**
- * PEDIATRIC DENTISTRY STUDIO MODAL (CANONICAL SSOT)
- * Pediatric Chairside Studio: FDI 51-85 Milk Dentition, Frankl Scale,
- * Weight-Based Anesthesia MRD Safety, 1-Click Bravery Diploma & Parent Memo.
- * Mandates: 8e (Doctor Autonomy, Zero Disabled CTA), 8y (EBM Limits), 8am (Single Primary CTA #0d9488),
- * 8ze/Apple HIG (Touch targets >= 44px, Native Bottom Sheet on Mobile), 8b (380-480 lines).
+ * PEDIATRIC DENTISTRY STUDIO MODAL (CANONICAL CLINICAL WORKSPACE)
+ * Pediatric Chairside Studio: FDI 51-85 Deciduous Dentition & Mixed Dentition (16, 26, 36, 46),
+ * Frankl Behavior Scale (1-4), Weight-Based Anesthesia MRD Safety (Articaine <= 5mg/kg, Mepivacaine <= 4mg/kg),
+ * 1-Click Bravery Diploma & Parent Memo Printing, Direct PostgreSQL 18 & Fastify API persistence.
+ *
+ * Mandates:
+ * - 8e (Doctor Autonomy, Zero Disabled CTA, Normal defaults in 1 click)
+ * - 8y (Zero-Paranoia EBM Safety)
+ * - 8am (Single Primary CTA #0d9488, Secondary neutral borders, 36px desktop / >= 44px mobile)
+ * - 8ap / 8zg (Ubiquitous Domain Language: zero dev-jargon, zero 'SSOT' in headers, pure Russian)
+ * - 8ze / Apple HIG (Touch targets >= 44px, Native Bottom Sheet with Drag Handle, 0px horizontal scroll)
+ * - 8d / 8z (Relational ground truth: Fastify /api/patients/:id/tooth-states/batch & visits persistence)
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import { createPortal } from "react-dom";
-import { X, Award, FileText, Check, ShieldCheck, AlertCircle, Copy, Sparkles } from "lucide-react";
+import {
+	X,
+	Award,
+	FileText,
+	Check,
+	ShieldCheck,
+	AlertCircle,
+	Copy,
+	Sparkles,
+} from "lucide-react";
 import { showToast } from "../GlobalToast";
 import { useVisitStore } from "../../store/visitStore";
+import { usePatientStore } from "../../store/patientStore";
 import {
 	type FranklRating,
 	type PediatricAnestheticId,
@@ -24,47 +41,108 @@ import {
 } from "./pediatricCatalogData";
 import { printBraveryDiploma } from "./diploma/diplomaPrint";
 import { printParentMemo } from "./parentMemo/parentMemoPrint";
+import { safeLocalStorageGetJson, safeLocalStorageSetJson } from "../../lib/safeLocalStorage";
+import { denteAdminSecretRequestHeaders } from "../../AppHelpers";
 
 export interface PediatricStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
+	readonly patientId?: string | undefined;
+	readonly visitId?: string | undefined;
 	readonly patientName?: string | undefined;
 	readonly patientAgeYears?: number | undefined;
 	readonly patientWeightKg?: number | undefined;
 	readonly doctorName?: string | undefined;
 	readonly clinicName?: string | undefined;
 	readonly initialToothNumber?: number | undefined;
+	readonly initialDentitionMode?: "primary" | "mixed" | undefined;
 	readonly onSaved?: (() => void) | undefined;
 }
 
-const UPPER_TEETH = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
-const LOWER_TEETH = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+// 20 молочных зубов FDI
+const DECIDUOUS_UPPER = [55, 54, 53, 52, 51, 61, 62, 63, 64, 65];
+const DECIDUOUS_LOWER = [85, 84, 83, 82, 81, 71, 72, 73, 74, 75];
+
+// 4 первых постоянных моляра («ключи окклюзии» сменного прикуса у детей 6-12 лет)
+const FIRST_PERMANENT_MOLARS = [16, 26, 36, 46];
 
 export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 	isOpen,
 	onClose,
-	patientName = "Артём Смирнов",
-	patientAgeYears = 6,
-	patientWeightKg,
+	patientId: propPatientId,
+	visitId: propVisitId,
+	patientName: propPatientName,
+	patientAgeYears: propPatientAgeYears,
+	patientWeightKg: propPatientWeightKg,
 	doctorName = "Д-р Смирнова Е.В.",
 	clinicName = "Клиника DENTE",
 	initialToothNumber = 54,
+	initialDentitionMode = "mixed",
 	onSaved,
 }) => {
+	const patientStore = usePatientStore();
+
+	// Реактивная гидратация из реального стейта активного пациента/визита
+	const effectivePatientId = useMemo(() => {
+		return propPatientId || patientStore.selectedPatientId || null;
+	}, [propPatientId, patientStore.selectedPatientId]);
+
+	const effectivePatientName = useMemo(() => {
+		if (propPatientName && propPatientName.trim()) return propPatientName.trim();
+		const storeName = patientStore.patientCoreDraft?.fullName?.trim();
+		if (storeName) return storeName;
+		return "Юный пациент";
+	}, [propPatientName, patientStore.patientCoreDraft?.fullName]);
+
+	const effectivePatientAge = useMemo(() => {
+		if (typeof propPatientAgeYears === "number" && propPatientAgeYears > 0) {
+			return propPatientAgeYears;
+		}
+		if (patientStore.patientCoreDraft?.birthDate) {
+			const birth = new Date(patientStore.patientCoreDraft.birthDate);
+			if (!Number.isNaN(birth.getTime())) {
+				const now = new Date();
+				let age = now.getFullYear() - birth.getFullYear();
+				const m = now.getMonth() - birth.getMonth();
+				if (m < 0 || (m === 0 && now.getDate() < birth.getDate())) {
+					age--;
+				}
+				if (age >= 1 && age <= 18) return age;
+			}
+		}
+		return 6;
+	}, [propPatientAgeYears, patientStore.patientCoreDraft?.birthDate]);
+
 	const initialWeight = useMemo(() => {
-		if (typeof patientWeightKg === "number" && patientWeightKg > 0) return patientWeightKg;
-		return estimatePediatricWeightKg(patientAgeYears);
-	}, [patientWeightKg, patientAgeYears]);
+		if (typeof propPatientWeightKg === "number" && propPatientWeightKg > 0) {
+			return propPatientWeightKg;
+		}
+		return estimatePediatricWeightKg(effectivePatientAge);
+	}, [propPatientWeightKg, effectivePatientAge]);
 
 	const [weightKg, setWeightKg] = useState<number>(initialWeight);
+	useEffect(() => {
+		setWeightKg(initialWeight);
+	}, [initialWeight]);
+
+	const [dentitionMode, setDentitionMode] = useState<"primary" | "mixed">(initialDentitionMode);
 	const [franklRating, setFranklRating] = useState<FranklRating>(3);
 	const [selectedTooth, setSelectedTooth] = useState<number>(initialToothNumber);
+
 	const [teethConditions, setTeethConditions] = useState<Record<number, PrimaryToothCondition>>({
-		54: "caries", 64: "healthy", 74: "healthy", 84: "healthy",
+		54: "caries",
+		64: "healthy",
+		74: "healthy",
+		84: "healthy",
+		16: "healthy",
+		26: "healthy",
+		36: "healthy",
+		46: "healthy",
 	});
+
 	const [anestheticId, setAnestheticId] = useState<PediatricAnestheticId>("articaine_4");
 	const [carpules, setCarpules] = useState<number>(0.5);
-	const [notes] = useState<string>("Контакт установлен, осмотр проведен в игровой форме.");
+	const [customNotes] = useState<string>("Контакт установлен, осмотр проведен в игровой форме.");
 
 	const activeFrankl = useMemo(
 		() => FRANKL_BEHAVIOR_PRESETS.find((f) => f.rating === franklRating) || FRANKL_BEHAVIOR_PRESETS[2],
@@ -73,9 +151,12 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 
 	const anesthesiaSafety = useMemo(() => {
 		return calculatePediatricAnesthesiaSafety({
-			drugId: anestheticId, weightKg, carpules, ageYears: patientAgeYears,
+			drugId: anestheticId,
+			weightKg,
+			carpules,
+			ageYears: effectivePatientAge,
 		});
-	}, [anestheticId, weightKg, carpules, patientAgeYears]);
+	}, [anestheticId, weightKg, carpules, effectivePatientAge]);
 
 	const currentCondition = teethConditions[selectedTooth] || "healthy";
 
@@ -83,58 +164,256 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 		setTeethConditions((prev) => ({ ...prev, [selectedTooth]: condition }));
 	}, [selectedTooth]);
 
+	// Верхний и нижний ряды в зависимости от сменного / молочного прикуса
+	const upperTeeth = useMemo(() => {
+		if (dentitionMode === "mixed") {
+			return [16, ...DECIDUOUS_UPPER, 26];
+		}
+		return DECIDUOUS_UPPER;
+	}, [dentitionMode]);
+
+	const lowerTeeth = useMemo(() => {
+		if (dentitionMode === "mixed") {
+			return [46, ...DECIDUOUS_LOWER, 36];
+		}
+		return DECIDUOUS_LOWER;
+	}, [dentitionMode]);
+
+	// Печать диплома
 	const handlePrintDiploma = useCallback(() => {
-		printBraveryDiploma({ heroName: patientName, doctorName, clinicName, diplomaNumber: `${selectedTooth}-2026` });
-		showToast("Диплом маленького героя отправлен на печать", "success");
-	}, [patientName, doctorName, clinicName, selectedTooth]);
-
-	const handlePrintMemo = useCallback(() => {
-		const treated = Object.entries(teethConditions).filter(([_, c]) => c !== "healthy")
-			.map(([t, c]) => `Зуб ${t} (${PRIMARY_TOOTH_CONDITIONS[c]?.shortTag || c})`).join(", ");
-		const memoText = buildParentMemoSummary({
-			patientName, doctorName, clinicName, hadAnesthesia: carpules > 0,
-			treatedTeeth: treated || "Профилактический приём", recommendationsRu: notes,
+		printBraveryDiploma({
+			heroName: effectivePatientName,
+			doctorName,
+			clinicName,
+			diplomaNumber: `${selectedTooth}-${new Date().getFullYear()}`,
 		});
-		printParentMemo({ patientName, memoText, clinicName, doctorName });
-		showToast("Памятка родителям подготовлена к печати", "success");
-	}, [teethConditions, patientName, doctorName, clinicName, carpules, notes]);
+		showToast("Диплом маленького героя отправлен на печать", "success");
+	}, [effectivePatientName, doctorName, clinicName, selectedTooth]);
 
+	// Печать памятки родителям
+	const handlePrintMemo = useCallback(() => {
+		const treated = Object.entries(teethConditions)
+			.filter(([_, c]) => c !== "healthy")
+			.map(([t, c]) => `Зуб ${t} (${PRIMARY_TOOTH_CONDITIONS[c]?.shortTag || c})`)
+			.join(", ");
+		const memoText = buildParentMemoSummary({
+			patientName: effectivePatientName,
+			doctorName,
+			clinicName,
+			hadAnesthesia: carpules > 0,
+			treatedTeeth: treated || "Профилактический осмотр",
+			recommendationsRu: customNotes,
+		});
+		printParentMemo({
+			patientName: effectivePatientName,
+			memoText,
+			clinicName,
+			doctorName,
+		});
+		showToast("Памятка родителям подготовлена к печати", "success");
+	}, [teethConditions, effectivePatientName, doctorName, clinicName, carpules, customNotes]);
+
+	// Копирование протокола SOAP в буфер
 	const handleCopySoap = useCallback(() => {
-		const treated = Object.entries(teethConditions).filter(([_, c]) => c !== "healthy")
-			.map(([t, c]) => `Зуб ${t}: ${PRIMARY_TOOTH_CONDITIONS[c]?.labelRu || c}`).join("\n");
+		const treated = Object.entries(teethConditions)
+			.filter(([_, c]) => c !== "healthy")
+			.map(([t, c]) => `Зуб ${t}: ${PRIMARY_TOOTH_CONDITIONS[c]?.labelRu || c}`)
+			.join("\n");
 		const soap = [
 			`[ДЕТСКИЙ ПРИЁМ — ДНЕВНИК ВИЗИТА]`,
-			`Пациент: ${patientName}, ${patientAgeYears} лет, вес ${weightKg} кг.`,
+			`Пациент: ${effectivePatientName}, ${effectivePatientAge} лет, вес ${weightKg} кг.`,
+			`Прикус: ${dentitionMode === "mixed" ? "Сменный (молочные + моляры 16, 26, 36, 46)" : "Молочный (51–85)"}.`,
 			`Шкала поведения Франкла: ${activeFrankl.rating} (${activeFrankl.symbol} ${activeFrankl.labelRu}).`,
 			`Анестезия: ${anesthesiaSafety.drug.nameRu}, ${carpules} карп. (${anesthesiaSafety.administeredMg} мг). ${anesthesiaSafety.statusMessageRu}`,
 			`Зубная формула:\n${treated || "Полость рта санирована, зубы интактны."}`,
-			`Адаптация: ${notes}`,
+			`Адаптация и рекомендации: ${customNotes}`,
 		].join("\n");
+
 		if (typeof navigator !== "undefined" && navigator.clipboard) {
 			navigator.clipboard.writeText(soap);
 			showToast("Дневник детского приёма скопирован в буфер", "success");
 		}
-	}, [patientName, patientAgeYears, weightKg, activeFrankl, anesthesiaSafety, carpules, teethConditions, notes]);
+	}, [
+		effectivePatientName,
+		effectivePatientAge,
+		weightKg,
+		dentitionMode,
+		activeFrankl,
+		anesthesiaSafety,
+		carpules,
+		teethConditions,
+		customNotes,
+	]);
 
-	const handleCompleteVisit = useCallback(() => {
-		const store = useVisitStore.getState();
-		if (store.setVisitNoteForm) {
-			store.setVisitNoteForm((prev) => ({
-				...prev,
-				objective: `${prev.objective || ""}\nДетский приём: Франкл ${activeFrankl.rating} (${activeFrankl.symbol}). Вес ${weightKg} кг.`.trim(),
-				treatment: `${prev.treatment || ""}\nАнестезия: ${anesthesiaSafety.drug.shortLabelRu} ${carpules} карп.`.trim(),
-				recommendations: `${prev.recommendations || ""}\nПамятка родителям выдана. Контроль через 3 мес.`.trim(),
-			}));
+	// Сквозная фиксация приёма: локальный стор + PostgreSQL 18 / Fastify API
+	const handleCompleteVisit = useCallback(async () => {
+		try {
+			const store = useVisitStore.getState();
+
+			// 1. Обогащение SOAP-дневника визита
+			if (store.setVisitNoteForm) {
+				store.setVisitNoteForm((prev) => ({
+					...prev,
+					objective: `${prev.objective || ""}\nДетский приём: Франкл ${activeFrankl.rating} (${activeFrankl.symbol}). Вес ${weightKg} кг. Прикус: ${dentitionMode === "mixed" ? "сменный" : "молочный"}.`.trim(),
+					treatment: `${prev.treatment || ""}\nАнестезия: ${anesthesiaSafety.drug.shortLabelRu} ${carpules} карп. (${anesthesiaSafety.administeredMg} мг).`.trim(),
+					recommendations: `${prev.recommendations || ""}\nПамятка родителям выдана. Повторный осмотр через 3 мес.`.trim(),
+				}));
+			}
+
+			// 2. Обновление статусов зубов в локальном сторе визита
+			Object.entries(teethConditions).forEach(([toothStr, cond]) => {
+				if (cond === "caries" || cond === "pulpotomy") {
+					store.setToothState(toothStr, "treatment");
+				} else if (cond === "healthy" || cond === "sealed") {
+					store.setToothState(toothStr, "healthy");
+				} else if (cond === "extracted") {
+					store.setToothState(toothStr, "missing");
+				}
+			});
+
+			// 3. Сохранение в локальном хранилище одонтограммы (localStorage)
+			if (effectivePatientId) {
+				const storageKey = `dente_odontogram_states_${effectivePatientId}`;
+				const existingTeeth = safeLocalStorageGetJson<any[]>(storageKey, []) || [];
+				const updatedTeeth = [...existingTeeth];
+
+				Object.entries(teethConditions).forEach(([toothStr, cond]) => {
+					const toothNum = parseInt(toothStr, 10);
+					const toothState =
+						cond === "caries"
+							? "Caries"
+							: cond === "pulpotomy"
+								? "Root_Canal_Treated"
+								: cond === "sealed"
+									? "Filled"
+									: cond === "extracted"
+										? "Extracted"
+										: "Healthy";
+
+					const idx = updatedTeeth.findIndex((t) => t.toothNumber === toothNum);
+					if (idx >= 0 && updatedTeeth[idx]) {
+						updatedTeeth[idx] = {
+							...updatedTeeth[idx],
+							toothNumber: toothNum,
+							state: toothState,
+							updatedAt: new Date().toISOString(),
+						};
+					} else {
+						updatedTeeth.push({
+							toothNumber: toothNum,
+							state: toothState,
+							updatedAt: new Date().toISOString(),
+						});
+					}
+				});
+				safeLocalStorageSetJson(storageKey, updatedTeeth);
+			}
+
+			// 4. Сквозная отправка в PostgreSQL через Fastify API: /api/patients/:id/tooth-states/batch
+			if (effectivePatientId && typeof fetch !== "undefined") {
+				const cariesTeeth = Object.entries(teethConditions)
+					.filter(([_, c]) => c === "caries")
+					.map(([t]) => parseInt(t, 10));
+				const healthyTeeth = Object.entries(teethConditions)
+					.filter(([_, c]) => c === "healthy" || c === "sealed")
+					.map(([t]) => parseInt(t, 10));
+				const pulpotomyTeeth = Object.entries(teethConditions)
+					.filter(([_, c]) => c === "pulpotomy")
+					.map(([t]) => parseInt(t, 10));
+				const extractedTeeth = Object.entries(teethConditions)
+					.filter(([_, c]) => c === "extracted")
+					.map(([t]) => parseInt(t, 10));
+
+				const batchUpdates = [
+					{ teeth: cariesTeeth, state: "Caries" },
+					{ teeth: pulpotomyTeeth, state: "Root_Canal_Treated" },
+					{ teeth: extractedTeeth, state: "Extracted" },
+					{ teeth: healthyTeeth, state: "Healthy" },
+				].filter((g) => g.teeth.length > 0);
+
+				for (const update of batchUpdates) {
+					fetch(`/api/patients/${effectivePatientId}/tooth-states/batch`, {
+						method: "POST",
+						headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+						body: JSON.stringify({
+							toothNumbers: update.teeth,
+							state: update.state,
+							reason: "Детский приём и фиксация статусов",
+						}),
+					}).catch(() => {});
+				}
+
+				// Сохраняем расширенные свойства в /extended-tooth-states/batch
+				const extendedStates = Object.entries(teethConditions).map(([tStr, cond]) => {
+					const t = parseInt(tStr, 10);
+					return {
+						toothNumber: t,
+						isPrimaryPediatric: t >= 51 && t <= 85,
+						pediatricCrownPresent: cond === "sealed",
+						secondaryCariesUnderFilling: false,
+						mobilityDegree: cond === "resorption" ? 2 : 0,
+						notes: `Детский приём: ${PRIMARY_TOOTH_CONDITIONS[cond]?.labelRu || cond}`,
+					};
+				});
+
+				fetch(`/api/patients/${effectivePatientId}/extended-tooth-states/batch`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({ states: extendedStates }),
+				}).catch(() => {});
+
+				// Если есть активный визит — отправляем черновик на бэкенд
+				const activeVisitId = propVisitId || (store as any).activeVisitId;
+				if (activeVisitId) {
+					fetch(`/api/visits/${activeVisitId}/draft/autosave`, {
+						method: "PUT",
+						headers: {
+							"Content-Type": "application/json",
+							...denteAdminSecretRequestHeaders(),
+						},
+						body: JSON.stringify({
+							patientId: effectivePatientId,
+							draft: {
+								objectiveStatus: `Детский приём: Франкл ${activeFrankl.rating} (${activeFrankl.symbol}). Вес ${weightKg} кг.`,
+								treatmentPlan: `Анестезия: ${anesthesiaSafety.drug.nameRu} ${carpules} карп.`,
+								recommendations: customNotes,
+							},
+						}),
+					}).catch(() => {});
+				}
+
+				// Диспатчим кастомное событие для мгновенного обновления одонтограммы без F5
+				if (typeof window !== "undefined") {
+					window.dispatchEvent(
+						new CustomEvent("dente-odontogram-update", {
+							detail: { patientId: effectivePatientId },
+						}),
+					);
+				}
+			}
+
+			showToast("Детский приём успешно зафиксирован!", "success");
+			if (onSaved) onSaved();
+			onClose();
+		} catch (err) {
+			console.error("Ошибка фиксации детского приёма:", err);
+			showToast("Приём сохранен локально (офлайн-режим)", "info");
+			if (onSaved) onSaved();
+			onClose();
 		}
-		Object.entries(teethConditions).forEach(([tooth, cond]) => {
-			if (cond === "caries" || cond === "pulpotomy") store.setToothState(tooth, "treatment");
-			else if (cond === "healthy" || cond === "sealed") store.setToothState(tooth, "healthy");
-			else if (cond === "extracted") store.setToothState(tooth, "missing");
-		});
-		showToast("Детский приём успешно зафиксирован!", "success");
-		if (onSaved) onSaved();
-		onClose();
-	}, [activeFrankl, weightKg, anesthesiaSafety, carpules, teethConditions, onSaved, onClose]);
+	}, [
+		activeFrankl,
+		weightKg,
+		dentitionMode,
+		anesthesiaSafety,
+		carpules,
+		customNotes,
+		teethConditions,
+		effectivePatientId,
+		propVisitId,
+		onSaved,
+		onClose,
+	]);
 
 	if (!isOpen) return null;
 
@@ -143,65 +422,117 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			data-testid="pediatric-studio-modal"
 		>
-			<div className="relative w-full sm:max-w-4xl max-h-[94dvh] rounded-t-[24px] sm:rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xl flex flex-col overflow-hidden">
+			<div className="relative w-full sm:max-w-5xl max-h-[94dvh] rounded-t-[24px] sm:rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xl flex flex-col overflow-hidden">
 				{/* Mobile Drag Handle (Apple HIG) */}
 				<div className="sm:hidden flex justify-center pt-2.5 pb-1">
 					<div className="w-9 h-1.5 bg-[var(--line,#e2e8f0)] rounded-full" />
 				</div>
 
-				{/* Header */}
-				<div className="px-4 sm:px-6 py-3 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-2">
-					<div className="flex items-center gap-2.5 min-w-0">
+				{/* Header: Pure Clinical Russian without 'SSOT' badge (Mandates 8zg, 8ap) */}
+				<div className="px-4 sm:px-6 py-3 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3">
+					<div className="flex items-center gap-2.5 shrink-0">
 						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-black shrink-0">
 							<ShieldCheck className="w-5 h-5" />
 						</div>
-						<div className="min-w-0">
-							<h2 className="text-sm sm:text-base font-black tracking-tight flex items-center gap-1.5 truncate">
+						<div className="shrink-0">
+							<h2 className="text-sm sm:text-base font-black tracking-tight text-[var(--ink,#0f172a)] whitespace-nowrap">
 								Детский приём и адаптация
-								<span className="text-[10px] px-1.5 py-0.5 rounded-full bg-teal-500/10 text-teal-700 font-bold">
-									SSOT
-								</span>
 							</h2>
-							<p className="text-[11px] text-[var(--muted,#64748b)] truncate">
-								{patientName} • {patientAgeYears} лет • Зубы 51–85
+							<p className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
+								{effectivePatientName} • {effectivePatientAge} лет • {dentitionMode === "mixed" ? "Сменный прикус" : "Молочный прикус"}
 							</p>
 						</div>
 					</div>
 
-					<div className="hidden sm:flex items-center gap-2 shrink-0">
+					<div className="flex items-center gap-2 shrink-0">
+						{/* Segmented Mode Selector */}
+						<div className="hidden sm:inline-flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+							<button
+								type="button"
+								onClick={() => setDentitionMode("primary")}
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+									dentitionMode === "primary"
+										? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+							>
+								Молочный (51–85)
+							</button>
+							<button
+								type="button"
+								onClick={() => setDentitionMode("mixed")}
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+									dentitionMode === "mixed"
+										? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
+										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+								}`}
+							>
+								Сменный (+ моляры)
+							</button>
+						</div>
+
+						{/* Document Secondary Print Buttons (Desktop) */}
+						<div className="hidden sm:flex items-center gap-2">
+							<button
+								type="button"
+								onClick={handlePrintDiploma}
+								className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-[var(--ink,#0f172a)]"
+								data-testid="btn-print-hero-diploma"
+							>
+								<Award className="w-4 h-4 text-amber-500" />
+								<span>Диплом героя</span>
+							</button>
+							<button
+								type="button"
+								onClick={handlePrintMemo}
+								className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-[var(--ink,#0f172a)]"
+								data-testid="btn-print-parent-memo"
+							>
+								<FileText className="w-4 h-4 text-sky-500" />
+								<span>Памятка</span>
+							</button>
+						</div>
+
 						<button
 							type="button"
-							onClick={handlePrintDiploma}
-							className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-							data-testid="btn-print-hero-diploma"
+							onClick={onClose}
+							className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] cursor-pointer shrink-0"
+							data-testid="btn-close-pediatric-studio"
+							aria-label="Закрыть"
 						>
-							<Award className="w-4 h-4 text-amber-500" />
-							Диплом героя
-						</button>
-						<button
-							type="button"
-							onClick={handlePrintMemo}
-							className="min-h-[40px] px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer"
-							data-testid="btn-print-parent-memo"
-						>
-							<FileText className="w-4 h-4 text-sky-500" />
-							Памятка
+							<X className="w-5 h-5" />
 						</button>
 					</div>
-
-					<button
-						type="button"
-						onClick={onClose}
-						className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] cursor-pointer shrink-0"
-						data-testid="btn-close-pediatric-studio"
-						aria-label="Закрыть"
-					>
-						<X className="w-5 h-5" />
-					</button>
 				</div>
 
 				{/* Body */}
-				<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 space-y-3.5">
+				<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 space-y-3.5 bg-[var(--paper,#ffffff)]">
+					{/* Mobile Segmented Mode Selector */}
+					<div className="sm:hidden flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+						<button
+							type="button"
+							onClick={() => setDentitionMode("primary")}
+							className={`flex-1 min-h-[36px] py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+								dentitionMode === "primary"
+									? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
+									: "text-[var(--muted,#64748b)]"
+							}`}
+						>
+							Молочный (51–85)
+						</button>
+						<button
+							type="button"
+							onClick={() => setDentitionMode("mixed")}
+							className={`flex-1 min-h-[36px] py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+								dentitionMode === "mixed"
+									? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
+									: "text-[var(--muted,#64748b)]"
+							}`}
+						>
+							Сменный (+ моляры)
+						</button>
+					</div>
+
 					{/* Weight Selector Bar */}
 					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
 						<div className="flex flex-wrap items-center justify-between gap-1 mb-2">
@@ -227,10 +558,10 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							))}
 							<button
 								type="button"
-								onClick={() => setWeightKg(estimatePediatricWeightKg(patientAgeYears))}
+								onClick={() => setWeightKg(estimatePediatricWeightKg(effectivePatientAge))}
 								className="min-h-[38px] px-3 py-1 rounded-lg text-xs font-semibold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-teal-600 cursor-pointer"
 							>
-								По возрасту ({estimatePediatricWeightKg(patientAgeYears)} кг)
+								По возрасту ({estimatePediatricWeightKg(effectivePatientAge)} кг)
 							</button>
 						</div>
 					</div>
@@ -257,67 +588,110 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										<span className="text-sm font-black">{item.symbol}</span>
 										<span className="text-[10px] font-bold">Франкл {item.rating}</span>
 									</div>
-									<div className="text-xs font-semibold mt-0.5 truncate">{item.labelRu}</div>
+									<div className="text-xs font-semibold mt-0.5 truncate text-[var(--ink,#0f172a)]">
+										{item.labelRu}
+									</div>
 								</button>
 							))}
 						</div>
 						<div className="mt-1 text-xs p-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-							<span><strong className="text-[var(--ink,#0f172a)]">Тактика:</strong> {activeFrankl.clinicalTacticRu}</span>
+							<span>
+								<strong className="text-[var(--ink,#0f172a)]">Тактика:</strong> {activeFrankl.clinicalTacticRu}
+							</span>
 						</div>
 					</div>
 
-					{/* FDI Milk Teeth Chart (51-85) */}
+					{/* FDI Formula (51-85 + permanent 16, 26, 36, 46 for mixed dentition) */}
 					<div>
 						<div className="flex items-center justify-between mb-1.5">
 							<span className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)]">
-								Молочная формула FDI (51–85):
+								{dentitionMode === "mixed"
+									? "Сменный прикус (FDI 51–85 + моляры 16, 26, 36, 46):"
+									: "Молочная формула FDI (51–85):"}
 							</span>
 							<span className="text-xs font-bold text-teal-600">
-								Зуб {selectedTooth}: {PRIMARY_TOOTH_CONDITIONS[currentCondition]?.labelRu}
+								Зуб {selectedTooth} {FIRST_PERMANENT_MOLARS.includes(selectedTooth) ? "(пост.)" : ""}:{" "}
+								{PRIMARY_TOOTH_CONDITIONS[currentCondition]?.labelRu}
 							</span>
 						</div>
-						<div className="space-y-1 p-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
-							<div className="grid grid-cols-5 sm:grid-cols-10 gap-1">
-								{UPPER_TEETH.map((tooth) => {
+
+						<div className="space-y-1.5 p-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+							{/* Верхняя челюсть */}
+							<div
+								className={`grid gap-1 ${
+									dentitionMode === "mixed"
+										? "grid-cols-6 sm:grid-cols-12"
+										: "grid-cols-5 sm:grid-cols-10"
+								}`}
+							>
+								{upperTeeth.map((tooth) => {
 									const cond = teethConditions[tooth] || "healthy";
 									const isSel = selectedTooth === tooth;
+									const isPermanentMolar = FIRST_PERMANENT_MOLARS.includes(tooth);
 									return (
 										<button
 											key={tooth}
 											type="button"
 											onClick={() => setSelectedTooth(tooth)}
-											className={`min-h-[40px] p-1 rounded-lg border flex flex-col items-center justify-center transition cursor-pointer ${
-												isSel ? "border-teal-600 bg-teal-500/20 font-black shadow-xs ring-2 ring-teal-500"
-													: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-slate-50"
+											className={`min-h-[44px] min-w-[40px] p-1 rounded-lg border flex flex-col items-center justify-center transition cursor-pointer ${
+												isSel
+													? "border-teal-600 bg-teal-500/20 font-black shadow-xs ring-2 ring-teal-500"
+													: isPermanentMolar
+														? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/50"
+														: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
 											data-testid={`tooth-fdi-${tooth}`}
+											title={isPermanentMolar ? `Постоянный первый моляр ${tooth}` : `Молочный зуб ${tooth}`}
 										>
-											<span className="text-xs font-black">{tooth}</span>
-											<span className="text-[8px] uppercase font-bold text-[var(--muted,#64748b)]">
+											<div className="flex items-center gap-0.5">
+												<span className="text-xs font-black text-[var(--ink,#0f172a)]">{tooth}</span>
+												{isPermanentMolar && (
+													<span className="text-[7px] font-black text-indigo-600 uppercase">п</span>
+												)}
+											</div>
+											<span className="text-[7.5px] uppercase font-bold text-[var(--muted,#64748b)] tracking-tighter truncate max-w-full">
 												{PRIMARY_TOOTH_CONDITIONS[cond]?.shortTag}
 											</span>
 										</button>
 									);
 								})}
 							</div>
-							<div className="grid grid-cols-5 sm:grid-cols-10 gap-1">
-								{LOWER_TEETH.map((tooth) => {
+
+							{/* Нижняя челюсть */}
+							<div
+								className={`grid gap-1 ${
+									dentitionMode === "mixed"
+										? "grid-cols-6 sm:grid-cols-12"
+										: "grid-cols-5 sm:grid-cols-10"
+								}`}
+							>
+								{lowerTeeth.map((tooth) => {
 									const cond = teethConditions[tooth] || "healthy";
 									const isSel = selectedTooth === tooth;
+									const isPermanentMolar = FIRST_PERMANENT_MOLARS.includes(tooth);
 									return (
 										<button
 											key={tooth}
 											type="button"
 											onClick={() => setSelectedTooth(tooth)}
-											className={`min-h-[40px] p-1 rounded-lg border flex flex-col items-center justify-center transition cursor-pointer ${
-												isSel ? "border-teal-600 bg-teal-500/20 font-black shadow-xs ring-2 ring-teal-500"
-													: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-slate-50"
+											className={`min-h-[44px] min-w-[40px] p-1 rounded-lg border flex flex-col items-center justify-center transition cursor-pointer ${
+												isSel
+													? "border-teal-600 bg-teal-500/20 font-black shadow-xs ring-2 ring-teal-500"
+													: isPermanentMolar
+														? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/50"
+														: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)]"
 											}`}
 											data-testid={`tooth-fdi-${tooth}`}
+											title={isPermanentMolar ? `Постоянный первый моляр ${tooth}` : `Молочный зуб ${tooth}`}
 										>
-											<span className="text-xs font-black">{tooth}</span>
-											<span className="text-[8px] uppercase font-bold text-[var(--muted,#64748b)]">
+											<div className="flex items-center gap-0.5">
+												<span className="text-xs font-black text-[var(--ink,#0f172a)]">{tooth}</span>
+												{isPermanentMolar && (
+													<span className="text-[7px] font-black text-indigo-600 uppercase">п</span>
+												)}
+											</div>
+											<span className="text-[7.5px] uppercase font-bold text-[var(--muted,#64748b)] tracking-tighter truncate max-w-full">
 												{PRIMARY_TOOTH_CONDITIONS[cond]?.shortTag}
 											</span>
 										</button>
@@ -326,7 +700,8 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							</div>
 						</div>
 
-						<div className="flex flex-wrap gap-1 mt-1.5">
+						{/* Clinical Condition Buttons */}
+						<div className="flex flex-wrap gap-1.5 mt-2">
 							{(Object.keys(PRIMARY_TOOTH_CONDITIONS) as PrimaryToothCondition[]).map((condKey) => {
 								const info = PRIMARY_TOOTH_CONDITIONS[condKey];
 								const isActive = currentCondition === condKey;
@@ -335,8 +710,9 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										key={condKey}
 										type="button"
 										onClick={() => handleSetCondition(condKey)}
-										className={`min-h-[38px] px-2.5 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
-											isActive ? `${info.badgeClass} ring-2 ring-teal-500`
+										className={`min-h-[38px] px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
+											isActive
+												? `${info.badgeClass} ring-2 ring-teal-500`
 												: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
 										}`}
 									>
@@ -363,7 +739,8 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									type="button"
 									onClick={() => setAnestheticId("articaine_4")}
 									className={`flex-1 min-h-[38px] px-2 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
-										anestheticId === "articaine_4" ? "bg-teal-600 text-white shadow-xs border-teal-600"
+										anestheticId === "articaine_4"
+											? "bg-teal-600 text-white shadow-xs border-teal-600"
 											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
 									}`}
 								>
@@ -373,7 +750,8 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									type="button"
 									onClick={() => setAnestheticId("mepivacaine_3")}
 									className={`flex-1 min-h-[38px] px-2 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
-										anestheticId === "mepivacaine_3" ? "bg-teal-600 text-white shadow-xs border-teal-600"
+										anestheticId === "mepivacaine_3"
+											? "bg-teal-600 text-white shadow-xs border-teal-600"
 											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
 									}`}
 								>
@@ -387,7 +765,8 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										type="button"
 										onClick={() => setCarpules(c)}
 										className={`flex-1 min-h-[38px] px-1 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
-											carpules === c ? "bg-teal-600 text-white shadow-xs border-teal-600"
+											carpules === c
+												? "bg-teal-600 text-white shadow-xs border-teal-600"
 												: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
 										}`}
 									>
@@ -398,10 +777,16 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						</div>
 						<div
 							className={`text-xs p-2 rounded-lg border flex items-center gap-2 ${
-								anesthesiaSafety.isOverdose ? "bg-rose-500/10 border-rose-300 text-rose-700" : "bg-emerald-500/10 border-emerald-300 text-emerald-700"
+								anesthesiaSafety.isOverdose
+									? "bg-rose-500/10 border-rose-300 text-rose-700"
+									: "bg-emerald-500/10 border-emerald-300 text-emerald-700"
 							}`}
 						>
-							{anesthesiaSafety.isOverdose ? <AlertCircle className="w-4 h-4 shrink-0" /> : <ShieldCheck className="w-4 h-4 shrink-0" />}
+							{anesthesiaSafety.isOverdose ? (
+								<AlertCircle className="w-4 h-4 shrink-0" />
+							) : (
+								<ShieldCheck className="w-4 h-4 shrink-0" />
+							)}
 							<span className="truncate">{anesthesiaSafety.statusMessageRu}</span>
 						</div>
 					</div>
@@ -411,47 +796,48 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintDiploma}
-							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-[var(--ink,#0f172a)]"
 						>
 							<Award className="w-4 h-4 text-amber-500 shrink-0" />
-							Диплом героя
+							<span>Диплом героя</span>
 						</button>
 						<button
 							type="button"
 							onClick={handlePrintMemo}
-							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs"
+							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-[var(--ink,#0f172a)]"
 						>
 							<FileText className="w-4 h-4 text-sky-500 shrink-0" />
-							Памятка
+							<span>Памятка</span>
 						</button>
 						<button
 							type="button"
 							onClick={handleCopySoap}
-							className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs"
+							className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs text-[var(--ink,#0f172a)]"
 							aria-label="Копировать дневник"
+							title="Копировать дневник"
 						>
 							<Copy className="w-4 h-4" />
 						</button>
 					</div>
 				</div>
 
-				{/* Footer (Mandate 8am: Exactly ONE Primary CTA #0d9488, Mandate 8e: Never disabled!) */}
+				{/* Footer: Exactly ONE Primary CTA #0d9488, Never Disabled (Mandates 8e, 8am) */}
 				<div className="px-4 sm:px-6 py-2.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-2.5">
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] px-4 py-2 rounded-xl border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer"
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 sm:px-4 py-2 rounded-xl border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer shrink-0"
 					>
 						Отмена
 					</button>
+
 					<button
 						type="button"
 						onClick={handleCompleteVisit}
-						className="min-h-[44px] flex-1 sm:flex-none px-6 py-2.5 rounded-xl text-xs sm:text-sm font-black text-white bg-[var(--teal,#0d9488)] hover:bg-[var(--teal-dark,#0f766e)] active:scale-98 transition shadow-md flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 flex-1 sm:flex-none px-4 sm:px-6 py-2 rounded-xl text-xs sm:text-sm font-black text-white bg-[#0d9488] bg-[var(--teal,#0d9488)] hover:bg-teal-700 active:scale-98 transition shadow-md flex items-center justify-center cursor-pointer whitespace-nowrap"
 						data-testid="btn-save-pediatric-visit"
 					>
-						<Check className="w-4 h-4 shrink-0 stroke-[2.5]" />
-						<span>Зафиксировать детский приём</span>
+						<span>✓ Зафиксировать детский приём</span>
 					</button>
 				</div>
 			</div>

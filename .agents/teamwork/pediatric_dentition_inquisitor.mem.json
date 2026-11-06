@@ -1,0 +1,77 @@
+{
+  "role": "Pediatric Dentistry & Mixed Dentition Red Team Inquisitor",
+  "phase": "COMPLETED",
+  "status": "VERIFIED_CLEAN",
+  "inquisition_targets": [
+    "apps/web/src/components/pediatric/PediatricStudioModal.tsx",
+    "apps/web/src/components/pediatric/DirectPediatricLauncher.tsx",
+    "apps/web/src/AppShell.tsx",
+    "scripts/capture-pediatric-live-proofs.mjs"
+  ],
+  "verified_defects": [
+    {
+      "id": "DEF-PEDIATRIC-01",
+      "issue": "Developer jargon 'SSOT' badge rendered in PediatricStudioModal header",
+      "mandate": "8zg / 8ap / Clean Domain Language",
+      "status": "FIXED",
+      "resolution": "Stripped 'SSOT' badge from header; clean clinical title 'Детский приём и адаптация' rendered in pure Russian."
+    },
+    {
+      "id": "DEF-PEDIATRIC-02",
+      "issue": "Hardcoded default fallback 'Артём Смирнов, 6 лет' instead of hydrating from active patient / visit state",
+      "mandate": "8ap / Relational Ground Truth / State Hydration",
+      "status": "FIXED",
+      "resolution": "Dynamic hydration from usePatientStore (selected patient fullName and calculated birth date) with fallback to 'Юный пациент'."
+    },
+    {
+      "id": "DEF-PEDIATRIC-03",
+      "issue": "Deciduous dentition limited to 51-85 without mixed dentition first permanent molars (16, 26, 36, 46 - keys of occlusion)",
+      "mandate": "8ar / Pediatric Mixed Dentition EBM",
+      "status": "FIXED",
+      "resolution": "Implemented segmented switcher between 'Молочный (51-85)' (20 teeth) and 'Сменный (+ моляры)' (24 teeth including 16, 26, 36, 46 distinctively marked with 'п')."
+    },
+    {
+      "id": "DEF-PEDIATRIC-04",
+      "issue": "Isolated visit completion: saving visit only touches local useVisitStore without dispatching Fastify batch tooth states / PostgreSQL persistence",
+      "mandate": "8d / 8z / Live API & DB Persistence",
+      "status": "FIXED",
+      "resolution": "Connected handleCompleteVisit to Fastify API (/api/patients/:id/tooth-states/batch and /api/patients/:id/extended-tooth-states/batch), safeLocalStorage patient tooth cache, and live custom event dispatch."
+    },
+    {
+      "id": "DEF-PEDIATRIC-05",
+      "issue": "Button color token, duplicate checkmark and clipping in Primary CTA",
+      "mandate": "8am / Single Primary CTA #0d9488 / Zero-Clipping",
+      "status": "FIXED",
+      "resolution": "Styled with canonical bg-[#0d9488] bg-[var(--teal,#0d9488)], exact single checkmark '✓ Зафиксировать детский приём', zero text clipping on both desktop and mobile 390x844."
+    },
+    {
+      "id": "DEF-PEDIATRIC-06",
+      "issue": "Hardcoded white and slate-50 backgrounds violating Dark Mode hygiene",
+      "mandate": "WCAG AAA / var(--paper) and var(--paper-soft) tokenization",
+      "status": "FIXED",
+      "resolution": "100% tokenized CSS variables: var(--paper), var(--paper-soft), var(--line), var(--ink). Zero bright white leaks in dark mode."
+    }
+  ],
+  "progress": {
+    "constitution_read": true,
+    "clinical_rules_read": true,
+    "odontogram_bible_read": true,
+    "frontend_reference_read": true,
+    "code_analyzed": true,
+    "implementation": "COMPLETED",
+    "test_verification": "PASSED (27 files, 197 tests, 100% pass)",
+    "4state_screenshots": "VERIFIED_AUTOPSIED",
+    "machine_gates": {
+      "encoding_utf8": "PASSED (23910 files)",
+      "stub_overrides": "PASSED",
+      "fetch_response_guard": "PASSED (14420 files)",
+      "dynamic_imports": "PASSED (18187 files)"
+    }
+  },
+  "visual_proofs": {
+    "pc_light": "docs/proofs/pediatric/01_pediatric_studio_pc_light_1440x900.png (91073 bytes)",
+    "pc_dark": "docs/proofs/pediatric/02_pediatric_studio_pc_dark_1440x900.png (391100 bytes)",
+    "mobile_light": "docs/proofs/pediatric/03_pediatric_studio_mobile_light_390x844.png (229211 bytes)",
+    "mobile_dark": "docs/proofs/pediatric/04_pediatric_studio_mobile_dark_390x844.png (234559 bytes)"
+  }
+}

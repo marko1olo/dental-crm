@@ -209,6 +209,10 @@ function isStandaloneActive(): boolean {
 		s.includes("copilot=1") ||
 		s.includes("anesthesia") ||
 		h.includes("anesthesia") ||
+		s.includes("pediatric") ||
+		h.includes("pediatric") ||
+		s.includes("children") ||
+		h.includes("children") ||
 		s.includes("patient_card") ||
 		h.includes("patient_card") ||
 		s.includes("patient-card") ||
