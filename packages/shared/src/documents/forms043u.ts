@@ -282,23 +282,70 @@ export function calculateDmftFromOdontogram(
 	const totalDmft = decayed + filled + missing;
 	const totalDmfs = decayedSurfaces + filledSurfaces;
 	const totalDft = deciduousDecayed + deciduousFilled + deciduousExtracted;
+	const isPediatricOnly = totalDmft === 0 && totalDft > 0;
+	const isMixedDentition = totalDmft > 0 && totalDft > 0;
+	const pediatricKpTotal = deciduousDecayed + deciduousFilled;
+	const combinedKpuTotal = totalDmft + totalDft;
 
 	let intensityLevel: DmftIndex["intensityLevel"] = "medium";
-	let intensityLevelLabel = "Средний (3.5–4.9)";
-	if (totalDmft <= 1.5) {
-		intensityLevel = "very_low";
-		intensityLevelLabel = "Очень низкий (0–1.5)";
-	} else if (totalDmft <= 4.9) {
-		intensityLevel = totalDmft <= 3.4 ? "low" : "medium";
-		intensityLevelLabel =
-			totalDmft <= 3.4 ? "Низкий (1.6–3.4)" : "Средний (3.5–4.9)";
-	} else if (totalDmft <= 8.0) {
-		intensityLevel = "high";
-		intensityLevelLabel = "Высокий (5–8)";
+	let intensityLevelLabel = "Средний";
+
+	if (isPediatricOnly) {
+		// Детская градация интенсивности кариеса для молочного прикуса (индекс кп)
+		if (totalDft === 0) {
+			intensityLevel = "very_low";
+			intensityLevelLabel = "Очень низкий (кп: 0)";
+		} else if (totalDft <= 2) {
+			intensityLevel = "low";
+			intensityLevelLabel = `Низкий (кп: ${totalDft})`;
+		} else if (totalDft <= 4) {
+			intensityLevel = "medium";
+			intensityLevelLabel = `Средний (кп: ${totalDft})`;
+		} else if (totalDft <= 7) {
+			intensityLevel = "high";
+			intensityLevelLabel = `Высокий (кп: ${totalDft})`;
+		} else {
+			intensityLevel = "very_high";
+			intensityLevelLabel = `Очень высокий (кп: ${totalDft} ≥ 8)`;
+		}
+	} else if (isMixedDentition) {
+		// Сменный прикус: комбинированная интенсивность КПУ + кп
+		if (combinedKpuTotal <= 2) {
+			intensityLevel = "low";
+			intensityLevelLabel = `Низкий (КПУ+кп: ${combinedKpuTotal})`;
+		} else if (combinedKpuTotal <= 5) {
+			intensityLevel = "medium";
+			intensityLevelLabel = `Средний (КПУ+кп: ${combinedKpuTotal})`;
+		} else if (combinedKpuTotal <= 8) {
+			intensityLevel = "high";
+			intensityLevelLabel = `Высокий (КПУ+кп: ${combinedKpuTotal})`;
+		} else {
+			intensityLevel = "very_high";
+			intensityLevelLabel = `Очень высокий (КПУ+кп: ${combinedKpuTotal} > 8)`;
+		}
 	} else {
-		intensityLevel = "very_high";
-		intensityLevelLabel = "Очень высокий (> 8.0)";
+		// Постоянный прикус: классическая шкала ВОЗ для КПУ(з)
+		if (totalDmft <= 1.5) {
+			intensityLevel = "very_low";
+			intensityLevelLabel = "Очень низкий (0–1.5)";
+		} else if (totalDmft <= 4.9) {
+			intensityLevel = totalDmft <= 3.4 ? "low" : "medium";
+			intensityLevelLabel =
+				totalDmft <= 3.4 ? "Низкий (1.6–3.4)" : "Средний (3.5–4.9)";
+		} else if (totalDmft <= 8.0) {
+			intensityLevel = "high";
+			intensityLevelLabel = "Высокий (5–8)";
+		} else {
+			intensityLevel = "very_high";
+			intensityLevelLabel = "Очень высокий (> 8.0)";
+		}
 	}
+
+	const displayKpuText = isPediatricOnly
+		? `Индекс кп: ${pediatricKpTotal} (к=${deciduousDecayed}, п=${deciduousFilled}${deciduousExtracted > 0 ? `, у=${deciduousExtracted}` : ""})`
+		: isMixedDentition
+			? `Индекс КПУ+кп: ${combinedKpuTotal} (КПУ=${totalDmft}, кп=${pediatricKpTotal})`
+			: `Индекс КПУ: ${totalDmft} (К=${decayed}, П=${filled}, У=${missing})`;
 
 	return {
 		decayed,
@@ -315,6 +362,11 @@ export function calculateDmftFromOdontogram(
 		totalDft,
 		intensityLevel,
 		intensityLevelLabel,
+		isPediatricOnly,
+		isMixedDentition,
+		pediatricKpTotal,
+		combinedKpuTotal,
+		displayKpuText,
 	};
 }
 

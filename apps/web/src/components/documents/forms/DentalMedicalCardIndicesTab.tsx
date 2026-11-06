@@ -38,7 +38,6 @@ export const DentalMedicalCardIndicesTab: React.FC<DentalMedicalCardIndicesTabPr
 					data-testid="btn-043-cpitn-norm-1click"
 					className="btn btn-sm btn-outline-success"
 					onClick={handleResetToHealthy}
-					disabled={effectiveDisabled}
 					title="Установить норму пародонта (CPITN 0 / TN 0) и гигиены (OHI-S 0.0)"
 				>
 					Все секстанты здоровы (Код 0 / TN 0, OHI-S = 0.0)
@@ -68,15 +67,45 @@ export const DentalMedicalCardIndicesTab: React.FC<DentalMedicalCardIndicesTabPr
 			</div>
 
 			<div>
-				<label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
-					Индекс гигиены полости рта (OHI-S / Грин-Вермиллиона):
-				</label>
+				<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "6px" }}>
+					<label style={{ fontWeight: 600 }}>
+						Индекс гигиены полости рта (OHI-S / Грин-Вермиллиона):
+					</label>
+					<div style={{ display: "flex", gap: "6px" }}>
+						<button
+							type="button"
+							data-testid="btn-043-ohis-ideal"
+							onClick={() => setHygieneIndexOhiS("OHI-S = 0.0 (Отличная гигиена)")}
+							className="btn btn-xs btn-outline-success"
+							title="Установить OHI-S 0.0 в 1 клик"
+						>
+							✓ 0.0 Идеальная
+						</button>
+						<button
+							type="button"
+							data-testid="btn-043-ohis-good"
+							onClick={() => setHygieneIndexOhiS("OHI-S = 0.8 (Хорошая гигиена)")}
+							className="btn btn-xs btn-outline-info"
+							title="Установить OHI-S 0.8 в 1 клик"
+						>
+							0.8 Хорошая
+						</button>
+						<button
+							type="button"
+							data-testid="btn-043-ohis-fair"
+							onClick={() => setHygieneIndexOhiS("OHI-S = 1.8 (Удовлетворительная гигиена)")}
+							className="btn btn-xs btn-outline-warning"
+							title="Установить OHI-S 1.8 в 1 клик"
+						>
+							1.8 Удовл.
+						</button>
+					</div>
+				</div>
 				<input
 					type="text"
 					value={hygieneIndexOhiS}
 					onChange={(e) => setHygieneIndexOhiS(e.target.value)}
-					placeholder="например, OHI-S = 0.8 (Хорошая гигиена)"
-					disabled={effectiveDisabled}
+					placeholder="например, OHI-S = 0.0 (Отличная гигиена)"
 					style={{ width: "100%" }}
 				/>
 			</div>

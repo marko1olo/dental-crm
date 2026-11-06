@@ -110,7 +110,14 @@ export function useVisitFastPrintState({
 			activeAppointment?.status === "closed" ||
 			visitNoteForm?.status === "completed" ||
 			visitNoteForm?.status === "signed";
-		const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";
+		const revisionCount = Number((visitNoteForm as any)?.revisionCount ?? 0);
+		const isRevising = Boolean((visitNoteForm as any)?.isRevising);
+		const watermarkText =
+			revisionCount > 0 || isRevising
+				? `ИСПРАВЛЕННОМУ ВЕРИТЬ (РЕДАКЦИЯ ${revisionCount + (isRevising ? 1 : 0)})`
+				: isClosed
+					? "ПОДПИСАНО ВРАЧОМ"
+					: "ЧЕРНОВИК";
 		executeFastPrint043u({
 			activePatient,
 			activeDoctor,

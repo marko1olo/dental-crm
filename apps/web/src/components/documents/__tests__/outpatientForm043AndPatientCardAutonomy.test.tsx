@@ -71,7 +71,15 @@ describe("EMR Form 043/u & Patient Card Autonomy (Mandates 8e, 8d, 8n)", () => {
 		__dirname,
 		"../../../VisitView.tsx",
 	);
-	const visitViewSource = fs.readFileSync(visitViewPath, "utf8");
+	const visitViewModulesDir = path.resolve(__dirname, "../../visit/view");
+	const visitViewModulesFiles = fs.existsSync(visitViewModulesDir)
+		? fs
+				.readdirSync(visitViewModulesDir, { recursive: true })
+				.filter((f) => typeof f === "string" && (f.endsWith(".ts") || f.endsWith(".tsx")))
+				.map((f) => fs.readFileSync(path.join(visitViewModulesDir, f as string), "utf8"))
+				.join("\n")
+		: "";
+	const visitViewSource = fs.readFileSync(visitViewPath, "utf8") + "\n" + visitViewModulesFiles;
 
 	const visitDiarySectionPath = path.resolve(
 		__dirname,
