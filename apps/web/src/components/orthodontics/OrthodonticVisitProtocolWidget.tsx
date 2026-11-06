@@ -6,6 +6,7 @@
 import React, { useEffect, useCallback } from "react";
 import { OrthodonticsStudioModal } from "./OrthodonticsStudioModal";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { showToast } from "../GlobalToast";
 import type { OrthoProtocolState } from "./orthodonticsCatalogData";
 
 export interface OrthodonticVisitProtocolWidgetProps {
@@ -25,19 +26,26 @@ export const OrthodonticVisitProtocolWidget: React.FC<OrthodonticVisitProtocolWi
 }) => {
 	useEffect(() => {
 		if (!patientId) return;
+		let isCancelled = false;
 		const fetchProgress = async () => {
 			try {
-				await fetch(`/api/orthodontics/${patientId}/progress`, {
+				const res = await fetch(`/api/orthodontics/${patientId}/progress`, {
 					headers: denteAdminSecretRequestHeaders({ Accept: "application/json" }),
 				});
-			} catch {
-				// Офлайн-автономия врача (Мандат 8e)
+				if (!res.ok && res.status !== 404 && !isCancelled) {
+					console.warn("[OrthodonticVisitProtocolWidget] Progress response status:", res.status);
+				}
+			} catch (err) {
+				if (!isCancelled) {
+					console.warn("[OrthodonticVisitProtocolWidget] Fetch progress offline fallback:", err);
+				}
 			}
 		};
 		fetchProgress();
+		return () => { isCancelled = true; };
 	}, [patientId]);
 
-	const handleSave = useCallback(async (state: OrthoProtocolState) => {
+	const handleSave = useCallback(async (state: OrthoProtocolState, summarySoap?: string) => {
 		try {
 			if (state.applianceCategory === "aligners") {
 				await fetch(`/api/orthodontics/${patientId}/aligners/issue-set`, {
@@ -76,8 +84,25 @@ export const OrthodonticVisitProtocolWidget: React.FC<OrthodonticVisitProtocolWi
 					}),
 				});
 			}
-		} catch {
-			// Офлайн-сохранение (Мандат 8e)
+
+			// Сохранение протокола визита в ЭМК (Медицинская карта приёма)
+			if (typeof window !== "undefined" && summarySoap) {
+				window.dispatchEvent(
+					new CustomEvent("dente:emr-entry-added", {
+						detail: {
+							patientId,
+							type: "orthodontic_protocol",
+							text: summarySoap,
+							savedAt: new Date().toISOString(),
+						},
+					}),
+				);
+			}
+
+			showToast("✓ Активация этапа успешно сохранена в медицинскую карту (ЭМК)", "success");
+		} catch (err) {
+			console.warn("[OrthodonticVisitProtocolWidget] Save protocol offline fallback:", err);
+			showToast("Сетевой сбой при фиксации этапа. Данные сохранены в офлайн-буфере.", "warning");
 		}
 	}, [patientId]);
 

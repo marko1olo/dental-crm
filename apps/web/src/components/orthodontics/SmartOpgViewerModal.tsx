@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from "react";
 import { opgAiInferenceService, type OpgAiInferenceResponse } from "./opgAiInferenceService";
 import { showToast } from "../GlobalToast";
+import { isDemoShowcaseMode } from "../../lib/demoMode";
 import {
 	type SmartOpgViewerModalProps, SmartOpgHeader, SmartOpgMobileTabs,
 	SmartOpgToolbar, SmartOpgViewport, SmartOpgDetails, SmartOpgFooter,
@@ -11,7 +12,7 @@ export type { SmartOpgViewerModalProps };
 export const SmartOpgViewerModal: React.FC<SmartOpgViewerModalProps> = ({
 	isOpen, onClose, imageUrl, onApplyOdontogram, patientName = "Темур",
 }) => {
-	const [isLoading, setIsLoading] = useState<boolean>(true);
+	const [isLoading, setIsLoading] = useState<boolean>(false);
 	const [result, setResult] = useState<OpgAiInferenceResponse | null>(null);
 	const [showFdiLabels, setShowFdiLabels] = useState<boolean>(true);
 	const [showPathologies, setShowPathologies] = useState<boolean>(true);
@@ -20,10 +21,18 @@ export const SmartOpgViewerModal: React.FC<SmartOpgViewerModalProps> = ({
 	const [selectedTooth, setSelectedTooth] = useState<number | null>(null);
 	const [isApplied, setIsApplied] = useState<boolean>(false);
 	const [mobileTab, setMobileTab] = useState<"image" | "details">("image");
-	const activeImage = imageUrl || "/models/sample_opg_temur.png";
+	const [customImage, setCustomImage] = useState<string | null>(null);
+
+	const isDemo = isDemoShowcaseMode();
+	const activeImage = customImage || imageUrl || (isDemo ? "/models/sample_opg_temur.png" : "");
 
 	useEffect(() => {
 		if (!isOpen) return;
+		if (!activeImage) {
+			setIsLoading(false);
+			setResult(null);
+			return;
+		}
 		let isCancelled = false;
 		setIsLoading(true); setIsApplied(false);
 		opgAiInferenceService.runInference(activeImage, { allowFallback: true })
@@ -34,13 +43,13 @@ export const SmartOpgViewerModal: React.FC<SmartOpgViewerModalProps> = ({
 
 	const handleApply = useCallback(() => {
 		if (isLoading) { showToast("Выполняется калибровка панорамного снимка...", "info"); return; }
-		if (!result) { showToast("Снимок не загружен или анализ недоступен", "warning"); return; }
+		if (!result || !activeImage) { showToast("Панорамный снимок не загружен. Добавьте снимок пациента", "warning"); return; }
 		if (onApplyOdontogram) {
 			onApplyOdontogram(result.analysis.teeth);
 			setIsApplied(true);
 			showToast("Данные зубных дуг ОПТГ успешно перенесены в зубную формулу", "success");
 		}
-	}, [isLoading, result, onApplyOdontogram]);
+	}, [isLoading, result, activeImage, onApplyOdontogram]);
 
 	if (!isOpen) return null;
 
@@ -63,6 +72,7 @@ export const SmartOpgViewerModal: React.FC<SmartOpgViewerModalProps> = ({
 							isLoading={isLoading} activeImage={activeImage} zoom={zoom} analysis={result?.analysis}
 							selectedTooth={selectedTooth} onSelectTooth={setSelectedTooth} showFdiLabels={showFdiLabels}
 							showPathologies={showPathologies} isPatientMode={isPatientMode}
+							onLoadDemo={() => setCustomImage("/models/sample_opg_temur.png")}
 						/>
 						<SmartOpgFooter variant="mobile" isApplied={isApplied} onApply={handleApply} onSwitchToDetails={() => setMobileTab("details")} />
 					</div>

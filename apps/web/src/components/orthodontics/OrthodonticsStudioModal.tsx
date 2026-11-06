@@ -13,25 +13,11 @@
 import React, { useState, useCallback, useMemo } from "react";
 import { X, Check, Sparkles, Activity, Layers, ArrowRight, Copy, Clock, BookOpen, Smile, FileText, Camera } from "lucide-react";
 import {
-	APPLIANCES_CATALOG,
-	ANGLE_CLASSES_CATALOG,
-	ARCHWIRE_ALLOYS_SSOT,
-	ARCHWIRE_SECTIONS_SSOT,
-	ELASTICS_CATALOG,
-	TRG_ANGLES_NORMS_SSOT,
-	CHAIRSIDE_ACTIONS_CATALOG,
-	ORTHO_ACTIVATION_PRESETS,
-	ORTHO_PHOTO_SLOTS_SSOT,
-	ORTHO_PATIENT_MEMO_SECTIONS,
-	createDefaultOrthoProtocolState,
-	calculateSkeletalClassFromAnb,
-	evaluateTrgAngleStatus,
-	formatOrthoProtocolSoapEntry,
-	getOrthoPatientMemoText,
-	type ArchwireAlloy,
-	type ArchwireSection,
-	type OrthoProtocolState,
-	type OrthoActivationPreset,
+	APPLIANCES_CATALOG, ANGLE_CLASSES_CATALOG, ARCHWIRE_ALLOYS_SSOT, ARCHWIRE_SECTIONS_SSOT,
+	ELASTICS_CATALOG, TRG_ANGLES_NORMS_SSOT, CHAIRSIDE_ACTIONS_CATALOG, ORTHO_ACTIVATION_PRESETS,
+	ORTHO_PHOTO_SLOTS_SSOT, ORTHO_PATIENT_MEMO_SECTIONS, createDefaultOrthoProtocolState,
+	calculateSkeletalClassFromAnb, evaluateTrgAngleStatus, formatOrthoProtocolSoapEntry, getOrthoPatientMemoText,
+	type ArchwireAlloy, type ArchwireSection, type OrthoProtocolState, type OrthoActivationPreset,
 } from "./orthodonticsCatalogData";
 if (typeof document !== "undefined") {
 	import("./styles/orthodonticsStudio.css");
@@ -72,16 +58,30 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 	const memoText = useMemo(() => getOrthoPatientMemoText(), []);
 
 	const handleApplyPreset = useCallback((preset: OrthoActivationPreset) => {
-		setProtocol((prev) => ({
-			...prev,
-			upperAlloy: preset.upperAlloy,
-			upperSection: preset.upperSection,
-			lowerAlloy: preset.lowerAlloy,
-			lowerSection: preset.lowerSection,
-			selectedElasticId: preset.elasticId,
-			selectedActionIds: [...preset.actionIds],
-			nextVisitWeeks: preset.nextVisitWeeks,
-		}));
+		setProtocol((prev) => {
+			const updated = {
+				...prev,
+				upperAlloy: preset.upperAlloy,
+				upperSection: preset.upperSection,
+				lowerAlloy: preset.lowerAlloy,
+				lowerSection: preset.lowerSection,
+				selectedElasticId: preset.elasticId,
+				selectedActionIds: [...preset.actionIds],
+				nextVisitWeeks: preset.nextVisitWeeks,
+			};
+			if (preset.id === "class_1_norm") {
+				updated.angleClass = "class_1";
+				updated.trgValues = { ...updated.trgValues, anb: 2.0 };
+			} else if (preset.id === "aligners_28d") {
+				updated.applianceCategory = "aligners";
+				updated.alignerTracking = { ...updated.alignerTracking, issuedSetsCount: 2, wearDaysPerStep: 14 };
+				setActiveTab("aligners");
+			} else if (preset.id === "wire_niti_014") {
+				updated.applianceCategory = "brackets";
+				setActiveTab("brackets");
+			}
+			return updated;
+		});
 		setFeedbackToast(`Применён: «${preset.title}»`);
 		setTimeout(() => setFeedbackToast(null), 2200);
 	}, []);
@@ -464,8 +464,7 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 							className="ortho-primary-cta w-full sm:w-auto"
 						>
 							<Check className="w-4 h-4 shrink-0" />
-							<span className="sm:hidden">✓ Зафиксировать активацию</span>
-							<span className="hidden sm:inline">✓ Зафиксировать активацию этапа</span>
+							<span>✓ Зафиксировать активацию этапа</span>
 						</button>
 					</div>
 				</footer>

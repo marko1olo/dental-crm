@@ -1,5 +1,5 @@
 import React from "react";
-import { Activity } from "lucide-react";
+import { Activity, Camera } from "lucide-react";
 import type { OpgAiInferenceResponse } from "../opgAiInferenceService";
 
 interface SmartOpgViewportProps {
@@ -12,6 +12,7 @@ interface SmartOpgViewportProps {
 	showFdiLabels: boolean;
 	showPathologies: boolean;
 	isPatientMode: boolean;
+	onLoadDemo?: () => void;
 }
 
 export const SmartOpgViewport: React.FC<SmartOpgViewportProps> = ({
@@ -24,6 +25,7 @@ export const SmartOpgViewport: React.FC<SmartOpgViewportProps> = ({
 	showFdiLabels,
 	showPathologies,
 	isPatientMode,
+	onLoadDemo,
 }) => {
 	if (isLoading) {
 		return (
@@ -32,6 +34,31 @@ export const SmartOpgViewport: React.FC<SmartOpgViewportProps> = ({
 					<Activity className="w-8 h-8 text-sky-400 animate-spin" />
 					<p className="text-sm font-medium">Анализ панорамы нейросетью...</p>
 				</div>
+			</div>
+		);
+	}
+
+	if (!activeImage) {
+		return (
+			<div className="flex-1 relative flex flex-col items-center justify-center p-6 text-center select-none bg-[var(--paper,#090d16)]">
+				<div className="w-14 h-14 rounded-2xl bg-[var(--paper-soft,#111827)] border border-[var(--line,#1e293b)] flex items-center justify-center mb-3 text-[var(--ink-muted,#94a3b8)]">
+					<Camera className="w-7 h-7 text-sky-400/80" />
+				</div>
+				<h3 className="text-sm sm:text-base font-bold text-[var(--ink,#f8fafc)] mb-1">
+					Панорамный снимок ОПТГ не загружен
+				</h3>
+				<p className="text-xs text-[var(--ink-muted,#94a3b8)] max-w-sm mb-4 leading-relaxed">
+					Для автоматического анализа зубных дуг добавьте рентгеновский снимок пациента (DICOM / панорама) или откройте демонстрационный образец.
+				</p>
+				{onLoadDemo && (
+					<button
+						type="button"
+						onClick={onLoadDemo}
+						className="px-3.5 py-2 text-xs font-semibold rounded-xl bg-[var(--teal,#0d9488)] text-white hover:opacity-95 shadow-sm transition-all"
+					>
+						Загрузить демо-образец ОПТГ
+					</button>
+				)}
 			</div>
 		);
 	}

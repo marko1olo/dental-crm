@@ -34,4 +34,4 @@ export {
 
 export { calculateCephalometrics } from "./analysisEngine";
 
-export { generateForm043OrthodonticProtocolText } from "./protocolGenerator";
+export { generateOrthodonticProtocolText, generateForm043OrthodonticProtocolText } from "./protocolGenerator";

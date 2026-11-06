@@ -182,32 +182,32 @@ export interface OrthoActivationPreset {
 
 export const ORTHO_ACTIVATION_PRESETS: OrthoActivationPreset[] = [
 	{
-		id: "leveling_primary", title: "1. Нивелирование", stageName: "Первичное нивелирование и деротация",
+		id: "class_1_norm", title: "✓ Класс I (Норма ANB 2°)", stageName: "Скелетный класс I (нейтральное соотношение челюстей, ANB 2°)",
+		upperAlloy: "cuniti", upperSection: "17x25", lowerAlloy: "cuniti", lowerSection: "17x25",
+		elasticId: null, actionIds: ["archwire_replace", "change_ligatures"], nextVisitWeeks: 4,
+	},
+	{
+		id: "wire_niti_014", title: "✓ Активация дуги (NiTi 0.014)", stageName: "Первичное нивелирование и деротация дугой NiTi .014",
 		upperAlloy: "niti", upperSection: "0.014", lowerAlloy: "niti", lowerSection: "0.014",
 		elasticId: null, actionIds: ["archwire_replace", "change_ligatures", "cinch_back"], nextVisitWeeks: 6,
 	},
 	{
-		id: "transitional_torque", title: "2. Торк и форма", stageName: "Переходный этап выражения торка",
-		upperAlloy: "cuniti", upperSection: "17x25", lowerAlloy: "cuniti", lowerSection: "17x25",
-		elasticId: "c2_fox", actionIds: ["archwire_replace", "elastics_prescription"], nextVisitWeeks: 4,
+		id: "aligners_28d", title: "✓ Выдача кап (2 шт. на 28 дн.)", stageName: "Выдача следующего комплекта элайнеров (2 шага по 14 дней)",
+		upperAlloy: "niti", upperSection: "0.014", lowerAlloy: "niti", lowerSection: "0.014",
+		elasticId: null, actionIds: ["aligner_dispense", "attachments_bonding"], nextVisitWeeks: 4,
 	},
 	{
-		id: "working_space_closure", title: "3. Закрытие щелей", stageName: "Рабочий этап закрытия промежутков",
+		id: "working_space_closure", title: "Закрытие щелей (SS)", stageName: "Рабочий этап закрытия промежутков на стальных дугах",
 		upperAlloy: "ss", upperSection: "19x25", lowerAlloy: "ss", lowerSection: "19x25",
 		elasticId: "c2_bear", actionIds: ["power_chain", "cinch_back"], nextVisitWeeks: 4,
 	},
 	{
-		id: "detailing_tma", title: "4. Детализация", stageName: "Юстировка и индивидуальные изгибы",
+		id: "detailing_tma", title: "Детализация (ТМА)", stageName: "Юстировка и индивидуальные изгибы на дугах ТМА",
 		upperAlloy: "tma", upperSection: "19x25", lowerAlloy: "tma", lowerSection: "19x25",
 		elasticId: "tri_quail", actionIds: ["change_ligatures"], nextVisitWeeks: 3,
 	},
 	{
-		id: "aligners_activation", title: "5. Элайнеры", stageName: "Контроль трекинга кап и аттачментов",
-		upperAlloy: "niti", upperSection: "0.014", lowerAlloy: "niti", lowerSection: "0.014",
-		elasticId: null, actionIds: ["aligner_dispense", "attachments_bonding", "ipr_stripping"], nextVisitWeeks: 4,
-	},
-	{
-		id: "debonding_stage", title: "6. Снятие и ретенция", stageName: "Фиксация несъемного ретейнера",
+		id: "debonding_stage", title: "Снятие и ретенция", stageName: "Фиксация несъемного ретейнера",
 		upperAlloy: "ss", upperSection: "19x25", lowerAlloy: "ss", lowerSection: "19x25",
 		elasticId: null, actionIds: ["debonding_retainer"], nextVisitWeeks: 8,
 	},

@@ -8,7 +8,7 @@ import type { CephalometricAnalysisResult } from "./types";
 /**
  * Генерирует расширенный протокол ТРГ для медицинской карты приёма.
  */
-export function generateForm043OrthodonticProtocolText(
+export function generateOrthodonticProtocolText(
 	analysis: CephalometricAnalysisResult,
 	options?: {
 		patientName?: string | undefined;
@@ -66,3 +66,5 @@ export function generateForm043OrthodonticProtocolText(
 ЗАКЛЮЧЕНИЕ ЦЕФАЛОМЕТРИИ (ТРГ):
 ${analysis.diagnosis.summaryRu}`;
 }
+
+export const generateForm043OrthodonticProtocolText = generateOrthodonticProtocolText;

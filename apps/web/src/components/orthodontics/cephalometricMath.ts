@@ -27,6 +27,7 @@ export {
 	CLASS_II_DISTAL_LANDMARKS_PRESET,
 	CLASS_III_MESIAL_LANDMARKS_PRESET,
 	calculateCephalometrics,
+	generateOrthodonticProtocolText,
 	generateForm043OrthodonticProtocolText,
 } from "./cephalometric";
 

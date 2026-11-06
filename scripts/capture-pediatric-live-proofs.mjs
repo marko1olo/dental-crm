@@ -177,9 +177,14 @@ async function capture() {
     await injectStorage(pcContext, auth, "light");
     const pcPage = await pcContext.newPage();
     console.log(`Navigating PC to ${webBase}/#pediatric...`);
-    await pcPage.goto(`${webBase}/#pediatric`, { waitUntil: "commit", timeout: 30000 });
+    await pcPage.goto(`${webBase}/#pediatric`, { waitUntil: "load", timeout: 60000 });
+    await waitForRealUI(pcPage);
+    await pcPage.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente-open-pediatric"));
+      window.dispatchEvent(new CustomEvent("dente:open-pediatric"));
+    });
     console.log("Waiting for modal selector [data-testid='pediatric-studio-modal']...");
-    await pcPage.waitForSelector("[data-testid='pediatric-studio-modal']", { state: "attached", timeout: 45000 });
+    await pcPage.waitForSelector("[data-testid='pediatric-studio-modal']", { state: "visible", timeout: 45000 });
     await pcPage.waitForTimeout(1000);
     await suppressOverlays(pcPage);
 
@@ -201,9 +206,14 @@ async function capture() {
     await injectStorage(mobileContext, auth, "light");
     const mobilePage = await mobileContext.newPage();
     console.log(`Navigating Mobile to ${webBase}/#pediatric...`);
-    await mobilePage.goto(`${webBase}/#pediatric`, { waitUntil: "commit", timeout: 30000 });
+    await mobilePage.goto(`${webBase}/#pediatric`, { waitUntil: "load", timeout: 60000 });
+    await waitForRealUI(mobilePage);
+    await mobilePage.evaluate(() => {
+      window.dispatchEvent(new CustomEvent("dente-open-pediatric"));
+      window.dispatchEvent(new CustomEvent("dente:open-pediatric"));
+    });
     console.log("Waiting for modal selector [data-testid='pediatric-studio-modal'] on mobile...");
-    await mobilePage.waitForSelector("[data-testid='pediatric-studio-modal']", { state: "attached", timeout: 45000 });
+    await mobilePage.waitForSelector("[data-testid='pediatric-studio-modal']", { state: "visible", timeout: 45000 });
     await mobilePage.waitForTimeout(1000);
     await suppressOverlays(mobilePage);
 
