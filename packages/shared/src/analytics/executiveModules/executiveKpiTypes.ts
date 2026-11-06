@@ -42,6 +42,7 @@ export interface ExecutiveTopDoctorItem {
 	readonly revenueRub: number;
 	readonly revenueFormatted: string;
 	readonly visitsCount: number;
+	readonly chairHours?: number;
 	readonly attendancePercent: number;
 	readonly averageCheckKopecks: number;
 	readonly averageCheckFormatted: string;

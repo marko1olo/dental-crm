@@ -86,6 +86,35 @@ export function resolveExecutiveDateRange(
 	return { execPeriod, startDate, endDate, daysCount };
 }
 
+/**
+ * [ANL-04] Честный расчет доступных рабочих минут клиники в периоде (6 дней/нед по 11ч, без искажения на 84 ч/нед).
+ */
+export function calculateWorkingMinutesInPeriod(
+	startDate: Date,
+	endDate: Date = new Date(),
+	dailyWorkingHours: number = 11,
+): { workingDays: number; availableMinutesPerChair: number } {
+	const cur = new Date(startDate);
+	cur.setHours(0, 0, 0, 0);
+	const end = new Date(endDate);
+	end.setHours(23, 59, 59, 999);
+
+	let workingDays = 0;
+	const temp = new Date(cur);
+	while (temp <= end) {
+		const dayOfWeek = temp.getDay(); // 0 = Sunday
+		if (dayOfWeek !== 0) {
+			workingDays++;
+		}
+		temp.setDate(temp.getDate() + 1);
+	}
+	if (workingDays === 0) {
+		workingDays = 1;
+	}
+	const availableMinutesPerChair = workingDays * dailyWorkingHours * 60;
+	return { workingDays, availableMinutesPerChair };
+}
+
 export interface ExecutiveKpiQueryResult {
 	readonly kpis: ExecutiveKpisSummary;
 	readonly funnelStages: ExecutiveFunnelStageItem[];
@@ -125,7 +154,9 @@ export async function queryExecutiveKpiAndFunnel(
 		.where(eq(chairs.organizationId, orgId));
 
 	const totalChairs = Math.max(1, Number(chairCountRow?.count || 1));
-	const totalAvailableMinutes = totalChairs * daysCount * 12 * 60; // 12-часовая смена на кресло
+	// [ANL-04] Честный расчет доступных минут кресел по рабочему графику (6 дней в неделю, 11 часов/день) вместо вымышленных 84 ч/нед
+	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(startDate, range.endDate, 11);
+	const totalAvailableMinutes = totalChairs * availableMinutesPerChair;
 
 	// 2. Лиды и входящие обращения
 	const [leadsRow] = await db
@@ -213,7 +244,7 @@ export async function queryExecutiveKpiAndFunnel(
 		}
 	}
 
-	// 5. Выручка и платежи по 54-ФЗ (честный приход paid минус возвраты refunded)
+	// 5. Выручка и платежи (честный приход paid минус возвраты refunded строго по времени проведения платежа)
 	const [paymentsSummary] = await db
 		.select({
 			paidRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} else 0 end), 0)`,
@@ -224,7 +255,7 @@ export async function queryExecutiveKpiAndFunnel(
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
-				gte(payments.createdAt, startDate),
+				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
 				inArray(payments.status, ["paid", "refunded"]),
 			),
 		);
@@ -244,7 +275,7 @@ export async function queryExecutiveKpiAndFunnel(
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
-				gte(payments.createdAt, startDate),
+				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
 				inArray(payments.status, ["paid", "refunded"]),
 			),
 		)
@@ -394,11 +425,11 @@ export async function queryExecutiveKpiAndFunnel(
 	// 8. Исторический когортный LTV и первичная/повторная выручка
 	const [historicalLtvRow] = await db
 		.select({
-			totalRevenueRub: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-			payingPatientsCount: sql<number>`count(distinct ${payments.patientId})::int`,
+			totalRevenueRub: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+			payingPatientsCount: sql<number>`count(distinct case when ${payments.status} = 'paid' then ${payments.patientId} end)::int`,
 		})
 		.from(payments)
-		.where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid")));
+		.where(and(eq(payments.organizationId, orgId), inArray(payments.status, ["paid", "refunded"])));
 
 	const histPayingPatients = Number(historicalLtvRow?.payingPatientsCount || 0);
 	const histTotalRevenueKop = Math.round(Number(historicalLtvRow?.totalRevenueRub || 0) * 100);
@@ -415,7 +446,7 @@ export async function queryExecutiveKpiAndFunnel(
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
-				gte(payments.createdAt, startDate),
+				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
 				gte(patients.createdAt, startDate),
 				inArray(payments.status, ["paid", "refunded"]),
 			),
@@ -431,7 +462,7 @@ export async function queryExecutiveKpiAndFunnel(
 		.where(
 			and(
 				eq(payments.organizationId, orgId),
-				gte(payments.createdAt, startDate),
+				gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate),
 				lt(patients.createdAt, startDate),
 				inArray(payments.status, ["paid", "refunded"]),
 			),

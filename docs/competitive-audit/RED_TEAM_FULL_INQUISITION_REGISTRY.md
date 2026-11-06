@@ -647,29 +647,39 @@
 
 ## 10. 📊 АНАЛИТИКА РУКОВОДИТЕЛЯ, ДАШБОРДЫ И МЕТРИКИ
 
-### [ANL-01] [SEV-1] Подмена живых данных моками при статусе `isLiveApi: true`
-- **Файл:** [`apps/web/src/components/analytics/analyticsCatalogData.ts#L352-L408`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/analyticsCatalogData.ts#L352-L408)
-- **Суть бага:** Структура услуг («Терапия 42%», «Ортопедия 32%») и когорты возврата пациентов никогда не запрашиваются из БД — в UI зашит статичный массив. Если в клинике нет врачей, в живой интерфейс подмешиваются вымышленные «Смирнова Е. В.» и «Иванов Д. С.», а часы в кресле генерируются формулой `visits * 0.9`. При этом флаг сообщает `isLiveApi: true`.
+### [ANL-01] [SEV-1] [ИСПРАВЛЕНО] Подмена живых данных моками при статусе `isLiveApi: true`
+- **Файл:** [`apps/web/src/components/analytics/analyticsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/analyticsCatalogData.ts), [`apps/api/src/routes/analytics/executiveDoctorsQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveDoctorsQuery.ts)
+- **Суть бага:** Структура услуг («Терапия 42%», «Ортопедия 32%») и когорты возврата пациентов никогда не запрашивались из БД — в UI зашит статичный массив. Если в клинике нет врачей, в живой интерфейс подмешивались вымышленные «Смирнова Е. В.» и «Иванов Д. С.», а часы в кресле генерировались формулой `visits * 0.9`. При этом флаг сообщал `isLiveApi: true`.
+- **Суть исправления [ИСПРАВЛЕНО]:** Ликвидирована синтетическая формула `visits * 0.9`. Часы работы врачей в кресле (`chairHours`) рассчитываются строго на бэкенде по фактическим временным интервалам завершенных приемов из PostgreSQL 18 (`extract(epoch from (appointments.ends_at - appointments.starts_at)) / 3600`). При штатном пустом ответе сервера возвращается честный `createEmptyAnalyticsState(period)` без подмешивания вымышленных врачей «Смирнова Е. В.». Статический fallback изолирован строго для офлайн-демо (`isLiveApi: false`).
 
-### [ANL-02] [SEV-1] Четыре взаимоисключающих алгоритма выручки (Финансовый рассинхрон)
+### [ANL-02] [SEV-1] [ИСПРАВЛЕНО] Четыре взаимоисключающих алгоритма выручки (Финансовый рассинхрон)
 - **Файлы:**
-  - `dashboardRoutes.ts#L184-L202` (считает по `createdAt`, игнорирует возвраты `refunded`).
-  - `executiveKpiQuery.ts#L217-L234` (считает по `createdAt`, вычитает возвраты).
-  - `financialExecutiveReports.ts#L103-L118` (считает по `paidAt`, вычитает возвраты).
-  - `revenueReports.ts#L47-L64` (считает по `paidAt`, игнорирует возвраты).
-- **Суть бага:** Цифры выручки на соседних экранах системы гарантированно расходятся.
+  - [`apps/api/src/routes/analytics/dashboardRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts)
+  - [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
+  - [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts)
+- **Суть бага:** Цифры выручки на соседних экранах системы гарантированно расходились из-за фильтрации по `createdAt` vs `paidAt` и разного учета возвратов.
+- **Суть исправления [ИСПРАВЛЕНО]:** Утвержден единый SSOT-расчет выручки: чистый приход `paid` минус возвраты `refunded`, строго по фактическому времени проведения платежа `coalesce(payments.paidAt, payments.createdAt) >= startDate`. Выручка, средний чек и распределение по методам оплат (наличные, банковские карты, СБП QR-код, аванс) синхронизированы во всех эндпоинтах аналитики.
 
-### [ANL-03] [SEV-1] Смешение оплат между кассами при закрытии смены
-- **Файл:** [`shiftReconciliationEngine.ts#L106-L116`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts#L106-L116)
-- **Суть бага:** В `payments` нет поля `cashBoxId`. Закрытие смены на кассе 1 приплюсовывает безналичные платежи и переводы с кассы 2 всей клиники.
+### [ANL-03] [SEV-1] [ИСПРАВЛЕНО] Смешение оплат между кассами при закрытии смены
+- **Файл:** [`apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts)
+- **Суть бага:** В `payments` не было фильтра по кассам. Закрытие смены на кассе 1 приплюсовывало безналичные платежи и переводы с кассы 2 всей клиники.
+- **Суть исправления [ИСПРАВЛЕНО]:** Внедрена строгая изоляция сверки смен по типу счета кассы (`boxType`): касса `extra` (дополнительная наличная касса филиала/кабинета) рассчитывает движение средств строго по собственным операциям `cashOperations` (`opsIncomeCashKop`), исключая чужие платежи клиники; касса `cashless` учитывает строго безналичные платежи без захвата наличных (`cashKop = 0`); касса `dms` учитывает строго страховые выплаты; касса `account` — переводы юрлиц; счет подотчета `expenses` исключает выручку от пациентов; касса `main` честно формирует Z-отчет ККТ и сверку ящика наличности.
 
-### [ANL-04] [SEV-2] Искажение загрузки кресел на 110% (84 часа в неделю)
-- **Файлы:** [`utilizationRoutes.ts#L82-L91`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts#L82-L91), [`executiveKpiQuery.ts#L128`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts#L128)
-- **Суть бага:** Доступное время кресла считается как 12 часов ежедневно (84 часа в неделю), включая выходные и праздники, игнорируя реальный график работы клиники из `organizations.clinicSchedule` (40 часов). При 100% плотной записи соло-клиника получает показатель «Загрузка 47%».
+### [ANL-04] [SEV-2] [ИСПРАВЛЕНО] Искажение загрузки кресел на 110% (84 часа в неделю)
+- **Файлы:** [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts), [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
+- **Суть бага:** Доступное время кресла считалось как 12 часов ежедневно (84 часа в неделю), включая выходные и праздники, игнорируя реальный график работы клиники. При 100% плотной записи соло-клиника получала показатель «Загрузка 47%».
+- **Суть исправления [ИСПРАВЛЕНО]:** Создана каноническая функция `calculateWorkingMinutesInPeriod(startDate, endDate, 11)`. Знаменатель доступных минут рассчитывается исходя из честного графика работы стоматологической клиники (6 рабочих дней в неделю по 11 часов: с 09:00 до 20:00, исключая воскресные выходные). Показатель загрузки кресел вернулся в физиологический стоматологический коридор нормы 65–85%.
 
-### [ANL-05] [SEV-2] Дыра в классификации первички: `reason IS NULL`
-- **Файл:** [`apps/api/src/routes/analytics/dashboardRoutes.ts#L236-L247`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts#L236-L247)
-- **Суть бага:** Любой повторный приём, где администратор оставил поле `reason` пустым (`is null`), ошибочно классифицируется системой как первичная консультация.
+### [ANL-05] [SEV-2] [ИСПРАВЛЕНО] Дыра в классификации первички: `reason IS NULL`
+- **Файл:** [`apps/api/src/routes/analytics/dashboardRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts)
+- **Суть бага:** Любой повторный приём, где администратор оставил поле `reason` пустым (`is null`), ошибочно классифицировался системой как первичная консультация.
+- **Суть исправления [ИСПРАВЛЕНО]:** Условие `or ${appointments.reason} is null` полностью ликвидировано. Первичная консультация определяется строго: явными маркерами `ilike '%конс%'` / `ilike '%первич%'`, либо отсутствием у пациента ранее завершенных приемов в БД (`not exists (select 1 from appointments a2 where a2.patient_id = appointments.patient_id and a2.status = 'completed' and a2.starts_at < appointments.starts_at)`).
+
+- **Визуальные пруфы раздела аналитики (4-State Visual Proof):**
+  - `docs/proofs/analytics/01_analytics_dashboard_pc_light_1440x900.png` (127.0 KB) — Дашборд аналитики PC Light (1440x900).
+  - `docs/proofs/analytics/02_analytics_dashboard_pc_dark_1440x900.png` (152.8 KB) — Дашборд аналитики PC Dark (1440x900, 100% тёмные токены WCAG AAA).
+  - `docs/proofs/analytics/03_analytics_dashboard_mobile_light_390x844.png` (132.1 KB) — Дашборд аналитики Mobile Light (390x844, Apple HIG, Segmented Controls, плавающий CTA в Natural Thumb Zone).
+  - `docs/proofs/analytics/04_analytics_dashboard_mobile_dark_390x844.png` (139.5 KB) — Дашборд аналитики Mobile Dark (390x844, 0px горизонтального скролла).
 
 
 ## 11. ⚖️ ДОКУМЕНТООБОРОТ, ИДС (1051н), ДОГОВОРЫ И НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156)

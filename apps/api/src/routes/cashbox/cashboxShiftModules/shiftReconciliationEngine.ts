@@ -102,18 +102,14 @@ export async function calculateShiftTenderTotals(
 		}
 	}
 
-	// 2. Fetch payments made in this organization during shift timeframe
-	const shiftPayments = await tx
-		.select()
-		.from(payments)
-		.where(
-			and(
-				eq(payments.organizationId, orgId),
-				eq(payments.status, "paid"),
-				gte(payments.paidAt, shiftStart),
-				lte(payments.paidAt, shiftEnd),
-			),
-		);
+	// 2. [ANL-03] Fetch payments made in this organization during shift timeframe with strict cashbox isolation
+	const boxType = targetBox?.type || "main";
+	const isCashlessBox = boxType === "cashless" || targetBox?.isCashless === true;
+	const isMainBox = boxType === "main";
+	const isExtraBox = boxType === "extra";
+	const isDmsBox = boxType === "dms";
+	const isAccountBox = boxType === "account";
+	const isExpensesBox = boxType === "expenses";
 
 	let cashKop = 0;
 	let cardKop = 0;
@@ -122,42 +118,64 @@ export async function calculateShiftTenderTotals(
 	let insuranceKop = 0;
 	let returnKop = 0;
 
-	for (const p of shiftPayments) {
-		const amtKop = rubToKopecks(p.amountRub);
-		const canonicalTender = normalizeTenderType(p.method);
+	// Для подотчетного счета (expenses) выручка от пациентов строго 0
+	if (!isExpensesBox) {
+		const shiftPayments = await tx
+			.select()
+			.from(payments)
+			.where(
+				and(
+					eq(payments.organizationId, orgId),
+					eq(payments.status, "paid"),
+					gte(payments.paidAt, shiftStart),
+					lte(payments.paidAt, shiftEnd),
+				),
+			);
 
-		switch (canonicalTender) {
-			case "cash":
-				cashKop += amtKop;
-				break;
-			case "card":
-			case "bank_transfer":
-			case "other":
-				cardKop += amtKop;
-				break;
-			case "sbp":
-				sbpKop += amtKop;
-				break;
-			case "deposit":
-			case "family_wallet":
-				advanceKop += amtKop;
-				break;
-			case "insurance":
-				insuranceKop += amtKop;
-				break;
-			default:
-				cardKop += amtKop;
-				break;
+		for (const p of shiftPayments) {
+			const amtKop = rubToKopecks(p.amountRub);
+			const canonicalTender = normalizeTenderType(p.method);
+
+			if (canonicalTender === "cash") {
+				// Наличные учитываются только в кассе main или если это операции по кассе
+				if (isMainBox) {
+					cashKop += amtKop;
+				}
+			} else if (canonicalTender === "sbp") {
+				if (isCashlessBox || isMainBox) {
+					sbpKop += amtKop;
+				}
+			} else if (canonicalTender === "deposit" || canonicalTender === "family_wallet") {
+				if (isCashlessBox || isMainBox) {
+					advanceKop += amtKop;
+				}
+			} else if (canonicalTender === "insurance") {
+				if (isDmsBox || isMainBox) {
+					insuranceKop += amtKop;
+				}
+			} else if (canonicalTender === "bank_transfer") {
+				if (isAccountBox || isCashlessBox || isMainBox) {
+					cardKop += amtKop;
+				}
+			} else {
+				// card / other
+				if (isCashlessBox || isMainBox) {
+					cardKop += amtKop;
+				}
+			}
 		}
 	}
 
-	// If cash operations had direct cash incomes not registered in payments, add them
-	if (opsIncomeCashKop > cashKop && targetBox?.type === "main") {
+	// Для дополнительной кассы филиала (extra) наличный приход берется строго из ее собственных операций ops
+	if (isExtraBox) {
+		cashKop = opsIncomeCashKop;
+	} else if (isMainBox && opsIncomeCashKop > cashKop) {
+		// If cash operations had direct cash incomes not registered in payments, add them
 		cashKop = opsIncomeCashKop;
 	}
 
 	// Return operations if recorded in cash expense
-	if (opsExpenseCashKop > 0 && targetBox?.type === "main") {
+	if (opsExpenseCashKop > 0 && (isMainBox || isExtraBox)) {
 		returnKop = opsExpenseCashKop;
 	}
 

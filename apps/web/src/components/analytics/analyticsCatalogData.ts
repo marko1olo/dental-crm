@@ -375,8 +375,9 @@ export async function fetchClinicAnalyticsSSOT(
 
 		const json = await res.json();
 		const payload = json?.data;
-		if (!payload || !payload.kpis) {
-			return createDeterministicAnalyticsFallback(period);
+		if (!payload || !payload.kpis || payload.isEmpty) {
+			// [ANL-01] При живом ответе API без данных возвращаем честный пустой стейт без синтетики
+			return createEmptyAnalyticsState(period);
 		}
 
 		const kpis = payload.kpis;
@@ -431,16 +432,26 @@ export async function fetchClinicAnalyticsSSOT(
 		const doctors: DoctorPerformanceSSOT[] = rawDocs.map((d: any, idx: number) => {
 			const docBilled = Number(d.billedRub || d.revenueRub || 0);
 			const docKop = Math.round(docBilled * 100);
-			const visits = Number(d.visits || 0);
+			const visits = Number(d.visits || d.visitsCount || 0);
 			const avgKop = visits > 0 ? Math.round(docKop / visits) : 0;
+			// [ANL-01] Ликвидация симуляции visits * 0.9: расчет строго по реальным часам в кресле из PostgreSQL 18
+			const chairHours =
+				typeof d.chairHours === "number" && !isNaN(d.chairHours)
+					? Number(d.chairHours.toFixed(1))
+					: typeof d.workedHours === "number" && !isNaN(d.workedHours)
+						? Number(d.workedHours.toFixed(1))
+						: typeof d.occupiedMinutes === "number" && !isNaN(d.occupiedMinutes)
+							? Number((d.occupiedMinutes / 60).toFixed(1))
+							: 0;
+
 			return {
-				id: String(d.id || `doc-${idx + 1}`),
-				name: String(d.name || `Врач ${idx + 1}`),
+				id: String(d.id || d.doctorUserId || `doc-${idx + 1}`),
+				name: String(d.name || d.fullName || `Врач ${idx + 1}`),
 				specialty: String(d.specialty || "Стоматолог"),
 				revenueKopecks: docKop,
 				revenueFormatted: formatKopecksToRubles(docKop),
 				visitsCount: visits,
-				chairHours: Number((visits * 0.9).toFixed(1)),
+				chairHours,
 				averageCheckKopecks: avgKop,
 				averageCheckFormatted: formatKopecksToRubles(avgKop),
 				rebookingPercent: Number(d.rebookingPercent || 0),

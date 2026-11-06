@@ -123,7 +123,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			),
 		);
 
-	// 3. Топ врачей по выручке и явке пациентов (100% честный запрос к БД)
+	// 3. Топ врачей по выручке, часам в кресле и явке пациентов (100% честный запрос к БД)
 	const doctorRevenueExpr = sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`;
 	const doctorStats = await db
 		.select({
@@ -133,6 +133,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			revenueRub: doctorRevenueExpr,
 			appointmentsCount: sql<number>`count(distinct ${appointments.id})::int`,
 			completedCount: sql<number>`coalesce(sum(case when ${appointments.status} in ('completed', 'arrived', 'in_treatment') then 1 else 0 end), 0)::int`,
+			occupiedMinutes: sql<number>`coalesce(sum(case when ${appointments.status} not in ('cancelled', 'no_show') then extract(epoch from (${appointments.endsAt} - ${appointments.startsAt})) / 60 else 0 end), 0)::int`,
 		})
 		.from(appointments)
 		.leftJoin(users, eq(appointments.doctorUserId, users.id))
@@ -156,6 +157,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 			const totalAppts = Number(d.appointmentsCount || 0);
 			const attendance = totalAppts > 0 ? Math.round((visitsCount / totalAppts) * 100) : 100;
 			const avgCheckKop = visitsCount > 0 ? Math.round(revKop / visitsCount) : 0;
+			const chairHours = Math.round((Number(d.occupiedMinutes || 0) / 60) * 10) / 10;
 			const name = d.fullName || "Врач клиники";
 			const initials = name
 				.split(" ")
@@ -175,6 +177,7 @@ export async function queryExecutiveDepartmentsAndDoctors(
 				revenueRub: Math.round(revKop / 100),
 				revenueFormatted: formatKopecksRu(revKop),
 				visitsCount,
+				chairHours,
 				attendancePercent: attendance,
 				averageCheckKopecks: avgCheckKop,
 				averageCheckFormatted: formatKopecksRu(avgCheckKop),

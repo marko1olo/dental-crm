@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import {
 	requireClinicalReadAccess,
@@ -183,21 +183,22 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 
 			const [revenueRow] = await db
 				.select({
-					total: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
-					cash: sql<number>`coalesce(sum(case when ${payments.method} = 'cash' then ${payments.amountRub} else 0 end), 0)`,
-					card: sql<number>`coalesce(sum(case when ${payments.method} = 'card' then ${payments.amountRub} else 0 end), 0)`,
-					cashless: sql<number>`coalesce(sum(case when ${payments.method} in ('bank_transfer', 'online') then ${payments.amountRub} else 0 end), 0)`,
-					advance: sql<number>`coalesce(sum(case when ${payments.method} in ('family_wallet', 'insurance', 'other') then ${payments.amountRub} else 0 end), 0)`,
-					sbp: sql<number>`coalesce(sum(case when ${payments.method} = 'online' then ${payments.amountRub} else 0 end), 0)`,
-					bankTransfer: sql<number>`coalesce(sum(case when ${payments.method} = 'bank_transfer' then ${payments.amountRub} else 0 end), 0)`,
-					insurance: sql<number>`coalesce(sum(case when ${payments.method} = 'insurance' then ${payments.amountRub} else 0 end), 0)`,
+					total: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
+					cash: sql<number>`coalesce(sum(case when ${payments.method} = 'cash' then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
+					card: sql<number>`coalesce(sum(case when ${payments.method} = 'card' then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
+					cashless: sql<number>`coalesce(sum(case when ${payments.method} in ('bank_transfer', 'online') then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
+					advance: sql<number>`coalesce(sum(case when ${payments.method} in ('family_wallet', 'insurance', 'other') then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
+					sbp: sql<number>`coalesce(sum(case when ${payments.method} = 'online' then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
+					bankTransfer: sql<number>`coalesce(sum(case when ${payments.method} = 'bank_transfer' then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
+					insurance: sql<number>`coalesce(sum(case when ${payments.method} = 'insurance' then (case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end) else 0 end), 0)`,
 				})
 				.from(payments)
-				// Только фактически полученные деньги
+				// [ANL-02] Только фактически полученные деньги: чистый приход минус возвраты по фактическому времени проведения платежа
 				.where(
 					and(
-						withDate(payments.organizationId, payments.createdAt),
-						eq(payments.status, "paid"),
+						eq(payments.organizationId, orgId),
+						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+						inArray(payments.status, ["paid", "refunded"]),
 					),
 				);
 
@@ -209,7 +210,8 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				.from(payments)
 				.where(
 					and(
-						withDate(payments.organizationId, payments.createdAt),
+						eq(payments.organizationId, orgId),
+						startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
 						eq(payments.status, "paid"),
 					),
 				);
@@ -233,6 +235,8 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 					withDate(treatmentPlans.organizationId, treatmentPlans.createdAt),
 				);
 
+			// [ANL-05] Первичный приём: по явному маркеру консультации/первички в причине,
+			// либо по отсутствию у пациента завершенных приемов в прошлом (без ложного "or reason is null").
 			const [consultationApptRow] = await db
 				.select({
 					count: sql<number>`count(*)::int`,
@@ -241,7 +245,7 @@ export async function registerDashboardRoutes(app: FastifyInstance) {
 				.where(
 					and(
 						withDate(appointments.organizationId, appointments.startsAt),
-						sql`(${appointments.reason} ilike '%конс%' or ${appointments.reason} ilike '%первич%' or ${appointments.reason} is null)`,
+						sql`(${appointments.reason} ilike '%конс%' or ${appointments.reason} ilike '%первич%' or not exists (select 1 from appointments a2 where a2.patient_id = ${appointments.patientId} and a2.status = 'completed' and a2.starts_at < ${appointments.startsAt}))`,
 					),
 				);
 

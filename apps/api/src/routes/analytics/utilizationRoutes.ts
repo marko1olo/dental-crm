@@ -16,6 +16,7 @@ import {
 	users,
 	visits,
 } from "../../db/schema.js";
+import { calculateWorkingMinutesInPeriod } from "./executiveKpiQuery.js";
 
 export interface ChairUtilizationItem {
 	chairId: string | null;
@@ -88,7 +89,9 @@ export async function calculateChairUtilization(
 				),
 			)
 		: 30;
-	const availableMinutesPerChair = daysInPeriod * 12 * 60; // 12-часовая рабочая смена
+	// [ANL-04] Честный расчет рабочих минут клиники (6 рабочих дней в неделю по 11ч) вместо вымышленных 84ч/нед
+	const effectiveStart = startDate ?? new Date(now.getFullYear(), now.getMonth(), 1, 0, 0, 0, 0);
+	const { availableMinutesPerChair } = calculateWorkingMinutesInPeriod(effectiveStart, now, 11);
 
 	const chairConditions: any[] = [eq(chairs.organizationId, orgId)];
 	if (branchId && branchId !== "all") {
@@ -187,15 +190,16 @@ export async function calculateDoctorProfitability(
 	const docProfRes = await db
 		.select({
 			doctorId: appointments.doctorUserId,
-			revenue: sql<number>`coalesce(sum(${payments.amountRub}),0)`,
+			revenue: sql<number>`coalesce(sum(case when ${payments.status} = 'paid' then ${payments.amountRub} when ${payments.status} = 'refunded' then -${payments.amountRub} else 0 end), 0)`,
 		})
 		.from(payments)
 		.leftJoin(visits, eq(payments.visitId, visits.id))
 		.leftJoin(appointments, eq(visits.appointmentId, appointments.id))
 		.where(
 			and(
-				withDateFilter(orgId, payments.organizationId, payments.createdAt, startDate),
-				eq(payments.status, "paid"),
+				eq(payments.organizationId, orgId),
+				startDate ? gte(sql`coalesce(${payments.paidAt}, ${payments.createdAt})`, startDate) : sql`true`,
+				inArray(payments.status, ["paid", "refunded"]),
 			),
 		)
 		.groupBy(appointments.doctorUserId);
