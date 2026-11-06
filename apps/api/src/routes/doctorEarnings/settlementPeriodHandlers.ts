@@ -70,7 +70,13 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 		}
 
 		const identity = getRequestIdentity(request);
-		const effectiveOrgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		if (!identity.organizationId || !identity.userId || !identity.role) {
+			return reply.code(401).send({
+				error: "StaffAuthRequired",
+				message: "Требуется авторизация сотрудника клиники",
+			});
+		}
+		const effectiveOrgId = identity.organizationId;
 		const body = parsed.data;
 
 		// Разрешаем doctorId в реальный UUID пользователя базы данных
@@ -84,7 +90,7 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 
 		// RBAC: врач может закрывать только свои периоды, владелец и администратор — для любого врача
 		const canManageAny = identity.role === "owner" || identity.role === "administrator" || identity.role === "admin";
-		if (!canManageAny && identity.role === "doctor" && identity.userId && resolvedDoctorId !== identity.userId) {
+		if (!canManageAny && resolvedDoctorId !== identity.userId) {
 			return reply.code(403).send({
 				error: "DoctorForbiddenError",
 				message: "Доступ запрещен: врач может закрывать расчетный период исключительно для себя",
@@ -191,9 +197,20 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 		if (!parsed.success) return reply.code(400).send({ error: "ValidationError", message: "Неверные параметры" });
 
 		const identity = getRequestIdentity(request);
-		const effectiveOrgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		if (!identity.organizationId || !identity.userId || !identity.role) {
+			return reply.code(401).send({ error: "StaffAuthRequired", message: "Требуется авторизация сотрудника клиники" });
+		}
+		const effectiveOrgId = identity.organizationId;
 		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, parsed.data.doctorId, identity.userId ?? undefined);
 		if (!resolvedDoctorId) return reply.code(404).send({ error: "DoctorNotFoundError" });
+
+		const canManageAny = identity.role === "owner" || identity.role === "administrator" || identity.role === "admin";
+		if (!canManageAny && resolvedDoctorId !== identity.userId) {
+			return reply.code(403).send({
+				error: "DoctorForbiddenError",
+				message: "Доступ запрещен: переоткрывать расчетный период можно только для себя",
+			});
+		}
 
 		const { periodKey } = parsePeriodDates(parsed.data.periodStart, parsed.data.periodEnd);
 		const reopened = await reopenSettlementPeriodInDb(effectiveOrgId, resolvedDoctorId, periodKey);
@@ -205,9 +222,20 @@ export async function registerSettlementPeriodRoutes(app: FastifyInstance): Prom
 		if (!q.doctorId || !q.from || !q.to) return reply.code(400).send({ error: "MissingParams" });
 
 		const identity = getRequestIdentity(request);
-		const effectiveOrgId = identity.organizationId || "00000000-0000-0000-0000-000000000001";
+		if (!identity.organizationId || !identity.userId || !identity.role) {
+			return reply.code(401).send({ error: "StaffAuthRequired", message: "Требуется авторизация сотрудника клиники" });
+		}
+		const effectiveOrgId = identity.organizationId;
 		const resolvedDoctorId = await resolveDoctorUserUuid(effectiveOrgId, String(q.doctorId), identity.userId ?? undefined);
 		if (!resolvedDoctorId) return reply.send({ isClosed: false, statement: null });
+
+		const canManageAny = identity.role === "owner" || identity.role === "administrator" || identity.role === "admin";
+		if (!canManageAny && resolvedDoctorId !== identity.userId) {
+			return reply.code(403).send({
+				error: "DoctorForbiddenError",
+				message: "Доступ запрещен: просмотр статуса доступен только для себя",
+			});
+		}
 
 		const { periodKey } = parsePeriodDates(String(q.from), String(q.to));
 		const statement = await findPayrollStatement(effectiveOrgId, resolvedDoctorId, periodKey);

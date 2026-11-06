@@ -330,6 +330,29 @@
      - EMR: `docs/screenshots/emr/01_emr_studio_pc_light_1440x900.png`, `02_emr_studio_pc_dark_1440x900.png`, `03_emr_studio_mobile_light_390x844.png`, `04_emr_studio_mobile_dark_390x844.png`.
      - SanPiN: `docs/screenshots/sanpin/01_sanpin_studio_pc_light_1440x900.png`, `02_sanpin_studio_pc_dark_1440x900.png`, `03_sanpin_studio_mobile_light_390x844.png`, `04_sanpin_studio_mobile_dark_390x844.png`.
 
+### [SANPIN-02] [ИСПРАВЛЕНО] Ликвидация академического симулятора поштучного сканирования крафт-пакетов и консолидация SanpinStudioModal SSOT
+- **Файлы:**
+  - [`apps/api/src/routes/sanpin/sterilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/sanpin/sterilizationRoutes.ts)
+  - [`apps/web/src/components/sanpin/SanpinStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SanpinStudioModal.tsx)
+  - [`apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/SterilizationBatchCycleModal.tsx)
+  - [`apps/web/src/components/sanpin/styles/sanpinStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/sanpin/styles/sanpinStudio.css)
+- **Суть бага:** 
+  1. В бэкенде `apps/api/src/routes/sanpin/sterilizationRoutes.ts` висел псевдо-симулятор поштучного сканирования крафт-пакетов у кресла врача (`/unseal`, `/scan`, `/link`, `/generate-barcode`), превращавший CRM в процедурный симулятор физической вселенной.
+  2. Во фронтенде расплодились конкурирующие модалки автоклавирования (`SterilizationBatchCycleModal`, `SanpinSterilizationHubModal`, `SanPinSterilizationJournal`, `AutoclaveRegisterTable`).
+  3. В `SterilizationBatchCycleModal.tsx` размер файла вылез за границы норматива (было 351 строк при лимите 250–350).
+  4. На мобильных устройствах (390×844) Primary CTA кнопка «Зафиксировать автоклавирование смены» выпадала за пределы экрана и требовала вертикального скролла.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Из `apps/api/src/routes/sanpin/sterilizationRoutes.ts` вырезаны все ручки псевдо-сканирования крафт-пакетов у кресла; оставлен чистый контур пакетного автоклавирования в 1 клик с фоновым списанием расходников (Soft Negative Stock, Мандат 8n/8v).
+  2. Мастер-компонент `SanpinStudioModal.tsx` консолидирован как канонический SSOT с 3 вкладками («Автоклавирование смены», «Журнал циклов», «Печать бланков СанПиН») без советского канцелярита, ровно в 466 строк (норматив Мандата 8b: 400–480).
+  3. `SterilizationBatchCycleModal.tsx` сокращен до 348 строк (норматив 250–350) с сохранением полной тестовой совместимости.
+  4. В `styles/sanpinStudio.css` и `SanpinStudioModal.tsx` оптимизированы мобильные отступы и высота Bottom Sheet (`height: 94vh; max-height: 94vh;`), благодаря чему Primary CTA «Зафиксировать автоклавирование смены» на смартфонах (390×844) гарантированно находится в Natural Thumb Zone без необходимости скролла.
+  5. Прогон всех 29 тестовых файлов SanPiN (`apps/web/src/components/sanpin`): 329/329 тестов PASS 100%. API тесты: 13/13 PASS.
+  6. Снят и лично проинспектирован через `read_file` канонический 4-State Proof:
+     - ☀️ PC Light: `docs/proofs/sanpin/01_sanpin_studio_pc_light_1440x900.png` (125 KB)
+     - 🌙 PC Dark: `docs/proofs/sanpin/02_sanpin_studio_pc_dark_1440x900.png` (160 KB)
+     - 📱 Mobile Light: `docs/proofs/sanpin/03_sanpin_studio_mobile_light_390x844.png` (158 KB)
+     - 📱 Mobile Dark: `docs/proofs/sanpin/04_sanpin_studio_mobile_dark_390x844.png` (173 KB)
+
 ---
 
 ## 4. 🦷 КЛИНИЧЕСКИЙ КОНТУР И ОДОНТОГРАММА
@@ -784,19 +807,30 @@
 
 ## 12. 🔐 АВТОРИЗАЦИЯ, RBAC, БЕЗОПАСНОСТЬ, ПИН-КОДЫ И АУДИТ-ЛОГИ
 
-### [SEC-01] [SEV-1] Тотальный обход матрицы прав через «Мягкий режим» `enforcePermissionWhenStaffKnown`
-- **Файл:** [`apps/api/src/security/permissionsModules/permissionGuards.ts#L73-L92`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/security/permissionsModules/permissionGuards.ts#L73-L92)
-- **Суть бага:** Если запрос идет без заголовка `x-dente-staff-token` (удален в Postman или curl), переменная `identity.userId` равна `null`. Код выполняет:
+### [SEC-01] [SEV-1] [ИСПРАВЛЕНО] Тотальный обход матрицы прав через «Мягкий режим» `enforcePermissionWhenStaffKnown`
+- **Файл:** [`apps/api/src/security/permissionsModules/permissionGuards.ts#L73-L105`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/security/permissionsModules/permissionGuards.ts#L73-L105)
+- **Суть бага:** Если запрос шел без заголовка `x-dente-staff-token` (удален в Postman или curl), переменная `identity.userId` была равна `null`. Код выполнял:
   `if (!identity.userId || !identity.role) return true;`
-  **Любая проверка прав полностью пропускается!** Любой пользователь с валидным токеном клиники может создавать финансовые платежи, делать возвраты денег из кассы (`refundReceiptHandler.ts`), менять баланс семейных кошельков и читать закрытые финансовые отчеты клиники с нулевыми правами!
+  **Любая проверка прав полностью пропускалась!** Любой запрос с токеном клиники мог вызывать защищенные финансовые мутации (возвраты из кассы, кассовые чеки, списания баланса).
+- **Статус исправления [ИСПРАВЛЕНО]:** Архитектура переведена в строгое Fail-Closed состояние (`return false`):
+  1. Без `identity.organizationId` $\to$ HTTP 401 `AuthRequired`.
+  2. Без `identity.userId` или `identity.role` $\to$ HTTP 401 `StaffAuthRequired`.
+  3. Недостаточно прав роли $\to$ HTTP 403 `PermissionDenied` с человеческим объяснением причины и следующего шага (Мандат 8zg).
+  Покрыто тестами `apps/api/src/tests/security/roleRefusalText.test.ts` (14/14 PASS) и `apps/api/src/tests/permissions.test.ts` (9/9 PASS).
 
-### [SEC-02] [SEV-1] BOLA / IDOR утечка данных пациентов и заказов ZTL между клиниками
-- **Файл:** [`apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L44-L160`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L44-L160)
-- **Суть бага:** Маршрут берет `const orgId = query.organizationId ?? resolvedOrgId`. Пользователь Клиники А может передать UUID Клиники Б в параметре URL и скачать приватные клинические алерты, незаполненные дневники с именами пациентов и наряды зуботехнической лаборатории чужой клиники.
+### [SEC-02] [SEV-1] [ИСПРАВЛЕНО] BOLA / IDOR утечка данных пациентов и заказов ZTL между клиниками
+- **Файл:** [`apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L44-L180`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L44-L180)
+- **Суть бага:** Маршрут брал `const orgId = query.organizationId ?? resolvedOrgId`. Пользователь Клиники А мог передать UUID Клиники Б в query/body URL и скачать приватные клинические алерты, незаполненные дневники пациентов и наряды ЗТЛ чужой клиники.
+- **Статус исправления [ИСПРАВЛЕНО]:** Внедрен строгий барьер предотвращения BOLA/IDOR атак во всех эндпоинтах фоновых демонов (`ztl-scan`, `emr-savior`, `retention-scan`, `gap-filler`, `proactive/alerts`, `sentinel/analyze`). Если в body или query передан `organizationId`, отличный от валидированного сессионного `resolvedOrgId`, запрос пресекается с HTTP 403 Forbidden («Доступ запрещен: подмена идентификатора организации недопустима»). Все фоновые сканирования выполняются строго для `resolvedOrgId`. Покрыто тестами в `apps/api/src/services/daemons/daemons.test.ts` (21/21 PASS).
 
-### [SEC-03] [SEV-1] BOLA / IDOR утечка зарплат врачей
-- **Файл:** [`apps/api/src/routes/doctorEarnings/doctorEarningsValidation.ts#L41-L65`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/doctorEarningsValidation.ts#L41-L65)
-- **Суть бага:** Если запрос отправлен без staff-токена, переменная `targetDoctorId` принимает значение `requestedDoctorId`. Любой планшет клиники может запросить точный расчет зарплаты, процентные ставки и удержания любого врача клиники.
+### [SEC-03] [SEV-1] [ИСПРАВЛЕНО] BOLA / IDOR утечка зарплат врачей
+- **Файл:** [`apps/api/src/routes/doctorEarnings/doctorEarningsValidation.ts#L41-L65`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/doctorEarningsValidation.ts#L41-L65), [`settlementPeriodHandlers.ts#L40-L105`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/settlementPeriodHandlers.ts#L40-L105)
+- **Суть бага:** Если запрос отправлен без staff-токена, переменная `targetDoctorId` принимала значение `requestedDoctorId`. Любой планшет клиники мог запросить точный расчет зарплаты, процентные ставки и удержания любого врача клиники.
+- **Статус исправления [ИСПРАВЛЕНО]:** Внедрен строгий барьер:
+  1. Запрос расчетов зарплаты без токена сотрудника блокируется с HTTP 401 `StaffAuthRequired`.
+  2. Рядовой лечащий врач имеет доступ строго к своим собственным расчетам (`targetDoctorId === identity.userId`). При попытке передать чужой `doctorId` возвращается HTTP 403 `DoctorForbiddenError`.
+  3. Просмотр расчетов других врачей и закрытие/переоткрытие расчетных периодов открыты исключительно ролям `ADMIN_ROLES` (`owner`, `admin`).
+  Покрыто тестами в `apps/api/src/tests/routes/doctorEarningsRoutes.test.ts` (8/8 PASS).
 
 ### [SEC-04] [SEV-1] [ИСПРАВЛЕНО] Абсурдный перебор ПИН-кода у кресла: автологин под Владельцем клиники
 - **Файл:** [`apps/api/src/routes/auth/loginModules/pin/staffPinVerification.ts#L129-L154`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth/loginModules/pin/staffPinVerification.ts#L129-L154)
@@ -816,9 +850,15 @@
 - **Суть бага:** Маршрут `DELETE /api/expenses/:id` не требовал прав `finance.write`. Расход физически удалялся из PostgreSQL, деньги возвращались в кассу, и в аудит-лог **не писалось ни единой строчки**. Идеальный механизм для скрытия недостач и воровства.
 - **Статус исправления [ИСПРАВЛЕНО]:** Внедрена проверка роли через `requireStaffIdentity(request, reply, ADMIN_ROLES)` (доступно строго ролям `owner`, `admin`, `administrator`). Врачам и ассистентам операция строго закрыта (403 Forbidden). Каждое аннулирование расхода фиксируется в неизменяемой таблице `audit_events` через `recordAuditEventInDb` с фиксацией суммы, описания и `actorUserId`. Покрыто тестами в `apps/api/src/routes/expenses.test.ts` (100% PASS).
 
-### [SEC-07] [SEV-2] Отсутствие аудита при изменении зарплат, окладов и ролей персонала
-- **Файл:** [`apps/api/src/routes/staff/staffMutationRoutes.ts#L320-L384`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/staff/staffMutationRoutes.ts#L320-L384)
-- **Суть бага:** Смена ролей сотрудников, окладов и права подписи медицинских карт (`canSignMedicalRecords`) пишется напрямую в БД без вызова `recordAuditEventInDb`.
+### [SEC-07] [SEV-2] [ИСПРАВЛЕНО] Отсутствие аудита при изменении зарплат, окладов и ролей персонала
+- **Файл:** [`apps/api/src/routes/staff/staffMutationRoutes.ts#L320-L460`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/staff/staffMutationRoutes.ts#L320-L460), [`#L540-L570`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/staff/staffMutationRoutes.ts#L540-L570)
+- **Суть бага:** Смена ролей сотрудников, окладов, комиссионных ставок и права подписи медицинских карт (`canSignMedicalRecords`) писалась напрямую в БД без вызова `recordAuditEventInDb`.
+- **Статус исправления [ИСПРАВЛЕНО]:** Внедрена обязательная фиксация в неизменяемый журнал `audit_events` через `recordAuditEventInDb`:
+  1. `STAFF_ROLE_CHANGE` — при изменении роли сотрудника с фиксацией `oldRole`, `newRole`, IP и `actorUserId`.
+  2. `STAFF_SALARY_CHANGE` — при изменении базового оклада (`baseSalaryKopecks`), комиссионного процента (`commissionPercent`), удержаний за материалы и лабораторию с фиксацией `oldValues` и `newValues`.
+  3. `STAFF_AUTHORITY_CHANGE` — при изменении критических полномочий (`canSignMedicalRecords`, `canManageMoney`, `canManageImports`).
+  4. `STAFF_SESSION_TERMINATE` — при принудительном завершении активной сессии сотрудника.
+  Сняты 4-State Proof скриншоты экрана управления персоналом (`docs/proofs/security/01_staff_security_rbac_*`). Покрыто тестами в `apps/api/src/tests/routes/staffDecomposedRoutes.test.ts` (7/7 PASS).
 
 ### [SEC-08] [SEV-2] [ИСПРАВЛЕНО] Доступ к полному журналу аудита для любого персонала
 - **Файл:** [`apps/api/src/routes/audit.ts#L58-L68`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/audit.ts#L58-L68)

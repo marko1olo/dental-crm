@@ -58,17 +58,13 @@ export async function requirePermission(
 }
 
 /**
- * Мягкий режим: проверяет право ТОЛЬКО если сотрудник опознан.
+ * Строгий контроль полномочий (Fail-Closed Architecture).
  *
- * ЗАЧЕМ ОТДЕЛЬНАЯ ФУНКЦИЯ. Часть рабочих процессов сейчас идёт под токеном
- * кабинета без входа конкретного сотрудника (userId в токене нет). Если сразу
- * потребовать личность на всех маршрутах, эти сценарии перестанут работать.
- * Поэтому права внедряются в два шага: сначала запрет для тех, кто опознан и
- * не имеет права (ассистент у кассы, ассистент в настройках) — это ловит реальные
- * злоупотребления и ничего не ломает; и только потом, когда вход сотрудника
- * станет обязательным везде, вызовы заменяются на requirePermission.
+ * Защищает маршрут: если требуется право (permission), запрос ОБЯЗАН
+ * содержать валидную организацию (401 AuthRequired) и опознанного сотрудника
+ * с ролью (401 StaffAuthRequired). Если роль не даёт права — 403 PermissionDenied.
  *
- * Возвращает false, если ответ клиенту уже отправлен.
+ * Возвращает false, если ответ клиенту уже отправлен (доступ заблокирован).
  */
 export function enforcePermissionWhenStaffKnown(
 	request: FastifyRequest,
@@ -76,9 +72,23 @@ export function enforcePermissionWhenStaffKnown(
 	permission: Permission,
 ): boolean {
 	const identity = getRequestIdentity(request);
-	// Сотрудник не опознан — решение принимают прежние барьеры (секрет + токен
-	// кабинета). Здесь мы не ужесточаем.
-	if (!identity.userId || !identity.role) return true;
+
+	if (!identity.organizationId) {
+		reply.code(401).send({
+			error: "AuthRequired",
+			message: "Требуется авторизация рабочего кабинета клиники.",
+		});
+		return false;
+	}
+
+	if (!identity.userId || !identity.role) {
+		reply.code(401).send({
+			error: "StaffAuthRequired",
+			message:
+				"Требуется вход сотрудника: действие выполняется от конкретного лица.",
+		});
+		return false;
+	}
 
 	if (!roleHasPermission(identity.role, permission)) {
 		reply.code(403).send({

@@ -11,7 +11,6 @@
 
 import type { FastifyInstance, FastifyPluginAsync } from "fastify";
 import { requireResolvedOrganizationId } from "../../accessGuard.js";
-import { getRequestIdentity } from "../../security/identity.js";
 import {
 	defaultChairsideSentinel,
 } from "../../services/agent/index.js";
@@ -41,10 +40,15 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 
 			const parsedBody = ztlScanBodySchema.safeParse(request.body ?? {});
 			const body = parsedBody.success ? parsedBody.data : {};
-			const orgId = body.organizationId ?? resolvedOrgId;
+			if (body.organizationId && body.organizationId !== resolvedOrgId) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещен: подмена идентификатора организации недопустима",
+				});
+			}
 
 			const alerts = await defaultDaemonScheduler.triggerZtlScan({
-				organizationId: orgId,
+				organizationId: resolvedOrgId,
 				...(body.lookAheadHours !== undefined ? { lookAheadHours: body.lookAheadHours } : {}),
 			});
 
@@ -65,10 +69,15 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 
 			const parsedBody = emrSaviorBodySchema.safeParse(request.body ?? {});
 			const body = parsedBody.success ? parsedBody.data : {};
-			const orgId = body.organizationId ?? resolvedOrgId;
+			if (body.organizationId && body.organizationId !== resolvedOrgId) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещен: подмена идентификатора организации недопустима",
+				});
+			}
 
 			const alerts = await defaultDaemonScheduler.triggerEmrSaviorScan({
-				organizationId: orgId,
+				organizationId: resolvedOrgId,
 				...(body.targetDate ? { targetDate: new Date(body.targetDate) } : {}),
 			});
 
@@ -89,10 +98,15 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 
 			const parsedBody = retentionScanBodySchema.safeParse(request.body ?? {});
 			const body = parsedBody.success ? parsedBody.data : {};
-			const orgId = body.organizationId ?? resolvedOrgId;
+			if (body.organizationId && body.organizationId !== resolvedOrgId) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещен: подмена идентификатора организации недопустима",
+				});
+			}
 
 			const summaries = await defaultDaemonScheduler.triggerRetentionScan({
-				organizationId: orgId,
+				organizationId: resolvedOrgId,
 			});
 
 			return reply.send({ ok: true, data: summaries, count: summaries.length });
@@ -118,10 +132,17 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 				});
 			}
 
+			if (parsedBody.data.organizationId && parsedBody.data.organizationId !== resolvedOrgId) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещен: подмена идентификатора организации недопустима",
+				});
+			}
+
 			const alert = await defaultDaemonScheduler.triggerGapFiller(
 				parsedBody.data.cancelledAppointmentId,
 				{
-					organizationId: parsedBody.data.organizationId ?? resolvedOrgId,
+					organizationId: resolvedOrgId,
 					...(parsedBody.data.maxCandidates !== undefined
 						? { maxCandidates: parsedBody.data.maxCandidates }
 						: {}),
@@ -152,11 +173,16 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 
 			const parsedQuery = proactiveAlertsQuerySchema.safeParse(request.query ?? {});
 			const query = parsedQuery.success ? parsedQuery.data : {};
-			const orgId = query.organizationId ?? resolvedOrgId;
+			if (query.organizationId && query.organizationId !== resolvedOrgId) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещен: подмена идентификатора организации недопустима",
+				});
+			}
 			const liveScan = query.liveScan === "true" || query.liveScan === undefined;
 
 			const aggregate = await defaultDaemonScheduler.getProactiveAlerts({
-				organizationId: orgId,
+				organizationId: resolvedOrgId,
 				liveScan,
 			});
 
@@ -168,6 +194,13 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 	server.post(
 		"/api/v1/copilot/sentinel/analyze",
 		async (request, reply) => {
+			const resolvedOrgId = await requireResolvedOrganizationId(
+				request,
+				reply,
+				"copilot analyze sentinel",
+			);
+			if (!resolvedOrgId) return;
+
 			const parsedBody = chairsideSentinelAnalyzeBodySchema.safeParse(
 				request.body ?? {},
 			);
@@ -179,9 +212,17 @@ export const daemonSchedulerRoutes: FastifyPluginAsync = async (
 				});
 			}
 
-			const result = await defaultChairsideSentinel.analyzeVisitContext(
-				parsedBody.data,
-			);
+			if (parsedBody.data.organizationId && parsedBody.data.organizationId !== resolvedOrgId) {
+				return reply.code(403).send({
+					error: "Forbidden",
+					message: "Доступ запрещен: подмена идентификатора организации недопустима",
+				});
+			}
+
+			const result = await defaultChairsideSentinel.analyzeVisitContext({
+				...parsedBody.data,
+				organizationId: resolvedOrgId,
+			});
 			return reply.send({ ok: true, data: result });
 		},
 	);

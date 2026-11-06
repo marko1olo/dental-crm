@@ -31,7 +31,13 @@ import {
 } from "../../security/authSecret.js";
 import { registerStaffRoutes } from "../../routes/staff.js";
 import { getRequestIdentity } from "../../security/identity.js";
-import { fixtureUuid, withFixtureTenant } from "../support/fixtureOrganizations.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+import { db } from "../../db/client.js";
+import { organizations, users } from "../../db/schema.js";
 
 const ORG_ID = fixtureUuid("staff-decomposed-org", 1);
 const STAFF_ID = fixtureUuid("staff-decomposed-member", 1);
@@ -64,9 +70,40 @@ describe("Staff Decomposed Routes Integration Tests", () => {
 		});
 		await registerStaffRoutes(app);
 		await app.ready();
+
+		try {
+			await purgeFixtureOrganizations([ORG_ID]);
+			await withFixtureTenant(ORG_ID, async () => {
+				await db
+					.insert(organizations)
+					.values({
+						id: ORG_ID,
+						name: "Клиника Декомпозированного Персонала",
+					})
+					.onConflictDoNothing();
+
+				await db
+					.insert(users)
+					.values({
+						id: STAFF_ID,
+						organizationId: ORG_ID,
+						email: "staff.decomposed@dente.local",
+						role: "owner",
+						fullName: "Владелец Декомпозированный",
+					})
+					.onConflictDoNothing();
+			});
+		} catch (e) {
+			// Если база локально недоступна, тесты сами обработают
+		}
 	});
 
 	after(async () => {
+		try {
+			await purgeFixtureOrganizations([ORG_ID]);
+		} catch {
+			// ignore cleanup errors
+		}
 		await app.close();
 	});
 

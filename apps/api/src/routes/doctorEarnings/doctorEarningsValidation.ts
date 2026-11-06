@@ -31,42 +31,43 @@ export function validateDoctorEarningsRequest(
 	}
 
 	const identity = getRequestIdentity(request);
-	const requestedDoctorId = parsedQuery.data.doctorId?.trim();
-
-	// Тайна зарплат (Мандат 8e): врач и прочий персонал видят строго свои начисления.
-	// Чужие сдельные листки отсекаются бэкендом с 403, а не просто скрыты на фронте.
-	// Просмотр начислений любого врача разрешен только владельцу и администратору.
-	const canViewAnyDoctor = identity.role === "owner" || identity.role === "administrator" || identity.role === "admin";
-
-	if (!canViewAnyDoctor && requestedDoctorId && identity.userId && requestedDoctorId !== identity.userId) {
-		reply.code(403).send({
-			error: "DoctorForbiddenError",
-			message:
-				"Доступ запрещен: просматривать можно исключительно собственные начисления сдельной оплаты",
+	if (!identity.organizationId || !identity.userId || !identity.role) {
+		reply.code(401).send({
+			error: "StaffAuthRequired",
+			message: "Требуется авторизация сотрудника клиники для доступа к данным заработной платы.",
 		});
 		return null;
 	}
 
-	if (!canViewAnyDoctor && identity.role === "doctor" && identity.userId) {
+	const requestedDoctorId = parsedQuery.data.doctorId?.trim();
+
+	// Тайна зарплат (Мандат 8e): врач и прочий персонал видят строго свои начисления.
+	// Чужие сдельные листки отсекаются бэкендом с 403, а не просто скрыты на фронте.
+	// Просмотр начислений любого врача разрешен только руководству (owner, admin, administrator).
+	const canViewAnyDoctor =
+		identity.role === "owner" ||
+		identity.role === "administrator" ||
+		identity.role === "admin";
+
+	if (!canViewAnyDoctor) {
 		if (requestedDoctorId && requestedDoctorId !== identity.userId) {
 			reply.code(403).send({
 				error: "DoctorForbiddenError",
 				message:
-					"Доступ запрещен: лечащий врач имеет право просматривать исключительно собственные начисления сдельной оплаты",
+					"Доступ запрещен: просматривать можно исключительно собственные начисления сдельной оплаты",
 			});
 			return null;
 		}
 	}
 
-	const targetDoctorId =
-		identity.role === "doctor" && !canViewAnyDoctor && identity.userId
-			? identity.userId
-			: requestedDoctorId || identity.userId;
+	const targetDoctorId = canViewAnyDoctor
+		? requestedDoctorId || identity.userId
+		: identity.userId;
 
 	if (!targetDoctorId) {
-		reply.code(401).send({
-			error: "UnauthorizedError",
-			message: "Не удалось определить врача: авторизуйтесь или укажите врача для расчета",
+		reply.code(400).send({
+			error: "ValidationError",
+			message: "Не удалось определить врача для расчета начислений",
 		});
 		return null;
 	}

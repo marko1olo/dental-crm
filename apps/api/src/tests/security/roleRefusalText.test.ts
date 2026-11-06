@@ -405,6 +405,29 @@ describe("тело ответа 403 действительно несёт это
 		);
 	});
 
+	test("fail-closed режим enforcePermissionWhenStaffKnown блокирует запрос без токена сотрудника [SEC-01]", async () => {
+		const app = Fastify({ logger: false });
+		app.post("/probe", async (request, reply) => {
+			if (!enforcePermissionWhenStaffKnown(request, reply, "finance.write"))
+				return reply;
+			return { unreachable: true };
+		});
+		const secret = authTokenSecret();
+		const response = await app.inject({
+			method: "POST",
+			url: "/probe",
+			headers: {
+				"x-dente-clinic-token": signToken({ organizationId: ORG }, secret),
+				"content-type": "application/json",
+			},
+			payload: {},
+		});
+		await app.close();
+		assert.equal(response.statusCode, 401);
+		const json = response.json() as Record<string, unknown>;
+		assert.equal(json.error, "StaffAuthRequired");
+	});
+
 	test("охрана «кроме врача» из accessGuard", async () => {
 		const { statusCode, body } = await refusalBody((app) => {
 			app.post("/probe", async (request, reply) => {

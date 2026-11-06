@@ -428,5 +428,32 @@ describe("Background Daemons & Scheduler Architecture", () => {
 			assert.ok(Array.isArray(json.data.ztlAlerts));
 			assert.ok(Array.isArray(json.data.emrSaviorDrafts));
 		});
+
+		it("BOLA / IDOR [SEC-02]: rejects cross-organization data leakage with 403 Forbidden", async () => {
+			const foreignOrgId = "99999999-9999-4999-8999-999999999999";
+
+			// GET with spoofed organizationId query
+			const resQuerySpoof = await app.inject({
+				method: "GET",
+				url: `/api/v1/copilot/proactive/alerts?organizationId=${foreignOrgId}`,
+				headers: authHeaders(),
+			});
+			assert.equal(resQuerySpoof.statusCode, 403);
+			const jsonQuery = resQuerySpoof.json();
+			assert.equal(jsonQuery.error, "Forbidden");
+
+			// POST with spoofed organizationId in body
+			const resBodySpoof = await app.inject({
+				method: "POST",
+				url: "/api/v1/copilot/daemons/ztl-scan",
+				headers: authHeaders(),
+				payload: {
+					organizationId: foreignOrgId,
+				},
+			});
+			assert.equal(resBodySpoof.statusCode, 403);
+			const jsonBody = resBodySpoof.json();
+			assert.equal(jsonBody.error, "Forbidden");
+		});
 	});
 });

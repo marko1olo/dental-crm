@@ -82,6 +82,20 @@ describe("GET /api/doctor/my-earnings (Piece-Rate & Commission Transparency)", (
 		assert.ok(body.message.includes("исключительно собственные начисления"));
 	});
 
+	test("2.1. BOLA / IDOR [SEC-03]: запрос без staff-токена с попыткой узнать зарплату врача блокируется 401", async () => {
+		const res = await app.inject({
+			method: "GET",
+			url: `/api/doctor/my-earnings?doctorId=${DOCTOR_OTHER}`,
+			headers: {
+				[CLINIC_TOKEN_HEADER]: signToken({ organizationId: ORG_ID }, TEST_SECRET, 3600),
+			},
+		});
+
+		assert.equal(res.statusCode, 401);
+		const body = JSON.parse(res.body);
+		assert.equal(body.error, "StaffAuthRequired");
+	});
+
 	test("3. Администратор имеет право передавать doctorId конкретного врача для сверки", async () => {
 		const res = await app.inject({
 			method: "GET",
