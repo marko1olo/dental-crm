@@ -37,8 +37,8 @@ describe("Anesthesia Carpule Disposal Engine (SanPiN 3.3686-21 / Mandate 8e / So
 		it("generates complete Ultracain disposal record in 1 click with Class B waste container", () => {
 			const record = create1ClickAnesthesiaPkuDisposalRecord("ultracain_ds_forte_1");
 
-			assert.ok(record.id.startsWith("pku_an_"));
-			assert.ok(record.recordNumber.includes("ПКУ-АН-"));
+			assert.ok(record.id.startsWith("an_") || record.id.startsWith("pku_an_"));
+			assert.ok(record.recordNumber.includes("АН-"));
 			assert.equal(record.drugId, "articaine_4_epi_100k");
 			assert.equal(record.drugNameRu, "Ультракаин Д-С форте");
 			assert.equal(record.carpulesUsedCount, 1);

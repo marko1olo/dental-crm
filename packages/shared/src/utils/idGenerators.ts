@@ -141,10 +141,12 @@ export function generatePrescriptionSeriesNumber(
 }
 
 /**
- * Generates an official Anesthesia PKU Record number according to SanPiN 3.3686-21.
- * Format: ПКУ-АН-YYYY/XXX (100..999).
+ * Generates an official clinical Anesthesia Administration & Consumption record number.
+ * Note: Dental local anesthetics (Articaine, Mepivacaine) are NOT subject to PKU (Subject-Quantitative Accounting)
+ * under RF legislation (List II/III narcotics). This generates a clinical administration record number.
+ * Format: АН-YYYY/XXX (100..999).
  */
-export function generateAnesthesiaPkuRecordNumber(
+export function generateAnesthesiaRecordNumber(
 	year?: number,
 	options?: {
 		readonly seedKey?: string | undefined;
@@ -157,13 +159,13 @@ export function generateAnesthesiaPkuRecordNumber(
 	}
 	const y = year ?? new Date().getFullYear();
 	const num = generateDeterministicOrSecureInteger(100, 999, options?.seedKey, options?.sequenceNumber);
-	return `ПКУ-АН-${y}/${num}`;
+	return `АН-${y}/${num}`;
 }
 
 /**
- * Generates a unique PKU record ID without Math.random.
+ * Generates a unique Anesthesia administration record ID without Math.random.
  */
-export function generateAnesthesiaPkuRecordId(prefix = "pku_an"): string {
+export function generateAnesthesiaRecordId(prefix = "an"): string {
 	return `${prefix}_${Date.now()}_${generateSecureAlphanumericId(6)}`;
 }
 

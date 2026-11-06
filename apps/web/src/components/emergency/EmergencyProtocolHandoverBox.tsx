@@ -94,7 +94,7 @@ export function EmergencyProtocolHandoverBox({
 
 						{onWriteoffAntishockKit && (
 							<div className="emergency-protocol-action-row tertiary-actions" style={{ gridTemplateColumns: "1fr" }}>
-								<button type="button" className={`emergency-copy-act-btn ${isKitWrittenOff ? "teal" : "surface"}`} onClick={onWriteoffAntishockKit} data-testid="emergency-handover-writeoff-btn" title="1-клик списание укладки «Антишок» со склада (Приказ Минздрава РФ № 786н, мягкий овердрафт)">
+								<button type="button" className={`emergency-copy-act-btn ${isKitWrittenOff ? "teal" : "surface"}`} onClick={onWriteoffAntishockKit} data-testid="emergency-handover-writeoff-btn" title="1-клик списание экстренной аптечки «Антишок» со склада (мягкий овердрафт)">
 									{isKitWrittenOff ? <Check size={16} /> : <PackageCheck size={16} />}
 									<span>{isWritingOffKit ? "Списание со склада..." : isKitWrittenOff ? "Укладка «Антишок» списана со склада" : "Списать укладку «Антишок» (Склад)"}</span>
 								</button>

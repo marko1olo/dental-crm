@@ -5,8 +5,8 @@ import {
 	hashStringSeed,
 	generateDeterministicOrSecureInteger,
 	generatePrescriptionSeriesNumber,
-	generateAnesthesiaPkuRecordNumber,
-	generateAnesthesiaPkuRecordId,
+	generateAnesthesiaRecordNumber,
+	generateAnesthesiaRecordId,
 	generateFamilyDepositTransactionId,
 	generatePartialRefundOperationNumber,
 	generateTreatmentPlanNumber,
@@ -65,12 +65,13 @@ test("packages/shared/utils/idGenerators: generatePrescriptionSeriesNumber satis
 	assert.equal(custom, "CUSTOM-001");
 });
 
-test("packages/shared/utils/idGenerators: generateAnesthesiaPkuRecord satisfies SanPiN 3.3686-21", () => {
-	const num = generateAnesthesiaPkuRecordNumber(2026, { seedKey: "art-1" });
-	assert.match(num, /^ПКУ-АН-2026\/\d{3}$/);
+test("packages/shared/utils/idGenerators: generateAnesthesiaRecord formats official clinical administration numbers", () => {
+	// Note: Local dental anesthetics (Articaine, Mepivacaine) do NOT belong to PKU / narcotics List II/III in RF
+	const num = generateAnesthesiaRecordNumber(2026, { seedKey: "art-1" });
+	assert.match(num, /^АН-2026\/\d{3}$/);
 
-	const id = generateAnesthesiaPkuRecordId();
-	assert.match(id, /^pku_an_\d+_[a-z0-9]{6}$/);
+	const id = generateAnesthesiaRecordId();
+	assert.match(id, /^an_\d+_[a-z0-9]{6}$/);
 });
 
 test("packages/shared/utils/idGenerators: generateFamilyDepositTransactionId formats transactions", () => {

@@ -216,7 +216,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 							onClick={openEmergency}
 							className="px-2.5 py-1.5 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-rose-500/10 hover:border-rose-500/40 text-[var(--muted)] hover:text-rose-600 text-xs font-semibold inline-flex items-center gap-1 transition-colors cursor-pointer"
 							data-testid="btn-anesthesia-quick-emergency"
-							title="Укладка Антишок (Приказ 786н)"
+							title="Экстренная аптечка (Антишок)"
 						>
 							<ShieldAlert size={14} className="text-rose-500 shrink-0" />
 							<span className="hidden sm:inline">Аптечка</span>

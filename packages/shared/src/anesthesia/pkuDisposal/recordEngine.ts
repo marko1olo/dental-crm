@@ -9,8 +9,8 @@ import type {
 	AnesthesiaPkuPresetKey,
 } from "../types.js";
 import {
-	generateAnesthesiaPkuRecordId,
-	generateAnesthesiaPkuRecordNumber,
+	generateAnesthesiaRecordId,
+	generateAnesthesiaRecordNumber,
 } from "../../utils/idGenerators.js";
 import { calculateDefaultCarpuleExpirationDate } from "./expirationValidator.js";
 import { ANESTHESIA_PKU_PRESETS } from "./presets.js";
@@ -21,11 +21,11 @@ export function createAnesthesiaPkuRecord(
 		recordNumber?: string | undefined;
 	},
 ): AnesthesiaPkuDisposalRecord {
-	const genId = params.id || generateAnesthesiaPkuRecordId();
+	const genId = params.id || generateAnesthesiaRecordId();
 	const year = new Date().getFullYear();
 	const recordNumber =
 		params.recordNumber ||
-		generateAnesthesiaPkuRecordNumber(year, {
+		generateAnesthesiaRecordNumber(year, {
 			seedKey: `${params.patientFullName}:${params.batchNumber}`,
 		});
 

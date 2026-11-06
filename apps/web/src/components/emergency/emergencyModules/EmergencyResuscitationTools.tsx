@@ -64,7 +64,7 @@ export function EmergencyResuscitationTools({
 							className={`emergency-writeoff-kit-btn ${isKitWrittenOff ? 'written-off' : ''}`}
 							onClick={onWriteoffAntishockKit}
 							data-testid="emergency-writeoff-kit-btn"
-							title="1-клик списание укладки «Антишок» со склада (Приказ Минздрава РФ № 786н, мягкий овердрафт)"
+							title="1-клик списание экстренной аптечки «Антишок» со склада (мягкий овердрафт)"
 						>
 							{isKitWrittenOff ? <Check size={14} /> : <PackageCheck size={14} />}
 							<span>{isWritingOffKit ? "Списание..." : isKitWrittenOff ? "Списано" : "Списать укладку"}</span>
