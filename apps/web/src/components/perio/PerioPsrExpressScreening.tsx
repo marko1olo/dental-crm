@@ -47,8 +47,7 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 				<div className="flex flex-wrap items-center gap-2">
 					<button
 						type="button"
-						onClick={onSetAllIntact}
-						disabled={readOnly}
+						onClick={readOnly ? undefined : onSetAllIntact}
 						data-testid="psr-all-intact-btn"
 						className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-emerald-600 dark:text-emerald-400 font-bold text-xs border border-[var(--line)] hover:border-emerald-500 flex items-center gap-1.5 cursor-pointer"
 					>
@@ -56,8 +55,7 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 					</button>
 					<button
 						type="button"
-						onClick={onApplyHygienePreset}
-						disabled={readOnly}
+						onClick={readOnly ? undefined : onApplyHygienePreset}
 						data-testid="psr-hygiene-preset-btn"
 						className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-sky-600 dark:text-sky-400 font-semibold text-xs border border-[var(--line)] hover:border-sky-500 flex items-center gap-1.5 cursor-pointer"
 					>
@@ -65,8 +63,7 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 					</button>
 					<button
 						type="button"
-						onClick={onApplyPeriodontitisPreset}
-						disabled={readOnly}
+						onClick={readOnly ? undefined : onApplyPeriodontitisPreset}
 						data-testid="psr-periodontitis-preset-btn"
 						className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-orange-600 dark:text-orange-400 font-semibold text-xs border border-[var(--line)] hover:border-orange-500 flex items-center gap-1.5 cursor-pointer"
 					>
@@ -87,8 +84,7 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 								<span className="font-bold text-xs text-[var(--ink)]">{s.name} ({s.teethRange})</span>
 								<button
 									type="button"
-									onClick={() => onUpdateSextant(s.id, current.code, !current.asterisk)}
-									disabled={readOnly}
+									onClick={() => (readOnly ? undefined : onUpdateSextant(s.id, current.code, !current.asterisk))}
 									className={`min-h-[44px] min-w-[44px] h-7 px-2 rounded font-bold text-xs cursor-pointer transition-all border ${
 										current.asterisk ? "bg-rose-500 text-white border-rose-600" : "bg-[var(--paper)] text-[var(--muted)] border-[var(--line)]"
 									}`}
@@ -102,8 +98,7 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 									<button
 										key={code}
 										type="button"
-										onClick={() => onUpdateSextant(s.id, code, current.asterisk)}
-										disabled={readOnly}
+										onClick={() => (readOnly ? undefined : onUpdateSextant(s.id, code, current.asterisk))}
 										className={`min-h-[44px] min-w-[44px] rounded-lg text-xs font-bold flex flex-col items-center justify-center cursor-pointer transition-all border ${
 											current.code === code ? "bg-[#0d9488] text-white border-[#0f766e]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
 										}`}
@@ -131,7 +126,6 @@ export const PerioPsrExpressScreening: React.FC<PerioPsrExpressScreeningProps> =
 					<button
 						type="button"
 						onClick={() => onInsertToProtocol(`Пародонтологический осмотр: ${summary.psrFormula}\nДиагноз: ${summary.suggestedDiagnosisRu} (${summary.icd10Code})\nРекомендации: ${summary.hygienePlanRu}`)}
-						disabled={readOnly}
 						className="min-h-[44px] px-3.5 rounded-lg bg-[var(--paper)] text-[var(--ink)] font-semibold text-xs border border-[var(--line)] hover:border-[#0d9488] flex items-center gap-1.5 cursor-pointer shrink-0"
 					>
 						Вставить в дневник

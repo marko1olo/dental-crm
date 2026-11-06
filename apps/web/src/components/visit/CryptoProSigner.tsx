@@ -1,5 +1,5 @@
 import { Lock } from "lucide-react";
-import type React from "react";
+import React from "react";
 import { CryptoProLockedBanner } from "./cryptoProModules/CryptoProLockedBanner";
 import { CryptoProSignerModal } from "./cryptoProModules/CryptoProSignerModal";
 import {

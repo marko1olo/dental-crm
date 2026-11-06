@@ -1,4 +1,4 @@
-import type React from "react";
+import React from "react";
 import { AlertTriangle, CheckCircle2, Printer } from "lucide-react";
 import { CryptoProSigner } from "../../CryptoProSigner";
 import { VisitDiaryReviseAndLockFooters } from "../VisitDiaryReviseAndLockFooters";

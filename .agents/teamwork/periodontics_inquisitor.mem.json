@@ -2,7 +2,7 @@
   "role": "Periodontics & Perio-Chart Inquisitor",
   "status": "COMPLETED",
   "verdict": "ПРОВЕРЕНО: ЧИСТО",
-  "updatedAt": "2026-11-06T09:29:40+04:00",
+  "updatedAt": "2026-11-06T09:56:00+04:00",
   "scope": {
     "frontend": "apps/web/src/components/perio/PerioStudioModal.tsx",
     "facades": [
@@ -24,12 +24,13 @@
     ]
   },
   "invariants_verified": {
-    "mandate_8e_doctor_autonomy": "1-click presets: '✓ Здоровый пародонт (Норма)', 'Гингивит (PSR 1–2)', 'Профгигиена AirFlow + УЗ', 'Пародонтит легкий', 'Пародонтит тяжелый'. Buttons never disabled.",
+    "mandate_8e_doctor_autonomy": "1-click presets: '✓ Здоровый пародонт (Норма)', 'Гингивит (PSR 1–2)', 'Профгигиена AirFlow + УЗ', 'Пародонтит легкий', 'Пародонтит тяжелый'. Buttons never disabled. Debounced submit with aria-busy.",
     "mandate_8am_single_primary_cta": "Exactly ONE Primary CTA '#0d9488' ('Сохранить пародонтограмму'): in header on desktop, in Floating Bottom Bar on mobile. Zero duplicate CTA.",
+    "mandate_8b_line_count": "PerioStudioModal.tsx is 486 lines, strictly <= 500 lines (Mandate 8b Sweet Spot).",
     "apple_hig_mobile": ">= 44x44px touch targets, iOS Bottom Sheet drawer drag handle (36x5px), 0px horizontal scroll, Natural Thumb Zone.",
     "clean_clinical_russian": "Zero bureaucratic codes ('043/у', '804н'), human clinical language ('Дневник приёма', 'Медицинская карта приёма', 'Сохранить пародонтограмму'). Zero 3rd party brands ('Florida Probe', 'DentalPRO').",
     "acid_database_persistence": "Unified resolution of non-UUID / demo patient IDs via resolvePerioPatientId with dual write to periodontogram_snapshots and perio_charts in PostgreSQL 18.",
-    "visual_proof_8_axes": "4-State proof verified via personal read_file: PC Light (309 KB), PC Dark (315 KB), Mobile Light (184 KB), Mobile Dark (189 KB)."
+    "visual_proof_8_axes": "4-State proof verified via personal read_file: PC Light (309.3 KB, MD5: b11eae9059b4e8b109e4f05ebab6c104), PC Dark (317.3 KB, MD5: 2567aee21265ff47e860184d692803f1), Mobile Light (183.9 KB, MD5: 71bb7aceb6ecb002824bd0d1da06fb40), Mobile Dark (215.2 KB, MD5: ac361466790bf9139e8c7313e1352f5e)."
   },
   "proofs": [
     "docs/proofs/perio/01_perio_studio_pc_light_1440x900.png",
@@ -38,12 +39,13 @@
     "docs/proofs/perio/04_perio_studio_mobile_dark_390x844.png"
   ],
   "gates": {
-    "encoding": "PASS",
-    "stub_overrides": "PASS",
-    "fetch_response": "PASS",
-    "dynamic_imports": "PASS",
+    "encoding": "PASS (23,933 files)",
+    "stub_overrides": "PASS (139 properties, 0 overrides)",
+    "fetch_response": "PASS (14,422 files, 100% guarded)",
+    "dynamic_imports": "PASS (18,194 files, 0 broken)",
     "tests_api": "27/27 PASS",
     "tests_web": "50/50 PASS",
-    "tests_shared": "38/38 PASS"
+    "tests_shared": "38/38 PASS",
+    "mandate_8b_line_count": "PASS (PerioStudioModal.tsx: 486 lines <= 500)"
   }
 }

@@ -1,5 +1,5 @@
 import { ArrowLeftRight, ShieldCheck, Sparkles, X } from "lucide-react";
-import type React from "react";
+import React from "react";
 
 export interface QuickActionsBatchOpsProps {
 	readonly pediatricMode?: boolean | undefined;

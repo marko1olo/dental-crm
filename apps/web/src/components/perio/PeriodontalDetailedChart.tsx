@@ -83,7 +83,6 @@ export const PeriodontalDetailedChart: React.FC<PeriodontalDetailedChartProps> =
 									key={num}
 									type="button"
 									onClick={() => setSelectedToothNum(num)}
-									disabled={readOnly}
 									data-testid={`perio-tooth-btn-${num}`}
 									className={`min-h-[44px] min-w-[44px] w-9 h-11 rounded-lg text-xs font-bold flex flex-col items-center justify-center cursor-pointer transition-all border ${
 										isSelected ? "bg-[#0d9488] text-white border-[#0f766e] ring-2 ring-[#0d9488]/40" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)]"
@@ -112,7 +111,6 @@ export const PeriodontalDetailedChart: React.FC<PeriodontalDetailedChartProps> =
 									key={site.key}
 									type="button"
 									onClick={() => setSelectedSiteKey(site.key)}
-									disabled={readOnly}
 									className={`min-h-[44px] p-2.5 rounded-xl flex flex-col items-start gap-1 text-left border cursor-pointer transition-all ${
 										isCurrentSite ? "bg-[#0d9488]/15 border-[#0d9488] text-[var(--ink)]" : "bg-[var(--paper)] border-[var(--line)] text-[var(--ink)]"
 									}`}
@@ -134,7 +132,6 @@ export const PeriodontalDetailedChart: React.FC<PeriodontalDetailedChartProps> =
 						<button
 							type="button"
 							onClick={handleBopToggle}
-							disabled={readOnly}
 							className={`min-h-[44px] min-w-[44px] px-3 rounded-lg font-bold text-xs flex items-center gap-1.5 border cursor-pointer transition-all ${
 								currentTooth[selectedSiteKey]?.bleedingOnProbing ? "bg-rose-500 text-white border-rose-600" : "bg-[var(--paper)] text-rose-600 dark:text-rose-400 border-[var(--line)]"
 							}`}
@@ -148,7 +145,6 @@ export const PeriodontalDetailedChart: React.FC<PeriodontalDetailedChartProps> =
 								key={val}
 								type="button"
 								onClick={() => handleDepthChange(val)}
-								disabled={readOnly}
 								className="min-h-[44px] min-w-[44px] h-12 rounded-xl text-base font-bold flex items-center justify-center cursor-pointer transition-all border bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] border-[var(--line)]"
 							>
 								{val} мм
