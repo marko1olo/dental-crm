@@ -7,6 +7,7 @@
 import { CheckCircle2, Share2, ShieldAlert, SlidersHorizontal } from "lucide-react";
 import React, { useId, useState } from "react";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
+import { AnesthesiaStudioModal } from "./AnesthesiaStudioModal";
 import {
 	type AnestheticDrugId,
 	type InjectionTechniqueId,
@@ -81,6 +82,10 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 	const [lastAppliedText, setLastAppliedText] = useState<string | null>(null);
 	const [toastMessage, setToastMessage] = useState<string | null>(null);
 	const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+	const [isStudioOpen, setIsStudioOpen] = useState<boolean>(() => {
+		if (typeof window === "undefined") return false;
+		return window.location.search.includes("studio=1") || window.location.search.includes("modal=1");
+	});
 	const memoBtnId = useId();
 
 	const isPediatric =
@@ -262,6 +267,17 @@ export function ChairsideAnesthesiaQuickBar(props: ChairsideAnesthesiaQuickBarPr
 						isAspirationNegative={isAspirationNegative}
 						onToggleAspiration={() => setIsAspirationNegative((v) => !v)}
 					/>
+
+					<button
+						type="button"
+						onClick={() => setIsStudioOpen(true)}
+						className="inline-flex items-center gap-1 px-2.5 py-1 min-h-[44px] rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-xs font-semibold text-[var(--ink)] transition-colors cursor-pointer shrink-0"
+						data-testid="btn-open-anesthesia-studio"
+						title="Открыть Студию анестезии"
+					>
+						<SlidersHorizontal size={13} className="text-teal-600 shrink-0" />
+						<span className="hidden sm:inline">Студия</span>
+					</button>
 
 					<button
 						id={memoBtnId}

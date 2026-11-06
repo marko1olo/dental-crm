@@ -12,6 +12,7 @@ import "./styles/touch-targets.css";
 import "./styles/tailwind.css";
 import "./components/anesthesia/anesthesia.css";
 import { AnesthesiaQuickBar } from "./components/anesthesia/AnesthesiaQuickBar";
+import { AnesthesiaStudioModal } from "./components/anesthesia/AnesthesiaStudioModal";
 import { EmergencyRescueModal } from "./components/emergency/EmergencyRescueModal";
 import { Syringe, Heart, FileText, CheckCircle2, ShieldAlert } from "lucide-react";
 
@@ -19,6 +20,12 @@ function AnesthesiaPreviewApp() {
 	const [activeDiaryText, setActiveDiaryText] = useState<string>(
 		"Проведена инфильтрационная анестезия в области зуба 16 Sol. Articaini 4% cum Epinephrini 1:200 000 — 1.7 мл (1 карпула). Осложнений нет."
 	);
+	const [isStudioOpen, setIsStudioOpen] = useState<boolean>(() => {
+		if (typeof window !== "undefined") {
+			return new URLSearchParams(window.location.search).get("studio") === "1";
+		}
+		return false;
+	});
 	const [isEmergencyOpen, setIsEmergencyOpen] = useState<boolean>(() => {
 		if (typeof window !== "undefined") {
 			return new URLSearchParams(window.location.search).get("emergency") === "1";
@@ -48,6 +55,15 @@ function AnesthesiaPreviewApp() {
 					</div>
 				</div>
 				<div className="flex items-center gap-2">
+					<button
+						type="button"
+						onClick={() => setIsStudioOpen(true)}
+						className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#0d9488] text-white text-xs font-semibold hover:bg-[#0f766e] transition-colors shadow-xs cursor-pointer"
+						data-testid="btn-preview-open-studio"
+					>
+						<Syringe size={14} />
+						Студия анестезии
+					</button>
 					<button
 						type="button"
 						onClick={() => setIsEmergencyOpen(true)}
@@ -105,6 +121,17 @@ function AnesthesiaPreviewApp() {
 					<span>Автоматическое списание со склада (Soft Negative Overdraft) и фиксация в карте приёма.</span>
 				</div>
 			</footer>
+
+			<AnesthesiaStudioModal
+				isOpen={isStudioOpen}
+				onClose={() => setIsStudioOpen(false)}
+				patientName="Иванов Иван Иванович"
+				doctorName="Д-р Воронов Алексей Владимирович"
+				targetToothNumberFdi={16}
+				patientWeightKg={70}
+				patientAgeYears={35}
+				onApplyAnesthesia={(text) => setActiveDiaryText(text)}
+			/>
 
 			<EmergencyRescueModal
 				isOpen={isEmergencyOpen}

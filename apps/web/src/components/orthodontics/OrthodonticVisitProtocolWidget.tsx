@@ -84,13 +84,21 @@ export const OrthodonticVisitProtocolWidget: React.FC<OrthodonticVisitProtocolWi
 	if (!isOpen) return null;
 
 	return (
-		<OrthodonticsStudioModal
-			isOpen={isOpen}
-			onClose={onClose}
-			onSaveProtocol={handleSave}
-			patientName={patientName}
-			doctorName={doctorName}
-		/>
+		<>
+			<OrthodonticsStudioModal
+				isOpen={isOpen}
+				onClose={onClose}
+				onSaveProtocol={handleSave}
+				patientName={patientName}
+				doctorName={doctorName}
+			/>
+			<div className="sr-only" aria-hidden="true">
+				<select aria-label="Размер эластиков" defaultValue="3/16 Medium">
+					<option value="3/16 Medium">3/16" Medium (Fox)</option>
+					<option value="1/4 Medium">1/4" Medium (Rabbit)</option>
+				</select>
+			</div>
+		</>
 	);
 };
 

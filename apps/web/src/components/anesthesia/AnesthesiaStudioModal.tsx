@@ -180,7 +180,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 			onClick={onClose}
 		>
 			<div
-				className="w-full sm:max-w-3xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-2xl rounded-t-[24px] sm:rounded-2xl flex flex-col max-h-[90vh] sm:max-h-[88vh] overflow-hidden"
+				className="w-full sm:max-w-3xl bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-2xl rounded-t-[24px] sm:rounded-2xl flex flex-col max-h-[92vh] sm:max-h-[94vh] overflow-hidden"
 				data-testid="anesthesia-studio-modal"
 				role="dialog"
 				aria-labelledby={titleId}
@@ -260,7 +260,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 				</section>
 
 				{/* Scrollable Studio Content Body */}
-				<main className="p-3.5 sm:p-5 space-y-2.5 overflow-y-auto min-h-0 flex-1">
+				<main className="p-3 sm:p-4 space-y-2 overflow-y-auto min-h-0 flex-1">
 					{/* 1. Four 1-Click Clinical Fast Presets */}
 					<div className="space-y-1">
 						<label className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">Быстрые шаблоны в 1 клик</label>
@@ -415,7 +415,7 @@ export const AnesthesiaStudioModal: React.FC<AnesthesiaStudioModalProps> = ({
 						<div className="flex items-center justify-between text-xs text-[var(--muted)] font-semibold">
 							<span className="flex items-center gap-1">
 								<FileText size={13} className="text-teal-600" />
-								<span>Запись в дневник приёма (Форма 043/у):</span>
+								<span>Запись в медицинскую карту приёма:</span>
 							</span>
 							<button
 								type="button"

@@ -7,3 +7,7 @@
  */
 
 export * from "./consentEngine/index.js";
+
+
+export const CHAIRSIDE_LEGAL_STAMP_REGULATORY =
+	"ЛИЧНОЕ СОГЛАСИЕ В ПРИСУТСТВИИ ПАЦИЕНТА В КРЕСЛЕ (ст. 20 323-ФЗ, Приказ МЗ РФ № 1051н)";
