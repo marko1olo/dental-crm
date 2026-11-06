@@ -68,6 +68,12 @@ import {
 	type Form257Record,
 	type PhysicalSensorsData,
 	type PsoJournalRecord,
+	// Shift Batch Autopilot & Chairside Norm (Mandates 8aa, 8e)
+	createCanonicalShiftAutoclaveBatch,
+	createChairsidePouchRecord,
+	exportChairsidePouchToForm257Record,
+	formatPouch043StatutorySnippet,
+	DEFAULT_CHAIRSIDE_STERILITY_SNIPPET,
 } from "../index.js";
 
 describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHENSIVE SUITE", () => {
@@ -760,6 +766,66 @@ describe("ROLE 2: NURSE & STERILIZATION ASSISTANT — SANPIN 3.3686-21 COMPREHEN
 			assert.equal(record.operatorStaffFullName, "Персонал клиники");
 			assert.equal(record.isPaperJournalDefault, true);
 			assert.ok(record.digitalStampHash.startsWith("CAB-CHECK-"));
+		});
+	});
+
+	// ─────────────────────────────────────────────────────────────────────────
+	// 5. 1-CLICK SHIFT AUTOCLAVE BATCH & CHAIRSIDE STATUTORY NORM (MANDATES 8aa, 8e)
+	// ─────────────────────────────────────────────────────────────────────────
+	describe("5. 1-Click Shift Autoclave Batch & Chairside Norm (Mandates 8aa, 8e)", () => {
+		it("creates canonical shift autoclave batch (134°C / 2.15 bar / 5.5 min) with soft negative stock metadata", () => {
+			const batch = createCanonicalShiftAutoclaveBatch({
+				date: "2026-09-25",
+				cycleNumber: 1,
+				packsCount: 18,
+				operatorFullName: "Смирнова А.В.",
+				operatorPosition: "Медсестра ЦСО",
+				headNurseFullName: "Воронова М.А.",
+			});
+
+			assert.equal(batch.isCyclePassed, true);
+			assert.equal(batch.actualTemperatureCelsius, 134.4);
+			assert.equal(batch.actualPressureBar, 2.15);
+			assert.equal(batch.actualExposureMinutes, 5.5);
+			assert.equal(batch.packsCount, 18);
+			assert.equal(batch.chamberPoints.length, 5);
+			assert.ok(batch.notes.includes("Soft Negative Stock"));
+			assert.ok(batch.notes.includes("Режим 134°C, 2.15 бар, 5 мин"));
+			assert.ok(batch.id.startsWith("F257-20260925-"));
+			assert.ok(batch.id.includes("-C01"));
+			assert.ok(batch.digitalStampHash.startsWith("DENTE-CSO-257-"));
+		});
+
+		it("defaults chairside sterilization snippet to healthy statutory norm in 1 click without procedural roadblocks", () => {
+			const defaultSnippet = formatPouch043StatutorySnippet();
+			assert.equal(defaultSnippet, DEFAULT_CHAIRSIDE_STERILITY_SNIPPET);
+			assert.equal(defaultSnippet, "Инструменты стерильны, крафт-пакет вскрыт при пациенте.");
+
+			const customSnippet = formatPouch043StatutorySnippet({
+				pouchCode: "КП-0925-14",
+				indicatorClass: 5,
+				openedInPresenceOfPatient: true,
+				isPassed: true,
+			});
+			assert.ok(customSnippet.includes("Стерильный лоток №КП-0925-14"));
+			assert.ok(customSnippet.includes("индикатор 5 класса сработал"));
+		});
+
+		it("links chairside record to shift CSO autoclave register seamlessly", () => {
+			const pouch = createChairsidePouchRecord({
+				customCode: "КП-0925-14",
+				trayKind: "therapeutic",
+			});
+
+			assert.equal(pouch.pouchCode, "КП-0925-14");
+			assert.equal(pouch.indicator.isPassed, true);
+			assert.equal(pouch.autoclave.temperatureC, 134);
+			assert.ok(pouch.form257Link.recordId.startsWith("F257-"));
+
+			const form257 = exportChairsidePouchToForm257Record(pouch);
+			assert.equal(form257.isCyclePassed, true);
+			assert.equal(form257.chamberPoints.length, 5);
+			assert.ok(form257.notes.includes("Мандат 8aa"));
 		});
 	});
 });

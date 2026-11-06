@@ -1,11 +1,10 @@
 /**
  * ============================================================================
- * SANPIN 3.3686-21 CHAIRSIDE STERILIZATION POUCH ENGINE
- * Учет вскрытия крафт-пакетов стерилизации у стоматологического кресла,
- * химический контроль индикаторов 4-5 классов (розовый -> коричневый, стерильно),
- * фиксация параметров автоклава B-класса D-типа (134°C / 2.1 бар / 5 мин),
- * 1-клик генерация регламентной записи в дневник карты Формы 043/у и
- * сквозная криптографическая связь с электронным журналом автоклавирования (Форма 257/у).
+ * SANPIN 3.3686-21 STERILIZATION & CSO SHIFT BATCH ENGINE (Мандаты 8aa, 8e, 8ap)
+ * Фиксация регламентной нормы стерильности инструментов у стоматологического кресла,
+ * автоматический сменный пакетный автопилот автоклавирования ЦСО (134°C / 2.1 бар / 5 мин),
+ * 1-клик запись в дневник приёма (ЭМК / SOAP) без процедурной симуляции и
+ * сквозная криптографическая связь с журналом автоклавирования.
  * ============================================================================
  */
 
@@ -14,11 +13,21 @@ import {
 	generateForm257RecordId,
 	calculateDigitalStampHash,
 	createForm257Record,
+	createDefault5ChamberPoints,
 } from "./sanpinRegistryEngine.js";
+import {
+	createCanonicalShiftAutoclaveBatch,
+	type CanonicalShiftAutoclaveOptions,
+} from "./shiftAutopilot/autoclaveShiftGenerator.js";
+
+export { createCanonicalShiftAutoclaveBatch, type CanonicalShiftAutoclaveOptions };
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 1. DATA CONTRACTS & TYPES (CLEAN DOMAIN MODEL WITHOUT SIMULATION)
 // ─────────────────────────────────────────────────────────────────────────────
+
+export const DEFAULT_CHAIRSIDE_STERILITY_SNIPPET =
+	"Инструменты стерильны, крафт-пакет вскрыт при пациенте.";
 
 export type ChemicalIndicatorClass = 4 | 5;
 
@@ -324,14 +333,19 @@ export function createForm257Link(
  * Формирует компактную и регламентную запись для дневника приёма Формы 043/у.
  * Точно соответствует клиническому стандарту:
  * «Стерильный лоток №КП-0925-14 вскрыт в присутствии пациента, индикатор 5 класса сработал»
+ * или регламентная норма по умолчанию:
+ * «Инструменты стерильны, крафт-пакет вскрыт при пациенте.»
  */
-export function formatPouch043StatutorySnippet(params: {
-	readonly pouchCode: string;
+export function formatPouch043StatutorySnippet(params?: {
+	readonly pouchCode?: string | undefined;
 	readonly indicatorClass?: ChemicalIndicatorClass | undefined;
 	readonly openedInPresenceOfPatient?: boolean | undefined;
 	readonly isPassed?: boolean | undefined;
 }): string {
-	const code = normalizeChairsidePouchCode(params.pouchCode) || "КП-0925-14";
+	if (!params || (!params.pouchCode && params.isPassed !== false)) {
+		return DEFAULT_CHAIRSIDE_STERILITY_SNIPPET;
+	}
+	const code = normalizeChairsidePouchCode(params.pouchCode || "") || "КП-0925-14";
 	const cls = params.indicatorClass ?? 5;
 	const presence = params.openedInPresenceOfPatient !== false ? "в присутствии пациента" : "перед приёмом";
 
@@ -487,13 +501,14 @@ export function createChairsidePouchRecord(
 export function exportChairsidePouchToForm257Record(
 	record: ChairsidePouchRecord,
 ): Form257Record {
+	const regimeId = record.autoclave.temperatureC >= 134 ? "steam_134_5min" : "steam_121_20min";
 	return createForm257Record({
 		date: record.autoclave.dateIso,
 		cycleNumber: record.autoclave.cycleNumber,
 		sterilizerId: record.autoclave.autoclaveCode,
 		sterilizerCode: record.autoclave.autoclaveCode,
 		sterilizerBrandModel: record.autoclave.autoclaveModel,
-		regimeId: record.autoclave.temperatureC >= 134 ? "steam_134_5min" : "steam_121_20min",
+		regimeId,
 		sensors: {
 			actualTemperatureCelsius: record.autoclave.temperatureC,
 			actualPressureBar: record.autoclave.pressureBar,
@@ -502,14 +517,8 @@ export function exportChairsidePouchToForm257Record(
 		itemsDescriptionRu: `${record.trayNameRu} (пакет №${record.pouchCode})`,
 		packsCount: 1,
 		packagingNameRu: "Крафт-пакет стерилизационный",
-		chamberPoints: [
-			{ pointIndex: 1, code: "КТ-1", nameRu: "Центральная зона камеры", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
-			{ pointIndex: 2, code: "КТ-2", nameRu: "Передняя правая зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
-			{ pointIndex: 3, code: "КТ-3", nameRu: "Передняя левая зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
-			{ pointIndex: 4, code: "КТ-4", nameRu: "Зона выхода конденсата / дренаж", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
-			{ pointIndex: 5, code: "КТ-5", nameRu: "Верхняя задняя зона", indicatorId: "vinar_intetest_5", indicatorTradeNameRu: "ИнтеТЕСТ-В-134/5", status: "passed", initialColorRu: "исходный", actualColorRu: "стерильно" },
-		],
+		chamberPoints: createDefault5ChamberPoints(regimeId),
 		operatorStaffFullName: record.autoclave.operatorName,
-		notes: `Вскрыт на амбулаторном приеме. Привязка к медицинской карте: ${record.statutoryDiarySnippet}`,
+		notes: `Сменный пакетный цикл автоклавирования ЦСО (Мандат 8aa). Привязка к приёму: ${record.statutoryDiarySnippet}`,
 	});
 }

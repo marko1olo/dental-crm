@@ -15,7 +15,7 @@ import { chromium } from "playwright";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONV_ID = "5899529d-720f-4bab-b9ae-7b894d2d62f9";
+const CONV_ID = process.env.CONVERSATION_ID || "c5db1ba9-d110-4a0b-b18b-29db63aea1f8";
 const OUT_CONV = `C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}/screenshots/sanpin`;
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/sanpin");
 const OUT_SCREENSHOTS = path.resolve(__dirname, "../docs/screenshots/sanpin");

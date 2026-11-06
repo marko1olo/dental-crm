@@ -11,6 +11,57 @@ import {
 	type Form257Record,
 } from "../sanpinRegistryEngine.js";
 
+export interface CanonicalShiftAutoclaveOptions {
+	date?: string;
+	cycleNumber?: number;
+	packsCount?: number;
+	operatorFullName?: string;
+	operatorPosition?: string;
+	headNurseFullName?: string;
+	autoclaveCode?: string;
+}
+
+/**
+ * Канонический 1-клик цикл автоклава смены ЦСО (134°C, 2.15 бар, 5 мин).
+ * SSOT пакетного автопилота с автоматическим списанием со склада по Soft Negative Stock.
+ */
+export function createCanonicalShiftAutoclaveBatch(
+	options: CanonicalShiftAutoclaveOptions = {},
+): Form257Record {
+	const date = options.date || new Date().toISOString().slice(0, 10);
+	const cycleNumber = options.cycleNumber ?? 1;
+	const packsCount = options.packsCount ?? 18;
+	const operatorFullName = options.operatorFullName || "Медсестра ЦСО";
+	const operatorPosition = options.operatorPosition || "Медицинская сестра ЦСО";
+	const headNurseFullName = options.headNurseFullName || "Главная медсестра";
+	const melagApp = CLINIC_AUTOCLAVE_MODELS.find((a) => a.id === "AUTO-MELAG-01") || CLINIC_AUTOCLAVE_MODELS[0]!;
+	const chamberPoints = createDefault5ChamberPoints("steam_134_5min");
+
+	return createForm257Record({
+		date,
+		cycleNumber,
+		sterilizerId: melagApp.id,
+		sterilizerCode: options.autoclaveCode || melagApp.code,
+		sterilizerBrandModel: melagApp.brandModelRu,
+		sterilizerSerialNumber: melagApp.serialNumber,
+		regimeId: "steam_134_5min",
+		sensors: {
+			actualTemperatureCelsius: 134.4,
+			actualPressureBar: 2.15,
+			actualExposureMinutes: 5.5,
+		},
+		itemsDescriptionRu: `Терапевтические и хирургические наборы лотков (${packsCount} пакетов)`,
+		packsCount,
+		packagingType: "kraft_pouch",
+		chamberPoints,
+		operatorStaffFullName: operatorFullName,
+		operatorStaffPosition: operatorPosition,
+		headNurseSignatureFullName: headNurseFullName,
+		isHeadNurseVerified: true,
+		notes: "Сменный пакетный цикл автоклавирования ЦСО в 1 клик. Режим 134°C, 2.15 бар, 5 мин. Списание упаковки и дезсредств со склада выполнено автоматически (Soft Negative Stock).",
+	});
+}
+
 export function generateShiftAutoclaveRecords(
 	date: string,
 	operatorFullName: string,
