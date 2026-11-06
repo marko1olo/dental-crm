@@ -6,6 +6,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { describe, it } from "node:test";
 import {
 	calculateBatchBomDeduction,
@@ -66,8 +67,8 @@ describe("defaultServiceBomCatalog & bomModules Test Suite", () => {
 	});
 
 	it("4. Mandate 8b file limits (submodules <= 120 lines, facades <= 15 lines)", () => {
-		const root = process.cwd();
-		const bomModulesDir = path.join(root, "packages/shared/src/warehouse/bomModules");
+		const currentDir = path.dirname(fileURLToPath(import.meta.url));
+		const bomModulesDir = path.resolve(currentDir, "../bomModules");
 		const moduleFiles = fs.readdirSync(bomModulesDir).filter((f) => f.endsWith(".ts"));
 
 		for (const file of moduleFiles) {
@@ -79,11 +80,11 @@ describe("defaultServiceBomCatalog & bomModules Test Suite", () => {
 			);
 		}
 
-		const facadePath = path.join(root, "packages/shared/src/warehouse/defaultServiceBomCatalog.ts");
+		const facadePath = path.resolve(currentDir, "../defaultServiceBomCatalog.ts");
 		const facadeLines = fs.readFileSync(facadePath, "utf-8").split("\n").length;
 		assert.ok(facadeLines <= 15, `defaultServiceBomCatalog.ts has ${facadeLines} lines (limit: <= 15)`);
 
-		const legacyFacadePath = path.join(root, "packages/shared/src/warehouse/default804nBomCatalog.ts");
+		const legacyFacadePath = path.resolve(currentDir, "../default804nBomCatalog.ts");
 		const legacyLines = fs.readFileSync(legacyFacadePath, "utf-8").split("\n").length;
 		assert.ok(legacyLines <= 10, `default804nBomCatalog.ts has ${legacyLines} lines (limit: <= 10)`);
 	});

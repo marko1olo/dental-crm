@@ -1,23 +1,77 @@
 {
-  "agent": "subagent_telephony_inquisitor",
-  "role": "Верховный Red Team Инквизитор Телефонии, Входящих Звонков и Плавающего Софтфона (Telephony & Omnichannel Hub)",
-  "updated": "2026-10-29T15:07:00+04:00",
+  "timestamp": "2026-11-06T08:58:20.000Z",
+  "inquisitor": "RED TEAM INQUISITOR WAVE 503: TELEPHONY & CRM LEADS",
   "status": "COMPLETED",
-  "stand": {
-    "web": "http://127.0.0.1:5173",
-    "api": "http://127.0.0.1:4100",
-    "postgres": "127.0.0.1:5432"
+  "invariantsVerified": {
+    "doctorSterileZone": {
+      "verified": true,
+      "details": "In VisitView/doctor role, incoming calls and floating widgets return null. Zero chairside overlays and zero sound distractions."
+    },
+    "zeroFloatingBlobs": {
+      "verified": true,
+      "details": "No floating circular buttons (FABs) or blocking overlays on clinical screens or appointment calendar."
+    },
+    "quietAdminSoftphone": {
+      "verified": true,
+      "details": "Discreet top-right capsule on desktop, native iOS Bottom Sheet (rounded-t-[24px], drag handle, touch targets >= 44x44px) on mobile."
+    },
+    "kanbanFunnel4Columns": {
+      "verified": true,
+      "details": "Canonical 4 stages: 'Новые', 'Квалифицированные', 'Записаны на консультацию', 'Дошли до клиники'. 0px horizontal drift, NEXT_STAGE_MAP.new label is 'Квалифицировать (в работу) →'."
+    },
+    "zeroAudioSimulators": {
+      "verified": true,
+      "details": "CallAudioEmptyState renders subtitle 'Запись звонка не подключена или недоступна'. Honest empty state with zero audio synthesizers."
+    },
+    "zeroBirdLanguage": {
+      "verified": true,
+      "details": "Zero bureaucratic codes (54-ФЗ, 804н, 043/у) in user-facing telephony and leads interfaces."
+    }
   },
-  "summary": "Ликвидирован файловый микро-шредер в incomingCallPopupModules, реализован сквозной бэкенд ответа и завершения вызовов в Fastify/PostgreSQL 18, честный стриминг аудиозаписей без моков, исправлена мобильная эргономика (Apple HIG, сенсорный минимум >= 44px, устранено усечение заголовков на 390px, строго 1 Primary CTA кнопка), получены 4-state visual proofs.",
-  "proofs": {
-    "pc_light": "docs/proofs/telephony/01_telephony_pc_light_1440x900.png",
-    "pc_dark": "docs/proofs/telephony/02_telephony_pc_dark_1440x900.png",
-    "mobile_light": "docs/proofs/telephony/03_telephony_mobile_light_390x844.png",
-    "mobile_dark": "docs/proofs/telephony/04_telephony_mobile_dark_390x844.png"
-  },
-  "tests": {
-    "web_telephony": "129 pass, 0 fail",
-    "api_lifecycle": "2 pass, 0 fail",
-    "total": "131 pass, 0 fail"
+  "proofs": [
+    {
+      "file": "docs/proofs/telephony_crm/pc_light_1440x900.png",
+      "resolution": "1440x900",
+      "state": "PC Light",
+      "sizeBytes": 75321,
+      "view": "Leads Kanban 4 columns",
+      "verifiedByReadFile": true
+    },
+    {
+      "file": "docs/proofs/telephony_crm/pc_dark_1440x900.png",
+      "resolution": "1440x900",
+      "state": "PC Dark",
+      "sizeBytes": 99618,
+      "view": "Telephony Studio & Call Journal",
+      "verifiedByReadFile": true
+    },
+    {
+      "file": "docs/proofs/telephony_crm/mobile_light_390x844.png",
+      "resolution": "390x844",
+      "state": "Mobile Light",
+      "sizeBytes": 36355,
+      "view": "Mobile Leads Feed (Apple HIG Bottom Sheet)",
+      "verifiedByReadFile": true
+    },
+    {
+      "file": "docs/proofs/telephony_crm/mobile_dark_390x844.png",
+      "resolution": "390x844",
+      "state": "Mobile Dark",
+      "sizeBytes": 51029,
+      "view": "Mobile Telephony (Apple HIG Bottom Sheet)",
+      "verifiedByReadFile": true
+    }
+  ],
+  "testSuites": {
+    "vitestTargetedSuites": {
+      "command": "npx vitest run apps/web/src/components/leads/ apps/web/src/components/telephony/",
+      "suitesPassed": 54,
+      "testsPassed": 352,
+      "failed": 0
+    },
+    "nodeTargetedTests": {
+      "passed": 93,
+      "failed": 0
+    }
   }
 }

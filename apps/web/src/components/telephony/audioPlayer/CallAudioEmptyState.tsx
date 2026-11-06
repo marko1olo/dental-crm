@@ -21,7 +21,7 @@ export function CallAudioEmptyState({
 				<VolumeX size={20} className="text-[var(--muted,#94a3b8)] shrink-0" />
 				<div className="flex flex-col items-center text-center">
 					<span className="font-bold text-xs text-[var(--ink,#0f172a)]">
-						Запись обрабатывается АТС
+						Запись разговора недоступна / звонок завершен
 					</span>
 					<span className="text-[11px] text-[var(--muted,#64748b)] mt-0.5">
 						Запись звонка не подключена или недоступна

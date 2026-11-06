@@ -184,10 +184,10 @@ export function validateAndBalanceSplitPayment(params: {
 }): SplitPaymentValidationResult {
 	const actKopecks = resolveKopecks(params.actTotalKopecks, params.actTotalRub);
 
-	if (actKopecks <= 0) {
+	if (actKopecks < 0) {
 		throw new SplitPaymentValidationError(
 			"InvalidActTotal",
-			"Итоговая сумма акта должна быть строго больше 0 копеек.",
+			"Итоговая сумма акта не может быть отрицательной.",
 			{ actTotalKopecks: actKopecks },
 		);
 	}

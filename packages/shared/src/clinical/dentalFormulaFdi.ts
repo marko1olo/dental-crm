@@ -154,8 +154,9 @@ export const isValidFdiTooth = isValidFdiToothNumber;
 
 export function assertValidFdiToothNumber(toothNumber: unknown): asserts toothNumber is number {
 	if (!isValidFdiToothNumber(toothNumber)) {
+		const repr = typeof toothNumber === "symbol" ? toothNumber.toString() : String(toothNumber);
 		throw new Error(
-			`Некорректный номер зуба по стандарту FDI (ISO 3950): ${toothNumber}. Допустимы постоянные 11..48 и молочные 51..85.`,
+			`Некорректный номер зуба по стандарту FDI (ISO 3950): ${repr}. Допустимы постоянные 11..48 и молочные 51..85.`,
 		);
 	}
 }

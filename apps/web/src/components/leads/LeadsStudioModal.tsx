@@ -116,7 +116,7 @@ export const LeadsStudioModal: React.FC<LeadsStudioModalProps> = ({
 							<h2 className="text-base sm:text-lg font-bold leading-tight flex items-center gap-2">
 								Воронка первичных обращений
 								<span className="text-xs px-2 py-0.5 rounded-full bg-teal-500/10 text-teal-700 dark:text-teal-300 font-semibold border border-teal-500/20">
-									SSOT 1–5 кресел
+									1–5 кресел
 								</span>
 							</h2>
 							<p className="text-xs text-[var(--leads-muted)]">
@@ -213,7 +213,7 @@ export const LeadsStudioModal: React.FC<LeadsStudioModalProps> = ({
 															data-testid={`lead-card-${lead.id}`}
 														>
 															<div className="flex items-start justify-between gap-1 mb-1.5">
-																<h4 className="text-xs font-bold leading-snug line-clamp-1">{lead.name}</h4>
+																<h4 className="text-xs font-bold leading-snug break-words">{lead.name}</h4>
 																<span className="text-[11px] font-black text-teal-600 dark:text-teal-400 shrink-0">
 																	{formatRubles(lead.potentialRevenueRub)}
 																</span>

@@ -110,7 +110,7 @@ export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
 export const NEXT_STAGE_MAP: Partial<
 	Record<LeadStatus, { status: LeadStatus; label: string }>
 > = {
-	new: { status: "contacted", label: "В работу →" },
+	new: { status: "contacted", label: "Квалифицировать (в работу) →" },
 	contacted: { status: "consult_booked", label: "Записать на приём →" },
 	consult_booked: { status: "showed_up", label: "Отметить визит (дошел) →" },
 	showed_up: { status: "trash", label: "В архив →" },
