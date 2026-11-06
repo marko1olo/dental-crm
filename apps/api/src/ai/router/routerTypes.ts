@@ -21,8 +21,15 @@ export const SUPPORTED_GEMINI_MODELS = [
 export type SupportedGeminiModel = (typeof SUPPORTED_GEMINI_MODELS)[number];
 
 export const DEFAULT_AGENTROUTER_KEYS: readonly string[] = Object.freeze(
-	(process.env.AGENTROUTER_API_KEYS || process.env.GROQ_API_KEYS || "")
-		.split(",")
+	[
+		process.env.AGENTROUTER_API_KEYS,
+		process.env.GEMINI_API_KEY,
+		process.env.GOOGLE_API_KEYS,
+		process.env.GROQ_API_KEYS,
+		process.env.OPENAI_API_KEYS,
+	]
+		.filter((v): v is string => typeof v === "string" && v.trim().length > 0)
+		.flatMap((v) => v.split(","))
 		.map((k) => k.trim())
 		.filter((k) => k.length > 0),
 );

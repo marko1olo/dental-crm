@@ -68,19 +68,16 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   useEffect(() => { if (initialMessages?.length) setMessages(parseChatMsgs(initialMessages)); }, [initialMessages]);
   useEffect(() => {
     const saved = threadMessages[threadKey];
-    if (saved && saved.length > 0) {
-      setMessages(saved);
-    } else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) {
-      setMessages([]);
-    }
-  }, [threadKey]);
+    if (saved && saved.length > 0) setMessages(saved);
+    else if (!isDemoShowcaseMode() && !isDemoPatientId(patientId)) setMessages([]);
+  }, [threadKey, patientId]);
   useEffect(() => { if (initialTab) setActiveTab(initialTab as CopilotStudioTab); }, [initialTab]);
   useEffect(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); }, [messages, threadKey, saveThreadMessages]);
   const handleClose = useCallback(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); onClose(); }, [messages, threadKey, saveThreadMessages, onClose]);
 
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
   const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
-  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
+  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [actionError, setActionError] = useState<string | null>(null), [, setIsExecuting] = useState<string | null>(null), [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
   const voice = useVoiceEngine({ lang: "ru-RU", continuous: true });
 
   // Автоматическое определение среды исполнения без ручных переключателей
@@ -94,9 +91,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
 
   useEffect(() => {
     if (!isOpen) return;
-    if (typeof document !== "undefined") {
-      document.body.classList.add("copilot-open", "copilot-studio-open");
-    }
+    if (typeof document !== "undefined") document.body.classList.add("copilot-open", "copilot-studio-open");
     let s: WakeLockSentinel | null = null;
     if ("wakeLock" in navigator && typeof navigator.wakeLock?.request === "function") navigator.wakeLock.request("screen").then((l) => { s = l; }).catch(() => {});
     const handleKeyDown = (e: KeyboardEvent) => { if (e.key === "Escape" && !isSettingsOpen && !isHistoryOpen) handleClose(); };
@@ -225,31 +220,34 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     setIsStreaming(false);
     const localProposal = localPendingAction ? { id: localPendingAction.id, toolName: localPendingAction.toolName, description: localPendingAction.description, payload: { ...(localPendingAction.payload || {}), execute: localPendingAction.execute } } : undefined;
     if (isDemoShowcaseMode()) {
-      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? {
-        ...m, text: m.text.trim() ? m.text : fallbackText,
-        citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)",
-        actionProposal: m.actionProposal ?? localProposal ?? { id: `act-${Date.now()}`, toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`, payload: { tooth: fallbackProposalTooth } }
-      } : m)));
+      setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() ? m.text : fallbackText, citation: "Клинический протокол СтАР (Диагностика и лечение кариеса и пульпита)", actionProposal: m.actionProposal ?? localProposal ?? { id: `act-${Date.now()}`, toolName: CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, description: `Обновление одонтограммы для зуба ${fallbackProposalTooth}`, payload: { tooth: fallbackProposalTooth } } } : m)));
     } else {
       setMessages((prev) => prev.map((m) => (m.id === assistantMsgId ? { ...m, text: m.text.trim() || fallbackText || "Шлюз ИИ временно недоступен. Проверьте интернет-соединение или API-ключи.", citation: undefined, actionProposal: m.actionProposal ?? localProposal } : m)));
     }
   };
 
-  const handleApplyPrimaryAction = useCallback((action?: CopilotChatMessage["actionProposal"]) => {
-    setAppliedStatus(true);
-    showToast("Клиническое действие успешно применено в карту приёма", "success");
+  const handleApplyPrimaryAction = useCallback(async (action?: CopilotChatMessage["actionProposal"]) => {
+    setActionError(null);
     const act = action ?? [...messages].reverse().find((m) => m.role === "assistant" && m.actionProposal && !m.applied)?.actionProposal;
-    if (act?.payload && typeof (act.payload as any).execute === "function") {
-      (act.payload as any).execute();
-    } else if (typeof window !== "undefined") {
-      const targetTooth = Number(act?.payload?.tooth ?? act?.payload?.toothNumber ?? activeTooth) || undefined;
-      const targetDiag = (act?.payload?.diagnosis as string) || act?.description || (targetTooth ? `Клинический статус (Зуб ${targetTooth})` : "Клинический статус");
-      const targetPlan = (act?.payload?.treatmentPlan as string) || (act?.payload?.plan as string) || (act?.description ? `План: ${act.description}` : "План лечения согласно протоколу СтАР");
-      const targetState = (act?.payload?.state as string) || (act?.payload?.status as string) || undefined;
-      const targetIcd = (act?.payload?.diagnosisIcd10 as string) || (act?.payload?.icd10 as string) || undefined;
-      window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: targetTooth, toothNumber: targetTooth, state: targetState, diagnosis: targetDiag, diagnosisIcd10: targetIcd, treatmentPlan: targetPlan, finding: targetTooth ? { toothNumber: targetTooth, state: targetState || "caries", icd10Override: targetIcd } : undefined } }));
+    try {
+      if (act?.payload && typeof (act.payload as any).execute === "function") {
+        await Promise.resolve((act.payload as any).execute());
+      } else if (typeof window !== "undefined") {
+        const targetTooth = Number(act?.payload?.tooth ?? act?.payload?.toothNumber ?? activeTooth) || undefined;
+        const targetDiag = (act?.payload?.diagnosis as string) || act?.description || (targetTooth ? `Клинический статус (Зуб ${targetTooth})` : "Клинический статус");
+        const targetPlan = (act?.payload?.treatmentPlan as string) || (act?.payload?.plan as string) || (act?.description ? `План: ${act.description}` : "План лечения согласно протоколу СтАР");
+        const targetState = (act?.payload?.state as string) || (act?.payload?.status as string) || undefined;
+        const targetIcd = (act?.payload?.diagnosisIcd10 as string) || (act?.payload?.icd10 as string) || undefined;
+        window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", { detail: { tooth: targetTooth, toothNumber: targetTooth, state: targetState, diagnosis: targetDiag, diagnosisIcd10: targetIcd, treatmentPlan: targetPlan, finding: targetTooth ? { toothNumber: targetTooth, state: targetState || "caries", icd10Override: targetIcd } : undefined } }));
+      }
+      setAppliedStatus(true);
+      showToast("Клиническое действие успешно применено в карту приёма", "success");
+      setMessages((prev) => prev.map((m) => (m.role === "assistant" ? { ...m, applied: true } : m)));
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Не удалось применить действие в карту";
+      setActionError(msg);
+      showToast(msg, "error");
     }
-    setMessages((prev) => prev.map((m) => (m.role === "assistant" ? { ...m, applied: true } : m)));
   }, [activeTooth, messages]);
 
   const executeApiTool = async (toolKey: string, payload: Record<string, unknown>) => {
@@ -257,11 +255,13 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     const startTime = Date.now();
     try {
       const res = await fetch("/api/v1/copilot/tools/execute", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ toolName: toolKey, arguments: payload }) });
-      addToolLog({ toolName: toolKey, category: "clinical", status: res.ok ? "success" : "pending", durationMs: Date.now() - startTime, args: payload, resultSummary: `Выполнен инструмент ${toolKey}` });
-      showToast(res.ok ? "Успешно: действие зарегистрировано в системе" : (isDemoShowcaseMode() ? "Действие выполнено в демо-режиме" : `Сбой выполнения ${toolKey}`), res.ok ? "success" : (isDemoShowcaseMode() ? "info" : "error"));
-    } catch {
-      addToolLog({ toolName: toolKey, category: "clinical", status: isDemoShowcaseMode() ? "success" : "error", durationMs: isDemoShowcaseMode() ? 40 : 0, args: payload, resultSummary: isDemoShowcaseMode() ? `Локальное применение: ${toolKey}` : `Сбой сети для ${toolKey}` });
-      showToast(isDemoShowcaseMode() ? "Локальное применение: данные сохранены в контуре приёма" : "Ошибка сети при вызове инструмента", isDemoShowcaseMode() ? "info" : "error");
+      const ok = res.ok;
+      addToolLog({ toolName: toolKey, category: "clinical", status: ok ? "success" : "error", durationMs: Date.now() - startTime, args: payload, resultSummary: ok ? `Выполнен инструмент ${toolKey}` : `Сбой инструмента ${toolKey}` });
+      showToast(ok ? "Действие успешно зарегистрировано в системе" : `Сбой выполнения инструмента ${toolKey}`, ok ? "success" : "error");
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : "Ошибка сети";
+      addToolLog({ toolName: toolKey, category: "clinical", status: "error", durationMs: Date.now() - startTime, args: payload, resultSummary: `Сбой сети для ${toolKey}: ${msg}` });
+      showToast(`Ошибка сети при вызове инструмента: ${msg}`, "error");
     } finally { setIsExecuting(null); }
   };
 
@@ -345,11 +345,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                       {m.actionProposal && !m.applied && (() => {
                         const proposalTooth = Number(m.actionProposal.payload?.tooth ?? m.actionProposal.payload?.toothNumber ?? (activeTooth || 36));
                         const toolShort = m.actionProposal.toolName.split('.').pop() || m.actionProposal.toolName;
-                        const actionTitle = toolShort.includes("Soap") || toolShort.includes("Diary") || toolShort.includes("Visit")
-                          ? `Дневник приёма (Зуб ${proposalTooth})`
-                          : toolShort.includes("Tooth")
-                          ? `Обновление одонтограммы (Зуб ${proposalTooth})`
-                          : `Клинический протокол (Зуб ${proposalTooth})`;
+                        const actionTitle = toolShort.includes("Soap") || toolShort.includes("Diary") || toolShort.includes("Visit") ? `Дневник приёма (Зуб ${proposalTooth})` : toolShort.includes("Tooth") ? `Обновление одонтограммы (Зуб ${proposalTooth})` : `Клинический протокол (Зуб ${proposalTooth})`;
                         return (
                           <div className="copilot-tool-execution-card mt-2.5 p-3 rounded-xl bg-[var(--paper-soft,#f4f7f6)] border border-[var(--teal,#0d9488)]/30 space-y-2 text-[11px]">
                             <div className="flex items-center justify-between gap-2">
@@ -360,8 +356,14 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
                               <div className="flex items-center gap-2 text-[var(--muted)]"><span className="text-[11px] font-medium text-[var(--muted)] w-14 shrink-0">Было:</span><span className="line-through opacity-75">{`Зуб ${proposalTooth}: Без патологии / Интактный`}</span></div>
                               <div className="flex items-center gap-2 text-[var(--ink)] font-medium"><span className="text-[11px] font-semibold text-[var(--teal,#0d9488)] w-14 shrink-0">Станет:</span><span className="text-[var(--teal,#0d9488)] font-semibold">{`Зуб ${proposalTooth}: ${m.actionProposal.description}`}</span></div>
                             </div>
+                            {actionError && (
+                              <div className="p-2 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800 flex items-center justify-between text-[11px] text-rose-700 dark:text-rose-300">
+                                <span>{actionError}</span>
+                                <button type="button" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="px-2 py-1 rounded bg-rose-600 text-white font-semibold hover:bg-rose-700 cursor-pointer text-[10px]">Повторить попытку</button>
+                              </div>
+                            )}
                             <div className="flex items-center justify-end gap-2 pt-1">
-                              <button type="button" onClick={() => setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg))} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
+                              <button type="button" onClick={() => { setActionError(null); setMessages((prev) => prev.map((msg) => msg.id === m.id ? { ...msg, actionProposal: undefined } : msg)); }} className="h-11 min-h-[44px] min-w-[44px] px-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--muted)] hover:text-rose-600 font-semibold cursor-pointer text-xs flex items-center justify-center transition-colors">Отклонить</button>
                               <button type="button" data-testid="copilot-primary-apply-cta" onClick={() => handleApplyPrimaryAction(m.actionProposal)} className="copilot-primary-cta h-11 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white font-bold flex items-center justify-center gap-1.5 cursor-pointer text-xs shadow-sm hover:opacity-95 transition-all"><Check size={14} /><span>{appliedStatus ? "Применено в карту приёма" : "Применить в карту"}</span></button>
                             </div>
                           </div>
@@ -418,10 +420,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               { title: "Зубная формула FDI", badge: "Одонтограмма", desc: `Фиксация кариеса дентина и пломбирования зуба ${activeTooth || 36}.`, btn: `Обновить статус зуба ${activeTooth || 36}`, icon: <Activity size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.updateToothStatus, { tooth: activeTooth || 36, state: "C", diagnosis: "K02.1" }) },
               { title: "Выставление счёта", badge: "Касса и чеки", desc: "Пречек на препарирование и нанокомпозитную реставрацию: 6 500 руб.", btn: "Сформировать счёт (6 500 руб.)", icon: <Receipt size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.createInvoiceDraft, { patientId, amountKopecks: 650000, serviceTitle: "Лечение кариеса" }) },
               { title: "Протокол SOAP в карту", badge: "Медкарта", desc: "Синтез дневника по стандарту SOAP с жалобами, осмотром и лечением.", btn: "Сформировать протокол SOAP", icon: <BookOpen size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool(CRM_FASTIFY_TOOLS_REGISTRY.generateSoapDiary, { patientId, tooth: activeTooth, diagnosis: "K02.1" }) },
-              ...(runtimeMode === "desktop_native" ? [
-                { title: "Захват визиографа (ROI)", badge: "Workstation", desc: "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.captureVisigraphRoi", { roi: "visigraph_window", tooth: activeTooth || 36 }) },
-                { title: "Поиск КЛКТ на диске", badge: "Локальный I/O", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.scanDicomDropzone", { patientId }) },
-              ] : []),
+              ...(runtimeMode === "desktop_native" ? [{ title: "Захват визиографа (ROI)", badge: "Workstation", desc: "Локальный снимок активного окна визиографа для анализа рентгенограммы.", btn: "Захватить снимок визиографа", icon: <Sparkles size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.captureVisigraphRoi", { roi: "visigraph_window", tooth: activeTooth || 36 }) }, { title: "Поиск КЛКТ на диске", badge: "Локальный I/O", desc: "Сканирование сетевой папки томографа Romexis/Ez3D на наличие новых срезов.", btn: "Сканировать папку КЛКТ", icon: <Brain size={16} className="text-[var(--teal,#0d9488)]" />, fn: () => executeApiTool("desktop.scanDicomDropzone", { patientId }) }] : []),
             ].map((item, idx) => (
               <div key={idx} className="copilot-action-item-card p-4 rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] space-y-2">
                 <div className="copilot-action-item-header flex items-center justify-between"><div className="flex items-center gap-2">{item.icon}<span className="text-xs font-bold text-[var(--ink)]">{item.title}</span></div><span className="text-[10px] px-2 py-0.5 rounded bg-[var(--paper)] text-[var(--muted)] border border-[var(--line)]">{item.badge}</span></div>
@@ -439,8 +438,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
           selectThread(tId); const saved = threadMessages[tId];
           if (saved && saved.length > 0) setMessages(saved);
           else { const f = threads.find((t) => t.id === tId); setMessages(f?.previewText ? [{ id: `thread-init-${Date.now()}`, role: "assistant", text: f.previewText, timestamp: f.updatedAt, citation: "Клинический протокол СтАР" }] : []); }
-          setHistoryOpen(false); setActiveTab("dialog");
-        }} />
+          setHistoryOpen(false); setActiveTab("dialog"); }} />
       </aside>
     </div>
   );
