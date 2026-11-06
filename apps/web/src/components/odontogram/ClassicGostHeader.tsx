@@ -78,13 +78,13 @@ export const ClassicGostHeader: React.FC<ClassicGostHeaderProps> = ({
 					<Award size={16} className="text-amber-500 shrink-0" />
 					<div className="flex items-center gap-2">
 						<span className="font-semibold text-[var(--odontogram-ink-muted)]">
-							Индекс КПУ:
+							{dmftStats.isPediatric ? "Индекс кп:" : dmftStats.isMixed ? "Индекс КПУ+кп:" : "Индекс КПУ:"}
 						</span>
 						<strong className="font-black text-sm text-[var(--odontogram-ink)]">
-							{dmftStats.dmftTotal}
+							{dmftStats.isPediatric ? dmftStats.pediatricKpu.total : dmftStats.isMixed ? (dmftStats.dmftTotal + dmftStats.pediatricKpu.total) : dmftStats.dmftTotal}
 						</strong>
 						<span className="text-xs font-semibold text-[var(--odontogram-ink-muted)]">
-							(К={dmftStats.decayed}, П={dmftStats.filled}, У={dmftStats.missing})
+							{dmftStats.displayKpuDetails}
 						</span>
 					</div>
 					<span className="ml-1 hidden md:inline-block font-bold text-xs text-[var(--odontogram-ink-muted)]">

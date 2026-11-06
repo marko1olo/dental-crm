@@ -5,11 +5,14 @@
  * Соответствует Мандатам: 8b (380–480 строк), 8e (Автономия врача), 8am (Ровно 1 Primary CTA), 8ze (Apple HIG).
  */
 
-import React, { useState, useMemo, useCallback } from "react";
+import React, { useState, useMemo, useCallback, useEffect } from "react";
 import {
 	OHI_S_PRESETS,
 	CLEANING_PROTOCOLS,
 	HOME_CARE_PLANS,
+	CANONICAL_OHI_S_TEETH,
+	createIdealOhiSTeethScores,
+	computeCanonicalOhiS,
 	type OhiSPreset,
 	type CleaningProtocol,
 	type HomeCarePlan,
@@ -33,7 +36,14 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 	doctorName = "Д-р Смирнова А.В.",
 	previousOhiS = 2.4,
 }) => {
-	const [selectedOhiS, setSelectedOhiS] = useState<OhiSPreset>(OHI_S_PRESETS[1]);
+	const [ohisTeeth, setOhisTeeth] = useState<Record<number, { debris: number; calculus: number }>>(createIdealOhiSTeethScores);
+	const calculatedOhiS = useMemo(() => computeCanonicalOhiS(ohisTeeth), [ohisTeeth]);
+	const [selectedOhiS, setSelectedOhiS] = useState<OhiSPreset>(calculatedOhiS);
+
+	useEffect(() => {
+		setSelectedOhiS(calculatedOhiS);
+	}, [calculatedOhiS]);
+
 	const [selectedProtocol, setSelectedProtocol] = useState<CleaningProtocol>(CLEANING_PROTOCOLS[0]);
 	const [selectedCarePlan, setSelectedCarePlan] = useState<HomeCarePlan>(HOME_CARE_PLANS[0]);
 	const [activeSection, setActiveSection] = useState<"protocol" | "homecare">("protocol");
@@ -136,7 +146,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 flex items-center justify-center rounded-lg border border-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors"
+						className="w-9 h-9 flex items-center justify-center rounded-lg bg-transparent border-none text-[var(--ink-muted)] dark:text-slate-400 hover:text-[var(--ink)] dark:hover:text-slate-200 hover:bg-[var(--paper-soft)] dark:hover:bg-slate-800 transition-colors"
 						aria-label="Закрыть студию гигиены"
 					>
 						✕
@@ -159,14 +169,14 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				)}
 
 				{/* Sub-navigation tabs */}
-				<div className="flex border-b border-[var(--line)] px-4 sm:px-6 bg-[var(--paper)] gap-2">
+				<div className="flex border-b border-[var(--line)] dark:border-slate-800 px-4 sm:px-6 bg-[var(--paper)] dark:bg-slate-900 gap-2">
 					<button
 						type="button"
 						onClick={() => setActiveSection("protocol")}
-						className={`py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors ${
+						className={`py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 bg-transparent transition-colors ${
 							activeSection === "protocol"
 								? "border-teal-600 text-teal-900 dark:text-teal-300"
-								: "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+								: "border-transparent text-[var(--ink-muted)] dark:text-slate-400 hover:text-[var(--ink)] dark:hover:text-slate-200"
 						}`}
 					>
 						Протокол чистки у кресла
@@ -174,10 +184,10 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 					<button
 						type="button"
 						onClick={() => setActiveSection("homecare")}
-						className={`py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 transition-colors ${
+						className={`py-2.5 px-3 text-xs sm:text-sm font-semibold border-b-2 bg-transparent transition-colors ${
 							activeSection === "homecare"
 								? "border-teal-600 text-teal-900 dark:text-teal-300"
-								: "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]"
+								: "border-transparent text-[var(--ink-muted)] dark:text-slate-400 hover:text-[var(--ink)] dark:hover:text-slate-200"
 						}`}
 					>
 						Памятка домашнего ухода
@@ -186,47 +196,91 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 
 				{/* Scrollable Content */}
 				<div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-5">
-					{/* 1. OHI-S Quick Selector (Available in both tabs for chairside speed) */}
-					<div>
-						<div className="flex items-center justify-between mb-2">
-							<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
-								Индекс гигиены Грина-Вермиллиона (OHI-S)
-							</span>
-							<span className={`text-xs px-2.5 py-0.5 rounded-full border font-semibold ${selectedOhiS.badgeClass}`}>
-								{selectedOhiS.ratingText}
-							</span>
+					{/* 1. OHI-S Canonical 6-Teeth Calculator (No fake stubs) */}
+					<div className="space-y-2.5 p-3.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl">
+						<div className="flex items-center justify-between flex-wrap gap-2">
+							<div className="flex items-center gap-2">
+								<span className="text-xs font-bold uppercase tracking-wider text-[var(--ink-muted)]">
+									Индекс гигиены Грина-Вермиллиона (OHI-S)
+								</span>
+								<span className={`text-xs px-2.5 py-0.5 rounded-full border font-bold ${selectedOhiS.badgeClass}`}>
+									{selectedOhiS.ratingText}
+								</span>
+								<span className="text-xs text-[var(--ink-muted)]">
+									(DI: {selectedOhiS.debris.toFixed(1)}, CI: {selectedOhiS.calculus.toFixed(1)})
+								</span>
+							</div>
+
+							<button
+								type="button"
+								data-testid="hygiene-btn-ideal-ohis-studio"
+								onClick={() => setOhisTeeth(createIdealOhiSTeethScores())}
+								className="px-2.5 py-1 text-xs font-bold rounded-lg border border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 cursor-pointer"
+							>
+								✓ Идеальная гигиена (все 0.0)
+							</button>
 						</div>
 
-						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-							{OHI_S_PRESETS.map((preset) => {
-								const isSelected = selectedOhiS.id === preset.id;
+						{/* Сетка 6 индексных зубов */}
+						<div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+							{CANONICAL_OHI_S_TEETH.map((t) => {
+								const current = ohisTeeth[t.toothNumber] ?? { debris: 0, calculus: 0 };
 								return (
-									<button
-										key={preset.id}
-										type="button"
-										data-testid={`hygiene-preset-${preset.id}`}
-										onClick={() => setSelectedOhiS(preset)}
-										className={`p-2.5 sm:p-3 text-left rounded-xl border transition-all min-h-[48px] flex flex-col justify-between ${
-											isSelected
-												? "border-teal-600 ring-2 ring-teal-500/20 bg-teal-50/50 dark:bg-teal-950/20"
-												: "border-[var(--line)] bg-[var(--paper)] hover:border-slate-300 dark:hover:border-slate-600"
-										}`}
-									>
-										<div className="flex items-center justify-between w-full">
-											<span className="text-xs sm:text-sm font-bold text-[var(--ink)]">
-												{preset.label}
-											</span>
-											<span
-												className="w-3 h-3 rounded-full"
-												style={{ backgroundColor: preset.colorHex }}
-											/>
+									<div key={t.toothNumber} className="p-2 rounded-lg border border-[var(--line)] bg-[var(--paper-soft)] text-center flex flex-col gap-1">
+										<div className="text-xs font-bold text-[var(--ink)]">{t.surfaceLabelRu}</div>
+										<div className="text-[10px] text-[var(--ink-muted)]">Налет DI (0..3):</div>
+										<div className="grid grid-cols-4 gap-0.5">
+											{[0, 1, 2, 3].map((val) => (
+												<button
+													key={`d-${val}`}
+													type="button"
+													onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], debris: val } }))}
+													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
+														current.debris === val ? "bg-teal-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+													}`}
+												>
+													{val}
+												</button>
+											))}
 										</div>
-										<p className="text-[11px] text-[var(--ink-muted)] line-clamp-2 mt-1">
-											{preset.statusDescription}
-										</p>
-									</button>
+										<div className="text-[10px] text-[var(--ink-muted)]">Камень CI (0..3):</div>
+										<div className="grid grid-cols-4 gap-0.5">
+											{[0, 1, 2, 3].map((val) => (
+												<button
+													key={`c-${val}`}
+													type="button"
+													onClick={() => setOhisTeeth((p) => ({ ...p, [t.toothNumber]: { ...p[t.toothNumber], calculus: val } }))}
+													className={`h-6 text-[10px] font-bold rounded cursor-pointer ${
+														current.calculus === val ? "bg-amber-600 text-white" : "bg-[var(--paper)] text-[var(--ink)] hover:bg-slate-200 dark:hover:bg-slate-700"
+													}`}
+												>
+													{val}
+												</button>
+											))}
+										</div>
+									</div>
 								);
 							})}
+						</div>
+
+						{/* Быстрые пресеты для совместимости с автотестами */}
+						<div className="flex items-center gap-1.5 pt-1 border-t border-[var(--line-subtle)] overflow-x-auto text-xs">
+							{OHI_S_PRESETS.map((preset) => (
+								<button
+									key={preset.id}
+									type="button"
+									data-testid={`hygiene-preset-${preset.id}`}
+									onClick={() => {
+										if (preset.id === "ideal") setOhisTeeth(createIdealOhiSTeethScores());
+										else if (preset.id === "fair") setOhisTeeth({ 16: { debris: 1, calculus: 0 }, 11: { debris: 1, calculus: 0 }, 26: { debris: 1, calculus: 0 }, 31: { debris: 1, calculus: 0 }, 36: { debris: 1, calculus: 0 }, 46: { debris: 0, calculus: 0 } });
+										else if (preset.id === "poor") setOhisTeeth({ 16: { debris: 2, calculus: 1 }, 11: { debris: 2, calculus: 1 }, 26: { debris: 2, calculus: 1 }, 31: { debris: 2, calculus: 1 }, 36: { debris: 2, calculus: 1 }, 46: { debris: 2, calculus: 1 } });
+										else setOhisTeeth({ 16: { debris: 3, calculus: 2 }, 11: { debris: 3, calculus: 2 }, 26: { debris: 3, calculus: 2 }, 31: { debris: 3, calculus: 2 }, 36: { debris: 3, calculus: 2 }, 46: { debris: 3, calculus: 2 } });
+									}}
+									className="px-2 py-0.5 rounded-md border border-[var(--line)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] font-semibold text-[11px] shrink-0 cursor-pointer"
+								>
+									{preset.label}
+								</button>
+							))}
 						</div>
 					</div>
 
@@ -374,13 +428,13 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 				</div>
 
 				{/* Floating Bottom Bar / Actions (Mandate 8am: Exactly ONE Primary CTA) */}
-				<div className="p-3 sm:p-4 border-t border-[var(--line)] bg-[var(--paper)] flex flex-wrap items-center justify-between gap-2.5">
+				<div className="p-3 sm:p-4 border-t border-[var(--line)] dark:border-slate-800 bg-[var(--paper)] dark:bg-slate-900 flex flex-wrap items-center justify-between gap-2.5">
 					<div className="flex items-center gap-2">
 						<button
 							type="button"
 							data-testid="hygiene-print-memo-btn"
 							onClick={handlePrint}
-							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] text-[var(--ink)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors min-h-[44px]"
+							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] dark:border-slate-700 text-[var(--ink)] dark:text-slate-200 bg-[var(--paper-soft)] dark:bg-slate-800 hover:bg-[var(--paper)] dark:hover:bg-slate-700 transition-colors min-h-[44px]"
 						>
 							Печать памятки А4
 						</button>
@@ -388,7 +442,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 							type="button"
 							data-testid="hygiene-copy-memo-btn"
 							onClick={handleCopyMemo}
-							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] text-[var(--ink)] bg-[var(--paper-soft)] hover:bg-[var(--paper)] transition-colors min-h-[44px] hidden sm:inline-flex"
+							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] dark:border-slate-700 text-[var(--ink)] dark:text-slate-200 bg-[var(--paper-soft)] dark:bg-slate-800 hover:bg-[var(--paper)] dark:hover:bg-slate-700 transition-colors min-h-[44px] hidden sm:inline-flex"
 						>
 							Копировать текст
 						</button>
@@ -398,7 +452,7 @@ export const HygieneStudioModal: React.FC<HygieneStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors min-h-[44px]"
+							className="px-3 py-2 text-xs font-semibold rounded-lg border border-[var(--line)] dark:border-slate-700 bg-transparent dark:bg-slate-800 text-[var(--ink-muted)] dark:text-slate-300 hover:text-[var(--ink)] dark:hover:text-slate-100 hover:bg-[var(--paper-soft)] dark:hover:bg-slate-700 transition-colors min-h-[44px]"
 						>
 							Отмена
 						</button>

@@ -422,23 +422,23 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 			className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150"
 			data-testid="pediatric-studio-modal"
 		>
-			<div className="relative w-full sm:max-w-5xl max-h-[94dvh] rounded-t-[24px] sm:rounded-2xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] shadow-2xl flex flex-col overflow-hidden">
+			<div className="relative w-full sm:max-w-5xl max-h-[94dvh] rounded-t-[24px] sm:rounded-2xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 shadow-2xl flex flex-col overflow-hidden">
 				{/* Mobile Drag Handle (Apple HIG) */}
 				<div className="sm:hidden flex justify-center pt-2.5 pb-1">
-					<div className="w-9 h-1.5 bg-[var(--line,#e2e8f0)] rounded-full" />
+					<div className="w-9 h-1.5 bg-[var(--line,#e2e8f0)] dark:bg-slate-700 rounded-full" />
 				</div>
 
 				{/* Header: Pure Clinical Russian without 'SSOT' badge (Mandates 8zg, 8ap) */}
-				<div className="px-4 sm:px-6 py-3 border-b border-[var(--line,#e2e8f0)] flex items-center justify-between gap-3">
+				<div className="px-4 sm:px-6 py-3 border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 flex items-center justify-between gap-3">
 					<div className="flex items-center gap-2.5 shrink-0">
-						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 text-teal-600 flex items-center justify-center font-black shrink-0">
+						<div className="w-9 h-9 sm:w-10 sm:h-10 rounded-xl bg-teal-500/10 dark:bg-teal-950/40 text-teal-600 dark:text-teal-400 flex items-center justify-center font-black shrink-0">
 							<ShieldCheck className="w-5 h-5" />
 						</div>
 						<div className="shrink-0">
-							<h2 className="text-sm sm:text-base font-black tracking-tight text-[var(--ink,#0f172a)] whitespace-nowrap">
+							<h2 className="text-sm sm:text-base font-black tracking-tight text-[var(--ink,#0f172a)] dark:text-slate-100 whitespace-nowrap">
 								Детский приём и адаптация
 							</h2>
-							<p className="text-[11px] text-[var(--muted,#64748b)] whitespace-nowrap">
+							<p className="text-[11px] text-[var(--muted,#64748b)] dark:text-slate-400 whitespace-nowrap">
 								{effectivePatientName} • {effectivePatientAge} лет • {dentitionMode === "mixed" ? "Сменный прикус" : "Молочный прикус"}
 							</p>
 						</div>
@@ -446,14 +446,14 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 
 					<div className="flex items-center gap-2 shrink-0">
 						{/* Segmented Mode Selector */}
-						<div className="hidden sm:inline-flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+						<div className="hidden sm:inline-flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700">
 							<button
 								type="button"
 								onClick={() => setDentitionMode("primary")}
-								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer border-none ${
 									dentitionMode === "primary"
-										? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+										? "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
+										: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
 								Молочный (51–85)
@@ -461,10 +461,10 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setDentitionMode("mixed")}
-								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+								className={`px-2.5 py-1 text-xs font-bold rounded-lg transition cursor-pointer border-none ${
 									dentitionMode === "mixed"
-										? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
-										: "text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)]"
+										? "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
+										: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
 								}`}
 							>
 								Сменный (+ моляры)
@@ -476,7 +476,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							<button
 								type="button"
 								onClick={handlePrintDiploma}
-								className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-[var(--ink,#0f172a)]"
+								className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-[var(--ink,#0f172a)] dark:text-slate-200"
 								data-testid="btn-print-hero-diploma"
 							>
 								<Award className="w-4 h-4 text-amber-500" />
@@ -485,7 +485,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							<button
 								type="button"
 								onClick={handlePrintMemo}
-								className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)] text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-[var(--ink,#0f172a)]"
+								className="min-h-[36px] h-9 px-3 py-1.5 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 text-xs font-bold flex items-center gap-1.5 transition cursor-pointer text-[var(--ink,#0f172a)] dark:text-slate-200"
 								data-testid="btn-print-parent-memo"
 							>
 								<FileText className="w-4 h-4 text-sky-500" />
@@ -496,7 +496,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={onClose}
-							className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] cursor-pointer shrink-0"
+							className="min-h-[44px] min-w-[44px] flex items-center justify-center rounded-xl bg-transparent border-none hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-400 cursor-pointer shrink-0"
 							data-testid="btn-close-pediatric-studio"
 							aria-label="Закрыть"
 						>
@@ -506,16 +506,16 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 				</div>
 
 				{/* Body */}
-				<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 space-y-3.5 bg-[var(--paper,#ffffff)]">
+				<div className="flex-1 overflow-y-auto px-4 sm:px-6 py-3.5 space-y-3.5 bg-[var(--paper,#ffffff)] dark:bg-slate-900">
 					{/* Mobile Segmented Mode Selector */}
-					<div className="sm:hidden flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] border border-[var(--line,#e2e8f0)]">
+					<div className="sm:hidden flex p-1 rounded-xl bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/80 border border-[var(--line,#e2e8f0)] dark:border-slate-700">
 						<button
 							type="button"
 							onClick={() => setDentitionMode("primary")}
-							className={`flex-1 min-h-[36px] py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+							className={`flex-1 min-h-[36px] py-1 text-xs font-bold rounded-lg transition cursor-pointer border-none ${
 								dentitionMode === "primary"
-									? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
-									: "text-[var(--muted,#64748b)]"
+									? "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
+									: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-400"
 							}`}
 						>
 							Молочный (51–85)
@@ -523,10 +523,10 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={() => setDentitionMode("mixed")}
-							className={`flex-1 min-h-[36px] py-1 text-xs font-bold rounded-lg transition cursor-pointer ${
+							className={`flex-1 min-h-[36px] py-1 text-xs font-bold rounded-lg transition cursor-pointer border-none ${
 								dentitionMode === "mixed"
-									? "bg-[var(--paper,#ffffff)] text-teal-700 shadow-xs"
-									: "text-[var(--muted,#64748b)]"
+									? "bg-[var(--paper,#ffffff)] dark:bg-slate-700 text-teal-700 dark:text-teal-300 shadow-xs"
+									: "bg-transparent text-[var(--muted,#64748b)] dark:text-slate-400"
 							}`}
 						>
 							Сменный (+ моляры)
@@ -534,12 +534,12 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 					</div>
 
 					{/* Weight Selector Bar */}
-					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/50">
 						<div className="flex flex-wrap items-center justify-between gap-1 mb-2">
-							<span className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)]">
+							<span className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)] dark:text-slate-400">
 								Вес ребенка (для безопасной анестезии):
 							</span>
-							<span className="text-xs font-black text-teal-600">{weightKg} кг</span>
+							<span className="text-xs font-black text-teal-600 dark:text-teal-400">{weightKg} кг</span>
 						</div>
 						<div className="flex flex-wrap items-center gap-1.5">
 							{PEDIATRIC_WEIGHT_CHIPS.map((w) => (
@@ -550,7 +550,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									className={`min-h-[38px] px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer ${
 										weightKg === w
 											? "bg-teal-600 text-white shadow-xs"
-											: "border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
+											: "border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-teal-500/10 dark:hover:bg-slate-700"
 									}`}
 								>
 									{w} кг
@@ -559,7 +559,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							<button
 								type="button"
 								onClick={() => setWeightKg(estimatePediatricWeightKg(effectivePatientAge))}
-								className="min-h-[38px] px-3 py-1 rounded-lg text-xs font-semibold border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-teal-600 cursor-pointer"
+								className="min-h-[38px] px-3 py-1 rounded-lg text-xs font-semibold border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-400 hover:text-teal-600 dark:hover:text-teal-300 cursor-pointer"
 							>
 								По возрасту ({estimatePediatricWeightKg(effectivePatientAge)} кг)
 							</button>
@@ -568,7 +568,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 
 					{/* Frankl Scale */}
 					<div>
-						<div className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)] mb-1.5">
+						<div className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)] dark:text-slate-400 mb-1.5">
 							Поведение по шкале Франкла (в 1 клик):
 						</div>
 						<div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -580,7 +580,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									className={`min-h-[44px] p-2 rounded-xl border text-left transition cursor-pointer flex flex-col justify-between ${
 										franklRating === item.rating
 											? `${item.badgeColor} ring-2 ring-teal-500 shadow-xs`
-											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)]"
+											: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700"
 									}`}
 									data-testid={`frankl-chip-${item.rating}`}
 								>
@@ -588,16 +588,16 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										<span className="text-sm font-black">{item.symbol}</span>
 										<span className="text-[10px] font-bold">Франкл {item.rating}</span>
 									</div>
-									<div className="text-xs font-semibold mt-0.5 truncate text-[var(--ink,#0f172a)]">
+									<div className="text-xs font-semibold mt-0.5 truncate text-[var(--ink,#0f172a)] dark:text-slate-200">
 										{item.labelRu}
 									</div>
 								</button>
 							))}
 						</div>
-						<div className="mt-1 text-xs p-2 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] text-[var(--muted,#64748b)] flex items-center gap-1.5">
+						<div className="mt-1 text-xs p-2 rounded-lg border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/60 text-[var(--muted,#64748b)] dark:text-slate-400 flex items-center gap-1.5">
 							<Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
 							<span>
-								<strong className="text-[var(--ink,#0f172a)]">Тактика:</strong> {activeFrankl.clinicalTacticRu}
+								<strong className="text-[var(--ink,#0f172a)] dark:text-slate-200">Тактика:</strong> {activeFrankl.clinicalTacticRu}
 							</span>
 						</div>
 					</div>
@@ -616,7 +616,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 							</span>
 						</div>
 
-						<div className="space-y-1.5 p-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+						<div className="space-y-1.5 p-2 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/50">
 							{/* Верхняя челюсть */}
 							<div
 								className={`grid gap-1 ${
@@ -638,19 +638,19 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 												isSel
 													? "border-teal-600 bg-teal-500/20 font-black shadow-xs ring-2 ring-teal-500"
 													: isPermanentMolar
-														? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/50"
-														: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)]"
+														? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/40"
+														: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700"
 											}`}
 											data-testid={`tooth-fdi-${tooth}`}
 											title={isPermanentMolar ? `Постоянный первый моляр ${tooth}` : `Молочный зуб ${tooth}`}
 										>
 											<div className="flex items-center gap-0.5">
-												<span className="text-xs font-black text-[var(--ink,#0f172a)]">{tooth}</span>
+												<span className="text-xs font-black text-[var(--ink,#0f172a)] dark:text-slate-100">{tooth}</span>
 												{isPermanentMolar && (
-													<span className="text-[7px] font-black text-indigo-600 uppercase">п</span>
+													<span className="text-[7px] font-black text-indigo-600 dark:text-indigo-400 uppercase">п</span>
 												)}
 											</div>
-											<span className="text-[7.5px] uppercase font-bold text-[var(--muted,#64748b)] tracking-tighter truncate max-w-full">
+											<span className="text-[7.5px] uppercase font-bold text-[var(--muted,#64748b)] dark:text-slate-400 tracking-tighter truncate max-w-full">
 												{PRIMARY_TOOTH_CONDITIONS[cond]?.shortTag}
 											</span>
 										</button>
@@ -679,19 +679,19 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 												isSel
 													? "border-teal-600 bg-teal-500/20 font-black shadow-xs ring-2 ring-teal-500"
 													: isPermanentMolar
-														? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/50"
-														: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f8fafc)]"
+														? "border-indigo-300 dark:border-indigo-700 bg-indigo-50/50 dark:bg-indigo-950/30 hover:bg-indigo-100/50 dark:hover:bg-indigo-900/40"
+														: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700"
 											}`}
 											data-testid={`tooth-fdi-${tooth}`}
 											title={isPermanentMolar ? `Постоянный первый моляр ${tooth}` : `Молочный зуб ${tooth}`}
 										>
 											<div className="flex items-center gap-0.5">
-												<span className="text-xs font-black text-[var(--ink,#0f172a)]">{tooth}</span>
+												<span className="text-xs font-black text-[var(--ink,#0f172a)] dark:text-slate-100">{tooth}</span>
 												{isPermanentMolar && (
-													<span className="text-[7px] font-black text-indigo-600 uppercase">п</span>
+													<span className="text-[7px] font-black text-indigo-600 dark:text-indigo-400 uppercase">п</span>
 												)}
 											</div>
-											<span className="text-[7.5px] uppercase font-bold text-[var(--muted,#64748b)] tracking-tighter truncate max-w-full">
+											<span className="text-[7.5px] uppercase font-bold text-[var(--muted,#64748b)] dark:text-slate-400 tracking-tighter truncate max-w-full">
 												{PRIMARY_TOOTH_CONDITIONS[cond]?.shortTag}
 											</span>
 										</button>
@@ -713,7 +713,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										className={`min-h-[38px] px-3 py-1 rounded-lg text-xs font-bold transition cursor-pointer border ${
 											isActive
 												? `${info.badgeClass} ring-2 ring-teal-500`
-												: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f8fafc)]"
+												: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700"
 										}`}
 									>
 										{info.labelRu}
@@ -724,12 +724,12 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 					</div>
 
 					{/* Anesthesia Calculator */}
-					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)]">
+					<div className="p-3 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800/50">
 						<div className="flex items-center justify-between mb-1.5">
-							<span className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)]">
+							<span className="text-xs font-bold uppercase tracking-wide text-[var(--muted,#64748b)] dark:text-slate-400">
 								Безопасная анестезия ({weightKg} кг):
 							</span>
-							<span className={`text-xs font-black ${anesthesiaSafety.isOverdose ? "text-rose-600" : "text-teal-600"}`}>
+							<span className={`text-xs font-black ${anesthesiaSafety.isOverdose ? "text-rose-600 dark:text-rose-400" : "text-teal-600 dark:text-teal-400"}`}>
 								{anesthesiaSafety.administeredMg} мг / МРД {anesthesiaSafety.maxAllowedMg} мг ({anesthesiaSafety.percentUsed}%)
 							</span>
 						</div>
@@ -741,7 +741,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									className={`flex-1 min-h-[38px] px-2 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
 										anestheticId === "articaine_4"
 											? "bg-teal-600 text-white shadow-xs border-teal-600"
-											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
+											: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-teal-500/10 dark:hover:bg-slate-700"
 									}`}
 								>
 									Артикаин 4% (5 мг/кг)
@@ -752,7 +752,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 									className={`flex-1 min-h-[38px] px-2 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
 										anestheticId === "mepivacaine_3"
 											? "bg-teal-600 text-white shadow-xs border-teal-600"
-											: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
+											: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-teal-500/10 dark:hover:bg-slate-700"
 									}`}
 								>
 									Мепивакаин 3% (4 мг/кг)
@@ -767,7 +767,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 										className={`flex-1 min-h-[38px] px-1 py-1 rounded-lg text-xs font-bold border transition cursor-pointer ${
 											carpules === c
 												? "bg-teal-600 text-white shadow-xs border-teal-600"
-												: "border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] hover:bg-teal-500/10"
+												: "border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-200 hover:bg-teal-500/10 dark:hover:bg-slate-700"
 										}`}
 									>
 										{c} к.
@@ -796,7 +796,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintDiploma}
-							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-[var(--ink,#0f172a)]"
+							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-[var(--ink,#0f172a)] dark:text-slate-200"
 						>
 							<Award className="w-4 h-4 text-amber-500 shrink-0" />
 							<span>Диплом героя</span>
@@ -804,7 +804,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={handlePrintMemo}
-							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-[var(--ink,#0f172a)]"
+							className="flex-1 min-h-[44px] px-2.5 py-2 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer shadow-xs text-[var(--ink,#0f172a)] dark:text-slate-200"
 						>
 							<FileText className="w-4 h-4 text-sky-500 shrink-0" />
 							<span>Памятка</span>
@@ -812,7 +812,7 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 						<button
 							type="button"
 							onClick={handleCopySoap}
-							className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs text-[var(--ink,#0f172a)]"
+							className="min-h-[44px] px-3 py-2 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-bold flex items-center justify-center cursor-pointer shadow-xs text-[var(--ink,#0f172a)] dark:text-slate-200"
 							aria-label="Копировать дневник"
 							title="Копировать дневник"
 						>
@@ -822,11 +822,11 @@ export const PediatricStudioModal: React.FC<PediatricStudioModalProps> = ({
 				</div>
 
 				{/* Footer: Exactly ONE Primary CTA #0d9488, Never Disabled (Mandates 8e, 8am) */}
-				<div className="px-4 sm:px-6 py-2.5 border-t border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] flex items-center justify-between gap-2.5">
+				<div className="px-4 sm:px-6 py-2.5 border-t border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-[var(--paper,#ffffff)] dark:bg-slate-900 flex items-center justify-between gap-2.5">
 					<button
 						type="button"
 						onClick={onClose}
-						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 sm:px-4 py-2 rounded-xl border border-[var(--line,#e2e8f0)] text-xs font-bold text-[var(--muted,#64748b)] hover:bg-[var(--paper-soft,#f8fafc)] cursor-pointer shrink-0"
+						className="min-h-[44px] sm:min-h-[36px] h-11 sm:h-9 px-3 sm:px-4 py-2 rounded-xl border border-[var(--line,#e2e8f0)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-bold text-[var(--muted,#64748b)] dark:text-slate-300 hover:bg-[var(--paper-soft,#f8fafc)] dark:hover:bg-slate-700 cursor-pointer shrink-0"
 					>
 						Отмена
 					</button>

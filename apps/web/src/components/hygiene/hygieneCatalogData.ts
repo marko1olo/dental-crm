@@ -24,6 +24,88 @@ export interface OhiSPreset {
 	readonly ratingText: string;
 }
 
+export const CANONICAL_OHI_S_TEETH = [
+	{ toothNumber: 16, surfaceAspect: "vestibular", surfaceLabelRu: "16 щечная" },
+	{ toothNumber: 11, surfaceAspect: "vestibular", surfaceLabelRu: "11 губная" },
+	{ toothNumber: 26, surfaceAspect: "vestibular", surfaceLabelRu: "26 щечная" },
+	{ toothNumber: 31, surfaceAspect: "vestibular", surfaceLabelRu: "31 губная" },
+	{ toothNumber: 36, surfaceAspect: "lingual", surfaceLabelRu: "36 язычная" },
+	{ toothNumber: 46, surfaceAspect: "lingual", surfaceLabelRu: "46 язычная" },
+] as const;
+
+export function createIdealOhiSTeethScores(): Record<number, { debris: number; calculus: number }> {
+	return {
+		16: { debris: 0, calculus: 0 },
+		11: { debris: 0, calculus: 0 },
+		26: { debris: 0, calculus: 0 },
+		31: { debris: 0, calculus: 0 },
+		36: { debris: 0, calculus: 0 },
+		46: { debris: 0, calculus: 0 },
+	};
+}
+
+export function computeCanonicalOhiS(
+	teeth: Readonly<Record<number, { debris?: number; calculus?: number }>>
+): OhiSPreset {
+	let totalDebris = 0;
+	let totalCalculus = 0;
+	const count = CANONICAL_OHI_S_TEETH.length; // 6
+
+	for (const t of CANONICAL_OHI_S_TEETH) {
+		const rec = teeth[t.toothNumber];
+		totalDebris += rec?.debris ?? 0;
+		totalCalculus += rec?.calculus ?? 0;
+	}
+
+	const debrisAvg = Math.round((totalDebris / count) * 10) / 10;
+	const calculusAvg = Math.round((totalCalculus / count) * 10) / 10;
+	const score = Math.round((debrisAvg + calculusAvg) * 10) / 10;
+
+	let id: OhiSLevel = "ideal";
+	let label = "Идеальная (0.0)";
+	let statusDescription = "Зубной налет и камень отсутствуют, десна интактная.";
+	let colorHex = "#10b981";
+	let badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+
+	if (score === 0.0) {
+		id = "ideal";
+		label = "Идеальная (0.0)";
+		statusDescription = "Зубной налет и камень отсутствуют, десна интактная.";
+		colorHex = "#10b981";
+		badgeClass = "bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800";
+	} else if (score <= 1.2) {
+		id = "fair";
+		label = `Хорошая (${score.toFixed(1)})`;
+		statusDescription = "Незначительный мягкий налет, наддесневой камень минимален.";
+		colorHex = "#0ea5e9";
+		badgeClass = "bg-sky-50 text-sky-800 border-sky-200 dark:bg-sky-950/40 dark:text-sky-300 dark:border-sky-800";
+	} else if (score <= 3.0) {
+		id = "poor";
+		label = `Удовлетворительная (${score.toFixed(1)})`;
+		statusDescription = "Умеренный зубной налет до 1/2 коронки, наддесневой зубной камень.";
+		colorHex = "#f59e0b";
+		badgeClass = "bg-amber-50 text-amber-800 border-amber-200 dark:bg-amber-950/40 dark:text-amber-300 dark:border-amber-800";
+	} else {
+		id = "severe";
+		label = `Плохая (${score.toFixed(1)})`;
+		statusDescription = "Обильный зубной налет, массивный над- и поддесневой камень.";
+		colorHex = "#ef4444";
+		badgeClass = "bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800";
+	}
+
+	return {
+		id,
+		score,
+		debris: debrisAvg,
+		calculus: calculusAvg,
+		label,
+		statusDescription,
+		colorHex,
+		badgeClass,
+		ratingText: `OHI-S: ${score.toFixed(1)} (${label})`,
+	};
+}
+
 export const OHI_S_PRESETS: readonly OhiSPreset[] = [
 	{
 		id: "ideal",

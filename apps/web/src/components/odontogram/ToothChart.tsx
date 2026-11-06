@@ -1,4 +1,5 @@
 import React, { useCallback, memo, useRef } from "react";
+import { getPermanentSuccessor } from "@dental/shared";
 import { ToothRadialMenu } from "./ToothRadialMenu";
 import {
 	type ToothChartProps,
@@ -110,7 +111,35 @@ export const ToothChart: React.FC<ToothChartProps> = memo(({
 			<ToothChartToolbar hideExpressActions={hideExpressActions} hideQuadrantSwitcher={hideQuadrantSwitcher} hideDentitionSwitcher={hideDentitionSwitcher} currentQuadrant={dentition.currentQuadrant} isPediatricEffective={dentition.isPediatricEffective} isMixedEffective={dentition.isMixedEffective} pediatricMode={pediatricMode} dentitionMode={dentitionMode} onDentitionModeChange={onDentitionModeChange} {...actions} handleSelectQuadrant={dentition.handleSelectQuadrant} mobileDisplayMode={dentition.mobileDisplayMode} onToggleMobileDisplayMode={dentition.setMobileDisplayMode} />
 			<ToothArchGrid archContainerRef={archContainerRef} isQuadrantView={dentition.isQuadrantView} currentQuadrant={dentition.currentQuadrant} pediatricMode={pediatricMode} isPediatricEffective={dentition.isPediatricEffective} handleSelectQuadrant={dentition.handleSelectQuadrant} isTopQuadrant={dentition.isTopQuadrant} activeQuadrantTeeth={dentition.activeQuadrantTeeth} toothDataMap={dentition.toothDataMap} archScale={archScale} topSplit={dentition.topSplit} bottomSplit={dentition.bottomSplit} useSurfaces={useSurfaces} showPulpAndCanals={showPulpAndCanals} showPeriapicalHalos={showPeriapicalHalos} showPeriodontalBoneLoss={showPeriodontalBoneLoss} selectedTeeth={selectedTeeth} activeStamp={activeStamp} handleToothClick={handleToothClick} onQuickStateChange={onQuickStateChange} onResorptionChange={onResorptionChange} mobileDisplayMode={dentition.mobileDisplayMode} carouselTooth={dentition.carouselTooth} onSelectCarouselTooth={dentition.setCarouselTooth} onOpenStatusSheet={(num, rect) => dentition.setLocalRadialData({ toothNumber: num, anchorRect: { x: rect?.left ?? 195, y: rect?.top ?? 400, width: rect?.width || 120, height: rect?.height || 140 }, currentState: dentition.toothDataMap.get(num)?.state ?? "Healthy" })} onSurfacesChange={onSurfacesChange} />
 			{dentition.localRadialData && (
-				<ToothRadialMenu toothNumber={dentition.localRadialData.toothNumber} anchorRect={dentition.localRadialData.anchorRect} currentState={dentition.localRadialData.currentState} surfaces={dentition.toothDataMap.get(dentition.localRadialData.toothNumber)?.surfaces} onSelectState={(state, surfs) => { onQuickStateChange?.([dentition.localRadialData!.toothNumber], state, surfs); dentition.setLocalRadialData(null); }} onSelectSurfaces={(surfs) => onSurfacesChange?.([dentition.localRadialData!.toothNumber], surfs)} onClose={() => dentition.setLocalRadialData(null)} />
+				<ToothRadialMenu
+					toothNumber={dentition.localRadialData.toothNumber}
+					anchorRect={dentition.localRadialData.anchorRect}
+					currentState={dentition.localRadialData.currentState}
+					surfaces={dentition.toothDataMap.get(dentition.localRadialData.toothNumber)?.surfaces}
+					onSelectState={(state, surfs, subType) => {
+						const num = dentition.localRadialData!.toothNumber;
+						if (subType === "resorption_1") {
+							onResorptionChange?.([num], 25);
+						} else if (subType === "resorption_2") {
+							onResorptionChange?.([num], 50);
+						} else if (subType === "resorption_3") {
+							onResorptionChange?.([num], 75);
+						} else if (subType === "exfoliation") {
+							onResorptionChange?.([num], 100);
+							onQuickStateChange?.([num], "Missing", surfs);
+							const successor = getPermanentSuccessor(num);
+							if (successor) {
+								onQuickStateChange?.([successor], "Healthy", undefined);
+							}
+							dentition.setLocalRadialData(null);
+							return;
+						}
+						onQuickStateChange?.([num], state, surfs);
+						dentition.setLocalRadialData(null);
+					}}
+					onSelectSurfaces={(surfs) => onSurfacesChange?.([dentition.localRadialData!.toothNumber], surfs)}
+					onClose={() => dentition.setLocalRadialData(null)}
+				/>
 			)}
 		</div>
 	);

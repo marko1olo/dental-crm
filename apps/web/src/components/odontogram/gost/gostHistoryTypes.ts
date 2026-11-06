@@ -30,6 +30,10 @@ export interface DmftCalculationResult {
 		u: number;
 		total: number;
 	};
+	isPediatric: boolean;
+	isMixed: boolean;
+	displayKpuHeader: string;
+	displayKpuDetails: string;
 }
 
 export function calculateDmft(teethData: readonly ToothData[]): DmftCalculationResult {
@@ -64,26 +68,6 @@ export function calculateDmft(teethData: readonly ToothData[]): DmftCalculationR
 	const healthy = 32 - (decayed + filled + missing + implants);
 	const dmftTotal = decayed + filled + missing;
 
-	let severity: DmftCalculationResult["severity"] = "very_low";
-	let severityLabel = "Очень низкий (0–1.5)";
-
-	if (dmftTotal <= 1.5) {
-		severity = "very_low";
-		severityLabel = "Очень низкий (0–1.5)";
-	} else if (dmftTotal <= 3.0) {
-		severity = "low";
-		severityLabel = "Низкий (1.6–3.0)";
-	} else if (dmftTotal <= 6.2) {
-		severity = "moderate";
-		severityLabel = "Средний (3.1–6.2)";
-	} else if (dmftTotal <= 12.7) {
-		severity = "high";
-		severityLabel = "Высокий (6.3–12.7)";
-	} else {
-		severity = "very_high";
-		severityLabel = "Очень высокий (> 12.7)";
-	}
-
 	// Pediatric calculation
 	let pedK = 0;
 	let pedP = 0;
@@ -105,6 +89,70 @@ export function calculateDmft(teethData: readonly ToothData[]): DmftCalculationR
 		}
 	}
 
+	const pedTotal = pedK + pedP + pedU;
+	const isPediatric = dmftTotal === 0 && pedTotal > 0;
+	const isMixed = dmftTotal > 0 && pedTotal > 0;
+
+	let severity: DmftCalculationResult["severity"] = "very_low";
+	let severityLabel = "Очень низкий (0–1.5)";
+	let displayKpuHeader = "Индекс КПУ:";
+	let displayKpuDetails = `(К=${decayed}, П=${filled}, У=${missing})`;
+
+	if (isPediatric) {
+		displayKpuHeader = "Индекс кп:";
+		displayKpuDetails = `(к=${pedK}, п=${pedP}${pedU > 0 ? `, у=${pedU}` : ""})`;
+		if (pedTotal === 0) {
+			severity = "very_low";
+			severityLabel = "Очень низкий (кп: 0)";
+		} else if (pedTotal <= 2) {
+			severity = "low";
+			severityLabel = `Низкий (кп: ${pedTotal})`;
+		} else if (pedTotal <= 4) {
+			severity = "moderate";
+			severityLabel = `Средний (кп: ${pedTotal})`;
+		} else if (pedTotal <= 7) {
+			severity = "high";
+			severityLabel = `Высокий (кп: ${pedTotal})`;
+		} else {
+			severity = "very_high";
+			severityLabel = `Очень высокий (кп: ${pedTotal} ≥ 8)`;
+		}
+	} else if (isMixed) {
+		displayKpuHeader = "Индекс КПУ+кп:";
+		displayKpuDetails = `(КПУ=${dmftTotal}, кп=${pedK + pedP})`;
+		const combined = dmftTotal + pedTotal;
+		if (combined <= 2) {
+			severity = "low";
+			severityLabel = `Низкий (КПУ+кп: ${combined})`;
+		} else if (combined <= 5) {
+			severity = "moderate";
+			severityLabel = `Средний (КПУ+кп: ${combined})`;
+		} else if (combined <= 8) {
+			severity = "high";
+			severityLabel = `Высокий (КПУ+кп: ${combined})`;
+		} else {
+			severity = "very_high";
+			severityLabel = `Очень высокий (КПУ+кп: ${combined} > 8)`;
+		}
+	} else {
+		if (dmftTotal <= 1.5) {
+			severity = "very_low";
+			severityLabel = "Очень низкий (0–1.5)";
+		} else if (dmftTotal <= 3.0) {
+			severity = "low";
+			severityLabel = "Низкий (1.6–3.0)";
+		} else if (dmftTotal <= 6.2) {
+			severity = "moderate";
+			severityLabel = "Средний (3.1–6.2)";
+		} else if (dmftTotal <= 12.7) {
+			severity = "high";
+			severityLabel = "Высокий (6.3–12.7)";
+		} else {
+			severity = "very_high";
+			severityLabel = "Очень высокий (> 12.7)";
+		}
+	}
+
 	return {
 		dmftTotal,
 		decayed,
@@ -118,8 +166,12 @@ export function calculateDmft(teethData: readonly ToothData[]): DmftCalculationR
 			k: pedK,
 			p: pedP,
 			u: pedU,
-			total: pedK + pedP + pedU,
+			total: pedTotal,
 		},
+		isPediatric,
+		isMixed,
+		displayKpuHeader,
+		displayKpuDetails,
 	};
 }
 

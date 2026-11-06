@@ -58,12 +58,16 @@ export const DirectHygieneLauncher: React.FC = () => {
 		window.addEventListener("popstate", handleLocationChange);
 		window.addEventListener("dente:open-hygiene", handleOpenEvent);
 		window.addEventListener("dente:open-cleaning", handleOpenEvent);
+		window.addEventListener("dente-open-hygiene", handleOpenEvent);
+		window.addEventListener("dente-open-cleaning", handleOpenEvent);
 
 		return () => {
 			window.removeEventListener("hashchange", handleLocationChange);
 			window.removeEventListener("popstate", handleLocationChange);
 			window.removeEventListener("dente:open-hygiene", handleOpenEvent);
 			window.removeEventListener("dente:open-cleaning", handleOpenEvent);
+			window.removeEventListener("dente-open-hygiene", handleOpenEvent);
+			window.removeEventListener("dente-open-cleaning", handleOpenEvent);
 		};
 	}, []);
 

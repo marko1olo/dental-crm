@@ -1,4 +1,5 @@
 import React, { useMemo, useCallback } from "react";
+import { getPermanentSuccessor, isPrimaryTooth } from "@dental/shared";
 import {
 	type PediatricDentitionMode,
 	type PediatricTeethChartProps,
@@ -66,13 +67,29 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 	const handleToothClick = useCallback((num: number) => onSelectTooth?.(num), [onSelectTooth]);
 
 	const handleQuickState = useCallback((targets: number[], state: ToothState) => {
-		targets.forEach((t) => onToothFindingChange?.(t, state as ToothClinicalFinding));
+		targets.forEach((t) => {
+			onToothFindingChange?.(t, state as ToothClinicalFinding);
+			if (state === "Missing" && isPrimaryTooth(t)) {
+				const successor = getPermanentSuccessor(t);
+				if (successor) {
+					onToothFindingChange?.(successor, "Healthy" as ToothClinicalFinding);
+				}
+			}
+		});
 	}, [onToothFindingChange]);
 
 	const handleResorption = useCallback((targets: number[], stage: any) => {
 		const percent = typeof stage === "number" ? stage : stage === "complete" ? 100 : stage === "half" ? 50 : stage === "initial" ? 25 : 0;
-		targets.forEach((t) => onResorptionChange?.(t, percent as any));
-	}, [onResorptionChange]);
+		targets.forEach((t) => {
+			onResorptionChange?.(t, percent as any);
+			if (percent === 100 && isPrimaryTooth(t)) {
+				const successor = getPermanentSuccessor(t);
+				if (successor) {
+					onToothFindingChange?.(successor, "Healthy" as ToothClinicalFinding);
+				}
+			}
+		});
+	}, [onResorptionChange, onToothFindingChange]);
 
 	return (
 		<div
@@ -93,6 +110,7 @@ export const PediatricTeethChart: React.FC<PediatricTeethChartProps> = ({
 					selectedTeeth={activeTooth ? [activeTooth] : []}
 					onToothClick={handleToothClick}
 					onQuickStateChange={handleQuickState}
+					onResorptionChange={handleResorption}
 					hideExpressActions={true}
 					hideQuadrantSwitcher={true}
 					showPulpAndCanals={true}

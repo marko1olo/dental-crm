@@ -29,38 +29,38 @@ export const ToothRadialResorptionBar: React.FC<ToothRadialResorptionBarProps> =
 						</span>
 						<span className="text-[10px] text-[var(--muted)]">0–100%</span>
 					</div>
-					<div className="grid grid-cols-4 gap-1 w-full">
+					<div className="grid grid-cols-4 gap-1.5 w-full">
 						<button
 							type="button"
-							onClick={() => { onSelectState("Healthy", undefined, "resorption_1"); onClose(); }}
-							className="min-h-[28px] px-1.5 py-0.5 rounded-lg text-[10px] font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center"
-							title="Резорбция I степени (25%)"
+							onClick={() => { onSelectState(currentState ?? "Healthy", undefined, "resorption_1"); onClose(); }}
+							className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center flex items-center justify-center shadow-xs"
+							title="Резорбция I степени (25%) — сохраняет диагноз коронки"
 						>
-							[Рез I]
+							Рез I
 						</button>
 						<button
 							type="button"
-							onClick={() => { onSelectState("Healthy", undefined, "resorption_2"); onClose(); }}
-							className="min-h-[28px] px-1.5 py-0.5 rounded-lg text-[10px] font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center"
-							title="Резорбция II степени (50%)"
+							onClick={() => { onSelectState(currentState ?? "Healthy", undefined, "resorption_2"); onClose(); }}
+							className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center flex items-center justify-center shadow-xs"
+							title="Резорбция II степени (50%) — сохраняет диагноз коронки"
 						>
-							[Рез II]
+							Рез II
 						</button>
 						<button
 							type="button"
-							onClick={() => { onSelectState("Healthy", undefined, "resorption_3"); onClose(); }}
-							className="min-h-[28px] px-1.5 py-0.5 rounded-lg text-[10px] font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center"
-							title="Резорбция III степени (75%)"
+							onClick={() => { onSelectState(currentState ?? "Healthy", undefined, "resorption_3"); onClose(); }}
+							className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-black bg-purple-500/15 text-purple-800 dark:text-purple-200 hover:bg-purple-500/30 transition-all cursor-pointer border border-purple-500/30 text-center flex items-center justify-center shadow-xs"
+							title="Резорбция III степени (75%) — сохраняет диагноз коронки"
 						>
-							[Рез III]
+							Рез III
 						</button>
 						<button
 							type="button"
 							onClick={() => { onSelectState("Missing", undefined, "exfoliation"); onClose(); }}
-							className="min-h-[28px] px-1.5 py-0.5 rounded-lg text-[10px] font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 text-center"
-							title="Смена зуба / Эксфолиация (100%)"
+							className="min-h-[36px] px-2 py-1 rounded-lg text-[11px] font-black bg-rose-500/15 text-rose-800 dark:text-rose-200 hover:bg-rose-500/30 transition-all cursor-pointer border border-rose-500/30 text-center flex items-center justify-center shadow-xs"
+							title="Смена зуба / Эксфолиация (100%) — физиологическое выпадение и прорезывание постоянного"
 						>
-							[Смена]
+							Смена
 						</button>
 					</div>
 				</div>

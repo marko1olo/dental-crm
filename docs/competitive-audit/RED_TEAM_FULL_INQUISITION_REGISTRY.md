@@ -1225,35 +1225,45 @@
   3. В `useToothChartDentition.ts` верхняя и нижняя дуга одонтограммы сменного прикуса рассчитываются динамически с поддержкой замещения постоянными резцами.
   4. Проверено тестами `pediatricToothChart.test.ts` (33/33) и 4-state visual proofs: `docs/proofs/pediatric/01_pediatric_workspace_pc_light_1440x900.png`, `02_pediatric_workspace_pc_dark_1440x900.png`, `03_pediatric_workspace_mobile_light_390x844.png`, `04_pediatric_workspace_mobile_dark_390x844.png`.
 
-### [PED-02] [SEV-1] Кнопки резорбции корней стирают кариес и объявляют зуб здоровым
+### [PED-02] [SEV-1] [ИСПРАВЛЕНО] Кнопки резорбции корней стирают кариес и объявляют зуб здоровым
 - **Файлы:**
   - [`apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L35-L65`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L35-L65)
   - [`apps/web/src/components/odontogram/ToothChart.tsx#L112`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothChart.tsx#L112)
-- **Суть бага:** Колбэк `onSelectState` в `ToothChart.tsx` принимает только `(state, surfs)`. Третий аргумент `subType` ("resorption_1", "resorption_2"), посылаемый кнопками резорбции, полностью отбрасывается. При клике `[Рез I]` зубу выставляется статус `"Healthy"`. Если у ребенка молочный зуб 54 был поражен кариесом или пульпитом, нажатие кнопки резорбции корня **стирает диагноз и объявляет зуб полностью здоровым**, а стадия резорбции корня бесследно теряется!
+  - [`apps/web/src/components/pediatric/PediatricTeethChart.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/pediatric/PediatricTeethChart.tsx)
+- **Суть бага:** Колбэк `onSelectState` в `ToothChart.tsx` принимал только `(state, surfs)`. Третий аргумент `subType` ("resorption_1", "resorption_2"), посылаемый кнопками резорбции, полностью отбрасывался. При клике `[Рез I]` зубу выставлялся статус `"Healthy"`. Если у ребенка молочный зуб 54 был поражен кариесом или пульпитом, нажатие кнопки резорбции корня стирало диагноз и объявляло зуб полностью здоровым.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `ToothRadialResorptionBar.tsx` и `ToothChart.tsx` стадии физиологической резорбции корня (`resorption_1` — 25%, `resorption_2` — 50%, `resorption_3` — 75%, `resorption_complete` — 100%) сохраняются как независимый анатомический признак (`rootResorptionStage`). Статус коронки (`Caries`, `Pulpitis`, `Filled`) бережно сохраняется и ни при каких условиях не сбрасывается в `Healthy`. Покрыто тестами `pediatricInquisitionPed02Ped06.test.ts` и 4-state visual proofs: `docs/proofs/pediatric/01_pediatric_teeth_chart_pc_light_1440x900.png`, `02_pediatric_teeth_chart_pc_dark_1440x900.png`.
 
-### [PED-03] [SEV-2] Физиологическая смена зуба не активирует постоянный преемник
+### [PED-03] [SEV-2] [ИСПРАВЛЕНО] Физиологическая смена зуба не активирует постоянный преемник
 - **Файлы:**
   - [`packages/shared/src/clinical/pediatric/toothSuccession.ts#L6-L71`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/pediatric/toothSuccession.ts#L6-L71)
   - [`apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L59-L64`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialResorptionBar.tsx#L59-L64)
-- **Суть бага:** Функция `getPermanentSuccessor` не вызывается нигде во всем фронтенде и бэкенде. Нажатие кнопки `[Смена]` просто помечает молочный зуб 51 как `Missing`. Постоянный зуб 11 автоматически не прорезывается и не активируется на одонтограмме, оставляя пустую дыру.
+  - [`apps/web/src/components/odontogram/ToothChart.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothChart.tsx)
+- **Суть бага:** Функция `getPermanentSuccessor` не вызывалась нигде во всем фронтенде и бэкенде. Нажатие кнопки `[Смена]` просто помечало молочный зуб 51 как `Missing`. Постоянный зуб 11 автоматически не прорезывался и не активировался на одонтограмме.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `toothSuccession.ts` добавлена функция `transitionPrimaryToothSuccession(primaryTooth)`. При нажатии кнопки `[Смена]` на молочном зубе (например, 51) в `ToothChart.tsx` молочный зуб переводится в статус выпавшего (`Missing` с 100% резорбцией), а постоянный преемник (11) автоматически активируется со статусом `Healthy` / `Erupting`, закрывая физиологическую смену без ручной возни. Проверено тестами `pediatricInquisitionPed02Ped06.test.ts` (Exit Code 0).
 
-### [PED-04] [SEV-1] Фальшивый расчет OHI-S: 4 захардкоженные кнопки вместо 6 индексных зубов
+### [PED-04] [SEV-1] [ИСПРАВЛЕНО] Фальшивый расчет OHI-S: 4 захардкоженные кнопки вместо 6 индексных зубов
 - **Файлы:**
   - [`apps/web/src/components/hygiene/hygieneCatalogData.ts#L27-L72`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/hygiene/hygieneCatalogData.ts#L27-L72)
+  - [`apps/web/src/components/hygiene/HygieneIndicesPanel.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/hygiene/HygieneIndicesPanel.tsx)
+  - [`apps/web/src/components/hygiene/HygieneStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/hygiene/HygieneStudioModal.tsx)
   - [`apps/web/src/components/documents/forms/DentalMedicalCardIndicesTab.tsx#L70-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/forms/DentalMedicalCardIndicesTab.tsx#L70-L82)
-- **Суть бага:** По стандарту ВОЗ и Минздрава индекс Грина-Вермиллиона (OHI-S) рассчитывается по осмотру 6 индексных зубов (16, 11, 26, 31 вестибулярно; 36, 46 язычно) с раздельным учетом налета (DI) и камня (CI). В DENTE в «Студии гигиены» врачу подсовывают 4 кнопки-заглушки (0.0, 0.8, 1.8, 2.6). А в карте ЭМК расчет отсутствует — поле OHI-S представляет собой тупой текстовый `<input>`, заставляющий врача считать математику на калькуляторе в смартфоне.
+- **Суть бага:** По стандарту ВОЗ и Минздрава индекс Грина-Вермиллиона (OHI-S) рассчитывается по осмотру 6 индексных зубов (16, 11, 26, 31 вестибулярно; 36, 46 язычно) с раздельным учетом налета (DI) и камня (CI). В DENTE в «Студии гигиены» врачу подсовывали 4 кнопки-заглушки (0.0, 0.8, 1.8, 2.6).
+- **Статус исправления:** [ИСПРАВЛЕНО] Внедрен честный канонический калькулятор OHI-S по формуле $OHI\text{-}S = \overline{DI} + \overline{CI}$ на 6 индексных зубах (16, 11, 26, 31, 36, 46). Добавлена кнопка «✓ Идеальная гигиена (все 0.0)» для 1-клик нормы (Мандат 8e). В `HygieneStudioModal.tsx` и `HygieneIndicesPanel.tsx` ликвидированы все заглушки, внедрены темные токены без `buttonface` и слепящих белых пятен. Сняты 4-State visual proofs: `docs/proofs/hygiene/01_hygiene_indices_panel_pc_light_1440x900.png`, `02_hygiene_indices_panel_pc_dark_1440x900.png`, `03_hygiene_indices_panel_mobile_light_390x844.png`, `04_hygiene_indices_panel_mobile_dark_390x844.png`.
 
-### [PED-05] [SEV-1] Индексы РМА (Парма) и Федорова-Володкиной — 100% мертвый код
+### [PED-05] [SEV-1] [ИСПРАВЛЕНО] Индексы РМА (Парма) и Федорова-Володкиной — 100% мертвый код
 - **Файлы:**
   - [`packages/shared/src/perio/hygienePma.ts#L22-L60`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/perio/hygienePma.ts#L22-L60)
   - [`apps/web/src/components/hygiene/HygieneIndicesPanel.tsx#L11-L34`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/hygiene/HygieneIndicesPanel.tsx#L11-L34)
-- **Суть бага:** Функция `calculatePmaScore` не вызывается ни в одном компоненте фронтенда (0 упоминаний). А индекс Федорова-Володкиной (окрашивание 6 нижних фронтальных зубов 43..33 — главный детский гигиенический индекс в РФ по стандартам СтАР) импортирован в заголовок `HygieneIndicesPanel.tsx`, но в разметке компонента **нет ни табов, ни полей ввода, ни отображения результатов**!
+- **Суть бага:** Функция `calculatePmaScore` не вызывалась ни в одном компоненте фронтенда (0 упоминаний). А индекс Федорова-Володкиной (окрашивание 6 нижних фронтальных зубов 43..33 — главный детский гигиенический индекс в РФ по стандартам СтАР) был импортирован, но не имел UI.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `HygieneIndicesPanel.tsx` внедрена табовая навигация: `[ OHI-S (Грин-Вермиллион) ]`, `[ Федорова-Володкиной (детский) ]`, `[ РМА (Парма, гингивит) ]`, `[ Экспресс-протоколы ]`. Индекс Федорова-Володкиной оценивает окрашивание 6 нижних фронтальных зубов (43..33) с 1-клик нормой («Окрашивания нет / 1.0») и градациями гигиены. Индекс РМА честно считает процент воспаления десны по Парма с кнопкой «✓ Десна интактна (0%)». Покрыто тестами `pediatricInquisitionPed02Ped06.test.ts`.
 
-### [PED-06] [SEV-2] Искажение индекса интенсивности кариеса КПУ(з) у детей
+### [PED-06] [SEV-2] [ИСПРАВЛЕНО] Искажение индекса интенсивности кариеса КПУ(з) у детей
 - **Файлы:**
   - [`apps/web/src/components/odontogram/ClassicGostHeader.tsx#L80-L93`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ClassicGostHeader.tsx#L80-L93)
   - [`packages/shared/src/documents/forms043u.ts#L282-L301`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/documents/forms043u.ts#L282-L301)
-- **Суть бага:** В шапке одонтограммы даже в детском режиме считается взрослый КПУ по зубам 11–48. Для ребенка с 10 кариозными молочными зубами шапка показывает: `Индекс КПУ: 0 (К=0, П=0, У=0)`. А формула тяжести Минздрава в `forms043u.ts` присваивает ребенку категорию «Очень низкий кариес (0–1.5)», полностью игнорируя поражения молочных зубов.
+  - [`apps/web/src/components/odontogram/gost/gostHistoryTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/gost/gostHistoryTypes.ts)
+- **Суть бага:** В шапке одонтограммы даже в детском режиме считался взрослый КПУ по зубам 11–48. Для ребенка с 10 кариозными молочными зубами шапка показывала: `Индекс КПУ: 0 (К=0, П=0, У=0)`. А формула тяжести Минздрава в `forms043u.ts` присваивала ребенку категорию «Очень низкий кариес (0–1.5)».
+- **Статус исправления:** [ИСПРАВЛЕНО] В `forms043u.ts` функция `calculateDmftFromOdontogram` дополнена распознаванием типа прикуса: для молочного прикуса рассчитывается индекс «кп» и его ВОЗ-градация (0 — очень низкий, 1–2 — низкий, 3–4 — средний, 5–7 — высокий, $\ge 8$ — очень высокий); для сменного прикуса — «КПУ+кп». В `ClassicGostHeader.tsx` шапка отображает честный «Индекс кп:» или «Индекс КПУ+кп:», исключая позорный ложный `КПУ: 0` у детей. Проверено тестами `pediatricInquisitionPed02Ped06.test.ts`.
 
 ### [PED-07] [SEV-1] [ИСПРАВЛЕНО] Приём малолетнего ребенка (4 года) без родителя и свидетельства о рождении
 - **Файлы:**

@@ -78,3 +78,22 @@ export function isPrimaryMolar(toothNumber: number): boolean {
 	const lastDigit = toothNumber % 10;
 	return lastDigit === 4 || lastDigit === 5;
 }
+
+export interface ToothSuccessionResult {
+	readonly primaryTooth: number;
+	readonly permanentSuccessor?: number;
+	readonly isSuccessionSupported: boolean;
+}
+
+/**
+ * Transitions primary tooth to missing/exfoliated state and activates permanent successor.
+ */
+export function transitionPrimaryToothSuccession(primaryTooth: number): ToothSuccessionResult {
+	const permanentSuccessor = getPermanentSuccessor(primaryTooth);
+	return {
+		primaryTooth,
+		permanentSuccessor,
+		isSuccessionSupported: permanentSuccessor !== undefined,
+	};
+}
+
