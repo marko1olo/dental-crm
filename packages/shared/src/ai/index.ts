@@ -45,5 +45,6 @@ export {
 export * from "./taskPlanTracker.js";
 export * from "./agentEvents.js";
 export * from "./reasoningStripper.js";
+export * from "./dentalSpeechPostProcessor.js";
 
 

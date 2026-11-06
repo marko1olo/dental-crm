@@ -49,6 +49,9 @@ export const endoCanalMeasurementSchema = z.object({
 	referencePoint: z.string().trim().max(100).optional().default(""),
 	workingLengthMm: z.union([z.number(), z.string()]).optional().default(""),
 	masterApicalFile: z.string().trim().max(100).optional().default(""),
+	masterFile: z.string().trim().max(100).optional().default(""),
+	masterCone: z.string().trim().max(100).optional().default(""),
+	apexLocatorReading: z.string().trim().max(100).optional().default("0.0 (Apex)"),
 	taper: z.string().trim().max(50).optional().default(""),
 	obturationTechnique: z.string().trim().max(200).optional().default(""),
 	sealer: z.string().trim().max(200).optional().default(""),
@@ -89,6 +92,7 @@ export const batchToothStateSchema = z.object({
 	state: clinicalToothStateSchema,
 	surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 	notes: z.string().max(10000).optional().nullable(),
+	canalMeasurements: z.array(endoCanalMeasurementSchema).optional().nullable(),
 	clinicalData: endoToothClinicalDataSchema.optional().nullable(),
 	visitId: z
 		.string()
@@ -108,6 +112,7 @@ export const odontogramStatusMutationSchema = z
 		state: clinicalToothStateSchema,
 		surfaces: z.array(z.string().trim().min(1).max(30)).max(8).optional(),
 		notes: z.string().max(10000).optional().nullable(),
+		canalMeasurements: z.array(endoCanalMeasurementSchema).optional().nullable(),
 		clinicalData: endoToothClinicalDataSchema.optional().nullable(),
 		visitId: z
 			.string()

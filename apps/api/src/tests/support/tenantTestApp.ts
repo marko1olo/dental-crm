@@ -42,8 +42,32 @@ import { getRequestIdentity } from "../../security/identity.js";
  * строк — то есть проверки «сессия несуществующей клиники» и «чужой арендатор»
  * продолжают проверять именно то, что проверяли.
  */
+export const activeTenantTestApps = new Set<FastifyInstance>();
+
+/**
+ * Гарантированное закрытие всех активных тестовых экземпляров Fastify.
+ * Предотвращает утечки таймеров, открытых сокетов и дескрипторов между прогонами.
+ */
+export async function closeAllTenantTestApps(): Promise<void> {
+	const apps = Array.from(activeTenantTestApps);
+	activeTenantTestApps.clear();
+	await Promise.allSettled(
+		apps.map(async (app) => {
+			try {
+				await app.close();
+			} catch {
+				// Экземпляр мог быть закрыт тестом явно через after()
+			}
+		}),
+	);
+}
+
 export function createTenantTestApp(): FastifyInstance {
 	const app = Fastify();
+	activeTenantTestApps.add(app);
+	app.addHook("onClose", () => {
+		activeTenantTestApps.delete(app);
+	});
 
 	// Порядок обязателен: `onRoute` срабатывает в момент РЕГИСТРАЦИИ маршрута,
 	// поэтому хук должен стоять до `registerXxxRoutes(app)`. Хук, повешенный

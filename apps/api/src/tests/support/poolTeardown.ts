@@ -35,11 +35,14 @@ export function purgeLiveApiKeys(env: NodeJS.ProcessEnv = process.env): void {
 // Purge live API keys and proxy configuration immediately on import
 purgeLiveApiKeys();
 
-// Automatically close postgres client pool when process completes
+import { closeAllTenantTestApps } from "./tenantTestApp.js";
+
+// Automatically close fastify app instances and postgres client pool when process completes
 if (typeof process.once === "function") {
-	process.once("beforeExit", () => {
+	process.once("beforeExit", async () => {
+		await closeAllTenantTestApps();
 		void endPool();
 	});
 }
 
-export { endPool };
+export { endPool, closeAllTenantTestApps };

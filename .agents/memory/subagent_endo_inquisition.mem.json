@@ -1,0 +1,49 @@
+{
+  "subagent": "Red Team Endo Inquisition & Clinical Architecture",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-06T11:57:00.000Z",
+  "scope": "[END-03..07]",
+  "completedDefects": [
+    {
+      "code": "END-03",
+      "severity": "SEV-1",
+      "summary": "Ликвидация свалки замеров каналов в notes. Создана колонка canal_measurements jsonb в PostgreSQL 18 для tooth_states и tooth_state_history. notes сохраняет чистый клинический текст врача.",
+      "tests": ["apps/api/src/tests/routes/endoCanalJsonbPersistence.test.ts"]
+    },
+    {
+      "code": "END-04",
+      "severity": "SEV-2",
+      "summary": "Ликвидация захардкоженного мока apexLocator: '0.0 Apex'. Внедрены поля показаний прибора по каждому каналу (-0.5, 0.0, +0.5 мм, За апексом) и макро-кнопка '✓ Все 0.0 (Apex)' в EndodonticStudioModal и ChairsideEndoQuickBar.",
+      "tests": ["apps/web/src/components/endo/__tests__/chairsideEndoQuickBar.test.tsx", "apps/web/src/components/endo/__tests__/endodonticsSSOTSuite.test.tsx"]
+    },
+    {
+      "code": "END-05",
+      "severity": "SEV-2",
+      "summary": "Прекращено слепое списание 1 целого NiTi файла на зуб. Внедрен мягкий учет циклической усталости инструмента: 1 файл = 4 канала (0.25 файла / 162.5 ₽ на канал) с фоновым списанием склада.",
+      "tests": ["packages/shared/src/clinical/endo/endoBillingAndMaterials.test.ts"]
+    },
+    {
+      "code": "END-06",
+      "severity": "SEV-2",
+      "summary": "Добавлен пресет 2-го визита периодонтита 'periodontitis_permanent_ahplus' в endodonticsCatalogData и тулбар EndodonticStudioModal (постоянная обтурация AH Plus + гуттаперча с генерацией K04.5 дневника без ложного пульпита).",
+      "tests": ["apps/web/src/components/endo/__tests__/endodonticsSSOTSuite.test.tsx"]
+    },
+    {
+      "code": "END-07",
+      "severity": "SEV-2",
+      "summary": "Эргономика и автономия врача: кнопки сохранения/печати никогда не disabled. Touch targets >= 44x44px Apple HIG, 0px горизонтального скролла. 4-State Proof скриншоты сняты и лично проверены.",
+      "proofs": [
+        "docs/proofs/endo/01_endo_studio_pc_light_1440x900.png",
+        "docs/proofs/endo/02_endo_studio_pc_dark_1440x900.png",
+        "docs/proofs/endo/03_endo_studio_mobile_light_390x844.png",
+        "docs/proofs/endo/04_endo_studio_mobile_dark_390x844.png"
+      ]
+    }
+  ],
+  "gatesVerified": {
+    "encoding": "PASS (npm run check:encoding: 24006 files OK)",
+    "unitAndIntegrationTests": "PASS (37/37 passed)",
+    "visual4StateProof": "PASS (PC Light/Dark 1440x900, Mobile Light/Dark 390x844)",
+    "documentationSync": "PASS (RED_TEAM_FULL_INQUISITION_REGISTRY.md updated)"
+  }
+}

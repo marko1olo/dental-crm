@@ -1,5 +1,6 @@
 import assert from "node:assert/strict";
-import { describe, test } from "node:test";
+import { after, before, describe, test } from "node:test";
+import type { FastifyInstance } from "fastify";
 import { createTenantTestApp } from "../support/tenantTestApp.js";
 import { registerAppointmentsRoutes } from "../../routes/appointments.js";
 import { appointments as inMemoryAppointments } from "../../sampleData.js";
@@ -15,13 +16,21 @@ import { TOKEN_SECRET } from "../../routes/auth.js";
 const ADMIN_SECRET = "dente-admin-secret-test-pass";
 
 describe("Appointment Next Stage Sequential Visits", () => {
-  test("creates next-stage appointment with inherited clinical fields", async () => {
+  let app: FastifyInstance;
+
+  before(async () => {
     process.env.DENTAL_STATE_PERSISTENCE = "off";
     process.env.DENTE_SCHEDULE_ADMIN_SECRET = ADMIN_SECRET;
 
-    const app = createTenantTestApp();
+    app = createTenantTestApp();
     await registerAppointmentsRoutes(app);
+  });
 
+  after(async () => {
+    await app.close();
+  });
+
+  test("creates next-stage appointment with inherited clinical fields", async () => {
     const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID }, TOKEN_SECRET());
 
     const parentId = "00000000-0000-4000-8000-000000000005";
@@ -79,12 +88,6 @@ describe("Appointment Next Stage Sequential Visits", () => {
   });
 
   test("returns 404 if parent appointment does not exist", async () => {
-    process.env.DENTAL_STATE_PERSISTENCE = "off";
-    process.env.DENTE_SCHEDULE_ADMIN_SECRET = ADMIN_SECRET;
-
-    const app = createTenantTestApp();
-    await registerAppointmentsRoutes(app);
-
     const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID }, TOKEN_SECRET());
 
     const response = await app.inject({

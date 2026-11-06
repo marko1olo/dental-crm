@@ -15,6 +15,9 @@ export interface EndoCanalData {
 	referencePoint: string;
 	workingLengthMm: number | string;
 	masterApicalFile: string;
+	masterFile?: string | undefined;
+	masterCone?: string | undefined;
+	apexLocatorReading?: string | undefined;
 	taper: string;
 	obturationTechnique: string;
 	sealer?: string | undefined;

@@ -1,4 +1,4 @@
-# 💻 CLI Commands & Smoke Tests
+# 💻 CLI Commands, Smoke Tests & Test Suite Architecture
 
 > ⚠️ **ВЫСШАЯ КОНСТИТУЦИЯ (THE SUPREME LAW):** [`.agents/THE_HAMMER_MASTER_PROMPT.md`](file:///C:/Clinic_MVP/dental-crm/.agents/THE_HAMMER_MASTER_PROMPT.md) и [`.agents/AGENTS.md`](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md).
 >
@@ -7,132 +7,195 @@
 > До сетевых холдингов нам ещё расти и расти! Все команды сборки, линтеры и смоук-тесты проверяют стабильность монолита и отсутствие трения.
 >
 > 🛑 **СТОП-ЛИНИЯ DEFINITION OF DONE (МАНДАТ 8j) & ZERO DEAD-ENDS (МАНДАТ 8n):**
-> Код завершен только при: Exit 0 компиляторов, 0 ошибок кодировки (`check:encoding`), 0 нетипизированных моков, пофайловый `git add <file>`.
-
-> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | **[Системный Закон (AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**
-
-This document catalogs commands for building, database management, lints, formatting, and the complete smoke testing suite.
+> Код завершен только при: Exit 0 компиляторов, 0 ошибок кодировки (`check:encoding`), 0 нетипизированных моков, пофайловый `git add <file>`, Dual-Push (`origin` + `gitlab`).
+>
+> 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Мастер-Архитектура Тестирования (docs/testing/MASTER_TESTING_ARCHITECTURE.md)](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md) | **[Системный Закон (AGENTS.md)](file:///C:/Clinic_MVP/dental-crm/.agents/AGENTS.md)**
 
 ---
 
-## 🛠️ Package Manager Commands
+## 🚨 КРИТИЧЕСКИЕ ИНВАРИАНТЫ ДЛЯ СУБАГЕНТОВ (SWARM RED TEAM GATES)
 
-The project uses `npm` workspaces. Run these commands from the root directory:
-
-*   `npm run dev` — Starts both Fastify API and Vite Web servers concurrently.
-*   `npm run build` — Compiles workspaces in sequence: `shared` ➔ `api` ➔ `web`.
-*   `npm run typecheck` — Runs TypeScript compiler checks on all packages and apps.
-
-    > **⚠️ Read this before you report a typecheck result (added 2026-08-06).** `typecheck` is **five
-    > stages chained with `&&`**, not one command:
-    > `shared` ➔ `shared:tests` ➔ `api` ➔ `api:tests` ➔ `web`.
-    > Because they are chained, **the first failing stage aborts the rest**, and a log that ends in
-    > errors may have run only one of the five. `EXIT=0` is necessary but not sufficient evidence — a
-    > truncated or misread log can look clean.
-    > **Always confirm the stage count**, e.g. `rg -c '^> @dental' <logfile>`, and report the number of
-    > stages alongside the exit code. "Typecheck passes" without a stage count is not a verified claim.
-
-*   `npx @biomejs/biome check --write .` — Lints, formats, and checks codebase styles globally.
-*   `npm run lint` — `check:encoding` ➔ `check:dynamic-imports` ➔ `typecheck`, also `&&`-chained.
-*   `npm run check:encoding` — `scripts/check-encoding.mjs`. Catches invalid UTF-8, a UTF-8 BOM, UTF-16,
-    `U+FFFD`, and cp1252 mojibake. `.md` files are in scope, so documentation edits must pass it too.
-*   `npm run check:guarded-headers` — `scripts/check-guarded-route-headers.mjs`.
+1. **Запрет на глобальный `typecheck` для воркеров (Мандат 8t / 8wx):**
+   - Субагентам роя **КАТЕГОРИЧЕСКИ ЗАПРЕЩЕНО** параллельно запускать глобальный `npm run typecheck`, `tsc -b --noEmit` или полную сборку `npm run build`.
+   - Глобальный компилятор поднимает тяжелые процессы `node.exe` на всех ядрах процессора, сжигает RAM хоста и подвешивает систему пользователя (Compiler Thrashing).
+   - Субагенты обязаны проверять код строго точечными тестами (`node --test ...` или локальными юнит-тестами). Полный `npm run typecheck` запускает единолично L1 Оркестратор.
+2. **Лимит памяти и таймауты (Anti-Pagefile Ballooning Ceiling):**
+   - Все тестовые команды запускаются со строгим флагом памяти: `--max-old-space-size=2048` (для веб — до 3072 МБ).
+   - Таймаут на выполнение любого юнит-теста строго $\le 10$ секунд (`--test-timeout=10000`).
+3. **Изоляция боевых ключей и окружения (Мандат 8af):**
+   - Тесты никогда не используют реальные API-ключи из `.env`. Все внешние интеграции перехвачены мок-хэндлерами.
+   - При запуске тестов API обязателен импорт модуля зачистки: `--import ./apps/api/src/tests/support/poolTeardown.ts`.
+4. **Гарантированное закрытие Fastify и пула PostgreSQL (Anti-Hang Law):**
+   - Каждый тестовый сьют обязан содержать блок `after(async () => { await app.close(); })`.
+   - На уровне раннера `poolTeardown.ts` автоматически вызывает `closeAllTenantTestApps()` и закрывает соединение `endPool()`.
 
 ---
 
-## 🗄️ Database Commands
+## 🛠️ Сборка и управление монорепозиторием
 
-*   `npm run db:generate` — Generates SQL migration scripts based on Drizzle schema. **Hand-write
-    migration SQL instead**; see `.agents/DATABASE.md` for why the drizzle journal does not describe this
-    repo's migration set.
-*   `npm run db:migrate` — Applies pending migrations to **native PostgreSQL 18 over TCP at
-    `127.0.0.1:5432`**, via the custom runner `apps/api/src/scripts/migrate.ts`. *(Corrected 2026-08-06:
-    this line used to read "to the PGlite database file". There is no PGlite database and no file-based
-    engine — `@electric-sql/pglite` is not installed anywhere in the monorepo.)*
-*   `npm run db:migrate:check` — Dry run. Shows what WOULD be applied and changes nothing. Run it before
-    `db:migrate` and quote both.
-*   `npm run db:reset-seed` — Destructively deletes ONE tenant's rows across 22 tables and re-seeds them
-    from the JSON state file. Requires `DATABASE_URL`; there is no fallback connection string.
+Команды запускаются из корневого каталога монорепозитория:
 
-    > **🚨 The safety gate is real code as of 2026-08-06** — this supersedes the "NO safety gate"
-    > correction written earlier the same day, which was accurate when written. What now guards it:
-    > the seed runs in one transaction under `app.current_tenant`, so the clear cannot reach other
-    > clinics; affected row counts are printed before anything is deleted; an **empty** tenant needs no
-    > flag at all (a first deployment on a clean machine just works); a **non-empty** tenant requires
-    > `DENTAL_ALLOW_DESTRUCTIVE_DB_RESET="YES"` or the script exits 1 and rolls back; and
-    > `NODE_ENV=production` refuses unconditionally, with or without the flag. It is still destructive
-    > by design — do not aim it at a database you care about. Details in `.agents/DATABASE.md`.
+*   `npm run dev` — Запуск Fastify API (`127.0.0.1:4100`) и Vite Web (`127.0.0.1:5173`) серверов параллельно.
+*   `npm run build` — Последовательная компиляция рабочих пространств: `shared` ➔ `api` ➔ `web`.
+*   `npm run typecheck` — **(Только L1 Оркестратор!)** Проверка TypeScript компилятора по 5 этапам: `shared` ➔ `shared:tests` ➔ `api` ➔ `api:tests` ➔ `web`.
+*   `npx @biomejs/biome check --write .` — Форматирование и базовый линтинг кодовой базы.
+*   `npm run check:encoding` — Проверка строгого UTF-8 без BOM по 23 960+ файлам (включая `.md`).
+*   `npm run check:react-hooks` — Проверка правил хуков React 19 (ноль условных хуков).
+*   `npm run check:stub-overrides` — Проверка целостности контрактов хука `useAppLogic`.
+*   `npm run check:dynamic-imports` — Проверка валидности всех путей динамических импортов.
+*   `npm run check:sandboxes` — Проверка отсутствия изолированных `*_preview.html` файлов.
+*   `npm run check:limits` — Контроль размера модулей по Мандату 8b (200–300 строк, макс 500).
 
 ---
 
-## 🧪 Testing Suites & Registries (SSOT)
+## 🗄️ Команды базы данных PostgreSQL 18 (`127.0.0.1:5432`)
 
-> 🔬 **КАНОНИЧЕСКАЯ АРХИТЕКТУРА ТЕСТИРОВАНИЯ:** [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md).  
-> Все тесты монорепозитория разбиты на 6 эшелонов и зафиксированы в доменных реестрах `docs/testing/`.
-
-### 🧭 Доменные реестры тестирования:
-- **Мастер-Архитектура (SSOT)**: [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md)
-- **Сквозной E2E Master Lifecycle**: [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md)
-- **Сетевой хаос и идемпотентность (UUIDv7)**: [`docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md)
-- **Контракты роутов Fastify & CWE-209**: [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md)
-- **ACID-транзакции и дедлоки Postgres 18**: [`docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md)
-- **Фаззинг формулы FDI и копеек**: [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md)
-- **Жизненный цикл ЭМК, дневников и ПЭП**: [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md)
-- **React 19 & Zustand сторы**: [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md)
-- **Касса 54-ФЗ, сплит и Soft Negative Stock**: [`docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md)
-- **Радиология, DICOM и ЗТЛ наряды**: [`docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md)
-- **Омниканальная телефония, мессенджеры и Outbox**: [`docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md)
-- **Безопасность, 152-ФЗ и RBAC**: [`docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md)
-- **ИИ-Копайлот и Workstation-Харнесс**: [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md)
-- **Реестр очищения тестов**: [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)
-
-### 🎯 Быстрые тестовые команды (время прогона $\le 5$ с):
-- `npx tsx --test apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts` — 17 тестов радиологии (DICOM/RVG), денситометрии HU (шкала Миша D1..D5) и нарядов ЗТЛ VITA
-- `npx tsx --test apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` — 17 тестов ИИ-ассистента и харнесса (ротация ключей, 3 уровня доверия, FDI, откат)
-- `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` — E2E мастер-цикл приёма
-- `npx tsx --test packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` — 10k фаззинг формулы FDI
-- `npx tsx --test apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` — шторм идемпотентности
-- `npx tsx --test apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts` — контракты Fastify
-- `node --import tsx --import ./src/tests/support/poolTeardown.ts --test apps/api/src/tests/concurrency/acidTransactionStress.test.ts` — ACID стресс
-- `npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` — ЭМК и ПЭП
-- `npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts` — сторы и гидратация
-- `npx tsx --test apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts` — касса 54-ФЗ без ИНН физлиц, сплит-чекаут (карта+нал+семейный баланс) без float-дрифта, Soft Negative Stock склада
-- `npx tsx --test apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts` — 20 тестов омниканальной телефонии, транзакционного Outbox, тихого режима врача (Мандат 8v) и вебхуков мессенджеров (3.8 с)
-- `node --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/security/deepRoutesPrivacyAudit.test.ts` — 17 тестов межклинической изоляции организаций (Multi-Tenant) и RBAC пентеста (2.4 с)
-- `npm run test:infra` — проверка базовой тестовой инфраструктуры
+*   `npm run db:generate` — Генерация миграций Drizzle.
+*   `npm run db:migrate` — Накатывание миграций на **нативный PostgreSQL 18 по TCP `127.0.0.1:5432`** через раннер `apps/api/src/scripts/migrate.ts`.
+*   `npm run db:migrate:check` — Холостой прогон миграций (Dry Run). Показывает, что применится, не изменяя базу данных.
+*   `npm run db:reset-seed` — Безопасный сброс и перезаполнение сидами одного тенанта (защищен флагом `DENTAL_ALLOW_DESTRUCTIVE_DB_RESET="YES"`).
 
 ---
 
-## 🧪 Smoke Testing Suite (`scripts/`)
+## 🧪 Пирамида тестирования из 6 колец (Ring 0..Ring 5)
 
-DENTE has a comprehensive end-to-end smoke testing system built with Playwright and Puppeteer. These tests check UI rendering, API integrations, and database state invariants.
+> 🔬 **КАНОНИЧЕСКИЙ РЕЕСТР ТЕСТИРОВАНИЯ (SSOT):**  
+> Полная документация архитектуры тестирования зафиксирована в [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md).
 
-*   `npm run smoke:all` — Runs all smoke test scripts sequentially.
-
-### 🎯 Specific Integration Tests
-
-If you modify a specific module, you MUST run its corresponding smoke test:
-
-| Test Script Command | Focus Area |
-| :--- | :--- |
-| `npm run smoke:telegram-bot` | Telegram webhook routing, command processing, and auth linking. |
-| `npm run smoke:telegram-outbox-persistence` | Outbox message queueing and delivery receipts. |
-| `npm run smoke:settings-admin-guard` | Role-based gate rules on the clinic settings pages. |
-| `npm run smoke:billing-document-link` | Invoice generation, payments tracking, and document links. |
-| `npm run smoke:speech-groq-chunk-floor` | Speech transcription, Groq AI key rotation, and backup. |
-| `npm run smoke:browser-file-input-dicom` | Local directory scanning for DICOM files. |
-
-*(Verified 2026-08-06: every script above except one resolves to an existing file under `scripts/`.
-**`npm run smoke:documents-lifecycle` does not exist** — it is declared in no `package.json` and no
-matching file exists under `scripts/`. It was listed here as covering "Patient clinical documents, acts,
-contracts generation, and signing"; that coverage is a documentation artifact, not a test. Do not report
-it as run. `npm run smoke:all` resolves to `scripts/run-smoke-suite.mjs`.)*
+```mermaid
+graph TD
+    Ring0["Ring 0: Pre-Flight L1 Machine Gates"] --> Ring1["Ring 1: Pure Domain Logic (@dental/shared)"]
+    Ring1 --> Ring2["Ring 2: Fastify Route Contracts (@dental/api)"]
+    Ring2 --> Ring3["Ring 3: React 19 Component & Zustand Hydration (@dental/web)"]
+    Ring3 --> Ring4["Ring 4: Security, Multi-Tenant Isolation & RBAC"]
+    Ring4 --> Ring5["Ring 5: Playwright E2E & High-Concurrency Chaos"]
+```
 
 ---
 
-## 🚨 Execution Rules for Agents
+## 🎯 БОЕВЫЕ ТОЧЕЧНЫЕ КОМАНДЫ ТЕСТИРОВАНИЯ ДЛЯ СУБАГЕНТОВ
 
-1.  **Strict Lint Verification:** Before submitting your code, run `npx @biomejs/biome check --write .` to format files. Unformatted code violates the codebase standards.
-2.  **Strict Compilation Gate:** You must run `npm run typecheck` after any TypeScript modifications. If it outputs errors, the task is incomplete. **Report the exit code AND the number of stages that actually ran** — see the warning under `npm run typecheck` above; five `&&`-chained stages mean a failure at stage 1 leaves four unrun.
-3.  **No Blind Tests:** Never run tests while the local server is down. The test runner will timeout. Keep the dev server running or wait for port response before initiating tests.
-4.  **One writer per gate.** `typecheck`, `build`, migrations, seeds and Playwright runs all touch shared state — `dist/`, `.tsbuildinfo`, generated `packages/shared/dist/` and the single live PostgreSQL instance on `127.0.0.1:5432`. There is no per-agent database. Do not start one of these while another agent is mid-run (`.agents/AGENTS.md` §7a).
+### Ring 0: Машинные статические гейты (время прогона $\le 3$ с)
+```bash
+# 1. Проверка кодировки UTF-8 (ноль BOM):
+npm run check:encoding
+
+# 2. Проверка хуков React 19:
+npm run check:react-hooks
+
+# 3. Проверка стабов useAppLogic:
+npm run check:stub-overrides
+
+# 4. Проверка динамических импортов:
+npm run check:dynamic-imports
+
+# 5. Проверка дизайн-токенов:
+npm run check:css-tokens
+
+# 6. Проверка базовой инфраструктуры тестов:
+npm run test:infra
+```
+
+### Ring 1: Чистая доменная математика и фаззинг (`packages/shared`)
+```bash
+# 1. Фаззинг формулы FDI, геометрии Wheeler 2.5D и копеек (300 мс):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --test packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts
+
+# 2. Фильтрация тестов по паттерну имени (например, Гамильтон-Хэр):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --test packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts --test-name-pattern="splitKopecks"
+
+# 3. Анестезия, утилизация карпул СанПиН 3.3686-21 и Soft Negative Stock:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --test packages/shared/src/tests/anesthesiaPkuDisposal.test.ts
+
+# 4. Стоматологический пост-процессор распознавания речи:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --test packages/shared/src/ai/dentalSpeechPostProcessor.test.ts
+```
+
+### Ring 2: Fastify API роуты, схемы Zod и обработка ошибок (`apps/api`)
+```bash
+# 1. Префлайт-валидация UUID (защита от CWE-209 и SQL 22P02, 37 тестов):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts
+
+# 2. Шторм идемпотентности (UUIDv7 Idempotency-Key) и сетевой хаос:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts
+
+# 3. Жизненный цикл ЭМК, дневников приёма SOAP и ПЭП подписи:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts
+
+# 4. Касса 54-ФЗ без ИНН физлиц, сплит и Soft Negative Stock склада:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts
+
+# 5. Омниканальная телефония, мессенджеры и транзакционный Outbox:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts
+
+# 6. Радиология (DICOM PACS <50мс) и наряды ЗТЛ по шкале VITA:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts
+
+# 7. Планы лечения, 3 тарифа (Эконом/Оптимум/Премиум) и вычет 13% НДФЛ:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/routes/treatmentPlanStudioAndPep.test.ts
+```
+
+### Ring 3: React 19 компоненты, Zustand сторы и гидратация (`apps/web`)
+```bash
+# 1. Поведенческие тесты стора, изоляция сессий 152-ФЗ и анти-амнезия:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts
+
+# 2. Реактивная гидратация состояния 0-F5 (Мандат 8zq):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx
+
+# 3. Одонтограмма Wheeler 2.5D, мультиселект и контекстные меню:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx
+
+# 4. Визит врача, автосохранение черновиков SOAP и разблокированный Primary CTA:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx
+
+# 5. Сплит-касса 54-ФЗ и комбинированные платежи:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/cashbox/__tests__/cashboxSsotScreens.test.tsx
+```
+
+### Ring 4: Безопасность, 152-ФЗ, межклиническая изоляция и RBAC
+```bash
+# 1. Межклиническая изоляция организаций (организация ➔ 404, неклинические роли ➔ 403):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/security/deepRoutesPrivacyAudit.test.ts
+
+# 2. Защита персональных данных 152-ФЗ (маскирование телефонов, паспортов РФ, СНИЛС):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/security/payloadStripping152Fz.test.ts
+
+# 3. Человечные отказы в доступе по Мандату 8zg (ноль латиницы и дев-жаргона):
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/security/roleRefusalText.test.ts
+```
+
+### Ring 5: Playwright E2E и ACID-стресс PostgreSQL 18
+```bash
+# 1. Сквозной 6-фазный мастер-цикл приёма врача у кресла (Playwright E2E):
+npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts
+
+# 2. Кросс-модульные сценарии кассы 54-ФЗ и склада:
+npx playwright test apps/web/tests/e2e/cashbox-billing-flow.spec.ts
+npx playwright test apps/web/tests/e2e/warehouse-consumption-flow.spec.ts
+npx playwright test apps/web/tests/e2e/odontogram-multiselect-flow.spec.ts
+
+# 3. Стресс-тест параллельных транзакций ACID и дедлоков PostgreSQL 18:
+node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/concurrency/acidTransactionStress.test.ts
+```
+
+---
+
+## 🛑 ДОРОЖНАЯ КАРТА ДОМЕННЫХ РЕЕСТРОВ ТЕСТИРОВАНИЯ (`docs/testing/`)
+
+| Доменный стандарт | Путь к реестру | Ключевой охват |
+| :--- | :--- | :--- |
+| **Мастер-Архитектура (SSOT)** | [`docs/testing/MASTER_TESTING_ARCHITECTURE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/MASTER_TESTING_ARCHITECTURE.md) | Полный свод пирамиды тестирования, команд и контрактов |
+| **Сквозной E2E Master Flow** | [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md) | 6-фазный путь пациента от брони до чека и склада |
+| **Сетевой хаос и идемпотентность** | [`docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md) | UUIDv7 `Idempotency-Key`, Double-Spend защита |
+| **Контракты роутов Fastify** | [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md) | Защита от CWE-209 и SQL 22P02 во всех 11 доменах |
+| **ACID-транзакции и дедлоки** | [`docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md) | 20 потоков на слот, `SELECT ... FOR UPDATE` |
+| **Фаззинг формулы FDI и копеек** | [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md) | 10k мутаций FDI, Гамильтон-Хэр, Wheeler 2.5D |
+| **Жизненный цикл ЭМК и дневников** | [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md) | SOAP протоколы, автосейв черновиков, ПЭП SHA-256 |
+| **React 19 & Zustand сторы** | [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md) | Реактивная гидратация 0-F5, изоляция сессий 152-ФЗ |
+| **Касса 54-ФЗ и склад** | [`docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md) | Сплит-оплата в копейках, Soft Negative Stock |
+| **Радиология, DICOM и ЗТЛ наряды** | [`docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md) | Визиограф <50мс, шкала Миша HU, шкала VITA |
+| **Телефония, мессенджеры и Outbox** | [`docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md) | Транзакционный Outbox, тихий режим врача, DLQ |
+| **Безопасность, 152-ФЗ и RBAC** | [`docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md) | Изоляция организаций, маскирование ПДн |
+| **ИИ-Копайлот и харнесс** | [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md) | 3 уровня доверия, ротация ключей, откат мутаций |
+| **Реестр очищения тестов** | [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md) | Искоренение моков и рантайм-валидация |

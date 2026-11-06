@@ -946,27 +946,32 @@
 - **Суть бага:** Если во второй визит лечения периодонтита каналы обтурируются золотым стандартом AH Plus (эпоксидный силер с гуттаперчей), а не биокерамикой, дефолтный фоллбек генерировал диагноз «Острый пульпит (K04.0)» и «витальная экстирпация пульпы».
 - **Статус исправления:** [ИСПРАВЛЕНО] В `ChairsideEndoQuickBar.tsx` добавлен клинический пресет «Периодонтит (AH Plus)», а функция `generateSoapEndoProtocol` перестроена для строгого дифференцирования диагноза периодонтита (`toothState` и `isPeriodontitis`). При обтурации AH Plus во 2-й визит генерируется протокол постоянной обтурации без фальсификации витальной пульпотомии. Подтверждено тестами и скриншотами 4-state visual proofs.
 
-### [END-03] [SEV-1] Отсутствие реляционной структуры эндо-замеров в БД (Помойка в notes)
+### [END-03] [SEV-1] [ИСПРАВЛЕНО] Отсутствие реляционной структуры эндо-замеров в БД (Помойка в notes)
 - **Файлы:**
-  - [`apps/api/src/routes/odontogram/endoRoutes.ts#L309-L392`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/endoRoutes.ts#L309-L392)
-  - [`apps/api/src/db/schema/clinical/odontogramSchema.ts#L61-L98`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/odontogramSchema.ts#L61-L98)
-- **Суть бага:** В PostgreSQL 18 нет таблиц `tooth_canals` или `endo_protocols`. Данные замеров каналов сериализуются через `JSON.stringify` и сбрасываются в текстовое поле `tooth_states.notes`. Если врач или ассистент запишет в карточке текстовое примечание («болезненность при накусывании»), JSON ломается, и вся эндодонтическая карта зуба бесследно стирается.
+  - [`apps/api/src/routes/odontogram/endoRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/odontogram/endoRoutes.ts)
+  - [`apps/api/src/db/schema/clinical/odontogramSchema.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/odontogramSchema.ts)
+  - [`packages/shared/src/clinical/endo/types.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/endo/types.ts)
+- **Суть бага:** Данные замеров каналов ранее сериализовались через `JSON.stringify` в свободное текстовое поле `tooth_states.notes`. Любая клиническая заметка врача («болезненность при накусывании») стирала паспорт каналов зуба.
+- **Статус исправления:** [ИСПРАВЛЕНО] Проведена физическая миграция БД PostgreSQL 18: в таблицы `tooth_states` и `tooth_state_history` добавлена типизированная колонка `canal_measurements jsonb`. Роут `endoRoutes.ts` разделяет текстовые примечания врача (сохраняются чистым текстом в `notes`) и замеры каналов `{ canalName, workingLengthMm, referencePoint, apexLocatorReading, masterFile, masterCone }` (сохраняются в `canal_measurements jsonb`). Подтверждено интеграционным тестом `endoCanalJsonbPersistence.test.ts`.
 
-### [END-04] [SEV-2] Фиктивный апекслокатор (Hardcoded Mock)
+### [END-04] [SEV-2] [ИСПРАВЛЕНО] Фиктивный апекслокатор (Hardcoded Mock)
 - **Файлы:**
-  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx#L192, L275`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx#L192)
-  - [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L133`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx#L133)
-- **Суть бага:** Значение `apexLocator: "0.0 Apex"` намертво зашито в коде. В интерфейсе нет полей ввода показаний прибора по каждому каналу (-0.5, 0.0, +0.5 мм). Бейдж «Apex 0.0 активен» в UI — чистая декорация без связи с реальностью.
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx)
+  - [`apps/web/src/components/endo/ChairsideEndoQuickBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/ChairsideEndoQuickBar.tsx)
+- **Суть бага:** Значение `apexLocator: "0.0 Apex"` было захардкожено. В интерфейсе отсутствовали поля ввода показаний по каждому каналу (-0.5, 0.0, +0.5 мм), а бейдж «Apex 0.0 активен» являлся статичной декорацией.
+- **Статус исправления:** [ИСПРАВЛЕНО] В `EndodonticStudioModal.tsx` и `ChairsideEndoQuickBar.tsx` внедрен выбор реальных показаний апекслокатора по каждому каналу (`-0.5 мм`, `0.0 Apex`, `+0.5 мм`, `За апексом`) и добавлена макро-кнопка «✓ Все 0.0 (Apex)» для калибровки в 1 клик (Мандат 8e). Показания передаются в SOAP-дневник и сохраняются в БД. Подтверждено тестами и живыми 4-State скриншотами.
 
-### [END-05] [SEV-2] Слепое списание NiTi-файлов без учёта ресурса циклической усталости
-- **Файл:** [`packages/shared/src/clinical/endo/endoBillingAndMaterials.ts#L143-L152`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/endo/endoBillingAndMaterials.ts#L143-L152)
-- **Суть бага:** Ротационный машинный файл (ProTaper / WaveOne за 650 ₽) списывается в количестве 1 шт на каждый зуб. Отсутствует учёт ресурса инструмента (4–5 каналов), что ведёт к финансовому перекосу склада и риску отлома усталого инструмента (*broken instrument*) в апикальной трети канала.
+### [END-05] [SEV-2] [ИСПРАВЛЕНО] Слепое списание NiTi-файлов без учёта ресурса циклической усталости
+- **Файл:** [`packages/shared/src/clinical/endo/endoBillingAndMaterials.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/endo/endoBillingAndMaterials.ts)
+- **Суть бага:** Ротационный машинный файл (650 ₽) списывался в объеме 1 шт на каждый зуб безусловно, искажая складскую себестоимость.
+- **Статус исправления:** [ИСПРАВЛЕНО] Реализован мягкий учет ресурса циклической усталости инструмента (1 файл = 4 канала, 0.25 файла на канал): списание рассчитывается строго пропорционально анатомическому числу каналов (`canalCount / 4`, 162.5 ₽ на канал) с фоновым мягким овердрафтом (Мандат 8aa). Подтверждено тестом `endoBillingAndMaterials.test.ts` (7 из 7 pass).
 
-### [END-06] [SEV-2] Отсутствие пресета постоянной обтурации периодонтита в студии эндодонтии
+### [END-06] [SEV-2] [ИСПРАВЛЕНО] Отсутствие пресета постоянной обтурации периодонтита в студии эндодонтии
 - **Файлы:**
-  - [`apps/web/src/components/endo/endodonticsCatalogData.ts#L173-L234`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/endodonticsCatalogData.ts#L173-L234)
-  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx#L260-L264`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx#L260-L264)
-- **Суть бага:** В модалке есть кнопки «Пульпит (1 визит)», «Периодонтит (Ca(OH)2)», «Распломбировка». Завершить 2-й визит периодонтита в 1 клик невозможно — врачу приходится вручную перенастраивать каждый канал.
+  - [`apps/web/src/components/endo/endodonticsCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/endodonticsCatalogData.ts)
+  - [`apps/web/src/components/endo/EndodonticStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/endo/EndodonticStudioModal.tsx)
+- **Суть бага:** В модалке отсутствовал пресет для 2-го визита периодонтита (AH Plus + гуттаперча), что заставляло врача вручную перенастраивать каналы.
+- **Статус исправления:** [ИСПРАВЛЕНО] В канонический справочник `endodonticsCatalogData.ts` и в тулбар `EndodonticStudioModal.tsx` добавлен пресет `periodontitis_permanent_ahplus` («Периодонтит (AH Plus)»). В 1 клик выставляется постоянная обтурация гуттаперчей с AH Plus, ирригация NaOCl 3% + EDTA 17% с УЗ-активацией и генерируется дневник постоянной обтурации периодонтита (K04.5) без ложного диагноза пульпита. Подтверждено тестом `endodonticsSSOTSuite.test.tsx`.
 
 ### [END-07] [SEV-2] Утечка 3D КЛКТ замеров каналов в LocalStorage
 - **Файл:** [`apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L369`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/radiology/endoClinicalIntegrationBridge.ts#L368-L369)

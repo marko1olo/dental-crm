@@ -12,6 +12,8 @@ import { useRvgGlCanvas } from "../useRvgGlCanvas";
 import { useDirectRvgPanZoom } from "../useDirectRvgPanZoom";
 import { useDirectRvgSensorAcquisition } from "./useDirectRvgSensorAcquisition";
 import { useDirectRvgEmrActions } from "./useDirectRvgEmrActions";
+import { useAppStore } from "../../../store/appStore";
+import { useVisitStore } from "../../../store/visitStore";
 
 export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const {
@@ -30,18 +32,32 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 	const modalId = useId();
 	const isDemo = isDemoShowcaseMode() || isDemoPatientId(patientId) || isDemoPatientId(patientName);
 
+	// Read active tooth from global application store / active visit store (Mandate 8e: Chairside Autonomy)
+	const appStoreActiveTooth = useAppStore((s) => s.activeTooth);
+	const visitStoreActiveTooth = useVisitStore((s) => s.activeToothNumber);
+	const storeActiveTooth = appStoreActiveTooth ?? visitStoreActiveTooth;
+	const effectiveInitialTooth = useMemo(() => {
+		if (initialToothFdi && initialToothFdi !== "16" && initialToothFdi !== "all") {
+			return String(initialToothFdi);
+		}
+		if (storeActiveTooth) {
+			return String(storeActiveTooth);
+		}
+		return initialToothFdi || "16";
+	}, [initialToothFdi, storeActiveTooth]);
+
 	// 1-Click Anatomical & Patient Category Presets (Mandate 8e: Doctor Autonomy)
 	const [patientCategory, setPatientCategory] = useState<PatientCategory>("adult");
 	const [anatomicalZone, setAnatomicalZone] = useState<AnatomicalZone>("molar");
 	const [exposureSec, setExposureSec] = useState<number>(0.08);
 
 	// Tooth & Projection
-	const [selectedTeeth, setSelectedTeeth] = useState<string[]>([initialToothFdi]);
+	const [selectedTeeth, setSelectedTeeth] = useState<string[]>([effectiveInitialTooth]);
 	useEffect(() => {
-		if (initialToothFdi && initialToothFdi !== "all") {
-			setSelectedTeeth([initialToothFdi]);
+		if (effectiveInitialTooth && effectiveInitialTooth !== "all") {
+			setSelectedTeeth([effectiveInitialTooth]);
 		}
-	}, [initialToothFdi]);
+	}, [effectiveInitialTooth]);
 
 	const [projectionType, setProjectionType] = useState<ProjectionAngleType>("periapical");
 	const [clinicalNotes, setClinicalNotes] = useState<string>(
@@ -90,7 +106,7 @@ export function useDirectRvgCapture(props: DirectRvgCaptureModalProps) {
 		selectedSensorModel: sensorAcq.selectedSensorModel,
 		selectedTeeth,
 		primaryToothName,
-		initialToothFdi,
+		initialToothFdi: effectiveInitialTooth,
 		exposureSec,
 		calculatedDoseMicrosv,
 		capturedImage: sensorAcq.capturedImage,

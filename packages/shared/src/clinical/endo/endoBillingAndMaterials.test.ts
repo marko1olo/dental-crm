@@ -36,7 +36,8 @@ describe("endoBillingAndMaterials — 804n Billing & Warehouse Materials SSOT", 
 		// Складские материалы
 		const niti = result.materials.find((m) => m.itemId === "mat-niti-rotary-file");
 		assert.ok(niti);
-		assert.equal(niti.quantity, 1);
+		assert.equal(niti.quantity, 0.25); // Мягкий ресурс: 1 канал = 0.25 файла (1 файл на 4 канала)
+		assert.equal(niti.costPriceRub, 162.5);
 
 		const gutta = result.materials.find((m) => m.itemId === "mat-gutta-percha");
 		assert.ok(gutta);
@@ -75,6 +76,11 @@ describe("endoBillingAndMaterials — 804n Billing & Warehouse Materials SSOT", 
 		assert.equal(res4.services804n[0]?.priceRub, 10500);
 		assert.equal(res4.services804n[1]?.code804n, "A16.07.008.004");
 		assert.equal(res4.services804n[1]?.priceRub, 12000);
+
+		const niti4 = res4.materials.find((m) => m.itemId === "mat-niti-rotary-file");
+		assert.ok(niti4);
+		assert.equal(niti4.quantity, 1.0); // 4 канала = 1.0 машинный файл
+		assert.equal(niti4.costPriceRub, 650);
 
 		const gutta4 = res4.materials.find((m) => m.itemId === "mat-gutta-percha");
 		assert.ok(gutta4);

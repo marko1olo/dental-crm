@@ -48,7 +48,8 @@ export function generateSoapEndoProtocol({
 				? `постоянная обтурация гуттаперчей + биокерамика (${c.sealer || "BioRoot"})`
 				: `обтурация гуттаперчей с ${c.sealer || "AH Plus"} методом латеральной компакции`;
 		const len = c.workingLengthMm > 0 ? c.workingLengthMm.toFixed(1) : "21.0";
-		return `• Канал ${c.name}: пройден, WL = ${len} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, ${obt}`;
+		const apexStr = c.apexLocatorReading ? c.apexLocatorReading : "0.0 Apex";
+		return `• Канал ${c.name}: пройден, WL = ${len} мм (Apex: ${apexStr}), MAF = ${c.masterApicalFile}/${c.taper}, ${obt}`;
 	}).join("\n");
 
 	const canalNamesRu = canals.map((c) => c.name).join(", ");
@@ -100,9 +101,14 @@ export function executeChairsideTransferToDiary({
 	const sharedCanals: EndoCanalData[] = canals.map((c) => ({
 		id: c.id, canalName: c.name, referencePoint: "Бугор", workingLengthMm: c.isObliterated ? 0 : (c.workingLengthMm || 21.0),
 		masterApicalFile: c.masterApicalFile || "#25", taper: c.taper || ".04", isObliterated: Boolean(c.isObliterated),
+		apexLocatorReading: c.apexLocatorReading || "0.0 (Apex)", masterFile: c.masterFile || c.masterApicalFile || "#25",
+		masterCone: c.masterCone || "Гуттаперча 0.04",
 		obturationTechnique: c.obturationType === "temp_caoh2" ? "Временная обтурация Ca(OH)2" : c.obturationType === "bioceramic" ? "Биокерамика (гуттаперча + биокерамический силер)" : "Латеральная компакция",
 		sealer: c.sealer || (c.obturationType === "temp_caoh2" ? "Каласепт (Ca(OH)2)" : c.obturationType === "bioceramic" ? "Биокерамика (BioRoot)" : "AH Plus"),
 	}));
+
+	const allApex00 = canals.every((c) => !c.apexLocatorReading || c.apexLocatorReading.includes("0.0"));
+	const dynamicApexLocator = allApex00 ? "0.0 Apex" : canals.map((c) => `${c.name}: ${c.apexLocatorReading || "0.0 Apex"}`).join("; ");
 
 	try {
 		const billing = calculateEndoBillingAndMaterialsEstimate({
@@ -135,7 +141,7 @@ export function executeChairsideTransferToDiary({
 	if (patientId) {
 		fetch(`/api/patients/${patientId}/tooth-states/${activeTooth}/endo`, {
 			method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-			body: JSON.stringify({ toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi", radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: "0.0 Apex", stageStamp, notes: "" }),
+			body: JSON.stringify({ toothNumber: activeTooth, canals: sharedCanals, irrigation: "3% NaOCl + 17% EDTA с УЗ-активацией", rotarySystem: "Машинная обработка NiTi", radiologyControl: "Контрольная радиовизиография: каналы гомогенно обтурированы до апекса.", apexLocator: dynamicApexLocator, stageStamp, notes: "" }),
 		}).catch(() => {});
 	}
 
@@ -171,19 +177,16 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "gutta_sealer", sealer: "AH Plus", masterApicalFile: "#25", taper: ".04", isObliterated: false })));
 		showToast("Применён протокол: Пульпит в 1 визит (AH Plus)", "info", 2000);
 	}, []);
-
 	const applyPeriodontitisAhPlus = useCallback(() => {
 		setExplicitProtocolType("periodontitis_ahplus");
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "gutta_sealer", sealer: "AH Plus", masterApicalFile: "#25", taper: ".04", isObliterated: false })));
 		showToast("Применён протокол: Периодонтит 2 эт. (AH Plus)", "info", 2000);
 	}, []);
-
 	const applyPeriodontitisBio = useCallback(() => {
 		setExplicitProtocolType("periodontitis_bio");
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "bioceramic", sealer: "BioRoot", masterApicalFile: "#30", taper: ".04", isObliterated: false })));
 		showToast("Применён протокол: Периодонтит (Биокерамика)", "info", 2000);
 	}, []);
-
 	const applyCaOh2 = useCallback(() => {
 		setExplicitProtocolType("temp_caoh2");
 		setCanals((prev) => prev.map((c) => ({ ...c, obturationType: "temp_caoh2", sealer: "Каласепт (Ca(OH)2)", masterApicalFile: "#25", taper: ".04", isObliterated: false })));
@@ -259,10 +262,14 @@ export function ChairsideEndoQuickBar(props: ChairsideEndoQuickBarProps) {
 					{canals.map((c) => (
 						<div key={c.id} className="pt-2 first:pt-0 space-y-2">
 							<div className="flex items-center justify-between gap-2 flex-wrap">
-								<div className="flex items-center gap-2">
+								<div className="flex items-center gap-1.5 flex-wrap">
 									<span className="font-bold text-xs text-[var(--ink,#0f172a)] dark:text-white">Канал {c.name}</span>
 									<span className="text-[11px] font-semibold text-[var(--teal,#0d9488)]">{c.isObliterated ? "ОБЛИТЕРИРОВАН" : `${c.workingLengthMm.toFixed(1)} мм`}</span>
-									<span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-mono">Apex 0.0</span>
+									<div className="flex items-center gap-1">
+										{(["-0.5", "0.0", "+0.5"] as const).map((ap) => (
+											<button key={ap} type="button" onClick={() => updateCanal(c.id, { apexLocatorReading: `${ap} Apex` })} className={`px-1.5 py-0.5 rounded text-[10px] font-mono border transition-all cursor-pointer ${(c.apexLocatorReading || "0.0 Apex").startsWith(ap) ? "bg-emerald-600 text-white border-emerald-600 font-bold" : "bg-[var(--surface,#f8fafc)] dark:bg-slate-800 text-slate-500 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>{ap}</button>
+										))}
+									</div>
 								</div>
 								<div className="flex items-center gap-1.5">
 									<label className="flex items-center gap-1 text-[11px] text-[var(--muted,#64748b)] cursor-pointer">

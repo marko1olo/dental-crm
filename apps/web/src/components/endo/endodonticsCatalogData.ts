@@ -23,12 +23,16 @@ export {
 } from "@dental/shared";
 
 export type EndoStageStamp = "COMPLETED" | "TEMP_CAOH2" | "DRAFT";
-export type EndoProtocolPresetId = "pulpitis_1visit" | "periodontitis_temp" | "retreatment_unsealing";
+export type EndoProtocolPresetId = "pulpitis_1visit" | "periodontitis_temp" | "periodontitis_permanent_ahplus" | "retreatment_unsealing";
 
 export interface QuickCanalState {
 	id: string; name: string; workingLengthMm: number; masterApicalFile: string;
 	taper: string; obturationType: "gutta_sealer" | "temp_caoh2" | "bioceramic";
 	sealer: string; isObliterated?: boolean;
+	apexLocatorReading?: string;
+	masterFile?: string;
+	masterCone?: string;
+	referencePoint?: string;
 }
 
 /** Канонические размеры мастер-файла (Sweet Spot MAF) */
@@ -136,25 +140,28 @@ export function getChairsideDefaultCanals(toothNumber: number): QuickCanalState[
 
 	if (isUpperMolar) {
 		return [
-			{ id: `c-mb1-${Date.now()}-1`, name: "MB", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
-			{ id: `c-db-${Date.now()}-2`, name: "DB", workingLengthMm: 20.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
-			{ id: `c-p-${Date.now()}-3`, name: "P", workingLengthMm: 22.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
+			{ id: `c-mb1-${Date.now()}-1`, name: "MB1", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-mb2-${Date.now()}-2`, name: "MB2", workingLengthMm: 20.0, masterApicalFile: "#20", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-db-${Date.now()}-3`, name: "DB", workingLengthMm: 20.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-p-${Date.now()}-4`, name: "P", workingLengthMm: 22.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 		];
 	}
 	if (isLowerMolar) {
 		return [
-			{ id: `c-m-${Date.now()}-1`, name: "M", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
-			{ id: `c-d-${Date.now()}-2`, name: "D", workingLengthMm: 21.5, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
+			{ id: `c-mb-${Date.now()}-1`, name: "MB", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-ml-${Date.now()}-2`, name: "ML", workingLengthMm: 21.0, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-db-${Date.now()}-3`, name: "DB", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-dl-${Date.now()}-4`, name: "DL", workingLengthMm: 21.5, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 		];
 	}
 	if (isUpperPremolar) {
 		return [
-			{ id: `c-b-${Date.now()}-1`, name: "B", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
-			{ id: `c-p-${Date.now()}-2`, name: "P", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
+			{ id: `c-b-${Date.now()}-1`, name: "B", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
+			{ id: `c-p-${Date.now()}-2`, name: "P", workingLengthMm: 21.5, masterApicalFile: "#25", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 		];
 	}
 	return [
-		{ id: `c-main-${Date.now()}-1`, name: "Основной", workingLengthMm: 22.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus" },
+		{ id: `c-main-${Date.now()}-1`, name: "Основной", workingLengthMm: 22.0, masterApicalFile: "#30", taper: ".04", obturationType: "gutta_sealer", sealer: "AH Plus", apexLocatorReading: "0.0 (Apex)" },
 	];
 }
 
@@ -209,6 +216,26 @@ export const CANONICAL_ENDO_PROTOCOLS: Record<EndoProtocolPresetId, CanonicalEnd
 				`Ирригация: обильная обработка NaOCl 3% с УЗ-активацией и EDTA 17%, высушивание бумажными штифтами.\n` +
 				`A: Хронический апикальный периодонтит зуба #${activeTooth} (K04.5).\n` +
 				`P: Временная обтурация корневых каналов лечебной пастой гидроксида кальция Ca(OH)2 (Каласепт) на 10–14 дней. Герметичная временная пломба. Назначен 2-й визит.`;
+		},
+	},
+	periodontitis_permanent_ahplus: {
+		id: "periodontitis_permanent_ahplus",
+		title: "Периодонтит (AH Plus / 2 визит)",
+		description: "Второй визит: удаление Ca(OH)2, повторная ирригация, постоянная 3D обтурация гуттаперча + AH Plus",
+		stageStamp: "COMPLETED",
+		defaultSealer: "AH Plus (эпоксидный герметик)",
+		obturationTechnique: "Гуттаперча + Силер (AH Plus) латерально",
+		irrigation: "NaOCl 3% + EDTA 17% (УЗ-активация)",
+		rotarySystem: "WaveOne Gold / ProTaper Next",
+		generateSoapNote: ({ activeTooth, toothAnatomicalName, canals }) => {
+			const canalsReport = canals.map((c) => c.isObliterated ? `• Канал ${c.name}: ОБЛИТЕРИРОВАН (0 мм)` : `• Канал ${c.name}: WL = ${c.workingLengthMm.toFixed(1)} мм (Apex 0.0), MAF = ${c.masterApicalFile}/${c.taper}, обтурация гуттаперча + AH Plus`).join("\n");
+			return `[ПРОТОКОЛ ЭНДОДОНТИИ: ЗУБ #${activeTooth} (${toothAnatomicalName}) — ПЕРИОДОНТИТ 2-Й ВИЗИТ (ПОСТОЯННАЯ ОБТУРАЦИЯ)]\n` +
+				`S: Повторное посещение по поводу периодонтита зуба #${activeTooth}. Жалоб на боли при накусывании нет, временная повязка сохранена.\n` +
+				`O: Проведена изоляция коффердамом. Снятие временной пломбы, эвакуация гидроксида кальция Ca(OH)2 из каналов.\n` +
+				`Ирригация: обильное промывание NaOCl 3% с УЗ-активацией, экспозиция EDTA 17%, промывание дистиллированной водой, высушивание бумажными штифтами.\n` +
+				`Каналы сухие, отделяемого нет, перкуссия безболезненная:\n${canalsReport}\n` +
+				`A: Хронический апикальный периодонтит зуба #${activeTooth} в стадии стихания (K04.5).\n` +
+				`P: Постоянная трёхмерная обтурация каналов гуттаперчей с AH Plus методом латеральной компакции. Рентген-контроль: каналы гомогенно обтурированы до верхушки корня (Apex 0.0). Подготовка под постоянную реставрацию.`;
 		},
 	},
 	retreatment_unsealing: {

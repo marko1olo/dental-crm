@@ -124,26 +124,26 @@ describe("тестовое приложение с тенант-контекст
 		// Сторож против расхождения двух экземпляров одной логики. Он намеренно
 		// смотрит в ИСХОДНИК: импортировать server.ts ради проверки нельзя —
 		// модуль на импорте поднимает прокси, туннели и семьдесят наборов
-		// маршрутов.
+		// маршрутов. Канонические хуки жизненного цикла и изоляция вынесены в lifecycleHooks.ts.
 		const serverSource = await readFile(
-			new URL("../../server.ts", import.meta.url),
+			new URL("../../serverModules/lifecycleHooks.ts", import.meta.url),
 			"utf8",
 		);
 
 		assert.match(
 			serverSource,
 			/addHook\(\s*["']onRoute["']/,
-			"в server.ts исчез хук onRoute — обвязка тестов воспроизводит контур, которого больше нет",
+			"в serverModules/lifecycleHooks.ts исчез хук onRoute — обвязка тестов воспроизводит контур, которого больше нет",
 		);
 		assert.match(
 			serverSource,
 			/withTenantCtx\(\s*tenantId/,
-			"в server.ts обработчики больше не оборачиваются в withTenantCtx(tenantId, …) — обвязку тестов надо привести к новому способу",
+			"в serverModules/lifecycleHooks.ts обработчики больше не оборачиваются в withTenantCtx(tenantId, …) — обвязку тестов надо привести к новому способу",
 		);
 		assert.match(
 			serverSource,
 			/_req\.tenantId = _identity\.organizationId/,
-			"в server.ts изменился способ получения арендатора запроса — сверьте с tenantTestApp.ts",
+			"в serverModules/lifecycleHooks.ts изменился способ получения арендатора запроса — сверьте с tenantTestApp.ts",
 		);
 	});
 });

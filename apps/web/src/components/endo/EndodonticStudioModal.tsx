@@ -143,11 +143,17 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		showToast(`Восстановлена анатомическая норма зуба #${activeTooth}`, "info", 1800);
 	}, [activeTooth]);
 
+	const applyAllCanalsApex00 = useCallback(() => {
+		setCanals((prev) => prev.map((c) => ({ ...c, apexLocatorReading: "0.0 (Apex)" })));
+		showToast("Все каналы откалиброваны: 0.0 (Apex)", "success", 1800);
+	}, []);
+
 	const quickCanalsState: QuickCanalState[] = useMemo(() => canals.map((c) => ({
 		id: c.id, name: c.canalName, workingLengthMm: typeof c.workingLengthMm === "number" ? c.workingLengthMm : 21.0,
 		masterApicalFile: c.masterApicalFile || "#25.04", taper: c.taper || ".04",
 		obturationType: stageStamp === "TEMP_CAOH2" ? "temp_caoh2" : "gutta_sealer",
 		sealer: c.sealer || "AH Plus", isObliterated: Boolean(c.isObliterated),
+		apexLocatorReading: c.apexLocatorReading || "0.0 (Apex)",
 	})), [canals, stageStamp]);
 
 	const generatedProtocolText = useMemo(() => {
@@ -187,9 +193,11 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 	const handleCommitProtocol = useCallback(async () => {
 		setIsSaving(true);
 		const sanitized = sanitizeCanalsForSubmission(canals, activeTooth, stageStamp, getAnatomicalWorkingLength);
+		const allApex00 = sanitized.every((c) => !c.apexLocatorReading || c.apexLocatorReading.includes("0.0"));
+		const dynamicApexLocator = allApex00 ? "0.0 Apex" : sanitized.map((c) => `${c.canalName}: ${c.apexLocatorReading || "0.0 Apex"}`).join("; ");
 		const clinicalData: EndoToothClinicalData = {
 			toothNumber: activeTooth, canals: sanitized, irrigation, rotarySystem, radiologyControl,
-			apexLocator: "0.0 Apex", stageStamp, notes: "", updatedAt: new Date().toISOString(),
+			apexLocator: dynamicApexLocator, stageStamp, notes: "", updatedAt: new Date().toISOString(),
 		};
 
 		try {
@@ -219,7 +227,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 		if (props.patientId) {
 			fetch(`/api/patients/${props.patientId}/tooth-states/${activeTooth}/endo`, {
 				method: "POST", headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
-				body: JSON.stringify({ toothNumber: activeTooth, canals: sanitized, irrigation, rotarySystem, radiologyControl, apexLocator: "0.0 Apex", stageStamp, notes: "" }),
+				body: JSON.stringify({ toothNumber: activeTooth, canals: sanitized, irrigation, rotarySystem, radiologyControl, apexLocator: dynamicApexLocator, stageStamp, notes: "" }),
 			}).catch(() => {});
 		}
 		if (props.onInsertToProtocol) props.onInsertToProtocol(generatedProtocolText, sanitized);
@@ -259,6 +267,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 						<div className="flex items-center gap-1.5 flex-wrap">
 							<button type="button" onClick={() => applyCanonicalProtocol("pulpitis_1visit")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "pulpitis_1visit" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Пульпит (1 визит)</button>
 							<button type="button" onClick={() => applyCanonicalProtocol("periodontitis_temp")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "periodontitis_temp" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Периодонтит (Ca(OH)2)</button>
+							<button type="button" onClick={() => applyCanonicalProtocol("periodontitis_permanent_ahplus")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "periodontitis_permanent_ahplus" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Периодонтит (AH Plus)</button>
 							<button type="button" onClick={() => applyCanonicalProtocol("retreatment_unsealing")} className={`min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold border transition-all cursor-pointer ${activeProtocolId === "retreatment_unsealing" ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)]" : "bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100"}`}>Распломбировка</button>
 							<button type="button" data-testid="btn-endo-anatomical-autofill" onClick={applyAnatomicalNorm} className="btn-endo-anatomical-autofill min-h-[44px] sm:min-h-[34px] h-9 sm:h-8 px-3 rounded-lg text-xs font-semibold bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:bg-slate-100 cursor-pointer" title="Восстановить анатомическую норму каналов по FDI">Норма (FDI)</button>
 						</div>
@@ -272,7 +281,12 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 								<span className="text-xs font-bold text-[var(--ink,#0f172a)] dark:text-white">Корневые каналы зуба #{activeTooth}</span>
 								<span className="text-[11px] text-[var(--muted,#64748b)]">({canals.length} {canals.length === 1 ? "канал" : "канала"})</span>
 							</div>
-							<span className="text-[11px] font-mono font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">Apex 0.0 активен</span>
+							<div className="flex items-center gap-2">
+								<button type="button" onClick={applyAllCanalsApex00} data-testid="btn-endo-all-apex-00" className="btn-endo-all-apex-00 min-h-[36px] sm:min-h-[28px] h-8 sm:h-7 px-2.5 rounded-lg text-xs font-bold text-emerald-700 dark:text-emerald-300 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-500/30 flex items-center gap-1.5 transition-colors cursor-pointer" title="Выставить 0.0 Apex на все каналы в 1 клик">
+									<Check size={13} className="text-emerald-600 dark:text-emerald-400" />
+									<span>Все 0.0 (Apex)</span>
+								</button>
+							</div>
 						</div>
 
 						{/* Desktop View */}
@@ -280,8 +294,8 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 							<table className="w-full text-left border-collapse text-xs">
 								<thead>
 									<tr className="border-b border-[var(--line,#e2e8f0)] dark:border-slate-800 bg-slate-50/60 dark:bg-slate-800/40 text-[var(--muted,#64748b)]">
-										<th className="p-2.5 font-bold">Канал</th><th className="p-2.5 font-bold">Склероз</th><th className="p-2.5 font-bold">Длина WL (мм)</th>
-										<th className="p-2.5 font-bold">Мастер-файл MAF</th><th className="p-2.5 font-bold">Конусность</th><th className="p-2.5 font-bold">Обтурация и силер</th>
+										<th className="p-2.5 font-bold">Канал</th><th className="p-2.5 font-bold">Склероз</th><th className="p-2.5 font-bold">Длина WL</th>
+										<th className="p-2.5 font-bold">Апекс</th><th className="p-2.5 font-bold">Мастер-файл MAF</th><th className="p-2.5 font-bold">Конусность</th><th className="p-2.5 font-bold">Обтурация и силер</th>
 										<th className="p-2.5 text-center font-bold">Удалить</th>
 									</tr>
 								</thead>
@@ -305,7 +319,12 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 												</div>
 											</td>
 											<td className="p-2.5">
-												<select value={c.masterApicalFile} onChange={(e) => updateCanal(c.id, "masterApicalFile", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[140px] truncate cursor-pointer">
+												<select value={c.apexLocatorReading || "0.0 (Apex)"} onChange={(e) => updateCanal(c.id, "apexLocatorReading", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs font-semibold text-emerald-600 dark:text-emerald-400 cursor-pointer">
+													<option value="0.0 (Apex)">0.0 Apex</option><option value="-0.5 мм">-0.5 мм</option><option value="+0.5 мм">+0.5 мм</option><option value="-1.0 мм">-1.0 мм</option><option value="За апексом">За апексом</option>
+												</select>
+											</td>
+											<td className="p-2.5">
+												<select value={c.masterApicalFile} onChange={(e) => updateCanal(c.id, "masterApicalFile", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[130px] truncate cursor-pointer">
 													{CANONICAL_MAF_SIZES.map((opt) => <option key={opt.label} value={opt.label}>{opt.label} ({opt.system})</option>)}
 													{CURATED_ISO_MAF_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
 												</select>
@@ -316,7 +335,7 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 												</select>
 											</td>
 											<td className="p-2.5">
-												<select value={c.sealer || "AH Plus (эпоксидный герметик)"} onChange={(e) => updateCanal(c.id, "sealer", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[160px] truncate cursor-pointer">
+												<select value={c.sealer || "AH Plus (эпоксидный герметик)"} onChange={(e) => updateCanal(c.id, "sealer", e.target.value)} className="px-1.5 py-1 rounded border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-transparent text-xs max-w-[150px] truncate cursor-pointer">
 													{CURATED_SEALERS.map((s) => <option key={s} value={s}>{s}</option>)}
 												</select>
 											</td>
@@ -355,18 +374,24 @@ export function EndodonticStudioModal(props: EndodonticStudioModalProps) {
 									</div>
 									<div className="grid grid-cols-2 gap-2">
 										<div>
+											<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Апекслокатор:</span>
+											<select value={c.apexLocatorReading || "0.0 (Apex)"} onChange={(e) => updateCanal(c.id, "apexLocatorReading", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-semibold text-emerald-600 dark:text-emerald-400">
+												<option value="0.0 (Apex)">0.0 Apex</option><option value="-0.5 мм">-0.5 мм</option><option value="+0.5 мм">+0.5 мм</option><option value="-1.0 мм">-1.0 мм</option><option value="За апексом">За апексом</option>
+											</select>
+										</div>
+										<div>
 											<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Мастер-файл MAF:</span>
 											<select value={c.masterApicalFile} onChange={(e) => updateCanal(c.id, "masterApicalFile", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium">
 												{CANONICAL_MAF_SIZES.map((opt) => <option key={opt.label} value={opt.label}>{opt.label}</option>)}
 												{CURATED_ISO_MAF_OPTIONS.map((opt) => <option key={opt} value={opt}>{opt}</option>)}
 											</select>
 										</div>
-										<div>
-											<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Силер / герметик:</span>
-											<select value={c.sealer || "AH Plus (эпоксидный герметик)"} onChange={(e) => updateCanal(c.id, "sealer", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium">
-												{CURATED_SEALERS.map((s) => <option key={s} value={s}>{s}</option>)}
-											</select>
-										</div>
+									</div>
+									<div>
+										<span className="text-[10px] text-[var(--muted,#64748b)] block mb-1">Силер / герметик:</span>
+										<select value={c.sealer || "AH Plus (эпоксидный герметик)"} onChange={(e) => updateCanal(c.id, "sealer", e.target.value)} className="min-h-[44px] w-full px-2 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-xs font-medium">
+											{CURATED_SEALERS.map((s) => <option key={s} value={s}>{s}</option>)}
+										</select>
 									</div>
 								</div>
 							))}

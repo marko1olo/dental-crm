@@ -72,6 +72,7 @@ export const toothStates = pgTable(
 		state: text("state").notNull().default("healthy"),
 		surfaces: jsonb("surfaces"),
 		notes: text("notes"),
+		canalMeasurements: jsonb("canal_measurements"),
 		// Учёт офлайн-синхронизации, см. комментарий у visit_diaries.
 		isSynced: boolean("is_synced").notNull().default(false),
 		version: integer("version").notNull().default(1),
@@ -125,6 +126,7 @@ export const toothStateHistory = pgTable(
 		newState: text("new_state").notNull(),
 		previousSurfaces: jsonb("previous_surfaces"),
 		newSurfaces: jsonb("new_surfaces"),
+		canalMeasurements: jsonb("canal_measurements"),
 		/** Кто внёс изменение. Раньше в истории всегда значился «System». */
 		changedByUserId: uuid("changed_by_user_id"),
 		/** В рамках какого приёма изменено, если он известен. */

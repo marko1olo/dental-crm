@@ -139,16 +139,17 @@ export function calculateEndoBillingAndMaterialsEstimate(
 	// ─── РАСХОДНЫЕ МАТЕРИАЛЫ СКЛАДА (ЧЕСТНОЕ СПИСАНИЕ) ─────────────────────────
 	const materials: EndoMaterialConsumableEstimate[] = [];
 
-	// 1. Машинный NiTi файл ProTaper / WaveOne (1 шт на зуб)
+	// 1. Машинный NiTi файл ProTaper / WaveOne (ресурс инструмента: 1 файл = 4 канала, мягкое списание Мандат 8aa)
+	const nitiFraction = Math.round((canalCount / 4) * 100) / 100;
 	materials.push({
 		itemId: "mat-niti-rotary-file",
 		itemName: "NiTi ротационный машинный файл (ProTaper / WaveOne)",
 		category: "rotary_file",
 		unit: "шт",
-		quantity: 1,
-		costPriceRub: 650,
-		costPriceKopecks: 65000,
-		notes: `Инструментальная обработка каналов зуба #${toothNumber}`,
+		quantity: nitiFraction,
+		costPriceRub: Math.round(650 * nitiFraction * 100) / 100,
+		costPriceKopecks: Math.round(65000 * nitiFraction),
+		notes: `Инструментальная обработка ${canalCount} ${getCanalPluralRu(canalCount)} зуба #${toothNumber} (ресурс инструмента: ${canalCount}/4)`,
 	});
 
 	// 2. Гипохлорит натрия 3% (5 мл на канал)
