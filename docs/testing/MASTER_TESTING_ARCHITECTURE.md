@@ -27,8 +27,8 @@ graph TD
 | :--- | :--- | :--- | :--- |
 | **Сквозной E2E Master Flow** | [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md) | `apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` | 5-сек бронь ➔ 0-клик норма ➔ Wheeler 36 [O] ➔ Смета ➔ Сплит 50/50 ➔ Чек 54-ФЗ ➔ Склад Soft Negative Stock. |
 | **Кросс-модульные сценарии E2E** | [`docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/E2E_CLINICAL_TESTING_STANDARD.md) | `cashbox-billing-flow.spec.ts`<br>`warehouse-consumption-flow.spec.ts`<br>`odontogram-multiselect-flow.spec.ts` | Сплит-оплата в копейках, списание по техкартам (Soft Negative Stock), мультиселект одонтограммы. |
-| **Сетевой хаос и идемпотентность** | [`docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md) | `apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` | 20-поточный шторм `Idempotency-Key` (UUIDv7), Double-Spend defense, FIFO офлайн-очередь, CRDT LWW зубов. |
-| **Контракты роутов Fastify** | [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md) | `apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts` | Защита CWE-209 & SQL 22P02, валидация UUID, строгие коды 400/404/409/422 вместо 500 краша. |
+| **Сетевой хаос и идемпотентность** | [`docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CHAOS_AND_IDEMPOTENCY_TEST_REGISTRY.md) | `apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` | 6 тестов: 20-поточный шторм `Idempotency-Key` (UUIDv7), 15-поточный Double-Spend defense баланса (`SELECT ... FOR UPDATE`), FIFO офлайн-очередь, анатомический CRDT LWW поверхностей MODVL. |
+| **Контракты роутов Fastify** | [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md) | `apps/api/src/tests/routes/apiContractsAndErrorHardening.test.ts` | 37 тестов (11 доменов): полная зачистка CWE-209 и SQL 22P02 (`invalid input syntax for type uuid`) в `documents`, `consents`, `family`, `lab`, `xray`, `anesthesia`. Чистый 400 вместо 500. |
 | **ACID-транзакции и дедлоки** | [`docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md) | `apps/api/src/tests/concurrency/acidTransactionStress.test.ts` | 20 потоков бронирования (1x 201 + 19x 409), дебет семейного депозита (3x 200 + 12x 402), дедлок-иммунитет склада через `ORDER BY id ASC`. |
 | **Фаззинг формулы FDI и копеек** | [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md) | `packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` | 10 000 мутаций ввода FDI (0 крашей), анатомические поверхности Wheeler, 10 000 сплитов и скидок Мандата 8e (`sum === totalKopecks`). |
 | **Жизненный цикл ЭМК и дневников** | [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md) | `apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` | Дневники SOAP, автосохранение черновиков (Мандат 8e), ПЭП криптохеш SHA-256, аудит «Исправленному верить», печать A4. |
@@ -36,7 +36,7 @@ graph TD
 | **Касса 54-ФЗ, сплит и склад** | [`docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md) | `apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts` | 54-ФЗ без ИНН физлиц (Мандат 8n), сплит (карта+нал+депозит) без float-дрифта, Soft Negative Stock при 0 остатке (Мандат 8aa), 100% гарантийный акт. |
 | **Радиология, DICOM и ЗТЛ наряды** | [`docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md) | `apps/api/src/tests/routes/radiologyAndLabOrdersLifecycle.test.ts` | Быстрый визиограф <50мс, DICOM парсинг, калибровка линейки (35/40 мкм), плотность HU (Misch D1-D5), ЗТЛ наряды-заказы FDI, шкала VITA, копейки BigInt. |
 | **Омниканальная телефония и Outbox** | [`docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md) | `apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts`<br>`apps/api/src/services/telephony/__tests__/omnichannelOutboxAndTelephony.test.ts` | Транзакционный Outbox, тихий режим софтфона врача (Мандат 8v), экспоненциальный backoff, DLQ, Meta HMAC-SHA256, Telegram 24h, маскирование 152-ФЗ, SSRF защита. |
-| **React 19 & Zustand сторы** | [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md) | `appStoreBehavioral.test.ts`<br>`clinicalWorkflowStateHydration.test.tsx` | Изоляция сессий пациентов (ноль утечек данных), 0-F5 реактивная гидратация, Apple HIG $\ge 44\times 44$px. |
+| **React 19 & Zustand сторы** | [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md) | `appStoreBehavioral.test.ts`<br>`clinicalWorkflowStateHydration.test.tsx`<br>`odontogramRealBehavioralSuite.test.tsx`<br>`visitRealBehavioralSuite.test.tsx` | 51 тест (118 тестов суммарно по Ring 3): Изоляция сессий 152-ФЗ, `switchDoctorChair`, анти-амнезия `currentView`, 0-F5 реактивная гидратация, пакетные операции Wheeler 2.5D, автосейв SOAP. |
 | **Расписание и быстрая запись (3 сек)** | [`docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md) | `redTeamSchedule3SecondBookingInquisition.test.tsx`<br>`quickBookingSoloDoctor.test.tsx` | 3-сек запись без ассистента (Мандат 8n), `disabled={false}`, UUIDv7 Idempotency-Key, Apple HIG Agenda View. |
 | **ИИ-Копайлот и Workstation-Харнесс** | [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md) | `apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` | 3 уровня доверия (cautious/supervised/autonomous), ротация ключей и 429 cooldown, чистый клинический язык (Мандат 8x), изоляция Web vs Desktop. |
 | **Очищение тестовой базы** | [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md) | 11 очищенных сьютов (`labOrders`, `radiology`, `fns`, `bom`, `speech`) | Ликвидация тестов с `fs.readFileSync`, искоренение проглоченных `catch {}`, строгие `node:assert/strict`. |
@@ -58,7 +58,7 @@ graph TD
 - **Команда запуска**: `npx tsx --test apps/api/src/tests/<filename>.test.ts`
 - **Ключевые поддиректории и сьюты**:
   * **Контракты и защита от крашей (`apps/api/src/tests/routes/`)**:
-    - `apiContractsAndErrorHardening.test.ts` — защита от CWE-209 и SQL 22P02 (`invalid input syntax for type uuid`). Префлайт-валидация UUID возвращает 400/404 вместо неконтролируемого 500 с утечкой стека БД.
+    - `apiContractsAndErrorHardening.test.ts` (37 тестов, 11 доменов) — тотальная защита от CWE-209 и SQL 22P02 (`invalid input syntax for type uuid`). Префлайт-валидация UUID в `visits`, `billing`, `appointments`, `inventory`, `staff`, `documents`, `consents`, `family`, `labOrders`, `xray`, `anesthesia` возвращает 400/404 вместо неконтролируемого 500 с утечкой стека БД.
     - `visits.test.ts`, `visitSignAuditTrail.test.ts`, `visitFlowPayloadValidation.test.ts` — сквозной поток приёма пациента.
     - `warehouseSoftOverdraftAndTechCardInquisitor.test.ts`, `warehouseStockEndpoint.test.ts` — автоматическое фоновое списание по техкартам с мягким овердрафтом (Soft Negative Stock, Мандат 8aa).
     - `splitPaymentTreatmentConsumablesE2E.test.ts` — одновременный чекаут и списание расходников.
@@ -70,7 +70,7 @@ graph TD
     - `scheduleSlotLockConcurrency.test.ts` — 4D-разрешение конфликтов временных окон.
     - `inventoryStockDeductionStress.test.ts` — параллельное списание партий материалов.
   * **Сетевой хаос и устойчивость (`apps/api/src/tests/chaos/`)**:
-    - `idempotencyAndOfflineStorm.test.ts` — 20 одновременных POST с одинаковым `Idempotency-Key` (UUIDv7) выполняются ровно 1 раз (1x 201 + 19x 409), офлайн FIFO очередь, CRDT LWW одонтограммы.
+    - `idempotencyAndOfflineStorm.test.ts` (6 стресс-тестов) — 20 одновременных POST с одинаковым `Idempotency-Key` (UUIDv7) выполняются ровно 1 раз (1x 201 + 19x 409), 15-поточный atomic Double-Spend defense депозита пациента (2x 200 + 13x 402, 0 овердрафта, точные копейки), офлайн FIFO очередь, анатомический CRDT LWW поверхностей MODVL одонтограммы.
   * **Клинический жизненный цикл ЭМК (`apps/api/src/tests/clinical/`)**:
     - `clinicalEmrLifecycle.test.ts` — валидация номеров FDI постоянного (11..48) и молочного (51..85) прикуса, связывание с МКБ-10, соматическая безопасность (аллергии, кардиориски), debounced autosave черновика (Мандат 8e), ПЭП подпись с SHA-256 хешем и ревизии «Исправленному верить».
   * **Радиология, визиография (RVG/DICOM PACS) и зуботехническая лаборатория ЗТЛ (`apps/api/src/tests/routes/`)**:
@@ -85,11 +85,13 @@ graph TD
 - **Путь**: `apps/web/src/store/__tests__/`, `apps/web/src/components/__tests__/`
 - **Команда запуска**: `npx tsx --test <filename>`
 - **Ключевые сьюты**:
-  * `appStoreBehavioral.test.ts` — изоляция состояний между сессиями пациентов, отсутствие амнезии при смене вкладок.
-  * `clinicalWorkflowStateHydration.test.tsx` — реактивная гидратация 0-F5 без необходимости ручной перезагрузки страницы (Мандат 8zq).
-  * `odontogramRealBehavioralSuite.test.tsx` — реактивность зубной формулы FDI, зубоспецифичные меню, мультиселект.
-  * `visitRealBehavioralSuite.test.tsx` — автосохранение черновиков SOAP, кнопка «✓ Норма» в 1 клик, Primary CTA никогда не disabled.
-  * `cashboxSsotScreens.test.tsx` — сплит-чеки, комбинированная оплата (нал/карта/СБП/депозит).
+  * `appStoreBehavioral.test.ts` (12 тестов) — изоляция состояний между сессиями пациентов (152-ФЗ), разделение кабинетов врача `switchDoctorChair`, анти-амнезия при смене экранов (`currentView`) и табов визита (`VISIT_VIEW_TABS`).
+  * `clinicalWorkflowStateHydration.test.tsx` (13 тестов) — реактивная гидратация 0-F5 без ручного перезапуска (Мандат 8zq), динамический пересчет итогов в копейках при добавлении/удалении услуг, уменьшение бейджей, очистка долга при чекауте.
+  * `odontogramRealBehavioralSuite.test.tsx` (16 тестов) — реактивность зубной формулы FDI, зубоспецифичные меню, мультиселект, пакетное назначение статусов, инверсия, очистка, парсинг поверхностей MODVL, анатомическое деление дуги Wheeler (`splitArchAtMidline`).
+  * `visitRealBehavioralSuite.test.tsx` (10 тестов) — автосохранение черновиков SOAP, восстановление свежего драфта (`isChairsideDraftRecent`), кнопка «✓ Норма» в 1 клик, Primary CTA (`diary-complete-visit-btn`) никогда не disabled (Мандат 8e).
+  * `cashboxSsotScreens.test.tsx` (18 тестов) — сплит-чеки, комбинированная оплата (нал/карта/СБП/депозит), 0 disabled кнопок.
+  * `treatmentPlanStudioSSOT.test.tsx` (14 тестов) — 3-тарифный выбор, расчет НДФЛ, принятие плана в 1 клик.
+  * `scheduleGridSSOT.test.tsx` (15 тестов) — Apple HIG тач-таргеты $\ge 44\times 44$px (52px `ScheduleMobileBottomBar`), повестка дня Agenda view.
 
 ### Слой 4: Сквозные Playwright E2E сценарии (`apps/web/tests/e2e`)
 - **Путь**: `apps/web/tests/e2e/`
@@ -144,9 +146,11 @@ node --import tsx --import ./src/tests/support/poolTeardown.ts --test apps/api/s
 # 7. Жизненный цикл ЭМК, дневников SOAP и ПЭП (4.1 с):
 npx tsx --test apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts
 
-# 8. Поведенческие тесты React 19 компонентов и Zustand (4.07 с):
-npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts
-npx tsx --test apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx
+# 8. Поведенческие тесты ядра React 19 компонентов и Zustand (51 тест, ~4.1 с):
+npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts \
+  apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx \
+  apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx \
+  apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx
 
 # 9. Проверка базовой тестовой инфраструктуры:
 npm run test:infra

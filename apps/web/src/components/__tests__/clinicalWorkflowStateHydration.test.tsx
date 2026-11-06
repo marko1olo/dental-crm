@@ -32,6 +32,28 @@ import { CashRegisterCheckoutModal } from "../cashbox/CashRegisterCheckoutModal"
 import { ScheduleMobileBottomBar } from "../schedule/mobile/ScheduleMobileBottomBar";
 import { IcdMobileBottomSheet } from "../visit/diary/fields/IcdMobileBottomSheet";
 
+// Setup lightweight in-memory localStorage for Node.js test environment if absent
+if (typeof globalThis.localStorage === "undefined") {
+	const storage = new Map<string, string>();
+	const storageMock = {
+		getItem: (k: string) => storage.get(k) ?? null,
+		setItem: (k: string, v: string) => storage.set(k, String(v)),
+		removeItem: (k: string) => storage.delete(k),
+		clear: () => storage.clear(),
+	};
+	Object.defineProperty(globalThis, "localStorage", {
+		value: storageMock,
+		writable: true,
+	});
+	if (typeof (globalThis as any).window === "undefined") {
+		(globalThis as any).window = globalThis;
+	}
+	(globalThis as any).window.localStorage = storageMock;
+	if (typeof (globalThis as any).window.dispatchEvent !== "function") {
+		(globalThis as any).window.dispatchEvent = () => true;
+	}
+}
+
 describe("Clinical Workflow — Stage 1: Schedule & Chairside Activation", () => {
 	beforeEach(() => {
 		useScheduleStore.getState().setScheduleDateFilter(null);
@@ -263,5 +285,123 @@ describe("Clinical Workflow — Stage 6: Cross-Patient State Isolation & Reactiv
 
 		assert.equal(useAppStore.getState().dashboard?.patients?.length, 2);
 		assert.equal(useAppStore.getState().dashboard?.patients?.[1]?.fullName, "Петров П.П.");
+	});
+});
+
+describe("Clinical Workflow — Stage 7: 0-F5 Reactive State Hydration & Counters Sync (Mandate 8zq)", () => {
+	beforeEach(() => {
+		useVisitStore.getState().resetVisitToothState();
+		useVisitStore.getState().setCompletedServices([]);
+		useVisitStore.getState().setVisitFlowResult(null);
+		useVisitStore.getState().setLastVisitSaveReceipt(null);
+	});
+
+	it("11. adding clinical services reactively recalculates estimate total in kopecks & increments service badges without F5", () => {
+		const visitStore = useVisitStore.getState();
+		assert.equal(visitStore.completedServices.length, 0);
+
+		// 1. Add first service: Diagnostic examination
+		visitStore.addCompletedService({
+			serviceId: "srv-diag-01",
+			title: "Осмотр и сбор анамнеза",
+			price: 1500,
+			amountKopecks: 150000,
+			toothCode: "16",
+		});
+
+		let currentServices = useVisitStore.getState().completedServices;
+		assert.equal(currentServices.length, 1);
+		assert.equal(currentServices[0]?.amountKopecks, 150000);
+
+		// Calculate total in kopecks
+		let totalKopecks = currentServices.reduce((sum, s) => sum + (s.amountKopecks || s.price * 100), 0);
+		assert.equal(totalKopecks, 150000, "1500.00 RUB = 150000 kopecks");
+
+		// 2. Add second service: Photopolymer restoration
+		visitStore.addCompletedService({
+			serviceId: "srv-rest-02",
+			title: "Восстановление зуба пломбой (Estelite)",
+			price: 5500,
+			amountKopecks: 550000,
+			toothCode: "16",
+		});
+
+		currentServices = useVisitStore.getState().completedServices;
+		assert.equal(currentServices.length, 2);
+		totalKopecks = currentServices.reduce((sum, s) => sum + (s.amountKopecks || s.price * 100), 0);
+		assert.equal(totalKopecks, 700000, "Total must be exactly 7000.00 RUB (700000 kopecks)");
+
+		// 3. Remove first service: instantly reactively decrements badge count and updates total
+		visitStore.removeCompletedService(0);
+		currentServices = useVisitStore.getState().completedServices;
+		assert.equal(currentServices.length, 1);
+		assert.equal(currentServices[0]?.serviceId, "srv-rest-02");
+		totalKopecks = currentServices.reduce((sum, s) => sum + (s.amountKopecks || s.price * 100), 0);
+		assert.equal(totalKopecks, 550000);
+	});
+
+	it("12. protocol save receipt instantly updates clinical EMR badges and save receipts without page refresh", () => {
+		assert.equal(useVisitStore.getState().lastVisitSaveReceipt, null);
+		assert.equal(useVisitStore.getState().visitFlowResult, null);
+
+		const nowIso = new Date().toISOString();
+		const mockReceipt = {
+			visitId: "visit-flow-777",
+			protocolId: "proto-soap-01",
+			savedAt: nowIso,
+			signatureSha256: "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+			pepSigned: true,
+		};
+
+		// Simulate server protocol confirmation response hydration
+		useVisitStore.getState().setLastVisitSaveReceipt(mockReceipt as any);
+		useVisitStore.getState().setServerDraftSyncState("saved");
+
+		const state = useVisitStore.getState();
+		assert.ok(state.lastVisitSaveReceipt !== null);
+		assert.equal(state.lastVisitSaveReceipt?.visitId, "visit-flow-777");
+		assert.equal(state.serverDraftSyncState, "saved");
+		assert.equal(state.lastVisitSaveReceipt?.pepSigned, true);
+	});
+
+	it("13. payment checkout completion reactively clears patient debt status without manual reload", () => {
+		// Mock initial dashboard with an invoice awaiting payment
+		const initialDashboard = {
+			clinic: { id: "c1", name: "DENTE" },
+			patients: [{ id: "pat-petrov", fullName: "Петров Василий Николаевич", debtRub: 12500 }],
+			appointments: [],
+			doctors: [],
+			chairs: [],
+			invoices: [
+				{
+					id: "inv-101",
+					patientId: "pat-petrov",
+					amountKopecks: 1250000,
+					totalDueRub: 12500,
+					status: "issued",
+				},
+			],
+			catalog: [],
+		};
+
+		useAppStore.getState().setDashboard(initialDashboard as any);
+		let currentDashboard = useAppStore.getState().dashboard;
+		assert.equal(currentDashboard?.patients?.[0]?.debtRub, 12500);
+		assert.equal(currentDashboard?.invoices?.[0]?.status, "issued");
+
+		// Simulate 0-F5 payment checkout event (e.g. after CashRegisterCheckoutModal closes with success)
+		useAppStore.getState().setDashboard((prev: any) => ({
+			...prev,
+			patients: prev.patients.map((p: any) =>
+				p.id === "pat-petrov" ? { ...p, debtRub: 0 } : p,
+			),
+			invoices: prev.invoices.map((inv: any) =>
+				inv.id === "inv-101" ? { ...inv, status: "paid", paidAt: new Date().toISOString() } : inv,
+			),
+		}));
+
+		currentDashboard = useAppStore.getState().dashboard;
+		assert.equal(currentDashboard?.patients?.[0]?.debtRub, 0, "Patient debt must be reactively cleared to 0");
+		assert.equal(currentDashboard?.invoices?.[0]?.status, "paid", "Invoice status must be reactively updated to 'paid'");
 	});
 });

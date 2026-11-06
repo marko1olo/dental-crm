@@ -25,14 +25,14 @@
 
 | Сюит тестов | Расположение | Кол-во тестов | Статус | Проверяемые инварианты |
 |---|---|:---:|:---:|---|
-| **App Store Behavioral** | `apps/web/src/store/__tests__/appStoreBehavioral.test.ts` | 8 | ✅ PASS | Изоляция сессий, сброс визита при смене пациента, реактивная гидратация дэшборда, Anti-Matryoshka модалок |
-| **Clinical Workflow Hydration** | `apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx` | 10 | ✅ PASS | Сквозной цикл: Расписание ➔ Одонтограмма (норма в 1 клик) ➔ Визит SOAP (1 Primary CTA) ➔ План лечения (3 тарифа, копейки) ➔ Касса |
-| **Odontogram Real Behavioral** | `apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx` | 10 | ✅ PASS | Wheeler viewBox $100\times 218$, FDI 11–48, пакетные операции, 0 disabled кнопок |
-| **Visit Real Behavioral** | `apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx` | 7 | ✅ PASS | SOAP дневник, 1 Primary CTA, автосейв, блокировка и подпись CryptoPro |
+| **App Store Behavioral** | `apps/web/src/store/__tests__/appStoreBehavioral.test.ts` | 12 | ✅ PASS | Изоляция сессий 152-ФЗ, сброс визита при смене пациента, `switchDoctorChair`, анти-амнезия `currentView` и `VISIT_VIEW_TABS`, реактивная гидратация дэшборда, Anti-Matryoshka модалок |
+| **Clinical Workflow Hydration** | `apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx` | 13 | ✅ PASS | Сквозной цикл 0-F5: Расписание ➔ Одонтограмма (норма в 1 клик) ➔ Визит SOAP (1 Primary CTA) ➔ План лечения (3 тарифа, копейки) ➔ Касса, динамический пересчет итогов и декремент бейджей |
+| **Odontogram Real Behavioral** | `apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx` | 16 | ✅ PASS | Wheeler viewBox $100\times 218$, FDI 11–48, пакетные инверсии/очистки/группы, MODVL парсинг, `splitArchAtMidline`, 0 disabled кнопок |
+| **Visit Real Behavioral** | `apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx` | 10 | ✅ PASS | SOAP дневник, 1 Primary CTA (`diary-complete-visit-btn`), chairside автосейв и восстановление драфтов, блокировка и подпись CryptoPro |
 | **Schedule Grid SSOT** | `apps/web/src/components/schedule/__tests__/scheduleGridSSOT.test.tsx` | 15 | ✅ PASS | Apple HIG тач $\ge 44\times 44$px (52px `ScheduleMobileBottomBar`), фильтр кресел, Agenda view |
 | **Treatment Plan Studio** | `apps/web/src/components/treatment-plans/__tests__/treatmentPlanStudioSSOT.test.tsx` | 14 | ✅ PASS | 3 тарифа лечения, суммы в копейках (`amountKopecks`), 1-клик принятие |
 | **Cashbox SSOT Screens** | `apps/web/src/components/cashbox/__tests__/cashboxSsotScreens.test.tsx` | 18 | ✅ PASS | 0 disabled кнопок, экспресс-чеки без ИНН физлиц, сплит-оплата |
-| **ИТОГО** | **7 сюитов** | **99** | **100% PASS** | **Время выполнения: ~6.1s** |
+| **ИТОГО** | **7 сюитов** | **118** | **100% PASS** | **Время выполнения: ~6.5s** |
 
 ---
 
@@ -51,10 +51,19 @@
 
 ---
 
-## 4. 4-STATE RED TEAM VISUAL PROOFS (8 СКРИНШОТОВ)
+## 4. 4-STATE RED TEAM VISUAL PROOFS (12 СКРИНШОТОВ)
 
-Скриншоты сняты на живом dev-сервере (`http://127.0.0.1:5173`) через Playwright Chromium и лично отсмотрены через `read_file`:
+Скриншоты сняты на живом стенде приложения через Playwright Chromium и лично отсмотрены через `read_file` в соответствии с Мандатом 8d / 8al / 8am:
 
+### А. Сквозной клинический поток: Одонтограмма Wheeler ➔ Дневник SOAP ➔ Чекаут
+| Скриншот | Разрешение | Размер | Проверенные 8 осей Red Team |
+|---|:---:|:---:|---|
+| `docs/proofs/workflow/01_clinical_workflow_pc_light_1440x900.png` | 1440×900 | 269.4 KB | 0 клиппинга, зубная формула Wheeler $100\times 218$, чипы FDI 11..48, единый Primary CTA «Завершить приём и сформировать счёт» |
+| `docs/proofs/workflow/02_clinical_workflow_pc_dark_1440x900.png` | 1440×900 | 278.4 KB | Тёмная тема 100% без слепящих белых пятен, глубокий контраст `var(--paper)` WCAG AAA |
+| `docs/proofs/workflow/03_clinical_workflow_mobile_light_390x844.png` | 390×844 | 73.7 KB | Apple HIG: Natural Thumb Zone, плашка действия $\ge 52$px, 0px горизонтального скролла |
+| `docs/proofs/workflow/04_clinical_workflow_mobile_dark_390x844.png` | 390×844 | 74.3 KB | Мобильный тёмный вид: идеальная читаемость формулы, отступы safe area `env(safe-area-inset-bottom)` |
+
+### Б. Расписание и подвал дневника SOAP
 | Скриншот | Разрешение | Размер | Проверенные 8 осей Red Team |
 |---|:---:|:---:|---|
 | `docs/proofs/components/01_schedule_agenda_pc_light_1440x900.png` | 1440×900 | 118.9 KB | 0 клиппинга, 1 Primary CTA, Sentence case, 0px горизонтального скролла |
@@ -71,7 +80,7 @@
 ## 5. ПРОЦЕДУРА ЗАПУСКА ТЕСТОВОГО СЮИТА
 
 ```bash
-# Изолированный прогон всех 99 поведенческих тестов компонентов и сторов:
+# Изолированный прогон всех 118 поведенческих тестов компонентов и сторов (Ring 3):
 npx tsx --test apps/web/src/store/__tests__/*.test.ts \
   apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx \
   apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx \
@@ -79,4 +88,10 @@ npx tsx --test apps/web/src/store/__tests__/*.test.ts \
   apps/web/src/components/treatment-plans/__tests__/treatmentPlanStudioSSOT.test.tsx \
   apps/web/src/components/cashbox/__tests__/cashboxSsotScreens.test.tsx \
   apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx
+
+# Быстрый фокусный прогон ядра изоляции сессий, 0-F5 гидратации и одонтограммы (51 тест):
+npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts \
+  apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx \
+  apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx \
+  apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx
 ```

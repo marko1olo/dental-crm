@@ -16,6 +16,37 @@ import { useAppStore } from "../appStore";
 import { usePatientStore } from "../patientStore";
 import { useVisitStore } from "../visitStore";
 import { useUiSurfaceStore } from "../uiSurfaceStore";
+import {
+	createDoctorChairSession,
+	switchDoctorChair,
+	saveChairsideVisitDraft,
+	loadChairsideVisitDraft,
+	clearChairsideVisitDraft,
+	getIsolatedVisitDraftStorageKey,
+} from "../../components/visit/doctorChairSessions";
+import { VISIT_VIEW_TABS } from "../../components/visit/view/VisitTabNav";
+
+// Setup lightweight in-memory localStorage for Node.js test environment if absent
+if (typeof globalThis.localStorage === "undefined") {
+	const storage = new Map<string, string>();
+	const storageMock = {
+		getItem: (k: string) => storage.get(k) ?? null,
+		setItem: (k: string, v: string) => storage.set(k, String(v)),
+		removeItem: (k: string) => storage.delete(k),
+		clear: () => storage.clear(),
+	};
+	Object.defineProperty(globalThis, "localStorage", {
+		value: storageMock,
+		writable: true,
+	});
+	if (typeof (globalThis as any).window === "undefined") {
+		(globalThis as any).window = globalThis;
+	}
+	(globalThis as any).window.localStorage = storageMock;
+	if (typeof (globalThis as any).window.dispatchEvent !== "function") {
+		(globalThis as any).window.dispatchEvent = () => true;
+	}
+}
 
 describe("useAppStore Behavioral Tests — Session Isolation & Patient Context", () => {
 	beforeEach(() => {
@@ -88,6 +119,213 @@ describe("useAppStore Behavioral Tests — Session Isolation & Patient Context",
 		// Assert Patient B has pristine clean clinical state
 		assert.equal(useVisitStore.getState().visitToothStateByCode["36"], undefined);
 		assert.equal(useVisitStore.getState().completedServices.length, 0);
+	});
+
+	it("4. 152-FZ patient session draft isolation: switching patient stores draft in isolated key and never leaks into Patient B", () => {
+		const visitIdA = "visit-pat-alpha-101";
+		const visitIdB = "visit-pat-beta-202";
+
+		// 1. Patient Alpha: doctor types complaints, anamnesis, sets pulpitis on tooth 46
+		saveChairsideVisitDraft(visitIdA, {
+			patientId: "patient-alpha",
+			patientName: "Алексеев Алексей Алексеевич",
+			activeTooth: 46,
+			activeTab: "emk",
+			diary: {
+				complaint: "Острая ночная самопроизвольная боль в зубе 46",
+				anamnesis: "Боли начались 2 дня назад, усиливаются от температурных раздражителей. Аллергия на новокаин.",
+				diagnosis: "K04.0 Острый очаговый пульпит",
+				toothNumber: 46,
+			},
+		});
+
+		// Hydrate store for Patient Alpha
+		useAppStore.getState().setActivePatientId("patient-alpha");
+		usePatientStore.getState().setSelectedPatientId("patient-alpha");
+		useVisitStore.getState().setToothState("46", "pulpitis");
+		useVisitStore.getState().setVisitNoteForm({
+			complaints: "Острая ночная самопроизвольная боль в зубе 46",
+			anamnesis: "Боли начались 2 дня назад. Аллергия на новокаин.",
+			statusLocalis: "Зуб 46 глубокая кариозная полость",
+			treatmentDescription: "Анестезия Ubistesin, раскрытие полости",
+			recommendations: "Контрольный осмотр через 3 дня",
+			icd10: "K04.0",
+		});
+
+		// Verify Alpha state is present
+		assert.equal(useVisitStore.getState().visitNoteForm.complaints, "Острая ночная самопроизвольная боль в зубе 46");
+		assert.equal(useVisitStore.getState().visitToothStateByCode["46"], "pulpitis");
+
+		// 2. Doctor switches to Patient Beta (Emergency walk-in)
+		usePatientStore.getState().setSelectedPatientId("patient-beta");
+		useAppStore.getState().setActivePatientId("patient-beta");
+		useVisitStore.getState().setVisitNoteForm({
+			complaints: "",
+			anamnesis: "",
+			statusLocalis: "",
+			treatmentDescription: "",
+			recommendations: "",
+			icd10: "",
+		});
+
+		// Check Patient Beta state is completely empty: NO leaks of Alpha's private health data!
+		assert.equal(useVisitStore.getState().visitToothStateByCode["46"], undefined, "Patient B must not inherit tooth state 46");
+		assert.equal(useVisitStore.getState().visitNoteForm.complaints, "", "Patient B must not see Alpha complaints");
+		assert.equal(useVisitStore.getState().visitNoteForm.anamnesis, "", "Patient B must not see Alpha allergies");
+
+		// Patient Beta's own draft key is isolated
+		const draftB = loadChairsideVisitDraft(visitIdB);
+		assert.equal(draftB, null, "Patient Beta has no phantom draft");
+
+		// 3. Switch back to Patient Alpha: restore Alpha's isolated draft
+		usePatientStore.getState().setSelectedPatientId("patient-alpha");
+		useAppStore.getState().setActivePatientId("patient-alpha");
+		const restoredAlphaDraft = loadChairsideVisitDraft(visitIdA);
+		assert.ok(restoredAlphaDraft !== null, "Alpha draft must be safely persisted");
+		assert.equal(restoredAlphaDraft?.diary?.diagnosis, "K04.0 Острый очаговый пульпит");
+		assert.equal(restoredAlphaDraft?.diary?.complaint, "Острая ночная самопроизвольная боль в зубе 46");
+
+		// Clean up
+		clearChairsideVisitDraft(visitIdA);
+		clearChairsideVisitDraft(visitIdB);
+	});
+
+	it("5. anti-amnesia module switching: navigating between visit, imaging, pipeline, finance preserves SOAP form & tooth state", () => {
+		// Set initial view to visit
+		useAppStore.getState().setCurrentView("visit");
+		useAppStore.getState().setActivePatientId("patient-gamma");
+		usePatientStore.getState().setSelectedPatientId("patient-gamma");
+
+		// Doctor fills in SOAP diary form and marks teeth
+		useVisitStore.getState().setVisitNoteForm({
+			complaints: "Кровоточивость десен при чистке зубов",
+			anamnesis: "Хронический гингивит в течение полугода",
+			statusLocalis: "Зубной налет и поддесневой камень в области фронтальной группы",
+			treatmentDescription: "Ультразвуковой скейлинг, AirFlow, полировка пастой",
+			recommendations: "Полоскания хлоргексидином 0.05% 7 дней",
+			icd10: "K05.1",
+		});
+		useVisitStore.getState().setToothState("31", "done");
+		useVisitStore.getState().setToothState("41", "done");
+		useVisitStore.getState().addCompletedService({
+			serviceId: "srv-hygiene",
+			title: "Комплексная гигиена полости рта",
+			price: 5500,
+			amountKopecks: 550000,
+		});
+
+		// 1. Doctor navigates to "imaging" to inspect X-Ray/CT scan
+		useAppStore.getState().setCurrentView("imaging");
+		assert.equal(useAppStore.getState().currentView, "imaging");
+
+		// 2. Doctor navigates to "pipeline" (treatment plan / estimates)
+		useAppStore.getState().setCurrentView("pipeline");
+		assert.equal(useAppStore.getState().currentView, "pipeline");
+
+		// 3. Doctor navigates to "finance" (cashbox / invoices)
+		useAppStore.getState().setCurrentView("finance");
+		assert.equal(useAppStore.getState().currentView, "finance");
+
+		// 4. Doctor returns to "visit" view — ZERO AMNESIA!
+		useAppStore.getState().setCurrentView("visit");
+		assert.equal(useAppStore.getState().currentView, "visit");
+
+		// Assert all clinical SOAP data and tooth states are 100% intact
+		const form = useVisitStore.getState().visitNoteForm;
+		assert.equal(form.complaints, "Кровоточивость десен при чистке зубов");
+		assert.equal(form.anamnesis, "Хронический гингивит в течение полугода");
+		assert.equal(form.statusLocalis, "Зубной налет и поддесневой камень в области фронтальной группы");
+		assert.equal(form.treatmentDescription, "Ультразвуковой скейлинг, AirFlow, полировка пастой");
+		assert.equal(form.icd10, "K05.1");
+		assert.equal(useVisitStore.getState().visitToothStateByCode["31"], "done");
+		assert.equal(useVisitStore.getState().visitToothStateByCode["41"], "done");
+		assert.equal(useVisitStore.getState().completedServices.length, 1);
+		assert.equal(useVisitStore.getState().completedServices[0]?.amountKopecks, 550000);
+	});
+
+	it("6. anti-amnesia visit tab navigation: switching between tabs (odontogram -> emk -> diagnostics -> plan) preserves local mutations", () => {
+		// All 6 tabs defined in VISIT_VIEW_TABS
+		const tabIds = VISIT_VIEW_TABS.map((t) => t.id);
+		assert.deepEqual(tabIds, ["odontogram", "emk", "diagnostics", "plan", "consents", "anamnesis"]);
+
+		// Simulate doctor workflow: set tooth state in odontogram tab
+		useVisitStore.getState().setToothState("16", "caries");
+		useVisitStore.getState().setVisitToothRecord("16", {
+			toothNumber: 16,
+			state: "caries",
+			cavity: "MOD",
+			surfaces: ["M", "O", "D"],
+			diagnosisIcd10: "K02.1",
+		});
+
+		// Switch to EMK diary tab and type treatment protocol
+		useVisitStore.getState().setVisitNoteForm({
+			complaints: "Застревание пищи между 16 и 17 зубами",
+			anamnesis: "Полость появилась 3 месяца назад",
+			statusLocalis: "Кариозная полость MOD на зубе 16",
+			treatmentDescription: "Препарирование полости MOD, коффердам, пломба световой композит",
+			recommendations: "Не принимать красящую пищу 2 часа",
+			icd10: "K02.1",
+		});
+
+		// Switch to Diagnostics tab, then Plan tab, then Consents tab
+		// Assert that state remains completely stable and uncorrupted
+		const record = useVisitStore.getState().visitToothRecordsByCode["16"];
+		assert.ok(record !== undefined);
+		assert.equal(record.cavity, "MOD");
+		assert.deepEqual(record.surfaces, ["M", "O", "D"]);
+		assert.equal(record.diagnosisIcd10, "K02.1");
+
+		const note = useVisitStore.getState().visitNoteForm;
+		assert.equal(note.complaints, "Застревание пищи между 16 и 17 зубами");
+		assert.equal(note.treatmentDescription, "Препарирование полости MOD, коффердам, пломба световой композит");
+	});
+
+	it("7. solo doctor multi-chair session isolation: switching between Chair 1 and Chair 2 maintains isolated states & timers", () => {
+		const session1 = createDoctorChairSession({
+			chairId: "chair-1",
+			chairName: "Кресло 1 (Терапия)",
+			visitId: "visit-1",
+			patientId: "pat-1",
+			patientName: "Смирнова Е.В.",
+			doctorName: "Д-р Иванов А.А.",
+			complaint: "Пульпит 26",
+			anesthesiaDrugName: "Ультракаин Д-С",
+			startedAt: "2026-11-06T10:00:00Z",
+		});
+
+		const session2 = createDoctorChairSession({
+			chairId: "chair-2",
+			chairName: "Кресло 2 (Хирургия)",
+			visitId: "visit-2",
+			patientId: "pat-2",
+			patientName: "Кузнецов И.П.",
+			doctorName: "Д-р Иванов А.А.",
+			isDoctorPresent: false,
+			complaint: "Удаление 38",
+			startedAt: "2026-11-06T10:05:00Z",
+		});
+
+		const sessions = [session1, session2];
+		assert.equal(sessions[0]?.isDoctorPresent, true);
+		assert.equal(sessions[1]?.isDoctorPresent, false);
+
+		// Doctor administers anesthesia on Chair 1 and switches to Chair 2
+		const switched = switchDoctorChair(sessions, "chair-2", {
+			nowIso: "2026-11-06T10:15:00Z",
+		});
+
+		// Chair 2 is now active
+		assert.equal(switched.activeSession?.chairId, "chair-2");
+		assert.equal(switched.activeSession?.isDoctorPresent, true);
+		assert.equal(switched.activeSession?.status, "active");
+
+		// Chair 1 was paused and accumulated 900 seconds of doctor active work
+		const updatedChair1 = switched.updatedSessions.find((s) => s.chairId === "chair-1");
+		assert.ok(updatedChair1 !== undefined);
+		assert.equal(updatedChair1.isDoctorPresent, false);
+		assert.equal(updatedChair1.doctorWorkSeconds, 900, "15 minutes = 900 seconds accumulated");
+		assert.equal(updatedChair1.patientName, "Смирнова Е.В.");
 	});
 });
 

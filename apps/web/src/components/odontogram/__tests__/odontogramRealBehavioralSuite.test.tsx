@@ -22,6 +22,23 @@ import {
 	markFrontalHygieneAction,
 	markWisdomTeethMissingAction,
 } from "../batchSanitationActions";
+import {
+	invertSelectionAction,
+	clearSelectionAction,
+	batchSelectGroupAction,
+	triggerQuickStateAction,
+} from "../batchSelectionActions";
+import { CANONICAL_SURFACES } from "@dental/shared";
+import {
+	parseSurfacesString,
+	formatSurfacesString,
+	areSurfacesEqual,
+	RUSSIAN_TO_SURFACE_MAP,
+	SURFACE_NAMES_RU,
+	TOP_TEETH,
+	BOTTOM_TEETH,
+	splitArchAtMidline,
+} from "../chart/toothChartTypes";
 import type { ToothData } from "../ToothChart";
 
 describe("OdontogramStudioModal Real Component Rendering (React 19)", () => {
@@ -202,5 +219,144 @@ describe("Odontogram Batch Operations Behavioral Tests (batchSanitationActions)"
 		assert.ok(html.includes("mark-wisdom-missing-btn"));
 		assert.ok(html.includes("Санирован"));
 		assert.ok(html.includes("Без 8-ок"));
+	});
+});
+
+describe("Odontogram Wheeler 2.5D Multiselect, Batch Stamp & MODVL Surfaces Behavioral Suite", () => {
+	const allAdultTeeth = [...TOP_TEETH, ...BOTTOM_TEETH];
+
+	it("11. invertSelectionAction correctly inverts selected teeth subset across 32 FDI teeth", () => {
+		let invertedTeeth: number[] = [];
+		const initiallySelected = [16, 26, 36, 46]; // First permanent molars
+
+		invertSelectionAction(
+			() => allAdultTeeth,
+			initiallySelected,
+			(teeth) => {
+				invertedTeeth = teeth;
+			},
+		);
+
+		assert.equal(invertedTeeth.length, 32 - 4, "Must invert 4 teeth out of 32");
+		assert.ok(!invertedTeeth.includes(16), "16 must be unselected");
+		assert.ok(!invertedTeeth.includes(26), "26 must be unselected");
+		assert.ok(!invertedTeeth.includes(36), "36 must be unselected");
+		assert.ok(!invertedTeeth.includes(46), "46 must be unselected");
+		assert.ok(invertedTeeth.includes(11), "11 must now be selected");
+		assert.ok(invertedTeeth.includes(21), "21 must now be selected");
+	});
+
+	it("12. clearSelectionAction clears any existing selection to empty array", () => {
+		let resultSelection: number[] = [11, 12, 13];
+		clearSelectionAction((teeth) => {
+			resultSelection = teeth;
+		});
+		assert.deepEqual(resultSelection, []);
+	});
+
+	it("13. batchSelectGroupAction applies active stamp tool to all target teeth", () => {
+		let appliedTargets: number[] = [];
+		let appliedState = "";
+
+		const targetGroup = [14, 15, 16];
+		batchSelectGroupAction(
+			targetGroup,
+			"Caries",
+			(targets, state) => {
+				appliedTargets = targets;
+				appliedState = state;
+			},
+			() => {},
+		);
+
+		assert.equal(appliedState, "Caries");
+		assert.deepEqual(appliedTargets, [14, 15, 16]);
+	});
+
+	it("14. triggerQuickStateAction applies clinical status directly when selectedTeeth array is present", () => {
+		let appliedTargets: number[] = [];
+		let appliedState = "";
+		let activeToolState: any = null;
+
+		const selectedTeeth = [24, 25, 26];
+		triggerQuickStateAction(
+			"Pulpitis",
+			selectedTeeth,
+			null,
+			(val: any) => {
+				activeToolState = val;
+			},
+			(targets, state) => {
+				appliedTargets = targets;
+				appliedState = state;
+			},
+		);
+
+		assert.equal(appliedState, "Pulpitis");
+		assert.deepEqual(appliedTargets, [24, 25, 26]);
+		assert.equal(activeToolState, null, "Should not toggle stamp mode when selectedTeeth are active");
+	});
+
+	it("15. MODVL anatomical surfaces: validates canonical keys, Russian mappings and normalization", () => {
+		// All 6 canonical surfaces: O, V, L, M, D, C
+		assert.deepEqual(CANONICAL_SURFACES, ["O", "V", "L", "M", "D", "C"]);
+
+		// Parse Latin MOD string
+		const modLatin = parseSurfacesString("MOD");
+		assert.ok(modLatin.includes("M"));
+		assert.ok(modLatin.includes("O"));
+		assert.ok(modLatin.includes("D"));
+
+		// Parse Russian МОД string
+		const modRu = parseSurfacesString("МОД");
+		assert.ok(modRu.includes("M"));
+		assert.ok(modRu.includes("O"));
+		assert.ok(modRu.includes("D"));
+
+		// Russian mappings: Щ/В -> V, Я/Н -> L, П/Ц -> C
+		assert.equal(RUSSIAN_TO_SURFACE_MAP["Щ"], "V");
+		assert.equal(RUSSIAN_TO_SURFACE_MAP["В"], "V");
+		assert.equal(RUSSIAN_TO_SURFACE_MAP["Я"], "L");
+		assert.equal(RUSSIAN_TO_SURFACE_MAP["Н"], "L");
+		assert.equal(RUSSIAN_TO_SURFACE_MAP["П"], "C");
+
+		// Surface formatting to Russian
+		const formatted = formatSurfacesString(["M", "O", "D"]);
+		assert.ok(
+			formatted.includes("мезиальная") &&
+				formatted.includes("окклюзионная") &&
+				formatted.includes("дистальная"),
+		);
+
+		// Surface equality helper
+		assert.equal(areSurfacesEqual(["M", "O"], ["M", "O"]), true);
+		assert.equal(areSurfacesEqual(["M", "O"], ["O", "M"]), false);
+		assert.equal(areSurfacesEqual(["M", "O"], ["M"]), false);
+	});
+
+	it("16. Wheeler anatomical arch midline splitting & quadrant geometry", () => {
+		// Top teeth: 16 teeth total
+		assert.equal(TOP_TEETH.length, 16);
+		const { left: topQ1, right: topQ2 } = splitArchAtMidline(TOP_TEETH);
+		// Quadrant 1 (patient right / screen left): 18..11 (8 teeth)
+		assert.equal(topQ1.length, 8);
+		assert.equal(topQ1[0], 18);
+		assert.equal(topQ1[7], 11);
+		// Quadrant 2 (patient left / screen right): 21..28 (8 teeth)
+		assert.equal(topQ2.length, 8);
+		assert.equal(topQ2[0], 21);
+		assert.equal(topQ2[7], 28);
+
+		// Bottom teeth: 16 teeth total
+		assert.equal(BOTTOM_TEETH.length, 16);
+		const { left: botQ4, right: botQ3 } = splitArchAtMidline(BOTTOM_TEETH);
+		// Quadrant 4 (patient right / screen left): 48..41 (8 teeth)
+		assert.equal(botQ4.length, 8);
+		assert.equal(botQ4[0], 48);
+		assert.equal(botQ4[7], 41);
+		// Quadrant 3 (patient left / screen right): 31..38 (8 teeth)
+		assert.equal(botQ3.length, 8);
+		assert.equal(botQ3[0], 31);
+		assert.equal(botQ3[7], 38);
 	});
 });

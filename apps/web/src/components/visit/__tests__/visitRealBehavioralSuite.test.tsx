@@ -17,6 +17,34 @@ import { renderToString } from "react-dom/server";
 import { VisitDiaryActionsFooter } from "../diary/section/VisitDiaryActionsFooter";
 import { IcdMobileBottomSheet } from "../diary/fields/IcdMobileBottomSheet";
 import { applyFullPhysiologicalNorm } from "../diary/section/applyPhysiologicalNormHelper";
+import {
+	saveChairsideVisitDraft,
+	loadChairsideVisitDraft,
+	clearChairsideVisitDraft,
+	isChairsideDraftRecent,
+} from "../doctorChairSessions";
+
+// Setup lightweight in-memory localStorage for Node.js test environment if absent
+if (typeof globalThis.localStorage === "undefined") {
+	const storage = new Map<string, string>();
+	const storageMock = {
+		getItem: (k: string) => storage.get(k) ?? null,
+		setItem: (k: string, v: string) => storage.set(k, String(v)),
+		removeItem: (k: string) => storage.delete(k),
+		clear: () => storage.clear(),
+	};
+	Object.defineProperty(globalThis, "localStorage", {
+		value: storageMock,
+		writable: true,
+	});
+	if (typeof (globalThis as any).window === "undefined") {
+		(globalThis as any).window = globalThis;
+	}
+	(globalThis as any).window.localStorage = storageMock;
+	if (typeof (globalThis as any).window.dispatchEvent !== "function") {
+		(globalThis as any).window.dispatchEvent = () => true;
+	}
+}
 
 describe("VisitDiaryActionsFooter Real Rendering & Mandates (React 19)", () => {
 	const defaultProps = {
@@ -152,5 +180,92 @@ describe("Physiological Norm Application Logic (Mandate 8e)", () => {
 		assert.ok(updatedDiary.statusLocalis.includes("Зубные ряды интактны"));
 		assert.ok(updatedDiary.treatmentDescription.includes("плановый осмотр"));
 		assert.equal(updatedDiary.complications, "Осложнений нет.");
+	});
+
+	it("8. autosave & instant recovery of chairside visit draft: persists all SOAP fields & tooth selection without data loss", () => {
+		const visitId = "visit-autosave-test-999";
+
+		// Doctor types notes during chairside examination
+		const originalDraft = saveChairsideVisitDraft(visitId, {
+			chairId: "chair-main",
+			patientId: "pat-12345",
+			patientName: "Смирнов Алексей Викторович",
+			doctorId: "doc-01",
+			activeTooth: 24,
+			activeTab: "emk",
+			diary: {
+				complaint: "Ноющая боль при накусывании на зуб 24",
+				anamnesis: "Боли в течение недели, ранее зуб лечен по поводу глубокого кариеса",
+				objectiveStatus: "Зуб 24: пломба с дефектом прилегания по дистальной поверхности, перкуссия слабо болезненна",
+				diagnosis: "K04.4 Хронический апикальный периодонтит",
+				treatmentPlan: "Эндодонтическое перелечивание каналов зуба 24, распломбировка, медикаментозная обработка",
+				recommendations: "Охранительный режим, не жевать на левой стороне",
+				icd10: "K04.4",
+				toothNumber: 24,
+			},
+		});
+
+		assert.equal(originalDraft.visitId, visitId);
+		assert.equal(originalDraft.activeTooth, 24);
+
+		// Sudden browser refresh or accidental tab close: recover draft instantly
+		const loadedDraft = loadChairsideVisitDraft(visitId);
+		assert.ok(loadedDraft !== null, "Draft must be safely recovered from isolated storage");
+		assert.equal(loadedDraft?.patientId, "pat-12345");
+		assert.equal(loadedDraft?.patientName, "Смирнов Алексей Викторович");
+		assert.equal(loadedDraft?.diary?.complaint, "Ноющая боль при накусывании на зуб 24");
+		assert.equal(loadedDraft?.diary?.diagnosis, "K04.4 Хронический апикальный периодонтит");
+		assert.equal(loadedDraft?.diary?.icd10, "K04.4");
+		assert.equal(loadedDraft?.diary?.toothNumber, 24);
+
+		// Verify draft is recent (within 24 hours)
+		assert.equal(isChairsideDraftRecent(loadedDraft), true);
+
+		// Clean up
+		clearChairsideVisitDraft(visitId);
+		assert.equal(loadChairsideVisitDraft(visitId), null, "Draft should be cleared after visit finalization");
+	});
+
+	it("9. primary CTA 'Завершить приём и сохранить карту' is never disabled (Mandate 8e Doctor Autonomy)", () => {
+		// Even when visit is completely empty or saving is false, button is clickable
+		const html = renderToString(
+			<VisitDiaryActionsFooter
+				isLocked={false}
+				isSaving={false}
+				doSave={async () => {}}
+				ensureDraftSavedForSigning={async () => null}
+				doLock={async () => {}}
+				isRevising={false}
+				revisionReason=""
+				setRevisionReason={() => {}}
+				cancelRevise={() => {}}
+				isRevisingBusy={false}
+				doRevise={async () => {}}
+				beginRevise={() => {}}
+				setShowPreview={() => {}}
+				onCompleteVisitAndBilling={async () => {}}
+			/>,
+		);
+
+		// Match primary CTA button
+		const completeBtnMatch = html.match(/<button[^>]*id="diary-complete-visit-btn"[^>]*>/i);
+		assert.ok(completeBtnMatch !== null, "Primary CTA must exist");
+		assert.ok(!completeBtnMatch[0].includes("disabled"), "Primary CTA must NEVER have disabled attribute");
+		assert.ok(completeBtnMatch[0].includes("bg-[var(--teal,#0d9488)]"), "Primary CTA must be teal accent");
+	});
+
+	it("10. isChairsideDraftRecent distinguishes between active and stale drafts (> 24 hours)", () => {
+		const now = Date.now();
+		const recentDraft: any = {
+			visitId: "v-recent",
+			timestamp: now - 3600 * 1000, // 1 hour ago
+		};
+		assert.equal(isChairsideDraftRecent(recentDraft), true);
+
+		const staleDraft: any = {
+			visitId: "v-stale",
+			timestamp: now - (25 * 3600 * 1000), // 25 hours ago
+		};
+		assert.equal(isChairsideDraftRecent(staleDraft), false);
 	});
 });
