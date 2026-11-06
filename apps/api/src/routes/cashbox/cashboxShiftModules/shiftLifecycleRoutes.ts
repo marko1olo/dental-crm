@@ -34,6 +34,7 @@ import {
 import type { CloseShiftResponseBody, OpenShiftResponseBody } from "../types.js";
 import { reconcileSingleShift } from "./shiftReconciliationEngine.js";
 import { checkAndAutoCloseExpiredShifts } from "../../shifts/shiftAutoCloseService.js";
+import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
 
 export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 	/**
@@ -148,6 +149,16 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 			return shifts;
 		});
 
+		// Аппаратное открытие смены на ККТ (54-ФЗ)
+		try {
+			await LanKktDriverService.openShift({
+				cashierName: identity.fullName || "Кассир клиники",
+				shiftNumber: openedShifts[0]?.shiftNumber ?? 1,
+			});
+		} catch (err: unknown) {
+			request.log.warn({ err }, "LanKktDriverService.openShift non-blocking warning");
+		}
+
 		const response: OpenShiftResponseBody = {
 			success: true,
 			message: `Кассовые смены успешно открыты (${openedShifts.length} счетов).`,
@@ -243,6 +254,19 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 					: [];
 			const boxMap = new Map(boxes.map((b) => [b.id, b]));
 
+			// Аппаратное закрытие смены со снятием Z-отчета с гашением (54-ФЗ)
+			let kktZResult: Awaited<ReturnType<typeof LanKktDriverService.closeShift>> | undefined;
+			if (openShifts.length > 0) {
+				try {
+					kktZResult = await LanKktDriverService.closeShift({
+						cashierName: inputData.cashierFullName || identity.fullName || "Кассир",
+						shiftNumber: openShifts[0]?.shiftNumber ?? 1,
+					});
+				} catch (err: unknown) {
+					request.log.warn({ err }, "LanKktDriverService.closeShift non-blocking warning");
+				}
+			}
+
 			let primaryResult: Awaited<ReturnType<typeof reconcileSingleShift>> | undefined;
 
 			for (const shift of openShifts) {
@@ -258,6 +282,16 @@ export function registerShiftLifecycleRoutes(app: FastifyInstance): void {
 					effectiveUserId,
 					now,
 				);
+
+				if (kktZResult?.success && kktZResult.fiscalDocumentNumber) {
+					reconciliationResult.fiscalDocNumber = kktZResult.fiscalDocumentNumber;
+					if (kktZResult.fiscalSign) reconciliationResult.fiscalSign = kktZResult.fiscalSign;
+					if (kktZResult.qrString) reconciliationResult.qrString = kktZResult.qrString;
+					// biome-ignore lint/suspicious/noExplicitAny: enrichment
+					(reconciliationResult.zReportData as any).fiscalDocNumber = kktZResult.fiscalDocumentNumber;
+					if (kktZResult.fiscalSign) (reconciliationResult.zReportData as any).fiscalSign = kktZResult.fiscalSign;
+					if (kktZResult.qrString) (reconciliationResult.zReportData as any).qrString = kktZResult.qrString;
+				}
 
 				if (!primaryResult || box?.type === "main") {
 					primaryResult = reconciliationResult;

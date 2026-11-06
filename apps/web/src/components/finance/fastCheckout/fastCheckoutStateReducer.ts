@@ -74,6 +74,7 @@ export function useFastCheckoutStateMachine(props: UseFastCheckoutLogicProps) {
 		remainingRub, activeMethod: t.activeMethod, validation, clientType: t.clientType, buyerInn: t.buyerInn, buyerName: t.buyerName,
 		isElectronicReceiptOnly: t.isElectronicReceiptOnly, patientId: props.patientId, visitId: props.visitId, patientPhone: props.patientPhone || "",
 		patientEmail: props.patientEmail || "", orderId: t.orderId, effectiveCashierFullName: t.effectiveCashierFullName, stageCalc,
+		items: props.items,
 		onPaymentComplete: props.onPaymentComplete, onSuccess: props.onSuccess, onClose: props.onClose, isPrinting: t.isPrinting,
 		setIsPrinting: t.setIsPrinting, setIsOfflineBuffered: t.setIsOfflineBuffered, setInterruptedPaymentState: t.setInterruptedPaymentState,
 		setCardAmountRub: t.setCardAmountRub, setCashAmountRub: t.setCashAmountRub, setCashTenderedRub: t.setCashTenderedRub, setSbpAmountRub: t.setSbpAmountRub,

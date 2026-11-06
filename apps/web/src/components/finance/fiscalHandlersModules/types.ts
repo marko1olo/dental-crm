@@ -10,6 +10,20 @@ import type {
 
 export type { FiscalReceiptPayload } from "../../payments/checkout/fastCheckoutEngine.js";
 
+export interface FiscalExecutionItem {
+	readonly name: string;
+	readonly priceKopecks?: number | undefined;
+	readonly priceRub?: number | undefined;
+	readonly quantity?: number | undefined;
+	readonly amountKopecks?: number | undefined;
+	readonly amountRub?: number | undefined;
+	readonly subject?: "service" | "commodity" | "marked" | undefined;
+	readonly method?: "full_payment" | "full_prepayment" | "advance" | undefined;
+	readonly vatRate?: "vat_none" | "vat_0" | "vat_10" | "vat_20" | undefined;
+	readonly medicalServiceCode804n?: string | undefined;
+	readonly markingCode?: string | undefined;
+}
+
 export interface FiscalExecutionParams {
 	targetBillKop: number;
 	targetBillRub: number;
@@ -35,6 +49,7 @@ export interface FiscalExecutionParams {
 	orderId: string;
 	effectiveCashierFullName: string;
 	stageCalc: StageAdvanceCalculation;
+	items?: readonly FiscalExecutionItem[] | undefined;
 	onPaymentComplete?: ((payload: FiscalReceiptPayload) => void) | undefined;
 	onSuccess?: ((payload: any) => void) | undefined;
 	onClose: () => void;
@@ -72,6 +87,7 @@ export interface ManualCardTerminalParams {
 	buyerName: string;
 	isElectronicReceiptOnly: boolean;
 	stageCalc: StageAdvanceCalculation;
+	items?: readonly FiscalExecutionItem[] | undefined;
 	onPaymentComplete?: ((payload: FiscalReceiptPayload) => void) | undefined;
 	onSuccess?: ((payload: any) => void) | undefined;
 	onClose: () => void;

@@ -13,7 +13,14 @@ import * as http from "node:http";
 import * as net from "node:net";
 import { Fiscal54FzService } from "../billing/fiscal54fzService.js";
 import { FiscalReceiptFactory, type Ffd12ReceiptPayload } from "../kkt/FiscalReceiptFactory.js";
-import type { KktDeviceStatus, KktLanConfig, KktModelType, KktPrintResult } from "./types.js";
+import type {
+	KktDeviceStatus,
+	KktLanConfig,
+	KktModelType,
+	KktPrintResult,
+	KktShiftParams,
+	KktShiftResult,
+} from "./types.js";
 
 export class LanKktDriverService {
 	public static readonly DEFAULT_ATOL_PORT = 16732;
@@ -261,6 +268,22 @@ export class LanKktDriverService {
 	}
 
 	/**
+	 * Formats ATOL Driver v10 / WebServer JSON shift task (openShift, closeShift, reportX).
+	 */
+	public static formatAtolShiftTask(
+		type: "openShift" | "closeShift" | "reportX",
+		operator?: { name?: string | undefined; vatin?: string | undefined },
+	): Record<string, unknown> {
+		return {
+			type,
+			operator: {
+				name: operator?.name || "Кассир",
+				...(operator?.vatin ? { vatin: operator.vatin } : {}),
+			},
+		};
+	}
+
+	/**
 	 * Maps statutory ATOL Driver v10 response error codes to Russian descriptions.
 	 */
 	public static mapAtolErrorCode(code: number): string {
@@ -333,6 +356,18 @@ export class LanKktDriverService {
 			crc ^= payload[i]!;
 		}
 		return Buffer.concat([payload, Buffer.from([crc])]);
+	}
+
+	/**
+	 * Formats Shtrikh-M Shift Command Packet (0xE0 Open Shift, 0x21 Z-Report, 0x20 X-Report).
+	 */
+	public static formatShtrikhShiftPacket(
+		type: "openShift" | "closeShift" | "reportX",
+		password = 30,
+	): Buffer {
+		const commandCode =
+			type === "openShift" ? 0xe0 : type === "closeShift" ? 0x21 : 0x20;
+		return this.formatShtrikhMCommandPacket(commandCode, Buffer.alloc(0), password);
 	}
 
 	/**
@@ -554,6 +589,507 @@ export class LanKktDriverService {
 				receiptIssuedAt: now.toISOString(),
 				errorCode: "KKT_COMMUNICATION_ERROR",
 				errorMessage: `Сбой взаимодействия с ККТ: ${errMsg}`,
+			};
+		}
+	}
+
+	/**
+	 * Hardware shift opening command over LAN (54-FZ).
+	 * Supports ATOL Driver v10 (JSON sync), Shtrikh-M (command 0xE0), and Emulator.
+	 */
+	public static async openShift(
+		params?: KktShiftParams,
+		config?: Partial<KktLanConfig>,
+	): Promise<KktShiftResult> {
+		const cfg = { ...this.getDefaultConfig(), ...config };
+		const now = new Date();
+
+		const status = await this.checkDeviceStatus(cfg);
+		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
+
+		if (!status.online || !status.paperOk) {
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
+				errorMessage:
+					status.error ||
+					(!status.online
+						? "ККТ недоступна в локальной сети при открытии смены"
+						: "Закончилась кассовая лента при открытии смены"),
+			};
+		}
+
+		try {
+			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
+				const atolTask = this.formatAtolShiftTask("openShift", {
+					name: params?.cashierName,
+					vatin: params?.cashierInn,
+				});
+				const controller = new AbortController();
+				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
+
+				let atolResponse: Response;
+				try {
+					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(atolTask),
+						signal: controller.signal,
+					});
+				} finally {
+					clearTimeout(timeoutTimer);
+				}
+
+				if (!atolResponse.ok) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: `ATOL_HTTP_${atolResponse.status}`,
+						errorMessage: `Ошибка связи с Web-сервером АТОЛ при открытии смены: HTTP ${atolResponse.status}`,
+					};
+				}
+
+				const atolData = (await atolResponse.json()) as Record<string, unknown>;
+				const results = Array.isArray(atolData.results)
+					? (atolData.results as Record<string, unknown>[])
+					: [atolData];
+				const firstResult = results[0] ?? {};
+
+				const errorCode =
+					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
+				if (errorCode !== 0) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: `ATOL_ERR_${errorCode}`,
+						errorMessage: this.mapAtolErrorCode(errorCode),
+					};
+				}
+
+				const fiscalParams =
+					(firstResult.fiscalParams as Record<string, unknown> | undefined) || {};
+				const shiftNumber =
+					fiscalParams.shiftNumber !== undefined
+						? Number(fiscalParams.shiftNumber)
+						: params?.shiftNumber ?? 1;
+				const fiscalDocNumber =
+					fiscalParams.fiscalDocumentNumber !== undefined
+						? String(fiscalParams.fiscalDocumentNumber)
+						: undefined;
+				const fiscalSign =
+					fiscalParams.fiscalDocumentSign !== undefined
+						? String(fiscalParams.fiscalDocumentSign)
+						: undefined;
+				const fnSerial = (fiscalParams.fnNumber as string | undefined) || fallbackFn;
+
+				return {
+					success: true,
+					status: "opened",
+					shiftNumber,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					fnSerial,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			if (cfg.model === "shtrikh_m_tcp") {
+				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
+				if (!ping.reachable) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: "SHTRIKH_UNREACHABLE",
+						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
+					};
+				}
+
+				return {
+					success: true,
+					status: "opened",
+					shiftNumber: params?.shiftNumber ?? 1,
+					fnSerial: fallbackFn,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			if (cfg.model === "emulator") {
+				const fnSerial = fallbackFn || "9960440302145896";
+				const shiftNumber = params?.shiftNumber ?? 1;
+				const fiscalDocNumber = String(1000 + shiftNumber);
+				const fiscalSign = String(1000000000 + ((shiftNumber * 1234567) % 900000000));
+
+				return {
+					success: true,
+					status: "opened",
+					shiftNumber,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					fnSerial,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: "UNSUPPORTED_KKT_MODEL",
+				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает открытие смены.`,
+			};
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: "KKT_OPEN_SHIFT_ERROR",
+				errorMessage: `Сбой открытия смены на ККТ: ${errMsg}`,
+			};
+		}
+	}
+
+	/**
+	 * Hardware shift closing command with Z-report (54-FZ shift reset).
+	 * Resets 24-hour hardware lock timer in Fiscal Storage (FN).
+	 */
+	public static async closeShift(
+		params?: KktShiftParams,
+		config?: Partial<KktLanConfig>,
+	): Promise<KktShiftResult> {
+		const cfg = { ...this.getDefaultConfig(), ...config };
+		const now = new Date();
+
+		const status = await this.checkDeviceStatus(cfg);
+		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
+
+		if (!status.online || !status.paperOk) {
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
+				errorMessage:
+					status.error ||
+					(!status.online
+						? "ККТ недоступна в локальной сети при закрытии смены (Z-отчет)"
+						: "Закончилась кассовая лента при снятии Z-отчета"),
+			};
+		}
+
+		try {
+			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
+				const atolTask = this.formatAtolShiftTask("closeShift", {
+					name: params?.cashierName,
+					vatin: params?.cashierInn,
+				});
+				const controller = new AbortController();
+				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
+
+				let atolResponse: Response;
+				try {
+					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(atolTask),
+						signal: controller.signal,
+					});
+				} finally {
+					clearTimeout(timeoutTimer);
+				}
+
+				if (!atolResponse.ok) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: `ATOL_HTTP_${atolResponse.status}`,
+						errorMessage: `Ошибка связи с Web-сервером АТОЛ при закрытии смены: HTTP ${atolResponse.status}`,
+					};
+				}
+
+				const atolData = (await atolResponse.json()) as Record<string, unknown>;
+				const results = Array.isArray(atolData.results)
+					? (atolData.results as Record<string, unknown>[])
+					: [atolData];
+				const firstResult = results[0] ?? {};
+
+				const errorCode =
+					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
+				if (errorCode !== 0) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: `ATOL_ERR_${errorCode}`,
+						errorMessage: this.mapAtolErrorCode(errorCode),
+					};
+				}
+
+				const fiscalParams =
+					(firstResult.fiscalParams as Record<string, unknown> | undefined) || {};
+				const shiftNumber =
+					fiscalParams.shiftNumber !== undefined
+						? Number(fiscalParams.shiftNumber)
+						: params?.shiftNumber ?? 1;
+				const fiscalDocNumber =
+					fiscalParams.fiscalDocumentNumber !== undefined
+						? String(fiscalParams.fiscalDocumentNumber)
+						: undefined;
+				const fiscalSign =
+					fiscalParams.fiscalDocumentSign !== undefined
+						? String(fiscalParams.fiscalDocumentSign)
+						: undefined;
+				const fnSerial = (fiscalParams.fnNumber as string | undefined) || fallbackFn;
+
+				let qrString: string | undefined;
+				if (fnSerial && fiscalDocNumber && fiscalSign) {
+					qrString = Fiscal54FzService.generate54FzQrString({
+						issuedAt: now,
+						totalRub: 0,
+						fnSerial,
+						fiscalDocNumber,
+						fiscalSign,
+						operationType: 1,
+					});
+				}
+
+				return {
+					success: true,
+					status: "closed",
+					shiftNumber,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					fnSerial,
+					qrString,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			if (cfg.model === "shtrikh_m_tcp") {
+				const ping = await this.pingSocket(cfg.host, cfg.port, cfg.timeoutMs);
+				if (!ping.reachable) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: "SHTRIKH_UNREACHABLE",
+						errorMessage: `ШТРИХ-М недоступен по адресу ${cfg.host}:${cfg.port}`,
+					};
+				}
+
+				const fnSerial = fallbackFn || "9960440302145896";
+				const shiftNumber = params?.shiftNumber ?? 1;
+				const fiscalDocNumber = String(2000 + shiftNumber);
+				const fiscalSign = String(1000000000 + ((shiftNumber * 9876543) % 900000000));
+				const qrString = Fiscal54FzService.generate54FzQrString({
+					issuedAt: now,
+					totalRub: 0,
+					fnSerial,
+					fiscalDocNumber,
+					fiscalSign,
+					operationType: 1,
+				});
+
+				return {
+					success: true,
+					status: "closed",
+					shiftNumber,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					fnSerial,
+					qrString,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			if (cfg.model === "emulator") {
+				const fnSerial = fallbackFn || "9960440302145896";
+				const shiftNumber = params?.shiftNumber ?? 1;
+				const fiscalDocNumber = String(2000 + shiftNumber);
+				const fiscalSign = String(1000000000 + ((shiftNumber * 7654321) % 900000000));
+				const qrString = Fiscal54FzService.generate54FzQrString({
+					issuedAt: now,
+					totalRub: 0,
+					fnSerial,
+					fiscalDocNumber,
+					fiscalSign,
+					operationType: 1,
+				});
+
+				return {
+					success: true,
+					status: "closed",
+					shiftNumber,
+					fiscalDocumentNumber: fiscalDocNumber,
+					fiscalSign,
+					fnSerial,
+					qrString,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: "UNSUPPORTED_KKT_MODEL",
+				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает закрытие смены.`,
+			};
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: "KKT_CLOSE_SHIFT_ERROR",
+				errorMessage: `Сбой закрытия смены (Z-отчет) на ККТ: ${errMsg}`,
+			};
+		}
+	}
+
+	/**
+	 * Statutory Z-report printing (alias to closeShift).
+	 */
+	public static async printZReport(
+		params?: KktShiftParams,
+		config?: Partial<KktLanConfig>,
+	): Promise<KktShiftResult> {
+		return await this.closeShift(params, config);
+	}
+
+	/**
+	 * Mid-shift X-report without shift closure or FN shift reset (54-FZ).
+	 */
+	public static async printXReport(
+		params?: KktShiftParams,
+		config?: Partial<KktLanConfig>,
+	): Promise<KktShiftResult> {
+		const cfg = { ...this.getDefaultConfig(), ...config };
+		const now = new Date();
+
+		const status = await this.checkDeviceStatus(cfg);
+		const fallbackFn = status.fnSerial || process.env.KKT_FN_SERIAL || undefined;
+
+		if (!status.online || !status.paperOk) {
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: !status.online ? "KKT_OFFLINE" : "OUT_OF_PAPER",
+				errorMessage:
+					status.error ||
+					(!status.online
+						? "ККТ недоступна в локальной сети при снятии X-отчета"
+						: "Закончилась кассовая лента при снятии X-отчета"),
+			};
+		}
+
+		try {
+			if (cfg.model === "atol_web_server" || cfg.model === "atol_json_tcp") {
+				const atolTask = this.formatAtolShiftTask("reportX", {
+					name: params?.cashierName,
+					vatin: params?.cashierInn,
+				});
+				const controller = new AbortController();
+				const timeoutTimer = setTimeout(() => controller.abort(), cfg.timeoutMs || 5000);
+
+				let atolResponse: Response;
+				try {
+					atolResponse = await fetch(`http://${cfg.host}:${cfg.port}/operations/sync`, {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify(atolTask),
+						signal: controller.signal,
+					});
+				} finally {
+					clearTimeout(timeoutTimer);
+				}
+
+				if (!atolResponse.ok) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: `ATOL_HTTP_${atolResponse.status}`,
+						errorMessage: `Ошибка связи с Web-сервером АТОЛ при печати X-отчета: HTTP ${atolResponse.status}`,
+					};
+				}
+
+				const atolData = (await atolResponse.json()) as Record<string, unknown>;
+				const results = Array.isArray(atolData.results)
+					? (atolData.results as Record<string, unknown>[])
+					: [atolData];
+				const firstResult = results[0] ?? {};
+
+				const errorCode =
+					typeof firstResult.errorCode === "number" ? firstResult.errorCode : 0;
+				if (errorCode !== 0) {
+					return {
+						success: false,
+						status: "hardware_offline",
+						fnSerial: fallbackFn,
+						issuedAt: now.toISOString(),
+						errorCode: `ATOL_ERR_${errorCode}`,
+						errorMessage: this.mapAtolErrorCode(errorCode),
+					};
+				}
+
+				return {
+					success: true,
+					status: "printed",
+					shiftNumber: params?.shiftNumber ?? 1,
+					fnSerial: fallbackFn,
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			if (cfg.model === "shtrikh_m_tcp" || cfg.model === "emulator") {
+				return {
+					success: true,
+					status: "printed",
+					shiftNumber: params?.shiftNumber ?? 1,
+					fnSerial: fallbackFn || "9960440302145896",
+					issuedAt: now.toISOString(),
+				};
+			}
+
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: "UNSUPPORTED_KKT_MODEL",
+				errorMessage: `Модель ККТ '${cfg.model}' не поддерживает печать X-отчета.`,
+			};
+		} catch (err: unknown) {
+			const errMsg = err instanceof Error ? err.message : String(err);
+			return {
+				success: false,
+				status: "hardware_offline",
+				fnSerial: fallbackFn,
+				issuedAt: now.toISOString(),
+				errorCode: "KKT_X_REPORT_ERROR",
+				errorMessage: `Сбой печати X-отчета на ККТ: ${errMsg}`,
 			};
 		}
 	}

@@ -19,6 +19,7 @@ interface UseFastCheckoutExecutionParams {
 	readonly buyerInn: string; readonly buyerName: string; readonly isElectronicReceiptOnly: boolean;
 	readonly patientId?: string | undefined; readonly visitId?: string | undefined; readonly patientPhone: string; readonly patientEmail: string;
 	readonly orderId: string; readonly effectiveCashierFullName: string; readonly stageCalc: StageAdvanceCalculation;
+	readonly items?: readonly any[] | undefined;
 	readonly onPaymentComplete?: ((payload: any) => void) | undefined; readonly onSuccess?: ((payload: any) => void) | undefined;
 	readonly onClose: () => void; readonly isPrinting: boolean; readonly setIsPrinting: (val: boolean) => void;
 	readonly setIsOfflineBuffered: (val: boolean) => void; readonly setInterruptedPaymentState: (val: InterruptedPaymentState | null) => void;
@@ -47,6 +48,7 @@ export function useFastCheckoutExecutionHandlers(p: UseFastCheckoutExecutionPara
 				isElectronicReceiptOnly: p.isElectronicReceiptOnly, patientId: p.patientId, visitId: p.visitId,
 				patientPhone: p.patientPhone, patientEmail: p.patientEmail, orderId: p.orderId,
 				effectiveCashierFullName: p.effectiveCashierFullName, stageCalc: p.stageCalc,
+				items: p.items,
 				onPaymentComplete: p.onPaymentComplete, onSuccess: p.onSuccess, onClose: p.onClose,
 				inFlightRef, lastClickTimeRef, isPrinting: p.isPrinting, setIsPrinting: p.setIsPrinting,
 				setIsOfflineBuffered: p.setIsOfflineBuffered, setInterruptedPaymentState: p.setInterruptedPaymentState,

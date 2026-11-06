@@ -48,6 +48,25 @@ export interface KktPrintResult {
 	readonly errorMessage?: string | undefined;
 }
 
+export interface KktShiftParams {
+	readonly cashierName?: string | undefined;
+	readonly cashierInn?: string | undefined;
+	readonly shiftNumber?: number | undefined;
+}
+
+export interface KktShiftResult {
+	readonly success: boolean;
+	readonly status: "opened" | "closed" | "printed" | "hardware_offline";
+	readonly shiftNumber?: number | undefined;
+	readonly fiscalDocumentNumber?: string | undefined;
+	readonly fiscalSign?: string | undefined;
+	readonly fnSerial?: string | undefined;
+	readonly qrString?: string | undefined;
+	readonly issuedAt: string;
+	readonly errorCode?: string | undefined;
+	readonly errorMessage?: string | undefined;
+}
+
 export type CloudSyncStatus = "local_only" | "sync_queued" | "syncing" | "synced" | "sync_failed";
 
 export interface LocalRadiologyScanInput {

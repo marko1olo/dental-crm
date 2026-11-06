@@ -43,11 +43,59 @@ export async function executeFiscalPayment(params: FiscalExecutionParams, forceO
 	const rawUuid = typeof crypto !== "undefined" && typeof crypto.randomUUID === "function" ? crypto.randomUUID() : `idemp-${now}-${Date.now().toString(36)}`;
 	const cashKop = Math.round(eff.cash * 100);
 	const electronicKop = Math.round((eff.card + eff.sbp) * 100);
+
+	// 54-ФЗ (Тег 1030 — Наименование предмета расчета): честная номенклатура процедур
+	const rawItems = params.items && params.items.length > 0
+		? params.items
+		: Array.isArray((stageCalc as any)?.items) && (stageCalc as any).items.length > 0
+			? (stageCalc as any).items
+			: null;
+
+	const compiledItems = rawItems && rawItems.length > 0
+		? rawItems.map((it: any) => {
+				const qty = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1;
+				const priceKop =
+					typeof it.priceKopecks === "number"
+						? it.priceKopecks
+						: typeof it.priceRub === "number"
+							? Math.round(it.priceRub * 100)
+							: targetBillKop;
+				const amountKop =
+					typeof it.amountKopecks === "number"
+						? it.amountKopecks
+						: typeof it.amountRub === "number"
+							? Math.round(it.amountRub * 100)
+							: priceKop * qty;
+
+				return {
+					name: String(it.name || "Стоматологические услуги по плану лечения"),
+					priceKopecks: priceKop,
+					quantity: qty,
+					amountKopecks: amountKop,
+					subject: it.subject || (stageCalc.ffdTag1212 === 1 ? "commodity" : "service"),
+					method: it.method || (stageCalc.ffdTag1214 === 1 ? "full_prepayment" : stageCalc.ffdTag1214 === 3 ? "advance" : "full_payment"),
+					vatRate: it.vatRate || "vat_none",
+					medicalServiceCode804n: it.medicalServiceCode804n,
+					markingCode: it.markingCode,
+				};
+			})
+		: [
+				{
+					name: "Стоматологические услуги по плану лечения",
+					priceKopecks: targetBillKop,
+					quantity: 1,
+					amountKopecks: targetBillKop,
+					subject: stageCalc.ffdTag1212 === 1 ? "commodity" : "service",
+					method: stageCalc.ffdTag1214 === 1 ? "full_prepayment" : stageCalc.ffdTag1214 === 3 ? "advance" : "full_payment",
+					vatRate: "vat_none",
+				},
+			];
+
 	const signature = buildFiscalReceiptPayloadSignature({
 		patientId: orderId, operationType: "income", taxationSystem: "usn_income", totalKopecks: targetBillKop,
 		cashKopecks: cashKop, electronicCardKopecks: Math.round(eff.card * 100), sbpKopecks: Math.round(eff.sbp * 100),
 		prepaidKopecks: Math.round((eff.dep + eff.loyalty) * 100),
-		items: [{ name: "Стоматологические услуги по плану лечения", priceKopecks: targetBillKop, quantity: 1, amountKopecks: targetBillKop, subject: "service", method: "full_payment", vatRate: "vat_none" }],
+		items: compiledItems,
 	});
 	const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(rawUuid, signature);
 
@@ -73,7 +121,7 @@ export async function executeFiscalPayment(params: FiscalExecutionParams, forceO
 
 	const contact = patientPhone || patientEmail || "";
 	if (forceOfflineBuffer || (typeof navigator !== "undefined" && navigator.onLine === false)) {
-		const qItem = buildReceiptQueueItem({ customerContact: contact, cashierFullName: effectiveCashierFullName, totalRub: targetBillRub, payload, effectiveSbpRub: eff.sbp });
+		const qItem = buildReceiptQueueItem({ customerContact: contact, cashierFullName: effectiveCashierFullName, totalRub: targetBillRub, payload, effectiveSbpRub: eff.sbp, items: compiledItems });
 		FiscalReceiptQueueManager.enqueueReceipt(qItem, forceOfflineBuffer ? "Оплата через автономный терминал (без ККТ) / чек пробить позже" : "Кассовый аппарат временно недоступен в сети", compositeIdempotencyKey);
 		setIsOfflineBuffered(true);
 		showToast("Оплата принята через автономный терминал! Фискальный чек поставлен в очередь отложенной печати. Пациент рассчитан.", "success", 4000);
@@ -86,7 +134,7 @@ export async function executeFiscalPayment(params: FiscalExecutionParams, forceO
 
 	const crmPaymentRecord = await recordCrmPayment({ patientId, visitId, compositeIdempotencyKey, effectiveTotalRub, targetBillRub, targetBillKop, isSplitPayment, primaryMethod, cashKop, electronicKop, effectiveCashRub: eff.cash, effectiveCardRub: eff.card, effectiveSbpRub: eff.sbp, effectiveLoyaltyRub: eff.loyalty, effectiveCashierFullName });
 	const fdSuffix = crmPaymentRecord?.fiscalReceiptNumber ? ` (${crmPaymentRecord.fiscalReceiptNumber})` : "";
-	const printRes = await printOrQueueFiscalReceipt({ targetBillRub, customerContact: contact, cashierFullName: effectiveCashierFullName, payload, effectiveSbpRub: eff.sbp, compositeIdempotencyKey, isElectronicReceiptOnly, fdSuffix });
+	const printRes = await printOrQueueFiscalReceipt({ targetBillRub, customerContact: contact, cashierFullName: effectiveCashierFullName, payload, effectiveSbpRub: eff.sbp, compositeIdempotencyKey, isElectronicReceiptOnly, fdSuffix, items: compiledItems });
 	if (printRes.isBuffered) setIsOfflineBuffered(true);
 	onPaymentComplete?.({ ...payload, offlineBuffered: printRes.isBuffered });
 	onSuccess?.({ ...payload, offlineBuffered: printRes.isBuffered });

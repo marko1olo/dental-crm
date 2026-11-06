@@ -21,9 +21,20 @@ export async function executeManualCardTerminalConfirm(params: ManualCardTermina
 			: `idemp-${Date.now()}-${Date.now().toString(36)}`;
 		const compositeIdempotencyKey = createFiscalCompositeIdempotencyKey(rawUuid, { method: "manual-card", orderId, amountRub });
 
+		const manualItems = params.items && params.items.length > 0
+			? params.items.map((it) => ({
+					name: it.name || "Стоматологические услуги по плану лечения",
+					priceRub: typeof it.priceRub === "number" ? it.priceRub : typeof it.priceKopecks === "number" ? it.priceKopecks / 100 : amountRub,
+					quantity: typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1,
+					amountRub: typeof it.amountRub === "number" ? it.amountRub : typeof it.amountKopecks === "number" ? it.amountKopecks / 100 : amountRub,
+					paymentMethod: (it.method || "full_payment") as "full_payment" | "advance" | "prepayment" | "full_prepayment",
+					paymentSubject: (it.subject === "commodity" ? "commodity" : it.subject === "marked" ? "goods_with_marking" : "service") as "service" | "commodity" | "goods_with_marking",
+				}))
+			: [{ name: "Стоматологические услуги по плану лечения", priceRub: amountRub, quantity: 1, amountRub, paymentMethod: "full_payment" as const, paymentSubject: "service" as const }];
+
 		FiscalReceiptQueueManager.enqueueReceipt({
 			operationType: "income", customerContact: patientPhone || patientEmail || "", cashierFullName: effectiveCashierFullName,
-			totalRub: amountRub, items: [{ name: "Стоматологические услуги по плану лечения", priceRub: amountRub, quantity: 1, amountRub, paymentMethod: "full_payment", paymentSubject: "service" }],
+			totalRub: amountRub, items: manualItems,
 			cashRub: 0, electronicRub: amountRub, prepaidRub: 0, taxationSystem: "usn_income_expense",
 		}, "Оплата картой подтверждена на терминале вручную (без повторного списания с карты)", compositeIdempotencyKey);
 		setIsOfflineBuffered(true);

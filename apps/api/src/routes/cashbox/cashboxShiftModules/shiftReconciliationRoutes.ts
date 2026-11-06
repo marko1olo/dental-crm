@@ -22,6 +22,7 @@ import { ensureOrganizationCashBoxes } from "../../../db/seeds/seed_cash_and_rea
 import { xReportQueryOrBodySchema } from "../cashboxSchemas.js";
 import { calculateShiftTenderTotals } from "./shiftReconciliationEngine.js";
 import { checkAndAutoCloseExpiredShifts } from "../../shifts/shiftAutoCloseService.js";
+import { LanKktDriverService } from "../../../services/hardware/lanKktDriverService.js";
 
 export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 	/**
@@ -81,6 +82,19 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 
 			const now = new Date();
 
+			// Аппаратный запрос Х-отчета без гашения на ККТ (54-ФЗ)
+			let kktResult: Awaited<ReturnType<typeof LanKktDriverService.printXReport>> | undefined;
+			if (request.method === "POST" || (queryOrBody as Record<string, unknown>).print) {
+				try {
+					kktResult = await LanKktDriverService.printXReport({
+						cashierName,
+						shiftNumber: currentShiftNumber,
+					});
+				} catch (err: unknown) {
+					request.log.warn({ err }, "LanKktDriverService.printXReport non-blocking warning");
+				}
+			}
+
 			return {
 				success: true,
 				reportType: "x_report" as const,
@@ -94,6 +108,7 @@ export function registerShiftReconciliationRoutes(app: FastifyInstance): void {
 				totalExpenseRub,
 				openShiftsCount: openShifts.length,
 				boxesCount: boxes.length,
+				kktResult,
 			};
 		});
 

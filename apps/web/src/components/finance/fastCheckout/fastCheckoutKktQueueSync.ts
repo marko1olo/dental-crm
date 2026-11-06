@@ -32,19 +32,50 @@ export async function executeRetryFiscalizationDirect(params: {
 	readonly sbpAmountRub: number;
 	readonly depositAmountRub: number;
 	readonly loyaltyAmountRub: number;
+	readonly items?: readonly any[] | undefined;
 	readonly setIsFlushingQueue: (val: boolean) => void;
 	readonly setInterruptedPaymentState: (val: InterruptedPaymentState | null) => void;
 }): Promise<void> {
-	const { patientPhone, patientEmail, effectiveCashierFullName, targetBillRub, cashAmountRub, cardAmountRub, sbpAmountRub, depositAmountRub, loyaltyAmountRub, setIsFlushingQueue, setInterruptedPaymentState } = params;
+	const { patientPhone, patientEmail, effectiveCashierFullName, targetBillRub, cashAmountRub, cardAmountRub, sbpAmountRub, depositAmountRub, loyaltyAmountRub, items, setIsFlushingQueue, setInterruptedPaymentState } = params;
 
 	setIsFlushingQueue(true);
 	try {
+		const rawItems = items && items.length > 0 ? items : null;
+		const lineItems = rawItems
+			? rawItems.map((it) => {
+					const qty = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1;
+					const priceRub =
+						typeof it.priceRub === "number"
+							? it.priceRub
+							: typeof it.priceKopecks === "number"
+								? it.priceKopecks / 100
+								: targetBillRub;
+					const amountRub =
+						typeof it.amountRub === "number"
+							? it.amountRub
+							: typeof it.amountKopecks === "number"
+								? it.amountKopecks / 100
+								: priceRub * qty;
+					return {
+						name: String(it.name || "Стоматологические услуги по плану лечения"),
+						priceRub,
+						quantity: qty,
+						amountRub,
+						paymentMethod: (it.method || "full_payment") as "full_payment" | "advance" | "prepayment" | "full_prepayment",
+						paymentSubject: (it.subject === "commodity" ? "commodity" : it.subject === "marked" ? "goods_with_marking" : "service") as "service" | "commodity" | "goods_with_marking",
+						vatRate: it.vatRate,
+						medicalServiceCode804n: it.medicalServiceCode804n,
+						markingCode: it.markingCode,
+					};
+				})
+			: [{ name: "Стоматологические услуги по плану лечения", priceRub: targetBillRub, quantity: 1, amountRub: targetBillRub, paymentMethod: "full_payment" as const, paymentSubject: "service" as const }];
+
 		const printResult = await KktLanPrinterService.printReceipt({
 			operationType: "income",
 			customerContact: patientPhone || patientEmail || "",
 			cashierFullName: effectiveCashierFullName,
 			totalRub: targetBillRub,
-			items: [{ name: "Стоматологические услуги по плану лечения", priceRub: targetBillRub, quantity: 1, amountRub: targetBillRub, paymentMethod: "full_payment", paymentSubject: "service" }],
+			items: lineItems,
 			cashRub: cashAmountRub,
 			electronicRub: cardAmountRub + sbpAmountRub,
 			prepaidRub: depositAmountRub + loyaltyAmountRub,

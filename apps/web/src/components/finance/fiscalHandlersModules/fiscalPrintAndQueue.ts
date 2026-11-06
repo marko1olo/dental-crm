@@ -1,7 +1,7 @@
 import { FiscalReceiptQueueManager } from "../../../services/hardware/fiscalReceiptQueueManager.js";
 import { KktLanPrinterService } from "../../../services/hardware/kktLanPrinter.js";
 import { showToast } from "../../GlobalToast.js";
-import type { FiscalReceiptPayload } from "./types.js";
+import type { FiscalExecutionItem, FiscalReceiptPayload } from "./types.js";
 
 export interface FiscalPrintParams {
 	targetBillRub: number;
@@ -12,6 +12,7 @@ export interface FiscalPrintParams {
 	compositeIdempotencyKey: string;
 	isElectronicReceiptOnly: boolean;
 	fdSuffix: string;
+	items?: readonly FiscalExecutionItem[] | undefined;
 }
 
 export function buildReceiptQueueItem(params: {
@@ -20,22 +21,61 @@ export function buildReceiptQueueItem(params: {
 	totalRub: number;
 	payload: FiscalReceiptPayload;
 	effectiveSbpRub?: number | undefined;
+	items?: readonly FiscalExecutionItem[] | undefined;
 }) {
+	const rawItems = params.items && params.items.length > 0 ? params.items : null;
+	const lineItems = rawItems
+		? rawItems.map((it) => {
+				const qty = typeof it.quantity === "number" && it.quantity > 0 ? it.quantity : 1;
+				const priceRub =
+					typeof it.priceRub === "number"
+						? it.priceRub
+						: typeof it.priceKopecks === "number"
+							? it.priceKopecks / 100
+							: params.totalRub;
+				const amountRub =
+					typeof it.amountRub === "number"
+						? it.amountRub
+						: typeof it.amountKopecks === "number"
+							? it.amountKopecks / 100
+							: priceRub * qty;
+				return {
+					name: String(it.name || "Стоматологические услуги по плану лечения"),
+					priceRub,
+					quantity: qty,
+					amountRub,
+					paymentMethod: (it.method || "full_payment") as
+						| "full_payment"
+						| "advance"
+						| "prepayment"
+						| "full_prepayment",
+					paymentSubject: (it.subject === "commodity"
+						? "commodity"
+						: it.subject === "marked"
+							? "goods_with_marking"
+							: "service") as "service" | "commodity" | "goods_with_marking",
+					vatRate: it.vatRate,
+					medicalServiceCode804n: it.medicalServiceCode804n,
+					markingCode: it.markingCode,
+				};
+			})
+		: [
+				{
+					name: "Стоматологические услуги по плану лечения",
+					priceRub: params.totalRub,
+					quantity: 1,
+					amountRub: params.totalRub,
+					paymentMethod: "full_payment" as const,
+					paymentSubject: "service" as const,
+				},
+			];
+
 	return {
 		operationType: "income" as const,
 		customerContact: params.customerContact,
 		cashierFullName: params.cashierFullName,
 		totalRub: params.totalRub,
-		items: [
-			{
-				name: "Стоматологические услуги по плану лечения",
-				priceRub: params.totalRub,
-				quantity: 1,
-				amountRub: params.totalRub,
-				paymentMethod: "full_payment" as const,
-				paymentSubject: "service" as const,
-			},
-		],
+		items: lineItems,
 		cashRub: params.payload.paymentsDistribution.cashKop / 100,
 		electronicRub: params.payload.paymentsDistribution.electronicKop / 100,
 		sbpRub: params.effectiveSbpRub && params.effectiveSbpRub > 0 ? params.effectiveSbpRub : undefined,
@@ -54,6 +94,7 @@ export async function printOrQueueFiscalReceipt(params: FiscalPrintParams): Prom
 		totalRub: params.targetBillRub,
 		payload: params.payload,
 		effectiveSbpRub: params.effectiveSbpRub,
+		items: params.items,
 	});
 
 	try {
