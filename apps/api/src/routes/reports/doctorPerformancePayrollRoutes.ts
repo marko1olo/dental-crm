@@ -5,6 +5,7 @@
 
 import type { FastifyInstance } from "fastify";
 import {
+	assistantPayrollReport,
 	doctorPayrollReport,
 	doctorPerformance,
 	serviceSales,
@@ -36,6 +37,17 @@ export async function registerDoctorPerformancePayrollRoutes(app: FastifyInstanc
 		const resolved = await scopeForReport(request, reply, "report doctor payroll");
 		if (!resolved) return;
 		return await doctorPayrollReport(resolved.scope);
+	});
+
+	/**
+	 * Прозрачный расчет оплаты труда ассистентов клиники:
+	 * Отработанные смены, часы, снимки (RVG/ОПТГ), хирургические операции,
+	 * базовая ставка за смену, доплаты, НДФЛ 13% и чистая выплата на руки.
+	 */
+	app.get("/api/reports/assistant-payroll", async (request, reply) => {
+		const resolved = await scopeForReport(request, reply, "report assistant payroll");
+		if (!resolved) return;
+		return await assistantPayrollReport(resolved.scope);
 	});
 
 	/**

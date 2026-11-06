@@ -914,17 +914,36 @@
 - **Суть бага:** Код считал НДФЛ 13% (`ndflTaxRub = accruedRub * 0.13`), но сумма «К выплате» (`netPayoutRub`) бралась из `payoutRub`, где налог **не вычитался**! В печатном листке выводилось: *Начислено: 100 000 ₽ | НДФЛ: 13 000 ₽ | К выплате: 100 000 ₽*.
 - **Статус исправления [ИСПРАВЛЕНО]:** В `doctorPayslip.ts` расчет чистой выплаты на руки (`netPayoutRub`) строго вычитает начисленный НДФЛ 13%: `netPayoutRub = Math.max(0, accruedRub - ndflTaxRub)`. Расчетный листок выработки и форма T-51 выводят честную математику на руки без арифметических подлогов. Проверено тестами `doctorPayoutsAdvanced.test.ts` и `doctorNetSalaryEngine.test.ts`.
 
-### [PAY-03] [SEV-1] Запрос по мертвому полю `doctorId` сбрасывает все ставки на 25%
-- **Файл:** [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L277-L291`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L277-L291)
-- **Суть бага:** Таблица `doctor_commissions` связывается по `userId`. Запрос отбирает `comm.doctorId`, возвращает `null` для всех врачей, и отчет безусловно сбрасывает индивидуальные ставки ведущих специалистов на дефолтные 25%.
+### [PAY-03] [SEV-1] [ИСПРАВЛЕНО] Запрос по мертвому полю `doctorId` сбрасывает все ставки на 25%
+- **Файл:** [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L313-L342`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L313-L342)
+- **Суть бага:** Таблица `doctor_commissions` связывается по `userId` или `doctorId`. Ранее запрос отбирал только `comm.doctorId`, возвращал `null` для врачей, привязанных по `userId`, и отчет безусловно сбрасывал индивидуальные ставки ведущих специалистов на дефолтные 25%.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `doctorPayrollReport` запрос к `doctor_commissions` выбирает поля `doctorId`, `userId`, `commissionPercent`, `commissionPct`.
+  2. Значение ставки `rate` разрешается через `Number(comm.commissionPct ?? comm.commissionPercent)`.
+  3. В `commissionRateMap` ставка мапится по обоим ключам (`userId` и `doctorId`), полностью сохраняя индивидуальные проценты врачей (35%, 28% и т.д.) без ложного сброса на 25%.
+  4. Проверено тестами `payrollReportsInquisition.test.ts`.
 
-### [PAY-04] [SEV-2] Зашитые моки 10% на материалы и 30% на лабораторию
-- **Файл:** [`financialExecutiveReports.ts#L348, L395`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L348)
-- **Суть бага:** Вместо реального списания материалов со склада и счетов ЗТЛ в отчет зашит мок: `Math.round(revRub * 0.1)` (10% на материалы) и 30% на лабораторию.
+### [PAY-04] [SEV-2] [ИСПРАВЛЕНО] Зашитые моки 10% на материалы и 30% на лабораторию
+- **Файл:** [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L394-L448`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L394-L448)
+- **Суть бага:** Вместо реального списания материалов со склада и счетов ЗТЛ в отчет был зашит мок: `Math.round(revRub * 0.1)` (10% на материалы) и 30% на лабораторию (`priceRub * 0.3`).
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Полностью вырезаны моки `revRub * 0.1` и `priceRub * 0.3`.
+  2. Подключены реальные складские проводки `inventory_transactions` (`auto_deduct`, `usage`, `write_off`, `emergency_overdraft`, `shift_batch_deduction`) с расчетом фактической себестоимости материалов по техкартам визитов врача.
+  3. Расходы ЗТЛ берутся по реальной себестоимости выполненных нарядов `coalesce(${labOrders.labCostRub}, 0)`. При отсутствии расходов начисляется честный 0 ₽, а не налог из воздуха.
+  4. Проверено тестами `payrollReportsInquisition.test.ts`.
 
-### [PAY-05] [SEV-2] Оплата ассистентам — 100% фантомный мок
-- **Файлы:** [`apps/api/src/db/schema/schedule/appointmentsTable.ts#L30`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/schedule/appointmentsTable.ts#L30), [`payrollCatalogData.ts#L152`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payroll/payrollCatalogData.ts#L152)
-- **Суть бага:** В бэкенде Fastify **нет ни одной таблицы и ни одного эндпоинта** для расчета зарплаты ассистентов (почасовая, за смену, доплата за снимки). Код существует исключительно в изолированных unit-тестах.
+### [PAY-05] [SEV-2] [ИСПРАВЛЕНО] Оплата ассистентам — 100% фантомный мок
+- **Файлы:**
+  - [`apps/api/src/services/reports/managerReports/assistantPayrollReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/assistantPayrollReports.ts)
+  - [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts)
+  - [`apps/api/src/routes/reports/doctorPerformancePayrollRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/reports/doctorPerformancePayrollRoutes.ts)
+  - [`apps/web/src/components/analytics/DoctorPayrollReport.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/analytics/DoctorPayrollReport.tsx)
+- **Суть бага:** В бэкенде Fastify отсутствовал сервис и эндпоинт расчета оплаты труда ассистентов клиники по реальным сменам и приёмам.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Создан модульный сервис `assistantPayrollReport(scope)`: агрегирует назначения из расписания `appointments.assistantUserId`, рассчитывает отработанные смены (`standard_6h` / `full_12h`), отработанные часы, доплаты за RVG снимки и хирургические операции, НДФЛ 13% и чистую выплату на руки (`calculateAssistantPeriodPayroll` из `@dental/shared`).
+  2. Зарегистрирован Fastify эндпоинт `GET /api/reports/assistant-payroll` и интегрирован в сводный `financialExecutiveReports` (`assistantRows`, `totalAssistantPayoutRub`, `totalClinicPayrollRub`).
+  3. В `DoctorPayrollReport.tsx` добавлен Apple Segmented Control `[ Врачи | Ассистенты ]`, сводные плитки ФОТ ассистентов, десктопная ведомость и мобильные Grouped Cards по Apple HIG.
+  4. Сняты 4-State Proofs скриншоты (`01_doctor_payroll_pc_light_1440x900.png`, `02_doctor_payroll_pc_dark_1440x900.png`, `03_doctor_payroll_mobile_light_390x844.png`, `04_doctor_payroll_mobile_dark_390x844.png`) в `docs/proofs/payroll/`. Проверено тестами `payrollReportsInquisition.test.ts`.
 
 
 ## 14. 📋 ПЛАНЫ ЛЕЧЕНИЯ, 3-УРОВНЕВЫЕ СМЕТЫ, КУРАТОРЫ И РАССРОЧКИ

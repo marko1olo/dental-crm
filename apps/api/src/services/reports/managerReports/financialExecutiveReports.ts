@@ -15,12 +15,17 @@ import {
 	appointments,
 	doctorCommissions,
 	doctorPayrollStatements,
+	inventoryTransactions,
 	invoices,
 	payments,
 	users,
 	visits,
 } from "../../../db/schema.js";
 import { labOrders } from "../../../db/schema/clinical/clinicalRulesModules/clinicalProtocolsTables.js";
+import {
+	assistantPayrollReport,
+	type AssistantPayrollRow,
+} from "./assistantPayrollReports.js";
 import type { ReportScope } from "./types.js";
 
 export type PaymentMethodBreakdown = {
@@ -84,6 +89,7 @@ export type DoctorPayrollRow = {
 export type DoctorPayrollReportData = {
 	readonly period: { readonly from: string; readonly to: string };
 	readonly rows: DoctorPayrollRow[];
+	readonly assistantRows: AssistantPayrollRow[];
 	readonly totals: {
 		readonly totalServicesRenderedRub: number;
 		readonly totalServicesRenderedKopecks: number;
@@ -96,6 +102,10 @@ export type DoctorPayrollReportData = {
 		readonly totalPayoutRub: number;
 		readonly totalPayoutKopecks: number;
 		readonly totalAppointmentsCompleted: number;
+		readonly totalAssistantPayoutRub: number;
+		readonly totalAssistantPayoutKopecks: number;
+		readonly totalClinicPayrollRub: number;
+		readonly totalClinicPayrollKopecks: number;
 	};
 	readonly isEmpty: boolean;
 };
@@ -300,20 +310,33 @@ export async function doctorPayrollReport(
 		]),
 	);
 
-	// 2. Индивидуальные комиссии врачей из doctorCommissions
+	// 2. Индивидуальные комиссии врачей из doctorCommissions [PAY-03: SEV-1 FIX]
+	// Связываем doctorId и userId (alias в схеме), а также commissionPct и commissionPercent
 	const commissions = await db
 		.select({
 			doctorId: doctorCommissions.doctorId,
+			userId: doctorCommissions.userId,
 			commissionPercent: doctorCommissions.commissionPercent,
+			commissionPct: doctorCommissions.commissionPct,
 		})
 		.from(doctorCommissions)
-		.where(eq(doctorCommissions.organizationId, scope.organizationId));
+		.where(
+			and(
+				eq(doctorCommissions.organizationId, scope.organizationId),
+				eq(doctorCommissions.isActive, true),
+			),
+		);
 
 	const commissionRateMap = new Map<string, number>();
 	for (const comm of commissions) {
-		const rate = Number(comm.commissionPercent);
-		if (comm.doctorId && !Number.isNaN(rate) && rate > 0) {
-			commissionRateMap.set(comm.doctorId, rate);
+		const rate = Number(comm.commissionPct ?? comm.commissionPercent);
+		if (!Number.isNaN(rate) && rate > 0) {
+			if (comm.userId) {
+				commissionRateMap.set(comm.userId, rate);
+			}
+			if (comm.doctorId) {
+				commissionRateMap.set(comm.doctorId, rate);
+			}
 		}
 	}
 
@@ -368,11 +391,11 @@ export async function doctorPayrollReport(
 		]),
 	);
 
-	// 4b. Расходы зуботехнической лаборатории (ЗТЛ) по выполненным нарядам за период
+	// 4b. Расходы зуботехнической лаборатории (ЗТЛ) по выполненным нарядам за период [PAY-04: честная себестоимость без мока 30%]
 	const labOrderRows = await db
 		.select({
 			doctorId: labOrders.doctorId,
-			labCostRub: sql<number>`coalesce(sum(case when ${labOrders.isWarranty} = false and ${labOrders.status} in ('completed', 'received', 'installed') then coalesce(${labOrders.labCostRub}, ${labOrders.priceRub} * 0.3) else 0 end), 0)::numeric(12,2)`,
+			labCostRub: sql<number>`coalesce(sum(case when ${labOrders.isWarranty} = false and ${labOrders.status} in ('completed', 'received', 'installed') then coalesce(${labOrders.labCostRub}, 0) else 0 end), 0)::numeric(12,2)`,
 		})
 		.from(labOrders)
 		.where(
@@ -387,6 +410,36 @@ export async function doctorPayrollReport(
 
 	const labCostsMap = new Map(
 		labOrderRows.map((l) => [l.doctorId, Number(l.labCostRub || 0)]),
+	);
+
+	// 4c. Фактически списанные материалы со склада по техкартам и нарядам [PAY-04: честный учет без мока 10%]
+	const materialUsageRows = await db
+		.select({
+			doctorId: appointments.doctorUserId,
+			totalCostRub: sql<number>`coalesce(sum(abs(coalesce(${inventoryTransactions.quantityChanged}, ${inventoryTransactions.qty}, 0)) * coalesce(${inventoryTransactions.unitCostRub}, 0)), 0)::numeric(12,2)`,
+		})
+		.from(inventoryTransactions)
+		.innerJoin(visits, eq(inventoryTransactions.visitId, visits.id))
+		.innerJoin(appointments, eq(visits.appointmentId, appointments.id))
+		.where(
+			and(
+				eq(inventoryTransactions.organizationId, scope.organizationId),
+				inArray(inventoryTransactions.transactionType, [
+					"auto_deduct",
+					"usage",
+					"write_off",
+					"emergency_overdraft",
+					"shift_batch_deduction",
+				]),
+				gte(inventoryTransactions.createdAt, scope.from),
+				lte(inventoryTransactions.createdAt, scope.to),
+				isNotNull(appointments.doctorUserId),
+			),
+		)
+		.groupBy(appointments.doctorUserId);
+
+	const materialsMap = new Map(
+		materialUsageRows.map((m) => [m.doctorId, Number(m.totalCostRub || 0)]),
 	);
 
 	// 5. Собираем всех уникальных врачей (из списка персонала + из выручки)
@@ -414,12 +467,12 @@ export async function doctorPayrollReport(
 		const revRub = Math.max(0, Number(revRow?.revenueRub || 0));
 		const completedCount = Number(revRow?.completedCount || 0);
 
-		// Списанные материалы техкарт: либо из зафиксированной ведомости, либо нормативный учет 10%
+		// Списанные материалы техкарт: либо из зафиксированной ведомости, либо по фактическим складским проводкам [PAY-04]
 		const st = statementsMap.get(docId);
 		const materialsCostRub =
 			st && st.materialsCostRub > 0
 				? st.materialsCostRub
-				: Math.round(revRub * 0.1); // Норматив расходных материалов по техкартам 10%
+				: (materialsMap.get(docId) ?? 0);
 
 		// Расходы ЗТЛ по заказам ортопедии
 		const labCostRub = labCostsMap.get(docId) ?? 0;
@@ -472,12 +525,16 @@ export async function doctorPayrollReport(
 	// Сортируем врачей по чистой выручке (Net Revenue) по убыванию
 	rows.sort((a, b) => b.netRevenueKopecks - a.netRevenueKopecks);
 
+	// 6. Расчет оплаты труда ассистентов клиники [PAY-05]
+	const assistantReport = await assistantPayrollReport(scope);
+
 	return {
 		period: {
 			from: scope.from.toISOString(),
 			to: scope.to.toISOString(),
 		},
 		rows,
+		assistantRows: assistantReport.rows,
 		totals: {
 			totalServicesRenderedRub: Math.round(totalServicesRenderedKopecks / 100),
 			totalServicesRenderedKopecks,
@@ -490,8 +547,17 @@ export async function doctorPayrollReport(
 			totalPayoutRub: Math.round(totalPayoutKopecks / 100),
 			totalPayoutKopecks,
 			totalAppointmentsCompleted,
+			totalAssistantPayoutRub: assistantReport.totals.totalPayoutRub,
+			totalAssistantPayoutKopecks: assistantReport.totals.totalPayoutKopecks,
+			totalClinicPayrollRub: Math.round(
+				(totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks) / 100,
+			),
+			totalClinicPayrollKopecks:
+				totalPayoutKopecks + assistantReport.totals.totalPayoutKopecks,
 		},
-		isEmpty: rows.length === 0 || totalServicesRenderedKopecks === 0,
+		isEmpty:
+			(rows.length === 0 || totalServicesRenderedKopecks === 0) &&
+			assistantReport.isEmpty,
 	};
 	} catch (err) {
 		console.error("DOCTOR_PAYROLL_REPORT_ERROR:", err);
