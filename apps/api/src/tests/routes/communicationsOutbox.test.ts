@@ -496,6 +496,7 @@ describe("маршруты сообщений пациентам", { concurrency
 			"email",
 			"whatsapp",
 			"telegram",
+			"max",
 		]);
 	});
 

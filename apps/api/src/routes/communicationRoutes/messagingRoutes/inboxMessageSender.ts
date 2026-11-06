@@ -1,7 +1,14 @@
 import { and, eq, gt } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { communicationEvents } from "../../../db/schema.js";
+import {
+	type CommunicationChannelCode,
+	resolveChannelCredentials,
+	sendThroughChannel,
+} from "../../../services/communications/channelRouter.js";
+import { resolveRecipientAddress } from "../../../services/communications/dispatch/channelAdapters.js";
 import { MessageTemplateEngine } from "../../../services/communications/MessageTemplateEngine.js";
+import { wsBroker } from "../../../services/websocketBroker.js";
 import type { SendMessageBody } from "../types.js";
 
 export async function processSendMessage(
@@ -74,7 +81,83 @@ export async function processSendMessage(
 		? `${messageToSend} [idempotency:${idempotencyKey}]`
 		: messageToSend;
 
-	const inserted = await db
+	// 1. Проверяем наличие адреса получателя (телефон, email, telegram chatId, MAX)
+	const recipient = await resolveRecipientAddress(
+		orgId,
+		resolvedChannel as CommunicationChannelCode,
+		patientId,
+	);
+
+	if (!recipient.address) {
+		const [failedEvent] = await db
+			.insert(communicationEvents)
+			.values({
+				organizationId: orgId,
+				patientId,
+				channel: resolvedChannel,
+				direction: "outbound",
+				status: "failed",
+				message: messageToStore,
+			})
+			.returning();
+
+		return {
+			success: false,
+			status: 422,
+			error: "RecipientAddressMissing",
+			message:
+				recipient.reason ||
+				"Не удалось определить контактные данные получателя для выбранного канала связи.",
+			event: failedEvent,
+			warning,
+			hasMedicalSecrecyWarning: Boolean(warning),
+		};
+	}
+
+	// 2. Получаем учетные данные каналов организации
+	const credentials = await resolveChannelCredentials(orgId);
+
+	// 3. Отправляем сообщение через реальный шлюз канала
+	const sendResult = await sendThroughChannel(
+		{
+			channel: resolvedChannel as CommunicationChannelCode,
+			recipientAddress: recipient.address,
+			subject: null,
+			body: messageToSend,
+			idempotencyKey: idempotencyKey ?? null,
+		},
+		credentials,
+	);
+
+	// 4. Фиксируем фактический результат в базе данных
+	if (!sendResult.ok) {
+		const [failedEvent] = await db
+			.insert(communicationEvents)
+			.values({
+				organizationId: orgId,
+				patientId,
+				channel: resolvedChannel,
+				direction: "outbound",
+				status: "failed",
+				message: messageToStore,
+			})
+			.returning();
+
+		return {
+			success: false,
+			status: sendResult.errorClass === "not_configured" ? 400 : 502,
+			error:
+				sendResult.errorClass === "not_configured"
+					? "ChannelNotConfigured"
+					: "DeliveryFailed",
+			message: sendResult.errorMessage,
+			event: failedEvent,
+			warning,
+			hasMedicalSecrecyWarning: Boolean(warning),
+		};
+	}
+
+	const [inserted] = await db
 		.insert(communicationEvents)
 		.values({
 			organizationId: orgId,
@@ -86,9 +169,24 @@ export async function processSendMessage(
 		})
 		.returning();
 
+	// 5. Оповещаем открытые клиенты через WebSocket
+	try {
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "INBOX_NEW_MESSAGE",
+			payload: { patientId, event: inserted },
+		});
+		wsBroker.broadcastToPatient(orgId, patientId, {
+			type: "INBOX_NEW_MESSAGE",
+			payload: { event: inserted },
+		});
+	} catch {
+		// Не фатально для клиентского ответа
+	}
+
 	return {
 		success: true,
-		event: inserted[0],
+		event: inserted,
+		providerMessageId: sendResult.providerMessageId,
 		warning,
 		hasMedicalSecrecyWarning: Boolean(warning),
 	};

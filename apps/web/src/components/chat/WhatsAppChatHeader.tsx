@@ -150,7 +150,7 @@ export function WhatsAppChatHeader({
 						type="button"
 						onClick={onRefresh}
 						disabled={isLoading}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
 						title="Обновить переписку"
 						aria-label="Обновить переписку"
 					>
@@ -160,7 +160,7 @@ export function WhatsAppChatHeader({
 					<button
 						type="button"
 						onClick={onToggleSearch}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-[var(--muted,#94a3b8)] hover:text-[var(--ink,#f8fafc)] hover:bg-[var(--paper-soft,#1e293b)] inline-flex items-center justify-center transition-colors"
 						title="Поиск по сообщениям"
 						aria-label="Поиск по сообщениям"
 					>
@@ -170,7 +170,7 @@ export function WhatsAppChatHeader({
 					<button
 						type="button"
 						onClick={onCallPatient}
-						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl text-teal-400 hover:bg-teal-500/10 inline-flex items-center justify-center transition-colors"
+						className="min-h-[44px] min-w-[44px] p-2.5 rounded-xl bg-transparent text-teal-400 hover:bg-teal-500/10 inline-flex items-center justify-center transition-colors"
 						title={`Позвонить пациенту ${formattedPhone}`}
 						aria-label={`Позвонить пациенту ${formattedPhone}`}
 					>

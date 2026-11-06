@@ -11,6 +11,9 @@
  * машине разработчика фоновые отправки не нужны.
  */
 
+import { and, eq, lte } from "drizzle-orm";
+import { withSuperuserBypass } from "../../db/rls.js";
+import { communicationTasks } from "../../db/schema.js";
 import { processInboundEvents } from "../messengerIngestion.js";
 import { purgeExpiredActionCodes } from "./appointmentActionLinks.js";
 import {
@@ -21,7 +24,7 @@ import {
 	completeFinishedCampaigns,
 	launchScheduledCampaigns,
 } from "./campaigns.js";
-import { type DispatchReport, dispatchDueMessages } from "./dispatcher.js";
+import { type DispatchReport, dispatchDueMessages, enqueueMessage } from "./dispatcher.js";
 
 export type DispatchWorkerLogger = {
 	info: (payload: Record<string, unknown>, message: string) => void;
@@ -56,6 +59,61 @@ export type AutomaticSendingState = {
 	/** Имя переменной окружения — чтобы не искать её по документации. */
 	readonly enableWith: string;
 };
+
+/**
+ * Перенос созревших задач постоперационного теле-ухода (communicationTasks) в очередь отправки (communicationOutbox).
+ */
+export async function dispatchDueCareTasks(
+	now = new Date(),
+): Promise<{ queued: number; problems: string[] }> {
+	const problems: string[] = [];
+	let queued = 0;
+
+	try {
+		const dueTasks = await withSuperuserBypass(async (tx) => {
+			return tx
+				.select()
+				.from(communicationTasks)
+				.where(
+					and(
+						eq(communicationTasks.status, "scheduled"),
+						lte(communicationTasks.dueAt, now),
+					),
+				)
+				.limit(50);
+		});
+
+		for (const task of dueTasks) {
+			const res = await enqueueMessage({
+				organizationId: task.organizationId,
+				clinicId: task.clinicId,
+				patientId: task.patientId,
+				taskId: task.id,
+				channel: (task.channel as any) || "telegram",
+				intent: (task.intent as any) || "post_visit_instruction",
+				body: task.body || task.title,
+				dedupeKey: `care_task:${task.id}`,
+				scheduledAt: now,
+			});
+
+			if (res.ok) {
+				queued++;
+				await withSuperuserBypass(async (tx) => {
+					await tx
+						.update(communicationTasks)
+						.set({ status: "queued", updatedAt: new Date() })
+						.where(eq(communicationTasks.id, task.id));
+				});
+			} else {
+				problems.push(`Task ${task.id}: ${res.reason}`);
+			}
+		}
+	} catch (err) {
+		problems.push(err instanceof Error ? err.message : String(err));
+	}
+
+	return { queued, problems };
+}
 
 /**
  * Чистая функция: читает окружение и объясняет состояние словами. Вынесена из
@@ -274,6 +332,20 @@ export function startCommunicationDispatchWorker(
 				}
 				for (const problem of reminders.problems)
 					logger?.warn({ problem }, "Напоминания о приёме: помеха");
+
+				const careTasks = await dispatchDueCareTasks();
+				if (careTasks.queued > 0) {
+					logger?.info(
+						{ queued: careTasks.queued },
+						"Задачи теле-ухода поставлены в очередь",
+					);
+				}
+				for (const problem of careTasks.problems) {
+					logger?.warn(
+						{ problem },
+						"Задачи теле-ухода: ошибка переноса в очередь",
+					);
+				}
 			} else {
 				ticksSinceReminders += 1;
 			}

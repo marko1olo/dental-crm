@@ -105,7 +105,7 @@ export function WhatsAppQuickBar({
 						<button
 							type="button"
 							onClick={() => onApplyTemplate(tmpl)}
-							className="min-h-[44px] px-3 py-2 flex items-center gap-1.5 hover:opacity-90 active:scale-95 text-left focus:outline-none"
+							className="min-h-[44px] px-3 py-2 flex items-center gap-1.5 hover:opacity-90 active:scale-95 text-left focus:outline-none bg-transparent text-inherit"
 							title={`Вставить: ${tmpl.label}`}
 						>
 							<span>{tmpl.icon}</span>
@@ -115,7 +115,7 @@ export function WhatsAppQuickBar({
 							type="button"
 							onClick={() => onDirectSendTemplate(tmpl)}
 							disabled={isSending}
-							className="min-h-[44px] min-w-[36px] px-2 border-l border-[var(--line,#334155)] hover:bg-teal-700/60 dark:hover:bg-teal-500/30 text-teal-400 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
+							className="min-h-[44px] min-w-[36px] px-2 border-l border-[var(--line,#334155)] bg-transparent hover:bg-teal-700/60 dark:hover:bg-teal-500/30 text-teal-600 dark:text-teal-400 hover:text-white transition-colors flex items-center justify-center disabled:opacity-40"
 							title={`Отправить сразу: ${tmpl.label}`}
 							aria-label={`Отправить сразу: ${tmpl.label}`}
 							data-testid={`quick-send-${tmpl.id}`}

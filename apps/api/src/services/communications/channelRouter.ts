@@ -48,7 +48,7 @@ export type { CommunicationChannelCode, CommunicationConsentScope };
 
 /** Каналы, по которым сообщение действительно уходит машиной. */
 export const MACHINE_DELIVERABLE_CHANNELS: readonly CommunicationChannelCode[] =
-	["sms", "email", "whatsapp", "telegram"];
+	["sms", "email", "whatsapp", "telegram", "max"];
 
 export function isMachineDeliverableChannel(
 	channel: string,
@@ -187,6 +187,9 @@ export type ChannelSendRequest = {
 	readonly subject: string | null;
 	readonly body: string;
 	readonly idempotencyKey: string | null;
+	readonly intent?: string | null;
+	readonly templateName?: string | null;
+	readonly templateParameters?: readonly string[] | null;
 };
 
 function notConfigured(message: string): ChannelSendResult {
@@ -251,10 +254,43 @@ export async function sendThroughChannel(
 				return notConfigured(
 					"WhatsApp не настроен: нет Phone Number ID и токена доступа.",
 				);
+
+			let templateConfig = request.templateName
+				? {
+						name: request.templateName,
+						language: "ru",
+						parameters: request.templateParameters
+							? [...request.templateParameters]
+							: undefined,
+					}
+				: undefined;
+
+			// Автоматический маппинг интентов на официальные шаблоны Meta WABA
+			if (!templateConfig && request.intent) {
+				const intentToTemplate: Record<string, string> = {
+					appointment_confirmation: "appointment_confirmation",
+					appointment_reminder: "appointment_reminder",
+					post_visit_instruction: "post_op_instructions",
+					payment_reminder: "invoice_payment_link",
+					recall: "recall_reminder",
+				};
+				const mappedName = intentToTemplate[request.intent];
+				if (mappedName) {
+					templateConfig = {
+						name: mappedName,
+						language: "ru",
+						parameters: request.templateParameters
+							? [...request.templateParameters]
+							: undefined,
+					};
+				}
+			}
+
 			const result = await sendWhatsappTextMessage({
 				...credentials.whatsapp,
 				toPhoneE164: request.recipientAddress,
 				text: request.body,
+				template: templateConfig,
 			});
 			return result.ok
 				? {

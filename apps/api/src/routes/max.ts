@@ -19,12 +19,16 @@ import {
 import { db } from "../db/client.js";
 import { withSuperuserBypass, withTenantCtx } from "../db/rls.js";
 import {
+	communicationEvents,
 	denteMaxBotConfigs,
 	messengerInboundEvents,
 	patients,
 } from "../db/schema.js";
+import { sendMaxTextMessage } from "../maxTransport.js";
 import { verifyWebhookSecret } from "../security/webhookAuth.js";
+import { resolveRecipientAddress } from "../services/communications/dispatch/channelAdapters.js";
 import { processInboundEvents } from "../services/messengerIngestion.js";
+import { wsBroker } from "../services/websocketBroker.js";
 
 const updateMaxConfigSchema = z.object({
 	botId: z.string().trim().max(128).nullable().optional(),
@@ -443,30 +447,65 @@ export async function registerMaxRoutes(app: FastifyInstance): Promise<void> {
 			});
 		}
 
-		// БЫЛО: обработчик писал строку в communication_events со статусом "sent",
-		// рассылал событие по WebSocket, печатал «[MAX Outbox] Sent to …» и
-		// возвращал { ok: true }. Обращения к API мессенджера не было. Отправка
-		// выглядела успешной, пациент не получал ничего.
-		//
-		// Транспорт MAX здесь не реализован: публично проверяемого контракта Bot
-		// API у business.max.ru нет (документация за входом в бизнес-аккаунт), а
-		// выдумывать адреса и формат запроса — это ровно та же подделка, только
-		// уровнем ниже. Пока транспорт не написан, обработчик честно отвечает
-		// 501: интерфейс покажет ошибку вместо ложного «отправлено».
-		//
-		// Когда контракт появится: добавить maxTransport.ts по образцу
-		// whatsappTransport.ts, записывать communication_events со статусом по
-		// фактическому результату (channel: "max" — значение добавлено в
-		// перечисление миграцией 0120) и рассылать событие только после
-		// подтверждения от провайдера.
-		request.log.warn(
-			{ organizationId: orgId, patientId },
-			"Запрошена отправка в MAX, транспорт не реализован",
-		);
-		return reply.code(501).send({
-			error: "MaxSendNotImplemented",
-			message:
-				"Отправка сообщений в MAX пока не реализована: нет транспорта к Bot API. Сообщение НЕ отправлено — воспользуйтесь другим каналом.",
+		if (!config.maxBotToken) {
+			return reply.code(400).send({
+				error: "MaxTokenMissing",
+				message: "В конфигурации MAX не указан токен бота.",
+			});
+		}
+
+		const { address: recipientAddress, reason: addressReason } =
+			await resolveRecipientAddress(orgId, "max", patientId);
+
+		if (!recipientAddress) {
+			return reply.code(422).send({
+				error: "RecipientUnavailable",
+				message:
+					addressReason ||
+					"У пациента нет переписки в MAX: отправить первым может только бот, которому пациент уже написал.",
+			});
+		}
+
+		const sendResult = await sendMaxTextMessage({
+			botToken: config.maxBotToken,
+			recipient: { kind: "chat", id: recipientAddress },
+			text: message,
+		});
+
+		const [event] = await db
+			.insert(communicationEvents)
+			.values({
+				organizationId: orgId,
+				patientId,
+				channel: "max",
+				direction: "outbound",
+				status: sendResult.ok ? "sent" : "failed",
+				message,
+			})
+			.returning();
+
+		if (!sendResult.ok) {
+			return reply.code(502).send({
+				ok: false,
+				error: "MaxDeliveryFailed",
+				message: sendResult.errorMessage,
+				event,
+			});
+		}
+
+		try {
+			wsBroker.broadcastToOrganization(orgId, {
+				type: "INBOX_NEW_MESSAGE",
+				payload: { patientId, event },
+			});
+		} catch {
+			// Non-fatal broadcast failure
+		}
+
+		return reply.send({
+			ok: true,
+			providerMessageId: sendResult.providerMessageId,
+			event,
 		});
 	});
 }

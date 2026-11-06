@@ -447,36 +447,80 @@
 
 ## 7. 💬 МЕССЕНДЖЕРЫ, WHATSAPP, TELEGRAM И CRM-АВТОМАТИЗАЦИЯ
 
-### [MSG-01] [SEV-1] Фантомная отправка из UI-чатов клиники (Silent Blackhole Send)
+### [MSG-01] [SEV-1] [ИСПРАВЛЕНО] Фантомная отправка из UI-чатов клиники (Silent Blackhole Send)
 - **Файлы:**
-  - [`apps/api/src/routes/communicationRoutes/messagingRoutes/inboxMessageSender.ts#L77-L94`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communicationRoutes/messagingRoutes/inboxMessageSender.ts#L77-L94)
-  - [`apps/web/src/components/chat/useWhatsAppChatLogic.ts#L130-L149`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/chat/useWhatsAppChatLogic.ts#L130-L149)
-  - [`apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts#L47-L61`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts#L47-L61)
-- **Суть бага:** При клике «Отправить» в чате карточки пациента обработчик `processSendMessage` **не вызывает никаких провайдеров и очередей**. Он просто делает `db.insert(communicationEvents).values({ status: "sent" })`. Врач видит зеленую галочку, но пациенту ничего не отправляется!
+  - [`apps/api/src/routes/communicationRoutes/messagingRoutes/inboxMessageSender.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/communicationRoutes/messagingRoutes/inboxMessageSender.ts)
+  - [`apps/web/src/components/chat/useWhatsAppChatLogic.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/chat/useWhatsAppChatLogic.ts)
+  - [`apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts)
+- **Суть бага:** При клике «Отправить» в чате карточки пациента обработчик `processSendMessage` **не вызывал никаких провайдеров и очередей**. Он просто делал `db.insert(communicationEvents).values({ status: "sent" })`. Врач видел зеленую галочку, но пациенту ничего не отправлялось!
+- **Суть исправления [ИСПРАВЛЕНО]:** Метод `processSendMessage` полностью переписан:
+  1. Разрешает и валидирует адрес получателя через `resolveRecipientAddress(patientId, channel, organizationId)`. При отсутствии валидного адреса/телефона возвращает `422 Unprocessable Entity` (`RecipientAddressMissing`).
+  2. Проверяет наличие настроенных учетных данных шлюза через `resolveChannelCredentials()`. Если интеграция не настроена в продакшн, возвращает честный `400 Bad Request` (`ChannelNotConfigured`).
+  3. Вызывает реальный `sendThroughChannel()`, направляя сообщение в соответствующий транспорт (WhatsApp, Telegram, SMS, Max).
+  4. Записывает в `communicationEvents` честный статус: `sent` с `providerMessageId` от реального провайдера при успехе, либо `failed` с текстом ошибки.
+  5. Оповещает операторов в реальном времени через `wsBroker.broadcastPatientEvent()`.
+- **Тесты:** `apps/api/src/tests/routes/communicationsInboxSend.test.ts` (5/5 PASS).
 
-### [MSG-02] [SEV-1] 100% отказ напоминаний WhatsApp вне 24h окна (Отсутствие HSM шаблонов)
+### [MSG-02] [SEV-1] [ИСПРАВЛЕНО] 100% отказ напоминаний WhatsApp вне 24h окна (Отсутствие HSM шаблонов)
 - **Файлы:**
-  - [`apps/api/src/services/communications/channelRouter.ts#L249-L270`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/channelRouter.ts#L249-L270)
-  - [`apps/api/src/whatsappTransport.ts#L159-L166`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/whatsappTransport.ts#L159-L166)
-- **Суть бага:** Все напоминания шлются обычным текстом `type: "text"`. Meta Cloud API отклоняет любые сообщения вне 24-часового окна ошибкой `131047`. 100% напоминаний новым и спящим пациентам падают в статус `failed`. Эндпоинт `/api/whatsapp/templates/sync` возвращает захардкоженный мок-массив `DEFAULT_APPROVED_TEMPLATES`.
+  - [`apps/api/src/services/communications/channelRouter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/channelRouter.ts)
+  - [`apps/api/src/whatsappTransport.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/whatsappTransport.ts)
+- **Суть бага:** Все напоминания шлются обычным текстом `type: "text"`. Meta Cloud API отклоняет любые сообщения вне 24-часового окна ошибкой `131047`. 100% напоминаний новым и спящим пациентам падали в статус `failed`.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. В `whatsappTransport.ts` реализована отправка сервисных HSM-шаблонов Meta Cloud API (`sendWhatsappTemplateMessage`) с корректной структурой `{ type: "template", template: { name, language: { code: "ru" }, components } }`.
+  2. Добавлена явная обработка ошибки Meta Cloud API `131047` с информативным сообщением об истечении 24-часового окна и необходимости HSM-шаблона.
+  3. В `channelRouter.ts` интерфейс `ChannelSendRequest` расширен полями `intent`, `templateName`, `templateParameters`. Внедрен автоматический маппинг интентов визитов в зарегистрированные шаблоны (`appointment_confirmation` -> `dente_appointment_confirmation_v1`, `appointment_reminder` -> `dente_appointment_reminder_v1`, `post_op_instructions` -> `dente_post_op_care_v1`, `invoice_payment_link` -> `dente_payment_link_v1`, `recall_reminder` -> `dente_recall_reminder_v1`).
+- **Тесты:** `apps/api/src/tests/whatsappTransport.test.ts` (100% PASS).
 
-### [MSG-03] [SEV-1] Постоперационные боты опроса самочувствия — брошенный зомби-код
+### [MSG-03] [SEV-1] [ИСПРАВЛЕНО] Постоперационные боты опроса самочувствия — персистентность в PostgreSQL 18
 - **Файлы:**
-  - [`apps/api/src/services/telegram/postOpCare/postOpPipelineCore.ts#L44-L46`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telegram/postOpCare/postOpPipelineCore.ts#L44-L46)
-  - [`apps/api/src/services/communications/dispatchWorker.ts#L14-L25`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/dispatchWorker.ts#L14-L25)
-- **Суть бага:** Пайплайн создает задачи опроса (+3ч, +24ч, +72ч, +7д) в таблице `communicationTasks` и RAM-карте `activeCarePlans`, но фоновый воркер `dispatchWorker.ts` **никогда не читает и не отправляет эти задачи**. Пациенты после удаления или имплантации никогда не получают опрос о боли/кровотечении. При перезапуске сервера стейт в памяти исчезает.
+  - [`apps/api/src/services/telegram/postOpCare/postOpPipelineCore.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telegram/postOpCare/postOpPipelineCore.ts)
+  - [`apps/api/src/services/communications/dispatchWorker.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/dispatchWorker.ts)
+- **Суть бага:** Пайплайн создавал задачи опроса в таблице `communicationTasks` только для этапа 3ч, а остальные держал в RAM-карте `activeCarePlans`. Фоновый воркер `dispatchWorker.ts` никогда не читал и не отправлял эти задачи. При перезапуске сервера стейт в памяти исчезал.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. Все 4 этапа постоперационного теле-ухода (+3 часа, +24 часа / День 1, +72 часа / День 3, +7 дней / День 7) персистентно сохраняются в PostgreSQL 18 в таблицу `communicationTasks` с кодами `POST_OP_CARE_3H`, `POST_OP_CARE_DAY_1`, `POST_OP_CARE_DAY_3`, `POST_OP_CARE_DAY_7` и вычисленным временем отправки `dueAt`.
+  2. Реализована функция `loadPlanFromDatabase(visitId, organizationId)` для гарантированного восстановления активного клинического плана из СУБД после перезапуска сервера.
+  3. В фоновый воркер `dispatchWorker.ts` добавлена функция `dispatchDueCareTasks()`, которая считывает созревшие задачи (`dueAt <= now`), переводит их в `communicationOutbox` через `enqueueMessage` и предотвращает повторную отправку.
+- **Тесты:** `apps/api/src/tests/telegramPostOpEmergency.test.ts`, `apps/api/src/tests/routes/communicationsOutbox.test.ts` (100% PASS).
 
-### [MSG-04] [SEV-2] Фальшивая симуляция WhatsApp Web (QR Matrix Simulator)
-- **Файлы:** [`apps/api/src/services/messaging/whatsappConnectionHub.ts#L72-L169`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/messaging/whatsappConnectionHub.ts#L72-L169), [`whatsappConnectionHub.ts#L304-L319`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/messaging/whatsappConnectionHub.ts#L304-L319)
-- **Суть бага:** Нет библиотек Baileys / WppConnect. Код генерирует случайный SVG из `randomBytes(32)`. При сканировании официальный WhatsApp выдает ошибку. В коде открыт эндпоинт `POST /api/whatsapp/qr/session/simulate-auth`, который насильно ставит статус «подключено» с фейковым номером `+7 (999) 123-45-67`.
+### [MSG-04] [SEV-2] [ИСПРАВЛЕНО] Фальшивая симуляция WhatsApp Web (Ликвидация фейка QR Matrix)
+- **Файлы:**
+  - [`apps/api/src/services/messaging/whatsappConnectionHub.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/messaging/whatsappConnectionHub.ts)
+  - [`apps/api/src/routes/whatsappModules/connectionHubRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/whatsappModules/connectionHubRoutes.ts)
+- **Суть бага:** Нет библиотек Baileys / WppConnect. Код генерировал случайный SVG из `randomBytes(32)`. При сканировании официальный WhatsApp выдавал ошибку. В коде был открыт эндпоинт `POST /api/whatsapp/qr/session/simulate-auth`, который насильно ставил статус «подключено» с фейковым номером.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. В боевом контуре при отсутствии сконфигурированного шлюза возвращается честный статус `status: "disconnected"` с пояснением о необходимости настройки интеграции.
+  2. Сессии четко разграничены флагом `isSimulated: boolean`.
+  3. Эндпоинт `POST /api/whatsapp/qr/session/simulate-auth` защищен: в продакшн-окружении при отсутствии флага `DENTE_DEMO_MODE=true` возвращается `403 Forbidden` (`SimulationForbidden`).
+- **Тесты:** `apps/api/src/tests/whatsappConnectionHub.test.ts` (100% PASS).
 
-### [MSG-05] [SEV-2] Заглушка 501 на отправку в MAX и саботаж очереди
-- **Файлы:** [`apps/api/src/routes/max.ts#L462-L470`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/max.ts#L462-L470), [`channelRouter.ts#L50`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/channelRouter.ts#L50)
-- **Суть бага:** Транспорт `maxTransport.ts` написан, но `/api/max/send` бросает `501 MaxSendNotImplemented`, а канал `max` исключен из списка доставщиков, подавляя отправку.
+### [MSG-05] [SEV-2] [ИСПРАВЛЕНО] Включение MAX в маршрутизацию каналов и рабочий транспорт
+- **Файлы:**
+  - [`apps/api/src/routes/max.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/max.ts)
+  - [`apps/api/src/services/communications/channelRouter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/communications/channelRouter.ts)
+- **Суть бага:** Транспорт `maxTransport.ts` был написан, но `/api/max/send` бросал `501 MaxSendNotImplemented`, а канал `max` был исключен из списка доставщиков, подавляя отправку.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. Канал `"max"` добавлен в массив `MACHINE_DELIVERABLE_CHANNELS` и зарегистрирован в роутере `dispatchChannelSend()`.
+  2. В `apps/api/src/routes/max.ts` обработчик `/api/max/send` переписан со стаба 501 на реальную отправку через `resolveRecipientAddress()` и `sendMaxTextMessage()`, с фиксацией в `communicationEvents` и нотификацией по WebSocket.
+- **Тесты:** `apps/api/src/tests/routes/communicationsOutbox.test.ts` (100% PASS).
 
-### [MSG-06] [SEV-3] Хардкод прикрепления файлов в мобильном мессенджере
-- **Файл:** [`apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts#L76-L79`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts#L76-L79)
-- **Суть бага:** Клик по скрепке в чате вшивает имя файла `"Прицельный_снимок_16_зуб.jpg"` вместо открытия диалога выбора файла.
+### [MSG-06] [SEV-3] [ИСПРАВЛЕНО] Нативный диалог прикрепления файлов/снимков в мобильном мессенджере
+- **Файлы:**
+  - [`apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/mobileMessenger/useMobileMessageSender.ts)
+  - [`apps/web/src/components/communications/styles/mobileMessenger/mobileMessengerChatView.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/communications/styles/mobileMessenger/mobileMessengerChatView.css)
+  - [`apps/web/src/components/chat/WhatsAppChatHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/chat/WhatsAppChatHeader.tsx)
+  - [`apps/web/src/components/chat/WhatsAppQuickBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/chat/WhatsAppQuickBar.tsx)
+- **Суть бага:** Клик по скрепке в чате вшивал захардкоженное имя файла `"Прицельный_снимок_16_зуб.jpg"` вместо открытия диалога выбора файла.
+- **Суть исправления [ИСПРАВЛЕНО]:**
+  1. Хардкод полностью удален. Клик по скрепке открывает нативный диалог операционной системы `<input type="file" accept="image/*,.pdf,.dcm,application/dicom" />`.
+  2. Реализована обработка реального выбранного файла (имя, размер в КБ/МБ, тип данных).
+  3. В `mobileMessengerChatView.css` скорректирован z-index полноэкранного чата (`z-index: 10005`), исключив перекрытие панели ввода нижним таб-баром (`MobileTabBar`).
+  4. В `WhatsAppChatHeader.tsx` и `WhatsAppQuickBar.tsx` добавлены CSS-классы `bg-transparent text-inherit`, ликвидировав белые слепящие прямоугольники в темной теме.
+- **Визуальные пруфы (4-State Visual Proof):**
+  - `docs/proofs/communications/01_patient_chat_pc_light_1440x900.png` (178 KB) — PC Light.
+  - `docs/proofs/communications/02_patient_chat_pc_dark_1440x900.png` (177 KB) — PC Dark (100% темные токены, 0 белых пятен).
+  - `docs/proofs/communications/03_mobile_messenger_mobile_light_390x844.png` (39 KB) — Mobile Light (нативный ввод в нижней трети, скрепка, без наездов таб-бара).
+  - `docs/proofs/communications/04_mobile_messenger_mobile_dark_390x844.png` (40 KB) — Mobile Dark (Apple HIG, 0px горизонтального скролла).
 
 
 ## 8. 🌐 ПАЦИЕНТСКИЙ ПОРТАЛ (PWA) И ОНЛАЙН-ЗАПИСЬ

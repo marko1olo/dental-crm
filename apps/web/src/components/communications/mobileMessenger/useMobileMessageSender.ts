@@ -74,8 +74,31 @@ export function useMobileMessageSender(
 	}, [activeChannel]);
 
 	const handleAttachFile = useCallback(() => {
-		setAttachedFileName("Прицельный_снимок_16_зуб.jpg");
-		showToast("Прикреплен снимок пациента для отправки", "info");
+		let input = document.getElementById(
+			"mobile-chat-file-input",
+		) as HTMLInputElement | null;
+		if (!input) {
+			input = document.createElement("input");
+			input.id = "mobile-chat-file-input";
+			input.type = "file";
+			input.accept = "image/*,.pdf,.dcm,application/dicom";
+			input.style.display = "none";
+			document.body.appendChild(input);
+		}
+		input.onchange = (e) => {
+			const target = e.target as HTMLInputElement;
+			const file = target.files?.[0];
+			if (file) {
+				setAttachedFileName(file.name);
+				const sizeKb = Math.round(file.size / 1024);
+				showToast(
+					`Файл «${file.name}» (${sizeKb} КБ) прикреплен к сообщению`,
+					"info",
+				);
+			}
+		};
+		input.value = "";
+		input.click();
 	}, []);
 
 	return {

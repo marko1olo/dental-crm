@@ -29,6 +29,8 @@ export interface WhatsappQrSession {
 	connectedAt: string | null;
 	deviceModel: string | null;
 	lastScannedAt: string | null;
+	isSimulated?: boolean;
+	notConfiguredReason?: string | null;
 }
 
 export interface WabaConnectionInput {
@@ -210,6 +212,34 @@ export class WhatsappConnectionHubService {
 			return existing;
 		}
 
+		const hasGateway = Boolean(
+			process.env.WHATSAPP_GATEWAY_URL?.trim() ||
+			process.env.GREEN_API_INSTANCE_ID?.trim(),
+		);
+		const isProduction = process.env.NODE_ENV === "production";
+
+		if (!hasGateway && isProduction && process.env.DENTE_DEMO_MODE !== "true") {
+			const session: WhatsappQrSession = {
+				organizationId,
+				sessionId: `wa_qr_${organizationId}_disconnected`,
+				status: "disconnected",
+				qrPayload: "",
+				qrSvg: "",
+				qrDataUrl: "",
+				pairingCode: "",
+				pairingPhone: pairingPhone?.trim() || null,
+				expiresAt: 0,
+				connectedPhone: null,
+				connectedAt: null,
+				deviceModel: null,
+				lastScannedAt: null,
+				notConfiguredReason:
+					"Шлюз WhatsApp Web (Multi-Device) не подключен на сервере. Для отправки используйте официальный WhatsApp Business Cloud API или настройте параметры шлюза.",
+			};
+			activeQrSessions.set(organizationId, session);
+			return session;
+		}
+
 		const sessionId = `wa_qr_${organizationId}_${randomBytes(6).toString("hex")}`;
 		const qrPayload = `2@${randomBytes(32).toString("base64")},${randomBytes(32).toString("base64")},${organizationId.slice(0, 8)}`;
 		const { svg, dataUrl } = generateQrMatrixSvg(qrPayload);
@@ -230,6 +260,7 @@ export class WhatsappConnectionHubService {
 			connectedAt: null,
 			deviceModel: null,
 			lastScannedAt: null,
+			isSimulated: !hasGateway,
 		};
 
 		activeQrSessions.set(organizationId, session);
@@ -304,7 +335,15 @@ export class WhatsappConnectionHubService {
 	/**
 	 * Симуляция успешного сканирования/сопряжения QR-кода (для тестов, демо или webhook-коллбэков Baileys/шлюза).
 	 */
-	static simulateAuthenticate(organizationId: string, phone = "+7 (999) 123-45-67", deviceModel = "Рабочий iPhone клиники"): WhatsappQrSession {
+	static simulateAuthenticate(
+		organizationId: string,
+		phone = "+7 (999) 123-45-67",
+		deviceModel = "Рабочий iPhone клиники",
+	): WhatsappQrSession {
+		const isTestOrDemo =
+			process.env.NODE_ENV === "test" ||
+			process.env.DENTE_DEMO_MODE === "true";
+
 		let session = activeQrSessions.get(organizationId);
 		if (!session) {
 			session = this.startQrSession({ organizationId });
@@ -313,6 +352,7 @@ export class WhatsappConnectionHubService {
 		session.connectedPhone = phone;
 		session.connectedAt = new Date().toISOString();
 		session.deviceModel = deviceModel;
+		session.isSimulated = isTestOrDemo;
 		activeQrSessions.set(organizationId, session);
 		return session;
 	}

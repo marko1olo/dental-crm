@@ -330,6 +330,18 @@ export async function registerConnectionHubRoutes(
 		);
 		if (!orgId) return;
 
+		if (
+			process.env.NODE_ENV !== "test" &&
+			process.env.DENTE_DEMO_MODE !== "true"
+		) {
+			reply.code(403);
+			return {
+				error: "SimulationForbidden",
+				message:
+					"Симуляция авторизации WhatsApp Web запрещена в боевом режиме. Подключите официальный WhatsApp Business Cloud API.",
+			};
+		}
+
 		const parsed = qrSimulateAuthSchema.safeParse(request.body || {});
 		const data = parsed.success
 			? parsed.data
@@ -350,6 +362,7 @@ export async function registerConnectionHubRoutes(
 			connectedPhone: session.connectedPhone,
 			connectedAt: session.connectedAt,
 			deviceModel: session.deviceModel,
+			isSimulated: session.isSimulated,
 		};
 	});
 

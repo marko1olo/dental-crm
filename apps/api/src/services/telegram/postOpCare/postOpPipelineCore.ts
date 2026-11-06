@@ -133,21 +133,50 @@ export class TelegramPostOpCarePipeline {
 				if (cRow) validClinicId = cRow.id;
 			}
 
-			await tx.insert(communicationTasks).values({
-				organizationId: params.organizationId,
-				clinicId: validClinicId,
-				patientId: params.patientId,
-				visitId: validVisitId,
-				assignedRole: "reception",
-				channel: "telegram" as const,
-				intent: "post_visit_instruction" as const,
-				status: "scheduled" as const,
-				priority: "normal" as const,
-				dueAt: new Date(stages[0]!.dueAt),
-				title: `Теле-уход: 3 часа после (${params.surgeryTitle})`,
-				body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 1: через 3 часа.`,
-				workflowCode: "POST_OP_CARE_PIPELINE",
-			});
+			const stageConfigs = [
+				{
+					workflowCode: "POST_OP_CARE_3H",
+					dueAt: new Date(stages[0]!.dueAt),
+					title: `Теле-уход: 3 часа после (${params.surgeryTitle})`,
+					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 1: через 3 часа (контроль гемостаза и анестезии).`,
+				},
+				{
+					workflowCode: "POST_OP_CARE_DAY_1",
+					dueAt: new Date(stages[1]!.dueAt),
+					title: `Теле-уход: День 1 (${params.surgeryTitle})`,
+					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 2: через 24 часа (контроль боли, отёка и температуры).`,
+				},
+				{
+					workflowCode: "POST_OP_CARE_DAY_3",
+					dueAt: new Date(stages[2]!.dueAt),
+					title: `Теле-уход: День 3 (${params.surgeryTitle})`,
+					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 3: через 72 часа (пик реактивного отёка, динамика заживления).`,
+				},
+				{
+					workflowCode: "POST_OP_CARE_DAY_7",
+					dueAt: new Date(stages[3]!.dueAt),
+					title: `Теле-уход: День 7 (${params.surgeryTitle})`,
+					body: `Запланирован 4-этапный теле-мониторинг после операции: ${params.surgeryTitle}. Этап 4: через 7 дней (контрольный осмотр, снятие швов).`,
+				},
+			];
+
+			for (const sc of stageConfigs) {
+				await tx.insert(communicationTasks).values({
+					organizationId: params.organizationId,
+					clinicId: validClinicId,
+					patientId: params.patientId,
+					visitId: validVisitId,
+					assignedRole: "reception",
+					channel: "telegram" as const,
+					intent: "post_visit_instruction" as const,
+					status: "scheduled" as const,
+					priority: "normal" as const,
+					dueAt: sc.dueAt,
+					title: sc.title,
+					body: sc.body,
+					workflowCode: sc.workflowCode,
+				});
+			}
 		}).catch((err) => {
 			console.warn("[TelegramPostOpCarePipeline] Ошибка сохранения задачи в БД:", err);
 		});
@@ -180,21 +209,29 @@ export class TelegramPostOpCarePipeline {
 
 			// 1. Идемпотентность в базе: проверяем, нет ли уже назначенной задачи опроса после этого визита
 			if (hasValidOrg && hasValidVisit) {
-				const [existingTask] = await tx
-					.select({ id: communicationTasks.id })
+				const existingTasks = await tx
+					.select()
 					.from(communicationTasks)
 					.where(
 						and(
 							eq(communicationTasks.organizationId, params.organizationId),
 							eq(communicationTasks.visitId, params.visitId),
-							eq(communicationTasks.intent, "post_visit_instruction"),
 						),
-					)
-					.limit(1);
+					);
 
-				if (existingTask) {
+				if (existingTasks.length > 0) {
 					scheduledVisitIds.add(params.visitId);
-					return { isSurgery: false, scheduled: false, taskId: existingTask.id };
+					const isSurg = existingTasks.some(
+						(t) =>
+							t.workflowCode?.startsWith("POST_OP_") ||
+							t.workflowCode === "POST_OP_CARE_PIPELINE",
+					);
+					return {
+						isSurgery: isSurg,
+						scheduled: false,
+						taskId: existingTasks[0]?.id ?? null,
+						planId: isSurg ? `plan_${params.visitId}` : undefined,
+					};
 				}
 			}
 
@@ -297,6 +334,93 @@ export class TelegramPostOpCarePipeline {
 			if (plan.visitId === visitId) return plan;
 		}
 		return undefined;
+	}
+
+	/**
+	 * Восстановление плана теле-ухода из PostgreSQL (устойчивость к перезапуску сервера).
+	 */
+	static async loadPlanFromDatabase(
+		visitId: string,
+		organizationId: string,
+	): Promise<PostOpCarePlan | null> {
+		if (!isUuid(organizationId) || !isUuid(visitId)) return null;
+		return withTenantCtx(organizationId, async (tx) => {
+			const rows = await tx
+				.select()
+				.from(communicationTasks)
+				.where(
+					and(
+						eq(communicationTasks.organizationId, organizationId),
+						eq(communicationTasks.visitId, visitId),
+					),
+				);
+
+			const postOpRows = rows.filter(
+				(r) =>
+					r.workflowCode?.startsWith("POST_OP_CARE_") ||
+					r.workflowCode === "POST_OP_CARE_PIPELINE",
+			);
+			if (postOpRows.length === 0) return null;
+
+			const stageCodeMap: Record<string, PostOpStageItem["stage"]> = {
+				POST_OP_CARE_3H: "3_hours",
+				POST_OP_CARE_DAY_1: "day_1",
+				POST_OP_CARE_DAY_3: "day_3",
+				POST_OP_CARE_DAY_7: "day_7",
+			};
+
+			const stages: PostOpStageItem[] = postOpRows.map((r) => ({
+				stage: (r.workflowCode && stageCodeMap[r.workflowCode]) || "3_hours",
+				dueAt: r.dueAt ? r.dueAt.getTime() : Date.now(),
+				status: r.status === "completed" ? "completed" : "pending",
+			}));
+
+			const firstRow = postOpRows[0]!;
+			const planId = `plan_${visitId}`;
+			const reconstructed: PostOpCarePlan = {
+				id: planId,
+				organizationId,
+				clinicId: firstRow.clinicId,
+				visitId,
+				patientId: firstRow.patientId,
+				doctorId: null,
+				chatFingerprint: null,
+				telegramChatId: null,
+				surgeryTitle: firstRow.title || "Хирургическая операция",
+				surgeryCompletedAt: stages[0]
+					? stages[0].dueAt - 3 * 3600 * 1000
+					: Date.now(),
+				stages:
+					stages.length === 4
+						? stages
+						: [
+								{
+									stage: "3_hours",
+									dueAt: Date.now() + 3 * 3600 * 1000,
+									status: "pending",
+								},
+								{
+									stage: "day_1",
+									dueAt: Date.now() + 24 * 3600 * 1000,
+									status: "pending",
+								},
+								{
+									stage: "day_3",
+									dueAt: Date.now() + 72 * 3600 * 1000,
+									status: "pending",
+								},
+								{
+									stage: "day_7",
+									dueAt: Date.now() + 7 * 24 * 3600 * 1000,
+									status: "pending",
+								},
+							],
+				createdAt: firstRow.createdAt.getTime(),
+			};
+
+			activeCarePlans.set(planId, reconstructed);
+			return reconstructed;
+		});
 	}
 
 	/**

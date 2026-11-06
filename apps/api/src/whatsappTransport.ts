@@ -58,12 +58,35 @@ export interface WhatsappCredentials {
 	appSecret?: string | null;
 }
 
+export interface WhatsappTemplateConfig {
+	name: string;
+	language?: { code: string } | string;
+	parameters?: string[];
+	components?: Array<{
+		type: "header" | "body" | "button";
+		sub_type?: string;
+		index?: number;
+		parameters: Array<{
+			type: "text" | "currency" | "date_time" | "image" | "document" | "video";
+			text?: string;
+			currency?: { fallback_value: string; code: string; amount_1000: number };
+			date_time?: { fallback_value: string };
+		}>;
+	}>;
+}
+
 export interface SendWhatsappTextInput extends WhatsappCredentials {
 	/** Номер получателя в международном формате, только цифры. */
 	toPhoneE164: string;
 	text: string;
+	template?: WhatsappTemplateConfig;
 	timeoutMs?: number;
 }
+
+export type SendWhatsappTemplateInput = Omit<SendWhatsappTextInput, "text"> & {
+	text?: string;
+	template: WhatsappTemplateConfig;
+};
 
 function classifyWhatsappError(
 	status: number,
@@ -148,6 +171,43 @@ export async function sendWhatsappTextMessage(
 			url += `?appsecret_proof=${encodeURIComponent(proof)}`;
 		}
 
+		const requestPayload = input.template
+			? {
+					messaging_product: "whatsapp",
+					recipient_type: "individual",
+					to: input.toPhoneE164,
+					type: "template",
+					template: {
+						name: input.template.name,
+						language: {
+							code:
+								typeof input.template.language === "string"
+									? input.template.language
+									: input.template.language?.code || "ru",
+						},
+						components:
+							input.template.components ||
+							(input.template.parameters && input.template.parameters.length > 0
+								? [
+										{
+											type: "body",
+											parameters: input.template.parameters.map((p) => ({
+												type: "text",
+												text: p,
+											})),
+										},
+									]
+								: undefined),
+					},
+				}
+			: {
+					messaging_product: "whatsapp",
+					recipient_type: "individual",
+					to: input.toPhoneE164,
+					type: "text",
+					text: { preview_url: false, body: input.text },
+				};
+
 		const response = await fetch(
 			url,
 			{
@@ -156,13 +216,7 @@ export async function sendWhatsappTextMessage(
 					authorization: `Bearer ${input.accessToken}`,
 					"content-type": "application/json",
 				},
-				body: JSON.stringify({
-					messaging_product: "whatsapp",
-					recipient_type: "individual",
-					to: input.toPhoneE164,
-					type: "text",
-					text: { preview_url: false, body: input.text },
-				}),
+				body: JSON.stringify(requestPayload),
 				signal: controller.signal,
 			},
 		);
@@ -180,15 +234,23 @@ export async function sendWhatsappTextMessage(
 				providerCode === 131026 || providerCode === 131047
 					? ("recipient_unavailable" as const)
 					: classifyWhatsappError(response.status);
+
+			const providerErrorMessage =
+				typeof payload.error?.message === "string"
+					? payload.error.message
+					: `WhatsApp Cloud API ответил ${response.status}`;
+
+			const errorMessage =
+				providerCode === 131047
+					? "Окно 24 часов Meta Cloud API закрыто: требуется утвержденный сервисный HSM-шаблон для возобновления диалога (код 131047)."
+					: providerErrorMessage;
+
 			return {
 				ok: false,
 				providerMessageId: null,
 				errorCode: providerCode ?? response.status,
 				errorClass,
-				errorMessage:
-					typeof payload.error?.message === "string"
-						? payload.error.message
-						: `WhatsApp Cloud API ответил ${response.status}`,
+				errorMessage,
 			};
 		}
 
@@ -214,4 +276,17 @@ export async function sendWhatsappTextMessage(
 	} finally {
 		clearTimeout(timeout);
 	}
+}
+
+/**
+ * Отправка сервисного регламентного шаблона WhatsApp (HSM) вне 24-часового окна Meta.
+ */
+export async function sendWhatsappTemplateMessage(
+	input: SendWhatsappTemplateInput,
+): Promise<WhatsappTransportResult> {
+	return sendWhatsappTextMessage({
+		...input,
+		text: input.text || `[Сервисный шаблон: ${input.template.name}]`,
+		template: input.template,
+	});
 }
