@@ -14,6 +14,7 @@ import test from "node:test";
 import {
 	buildAgentSystemPrompt,
 	detectClinicalProcedureDomain,
+	MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE,
 } from "./harness/systemPromptBuilder.js";
 import {
 	executeDentalTool,
@@ -262,3 +263,50 @@ test("Dynamic clinical domain protocol adaptation in system prompt", () => {
 	);
 	assert.ok(orthoPrompt.includes("Феррул-эффект"));
 });
+
+test("Multimodal dental imaging analysis protocol (RVG, OPTG, CBCT, polish artifacts) integration", () => {
+	assert.ok(
+		MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE.includes(
+			"ПРОТОКОЛ МУЛЬТИМОДАЛЬНОГО АНАЛИЗА СТОМАТОЛОГИЧЕСКИХ СНИМКОВ (STOMCHAT VISION SSOT)",
+		),
+	);
+	assert.ok(
+		MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE.includes(
+			"ДИФФЕРЕНЦИАЦИЯ СВЕТОВЫХ БЛИКОВ ПОЛИРА И ОПТИЧЕСКИХ АРТЕФАКТОВ ОТ ВТОРИЧНОГО КАРИЕСА",
+		),
+	);
+	assert.ok(
+		MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE.includes(
+			"ПРИЦЕЛЬНАЯ РАДИОВИЗИОГРАФИЯ (RVG)",
+		),
+	);
+	assert.ok(
+		MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE.includes(
+			"ОРТОПАНТОМОГРАФИЯ (ОПТГ)",
+		),
+	);
+	assert.ok(
+		MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE.includes(
+			"КОНУСНО-ЛУЧЕВАЯ КОМПЬЮТЕРНАЯ ТОМОГРАФИЯ (КЛКТ 3D)",
+		),
+	);
+	assert.ok(
+		MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE.includes(
+			"MB2 в мезиально-щечном корне",
+		),
+	);
+
+	const prompt = buildAgentSystemPrompt("web_browser");
+	assert.ok(
+		prompt.includes(
+			"ПРОТОКОЛ МУЛЬТИМОДАЛЬНОГО АНАЛИЗА СТОМАТОЛОГИЧЕСКИХ СНИМКОВ (STOMCHAT VISION SSOT)",
+		),
+	);
+	assert.ok(
+		prompt.includes(
+			"ДИФФЕРЕНЦИАЦИЯ СВЕТОВЫХ БЛИКОВ ПОЛИРА И ОПТИЧЕСКИХ АРТЕФАКТОВ ОТ ВТОРИЧНОГО КАРИЕСА",
+		),
+	);
+	assert.ok(prompt.includes("Принял световой блик полира за избыток композита"));
+});
+

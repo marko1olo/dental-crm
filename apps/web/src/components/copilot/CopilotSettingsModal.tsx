@@ -144,7 +144,8 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						</div>
 						<div className="min-w-0">
 							<h3 className="text-sm font-bold text-[var(--ink)] truncate">Настройки ИИ и Копайлота</h3>
-							<p className="text-[11px] text-[var(--muted)] truncate">Интеллект, уровни доверия, персона врача, голос и память</p>
+							<p className="text-[11px] text-[var(--muted)] hidden sm:block truncate">Интеллект, уровни доверия, персона врача, голос и память</p>
+							<p className="text-[11px] text-[var(--muted)] sm:hidden">Интеллект, доверие и персона</p>
 						</div>
 					</div>
 					<button

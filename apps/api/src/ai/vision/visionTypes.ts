@@ -6,7 +6,7 @@ export const GROQ_VISION_MODEL =
 	process.env.GROQ_VISION_MODEL ?? "meta-llama/llama-4-scout-17b-16e-instruct";
 
 export const GEMINI_VISION_MODEL =
-	process.env.GEMINI_VISION_MODEL ?? "gemini-3.1-flash-lite";
+	process.env.GEMINI_VISION_MODEL ?? "gemini-3.6-flash";
 
 export const GROQ_BASE_URL = "https://api.groq.com/openai/v1";
 export const GEMINI_BASE_URL =

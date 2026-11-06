@@ -1714,3 +1714,60 @@
      - 🌙 `08_patient_journey_mobile_cashbox_dark_390x844.png` (53 KB)
      Все скриншоты проверены на отсутствие 7 смертных грехов UI: нулевой клиппинг, ровно 1 Primary CTA, 100% тёмные токены в тёмной теме, нативный тач $\ge 44$px.
 
+
+---
+
+## РАЗДЕЛ V: МЕДИЦИНСКИЙ ГЕНЕРАТИВНЫЙ ФАЗЗИНГ И СТОХАСТИЧЕСКИЙ ХАОС (GENERATIVE FUZZING & CHAOS INTEGRITY)
+
+| ID | Область | Sev | Описание дефекта | Файл и строки |
+|---|---|---|---|---|
+| **FUZZ-01** | FDI Shorthand Parser | **Sev 1** | **[ИСПРАВЛЕНО] Уязвимость парсера формулы к гомоглифам, пробельным бомбам и некорректным номерам**: Внедрен стохастический стресс-раннер с 10 000 мутаций. Доказано: 0 uncaught crashes, 100% извлеченных номеров строго принадлежат `ALL_FDI_TEETH`, атипичные и поврежденные токены изолируются в `unrecognized`. Выполнение: 92мс. | [`medicalFuzzerGenerators.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/fuzzing/generators/medicalFuzzerGenerators.ts), [`medicalDomainGenerativeFuzzing.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/medicalDomainGenerativeFuzzing.test.ts) |
+| **FUZZ-02** | BigInt Split Math | **Sev 1** | **[ИСПРАВЛЕНО] Погрешности float и расхождения сплит-чеков на триллионах сумм**: 10 000 случайных сплитов от 1 коп. до 100 млн руб. в BigInt. Доказан строгий математический инвариант `sum(splits) === payableKopecks`, метод Гамильтона-Хэра (максимальная дельта между участниками <= 1 коп.), 100% скидка врача по Мандату 8e дает ровно 0 коп. без ZeroDivisionError. Выполнение: 12мс. | [`medicalFuzzerGenerators.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/fuzzing/generators/medicalFuzzerGenerators.ts), [`medicalDomainGenerativeFuzzing.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/medicalDomainGenerativeFuzzing.test.ts) |
+| **FUZZ-03** | Pricelist Parser Chaos | **Sev 2** | **[ИСПРАВЛЕНО] Краши парсинга грязных прайс-листов на экстремальных строках**: 10 000 строк с советской нотацией (`1500-00`), отрицательными ценами, эмодзи, длинами до 2000 символов и 5 форматами вендоров (IDENT, DentalPRO, iStom, 1C:Медицина). 0 падений, корректный перехват ошибок. Выполнение: 13мс. | [`medicalFuzzerGenerators.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/fuzzing/generators/medicalFuzzerGenerators.ts), [`medicalDomainGenerativeFuzzing.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/medicalDomainGenerativeFuzzing.test.ts) |
+| **FUZZ-04** | SanPiN Expiry RangeError | **Sev 2** | **[ИСПРАВЛЕНО] Вылет по `RangeError: Invalid time value` на битых датах стерилизации**: Внедрен `safeCalculateExpiry` с проверкой таймстампов до ISO-конвертации. 1000 проверок високосных годов (29 февраля 2024, 2028, 2000), невисокосных столетий (1900, 2100) и отрицательных интервалов без сбоев рантайма. Выполнение: 10мс. | [`medicalFuzzerGenerators.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/fuzzing/generators/medicalFuzzerGenerators.ts), [`medicalDomainGenerativeFuzzing.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/medicalDomainGenerativeFuzzing.test.ts) |
+
+---
+
+## 27. ⚡ FASTIFY API STRESS, CONCURRENCY & TRANSACTIONAL RESILIENCE INQUISITION
+
+### [CONC-01] [SEV-1] [ЗАКРЫТО] Гонки потоков при одновременном бронировании слота и кресла (Anti-Double-Booking Slot Lock)
+- **Файлы:**
+  - Тест: [`apps/api/src/tests/concurrencyAppointmentBooking.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyAppointmentBooking.test.ts)
+  - Спецификация: [`docs/testing/FASTIFY_CONCURRENCY_AND_TRANSACTION_RESILIENCE.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/FASTIFY_CONCURRENCY_AND_TRANSACTION_RESILIENCE.md)
+- **Суть проблемы:** В час пик при одновременной попытке двух администраторов записать пациентов на один интервал времени в одно кресло или к одному врачу возникал риск создания двух записей (Double Booking) либо неструктурированного сбоя сервера.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Реализован и верифицирован стресс-тест Fastify: при шторме из 10 параллельных запросов на один слот ровно 1 запрос побеждает (`201 Created`), а остальные 9 детерминированно получают `409 Conflict` со структурированным телом:
+     ```json
+     {
+       "code": "AppointmentCreateRejected",
+       "reason": "resource_overlap",
+       "collisionCode": "CHAIR_OVERBOOKING_COLLISION",
+       "suggestedSlots": [ ... ]
+     }
+     ```
+  2. Защита от оверлапа врача: один и тот же врач не может быть одновременно записан в 2 разных кресла (строгий отказ 409 с причиной занятости врача).
+  3. Непересекающиеся слоты и кресла при параллельной нагрузке создаются без задержек (100% `201 Created`).
+  4. 4/4 теста PASSED (время ~910мс).
+
+### [CONC-02] [SEV-1] [ЗАКРЫТО] Мультиклики на кассе, повторные оплаты и истощение семейного баланса (Idempotency-Key & Split Debit Storm)
+- **Файлы:**
+  - Тест: [`apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts)
+  - Фиксы: [`apps/api/src/routes/billingRoutes/handlers/paymentCreateHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/billingRoutes/handlers/paymentCreateHandler.ts), [`apps/api/src/db/billing/paymentCreationPipeline.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentCreationPipeline.ts), [`apps/api/src/db/billing/billingTargetBalance.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/billingTargetBalance.ts)
+- **Суть проблемы:** При нажатии кнопки «Оплатить» 10 раз за секунду без строгой идемпотентности происходило дублирование платежей (Double Spend). При параллельных списаниях семейного кошелька баланс уходил в минус.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. 10 параллельных запросов с одинаковым `Idempotency-Key` (UUIDv7) создают ровно 1 платеж в БД (`201 Created`), а 9 параллельных запросов возвращают кешированный ответ `200 OK` со стандартизированным заголовком `idempotency-replayed: true` и идентичным `payment.id`.
+  2. При шторме из 10 параллельных списаний по 4 000 ₽ на семейном балансе 6 000 ₽ побеждает ровно 1 запрос (`200 OK`), остальные 9 получают честный отказ `402 Payment Required` («Недостаточно средств на семейном счете»), а итоговый баланс составляет строго 2 000.00 ₽ (200 000 копеек).
+  3. 10 конкурентных пополнений по 155.55 ₽ сохраняют абсолютную копеечную точность без float-погрешностей.
+  4. 3/3 теста PASSED (время ~855мс).
+
+### [CONC-03] [SEV-1] [ЗАКРЫТО] Блокировка врачей у кресла при нехватке расходников и взаимные блокировки 40P01 deadlocks (Soft Negative Stock)
+- **Файлы:**
+  - Тест: [`apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts)
+  - Роут склада: [`apps/api/src/routes/inventory.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/inventory.ts)
+- **Суть проблемы:** По Мандатам 8e и 8n софт служит врачу, а не врач софту. Если у кресла заканчивается материал, сервер не имеет права заблокировать приём врача. При списании наборов материалов в разном порядке возникали взаимные блокировки PostgreSQL `40P01 deadlock detected`.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. 20 параллельных приёмов списывают 20 единиц материала при остатке 1 шт. -> все 20 запросов возвращают `200 OK` (ноль блокировок врача), 19 проводок фиксируют мягкий овердрафт (`isOverdraft: true`), остаток на складе уходит в `-19.000`.
+  2. 10 параллельных PATCH запросов на корректировку остатка отрабатывают атомарно без потери дельт.
+  3. Алгоритм сортировки идентификаторов материалов перед блокировкой в транзакции исключает deadlocks: 20 конкурентных списаний наборов материалов во встречных порядках (`[A,B,C]` vs `[C,B,A]`) завершаются со 100% успехом без 40P01 deadlocks.
+  4. 3/3 теста PASSED (время ~942мс).
+

@@ -39,6 +39,10 @@
 | `apps/web/tests/e2e/clinical-master-journey.spec.ts` | Отсутствие сквозного E2E сценария полного приёма врача (расписание -> визит -> одонтограмма Wheeler -> 3 тарифа -> черновик ИДС -> касса). | Сквозной браузерный Playwright-тест полного клинического пути врача: экспресс-запись без ассистента (Мандат 8n), норма в 1 клик (Мандат 8e), одонтограмма Wheeler 2.5D (зуб 36, кариес K02.0), генерация 3 тарифов лечения, печать ИДС с водяным знаком «ЧЕРНОВИК», 4-State Proof. | **PASS (1/1, 18.7s)** |
 | `apps/web/tests/e2e/billing-and-family-split-e2e.spec.ts` | Риск потери точности при сплит-оплате, блокировка кассы при 100% скидке врача, требование ИНН физлиц. | Сквозной финансовый сценарий: сплит-тендер (депозит семьи + карта + нал), точный расчет копеек без расхождений (Hamilton-Hare exact math), врачебная скидка 100% на переделку без пароля начмеда (Мандат 8e), чек 54-ФЗ без ИНН физлиц (Мандат 8n), 4-State Proof. | **PASS (1/1, 13.4s)** |
 | `apps/web/tests/e2e/warehouse-soft-negative-e2e.spec.ts` | Панические блокирующие модалки и остановка приёма врача при нулевом остатке расходников на складе. | Сквозной складской сценарий: бесшумное пакетное списание расходников по техкартам оказанных услуг в режиме Soft Negative Stock (Мандаты 8n, 8v) с фиксацией мягкого овердрафта в бэк-офисе, 1-клик сверка и оприходование накладной поставщика, 4-State Proof. | **PASS (1/1, 19.6s)** |
+| `apps/api/src/tests/concurrencyAppointmentBooking.test.ts` | Отсутствие стресс-теста одновременного бронирования слотов: риск двойных записей в одно кресло и оверлапа врачей. | Стресс-тест Fastify: 10 одновременных запросов на один слот -> ровно 1 побеждает (201 Created), 9 получают 409 Conflict с массивом `suggestedSlots`; запрет записи одного врача в 2 кресла одновременно. | **PASS (4/4, 910ms)** |
+| `apps/api/src/tests/concurrencyInvoiceCheckoutIdempotency.test.ts` | Мультиклики на кассе («Оплатить» x10), списание семейного баланса в минус при параллельных запросах, float drift. | Защита от Double-Spend: 10 параллельных запросов с одинаковым `Idempotency-Key` (UUIDv7) создают 1 платеж (201 Created), 9 получают 200 OK с заголовком `idempotency-replayed: true`; 10 списаний по 4000 ₽ при балансе 6000 ₽ дают 1 успех и 9 HTTP 402; 10 пополнений по 155.55 ₽ сохраняют абсолютную точность копеек. | **PASS (3/3, 855ms)** |
+| `apps/api/src/tests/concurrencyWarehouseSoftNegative.test.ts` | Блокировка врачей у кресла при списании дефицитных расходников (остаток 1 шт.), взаимные блокировки 40P01 deadlocks при списании списков материалов. | 20 параллельных приёмов списывают 20 единиц материала при остатке 1 шт. -> все получают 200 OK, 19 транзакций фиксируют Soft Negative Stock (isOverdraft: true), остаток уходит в -19; упорядочивание UUID при блокировках устраняет deadlocks 40P01 при встречных порядках [A,B,C] vs [C,B,A]. | **PASS (3/3, 942ms)** |
+| `apps/api/src/tests/concurrencyRaceCondition.test.ts` | Фантомные падения при BOLA/IDOR валидации семейного кошелька из-за отсутствия `headPatientId` и `patientRelationships`. | Починены фикстуры семейного кошелька: `familyGroups.headPatientId` и `patientRelationships` с флагом `canSpendFamilyWallet: true`. Все 4 стресс-теста баланса, склада и кассы проходят безупречно. | **PASS (4/4, 870ms)** |
 
 ---
 
@@ -47,17 +51,11 @@
 В процессе инквизиции и перевода тестов на реальный рантайм был обнаружен и исправлен скрытый дефект:
 - **`packages/shared/src/radiology/scanRegistration/registrationProtocol.ts` (строка 148):**
   Функция `formatRegistrationA4Protocol(result, patientName, doctorName)` вызывала `patientName.trim()` без проверки на `undefined` или дефолтных параметров. При вызове с неполными метаданными происходил краш `TypeError: Cannot read properties of undefined (reading 'trim')`.  
-  **Исправление:** добавлены безопасные дефолты и оператор нулевого слияния:
-  ```ts
-  export function formatRegistrationA4Protocol(
-      result: RegistrationProtocolInput,
-      patientName: string = "Не указан",
-      doctorName: string = "Врач-стоматолог",
-  ): string {
-      const pName = (patientName ?? "").trim() || "Не указан";
-      const dName = (doctorName ?? "").trim() || "Врач-стоматолог";
-      ...
-  ```
+  **Исправление:** добавлены безопасные дефолты и оператор нулевого слияния.
+- **`apps/api/src/routes/billingRoutes/handlers/paymentCreateHandler.ts` & `paymentCreationPipeline.ts`:**
+  При повторном параллельном запросе на оплату с тем же `Idempotency-Key` (через pg_advisory_xact_lock) клиенту отдавался HTTP 200, но отсутствовал стандартизированный заголовок `idempotency-replayed: true`. Добавлен возврат флага `isReplay: true` из пайплайна и проброс заголовка `idempotency-replayed: true` в Fastify Handler.
+- **`apps/api/src/db/billing/billingTargetBalance.ts` & `fiscalReceiptService.ts`:**
+  При оплате счета `patientInvoices` поиск цели платежа производился только в таблице `generatedDocuments`, что вызывало ошибку 400 "Документ не найден". Добавлена поддержка `patientInvoices` в `billingTargetBalance.ts` и расширен список валидных документов (`payment_invoice`, `invoice`) в `documentCanReceivePayment()`.
 
 ---
 
