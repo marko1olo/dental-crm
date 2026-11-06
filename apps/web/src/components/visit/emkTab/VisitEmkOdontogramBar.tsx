@@ -144,7 +144,7 @@ export function VisitEmkOdontogramBar({
 					});
 				}
 
-				// 2. Linear Chairside Cockpit Trajectory: Auto-enrich Form 043/u SOAP Diary
+				// 2. Линейная траектория врача у кресла: автозаполнение дневника приёма (Медицинская карта SOAP)
 				const soap = generateSoapFromOdontogramFinding({
 					toothNumber: num,
 					state: canonicalState,
@@ -216,11 +216,12 @@ export function VisitEmkOdontogramBar({
 					}),
 				);
 
-				// 3. Auto-link Order 804n clinical services to tooth & invoice
+				// 3. Автоматическая привязка услуг прейскуранта к зубу и счёту визита
 				const matchingService = infer804nServiceFromStamp(stamp, num);
 				if (matchingService) {
 					useVisitStore.getState().addCompletedService({
 						serviceId: matchingService.id,
+						serviceCode: matchingService.code804n,
 						code804n: matchingService.code804n,
 						toothNumber: num,
 						toothCode: code,
@@ -239,6 +240,7 @@ export function VisitEmkOdontogramBar({
 										title: matchingService.title,
 										unitPriceRub: matchingService.priceRub,
 										quantity: 1,
+										serviceCode: matchingService.code804n,
 										code804n: matchingService.code804n,
 										toothCode: code,
 									},

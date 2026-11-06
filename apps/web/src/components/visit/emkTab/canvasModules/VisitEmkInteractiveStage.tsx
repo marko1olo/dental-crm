@@ -47,7 +47,7 @@ export function VisitEmkInteractiveStage({
 					onOpenTemplatesModal={() => setIsSoapTemplatesModalOpen(true)}
 				/>
 
-				{/* Компактный трекер статуса Form 043/u (SOAP Visibility Tracker) */}
+				{/* Компактный трекер протокола дневника приёма (Медицинская карта SOAP) */}
 				<EmkSoapVisibilityTracker
 					visitNoteForm={visitNoteForm}
 					activeTooth={effectiveActiveTooth}

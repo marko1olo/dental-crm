@@ -8,6 +8,7 @@ import {
 } from "../clinicalVisitWorkflow";
 import { assembleVisitStoreCompletedServices } from "../useVisitCompletion";
 import { executeVisitPostCompletionPipeline } from "../completionModules/visitCompletionPipeline";
+import { createVisitInvoiceInApi } from "../completionModules/visitInvoiceCreationService";
 
 export interface UseVisitCompletionWorkflowOptions {
 	openVisitId: string;
@@ -113,6 +114,18 @@ export function useVisitCompletionWorkflow({
 				result,
 			});
 
+			const createdInvoice = await createVisitInvoiceInApi({
+				effectiveVisitId,
+				effectivePatientId,
+				effectiveDoctorId: dashboard?.activeDoctor?.id,
+				result,
+			});
+
+			if (createdInvoice.isPersistedInDb) {
+				result.invoiceId = createdInvoice.invoiceId;
+				result.receiptNumber = createdInvoice.invoiceNumber;
+			}
+
 			staffTelemetryService.recordAction({
 				actionType: "custom_action",
 				entityType: "visit",
@@ -120,8 +133,9 @@ export function useVisitCompletionWorkflow({
 				patientId: activePatient?.id || null,
 				details: {
 					status: "completed",
+					invoiceId: createdInvoice.invoiceId,
 					totalNetRub: result.totalNetRub,
-					receiptNumber: result.receiptNumber,
+					receiptNumber: createdInvoice.invoiceNumber,
 				},
 			});
 
@@ -129,9 +143,10 @@ export function useVisitCompletionWorkflow({
 				patientId: activePatient?.id || "pat-default",
 				patientName: activePatient?.fullName || (activePatient as any)?.name || "Пациент",
 				visitId: openVisitId,
+				invoiceId: createdInvoice.invoiceId,
 				services: result.items,
-				totalDueRub: result.totalNetRub,
-				receiptNumber: result.receiptNumber,
+				totalDueRub: createdInvoice.totalAmountRub,
+				receiptNumber: createdInvoice.invoiceNumber,
 				timestamp: Date.now(),
 			};
 			try {
@@ -142,11 +157,27 @@ export function useVisitCompletionWorkflow({
 			}
 
 			setCompletionResult(result);
-			setIsSbpQrModalOpen(true);
-			showToast(`Приём завершён! Смета: ${result.totalNetRub.toLocaleString("ru-RU")} ₽. Переход в кассу...`, "success", 4000);
+			// Мандат 8e: Запрет насильственного срыва экрана в кассу. Врач остаётся в карте приёма!
+			setIsSbpQrModalOpen(false);
+			showToast(
+				`Приём завершён. Счёт №${createdInvoice.invoiceNumber}: ${result.totalNetRub.toLocaleString("ru-RU")} ₽ сформирован.`,
+				"success",
+				4000,
+			);
 			if (typeof window !== "undefined") {
-				window.dispatchEvent(new CustomEvent("dente:pending-checkout-ready", { detail: pendingCheckout }));
-				window.location.hash = "finance";
+				window.dispatchEvent(
+					new CustomEvent("dente-invoice-created", {
+						detail: {
+							invoiceId: createdInvoice.invoiceId,
+							patientId: effectivePatientId,
+						},
+					}),
+				);
+				window.dispatchEvent(
+					new CustomEvent("dente:pending-checkout-ready", {
+						detail: pendingCheckout,
+					}),
+				);
 			}
 			return true;
 		} catch (err) {

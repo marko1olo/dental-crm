@@ -6,15 +6,15 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
-		background: var(--ok-fg);
+		background: var(--primary);
 		color: #ffffff;
 		border: none;
-		border-radius: 12px;
+		border-radius: 14px;
 		font-size: 14px;
 		font-weight: 800;
 		cursor: pointer;
 		touch-action: manipulation;
-		box-shadow: 0 4px 14px rgba(16, 185, 129, 0.3);
+		box-shadow: 0 4px 14px rgba(13, 148, 136, 0.28);
 		transition: transform 0.1s ease, opacity 0.15s ease;
 	}
 
@@ -30,10 +30,10 @@
 		align-items: center;
 		justify-content: center;
 		gap: 8px;
-		background: var(--brand);
+		background: var(--primary);
 		color: #ffffff;
 		border: none;
-		border-radius: 12px;
+		border-radius: 14px;
 		font-size: 14px;
 		font-weight: 800;
 		cursor: pointer;

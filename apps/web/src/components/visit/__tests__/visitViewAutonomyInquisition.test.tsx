@@ -286,7 +286,9 @@ describe("VisitView Audio Transcription Polish & Somatic Norm Autonomy Inquisiti
 	it("7. guarantees fast Form 043/u printing is accessible anytime with draft/signed watermark (Mandate 8e)", () => {
 		expect(visitViewSource).toContain('data-testid="btn-visit-fast-print-043u"');
 		expect(visitViewSource).toContain("handlePrintForm043uFast");
-		expect(visitViewSource).toContain('const watermarkText = isClosed ? "ПОДПИСАНО ВРАЧОМ" : "ЧЕРНОВИК";');
+		expect(visitViewSource).toMatch(
+			/watermarkText\s*=\s*[\s\S]*?isClosed\s*\?\s*"ПОДПИСАНО ВРАЧОМ"\s*:\s*"ЧЕРНОВИК"/,
+		);
 	});
 
 	it("8. VisitNoteDraftPanel provides 1-click somatic norm preset and non-blocking transcription fallback (Mandates 8e & 8k)", () => {

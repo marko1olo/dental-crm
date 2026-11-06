@@ -80,7 +80,7 @@ export function VisitEmkCanvas({
 				currentDiary: visitNoteForm as any,
 			});
 
-			// 1. Анамнез заболевания, диагноз, жалобы, осмотр, протокол Формы 043/у
+			// 1. Анамнез заболевания, диагноз, жалобы, осмотр, протокол дневника приёма (Медицинская карта)
 			updateVisitNoteField("diagnosis", result.soap.diagnosis);
 			updateVisitNoteField("anamnesis", result.soap.anamnesis);
 			updateVisitNoteField("complaint", result.soap.complaints);
@@ -89,11 +89,12 @@ export function VisitEmkCanvas({
 			updateVisitNoteField("treatmentPlan", result.soap.treatmentPlan);
 			updateVisitNoteField("recommendations", result.soap.recommendations);
 
-			// 2. Смета 804н: замена услуги 1-го этапа на услуги 2-го этапа
+			// 2. Прейскурант услуг: замена услуги 1-го этапа на услуги 2-го этапа в счёте
 			window.dispatchEvent(
 				new CustomEvent("dente-remove-billing-items", {
 					detail: {
-						items: result.servicesToRemove.map((s) => s.code804n),
+						items: result.servicesToRemove.map((s: any) => s.serviceCode ?? s.code804n),
+						serviceCodes: result.servicesToRemove.map((s: any) => s.serviceCode ?? s.code804n),
 					},
 				}),
 			);
@@ -101,7 +102,11 @@ export function VisitEmkCanvas({
 			window.dispatchEvent(
 				new CustomEvent("dente-add-services-to-invoice", {
 					detail: {
-						services: result.servicesToAdd,
+						services: result.servicesToAdd.map((s: any) => ({
+							...s,
+							serviceCode: s.serviceCode ?? s.code804n,
+							code: s.serviceCode ?? s.code804n,
+						})),
 					},
 				}),
 			);
@@ -112,8 +117,9 @@ export function VisitEmkCanvas({
 				state: result.targetToothState,
 				diagnosis: result.soap.diagnosis,
 				treatmentPlan: result.soap.treatmentPlan,
-				services: result.servicesToAdd.map((s) => ({
-					code: s.code804n,
+				services: result.servicesToAdd.map((s: any) => ({
+					code: s.serviceCode ?? s.code804n,
+					serviceCode: s.serviceCode ?? s.code804n,
 					title: s.title,
 					price: s.unitPriceRub,
 				})),

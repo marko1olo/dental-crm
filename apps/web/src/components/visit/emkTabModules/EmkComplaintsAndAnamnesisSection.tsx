@@ -38,10 +38,18 @@ export function EmkComplaintsAndAnamnesisSection(props: EmkComplaintsAndAnamnesi
 		const norm = buildEmkHealthyComplaintsAndAnamnesisPreset();
 		if (!String(visitNoteForm?.complaint || "").trim()) {
 			updateVisitNoteField("complaint", norm.complaint);
+			updateVisitNoteField("complaints", norm.complaint);
 		}
 		updateVisitNoteField("anamnesis", norm.anamnesis);
+		if (!String(visitNoteForm?.objectiveStatus || "").trim()) {
+			const normObjective =
+				"Слизистая оболочка полости рта бледно-розовая, умеренно влажная. Зубные ряды санированы / интактны. Прикус физиологический.";
+			updateVisitNoteField("objectiveStatus", normObjective);
+			updateVisitNoteField("objectiveInspection", normObjective);
+			updateVisitNoteField("objective", normObjective);
+		}
 		onApplyHealthyNorm?.();
-		showToast(`Заполнена соматическая норма (${CANONICAL_FORM043_SOMATIC_NORM.allergologicalHistory})`, "success", 2200);
+		showToast("Физиологическая норма заполнена (соматически здоров, слизистая в норме)", "success", 2500);
 	};
 
 	const handleToggleSomaticChip = (chip: SomaticQuickChip) => {

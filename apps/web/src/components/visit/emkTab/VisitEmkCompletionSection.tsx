@@ -18,6 +18,54 @@ export function VisitEmkCompletionSection({
 }: VisitEmkCompletionSectionProps) {
 	return (
 		<>
+			{/* Ненавязчивая плашка завершения приёма (Мандат 8e: свобода врача, ноль насильственного срыва в кассу) */}
+			{completionResult && (
+				<div
+					className="mt-2.5 p-3.5 sm:p-4 rounded-2xl border border-emerald-500/30 bg-emerald-500/10 text-emerald-950 dark:text-emerald-50 text-xs sm:text-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs"
+					data-testid="visit-completion-success-banner"
+					role="status"
+				>
+					<div className="flex items-center gap-2.5 min-w-0">
+						<div className="w-8 h-8 rounded-xl bg-emerald-600 text-white flex items-center justify-center shrink-0 shadow-2xs">
+							<Check size={18} />
+						</div>
+						<div className="flex flex-col min-w-0">
+							<span className="font-extrabold text-emerald-950 dark:text-emerald-50">
+								Приём завершён. Счёт №{completionResult.receiptNumber || completionResult.invoiceId} сформирован
+							</span>
+							<span className="text-[11px] text-emerald-800/80 dark:text-emerald-200/80">
+								Протокол и смета сохранены. К оплате: {completionResult.totalNetRub.toLocaleString("ru-RU")} ₽. Вы можете остаться в карте или перейти в кассу.
+							</span>
+						</div>
+					</div>
+					<div className="flex items-center gap-2 w-full sm:w-auto justify-end shrink-0">
+						<button
+							type="button"
+							onClick={() => setIsSbpQrModalOpen(true)}
+							className="secondary-button min-h-[38px] px-3 py-1.5 rounded-xl text-xs font-bold border border-emerald-500/40 bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-emerald-800 dark:text-emerald-200 transition-colors cursor-pointer inline-flex items-center gap-1.5 shadow-2xs"
+							data-testid="btn-reopen-sbp-qr"
+							title="Показать QR-код СБП"
+						>
+							<QrCode size={14} className="shrink-0" />
+							<span>QR-код СБП</span>
+						</button>
+						<button
+							type="button"
+							onClick={() => {
+								if (typeof window !== "undefined") {
+									window.location.hash = "finance";
+								}
+							}}
+							className="primary-button min-h-[38px] px-4 py-1.5 rounded-xl text-xs sm:text-sm font-extrabold bg-[var(--primary)] text-white hover:opacity-90 transition-all cursor-pointer inline-flex items-center gap-1.5 shadow-xs"
+							data-testid="btn-goto-cashbox"
+						>
+							<span>Перейти в кассу</span>
+							<ChevronRight size={15} className="shrink-0" />
+						</button>
+					</div>
+				</div>
+			)}
+
 			{/* Честный неблокирующий баннер ошибки расчёта сметы без фальшивых чеков */}
 			{completionError && (
 				<div
@@ -158,93 +206,134 @@ export function VisitEmkCompletionSection({
 				)}
 			</div>
 
-			{/* Мобильный плавающий бар действия у кресла (Apple HIG Thumb Zone, blur(20px), safe-area) */}
+			{/* Мобильный плавающий бар действия у кресла (Apple HIG Thumb Zone, blur(20px), safe-area, тач >= 44x44px) */}
 			<div
 				className="sm:hidden mobile-bottom-bar-floating"
 				data-testid="mobile-emk-sticky-bottom-bar"
 			>
-				{/* 52px Primary CTA: Далее (шаги 1–3) или Завершить приём (шаг 4) */}
-				{(activeEmkTab === "complaints" ||
-					activeEmkTab === "complaint" ||
-					activeEmkTab === "anamnesis") && (
-					<button
-						type="button"
-						onClick={() => setActiveEmkTab("objectiveStatus")}
-						className="mobile-bottom-cta-next"
-						data-testid="btn-mobile-next-step"
-					>
-						<span>Далее: Осмотр и статус</span>
-						<ChevronRight size={16} />
-					</button>
+				{completionResult ? (
+					<div className="flex flex-col gap-2 w-full" data-testid="mobile-completed-checkout-bar">
+						<button
+							type="button"
+							onClick={() => {
+								if (typeof window !== "undefined") {
+									window.location.hash = "finance";
+								}
+							}}
+							className="mobile-bottom-cta-primary min-h-[48px] h-12"
+							data-testid="btn-mobile-goto-cashbox"
+						>
+							<span>Перейти в кассу (Счёт №{completionResult.receiptNumber || completionResult.invoiceId})</span>
+							<ChevronRight size={16} className="shrink-0" />
+						</button>
+						<div className="mobile-bottom-secondary-strip">
+							<button
+								type="button"
+								onClick={() => setIsSbpQrModalOpen(true)}
+								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+								data-testid="btn-mobile-reopen-sbp"
+							>
+								<QrCode size={16} className="text-[var(--teal)] shrink-0" />
+								<span>СБП QR</span>
+							</button>
+							<button
+								type="button"
+								onClick={handleSaveVisitNote}
+								disabled={isDraftAccepting}
+								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+								data-testid="btn-mobile-sticky-save"
+							>
+								<FileCheck size={16} className="text-[var(--teal)] shrink-0" />
+								<span>Сохранить в карте</span>
+							</button>
+						</div>
+					</div>
+				) : (
+					<>
+						{/* Ровно 1 Primary CTA: Далее (шаги 1–3) или Завершить приём (шаг 4) */}
+						{(activeEmkTab === "complaints" ||
+							activeEmkTab === "complaint" ||
+							activeEmkTab === "anamnesis") && (
+							<button
+								type="button"
+								onClick={() => setActiveEmkTab("objectiveStatus")}
+								className="mobile-bottom-cta-next min-h-[48px] h-12"
+								data-testid="btn-mobile-next-step"
+							>
+								<span>Далее: Осмотр и статус</span>
+								<ChevronRight size={16} />
+							</button>
+						)}
+
+						{(activeEmkTab === "objectiveStatus" ||
+							activeEmkTab === "status" ||
+							activeEmkTab === "objective") && (
+							<button
+								type="button"
+								onClick={() => setActiveEmkTab("diagnosis")}
+								className="mobile-bottom-cta-next min-h-[48px] h-12"
+								data-testid="btn-mobile-next-step"
+							>
+								<span>Далее: Диагноз (МКБ-10)</span>
+								<ChevronRight size={16} />
+							</button>
+						)}
+
+						{activeEmkTab === "diagnosis" && (
+							<button
+								type="button"
+								onClick={() => setActiveEmkTab("treatmentPlan")}
+								className="mobile-bottom-cta-next min-h-[48px] h-12"
+								data-testid="btn-mobile-next-step"
+							>
+								<span>Далее: Лечение и протокол</span>
+								<ChevronRight size={16} />
+							</button>
+						)}
+
+						{(activeEmkTab === "treatmentPlan" ||
+							activeEmkTab === "diary" ||
+							activeEmkTab === "recommendations" ||
+							activeEmkTab === "all") && (
+							<button
+								type="button"
+								onClick={handleCompleteVisitAndGenerateReceipt}
+								disabled={isCompletingVisit}
+								className="mobile-bottom-cta-primary min-h-[48px] h-12"
+								data-testid="btn-mobile-primary-complete"
+							>
+								<Check size={18} className="shrink-0" />
+								<span>Завершить приём и сформировать счёт</span>
+								<ChevronRight size={16} className="shrink-0" />
+							</button>
+						)}
+
+						{/* Вспомогательная полоса действий: нейтральные Secondary кнопки */}
+						<div className="mobile-bottom-secondary-strip">
+							<button
+								type="button"
+								onClick={handleSaveVisitNote}
+								disabled={isDraftAccepting}
+								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+								data-testid="btn-mobile-sticky-save"
+							>
+								<FileCheck size={15} className="text-teal-600 dark:text-teal-400 shrink-0" />
+								<span>Сохранить черновик</span>
+							</button>
+
+							<button
+								type="button"
+								onClick={handleCompleteVisitAndGenerateReceipt}
+								disabled={isCompletingVisit}
+								className="min-h-[44px] flex-1 px-3 py-2 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
+								data-testid="btn-mobile-sticky-complete"
+							>
+								<Check size={15} className="shrink-0 text-emerald-600 dark:text-emerald-400" />
+								<span>Завершить приём</span>
+							</button>
+						</div>
+					</>
 				)}
-
-				{(activeEmkTab === "objectiveStatus" ||
-					activeEmkTab === "status" ||
-					activeEmkTab === "objective") && (
-					<button
-						type="button"
-						onClick={() => setActiveEmkTab("diagnosis")}
-						className="mobile-bottom-cta-next"
-						data-testid="btn-mobile-next-step"
-					>
-						<span>Далее: Диагноз (МКБ-10)</span>
-						<ChevronRight size={16} />
-					</button>
-				)}
-
-				{activeEmkTab === "diagnosis" && (
-					<button
-						type="button"
-						onClick={() => setActiveEmkTab("treatmentPlan")}
-						className="mobile-bottom-cta-next"
-						data-testid="btn-mobile-next-step"
-					>
-						<span>Далее: Лечение и протокол</span>
-						<ChevronRight size={16} />
-					</button>
-				)}
-
-				{(activeEmkTab === "treatmentPlan" ||
-					activeEmkTab === "diary" ||
-					activeEmkTab === "recommendations" ||
-					activeEmkTab === "all") && (
-					<button
-						type="button"
-						onClick={handleCompleteVisitAndGenerateReceipt}
-						disabled={isCompletingVisit}
-						className="mobile-bottom-cta-primary"
-						data-testid="btn-mobile-primary-complete"
-					>
-						<Check size={18} className="shrink-0" />
-						<span>Завершить приём и сформировать чек</span>
-						<ChevronRight size={16} className="shrink-0" />
-					</button>
-				)}
-
-				{/* Вспомогательная полоса действий (Сохранить черновик / Быстро завершить) */}
-				<div className="mobile-bottom-secondary-strip">
-					<button
-						type="button"
-						onClick={handleSaveVisitNote}
-						disabled={isDraftAccepting}
-						className="min-h-[40px] flex-1 px-3 py-1.5 rounded-xl text-xs font-bold bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] flex items-center justify-center gap-1.5 shadow-2xs cursor-pointer active:scale-98"
-						data-testid="btn-mobile-sticky-save"
-					>
-						<FileCheck size={14} className="text-teal-600 dark:text-teal-400 shrink-0" />
-						<span>Сохранить черновик</span>
-					</button>
-
-					<button
-						type="button"
-						onClick={handleCompleteVisitAndGenerateReceipt}
-						disabled={isCompletingVisit}
-						className="min-h-[40px] flex-1 px-3 py-1.5 rounded-xl text-xs font-extrabold bg-[var(--ok-fg)] text-white flex items-center justify-center gap-1.5 shadow-xs cursor-pointer active:scale-98"
-						data-testid="btn-mobile-sticky-complete"
-					>
-						<Check size={14} className="shrink-0" />
-						<span>Завершить приём</span>
-					</button>
-				</div>
 			</div>
 		</>
 	);

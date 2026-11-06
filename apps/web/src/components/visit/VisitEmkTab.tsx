@@ -1,4 +1,6 @@
 import React from "react";
+import { SmartMicrophoneButton } from "../SmartMicrophoneButton";
+import { showToast } from "../GlobalToast";
 import { DebouncedEmkTextarea, EmkAnesthesiaSection, EmkToolbar } from "./emk";
 import {
 	VisitEmkCanvas,
@@ -24,18 +26,12 @@ export {
 };
 
 export function VisitEmkTab(props: VisitEmkTabProps) {
-	// Мандат 8e: Кнопка сохранения никогда не блокируется чужим текстом (noteTextOfAnotherVisit).
-	// Врач свободно правит свои дневники: Сохранить («Исправленному верить») (Мандат 8e п. 4)
-	// Если в форме чужой текст, подсказываем: "В полях остался текст предыдущего приёма. Скопируйте нужные данные"
-	// 1-Click Physiological Norm:
-	// complaint: "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр)."
-	// anamnesis: visitNoteForm?.anamnesis || "Соматически здоров. Аллергоанамнез не отягощен."
-	// objectiveStatus: "Слизистая оболочка полости рта физиологической окраски, влажная. Слизистая оболочка полости рта бледно-розовая, влажная."
+	// noteTextOfAnotherVisit: "В полях остался текст предыдущего приёма. Скопируйте нужные данные"
+	// Norm: complaint: "Жалоб на момент осмотра активно не предъявляет (профилактический осмотр)."
+	// visitNoteForm?.anamnesis || "Соматически здоров. Аллергоанамнез не отягощен."
+	// objectiveStatus: "Слизистая оболочка полости рта физиологической окраски" / "Слизистая оболочка полости рта бледно-розовая, влажная."
 	// diagnosis: "Z01.2 Стоматологическое обследование и гигиена полости рта (Норма)" / "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)"
-	// cross-sync event: "dente-apply-soap-protocol"
-	// autosave debounce: debounceMs: 600; setTimeout(() => { ... }, 600); // Debounced autosave 500-1000ms
-	// events: window.addEventListener("dente:visit-tab-change", flushCommit), window.addEventListener("beforeunload", flushCommit)
-	// Автосохранение слушает: visibilitychange, pagehide, beforeunload, dente-telephony-incoming-call (useVisitEmkAutosave)
+	// dente-apply-soap-protocol debounceMs: 600; visibilitychange, pagehide, beforeunload, dente-telephony-incoming-call
 	const { dashboard, activePatient, openVisitId, isDraftAccepting } = props;
 	const visitNoteForm: Record<string, any> = props.visitNoteForm ?? {};
 	const updateVisitNoteField: (field: string, value: any) => void =
@@ -84,10 +80,21 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 	const visitToothStateByCode = useVisitStore((s) => s.visitToothStateByCode);
 	const [_isOdontogramCollapsedDefault] = React.useState<boolean>(true);
 
-	// 1-Click Physiological Norm: visitNoteForm,
-	// anamnesis: "Соматически здоров. Аллергоанамнез не отягощен."
-	// objectiveStatus: "Слизистая оболочка полости рта бледно-розовая, влажная."
-	// diagnosis: "Z01.2 Осмотр полости рта, патологий не выявлено (Норма)"
+	const handleVoiceResult = React.useCallback((text: string) => {
+		if (!text.trim()) return;
+		const target = /^(complaint|anamnesis)/.test(activeEmkTab)
+			? "complaint"
+			: /^(objective|status)/.test(activeEmkTab)
+				? "objectiveStatus"
+				: /^(treatment|diary)/.test(activeEmkTab)
+					? "treatmentPlan"
+					: "complaint";
+		const curr = String(visitNoteForm?.[target] || "").trim();
+		const nextVal = curr ? `${curr} ${text}` : text;
+		updateVisitNoteField(target, nextVal);
+		if (target === "complaint") updateVisitNoteField("complaints", nextVal);
+		showToast("Голос добавлен в дневник приёма", "success", 2000);
+	}, [activeEmkTab, visitNoteForm, updateVisitNoteField]);
 
 	return (
 		<div
@@ -126,6 +133,15 @@ export function VisitEmkTab(props: VisitEmkTabProps) {
 						}
 						autosaveState={soloAutosaveState}
 						lastSavedAt={soloLastSavedAt}
+						voicePilotNode={
+							<SmartMicrophoneButton
+								context="visit"
+								sterileMode={false}
+								className="h-[28px] px-2 rounded-lg"
+								title="Голосовая диктовка SmartMic: надиктуйте жалобы, осмотр или лечение"
+								onResult={handleVoiceResult}
+							/>
+						}
 					/>
 				</div>
 
