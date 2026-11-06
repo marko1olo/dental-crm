@@ -392,6 +392,49 @@ export async function* runTurn(
 				continue;
 			}
 
+			// Cautious mode: every single tool call requires explicit user confirmation
+			if (ctx.mode === "cautious") {
+				if (!writeToolToConfirm) {
+					writeToolToConfirm = { tu, realArgs };
+				}
+				continue;
+			}
+
+			// Autonomous mode (Mandate 8e): execute all non-fatal tools automatically with live log
+			if (ctx.mode === "autonomous") {
+				yield {
+					type: "tool_call_started",
+					callId: tu.id,
+					name: tu.name,
+					arguments: realArgs,
+				};
+
+				const res = await ctx.tools.call(ctx, tu.name, realArgs);
+				const payload = res.ok ? res.data : { error: res.error };
+
+				history.push({
+					role: "tool",
+					content: [
+						{
+							type: "tool_result",
+							toolCallId: tu.id,
+							content: payload,
+							isError: !res.ok,
+						} as ToolResultBlock,
+					],
+				});
+
+				yield {
+					type: "tool_call_finished",
+					callId: tu.id,
+					name: tu.name,
+					ok: res.ok,
+					result: payload,
+				};
+				continue;
+			}
+
+			// Supervised mode (Recommended Default):
 			// READ tools execute immediately and continue loop
 			if (tool.category === "read") {
 				yield {

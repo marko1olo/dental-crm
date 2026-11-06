@@ -27,14 +27,9 @@
   transition: right 0.25s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-body.copilot-open .chairside-copilot-hud--floating {
-  right: 456px;
-}
-
-@media (max-width: 1024px) {
-  body.copilot-open .chairside-copilot-hud--floating {
-    display: none;
-  }
+body.copilot-open .chairside-copilot-hud--floating,
+body.copilot-studio-open .chairside-copilot-hud--floating {
+  display: none !important;
 }
 .chairside-copilot-hud--docked {
   position: relative;

@@ -58,3 +58,8 @@ export const updateTreatmentPlanSchema = z.object({
 	planDiscountPercent: z.number().min(0).max(100).optional(),
 	planDiscountRub: z.number().nonnegative().optional(),
 });
+
+export const updateTreatmentPlanStatusSchema = z.object({
+	status: z.enum(["Draft", "Active", "Approved", "Completed", "Rejected"]).default("Approved"),
+	selectedTier: z.string().optional(),
+});

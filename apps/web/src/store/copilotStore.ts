@@ -19,7 +19,7 @@ import {
 	SHOWCASE_TOOL_LOGS,
 } from "./copilotShowcaseData";
 
-export type AiTrustLevel = "confirm_all" | "balanced" | "autonomous";
+export type AiTrustLevel = "cautious" | "supervised" | "autonomous" | "confirm_all" | "balanced";
 export type AiProvider = "gemini" | "openai" | "anthropic" | "deepseek" | "groq";
 export type AiSpeedMode = "turbo" | "deep_reasoning";
 export type ModelRoutingMode = "server_managed" | "custom_byok";
@@ -180,7 +180,7 @@ export interface CopilotStoreState {
 }
 
 const DEFAULT_SETTINGS: CopilotSettings = {
-	trustLevel: "balanced",
+	trustLevel: "supervised",
 	provider: "gemini",
 	model: "server_managed",
 	modelRoutingMode: "server_managed",

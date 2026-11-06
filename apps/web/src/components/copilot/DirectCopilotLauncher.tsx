@@ -29,10 +29,8 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
 
   const appTooth = useAppStore((s) => s.activeTooth), visitTooth = useVisitStore((s) => s.activeToothNumber);
   const activeTooth = ctx?.activeTooth ?? ctx?.tooth ?? visitTooth ?? appTooth ?? null;
-
   const appPatId = useAppStore((s) => s.activePatientId), visitPatId = useVisitStore((s) => s.activeVisit?.patientId);
   const patientId = ctx?.patientId ?? visitPatId ?? appPatId ?? null;
-
   const dashboard = useAppStore((s) => s.dashboard);
   const patientName = useMemo(() => {
     if (ctx?.patientName) return ctx.patientName;
@@ -43,13 +41,15 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
   useEffect(() => {
     const handleLoc = () => { const a = checkIsCopilotActive(); setIsActive(a); if (a) setIsOpen(true); };
     const handleOpen = (e: Event) => {
-      const d = (e as CustomEvent<LaunchDetail>)?.detail; if (d) setCtx(d);
-      setIsActive(true); setIsOpen(true);
+      const d = (e as CustomEvent<LaunchDetail>)?.detail;
+      if (typeof window !== "undefined" && (window as any).__denteCopilot) {
+        if (d) (window as any).__denteCopilot.setContext?.({ patientName: d.patientName, patientId: d.patientId, activeTooth: d.activeTooth ?? d.tooth });
+        (window as any).__denteCopilot.open(); return;
+      }
+      if (d) setCtx(d); setIsActive(true); setIsOpen(true);
     };
     const handleToggle = () => { setIsActive((p) => !p); setIsOpen((p) => !p); };
-    const handleKey = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && ["k", "K", "j", "J"].includes(e.key)) { e.preventDefault(); setIsActive((p) => !p); setIsOpen((p) => !p); }
-    };
+    const handleKey = (e: KeyboardEvent) => { if ((e.ctrlKey || e.metaKey) && ["k", "K", "j", "J"].includes(e.key)) { e.preventDefault(); handleToggle(); } };
     window.addEventListener("hashchange", handleLoc); window.addEventListener("popstate", handleLoc);
     window.addEventListener("dente:open-copilot", handleOpen); window.addEventListener("dente:toggle-copilot", handleToggle);
     window.addEventListener("dente:open-agent-cockpit", handleOpen); window.addEventListener("keydown", handleKey);
@@ -66,7 +66,6 @@ export function DirectCopilotLauncher(): React.ReactElement | null {
       window.history.pushState(null, "", window.location.pathname + window.location.search);
     }
   }, []);
-
   if (!isActive || !isOpen) return null;
   return (
     <CopilotStudioModal

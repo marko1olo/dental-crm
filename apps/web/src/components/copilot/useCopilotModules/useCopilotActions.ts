@@ -82,6 +82,8 @@ export function useCopilotActions({
 				byokApiKey: settings.byokApiKey,
 				byokModel: settings.byokModel,
 				speedMode: settings.speedMode,
+				trustLevel: settings.trustLevel,
+				runtimeMode: settings.runtimeMode,
 			});
 			setBusy(false);
 			setPhase(null);

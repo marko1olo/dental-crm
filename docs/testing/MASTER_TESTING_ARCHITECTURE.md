@@ -32,8 +32,10 @@ graph TD
 | **ACID-транзакции и дедлоки** | [`docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/ACID_CONCURRENCY_TEST_REGISTRY.md) | `apps/api/src/tests/concurrency/acidTransactionStress.test.ts` | 20 потоков бронирования (1x 201 + 19x 409), дебет семейного депозита (3x 200 + 12x 402), дедлок-иммунитет склада через `ORDER BY id ASC`. |
 | **Фаззинг формулы FDI и копеек** | [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md) | `packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` | 10 000 мутаций ввода FDI (0 крашей), анатомические поверхности Wheeler, 10 000 сплитов и скидок Мандата 8e (`sum === totalKopecks`). |
 | **Жизненный цикл ЭМК и дневников** | [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md) | `apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` | Дневники SOAP, автосохранение черновиков (Мандат 8e), ПЭП криптохеш SHA-256, аудит «Исправленному верить», печать A4. |
+| **Планы лечения, 3 тарифа и ПЭП** | [`docs/testing/TREATMENT_PLANS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TREATMENT_PLANS_TEST_REGISTRY.md) | `apps/api/src/tests/routes/treatmentPlanStudioAndPep.test.ts`<br>`treatmentPlanMultiTierAndSigning.test.ts` | 3 тарифа (Эконом/Оптимум/Премиум), скрытие микро-расходников, копеечная математика рассрочки 0%, вычет 13% НДФЛ, ПЭП SHA-256, 30-дней без блокировок (Мандат 8e). |
 | **React 19 & Zustand сторы** | [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md) | `appStoreBehavioral.test.ts`<br>`clinicalWorkflowStateHydration.test.tsx` | Изоляция сессий пациентов (ноль утечек данных), 0-F5 реактивная гидратация, Apple HIG $\ge 44\times 44$px. |
 | **Расписание и быстрая запись (3 сек)** | [`docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md) | `redTeamSchedule3SecondBookingInquisition.test.tsx`<br>`quickBookingSoloDoctor.test.tsx` | 3-сек запись без ассистента (Мандат 8n), `disabled={false}`, UUIDv7 Idempotency-Key, Apple HIG Agenda View. |
+| **ИИ-Копайлот и Workstation-Харнесс** | [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md) | `apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` | 3 уровня доверия (cautious/supervised/autonomous), ротация ключей и 429 cooldown, чистый клинический язык (Мандат 8x), изоляция Web vs Desktop. |
 | **Очищение тестовой базы** | [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md) | 11 очищенных сьютов (`labOrders`, `radiology`, `fns`, `bom`, `speech`) | Ликвидация тестов с `fs.readFileSync`, искоренение проглоченных `catch {}`, строгие `node:assert/strict`. |
 
 ---
@@ -67,6 +69,9 @@ graph TD
     - `idempotencyAndOfflineStorm.test.ts` — 20 одновременных POST с одинаковым `Idempotency-Key` (UUIDv7) выполняются ровно 1 раз (1x 201 + 19x 409), офлайн FIFO очередь, CRDT LWW одонтограммы.
   * **Клинический жизненный цикл ЭМК (`apps/api/src/tests/clinical/`)**:
     - `clinicalEmrLifecycle.test.ts` — валидация номеров FDI постоянного (11..48) и молочного (51..85) прикуса, связывание с МКБ-10, соматическая безопасность (аллергии, кардиориски), debounced autosave черновика (Мандат 8e), ПЭП подпись с SHA-256 хешем и ревизии «Исправленному верить».
+  * **Планы лечения, 3 тарифа и электронная подпись ПЭП (`apps/api/src/tests/routes/`, `apps/api/src/services/`)**:
+    - `treatmentPlanStudioAndPep.test.ts` — интеграционный CRUD планов, 3-тарифное сравнение, скрытие микро-расходников, точная копеечная математика (`amountKopecks`), 30-дневная автономия врача (Мандат 8e), SMS OTP ПЭП подписание с SHA-256 хешем и валидация статусов.
+    - `treatmentPlanMultiTierAndSigning.test.ts` — доменная математика тарифов, расчет 13% налогового вычета НДФЛ (КНД 1151156, коды 01 и 02), SHA-256 Frozen Snapshot и генерация бланка A4 в 1 клик.
   * **Безопасность и RBAC (`apps/api/src/tests/security/`)**:
     - `deepRoutesPrivacyAudit.test.ts`, `payloadStripping152Fz.test.ts`, `roleRefusalText.test.ts` — защита персональных данных пациентов (152-ФЗ), изоляция арендаторов (`organizationId`).
 
@@ -139,6 +144,10 @@ npx tsx --test apps/web/src/components/__tests__/clinicalWorkflowStateHydration.
 
 # 9. Проверка базовой тестовой инфраструктуры:
 npm run test:infra
+
+# 10. Планы лечения, 3 тарифа, копеечная математика и ПЭП (5.3 с):
+npx tsx --test apps/api/src/tests/routes/treatmentPlanStudioAndPep.test.ts
+npx tsx --test apps/api/src/services/treatmentPlan/__tests__/treatmentPlanMultiTierAndSigning.test.ts
 ```
 
 ### Комплексные гейты монорепозитория (строго единолично L1 Оркестратор):

@@ -45,7 +45,11 @@ export function CopilotSettingsModelRouting({
 	const [testError, setTestError] = useState<string | null>(null);
 
 	const handleTestConnection = async () => {
-		if (!byokApiKey.trim()) return;
+		if (!byokApiKey.trim()) {
+			setTestStatus("error");
+			setTestError("Введите API-ключ");
+			return;
+		}
 		setIsTesting(true);
 		setTestStatus("idle");
 		setTestError(null);
@@ -178,8 +182,8 @@ export function CopilotSettingsModelRouting({
 							<button
 								type="button"
 								onClick={handleTestConnection}
-								disabled={isTesting || !byokApiKey.trim()}
-								className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1.5 cursor-pointer disabled:opacity-40"
+								aria-busy={isTesting}
+								className="h-7 px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[11px] font-semibold text-[var(--ink)] flex items-center gap-1.5 cursor-pointer"
 								data-testid="copilot-test-byok-btn"
 							>
 								{isTesting ? <Loader2 size={12} className="animate-spin text-[var(--teal,#0d9488)]" /> : <Sparkles size={12} className="text-[var(--teal,#0d9488)]" />}

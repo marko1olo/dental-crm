@@ -16,11 +16,12 @@ export interface CopilotThinkingIndicatorProps {
 	showThinkingProcess?: boolean | undefined;
 }
 
-export function getClinicalThinkingPhase(elapsed: number): string {
-	if (elapsed < 0.8) return "ИИ формирует клинический протокол...";
-	if (elapsed < 1.8) return "Дифференциальный диагноз по МКБ-10...";
-	if (elapsed < 2.8) return "Проверка противопоказаний и СтАР...";
-	return "Синтез рекомендаций и сметы...";
+export function getClinicalThinkingPhase(elapsed: number, includeSeconds = false): string {
+	let phase = "Синтез рекомендаций и сметы...";
+	if (elapsed < 0.8) phase = "ИИ формирует клинический протокол...";
+	else if (elapsed < 1.8) phase = "Дифференциальный диагноз по МКБ-10...";
+	else if (elapsed < 2.8) phase = "Проверка противопоказаний и СтАР...";
+	return includeSeconds ? `${phase} (${elapsed.toFixed(1)}с)` : phase;
 }
 
 export function CopilotThinkingIndicator({
@@ -49,7 +50,7 @@ export function CopilotThinkingIndicator({
 
 	if (!isThinking) return null;
 
-	const thinkingPhase = getClinicalThinkingPhase(elapsedSeconds);
+	const thinkingPhase = getClinicalThinkingPhase(elapsedSeconds, true);
 
 	return (
 		<div className="copilot-thinking-card my-2 rounded-xl border border-[var(--teal,#0d9488)]/30 bg-[var(--teal-soft,rgba(13,148,136,0.06))] transition-all duration-200 text-xs overflow-hidden" data-testid="copilot-thinking-indicator">
@@ -70,7 +71,7 @@ export function CopilotThinkingIndicator({
 						</div>
 						<div className="flex items-center gap-1 text-[10px] text-[var(--teal,#0d9488)] font-medium">
 							<span>{thinkingPhase}</span>
-							<span className="inline-block w-1 h-2.5 bg-[var(--teal,#0d9488)] animate-pulse" />
+							<span className="inline-block w-1.5 h-3 bg-[var(--teal,#0d9488)] animate-pulse rounded-[1px] ml-0.5 align-middle" data-testid="copilot-thinking-cursor" />
 						</div>
 					</div>
 				</div>

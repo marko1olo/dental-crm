@@ -20,7 +20,7 @@ export function CopilotSettingsGranularPermissions({
 		<section className="p-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
 			<div className="font-bold text-[var(--ink)] flex items-center justify-between">
 				<span>Гранулярные разрешения действий (Auto-Approve)</span>
-				<span className="text-[10px] text-[var(--teal,#0d9488)] font-semibold">Open-Source SOTA</span>
+				<span className="text-[10px] text-[var(--teal,#0d9488)] font-semibold">Автономные права</span>
 			</div>
 			<p className="text-[10px] text-[var(--muted)] m-0 leading-relaxed">
 				Выберите, какие действия ассистент выполняет без всплывающих подтверждений:

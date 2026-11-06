@@ -15,6 +15,8 @@ export const messageBodySchema = z.object({
 	byokProvider: z.enum(["gemini", "openai", "anthropic", "deepseek", "groq"]).optional(),
 	byokApiKey: z.string().optional(),
 	byokModel: z.string().optional(),
+	trustLevel: z.enum(["cautious", "supervised", "autonomous", "confirm_all", "balanced"]).optional(),
+	runtimeMode: z.enum(["web_browser", "desktop_native", "chairside_tablet", "mobile_tablet"]).optional(),
 });
 
 export type MessageBody = z.infer<typeof messageBodySchema>;

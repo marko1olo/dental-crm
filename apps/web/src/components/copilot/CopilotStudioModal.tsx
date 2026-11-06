@@ -72,12 +72,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   const handleClose = useCallback(() => { if (messages.length > 0) saveThreadMessages(threadKey, messages); onClose(); }, [messages, threadKey, saveThreadMessages, onClose]);
 
   const [inputText, setInputText] = useState(() => safeLocalStorageGetItem("dente_copilot_draft_text") || "");
-  const baseDraftRef = useRef<string>(inputText);
-  const [appliedStatus, setAppliedStatus] = useState<boolean>(false);
-  const [, setIsExecuting] = useState<string | null>(null);
-  const [isStreaming, setIsStreaming] = useState<boolean>(false);
-  const [currentThought, setCurrentThought] = useState<string>("");
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const baseDraftRef = useRef<string>(inputText), messagesEndRef = useRef<HTMLDivElement>(null), isFirstRenderRef = useRef<boolean>(true);
+  const [appliedStatus, setAppliedStatus] = useState<boolean>(false), [, setIsExecuting] = useState<string | null>(null);
+  const [isStreaming, setIsStreaming] = useState<boolean>(false), [currentThought, setCurrentThought] = useState<string>("");
   const voice = useVoiceEngine({ lang: "ru-RU", continuous: true });
 
   // Автоматическое определение среды исполнения без ручных переключателей
@@ -105,11 +102,7 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
     };
   }, [isOpen, isSettingsOpen, isHistoryOpen, handleClose]);
 
-  useEffect(() => {
-    baseDraftRef.current = inputText;
-    if (!voice.isListening) voice.clearTranscript();
-  }, [voice.isListening]);
-
+  useEffect(() => { baseDraftRef.current = inputText; if (!voice.isListening) voice.clearTranscript(); }, [voice.isListening]);
   useEffect(() => {
     if (!voice.fullText) return;
     const base = (baseDraftRef.current || "").trim();
@@ -118,7 +111,9 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
   }, [voice.fullText]);
 
   useEffect(() => {
-    if (isOpen && activeTab === "dialog") messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    if (!isOpen || activeTab !== "dialog") return;
+    if (isFirstRenderRef.current) { isFirstRenderRef.current = false; return; }
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isOpen, activeTab]);
 
   const handleInputChange = (val: string) => {
@@ -384,7 +379,10 @@ export const CopilotStudioModal: React.FC<CopilotStudioModalProps> = ({
               if (!replies || replies.length === 0 || isStreaming) return null;
               return (
                 <div className="copilot-smart-replies-track px-3 sm:px-5 py-1.5 flex items-center gap-1.5 overflow-x-auto no-scrollbar shrink-0 snap-x" data-testid="copilot-smart-replies">
-                  <span className="text-[11px] text-[var(--muted)] font-medium shrink-0 flex items-center gap-1"><Sparkles size={11} className="text-[var(--teal,#0d9488)]" />Подсказки:</span>
+                  <span className="text-[11px] text-[var(--teal,#0d9488)] font-semibold shrink-0 flex items-center gap-1">
+                    <Sparkles size={12} className="text-[var(--teal,#0d9488)] shrink-0" />
+                    <span className="hidden sm:inline">Подсказки:</span>
+                  </span>
                   {replies.map((reply, i) => (
                     <button key={i} type="button" onClick={() => handleSendMessage(reply)} className="copilot-smart-reply-chip shrink-0 px-3 py-1.5 min-h-[36px] rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f4f7f6)] hover:bg-[var(--line)] hover:border-[var(--teal,#0d9488)] text-[var(--ink)] text-xs font-medium whitespace-nowrap cursor-pointer transition-all shadow-2xs snap-start flex items-center">{reply}</button>
                   ))}

@@ -37,12 +37,16 @@ import { parseDeepSeekSseChunks } from "./deepseekModules/deepseekSseParser.js";
 
 export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 	public readonly providerId: LlmProviderId = "deepseek";
-	public readonly defaultModel: string = "deepseek-chat";
+	public readonly defaultModel: string;
 	public readonly supportedModels: readonly string[] = [
 		"deepseek-chat",
 		"deepseek-reasoner",
 		"deepseek-v4-flash",
 	] as const;
+
+	constructor(config?: { modelId?: string }) {
+		this.defaultModel = config?.modelId || "deepseek-chat";
+	}
 
 	public async *chatStream(
 		messages: ProviderMessage[],
@@ -54,6 +58,7 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 
 		const useAgentRouter = Boolean(
 			options.modelId === "deepseek-v4-flash" ||
+			this.defaultModel === "deepseek-v4-flash" ||
 			config?.baseUrl?.includes("agentrouter") ||
 			process.env.AGENTROUTER_BASE_URL?.includes("agentrouter") ||
 			(!explicitApiKey && process.env.AGENTROUTER_API_KEYS),
@@ -102,8 +107,9 @@ export class DeepSeekProviderAdapter implements LlmProviderAdapter {
 			const routerModel =
 				options.modelId ||
 				config?.modelId ||
+				(this.defaultModel && this.defaultModel !== "deepseek-chat" ? this.defaultModel : undefined) ||
 				process.env.AGENTROUTER_MODEL ||
-				DEFAULT_AGENTROUTER_MODEL;
+				"deepseek-v4-flash";
 
 			const routerKeys = explicitApiKey
 				? [explicitApiKey]

@@ -2,7 +2,7 @@ import { and, eq } from "drizzle-orm";
 import type { FastifyReply, FastifyRequest } from "fastify";
 import { db } from "../../../db/client.js";
 import { auditEvents, treatmentPlans } from "../../../db/schema.js";
-import { updateTreatmentPlanSchema } from "./schemas.js";
+import { updateTreatmentPlanSchema, updateTreatmentPlanStatusSchema } from "./schemas.js";
 
 export async function handleUpdateTreatmentPlan(
 	request: FastifyRequest<{ Params: { id: string } }>,
@@ -123,8 +123,15 @@ export async function handleUpdateTreatmentPlanStatus(
 	organizationId: string,
 ) {
 	const { id } = request.params;
-	const body = request.body as { status?: string; selectedTier?: string } | undefined;
-	const status = body?.status || "Approved";
+	const parsed = updateTreatmentPlanStatusSchema.safeParse(request.body);
+	if (!parsed.success) {
+		return reply.code(400).send({
+			error: "ValidationError",
+			message: "Некорректные параметры статуса плана лечения: " + parsed.error.issues.map((i) => i.message).join("; "),
+			issues: parsed.error.issues,
+		});
+	}
+	const status = parsed.data.status;
 
 	const [existing] = await db
 		.select()

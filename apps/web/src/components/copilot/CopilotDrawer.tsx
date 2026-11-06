@@ -416,7 +416,7 @@ export const CopilotDrawer: React.FC<CopilotDrawerProps> = ({
                 type="button"
                 onClick={toggleVoice}
                 className={`copilot-icon-btn copilot-mic-btn ${isVoiceRecording ? "active recording" : ""}`}
-                title={isVoiceRecording ? "Остановить надиктовку речи" : "Голосовая надиктовка ДЕНТА (Web Speech Live)"}
+                title={isVoiceRecording ? "Остановить надиктовку речи" : "Голосовая надиктовка ДЕНТА (Gemini Live)"}
                 aria-label="Голос"
                 data-testid="copilot-composer-mic"
               >

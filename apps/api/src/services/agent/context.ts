@@ -5,7 +5,7 @@
 import type { GuardrailConfig } from "./guardrails.js";
 import type { ToolRegistry } from "./tools/registry.js";
 
-export type AgentMode = "autonomous" | "supervised";
+export type AgentMode = "autonomous" | "supervised" | "cautious";
 
 export interface AgentContext {
 	readonly organizationId: string;

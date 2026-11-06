@@ -17,6 +17,7 @@ export interface UseCopilotGlobalEventsOptions {
   closeTreatmentPlanCopilot: () => void;
   setCustomMessages: (msgs: CopilotUiMessage[]) => void;
   setCustomPending: (pend: PendingConfirmation | null) => void;
+  setCustomContext?: (ctx: { patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null) => void;
   setCustomBusy?: (busy: boolean) => void;
   setCustomPhase?: (phase: string | null) => void;
   onOpenCatalog: (tooth?: number, category?: SpecialtyCategoryKey) => void;
@@ -24,10 +25,24 @@ export interface UseCopilotGlobalEventsOptions {
 
 export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): void {
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('copilot') === 'drawer' || window.location.hash === '#copilot-drawer') opts.openDrawer();
-    if (params.get('hud') === 'open' || window.location.hash.includes('chairside-hud')) opts.openHud();
-    if (params.get('voice') === 'open' || window.location.hash.includes('voice-stenographer')) opts.openVoiceModal();
+    const checkAndTrigger = () => {
+      const params = new URLSearchParams(window.location.search);
+      const hash = window.location.hash || '';
+      const isCopilotRequested =
+        params.get('copilot') === 'drawer' ||
+        params.get('copilot') === '1' ||
+        params.get('copilot') === 'studio' ||
+        params.get('copilot') === 'open' ||
+        params.get('ai') === '1' ||
+        params.get('assistant') === '1' ||
+        ['#copilot', '#copilot-drawer', '#copilot-studio', '#ai', '#assistant', '#chairside-copilot'].includes(hash);
+
+      if (isCopilotRequested) opts.openDrawer();
+      if (params.get('hud') === 'open' || hash.includes('chairside-hud')) opts.openHud();
+      if (params.get('voice') === 'open' || hash.includes('voice-stenographer')) opts.openVoiceModal();
+    };
+
+    checkAndTrigger();
 
     (window as any).__denteCopilot = {
       open: opts.openDrawer,
@@ -44,6 +59,7 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
         useAppStore.getState().setCurrentView('settings');
         useAppStore.getState().setSettingsTab('ai');
       },
+      setContext: (ctx: { patientName?: string | null; patientId?: string | null; activeTooth?: number | null } | null) => opts.setCustomContext?.(ctx),
       setMessages: (msgs) => opts.setCustomMessages(msgs),
       setPending: (pend) => opts.setCustomPending(pend),
       setBusy: (b: boolean) => opts.setCustomBusy?.(b),
@@ -69,14 +85,33 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     };
 
     const handleOpenCopilot = (e?: Event) => {
-      const customEvent = e as CustomEvent<{ messages?: CopilotUiMessage[]; pending?: PendingConfirmation | null; activeTab?: 'chat' | 'pending' }>;
+      const customEvent = e as CustomEvent<{
+        messages?: CopilotUiMessage[];
+        pending?: PendingConfirmation | null;
+        activeTab?: 'chat' | 'pending';
+        tooth?: number | null;
+        activeTooth?: number | null;
+        patientId?: string | null;
+        patientName?: string | null;
+      }>;
       if (customEvent?.detail) {
         if (customEvent.detail.messages) opts.setCustomMessages(customEvent.detail.messages);
         if (customEvent.detail.pending !== undefined) opts.setCustomPending(customEvent.detail.pending);
         if (customEvent.detail.activeTab) opts.setActiveTab(customEvent.detail.activeTab);
+        const tooth = customEvent.detail.activeTooth ?? customEvent.detail.tooth;
+        if (tooth !== undefined || customEvent.detail.patientId !== undefined || customEvent.detail.patientName !== undefined) {
+          opts.setCustomContext?.({
+            patientName: customEvent.detail.patientName,
+            patientId: customEvent.detail.patientId,
+            activeTooth: tooth,
+          });
+        }
       }
       opts.openDrawer();
     };
+
+    window.addEventListener('hashchange', checkAndTrigger);
+    window.addEventListener('popstate', checkAndTrigger);
 
     window.addEventListener('dente:toggle-copilot', handleCustomToggle);
     window.addEventListener('dente:open-copilot', handleOpenCopilot);
@@ -95,6 +130,8 @@ export function useCopilotGlobalEvents(opts: UseCopilotGlobalEventsOptions): voi
     window.addEventListener('keydown', handleKeyDown);
 
     return () => {
+      window.removeEventListener('hashchange', checkAndTrigger);
+      window.removeEventListener('popstate', checkAndTrigger);
       window.removeEventListener('dente:toggle-copilot', handleCustomToggle);
       window.removeEventListener('dente:open-copilot', handleOpenCopilot);
       window.removeEventListener('dente-open-copilot', handleOpenCopilot);

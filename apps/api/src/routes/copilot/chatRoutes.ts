@@ -110,17 +110,29 @@ export const chatRoutes: FastifyPluginAsync = async (
 			reply.raw.flushHeaders?.();
 
 			// Build agent context
+			const rawTrust = body.trustLevel;
+			const effectiveMode =
+				rawTrust === "autonomous"
+					? ("autonomous" as const)
+					: rawTrust === "cautious" || rawTrust === "confirm_all"
+						? ("cautious" as const)
+						: ("supervised" as const);
+
 			const ctx: AgentContext = {
 				organizationId: resolvedOrgId,
 				clinicId: resolvedOrgId,
 				userId,
 				sessionId,
-				mode: "supervised",
+				mode: effectiveMode,
 				role: identity.role ?? "doctor",
 				permissions: [...PERMISSIONS],
 				tools: defaultToolRegistry,
 				db,
-				...(doctorContext ? { metadata: { doctorContext } } : {}),
+				metadata: {
+					...(doctorContext ? { doctorContext } : {}),
+					...(body.runtimeMode ? { runtimeMode: body.runtimeMode } : {}),
+					trustLevel: effectiveMode,
+				},
 			};
 
 			let assistantText = "";
@@ -224,6 +236,8 @@ export const chatRoutes: FastifyPluginAsync = async (
 		byokApiKey?: string;
 		byokModel?: string;
 		speedMode?: "turbo" | "deep_reasoning";
+		trustLevel?: "cautious" | "supervised" | "autonomous" | "confirm_all" | "balanced";
+		runtimeMode?: "web_browser" | "desktop_native" | "chairside_tablet" | "mobile_tablet";
 	}
 
 	const handleUnifiedChat = async (
@@ -287,17 +301,29 @@ export const chatRoutes: FastifyPluginAsync = async (
 			reply.raw.setHeader("X-Accel-Buffering", "no");
 			reply.raw.flushHeaders?.();
 
+			const rawTrust = body.trustLevel;
+			const effectiveMode =
+				rawTrust === "autonomous"
+					? ("autonomous" as const)
+					: rawTrust === "cautious" || rawTrust === "confirm_all"
+						? ("cautious" as const)
+						: ("supervised" as const);
+
 			const ctx: AgentContext = {
 				organizationId: resolvedOrgId,
 				clinicId: resolvedOrgId,
 				userId,
 				sessionId,
-				mode: "supervised",
+				mode: effectiveMode,
 				role: identity.role ?? "doctor",
 				permissions: [...PERMISSIONS],
 				tools: defaultToolRegistry,
 				db,
-				...(doctorContext ? { metadata: { doctorContext } } : {}),
+				metadata: {
+					...(doctorContext ? { doctorContext } : {}),
+					...(body.runtimeMode ? { runtimeMode: body.runtimeMode } : {}),
+					trustLevel: effectiveMode,
+				},
 			};
 
 			let assistantText = "";

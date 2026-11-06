@@ -79,9 +79,11 @@ The project uses `npm` workspaces. Run these commands from the root directory:
 - **Фаззинг формулы FDI и копеек**: [`docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md)
 - **Жизненный цикл ЭМК, дневников и ПЭП**: [`docs/testing/CLINICAL_EMR_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CLINICAL_EMR_TEST_REGISTRY.md)
 - **React 19 & Zustand сторы**: [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md)
+- **ИИ-Копайлот и Workstation-Харнесс**: [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md)
 - **Реестр очищения тестов**: [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)
 
 ### 🎯 Быстрые тестовые команды (время прогона $\le 5$ с):
+- `npx tsx --test apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` — 17 тестов ИИ-ассистента и харнесса (ротация ключей, 3 уровня доверия, FDI, откат)
 - `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` — E2E мастер-цикл приёма
 - `npx tsx --test packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` — 10k фаззинг формулы FDI
 - `npx tsx --test apps/api/src/tests/chaos/idempotencyAndOfflineStorm.test.ts` — шторм идемпотентности
