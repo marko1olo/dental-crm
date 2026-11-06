@@ -74,9 +74,11 @@ export function LabTrackingFittingDates({
 			<div className="flex justify-end">
 				<button
 					type="button"
-					onClick={handleSaveFittingDates}
-					disabled={isUpdating}
-					className="min-h-[36px] h-9 px-4 py-1.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 text-white shadow-sm disabled:opacity-50 transition-all inline-flex items-center gap-2 cursor-pointer"
+					onClick={() => {
+						if (!isUpdating) void handleSaveFittingDates();
+					}}
+					aria-busy={isUpdating}
+					className="min-h-[36px] h-9 px-4 py-1.5 text-xs font-bold rounded-xl bg-[var(--teal)] hover:opacity-90 text-white shadow-sm transition-all inline-flex items-center gap-2 cursor-pointer"
 				>
 					{isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Check className="w-4 h-4" />}
 					Сохранить даты примерок

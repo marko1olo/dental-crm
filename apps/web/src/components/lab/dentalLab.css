@@ -8,6 +8,15 @@
 
 @import "./styles/dentalLabStudio.css";
 @import "./styles/dentalLabPrintAndMobile.css";
+@import "./styles/dentalLabHub.css";
+@import "./styles/dentalLabFilterBar.css";
+@import "./styles/dentalLabFilterChips.css";
+@import "./styles/dentalLabKanbanColumns.css";
+@import "./styles/dentalLabKanbanCards.css";
+@import "./styles/dentalLabCardActions.css";
+@import "./styles/dentalLabTeeth.css";
+@import "./styles/dentalLabShades.css";
+@import "./styles/dentalLabToolbar.css";
 
 /* 1. Изоляция контекста модального окна и 0px скролла */
 [data-testid="dental-lab-studio-modal-root"] {

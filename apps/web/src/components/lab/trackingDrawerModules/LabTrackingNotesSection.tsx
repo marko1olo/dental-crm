@@ -39,9 +39,11 @@ export function LabTrackingNotesSection({
 					/>
 					<button
 						type="button"
-						onClick={() => handleAdvanceStage()}
-						disabled={isUpdating}
-						className="min-h-[44px] sm:min-h-[36px] h-10 px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs disabled:opacity-50 transition-all cursor-pointer"
+						onClick={() => {
+							if (!isUpdating) void handleAdvanceStage();
+						}}
+						aria-busy={isUpdating}
+						className="min-h-[44px] sm:min-h-[36px] h-10 px-4 rounded-xl bg-[var(--primary)] hover:bg-[var(--primary-strong)] text-white font-bold text-xs inline-flex items-center gap-2 shadow-xs transition-all cursor-pointer"
 					>
 						{isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
 						<span>Следующий этап</span>

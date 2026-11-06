@@ -167,7 +167,9 @@ export function normalizeCanonicalSurface(surface: string | null | undefined): C
 		s === "VESTIBULAR" ||
 		s === "LABIAL" ||
 		s === "ВЕСТ" ||
+		s === "ВЕСТИБ" ||
 		s === "ЩЕЧ" ||
+		s === "ЩЕЧН" ||
 		s === "ЩЕЧНАЯ" ||
 		s === "ГУБНАЯ" ||
 		s === "ВЕСТИБУЛЯРНАЯ"
@@ -185,7 +187,9 @@ export function normalizeCanonicalSurface(surface: string | null | undefined): C
 		s === "PALATAL" ||
 		s === "ORAL" ||
 		s === "ЯЗ" ||
+		s === "ЯЗЫЧН" ||
 		s === "НЕБ" ||
+		s === "НЕБН" ||
 		s === "ЯЗЫЧНАЯ" ||
 		s === "НЕБНАЯ" ||
 		s === "ОРАЛЬНАЯ"
@@ -200,6 +204,8 @@ export function normalizeCanonicalSurface(surface: string | null | undefined): C
 		s === "MESIAL" ||
 		s === "МЕД" ||
 		s === "МЕЗ" ||
+		s === "МЕДИАЛ" ||
+		s === "МЕЗИАЛ" ||
 		s === "МЕДИАЛЬНАЯ" ||
 		s === "МЕЗИАЛЬНАЯ"
 	) {
@@ -212,6 +218,7 @@ export function normalizeCanonicalSurface(surface: string | null | undefined): C
 		s === "Д" ||
 		s === "DISTAL" ||
 		s === "ДИСТ" ||
+		s === "ДИСТАЛ" ||
 		s === "ДИСТАЛЬНАЯ"
 	) {
 		return "D";
@@ -224,7 +231,9 @@ export function normalizeCanonicalSurface(surface: string | null | undefined): C
 		s === "Ц" ||
 		s === "CERVICAL" ||
 		s === "ПРИШ" ||
+		s === "ПРИШЕЕЧ" ||
 		s === "ЦЕРВ" ||
+		s === "ЦЕРВИК" ||
 		s === "ПРИШЕЕЧНАЯ" ||
 		s === "ЦЕРВИКАЛЬНАЯ"
 	) {

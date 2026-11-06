@@ -496,5 +496,8 @@ apps/web/src/components/odontogram/gate0/teeth/tooth{ID}/
     - **Сценарий Б (Стенограф без мышки)**: Свободная диктовка/текст обновляет одонтограмму, генерирует SOAP и начисляет номенклатуру без барьеров модальных окон.
     - Автоскрытие плавающего круглого лаунчера `.copilot-trigger-btn` при открытии шторки/модалки, устраняющее перекрытие крестика закрытия `X`.
     - 4-State Proof проверен лично через `read_file` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844).
+- [x] **Red Team Fuzzing & Stress Inquisition (Завершен):**
+  * Разработан и верифицирован стресс-сьют `packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` (10 000 мутаций строк FDI, 10 000 сплит-комбинаций, Wheeler-пропорции 48/54/60/68px, 0px дрифта на iPhone 390px, Mandate 8e 100% скидка).
+  * Документирован реестр `docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`. Прогон 187 мс, 100% pass.
 - [ ] **Gate 5:** Интерактивный 5-поверхностный селектор клика (Click-to-Apply) прямо по полигонам SVG.
 - [ ] **Gate 6:** Пародонтологический контур непрерывной альвеолярной кости и мостовидные протезы.

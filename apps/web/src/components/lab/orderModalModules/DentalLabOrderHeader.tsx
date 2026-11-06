@@ -109,7 +109,7 @@ export function DentalLabOrderHeader({
 							data-testid="lab-order-treatment-stage-chip"
 							className="px-2 py-0.5 rounded-md text-[11px] font-semibold bg-teal-500/10 text-teal-700 dark:text-teal-300 border border-teal-500/30"
 						>
-							Этап {stageNumber ?? 1} {stageTitle ? `(${stageTitle})` : ""}
+							План лечения: Этап {stageNumber ?? 1} {stageTitle ? `(${stageTitle})` : ""}
 						</span>
 					)}
 					{selectedLabName && (
