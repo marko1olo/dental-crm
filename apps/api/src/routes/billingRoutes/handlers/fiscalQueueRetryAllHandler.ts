@@ -40,6 +40,8 @@ export async function handleRetryAllFiscalQueue(
 		return reply.code(200).send({
 			success: true,
 			retriedCount: 0,
+			processedCount: 0,
+			failedCount: 0,
 			status: "idle",
 			message: "Нет чеков, ожидающих печати.",
 		});
@@ -67,6 +69,8 @@ export async function handleRetryAllFiscalQueue(
 			success: false,
 			status: "hardware_offline",
 			retriedCount: pendingItems.length,
+			processedCount: pendingItems.length,
+			failedCount: pendingItems.length,
 			error: "KKT connection timed out (5000ms) or printer offline",
 		});
 	}
@@ -85,5 +89,7 @@ export async function handleRetryAllFiscalQueue(
 		success: true,
 		status: "printed",
 		retriedCount: pendingItems.length,
+		processedCount: pendingItems.length,
+		failedCount: 0,
 	});
 }

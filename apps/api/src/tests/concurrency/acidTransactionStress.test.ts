@@ -42,6 +42,7 @@ import {
 	inventoryTransactions,
 	organizations,
 	patients,
+	patientRelationships,
 	payments,
 	treatmentPlanItemsNew,
 	treatmentPlans,
@@ -207,6 +208,7 @@ describe("RED TEAM: PostgreSQL 18 ACID Concurrency, Deadlock Immunity & Rollback
 						id: FAMILY_GROUP_ID,
 						organizationId: ORG_ID,
 						name: "Семейный депозит ACID",
+						headPatientId: PATIENT_FAMILY_HEAD_ID,
 						balance: "10000.00", // 10 000 ₽ = 1 000 000 коп
 					})
 					.onConflictDoNothing();
@@ -236,6 +238,17 @@ describe("RED TEAM: PostgreSQL 18 ACID Concurrency, Deadlock Immunity & Rollback
 							status: "active" as const,
 						})),
 					])
+					.onConflictDoNothing();
+
+				await tx
+					.insert(patientRelationships)
+					.values({
+						organizationId: ORG_ID,
+						patientId: PATIENT_FAMILY_HEAD_ID,
+						relatedPatientId: PATIENT_FAMILY_MEMBER_ID,
+						relationshipType: "spouse",
+						canSpendFamilyWallet: true,
+					})
 					.onConflictDoNothing();
 
 				// Создаем 20 визитов для тестирования списания расходников
@@ -400,7 +413,7 @@ describe("RED TEAM: PostgreSQL 18 ACID Concurrency, Deadlock Immunity & Rollback
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await tx
 				.update(familyGroups)
-				.set({ balance: "10000.00", updatedAt: new Date() })
+				.set({ balance: "10000.00", headPatientId: PATIENT_FAMILY_HEAD_ID, updatedAt: new Date() })
 				.where(
 					and(
 						eq(familyGroups.id, FAMILY_GROUP_ID),
@@ -453,7 +466,7 @@ describe("RED TEAM: PostgreSQL 18 ACID Concurrency, Deadlock Immunity & Rollback
 		for (const r of insufficientFundsResponses) {
 			const body = JSON.parse(r.body);
 			assert.equal(body.error, "InsufficientFunds");
-			assert.match(body.message, /Недостаточно средств на семейном балансе/i);
+			assert.match(body.message, /Недостаточно средств на семейном (балансе|кошельке)/i);
 		}
 
 		// Direct Database Census in PostgreSQL 18

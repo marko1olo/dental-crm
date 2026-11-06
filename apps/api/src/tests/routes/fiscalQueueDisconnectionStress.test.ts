@@ -150,8 +150,9 @@ describe("54-FZ Fiscal Receipt Queue & Disconnection Stress Test Suite", () => {
 			assert.equal(json.status, "hardware_offline");
 			assert.ok(json.queueId, "Queue ID must be generated");
 			assert.ok(json.fnSerial, "FN Serial must be provided");
-			assert.ok(json.fiscalDocumentNumber, "FD number must be calculated");
-			assert.ok(json.fiscalSign, "FPD signature must be calculated");
+			assert.ok(json.hardwareWarning, "Hardware warning must be present when offline");
+			assert.equal(json.fiscalDocumentNumber, undefined, "FD number is not issued until physical fiscalization");
+			assert.equal(json.fiscalSign, undefined, "FPD signature is not issued until physical fiscalization");
 
 			// Verify in PostgreSQL database
 			const [storedQueue] = await withFixtureTenant(ORG_ID, async () => {

@@ -35,8 +35,6 @@ export async function processFamilyDebit(params: FamilyDebitParams): Promise<Fam
 		const [family] = await tx.select().from(familyGroups).where(and(eq(familyGroups.id, familyGroupId), eq(familyGroups.organizationId, organizationId))).limit(1).for("update");
 		if (!family) throw new FamilyWalletError("Семейная группа не найдена", 404, "FAMILY_NOT_FOUND");
 
-		await verifyFamilySpendAuthorization({ tx, organizationId, family, patientId, payerPatientId: params.payerPatientId, debitKopecks });
-
 		const [existingPayment] = await tx.select().from(payments).where(and(eq(payments.organizationId, organizationId), eq(payments.clientMutationId, clientMutationId.trim()))).limit(1);
 		if (existingPayment) {
 			if (parseKopecks(existingPayment.amountRub) !== debitKopecks || existingPayment.patientId !== patientId || existingPayment.method !== "family_wallet") {
@@ -45,6 +43,8 @@ export async function processFamilyDebit(params: FamilyDebitParams): Promise<Fam
 			const currentBal = parseKopecks(family.balance);
 			return { success: true, payment: existingPayment, previousBalanceRub: kopecksToRub(currentBal), newBalanceRub: kopecksToRub(currentBal), debitedRub: kopecksToRub(parseKopecks(existingPayment.amountRub)), duplicate: true };
 		}
+
+		await verifyFamilySpendAuthorization({ tx, organizationId, family, patientId, payerPatientId: params.payerPatientId, debitKopecks });
 
 		const currentBalanceKop = parseKopecks(family.balance);
 		if (currentBalanceKop < debitKopecks) {

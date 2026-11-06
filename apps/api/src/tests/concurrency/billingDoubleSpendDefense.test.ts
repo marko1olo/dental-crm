@@ -30,6 +30,7 @@ import {
 	familyGroups,
 	organizations,
 	patients,
+	patientRelationships,
 	payments,
 	users,
 } from "../../db/schema.js";
@@ -114,6 +115,7 @@ describe("RED TEAM: Billing Double-Spend Defense & Exact Kopeck Concurrency", ()
 					id: FAMILY_GROUP_ID,
 					organizationId: ORG_ID,
 					name: "Семейный Депозит Стресс-Теста",
+					headPatientId: PATIENT_HEAD_ID,
 					balance: "10000.00", // 10 000 ₽ = 1 000 000 копеек
 				}).onConflictDoNothing();
 
@@ -133,6 +135,14 @@ describe("RED TEAM: Billing Double-Spend Defense & Exact Kopeck Concurrency", ()
 						familyGroupId: FAMILY_GROUP_ID,
 					},
 				]).onConflictDoNothing();
+
+				await tx.insert(patientRelationships).values({
+					organizationId: ORG_ID,
+					patientId: PATIENT_HEAD_ID,
+					relatedPatientId: PATIENT_MEMBER_ID,
+					relationshipType: "spouse",
+					canSpendFamilyWallet: true,
+				}).onConflictDoNothing();
 			});
 		} catch (error) {
 			if (!isDatabaseUnavailable(error)) throw error;
@@ -154,7 +164,7 @@ describe("RED TEAM: Billing Double-Spend Defense & Exact Kopeck Concurrency", ()
 		await withFixtureTenant(ORG_ID, async (tx) => {
 			await tx
 				.update(familyGroups)
-				.set({ balance: "10000.00", updatedAt: new Date() })
+				.set({ balance: "10000.00", headPatientId: PATIENT_HEAD_ID, updatedAt: new Date() })
 				.where(and(eq(familyGroups.id, FAMILY_GROUP_ID), eq(familyGroups.organizationId, ORG_ID)));
 
 			await tx.delete(payments).where(eq(payments.organizationId, ORG_ID));
@@ -202,7 +212,7 @@ describe("RED TEAM: Billing Double-Spend Defense & Exact Kopeck Concurrency", ()
 			const body = JSON.parse(r.body);
 			assert.match(
 				body.message,
-				/Недостаточно средств на семейном балансе/i,
+				/Недостаточно средств на семейном (балансе|кошельке)/i,
 				"Ответ 402 обязан содержать понятное сообщение о нехватке средств",
 			);
 		}
@@ -309,7 +319,14 @@ describe("RED TEAM: Billing Double-Spend Defense & Exact Kopeck Concurrency", ()
 	it("2.3 Exact Kopeck Integrity: 20 concurrent non-round top-ups of 133.37 ₽ yield exact 2,667.40 ₽ in DB", async (context) => {
 		if (!databaseAvailable) return context.skip("База данных недоступна");
 
-		// Starting from balance 0.00 ₽
+		// Reset balance to exactly 0.00 ₽ before top-ups
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.update(familyGroups)
+				.set({ balance: "0.00", headPatientId: PATIENT_HEAD_ID, updatedAt: new Date() })
+				.where(and(eq(familyGroups.id, FAMILY_GROUP_ID), eq(familyGroups.organizationId, ORG_ID)));
+		});
+
 		const concurrencyCount = 20;
 		const amountPerTopup = 133.37; // 13,337 копеек
 

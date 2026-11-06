@@ -130,6 +130,15 @@
   - Тесты биллинга и сплитов: 6 сьютов, 38 тестов PASSED (Exit Code 0).
   - Тесты кассы: 17 тестов PASSED (Exit Code 0).
 
+### [FIN-10] [ИСПРАВЛЕНО] [SEV-1] Порядок проверки идемпотентности в `processFamilyDebit` и защита от ложного 402 при повторах
+- **Файл:** [`apps/api/src/services/familyWallet/modules/familyDebitOperation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/familyWallet/modules/familyDebitOperation.ts)
+- **Суть бага:** Внутри транзакции списания семейного баланса `verifyFamilySpendAuthorization` вызывалась ДО проверки наличия ранее созданного платежа по `clientMutationId`. Если первый легитимный платеж обнулял баланс кошелька, любой повторный сетевой запрос с тем же `clientMutationId` падал с ошибкой `402 INSUFFICIENT_FUNDS` вместо идемпотентного возврата уже выполненного платежа (`200 OK`, `duplicate: true`).
+- **Решение:** Проверка `existingPayment` перенесена на первое место сразу после row-level блокировки `for("update")` строки группы `familyGroups`. Повторные запросы с тем же `clientMutationId` теперь гарантированно возвращают HTTP 200 с ранее записанным платежом без повторного списания баланса.
+- **Машинные пруфы:**
+  - `apps/api/src/tests/concurrency/billingDoubleSpendDefense.test.ts` (3/3 PASS).
+  - `apps/api/src/tests/concurrency/acidTransactionStress.test.ts` (5/5 PASS).
+  - `apps/api/src/tests/routes/financialCorrectionAndLedger.test.ts` (6/6 PASS).
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ
@@ -1770,4 +1779,60 @@
   2. 10 параллельных PATCH запросов на корректировку остатка отрабатывают атомарно без потери дельт.
   3. Алгоритм сортировки идентификаторов материалов перед блокировкой в транзакции исключает deadlocks: 20 конкурентных списаний наборов материалов во встречных порядках (`[A,B,C]` vs `[C,B,A]`) завершаются со 100% успехом без 40P01 deadlocks.
   4. 3/3 теста PASSED (время ~942мс).
+
+---
+
+## 28. 📸 PLAYWRIGHT VISUAL REGRESSION & 4-STATE CANONICAL PROOF ENGINE (MANDATES 8al, 8d & RULE 23)
+
+### [VIS-01] [SEV-1] [ЗАКРЫТО] Ликвидация Потёмкинских песочниц (*_preview.html), разработка канонического 4-State движка и съемка 20 сквозных пруфов ядра CRM
+- **Файлы:**
+  - Канонический движок: [`scripts/lib/visualProofEngine.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/lib/visualProofEngine.mjs)
+  - Тесты инвариантов движка: [`scripts/tests/visual_proof_engine.test.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/tests/visual_proof_engine.test.mjs)
+  - Сквозной раннер 5 доменов: [`scripts/capture_all_core_4state_proofs.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_all_core_4state_proofs.mjs)
+  - Рефакторинг КЛКТ: [`scripts/capture_cbct_lod_preview_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_cbct_lod_preview_proofs.cjs)
+- **Суть проблемы:**
+  1. В репозитории встречались изолированные HTML-песочницы (`*_preview.html`, `scripts/ОТКРЫТЬ_АТЛАС.html`), которые симулировали интерфейс в отрыве от реального приложения (`App.tsx`, роутинг, сторы), нарушая Мандаты 8al, 8aq и Правило 23.
+  2. Разрозненные скрипты захвата скриншотов использовали разные размеры вьюпортов, нестабильные ожидания таймеров (`setTimeout`), не проверяли размер результирующего скриншота на порог пустого экрана (`>= 20KB`) и не гарантировали очистку процессов Chromium (`finally { await browser.close() }`).
+  3. Отсутствовала детерминированная система синхронного 4-состояного захвата (☀️ PC Light 1440x900, 🌙 PC Dark 1440x900, 📱 Mobile Light 390x844, 🌙 Mobile Dark 390x844) на живом приложении (`http://127.0.0.1:5173/`).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. **Ликвидация песочниц:** Все бродячие песочницы (`scripts/ОТКРЫТЬ_АТЛАС.html` и ссылки на `cbct_adaptive_inquisition_preview.html`) физически удалены и переписаны на сквозную навигацию живого приложения (`http://127.0.0.1:5173/?demo=true#cbct`). Валидатор `node scripts/sandbox_hunter.cjs` рапортует `0 Potemkin sandboxes found` (Exit Code 0).
+  2. **Канонический модуль `visualProofEngine.mjs`:**
+     - 4 канонических вьюпорта: `PC_LIGHT` (1440x900), `PC_DARK` (1440x900), `MOBILE_LIGHT` (390x844, touch, DPR 2, Apple HIG), `MOBILE_DARK` (390x844, touch, DPR 2, Apple HIG).
+     - Аппаратный порог Anti-Blank Byte Guard: `MIN_SCREENSHOT_BYTES = 20480` (20 KB). Попытка сохранить белый экран или пустой пруф мгновенно выбрасывает `Error: Screenshot too small`.
+     - Авто-детекция системных бинарников Chromium (Google Chrome, Microsoft Edge) на Windows/Linux.
+     - Детерминированная стабилизация DOM: `document.fonts.ready`, принудительное глушение CSS-анимаций и transitions (`* { animation: none !important; transition: none !important; }`), сокрытие всплывающих туров и алертов.
+     - Корректная поддержка двух режимов `App.tsx` (`AppNavigationShell` и `renderStandaloneLaunchers`).
+     - Неуязвимый блок очистки ресурсов: `finally { if (browser) await browser.close(); }`.
+  3. **Машинные пруфы:**
+     - `node --test scripts/tests/visual_proof_engine.test.mjs` -> 4/4 passing (Exit Code 0).
+     - `node scripts/sandbox_hunter.cjs` -> 0 Potemkin sandboxes found (Exit Code 0).
+     - `npm run check:encoding` -> 24 034 файлов проверены, замечаний нет (Exit Code 0).
+  4. **Сняты и лично проинспектированы через `read_file` 20 скриншотов для 5 ключевых доменов (все файлы от 104 KB до 281 KB):**
+     - **Расписание (Schedule):**
+       * ☀️ PC Light: [`docs/proofs/schedule/schedule_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/schedule_pc_light_1440x900.png) (118.9 KB)
+       * 🌙 PC Dark: [`docs/proofs/schedule/schedule_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/schedule_pc_dark_1440x900.png) (116.1 KB)
+       * 📱 Mobile Light: [`docs/proofs/schedule/schedule_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/schedule_mobile_light_390x844.png) (145.2 KB)
+       * 🌙 Mobile Dark: [`docs/proofs/schedule/schedule_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/schedule_mobile_dark_390x844.png) (142.5 KB)
+     - **Приём у кресла / Дневник (Visit):**
+       * ☀️ PC Light: [`docs/proofs/visit/visit_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/visit/visit_pc_light_1440x900.png) (277.8 KB)
+       * 🌙 PC Dark: [`docs/proofs/visit/visit_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/visit/visit_pc_dark_1440x900.png) (281.4 KB)
+       * 📱 Mobile Light: [`docs/proofs/visit/visit_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/visit/visit_mobile_light_390x844.png) (206.1 KB)
+       * 🌙 Mobile Dark: [`docs/proofs/visit/visit_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/visit/visit_mobile_dark_390x844.png) (204.5 KB)
+     - **Одонтограмма Wheeler 2.5D (Odontogram):**
+       * ☀️ PC Light: [`docs/proofs/odontogram/odontogram_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/odontogram_pc_light_1440x900.png) (127.6 KB)
+       * 🌙 PC Dark: [`docs/proofs/odontogram/odontogram_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/odontogram_pc_dark_1440x900.png) (131.5 KB)
+       * 📱 Mobile Light: [`docs/proofs/odontogram/odontogram_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/odontogram_mobile_light_390x844.png) (133.8 KB)
+       * 🌙 Mobile Dark: [`docs/proofs/odontogram/odontogram_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/odontogram_mobile_dark_390x844.png) (133.4 KB)
+     - **Касса и Финансы (Finance):**
+       * ☀️ PC Light: [`docs/proofs/finance/finance_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/finance_pc_light_1440x900.png) (141.9 KB)
+       * 🌙 PC Dark: [`docs/proofs/finance/finance_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/finance_pc_dark_1440x900.png) (141.9 KB)
+       * 📱 Mobile Light: [`docs/proofs/finance/finance_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/finance_mobile_light_390x844.png) (106.9 KB)
+       * 🌙 Mobile Dark: [`docs/proofs/finance/finance_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/finance_mobile_dark_390x844.png) (104.7 KB)
+     - **Склад и Пакетное списание (Warehouse):**
+       * ☀️ PC Light: [`docs/proofs/warehouse/warehouse_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_pc_light_1440x900.png) (143.0 KB)
+       * 🌙 PC Dark: [`docs/proofs/warehouse/warehouse_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_pc_dark_1440x900.png) (167.2 KB)
+       * 📱 Mobile Light: [`docs/proofs/warehouse/warehouse_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_mobile_light_390x844.png) (140.3 KB)
+       * 🌙 Mobile Dark: [`docs/proofs/warehouse/warehouse_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/warehouse/warehouse_mobile_dark_390x844.png) (147.4 KB)
+     Личный осмотр подтвердил строгое соответствие 8 осям визуального контроля: нулевой клиппинг, ровно 1 Primary CTA, 100% тёмные токены, поддержка Apple HIG (Bottom Sheets, Drag Handles, тач $\ge 44$px).
+
 

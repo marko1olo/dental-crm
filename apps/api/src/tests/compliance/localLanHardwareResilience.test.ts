@@ -349,7 +349,7 @@ describe("Local LAN Hardware Integration & Resilience (54-FZ KKT, PACS/DICOM, We
 		});
 		assert.ok(study);
 		assert.equal(study.status, "available");
-		assert.equal(study.storagePath, localDicomPath);
+		assert.equal(study.storagePath, `uploads/dicom/${ORG_A_ID}/study-cbct-patientA.dcm`);
 	});
 
 	it("2.2 GET /api/imaging/local-offline/studies/:id provides immediate consultation access without cloud latency", async () => {

@@ -85,19 +85,29 @@ describe("FINANCIAL CORRECTION, FAMILY WALLET & CASH LEDGER SUITE", { concurrenc
 				role: "admin",
 				isActive: true,
 			}).onConflictDoNothing();
-			await db.insert(familyGroups).values({
-				id: FAMILY_ID,
-				organizationId: ORG_ID,
-				name: "Семья Корректировых",
-				balance: "50000.00",
-			}).onConflictDoNothing();
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				familyGroupId: FAMILY_ID,
-				fullName: "Корректиров Сергей Николаевич",
-				phone: "+79998882233",
-			}).onConflictDoNothing();
+			await db
+				.insert(familyGroups)
+				.values({
+					id: FAMILY_ID,
+					organizationId: ORG_ID,
+					name: "Семья Корректировых",
+					balance: "50000.00",
+					headPatientId: PATIENT_ID,
+				})
+				.onConflictDoUpdate({
+					target: familyGroups.id,
+					set: { balance: "50000.00", headPatientId: PATIENT_ID },
+				});
+			await db
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					familyGroupId: FAMILY_ID,
+					fullName: "Корректиров Сергей Николаевич",
+					phone: "+79998882233",
+				})
+				.onConflictDoNothing();
 		});
 	});
 

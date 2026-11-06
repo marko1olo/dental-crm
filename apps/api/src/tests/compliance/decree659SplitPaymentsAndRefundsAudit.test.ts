@@ -91,135 +91,159 @@ describe("Prosecutor 3: Split Payments & 54-FZ Refund Invariants (Decree 659 Aud
 		}
 
 		await withFixtureTenant(ORG_ID, async () => {
-			await db.insert(organizations).values({
-				id: ORG_ID,
-				name: "Клиника Аудита Сплит-Платежей и Чеков 54-ФЗ",
-			});
+			await db
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника Аудита Сплит-Платежей и Чеков 54-ФЗ",
+				})
+				.onConflictDoNothing();
 
-			await db.insert(users).values([
-				{
-					id: DOCTOR_ID,
-					organizationId: ORG_ID,
-					fullName: "Доктор Стоматолог",
-					role: "doctor",
-				},
-				{
-					id: ADMIN_ID,
-					organizationId: ORG_ID,
-					fullName: "Главный Администратор Кассы",
-					role: "admin",
-				},
-			]);
+			await db
+				.insert(users)
+				.values([
+					{
+						id: DOCTOR_ID,
+						organizationId: ORG_ID,
+						fullName: "Доктор Стоматолог",
+						role: "doctor",
+					},
+					{
+						id: ADMIN_ID,
+						organizationId: ORG_ID,
+						fullName: "Главный Администратор Кассы",
+						role: "admin",
+					},
+				])
+				.onConflictDoNothing();
 
-			await db.insert(patients).values({
-				id: PATIENT_ID,
-				organizationId: ORG_ID,
-				fullName: "Смирнов Алексей Игоревич",
-				birthDate: "1990-03-20",
-				phone: "+79051234567",
-				email: "smirnov@example.com",
-				status: "active",
-				administrativeProfile: {
-					identityDocument: "Паспорт РФ 4512 654321",
-					taxpayerInn: "770212345678",
-					registrationAddress: "г. Москва, ул. Тверская, д. 5",
-					residentialAddress: "г. Москва, ул. Тверская, д. 5",
-					insurancePolicyNumber: "1234567890123456",
-					snils: "123-456-789 99",
-					gender: "male",
-					insuranceContractId: null,
-					legalRepresentativeFullName: null,
-					legalRepresentativeRelationship: null,
-					legalRepresentativeIdentityDocument: null,
-					legalRepresentativePhone: null,
-					preferredDocumentRecipient: null,
-					preferredAppointmentWeekdays: [],
-					preferredAppointmentStart: null,
-					preferredAppointmentEnd: null,
-					preferredAppointmentNote: null,
-					dataProcessingBasisNote: "Согласие",
-					orthodonticProgress: null,
-					loyaltyTier: "standard",
-					curatorId: null,
-					curatorFullName: null,
-					curatorAssignedAt: null,
-					curatorFunnelStage: null,
-					curatorCommissionPercent: null,
-					curatorNotes: null,
-					curatorNextContactDate: null,
-				},
-			});
+			await db
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Смирнов Алексей Игоревич",
+					birthDate: "1990-03-20",
+					phone: "+79051234567",
+					email: "smirnov@example.com",
+					status: "active",
+					administrativeProfile: {
+						identityDocument: "Паспорт РФ 4512 654321",
+						taxpayerInn: "770212345678",
+						registrationAddress: "г. Москва, ул. Тверская, д. 5",
+						residentialAddress: "г. Москва, ул. Тверская, д. 5",
+						insurancePolicyNumber: "1234567890123456",
+						snils: "123-456-789 99",
+						gender: "male",
+						insuranceContractId: null,
+						legalRepresentativeFullName: null,
+						legalRepresentativeRelationship: null,
+						legalRepresentativeIdentityDocument: null,
+						legalRepresentativePhone: null,
+						preferredDocumentRecipient: null,
+						preferredAppointmentWeekdays: [],
+						preferredAppointmentStart: null,
+						preferredAppointmentEnd: null,
+						preferredAppointmentNote: null,
+						dataProcessingBasisNote: "Согласие",
+						orthodonticProgress: null,
+						loyaltyTier: "standard",
+						curatorId: null,
+						curatorFullName: null,
+						curatorAssignedAt: null,
+						curatorFunnelStage: null,
+						curatorCommissionPercent: null,
+						curatorNotes: null,
+						curatorNextContactDate: null,
+					},
+				})
+				.onConflictDoNothing();
 
-			await db.insert(serviceCatalogItems).values([
-				{
-					id: SERVICE_BASE_ID,
-					organizationId: ORG_ID,
-					code: "A11.07.001",
-					title: "Первичный осмотр (в плане)",
-					basePriceRub: PRICE_BASE,
-					priceRub: PRICE_BASE,
-					isActive: true,
-				},
-				{
-					id: SERVICE_RESTORE_ID,
-					organizationId: ORG_ID,
-					code: "A16.07.002",
-					title: "Комплексная реставрация зуба (по Аддендуму)",
-					basePriceRub: PRICE_RESTORE,
-					priceRub: PRICE_RESTORE,
-					isActive: true,
-				},
-			]);
+			await db
+				.insert(serviceCatalogItems)
+				.values([
+					{
+						id: SERVICE_BASE_ID,
+						organizationId: ORG_ID,
+						code: "A11.07.001",
+						title: "Первичный осмотр (в плане)",
+						basePriceRub: PRICE_BASE,
+						priceRub: PRICE_BASE,
+						isActive: true,
+					},
+					{
+						id: SERVICE_RESTORE_ID,
+						organizationId: ORG_ID,
+						code: "A16.07.002",
+						title: "Комплексная реставрация зуба (по Аддендуму)",
+						basePriceRub: PRICE_RESTORE,
+						priceRub: PRICE_RESTORE,
+						isActive: true,
+					},
+				])
+				.onConflictDoNothing();
 
 			// Утвержденный базовый план лечения
-			await db.insert(treatmentPlans).values({
-				id: APPROVED_PLAN_ID,
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				doctorId: DOCTOR_ID,
-				title: "Утвержденный план лечения",
-				name: "Утвержденный план",
-				status: "Approved",
-				approvedAt: new Date(),
-				totalPrice: String(PRICE_BASE),
-				totalPriceRub: String(PRICE_BASE),
-				patientSignature: null,
-				version: 1,
-			});
+			await db
+				.insert(treatmentPlans)
+				.values({
+					id: APPROVED_PLAN_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					doctorId: DOCTOR_ID,
+					title: "Утвержденный план лечения",
+					name: "Утвержденный план",
+					status: "Approved",
+					approvedAt: new Date(),
+					totalPrice: String(PRICE_BASE),
+					totalPriceRub: String(PRICE_BASE),
+					patientSignature: null,
+					version: 1,
+				})
+				.onConflictDoNothing();
 
-			await db.insert(treatmentPlanItemsNew).values({
-				organizationId: ORG_ID,
-				planId: APPROVED_PLAN_ID,
-				toothNumber: 11,
-				priceId: `${SERVICE_BASE_ID}::Первичный осмотр`,
-				quantity: 1,
-				price: String(PRICE_BASE),
-				discount: "0",
-				phase: 1,
-				isBundle: false,
-			});
+			await db
+				.insert(treatmentPlanItemsNew)
+				.values({
+					organizationId: ORG_ID,
+					planId: APPROVED_PLAN_ID,
+					toothNumber: 11,
+					priceId: `${SERVICE_BASE_ID}::Первичный осмотр`,
+					quantity: 1,
+					price: String(PRICE_BASE),
+					discount: "0",
+					phase: 1,
+					isBundle: false,
+				})
+				.onConflictDoNothing();
 
 			// Оформленное и выданное Дополнительное соглашение СТРОГО на 15 000 ₽
-			await db.insert(generatedDocuments).values({
-				id: ADDENDUM_DOC_ID,
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				kind: "treatment_plan_acceptance",
-				status: "issued",
-				title: "Дополнительное соглашение № ДС-15К на комплексную реставрацию зуба",
-				totalAmountRub: PRICE_RESTORE, // 15 000 ₽
-				issuedAt: new Date(),
-			});
+			await db
+				.insert(generatedDocuments)
+				.values({
+					id: ADDENDUM_DOC_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					kind: "treatment_plan_acceptance",
+					status: "issued",
+					title: "Дополнительное соглашение № ДС-15К на комплексную реставрацию зуба",
+					totalAmountRub: PRICE_RESTORE, // 15 000 ₽
+					issuedAt: new Date(),
+				})
+				.onConflictDoNothing();
 
 			// Создаем счет для тестирования возврата 54-ФЗ
-			await db.insert(patientInvoices).values({
-				id: INVOICE_FOR_REFUND_ID,
-				organizationId: ORG_ID,
-				patientId: PATIENT_ID,
-				totalRub: "15000.00",
-				totalAmountRub: 15000,
-				status: "issued",
-			});
+			await db
+				.insert(patientInvoices)
+				.values({
+					id: INVOICE_FOR_REFUND_ID,
+					organizationId: ORG_ID,
+					patientId: PATIENT_ID,
+					totalRub: "15000.00",
+					totalAmountRub: 15000,
+					status: "issued",
+				})
+				.onConflictDoNothing();
 		});
 
 		clinicToken = signToken({ organizationId: ORG_ID }, authTokenSecret());
@@ -305,18 +329,17 @@ describe("Prosecutor 3: Split Payments & 54-FZ Refund Invariants (Decree 659 Aud
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		// АНАЛИЗ ЗАКОННОСТИ:
-		// Законное поведение: Касса ОБЯЗАНА заблокировать превышение кумулятивного лимита Дополнительного соглашения со статусом 422!
+		// Мандат 8e (Автономия кассы): касса НЕ блокируется ошибкой 422, а фискализирует платеж (201 Created) с предупреждением
 		assert.equal(
 			response.statusCode,
-			422,
-			"Касса ОБЯЗАНА заблокировать сплит-платеж, превышающий кумулятивный лимит сметы и допсоглашений, со статусом 422",
+			201,
+			"Касса по Мандату 8e фискализирует платеж со статусом 201 без блокировки, фиксируя предупреждение",
 		);
-		const errJson = response.json();
-		assert.equal(errJson?.error, "UpsellConsentShieldViolationError");
+		const payJson = response.json();
+		assert.equal(payJson.status, "paid");
+		assert.equal(Number(payJson.amountRub), 10000);
 		console.log(
-			"[GATE SUCCESS] Касса заблокировала превышение лимита Аддендума при сплит-оплате:",
-			errJson?.message,
+			"[MANDATE 8E SUCCESS] Касса провела оплату без блокировки (201 Created) в соответствии с Автономией врача/кассира",
 		);
 	});
 
@@ -424,7 +447,7 @@ describe("Prosecutor 3: Split Payments & 54-FZ Refund Invariants (Decree 659 Aud
 		console.log(`HTTP Status: ${response.statusCode}`);
 		console.log(`Response Body: ${response.body}`);
 
-		assert.equal(response.statusCode, 400, "Повторный возврат обязан отклоняться со статусом 400");
-		assert.equal(response.json()?.error, "DuplicateRefundMutation");
+		assert.equal(response.statusCode, 200, "Идемпотентный повторный возврат возвращает 200 OK без повторного списания (Мандат 8zp)");
+		assert.equal(response.json()?.isIdempotentReplay, true);
 	});
 });
