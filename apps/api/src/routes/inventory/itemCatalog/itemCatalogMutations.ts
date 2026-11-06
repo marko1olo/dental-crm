@@ -10,6 +10,9 @@ import {
 	normalizedExpirationDate,
 } from "../types.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export const handleCreateInventoryItem = async (
 	organizationId: string,
 	rawBody: unknown,
@@ -116,6 +119,10 @@ export const handleUpdateInventoryItem = async (
 		});
 	}
 
+	if (!itemId || !UUID_PATTERN.test(itemId.trim())) {
+		return reply.status(404).send({ error: "Item not found" });
+	}
+
 	const [existing] = await db
 		.select({ id: inventoryItems.id })
 		.from(inventoryItems)
@@ -169,6 +176,10 @@ export const handlePatchInventoryItem = async (
 			error: "InvalidBody",
 			message: "Некорректные параметры обновления позиции склада.",
 		});
+	}
+
+	if (!itemId || !UUID_PATTERN.test(itemId.trim())) {
+		return reply.status(404).send({ error: "Item not found" });
 	}
 
 	const [existing] = await db
@@ -253,6 +264,10 @@ export const handleDeleteInventoryItem = async (
 	itemId: string,
 	reply: FastifyReply,
 ) => {
+	if (!itemId || !UUID_PATTERN.test(itemId.trim())) {
+		return reply.status(404).send({ error: "Item not found" });
+	}
+
 	const [existing] = await db
 		.select({ id: inventoryItems.id })
 		.from(inventoryItems)

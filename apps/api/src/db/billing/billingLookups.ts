@@ -65,10 +65,14 @@ export async function findPaymentByClientMutationIdInDb(
 	};
 }
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function getPatientForBilling(
 	organizationId: string,
 	patientId: string,
 ) {
+	if (!patientId || !UUID_PATTERN.test(patientId.trim())) return null;
 	return withTenantCtx(organizationId, async (tx) => {
 		const [patient] = await tx
 			.select()
@@ -88,6 +92,7 @@ export async function getVisitForBilling(
 	organizationId: string,
 	visitId: string,
 ) {
+	if (!visitId || !UUID_PATTERN.test(visitId.trim())) return null;
 	return withTenantCtx(organizationId, async (tx) => {
 		const [visit] = await tx
 			.select()
@@ -107,6 +112,7 @@ export async function getDocumentForBilling(
 	organizationId: string,
 	documentId: string,
 ) {
+	if (!documentId || !UUID_PATTERN.test(documentId.trim())) return null;
 	return withTenantCtx(organizationId, async (tx) => {
 		const [doc] = await tx
 			.select()
@@ -149,6 +155,7 @@ export async function getPaymentsByPatientIdInDb(
 	organizationId: string,
 	patientId: string,
 ): Promise<Payment[]> {
+	if (!patientId || !UUID_PATTERN.test(patientId.trim())) return [];
 	const runQuery = async (client: any) => {
 		const res = await client
 			.select()

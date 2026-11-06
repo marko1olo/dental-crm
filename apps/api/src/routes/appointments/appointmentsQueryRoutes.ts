@@ -46,14 +46,36 @@ export async function handleGetAppointments(
 
 	const conditions = [eq(appointments.organizationId, orgId)];
 	if (doctorId) {
-		conditions.push(eq(appointments.doctorUserId, doctorId));
+		if (!APPOINTMENT_ID_UUID_PATTERN.test(doctorId.trim())) {
+			return reply.code(400).send({
+				error: "AppointmentValidationError",
+				message: "Некорректный идентификатор врача (ожидается UUID).",
+			});
+		}
+		conditions.push(eq(appointments.doctorUserId, doctorId.trim()));
 	}
 	if (patientId) {
-		conditions.push(eq(appointments.patientId, patientId));
+		if (!APPOINTMENT_ID_UUID_PATTERN.test(patientId.trim())) {
+			return reply.code(400).send({
+				error: "AppointmentValidationError",
+				message: "Некорректный идентификатор пациента (ожидается UUID).",
+			});
+		}
+		conditions.push(eq(appointments.patientId, patientId.trim()));
 	}
 	if (date) {
-		const dayStart = new Date(`${date}T00:00:00.000Z`);
-		const dayEnd = new Date(`${date}T23:59:59.999Z`);
+		if (
+			!/^\d{4}-\d{2}-\d{2}$/.test(date.trim()) ||
+			Number.isNaN(Date.parse(`${date.trim()}T00:00:00.000Z`))
+		) {
+			return reply.code(400).send({
+				error: "AppointmentValidationError",
+				message: "Некорректный формат даты (ожидается YYYY-MM-DD).",
+			});
+		}
+		const cleanDate = date.trim();
+		const dayStart = new Date(`${cleanDate}T00:00:00.000Z`);
+		const dayEnd = new Date(`${cleanDate}T23:59:59.999Z`);
 		conditions.push(
 			sql`${appointments.startsAt} >= ${dayStart} AND ${appointments.startsAt} <= ${dayEnd}`,
 		);

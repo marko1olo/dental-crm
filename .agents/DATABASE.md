@@ -400,3 +400,8 @@ that ships without them is a tenant leak, and 0160 is the receipt for what that 
    * 15 одновременных завершений визитов списывают материалы по техкартам: упорядочивание строк по `id ASC` полностью устраняет дедлоки PostgreSQL (`deadlock detected`), остатки списываются строго на 15 * qty, создается ровно 30 записей в `inventory_transactions`.
    * **Soft Negative Stock (Мандат 8n)**: 20 одновременных списаний при дефиците 3 единиц никогда не блокируют врача (все 20 возвращают 200 OK), остаток детерминированно уходит в овердрафт -17.000.
    * **Bidirectional Mutations**: 10 одновременных приходов (+4) и 10 списаний (-2) гарантируют отсутствие Lost Update аномалий с итоговым балансом +20.000.
+4. **Fastify Route Contracts & PostgreSQL 22P02 Defense** (`apiContractsAndErrorHardening.test.ts`):
+   * Полная ликвидация уязвимостей CWE-209 и падений PostgreSQL `SQLSTATE 22P02: invalid input syntax for type uuid`.
+   * Префлайт-валидация параметров пути (`:visitId`, `:appointmentId`, `:staffId`, `:itemId`), query-параметров (`doctorId`, `patientId`, `date`) и заголовков `Idempotency-Key` до попадания в SQL Drizzle ORM.
+   * Детерминированные структурированные ответы клиенту `400 Bad Request` и `404 Not Found` вместо слепых необработанных сбоев `500 Internal Server Error`.
+   * Реестр дефектов и проверок зафиксирован в [`docs/testing/API_ROUTES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/API_ROUTES_INQUISITION_REGISTRY.md).

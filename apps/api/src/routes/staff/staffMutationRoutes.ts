@@ -15,6 +15,9 @@ import * as schema from "../../db/schema.js";
 import { assembleStaffProfile, resolveOrganizationId } from "./staffHelpers.js";
 import type { ExtendedHrProfileStorage } from "./types.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function registerStaffMutationRoutes(app: FastifyInstance) {
 	/**
 	 * Изменение кадровых данных требует ЛИЧНОГО входа сотрудника. Токена
@@ -45,6 +48,13 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		if (!requirePersonalStaff(auth, reply)) return;
 
 		const params = request.params as { staffId: string };
+		if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
+			};
+		}
 		const parsed = updateStaffProfileExtendedSchema.safeParse(request.body);
 		if (!parsed.success) {
 			reply.code(400);
@@ -446,6 +456,13 @@ export async function registerStaffMutationRoutes(app: FastifyInstance) {
 		}
 
 		const params = request.params as { staffId: string };
+		if (!params.staffId || !UUID_PATTERN.test(params.staffId.trim())) {
+			reply.code(400);
+			return {
+				error: "ValidationError",
+				message: "Некорректный идентификатор сотрудника (ожидается UUID).",
+			};
+		}
 		await db
 			.update(schema.users)
 			.set({ currentSessionId: null })

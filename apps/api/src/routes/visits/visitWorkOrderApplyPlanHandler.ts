@@ -7,6 +7,9 @@ import {
 	VisitWorkOrderService,
 } from "../../services/clinical/VisitWorkOrderService.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function handleApplyPlanItemsToVisit(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -19,6 +22,13 @@ export async function handleApplyPlanItemsToVisit(
 	if (!context) return;
 
 	const { visitId } = request.params as { visitId: string };
+	if (!visitId || !UUID_PATTERN.test(visitId.trim())) {
+		reply.code(400);
+		return {
+			error: "ValidationError",
+			message: "Некорректный идентификатор приёма (ожидается UUID).",
+		};
+	}
 	const parsed = applyPlanItemsToVisitSchema.safeParse(request.body);
 	if (!parsed.success) {
 		reply.code(400);

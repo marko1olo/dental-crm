@@ -90,10 +90,10 @@ async function handlePostVisitConsumables(
 	reply: FastifyReply,
 ) {
 	const targetVisitId = extractTargetVisitId(request.params);
-	if (!targetVisitId) {
+	if (!targetVisitId || !isValidUuid(targetVisitId)) {
 		return reply.status(400).send({
 			error: "ValidationError",
-			message: "Не указан идентификатор приёма",
+			message: "Некорректный идентификатор приёма (ожидается UUID)",
 		});
 	}
 
@@ -239,10 +239,10 @@ async function handleGetVisitConsumables(
 	reply: FastifyReply,
 ) {
 	const targetVisitId = extractTargetVisitId(request.params);
-	if (!targetVisitId) {
+	if (!targetVisitId || !isValidUuid(targetVisitId)) {
 		return reply.status(400).send({
 			error: "ValidationError",
-			message: "Не указан идентификатор приёма",
+			message: "Некорректный идентификатор приёма (ожидается UUID)",
 		});
 	}
 

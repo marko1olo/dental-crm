@@ -10,6 +10,9 @@ import {
 } from "../../services/clinical/VisitWorkOrderService.js";
 import { executeVisitCompletionSideEffects } from "./visitCompletionEffects.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function handleCompleteVisitWorkOrder(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -22,6 +25,13 @@ export async function handleCompleteVisitWorkOrder(
 	if (!context) return;
 
 	const { visitId } = request.params as { visitId: string };
+	if (!visitId || !UUID_PATTERN.test(visitId.trim())) {
+		reply.code(400);
+		return {
+			error: "ValidationError",
+			message: "Некорректный идентификатор приёма (ожидается UUID).",
+		};
+	}
 	const body =
 		(request.body as
 			| { status?: "signed" | "draft" | "voided" | "completed" | "in_progress" }

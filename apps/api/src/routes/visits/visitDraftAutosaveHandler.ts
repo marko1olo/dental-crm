@@ -23,6 +23,9 @@ import {
 	visitRequestBody,
 } from "./visitErrors.js";
 
+const UUID_PATTERN =
+	/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function handleGetVisitDraft(
 	request: FastifyRequest,
 	reply: FastifyReply,
@@ -36,35 +39,55 @@ export async function handleGetVisitDraft(
 	const orgId = context.organizationId;
 	const { visitId } = request.params as { visitId: string };
 
-	if (!visitId || visitId === noActiveVisitId) {
+	const trimmedVisitId = typeof visitId === "string" ? visitId.trim() : "";
+	if (!trimmedVisitId || trimmedVisitId === noActiveVisitId) {
 		return visitDraftAutosaveResponseSchema.parse({ serverDraft: null });
 	}
-	const lookup = await getVisitDraftAutosaveFromDb(orgId, visitId);
-	if (lookup.outcome === "visit_absent") {
-		reply.code(404);
+
+	if (!UUID_PATTERN.test(trimmedVisitId)) {
+		reply.code(400);
 		return {
-			error: "VisitNotFound",
-			reason: "visit_not_found",
-			message: visitDraftNotFoundMessage,
+			error: "VisitValidationError",
+			reason: "invalid_uuid",
+			message: "Некорректный идентификатор приёма (ожидается UUID).",
 		};
 	}
-	if (lookup.outcome === "no_draft") {
-		reply.code(404);
+
+	try {
+		const lookup = await getVisitDraftAutosaveFromDb(orgId, trimmedVisitId);
+		if (lookup.outcome === "visit_absent") {
+			reply.code(404);
+			return {
+				error: "VisitNotFound",
+				reason: "visit_not_found",
+				message: visitDraftNotFoundMessage,
+			};
+		}
+		if (lookup.outcome === "no_draft") {
+			reply.code(404);
+			return {
+				error: "VisitDraftAbsent",
+				reason: lookup.status === "signed" ? "visit_signed" : "visit_voided",
+				visitId: lookup.visitId,
+				visitStatus: lookup.status,
+				signedAt: lookup.signedAt,
+				message:
+					lookup.status === "signed"
+						? visitDraftSignedNoDraftMessage
+						: visitDraftVoidedNoDraftMessage,
+			};
+		}
+		return visitDraftAutosaveResponseSchema.parse({
+			serverDraft: lookup.serverDraft,
+		});
+	} catch (error) {
+		request.log.error(error, "Ошибка получения черновика приёма");
+		reply.code(500);
 		return {
-			error: "VisitDraftAbsent",
-			reason: lookup.status === "signed" ? "visit_signed" : "visit_voided",
-			visitId: lookup.visitId,
-			visitStatus: lookup.status,
-			signedAt: lookup.signedAt,
-			message:
-				lookup.status === "signed"
-					? visitDraftSignedNoDraftMessage
-					: visitDraftVoidedNoDraftMessage,
+			error: "InternalServerError",
+			message: "Не удалось загрузить черновик приёма.",
 		};
 	}
-	return visitDraftAutosaveResponseSchema.parse({
-		serverDraft: lookup.serverDraft,
-	});
 }
 
 export async function handlePutVisitDraft(
