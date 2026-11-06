@@ -34,7 +34,7 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 	const selectedSet = React.useMemo(() => new Set(selectedTeeth), [selectedTeeth]);
 
 	const renderQuadrant = (teeth: readonly number[], testId: string) => (
-		<div className="flex items-center gap-0.5 sm:gap-1" data-testid={testId}>
+		<div className="flex items-start gap-0.5 sm:gap-1" data-testid={testId}>
 			{teeth.map((num) => (
 				<AnatomicalGate0Cell
 					key={num}
@@ -59,7 +59,7 @@ export const AnatomicalGate0Row: React.FC<AnatomicalGate0RowProps> = React.memo(
 					{archTitle}
 				</div>
 			)}
-			<div className="flex items-center justify-center gap-1 sm:gap-2 w-full">
+			<div className="flex items-start justify-center gap-1 sm:gap-2 w-full">
 				{renderQuadrant(leftTeeth, isUpper ? "quadrant-1" : "quadrant-4")}
 				<div
 					className="flex flex-col items-center justify-center mx-1 sm:mx-2 self-stretch select-none"

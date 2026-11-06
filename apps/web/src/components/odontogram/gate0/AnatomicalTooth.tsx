@@ -54,18 +54,20 @@ export function areAnatomicalToothPropsEqual(prev: AnatomicalToothProps, next: A
 }
 
 export const AnatomicalTooth: React.FC<AnatomicalToothProps> = React.memo((props) => {
-	const { toothNumber, onClick, isFlipped: isFlippedProp, badgeRadius, ...rest } = props;
+	const { toothNumber, onClick, isFlipped: isFlippedProp, badgeRadius, badgeCy, ...rest } = props;
 	const Component = getToothComponent(toothNumber);
 	if (!Component) return null;
 
 	const isFlipped = isFlippedProp ?? (toothNumber >= 21 && toothNumber <= 38);
 	const effectiveBadgeRadius = badgeRadius ?? 14;
+	const effectiveBadgeCy = badgeCy ?? (effectiveBadgeRadius > 14 ? 194.5 : (effectiveBadgeRadius > 10 ? 176.0 : 160));
 	const handleClick = onClick ? (e: React.MouseEvent<SVGSVGElement>) => onClick(e, toothNumber) : undefined;
 	const element = Component({
 		...rest,
 		toothNumber,
 		isFlipped,
 		badgeRadius: effectiveBadgeRadius,
+		badgeCy: effectiveBadgeCy,
 		...(handleClick ? { onClick: handleClick } : {}),
 	});
 

@@ -496,6 +496,12 @@ apps/web/src/components/odontogram/gate0/teeth/tooth{ID}/
     - **Сценарий Б (Стенограф без мышки)**: Свободная диктовка/текст обновляет одонтограмму, генерирует SOAP и начисляет номенклатуру без барьеров модальных окон.
     - Автоскрытие плавающего круглого лаунчера `.copilot-trigger-btn` при открытии шторки/модалки, устраняющее перекрытие крестика закрытия `X`.
     - 4-State Proof проверен лично через `read_file` (PC Light/Dark 1440x900, Mobile Light/Dark 390x844).
+- [x] **Gate 4.1 (Завершен — Multi-Select Batch Actions & Shorthand Integration):**
+  * **Пакетный макро-ввод (Мандат 8ba / 5 Неудобных Вопросов реальности)**: групповое выделение фронта (13–23, 43–33), квадрантов или произвольного набора зубов с 1-клик применением патологических штампов и физиологической нормы («✓ Все зубы здоровы (Норма)»).
+  * **Устранение расхождения типов в `OdontogramActiveViewSlot.tsx`**: коллбэк `onApplyBatch` в `OdontogramQuickTextInput` передавал массив объектов `{ toothNumber, state, surfaces }`, который ранее ошибочно принимался как плоские параметры `(targets, state, surfaces)` — исправлено на поштучную распаковку и вызов `onQuickStateChange([item.toothNumber], item.state, item.surfaces)`.
+  * **Ликвидация частокола в `ToothStatusBadge.tsx`**: динамический расчет `isHealthy` (`badge.code === "✓"`) с `opacity-60` для нормы и `opacity-100` для активной патологии при клиренсе $R=14$, $CY=176.0$.
+  * **Окклюзионная плоскость Wheeler**: фиксация `items-start justify-center` в `AnatomicalGate0Cell.tsx` и `AnatomicalGate0Row.tsx`, устраняющая ступеньки высот между резцами и молярами.
+  * **4-State Visual Proofs**: Лично отсмотрены через `read_file` все 8 пруфов (`01_odontogram_pc_light_1440x900.png`, `02_odontogram_pc_dark_1440x900.png`, `03_odontogram_mobile_light_390x844.png`, `04_odontogram_mobile_dark_390x844.png`, `01_odontogram_multiselect_pc_dark_1440x900.png`, `02_odontogram_multiselect_pc_light_1440x900.png`, `03_odontogram_multiselect_mobile_light_390x844.png`, `04_odontogram_multiselect_mobile_dark_390x844.png`). 90 сьютов Vitest (772 теста) — 100% pass.
 - [x] **Red Team Fuzzing & Stress Inquisition (Завершен):**
   * Разработан и верифицирован стресс-сьют `packages/shared/src/__tests__/fuzzingToothAndBillingMath.test.ts` (10 000 мутаций строк FDI, 10 000 сплит-комбинаций, Wheeler-пропорции 48/54/60/68px, 0px дрифта на iPhone 390px, Mandate 8e 100% скидка).
   * Документирован реестр `docs/testing/CLINICAL_MATH_FUZZING_REGISTRY.md`. Прогон 187 мс, 100% pass.

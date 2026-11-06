@@ -79,10 +79,16 @@ export const OdontogramActiveViewSlot: React.FC<
 							selectedTeeth={selectedTeeth}
 						/>
 						<OdontogramQuickTextInput
-							onApplyBatch={(targets, state, surfaces) => {
-								onQuickStateChange(targets, state, surfaces);
+							onApplyBatch={(batchOrTargets: any, maybeState?: any, maybeSurfaces?: any) => {
+								if (!onQuickStateChange) return;
+								if (Array.isArray(batchOrTargets) && batchOrTargets.length > 0 && typeof batchOrTargets[0] === "object") {
+									for (const item of batchOrTargets) {
+										onQuickStateChange([item.toothNumber], item.state, item.surfaces);
+									}
+								} else if (Array.isArray(batchOrTargets) && maybeState) {
+									onQuickStateChange(batchOrTargets, maybeState, maybeSurfaces);
+								}
 							}}
-							dentitionMode={sharedViewProps.dentitionMode as any}
 						/>
 					</>
 				)}

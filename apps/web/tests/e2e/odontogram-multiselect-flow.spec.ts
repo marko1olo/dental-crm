@@ -288,30 +288,44 @@ test.describe("Сквозной E2E мультиселект формулы Whee
 		// Шаг 10: Повторная санация в 1 клик для восстановления физиологической нормы
 		await normBtn.dispatchEvent("click");
 
-		// Шаг 9: Снятие 4-State Proof скриншотов (PC Light/Dark + Mobile Light/Dark)
+		// Шаг 11: Активируем мультиселект фронтального сектора (13–23, 43–33) для наглядного пруфа
+		await quickActionsMenu.dispatchEvent("click");
+		await selectFrontBtn.dispatchEvent("click");
+		await expect(toothCell11).toHaveClass(/ring-2|ring-teal/);
+		await expect(toothCell21).toHaveClass(/ring-2|ring-teal/);
+
+		// Шаг 12: Снятие 4-State Proof скриншотов (PC Light/Dark + Mobile Light/Dark)
 		if (!fs.existsSync(PROOFS_DIR)) {
 			fs.mkdirSync(PROOFS_DIR, { recursive: true });
 		}
 
-		// 1. PC Dark (1440x900)
+		// 1. PC Dark (1440x900) с активным мультиселектом
 		await page.setViewportSize({ width: 1440, height: 900 });
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("light");
 			document.documentElement.classList.add("dark");
 			document.documentElement.setAttribute("data-theme", "dark");
 		});
+		await page.waitForTimeout(500);
 		await page.screenshot({ path: path.join(PROOFS_DIR, "01_odontogram_multiselect_pc_dark_1440x900.png"), fullPage: false });
 
-		// 2. PC Light (1440x900)
+		// 2. PC Light (1440x900) с активным мультиселектом
 		await page.evaluate(() => {
 			document.documentElement.classList.remove("dark");
 			document.documentElement.classList.add("light");
 			document.documentElement.setAttribute("data-theme", "light");
 		});
+		await page.waitForTimeout(500);
 		await page.screenshot({ path: path.join(PROOFS_DIR, "02_odontogram_multiselect_pc_light_1440x900.png"), fullPage: false });
 
-		// 3. Mobile Light (390x844 Apple HIG)
+		// 3. Mobile Light (390x844 Apple HIG) — переход к зубной формуле / шагу Осмотр
 		await page.setViewportSize({ width: 390, height: 844 });
+		await page.waitForTimeout(500);
+		const examStepBtn = page.locator('[data-testid="mobile-chairside-visit-workspace-step-exam"], button:has-text("Осмотр")').first();
+		if (await examStepBtn.isVisible({ timeout: 5000 }).catch(() => false)) {
+			await examStepBtn.dispatchEvent("click");
+			await page.waitForTimeout(500);
+		}
 		await page.screenshot({ path: path.join(PROOFS_DIR, "03_odontogram_multiselect_mobile_light_390x844.png"), fullPage: false });
 
 		// 4. Mobile Dark (390x844 Apple HIG)
@@ -320,6 +334,7 @@ test.describe("Сквозной E2E мультиселект формулы Whee
 			document.documentElement.classList.add("dark");
 			document.documentElement.setAttribute("data-theme", "dark");
 		});
+		await page.waitForTimeout(500);
 		await page.screenshot({ path: path.join(PROOFS_DIR, "04_odontogram_multiselect_mobile_dark_390x844.png"), fullPage: false });
 	});
 });

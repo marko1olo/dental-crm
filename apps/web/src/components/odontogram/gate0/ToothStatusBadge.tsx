@@ -20,25 +20,27 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 	presetId,
 	layers,
 	cx = 50,
-	cy = 160,
+	cy: cyProp,
 	r = 8.5,
 	toothNumber,
 }) => {
 	const badge = resolveToothStatusBadge(presetId, layers, toothNumber);
 	const textContent = (badge.code === "✓" && toothNumber) ? String(toothNumber) : badge.code;
+	const isHealthy = badge.code === "✓";
+	const cy = cyProp ?? (r > 14 ? 194.5 : (r > 10 ? 176.0 : 160));
 	const len = textContent.length;
 	const fontSize =
 		len === 1
-			? r * 0.92
+			? r * 0.96
 			: len === 2
-				? r * 0.74
+				? r * 0.82
 				: len === 3
-					? r * 0.58
+					? r * 0.64
 					: len === 4
 						? r * 0.48
 						: r * 0.40;
 	const strokeWidth = Math.max(1.0, Number((r * 0.12).toFixed(1)));
-	const letterSpacing = len >= 5 ? "-0.06em" : len >= 4 ? "-0.04em" : len >= 3 ? "-0.02em" : undefined;
+	const letterSpacing = len >= 5 ? "-0.06em" : len >= 4 ? "-0.04em" : len >= 3 ? "-0.03em" : undefined;
 
 	return (
 		<g
@@ -47,6 +49,8 @@ export const ToothStatusBadge: React.FC<ToothStatusBadgeProps> = ({
 			data-tooth-number={toothNumber}
 			role="status"
 			shapeRendering="geometricPrecision"
+			opacity={isHealthy ? 0.6 : 1.0}
+			className={isHealthy ? "opacity-60 transition-opacity duration-150" : "opacity-100 transition-opacity duration-150"}
 		>
 			<title>{toothNumber ? `${badge.title} (Зуб ${toothNumber})` : badge.title}</title>
 			<circle
