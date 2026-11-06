@@ -259,29 +259,162 @@ export class NdflTaxService {
 				continue;
 			}
 
-			// Классификация Код 1 vs Код 2
-			const deductionCode =
-				pay.taxDeductionCode === "2" ||
-				classifyNdflServiceCode(serviceName, payAny.code804n) === "2"
-					? "2"
-					: "1";
+			// [DOC-07 Fix]: Автоматическое разделение смешанного чека на Код 1 и Код 2 (ПП РФ №458)
+			const c1Explicit = payAny.code1AmountKopecks ?? (payAny.code1AmountRub != null ? parseKopecks(payAny.code1AmountRub) : undefined);
+			const c2Explicit = payAny.code2AmountKopecks ?? (payAny.code2AmountRub != null ? parseKopecks(payAny.code2AmountRub) : undefined);
+			const items: any[] = payAny.items || payAny.positions || payAny.serviceLines || payAny.fiscalReceipt?.items || [];
+			const noteText = typeof pay.note === "string" ? pay.note : "";
+			const c2Match = noteText.match(/код\s*2\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
+			const c1Match = noteText.match(/код\s*1\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
 
-			if (deductionCode === "2") {
-				code2Kopecks += amountKop;
+			if (c1Explicit !== undefined || c2Explicit !== undefined) {
+				// 1. Прямое указание сумм Код 1 и Код 2 в объекте платежа
+				const splitCode1Kop = c1Explicit ?? Math.max(0, amountKop - (c2Explicit ?? 0));
+				const splitCode2Kop = c2Explicit ?? Math.max(0, amountKop - splitCode1Kop);
+
+				if (splitCode1Kop > 0) {
+					code1Kopecks += splitCode1Kop;
+					receipts.push({
+						id: `${pay.id}-code1`,
+						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/1`,
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName: `${serviceName} (Код 1: стандартное лечение)`,
+						deductionCode: "1",
+						amountRub: rublesFromKopecks(splitCode1Kop),
+						isExcluded: false,
+					});
+				}
+				if (splitCode2Kop > 0) {
+					code2Kopecks += splitCode2Kop;
+					receipts.push({
+						id: `${pay.id}-code2`,
+						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/2`,
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName: `${serviceName} (Код 2: дорогостоящее лечение, ПП РФ №458)`,
+						deductionCode: "2",
+						amountRub: rublesFromKopecks(splitCode2Kop),
+						isExcluded: false,
+					});
+				}
+			} else if (items.length > 0) {
+				// 2. Расщепление по детализированным позициям чека
+				let receiptHasItems = false;
+				for (const item of items) {
+					const itemKop = typeof item.amountKopecks === "number"
+						? item.amountKopecks
+						: item.amountRub != null
+							? parseKopecks(item.amountRub)
+							: typeof item.priceRub === "number"
+								? parseKopecks(item.priceRub * (item.quantity || 1))
+								: 0;
+					if (itemKop <= 0) continue;
+
+					if (isNonMedicalGood(item.name, item.category)) {
+						excludedNonMedicalKopecks += itemKop;
+						excludedNonMedicalCount += 1;
+						receipts.push({
+							id: `${pay.id}-${item.id || item.name}`,
+							receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+							fiscalDocumentNumber: fiscalDocNum,
+							receiptDate,
+							serviceName: item.name || "Сопутствующий товар",
+							deductionCode: "1",
+							amountRub: rublesFromKopecks(itemKop),
+							isExcluded: true,
+							exclusionReason: "Сопутствующий товар (ст. 219 НК РФ)",
+						});
+					} else {
+						const itCode = classifyNdflServiceCode(item.name, item.code804n);
+						if (itCode === "2") {
+							code2Kopecks += itemKop;
+						} else {
+							code1Kopecks += itemKop;
+						}
+						receipts.push({
+							id: `${pay.id}-${item.id || item.name}`,
+							receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+							fiscalDocumentNumber: fiscalDocNum,
+							receiptDate,
+							serviceName: item.name || serviceName,
+							deductionCode: itCode,
+							amountRub: rublesFromKopecks(itemKop),
+							isExcluded: false,
+						});
+					}
+					receiptHasItems = true;
+				}
+				if (!receiptHasItems) {
+					code1Kopecks += amountKop;
+					receipts.push({
+						id: pay.id,
+						receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName,
+						deductionCode: "1",
+						amountRub: pay.amountRub,
+						isExcluded: false,
+					});
+				}
+			} else if (c2Match) {
+				// 3. Расщепление по примечанию (note)
+				const c2Rub = parseFloat(c2Match[1].replace(",", "."));
+				const c2Kop = Math.min(amountKop, parseKopecks(c2Rub));
+				const c1Kop = Math.max(0, amountKop - c2Kop);
+
+				if (c1Kop > 0) {
+					code1Kopecks += c1Kop;
+					receipts.push({
+						id: `${pay.id}-code1`,
+						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/1`,
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName: `${serviceName} (Код 1: терапия/гигиена)`,
+						deductionCode: "1",
+						amountRub: rublesFromKopecks(c1Kop),
+						isExcluded: false,
+					});
+				}
+				if (c2Kop > 0) {
+					code2Kopecks += c2Kop;
+					receipts.push({
+						id: `${pay.id}-code2`,
+						receiptNumber: `${pay.fiscalReceiptNumber || pay.id.slice(0, 8)}/2`,
+						fiscalDocumentNumber: fiscalDocNum,
+						receiptDate,
+						serviceName: `${serviceName} (Код 2: имплантация/синус-лифтинг ПП РФ №458)`,
+						deductionCode: "2",
+						amountRub: rublesFromKopecks(c2Kop),
+						isExcluded: false,
+					});
+				}
 			} else {
-				code1Kopecks += amountKop;
-			}
+				// 4. Обычная классификация чека целиком
+				const deductionCode =
+					pay.taxDeductionCode === "2" ||
+					classifyNdflServiceCode(serviceName, payAny.code804n) === "2"
+						? "2"
+						: "1";
 
-			receipts.push({
-				id: pay.id,
-				receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
-				fiscalDocumentNumber: fiscalDocNum,
-				receiptDate,
-				serviceName,
-				deductionCode,
-				amountRub: pay.amountRub,
-				isExcluded: false,
-			});
+				if (deductionCode === "2") {
+					code2Kopecks += amountKop;
+				} else {
+					code1Kopecks += amountKop;
+				}
+
+				receipts.push({
+					id: pay.id,
+					receiptNumber: pay.fiscalReceiptNumber || pay.id.slice(0, 8),
+					fiscalDocumentNumber: fiscalDocNum,
+					receiptDate,
+					serviceName,
+					deductionCode,
+					amountRub: pay.amountRub,
+					isExcluded: false,
+				});
+			}
 		}
 
 		const code1TotalRub = rublesFromKopecks(code1Kopecks);

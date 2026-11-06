@@ -33,63 +33,66 @@ export const LEGACY_CONSENT_PRESETS: Record<
 };
 
 /**
- * Канонический реестр 23+ специализированных клинических пресетов StomX & Минздрава РФ.
+ * Канонический реестр 23+ специализированных клинических пресетов DENTE & Минздрава РФ.
  */
-export const STOMX_SPECIALIZED_CONSENT_PRESETS: Record<
+export const CLINICAL_SPECIALIZED_CONSENT_PRESETS: Record<
 	string,
 	ClinicalProcedureConsentPreset
 > = {
-	// 1. ИДС Виниры (StomX #58)
+	// 1. ИДС Виниры
 	veneers: ORTHO_AND_PROSTHETIC_CONSENT_PRESETS.veneers,
-	// 2. ИДС Имплантация (StomX #60)
+	// 2. ИДС Имплантация
 	implantation: SURGERY_AND_IMPLANT_CONSENT_PRESETS.implantation,
-	// 3. ИДС Синус-лифтинг (StomX #73)
+	// 3. ИДС Синус-лифтинг
 	sinus_lifting: SURGERY_AND_IMPLANT_CONSENT_PRESETS.sinus_lifting,
-	// 3a. ИДС Костная пластика / Направленная костная регенерация (НКР) / Остеопластика (DentalPRO & StomX)
+	// 3a. ИДС Костная пластика / Направленная костная регенерация (НКР) / Остеопластика
 	bone_grafting: SURGERY_AND_IMPLANT_CONSENT_PRESETS.bone_grafting,
-	// 4. ИДС Седация (StomX #72)
+	// 4. ИДС Седация
 	sedation: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.sedation,
-	// 5. ИДС Удаление зуба (StomX #76)
+	// 5. ИДС Удаление зуба
 	surgery_extraction: SURGERY_AND_IMPLANT_CONSENT_PRESETS.surgery_extraction,
-	// 6. ИДС Несъемные ортопедические конструкции (StomX #63)
+	// 6. ИДС Несъемные ортопедические конструкции
 	fixed_prosthetics: ORTHO_AND_PROSTHETIC_CONSENT_PRESETS.fixed_prosthetics,
-	// 7. ИДС Съемные ортопедические конструкции (StomX #74)
+	// 7. ИДС Съемные ортопедические конструкции
 	removable_prosthetics: ORTHO_AND_PROSTHETIC_CONSENT_PRESETS.removable_prosthetics,
-	// 8. ИДС Глубокий кариес (StomX #59)
+	// 8. ИДС Глубокий кариес
 	deep_caries: THERAPY_CONSENT_PRESETS.deep_caries,
-	// 9. ИДС Поверхностный и средний кариес (StomX #61)
+	// 9. ИДС Поверхностный и средний кариес
 	superficial_medium_caries: THERAPY_CONSENT_PRESETS.superficial_medium_caries,
-	// 10. ИДС Пульпит и эндодонтия (StomX #70, #79)
+	// 10. ИДС Пульпит и эндодонтия
 	pulpitis_endodontics: THERAPY_CONSENT_PRESETS.pulpitis_endodontics,
-	// 11. ИДС Пародонтология (StomX #68)
+	// 11. ИДС Пародонтология
 	periodontology: THERAPY_CONSENT_PRESETS.periodontology,
-	// 12. ИДС Профессиональная гигиена (StomX #69)
+	// 12. ИДС Профессиональная гигиена
 	professional_hygiene: THERAPY_CONSENT_PRESETS.professional_hygiene,
-	// 13. ИДС Отбеливание зубов (StomX #67)
+	// 13. ИДС Отбеливание зубов
 	teeth_whitening: THERAPY_CONSENT_PRESETS.teeth_whitening,
-	// 14. ИДС Ортодонтия (StomX #65)
+	// 14. ИДС Ортодонтия
 	orthodontics: ORTHO_AND_PROSTHETIC_CONSENT_PRESETS.orthodontics,
-	// 14a. ИДС Элайнеры и ортодонтические каппы (DentalPRO & StomX)
+	// 14a. ИДС Элайнеры и ортодонтические каппы
 	aligners: ORTHO_AND_PROSTHETIC_CONSENT_PRESETS.aligners,
-	// 15. ИДС Общее для несовершеннолетних (представитель) (StomX #64)
+	// 15. ИДС Общее для несовершеннолетних (представитель)
 	minor_general: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.minor_general,
-	// 16. ИДС Рентгенологическое исследование и КЛКТ (StomX #71)
+	// 16. ИДС Рентгенологическое исследование и КЛКТ
 	xray_cbct: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.xray_cbct,
-	// 17. ИДС Фотопротокол (StomX #77)
+	// 17. ИДС Фотопротокол
 	photoprotocol: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.photoprotocol,
-	// 18. Отказ от передачи данных в ЕГИСЗ (ФЗ-323 ст. 13) (StomX #80)
+	// 18. Отказ от передачи данных в ЕГИСЗ (ФЗ-323 ст. 13)
 	egisz_refusal: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.egisz_refusal,
-	// 19. Отказ от медицинского вмешательства (StomX #81)
+	// 19. Отказ от медицинского вмешательства
 	medical_intervention_refusal: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.medical_intervention_refusal,
-	// 20. Положение о гарантийных обязательствах и сроках службы (StomX #82)
+	// 20. Положение о гарантийных обязательствах и сроках службы
 	warranty_policy: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.warranty_policy,
-	// 21. Лист учета дозовых нагрузок пациента (СанПиН 2.6.1.1192-03) (StomX #15)
+	// 21. Лист учета дозовых нагрузок пациента (СанПиН 2.6.1.1192-03)
 	xray_dose_load_sheet: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.xray_dose_load_sheet,
-	// 22. Гарантийный паспорт стоматологического пациента (StomX #54)
+	// 22. Гарантийный паспорт стоматологического пациента
 	warranty_passport: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.warranty_passport,
-	// 23. Анкета общего состояния здоровья (StomX #53)
+	// 23. Анкета общего состояния здоровья
 	somatic_health_questionnaire: ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.somatic_health_questionnaire,
 
 	// Legacy aliases (полная обратная совместимость)
 	...LEGACY_CONSENT_PRESETS,
 };
+
+/** @deprecated Use CLINICAL_SPECIALIZED_CONSENT_PRESETS */
+export const STOMX_SPECIALIZED_CONSENT_PRESETS = CLINICAL_SPECIALIZED_CONSENT_PRESETS;

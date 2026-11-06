@@ -574,14 +574,33 @@ export function generateMinorConsentPrintHtml(params: {
 </body></html>`;
 }
 
-export function generateConsentPackagePrintHtml(packageKey: string, options?: { context?: ConsentSubstitutionContext }): string {
-	const doc = getConsentDocumentById("therapy");
-	return generateConsentPrintHtml(doc, { patientName: options?.context?.patientName || "Иванов И.И." });
+export function generateSingleConsentTemplatePrintHtml(
+	templateKey: string,
+	options?: { context?: ConsentSubstitutionContext },
+): string {
+	const doc = getConsentDocumentById(templateKey as any);
+	const ctx = options?.context;
+	return generateConsentPrintHtml(doc, {
+		patientName: ctx?.patientName || "________________________________________________",
+		birthDate: ctx?.birthDate || "____.____.________",
+		passport: ctx?.passport || "серия ______ № ________ выдан ________________________",
+		phone: ctx?.phone,
+		clinicName: ctx?.clinicLegalName || ctx?.clinicName || "Стоматологическая клиника «DENTE»",
+		doctorName: ctx?.doctorName || "Лечащий врач-стоматолог",
+		date: ctx?.date || new Date().toLocaleDateString("ru-RU"),
+		guardianName: ctx?.guardianName,
+		guardianPassport: ctx?.guardianDocument,
+		guardianRelation: ctx?.guardianRelation,
+		toothOrArea: ctx?.toothNumbers,
+		diagnosisText: ctx?.diagnosisIcd,
+	});
 }
 
-export function generateSingleConsentTemplatePrintHtml(templateKey: string, options?: { context?: ConsentSubstitutionContext }): string {
-	const doc = getConsentDocumentById((templateKey as ConsentDocumentId) || "therapy");
-	return generateConsentPrintHtml(doc, { patientName: options?.context?.patientName || "Иванов И.И." });
+export function generateConsentPackagePrintHtml(
+	packageKey: string,
+	options?: { context?: ConsentSubstitutionContext },
+): string {
+	return generateSingleConsentTemplatePrintHtml(packageKey, options);
 }
 
 export function printBlankConsentPackage(packageKey: string, clinicDefaults?: unknown): void {

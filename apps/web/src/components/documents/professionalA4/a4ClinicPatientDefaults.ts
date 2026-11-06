@@ -72,29 +72,29 @@ export function buildA4PatientRequisites(patient?: Patient | null) {
 	const admin = pAny.administrativeProfile || {};
 	const pass = admin.passport || {};
 	return {
-		fullName: patient?.fullName || "Ковалёв Роман Станиславович",
+		fullName: patient?.fullName || "________________________________________",
 		birthDate: patient?.birthDate
 			? new Date(patient.birthDate).toLocaleDateString("ru-RU")
-			: "12.04.1988",
+			: "«___» _________ _____ г.",
 		gender: (patient?.gender as "male" | "female") || "male",
-		phone: patient?.phone || "+7 (999) 888-77-66",
-		passportSeries: pass.series || "4515",
-		passportNumber: pass.number || "892341",
-		passportIssuedBy: pass.issuedBy || "ОВД Тверского района города Москвы",
+		phone: patient?.phone || "+7 (___) ___-__-__",
+		passportSeries: pass.series || "____",
+		passportNumber: pass.number || "______",
+		passportIssuedBy: pass.issuedBy || "________________________________________________",
 		passportIssuedDate: pass.issuedDate
 			? new Date(pass.issuedDate).toLocaleDateString("ru-RU")
-			: "20.05.2012",
-		passportDepartmentCode: pass.departmentCode || "770-015",
+			: "«___» _________ _____ г.",
+		passportDepartmentCode: pass.departmentCode || "___-___",
 		address:
 			pAny.address ||
 			admin.registrationAddress ||
-			"г. Москва, ул. Новослободская, д. 14, кв. 82",
+			"________________________________________________________",
 		registrationAddress:
 			admin.registrationAddress ||
 			pAny.address ||
-			"г. Москва, ул. Новослободская, д. 14, кв. 82",
-		snils: pAny.snils || admin.snils || "154-892-301 92",
-		omsPolis: pAny.omsPolis || admin.omsPolicyNumber || "7700 8923 1204 9512",
-		cardNumber: pAny.medicalCardNumber || pAny.cardNumber || "МК-2026/0418",
+			"________________________________________________________",
+		snils: pAny.snils || admin.snils || "___-___-___ __",
+		omsPolis: pAny.omsPolis || admin.omsPolicyNumber || "____________________",
+		cardNumber: pAny.medicalCardNumber || pAny.cardNumber || "МК-________",
 	};
 }

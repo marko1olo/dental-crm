@@ -102,4 +102,45 @@ describe("FNS NDFL Tax Service & Anti-Anomaly Controls Suite (Feature #33 & #5)"
 		assert.ok(result.xmlContent.includes("<СведРасхУсл КодУслуг=\"1\" СумОпл=\"200000.00\"/>"));
 		assert.ok(result.xmlContent.includes("<СведРасхУсл КодУслуг=\"2\" СумОпл=\"250000.00\"/>"));
 	});
+
+	test("1.2 DOC-07 Fix: Mixed receipt splitting between Code 1 (general dentistry) and Code 2 (expensive implantology PP RF 458)", () => {
+		// Создаем смешанный пейлоад, где смешанный чек расщеплен на Код 1 и Код 2
+		const mixedPayload: FnsTaxPayload = {
+			...testPayload,
+			documentNumber: "СПР-2026/101",
+			receipts: [
+				{
+					id: "rec-mixed-1",
+					receiptNumber: "ЧЕК-MIX-01/1",
+					fiscalDocumentNumber: "901-1",
+					receiptDate: "2025-06-10",
+					serviceName: "Лечение кариеса 1.6 (Код 1: обычное лечение)",
+					deductionCode: "1",
+					amountRub: 50000,
+				},
+				{
+					id: "rec-mixed-2",
+					receiptNumber: "ЧЕК-MIX-01/2",
+					fiscalDocumentNumber: "901-2",
+					receiptDate: "2025-06-10",
+					serviceName: "Установка дентального имплантата Straumann (Код 2: дорогостоящее лечение, ПП РФ №458)",
+					deductionCode: "2",
+					amountRub: 100000,
+				},
+			],
+			expenses: {
+				code1AmountRub: 50000,
+				code2AmountRub: 100000,
+			},
+		};
+
+		const result = NdflTaxService.generateXml(mixedPayload);
+		assert.strictEqual(result.isValidForSubmission, true);
+		assert.strictEqual(result.code1Rub, 50000);
+		assert.strictEqual(result.code2Rub, 100000);
+		assert.strictEqual(result.totalRub, 150000);
+		assert.strictEqual(result.estimatedTaxRefundRub, 50000 * 0.13 + 100000 * 0.13); // 6500 + 13000 = 19500
+		assert.ok(result.xmlContent.includes("<СведРасхУсл КодУслуг=\"1\" СумОпл=\"50000.00\"/>"));
+		assert.ok(result.xmlContent.includes("<СведРасхУсл КодУслуг=\"2\" СумОпл=\"100000.00\"/>"));
+	});
 });

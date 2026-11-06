@@ -268,28 +268,70 @@ export function buildKnd1151156Xml(
 		};
 	}
 
-	// Точный подсчет в копейках
-	const code1Payments = scopedPayments.filter((p) => p.taxDeductionCode === "1" || !p.taxDeductionCode);
-	const code2Payments = scopedPayments.filter((p) => p.taxDeductionCode === "2");
+	// Точный подсчет в копейках с поддержкой смешанных чеков (DOC-07 Fix)
+	let code1Kopecks = 0;
+	let code2Kopecks = 0;
 
-	const code1Kopecks = sumKopecks(
-		code1Payments.map((p) => {
-			const paymentAny = p as unknown as { amountKopecks?: number; amountRub?: number | string; amount?: number | string };
-			if (typeof paymentAny.amountKopecks === "number") return paymentAny.amountKopecks;
-			if (paymentAny.amountRub != null) return parseKopecks(paymentAny.amountRub);
-			if (paymentAny.amount != null) return parseKopecks(paymentAny.amount);
-			return 0;
-		}),
-	);
-	const code2Kopecks = sumKopecks(
-		code2Payments.map((p) => {
-			const paymentAny = p as unknown as { amountKopecks?: number; amountRub?: number | string; amount?: number | string };
-			if (typeof paymentAny.amountKopecks === "number") return paymentAny.amountKopecks;
-			if (paymentAny.amountRub != null) return parseKopecks(paymentAny.amountRub);
-			if (paymentAny.amount != null) return parseKopecks(paymentAny.amount);
-			return 0;
-		}),
-	);
+	for (const p of scopedPayments) {
+		const pAny = p as unknown as {
+			code1AmountKopecks?: number;
+			code2AmountKopecks?: number;
+			code1AmountRub?: number;
+			code2AmountRub?: number;
+			items?: Array<{ name?: string; amountRub?: number; amountKopecks?: number; code804n?: string; category?: string }>;
+			fiscalReceipt?: { items?: Array<{ name?: string; amountRub?: number; amountKopecks?: number; code804n?: string; category?: string }> };
+			amountKopecks?: number;
+			amountRub?: number | string;
+			amount?: number | string;
+			taxDeductionCode?: string;
+			serviceName?: string;
+			note?: string;
+			code804n?: string;
+		};
+
+		const rawAmountKop = typeof pAny.amountKopecks === "number"
+			? pAny.amountKopecks
+			: pAny.amountRub != null
+				? parseKopecks(pAny.amountRub)
+				: pAny.amount != null
+					? parseKopecks(pAny.amount)
+					: 0;
+
+		const c1Explicit = pAny.code1AmountKopecks ?? (pAny.code1AmountRub != null ? parseKopecks(pAny.code1AmountRub) : undefined);
+		const c2Explicit = pAny.code2AmountKopecks ?? (pAny.code2AmountRub != null ? parseKopecks(pAny.code2AmountRub) : undefined);
+		const items = pAny.items || pAny.fiscalReceipt?.items || [];
+		const noteText = typeof pAny.note === "string" ? pAny.note : "";
+		const c2Match = noteText.match(/код\s*2\s*[:=]\s*(\d+(?:[.,]\d+)?)/i);
+
+		if (c1Explicit !== undefined || c2Explicit !== undefined) {
+			code1Kopecks += c1Explicit ?? Math.max(0, rawAmountKop - (c2Explicit ?? 0));
+			code2Kopecks += c2Explicit ?? Math.max(0, rawAmountKop - (c1Explicit ?? 0));
+		} else if (items.length > 0) {
+			for (const it of items) {
+				const itKop = typeof it.amountKopecks === "number"
+					? it.amountKopecks
+					: it.amountRub != null
+						? parseKopecks(it.amountRub)
+						: 0;
+				if (itKop <= 0) continue;
+				if (it.code804n?.startsWith("A16.07.054") || it.name?.toLowerCase().includes("имплант") || it.name?.toLowerCase().includes("синус")) {
+					code2Kopecks += itKop;
+				} else {
+					code1Kopecks += itKop;
+				}
+			}
+		} else if (c2Match) {
+			const c2Rub = parseFloat(c2Match[1].replace(",", "."));
+			const c2Kop = Math.min(rawAmountKop, parseKopecks(c2Rub));
+			const c1Kop = Math.max(0, rawAmountKop - c2Kop);
+			code1Kopecks += c1Kop;
+			code2Kopecks += c2Kop;
+		} else if (pAny.taxDeductionCode === "2") {
+			code2Kopecks += rawAmountKop;
+		} else {
+			code1Kopecks += rawAmountKop;
+		}
+	}
 
 	const clinicKpp = cleanDigits(clinicProfileAny.kpp) || undefined;
 	const clinicOgrn = cleanDigits(clinicProfileAny.ogrn) || undefined;

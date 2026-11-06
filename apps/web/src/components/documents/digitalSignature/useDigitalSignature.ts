@@ -44,13 +44,34 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 		setHasStroke(false);
 	}, []);
 
-	const handleSendSmsCode = useCallback(() => {
-		const code = String(Math.floor(1000 + Math.random() * 9000));
-		setExpectedOtp(code);
-		setSmsCountdown(60);
-		setSmsCode(code);
-		showToast(`Код подтверждения отправлен: ${code}`, "info", 5000);
-	}, []);
+	const handleSendSmsCode = useCallback(async () => {
+		try {
+			const res = await fetch("/api/documents/pep-sms/send", {
+				method: "POST",
+				headers: { "Content-Type": "application/json" },
+				body: JSON.stringify({
+					patientId: patient?.id || "patient",
+					phone: patient?.phone || "+7 (999) 000-00-00",
+					documentId: doc?.id,
+				}),
+			});
+			const data = await res.json();
+			if (!res.ok) {
+				showToast(data.message || "Ошибка отправки СМС", "error", 4000);
+				return;
+			}
+			setSmsCountdown(data.cooldownSeconds || 60);
+			if (data.devCode) {
+				setExpectedOtp(data.devCode);
+				setSmsCode(data.devCode);
+				showToast(`Код подтверждения (тестовый контур): ${data.devCode}`, "info", 5000);
+			} else {
+				showToast("Код подтверждения отправлен на номер пациента", "info", 4000);
+			}
+		} catch (_err) {
+			showToast("Сетевая ошибка при отправке СМС-кода", "error", 4000);
+		}
+	}, [patient, doc]);
 
 	useEffect(() => {
 		if (smsCountdown <= 0) return;
@@ -66,8 +87,27 @@ export function useDigitalSignature(props: DigitalSignatureTabletModalProps) {
 				: `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='60'><text x='10' y='35' font-family='sans-serif' font-size='15' fill='%230d9488'>ЭЦП: ${encodeURIComponent(patientName)}</text></svg>`;
 		} else if (activeTab === "sms") {
 			const entered = smsCode.trim();
-			if (!entered || (expectedOtp && entered !== expectedOtp)) {
-				showToast("Введите корректный код подтверждения", "error", 4000);
+			if (!entered) {
+				showToast("Введите код подтверждения", "error", 4000);
+				return;
+			}
+			try {
+				const verifyRes = await fetch("/api/documents/pep-sms/verify", {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						patientId: patient?.id || "patient",
+						phone: patient?.phone || "+7 (999) 000-00-00",
+						code: entered,
+					}),
+				});
+				if (!verifyRes.ok) {
+					const verifyData = await verifyRes.json();
+					showToast(verifyData.message || "Неверный СМС-код или срок действия истек", "error", 4000);
+					return;
+				}
+			} catch (_err) {
+				showToast("Ошибка проверки СМС-кода", "error", 4000);
 				return;
 			}
 			signatureSvg = `data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='240' height='60'><text x='10' y='35' font-family='sans-serif' font-size='14' fill='%230d9488'>СМС Код: ${encodeURIComponent(entered)}</text></svg>`;

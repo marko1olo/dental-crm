@@ -2,15 +2,15 @@ import type { ProcedureSpecificConsentProcedure } from "../legalContractsAndCons
 
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * STOMX CONSENTS & DOCUMENT REGISTRY CONTRACTS (LAYER 0)
+ * CLINICAL CONSENTS & DOCUMENT REGISTRY CONTRACTS (LAYER 0)
  *
- * Чистые TypeScript-интерфейсы и типы данных для специализированных
- * стоматологических ИДС StomX, контекста подстановки переменных и реестра документов.
- * Соответствие: 323-ФЗ ст. 20, СанПиН 2.6.1.1192-03, Мандаты 8e, 8k, 8n.
+ * Канонические TypeScript-интерфейсы и типы данных для специализированных
+ * стоматологических ИДС клиники DENTE, контекста подстановки переменных и реестра документов.
+ * Соответствие: 323-ФЗ ст. 20, СанПиН 2.6.1.1192-03, Мандаты 8e, 8k, 8n, 8x, 8ap.
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
-export type StomxConsentCategory =
+export type ClinicalConsentCategory =
 	| "therapy"
 	| "surgery"
 	| "prosthetics"
@@ -20,12 +20,15 @@ export type StomxConsentCategory =
 	| "radiology"
 	| "legal";
 
-export interface StomxLegalConsentTemplateMetadata {
+/** @deprecated Use ClinicalConsentCategory (Mandate 8x/8ap) */
+export type StomxConsentCategory = ClinicalConsentCategory;
+
+export interface ClinicalLegalConsentTemplateMetadata {
 	id: number;
 	systemAlias: string;
 	name: string;
 	procedureType: ProcedureSpecificConsentProcedure;
-	category: StomxConsentCategory;
+	category: ClinicalConsentCategory;
 	categoryLabel: string;
 	statutoryBasis: string;
 	isEgisz: boolean;
@@ -35,7 +38,10 @@ export interface StomxLegalConsentTemplateMetadata {
 	keyVariables: readonly string[];
 }
 
-export interface StomxVariableContext {
+/** @deprecated Use ClinicalLegalConsentTemplateMetadata (Mandate 8x/8ap) */
+export type StomxLegalConsentTemplateMetadata = ClinicalLegalConsentTemplateMetadata;
+
+export interface ClinicalVariableContext {
 	patient?: {
 		id?: string | number | null;
 		fullName?: string | null;
@@ -113,7 +119,10 @@ export interface StomxVariableContext {
 	custom?: Record<string, string | number | null | undefined>;
 }
 
-export type StomxDocumentCategory =
+/** @deprecated Use ClinicalVariableContext (Mandate 8x/8ap) */
+export type StomxVariableContext = ClinicalVariableContext;
+
+export type ClinicalDocumentCategory =
 	| "clinical"
 	| "legal"
 	| "financial"
@@ -122,7 +131,10 @@ export type StomxDocumentCategory =
 	| "analytics"
 	| "warehouse";
 
-export type StomxDenteModule =
+/** @deprecated Use ClinicalDocumentCategory (Mandate 8x/8ap) */
+export type StomxDocumentCategory = ClinicalDocumentCategory;
+
+export type DenteAppModule =
 	| "legal"
 	| "emr"
 	| "billing"
@@ -133,13 +145,21 @@ export type StomxDenteModule =
 	| "warehouse"
 	| "analytics";
 
-export interface StomxDocumentRegistryItem {
+/** @deprecated Use DenteAppModule (Mandate 8x/8ap) */
+export type StomxDenteModule = DenteAppModule;
+
+export interface DenteDocumentRegistryItem {
 	id: number;
 	name: string;
-	category: StomxDocumentCategory;
+	category: ClinicalDocumentCategory;
 	categoryLabel: string;
 	statutoryBasis: string;
-	targetDenteModule: StomxDenteModule;
+	targetDenteModule: DenteAppModule;
 	isConsentOrLegalContract: boolean;
 	inSharedCatalog: boolean;
 }
+
+export type ClinicalDocumentRegistryItem = DenteDocumentRegistryItem;
+
+/** @deprecated Use DenteDocumentRegistryItem (Mandate 8x/8ap) */
+export type StomxDocumentRegistryItem = DenteDocumentRegistryItem;

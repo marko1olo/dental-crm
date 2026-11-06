@@ -54,6 +54,12 @@ export interface ConsentPartyContext {
 	readonly clinicName?: string;
 	readonly doctorName?: string;
 	readonly date?: string;
+	readonly guardianName?: string;
+	readonly guardianPassport?: string;
+	readonly guardianRelation?: string;
+	readonly toothOrArea?: string;
+	readonly diagnosisText?: string;
+	readonly plannedProcedures?: string;
 }
 
 export const CANONICAL_CONSENT_CATALOG: readonly ConsentDocumentItem[] = [
@@ -269,8 +275,34 @@ export const CANONICAL_CONSENT_CATALOG: readonly ConsentDocumentItem[] = [
 	},
 ];
 
-export function getConsentDocumentById(id: ConsentDocumentId): ConsentDocumentItem {
-	return CANONICAL_CONSENT_CATALOG.find((item) => item.id === id) || CANONICAL_CONSENT_CATALOG[0];
+export function normalizeConsentDocId(rawId: string): ConsentDocumentId {
+	if (!rawId) return "therapy";
+	const lower = String(rawId).toLowerCase().trim();
+	if (lower.includes("implant") || lower.includes("имплант") || lower.includes("синус") || lower.includes("osteoplast")) return "implant";
+	if (lower.includes("surg") || lower.includes("удален") || lower.includes("хирург") || lower.includes("extraction")) return "surgery";
+	if (lower.includes("orthodont") || lower.includes("ортодонт") || lower.includes("брекет") || lower.includes("aligner") || lower.includes("элайн")) return "orthodontics";
+	if (lower.includes("orthoped") || lower.includes("ортопед") || lower.includes("протез") || lower.includes("коронк") || lower.includes("винир") || lower.includes("prosthet")) return "orthopedics";
+	if (lower.includes("pediatr") || lower.includes("детск") || lower.includes("ребен") || lower.includes("несовершеннолет") || lower.includes("minor")) return "pediatric";
+	if (lower.includes("anesthes") || lower.includes("анестез") || lower.includes("обезбол")) return "anesthesia";
+	if (lower.includes("hygien") || lower.includes("гигиен") || lower.includes("bleach") || lower.includes("отбеливан")) return "hygiene";
+	if (lower.includes("radio") || lower.includes("рентген") || lower.includes("cbct") || lower.includes("клкт") || lower.includes("xray") || lower.includes("снимок")) return "radiology";
+	if (lower.includes("personal") || lower.includes("персональн") || lower.includes("152")) return "personal_data";
+	if (lower.includes("periodont") || lower.includes("пародонт")) return "periodontics";
+	if (lower.includes("sedat") || lower.includes("седац")) return "sedation";
+	if (lower.includes("contract") || lower.includes("договор")) return "paid_contract";
+	if (lower.includes("refus") || lower.includes("отказ")) return "refusal";
+	if (lower.includes("endo") || lower.includes("пульпит") || lower.includes("канал")) return "endodontics";
+	if (lower.includes("therap") || lower.includes("терап") || lower.includes("кариес")) return "therapy";
+
+	const directMatch = CANONICAL_CONSENT_CATALOG.find((item) => item.id.toLowerCase() === lower);
+	if (directMatch) return directMatch.id;
+
+	return "therapy";
+}
+
+export function getConsentDocumentById(id: string): ConsentDocumentItem {
+	const normalized = normalizeConsentDocId(id);
+	return CANONICAL_CONSENT_CATALOG.find((item) => item.id === normalized) || CANONICAL_CONSENT_CATALOG[0];
 }
 
 /** Хэширование целостности подписанного документа (Мандат 8e, 8zk) */
@@ -307,12 +339,23 @@ export function generateConsentPrintHtml(
 		.map((s) => `<section class="sec"><h3>${s.title}</h3><p>${s.content}</p>${s.bullets?.length ? `<ul>${s.bullets.map((b) => `<li>${b}</li>`).join("")}</ul>` : ""}</section>`)
 		.join("");
 
-	let stampHtml = `<div class="sig-lines empty-stamp"><div class="row"><span>Подпись пациента: ________________ / ${pName} /</span></div><div class="row"><span>Лечащий врач: ________________ / ${docName} /</span></div><div class="date-row">Дата оформления: «____» ________________ 202___ г. М.П.</div></div>`;
+	const signerName = context?.guardianName || pName;
+	let stampHtml = `<div class="sig-lines empty-stamp"><div class="row"><span>Подпись пациента: ________________ / ${pName} /</span></div>${context?.guardianName ? `<div class="row"><span>Законный представитель: ________________ / ${context.guardianName} /</span></div>` : ""}<div class="row"><span>Лечащий врач: ________________ / ${docName} /</span></div><div class="date-row">Дата оформления: «____» ________________ 202___ г. М.П.</div></div>`;
 	if (status === "signed_paper") {
-		stampHtml = `<div class="stamp paper"><strong>✓ ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</strong><div>Оригинал подписан пациентом собственноручно и хранится в архиве.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Врач: ${docName}</div></div><div class="sig-lines"><div>Подпись пациента: ________________ / ${pName} /</div><div>Подпись врача: ________________ / ${docName} /</div></div>`;
+		stampHtml = `<div class="stamp paper"><strong>✓ ПОДПИСАНО НА БУМАЖНОМ НОСИТЕЛЕ</strong><div>Оригинал подписан пациентом собственноручно и хранится в архиве.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Врач: ${docName}</div></div><div class="sig-lines"><div>Подпись пациента: ________________ / ${signerName} /</div><div>Подпись врача: ________________ / ${docName} /</div></div>`;
 	} else if (status === "signed_digital" && signature?.signatureSvg) {
-		stampHtml = `<div class="stamp digital"><strong>✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><div>Подписано на планшете клиники. Юридическая сила подтверждена.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Пациент: ${pName}</div></div><div class="sig-svg">${signature.signatureSvg}</div><div class="sig-lines"><div>ЭЦП врача: ________________ / ${docName} /</div></div>`;
+		stampHtml = `<div class="stamp digital"><strong>✓ ПОДПИСАНО ПРОСТОЙ ЭЛЕКТРОННОЙ ПОДПИСЬЮ (ПЭП)</strong><div>Подписано на планшете клиники. Юридическая сила подтверждена.</div><div class="meta">Дата: ${signature?.signedAt || dateStr} • Пациент: ${signerName}</div></div><div class="sig-svg">${signature.signatureSvg}</div><div class="sig-lines"><div>ЭЦП врача: ________________ / ${docName} /</div></div>`;
 	}
+
+	const guardianHtml = context?.guardianName
+		? `<div><strong>Законный представитель (родитель/опекун):</strong> ${context.guardianName}${context.guardianPassport ? ` • Паспорт: ${context.guardianPassport}` : ""}${context.guardianRelation ? ` (${context.guardianRelation})` : ""}</div>`
+		: "";
+	const toothAreaHtml = context?.toothOrArea
+		? `<div><strong>Область вмешательства (зубы / челюсть):</strong> ${context.toothOrArea}</div>`
+		: "";
+	const diagnosisHtml = context?.diagnosisText
+		? `<div><strong>Клинический диагноз:</strong> ${context.diagnosisText}</div>`
+		: "";
 
 	return `<!DOCTYPE html><html lang="ru"><head><meta charset="UTF-8"><title>${doc.title} — ${pName}</title>
 <style>
@@ -335,7 +378,7 @@ h1 { font-size: 13pt; font-weight: 700; margin: 6px 0 2px; color: #0f172a; }
 .date-row { margin-top: 10px; font-size: 9pt; color: #475569; }
 </style></head><body>
 <header class="header"><div class="c-info">${cName} • Медицинская документация</div><h1>${doc.title}</h1><div class="subtitle">${doc.subtitle}</div></header>
-<div class="meta-box"><div><strong>Пациент:</strong> ${pName} • Дата рождения: ${bDate}</div><div><strong>Паспорт:</strong> ${pass}</div><div><strong>Лечащий врач:</strong> ${docName} • Дата: ${dateStr}</div></div>
+<div class="meta-box"><div><strong>Пациент:</strong> ${pName} • Дата рождения: ${bDate}</div><div><strong>Паспорт:</strong> ${pass}</div>${guardianHtml}${toothAreaHtml}${diagnosisHtml}<div><strong>Лечащий врач:</strong> ${docName} • Дата: ${dateStr}</div></div>
 <div class="body">${sectionsHtml}</div><div class="sig-box">${stampHtml}</div>
 </body></html>`;
 }

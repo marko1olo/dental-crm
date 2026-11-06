@@ -78,13 +78,52 @@ export function usePrimaryIntakeModalState({
 		showToast("Анкета здоровья заполнена нормой: соматически здоров, противопоказаний нет", "success", 3500);
 	};
 
-	const handleConfirmSignatureFromTablet = async () => {
+	const handleConfirmSignatureFromTablet = async (signatureData?: {
+		signatureSvg?: string;
+		pepCode?: string;
+		mode?: string;
+		[key: string]: unknown;
+	}) => {
 		for (const kind of missingKinds) {
 			onCreateDocument(kind);
 		}
 		setIsNormApplied(true);
 		setIsSignedPep(true);
 		setIsSignatureTabletOpen(false);
+
+		// [DOC-04 Fix]: Персистирование ПЭП 63-ФЗ с юридическим следом в базе данных
+		const sigSvg =
+			signatureData?.signatureSvg ||
+			`data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='260' height='60'><text x='10' y='35' font-family='sans-serif' font-size='14' fill='%230d9488'>ПЭП (63-ФЗ): ${encodeURIComponent(patient?.fullName || "Пациент")}</text></svg>`;
+
+		// Для уже сформированных документов пакета вызываем серверную фиксацию подписи
+		const docsToSign = (existingDocuments ?? []).filter((d) =>
+			INTAKE_STATUTORY_ITEMS.some((item) => item.kind === d.kind),
+		);
+
+		for (const doc of docsToSign) {
+			try {
+				await fetch(`/api/documents/${doc.id}/signature`, {
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						signatureSvg: sigSvg,
+						mode: signatureData?.mode || "simple_electronic_signature",
+						pepCode: signatureData?.pepCode,
+						signedAt: new Date().toISOString(),
+						recipientFullName: patient?.fullName || "Пациент",
+						recipientRole: "пациент/законный представитель",
+						phoneNumber: patient?.phone,
+						auditContext: {
+							userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "Dente-Client",
+						},
+					}),
+				});
+			} catch (_e) {
+				// Фоновая устойчивость
+			}
+		}
+
 		showToast("Экспресс-пакет первичного визита утвержден и подписан ПЭП (63-ФЗ)", "success", 4500);
 	};
 

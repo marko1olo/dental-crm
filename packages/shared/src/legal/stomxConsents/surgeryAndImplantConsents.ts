@@ -1,17 +1,21 @@
-import type { StomxLegalConsentTemplateMetadata } from "./types.js";
+import type {
+	ClinicalLegalConsentTemplateMetadata,
+	StomxLegalConsentTemplateMetadata,
+} from "./types.js";
 
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * STOMX SURGERY & IMPLANTATION CONSENTS (LAYER 1)
+ * CLINICAL SURGERY & IMPLANTATION CONSENTS (LAYER 1)
  *
- * Специализированные ИДС StomX по хирургической стоматологии:
+ * Специализированные ИДС клиники DENTE по хирургической стоматологии:
  * дентальная имплантация, синус-лифтинг, остеопластика/костная пластика,
  * удаление зубов любой сложности и седация (ЗАКС / внутривенная).
  * Нормативная база: 323-ФЗ ст. 19-23, Приказ Минздрава РФ № 1051н, ПП РФ № 736.
+ * Мандаты 8x и 8ap: суверенная терминология без брендов конкурентов.
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
-export const STOMX_CONSENT_IMPLANTATION: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_IMPLANTATION: ClinicalLegalConsentTemplateMetadata = {
 	id: 60,
 	systemAlias: "ids_implant",
 	name: "ИДС Имплантация",
@@ -24,8 +28,10 @@ export const STOMX_CONSENT_IMPLANTATION: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зуб", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_IMPLANTATION (Mandate 8x/8ap) */
+export const STOMX_CONSENT_IMPLANTATION = CLINICAL_CONSENT_IMPLANTATION;
 
-export const STOMX_CONSENT_SINUS_LIFTING: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_SINUS_LIFTING: ClinicalLegalConsentTemplateMetadata = {
 	id: 73,
 	systemAlias: "ids_sinus_lifting",
 	name: "ИДС Синус-лифтинг",
@@ -38,8 +44,10 @@ export const STOMX_CONSENT_SINUS_LIFTING: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_SINUS_LIFTING (Mandate 8x/8ap) */
+export const STOMX_CONSENT_SINUS_LIFTING = CLINICAL_CONSENT_SINUS_LIFTING;
 
-export const STOMX_CONSENT_SEDATION: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_SEDATION: ClinicalLegalConsentTemplateMetadata = {
 	id: 72,
 	systemAlias: "ids_sedaciya",
 	name: "ИДС Седация (ЗАКС / в/в)",
@@ -52,8 +60,10 @@ export const STOMX_CONSENT_SEDATION: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_SEDATION (Mandate 8x/8ap) */
+export const STOMX_CONSENT_SEDATION = CLINICAL_CONSENT_SEDATION;
 
-export const STOMX_CONSENT_EXTRACTION: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_EXTRACTION: ClinicalLegalConsentTemplateMetadata = {
 	id: 76,
 	systemAlias: "ids_udalenie_zuba",
 	name: "ИДС Удаление зуба",
@@ -66,8 +76,10 @@ export const STOMX_CONSENT_EXTRACTION: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зуб", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_EXTRACTION (Mandate 8x/8ap) */
+export const STOMX_CONSENT_EXTRACTION = CLINICAL_CONSENT_EXTRACTION;
 
-export const STOMX_CONSENT_BONE_GRAFTING: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_BONE_GRAFTING: ClinicalLegalConsentTemplateMetadata = {
 	id: 78,
 	systemAlias: "ids_bone_grafting",
 	name: "ИДС Костная пластика и остеопластика",
@@ -80,11 +92,16 @@ export const STOMX_CONSENT_BONE_GRAFTING: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зубы", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_BONE_GRAFTING (Mandate 8x/8ap) */
+export const STOMX_CONSENT_BONE_GRAFTING = CLINICAL_CONSENT_BONE_GRAFTING;
 
-export const STOMX_SURGERY_AND_IMPLANT_CONSENTS: readonly StomxLegalConsentTemplateMetadata[] = [
-	STOMX_CONSENT_IMPLANTATION,
-	STOMX_CONSENT_SINUS_LIFTING,
-	STOMX_CONSENT_SEDATION,
-	STOMX_CONSENT_EXTRACTION,
-	STOMX_CONSENT_BONE_GRAFTING,
+export const CLINICAL_SURGERY_AND_IMPLANT_CONSENTS: readonly ClinicalLegalConsentTemplateMetadata[] = [
+	CLINICAL_CONSENT_IMPLANTATION,
+	CLINICAL_CONSENT_SINUS_LIFTING,
+	CLINICAL_CONSENT_SEDATION,
+	CLINICAL_CONSENT_EXTRACTION,
+	CLINICAL_CONSENT_BONE_GRAFTING,
 ] as const;
+
+/** @deprecated Use CLINICAL_SURGERY_AND_IMPLANT_CONSENTS (Mandate 8x/8ap) */
+export const STOMX_SURGERY_AND_IMPLANT_CONSENTS = CLINICAL_SURGERY_AND_IMPLANT_CONSENTS;

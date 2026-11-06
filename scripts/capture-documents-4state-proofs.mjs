@@ -41,6 +41,7 @@ const configs = [
 	{
 		name: "pc_light_1440x900",
 		alias: "pc_light",
+		numberedAlias: "01_documents_catalog_pc_light_1440x900",
 		viewport: { width: 1440, height: 900 },
 		theme: "light",
 		isMobile: false,
@@ -48,6 +49,7 @@ const configs = [
 	{
 		name: "pc_dark_1440x900",
 		alias: "pc_dark",
+		numberedAlias: "02_documents_catalog_pc_dark_1440x900",
 		viewport: { width: 1440, height: 900 },
 		theme: "dark",
 		isMobile: false,
@@ -55,6 +57,7 @@ const configs = [
 	{
 		name: "mobile_light_390x844",
 		alias: "mobile_light",
+		numberedAlias: "03_documents_catalog_mobile_light_390x844",
 		viewport: { width: 390, height: 844 },
 		theme: "light",
 		isMobile: true,
@@ -62,12 +65,14 @@ const configs = [
 	{
 		name: "mobile_dark_390x844",
 		alias: "mobile_dark",
+		numberedAlias: "04_documents_catalog_mobile_dark_390x844",
 		viewport: { width: 390, height: 844 },
 		theme: "dark",
 		isMobile: true,
 	},
 ];
 
+try {
 for (const cfg of configs) {
 	const targetPath = path.join(PROOFS_DIR, `${cfg.name}.png`);
 	console.log(`[CAPTURE] Capturing ${cfg.name}...`);
@@ -172,9 +177,9 @@ for (const cfg of configs) {
 			console.log(`[WAIT] Waiting for .boot-state detachment for ${cfg.name}...`);
 			await page.waitForSelector('.boot-state', { state: "detached", timeout: 25000 }).catch(() => {});
 			if (cfg.isMobile) {
-				await page.waitForSelector('.mobile-documents-hub-wrapper, [data-testid="mobile-documents-hub"], .mobile-shell-layout', { state: "visible", timeout: 25000 });
+				await page.waitForSelector('[data-testid="mobile-documents-hub"], [data-testid="documents-catalog-view"], .mobile-documents-hub-wrapper, .mobile-shell-layout', { state: "visible", timeout: 10000 });
 			} else {
-				await page.waitForSelector('.app-shell, .documents-panel, .desktop-documents-experience', { state: "visible", timeout: 25000 });
+				await page.waitForSelector('[data-testid="documents-catalog-view"], [data-testid="documents-catalog-grid"], .documents-panel, .desktop-documents-experience', { state: "visible", timeout: 10000 });
 			}
 			ready = true;
 		} catch (e) {
@@ -228,12 +233,19 @@ for (const cfg of configs) {
 		console.log(`[ALIAS] Copied to ${aliasPath}`);
 	}
 
+	if (cfg.numberedAlias) {
+		const numAliasPath = path.join(PROOFS_DIR, `${cfg.numberedAlias}.png`);
+		fs.writeFileSync(numAliasPath, buffer);
+		console.log(`[NUMBERED ALIAS] Copied to ${numAliasPath}`);
+	}
+
 	if (stats.size < 20 * 1024) {
 		throw new Error(`[ERROR] Screenshot ${cfg.name} is too small: ${stats.size} bytes (< 20 KB floor)!`);
 	}
 
 	await context.close();
 }
-
-await browser.close();
+} finally {
+	await browser.close();
+}
 console.log("[SUCCESS] All 4 visual proof states captured cleanly!");

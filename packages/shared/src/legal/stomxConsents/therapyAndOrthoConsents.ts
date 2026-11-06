@@ -1,16 +1,20 @@
-import type { StomxLegalConsentTemplateMetadata } from "./types.js";
+import type {
+	ClinicalLegalConsentTemplateMetadata,
+	StomxLegalConsentTemplateMetadata,
+} from "./types.js";
 
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * STOMX THERAPY, ORTHOPEDICS & HYGIENE CONSENTS (LAYER 1)
+ * CLINICAL THERAPY, ORTHOPEDICS & HYGIENE CONSENTS (LAYER 1)
  *
- * Специализированные ИДС StomX по терапевтической стоматологии, лечению кариеса,
+ * Специализированные ИДС клиники DENTE по терапевтической стоматологии, лечению кариеса,
  * эндодонтии, пародонтологии, профгигиене, отбеливанию, несъемному и съемному протезированию.
  * Нормативная база: 323-ФЗ ст. 19-23, Приказ Минздрава РФ № 1051н, ПП РФ № 736.
+ * Мандаты 8x и 8ap: суверенный бренд DENTE.
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
-export const STOMX_CONSENT_VENEERS: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_VENEERS: ClinicalLegalConsentTemplateMetadata = {
 	id: 58,
 	systemAlias: "ids_viniry",
 	name: "ИДС Виниры",
@@ -23,8 +27,10 @@ export const STOMX_CONSENT_VENEERS: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_VENEERS (Mandate 8x/8ap) */
+export const STOMX_CONSENT_VENEERS = CLINICAL_CONSENT_VENEERS;
 
-export const STOMX_CONSENT_FIXED_PROSTHETICS: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_FIXED_PROSTHETICS: ClinicalLegalConsentTemplateMetadata = {
 	id: 63,
 	systemAlias: "ids_nesemnye_ortopedicheskie",
 	name: "ИДС Несъемные ортопедические конструкции",
@@ -37,8 +43,10 @@ export const STOMX_CONSENT_FIXED_PROSTHETICS: StomxLegalConsentTemplateMetadata 
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зубы", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_FIXED_PROSTHETICS (Mandate 8x/8ap) */
+export const STOMX_CONSENT_FIXED_PROSTHETICS = CLINICAL_CONSENT_FIXED_PROSTHETICS;
 
-export const STOMX_CONSENT_REMOVABLE_PROSTHETICS: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_REMOVABLE_PROSTHETICS: ClinicalLegalConsentTemplateMetadata = {
 	id: 74,
 	systemAlias: "ids_semnye_ortopedicheskie",
 	name: "ИДС Съемные ортопедические конструкции",
@@ -51,8 +59,10 @@ export const STOMX_CONSENT_REMOVABLE_PROSTHETICS: StomxLegalConsentTemplateMetad
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_REMOVABLE_PROSTHETICS (Mandate 8x/8ap) */
+export const STOMX_CONSENT_REMOVABLE_PROSTHETICS = CLINICAL_CONSENT_REMOVABLE_PROSTHETICS;
 
-export const STOMX_CONSENT_DEEP_CARIES: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_DEEP_CARIES: ClinicalLegalConsentTemplateMetadata = {
 	id: 59,
 	systemAlias: "ids_glubokiy_karies",
 	name: "ИДС Глубокий кариес",
@@ -65,8 +75,10 @@ export const STOMX_CONSENT_DEEP_CARIES: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зуб", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_DEEP_CARIES (Mandate 8x/8ap) */
+export const STOMX_CONSENT_DEEP_CARIES = CLINICAL_CONSENT_DEEP_CARIES;
 
-export const STOMX_CONSENT_SUPERFICIAL_MEDIUM_CARIES: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES: ClinicalLegalConsentTemplateMetadata = {
 	id: 61,
 	systemAlias: "ids_poverhnostnyy_sredniy_karies",
 	name: "ИДС Поверхностный и средний кариес",
@@ -79,8 +91,10 @@ export const STOMX_CONSENT_SUPERFICIAL_MEDIUM_CARIES: StomxLegalConsentTemplateM
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зуб", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES (Mandate 8x/8ap) */
+export const STOMX_CONSENT_SUPERFICIAL_MEDIUM_CARIES = CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES;
 
-export const STOMX_CONSENT_PULPITIS_ENDODONTICS: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_PULPITIS_ENDODONTICS: ClinicalLegalConsentTemplateMetadata = {
 	id: 70,
 	systemAlias: "ids_pulpit_endodontiya",
 	name: "ИДС Пульпит и эндодонтия",
@@ -93,8 +107,10 @@ export const STOMX_CONSENT_PULPITIS_ENDODONTICS: StomxLegalConsentTemplateMetada
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зуб", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_PULPITIS_ENDODONTICS (Mandate 8x/8ap) */
+export const STOMX_CONSENT_PULPITIS_ENDODONTICS = CLINICAL_CONSENT_PULPITIS_ENDODONTICS;
 
-export const STOMX_CONSENT_PERIODONTOLOGY: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_PERIODONTOLOGY: ClinicalLegalConsentTemplateMetadata = {
 	id: 68,
 	systemAlias: "ids_parodontologiya",
 	name: "ИДС Пародонтология",
@@ -107,8 +123,10 @@ export const STOMX_CONSENT_PERIODONTOLOGY: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_PERIODONTOLOGY (Mandate 8x/8ap) */
+export const STOMX_CONSENT_PERIODONTOLOGY = CLINICAL_CONSENT_PERIODONTOLOGY;
 
-export const STOMX_CONSENT_PROFESSIONAL_HYGIENE: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_PROFESSIONAL_HYGIENE: ClinicalLegalConsentTemplateMetadata = {
 	id: 69,
 	systemAlias: "ids_prof_gigiena",
 	name: "ИДС Профессиональная гигиена",
@@ -121,8 +139,10 @@ export const STOMX_CONSENT_PROFESSIONAL_HYGIENE: StomxLegalConsentTemplateMetada
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_PROFESSIONAL_HYGIENE (Mandate 8x/8ap) */
+export const STOMX_CONSENT_PROFESSIONAL_HYGIENE = CLINICAL_CONSENT_PROFESSIONAL_HYGIENE;
 
-export const STOMX_CONSENT_TEETH_WHITENING: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_TEETH_WHITENING: ClinicalLegalConsentTemplateMetadata = {
 	id: 67,
 	systemAlias: "ids_otbelivanie",
 	name: "ИДС Отбеливание зубов",
@@ -135,8 +155,10 @@ export const STOMX_CONSENT_TEETH_WHITENING: StomxLegalConsentTemplateMetadata = 
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_TEETH_WHITENING (Mandate 8x/8ap) */
+export const STOMX_CONSENT_TEETH_WHITENING = CLINICAL_CONSENT_TEETH_WHITENING;
 
-export const STOMX_CONSENT_SOMATIC_HEALTH: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_SOMATIC_HEALTH: ClinicalLegalConsentTemplateMetadata = {
 	id: 53,
 	systemAlias: "anketa_zdorovya",
 	name: "Анкета общего состояния здоровья пациента",
@@ -149,16 +171,21 @@ export const STOMX_CONSENT_SOMATIC_HEALTH: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_SOMATIC_HEALTH (Mandate 8x/8ap) */
+export const STOMX_CONSENT_SOMATIC_HEALTH = CLINICAL_CONSENT_SOMATIC_HEALTH;
 
-export const STOMX_THERAPY_AND_ORTHO_CONSENTS: readonly StomxLegalConsentTemplateMetadata[] = [
-	STOMX_CONSENT_VENEERS,
-	STOMX_CONSENT_FIXED_PROSTHETICS,
-	STOMX_CONSENT_REMOVABLE_PROSTHETICS,
-	STOMX_CONSENT_DEEP_CARIES,
-	STOMX_CONSENT_SUPERFICIAL_MEDIUM_CARIES,
-	STOMX_CONSENT_PULPITIS_ENDODONTICS,
-	STOMX_CONSENT_PERIODONTOLOGY,
-	STOMX_CONSENT_PROFESSIONAL_HYGIENE,
-	STOMX_CONSENT_TEETH_WHITENING,
-	STOMX_CONSENT_SOMATIC_HEALTH,
+export const CLINICAL_THERAPY_AND_ORTHO_CONSENTS: readonly ClinicalLegalConsentTemplateMetadata[] = [
+	CLINICAL_CONSENT_VENEERS,
+	CLINICAL_CONSENT_FIXED_PROSTHETICS,
+	CLINICAL_CONSENT_REMOVABLE_PROSTHETICS,
+	CLINICAL_CONSENT_DEEP_CARIES,
+	CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES,
+	CLINICAL_CONSENT_PULPITIS_ENDODONTICS,
+	CLINICAL_CONSENT_PERIODONTOLOGY,
+	CLINICAL_CONSENT_PROFESSIONAL_HYGIENE,
+	CLINICAL_CONSENT_TEETH_WHITENING,
+	CLINICAL_CONSENT_SOMATIC_HEALTH,
 ] as const;
+
+/** @deprecated Use CLINICAL_THERAPY_AND_ORTHO_CONSENTS (Mandate 8x/8ap) */
+export const STOMX_THERAPY_AND_ORTHO_CONSENTS = CLINICAL_THERAPY_AND_ORTHO_CONSENTS;

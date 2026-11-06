@@ -1,23 +1,24 @@
-import type { StomxVariableContext } from "./types.js";
+import type { ClinicalVariableContext, StomxVariableContext } from "./types.js";
 
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * STOMX TEMPLATE VARIABLE RESOLVER & PRINT FORMATTER (LAYER 1)
+ * CLINICAL TEMPLATE VARIABLE RESOLVER & PRINT FORMATTER (LAYER 1)
  *
  * Разрешение клинических, правовых, финансовых и паспортных токенов
  * для всех шаблонов печати и ИДС клиники DENTE.
  * Поддерживает 4 синтаксиса: [Токен], {{Токен}}, ${Токен}, {Токен}.
  * Мандат 8e: при отсутствии данных ставит чистое подчеркивание «____________________».
+ * Мандаты 8x и 8ap: суверенная терминология без брендов конкурентов.
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
 /**
- * Разрешает один токен шаблонизатора StomX по переданному контексту.
+ * Разрешает один токен клинического шаблонизатора по переданному контексту.
  * При отсутствии значения возвращает чистое подчеркивание «____________________» (Мандат 8e).
  */
-export function resolveStomxVariableToken(
+export function resolveClinicalVariableToken(
 	token: string,
-	context: StomxVariableContext,
+	context: ClinicalVariableContext,
 	fallbackToUnderline = true,
 ): string {
 	const rawKey = token.trim();
@@ -244,36 +245,42 @@ export function resolveStomxVariableToken(
 
 /**
  * Подставляет значения в шаблон, распознавая синтаксисы:
- * - [Пациент.ФИО] (канонический StomX)
+ * - [Пациент.ФИО] (канонический клинический синтаксис)
  * - {{Пациент.ФИО}} (Mustache / handlebars)
  * - ${Пациент.ФИО} (ES6)
- * - {Пациент.ФИО} (DentalPRO / TemplateEngine)
+ * - {Пациент.ФИО} (универсальный синтаксис)
  */
-export function renderStomxTemplateText(
+export function renderClinicalTemplateText(
 	templateText: string,
-	context: StomxVariableContext,
+	context: ClinicalVariableContext,
 ): string {
 	if (!templateText) return "";
 
 	// 1. [Токен]
 	let result = templateText.replace(/\[([А-Яа-яA-Za-z0-9_.]+)\]/g, (_, token) => {
-		return resolveStomxVariableToken(token, context);
+		return resolveClinicalVariableToken(token, context);
 	});
 
 	// 2. {{Токен}}
 	result = result.replace(/\{\{([А-Яа-яA-Za-z0-9_.]+)\}\}/g, (_, token) => {
-		return resolveStomxVariableToken(token, context);
+		return resolveClinicalVariableToken(token, context);
 	});
 
 	// 3. ${Токен}
 	result = result.replace(/\$\{([А-Яа-яA-Za-z0-9_.]+)\}/g, (_, token) => {
-		return resolveStomxVariableToken(token, context);
+		return resolveClinicalVariableToken(token, context);
 	});
 
 	// 4. {Токен}
 	result = result.replace(/\{([А-Яа-яA-Za-z0-9_.-]+)\}/g, (_, token) => {
-		return resolveStomxVariableToken(token, context);
+		return resolveClinicalVariableToken(token, context);
 	});
 
 	return result;
 }
+
+/** @deprecated Use resolveClinicalVariableToken (Mandate 8x/8ap) */
+export const resolveStomxVariableToken = resolveClinicalVariableToken;
+
+/** @deprecated Use renderClinicalTemplateText (Mandate 8x/8ap) */
+export const renderStomxTemplateText = renderClinicalTemplateText;

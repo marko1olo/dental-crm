@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+	CLINICAL_SPECIALIZED_CONSENT_PRESETS,
 	LEGACY_CONSENT_PRESETS,
 	STOMX_SPECIALIZED_CONSENT_PRESETS,
 	THERAPY_CONSENT_PRESETS,
@@ -10,10 +11,13 @@ import {
 	type ProcedureSpecificConsentProcedure,
 	type ClinicalProcedureConsentPreset,
 } from "../stomxConsentPresets.js";
+import { generateClinicalConsentHtml } from "../stomxConsentHtmlGenerator.js";
 
-test("Facade stomxConsentPresets correctly re-exports LEGACY_CONSENT_PRESETS and STOMX_SPECIALIZED_CONSENT_PRESETS", () => {
+test("Facade stomxConsentPresets correctly re-exports LEGACY_CONSENT_PRESETS, CLINICAL_SPECIALIZED_CONSENT_PRESETS and STOMX_SPECIALIZED_CONSENT_PRESETS", () => {
 	assert.ok(LEGACY_CONSENT_PRESETS, "LEGACY_CONSENT_PRESETS must be exported");
+	assert.ok(CLINICAL_SPECIALIZED_CONSENT_PRESETS, "CLINICAL_SPECIALIZED_CONSENT_PRESETS must be exported");
 	assert.ok(STOMX_SPECIALIZED_CONSENT_PRESETS, "STOMX_SPECIALIZED_CONSENT_PRESETS must be exported");
+	assert.equal(CLINICAL_SPECIALIZED_CONSENT_PRESETS, STOMX_SPECIALIZED_CONSENT_PRESETS);
 	assert.equal(typeof STOMX_SPECIALIZED_CONSENT_PRESETS, "object");
 	assert.equal(typeof LEGACY_CONSENT_PRESETS, "object");
 });
@@ -117,4 +121,30 @@ test("Modular DAG layers export their categorized domain presets", () => {
 	assert.ok(ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.xray_dose_load_sheet);
 	assert.ok(ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.warranty_passport);
 	assert.ok(ANESTHESIA_AND_GENERAL_CONSENT_PRESETS.somatic_health_questionnaire);
+});
+
+test("DOC-02 Fix: Specialized procedure keys generate distinct specialized consents without falling back to caries therapy", () => {
+	// 1. Surgery / Extraction
+	const surgHtml = generateClinicalConsentHtml("surgery");
+	assert.ok(surgHtml.includes("Удаление зуба") || surgHtml.includes("Хирургическ"), "Surgery must render extraction consent");
+	assert.ok(!surgHtml.includes("Лечение кариеса дентина"), "Surgery must not fall back to caries");
+
+	// 2. Implant
+	const implantHtml = generateClinicalConsentHtml("implant");
+	assert.ok(implantHtml.includes("имплантац"), "Implant key must render dental implantation consent");
+
+	// 3. Orthodontics
+	const orthoHtml = generateClinicalConsentHtml("orthodontics");
+	assert.ok(orthoHtml.includes("Ортодонти") || orthoHtml.includes("брекет"), "Orthodontics must render orthodontic consent");
+
+	// 4. Pediatric / Minor
+	const pedHtml = generateClinicalConsentHtml("pediatric", {
+		"Пациент.ФИО": "Иванов Ваня (7 лет)",
+		"Пациент.ПредставительФИО": "Иванова Ольга Петровна (мать)",
+	});
+	assert.ok(pedHtml.includes("несовершеннолетн"), "Pediatric key must render minor consent with representative");
+
+	// 5. Orthopedics / Prosthetics
+	const prosthHtml = generateClinicalConsentHtml("orthopedics");
+	assert.ok(prosthHtml.includes("протез") || prosthHtml.includes("коронк"), "Orthopedics key must render prosthetics consent");
 });

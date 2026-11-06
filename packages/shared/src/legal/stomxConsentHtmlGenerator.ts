@@ -1,28 +1,37 @@
-import { STOMX_SPECIALIZED_CONSENT_PRESETS } from "./stomxConsentPresets.js";
 import {
+	CLINICAL_SPECIALIZED_CONSENT_PRESETS,
+	STOMX_SPECIALIZED_CONSENT_PRESETS,
+} from "./stomxConsentPresets.js";
+import {
+	getClinicalTemplateMetadata,
 	getStomxTemplateMetadata,
+	resolveClinicalVariableToken,
 	resolveStomxVariableToken,
+	type ClinicalVariableContext,
 	type StomxVariableContext,
 } from "./stomxLegalConsentsCatalog.js";
 
-export interface GenerateStomxConsentOptions {
+export interface GenerateClinicalConsentOptions {
 	templateIdOrAlias?: string | number;
 	aliasOrId?: string | number;
-	context?: StomxVariableContext;
+	context?: ClinicalVariableContext;
 	toothOrArea?: string;
 }
 
+/** @deprecated Use GenerateClinicalConsentOptions */
+export type GenerateStomxConsentOptions = GenerateClinicalConsentOptions;
+
 /**
- * Генерирует регламентный HTML-документ A4 для любого из 21 шаблонов StomX.
+ * Генерирует регламентный HTML-документ A4 для любого из 21 шаблонов DENTE.
  * Полностью соответствует стандартам Минздрава РФ (1051н, 323-ФЗ, СанПиН 2.6.1.1192-03)
  * и правилу нулевых эмодзи (Мандат 8d, п. 7).
  */
-export function generateStomxConsentHtml(
-	aliasOrIdOrOptions: string | number | GenerateStomxConsentOptions,
-	maybeContext?: StomxVariableContext,
+export function generateClinicalConsentHtml(
+	aliasOrIdOrOptions: string | number | GenerateClinicalConsentOptions,
+	maybeContext?: ClinicalVariableContext,
 ): string {
 	let aliasOrId: string | number;
-	let context: StomxVariableContext;
+	let context: ClinicalVariableContext;
 	let toothAreaOverride: string | undefined;
 
 	if (typeof aliasOrIdOrOptions === "object" && aliasOrIdOrOptions !== null) {
@@ -34,21 +43,21 @@ export function generateStomxConsentHtml(
 		context = maybeContext ?? {};
 	}
 
-	const meta = getStomxTemplateMetadata(aliasOrId);
+	const meta = getClinicalTemplateMetadata(aliasOrId);
 	if (!meta) {
-		throw new Error(`Не найден шаблон StomX: ${aliasOrId}`);
+		throw new Error(`Не найден шаблон DENTE: ${aliasOrId}`);
 	}
 
-	const preset = STOMX_SPECIALIZED_CONSENT_PRESETS[meta.procedureType];
-	const patientName = resolveStomxVariableToken("Пациент.ФИО", context);
-	const clinicName = resolveStomxVariableToken("Клиника.Название", context);
-	const clinicAddress = resolveStomxVariableToken("Клиника.ФактАдрес", context);
-	const doctorName = resolveStomxVariableToken("Врач.ФИО", context);
-	const currentDate = resolveStomxVariableToken("ТекущаяДата", context);
-	const passportData = resolveStomxVariableToken("Пациент.ПаспортДанные", context);
-	const patientAddress = resolveStomxVariableToken("Пациент.Адрес", context);
-	const toothArea = toothAreaOverride || resolveStomxVariableToken("Прием.Зубы", context);
-	const cardNumber = resolveStomxVariableToken("Пациент.НомерКарты", context);
+	const preset = CLINICAL_SPECIALIZED_CONSENT_PRESETS[meta.procedureType];
+	const patientName = resolveClinicalVariableToken("Пациент.ФИО", context);
+	const clinicName = resolveClinicalVariableToken("Клиника.Название", context);
+	const clinicAddress = resolveClinicalVariableToken("Клиника.ФактАдрес", context);
+	const doctorName = resolveClinicalVariableToken("Врач.ФИО", context);
+	const currentDate = resolveClinicalVariableToken("ТекущаяДата", context);
+	const passportData = resolveClinicalVariableToken("Пациент.ПаспортДанные", context);
+	const patientAddress = resolveClinicalVariableToken("Пациент.Адрес", context);
+	const toothArea = toothAreaOverride || resolveClinicalVariableToken("Прием.Зубы", context);
+	const cardNumber = resolveClinicalVariableToken("Пациент.НомерКарты", context);
 
 	return `<!DOCTYPE html>
 <html lang="ru">
@@ -173,3 +182,6 @@ export function generateStomxConsentHtml(
 </body>
 </html>`;
 }
+
+/** @deprecated Use generateClinicalConsentHtml */
+export const generateStomxConsentHtml = generateClinicalConsentHtml;

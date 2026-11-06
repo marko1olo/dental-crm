@@ -1,8 +1,20 @@
 import type {
+	ClinicalDocumentRegistryItem,
+	ClinicalLegalConsentTemplateMetadata,
 	StomxDocumentRegistryItem,
 	StomxLegalConsentTemplateMetadata,
 } from "./types.js";
 import {
+	CLINICAL_CONSENT_DEEP_CARIES,
+	CLINICAL_CONSENT_FIXED_PROSTHETICS,
+	CLINICAL_CONSENT_PERIODONTOLOGY,
+	CLINICAL_CONSENT_PROFESSIONAL_HYGIENE,
+	CLINICAL_CONSENT_PULPITIS_ENDODONTICS,
+	CLINICAL_CONSENT_REMOVABLE_PROSTHETICS,
+	CLINICAL_CONSENT_SOMATIC_HEALTH,
+	CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES,
+	CLINICAL_CONSENT_TEETH_WHITENING,
+	CLINICAL_CONSENT_VENEERS,
 	STOMX_CONSENT_DEEP_CARIES,
 	STOMX_CONSENT_FIXED_PROSTHETICS,
 	STOMX_CONSENT_PERIODONTOLOGY,
@@ -15,6 +27,11 @@ import {
 	STOMX_CONSENT_VENEERS,
 } from "./therapyAndOrthoConsents.js";
 import {
+	CLINICAL_CONSENT_BONE_GRAFTING,
+	CLINICAL_CONSENT_EXTRACTION,
+	CLINICAL_CONSENT_IMPLANTATION,
+	CLINICAL_CONSENT_SEDATION,
+	CLINICAL_CONSENT_SINUS_LIFTING,
 	STOMX_CONSENT_BONE_GRAFTING,
 	STOMX_CONSENT_EXTRACTION,
 	STOMX_CONSENT_IMPLANTATION,
@@ -26,17 +43,17 @@ export * from "./variableResolver.js";
 
 /**
  * ══════════════════════════════════════════════════════════════════════════════
- * STOMX SPECIALIZED, REFUSAL & STATUTORY CONSENTS (LAYER 2)
+ * DENTE CLINICAL SPECIALIZED, REFUSAL & STATUTORY CONSENTS (LAYER 2)
  *
- * Специализированные ИДС StomX: ортодонтия, элайнеры, детская стоматология,
+ * Специализированные ИДС DENTE: ортодонтия, элайнеры, детская стоматология,
  * рентгенодиагностика/КЛКТ, лист дозовых нагрузок (СанПиН 2.6.1.1192-03),
  * фотопротокол, отказ от ЕГИСЗ (323-ФЗ ст. 13), отказ от мед. вмешательства (323-ФЗ ст. 20),
  * гарантийная политика и гарантийный паспорт пациента.
- * Также объединяет мастер-каталог STOMX_LEGAL_CONSENTS_CATALOG и реестр всех 49 документов.
+ * Также объединяет мастер-каталог CLINICAL_LEGAL_CONSENTS_CATALOG и реестр всех 49 документов.
  * ══════════════════════════════════════════════════════════════════════════════
  */
 
-export const STOMX_CONSENT_ORTHODONTICS: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_ORTHODONTICS: ClinicalLegalConsentTemplateMetadata = {
 	id: 65,
 	systemAlias: "ids_ortodontiya",
 	name: "ИДС Ортодонтия",
@@ -49,8 +66,10 @@ export const STOMX_CONSENT_ORTHODONTICS: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_ORTHODONTICS */
+export const STOMX_CONSENT_ORTHODONTICS = CLINICAL_CONSENT_ORTHODONTICS;
 
-export const STOMX_CONSENT_ALIGNERS: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_ALIGNERS: ClinicalLegalConsentTemplateMetadata = {
 	id: 79,
 	systemAlias: "ids_aligners",
 	name: "ИДС Элайнеры и ортодонтические каппы",
@@ -63,8 +82,10 @@ export const STOMX_CONSENT_ALIGNERS: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_ALIGNERS */
+export const STOMX_CONSENT_ALIGNERS = CLINICAL_CONSENT_ALIGNERS;
 
-export const STOMX_CONSENT_MINOR_GENERAL: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_MINOR_GENERAL: ClinicalLegalConsentTemplateMetadata = {
 	id: 64,
 	systemAlias: "ids_nesovershennoletnie",
 	name: "ИДС Общее для несовершеннолетних (представитель)",
@@ -84,8 +105,10 @@ export const STOMX_CONSENT_MINOR_GENERAL: StomxLegalConsentTemplateMetadata = {
 		"Прием.Дата",
 	],
 };
+/** @deprecated Use CLINICAL_CONSENT_MINOR_GENERAL */
+export const STOMX_CONSENT_MINOR_GENERAL = CLINICAL_CONSENT_MINOR_GENERAL;
 
-export const STOMX_CONSENT_XRAY_CBCT: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_XRAY_CBCT: ClinicalLegalConsentTemplateMetadata = {
 	id: 71,
 	systemAlias: "ids_rentgen_cbct",
 	name: "ИДС Рентгенологическое исследование и КЛКТ",
@@ -99,8 +122,10 @@ export const STOMX_CONSENT_XRAY_CBCT: StomxLegalConsentTemplateMetadata = {
 	standardDoseMsv: 0.055,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_XRAY_CBCT */
+export const STOMX_CONSENT_XRAY_CBCT = CLINICAL_CONSENT_XRAY_CBCT;
 
-export const STOMX_CONSENT_PHOTOPROTOCOL: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_PHOTOPROTOCOL: ClinicalLegalConsentTemplateMetadata = {
 	id: 77,
 	systemAlias: "ids_fotoprotokol",
 	name: "ИДС Фотопротокол",
@@ -113,8 +138,10 @@ export const STOMX_CONSENT_PHOTOPROTOCOL: StomxLegalConsentTemplateMetadata = {
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_PHOTOPROTOCOL */
+export const STOMX_CONSENT_PHOTOPROTOCOL = CLINICAL_CONSENT_PHOTOPROTOCOL;
 
-export const STOMX_CONSENT_EGISZ_REFUSAL: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_EGISZ_REFUSAL: ClinicalLegalConsentTemplateMetadata = {
 	id: 80,
 	systemAlias: "otkaz_egisz",
 	name: "Отказ от передачи данных в ЕГИСЗ (ФЗ-323 ст. 13)",
@@ -135,8 +162,10 @@ export const STOMX_CONSENT_EGISZ_REFUSAL: StomxLegalConsentTemplateMetadata = {
 		"Прием.Дата",
 	],
 };
+/** @deprecated Use CLINICAL_CONSENT_EGISZ_REFUSAL */
+export const STOMX_CONSENT_EGISZ_REFUSAL = CLINICAL_CONSENT_EGISZ_REFUSAL;
 
-export const STOMX_CONSENT_INTERVENTION_REFUSAL: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_INTERVENTION_REFUSAL: ClinicalLegalConsentTemplateMetadata = {
 	id: 81,
 	systemAlias: "otkaz_lechenie",
 	name: "Отказ от медицинского вмешательства",
@@ -156,8 +185,10 @@ export const STOMX_CONSENT_INTERVENTION_REFUSAL: StomxLegalConsentTemplateMetada
 		"Прием.Дата",
 	],
 };
+/** @deprecated Use CLINICAL_CONSENT_INTERVENTION_REFUSAL */
+export const STOMX_CONSENT_INTERVENTION_REFUSAL = CLINICAL_CONSENT_INTERVENTION_REFUSAL;
 
-export const STOMX_CONSENT_WARRANTY_POLICY: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_WARRANTY_POLICY: ClinicalLegalConsentTemplateMetadata = {
 	id: 82,
 	systemAlias: "polozhenie_o_garantiyah",
 	name: "Положение о гарантийных обязательствах и сроках службы",
@@ -170,8 +201,10 @@ export const STOMX_CONSENT_WARRANTY_POLICY: StomxLegalConsentTemplateMetadata = 
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Клиника.ДиректорФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_WARRANTY_POLICY */
+export const STOMX_CONSENT_WARRANTY_POLICY = CLINICAL_CONSENT_WARRANTY_POLICY;
 
-export const STOMX_CONSENT_XRAY_DOSE_SHEET: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_XRAY_DOSE_SHEET: ClinicalLegalConsentTemplateMetadata = {
 	id: 15,
 	systemAlias: "list_ucheta_dozovyh_nagruzok",
 	name: "Лист учета дозовых нагрузок пациента при рентгенологических исследованиях",
@@ -185,8 +218,10 @@ export const STOMX_CONSENT_XRAY_DOSE_SHEET: StomxLegalConsentTemplateMetadata = 
 	standardDoseMsv: 0.055,
 	keyVariables: ["Пациент.ФИО", "Пациент.НомерКарты", "Клиника.Название", "Врач.ФИО", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_XRAY_DOSE_SHEET */
+export const STOMX_CONSENT_XRAY_DOSE_SHEET = CLINICAL_CONSENT_XRAY_DOSE_SHEET;
 
-export const STOMX_CONSENT_WARRANTY_PASSPORT: StomxLegalConsentTemplateMetadata = {
+export const CLINICAL_CONSENT_WARRANTY_PASSPORT: ClinicalLegalConsentTemplateMetadata = {
 	id: 54,
 	systemAlias: "garantiynyy_pasport",
 	name: "Гарантийный паспорт стоматологического пациента",
@@ -199,64 +234,131 @@ export const STOMX_CONSENT_WARRANTY_PASSPORT: StomxLegalConsentTemplateMetadata 
 	isXrayIds: false,
 	keyVariables: ["Пациент.ФИО", "Клиника.Название", "Врач.ФИО", "Прием.Зуб", "Прием.Дата"],
 };
+/** @deprecated Use CLINICAL_CONSENT_WARRANTY_PASSPORT */
+export const STOMX_CONSENT_WARRANTY_PASSPORT = CLINICAL_CONSENT_WARRANTY_PASSPORT;
 
-export const STOMX_SPECIALIZED_AND_REFUSAL_CONSENTS: readonly StomxLegalConsentTemplateMetadata[] = [
-	STOMX_CONSENT_ORTHODONTICS,
-	STOMX_CONSENT_ALIGNERS,
-	STOMX_CONSENT_MINOR_GENERAL,
-	STOMX_CONSENT_XRAY_CBCT,
-	STOMX_CONSENT_PHOTOPROTOCOL,
-	STOMX_CONSENT_EGISZ_REFUSAL,
-	STOMX_CONSENT_INTERVENTION_REFUSAL,
-	STOMX_CONSENT_WARRANTY_POLICY,
-	STOMX_CONSENT_XRAY_DOSE_SHEET,
-	STOMX_CONSENT_WARRANTY_PASSPORT,
+export const CLINICAL_SPECIALIZED_AND_REFUSAL_CONSENTS: readonly ClinicalLegalConsentTemplateMetadata[] = [
+	CLINICAL_CONSENT_ORTHODONTICS,
+	CLINICAL_CONSENT_ALIGNERS,
+	CLINICAL_CONSENT_MINOR_GENERAL,
+	CLINICAL_CONSENT_XRAY_CBCT,
+	CLINICAL_CONSENT_PHOTOPROTOCOL,
+	CLINICAL_CONSENT_EGISZ_REFUSAL,
+	CLINICAL_CONSENT_INTERVENTION_REFUSAL,
+	CLINICAL_CONSENT_WARRANTY_POLICY,
+	CLINICAL_CONSENT_XRAY_DOSE_SHEET,
+	CLINICAL_CONSENT_WARRANTY_PASSPORT,
 ] as const;
+/** @deprecated Use CLINICAL_SPECIALIZED_AND_REFUSAL_CONSENTS */
+export const STOMX_SPECIALIZED_AND_REFUSAL_CONSENTS = CLINICAL_SPECIALIZED_AND_REFUSAL_CONSENTS;
 
-export const STOMX_LEGAL_CONSENTS_CATALOG: readonly StomxLegalConsentTemplateMetadata[] = [
-	STOMX_CONSENT_VENEERS,
-	STOMX_CONSENT_IMPLANTATION,
-	STOMX_CONSENT_SINUS_LIFTING,
-	STOMX_CONSENT_SEDATION,
-	STOMX_CONSENT_EXTRACTION,
-	STOMX_CONSENT_FIXED_PROSTHETICS,
-	STOMX_CONSENT_REMOVABLE_PROSTHETICS,
-	STOMX_CONSENT_DEEP_CARIES,
-	STOMX_CONSENT_SUPERFICIAL_MEDIUM_CARIES,
-	STOMX_CONSENT_PULPITIS_ENDODONTICS,
-	STOMX_CONSENT_PERIODONTOLOGY,
-	STOMX_CONSENT_PROFESSIONAL_HYGIENE,
-	STOMX_CONSENT_TEETH_WHITENING,
-	STOMX_CONSENT_ORTHODONTICS,
-	STOMX_CONSENT_MINOR_GENERAL,
-	STOMX_CONSENT_XRAY_CBCT,
-	STOMX_CONSENT_PHOTOPROTOCOL,
-	STOMX_CONSENT_EGISZ_REFUSAL,
-	STOMX_CONSENT_INTERVENTION_REFUSAL,
-	STOMX_CONSENT_WARRANTY_POLICY,
-	STOMX_CONSENT_XRAY_DOSE_SHEET,
-	STOMX_CONSENT_WARRANTY_PASSPORT,
-	STOMX_CONSENT_SOMATIC_HEALTH,
-	STOMX_CONSENT_BONE_GRAFTING,
-	STOMX_CONSENT_ALIGNERS,
+export const CLINICAL_LEGAL_CONSENTS_CATALOG: readonly ClinicalLegalConsentTemplateMetadata[] = [
+	CLINICAL_CONSENT_VENEERS,
+	CLINICAL_CONSENT_IMPLANTATION,
+	CLINICAL_CONSENT_SINUS_LIFTING,
+	CLINICAL_CONSENT_SEDATION,
+	CLINICAL_CONSENT_EXTRACTION,
+	CLINICAL_CONSENT_FIXED_PROSTHETICS,
+	CLINICAL_CONSENT_REMOVABLE_PROSTHETICS,
+	CLINICAL_CONSENT_DEEP_CARIES,
+	CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES,
+	CLINICAL_CONSENT_PULPITIS_ENDODONTICS,
+	CLINICAL_CONSENT_PERIODONTOLOGY,
+	CLINICAL_CONSENT_PROFESSIONAL_HYGIENE,
+	CLINICAL_CONSENT_TEETH_WHITENING,
+	CLINICAL_CONSENT_ORTHODONTICS,
+	CLINICAL_CONSENT_MINOR_GENERAL,
+	CLINICAL_CONSENT_XRAY_CBCT,
+	CLINICAL_CONSENT_PHOTOPROTOCOL,
+	CLINICAL_CONSENT_EGISZ_REFUSAL,
+	CLINICAL_CONSENT_INTERVENTION_REFUSAL,
+	CLINICAL_CONSENT_WARRANTY_POLICY,
+	CLINICAL_CONSENT_XRAY_DOSE_SHEET,
+	CLINICAL_CONSENT_WARRANTY_PASSPORT,
+	CLINICAL_CONSENT_SOMATIC_HEALTH,
+	CLINICAL_CONSENT_BONE_GRAFTING,
+	CLINICAL_CONSENT_ALIGNERS,
 ] as const;
+/** @deprecated Use CLINICAL_LEGAL_CONSENTS_CATALOG */
+export const STOMX_LEGAL_CONSENTS_CATALOG = CLINICAL_LEGAL_CONSENTS_CATALOG;
 
-export function getStomxTemplateMetadata(
+export function getClinicalTemplateMetadata(
 	aliasOrId: string | number,
-): StomxLegalConsentTemplateMetadata | undefined {
+): ClinicalLegalConsentTemplateMetadata | undefined {
 	if (typeof aliasOrId === "number") {
-		return STOMX_LEGAL_CONSENTS_CATALOG.find((item) => item.id === aliasOrId);
+		return CLINICAL_LEGAL_CONSENTS_CATALOG.find((item) => item.id === aliasOrId);
 	}
 	const normalized = String(aliasOrId).trim().toLowerCase();
-	return STOMX_LEGAL_CONSENTS_CATALOG.find(
+	const direct = CLINICAL_LEGAL_CONSENTS_CATALOG.find(
 		(item) =>
 			item.systemAlias.toLowerCase() === normalized ||
 			item.procedureType.toLowerCase() === normalized ||
 			String(item.id) === normalized,
 	);
-}
+	if (direct) return direct;
 
-export const STOMX_ALL_49_DOCUMENTS_REGISTRY: readonly StomxDocumentRegistryItem[] = [
+	// Алиас-нормализация для клинических направлений
+	if (normalized.includes("implant") || normalized.includes("имплант")) {
+		return CLINICAL_CONSENT_IMPLANTATION;
+	}
+	if (normalized.includes("sinus") || normalized.includes("синус")) {
+		return CLINICAL_CONSENT_SINUS_LIFTING;
+	}
+	if (normalized.includes("bone") || normalized.includes("костн")) {
+		return CLINICAL_CONSENT_BONE_GRAFTING;
+	}
+	if (normalized.includes("surg") || normalized.includes("extract") || normalized.includes("удален") || normalized.includes("хирург")) {
+		return CLINICAL_CONSENT_EXTRACTION;
+	}
+	if (normalized.includes("aligner") || normalized.includes("элайн")) {
+		return CLINICAL_CONSENT_ALIGNERS;
+	}
+	if (normalized.includes("orthodont") || normalized.includes("ортодонт") || normalized.includes("брекет")) {
+		return CLINICAL_CONSENT_ORTHODONTICS;
+	}
+	if (normalized.includes("orthoped") || normalized.includes("prosthet") || normalized.includes("протез") || normalized.includes("коронк")) {
+		return CLINICAL_CONSENT_FIXED_PROSTHETICS;
+	}
+	if (normalized.includes("veneer") || normalized.includes("винир")) {
+		return CLINICAL_CONSENT_VENEERS;
+	}
+	if (normalized.includes("pediatr") || normalized.includes("детск") || normalized.includes("minor") || normalized.includes("ребен")) {
+		return CLINICAL_CONSENT_MINOR_GENERAL;
+	}
+	if (normalized.includes("hygien") || normalized.includes("гигиен") || normalized.includes("чистк")) {
+		return CLINICAL_CONSENT_PROFESSIONAL_HYGIENE;
+	}
+	if (normalized.includes("whiten") || normalized.includes("bleach") || normalized.includes("отбеливан")) {
+		return CLINICAL_CONSENT_TEETH_WHITENING;
+	}
+	if (normalized.includes("endo") || normalized.includes("пульпит") || normalized.includes("канал")) {
+		return CLINICAL_CONSENT_PULPITIS_ENDODONTICS;
+	}
+	if (normalized.includes("periodont") || normalized.includes("пародонт")) {
+		return CLINICAL_CONSENT_PERIODONTOLOGY;
+	}
+	if (normalized.includes("sedat") || normalized.includes("седац")) {
+		return CLINICAL_CONSENT_SEDATION;
+	}
+	if (normalized.includes("xray") || normalized.includes("cbct") || normalized.includes("рентген") || normalized.includes("кт")) {
+		return CLINICAL_CONSENT_XRAY_CBCT;
+	}
+	if (normalized.includes("refus") || normalized.includes("отказ")) {
+		return CLINICAL_CONSENT_INTERVENTION_REFUSAL;
+	}
+	if (normalized.includes("deep_caries") || normalized.includes("глубок")) {
+		return CLINICAL_CONSENT_DEEP_CARIES;
+	}
+	if (normalized.includes("caries") || normalized.includes("кариес") || normalized.includes("therap") || normalized.includes("терап")) {
+		return CLINICAL_CONSENT_SUPERFICIAL_MEDIUM_CARIES;
+	}
+
+	return undefined;
+}
+/** @deprecated Use getClinicalTemplateMetadata */
+export const getStomxTemplateMetadata = getClinicalTemplateMetadata;
+
+export const DENTE_ALL_49_DOCUMENTS_REGISTRY: readonly ClinicalDocumentRegistryItem[] = [
 	{
 		id: 1,
 		name: "Акт выполненных работ",
@@ -748,22 +850,29 @@ export const STOMX_ALL_49_DOCUMENTS_REGISTRY: readonly StomxDocumentRegistryItem
 		inSharedCatalog: true,
 	},
 ] as const;
+/** @deprecated Use DENTE_ALL_49_DOCUMENTS_REGISTRY */
+export const STOMX_ALL_49_DOCUMENTS_REGISTRY = DENTE_ALL_49_DOCUMENTS_REGISTRY;
 
-export function getAllStomx49Documents(): readonly StomxDocumentRegistryItem[] {
-	return STOMX_ALL_49_DOCUMENTS_REGISTRY;
+export function getAllDente49Documents(): readonly ClinicalDocumentRegistryItem[] {
+	return DENTE_ALL_49_DOCUMENTS_REGISTRY;
 }
+/** @deprecated Use getAllDente49Documents */
+export const getAllStomx49Documents = getAllDente49Documents;
 
-export function getStomxDocumentRegistryItem(
+export function getDenteDocumentRegistryItem(
 	idOrName: number | string,
-): StomxDocumentRegistryItem | undefined {
+): ClinicalDocumentRegistryItem | undefined {
 	if (typeof idOrName === "number") {
-		return STOMX_ALL_49_DOCUMENTS_REGISTRY.find((item) => item.id === idOrName);
+		return DENTE_ALL_49_DOCUMENTS_REGISTRY.find((item) => item.id === idOrName);
 	}
 	const normalized = String(idOrName).trim().toLowerCase();
-	return STOMX_ALL_49_DOCUMENTS_REGISTRY.find(
+	return DENTE_ALL_49_DOCUMENTS_REGISTRY.find(
 		(item) =>
 			item.name.toLowerCase() === normalized ||
 			item.name.toLowerCase().includes(normalized) ||
 			String(item.id) === normalized,
 	);
 }
+/** @deprecated Use getDenteDocumentRegistryItem */
+export const getStomxDocumentRegistryItem = getDenteDocumentRegistryItem;
+

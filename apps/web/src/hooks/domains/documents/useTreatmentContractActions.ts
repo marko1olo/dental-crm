@@ -152,7 +152,11 @@ export function useTreatmentContractActions(
 		setDocumentIssueConfirmationId(document.id);
 	}
 
-	async function confirmDocumentIssue(_forceAllAttestations = false) {
+	async function confirmDocumentIssue(
+		_forceAllAttestations = false,
+		signatureSvg?: string | null,
+		pepCode?: string | null,
+	) {
 		const documentId = documentIssueConfirmation?.id;
 		if (!documentId) {
 			setError("Выберите черновик документа для выдачи.");
@@ -195,6 +199,8 @@ export function useTreatmentContractActions(
 				clinicRepresentativeSigned: true,
 				note: documentIssueNote.trim() || null,
 			},
+			signatureSvg: signatureSvg ?? null,
+			pepCode: pepCode ?? null,
 		} satisfies IssueDocumentInput;
 		saveDocumentIssueSignatureDraft(
 			dashboard?.clinicSettings?.profile?.organizationId ?? null,
@@ -205,6 +211,68 @@ export function useTreatmentContractActions(
 		const updated = await updateDocumentStatus(documentId, "issue", payload);
 		if (updated) {
 			setDocumentIssueConfirmationId(null);
+		}
+	}
+
+	async function signDocumentWithTablet(
+		documentId: string,
+		signatureSvg: string,
+		options?: {
+			mode?: "simple_electronic_signature" | "paper_signed" | "tablet_canvas" | "pep_sms";
+			pepCode?: string;
+			signedAt?: string;
+			recipientFullName?: string;
+		},
+	): Promise<boolean> {
+		if (documentStatusSavingId) {
+			setError("Дождитесь завершения текущего действия с документом.");
+			return false;
+		}
+		setDocumentStatusSavingId(documentId);
+		try {
+			const headers = auth.denteClinicalMutationHeaders({
+				"Content-Type": "application/json",
+			});
+			const response = await fetchWithHandling(
+				`/api/documents/${documentId}/signature`,
+				{
+					method: "POST",
+					headers,
+					body: JSON.stringify({
+						signatureSvg,
+						mode: options?.mode || "simple_electronic_signature",
+						pepCode: options?.pepCode,
+						signedAt: options?.signedAt || new Date().toISOString(),
+						recipientFullName: options?.recipientFullName,
+						auditContext: {
+							userAgent: typeof navigator !== "undefined" ? navigator.userAgent : "Dente-Client",
+						},
+					}),
+				},
+			);
+			if (!response.ok) {
+				const msg = await responseErrorMessage(
+					response,
+					"Подпись документа не сохранена",
+				);
+				setError(msg);
+				showToast(msg, "error");
+				return false;
+			}
+			showToast("Подпись пациента успешно зафиксирована (63-ФЗ)", "success");
+			await loadDashboard();
+			setError(null);
+			return true;
+		} catch (error) {
+			const msg = requestFailureMessage(
+				"Подпись документа не сохранена",
+				error,
+			);
+			showToast(msg, "error");
+			setError(msg);
+			return false;
+		} finally {
+			setDocumentStatusSavingId(null);
 		}
 	}
 
@@ -272,6 +340,7 @@ export function useTreatmentContractActions(
 		updateDocumentStatus,
 		requestDocumentIssue,
 		confirmDocumentIssue,
+		signDocumentWithTablet,
 		signDocumentUkep,
 		...voidActions,
 	};

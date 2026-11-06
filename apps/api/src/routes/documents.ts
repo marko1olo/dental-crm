@@ -6,6 +6,7 @@ import { register as registerIssue } from "./documents/issue.js";
 import { register as registerNdflCalculator } from "./documents/ndflCalculator.js";
 import { register as registerPdf } from "./documents/pdf.js";
 import { register as registerSignUkep } from "./documents/signUkep.js";
+import { register as registerSignature } from "./documents/signature.js";
 import { register as registerTaxXml } from "./documents/taxXml.js";
 import { register as registerVoid } from "./documents/void.js";
 import { registerQuery } from "./documents/query.js";
@@ -23,5 +24,6 @@ export async function registerDocumentRoutes(app: FastifyInstance) {
 	await registerPdf(app);
 	await registerHtml(app);
 	await registerSignUkep(app);
+	await registerSignature(app);
 	await registerNdflCalculator(app);
 }
