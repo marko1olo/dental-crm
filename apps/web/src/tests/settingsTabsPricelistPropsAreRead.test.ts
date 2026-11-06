@@ -302,6 +302,7 @@ describe("вкладки настроек не держат мёртвых пр�
 			[
 				readFileSync(join(here, "..", "App.tsx"), "utf8"),
 				readFileSync(join(here, "..", "components", "appLayout", "AppViewRouter.tsx"), "utf8"),
+				readFileSync(join(here, "..", "components", "appLayout", "viewRouterModules", "BusinessOperationsViewRouter.tsx"), "utf8"),
 			].join("\n"),
 		);
 		const openAt = app.indexOf("<SettingsView");

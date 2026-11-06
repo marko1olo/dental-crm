@@ -1,8 +1,15 @@
 /**
- * Facade re-export for ServicePricelistManagerModal
- * Ensures backward compatibility across modular catalog imports.
+ * apps/web/src/components/catalog/ServicePricelistManagerModal.tsx
+ *
+ * Unified canonical SSOT facade re-exporting PricelistStudioModal (Mandate 8aq).
+ * Eliminates duplicate parallel modal clutter and unifies all catalog access points into PricelistStudioModal.
  */
+
 export {
-	ServicePricelistManagerModal,
+	PricelistStudioModal,
+	PricelistStudioModal as ServicePricelistManagerModal,
+	type PricelistStudioModalProps,
 	type ServicePricelistManagerModalProps,
-} from "./pricelist/ServicePricelistManagerModal";
+} from "./PricelistStudioModal";
+
+export { default } from "./PricelistStudioModal";

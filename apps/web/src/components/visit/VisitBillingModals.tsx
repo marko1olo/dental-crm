@@ -8,6 +8,8 @@ import React from "react";
 import { PaymentModal } from "../finance/PaymentModal.js";
 import { ConsumablesDeductionModal } from "../inventory/ConsumablesDeductionModal.js";
 import { DmsGuaranteeLetterModal } from "../insurance/DmsGuaranteeLetterModal.js";
+import { PricelistStudioModal } from "../catalog/PricelistStudioModal.js";
+import type { PricelistClinicalBundle, PricelistStudioItem } from "../catalog/pricelistCatalogData.js";
 import { showToast } from "../GlobalToast.js";
 import type { VisitBillingServiceItem, VisitBillingTotals } from "./visitBillingTypes.js";
 
@@ -40,6 +42,11 @@ export interface VisitBillingModalsProps {
 	isDmsModalOpen: boolean;
 	onCloseDmsModal: () => void;
 	onSaveDmsLetter: (savedLetter: any) => void;
+
+	isPricelistOpen?: boolean | undefined;
+	onClosePricelist?: (() => void) | undefined;
+	onApplyBundle?: ((bundle: PricelistClinicalBundle) => void) | undefined;
+	onAddPricelistItem?: ((item: PricelistStudioItem) => void) | undefined;
 }
 
 export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
@@ -69,6 +76,10 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 	isDmsModalOpen,
 	onCloseDmsModal,
 	onSaveDmsLetter,
+	isPricelistOpen,
+	onClosePricelist,
+	onApplyBundle,
+	onAddPricelistItem,
 }) => {
 	return (
 		<>
@@ -165,6 +176,17 @@ export const VisitBillingModals: React.FC<VisitBillingModalsProps> = ({
 					onSave={(savedLetter) => {
 						onSaveDmsLetter(savedLetter);
 					}}
+				/>
+			)}
+
+			{/* Chairside Pricelist & Turnkey Bundles Studio (Mandate 8e/8n) */}
+			{isPricelistOpen && (
+				<PricelistStudioModal
+					isOpen={isPricelistOpen}
+					onClose={onClosePricelist || (() => {})}
+					onApplyBundleToVisit={onApplyBundle}
+					onAddServiceToInvoice={onAddPricelistItem}
+					clinicName={clinicLegalName}
 				/>
 			)}
 		</>

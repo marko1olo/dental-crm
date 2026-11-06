@@ -1,5 +1,5 @@
 /**
- * apps/web/src/tests/baseline804nPricelistSuite.test.ts
+ * apps/web/src/tests/baselinePricelistCatalogSuite.test.ts
  *
  * Семантический тест рекомендованного прейскуранта услуг клиники (30 услуг) и каталога процедур.
  * Соответствует Мандатам 8b (копейка в копейку), 8e (автономия врача), 8x (живой язык без канцелярита) и 8ap (чистый доменный язык).
@@ -25,7 +25,7 @@ describe("Прейскурант услуг клиники и быстрое н�
 	it("каждая услуга имеет валидный код медицинской номенклатуры (класс A или B)", () => {
 		const statutoryCodeRegex = /^[ABАВ]\d{2}\.\d{2,3}\.\d{3}(\.\d{3})?$/i;
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode ?? item.code804n;
+			const code = item.serviceCode ?? item.statutoryCode ?? item.code804n;
 			assert.ok(
 				statutoryCodeRegex.test(code),
 				`Услуга ${item.id} («${item.commercialTitle}») имеет некорректный номенклатурный код: «${code}»`,
@@ -35,7 +35,7 @@ describe("Прейскурант услуг клиники и быстрое н�
 
 	it("цены в рублях и копейках строго согласованы (Мандат 8b: копейка в копейку)", () => {
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode ?? item.code804n;
+			const code = item.serviceCode ?? item.statutoryCode ?? item.code804n;
 			assert.ok(item.basePriceRub > 0, `Услуга ${code} имеет нулевую или отрицательную цену`);
 			assert.equal(
 				item.basePriceKopecks,
@@ -47,7 +47,7 @@ describe("Прейскурант услуг клиники и быстрое н�
 
 	it("все услуги содержат официальное наименование номенклатуры и понятное коммерческое наименование", () => {
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode ?? item.code804n;
+			const code = item.serviceCode ?? item.statutoryCode ?? item.code804n;
 			const statTitle = item.statutoryTitle ?? item.statutoryTitle804n;
 			assert.ok(statTitle.trim().length > 5, `Пустое номенклатурное название у услуги ${code}`);
 			assert.ok(item.commercialTitle.trim().length > 5, `Пустое коммерческое название у услуги ${code}`);
@@ -56,7 +56,7 @@ describe("Прейскурант услуг клиники и быстрое н�
 
 	it("НДС равен 0% с указанием ссылки на пп. 2 п. 2 ст. 149 НК РФ", () => {
 		for (const item of BASELINE_PRICELIST_SERVICES) {
-			const code = item.statutoryCode ?? item.code804n;
+			const code = item.serviceCode ?? item.statutoryCode ?? item.code804n;
 			assert.equal(item.vatRate, 0);
 			assert.ok(
 				item.vatExemptionArticle.includes("149"),

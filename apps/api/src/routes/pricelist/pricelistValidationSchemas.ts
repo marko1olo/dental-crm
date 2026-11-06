@@ -50,6 +50,7 @@ export const pricelistBatchImportBodySchema = z.object({
 	items: z.array(
 		z.object({
 			code: z.string().optional(),
+			serviceCode: z.string().optional(),
 			order804nCode: z.string().optional(),
 			title: z.string().min(1, "Название услуги обязательно"),
 			category: z.string().default("other"),
@@ -74,6 +75,7 @@ export const scanAndImportItemSchema = z.object({
 	id: z.string().optional(),
 	cleanedTitle: z.string().min(1, "Наименование услуги не может быть пустым"),
 	code: z.string().optional(),
+	serviceCode: z.string().optional(),
 	code804n: z.string().default("A16.07.002"),
 	category: z.string().default("therapy"),
 	specialty: z.string().default("therapist"),

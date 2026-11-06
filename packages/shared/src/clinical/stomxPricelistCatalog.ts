@@ -1,12 +1,13 @@
 /**
  * packages/shared/src/clinical/stomxPricelistCatalog.ts
  *
- * StomX Dental Pricelist & Order 804n Harmonized Catalog.
+ * DENTE Clinical Pricelist & Order 804n Harmonized Catalog.
  *
  * Compliant with:
  * - Supreme Law: THE HAMMER (Zero Mocks, Absolute Parity)
  * - Mandate 8e: Doctor Autonomy (No false blockers, free doctor discounts 0..100%, 1-click plan application)
  * - Mandate 8i: Specialized Outpatient Bounded Context (Form 043/u, Nomenclature 804n)
+ * - Mandate 8ap: Zero Foreign CRM Contamination
  * - Mandate 8b: Exact Math & Accounting to the kopeck
  */
 
@@ -14,6 +15,11 @@ import { STOMX_THERAPY_PROCEDURES } from "./stomxPricelistTherapyData.js";
 import { STOMX_SURGERY_PROCEDURES } from "./stomxPricelistSurgeryData.js";
 import { STOMX_ORTHOPEDICS_PROCEDURES } from "./stomxPricelistOrthopedicsData.js";
 import type {
+	ClinicalEstimateItem,
+	ClinicalPricelistCategory,
+	ClinicalProcedureItem,
+	ClinicalSearchOptions,
+	ClinicalTreatmentPlanItem,
 	StomxEstimateItem,
 	StomxPricelistCategory,
 	StomxProcedureItem,
@@ -23,24 +29,32 @@ import type {
 
 export * from "./stomxPricelistTypes.js";
 export * from "./stomxPricelistCategories.js";
+
+export const CLINICAL_THERAPY_PROCEDURES = STOMX_THERAPY_PROCEDURES;
+export const CLINICAL_SURGERY_PROCEDURES = STOMX_SURGERY_PROCEDURES;
+export const CLINICAL_ORTHOPEDICS_PROCEDURES = STOMX_ORTHOPEDICS_PROCEDURES;
+
 export { STOMX_THERAPY_PROCEDURES } from "./stomxPricelistTherapyData.js";
 export { STOMX_SURGERY_PROCEDURES } from "./stomxPricelistSurgeryData.js";
 export { STOMX_ORTHOPEDICS_PROCEDURES } from "./stomxPricelistOrthopedicsData.js";
 
 /**
- * All harmonized core procedures from StomX Drop across all 10 dental specialties.
+ * All harmonized core procedures across all 10 dental specialties in DENTE CRM.
  */
-export const STOMX_CORE_PROCEDURES: readonly StomxProcedureItem[] = [
-	...STOMX_THERAPY_PROCEDURES,
-	...STOMX_SURGERY_PROCEDURES,
-	...STOMX_ORTHOPEDICS_PROCEDURES,
+export const CLINICAL_CORE_PROCEDURES: readonly ClinicalProcedureItem[] = [
+	...CLINICAL_THERAPY_PROCEDURES,
+	...CLINICAL_SURGERY_PROCEDURES,
+	...CLINICAL_ORTHOPEDICS_PROCEDURES,
 ];
 
+/** @deprecated Use CLINICAL_CORE_PROCEDURES */
+export const STOMX_CORE_PROCEDURES = CLINICAL_CORE_PROCEDURES;
+
 // O(1) fast lookup indices
-const PROCEDURE_BY_ID = new Map<string | number, StomxProcedureItem>();
-const PROCEDURE_BY_CODE = new Map<string, StomxProcedureItem>();
-const PROCEDURE_BY_804N = new Map<string, StomxProcedureItem[]>();
-const PROCEDURES_BY_CATEGORY = new Map<StomxPricelistCategory, StomxProcedureItem[]>();
+const PROCEDURE_BY_ID = new Map<string | number, ClinicalProcedureItem>();
+const PROCEDURE_BY_CODE = new Map<string, ClinicalProcedureItem>();
+const PROCEDURE_BY_804N = new Map<string, ClinicalProcedureItem[]>();
+const PROCEDURES_BY_CATEGORY = new Map<ClinicalPricelistCategory, ClinicalProcedureItem[]>();
 
 function normalizeCodeKey(key: string): string {
 	return key
@@ -52,10 +66,13 @@ function normalizeCodeKey(key: string): string {
 		.replace(/\.+/g, ".");
 }
 
-for (const proc of STOMX_CORE_PROCEDURES) {
+for (const proc of CLINICAL_CORE_PROCEDURES) {
 	PROCEDURE_BY_ID.set(proc.id, proc);
 	if (proc.stomxId) {
 		PROCEDURE_BY_ID.set(proc.stomxId, proc);
+	}
+	if (proc.denteId) {
+		PROCEDURE_BY_ID.set(proc.denteId, proc);
 	}
 
 	const codeKey = normalizeCodeKey(proc.code);
@@ -81,7 +98,7 @@ for (const proc of STOMX_CORE_PROCEDURES) {
 /**
  * Finds a procedure by its code (internal code, 804n code, or numeric ID).
  */
-export function findStomxProcedureByCode(code: string | number): StomxProcedureItem | undefined {
+export function findClinicalProcedureByCode(code: string | number): ClinicalProcedureItem | undefined {
 	if (typeof code === "number") {
 		return PROCEDURE_BY_ID.get(code);
 	}
@@ -99,21 +116,24 @@ export function findStomxProcedureByCode(code: string | number): StomxProcedureI
 	return PROCEDURE_BY_CODE.get(normalized) ?? PROCEDURE_BY_ID.get(trimmed);
 }
 
+/** @deprecated Use findClinicalProcedureByCode */
+export const findStomxProcedureByCode = findClinicalProcedureByCode;
+
 /**
  * Searches procedures by free-text query (name, code, or 804n) with optional filters.
  */
-export function searchStomxProcedures(
+export function searchClinicalProcedures(
 	query: string,
-	options: StomxSearchOptions = {},
-): StomxProcedureItem[] {
+	options: ClinicalSearchOptions = {},
+): ClinicalProcedureItem[] {
 	const q = query.trim().toLowerCase();
 	const normalizedQueryCode = normalizeCodeKey(query).toLowerCase();
 
 	const targetList = options.category
 		? (PROCEDURES_BY_CATEGORY.get(options.category) ?? [])
-		: STOMX_CORE_PROCEDURES;
+		: CLINICAL_CORE_PROCEDURES;
 
-	const matches: StomxProcedureItem[] = [];
+	const matches: ClinicalProcedureItem[] = [];
 
 	for (const proc of targetList) {
 		if (options.requireTooth !== undefined && proc.requireTooth !== options.requireTooth) {
@@ -148,10 +168,13 @@ export function searchStomxProcedures(
 	return matches;
 }
 
+/** @deprecated Use searchClinicalProcedures */
+export const searchStomxProcedures = searchClinicalProcedures;
+
 /**
  * Returns all procedures belonging to a specific clinical specialty / category.
  */
-export function getProceduresByCategory(category: StomxPricelistCategory): StomxProcedureItem[] {
+export function getProceduresByCategory(category: ClinicalPricelistCategory): ClinicalProcedureItem[] {
 	return [...(PROCEDURES_BY_CATEGORY.get(category) ?? [])];
 }
 
@@ -169,14 +192,14 @@ export function mapProcedureTo804nCode(procedureNameOrCode: string): string | un
 	}
 
 	// Try lookup by code
-	const byCode = findStomxProcedureByCode(trimmed);
+	const byCode = findClinicalProcedureByCode(trimmed);
 	if (byCode) {
 		return byCode.code804n;
 	}
 
 	// Try substring search in names
 	const lower = trimmed.toLowerCase();
-	for (const proc of STOMX_CORE_PROCEDURES) {
+	for (const proc of CLINICAL_CORE_PROCEDURES) {
 		if (proc.name.toLowerCase().includes(lower) || lower.includes(proc.name.toLowerCase())) {
 			return proc.code804n;
 		}
@@ -200,13 +223,13 @@ export interface CreateTreatmentPlanItemOptions extends CreateEstimateItemOption
 }
 
 /**
- * Creates an estimate item from a StomX procedure in 1 click.
+ * Creates an estimate item from a clinical procedure in 1 click.
  * Complies with Mandate 8e: Doctor Autonomy (free discounts 0..100%, exact kopeck math).
  */
-export function createEstimateItemFromStomxProcedure(
-	procedure: StomxProcedureItem,
+export function createEstimateItemFromClinicalProcedure(
+	procedure: ClinicalProcedureItem,
 	options: CreateEstimateItemOptions = {},
-): StomxEstimateItem {
+): ClinicalEstimateItem {
 	const quantity = Math.max(1, Math.round(options.quantity ?? 1));
 	const discountPercent = Math.max(0, Math.min(100, options.discountPercent ?? 0));
 	const priceRub = options.customPriceRub !== undefined
@@ -223,6 +246,7 @@ export function createEstimateItemFromStomxProcedure(
 	return {
 		procedureId: procedure.id,
 		code: procedure.code,
+		serviceCode: procedure.serviceCode ?? procedure.code804n ?? procedure.code,
 		code804n: procedure.code804n,
 		name: procedure.name,
 		category: procedure.category,
@@ -241,20 +265,18 @@ export function createEstimateItemFromStomxProcedure(
 	};
 }
 
-export interface CreateTreatmentPlanItemOptions extends CreateEstimateItemOptions {
-	readonly phaseNumber?: number;
-	readonly status?: "planned" | "in_progress" | "completed" | "cancelled";
-}
+/** @deprecated Use createEstimateItemFromClinicalProcedure */
+export const createEstimateItemFromStomxProcedure = createEstimateItemFromClinicalProcedure;
 
 /**
- * Creates a treatment plan item from a StomX procedure in 1 click.
+ * Creates a treatment plan item from a clinical procedure in 1 click.
  * Complies with Mandate 8e: Doctor Autonomy (zero false blocking, phased treatment).
  */
-export function createTreatmentPlanItemFromStomxProcedure(
-	procedure: StomxProcedureItem,
+export function createTreatmentPlanItemFromClinicalProcedure(
+	procedure: ClinicalProcedureItem,
 	options: CreateTreatmentPlanItemOptions = {},
-): StomxTreatmentPlanItem {
-	const estimate = createEstimateItemFromStomxProcedure(procedure, options);
+): ClinicalTreatmentPlanItem {
+	const estimate = createEstimateItemFromClinicalProcedure(procedure, options);
 
 	return {
 		...estimate,
@@ -262,3 +284,6 @@ export function createTreatmentPlanItemFromStomxProcedure(
 		status: options.status ?? "planned",
 	};
 }
+
+/** @deprecated Use createTreatmentPlanItemFromClinicalProcedure */
+export const createTreatmentPlanItemFromStomxProcedure = createTreatmentPlanItemFromClinicalProcedure;

@@ -14,6 +14,7 @@ export interface VisitBillingHeaderProps {
 	onAddService: () => void;
 	onOpenBom: () => void;
 	onPrintEstimate: () => void;
+	onOpenPricelist?: (() => void) | undefined;
 }
 
 export const VisitBillingHeader: React.FC<VisitBillingHeaderProps> = ({
@@ -23,6 +24,7 @@ export const VisitBillingHeader: React.FC<VisitBillingHeaderProps> = ({
 	onAddService,
 	onOpenBom,
 	onPrintEstimate,
+	onOpenPricelist,
 }) => {
 	return (
 		<div className="flex items-center justify-between flex-wrap gap-2 border-b border-[var(--line,#e2e8f0)] pb-3">
@@ -44,6 +46,18 @@ export const VisitBillingHeader: React.FC<VisitBillingHeaderProps> = ({
 			</div>
 
 			<div className="flex items-center gap-1.5 flex-wrap">
+				{!readOnly && onOpenPricelist && (
+					<button
+						type="button"
+						onClick={onOpenPricelist}
+						title="Открыть прейскурант и готовые комплексы под ключ"
+						className="h-8 px-3 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] hover:bg-[var(--line,#e2e8f0)] text-xs font-semibold text-[var(--ink,#0f172a)] cursor-pointer flex items-center gap-1 transition-all"
+						data-testid="btn-open-pricelist-catalog"
+					>
+						<Tag size={14} className="text-teal-600" />
+						<span>Прейскурант</span>
+					</button>
+				)}
 				{!readOnly && (
 					<button
 						type="button"

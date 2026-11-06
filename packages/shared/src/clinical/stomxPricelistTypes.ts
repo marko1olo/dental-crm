@@ -1,17 +1,18 @@
 /**
  * packages/shared/src/clinical/stomxPricelistTypes.ts
  *
- * StomX Pricelist & Order 804n Nomenclature Types and Interfaces.
+ * DENTE Clinical Pricelist & Order 804n Nomenclature Types and Interfaces.
  *
  * Compliant with:
  * - Supreme Law: THE HAMMER (Zero Mocks, Absolute Parity)
  * - Mandate 8e: Doctor Autonomy (No false blockers, free doctor discounts 0..100%, 1-click plan application)
  * - Mandate 8i: Specialized Outpatient Bounded Context (Form 043/u, Nomenclature 804n)
+ * - Mandate 8ap: Zero Foreign CRM Contamination
  * - Exact kopeck accounting (Mandate 8b / ACID & Exact Math)
  * - exactOptionalPropertyTypes: true compliance
  */
 
-export type StomxPricelistCategory =
+export type ClinicalPricelistCategory =
 	| "therapy"
 	| "orthopedics"
 	| "surgery"
@@ -23,19 +24,25 @@ export type StomxPricelistCategory =
 	| "anesthesiology"
 	| "ztl";
 
-export interface StomxCategoryDefinition {
-	readonly id: StomxPricelistCategory;
+/** @deprecated Use ClinicalPricelistCategory */
+export type StomxPricelistCategory = ClinicalPricelistCategory;
+
+export interface ClinicalCategoryDefinition {
+	readonly id: ClinicalPricelistCategory;
 	readonly code: string;
 	readonly titleRu: string;
 	readonly descriptionRu: string;
 	readonly defaultDurationMinutes: number;
 }
 
-export interface StomxProcedureItem {
+/** @deprecated Use ClinicalCategoryDefinition */
+export type StomxCategoryDefinition = ClinicalCategoryDefinition;
+
+export interface ClinicalProcedureItem {
 	readonly id: string | number;
 	readonly code: string;
 	readonly name: string;
-	readonly category: StomxPricelistCategory;
+	readonly category: ClinicalPricelistCategory;
 	readonly categoryName: string;
 	readonly price: number;
 	readonly priceKopecks: number;
@@ -43,26 +50,35 @@ export interface StomxProcedureItem {
 	readonly requireTooth: boolean;
 	readonly warrantyMonths: number;
 	readonly lifetimeMonths: number;
+	readonly serviceCode?: string | undefined; // Canonical clean domain alias per Mandate 8ap
 	readonly code804n: string;
 	readonly canDiscount: boolean;
 	readonly description?: string | undefined;
 	readonly stomxId?: number | undefined;
+	readonly denteId?: number | undefined;
 }
 
-export interface StomxSearchOptions {
-	readonly category?: StomxPricelistCategory | undefined;
+/** @deprecated Use ClinicalProcedureItem */
+export type StomxProcedureItem = ClinicalProcedureItem;
+
+export interface ClinicalSearchOptions {
+	readonly category?: ClinicalPricelistCategory | undefined;
 	readonly requireTooth?: boolean | undefined;
 	readonly maxPriceRub?: number | undefined;
 	readonly minPriceRub?: number | undefined;
 	readonly limit?: number | undefined;
 }
 
-export interface StomxEstimateItem {
+/** @deprecated Use ClinicalSearchOptions */
+export type StomxSearchOptions = ClinicalSearchOptions;
+
+export interface ClinicalEstimateItem {
 	readonly procedureId: string | number;
 	readonly code: string;
+	readonly serviceCode?: string | undefined; // Canonical clean domain alias per Mandate 8ap
 	readonly code804n: string;
 	readonly name: string;
-	readonly category: StomxPricelistCategory;
+	readonly category: ClinicalPricelistCategory;
 	readonly priceRub: number;
 	readonly priceKopecks: number;
 	readonly quantity: number;
@@ -77,12 +93,16 @@ export interface StomxEstimateItem {
 	readonly notes?: string | undefined;
 }
 
-export interface StomxTreatmentPlanItem {
+/** @deprecated Use ClinicalEstimateItem */
+export type StomxEstimateItem = ClinicalEstimateItem;
+
+export interface ClinicalTreatmentPlanItem {
 	readonly procedureId: string | number;
 	readonly code: string;
+	readonly serviceCode?: string | undefined; // Canonical clean domain alias per Mandate 8ap
 	readonly code804n: string;
 	readonly name: string;
-	readonly category: StomxPricelistCategory;
+	readonly category: ClinicalPricelistCategory;
 	readonly priceRub: number;
 	readonly priceKopecks: number;
 	readonly quantity: number;
@@ -98,3 +118,6 @@ export interface StomxTreatmentPlanItem {
 	readonly lifetimeMonths: number;
 	readonly notes?: string | undefined;
 }
+
+/** @deprecated Use ClinicalTreatmentPlanItem */
+export type StomxTreatmentPlanItem = ClinicalTreatmentPlanItem;
