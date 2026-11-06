@@ -64,7 +64,7 @@ export function handleClinicalSpeechOrText(
 	const shouldAutoApply = resolvedOptions.autoApply !== undefined ? resolvedOptions.autoApply : (trustLevel === undefined || isAutonomous || !isSupervisedOrCautious);
 
 	const intent = parseDentalVoiceSpeech(query);
-	const targetNumbers = intent.teethUpdates.length > 0 ? intent.teethUpdates.map((u) => u.toothNumber) : intent.detectedTeeth;
+	const targetNumbers = intent.teethUpdates.length > 0 ? intent.teethUpdates.map((u) => u.toothNumber) : [...intent.detectedTeeth];
 	const isFullSanitation = /санирован|вся\s+формул|вся\s+полость|все\s+зубы\s+норм/i.test(query);
 
 	// СЦЕНАРИЙ 1: Полная санация полости рта

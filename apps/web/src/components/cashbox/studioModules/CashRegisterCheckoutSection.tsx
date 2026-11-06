@@ -158,7 +158,7 @@ export const CashRegisterCheckoutSection: React.FC<CashRegisterCheckoutSectionPr
 			{/* Total Due Prominent Display (36px bold centered, Mandate 8am & Universal Checkout) */}
 			<div className="p-4 sm:p-5 rounded-2xl bg-[var(--paper-strong)] border border-[var(--line)] flex flex-col items-center justify-center text-center">
 				<span className="text-xs font-bold text-[var(--muted)] uppercase tracking-wider">
-					Итоговая сумма к оплате
+					Сумма счёта к оплате
 				</span>
 				<div
 					className="text-3xl sm:text-[36px] font-bold font-mono text-[var(--ink)] tracking-tight leading-none mt-1.5"
