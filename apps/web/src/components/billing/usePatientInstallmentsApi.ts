@@ -211,8 +211,13 @@ export function usePatientInstallmentsApi(options: {
 	);
 
 	const payTranche = useCallback(
-		async (trancheId: string, cashBoxId?: string): Promise<boolean> => {
+		async (
+			trancheId: string,
+			options?: { cashBoxId?: string; amountPaidKopecks?: number } | string,
+		): Promise<boolean> => {
 			if (!isUuid(trancheId)) return false;
+			const cashBoxId = typeof options === "string" ? options : options?.cashBoxId;
+			const amountPaidKopecks = typeof options === "object" ? options?.amountPaidKopecks : undefined;
 			setIsLoading(true);
 			try {
 				const headers: Record<string, string> = {
@@ -222,7 +227,7 @@ export function usePatientInstallmentsApi(options: {
 				const res = await fetch(`/api/installments/tranches/${trancheId}/pay`, {
 					method: "POST",
 					headers,
-					body: JSON.stringify({ cashBoxId }),
+					body: JSON.stringify({ cashBoxId, amountPaidKopecks }),
 				});
 				return res.ok;
 			} catch {

@@ -68,7 +68,10 @@ export function usePatientInstallmentsState(props: PatientInstallmentsModalProps
 		if (!target) return;
 		const enteredKop = customPayAmountRub ? rublesToKopecks(Math.max(1, Number(customPayAmountRub))) : (target.amountKopecks - target.paidKopecks);
 		try {
-			if (isUuid(selectedPaymentItemId)) await installmentsApi.payTranche(selectedPaymentItemId);
+			// PLN-03 [SEV-1]: Передаем фактическую сумму частичной оплаты amountPaidKopecks на бэкенд
+			if (isUuid(selectedPaymentItemId)) {
+				await installmentsApi.payTranche(selectedPaymentItemId, { amountPaidKopecks: enteredKop });
+			}
 			const { updatedPlan, receipt } = recordInstallmentPayment({
 				plan, paymentItemId: selectedPaymentItemId, paidAmountKopecks: enteredKop,
 				paymentMethod: selectedPaymentMethod, paidAtIso: new Date().toISOString(),

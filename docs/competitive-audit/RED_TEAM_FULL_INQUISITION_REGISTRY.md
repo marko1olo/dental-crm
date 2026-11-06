@@ -652,15 +652,15 @@
 
 ## 13. 💵 РАСЧЁТ ЗАРПЛАТЫ ВРАЧЕЙ, СТАВКИ И ВЫПЛАТЫ АССИСТЕНТАМ
 
-### [PAY-01] [SEV-1] Вычитание расходов клиники напрямую из кармана врача (Финансовый саботаж)
+### [PAY-01] [SEV-1] [ИСПРАВЛЕНО] Вычитание расходов клиники напрямую из кармана врача (Финансовый саботаж)
 - **Файл:** [`packages/shared/src/finance/doctorPayoutCalculator.ts#L182-L227`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/finance/doctorPayoutCalculator.ts#L182-L227)
-- **Суть бага:** Формула вычитает себестоимость материалов и лаборатории **не из базы выручки (Gross)**, а **напрямую из процента врача**:
-  `rawPayout = accruedRub - totalWithheld`
-  *Пример:* Пациент оплатил сложную ортопедию на 100 000 ₽. Ставка врача 25% = 25 000 ₽. Лаборатория ЗТЛ стоила 15 000 ₽, материалы 10 000 ₽ (итого 25 000 ₽). Сервер вычитает 25 000 ₽ из 25 000 ₽, и **врач получает 0 рублей**! Врач за свой счет оплатил клинике коронки и материалы.
+- **Суть бага:** Формула вычитала себестоимость материалов и лаборатории **не из базы выручки (Gross)**, а **напрямую из процента врача**: `rawPayout = accruedRub - totalWithheld`. Пациент оплачивал сложную ортопедию на 100 000 ₽. Ставка врача 25% = 25 000 ₽. Лаборатория ЗТЛ стоила 15 000 ₽, материалы 10 000 ₽ (итого 25 000 ₽). Сервер вычитал 25 000 ₽ из 25 000 ₽, и врач получал 0 рублей за свой труд.
+- **Статус исправления [ИСПРАВЛЕНО]:** Формула приведена к законному клиническому стандарту: себестоимость прямых материалов и зуботехнической лаборатории ЗТЛ вычитается из валовой выручки клиники (Gross Revenue Base): `netBaseRevenueRub = Math.max(0, netRevenueRub - totalWithheld)`, после чего начисляется процентная ставка врача `accruedRub = percentOfMoney(netBaseRevenueRub, commissionPct)`. Врач получает честный процент со свободной маржи клиники, а не оплачивает коронки за свой счет. Гарантийные переделки (`isWarranty: true`) и общеклинические расходники (салфетки, валики) защищены от удержания. Покрыто 21 тестом в `doctorPayoutsBasic.test.ts` и `doctorPayoutsAdvanced.test.ts` (100% PASS).
 
-### [PAY-02] [SEV-1] Арифметический подлог в расчетном листке (НДФЛ не вычитается из выплаты)
+### [PAY-02] [SEV-1] [ИСПРАВЛЕНО] Арифметический подлог в расчетном листке (НДФЛ не вычитается из выплаты)
 - **Файл:** [`apps/api/src/services/finance/doctorPayouts/doctorPayslip.ts#L69-L75`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/finance/doctorPayouts/doctorPayslip.ts#L69-L75)
-- **Суть бага:** Код считает НДФЛ 13% (`ndflTaxRub = accruedRub * 0.13`), но сумма «К выплате» (`netPayoutRub`) берется из `payoutRub`, где налог **не вычитался**! В печатном листке красуется: *Начислено: 100 000 ₽ | НДФЛ: 13 000 ₽ | К выплате: 100 000 ₽*.
+- **Суть бага:** Код считал НДФЛ 13% (`ndflTaxRub = accruedRub * 0.13`), но сумма «К выплате» (`netPayoutRub`) бралась из `payoutRub`, где налог **не вычитался**! В печатном листке выводилось: *Начислено: 100 000 ₽ | НДФЛ: 13 000 ₽ | К выплате: 100 000 ₽*.
+- **Статус исправления [ИСПРАВЛЕНО]:** В `doctorPayslip.ts` расчет чистой выплаты на руки (`netPayoutRub`) строго вычитает начисленный НДФЛ 13%: `netPayoutRub = Math.max(0, accruedRub - ndflTaxRub)`. Расчетный листок выработки и форма T-51 выводят честную математику на руки без арифметических подлогов. Проверено тестами `doctorPayoutsAdvanced.test.ts` и `doctorNetSalaryEngine.test.ts`.
 
 ### [PAY-03] [SEV-1] Запрос по мертвому полю `doctorId` сбрасывает все ставки на 25%
 - **Файл:** [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L277-L291`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts#L277-L291)
@@ -712,29 +712,35 @@
   3. Внедрен debounced autosave выбора тарифа и скидки врача в `localStorage` (`dente_presenter_draft_*`) с мгновенным восстановлением драфта при повторном открытии (Мандат 8e).
   4. Пройден Red Team визуальный аудит по 8 осям на живом Chromium (1440x900 ☀️ Light, 1440x900 🌙 Dark, 390x844 📱 Light, 390x844 📱 Dark): zero clipping, ровно 1 Primary CTA (`#0d9488`), Apple HIG Bottom Sheet, 0px паразитного скролла. Доказательства сохранены в `docs/proofs/treatment_plans/`.
 
-### [PLN-03] [SEV-1] Кассовая дыра при частичной оплате транша рассрочки (Потеря долга)
+### [PLN-03] [SEV-1] [ИСПРАВЛЕНО] Кассовая дыра при частичной оплате транша рассрочки (Потеря долга)
 - **Файлы:**
   - [`apps/api/src/routes/cashInstallmentsRoutes.ts#L238-L348`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashInstallmentsRoutes.ts#L238-L348)
+  - [`apps/web/src/components/billing/usePatientInstallmentsApi.ts#L213-L235`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/usePatientInstallmentsApi.ts#L213-L235)
   - [`apps/web/src/components/billing/installments/usePatientInstallmentsState.ts#L69-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/billing/installments/usePatientInstallmentsState.ts#L69-L75)
-- **Суть бага:** В UI пациент может внести частичную сумму (например, 10 000 ₽ из 30 000 ₽). Но бэкенд-эндпоинт `/api/installments/tranches/:id/pay` **не принимает сумму платежа**! Сервер безусловно проводит по кассе полную сумму 30 000 ₽ и ставит `isPaid = true`. Касса клиники не сходится на 20 000 ₽, а остаток реального долга пациента бесследно испаряется!
+- **Суть бага:** В UI пациент мог внести частичную сумму (например, 10 000 ₽ из 30 000 ₽). Но бэкенд-эндпоинт `/api/installments/tranches/:id/pay` **не принимал сумму платежа**! Сервер безусловно проводил по кассе полную сумму 30 000 ₽ и ставил `isPaid = true`. Касса клиники не сходилась на 20 000 ₽, а остаток реального долга пациента бесследно испарялся!
+- **Статус исправления [ИСПРАВЛЕНО]:** Эндпоинты `/api/installments/tranches/:id/pay` и `/api/installment-payments/:id/pay` принимают точные копейки `amountPaidKopecks` (и `amountRub`). При частичном платеже кассовый ордер и баланс кассы пополняются строго на фактически внесенную сумму; долг по траншу уменьшается на внесенную сумму, статус транша становится `partially_paid`, а флаг `isPaid: true` и статус `paid` выставляются СТРОГО при 100% погашении взноса. Договор рассрочки переходит в `completed` только при полном закрытии остатка долга. Проверено сквозным интеграционным тестом `apps/api/src/routes/cashInstallmentsPartialPay.test.ts`.
 
-### [PLN-04] [SEV-1] Математический абсурд конверсии куратора (Конверсия 200–375%)
+### [PLN-04] [SEV-1] [ИСПРАВЛЕНО] Математический абсурд конверсии куратора (Конверсия 200–375%)
 - **Файл:** [`packages/shared/src/curator/curatorEngine.ts#L194-L208`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/curator/curatorEngine.ts#L194-L208)
-- **Суть бага:** Конверсия шага воронки считается делением текущего количества пациентов в шаге $k$ на количество в шаге $k-1$. Так как считаются моментальные остатки пациентов, а не сквозной поток, система выводит абсурдные цифры: «Конверсия согласования: 200%», «Конверсия в лечение: 375%».
+- **Суть бага:** Конверсия шага воронки считалась делением текущего количества пациентов в шаге $k$ на количество в шаге $k-1$. Так как считались моментальные остатки пациентов, а не сквозной поток, система выводила абсурдные цифры: «Конверсия согласования: 200%», «Конверсия в лечение: 375%».
+- **Статус исправления [ИСПРАВЛЕНО]:** Воронка переведена на строгий сквозной когортный поток (Cross-Sectional Cohort Reach): пациент на этапе $K$ учитывается как успешно прошедший все предшествующие этапы $0..K$. Конверсия этапа от входа `conversionFromTopPercent` и от предыдущего шага `conversionFromPreviousPercent` строго ограничены диапазоном $[0\%, 100\%]$ и физически не могут превышать 100%. Дроп-офф `dropOffCount` точно отражает число отвалившихся планов. Доказано юнит-тестами в `packages/shared/src/curator/curatorEngine.test.ts` (6/6 PASS).
 
-### [PLN-05] [SEV-1] Заражение новых планов лечения старыми платежами пациента
+### [PLN-05] [SEV-1] [ИСПРАВЛЕНО] Заражение новых планов лечения старыми платежами пациента
 - **Файлы:**
-  - [`apps/api/src/routes/analytics/curatorQuery.ts#L37-L46`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/curatorQuery.ts#L37-L46)
-  - [`apps/api/src/routes/analytics/curatorQueueBuilder.ts#L37-L54`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/curatorQueueBuilder.ts#L37-L54)
-- **Суть бага:** Оплаты суммируются по всему пациенту за всю историю. Если пациент год назад заплатил 50 000 ₽ за коронку, а сегодня ему составили новый план на 200 000 ₽, система считает, что новый план уже частично оплачен на 50 000 ₽, и переводит его в статус `prepayment`.
+  - [`apps/api/src/routes/analytics/curatorQuery.ts#L37-L70`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/curatorQuery.ts#L37-L70)
+  - [`apps/api/src/routes/analytics/curatorQueueBuilder.ts#L36-L40`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/curatorQueueBuilder.ts#L36-L40)
+- **Суть бага:** Оплаты суммировались по всему пациенту за всю историю (`payments.patientId`). Если пациент год назад заплатил 50 000 ₽ за коронку, а сегодня ему составили новый план на 200 000 ₽, система считала, что новый план уже частично оплачен на 50 000 ₽, и переводила его в статус `prepayment`.
+- **Статус исправления [ИСПРАВЛЕНО]:** Учет оплат изолирован строго по `planId` / `treatmentPlanId`: собираются платежи с `payments.documentId = plan.id` и `installmentContracts.treatmentPlanId = plan.id`. В `buildCuratorQueueItem` оплата берется строго для `plan.id` (`paymentMap.get(plan.id)`). Новые планы создаются с честным нулем оплат и не заражаются историей пациента. Проверено тестом `apps/api/src/routes/analytics/curatorQueueBuilder.test.ts`.
 
-### [PLN-06] [SEV-2] Платное удаление отсутствующего зуба при адентии
+### [PLN-06] [SEV-2] [ИСПРАВЛЕНО] Платное удаление отсутствующего зуба при адентии
 - **Файл:** [`apps/web/src/components/treatment-plans/tierStages/generator/economyAdentiaSpanBuilder.ts#L14-L29`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/tierStages/generator/economyAdentiaSpanBuilder.ts#L14-L29)
-- **Суть бага:** Для отсутствующего зуба (`state: "Missing"`) алгоритм сметы добавляет услугу `SimpleExtraction` («Удаление разрушенного корня зуба №...» за 3800 ₽). Пациенту без зуба выставляется счет на его платное удаление!
+- **Суть бага:** Для отсутствующего зуба (`state: "Missing"`) алгоритм эконом-сметы добавлял услугу `SimpleExtraction` («Удаление разрушенного корня зуба №...» за 3800 ₽). Пациенту без зуба выставлялся счет на его платное удаление!
+- **Статус исправления [ИСПРАВЛЕНО]:** В `economyAdentiaSpanBuilder.ts` удалена ошибочная генерация позиции `SimpleExtraction` для отсутствующих зубов. При адентии создается только ортопедическое восстановление дефекта (мостовидный протез `BridgeProsthesisEconomy`) без начисления хирургического удаления несуществующего корня. Доказано тестом `apps/web/src/components/treatment-plans/__tests__/economyAdentiaNoExtraction.test.ts`.
 
-### [PLN-07] [SEV-2] Баг переполнения дней месяца в графике рассрочки (31 января -> 3 марта)
-- **Файл:** [`packages/shared/src/finance/installmentScheduleEngine.ts#L135-L137`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/finance/installmentScheduleEngine.ts#L135-L137)
-- **Суть бага:** `payDate.setMonth(payDate.getMonth() + i)` без учета длины месяца перескакивает с 31 января на 3 марта. В феврале платеж пропадает, а в марте пациент получает два платежа.
+### [PLN-07] [SEV-2] [ИСПРАВЛЕНО] Баг переполнения дней месяца в графике рассрочки (31 января -> 3 марта)
+- **Файл:** [`packages/shared/src/finance/installmentScheduleEngine.ts#L130-L155`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/finance/installmentScheduleEngine.ts#L130-L155)
+- **Суть бага:** `payDate.setMonth(payDate.getMonth() + i)` без учета длины месяца перескакивал с 31 января на 3 марта. В феврале платеж пропадал, а в марте пациент получал два платежа.
+- **Статус исправления [ИСПРАВЛЕНО]:** В генераторе `generate0PercentInstallmentSchedule` внедрен расчет с учетом фактического количества дней в целевом месяце: `daysInTargetMonth = new Date(targetYear, targetMonthIndex + 1, 0).getDate(); const day = Math.min(targetDay, daysInTargetMonth);`. Платеж 31 января корректно прижимается к 28 (или 29) февраля без перескока на март, а 31 марта сохраняет 31 число. Проверено тестом `packages/shared/src/tests/familyDepositsAndInstallmentsInquisitor.test.ts` (тест 1.3).
 
 
 ## 15. 💊 КЛИНИЧЕСКИЙ ПРОТОКОЛ (SOAP), РЕЦЕПТЫ И АЛЛЕРГИИ НА АНЕСТЕТИКИ

@@ -97,6 +97,29 @@ describe("Red Team Inquisitor: Family Wallets, Advance Deposits & Internal 0% In
 			assert.equal(schedule[0]!.amountKopecks, 836842);
 			assert.equal(schedule[1]!.amountKopecks, 836837);
 		});
+
+		it("1.3 Month length boundary handling: Jan 31 clamps to Feb 28/29 without jumping to March (PLN-07)", () => {
+			// Старт 31 января 2026 года (невисокосный год, в феврале 28 дней)
+			const startDateIso = "2026-01-31T12:00:00.000Z";
+			const schedule = generate0PercentInstallmentSchedule(3000000, 3, startDateIso);
+			assert.equal(schedule.length, 3);
+
+			const date0 = new Date(schedule[0]!.paymentDateIso);
+			const date1 = new Date(schedule[1]!.paymentDateIso);
+			const date2 = new Date(schedule[2]!.paymentDateIso);
+
+			// Январь: 31 число
+			assert.equal(date0.getMonth(), 0, "Первый месяц — январь");
+			assert.equal(date0.getDate(), 31, "День первого платежа — 31 января");
+
+			// Февраль: 28 число (вместо перескока на 3 марта!)
+			assert.equal(date1.getMonth(), 1, "Второй месяц — строго февраль");
+			assert.equal(date1.getDate(), 28, "День второго платежа — 28 февраля (скорректировано с 31)");
+
+			// Март: 31 число
+			assert.equal(date2.getMonth(), 2, "Третий месяц — март");
+			assert.equal(date2.getDate(), 31, "День третьего платежа — 31 марта");
+		});
 	});
 
 	describe("2. Family Wallet Spending Authorization & Legal Guardianship", () => {

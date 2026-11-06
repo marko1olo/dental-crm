@@ -131,9 +131,26 @@ export function generate0PercentInstallmentSchedule(
 	const nowMs = Date.now();
 	const schedule: InstallmentMonthSchedule[] = [];
 
+	const startYear = startDate.getFullYear();
+	const startMonth = startDate.getMonth();
+	const targetDay = startDate.getDate();
+
 	for (let i = 0; i < monthsCount; i++) {
-		const payDate = new Date(startDate);
-		payDate.setMonth(payDate.getMonth() + i);
+		const targetYear = startYear + Math.floor((startMonth + i) / 12);
+		const targetMonthIndex = (startMonth + i) % 12;
+		// PLN-07: Защита от перескока дней месяца (31 января -> 28 февраля, а не 3 марта)
+		const daysInTargetMonth = new Date(targetYear, targetMonthIndex + 1, 0).getDate();
+		const day = Math.min(targetDay, daysInTargetMonth);
+
+		const payDate = new Date(
+			targetYear,
+			targetMonthIndex,
+			day,
+			startDate.getHours(),
+			startDate.getMinutes(),
+			startDate.getSeconds(),
+			startDate.getMilliseconds(),
+		);
 
 		// First month absorbs the remainder kopecks
 		const amountKopecks = (i === 0 ? baseAmountKop + remainderKop : baseAmountKop) as Kopecks;

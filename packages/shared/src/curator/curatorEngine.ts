@@ -190,21 +190,42 @@ export function calculateCuratorMetrics(
 		rules,
 	);
 
-	// Построение 5-этапного отчета
-	let previousStageCount = totalPlansCount;
-	const stagesBreakdown: CuratorStageStats[] = CURATOR_STAGE_DEFINITIONS.map((def) => {
+	// Построение 5-этапного отчета воронки куратора
+	// PLN-04 [SEV-1]: Сквозной когортный поток пациентов (Cross-Sectional Cohort Funnel).
+	// Исключено деление моментальных остатков шагов (ликвидирован абсурд конверсий 200–375%).
+	const STAGE_ORDER_MAP: Record<CuratorFunnelStage, number> = {
+		consultation: 0,
+		plan_negotiation: 1,
+		prepayment: 2,
+		treatment_start: 3,
+		completed: 4,
+	};
+
+	// Число планов, достигших каждого шага воронки или продвинувшихся дальше
+	const reachedCounts = CURATOR_STAGE_DEFINITIONS.map((def) => {
+		const targetIndex = STAGE_ORDER_MAP[def.stage];
+		return curatorItems.filter((it) => STAGE_ORDER_MAP[it.funnelStage] >= targetIndex).length;
+	});
+
+	const stagesBreakdown: CuratorStageStats[] = CURATOR_STAGE_DEFINITIONS.map((def, idx) => {
 		const bucket = stageMap.get(def.stage) ?? { count: 0, totalKopecks: 0, totalDays: 0 };
 		const count = bucket.count;
 		const totalRub = bucket.totalKopecks / 100;
 		const avgDays = count > 0 ? Math.round((bucket.totalDays / count) * 10) / 10 : 0;
 
-		const conversionFromTop =
-			totalPlansCount > 0 ? Math.round((count / totalPlansCount) * 1000) / 10 : 0;
-		const conversionFromPrev =
-			previousStageCount > 0 ? Math.round((count / previousStageCount) * 1000) / 10 : 0;
-		const dropOff = Math.max(0, previousStageCount - count);
+		const currentReached = reachedCounts[idx] ?? 0;
+		const previousReached = idx === 0 ? totalPlansCount : (reachedCounts[idx - 1] ?? 0);
 
-		previousStageCount = count;
+		// Сквозная конверсия от вершины воронки (0..100%)
+		const conversionFromTop =
+			totalPlansCount > 0 ? Math.min(100, Math.round((currentReached / totalPlansCount) * 1000) / 10) : 0;
+
+		// Сквозная конверсия с предыдущего шага воронки (0..100%)
+		const conversionFromPrev =
+			previousReached > 0 ? Math.min(100, Math.round((currentReached / previousReached) * 1000) / 10) : 0;
+
+		// Число планов, не перешедших на текущий шаг с предыдущего
+		const dropOff = Math.max(0, previousReached - currentReached);
 
 		return {
 			stage: def.stage,

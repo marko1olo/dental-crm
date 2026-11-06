@@ -182,11 +182,6 @@ export function computeDoctorPayout(input: PayoutFormulaInput): PayoutFormulaRes
 	const netRevenueRub = roundMoney(
 		(input.revenueRub ?? 0) - (input.refundRub ?? 0),
 	);
-	const accruedRub = percentOfMoney(netRevenueRub, input.commissionPct);
-	const refundClawbackRub =
-		input.refundRub && input.refundRub > 0
-			? percentOfMoney(input.refundRub, input.commissionPct)
-			: 0;
 
 	// Вычет материалов
 	let withheldMaterialRub: number | null = 0;
@@ -195,7 +190,7 @@ export function computeDoctorPayout(input: PayoutFormulaInput): PayoutFormulaRes
 			// Себестоимость есть, а доля удержания неизвестна
 			return {
 				state: "material_policy_missing",
-				accruedRub,
+				accruedRub: percentOfMoney(netRevenueRub, input.commissionPct),
 				withheldMaterialRub: null,
 				withheldLabRub: null,
 				payoutRub: null,
@@ -210,20 +205,30 @@ export function computeDoctorPayout(input: PayoutFormulaInput): PayoutFormulaRes
 	// Вычет зуботехнической лаборатории (ЗТЛ):
 	// При гарантийных переделках (isWarranty: true) расходы ЗТЛ с врача НЕ удерживаются,
 	// а относятся на рекламационный фонд клиники!
-	const labOrdersCount = input.labOrdersCount ?? 0;
+	const labOrdersCount = input.labOrdersCount ?? (input.labCostRub && input.labCostRub > 0 ? 1 : 0);
 	const isWarranty = Boolean(input.isWarranty);
 	const labCostRub = isWarranty ? 0 : (input.labCostRub ?? 0);
 	let withheldLabRub: number | null = 0;
 	if (!isWarranty && labOrdersCount > 0 && labCostRub > 0) {
 		const labPct = isUsablePercent(input.labDeductionPct ?? null)
 			? (input.labDeductionPct as number)
-			: input.commissionPct;
+			: 100;
 		withheldLabRub = percentOfMoney(labCostRub, labPct);
 	}
 
 	const totalWithheld = roundMoney((withheldMaterialRub ?? 0) + (withheldLabRub ?? 0));
+
+	// PAY-01 [SEV-1]: себестоимость материалов и лаборатории вычитается из базы выручки (Gross Base),
+	// а не напрямую из процента врача! (Мандат 8e, ТК РФ, защита от бунта врачей)
+	const netBaseRevenueRub = roundMoney(Math.max(0, netRevenueRub - totalWithheld));
+	const accruedRub = percentOfMoney(netBaseRevenueRub, input.commissionPct);
+	const refundClawbackRub =
+		input.refundRub && input.refundRub > 0
+			? percentOfMoney(input.refundRub, input.commissionPct)
+			: 0;
+
 	// Запрет отрицательной зарплаты по ТК РФ: выплата не может быть меньше нуля (payout >= 0)
-	const rawPayout = accruedRub - totalWithheld;
+	const rawPayout = accruedRub;
 	const payoutRub = roundMoney(Math.max(0, rawPayout));
 	const advanceRub = input.advanceRub ? roundMoney(Math.max(0, input.advanceRub)) : 0;
 	const mainPayoutRub = roundMoney(Math.max(0, payoutRub - advanceRub));
@@ -294,7 +299,7 @@ export function payoutRowNote(input: {
 				);
 			} else {
 				parts.push(
-					"Начислено процентом от кассы, затем удержана доля себестоимости материалов и лаборатории (ЗТЛ).",
+					"Начислено процентом от чистой базы выручки (за вычетом материалов и лаборатории ЗТЛ).",
 				);
 			}
 			break;

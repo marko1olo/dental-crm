@@ -238,6 +238,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 		const bodySchema = z.object({
 			cashBoxId: z.string().uuid().optional(),
 			operatorId: z.string().uuid().optional(),
+			amountPaidKopecks: z.number().int().positive().optional(),
+			amountRub: positiveMoneyRubSchema.optional(),
 		});
 		const parsed = bodySchema.safeParse(request.body || {});
 		const payData = parsed.success ? parsed.data : {};
@@ -257,6 +259,19 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			if (tranche.isPaid) {
 				return { kind: "already_paid" as const };
 			}
+
+			const trancheRemainingKop = rubToKopecks(tranche.amountRub);
+			if (trancheRemainingKop <= 0) {
+				return { kind: "already_paid" as const };
+			}
+
+			// PLN-03 [SEV-1]: Поддержка частичной оплаты в копейках
+			const requestedKop = payData.amountPaidKopecks ?? (payData.amountRub ? rubToKopecks(payData.amountRub) : null);
+			const paymentKop = requestedKop !== null ? Math.min(trancheRemainingKop, requestedKop) : trancheRemainingKop;
+			const paymentRub = kopecksToRub(paymentKop);
+
+			const remainingTrancheKop = Math.max(0, trancheRemainingKop - paymentKop);
+			const isTrancheFullyPaid = remainingTrancheKop === 0;
 
 			const [contract] = await tx
 				.select()
@@ -306,9 +321,9 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 			}
 
 			const balanceBefore = targetBox.balanceRub;
-			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + rubToKopecks(tranche.amountRub));
+			const balanceAfter = kopecksToRub(rubToKopecks(balanceBefore) + paymentKop);
 
-			// Обновляем кассу
+			// Обновляем кассу на фактически поступившую сумму
 			await tx
 				.update(cashBoxes)
 				.set({
@@ -317,17 +332,21 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				})
 				.where(and(eq(cashBoxes.id, targetBox.id), eq(cashBoxes.organizationId, orgId)));
 
-			// Проводим кассовую операцию прихода
+			const operationReasonText = isTrancheFullyPaid
+				? `Оплата взноса №${tranche.trancheNumber} по договору рассрочки ${contract.contractNumber}`
+				: `Частичная оплата взноса №${tranche.trancheNumber} по договору рассрочки ${contract.contractNumber} (остаток долга: ${kopecksToRub(remainingTrancheKop)} ₽)`;
+
+			// Проводим кассовую операцию прихода на фактически внесенную сумму
 			const [operation] = await tx
 				.insert(cashOperations)
 				.values({
 					organizationId: orgId,
 					cashBoxId: targetBox.id,
 					operationType: "income",
-					amountRub: tranche.amountRub,
+					amountRub: paymentRub,
 					balanceBeforeRub: balanceBefore,
 					balanceAfterRub: balanceAfter,
-					reasonText: `Оплата взноса №${tranche.trancheNumber} по договору рассрочки ${contract.contractNumber}`,
+					reasonText: operationReasonText,
 					patientId: contract.patientId,
 					installmentTrancheId: tranche.id,
 					operatorId: payData.operatorId ?? null,
@@ -336,21 +355,23 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 
 			const now = new Date();
 
-			// Обновляем транш
+			// Обновляем транш: при частичной оплате уменьшаем долг транша, status: "partially_paid", isPaid: false.
+			// isPaid: true ставится СТРОГО при выплате 100% суммы взноса.
 			const [updatedTranche] = await tx
 				.update(installmentTranches)
 				.set({
-					isPaid: true,
+					amountRub: isTrancheFullyPaid ? tranche.amountRub : kopecksToRub(remainingTrancheKop),
+					isPaid: isTrancheFullyPaid,
 					paidAt: now,
-					status: "paid",
+					status: isTrancheFullyPaid ? "paid" : "partially_paid",
 					cashOperationId: operation!.id,
 				})
 				.where(and(eq(installmentTranches.id, tranche.id), eq(installmentTranches.organizationId, orgId)))
 				.returning();
 
-			// Обновляем баланс договора рассрочки
-			const newPaidAmount = kopecksToRub(rubToKopecks(contract.paidAmountRub) + rubToKopecks(tranche.amountRub));
-			const newRemaining = Math.max(0, kopecksToRub(rubToKopecks(contract.remainingAmountRub) - rubToKopecks(tranche.amountRub)));
+			// Обновляем баланс договора рассрочки на фактически оплаченную сумму
+			const newPaidAmount = kopecksToRub(rubToKopecks(contract.paidAmountRub) + paymentKop);
+			const newRemaining = Math.max(0, kopecksToRub(rubToKopecks(contract.remainingAmountRub) - paymentKop));
 			const isFullyPaid = newRemaining <= 0;
 
 			const [updatedContract] = await tx
@@ -370,6 +391,8 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 				tranche: updatedTranche!,
 				contract: updatedContract!,
 				cashOperation: operation!,
+				paymentRub,
+				isTrancheFullyPaid,
 			};
 		});
 
@@ -400,10 +423,14 @@ export async function registerCashInstallmentsRoutes(app: FastifyInstance) {
 
 		return reply.send({
 			success: true,
-			message: `Платеж по рассрочке на сумму ${result.tranche.amountRub} ₽ успешно проведен.`,
+			message: result.isTrancheFullyPaid
+				? `Платеж по рассрочке на сумму ${result.paymentRub} ₽ успешно проведен.`
+				: `Частичный платеж на сумму ${result.paymentRub} ₽ принят. Остаток долга по взносу: ${result.tranche.amountRub} ₽.`,
 			tranche: result.tranche,
 			contract: result.contract,
 			cashOperation: result.cashOperation,
+			paymentRub: result.paymentRub,
+			isFullyPaid: result.isTrancheFullyPaid,
 		});
 	};
 

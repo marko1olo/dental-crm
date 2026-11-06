@@ -201,7 +201,15 @@ export type DmftIndex = z.infer<typeof dmftIndexSchema>;
 /** Калькулятор индекса КПУ по зубной формуле */
 export function calculateDmftFromOdontogram(
 	teethInput: readonly any[] | Record<number | string, any>,
-): DmftIndex & { dmftTotal: number; intensityLevelLabel: string } {
+): DmftIndex & {
+	dmftTotal: number;
+	intensityLevelLabel: string;
+	isPediatricOnly?: boolean;
+	isMixedDentition?: boolean;
+	pediatricKpTotal?: number;
+	combinedKpuTotal?: number;
+	displayKpuText?: string;
+} {
 	const teeth = Array.isArray(teethInput)
 		? teethInput
 		: Object.values(teethInput ?? {});

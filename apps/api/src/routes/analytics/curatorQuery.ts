@@ -1,6 +1,6 @@
 import { and, eq, sql } from "drizzle-orm";
 import { db } from "../../db/client.js";
-import { patients, payments, treatmentPlans, users } from "../../db/schema.js";
+import { installmentContracts, patients, payments, treatmentPlans, users } from "../../db/schema.js";
 import { calculateCuratorMetrics } from "@dental/shared";
 import { buildCuratorQueueItem } from "./curatorQueueBuilder.js";
 import type { CuratorStaffUser } from "./curatorTypes.js";
@@ -34,16 +34,50 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 		.innerJoin(patients, eq(treatmentPlans.patientId, patients.id))
 		.where(eq(treatmentPlans.organizationId, orgId));
 
-	const patientPayments = await db
+	// PLN-05 [SEV-1]: Учет оплат строго по planId / treatmentPlanId, ликвидация заражения планов старыми оплатами пациента.
+	// 1. Прямые оплаты, привязанные к плану лечения (documentId = treatment_plans.id)
+	const directPlanPayments = await db
 		.select({
-			patientId: payments.patientId,
+			planId: payments.documentId,
 			totalPaid: sql<number>`coalesce(sum(${payments.amountRub}), 0)`,
 		})
 		.from(payments)
-		.where(and(eq(payments.organizationId, orgId), eq(payments.status, "paid")))
-		.groupBy(payments.patientId);
+		.where(
+			and(
+				eq(payments.organizationId, orgId),
+				eq(payments.status, "paid"),
+				sql`${payments.documentId} is not null`,
+			),
+		)
+		.groupBy(payments.documentId);
 
-	const paymentMap = new Map(patientPayments.map((p) => [p.patientId, Number(p.totalPaid)]));
+	// 2. Оплаты по договорам рассрочки данного плана лечения
+	const installmentPlanPayments = await db
+		.select({
+			planId: installmentContracts.treatmentPlanId,
+			totalPaid: sql<number>`coalesce(sum(${installmentContracts.paidAmountRub}), 0)`,
+		})
+		.from(installmentContracts)
+		.where(
+			and(
+				eq(installmentContracts.organizationId, orgId),
+				sql`${installmentContracts.treatmentPlanId} is not null`,
+			),
+		)
+		.groupBy(installmentContracts.treatmentPlanId);
+
+	const planPaymentMap = new Map<string, number>();
+	for (const p of directPlanPayments) {
+		if (p.planId) {
+			planPaymentMap.set(p.planId, (planPaymentMap.get(p.planId) || 0) + Number(p.totalPaid));
+		}
+	}
+	for (const p of installmentPlanPayments) {
+		if (p.planId) {
+			planPaymentMap.set(p.planId, (planPaymentMap.get(p.planId) || 0) + Number(p.totalPaid));
+		}
+	}
+
 	const doctorMap = new Map(staffList.map((u) => [u.id, u.fullName]));
 	const defaultCurator: CuratorStaffUser = curatorUsers[0] || {
 		id: "00000000-0000-0000-0000-000000000001",
@@ -52,7 +86,7 @@ export async function fetchCuratorAnalyticsPayload(orgId: string) {
 	};
 
 	const queueItems = plans.map((plan) =>
-		buildCuratorQueueItem(plan, paymentMap, doctorMap, defaultCurator),
+		buildCuratorQueueItem(plan, planPaymentMap, doctorMap, defaultCurator),
 	);
 	const overallMetrics = calculateCuratorMetrics(queueItems, "all", "Все кураторы");
 	const perCuratorMetrics = curatorUsers.map((cur) =>

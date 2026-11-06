@@ -34,7 +34,8 @@ export function buildCuratorQueueItem(
 			: doctorMap.get(curatorId) || defaultCurator.fullName;
 
 	const planPrice = Number(plan.totalPriceRub || plan.totalPrice || 0);
-	const paid = paymentMap.get(plan.patientId) || 0;
+	// PLN-05 [SEV-1]: Учет оплат строго по plan.id (treatmentPlanId) — ноль заражения чужими платежами из истории пациента
+	const paid = paymentMap.get(plan.id) || 0;
 	const planPaid = Math.min(planPrice, paid);
 	const remaining = Math.max(0, planPrice - planPaid);
 

@@ -175,6 +175,59 @@ describe("Curator Treatment Funnel & Commission Math Engine", () => {
 		assert.strictEqual(metrics.stagesBreakdown[4]?.count, 1);
 	});
 
+	test("PLN-04: conversion percentages never exceed 100% and exclude snapshot ratio spikes (200-375%)", () => {
+		// Тестовый сценарий, который в старом коде вызывал дефект 400%:
+		// 1 план на этапе consultation, 4 плана на этапе plan_negotiation
+		const skewedQueue: CuratorPatientQueueItem[] = [
+			{
+				...sampleCuratorQueue[3]!,
+				patientId: "11111111-1111-4111-8111-111111111101",
+				treatmentPlanId: "22222222-2222-4222-8222-222222222201",
+				funnelStage: "consultation",
+			},
+			{
+				...sampleCuratorQueue[2]!,
+				patientId: "11111111-1111-4111-8111-111111111102",
+				treatmentPlanId: "22222222-2222-4222-8222-222222222202",
+				funnelStage: "plan_negotiation",
+			},
+			{
+				...sampleCuratorQueue[2]!,
+				patientId: "11111111-1111-4111-8111-111111111103",
+				treatmentPlanId: "22222222-2222-4222-8222-222222222203",
+				funnelStage: "plan_negotiation",
+			},
+			{
+				...sampleCuratorQueue[2]!,
+				patientId: "11111111-1111-4111-8111-111111111104",
+				treatmentPlanId: "22222222-2222-4222-8222-222222222204",
+				funnelStage: "plan_negotiation",
+			},
+			{
+				...sampleCuratorQueue[2]!,
+				patientId: "11111111-1111-4111-8111-111111111105",
+				treatmentPlanId: "22222222-2222-4222-8222-222222222205",
+				funnelStage: "plan_negotiation",
+			},
+		];
+
+		const metrics = calculateCuratorMetrics(skewedQueue, "all", "Все кураторы");
+		for (const stage of metrics.stagesBreakdown) {
+			assert.ok(
+				stage.conversionFromPreviousPercent <= 100,
+				`Конверсия этапа ${stage.stage} (${stage.conversionFromPreviousPercent}%) не должна превышать 100%`,
+			);
+			assert.ok(
+				stage.conversionFromTopPercent <= 100,
+				`Конверсия от входа для этапа ${stage.stage} (${stage.conversionFromTopPercent}%) не должна превышать 100%`,
+			);
+			assert.ok(
+				stage.conversionFromPreviousPercent >= 0,
+				`Конверсия этапа ${stage.stage} не должна быть отрицательной`,
+			);
+		}
+	});
+
 	test("evaluatePatientUrgency: detects stagnant plans, high checks, and priority scoring", () => {
 		// План на согласовании 7 дней без оплаты на 200 000 руб
 		const urg1 = evaluatePatientUrgency(7, "plan_negotiation", 200_000, 0, false);

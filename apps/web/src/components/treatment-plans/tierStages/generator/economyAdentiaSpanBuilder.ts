@@ -7,26 +7,12 @@ export function handleEconomyAdentiaSpan(
 	handled: Set<number>,
 	ctx: TierGeneratorContext,
 ): void {
-	const { catalog, validDiscountPct, isDemo, stage2Items, stage3Items } = ctx;
+	const { catalog, validDiscountPct, isDemo, stage3Items } = ctx;
 
 	for (const missingT of currentSpan) {
 		handled.add(missingT);
-		const defExt = SERVICES_CATALOG_DICTIONARY.SimpleExtraction!;
-		stage2Items.push(
-			createPlanItem(
-				"s2-eco-ext-" + missingT,
-				2,
-				"stage_2_surgery",
-				defExt,
-				missingT,
-				catalog,
-				validDiscountPct,
-				{
-					customTitle: "Удаление разрушенного корня / подготовка альвеолы зуба №" + missingT,
-					isDemoMode: isDemo,
-				},
-			),
-		);
+		// PLN-06 [SEV-2]: Зуб со статусом "Missing" (адентия) уже отсутствует.
+		// Запрещено начислять платное удаление разрушенного корня. Формируем только металлокерамический мостовидный протез.
 		const defEcoBridge = SERVICES_CATALOG_DICTIONARY.BridgeProsthesisEconomy!;
 		stage3Items.push(
 			createPlanItem(
