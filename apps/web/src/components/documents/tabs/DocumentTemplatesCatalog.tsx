@@ -4,7 +4,7 @@ import type {
 	DocumentKindMetadata,
 	DocumentSourceStatus,
 } from "@dental/shared";
-import { FileText, FolderArchive } from "lucide-react";
+import { FileText, FolderArchive, Loader2 } from "lucide-react";
 import { DentalForm043 } from "../../icons/DentalIcons";
 
 export interface DocumentTemplatesCatalogProps {
@@ -64,21 +64,24 @@ export const DocumentTemplatesCatalog: React.FC<
 							{(group?.kinds ?? []).map((kind) => {
 								const metadata = documentKindMetadata?.[kind];
 								const sourceStatus = metadata?.sourceStatus ?? "manual_only";
+								const isCurrentSaving = documentCreateSavingKind === kind;
 								return (
 									<button
-										className="secondary-button document-factory-kind-button"
+										className="secondary-button document-factory-kind-button cursor-pointer"
 										type="button"
 										key={kind}
-										disabled={Boolean(documentCreateSavingKind)}
-										aria-busy={documentCreateSavingKind === kind || undefined}
+										aria-busy={isCurrentSaving || undefined}
 										onClick={() => {
+											if (documentCreateSavingKind) return;
 											setSelectedDocumentKind(kind);
 											if (!structuredPayloadDocumentKinds.has(kind)) {
 												void createDocument(kind);
 											}
 										}}
 									>
-										{kind === "dental_medical_card_043u" ||
+										{isCurrentSaving ? (
+											<Loader2 aria-hidden="true" size={16} className="animate-spin text-[var(--teal,#0d9488)]" />
+										) : kind === "dental_medical_card_043u" ||
 										kind === "orthodontic_medical_card_043_1u" ? (
 											<DentalForm043 aria-hidden="true" size={16} />
 										) : (

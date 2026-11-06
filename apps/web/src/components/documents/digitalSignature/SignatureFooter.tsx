@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, Printer } from "lucide-react";
+import { CheckCircle2, Loader2, Printer } from "lucide-react";
 
 interface SignatureFooterProps {
 	readonly isSubmitting: boolean;
@@ -81,8 +81,11 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 
 			<button
 				type="button"
-				disabled={isSubmitting}
-				onClick={onConfirm}
+				aria-busy={isSubmitting || undefined}
+				onClick={() => {
+					if (isSubmitting) return;
+					onConfirm();
+				}}
 				className="primary-button"
 				style={{
 					minHeight: "44px",
@@ -100,7 +103,7 @@ export const SignatureFooter: React.FC<SignatureFooterProps> = ({
 				}}
 				data-testid="btn-confirm-pep-signature"
 			>
-				<CheckCircle2 size={15} />
+				{isSubmitting ? <Loader2 size={15} className="animate-spin" /> : <CheckCircle2 size={15} />}
 				<span>{isSubmitting ? "Утверждение..." : "Утвердить подписание"}</span>
 			</button>
 		</div>

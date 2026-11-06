@@ -1,4 +1,4 @@
-import { Download, Printer, ShieldCheck, Sparkles, X } from "lucide-react";
+import { Download, Loader2, Printer, ShieldCheck, Sparkles, X } from "lucide-react";
 import React from "react";
 
 export interface InformedConsentViewerHeaderProps {
@@ -65,14 +65,17 @@ export const InformedConsentViewerHeader: React.FC<
 
 				<button
 					type="button"
-					onClick={onPrint}
-					disabled={isPrinting}
-					className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5"
+					onClick={() => {
+						if (isPrinting) return;
+						onPrint();
+					}}
+					aria-busy={isPrinting || undefined}
+					className="primary-button h-8 px-3 text-xs inline-flex items-center gap-1.5 cursor-pointer"
 					data-testid="consent-print-btn"
 					title="Печать бланка ИДС"
 				>
-					<Printer size={14} />
-					<span>Печать ИДС</span>
+					{isPrinting ? <Loader2 size={14} className="animate-spin" /> : <Printer size={14} />}
+					<span>{isPrinting ? "Печать..." : "Печать ИДС"}</span>
 				</button>
 
 				<button

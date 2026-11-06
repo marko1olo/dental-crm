@@ -66,16 +66,16 @@ export const RadiationDoseSheetForm: React.FC<RadiationDoseSheetFormProps> = Rea
 					<div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "10px", flexWrap: "wrap", gap: "8px" }}>
 						<h4 style={{ margin: 0 }}>История рентгенологических исследований ({records.length})</h4>
 						<div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-							<button type="button" className="btn btn-sm btn-outline-primary" onClick={() => addStudyRow("intraoral_radiovisiography")} disabled={disabled}>
+							<button type="button" className={`btn btn-sm btn-outline-primary ${disabled ? "opacity-50 cursor-not-allowed" : ""}`} onClick={() => addStudyRow("intraoral_radiovisiography")} aria-disabled={disabled}>
 								+ Визиография
 							</button>
-							<button type="button" className="btn btn-sm btn-outline-primary" onClick={() => addStudyRow("optg_digital_panoramic")} disabled={disabled}>
+							<button type="button" className={`btn btn-sm btn-outline-primary ${disabled ? "opacity-50 cursor-not-allowed" : ""}`} onClick={() => addStudyRow("optg_digital_panoramic")} aria-disabled={disabled}>
 								+ ОПТГ
 							</button>
-							<button type="button" className="btn btn-sm btn-outline-primary" onClick={() => addStudyRow("cbct_segment_5x5")} disabled={disabled}>
+							<button type="button" className={`btn btn-sm btn-outline-primary ${disabled ? "opacity-50 cursor-not-allowed" : ""}`} onClick={() => addStudyRow("cbct_segment_5x5")} aria-disabled={disabled}>
 								+ КЛКТ 5x5
 							</button>
-							<button type="button" className="btn btn-sm btn-outline-primary" onClick={() => addStudyRow("cbct_jaw_8x8")} disabled={disabled}>
+							<button type="button" className={`btn btn-sm btn-outline-primary ${disabled ? "opacity-50 cursor-not-allowed" : ""}`} onClick={() => addStudyRow("cbct_jaw_8x8")} aria-disabled={disabled}>
 								+ КЛКТ 8x8
 							</button>
 						</div>

@@ -12,11 +12,15 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import React from "react";
 import { renderToString } from "react-dom/server";
 import { describe, it } from "vitest";
 import { ClinicalVisitPackageModal } from "../ClinicalVisitPackageModal";
 import { getDocumentsCatalogData } from "../documentsCatalogData";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 describe("ClinicalVisitPackageModal & documentsCatalogData Red Team Audit", () => {
 	const mockPatient = {

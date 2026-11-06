@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { FileCheck, FileCode2, FileText, Printer, X } from "lucide-react";
+import { FileCheck, FileCode2, FileText, Loader2, Printer, X } from "lucide-react";
 import type { DocumentRowProps } from "./documentRegistryTypes";
 
 export const DocumentRowExportActions: React.FC<DocumentRowProps & { onClose: () => void }> = React.memo(
@@ -64,9 +64,18 @@ export const DocumentRowExportActions: React.FC<DocumentRowProps & { onClose: ()
 					</button>
 				)}
 				{document.status !== "voided" && (
-					<button className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--bad-fg,#ef4444)] hover:bg-[var(--bad-fg,#ef4444)]/10 rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]" type="button" disabled={isSaving} aria-busy={isSaving || undefined} onClick={() => { onClose(); requestDocumentVoid(document); }}>
-						<X size={14} className="shrink-0" aria-hidden="true" />
-						<span>Аннулировать</span>
+					<button
+						className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--bad-fg,#ef4444)] hover:bg-[var(--bad-fg,#ef4444)]/10 rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
+						type="button"
+						aria-busy={isSaving || undefined}
+						onClick={() => {
+							if (isSaving) return;
+							onClose();
+							requestDocumentVoid(document);
+						}}
+					>
+						{isSaving ? <Loader2 size={14} className="shrink-0 animate-spin" aria-hidden="true" /> : <X size={14} className="shrink-0" aria-hidden="true" />}
+						<span>{isSaving ? "Аннулирование..." : "Аннулировать"}</span>
 					</button>
 				)}
 			</>

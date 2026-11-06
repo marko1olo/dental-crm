@@ -26,8 +26,11 @@ export function UkepCertificateSelector({
 			<select
 				id="ukep-cert-select"
 				value={selectedThumbprint}
-				onChange={(e) => onSelectThumbprint(e.target.value)}
-				disabled={isSigning}
+				onChange={(e) => {
+					if (isSigning) return;
+					onSelectThumbprint(e.target.value);
+				}}
+				aria-busy={isSigning || undefined}
 				className="w-full text-xs bg-[var(--paper)] border border-[var(--line)] rounded-lg px-2.5 py-2 mb-2 focus:outline-none focus:ring-1 focus:ring-[var(--teal,#0d9488)] text-[var(--ink,#0f172a)]"
 			>
 				{certificates.map((cert) => {

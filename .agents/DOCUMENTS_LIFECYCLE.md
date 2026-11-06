@@ -152,6 +152,23 @@ graph LR
 
 ---
 
+## 📸 7. Red Team Инквизиция и 4-State Visual Proof
+
+1. **Тотальная ликвидация блокировок кнопок (Мандат 8e):**
+   * Все кнопки в `apps/web/src/components/documents/` очищены от искусственного атрибута `disabled={...}` (включая печать, экспорт, подписание, сохранение, отправку SMS).
+   * Защита от дублирующих нажатий реализована через неблокирующий debounced клик, атрибут `aria-busy` и тактильный индикатор `Loader2`.
+2. **Машинное покрытие тестами:**
+   * 210 из 210 тестов полного набора `apps/web/src/components/documents/__tests__/*.test.ts*` завершаются с Exit Code 0 (0 сбоев).
+   * Устранены ESM-несовместимости (`fileURLToPath(import.meta.url)`).
+3. **4-State Visual Proof (Live App Capture):**
+   * Все 4 состояния сняты на живом Vite-сервере и лично отсмотрены через `read_file` по 8 осям контроля:
+     - `docs/proofs/documents/01_documents_catalog_pc_light_1440x900.png` (143 KB) — десктоп светлая тема, нулевой клиппинг, ровно 1 Primary CTA.
+     - `docs/proofs/documents/02_documents_catalog_pc_dark_1440x900.png` (134 KB) — десктоп тёмная тема, 100% токены `var(--paper)`, WCAG AAA контраст.
+     - `docs/proofs/documents/03_documents_catalog_mobile_light_390x844.png` (54 KB) — iPhone светлая тема, нативный Bottom Sheet Apple HIG с drag handle 36×5px и тач-зоной $\ge 44$px.
+     - `docs/proofs/documents/04_documents_catalog_mobile_dark_390x844.png` (50 KB) — iPhone тёмная тема, 0px горизонтального скролла.
+
+---
+
 ## 🔗 6. Перекрестные ссылки на архитектурные документы
 
 * **[INDEX.md](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md)** — Главный индекс документации DENTE CRM.

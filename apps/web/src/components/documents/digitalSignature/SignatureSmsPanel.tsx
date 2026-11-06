@@ -75,8 +75,11 @@ export const SignatureSmsPanel: React.FC<SignatureSmsPanelProps> = ({
 			/>
 			<button
 				type="button"
-				disabled={smsCountdown > 0}
-				onClick={handleSendSmsCode}
+				aria-busy={smsCountdown > 0 || undefined}
+				onClick={() => {
+					if (smsCountdown > 0) return;
+					handleSendSmsCode();
+				}}
 				className="secondary-button"
 				style={{
 					height: "40px",
@@ -84,7 +87,8 @@ export const SignatureSmsPanel: React.FC<SignatureSmsPanelProps> = ({
 					borderRadius: "8px",
 					fontSize: "12.5px",
 					fontWeight: 600,
-					cursor: "pointer",
+					cursor: smsCountdown > 0 ? "default" : "pointer",
+					opacity: smsCountdown > 0 ? 0.75 : 1,
 				}}
 				data-testid="btn-send-sms-code"
 			>

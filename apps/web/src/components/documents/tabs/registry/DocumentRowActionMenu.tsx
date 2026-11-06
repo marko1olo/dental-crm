@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { FileSignature, MoreHorizontal, Shield } from "lucide-react";
+import { FileSignature, Loader2, MoreHorizontal, Shield } from "lucide-react";
 import type { DocumentRowProps } from "./documentRegistryTypes";
 import { DocumentRowExportActions } from "./DocumentRowExportActions";
 
@@ -41,13 +41,16 @@ export const DocumentRowActionMenu: React.FC<DocumentRowProps & { actionContext:
 						<button
 							className="doc-dropdown-item w-full flex items-center gap-2 px-2.5 py-1.5 text-xs text-[var(--ink)] hover:bg-[var(--paper-soft)] rounded-lg transition-colors cursor-pointer text-left border-0 bg-transparent min-h-[44px] sm:min-h-[36px]"
 							type="button"
-							onClick={() => { closeMenu(); void loadDocumentAuditFacts(document.id); }}
-							disabled={isAuditLoading}
+							onClick={() => {
+								if (isAuditLoading) return;
+								closeMenu();
+								void loadDocumentAuditFacts(document.id);
+							}}
 							aria-busy={isAuditLoading || undefined}
 							aria-label={`Журнал проверки: ${actionContext}`}
 							data-testid={`btn-audit-doc-${document.id}`}
 						>
-							<Shield size={14} className="text-[var(--primary,#0d9488)] shrink-0" aria-hidden="true" />
+							{isAuditLoading ? <Loader2 size={14} className="text-[var(--primary,#0d9488)] shrink-0 animate-spin" aria-hidden="true" /> : <Shield size={14} className="text-[var(--primary,#0d9488)] shrink-0" aria-hidden="true" />}
 							<span>{isAuditLoading ? "Загрузка журнала..." : "Журнал проверки документа"}</span>
 						</button>
 

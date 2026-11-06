@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { CheckCircle2, FileSignature, FileText, Printer } from "lucide-react";
+import { CheckCircle2, FileSignature, FileText, Loader2, Printer } from "lucide-react";
 import { CANONICAL_DOCUMENT_STATUS_LABELS, documentRowLifecycleGuidance } from "../../documentAutonomy";
 import type { DocumentRowProps } from "./documentRegistryTypes";
 import { DocumentRowActionMenu } from "./DocumentRowActionMenu";
@@ -65,17 +65,19 @@ export const DocumentRegistryRow: React.FC<DocumentRowProps> = React.memo(
 
 					{document.status === "draft" ? (
 						<button
-							className="tactile-doc-btn tactile-doc-btn--primary doc-link min-h-[44px] sm:min-h-[36px] sm:h-8"
+							className="tactile-doc-btn tactile-doc-btn--primary doc-link min-h-[44px] sm:min-h-[36px] sm:h-8 cursor-pointer"
 							type="button"
-							disabled={isSaving}
 							aria-busy={isSaving || undefined}
-							onClick={() => requestDocumentIssue(document)}
+							onClick={() => {
+								if (isSaving) return;
+								requestDocumentIssue(document);
+							}}
 							aria-describedby={guidanceId}
 							aria-label={`Выдать на бумаге: ${actionContext}`}
 							data-testid={`btn-issue-doc-${document.id}`}
 						>
-							<FileSignature size={14} className="shrink-0" aria-hidden="true" />
-							<span>Выдать на бумаге</span>
+							{isSaving ? <Loader2 size={14} className="shrink-0 animate-spin" aria-hidden="true" /> : <FileSignature size={14} className="shrink-0" aria-hidden="true" />}
+							<span>{isSaving ? "Выдача..." : "Выдать на бумаге"}</span>
 						</button>
 					) : (
 						<button
