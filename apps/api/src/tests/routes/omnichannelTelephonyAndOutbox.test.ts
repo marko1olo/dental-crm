@@ -491,10 +491,27 @@ describe("Omnichannel Telephony, Messengers (Telegram/WhatsApp/MAX) and Outbox R
 	// =========================================================================
 	describe("4. CTI Telephony & WebSocket PBX Stream (Instant-Ack & Tenant Isolation)", () => {
 		it("POST /api/telephony/:organizationId/webhook/async responds in < 50ms with Instant-Ack", async () => {
+			// [TEL-03] Verify unauthorized webhook without signature/secret is rejected with 401
+			const unauthResponse = await app.inject({
+				method: "POST",
+				url: `/api/telephony/${ORG_A_ID}/webhook/async`,
+				payload: {
+					event: "ringing",
+					from: "+79161112233",
+					to: "+74959998877",
+					call_id: "pbx-call-session-unauth",
+				},
+			});
+			assert.equal(unauthResponse.statusCode, 401, "Webhook without authentication must be rejected with 401");
+
+			// Authenticated webhook with secret
 			const start = performance.now();
 			const response = await app.inject({
 				method: "POST",
 				url: `/api/telephony/${ORG_A_ID}/webhook/async`,
+				headers: {
+					"x-dente-webhook-secret": "mock-telephony-secret-xyz",
+				},
 				payload: {
 					event: "ringing",
 					from: "+79161112233",

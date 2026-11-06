@@ -31,9 +31,8 @@ export const communicationEvents = pgTable(
 		clinicId: uuid("clinic_id").references(() => clinics.id),
 		botConfigId: text("bot_config_id").notNull().default("default"),
 		taskId: uuid("task_id").references(() => communicationTasks.id),
-		patientId: uuid("patient_id")
-			.notNull()
-			.references(() => patients.id),
+		patientId: uuid("patient_id").references(() => patients.id),
+		callerPhone: text("caller_phone"),
 		actorUserId: uuid("actor_user_id").references(() => users.id),
 		channel: communicationChannel("channel").notNull(),
 		direction: communicationDirection("direction").notNull(),
@@ -53,6 +52,7 @@ export const communicationEvents = pgTable(
 		clinicIdIdx: index("communication_events_clinic_id_idx").on(t.clinicId),
 		taskIdIdx: index("communication_events_task_id_idx").on(t.taskId),
 		patientIdIdx: index("communication_events_patient_id_idx").on(t.patientId),
+		callerPhoneIdx: index("communication_events_caller_phone_idx").on(t.callerPhone),
 		actorUserIdIdx: index("communication_events_actor_user_id_idx").on(
 			t.actorUserId,
 		),

@@ -89,6 +89,30 @@
       - 🌙 Смена и Z-отчёт: [`docs/proofs/cashbox/03_cashbox_shift_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/03_cashbox_shift_pc_dark_1440x900.png) (50 KB)
       - ☀️ Контрольная лента: [`docs/proofs/cashbox/04_cashbox_tape_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/04_cashbox_tape_pc_light_1440x900.png) (42 KB)
 
+### [FIN-09] [ИСПРАВЛЕНО] [SEV-2] Сплит-чекаут (Split Payment), валидация ИНН B2B и 4-State Visual Proof
+- **Файлы:**
+  - Компонент модалки: [`PaymentModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/PaymentModal.tsx)
+  - Сплит-сабмиттер: [`splitSubmitExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts)
+  - Валидатор ИНН: [`cashboxInnValidation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/cashboxInnValidation.ts)
+  - Экспресс-списание: [`ClinicalWriteoffQuickStrip.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/inventory/writeoff/ClinicalWriteoffQuickStrip.tsx)
+- **Суть бага:**
+  1. В `cashboxInnValidation.ts` некорректно валидировался ИНН юридических лиц (ООО/АО), допуская 12 цифр вместо строгих 10 цифр, а текст ошибки не содержал шаблон "10 цифр", ломая контракт тестов 54-ФЗ.
+  2. В `ClinicalWriteoffQuickStrip.tsx` кнопка экспресс-списания терапии содержала `data-cy="btn-quick-therapy-writeoff"`, но не имела соответствующего `data-testid`, вызывая сбой в проверке интерфейса врача.
+  3. Для Сплит-оплаты (Нал + Карта + СБП + Депозит) на живом приложении отсутствовал полный комплект 4-State Proof скриншотов высокого разрешения.
+- **Решение:**
+  1. Исправлена проверка ИНН в `cashboxInnValidation.ts`: юридические лица требуют строго 10 цифр с каноническим сообщением об ошибке, ИП — 12 цифр, физлица — свободны от обязательного ИНН (Мандаты 8e, 8n).
+  2. В `ClinicalWriteoffQuickStrip.tsx` добавлен `data-testid="btn-quick-therapy-writeoff"`.
+  3. Сняты и верифицированы через `read_file` 4-State Proof скриншоты реального живого сплит-чекаута на 78 500 ₽:
+    * ☀️ PC Light: [`docs/proofs/finance/10_payment_modal_split_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/10_payment_modal_split_pc_light_1440x900.png) (218 KB)
+    * 🌙 PC Dark: [`docs/proofs/finance/11_payment_modal_split_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/11_payment_modal_split_pc_dark_1440x900.png) (220 KB)
+    * 📱 Mobile Light: [`docs/proofs/finance/12_payment_modal_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/12_payment_modal_mobile_light_390x844.png) (149 KB)
+    * 🌙 Mobile Dark: [`docs/proofs/finance/13_payment_modal_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/finance/13_payment_modal_mobile_dark_390x844.png) (138 KB)
+- **Машинные пруфы:**
+  - `npm run check:encoding`: 24 013 файлов проверено, Exit Code 0.
+  - Тесты финансов: 43 тест-сьюта, 327 тестов PASSED (Exit Code 0).
+  - Тесты биллинга и сплитов: 6 сьютов, 38 тестов PASSED (Exit Code 0).
+  - Тесты кассы: 17 тестов PASSED (Exit Code 0).
+
 ---
 
 ## 2. 🦷 ЗУБОТЕХНИЧЕСКАЯ ЛАБОРАТОРИЯ И ОРТОПЕДИЯ
@@ -490,26 +514,25 @@
 
 ## 9. 📞 ТЕЛЕФОНИЯ, СОФТФОН И КОЛЛ-ЦЕНТР
 
-### [TEL-01] [SEV-1] Исходящие вызовы — 100% симуляция (Click-to-Call — фикция)
-- **Файл:** [`apps/api/src/routes/telephony/telephonyOutboundHandler.ts#L38-L73`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyOutboundHandler.ts#L38-L73)
-- **Суть бага:** При `POST /api/telephony/outbound-call` сервер генерирует фейковый ID `outbound-${Date.now()}-...`, сразу пишет в базу статус `completed` и рассылает WebSocket-событие. В Mango, Zadarma или Asterisk AMI **не уходит ни одного сетевого пакета**. Звонок не происходит.
-- **Во фронтенде:** [`useFloatingDialActions.ts#L30-L52`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyFloatingWidget/quickActions/useFloatingDialActions.ts#L30-L52) кнопка «Позвонить» даже не шлет запрос к бэкенду — она локально выставляет `status: "answered"` в Zustand и крутит секундомер в браузере.
+### [TEL-01] [SEV-1] [ИСПРАВЛЕНО] Исходящие вызовы — сетевой Click-to-Call вместо симуляции
+- **Файл:** [`apps/api/src/routes/telephony/telephonyOutboundHandler.ts#L38-L95`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyOutboundHandler.ts#L38-L95), [`apps/web/src/components/telephony/telephonyFloatingWidget/quickActions/useFloatingDialActions.ts#L30-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/telephonyFloatingWidget/quickActions/useFloatingDialActions.ts#L30-L75), [`telephonyGatewayService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephony/telephonyGatewayService.ts)
+- **Суть исправления:** Локальная симуляция секундомера и фальшивый статус `completed` ликвидированы. Кнопка «Позвонить» отправляет реальный HTTP-запрос `POST /api/telephony/outbound-call`. Бэкенд вызывает `telephonyGatewayService.initiateOutboundCall()`, который проверяет подключение АТС (Asterisk AMI / Mango / Zadarma / UIS) и отправляет команду на исходящий дозвон. При отсутствии сконфигурированной АТС бэкенд возвращает честный статус 422 с `status: "needs_call"` и тостом об отсутствии АТС (таймер не тикает). При успехе устанавливается статус дозвона `dialing` и событие рассылается по WebSocket.
 
 ### [TEL-02] [SEV-1] Муляж WebRTC SIP софтфона
 - **Файл:** [`TelephonyAudioStreamManager.ts#L47-L190`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/store/telephonyModules/telephonyAudioStreamManager.ts#L47-L190)
 - **Суть бага:** Во всем монорепозитории ровно 0 упоминаний `RTCPeerConnection` (нет ни JsSIP, ни sip.js). Захват микрофона и воспроизведение RTP никем не вызываются. Статистика аудио захардкожена: `jitterMs: 12`, `packetsLost: 0`.
 
-### [TEL-03] [SEV-1] Дыра безопасности вебхука АТС для всего интернета
-- **Файл:** [`telephonyOutboxService.ts#L35, L140-L360`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephonyOutboxService.ts#L35)
-- **Суть бага:** Эндпоинт `POST /api/telephony/webhook/async` открыт без авторизации (`authenticatePbxWebhook` импортирован, но никогда не вызывается). Любой желающий может спамить фейковыми звонками и создавать лиды.
+### [TEL-03] [SEV-1] [ИСПРАВЛЕНО] Дыра безопасности вебхука АТС для всего интернета
+- **Файл:** [`telephonyOutboxService.ts#L35-L65`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephonyOutboxService.ts#L35-L65), [`omnichannelTelephonyAndOutbox.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts)
+- **Суть исправления:** В `telephonyOutboxService.handleInstantAck` внедрен обязательный барьер аутентификации `authenticatePbxWebhook(request, reply, resolvedOrgId, request.body)` по токену провайдера / заголовку `x-dente-webhook-secret`. Неавторизованный спам из интернета отклоняется кодом 401 Unauthorized до постановки задачи в очередь фонового воркера.
 
-### [TEL-04] [SEV-1] Звонки от новых пациентов исчезают из истории
-- **Файл:** [`telephonyWebhookEndedService.ts#L49-L60`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyWebhookEndedService.ts#L49-L60)
-- **Суть бага:** Звонок пишется в `communication_events` только если найден существующий пациент. Так как у нового звонящего карточки еще нет, а колонка `patient_id` строго `NOT NULL`, звонки первичных пациентов **вообще не сохраняются в историю**.
+### [TEL-04] [SEV-1] [ИСПРАВЛЕНО] Звонки от новых пациентов исчезают из истории
+- **Файл:** [`messagesSchema.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/communications/messagesSchema.ts), [`telephonyWebhookEndedService.ts#L49-L90`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyWebhookEndedService.ts#L49-L90), [`telephonyOutboxService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephonyOutboxService.ts), [`telephonyGatewayService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/telephony/telephonyGatewayService.ts)
+- **Суть исправления:** Ограничение `NOT NULL` на `patient_id` в таблице `communication_events` снято (`patient_id` объявлен nullable), добавлена колонка `caller_phone text` с индексом. Обработчики завершения звонка (`telephonyWebhookEndedService`, воркер `processTelephonyWebhook`, `processAsteriskAmiEvent`) всегда персистят входящий звонок в `communication_events` с номером `callerPhone`. При отсутствии привязанного пациента (`!matchedPatient`) автоматически генерируется входящее обращение первичного пациента в таблице `crmLeads`, исключая потерю потенциальных клиентов клиники.
 
-### [TEL-05] [SEV-2] Студия телефонии сидит на моках
-- **Файл:** [`TelephonyStudioModal.tsx#L273-L296`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx#L273-L296)
-- **Суть бага:** Отображает статичный каталог `TELEPHONY_CATALOG_DATA` вместо реальных записей разговоров из базы данных.
+### [TEL-05] [SEV-2] [ИСПРАВЛЕНО] Студия телефонии сидит на моках
+- **Файл:** [`TelephonyStudioModal.tsx#L273-L375`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx#L273-L375), [`telephonyCallsListHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyCallsListHandler.ts), [`telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts)
+- **Суть исправления:** Создан и подключен бэкенд-эндпоинт `GET /api/telephony/calls` и `GET /api/telephony/:organizationId/calls`. В рабочем режиме `TelephonyStudioModal` загружает реальный журнал звонков из таблицы `communication_events` PostgreSQL 18. При отсутствии записей выводится честный Empty State («Нет звонков в журнале»). Статичный каталог `TELEPHONY_CATALOG_DATA` изолирован строго для демонстрационного режима `isDemoShowcaseMode() === true`.
 
 ---
 

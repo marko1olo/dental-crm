@@ -35,6 +35,7 @@ export function registerTelephonyCallsListHandlers(app: FastifyInstance): void {
 				message: communicationEvents.message,
 				recordingUrl: communicationEvents.recordingUrl,
 				durationSeconds: communicationEvents.durationSeconds,
+				callerPhone: communicationEvents.callerPhone,
 				createdAt: communicationEvents.createdAt,
 				patientName: patients.fullName,
 				patientPhone: patients.phone,
