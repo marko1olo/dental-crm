@@ -167,3 +167,53 @@ flowchart LR
 - **Первичная адентия третьих моляров (зубы мудрости):** `mark-wisdom-missing-btn`
 - **Норма в 1 клик для выделенных зубов:** `mark-intact-dentition-btn`
 - **Сброс группового выделения:** `clear-selection-btn`
+
+---
+
+## 8. КОМПЛЕКСНЫЙ СКВОЗНОЙ МАСТЕР-ТЕСТ КЛИНИЧЕСКОГО ЦИКЛА (`master-clinical-lifecycle.spec.ts`)
+
+Тест расположен в [`apps/web/tests/e2e/master-clinical-lifecycle.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/master-clinical-lifecycle.spec.ts) и проверяет непрерывный жизненный цикл пациента от бронирования в расписании до фискального чека 54-ФЗ:
+
+```mermaid
+flowchart TD
+    A["1. Студия расписания (#schedule)<br/>Экспресс-запись за 5с (без обязательного ассистента — Мандат 8n)"] --> B["2. Рабочее место врача (#chairside-visit)<br/>Приём у кресла и автозаполнение нормы в 1 клик (Мандат 8e / 8ba)"]
+    B --> C["3. Одонтограмма Wheeler 2.5D<br/>Выбор зуба 36, окклюзия [O], фиксация кариеса эмали K02.0"]
+    C --> D["4. План лечения и смета<br/>Расчёт стоимости строго в копейках (amountKopecks, BIGINT)"]
+    D --> E["5. Фискальная касса 54-ФЗ (#checkout)<br/>Сплит-оплата 50/50 (3 250 ₽ нал + 3 250 ₽ карта без ИНН физлица)"]
+    E --> F["6. 4-State Visual Proof<br/>(docs/proofs/e2e_master/)"]
+```
+
+### Аппаратные контракты и селекторы:
+| Фаза | Селектор `data-testid` | Назначение |
+|---|---|---|
+| **Фаза A: Расписание** | `chair-schedule-studio-modal` | Модальное окно студии расписания и сетки кресел |
+| | `chair-schedule-confirm-slot-btn` | Быстрое бронирование свободного слота |
+| | `quick-booking-popover` | Шторка экспресс-записи пациента без бюрократии |
+| | `quick-booking-submit-btn` | Primary CTA «Записать на приём» |
+| | `schedule-studio-close-btn` | Закрытие студии и плавный переход в визит |
+| **Фаза B: Визит у кресла** | `visit-view` | Суверенный экран приёма врача |
+| | `visit-header-monolith` | Монолитная шапка (пациент, таймер, аллергии) |
+| | `btn-soap-norm-one-click` | 1-клик норма физиологического статуса |
+| **Фаза C: Wheeler 2.5D** | `visit-subtab-odontogram` | Переход в анатомическую формулу |
+| | `anatomical-tooth-cell-36` | Первый нижний моляр слева по FDI |
+| | `tooth-radial-menu-overlay` | Клиническое радиальное меню манипуляций |
+| | `radial-btn-caries` | Фиксация патологии «Кариес» |
+| **Фаза D: Смета и План** | `visit-subtab-plan` | Переход во вкладку плана лечения |
+| | `btn-plan-tab-print-estimate` | Печать сметы (кнопка никогда не disabled) |
+| **Фаза E: Касса 54-ФЗ** | `cash-register-checkout-modal` | Окно расчёта и пробития чека |
+| | `display-total-amount-due` | Проверка итоговой суммы (6 500 ₽) |
+| | `btn-tender-split` | Переключение в сплит-тендер |
+| | `btn-checkout-split-50-50` | 1-клик распределение 50% карта / 50% нал |
+| | `split-balance-status` | Индикатор точной сходимости сумм («Сумма сходится точно ✓») |
+| | `btn-confirm-checkout-payment` | Primary CTA подтверждения фискального платежа |
+
+### Автопсия и устранение архитектурных дефектов:
+1. **React 19 Rules of Hooks в `DirectVisitLauncher.tsx`**:
+   - *Дефект*: хук `const fallbackAppLogic = useMemo(...)` вызывался после раннего возврата `if (!isOpen) return null;`. При переходе из расписания в визит это вызывало `Error: Rendered more hooks than during the previous render`, валившее всё приложение в `BootErrorBoundary`.
+   - *Исправление*: вызов `useMemo` перенесён выше раннего возврата. Порядок вызова хуков гарантированно инвариантен при любых переходах.
+2. **4-State Visual Proof (`docs/proofs/e2e_master/`)**:
+   - `01_master_clinical_lifecycle_pc_light_1440x900.png` (96 КБ $\ge 20$ КБ) — светлая тема, контраст WCAG AAA $\ge 4.5:1$.
+   - `02_master_clinical_lifecycle_pc_dark_1440x900.png` (98 КБ $\ge 20$ КБ) — тёмная тема, 100% тёмные токены `var(--paper)`.
+   - `03_master_clinical_lifecycle_mobile_light_390x844.png` (53 КБ $\ge 20$ КБ) — Apple HIG, тач $\ge 44\times 44$px, Drag Handle 36x5px.
+   - `04_master_clinical_lifecycle_mobile_dark_390x844.png` (50 КБ $\ge 20$ КБ) — мобильная тёмная тема, ноль слепящих белых пятен.
+

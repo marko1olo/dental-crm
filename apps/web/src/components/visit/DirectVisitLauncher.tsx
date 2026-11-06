@@ -167,6 +167,15 @@ export const DirectVisitLauncher: React.FC = () => {
 		};
 	}, [dashboard?.clinicSettings?.staff]);
 
+	const fallbackAppLogic: any = useMemo(() => ({
+		dashboard,
+		activePatient,
+		activeDoctor,
+		odontogramUseSurfaces: true,
+		auth: { role: "owner" },
+		money: (rub: number) => `${rub.toLocaleString("ru-RU")} ₽`,
+	}), [dashboard, activePatient, activeDoctor]);
+
 	if (!isOpen) return null;
 
 	const handleClose = () => {
@@ -187,15 +196,6 @@ export const DirectVisitLauncher: React.FC = () => {
 			anamnesis: "Соматически здоров. Аллергологический анамнез не отягощен. Хронические заболевания отрицает.",
 		}));
 	};
-
-	const fallbackAppLogic: any = useMemo(() => ({
-		dashboard,
-		activePatient,
-		activeDoctor,
-		odontogramUseSurfaces: true,
-		auth: { role: "owner" },
-		money: (rub: number) => `${rub.toLocaleString("ru-RU")} ₽`,
-	}), [dashboard, activePatient, activeDoctor]);
 
 	return (
 		<AppLogicProvider value={fallbackAppLogic}>

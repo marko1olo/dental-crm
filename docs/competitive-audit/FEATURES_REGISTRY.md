@@ -1,7 +1,7 @@
 # Главный Реестр Фич Конкурентов (IDENT, DentalPRO, iStom & StomX)
 
 > 🧭 **Навигация:** [🗺️ Главный Индекс (.agents/INDEX.md)](file:///C:/Clinic_MVP/dental-crm/.agents/INDEX.md) | [📚 Портал Документации (docs/README.md)](file:///C:/Clinic_MVP/dental-crm/docs/README.md) | [⚡ Библия StomX (STOMX_REVERSE_ENGINEERING_BIBLE.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/STOMX_REVERSE_ENGINEERING_BIBLE.md) | [📑 Бэклог (BACKLOG.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/BACKLOG.md) | [🗺️ Карта CRM (OUR_CRM_MAP.md)](file:///C:/Clinic_MVP/dental-crm/docs/competitive-audit/OUR_CRM_MAP.md)
-> ⚠️ **СТАТУС (2026-10-19 / WAVES 301–353 / ВОЛНА 353 РЕНТГЕНОЛОГИЧЕСКИЙ АРХИВ, ПРЯМОЙ ЗАХВАТ RVG VATECH/KAVO/PLANMECA, 1-КЛИК FDI ПРИВЯЗКА, ТЕМНЫЙ ХОЛСТ #090d16 И ФОНОВАЯ ДОЗИМЕТРИЯ САНПИН — 491 ФИЧА: 64 КАНОНИЧЕСКИЕ + 427 АДДЕНДУМ, ВСЕ 491 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
+> ⚠️ **СТАТУС (2026-11-06 / WAVES 301–354 / ВОЛНА 354 СКВОЗНОЙ КЛИНИЧЕСКИЙ E2E МАСТЕР-ЦИКЛ DENTE CRM — РАСПИСАНИЕ ЗА 5 СЕК БЕЗ ОБЯЗАТЕЛЬНОГО АССИСТЕНТА, ПРИЁМ У КРЕСЛА С АВТОЗАПОЛНЕНИЕМ НОРМЫ В 1 КЛИК, ОДОНТОГРАММА WHEELER 2.5D С КАРИЕСОМ 36 И ОККЛЮЗИЕЙ, СМЕТА В ЦЕЛЫХ КОПЕЙКАХ, КАССА 54-ФЗ СО СПЛИТ-ОПЛАТОЙ 50/50 БЕЗ ИНН ФИЗЛИЦА, УСТРАНЕНИЕ СБОЯ REACT RULES OF HOOKS В DIRECTVISITLAUNCHER И ПОЛНЫЙ 4-STATE VISUAL PROOF В DOCS/PROOFS/E2E_MASTER/ — 491 ФИЧА: 64 КАНОНИЧЕСКИЕ + 427 АДДЕНДУМ, ВСЕ 491 СО СТАТУСОМ [ДА] / [ЕСТЬ] / [ЗАКРЫТО], 100% ПАРИТЕТ).**
 
 
 | # | feature_key | Фича | Конкурент | Модуль | Что делает | Статус у нас | Ценность (1-5) | Внедрять? | Сложность | Приоритет | Доказательство (строки источника) |
