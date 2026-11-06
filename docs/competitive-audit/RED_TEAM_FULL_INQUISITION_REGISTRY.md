@@ -993,11 +993,18 @@
   - [`apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterFineTunePanel.tsx#L18-L81)
 - **Суть бага:** Заявленный модуль DSD — бутафория. Математика золотого сечения (1:1.618) и линий Риккетса существует только в тестах и не вызывается ни одним UI-компонентом. Оверлей направляющих (`IncisalAlignmentGuideOverlay.tsx`) содержит статичный SVG с захардкоженными координатами, заблокирован (`pointerEvents: 'none'`) и **вообще не импортируется ни в одном экране системы**! Панель точной подгонки крена зрачков и резцов — 100% несмонтированный сирота (Orphan Component).
 
-### [PHO-03] [SEV-1] Сохранение фотопротокола в localStorage браузера мимо PostgreSQL 18
+### [PHO-03] [ИСПРАВЛЕНО] Сохранение фотопротокола в localStorage браузера мимо PostgreSQL 18
 - **Файлы:**
-  - [`apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L70-L85`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts#L70-L85)
-  - [`apps/web/src/components/patients/workspaceModals/PatientClinicalPhotoModals.tsx#L76-L88`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/workspaceModals/PatientClinicalPhotoModals.tsx#L76-L88)
-- **Суть бага:** В PostgreSQL 18 нет таблицы `photo_protocols`. При сохранении из карты пациента протокол записывается в `localStorage` конкретного компьютера (`dente_photo_protocol_${patientId}`). Если на следующий день врач открывает карту пациента в другом кабинете клиники — сетка фотопротокола полностью пуста! А при сохранении из визита протокол принудительно затирает текст дневника ЭМК (`treatmentDescription`).
+  - [`apps/api/src/db/schema/clinical/visitsSchema.ts#L345-L384`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/clinical/visitsSchema.ts#L345-L384)
+  - [`apps/api/src/routes/patients/photoRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patients/photoRoutes.ts)
+  - [`apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/modal/usePhotoProtocolUpload.ts)
+  - [`apps/api/src/tests/routes/patientPhotoProtocolPersistence.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/patientPhotoProtocolPersistence.test.ts)
+- **Суть бага:** В PostgreSQL 18 не было таблицы `patient_photo_protocols`. При сохранении из карты пациента протокол записывался в `localStorage` конкретного компьютера. Если на следующий день врач открывал карту на другом ПК клиники — сетка была пуста.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В Drizzle ORM и физической PostgreSQL 18 создана таблица `patient_photo_protocols` с индексами `(organization_id, patient_id)` и `visit_id`.
+  2. Реализованы Fastify эндпоинты `GET/POST /api/patients/:patientId/photo-protocol` и `GET/POST /api/patients/:patientId/photos` с tenant isolation.
+  3. Хук `usePhotoProtocolUpload.ts` гидрирует состояние напрямую из БД и сохраняет мутации через Fastify API с локальным отказоустойчивым кэшем.
+  4. Проверено юнит-тестом `patientPhotoProtocolPersistence.test.ts` (4/4 passed).
 
 ### [PHO-04] [SEV-2] Утечка памяти сырыми Base64-строками в ортодонтии (Фриз браузера)
 - **Файлы:**
@@ -1005,26 +1012,48 @@
   - [`apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx#L68-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthodonticPhotoProtocolModal.tsx#L68-L82)
 - **Суть бага:** В ортодонтической модалке снимки читаются через `FileReader.readAsDataURL(file)` без сжатия. Фотографии по 25–40 МБ с зеркальной камеры раздувают кучу V8 до 400 МБ, вызывая фризы UI при перерисовке сетки. При этом отправки на сервер нет — снимки испаряются при закрытии вкладки.
 
-### [PHO-05] [SEV-2] Три разрозненных дубликата слайдера ДО/ПОСЛЕ без связи с планами лечения
+### [PHO-05] [ИСПРАВЛЕНО] Три разрозненных дубликата слайдера ДО/ПОСЛЕ без связи с планами лечения
 - **Файлы:**
-  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L16-L113`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L16-L113)
-  - [`apps/web/src/components/visit/BeforeAfterSplitter.tsx#L15-L100`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/BeforeAfterSplitter.tsx#L15-L100)
-  - [`apps/web/src/components/diagnostics/OrthoBeforeAfterComparison.tsx#L1-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/OrthoBeforeAfterComparison.tsx#L1-L60)
-- **Суть бага:** В системе напложено 3 независимых слайдера сравнения До/После, и ни один из них не подключен к презентации плана лечения и сметам. Компоненты экспорта клинического коллажа `BeforeAfterExportModal.tsx` и `PhotoCollageExportSheet.tsx` нигде не смонтированы и являются мертвым кодом.
+  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx)
+  - [`apps/web/src/components/visit/BeforeAfterSplitter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/BeforeAfterSplitter.tsx)
+  - [`apps/web/src/components/diagnostics/orthoModal/OrthoSliderSplitView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/diagnostics/orthoModal/OrthoSliderSplitView.tsx)
+  - [`apps/web/src/components/treatment-plans/presenterModules/PresenterHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/presenterModules/PresenterHeader.tsx)
+  - [`apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/treatment-plans/TreatmentPlanPresenterModal.tsx)
+- **Суть бага:** В системе было напложено 3 независимых слайдера сравнения До/После, и ни один из них не был подключен к презентации плана лечения и сметам.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. `BeforeAfterSplitSlider.tsx` утвержден как единый канонический SSOT с поддержкой гибких пропсов, клавиатурной навигации, сплита и переворота.
+  2. `BeforeAfterSplitter.tsx` (в визитах) и `OrthoSliderSplitView.tsx` (в ортодонтии) схлопнуты в тонкие фасады (<35 строк), напрямую делегирующие рендеринг SSOT `BeforeAfterSplitSlider`.
+  3. В шапку презентера планов лечения `PresenterHeader.tsx` и тело `TreatmentPlanPresenterModal.tsx` интегрирована вкладка «До / После» с живым сопоставлением результатов лечения для пациента.
+  4. Проверено тестом `photoProtocolSSOTAndEmptyStateInquisition.test.ts`.
 
-### [PHO-06] [SEV-2] Карикатурные векторные желтые зубы в пустом состоянии слайдера
+### [PHO-06] [ИСПРАВЛЕНО] Карикатурные векторные желтые зубы в пустом состоянии слайдера
 - **Файлы:**
-  - [`apps/web/src/components/photography/patientPresentationDemoData.ts#L8-L60`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/patientPresentationDemoData.ts#L8-L60)
-  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L29-L30`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx#L29-L30)
-- **Суть бага:** Если снимки еще не загружены, слайдер показывает пациенту на мониторе карикатурный желтый рисунок `DEMO_BEFORE_SMILE_SVG`. Нарушение Мандата 8c (Запрет моков и честный Empty State).
+  - [`apps/web/src/components/photography/patientPresentationDemoData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/patientPresentationDemoData.ts)
+  - [`apps/web/src/components/photography/BeforeAfterSplitSlider.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/BeforeAfterSplitSlider.tsx)
+- **Суть бага:** Если снимки еще не загружены, слайдер показывал пациенту на мониторе карикатурный желтый рисунок `DEMO_BEFORE_SMILE_SVG`. Нарушение Мандата 8c (Запрет моков и честный Empty State).
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Полностью ликвидирован карикатурный желтый рисунок с градиентами `#f5e6cb`/`#ecd1a7` из `patientPresentationDemoData.ts`.
+  2. Внедрен честный, строгий медицинский Empty State (`data-testid="before-after-empty-state"`) с клиническим пояснением, иконкой фотокамеры и разблокированной кнопкой загрузки.
+  3. Пруфы зафиксированы в `docs/proofs/photography/05_before_after_slider_pc_light_1440x900.png` и `06_before_after_slider_pc_dark_1440x900.png`.
 
-### [PHO-07] [SEV-3] Жестко зашитые метаданные в экспорте фотопротокола
-- **Файл:** [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L27`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L27)
-- **Суть бага:** Если номер карты не передан, на экспортируемых в зуботехническую лабораторию фотоколлажах печатается чужой номер карты «К-8492» и чужой врач «Д-р Смирнова Е. В.».
+### [PHO-07] [ИСПРАВЛЕНО] Жестко зашитые метаданные в экспорте фотопротокола
+- **Файлы:**
+  - [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)
+  - [`apps/web/src/components/photography/LabPhotoExportDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/LabPhotoExportDrawer.tsx)
+  - [`apps/web/src/components/patients/workspaceModals/PatientClinicalPhotoModals.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/workspaceModals/PatientClinicalPhotoModals.tsx)
+- **Суть бага:** Если номер карты не передан, на экспортируемых в зуботехническую лабораторию фотоколлажах печатался чужой номер карты «К-8492» и чужой врач «Д-р Смирнова Е. В.».
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Удален весь чужой хардкод «К-8492» и «Д-р Смирнова Е. В.» из `ClinicalPhotoProtocolModal.tsx` и `LabPhotoExportDrawer.tsx`.
+  2. Номер карты динамически формируется как `patientCardNumber` либо `К-${patientId.slice(0, 6).toUpperCase()}`, а имя врача берется из авторизованной сессии сотрудника (`doctorName || 'Лечащий врач'`).
+  3. Проброс `patientCardNumber` добавлен через цепочку `PatientClinicalPhotoModals.tsx`.
 
-### [PHO-08] [SEV-3] Слепая привязка файлов по индексу массива со сдвигом всей сетки
-- **Файл:** [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx#L59-L62)
-- **Суть бага:** При пакетной загрузке файлы раскладываются строго по `slots[i % length]`. Любой лишний дубль фото сдвигает всю сетку: окклюзионные снимки попадают в профиль лица, а портрет — в макросъемку резцов.
+### [PHO-08] [ИСПРАВЛЕНО] Слепая привязка файлов по индексу массива со сдвигом всей сетки
+- **Файл:** [`apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/photography/ClinicalPhotoProtocolModal.tsx)
+- **Суть бага:** При пакетной загрузке файлы раскладывались строго по `slots[i % length]`. Любой лишний дубль фото сдвигал всю сетку: окклюзионные снимки попадали в профиль лица, а портрет — в макросъемку резцов.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Ликвидирован слепой расчет по модулю длины `i % length`.
+  2. Внедрен семантический маппинг по ключевым словам в имени файла (`smile`/`улыб` -> портрет, `profile`/`профиль` -> профиль, `upper`/`верхн` -> верхняя дуга, `lower`/`нижн` -> нижняя дуга, `front`/`фронт`/`occlus` -> окклюзия).
+  3. Для файлов без ключевых слов последовательно заполняются только фактически пустые слоты `emptySlotIds.shift()`, исключая затирание уже отснятых ракурсов.
 
 
 ## 21. 🎁 ПРОГРАММА ЛОЯЛЬНОСТИ, БОНУСЫ, СЕМЕЙНЫЕ КОШЕЛЬКИ И RFM-МАРКЕТИНГ
@@ -1041,17 +1070,38 @@
   2. В `bonusRedemptionService.ts` добавлен запрос настроек программы лояльности `loyaltyPrograms` организации: списание бонусов ограничено установленным клиникой порогом (по умолчанию 30%), а 100% покрытие допускается только при явном ручном подтверждении врача.
   3. В `recordCrmPayment.ts` передается `allowFullCoverage: false`.
 
-### [LOY-02] [SEV-1] Фантомные бонусы в кассовом сплите: скидка даётся, но баллы не списываются
+### [LOY-02] [SEV-1] [ИСПРАВЛЕНО] Фантомные бонусы в кассовом сплите: скидка даётся, но баллы не списываются
 - **Файлы:**
-  - [`apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts#L36-L82`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts#L36-L82)
-  - [`apps/api/src/db/billing/paymentRecordExecutor.ts#L30-L75`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts#L30-L75)
-- **Суть бага:** В кассовом окне комбинированной оплаты сумма бонусов `splitBonusRub` вычитается из наличного долга пациента, но в API запрос отправляется **только текстовая приписка** `note: "бонусы 500 ₽"`. В теле запроса нет полей для бонусов, а эндпоинт `/api/loyalty/redeem` **вообще не вызывается**! Пациент получает скидку деньгами, а его бонусный баланс не уменьшается ни на один балл — бесконечный фантомный дисконт при каждом визите.
+  - [`apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/modal/payment/executionModules/splitSubmitExecutor.ts)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts)
+  - [`apps/web/src/components/finance/modal/payment/executionModules/paymentRequestTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/modal/payment/executionModules/paymentRequestTypes.ts)
+  - [`packages/shared/src/schemas/clinicScaleAndPreviewSchemas.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/schemas/clinicScaleAndPreviewSchemas.ts)
+  - [`apps/api/src/db/billing/paymentSplitValidation.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentSplitValidation.ts)
+  - [`apps/api/src/db/billing/paymentRecordExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts)
+- **Суть бага:** В кассовом окне комбинированной оплаты сумма бонусов вычиталась из наличного долга пациента, но в API запрос отправлялась только текстовая приписка `note: "бонусы 500 ₽"`, а бонусный баланс не списывался.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `createPaymentSchema` добавлены строго типизированные поля `bonusAmountKopecks`, `bonusAmountRub`, `pointsToRedeem`.
+  2. Во фронтенде (`splitSubmitExecutor.ts`, `recordCrmPayment.ts`, `paymentRequestTypes.ts`) списанные бонусы передаются в кассовый пейлоад в копейках (`amountKopecks`).
+  3. В `paymentSplitValidation.ts` добавлен расчет `resolvedBonusKop` и проверка баланса сплита с учетом баллов.
+  4. В `paymentRecordExecutor.ts` реализована Phase 1 Hold: блокировка баланса `patient_bonus_balances` под `FOR UPDATE` и проверка достаточного остатка баллов ДО проведения платежа.
+  5. Списание баллов фиксируется в `bonus_transactions` с типом `redemption_payment` и связкой с `paymentId`. Вставка платежа использует канонический enum метод `other`.
+  6. Проверено тестами `loyaltyMarketingInquisitionSuite.test.ts` (7/7 PASS) и `cashierSSOTSuite.test.tsx` (18/18 PASS).
 
-### [LOY-03] [SEV-1] Неатомарность кассы и бонусов: потеря баллов и скидок при сбоях сети
+### [LOY-03] [SEV-1] [ИСПРАВЛЕНО] Неатомарность кассы и бонусов: потеря баллов и скидок при сбоях сети
 - **Файлы:**
-  - [`apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L57-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/recordCrmPayment.ts#L57-L75)
-  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L43-L64`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts#L43-L64)
-- **Суть бага:** Списание бонусов оторвано от чека ККТ на несвязанные вызовы через `.catch(() => null)`. При сетевой ошибке после печати чека запрос на списание баллов молча глушится — пациент уходит со скидкой, не потратив баллы. Либо наоборот: если списать баллы до чека, а ККТ заклинило, баллы сгорают без фискализации услуги. В системе отсутствует обязательный паттерн **Two-Phase Hold/Commit** (блокировка баллов до ответа кассы).
+  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts)
+  - [`apps/api/src/routes/loyaltyModules/loyaltyLedgerRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltyLedgerRoutes.ts)
+  - [`apps/api/src/routes/loyaltyModules/loyaltySchemas.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltySchemas.ts)
+  - [`apps/api/src/db/billing/paymentRecordExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts)
+  - [`apps/api/src/db/billing/paymentCreationPipeline.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentCreationPipeline.ts)
+- **Суть бага:** Списание бонусов было оторвано от чека ККТ на несвязанные вызовы через `.catch(() => null)`. При сбоях сети происходил рассинхрон кассы и бонусного счета.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Реализован канонический протокол Two-Phase Hold:
+     - `POST /api/loyalty/hold`: резервирование баллов (`hold_payment`), перенос из `activePoints` в `pendingPoints` под `FOR UPDATE`.
+     - `POST /api/loyalty/confirm`: подтверждение списания после фискализации чека (`redemption_payment`, списание из `pendingPoints` в `lifetimeSpentPoints`).
+     - `POST /api/loyalty/release`: мгновенный откат резерва при ошибке ККТ / принтера (`hold_released`, возврат в `activePoints`).
+  2. В кассовом контуре `paymentRecordExecutor.ts` фазы проверки, блокировки и фиксации объединены в единую ACID транзакцию PostgreSQL 18.
+  3. В `paymentCreationPipeline.ts` добавлена защита от повторного списания через составной ключ идемпотентности `${input.clientMutationId}:bonus`.
 
 ### [LOY-04] [SEV-2] Бессмертные бонусы (Отсутствие фонового сгорания баллов по TTL)
 - **Файлы:**
@@ -1059,39 +1109,76 @@
   - [`apps/api/src/routes/loyaltyModules/bonusBalanceService.ts#L18-L62`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusBalanceService.ts#L18-L62)
 - **Суть бага:** В базе сохраняется поле `expiresAt` (на 180 дней), но во всем бэкенде **нет ни одного cron-задания или фонового воркера для сгорания баллов**. Колонка `lifetimeExpiredPoints` никогда не обновляется. Баллы пациентов живут вечно.
 
-### [LOY-05] [SEV-1] BOLA / IDOR уязвимость списания чужого семейного кошелька
+### [LOY-05] [SEV-1] [ИСПРАВЛЕНО] BOLA / IDOR уязвимость списания чужого семейного кошелька
 - **Файлы:**
-  - [`apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts#L20-L72`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts#L20-L72)
-  - [`apps/web/src/components/patients/family/familyWalletModal/useFamilySpendMutation.ts#L45-L71`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/patients/family/familyWalletModal/useFamilySpendMutation.ts#L45-L71)
-- **Суть бага:** Если клиент передает параметр `payerPatientId = walletOwnerId`, условие проверки прав `!isAuthorizerPayer` становится ложным, и вся валидация прав `canSpendFamilyWallet` **полностью пропускается**! Фронтенд автоматически подставляет `headPatientId` в этот параметр, позволяя любому члену семьи (включая детей и дальних родственников с запретом на списание) списать любые суммы с чужого депозита.
+  - [`apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/familyWallet/modules/familySpendAuthorization.ts)
+- **Суть бага:** При подстановке `payerPatientId = walletOwnerId` проверка прав `!isAuthorizerPayer` становилась ложной, позволяя любому лицу списать чужой семейный депозит.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Полностью ликвидирована дыра BOLA/IDOR в `familySpendAuthorization.ts`. Запрещен обход авторизации через подмену `payerPatientId`.
+  2. Проверка прав `canSpendFamilyWallet` выполняется СТРОГО для фактического пациента, получающего услугу, относительно главы семейного кошелька через таблицу `patient_relationships`.
+  3. Если родственник не имеет активного разрешения `canSpendFamilyWallet === true` (или родство не подтверждено), транзакция блокируется с ошибкой `403 Forbidden` (`FORBIDDEN_SPEND`).
+  4. Защищено тестом №3 и №4 в `loyaltyMarketingInquisitionSuite.test.ts`.
 
-### [LOY-06] [SEV-1] Списание семейного депозита в кассе без проверки родства
-- **Файл:** [`apps/api/src/db/billing/paymentRecordExecutor.ts#L295-L359`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts#L295-L359)
-- **Суть бага:** В кассовом маршруте `/api/finance/payments` списание баланса семейной группы `deductFamilyWalletBalance` **вообще не обращается к таблице `patient_relationships`** и не проверяет полномочия плательщика.
+### [LOY-06] [SEV-1] [ИСПРАВЛЕНО] Списание семейного депозита в кассе без проверки родства
+- **Файл:** [`apps/api/src/db/billing/paymentRecordExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts)
+- **Суть бага:** В кассовом маршруте `/api/finance/payments` списание баланса семейной группы `deductFamilyWalletBalance` вообще не обращалось к таблице `patient_relationships` и не проверяло полномочия плательщика.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `paymentRecordExecutor.ts` добавлена функция `verifyFamilySpendPermission`, которая в транзакции проверяет таблицу `patient_relationships` между `patientId` и владельцем семейного кошелька.
+  2. Списание депозита отклоняется до списания средств, если родство отсутствует или флаг `canSpendFamilyWallet` выключен.
 
-### [LOY-07] [SEV-1] Реферальные бонусы из воздуха (Опциональный платеж)
-- **Файл:** [`apps/api/src/routes/referrals.ts#L23-L27, L255-L284`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts#L23-L27)
-- **Суть бага:** Параметр `paymentId` в схеме `rewardFirstVisitBodySchema` объявлен как `.optional()`. Если он не передан, сумма `verifiedAmountRub` берется прямо из тела запроса без проверки платежа в базе данных! Сервер мгновенно начисляет 1000 баллов рефереру L1 и 300 баллов L2 из воздуха.
+### [LOY-07] [SEV-1] [ИСПРАВЛЕНО] Реферальные бонусы из воздуха (Опциональный платеж)
+- **Файл:** [`apps/api/src/routes/referrals.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts)
+- **Суть бага:** Параметр `paymentId` в схеме `rewardFirstVisitBodySchema` был опциональным. Бонусы начислялись из воздуха без подтверждения факта оплаты.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `rewardFirstVisitBodySchema` поле `paymentId` сделано строго обязательным UUID (`z.string().uuid()`).
+  2. В БД выполняется строгая проверка платежа: статус строго `paid`, принадлежность текущей организации `organizationId`, сумма берется из подтвержденного `payment.amountRub`.
+  3. Несуществующий или неоплаченный платеж возвращает `404 Not Found`.
 
-### [LOY-08] [SEV-1] Захардкоженные моки в роутах рефералов
-- **Файл:** [`apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts#L34-L83`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts#L34-L83)
-- **Суть бага:** Маршрут `GET /api/loyalty/referrals/:patientId` возвращает статичный массив с фейковым именем «Друг / Семья», `POST /register` симулирует регистрацию без записи в БД, а `POST /credit` начисляет бонусы без проверки факта визита.
+### [LOY-08] [SEV-1] [ИСПРАВЛЕНО] Захардкоженные моки в роутах рефералов
+- **Файл:** [`apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltyReferralRoutes.ts)
+- **Суть бага:** Маршрут `GET /api/loyalty/referrals/:patientId` возвращал статичный массив с фейковым именем «Друг / Семья», `POST /register` симулировал регистрацию без записи в БД, а `POST /credit` начислял бонусы без проверки платежа.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Выкошены все статические моки `ref-sample-...`.
+  2. `GET /api/loyalty/referrals/:patientId` выполняет реальный SQL JOIN между `patientReferrals` и `patients`.
+  3. `POST /api/loyalty/referrals/register` создает реальный реферальный код в `patientReferralCodes`.
+  4. `POST /api/loyalty/referrals/credit` валидирует реальный платеж в `payments` клиники и начисляет бонусы через `executeBonusAccrual`.
 
-### [LOY-09] [SEV-2] Коллизия 4-значных промокодов с падением в ошибку 500
-- **Файл:** [`apps/api/src/routes/referrals.ts#L29-L38, L74-L86`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts#L29-L38)
-- **Суть бага:** Реферальный код генерируется с 4 случайными цифрами (всего 9000 вариантов). При коллизии уникального индекса запрос падает с необработанным исключением 500 Internal Server Error (нет цикла ретрая). Диапазон позволяет мгновенно перебрать все коды клиники скриптом.
+### [LOY-09] [SEV-2] [ИСПРАВЛЕНО] Коллизия 4-значных промокодов с падением в ошибку 500
+- **Файл:** [`apps/api/src/routes/referrals.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/referrals.ts)
+- **Суть бага:** Реферальный код генерировался с 4 случайными цифрами (9000 вариантов). При коллизии уникального индекса запрос падал с ошибкой 500.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. `generateReferralCode` использует криптографический генератор `randomBytes(3).toString("hex").toUpperCase()` (16.7 млн уникальных комбинаций).
+  2. Добавлен цикл retry (до 5 попыток) с перехватом ошибки коллизии уникального индекса Postgres (код `23505`).
 
-### [LOY-10] [SEV-1] Статичные фейковые сегменты пациентов в маркетинговом дашборде
+### [LOY-10] [SEV-1] [ИСПРАВЛЕНО] Статичные фейковые сегменты пациентов в маркетинговом дашборде
 - **Файлы:**
-  - [`apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx#L40-L73`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx#L40-L73)
-  - [`apps/web/src/components/marketing/marketingSegmentsPresets.ts#L8-L33`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/marketing/marketingSegmentsPresets.ts#L8-L33)
-- **Суть бага:** На экране маркетинга выводятся захардкоженные числа: «142 спящих пациента», «48 пропустили гигиену», «240 активная база». Компонент даже не делает запрос к серверу — фальшивая диорама вместо реальной сегментации базы.
+  - [`apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/pages/marketingDashboardModules/MarketingSegmentsCohortCard.tsx)
+  - [`apps/web/src/components/marketing/marketingSegmentsPresets.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/marketing/marketingSegmentsPresets.ts)
+  - [`apps/api/src/services/marketing/marketingCohortService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/marketing/marketingCohortService.ts)
+  - [`apps/api/src/routes/marketing.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketing.ts)
+- **Суть бага:** На экране маркетинга выводились захардкоженные числа: «142 спящих пациента», «48 пропустили гигиену», «240 активная база».
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Из `marketingSegmentsPresets.ts` удалены захардкоженные числа (142, 48, 95, 240). Стартовые счетчики инициализируются в 0.
+  2. Создан канонический бэкенд-сервис `marketingCohortService.ts` с реальными SQL агрегатами к PostgreSQL 18:
+     - `no_visit_6m`: пациенты без завершенных приемов за последние 180 дней.
+     - `missed_hygiene`: пациенты с интервалом после профгигиены > 180 дней.
+     - `ortho_therapy`: пациенты на активных ортодонтических и терапевтических протоколах.
+  3. В `marketing.ts` зарегистрирован роут `GET /api/marketing/cohort-segments`.
+  4. В `MarketingSegmentsCohortCard.tsx` внедрена динамическая гидратация из API с реальным выводом количества пациентов в когортах.
 
-### [LOY-11] [SEV-2] Полное отсутствие трехмерной матрицы RFM (Frequency и Monetary)
+### [LOY-11] [SEV-2] [ИСПРАВЛЕНО] Полное отсутствие трехмерной матрицы RFM (Frequency и Monetary)
 - **Файлы:**
-  - [`apps/api/src/services/patients/recallCandidates.ts#L140-L337`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/patients/recallCandidates.ts#L140-L337)
-  - [`apps/api/src/routes/marketing.ts#L69-L245`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/marketing.ts#L69-L245)
-- **Суть бага:** Алгоритм recall-кандидатов учитывает только Recency (давность визита). Измерения Frequency (частота визитов) и Monetary (выручка и маржинальность пациента) в коде отсутствуют на 100%. VIP-пациент с чеком 500 000 ₽ сваливается в одну кучу со случайным посетителем на осмотр.
+  - [`apps/api/src/services/marketing/marketingCohortService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/marketing/marketingCohortService.ts)
+  - [`apps/api/src/services/patients/recallCandidates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/patients/recallCandidates.ts)
+  - [`packages/shared/src/recalls/recallCandidates.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/recalls/recallCandidates.ts)
+- **Суть бага:** Алгоритм реколла и маркетинга учитывал только Recency (давность визита). Frequency (частота визитов) и Monetary (суммарный чек в копейках) отсутствовали.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `marketingCohortService.ts` реализована полная 3D матрица RFM:
+     - **Recency**: количество дней с последнего визита.
+     - **Frequency**: количество визитов за последние 12 месяцев.
+     - **Monetary**: суммарный подтвержденный чек в копейках (`revenueKopecks`) из таблицы `payments`.
+  2. Сегментация на категории: `VIP` (выручка > 150 000 ₽ или > 5 визитов), `Loyal` (2–4 визита, выручка > 30 000 ₽), `Sleeping` (давность > 180 дней), `Lost` (давность > 365 дней), `New` (1 визит).
+  3. В `recallCandidates.ts` добавлены поля `frequencyPast12m`, `revenueKopecks`, `isVip`, `rfmSegment`. VIP-пациенты и крупные чеки получают наивысший приоритет в очереди звонков и уведомлений.
 
 
 ## 22. 👶 ДЕТСКАЯ СТОМАТОЛОГИЯ, МОЛОЧНЫЙ ПРИКУС (51–85) И ИНДЕКСЫ ГИГИЕНЫ

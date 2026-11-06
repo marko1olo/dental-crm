@@ -28,6 +28,7 @@ import { PresenterDoctorDiscountBar } from "./presenterModules/PresenterDoctorDi
 import { Presenter3TierGrid } from "./presenterModules/Presenter3TierGrid";
 import { PresenterStagesSection } from "./presenterModules/PresenterStagesSection";
 import { CashRegisterCheckoutModal } from "../billing/CashRegisterCheckoutModal";
+import { BeforeAfterSplitSlider } from "../photography/BeforeAfterSplitSlider";
 
 if (typeof window !== "undefined") {
 	void import("./treatmentPlans.css");
@@ -323,6 +324,21 @@ export const TreatmentPlanPresenterModal: React.FC<TreatmentPlanPresenterModalPr
 									Гарантийный срок: {activeTier?.warrantyYears} лет. Все манипуляции зафиксированы в медицинской карте приёма.
 								</div>
 							</div>
+						</div>
+					)}
+
+					{activeTab === "beforeAfter" && (
+						<div className="space-y-4 p-4 rounded-2xl bg-[var(--paper-soft)] border border-[var(--line)]" data-testid="presenter-before-after-tab-content">
+							<div className="flex items-center justify-between flex-wrap gap-2">
+								<div>
+									<h3 className="text-base font-bold text-[var(--ink)] m-0">Клиническое сопоставление До / После</h3>
+									<p className="text-xs text-[var(--muted)] m-0">Интерактивная демонстрация ожидаемого эстетического результата по плану лечения</p>
+								</div>
+							</div>
+							<BeforeAfterSplitSlider
+								beforeLabel="До лечения"
+								afterLabel={`План: ${activeTier?.title || "После"}`}
+							/>
 						</div>
 					)}
 				</main>

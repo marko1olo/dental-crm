@@ -342,6 +342,45 @@ export const visitExaminationPhotoLinks = pgTable(
 	}),
 );
 
+// patient photo protocols (clinical photo protocol sessions, Mandate 8aq / PHO-03)
+export const patientPhotoProtocols = pgTable(
+	"patient_photo_protocols",
+	{
+		id: uuid("id").primaryKey().default(sql`uuidv7()`),
+		organizationId: uuid("organization_id")
+			.notNull()
+			.references(() => organizations.id),
+		patientId: uuid("patient_id")
+			.notNull()
+			.references(() => patients.id, { onDelete: "cascade" }),
+		visitId: uuid("visit_id").references(() => visits.id, { onDelete: "set null" }),
+		presetId: text("preset_id").notNull().default("express_6_slots"),
+		slots: jsonb("slots").notNull().default({}),
+		stage: text("stage").default("before"),
+		notes: text("notes"),
+		createdAt: timestamp("created_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+		updatedAt: timestamp("updated_at", { withTimezone: true })
+			.notNull()
+			.defaultNow(),
+	},
+	(t) => ({
+		organizationIdIdx: index(
+			"patient_photo_protocols_organizationId_idx",
+		).on(t.organizationId),
+		patientIdIdx: index(
+			"patient_photo_protocols_patient_id_idx",
+		).on(t.patientId),
+		visitIdIdx: index(
+			"patient_photo_protocols_visit_id_idx",
+		).on(t.visitId),
+		orgPatientIdx: index(
+			"patient_photo_protocols_org_patient_idx",
+		).on(t.organizationId, t.patientId),
+	}),
+);
+
 // protocol templates (visit protocol / clinical workflow templates)
 export const protocolTemplates = pgTable(
 	"protocol_templates",

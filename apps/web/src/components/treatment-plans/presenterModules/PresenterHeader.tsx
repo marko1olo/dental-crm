@@ -8,7 +8,7 @@
 import React from "react";
 import { Sparkles, Printer, Copy, Minimize2, Maximize2, X, Calculator, Send } from "lucide-react";
 
-export type PresenterModalTab = "comparison" | "stages" | "print";
+export type PresenterModalTab = "comparison" | "stages" | "print" | "beforeAfter";
 
 export interface PresenterHeaderProps {
 	readonly patientName: string;
@@ -160,6 +160,18 @@ export const PresenterHeader: React.FC<PresenterHeaderProps> = ({
 						data-testid="tab-print-preview"
 					>
 						Сводка для договора
+					</button>
+					<button
+						type="button"
+						onClick={() => onTabChange("beforeAfter")}
+						className={`min-h-[44px] sm:min-h-[36px] px-4 rounded-xl text-xs sm:text-sm font-bold whitespace-nowrap shrink-0 transition-all cursor-pointer ${
+							activeTab === "beforeAfter"
+								? "bg-[var(--paper)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
+								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--line-subtle)]"
+						}`}
+						data-testid="tab-before-after"
+					>
+						До / После
 					</button>
 					<button
 						type="button"

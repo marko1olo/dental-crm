@@ -23,6 +23,7 @@ export interface PatientClinicalPhotoModalsProps {
 	setIsCbctModalOpen: (v: boolean) => void;
 	patientId: string;
 	patientName?: string | null | undefined;
+	patientCardNumber?: string | undefined;
 	doctorName?: string | undefined;
 	clinicName?: string | undefined;
 	isEffectivePhotoProtocolOpen: boolean;
@@ -39,6 +40,7 @@ export const PatientClinicalPhotoModals: React.FC<PatientClinicalPhotoModalsProp
 	setIsCbctModalOpen,
 	patientId,
 	patientName,
+	patientCardNumber,
 	doctorName,
 	clinicName,
 	isEffectivePhotoProtocolOpen,
@@ -82,6 +84,7 @@ export const PatientClinicalPhotoModals: React.FC<PatientClinicalPhotoModalsProp
 						}}
 						patientId={patientId}
 						patientName={patientName || undefined}
+						patientCardNumber={patientCardNumber}
 						doctorName={doctorName}
 						clinicName={clinicName}
 					/>
@@ -98,6 +101,7 @@ export const PatientClinicalPhotoModals: React.FC<PatientClinicalPhotoModalsProp
 						}}
 						patientId={patientId}
 						patientName={patientName || undefined}
+						patientCardNumber={patientCardNumber}
 						doctorName={doctorName}
 						clinicName={clinicName}
 					/>

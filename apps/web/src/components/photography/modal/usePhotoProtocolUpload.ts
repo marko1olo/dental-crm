@@ -5,14 +5,29 @@ import { showToast } from '../../GlobalToast';
 import { denteAdminSecretRequestHeaders } from '../../../lib/denteRequestHeaders';
 
 export interface UsePhotoProtocolUploadProps {
-	patientId?: string | undefined; visitId?: string | undefined; toothCode?: string | number | undefined;
-	initialSlots?: Record<string, PhotoSlotRecord> | undefined; initialPresetId?: string | undefined;
+	patientId?: string | undefined;
+	visitId?: string | undefined;
+	toothCode?: string | number | undefined;
+	initialSlots?: Record<string, PhotoSlotRecord> | undefined;
+	initialPresetId?: string | undefined;
 	onSaveProtocol?: ((slots: Record<string, PhotoSlotRecord>, presetId: string) => void) | undefined;
 	onClose: () => void;
 }
 
-export function usePhotoProtocolUpload(props: UsePhotoProtocolUploadProps, externalBlobUrlsRef?: React.MutableRefObject<Set<string>>) {
-	const { patientId, visitId, toothCode, initialSlots = {}, initialPresetId, onSaveProtocol, onClose } = props;
+export function usePhotoProtocolUpload(
+	props: UsePhotoProtocolUploadProps,
+	externalBlobUrlsRef?: React.MutableRefObject<Set<string>>,
+) {
+	const {
+		patientId,
+		visitId,
+		toothCode,
+		initialSlots = {},
+		initialPresetId,
+		onSaveProtocol,
+		onClose,
+	} = props;
+
 	const [activePreset, setActivePreset] = useState<PhotoProtocolPreset>(() =>
 		initialPresetId ? getPresetById(initialPresetId) : EXPRESS_6_SLOT_PROTOCOL,
 	);
@@ -22,6 +37,7 @@ export function usePhotoProtocolUpload(props: UsePhotoProtocolUploadProps, exter
 		for (const [k, v] of Object.entries(seeded)) if (!v.toothCode) seeded[k] = { ...v, toothCode };
 		return seeded;
 	});
+	const [isSaving, setIsSaving] = useState(false);
 	const [activeViewMode, setActiveViewMode] = useState<'grid' | 'comparison' | 'export'>('grid');
 	const [activeFilter, setActiveFilter] = useState<'all' | 'extraoral' | 'intraoral'>('all');
 	const [selectedSlotForEdit, setSelectedSlotForEdit] = useState<string | null>(null);
@@ -31,6 +47,51 @@ export function usePhotoProtocolUpload(props: UsePhotoProtocolUploadProps, exter
 	const fallbackBlobUrlsRef = useRef<Set<string>>(new Set());
 	const createdBlobUrlsRef = externalBlobUrlsRef || fallbackBlobUrlsRef;
 
+	// Гидратация сохраненного фотопротокола из PostgreSQL 18 через Fastify API (Мандат 8aq / PHO-03)
+	useEffect(() => {
+		if (!patientId || Object.keys(initialSlots).length > 0) return;
+		let isCancelled = false;
+
+		const fetchSavedProtocol = async () => {
+			try {
+				const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
+					headers: denteAdminSecretRequestHeaders(),
+				});
+				if (!res.ok) return;
+				const data = await res.json();
+				if (isCancelled || !data?.protocol?.slots) return;
+
+				const loadedSlots = data.protocol.slots as Record<string, PhotoSlotRecord>;
+				setSlotsData((prev) => {
+					// Не затираем если пользователь уже добавил снимки у кресла
+					if (Object.keys(prev).length > 0) return { ...loadedSlots, ...prev };
+					return loadedSlots;
+				});
+
+				if (data.protocol.presetId && !initialPresetId) {
+					setActivePreset(getPresetById(data.protocol.presetId));
+				}
+			} catch (err) {
+				// В офлайн-режиме мягко пробуем localStorage
+				try {
+					const cached = localStorage.getItem(`dente_photo_protocol_${patientId}`);
+					if (cached && !isCancelled) {
+						const parsed = JSON.parse(cached);
+						if (parsed.slots) setSlotsData(parsed.slots);
+						if (parsed.presetId && !initialPresetId) setActivePreset(getPresetById(parsed.presetId));
+					}
+				} catch {
+					// ignore
+				}
+			}
+		};
+
+		void fetchSavedProtocol();
+		return () => {
+			isCancelled = true;
+		};
+	}, [patientId, initialSlots, initialPresetId]);
+
 	useEffect(() => () => {
 		if (!externalBlobUrlsRef) {
 			createdBlobUrlsRef.current.forEach((u) => URL.revokeObjectURL(u));
@@ -39,7 +100,10 @@ export function usePhotoProtocolUpload(props: UsePhotoProtocolUploadProps, exter
 	}, [externalBlobUrlsRef, createdBlobUrlsRef]);
 
 	const updateSlotRecord = useCallback((slotId: string, updates: Partial<PhotoSlotRecord>) => {
-		setSlotsData((prev) => ({ ...prev, [slotId]: { ...(prev[slotId] || { slotId, ...(toothCode ? { toothCode } : {}) }), ...updates } }));
+		setSlotsData((prev) => ({
+			...prev,
+			[slotId]: { ...(prev[slotId] || { slotId, ...(toothCode ? { toothCode } : {}) }), ...updates },
+		}));
 	}, [toothCode]);
 
 	const uploadPhotoToBackend = useCallback(async (slotId: string, blob: Blob, rawFilename: string) => {
@@ -50,7 +114,9 @@ export function usePhotoProtocolUpload(props: UsePhotoProtocolUploadProps, exter
 			fd.append('file', blob, rawFilename.endsWith('.webp') ? rawFilename : `${rawFilename}.webp`);
 			const res = await fetch(url, { method: 'POST', headers: denteAdminSecretRequestHeaders(), body: fd });
 			return res.ok ? ((await res.json())?.file?.url || null) : null;
-		} catch { return null; }
+		} catch {
+			return null;
+		}
 	}, [visitId, patientId]);
 
 	const handleUpload = async (slotId: string, file: File) => {
@@ -67,27 +133,78 @@ export function usePhotoProtocolUpload(props: UsePhotoProtocolUploadProps, exter
 		}
 	};
 
-	const handleSaveProtocol = useCallback(() => {
+	const handleSaveProtocol = useCallback(async () => {
+		setIsSaving(true);
+		let persistedInDb = false;
+
+		// 1. Персистентность в PostgreSQL 18 через Fastify API (Мандат 8aq / PHO-03)
+		if (patientId) {
+			try {
+				const res = await fetch(`/api/patients/${patientId}/photo-protocol`, {
+					method: 'POST',
+					headers: {
+						...denteAdminSecretRequestHeaders(),
+						'Content-Type': 'application/json',
+					},
+					body: JSON.stringify({
+						presetId: activePreset.id,
+						slots: slotsData,
+						visitId: visitId || null,
+						stage: 'before',
+					}),
+				});
+				if (res.ok) {
+					persistedInDb = true;
+				}
+			} catch (e) {
+				console.warn('Network issue saving photo protocol to Fastify API, falling back to local cache', e);
+			}
+		}
+
+		// 2. Офлайн-бэкап и события для совместимости call sites
+		try {
+			localStorage.setItem(`dente_photo_protocol_${patientId || 'chairside'}`, JSON.stringify({
+				presetId: activePreset.id,
+				slots: slotsData,
+				savedAt: new Date().toISOString(),
+				persistedInDb,
+			}));
+			window.dispatchEvent(new CustomEvent('dente-photo-protocol-saved', {
+				detail: { patientId, visitId, slots: slotsData, presetId: activePreset.id, persistedInDb },
+			}));
+		} catch (e) {
+			console.warn('Failed to persist photo protocol to localStorage', e);
+		}
+
 		if (onSaveProtocol) {
 			onSaveProtocol(slotsData, activePreset.id);
-		} else {
-			try {
-				localStorage.setItem(`dente_photo_protocol_${patientId || 'chairside'}`, JSON.stringify({
-					presetId: activePreset.id, slots: slotsData, savedAt: new Date().toISOString(),
-				}));
-				window.dispatchEvent(new CustomEvent('dente-photo-protocol-saved', {
-					detail: { patientId, visitId, slots: slotsData, presetId: activePreset.id },
-				}));
-			} catch (e) { console.warn('Failed to persist photo protocol to localStorage', e); }
 		}
-		showToast('Клинический фотопротокол сохранён', 'success', 3000);
+
+		setIsSaving(false);
+		showToast(persistedInDb ? 'Клинический фотопротокол сохранён в базе данных' : 'Фотопротокол сохранён локально', 'success', 3000);
 		onClose();
 	}, [onSaveProtocol, slotsData, activePreset.id, patientId, visitId, onClose]);
 
 	return {
-		activePreset, setActivePreset, slotsData, setSlotsData, activeViewMode, setActiveViewMode,
-		activeFilter, setActiveFilter, selectedSlotForEdit, setSelectedSlotForEdit,
-		dragOverSlotId, setDragOverSlotId, fileInputRef, currentSlotRef, createdBlobUrlsRef,
-		updateSlotRecord, uploadPhotoToBackend, handleUpload, handleSaveProtocol,
+		activePreset,
+		setActivePreset,
+		slotsData,
+		setSlotsData,
+		isSaving,
+		activeViewMode,
+		setActiveViewMode,
+		activeFilter,
+		setActiveFilter,
+		selectedSlotForEdit,
+		setSelectedSlotForEdit,
+		dragOverSlotId,
+		setDragOverSlotId,
+		fileInputRef,
+		currentSlotRef,
+		createdBlobUrlsRef,
+		updateSlotRecord,
+		uploadPhotoToBackend,
+		handleUpload,
+		handleSaveProtocol,
 	};
 }

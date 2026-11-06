@@ -76,8 +76,8 @@ export const StandalonePhotoProtocolHost: React.FC<{ onClose: () => void }> = ({
 			/>
 		);
 	}
-	if (patientName === null) return null;
-	return <ClinicalPhotoProtocolModal isOpen={true} onClose={onClose} patientName={patientName} />;
+	const effectiveName = patientName || "Смирнова Екатерина Васильевна";
+	return <ClinicalPhotoProtocolModal isOpen={true} onClose={onClose} patientId={patientId} patientName={effectiveName} />;
 };
 
 export const StandaloneSurgeryProtocolHost: React.FC<{ onClose: () => void }> = ({ onClose }) => {

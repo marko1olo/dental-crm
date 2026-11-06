@@ -19,8 +19,8 @@ export const LabPhotoExportDrawer: React.FC<LabPhotoExportDrawerProps> = ({
 	slotsData,
 	clinicName = 'DENTE CLINIC',
 	patientName = '',
-	patientCardNumber = 'К-8492',
-	doctorName = 'Д-р Смирнова Е. В.',
+	patientCardNumber = 'Медкарта',
+	doctorName = 'Лечащий врач',
 }) => {
 	const [selectedShade, setSelectedShade] = useState('A2');
 	const [labComment, setLabComment] = useState('Фронтальная реставрация. Воспроизвести микрорельеф и прозрачный режущий край.');
