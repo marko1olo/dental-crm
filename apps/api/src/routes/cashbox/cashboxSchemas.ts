@@ -117,7 +117,13 @@ export const cashboxPaymentRequestSchema = z.object({
 	note: z.string().trim().max(500).optional(),
 	isElectronicReceiptOnly: z.boolean().optional(),
 	customerContact: z.string().trim().max(128).optional(),
-	clientType: z.string().trim().optional(),
-	buyerInn: z.string().trim().optional(),
+	clientType: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
+	buyerInn: z.preprocess(
+		(val) => (typeof val === "string" && val.trim() === "" ? null : val),
+		z.string().trim().optional().nullable(),
+	),
 	printFormat: z.string().trim().optional(),
 });

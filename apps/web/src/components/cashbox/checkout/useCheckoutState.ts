@@ -238,7 +238,11 @@ export function useCheckoutState(props: CashRegisterCheckoutModalProps) {
 			onSuccess?.(paymentData);
 			onPaymentComplete?.(paymentData);
 			setTimeout(onClose, 800);
-		} catch {
+		} catch (err: unknown) {
+			const errorMsg =
+				err instanceof Error
+					? err.message
+					: "Сетевой сбой при связи с кассой. Проверьте подключение и повторите.";
 			if (isDemoShowcaseMode() || isDemoPatientId(patientId)) {
 				const fallbackData = { ...payload, status: isWarrantyCase ? "paid_warranty" : "paid" };
 				setReceiptSuccess(fallbackData);
@@ -248,7 +252,7 @@ export function useCheckoutState(props: CashRegisterCheckoutModalProps) {
 				setTimeout(onClose, 800);
 				return;
 			}
-			setErrorMessage("Сетевой сбой при связи с кассой. Проверьте подключение и повторите.");
+			setErrorMessage(errorMsg);
 			setIsSubmitting(false);
 		}
 	};

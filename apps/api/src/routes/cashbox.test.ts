@@ -431,6 +431,37 @@ describe("Cashbox payment honesty rails (honest attribution & zero-amount ban)",
 			assert.equal(isWarrantyJson.success, true);
 			assert.equal(isWarrantyJson.data.status, "paid_warranty");
 			assert.equal(isWarrantyJson.data.isWarranty, true);
+
+			// 8. Передача пустого buyerInn (пустая строка, null, undefined) не вызывает 400 ValidationError
+			const emptyInnRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 500,
+					method: "cash",
+					clientType: "physical_person",
+					buyerInn: "",
+					clientMutationId: `cbx-test-empty-inn-${Date.now()}`,
+				},
+			});
+			assert.equal(emptyInnRes.statusCode, 200, "Empty buyerInn string must pass Zod validation");
+
+			const nullInnRes = await app.inject({
+				method: "POST",
+				url: base,
+				headers,
+				payload: {
+					patientId,
+					amountRub: 500,
+					method: "card",
+					clientType: null,
+					buyerInn: null,
+					clientMutationId: `cbx-test-null-inn-${Date.now()}`,
+				},
+			});
+			assert.equal(nullInnRes.statusCode, 200, "null buyerInn and clientType must pass Zod validation");
 		} finally {
 			await purgeFixtureOrganizations([orgId]);
 		}

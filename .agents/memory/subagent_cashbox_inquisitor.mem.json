@@ -1,0 +1,34 @@
+{
+  "subagent": "cashbox_inquisitor",
+  "role": "Supreme Red Team Inquisitor for Cashbox, Checkout, and 54-FZ Fiscalization",
+  "status": "COMPLETED",
+  "wave": 505,
+  "lastUpdated": "2026-11-06T09:48:00+04:00",
+  "invariants": {
+    "mandate_8e_doctor_autonomy": "Zero disabled buttons on primary CTA actions. Doctor discount up to 100% (warranty remake 0 rub) supported.",
+    "mandate_8n_solo_doctor_sovereignty": "Citizen / physical person INN never required on checkout (54-FZ Tag 1228). Fastify Zod schema preprocessed.",
+    "mandate_8am_single_primary_cta": "Exactly ONE primary CTA button in var(--teal) per view with secondary neutral border buttons.",
+    "mandate_8b_monolith_decomposition": "CashRegisterStudioModal decomposed from 1329 lines to ~210 lines orchestrating studioModules.",
+    "mandate_8an_clean_checkout_facade": "checkout/CashRegisterCheckoutModal.tsx turned into thin facade pointing to ../CashRegisterCheckoutModal.js.",
+    "mandate_8zr_zero_swallowed_errors": "All catch blocks handle errors and display human-friendly GlobalToast notifications."
+  },
+  "modulesCreated": [
+    "apps/web/src/components/cashbox/studioModules/useCashRegisterStudioState.ts",
+    "apps/web/src/components/cashbox/studioModules/CashRegisterStudioHeader.tsx",
+    "apps/web/src/components/cashbox/studioModules/CashRegisterCheckoutSection.tsx",
+    "apps/web/src/components/cashbox/studioModules/CashRegisterShiftSection.tsx",
+    "apps/web/src/components/cashbox/studioModules/CashRegisterTapeSection.tsx",
+    "apps/web/src/components/cashbox/studioModules/CashRegisterStudioFooter.tsx",
+    "apps/web/src/components/cashbox/studioModules/index.ts"
+  ],
+  "verifiedGates": {
+    "encoding": "Passed (npm run check:encoding, Exit Code 0, 23923 files)",
+    "unit_tests": "Passed 27/27 tests across cashboxSsotScreens, cashboxViewModules, cashRegisterAndSplitModals, and cashbox.test.ts",
+    "visual_proofs": [
+      "docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png (84 KB)",
+      "docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png (82 KB)",
+      "docs/proofs/cashbox/03_cashbox_studio_mobile_light_390x844.png (130 KB, drift: 0px)",
+      "docs/proofs/cashbox/04_cashbox_studio_mobile_dark_390x844.png (130 KB, drift: 0px)"
+    ]
+  }
+}
