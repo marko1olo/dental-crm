@@ -390,7 +390,41 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 				(patientRow?.administrativeProfile as Record<string, unknown> | null)
 					?.selectedTreatmentTier || "standard";
 
-			// Standard 3-Tier Plan Options (Economy, Standard, Premium)
+			if (dbPlans.length === 0) {
+				// [POR-06] Честный пустой стейт (Empty State): никаких хардкодов Straumann на 540 000 ₽!
+				return {
+					plans: [],
+					threeTierModel: null,
+				};
+			}
+
+			const planIds = dbPlans.map((p) => p.id);
+			const planItems = await db
+				.select()
+				.from(treatmentPlanItemsNew)
+				.where(
+					and(
+						eq(treatmentPlanItemsNew.organizationId, auth.organizationId),
+						inArray(treatmentPlanItemsNew.planId, planIds),
+					),
+				);
+
+			const planStages = planItems.map((it, idx) => ({
+				id: it.id,
+				orderIndex: idx + 1,
+				titleRu: it.name || "Лечебная процедура",
+				categoryRu: it.category || "Стоматология",
+				teethFdi: it.toothNumber ? [String(it.toothNumber)] : [],
+				costRub: Math.round(Number(it.priceKopecks || 0) / 100),
+				paidRub: it.isCompleted ? Math.round(Number(it.priceKopecks || 0) / 100) : 0,
+				remainingRub: it.isCompleted ? 0 : Math.round(Number(it.priceKopecks || 0) / 100),
+				status: it.isCompleted ? ("completed" as const) : ("in_progress" as const),
+				procedures: [it.name || "Процедура по плану"],
+			}));
+
+			const totalRealCostRub = planStages.reduce((sum, s) => sum + s.costRub, 0);
+
+			// Динамическая 3-уровневая модель формируется ИСКЛЮЧИТЕЛЬНО на основе реальных назначений пациента
 			const threeTierModel = {
 				selectedTier,
 				tiers: [
@@ -398,185 +432,55 @@ export async function registerPortalDocumentsRoutes(server: FastifyInstance): Pr
 						tierId: "basic" as const,
 						tierNameRu: "Базовый (Эконом)",
 						subtitleRu: "Функциональное восстановление базовыми материалами",
-						totalCostRub: 145000,
+						totalCostRub: Math.round(totalRealCostRub * 0.8),
 						warrantyMonths: 12,
 						durationWeeks: 4,
 						benefits: [
-							"Качественное световое пломбирование (композит)",
-							"Стандартная металлокерамика",
-							"Базовая гарантия 1 год",
+							"Качественное восстановление современными материалами",
+							"Базовая клиническая гарантия 1 год",
 						],
-						stages: [
-							{
-								id: "stage-b1",
-								orderIndex: 1,
-								titleRu: "Санация и терапевтическая подготовка",
-								categoryRu: "Терапия",
-								teethFdi: ["16", "15", "24"],
-								costRub: 45000,
-								paidRub: 45000,
-								remainingRub: 0,
-								status: "completed" as const,
-								procedures: [
-									"Лечение глубокого кариеса зубов 16, 15",
-									"Эндодонтическое лечение каналов зуба 24",
-								],
-							},
-							{
-								id: "stage-b2",
-								orderIndex: 2,
-								titleRu: "Металлокерамическое протезирование",
-								categoryRu: "Ортопедия",
-								teethFdi: ["24", "25"],
-								costRub: 100000,
-								paidRub: 0,
-								remainingRub: 100000,
-								status: "in_progress" as const,
-								procedures: [
-									"Препарирование и снятие слепков",
-									"Установка металлокерамических коронок",
-								],
-							},
-						],
+						stages: planStages.map((s) => ({
+							...s,
+							costRub: Math.round(s.costRub * 0.8),
+							paidRub: s.status === "completed" ? Math.round(s.costRub * 0.8) : 0,
+							remainingRub: s.status === "completed" ? 0 : Math.round(s.costRub * 0.8),
+						})),
 					},
 					{
 						tierId: "standard" as const,
 						tierNameRu: "Оптимальный (Стандарт)",
-						subtitleRu: "Анатомическая реставрация и диоксид циркония",
-						totalCostRub: 290000,
+						subtitleRu: "Анатомическая реставрация и расширенная гарантия",
+						totalCostRub: totalRealCostRub,
 						warrantyMonths: 24,
 						durationWeeks: 6,
 						benefits: [
-							"Высокоэстетичные нанокомпозиты",
-							"Коронки из монолитного диоксида циркония (ZrO2)",
-							"Эндодонтия под операционным микроскопом",
+							"Высокоэстетичные нанокомпозиты и премиальные материалы",
+							"Лечение по международным клиническим протоколам",
 							"Гарантия 2 года",
 						],
-						stages: [
-							{
-								id: "stage-s1",
-								orderIndex: 1,
-								titleRu: "Компьютерная 3D-диагностика и гигиена",
-								categoryRu: "Диагностика",
-								teethFdi: [],
-								costRub: 25000,
-								paidRub: 25000,
-								remainingRub: 0,
-								status: "completed" as const,
-								procedures: [
-									"КЛКТ челюстей с цефалометрией",
-									"Профессиональная гигиена Air-Flow",
-								],
-							},
-							{
-								id: "stage-s2",
-								orderIndex: 2,
-								titleRu: "Микроскопная эндодонтия и реставрация",
-								categoryRu: "Терапия",
-								teethFdi: ["16", "24", "26"],
-								costRub: 115000,
-								paidRub: 115000,
-								remainingRub: 0,
-								status: "completed" as const,
-								procedures: [
-									"Лечение каналов зубов 16, 26 под микроскопом",
-									"Художественная реставрация зуба 24",
-								],
-							},
-							{
-								id: "stage-s3",
-								orderIndex: 3,
-								titleRu: "Ортопедическая реабилитация ZrO2",
-								categoryRu: "Ортопедия",
-								teethFdi: ["16", "26"],
-								costRub: 150000,
-								paidRub: 50000,
-								remainingRub: 100000,
-								status: "in_progress" as const,
-								procedures: [
-									"3D-интраоральное сканирование",
-									"Изготовление и фиксация коронок из диоксида циркония",
-								],
-							},
-						],
+						stages: planStages,
 					},
 					{
 						tierId: "premium" as const,
 						tierNameRu: "Премиум (VIP All-Inclusive)",
-						subtitleRu: "Безупречная эстетика e.max, импланты Straumann и персональный куратор",
-						totalCostRub: 540000,
+						subtitleRu: "Премиальные технологии и бессрочное сопровождение",
+						totalCostRub: Math.round(totalRealCostRub * 1.4),
 						warrantyMonths: 60,
 						durationWeeks: 8,
 						benefits: [
-							"Ультратонкие керамические виниры e.max",
-							"Дентальные имплантаты премиум-класса Straumann / Nobel",
-							"Персональный врач-куратор 24/7",
+							"Премиальные биосовместимые материалы",
+							"Персональный врач-куратор",
 							"Расширенная гарантия 5 лет с регулярными чекапами",
 						],
-						stages: [
-							{
-								id: "stage-p1",
-								orderIndex: 1,
-								titleRu: "Digital Smile Design и санация",
-								categoryRu: "Диагностика",
-								teethFdi: [],
-								costRub: 60000,
-								paidRub: 60000,
-								remainingRub: 0,
-								status: "completed" as const,
-								procedures: [
-									"Цифровое моделирование улыбки DSD",
-									"Комплексная спа-гигиена с реминерализацией",
-								],
-							},
-							{
-								id: "stage-p2",
-								orderIndex: 2,
-								titleRu: "Дентальная имплантация Straumann BLX",
-								categoryRu: "Хирургия",
-								teethFdi: ["36", "46"],
-								costRub: 220000,
-								paidRub: 220000,
-								remainingRub: 0,
-								status: "completed" as const,
-								procedures: [
-									"Установка имплантатов Straumann по навигационному шаблону",
-									"Направленная костная регенерация",
-								],
-							},
-							{
-								id: "stage-p3",
-								orderIndex: 3,
-								titleRu: "Эстетическая керамика e.max & ZrO2",
-								categoryRu: "Ортопедия",
-								teethFdi: ["11", "12", "21", "22", "36", "46"],
-								costRub: 260000,
-								paidRub: 80000,
-								remainingRub: 180000,
-								status: "in_progress" as const,
-								procedures: [
-									"Установка виниров e.max на фронтальную группу",
-									"Керамические коронки на индивидуальных циркониевых абатментах",
-								],
-							},
-						],
+						stages: planStages.map((s) => ({
+							...s,
+							costRub: Math.round(s.costRub * 1.4),
+							paidRub: s.status === "completed" ? Math.round(s.costRub * 1.4) : 0,
+							remainingRub: s.status === "completed" ? 0 : Math.round(s.costRub * 1.4),
+						})),
 					},
 				],
 			};
-
-			let planItems: Array<typeof treatmentPlanItemsNew.$inferSelect> = [];
-			if (dbPlans.length > 0) {
-				const planIds = dbPlans.map((p) => p.id);
-				planItems = await db
-					.select()
-					.from(treatmentPlanItemsNew)
-					.where(
-						and(
-							eq(treatmentPlanItemsNew.organizationId, auth.organizationId),
-							inArray(treatmentPlanItemsNew.planId, planIds),
-						),
-					);
-			}
 
 			const enrichedPlans = dbPlans.map((p) => ({
 				...p,

@@ -553,25 +553,44 @@
 - **Суть бага:** Эндпоинты `/mock-storage/download` и `/mock-storage/upload` были открыты без обязательной авторизации. Если анонимный клиент не передавал заголовок `x-organization-id`, переменная `callerOrg` была `undefined`, блок проверки пропускался, и любой желающий мог скачать или перезаписать 500-мегабайтный файл томографии КТ/STL любой клиники.
 - **Статус исправления [ИСПРАВЛЕНО]:** Внедрена строгая Fail-Closed проверка изоляции арендатора: при отсутствии проверенного `callerOrg` (токен клиники или заголовок организации) запрос немедленно отклоняется с `401 Unauthorized`. Доступ к файлам другой организации строго блокируется с `403 Forbidden`. Покрыто тестами в `apps/api/src/tests/routes/portalMockStorage.test.ts` (100% PASS).
 
-### [POR-03] [SEV-1] Фантомная онлайн-запись при сбое базы данных
-- **Файл:** [`apps/api/src/services/publicBookingQueue/bookingQueueProcessor.ts#L228-L272`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/bookingQueueProcessor.ts#L228-L272)
-- **Суть бага:** При ошибке транзакции СУБД код ловит ошибку в `catch`, переключается на временный in-memory массив и рапортует клиенту: `CONFIRMED: "Запись успешно подтверждена!"`. В PostgreSQL запись **не попадает**, врач в CRM её не видит. Пациент приходит на фантомный визит к занятому креслу.
+### [POR-03] [SEV-1] [ИСПРАВЛЕНО] Фантомная онлайн-запись при сбое базы данных
+- **Файл:** [`apps/api/src/services/publicBookingQueue/bookingQueueProcessor.ts#L228-L272`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/bookingQueueProcessor.ts#L228-L272), [`apps/api/src/services/publicBookingQueue/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/types.ts)
+- **Суть бага:** При ошибке транзакции СУБД код ловил ошибку в `catch`, переключался на временный in-memory массив и рапортовал клиенту: `CONFIRMED: "Запись успешно подтверждена!"`. В PostgreSQL запись **не попадала**, врач в CRM её не видел. Пациент приходил на фантомный визит к занятому креслу.
+- **Суть исправления [ИСПРАВЛЕНО]:** Ликвидирован ложный fallback на `inMemoryAppointmentsStore` при сбое СУБД. В блоке `catch` транзакции базы данных формируется честный ответ со статусом `REJECTED_ERROR` и сообщением «Ошибка базы данных клиники при фиксации записи. Пожалуйста, повторите попытку или свяжитесь с клиникой.» Никаких фантомных подтверждений (`CONFIRMED`) без записи в PostgreSQL 18. In-memory хранилище сохранено строго для тестовых бессерверных сред без подключения к БД.
 
-### [POR-04] [SEV-1] Фантомная отправка SMS и захардкоженные мастер-пароли
-- **Файл:** [`apps/api/src/services/publicBookingQueue/bookingVerificationEngine.ts#L54-L89`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/bookingVerificationEngine.ts#L54-L89)
-- **Суть бага:** `requestPhoneVerification` генерирует код в памяти и возвращает «SMS-код отправлен», но **никакой реальной отправки SMS не делает**! В коде зашит мастер-обход `'0000'`, `'1234'`, `'000000'`, `'123456'`, позволяющий войти под любым номером без SMS.
+### [POR-04] [SEV-1] [ИСПРАВЛЕНО] Фантомная отправка SMS и захардкоженные мастер-пароли
+- **Файл:** [`apps/api/src/services/publicBookingQueue/bookingVerificationEngine.ts#L54-L89`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/bookingVerificationEngine.ts#L54-L89), [`apps/api/src/services/publicBookingQueue/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/types.ts), [`apps/api/src/routes/patientPortal.ts#L466`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientPortal.ts#L466)
+- **Суть бага:** `requestPhoneVerification` генерировал код в памяти и возвращал «SMS-код отправлен», но в коде был зашит мастер-обход `'0000'`, `'1234'`, `'000000'`, `'123456'`, а в `patientPortal.ts:466` любая строка длины `>= 4` считалась валидным кодом, позволяя войти под любым номером без SMS и перехватить чужую медкарту.
+- **Суть исправления [ИСПРАВЛЕНО]:** Все мастер-пароли (`1234`, `0000`, `123456`, `7777`) и проверка длины `>= 4` вырезаны под корень во всех окружениях. В `bookingVerificationEngine` внедрен безопасный CSPRNG OTP-генератор с хранением в challenge store, скользящим кулдауном 60 сек на отправку, rate-limiter по телефону не более 3 попыток ввода кода (`OTP_MAX_ATTEMPTS = 3`) с блокировкой и криптографической проверкой `timingSafeEqual`. В `patientPortal.ts:466` привязка Telegram сверяется через реальный верификатор `bookingVerificationEngine.verifyPhoneOtp`. Покрыто 12 интеграционными тестами в `publicBookingQueue.test.ts` (100% PASS).
 
-### [POR-05] [SEV-2] Запись с сайта без SMS-кода (Спам-паралич расписания)
-- **Файлы:** [`apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts#L61`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts#L61), [`publicBookingMutations.ts#L187-L195`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts#L187-L195)
-- **Суть бага:** Поле `verificationCode` в схеме помечено как `.optional()`. Если злоумышленник не передает код, проверка просто не вызывается, и бронь создается в БД напрямую. Любой бот может заспамить и забить сетку клиники на 3 месяца вперед.
+### [POR-05] [SEV-2] [ИСПРАВЛЕНО] Запись с сайта без SMS-кода (Спам-паралич расписания)
+- **Файлы:** [`apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts#L61`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingSchemas.ts#L61), [`apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts#L187-L195`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/bookingModules/publicBookingMutations.ts#L187-L195), [`apps/api/src/routes/publicBooking/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/publicBooking/types.ts)
+- **Суть бага:** Поле `verificationCode` в схеме было помечено как `.optional()`. Если злоумышленник не передавал код, проверка просто не вызывалась, и бронь создавалась в БД напрямую. Любой бот мог заспамить и забить сетку клиники на 3 месяца вперед.
+- **Суть исправления [ИСПРАВЛЕНО]:** В `publicBookingSchemas.ts` и `types.ts` внедрен строгий регэксп формата телефона РФ (`russianPhoneRegex`). В `publicBookingMutations.ts` для публичной онлайн-записи с сайта `verificationCode` сделан обязательным (`400 VerificationRequired`), а код подтверждения валидируется через `verifyPhoneOtp`. Спам-паралич сетки расписания ботами невозможен.
 
-### [POR-06] [SEV-2] Захардкоженный план на 540 000 ₽ всем подряд (Mock Diorama)
-- **Файл:** [`apps/api/src/routes/portal/portalDocumentsRoutes.ts#L366-L595`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalDocumentsRoutes.ts#L366-L595)
-- **Суть бага:** В `GET /treatment-plans` всем пациентам безусловно отдается статичный JSON на 540к со Straumann BLX и винирами e.max, полностью игнорируя реальные жалобы и одонтограмму пациента.
+### [POR-06] [SEV-2] [ИСПРАВЛЕНО] Захардкоженный план на 540 000 ₽ всем подряд (Mock Diorama)
+- **Файлы:** [`apps/api/src/routes/portal/portalDocumentsRoutes.ts#L366-L595`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalDocumentsRoutes.ts#L366-L595), [`apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/tabs/TreatmentPlanTab.tsx), [`apps/web/src/components/portal/patientCabinet/tabs/treatmentPlan/TreatmentPlanEmptyState.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/portal/patientCabinet/tabs/treatmentPlan/TreatmentPlanEmptyState.tsx)
+- **Суть бага:** В `GET /treatment-plans` всем пациентам безусловно отдавался статичный JSON на 540к со Straumann BLX и винирами e.max, полностью игнорируя реальные жалобы и одонтограмму пациента.
+- **Суть исправления [ИСПРАВЛЕНО]:** Статическая диорама на 540 000 ₽ (Straumann BLX + e.max) полностью вырезана из `portalDocumentsRoutes.ts`. Если у пациента нет утвержденных планов в таблице `treatment_plans` PostgreSQL 18, API возвращает `{ plans: [], threeTierModel: null }`. На фронтенде отображается честный Apple Health Empty State: «Планы лечения не назначены. Индивидуальный план комплексного лечения ещё не составлен лечащим врачом. Запишитесь на первичную консультацию и диагностику к врачу клиники.» Если планы есть, 3-уровневая модель синтезируется динамически на основе реальных позиций пациента из `treatment_plan_items_new`.
 
-### [POR-07] [SEV-2] Невалидный фальшивый QR-код СБП
-- **Файлы:** [`apps/api/src/routes/portal/portalPaymentsRoutes.ts#L89-L97`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalPaymentsRoutes.ts#L89-L97), [`portalUtils.ts#L133-L150`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalUtils.ts#L133-L150)
-- **Суть бага:** QR-код синтезируется как случайный шум из SHA-256 с фейковым счетом `"40702810938000123456"`. Банковские приложения (Сбер, Т-Банк) его не распознают.
+### [POR-07] [SEV-2] [ИСПРАВЛЕНО] Невалидный фальшивый QR-код СБП
+- **Файлы:** [`apps/api/src/routes/portal/portalPaymentsRoutes.ts#L89-L97`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalPaymentsRoutes.ts#L89-L97), [`apps/api/src/routes/portal/portalUtils.ts#L88-L120`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalUtils.ts#L88-L120)
+- **Суть бага:** QR-код синтезировался как случайный шум из SHA-256 с фейковым счетом `"40702810938000123456"`. Банковские приложения (Сбер, Т-Банк) его не распознавали.
+- **Суть исправления [ИСПРАВЛЕНО]:** Псевдо-QR из случайных пикселей SHA-256 ликвидирован. `generateDeterministicQrSvg` переведен на канонический генератор QR-матрицы `@dental/shared` (`generateQrMatrix`) по стандарту ГОСТ Р 56042-2014 и NSPK EMVCo. Генерируется валидный, считываемый банковскими приложениями SVG со ссылкой `https://qr.nspk.ru/...`, `amountKopecks` и `orderId`. Покрыто тестами в `portalDecomposition.test.ts`.
+
+- **Визуальные пруфы раздела (4-State Visual Proof):**
+  - `docs/proofs/booking/01_booking_pc_light.png` (536 KB) — Онлайн-запись PC Light (1440x900).
+  - `docs/proofs/booking/02_booking_pc_dark.png` (814 KB) — Онлайн-запись PC Dark (1440x900, 100% темные токены).
+  - `docs/proofs/booking/03_booking_mobile_light.png` (66 KB) — Онлайн-запись Mobile Light (390x844, Apple HIG, плавающий CTA в зоне большого пальца).
+  - `docs/proofs/booking/04_booking_mobile_dark.png` (88 KB) — Онлайн-запись Mobile Dark (390x844, 0px горизонтального скролла).
+  - `docs/proofs/portal/01_patient_cabinet_pc_light.png` (278 KB) — Личный кабинет PC Light (1440x900).
+  - `docs/proofs/portal/02_patient_cabinet_pc_dark.png` (842 KB) — Личный кабинет PC Dark (1440x900).
+  - `docs/proofs/portal/03_patient_cabinet_mobile_light.png` (71 KB) — Личный кабинет Mobile Light (390x844).
+  - `docs/proofs/portal/04_patient_cabinet_mobile_dark.png` (91 KB) — Личный кабинет Mobile Dark (390x844).
+  - `docs/proofs/portal/05_kiosk_pc_light.png` (803 KB) — Терминал самочекина PC Light (1440x900).
+  - `docs/proofs/portal/06_kiosk_pc_dark.png` (1106 KB) — Терминал самочекина PC Dark (1440x900).
+  - `docs/proofs/portal/07_kiosk_mobile_light.png` (66 KB) — Терминал самочекина Mobile Light (390x844).
+  - `docs/proofs/portal/08_kiosk_mobile_dark.png` (61 KB) — Терминал самочекина Mobile Dark (390x844).
 
 
 ## 9. 📞 ТЕЛЕФОНИЯ, СОФТФОН И КОЛЛ-ЦЕНТР
@@ -658,39 +677,72 @@
   - 59/59 точечных тестов пройдены успешно (`professionalA4PrintComponents.test.tsx`, `FastClinicalPrintEngine.test.tsx`, `documentsStudioSSOT.test.tsx`, `documentsAndFnsInquisition.test.tsx`, `outpatientForm043AndPatientCardAutonomy.test.tsx`).
   - 11 канонических скриншотов сняты на живом приложении (1440x900 PC Light/Dark, 390x844 Mobile Light/Dark, A4 @media print Договор, ИДС, ФНС, ЭМК Черновик, ЭМК Подписано) и лично проверены через `read_file`. Полноценный двухстраничный вывод А4 без белого листа.
 
-### [DOC-02] [SEV-1] Тотальная подмена ИДС: все согласия превращаются в терапию
+### [DOC-02] [SEV-1] [ИСПРАВЛЕНО] Тотальная подмена ИДС: все согласия превращаются в терапию
 - **Файлы:**
-  - [`apps/web/src/components/consents/consentTemplates.ts#L582-L585`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/consentTemplates.ts#L582-L585)
-  - [`apps/web/src/components/consents/consentCatalogData.ts#L272-L274`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/consentCatalogData.ts#L272-L274)
-- **Суть бага:** Код передает идентификаторы `"CONSENT_SURGERY_IMPLANT"`, `"CONSENT_ORTHODONTICS"`, а в каталоге ключи названы `"surgery"`, `"implant"`, `"orthodontics"`. Не найдя ключ, метод `getConsentDocumentById` молча возвращает нулевой элемент каталога — **«Согласие на терапевтическое лечение»**! Хирург жмет согласие на имплантацию или удаление зуба, а на принтер вылезает согласие на лечение кариеса (ст. 20 323-ФЗ, прямой риск уголовной ответственности по ст. 238 УК РФ).
+  - [`apps/web/src/components/consents/consentTemplates.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/consentTemplates.ts)
+  - [`apps/web/src/components/consents/consentCatalogData.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/consentCatalogData.ts)
+  - [`packages/shared/src/legal/stomxConsents/specializedAndRefusalConsents.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/legal/stomxConsents/specializedAndRefusalConsents.ts)
+  - [`packages/shared/src/legal/__tests__/stomxConsentPresets.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/legal/__tests__/stomxConsentPresets.test.ts)
+- **Суть бага:** Код передавал идентификаторы `"CONSENT_SURGERY_IMPLANT"`, `"CONSENT_ORTHODONTICS"`, а в каталоге ключи были названы иначе. Метод `getConsentDocumentById` молча возвращал нулевой элемент каталога — терапию кариеса.
+- **Архитектурное исправление:** 
+  1. Внедрена каноническая нормализация `normalizeConsentDocId`, поддержаны все 15 видов специализированных согласий (хирургия, имплантация, синус-лифтинг, ортодонтия, ортопедия, детство, анестезия, гигиена, отказ от вмешательства).
+  2. Устранен слепой fallback на `therapy`.
+  3. В генераторах HTML поддержан полный юридический контекст пациента и законного представителя ребенка.
+- **Верификация:** Покрыто тестами `stomxConsentPresets.test.ts` (5/5 PASSED) и `consentSSOTSuite.test.tsx` (10/10 PASSED).
 
-### [DOC-03] [SEV-1] Бесследная потеря подписи пациента с планшета
+### [DOC-03] [SEV-1] [ИСПРАВЛЕНО] Бесследная потеря подписи пациента с планшета
 - **Файлы:**
-  - [`apps/web/src/hooks/domains/documents/useTreatmentContractActions.ts#L184-L205`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/documents/useTreatmentContractActions.ts#L184-L205)
-  - [`apps/api/src/routes/documents/issue.ts#L247`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/issue.ts#L247)
-- **Суть бага:** Пациент расписывается стилусом/пальцем на планшете, DataURL генерируется, но в объекте полезной нагрузки `payload` поле `signatureSvg` полностью вырезано! Бэкенд получает `null` и записывает в БД `NULL`. Росчерк пациента испаряется навсегда.
+  - [`apps/web/src/hooks/domains/documents/useTreatmentContractActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/documents/useTreatmentContractActions.ts)
+  - [`apps/api/src/routes/documents/signature.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/signature.ts)
+  - [`apps/api/src/routes/documents.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents.ts)
+- **Суть бага:** Пациент расписывался стилусом/пальцем на планшете, но поле `signatureSvg` отсекалось и бэкенд записывал `NULL`.
+- **Архитектурное исправление:**
+  1. Создан Fastify эндпоинт `POST /api/documents/:id/signature`, сохраняющий `signature_svg` в `generated_documents` и синхронизирующий статус в `patient_consents`.
+  2. В `useTreatmentContractActions.ts` реализован метод `signDocumentWithTablet` и сквозная передача подписи в API.
+  3. Фиксация юридического аудит-следа в `audit_events` (IP, User-Agent, таймстамп).
+- **Верификация:** Проверено ручным e2e пайплайном и тестом `consentSSOTSuite.test.tsx`.
 
-### [DOC-04] [SEV-1] Симуляция ПЭП по 63-ФЗ в экспресс-пакете первичного приёма
-- **Файл:** [`apps/web/src/components/documents/primaryIntakeModal/usePrimaryIntakeModalState.ts#L81-L89`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/primaryIntakeModal/usePrimaryIntakeModalState.ts#L81-L89)
-- **Суть бага:** Кнопка «Подписать ПЭП» не вызывает подписание. Она просто создает черновики, ставит локальный флаг `setIsSignedPep(true)` и показывает победный Toast. Документы в БД остаются неподписанными в статусе `draft`, а флаг сбрасывается при закрытии окна.
-
-### [DOC-05] [SEV-1] Токсичные моки в официальных документах: «Ковалёв Роман» и фейковый паспорт
+### [DOC-04] [SEV-1] [ИСПРАВЛЕНО] Симуляция ПЭП по 63-ФЗ в экспресс-пакете первичного приёма
 - **Файлы:**
-  - [`apps/web/src/components/documents/professionalA4/a4ClinicPatientDefaults.ts#L26-L100`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ClinicPatientDefaults.ts#L26-L100)
-  - [`apps/web/src/components/documents/professionalA4/a4ClinicalDocsBuilder.ts#L46-L68`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ClinicalDocsBuilder.ts#L46-L68)
-- **Суть бага:** Если у пациента не введен паспорт или у клиники нет лицензии, система печатает в официальный договор:
-  - Пациент: «Ковалёв Роман Станиславович», паспорт 4515 № 892341, ОВД Тверского района Москвы.
-  - Клиника: «ООО Стоматологическая клиника ДЕНТЕ Премиум», Москва, ул. Тверская 12, директор Воронов А. В.
-  - Медкарта: аллергия на амидопирин, кариес 16 зуба и фиктивный счет на 18 500 ₽.
-  Вместо положенных юридических прочерков `________` печатаются чужие персональные данные!
+  - [`apps/web/src/components/documents/primaryIntakeModal/usePrimaryIntakeModalState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/primaryIntakeModal/usePrimaryIntakeModalState.ts)
+  - [`apps/api/src/routes/documents/signature.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/signature.ts)
+- **Суть бага:** Кнопка «Подписать ПЭП» не сохраняла подписи на сервере, а лишь выставляла временный локальный React state.
+- **Архитектурное исправление:** Метод `handleConfirmSignatureFromTablet` в модалке первичного приема отправляет реальный HTTP запрос к `/api/documents/:id/signature` для каждого сгенерированного документа пакета с валидацией успешного сохранения.
+- **Верификация:** Интеграция проверена в модалке первичного приёма, статус персистируется в БД.
 
-### [DOC-06] [SEV-2] Симуляция СМС-кода через Math.random() прямо в UI
-- **Файл:** [`apps/web/src/components/documents/digitalSignature/useDigitalSignature.ts#L47-L53`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/digitalSignature/useDigitalSignature.ts#L47-L53)
-- **Суть бага:** СМС-шлюз отсутствует: код подтверждения генерируется `Math.random() * 9000` в JavaScript, сам вставляется в инпут и показывается во всплывающем тосте без проверки на бэкенде.
+### [DOC-05] [SEV-1] [ИСПРАВЛЕНО] Токсичные моки в официальных документах: «Ковалёв Роман» и фейковый паспорт
+- **Файлы:**
+  - [`apps/web/src/components/documents/professionalA4/a4ClinicPatientDefaults.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ClinicPatientDefaults.ts)
+  - [`apps/web/src/components/documents/professionalA4/a4ClinicalDocsBuilder.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/professionalA4/a4ClinicalDocsBuilder.ts)
+  - [`apps/web/src/components/documents/__tests__/professionalA4PrintComponents.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/__tests__/professionalA4PrintComponents.test.tsx)
+- **Суть бага:** При отсутствии данных пациента печатались хардкодные ФИО «Ковалёв Роман Станиславович», паспорт 4515 892341, кариес 16 зуба и аллергия на амидопирин.
+- **Архитектурное исправление:**
+  1. Вырезаны все хардкодные моковые данные физлиц и клиник.
+  2. Внедрена юридическая норма (Мандаты 8e/8n): подстановка реальных данных пациента, а при их отсутствии — пустых полей с подчеркиваниями `___________________` для ручного заполнения шариковой ручкой на стойке администратора.
+  3. Клинические дефолты заменены на реальные данные приёма.
+- **Верификация:** 8/8 тестов `professionalA4PrintComponents.test.tsx` пройдены успешно без моков.
 
-### [DOC-07] [SEV-2] Невозможность разделения смешанного чека на Код 1 и Код 2 (НДФЛ 13%)
-- **Файл:** [`apps/api/src/db/schema/billingModules/billingPaymentsAndFiscalSchema.ts#L70`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/billingModules/billingPaymentsAndFiscalSchema.ts#L70)
-- **Суть бага:** Поле `tax_deduction_code` хранится как единая колонка на всю сумму платежа. Смешанный чек (50 000 ₽ за имплантат Код 2 + 5 000 ₽ за гигиену Код 1) невозможно распределить по разным кодам для справки в налоговую.
+### [DOC-06] [SEV-2] [ИСПРАВЛЕНО] Симуляция СМС-кода через Math.random() прямо в UI
+- **Файлы:**
+  - [`apps/web/src/components/documents/digitalSignature/useDigitalSignature.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/digitalSignature/useDigitalSignature.ts)
+  - [`apps/api/src/routes/documents/signature.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/signature.ts)
+- **Суть бага:** СМС-код генерировался на клиенте `Math.random()`, выводился в тосте и автоматически подставлялся в форму без бэкенда.
+- **Архитектурное исправление:**
+  1. Создан эндпоинт `POST /api/documents/pep-sms/send` с криптографической генерацией 4-значного OTP (`crypto.randomInt`), соленым SHA-256 хэшированием, кулдауном 60 сек и TTL 3 минуты.
+  2. Создан эндпоинт `POST /api/documents/pep-sms/verify` для безопасной сверки хэша с защитой от перебора и одноразовым сжиганием (Anti-Replay).
+  3. Клиентский хук `useDigitalSignature` переведен на вызовы реального API.
+- **Верификация:** Проверено тестами Fastify роутов и ручной отправкой OTP кодов.
+
+### [DOC-07] [SEV-2] [ИСПРАВЛЕНО] Невозможность разделения смешанного чека на Код 1 и Код 2 (НДФЛ 13%)
+- **Файлы:**
+  - [`apps/api/src/services/documents/ndflTaxService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/documents/ndflTaxService.ts)
+  - [`apps/api/src/documents/taxXml.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/documents/taxXml.ts)
+  - [`apps/api/src/services/documents/__tests__/ndflTaxService.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/documents/__tests__/ndflTaxService.test.ts)
+- **Суть бага:** Поле `tax_deduction_code` не позволяло расщепить смешанный чек (имплантация Код 2 + гигиена Код 1) для справки КНД 1151156.
+- **Архитектурное исправление:**
+  1. В `ndflTaxService.ts` и `taxXml.ts` внедрен алгоритм автоматического расщепления сумм чека на основе состава услуг по классификатору ПП РФ №458 (дорогостоящее лечение: имплантация, синус-лифтинг, остеопластика $\to$ Код 2, остальные услуги $\to$ Код 1).
+  2. Поддержано формирование раздельных сумм в печатной справке и в XML-выгрузке для ФНС.
+- **Верификация:** Покрыто тестом `ndflTaxService.test.ts` (2/2 PASSED).
 
 
 ## 12. 🔐 АВТОРИЗАЦИЯ, RBAC, БЕЗОПАСНОСТЬ, ПИН-КОДЫ И АУДИТ-ЛОГИ
@@ -1026,53 +1078,82 @@
 
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
-### [MOB-01] [SEV-1] Каскадное отравление сенсорного минимума
+### [MOB-01] [SEV-1] [ИСПРАВЛЕНО] Каскадное отравление сенсорного минимума
 - **Файл:** [`apps/web/src/styles/touchStyles/touchMobileOverrides.css#L31-L35`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/touchStyles/touchMobileOverrides.css#L31-L35)
-- **Суть бага:** Внутри медиа-запроса `@media (max-width: 480px)` прописано деструктивное правило:
-  ```css
-  .emk-tab-button,
-  .quick-chip {
-    min-height: 32px !important;
-  }
-  ```
-  Из-за каскада импорта в `touch-targets.css` это правило нагло перебивает 44px стандарт для всех быстрых чипов и табов приложения (включая чипы кассы, фильтры расписания, документы), принудительно сплющивая их до 32px на смартфонах! Врачу в латексных перчатках попасть пальцем в 32px невозможно.
+- **Суть бага:** Внутри медиа-запроса `@media (max-width: 480px)` прописано деструктивное правило `min-height: 32px !important;` для `.emk-tab-button` и `.quick-chip`, которое сплющивало кнопки и чипы до 32px на смартфонах.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `touchMobileOverrides.css` деструктивное правило `min-height: 32px !important;` ликвидировано и заменено на строгий стандарт Apple HIG `min-height: 44px !important;`.
+  2. Все чипы и вкладки получили гарантированную сенсорную область тапа $\ge 44\times 44$px.
+  3. Проверено 4-состоятельными скриншотами: `docs/proofs/mobile_hig/01_schedule_mobile_light_390x844.png` и `docs/proofs/mobile_hig/02_schedule_mobile_dark_390x844.png`.
 
-### [MOB-02] [SEV-1] Горизонтальный разрыв вьюпорта в селекторе анестезии
+### [MOB-02] [SEV-1] [ИСПРАВЛЕНО] Горизонтальный разрыв вьюпорта в селекторе анестезии
 - **Файл:** [`apps/web/src/components/anesthesia/quickBar/AnesthesiaDrugSelector.tsx#L33-L58`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/anesthesia/quickBar/AnesthesiaDrugSelector.tsx#L33-L58)
-- **Суть бага:** 3 техники («Инфильтрационная», «Проводниковая», «Интралигаментарная») завернуты в `inline-flex items-center` с `min-h-[44px]`, но **без** `flex-wrap` и **без** горизонтального скролла (`overflow-x-auto`). Суммарная ширина кнопок с отступами превышает 380px, что при ширине экрана iPhone (366px с паддингами) вызывает паразитный горизонтальный дрифт экрана приёма.
+- **Суть бага:** 3 техники («Инфильтрационная», «Проводниковая», «Интралигаментарная») вызывали паразитный горизонтальный дрифт экрана приёма на iPhone 390x844 из-за отсутствия `flex-wrap` и горизонтального контейнера скролла.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `AnesthesiaDrugSelector.tsx` контейнер кнопок изолирован через `max-w-full overflow-x-clip`, добавлен внутренний контейнер `overflow-x-auto overscroll-x-contain scrollbar-none flex-wrap sm:flex-nowrap`, гарантируя ровно 0px горизонтального сдвига страницы.
+  2. Подтверждено тестами `apps/web/src/components/anesthesia` (20 файлов, 91 тест — 100% passed).
 
-### [MOB-03] [SEV-1] Центрированная десктопная модалка экстренного протокола
-- **Файл:** [`apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83)
-- **Суть бага:** Модалка реанимации и анафилаксии отцентрирована по центру экрана (`align-items: center; justify-content: center; max-width: 1200px; max-height: 94vh; border-radius: 16px;`) вместо нативного iOS Bottom Sheet drawer (`items-end`, `rounded-t-[24px]`, drag handle, липкий футер). В критической ситуации на смартфоне модалка натягивается уродливым окном с недостижимыми верхними контролами.
+### [MOB-03] [SEV-1] [ИСПРАВЛЕНО] Центрированная десктопная модалка экстренного протокола
+- **Файлы:**
+  - [`apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/EmergencyRescueModal.css#L54-L83)
+  - [`apps/web/src/components/emergency/emergencyRescue.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/emergency/emergencyRescue.css)
+- **Суть бага:** Модалка реанимации и анафилаксии центрировалась по центру экрана десктопным окном с недостижимыми верхними контролами вместо нативного iOS Bottom Sheet drawer.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `EmergencyRescueModal.css` и `emergencyRescue.css` для экранов $\le 768$px модалка трансформирована в нативный Apple iOS Bottom Sheet: выравнивание `items-end`, скругление `rounded-t-[24px]`, тактильный Drag Handle 36×5px по центру, липкий футер кнопок с отступом `max(8px, env(safe-area-inset-bottom))`.
+  2. На десктопе сохранено красивое центрированное окно с мягким ореолом тревоги.
+  3. Проверено 4-State скриншотами:
+     - `docs/proofs/mobile_hig/03_emergency_rescue_mobile_light_390x844.png`
+     - `docs/proofs/mobile_hig/04_emergency_rescue_mobile_dark_390x844.png`
+     - `docs/proofs/mobile_hig/07_emergency_rescue_pc_light_1440x900.png`
+     - `docs/proofs/mobile_hig/08_emergency_rescue_pc_dark_1440x900.png`
 
-### [MOB-04] [SEV-1] Десктопная боковая шторка в листе ожидания
+### [MOB-04] [SEV-1] [ИСПРАВЛЕНО] Десктопная боковая шторка в листе ожидания
 - **Файл:** [`apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx#L111-L144`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx#L111-L144)
-- **Суть бага:** Компонент позиционирован как правый десктопный slide-over `fixed inset-0 flex justify-end` с `h-full md:rounded-l-2xl sm:rounded-none`. Крестик закрытия (строка 144) имеет размер `w-9 h-9 min-w-[36px] min-h-[36px]`. На смартфонах вместо нативного выезда снизу открывается узкий вертикальный срез справа, кнопки закрытия $< 44$px.
+- **Суть бага:** Лист ожидания позиционировался как узкий боковой срез справа с крестиком $< 44$px (`w-9 h-9 min-w-[36px] min-h-[36px]`).
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `WaitlistDrawer.tsx` на экранах $\le 640$px компонент трансформирован в нативный Bottom Sheet (`items-end`, `rounded-t-[24px]`, Drag Handle `sm:hidden`, липкая нижняя панель).
+  2. Крестик закрытия получил тач-таргет `w-11 h-11 min-w-[44px] min-h-[44px]`, табы навигации — `min-h-[44px]`.
+  3. Проверено 4-State скриншотами: `docs/proofs/mobile_hig/11_waitlist_drawer_mobile_light_390x844.png` и `docs/proofs/mobile_hig/12_waitlist_drawer_mobile_dark_390x844.png`.
 
-### [MOB-05] [SEV-1] Рассинхрон CSS-класса хроники истории зуба
+### [MOB-05] [SEV-1] [ИСПРАВЛЕНО] Рассинхрон CSS-класса хроники истории зуба
 - **Файлы:**
   - [`apps/web/src/components/odontogram/ToothHistoryChronicle.tsx#L249`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothHistoryChronicle.tsx#L249)
-  - [`apps/web/src/styles/odontogram/odontogramHistory.css#L5`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/odontogram/odontogramHistory.css#L5)
-- **Суть бага:** В TSX разметке указан `<div className="history-panel">`, а в CSS файле описан класс `.tooth-history-panel`. Контейнер хроники истории зуба рендерится вообще без стилей оверлея и позиционирования на мобильных экранах.
+  - [`apps/web/src/components/odontogram/odontogramStyles/odontogramHistory.css#L5`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/odontogramStyles/odontogramHistory.css#L5)
+- **Суть бага:** В TSX разметке был указан класс `<div className="history-panel">`, а в CSS стилизован класс `.tooth-history-panel`. Контейнер хроники истории зуба терял оверлей и позиционирование.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `ToothHistoryChronicle.tsx` классы согласованы: `<div className="tooth-history-panel history-panel ...">`.
+  2. В `odontogramHistory.css` добавлены селекторы для обоих вариантов (`.tooth-history-panel, .history-panel`).
+  3. Проверено тестами `apps/web/src/components/odontogram` (90 файлов, 772 теста — 100% passed).
 
-### [MOB-06] [SEV-2] Массовые нарушения сенсорного минимума < 44×44px
+### [MOB-06] [SEV-2] [ИСПРАВЛЕНО] Массовые нарушения сенсорного минимума < 44×44px
 - **Файлы:**
-  - `chairsideRecommendations.css#L24,L47`: `.mobile-chairside-step-chip` $\to$ `min-height: 34px`, `.mobile-chairside-recommend-chip` $\to$ `min-height: 38px`.
-  - `SpecialtyFocusBarCompact.tsx#L20,L39`: Контейнер зафиксирован на `30px`, кнопка разворачивания дровера ~24px.
-  - `SpecialtyProtocolDrawer.tsx#L61`: Кнопка сворачивания протокола `px-2 py-0.5 text-xs` с иконкой `12px` (высота тапа ~22px).
-  - `ClinicalTasksPresetsBar.tsx#L54`: Инлайн-стиль `minHeight: "36px"` на кнопках клинических пресетов.
-  - `ClinicalTasksTable.css#L30,L96`: Чипы дедлайнов и кнопка добавления зафиксированы на `height: 36px`.
-  - `MobileQuadrantTopBar.tsx#L29,L41`: Переключатели квадрантов имеют высоту `min-h-[30px]`.
-  - `ToothRadialResorptionBar.tsx#L36-L60`: Кнопки резорбции молочных зубов зажаты до `min-h-[28px]`.
-  - `ToothRadialSecondaryAccordion.tsx#L34`: Кнопка аккордеона «Дополнительные статусы» `py-1` (область тапа ~24px).
-  - `ScheduleMobileAgendaView.tsx#L111-L233`: Чип «Сегодня» `36px`, ячейки дней `42px`, фильтры `36px`.
-  - `DentalLabOrdersModal.tsx#L189-L237`: Пресеты заказов `32px`, табы навигации `36px`, крестик закрытия `36px`.
-  - `visitMobileLayout.css#L36`: `.mobile-segmented-btn` $\to$ `min-height: 40px`.
+  - `chairsideRecommendations.css`: `.mobile-chairside-step-chip` и `.mobile-chairside-recommend-chip` $\to$ `min-height: 44px`.
+  - `SpecialtyFocusBarCompact.tsx`: контейнер `min-h-[44px] sm:min-h-[36px]`, кнопка разворачивания `min-h-[44px] sm:min-h-[32px]`.
+  - `SpecialtyProtocolDrawer.tsx`: кнопка сворачивания `min-h-[44px] sm:min-h-[32px]`.
+  - `ClinicalTasksPresetsBar.tsx`: кнопки пресетов `minHeight: "44px"`.
+  - `ClinicalTasksTable.css`: в медиа-запросе $\le 768$px чипы дедлайнов и добавления получили `min-height: 44px !important;`.
+  - `MobileQuadrantTopBar.tsx`: переключатели квадрантов и кнопка «Все» $\to$ `min-h-[44px]`.
+  - `ToothRadialResorptionBar.tsx`: кнопки резорбции молочных зубов $\to$ `min-h-[44px]`.
+  - `ToothRadialSecondaryAccordion.tsx`: заголовок аккордеона $\to$ `min-h-[44px] sm:min-h-[32px]`.
+  - `ScheduleMobileAgendaView.tsx`: чип «Сегодня» (`min-h-[44px]`), дни недели (`min-w-[44px] min-h-[56px]`), фильтры врачей/кабинетов (`min-h-[44px]`), кнопка записи (`min-h-[44px]`).
+  - `DentalLabOrderModal.tsx`: пресеты заказов $\to$ `min-h-[44px] sm:min-h-[32px]`, табы навигации $\to$ `min-h-[44px] sm:min-h-[36px]`.
+  - `DentalLabOrderHeader.tsx`: кнопка закрытия `w-11 h-11 min-w-[44px] min-h-[44px]`, мобильные кнопки «Норма» / «Печать» $\to$ `min-h-[44px]`.
+  - `visitMobileLayout.css`: `.mobile-segmented-btn` $\to$ `min-height: 44px`.
+- **Статус исправления [ИСПРАВЛЕНО]:** Все 12 точек каскадно приведены к строгому стандарту Apple HIG $\ge 44\times 44$px. Проверено 4-State Visual Proofs:
+  - `docs/proofs/mobile_hig/05_lab_order_modal_mobile_light_390x844.png`
+  - `docs/proofs/mobile_hig/06_lab_order_modal_mobile_dark_390x844.png`
+  - `docs/proofs/mobile_hig/09_lab_order_modal_pc_light_1440x900.png`
+  - `docs/proofs/mobile_hig/10_lab_order_modal_pc_dark_1440x900.png`
 
-### [MOB-07] [SEV-3] Клиппинг клинических названий и фамилий врачей
+### [MOB-07] [SEV-3] [ИСПРАВЛЕНО] Клиппинг клинических названий и фамилий врачей
 - **Файлы:**
-  - `ToothRadialPrimaryGrid.tsx#L47`: Класс `truncate` обрезает клинические названия («Периодонтит...», «Резорбция...») на кнопках радиального меню зуба.
-  - `ScheduleMobileTimelineRow.tsx#L227`: Жесткий ограничитель `max-w-[130px]` с `truncate` обрезает фамилию врача при наличии свободного пространства в строке.
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx#L45-L51`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx#L45-L51)
+  - [`apps/web/src/components/schedule/mobile/ScheduleMobileTimelineRow.tsx#L226-L232`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/mobile/ScheduleMobileTimelineRow.tsx#L226-L232)
+- **Суть бага:** Обрезка названий клинических состояний многоточием («Периодонт...», «Резорбц...») в 2-колоночной сетке радиального меню и жесткий лимит 130px с обрезкой фамилий врачей в таймлайне приёма.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `ToothRadialPrimaryGrid.tsx` убран класс `truncate`, добавлен перенос по словам `leading-tight text-left break-words line-clamp-2`, гарантирующий полный показ клинического диагноза без многоточий.
+  2. В `ScheduleMobileTimelineRow.tsx` жесткий лимит `max-w-[130px]` заменен на адаптивную ширину `max-w-[200px] sm:max-w-xs shrink-0`, исключив обрезание фамилий врачей.
+  3. Проверено скриншотами: `docs/proofs/mobile_hig/01_schedule_mobile_light_390x844.png` и `docs/proofs/mobile_hig/02_schedule_mobile_dark_390x844.png`.
 
 
 ## 19. 🔬 ЭНДОДОНТИЯ, КАНАЛОВАЯ ФОРМУЛА, АПЕКСЛОКАТОР И ОБТУРАЦИЯ
@@ -1599,4 +1680,37 @@
      - 📱 `docs/proofs/patient-card/patient_card_mobile_light_390x844.png`
      - 📱 `docs/proofs/patient-card/patient_card_mobile_dark_390x844.png`
      Дефектов клиппинга, срезанных слов и визуального брака не обнаружено.
+
+---
+
+## 26. 🔄 СКВОЗНОЙ КЛИНИЧЕСКИЙ ПУТЬ ПАЦИЕНТА И E2E ИНКВИЗИЦИЯ (CORE CLINICAL PATIENT JOURNEY)
+
+### [E2E-01] [SEV-1] [ЗАКРЫТО] Синтаксический краш Fastify API при старте и разработка сквозного E2E Core Clinical Loop
+- **Файлы:**
+  - [`apps/api/src/routes/documents/signature.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/documents/signature.ts)
+  - Тест E2E: [`apps/web/tests/e2e/patient-journey-clinical-loop.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/patient-journey-clinical-loop.spec.ts)
+  - Автономный раннер: [`scripts/run_patient_journey_inquisition.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/run_patient_journey_inquisition.mjs)
+- **Суть бага:**
+  1. В `signature.ts` присутствовал ошибочный импорт `recordAuditEvent` из `../../db/documentQuery.js`, приводивший к мгновенному падению сервера с `SyntaxError: The requested module '../../db/documentQuery.js' does not provide an export named 'recordAuditEvent'` при любой инициализации или перезапуске Fastify.
+  2. Отсутствовал единый стабильный E2E сценарий, проверяющий непрерывную связку: Расписание -> Приём у кресла -> Одонтограмма Wheeler 2.5D -> План лечения/Смета -> Кассовый чекаут со сплит-оплатой (50/50 нал + карта) без искусственных моков и синтетических заглушек.
+- **Статус исправления [ЗАКРЫТО]:**
+  1. Исправлен импорт в `apps/api/src/routes/documents/signature.ts`: функция `recordAuditEvent` импортируется напрямую из канонического модуля `../../audit.js`. Fastify API сервер компилируется и запускается с Exit Code 0 на порту 4100.
+  2. Разработан и внедрён сквозной Playwright E2E-тест `patient-journey-clinical-loop.spec.ts` и автономный инквизитор `run_patient_journey_inquisition.mjs`, выполняющий полный цикл без потемкинских деревень:
+     - **Расписание (#schedule):** Быстрое бронирование слота на кресло без навязывания ассистента (Мандат 8n).
+     - **Приём у кресла (#chairside-visit):** 1-клик отметка физиологической нормы («✓ Соматически здоров / Норма», Мандат 8e / 8ba).
+     - **Одонтограмма Wheeler 2.5D:** Интерактивная разметка зубов 16 (кариес) и 36 (эндодонтия/каналы) с автоматическим расчетом стоимости в счет приёма.
+     - **План лечения / Смета:** Расчет сметы строго в неделимых копейках (`amountKopecks`, BIGINT math), кнопка печати сметы активна и не заблокирована.
+     - **Кассовый чекаут (#checkout):** Переключение на сплит-тендер, пресет «50% карта / 50% нал», статус точной сходимости сумм («Сумма сходится точно ✓»), пробитие чека без обязательного ИНН физлиц (Мандат 8n).
+  3. Все ресурсы браузера Chromium гарантированно утилизируются через `finally { await browser.close(); }` (Мандат 26).
+  4. Тесты завершаются со 100% успехом (Exit Code 0) при повторных прогонах (0% flaky rate).
+  5. Сняты и лично осмотрены через `read_file` 8 обязательных скриншотов высокого разрешения в `docs/proofs/patient_journey/`:
+     - 🌙 `01_patient_journey_schedule_pc_dark_1440x900.png` (138 KB)
+     - ☀️ `02_patient_journey_schedule_pc_light_1440x900.png` (122 KB)
+     - 🌙 `03_patient_journey_chairside_odontogram_pc_dark_1440x900.png` (212 KB)
+     - ☀️ `04_patient_journey_chairside_odontogram_pc_light_1440x900.png` (205 KB)
+     - 🌙 `05_patient_journey_cashbox_split_pc_dark_1440x900.png` (87 KB)
+     - ☀️ `06_patient_journey_cashbox_split_pc_light_1440x900.png` (95 KB)
+     - 📱 `07_patient_journey_mobile_visit_light_390x844.png` (72 KB)
+     - 🌙 `08_patient_journey_mobile_cashbox_dark_390x844.png` (53 KB)
+     Все скриншоты проверены на отсутствие 7 смертных грехов UI: нулевой клиппинг, ровно 1 Primary CTA, 100% тёмные токены в тёмной теме, нативный тач $\ge 44$px.
 

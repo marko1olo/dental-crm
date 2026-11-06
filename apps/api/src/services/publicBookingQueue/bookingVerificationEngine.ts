@@ -66,28 +66,37 @@ export class BookingVerificationEngine {
 		});
 
 		const message = method === "sms" ? "SMS-код успешно отправлен" : "Заказ звонка-сброса выполнен (введите 6 цифр)";
-		return { allowed: true, message, cooldownSeconds: 60, challengeId };
+		const isDevOrTest =
+			namedDevelopmentModeActive() ||
+			process.env.NODE_ENV === "test" ||
+			process.env.NODE_ENV === "development";
+		return {
+			allowed: true,
+			message,
+			cooldownSeconds: 60,
+			challengeId,
+			...(isDevOrTest ? { developerCode: code } : {}),
+		};
+	}
+
+	/**
+	 * Test helper to inspect generated OTP code for test verification without static backdoor credentials.
+	 */
+	public getActiveCodeForTesting(phone: string): string | undefined {
+		const cleanPhone = normalizePhoneDigits(phone);
+		return this.otpChallenges.get(cleanPhone)?.code;
+	}
+
+	public clearChallengesForTesting(): void {
+		this.otpChallenges.clear();
 	}
 
 	public verifyPhoneOtp(phone: string, code: string): { valid: boolean; error?: string } {
 		const cleanPhone = normalizePhoneDigits(phone);
 		const trimmedCode = code.trim();
 
-		// Dev/test bypass: strictly allowed ONLY when explicitly running in test or development environment
-		const isDevOrTest =
-			namedDevelopmentModeActive() ||
-			process.env.NODE_ENV === "test" ||
-			process.env.NODE_ENV === "development";
-		if (
-			isDevOrTest &&
-			(trimmedCode === "0000" ||
-				trimmedCode === "1234" ||
-				trimmedCode === "000000" ||
-				trimmedCode === "123456")
-		) {
-			return { valid: true };
-		}
-
+		// [POR-04] Запрет любых захардкоженных мастер-паролей (1234, 0000, 123456, 7777).
+		// Код проверяется строго против одноразового криптографического токена в памяти.
 		const challenge = this.otpChallenges.get(cleanPhone);
 		if (!challenge) {
 			return { valid: false, error: "Код подтверждения не запрашивался или устарел" };

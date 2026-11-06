@@ -13,11 +13,10 @@ export const TreatmentPlanEmptyState: React.FC<TreatmentPlanEmptyStateProps> = (
 	return (
 		<div className="pc-empty-state" data-testid="pc-treatment-plan-empty">
 			<Percent size={40} className="pc-icon-muted" />
-			<h4 className="pc-empty-title">План комплексного лечения формируется</h4>
+			<h4 className="pc-empty-title">Планы лечения не назначены</h4>
 			<p className="pc-empty-desc">
-				Ваш лечащий врач <strong>{curatingDoctor || "Клиники"}</strong> составляет
-				индивидуальный план лечения и оздоровления. После согласования он сразу появится в вашем
-				личном кабинете.
+				Индивидуальный план комплексного лечения ещё не составлен лечащим врачом.
+				Запишитесь на первичную консультацию и диагностику к врачу клиники.
 			</p>
 			<button
 				type="button"

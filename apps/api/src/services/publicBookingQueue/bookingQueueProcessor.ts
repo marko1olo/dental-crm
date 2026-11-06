@@ -234,7 +234,15 @@ export class BookingQueueProcessor {
 					});
 				}
 			} catch (err) {
-				console.warn("[publicBookingQueue] DB transaction error, falling back to in-memory store:", (err as Error).message);
+				console.error("[publicBookingQueue] [POR-03] DB transaction failure during direct booking:", (err as Error).message);
+				return makeReceipt(
+					input,
+					bookingId,
+					referenceNumber,
+					"REJECTED_ERROR",
+					false,
+					"Ошибка базы данных клиники при фиксации записи. Пожалуйста, повторите попытку или свяжитесь с клиникой.",
+				);
 			}
 		}
 

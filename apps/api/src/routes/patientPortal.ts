@@ -25,6 +25,7 @@ import {
 	portalRevokedBeforeByPatient,
 	revokedPortalTokens,
 } from "./portal.js";
+import { bookingVerificationEngine } from "../services/publicBookingQueue/bookingVerificationEngine.js";
 import {
 	extractTaxYearFromDate,
 	generateTaxCertificateQrSvg,
@@ -461,14 +462,22 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 						};
 					}
 
-					// Если Telegram ещё не привязан — требуем код верификации (SMS OTP)
+					// [POR-04] Если Telegram ещё не привязан — требуем валидный код верификации (SMS OTP)
 					if (!boundTelegramId) {
-						const isVerified = verificationCode && (verificationCode === "1234" || verificationCode.length >= 4);
-						if (!isVerified) {
+						if (!verificationCode) {
 							reply.status(403);
 							return {
 								error: "VerificationRequired",
 								message: "Для первой привязки Telegram-аккаунта к медкарте требуется проверочный SMS-код.",
+							};
+						}
+
+						const otpCheck = bookingVerificationEngine.verifyPhoneOtp(phone, verificationCode);
+						if (!otpCheck.valid) {
+							reply.status(403);
+							return {
+								error: "VerificationFailed",
+								message: otpCheck.error || "Неверный или истёкший проверочный SMS-код.",
 							};
 						}
 

@@ -48,17 +48,20 @@ export const dateSchema = z
 export const organizationIdSchema = z.string().uuid("Некорректный ID клиники");
 export const optionalDoctorIdSchema = z.string().uuid("Некорректный ID врача").optional();
 
+export const russianPhoneRegex =
+	/^(?:\+7|8|7)?[\s\-]?(?:\(?\d{3}\)?[\s\-]?)?\d{3}[\s\-]?\d{2}[\s\-]?\d{2}$|^\+[1-9]\d{9,14}$/;
+
 export const bookingRequestSchema = z.object({
 	doctorId: z.string().uuid("Некорректный идентификатор врача"),
 	startsAt: z.string().datetime({ offset: true }),
 	endsAt: z.string().datetime({ offset: true }),
-	patientName: z.string().trim().min(2).max(120),
+	patientName: z.string().trim().min(2, "Имя пациента должно содержать от 2 символов").max(120),
 	patientPhone: z
 		.string()
 		.trim()
-		.regex(/^\+?[0-9\s\-()]{7,20}$/, "Неверный формат номера телефона"),
+		.regex(russianPhoneRegex, "Неверный формат номера телефона РФ (ожидается +7XXXXXXXXXX)"),
 	comment: z.string().trim().max(500).optional(),
-	verificationCode: z.string().trim().min(4).max(8).optional(),
+	verificationCode: z.string().trim().min(4, "Код подтверждения должен быть от 4 до 8 символов").max(8).optional(),
 	source: z.string().trim().max(100).optional(),
 	utm_source: z.string().trim().max(100).optional(),
 	utmSource: z.string().trim().max(100).optional(),
@@ -94,11 +97,11 @@ export const cloudIntakeSchema = z.object({
 	patientPhone: z
 		.string()
 		.trim()
-		.regex(/^\+?[0-9\s\-()]{7,20}$/, "Неверный формат номера телефона"),
+		.regex(russianPhoneRegex, "Неверный формат номера телефона РФ (ожидается +7XXXXXXXXXX)"),
 	comment: z.string().trim().max(500).optional(),
 	chairId: z.string().uuid().optional(),
 	serviceName: z.string().trim().max(100).optional(),
-	verificationCode: z.string().trim().min(4).max(8).optional(),
+	verificationCode: z.string().trim().min(4, "Код подтверждения должен быть от 4 до 8 символов").max(8).optional(),
 	source: z.enum(["widget", "telegram", "tilda", "wordpress", "site"]).optional(),
 });
 

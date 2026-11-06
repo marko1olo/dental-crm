@@ -304,9 +304,15 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.equal(second.allowed, false);
 		assert.match(second.message, /через \d+ сек/);
 
-		// Verify dev code bypass works
-		const verifyCheck = publicBookingQueueService.verifyPhoneOtp(testPhone, "1234");
+		// Verify authentic generated OTP works (no backdoor bypass)
+		const activeCode = publicBookingQueueService.getActiveCodeForTesting(testPhone);
+		assert.ok(activeCode, "Active OTP code must be present in challenge store");
+		const verifyCheck = publicBookingQueueService.verifyPhoneOtp(testPhone, activeCode);
 		assert.equal(verifyCheck.valid, true);
+
+		// [POR-04] Master backdoor codes (1234, 0000) are strictly rejected
+		const backdoorCheck = publicBookingQueueService.verifyPhoneOtp(testPhone, "1234");
+		assert.equal(backdoorCheck.valid, false);
 
 		// Invalid code fails
 		const invalidCheck = publicBookingQueueService.verifyPhoneOtp(testPhone, "9999");
@@ -332,7 +338,13 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 			{ message: /Код подтверждения не запрашивался или устарел|Неверный код/ },
 		);
 
-		// Valid test code succeeds
+		// Request valid OTP first
+		const otpReq = publicBookingQueueService.requestPhoneVerification("+7 (917) 333-44-55", "sms", "127.0.0.1");
+		assert.equal(otpReq.allowed, true);
+		const validCode = publicBookingQueueService.getActiveCodeForTesting("+7 (917) 333-44-55");
+		assert.ok(validCode, "Valid generated code must be present");
+
+		// Valid CSPRNG code succeeds
 		const receipt = await publicBookingQueueService.submitBooking({
 			organizationId: TEST_ORG_ID,
 			doctorId: TEST_DOCTOR_ID,
@@ -340,29 +352,29 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 			patientPhone: "+7 (917) 333-44-55",
 			startsAt: "2026-09-30T14:00:00.000Z",
 			endsAt: "2026-09-30T14:30:00.000Z",
-			verificationCode: "1234",
+			verificationCode: validCode,
 		});
 		assert.equal(receipt.status, "CONFIRMED");
 	});
 
-	it("11. 6-Digit CSPRNG Code Security & 5-Attempt Lockout Protection", () => {
+	it("11. 6-Digit CSPRNG Code Security & 3-Attempt Lockout Protection (POR-04)", () => {
 		const securePhone = "+7 (927) 888-00-11";
 		const ip = "192.168.1.120";
 
 		const req = publicBookingQueueService.requestPhoneVerification(securePhone, "sms", ip);
 		assert.equal(req.allowed, true);
 
-		// Multiple wrong attempts should decrement and lockout at 5 attempts
-		for (let attempt = 1; attempt <= 4; attempt++) {
+		// Multiple wrong attempts should decrement and lockout at 3 attempts
+		for (let attempt = 1; attempt <= 2; attempt++) {
 			const check = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");
 			assert.equal(check.valid, false);
 			assert.match(check.error || "", /Осталось попыток: \d/);
 		}
 
-		// 5th failed attempt must purge challenge and lockout
-		const fifthCheck = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");
-		assert.equal(fifthCheck.valid, false);
-		assert.match(fifthCheck.error || "", /Превышено максимальное число попыток/);
+		// 3rd failed attempt must purge challenge and lockout
+		const thirdCheck = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");
+		assert.equal(thirdCheck.valid, false);
+		assert.match(thirdCheck.error || "", /Превышено максимальное число попыток/);
 
 		// Subsequent attempt returns challenge expired or not found
 		const subsequentCheck = publicBookingQueueService.verifyPhoneOtp(securePhone, "999999");

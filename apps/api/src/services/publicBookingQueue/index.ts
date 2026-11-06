@@ -84,6 +84,14 @@ export class PublicBookingQueueService {
 		return this.verificationEngine.verifyPhoneOtp(phone, code);
 	}
 
+	public getActiveCodeForTesting(phone: string): string | undefined {
+		return this.verificationEngine.getActiveCodeForTesting(phone);
+	}
+
+	public clearChallengesForTesting(): void {
+		this.verificationEngine.clearChallengesForTesting();
+	}
+
 	public async submitBooking(
 		input: BookingRequestInput,
 		options: { now?: Date; useDb?: boolean } = {},

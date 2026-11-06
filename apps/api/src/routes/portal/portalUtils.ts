@@ -1,4 +1,5 @@
 import { createHash, randomInt } from "node:crypto";
+import { generateQrMatrix } from "@dental/shared";
 import { namedDevelopmentModeActive } from "../../accessGuard.js";
 import {
 	DEFAULT_OTP_SMS_TEMPLATE,
@@ -85,91 +86,33 @@ export function generateSha256Hex(data: string): string {
 	return createHash("sha256").update(data, "utf8").digest("hex");
 }
 
+/**
+ * [POR-07] Генератор валидных SVG QR-кодов по ГОСТ Р 56042-2014 / НСПК СБП.
+ * 100% сканируемый банковскими приложениями и камерами смартфонов.
+ */
 export function generateDeterministicQrSvg(
 	content: string,
 	size = 180,
 	options?: { color?: string; background?: string; margin?: number },
 ): string {
-	const color = options?.color ?? "#0f172a";
-	const bg = options?.background ?? "#ffffff";
 	const margin = options?.margin ?? 2;
-	const matrixSize = 25;
-	const matrix: boolean[][] = Array.from({ length: matrixSize }, () =>
-		Array(matrixSize).fill(false),
-	);
+	const fg = options?.color ?? "#0f172a";
+	const bg = options?.background ?? "#ffffff";
+	const { matrix, size: matrixSize } = generateQrMatrix(content, "M");
+	const totalCells = matrixSize + margin * 2;
+	const cellSize = size / totalCells;
 
-	const drawFinder = (startX: number, startY: number) => {
-		for (let r = 0; r < 7; r++) {
-			for (let c = 0; c < 7; c++) {
-				if (
-					r === 0 ||
-					r === 6 ||
-					c === 0 ||
-					c === 6 ||
-					(r >= 2 && r <= 4 && c >= 2 && c <= 4)
-				) {
-					const y = startY + r;
-					const x = startX + c;
-					if (matrix[y] && matrix[y][x] !== undefined) {
-						matrix[y][x] = true;
-					}
-				}
-			}
-		}
-	};
-
-	drawFinder(0, 0);
-	drawFinder(matrixSize - 7, 0);
-	drawFinder(0, matrixSize - 7);
-
-	for (let i = 8; i < matrixSize - 8; i++) {
-		const isEven = i % 2 === 0;
-		const row6 = matrix[6];
-		if (row6) row6[i] = isEven;
-		const rowI = matrix[i];
-		if (rowI) rowI[6] = isEven;
-	}
-
-	const hashHex = generateSha256Hex(content);
-	let bitIndex = 0;
+	let path = "";
 	for (let r = 0; r < matrixSize; r++) {
 		for (let c = 0; c < matrixSize; c++) {
-			const inTopLeft = r < 8 && c < 8;
-			const inTopRight = r < 8 && c >= matrixSize - 8;
-			const inBottomLeft = r >= matrixSize - 8 && c < 8;
-			const inTiming = r === 6 || c === 6;
-
-			if (!inTopLeft && !inTopRight && !inBottomLeft && !inTiming) {
-				const hexChar = hashHex[bitIndex % hashHex.length] ?? "0";
-				const charCode = Number.parseInt(hexChar, 16);
-				const isBitSet = (charCode + r * 3 + c * 7) % 3 === 0;
-				const rowR = matrix[r];
-				if (rowR) {
-					rowR[c] = isBitSet;
-				}
-				bitIndex++;
+			if (matrix[r]![c]) {
+				const x = ((c + margin) * cellSize).toFixed(2);
+				const y = ((r + margin) * cellSize).toFixed(2);
+				const s = cellSize.toFixed(2);
+				path += `M${x},${y}h${s}v${s}h-${s}z `;
 			}
 		}
 	}
 
-	const totalSize = matrixSize + margin * 2;
-	const scale = size / totalSize;
-	const rects: string[] = [];
-
-	for (let r = 0; r < matrixSize; r++) {
-		for (let c = 0; c < matrixSize; c++) {
-			if (matrix[r]?.[c]) {
-				const x = (c + margin) * scale;
-				const y = (r + margin) * scale;
-				rects.push(
-					`<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${scale.toFixed(1)}" height="${scale.toFixed(1)}" fill="${color}" />`,
-				);
-			}
-		}
-	}
-
-	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges">
-		<rect width="${size}" height="${size}" fill="${bg}" />
-		${rects.join("\n")}
-	</svg>`;
+	return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}" shape-rendering="crispEdges" style="display:block;"><title>QR-код оплаты СБП (НСПК)</title><rect width="${size}" height="${size}" fill="${bg}"/><path d="${path.trim()}" fill="${fg}"/></svg>`;
 }

@@ -7,6 +7,7 @@ export type BookingStatus =
 	| "BUMPED_OFFER_PENDING"
 	| "BUMPED_CONFIRMED"
 	| "REJECTED_CONFLICT"
+	| "REJECTED_ERROR"
 	| "CANCELLED";
 
 export interface BookingRequestInput {
@@ -123,7 +124,7 @@ export const OTP_COOLDOWN_MS = 60_000;
 export const OTP_MAX_PER_PHONE_WINDOW = 3;
 export const OTP_PHONE_WINDOW_MS = 600_000; // 10 min
 export const OTP_TTL_MS = 5 * 60_000; // 5 min TTL
-export const OTP_MAX_ATTEMPTS = 5; // maximum 5 failed attempts
+export const OTP_MAX_ATTEMPTS = 3; // maximum 3 failed attempts (POR-04 rate limit)
 
 export function formatReferenceNumber(): string {
 	return `BKG-${randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;

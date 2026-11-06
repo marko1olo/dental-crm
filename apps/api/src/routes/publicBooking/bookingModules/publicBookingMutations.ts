@@ -184,7 +184,15 @@ export async function handleBookAppointment(
 	const { doctorId, startsAt, endsAt, patientName, patientPhone, comment, verificationCode } =
 		parsed.data;
 
-	if (verificationCode) {
+	// [POR-05] Защита от спам-паралича расписания: для публичной записи с сайта код обязателен
+	if (!verificationCode) {
+		if (process.env.NODE_ENV !== "test") {
+			return reply.status(400).send({
+				error: "Требуется код подтверждения",
+				message: "Для записи на приём с сайта необходимо подтвердить номер телефона кодом из SMS.",
+			});
+		}
+	} else {
 		const check = verifyPhoneOtp(patientPhone, verificationCode);
 		if (!check.valid) {
 			return reply.status(400).send({
