@@ -1,5 +1,5 @@
 import { useState, useRef } from "react";
-import type { Appointment, Dashboard } from "@dental/shared";
+import { generateUuidV7, type Appointment, type Dashboard } from "@dental/shared";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { logger } from "../../utils/logger";
 import { fetchWithHandling } from "../../utils/networkUtils";
@@ -29,9 +29,14 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
     try {
       const activePatientId = await resolveOrAutoCreateSubmitPatient(patientSearch, appointmentType);
       if (!activePatientId && appointmentType !== "emergency") {
-        const msg = "Укажите пациента из списка или создайте быстрого пациента (ФИО + телефон)";
+        const msg = "Укажите пациента из списка или начните вводить фамилию/телефон для быстрой записи";
         setSubmitError(msg);
         showToast(msg, "warning");
+        if (patientSearch.showInlineNewPatient && patientSearch.newPatientFullNameInputRef?.current) {
+          patientSearch.newPatientFullNameInputRef.current.focus();
+        } else if (patientSearch.searchInputRef?.current) {
+          patientSearch.searchInputRef.current.focus();
+        }
         return;
       }
 
@@ -54,9 +59,13 @@ export function useQuickBookingSubmit(params: UseQuickBookingSubmitParams) {
       });
 
       const url = isEditing ? `/api/appointments/${encodeURIComponent(editingAppointmentId!)}` : "/api/appointments";
+      const mutationKey = (payload as { idempotencyKey?: string }).idempotencyKey || generateUuidV7();
       const res = await fetchWithHandling(url, {
         method: isEditing ? "PATCH" : "POST",
-        headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+        headers: denteAdminSecretRequestHeaders({
+          "Content-Type": "application/json",
+          "Idempotency-Key": mutationKey,
+        }),
         body: JSON.stringify(payload),
       });
 

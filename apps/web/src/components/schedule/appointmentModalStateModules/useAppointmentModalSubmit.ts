@@ -1,4 +1,4 @@
-import type { Appointment, StaffMember as ClinicStaffMember, Chair as DentalChair } from "@dental/shared";
+import { generateUuidV7, type Appointment, type StaffMember as ClinicStaffMember, type Chair as DentalChair } from "@dental/shared";
 import { isCitoAppointment } from "../../../utils/scheduleCollisionUtils";
 import {
 	resolveEffectiveDoctorAndChair,
@@ -92,6 +92,7 @@ export async function executeAppointmentModalSave(params: HandleSaveParams) {
 	setError(null);
 	const effIsCito = Boolean(isCito || collision?.isCitoOverbooking || isCitoAppointment({ reason, comment }));
 	const allowOverbooking = Boolean(effIsCito || collision?.hasCollision || collision?.isCitoOverbooking);
+	const mutationId = generateUuidV7();
 
 	const success = await onSave(appointment.id, {
 		patientId: effPatientId || null,
@@ -107,6 +108,8 @@ export async function executeAppointmentModalSave(params: HandleSaveParams) {
 		cito: effIsCito,
 		allowEmergencyOverride: allowOverbooking,
 		allowOverbooking: allowOverbooking,
+		idempotencyKey: mutationId,
+		clientMutationId: mutationId,
 		urgency: effIsCito ? "emergency" : undefined,
 	} as any);
 

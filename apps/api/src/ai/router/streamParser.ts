@@ -2,6 +2,10 @@
  * streamParser.ts — Server-Sent Events (SSE) Stream Reader & Tool-Call Accumulator
  */
 
+import {
+	StreamingReasoningFilter,
+	stripReasoning,
+} from "@dental/shared/ai";
 import type {
 	AgentRouterChatResponse,
 	AgentRouterStreamCallbacks,
@@ -37,6 +41,17 @@ export async function readSseStream(
 			arguments: string;
 		}
 	>();
+
+	const reasoningFilter = new StreamingReasoningFilter({
+		onTextDelta: (text) => {
+			fullContent += text;
+			callbacks.onChunk?.(text);
+		},
+		onThinkingDelta: (text) => {
+			fullReasoning += text;
+			callbacks.onReasoningChunk?.(text);
+		},
+	});
 
 	try {
 		while (true) {
@@ -84,13 +99,12 @@ export async function readSseStream(
 				const delta = choice.delta;
 				if (!delta) continue;
 
-				// 1. Text content delta
+				// 1. Text content delta routed through real-time Reasoning/CoT filter
 				if (delta.content) {
-					fullContent += delta.content;
-					callbacks.onChunk?.(delta.content);
+					reasoningFilter.feed(delta.content);
 				}
 
-				// 2. Reasoning / Thinking delta (DeepSeek & Google Gemini 2.5 thinking)
+				// 2. Explicit Reasoning / Thinking delta (DeepSeek & Google Gemini 2.5 thinking)
 				const reasoningDelta =
 					delta.reasoning_content || delta.reasoning || delta.thinking;
 				if (reasoningDelta) {
@@ -136,6 +150,9 @@ export async function readSseStream(
 		reader.releaseLock();
 	}
 
+	reasoningFilter.flush();
+	const cleanContent = stripReasoning(fullContent);
+
 	const aggregatedToolCalls: AgentRouterToolCall[] = Array.from(
 		toolCallsMap.entries(),
 	)
@@ -159,7 +176,7 @@ export async function readSseStream(
 				index: 0,
 				message: {
 					role: "assistant",
-					content: fullContent.length > 0 ? fullContent : null,
+					content: cleanContent.length > 0 ? cleanContent : null,
 					tool_calls:
 						aggregatedToolCalls.length > 0 ? aggregatedToolCalls : undefined,
 					reasoning_content:

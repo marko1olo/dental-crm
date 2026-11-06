@@ -114,6 +114,7 @@ export interface AbortOrRescheduleVisitInput {
 }
 
 export type ChairsideSmartProtocolKey =
+	| "emergency_pain"
 	| "caries"
 	| "pulpitis"
 	| "periodontitis"
@@ -127,6 +128,7 @@ export type ChairsideSmartProtocolKey =
 	| "ortho_bracket_control";
 
 export const CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[] = [
+	"emergency_pain",
 	"caries",
 	"pulpitis",
 	"periodontitis",
@@ -135,6 +137,7 @@ export const CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[]
 ];
 
 export const ALL_CHAIRSIDE_SMART_PROTOCOL_KEYS: readonly ChairsideSmartProtocolKey[] = [
+	"emergency_pain",
 	"caries",
 	"pulpitis",
 	"periodontitis",

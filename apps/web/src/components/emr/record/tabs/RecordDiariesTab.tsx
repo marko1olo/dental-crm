@@ -14,9 +14,11 @@ import {
 	Copy,
 	Check,
 	Tag,
+	Edit3,
 } from "lucide-react";
 import type { MedicalRecordData, ClinicalVisitDiaryEntry, Form043VisitDiaryEntry } from "../../types/recordDataTypes";
 import { RecordNewDiaryInlineForm } from "./RecordNewDiaryInlineForm";
+import { VisitSoapEditor, type VisitSoapNoteValues } from "../../../visit/VisitSoapEditor";
 
 export interface RecordDiariesTabProps {
 	readonly formData: MedicalRecordData;
@@ -50,6 +52,8 @@ export const RecordDiariesTab: React.FC<RecordDiariesTabProps> = React.memo(
 		const [materials, setMaterials] = useState<string>("");
 		const [isFormOpen, setIsFormOpen] = useState<boolean>(false);
 		const [copiedIndex, setCopiedIndex] = useState<number | null>(null);
+		const [editingDiaryIndex, setEditingDiaryIndex] = useState<number | null>(null);
+		const [editorMode, setEditorMode] = useState<"standard" | "compact">("standard");
 
 		const autosaveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -205,6 +209,66 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 			}
 		}, []);
 
+		const handleStartEditDiary = useCallback((diary: ClinicalVisitDiaryEntry, idx: number) => {
+			setSelectedTooth(diary.toothNumber || "16");
+			setSubjective(diary.subjectiveComplaints || "");
+			setObjective(diary.objectiveStatusLocalis || "");
+			setDiagnosisText(diary.assessmentDiagnosisText || "");
+			setIcd10Code(diary.assessmentIcd10Code || "K02.1");
+			setProtocol(diary.procedureProtocol || "");
+			setAnesthesia(diary.anesthesiaDetails || "");
+			setMaterials(diary.appliedMaterials || "");
+			setEditingDiaryIndex(idx);
+			setEditorMode("standard");
+			setIsFormOpen(true);
+		}, []);
+
+		const handleSaveFromSoapEditor = useCallback((values: VisitSoapNoteValues) => {
+			const now = new Date();
+			const entryDate = now.toISOString().slice(0, 10);
+			const entryTime = now.toTimeString().slice(0, 5);
+
+			if (editingDiaryIndex !== null) {
+				const existing = formData.visitDiaries[editingDiaryIndex];
+				const dateStamp = now.toLocaleDateString("ru-RU", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
+				const updatedProtocol = values.treatmentPlan ? `${values.treatmentPlan}\n\n[Исправленному верить: ${dateStamp}]` : existing?.procedureProtocol || "";
+				const revisedEntry: ClinicalVisitDiaryEntry = {
+					...existing,
+					toothNumber: selectedTooth ? String(selectedTooth) : existing?.toothNumber || "16",
+					subjectiveComplaints: values.complaint ?? existing?.subjectiveComplaints ?? "Жалоб нет",
+					objectiveStatusLocalis: values.objectiveStatus ?? existing?.objectiveStatusLocalis ?? "Статус без патологии",
+					assessmentDiagnosisText: values.diagnosis ?? existing?.assessmentDiagnosisText ?? "Клинический осмотр",
+					assessmentIcd10Code: values.icd10 ?? existing?.assessmentIcd10Code ?? "Z01.2",
+					procedureProtocol: updatedProtocol,
+				};
+				formData.visitDiaries[editingDiaryIndex] = revisedEntry;
+				setEditingDiaryIndex(null);
+			} else {
+				const newEntry: ClinicalVisitDiaryEntry = {
+					id: `diary_${Date.now()}`,
+					entryDate,
+					entryTime,
+					toothNumber: selectedTooth ? String(selectedTooth) : "16",
+					doctorFullName: formData.passport.attendingDoctorFullName || "Лечащий врач",
+					doctorSpecialty: formData.passport.attendingDoctorSpecialty || "Врач-стоматолог-терапевт",
+					subjectiveComplaints: values.complaint || "Жалоб нет",
+					objectiveStatusLocalis: values.objectiveStatus || "Статус без патологии",
+					assessmentDiagnosisText: values.diagnosis || "Клинический осмотр",
+					assessmentIcd10Code: values.icd10 || "Z01.2",
+					procedureProtocol: values.treatmentPlan || "Проведен осмотр",
+					anesthesiaDetails: anesthesia || undefined,
+					appliedMaterials: materials || undefined,
+				};
+				if (onAddDiary) {
+					onAddDiary(newEntry);
+				} else {
+					formData.visitDiaries.unshift(newEntry);
+				}
+			}
+			handleClearDraft();
+			setIsFormOpen(false);
+		}, [editingDiaryIndex, formData, selectedTooth, anesthesia, materials, onAddDiary, handleClearDraft]);
+
 		return (
 			<div className="max-w-full overflow-x-clip">
 				<div className="emr-studio-card emr-studio-section-card">
@@ -240,42 +304,109 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 
 					{/* Быстрая форма добавления записи приёма */}
 					{isFormOpen && (
-						<RecordNewDiaryInlineForm
-							selectedTooth={selectedTooth}
-							setSelectedTooth={(tooth) => {
-								setSelectedTooth(tooth);
-								triggerAutosave({ subjective, objective, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth: tooth });
-							}}
-							commonTeeth={COMMON_TEETH}
-							subjective={subjective}
-							setSubjective={(val) => {
-								setSubjective(val);
-								triggerAutosave({ subjective: val, objective, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth });
-							}}
-							objective={objective}
-							setObjective={(val) => {
-								setObjective(val);
-								triggerAutosave({ subjective, objective: val, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth });
-							}}
-							diagnosisText={diagnosisText}
-							setDiagnosisText={(val) => {
-								setDiagnosisText(val);
-								triggerAutosave({ subjective, objective, diagnosisText: val, icd10Code, protocol, anesthesia, materials, selectedTooth });
-							}}
-							icd10Code={icd10Code}
-							setIcd10Code={(val) => {
-								setIcd10Code(val);
-								triggerAutosave({ subjective, objective, diagnosisText, icd10Code: val, protocol, anesthesia, materials, selectedTooth });
-							}}
-							protocol={protocol}
-							setProtocol={(val) => {
-								setProtocol(val);
-								triggerAutosave({ subjective, objective, diagnosisText, icd10Code, protocol: val, anesthesia, materials, selectedTooth });
-							}}
-							onApplyNorm={handleApplyNorm}
-							onClear={handleClearDraft}
-							onSave={handleSaveNewDiary}
-						/>
+						<div className="mb-4 space-y-2">
+							<div className="flex items-center justify-between pb-1 border-b border-[var(--line,#e2e8f0)]">
+								<span className="text-xs font-bold text-[var(--teal,#0d9488)] flex items-center gap-1.5">
+									{editingDiaryIndex !== null ? (
+										<>
+											<Edit3 className="w-3.5 h-3.5 text-amber-600" />
+											<span>Редактирование визита #{formData.visitDiaries.length - editingDiaryIndex} («Исправленному верить»)</span>
+										</>
+									) : (
+										<>
+											<Sparkles className="w-3.5 h-3.5" />
+											<span>Клинический протокол приёма (SOAP) • 448 шаблонов СтАР</span>
+										</>
+									)}
+								</span>
+								<div className="flex items-center gap-2">
+									<button
+										type="button"
+										onClick={() => setEditorMode((m) => (m === "standard" ? "compact" : "standard"))}
+										className="text-[11px] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] underline cursor-pointer"
+									>
+										{editorMode === "standard" ? "Компактная форма" : "Открыть полный редактор SOAP"}
+									</button>
+								</div>
+							</div>
+
+							{editorMode === "standard" ? (
+								<VisitSoapEditor
+									patientName={formData.passport.patientFullName}
+									doctorName={formData.passport.attendingDoctorFullName}
+									activeTooth={Number(selectedTooth) || 16}
+									isLocked={editingDiaryIndex !== null}
+									initialValues={{
+										complaint: subjective,
+										anamnesis: "",
+										objectiveStatus: objective,
+										diagnosis: diagnosisText,
+										treatmentPlan: protocol,
+										recommendations: "",
+										icd10: icd10Code,
+									}}
+									onSelectActiveTooth={(tooth) => {
+										setSelectedTooth(String(tooth));
+										triggerAutosave({ subjective, objective, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth: String(tooth) });
+									}}
+									onSave={handleSaveFromSoapEditor}
+									onChange={(vals) => {
+										if (vals.complaint !== undefined) setSubjective(vals.complaint);
+										if (vals.objectiveStatus !== undefined) setObjective(vals.objectiveStatus);
+										if (vals.diagnosis !== undefined) setDiagnosisText(vals.diagnosis);
+										if (vals.treatmentPlan !== undefined) setProtocol(vals.treatmentPlan);
+										if (vals.icd10 !== undefined) setIcd10Code(vals.icd10);
+										triggerAutosave({
+											subjective: vals.complaint ?? subjective,
+											objective: vals.objectiveStatus ?? objective,
+											diagnosisText: vals.diagnosis ?? diagnosisText,
+											icd10Code: vals.icd10 ?? icd10Code,
+											protocol: vals.treatmentPlan ?? protocol,
+											anesthesia,
+											materials,
+											selectedTooth,
+										});
+									}}
+								/>
+							) : (
+								<RecordNewDiaryInlineForm
+									selectedTooth={selectedTooth}
+									setSelectedTooth={(tooth) => {
+										setSelectedTooth(tooth);
+										triggerAutosave({ subjective, objective, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth: tooth });
+									}}
+									commonTeeth={COMMON_TEETH}
+									subjective={subjective}
+									setSubjective={(val) => {
+										setSubjective(val);
+										triggerAutosave({ subjective: val, objective, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth });
+									}}
+									objective={objective}
+									setObjective={(val) => {
+										setObjective(val);
+										triggerAutosave({ subjective, objective: val, diagnosisText, icd10Code, protocol, anesthesia, materials, selectedTooth });
+									}}
+									diagnosisText={diagnosisText}
+									setDiagnosisText={(val) => {
+										setDiagnosisText(val);
+										triggerAutosave({ subjective, objective, diagnosisText: val, icd10Code, protocol, anesthesia, materials, selectedTooth });
+									}}
+									icd10Code={icd10Code}
+									setIcd10Code={(val) => {
+										setIcd10Code(val);
+										triggerAutosave({ subjective, objective, diagnosisText, icd10Code: val, protocol, anesthesia, materials, selectedTooth });
+									}}
+									protocol={protocol}
+									setProtocol={(val) => {
+										setProtocol(val);
+										triggerAutosave({ subjective, objective, diagnosisText, icd10Code, protocol: val, anesthesia, materials, selectedTooth });
+									}}
+									onApplyNorm={handleApplyNorm}
+									onClear={handleClearDraft}
+									onSave={handleSaveNewDiary}
+								/>
+							)}
+						</div>
 					)}
 
 					{/* Список уже существующих записей визитов */}
@@ -294,6 +425,16 @@ ${diary.anesthesiaDetails ? `Анестезия: ${diary.anesthesiaDetails}\n` :
 								</div>
 								<div className="flex items-center gap-2 text-xs text-[var(--muted,#64748b)]">
 									<span>Врач: <strong>{diary.doctorFullName}</strong></span>
+									<button
+										type="button"
+										onClick={() => handleStartEditDiary(diary, index)}
+										className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-900/40 text-amber-600 dark:text-amber-400 font-semibold text-xs inline-flex items-center gap-1 cursor-pointer"
+										title="Внести исправление в протокол («Исправленному верить»)"
+										data-testid={`btn-revise-diary-${index}`}
+									>
+										<Edit3 className="w-3.5 h-3.5" />
+										<span>Исправить</span>
+									</button>
 									<button
 										type="button"
 										onClick={() => handleCopyDiaryText(diary, index)}

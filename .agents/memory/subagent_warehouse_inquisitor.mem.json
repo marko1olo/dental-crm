@@ -1,0 +1,32 @@
+{
+  "role": "Supreme Red Team Inquisitor for Warehouse & Supply Domain",
+  "status": "COMPLETED",
+  "timestamp": "2026-11-06T10:49:00+04:00",
+  "mandates_complied": [
+    "Mandate 8e (Doctor Autonomy: 0 disabled buttons, seamless 1-click norm)",
+    "Mandate 8n (Solo Sovereign: batch writeoff, soft negative stock, zero forced assistants)",
+    "Mandate 8v (Silent Backoffice: background soft overdraft deduction, zero chairside alert noise)",
+    "Mandate 8am (Single Primary CTA: exactly 1 #0d9488 button per screen)",
+    "Mandate 8ze / Apple HIG (Native Bottom Sheet, Drag Handle 36x5px, touch >= 44x44px, Natural Thumb Zone, 0px horizontal scroll)",
+    "Mandate 8wy (Integer kopecks amountKopecks BIGINT arithmetic, zero float precision issues)",
+    "Mandate 8b (Sweet Spot: WarehouseStudioModal.tsx 445 lines, strictly between 400-480)",
+    "Mandate 8an (VCS: selective per-file git add, no touching alien domains)",
+    "Mandate 8ba (5 Uncomfortable Questions Reality Check: batch macro flows, 0px noise, dynamic hydration, unlocked primary CTA)"
+  ],
+  "canonical_ssot": "apps/web/src/components/inventory/WarehouseStudioModal.tsx",
+  "legacy_purge": {
+    "WarehouseManagerModal.tsx": "Replaced with canonical facade gateway delegating to WarehouseStudioModal without hardcoded doctor names",
+    "hardcoded_names_removed": ["Д-р Кузнецов А.В.", "Иванова Е.В."],
+    "dynamic_hydration": "useAppStore activeDoctorName integration"
+  },
+  "tests_verified": {
+    "web_inventory_suites": "61 files, 240 tests passed (vitest)",
+    "api_warehouse_routes": "2 suites, 15 tests passed (node --test)"
+  },
+  "proofs_captured": [
+    "docs/proofs/warehouse/01_warehouse_studio_pc_light_1440x900.png",
+    "docs/proofs/warehouse/02_warehouse_studio_pc_dark_1440x900.png",
+    "docs/proofs/warehouse/03_warehouse_studio_mobile_light_390x844.png",
+    "docs/proofs/warehouse/04_warehouse_studio_mobile_dark_390x844.png"
+  ]
+}

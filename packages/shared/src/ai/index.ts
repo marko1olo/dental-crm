@@ -7,6 +7,8 @@
  */
 
 export * from "./clinicalCognitiveCore.js";
+export * from "./dentalStylesAndPhonetics.js";
+export * from "./clinicalTriageEngine.js";
 export * from "./dentalProtocols.js";
 export * from "./anesthesiaEngine.js";
 export * from "./emergencyProtocols.js";
@@ -42,4 +44,6 @@ export {
 } from "./contextCompactor.js";
 export * from "./taskPlanTracker.js";
 export * from "./agentEvents.js";
+export * from "./reasoningStripper.js";
+
 

@@ -34,13 +34,26 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 	const anesthesiaCatalogDataPath = path.resolve(__dirname, '../../anesthesia/anesthesiaCatalogData.ts');
 	const anesthesiaQuickBarDir = path.resolve(__dirname, '../../anesthesia/anesthesiaQuickBar');
 
+	const readFilesRecursively = (dir: string): string[] => {
+		if (!fs.existsSync(dir)) return [];
+		const entries = fs.readdirSync(dir, { withFileTypes: true });
+		const contents: string[] = [];
+		for (const entry of entries) {
+			const fullPath = path.join(dir, entry.name);
+			if (entry.isDirectory()) {
+				contents.push(...readFilesRecursively(fullPath));
+			} else if (entry.isFile() && (entry.name.endsWith('.ts') || entry.name.endsWith('.tsx'))) {
+				contents.push(fs.readFileSync(fullPath, 'utf8'));
+			}
+		}
+		return contents;
+	};
+
 	const usePatientLogicDir = path.resolve(__dirname, '../../../hooks/domains/patientLogicModules');
 	const clinicProfileUtilsCode = fs.readFileSync(clinicProfileUtilsPath, 'utf8');
 	const usePatientLogicCode = [
 		fs.readFileSync(usePatientLogicPath, 'utf8'),
-		...(fs.existsSync(usePatientLogicDir)
-			? fs.readdirSync(usePatientLogicDir).map((f) => fs.readFileSync(path.join(usePatientLogicDir, f), 'utf8'))
-			: []),
+		...readFilesRecursively(usePatientLogicDir),
 	].join('\n');
 	const visiographAnalyzerCode = fs.readFileSync(visiographAnalyzerPath, 'utf8');
 	const visitDiagnosticsTabCode = fs.readFileSync(visitDiagnosticsTabPath, 'utf8');
@@ -49,7 +62,9 @@ describe('Wave 60 / Feature 249: Clinical Autonomy & Friction Reduction', () => 
 		fs.existsSync(chairsideAnesthesiaQuickBarPath) ? fs.readFileSync(chairsideAnesthesiaQuickBarPath, 'utf8') : '',
 		fs.existsSync(anesthesiaCatalogDataPath) ? fs.readFileSync(anesthesiaCatalogDataPath, 'utf8') : '',
 		...(fs.existsSync(anesthesiaQuickBarDir)
-			? fs.readdirSync(anesthesiaQuickBarDir).map((f) => fs.readFileSync(path.join(anesthesiaQuickBarDir, f), 'utf8'))
+			? fs.readdirSync(anesthesiaQuickBarDir)
+				.filter((f) => fs.statSync(path.join(anesthesiaQuickBarDir, f)).isFile())
+				.map((f) => fs.readFileSync(path.join(anesthesiaQuickBarDir, f), 'utf8'))
 			: []),
 	].join('\n');
 

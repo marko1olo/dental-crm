@@ -24,6 +24,10 @@ export const SoapExpressProtocolsBar: React.FC<SoapExpressProtocolsBarProps> = (
 				<span className="text-[12px] font-semibold text-[var(--ink)]">Экспресс-протоколы:</span>
 			</div>
 			<div className="flex items-center gap-1.5 flex-wrap">
+				<button type="button" onClick={() => onApplyExpressProtocol("emergency_pain")} className={btnCls} data-testid="btn-soap-express-emergency-pain" title="Экстренный приём за 15 секунд: острая боль, анестезия и неотложная помощь в 1 клик">
+					<Zap className="w-3.5 h-3.5 text-amber-500" />
+					<span>Острая боль (Экстренно)</span>
+				</button>
 				<button type="button" onClick={() => onApplyExpressProtocol("caries")} className={btnCls} data-testid="btn-soap-express-caries" title="Протокол: Кариес дентина (K02.1)">
 					<Activity className="w-3.5 h-3.5 text-[var(--ink-muted)]" />
 					<span>Кариес (K02.1)</span>

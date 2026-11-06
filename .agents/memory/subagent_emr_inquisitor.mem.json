@@ -1,0 +1,29 @@
+{
+  "subagent": "emr_visit_soap_inquisitor",
+  "status": "COMPLETED",
+  "domain": "Visit Diary, Medical Record (EMR) & SOAP Clinical Protocols",
+  "timestamp": "2026-11-06T10:56:00Z",
+  "verifications": {
+    "zero_bureaucracy_mandate_8x": "PASSED - eliminated raw '043/u' in user-facing UI in favor of 'Медицинская карта приёма' and 'Дневник визита'",
+    "doctor_autonomy_mandate_8e": "PASSED - non-blocking buttons (disabled=false), 1-click norm, instant debounced autosave, versioned audit ('Исправленному верить')",
+    "emergency_pain_protocol_15s": "PASSED - 1-click emergency autopilot ('Острая боль (Экстренно)', K04.0, Articaine 1:100 000, 2500 RUB + 800 RUB)",
+    "unified_soap_editor_ssot": "PASSED - RecordDiariesTab unified with VisitSoapEditor (448 StomX templates + express protocols + safe anesthesia)",
+    "unit_tests_pass": "PASSED - 59/59 EMR tests + 38/38 Visit/Diary tests green (Exit code 0)",
+    "visual_proof_4state": "PASSED - docs/proofs/emr/ (PC Light 111.1KB, PC Dark 110.0KB, Mobile Light 45.6KB, Mobile Dark 45.7KB), all personally inspected via read_file with 0 clipping and 1 Primary CTA",
+    "gates_dod": "PASSED - UTF-8, stub-overrides, fetch-response, dynamic-imports all 0 exit code"
+  },
+  "artifacts": [
+    "apps/web/src/components/emr/record/tabs/RecordDiariesTab.tsx",
+    "apps/web/src/components/visit/soapEditor/SoapExpressProtocolsBar.tsx",
+    "apps/web/src/components/visit/workflowModules/chairsideSmartProtocolBuilder.ts",
+    "apps/web/src/components/visit/workflowModules/clinicalWorkflowTypes.ts",
+    "apps/web/src/components/visit/presets/clinicalModules/endoPresets.ts",
+    "apps/web/src/components/visit/presets/clinicalModules/presetCollections.ts",
+    "apps/web/src/components/visit/presets/autopilotPresets.ts",
+    "apps/web/src/components/visit/__tests__/clinicalTemplatesEditorWiring.test.ts",
+    "docs/proofs/emr/01_visit_soap_pc_light_1440x900.png",
+    "docs/proofs/emr/02_visit_soap_pc_dark_1440x900.png",
+    "docs/proofs/emr/03_visit_soap_mobile_light_390x844.png",
+    "docs/proofs/emr/04_visit_soap_mobile_dark_390x844.png"
+  ]
+}

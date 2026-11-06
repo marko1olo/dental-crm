@@ -1,5 +1,6 @@
 import { useRef, useState } from "react";
 import { showToast } from "../../GlobalToast.js";
+import { useAppStore } from "../../../store/appStore.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import {
 	type ClinicalPackageId,
@@ -20,13 +21,15 @@ export function useShiftBatchPackageAction({
 	organizationId = "org-default",
 	warehouseItems,
 	currentStockMap,
-	doctorName = "Кузнецов А.В.",
+	doctorName: propDoctorName,
 	packageQuantityMultiplier,
 	onDeductionComplete,
 }: UseShiftBatchPackageActionParams) {
 	const inFlightRef = useRef(false);
 	const [submittingPackageId, setSubmittingPackageId] = useState<string | null>(null);
 	const [lastPackageResult, setLastPackageResult] = useState<OneClickPackageWriteOffResult | null>(null);
+	const storeDoctorName = useAppStore.getState().activeDoctorName;
+	const doctorName = propDoctorName || storeDoctorName || "Лечащий врач";
 
 	const handlePackageClick = async (packageId: ClinicalPackageId) => {
 		if (inFlightRef.current || submittingPackageId) return;

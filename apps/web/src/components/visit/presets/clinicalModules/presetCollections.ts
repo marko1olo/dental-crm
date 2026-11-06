@@ -1,6 +1,6 @@
 import type { DoctorAutopilotPreset } from "../../clinicalSoapTypes";
 import { AUTOPILOT_CARIES_K021, AUTOPILOT_NORM_HEALTHY } from "./therapyPresets";
-import { AUTOPILOT_PULPITIS_K040, AUTOPILOT_PERIODONTITIS_K045 } from "./endoPresets";
+import { AUTOPILOT_EMERGENCY_PAIN_K040, AUTOPILOT_PULPITIS_K040, AUTOPILOT_PERIODONTITIS_K045 } from "./endoPresets";
 import { AUTOPILOT_HYGIENE_AIRFLOW, AUTOPILOT_HYGIENE_K051 } from "./perioHygienePresets";
 import {
 	AUTOPILOT_EXTRACTION_K011,
@@ -16,6 +16,7 @@ import {
 } from "./orthoPresets";
 
 export const DOCTOR_1CLICK_AUTOPILOT_PRESETS: readonly DoctorAutopilotPreset[] = [
+	AUTOPILOT_EMERGENCY_PAIN_K040,
 	AUTOPILOT_CARIES_K021,
 	AUTOPILOT_PULPITIS_K040,
 	AUTOPILOT_PERIODONTITIS_K045,
@@ -27,6 +28,11 @@ export const DOCTOR_1CLICK_AUTOPILOT_PRESETS: readonly DoctorAutopilotPreset[] =
 ];
 
 export const DOCTOR_AUTOPILOT_PRESETS_MAP: Readonly<Record<string, DoctorAutopilotPreset>> = {
+	autopilot_emergency_pain_k040: AUTOPILOT_EMERGENCY_PAIN_K040,
+	emergency_pain_k040: AUTOPILOT_EMERGENCY_PAIN_K040,
+	emergency_pain: AUTOPILOT_EMERGENCY_PAIN_K040,
+	acute_pain: AUTOPILOT_EMERGENCY_PAIN_K040,
+	emergency: AUTOPILOT_EMERGENCY_PAIN_K040,
 	autopilot_caries_k021: AUTOPILOT_CARIES_K021,
 	caries_k021: AUTOPILOT_CARIES_K021,
 	caries_medium: AUTOPILOT_CARIES_K021,

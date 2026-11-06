@@ -1,3 +1,4 @@
+import { generateUuidV7 } from "@dental/shared";
 import { actionFailureToast } from "../../lib/panelStateText";
 import { showToast } from "../GlobalToast";
 import type { UseQuickBookingSubmitParams } from "./QuickBookingDrawerTypes";
@@ -38,6 +39,7 @@ export function buildQuickBookingPayload(opts: BuildPayloadOptions) {
   }
 
   const allowOverbookingFlag = Boolean(isEmergency || overbookOverride);
+  const clientMutationId = generateUuidV7();
   return {
     patientId: activePatientId || null,
     doctorUserId: effDoctor,
@@ -52,6 +54,8 @@ export function buildQuickBookingPayload(opts: BuildPayloadOptions) {
     cito: isEmergency,
     allowOverbooking: allowOverbookingFlag,
     allowEmergencyOverride: allowOverbookingFlag,
+    idempotencyKey: clientMutationId,
+    clientMutationId,
     treatmentPlanId: planId,
     stageId,
     invoice_items: stageServices,

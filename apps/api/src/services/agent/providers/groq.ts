@@ -25,16 +25,16 @@ import { createProxiedFetch, getGlobalProxyUrl } from "../proxyDispatcher.js";
 
 export class GroqProviderAdapter implements LlmProviderAdapter {
 	public readonly providerId: LlmProviderId = "groq";
-	public readonly defaultModel: string = "qwen/qwen3.8-27b";
+	public readonly defaultModel: string = "llama-3.3-70b-versatile";
 	public readonly supportedModels: readonly string[] = [
+		"llama-3.3-70b-versatile",
+		"qwen/qwen3.6-27b",
 		"whisper-large-v3-turbo",
 		"qwen/qwen3.8-27b",
 		"openai/gpt-oss-120b",
 		"openai/gpt-oss-20b",
-		"qwen/qwen3.6-27b",
 		"groq/compound",
 		"groq/compound-mini",
-		"llama-3.3-70b-versatile",
 		"llama-3.1-8b-instant",
 	] as const;
 

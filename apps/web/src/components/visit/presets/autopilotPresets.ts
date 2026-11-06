@@ -62,6 +62,27 @@ export function build1ClickCariesPreset(
 }
 
 /**
+ * Построитель протокола экстренного приёма / острой боли (K04.0).
+ */
+export function build1ClickEmergencyPainPreset(
+	toothNumber?: number | null,
+): DoctorAutopilotPreset {
+	const tooth = toothNumber ?? 36;
+	const toothPrefix = `Зуб ${tooth}: `;
+	const base = DOCTOR_AUTOPILOT_PRESETS_MAP.autopilot_emergency_pain_k040 || AUTOPILOT_PULPITIS_K040;
+
+	return {
+		...base,
+		defaultTooth: tooth,
+		statusLocalis: `${toothPrefix}${base.statusLocalis}`,
+		service804n: {
+			...base.service804n!,
+			title: `${base.service804n!.title} (Зуб ${tooth})`,
+		},
+	};
+}
+
+/**
  * Построитель протокола эндодонтии / пульпита (K04.0).
  */
 export function build1ClickPulpitisPreset(
@@ -218,6 +239,13 @@ export function apply1ClickClinicalAutopilot(
 
 	let targetPreset: DoctorAutopilotPreset;
 	switch (presetId) {
+		case "autopilot_emergency_pain_k040":
+		case "emergency_pain_k040":
+		case "emergency_pain":
+		case "acute_pain":
+		case "emergency":
+			targetPreset = build1ClickEmergencyPainPreset(tooth);
+			break;
 		case "autopilot_caries_k021":
 		case "caries_k021":
 		case "caries_medium":

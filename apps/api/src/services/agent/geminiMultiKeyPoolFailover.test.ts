@@ -120,9 +120,13 @@ describe("Mandate 8l: Gemini Multi-Key Pool & Cascade Failover Suite", () => {
 		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[2], "gemini-3.5-flash-lite");
 		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[3], "gemini-3.1-flash-lite");
 
+		// 2.5 fallbacks follow
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[4], "gemini-2.5-flash");
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[5], "gemini-2.5-flash-lite");
+
 		// 3.8 and Pro follow
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[4], "gemini-3.8-flash");
-		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[5], "gemini-3.1-pro");
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[6], "gemini-3.8-flash");
+		assert.strictEqual(DEFAULT_GEMINI_MODEL_CASCADE[7], "gemini-3.1-pro");
 	});
 
 	test("3. Instant key swapping across HTTP 429 rate limits without dropping user request", async () => {

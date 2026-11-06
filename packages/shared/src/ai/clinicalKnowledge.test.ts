@@ -371,22 +371,28 @@ describe("Chairside Emergency Protocols & Quick-Action Algorithms", () => {
 // ==============================================================================
 
 describe("Master Cognitive Matrix & Prompt Builders", () => {
-	it("master cognitive architecture text includes all 15 meta-cognitive laws", () => {
-		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("1. АУДИТ СКРЫТЫХ ПРЕДПОСЫЛОК"));
+	it("master cognitive architecture text includes all 21 meta-cognitive laws", () => {
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("1. ПРИОРИТЕТ ПРАКТИЧЕСКОГО РЕШЕНИЯ"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("2. МЫШЛЕНИЕ ОТ ПЕРВОПРИНЦИПОВ"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("3. ЭПИСТЕМИЧЕСКАЯ ЧЕСТНОСТЬ"));
-		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("4. РАДАР СЛЕПЫХ ЗОН"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("4. РАДАР СКРЫТЫХ КЛИНИЧЕСКИХ"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("5. ПОСЛЕДСТВИЯ ВТОРОГО И ТРЕТЬЕГО ПОРЯДКА"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("6. КОРНЕВАЯ ПРИЧИНА"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("7. ИММУНИТЕТ К НАВОДЯЩИМ ВОПРОСАМ"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("8. ПРОТОКОЛ ИНФОРМАЦИОННОЙ НЕОПРЕДЕЛЕННОСТИ"));
-		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("9. ШОКОВАЯ РАЦИОНАЛИЗАЦИЯ"));
-		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("10. СКВОЗНОЙ РЕТРОСПЕКТИВНЫЙ АУДИТ"));
-		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("11. ПРОАКТИВНАЯ РЕКАЛИБРОВКА"));
-		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("12. ПРОТОКОЛ ЭВРИСТИЧЕСКОЙ ОППОЗИЦИИ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("9. ХОЛОДНЫЙ ИНЖЕНЕРНЫЙ АЛГОРИТМ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("10. СКВОЗНОЙ КЛИНИЧЕСКИЙ АУДИТ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("11. ПРАГМАТИЧЕСКАЯ ОПТИМИЗАЦИЯ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("12. КЛИНИЧЕСКАЯ ВЕРИФИКАЦИЯ"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("13. РАЗРЕШЕНИЕ КЛИНИЧЕСКОЙ ДВУСМЫСЛЕННОСТИ"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("14. БЕСКОМПРОМИССНОЕ АНТИ-СИКОФАНТСТВО"));
 		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("15. ДИНАМИЧЕСКОЕ МАСШТАБИРОВАНИЕ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("16. БИОЛОГИЧЕСКИЙ БАРЬЕР И АНТИ-ЯТРОГЕНИЯ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("17. ТОТАЛЬНЫЙ ЗАПРЕТ ЗЕРКАЛИРОВАНИЯ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("18. ЗУБНАЯ ФОРМУЛА FDI"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("19. КИРИЛЛИЧЕСКАЯ ТРАНСЛИТЕРАЦИЯ БРЕНДОВ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("20. НЕОТЛОЖНЫЙ ХОЛОДНЫЙ ПРОТОКОЛ"));
+		assert.ok(MASTER_COGNITIVE_ARCHITECTURE_TEXT.includes("21. РАЗМЫКАНИЕ КОНТЕКСТНЫХ ЯКОРЕЙ"));
 	});
 
 	it("builds custom chairside clinical system prompt with options", () => {

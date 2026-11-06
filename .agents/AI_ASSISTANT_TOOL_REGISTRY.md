@@ -42,6 +42,17 @@
 
 ---
 
+### 🚦 СВЯЗЬ ИНСТРУМЕНТАРНОГО ХАРНЕССА С 7-GATES CLINICAL TRIAGE ENGINE
+Каждый входящий запрос предварительно классифицируется через `evaluateClinicalTriage(query)` (`packages/shared/src/ai/clinicalTriageEngine.ts`), активируя профильный шлюз и рекомендуемый набор инструментов:
+- **Gate 2: Emergency SOS** $\rightarrow$ `chairside_emergency_rescue` (анафилаксия, LAST-синдром, NaOCl авария, поломка файла bypass, перфорация).
+- **Gate 3: Hot Path Direct Action** $\rightarrow$ `update_tooth_status`, `create_appointment`, `create_invoice_draft`, `print_document` (мутации с 2-фазным Guard при подтверждении).
+- **Gate 4: Material & Technical Protocol** $\rightarrow$ `compare_dental_materials`, `search_clinic_services_and_prices` (физико-химия, протоколы адгезии, эндомотор).
+- **Gate 5: Ambiguity & Clinical Dilemma** $\rightarrow$ `multidisciplinary_concilium`, `translate_patient_complaint` (дифдиагноз «пульпит vs глубокий кариес», Сценарий А / Б).
+- **Gate 6: Evidence & Pediatric Safety** $\rightarrow$ `calculate_anesthesia`, `check_somatic_risks` (потолок анестезии детям $\le 5$ мг/кг, соматика, аллергии).
+- **Gate 7: Output Polish & Sanitizer** $\rightarrow$ `sanitizeClinicalAiOutput` (выкос сервильной слизи, судейских ярлыков и замена канцелярита по Мандату 8x).
+
+---
+
 ## 🩺 РАЗДЕЛ I: КЛИНИЧЕСКИЕ КАЛЬКУЛЯТОРЫ И ПРОТОКОЛЫ (9 ИНСТРУМЕНТОВ)
 
 ### 1. `calculate_anesthesia`

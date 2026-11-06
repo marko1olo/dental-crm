@@ -6,6 +6,7 @@
  */
 
 import { z } from "zod";
+import { stripReasoning } from "@dental/shared/ai";
 import type { LLMProvider, LLMStreamEvent, ProviderMessage } from "./types.js";
 import { AnthropicProviderAdapter } from "./providers/anthropic.js";
 import { DeepSeekProviderAdapter } from "./providers/deepseek.js";
@@ -416,7 +417,7 @@ export class OmniLlmGateway {
 			}
 		}
 
-		const cleaned = rawText
+		const cleaned = stripReasoning(rawText)
 			.replace(/^```(?:json)?\s*/i, "")
 			.replace(/\s*```$/, "")
 			.trim();
@@ -480,6 +481,8 @@ export class OmniLlmGateway {
 					for await (const chunk of stream) {
 						if (chunk.type === "text_delta") {
 							yield { type: "text_delta", text: chunk.text };
+						} else if (chunk.type === "thinking_delta") {
+							yield { type: "thought_delta", text: chunk.text };
 						} else if (chunk.type === "tool_call_end") {
 							let inputObj: Record<string, unknown> = {};
 							if (typeof chunk.arguments === "object" && chunk.arguments !== null) {

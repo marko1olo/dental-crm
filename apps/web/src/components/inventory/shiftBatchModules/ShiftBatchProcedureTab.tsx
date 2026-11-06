@@ -1,5 +1,6 @@
 import type React from "react";
 import { Check, ShieldAlert, ShieldCheck } from "lucide-react";
+import { useAppStore } from "../../../store/appStore.js";
 import { useConsumablesDeductionLogic } from "../deductionModalModules/useConsumablesDeductionLogic.js";
 import type { InventoryItem } from "../useInventoryLogic.js";
 import { ShiftBatchProcedureItemRow } from "./ShiftBatchProcedureItemRow.js";
@@ -21,12 +22,14 @@ export const ShiftBatchProcedureTab: React.FC<ShiftBatchProcedureTabProps> = ({
 	serviceCode,
 	service804nCode = "A16.07.002.011",
 	toothNumber = 16,
-	doctorName = "Кузнецов А.В.",
+	doctorName: propDoctorName,
 	patientName = "Смирнова Е.А.",
 	currentStockMap = {},
 	warehouseItems,
 	onConfirmDeduction,
 }) => {
+	const storeDoctorName = useAppStore((s) => s.activeDoctorName);
+	const doctorName = propDoctorName || storeDoctorName || "Лечащий врач";
 	const effectiveServiceCode = serviceCode || service804nCode;
 
 	const {

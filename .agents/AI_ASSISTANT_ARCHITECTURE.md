@@ -37,7 +37,7 @@
 
 ---
 
-## ⚡ 2. ГИБРИДНЫЙ ПАЙПЛАЙН: LOCAL-FIRST HEURISTICS VS CLOUD LLM FAILOVER
+## ⚡ 2. ГИБРИДНЫЙ ПАЙПЛАЙН: 7-GATES CLINICAL TRIAGE, LOCAL HEURISTICS & CLOUD LLM FAILOVER
 
 Для обеспечения отказоустойчивости, соблюдения Mandate 8e (Zero Blocking) и защиты бюджета токенов внедрен строгий двухуровневый шлюз:
 
@@ -71,6 +71,9 @@
 ```
 
 ### Ключевые файлы реализации:
+- **`packages/shared/src/ai/clinicalTriageEngine.ts`**: 7-ступенчатый движок триажа (`evaluateClinicalTriage`) и фильтр вывода (`sanitizeClinicalAiOutput`).
+- **`packages/shared/src/ai/dentalStylesAndPhonetics.ts`**: 3 стиля общения врача (`STYLE_PROMPTS`), реакция на критику снимков, фонетический маппинг брендов (`PHONETIC_BRAND_MAP`) и черный список токсичных препаратов (`WITHDRAWN_DRUGS_AND_PRACTICES`).
+- **`packages/shared/src/ai/clinicalCognitiveCore.ts`**: 21 закон Мастер-матрицы клинического мышления, расчет анестезии и протоколы ESE/СтАР.
 - **`apps/web/src/lib/aiOrchestrator.ts`**: Маршрутизатор намерений (`detectIntent`). Проверяет локальные парсеры: `smartBookingParser.ts`, `smartPatientParser.ts`, `smartVisitParser.ts`, `smartPriceParser.ts`.
 - **`apps/api/src/ai/localDictationParser.ts`**: Бэкендовый детерминированный разбор диктовок.
 - **`apps/api/src/services/agent/geminiMultiKeyPoolFailover.ts`**: Ротационный пул API-ключей Google Gemini с автоматическим обходом лимитов (`429 RateLimit`) и падением в резервные провайдеры.
@@ -283,6 +286,25 @@ CREATE TABLE ai_telemetry_logs (
 3. **Сквозной естественный ввод (голос, свободный текст) вместо кликабельного рабства**: Автоматический разбор свободной клинической речи в одонтограмму, дневник и кассу.
 4. **Полная гидратация состояния без пустых экранов и амнезии**: Мгновенное слияние данных визита и долговременной одонтограммы пациента при открытии шторки.
 5. **Принцип анти-цербера**: Главная кнопка действия всегда кликабельна без блокировок из-за второстепенных полей.
+
+---
+
+## 🔄 8.4. КАСКАДЫ МОДЕЛЕЙ, БОЕВАЯ РОТАЦИЯ КЛЮЧЕЙ И ОЧИСТКА РЕЗОНИНГА (STOMCHAT & DVACHBOT ARCHITECTURE)
+
+Архитектура инференса DENTE CRM вобрала в себя многолетний опыт боевых систем stomchat и dvachbot:
+1. **Иерархический каскад LLM (Multi-Tier Cascade)**:
+   - **Smart Tier**: `gemini-3.6-flash`, `gemini-3.5-flash` — глубокий анализ, ортопантомограммы, хирургия.
+   - **Lite Tier (<300 мс)**: `gemini-3.5-flash-lite`, `gemini-3.1-flash-lite`, `gemini-2.5-flash-lite` — мгновенные операции врача у кресла.
+   - **Groq High-Throughput & Fallbacks**: `llama-3.3-70b-versatile`, `qwen/qwen3.6-27b`, `gemini-2.5-flash`.
+   - **BYOK Frontier**: `claude-3-5-sonnet`, `gpt-4o`, `deepseek-r1`.
+2. **Изоляция и выкос Chain-of-Thought (`stripReasoning`)**:
+   - Исключена утечка тегов `<think>...</think>`, `<thought>...</thought>`, `<reasoning>...</reasoning>` в пользовательский интерфейс.
+   - `StreamingReasoningFilter` разделяет поток в реальном времени: reasoning уходит в `thought_delta` / UI-аккордеон размышлений, а чистый ответ — в `text_delta`.
+   - `generateStructuredJson` автоматически очищается от CoT перед валидацией JSON по Zod-схеме.
+3. **Пулы ключей и защита от банов (Key Pool Cooldown & Pacing)**:
+   - Экспоненциальный бэкофф при 429: $60\text{с} \times 2^{(failures - 1)}$ до 16x.
+   - Мгновенная ротация: при 429 запрос переключается на следующий свободный ключ из пула без падения интерфейса.
+   - Разделение ошибок 402: при исчерпании бюджетного пула банится модель на 1800с, а API-ключ остается активным для других моделей.
 
 ---
 

@@ -18,7 +18,7 @@ export async function resolveOrAutoCreateSubmitPatient(
     rawName ||
     (rawPhone ? `Пациент (${rawPhone})` : "") ||
     patientSearch.searchQuery.trim() ||
-    (appointmentType === "emergency" ? "Пациент с острой болью (срочно)" : "Новый пациент");
+    (appointmentType === "emergency" ? "Пациент с острой болью (срочно)" : "");
 
   if (!fallbackName) return null;
 

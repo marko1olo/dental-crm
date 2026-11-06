@@ -40,6 +40,9 @@ export function buildChairsideSmartProtocol(
 
 	let diagnosis = "";
 	switch (key) {
+		case "emergency_pain":
+			diagnosis = `K04.0 Острый пульпит (неотложная помощь) ${toothLabel}`.trim();
+			break;
 		case "caries":
 			diagnosis = `K02.1 Кариес дентина ${toothLabel}${surfStr}`.trim();
 			break;

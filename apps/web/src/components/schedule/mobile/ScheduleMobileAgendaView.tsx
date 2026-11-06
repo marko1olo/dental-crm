@@ -4,11 +4,13 @@ import {
 	Calendar as CalendarIcon,
 	ChevronLeft,
 	ChevronRight,
+	LayoutGrid,
+	ListFilter,
 	Plus,
 	User,
 	Users,
 } from "lucide-react";
-import React, { memo } from "react";
+import React, { memo, useState } from "react";
 import { useScheduleStore } from "../../../store/scheduleStore";
 import { formatDoctorShortName } from "../appointmentCardHelpers";
 import "../scheduleMobileAgenda.css";
@@ -65,6 +67,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 		} = props;
 
 		const state = useScheduleMobileAgendaState(props);
+		const [viewMode, setViewMode] = useState<"agenda" | "grid">("agenda");
 		const {
 			selectedMobileAppt,
 			setSelectedMobileAppt,
@@ -138,8 +141,45 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 					</div>
 				</div>
 
-				{/* 1.1 Apple HIG Segmented Day Control: [ Сегодня | Завтра | + День ] */}
-				<div className="schedule-mobile-segmented-bar px-3 py-1.5 bg-[var(--paper)] border-b border-[var(--line-subtle)] flex items-center justify-center">
+				{/* 1.1 Apple HIG Segmented Controls: [ Сетка | Лента ] & [ Сегодня | Завтра | + День ] */}
+				<div className="schedule-mobile-segmented-bar px-3 py-1.5 bg-[var(--paper)] border-b border-[var(--line-subtle)] flex flex-col items-center gap-1.5">
+					<div
+						className="flex w-full max-w-sm p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 shadow-2xs"
+						role="tablist"
+						aria-label="Режим отображения"
+					>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={viewMode === "grid"}
+							onClick={() => setViewMode("grid")}
+							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+								viewMode === "grid"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
+									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+							data-testid="schedule-mobile-view-mode-grid"
+						>
+							<LayoutGrid size={14} className="shrink-0" />
+							<span>Сетка</span>
+						</button>
+						<button
+							type="button"
+							role="tab"
+							aria-selected={viewMode === "agenda"}
+							onClick={() => setViewMode("agenda")}
+							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+								viewMode === "agenda"
+									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
+									: "text-[var(--ink)] hover:bg-[var(--paper)]"
+							}`}
+							data-testid="schedule-mobile-view-mode-agenda"
+						>
+							<ListFilter size={14} className="shrink-0" />
+							<span>Лента</span>
+						</button>
+					</div>
+
 					<div
 						className="flex w-full max-w-sm p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 shadow-2xs"
 						role="group"
@@ -300,44 +340,146 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 					</div>
 				</div>
 
-				{/* 4. Vertical Agenda Timeline List */}
-				<div className="schedule-mobile-agenda-list p-3 flex flex-col gap-2.5">
-					{timelineItems.length === 0 ? (
-						<div className="schedule-mobile-empty-day flex flex-col items-center justify-center p-8 bg-[var(--paper)] border border-[var(--line)] rounded-2xl text-center gap-3 mt-4">
-							<CalendarIcon size={36} className="text-[var(--muted)] opacity-50" />
-							<div className="text-sm font-semibold text-[var(--ink)]">
-								На этот день нет записей
+				{/* 4. Display Area: Grid vs Agenda */}
+				{viewMode === "grid" ? (
+					<div
+						className="schedule-mobile-grid-mode p-3 flex flex-col gap-3"
+						data-testid="schedule-mobile-grid-container"
+					>
+						{chairs.length === 0 ? (
+							<div className="p-6 text-center text-sm text-[var(--muted)] bg-[var(--paper)] rounded-2xl border border-[var(--line)]">
+								Кабинеты ещё не настроены
 							</div>
-							<p className="text-xs text-[var(--muted)] max-w-xs">
-								Расписание свободно. Выберите свободный слот или нажмите кнопку ниже.
-							</p>
-							<button
-								type="button"
-								onClick={handleCreateBooking}
-								className="mt-2 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all"
-							>
-								<Plus size={15} /> Записать первого пациента
-							</button>
-						</div>
-					) : (
-						timelineItems.map((item, idx) => (
-							<ScheduleMobileTimelineRow
-								key={item.type === "appointment" ? item.appointment.id : `gap-${idx}`}
-								item={item}
-								effectiveDateKey={effectiveDateKey}
-								selectedDoctorId={selectedDoctorId}
-								selectedChairId={selectedChairId}
-								dashboard={props.dashboard}
-								patientName={props.patientName}
-								appointmentLabels={props.appointmentLabels}
-								onSlotClick={onSlotClick}
-								onSelectMobileAppt={setSelectedMobileAppt}
-								onQuickStatusChange={props.onQuickStatusChange}
-								onOpenVisit={props.onOpenVisit}
-							/>
-						))
-					)}
-				</div>
+						) : (
+							chairs.map((chair: any) => {
+								const chairAppts = props.appointments.filter(
+									(a) =>
+										a.chairId === chair.id &&
+										a.startsAt.startsWith(effectiveDateKey),
+								);
+								return (
+									<div
+										key={chair.id}
+										className="schedule-mobile-chair-card p-3 rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xs flex flex-col gap-2"
+										data-testid={`schedule-mobile-chair-card-${chair.id}`}
+									>
+										<div className="flex items-center justify-between">
+											<div className="flex items-center gap-2">
+												<div className="w-7 h-7 rounded-lg bg-[var(--teal,#0d9488)]/15 text-[var(--teal,#0d9488)] flex items-center justify-center font-bold text-xs">
+													<Armchair size={15} />
+												</div>
+												<span className="text-sm font-bold text-[var(--ink)]">
+													{chair.name}
+												</span>
+											</div>
+											<span className="text-xs text-[var(--muted)] font-medium">
+												Записей: {chairAppts.length}
+											</span>
+										</div>
+
+										{chairAppts.length === 0 ? (
+											<div className="py-3 px-3 text-center text-xs text-[var(--muted)] bg-[var(--paper-soft)] rounded-xl border border-dashed border-[var(--line)]">
+												Свободно на весь день
+											</div>
+										) : (
+											<div className="flex flex-col gap-1.5">
+												{chairAppts.map((a) => (
+													<div
+														key={a.id}
+														onClick={() => setSelectedMobileAppt(a)}
+														className="p-2.5 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] flex items-center justify-between text-xs cursor-pointer active:scale-[0.99] transition-all"
+													>
+														<div className="flex items-center gap-2">
+															<span className="font-mono font-bold text-[var(--teal,#0d9488)]">
+																{a.startsAt.slice(11, 16)} – {a.endsAt.slice(11, 16)}
+															</span>
+															<span className="font-medium text-[var(--ink)]">
+																{props.patientName(
+																	props.dashboard?.patients ?? [],
+																	a.patientId,
+																)}
+															</span>
+														</div>
+														<span className="text-[11px] text-[var(--muted)]">
+															{props.appointmentLabels[a.status] || a.status}
+														</span>
+													</div>
+												))}
+											</div>
+										)}
+
+										<button
+											type="button"
+											onClick={() => {
+												if (onSlotClick) {
+													onSlotClick({
+														dateKey: effectiveDateKey,
+														doctorUserId: selectedDoctorId || null,
+														chairId: chair.id,
+														durationMinutes: 30,
+													});
+												} else if (onQuickBooking) {
+													onQuickBooking();
+												}
+											}}
+											className="mt-1 w-full min-h-[38px] py-1.5 px-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] text-xs font-semibold text-[var(--ink)] flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+										>
+											<Plus size={14} className="text-[var(--teal,#0d9488)]" />
+											<span>Записать в этот кабинет</span>
+										</button>
+									</div>
+								);
+							})
+						)}
+					</div>
+				) : (
+					/* 4. Vertical Agenda Timeline List */
+					<div className="schedule-mobile-agenda-list p-3 flex flex-col gap-2.5">
+						{timelineItems.length === 0 ? (
+							<div className="schedule-mobile-empty-day flex flex-col items-center justify-center p-8 bg-[var(--paper)] border border-[var(--line)] rounded-2xl text-center gap-3 mt-4">
+								<CalendarIcon
+									size={36}
+									className="text-[var(--muted)] opacity-50"
+								/>
+								<div className="text-sm font-semibold text-[var(--ink)]">
+									На этот день нет записей
+								</div>
+								<p className="text-xs text-[var(--muted)] max-w-xs">
+									Расписание свободно. Выберите свободный слот или нажмите кнопку
+									ниже.
+								</p>
+								<button
+									type="button"
+									onClick={handleCreateBooking}
+									className="mt-2 min-h-[44px] px-4 rounded-xl bg-[var(--teal,#0d9488)] text-white text-xs font-bold flex items-center gap-1.5 active:scale-95 transition-all"
+								>
+									<Plus size={15} /> Записать первого пациента
+								</button>
+							</div>
+						) : (
+							timelineItems.map((item, idx) => (
+								<ScheduleMobileTimelineRow
+									key={
+										item.type === "appointment"
+											? item.appointment.id
+											: `gap-${idx}`
+									}
+									item={item}
+									effectiveDateKey={effectiveDateKey}
+									selectedDoctorId={selectedDoctorId}
+									selectedChairId={selectedChairId}
+									dashboard={props.dashboard}
+									patientName={props.patientName}
+									appointmentLabels={props.appointmentLabels}
+									onSlotClick={onSlotClick}
+									onSelectMobileAppt={setSelectedMobileAppt}
+									onQuickStatusChange={props.onQuickStatusChange}
+									onOpenVisit={props.onOpenVisit}
+								/>
+							))
+						)}
+					</div>
+				)}
 
 				{/* 5. Apple HIG Sticky Floating Bottom Bar */}
 				<ScheduleMobileBottomBar

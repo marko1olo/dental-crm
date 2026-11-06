@@ -15,11 +15,11 @@ const fs = require("node:fs");
 
 const WEB_URL = "http://127.0.0.1:5173/?demo=true&warehouse=1";
 const PROOF_DIR = path.resolve(__dirname, "../docs/proofs/warehouse");
-const BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/cf0d2b7b-6337-4a9e-b178-aed2b037975d");
-const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/1a5ac924-43af-42a0-a684-00dbb822c536");
+const CURRENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/407cb3a7-2dea-4b74-9a03-d708585b6e01");
+const PARENT_BRAIN_DIR = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/07663fdc-eba5-48a1-bbb4-3c4b8f181006");
 
 if (!fs.existsSync(PROOF_DIR)) fs.mkdirSync(PROOF_DIR, { recursive: true });
-if (!fs.existsSync(BRAIN_DIR)) fs.mkdirSync(BRAIN_DIR, { recursive: true });
+if (!fs.existsSync(CURRENT_BRAIN_DIR)) fs.mkdirSync(CURRENT_BRAIN_DIR, { recursive: true });
 if (!fs.existsSync(PARENT_BRAIN_DIR)) fs.mkdirSync(PARENT_BRAIN_DIR, { recursive: true });
 
 async function suppressTransientOverlays(page) {
@@ -64,20 +64,26 @@ async function setTheme(page, theme) {
   await page.waitForTimeout(500);
 }
 
-function verifyAndSaveScreenshot(buffer, filename) {
+function verifyAndSaveScreenshot(buffer, filename, alias) {
   if (buffer.length < 20480) {
     throw new Error(`Screenshot ${filename} is too small: ${buffer.length} bytes (< 20KB threshold)!`);
   }
   const destPrimary = path.join(PROOF_DIR, filename);
   fs.writeFileSync(destPrimary, buffer);
 
-  const destBrain = path.join(BRAIN_DIR, filename);
+  const destBrain = path.join(CURRENT_BRAIN_DIR, filename);
   fs.writeFileSync(destBrain, buffer);
 
   const destParentBrain = path.join(PARENT_BRAIN_DIR, filename);
   fs.writeFileSync(destParentBrain, buffer);
 
-  console.log(`[PROOF CAPTURED] ${filename}: ${buffer.length} bytes -> ${destPrimary}`);
+  if (alias) {
+    fs.writeFileSync(path.join(PROOF_DIR, alias), buffer);
+    fs.writeFileSync(path.join(CURRENT_BRAIN_DIR, alias), buffer);
+    fs.writeFileSync(path.join(PARENT_BRAIN_DIR, alias), buffer);
+  }
+
+  console.log(`[PROOF CAPTURED] ${filename} (alias: ${alias || "none"}): ${buffer.length} bytes -> ${destPrimary}`);
   return destPrimary;
 }
 
@@ -104,12 +110,12 @@ async function capture() {
     // 1A. PC Light
     await setTheme(pcPage, "light");
     const pcLightBuf = await pcPage.screenshot({ fullPage: false });
-    verifyAndSaveScreenshot(pcLightBuf, "warehouse_pc_light_1440x900.png");
+    verifyAndSaveScreenshot(pcLightBuf, "01_warehouse_studio_pc_light_1440x900.png", "warehouse_pc_light_1440x900.png");
 
     // 1B. PC Dark
     await setTheme(pcPage, "dark");
     const pcDarkBuf = await pcPage.screenshot({ fullPage: false });
-    verifyAndSaveScreenshot(pcDarkBuf, "warehouse_pc_dark_1440x900.png");
+    verifyAndSaveScreenshot(pcDarkBuf, "02_warehouse_studio_pc_dark_1440x900.png", "warehouse_pc_dark_1440x900.png");
 
     await pcContext.close();
 
@@ -131,12 +137,12 @@ async function capture() {
     // 2A. Mobile Light
     await setTheme(mobilePage, "light");
     const mobileLightBuf = await mobilePage.screenshot({ fullPage: false });
-    verifyAndSaveScreenshot(mobileLightBuf, "warehouse_mobile_light_390x844.png");
+    verifyAndSaveScreenshot(mobileLightBuf, "03_warehouse_studio_mobile_light_390x844.png", "warehouse_mobile_light_390x844.png");
 
     // 2B. Mobile Dark
     await setTheme(mobilePage, "dark");
     const mobileDarkBuf = await mobilePage.screenshot({ fullPage: false });
-    verifyAndSaveScreenshot(mobileDarkBuf, "warehouse_mobile_dark_390x844.png");
+    verifyAndSaveScreenshot(mobileDarkBuf, "04_warehouse_studio_mobile_dark_390x844.png", "warehouse_mobile_dark_390x844.png");
 
     await mobileContext.close();
     console.log("[SUCCESS] All 4 canonical warehouse proofs generated successfully.");
