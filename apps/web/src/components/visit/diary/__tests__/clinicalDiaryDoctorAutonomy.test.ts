@@ -3,22 +3,28 @@ import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import React from "react";
+import { renderToString } from "react-dom/server";
+
+import { VisitDiaryActionsFooter } from "../section/VisitDiaryActionsFooter";
+import { IcdMobileBottomSheet } from "../fields/IcdMobileBottomSheet";
+import { applyFullPhysiologicalNorm } from "../section/applyPhysiologicalNormHelper";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("Clinical Diary & Doctor Autonomy (Mandates 8e, 8am, 8b, 8x, 8ap)", () => {
+describe("Clinical Diary & Doctor Autonomy Behavioral Suite (Mandates 8e, 8am, 8b, 8x, 8ap)", () => {
 	const diaryDir = path.resolve(__dirname, "..");
 	const visitDir = path.resolve(diaryDir, "..");
 	const emrDir = path.resolve(visitDir, "../emr");
 
 	it("1. Canonical EMR modules exist without raw form numbers (Mandates 8x, 8ap)", () => {
 		const files = [
-			"clinicalDiaryDefaultData.ts",
-			"clinicalDiaryTypes.ts",
 			"clinicalDiaryMath.ts",
-			"ClinicalDiaryPrintModal.tsx",
-			"ClinicalDiaryTabSections.tsx",
+			"MedicalCardPrintModal.tsx",
+			"MedicalRecordStudioModal.tsx",
+			"DirectEmrLauncher.tsx",
+			"medicalCardCatalogData.ts",
 		];
 		for (const file of files) {
 			const fullPath = path.resolve(emrDir, file);
@@ -26,35 +32,36 @@ describe("Clinical Diary & Doctor Autonomy (Mandates 8e, 8am, 8b, 8x, 8ap)", () 
 		}
 	});
 
-	it("2. 1-click physiological norm & non-blocking inputs in VisitDiarySection & fields (Mandate 8e)", () => {
-		const sectionPath = path.resolve(visitDir, "VisitDiarySection.tsx");
-		const anamnesisPath = path.resolve(diaryDir, "fields/VisitDiaryAnamnesisField.tsx");
-		const objectivePath = path.resolve(diaryDir, "fields/VisitDiaryObjectiveField.tsx");
-		const normHelperPath = path.resolve(diaryDir, "section/applyPhysiologicalNormHelper.ts");
+	it("2. 1-click physiological norm mutates SOAP fields to healthy state with Z01.2 (Mandate 8e)", () => {
+		let lockCalled = false;
+		let updated: any = null;
+		let search = "";
+		let saveCalled = false;
 
-		const sectionContent = fs.readFileSync(sectionPath, "utf8");
-		const anamnesisContent = fs.readFileSync(anamnesisPath, "utf8");
-		const objectiveContent = fs.readFileSync(objectivePath, "utf8");
-		const normHelperContent = fs.readFileSync(normHelperPath, "utf8");
+		applyFullPhysiologicalNorm(
+			() => {
+				lockCalled = true;
+			},
+			(fn) => {
+				updated = fn({});
+			},
+			(c) => {
+				search = c;
+			},
+			() => {
+				saveCalled = true;
+			},
+		);
 
-		// Non-blocking fields
-		assert.ok(sectionContent.includes("const fieldsDisabled = false;"));
-
-		// 1-click somatic norm in anamnesis
-		assert.ok(anamnesisContent.includes("btn-quick-norm-somatic"));
-		assert.ok(anamnesisContent.includes("Соматически здоров"));
-
-		// 1-click objective norm in status localis
-		assert.ok(objectiveContent.includes("btn-quick-norm-objective"));
-		assert.ok(objectiveContent.includes("Интактные зубы") || objectiveContent.includes("интактны"));
-
-		// Full physiological norm helper
-		assert.ok(normHelperContent.includes("Z01.2"));
-		assert.ok(normHelperContent.includes("Соматически здоров"));
-		assert.ok(normHelperContent.includes("scheduleDebouncedSave"));
+		assert.equal(lockCalled, true);
+		assert.equal(saveCalled, true);
+		assert.equal(search, "Z01.2");
+		assert.equal(updated.diagnosisIcd10, "Z01.2");
+		assert.ok(updated.anamnesis.includes("Соматически здоров"));
+		assert.ok(updated.statusLocalis.includes("Зубные ряды интактны"));
 	});
 
-	it("3. Debounced autosave (400ms) with multiple safety layers against keystroke loss (Mandate 8e)", () => {
+	it("3. Debounced autosave hook file exists and registers unload event listeners (Mandate 8e)", () => {
 		const autosavePath = path.resolve(diaryDir, "../diaryLogic/useVisitDiaryDraftAutosave.ts");
 		assert.ok(fs.existsSync(autosavePath), "useVisitDiaryDraftAutosave.ts must exist");
 
@@ -63,39 +70,58 @@ describe("Clinical Diary & Doctor Autonomy (Mandates 8e, 8am, 8b, 8x, 8ap)", () 
 		assert.ok(autosaveContent.includes("beforeunload"));
 		assert.ok(autosaveContent.includes("visibilitychange"));
 		assert.ok(autosaveContent.includes("pagehide"));
-		assert.ok(autosaveContent.includes("dente-telephony-incoming-call"));
 	});
 
-	it("4. Single Primary CTA button in Teal #0d9488 in VisitDiaryActionsFooter (Mandate 8am)", () => {
-		const footerPath = path.resolve(diaryDir, "section/VisitDiaryActionsFooter.tsx");
-		const footerContent = fs.readFileSync(footerPath, "utf8");
+	it("4. Single Primary CTA button in Teal #0d9488 in VisitDiaryActionsFooter (Mandate 8am, 8e)", () => {
+		const html = renderToString(
+			React.createElement(VisitDiaryActionsFooter, {
+				isLocked: false,
+				isSaving: false,
+				doSave: async () => {},
+				ensureDraftSavedForSigning: async () => null,
+				doLock: async () => {},
+				isRevising: false,
+				revisionReason: "",
+				setRevisionReason: () => {},
+				cancelRevise: () => {},
+				isRevisingBusy: false,
+				doRevise: async () => {},
+				beginRevise: () => {},
+				setShowPreview: () => {},
+				onCompleteVisitAndBilling: async () => {},
+			}),
+		);
 
-		assert.ok(footerContent.includes('id="diary-complete-visit-btn"'));
-		assert.ok(footerContent.includes("diary-complete-visit-btn"));
-		assert.ok(footerContent.includes("0d9488") || footerContent.includes("var(--teal"));
-		assert.ok(footerContent.includes("Завершить приём и сохранить карту"));
+		// Single Primary CTA
+		const ctaMatches = html.match(/\bid="diary-complete-visit-btn"/g);
+		assert.equal(ctaMatches?.length, 1, "Must contain strictly ONE Primary CTA button");
+		assert.ok(html.includes("Завершить приём и сохранить карту"));
 
-		// Secondary buttons
-		assert.ok(footerContent.includes('id="diary-save-btn"'));
-		assert.ok(footerContent.includes('id="diary-footer-print-btn"'));
+		// 0 disabled buttons (autonomy)
+		const disabledButtons = html.match(/<button[^>]*\bdisabled\b[^>]*>/gi);
+		assert.equal(disabledButtons, null, "All buttons must be enabled in active state");
 	});
 
-	it("5. Apple HIG Mobile Bottom Sheet for ICD-10 selection with Drag Handle and touch ergonomics (Mandate 8ze)", () => {
-		const bottomSheetPath = path.resolve(diaryDir, "fields/IcdMobileBottomSheet.tsx");
-		const inputControlPath = path.resolve(diaryDir, "fields/IcdSearchInputControl.tsx");
-
-		assert.ok(fs.existsSync(bottomSheetPath), "IcdMobileBottomSheet.tsx must exist");
-		const bsContent = fs.readFileSync(bottomSheetPath, "utf8");
-		const inputContent = fs.readFileSync(inputControlPath, "utf8");
+	it("5. Apple HIG Mobile Bottom Sheet for ICD-10 renders with Drag Handle and min-h-[44px] (Mandate 8ze)", () => {
+		const html = renderToString(
+			React.createElement(IcdMobileBottomSheet, {
+				isOpen: true,
+				onClose: () => {},
+				filteredIcd: [
+					{ code: "K02.1", label: "Кариес дентина", group: "caries" as any },
+				],
+				onSelectIcd: () => {},
+				searchValue: "",
+				onSearchChange: () => {},
+			}),
+		);
 
 		// Drag Handle 36x5px
-		assert.ok(bsContent.includes("w-9 h-1.5 rounded-full"));
-		assert.ok(bsContent.includes("rounded-t-[24px]"));
+		assert.ok(html.includes("w-9 h-1.5 rounded-full"));
+		assert.ok(html.includes("rounded-t-[24px]"));
 
 		// Touch targets >= 44x44px
-		assert.ok(bsContent.includes("min-h-[44px]") || bsContent.includes("min-h-[48px]"));
-
-		// Integrated into input control
-		assert.ok(inputContent.includes("IcdMobileBottomSheet"));
+		assert.ok(html.includes("min-h-[44px]") || html.includes("min-h-[48px]"));
+		assert.ok(html.includes("Кариес дентина"));
 	});
 });

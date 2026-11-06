@@ -28,9 +28,11 @@ export const CopilotContextTelemetryBar: React.FC<CopilotContextTelemetryBarProp
 	allergies,
 	compact = false,
 }) => {
+	const liveTelemetry = useCopilotStore((s) => s.telemetry);
+	const liveSettings = useCopilotStore((s) => s.settings);
 	const isTestEnv = typeof window === "undefined" || (typeof process !== "undefined" && process.env?.NODE_ENV === "test");
-	const telemetry = isTestEnv ? useCopilotStore.getState().telemetry : useCopilotStore((s) => s.telemetry);
-	const settings = isTestEnv ? useCopilotStore.getState().settings : useCopilotStore((s) => s.settings);
+	const telemetry = isTestEnv ? useCopilotStore.getState().telemetry : liveTelemetry;
+	const settings = isTestEnv ? useCopilotStore.getState().settings : liveSettings;
 
 	const resolvedPatientName = propPatientName !== undefined ? propPatientName : telemetry.patientName;
 	const resolvedPatientId = propPatientId !== undefined ? propPatientId : telemetry.patientId;

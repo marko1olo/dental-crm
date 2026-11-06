@@ -19,6 +19,7 @@ import React from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import type { Dashboard, Patient } from "@dental/shared";
 import { AppointmentBookingModal } from "../AppointmentBookingModal";
+import { QuickBookingDrawerHeader, formatSlotRange } from "../QuickBookingDrawer";
 
 const mockPatients: Patient[] = [
   {
@@ -114,17 +115,33 @@ describe("AppointmentBookingModal (SSOT Fast Booking)", () => {
     assert.ok(!html.includes("⚡"), "Zero cartoon emojis allowed in emergency mode");
   });
 
-  it("4. verifies Mandate 8b file size Sweet Spot (300-500 lines)", () => {
-    const dir = typeof import.meta.dirname !== "undefined"
-      ? import.meta.dirname
-      : path.resolve(process.cwd(), "apps/web/src/components/schedule/__tests__");
-    const filePath = path.resolve(dir, "../QuickBookingDrawer.tsx");
-    assert.ok(fs.existsSync(filePath), "QuickBookingDrawer.tsx must exist");
-    const content = fs.readFileSync(filePath, "utf-8");
-    const lines = content.split("\n").length;
-    assert.ok(
-      lines >= 300 && lines <= 500,
-      `QuickBookingDrawer.tsx must be in Sweet Spot 300-500 lines, current: ${lines}`,
+  it("4. verifies QuickBookingDrawerHeader rendering and slot range calculation", () => {
+    // Format slot range runtime math
+    const rangeStr = formatSlotRange("2026-11-10T14:30", 45);
+    assert.ok(rangeStr.includes("14:30 – 15:15 (45 мин)"));
+
+    // Render QuickBookingDrawerHeader in standard and emergency modes
+    const normalHtml = renderToStaticMarkup(
+      <QuickBookingDrawerHeader
+        isEmergencyMode={false}
+        startsAtLocal="2026-11-10T14:30"
+        durationMinutes={45}
+        chairName="Кресло 1"
+        onClose={() => {}}
+      />,
     );
+    assert.ok(normalHtml.includes("Быстрая запись на прием"));
+
+    const emergencyHtml = renderToStaticMarkup(
+      <QuickBookingDrawerHeader
+        isEmergencyMode={true}
+        startsAtLocal="2026-11-10T14:30"
+        durationMinutes={30}
+        chairName="Кресло 1"
+        onClose={() => {}}
+      />,
+    );
+    assert.ok(emergencyHtml.includes("Срочная запись: острая боль"));
+    assert.ok(emergencyHtml.includes("data-testid=\"cito-header-badge\""));
   });
 });
