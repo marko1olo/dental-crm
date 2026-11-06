@@ -1,13 +1,13 @@
 import React from "react";
 import { Trash2 } from "lucide-react";
+import type { EndoCanalData } from "@dental/shared";
 import {
-	type EndoCanalData,
 	CANAL_NAME_OPTIONS,
 	REFERENCE_POINT_OPTIONS,
 	MAF_ISO_OPTIONS,
 	TAPER_OPTIONS,
 	OBTURATION_TECHNIQUE_OPTIONS,
-} from "../../endo/EndoCanalLogModal";
+} from "../../endo/endodonticsCatalogData";
 
 export interface ToothEndoCanalRowProps {
 	canal: EndoCanalData;

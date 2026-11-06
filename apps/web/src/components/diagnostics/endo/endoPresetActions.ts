@@ -1,13 +1,12 @@
+import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
 import {
-	type EndoCanalData,
-	type EndoToothClinicalData,
 	applyPulpitisProtocol,
 	applyPeriodontitisTempProtocol,
 	applyObturationPermanentProtocol,
 	applyAnatomicalWorkingLengths,
 	getDefaultCanalsForTooth,
-	generateEndoProtocol043,
-} from "../../endo/EndoCanalLogModal";
+	formatEndoClinicalDiaryProtocol as generateEndoProtocol043,
+} from "../../endo/endodonticsCatalogData";
 import type { ToothData } from "../../odontogram/ToothChart";
 
 export function createRevisionCanals(canals: EndoCanalData[], toothNumber: number) {

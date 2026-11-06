@@ -8,7 +8,7 @@
  */
 
 import React from "react";
-import { EndoCanalLogModal } from "../../../endo/EndoCanalLogModal";
+import { EndodonticStudioModal } from "../../../endo/EndodonticStudioModal";
 import { VisiographComparisonModal } from "../../../visiograph/VisiographComparisonModal";
 import { useUiSurfaceStore } from "../../../../store/uiSurfaceStore";
 
@@ -45,7 +45,7 @@ export const EndoAndImagingModals: React.FC<EndoAndImagingModalsProps> = ({
 		<>
 			{/* Endodontic Root Canal Log Modal */}
 			{effectiveActiveModal === "endo_canal" && endoModalToothNumber && (
-				<EndoCanalLogModal
+				<EndodonticStudioModal
 					isOpen={isEndoModalOpen || effectiveActiveModal === "endo_canal"}
 					onClose={() => {
 						setIsEndoModalOpen(false);

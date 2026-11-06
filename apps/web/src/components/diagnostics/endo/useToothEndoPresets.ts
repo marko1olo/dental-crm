@@ -1,4 +1,4 @@
-import type { EndoCanalData } from "../../endo/EndoCanalLogModal";
+import type { EndoCanalData } from "@dental/shared";
 import type { ToothData } from "../../odontogram/ToothChart";
 import { showToast } from "../../GlobalToast";
 import {

@@ -179,6 +179,7 @@ graph TD
 | **apps/web** | Реактивная гидратация 0-F5 | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx` | $\le 3$ с |
 | **apps/web** | Одонтограмма Wheeler | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx` | $\le 4$ с |
 | **apps/web** | Дневник SOAP и норма | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx` | $\le 3$ с |
+| **apps/web** | Эндодонтия и каналы SSOT | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --test apps/web/src/components/endo/__tests__/endodonticsSSOTSuite.test.tsx` | $\le 3$ с |
 | **E2E Playwright** | Мастер-цикл приёма | `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` | $\le 40$ с |
 | **E2E Playwright** | Мульти-сервисный визит (3+ услуг) | `npx playwright test apps/web/tests/e2e/multi-service-visit-lifecycle.spec.ts` | $\le 45$ с |
 | **E2E Playwright** | Семейный баланс и сплит 54-ФЗ | `npx playwright test apps/web/tests/e2e/family-balance-and-split-payment.spec.ts` | $\le 45$ с |

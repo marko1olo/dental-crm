@@ -1,5 +1,5 @@
 import React from "react";
-import type { EndoCanalData } from "../../endo/EndoCanalLogModal";
+import type { EndoCanalData } from "@dental/shared";
 import { ToothEndoCanalRow } from "./ToothEndoCanalRow";
 
 export interface ToothEndoCanalsTableProps {

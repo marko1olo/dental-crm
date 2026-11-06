@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { describe, it  } from "vitest";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
-import { EndoCanalLogModal } from "../../../endo/EndoCanalLogModal";
+import { EndodonticStudioModal as EndoCanalLogModal } from "../../../endo/EndodonticStudioModal";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);

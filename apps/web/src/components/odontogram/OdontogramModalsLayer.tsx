@@ -15,12 +15,12 @@ import {
 	type ToothState,
 } from "./ToothChart";
 import { ToothHistoryChronicle } from "./ToothHistoryChronicle";
-import type { EndoToothClinicalData } from "../endo/EndoCanalLogModal";
+import type { EndoToothClinicalData } from "@dental/shared";
 import type { CheckoutPaymentMethodType } from "../payments/checkout/fastCheckoutPresets";
 
-const EndoCanalLogModal = React.lazy(() =>
-	import("../endo/EndoCanalLogModal").then((m) => ({
-		default: m.EndoCanalLogModal,
+const EndodonticStudioModal = React.lazy(() =>
+	import("../endo/EndodonticStudioModal").then((m) => ({
+		default: m.EndodonticStudioModal,
 	})),
 );
 const PediatricMixedDentitionModal = React.lazy(() =>
@@ -114,7 +114,7 @@ export const OdontogramModalsLayer: React.FC<OdontogramModalsLayerProps> = ({
 
 			{endoTooth !== null && (
 				<React.Suspense fallback={null}>
-					<EndoCanalLogModal
+					<EndodonticStudioModal
 						isOpen={true}
 						onClose={() => setEndoTooth(null)}
 						toothNumber={endoTooth}

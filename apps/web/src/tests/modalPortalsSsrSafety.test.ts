@@ -3,7 +3,7 @@ import { describe, it } from "node:test";
 import { createElement } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import { InventoryConfirmDialog } from "../components/inventory/InventoryConfirmDialog";
-import { EndoCanalLogModal } from "../components/endo/EndoCanalLogModal";
+import { EndodonticStudioModal as EndoCanalLogModal } from "../components/endo/EndodonticStudioModal";
 import { CephalometricAnalysisModal } from "../components/radiology/CephalometricAnalysisModal";
 import { WaitlistDrawer } from "../components/schedule/WaitlistDrawer";
 import { WaitlistQuickFillModal } from "../components/schedule/WaitlistQuickFillModal";

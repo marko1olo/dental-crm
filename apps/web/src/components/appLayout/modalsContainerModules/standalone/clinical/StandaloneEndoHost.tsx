@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { Stethoscope } from "lucide-react";
 import { StandaloneTreatmentPlanWorkspaceShell } from "../StandaloneTreatmentPlanWorkspaceShell";
 import { ChairsideEndoQuickBar } from "../../../../endo/ChairsideEndoQuickBar";
-import { EndoCanalLogModal } from "../../../../endo/EndoCanalLogModal";
+import { EndodonticStudioModal } from "../../../../endo/EndodonticStudioModal";
 import { readPatientIdFromUrl, useLauncherPatientName } from "../useLauncherPatientDebt";
 
 export interface StandaloneEndoHostProps {
@@ -85,7 +85,7 @@ export const StandaloneEndoHost: React.FC<StandaloneEndoHostProps> = ({ onClose 
 				)}
 
 				{/* Модальное окно подробного эндодонтического протокола */}
-				<EndoCanalLogModal
+				<EndodonticStudioModal
 					isOpen={isModalOpen}
 					onClose={() => setIsModalOpen(false)}
 					toothNumber={activeTooth}

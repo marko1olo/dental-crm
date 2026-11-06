@@ -7,14 +7,14 @@
 
 import React from "react";
 import {
-	EndoCanalLogModal,
-	type EndoCanalLogModalProps,
-} from "../endo/EndoCanalLogModal";
+	EndodonticStudioModal,
+	type EndodonticStudioModalProps,
+} from "../endo/EndodonticStudioModal";
 
-export type EndoCanalMeasurementDrawerProps = EndoCanalLogModalProps;
+export type EndoCanalMeasurementDrawerProps = EndodonticStudioModalProps;
 
 export const EndoCanalMeasurementDrawer: React.FC<EndoCanalMeasurementDrawerProps> = (props) => {
-	return <EndoCanalLogModal {...props} />;
+	return <EndodonticStudioModal {...props} />;
 };
 
 export default EndoCanalMeasurementDrawer;

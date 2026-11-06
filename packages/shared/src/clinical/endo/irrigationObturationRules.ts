@@ -441,7 +441,7 @@ export function generateEndoCanalsTable043(canals: readonly EndoCanalData[]): st
 	const footer = "└──────────────┴─────────────────────────────┴─────────────┴─────────────┴──────────────────────────────┘";
 
 	return [
-		"ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ (ЭНДОДОНТИЯ 043/у):",
+		"ТАБЛИЦА УЧЕТА РАБОЧЕЙ ДЛИНЫ КОРНЕВЫХ КАНАЛОВ (ДНЕВНИК ПРИЁМА):",
 		...header,
 		...rows,
 		footer,
@@ -467,10 +467,10 @@ export function formatEndoCanalsTable043(
 }
 
 /**
- * Генерация структурированного клинического текста протокола для Формы 043/у (Приказ МЗ РФ 834н).
- * Гарантирует отсутствие эмодзи, точность медицинских формулировок и стандарты СтАР.
+ * Каноническая генерация структурированного протокола эндодонтии для медицинской карты приёма / дневника визита.
+ * Без советского канцелярита («043/у»), ноль эмодзи, точность медицинских формулировок и стандарты СтАР (Мандаты 8e, 8x, 8ap).
  */
-export function generateEndoProtocol043(params: {
+export function formatEndoClinicalDiaryProtocol(params: {
 	toothNumber: number;
 	toothTitle?: string;
 	canals: readonly EndoCanalData[];
@@ -482,6 +482,7 @@ export function generateEndoProtocol043(params: {
 	 * @deprecated Use radiologyControl instead.
 	 */
 	xrayControl?: string;
+	notes?: string;
 }): string {
 	const { toothNumber, canals } = params;
 	const toothDisplay = params.toothTitle || `Зуб ${toothNumber}`;
@@ -545,6 +546,11 @@ export function generateEndoProtocol043(params: {
 		`Рентгенологический контроль: ${radiology}`,
 	].join("\n");
 }
+
+/**
+ * @deprecated Use formatEndoClinicalDiaryProtocol instead (Мандат 8x / 8ap: искоренение советского канцелярита '043/у').
+ */
+export const generateEndoProtocol043 = formatEndoClinicalDiaryProtocol;
 
 // ─── 1-КЛИК ПАМЯТКА ПАЦИЕНТУ ПОСЛЕ ЛЕЧЕНИЯ КАНАЛОВ (МАНДАТЫ 8e, 8k, 8n) ───────
 

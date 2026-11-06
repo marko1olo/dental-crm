@@ -1,11 +1,11 @@
 import { useState, useEffect } from "react";
-import type { EndoCanalData, EndoToothClinicalData } from "../../endo/EndoCanalLogModal";
+import type { EndoCanalData, EndoToothClinicalData } from "@dental/shared";
 import {
 	REFERENCE_POINT_OPTIONS,
 	MAF_ISO_OPTIONS,
 	TAPER_OPTIONS,
 	OBTURATION_TECHNIQUE_OPTIONS,
-} from "../../endo/EndoCanalLogModal";
+} from "../../endo/endodonticsCatalogData";
 import type { ToothData } from "../../odontogram/ToothChart";
 import { showToast } from "../../GlobalToast";
 import { buildEndoUpdatePayload, getDefaultCanalsForTooth } from "./endoPresetActions";
