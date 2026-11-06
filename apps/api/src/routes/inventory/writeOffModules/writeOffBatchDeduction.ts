@@ -20,16 +20,27 @@ async function checkOrg(req: FastifyRequest, rep: FastifyReply, tag: string): Pr
 }
 
 export async function registerBatchDeductionRoutes(server: FastifyInstance): Promise<void> {
-	// Списание расходников за смену
+	// Списание расходников за смену и по технологическим картам услуг (BOM)
 	const handleShiftDeduct = async (request: FastifyRequest<{ Params?: { organizationId?: string }; Body?: Record<string, any> }>, reply: FastifyReply) => {
 		const targetOrgId = await checkOrg(request, reply, "inventory shift batch deduct");
 		if (!targetOrgId) return;
 		const body = (request.body as any) ?? {};
-		return withTenantCtx(targetOrgId, async (tx) =>
-			TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
+		return withTenantCtx(targetOrgId, async (tx) => {
+			if (Array.isArray(body.services) && body.services.length > 0) {
+				return TreatmentConsumablesService.executeAutoBomWriteoff(tx, {
+					organizationId: targetOrgId,
+					visitId: body.visitId || "batch-service-bom",
+					services: body.services,
+					userId: request.user?.id ?? null,
+					notes: body.notes,
+					allowOverdraft: true,
+					clientMutationId: body.clientMutationId,
+				});
+			}
+			return TreatmentConsumablesService.executeShiftBatchDeduction(tx, {
 				organizationId: targetOrgId, date: body.date, userId: request.user?.id ?? null, items: body.items, notes: body.notes,
-			})
-		);
+			});
+		});
 	};
 	[
 		"/:organizationId/shift-batch-deduct",
@@ -40,6 +51,8 @@ export async function registerBatchDeductionRoutes(server: FastifyInstance): Pro
 		"/batch-shift-writeoff",
 		"/:organizationId/shift-deduction",
 		"/shift-deduction",
+		"/:organizationId/batch-writeoff",
+		"/batch-writeoff",
 	].forEach((p) => server.post(p, handleShiftDeduct));
 
 	// 1-клик протоколы процедур

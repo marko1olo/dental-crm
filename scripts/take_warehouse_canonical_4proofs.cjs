@@ -96,7 +96,7 @@ async function capture() {
     const pcPage = await pcContext.newPage();
 
     console.log(`Navigating PC to ${WEB_URL}...`);
-    await pcPage.goto(WEB_URL, { waitUntil: "networkidle", timeout: 30000 });
+    await pcPage.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
     await pcPage.waitForSelector('[data-testid="warehouse-studio-modal"]', { timeout: 15000 });
     await suppressTransientOverlays(pcPage);
     await pcPage.waitForTimeout(1000);
@@ -123,7 +123,7 @@ async function capture() {
     const mobilePage = await mobileContext.newPage();
 
     console.log(`Navigating Mobile to ${WEB_URL}...`);
-    await mobilePage.goto(WEB_URL, { waitUntil: "networkidle", timeout: 30000 });
+    await mobilePage.goto(WEB_URL, { waitUntil: "domcontentloaded", timeout: 30000 });
     await mobilePage.waitForSelector('[data-testid="warehouse-studio-modal"]', { timeout: 15000 });
     await suppressTransientOverlays(mobilePage);
     await mobilePage.waitForTimeout(1000);

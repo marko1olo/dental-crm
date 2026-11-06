@@ -1,0 +1,102 @@
+{
+  "role": "Red Team Lead Inquisitor: Warehouse, Supply Chain & Clinical Consumables (Wave 503)",
+  "status": "COMPLETED",
+  "lastUpdated": "2026-11-06T00:59:00.000Z",
+  "scope": {
+    "WH-03": {
+      "status": "RESOLVED",
+      "severity": "SEV-1",
+      "summary": "Fastify route GET /api/inventory/:org/shift-summary and 1-click batch shift deduction without 404 or DEFAULT_SHIFT_DATA mock",
+      "backendFiles": [
+        "apps/api/src/services/treatmentConsumables/shiftBatch/shiftSummaryQueries.ts",
+        "apps/api/src/routes/inventory/index.ts"
+      ],
+      "frontendFiles": [
+        "apps/web/src/components/inventory/writeoff/useConsumablesBatchWriteoff.ts",
+        "apps/web/src/components/inventory/ConsumablesBatchWriteoffModal.tsx"
+      ],
+      "tests": [
+        "apps/api/src/tests/routes/shiftBatchDeduction.test.ts"
+      ]
+    },
+    "WH-04": {
+      "status": "RESOLVED",
+      "severity": "SEV-1",
+      "summary": "Package multiplier (50 carpules/pack) preventing false overdrafts during chairside single carpule write-offs",
+      "databaseMigration": "ALTER TABLE inventory_items ADD COLUMN IF NOT EXISTS package_multiplier numeric(10, 3) DEFAULT '1.000';",
+      "sharedFiles": [
+        "packages/shared/src/inventory/inventoryUnitsSsot.ts"
+      ],
+      "backendFiles": [
+        "apps/api/src/db/schema/inventory/inventoryItemsTable.ts",
+        "apps/api/src/routes/inventory/supplierInvoices/invoiceStatusAndApproval.ts",
+        "apps/api/src/services/treatmentConsumables/stockDeductionModules/stockDeductionStepExecutor.ts"
+      ],
+      "tests": [
+        "packages/shared/src/inventory/__tests__/materialsAutoDeductionAndUnitsSsot.test.ts",
+        "apps/api/src/tests/routes/packageMultiplierFefoInquisition.test.ts"
+      ]
+    },
+    "WH-05": {
+      "status": "RESOLVED",
+      "severity": "SEV-2",
+      "summary": "Elimination of hardcoded Ivanova E. S. in SanPiN autoclave journal, replaced with dynamic authenticated staff context",
+      "frontendFiles": [
+        "apps/web/src/components/sanpin/SanpinStudioModal.tsx"
+      ],
+      "tests": [
+        "apps/web/src/components/sanpin/__tests__/autoSanpinShiftBatchAutonomy.test.ts"
+      ]
+    },
+    "WH-06": {
+      "status": "RESOLVED",
+      "severity": "SEV-1",
+      "summary": "Fastify endpoints POST /api/v1/inventory/batch-writeoff and PATCH /api/v1/inventory/items/:itemId with Soft Negative Stock backend support and dual-route mounting under /api/inventory and /api/v1/inventory",
+      "backendFiles": [
+        "apps/api/src/serverModules/routeRegistrar.ts",
+        "apps/api/src/routes/inventory/writeOffModules/writeOffBatchDeduction.ts",
+        "apps/api/src/routes/inventory/itemCatalog/itemCatalogMutations.ts"
+      ],
+      "tests": [
+        "apps/api/src/tests/routes/inventoryBatchWriteoffAndPatch.test.ts"
+      ]
+    },
+    "WH-07": {
+      "status": "RESOLVED",
+      "severity": "SEV-2",
+      "summary": "WarehouseManagerTable and Footer responsive layout: Apple HIG Grouped List Cards on mobile (390px) with touch targets >= 44x44px and desktop calibrated table zero-clipping",
+      "frontendFiles": [
+        "apps/web/src/components/inventory/WarehouseManagerModal.tsx",
+        "apps/web/src/components/inventory/warehouseManagerModules/WarehouseManagerTable.tsx",
+        "apps/web/src/components/inventory/warehouseManagerModules/WarehouseManagerHeader.tsx",
+        "apps/web/src/components/inventory/warehouseManagerModules/WarehouseManagerToolbar.tsx",
+        "apps/web/src/components/inventory/warehouseManagerModules/WarehouseManagerFooter.tsx",
+        "apps/web/src/components/inventory/writeoff/BatchWriteoffFooterActions.tsx"
+      ],
+      "tests": [
+        "apps/web/src/components/warehouse/warehouseModularFacade.test.ts",
+        "apps/web/src/components/inventory/__tests__/consumablesBatchWriteoffDecomposition.test.tsx"
+      ]
+    }
+  },
+  "verification": {
+    "backendBatchWriteoffAndPatchTests": "4 tests passed (apps/api/src/tests/routes/inventoryBatchWriteoffAndPatch.test.ts)",
+    "backendShiftBatchTests": "3 tests passed (apps/api/src/tests/routes/shiftBatchDeduction.test.ts)",
+    "frontendModularFacadeTests": "4 tests passed (apps/web/src/components/warehouse/warehouseModularFacade.test.ts)",
+    "frontendConsumablesBatchTests": "5 tests passed (apps/web/src/components/inventory/__tests__/consumablesBatchWriteoffDecomposition.test.tsx)",
+    "encodingCheck": "OK (6363 / 23897 files checked, 0 issues)",
+    "stubOverridesCheck": "OK (139 properties checked, 0 overlaps)",
+    "fetchResponseCheck": "OK (14420 files checked, 0 issues)",
+    "dynamicImportsCheck": "OK (18179 files checked, 530 dynamic imports, 0 broken)"
+  },
+  "proofs": {
+    "warehouse_pc_light_1440x900": "docs/proofs/warehouse/warehouse_pc_light_1440x900.png",
+    "warehouse_pc_dark_1440x900": "docs/proofs/warehouse/warehouse_pc_dark_1440x900.png",
+    "warehouse_mobile_light_390x844": "docs/proofs/warehouse/warehouse_mobile_light_390x844.png",
+    "warehouse_mobile_dark_390x844": "docs/proofs/warehouse/warehouse_mobile_dark_390x844.png",
+    "warehouse_manager_pc_light_1440x900": "docs/proofs/warehouse/warehouse_manager_pc_light_1440x900.png",
+    "warehouse_manager_pc_dark_1440x900": "docs/proofs/warehouse/warehouse_manager_pc_dark_1440x900.png",
+    "warehouse_manager_mobile_light_390x844": "docs/proofs/warehouse/warehouse_manager_mobile_light_390x844.png",
+    "warehouse_manager_mobile_dark_390x844": "docs/proofs/warehouse/warehouse_manager_mobile_dark_390x844.png"
+  }
+}

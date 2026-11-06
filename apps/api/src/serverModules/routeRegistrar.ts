@@ -260,9 +260,14 @@ export async function registerAllRoutes(app: FastifyInstance): Promise<void> {
 	// apps/web обращается к /api/templates, а маршрута не существовало.
 	await registerTemplateRoutes(app);
 	await app.register(inventoryRoutes, { prefix: "/api/inventory" });
+	await app.register(inventoryRoutes, { prefix: "/api/v1/inventory" });
 	await app.register(warehouseRoutes, { prefix: "/api/warehouse" });
+	await app.register(warehouseRoutes, { prefix: "/api/v1/warehouse" });
 	await app.register(treatmentConsumablesRoutes, {
 		prefix: "/api/treatment-consumables",
+	});
+	await app.register(treatmentConsumablesRoutes, {
+		prefix: "/api/v1/treatment-consumables",
 	});
 	await app.register(copilotRoutes);
 	await app.register(portalRoutes, { prefix: "/api/portal" });

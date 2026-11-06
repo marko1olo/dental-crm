@@ -50,7 +50,8 @@ export const BatchWriteoffFooterActions: React.FC<BatchWriteoffFooterActionsProp
 				<button
 					type="button"
 					onClick={onConfirm}
-					className="primary-button btn-confirm-shift-batch-deduction btn-confirm-deduction px-5 py-2.5 min-h-[44px] text-sm font-semibold rounded-lg flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-xs whitespace-nowrap cursor-pointer"
+					disabled={isSubmitting ? true : undefined}
+					className="primary-button btn-confirm-shift-batch-deduction btn-confirm-deduction px-5 py-2.5 min-h-[44px] text-sm font-semibold rounded-lg flex-1 sm:flex-none flex items-center justify-center gap-2 shadow-xs whitespace-nowrap cursor-pointer opacity-90 hover:opacity-100"
 					style={{ background: "var(--teal, #0d9488)", color: "#ffffff" }}
 					data-testid={confirmTestId || "btn-confirm-shift-batch-deduction"}
 					data-cy="btn-confirm-deduction"

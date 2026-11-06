@@ -157,6 +157,97 @@ export const handleUpdateInventoryItem = async (
 	return updated;
 };
 
+export const handlePatchInventoryItem = async (
+	organizationId: string,
+	itemId: string,
+	rawBody: unknown,
+	reply: FastifyReply,
+) => {
+	const parsedPatch = inventoryUpdateBodySchema.safeParse(rawBody ?? {});
+	if (!parsedPatch.success) {
+		return reply.status(400).send({
+			error: "InvalidBody",
+			message: "Некорректные параметры обновления позиции склада.",
+		});
+	}
+
+	const [existing] = await db
+		.select()
+		.from(inventoryItems)
+		.where(
+			and(
+				eq(inventoryItems.id, itemId),
+				eq(inventoryItems.organizationId, organizationId),
+			),
+		)
+		.limit(1);
+	if (!existing) return reply.status(404).send({ error: "Item not found" });
+
+	const data = parsedPatch.data;
+	const patchData: Record<string, any> = { updatedAt: new Date() };
+
+	if (data.name !== undefined) {
+		if (!data.name?.trim()) {
+			return reply.status(400).send({
+				error: "NameRequired",
+				message: "Укажите название материала.",
+			});
+		}
+		patchData.name = data.name.trim();
+	}
+	if (data.criticalThreshold !== undefined) {
+		patchData.criticalThreshold = String(Math.max(0, data.criticalThreshold));
+	}
+	if (data.unitCostRub !== undefined) {
+		patchData.unitCostRub = String(Math.max(0, data.unitCostRub));
+	}
+	if (data.stockQuantity !== undefined) {
+		patchData.stockQuantity = String(data.stockQuantity);
+		patchData.currentQty = String(data.stockQuantity);
+	}
+	if (data.packageMultiplier !== undefined) {
+		patchData.packageMultiplier = String(data.packageMultiplier);
+	}
+	if (data.sku !== undefined) {
+		patchData.sku = data.sku?.trim() || null;
+	}
+	if (data.barcode !== undefined) {
+		patchData.barcode = data.barcode?.trim() || null;
+	}
+	if (data.lotNumber !== undefined) {
+		patchData.lotNumber = data.lotNumber?.trim() || null;
+	}
+	if (data.expirationDate !== undefined) {
+		const expiration = normalizedExpirationDate(data.expirationDate);
+		if (expiration === INVALID_DATE) {
+			return reply.status(400).send({
+				error: "ExpirationDateInvalid",
+				message: "Срок годности указывается датой, например 31.03.2027.",
+			});
+		}
+		patchData.expirationDate = expiration;
+	}
+
+	const [updated] = await db
+		.update(inventoryItems)
+		.set(patchData)
+		.where(
+			and(
+				eq(inventoryItems.id, itemId),
+				eq(inventoryItems.organizationId, organizationId),
+			),
+		)
+		.returning();
+
+	if (!updated) {
+		return reply.status(500).send({
+			error: "InventoryItemNotSaved",
+			message: "Позиция склада не сохранена.",
+		});
+	}
+	return updated;
+};
+
 export const handleDeleteInventoryItem = async (
 	organizationId: string,
 	itemId: string,
@@ -354,5 +445,66 @@ export const registerItemCatalogMutations = (server: FastifyInstance): void => {
 
 		const { itemId } = request.params;
 		return handleDeleteInventoryItem(resolvedOrgId, itemId, reply);
+	});
+
+	// PATCH /:organizationId/items/:itemId — partial update (Mandates 8e, 8n)
+	server.patch<{
+		Params: { organizationId: string; itemId: string };
+	}>("/:organizationId/items/:itemId", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory patch org items",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId, itemId } = request.params;
+		const effectiveOrgId =
+			organizationId === "current" || organizationId === "items"
+				? resolvedOrgId
+				: organizationId;
+		if (resolvedOrgId !== effectiveOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handlePatchInventoryItem(effectiveOrgId, itemId, request.body, reply);
+	});
+
+	// PATCH /:organizationId/:itemId alias
+	server.patch<{
+		Params: { organizationId: string; itemId: string };
+	}>("/:organizationId/:itemId", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory patch org alias",
+		);
+		if (!resolvedOrgId) return;
+
+		const { organizationId, itemId } = request.params;
+		const effectiveOrgId =
+			organizationId === "current" || organizationId === "items"
+				? resolvedOrgId
+				: organizationId;
+		if (resolvedOrgId !== effectiveOrgId) {
+			return reply.code(403).send({ error: "Forbidden" });
+		}
+
+		return handlePatchInventoryItem(effectiveOrgId, itemId, request.body, reply);
+	});
+
+	// PATCH /items/:itemId — unparameterized partial update with session org
+	server.patch<{
+		Params: { itemId: string };
+	}>("/items/:itemId", async (request, reply) => {
+		const resolvedOrgId = await requireResolvedStaffOrAdminOrganizationId(
+			request,
+			reply,
+			"inventory patch fallback",
+		);
+		if (!resolvedOrgId) return;
+
+		const { itemId } = request.params;
+		return handlePatchInventoryItem(resolvedOrgId, itemId, request.body, reply);
 	});
 };
