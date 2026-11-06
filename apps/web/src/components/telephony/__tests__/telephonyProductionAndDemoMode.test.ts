@@ -1,5 +1,17 @@
 import assert from "node:assert/strict";
-import { afterEach, beforeEach, describe, test, vi } from "vitest";
+import { afterEach, beforeEach, describe, test } from "node:test";
+const vi = {
+	restoreAllMocks: () => {},
+	fn: (impl?: any) => {
+		const fn: any = (...args: any[]) => {
+			fn.mock.calls.push(args);
+			return impl ? impl(...args) : undefined;
+		};
+		fn.mock = { calls: [] };
+		return fn;
+	},
+	stubGlobal: (key: string, val: any) => { (globalThis as any)[key] = val; },
+};
 import { disableDemoShowcaseMode, enableDemoShowcaseMode, isDemoShowcaseMode } from "../../../lib/demoMode";
 import { assertNoSyntheticCallsInProduction, useTelephonyStore } from "../../../store/telephonyStore";
 

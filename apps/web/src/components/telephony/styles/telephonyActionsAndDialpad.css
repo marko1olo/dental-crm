@@ -101,6 +101,12 @@
 	cursor: pointer;
 	transition: all 0.15s ease;
 }
+@media (max-width: 768px) {
+	.dnt-dialpad-key {
+		min-height: 52px;
+		height: 52px;
+	}
+}
 .dnt-dialpad-key:hover { background: var(--paper-muted, rgba(0, 0, 0, 0.06)); border-color: var(--line-strong, #cbd5e1); }
 .dnt-dialpad-key:active { transform: scale(0.97); }
 .dnt-dialpad-key-digit { font-size: 16px; font-weight: 700; line-height: 1; }

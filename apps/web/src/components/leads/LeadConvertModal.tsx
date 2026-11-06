@@ -370,7 +370,7 @@ export const LeadConvertModal: React.FC<LeadConvertModalProps> = ({
 						type="submit"
 						className="primary-button"
 						data-testid="lead-convert-submit-btn"
-						disabled={isLeadBookingDisabled(isBooking)}
+						aria-busy={isBooking}
 						title={submitTitle}
 						style={{
 							marginTop: 4,

@@ -36,8 +36,8 @@ export const IncomingCallDrawerQuickCreatePatient: React.FC<IncomingCallDrawerQu
 				<button
 					type="button"
 					onClick={onQuickCreatePatient}
-					disabled={isCreatingPatient}
-					className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] text-white text-[13px] font-semibold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+					aria-busy={isCreatingPatient}
+					className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] text-white text-[13px] font-semibold hover:opacity-90 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 					data-testid="popup-drawer-quick-create-patient-btn"
 					title="Создать первичную карту пациента за 5 секунд (без обязательного паспорта и СНИЛС)"
 				>

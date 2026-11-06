@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 describe("Telephony & Softphone Red Team Inquisitor Suite (Mandates 8e, 8n, Apple HIG, Anti-Floating Trap)", () => {
 	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))

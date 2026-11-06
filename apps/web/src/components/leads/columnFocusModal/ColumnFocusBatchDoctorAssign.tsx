@@ -28,7 +28,7 @@ export const ColumnFocusBatchDoctorAssign: React.FC<ColumnFocusBatchDoctorAssign
 			<select
 				value={batchTargetDoctorId}
 				onChange={(e) => onBatchTargetDoctorIdChange(e.target.value)}
-				disabled={isProcessingBatch}
+				aria-busy={isProcessingBatch}
 				className="expanded-focus-bulk-select"
 			>
 				<option value="">Назначить врача...</option>
@@ -42,7 +42,7 @@ export const ColumnFocusBatchDoctorAssign: React.FC<ColumnFocusBatchDoctorAssign
 				<button
 					type="button"
 					onClick={onBatchAssign}
-					disabled={isProcessingBatch}
+					aria-busy={isProcessingBatch}
 					className="expanded-focus-bulk-confirm-btn"
 				>
 					Применить

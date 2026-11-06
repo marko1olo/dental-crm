@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 describe("Telephony Quiet UI & Dynamic Island (Mandates 8d, 8e, 8p)", () => {
 	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))

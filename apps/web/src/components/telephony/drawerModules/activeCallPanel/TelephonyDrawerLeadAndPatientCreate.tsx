@@ -48,8 +48,8 @@ export function TelephonyDrawerLeadAndPatientCreate({
 					<button
 						type="button"
 						onClick={onCaptureLead}
-						disabled={isCapturingLead || currentCall.isLeadCaptured}
-						className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer disabled:opacity-60"
+						aria-busy={isCapturingLead}
+						className="w-full min-h-[44px] px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 active:scale-95 text-white text-xs font-bold transition-all inline-flex items-center justify-center gap-1.5 shadow-sm cursor-pointer"
 						data-testid="drawer-action-capture-lead"
 					>
 						{currentCall.isLeadCaptured ? <Check size={15} /> : <UserPlus size={15} />}
@@ -83,8 +83,8 @@ export function TelephonyDrawerLeadAndPatientCreate({
 					<button
 						type="button"
 						onClick={onQuickCreatePatient}
-						disabled={isCreatingPatient}
-						className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+						aria-busy={isCreatingPatient}
+						className="w-full min-h-[44px] px-3 py-2 rounded-xl bg-teal-600 text-white text-xs font-bold hover:bg-teal-500 active:scale-95 transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 						data-testid="drawer-quick-create-patient-btn"
 						data-legacy-testid="popup-drawer-quick-create-patient-btn"
 					>

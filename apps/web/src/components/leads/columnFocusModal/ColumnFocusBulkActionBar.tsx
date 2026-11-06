@@ -50,7 +50,7 @@ export const ColumnFocusBulkActionBar: React.FC<
 				{nextStageInfo && (
 					<button
 						type="button"
-						disabled={isProcessingBatch}
+						aria-busy={isProcessingBatch}
 						onClick={onBatchAdvance}
 						className="expanded-focus-bulk-primary-btn"
 						data-testid="focus-batch-advance-btn"
@@ -70,7 +70,7 @@ export const ColumnFocusBulkActionBar: React.FC<
 						}
 					}}
 					defaultValue=""
-					disabled={isProcessingBatch}
+					aria-busy={isProcessingBatch}
 					className="expanded-focus-bulk-select"
 				>
 					<option value="" disabled>

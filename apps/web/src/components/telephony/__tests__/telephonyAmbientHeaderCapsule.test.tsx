@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { TelephonyHeaderCapsule } from "../headerCapsule/TelephonyHeaderCapsule";
 import { TelephonySoftphonePopover } from "../headerCapsule/TelephonySoftphonePopover";
 import { IncomingCallCapsuleBar } from "../incomingCallPopupModules/IncomingCallCapsuleBar";

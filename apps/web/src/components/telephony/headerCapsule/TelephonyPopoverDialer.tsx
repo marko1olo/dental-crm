@@ -70,7 +70,7 @@ export function TelephonyPopoverDialer({
 						key={d}
 						type="button"
 						onClick={() => handleDigit(d)}
-						className="min-h-[44px] sm:min-h-[38px] rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] active:scale-95 border border-[var(--line)] flex flex-col items-center justify-center transition-all cursor-pointer group"
+						className="min-h-[52px] h-[52px] sm:min-h-[40px] sm:h-auto rounded-xl bg-[var(--paper-soft)] hover:bg-[var(--paper-subtle)] active:scale-95 border border-[var(--line)] flex flex-col items-center justify-center transition-all cursor-pointer group"
 					>
 						<span className="text-sm font-bold text-[var(--ink)] group-hover:text-[var(--teal)]">{d}</span>
 						{sub && <span className="text-[9px] font-mono text-[var(--muted)] -mt-0.5 leading-none">{sub}</span>}

@@ -937,15 +937,17 @@
    - SSRF-защита от атак на внутреннюю сеть (блокировка приватных IP 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16, 127.0.0.0/8).
    - Строгая изоляция клиники по тенант-токену, поддержка Range/206 Partial Content для нативной перемотки в плеере.
 6. **100% покрытие тестами и доказательная база (Red Team 4-State Visual Proof)**:
-   - 155 тестов в 13 тестовых наборах (`telephony.test.ts`, `telephonyHub.test.ts`, `telephonyMillerLawAutonomy.test.ts`, `telephonyTwoLinesConcurrency.test.ts`, `telephonyInquisitorFacades.test.tsx` и др.) проходят с результатом 100% PASS.
-   - Кодировки проверены: `npm run check:encoding` — 14 541 файлов без замечаний (строгий UTF-8).
-   - Доказательная база реальных скриншотов из живого браузера над реальным PostgreSQL и Fastify API (:4100/:5173) в `docs/proofs/telephony/`:
-     * ☀️ 1. `pc_light_telephony_capsule_1440x900.png` (222 KB) — капсула врача в светлой теме над сеткой расписания.
-     * 🌙 2. `pc_dark_telephony_capsule_1440x900.png` (120 KB) — капсула врача в темной теме над сеткой расписания.
-     * ☀️ 3. `pc_light_1440x900_telephony_reception.png` (220 KB) — карточка регистратора с балансом и аллергиями в светлой теме.
-     * 🌙 4. `pc_dark_1440x900_telephony_reception.png` (138 KB) — карточка регистратора в темной теме.
-     * 📱 5. `mobile_light_telephony_390x844.png` (182 KB) — мобильный софтфон и лента визитов в светлой теме.
-     * 📱 6. `mobile_dark_telephony_390x844.png` (178 KB) — мобильный софтфон в темной теме.
+   - 302 теста в 96 тестовых наборах (`apps/web/src/components/telephony/__tests__/`, `apps/web/src/components/leads/__tests__/`) проходят с результатом 100% PASS (302 pass, 0 fail).
+   - Мандат 8e: полностью ликвидированы все искусственные `disabled={...}` блокировки в 16 компонентах телефонии и лидов (`LeadCardActionButtons.tsx`, `TelephonyWidgetMoreMenu.tsx`, `IncomingCallerLeadCapture.tsx`, `LeadConvertModal.tsx` и др.), заменены на `aria-busy` и неблокирующий debounced submit.
+   - Кодировки проверены: `npm run check:encoding` — 23 911 файлов без замечаний (строгий UTF-8 без BOM).
+   - Доказательная база реальных скриншотов из живого браузера (:5173) в `docs/proofs/telephony_crm/`:
+     * ☀️ 1. `01_telephony_crm_pc_light_1440x900.png` (97 KB) — канбан лидов и каналы привлечения в светлой теме.
+     * 🌙 2. `02_telephony_crm_pc_dark_1440x900.png` (98 KB) — канбан лидов в темной теме (100% тёмные токены).
+     * 📱 3. `03_telephony_crm_mobile_light_390x844.png` (99 KB) — мобильный вид воронки Apple HIG в светлой теме.
+     * 📱 4. `04_telephony_crm_mobile_dark_390x844.png` (98 KB) — мобильный вид воронки в темной теме.
+     * ☀️ 5. `05_ambient_capsule_and_drawer_pc_light_1440x900.png` (168 KB) — верхняя капсула звонка и карточка звонящего на десктопе.
+     * 📱 6. `07_ambient_capsule_and_drawer_mobile_light_390x844.png` (144 KB) — мобильная карточка звонящего и Apple таббар.
+     * ☀️ 7. `09_call_audio_player_pc_light_1440x900.png` (214 KB) — плеер записей разговоров с расшифровкой.
      * Все скриншоты лично просмотрены через `read_file` и очищены от дефектов.
 
 ### 11. Фича #481: Treatment Plans, 3-Tier Estimates (Economy, Optimum, Premium), Single-Row Toolbar (32–36px), 1-Click Cashier Handoff & Apple HIG Touch Ergonomics

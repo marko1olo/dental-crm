@@ -446,8 +446,8 @@ export const LeadCard: React.FC<LeadCardProps> = ({
 							e.stopPropagation();
 							void onCreatePatient(lead);
 						}}
-						disabled={creatingPatientLeadId === lead.id}
-						className="secondary-button w-full h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs hover:border-[var(--teal)] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-wait"
+						aria-busy={creatingPatientLeadId === lead.id}
+						className="secondary-button w-full h-8 min-h-[32px] text-[12.5px] font-bold px-2.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] shadow-2xs hover:border-[var(--teal)] inline-flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
 						data-testid={`create-patient-btn-${lead.id}`}
 						title="Создать карту пациента из обращения"
 					>

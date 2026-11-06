@@ -54,7 +54,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 			<button
 				type="submit"
 				className="primary-button"
-				disabled={isDeleting}
+				aria-busy={isDeleting}
 				style={{ flex: 1, minHeight: 40, justifyContent: "center" }}
 			>
 				Сохранить
@@ -66,7 +66,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 						type="button"
 						className="secondary-button"
 						data-testid="open-patient-modal-btn"
-						disabled={isDeleting}
+						aria-busy={isDeleting}
 						onClick={() => onOpenPatient(currentLead.existingPatient!.id)}
 						title={`Открыть карту постоянного пациента ${currentLead.existingPatient.fullName}`}
 						style={secondaryBtnStyle}
@@ -79,7 +79,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 						type="button"
 						className="secondary-button"
 						data-testid="lead-create-patient-modal-btn"
-						disabled={isDeleting || creatingPatientLeadId === editingLeadId}
+						aria-busy={isDeleting || creatingPatientLeadId === editingLeadId}
 						onClick={() => onCreatePatient(currentLead)}
 						title="Создать карту пациента из обращения"
 						style={secondaryBtnStyle}
@@ -95,7 +95,7 @@ export const LeadFormFooterActions: React.FC<LeadFormFooterActionsProps> = ({
 					type="button"
 					className="secondary-button"
 					data-testid="lead-delete-permanent"
-					disabled={isDeleting}
+					aria-busy={isDeleting}
 					onClick={onDelete}
 					title="Удалить обращение из базы навсегда"
 					aria-label="Удалить обращение навсегда"

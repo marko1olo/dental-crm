@@ -28,7 +28,7 @@ export function WidgetMoreMenuBookingActions({
 				<button
 					type="button"
 					onClick={() => { onCaptureLead(); onClose(); }}
-					disabled={isCapturingLead || activeCall?.isLeadCaptured}
+					aria-busy={isCapturingLead}
 					className="w-full text-left px-2.5 py-2 rounded-lg bg-[var(--teal-surface)] hover:opacity-90 text-[var(--teal)] font-bold flex items-center gap-2 transition-colors cursor-pointer border border-[var(--teal-soft)] mb-1"
 					data-testid="widget-action-capture-lead"
 					title={`Захват в лиды с авторазметкой канала (${callAttribution.channelLabel})`}
@@ -75,7 +75,7 @@ export function WidgetMoreMenuBookingActions({
 				<button
 					type="button"
 					onClick={() => { onQuickCreatePatient(); onClose(); }}
-					disabled={isCreatingPatient}
+					aria-busy={isCreatingPatient}
 					className="w-full text-left px-2.5 py-2 rounded-lg hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 font-medium flex items-center gap-2 transition-colors cursor-pointer"
 				>
 					<UserPlus size={13} className="text-emerald-600 shrink-0" />

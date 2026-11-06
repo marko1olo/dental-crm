@@ -64,8 +64,8 @@ export const IncomingCallerLeadCapture: React.FC<IncomingCallerLeadCaptureProps>
 				<button
 					type="button"
 					onClick={onCaptureLead}
-					disabled={isCapturingLead || isLeadCaptured}
-					className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer disabled:opacity-60"
+					aria-busy={isCapturingLead}
+					className="w-full h-9 min-h-[36px] px-3.5 py-1.5 rounded-lg bg-[var(--teal)] hover:opacity-90 active:scale-95 text-white text-[13px] font-semibold transition-all inline-flex items-center justify-center gap-1.5 shadow-xs cursor-pointer"
 					data-testid="drawer-action-capture-lead"
 					title="Захват звонящего в лиды с автоматической разметкой рекламного канала"
 				>

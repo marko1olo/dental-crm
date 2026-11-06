@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 import { CHANNEL_BADGE_COLORS, CHANNEL_DISPLAY_NAMES } from "../telephonyAttribution";
 
 describe("Telephony Lead Capture Visual & Ergonomics Integrity (Miller's Law & Tokens)", () => {

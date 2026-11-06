@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { beforeEach, describe, it } from "vitest";
+import { beforeEach, describe, it } from "node:test";
 import { captureLeadFromIncomingCall } from "../telephonyAttribution";
 import type { IncomingCallPayload } from "../../../store/telephonyTypes";
 import { useTelephonyStore } from "../../../store/telephonyStore";

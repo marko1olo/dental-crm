@@ -54,8 +54,8 @@ export const LeadMobileSheetBottomBar: React.FC<
 				<button
 					type="button"
 					onClick={() => onCreatePatient(lead)}
-					disabled={creatingPatientLeadId === lead.id}
-					className="w-full min-h-[44px] rounded-[12px] bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-semibold text-[13.5px] flex items-center justify-center gap-2 active:bg-[var(--paper)] transition-all cursor-pointer disabled:opacity-50"
+					aria-busy={creatingPatientLeadId === lead.id}
+					className="w-full min-h-[44px] rounded-[12px] bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink)] font-semibold text-[13.5px] flex items-center justify-center gap-2 active:bg-[var(--paper)] transition-all cursor-pointer"
 					data-testid="bottom-sheet-create-patient-btn"
 				>
 					<UserPlus size={16} />

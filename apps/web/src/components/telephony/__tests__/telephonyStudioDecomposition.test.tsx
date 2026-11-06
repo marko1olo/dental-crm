@@ -5,9 +5,19 @@
  * Mandates 8b (Sweet Spot), 8e (Doctor Autonomy, 0 Locks), 8am (Single CTA), Apple HIG.
  */
 
+import assert from "node:assert/strict";
 import React from "react";
 import { renderToString } from "react-dom/server";
-import { describe, it, expect } from "vitest";
+import { describe, it } from "node:test";
+
+const expect = (actual: any) => ({
+	toBe: (expected: any) => assert.strictEqual(actual, expected),
+	toContain: (substr: string) => assert.ok(actual.includes(substr), `Expected actual to contain ${JSON.stringify(substr)}`),
+	not: {
+		toContain: (substr: string) => assert.ok(!actual.includes(substr), `Expected actual not to contain ${JSON.stringify(substr)}`),
+	},
+	toBeNull: () => assert.strictEqual(actual, null),
+});
 import {
 	TelephonyStudioHeader,
 	TelephonySoftphoneDialpad,

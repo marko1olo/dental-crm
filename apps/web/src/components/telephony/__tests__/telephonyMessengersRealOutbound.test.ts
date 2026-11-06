@@ -1,5 +1,17 @@
 import assert from "node:assert/strict";
-import { describe, test, beforeEach, afterEach, vi } from "vitest";
+import { describe, test, beforeEach, afterEach } from "node:test";
+const vi = {
+	restoreAllMocks: () => {},
+	fn: (impl?: any) => {
+		const fn: any = (...args: any[]) => {
+			fn.mock.calls.push(args);
+			return impl ? impl(...args) : undefined;
+		};
+		fn.mock = { calls: [] };
+		return fn;
+	},
+	stubGlobal: (key: string, val: any) => { (globalThis as any)[key] = val; },
+};
 import {
 	dispatchBatchReminders,
 	type TomorrowReminderItem,

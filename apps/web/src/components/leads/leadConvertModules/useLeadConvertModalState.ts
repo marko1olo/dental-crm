@@ -37,6 +37,10 @@ export function useLeadConvertModalState(props: LeadConvertModalProps) {
 	const setConsentMarketing = props.setConsentMarketing || setLocalConsentMarketing;
 
 	const handleFormSubmit = (e: React.FormEvent) => {
+		if (props.isBooking) {
+			e.preventDefault();
+			return;
+		}
 		props.onSubmit(e, {
 			mode,
 			consentMedical,

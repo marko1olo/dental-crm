@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { test } from "vitest";
+import { test } from "node:test";
 import { calculatePatientFinancialStatus, useTelephonyStore } from "../../../store/telephonyStore";
 
 test("Telephony - patient financial status calculation", () => {

@@ -38,8 +38,8 @@ export const LeadMobileSheetStagesAndNotes: React.FC<
 					<button
 						type="button"
 						onClick={onSaveNotes}
-						disabled={isSavingNotes || notesText === (lead.notes || "")}
-						className="min-h-[32px] px-2.5 rounded-[6px] text-[12px] font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] disabled:opacity-40 transition-all cursor-pointer"
+						aria-busy={isSavingNotes}
+						className="min-h-[32px] px-2.5 rounded-[6px] text-[12px] font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] transition-all cursor-pointer"
 					>
 						{isSavingNotes ? "Сохранение..." : "Сохранить"}
 					</button>

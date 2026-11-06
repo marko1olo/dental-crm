@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import fs from "node:fs";
 import path from "node:path";
-import { describe, it } from "vitest";
+import { describe, it } from "node:test";
 
 describe("Telephony Doctor Sterile Zone & Solo Doctor Autonomy (Mandates 8e, 8n, 8p)", () => {
 	const srcDir = fs.existsSync(path.resolve(process.cwd(), "apps/web/src"))
