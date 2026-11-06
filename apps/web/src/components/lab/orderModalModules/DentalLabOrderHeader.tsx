@@ -89,7 +89,7 @@ export function DentalLabOrderHeader({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-9 h-9 min-w-[36px] min-h-[36px] rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-100 hover:bg-[var(--line,#e2e8f0)] dark:hover:bg-slate-800 cursor-pointer transition-colors"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-100 hover:bg-[var(--line,#e2e8f0)] dark:hover:bg-slate-800 cursor-pointer transition-colors"
 						aria-label="Закрыть"
 						data-testid="lab-order-modal-close-btn"
 					>
@@ -125,13 +125,13 @@ export function DentalLabOrderHeader({
 					)}
 				</div>
 
-				{/* Мобильные действия: Норма + Печать иконкой */}
+				{/* Мобильные действия: Норма + Печать иконкой (тач-минимум Apple HIG >= 44x44px) */}
 				<div className="flex sm:hidden items-center gap-1.5">
 					{onApplyDefaults && (
 						<button
 							type="button"
 							onClick={onApplyDefaults}
-							className="inline-flex sm:hidden items-center gap-1 px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs shadow-2xs transition cursor-pointer"
+							className="inline-flex sm:hidden items-center gap-1 px-3 py-1.5 min-h-[44px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs shadow-2xs transition cursor-pointer"
 							title="Заполнить физиологическую норму (Мандат 8e: 1 клик)"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-[#0d9488]" />
@@ -142,11 +142,11 @@ export function DentalLabOrderHeader({
 						<button
 							type="button"
 							onClick={onPrint}
-							className="inline-flex sm:hidden items-center justify-center w-8 h-8 rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink-secondary,#334155)] dark:text-slate-300 shadow-2xs transition cursor-pointer"
+							className="inline-flex sm:hidden items-center justify-center w-11 h-11 min-w-[44px] min-h-[44px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink-secondary,#334155)] dark:text-slate-300 shadow-2xs transition cursor-pointer"
 							title="Печать"
 							aria-label="Печать"
 						>
-							<Printer className="w-3.5 h-3.5 text-[var(--muted,#64748b)]" />
+							<Printer className="w-4 h-4 text-[var(--muted,#64748b)]" />
 						</button>
 					)}
 				</div>

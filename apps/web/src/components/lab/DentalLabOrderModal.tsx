@@ -150,12 +150,12 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 			}}
 		>
 			<div
-				className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden flex flex-col max-h-[92vh] max-sm:max-h-[94vh]"
+				className="relative w-full max-w-5xl bg-[var(--paper,#ffffff)] dark:bg-slate-900 text-[var(--ink,#0f172a)] dark:text-slate-100 border border-[var(--line,#cbd5e1)] dark:border-slate-800 rounded-2xl max-sm:rounded-t-[24px] max-sm:rounded-b-none shadow-2xl overflow-hidden overflow-x-clip max-sm:w-full flex flex-col max-h-[92vh] max-sm:max-h-[94vh]"
 				data-testid="dental-lab-order-drawer"
 				id="lab-order-modal-container"
 			>
 				{/* Apple HIG: Mobile Drag Handle (36x5px) */}
-				<div className="sm:hidden w-9 h-1.5 bg-slate-300 dark:bg-slate-600 rounded-full mx-auto my-2.5 shrink-0" aria-hidden="true" />
+				<div className="sm:hidden w-9 h-[5px] bg-[var(--line-strong,#94a3b8)] rounded-full mx-auto my-2.5 shrink-0" aria-hidden="true" />
 
 				{/* 1. Header Bar */}
 				<DentalLabOrderHeader
@@ -187,7 +187,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 							type="button"
 							data-testid={`lab-preset-btn-${p.id}`}
 							onClick={() => form.handleApplyExpressPreset(p)}
-							className="px-2.5 py-1 min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-[#0d9488] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/20 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium whitespace-nowrap transition cursor-pointer shrink-0"
+							className="px-3 py-1.5 min-h-[44px] sm:min-h-[32px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 hover:border-[#0d9488] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-800 hover:bg-teal-50 dark:hover:bg-teal-950/20 text-xs text-[var(--ink,#0f172a)] dark:text-slate-200 font-medium whitespace-nowrap transition cursor-pointer shrink-0"
 						>
 							{p.badge || (p as any).name || (p as any).title}
 						</button>
@@ -199,7 +199,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("main")}
-						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 min-h-[44px] sm:min-h-[36px] text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "main"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -211,7 +211,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("shades")}
-						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 min-h-[44px] sm:min-h-[36px] text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "shades"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -223,7 +223,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("scans")}
-						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 min-h-[44px] sm:min-h-[36px] text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "scans"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -235,7 +235,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("stages")}
-						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 min-h-[44px] sm:min-h-[36px] text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "stages"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
@@ -247,7 +247,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 					<button
 						type="button"
 						onClick={() => setActiveSubTab("print")}
-						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
+						className={`!bg-transparent dark:!bg-transparent py-2 sm:py-3 px-1 sm:px-3 min-h-[44px] sm:min-h-[36px] text-[11px] sm:text-xs font-bold border-b-2 whitespace-nowrap transition cursor-pointer flex items-center gap-1 sm:gap-1.5 shrink-0 ${
 							activeSubTab === "print"
 								? "border-[#0d9488] text-[#0d9488]"
 								: "border-transparent text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-200"
