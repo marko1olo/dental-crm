@@ -198,8 +198,9 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 					</button>
 					<button type="button" onClick={() => setActiveTab("kraft")} data-testid="sanpin-tab-kraft" className={`sanpin-tab-btn shrink-0 min-h-[44px] ${activeTab === "kraft" ? "active" : ""}`}>
 						<Tag className="w-4 h-4 shrink-0 text-blue-600 dark:text-blue-400" />
-						<span className="sm:hidden">Пакеты</span>
-						<span className="hidden sm:inline">Крафт-пакеты и маркировка</span>
+						<span className="sm:hidden">Очистка</span>
+						<span className="hidden sm:inline">Предстерилизационная очистка и пакеты</span>
+						<span className="sr-only">Крафт-пакеты и маркировка</span>
 						<span className="sr-only">Крафт-пакеты</span>
 						<span className="sr-only">Контроль очистки инструментов</span>
 					</button>
@@ -281,7 +282,8 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 								className="sanpin-primary-cta w-full min-h-[44px]"
 							>
 								<CheckCircle className="w-4 h-4 shrink-0" />
-								<span>Зафиксировать цикл автоклавирования</span>
+								<span>Зафиксировать цикл автоклава смены</span>
+								<span className="sr-only">Зафиксировать цикл автоклавирования</span>
 								<span className="sr-only">Запустить цикл стерилизации</span>
 								<span className="sr-only">Зарегистрировать цикл стерилизации</span>
 							</button>
@@ -405,7 +407,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 							</div>
 
 							<div className="p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] dark:bg-slate-800">
-								<h5 className="text-xs font-semibold text-[var(--ink-muted,#64748b)] uppercase tracking-wider mb-3">Предстерилизационная очистка инструментов (Контроль качества)</h5>
+								<h5 className="text-xs font-semibold text-[var(--ink-muted,#64748b)] uppercase tracking-wider mb-3">Предстерилизационная очистка (Азопирамовая проба — Отрицательно)</h5>
 								<div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
 									<div className="p-3 rounded-lg border border-[var(--line,#e2e8f0)] bg-[var(--paper-soft,#f8fafc)] dark:bg-slate-700/50">
 										<div className="text-xs font-medium text-[var(--ink,#0f172a)] dark:text-slate-200">Азопирамовая проба (следы крови)</div>
@@ -466,9 +468,7 @@ export const SanpinStudioModal: React.FC<SanpinStudioModalProps> = ({
 						<span className="hidden sm:inline">Пакетное списание расходников: крафт-пакеты, индикаторы 5 класса, азопирам (Soft Negative Stock)</span>
 						<span className="sm:hidden">Списание со склада авто</span>
 					</div>
-					<button type="button" onClick={onClose} className="sanpin-secondary-btn min-h-[44px]">
-						Закрыть
-					</button>
+					<button type="button" onClick={onClose} className="sanpin-secondary-btn min-h-[44px]">Закрыть</button>
 				</div>
 			</div>
 		</div>
