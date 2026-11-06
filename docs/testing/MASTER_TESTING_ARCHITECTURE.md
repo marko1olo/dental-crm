@@ -132,6 +132,21 @@ graph TD
   4. *Смета:* расчет без микро-расходников (валики и перчатки скрыты от пациента).
   5. *Касса:* сплит-чекаут 50% карта / 50% наличные, фискальный чек 54-ФЗ без ИНН физлица.
   6. *Склад:* фоновое автоматическое списание композита и анестетика с мягким овердрафтом (Soft Negative Stock).
+- **Мульти-сервисный клинический приём 3+ услуг (`multi-service-visit-lifecycle.spec.ts`):**
+  * Сквозной визит пациента у кресла: терапия (лечение кариеса K02.0) + радиовизиография (RVG снимок) + инфильтрационная анестезия (Ультракаин Д-С).
+  * Дебаунс-автосейв черновика SOAP-дневника без потери букв (жалобы, анамнез, объективно, диагноз, лечение) и норма в 1 клик (Мандаты 8e, 8ba).
+  * Пакетное списание расходников со склада по технологическим картам с мягким овердрафтом (Soft Negative Stock).
+  * Переход в кассу (#checkout), проверка 100% сходимости копеек и разблокированного Primary CTA.
+- **Семейный баланс, депозит и сплит-чек 54-ФЗ (`family-balance-and-split-payment.spec.ts`):**
+  * Чекаут пациента с использованием семейного баланса / депозита и раздельной оплаты (сплит-тендер).
+  * Распределение сумм: депозит + банковская карта + наличные без копеечных расхождений по Гамильтону-Хэру (Hamilton-Hare exact math).
+  * Автоматический расчет сдачи при переплате наличными купюрами (2000 ₽ при доле 1500 ₽ ➔ сдача 500 ₽).
+  * Фискализация чека 54-ФЗ без барьера ИНН для физлиц, верификация записи платежа в смене кассы (#cashbox).
+- **Детский приём и цефалометрия ортодонтии (`pediatric-and-orthodontic-flow.spec.ts`):**
+  * Детская студия (#pediatric): молочный прикус FDI (51–85), сменный прикус с первыми молярами (16, 26, 36, 46).
+  * Разметка кариеса на молочном моляре 54, физиологическая смена зубов / резорбция корней на резце 71.
+  * Расчет безопасной детской дозы анестезии по весу ребенка (22 кг), фиксация поведения по шкале Франкла (Франкл 3 — позитивный контакт), диплом маленького героя.
+  * Ортодонтическая студия (#orthodontics): дуги (NiTi, CuNiTi, Сталь, ТМА), межчелюстные эластики (Fox, Bear), цефалометрический анализ ТРГ без сбоев Canvas, 1-клик фиксация активации этапа.
 - **Высококонкурентные стресс-тесты ACID (`acidTransactionStress.test.ts`):**
   * 20 параллельных потоков на один временной слот расписания (1x 201 Created + 19x 409 Conflict).
   * Атомарный дебет семейного депозита через `SELECT ... FOR UPDATE` (защита от Double-Spend).
@@ -164,7 +179,10 @@ graph TD
 | **apps/web** | Реактивная гидратация 0-F5 | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/__tests__/clinicalWorkflowStateHydration.test.tsx` | $\le 3$ с |
 | **apps/web** | Одонтограмма Wheeler | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/odontogram/__tests__/odontogramRealBehavioralSuite.test.tsx` | $\le 4$ с |
 | **apps/web** | Дневник SOAP и норма | `node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/web/testCssStub.mjs --test apps/web/src/components/visit/__tests__/visitRealBehavioralSuite.test.tsx` | $\le 3$ с |
-| **E2E Playwright** | Мастер-цикл приёма | `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` | $\le 25$ с |
+| **E2E Playwright** | Мастер-цикл приёма | `npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts` | $\le 40$ с |
+| **E2E Playwright** | Мульти-сервисный визит (3+ услуг) | `npx playwright test apps/web/tests/e2e/multi-service-visit-lifecycle.spec.ts` | $\le 45$ с |
+| **E2E Playwright** | Семейный баланс и сплит 54-ФЗ | `npx playwright test apps/web/tests/e2e/family-balance-and-split-payment.spec.ts` | $\le 45$ с |
+| **E2E Playwright** | Детство FDI и ортодонтия ТРГ | `npx playwright test apps/web/tests/e2e/pediatric-and-orthodontic-flow.spec.ts` | $\le 30$ с |
 | **E2E Playwright** | Кросс-модульные тесты | `npx playwright test apps/web/tests/e2e/cashbox-billing-flow.spec.ts`<br>`npx playwright test apps/web/tests/e2e/warehouse-consumption-flow.spec.ts` | $\le 20$ с |
 
 ---

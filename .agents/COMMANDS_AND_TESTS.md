@@ -170,12 +170,21 @@ node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps
 # 1. Сквозной 6-фазный мастер-цикл приёма врача у кресла (Playwright E2E):
 npx playwright test apps/web/tests/e2e/master-clinical-lifecycle.spec.ts
 
-# 2. Кросс-модульные сценарии кассы 54-ФЗ и склада:
+# 2. Сквозной визит 3+ услуг (терапия, RVG снимок, анестезия, автосейв SOAP, списание со склада):
+npx playwright test apps/web/tests/e2e/multi-service-visit-lifecycle.spec.ts
+
+# 3. Семейный баланс, депозит и сплит-чек 54-ФЗ (Hamilton-Hare exact math, сдача с наличных):
+npx playwright test apps/web/tests/e2e/family-balance-and-split-payment.spec.ts
+
+# 4. Детский приём (FDI 51-85, смена зубов, шкала Франкла 3, диплом) + Ортодонтия (ТРГ цефалометрия):
+npx playwright test apps/web/tests/e2e/pediatric-and-orthodontic-flow.spec.ts
+
+# 5. Кросс-модульные сценарии кассы 54-ФЗ и склада:
 npx playwright test apps/web/tests/e2e/cashbox-billing-flow.spec.ts
 npx playwright test apps/web/tests/e2e/warehouse-consumption-flow.spec.ts
 npx playwright test apps/web/tests/e2e/odontogram-multiselect-flow.spec.ts
 
-# 3. Стресс-тест параллельных транзакций ACID и дедлоков PostgreSQL 18:
+# 6. Стресс-тест параллельных транзакций ACID и дедлоков PostgreSQL 18:
 node --max-old-space-size=2048 --test-timeout=10000 --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/concurrency/acidTransactionStress.test.ts
 ```
 
