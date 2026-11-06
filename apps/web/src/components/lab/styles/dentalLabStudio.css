@@ -311,17 +311,31 @@
 	}
 
 	.dental-lab-modal-container {
+		width: 100vw;
 		max-width: 100vw;
+		height: 94vh;
 		max-height: 94vh;
 		border-radius: 24px 24px 0 0;
 		border-bottom: none;
+		display: flex;
+		flex-direction: column;
+	}
+
+	.dental-lab-header {
+		flex-direction: column;
+		align-items: stretch;
+		gap: 8px;
+		padding: 10px 14px;
 	}
 
 	.dental-lab-body-grid {
 		display: flex;
 		flex-direction: column;
+		flex: 1 1 auto;
+		min-height: 0;
 		height: auto;
 		overflow-y: auto;
+		-webkit-overflow-scrolling: touch;
 	}
 
 	.dental-lab-left-column.mobile-hidden,
@@ -333,6 +347,8 @@
 	.dental-lab-right-column.mobile-visible {
 		display: flex !important;
 		width: 100% !important;
+		flex: 1 1 auto !important;
+		min-height: 0 !important;
 	}
 
 	/* Тактильный Drag Handle 36x5px по центру шторки */

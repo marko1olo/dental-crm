@@ -13,6 +13,7 @@ import { GlobalSupportModals } from "./modalsContainerModules/GlobalSupportModal
 import { useAppModalsEventBridge } from "./modalsContainerModules/useAppModalsEventBridge";
 import { useUiSurfaceStore } from "../../store/uiSurfaceStore";
 import { DoctorPayrollStudioModal } from "../payroll/DoctorPayrollStudioModal";
+import { DentalLabStudioModal } from "../lab/DentalLabStudioModal";
 
 export type { StandaloneLaunchersProps };
 export { renderStandaloneLaunchers };
@@ -27,6 +28,7 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 	const isEmergencyFromStore = primaryModal?.id === "emergency_rescue";
 	const isEffectiveEmergencyOpen = Boolean(bridge.isEmergencyRescueOpen || isEmergencyFromStore);
 	const isPayrollFromStore = primaryModal?.id === "doctor_payroll" || primaryModal?.id === "payroll";
+	const isLabFromStore = primaryModal?.id === "lab_order" || primaryModal?.id === "dental_lab" || primaryModal?.id === "lab" || primaryModal?.id === "lab_hub";
 
 	return (
 		<>
@@ -36,6 +38,14 @@ export function AppModalsContainer(props: AppModalsContainerProps) {
 				<DoctorPayrollStudioModal
 					isOpen={true}
 					onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
+				/>
+			)}
+
+			{isLabFromStore && (
+				<DentalLabStudioModal
+					isOpen={true}
+					onClose={() => useUiSurfaceStore.getState().closePrimaryModal(primaryModal.id)}
+					{...(primaryModal?.payload as any)}
 				/>
 			)}
 

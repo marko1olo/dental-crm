@@ -1,5 +1,5 @@
 import React from "react";
-import { DentalLabOrderModal } from "../../lab/DentalLabOrderModal";
+import { DentalLabStudioModal } from "../../lab/DentalLabStudioModal";
 import { DoctorPrivacyShield } from "../../auth/DoctorPrivacyShield";
 import { GlobalPaymentModalLauncher } from "../../billing/GlobalPaymentModalLauncher";
 import { safeLocalStorageRemoveItem } from "../../../lib/safeLocalStorage";
@@ -29,10 +29,10 @@ export function AdministrativeModalsSubcontainer({
 		<>
 			<GlobalPaymentModalLauncher activeStaffUser={activeStaffUser} />
 			{isGlobalLabCreateOrderOpen && (
-				<DentalLabOrderModal
+				<DentalLabStudioModal
 					isOpen={isGlobalLabCreateOrderOpen}
 					onClose={() => setIsGlobalLabCreateOrderOpen(false)}
-					onOrderSaved={() => setIsGlobalLabCreateOrderOpen(false)}
+					onOrderCreated={() => setIsGlobalLabCreateOrderOpen(false)}
 					patientName={
 						labCreateOrderContext?.patientName || "Пациент"
 					}
@@ -43,13 +43,6 @@ export function AdministrativeModalsSubcontainer({
 						"Лечащий врач"
 					}
 					initialToothFdi={labCreateOrderContext?.toothNumber || "21"}
-					treatmentPlanId={labCreateOrderContext?.treatmentPlanId}
-					stageNumber={labCreateOrderContext?.stageNumber ?? 2}
-					stageTitle={
-						labCreateOrderContext?.stageTitle ||
-						"Ортопедический этап: безметалловая керамика"
-					}
-					initialTeeth={labCreateOrderContext?.initialTeeth || [21, 22]}
 				/>
 			)}
 			{/* Честность: бонусы списываются только конкретному пациенту из контекста.

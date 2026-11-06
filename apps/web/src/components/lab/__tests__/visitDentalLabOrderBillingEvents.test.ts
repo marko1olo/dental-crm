@@ -54,8 +54,10 @@ describe("visitDentalLabOrder — Billing, Events & Codebase Wiring", () => {
 	});
 
 	it("Сквозная связка VisitView, DentalLabOrdersView и VisitViewModals", () => {
-		const visitViewPath = path.resolve(webSrcDir, "VisitView.tsx");
-		const content = fs.readFileSync(visitViewPath, "utf-8");
+		const layoutPath = path.resolve(webSrcDir, "components/visit/view/VisitViewDesktopLayout.tsx");
+		const content = fs.existsSync(layoutPath)
+			? fs.readFileSync(layoutPath, "utf-8")
+			: fs.readFileSync(path.resolve(webSrcDir, "VisitView.tsx"), "utf-8");
 		assert.match(content, /loadedTreatmentPlan=\{(?:s\.)?loadedTreatmentPlan\s*\|\|\s*(?:s\.)?activePlan\}/);
 
 		const ordersViewPath = path.resolve(labDir, "DentalLabOrdersView.tsx");

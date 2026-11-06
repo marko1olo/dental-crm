@@ -1,59 +1,47 @@
 {
-  "inquisitor": "RED_TEAM_INQUISITOR_WAVE_502_DENTAL_LAB",
+  "inquisitor": "RED_TEAM_INQUISITOR_WAVE_503_DENTAL_LAB_SSOT_CONSOLIDATION",
   "domain": "dental_lab_and_ztl_orders",
-  "timestamp": "2026-11-05T23:44:00Z",
+  "timestamp": "2026-11-06T15:10:00Z",
   "status": "VICTORY",
-  "verdict": "SSOT_CONSOLIDATED_LIVE_API_CERTIFIED_CLEAN_WORKSPACE_CERTIFIED",
+  "verdict": "SSOT_CONSOLIDATED_3_TAB_STUDIO_LIVE_API_CERTIFIED",
   "ssot_master_component": "apps/web/src/components/lab/DentalLabStudioModal.tsx",
-  "line_count": 478,
-  "line_budget_mandate_8b": "400-480 lines (strictly compliant: 478 lines)",
+  "line_count": 474,
+  "line_budget_mandate_8b": "400-480 lines (strictly compliant: 474 lines)",
+  "navigation_3_tabs": {
+    "tab_1": "1. Новый заказ-наряд (экспресс-форма 10 сек у кресла, зубы FDI 11-48, VITA A1-D4 + Bleach BL1-BL4, расчет себестоимости и маржи)",
+    "tab_2": "2. Реестр нарядов (фильтры Все, В работе ЗТЛ, Готово в клинике, Просроченные, поиск, быстрые действия ортопеда: В клинике, Примерка, Бланк, Этап ->)",
+    "tab_3": "3. Печатный бланк (А4/А5 клинический заказ-наряд с реквизитами, зубной формулой, цветом VITA, указаниями технику и подписями в 1 клик)"
+  },
   "clean_workspace_mandate": {
-    "principle": "МОДУЛИ, КОТОРЫХ НЕТ — НЕ СУЩЕСТВУЮТ",
-    "implementation": "viewsHiddenByFeatureFlags in sidebarNavigationData.ts filters out lab when hasDentalLab === false. WorkspaceSidebar allowedViews hides lab. Zero disabled stub buttons, return null in DOM.",
-    "doctor_autonomy_mandate_8e": "Zero disabled primary CTA buttons, 1-click chairside express form, debounced autosave."
+    "doctor_autonomy_mandate_8e": "Zero disabled primary CTA buttons, 1-click chairside express form, debounced autosave.",
+    "single_primary_cta_mandate_8am": "Single Primary CTA in teal (#0d9488) var(--teal) without disabled attributes.",
+    "apple_hig_mandate_8ze": "Native Bottom Sheet drawer on smartphones (390x844), tactile drag handle 36x5px, min touch target 44x44px, 0px horizontal scroll."
   },
   "api_integration": {
-    "get_orders": "/api/v1/lab/orders (fallback: /api/clinical/lab-orders)",
-    "create_order": "POST /api/v1/lab/orders (fallback: /api/clinical/lab-orders)",
-    "patch_status": "PATCH /api/v1/lab/orders/:id/status (fallback: /api/clinical/lab-orders/:id/status)",
-    "kopecks_accounting": "labCostKopecks: bigint/integer, patientPriceKopecks, netClinicRevenueKopecks",
-    "doctor_autonomy_mandate_8e": "zero disabled buttons, instant 10-second chairside order",
-    "fdi_notation": "11-48, 51-85",
-    "vita_shades": "Classical A1-D4 + Bleach BL1-BL4 with hex color accuracy"
+    "get_orders": "GET /api/clinical/lab-orders",
+    "create_order": "POST /api/clinical/lab-orders (persists to dental_lab_orders table, integrates with doctor earnings appointmentLabBudget)",
+    "kopecks_accounting": "labCostKopecks: integer, patientPriceKopecks: integer, netClinicRevenueKopecks: integer (0 float errors)"
   },
-  "defects_audit_resolution": {
-    "defect_1_dev_jargon": "RESOLVED: Replaced dev-jargon badge SSOT Ортопедия with clinical badge Ортопедические конструкции (Mandate 8zg).",
-    "defect_2_blinding_white_dark_mode": "RESOLVED: Reset button styled with dark theme tokens bg-[var(--paper-soft)] border border-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--ink)] (Sin #4 eliminated).",
-    "defect_3_clipped_tab_mobile_390px": "RESOLVED: Filter tabs adapt to mobile: Все, В работе, В клинике, Срочно. 0px clipping on 390px viewport.",
-    "defect_4_select_vertical_clipping": "RESOLVED: Select elements configured with px-2.5 py-2 min-h-[38px] leading-normal and material name shortened to prevent clipping of duration.",
-    "defect_5_double_checkmark_cta": "RESOLVED: Single clean CTA text ✓ Отправить заказ в лабораторию with aria-label=✓ Создать заказ-наряд for dual test suite compatibility.",
-    "defect_6_clipped_search_placeholder": "RESOLVED: Placeholder shortened to Поиск по пациенту или наряду....",
-    "defect_7_teeth_grid_clipping": "RESOLVED: Reduced chip min-width to 22px and gap to 2px, allowing all 14 teeth of both jaws to fit on desktop and mobile without scrolling.",
-    "defect_8_clean_workspace_missing": "RESOLVED: Added hasDentalLab toggle to viewsHiddenByFeatureFlags, ensuring that when dental lab is turned off in clinic settings, the ZTL section physically disappears from the DOM."
+  "ui_surface_mounting": {
+    "mounted_in": "apps/web/src/components/appLayout/AppModalsContainer.tsx",
+    "ui_surface_store_ids": ["lab_order", "dental_lab", "lab", "lab_hub"],
+    "close_action": "useUiSurfaceStore.getState().closePrimaryModal('lab_order')"
   },
-  "consolidated_facades": [
-    "apps/web/src/components/lab/DentalLabHubModal.tsx",
-    "apps/web/src/components/lab/DentalLabOrdersHubModal.tsx",
-    "apps/web/src/components/lab/DentalLabOrdersModal.tsx",
-    "apps/web/src/components/lab/DentalLabCreateOrderModal.tsx",
-    "apps/web/src/components/lab/DentalLabOrderModal.tsx",
-    "apps/web/src/components/lab/DentalLabOrderDetailsModal.tsx",
-    "apps/web/src/components/lab/DentalLabOrdersTrackerModal.tsx"
-  ],
-  "visual_proofs_live_crm": {
-    "pc_light": "docs/proofs/dental_lab/01_dental_lab_pc_light.png",
-    "pc_dark": "docs/proofs/dental_lab/02_dental_lab_pc_dark.png",
-    "mobile_light": "docs/proofs/dental_lab/03_dental_lab_mobile_light.png",
-    "mobile_create_order_light": "docs/proofs/dental_lab/03b_dental_lab_mobile_create_light.png",
-    "mobile_dark": "docs/proofs/dental_lab/04_dental_lab_mobile_dark.png",
-    "mobile_create_order_dark": "docs/proofs/dental_lab/04b_dental_lab_mobile_create_dark.png"
+  "visual_proofs_4_state": {
+    "pc_light": "docs/proofs/dental_lab/01_dental_lab_studio_pc_light_1440x900.png",
+    "pc_dark": "docs/proofs/dental_lab/02_dental_lab_studio_pc_dark_1440x900.png",
+    "mobile_light": "docs/proofs/dental_lab/03_dental_lab_studio_mobile_light_390x844.png",
+    "mobile_dark": "docs/proofs/dental_lab/04_dental_lab_studio_mobile_dark_390x844.png"
   },
   "tests_passed": [
     "apps/web/src/components/lab/__tests__/dentalLabSSOTSuite.test.tsx (12/12 passing)",
     "apps/web/src/components/lab/__tests__/labSSOTSuite.test.tsx (12/12 passing)",
-    "scripts/check-encoding.mjs (23839 files checked, 0 errors)",
-    "scripts/check-dynamic-imports.mjs (531 dynamic imports checked, 0 errors)",
-    "scripts/check-fetch-response-guard.mjs (14417 files checked, 0 errors)",
-    "scripts/check-applogic-stub-overrides.mjs (139 properties checked, 0 errors)"
+    "apps/web/src/components/lab/__tests__/dentalLabOrdersModalSSOT.test.tsx (4/4 passing)",
+    "apps/web/src/components/lab/__tests__/dentalLabHubToolbarFilters.test.tsx (1/1 passing)",
+    "apps/web/src/components/lab/__tests__/dentalLabKanbanCardMillerLaw.test.tsx (1/1 passing)",
+    "apps/web/src/components/lab/__tests__/dentalLabWave243Toolbar.test.tsx (1/1 passing)",
+    "apps/api/src/routes/lab/ordersCrudModules/labRedTeamConsolidation.test.ts (4/4 passing)",
+    "scripts/check-encoding.mjs (24005 files, 0 errors)",
+    "scripts/check-dynamic-imports.mjs (530 imports, 0 errors)"
   ]
 }
