@@ -120,7 +120,7 @@
    ========================================================================== */
 .dental-lab-body-grid {
 	display: grid;
-	grid-template-columns: 410px 1fr;
+	grid-template-columns: 424px 1fr;
 	gap: 0;
 	flex: 1 1 auto;
 	min-height: 0;
@@ -130,20 +130,20 @@
 .dental-lab-left-column {
 	border-right: 1px solid var(--line, #e2e8f0);
 	background: var(--paper, #f8fafc);
-	padding: 16px;
+	padding: 10px 12px 14px 12px;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 16px;
+	gap: 6px;
 }
 
 .dental-lab-right-column {
 	background: var(--paper-strong, #ffffff);
-	padding: 16px;
+	padding: 14px;
 	overflow-y: auto;
 	display: flex;
 	flex-direction: column;
-	gap: 14px;
+	gap: 12px;
 }
 
 /* ==========================================================================
@@ -151,19 +151,19 @@
    ========================================================================== */
 .dental-lab-teeth-grid {
 	display: flex;
-	gap: 4px;
+	gap: 1.5px;
 	overflow-x: auto;
-	padding-bottom: 4px;
+	padding-bottom: 2px;
 	scrollbar-width: thin;
 	user-select: none;
 }
 
 .dental-lab-tooth-chip {
-	min-height: 34px;
-	min-width: 26px;
-	font-size: 11px;
+	min-height: 24px;
+	min-width: 19px;
+	font-size: 9.5px;
 	font-weight: 700;
-	border-radius: 8px;
+	border-radius: 5px;
 	border: 1px solid var(--line, #cbd5e1);
 	background: var(--paper-strong, #ffffff);
 	color: var(--ink, #334155);
@@ -172,7 +172,7 @@
 	align-items: center;
 	justify-content: center;
 	transition: all 0.15s ease-in-out;
-	padding: 0 4px;
+	padding: 0;
 	flex-shrink: 0;
 }
 
@@ -226,22 +226,24 @@
    6. ЕДИНАЯ PRIMARY CTA КНОПКА #0d9488 (МАНДАТ 8am & 8e)
    ========================================================================== */
 .dental-lab-primary-cta {
-	min-height: var(--lab-touch-target-min);
+	min-height: 38px;
 	width: 100%;
 	background: var(--lab-teal);
 	color: #ffffff;
 	font-weight: 700;
-	font-size: 0.925rem;
+	font-size: 0.85rem;
 	border: none;
-	border-radius: 14px;
+	border-radius: 12px;
 	display: flex;
 	align-items: center;
 	justify-content: center;
-	gap: 8px;
+	gap: 6px;
 	cursor: pointer;
 	box-shadow: 0 4px 12px rgba(13, 148, 136, 0.35);
 	transition: background 0.15s ease, transform 0.1s ease;
 	outline: none;
+	padding: 6px 10px;
+	text-align: center;
 }
 
 .dental-lab-primary-cta:hover {

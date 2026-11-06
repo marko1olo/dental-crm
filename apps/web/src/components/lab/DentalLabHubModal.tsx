@@ -1,12 +1,12 @@
 /**
- * DentalLabHubModal.tsx — Канонический фасад хаба ЗТЛ (Мандат 8b: < 20 строк, SSOT).
- * 
- * Делегирует выполнение единому SSOT компоненту DentalLabOrdersHubModal.
- * Соответствует Высшей Конституции THE HAMMER и ликвидирует дублирование модалок.
+ * apps/web/src/components/lab/DentalLabHubModal.tsx
+ *
+ * DENTE Dental CRM — Канонический фасад хаба зуботехнической лаборатории (SSOT).
+ * Делегирует выполнение каноническому мастер-компоненту DentalLabStudioModal (Мандаты 8b: < 20 строк, 8e, 8aq).
  */
 
-export * from "./DentalLabOrdersHubModal";
+export * from "./DentalLabStudioModal";
 export {
-	DentalLabOrdersHubModal as DentalLabHubModal,
-	DentalLabOrdersHubModal as default,
-} from "./DentalLabOrdersHubModal";
+	DentalLabStudioModal as DentalLabHubModal,
+	DentalLabStudioModal as default,
+} from "./DentalLabStudioModal";

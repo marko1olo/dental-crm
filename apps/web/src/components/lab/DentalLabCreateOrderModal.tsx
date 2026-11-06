@@ -1,50 +1,39 @@
 /**
- * DentalLabCreateOrderModal.tsx — Канонический фасад модального окна создания наряд-заказа в лабораторию.
- * Делегирует выполнение единому SSOT-компоненту DentalLabOrderModal.
+ * apps/web/src/components/lab/DentalLabCreateOrderModal.tsx
+ *
+ * DENTE Dental CRM — Канонический фасад создания наряд-заказа ЗТЛ (SSOT).
+ * Делегирует выполнение каноническому мастер-компоненту DentalLabStudioModal (Мандаты 8b: < 50 строк, 8e, 8aq).
  */
 
 import React from "react";
 import type { DentalLabCreateOrderModalProps } from "./orderCreateModules/labOrderCreateTypes";
-import { DentalLabOrderModal } from "./DentalLabOrderModal";
-import type { DentalLabOrderData } from "./dentalLabDefinitions";
+import { DentalLabStudioModal } from "./DentalLabStudioModal";
 
 export type { DentalLabCreateOrderModalProps };
 
-export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps> = (props) => {
-	const {
-		isOpen,
-		onClose,
-		onCreateOrder,
-		currentDoctorName,
-		currentPatientName,
-		currentPatientId,
-		currentToothNumber,
-		treatmentPlanId,
-		stageNumber,
-		stageTitle,
-		initialTeeth,
-	} = props;
-
-	const handleSave = (order: DentalLabOrderData) => {
-		onCreateOrder(order as any);
-		onClose();
-	};
-
+export const DentalLabCreateOrderModal: React.FC<DentalLabCreateOrderModalProps> = ({
+	isOpen,
+	onClose,
+	onCreateOrder,
+	currentDoctorName,
+	currentPatientName,
+	currentPatientId,
+	currentToothNumber,
+}) => {
 	return (
-		<DentalLabOrderModal
+		<DentalLabStudioModal
 			isOpen={isOpen}
 			onClose={onClose}
-			doctorName={currentDoctorName}
 			patientName={currentPatientName}
 			patientId={currentPatientId}
+			doctorName={currentDoctorName}
 			initialToothFdi={currentToothNumber}
-			initialTeeth={initialTeeth}
-			treatmentPlanId={treatmentPlanId}
-			stageNumber={stageNumber}
-			stageTitle={stageTitle}
-			onSaveOrder={handleSave}
-			onOrderSaved={handleSave}
+			onOrderCreated={(ord) => {
+				onCreateOrder?.(ord as any);
+				onClose();
+			}}
 		/>
 	);
 };
 
+export default DentalLabCreateOrderModal;

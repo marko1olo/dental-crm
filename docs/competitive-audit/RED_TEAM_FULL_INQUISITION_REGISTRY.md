@@ -143,6 +143,32 @@
   5. Дельта заменена на аккуратную векторную иконку Lucide `AlertCircle`.
   6. Все 8 эталонных скриншотов (PC и Mobile Light/Dark для хаба и модалки наряда) обновлены в `docs/proofs/lab/` и лично проверены через `read_file`.
 
+### [LAB-07] [SEV-1] Консолидация модалок ЗТЛ в единый канонический SSOT DentalLabStudioModal.tsx и Apple HIG 4-State Visual Proof — [ЗАКРЫТО]
+- **Файлы:**
+  - [`DentalLabStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabStudioModal.tsx) (Канонический SSOT: 479 строк, Mandate 8b Sweet Spot)
+  - [`DirectDentalLabLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DirectDentalLabLauncher.tsx) (Шлюз запуска)
+  - [`DentalLabHubModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabHubModal.tsx) (Тонкий фасад)
+  - [`DentalLabCreateOrderModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabCreateOrderModal.tsx) (Тонкий фасад)
+  - [`DentalLabOrdersTrackerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabOrdersTrackerModal.tsx) (Тонкий фасад)
+  - [`dentalLabStudio.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/styles/dentalLabStudio.css) (379 строк, Apple HIG, Zero-Clipping)
+- **Суть бага:** Исторический зоопарк параллельных модалок ЗТЛ (`DentalLabCreateOrderModal`, `DentalLabOrdersTrackerModal`, `DentalLabHubModal`), наезды кнопок в левой колонке экспресс-наряда, обрезанные даты ISO (`2026-11-07T20:00:21.274Z`), капслочные заголовки и отсутствие гарантированного мобильного адаптива Apple HIG.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Утвержден единственный SSOT компонент `DentalLabStudioModal.tsx` (479 строк, строго в диапазоне 400–480 строк по Мандату 8b). Все остальные модалки редуцированы до прозрачных фасадов без дублирования бизнес-логики.
+  2. Экспресс-наряд у кресла за 10 секунд: выбор зуба по формуле FDI (11–48), быстрые кнопки конструкции («Цирконий e.max», «Бюгельный протез», «Временная фрезерованная», «Металлокерамика»), 20 оттенков шкалы VITA Classical + Bleach, расчет срока сдачи с учетом производственных дней РФ.
+  3. Финансовая точность: расчет себестоимости и прайса пациента строго в неделимых копейках (`amountKopecks`, BIGINT math) с наглядным отображением маржи клиники.
+  4. Автономия врача (Мандат 8e): кнопка «✓ Создать заказ-наряд / ✓ Отправить заказ в лабораторию» никогда не блокируется (`disabled=false`).
+  5. Ровно 1 Primary CTA `#0d9488` (Мандат 8am), нейтральные кнопки печати наряда А5 и бланка курьеру.
+  6. Нативный мобильный слой Apple iOS HIG: Bottom Sheet с Drag Handle 36x5px, тач-таргеты $\ge 44\times 44$px, 0px паразитного горизонтального скролла.
+  7. Ликвидирован технический жаргон и сырые таймстемпы: чистый вывод дат «Срок: 2026-11-07», Sentence case в заголовках.
+  8. Все 72 файла тестов (236 тестов) в `apps/web/src/components/lab/` проходят со 100% успехом (Exit Code 0).
+  9. 4-State Visual Proofs высокого разрешения ($\ge 20$KB) зафиксированы в `docs/proofs/lab/` и лично проверены через `read_file`:
+     * ☀️ PC Light: [`01_dental_lab_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/01_dental_lab_studio_pc_light_1440x900.png) (129.8 KB)
+     * 🌙 PC Dark: [`02_dental_lab_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/02_dental_lab_studio_pc_dark_1440x900.png) (129.7 KB)
+     * 📱 Mobile Light: [`03_dental_lab_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/03_dental_lab_studio_mobile_light_390x844.png) (135.8 KB)
+     * 🌙 Mobile Dark: [`04_dental_lab_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/04_dental_lab_studio_mobile_dark_390x844.png) (138.2 KB)
+     * 📱 Mobile Create Light: [`05_dental_lab_studio_mobile_create_order_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/05_dental_lab_studio_mobile_create_order_light_390x844.png) (122.3 KB)
+     * 🌙 Mobile Create Dark: [`06_dental_lab_studio_mobile_create_order_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab/06_dental_lab_studio_mobile_create_order_dark_390x844.png) (121.0 KB)
+
 ---
 
 ## 3. 📦 СКЛАД, АВТОКЛАВИРОВАНИЕ И САНПИН

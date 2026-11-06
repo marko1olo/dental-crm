@@ -1,9 +1,8 @@
 /**
- * ═══════════════════════════════════════════════════════════════════════════
- * DENTE Dental CRM — DentalLabOrdersModal (Канонический фасад / Реэкспорт)
- * ═══════════════════════════════════════════════════════════════════════════
- * Канонический мастер-компонент: DentalLabOrderModal.tsx
- * Соответствует Высшей Конституции THE HAMMER (Мандат 8b: < 20 строк).
+ * apps/web/src/components/lab/DentalLabOrdersModal.tsx
+ *
+ * DENTE Dental CRM — Канонический фасад модального окна наряда ЗТЛ.
+ * Ре-экспортирует DentalLabOrderModal (Мандаты 8b: < 20 строк, 8e, 8aq).
  */
 
 export * from "./DentalLabOrderModal";

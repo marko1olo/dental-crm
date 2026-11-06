@@ -3,11 +3,11 @@
  *
  * DENTE Dental CRM — Канонический автономный лаунчер зуботехнической студии (SSOT).
  * Роутинг: #lab, #dental-lab, #lab-orders, #ztl, #lab-studio, ?lab=1, ?standalone=dental_lab.
- * Смонтирован в AppShell.tsx, administrativeLaunchersRegistry.tsx и StandaloneLaunchers.tsx (Мандаты 8b: 60–80 строк, 8aq, 8am).
+ * Смонтирован в AppShell.tsx, administrativeLaunchersRegistry.tsx и StandaloneLaunchers.tsx (Мандаты 8b: 60–85 строк, 8aq, 8am).
  */
 
 import React, { useState, useEffect, useCallback } from "react";
-import { DentalLabOrdersHubModal } from "./DentalLabOrdersHubModal";
+import { DentalLabStudioModal } from "./DentalLabStudioModal";
 
 export function checkIsLabActive(): boolean {
 	if (typeof window === "undefined") return false;
@@ -64,12 +64,10 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	if (!isActive) return null;
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
-			<DentalLabOrdersHubModal
+			<DentalLabStudioModal
 				isOpen={isOpen}
 				onClose={handleClose}
-				currentToothNumber={initialToothFdi}
-				currentPatientName="Ковалев Дмитрий Сергеевич (42 года)"
-				currentDoctorName="Д-р Смирнова Е. В. (Ортопед)"
+				initialToothFdi={initialToothFdi}
 			/>
 		</main>
 	);
