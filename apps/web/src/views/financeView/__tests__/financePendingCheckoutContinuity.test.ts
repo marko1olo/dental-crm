@@ -29,27 +29,47 @@ describe("RED TEAM INQUISITION: Finance POS & Pending Checkout Data Continuity",
 		);
 	});
 
-	it("2. useFinanceView prioritizes pendingCheckout patient and billing summary over stale props", () => {
-		const source = fs.readFileSync(hookPath, "utf8");
-		// pendingCheckout must be checked before documentPatient fallback in effectivePatient
-		const patientMatch = source.indexOf("if (pendingCheckout?.patientId)");
-		const docPatientFallback = source.indexOf("if (documentPatient) return documentPatient;");
-		assert.ok(patientMatch !== -1, "effectivePatient must check pendingCheckout?.patientId");
-		assert.ok(docPatientFallback !== -1, "effectivePatient must have documentPatient fallback");
-		assert.ok(
-			patientMatch < docPatientFallback,
-			"pendingCheckout must take precedence over stale documentPatient in effectivePatient",
-		);
+	it("2. useFinanceView prioritizes pendingCheckout patient and billing summary over stale props", { timeout: 30000 }, async () => {
+		const { resolveEffectivePatient, resolveEffectiveBillingSummary } = await import("../useFinanceView.js");
 
-		// pendingCheckout must be checked before billingSummary in effectiveBillingSummary
-		const billingSummaryPendingMatch = source.indexOf("if (pendingCheckout?.totalDueRub && pendingCheckout.totalDueRub > 0)");
-		const billingSummaryFallback = source.indexOf("if (billingSummary && billingSummary.totalDueRub > 0) return billingSummary;");
-		assert.ok(billingSummaryPendingMatch !== -1, "effectiveBillingSummary must check pendingCheckout");
-		assert.ok(billingSummaryFallback !== -1, "effectiveBillingSummary must check billingSummary");
-		assert.ok(
-			billingSummaryPendingMatch < billingSummaryFallback,
-			"pendingCheckout.totalDueRub must take precedence over stale billingSummary",
-		);
+		const mockStalePatient = { id: "pat-stale", fullName: "Старый Пациент" };
+		const mockPendingCheckout = {
+			patientId: "pat-pending",
+			patientName: "Свежий Пациент из Приёма",
+			patientPhone: "+7 (999) 000-11-22",
+			totalDueRub: 15400,
+			services: [{ id: "srv-1" }],
+		};
+
+		// 1. Проверяем приоритет pendingCheckout над устаревшим documentPatient
+		const patientWithPending = resolveEffectivePatient({
+			pendingCheckout: mockPendingCheckout as any,
+			documentPatient: mockStalePatient,
+		});
+		assert.strictEqual(patientWithPending?.id, "pat-pending", "pendingCheckout patient must take precedence");
+		assert.strictEqual(patientWithPending?.fullName, "Свежий Пациент из Приёма");
+
+		// 2. Fallback на documentPatient при отсутствии pendingCheckout
+		const patientWithoutPending = resolveEffectivePatient({
+			pendingCheckout: null,
+			documentPatient: mockStalePatient,
+		});
+		assert.strictEqual(patientWithoutPending?.id, "pat-stale", "Must fallback to documentPatient when no pending checkout");
+
+		// 3. Проверяем приоритет суммы pendingCheckout над устаревшим billingSummary
+		const mockStaleBilling = { totalDueRub: 5000, totalPaidRub: 0 };
+		const summaryWithPending = resolveEffectiveBillingSummary({
+			pendingCheckout: mockPendingCheckout as any,
+			billingSummary: mockStaleBilling,
+		});
+		assert.strictEqual(summaryWithPending?.totalDueRub, 15400, "pendingCheckout totalDueRub must take precedence");
+
+		// 4. Fallback на billingSummary при отсутствии pendingCheckout
+		const summaryWithoutPending = resolveEffectiveBillingSummary({
+			pendingCheckout: null,
+			billingSummary: mockStaleBilling,
+		});
+		assert.strictEqual(summaryWithoutPending?.totalDueRub, 5000, "Must fallback to billingSummary when no pending checkout");
 	});
 
 	it("3. onRecordPayment wrapper clears dente_pending_checkout from storage upon completion", () => {

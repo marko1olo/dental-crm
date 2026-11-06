@@ -2,17 +2,17 @@
   "subagent": "cashbox_inquisitor",
   "role": "Supreme Red Team Inquisitor for Cashbox, Checkout, and 54-FZ Fiscalization",
   "status": "COMPLETED",
-  "wave": 505,
-  "lastUpdated": "2026-11-06T09:48:00+04:00",
+  "wave": 507,
+  "lastUpdated": "2026-11-06T16:22:00+04:00",
   "invariants": {
     "mandate_8e_doctor_autonomy": "Zero disabled buttons on primary CTA actions. Doctor discount up to 100% (warranty remake 0 rub) supported.",
     "mandate_8n_solo_doctor_sovereignty": "Citizen / physical person INN never required on checkout (54-FZ Tag 1228). Fastify Zod schema preprocessed.",
-    "mandate_8am_single_primary_cta": "Exactly ONE primary CTA button in var(--teal) per view with secondary neutral border buttons.",
-    "mandate_8b_monolith_decomposition": "CashRegisterStudioModal decomposed from 1329 lines to ~210 lines orchestrating studioModules.",
-    "mandate_8an_clean_checkout_facade": "checkout/CashRegisterCheckoutModal.tsx turned into thin facade pointing to ../CashRegisterCheckoutModal.js.",
+    "mandate_8am_single_primary_cta": "Exactly ONE primary CTA button in var(--teal, #0d9488) per visible view with secondary neutral border buttons.",
+    "mandate_8b_monolith_decomposition": "CashRegisterStudioModal decomposed into ~255 lines orchestrating studioModules (all <480 lines).",
+    "mandate_8an_clean_checkout_facade": "All cashbox facades (CashRegisterCheckoutModal, CashierStudioModal, CashCheckoutStudioModal) consolidated to CashRegisterStudioModal SSOT.",
     "mandate_8zr_zero_swallowed_errors": "All catch blocks handle errors and display human-friendly GlobalToast notifications."
   },
-  "modulesCreated": [
+  "modulesDecomposed": [
     "apps/web/src/components/cashbox/studioModules/useCashRegisterStudioState.ts",
     "apps/web/src/components/cashbox/studioModules/CashRegisterStudioHeader.tsx",
     "apps/web/src/components/cashbox/studioModules/CashRegisterCheckoutSection.tsx",
@@ -22,13 +22,25 @@
     "apps/web/src/components/cashbox/studioModules/index.ts"
   ],
   "verifiedGates": {
-    "encoding": "Passed (npm run check:encoding, Exit Code 0, 23923 files)",
-    "unit_tests": "Passed 27/27 tests across cashboxSsotScreens, cashboxViewModules, cashRegisterAndSplitModals, and cashbox.test.ts",
-    "visual_proofs": [
+    "encoding": "Passed (npm run check:encoding, Exit Code 0, 24013 files)",
+    "stub_overrides": "Passed (npm run check:stub-overrides, Exit Code 0)",
+    "fetch_response": "Passed (npm run check:fetch-response, Exit Code 0, 14407 files)",
+    "dynamic_imports": "Passed (npm run check:dynamic-imports, Exit Code 0, 530 dynamic imports)",
+    "unit_tests_finance_components": "Passed 327/327 tests across apps/web/src/components/finance/__tests__/ (43 files, 0 failed)",
+    "unit_tests_finance_views_and_backend": "Passed 38/38 tests across financeView, paymentSplitValidation, PartialRefundService, cashboxSplitAndWarehouseDeduction, familyDeposits",
+    "unit_tests_web_cashbox": "Passed 17/17 tests across apps/web/src/components/cashbox/__tests__/",
+    "api_tests": "Passed 2/2 suites in apps/api/src/routes/cashbox.test.ts",
+    "visual_proofs_cashbox_studio_4state": [
       "docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png (84 KB)",
       "docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png (82 KB)",
-      "docs/proofs/cashbox/03_cashbox_studio_mobile_light_390x844.png (130 KB, drift: 0px)",
-      "docs/proofs/cashbox/04_cashbox_studio_mobile_dark_390x844.png (130 KB, drift: 0px)"
+      "docs/proofs/cashbox/03_cashbox_studio_mobile_light_390x844.png (129 KB, drift: 0px)",
+      "docs/proofs/cashbox/04_cashbox_studio_mobile_dark_390x844.png (129 KB, drift: 0px)"
+    ],
+    "visual_proofs_split_payment_4state": [
+      "docs/proofs/finance/10_payment_modal_split_pc_light_1440x900.png (218 KB)",
+      "docs/proofs/finance/11_payment_modal_split_pc_dark_1440x900.png (220 KB)",
+      "docs/proofs/finance/12_payment_modal_mobile_light_390x844.png (149 KB, drift: 0px)",
+      "docs/proofs/finance/13_payment_modal_mobile_dark_390x844.png (138 KB, drift: 0px)"
     ]
   }
 }

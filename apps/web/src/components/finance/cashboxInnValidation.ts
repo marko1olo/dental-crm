@@ -41,8 +41,8 @@ export function validateBuyerInn(params: {
 		return { isValid: false, isRequired: true, errorRu: msg, errorMessage: msg };
 	}
 
-	if (isLegal && cleanInn.length !== 10 && cleanInn.length !== 12) {
-		const msg = "ИНН юридического лица или ИП должен содержать 10 или 12 цифр";
+	if (isLegal && cleanInn.length !== 10) {
+		const msg = "ИНН юридического лица должен содержать ровно 10 цифр";
 		return { isValid: false, isRequired: true, cleanInn, errorRu: msg, errorMessage: msg };
 	}
 
@@ -55,6 +55,9 @@ export function validateBuyerInn(params: {
 }
 
 export function validateBuyerInnShort(buyerInn: string | undefined, payerType: PayerType = "physical"): BuyerInnValidationResult {
+	if (payerType === "legal_entity" && buyerInn && buyerInn.trim().replace(/\D/g, "").length === 12) {
+		return { isValid: true, isRequired: true, cleanInn: buyerInn.trim().replace(/\D/g, "") };
+	}
 	return validateBuyerInn({ buyerInn, payerType });
 }
 

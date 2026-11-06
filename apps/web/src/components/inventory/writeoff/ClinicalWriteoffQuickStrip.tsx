@@ -74,7 +74,7 @@ export const ClinicalWriteoffQuickStrip: React.FC<
 					type="button"
 					onClick={onQuickTherapyWriteoff}
 					className="min-h-[44px] h-11 px-4 rounded-xl text-xs font-bold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)] hover:border-[var(--teal)] hover:bg-[var(--teal-soft)] transition-all cursor-pointer flex items-center gap-2 shadow-2xs active:scale-95"
-					data-testid="btn-quick-standard-kit"
+					data-testid="btn-quick-therapy-writeoff"
 					data-cy="btn-quick-therapy-writeoff"
 					title="Пакетное списание расходников терапии (стандартный набор: анестезия + композит + расходники)"
 				>
