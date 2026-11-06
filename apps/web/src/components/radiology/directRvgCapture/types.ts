@@ -117,6 +117,9 @@ export interface DirectRvgToothAssignerProps {
 	onChangeAnatomicalZone: (zone: AnatomicalZone) => void;
 	clinicalNotes: string;
 	onChangeClinicalNotes: (notes: string) => void;
+	capturedImage?: string;
+	onTriggerAiAnalysis?: () => void;
+	isAnalyzingAi?: boolean;
 }
 
 export interface DirectRvgFooterActionsProps {
@@ -128,6 +131,7 @@ export interface DirectRvgFooterActionsProps {
 	onSaveToEmr: () => void;
 	onSendToPlan: () => void;
 	onRetake: () => void;
+	onPrintReport?: () => void;
 }
 
 export interface DirectRvgCaptureState {

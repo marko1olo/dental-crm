@@ -80,7 +80,7 @@ export function useDirectRvgEmrActions({
 					apparatusModel: currentSensor?.name || "Vatech EzSensor HD",
 					sensorType: "CMOS Active Pixel",
 				},
-				tags: ["Прицельный", "043/у", `Зуб_${selectedTeeth.join("_")}`],
+				tags: ["Прицельный", "Медицинская карта приёма", `Зуб_${selectedTeeth.join("_")}`],
 			};
 			return { study, pixelSpacingMm };
 		},

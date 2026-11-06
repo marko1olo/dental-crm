@@ -471,3 +471,51 @@
 	}
 }
 
+/* Light theme overrides (WCAG AAA & Mandate 8al) */
+html[data-theme="light"] .mobile-radiology-container,
+[data-theme="light"] .mobile-radiology-container {
+	background-color: var(--paper-soft, #f8fafc);
+	color: var(--ink, #0f172a);
+}
+
+html[data-theme="light"] .mobile-radiology-topbar,
+[data-theme="light"] .mobile-radiology-topbar {
+	background: rgba(255, 255, 255, 0.94);
+	border-bottom: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+html[data-theme="light"] .mobile-radiology-thumb-bar,
+[data-theme="light"] .mobile-radiology-thumb-bar {
+	background: rgba(255, 255, 255, 0.94);
+	border-top: 1px solid var(--line, #e2e8f0);
+	box-shadow: 0 -8px 24px rgba(0, 0, 0, 0.06);
+}
+
+html[data-theme="light"] .mobile-radiology-thumb-btn,
+[data-theme="light"] .mobile-radiology-thumb-btn {
+	background: var(--paper, #ffffff);
+	border: 1px solid var(--line, #e2e8f0);
+	color: var(--ink, #1e293b);
+}
+
+html[data-theme="light"] .mobile-radiology-thumb-btn:active,
+[data-theme="light"] .mobile-radiology-thumb-btn:active {
+	background: var(--paper-soft, #f1f5f9);
+}
+
+html[data-theme="light"] .mobile-radiology-thumb-btn.active,
+[data-theme="light"] .mobile-radiology-thumb-btn.active {
+	background: #0d9488;
+	color: #ffffff;
+	border-color: #0d9488;
+}
+
+html[data-theme="light"] .mobile-radiology-empty-card,
+[data-theme="light"] .mobile-radiology-empty-card {
+	background: var(--paper, #ffffff);
+	border-color: var(--line, #cbd5e1);
+	color: var(--ink, #0f172a);
+}
+
+

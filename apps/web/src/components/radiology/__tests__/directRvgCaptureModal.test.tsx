@@ -136,7 +136,7 @@ describe("Direct RVG Capture Modal & Clinical VisioGraphy Workstation", () => {
 			assert.ok(html.includes('data-testid="rvg-send-plan-btn"'), "Must have send to plan button");
 			assert.ok(html.includes('data-testid="rvg-send-lab-btn"'), "Must have send to dental lab button");
 			assert.ok(html.includes('data-testid="rvg-export-dicom-btn"'), "Must have export DICOM button");
-			assert.ok(html.includes("Сохранить в карту"), "EMR button text");
+			assert.ok(html.includes("Прикрепить снимок к зубу и карте визита"), "EMR button text");
 			assert.ok(html.includes("В план лечения"), "Plan button text");
 			assert.ok(html.includes("В лабораторию (ЗТЛ)"), "Lab button text");
 		});

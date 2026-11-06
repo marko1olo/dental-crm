@@ -1,5 +1,5 @@
 import React from "react";
-import { CheckCircle2, ClipboardList, Download, RotateCcw, Truck } from "lucide-react";
+import { CheckCircle2, ClipboardList, Download, Printer, RotateCcw, Truck } from "lucide-react";
 
 export interface DirectRvgFooterProps {
 	selectedTeeth: string[];
@@ -10,14 +10,15 @@ export interface DirectRvgFooterProps {
 	onSaveToEmr: () => void;
 	onSendToPlan?: () => void;
 	onRetake?: () => void;
+	onPrintReport?: () => void;
 }
 
 /**
  * DirectRvgFooter
  *
  * Strict, high-contrast action bar for the chairside dental RVG workstation.
- * Primary CTA: «Сохранить в карту»
- * Secondary actions: «Переснять (Space)», «В план лечения», «В лабораторию (ЗТЛ)», «Экспорт DICOM».
+ * Primary CTA: «✓ Прикрепить снимок к зубу и карте визита» (#0d9488)
+ * Secondary actions: «Переснять (Space)», «В план лечения», «В лабораторию (ЗТЛ)», «Экспорт DICOM/JPEG», «Печать заключения».
  *
  * Governed by Mandate 8e (Doctor Autonomy) and Mandate 8zd.
  */
@@ -29,12 +30,15 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 	onSaveToEmr,
 	onSendToPlan,
 	onRetake,
+	onPrintReport,
 }) => {
+	const toothLabel = selectedTeeth.length > 0 ? selectedTeeth.join(", ") : "—";
+
 	return (
 		<div className="rvg-capture-footer">
 			<div className="rvg-footer-left-info">
 				<span className="font-mono text-xs text-[var(--muted,#94a3b8)]">
-					Зуб FDI #{selectedTeeth.join(", ")} · Готовность к сохранению в карту
+					Зуб FDI #{toothLabel} · Готовность к сохранению в карту визита
 				</span>
 			</div>
 
@@ -79,19 +83,33 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					<span>В лабораторию (ЗТЛ)</span>
 				</button>
 
-				{/* Secondary Action 4: Export DICOM */}
+				{/* Secondary Action 4: Export DICOM / JPEG */}
 				<button
 					type="button"
 					onClick={onExportDicom}
 					className="secondary-button rvg-action-btn-secondary"
-					title="Экспортировать снимок в DICOM 3.0 / TIFF высокой четкости"
+					title="Экспортировать снимок в DICOM 3.0 / TIFF / JPEG"
 					data-testid="rvg-export-dicom-btn"
 				>
 					<Download className="w-3.5 h-3.5 text-[var(--muted,#94a3b8)]" />
-					<span>Экспорт DICOM</span>
+					<span>Экспорт DICOM/JPEG</span>
 				</button>
 
-				{/* Primary CTA: Save to EMR 043/u */}
+				{/* Secondary Action 5: Print Report */}
+				{onPrintReport && (
+					<button
+						type="button"
+						onClick={onPrintReport}
+						className="secondary-button rvg-action-btn-secondary"
+						title="Печать заключения и рентгенологического протокола"
+						data-testid="rvg-print-report-btn"
+					>
+						<Printer className="w-3.5 h-3.5 text-[var(--muted,#94a3b8)]" />
+						<span>Печать заключения</span>
+					</button>
+				)}
+
+				{/* Primary CTA: Attach to Tooth and Visit Card (#0d9488) */}
 				<button
 					type="button"
 					onClick={isSaving ? undefined : onSaveToEmr}
@@ -100,12 +118,12 @@ export const DirectRvgFooter: React.FC<DirectRvgFooterProps> = ({
 					title={
 						isSaving
 							? "Сохранение снимка и протокола исследования в медицинскую карту..."
-							: "Сохранить исследование в медицинскую карту пациента"
+							: "Прикрепить снимок к зубу и карте визита"
 					}
 					data-testid="rvg-save-emr-btn"
 				>
 					<CheckCircle2 className="w-4 h-4" />
-					<span>{isSaving ? "Сохранение..." : "Сохранить в карту"}</span>
+					<span>{isSaving ? "Сохранение..." : "✓ Прикрепить снимок к зубу и карте визита"}</span>
 				</button>
 			</div>
 		</div>

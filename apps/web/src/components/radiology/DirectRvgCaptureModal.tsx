@@ -78,11 +78,19 @@ export const DirectRvgCaptureModal: React.FC<DirectRvgCaptureModalProps> = (prop
 						selectedTeeth={logic.selectedTeeth} onToothToggle={logic.handleToothToggle} onSelectTeeth={logic.setSelectedTeeth} primaryTooth={logic.primaryTooth} primaryToothName={logic.primaryToothName}
 						projectionType={logic.projectionType} onSelectProjectionType={logic.handleSelectProjectionType} patientCategory={logic.patientCategory} onChangePatientCategory={logic.setPatientCategory}
 						anatomicalZone={logic.anatomicalZone} onChangeAnatomicalZone={logic.setAnatomicalZone} clinicalNotes={logic.clinicalNotes} onChangeClinicalNotes={logic.setClinicalNotes}
+						capturedImage={logic.capturedImage}
 					/>
 				</div>
 				<DirectRvgFooterActions
 					selectedTeeth={logic.selectedTeeth} calculatedDoseMicrosv={logic.calculatedDoseMicrosv} isSaving={logic.isSaving}
 					onExportDicom={logic.handleExportDicom} onSendToLab={logic.handleSendToLab} onSaveToEmr={logic.handleSaveToEmr} onSendToPlan={logic.handleSendToPlan} onRetake={logic.handleTriggerCapture}
+					onPrintReport={() => {
+						try {
+							window.print();
+						} catch {
+							// quiet fallback
+						}
+					}}
 				/>
 			</div>
 		</div>

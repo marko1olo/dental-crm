@@ -11,6 +11,7 @@ export const DirectRvgFooterActions: React.FC<DirectRvgFooterActionsProps> = ({
 	onSaveToEmr,
 	onSendToPlan,
 	onRetake,
+	onPrintReport,
 }) => {
 	return (
 		<DirectRvgFooter
@@ -22,6 +23,7 @@ export const DirectRvgFooterActions: React.FC<DirectRvgFooterActionsProps> = ({
 			onSaveToEmr={onSaveToEmr}
 			onSendToPlan={onSendToPlan}
 			onRetake={onRetake}
+			onPrintReport={onPrintReport}
 		/>
 	);
 };
