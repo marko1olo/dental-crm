@@ -195,9 +195,6 @@ export const OrthodonticsStudioModal: React.FC<OrthodonticsStudioModalProps> = (
 								<h2 className="text-sm sm:text-base font-bold tracking-tight text-[var(--ink)] truncate">
 									<span>Ортодонтическая студия</span>
 								</h2>
-								<span className="hidden sm:inline-flex px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider rounded-md bg-[var(--teal-subtle,rgba(13,148,136,0.1))] text-[var(--teal,#0d9488)] border border-[var(--teal-line,rgba(13,148,136,0.2))]">
-									SSOT
-								</span>
 							</div>
 							<p className="text-xs text-[var(--ink-muted)] truncate">
 								<span className="sm:hidden">{patientName}</span>
