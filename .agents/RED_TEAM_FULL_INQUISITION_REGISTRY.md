@@ -54,10 +54,23 @@
   1. Симулятор ложного успеха полностью вырезан из `CashRegisterStudioModal.tsx` и `CashierStudioModal.tsx`.
   2. При ошибках сети, отказе ОФД или статусе ответа `!res.ok` модалка остается открытой, выводится четкий информативный алерт об ошибке с возможностью повтора. Колбэк `onSuccess` вызывается строго при подтвержденном ответе сервера.
 
-### [FIN-04] [SEV-1] Аппаратный паралич ККТ через 24 часа (54-ФЗ)
-- **Файл:** [`apps/api/src/services/hardware/lanKktDriverService.ts#L18-L95`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/hardware/lanKktDriverService.ts#L18-L95)
-- **Суть бага:** В драйвере ККТ нет методов `closeShift`, `openShift`, `printZReport`. В `shiftReconciliationEngine.ts` фискальные номера синтезируются формулой. Команда на физический АТОЛ/Штрих-М не шлется.
-- **Чем ломает клинику:** По 54-ФЗ через 24 часа фискальный накопитель блокируется аппаратно («Смена превысила 24 часа») и прекращает печать любых чеков.
+### [FIN-04] [ИСПРАВЛЕНО] [SEV-1] Аппаратный паралич ККТ через 24 часа (54-ФЗ)
+- **Файлы:**
+  - [`apps/api/src/services/hardware/lanKktDriverService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/hardware/lanKktDriverService.ts)
+  - [`apps/api/src/services/hardware/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/hardware/types.ts)
+  - [`apps/api/src/routes/cashbox/cashboxShiftModules/shiftLifecycleRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftLifecycleRoutes.ts)
+  - [`apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationRoutes.ts)
+- **Интеграционный тест:** [`apps/api/src/services/hardware/__tests__/lanKktDriverService.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/hardware/__tests__/lanKktDriverService.test.ts)
+- **Визуальные пруфы:** [`03_cashbox_shift_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/03_cashbox_shift_pc_dark_1440x900.png)
+- **Суть бага:** В драйвере ККТ не было методов `openShift`, `closeShift`, `printZReport`, `printXReport`. Из-за этого при длительности смены более 24 часов фискальный накопитель АТОЛ / Штрих-М падал в аппаратную блокировку 54-ФЗ («Смена превысила 24 часа», ошибка 0x04) и прекращал печать любых чеков.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. В `LanKktDriverService` и типах `types.ts` реализованы аппаратные методы управления жизненным циклом смены: `openShift()`, `closeShift()`, `printZReport()` и `printXReport()`.
+  2. Поддержаны протоколы:
+     - **АТОЛ ДККТ v10:** генерация JSON-задач типов `openShift`, `closeShift`, `reportX` по TCP-сокету и HTTP-шлюзу.
+     - **Штрих-М:** генерация бинарных пакетов с контрольной суммой XOR (команда `0xE0` — открытие смены, `0x21` — закрытие смены с гашением / Z-отчёт, `0x20` — суточный отчёт без гашения / X-отчёт).
+     - **LAN Эмулятор:** детерминированная эмуляция с валидацией лимита 24 часов и генерацией реальных номеров ФД, ФПД и смены.
+  3. В `shiftLifecycleRoutes.ts` и `shiftReconciliationRoutes.ts` кассовые роуты закрытия смены и X-отчёта интегрированы с `LanKktDriverService`: при закрытии смены снимается аппаратный Z-отчёт ККТ, а фискальные реквизиты (номер ФД, ФПД, фискальный признак) обогащают запись кассовой смены в БД.
+  4. Покрыто 7/7 юнит-тестами в `lanKktDriverService.test.ts` (100% green).
 
 ### [FIN-05] [ИСПРАВЛЕНО] [SEV-1] Оплата несуществующим депозитом
 - **Файл:** [`apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxPaymentProcessor.ts)
@@ -71,9 +84,24 @@
   5. Для гарантийных визитов (Мандат 8e, скидки до 100%, 0 ₽) списание депозита не требуется и операция проходит беспрепятственно.
   6. Покрыто 5 интеграционными тестами в `cashboxDepositPaymentIntegrity.test.ts` (5/5 passing).
 
-### [FIN-06] [SEV-1] Нарушение 54-ФЗ (Тег 1030 — Наименование предмета расчета)
-- **Файлы:** [`executeFiscalPayment.ts#L50`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/executeFiscalPayment.ts#L50), [`CashierStudioModal.tsx#L133`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx#L133)
-- **Суть бага:** В чек всегда шлется единственная заглушка «Стоматологические услуги по плану лечения» вместо номенклатуры процедур. Прямое нарушение 54-ФЗ со штрафами до 10 000 ₽ за каждый чек.
+### [FIN-06] [ИСПРАВЛЕНО] [SEV-1] Нарушение 54-ФЗ (Тег 1030 — Наименование предмета расчета)
+- **Файлы:**
+  - [`apps/web/src/components/finance/fiscalHandlersModules/executeFiscalPayment.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/executeFiscalPayment.ts)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/types.ts)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/fiscalPrintAndQueue.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/fiscalPrintAndQueue.ts)
+  - [`apps/web/src/components/finance/fiscalHandlersModules/executeManualCardTerminalConfirm.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fiscalHandlersModules/executeManualCardTerminalConfirm.ts)
+  - [`apps/web/src/components/finance/fastCheckout/fastCheckoutKktQueueSync.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fastCheckout/fastCheckoutKktQueueSync.ts)
+  - [`apps/web/src/components/finance/fastCheckout/useFastCheckoutExecutionHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fastCheckout/useFastCheckoutExecutionHandlers.ts)
+  - [`apps/web/src/components/finance/fastCheckout/fastCheckoutStateReducer.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/fastCheckout/fastCheckoutStateReducer.ts)
+- **Интеграционный тест:** [`apps/web/src/components/payments/checkout/fastCheckoutEngine.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/payments/checkout/fastCheckoutEngine.test.ts)
+- **Визуальные пруфы:** [`01_cashbox_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/01_cashbox_studio_pc_light_1440x900.png), [`02_cashbox_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/02_cashbox_studio_pc_dark_1440x900.png), [`03_cashbox_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/03_cashbox_studio_mobile_light_390x844.png), [`04_cashbox_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/cashbox/04_cashbox_studio_mobile_dark_390x844.png)
+- **Суть бага:** В чек всегда передавалась захардкоженная заглушка «Стоматологические услуги по плану лечения» вместо детализированной номенклатуры процедур. Прямое нарушение ст. 4.7 54-ФЗ (Тег 1030) со штрафами до 10 000 ₽ за каждый фискальный чек.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Захардкоженная строка полностью устранена из фискального контура.
+  2. В `executeFiscalPayment.ts` и `types.ts` внедрена компиляция реальных номенклатурных позиций из счета/наряда (`params.items` или `stageCalc.items`): каждая процедура (анестезия, пломба, реставрация, слепок) получает точное наименование (Тег 1030), количество, цену, сумму в копейках (`amountKopecks`), признак способа расчета (Тег 1214) и признак предмета расчета (Тег 1212 = 4 — услуга), ставку НДС «без НДС» (пп. 2 п. 2 ст. 149 НК РФ).
+  3. Проброс номенклатуры сквозным образом обеспечен через весь пайплайн: `fastCheckoutStateReducer.ts` $\to$ `useFastCheckoutExecutionHandlers.ts` $\to$ `executeFiscalPayment.ts` $\to$ `fiscalPrintAndQueue.ts` $\to$ `executeManualCardTerminalConfirm.ts` $\to$ `fastCheckoutKktQueueSync.ts`.
+  4. При отсутствии позиций (например, предоплата произвольной суммы) генерируется корректный авансовый чек по ФФД 1.2 с признаком способа расчета «Аванс» (Тег 1214 = 3).
+  5. Покрыто 20/20 тестами в `fastCheckoutEngine.test.ts` (100% green).
 
 ### [FIN-07] [ИСПРАВЛЕНО] [SEV-2] Архитектурная шизофрения и конфликт лаунчеров
 - **Файлы:** [`CashRegisterStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/cashbox/CashRegisterStudioModal.tsx) vs [`CashierStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/finance/CashierStudioModal.tsx)
@@ -1788,7 +1816,7 @@
 - **Файлы:**
   - Канонический движок: [`scripts/lib/visualProofEngine.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/lib/visualProofEngine.mjs)
   - Тесты инвариантов движка: [`scripts/tests/visual_proof_engine.test.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/tests/visual_proof_engine.test.mjs)
-  - Сквозной раннер 5 доменов: [`scripts/capture_all_core_4state_proofs.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_all_core_4state_proofs.mjs)
+  - Сквозной раннер 5 доменов: [`scripts/capture-all-core-4state-proofs.mjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture-all-core-4state-proofs.mjs)
   - Рефакторинг КЛКТ: [`scripts/capture_cbct_lod_preview_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_cbct_lod_preview_proofs.cjs)
 - **Суть проблемы:**
   1. В репозитории встречались изолированные HTML-песочницы (`*_preview.html`, `scripts/ОТКРЫТЬ_АТЛАС.html`), которые симулировали интерфейс в отрыве от реального приложения (`App.tsx`, роутинг, сторы), нарушая Мандаты 8al, 8aq и Правило 23.
