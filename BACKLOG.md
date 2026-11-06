@@ -9,6 +9,20 @@
 
 ---
 
+## 2026-11-06 — Cross-Module Playwright E2E Test Invariants, Split-Tender Cashbox, Soft-Negative Warehouse & Wheeler Multiselect Suite (Mandates 8e, 8n, 8ar, 8zq)
+
+- **Gap:** Individual component unit tests could not guarantee that a doctor or administrator can seamlessly complete cross-module transactions: opening a visit, selecting teeth in the Wheeler 2.5D formula, applying physiological norms in 1 click, deducting consumables via procedure tech maps with Soft Negative Stock (Mandate 8n), calculating split tender (cash + card) in integer kopecks, issuing a 54-FZ fiscal receipt, and closing the cash shift without crashes or visual clipping.
+- **Ship:**
+  - `apps/web/tests/e2e/cashbox-billing-flow.spec.ts`: End-to-end split tender payment flow (50/50 Cash + POS Card) with integer kopeck validation (`amountKopecks`), 54-FZ fiscal receipt with QR code, patient zero balance reconciliation, cash register shift overview and Z-report evening audit.
+  - `apps/web/tests/e2e/warehouse-consumption-flow.spec.ts`: End-to-end consumables batch deduction flow via procedure tech maps («Лечение кариеса» x4), quiet overdraft persistence without blocking errors (Soft Negative Stock per Mandate 8n), 1-click inventory reconciliation, and express inbound supplier waybill.
+  - `apps/web/tests/e2e/odontogram-multiselect-flow.spec.ts`: End-to-end multi-selection of dental groups (frontal sector 13–23, 43–33 & tooth click selection) on anatomical Wheeler 2.5D formula, 1-click «✓ Норма» action, wisdom teeth primary edentulism marking (18, 28, 38, 48), and reactive state hydration without page reload (Mandate 8zq).
+  - Machine Quality Gates: 100% UTF-8 without BOM, zero stub overrides, zero broken dynamic imports.
+  - Red Team 4-State Visual Proofs in `docs/proofs/`:
+    * Cashbox: `01_cashbox_billing_pc_dark_1440x900.png`, `02_cashbox_billing_pc_light_1440x900.png`, `03_cashbox_billing_mobile_light_390x844.png`, `04_cashbox_billing_mobile_dark_390x844.png`
+    * Warehouse: `01_warehouse_consumption_pc_dark_1440x900.png`, `02_warehouse_consumption_pc_light_1440x900.png`, `03_warehouse_consumption_mobile_light_390x844.png`, `04_warehouse_consumption_mobile_dark_390x844.png`
+    * Odontogram: `01_odontogram_multiselect_pc_dark_1440x900.png`, `02_odontogram_multiselect_pc_light_1440x900.png`, `03_odontogram_multiselect_mobile_light_390x844.png`, `04_odontogram_multiselect_mobile_dark_390x844.png`
+  - Documentation: `docs/testing/E2E_CLINICAL_TESTING_STANDARD.md`.
+
 ## 2026-10-26 — Clinical Diary & EHR Monolith Decomposition, Soviet Decree Purge & 1-Click Norm (Mandates 8b..8aq, Apple HIG)
 
 - **Gap:** Monolithic cyclopean stylesheet `visit-diary-043.css` (1 088L) and legacy `043/у` bureaucratic bird-language in classes, filenames, and UI strings violated Mandate 8b ($\le 110$ lines) and Mandates 8x & 8ap. Doctors at the chair needed instant 1-click physiological somatic norm without hospital checkboxes, non-blocking buttons (Mandate 8e), and seamless dark theme / mobile touch ergonomics without white holes or clipped words.

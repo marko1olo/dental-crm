@@ -93,3 +93,77 @@ flowchart LR
 4. 📱 **Mobile Dark (390×844)**: `04_chairside_visit_mobile_dark_390x844.png` — мобильная ночная тема с учетом вырезов Safe Area.
 
 Все скриншоты проверяются инженером лично через вызов инструмента чтения файлов перед сдачей коммита.
+
+---
+
+## 5. СКВОЗНОЙ КАССОВЫЙ РАСЧЁТ И СПЛИТ-ОПЛАТА (`cashbox-billing-flow.spec.ts`)
+
+Тест расположен в [`apps/web/tests/e2e/cashbox-billing-flow.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/cashbox-billing-flow.spec.ts) и проверяет цепочку расчёта пациента, сплит-платежа, чека 54-ФЗ и закрытия смены:
+
+```mermaid
+flowchart LR
+    A["1. Открытие модалки оплаты<br/>(#checkout)"] --> B["2. Сплит-оплата 50/50<br/>(btn-tender-split)"]
+    B --> C["3. Проверка суммы в копейках<br/>(amountKopecks: 650 000)"]
+    C --> D["4. Баланс сходится точно<br/>(split-balance-status)"]
+    D --> E["5. Фискализация чека<br/>(POST /api/cashbox/payments)"]
+    E --> F["6. Сверка кассы и Z-отчет<br/>(#cashbox)"]
+    F --> G["7. 4-State Proof<br/>(docs/proofs/cashbox/)"]
+```
+
+### Аппаратные контракты `data-testid`:
+| Селектор `data-testid` | Компонент | Назначение |
+|---|---|---|
+| `cash-register-checkout-modal` | `CashRegisterCheckoutModal.tsx` | Корневой экран расчёта и фискализации чека |
+| `btn-tender-split` | `TenderMethodsSelector.tsx` | Переключение в режим сплит-оплаты (нал + карта) |
+| `btn-checkout-split-50-50` | `SplitPaymentCalculator.tsx` | 1-клик распределение 50% наличными и 50% безналом |
+| `split-cash-amount-input` | `SplitPaymentCalculator.tsx` | Поле ввода наличной доли с валидацией целостности |
+| `split-card-amount-input` | `SplitPaymentCalculator.tsx` | Поле ввода безналичной доли |
+| `split-balance-status` | `SplitPaymentCalculator.tsx` | Индикатор баланса («Сумма сходится точно ✓») |
+| `btn-checkout-print-receipt` | `CashRegisterCheckoutModal.tsx` | Фискализация и печать фискального чека 54-ФЗ |
+| `standalone-cashbox-ssot-root` | `StandaloneCashboxStudioHost.tsx` | Рабочее место кассира/администратора клиники |
+| `btn-open-shift-close-modal` | `CashboxHeaderActions.tsx` | Открытие модалки вечерней сверки и Z-отчёта |
+| `cashbox-shift-close-modal` | `CashboxShiftCloseModal.tsx` | Форма инкассации и закрытия кассовой смены |
+
+---
+
+## 6. СКЛАДСКОЙ УЧЁТ И СПИСАНИЕ ПО ТЕХКАРТАМ (`warehouse-consumption-flow.spec.ts`)
+
+Тест расположен в [`apps/web/tests/e2e/warehouse-consumption-flow.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/warehouse-consumption-flow.spec.ts) и проверяет тихий бэк-офис без остановки приёма врача (Мандат 8n):
+
+```mermaid
+flowchart LR
+    A["1. Открытие склада<br/>(#warehouse)"] --> B["2. Пакетный расход<br/>(btn-batch-deduct)"]
+    B --> C["3. Выбор техкарты<br/>(Лечение кариеса x4)"]
+    C --> D["4. Списание без ошибок<br/>(Soft Negative Stock)"]
+    D --> E["5. Экспресс-сверка остатков<br/>(btn-quick-inventory-audit)"]
+    E --> F["6. Оприходование накладной<br/>(btn-express-inbound)"]
+    F --> G["7. 4-State Proof<br/>(docs/proofs/warehouse/)"]
+```
+
+### Ключевые клинические инварианты склада:
+- **Soft Negative Stock (Мандат 8n):** при списании материалов у кресла врач никогда не блокируется из-за нулевого остатка в базе данных. Овердрафт накапливается мягко в фоне и погашается экспресс-накладной поставщика.
+- **Целостность сумм в копейках (`amountKopecks`, BIGINT):** полная ликвидация float-ошибок округления.
+
+---
+
+## 7. ФОРМУЛА WHEELER 2.5D И МУЛЬТИСЕЛЕКТ (`odontogram-multiselect-flow.spec.ts`)
+
+Тест расположен в [`apps/web/tests/e2e/odontogram-multiselect-flow.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/odontogram-multiselect-flow.spec.ts) и проверяет реактивную работу врача с анатомической формулой Wheeler (Мандаты 8ar, 8as, 8zq):
+
+```mermaid
+flowchart LR
+    A["1. Визит у кресла<br/>(#chairside-visit)"] --> B["2. Одонтограмма Wheeler 2.5D<br/>(visit-subtab-odontogram)"]
+    B --> C["3. Мультиселект фронта<br/>(batch-select-front-btn)"]
+    C --> D["4. Подсветка группы зубов<br/>(ring-2 ring-teal-500)"]
+    D --> E["5. Физиологическая норма<br/>(mark-intact-dentition-btn)"]
+    E --> F["6. Адентия 18, 28, 38, 48<br/>(mark-wisdom-missing-btn)"]
+    F --> G["7. Реактивная гидратация без F5<br/>(Мандат 8zq)"]
+    G --> H["8. 4-State Proof<br/>(docs/proofs/odontogram/)"]
+```
+
+### Контракты мультиселекта одонтограммы:
+- **Селектор быстрых макросов:** `odontogram-quick-actions-menu`
+- **Фронтальная группа (13–23, 43–33):** `batch-select-front-btn`
+- **Первичная адентия третьих моляров (зубы мудрости):** `mark-wisdom-missing-btn`
+- **Норма в 1 клик для выделенных зубов:** `mark-intact-dentition-btn`
+- **Сброс группового выделения:** `clear-selection-btn`
