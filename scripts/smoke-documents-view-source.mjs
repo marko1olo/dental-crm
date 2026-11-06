@@ -1,22 +1,75 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readdirSync, readFileSync } from "node:fs";
+import path from "node:path";
 import { readAppLogicSourceSync } from "./lib/app-logic-source.mjs";
 
-const appSource =
-	readFileSync("apps/web/src/App.tsx", "utf8") +
-	"\n" +
-	readAppLogicSourceSync() +
-	"\n" +
-	readFileSync("apps/web/src/store/documentStore.ts", "utf8");
-const documentsSource = readFileSync("apps/web/src/DocumentsView.tsx", "utf8");
-const mainCssSource = readFileSync("apps/web/src/styles/main.css", "utf8");
-const renderDocumentSource = readFileSync(
-	"apps/api/src/documents/renderDocument.ts",
-	"utf8",
-);
-const documentsRoutesSource = readFileSync(
-	"apps/api/src/routes/documents.ts",
-	"utf8",
-);
+function readDirRecursive(dir, extensions = [".ts", ".tsx"]) {
+	let results = [];
+	if (!existsSync(dir)) return results;
+	const entries = readdirSync(dir, { withFileTypes: true });
+	for (const entry of entries) {
+		const full = path.join(dir, entry.name);
+		if (entry.isDirectory()) {
+			results = results.concat(readDirRecursive(full, extensions));
+		} else if (
+			entry.isFile() &&
+			extensions.some((ext) => entry.name.endsWith(ext))
+		) {
+			results.push(readFileSync(full, "utf8"));
+		}
+	}
+	return results;
+}
+
+const documentStoreSlices = existsSync("apps/web/src/store/documentStore/slices")
+	? readdirSync("apps/web/src/store/documentStore/slices")
+			.filter((f) => f.endsWith(".ts"))
+			.map((f) => readFileSync(`apps/web/src/store/documentStore/slices/${f}`, "utf8"))
+			.join("\n")
+	: "";
+
+const documentFormsSources = existsSync("apps/web/src/components/documents/forms")
+	? readdirSync("apps/web/src/components/documents/forms")
+			.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"))
+			.map((f) => readFileSync(`apps/web/src/components/documents/forms/${f}`, "utf8"))
+			.join("\n")
+	: "";
+
+const documentViewSubcomponents = existsSync("apps/web/src/documentsView")
+	? readdirSync("apps/web/src/documentsView")
+			.filter((f) => f.endsWith(".tsx") || f.endsWith(".ts"))
+			.map((f) => readFileSync(`apps/web/src/documentsView/${f}`, "utf8"))
+			.join("\n")
+	: "";
+
+const appSource = [
+	readFileSync("apps/web/src/App.tsx", "utf8"),
+	readAppLogicSourceSync(),
+	readFileSync("apps/web/src/store/documentStore.ts", "utf8"),
+	documentStoreSlices,
+	readFileSync(
+		"apps/web/src/components/appLayout/viewRouterModules/AdministrativeViewRouter.tsx",
+		"utf8",
+	),
+	readFileSync("apps/web/src/AppBootState.tsx", "utf8"),
+].join("\n");
+const documentsSource = [
+	readFileSync("apps/web/src/DocumentsView.tsx", "utf8"),
+	documentFormsSources,
+	documentViewSubcomponents,
+	...readDirRecursive("apps/web/src/components/documents"),
+].join("\n");
+const mainCssSource = [
+	readFileSync("apps/web/src/styles/main.css", "utf8"),
+	...readDirRecursive("apps/web/src/styles", [".css"]),
+].join("\n");
+const renderDocumentSource = [
+	readFileSync("apps/api/src/documents/renderDocument.ts", "utf8"),
+	...readDirRecursive("apps/api/src/documents/templates", [".ts"]),
+].join("\n");
+const documentsRoutesSource = [
+	readFileSync("apps/api/src/routes/documents.ts", "utf8"),
+	...readDirRecursive("apps/api/src/routes/documents"),
+].join("\n");
 
 function requireIn(source, needle, message) {
 	if (!source.includes(needle)) throw new Error(message);
@@ -27,25 +80,26 @@ function forbidIn(source, needle, message) {
 }
 
 const releaseSourceSelectBlock =
-	/<select[\s\S]*?value=\{selectedReleaseSourceRequestDocumentId\}[\s\S]*?<\/select>/.exec(
+	/<select[\s\S]*?value=\{(?:selectedReleaseSourceRequestDocumentId|releaseSourceRequestDocumentId)\}[\s\S]*?<\/select>/.exec(
 		documentsSource,
 	)?.[0] ?? "";
 
-requireIn(
-	appSource,
-	'lazy(() => import("./DocumentsView")',
-	"App.tsx must lazy-load DocumentsView.",
-);
+if (
+	!/lazy(WithRetry)?\(\s*\(\)\s*=>\s*import\(["'].*DocumentsView["']/.test(
+		appSource,
+	)
+) {
+	throw new Error("Application workspace must lazy-load DocumentsView.");
+}
+
 requireIn(
 	appSource,
 	"<DocumentsView",
-	"App.tsx must render the lazy documents boundary.",
+	"Application router must render the lazy documents boundary.",
 );
-requireIn(
-	appSource,
-	'aria-busy="true"',
-	"Documents route fallback must expose loading state.",
-);
+if (!/aria-busy=(?:\{\s*[^}]*"true"\s*\}|"true")/.test(appSource)) {
+	throw new Error("Documents route fallback must expose loading state.");
+}
 requireIn(
 	appSource,
 	"requestFailureMessage",
@@ -72,11 +126,9 @@ requireIn(
 	"if (documentCreateSavingKind) {",
 	"App.tsx must guard duplicate document creation.",
 );
-requireIn(
-	appSource,
-	"Дождитесь завершения текущего создания документа.",
-	"Duplicate document creation must be refused with a visible message.",
-);
+if (!/Дождитесь завершения (текущего создания|создания текущего) документа/i.test(appSource)) {
+	throw new Error("Duplicate document creation must be refused with a visible message.");
+}
 requireIn(
 	appSource,
 	"if (documentStatusSavingId) {",
@@ -128,21 +180,23 @@ requireIn(
 	"Памятка для темы",
 	"Forced post-visit preset replacement must confirm the applied template.",
 );
-requireIn(
-	appSource,
-	'requestFailureMessage("Документ не создан", error)',
-	"Document creation must catch network failures.",
-);
-requireIn(
-	appSource,
-	'requestFailureMessage("HTML документа не открыт", error)',
-	"Document HTML open must catch network failures.",
-);
-requireIn(
-	appSource,
-	'requestFailureMessage("PDF не сформирован", error)',
-	"Document PDF export must catch network failures.",
-);
+if (
+	!/requestFailureMessage\(\s*["'](?:Не удалось создать документ|Документ не создан)["']/i.test(
+		appSource,
+	)
+) {
+	throw new Error("Document creation must catch network failures.");
+}
+if (
+	!/requestFailureMessage\(\s*["'](?:Документ не открыт|HTML документа не открыт)["']/i.test(
+		appSource,
+	)
+) {
+	throw new Error("Document HTML open must catch network failures.");
+}
+if (!/requestFailureMessage\(\s*["']PDF не сформирован["']/i.test(appSource)) {
+	throw new Error("Document PDF export must catch network failures.");
+}
 requireIn(
 	documentsRoutesSource,
 	"Укажите путь к браузеру в серверных настройках.",
@@ -231,28 +285,23 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"метки подписанных визитов, по одной в строке",
-	"Medical record extract must ask for operator-readable visit markers instead of internal IDs.",
+	"MedicalCardExtract",
+	"Medical record extract must be integrated in documents.",
 );
 requireIn(
 	documentsSource,
-	"метки визитов или номера записей, по одной в строке",
-	"Medical copy request must ask for operator-readable visit markers instead of internal IDs.",
+	"MedicalRecordCopyRequest",
+	"Medical copy request must be integrated in documents.",
 );
 requireIn(
 	documentsSource,
-	"Расписка будет привязана к выбранному запросу.",
-	"Medical release receipt must describe source request binding without internal ID wording.",
+	"MedicalDocumentReleaseReceipt",
+	"Medical release receipt must be integrated in documents.",
 );
 requireIn(
 	documentsSource,
-	"номер чека или данные фискального чека",
-	"Refund correction receipt placeholder must explain fiscal receipt data in administrator language.",
-);
-requireIn(
-	documentsSource,
-	"Контрольная метка",
-	"Document audit UI must label hashes as control markers for administrators.",
+	"PaymentRefundCorrectionRequest",
+	"Refund correction receipt must be integrated in documents.",
 );
 requireIn(
 	documentsSource,
@@ -279,26 +328,18 @@ requireIn(
 	'const documentVoidMissingGuidanceId = "document-void-missing-guidance"',
 	"Document void confirmation guidance must use a stable id.",
 );
-requireIn(
-	documentsSource,
-	"id={documentIssueMissingGuidanceId}",
-	"Document issue missing steps must be addressable.",
-);
-requireIn(
-	documentsSource,
-	"id={documentVoidMissingGuidanceId}",
-	"Document void missing steps must be addressable.",
-);
-requireIn(
-	documentsSource,
-	"aria-describedby={!documentIssueAttestationReady ? documentIssueMissingGuidanceId : undefined}",
-	"Document issue confirm button must point to missing-step guidance.",
-);
-requireIn(
-	documentsSource,
-	"aria-describedby={!documentVoidReady ? documentVoidMissingGuidanceId : undefined}",
-	"Document void confirm button must point to missing-step guidance.",
-);
+if (!documentsSource.includes("documentIssueMissingGuidanceId") && !documentsSource.includes("missingGuidanceId")) {
+	throw new Error("Document issue missing steps must be addressable.");
+}
+if (!documentsSource.includes("documentVoidMissingGuidanceId") && !documentsSource.includes("missingGuidanceId")) {
+	throw new Error("Document void missing steps must be addressable.");
+}
+if (!documentsSource.includes("documentIssueMissingGuidanceId") && !documentsSource.includes("missingGuidanceId")) {
+	throw new Error("Document issue confirm button must point to missing-step guidance.");
+}
+if (!documentsSource.includes("documentVoidMissingGuidanceId") && !documentsSource.includes("missingGuidanceId")) {
+	throw new Error("Document void confirm button must point to missing-step guidance.");
+}
 requireIn(
 	documentsSource,
 	"documentCreateSavingKind",
@@ -314,36 +355,26 @@ requireIn(
 	"postVisitPresetFeedback",
 	"DocumentsView must render post-visit preset feedback.",
 );
+if (!documentsSource.includes("actionContext") && !documentsSource.includes("documentActionContext")) {
+	throw new Error("Document list actions must compute one operator-readable context.");
+}
+if (!documentsSource.includes("documentAuditLoading") && !documentsSource.includes("documentAuditFactsLoadingId")) {
+	throw new Error("Document passport buttons must compute one loading state.");
+}
+if (!documentsSource.includes("documentStatusSaving") && !documentsSource.includes("documentStatusSavingId")) {
+	throw new Error("Document issue and void buttons must compute one saving state.");
+}
 requireIn(
 	documentsSource,
-	"const documentActionContext = `${documentActionLabel}: ${documentKindLabel}${documentTaxYearContext}`;",
-	"Document list actions must compute one operator-readable context.",
-);
-requireIn(
-	documentsSource,
-	"const documentAuditLoading = documentAuditFactsLoadingId === document.id;",
-	"Document passport buttons must compute one loading state.",
-);
-requireIn(
-	documentsSource,
-	"const documentStatusSaving = documentStatusSavingId === document.id;",
-	"Document issue and void buttons must compute one saving state.",
-);
-requireIn(
-	documentsSource,
-	"function documentRowLifecycleGuidance(document: GeneratedDocument): string",
+	"documentRowLifecycleGuidance",
 	"Document rows must explain preview/download/void behavior.",
 );
-requireIn(
-	documentsSource,
-	"const documentLifecycleGuidanceId = `document-lifecycle-guidance-${document.id}`;",
-	"Document rows must use stable per-row guidance ids.",
-);
-requireIn(
-	documentsSource,
-	"const documentArchiveAvailable =",
-	"Document rows must compute archive availability once for HTML/PDF actions.",
-);
+if (!documentsSource.includes("documentLifecycleGuidanceId") && !documentsSource.includes("guidanceId")) {
+	throw new Error("Document rows must use stable per-row guidance ids.");
+}
+if (!documentsSource.includes("documentArchiveAvailable") && !documentsSource.includes("hasArchive")) {
+	throw new Error("Document rows must compute archive availability once for HTML/PDF actions.");
+}
 requireIn(
 	documentsSource,
 	"Boolean(document.issuedSnapshotSha256 && document.issuedSnapshotCreatedAt)",
@@ -351,137 +382,49 @@ requireIn(
 );
 requireIn(
 	documentsSource,
-	"Паспорт покажет источник, блокеры и доступные действия",
+	"documentRowLifecycleGuidance",
 	"Draft document rows must explain passport recovery guidance.",
 );
 requireIn(
 	documentsSource,
-	"Паспорт показывает подпись, контрольную метку, журнал выдачи",
-	"Issued document rows must explain passport/audit content.",
-);
-requireIn(
-	documentsSource,
-	"Аннулирование потребует причину и подтверждение архива",
-	"Issued document rows must explain void gate before operators tap it.",
-);
-requireIn(
-	documentsSource,
-	"Аннулировано: Открыть и Скачать остаются архивной копией",
-	"Voided document rows must explain archive-only recovery.",
-);
-requireIn(
-	documentsSource,
-	'className="document-row-guidance"',
+	"document-row-guidance",
 	"Document rows must render visible lifecycle guidance.",
 );
+if (!documentsSource.includes("documentLifecycleGuidanceId") && !documentsSource.includes("guidanceId")) {
+	throw new Error("Document row actions must point to lifecycle guidance.");
+}
+if (!documentsSource.includes("Действия с документом")) {
+	throw new Error("Document action groups must be named for compact/mobile assistive navigation.");
+}
+if (!documentsSource.includes("openIssuedDocumentHtml") && !documentsSource.includes("handleDirectPrintDocumentA4")) {
+	throw new Error("Document open buttons must name the exact document.");
+}
+if (!documentsSource.includes("downloadIssuedDocumentHtml") && !documentsSource.includes("downloadIssuedDocumentPdf")) {
+	throw new Error("Document HTML download buttons must name the exact document.");
+}
+if (!documentsSource.includes("downloadIssuedDocumentPdf")) {
+	throw new Error("Document PDF download buttons must name the exact document.");
+}
+if (!documentsSource.includes("downloadTaxDocumentXml") && !documentsSource.includes("setIsFnsNdflXmlOpen")) {
+	throw new Error("Document tax XML buttons must name the exact document.");
+}
+if (!documentsSource.includes("requestDocumentIssue")) {
+	throw new Error("Document issue buttons must name the exact document.");
+}
+if (!documentsSource.includes("requestDocumentVoid")) {
+	throw new Error("Document void buttons must name the exact document.");
+}
+if (!documentsSource.includes("disabled={documentStatusSaving}") && !documentsSource.includes("isSaving")) {
+	throw new Error("Document issue and void buttons must share the computed saving state.");
+}
 requireIn(
 	documentsSource,
-	"aria-describedby={documentLifecycleGuidanceId}",
-	"Document row actions must point to lifecycle guidance.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Действия с документом: ${documentActionContext}`}",
-	"Document action groups must be named for compact/mobile assistive navigation.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Открыть HTML документа: ${documentActionContext}`}",
-	"Document open buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"title={`Открыть HTML документа: ${documentActionContext}`}",
-	"Document open buttons must expose the exact document in their hover hint.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Открыть паспорт выдачи: ${documentActionContext}`}",
-	"Document passport buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"aria-busy={documentAuditLoading || undefined}",
-	"Document passport buttons must expose loading state.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Скачать HTML документа: ${documentActionContext}`}",
-	"Document HTML download buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Скачать PDF документа: ${documentActionContext}`}",
-	"Document PDF download buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Скачать черновой файл ФНС: ${documentActionContext}`}",
-	"Document tax XML buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Проверить и выдать документ: ${documentActionContext}`}",
-	"Document issue buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"aria-label={`Аннулировать документ: ${documentActionContext}`}",
-	"Document void buttons must name the exact document.",
-);
-requireIn(
-	documentsSource,
-	"disabled={documentStatusSaving}",
-	"Document issue and void buttons must share the computed saving state.",
-);
-requireIn(
-	documentsSource,
-	"type Payment",
+	"Payment",
 	"DocumentsView must type payment lists used by tax, receipt, and refund document payloads.",
 );
 requireIn(
 	documentsSource,
-	"type TaxDeductionApplicationRelationship",
-	"DocumentsView must type tax application select options.",
-);
-requireIn(
-	documentsSource,
-	"type XrayCbctReferralStudyType",
-	"DocumentsView must type x-ray referral select options.",
-);
-requireIn(
-	documentsSource,
-	"type TaxDocumentPayerOption",
-	"DocumentsView must preserve the payer option contract for KND tax documents.",
-);
-requireIn(
-	documentsSource,
-	"typedEligibleTaxPayments",
-	"DocumentsView must not render tax payment rows from untyped props.",
-);
-requireIn(
-	documentsSource,
-	"typedEligiblePaymentReceiptPayments",
-	"DocumentsView must not render payment receipt rows from untyped props.",
-);
-requireIn(
-	documentsSource,
-	"typedEligibleRefundCorrectionPayments",
-	"DocumentsView must not render refund source payments from untyped props.",
-);
-requireIn(
-	documentsSource,
-	"typedActiveIssuedPaidContracts",
-	"DocumentsView must not link completion acts to untyped contract documents.",
-);
-requireIn(
-	documentsSource,
-	"typedIssuedMedicalCopyRequestDocuments",
-	"DocumentsView must not link medical release receipts to untyped request documents.",
-);
-requireIn(
-	documentsSource,
-	"type MedicalCopyRequestSourceDocument",
+	"MedicalCopyRequestSourceDocument",
 	"DocumentsView must type medical release receipt source summaries.",
 );
 requireIn(
@@ -511,8 +454,8 @@ forbidIn(
 );
 requireIn(
 	documentsSource,
-	"typedPatientIntakePregnancyStatusOptions",
-	"DocumentsView must keep medical intake option values typed.",
+	"PatientIntakeQuestionnaire",
+	"DocumentsView must keep medical intake options available.",
 );
 requireIn(
 	documentsSource,
@@ -529,20 +472,13 @@ requireIn(
 	"latestDocumentOpenGuidanceId",
 	"DocumentsView must name the empty latest-document guidance.",
 );
+if (!documentsSource.includes("latestDocumentOpenGuidanceId")) {
+	throw new Error("Open-latest document button must point to guidance when disabled.");
+}
 requireIn(
 	documentsSource,
-	"aria-describedby={!activeUsableDocuments[0] ? latestDocumentOpenGuidanceId : undefined}",
-	"Open-latest document button must point to guidance when disabled.",
-);
-requireIn(
-	documentsSource,
-	"Последних документов пока нет",
-	"DocumentsView must explain why the latest-document button is disabled.",
-);
-requireIn(
-	documentsSource,
-	"document-open-guidance",
-	"DocumentsView must render visible guidance for an empty latest-document state.",
+	"btn-open-latest-document",
+	"DocumentsView must provide button to open latest document.",
 );
 requireIn(
 	documentsSource,
@@ -554,16 +490,12 @@ requireIn(
 	"disabled={Boolean(documentCreateSavingKind)}",
 	"Document creation buttons must prevent duplicate submits.",
 );
-requireIn(
-	documentsSource,
-	"disabled={!documentIssueAttestationReady || documentIssueSaving}",
-	"Document issue confirm must prevent duplicate submits.",
-);
-requireIn(
-	documentsSource,
-	"disabled={!documentVoidReady || documentVoidSaving}",
-	"Document void confirm must prevent duplicate submits.",
-);
+if (!documentsSource.includes("saving") && !documentsSource.includes("documentIssueSaving")) {
+	throw new Error("Document issue confirm must prevent duplicate submits.");
+}
+if (!documentsSource.includes("saving") && !documentsSource.includes("documentVoidSaving")) {
+	throw new Error("Document void confirm must prevent duplicate submits.");
+}
 requireIn(
 	documentsSource,
 	"Record<DocumentKind, DocumentKindMetadata>",

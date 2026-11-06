@@ -167,24 +167,65 @@ export async function validateVisitAndDocumentBalances(
 			.for("update")
 			.limit(1);
 
-		if (!lockedDoc) {
+		let effectiveDoc = lockedDoc as {
+			id: string;
+			patientId: string;
+			visitId?: string | null;
+			kind: string;
+			status: string;
+			totalAmountRub: number | string | null;
+		} | undefined;
+
+		if (!effectiveDoc) {
+			const [inv] = await tx
+				.select({
+					id: schema.patientInvoices.id,
+					patientId: schema.patientInvoices.patientId,
+					visitId: schema.patientInvoices.visitId,
+					status: schema.patientInvoices.status,
+					totalAmountRub: schema.patientInvoices.totalAmountRub,
+					totalRub: schema.patientInvoices.totalRub,
+				})
+				.from(schema.patientInvoices)
+				.where(
+					and(
+						eq(schema.patientInvoices.organizationId, organizationId),
+						eq(schema.patientInvoices.id, input.documentId),
+					),
+				)
+				.for("update")
+				.limit(1);
+
+			if (inv) {
+				effectiveDoc = {
+					id: inv.id,
+					patientId: inv.patientId,
+					visitId: inv.visitId,
+					kind: "payment_invoice",
+					status: inv.status === "paid" ? "settled" : "issued",
+					totalAmountRub: inv.totalAmountRub ?? Number(inv.totalRub || 0),
+				};
+			}
+		}
+
+		if (!effectiveDoc) {
 			throw new Error(`Документ ${input.documentId} не найден.`);
 		}
 
-		if (lockedDoc.patientId !== input.patientId) {
+		if (effectiveDoc.patientId !== input.patientId) {
 			throw new Error("Документ оплаты относится к другому пациенту.");
 		}
 
-		if (lockedDoc.status === "voided") {
+		if (effectiveDoc.status === "voided") {
 			throw new Error("К аннулированному документу нельзя привязать оплату.");
 		}
 
 		if (
-			lockedDoc.totalAmountRub !== null &&
-			lockedDoc.totalAmountRub !== undefined
+			effectiveDoc.totalAmountRub !== null &&
+			effectiveDoc.totalAmountRub !== undefined
 		) {
 			const documentTotalKopecks = toKopecks(
-				lockedDoc.totalAmountRub,
+				effectiveDoc.totalAmountRub,
 				"общая сумма документа",
 			);
 

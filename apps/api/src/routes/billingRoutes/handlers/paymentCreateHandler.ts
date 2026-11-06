@@ -69,6 +69,8 @@ export async function handleCreatePayment(
 				"Клиентская операция с данным ключом уже существует с другими параметрами платежа.",
 			);
 		}
+		reply.header("idempotency-replayed", "true");
+		reply.header("x-idempotency-replayed", "true");
 		return reply.code(200).send(paymentSchema.parse(existingPayment));
 	}
 
@@ -78,6 +80,11 @@ export async function handleCreatePayment(
 
 	try {
 		const payment = await createPaymentInDb(orgId, paymentInput);
+		if ((payment as unknown as { isReplay?: boolean }).isReplay) {
+			reply.header("idempotency-replayed", "true");
+			reply.header("x-idempotency-replayed", "true");
+			return reply.code(200).send(paymentSchema.parse(payment));
+		}
 		try {
 			const identity = getRequestIdentity(request);
 			await recordAuditEventInDb(orgId, {

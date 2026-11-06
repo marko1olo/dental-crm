@@ -18,6 +18,7 @@ export function cleanPaymentText(value: string | null | undefined): string | nul
 }
 
 export function documentCanReceivePayment(documentKind: string): boolean {
+	if (documentKind === "invoice" || documentKind === "payment_invoice") return true;
 	if (!(documentKind in documentKindMetadata)) return false;
 	const metadata =
 		documentKindMetadata[documentKind as keyof typeof documentKindMetadata];

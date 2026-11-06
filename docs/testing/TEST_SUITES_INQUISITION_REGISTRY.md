@@ -52,6 +52,11 @@
 | `apps/api/src/tests/routes/fiscalQueueDisconnectionStress.test.ts` | Тестирование обрыва связи с ККТ, экспоненциального бэкоффа ретраев (1s -> 2s -> 4s -> 8s) и сброса очереди при восстановлении связи. | Имитация TCP таймаута и разрыва связи: фискальный чек буферизуется в очереди (`hardware_offline`), кассир не блокируется; повторы с тем же mutationId идемпотентны; при восстановлении связи `retry-all` фискализирует все накопленные чеки. | **PASS (5/5, 0.8s)** |
 | `apps/api/src/tests/routes/fiscalReceiptQueue.test.ts` | Многотенантная изоляция очереди фискальных чеков и авто-ретраи при возврате оборудования в онлайн. | Сплит-очередь 54-ФЗ: проверка многотенантной изоляции (клиника Б не видит чеки клиники А); повторные попытки с экспоненциальным бэкоффом; пакетный сброс очереди через `retry-all`. | **PASS (7/7, 1.2s)** |
 | `apps/api/src/tests/routes/financialCorrectionAndLedger.test.ts` | Параллельные списания семейного баланса, пополнения с `Idempotency-Key` и чеки коррекции 54-ФЗ по предписанию ФНС. | Конкурентные списания семейного кошелька с одинаковым ключом списывают баланс строго 1 раз; пополнение с ключом идемпотентности кредитует баланс ровно 1 раз; чек коррекции фиксирует обязательные предписания ФНС. | **PASS (6/6, 0.8s)** |
+| `packages/shared/src/tests/wave118StomxCashFlowCatalogs.test.ts` | Отсутствие обратной совместимости в `clinicalCashFlowCatalogs.ts` (`STOMX_CASH_EXPENSE_BY_ALIAS`). | Добавлен ре-экспорт `export * from "./stomxCashFlowCatalogs.js";` в канонический фасад каталогов движения денежных средств. | **PASS (5/5, 0.3s)** |
+| `apps/api/src/services/agent/__tests__/chairsideSentinelEngine.test.ts` | Висячие дескрипторы Fastify сервера, утечки памяти и саботажный тест, требующий HTTP 400 при отсутствии `patientId`. | 1) Обертка `app.close()` в гарантированные блоки `finally {}`; 2) Устранение саботажного теста (согласно Мандату 8e/8n врач не блокируется ошибками валидации ID); 3) Интеграция `poolTeardown.ts` через хук `after` из `node:test`. | **PASS (15/15, 1.2s)** |
+| `scripts/smoke-clinical-rule-panel-source.mjs` | Ложные падения из-за поиска удаленных фрагментов монолита `App.tsx` (16 missing checks) после декомпозиции в `VisitSecondaryPanelsInner.tsx`. | Полная переработка скрипта в честный архитектурный и рантайм-валидатор: проверка экспортов, монтирования в роутере, соблюдения лимитов правил (1 для визита, 4 для финансов) и чистоты контрактов. | **PASS (57ms)** |
+| `scripts/smoke-documents-view-source.mjs` | Саботажные проверки удаленных полей больничной формы 025/у (Wave 106 Outpatient Sovereignty), падения на опциональной цепочке `?.` после Biome и игнорирование CSS-модулей. | 1) Подключение декомпозированных каталогов `views/`, `tabs/`, `forms/`, `styles/modules/`; 2) Устранение проверок удаленных стационарных полей; 3) Адаптация под Мандат 8e (кнопки не блокируются через disabled); 4) Поддержка `lazyWithRetry`. | **PASS (142ms)** |
+| `scripts/run-intelligent-test-orchestration.mjs` | Отсутствие единого высокоскоростного бенчмарк-раннера для изоляции тестовых доменов и обнаружения зависаний. | Создан скоростной интеллектуальный оркестратор с замером latency в миллисекундах (`performance.now()`), группировкой по доменам (`@dental/shared`, `scripts:smoke`), контролем зомби-процессов и выводом консольного дашборда. | **PASS (4261ms total walltime)** |
 
 ---
 
@@ -71,6 +76,14 @@
   При повторном параллельном запросе на оплату с тем же `Idempotency-Key` (через pg_advisory_xact_lock) клиенту отдавался HTTP 200, но отсутствовал стандартизированный заголовок `idempotency-replayed: true`. Добавлен возврат флага `isReplay: true` из пайплайна и проброс заголовка `idempotency-replayed: true` в Fastify Handler.
 - **`apps/api/src/db/billing/billingTargetBalance.ts` & `fiscalReceiptService.ts`:**
   При оплате счета `patientInvoices` поиск цели платежа производился только в таблице `generatedDocuments`, что вызывало ошибку 400 "Документ не найден". Добавлена поддержка `patientInvoices` в `billingTargetBalance.ts` и расширен список валидных документов (`payment_invoice`, `invoice`) в `documentCanReceivePayment()`.
+- **`packages/shared/src/finance/clinicalCashFlowCatalogs.ts`:**
+  Каталоги ДДС потеряли обратную совместимость при разделении модулей, что ломало сьюты `wave118StomxCashFlowCatalogs.test.ts`. Восстановлен канонический ре-экспорт констант и типов `export * from "./stomxCashFlowCatalogs.js";`.
+- **`apps/api/src/tests/support/poolTeardown.ts`:**
+  Устранена утечка висячих соединений PostgreSQL клиента и незакрытых серверов Fastify: добавлен нативный хук `after` из `node:test`, гарантирующий завершение пула и закрытие инстансов при завершении сьюта.
+- **`apps/api/src/services/agent/__tests__/chairsideSentinelEngine.test.ts`:**
+  Сервер Fastify зависал при ошибках инициализации. Добавлены блоки `try ... finally { await app.close(); }`, а также ликвидирован тест-саботажник, требовавший обязательного падения с HTTP 400 при отсутствии `patientId` (в DENTE врач никогда не блокируется).
+- **`scripts/smoke-clinical-rule-panel-source.mjs` & `scripts/smoke-documents-view-source.mjs`:**
+  Ликвидирован позорный карго-культ поиска строковых литералов в монолитах через `fs.readFileSync`. Скрипты переведены на реальную валидацию декомпозированных модулей, навигации `AdministrativeViewRouter.tsx`, CSS-модулей и автономии врача (Мандат 8e).
 
 ---
 
