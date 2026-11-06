@@ -428,3 +428,46 @@ describe("тело ответа 403 действительно несёт это
 		assert.equal(body.error, "DoctorsNotAllowed");
 	});
 });
+
+describe("Мандат 8zg: отсутствие дев-жаргона, сырых кодов и стектрейсов в отказах", () => {
+	const RAW_TECH_TOKENS = [
+		/RBAC_DENIED/i,
+		/ORGANIZATION_SCOPE_MISMATCH/i,
+		/ACCESS_CONTROL_RULE_VIOLATION/i,
+		/SCOPE_MISMATCH/i,
+		/SQL/i,
+		/Drizzle/i,
+		/FastifyError/i,
+		/stack\s*trace/i,
+		/at\s+async\s+/i,
+	];
+
+	test("ни один отказ матрицы прав не содержит машинных кодов и стектрейсов", () => {
+		for (const role of ROLES_IN_MATRIX) {
+			for (const permission of missingPermissionsFor(role)) {
+				const message = permissionRefusalMessage(role, permission);
+				for (const token of RAW_TECH_TOKENS) {
+					assert.ok(
+						!token.test(message),
+						`Отказ содержит технический жаргон или стектрейс (${token}): ${message}`,
+					);
+				}
+			}
+		}
+	});
+
+	test("сообщения отказов в финансовых и клинических сценариях понятны человеку", () => {
+		const doctorFinanceRefusal = permissionRefusalMessage("doctor", "finance.write");
+		assert.match(doctorFinanceRefusal, /проводить оплаты и возвраты/);
+
+		const doctorPayrollRefusal = permissionRefusalMessage("doctor", "payroll.read");
+		assert.match(doctorPayrollRefusal, /смотреть выплаты врачам клиники/);
+
+		const assistantSettingsRefusal = permissionRefusalMessage("assistant", "settings.write");
+		assert.match(assistantSettingsRefusal, /(изменять|менять) настройки клиники/);
+
+		const receptionistClinicalRefusal = permissionRefusalMessage("administrator", "clinical.write");
+		assert.match(receptionistClinicalRefusal, /(заполнять|вести) медицинскую документацию/);
+	});
+});
+

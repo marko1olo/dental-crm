@@ -1,20 +1,31 @@
 /**
- * 152-ФЗ RBAC WARDEN & HARDWARE PAYLOAD STRIPPING TEST SUITE
+ * 152-ФЗ RBAC WARDEN, PII MASKING & HARDWARE PAYLOAD STRIPPING TEST SUITE
  *
- * Проверяет обязательные требования законодательства (152-ФЗ и 323-ФЗ ст. 13 «Врачебная тайна»):
+ * Проверяет обязательные требования законодательства РФ (152-ФЗ «О персональных данных» и 323-ФЗ ст. 13 «Врачебная тайна»):
  * 1. Аппаратное усечение (Payload Stripping):
  *    - Роль маркетолога ("marketer"): поля диагнозов ФИЗИЧЕСКИ удаляются из JSON (diagnosis, emr_records, odontogram, clinicalNotes, mkb10).
  *    - Роль администратора ("receptionist" / "administrator"): поля диагнозов ФИЗИЧЕСКИ удаляются из JSON.
  *    - Роль администратора системы ("admin" без клинической роли врача/ассистента): поля диагнозов ФИЗИЧЕСКИ удаляются из JSON.
  *    - Роль врача ("doctor") и ассистента ("assistant"): поля диагнозов СОХРАНЯЮТСЯ в полном объеме.
  *    - Роль админа с клинической квалификацией ("admin" + clinicalRole: "doctor" или canSignMedicalRecords): поля СОХРАНЯЮТСЯ.
- * 2. Журнал аудита доступа к врачебной тайне (audit_logs):
+ * 2. Маскирование персональных данных (152-ФЗ PII Masking):
+ *    - Телефонные номера маскируются в логах и аналитике как `+7 (999) ***-**-12`.
+ *    - Паспортные данные РФ маскируются (`** ** ******12`) и очищаются из открытых логов.
+ *    - Страховые свидетельства СНИЛС маскируются (`***-***-*** 12`) и очищаются из открытых логов.
+ *    - Банковские карты и CVV/ПИН/токены надежно экранируются.
+ * 3. Журнал аудита доступа к врачебной тайне (audit_logs):
  *    - Фиксация каждого факта доступа (кто, когда, какого пациента, какой диагноз).
  *    - Защита журнала от фальсификации и удалений.
  */
 
 import assert from "node:assert/strict";
 import { describe, test } from "node:test";
+import {
+	isSensitiveKey,
+	maskPhoneDisplay,
+	sanitizePayload,
+	sanitizeString,
+} from "@dental/shared";
 import Fastify from "fastify";
 import { authTokenSecret } from "../../security/authSecret.js";
 import {
@@ -34,7 +45,7 @@ const PATIENT_ID = fixtureUuid("auditTest", 2);
 const DOCTOR_ID = fixtureUuid("auditTest", 3);
 const MARKETER_ID = fixtureUuid("auditTest", 4);
 
-describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
+describe("152-ФЗ RBAC Warden, PII Stripping & Privacy Audit", () => {
 	// =========================================================================
 	// 1. Аппаратное усечение полезной нагрузки (stripDiagnosisPayload)
 	// =========================================================================
@@ -49,7 +60,7 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 			emr_records: [
 				{
 					id: "emr-1",
-					protocol: "Первичный осмотр 043-у",
+					protocol: "Первичный осмотр медицинской карты приёма",
 					complaints: "Острая боль",
 				},
 			],
@@ -342,9 +353,147 @@ describe("152-ФЗ RBAC Warden & Payload Stripping Audit", () => {
 			metadata: { section: "odontogram" },
 		};
 
-		// Проверяем вызов сервиса аудита (не падает и корректно формирует запись)
 		await assert.doesNotReject(async () => {
 			await recordMedicalRecordAccessAudit(auditRecord);
 		});
+	});
+
+	// =========================================================================
+	// 5. 152-ФЗ МАСКИРОВАНИЕ ПЕРСОНАЛЬНЫХ ДАННЫХ (PII MASKING В ЛОГАХ И АНАЛИТИКЕ)
+	// =========================================================================
+	test("152-ФЗ: maskPhoneDisplay маскирует телефонные номера как +7 (999) ***-**-12", () => {
+		// Канонический формат маскирования по ТЗ: +7 (код) ***-**-последние2
+		assert.strictEqual(maskPhoneDisplay("+79991234512"), "+7 (999) ***-**-12");
+		assert.strictEqual(maskPhoneDisplay("+7 (916) 111-22-33"), "+7 (916) ***-**-33");
+		assert.strictEqual(maskPhoneDisplay("89031234567"), "+7 (903) ***-**-67");
+		assert.strictEqual(maskPhoneDisplay("79269876543"), "+7 (926) ***-**-43");
+		assert.strictEqual(maskPhoneDisplay("9161234567"), "+7 (916) ***-**-67");
+
+		// Краевые случаи и защита от утечек при коротких/битых номерах
+		assert.strictEqual(maskPhoneDisplay("123"), "+7 (***) ***-**-**");
+		assert.strictEqual(maskPhoneDisplay(null), "—");
+		assert.strictEqual(maskPhoneDisplay(undefined), "—");
+		assert.strictEqual(maskPhoneDisplay(""), "—");
+	});
+
+	test("152-ФЗ: sanitizeString маскирует паспортные данные и СНИЛС в открытом тексте", () => {
+		// Паспорт гражданина РФ: 10 цифр (серия 4 цифры + номер 6 цифр)
+		const textWithPassport = "Пациент предъявил паспорт РФ: 45 12 123456 при заключении договора";
+		const sanitizedPassport = sanitizeString(textWithPassport);
+		assert.strictEqual(
+			sanitizedPassport.includes("123456"),
+			false,
+			"Номер паспорта не должен присутствовать в открытом виде в логах!",
+		);
+		assert.strictEqual(sanitizedPassport, "Пациент предъявил паспорт РФ: ** ** ******56 при заключении договора");
+
+		// СНИЛС: 11 цифр (формат 123-456-789 12)
+		const textWithSnils = "СНИЛС пациента в системе: 123-456-789 12 для передачи в РЭМД";
+		const sanitizedSnils = sanitizeString(textWithSnils);
+		assert.strictEqual(
+			sanitizedSnils.includes("123-456-789"),
+			false,
+			"Первые цифры СНИЛС не должны присутствовать в открытом виде!",
+		);
+		assert.strictEqual(sanitizedSnils, "СНИЛС пациента в системе: ***-***-*** 12 для передачи в РЭМД");
+
+		// Банковская карта: 16 цифр
+		const textWithCard = "Оплата через POS: карта 4276 3800 1234 5678 успешно авторизована";
+		const sanitizedCard = sanitizeString(textWithCard);
+		assert.strictEqual(
+			sanitizedCard.includes("3800 1234"),
+			false,
+			"Номер банковской карты не должен фигурировать в открытых логах!",
+		);
+		assert.strictEqual(sanitizedCard, "Оплата через POS: карта 4276 **** **** 5678 успешно авторизована");
+
+		// Диагнозы МКБ-10 в тексте сетевых ошибок
+		const textWithError = "Ошибка сохранения: выявлен пульпит K04.0 зуба 36";
+		const sanitizedError = sanitizeString(textWithError);
+		assert.strictEqual(sanitizedError.includes("K04.0"), false);
+		assert.strictEqual(sanitizedError, "Ошибка сохранения: выявлен пульпит [МКБ_СКРЫТ] [ЗУБ_СКРЫТ]");
+	});
+
+	test("152-ФЗ: sanitizePayload очищает чувствительные объекты и массивы сетевых логов", () => {
+		const requestLogPayload = {
+			url: "/api/patients/create?token=secret-jwt-123",
+			method: "POST",
+			patient: {
+				fullName: "Кузнецов Алексей Петрович",
+				phone: "+79998881234",
+				passport: "45 10 987654",
+				snils: "987-654-321 00",
+				password: "SuperSecretPassword123!",
+				diagnosis: "K02.1",
+				cardPan: "5536910012349999",
+				cvv: "777",
+			},
+			metadata: {
+				tags: ["vip", "primary"],
+				comment: "Паспорт проверен администратором",
+			},
+		};
+
+		const sanitized = sanitizePayload(requestLogPayload);
+
+		// Проверяем, что чувствительные ключи скрыты
+		assert.strictEqual(sanitized.patient.password, "[СКРЫТО]");
+		assert.strictEqual(sanitized.patient.passport, "[СКРЫТО]");
+		assert.strictEqual(sanitized.patient.snils, "[СКРЫТО]");
+		assert.strictEqual(sanitized.patient.diagnosis, "[СКРЫТО]");
+		assert.strictEqual(sanitized.patient.cvv, "[СКРЫТО]");
+		assert.strictEqual(sanitized.patient.cardPan, "[СКРЫТО]");
+
+		// Проверяем маскирование URL параметров
+		assert.strictEqual(
+			sanitized.url.includes("secret-jwt-123"),
+			false,
+			"Секретный токен в query URL должен быть скрыт!",
+		);
+		assert.strictEqual(sanitized.url, "/api/patients/create?token=[СКРЫТО]");
+
+		// Проверяем, что нечувствительные поля остались доступными для отладки
+		assert.strictEqual(sanitized.method, "POST");
+		assert.strictEqual(sanitized.patient.fullName, "Кузнецов Алексей Петрович");
+		assert.deepStrictEqual(sanitized.metadata.tags, ["vip", "primary"]);
+	});
+
+	test("152-ФЗ: isSensitiveKey детерминированно идентифицирует ключи ПДн и безопасности", () => {
+		const sensitiveKeys = [
+			"password",
+			"pass",
+			"pwd",
+			"token",
+			"jwt",
+			"secret",
+			"apiKey",
+			"passport",
+			"snils",
+			"cvv",
+			"card_number",
+			"diagnosis",
+			"mkb10",
+			"clinicalNotes",
+			"паспорт",
+			"снилс",
+			"диагноз",
+		];
+
+		for (const key of sensitiveKeys) {
+			assert.strictEqual(
+				isSensitiveKey(key),
+				true,
+				`Ключ '${key}' обязан определяться как чувствительный по 152-ФЗ!`,
+			);
+		}
+
+		const normalKeys = ["id", "fullName", "name", "city", "status", "limit", "offset", "createdAt"];
+		for (const key of normalKeys) {
+			assert.strictEqual(
+				isSensitiveKey(key),
+				false,
+				`Ключ '${key}' не должен ложно помечаться как чувствительный!`,
+			);
+		}
 	});
 });

@@ -82,6 +82,7 @@ The project uses `npm` workspaces. Run these commands from the root directory:
 - **Касса 54-ФЗ, сплит и Soft Negative Stock**: [`docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/CASHBOX_AND_WAREHOUSE_TEST_REGISTRY.md)
 - **Радиология, DICOM и ЗТЛ наряды**: [`docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/RADIOLOGY_LAB_ORDERS_TEST_REGISTRY.md)
 - **Омниканальная телефония, мессенджеры и Outbox**: [`docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/OMNICHANNEL_AND_TELEPHONY_TEST_REGISTRY.md)
+- **Безопасность, 152-ФЗ и RBAC**: [`docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md)
 - **ИИ-Копайлот и Workstation-Харнесс**: [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md)
 - **Реестр очищения тестов**: [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md)
 
@@ -97,6 +98,7 @@ The project uses `npm` workspaces. Run these commands from the root directory:
 - `npx tsx --test apps/web/src/store/__tests__/appStoreBehavioral.test.ts` — сторы и гидратация
 - `npx tsx --test apps/api/src/tests/routes/cashboxFiscalAndWarehouseDeduction.test.ts` — касса 54-ФЗ без ИНН физлиц, сплит-чекаут (карта+нал+семейный баланс) без float-дрифта, Soft Negative Stock склада
 - `npx tsx --test apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts` — 20 тестов омниканальной телефонии, транзакционного Outbox, тихого режима врача (Мандат 8v) и вебхуков мессенджеров (3.8 с)
+- `node --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/security/deepRoutesPrivacyAudit.test.ts` — 17 тестов межклинической изоляции организаций (Multi-Tenant) и RBAC пентеста (2.4 с)
 - `npm run test:infra` — проверка базовой тестовой инфраструктуры
 
 ---

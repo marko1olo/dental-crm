@@ -39,6 +39,7 @@ graph TD
 | **React 19 & Zustand сторы** | [`docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/WEB_COMPONENTS_TEST_REGISTRY.md) | `appStoreBehavioral.test.ts`<br>`clinicalWorkflowStateHydration.test.tsx`<br>`odontogramRealBehavioralSuite.test.tsx`<br>`visitRealBehavioralSuite.test.tsx` | 51 тест (118 тестов суммарно по Ring 3): Изоляция сессий 152-ФЗ, `switchDoctorChair`, анти-амнезия `currentView`, 0-F5 реактивная гидратация, пакетные операции Wheeler 2.5D, автосейв SOAP. |
 | **Расписание и быстрая запись (3 сек)** | [`docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SCHEDULE_QUICK_BOOKING_TEST_REGISTRY.md) | `redTeamSchedule3SecondBookingInquisition.test.tsx`<br>`quickBookingSoloDoctor.test.tsx` | 3-сек запись без ассистента (Мандат 8n), `disabled={false}`, UUIDv7 Idempotency-Key, Apple HIG Agenda View. |
 | **ИИ-Копайлот и Workstation-Харнесс** | [`docs/testing/AI_COPILOT_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/AI_COPILOT_TEST_REGISTRY.md) | `apps/api/src/ai/__tests__/copilotAutonomousHarness.test.ts` | 3 уровня доверия (cautious/supervised/autonomous), ротация ключей и 429 cooldown, чистый клинический язык (Мандат 8x), изоляция Web vs Desktop. |
+| **Безопасность, RBAC и 152-ФЗ** | [`docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md) | `deepRoutesPrivacyAudit.test.ts`<br>`payloadStripping152Fz.test.ts`<br>`roleRefusalText.test.ts` | 44 теста: межклиническая изоляция организаций (`organizationId` ➔ 404), маскирование телефонов `+7 (999) ***-**-12`, паспортов РФ и СНИЛС, защита врачебной тайны (323-ФЗ ст. 13), человечные отказы по Мандату 8zg (ноль латиницы и дев-жаргона). |
 | **Очищение тестовой базы** | [`docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/TEST_SUITES_INQUISITION_REGISTRY.md) | 11 очищенных сьютов (`labOrders`, `radiology`, `fns`, `bom`, `speech`) | Ликвидация тестов с `fs.readFileSync`, искоренение проглоченных `catch {}`, строгие `node:assert/strict`. |
 
 ---
@@ -78,8 +79,11 @@ graph TD
   * **Планы лечения, 3 тарифа и электронная подпись ПЭП (`apps/api/src/tests/routes/`, `apps/api/src/services/`)**:
     - `treatmentPlanStudioAndPep.test.ts` — интеграционный CRUD планов, 3-тарифное сравнение, скрытие микро-расходников, точная копеечная математика (`amountKopecks`), 30-дневная автономия врача (Мандат 8e), SMS OTP ПЭП подписание с SHA-256 хешем и валидация статусов.
     - `treatmentPlanMultiTierAndSigning.test.ts` — доменная математика тарифов, расчет 13% налогового вычета НДФЛ (КНД 1151156, коды 01 и 02), SHA-256 Frozen Snapshot и генерация бланка A4 в 1 клик.
-  * **Безопасность и RBAC (`apps/api/src/tests/security/`)**:
-    - `deepRoutesPrivacyAudit.test.ts`, `payloadStripping152Fz.test.ts`, `roleRefusalText.test.ts` — защита персональных данных пациентов (152-ФЗ), изоляция арендаторов (`organizationId`).
+  * **Безопасность, RBAC и приватность 152-ФЗ (`apps/api/src/tests/security/`)**:
+    - [`SECURITY_AND_RBAC_TEST_REGISTRY.md`](file:///C:/Clinic_MVP/dental-crm/docs/testing/SECURITY_AND_RBAC_TEST_REGISTRY.md) (44 теста):
+      * `deepRoutesPrivacyAudit.test.ts` (17 тестов) — межклиническая изоляция 5 доменных сущностей (`organizationId` ➔ 404), RBAC-блокировки неклинических ролей (403 Forbidden), аудит доступа врачебной тайны в `audit_events`.
+      * `payloadStripping152Fz.test.ts` (14 тестов) — физическое вырезание полей диагнозов и ЭМК, маскирование номеров телефонов `+7 (999) ***-**-12`, очистка паспортов РФ и СНИЛС, санитизация сетевых логов аудита.
+      * `roleRefusalText.test.ts` (13 тестов) — человечные отказы в доступе по Мандату 8zg (ноль латиницы, отсутствие `RBAC_DENIED`/SQL/Fastify ошибок, ясный следующий шаг с подсказкой кого просить).
 
 ### Слой 3: Пользовательский интерфейс и состояние React 19 (`apps/web`)
 - **Путь**: `apps/web/src/store/__tests__/`, `apps/web/src/components/__tests__/`
@@ -169,6 +173,11 @@ npx tsx --test apps/api/src/services/billing/__tests__/cashboxSplitAndWarehouseD
 # 13. Омниканальная телефония, мессенджеры и транзакционный Outbox (3.8 с):
 npx tsx --test apps/api/src/tests/routes/omnichannelTelephonyAndOutbox.test.ts
 npx tsx --test apps/api/src/services/telephony/__tests__/omnichannelOutboxAndTelephony.test.ts
+
+# 14. Безопасность, 152-ФЗ, изоляция организаций и RBAC (44 теста, ~4.5 с):
+node --import tsx --import ./apps/api/src/tests/support/poolTeardown.ts --test apps/api/src/tests/security/deepRoutesPrivacyAudit.test.ts
+npx tsx --test apps/api/src/tests/security/payloadStripping152Fz.test.ts
+npx tsx --test apps/api/src/tests/security/roleRefusalText.test.ts
 ```
 
 ### Комплексные гейты монорепозитория (строго единолично L1 Оркестратор):
