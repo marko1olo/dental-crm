@@ -6,10 +6,12 @@ import assert from "node:assert/strict";
 import { describe, it } from "node:test";
 import React from "react";
 import { renderToString } from "react-dom/server";
+import { VisitSurgeryExtractionBar } from "../../visit/surgery/VisitSurgeryExtractionBar";
+import { VisitSurgerySinusGbrBar } from "../../visit/surgery/VisitSurgerySinusGbrBar";
+import { VisitSurgeryImplantBar } from "../../visit/surgery/VisitSurgeryImplantBar";
 
 describe("Surgery Clinical Bars (Extraction, Sinus/GBR, Implants)", () => {
-	it("1. renders VisitSurgeryExtractionBar with 1-click uncomplicated norm and chips", async () => {
-		const { VisitSurgeryExtractionBar } = await import("../../visit/surgery/VisitSurgeryExtractionBar");
+	it("1. renders VisitSurgeryExtractionBar with 1-click uncomplicated norm and chips", { timeout: 20000 }, () => {
 		const html = renderToString(
 			<VisitSurgeryExtractionBar
 				effectiveTooth={38}
@@ -31,8 +33,7 @@ describe("Surgery Clinical Bars (Extraction, Sinus/GBR, Implants)", () => {
 		assert.ok(html.includes("btn-hemostasis-tampon"));
 	});
 
-	it("2. renders VisitSurgerySinusGbrBar with graft selection and membrane options", async () => {
-		const { VisitSurgerySinusGbrBar } = await import("../../visit/surgery/VisitSurgerySinusGbrBar");
+	it("2. renders VisitSurgerySinusGbrBar with graft selection and membrane options", { timeout: 20000 }, () => {
 		const html = renderToString(
 			<VisitSurgerySinusGbrBar
 				effectiveTooth={16}
@@ -53,8 +54,7 @@ describe("Surgery Clinical Bars (Extraction, Sinus/GBR, Implants)", () => {
 		assert.ok(html.includes("btn-toggle-titanium-pins"));
 	});
 
-	it("3. renders VisitSurgeryImplantBar with extended brands", async () => {
-		const { VisitSurgeryImplantBar } = await import("../../visit/surgery/VisitSurgeryImplantBar");
+	it("3. renders VisitSurgeryImplantBar with extended brands", { timeout: 20000 }, () => {
 		const html = renderToString(
 			<VisitSurgeryImplantBar
 				implantBrand="Dentium"

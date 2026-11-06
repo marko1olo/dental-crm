@@ -134,6 +134,11 @@ export interface SurgeryFinancialBreakdown {
 	readonly consumablesCostRub: number;
 	readonly doctorGrossMarginRub: number;
 	readonly netDoctorIncomeRub: number;
+	readonly operationPriceKopecks: number;
+	readonly implantCostKopecks: number;
+	readonly consumablesCostKopecks: number;
+	readonly doctorGrossMarginKopecks: number;
+	readonly netDoctorIncomeKopecks: number;
 }
 
 export function calculateSurgeryFinancials(params: {
@@ -160,6 +165,11 @@ export function calculateSurgeryFinancials(params: {
 			consumablesCostRub,
 			doctorGrossMarginRub,
 			netDoctorIncomeRub: doctorGrossMarginRub,
+			operationPriceKopecks: Math.round(priceRub * 100),
+			implantCostKopecks: Math.round(implantCostRub * 100),
+			consumablesCostKopecks: Math.round(consumablesCostRub * 100),
+			doctorGrossMarginKopecks: Math.round(doctorGrossMarginRub * 100),
+			netDoctorIncomeKopecks: Math.round(doctorGrossMarginRub * 100),
 		};
 	}
 	let consumablesCostRub = 1200;
@@ -178,6 +188,11 @@ export function calculateSurgeryFinancials(params: {
 		consumablesCostRub,
 		doctorGrossMarginRub,
 		netDoctorIncomeRub: doctorGrossMarginRub,
+		operationPriceKopecks: Math.round(priceRub * 100),
+		implantCostKopecks: 0,
+		consumablesCostKopecks: Math.round(consumablesCostRub * 100),
+		doctorGrossMarginKopecks: Math.round(doctorGrossMarginRub * 100),
+		netDoctorIncomeKopecks: Math.round(doctorGrossMarginRub * 100),
 	};
 }
 
@@ -408,4 +423,12 @@ export function dispatchSurgicalServicesToInvoice(params: {
 		window.dispatchEvent(new CustomEvent("dente:cart-add-items", { detail: { items: services.map((s) => ({ code: s.code, name: s.nameRu || s.name, priceRub: s.priceRub, quantity: s.quantity || 1, toothNumber: effectiveTooth })) } }));
 	}
 	return services;
+}
+
+export function generateSystemSurgeryLot(toothNumber: number | string, dateIso?: string): string {
+	const dateStr = dateIso
+		? dateIso.slice(0, 10).replace(/-/g, "")
+		: new Date().toISOString().slice(0, 10).replace(/-/g, "");
+	const primaryTooth = String(toothNumber).split(/[,;\s]+/)[0] || "46";
+	return `LOT-SYS-${dateStr}-T${primaryTooth}`;
 }

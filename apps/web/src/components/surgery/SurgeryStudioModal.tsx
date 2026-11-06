@@ -15,8 +15,6 @@ export type SurgeryStudioModalProps = ChairsideSurgeryHubModalProps;
 export { ChairsideSurgeryHubModal };
 export type { SurgeryHubTab };
 
-export const SurgeryStudioModal: React.FC<SurgeryStudioModalProps> = (props) => {
-	return <ChairsideSurgeryHubModal {...props} />;
-};
+export const SurgeryStudioModal = ChairsideSurgeryHubModal;
 
 export default SurgeryStudioModal;

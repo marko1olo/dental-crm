@@ -8,12 +8,6 @@ import { ChairsideSurgeryHubModal } from "./ChairsideSurgeryHubModal";
 import type { SurgeryScenarioType } from "./surgeryCatalogData";
 import { useAppStore } from "../../store/appStore";
 
-const DEMO_SURGERY_PATIENT = {
-	id: "pat-surgery-canonical",
-	fullName: "Иванов Иван Иванович",
-	doctorName: "Д-р Воронов А. В.",
-};
-
 export const DirectSurgeryLauncher: React.FC = () => {
 	const checkUrlMatches = () => {
 		if (typeof window === "undefined") return false;
@@ -55,10 +49,14 @@ export const DirectSurgeryLauncher: React.FC = () => {
 			return {
 				id: storeActivePatient.id,
 				fullName: storeActivePatient.fullName,
-				doctorName: storeDoctorName || DEMO_SURGERY_PATIENT.doctorName,
+				doctorName: storeDoctorName || "Врач-хирург",
 			};
 		}
-		return DEMO_SURGERY_PATIENT;
+		return {
+			id: "PAT-BLANK",
+			fullName: "Пациент не выбран",
+			doctorName: storeDoctorName || "Врач-хирург",
+		};
 	}, [storeActivePatient, storeDoctorName]);
 
 	const handleOpenEvent = useCallback((e: Event) => {

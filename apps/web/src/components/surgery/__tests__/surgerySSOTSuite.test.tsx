@@ -132,4 +132,33 @@ describe("Surgery Studio SSOT & Clinical Sovereignty Suite", () => {
 		assert.strictEqual(mandibleDate, "2026-04-01");
 		assert.strictEqual(maxillaDate, "2026-06-01");
 	});
+
+	it("9. Reactive hydration from stores without hardcoded patient or doctor names", () => {
+		const html = renderToStaticMarkup(
+			<SurgeryStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+			/>
+		);
+		// Verified absence of fake Soviet hardcoded names in default state
+		assert.ok(!html.includes("Иванов Иван Иванович"), "Must NOT render hardcoded Иванов Иван Иванович");
+		assert.ok(!html.includes("Д-р Воронов А. В."), "Must NOT render hardcoded Д-р Воронов А. В.");
+	});
+
+	it("10. Memo section renders 1-click print button for post-op recommendations", () => {
+		const html = renderToStaticMarkup(
+			<SurgeryStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				initialTooth={46}
+				initialTab="memo"
+				patientName="Сидоров А. С."
+				doctorName="Д-р Смирнова"
+			/>
+		);
+		assert.ok(html.includes("btn-print-memo"), "Must render 1-click print button for patient post-op memo");
+		assert.ok(html.includes("Печать памятки"), "Must display human-readable button text");
+		assert.ok(html.includes("Сидоров А. С."), "Must render hydrated patient name in memo");
+	});
 });

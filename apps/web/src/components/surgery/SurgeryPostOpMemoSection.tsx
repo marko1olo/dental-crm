@@ -4,7 +4,7 @@
  */
 
 import React from "react";
-import { Copy, MessageSquare, Send, Share2 } from "lucide-react";
+import { Copy, MessageSquare, Printer, Send, Share2 } from "lucide-react";
 
 export interface SurgeryPostOpMemoSectionProps {
 	readonly memoText: string;
@@ -13,6 +13,7 @@ export interface SurgeryPostOpMemoSectionProps {
 	readonly onShareWhatsApp: () => void;
 	readonly onShareTelegram: () => void;
 	readonly onCopy: () => void;
+	readonly onPrint?: () => void;
 }
 
 export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> = ({
@@ -22,6 +23,7 @@ export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> =
 	onShareWhatsApp,
 	onShareTelegram,
 	onCopy,
+	onPrint,
 }) => {
 	return (
 		<div className="surgery-postop-memo-container min-h-0" data-testid="surgery-memo-content">
@@ -33,6 +35,17 @@ export const SurgeryPostOpMemoSection: React.FC<SurgeryPostOpMemoSectionProps> =
 					</span>
 				</div>
 				<div className="surgery-postop-memo-actions">
+					{onPrint && (
+						<button
+							type="button"
+							onClick={onPrint}
+							className="surgery-memo-action-btn"
+							data-testid="btn-print-memo"
+							title="Распечатать памятку пациенту в 1 клик"
+						>
+							<Printer size={14} className="text-[var(--teal,#0d9488)]" /><span>Печать памятки</span>
+						</button>
+					)}
 					<button
 						type="button"
 						onClick={onShareWhatsApp}

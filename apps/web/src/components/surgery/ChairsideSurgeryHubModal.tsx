@@ -12,6 +12,8 @@ import { AlertTriangle, Award, Check, FileText, MessageSquare, Printer, ShieldCh
 import { DentalImplant } from "../icons/DentalIcons";
 import { showToast } from "../GlobalToast";
 import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
+import { usePatientStore } from "../../store/patientStore";
+import { useAppStore } from "../../store/appStore";
 import {
 	SURGERY_SCENARIOS,
 	SURGERY_IMPLANT_SYSTEMS,
@@ -65,8 +67,8 @@ const FREQUENT_SURGERY_TEETH = [16, 26, 36, 46, 11, 21, 14, 24, 34, 44, 18, 28, 
 
 export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> = ({
 	isOpen, onClose,
-	patientName = "Иванов Иван Иванович", patientId = "PAT-DEMO-01",
-	doctorName = "Д-р Воронов А. В.", doctorId = "DOC-SURG-01",
+	patientName: propPatientName, patientId: propPatientId,
+	doctorName: propDoctorName, doctorId: propDoctorId,
 	initialTooth = 46, initialScenario = "implant", initialTab = "protocol",
 	inventoryOverdraftActive = false,
 	initialBrand, initialDiameterMm, initialLengthMm, initialTorqueNcm,
@@ -74,6 +76,67 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 	onSaveProtocol, onInsertIntoDiary, className = "",
 }) => {
 	const titleId = useId();
+
+	const storePatientId = usePatientStore((s) => s.selectedPatientId);
+	const storePatientCore = usePatientStore((s) => s.patientCoreDraft);
+	const appActivePatientId = useAppStore((s) => s.activePatientId);
+	const appActiveDoctorName = useAppStore((s) => s.activeDoctorName);
+	const appDashboard = useAppStore((s) => s.dashboard);
+
+	const effectivePatient = useMemo(() => {
+		if (propPatientName && propPatientName.trim() && propPatientId && propPatientId.trim()) {
+			return { id: propPatientId.trim(), name: propPatientName.trim() };
+		}
+		const targetId = propPatientId || storePatientId || appActivePatientId || appDashboard?.activeVisit?.patientId || null;
+
+		if (appDashboard?.patients && appDashboard.patients.length > 0) {
+			const found = targetId
+				? appDashboard.patients.find((p) => p.id === targetId)
+				: (propPatientName ? appDashboard.patients.find((p) => p.fullName === propPatientName) : null);
+			if (found) {
+				return { id: found.id, name: found.fullName };
+			}
+		}
+
+		if (propPatientName && propPatientName.trim()) {
+			return { id: targetId || "PAT-CURRENT", name: propPatientName.trim() };
+		}
+
+		if (storePatientCore?.fullName?.trim()) {
+			return { id: targetId || storePatientId || "PAT-CURRENT", name: storePatientCore.fullName.trim() };
+		}
+
+		if (appDashboard?.patients && appDashboard.patients.length > 0) {
+			return { id: appDashboard.patients[0].id, name: appDashboard.patients[0].fullName };
+		}
+
+		if (targetId) {
+			return { id: targetId, name: `Пациент (${targetId.slice(0, 8)})` };
+		}
+
+		return { id: "PAT-BLANK", name: "Пациент не выбран" };
+	}, [propPatientName, propPatientId, storePatientId, appActivePatientId, appDashboard, storePatientCore]);
+
+	const effectiveDoctor = useMemo(() => {
+		if (propDoctorName && propDoctorName.trim()) {
+			return { id: propDoctorId || "DOC-CURRENT", name: propDoctorName.trim() };
+		}
+		if (appActiveDoctorName && appActiveDoctorName.trim()) {
+			return { id: propDoctorId || "DOC-ACTIVE", name: appActiveDoctorName.trim() };
+		}
+		if (appDashboard?.activeVisit?.doctorName?.trim()) {
+			return {
+				id: appDashboard.activeVisit.doctorId || propDoctorId || "DOC-VISIT",
+				name: appDashboard.activeVisit.doctorName.trim(),
+			};
+		}
+		return { id: propDoctorId || "DOC-SURG", name: "Врач-хирург" };
+	}, [propDoctorName, propDoctorId, appActiveDoctorName, appDashboard]);
+
+	const patientName = effectivePatient.name;
+	const patientId = effectivePatient.id;
+	const doctorName = effectiveDoctor.name;
+	const doctorId = effectiveDoctor.id;
 	const [activeScenario, setActiveScenario] = useState<SurgeryScenarioType>(initialScenario);
 	const [activeTab, setActiveTab] = useState<SurgeryHubTab>(initialTab);
 	const [toothFdi, setToothFdi] = useState<number>(initialTooth);
@@ -197,6 +260,17 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 				},
 			}));
 			window.dispatchEvent(new CustomEvent("dente:diary-update", { detail: { diaryText, toothFdi, teeth: teethToProcess, scenario: activeScenario } }));
+			window.dispatchEvent(new CustomEvent("dente-apply-soap-protocol", {
+				detail: {
+					soap: { treatmentDescription: diaryText },
+					text: diaryText,
+					protocolText: diaryText,
+					mode: "smart_append",
+					tooth: toothFdi,
+					teeth: teethToProcess,
+					scenario: activeScenario,
+				},
+			}));
 		}
 
 		if (typeof fetch === "function") {
@@ -378,6 +452,7 @@ export const ChairsideSurgeryHubModal: React.FC<ChairsideSurgeryHubModalProps> =
 							onShareWhatsApp={handleShareWhatsAppMemo}
 							onShareTelegram={handleShareTelegramMemo}
 							onCopy={handleCopyMemo}
+							onPrint={handlePrintDocument}
 						/>
 					) : activeTab === "passport" && activeScenario === "implant" ? (
 						<div data-testid="surgery-passport-content"><ImplantPassportCard data={passportData} /></div>
