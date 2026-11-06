@@ -7,13 +7,15 @@ import { before, describe, it } from "node:test";
 import Fastify from "fastify";
 import { db } from "../db/client.js";
 import { withTenantCtx } from "../db/rls.js";
-import { organizations } from "../db/schema.js";
+import { organizations, users } from "../db/schema.js";
 import { authTokenSecret } from "../security/authSecret.js";
 import { signToken } from "../utils/cryptoHelper.js";
 import { registerExpensesRoutes } from "./expenses.js";
 
 const ORG_ID_1 = "11111111-1111-1111-1111-111111111111";
 const ORG_ID_2 = "22222222-2222-2222-2222-222222222222";
+const ADMIN_USER_ID = "00000000-0000-0000-0000-000000000001";
+const DOCTOR_USER_ID = "00000000-0000-0000-0000-000000000002";
 
 async function buildTestApp() {
 	process.env.NODE_ENV = "test";
@@ -23,7 +25,7 @@ async function buildTestApp() {
 	return app;
 }
 
-function createStaffHeaders(organizationId: string, userId = "usr-admin-1", role = "admin") {
+function createStaffHeaders(organizationId: string, userId = ADMIN_USER_ID, role = "admin") {
 	const token = signToken(
 		{ organizationId, userId, role },
 		authTokenSecret(),
@@ -39,6 +41,26 @@ describe("Expenses & P&L API Routes", () => {
 			await tx
 				.insert(organizations)
 				.values({ id: ORG_ID_1, name: "Test Expenses Org 1" })
+				.onConflictDoNothing();
+			await tx
+				.insert(users)
+				.values({
+					id: ADMIN_USER_ID,
+					organizationId: ORG_ID_1,
+					fullName: "Тестовый Управляющий",
+					role: "admin",
+					email: "admin-exp@clinic.com",
+				})
+				.onConflictDoNothing();
+			await tx
+				.insert(users)
+				.values({
+					id: DOCTOR_USER_ID,
+					organizationId: ORG_ID_1,
+					fullName: "Тестовый Доктор",
+					role: "doctor",
+					email: "doctor-exp@clinic.com",
+				})
 				.onConflictDoNothing();
 		});
 		await withTenantCtx(ORG_ID_2, async (tx) => {
@@ -179,7 +201,16 @@ describe("Expenses & P&L API Routes", () => {
 		});
 		assert.equal(idorDelRes.statusCode, 404);
 
-		// Delete from Org 1 -> 200
+		// Attempt deletion by doctor -> should return 403 Forbidden (RBAC / Mandate 8v)
+		const doctorHeaders = createStaffHeaders(ORG_ID_1, DOCTOR_USER_ID, "doctor");
+		const doctorDelRes = await app.inject({
+			method: "DELETE",
+			url: `/api/v1/expenses/${expenseId}`,
+			headers: doctorHeaders,
+		});
+		assert.equal(doctorDelRes.statusCode, 403);
+
+		// Delete from Org 1 by admin -> 200
 		const delRes = await app.inject({
 			method: "DELETE",
 			url: `/api/v1/expenses/${expenseId}`,
@@ -187,6 +218,23 @@ describe("Expenses & P&L API Routes", () => {
 		});
 		assert.equal(delRes.statusCode, 200);
 		assert.equal(delRes.json().success, true);
+
+		// Verify audit trail entry was recorded in audit_events [SEC-06]
+		const { auditEvents } = await import("../db/schema.js");
+		const { eq: eqAudit, and: andAudit } = await import("drizzle-orm");
+		const [auditEntry] = await db
+			.select()
+			.from(auditEvents)
+			.where(
+				andAudit(
+					eqAudit(auditEvents.organizationId, ORG_ID_1),
+					eqAudit(auditEvents.entityId, expenseId),
+					eqAudit(auditEvents.action, "delete_expense"),
+				),
+			)
+			.limit(1);
+		assert.ok(auditEntry, "Audit event must be recorded for deleted expense");
+		assert.equal(auditEntry.actorUserId, ADMIN_USER_ID);
 
 		// Delete again -> 404
 		const delAgainRes = await app.inject({

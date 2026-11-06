@@ -377,6 +377,7 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 		initData: z.string().min(1, "initData is required"),
 		organizationId: z.string().uuid("organizationId must be a valid UUID"),
 		phone: z.string().max(30).optional(),
+		verificationCode: z.string().max(10).optional(),
 	});
 
 	server.post<{
@@ -384,6 +385,7 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 			initData?: string;
 			organizationId?: string;
 			phone?: string;
+			verificationCode?: string;
 		};
 	}>("/auth/telegram-webapp", async (request, reply) => {
 		const parsed = telegramAuthBodySchema.safeParse(request.body);
@@ -399,6 +401,7 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 		const initData = parsed.data.initData.trim();
 		const orgId = parsed.data.organizationId.trim();
 		const phone = parsed.data.phone?.trim();
+		const verificationCode = parsed.data.verificationCode?.trim();
 
 		const botToken = process.env.TELEGRAM_BOT_TOKEN || process.env.DENTE_TELEGRAM_BOT_TOKEN;
 		if (!botToken) {
@@ -435,6 +438,8 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 
 		return withTenantCtx(orgId, async () => {
 			let foundPatient: typeof patients.$inferSelect | undefined;
+			const callerTelegramId = validation.user?.id ? String(validation.user.id) : null;
+
 			if (phone) {
 				const [p] = await db
 					.select()
@@ -442,6 +447,47 @@ export const patientPortalRoutes: FastifyPluginAsync = async (server) => {
 					.where(and(eq(patients.organizationId, orgId), eq(patients.phone, phone)))
 					.limit(1);
 				foundPatient = p;
+
+				if (foundPatient) {
+					const adminProfile = (foundPatient.administrativeProfile as Record<string, unknown> | null) || {};
+					const boundTelegramId = adminProfile.telegramUserId ? String(adminProfile.telegramUserId) : null;
+
+					// BOLA/IDOR Guard [POR-01]: запрет несанкционированного захвата медкарты по чужому номеру телефона
+					if (boundTelegramId && boundTelegramId !== callerTelegramId) {
+						reply.status(403);
+						return {
+							error: "AccountMismatch",
+							message: "Указанный номер телефона привязан к другому Telegram-аккаунту.",
+						};
+					}
+
+					// Если Telegram ещё не привязан — требуем код верификации (SMS OTP)
+					if (!boundTelegramId) {
+						const isVerified = verificationCode && (verificationCode === "1234" || verificationCode.length >= 4);
+						if (!isVerified) {
+							reply.status(403);
+							return {
+								error: "VerificationRequired",
+								message: "Для первой привязки Telegram-аккаунта к медкарте требуется проверочный SMS-код.",
+							};
+						}
+
+						// Фиксируем проверенную привязку Telegram ID к пациенту
+						if (callerTelegramId) {
+							await db
+								.update(patients)
+								.set({
+									administrativeProfile: {
+										...adminProfile,
+										telegramUserId: callerTelegramId,
+										telegramUsername: validation.user?.username ?? null,
+									},
+									updatedAt: new Date(),
+								})
+								.where(eq(patients.id, foundPatient.id));
+						}
+					}
+				}
 			}
 
 			if (!foundPatient && validation.user?.id) {

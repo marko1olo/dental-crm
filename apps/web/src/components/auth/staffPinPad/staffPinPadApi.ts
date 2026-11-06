@@ -66,10 +66,9 @@ export async function requestStaffUnlock(
 		return { success: true, user: unlockedUser };
 	} catch (err) {
 		logger.error(err);
-		if (completedPin === "1111" || completedPin === "0000" || isDemoOrFallbackStaff(user)) {
-			safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, `dente-offline-staff-token-${user.id}`, true);
-			return { success: true, user };
-		}
-		return { success: false, error: `Смена не открыта: ${NO_RESPONSE_CAUSE}. Для входа без сети используйте PIN 1111.` };
+		return {
+			success: false,
+			error: `Смена не открыта: ${NO_RESPONSE_CAUSE}. Проверьте подключение к сети клиники и повторите попытку.`,
+		};
 	}
 }

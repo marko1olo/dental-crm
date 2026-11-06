@@ -83,9 +83,6 @@ export async function handleStaffUnlock(
 	}
 
 	resetStaffPinRateLimit(rateLimitCheck.rateLimitKey);
-	if (user.id !== input.userId) {
-		resetStaffPinRateLimit(getStaffPinRateLimitKey(orgId, user.id, request.ip));
-	}
 	resetRateLimit(request);
 
 	const result = await issueStaffSessionToken({

@@ -127,8 +127,9 @@ export function resolveDemoUser(
 }
 
 /**
- * Комплексная проверка PIN-кода и сканирование сотрудников клиники (МАНДАТ 8e).
- * Если PIN не подошел выбранному врачу, перебираем всех активных сотрудников клиники.
+ * Комплексная проверка PIN-кода для выбранного сотрудника клиники.
+ * Защита от BOLA/IDOR: тотальный перебор всех сотрудников клиники (allClinicStaff) СТРОГО ЗАПРЕЩЁН.
+ * Проверка выполняется исключительно для целевого пользователя (userId).
  */
 export async function verifyAndMatchStaffUser(params: {
 	orgId: string;
@@ -150,57 +151,6 @@ export async function verifyAndMatchStaffUser(params: {
 		isMatch = storedPinHash
 			? await verifyCredential(pinCode, storedPinHash)
 			: demoLoginAllowed() && orgId === DEMO_SHOWCASE_ORG_ID && pinCode === "1234";
-	}
-
-	// МАНДАТ 8e: Быстрая смена врача у кресла по PIN-коду (Chairside Quick Switch).
-	if (!isMatch) {
-		try {
-			const allClinicStaff = await withTenantCtx(orgId, async (tx) => {
-				return tx
-					.select()
-					.from(users)
-					.where(
-						and(
-							eq(users.organizationId, orgId),
-							eq(users.isActive, true),
-						),
-					);
-			});
-
-			for (const candidate of allClinicStaff) {
-				if (user && candidate.id === user.id) continue;
-				if (!candidate.pinCodeHash) continue;
-				const candidateMatched = await verifyCredential(pinCode, candidate.pinCodeHash);
-				if (candidateMatched) {
-					user = candidate;
-					isMatch = true;
-					break;
-				}
-			}
-		} catch (scanErr) {
-			log?.error({ scanErr }, "[STAFF_UNLOCK_CHAIRSIDE_SCAN_ERR]");
-		}
-
-		if (!isMatch && demoLoginAllowed() && orgId === DEMO_SHOWCASE_ORG_ID && pinCode === "1234") {
-			const matchedDemoId =
-				userId === DEMO_DOCTOR_2_ID ? DEMO_DOCTOR_1_ID : (userId || DEMO_DOCTOR_1_ID);
-			user = {
-				id: matchedDemoId,
-				organizationId: DEMO_SHOWCASE_ORG_ID,
-				fullName:
-					matchedDemoId === DEMO_DOCTOR_2_ID
-						? "Д-р Морозова Е. И."
-						: "Д-р Соколов А. В.",
-				role: "doctor",
-				email: "doctor@clinic.com",
-				phone: "+7 (999) 111-22-33",
-				pinCodeHash: null,
-				isActive: true,
-				createdAt: new Date(),
-				updatedAt: new Date(),
-			} as unknown as typeof users.$inferSelect;
-			isMatch = true;
-		}
 	}
 
 	return { user, isMatch };

@@ -21,17 +21,20 @@ import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
 import type { FastifyPluginAsync, FastifyReply, FastifyRequest } from "fastify";
 import { z } from "zod";
 import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
+import { recordAuditEventInDb } from "../db/auditQuery.js";
 import { withTenantCtx } from "../db/rls.js";
 import {
 	cashBoxes,
 	cashExpenseReasons,
 	cashOperations,
 	payments,
+	users,
 } from "../db/schema.js";
 import {
 	ensureOrganizationCashBoxes,
 	ensureOrganizationExpenseReasons,
 } from "../db/seeds/seed_cash_and_reasons.js";
+import { ADMIN_ROLES, requireStaffIdentity } from "../security/identity.js";
 
 const createExpenseBodySchema = z.object({
 	organizationId: z.string().uuid().optional(),
@@ -378,17 +381,16 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 	server.get("/api/expenses/summary", handleExpensesSummary);
 
 	// 4. DELETE /api/v1/expenses/:id & /api/expenses/:id
+	// Мандат безопасности [SEC-06]: удаление расхода разрешено строго ролям owner / admin / administrator
+	// и сопровождается обязательной фиксацией в журнале аудита audit_events.
 	const handleDeleteExpense = async (request: FastifyRequest<{ Params: { id: string } }>, reply: FastifyReply) => {
-		const organizationId = await requireResolvedStaffOrAdminOrganizationId(
-			request,
-			reply,
-			"expenses delete",
-		);
-		if (!organizationId) return;
+		const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
+		if (!identity || !identity.organizationId) return;
+		const organizationId = identity.organizationId;
 
 		const { id } = request.params;
 
-		const deleted = await withTenantCtx(organizationId, async (tx) => {
+		const deletedOp = await withTenantCtx(organizationId, async (tx) => {
 			const [op] = await tx
 				.select()
 				.from(cashOperations)
@@ -401,7 +403,7 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				)
 				.limit(1);
 
-			if (!op) return false;
+			if (!op) return null;
 
 			// Возвращаем средства обратно на кассовый счет
 			const [box] = await tx
@@ -425,13 +427,32 @@ export const registerExpensesRoutes: FastifyPluginAsync = async (server) => {
 				.delete(cashOperations)
 				.where(and(eq(cashOperations.id, id), eq(cashOperations.organizationId, organizationId)));
 
-			return true;
+			return op;
 		});
 
-		if (!deleted) {
+		if (!deletedOp) {
 			reply.status(404);
 			return { error: "NotFound", message: "Расходная операция не найдена." };
 		}
+
+		// Фиксация в неизменяемом аудит-логе клиники с безопасным разрешением FK пользователя
+		let actorUserId: string | null = null;
+		if (typeof identity.userId === "string" && /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(identity.userId)) {
+			const [existingUser] = await withTenantCtx(organizationId, async (tx) => {
+				return tx.select({ id: users.id }).from(users).where(eq(users.id, identity.userId!)).limit(1);
+			});
+			if (existingUser) {
+				actorUserId = existingUser.id;
+			}
+		}
+
+		await recordAuditEventInDb(organizationId, {
+			entityType: "cash_operation",
+			entityId: id,
+			action: "delete_expense",
+			actorUserId,
+			reason: `Аннулирование расходной операции на сумму ${deletedOp.amountRub} руб. (${deletedOp.reasonText || "без описания"})`,
+		});
 
 		return { success: true };
 	};

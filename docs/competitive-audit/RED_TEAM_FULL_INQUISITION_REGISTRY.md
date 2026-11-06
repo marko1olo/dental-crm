@@ -457,13 +457,15 @@
 
 ## 8. 🌐 ПАЦИЕНТСКИЙ ПОРТАЛ (PWA) И ОНЛАЙН-ЗАПИСЬ
 
-### [POR-01] [SEV-1] Захват чужой медкарты 043/у через Telegram WebApp (Account Takeover)
-- **Файл:** [`apps/api/src/routes/patientPortal.ts#L413-L485`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientPortal.ts#L413-L485)
-- **Суть бага:** В `POST /auth/telegram-webapp` клиент передает любой `phone`. Сервер **не проверяет** принадлежность телефона пользователю Telegram и выдает рабочий 30-дневный JWT-токен на чужого пациента! Атакующий получает выписку карты 043/у, паспортные данные, СНИЛС и все диагнозы МКБ-10 любого пациента или главврача клиники (грубейшее нарушение 323-ФЗ и 152-ФЗ).
+### [POR-01] [SEV-1] [ИСПРАВЛЕНО] Захват чужой медкарты 043/у через Telegram WebApp (Account Takeover)
+- **Файл:** [`apps/api/src/routes/patientPortal.ts#L376-L485`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/patientPortal.ts#L376-L485)
+- **Суть бага:** В `POST /auth/telegram-webapp` клиент передает любой `phone`. Сервер **не проверял** принадлежность телефона пользователю Telegram и выдавал рабочий 30-дневный JWT-токен на чужого пациента! Атакующий получал выписку карты 043/у, паспортные данные, СНИЛС и все диагнозы МКБ-10 любого пациента или главврача клиники (грубейшее нарушение 323-ФЗ и 152-ФЗ).
+- **Статус исправления [ИСПРАВЛЕНО]:** Внедрен строгий IDOR/BOLA Guard: Telegram WebApp сверяет `validation.user.id` с привязанным `administrativeProfile.telegramUserId`. Если телефон уже привязан к другому Telegram ID, запрос немедленно блокируется с `403 AccountMismatch`. Для первичной привязки обязателен проверочный код (`verificationCode`). Без кода сервер возвращает `403 VerificationRequired`. Покрыто интеграционным тестом в `apps/api/src/tests/routes/telegramWebAppBolaProtection.test.ts` (100% PASS).
 
-### [POR-02] [SEV-1] Неавторизованный слив и перезапись 3D КЛКТ/STL (IDOR в Mock Storage)
-- **Файл:** [`apps/api/src/routes/portal/portalMockStorageRoutes.ts#L66-L87, L149-L170`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalMockStorageRoutes.ts#L66-L87)
-- **Суть бага:** Эндпоинты `/mock-storage/download` и `/mock-storage/upload` открыты без авторизации. Проверка изоляции тенанта обходится тривиально: если анонимный клиент **не передает** заголовок `x-organization-id`, переменная `callerOrg` равна `undefined`, блок проверки пропускается, и любой желающий может скачать или перезаписать 500-мегабайтный файл томографии КТ/STL любой клиники.
+### [POR-02] [SEV-1] [ИСПРАВЛЕНО] Неавторизованный слив и перезапись 3D КЛКТ/STL (IDOR в Mock Storage)
+- **Файл:** [`apps/api/src/routes/portal/portalMockStorageRoutes.ts#L78-L90, L165-L180`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/portal/portalMockStorageRoutes.ts#L78-L90)
+- **Суть бага:** Эндпоинты `/mock-storage/download` и `/mock-storage/upload` были открыты без обязательной авторизации. Если анонимный клиент не передавал заголовок `x-organization-id`, переменная `callerOrg` была `undefined`, блок проверки пропускался, и любой желающий мог скачать или перезаписать 500-мегабайтный файл томографии КТ/STL любой клиники.
+- **Статус исправления [ИСПРАВЛЕНО]:** Внедрена строгая Fail-Closed проверка изоляции арендатора: при отсутствии проверенного `callerOrg` (токен клиники или заголовок организации) запрос немедленно отклоняется с `401 Unauthorized`. Доступ к файлам другой организации строго блокируется с `403 Forbidden`. Покрыто тестами в `apps/api/src/tests/routes/portalMockStorage.test.ts` (100% PASS).
 
 ### [POR-03] [SEV-1] Фантомная онлайн-запись при сбое базы данных
 - **Файл:** [`apps/api/src/services/publicBookingQueue/bookingQueueProcessor.ts#L228-L272`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/publicBookingQueue/bookingQueueProcessor.ts#L228-L272)
@@ -622,28 +624,32 @@
 - **Файл:** [`apps/api/src/routes/doctorEarnings/doctorEarningsValidation.ts#L41-L65`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/doctorEarnings/doctorEarningsValidation.ts#L41-L65)
 - **Суть бага:** Если запрос отправлен без staff-токена, переменная `targetDoctorId` принимает значение `requestedDoctorId`. Любой планшет клиники может запросить точный расчет зарплаты, процентные ставки и удержания любого врача клиники.
 
-### [SEC-04] [SEV-1] Абсурдный перебор ПИН-кода у кресла: автологин под Владельцем клиники
-- **Файл:** [`apps/api/src/routes/auth/loginModules/pin/staffPinVerification.ts#L156-L179`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth/loginModules/pin/staffPinVerification.ts#L156-L179)
-- **Суть бага:** Если введенный ПИН-код не подошел выбранному врачу, сервер запускает цикл **по всем активным сотрудникам клиники**! Если введенный ПИН совпал с ПИН-кодом другого сотрудника — сервер **авторизует пользователя под этой новой учетной записью**! Если ассистент у кресла вводит "1111", и у Владельца клиники стоит "1111", ассистент мгновенно получает права Владельца со всеми финансовыми и административными полномочиями.
-- **В связке с рейтлимитером:** [`loginRateLimiter.ts#L26`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth/loginModules/loginRateLimiter.ts#L26) ключ формируется как `pin:${orgId}:${userId}:${ip}`. Передавая случайный `userId` на каждый запрос, атакующий полностью обходит защиту от брутфорса, а бэкенд на каждом запросе перебирает всех сотрудников клиники.
+### [SEC-04] [SEV-1] [ИСПРАВЛЕНО] Абсурдный перебор ПИН-кода у кресла: автологин под Владельцем клиники
+- **Файл:** [`apps/api/src/routes/auth/loginModules/pin/staffPinVerification.ts#L129-L154`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth/loginModules/pin/staffPinVerification.ts#L129-L154)
+- **Суть бага:** Если введенный ПИН-код не подошел выбранному врачу, сервер запускал цикл **по всем активным сотрудникам клиники**! Если введенный ПИН совпал с ПИН-кодом другого сотрудника — сервер **авторизовывал пользователя под этой новой учетной записью**! Если ассистент у кресла вводил "1111", и у Владельца клиники стоял "1111", ассистент мгновенно получал права Владельца со всеми финансовыми и административными полномочиями.
+- **В связке с рейтлимитером:** [`loginRateLimiter.ts#L20-L27`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/auth/loginModules/loginRateLimiter.ts#L20-L27) ключ формировался как `pin:${orgId}:${userId}:${ip}`. Передавая случайный `userId` на каждый запрос, атакующий полностью обходил защиту от брутфорса, а бэкенд на каждом запросе перебирал всех сотрудников клиники.
+- **Статус исправления [ИСПРАВЛЕНО]:** Цикл перебора `allClinicStaff` полностью ликвидирован. ПИН-код проверяется СТРОГО для выбранного пользователя (`targetUserId`). Ключ rate limiter в `loginRateLimiter.ts` переведен на учет `orgId` и `IP`, блокируя попытки перебора при любой ротации `userId` с одного IP. Покрыто 13 тестами в `staffPinSecurityAndDecomposition.test.ts` (100% PASS).
 
-### [SEC-05] [SEV-1] Клиентский бэкдор разблокировки ПИН-кода при сетевой ошибке
-- **Файл:** [`apps/web/src/components/auth/staffPinPad/staffPinPadApi.ts#L67-L74`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/auth/staffPinPad/staffPinPadApi.ts#L67-L74)
-- **Суть бага:** При ошибке сети код выполняет:
+### [SEC-05] [SEV-1] [ИСПРАВЛЕНО] Клиентский бэкдор разблокировки ПИН-кода при сетевой ошибке
+- **Файл:** [`apps/web/src/components/auth/staffPinPad/staffPinPadApi.ts#L65-L75`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/auth/staffPinPad/staffPinPadApi.ts#L65-L75)
+- **Суть бага:** При ошибке сети код выполнял:
   `if (completedPin === "1111" || completedPin === "0000") { safeLocalStorageSetItem(DENTE_STAFF_TOKEN_KEY, ...); return { success: true }; }`
-  При отключении интернета или блокировке запроса в DevTools любой человек входит под учетной записью любого врача через ПИН 1111.
+  При отключении интернета или блокировке запроса в DevTools любой человек входил под учетной записью любого врача через ПИН 1111.
+- **Статус исправления [ИСПРАВЛЕНО]:** Клиентский бэкдор `1111 / 0000` и тексты о входе без сети через PIN 1111 полностью вырезаны. При сетевой ошибке выдается честное информативное сообщение о сбое связи с кнопкой повтора, без выдачи фиктивных токенов. Сняты 4-State скриншоты PIN-пада (`docs/proofs/auth_pin/pinpad_*`).
 
-### [SEC-06] [SEV-2] Hard-Delete расходов с возвратом денег в кассу без аудит-лога
-- **Файл:** [`apps/api/src/routes/expenses.ts#L381-L441`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/expenses.ts#L381-L441)
-- **Суть бага:** Маршрут `DELETE /api/expenses/:id` не требует прав `finance.write`. Расход физически удаляется из PostgreSQL, деньги возвращаются в кассу, и в аудит-лог **не пишется ни единой строчки**. Идеальный механизм для скрытия недостач и воровства.
+### [SEC-06] [SEV-2] [ИСПРАВЛЕНО] Hard-Delete расходов с возвратом денег в кассу без аудит-лога
+- **Файл:** [`apps/api/src/routes/expenses.ts#L380-L450`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/expenses.ts#L380-L450)
+- **Суть бага:** Маршрут `DELETE /api/expenses/:id` не требовал прав `finance.write`. Расход физически удалялся из PostgreSQL, деньги возвращались в кассу, и в аудит-лог **не писалось ни единой строчки**. Идеальный механизм для скрытия недостач и воровства.
+- **Статус исправления [ИСПРАВЛЕНО]:** Внедрена проверка роли через `requireStaffIdentity(request, reply, ADMIN_ROLES)` (доступно строго ролям `owner`, `admin`, `administrator`). Врачам и ассистентам операция строго закрыта (403 Forbidden). Каждое аннулирование расхода фиксируется в неизменяемой таблице `audit_events` через `recordAuditEventInDb` с фиксацией суммы, описания и `actorUserId`. Покрыто тестами в `apps/api/src/routes/expenses.test.ts` (100% PASS).
 
 ### [SEC-07] [SEV-2] Отсутствие аудита при изменении зарплат, окладов и ролей персонала
 - **Файл:** [`apps/api/src/routes/staff/staffMutationRoutes.ts#L320-L384`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/staff/staffMutationRoutes.ts#L320-L384)
 - **Суть бага:** Смена ролей сотрудников, окладов и права подписи медицинских карт (`canSignMedicalRecords`) пишется напрямую в БД без вызова `recordAuditEventInDb`.
 
-### [SEC-08] [SEV-2] Доступ к полному журналу аудита для любого персонала
-- **Файл:** [`apps/api/src/routes/audit.ts#L60-L65`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/audit.ts#L60-L65)
-- **Суть бага:** Любой ассистент или медсестра может через `GET /api/audit/logs` просмотреть полный журнал действий руководства, аннулирования документов и просмотра карт.
+### [SEC-08] [SEV-2] [ИСПРАВЛЕНО] Доступ к полному журналу аудита для любого персонала
+- **Файл:** [`apps/api/src/routes/audit.ts#L58-L68`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/audit.ts#L58-L68)
+- **Суть бага:** Любой ассистент или медсестра могла через `GET /api/audit/logs` просмотреть полный журнал действий руководства, аннулирования документов и просмотра карт.
+- **Статус исправления [ИСПРАВЛЕНО]:** Маршрут `GET /api/audit/logs` ограничен строго ролями `ADMIN_ROLES` (`owner`, `admin`, `administrator`) через `requireStaffIdentity`. Докторам, ассистентам и медсестрам доступ заблокирован (403 Forbidden). Покрыто тестом в `apps/api/src/tests/staffActionAuditIngest.test.ts` (100% PASS).
 
 
 ---

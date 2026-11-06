@@ -1,5 +1,6 @@
 import React from "react";
 import { Delete, Lock, UserCheck, Zap } from "lucide-react";
+import { isDemoShowcaseMode } from "../../../lib/demoMode";
 import { DEMO_CHIEF_DOCTOR } from "../staffUnlockState";
 import type { StaffUser } from "./staffPinPadTypes";
 
@@ -107,7 +108,7 @@ export function StaffPinPadInput({
 				</button>
 			</div>
 
-			{(selectedUser?.id === DEMO_CHIEF_DOCTOR.id || listPhase !== "ready") && (
+			{isDemoShowcaseMode() && (selectedUser?.id === DEMO_CHIEF_DOCTOR.id || listPhase !== "ready") && (
 				<button
 					type="button"
 					className="auth-demo-btn"
@@ -115,7 +116,7 @@ export function StaffPinPadInput({
 					onClick={onDemoLogin}
 				>
 					<Zap size={16} className="auth-demo-btn-icon" />
-					<span>Войти как Доктор Демо (PIN: 1111)</span>
+					<span>Демо-вход (Главврач)</span>
 				</button>
 			)}
 		</div>

@@ -56,7 +56,7 @@ before(async () => {
 			await db.insert(organizations).values({
 				id: ORG_ID,
 				name: "Клиника Дент-Аудит Тест",
-			});
+			}).onConflictDoNothing();
 
 			await db.insert(users).values({
 				id: DOCTOR_USER_ID,
@@ -64,7 +64,7 @@ before(async () => {
 				email: "doctor@dente-test.local",
 				role: "doctor",
 				fullName: "Д-р Тестов А.А.",
-			});
+			}).onConflictDoNothing();
 		});
 	} catch (error) {
 		if (isMissingDatabase(error)) {
@@ -299,5 +299,36 @@ test("Staff Action Audit Ingestion & Immutability Suite", async (t) => {
 		// Organization MUST be the authenticated tenant ORG_ID, NOT the spoofed FOREIGN_ORG_ID
 		assert.strictEqual(eventRow.organizationId, ORG_ID);
 		assert.notStrictEqual(eventRow.organizationId, FOREIGN_ORG_ID);
+	});
+
+	await t.test("7. Role-Based Access Control [SEC-08]: GET /api/audit/logs rejects doctor with 403 and allows admin", async () => {
+		// Doctor attempts to read full clinic audit trail -> 403 Forbidden
+		const doctorRes = await app.inject({
+			method: "GET",
+			url: "/api/audit/logs",
+			headers: authHeaders,
+		});
+		assert.strictEqual(doctorRes.statusCode, 403);
+		assert.strictEqual(doctorRes.json().error, "Forbidden");
+
+		// Admin reads audit trail -> 200 OK
+		const adminToken = signToken(
+			{
+				userId: fixtureUuid(NAMESPACE, 99),
+				organizationId: ORG_ID,
+				role: "admin",
+			},
+			authTokenSecret(),
+		);
+		const adminRes = await app.inject({
+			method: "GET",
+			url: "/api/audit/logs",
+			headers: {
+				"x-dente-staff-token": adminToken,
+				"x-dente-clinic-token": adminToken,
+			},
+		});
+		assert.strictEqual(adminRes.statusCode, 200);
+		assert.ok(Array.isArray(adminRes.json().logs));
 	});
 });

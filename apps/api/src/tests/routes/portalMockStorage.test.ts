@@ -10,6 +10,7 @@ describe("Portal Mock Storage API Routes (/api/portal/mock-storage/*)", () => {
 	const testKeyStl = "org_test_inquisitor/lab_orders/order_999/test_scan.stl";
 	const testKeyPly = "org_test_inquisitor/lab_orders/order_999/test_scan.ply";
 	const sampleStlData = Buffer.from("solid test_jaw\nfacet normal 0 0 0\nouter loop\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\nendloop\nendfacet\nendsolid test_jaw");
+	const validClinicHeaders = { "x-organization-id": "test_inquisitor" };
 
 	before(async () => {
 		app = Fastify({ logger: false });
@@ -53,7 +54,7 @@ describe("Portal Mock Storage API Routes (/api/portal/mock-storage/*)", () => {
 			method: "PUT",
 			url: `/api/portal/mock-storage/upload?key=${encodeURIComponent(testKeyStl)}`,
 			payload: sampleStlData,
-			headers: { "content-type": "model/stl" },
+			headers: { "content-type": "model/stl", ...validClinicHeaders },
 		});
 
 		assert.strictEqual(res.statusCode, 200);
@@ -75,7 +76,7 @@ describe("Portal Mock Storage API Routes (/api/portal/mock-storage/*)", () => {
 			method: "PUT",
 			url: `/api/portal/mock-storage/upload?key=${encodeURIComponent(testKeyPly)}`,
 			payload: samplePlyData,
-			headers: { "content-type": "model/ply" },
+			headers: { "content-type": "model/ply", ...validClinicHeaders },
 		});
 
 		assert.strictEqual(res.statusCode, 200);
@@ -94,6 +95,7 @@ describe("Portal Mock Storage API Routes (/api/portal/mock-storage/*)", () => {
 		const res = await app.inject({
 			method: "GET",
 			url: `/api/portal/mock-storage/download?key=${encodeURIComponent(testKeyStl)}`,
+			headers: validClinicHeaders,
 		});
 
 		assert.strictEqual(res.statusCode, 200);
@@ -105,10 +107,31 @@ describe("Portal Mock Storage API Routes (/api/portal/mock-storage/*)", () => {
 	test("возвращает 404 при попытке скачать несуществующий файл", async () => {
 		const res = await app.inject({
 			method: "GET",
-			url: "/api/portal/mock-storage/download?key=org_test/non_existent_scan.stl",
+			url: "/api/portal/mock-storage/download?key=org_test_inquisitor/non_existent_scan.stl",
+			headers: validClinicHeaders,
 		});
 		assert.strictEqual(res.statusCode, 404);
 		assert.ok(res.json().error.includes("не найден"));
+	});
+
+	test("защита от утечки [POR-02]: анонимные запросы без заголовка организации отклоняются с 401 Unauthorized", async () => {
+		// Анонимная загрузка скана без x-organization-id
+		const uploadRes = await app.inject({
+			method: "PUT",
+			url: `/api/portal/mock-storage/upload?key=${encodeURIComponent(testKeyStl)}`,
+			payload: sampleStlData,
+			headers: { "content-type": "model/stl" },
+		});
+		assert.strictEqual(uploadRes.statusCode, 401);
+		assert.ok(uploadRes.json().error.includes("авторизация клиники"));
+
+		// Анонимное скачивание скана без x-organization-id
+		const downloadRes = await app.inject({
+			method: "GET",
+			url: `/api/portal/mock-storage/download?key=${encodeURIComponent(testKeyStl)}`,
+		});
+		assert.strictEqual(downloadRes.statusCode, 401);
+		assert.ok(downloadRes.json().error.includes("авторизация клиники"));
 	});
 
 	test("отклоняет загрузку файла с недопустимым расширением .exe (400)", async () => {

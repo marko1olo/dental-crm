@@ -2,6 +2,7 @@ import type { FastifyInstance, FastifyPluginAsync, FastifyRequest, FastifyReply 
 import path from "node:path";
 import fs from "node:fs";
 import { pipeline } from "node:stream/promises";
+import { getRequestIdentity } from "../../security/identity.js";
 import {
 	ALLOWED_SCAN_EXTENSIONS,
 	MAX_SCAN_FILE_SIZE_BYTES,
@@ -74,16 +75,20 @@ export async function registerPortalMockStorageRoutes(server: FastifyInstance): 
 			return reply.status(400).send({ error: "Недопустимый ключ хранилища (Path Traversal запрещен, требуется формат org_<id>/... и расширение STL/PLY/OBJ/DCM/ZIP)" });
 		}
 
-		// Изоляция организации: проверка соответствия ключа вызывающей организации
+		// Изоляция организации [POR-02]: строгая проверка соответствия ключа организации
+		const identity = getRequestIdentity(request);
 		const orgHeader = (request.headers["x-organization-id"] as string | undefined)?.trim();
 		const requestContext = request as unknown as { tenantId?: string; organizationId?: string };
-		const callerOrg = requestContext.tenantId || requestContext.organizationId || orgHeader;
-		if (callerOrg && typeof callerOrg === "string") {
-			const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
-			const keyOrg = key.split("/")[0] ?? "";
-			if (!keyOrg || keyOrg !== cleanOrg) {
-				return reply.status(403).send({ error: "Доступ к хранилищу другой организации запрещен" });
-			}
+		const callerOrg = identity.organizationId || requestContext.tenantId || requestContext.organizationId || orgHeader;
+
+		if (!callerOrg || typeof callerOrg !== "string") {
+			return reply.status(401).send({ error: "Требуется авторизация клиники (отсутствует токен авторизации или заголовок организации)" });
+		}
+
+		const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
+		const keyOrg = key.split("/")[0] ?? "";
+		if (!keyOrg || keyOrg !== cleanOrg) {
+			return reply.status(403).send({ error: "Доступ к хранилищу другой организации запрещен" });
 		}
 
 		// Проверка размера буфера в памяти
@@ -157,16 +162,20 @@ export async function registerPortalMockStorageRoutes(server: FastifyInstance): 
 			return reply.status(400).send({ error: "Недопустимый ключ хранилища" });
 		}
 
-		// Изоляция организации: проверка соответствия ключа вызывающей организации
+		// Изоляция организации [POR-02]: строгая проверка соответствия ключа организации при скачивании
+		const identity = getRequestIdentity(request);
 		const orgHeader = (request.headers["x-organization-id"] as string | undefined)?.trim();
 		const requestContext = request as unknown as { tenantId?: string; organizationId?: string };
-		const callerOrg = requestContext.tenantId || requestContext.organizationId || orgHeader;
-		if (callerOrg && typeof callerOrg === "string") {
-			const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
-			const keyOrg = key.split("/")[0] ?? "";
-			if (!keyOrg || keyOrg !== cleanOrg) {
-				return reply.status(403).send({ error: "Доступ к скачиванию скана другой организации запрещен" });
-			}
+		const callerOrg = identity.organizationId || requestContext.tenantId || requestContext.organizationId || orgHeader;
+
+		if (!callerOrg || typeof callerOrg !== "string") {
+			return reply.status(401).send({ error: "Требуется авторизация клиники (отсутствует токен авторизации или заголовок организации)" });
+		}
+
+		const cleanOrg = "org_" + callerOrg.replace(/[^a-zA-Z0-9_-]/g, "");
+		const keyOrg = key.split("/")[0] ?? "";
+		if (!keyOrg || keyOrg !== cleanOrg) {
+			return reply.status(403).send({ error: "Доступ к скачиванию скана другой организации запрещен" });
 		}
 
 		if (!fs.existsSync(fullPath)) {

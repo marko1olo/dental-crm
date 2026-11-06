@@ -10,7 +10,7 @@ import { requireResolvedStaffOrAdminOrganizationId } from "../accessGuard.js";
 import { auditFromRequest } from "../clinicalAuditService.js";
 import { db } from "../db/client.js";
 import { auditEvents, clinicalAuditLogs } from "../db/schema.js";
-import { getRequestIdentity } from "../security/identity.js";
+import { ADMIN_ROLES, getRequestIdentity, requireStaffIdentity } from "../security/identity.js";
 import { getMedicalAccessAuditTrailFromDb } from "../security/medicalAuditTrail.js";
 
 const auditQuerySchema = z.object({
@@ -54,15 +54,13 @@ const auditQuerySchema = z.object({
 
 export async function registerAuditRoutes(app: FastifyInstance) {
 	// GET /api/audit/logs — Read audit trail
+	// Мандат 8v [SEC-08]: Журнал действий доступен СТРОГО владельцам и администраторам клиники (owner/admin/administrator).
 	app.get(
 		"/api/audit/logs",
 		async (request: FastifyRequest, reply: FastifyReply) => {
-			const orgId = await requireResolvedStaffOrAdminOrganizationId(
-				request,
-				reply,
-				"read audit logs",
-			);
-			if (!orgId) return;
+			const identity = await requireStaffIdentity(request, reply, ADMIN_ROLES);
+			if (!identity || !identity.organizationId) return;
+			const orgId = identity.organizationId;
 
 			const query = auditQuerySchema.parse(request.query);
 			const conditions = [eq(auditEvents.organizationId, orgId)];
@@ -101,7 +99,6 @@ export async function registerAuditRoutes(app: FastifyInstance) {
 			 * по построению не бросает (`clinicalAuditService.ts:39`), а её отказ уходит
 			 * в аварийный канал с полным содержимым события.
 			 */
-			const identity = getRequestIdentity(request);
 			await auditFromRequest(request, {
 				organizationId: orgId,
 				userId: identity.userId ?? null,

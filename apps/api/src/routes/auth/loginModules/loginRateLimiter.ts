@@ -19,11 +19,13 @@ const pinRateLimitMap = new Map<string, RateLimitEntry>();
 
 export function getStaffPinRateLimitKey(
 	orgId: string,
-	userId: string,
+	userIdOrIp?: string,
 	ip?: string,
 ): string {
-	const sanitizedIp = ip ? ip.trim() : "unknown-ip";
-	return `pin:${orgId}:${userId}:${sanitizedIp}`;
+	// Мандат безопасности [SEC-04]: ключ учитывает orgId и IP терминала/клиента,
+	// исключая обход rate limit через ротацию userId с одного IP.
+	const effectiveIp = (ip || (userIdOrIp?.includes(".") || userIdOrIp?.includes(":") ? userIdOrIp : "unknown-ip")).trim();
+	return `pin:${orgId}:${effectiveIp}`;
 }
 
 export interface PinRateLimitStatus {

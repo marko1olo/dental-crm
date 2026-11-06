@@ -80,20 +80,23 @@ describe("Staff PIN Security, Rate Limiter & Role Switch Invariants", () => {
 			assert.strictEqual(fresh.remainingAttempts, 5);
 		});
 
-		it("isolates rate limits per IP and user ID", () => {
+		it("blocks brute-force across user rotation from same IP and isolates different IPs", () => {
 			const keyUserA = getStaffPinRateLimitKey("org-4", "user-A", "10.0.0.1");
 			const keyUserB = getStaffPinRateLimitKey("org-4", "user-B", "10.0.0.1");
 			const keyIp2 = getStaffPinRateLimitKey("org-4", "user-A", "10.0.0.2");
 
-			// Exhaust user A from IP 1
-			for (let i = 0; i < 5; i++) {
+			// 5 failures targeting user A and user B from same IP 10.0.0.1
+			for (let i = 0; i < 3; i++) {
 				recordStaffPinFailure(keyUserA);
 			}
+			for (let i = 0; i < 2; i++) {
+				recordStaffPinFailure(keyUserB);
+			}
 
+			// Same IP is locked out regardless of user rotation (anti-bypass)
 			assert.strictEqual(checkStaffPinRateLimit(keyUserA).allowed, false);
-			// User B from same IP is NOT blocked
-			assert.strictEqual(checkStaffPinRateLimit(keyUserB).allowed, true);
-			// User A from different IP is isolated
+			assert.strictEqual(checkStaffPinRateLimit(keyUserB).allowed, false);
+			// Different IP is isolated and permitted
 			assert.strictEqual(checkStaffPinRateLimit(keyIp2).allowed, true);
 		});
 	});
@@ -217,7 +220,7 @@ describe("Staff PIN Security, Rate Limiter & Role Switch Invariants", () => {
 			const res = verifyBruteForceLimit("org-test", "user-doc-1", "127.0.0.1");
 			assert.strictEqual(res.allowed, true);
 			assert.ok(res.rateLimitKey.includes("org-test"));
-			assert.ok(res.rateLimitKey.includes("user-doc-1"));
+			assert.ok(res.rateLimitKey.includes("127.0.0.1"));
 		});
 
 		it("handleDemoRoleSwitch produces signed tokens for demo roles", async () => {
