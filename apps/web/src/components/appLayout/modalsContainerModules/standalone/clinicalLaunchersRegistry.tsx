@@ -17,6 +17,7 @@ import { StandaloneClinicalTemplatesHost } from "./clinical/StandaloneClinicalTe
 import { DirectOdontogramLauncher } from "../../../odontogram/DirectOdontogramLauncher";
 import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46InspectionStand";
 import { DirectVisiographLauncher } from "../../../visiograph/DirectVisiographLauncher";
+import { DirectRvgCaptureModal } from "../../../radiology/DirectRvgCaptureModal";
 import { DirectEndodonticsLauncher } from "../../../endo/DirectEndodonticsLauncher";
 import { DirectOrthopedicsLauncher } from "../../../orthopedics/DirectOrthopedicsLauncher";
 import { DirectOrthodonticsLauncher } from "../../../orthodontics/DirectOrthodonticsLauncher";
@@ -116,12 +117,34 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			render: () => <DirectOdontogramLauncher />,
 		},
 
-		// 7. Радиовизиограф и снимки RVG
+		// 7. Аппаратный захват визиографа Direct RVG (Мандат 8e & [RAD-03])
+		{
+			id: "direct-rvg-capture",
+			title: "Аппаратный захват визиографа Direct RVG",
+			criteria: {
+				tokens: ["direct-rvg", "rvg-capture", "rvg-hardware"],
+				exactHashes: ["#rvg-capture", "#direct-rvg", "#rvg-hardware"],
+				searchIncludes: ["rvg-capture=1", "standalone=rvg-capture", "direct-rvg=1"],
+			},
+			render: () => (
+				<DirectRvgCaptureModal
+					isOpen={true}
+					onClose={() => clearUrlTokens(["direct-rvg", "rvg-capture", "rvg-hardware"])}
+					patientName="Захаров Иван Дмитриевич"
+					patientCardNumber="ЭМК №2026/891"
+					doctorName="Д-р Захаров А. В."
+					initialToothFdi="16"
+				/>
+			),
+		},
+
+		// 7b. Радиовизиограф и снимки RVG (Студия)
 		{
 			id: "visiograph-rvg",
 			title: "Радиовизиограф и снимки RVG",
 			criteria: {
 				tokens: ["visiograph", "rvg", "rvg-studio"],
+				exclude: ["rvg-capture", "direct-rvg", "rvg-hardware"],
 			},
 			render: () => <DirectVisiographLauncher />,
 		},
@@ -252,15 +275,15 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 			render: () => <DirectHygieneLauncher />,
 		},
 
-		// 13. Информированные согласия и медицинские договоры
+		// 13. Информированные согласия и медицинские договоры (SSOT)
 		{
 			id: "consents-studio",
 			title: "Информированные согласия и договоры",
 			criteria: {
-				tokens: ["consents", "consent", "documents", "consent-studio"],
+				tokens: ["consents", "consent", "consent-studio", "consents-studio"],
 				searchIncludes: ["consents=1", "consent=1", "standalone=consents"],
-				exactHashes: ["#consents", "#consent", "#documents", "#consent-studio"],
-				hashPrefixes: ["#consents?", "#consent?", "#documents?"],
+				exactHashes: ["#consents", "#consent", "#consent-studio", "#consents-studio"],
+				hashPrefixes: ["#consents?", "#consent?", "#consent-studio?"],
 			},
 			render: () => <DirectConsentLauncher />,
 		},

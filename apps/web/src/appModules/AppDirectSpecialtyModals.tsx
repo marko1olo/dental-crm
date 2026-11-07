@@ -25,6 +25,12 @@ const MedicalRecordStudioModal = lazyWithRetry(() =>
 const CtSelectorModal = lazyWithRetry(() =>
 	import("../components/radiology/CtSelectorModal").then((m) => ({ default: m.CtSelectorModal })),
 );
+const DirectRvgCaptureModal = lazyWithRetry(() =>
+	import("../components/radiology/DirectRvgCaptureModal").then((m) => ({ default: m.DirectRvgCaptureModal })),
+);
+const ConsentStudioModal = lazyWithRetry(() =>
+	import("../components/consents/ConsentStudioModal").then((m) => ({ default: m.ConsentStudioModal })),
+);
 
 interface AppDirectSpecialtyModalsProps {
 	routing: AppHashRoutingState;
@@ -97,6 +103,34 @@ export function AppDirectSpecialtyModals({ routing, sessionAuth, appLogic }: App
 						onClose={() => routing.setIsCtSelectorDirectModalOpen(false)}
 						patientName={patient?.fullName || patient?.name || "Захаров Иван Дмитриевич"}
 						cardNumber={patient?.cardNumber || patient?.cardId || "КТ-2026-0814"}
+					/>
+				</Suspense>
+			)}
+			{routing.isVisiographDirectModalOpen && (
+				<Suspense fallback={null}>
+					<DirectRvgCaptureModal
+						isOpen={true}
+						onClose={() => routing.setIsVisiographDirectModalOpen(false)}
+						patientName={patient?.fullName || patient?.name || "Захаров Иван Дмитриевич"}
+						patientCardNumber={patient?.cardNumber || "ЭМК №2026/891"}
+						doctorName={staffUser?.fullName || activeDoctor?.fullName || "Д-р Захаров А. В."}
+						initialToothFdi="16"
+					/>
+				</Suspense>
+			)}
+			{routing.isConsentDirectModalOpen && (
+				<Suspense fallback={null}>
+					<ConsentStudioModal
+						isOpen={true}
+						onClose={() => routing.setIsConsentDirectModalOpen(false)}
+						patient={patient || { fullName: "Иванов Иван Иванович", birthDate: "1988-04-12", id: "pat-demo-01" }}
+						patientName={patient?.fullName || patient?.name || "Иванов Иван Иванович"}
+						patientContext={{
+							patientName: patient?.fullName || patient?.name || "Иванов Иван Иванович",
+							birthDate: patient?.birthDate || "12.04.1988",
+							doctorName: staffUser?.fullName || activeDoctor?.fullName || "Д-р Смирнова Е. С.",
+							clinicName: "Клиника «DENTE»",
+						}}
 					/>
 				</Suspense>
 			)}

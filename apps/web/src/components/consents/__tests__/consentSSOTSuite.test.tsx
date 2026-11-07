@@ -221,4 +221,20 @@ describe("Red Team Inquisition: Consents & Legal Documents SSOT", () => {
 			"StandaloneLaunchers.tsx must handle #consents and ?consents=1",
 		);
 	});
+
+	it("4.1. Verifies testids for automation: consent-studio-modal, consent-signature-pad, print buttons", () => {
+		const html = renderToStaticMarkup(
+			<ConsentStudioModal
+				isOpen={true}
+				onClose={() => {}}
+				patientContext={{ patientName: "Тестовый Пациент" }}
+			/>,
+		);
+
+		assert.ok(html.includes('data-testid="consent-studio-modal"'), "Must have data-testid='consent-studio-modal'");
+		assert.ok(html.includes('data-testid="consent-signature-pad"'), "Must have data-testid='consent-signature-pad'");
+		assert.ok(html.includes('data-testid="btn-batch-sign-consents"'), "Must have data-testid='btn-batch-sign-consents'");
+		assert.ok(html.includes('data-testid="btn-print-blank-consent"'), "Must have data-testid='btn-print-blank-consent'");
+		assert.ok(html.includes('data-testid="btn-confirm-paper-signed"'), "Must have data-testid='btn-confirm-paper-signed'");
+	});
 });

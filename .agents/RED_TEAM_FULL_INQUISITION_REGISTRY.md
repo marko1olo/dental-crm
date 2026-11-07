@@ -941,6 +941,39 @@
   2. Поддержано формирование раздельных сумм в печатной справке и в XML-выгрузке для ФНС.
 - **Верификация:** Покрыто тестом `ndflTaxService.test.ts` (2/2 PASSED).
 
+### [DOC-08] [SEV-1] [ИСПРАВЛЕНО] Потеря SVG-подписи и хэша целостности в API согласий (Consents SSOT & Persistence)
+- **Файлы:**
+  - Бэкенд запросы и персистентность: [`apps/api/src/routes/consents/queries.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/consents/queries.ts)
+  - Бэкенд типы: [`apps/api/src/routes/consents/types.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/consents/types.ts)
+  - Тест автономии бэкенда: [`apps/api/src/tests/routes/consentsAutonomyProof.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/consentsAutonomyProof.test.ts)
+  - Каноническая студия согласий (SSOT): [`apps/web/src/components/consents/ConsentStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/ConsentStudioModal.tsx)
+  - Сенсорный холст подписи: [`apps/web/src/components/consents/studio/ConsentSignaturePad.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/studio/ConsentSignaturePad.tsx)
+  - Лаунчер согласий: [`apps/web/src/components/consents/DirectConsentLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/DirectConsentLauncher.tsx)
+  - Устранение паразитного роутинга: [`apps/web/src/components/documents/DirectDocumentsLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/DirectDocumentsLauncher.tsx)
+  - Изоляция лаунчеров: [`apps/web/src/components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/SpecializedAdministrativeLaunchers.tsx)
+  - Клинический реестр: [`apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/appLayout/modalsContainerModules/standalone/clinicalLaunchersRegistry.tsx)
+  - Тесты фронтенда: [`apps/web/src/components/consents/__tests__/consentSSOTSuite.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/consents/__tests__/consentSSOTSuite.test.tsx)
+- **Суть бага:** 
+  1. В `recordPatientConsentEntry` бэкенд принимал `SaveConsentBody` со всеми атрибутами (`signatureSvg`, `integrityHash`, `verificationMethod`, `notes`), но в таблицу `patientConsents` сохранял только `kind` и `documentId` (без создания записи в `generatedDocuments`), в результате чего штрихи SVG и хеш подписи безвозвратно терялись.
+  2. Запрос `fetchPatientConsentsList` не связывал `generatedDocuments` через JOIN и возвращал пустые метаданные.
+  3. В `DirectDocumentsLauncher` и `SpecializedAdministrativeLaunchers` происходил паразитный перехват `#consents` и `#consent`, открывавший устаревший `DocumentsStudioModal` с z-index 100000 поверх канонического `ConsentStudioModal`.
+- **Архитектурное исправление:**
+  1. В `queries.ts` внедрено сквозное создание юридической записи в `generatedDocuments` со статусом `issued`, сохранением `signatureSvg`, `issuedSnapshotSha256`, `signatureAttestation` и привязкой созданного `documentId` к `patientConsents`. При наличии существующего `documentId` выполняется обновление данных подписи и аттестации.
+  2. Метод `fetchPatientConsentsList` обогащен `LEFT JOIN` с `generatedDocuments`, возвращая `documentTitle`, `documentStatus`, `signatureSvg` и `integrityHash`.
+  3. В `ConsentStudioModal` внедрен сквозной асинхронный вызов `POST /api/patients/:id/consents` при нажатии «Подписать пакет согласий» и «Подтвердить подписание на бумаге».
+  4. Добавлены кнопки быстрого вызова 1-клик печати чистого бланка А4 для ручной подписи (`btn-print-blank-consent`) и печати заполненного бланка (`btn-print-consent`) под Мандат 8e.
+  5. Внедрены `data-testid="consent-studio-modal"`, `data-testid="consent-signature-pad"`, `data-testid="btn-batch-sign-consents"`, `data-testid="btn-clear-signature"`.
+  6. Устранен паразитный перехват маршрутов `#consents` в лаунчерах документов, а `ConsentStudioModal` установлен на высший слой z-index `z-[100001]`.
+- **Машинные пруфы:**
+  - `apps/web/src/components/consents/__tests__/consentSSOTSuite.test.tsx`: 11/11 тестов PASSED (Exit Code 0).
+  - `apps/api/src/tests/routes/consentsAutonomyProof.test.ts`: 4/4 бэкенд-теста на реальном PostgreSQL 18 PASSED (Exit Code 0).
+  - `npm run check:encoding`: проверено 24117 файлов, 0 замечаний (Exit Code 0).
+  - **4-State Visual Proof (Live App на `http://127.0.0.1:5173/#consents` без песочниц, личный осмотр через `read_file`):**
+    * ☀️ PC Light: [`docs/proofs/consents/01_consent_studio_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/consents/01_consent_studio_pc_light_1440x900.png) (98 KB)
+    * 🌙 PC Dark: [`docs/proofs/consents/02_consent_studio_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/consents/02_consent_studio_pc_dark_1440x900.png) (98 KB)
+    * 📱 Mobile Light: [`docs/proofs/consents/03_consent_studio_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/consents/03_consent_studio_mobile_light_390x844.png) (121 KB)
+    * 🌙 Mobile Dark: [`docs/proofs/consents/04_consent_studio_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/consents/04_consent_studio_mobile_dark_390x844.png) (122 KB)
+
 
 ## 12. 🔐 АВТОРИЗАЦИЯ, RBAC, БЕЗОПАСНОСТЬ, ПИН-КОДЫ И АУДИТ-ЛОГИ
 

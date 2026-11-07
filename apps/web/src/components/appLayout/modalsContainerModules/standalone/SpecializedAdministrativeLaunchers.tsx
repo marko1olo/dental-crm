@@ -24,6 +24,7 @@ import { DirectSettingsLauncher } from "../../../settings/DirectSettingsLauncher
 import { DirectPrescriptionLauncher } from "../../../prescriptions/DirectPrescriptionLauncher";
 import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
+import { DirectConsentLauncher } from "../../../consents/DirectConsentLauncher";
 import { DirectShiftLauncher } from "../../../shift/DirectShiftLauncher";
 import { DirectPayrollLauncher } from "../../../payroll/DirectPayrollLauncher";
 import { DirectWarehouseLauncher } from "../../../inventory/DirectWarehouseLauncher";
@@ -53,7 +54,22 @@ export function renderSpecializedAdministrativeLaunchers(
 		return <DirectShiftLauncher />;
 	}
 
-	// 0. Студия документов и договоров SSOT (#documents, #docs-studio, #consents, ?documents=1, ?docs=1, ?consents=1)
+	// 0a. Студия информированных согласий и договоров SSOT (#consents, #consent, #consent-studio, ?consents=1, ?consent=1)
+	if (
+		typeof window !== "undefined" &&
+		(window.location.hash === "#consents" ||
+			window.location.hash.startsWith("#consents?") ||
+			window.location.hash === "#consent" ||
+			window.location.hash.startsWith("#consent?") ||
+			window.location.hash === "#consent-studio" ||
+			window.location.hash.startsWith("#consent-studio?") ||
+			window.location.search.includes("consents=1") ||
+			window.location.search.includes("consent=1"))
+	) {
+		return <DirectConsentLauncher />;
+	}
+
+	// 0b. Студия документов и договоров SSOT (#documents, #docs-studio, ?documents=1, ?docs=1)
 	if (
 		typeof window !== "undefined" &&
 		(window.location.hash === "#documents" ||
@@ -61,14 +77,8 @@ export function renderSpecializedAdministrativeLaunchers(
 			window.location.hash === "#docs-studio" ||
 			window.location.hash.startsWith("#docs-studio?") ||
 			window.location.hash === "#documents-studio" ||
-			window.location.hash === "#consents" ||
-			window.location.hash.startsWith("#consents?") ||
-			window.location.hash === "#consent" ||
-			window.location.hash.startsWith("#consent?") ||
 			window.location.search.includes("documents=1") ||
-			window.location.search.includes("docs=1") ||
-			window.location.search.includes("consents=1") ||
-			window.location.search.includes("consent=1"))
+			window.location.search.includes("docs=1"))
 	) {
 		return <DirectDocumentsLauncher />;
 	}

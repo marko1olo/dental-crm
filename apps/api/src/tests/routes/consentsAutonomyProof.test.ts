@@ -1,23 +1,71 @@
 import assert from "node:assert/strict";
-import { describe, it } from "node:test";
+import { after, before, describe, it } from "node:test";
 import Fastify from "fastify";
+import { organizations, patients, users } from "../../db/schema.js";
 import { registerConsentRoutes } from "../../routes/consents.js";
-import { registerDocumentRoutes } from "../../routes/documents.js";
 import { authTokenSecret } from "../../security/authSecret.js";
 import { signToken } from "../../utils/cryptoHelper.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "../support/fixtureOrganizations.js";
+
+const FIXTURE = "consentsAutonomyProof";
+const ORG_ID = fixtureUuid(FIXTURE, 1);
+const DOCTOR_ID = fixtureUuid(FIXTURE, 2);
+const PATIENT_ID = fixtureUuid(FIXTURE, 3);
 
 describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
+	before(async () => {
+		await purgeFixtureOrganizations([ORG_ID]);
+
+		await withFixtureTenant(ORG_ID, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({
+					id: ORG_ID,
+					name: "Клиника DENTE Юридический Контур",
+				})
+				.onConflictDoNothing();
+
+			await tx
+				.insert(users)
+				.values({
+					id: DOCTOR_ID,
+					organizationId: ORG_ID,
+					role: "doctor",
+					fullName: "Д-р Правдолюбов Ю. В.",
+					isActive: true,
+				})
+				.onConflictDoNothing();
+
+			await tx
+				.insert(patients)
+				.values({
+					id: PATIENT_ID,
+					organizationId: ORG_ID,
+					fullName: "Иванов Иван Иванович",
+					phone: "+79991234567",
+					gender: "male",
+				})
+				.onConflictDoNothing();
+		});
+	});
+
+	after(async () => {
+		await purgeFixtureOrganizations([ORG_ID]);
+	});
+
 	it("1. GET /api/patients/:patientId/consents returns structured patient consents", async () => {
 		const app = Fastify();
 		await registerConsentRoutes(app);
 
-		const patientId = "00000000-0000-0000-0000-000000000001";
-		const orgId = "00000000-0000-0000-0000-000000000002";
-		const token = signToken({ organizationId: orgId, userId: "00000000-0000-0000-0000-000000000003", role: "doctor" }, authTokenSecret());
+		const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
 
 		const res = await app.inject({
 			method: "GET",
-			url: `/api/patients/${patientId}/consents`,
+			url: `/api/patients/${PATIENT_ID}/consents`,
 			headers: {
 				authorization: `Bearer ${token}`,
 			},
@@ -32,13 +80,11 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 		const app = Fastify();
 		await registerConsentRoutes(app);
 
-		const patientId = "00000000-0000-0000-0000-000000000001";
-		const orgId = "00000000-0000-0000-0000-000000000002";
-		const token = signToken({ organizationId: orgId, userId: "00000000-0000-0000-0000-000000000003", role: "doctor" }, authTokenSecret());
+		const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
 
 		const res = await app.inject({
 			method: "POST",
-			url: `/api/patients/${patientId}/consents/share-link`,
+			url: `/api/patients/${PATIENT_ID}/consents/share-link`,
 			headers: {
 				authorization: `Bearer ${token}`,
 				"content-type": "application/json",
@@ -63,9 +109,60 @@ describe("Consents & Legal Contracts Red Team Autonomy API Proof", () => {
 
 		const res = await app.inject({
 			method: "GET",
-			url: "/api/patients/00000000-0000-0000-0000-000000000001/consents",
+			url: `/api/patients/${PATIENT_ID}/consents`,
 		});
 
 		assert.strictEqual(res.statusCode, 401);
+	});
+
+	it("4. POST /api/patients/:patientId/consents persists signatureSvg and creates generatedDocuments record", async () => {
+		const app = Fastify();
+		await registerConsentRoutes(app);
+
+		const token = signToken({ organizationId: ORG_ID, userId: DOCTOR_ID, role: "doctor" }, authTokenSecret());
+
+		const testSvg = '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120"><path d="M 10 20 L 50 60" stroke="#0f172a"/></svg>';
+		const testHash = "DENTE-SSOT-TEST-HASH-12345678";
+
+		const postRes = await app.inject({
+			method: "POST",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${token}`,
+				"content-type": "application/json",
+			},
+			body: JSON.stringify({
+				kind: "informed_consent",
+				title: "Информированное добровольное согласие на терапевтическое лечение",
+				verificationMethod: "tablet_stylus",
+				signatureSvg: testSvg,
+				integrityHash: testHash,
+				notes: "Подписано пациентом на планшете стилусом",
+			}),
+		});
+
+		assert.strictEqual(postRes.statusCode, 201, `Expected 201, got ${postRes.statusCode}: ${postRes.body}`);
+		const postBody = postRes.json();
+		assert.ok(postBody.id, "Must return patient consent ID");
+		assert.ok(postBody.documentId, "Must create and link generated document ID");
+		assert.strictEqual(postBody.signatureSvg, testSvg, "Must return preserved signatureSvg");
+		assert.strictEqual(postBody.integrityHash, testHash, "Must return preserved integrityHash");
+
+		// Проверяем получение через GET с обогащенным JOIN из generatedDocuments
+		const getRes = await app.inject({
+			method: "GET",
+			url: `/api/patients/${PATIENT_ID}/consents`,
+			headers: {
+				authorization: `Bearer ${token}`,
+			},
+		});
+
+		assert.strictEqual(getRes.statusCode, 200);
+		const getBody = getRes.json();
+		assert.ok(Array.isArray(getBody.consents), "Consents must be array");
+		const found = getBody.consents.find((c: any) => c.kind === "informed_consent");
+		assert.ok(found, "Must find saved consent");
+		assert.strictEqual(found.signatureSvg, testSvg, "GET must return signatureSvg from joined generatedDocuments");
+		assert.strictEqual(found.integrityHash, testHash, "GET must return integrityHash from joined generatedDocuments");
 	});
 });

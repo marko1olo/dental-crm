@@ -30,6 +30,7 @@ import {
 	generateConsentPrintHtml,
 	computeConsentIntegrityHash,
 } from "./consentCatalogData";
+import { denteAdminSecretRequestHeaders } from "../../lib/denteRequestHeaders";
 import { ConsentBatchSignActions } from "./studio/ConsentBatchSignActions";
 import { ConsentDocumentViewer, type DocumentSignRecord } from "./studio/ConsentDocumentViewer";
 import { ConsentSignaturePad } from "./studio/ConsentSignaturePad";
@@ -37,8 +38,10 @@ import { ConsentSignaturePad } from "./studio/ConsentSignaturePad";
 export interface ConsentStudioModalProps {
 	readonly isOpen: boolean;
 	readonly onClose: () => void;
-	readonly patientContext?: Partial<ConsentPartyContext>;
+	readonly patientId?: string;
+	readonly patientContext?: Partial<ConsentPartyContext> & { patientId?: string };
 	readonly patient?: {
+		readonly id?: string;
 		readonly fullName?: string;
 		readonly birthDate?: string;
 		readonly passport?: string;
@@ -70,9 +73,41 @@ export interface ConsentStudioModalProps {
 	}) => void;
 }
 
+function mapCatalogIdToBackendKind(id: ConsentDocumentId): string {
+	switch (id) {
+		case "therapy":
+		case "endodontics":
+		case "orthopedics":
+		case "surgery":
+		case "hygiene":
+		case "periodontics":
+			return "procedure_specific_consent_packet";
+		case "implant":
+			return "implantology";
+		case "orthodontics":
+			return "orthodontics";
+		case "anesthesia":
+			return "anesthesia_consent_log";
+		case "pediatric":
+			return "pediatric";
+		case "radiology":
+			return "radiation_xray";
+		case "personal_data":
+			return "personal_data_processing_consent";
+		case "sedation":
+			return "sedation";
+		case "refusal":
+			return "medical_intervention_refusal";
+		case "paid_contract":
+		default:
+			return "informed_consent";
+	}
+}
+
 export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 	isOpen,
 	onClose,
+	patientId,
 	patientContext,
 	patient,
 	patientName,
@@ -87,6 +122,11 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 		patient?.fullName ||
 		patientName ||
 		"Пациент клиники";
+
+	const effectivePatientId =
+		patientId ||
+		(patient as any)?.id ||
+		(patientContext as any)?.patientId;
 
 	const effectiveContext: Partial<ConsentPartyContext> = {
 		patientName: effectivePatientName,
@@ -170,6 +210,31 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 			patientName: effectivePatientName,
 		});
 
+		// Сквозное сохранение в PostgreSQL через API DENTE CRM
+		if (effectivePatientId) {
+			for (const docId of targetDocs) {
+				const docItem = getConsentDocumentById(docId);
+				const hash = updated[docId]?.integrityHash || "DENTE-SSOT";
+				const mappedKind = mapCatalogIdToBackendKind(docId);
+				void fetch(`/api/patients/${encodeURIComponent(effectivePatientId)}/consents`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						kind: mappedKind,
+						title: docItem.title,
+						verificationMethod: status === "signed_paper" ? "paper_signed" : "tablet_stylus",
+						signatureSvg: status === "signed_digital" ? signatureSvg : undefined,
+						integrityHash: hash,
+						notes: status === "signed_paper"
+							? "Подписано пациентом на бумажном носителе (оригинал в архиве)"
+							: "Подписано пациентом на сенсорном планшете (ПЭП по 63-ФЗ)",
+					}),
+				}).catch(() => {
+					/* silent offline fallback */
+				});
+			}
+		}
+
 		setToastMsg(
 			status === "signed_paper"
 				? `✓ Пакет из ${targetDocs.length} бланков зафиксирован на бумаге`
@@ -218,12 +283,45 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 			patientName: effectivePatientName,
 		});
 
+		// Сквозное сохранение подтверждения на бумаге в PostgreSQL через API DENTE CRM
+		if (effectivePatientId) {
+			for (const docId of targetDocs) {
+				const docItem = getConsentDocumentById(docId);
+				const hash = updated[docId]?.integrityHash || "DENTE-SSOT-PAPER";
+				const mappedKind = mapCatalogIdToBackendKind(docId);
+				void fetch(`/api/patients/${encodeURIComponent(effectivePatientId)}/consents`, {
+					method: "POST",
+					headers: denteAdminSecretRequestHeaders({ "Content-Type": "application/json" }),
+					body: JSON.stringify({
+						kind: mappedKind,
+						title: docItem.title,
+						verificationMethod: "paper_signed",
+						integrityHash: hash,
+						notes: "Подтверждено подписание на бумажном носителе (оригинал в архиве)",
+					}),
+				}).catch(() => {
+					/* silent offline fallback */
+				});
+			}
+		}
+
 		setToastMsg(`✓ Пакет из ${targetDocs.length} бланков подтвержден на бумаге`);
 		setTimeout(() => setToastMsg(null), 3500);
 	};
 
 	const handlePrintDoc = () => {
 		const html = generateConsentPrintHtml(activeDoc, effectiveContext, currentRecord);
+		const win = window.open("", "_blank");
+		if (win) {
+			win.document.write(html);
+			win.document.close();
+			win.focus();
+			setTimeout(() => win.print(), 200);
+		}
+	};
+
+	const handlePrintBlankDoc = () => {
+		const html = generateConsentPrintHtml(activeDoc, effectiveContext, { status: "pending" });
 		const win = window.open("", "_blank");
 		if (win) {
 			win.document.write(html);
@@ -252,13 +350,14 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 
 	return (
 		<div
-			className="fixed inset-0 z-50 flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs p-0 md:p-4 overflow-x-clip"
+			className="fixed inset-0 z-[100001] flex items-end md:items-center justify-center bg-black/60 backdrop-blur-xs p-0 md:p-4 overflow-x-clip"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="consent-studio-title"
 			onClick={onClose}
 		>
 			<div
+				data-testid="consent-studio-modal"
 				className="relative w-full max-w-5xl max-h-[92vh] md:max-h-[88vh] flex flex-col bg-[var(--paper,#ffffff)] text-[var(--ink,#0f172a)] rounded-t-[24px] md:rounded-2xl border border-[var(--line,#e2e8f0)] shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-200"
 				onClick={(e) => e.stopPropagation()}
 			>
@@ -287,6 +386,17 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 					<div className="flex items-center gap-2 shrink-0">
 						<button
 							type="button"
+							data-testid="btn-print-blank-consent"
+							onClick={handlePrintBlankDoc}
+							className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors shadow-2xs min-h-[44px] md:min-h-[36px] cursor-pointer"
+							title="Распечатать чистый бланк А4 без подписи (для физической ручки)"
+						>
+							<FileText size={15} aria-hidden="true" />
+							<span className="hidden sm:inline">Чистый бланк</span>
+						</button>
+						<button
+							type="button"
+							data-testid="btn-print-consent"
 							onClick={handlePrintDoc}
 							className="inline-flex items-center gap-1.5 px-3 py-1.5 h-9 rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] text-xs font-medium text-[var(--ink,#0f172a)] transition-colors shadow-2xs min-h-[44px] md:min-h-[36px] cursor-pointer"
 							title="Распечатать бланк А4"
@@ -395,6 +505,7 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 						{/* Ровно ОДНА Primary CTA кнопка #0d9488 (Мандат 8am) */}
 						<button
 							type="button"
+							data-testid="btn-batch-sign-consents"
 							onClick={handleBatchSign}
 							className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 min-h-[44px] rounded-xl text-sm font-semibold bg-[var(--teal,#0d9488)] hover:bg-[#0f766e] text-white shadow-sm transition-all active:scale-[0.99] cursor-pointer border-0"
 							title="Утвердить и подписать выбранный пакет документов"

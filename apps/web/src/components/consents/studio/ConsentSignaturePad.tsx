@@ -44,7 +44,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 		if (points.length < 2) return;
 
 		ctx.beginPath();
-		ctx.strokeStyle = "#0f172a";
+		ctx.strokeStyle = "#0d9488";
 		ctx.lineWidth = 2.5;
 		ctx.lineCap = "round";
 		ctx.lineJoin = "round";
@@ -91,7 +91,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 				(acc, pt, i) => `${acc} ${i === 0 ? "M" : "L"} ${pt.x.toFixed(1)} ${pt.y.toFixed(1)}`,
 				"",
 			);
-			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="100%" height="100%"><path d="${d.trim()}" fill="none" stroke="#0f172a" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
+			const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 120" width="100%" height="100%"><path d="${d.trim()}" fill="none" stroke="#0d9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/></svg>`;
 			onSignatureChange(svg);
 		}
 	};
@@ -103,7 +103,10 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 	};
 
 	return (
-		<div className="mt-2 p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xs space-y-4">
+		<div
+			data-testid="consent-signature-pad"
+			className="mt-2 p-4 rounded-xl border border-[var(--line,#e2e8f0)] bg-[var(--paper,#ffffff)] shadow-2xs space-y-4"
+		>
 			<div className="flex items-center justify-between">
 				<div className="flex items-center gap-2">
 					<FileSignature size={18} className="text-[var(--teal,#0d9488)]" />
@@ -134,15 +137,16 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 						<span>Распишитесь пальцем или стилусом на экране (накладывается на весь пакет):</span>
 						<button
 							type="button"
+							data-testid="btn-clear-signature"
 							onClick={handleClear}
-							className="inline-flex items-center gap-1 text-xs text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[36px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] cursor-pointer"
+							className="inline-flex items-center gap-1 text-xs text-[var(--ink-muted,#64748b)] hover:text-[var(--ink,#0f172a)] min-h-[36px] px-2 rounded-lg border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] hover:bg-[var(--paper-soft,#f1f5f9)] cursor-pointer"
 							title="Очистить холст"
 						>
 							<RotateCcw size={13} />
 							<span>Очистить подпись</span>
 						</button>
 					</div>
-					<div className="relative touch-none border border-[var(--line,#cbd5e1)] rounded-xl bg-white overflow-hidden shadow-2xs">
+					<div className="relative touch-none border border-[var(--line,#cbd5e1)] rounded-xl bg-white dark:bg-slate-900/90 overflow-hidden shadow-2xs">
 						<canvas
 							ref={canvasRef}
 							width={360}
@@ -153,7 +157,7 @@ export const ConsentSignaturePad: React.FC<ConsentSignaturePadProps> = ({
 							className="w-full h-[120px] cursor-crosshair"
 						/>
 						{points.length === 0 && !signatureSvg && (
-							<div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-slate-400">
+							<div className="pointer-events-none absolute inset-0 flex items-center justify-center text-xs text-slate-400 dark:text-slate-500">
 								Поле для сенсорной подписи пациента (стилус или палец)
 							</div>
 						)}

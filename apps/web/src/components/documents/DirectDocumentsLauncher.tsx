@@ -21,20 +21,14 @@ export const isDocumentsOrConsentsTarget = (): boolean => {
 		h === "#documents-studio" ||
 		h === "#contract" ||
 		h === "#tax-certificate" ||
-		h === "#consents" ||
-		h === "#consent" ||
 		h === "#outpatient-card" ||
 		h.startsWith("#outpatient-card?") ||
 		h.startsWith("#emk-card") ||
 		h.startsWith("#documents?") ||
 		h.startsWith("#docs-studio?") ||
 		h.startsWith("#documents-studio?") ||
-		h.startsWith("#consents?") ||
-		h.startsWith("#consent?") ||
 		s.includes("documents=1") ||
 		s.includes("docs=1") ||
-		s.includes("consents=1") ||
-		s.includes("consent=1") ||
 		s.includes("outpatient_card=1") ||
 		s.includes("standalone=documents")
 	);
@@ -65,9 +59,6 @@ export const DirectDocumentsLauncher: React.FC = () => {
 		} else if (custom?.template) {
 			setIsOutpatientCard(false);
 			setInitialTemplate(custom.template);
-		} else if (custom?.isConsent || e?.type === "dente:open-consents") {
-			setIsOutpatientCard(false);
-			setInitialTemplate("informed_consent");
 		} else {
 			setIsOutpatientCard(false);
 		}
@@ -85,15 +76,11 @@ export const DirectDocumentsLauncher: React.FC = () => {
 
 	useEffect(() => {
 		window.addEventListener("dente:open-documents", handleOpen);
-		window.addEventListener("dente:open-consents", handleOpen);
-		window.addEventListener("dente:open-consent", handleOpen);
 		window.addEventListener("dente:open-outpatient-card", handleOpen);
 		window.addEventListener("hashchange", handleHash);
 
 		return () => {
 			window.removeEventListener("dente:open-documents", handleOpen);
-			window.removeEventListener("dente:open-consents", handleOpen);
-			window.removeEventListener("dente:open-consent", handleOpen);
 			window.removeEventListener("dente:open-outpatient-card", handleOpen);
 			window.removeEventListener("hashchange", handleHash);
 		};
