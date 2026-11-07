@@ -146,7 +146,11 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 				asstData = await asstRes.value.json();
 			}
 
-			if (docData || asstData) {
+			const hasRealActivePayroll =
+				((docData?.totals?.totalPayoutRub ?? 0) > 0 && (docData?.rows?.length ?? 0) > 0) ||
+				((asstData?.totals?.totalPayoutRub ?? 0) > 0 && (asstData?.rows?.length ?? 0) > 0);
+
+			if (hasRealActivePayroll || (!isDemoShowcaseMode() && (docData || asstData))) {
 				setRows(docData?.rows || []);
 				setAssistantRows(asstData?.rows || docData?.assistantRows || []);
 				setTotals(docData?.totals || null);
@@ -519,7 +523,11 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 									</tr>
 								) : (
 									rows.map((row) => (
-										<tr key={row.doctorId} className="hover:bg-[var(--paper-soft)] transition-colors">
+										<tr
+											key={row.doctorId}
+											data-testid="doctor-payroll-row"
+											className="hover:bg-[var(--paper-soft)] transition-colors"
+										>
 											<td className="py-2.5 px-3 font-semibold">{row.doctorName}</td>
 											<td className="py-2.5 px-3 text-[var(--muted)]">{row.specialty}</td>
 											<td className="py-2.5 px-3 text-right tabular-nums">
@@ -571,7 +579,11 @@ export const DoctorPayrollReport: React.FC<DoctorPayrollReportProps> = ({
 									</tr>
 								) : (
 									assistantRows.map((ast) => (
-										<tr key={ast.assistantId} className="hover:bg-[var(--paper-soft)] transition-colors">
+										<tr
+											key={ast.assistantId}
+											data-testid="assistant-payroll-row"
+											className="hover:bg-[var(--paper-soft)] transition-colors"
+										>
 											<td className="py-2.5 px-3 font-semibold">{ast.assistantName}</td>
 											<td className="py-2.5 px-3 text-[var(--muted)]">{ast.role}</td>
 											<td className="py-2.5 px-3 text-center tabular-nums">
