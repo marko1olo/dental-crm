@@ -64,7 +64,7 @@ export async function telephonyCallUpdateHandler(
 	} | null = null;
 
 	if (UUID_REGEX.test(callId)) {
-		await withTenantCtx(resolvedOrgId, async () => {
+		updatedCall = await withTenantCtx(resolvedOrgId, async () => {
 			const res = await db
 				.update(communicationEvents)
 				.set({
@@ -85,9 +85,7 @@ export async function telephonyCallUpdateHandler(
 					createdAt: communicationEvents.createdAt,
 				});
 
-			if (res.length > 0 && res[0]) {
-				updatedCall = res[0];
-			}
+			return res.length > 0 && res[0] ? res[0] : null;
 		});
 	}
 
