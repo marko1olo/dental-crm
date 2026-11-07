@@ -49,7 +49,7 @@ export function detectLeadStage(lead: FunnelLead): LeadFunnelStageKey {
 		return "treatment_plan_accepted";
 	}
 
-	if (lead.showedUp || lead.status === "showed_up") {
+	if (lead.showedUp || lead.status === "showed_up" || lead.status === "converted") {
 		return "showed_up";
 	}
 

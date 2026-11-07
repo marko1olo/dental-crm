@@ -93,6 +93,12 @@ export const CopilotGlobalHost: React.FC = () => {
     ? customContext.patientName
     : uiContext.patientName;
 
+  const isLeadsView =
+    uiContext.view?.toLowerCase() === 'leads' ||
+    (typeof window !== 'undefined' &&
+      (window.location.hash.toLowerCase().includes('leads') ||
+        window.location.pathname.toLowerCase().includes('leads')));
+
   return (
     <>
       <CopilotStudioModal
@@ -121,7 +127,7 @@ export const CopilotGlobalHost: React.FC = () => {
         patientAllergies={uiContext.allergies}
         activeTooth={numericActiveTooth}
       />
-      {!copilot.isOpen && !isHudOpen && (
+      {!copilot.isOpen && !isHudOpen && !isLeadsView && (
         <button
           type="button"
           onClick={copilot.openDrawer}

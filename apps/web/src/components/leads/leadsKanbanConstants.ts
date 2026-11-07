@@ -37,13 +37,13 @@ export const CORE_FUNNEL_COLUMNS: readonly [
 	},
 	{
 		id: "contacted",
-		label: "В работе",
+		label: "Квалифицированы",
 		color: "var(--teal-soft)",
 		icon: React.createElement(PhoneCall, { size: 15 }),
 	},
 	{
 		id: "consult_booked",
-		label: "Записан",
+		label: "Консультация",
 		color: "var(--teal-soft)",
 		icon: React.createElement(CalendarClock, { size: 15 }),
 	},
@@ -96,8 +96,8 @@ export const ALL_KANBAN_COLUMNS: readonly [
 
 export const STAGE_DISPLAY_LABELS: Record<LeadStatus, string> = {
 	new: "«Новые»",
-	contacted: "«В работе»",
-	consult_booked: "«Записан»",
+	contacted: "«Квалифицированы»",
+	consult_booked: "«Консультация»",
 	showed_up: "«Дошли»",
 	converted: "«Дошли»",
 	no_answer: "«Недозвон»",

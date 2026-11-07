@@ -320,6 +320,33 @@ async function run() {
     console.warn("Could not capture modal separately:", err.message);
   }
 
+  // 2b. PC Funnel Analytics Modal Light & Dark
+  try {
+    await applyTheme(pcPage, "light");
+    const moreMenuBtn = pcPage.locator('[data-testid="btn-leads-more-menu"]').first();
+    if (await moreMenuBtn.count() > 0) {
+      await moreMenuBtn.click();
+      await pcPage.waitForTimeout(300);
+      const analyticsBtn = pcPage.locator('[data-testid="btn-open-analytics"]').first();
+      if (await analyticsBtn.count() > 0) {
+        await analyticsBtn.click();
+        await pcPage.waitForTimeout(600);
+        await saveProof(pcPage, "leads_funnel_analytics_pc_light.png");
+
+        await applyTheme(pcPage, "dark");
+        await saveProof(pcPage, "leads_funnel_analytics_pc_dark.png");
+
+        const closeAnalyticsBtn = pcPage.locator('button[aria-label="Закрыть"], button:has-text("✕")').first();
+        if (await closeAnalyticsBtn.count() > 0) {
+          await closeAnalyticsBtn.click().catch(() => {});
+          await pcPage.waitForTimeout(300);
+        }
+      }
+    }
+  } catch (err) {
+    console.warn("Could not capture analytics modal separately:", err.message);
+  }
+
   await pcContext.close();
 
   // ================= 2. MOBILE CONTEXT (390x844) =================

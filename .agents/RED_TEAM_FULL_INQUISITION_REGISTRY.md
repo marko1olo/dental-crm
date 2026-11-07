@@ -2442,3 +2442,59 @@
      - Ось 6 (WCAG AAA Контраст): Тёмная тема — 100% тёмные токены, отсутствие слепящих белых пятен.
      - Ось 7 (Цветовая сдержанность): Спокойный клинический фон + 1 акцентный бирюзовый цвет.
      - Ось 8 (Live App Capture): Снято на живом приложении с реальной базой PostgreSQL 18.
+
+---
+
+## 31. 🎯 LEADS KANBAN & INTAKE HIGHWAY SSOT INQUISITION (CRM ПЕРВИЧНЫХ ОБРАЩЕНИЙ)
+
+### [LEADS-01] [SEV-1] [ЗАКРЫТО] Ликвидация плавающего блоба FAB «✨ ИИ Ассистент» в воронке лидов (Zero Floating Blobs)
+- **Файлы:**
+  - [`apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css)
+  - [`apps/web/src/components/copilot/CopilotGlobalHost.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotGlobalHost.tsx)
+  - [`apps/web/src/components/leads/leads.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/leads.css)
+- **Суть бага:** В нижнем правом углу экрана канбана лидов отображалась фиксированная плавающая круглая кнопка `.copilot-trigger-btn` («✨ ИИ Ассистент»), грубо нарушавшая Закон «ZERO FLOATING BLOBS» (Раздел VI Хаммера) и заслонявшая карточки пациентов и кнопки действий в крайних колонках.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `copilotDrawerTrigger.css` и `leads.css` добавлены строгие CSS-правила: при наличии `.leads-studio-root`, `[data-testid="leads-kanban-board"]`, `.leads-board-container`, `.leads-kanban-view`, `.leads-mobile-container` кнопка `.copilot-trigger-btn` принудительно скрывается (`display: none !important; opacity: 0 !important; visibility: hidden !important; pointer-events: none !important;`).
+  2. В `CopilotGlobalHost.tsx` введено условие `!isLeadsView` (проверка `uiContext.view === 'Leads'` и hash `#leads`), исключающее монтирование кнопки в DOM. ИИ-ассистент запускается строго штатно из верхнего Control Center клиники (`✨ ДЕНТА`) или по горячей клавише `Cmd/Ctrl+K`.
+
+### [LEADS-02] [SEV-2] [ЗАКРЫТО] Синхронизация сквозной аналитики воронки с реальными данными БД (expectedRevenue и статус converted)
+- **Файлы:**
+  - [`apps/web/src/components/leads/funnelEngineModules/leadStageDetector.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/funnelEngineModules/leadStageDetector.ts)
+  - [`apps/web/src/components/leads/funnelEngineModules/funnelRoiMath.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/funnelEngineModules/funnelRoiMath.ts)
+  - [`apps/web/src/components/leads/leadsFunnelAnalyticsModules/useLeadsFunnelAnalyticsController.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/leadsFunnelAnalyticsModules/useLeadsFunnelAnalyticsController.ts)
+- **Суть бага:** 
+  1. В `detectLeadStage` статус лида `converted` (конвертирован в пациента) не обрабатывался и проваливался в дефолтный статус `"new"`, искажая коэффициенты конверсии.
+  2. В `extractLeadRevenueRub` извлекались только `actualRevenueRub` и `paidAmountRub`, игнорируя реальное поле `expectedRevenue` лидов из базы PostgreSQL (`crm_leads`), что приводило к нулевому пайплайну в аналитике воронки.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `leadStageDetector.ts` добавлена проверка `lead.status === "converted"`, сопоставляющая конвертированного пациента с этапом `"showed_up"` (или `"paid"` при наличии оплат).
+  2. В `funnelRoiMath.ts` функция `extractLeadRevenueRub` расширена безопасным парсингом `lead.expectedRevenue`, обеспечивая 100% достоверный расчёт объёма пайплайна и ROMI.
+  3. Вся аналитика опирается на реальные данные лидов и роута `/api/marketing/attribution`.
+
+### [LEADS-03] [SEV-2] [ЗАКРЫТО] Конверсия лида без бюрократических барьеров и совместимость тестов Fastify/Vitest
+- **Файлы:**
+  - [`apps/web/src/components/leads/LeadConvertModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/LeadConvertModal.tsx)
+  - [`apps/web/src/components/leads/leadsKanbanConstants.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/leadsKanbanConstants.ts)
+  - [`apps/web/src/components/leads/__tests__/leadsKanbanErgonomicsAndDarkThemes.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/__tests__/leadsKanbanErgonomicsAndDarkThemes.test.ts)
+  - [`apps/api/src/tests/routes/leadsConversionAutonomy.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/leadsConversionAutonomy.test.ts)
+- **Суть бага:**
+  1. Тест `leadsConversionAutonomy.test.ts` падал при запуске через Vitest из-за асинхронного порядка хука `before` внутри `suite.test`.
+  2. В тесте `leadsKanbanErgonomicsAndDarkThemes.test.ts` проверялись устаревшие названия стадий (`'В работе'`, `'Записан'`) вместо канонических по Хаммеру (`'Квалифицированы'`, `'Консультация'`).
+  3. Модалка конверсии требовала проверки автономии врача (Мандат 8e/8n): 1 клик для соло-клиники без обязательного ассистента или кресла.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. `leadsConversionAutonomy.test.ts` переведен на канонический `describe/it` с верхнеуровневым `before/after`, обеспечивая 100% зелёные тесты и в Vitest, и в `node:test` (`npx tsx --test`).
+  2. В `leadsKanbanErgonomicsAndDarkThemes.test.ts` обновлены ассерты стадий под канонический порядок: `['Новые', 'Квалифицированы', 'Консультация', 'Дошли']`.
+  3. Проверена автономия врача: кнопки сохранения/конверсии никогда не `disabled`, поддерживается режим «Только карта» без принудительного слота в расписании, авто-резолвинг дефолтного врача и кресла.
+  4. Машинные тесты:
+     - `npx vitest run apps/web/src/components/leads/__tests__/` -> 14/14 сьютов, 193/193 тестов passed (100% green).
+     - `npx tsx --test apps/api/src/tests/routes/leadsConversionAutonomy.test.ts` -> 5/5 passed.
+     - `npx vitest run apps/api/src/tests/routes/leadsConversionAutonomy.test.ts` -> 5/5 passed.
+     - Кодировка: `npm run check:encoding` -> 24 117 файлов проверено, замечаний нет (Exit Code 0).
+     - Машинные гейты 2–4 (`check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports`) -> Exit Code 0.
+  5. 4-State Visual Proofs зафиксированы в `docs/proofs/leads/` и лично отсмотрены через `read_file` по 8 осям Хаммера:
+     - ☀️ PC Light (1440x900): [`docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png) (74.8 KB)
+     - 🌙 PC Dark (1440x900): [`docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png) (73.5 KB)
+     - 📱 Mobile Light (390x844): [`docs/proofs/leads/03_leads_mobile_feed_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/03_leads_mobile_feed_light_390x844.png) (117.2 KB)
+     - 🌙 Mobile Dark (390x844): [`docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) (120.4 KB)
+     - ☀️ PC Studio Modal Light: [`docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png) (81.0 KB)
+     - 🌙 PC Studio Modal Dark: [`docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png) (80.7 KB)
+

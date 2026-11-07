@@ -10,7 +10,7 @@
  */
 
 import assert from "node:assert/strict";
-import test, { after, before } from "node:test";
+import { after, before, describe, it } from "node:test";
 import { eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { clinics, crmLeads, organizations, users } from "../../db/schema.js";
@@ -38,7 +38,7 @@ const LEAD_2_ID = fixtureUuid(NAMESPACE, 11);
 const LEAD_3_ID = fixtureUuid(NAMESPACE, 12);
 const LEAD_4_ID = fixtureUuid(NAMESPACE, 13);
 
-test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", async (suite) => {
+describe("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", () => {
 	let app: FastifyInstance;
 	let clinicToken: string;
 	let staffToken: string;
@@ -154,7 +154,7 @@ test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", asyn
 		}
 	});
 
-	await suite.test(
+	it(
 		"Converting lead with fallback doctor ('default-doctor') and fallback chair ('default-chair') resolves active doctor and succeeds with 200 OK",
 		async () => {
 			const startIso = "2026-09-10T10:00:00.000Z";
@@ -204,7 +204,7 @@ test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", asyn
 		},
 	);
 
-	await suite.test(
+	it(
 		"Converting lead with omitted doctorId and chairId resolves defaults and creates appointment with 200 OK",
 		async () => {
 			const startIso = "2026-09-10T12:00:00.000Z";
@@ -252,7 +252,7 @@ test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", asyn
 		},
 	);
 
-	await suite.test(
+	it(
 		"PATCH /api/leads/:id partially updates lead fields and status in PostgreSQL",
 		async () => {
 			const response = await app.inject({
@@ -292,7 +292,7 @@ test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", asyn
 		},
 	);
 
-	await suite.test(
+	it(
 		"Converting lead without appointment dates (mode: patient_only) creates patient card with UTM tags and updates lead status to 'converted' without appointment slot",
 		async () => {
 			const response = await app.inject({
@@ -337,7 +337,7 @@ test("LEADS CONVERSION SOLO DOCTOR & FALLBACK AUTONOMY (MANDATES 8e & 8n)", asyn
 		},
 	);
 
-	await suite.test(
+	it(
 		"Direct 1-click patient creation via /api/leads/:id/create-patient sets lead status to 'converted' and persists UTM parameters in patient administrativeProfile",
 		async () => {
 			const response = await app.inject({
