@@ -365,20 +365,21 @@ export class SyncClinicalHandlers {
 				incomingDate,
 			});
 
-			if (conflictCheck.clientWins) {
+			if (conflictCheck.clientWins || conflictCheck.isMerged) {
 				await tx.insert(toothStateHistory).values({
 					organizationId,
 					patientId,
 					visitId: toothItem.visitId ?? null,
 					toothNumber: toothItem.toothNumber,
 					previousState: serverTooth?.state ?? null,
-					newState: toothItem.state,
+					newState: conflictCheck.effectiveState,
 					previousSurfaces: serverTooth?.surfaces ?? null,
 					// biome-ignore lint/suspicious/noExplicitAny: surfaces
-					newSurfaces: (toothItem.surfaces as any) ?? null,
+					newSurfaces: (conflictCheck.effectiveSurfaces as any) ?? null,
 					changedByUserId: effectiveAuthorId,
-					reason:
-						toothItem.notes || "Оффлайн-синхронизация одонтограммы (LWW)",
+					reason: conflictCheck.isMerged
+						? "Оффлайн-синхронизация одонтограммы (Surface Union Merge)"
+						: toothItem.notes || "Оффлайн-синхронизация одонтограммы (LWW)",
 					changedAt: incomingDate,
 				});
 
@@ -389,9 +390,9 @@ export class SyncClinicalHandlers {
 							organizationId,
 							patientId,
 							toothNumber: toothItem.toothNumber,
-							state: toothItem.state,
+							state: conflictCheck.effectiveState,
 							// biome-ignore lint/suspicious/noExplicitAny: surfaces
-							surfaces: (toothItem.surfaces as any) ?? null,
+							surfaces: (conflictCheck.effectiveSurfaces as any) ?? null,
 							notes: toothItem.notes,
 							updatedAt: incomingDate,
 							isSynced: true,
@@ -402,8 +403,8 @@ export class SyncClinicalHandlers {
 						(inserted as unknown as Record<string, unknown>) || {
 							patientId,
 							toothNumber: toothItem.toothNumber,
-							state: toothItem.state,
-							surfaces: toothItem.surfaces,
+							state: conflictCheck.effectiveState,
+							surfaces: conflictCheck.effectiveSurfaces,
 							notes: toothItem.notes,
 						},
 					);
@@ -411,9 +412,9 @@ export class SyncClinicalHandlers {
 					const [updated] = await tx
 						.update(toothStates)
 						.set({
-							state: toothItem.state,
+							state: conflictCheck.effectiveState,
 							// biome-ignore lint/suspicious/noExplicitAny: surfaces
-							surfaces: (toothItem.surfaces as any) ?? null,
+							surfaces: (conflictCheck.effectiveSurfaces as any) ?? null,
 							notes:
 								toothItem.notes !== null
 									? toothItem.notes
@@ -427,13 +428,20 @@ export class SyncClinicalHandlers {
 					updatedTeethStates.push(
 						(updated as unknown as Record<string, unknown>) || {
 							...serverTooth,
-							state: toothItem.state,
-							surfaces: toothItem.surfaces,
+							state: conflictCheck.effectiveState,
+							surfaces: conflictCheck.effectiveSurfaces,
 							notes: toothItem.notes,
 						},
 					);
 				}
+
+				if (conflictCheck.conflictDetail) {
+					allConflicts.push(conflictCheck.conflictDetail);
+				}
 				mergedFields.push(`tooth_${toothItem.toothNumber}`);
+				if (conflictCheck.isMerged) {
+					mergedFields.push(`tooth_${toothItem.toothNumber}_surfaces`);
+				}
 			} else {
 				await tx.insert(toothStateHistory).values({
 					organizationId,

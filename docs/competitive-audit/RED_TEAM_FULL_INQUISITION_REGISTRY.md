@@ -1101,9 +1101,31 @@
   - [`apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts#L308-L346`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/hooks/domains/schedule/useAppointmentMutations.ts#L308-L346)
 - **Суть бага:** Отличные сервисы очередей с расчетом в копейках и IndexedDB существуют исключительно для unit-тестов. В реальном расписании и кассе они не импортированы. При обрыве сети запись на приём просто вылетает с ошибкой.
 
-### [OFF-06] [SEV-2] Отсутствие слияния поверхностей зуба при параллельном редактировании
-- **Файл:** [`apps/api/src/services/sync/syncGateway/syncConflictResolver.ts#L171-L202`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncConflictResolver.ts#L171-L202)
-- **Суть бага:** Конфликт-резолвер одонтограммы работает по LWW на уровне зуба целиком. Если один врач офлайн отметил дистальную поверхность, а второй — окклюзионную, одна из них будет стёрта вместо union-слияния массива поверхностей.
+### [OFF-06] [ИСПРАВЛЕНО] [SEV-2] Отсутствие слияния поверхностей зуба при параллельном редактировании (Surface Union Merge)
+- **Файлы:**
+  - [`apps/api/src/services/sync/syncGateway/syncConflictResolver.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncConflictResolver.ts)
+  - [`apps/api/src/services/sync/syncGateway/syncClinicalHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncClinicalHandlers.ts)
+  - [`packages/shared/src/sync/types.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/sync/types.ts)
+  - Тест-сьют: [`apps/api/src/tests/syncConflictResolverSurfaces.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/syncConflictResolverSurfaces.test.ts)
+- **Суть бага:** Конфликт-резолвер одонтограммы работал по LWW на уровне зуба целиком. Если один врач офлайн отметил дистальную поверхность, а второй — окклюзионную, одна из них стиралась вместо union-слияния массива поверхностей.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `syncConflictResolver.ts` реализован алгоритм умного слияния поверхностей (Surface Union Merge) `resolveOdontogramToothConflict`:
+     - При совместимых клинических диагнозах (кариес на разных поверхностях, пломба на разных поверхностях, вторичный кариес рядом с пломбой) поверхности объединяются через дедуплицированное объединение `Set([...clientSurfaces, ...serverSurfaces])` с канонической сортировкой (Black Class II MOD/OD/MO).
+     - Полноценная нормализация поверхностей `normalizeSurfaces()`: поддержка массивов строк, comma-separated строк, JSON-строк, дедупликация и canonical ordering (`mesial`, `occlusal`, `distal`, `vestibular`, `lingual`, `cervical`, `root`, `cusp`).
+  2. Защита от Red Team ловушки №1 (Клинические приоритеты):
+     - Статус удаления / экстракции / адентии (`extracted`, `absent`, `missing`, `удален`, `адентия`) имеет абсолютный клинический приоритет над кариесом/пломбами. Если зуб удален на сервере, входящий кариес не воскрешает зуб и поверхности обнуляются. Если клиент присылает удаление — удаление побеждает.
+     - Импланты и коронки защищены от устаревших поверхностных правок кариеса.
+  3. В `syncClinicalHandlers.ts` синхронизация `odontogram_state` переведена на реакцию `conflictCheck.isMerged || conflictCheck.clientWins`:
+     - Результирующий статус `conflictCheck.effectiveState` и объединенные поверхности `conflictCheck.effectiveSurfaces` сохраняются в PostgreSQL 18 `toothStates`.
+     - В `toothStateHistory` сохраняется подробная запись истории с пометкой `"Оффлайн-синхронизация одонтограммы (Surface Union Merge)"`.
+     - Конфликт регистрируется со стратегией `"surface_union_merge"` и победителем `"merged"`.
+  4. В `packages/shared/src/sync/types.ts` в `conflictResolutionStrategySchema` добавлен тип стратегии `"surface_union_merge"`.
+  5. Покрыто 18/18 тестами в `apps/api/src/tests/syncConflictResolverSurfaces.test.ts` (100% pass) и 9/9 тестами в `apps/api/src/tests/syncGatewayService.test.ts`.
+  6. 4-State Visual Proofs:
+     - ☀️ PC Light (1440×900): [`docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png) (262.5 KB)
+     - 🌙 PC Dark (1440×900): [`docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png) (265.0 KB)
+     - 📱 Mobile Light (390×844): [`docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png) (209.9 KB)
+     - 🌙 Mobile Dark (390×844): [`docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png) (207.4 KB)
 
 
 ## 17. 🤖 ИИ-КОПАЙЛОТ, WHISPER STT И КЛИНИЧЕСКИЙ ЧАСОВОЙ (SENTINEL)

@@ -100,6 +100,7 @@ const mockDashboard = {
 };
 
 const outputDir = path.resolve(__dirname, "../docs/proofs/odontogram");
+const brainDir = path.resolve("C:/Users/Admin/.gemini/antigravity/brain/14a5f909-295a-4a0f-ad83-a3550a8f1348");
 if (!fs.existsSync(outputDir)) {
   fs.mkdirSync(outputDir, { recursive: true });
 }
@@ -248,18 +249,26 @@ async function run() {
 
     // 1. PC Light
     await setTheme(pcPage, "light");
-    const pcLightPath = path.join(outputDir, "odontogram_live_pc_light.png");
+    const pcLightPath = path.join(outputDir, "01_odontogram_pc_light_1440x900.png");
     await pcPage.screenshot({ path: pcLightPath, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(pcLightPath, path.join(outputDir, "odontogram_live_pc_light.png"));
+    if (fs.existsSync(brainDir)) {
+      fs.copyFileSync(pcLightPath, path.join(brainDir, "01_odontogram_pc_light_1440x900.png"));
+    }
     const pcLightSize = fs.statSync(pcLightPath).size;
-    console.log(`[1/4] odontogram_live_pc_light.png: ${(pcLightSize / 1024).toFixed(1)} KB`);
+    console.log(`[1/4] 01_odontogram_pc_light_1440x900.png: ${(pcLightSize / 1024).toFixed(1)} KB`);
     if (pcLightSize < 20480) throw new Error("PC Light size < 20KB");
 
     // 2. PC Dark
     await setTheme(pcPage, "dark");
-    const pcDarkPath = path.join(outputDir, "odontogram_live_pc_dark.png");
+    const pcDarkPath = path.join(outputDir, "02_odontogram_pc_dark_1440x900.png");
     await pcPage.screenshot({ path: pcDarkPath, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(pcDarkPath, path.join(outputDir, "odontogram_live_pc_dark.png"));
+    if (fs.existsSync(brainDir)) {
+      fs.copyFileSync(pcDarkPath, path.join(brainDir, "02_odontogram_pc_dark_1440x900.png"));
+    }
     const pcDarkSize = fs.statSync(pcDarkPath).size;
-    console.log(`[2/4] odontogram_live_pc_dark.png: ${(pcDarkSize / 1024).toFixed(1)} KB`);
+    console.log(`[2/4] 02_odontogram_pc_dark_1440x900.png: ${(pcDarkSize / 1024).toFixed(1)} KB`);
     if (pcDarkSize < 20480) throw new Error("PC Dark size < 20KB");
 
     await pcContext.close();
@@ -301,18 +310,26 @@ async function run() {
 
     // 3. Mobile Light
     await setTheme(mPage, "light");
-    const mLightPath = path.join(outputDir, "odontogram_live_mobile_light.png");
+    const mLightPath = path.join(outputDir, "03_odontogram_mobile_light_390x844.png");
     await mPage.screenshot({ path: mLightPath, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(mLightPath, path.join(outputDir, "odontogram_live_mobile_light.png"));
+    if (fs.existsSync(brainDir)) {
+      fs.copyFileSync(mLightPath, path.join(brainDir, "03_odontogram_mobile_light_390x844.png"));
+    }
     const mLightSize = fs.statSync(mLightPath).size;
-    console.log(`[3/4] odontogram_live_mobile_light.png: ${(mLightSize / 1024).toFixed(1)} KB`);
+    console.log(`[3/4] 03_odontogram_mobile_light_390x844.png: ${(mLightSize / 1024).toFixed(1)} KB`);
     if (mLightSize < 20480) throw new Error("Mobile Light size < 20KB");
 
     // 4. Mobile Dark
     await setTheme(mPage, "dark");
-    const mDarkPath = path.join(outputDir, "odontogram_live_mobile_dark.png");
+    const mDarkPath = path.join(outputDir, "04_odontogram_mobile_dark_390x844.png");
     await mPage.screenshot({ path: mDarkPath, fullPage: false, animations: "disabled" });
+    fs.copyFileSync(mDarkPath, path.join(outputDir, "odontogram_live_mobile_dark.png"));
+    if (fs.existsSync(brainDir)) {
+      fs.copyFileSync(mDarkPath, path.join(brainDir, "04_odontogram_mobile_dark_390x844.png"));
+    }
     const mDarkSize = fs.statSync(mDarkPath).size;
-    console.log(`[4/4] odontogram_live_mobile_dark.png: ${(mDarkSize / 1024).toFixed(1)} KB`);
+    console.log(`[4/4] 04_odontogram_mobile_dark_390x844.png: ${(mDarkSize / 1024).toFixed(1)} KB`);
     if (mDarkSize < 20480) throw new Error("Mobile Dark size < 20KB");
 
     await mobileContext.close();

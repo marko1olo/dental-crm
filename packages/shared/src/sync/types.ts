@@ -69,6 +69,7 @@ export const conflictResolutionStrategySchema = z.enum([
 	"status_priority",
 	"rejected",
 	"somatic_safety_union",
+	"surface_union_merge",
 ]);
 export type ConflictResolutionStrategy = z.infer<
 	typeof conflictResolutionStrategySchema
