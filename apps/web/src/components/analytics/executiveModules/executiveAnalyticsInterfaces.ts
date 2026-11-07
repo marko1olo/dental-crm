@@ -20,6 +20,7 @@ export type MobileAnalyticsPeriod =
 export interface ExecutiveDashboardProps {
 	readonly initialPeriod?: ExecutivePeriod | undefined;
 	readonly period?: ExecutivePeriod | undefined;
+	readonly initialTab?: "financial" | "payroll" | "chairs" | undefined;
 	readonly onPeriodChange?: ((period: ExecutivePeriod) => void) | undefined;
 	readonly onNavigateToSection?: ((sectionKey: string) => void) | undefined;
 	readonly onOpenFinancialAnalytics?: (() => void) | undefined;

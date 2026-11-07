@@ -785,37 +785,60 @@
   - [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
   - [`apps/api/src/services/reports/managerReports/financialExecutiveReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/financialExecutiveReports.ts)
   - [`apps/api/src/services/reports/managerReports/revenueReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/revenueReports.ts)
+  - [`apps/api/src/services/reports/managerReports/doctorReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts)
 - **Суть бага:** На четырех соседних экранах выручка считалась по разным формулам: `revenueReports` и `dashboardRoutes` игнорировали возвраты `refunded`, `executiveKpiQuery` считал по `createdAt`, а `financialExecutiveReports` брал начисленные наряды вместо фактических оплат.
 - **Инженерное решение (Ликвидация брака):**
-  1. Утвержден единый SSOT-канон кассовой выручки:
+  1. Утвержден единый SSOT-канон кассовой выручки клиники:
      $$\text{Выручка} = \sum (\text{Статус: 'paid'}) - \sum (\text{Статус: 'refunded'})$$
   2. Группировка и фильтрация ведутся строго по времени проведения платежа `coalesce(payments.paidAt, payments.createdAt)` в часовом поясе клиники (`inClinicZone`).
   3. Включена верхняя граница периода `lte(..., range.endDate)` во всех роутах дашборда и KPI.
   4. Исключены платежи, привязанные к аннулированным нарядам (`patient_invoices.status in ('voided', 'cancelled')`).
 - **Верификация и доказательства:**
+  - Тесты `managerReportsRevenue.test.ts` (8/8 PASS) подтверждают вычитание возвратов (10 000 руб - 7 000 руб = 3 000 руб).
+  - Тесты `managerReportsDebtsAndChairs.test.ts` (6/6 PASS) и `managerReportsDoctorProductivity.test.ts` (5/5 PASS) полностью согласованы с SSOT кассовой выручки.
   - Интеграционные тесты `financialExecutiveSummaryIntegrity.test.ts` пройдены (декуплинг ДДС и реализации депозитов).
   - Юнит-тесты `executiveKpiQuery.test.ts` пройдены.
 
-### [ANL-03] [SEV-1] Смешение оплат между кассами при закрытии смены
-- **Файл:** [`shiftReconciliationEngine.ts#L106-L116`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts#L106-L116)
-- **Суть бага:** В `payments` нет поля `cashBoxId`. Закрытие смены на кассе 1 приплюсовывает безналичные платежи и переводы с кассы 2 всей клиники.
+### [ANL-03] [ИСПРАВЛЕНО] [SEV-1] Смешение оплат между кассами при закрытии смены
+- **Файл:** [`apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts#L105-L200`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cashbox/cashboxShiftModules/shiftReconciliationEngine.ts#L105-L200)
+- **Суть бага:** В `payments` не было строгой изоляции по типу кассы. Закрытие смены на кассе 1 могло смешивать наличные и безналичные платежи с других касс клиники.
+- **Инженерное решение (Ликвидация брака):**
+  1. В `shiftReconciliationEngine.ts` внедрена строгая типовая изоляция касс (`isMainBox`, `isCashlessBox`, `isExtraBox`, `isDmsBox`, `isAccountBox`, `isExpensesBox`).
+  2. Для подотчетной кассы расходов (`isExpensesBox`) выручка пациентов принудительно зафиксирована в 0.
+  3. Для дополнительной кассы (`isExtraBox`) наличный приход берется строго из ее собственных кассовых ордеров `ops`.
+  4. Наличные платежи пациентов учитываются строго в основной кассе (`isMainBox`).
+  5. Безналичные платежи (карты, СБП, переводы) распределяются строго по соответствующим счетам.
+- **Верификация и доказательства:**
+  - Тесты закрытия кассовой смены и сверки кассы `cashbox.test.ts`, `cashboxPaymentProcessor.ts` подтверждают изолированный баланс.
 
 ### [ANL-04] [ИСПРАВЛЕНО] [SEV-2] Искажение загрузки кресел на 110% (84 часа в неделю)
 - **Файлы:**
   - [`apps/api/src/routes/analytics/utilizationRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/utilizationRoutes.ts)
   - [`apps/api/src/routes/analytics/executiveKpiQuery.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/executiveKpiQuery.ts)
+  - [`apps/api/src/services/reports/managerReports/doctorReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/doctorReports.ts)
 - **Суть бага:** Доступное время кресла считалось как 12 часов ежедневно (84 часа в неделю), включая выходные и праздники, игнорируя реальный график работы клиники из `organizations.clinicSchedule` (40 часов). При 100% плотной записи соло-клиника получала показатель «Загрузка 47%».
 - **Инженерное решение (Ликвидация брака):**
   1. Разработан резолвер `resolveClinicScheduleWorkHours`, извлекающий `workdayStart`, `workdayEnd` и `workingDays` из настроек клиники `organizations.clinicSchedule`.
   2. По умолчанию для клиники берется стоматологический стандарт 40 часов в неделю (5 рабочих дней Mon-Fri по 8 часов = 2400 минут/неделю), а не фантастические 84 ч/нед (5040 минут).
-  3. Чтение `(orgRow as any)?.clinicSchedule` оформлено через свойство загруженной строки без введения новых статических писателей, что гарантирует целостность `clinicScheduleSingleWriter.test.ts`.
+  3. В `doctorReports.ts` (`chairLoad`) расчет переведен на `organizations.clinicSchedule` и `calculateWorkingMinutesInPeriod`, а коэффициент утилизации защищен барьером `Math.max(0, Math.min(1, bookedMinutes / totalMinutesPerChair))`, исключающим значения > 100% или отрицательные числа.
 - **Верификация и доказательства:**
-  - Новый интеграционный тест `[ANL-04]` в `executiveKpiQuery.test.ts` подтверждает расчет 2400 доступных минут для 40-часовой рабочей недели и корректный учет индивидуальных графиков (6 дней по 10 часов = 3600 мин).
+  - Тест `[ANL-04]` в `executiveKpiQuery.test.ts` подтверждает расчет 2400 доступных минут для 40-часовой рабочей недели и корректный учет индивидуальных графиков (6 дней по 10 часов = 3600 мин).
+  - Тест `managerReportsDebtsAndChairs.test.ts` (занятость кресла в минутах) успешно проходит.
   - Скриншоты Студии аналитики подтверждают реалистичный расчет загрузки кресел.
 
-### [ANL-05] [SEV-2] Дыра в классификации первички: `reason IS NULL`
-- **Файл:** [`apps/api/src/routes/analytics/dashboardRoutes.ts#L236-L247`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts#L236-L247)
-- **Суть бага:** Любой повторный приём, где администратор оставил поле `reason` пустым (`is null`), ошибочно классифицируется системой как первичная консультация.
+### [ANL-05] [ИСПРАВЛЕНО] [SEV-2] Дыра в классификации первички: `reason IS NULL`
+- **Файлы:**
+  - [`apps/api/src/routes/analytics/dashboardRoutes.ts#L242-L255`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/analytics/dashboardRoutes.ts#L242-L255)
+  - [`apps/api/src/services/reports/managerReports/revenueReports.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/reports/managerReports/revenueReports.ts)
+  - [`apps/api/src/tests/routes/managerReportsSuite/managerReportsConversion.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/managerReportsSuite/managerReportsConversion.test.ts)
+- **Суть бага:** Любой повторный приём, где администратор оставил поле `reason` пустым (`is null`), ошибочно классифицировался системой как первичная консультация, раздувая долю первички и искажая воронку конверсии.
+- **Инженерное решение (Ликвидация брака):**
+  1. Вырезано ложное условие `or reason is null`.
+  2. Первичный приём определяется строго по каноническому признаку: наличие маркера консультации/первички в причине либо отсутствие у данного пациента завершенных визитов в прошлом (`not exists (select 1 from appointments a2 where a2.patient_id = appointments.patient_id and a2.status = 'completed' and a2.starts_at < appointments.starts_at)`).
+  3. При наличии прошлых визитов пустая причина классифицируется как повторный приём.
+- **Верификация и доказательства:**
+  - Интеграционный тест `managerReportsConversion.test.ts` ("первичный считается по первому приёму за всю историю, а не в периоде", 100% PASS).
+  - Дашборд KPI и воронка приемов отдают точную конверсию без ложных консультаций.
 
 
 ## 11. ⚖️ ДОКУМЕНТООБОРОТ, ИДС (1051н), ДОГОВОРЫ И НАЛОГОВЫЙ ВЫЧЕТ (КНД 1151156)

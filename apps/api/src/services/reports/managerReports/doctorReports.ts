@@ -2,16 +2,21 @@
  * Отчёты по выработке врачей, загрузке кресел, воронке приёмов, напоминаниям и расписанию.
  */
 
-import { and, eq, gte, lte, ne, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, lte, ne, sql } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import {
 	appointments,
 	chairs,
 	communicationOutbox,
+	organizations,
 	payments,
 	users,
 	visits,
 } from "../../../db/schema.js";
+import {
+	calculateWorkingMinutesInPeriod,
+	resolveClinicScheduleWorkHours,
+} from "../../../routes/analytics/executiveKpiQuery.js";
 import { inClinicZone, postgresKnowsTimeZone } from "./timezone.js";
 import type {
 	AppointmentFunnelReport,
@@ -37,6 +42,7 @@ import type {
 export async function doctorPerformance(
 	scope: ReportScope,
 ): Promise<DoctorPerformanceReport> {
+	const paymentTimestamp = sql`coalesce(${payments.paidAt}, ${payments.createdAt})`;
 	const revenueRows = await db
 		.select({
 			doctorUserId: appointments.doctorUserId,
@@ -49,8 +55,9 @@ export async function doctorPerformance(
 			and(
 				eq(payments.organizationId, scope.organizationId),
 				eq(payments.status, "paid"),
-				gte(payments.paidAt, scope.from),
-				lte(payments.paidAt, scope.to),
+				gte(paymentTimestamp, scope.from),
+				lte(paymentTimestamp, scope.to),
+				sql`(${payments.documentId} is null or not exists (select 1 from patient_invoices pi where pi.id = ${payments.documentId} and pi.status in ('voided', 'cancelled')))`,
 			),
 		)
 		.groupBy(appointments.doctorUserId);
@@ -176,14 +183,41 @@ export async function chairLoad(
 		readonly workingDaysPerWeek?: number;
 	} = {},
 ): Promise<ChairLoadReport> {
-	const minutesPerDay = Math.max(
-		60,
-		Math.min(24 * 60, options.minutesPerDay ?? 12 * 60),
-	);
-	const workingDaysPerWeek = Math.max(
-		1,
-		Math.min(7, options.workingDaysPerWeek ?? 6),
-	);
+	let minutesPerDay: number;
+	let workingDays: number;
+	let totalMinutesPerChair: number;
+
+	if (options.minutesPerDay !== undefined || options.workingDaysPerWeek !== undefined) {
+		const mPerDay = Math.max(
+			60,
+			Math.min(24 * 60, options.minutesPerDay ?? 8 * 60),
+		);
+		const daysPerWeek = Math.max(
+			1,
+			Math.min(7, options.workingDaysPerWeek ?? 5),
+		);
+		const spanDays = Math.max(
+			1,
+			Math.ceil((scope.to.getTime() - scope.from.getTime()) / 86_400_000),
+		);
+		workingDays = Math.max(
+			1,
+			Math.round((spanDays * daysPerWeek) / 7),
+		);
+		minutesPerDay = mPerDay;
+		totalMinutesPerChair = Math.max(60, workingDays * minutesPerDay);
+	} else {
+		// [ANL-04] Честный расчет от реального графика работы клиники из organizations.clinicSchedule (40ч/нед по умолчанию)
+		const [org] = await db
+			.select({ clinicSchedule: organizations.clinicSchedule })
+			.from(organizations)
+			.where(eq(organizations.id, scope.organizationId));
+		const spec = resolveClinicScheduleWorkHours(org?.clinicSchedule);
+		const workingCalculation = calculateWorkingMinutesInPeriod(scope.from, scope.to, spec);
+		workingDays = Math.max(1, workingCalculation.workingDays);
+		totalMinutesPerChair = Math.max(60, workingCalculation.availableMinutesPerChair);
+		minutesPerDay = Math.max(60, Math.round(totalMinutesPerChair / workingDays));
+	}
 
 	const rows = await db
 		.select({
@@ -210,16 +244,6 @@ export async function chairLoad(
 		.where(eq(chairs.organizationId, scope.organizationId));
 	const chairNames = new Map(chairRows.map((row) => [row.id, row.name]));
 
-	const spanDays = Math.max(
-		1,
-		Math.ceil((scope.to.getTime() - scope.from.getTime()) / 86_400_000),
-	);
-	const workingDays = Math.max(
-		1,
-		Math.round((spanDays * workingDaysPerWeek) / 7),
-	);
-	const totalMinutesPerChair = workingDays * minutesPerDay;
-
 	const result: ChairLoadRow[] = rows
 		.map((row) => {
 			const bookedMinutes = Number(row.bookedMinutes);
@@ -232,7 +256,7 @@ export async function chairLoad(
 				bookedMinutes,
 				// Записи без кресла нельзя отнести к занятости конкретного кресла.
 				utilization: row.chairId
-					? Math.min(1, bookedMinutes / totalMinutesPerChair)
+					? Math.max(0, Math.min(1, bookedMinutes / totalMinutesPerChair))
 					: null,
 			};
 		})

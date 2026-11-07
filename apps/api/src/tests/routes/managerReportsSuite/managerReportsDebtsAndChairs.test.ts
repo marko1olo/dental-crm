@@ -196,7 +196,8 @@ describe("отчёты руководителю: дебиторка, переп�
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
-		assert.equal(body.revenue.totalRub, 10_000);
+		// [ANL-02] 10 000 руб получено минус 7 000 руб возвращено = 3 000 руб чистая выручка
+		assert.equal(body.revenue.totalRub, 3_000);
 		assert.equal(body.appointments.total, 4);
 		assert.equal(body.receivables.totalDebtRub, 20_000);
 		assert.equal(body.receivables.debtors, 1);

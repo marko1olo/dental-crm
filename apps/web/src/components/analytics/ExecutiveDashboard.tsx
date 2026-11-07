@@ -45,12 +45,37 @@ export type ExecutiveActiveTab = "financial" | "payroll" | "chairs";
 export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => {
 	const {
 		period = "month",
+		initialTab,
 		onPeriodChange,
 		onNavigateToSection,
 		onOpenFinancialAnalytics,
 	} = props;
 
-	const [activeTab, setActiveTab] = useState<ExecutiveActiveTab>("financial");
+	const [activeTab, setActiveTab] = useState<ExecutiveActiveTab>(() => {
+		if (initialTab) return initialTab;
+		if (typeof window !== "undefined") {
+			const savedTab = sessionStorage.getItem("dente_executive_tab") || localStorage.getItem("dente_executive_tab");
+			if (savedTab === "payroll" || savedTab === "chairs" || savedTab === "financial") {
+				return savedTab;
+			}
+			const h = window.location.hash.toLowerCase();
+			const s = window.location.search.toLowerCase();
+			if (
+				h.includes("payroll") ||
+				s.includes("payroll") ||
+				h.includes("payout") ||
+				s.includes("payout") ||
+				h.includes("salary") ||
+				s.includes("salary")
+			) {
+				return "payroll";
+			}
+			if (h.includes("chairs") || s.includes("chairs")) {
+				return "chairs";
+			}
+		}
+		return "financial";
+	});
 	const [currentPeriod, setCurrentPeriod] = useState<string>(period);
 	const [isPnlModalOpen, setIsPnlModalOpen] = useState(false);
 
@@ -81,6 +106,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 					<button
 						type="button"
 						role="tab"
+						data-testid="executive-tab-financial"
 						aria-selected={activeTab === "financial"}
 						onClick={() => setActiveTab("financial")}
 						className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
@@ -97,6 +123,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 					<button
 						type="button"
 						role="tab"
+						data-testid="executive-tab-payroll"
 						aria-selected={activeTab === "payroll"}
 						onClick={() => setActiveTab("payroll")}
 						className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${
@@ -113,6 +140,7 @@ export const ExecutiveDashboard: React.FC<ExecutiveDashboardProps> = (props) => 
 					<button
 						type="button"
 						role="tab"
+						data-testid="executive-tab-chairs"
 						aria-selected={activeTab === "chairs"}
 						onClick={() => setActiveTab("chairs")}
 						className={`h-8 px-2.5 sm:px-3 rounded-lg text-xs font-medium transition-colors cursor-pointer shrink-0 flex items-center gap-1.5 ${

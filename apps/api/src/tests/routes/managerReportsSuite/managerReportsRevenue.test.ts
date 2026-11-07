@@ -5,6 +5,8 @@ import type { FastifyInstance } from "fastify";
 import { db } from "../../../db/client.js";
 import { appointments, clinics, patients } from "../../../db/schema.js";
 import { withFixtureTenant } from "../../support/fixtureOrganizations.js";
+import { authTokenSecret } from "../../../security/authSecret.js";
+import { signToken } from "../../../utils/cryptoHelper.js";
 import {
 	CLINIC_ID,
 	ManagerReportsTestContext,
@@ -38,8 +40,9 @@ describe("отчёты руководителю: выручка и валида�
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 
-		// 50 000 запланированных и 7 000 возвращённых в выручку не входят.
-		assert.equal(body.totalRub, 10_000, JSON.stringify(body));
+		// 50 000 запланированных в выручку не входят.
+		// [ANL-02] 7 000 возвращённых честно вычитаются из чистой выручки (10 000 - 7 000 = 3 000).
+		assert.equal(body.totalRub, 3_000, JSON.stringify(body));
 		assert.equal(body.isEmpty, false);
 		assert.equal(body.granularity, "day");
 		assert.equal(body.points.length, 1);
@@ -57,7 +60,7 @@ describe("отчёты руководителю: выручка и валида�
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);
 		assert.equal(body.granularity, "month");
-		assert.equal(body.totalRub, 10_000);
+		assert.equal(body.totalRub, 3_000);
 	});
 
 	/**
@@ -222,10 +225,21 @@ describe("отчёты руководителю: выручка и валида�
 	test("данные чужой организации в отчёт не попадают", async (context) => {
 		if (!ctx.databaseAvailable) return context.skip("база недоступна");
 
+		const otherOrgId = "dce70000-0000-4000-8000-0000000004ff";
+		const otherSecret = authTokenSecret();
+		const otherClinicToken = signToken({ organizationId: otherOrgId }, otherSecret);
+		const otherStaffToken = signToken(
+			{ organizationId: otherOrgId, userId: "dce70000-0000-4000-8000-0000000004ee", role: "owner" },
+			otherSecret,
+		);
 		const response = await app.inject({
 			method: "GET",
 			url: "/api/reports/revenue",
-			headers: { "x-organization-id": "dce70000-0000-4000-8000-0000000004ff" },
+			headers: {
+				"x-organization-id": otherOrgId,
+				"x-dente-clinic-token": otherClinicToken,
+				"x-dente-staff-token": otherStaffToken,
+			},
 		});
 		assert.equal(response.statusCode, 200, response.body);
 		const body = JSON.parse(response.body);

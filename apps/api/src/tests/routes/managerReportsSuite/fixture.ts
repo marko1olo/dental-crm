@@ -16,6 +16,8 @@ import { registerReportRoutes } from "../../../routes/reports.js";
 import { currentMonthPeriod } from "../../../services/reports/managerReports.js";
 import { withFixtureTenant } from "../../support/fixtureOrganizations.js";
 import { createTenantTestApp } from "../../support/tenantTestApp.js";
+import { authTokenSecret } from "../../../security/authSecret.js";
+import { signToken } from "../../../utils/cryptoHelper.js";
 
 export const ORG_ID = "dce70000-0000-4000-8000-000000000401";
 export const CLINIC_ID = "dce70000-0000-4000-8000-000000000402";
@@ -25,7 +27,7 @@ export const PATIENT_OLD = "dce70000-0000-4000-8000-000000000405";
 export const PATIENT_NEW = "dce70000-0000-4000-8000-000000000406";
 export const VISIT_ID = "dce70000-0000-4000-8000-000000000407";
 export const APPOINTMENT_ID = "dce70000-0000-4000-8000-000000000408";
-export const ORG_HEADERS = { "x-organization-id": ORG_ID };
+export let ORG_HEADERS: Record<string, string> = { "x-organization-id": ORG_ID };
 
 export function isMissingDatabase(error: unknown): boolean {
 	const message = error instanceof Error ? error.message : String(error);
@@ -85,7 +87,7 @@ export async function seedFixtureRows(inPeriod: Date, longAgo: Date): Promise<vo
 				id: DOCTOR_ID,
 				organizationId: ORG_ID,
 				fullName: "Петров Пётр Петрович",
-				role: "doctor",
+				role: "owner",
 			})
 			.onConflictDoNothing();
 		await db
@@ -229,6 +231,19 @@ export async function setupReportsContext(): Promise<ManagerReportsTestContext> 
 	process.env.DENTE_CLINICAL_ALLOW_UNGUARDED_READS = "1";
 	process.env.DENTE_DEV_ALLOW_HEADER_ORG = "1";
 	process.env.NODE_ENV = "development";
+	process.env.AUTH_TOKEN_SECRET = process.env.AUTH_TOKEN_SECRET || "fixture_test_secret_32_bytes_long_string_12345";
+
+	const secret = authTokenSecret();
+	const clinicToken = signToken({ organizationId: ORG_ID }, secret);
+	const staffToken = signToken(
+		{ organizationId: ORG_ID, userId: DOCTOR_ID, role: "owner" },
+		secret,
+	);
+	ORG_HEADERS = {
+		"x-organization-id": ORG_ID,
+		"x-dente-clinic-token": clinicToken,
+		"x-dente-staff-token": staffToken,
+	};
 
 	const app = createTenantTestApp();
 	await registerReportRoutes(app);
