@@ -1642,11 +1642,28 @@
   2. В кассовом контуре `paymentRecordExecutor.ts` фазы проверки, блокировки и фиксации объединены в единую ACID транзакцию PostgreSQL 18.
   3. В `paymentCreationPipeline.ts` добавлена защита от повторного списания через составной ключ идемпотентности `${input.clientMutationId}:bonus`.
 
-### [LOY-04] [SEV-2] Бессмертные бонусы (Отсутствие фонового сгорания баллов по TTL)
+### [LOY-04] [SEV-2] [ИСПРАВЛЕНО] Бессмертные бонусы (Отсутствие фонового сгорания баллов по TTL)
 - **Файлы:**
-  - [`apps/api/src/db/schema/patientsSchema/loyaltyModules/loyaltyBonusesTable.ts#L46-L135`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/schema/patientsSchema/loyaltyModules/loyaltyBonusesTable.ts#L46-L135)
-  - [`apps/api/src/routes/loyaltyModules/bonusBalanceService.ts#L18-L62`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusBalanceService.ts#L18-L62)
-- **Суть бага:** В базе сохраняется поле `expiresAt` (на 180 дней), но во всем бэкенде **нет ни одного cron-задания или фонового воркера для сгорания баллов**. Колонка `lifetimeExpiredPoints` никогда не обновляется. Баллы пациентов живут вечно.
+  - [`apps/api/src/routes/loyaltyModules/bonusBalanceService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusBalanceService.ts)
+  - [`apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/bonusRedemptionService.ts)
+  - [`apps/api/src/routes/loyaltyModules/loyaltyBalanceRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltyBalanceRoutes.ts)
+  - [`apps/api/src/db/billing/paymentRecordExecutor.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/db/billing/paymentRecordExecutor.ts)
+  - [`apps/web/src/components/loyalty/LoyaltyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/LoyaltyStudioModal.tsx)
+  - [`apps/api/src/tests/loyaltyBonusTtlExpiration.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/loyaltyBonusTtlExpiration.test.ts)
+- **Суть бага:** В базе сохранялось поле `expiresAt` (на 180 дней), но отсутствовал фоновый воркер и JIT пересчет для сгорания баллов. Колонка `lifetimeExpiredPoints` никогда не обновлялась. Баллы пациентов жили вечно.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. **JIT TTL Evaluation & Фоновый крон:**
+     - В `bonusBalanceService.ts` реализована функция `processPatientExpiredBonuses(tx, orgId, patientId, asOfDate)`: находит все начисления с `expiresAt <= asOfDate` и `unspentPoints > 0`, списывает просроченные баллы, увеличивает `lifetimeExpiredPoints`, обнуляет `unspentPoints` и создает транзакцию с типом `expired`.
+     - Функция `processExpiredBonuses(orgId, asOfDate)` обеспечивает пакетную фоновую обработку всех пациентов клиники через эндпоинт `POST /api/loyalty/process-expired`.
+     - Функция `getPatientBonusBalance` автоматически выполняет JIT сгорание просроченных баллов перед отдачей баланса и возвращает поля `nearestExpiringPoints`, `nearestExpirationDate`, `daysUntilNearestExpiration`, `lifetimeExpiredPoints`.
+  2. **FIFO списание начислений (Earliest Expiring First):**
+     - Реализована функция `deductUnspentPointsFifo`: при списании бонусов на кассе или в модалке первыми гасятся начисления с самым ранним сроком сгорания (`expiresAt ASC`), что исключает преждевременное сгорание уже потраченных пациентом баллов.
+     - Интегрировано в `executeBonusRedeem`, `executeBonusConfirm` и кассовый `commitBonusDeduction`.
+  3. **UI информирование и 4-State Proofs:**
+     - В `LoyaltyStudioModal.tsx` и `loyaltyStudio.css` добавлен бейдж ближайшего сгорания («Сгорит X бонусов через Y дн. (дата)») и общая статистика сгоревших бонусов.
+     - В истории операций поддержана семантическая подсветка сгораний (`expired`).
+     - Сняты и верифицированы 4-State Proofs (PC Light/Dark 1440x900, Mobile Light/Dark 390x844 Apple HIG) в `docs/proofs/loyalty/`.
+  4. **Автоматизированное покрытие:** Тесты `loyaltyBonusTtlExpiration.test.ts` (4/4 PASS) и `loyaltySSOTSuite.test.tsx` (47/47 PASS).
 
 ### [LOY-05] [SEV-1] [ИСПРАВЛЕНО] BOLA / IDOR уязвимость списания чужого семейного кошелька
 - **Файлы:**

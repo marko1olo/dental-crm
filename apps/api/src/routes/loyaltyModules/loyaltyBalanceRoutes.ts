@@ -1,12 +1,9 @@
 import { calculateCashbackPoints } from "@dental/shared";
-import { and, eq } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { requireOrganizationId } from "../../security/identity.js";
-import { db } from "../../db/client.js";
 import { withTenantCtx } from "../../db/rls.js";
-import { patientBonusBalances, patients } from "../../db/schema.js";
-import { manualAccrueBodySchema, accrueCashbackBodySchema } from "./loyaltySchemas.js";
-import { executeBonusAccrual } from "./bonusBalanceService.js";
+import { manualAccrueBodySchema, accrueCashbackBodySchema, processExpiredBodySchema } from "./loyaltySchemas.js";
+import { executeBonusAccrual, getPatientBonusBalance, processExpiredBonuses } from "./bonusBalanceService.js";
 
 export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 	app.get("/api/loyalty/balance/:patientId", async (request, reply) => {
@@ -15,31 +12,9 @@ export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 		const { patientId } = request.params as { patientId: string };
 
 		return withTenantCtx(orgId, async () => {
-			const [patient] = await db
-				.select({ id: patients.id, fullName: patients.fullName })
-				.from(patients)
-				.where(and(eq(patients.organizationId, orgId), eq(patients.id, patientId)))
-				.limit(1);
-			if (!patient) return reply.status(404).send({ message: "Пациент не найден" });
-
-			const [balance] = await db
-				.select()
-				.from(patientBonusBalances)
-				.where(and(eq(patientBonusBalances.organizationId, orgId), eq(patientBonusBalances.patientId, patientId)))
-				.limit(1);
-
-			return reply.send({
-				patientId,
-				patientName: patient.fullName,
-				activePoints: Number(balance?.activePoints ?? 0),
-				pendingPoints: Number(balance?.pendingPoints ?? 0),
-				lifetimeEarnedPoints: Number(balance?.lifetimeEarnedPoints ?? 0),
-				lifetimeSpentPoints: Number(balance?.lifetimeSpentPoints ?? 0),
-				tier: "bronze",
-				cashbackPercent: 3.0,
-				maxInvoiceCoveragePercent: 30.0,
-				pointRateRub: 1.0,
-			});
+			const result = await getPatientBonusBalance({ orgId, patientId });
+			if (!result) return reply.status(404).send({ message: "Пациент не найден" });
+			return reply.send(result);
 		});
 	});
 
@@ -71,6 +46,25 @@ export async function registerLoyaltyBalanceRoutes(app: FastifyInstance) {
 			const res = await executeBonusAccrual({ orgId, patientId, amountPoints: pointsToAccrue, description: description || "Кэшбэк за оплату услуг", txType: "accrual_cashback", expiresInDays, relatedPaymentId: paymentId, relatedInvoiceId: invoiceId });
 			if ("notFound" in res) return reply.status(404).send({ message: "Пациент не найден" });
 			return reply.status(201).send(res);
+		});
+	});
+
+	/**
+	 * Background / Cron endpoint: Batch expiration of overdue bonuses across the organization [LOY-04].
+	 */
+	app.post("/api/loyalty/process-expired", async (request, reply) => {
+		const orgId = requireOrganizationId(request, reply);
+		if (!orgId) return;
+		const parsed = processExpiredBodySchema.safeParse(request.body || {});
+		if (!parsed.success) {
+			return reply.status(400).send({ message: "Некорректные параметры даты", errors: parsed.error.format() });
+		}
+
+		const asOfDate = parsed.data?.asOfDate ? new Date(parsed.data.asOfDate) : new Date();
+
+		return withTenantCtx(orgId, async () => {
+			const res = await processExpiredBonuses(orgId, asOfDate);
+			return reply.status(200).send({ success: true, ...res });
 		});
 	});
 }

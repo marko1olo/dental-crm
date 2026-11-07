@@ -5,7 +5,7 @@ export const redeemPointsBodySchema = z.object({
 	invoiceId: z.string().uuid().optional().nullable(),
 	invoiceAmountRub: z.number().positive(),
 	pointsToRedeem: z.number().positive(),
-	allowFullCoverage: z.boolean().optional().default(true),
+	allowFullCoverage: z.boolean().optional().default(false),
 	clientMutationId: z.string().optional(),
 	description: z.string().default("Списание баллов в счет оплаты лечения"),
 });
@@ -42,3 +42,29 @@ export const referralRegisterBodySchema = z.object({
 	rewardRub: z.number().positive().default(1000),
 	note: z.string().optional(),
 });
+
+export const holdPointsBodySchema = z.object({
+	patientId: z.string().uuid(),
+	invoiceId: z.string().uuid().optional().nullable(),
+	invoiceAmountRub: z.number().positive(),
+	pointsToHold: z.number().positive(),
+	allowFullCoverage: z.boolean().optional().default(false),
+	clientMutationId: z.string().optional(),
+	description: z.string().default("Холдирование баллов для кассового чека"),
+});
+
+export const confirmHoldBodySchema = z.object({
+	holdId: z.string().uuid(),
+	paymentId: z.string().uuid().optional().nullable(),
+	clientMutationId: z.string().optional(),
+});
+
+export const releaseHoldBodySchema = z.object({
+	holdId: z.string().uuid(),
+	reason: z.string().default("Отмена фискализации чека"),
+});
+
+export const processExpiredBodySchema = z.object({
+	asOfDate: z.string().datetime().optional(),
+});
+
