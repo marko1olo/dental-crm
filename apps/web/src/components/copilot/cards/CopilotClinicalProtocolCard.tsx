@@ -44,14 +44,21 @@ export const CopilotClinicalProtocolCard: React.FC<
 		try {
 			const store = useVisitStore.getState();
 			if (patch) {
+				const mergeField = (existing?: string, incoming?: string): string | undefined => {
+					if (!incoming) return existing;
+					if (!existing || !existing.trim()) return incoming;
+					if (existing.trim() === incoming.trim() || existing.includes(incoming.trim())) return existing;
+					return `${existing.trim()}\n${incoming.trim()}`;
+				};
+
 				store.setVisitNoteForm((prev) => ({
 					...prev,
-					...(patch.complaint ? { complaint: patch.complaint } : {}),
-					...(patch.anamnesis ? { anamnesis: patch.anamnesis } : {}),
-					...(patch.objectiveStatus ? { objectiveStatus: patch.objectiveStatus } : {}),
-					...(patch.treatmentPlan ? { treatmentPlan: patch.treatmentPlan } : {}),
-					...(patch.recommendations ? { recommendations: patch.recommendations } : {}),
-					...(patch.diagnosis ? { diagnosis: patch.diagnosis } : {}),
+					complaint: mergeField(prev.complaint, patch.complaint) ?? prev.complaint,
+					anamnesis: mergeField(prev.anamnesis, patch.anamnesis) ?? prev.anamnesis,
+					objectiveStatus: mergeField(prev.objectiveStatus, patch.objectiveStatus) ?? prev.objectiveStatus,
+					treatmentPlan: mergeField(prev.treatmentPlan, patch.treatmentPlan) ?? prev.treatmentPlan,
+					recommendations: mergeField(prev.recommendations, patch.recommendations) ?? prev.recommendations,
+					diagnosis: patch.diagnosis || prev.diagnosis,
 				}));
 			}
 

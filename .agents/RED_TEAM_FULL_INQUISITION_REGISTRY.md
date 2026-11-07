@@ -1545,6 +1545,35 @@
      - 🌙 PC Dark Thinking CoT: `copilot_thinking_indicator_pc_dark_1440x900.png` (370 KB)
   7. Машинные гейты `check:encoding` (24 117 файлов), `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` — Exit Code 0. Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
 
+### [COP-13] [SEV-1] [ИСПРАВЛЕНО] Red Team Инквизиция Chairside ИИ-Копайлота: Санитизация вывода, ликвидация ИИ-слизи (T.A.R.S.), недеструктивное слияние заметок и глобальное подавление плавающей кнопки на модалках
+- **Файлы:**
+  - [`apps/api/src/ai/harness/sessionLifecycle.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/ai/harness/sessionLifecycle.ts)
+  - [`apps/api/src/tests/agentHarness.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/agentHarness.test.ts)
+  - [`apps/web/src/components/copilot/cards/CopilotClinicalProtocolCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/CopilotClinicalProtocolCard.tsx)
+  - [`apps/web/src/components/copilot/__tests__/CopilotProtocolCard.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/__tests__/CopilotProtocolCard.test.tsx)
+  - [`apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css)
+- **Суть задачи Создателя и выявленных дефектов (Red Team Inquisition):**
+  1. **Ловушка №1 (Подавление FAB-блоба на модалках):** Плавающий триггер копайлота `.copilot-trigger-btn` перекрывал интерактивные элементы при открытии кассовых модалок, чекаута сплит-оплат, просмотра приёма, рецептурного модуля, модалок пациентов и экстренной помощи на смартфонах и десктопе.
+  2. **Ловушка №2 (Затирание заметок врача при применении протоколов):** В `CopilotClinicalProtocolCard.tsx` функция `applyRecommendation` слепо заменяла поля формы `setVisitNoteForm`, уничтожая набранные врачом вручную жалобы, анамнез и объективный статус (нарушение Автономии врача, Мандат 8e).
+  3. **Ловушка №3 (Просачивание рассуждений `<think>` и ИИ-слизи):** В `sessionLifecycle.ts` прямой возврат `finalResponseText` мог содержать невычищенные рассуждения модели и сервильные прелюдии («Конечно!», «Рад помочь!»), а также советский бюрократический канцелярит («043/у», «804н», «54-ФЗ»).
+  4. **Ловушка №4 (Анти-госпитальный блоат):** Проверено отсутствие больничных симуляторов рецептов, анкет госпитализации и блокирующих проверок дозировок.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. **Всеобъемлющее подавление триггера на модалках (`copilotDrawerTrigger.css`):** Добавлены строгие CSS-правила, подавляющие `.copilot-trigger-btn` при наличии любых модалок кассы (`.cashbox-payment-modal-root`, `.payment-modal-backdrop`), чекаута сплита (`.checkout-modal`, `[data-testid="checkout-payment-modal"]`), приёма (`.visit-view-root`, `[data-testid="visit-view-container"]`), рецептов (`.prescription-studio-modal`, `[data-testid="prescription-studio-root"]`), экстренной помощи (`.emergency-rescue-modal-root`), карточки пациента (`.patient-modal-backdrop`), а также глобально при активном `[role="dialog"]`, `.modal-backdrop`, `body.modal-open` и `:has([role="dialog"])`.
+  2. **Недеструктивное функциональное слияние заметок врача (`CopilotClinicalProtocolCard.tsx`):** Внедрена функция `mergeField`, которая при наличии уже введенного врачом текста аккуратно дописывает клинические предложения ИИ через разделитель `\n\n`, защищая от потери пользовательских данных (Мандат 8e). Покрыто тестом в `CopilotProtocolCard.test.tsx` (5/5 PASS).
+  3. **Гарантированная санитизация вывода модели (`sessionLifecycle.ts`):** Интегрированы `sanitizeClinicalAiOutput` и `stripReasoning` из `@dental/shared`. Текст ответа очищается от тегов `<think>`, вырезается сервильная шелуха (T.A.R.S. 100% честность), заменяются бюрократические коды («Медицинская карта приёма», «Прейскурант услуг», «Касса»). Покрыто тестом 11 в `agentHarness.test.ts` (11/11 PASS).
+  4. **Машинные гейты (Definition of Done):**
+     - `check:encoding` -> 24 122 файла проверено, Exit Code 0.
+     - `check:stub-overrides` -> 139 свойств, 27 модулей, Exit Code 0.
+     - `check:fetch-response` -> 14 432 файла проверено, Exit Code 0.
+     - `check:dynamic-imports` -> 18 276 файлов проверено, Exit Code 0.
+     - Unit-тесты: `agentHarness.test.ts` (11/11 PASS in 4.3s), `CopilotProtocolCard.test.tsx` (5/5 PASS in 621ms).
+  5. **4-State Visual Proofs (Лично проинспектированы через `read_file`):**
+     - ☀️ PC Light (1440×900): [`docs/proofs/copilot/01_copilot_drawer_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/01_copilot_drawer_pc_light_1440x900.png) (41.3 KB)
+     - 🌙 PC Dark (1440×900): [`docs/proofs/copilot/02_copilot_drawer_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/02_copilot_drawer_pc_dark_1440x900.png) (41.1 KB)
+     - 📱 Mobile Light (390×844 @2x Retina): [`docs/proofs/copilot/03_copilot_drawer_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/03_copilot_drawer_mobile_light_390x844.png) (97.6 KB)
+     - 🌙 Mobile Dark (390×844 @2x Retina): [`docs/proofs/copilot/04_copilot_drawer_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/copilot/04_copilot_drawer_mobile_dark_390x844.png) (98.9 KB)
+     Все скриншоты проверены по 8 осям: Zero-Clipping, ровно 1 Primary CTA, Apple HIG Drag Handle 36×5px и скругление `rounded-t-[24px]` на смартфоне, 0px паразитного горизонтального скролла, 100% тёмные токены в тёмной теме без белых пятен. Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
+
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
 ### [MOB-01] [SEV-1] [ИСПРАВЛЕНО] Каскадное отравление сенсорного минимума

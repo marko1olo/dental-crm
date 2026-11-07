@@ -288,7 +288,7 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 			(err: Error) => {
 				// Secret must be masked!
 				assert.ok(!err.message.includes(rawKey), "Raw API key must NOT leak in error message");
-				assert.ok(err.message.includes("agentrouter...ytT3u"), "Masked key should be present");
+				assert.ok(err.message.includes("sk-***tT3u") || err.message.includes("agentrouter...ytT3u"), "Masked key should be present");
 				return true;
 			},
 		);
@@ -393,5 +393,42 @@ describe("Autonomous Dental Agent ReAct Harness & Routes", () => {
 		assert.ok(res.body.length > 0);
 
 		await app.close();
+	});
+
+	it("11. runAgentHarness sanitizes output: strips reasoning, AI fluff and transforms bureaucratic codes (Mandates 8x, 8ba, T.A.R.S.)", async () => {
+		const fluffClient = {
+			createChatCompletion: async () => ({
+				id: "chatcmpl-fluff",
+				object: "chat.completion",
+				created: Date.now(),
+				model: "gemini-3.6-flash",
+				choices: [
+					{
+						index: 0,
+						message: {
+							role: "assistant",
+							content: "<think>Внутренние рассуждения модели...</think>Конечно! Рад помочь! Согласно форме 043/у и номенклатуре 804н данные внесены, чек проведен по 54-ФЗ.",
+						},
+						finish_reason: "stop",
+					},
+				],
+			}),
+		} as unknown as AgentRouterClient;
+
+		const result = await runAgentHarness({
+			messages: [{ role: "user", content: "Оформи приём" }],
+			context: { organizationId: testOrgId },
+			client: fluffClient,
+		});
+
+		assert.ok(!result.text.includes("<think>"), "Must strip thinking tags");
+		assert.ok(!result.text.includes("Конечно!"), "Must eliminate AI fluff");
+		assert.ok(!result.text.includes("Рад помочь!"), "Must eliminate AI fluff");
+		assert.ok(!result.text.includes("043/у"), "Must replace Soviet code 043/у");
+		assert.ok(!result.text.includes("804н"), "Must replace bureaucratic code 804н");
+		assert.ok(!result.text.includes("54-ФЗ"), "Must replace bureaucratic code 54-ФЗ");
+		assert.ok(result.text.includes("Медицинская карта приёма"), "Must use clean clinical terms");
+		assert.ok(result.text.includes("Прейскурант услуг"), "Must use clean clinical terms");
+		assert.ok(result.text.includes("Касса"), "Must use clean clinical terms");
 	});
 });

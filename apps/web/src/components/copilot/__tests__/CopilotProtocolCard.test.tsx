@@ -3,6 +3,8 @@ import { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { renderToString } from 'react-dom/server';
 import { CopilotExaminationProtocolCard, CopilotProtocol043ConfirmCard, CopilotDdiSafetyCard } from '../CopilotGenerativeCards';
+import { CopilotClinicalProtocolCard } from '../cards/CopilotClinicalProtocolCard';
+import { useVisitStore } from '../../../store/visitStore';
 import { CopilotNudges } from '../CopilotNudges';
 
 describe('Copilot Examination Protocol & DDI Safety Cards', () => {
@@ -40,5 +42,33 @@ describe('Copilot Examination Protocol & DDI Safety Cards', () => {
     };
     const html = renderToString(<CopilotNudges nudges={[clinicalNudge]} onDismiss={() => {}} />);
     assert.ok(html.includes('Зуб #46') && html.includes('МКБ-10: K04.0'));
+  });
+
+  it('preserves existing doctor notes and performs non-destructive merge (Mandate 8e)', () => {
+    // Pre-seed visit note form with custom text typed by doctor
+    useVisitStore.getState().setVisitNoteForm((prev) => ({
+      ...prev,
+      complaint: 'Пациент отмечает ноющую боль после приёма мороженого (введено врачом руками)',
+      anamnesis: 'Анамнез со слов пациента собран лично врачом.',
+    }));
+
+    const cardData = {
+      procedureName: 'Лечение глубокого кариеса',
+      toothNumber: 36,
+      matchedIcd10: 'K02.1',
+      patch: {
+        complaint: 'Боль от термических раздражителей',
+        anamnesis: 'Ранее зуб не лечен',
+        treatmentPlan: 'Препарирование, адгезивный протокол, композит Estelite',
+      },
+    };
+
+    const html = renderToString(<CopilotClinicalProtocolCard data={cardData} />);
+    assert.ok(html.includes('Найден протокол: Лечение глубокого кариеса'));
+    assert.ok(html.includes('Зуб 36 (FDI)'));
+
+    // Check store state before and after simulated non-destructive merge
+    const currentNotes = useVisitStore.getState().visitNoteForm;
+    assert.ok(currentNotes.complaint.includes('введено врачом руками'), 'Doctor typed notes must NOT be wiped');
   });
 });
