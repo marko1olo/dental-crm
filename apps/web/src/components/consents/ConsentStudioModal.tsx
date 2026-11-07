@@ -482,10 +482,8 @@ export const ConsentStudioModal: React.FC<ConsentStudioModalProps> = ({
 				{/* Floating Bottom Bar (Apple HIG Thumb Zone, ровно 1 Primary CTA #0d9488, Мандаты 8e, 8am) */}
 				<footer className="sticky bottom-0 z-10 flex flex-col sm:flex-row items-center justify-between gap-3 px-4 md:px-6 py-3 pb-[calc(12px+env(safe-area-inset-bottom,0px))] border-t border-[var(--line,#e2e8f0)] bg-[var(--paper-strong,#ffffff)]/95 backdrop-blur-md shrink-0">
 					<div className="text-xs text-[var(--ink-muted,#64748b)] hidden sm:block">
-						{toastMsg ? (
+						{toastMsg && (
 							<span className="text-emerald-600 dark:text-emerald-400 font-medium">{toastMsg}</span>
-						) : (
-							<span>Мандат 8e: подписание в 1 клик. Кнопка никогда не блокируется.</span>
 						)}
 					</div>
 
