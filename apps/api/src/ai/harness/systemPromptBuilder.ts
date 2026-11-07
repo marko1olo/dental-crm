@@ -166,6 +166,7 @@ export function buildAgentSystemPrompt(
 	activeTooth?: number | null | undefined,
 	activeVisitId?: string | null | undefined,
 	messages?: AgentRouterChatMessage[],
+	trustLevel?: "confirm_all" | "balanced" | "autonomous" | undefined,
 ): string {
 	const runtimeSpecificDirective =
 		runtimeMode === "desktop_native"
@@ -183,19 +184,20 @@ export function buildAgentSystemPrompt(
    - 'run_workstation_command': запуск диагностических команд оборудования с контролем времени WaitMsBeforeAsync и уходом в фон.
    - 'manage_task': фоновый менеджер задач (list, status, kill, send_input).
    - 'schedule': установка таймеров и периодических напоминаний для ассистента.
-3. Внешний медицинский софт и Vision:
-   - 'launch_workstation_app': запуск программ Planmeca Romexis, VATECH EzDent, EasyDent, Sidexis, 3Shape, Exocad.
-   - 'capture_workstation_screen': захват снимка экрана или ROI датчика визиографа для мультимодального анализа.
+3. Внешний медицинский софт, буфер обмена Windows и Vision:
+   - 'launch_workstation_app': прямой запуск программ Planmeca Romexis, VATECH EzDent, Ez3D Plus, Sidexis, 3Shape, Exocad.
+   - 'capture_workstation_screen': захват снимка экрана или ROI датчика визиографа для мультимодального анализа без ручного экспорта.
+   - Интеграция с буфером обмена ОС Windows: мгновенный обмен клиническими протоколами и назначениями с внешними окнами.
 4. Локальный MCP-мост (Model Context Protocol):
-   - 'call_local_mcp_tool': вызов инструментов кассовых аппаратов Атол/Штрих-М, 2D сканеров Честный Знак и TWAIN-сенсоров.
+   - 'call_local_mcp_tool': вызов инструментов кассовых аппаратов Атол/Штрих-М, 2D сканеров Честный Знак и TWAIN-сенсоров через mcp desktop-control.
    - 'list_local_mcp_tools', 'read_local_mcp_resource': опрос инструментов и телеметрии подключенного оборудования.
 5. Настройка и импорт данных клиники:
    - 'configure_clinic_setup': автономная настройка клиники под ключ (кресла, врачи, смены, каталог услуг, кассовый аппарат).
    - 'import_clinic_data_file': пакетный импорт прейскуранта услуг или базы пациентов из файлов Excel, CSV, JSON.
-Если врач просит настроить клинику, найти файл, проверить датчик или фискализировать чек — активно используй эти системные инструменты!`
+Если врач просит настроить клинику, найти файл, проверить датчик, запустить Romexis или фискализировать чек — активно используй эти системные инструменты!`
 			: `[СРЕДА ВЫПОЛНЕНИЯ: WEB_BROWSER (БРАУЗЕРНЫЙ КЛИЕНТ)]
-Ты работаешь в стандартном веб-браузере врача.
-Тебе доступны все клинические инструменты анализа карты, расчета анестезии, проверки соматики, протоколов лечения и зубной формулы, а также настройка клиники и импорт файлов.
+Ты работаешь в стандартном веб-браузере врача у стоматологического кресла.
+Тебе доступны все клинические инструменты анализа карты, расчета анестезии, проверки соматики, протоколов лечения и зубной формулы FDI, а также настройка клиники и импорт файлов через Fastify API и PostgreSQL.
 Аппаратное прямое управление USB-датчиками, кассами и локальными папками Windows недоступно из браузера.
 Если врач просит прямой аппаратный запуск оборудования — объясни, что эта функция активируется в настольном приложении DENTE Desktop EXE, а в веб-версии снимок загружается через интерфейс.`;
 
@@ -234,6 +236,16 @@ export function buildAgentSystemPrompt(
 	const detectedDomain = detectClinicalProcedureDomain(doctorSpecialization, messages);
 	const procedureProtocolSection = getDomainProtocolSection(detectedDomain);
 
+	const trustLevelDirective =
+		trustLevel === "autonomous"
+			? `\n\n=== УРОВЕНЬ ДОВЕРИЯ И АВТОНОМИИ ОПЕРАТОРА (TRUST LEVEL: AUTONOMOUS) ===
+Режим полной клинической автономии. Безопасные операции (обновление зубной формулы FDI, поиск по прейскуранту, черновик сметы, генерация протокола SOAP) применяются мгновенно без пауз и подтверждений. Мутируй состояние без лишних подтверждений.`
+			: trustLevel === "confirm_all"
+				? `\n\n=== УРОВЕНЬ ДОВЕРИЯ И АВТОНОМИИ ОПЕРАТОРА (TRUST LEVEL: CONFIRM_ALL) ===
+Режим максимальной осторожности. Каждый вызов инструмента требует явного подтверждения оператора перед исполнением. Обосновывай каждый шаг.`
+				: `\n\n=== УРОВЕНЬ ДОВЕРИЯ И АВТОНОМИИ ОПЕРАТОРА (TRUST LEVEL: BALANCED) ===
+Сбалансированный режим (стандартный). Чтение данных и безопасные разметки выполняются автономно; деструктивные мутации (удаление записей, отмена визитов, перезапись планов) требуют подтверждения врача (confirmation_required).`;
+
 	const doctorProfileSection =
 		doctorSpecialization || customInstructions || (memoryFacts && memoryFacts.length > 0)
 			? `\n\n=== ИНДИВИДУАЛЬНЫЙ КЛИНИЧЕСКИЙ ПРОФИЛЬ ВРАЧА И ПАМЯТЬ АССИСТЕНТА ===\nСпециализация: ${doctorSpecialization || "Стоматолог общей практики"}\n${customInstructions ? `Инструкции и стиль врача: ${customInstructions}\n` : ""}${memoryFacts && memoryFacts.length > 0 ? `Факты из долговременной памяти:\n${memoryFacts.map((f) => `• ${f}`).join("\n")}\n` : ""}`
@@ -261,6 +273,7 @@ ${MULTIMODAL_STUDY_INTERPRETATION_DIRECTIVE}
 
 === СПЕЦИАЛИЗАЦИЯ И МАНДАТ ===
 ${roleDirective}
+${trustLevelDirective}
 
 === ПРИНЦИПЫ РАБОТЫ И ИСПОЛЬЗОВАНИЯ ИНСТРУМЕНТОВ ===
 1. ВХОД: Свободная естественная речь врача. Категорически запрещены слэш-команды (/calc, /rx, /record) — ты автономно понимаешь клинику и вызываешь нужные инструменты через Function Calling.

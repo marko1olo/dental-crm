@@ -1,6 +1,6 @@
 /**
- * CopilotWorkspaceHost.test.tsx — Red Team тесты единого кабинета Копайлота DENTE.
- * Мандаты 8b, 8e (автономия врача), 8am (ровно 1 Primary CTA), 8wy (двухрежимный харнесс).
+ * CopilotWorkspaceHost.test.tsx — Red Team тесты тонкого фасада Копайлота DENTE.
+ * Мандаты 8s (фасад без дублирования), 8e (автономия врача), 8wy (двухрежимный харнесс).
  */
 
 import { describe, it } from "node:test";
@@ -10,78 +10,61 @@ import { renderToString } from "react-dom/server";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { CopilotWorkspaceHost } from "../CopilotWorkspaceHost";
-import { DirectCopilotLauncher } from "../DirectCopilotLauncher";
-import { setRuntimeDemoMode } from "../../../utils/demoModeEngine";
+import { CopilotWorkspaceHost, CopilotDrawer } from "../CopilotWorkspaceHost";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-describe("CopilotWorkspaceHost Red Team Inquisition", () => {
-  it("1. рендерит панель кабинета Копайлота с заголовком и контекстом пациента", () => {
+describe("CopilotWorkspaceHost Red Team Inquisition (SSOT Facade)", () => {
+  it("1. рендерит канонический CopilotDrawer через фасад CopilotWorkspaceHost", () => {
     const html = renderToString(
       <CopilotWorkspaceHost
         isOpen={true}
         onClose={() => {}}
         activeTooth={36}
         patientName="Сидоров А. П."
-        initialTab="dialog"
+        initialTab="chat"
       />
     );
-    assert.ok(html.includes("ДЕНТА Копайлот"));
-    assert.ok(html.includes("Сидоров А. П."));
-    assert.ok(html.includes("Зуб 36"));
+    assert.ok(html.includes('data-testid="copilot-drawer"'), "Должен монтироваться канонический copilot-drawer");
+    assert.ok(html.includes("Клинический ассистент") || html.includes("Копайлот"));
   });
 
-  it("2. содержит обе ключевые вкладки: «Клинический диалог» и «Быстрые действия»", () => {
+  it("2. содержит обе канонические вкладки: «Чат» и «Задачи»", () => {
     const html = renderToString(
       <CopilotWorkspaceHost
         isOpen={true}
         onClose={() => {}}
-        initialTab="dialog"
+        initialTab="chat"
       />
     );
-    assert.ok(html.includes("Клинический диалог"));
-    assert.ok(html.includes("Быстрые действия"));
+    assert.ok(html.includes("Чат"));
+    assert.ok(html.includes("Задачи"));
   });
 
-  it("3. Мандат 8am: ровно ОДНА Primary CTA кнопка #0d9488 («✓ Применить в карту приёма»)", () => {
-    const html = renderToString(
-      <CopilotWorkspaceHost
-        isOpen={true}
-        onClose={() => {}}
-        initialTab="dialog"
-      />
-    );
-    assert.ok(html.includes('data-testid="copilot-primary-apply-cta"'));
-    assert.ok(html.includes("Применить в карту приёма"));
-    // Проверяем стиль Primary CTA (var(--teal) / #0d9488)
-    assert.ok(html.includes("var(--teal,#0d9488)") || html.includes("bg-[var(--teal,#0d9488)]"));
-  });
-
-  it("4. Apple HIG: нативный Drag Handle для выдвижного Bottom Sheet на мобильных", () => {
+  it("3. Apple HIG: нативный Drag Handle для выдвижного Bottom Sheet на мобильных", () => {
     const html = renderToString(
       <CopilotWorkspaceHost
         isOpen={true}
         onClose={() => {}}
       />
     );
-    assert.ok(html.includes("touch-none"));
-    assert.ok(html.includes("rounded-full"));
+    assert.ok(html.includes("copilot-drawer-drag-handle"));
   });
 
-  it("5. Мандат 8wy: Двухрежимный харнесс (Веб-ассистент vs Станция ОС)", () => {
+  it("4. Мандат 8wy: Двухрежимный харнесс (Веб-клиника vs Рабочая станция)", () => {
     const html = renderToString(
       <CopilotWorkspaceHost
         isOpen={true}
         onClose={() => {}}
       />
     );
-    assert.ok(html.includes("Веб-ассистент"));
-    assert.ok(html.includes("Станция ОС"));
+    assert.ok(html.includes("Веб-клиника"));
+    assert.ok(html.includes("Рабочая станция"));
+    assert.ok(html.includes('data-testid="copilot-mode-switcher"'));
   });
 
-  it("6. Вкладка «Быстрые действия»: рендерит 4 реальных Fastify инструмента без блокировок врача (Мандат 8e)", () => {
+  it("5. Вкладка «Задачи» (pending) рендерится без блокировок врача (Мандат 8e)", () => {
     const html = renderToString(
       <CopilotWorkspaceHost
         isOpen={true}
@@ -89,77 +72,43 @@ describe("CopilotWorkspaceHost Red Team Inquisition", () => {
         initialTab="actions"
       />
     );
-    assert.ok(html.includes("Бронирование слота"));
-    assert.ok(html.includes("Зубная формула FDI"));
-    assert.ok(html.includes("Выставление счёта"));
-    assert.ok(html.includes("Захват визиографа"));
-    // Мандат 8e: ни одна кнопка не имеет disabled
-    assert.equal(html.includes("disabled"), false, "Кнопки быстрых действий не должны быть disabled");
+    assert.ok(html.includes("Задачи"));
+    // Проверяем отсутствие заблокированных кнопок
+    assert.equal(html.includes("disabled"), false, "Кнопки задач не должны быть заблокированы");
   });
 
-  it("7. Мандат 8d pt 7: исходный код CopilotWorkspaceHost.tsx содержит строго 0 cartoon emojis", () => {
+  it("6. Мандат 8d pt 7: исходный код CopilotWorkspaceHost.tsx содержит строго 0 cartoon emojis", () => {
     const filePath = path.join(__dirname, "../CopilotWorkspaceHost.tsx");
     const content = fs.readFileSync(filePath, "utf-8");
     const emojiRegex = /[\u{1F300}-\u{1F9FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/u;
     assert.equal(emojiRegex.test(content), false, "Обнаружены запрещенные cartoon emojis в CopilotWorkspaceHost.tsx");
   });
 
-  it("8. Мандат 8b: размер файла CopilotWorkspaceHost.tsx строго в Sweet Spot 380–480 строк", () => {
+  it("7. Мандат 8s: размер файла CopilotWorkspaceHost.tsx строго компактный (< 75 строк)", () => {
     const filePath = path.join(__dirname, "../CopilotWorkspaceHost.tsx");
     const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 380 && lines <= 480, `CopilotWorkspaceHost.tsx имеет ${lines} строк (ожидалось 380–480)`);
+    assert.ok(lines <= 75, `CopilotWorkspaceHost.tsx имеет ${lines} строк (ожидалось <= 75)`);
   });
 
-  it("9. DirectCopilotLauncher: размер файла строго в Sweet Spot 60–80 строк", () => {
-    const filePath = path.join(__dirname, "../DirectCopilotLauncher.tsx");
-    const lines = fs.readFileSync(filePath, "utf-8").split("\n").length;
-    assert.ok(lines >= 60 && lines <= 80, `DirectCopilotLauncher.tsx имеет ${lines} строк (ожидалось 60–80)`);
-  });
-
-  it("10. DirectCopilotLauncher монтируется и не падает при SSR", () => {
-    const html = renderToString(<DirectCopilotLauncher />);
-    // В тестовом Node окружении без window.location search/hash возвращает null или компонент
-    assert.equal(typeof html, "string");
-  });
-
-  it("11. Мандат 8wy: в боевом режиме (!isDemoShowcaseMode()) диалог чист и рендерит Empty State", () => {
-    setRuntimeDemoMode(false);
-    const html = renderToString(
-      <CopilotWorkspaceHost
-        isOpen={true}
-        onClose={() => {}}
-        initialTab="dialog"
-      />
-    );
-    assert.ok(html.includes("Диалог чист"));
-    assert.ok(html.includes("Пациент не выбран"));
-    assert.ok(html.includes("Задайте клинический вопрос, продиктуйте дневник приёма голосом или выберите быстрое действие."));
-  });
-
-  it("12. Мандат 8wy: в демо-режиме (isDemoShowcaseMode()) подгружаются дефолтные сообщения и Иванов Иван Иванович", () => {
-    setRuntimeDemoMode(true);
-    const html = renderToString(
-      <CopilotWorkspaceHost
-        isOpen={true}
-        onClose={() => {}}
-        initialTab="dialog"
-      />
-    );
-    assert.ok(html.includes("Иванов Иван Иванович"));
-    assert.ok(html.includes("Пациент с жалобами на боли от холодного"));
-    setRuntimeDemoMode(null);
-  });
-
-  it("13. DEF-FRONT-03: DirectCopilotLauncher не хардкодит зуб 36 и пациента Иванов в коде", () => {
-    const filePath = path.join(__dirname, "../DirectCopilotLauncher.tsx");
-    const content = fs.readFileSync(filePath, "utf-8");
-    assert.equal(content.includes("activeTooth={36}"), false, "Обнаружен захардкоженный activeTooth={36}");
-    assert.equal(content.includes('patientName="Иванов Иван Иванович"'), false, "Обнаружен захардкоженный пациент Иванов");
-  });
-
-  it("14. AI-REV-02: CopilotWorkspaceHost изолирует симуляцию обновления зуба под isDemoShowcaseMode()", () => {
+  it("8. Мандат 8wy: отсутствие захардкоженного массива DEFAULT_MESSAGES про зуб 36", () => {
     const filePath = path.join(__dirname, "../CopilotWorkspaceHost.tsx");
     const content = fs.readFileSync(filePath, "utf-8");
-    assert.ok(content.includes("if (isDemoShowcaseMode())"), "Ответ обновления зуба обязан проверяться через isDemoShowcaseMode()");
+    assert.equal(content.includes("DEFAULT_MESSAGES"), false, "Обнаружен устаревший захардкоженный DEFAULT_MESSAGES");
+    assert.equal(content.includes("Пациент с жалобами на боли от холодного в зубе 36"), false, "Обнаружен статический хардкод жалобы");
+  });
+
+  it("9. Прозрачный реэкспорт канонического CopilotDrawer", () => {
+    assert.ok(CopilotDrawer !== undefined, "CopilotDrawer должен реэкспортироваться из CopilotWorkspaceHost");
+    assert.equal(typeof CopilotDrawer, "function");
+  });
+
+  it("10. При isOpen=false возвращает null", () => {
+    const html = renderToString(
+      <CopilotWorkspaceHost
+        isOpen={false}
+        onClose={() => {}}
+      />
+    );
+    assert.equal(html, "");
   });
 });

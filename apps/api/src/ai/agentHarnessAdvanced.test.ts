@@ -541,3 +541,53 @@ test("9. ToolDispatcher: Granular permissions auto-approve file and clinical act
 	assert.ok(result.text.includes("Файл успешно прочитан"));
 	assert.strictEqual(events.some((e) => e.type === "confirmation_required"), false, "Must auto-approve file read when granular permission is set");
 });
+
+test("10. buildAgentSystemPrompt: Injects trustLevel directives (autonomous, balanced, confirm_all)", () => {
+	const autoPrompt = buildAgentSystemPrompt(
+		"web_browser",
+		dummyContext,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		"autonomous",
+	);
+	assert.ok(autoPrompt.includes("TRUST LEVEL: AUTONOMOUS"));
+	assert.ok(autoPrompt.includes("Режим полной клинической автономии"));
+
+	const confirmPrompt = buildAgentSystemPrompt(
+		"web_browser",
+		dummyContext,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		"confirm_all",
+	);
+	assert.ok(confirmPrompt.includes("TRUST LEVEL: CONFIRM_ALL"));
+	assert.ok(confirmPrompt.includes("Режим максимальной осторожности"));
+
+	const balancedPrompt = buildAgentSystemPrompt(
+		"web_browser",
+		dummyContext,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		undefined,
+		"balanced",
+	);
+	assert.ok(balancedPrompt.includes("TRUST LEVEL: BALANCED"));
+	assert.ok(balancedPrompt.includes("Сбалансированный режим"));
+});

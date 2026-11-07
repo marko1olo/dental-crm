@@ -2,7 +2,7 @@
  * sessionLifecycle.ts — ReAct Loop Runner and Agent Session Lifecycle
  */
 
-import type { TaskPlan } from "@dental/shared";
+import { type TaskPlan, sanitizeClinicalAiOutput, stripReasoning } from "@dental/shared";
 import {
 	type AgentRouterChatMessage,
 	type AgentRouterChatResponse,
@@ -118,6 +118,7 @@ export async function runAgentHarness(
 		effectiveActiveTooth,
 		effectiveToolContext.activeVisitId,
 		messages,
+		params.trustLevel,
 	);
 
 	// Working history for this ReAct execution turn
@@ -330,7 +331,8 @@ export async function runAgentHarness(
 
 			// CASE 1: Model returned text without tool calls -> Final Answer reached
 			if (!toolCalls || toolCalls.length === 0) {
-				finalResponseText = content || "";
+				const rawContent = content || "";
+				finalResponseText = sanitizeClinicalAiOutput(stripReasoning(rawContent));
 				if (finalResponseText && !streamEmittedTokens) {
 					onEvent?.({ type: "token", text: finalResponseText });
 				}
@@ -472,6 +474,8 @@ export async function runAgentHarness(
 			throw new Error(safeErrMsg);
 		}
 	}
+
+	finalResponseText = sanitizeClinicalAiOutput(stripReasoning(finalResponseText));
 
 	onEvent?.({
 		type: "done",
