@@ -1267,9 +1267,31 @@
   4. В `useOfflineSync.ts` вызов `syncNow()` объединён с синхронизацией `flushOfflineAppointmentsToServer()` и `flushOfflinePaymentsToServer()`.
   5. Покрыто 7/7 тестами в `apps/web/src/tests/offlineQueueResilienceOff01Off02Off03.test.ts` (Exit Code 0). 4-State Proof: `01_cashbox_studio_pc_light_1440x900.png`, `02_cashbox_studio_pc_dark_1440x900.png`, `05_cashbox_studio_mobile_light_390x844.png`, `06_cashbox_studio_mobile_dark_390x844.png`.
 
-### [OFF-06] [SEV-2] Отсутствие слияния поверхностей зуба при параллельном редактировании
-- **Файл:** [`apps/api/src/services/sync/syncGateway/syncConflictResolver.ts#L171-L202`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncConflictResolver.ts#L171-L202)
-- **Суть бага:** Конфликт-резолвер одонтограммы работает по LWW на уровне зуба целиком. Если один врач офлайн отметил дистальную поверхность, а второй — окклюзионную, одна из них будет стёрта вместо union-слияния массива поверхностей.
+### [OFF-06] [ИСПРАВЛЕНО] [SEV-2] Отсутствие слияния поверхностей зуба при параллельном редактировании (Surface Union Merge)
+- **Файлы:**
+  - [`apps/api/src/services/sync/syncGateway/syncConflictResolver.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncConflictResolver.ts)
+  - [`apps/api/src/services/sync/syncGateway/syncClinicalHandlers.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/sync/syncGateway/syncClinicalHandlers.ts)
+  - [`packages/shared/src/sync/types.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/sync/types.ts)
+  - Тест-сьют: [`apps/api/src/tests/syncConflictResolverSurfaces.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/syncConflictResolverSurfaces.test.ts)
+- **Суть бага:** Конфликт-резолвер одонтограммы работал по LWW на уровне зуба целиком. Если один врач офлайн отметил дистальную поверхность, а второй — окклюзионную, одна из них стиралась вместо union-слияния массива поверхностей.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `syncConflictResolver.ts` реализован алгоритм умного слияния поверхностей (Surface Union Merge) `resolveOdontogramToothConflict`:
+     - При совместимых клинических диагнозах (кариес на разных поверхностях, пломба на разных поверхностях, вторичный кариес рядом с пломбой) поверхности объединяются через дедуплицированное объединение `Set([...clientSurfaces, ...serverSurfaces])` с канонической сортировкой (Black Class II MOD/OD/MO).
+     - Полноценная нормализация поверхностей `normalizeSurfaces()`: поддержка массивов строк, comma-separated строк, JSON-строк, дедупликация и canonical ordering (`mesial`, `occlusal`, `distal`, `vestibular`, `lingual`, `cervical`, `root`, `cusp`).
+  2. Защита от Red Team ловушки №1 (Клинические приоритеты):
+     - Статус удаления / экстракции / адентии (`extracted`, `absent`, `missing`, `удален`, `адентия`) имеет абсолютный клинический приоритет над кариесом/пломбами. Если зуб удален на сервере, входящий кариес не воскрешает зуб и поверхности обнуляются. Если клиент присылает удаление — удаление побеждает.
+     - Импланты и коронки защищены от устаревших поверхностных правок кариеса.
+  3. В `syncClinicalHandlers.ts` синхронизация `odontogram_state` переведена на реакцию `conflictCheck.isMerged || conflictCheck.clientWins`:
+     - Результирующий статус `conflictCheck.effectiveState` и объединенные поверхности `conflictCheck.effectiveSurfaces` сохраняются в PostgreSQL 18 `toothStates`.
+     - В `toothStateHistory` сохраняется подробная запись истории с пометкой `"Оффлайн-синхронизация одонтограммы (Surface Union Merge)"`.
+     - Конфликт регистрируется со стратегией `"surface_union_merge"` и победителем `"merged"`.
+  4. В `packages/shared/src/sync/types.ts` в `conflictResolutionStrategySchema` добавлен тип стратегии `"surface_union_merge"`.
+  5. Покрыто 18/18 тестами в `apps/api/src/tests/syncConflictResolverSurfaces.test.ts` (100% pass) и 9/9 тестами в `apps/api/src/tests/syncGatewayService.test.ts`.
+  6. 4-State Visual Proofs:
+     - ☀️ PC Light (1440×900): [`docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png) (262.5 KB)
+     - 🌙 PC Dark (1440×900): [`docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png) (265.0 KB)
+     - 📱 Mobile Light (390×844): [`docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png) (209.9 KB)
+     - 🌙 Mobile Dark (390×844): [`docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png) (207.4 KB)
 
 
 ## 17. 🤖 ИИ-КОПАЙЛОТ, WHISPER STT И КЛИНИЧЕСКИЙ ЧАСОВОЙ (SENTINEL)
@@ -2537,4 +2559,76 @@
      - 🌙 Mobile Dark (390x844): [`docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) (120.4 KB)
      - ☀️ PC Studio Modal Light: [`docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png) (81.0 KB)
      - 🌙 PC Studio Modal Dark: [`docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png) (80.7 KB)
+
+---
+
+## 32. 📅 SCHEDULE TIMELINE, CHAIR STUDIO & EXPRESS BOOKING SSOT INQUISITION (РАСПИСАНИЕ И ЭКСПРЕСС-ЗАПИСЬ)
+
+### [SCHED-01] [SEV-1] [ЗАКРЫТО] Ликвидация наложения иконок на текст в экспресс-записи (Zero Input Collision)
+- **Файлы:**
+  - [`apps/web/src/components/schedule/chairStudio/ChairQuickBookingPopover.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairQuickBookingPopover.tsx)
+- **Суть бага:** В шторке экспресс-бронирования слота иконка пользователя (`User`) накладывалась на первую букву «И» в плейсхолдере «Иванов Иван Иванович», а иконка телефона (`Phone`) — на «+7», из-за недостаточного левого паддинга (`pl-9`) и отсутствия вертикального центрирования иконок при растяжении инпутов на мобильных устройствах.
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `ChairQuickBookingPopover.tsx` контейнерам инпутов задан `relative flex items-center`.
+  2. Иконкам `User` и `Phone` задано строгое центрирование `absolute left-3 w-4 h-4 text-[var(--muted)] pointer-events-none`.
+  3. Инпутам задан гарантированный внутренний отступ `style={{ paddingLeft: "38px" }}` и `min-h-[44px]`. Текст и плейсхолдеры начинаются с чистым зазором в 10px после иконки. Наложение полностью ликвидировано.
+
+### [SCHED-02] [SEV-1] [ЗАКРЫТО] Ликвидация наложения плавающей кнопки ИИ-ассистента на инпуты шторки записи на мобильных (Zero Floating Blobs)
+- **Файлы:**
+  - [`apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/drawerStyles/copilotDrawerTrigger.css)
+- **Суть бага:** На экранах мобильных устройств (390×844) при открытии шторки экспресс-записи плавающая кнопка ИИ-копайлота `.copilot-trigger-btn` с `z-index: 9990` зависала на высоте `bottom: calc(136px + env(safe-area-inset-bottom))` и перекрывала правый край селектора «Причина визита», создавая визуальный дефект «огромной бирюзовой кнопки поверх поля ввода».
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `copilotDrawerTrigger.css` добавлены селекторы подавления:
+     ```css
+     body:has([data-testid="chair-schedule-studio-modal"]) .copilot-trigger-btn,
+     body:has([data-testid="quick-booking-popover"]) .copilot-trigger-btn,
+     body:has([data-testid="appointment-studio-modal-root"]) .copilot-trigger-btn,
+     body:has([data-testid="appointment-booking-modal"]) .copilot-trigger-btn,
+     :has([data-testid="chair-schedule-studio-modal"]) .copilot-trigger-btn,
+     :has([data-testid="quick-booking-popover"]) .copilot-trigger-btn,
+     :has([data-testid="appointment-studio-modal-root"]) .copilot-trigger-btn,
+     :has([data-testid="appointment-booking-modal"]) .copilot-trigger-btn
+     ```
+  2. При открытии студии расписания и шторки экспресс-записи плавающая кнопка немедленно и бесшовно скрывается (`display: none !important`), освобождая доступ ко всем элементам управления.
+
+### [SCHED-03] [SEV-2] [ЗАКРЫТО] Искоренение дев-жаргона и мета-статусов из интерфейса (Мандат 8zg)
+- **Файлы:**
+  - [`apps/web/src/components/schedule/chairStudio/ChairScheduleStudioHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairScheduleStudioHeader.tsx)
+  - [`apps/web/src/components/schedule/chairStudio/ChairScheduleStudioFooter.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairScheduleStudioFooter.tsx)
+  - [`apps/web/src/components/schedule/__tests__/chairScheduleStudioDecomposition.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/__tests__/chairScheduleStudioDecomposition.test.tsx)
+- **Суть бага:** 
+  1. В шапке студии расписания отображалась надпись `• Режим без блокировок` (утечка дев-жаргона в продакшн UI, запрещенная Мандатом 8zg).
+  2. В футере студии расписания отображалась надпись `• Автосохранение активно` (мета-хвастовство архитектурой, запрещенное Мандатом 8zg).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В `ChairScheduleStudioHeader.tsx` надпись заменена на чистый клинический статус: `• Оперативный журнал`.
+  2. В `ChairScheduleStudioFooter.tsx` надпись заменена на: `• Активная смена`.
+  3. В `chairScheduleStudioDecomposition.test.tsx` обновлен ассерт проверки заголовка.
+
+### [SCHED-04] [SEV-2] [ЗАКРЫТО] Внедрение Apple HIG тач-стандарта $\ge 44\times 44$px и устранение клиппинга чипов кресел
+- **Файлы:**
+  - [`apps/web/src/components/schedule/chairStudio/ChairScheduleStudioHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairScheduleStudioHeader.tsx)
+  - [`apps/web/src/components/schedule/chairStudio/ChairShiftSelector.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairShiftSelector.tsx)
+  - [`apps/web/src/components/schedule/chairStudio/ChairQuickBookingPopover.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairQuickBookingPopover.tsx)
+  - [`apps/web/src/components/schedule/chairStudio/ChairTimelineGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/chairStudio/ChairTimelineGrid.tsx)
+  - [`apps/web/src/components/schedule/mobile/ScheduleMobileAgendaView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/mobile/ScheduleMobileAgendaView.tsx)
+  - [`apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/schedule/waitlist/WaitlistDrawer.tsx)
+- **Суть бага:** 
+  1. Кнопки навигации по датам (`<` и `>`), закрытия (`X`), кнопки чипов кресел и длительности слотов имели размеры $32\times 32$px или $36\times 36$px, нарушая сенсорный минимум Apple HIG ($\ge 44\times 44$px).
+  2. Чипы кресел на мобильных обрезались правым краем экрана («К...»).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. Кнопки навигации по датам, креслам, сменам и закрытию переведены на мобильный размер `w-11 h-11 min-w-[44px] min-h-[44px]`.
+  2. Чипы стоматологических кресел получили `min-h-[44px] sm:min-h-[32px] px-3.5 sm:px-2.5 py-2 sm:py-1`, контейнер снабжен `overflow-x-auto pr-4 snap-x`, предотвращая клиппинг слов.
+  3. Инпуты и кнопки шторки экспресс-записи приведены к `min-h-[44px]` и `min-h-[48px]`.
+  4. Машинная верификация:
+     - `npx vitest run apps/web/src/components/schedule/__tests__/` -> **95/95 файлов passed, 758/758 тестов passed (100% green)**.
+     - `npm run check:encoding` -> 24 121 файлов проверено, 0 замечаний (Exit Code 0).
+     - `npm run check:stub-overrides` -> 139 свойств, 27 модулей, 0 перекрытий (Exit Code 0).
+     - `npm run check:fetch-response` -> 14 432 файлов проверено, 0 замечаний (Exit Code 0).
+     - `npm run check:dynamic-imports` -> 542 динамических импорта проверено, 0 битых (Exit Code 0).
+  5. 4-State Visual Proofs зафиксированы в `docs/proofs/schedule/` и лично отсмотрены через `read_file` по 8 осям Хаммера:
+     - ☀️ PC Light (1440x900): [`docs/proofs/schedule/01_schedule_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/01_schedule_pc_light_1440x900.png) (121.5 KB)
+     - 🌙 PC Dark (1440x900): [`docs/proofs/schedule/02_schedule_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/02_schedule_pc_dark_1440x900.png) (121.9 KB)
+     - 📱 Mobile Light (390x844): [`docs/proofs/schedule/03_schedule_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/03_schedule_mobile_light_390x844.png) (126.9 KB)
+     - 🌙 Mobile Dark (390x844): [`docs/proofs/schedule/04_schedule_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/schedule/04_schedule_mobile_dark_390x844.png) (128.4 KB)
+
 
