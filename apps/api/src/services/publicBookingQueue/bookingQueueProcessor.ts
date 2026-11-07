@@ -1,6 +1,7 @@
-import { randomUUID } from "node:crypto";
-import { and, eq, gt, lt, notInArray, or } from "drizzle-orm";
-import { withTenantCtx } from "../../db/rls.js";
+import { createHash, randomUUID } from "node:crypto";
+import { and, asc, eq, gt, ilike, lt, notInArray, or } from "drizzle-orm";
+import { db } from "../../db/client.js";
+import { withSuperuserBypass, withTenantCtx } from "../../db/rls.js";
 import { appointments, chairs, patients, users } from "../../db/schema.js";
 import { wsBroker } from "../websocketBroker.js";
 import { bookingVerificationEngine, type BookingVerificationEngine } from "./bookingVerificationEngine.js";
@@ -20,47 +21,21 @@ import {
 	normalizePhoneDigits,
 } from "./types.js";
 
+const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+export function ensureValidUuid(raw: string): string {
+	if (UUID_REGEX.test(raw)) return raw;
+	const hash = createHash("sha256").update(raw).digest("hex");
+	return `${hash.slice(0, 8)}-${hash.slice(8, 12)}-4${hash.slice(13, 16)}-8${hash.slice(17, 20)}-${hash.slice(20, 32)}`;
+}
+
 export class BookingQueueProcessor {
-	private holdingQueueStore = new Map<string, HoldingQueueItem>();
 	private clinicOnlineOverrides = new Map<string, boolean>();
-	private inMemoryAppointmentsStore = new Map<
-		string,
-		Array<{
-			id: string;
-			organizationId: string;
-			doctorId: string;
-			chairId?: string | null | undefined;
-			patientName?: string | undefined;
-			startsAt: Date;
-			endsAt: Date;
-			status: string;
-			comment?: string | undefined;
-		}>
-	>();
 
 	constructor(
 		private lockEngine: SlotHoldLockEngine = slotHoldLockEngine,
 		private verificationEngine: BookingVerificationEngine = bookingVerificationEngine,
-	) {
-		this.lockEngine.setQueueOverlapChecker(
-			(organizationId, doctorId, bookingId, candidateStart, candidateEnd, now) => {
-				for (const item of this.holdingQueueStore.values()) {
-					if (
-						item.organizationId === organizationId &&
-						item.doctorId === doctorId &&
-						item.id !== bookingId &&
-						item.status === "PENDING_RESERVATION" &&
-						new Date(item.softHoldExpiresAt).getTime() > now &&
-						candidateStart < new Date(item.endsAt).getTime() &&
-						candidateEnd > new Date(item.startsAt).getTime()
-					) {
-						return true;
-					}
-				}
-				return false;
-			},
-		);
-	}
+	) {}
 
 	public setClinicOnlineOverride(organizationId: string, isOnline: boolean | null): void {
 		if (isOnline === null) {
@@ -112,171 +87,179 @@ export class BookingQueueProcessor {
 		input: BookingRequestInput,
 		startDate: Date,
 		endDate: Date,
-		options: { useDb?: boolean } = {},
+		_options: { useDb?: boolean } = {},
 	): Promise<BookingReceipt> {
 		const referenceNumber = formatReferenceNumber();
 		const bookingId = randomUUID();
+		const orgId = ensureValidUuid(input.organizationId);
+		const docId = ensureValidUuid(input.doctorId);
 
-		const canUseDb =
-			options.useDb === true ||
-			(options.useDb !== false &&
-				Boolean(process.env.DATABASE_URL) &&
-				process.env.DENTAL_STATE_PERSISTENCE !== "off" &&
-				!input.organizationId.startsWith("org-test-"));
+		try {
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const [doctor] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(and(eq(users.id, docId), eq(users.organizationId, orgId), eq(users.isActive, true)))
+					.limit(1)
+					.for("update");
 
-		if (canUseDb) {
-			try {
-				const txResult = await withTenantCtx(input.organizationId, async (tx) => {
-					const [doctor] = await tx
-						.select({ id: users.id })
-						.from(users)
-						.where(and(eq(users.id, input.doctorId), eq(users.organizationId, input.organizationId), eq(users.isActive, true)))
-						.limit(1)
+				if (!doctor) return { error: "Врач не найден или не принимает в этой клинике" };
+
+				let resolvedChairId = input.chairId ? ensureValidUuid(input.chairId) : null;
+				if (!resolvedChairId) {
+					const availableChairs = await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
+						.orderBy(asc(chairs.id))
 						.for("update");
 
-					if (!doctor) return { error: "Врач не найден или не принимает в этой клинике" };
+					for (const chair of availableChairs) {
+						const [occupied] = await tx
+							.select({ id: appointments.id })
+							.from(appointments)
+							.where(
+								and(
+									eq(appointments.organizationId, orgId),
+									eq(appointments.chairId, chair.id),
+									lt(appointments.startsAt, endDate),
+									gt(appointments.endsAt, startDate),
+									notInArray(appointments.status, ["cancelled", "no_show"]),
+								),
+							)
+							.limit(1);
 
-					let resolvedChairId = input.chairId ?? null;
-					if (!resolvedChairId) {
-						const availableChairs = await tx
-							.select({ id: chairs.id })
-							.from(chairs)
-							.where(and(eq(chairs.organizationId, input.organizationId), eq(chairs.isActive, true)))
-							.for("update");
-
-						for (const chair of availableChairs) {
-							const [occupied] = await tx
-								.select({ id: appointments.id })
-								.from(appointments)
-								.where(
-									and(
-										eq(appointments.organizationId, input.organizationId),
-										eq(appointments.chairId, chair.id),
-										lt(appointments.startsAt, endDate),
-										gt(appointments.endsAt, startDate),
-										notInArray(appointments.status, ["cancelled", "no_show"]),
-									),
-								)
-								.limit(1);
-
-							if (!occupied) {
-								resolvedChairId = chair.id;
-								break;
-							}
+						if (!occupied) {
+							resolvedChairId = chair.id;
+							break;
 						}
 					}
+				}
 
-					const phoneDigits = normalizePhoneDigits(input.patientPhone);
-					const [existingPatient] = await tx
-						.select({ id: patients.id })
-						.from(patients)
-						.where(and(eq(patients.organizationId, input.organizationId), or(eq(patients.phone, input.patientPhone), eq(patients.phone, phoneDigits))))
-						.limit(1)
-						.for("update");
+				const phoneDigits = normalizePhoneDigits(input.patientPhone);
+				const [existingPatient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), or(eq(patients.phone, input.patientPhone), eq(patients.phone, phoneDigits))))
+					.limit(1)
+					.for("update");
 
-					let patientId = existingPatient?.id;
-					if (!patientId) {
-						const [newPatient] = await tx
-							.insert(patients)
-							.values({ organizationId: input.organizationId, fullName: input.patientName, phone: input.patientPhone, status: "active" })
-							.returning({ id: patients.id });
-						patientId = newPatient?.id;
-					}
-
-					const conditions = [
-						eq(appointments.organizationId, input.organizationId),
-						lt(appointments.startsAt, endDate),
-						gt(appointments.endsAt, startDate),
-						notInArray(appointments.status, ["cancelled", "no_show"]),
-					];
-					const resourceConditions = [eq(appointments.doctorUserId, input.doctorId)];
-					if (patientId) resourceConditions.push(eq(appointments.patientId, patientId));
-					if (resolvedChairId) resourceConditions.push(eq(appointments.chairId, resolvedChairId));
-
-					const [overlap] = await tx
-						.select({ id: appointments.id })
-						.from(appointments)
-						.where(and(...conditions, or(...resourceConditions)))
-						.limit(1);
-
-					if (overlap) return { conflict: true as const };
-
-					const [created] = await tx
-						.insert(appointments)
+				let patientId = existingPatient?.id;
+				if (!patientId) {
+					const [newPatient] = await tx
+						.insert(patients)
 						.values({
-							organizationId: input.organizationId,
-							patientId: patientId ?? null,
-							doctorUserId: input.doctorId,
-							chairId: resolvedChairId,
-							status: "planned",
-							startsAt: startDate,
-							endsAt: endDate,
-							reason: input.serviceName ?? "Онлайн-запись через виджет",
-							comment: input.comment ? `[Онлайн-запись] ${input.comment}` : "Онлайн-запись через виджет на сайте",
+							organizationId: orgId,
+							fullName: input.patientName,
+							phone: input.patientPhone,
+							status: "active",
 						})
-						.returning();
-
-					return { conflict: false as const, appointment: created };
-				});
-
-				if ("error" in txResult) throw new Error(txResult.error);
-				if (txResult.conflict) {
-					return makeReceipt(input, bookingId, referenceNumber, "REJECTED_CONFLICT", false, "Выбранное время уже занято. Обновите список слотов.");
+						.returning({ id: patients.id });
+					patientId = newPatient?.id;
 				}
 
-				if (txResult.appointment) {
-					wsBroker.broadcastToOrganization(input.organizationId, {
-						type: "APPOINTMENT_CREATED",
-						payload: { appointmentId: txResult.appointment.id, startsAt: txResult.appointment.startsAt },
-					});
-					return makeReceipt(input, bookingId, referenceNumber, "CONFIRMED", false, "Запись успешно подтверждена!", {
-						appointmentId: txResult.appointment.id,
-					});
+				const conditions = [
+					eq(appointments.organizationId, orgId),
+					lt(appointments.startsAt, endDate),
+					gt(appointments.endsAt, startDate),
+					notInArray(appointments.status, ["cancelled", "no_show"]),
+				];
+				const resourceConditions = [eq(appointments.doctorUserId, docId)];
+				if (patientId) resourceConditions.push(eq(appointments.patientId, patientId));
+				if (resolvedChairId) resourceConditions.push(eq(appointments.chairId, resolvedChairId));
+
+				const [overlap] = await tx
+					.select({
+						id: appointments.id,
+						comment: appointments.comment,
+						status: appointments.status,
+					})
+					.from(appointments)
+					.where(and(...conditions, or(...resourceConditions)))
+					.limit(1);
+
+				if (overlap) {
+					if (overlap.comment?.includes("[night_hold:pending_confirmation]")) {
+						// Очный/дневной прием клиники вытесняет ночной soft hold (Мандаты 8b, 8e, 8n)
+						const ref = extractReferenceNumber(overlap.comment) || `BKG-${overlap.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+						const recommendedSlots = this.generateDefaultAdjacentSlots(startDate, endDate);
+						const discountPercent = DEFAULT_BUMP_DISCOUNT_PERCENT;
+						const discountNote = `Приоритетная скидка ${discountPercent}% за перенос слота`;
+						const oneClickConfirmUrl = `/booking/confirm-bump?id=${overlap.id}&ref=${ref}`;
+						const firstSlotLabel = recommendedSlots[0]?.label ?? "соседнее время";
+						const messageText = `Здравствуйте! Слот на ${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, "0")} занят. Мы подобрали приоритетный слот ${firstSlotLabel} со скидкой ${discountPercent}%. Подтвердите в 1 клик: ${oneClickConfirmUrl}`;
+						const bumpOffer = {
+							bookingId: overlap.id,
+							originalStartsAt: startDate.toISOString(),
+							originalEndsAt: endDate.toISOString(),
+							recommendedSlots,
+							discountPercent,
+							discountNote,
+							notificationPayload: {
+								recipientPhone: "",
+								channel: "sms" as const,
+								messageText,
+								oneClickConfirmUrl,
+							},
+						};
+						const bumpedComment = `${overlap.comment.replace("[night_hold:pending_confirmation]", "[BUMPED_OFFER_PENDING]")} [bump_offer:${encodeURIComponent(JSON.stringify(bumpOffer))}]`;
+
+						await tx
+							.update(appointments)
+							.set({
+								status: "cancelled",
+								comment: bumpedComment,
+							})
+							.where(eq(appointments.id, overlap.id));
+					} else {
+						return { conflict: true as const };
+					}
 				}
-			} catch (err) {
-				console.error("[publicBookingQueue] [POR-03] DB transaction failure during direct booking:", (err as Error).message);
-				return makeReceipt(
-					input,
-					bookingId,
-					referenceNumber,
-					"REJECTED_ERROR",
-					false,
-					"Ошибка базы данных клиники при фиксации записи. Пожалуйста, повторите попытку или свяжитесь с клиникой.",
-				);
+
+				const [created] = await tx
+					.insert(appointments)
+					.values({
+						organizationId: orgId,
+						patientId: patientId ?? null,
+						doctorUserId: docId,
+						chairId: resolvedChairId,
+						status: "planned",
+						startsAt: startDate,
+						endsAt: endDate,
+						reason: input.serviceName ?? "Онлайн-запись через виджет",
+						comment: input.comment ? `[Онлайн-запись] ${input.comment}` : "Онлайн-запись через виджет на сайте",
+					})
+					.returning();
+
+				return { conflict: false as const, appointment: created };
+			});
+
+			if ("error" in txResult) throw new Error(txResult.error);
+			if (txResult.conflict) {
+				return makeReceipt(input, bookingId, referenceNumber, "REJECTED_CONFLICT", false, "Выбранное время уже занято. Обновите список слотов.");
 			}
+
+			if (txResult.appointment) {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "APPOINTMENT_CREATED",
+					payload: { appointmentId: txResult.appointment.id, startsAt: txResult.appointment.startsAt },
+				});
+				return makeReceipt(input, bookingId, referenceNumber, "CONFIRMED", false, "Запись успешно подтверждена!", {
+					appointmentId: txResult.appointment.id,
+				});
+			}
+			throw new Error("Не удалось создать запись приёма");
+		} catch (err) {
+			console.error("[publicBookingQueue] [POR-03] DB transaction failure during direct booking:", (err as Error).message);
+			return makeReceipt(
+				input,
+				bookingId,
+				referenceNumber,
+				"REJECTED_ERROR",
+				false,
+				`Ошибка базы данных клиники при фиксации записи: ${(err as Error).message}`,
+			);
 		}
-
-		// In-Memory store handling
-		const orgAppointments = this.inMemoryAppointmentsStore.get(input.organizationId) ?? [];
-		const isTaken = orgAppointments.some(
-			(a) =>
-				a.doctorId === input.doctorId &&
-				a.status !== "cancelled" &&
-				startDate.getTime() < a.endsAt.getTime() &&
-				endDate.getTime() > a.startsAt.getTime(),
-		);
-
-		if (isTaken) {
-			return makeReceipt(input, bookingId, referenceNumber, "REJECTED_CONFLICT", false, "Выбранное время уже занято. Обновите список слотов.");
-		}
-
-		const appointmentId = randomUUID();
-		orgAppointments.push({
-			id: appointmentId,
-			organizationId: input.organizationId,
-			doctorId: input.doctorId,
-			chairId: input.chairId ?? null,
-			patientName: input.patientName,
-			startsAt: startDate,
-			endsAt: endDate,
-			status: "planned",
-			comment: input.comment ?? undefined,
-		});
-		this.inMemoryAppointmentsStore.set(input.organizationId, orgAppointments);
-
-		return makeReceipt(input, bookingId, referenceNumber, "CONFIRMED", false, "Запись успешно подтверждена!", {
-			appointmentId,
-		});
 	}
 
 	public async executeNighttimeSoftHold(
@@ -288,11 +271,13 @@ export class BookingQueueProcessor {
 		const bookingId = randomUUID();
 		const referenceNumber = formatReferenceNumber();
 		const morningConfirmTime = DEFAULT_MORNING_CONFIRM_TIME;
+		const orgId = ensureValidUuid(input.organizationId);
+		const docId = ensureValidUuid(input.doctorId);
 
-		// ATOMIC SLOT MUTEX LOCK: Prevents race condition between concurrent night bookings
+		// Fast slot lock mutex (microsecond race guard)
 		const lockAcquired = this.lockEngine.tryAcquireSoftSlotLock(
-			input.organizationId,
-			input.doctorId,
+			orgId,
+			docId,
 			startDate,
 			endDate,
 			bookingId,
@@ -316,117 +301,343 @@ export class BookingQueueProcessor {
 		const formattedTime = `${timeHours}:${timeMinutes}`;
 		const receiptMessage = `Заявка принята! За вами зафиксировано время ${formattedTime}. Администратор подтвердит запись в ${morningConfirmTime}.`;
 
-		const queueItem: HoldingQueueItem = {
-			id: bookingId,
-			referenceNumber,
-			organizationId: input.organizationId,
-			doctorId: input.doctorId,
-			chairId: input.chairId ?? null,
-			patientName: input.patientName,
-			patientPhone: input.patientPhone,
-			startsAt: input.startsAt,
-			endsAt: input.endsAt,
-			comment: input.comment ?? undefined,
-			serviceName: input.serviceName ?? undefined,
-			status: "PENDING_RESERVATION",
-			isNightMode: true,
-			createdAt: now.toISOString(),
-			softHoldExpiresAt,
-			appointmentId: null,
-			bumpOffer: null,
-		};
-		this.holdingQueueStore.set(bookingId, queueItem);
+		try {
+			const txResult = await withTenantCtx(orgId, async (tx) => {
+				const [doctor] = await tx
+					.select({ id: users.id })
+					.from(users)
+					.where(and(eq(users.id, docId), eq(users.organizationId, orgId), eq(users.isActive, true)))
+					.limit(1)
+					.for("update");
 
-		return makeReceipt(
-			input,
-			bookingId,
-			referenceNumber,
-			"PENDING_RESERVATION",
-			true,
-			receiptMessage,
-			{ morningConfirmTime, softHoldExpiresAt, createdAt: now.toISOString() },
-		);
+				if (!doctor) return { error: "Врач не найден или не принимает в этой клинике" };
+
+				let resolvedChairId = input.chairId ? ensureValidUuid(input.chairId) : null;
+				if (!resolvedChairId) {
+					const availableChairs = await tx
+						.select({ id: chairs.id })
+						.from(chairs)
+						.where(and(eq(chairs.organizationId, orgId), eq(chairs.isActive, true)))
+						.orderBy(asc(chairs.id))
+						.for("update");
+
+					for (const chair of availableChairs) {
+						const [occupied] = await tx
+							.select({ id: appointments.id })
+							.from(appointments)
+							.where(
+								and(
+									eq(appointments.organizationId, orgId),
+									eq(appointments.chairId, chair.id),
+									lt(appointments.startsAt, endDate),
+									gt(appointments.endsAt, startDate),
+									notInArray(appointments.status, ["cancelled", "no_show"]),
+								),
+							)
+							.limit(1);
+
+						if (!occupied) {
+							resolvedChairId = chair.id;
+							break;
+						}
+					}
+				}
+
+				const phoneDigits = normalizePhoneDigits(input.patientPhone);
+				const [existingPatient] = await tx
+					.select({ id: patients.id })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), or(eq(patients.phone, input.patientPhone), eq(patients.phone, phoneDigits))))
+					.limit(1)
+					.for("update");
+
+				let patientId = existingPatient?.id;
+				if (!patientId) {
+					const [newPatient] = await tx
+						.insert(patients)
+						.values({
+							organizationId: orgId,
+							fullName: input.patientName,
+							phone: input.patientPhone,
+							status: "active",
+						})
+						.returning({ id: patients.id });
+					patientId = newPatient?.id;
+				}
+
+				const conditions = [
+					eq(appointments.organizationId, orgId),
+					lt(appointments.startsAt, endDate),
+					gt(appointments.endsAt, startDate),
+					notInArray(appointments.status, ["cancelled", "no_show"]),
+				];
+				const resourceConditions = [eq(appointments.doctorUserId, docId)];
+				if (patientId) resourceConditions.push(eq(appointments.patientId, patientId));
+				if (resolvedChairId) resourceConditions.push(eq(appointments.chairId, resolvedChairId));
+
+				const [overlap] = await tx
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(and(...conditions, or(...resourceConditions)))
+					.limit(1);
+
+				if (overlap) return { conflict: true as const };
+
+				const nightComment = `[night_hold] [night_hold:pending_confirmation] [ref:${referenceNumber}] [expires:${softHoldExpiresAt}] ${input.comment ? `[Онлайн-запись] ${input.comment}` : "Онлайн-запись через виджет (ночной буфер)"}`.trim();
+
+				const [created] = await tx
+					.insert(appointments)
+					.values({
+						organizationId: orgId,
+						patientId: patientId ?? null,
+						doctorUserId: docId,
+						chairId: resolvedChairId,
+						status: "planned",
+						startsAt: startDate,
+						endsAt: endDate,
+						reason: input.serviceName ? `[night_hold] ${input.serviceName}` : "[night_hold] Ночное удержание слота",
+						comment: nightComment,
+					})
+					.returning();
+
+				return { conflict: false as const, appointment: created };
+			});
+
+			if ("error" in txResult) {
+				this.lockEngine.releaseSoftSlotLock(orgId, docId, startDate);
+				throw new Error(txResult.error);
+			}
+
+			if (txResult.conflict) {
+				this.lockEngine.releaseSoftSlotLock(orgId, docId, startDate);
+				return makeReceipt(
+					input,
+					bookingId,
+					referenceNumber,
+					"REJECTED_CONFLICT",
+					true,
+					"Этот временной интервал уже предварительно удерживается другой ночной заявкой.",
+					{ createdAt: now.toISOString() },
+				);
+			}
+
+			if (txResult.appointment) {
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "APPOINTMENT_CREATED",
+					payload: {
+						appointmentId: txResult.appointment.id,
+						startsAt: txResult.appointment.startsAt,
+						isNightHold: true,
+						referenceNumber,
+					},
+				});
+
+				return makeReceipt(
+					input,
+					txResult.appointment.id,
+					referenceNumber,
+					"PENDING_RESERVATION",
+					true,
+					receiptMessage,
+					{
+						morningConfirmTime,
+						softHoldExpiresAt,
+						createdAt: now.toISOString(),
+						appointmentId: txResult.appointment.id,
+					},
+				);
+			}
+			throw new Error("Не удалось зафиксировать ночное удержание");
+		} catch (err) {
+			this.lockEngine.releaseSoftSlotLock(orgId, docId, startDate);
+			console.error("[publicBookingQueue] [POR-03] DB transaction failure during nighttime soft hold:", (err as Error).message);
+			return makeReceipt(
+				input,
+				bookingId,
+				referenceNumber,
+				"REJECTED_ERROR",
+				true,
+				`Ошибка фиксации ночной заявки в базе: ${(err as Error).message}`,
+			);
+		}
 	}
 
 	public async processHoldingQueue(
 		organizationId: string,
 		options: {
-			useDb?: boolean;
 			availableAdjacentSlotsFinder?: (doctorId: string, startsAt: Date) => Promise<GracefulBumpSlotOption[]> | GracefulBumpSlotOption[];
 		} = {},
 	): Promise<{ processed: number; confirmed: number; bumped: number; items: HoldingQueueItem[] }> {
-		const pendingItems = Array.from(this.holdingQueueStore.values()).filter(
-			(item) => item.organizationId === organizationId && item.status === "PENDING_RESERVATION",
-		);
+		const orgId = ensureValidUuid(organizationId);
+
+		const pendingRows = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select()
+				.from(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						ilike(appointments.comment, "%[night_hold%"),
+						or(
+							and(
+								eq(appointments.status, "planned"),
+								ilike(appointments.comment, "%[night_hold:pending_confirmation]%"),
+							),
+							ilike(appointments.comment, "%[BUMPED_OFFER_PENDING]%"),
+						),
+					),
+				);
+		});
 
 		let confirmedCount = 0;
 		let bumpedCount = 0;
+		const items: HoldingQueueItem[] = [];
 
-		for (const item of pendingItems) {
-			const startDate = new Date(item.startsAt);
-			const endDate = new Date(item.endsAt);
+		for (const row of pendingRows) {
+			const ref = extractReferenceNumber(row.comment) || `BKG-${row.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+			const expiresAt = extractExpiresAt(row.comment) || new Date(Date.now() + 14 * 60 * 60_000).toISOString();
 
-			const directResult = await this.executeDaytimeDirectBooking(
-				{
-					organizationId: item.organizationId,
-					doctorId: item.doctorId,
-					patientName: item.patientName,
-					patientPhone: item.patientPhone,
-					startsAt: item.startsAt,
-					endsAt: item.endsAt,
-					...(item.comment ? { comment: item.comment } : {}),
-					...(item.chairId ? { chairId: item.chairId } : {}),
-					...(item.serviceName ? { serviceName: item.serviceName } : {}),
-				},
-				startDate,
-				endDate,
-				options,
-			);
+			this.lockEngine.releaseSoftSlotLock(orgId, row.doctorUserId ?? "", row.startsAt);
 
-			// Release night soft hold lock regardless of outcome
-			this.lockEngine.releaseSoftSlotLock(item.organizationId, item.doctorId, startDate);
+			if (row.comment?.includes("[BUMPED_OFFER_PENDING]")) {
+				bumpedCount++;
+				const bumpOffer = extractBumpOffer(row.comment);
+				items.push({
+					id: row.id,
+					referenceNumber: ref,
+					organizationId: orgId,
+					doctorId: row.doctorUserId ?? "",
+					chairId: row.chairId ?? null,
+					patientName: "Пациент",
+					patientPhone: "",
+					startsAt: row.startsAt.toISOString(),
+					endsAt: row.endsAt.toISOString(),
+					status: "BUMPED_OFFER_PENDING",
+					isNightMode: true,
+					createdAt: row.startsAt.toISOString(),
+					softHoldExpiresAt: expiresAt,
+					appointmentId: row.id,
+					bumpOffer,
+					appliedDiscountPercent: DEFAULT_BUMP_DISCOUNT_PERCENT,
+					comment: row.comment,
+				});
+				continue;
+			}
 
-			if (directResult.status === "CONFIRMED" && directResult.appointmentId) {
-				item.status = "CONFIRMED";
-				item.appointmentId = directResult.appointmentId;
+			// Check for conflicts with existing daytime direct bookings
+			const hasConflict = await withTenantCtx(orgId, async (tx) => {
+				const [overlap] = await tx
+					.select({ id: appointments.id })
+					.from(appointments)
+					.where(
+						and(
+							eq(appointments.organizationId, orgId),
+							eq(appointments.doctorUserId, row.doctorUserId),
+							notInArray(appointments.id, [row.id]),
+							lt(appointments.startsAt, row.endsAt),
+							gt(appointments.endsAt, row.startsAt),
+							notInArray(appointments.status, ["cancelled", "no_show"]),
+						),
+					)
+					.limit(1);
+				return Boolean(overlap);
+			});
+
+			if (!hasConflict) {
+				const updatedComment = (row.comment ?? "").replace("[night_hold:pending_confirmation]", "[Онлайн-запись подтверждена]");
+				await withTenantCtx(orgId, async (tx) => {
+					await tx
+						.update(appointments)
+						.set({ comment: updatedComment })
+						.where(and(eq(appointments.organizationId, orgId), eq(appointments.id, row.id)));
+				});
+
+				wsBroker.broadcastToOrganization(orgId, {
+					type: "APPOINTMENT_UPDATED",
+					payload: { appointmentId: row.id, status: "confirmed" },
+				});
+
 				confirmedCount++;
+				items.push({
+					id: row.id,
+					referenceNumber: ref,
+					organizationId: orgId,
+					doctorId: row.doctorUserId ?? "",
+					chairId: row.chairId ?? null,
+					patientName: "Пациент",
+					patientPhone: "",
+					startsAt: row.startsAt.toISOString(),
+					endsAt: row.endsAt.toISOString(),
+					status: "CONFIRMED",
+					isNightMode: true,
+					createdAt: row.startsAt.toISOString(),
+					softHoldExpiresAt: expiresAt,
+					appointmentId: row.id,
+					comment: updatedComment,
+				});
 			} else {
 				const recommendedSlots = options.availableAdjacentSlotsFinder
-					? await options.availableAdjacentSlotsFinder(item.doctorId, startDate)
-					: this.generateDefaultAdjacentSlots(startDate, endDate);
+					? await options.availableAdjacentSlotsFinder(row.doctorUserId ?? "", row.startsAt)
+					: this.generateDefaultAdjacentSlots(row.startsAt, row.endsAt);
 
 				const discountPercent = DEFAULT_BUMP_DISCOUNT_PERCENT;
 				const discountNote = `Приоритетная скидка ${discountPercent}% за перенос слота`;
-				const oneClickConfirmUrl = `/booking/confirm-bump?id=${item.id}&ref=${item.referenceNumber}`;
+				const oneClickConfirmUrl = `/booking/confirm-bump?id=${row.id}&ref=${ref}`;
 				const firstSlotLabel = recommendedSlots[0]?.label ?? "соседнее время";
-				const messageText = `Здравствуйте, ${item.patientName}! Слот на ${startDate.getHours()}:${String(startDate.getMinutes()).padStart(2, "0")} занят. Мы подобрали приоритетный слот ${firstSlotLabel} со скидкой ${discountPercent}%. Подтвердите в 1 клик: ${oneClickConfirmUrl}`;
+				const messageText = `Здравствуйте! Слот на ${row.startsAt.getHours()}:${String(row.startsAt.getMinutes()).padStart(2, "0")} занят. Мы подобрали приоритетный слот ${firstSlotLabel} со скидкой ${discountPercent}%. Подтвердите в 1 клик: ${oneClickConfirmUrl}`;
 
-				item.status = "BUMPED_OFFER_PENDING";
-				item.bumpOffer = {
-					bookingId: item.id,
-					originalStartsAt: item.startsAt,
-					originalEndsAt: item.endsAt,
+				const bumpOffer = {
+					bookingId: row.id,
+					originalStartsAt: row.startsAt.toISOString(),
+					originalEndsAt: row.endsAt.toISOString(),
 					recommendedSlots,
 					discountPercent,
 					discountNote,
 					notificationPayload: {
-						recipientPhone: item.patientPhone,
-						channel: "whatsapp",
+						recipientPhone: "",
+						channel: "sms" as const,
 						messageText,
 						oneClickConfirmUrl,
 					},
 				};
-				item.appliedDiscountPercent = discountPercent;
+
+				const bumpedComment = `${(row.comment ?? "").replace("[night_hold:pending_confirmation]", "[BUMPED_OFFER_PENDING]")} [bump_offer:${encodeURIComponent(JSON.stringify(bumpOffer))}]`;
+
+				await withTenantCtx(orgId, async (tx) => {
+					await tx
+						.update(appointments)
+						.set({ status: "cancelled", comment: bumpedComment })
+						.where(and(eq(appointments.organizationId, orgId), eq(appointments.id, row.id)));
+				});
+
 				bumpedCount++;
+				items.push({
+					id: row.id,
+					referenceNumber: ref,
+					organizationId: orgId,
+					doctorId: row.doctorUserId ?? "",
+					chairId: row.chairId ?? null,
+					patientName: "Пациент",
+					patientPhone: "",
+					startsAt: row.startsAt.toISOString(),
+					endsAt: row.endsAt.toISOString(),
+					status: "BUMPED_OFFER_PENDING",
+					isNightMode: true,
+					createdAt: row.startsAt.toISOString(),
+					softHoldExpiresAt: expiresAt,
+					appointmentId: row.id,
+					bumpOffer,
+					appliedDiscountPercent: discountPercent,
+					comment: bumpedComment,
+				});
 			}
-			this.holdingQueueStore.set(item.id, item);
 		}
 
 		return {
-			processed: pendingItems.length,
+			processed: pendingRows.length,
 			confirmed: confirmedCount,
 			bumped: bumpedCount,
-			items: pendingItems,
+			items,
 		};
 	}
 
@@ -459,77 +670,216 @@ export class BookingQueueProcessor {
 		organizationId: string,
 		bookingId: string,
 		chosenSlot: { startsAt: string; endsAt: string },
-		options: { useDb?: boolean } = {},
 	): Promise<BookingReceipt> {
-		const item = this.holdingQueueStore.get(bookingId);
-		if (!item || item.organizationId !== organizationId) {
+		const orgId = ensureValidUuid(organizationId);
+		const apptId = ensureValidUuid(bookingId);
+
+		const [item] = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select()
+				.from(appointments)
+				.where(and(eq(appointments.organizationId, orgId), eq(appointments.id, apptId)))
+				.limit(1);
+		});
+
+		if (!item) {
 			throw new Error("Заявка в очереди не найдена");
 		}
-		if (item.status !== "BUMPED_OFFER_PENDING") {
+		if (!item.comment?.includes("[BUMPED_OFFER_PENDING]")) {
 			throw new Error("Для данной заявки нет активного предложения о переносе");
 		}
 
-		const discount = item.appliedDiscountPercent ?? DEFAULT_BUMP_DISCOUNT_PERCENT;
-		const directResult = await this.executeDaytimeDirectBooking(
-			{
-				organizationId,
-				doctorId: item.doctorId,
-				patientName: item.patientName,
-				patientPhone: item.patientPhone,
-				startsAt: chosenSlot.startsAt,
-				endsAt: chosenSlot.endsAt,
-				comment: `[Перенос Graceful Bump: скидка ${discount}%] ${item.comment ?? ""}`,
-				...(item.chairId ? { chairId: item.chairId } : {}),
-				...(item.serviceName ? { serviceName: item.serviceName } : {}),
-			},
-			new Date(chosenSlot.startsAt),
-			new Date(chosenSlot.endsAt),
-			options,
-		);
+		const discount = DEFAULT_BUMP_DISCOUNT_PERCENT;
+		const ref = extractReferenceNumber(item.comment) || `BKG-${item.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 
-		if (directResult.status === "CONFIRMED") {
-			item.status = "BUMPED_CONFIRMED";
-			item.startsAt = chosenSlot.startsAt;
-			item.endsAt = chosenSlot.endsAt;
-			item.appointmentId = directResult.appointmentId ?? undefined;
-			this.holdingQueueStore.set(item.id, item);
+		const start = new Date(chosenSlot.startsAt);
+		const end = new Date(chosenSlot.endsAt);
 
-			return {
-				...directResult,
-				bookingId: item.id,
-				referenceNumber: item.referenceNumber,
-				status: "BUMPED_CONFIRMED",
-				discountPercent: discount,
-				discountNote: `Приоритетная скидка ${discount}% за перенос подтверждена`,
-				message: `Перенос успешно зафиксирован! Ждём вас со скидкой ${discount}%.`,
-			};
-		}
-		return directResult;
+		await withTenantCtx(orgId, async (tx) => {
+			await tx
+				.update(appointments)
+				.set({
+					startsAt: start,
+					endsAt: end,
+					status: "planned",
+					comment: `[Перенос Graceful Bump: скидка ${discount}%] ${item.comment?.replace("[BUMPED_OFFER_PENDING]", "[BUMPED_CONFIRMED]") ?? ""}`,
+				})
+				.where(and(eq(appointments.organizationId, orgId), eq(appointments.id, apptId)));
+		});
+
+		wsBroker.broadcastToOrganization(orgId, {
+			type: "APPOINTMENT_UPDATED",
+			payload: { appointmentId: apptId, startsAt: start.toISOString() },
+		});
+
+		return {
+			bookingId: apptId,
+			referenceNumber: ref,
+			organizationId: orgId,
+			doctorId: item.doctorUserId ?? "",
+			patientName: "Пациент",
+			patientPhone: "",
+			startsAt: chosenSlot.startsAt,
+			endsAt: chosenSlot.endsAt,
+			status: "BUMPED_CONFIRMED",
+			isNightMode: true,
+			discountPercent: discount,
+			discountNote: `Приоритетная скидка ${discount}% за перенос подтверждена`,
+			message: `Перенос успешно зафиксирован! Ждём вас со скидкой ${discount}%.`,
+			createdAt: new Date().toISOString(),
+			appointmentId: apptId,
+		};
 	}
 
-	public getHoldingQueue(organizationId?: string, status?: BookingStatus): HoldingQueueItem[] {
-		let items = Array.from(this.holdingQueueStore.values());
-		if (organizationId) items = items.filter((it) => it.organizationId === organizationId);
-		if (status) items = items.filter((it) => it.status === status);
+	public async getHoldingQueue(organizationId?: string, status?: BookingStatus): Promise<HoldingQueueItem[]> {
+		if (!organizationId) return [];
+		const orgId = ensureValidUuid(organizationId);
+
+		const rows = await withTenantCtx(orgId, async (tx) => {
+			return tx
+				.select({
+					appointment: appointments,
+					patient: patients,
+				})
+				.from(appointments)
+				.leftJoin(patients, eq(patients.id, appointments.patientId))
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						ilike(appointments.comment, "%[night_hold%"),
+						or(
+							notInArray(appointments.status, ["cancelled", "no_show"]),
+							ilike(appointments.comment, "%[BUMPED_OFFER_PENDING]%"),
+							ilike(appointments.comment, "%[BUMPED_CONFIRMED]%"),
+						),
+					),
+				);
+		});
+
+		const items: HoldingQueueItem[] = rows.map(({ appointment, patient }) => {
+			const ref = extractReferenceNumber(appointment.comment) || `BKG-${appointment.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+			const expiresAt = extractExpiresAt(appointment.comment) || new Date(Date.now() + 14 * 60 * 60_000).toISOString();
+			let derivedStatus: BookingStatus = "PENDING_RESERVATION";
+			if (appointment.comment?.includes("[BUMPED_OFFER_PENDING]")) derivedStatus = "BUMPED_OFFER_PENDING";
+			else if (appointment.comment?.includes("[BUMPED_CONFIRMED]")) derivedStatus = "BUMPED_CONFIRMED";
+			else if (appointment.comment?.includes("[Онлайн-запись подтверждена]") || appointment.status === "confirmed") derivedStatus = "CONFIRMED";
+
+			return {
+				id: appointment.id,
+				referenceNumber: ref,
+				organizationId: orgId,
+				doctorId: appointment.doctorUserId ?? "",
+				chairId: appointment.chairId ?? null,
+				patientName: patient?.fullName ?? "Пациент",
+				patientPhone: patient?.phone ?? "",
+				startsAt: appointment.startsAt.toISOString(),
+				endsAt: appointment.endsAt.toISOString(),
+				status: derivedStatus,
+				isNightMode: true,
+				createdAt: appointment.startsAt.toISOString(),
+				softHoldExpiresAt: expiresAt,
+				appointmentId: appointment.id,
+				comment: appointment.comment ?? undefined,
+			};
+		});
+
+		if (status) return items.filter((it) => it.status === status);
 		return items;
 	}
 
-	public getHoldingQueueItem(bookingId: string): HoldingQueueItem | undefined {
-		return this.holdingQueueStore.get(bookingId);
+	public async getHoldingQueueItem(bookingId: string): Promise<HoldingQueueItem | undefined> {
+		const apptId = ensureValidUuid(bookingId);
+		const row = await withSuperuserBypass(async (tx) => {
+			const [found] = await tx
+				.select({
+					appointment: appointments,
+					patient: patients,
+				})
+				.from(appointments)
+				.leftJoin(patients, eq(patients.id, appointments.patientId))
+				.where(eq(appointments.id, apptId))
+				.limit(1);
+			return found;
+		});
+
+		if (!row) return undefined;
+		const { appointment, patient } = row;
+		const ref = extractReferenceNumber(appointment.comment) || `BKG-${appointment.id.replace(/-/g, "").slice(0, 6).toUpperCase()}`;
+		const expiresAt = extractExpiresAt(appointment.comment) || new Date(Date.now() + 14 * 60 * 60_000).toISOString();
+
+		let derivedStatus: BookingStatus = "PENDING_RESERVATION";
+		if (appointment.comment?.includes("[BUMPED_OFFER_PENDING]")) derivedStatus = "BUMPED_OFFER_PENDING";
+		else if (appointment.comment?.includes("[BUMPED_CONFIRMED]")) derivedStatus = "BUMPED_CONFIRMED";
+		else if (appointment.comment?.includes("[Онлайн-запись подтверждена]") || appointment.status === "confirmed") derivedStatus = "CONFIRMED";
+
+		const bumpOffer = extractBumpOffer(appointment.comment);
+
+		return {
+			id: appointment.id,
+			referenceNumber: ref,
+			organizationId: appointment.organizationId,
+			doctorId: appointment.doctorUserId ?? "",
+			chairId: appointment.chairId ?? null,
+			patientName: patient?.fullName ?? "Пациент",
+			patientPhone: patient?.phone ?? "",
+			startsAt: appointment.startsAt.toISOString(),
+			endsAt: appointment.endsAt.toISOString(),
+			status: derivedStatus,
+			isNightMode: true,
+			createdAt: appointment.startsAt.toISOString(),
+			softHoldExpiresAt: expiresAt,
+			appointmentId: appointment.id,
+			comment: appointment.comment ?? undefined,
+			bumpOffer,
+			appliedDiscountPercent: bumpOffer ? DEFAULT_BUMP_DISCOUNT_PERCENT : undefined,
+		};
 	}
 
-	public clearHoldingQueue(organizationId?: string): void {
+	public async clearHoldingQueue(organizationId?: string): Promise<void> {
 		if (!organizationId) {
-			this.holdingQueueStore.clear();
 			this.clinicOnlineOverrides.clear();
-			this.inMemoryAppointmentsStore.clear();
-		} else {
-			for (const [id, item] of this.holdingQueueStore.entries()) {
-				if (item.organizationId === organizationId) this.holdingQueueStore.delete(id);
-			}
-			this.clinicOnlineOverrides.delete(organizationId);
-			this.inMemoryAppointmentsStore.delete(organizationId);
+			return;
 		}
+		const orgId = ensureValidUuid(organizationId);
+		this.clinicOnlineOverrides.delete(organizationId);
+		this.lockEngine.clearLocks(orgId);
+
+		await withTenantCtx(orgId, async (tx) => {
+			await tx
+				.delete(appointments)
+				.where(
+					and(
+						eq(appointments.organizationId, orgId),
+						or(
+							ilike(appointments.comment, "%[night_hold%"),
+							ilike(appointments.comment, "%[Онлайн-запись%"),
+						),
+					),
+				);
+		});
+	}
+}
+
+function extractReferenceNumber(comment: string | null | undefined): string | null {
+	if (!comment) return null;
+	const match = comment.match(/\[ref:(BKG-[A-Z0-9]+)\]/i);
+	return match ? match[1]! : null;
+}
+
+function extractExpiresAt(comment: string | null | undefined): string | null {
+	if (!comment) return null;
+	const match = comment.match(/\[expires:([^\]]+)\]/i);
+	return match ? match[1]! : null;
+}
+
+function extractBumpOffer(comment: string | null | undefined): any | null {
+	if (!comment) return null;
+	const match = comment.match(/\[bump_offer:([^\]]+)\]/i);
+	if (!match || !match[1]) return null;
+	try {
+		return JSON.parse(decodeURIComponent(match[1]));
+	} catch {
+		return null;
 	}
 }
 

@@ -121,16 +121,16 @@ export class PublicBookingQueueService {
 		return this.queueProcessor.acceptBumpedSlot(organizationId, bookingId, chosenSlot, options);
 	}
 
-	public getHoldingQueue(organizationId?: string, status?: BookingStatus): HoldingQueueItem[] {
+	public async getHoldingQueue(organizationId?: string, status?: BookingStatus): Promise<HoldingQueueItem[]> {
 		return this.queueProcessor.getHoldingQueue(organizationId, status);
 	}
 
-	public getHoldingQueueItem(bookingId: string): HoldingQueueItem | undefined {
+	public async getHoldingQueueItem(bookingId: string): Promise<HoldingQueueItem | undefined> {
 		return this.queueProcessor.getHoldingQueueItem(bookingId);
 	}
 
-	public clearHoldingQueue(organizationId?: string): void {
-		this.queueProcessor.clearHoldingQueue(organizationId);
+	public async clearHoldingQueue(organizationId?: string): Promise<void> {
+		await this.queueProcessor.clearHoldingQueue(organizationId);
 		this.lockEngine.clearLocks(organizationId);
 		if (!organizationId) {
 			this.rateLimiter.clearRateLimits();

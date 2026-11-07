@@ -1,22 +1,77 @@
 import assert from "node:assert/strict";
-import { randomUUID } from "node:crypto";
-import { afterEach, beforeEach, describe, it } from "node:test";
+import { after, afterEach, before, beforeEach, describe, it } from "node:test";
+import { clinics, organizations, users } from "../db/schema.js";
+import {
+	fixtureUuid,
+	purgeFixtureOrganizations,
+	withFixtureTenant,
+} from "./support/fixtureOrganizations.js";
 import {
 	publicBookingQueueService,
 	type BookingRequestInput,
 	type GracefulBumpSlotOption,
 } from "../services/publicBookingQueueService.js";
 
-describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n)", () => {
-	const TEST_ORG_ID = `org-test-${randomUUID().slice(0, 8)}`;
-	const TEST_DOCTOR_ID = `doc-test-${randomUUID().slice(0, 8)}`;
+const NAMESPACE = "publicBookingQueue";
+const TEST_ORG_ID = fixtureUuid(NAMESPACE, 1);
+const TEST_CLINIC_ID = fixtureUuid(NAMESPACE, 2);
+const TEST_DOCTOR_ID = fixtureUuid(NAMESPACE, 10);
+const SOLO_DOCTOR_ID = fixtureUuid(NAMESPACE, 11);
 
-	beforeEach(() => {
-		publicBookingQueueService.clearHoldingQueue(TEST_ORG_ID);
+describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n)", () => {
+	before(async () => {
+		process.env.NODE_ENV = "test";
+		await purgeFixtureOrganizations([TEST_ORG_ID]);
+		await withFixtureTenant(TEST_ORG_ID, async (tx) => {
+			await tx
+				.insert(organizations)
+				.values({
+					id: TEST_ORG_ID,
+					name: "Тестовая Клиника Онлайн-Записи DENTE",
+				})
+				.onConflictDoNothing();
+
+			await tx
+				.insert(clinics)
+				.values({
+					id: TEST_CLINIC_ID,
+					organizationId: TEST_ORG_ID,
+					name: "Главный филиал онлайн-записи",
+				})
+				.onConflictDoNothing();
+
+			await tx
+				.insert(users)
+				.values([
+					{
+						id: TEST_DOCTOR_ID,
+						organizationId: TEST_ORG_ID,
+						fullName: "Кузнецов Доктор Тестович",
+						role: "doctor",
+						isActive: true,
+					},
+					{
+						id: SOLO_DOCTOR_ID,
+						organizationId: TEST_ORG_ID,
+						fullName: "Соло Врач Григорьевич",
+						role: "doctor",
+						isActive: true,
+					},
+				])
+				.onConflictDoNothing();
+		});
 	});
 
-	afterEach(() => {
-		publicBookingQueueService.clearHoldingQueue(TEST_ORG_ID);
+	after(async () => {
+		await purgeFixtureOrganizations([TEST_ORG_ID]);
+	});
+
+	beforeEach(async () => {
+		await publicBookingQueueService.clearHoldingQueue(TEST_ORG_ID);
+	});
+
+	afterEach(async () => {
+		await publicBookingQueueService.clearHoldingQueue(TEST_ORG_ID);
 	});
 
 	it("1. Daytime Mode: Instant slot confirmation with status CONFIRMED", async (t) => {
@@ -98,7 +153,7 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.match(receipt.message, /Администратор подтвердит запись в 08:30/);
 
 		// Verify queue contains the item with soft hold
-		const queue = publicBookingQueueService.getHoldingQueue(TEST_ORG_ID, "PENDING_RESERVATION");
+		const queue = await publicBookingQueueService.getHoldingQueue(TEST_ORG_ID, "PENDING_RESERVATION");
 		assert.equal(queue.length, 1);
 		assert.equal(queue[0]?.patientName, "Васильев Пётр Сергеевич");
 
@@ -135,7 +190,7 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.equal(syncResult.confirmed, 1);
 		assert.equal(syncResult.bumped, 0);
 
-		const updatedQueue = publicBookingQueueService.getHoldingQueue(TEST_ORG_ID);
+		const updatedQueue = await publicBookingQueueService.getHoldingQueue(TEST_ORG_ID);
 		assert.equal(updatedQueue[0]?.status, "CONFIRMED");
 		assert.ok(updatedQueue[0]?.appointmentId);
 	});
@@ -173,7 +228,7 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.equal(syncResult.confirmed, 0);
 		assert.equal(syncResult.bumped, 1);
 
-		const bumpedItem = publicBookingQueueService.getHoldingQueueItem(nightReceipt.bookingId);
+		const bumpedItem = await publicBookingQueueService.getHoldingQueueItem(nightReceipt.bookingId);
 		assert.ok(bumpedItem);
 		assert.equal(bumpedItem.status, "BUMPED_OFFER_PENDING");
 		assert.equal(bumpedItem.appliedDiscountPercent, 10);
@@ -214,7 +269,7 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		// Trigger Graceful Bump
 		await publicBookingQueueService.processHoldingQueue(TEST_ORG_ID);
 
-		const bumpedItem = publicBookingQueueService.getHoldingQueueItem(nightReceipt.bookingId);
+		const bumpedItem = await publicBookingQueueService.getHoldingQueueItem(nightReceipt.bookingId);
 		assert.ok(bumpedItem?.bumpOffer);
 		const chosenSlot = bumpedItem.bumpOffer.recommendedSlots[0] as GracefulBumpSlotOption;
 		assert.ok(chosenSlot);
@@ -230,7 +285,7 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		assert.equal(acceptedReceipt.discountPercent, 10);
 		assert.match(acceptedReceipt.message, /со скидкой 10%/);
 
-		const finalQueueItem = publicBookingQueueService.getHoldingQueueItem(nightReceipt.bookingId);
+		const finalQueueItem = await publicBookingQueueService.getHoldingQueueItem(nightReceipt.bookingId);
 		assert.equal(finalQueueItem?.status, "BUMPED_CONFIRMED");
 	});
 
@@ -240,7 +295,7 @@ describe("Public Booking Queue & 24/7 Offline Holding Relay (Mandates 8b, 8e, 8n
 		// Solo doctor scenario: 1 doctor, no assistant, no chair specified
 		const soloBooking: BookingRequestInput = {
 			organizationId: TEST_ORG_ID,
-			doctorId: "solo-doc-01",
+			doctorId: SOLO_DOCTOR_ID,
 			patientName: "Тарасов Олег Григорьевич",
 			patientPhone: "+7 (999) 123-45-67",
 			startsAt: "2026-09-29T09:00:00.000Z",
