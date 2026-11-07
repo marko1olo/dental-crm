@@ -80,7 +80,8 @@ export const ChairTimelineGrid: React.FC<ChairTimelineGridProps> = ({
             return (
               <div
                 key={appt.id}
-                className="p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs flex flex-col gap-2 min-h-[52px]"
+                data-testid="schedule-mobile-appt-card"
+                className="schedule-mobile-card p-3.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] shadow-xs flex flex-col gap-2 min-h-[52px]"
               >
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">

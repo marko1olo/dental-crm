@@ -113,7 +113,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 						{effectiveDateKey !== todayKey && (
 							<button
 								type="button"
-								className="secondary-button schedule-mobile-today-chip min-h-[36px] px-2.5 py-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] active:scale-95 transition-all"
+								className="secondary-button schedule-mobile-today-chip min-h-[44px] px-3.5 py-2 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] text-xs font-semibold text-[var(--ink)] active:scale-95 transition-all"
 								onClick={() => onDateChange(todayKey)}
 								aria-label="Перейти на сегодня"
 							>
@@ -153,14 +153,14 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							role="tab"
 							aria-selected={viewMode === "grid"}
 							onClick={() => setViewMode("grid")}
-							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 								viewMode === "grid"
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
 									: "text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							data-testid="schedule-mobile-view-mode-grid"
 						>
-							<LayoutGrid size={14} className="shrink-0" />
+							<LayoutGrid size={15} className="shrink-0" />
 							<span>Сетка</span>
 						</button>
 						<button
@@ -168,14 +168,14 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							role="tab"
 							aria-selected={viewMode === "agenda"}
 							onClick={() => setViewMode("agenda")}
-							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
 								viewMode === "agenda"
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
 									: "text-[var(--ink)] hover:bg-[var(--paper)]"
 							}`}
 							data-testid="schedule-mobile-view-mode-agenda"
 						>
-							<ListFilter size={14} className="shrink-0" />
+							<ListFilter size={15} className="shrink-0" />
 							<span>Лента</span>
 						</button>
 					</div>
@@ -191,7 +191,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 								useScheduleStore.getState().setScheduleDateFilter(todayKey);
 								onDateChange(todayKey);
 							}}
-							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 								effectiveDateKey === todayKey
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
 									: "text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -206,7 +206,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 								useScheduleStore.getState().setScheduleDateFilter(tomorrowKey);
 								onDateChange(tomorrowKey);
 							}}
-							className={`flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+							className={`flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
 								effectiveDateKey === tomorrowKey
 									? "bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
 									: "text-[var(--ink)] hover:bg-[var(--paper)]"
@@ -218,7 +218,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 						<button
 							type="button"
 							onClick={() => handleShiftDay(1)}
-							className="flex-1 min-h-[36px] py-1 px-2 rounded-lg text-xs font-semibold transition-all cursor-pointer text-[var(--ink)] hover:bg-[var(--paper)] active:scale-95 flex items-center justify-center gap-1"
+							className="flex-1 min-h-[44px] py-2 px-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer text-[var(--ink)] hover:bg-[var(--paper)] active:scale-95 flex items-center justify-center gap-1"
 							data-testid="schedule-mobile-segment-plus-day"
 							title="Сдвиг на +1 день вперед"
 						>
@@ -239,7 +239,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 							type="button"
 							role="tab"
 							aria-selected={day.isSelected}
-							className={`schedule-mobile-day-cell flex-1 min-w-[42px] min-h-[54px] rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all ${
+							className={`schedule-mobile-day-cell flex-1 min-w-[44px] min-h-[56px] rounded-2xl flex flex-col items-center justify-center gap-0.5 transition-all ${
 								day.isSelected
 									? "is-selected bg-[var(--teal,#0d9488)] text-white shadow-xs font-bold"
 									: day.isToday
@@ -276,7 +276,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 					<div className="schedule-mobile-chips-scroller flex items-center gap-1.5 min-w-max">
 						<button
 							type="button"
-							className={`schedule-mobile-filter-chip min-h-[36px] px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+							className={`schedule-mobile-filter-chip min-h-[44px] px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
 								!selectedDoctorId && !selectedChairId
 									? "active bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs"
 									: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
@@ -288,7 +288,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 								if (onSelectChair) onSelectChair(null);
 							}}
 						>
-							<Users size={13} className="shrink-0" />
+							<Users size={14} className="shrink-0" />
 							<span>Все врачи и кабинеты</span>
 						</button>
 
@@ -298,7 +298,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 								<button
 									key={doc.id}
 									type="button"
-									className={`schedule-mobile-filter-chip min-h-[36px] px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+									className={`schedule-mobile-filter-chip min-h-[44px] px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
 										isSelected
 											? "active bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs"
 											: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
@@ -309,7 +309,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 										if (onSelectDoctor) onSelectDoctor(nextVal);
 									}}
 								>
-									<User size={13} className="shrink-0" />
+									<User size={14} className="shrink-0" />
 									<span>{formatDoctorShortName(doc.fullName)}</span>
 								</button>
 							);
@@ -321,7 +321,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 								<button
 									key={chair.id}
 									type="button"
-									className={`schedule-mobile-filter-chip min-h-[36px] px-3 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
+									className={`schedule-mobile-filter-chip min-h-[44px] px-3.5 rounded-xl text-xs font-semibold flex items-center gap-1.5 transition-all ${
 										isSelected
 											? "active bg-[var(--teal,#0d9488)] text-white font-bold shadow-xs"
 											: "bg-[var(--paper-soft)] text-[var(--ink)] border border-[var(--line)]"
@@ -332,7 +332,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 										if (onSelectChair) onSelectChair(nextVal);
 									}}
 								>
-									<Armchair size={13} className="shrink-0" />
+									<Armchair size={14} className="shrink-0" />
 									<span>{chair.name}</span>
 								</button>
 							);
@@ -422,7 +422,7 @@ export const ScheduleMobileAgendaView: React.FC<ScheduleMobileAgendaViewProps> =
 													onQuickBooking();
 												}
 											}}
-											className="mt-1 w-full min-h-[38px] py-1.5 px-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] text-xs font-semibold text-[var(--ink)] flex items-center justify-center gap-1.5 active:scale-95 transition-all"
+											className="mt-1 w-full min-h-[44px] py-2 px-3 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] hover:border-[var(--teal,#0d9488)] text-xs font-semibold text-[var(--ink)] flex items-center justify-center gap-1.5 active:scale-95 transition-all cursor-pointer"
 										>
 											<Plus size={14} className="text-[var(--teal,#0d9488)]" />
 											<span>Записать в этот кабинет</span>

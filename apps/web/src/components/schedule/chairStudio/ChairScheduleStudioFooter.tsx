@@ -45,7 +45,7 @@ export const ChairScheduleStudioFooter: React.FC<ChairScheduleStudioFooterProps>
         </div>
         <span className="hidden sm:inline">•</span>
         <span className="hidden sm:inline text-[var(--teal,#0d9488)] font-medium">
-          Автосохранение активно
+          Активная смена
         </span>
       </div>
 

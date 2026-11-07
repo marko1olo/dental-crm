@@ -32,7 +32,7 @@ describe("Chair Schedule Studio Decomposition Suite (Sweet Spot & Mandates 8e, 8
     );
 
     assert.ok(html.includes("Расписание приёмов"));
-    assert.ok(html.includes("Режим без блокировок"));
+    assert.ok(html.includes("Оперативный журнал"));
     assert.ok(html.includes('data-testid="schedule-studio-close-btn"'));
     assert.ok(html.includes("2026-10-31"));
     assert.ok(html.includes("Сетка"));

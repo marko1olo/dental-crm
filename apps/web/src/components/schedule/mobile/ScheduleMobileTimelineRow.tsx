@@ -224,7 +224,7 @@ export const ScheduleMobileTimelineRow: React.FC<
 						{/* Meta Chips: Doctor, Chair, Balance, Allergy */}
 						<div className="flex items-center gap-1.5 text-[11px] text-[var(--muted)] min-w-0 flex-1 flex-wrap">
 							{doc && (
-								<span className="flex items-center gap-1 truncate max-w-[130px]">
+								<span className="flex items-center gap-1 max-w-[200px] sm:max-w-xs shrink-0">
 									<User size={11} className="shrink-0 text-[var(--teal,#0d9488)]" />
 									<span className="truncate">{formatDoctorShortName(doc.fullName)}</span>
 								</span>

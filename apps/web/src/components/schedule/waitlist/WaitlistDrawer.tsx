@@ -218,22 +218,22 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
       aria-modal="true"
       aria-labelledby={titleId}
       data-testid="waitlist-drawer"
-      className="fixed inset-0 z-[1200] flex justify-end bg-black/40 backdrop-blur-sm transition-opacity"
+      className="fixed inset-0 z-[1200] flex items-end justify-center sm:items-stretch sm:justify-end bg-black/40 backdrop-blur-sm transition-opacity"
       onClick={(e) => {
         if (e.target === e.currentTarget) onClose();
       }}
       style={{ overflowX: "hidden" }}
     >
       <div
-        className="w-full max-w-[540px] h-full flex flex-col bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] shadow-2xl border-l border-[var(--line,#e2e8f0)] transition-transform duration-300 ease-out md:rounded-l-2xl sm:rounded-none"
+        className="w-full max-w-full sm:max-w-[540px] max-h-[92dvh] sm:max-h-full h-auto sm:h-full flex flex-col bg-[var(--paper,#ffffff)] text-[var(--text,#0f172a)] shadow-2xl border-t sm:border-t-0 sm:border-l border-[var(--line,#e2e8f0)] transition-transform duration-300 ease-out rounded-t-[24px] sm:rounded-t-none sm:rounded-l-2xl pb-[max(12px,env(safe-area-inset-bottom))] sm:pb-0"
         style={{
           backgroundColor: "var(--paper, #ffffff)",
           color: "var(--text, #0f172a)",
         }}
       >
         {/* Мобильный Drag Handle по Apple HIG */}
-        <div className="md:hidden flex justify-center pt-2 pb-1">
-          <div className="w-9 h-1.5 rounded-full bg-[var(--line,#cbd5e1)] opacity-70" />
+        <div className="sm:hidden flex justify-center pt-3 pb-1 cursor-grab">
+          <div className="w-9 h-1.5 rounded-full bg-[var(--line-strong,var(--line,#cbd5e1))] opacity-70" />
         </div>
 
         {/* ШАПКА */}
@@ -251,7 +251,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           <button
             type="button"
             onClick={onClose}
-            className="w-9 h-9 min-w-[36px] min-h-[36px] flex items-center justify-center rounded-lg hover:bg-[var(--paper-subtle,#f1f5f9)] text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)] transition-colors text-lg font-light cursor-pointer"
+            className="w-11 h-11 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-[var(--paper-subtle,#f1f5f9)] active:scale-95 text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)] transition-all text-lg font-light cursor-pointer"
             style={{ border: "none", background: "transparent" }}
             aria-label="Закрыть лист ожидания"
           >
@@ -274,7 +274,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
               <button
                 type="button"
                 onClick={() => state.setActiveTab("smart_match")}
-                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[32px] flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+                className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                   state.activeTab === "smart_match"
                     ? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-sm dark:bg-[var(--paper-soft,#334155)] dark:text-white"
                     : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
@@ -287,7 +287,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
             <button
               type="button"
               onClick={() => state.setActiveTab("all_patients")}
-              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[32px] flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
+              className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all min-h-[44px] sm:min-h-[32px] flex items-center gap-1.5 whitespace-nowrap cursor-pointer ${
                 state.activeTab === "all_patients"
                   ? "bg-[var(--paper,#ffffff)] text-[var(--teal,#0d9488)] shadow-sm dark:bg-[var(--paper-soft,#334155)] dark:text-white"
                   : "text-[var(--text-muted,#64748b)] hover:text-[var(--text,#0f172a)]"
@@ -300,7 +300,7 @@ export function WaitlistDrawer(props: WaitlistDrawerProps) {
           <button
             type="button"
             onClick={() => state.setActiveTab("add_new")}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line,#e2e8f0)] transition-all min-h-[34px] flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
+            className={`px-3 py-1.5 text-xs font-semibold rounded-xl border border-[var(--line,#e2e8f0)] transition-all min-h-[44px] sm:min-h-[34px] flex items-center gap-1.5 whitespace-nowrap shrink-0 cursor-pointer ${
               state.activeTab === "add_new"
                 ? "bg-[var(--teal,#0d9488)] text-white border-[var(--teal,#0d9488)] shadow-sm"
                 : "bg-[var(--paper,#ffffff)] dark:bg-[var(--paper-soft,#1e293b)] text-[var(--ink,#0f172a)] hover:bg-[var(--paper-soft,#f1f5f9)]"

@@ -40,7 +40,7 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
       className="absolute inset-x-0 bottom-0 sm:inset-auto sm:right-6 sm:bottom-6 sm:w-96 bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl p-4 sm:p-5 shadow-2xl z-50 flex flex-col gap-3 animate-in slide-in-from-bottom duration-200"
     >
       {/* APPLE HIG: ТАКТИЛЬНЫЙ ХЭНДЛ 36x5px ДЛЯ МОБИЛЬНОЙ ШТОРКИ */}
-      <div className="sm:hidden flex items-center justify-center -mt-1 pb-1" aria-hidden="true">
+      <div className="sm:hidden flex items-center justify-center -mt-1 pb-1 cursor-grab" aria-hidden="true">
         <div className="w-[36px] h-[5px] rounded-full bg-[var(--line-strong,var(--line))]" />
       </div>
       <div className="flex items-center justify-between pb-2 border-b border-[var(--line)]">
@@ -56,19 +56,20 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
         <button
           type="button"
           onClick={onClose}
-          className="min-w-[44px] min-h-[44px] sm:min-w-0 sm:min-h-0 p-2 sm:p-1 flex items-center justify-center rounded-md text-[var(--muted)] hover:text-[var(--ink)] cursor-pointer"
+          aria-label="Закрыть экспресс-запись"
+          className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-8 sm:h-8 sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-xl text-[var(--muted)] hover:text-[var(--ink)] active:scale-95 transition-all cursor-pointer"
         >
-          <X className="w-4 h-4" />
+          <X className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </div>
 
       <form onSubmit={onSubmit} className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-[var(--ink)] mb-1">
+          <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
             ФИО Пациента
           </label>
-          <div className="relative">
-            <User className="absolute left-2.5 top-2.5 w-4 h-4 text-[var(--muted)]" />
+          <div className="relative flex items-center">
+            <User className="absolute left-3 w-4 h-4 text-[var(--muted)] pointer-events-none" />
             <input
               type="text"
               autoFocus
@@ -77,17 +78,18 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
               onChange={(e) =>
                 onFormChange({ ...bookingForm, patientName: e.target.value })
               }
-              className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] min-h-[38px]"
+              className="w-full pr-3 py-2 text-xs sm:text-sm rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] min-h-[44px]"
+              style={{ paddingLeft: "38px" }}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-xs font-medium text-[var(--ink)] mb-1">
+          <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
             Телефон пациента
           </label>
-          <div className="relative">
-            <Phone className="absolute left-2.5 top-2.5 w-4 h-4 text-[var(--muted)]" />
+          <div className="relative flex items-center">
+            <Phone className="absolute left-3 w-4 h-4 text-[var(--muted)] pointer-events-none" />
             <input
               type="tel"
               placeholder="+7 (999) 000-00-00"
@@ -95,14 +97,15 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
               onChange={(e) =>
                 onFormChange({ ...bookingForm, patientPhone: e.target.value })
               }
-              className="w-full pl-9 pr-3 py-1.5 text-xs sm:text-sm rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] min-h-[38px]"
+              className="w-full pr-3 py-2 text-xs sm:text-sm rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] min-h-[44px]"
+              style={{ paddingLeft: "38px" }}
             />
           </div>
         </div>
 
         {/* ДЛИТЕЛЬНОСТЬ ВИЗИТА (1-КЛИК ЧИПЫ) */}
         <div>
-          <label className="block text-xs font-medium text-[var(--ink)] mb-1">
+          <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
             Длительность слота
           </label>
           <div className="grid grid-cols-4 gap-1.5">
@@ -113,9 +116,9 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
                 onClick={() =>
                   onFormChange({ ...bookingForm, durationMinutes: opt.minutes })
                 }
-                className={`py-1.5 text-xs rounded-md transition-colors cursor-pointer ${
+                className={`min-h-[44px] sm:min-h-0 py-2 sm:py-1.5 text-xs rounded-xl transition-all cursor-pointer ${
                   bookingForm.durationMinutes === opt.minutes
-                    ? "bg-[var(--teal,#0d9488)] text-white font-medium"
+                    ? "bg-[var(--teal,#0d9488)] text-white font-medium shadow-xs"
                     : "bg-[var(--line)]/40 hover:bg-[var(--line)] text-[var(--ink)]"
                 }`}
               >
@@ -127,13 +130,13 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
 
         {/* ПРИЧИНА ПРИЁМА */}
         <div>
-          <label className="block text-xs font-medium text-[var(--ink)] mb-1">
+          <label className="block text-xs font-semibold text-[var(--ink)] mb-1">
             Причина визита
           </label>
           <select
             value={bookingForm.reason}
             onChange={(e) => onFormChange({ ...bookingForm, reason: e.target.value })}
-            className="w-full px-3 py-1.5 text-xs rounded-lg border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] min-h-[38px] cursor-pointer"
+            className="w-full px-3 py-2 text-xs sm:text-sm rounded-xl border border-[var(--line)] bg-[var(--paper-soft,#f8fafc)] dark:bg-[var(--paper-strong)] text-[var(--ink)] focus:outline-hidden focus:border-[var(--teal,#0d9488)] min-h-[44px] cursor-pointer"
           >
             {QUICK_APPOINTMENT_REASONS.map((r) => (
               <option key={r.label} value={r.reason}>
@@ -147,7 +150,7 @@ export const ChairQuickBookingPopover: React.FC<ChairQuickBookingPopoverProps> =
         <button
           type="submit"
           data-testid="quick-booking-submit-btn"
-          className="w-full mt-2 min-h-[44px] py-2.5 px-4 rounded-xl font-medium text-xs sm:text-sm text-white bg-[var(--teal,#0d9488)] hover:brightness-110 active:brightness-95 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
+          className="w-full mt-2 min-h-[48px] py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-[var(--teal,#0d9488)] hover:brightness-110 active:brightness-95 transition-all shadow-md flex items-center justify-center gap-1.5 cursor-pointer"
         >
           <CheckCircle2 className="w-4 h-4" />
           Записать на приём
