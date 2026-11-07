@@ -5,7 +5,7 @@
  */
 
 import React from "react";
-import { ShieldCheck, CalendarClock } from "lucide-react";
+import { ShieldCheck, CalendarClock, Sparkles } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
 
@@ -15,36 +15,71 @@ export interface Presenter3TierGridProps {
 	readonly onSelectTierId: (tierId: TreatmentPlanTierId) => void;
 }
 
+export function getTierSegmentLabel(tier: TreatmentPlanTier, index: number, all: readonly TreatmentPlanTier[]): string {
+	const t = (tier.title || "").toLowerCase();
+	const id = tier.tierId;
+	if (id === "economy" || t.includes("эконом") || t.includes("базов")) return "Эконом";
+	if (id === "premium" || t.includes("премиум") || (id === "optimum" && all.length === 3 && index === 2)) return "Премиум";
+	if (id === "standard" || t.includes("стандарт") || t.includes("оптим")) return "★ Оптимум";
+	if (index === 0) return "Эконом";
+	if (index === 1) return "★ Оптимум";
+	return "Премиум";
+}
+
 export const Presenter3TierGrid: React.FC<Presenter3TierGridProps> = ({
 	effectiveTiers,
 	selectedTierId,
 	onSelectTierId,
 }) => {
+	const tiersToDisplay = effectiveTiers.length > 0 ? effectiveTiers : [];
+
 	return (
-		<div className="space-y-6">
-			{/* Сенсорный Segmented Control на смартфонах (Apple HIG) */}
-			<div className="treatment-mobile-tier-bar flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 md:hidden">
-				{(["economy", "standard", "optimum"] as const).map((tId) => (
-					<button
-						key={tId}
-						type="button"
-						onClick={() => onSelectTierId(tId)}
-						className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-							selectedTierId === tId || (tId === "standard" && selectedTierId === "optimum")
-								? "active bg-[var(--paper)] text-[var(--teal)] shadow-xs"
-								: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-						}`}
-						data-testid={`mobile-tier-btn-${tId}`}
-					>
-						{tId === "economy" ? "Эконом" : tId === "standard" ? "Оптимум" : "Премиум"}
-					</button>
-				))}
+		<div className="space-y-6" data-testid="presenter-3tier-grid-wrap">
+			{/* Сенсорный Segmented Control на смартфонах (Apple HIG: Natural Thumb Zone, h >= 44px, 0px 2500px туннеля) */}
+			<div
+				className="treatment-mobile-tier-bar flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 md:hidden"
+				role="tablist"
+				aria-label="Выбор тарифа плана лечения"
+				data-testid="mobile-tier-segmented-control"
+			>
+				{tiersToDisplay.map((tier, idx) => {
+					const label = getTierSegmentLabel(tier, idx, tiersToDisplay);
+					const isDirectMatch = selectedTierId === tier.tierId;
+					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
+					const isSelected = isDirectMatch || isOptimumAlias;
+
+					return (
+						<button
+							key={tier.tierId}
+							type="button"
+							role="tab"
+							aria-selected={isSelected}
+							onClick={() => onSelectTierId(tier.tierId)}
+							className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 px-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center ${
+								isSelected
+									? "active is-selected bg-[var(--paper)] text-[var(--teal)] border border-[var(--line)] shadow-xs"
+									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid={`mobile-tier-btn-${tier.tierId}`}
+						>
+							<span className="truncate w-full text-center flex items-center justify-center gap-1">
+								{label.includes("★") && <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400 shrink-0" />}
+								<span>{label.replace("★ ", "")}</span>
+							</span>
+							<span className="text-[10px] font-mono opacity-85 truncate w-full text-center">
+								{formatRubles(tier.totalRub)}
+							</span>
+						</button>
+					);
+				})}
 			</div>
 
 			{/* 3-Tier Сетка вариантов смет: одинаковая высота h-full, items-stretch */}
 			<div className="treatment-3tier-grid grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-				{effectiveTiers.map((tier) => {
-					const isSelected = selectedTierId === tier.tierId;
+				{effectiveTiers.map((tier, idx) => {
+					const isDirectMatch = selectedTierId === tier.tierId;
+					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
+					const isSelected = isDirectMatch || isOptimumAlias;
 					const testId =
 						tier.tierId === "economy"
 							? "tier-card-economy"

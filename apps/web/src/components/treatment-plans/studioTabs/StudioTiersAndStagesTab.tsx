@@ -9,6 +9,7 @@ import React, { useState } from "react";
 import { Check, ShieldCheck, Sparkles, Calendar, ChevronDown, ChevronUp, Plus, Trash2, Clock, Landmark } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanItem } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
+import { isMicroConsumable } from "../treatmentPlanConsumables";
 
 export interface StudioTiersAndStagesTabProps {
 	readonly computedTiers: readonly TreatmentPlanTier[];
@@ -274,97 +275,111 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 								</button>
 
 								{/* Состав процедур этапа */}
-								{isExpanded && (
-									<div className="px-3 sm:px-4 pb-3 pt-1 border-t border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
-										{stage.items.map((item) => (
-											<div key={item.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--line-subtle)] last:border-0 text-xs">
-												<div className="flex items-center gap-2 min-w-0">
-													{item.toothNumber && (
-														<span className="font-bold text-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] px-1.5 py-0.5 rounded text-[10px] shrink-0">
-															№{item.toothNumber}
-														</span>
-													)}
-													<span className="text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</span>
+								{isExpanded && (() => {
+									const rawItems = stage.items || [];
+									const cleanItems = isExpressMode ? rawItems.filter((item) => !isMicroConsumable(item)) : rawItems;
+									const itemsToRender = isExpressMode && cleanItems.length > 0 ? cleanItems : rawItems;
+									const hiddenMicroCount = rawItems.length - itemsToRender.length;
+
+									return (
+										<div className="px-3 sm:px-4 pb-3 pt-1 border-t border-[var(--line)] bg-[var(--paper-soft)] space-y-2">
+											{itemsToRender.map((item) => (
+												<div key={item.id} className="flex items-center justify-between gap-2 py-1.5 border-b border-[var(--line-subtle)] last:border-0 text-xs">
+													<div className="flex items-center gap-2 min-w-0">
+														{item.toothNumber && (
+															<span className="font-bold text-[var(--teal,#0d9488)] bg-[var(--teal-soft,rgba(13,148,136,0.1))] px-1.5 py-0.5 rounded text-[10px] shrink-0">
+																№{item.toothNumber}
+															</span>
+														)}
+														<span className="text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</span>
+													</div>
+													<div className="flex items-center gap-2 shrink-0">
+														<span className="font-bold text-[var(--ink)]">{formatRubles(item.priceRub)}</span>
+														{!isExpressMode && onRemoveItemFromStage && stage.id && (
+															<button
+																type="button"
+																onClick={() => onRemoveItemFromStage(stage.id!, item.id)}
+																className="p-1 rounded text-[var(--muted)] hover:text-rose-500 cursor-pointer"
+																title="Удалить услугу из этапа"
+															>
+																<Trash2 className="w-3.5 h-3.5" />
+															</button>
+														)}
+													</div>
 												</div>
-												<div className="flex items-center gap-2 shrink-0">
-													<span className="font-bold text-[var(--ink)]">{formatRubles(item.priceRub)}</span>
-													{!isExpressMode && onRemoveItemFromStage && stage.id && (
+											))}
+
+											{hiddenMicroCount > 0 && (
+												<div className="px-2.5 py-1.5 rounded-lg bg-[var(--paper)] border border-[var(--line-subtle)] text-[11px] text-[var(--muted)] flex items-center gap-1.5">
+													<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+													<span>Сопутствующие микро-расходники ({hiddenMicroCount} поз.) включены в стоимость процедур</span>
+												</div>
+											)}
+
+											{/* Инлайн добавление процедуры в экспертном режиме */}
+											{!isExpressMode && onAddItemToStage && stage.id && (
+												<div className="pt-2">
+													{isAddingToThis ? (
+														<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2 text-xs">
+															<div className="font-bold text-[var(--ink)]">Добавление процедуры в этап:</div>
+															<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+																<input
+																	type="text"
+																	placeholder="Название процедуры"
+																	value={newItemName}
+																	onChange={(e) => setNewItemName(e.target.value)}
+																	className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
+																/>
+																<div className="flex items-center gap-1.5">
+																	<input
+																		type="number"
+																		placeholder="Зуб №"
+																		value={newItemTooth}
+																		onChange={(e) => setNewItemTooth(e.target.value)}
+																		className="w-16 px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
+																	/>
+																	<input
+																		type="number"
+																		step="100"
+																		placeholder="Цена ₽"
+																		value={newItemPriceRub}
+																		onChange={(e) => setNewItemPriceRub(Number(e.target.value))}
+																		className="w-24 px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold"
+																	/>
+																</div>
+															</div>
+															<div className="flex justify-end gap-2 pt-1">
+																<button
+																	type="button"
+																	onClick={() => setAddingToStageId(null)}
+																	className="px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--muted)] cursor-pointer"
+																>
+																	Отмена
+																</button>
+																<button
+																	type="button"
+																	onClick={() => handleAddCustomProcedure(stage.id!)}
+																	className="px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-bold cursor-pointer"
+																>
+																	Добавить
+																</button>
+															</div>
+														</div>
+													) : (
 														<button
 															type="button"
-															onClick={() => onRemoveItemFromStage(stage.id!, item.id)}
-															className="p-1 rounded text-[var(--muted)] hover:text-rose-500 cursor-pointer"
-															title="Удалить услугу из этапа"
+															onClick={() => setAddingToStageId(stage.id || null)}
+															className="text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline inline-flex items-center gap-1 cursor-pointer pt-1"
 														>
-															<Trash2 className="w-3.5 h-3.5" />
+															<Plus className="w-3.5 h-3.5" />
+															<span>Добавить процедуру в этап</span>
 														</button>
 													)}
 												</div>
-											</div>
-										))}
-
-										{/* Инлайн добавление процедуры в экспертном режиме */}
-										{!isExpressMode && onAddItemToStage && stage.id && (
-											<div className="pt-2">
-												{isAddingToThis ? (
-													<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2 text-xs">
-														<div className="font-bold text-[var(--ink)]">Добавление процедуры в этап:</div>
-														<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-															<input
-																type="text"
-																placeholder="Название процедуры"
-																value={newItemName}
-																onChange={(e) => setNewItemName(e.target.value)}
-																className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
-															/>
-															<div className="flex items-center gap-1.5">
-																<input
-																	type="number"
-																	placeholder="Зуб №"
-																	value={newItemTooth}
-																	onChange={(e) => setNewItemTooth(e.target.value)}
-																	className="w-16 px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
-																/>
-																<input
-																	type="number"
-																	step="100"
-																	placeholder="Цена ₽"
-																	value={newItemPriceRub}
-																	onChange={(e) => setNewItemPriceRub(Number(e.target.value))}
-																	className="w-24 px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold"
-																/>
-															</div>
-														</div>
-														<div className="flex justify-end gap-2 pt-1">
-															<button
-																type="button"
-																onClick={() => setAddingToStageId(null)}
-																className="px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--muted)] cursor-pointer"
-															>
-																Отмена
-															</button>
-															<button
-																type="button"
-																onClick={() => handleAddCustomProcedure(stage.id!)}
-																className="px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-bold cursor-pointer"
-															>
-																Добавить
-															</button>
-														</div>
-													</div>
-												) : (
-													<button
-														type="button"
-														onClick={() => setAddingToStageId(stage.id || null)}
-														className="text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline inline-flex items-center gap-1 cursor-pointer pt-1"
-													>
-														<Plus className="w-3.5 h-3.5" />
-														<span>Добавить процедуру в этап</span>
-													</button>
-												)}
-											</div>
-										)}
-									</div>
-								)}
+											)}
+										</div>
+									);
+								})()}
 							</div>
 						);
 					})}

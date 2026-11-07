@@ -4,10 +4,11 @@
  */
 
 import React from "react";
-import { ChevronDown, ChevronUp, CreditCard } from "lucide-react";
+import { ChevronDown, ChevronUp, CreditCard, Sparkles } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanStage } from "../treatmentPlanTypes";
 import { formatRubles, romanizeStageNumber } from "../treatmentPlanTypes";
 import { DEFAULT_PRESENTER_STAGES } from "./TreatmentPlanPresenterDefaultStages";
+import { isMicroConsumable } from "../treatmentPlanConsumables";
 
 export interface PresenterStagesSectionProps {
 	readonly activeTier: TreatmentPlanTier | undefined;
@@ -60,6 +61,10 @@ export const PresenterStagesSection: React.FC<PresenterStagesSectionProps> = ({
 				{stages.map((stage, idx) => {
 					const isExpanded = expandedStageIndex === idx;
 					const stageNumber = stage.stageNumber || idx + 1;
+					const rawItems = stage.items || [];
+					const cleanItems = rawItems.filter((item) => !isMicroConsumable(item));
+					const itemsToRender = cleanItems.length > 0 ? cleanItems : rawItems;
+					const hiddenMicroCount = rawItems.length - itemsToRender.length;
 
 					return (
 						<div
@@ -112,9 +117,9 @@ export const PresenterStagesSection: React.FC<PresenterStagesSectionProps> = ({
 							</div>
 
 							{isExpanded && (
-								<div className="p-3 sm:p-4 bg-[var(--paper)]">
+								<div className="p-3 sm:p-4 bg-[var(--paper)] space-y-2">
 									<div className="rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] divide-y divide-[var(--line)] overflow-hidden">
-										{stage.items?.map((item) => (
+										{itemsToRender.map((item) => (
 											<div
 												key={item.id}
 												className="p-3 sm:px-4 sm:py-3 flex items-center justify-between gap-3 text-xs min-h-[48px]"
@@ -136,6 +141,13 @@ export const PresenterStagesSection: React.FC<PresenterStagesSectionProps> = ({
 											</div>
 										))}
 									</div>
+
+									{hiddenMicroCount > 0 && (
+										<div className="px-3 py-1.5 rounded-lg bg-[var(--paper-soft)] border border-[var(--line)] text-[11px] text-[var(--muted)] flex items-center gap-1.5">
+											<Sparkles className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+											<span>Сопутствующие микро-расходники ({hiddenMicroCount} поз.) включены в стоимость процедур</span>
+										</div>
+									)}
 								</div>
 							)}
 						</div>

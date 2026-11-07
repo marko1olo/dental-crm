@@ -2725,8 +2725,7 @@
 
 ### [E2E-02] [SEV-1] [ЗАКРЫТО] Ликвидация моковых E2E-тестов и запуск канонического сквозного цикла Core Clinical Loop на живом PostgreSQL 18 и Fastify API
 - **Файлы:**
-  - Тестовый сьют Live E2E: [`apps/web/tests/e2e/core-clinical-loop-live.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/core-clinical-loop-live.spec.ts)
-  - Симлинк/Junction шлюз: [`apps/web/e2e/core-clinical-loop-live.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/e2e/core-clinical-loop-live.spec.ts)
+  - Тестовый сьют Live E2E (канонический путь): [`apps/web/tests/e2e/core-clinical-loop-live.spec.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/tests/e2e/core-clinical-loop-live.spec.ts) (паразитный дубликат apps/web/e2e полностью ликвидирован)
   - Скриншоты 4-State Proof:
     * ☀️ PC Light (1440x900): [`docs/proofs/root_e2e/01_core_clinical_loop_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/root_e2e/01_core_clinical_loop_pc_light_1440x900.png) (71.3 KB)
     * 🌙 PC Dark (1440x900): [`docs/proofs/root_e2e/02_core_clinical_loop_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/root_e2e/02_core_clinical_loop_pc_dark_1440x900.png) (86.4 KB)

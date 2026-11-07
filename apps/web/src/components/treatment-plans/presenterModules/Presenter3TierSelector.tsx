@@ -6,9 +6,10 @@
  */
 
 import React from "react";
-import { ShieldCheck } from "lucide-react";
+import { ShieldCheck, Sparkles } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
+import { getTierSegmentLabel } from "./Presenter3TierGrid";
 
 export interface Presenter3TierSelectorProps {
 	readonly tiers: readonly TreatmentPlanTier[];
@@ -21,52 +22,55 @@ export const Presenter3TierSelector: React.FC<Presenter3TierSelectorProps> = ({
 	selectedTierId,
 	onSelectTier,
 }) => {
+	const tiersToDisplay = tiers.length > 0 ? tiers : [];
+
 	return (
-		<div className="space-y-4">
+		<div className="space-y-4" data-testid="presenter-3tier-selector-wrap">
 			{/* Сенсорный мобильный Segmented Control для смартфонов (Apple HIG) */}
-			<div className="treatment-mobile-tier-bar flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 md:hidden">
-				<button
-					type="button"
-					onClick={() => onSelectTier("economy")}
-					className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-						selectedTierId === "economy"
-							? "active bg-[var(--paper)] text-[var(--ink)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
-					data-testid="mobile-tier-btn-economy"
-				>
-					Эконом
-				</button>
-				<button
-					type="button"
-					onClick={() => onSelectTier("standard")}
-					className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-						selectedTierId === "standard"
-							? "active bg-[var(--paper)] text-[var(--teal)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
-					data-testid="mobile-tier-btn-standard"
-				>
-					Оптимум
-				</button>
-				<button
-					type="button"
-					onClick={() => onSelectTier("optimum")}
-					className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 text-xs font-bold rounded-lg transition-all cursor-pointer ${
-						selectedTierId === "optimum"
-							? "active bg-[var(--paper)] text-[var(--ink)] shadow-xs"
-							: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
-					}`}
-					data-testid="mobile-tier-btn-optimum"
-				>
-					Премиум
-				</button>
+			<div
+				className="treatment-mobile-tier-bar flex items-center p-1 rounded-xl bg-[var(--paper-soft)] border border-[var(--line)] gap-1 md:hidden"
+				role="tablist"
+				aria-label="Переключатель тарифа плана"
+				data-testid="mobile-tier-bar-selector"
+			>
+				{tiersToDisplay.map((tier, idx) => {
+					const label = getTierSegmentLabel(tier, idx, tiersToDisplay);
+					const isDirectMatch = selectedTierId === tier.tierId;
+					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
+					const isSelected = isDirectMatch || isOptimumAlias;
+
+					return (
+						<button
+							key={tier.tierId}
+							type="button"
+							role="tab"
+							aria-selected={isSelected}
+							onClick={() => onSelectTier(tier.tierId)}
+							className={`treatment-mobile-tier-btn flex-1 min-h-[44px] py-2 px-1 text-xs font-bold rounded-lg transition-all cursor-pointer flex flex-col items-center justify-center ${
+								isSelected
+									? "active is-selected bg-[var(--paper)] text-[var(--teal)] border border-[var(--line)] shadow-xs"
+									: "bg-transparent text-[var(--muted)] hover:text-[var(--ink)]"
+							}`}
+							data-testid={`mobile-tier-btn-${tier.tierId}`}
+						>
+							<span className="truncate w-full text-center flex items-center justify-center gap-1">
+								{label.includes("★") && <Sparkles className="w-3 h-3 text-amber-500 fill-amber-400 shrink-0" />}
+								<span>{label.replace("★ ", "")}</span>
+							</span>
+							<span className="text-[10px] font-mono opacity-85 truncate w-full text-center">
+								{formatRubles(tier.totalRub)}
+							</span>
+						</button>
+					);
+				})}
 			</div>
 
 			{/* 3-Tier Сетка: на десктопе 3 колонки, на мобильных только выбранная карточка (Apple HIG: 0px скролл-туннеля) */}
 			<div className="treatment-3tier-grid grid grid-cols-1 md:grid-cols-3 gap-4">
-				{tiers.map((tier) => {
-					const isSelected = selectedTierId === tier.tierId;
+				{tiers.map((tier, idx) => {
+					const isDirectMatch = selectedTierId === tier.tierId;
+					const isOptimumAlias = (selectedTierId === "optimum" && tier.tierId === "standard") || (selectedTierId === "standard" && tier.tierId === "optimum" && idx === 1);
+					const isSelected = isDirectMatch || isOptimumAlias;
 					const isEconomy = tier.tierId === "economy";
 					const isStandard = tier.tierId === "standard";
 					const isOptimum = tier.tierId === "optimum";
