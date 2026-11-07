@@ -104,7 +104,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 										? "Опрос криптопровайдера КриптоПро CSP..."
 										: hasPlugin
 										? "Криптопровайдер готов к работе (ГОСТ Р 34.10-2012)"
-										: "Криптопровайдер не подключен (Автономия врача активна)"}
+										: "Криптопровайдер не обнаружен"}
 								</div>
 								<div className="text-[11px] text-[var(--muted)]">
 									{hasPlugin
@@ -228,7 +228,7 @@ export const UkepDocumentSigningModal: React.FC<UkepDocumentSigningModalProps> =
 							<div className="flex flex-col gap-1.5 pt-2 border-t border-[var(--line)]">
 								<label htmlFor="ukep-pin-input" className="text-xs font-medium flex items-center justify-between">
 									<span>ПИН-код контейнера / токена:</span>
-									<span className="text-[11px] text-[var(--muted)]">(опционально по Мандату 8e)</span>
+									<span className="text-[11px] text-[var(--muted)]">(если установлен на токене)</span>
 								</label>
 								<input
 									id="ukep-pin-input"
