@@ -28,7 +28,7 @@ export const SplitSimpleCashierButtons: React.FC<SplitSimpleCashierButtonsProps>
 	const isLoyaltyActive = activeMethod === "loyalty_points" || loyaltyAmountRub > 0;
 	const gridCols = hasBonus
 		? "grid-cols-2 sm:grid-cols-3 lg:grid-cols-5"
-		: totalAvailableDeposit > 0 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-3";
+		: totalAvailableDeposit > 0 ? "grid-cols-2 sm:grid-cols-4" : "grid-cols-2 sm:grid-cols-3";
 
 	return (
 		<div className={`grid gap-2 ${gridCols}`} data-testid="simple-cashier-methods">

@@ -62,8 +62,15 @@ export async function executeSplitSubmit(
 		const electronicKop = rubToKopecks(effectiveCardRub) + rubToKopecks(splitSbpRub);
 		const depositKop = rubToKopecks(splitDepositRub);
 		const dmsKop = rubToKopecks(splitDmsRub || 0);
-		const isSplit = (cashKop > 0 && electronicKop > 0) || (depositKop > 0 && (cashKop > 0 || electronicKop > 0 || dmsKop > 0)) || (dmsKop > 0 && (cashKop > 0 || electronicKop > 0 || depositKop > 0));
-		const method = determineSplitPrimaryMethod(isSplit, dmsKop, effectiveCashRub, effectiveCardRub, splitSbpRub, splitDepositRub);
+		const bonusKop = rubToKopecks(splitBonusRub);
+		const isSplit =
+			(cashKop > 0 && electronicKop > 0) ||
+			(depositKop > 0 && (cashKop > 0 || electronicKop > 0 || dmsKop > 0 || bonusKop > 0)) ||
+			(bonusKop > 0 && (cashKop > 0 || electronicKop > 0 || depositKop > 0 || dmsKop > 0)) ||
+			(dmsKop > 0 && (cashKop > 0 || electronicKop > 0 || depositKop > 0 || bonusKop > 0));
+		const method = (bonusKop > 0 && cashKop === 0 && electronicKop === 0 && depositKop === 0 && dmsKop === 0)
+			? "bonus"
+			: determineSplitPrimaryMethod(isSplit, dmsKop, effectiveCashRub, effectiveCardRub, splitSbpRub, splitDepositRub);
 
 		const innNote = buyerInn.trim() ? ` [ИНН плательщика: ${buyerInn.trim()}]` : "";
 		const note = `Комбинированная оплата (${effectiveCashier}): ${parts.join(" + ")}${discountRub > 0 ? ` [Скидка ${discountRub} ₽ (${effectiveDiscountPercent}%${discountReason ? ` — ${discountReason}` : ""})]` : ""}${innNote} [ДДС: ${activeCategory} | Касса: ${activeBox}]${toothNumber ? ` [Зуб ${toothNumber}]` : ""}`;
@@ -72,9 +79,12 @@ export async function executeSplitSubmit(
 			patientId, amountRub: totalDueRub, method: isSplit ? "split" : method,
 			cashAmountKopecks: cashKop > 0 ? cashKop : undefined, electronicAmountKopecks: electronicKop > 0 ? electronicKop : undefined,
 			dmsAmountKopecks: dmsKop > 0 ? dmsKop : undefined, depositAmountKopecks: depositKop > 0 ? depositKop : undefined,
+			bonusAmountKopecks: bonusKop > 0 ? bonusKop : undefined,
 			cashAmountRub: effectiveCashRub > 0 ? effectiveCashRub : undefined,
 			electronicAmountRub: effectiveCardRub + splitSbpRub > 0 ? Number((effectiveCardRub + splitSbpRub).toFixed(2)) : undefined,
 			dmsAmountRub: (splitDmsRub || 0) > 0 ? splitDmsRub : undefined, depositAmountRub: splitDepositRub > 0 ? splitDepositRub : undefined,
+			bonusAmountRub: splitBonusRub > 0 ? splitBonusRub : undefined,
+			pointsToRedeem: splitBonusRub > 0 ? splitBonusRub : undefined,
 			guaranteeLetterId: guaranteeLetterId || undefined, cashBoxType: selectedCashBoxType, receiptTypeAlias: selectedReceiptAlias,
 			cashFlowCategory: activeCategory, visitId: visitId || null, documentId: documentId || (invoiceId ? invoiceId : null),
 			clientMutationId, toothNumber: toothNumber ? Number(toothNumber) || toothNumber : undefined,

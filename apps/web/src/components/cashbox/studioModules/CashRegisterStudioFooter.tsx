@@ -88,14 +88,7 @@ export const CashRegisterStudioFooter: React.FC<CashRegisterStudioFooterProps> =
 							{isWarranty ? (
 								"Оформить по гарантии (0 ₽)"
 							) : (
-								<>
-									<span className="hidden sm:inline">
-										Принять оплату / Пробить чек ({formatRubles(effectiveTotalRub)})
-									</span>
-									<span className="sm:hidden">
-										Оплатить {formatRubles(effectiveTotalRub)}
-									</span>
-								</>
+								`Принять оплату ${formatRubles(effectiveTotalRub)}`
 							)}
 						</span>
 						<span className="sr-only">Принять оплату</span>

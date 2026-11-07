@@ -45,7 +45,7 @@ export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 						className="text-teal-600 dark:text-teal-400 shrink-0"
 					/>
 					<span className="text-sm">
-						Дополнительные медицинские услуги у кресла (без НДС)
+						Дополнительные медицинские услуги у кресла · НДС не облагается (ст. 149 НК РФ)
 					</span>
 				</div>
 				<span className="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-500/20 text-teal-800 dark:text-teal-200 border border-teal-500/40">
@@ -53,9 +53,9 @@ export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 				</span>
 			</div>
 			<p className="mt-1 leading-relaxed text-[var(--ink,#0f172a)] opacity-90">
-				В смету включены дополнительные манипуляции, выполненные врачом во время приёма.
-				Они освобождены от НДС как медицинские услуги, согласованы в рамках клинической автономии врача
-				и автоматически включаются в акт оказанных услуг и счёт на оплату без задержек кассы.
+				В смету включены дополнительные медицинские услуги, выполненные врачом у кресла.
+				Согласно ст. 149 НК РФ медицинские услуги не облагаются НДС, согласованы в рамках клинической автономии врача
+				и автоматически включаются в кассовый чек и акт оказанных услуг без задержек кассы.
 			</p>
 			<div className="mt-2.5 p-2.5 rounded-lg bg-[var(--paper-soft,rgba(255,255,255,0.6))] border border-teal-500/20">
 				<div className="font-semibold text-teal-800 dark:text-teal-300 mb-1">
@@ -86,7 +86,7 @@ export const TaxExemptionBanner: React.FC<TaxExemptionBannerProps> = ({
 						: "Распечатать Доп. соглашение (опционально)"}
 				</button>
 				<span className="text-[11px] text-teal-700 dark:text-teal-300 italic">
-					Счёт и оплата доступны сразу в 1 клик
+					Кассовый чек и оплата доступны сразу в 1 клик
 				</span>
 			</div>
 		</div>

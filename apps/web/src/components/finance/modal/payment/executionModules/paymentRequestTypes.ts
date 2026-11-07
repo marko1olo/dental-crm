@@ -26,10 +26,13 @@ export interface PaymentApiRequestBody {
 	readonly electronicAmountKopecks?: number | undefined;
 	readonly dmsAmountKopecks?: number | undefined;
 	readonly depositAmountKopecks?: number | undefined;
+	readonly bonusAmountKopecks?: number | undefined;
 	readonly cashAmountRub?: number | undefined;
 	readonly electronicAmountRub?: number | undefined;
 	readonly dmsAmountRub?: number | undefined;
 	readonly depositAmountRub?: number | undefined;
+	readonly bonusAmountRub?: number | undefined;
+	readonly pointsToRedeem?: number | undefined;
 	readonly guaranteeLetterId?: string | undefined;
 }
 

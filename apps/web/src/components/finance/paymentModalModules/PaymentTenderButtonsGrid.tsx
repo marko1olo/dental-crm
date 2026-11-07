@@ -40,50 +40,50 @@ export const PaymentTenderButtonsGrid: React.FC<PaymentFooterActionsProps> = ({
 
 	if (activeMethod === "cash") {
 		return (
-			<button type="button" onClick={execHook.handleCashSubmit} aria-busy={execHook.isSubmittingCash} title="Оплатить и напечатать чек (Enter)" className="payment-footer-submit-btn btn-cash min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-cash-submit-footer">
+			<button type="button" onClick={execHook.handleCashSubmit} aria-busy={execHook.isSubmittingCash} title="Принять оплату наличными (Enter)" className="payment-footer-submit-btn btn-cash min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-cash-submit-footer">
 				<span data-testid="btn-cash-submit" className="sr-only">Принять наличные</span>
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить наличными — {formattedDue} ₽</span>
-				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
+				<span>Принять оплату · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "sbp_qr") {
 		return (
-			<button type="button" onClick={execHook.handleConfirmSbpManual} aria-busy={tendersHook.isCheckingSbp} title="Оплатить и напечатать чек через СБП" className="payment-footer-submit-btn btn-sbp min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-sbp-submit-footer">
+			<button type="button" onClick={execHook.handleConfirmSbpManual} aria-busy={tendersHook.isCheckingSbp} title="Принять оплату через СБП" className="payment-footer-submit-btn btn-sbp min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-sbp-submit-footer">
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить через СБП ({formattedDue} ₽)</span>
-				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
+				<span>Принять оплату · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "split") {
 		return (
-			<button type="button" onClick={execHook.handleSplitSubmit} aria-busy={execHook.isSubmittingSplit} title="Оплатить и напечатать чек (сплит)" className="payment-footer-submit-btn btn-split min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-split-submit-footer">
+			<button type="button" onClick={execHook.handleSplitSubmit} aria-busy={execHook.isSubmittingSplit} title="Принять оплату сплит" className="payment-footer-submit-btn btn-split min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-split-submit-footer">
 				{srReceiptAnchor}<CheckCircle size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить сплит ({formattedDue} ₽)</span>
-				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
+				<span>Принять оплату · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	if (activeMethod === "family_deposit") {
 		return (
-			<button type="button" onClick={() => execHook.handleDepositOrPartialCombo("deposit")} aria-busy={execHook.isSubmittingDeposit} title="Оплатить и напечатать чек с депозита" className="payment-footer-submit-btn btn-deposit min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-deposit-submit-footer">
+			<button type="button" onClick={() => execHook.handleDepositOrPartialCombo("deposit")} aria-busy={execHook.isSubmittingDeposit} title="Принять оплату с депозита" className="payment-footer-submit-btn btn-deposit min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-deposit-submit-footer">
 				{srReceiptAnchor}<Wallet size={16} className="shrink-0" />
 				<span className="sr-only">Оплатить с депозита ({formattedDue} ₽)</span>
-				<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
+				<span>Принять оплату · {formattedDue} ₽</span>
 			</button>
 		);
 	}
 
 	return (
-		<button type="button" onClick={() => execHook.handleManualCardTerminalConfirm()} aria-busy={execHook.isSubmittingManualCard} title="Оплатить и напечатать чек картой (Enter)" className="payment-footer-submit-btn btn-card min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-card-submit-footer">
+		<button type="button" onClick={() => execHook.handleManualCardTerminalConfirm()} aria-busy={execHook.isSubmittingManualCard} title="Принять оплату картой (Enter)" className="payment-footer-submit-btn btn-card min-h-[52px] sm:min-h-[36px] px-5 rounded-xl w-full sm:w-auto" data-testid="btn-card-submit-footer">
 			{srReceiptAnchor}<CreditCard size={16} className="shrink-0" />
 			<span className="sr-only">Оплатить картой — {formattedDue} ₽</span>
-			<span>Оплатить и напечатать чек · {formattedDue} ₽</span>
+			<span>Принять оплату · {formattedDue} ₽</span>
 		</button>
 	);
 };
