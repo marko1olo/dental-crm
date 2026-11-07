@@ -24,26 +24,39 @@ export const EgiszRemdModalHeader: React.FC<EgiszRemdModalHeaderProps> = ({
 	return (
 		<header className="egisz-modal-header">
 			<div className="egisz-mobile-drag-handle" aria-hidden="true" />
-			<div className="egisz-header-left">
-				<div className="egisz-header-icon-badge teal">
-					<ShieldCheck size={24} />
-				</div>
-				<div className="egisz-header-title-group">
-					<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
-						<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>
-							Государственная отчётность и справки
-						</h2>
-						<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700, whiteSpace: "nowrap" }}>
-							Минздрав РФ
-						</span>
+			<div className="egisz-header-top-row">
+				<div className="egisz-header-left">
+					<div className="egisz-header-icon-badge teal">
+						<ShieldCheck size={24} />
 					</div>
-					<div className="egisz-modal-subtitle" style={{ fontSize: "0.75rem", margin: 0 }}>
-						Электронные медицинские карты и справки на налоговый вычет
+					<div className="egisz-header-title-group">
+						<div style={{ display: "flex", alignItems: "center", gap: "0.5rem", flexWrap: "wrap" }}>
+							<h2 className="egisz-modal-title" style={{ fontSize: "1.05rem", margin: 0 }}>
+								<span className="hidden sm:inline">Государственная отчётность и справки</span>
+								<span className="sm:hidden">Отчётность РЭМД</span>
+							</h2>
+							<span className="egisz-moh-badge egisz-badge-teal" style={{ fontSize: "0.7rem", padding: "0.12rem 0.4rem", borderRadius: "4px", fontWeight: 700, whiteSpace: "nowrap" }}>
+								Минздрав РФ
+							</span>
+						</div>
+						<div className="egisz-modal-subtitle" style={{ fontSize: "0.75rem", margin: 0 }}>
+							<span className="hidden sm:inline">Электронные медицинские карты и справки на налоговый вычет</span>
+							<span className="sm:hidden">ЭМК, РЭМД и справки на вычет</span>
+						</div>
 					</div>
 				</div>
+
+				<button
+					type="button"
+					className="egisz-close-btn egisz-close-icon-btn"
+					onClick={onClose}
+					aria-label="Закрыть модальное окно"
+				>
+					<X size={20} />
+				</button>
 			</div>
 
-			<div className="egisz-header-right">
+			<div className="egisz-header-toolbar-row">
 				<div className="egisz-doc-filter-toolbar" role="toolbar" aria-label="Фильтр видов документов">
 					<button
 						type="button"
@@ -51,7 +64,8 @@ export const EgiszRemdModalHeader: React.FC<EgiszRemdModalHeaderProps> = ({
 						className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "302" ? "active" : ""}`}
 						onClick={() => onSelectDocType("cda_semd", "302", "clinical")}
 					>
-						Консультация
+						<span className="hidden sm:inline">Консультация</span>
+						<span className="sm:hidden">Осмотр</span>
 					</button>
 					<button
 						type="button"
@@ -59,7 +73,8 @@ export const EgiszRemdModalHeader: React.FC<EgiszRemdModalHeaderProps> = ({
 						className={`egisz-doc-filter-btn ${activeDocType === "cda_semd" && semdDocCode === "303" ? "active" : ""}`}
 						onClick={() => onSelectDocType("cda_semd", "303", "clinical")}
 					>
-						Вмешательство
+						<span className="hidden sm:inline">Вмешательство</span>
+						<span className="sm:hidden">Лечение</span>
 					</button>
 					<button
 						type="button"
@@ -73,18 +88,10 @@ export const EgiszRemdModalHeader: React.FC<EgiszRemdModalHeaderProps> = ({
 						className={`egisz-doc-filter-btn ${activeDocType === "fns_tax" ? "active" : ""}`}
 						onClick={() => onSelectDocType("fns_tax", undefined, "tax_deduction")}
 					>
-						Справка для налогового вычета
+						<span className="hidden sm:inline">Справка для налогового вычета</span>
+						<span className="sm:hidden">Вычет</span>
 					</button>
 				</div>
-
-				<button
-					type="button"
-					className="egisz-close-btn egisz-close-icon-btn"
-					onClick={onClose}
-					aria-label="Закрыть модальное окно"
-				>
-					<X size={20} />
-				</button>
 			</div>
 		</header>
 	);

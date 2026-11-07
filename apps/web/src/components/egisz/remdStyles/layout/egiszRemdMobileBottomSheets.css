@@ -21,36 +21,73 @@
 	}
 
 	.egisz-modal-header {
-		flex-direction: column;
-		align-items: stretch;
-		padding: 0.75rem 1rem;
-		gap: 0.65rem;
+		display: flex !important;
+		flex-direction: column !important;
+		align-items: stretch !important;
+		padding: 0.75rem 1rem !important;
+		gap: 0.65rem !important;
+	}
+
+	.egisz-header-top-row {
+		display: flex !important;
+		align-items: center !important;
+		justify-content: space-between !important;
+		width: 100% !important;
+		gap: 0.5rem !important;
 	}
 
 	.egisz-header-left {
-		width: 100%;
-		justify-content: flex-start;
+		display: flex !important;
+		align-items: center !important;
+		gap: 0.65rem !important;
+		min-width: 0 !important;
+		flex: 1 !important;
 	}
 
-	.egisz-header-right {
-		width: 100%;
-		display: flex;
-		align-items: center;
-		justify-content: space-between;
-		gap: 0.5rem;
+	.egisz-close-btn,
+	.egisz-close-icon-btn {
+		min-width: 36px !important;
+		min-height: 36px !important;
+		flex-shrink: 0 !important;
+		display: flex !important;
+		align-items: center !important;
+		justify-content: center !important;
+	}
+
+	.egisz-header-toolbar-row {
+		display: flex !important;
+		width: 100% !important;
 	}
 
 	.egisz-doc-filter-toolbar {
-		overflow-x: auto;
-		-webkit-overflow-scrolling: touch;
-		width: 100%;
-		display: flex;
-		gap: 0.35rem;
+		width: 100% !important;
+		display: flex !important;
+		gap: 2px !important;
+		background: var(--line, #e2e8f0) !important;
+		padding: 2px !important;
+		border-radius: 8px !important;
+		overflow-x: auto !important;
+		-webkit-overflow-scrolling: touch !important;
+		scrollbar-width: none !important;
+	}
+
+	[data-theme="dark"] .egisz-doc-filter-toolbar,
+	.dark .egisz-doc-filter-toolbar {
+		background: var(--line, #1e293b) !important;
+	}
+
+	.egisz-doc-filter-toolbar::-webkit-scrollbar {
+		display: none !important;
 	}
 
 	.egisz-doc-filter-btn {
-		flex-shrink: 0;
-		white-space: nowrap;
+		flex: 1 1 0% !important;
+		min-width: 0 !important;
+		justify-content: center !important;
+		text-align: center !important;
+		padding: 0 0.25rem !important;
+		white-space: nowrap !important;
+		font-size: 0.75rem !important;
 	}
 
 	.egisz-fns-meta-grid,
@@ -63,6 +100,11 @@
 		flex-shrink: 0;
 		min-height: 48px;
 		-webkit-overflow-scrolling: touch;
+		scrollbar-width: none;
+	}
+
+	.egisz-tabs-nav::-webkit-scrollbar {
+		display: none;
 	}
 
 	.egisz-tab-btn {

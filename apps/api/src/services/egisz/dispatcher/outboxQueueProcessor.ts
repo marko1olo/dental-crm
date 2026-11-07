@@ -28,12 +28,14 @@ import type {
 	OutboxProcessResult,
 } from "./types.js";
 import { extractSnils } from "./semdXmlValidator.js";
+import { isValidSnils } from "../../../utils/snils.js";
 import {
 	calculateEgiszRetryDelayMs,
 	createEgiszRemdReceipt,
 } from "./egiszGatewayClient.js";
 import { getReceiptByOutboxId, getReceiptByVisitId } from "./receiptManager.js";
 import { syncPendingStatuses } from "./statusSyncer.js";
+import { processLegacyPendingLogs } from "./legacyLogsProcessor.js";
 
 export class EgiszOutboxDispatcher {
 	private readonly client: OiisGatewayClient;
@@ -300,6 +302,111 @@ export class EgiszOutboxDispatcher {
 					.limit(1);
 
 				const snils = patientRow ? extractSnils(patientRow.administrativeProfile) : "";
+				const adminProfile = (patientRow?.administrativeProfile && typeof patientRow.administrativeProfile === "object")
+					? (patientRow.administrativeProfile as Record<string, unknown>)
+					: null;
+				const identityDoc = typeof adminProfile?.identityDocument === "string" ? adminProfile.identityDocument.trim() : "";
+
+				// [EGI-03] Ликвидация хардкодного тестового СНИЛС '11223344595':
+				// Если СНИЛС отсутствует и нет удостоверения личности — ставим в статус ожидания данных пациента
+				if (!snils && !identityDoc) {
+					const missingMsg = "[Ожидает данных пациента] У пациента отсутствует СНИЛС и документ, удостоверяющий личность. Заполните данные в карточке пациента.";
+					await db
+						.update(egiszOutbox)
+						.set({
+							status: "failed",
+							attempts: row.attempts + 1,
+							lastErrorClass: "MissingPatientData",
+							lastErrorMessage: missingMsg,
+							lockedAt: null,
+							lockedBy: null,
+							updatedAt: new Date(),
+						})
+						.where(eq(egiszOutbox.id, row.id));
+
+					await db
+						.update(egiszLogs)
+						.set({
+							status: "Error",
+							errorDetails: {
+								outboxId: row.id,
+								errorMessage: missingMsg,
+								missingPatientData: true,
+								failedAt: new Date().toISOString(),
+							},
+						})
+						.where(
+							and(
+								eq(egiszLogs.organizationId, row.organizationId),
+								eq(egiszLogs.visitId, row.visitId),
+							),
+						);
+
+					await appendEgiszAuditLog(db, {
+						organizationId: row.organizationId,
+						eventType: "REMD_MISSING_PATIENT_DATA",
+						entityType: "egisz_outbox",
+						entityId: row.id,
+						patientId: row.patientId,
+						payload: {
+							outboxId: row.id,
+							visitId: row.visitId,
+							errorMessage: missingMsg,
+						},
+					});
+
+					result.failedCount++;
+					result.results.push({
+						outboxId: row.id,
+						visitId: row.visitId,
+						status: "failed",
+						error: missingMsg,
+					});
+					continue;
+				}
+
+				if (snils && !isValidSnils(snils)) {
+					const invalidMsg = `[Ожидает данных пациента] Некорректный СНИЛС пациента (${snils}) — ошибка контрольной суммы по 192п. Проверьте номер в карточке пациента.`;
+					await db
+						.update(egiszOutbox)
+						.set({
+							status: "failed",
+							attempts: row.attempts + 1,
+							lastErrorClass: "InvalidPatientSnils",
+							lastErrorMessage: invalidMsg,
+							lockedAt: null,
+							lockedBy: null,
+							updatedAt: new Date(),
+						})
+						.where(eq(egiszOutbox.id, row.id));
+
+					await db
+						.update(egiszLogs)
+						.set({
+							status: "Error",
+							errorDetails: {
+								outboxId: row.id,
+								errorMessage: invalidMsg,
+								invalidPatientSnils: true,
+								failedAt: new Date().toISOString(),
+							},
+						})
+						.where(
+							and(
+								eq(egiszLogs.organizationId, row.organizationId),
+								eq(egiszLogs.visitId, row.visitId),
+							),
+						);
+
+					result.failedCount++;
+					result.results.push({
+						outboxId: row.id,
+						visitId: row.visitId,
+						status: "failed",
+						error: invalidMsg,
+					});
+					continue;
+				}
 
 				const pkg: EgiszRemdPackage = {
 					documentId: row.visitId,
@@ -324,7 +431,7 @@ export class EgiszOutboxDispatcher {
 							}
 						: {}),
 					metadata: {
-						patientSnils: snils || "11223344595",
+						patientSnils: snils || "",
 						clinicOid: this.client.getConfig().clinicOid,
 						docTypeNsiCode: row.docTypeNsiCode || "108",
 					},
@@ -564,118 +671,7 @@ export class EgiszOutboxDispatcher {
 		}
 
 		// 2. Backward compatibility: also process pending items in egisz_logs that do not have an outbox row
-		const pendingLogs = await db
-			.select()
-			.from(egiszLogs)
-			.where(
-				organizationId
-					? and(
-							eq(egiszLogs.organizationId, organizationId),
-							inArray(egiszLogs.status, ["Pending", "Error"]),
-						)
-					: inArray(egiszLogs.status, ["Pending", "Error"]),
-			)
-			.limit(limit);
-
-		for (const log of pendingLogs) {
-			const logDetails = (log.errorDetails as Record<string, unknown>) || {};
-			if (logDetails.outboxId) {
-				continue;
-			}
-
-			const nextRetryAt = typeof logDetails.nextRetryAt === "string" ? new Date(logDetails.nextRetryAt) : null;
-			if (nextRetryAt && !Number.isNaN(nextRetryAt.getTime()) && nextRetryAt.getTime() > Date.now()) {
-				continue;
-			}
-
-			result.processedCount++;
-			try {
-				const docPayload = logDetails.packagePayload as EgiszRemdPackage | undefined;
-
-				if (docPayload && docPayload.xmlCanonicalPayload && docPayload.doctorSignature?.signatureBase64) {
-					const submissionRes = await this.client.sendRemdDocument(docPayload);
-					if (submissionRes.success) {
-						await db
-							.update(egiszLogs)
-							.set({
-								status: submissionRes.status === "Registered" ? "Accepted" : "Sent",
-								transactionId: submissionRes.transactionId,
-								errorDetails: {
-									...logDetails,
-									remdDocumentId: submissionRes.remdDocumentId,
-									registrationDate: submissionRes.registrationDate,
-									dispatchedAt: new Date().toISOString(),
-								},
-							})
-							.where(eq(egiszLogs.id, log.id));
-
-						result.successCount++;
-						result.results.push({
-							logId: log.id,
-							visitId: log.visitId,
-							status: submissionRes.status,
-							transactionId: submissionRes.transactionId,
-						});
-					} else {
-						const prevRetry = typeof logDetails.retryCount === "number" ? logDetails.retryCount : 0;
-						const retryCount = prevRetry + 1;
-						const delayMs = calculateEgiszRetryDelayMs(retryCount);
-						await db
-							.update(egiszLogs)
-							.set({
-								status: "Error",
-								transactionId: submissionRes.transactionId,
-								errorDetails: {
-									...logDetails,
-									retryCount,
-									nextRetryAt: new Date(Date.now() + delayMs).toISOString(),
-									errorMessage: submissionRes.errorMessage,
-								},
-							})
-							.where(eq(egiszLogs.id, log.id));
-
-						result.failedCount++;
-						result.results.push({
-							logId: log.id,
-							visitId: log.visitId,
-							status: "Error",
-							error: submissionRes.errorMessage,
-						});
-					}
-				} else {
-					const errorMsg = "Невозможно передать документ в РЭМД ЕГИСЗ: отсутствует квалифицированная подпись (УКЭП) врача-автора. Подпишите протокол в интерфейсе врача.";
-					await db
-						.update(egiszLogs)
-						.set({
-							status: "Error",
-							errorDetails: {
-								...logDetails,
-								errorMessage: errorMsg,
-								missingSignature: true,
-								failedAt: new Date().toISOString(),
-							},
-						})
-						.where(eq(egiszLogs.id, log.id));
-
-					result.failedCount++;
-					result.results.push({
-						logId: log.id,
-						visitId: log.visitId,
-						status: "Error",
-						error: errorMsg,
-					});
-				}
-			} catch (err: unknown) {
-				const errorMsg = err instanceof Error ? err.message : String(err);
-				result.failedCount++;
-				result.results.push({
-					logId: log.id,
-					visitId: log.visitId,
-					status: "Error",
-					error: errorMsg,
-				});
-			}
-		}
+		await processLegacyPendingLogs(this.client, result, organizationId, limit);
 
 		return result;
 	}

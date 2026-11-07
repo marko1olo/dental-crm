@@ -71,7 +71,8 @@ export async function dispatchPackageToVimis(
 	// Предварительный форматно-логический контроль на стороне клиники
 	const flkIssues: string[] = [];
 	const patientSnils = options.pkg.metadata.patientSnils ?? "";
-	if (!isValidSnils(patientSnils)) {
+	// [EGI-03] Проверяем контрольную сумму СНИЛС пациента, если номер предоставлен.
+	if (patientSnils.length > 0 && !isValidSnils(patientSnils)) {
 		const flk001 = STATUTORY_FLK_ERROR_DICTIONARY["FLK-001"];
 		if (flk001) flkIssues.push(flk001);
 	}

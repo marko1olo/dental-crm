@@ -195,6 +195,7 @@ export interface VimisReceipt {
  */
 export const validateDoctorSnilsBodySchema = z.object({
 	snils: z.unknown().optional(),
+	doctorId: z.string().uuid().optional(),
 });
 
 export const egiszLogsParamsSchema = z.object({

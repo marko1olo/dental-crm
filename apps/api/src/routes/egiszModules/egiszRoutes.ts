@@ -10,7 +10,11 @@ import { readGatewayConfig } from "../egisz/helpers.js";
 import { registerN3HealthRoutes } from "../egisz/n3HealthRoutes.js";
 import { registerEgiszOutboxRoutes } from "../egisz/outboxRoutes.js";
 import { registerVisitCdaExportRoute } from "../egisz/visitCdaExport.js";
-import { resolveEgiszIntegrationStatus, verifyDoctorSnilsForFrmr } from "./egiszAuthService.js";
+import {
+	resolveEgiszIntegrationStatus,
+	verifyDoctorFrmrProfile,
+	verifyDoctorSnilsForFrmr,
+} from "./egiszAuthService.js";
 import {
 	egiszBlankPermissionsPatchSchema,
 	egiszLogsParamsSchema,
@@ -51,8 +55,39 @@ export async function registerEgiszModularRoutes(app: FastifyInstance) {
 		if (!(await requireClinicalReadAccess(request, reply, "egisz snils validation"))) return;
 		const parsed = validateDoctorSnilsBodySchema.safeParse(request.body);
 		if (!parsed.success) {
-			return reply.status(400).send({ ok: false, error: "ValidationError", message: "Тело запроса должно быть JSON-объектом с полем snils." });
+			return reply.status(400).send({ ok: false, error: "ValidationError", message: "Тело запроса должно быть JSON-объектом с полем snils или doctorId." });
 		}
+		const identity = getRequestIdentity(request);
+		const orgId = identity.organizationId;
+		const targetDoctorId = parsed.data.doctorId || (parsed.data.snils ? undefined : identity.userId);
+
+		// Если передан doctorId или проверяется текущий вошедший пользователь — делаем глубокую проверку в БД users
+		if (targetDoctorId) {
+			const profileRes = await verifyDoctorFrmrProfile(db, {
+				doctorId: targetDoctorId,
+				snils: parsed.data.snils,
+				organizationId: orgId || undefined,
+			});
+			if (!profileRes.valid) {
+				return reply.status(200).send({
+					ok: false,
+					status: profileRes.status,
+					error: profileRes.error,
+					message: profileRes.message,
+					snilsFormatted: profileRes.snilsFormatted,
+					validForFrmr: false,
+				});
+			}
+			return reply.status(200).send({
+				ok: true,
+				status: profileRes.status,
+				snilsFormatted: profileRes.snilsFormatted,
+				validForFrmr: true,
+				doctor: profileRes.doctor,
+			});
+		}
+
+		// Быстрая проверка формата/контрольной суммы СНИЛС
 		const res = verifyDoctorSnilsForFrmr(parsed.data.snils);
 		if (!res.valid) {
 			return reply.status(400).send({ ok: false, error: res.error, message: res.message });

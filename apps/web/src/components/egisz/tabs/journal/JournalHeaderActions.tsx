@@ -26,7 +26,7 @@ export const JournalHeaderActions: React.FC<JournalHeaderActionsProps> = ({
 					Журнал электронных медицинских карт (протоколы консультаций и вмешательств)
 				</p>
 			</div>
-			<div style={{ display: "flex", gap: "0.5rem" }}>
+			<div style={{ display: "flex", gap: "0.5rem", flexWrap: "wrap", alignItems: "center" }}>
 				{onBatchSendShift && (
 					<button
 						type="button"
@@ -37,9 +37,12 @@ export const JournalHeaderActions: React.FC<JournalHeaderActionsProps> = ({
 							display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 0.9rem",
 							fontSize: "0.8125rem", fontWeight: 700, borderRadius: "6px",
 							background: "var(--teal)", color: "var(--ink-inverse)", border: "none", cursor: "pointer",
+							whiteSpace: "nowrap", flexShrink: 0,
 						}}
 					>
-						<Send size={15} /> ✓ Отправить пакет смены в РЭМД
+						<Send size={15} />
+						<span className="hidden sm:inline">✓ Отправить пакет смены в РЭМД</span>
+						<span className="sm:hidden">✓ Отправить смену</span>
 					</button>
 				)}
 				{onRefreshOutbox && (
@@ -51,6 +54,7 @@ export const JournalHeaderActions: React.FC<JournalHeaderActionsProps> = ({
 							display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 0.75rem",
 							fontSize: "0.8125rem", fontWeight: 600, borderRadius: "6px",
 							border: "1px solid var(--line)", background: "var(--paper)", color: "var(--ink)", cursor: "pointer",
+							whiteSpace: "nowrap", flexShrink: 0,
 						}}
 					>
 						<RefreshCw size={14} />
@@ -64,10 +68,12 @@ export const JournalHeaderActions: React.FC<JournalHeaderActionsProps> = ({
 						display: "flex", alignItems: "center", gap: "0.4rem", padding: "0.5rem 1rem",
 						fontSize: "0.8125rem", fontWeight: 700, borderRadius: "6px",
 						background: "var(--primary)", color: "var(--ink-inverse)", border: "none", cursor: "pointer",
+						whiteSpace: "nowrap", flexShrink: 0,
 					}}
 				>
 					<FileArchive size={16} />
-					Пакетный ZIP (.xml + .p7s)
+					<span className="hidden sm:inline">Пакетный ZIP (.xml + .p7s)</span>
+					<span className="sm:hidden">ZIP архив</span>
 				</button>
 			</div>
 		</div>

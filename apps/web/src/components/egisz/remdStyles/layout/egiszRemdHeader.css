@@ -12,6 +12,11 @@
 	flex-shrink: 0;
 }
 
+.egisz-header-top-row,
+.egisz-header-toolbar-row {
+	display: contents;
+}
+
 .egisz-header-left {
 	display: flex;
 	align-items: center;

@@ -31,7 +31,8 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 					onClick={() => onSelectTab("clinical")}
 				>
 					<FileText size={16} />
-					Медицинская карта приёма
+					<span className="hidden sm:inline">Медицинская карта приёма</span>
+					<span className="sm:hidden">Медкарта</span>
 				</button>
 			) : (
 				<button
@@ -40,7 +41,8 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 					onClick={() => onSelectTab("tax_deduction")}
 				>
 					<Receipt size={16} />
-					Справка для налогового вычета
+					<span className="hidden sm:inline">Справка для налогового вычета</span>
+					<span className="sm:hidden">Справка ФНС</span>
 				</button>
 			)}
 
@@ -50,7 +52,8 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("preflight")}
 			>
 				<Shield size={16} />
-				Проверка готовности
+				<span className="hidden sm:inline">Проверка готовности</span>
+				<span className="sm:hidden">Готовность</span>
 				<span className="egisz-tab-badge">{scorePercent}%</span>
 			</button>
 
@@ -60,7 +63,8 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("signature")}
 			>
 				<Key size={16} />
-				Подписание документа
+				<span className="hidden sm:inline">Подписание документа</span>
+				<span className="sm:hidden">Подпись ЭЦП</span>
 				{isDoctorSigned ? (
 					<span className="egisz-tab-badge" style={{ background: "rgba(16, 185, 129, 0.15)", color: "var(--success, #10b981)" }}>
 						Подписан
@@ -78,7 +82,8 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("xml_preview")}
 			>
 				<Code2 size={16} />
-				Экспорт и статус
+				<span className="hidden sm:inline">Экспорт и статус</span>
+				<span className="sm:hidden">Экспорт</span>
 			</button>
 
 			<button
@@ -87,7 +92,8 @@ export const EgiszRemdModalNav: React.FC<EgiszRemdModalNavProps> = ({
 				onClick={() => onSelectTab("journal")}
 			>
 				<Archive size={16} />
-				Журнал отправки
+				<span className="hidden sm:inline">Журнал отправки</span>
+				<span className="sm:hidden">Журнал</span>
 			</button>
 		</nav>
 	);
