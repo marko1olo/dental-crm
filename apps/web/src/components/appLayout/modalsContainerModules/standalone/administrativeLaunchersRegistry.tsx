@@ -25,6 +25,7 @@ import { DirectCopilotLauncher } from "../../../copilot/DirectCopilotLauncher";
 import { PatientOmnichannelHubModal } from "../../../messaging/PatientOmnichannelHubModal";
 import { DocumentsView } from "../../../../DocumentsView";
 import { DirectDocumentsLauncher } from "../../../documents/DirectDocumentsLauncher";
+import { DirectUkepSigningLauncher } from "../../../documents/ukep/DirectUkepSigningLauncher";
 import { DirectPatientLauncher } from "../../../patients/DirectPatientLauncher";
 import { DirectPatientStudioLauncher } from "../../../patients/DirectPatientStudioLauncher";
 import { StandalonePatientCardHost } from "./clinical/StandalonePatientCardHost";
@@ -282,6 +283,18 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 			</div>
 		),
 	},
+	// 14c. Юридическая электронная подпись врача (УКЭП ГОСТ / КриптоПро CSP)
+	{
+		id: "ukep-signing-studio",
+		title: "Юридическая электронная подпись врача (УКЭП)",
+		criteria: {
+			tokens: ["ukep", "cryptopro", "ukep-signing", "crypto-pro", "crypto_pro"],
+			searchIncludes: ["ukep=1", "cryptopro=1", "standalone=ukep"],
+			exactHashes: ["#ukep", "#cryptopro", "#ukep-signing", "#crypto-pro"],
+			hashPrefixes: ["#ukep?", "#cryptopro?"],
+		},
+		render: () => <DirectUkepSigningLauncher />,
+	},
 	// 15. Картотека пациентов и экспресс-регистрация
 	{
 		id: "patients-catalog",
@@ -330,10 +343,10 @@ export const ADMINISTRATIVE_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<S
 		id: "marketing-studio",
 		title: "Студия маркетинга, акций и ROMI",
 		criteria: {
-			tokens: ["marketing", "romi", "campaigns", "marketing-studio"],
-			searchIncludes: ["marketing=1", "romi=1", "standalone=marketing"],
-			exactHashes: ["#marketing", "#romi", "#campaigns", "#marketing-studio"],
-			hashPrefixes: ["#marketing?", "#marketing/", "#romi?", "#campaigns?"],
+			tokens: ["marketing-studio"],
+			searchIncludes: ["marketing=standalone", "marketing-studio=1", "standalone=marketing"],
+			exactHashes: ["#marketing-studio"],
+			hashPrefixes: ["#marketing-studio?"],
 		},
 		render: () => <DirectMarketingLauncher />,
 	},

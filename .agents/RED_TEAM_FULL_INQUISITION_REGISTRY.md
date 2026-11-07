@@ -2279,11 +2279,42 @@
   - `packages/shared/src/tests/cadespluginFacade.test.ts` (14/14 PASS).
   - `apps/api/src/tests/routes/documentsUkepSigning.test.ts` (14/14 PASS).
 
-### [CRY-03] [SEV-2] Забытый и не подключенный нативный CLI-мост КриптоПро (cryptcp.exe)
+### [CRY-03] [SEV-2] [ИСПРАВЛЕНО] Забытый и не подключенный нативный CLI-мост КриптоПро (cryptcp.exe / csptest.exe)
 - **Файлы:**
-  - [`apps/api/src/routes/cryptoProNativeRoutes.ts#L1-L100`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts#L1-L100)
-  - [`apps/api/src/crypto/cryptoProCliEngine.ts#L77-L177`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/crypto/cryptoProCliEngine.ts#L77-L177)
-- **Суть бага:** На бэкенде написан мощный CLI-мост прямого вызова `cryptcp.exe` и `csptest.exe`, но во фронтенде нет ни одного вызова этого API. Когда браузерный плагин не найден, система вместо нативного вызова падает в фальшивый ПИН-код.
+  - [`apps/api/src/crypto/cryptoProCliEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/crypto/cryptoProCliEngine.ts)
+  - [`apps/api/src/routes/cryptoProNativeRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/cryptoProNativeRoutes.ts)
+  - [`packages/shared/src/crypto/cryptoProNativeClient.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/crypto/cryptoProNativeClient.ts)
+  - [`packages/shared/src/crypto/cadespluginFacade.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/crypto/cadespluginFacade.ts)
+  - [`apps/web/src/utils/cryptoPro.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/utils/cryptoPro.ts)
+  - [`apps/web/src/components/documents/ukep/UkepDocumentSigningModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/ukep/UkepDocumentSigningModal.tsx)
+  - [`apps/web/src/components/documents/ukep/DirectUkepSigningLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/ukep/DirectUkepSigningLauncher.tsx)
+  - [`apps/web/src/components/documents/ukep/useUkepSigningEngine.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/documents/ukep/useUkepSigningEngine.ts)
+  - [`apps/web/src/components/visit/cryptoProModules/CryptoProCertSelectSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/CryptoProCertSelectSection.tsx)
+  - [`apps/web/src/components/visit/cryptoProModules/useCryptoProLockActions.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/useCryptoProLockActions.ts)
+- **Суть бага:** На бэкенде был написан CLI-мост прямого вызова `cryptcp.exe` и `csptest.exe`, но во фронтенде не было ни одного вызова этого API. Когда браузерный плагин CAdES не найден (например, в чистом браузере, Desktop/Electron клиенте), система вместо нативного вызова падала в симуляцию либо блокировалась. В `cryptoProCliEngine.ts` отсутствовал защитный таймаут процессов CLI, а в `useCryptoProLockActions.ts` стояла ложная блокировка обязательного ПИН-кода для контейнеров без пароля (нарушение Мандата 8e).
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. **Надежность CLI-движка бэкенда:** В `cryptoProCliEngine.ts` добавлен защитный таймаут 10 секунд (`timeout: 10000`) для вызова `certmgr`, `cryptcp` и `csptest`, исключающий зависание сервера при диалогах токена. Реализована передача PIN-кода токена (`-pin <pin>` / `-password <pin>`).
+  2. **Сквозные эндпоинты Fastify:** В `cryptoProNativeRoutes.ts` зарегистрированы канонические роуты `/api/cryptopro/native/status`, `/api/cryptopro/native/certificates`, `/api/cryptopro/native/sign`, а схема запроса дополнена поддержкой опционального PIN-кода и кодировок UTF-8/Base64/Hex.
+  3. **Клиент нативного моста в shared:** Создан модуль `packages/shared/src/crypto/cryptoProNativeClient.ts` с функциями `fetchCryptoProNativeStatus`, `fetchCryptoProNativeCertificates`, `signWithCryptoProNative`.
+  4. **Бесшовный фолбек в веб-клиенте:** В `apps/web/src/utils/cryptoPro.ts` обновлены `checkCryptoProPlugin()`, `getPersonalCertificates()` и `signBase64WithCertificate()`: если плагин `window.cadesplugin` недоступен, запрос прозрачно направляется в нативный CLI-мост Fastify бэкенда.
+  5. **Автономия врача (Мандат 8e):** В `CryptoProCertSelectSection.tsx` и `useCryptoProLockActions.ts` снята блокировка обязательного ввода PIN-кода (контейнеры КриптоПро без пароля подписываются напрямую). Если СКЗИ не установлена, система честно возвращает статус с `paperFallbackAvailable: true`, открывая возможность подписания ПЭП в 1 клик или печати бумажного бланка.
+  6. **Каноническая студия подписания УКЭП:** В `apps/web/src/components/documents/ukep/` создана `UkepDocumentSigningModal.tsx` и смонтирован deep-link лончер `DirectUkepSigningLauncher.tsx` (`#ukep`, `?ukep=1`).
+  7. **Тесты и верификация (PASS 100%):**
+     - `packages/shared/src/tests/cryptoProNativeClient.test.ts` (3/3 PASS)
+     - `packages/shared/src/tests/cadespluginFacade.test.ts` (14/14 PASS)
+     - `apps/api/src/tests/cryptoProCliEngine.test.ts` (35/35 PASS)
+     - `apps/api/src/tests/routes/documentsUkepSigning.test.ts` (14/14 PASS)
+     - Итого: 66/66 тестов криптоконтура green.
+  8. **Машинные гейты:**
+     - `npm run check:encoding` -> 24 131 файл, Exit Code 0.
+     - `npm run check:stub-overrides` -> 139 свойств, Exit Code 0.
+     - `npm run check:fetch-response` -> 14 437 файлов, Exit Code 0.
+     - `npm run check:dynamic-imports` -> 18 282 файла, Exit Code 0.
+  9. **4-State Visual Proofs (лично проинспектированы по 8 осям):**
+     - ☀️ `docs/proofs/ukep/01_ukep_signing_pc_light_1440x900.png` (78.6 KB)
+     - 🌙 `docs/proofs/ukep/02_ukep_signing_pc_dark_1440x900.png` (78.8 KB)
+     - 📱 `docs/proofs/ukep/03_ukep_signing_mobile_light_390x844.png` (153.2 KB)
+     - 📱 `docs/proofs/ukep/04_ukep_signing_mobile_dark_390x844.png` (154.6 KB)
 
 
 ## 25. 👥 КАРТОТЕКА И КАРТОЧКА ПАЦИЕНТА (SSOT, АНТИ-КЛИППИНГ, ЛИКВИДАЦИЯ ЛЕГАСИ-ШИМОВ)

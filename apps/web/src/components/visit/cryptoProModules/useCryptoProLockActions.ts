@@ -78,7 +78,10 @@ export function useCryptoProLockActions(params: UseCryptoProLockActionsParams) {
 		if (signatureType === "crypto") {
 			if (!selectedCert) { setFailureText("Сначала выберите сертификат из списка."); return; }
 			if (cryptoSigningUnavailable) { setFailureText(CRYPTO_SIGNING_UNAVAILABLE_TEXT); return; }
-			if (needsTokenPin && pinCode.length === 0) { setFailureText("Введите ПИН-код носителя Рутокен."); return; }
+			if (selectedCertInfo?.provider === "rutoken" && selectedCertInfo?.deviceId !== undefined && pinCode.length === 0) {
+				setFailureText("Введите ПИН-код носителя Рутокен.");
+				return;
+			}
 			setIsSigning(true);
 			try {
 				const draft = await props.ensureDraftSaved();

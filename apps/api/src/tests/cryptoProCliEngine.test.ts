@@ -309,7 +309,7 @@ PrivateKey: Present
 			}
 		});
 
-		it("GET /api/crypto/status returns status structure", async () => {
+		it("GET /api/crypto/status and /api/cryptopro/native/status return status structure", async () => {
 			const app = Fastify();
 			await registerCryptoProNativeRoutes(app);
 
@@ -323,9 +323,17 @@ PrivateKey: Present
 			assert.strictEqual(body.success, true);
 			assert.strictEqual(typeof body.installed, "boolean");
 			assert.ok(body.paths);
+
+			const nativeResponse = await app.inject({
+				method: "GET",
+				url: "/api/cryptopro/native/status",
+			});
+			assert.strictEqual(nativeResponse.statusCode, 200);
+			const nativeBody = JSON.parse(nativeResponse.body);
+			assert.strictEqual(nativeBody.success, true);
 		});
 
-		it("GET /api/crypto/certificates returns 503 CSP_NOT_INSTALLED when not installed", async () => {
+		it("GET /api/crypto/certificates and /api/cryptopro/native/certificates return 503 CSP_NOT_INSTALLED when not installed", async () => {
 			const installed = await isCryptoProInstalled();
 			if (!installed) {
 				const app = Fastify();
@@ -341,10 +349,18 @@ PrivateKey: Present
 				assert.strictEqual(body.success, false);
 				assert.strictEqual(body.code, "CSP_NOT_INSTALLED");
 				assert.match(body.message, /КриптоПро CSP не обнаружен/);
+
+				const nativeRes = await app.inject({
+					method: "GET",
+					url: "/api/cryptopro/native/certificates",
+				});
+				assert.strictEqual(nativeRes.statusCode, 503);
+				const nativeBody = JSON.parse(nativeRes.body);
+				assert.strictEqual(nativeBody.code, "CSP_NOT_INSTALLED");
 			}
 		});
 
-		it("POST /api/crypto/sign returns 503 CSP_NOT_INSTALLED when not installed", async () => {
+		it("POST /api/crypto/sign and /api/cryptopro/native/sign return 503 CSP_NOT_INSTALLED when not installed", async () => {
 			const installed = await isCryptoProInstalled();
 			if (!installed) {
 				const app = Fastify();
@@ -364,6 +380,19 @@ PrivateKey: Present
 				assert.strictEqual(body.success, false);
 				assert.strictEqual(body.code, "CSP_NOT_INSTALLED");
 				assert.match(body.message, /КриптоПро CSP не обнаружен/);
+
+				const nativeRes = await app.inject({
+					method: "POST",
+					url: "/api/cryptopro/native/sign",
+					payload: {
+						data: "<ClinicalDocument>Test CDA R3</ClinicalDocument>",
+						thumbprint: "38F8B1029384756A1029384756A1029384756A10",
+						pin: "1234",
+					},
+				});
+				assert.strictEqual(nativeRes.statusCode, 503);
+				const nativeBody = JSON.parse(nativeRes.body);
+				assert.strictEqual(nativeBody.code, "CSP_NOT_INSTALLED");
 			}
 		});
 

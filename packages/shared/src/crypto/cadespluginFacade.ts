@@ -511,6 +511,7 @@ export const createDemonstrationGostCmsSignature =
 	createDeterministicGostCmsTestSignature;
 
 export * from "./cadespluginConstants.js";
+export * from "./cryptoProNativeClient.js";
 export {
 	buildDeterministicGostCmsTestContainer,
 	buildGenuineGostCmsPkcs7Der,

@@ -8,4 +8,5 @@
 
 export { GOST_CRYPTO_OIDS } from "./cadespluginFacade.js";
 export * from "./cadespluginFacade.js";
+export * from "./cryptoProNativeClient.js";
 export * from "./visualSignatureStamp.js";

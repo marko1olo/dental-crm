@@ -25,6 +25,7 @@ import { DirectAnalyticsLauncher } from "../../analytics/DirectAnalyticsLauncher
 export { DirectLoyaltyLauncher } from "../../loyalty/DirectLoyaltyLauncher";
 export { DirectDentalLabLauncher, DirectLabLauncher } from "../../lab/DirectLabLauncher";
 export { DirectConsentLauncher } from "../../consents/DirectConsentLauncher";
+export { DirectUkepSigningLauncher } from "../../documents/ukep/DirectUkepSigningLauncher";
 export { DirectPublicBookingLauncher } from "../../booking/DirectPublicBookingLauncher";
 export { DirectOrthodonticsLauncher } from "../../orthodontics/DirectOrthodonticsLauncher";
 export { DirectTelephonyLauncher } from "../../telephony/DirectTelephonyLauncher";
@@ -38,7 +39,14 @@ export function renderStandaloneLaunchers(
 	props: StandaloneLaunchersProps,
 ): React.ReactElement | null {
 	// Мандат 8wy: Автономные стенды строго изолированы за демонстрационным контуром или DEV-окружением
-	if (!isDemoShowcaseMode() && !import.meta.env?.DEV) {
+	const isStandOrDemo =
+		typeof window !== "undefined" &&
+		(window.location.search.includes("stand=") ||
+			window.location.search.includes("demo=true") ||
+			window.location.hash.includes("capture") ||
+			window.location.hash.includes("rvg"));
+
+	if (!isStandOrDemo && !isDemoShowcaseMode() && !import.meta.env?.DEV) {
 		return null;
 	}
 

@@ -31,11 +31,12 @@ const signPayloadBodySchema = z.object({
 		required_error: "Поле data (содержимое документа для подписи) обязательно",
 		invalid_type_error: "Поле data должно быть строкой",
 	}).min(1, "Данные для подписания не могут быть пустыми"),
-	dataEncoding: z.enum(["utf8", "base64"]).default("utf8"),
+	dataEncoding: z.enum(["utf8", "base64", "hex"]).default("utf8"),
 	thumbprint: z.string({
 		required_error: "Отпечаток сертификата thumbprint обязателен",
 		invalid_type_error: "Отпечаток сертификата должен быть строкой",
 	}).trim().min(1, "Отпечаток сертификата обязателен"),
+	pin: z.string().trim().optional(),
 	requestId: z.string().trim().optional(),
 	documentId: z.string().trim().optional(),
 	documentKind: z.string().trim().optional(),
@@ -291,11 +292,7 @@ async function checkCryptoAccess(
 // ─── Route Registration ─────────────────────────────────────────────────────
 
 export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
-	/**
-	 * GET /api/crypto/status
-	 * Проверка статуса наличия КриптоПро CSP в операционной системе.
-	 */
-	app.get("/api/crypto/status", async (request, reply) => {
+	const handleStatus = async (request: FastifyRequest, reply: FastifyReply) => {
 		const allowed = await checkCryptoAccess(request, reply, "read", "crypto status");
 		if (!allowed) return;
 
@@ -308,15 +305,16 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			message: status.message,
 			paths: status.paths,
 		});
-	});
+	};
 
 	/**
-	 * GET /api/crypto/certificates
-	 * Получение списка установленных сертификатов УКЭП с фильтрацией по текущей клинике/врачу.
-	 * КАТЕГОРИЧЕСЧЕСКИЙ ЗАПРЕТ НА ФЕЙКОВЫЕ СЕРТИФИКАТЫ:
-	 * Если КриптоПро CSP не обнаружен в системе — возвращает HTTP 503 с кодом CSP_NOT_INSTALLED.
+	 * GET /api/crypto/status & GET /api/cryptopro/native/status
+	 * Проверка статуса наличия КриптоПро CSP в операционной системе.
 	 */
-	app.get("/api/crypto/certificates", async (request, reply) => {
+	app.get("/api/crypto/status", handleStatus);
+	app.get("/api/cryptopro/native/status", handleStatus);
+
+	const handleCertificates = async (request: FastifyRequest, reply: FastifyReply) => {
 		const allowed = await checkCryptoAccess(request, reply, "read", "crypto certificates");
 		if (!allowed) return;
 
@@ -352,14 +350,16 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				details: mapped.details,
 			});
 		}
-	});
+	};
 
 	/**
-	 * GET /api/crypto/certificates/:thumbprint
-	 * Получение конкретного сертификата по отпечатку с валидацией принадлежности клинике
-	 * и наличия закрытого ключа.
+	 * GET /api/crypto/certificates & GET /api/cryptopro/native/certificates
+	 * Получение списка установленных сертификатов УКЭП с фильтрацией по текущей клинике/врачу.
 	 */
-	app.get<{ Params: { thumbprint: string } }>("/api/crypto/certificates/:thumbprint", async (request, reply) => {
+	app.get("/api/crypto/certificates", handleCertificates);
+	app.get("/api/cryptopro/native/certificates", handleCertificates);
+
+	const handleCertificateByThumbprint = async (request: FastifyRequest<{ Params: { thumbprint: string } }>, reply: FastifyReply) => {
 		const allowed = await checkCryptoAccess(request, reply, "read", "crypto certificate details");
 		if (!allowed) return;
 
@@ -436,18 +436,15 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				details: mapped.details,
 			});
 		}
-	});
+	};
 
 	/**
-	 * POST /api/crypto/sign
-	 * Формирование отсоединенной электронной подписи (detached CMS / PKCS#7)
-	 * по ГОСТ Р 34.10-2012 для CDA R3 XML, выгрузок в ЕГИСЗ РЭМД или формы 043/у.
-	 *
-	 * КАТЕГОРИЧЕСКИЙ ЗАПРЕТ НА ФЕЙКОВЫЕ ПОДПИСИ:
-	 * При отсутствии КриптоПро в системе возвращает честный HTTP 503 CSP_NOT_INSTALLED
-	 * (строгий запрет на Math.random() и фальшивые CMS).
+	 * GET /api/crypto/certificates/:thumbprint & GET /api/cryptopro/native/certificates/:thumbprint
 	 */
-	app.post("/api/crypto/sign", async (request, reply) => {
+	app.get<{ Params: { thumbprint: string } }>("/api/crypto/certificates/:thumbprint", handleCertificateByThumbprint);
+	app.get<{ Params: { thumbprint: string } }>("/api/cryptopro/native/certificates/:thumbprint", handleCertificateByThumbprint);
+
+	const handleSign = async (request: FastifyRequest, reply: FastifyReply) => {
 		const allowed = await checkCryptoAccess(request, reply, "mutation", "crypto sign");
 		if (!allowed) return;
 
@@ -472,7 +469,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 			});
 		}
 
-		const { data, dataEncoding, thumbprint, requestId, documentId, documentKind } = parsed.data;
+		const { data, dataEncoding, thumbprint, pin, requestId, documentId, documentKind } = parsed.data;
 		const cleanThumbprint = thumbprint.replace(/[\s:-]/g, "").toUpperCase();
 
 		if (!/^[A-F0-9]{40}$/i.test(cleanThumbprint)) {
@@ -486,9 +483,13 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 		// Преобразуем входящие данные в байтовый Buffer
 		let dataBuffer: Buffer;
 		try {
-			dataBuffer = dataEncoding === "base64"
-				? Buffer.from(data, "base64")
-				: Buffer.from(data, "utf8");
+			if (dataEncoding === "base64") {
+				dataBuffer = Buffer.from(data, "base64");
+			} else if (dataEncoding === "hex") {
+				dataBuffer = Buffer.from(data, "hex");
+			} else {
+				dataBuffer = Buffer.from(data, "utf8");
+			}
 		} catch (err: unknown) {
 			return reply.status(400).send({
 				success: false,
@@ -529,7 +530,7 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				}
 			}
 
-			const signatureBuffer = await signDetachedGost(dataBuffer, cleanThumbprint, { requestId });
+			const signatureBuffer = await signDetachedGost(dataBuffer, cleanThumbprint, { requestId, pin });
 			const signatureBase64 = signatureBuffer.toString("base64");
 
 			return reply.send({
@@ -551,5 +552,13 @@ export async function registerCryptoProNativeRoutes(app: FastifyInstance) {
 				details: mapped.details,
 			});
 		}
-	});
+	};
+
+	/**
+	 * POST /api/crypto/sign & POST /api/cryptopro/native/sign
+	 * Формирование отсоединенной электронной подписи (detached CMS / PKCS#7)
+	 * по ГОСТ Р 34.10-2012 для CDA R3 XML, выгрузок в ЕГИСЗ РЭМД или формы 043/у.
+	 */
+	app.post("/api/crypto/sign", handleSign);
+	app.post("/api/cryptopro/native/sign", handleSign);
 }

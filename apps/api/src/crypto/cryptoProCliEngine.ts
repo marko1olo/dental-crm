@@ -466,6 +466,7 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 		try {
 			const { stdout } = await execFileAsync(paths.certmgr, ["-list", "-store", "uMy"], {
 				encoding: "buffer",
+				timeout: 10000,
 			});
 			const text = decodeCryptoProOutput(stdout);
 			return parseCertificatesOutput(text);
@@ -478,6 +479,7 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 		try {
 			const { stdout } = await execFileAsync(paths.cryptcp, ["-list", "-store", "uMy"], {
 				encoding: "buffer",
+				timeout: 10000,
 			});
 			const text = decodeCryptoProOutput(stdout);
 			return parseCertificatesOutput(text);
@@ -492,7 +494,7 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 			const { stdout } = await execFileAsync(
 				paths.csptest,
 				["-keyset", "-enum_cont", "-fqcn", "-verifyc"],
-				{ encoding: "buffer" },
+				{ encoding: "buffer", timeout: 10000 },
 			);
 			const text = decodeCryptoProOutput(stdout);
 			return parseCertificatesOutput(text);
@@ -543,7 +545,7 @@ export async function listInstalledCertificates(): Promise<CryptoProCertInfo[]> 
 export async function signDetachedGost(
 	dataBuffer: Buffer,
 	thumbprint: string,
-	options?: { requestId?: string | undefined },
+	options?: { requestId?: string | undefined; pin?: string | undefined },
 ): Promise<Buffer> {
 	const paths = findCryptoProPaths();
 
@@ -598,13 +600,21 @@ export async function signDetachedGost(
 			"-nochain",
 			"-thumbprint",
 			cleanThumbprint,
-			"-dir",
-			tmpDir,
-			tmpFile,
 		];
 
+		const cleanPin = (options?.pin ?? "").trim();
+		if (cleanPin.length > 0) {
+			if (paths.csptest && execBin === paths.csptest) {
+				args.push("-password", cleanPin);
+			} else {
+				args.push("-pin", cleanPin);
+			}
+		}
+
+		args.push("-dir", tmpDir, tmpFile);
+
 		try {
-			await execFileAsync(execBin, args, { encoding: "buffer" });
+			await execFileAsync(execBin, args, { encoding: "buffer", timeout: 10000 });
 		} catch (execErr: unknown) {
 			// Если -sign не поддержан (старые версии csptest), пробуем -sfsign
 			if (paths.csptest && execBin === paths.csptest) {
@@ -619,7 +629,10 @@ export async function signDetachedGost(
 					"-my",
 					cleanThumbprint,
 				];
-				await execFileAsync(paths.csptest, fallbackArgs, { encoding: "buffer" });
+				if (cleanPin.length > 0) {
+					fallbackArgs.push("-password", cleanPin);
+				}
+				await execFileAsync(paths.csptest, fallbackArgs, { encoding: "buffer", timeout: 10000 });
 			} else {
 				throw execErr;
 			}
@@ -653,7 +666,18 @@ export async function signDetachedGost(
 		if (err instanceof CryptoProCliError) {
 			throw err;
 		}
-		const execError = err as { stdout?: Buffer; stderr?: Buffer; message?: string; code?: string | number };
+		const execError = err as { stdout?: Buffer; stderr?: Buffer; message?: string; code?: string | number; killed?: boolean };
+		if (
+			execError.code === "ETIMEDOUT" ||
+			execError.killed ||
+			(execError.message && execError.message.toLowerCase().includes("timed out"))
+		) {
+			throw new CryptoProCliError(
+				"TIMEOUT",
+				"Превышено время ожидания ответа КриптоПро CSP (таймаут 10 с). Проверьте окно ввода PIN-кода на панели задач Windows.",
+				{ timeoutMs: 10000, thumbprint: cleanThumbprint },
+			);
+		}
 		if (execError.code === "ENOENT") {
 			throw new CryptoProCliError(
 				"CSP_NOT_INSTALLED",
@@ -700,7 +724,7 @@ export async function signDetachedGost(
 export async function executeSignDetachedGost(
 	dataBuffer: Buffer,
 	thumbprint: string,
-	options?: { requestId?: string | undefined },
+	options?: { requestId?: string | undefined; pin?: string | undefined },
 ): Promise<CryptoProSignResult> {
 	try {
 		const signature = await signDetachedGost(dataBuffer, thumbprint, options);

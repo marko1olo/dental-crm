@@ -47,7 +47,7 @@ export function useCryptoProSignerState(props: CryptoProSignerProps) {
 	}, [awaitingLockConfirmation]);
 
 	const selectedCertInfo = certificates.find((c) => c.thumbprint === selectedCert);
-	const needsTokenPin = selectedCertInfo?.provider === "rutoken" || selectedCertInfo?.deviceId !== undefined;
+	const needsTokenPin = Boolean(selectedCertInfo);
 
 	const { loadCertificates, handleSessionLock, handleConfirmLock } = useCryptoProLockActions({
 		props, selectedCert, pinCode, setPinCode, signatureType,

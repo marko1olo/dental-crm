@@ -98,7 +98,7 @@ export function CryptoProCertSelectSection({
 			{needsTokenPin && (
 				<div>
 					<label htmlFor="cryptopro-token-pin" className="block text-xs font-semibold text-[var(--muted)] mb-2 uppercase tracking-wider">
-						ПИН-код носителя Рутокен
+						ПИН-код токена или контейнера (опционально)
 					</label>
 					<input
 						id="cryptopro-token-pin"
@@ -108,7 +108,7 @@ export function CryptoProCertSelectSection({
 						className="w-full bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl px-4 py-3 text-[var(--ink)] focus:ring-2 focus:ring-[var(--teal,var(--brand-primary))] focus:outline-none disabled:opacity-60"
 						value={pinCode}
 						onChange={(e) => { setPinCode(e.target.value); setFailureText(null); }}
-						placeholder="ПИН носителя"
+						placeholder="ПИН токена / пароль контейнера"
 					/>
 				</div>
 			)}
