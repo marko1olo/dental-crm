@@ -1,11 +1,13 @@
 /**
  * StudioTiersAndStagesTab.tsx — Вкладка 3 тарифов и клинических этапов в студии планов лечения.
  * Мандаты 8b, 8al: Десктопная сетка + Apple HIG Segmented Control для смартфонов (390x844).
+ * Мандат 8e: Автономия врача — скидки до 100%, кнопки никогда не disabled, 0 блокировок.
+ * Мандат 8x: Чистый клинический язык без канцелярита («Варианты и тарифы», «Этапы и стоимость»).
  */
 
-import React from "react";
-import { Check, ShieldCheck, Sparkles, Calendar, ChevronDown, ChevronUp } from "lucide-react";
-import type { TreatmentPlanTier, TreatmentPlanTierId } from "../treatmentPlanTypes";
+import React, { useState } from "react";
+import { Check, ShieldCheck, Sparkles, Calendar, ChevronDown, ChevronUp, Plus, Trash2, Clock, Landmark } from "lucide-react";
+import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanItem } from "../treatmentPlanTypes";
 import { formatRubles } from "../treatmentPlanTypes";
 
 export interface StudioTiersAndStagesTabProps {
@@ -17,6 +19,9 @@ export interface StudioTiersAndStagesTabProps {
 	readonly onToggleExpandStage: (id: string) => void;
 	readonly onSelectDiagnosisPreset: (diagCode: string) => void;
 	readonly onResetToCanonical: () => void;
+	readonly isExpressMode?: boolean;
+	readonly onAddItemToStage?: (stageId: string, item: TreatmentPlanItem) => void;
+	readonly onRemoveItemFromStage?: (stageId: string, itemId: string) => void;
 }
 
 export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = ({
@@ -28,8 +33,35 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 	onToggleExpandStage,
 	onSelectDiagnosisPreset,
 	onResetToCanonical,
+	isExpressMode = false,
+	onAddItemToStage,
+	onRemoveItemFromStage,
 }) => {
 	const sanitizedActiveTitle = activeTier.title.replace("★ ", "");
+	const [addingToStageId, setAddingToStageId] = useState<string | null>(null);
+	const [newItemName, setNewItemName] = useState<string>("");
+	const [newItemPriceRub, setNewItemPriceRub] = useState<number>(3500);
+	const [newItemTooth, setNewItemTooth] = useState<string>("");
+
+	const handleAddCustomProcedure = (stageId: string) => {
+		if (!newItemName.trim()) return;
+		if (onAddItemToStage) {
+			const newItem: TreatmentPlanItem = {
+				id: `item-custom-${Date.now()}`,
+				name: newItemName.trim(),
+				priceRub: newItemPriceRub,
+				unitPriceRub: newItemPriceRub,
+				discountRub: 0,
+				quantity: 1,
+				toothNumber: newItemTooth ? Number(newItemTooth) : undefined,
+				stageKind: "stage_custom",
+				isCompleted: false,
+			};
+			onAddItemToStage(stageId, newItem);
+		}
+		setNewItemName("");
+		setAddingToStageId(null);
+	};
 
 	return (
 		<div className="space-y-6" data-testid="studio-tiers-stages-tab">
@@ -62,7 +94,7 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 				</button>
 			</div>
 
-			{/* Мобильный Segmented Control (Apple HIG 390x844: без 2500px скролла) */}
+			{/* Мобильный Segmented Control (Apple HIG 390x844: без 2500px скролла и без сжатия в 3 узкие колонки) */}
 			<div className="sm:hidden w-full space-y-3">
 				<div className="tp-segmented-control grid grid-cols-3 gap-1 p-1 bg-[var(--paper-soft)] border border-[var(--line)] rounded-xl" role="tablist">
 					{computedTiers.map((tier) => {
@@ -77,33 +109,48 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 								className={`tp-segmented-btn min-h-[44px] py-2 px-1 text-center rounded-lg text-xs font-bold transition-all cursor-pointer flex flex-col items-center justify-center ${
 									isSelected ? "is-selected bg-[var(--teal,#0d9488)] text-white shadow-xs" : "text-[var(--ink)] hover:bg-[var(--paper)]"
 								}`}
+								data-testid={`segmented-tab-${tier.tierId}`}
 							>
-								<span className="truncate w-full text-center">{tier.tierId === "economy" ? "Эконом" : tier.tierId === "optimum" ? "Оптимум" : "Премиум"}</span>
+								<span className="truncate w-full text-center">{tier.tierId === "economy" ? "Эконом" : tier.tierId === "optimum" ? "★ Оптимум" : "Премиум"}</span>
 								<span className="text-[10px] opacity-90 truncate w-full text-center">{formatRubles(tier.totalRub)}</span>
 							</button>
 						);
 					})}
 				</div>
 
-				{/* Карточка выбранного тарифа на смартфонах */}
-				<div className="tp-mobile-selected-tier-card p-3.5 rounded-xl border-2 border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-xs">
-					<div className="flex items-center justify-between mb-1.5">
+				{/* Карточка выбранного тарифа на смартфонах (на всю ширину экрана) */}
+				<div className="tp-mobile-selected-tier-card p-4 rounded-xl border-2 border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-xs space-y-3">
+					<div className="flex items-center justify-between">
 						<span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[var(--teal,#0d9488)] text-white">{activeTier.badge}</span>
 						<span className="text-xs text-[var(--muted)] flex items-center gap-1">
 							<ShieldCheck className="w-3.5 h-3.5 text-[var(--teal,#0d9488)]" />
 							{activeTier.warrantyYears} {activeTier.warrantyYears === 1 ? "год" : activeTier.warrantyYears === 3 ? "года" : "лет"} гарантии
 						</span>
 					</div>
-					<div className="flex items-baseline justify-between gap-2 mt-1">
+
+					<div className="flex items-baseline justify-between gap-2">
 						<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
 							{activeTier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
 							<span>{sanitizedActiveTitle}</span>
 						</h3>
 						<div className="text-xl font-black text-[var(--ink)] tracking-tight">{formatRubles(activeTier.totalRub)}</div>
 					</div>
-					<p className="text-xs text-[var(--muted)] mt-1 mb-2">{activeTier.subtitle}</p>
-					<ul className="space-y-1 text-xs text-[var(--muted)] pt-1.5 border-t border-[var(--line)]">
-						{activeTier.keyAdvantages.slice(0, 3).map((adv, idx) => (
+
+					<div className="grid grid-cols-2 gap-2 text-xs py-1.5 border-y border-[var(--line)]">
+						<div className="flex items-center gap-1.5 text-[var(--muted)]">
+							<Clock className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+							<span>0% рассрочка от {formatRubles(Math.round(activeTier.totalRub / 12))}/мес</span>
+						</div>
+						<div className="flex items-center gap-1.5 text-[var(--muted)]">
+							<Landmark className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0" />
+							<span>Вычет 13%: +{formatRubles(Math.round(activeTier.totalRub * 0.13))}</span>
+						</div>
+					</div>
+
+					<p className="text-xs text-[var(--muted)] m-0 leading-relaxed">{activeTier.subtitle}</p>
+
+					<ul className="space-y-1.5 text-xs text-[var(--muted)] pt-1 border-t border-[var(--line)]">
+						{activeTier.keyAdvantages.slice(0, 4).map((adv, idx) => (
 							<li key={idx} className="flex items-start gap-1.5">
 								<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
 								<span className="leading-tight">{adv}</span>
@@ -113,17 +160,22 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 				</div>
 			</div>
 
-			{/* Десктопная 3-тарифная сетка */}
+			{/* Десктопная 3-тарифная сетка (Эконом / Оптимум / Премиум) */}
 			<div className="tp-tiers-grid hidden sm:grid sm:grid-cols-3 gap-4">
 				{computedTiers.map((tier) => {
 					const isSelected = tier.tierId === selectedTierId;
 					const tierTitleClean = tier.title.replace("★ ", "");
+					const monthlyInstallment = Math.round(tier.totalRub / 12);
+					const ndflRefund = Math.round(tier.totalRub * 0.13);
+
 					return (
 						<div
 							key={tier.tierId}
 							onClick={() => onSelectTierId(tier.tierId)}
 							className={`tp-tier-card flex flex-col p-4 rounded-2xl border-2 transition-all cursor-pointer relative ${
-								isSelected ? "is-selected border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-md ring-2 ring-[var(--teal,#0d9488)]/20" : "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong,#94a3b8)]"
+								isSelected
+									? "is-selected border-[var(--teal,#0d9488)] bg-[var(--paper-soft)] shadow-md ring-2 ring-[var(--teal,#0d9488)]/20"
+									: "border-[var(--line)] bg-[var(--paper)] hover:border-[var(--line-strong,#94a3b8)]"
 							}`}
 							data-testid={`tier-card-${tier.tierId}`}
 						>
@@ -136,17 +188,36 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 									{tier.warrantyYears} {tier.warrantyYears === 1 ? "год" : tier.warrantyYears === 3 ? "года" : "лет"} гарантии
 								</span>
 							</div>
+
 							<h3 className="text-base font-black text-[var(--ink)] m-0 flex items-center gap-1.5">
 								{tier.isRecommended && <Sparkles className="w-4 h-4 text-amber-500 fill-amber-400 shrink-0" />}
 								<span>{tierTitleClean}</span>
 							</h3>
+
 							<p className="text-xs text-[var(--muted)] mt-1 mb-3 line-clamp-2">{tier.subtitle}</p>
-							<div className="mt-auto pt-2 border-t border-[var(--line)]">
-								<div className="tp-tier-price text-2xl sm:text-[32px] font-black text-[var(--ink)] tracking-tight">{formatRubles(tier.totalRub)}</div>
-								<ul className="mt-3 space-y-1.5 text-xs text-[var(--muted)]">
-									{tier.keyAdvantages.slice(0, 3).map((adv, idx) => (
+
+							<div className="mt-auto pt-2 border-t border-[var(--line)] space-y-2.5">
+								<div className="tp-tier-price text-2xl sm:text-[30px] font-black text-[var(--ink)] tracking-tight">
+									{formatRubles(tier.totalRub)}
+								</div>
+
+								{/* Финансовые преференции тарифа: рассрочка и налоговый вычет */}
+								<div className="space-y-1 text-[11px] text-[var(--muted)]">
+									<div className="flex items-center justify-between">
+										<span>Рассрочка 0% клиники:</span>
+										<strong className="text-[var(--ink)]">от {formatRubles(monthlyInstallment)}/мес</strong>
+									</div>
+									<div className="flex items-center justify-between">
+										<span>Возврат 13% НДФЛ:</span>
+										<strong className="text-emerald-600 dark:text-emerald-400">+{formatRubles(ndflRefund)}</strong>
+									</div>
+								</div>
+
+								<ul className="mt-2 space-y-1.5 text-xs text-[var(--muted)] pt-2 border-t border-[var(--line-subtle)]">
+									{tier.keyAdvantages.slice(0, 4).map((adv, idx) => (
 										<li key={idx} className="flex items-start gap-1.5">
-											<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" /><span className="leading-tight text-xs">{adv}</span>
+											<Check className="w-3.5 h-3.5 text-[var(--teal,#0d9488)] shrink-0 mt-0.5" />
+											<span className="leading-tight text-xs">{adv}</span>
 										</li>
 									))}
 								</ul>
@@ -158,15 +229,21 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 
 			{/* Клинические этапы лечения и процедуры FDI 11–48 */}
 			<div className="space-y-3">
-				<div className="flex items-center justify-between">
-					<h4 className="text-xs sm:text-sm font-bold tracking-wider text-[var(--muted)] m-0">Этапы выбранного плана: «{sanitizedActiveTitle}»</h4>
-					<span className="text-xs text-[var(--muted)]">{activeTier.stages.length} этапа · Итого {formatRubles(activeTier.totalRub)}</span>
+				<div className="flex items-center justify-between flex-wrap gap-2">
+					<h4 className="text-xs sm:text-sm font-bold tracking-wider text-[var(--muted)] m-0">
+						{isExpressMode ? "Краткая структура выбранного плана:" : "Клинические этапы и процедуры плана:"} «{sanitizedActiveTitle}»
+					</h4>
+					<span className="text-xs text-[var(--muted)] font-medium">
+						{activeTier.stages.length} этапа · Итого {formatRubles(activeTier.totalRub)}
+					</span>
 				</div>
 
 				<div className="space-y-2.5">
 					{activeTier.stages.map((stage) => {
 						const stageKey = stage.id || `stage-${stage.stageNumber}`;
 						const isExpanded = Boolean(stage.id && expandedStageId === stage.id);
+						const isAddingToThis = addingToStageId === stage.id;
+
 						return (
 							<div key={stageKey} className="tp-stage-card rounded-2xl border border-[var(--line)] bg-[var(--paper)] overflow-hidden shadow-xs">
 								<button
@@ -209,9 +286,83 @@ export const StudioTiersAndStagesTab: React.FC<StudioTiersAndStagesTabProps> = (
 													)}
 													<span className="text-[var(--ink)] line-clamp-2 leading-snug">{item.name}</span>
 												</div>
-												<span className="font-bold text-[var(--ink)] shrink-0">{formatRubles(item.priceRub)}</span>
+												<div className="flex items-center gap-2 shrink-0">
+													<span className="font-bold text-[var(--ink)]">{formatRubles(item.priceRub)}</span>
+													{!isExpressMode && onRemoveItemFromStage && stage.id && (
+														<button
+															type="button"
+															onClick={() => onRemoveItemFromStage(stage.id!, item.id)}
+															className="p-1 rounded text-[var(--muted)] hover:text-rose-500 cursor-pointer"
+															title="Удалить услугу из этапа"
+														>
+															<Trash2 className="w-3.5 h-3.5" />
+														</button>
+													)}
+												</div>
 											</div>
 										))}
+
+										{/* Инлайн добавление процедуры в экспертном режиме */}
+										{!isExpressMode && onAddItemToStage && stage.id && (
+											<div className="pt-2">
+												{isAddingToThis ? (
+													<div className="p-2.5 rounded-xl bg-[var(--paper)] border border-[var(--line)] space-y-2 text-xs">
+														<div className="font-bold text-[var(--ink)]">Добавление процедуры в этап:</div>
+														<div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+															<input
+																type="text"
+																placeholder="Название процедуры"
+																value={newItemName}
+																onChange={(e) => setNewItemName(e.target.value)}
+																className="sm:col-span-2 px-2.5 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
+															/>
+															<div className="flex items-center gap-1.5">
+																<input
+																	type="number"
+																	placeholder="Зуб №"
+																	value={newItemTooth}
+																	onChange={(e) => setNewItemTooth(e.target.value)}
+																	className="w-16 px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs"
+																/>
+																<input
+																	type="number"
+																	step="100"
+																	placeholder="Цена ₽"
+																	value={newItemPriceRub}
+																	onChange={(e) => setNewItemPriceRub(Number(e.target.value))}
+																	className="w-24 px-2 py-1.5 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] text-xs font-bold"
+																/>
+															</div>
+														</div>
+														<div className="flex justify-end gap-2 pt-1">
+															<button
+																type="button"
+																onClick={() => setAddingToStageId(null)}
+																className="px-3 py-1 rounded-lg border border-[var(--line)] bg-[var(--paper)] text-xs text-[var(--muted)] cursor-pointer"
+															>
+																Отмена
+															</button>
+															<button
+																type="button"
+																onClick={() => handleAddCustomProcedure(stage.id!)}
+																className="px-3 py-1 rounded-lg bg-[var(--teal,#0d9488)] text-white text-xs font-bold cursor-pointer"
+															>
+																Добавить
+															</button>
+														</div>
+													</div>
+												) : (
+													<button
+														type="button"
+														onClick={() => setAddingToStageId(stage.id || null)}
+														className="text-xs font-semibold text-[var(--teal,#0d9488)] hover:underline inline-flex items-center gap-1 cursor-pointer pt-1"
+													>
+														<Plus className="w-3.5 h-3.5" />
+														<span>Добавить процедуру в этап</span>
+													</button>
+												)}
+											</div>
+										)}
 									</div>
 								)}
 							</div>

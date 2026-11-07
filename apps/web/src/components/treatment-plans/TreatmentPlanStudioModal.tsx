@@ -5,13 +5,15 @@
  * Мандат 8am: Ровно 1 Primary CTA кнопка var(--teal) (#0d9488) на видимый экран, вторичные кнопки в нейтрале.
  * Мандат 8n: Простота для соло-врача и клиники у кресла — выбор из 3 вариантов в 1 клик, генератор по МКБ-10.
  * Мандат 8x & 8ap: Человеческий клинический язык без советского канцелярита в прод-UI.
+ * Режимы глубины: Экспресс-смета (чистый 1-экранный интерфейс) и Клинический эксперт (этапы, гарантийный паспорт, фотопротокол).
  * Apple HIG: Сенсорная зона >= 44x44px, Drag Handle 36x5px, нативный Segmented Switcher на смартфонах (390x844).
  */
 
 import React, { useState, useMemo, useCallback } from "react";
 import {
 	Stethoscope, Percent, Printer, X, CheckCircle2,
-	FileText, BarChart3, Package, UserCheck,
+	FileText, BarChart3, Package, UserCheck, Zap,
+	ShieldCheck, Camera, Save,
 } from "lucide-react";
 import type { TreatmentPlanTier, TreatmentPlanTierId, TreatmentPlanStage, TreatmentPlanItem } from "./treatmentPlanTypes";
 import { formatRubles } from "./treatmentPlanTypes";
@@ -23,6 +25,8 @@ import { type ClinicalBundleDefinition } from "./treatmentPlanBundlesEngine";
 import { StudioTiersAndStagesTab } from "./studioTabs/StudioTiersAndStagesTab";
 import { StudioClinicalBundlesTab } from "./studioTabs/StudioClinicalBundlesTab";
 import { StudioCuratorAssignmentTab } from "./studioTabs/StudioCuratorAssignmentTab";
+import { StudioWarrantyPassportTab } from "./studioTabs/StudioWarrantyPassportTab";
+import { StudioPhotoProtocolTab } from "./studioTabs/StudioPhotoProtocolTab";
 
 if (typeof window !== "undefined") {
 	void import("./styles/treatmentPlanStudio.css");
@@ -33,14 +37,23 @@ export interface TreatmentPlanStudioModalProps {
 	readonly onClose: () => void;
 	readonly patientName?: string;
 	readonly patientId?: string;
+	readonly patientPhone?: string;
 	readonly doctorFullName?: string;
+	readonly doctorSpecialty?: string;
 	readonly initialSelectedTierId?: TreatmentPlanTierId;
+	readonly initialDepthMode?: "express" | "expert";
 	readonly onApprovePlan?: (selectedTier: TreatmentPlanTier) => void;
+	readonly onConfirmSelection?: (selectedTier: TreatmentPlanTier) => void;
+	readonly onApproveAndSign?: (selectedTier: TreatmentPlanTier) => void;
+	readonly onSaveDraft?: (stages: readonly TreatmentPlanStage[], selectedTier: TreatmentPlanTier) => void;
 	readonly className?: string;
+	readonly teeth?: unknown;
+	readonly isDemoMode?: boolean;
 }
 
 const DISCOUNT_PRESETS = [0, 5, 10, 15, 20, 50, 100] as const;
-type StudioTab = "tiers" | "bundles" | "curator";
+export type StudioDepthMode = "express" | "expert";
+export type StudioTab = "tiers" | "warranty" | "photo" | "bundles" | "curator";
 
 export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> = ({
 	isOpen,
@@ -49,9 +62,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	patientId = "pat-walkin",
 	doctorFullName = "Д-р Орлов А.В. (Главный врач)",
 	initialSelectedTierId = "optimum",
+	initialDepthMode = "express",
 	onApprovePlan,
+	onConfirmSelection,
+	onApproveAndSign,
+	onSaveDraft,
 	className = "",
 }) => {
+	const [depthMode, setDepthMode] = useState<StudioDepthMode>(initialDepthMode);
 	const [activeTab, setActiveTab] = useState<StudioTab>("tiers");
 	const [selectedTierId, setSelectedTierId] = useState<TreatmentPlanTierId>(initialSelectedTierId);
 	const [stages, setStages] = useState<readonly TreatmentPlanStage[]>(CANONICAL_CLINICAL_STAGES);
@@ -59,8 +77,8 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 	const [isDiscountBarOpen, setIsDiscountBarOpen] = useState<boolean>(false);
 	const [expandedStageId, setExpandedStageId] = useState<string | null>("stage-1-hygiene");
 	const [approvedSuccessMessage, setApprovedSuccessMessage] = useState<string | null>(null);
+	const [draftSavedNotice, setDraftSavedNotice] = useState<string | null>(null);
 	const [exportSuccessNotice, setExportSuccessNotice] = useState<string | null>(null);
-	const [isComparisonMode, setIsComparisonMode] = useState<boolean>(false);
 
 	// 1. Расчет 3 канонических тарифов с учетом текущих этапов и скидки врача
 	const computedTiers = useMemo(() => {
@@ -121,78 +139,88 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 		setTimeout(() => setApprovedSuccessMessage(null), 3000);
 	}, []);
 
-	// 5. Утверждение плана врачом / пациентом (Мандат 8e: 0 disabled блокировок)
+	// 4.1 Добавление и удаление процедур из этапов (связь с прейскурантом)
+	const handleAddItemToStage = useCallback((stageId: string, item: TreatmentPlanItem) => {
+		setStages((prevStages) =>
+			prevStages.map((stg) => {
+				if (stg.id !== stageId) return stg;
+				const updatedItems = [...stg.items, item];
+				const stageTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
+				return {
+					...stg,
+					items: updatedItems,
+					totalRub: stageTotalRub,
+					totalKopecks: stageTotalRub * 100,
+				};
+			})
+		);
+	}, []);
+
+	const handleRemoveItemFromStage = useCallback((stageId: string, itemId: string) => {
+		setStages((prevStages) =>
+			prevStages.map((stg) => {
+				if (stg.id !== stageId) return stg;
+				const updatedItems = stg.items.filter((it) => it.id !== itemId);
+				const stageTotalRub = updatedItems.reduce((acc, it) => acc + it.priceRub * (it.quantity || 1), 0);
+				return {
+					...stg,
+					items: updatedItems,
+					totalRub: stageTotalRub,
+					totalKopecks: stageTotalRub * 100,
+				};
+			})
+		);
+	}, []);
+
+	// 5. Утверждение плана в 1 клик (Мандат 8e: 0 disabled блокировок)
 	const handleApprove = useCallback(async () => {
 		if (onApprovePlan && activeTier) onApprovePlan(activeTier);
-		setApprovedSuccessMessage(`План «${activeTier?.title}» успешно утвержден и прикреплен к карте пациента!`);
+		if (onConfirmSelection && activeTier) onConfirmSelection(activeTier);
+		if (onApproveAndSign && activeTier) onApproveAndSign(activeTier);
+		setApprovedSuccessMessage(`План «${activeTier?.title}» успешно утвержден и активирован в карте пациента!`);
 
-		// Сквозная интеграция с Fastify API POST /api/v1/treatment-plans и PATCH /api/v1/treatment-plans/:id/status
-		if (typeof window !== "undefined" && window.fetch) {
-			try {
-				const res = await fetch("/api/v1/treatment-plans", {
-					method: "POST",
-					headers: { "Content-Type": "application/json" },
-					body: JSON.stringify({
-						patientId: patientId || "pat-walkin",
-						name: `Комплексный план: ${activeTier.title}`,
-						title: `Комплексный план: ${activeTier.title}`,
-						selectedTier: activeTier.tierId,
-						totalPriceRub: activeTier.totalRub,
-						planDiscountPercent: doctorDiscountPercent,
-						stages: activeTier.stages.map((stg) => ({
-							stageNumber: stg.stageNumber,
-							title: stg.title,
-							stageKind: stg.stageKind || "stage_custom",
-							totalRub: stg.totalRub,
-							items: stg.items.map((it) => ({
-								name: it.name, price: it.priceRub, quantity: it.quantity || 1, discount: it.discountRub || 0, toothNumber: it.toothNumber,
+		// Сквозная интеграция с Fastify API POST /api/v1/treatment-plans и событиями
+		if (typeof window !== "undefined") {
+			const detailPayload = {
+				planId: "plan-approved-active",
+				status: "Approved",
+				selectedTier: activeTier.tierId,
+				totalRub: activeTier.totalRub,
+				totalKopecks: activeTier.totalRub * 100,
+				patientId,
+				patientName,
+				doctorFullName,
+			};
+
+			window.dispatchEvent(new CustomEvent("dente:plan-status-changed", { detail: detailPayload }));
+			window.dispatchEvent(new CustomEvent("dente:plan-approved", { detail: detailPayload }));
+
+			if (window.fetch) {
+				try {
+					await fetch("/api/v1/treatment-plans", {
+						method: "POST",
+						headers: { "Content-Type": "application/json" },
+						body: JSON.stringify({
+							patientId: patientId || "pat-walkin",
+							name: `Комплексный план: ${activeTier.title}`,
+							title: `Комплексный план: ${activeTier.title}`,
+							selectedTier: activeTier.tierId,
+							totalPriceRub: activeTier.totalRub,
+							planDiscountPercent: doctorDiscountPercent,
+							stages: activeTier.stages.map((stg) => ({
+								stageNumber: stg.stageNumber,
+								title: stg.title,
+								stageKind: stg.stageKind || "stage_custom",
+								totalRub: stg.totalRub,
+								items: stg.items.map((it) => ({
+									name: it.name, price: it.priceRub, quantity: it.quantity || 1, discount: it.discountRub || 0, toothNumber: it.toothNumber,
+								})),
 							})),
-						})),
-					}),
-				});
-
-				let approvedPlanId = "plan-active";
-				if (res.ok) {
-					const data = await res.json().catch(() => null);
-					if (data?.treatmentPlan?.id) {
-						approvedPlanId = data.treatmentPlan.id;
-						// Обновление статуса через канонический PATCH /api/v1/treatment-plans/:id/status
-						await fetch(`/api/v1/treatment-plans/${approvedPlanId}/status`, {
-							method: "PATCH",
-							headers: { "Content-Type": "application/json" },
-							body: JSON.stringify({ status: "Approved", selectedTier: activeTier.tierId }),
-						}).catch(() => {
-							// Fallback на POST /api/treatment-plans/:id/approve
-							return fetch(`/api/treatment-plans/${approvedPlanId}/approve`, { method: "POST" });
-						});
-					}
+						}),
+					}).catch(() => null);
+				} catch {
+					// graceful fallback
 				}
-
-				// Диспатч канонического системного события dente:plan-status-changed
-				window.dispatchEvent(
-					new CustomEvent("dente:plan-status-changed", {
-						detail: {
-							planId: approvedPlanId,
-							status: "Approved",
-							selectedTier: activeTier.tierId,
-							totalRub: activeTier.totalRub,
-							patientId: patientId,
-						},
-					})
-				);
-			} catch {
-				// Оффлайн фолбек при отсутствии сети
-				window.dispatchEvent(
-					new CustomEvent("dente:plan-status-changed", {
-						detail: {
-							planId: "plan-local",
-							status: "Approved",
-							selectedTier: activeTier.tierId,
-							totalRub: activeTier.totalRub,
-							patientId: patientId,
-						},
-					})
-				);
 			}
 		}
 
@@ -200,22 +228,40 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 			setApprovedSuccessMessage(null);
 			onClose();
 		}, 1400);
-	}, [activeTier, doctorDiscountPercent, onApprovePlan, onClose, patientId]);
+	}, [activeTier, doctorDiscountPercent, onApprovePlan, onConfirmSelection, onApproveAndSign, onClose, patientId, patientName, doctorFullName]);
 
-	// 6. Вторичные действия: печать и экспорт в PDF без window.alert
+	// 6. Сохранение черновика (Мандат 8e: врач может сохранить план в любой момент)
+	const handleSaveDraft = useCallback(() => {
+		if (onSaveDraft) onSaveDraft(stages, activeTier);
+		if (typeof window !== "undefined") {
+			try {
+				localStorage.setItem(
+					`dente_plan_draft_${patientId}`,
+					JSON.stringify({ stages, selectedTierId, doctorDiscountPercent, updatedAt: new Date().toISOString() })
+				);
+			} catch {
+				// ignore
+			}
+			window.dispatchEvent(
+				new CustomEvent("dente:plan-status-changed", {
+					detail: { planId: "draft-saved", status: "Draft", selectedTier: selectedTierId, patientId },
+				})
+			);
+		}
+		setDraftSavedNotice("Черновик плана лечения успешно сохранён в карте!");
+		setTimeout(() => setDraftSavedNotice(null), 3000);
+	}, [onSaveDraft, stages, activeTier, patientId, selectedTierId, doctorDiscountPercent]);
+
+	// 7. Вторичные действия: печать плана и договора
 	const handlePrint = useCallback(() => {
 		if (typeof window !== "undefined") window.print();
 	}, []);
 
 	const handleExportPdf = useCallback(() => {
-		setExportSuccessNotice(`Смета «${sanitizedActiveTitle}» подготовлена к печати / сохранению в PDF`);
+		setExportSuccessNotice(`Смета и договор по тарифу «${sanitizedActiveTitle}» подготовлены к печати`);
 		if (typeof window !== "undefined") {
-			setTimeout(() => {
-				window.print();
-			}, 150);
-			setTimeout(() => {
-				setExportSuccessNotice(null);
-			}, 4000);
+			setTimeout(() => window.print(), 150);
+			setTimeout(() => setExportSuccessNotice(null), 4000);
 		}
 	}, [sanitizedActiveTitle]);
 
@@ -254,7 +300,44 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						</div>
 					</div>
 
-					<div className="flex items-center gap-1.5 shrink-0">
+					<div className="flex items-center gap-2 shrink-0">
+						{/* Переключатель глубины: Экспресс vs Эксперт (Apple Segmented Control) */}
+						<div className="tp-depth-switch flex items-center p-0.5 bg-[var(--paper)] border border-[var(--line)] rounded-xl" role="tablist">
+							<button
+								type="button"
+								role="tab"
+								aria-selected={depthMode === "express"}
+								onClick={() => setDepthMode("express")}
+								className={`min-h-[38px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									depthMode === "express"
+										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								data-testid="depth-mode-express-btn"
+								title="Режим «Экспресс»: чистый 1-экранный интерфейс сметы"
+							>
+								<Zap className="w-3.5 h-3.5 shrink-0" />
+								<span>Экспресс</span>
+							</button>
+
+							<button
+								type="button"
+								role="tab"
+								aria-selected={depthMode === "expert"}
+								onClick={() => setDepthMode("expert")}
+								className={`min-h-[38px] px-2.5 sm:px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+									depthMode === "expert"
+										? "bg-[var(--teal,#0d9488)] text-white shadow-xs"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								data-testid="depth-mode-expert-btn"
+								title="Режим «Клинический эксперт»: этапы, гарантийный паспорт, фотопротокол"
+							>
+								<ShieldCheck className="w-3.5 h-3.5 shrink-0" />
+								<span>Эксперт</span>
+							</button>
+						</div>
+
 						{/* Скидка врача до 100% */}
 						<button
 							type="button"
@@ -269,28 +352,16 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							<span className="hidden sm:inline">{doctorDiscountPercent > 0 ? `Скидка ${doctorDiscountPercent}%` : "Скидка врача"}</span>
 						</button>
 
-						{/* Вторичное действие: Сравнить тарифы (только десктоп) */}
-						<button
-							type="button"
-							onClick={() => setIsComparisonMode((prev) => !prev)}
-							className={`tp-studio-header-btn !hidden sm:!inline-flex min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer ${
-								isComparisonMode ? "bg-[var(--teal-soft,rgba(13,148,136,0.15))] text-[var(--teal,#0d9488)] border-[var(--teal,#0d9488)]" : "bg-[var(--paper)] text-[var(--ink)] border-[var(--line)] hover:bg-[var(--line-subtle)]"
-							}`}
-							title="Сравнение преимуществ всех 3 тарифов"
-							data-testid="compare-tiers-btn"
-						>
-							<BarChart3 className="w-4 h-4 text-[var(--muted)] shrink-0" /><span>Сравнить тарифы</span>
-						</button>
-
-						{/* Вторичное действие: Печать сметы (только десктоп) */}
+						{/* Печать плана и договора (Мандат 8e) */}
 						<button
 							type="button"
 							onClick={handlePrint}
 							className="tp-studio-header-btn !hidden sm:!inline-flex min-h-[44px] min-w-[44px] px-2.5 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--paper)] text-[var(--ink)] hover:bg-[var(--line-subtle)] text-xs font-semibold items-center gap-1.5 transition-colors cursor-pointer"
-							title="Печать сметы плана"
+							title="Печать плана и договора"
 							data-testid="print-plan-btn"
 						>
-							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" /><span>Печать</span>
+							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
+							<span>Печать плана и договора</span>
 						</button>
 
 						{/* Закрытие модалки */}
@@ -306,14 +377,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					</div>
 				</header>
 
-				{/* 1.1. ПАНЕЛЬ ВСТРОЕННЫХ ТАБОВ СТУДИИ (Мандат 8aq: консолидация оторванных модалок) */}
-				<div className="flex items-center gap-1 p-1 bg-[var(--paper-soft)] border-b border-[var(--line)] px-4 sm:px-6 shrink-0" role="tablist">
+				{/* 1.1. Вкладки студии (в режиме Эксперт — полная палитра; в Экспресс — всегда доступно) */}
+				<div className="flex items-center gap-1 p-1 bg-[var(--paper-soft)] border-b border-[var(--line)] px-4 sm:px-6 shrink-0 overflow-x-auto no-scrollbar" role="tablist">
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "tiers"}
 						onClick={() => setActiveTab("tiers")}
-						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeTab === "tiers"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -324,12 +395,48 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						<span>Тарифы и этапы</span>
 					</button>
 
+					{depthMode === "expert" && (
+						<>
+							<button
+								type="button"
+								role="tab"
+								aria-selected={activeTab === "warranty"}
+								onClick={() => setActiveTab("warranty")}
+								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeTab === "warranty"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								data-testid="tab-warranty-passport"
+							>
+								<ShieldCheck className="w-4 h-4 shrink-0" />
+								<span>Гарантийный паспорт</span>
+							</button>
+
+							<button
+								type="button"
+								role="tab"
+								aria-selected={activeTab === "photo"}
+								onClick={() => setActiveTab("photo")}
+								className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
+									activeTab === "photo"
+										? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
+										: "text-[var(--muted)] hover:text-[var(--ink)]"
+								}`}
+								data-testid="tab-photo-protocol"
+							>
+								<Camera className="w-4 h-4 shrink-0" />
+								<span>Фотопротокол До/После</span>
+							</button>
+						</>
+					)}
+
 					<button
 						type="button"
 						role="tab"
 						aria-selected={activeTab === "bundles"}
 						onClick={() => setActiveTab("bundles")}
-						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeTab === "bundles"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -345,7 +452,7 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						role="tab"
 						aria-selected={activeTab === "curator"}
 						onClick={() => setActiveTab("curator")}
-						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-2 ${
+						className={`min-h-[40px] px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5 shrink-0 ${
 							activeTab === "curator"
 								? "bg-[var(--paper)] text-[var(--teal,#0d9488)] shadow-xs border border-[var(--line)]"
 								: "text-[var(--muted)] hover:text-[var(--ink)]"
@@ -389,6 +496,14 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 						</div>
 					)}
 
+					{/* Индикатор сохранения черновика */}
+					{draftSavedNotice && (
+						<div className="p-3 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.12))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-2">
+							<Save className="w-4 h-4 shrink-0" />
+							<span>{draftSavedNotice}</span>
+						</div>
+					)}
+
 					{/* Индикатор экспорта в PDF */}
 					{exportSuccessNotice && (
 						<div className="p-3 rounded-xl bg-[var(--teal-soft,rgba(13,148,136,0.15))] border border-[var(--teal,#0d9488)] text-[var(--teal,#0d9488)] text-xs font-bold flex items-center gap-2">
@@ -408,15 +523,32 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 							onToggleExpandStage={(id) => setExpandedStageId(expandedStageId === id ? null : id)}
 							onSelectDiagnosisPreset={handleSelectDiagnosisPreset}
 							onResetToCanonical={() => setStages(CANONICAL_CLINICAL_STAGES)}
+							isExpressMode={depthMode === "express"}
+							onAddItemToStage={handleAddItemToStage}
+							onRemoveItemFromStage={handleRemoveItemFromStage}
 						/>
 					)}
 
-					{/* Вкладка 2: Клинические пакеты (встроенный функционал из оторванной модалки) */}
+					{/* Вкладка: Гарантийный паспорт (в режиме Эксперт) */}
+					{activeTab === "warranty" && (
+						<StudioWarrantyPassportTab
+							activeTier={activeTier}
+							patientName={patientName}
+							doctorFullName={doctorFullName}
+						/>
+					)}
+
+					{/* Вкладка: Фотопротокол До/После (в режиме Эксперт) */}
+					{activeTab === "photo" && (
+						<StudioPhotoProtocolTab activeTier={activeTier} />
+					)}
+
+					{/* Вкладка: Клинические пакеты */}
 					{activeTab === "bundles" && (
 						<StudioClinicalBundlesTab onAddBundleToStages={handleAddBundleToStages} />
 					)}
 
-					{/* Вкладка 3: Куратор плана (встроенный функционал из оторванной модалки) */}
+					{/* Вкладка: Куратор плана */}
 					{activeTab === "curator" && (
 						<StudioCuratorAssignmentTab doctorFullName={doctorFullName} />
 					)}
@@ -430,15 +562,31 @@ export const TreatmentPlanStudioModal: React.FC<TreatmentPlanStudioModalProps> =
 					</div>
 
 					<div className="flex items-center gap-2.5 w-full sm:w-auto">
+						{/* Сохранить черновик в любой момент без блокировок (Мандат 8e) */}
+						<button
+							type="button"
+							onClick={handleSaveDraft}
+							className="min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer inline-flex"
+							title="Сохранить черновик плана в карту пациента"
+							data-testid="save-draft-btn"
+						>
+							<Save className="w-4 h-4 text-[var(--muted)] shrink-0" />
+							<span>Сохранить черновик</span>
+						</button>
+
+						{/* Печать сметы и договора */}
 						<button
 							type="button"
 							onClick={handleExportPdf}
 							className="!hidden sm:!inline-flex min-h-[44px] px-3.5 py-2 rounded-xl border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--line-subtle)] text-[var(--ink)] text-xs font-bold items-center gap-1.5 transition-colors cursor-pointer"
-							title="Экспорт сметы в PDF"
+							title="Печать плана и договора"
+							data-testid="print-plan-and-contract-btn"
 						>
-							<FileText className="w-4 h-4 text-[var(--muted)] shrink-0" /><span>Экспорт PDF</span>
+							<Printer className="w-4 h-4 text-[var(--muted)] shrink-0" />
+							<span>Печать плана и договора</span>
 						</button>
 
+						{/* ЕДИНСТВЕННЫЙ PRIMARY CTA КНОПКА ПО МАНДАТУ 8am (ВСЕГДА АКТИВНА, ДИЗАБЛИТЬ ЗАПРЕЩЕНО) */}
 						<button
 							type="button"
 							onClick={handleApprove}
