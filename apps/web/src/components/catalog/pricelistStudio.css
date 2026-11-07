@@ -53,47 +53,54 @@
 	box-sizing: border-box;
 }
 
-/* Шапка студии */
+/* Шапка студии — строго однострочная 48–56px по Apple HIG и Мандату 8am */
 .pricelist-studio-header {
 	display: flex;
 	align-items: center;
 	justify-content: space-between;
-	padding: 1rem 1.5rem;
+	padding: 0.5rem 1.25rem;
+	min-height: 52px;
+	max-height: 56px;
 	border-bottom: 1px solid var(--line, #e2e8f0);
 	background: var(--paper-soft, #f8fafc);
 	flex-shrink: 0;
+	box-sizing: border-box;
 }
 
 .pricelist-header-brand {
 	display: flex;
 	align-items: center;
-	gap: 0.75rem;
+	gap: 0.625rem;
+	min-width: 0;
 }
 
 .pricelist-header-icon-box {
-	width: 40px;
-	height: 40px;
-	border-radius: 12px;
+	width: 34px;
+	height: 34px;
+	border-radius: 10px;
 	background: linear-gradient(135deg, rgba(13, 148, 136, 0.15), rgba(20, 184, 166, 0.05));
 	color: var(--teal, #0d9488);
 	display: flex;
 	align-items: center;
 	justify-content: center;
 	border: 1px solid rgba(13, 148, 136, 0.2);
+	flex-shrink: 0;
 }
 
 .pricelist-header-title {
-	font-size: 1.125rem;
+	font-size: 1rem;
 	font-weight: 700;
 	color: var(--ink, #0f172a);
-	line-height: 1.25;
+	line-height: 1.2;
 	margin: 0;
+	white-space: nowrap;
 }
 
 .pricelist-header-subtitle {
-	font-size: 0.8125rem;
+	font-size: 0.75rem;
 	color: var(--muted, #64748b);
-	margin-top: 2px;
+	margin-top: 1px;
+	white-space: nowrap;
 }
 
 .pricelist-header-actions {
@@ -203,7 +210,7 @@
 	gap: 0.5rem;
 	overflow-x: auto;
 	scrollbar-width: none;
-	padding: 2px 0;
+	padding: 2px 1.5rem 2px 0;
 }
 
 .pricelist-quick-bundles-scroll::-webkit-scrollbar {
@@ -419,14 +426,16 @@
 	margin-top: 2px;
 }
 
-/* Инлайн редактирование цены за 1 клик */
+/* Инлайн редактирование цены за 1 клик — моноширинный табличный шрифт без клиппинга */
 .pricelist-price-cell {
 	display: inline-flex;
 	align-items: center;
 	gap: 0.5rem;
 	font-weight: 700;
 	color: var(--ink, #0f172a);
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
 	font-variant-numeric: tabular-nums;
+	white-space: nowrap;
 	cursor: pointer;
 	padding: 0.35rem 0.6rem;
 	border-radius: 8px;
@@ -440,8 +449,8 @@
 }
 
 .pricelist-price-input {
-	width: 110px;
-	height: 32px;
+	width: 120px;
+	height: 34px;
 	padding: 0 0.5rem;
 	border-radius: 6px;
 	border: 1px solid var(--teal, #0d9488);
@@ -449,11 +458,13 @@
 	color: var(--ink, #0f172a);
 	font-size: 0.875rem;
 	font-weight: 700;
+	font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+	font-variant-numeric: tabular-nums;
 	outline: none;
 	text-align: right;
 }
 
-/* Карточка на мобильном */
+/* Карточка на мобильном — канонический Apple HIG Grouped List Inset */
 .pricelist-mobile-card-list {
 	display: none;
 	flex-direction: column;
@@ -464,12 +475,14 @@
 .pricelist-mobile-card {
 	background: var(--paper, #ffffff);
 	border: 1px solid var(--line, #e2e8f0);
-	border-radius: 14px;
+	border-radius: 16px;
 	padding: 1rem;
 	display: flex;
 	flex-direction: column;
 	gap: 0.625rem;
 	box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+	min-height: 52px;
+	box-sizing: border-box;
 }
 
 /* Подвал студии */
@@ -623,6 +636,12 @@
 		padding-bottom: 2px;
 	}
 
+	.pricelist-quick-bundle-chip {
+		min-height: 44px;
+		padding: 0.5rem 0.875rem;
+		font-size: 0.8125rem;
+	}
+
 	.pricelist-studio-toolbar {
 		padding: 0.5rem 0.875rem;
 		gap: 0.375rem;
@@ -637,6 +656,32 @@
 
 	.pricelist-toolbar-stats {
 		display: none;
+	}
+
+	/* Изоляция шапки студии от внешних деструктивных правил serviceCatalog.css */
+	.pricelist-studio-modal .pricelist-header-actions {
+		width: auto !important;
+		flex-direction: row !important;
+		align-items: center !important;
+		justify-content: flex-end !important;
+		margin-left: auto !important;
+		flex-shrink: 0 !important;
+	}
+
+	.pricelist-studio-modal .pricelist-header-brand {
+		min-width: 0 !important;
+		flex: 1 1 auto !important;
+		overflow: hidden !important;
+	}
+
+	.pricelist-studio-modal .pricelist-header-title {
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
+	}
+
+	.pricelist-studio-modal .pricelist-header-subtitle {
+		overflow: hidden !important;
+		text-overflow: ellipsis !important;
 	}
 
 	.pricelist-header-actions .pricelist-btn:not(.pricelist-btn-icon) {
@@ -661,7 +706,12 @@
 		min-height: 48px;
 	}
 
+	/* Изоляция цен мобильных карточек от глобального width: 100% в serviceCatalog.css */
 	.pricelist-mobile-card .pricelist-price-cell {
+		width: auto !important;
+		max-width: max-content !important;
+		flex-shrink: 0 !important;
+		white-space: nowrap !important;
 		background: var(--paper-soft, #f8fafc);
 		border: 1px solid var(--line, #e2e8f0);
 		border-radius: 10px;
@@ -758,10 +808,9 @@
 }
 
 /* ==========================================================================
-   Dark Theme Overrides
+   Dark Theme Overrides — WCAG AAA контраст, ноль белых пятен во всех темных темах
    ========================================================================== */
-html.dark .pricelist-studio-modal,
-[data-theme="dark"] .pricelist-studio-modal {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-studio-modal {
 	--paper: #0f172a;
 	--paper-soft: #1e293b;
 	--paper-strong: rgba(15, 23, 42, 0.94);
@@ -771,72 +820,92 @@ html.dark .pricelist-studio-modal,
 	--teal: #14b8a6;
 }
 
-html.dark .pricelist-btn,
-[data-theme="dark"] .pricelist-btn {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn {
 	background: #1e293b;
 	border-color: #334155;
 	color: #f8fafc;
 }
 
-html.dark .pricelist-btn-primary,
-[data-theme="dark"] .pricelist-btn-primary,
-html.dark .pricelist-btn.pricelist-btn-primary,
-[data-theme="dark"] .pricelist-btn.pricelist-btn-primary {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn-primary,
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn.pricelist-btn-primary {
 	background: var(--teal, #0d9488) !important;
 	border-color: var(--teal, #0d9488) !important;
 	color: #ffffff !important;
 }
 
-html.dark .pricelist-btn-primary:hover,
-[data-theme="dark"] .pricelist-btn-primary:hover,
-html.dark .pricelist-btn.pricelist-btn-primary:hover,
-[data-theme="dark"] .pricelist-btn.pricelist-btn-primary:hover {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn-primary:hover,
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-btn.pricelist-btn-primary:hover {
 	background: #0f766e !important;
 	border-color: #0f766e !important;
 	color: #ffffff !important;
 }
 
-html.dark .pricelist-search-input,
-[data-theme="dark"] .pricelist-search-input {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-search-input {
 	background: #1e293b;
 	border-color: #334155;
 	color: #f8fafc;
 }
 
-html.dark .pricelist-drag-handle,
-[data-theme="dark"] .pricelist-drag-handle {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-drag-handle {
 	background: #475569;
 }
 
-html.dark .pricelist-chip-btn,
-[data-theme="dark"] .pricelist-chip-btn {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-chip-btn {
 	background: #1e293b;
 	border-color: #334155;
 	color: #f8fafc;
 }
 
-html.dark .pricelist-chip-btn.active,
-[data-theme="dark"] .pricelist-chip-btn.active {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-chip-btn.active {
 	background: var(--teal, #14b8a6);
 	color: #ffffff;
 	border-color: transparent;
 }
 
-html.dark .pricelist-mobile-card,
-[data-theme="dark"] .pricelist-mobile-card {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-mobile-card {
 	background: #1e293b;
 	border-color: #334155;
 }
 
-html.dark .pricelist-quick-bundle-chip,
-[data-theme="dark"] .pricelist-quick-bundle-chip {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-floating-bottom-bar {
+	background: #0f172a;
+	border-color: #334155;
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-price-cell:hover {
+	background: #1e293b;
+	border-color: #334155;
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-price-input {
+	background: #0f172a;
+	color: #f8fafc;
+	border-color: var(--teal, #14b8a6);
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-quick-bundle-chip {
 	background: #1e293b;
 	border-color: #334155;
 	color: #f8fafc;
 }
 
-html.dark .pricelist-quick-bundle-chip:hover,
-[data-theme="dark"] .pricelist-quick-bundle-chip:hover {
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-quick-bundle-chip:hover {
 	background: rgba(20, 184, 166, 0.15);
+	border-color: var(--teal, #14b8a6);
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-form-drawer {
+	background: #0f172a;
+	border-color: #334155;
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-input {
+	background: #1e293b;
+	border-color: #334155;
+	color: #f8fafc;
+}
+
+:is(html.dark, [data-theme="dark"], [data-theme="night"], [data-theme="cyber_xray"], [data-theme="contrast"]) .pricelist-input:focus {
+	background: #0f172a;
 	border-color: var(--teal, #14b8a6);
 }

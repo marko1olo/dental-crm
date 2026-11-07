@@ -50,6 +50,7 @@ export function PriceItemEditModal({
 			}}
 		>
 			<div className="premium-modal-content w-full max-w-lg rounded-2xl bg-[var(--paper)] border border-[var(--line)] shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
+				<div className="pricelist-drag-handle sm:hidden" />
 				<div className="premium-modal-header px-5 py-4 border-b border-[var(--line)] flex items-center justify-between bg-[var(--paper-soft)]">
 					<div
 						style={{ display: "flex", alignItems: "center", gap: "12px" }}
@@ -182,17 +183,17 @@ export function PriceItemEditModal({
 						specialtyLabels={specialtyLabels || {}}
 					/>
 
-					<div className="premium-modal-footer px-5 py-3.5 border-t border-[var(--line)] flex items-center justify-end gap-2.5 bg-[var(--paper-soft)]">
+					<div className="premium-modal-footer px-5 py-3.5 border-t border-[var(--line)] flex flex-col sm:flex-row items-center justify-end gap-2.5 bg-[var(--paper-soft)]">
 						<button
 							type="button"
-							className="secondary-button"
+							className="secondary-button w-full sm:w-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9"
 							onClick={onClose}
 						>
 							Отмена
 						</button>
 						<button
 							type="submit"
-							className="primary-button"
+							className="primary-button w-full sm:w-auto min-h-[44px] sm:min-h-[36px] h-11 sm:h-9"
 							disabled={isSaving}
 							aria-busy={isSaving}
 						>

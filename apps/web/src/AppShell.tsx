@@ -279,6 +279,12 @@ function isStandaloneActive(): boolean {
 		h.includes("kanban") ||
 		s.includes("settings") ||
 		h.includes("settings") ||
+		s.includes("pricelist") ||
+		h.includes("pricelist") ||
+		s.includes("prices") ||
+		h.includes("prices") ||
+		s.includes("services-catalog") ||
+		h.includes("services-catalog") ||
 		s.includes("clinic-setup") ||
 		h.includes("clinic-setup") ||
 		s.includes("clinic-requisites") ||

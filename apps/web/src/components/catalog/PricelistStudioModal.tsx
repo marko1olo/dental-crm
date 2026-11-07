@@ -607,35 +607,51 @@ export const PricelistStudioModal: React.FC<PricelistStudioModalProps> = ({
 									className="pricelist-mobile-card"
 									style={{ opacity: item.isActive ? 1 : 0.6 }}
 								>
-									<div className="flex items-start justify-between gap-2">
-										<div>
-											<div className="flex items-center gap-1 mb-1">
-												<span className="pricelist-item-code-badge">{item.code}</span>
+									<div className="flex items-start justify-between gap-3 w-full">
+										<div className="min-w-0 flex-1 pr-1">
+											<div className="flex items-center gap-1.5 mb-1 flex-wrap">
+												<span className="pricelist-item-code-badge font-mono shrink-0">{item.code}</span>
 												{item.isBundle && (
-													<span className="text-[11px] font-semibold text-[var(--teal)]">Комплекс</span>
+													<span className="text-[11px] font-semibold text-[var(--teal)] bg-[var(--teal)]/10 px-1.5 py-0.5 rounded-md shrink-0">Комплекс</span>
 												)}
 											</div>
-											<h4 className="font-semibold text-sm text-[var(--ink)]">{item.title}</h4>
+											<h4 className="font-semibold text-sm text-[var(--ink)] leading-snug break-words">{item.title}</h4>
 										</div>
 										<button
 											type="button"
-											className="pricelist-price-cell text-base font-bold text-[var(--teal)]"
+											className="pricelist-price-cell text-base font-bold text-[var(--teal)] font-mono tabular-nums shrink-0 min-h-[44px] h-11 px-3 rounded-xl border border-[var(--line)] bg-[var(--paper-soft)] cursor-pointer whitespace-nowrap"
 											onClick={() => handleOpenEdit(item)}
+											title="Нажмите для редактирования"
 										>
 											{formatKopecksToRubles(item.priceKopecks)}
 										</button>
 									</div>
-									<div className="flex items-center justify-between pt-2 border-t border-[var(--line)] text-xs text-[var(--muted)]">
-										<span>
-											{CANONICAL_CLINICAL_CATEGORIES.find((c) => c.key === item.category)?.shortTitle} · {item.durationMin} мин
+									<div className="flex items-center justify-between pt-2.5 border-t border-[var(--line)] text-xs text-[var(--muted)]">
+										<span className="truncate pr-2">
+											{CANONICAL_CLINICAL_CATEGORIES.find((c) => c.key === item.category)?.shortTitle || item.category} · {item.durationMin} мин
 										</span>
-										<button
-											type="button"
-											className="pricelist-btn text-xs py-1 px-2.5 h-auto"
-											onClick={() => handleOpenEdit(item)}
-										>
-											Изменить
-										</button>
+										<div className="flex items-center gap-1.5 shrink-0">
+											<button
+												type="button"
+												className="pricelist-btn text-xs px-3.5 min-h-[44px] h-11 rounded-xl font-medium inline-flex items-center justify-center cursor-pointer"
+												onClick={() => handleOpenEdit(item)}
+											>
+												<Edit2 size={13} className="mr-1 inline" />
+												<span>Изменить</span>
+											</button>
+											<button
+												type="button"
+												className="pricelist-btn pricelist-btn-icon min-h-[44px] min-w-[44px] w-11 h-11 rounded-xl cursor-pointer"
+												style={{
+													color: item.isActive ? "var(--teal)" : "var(--muted)",
+												}}
+												onClick={() => handleToggleActive(item.id)}
+												title={item.isActive ? "Выключить услугу" : "Включить услугу"}
+												aria-label={item.isActive ? "Выключить услугу" : "Включить услугу"}
+											>
+												<Check size={16} />
+											</button>
+										</div>
 									</div>
 								</div>
 							))}

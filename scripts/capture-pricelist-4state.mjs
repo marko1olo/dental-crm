@@ -19,7 +19,7 @@ import { fileURLToPath } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const CONVERSATION_ID = process.env.CONVERSATION_ID || "175a8f60-951d-4715-8be3-ca23bd9e7a0f";
+const CONVERSATION_ID = process.env.CONVERSATION_ID || "36d056c5-4ff6-47d8-8a68-67fefb3a5f33";
 const DOCS_DIR = path.resolve(__dirname, "../docs/proofs/pricelist");
 const BRAIN_DIR = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONVERSATION_ID}`);
 
@@ -122,18 +122,8 @@ async function run() {
 	try {
 		viteProc = await ensureViteServer();
 
-		const possibleBrowserPaths = [
-			"C:/Program Files/Google/Chrome/Application/chrome.exe",
-			"C:/Program Files (x86)/Google/Chrome/Application/chrome.exe",
-			"C:/Program Files/Microsoft/Edge/Application/msedge.exe",
-			"C:/Program Files (x86)/Microsoft/Edge/Application/msedge.exe",
-		];
-		const executablePath = possibleBrowserPaths.find((p) => fs.existsSync(p));
-		console.log(`[Browser] Using executable: ${executablePath || "bundled Playwright"}`);
-
 		browser = await chromium.launch({
 			headless: true,
-			executablePath,
 			args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu", "--disable-dev-shm-usage"],
 		});
 
@@ -158,8 +148,8 @@ async function run() {
 		});
 
 		const pcPage = await pcContext.newPage();
-		await pcPage.goto("http://127.0.0.1:5173/?pricelist=1#pricelist", { waitUntil: "domcontentloaded", timeout: 20000 });
-		await pcPage.waitForTimeout(2000);
+		await pcPage.goto("http://127.0.0.1:5173/?demo=true&pricelist=1#pricelist", { waitUntil: "commit", timeout: 20000 });
+		await pcPage.waitForSelector('[data-testid="service-pricelist-studio-modal"], .pricelist-studio-modal', { timeout: 20000 });
 		await cleanNoise(pcPage);
 
 		// 1.1 PC Light
@@ -199,8 +189,8 @@ async function run() {
 		});
 
 		const mobilePage = await mobileContext.newPage();
-		await mobilePage.goto("http://127.0.0.1:5173/?pricelist=1#pricelist", { waitUntil: "domcontentloaded", timeout: 20000 });
-		await mobilePage.waitForTimeout(2000);
+		await mobilePage.goto("http://127.0.0.1:5173/?demo=true&pricelist=1#pricelist", { waitUntil: "commit", timeout: 20000 });
+		await mobilePage.waitForSelector('[data-testid="service-pricelist-studio-modal"], .pricelist-studio-modal', { timeout: 20000 });
 		await cleanNoise(mobilePage);
 
 		// 2.1 Mobile Light
@@ -224,9 +214,6 @@ async function run() {
 	} finally {
 		if (browser) {
 			try { await browser.close(); } catch {}
-		}
-		if (viteProc) {
-			try { viteProc.kill(); } catch {}
 		}
 	}
 }
