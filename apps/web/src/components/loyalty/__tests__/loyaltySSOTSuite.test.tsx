@@ -241,6 +241,12 @@ describe("DENTE Dental Loyalty, Family Balance & Certificates SSOT Suite", () =>
 			assert.equal(res.success, false);
 			assert.equal(res.newStatus, "expired");
 		});
+
+		it("verifies LoyaltyStudioModal does NOT contain mockCert or fake 5000 fallback money", () => {
+			const studioCode = fs.readFileSync(path.join(webSrcRoot, "components/loyalty/LoyaltyStudioModal.tsx"), "utf8");
+			assert.doesNotMatch(studioCode, /mockCert/, "LoyaltyStudioModal must not contain mockCert");
+			assert.doesNotMatch(studioCode, /5\s*000\s*₽\s*успешно\s*активирован/, "Must not contain fake 5000 ₽ toast");
+		});
 	});
 
 	// =========================================================================

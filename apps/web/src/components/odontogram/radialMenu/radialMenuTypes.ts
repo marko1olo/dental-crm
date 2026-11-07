@@ -19,6 +19,7 @@ export interface ToothRadialMenuProps {
 	readonly currentState?: ToothState | undefined;
 	readonly iropz?: number | undefined;
 	readonly surfaces?: readonly string[] | undefined;
+	readonly selectedTeeth?: readonly number[] | undefined;
 	readonly onSelectState: (state: ToothState, surfaces?: readonly string[], subType?: string) => void;
 	readonly onSelectSurfaces?: (surfaces: readonly string[]) => void;
 	readonly onOpenEndo?: () => void;
@@ -39,6 +40,7 @@ export interface ToothRadialMobileSheetProps {
 	readonly items: readonly RadialMenuItem[];
 	readonly selectedSurfaces: readonly string[];
 	readonly surfaces?: readonly string[] | undefined;
+	readonly selectedTeeth?: readonly number[] | undefined;
 	readonly setSelectedSurfaces: React.Dispatch<React.SetStateAction<string[]>>;
 	readonly onSelectSurfaces?: ((surfaces: readonly string[]) => void) | undefined;
 	readonly toggleSurface: (surf: string) => void;

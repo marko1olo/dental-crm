@@ -48,6 +48,9 @@ export function useSharedViewProps({
 			activeStamp: st.activeStampTool,
 			onMarkIntactDentition: batch.handleMarkIntactDentition,
 			onMarkWisdomTeethMissing: batch.handleMarkWisdomTeethMissing,
+			onSelectTeethGroup: props.onSelectTeethGroup,
+			onClearSelection: batch.handleClearSelection,
+			onInvertSelection: batch.handleInvertSelection,
 			onJawClick: (target: "JU" | "JL" | "C") =>
 				st.setActiveJawModalTarget(target),
 			showWisdomTeeth: st.showWisdomTeeth,

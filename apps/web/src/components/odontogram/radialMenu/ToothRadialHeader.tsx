@@ -8,6 +8,7 @@ export interface ToothRadialHeaderProps {
 	readonly currentState?: ToothState | undefined;
 	readonly onClose: () => void;
 	readonly isMobile?: boolean | undefined;
+	readonly selectedTeethCount?: number | undefined;
 }
 
 export const ToothRadialHeader: React.FC<ToothRadialHeaderProps> = ({
@@ -15,7 +16,10 @@ export const ToothRadialHeader: React.FC<ToothRadialHeaderProps> = ({
 	currentState = "Healthy",
 	onClose,
 	isMobile = false,
+	selectedTeethCount,
 }) => {
+	const isBatch = Boolean(selectedTeethCount && selectedTeethCount > 1);
+
 	return (
 		<div className="flex items-center justify-between border-b border-[var(--line-subtle)] pb-2">
 			<div className="flex items-center gap-2.5 min-w-0">
@@ -23,9 +27,19 @@ export const ToothRadialHeader: React.FC<ToothRadialHeaderProps> = ({
 					{toothNumber}
 				</span>
 				<div className="flex flex-col min-w-0">
-					<span className={`${isMobile ? "text-sm font-extrabold" : "text-xs font-black"} text-[var(--ink)] leading-snug break-words`}>
-						{getToothFolkAndAnatomicalNameRu(toothNumber)}
-					</span>
+					<div className="flex items-center gap-1.5 flex-wrap">
+						<span className={`${isMobile ? "text-sm font-extrabold" : "text-xs font-black"} text-[var(--ink)] leading-snug break-words`}>
+							{getToothFolkAndAnatomicalNameRu(toothNumber)}
+						</span>
+						{isBatch && (
+							<span
+								className="px-2 py-0.5 rounded-md bg-teal-500/20 text-[var(--teal)] border border-teal-500/40 text-[10px] font-mono font-black shadow-2xs whitespace-nowrap"
+								data-testid="radial-batch-mode-indicator"
+							>
+								Пакет: {selectedTeethCount} зубов
+							</span>
+						)}
+					</div>
 					<span className="text-[11px] text-[var(--muted)] flex items-center gap-1">
 						<span>Статус:</span>
 						<span className="font-extrabold text-[var(--ink)]">

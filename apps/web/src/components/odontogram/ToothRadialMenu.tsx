@@ -20,7 +20,7 @@ import { useToothScanThumbnail } from "./radialMenu/useToothScanThumbnail";
 export type { RadialMenuItem, ToothRadialMenuProps };
 
 export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
-	toothNumber, anchorRect, currentState = "Healthy", iropz, surfaces,
+	toothNumber, anchorRect, currentState = "Healthy", iropz, surfaces, selectedTeeth,
 	onSelectState, onSelectSurfaces, onOpenEndo, onOpenTherapy, onAddToInvoice, onClose,
 }) => {
 	const isTouchOrMobile = typeof window !== "undefined" && (window.innerWidth <= 768 || (window.innerWidth <= 1024 && ("ontouchstart" in window || (Boolean(navigator.maxTouchPoints) && navigator.maxTouchPoints > 0))));
@@ -28,6 +28,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 	const [isMoreStatusesOpen, setIsMoreStatusesOpen] = useState(false);
 	const [selectedSurfaces, setSelectedSurfaces] = useState<string[]>(() => (surfaces ? [...surfaces] : []));
 	const isPrimary = isPrimaryTooth(toothNumber);
+	const selectedTeethCount = selectedTeeth?.length;
 
 	const primaryItems = useMemo(() => buildPrimaryRadialItems(isPrimary), [isPrimary]);
 	const secondaryItems = useMemo(() => buildSecondaryRadialItems(), []);
@@ -58,7 +59,7 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					menuRef={gestures.menuRef} dragOffsetY={gestures.dragOffsetY} isDraggingSheet={gestures.isDraggingSheet}
 					handleSheetTouchStart={gestures.handleSheetTouchStart} handleSheetTouchMove={gestures.handleSheetTouchMove} handleSheetTouchEnd={gestures.handleSheetTouchEnd}
 					toothNumber={toothNumber} currentState={currentState} items={allItems}
-					selectedSurfaces={selectedSurfaces} surfaces={surfaces} setSelectedSurfaces={setSelectedSurfaces}
+					selectedSurfaces={selectedSurfaces} surfaces={surfaces} selectedTeeth={selectedTeeth} setSelectedSurfaces={setSelectedSurfaces}
 					onSelectSurfaces={onSelectSurfaces} toggleSurface={(s) => setSelectedSurfaces((p) => p.includes(s) ? p.filter((x) => x !== s) : [...p, s])}
 					handleSelectStateWithHaptic={handleSelectStateWithHaptic} onSelectState={onSelectState} iropz={iropz}
 					onOpenTherapy={onOpenTherapy} onAddToInvoice={onAddToInvoice} onOpenEndo={onOpenEndo}
@@ -71,10 +72,10 @@ export const ToothRadialMenu: React.FC<ToothRadialMenuProps> = ({
 					style={{ left: `${clampedX}px`, top: `${clampedY}px`, width: "400px", maxHeight: "440px", transform: "translate(-50%, -50%)", boxShadow: "0 24px 48px -12px rgba(0, 0, 0, 0.45), 0 0 0 1px var(--line)" }}
 					role="dialog" aria-label={`Клиническое меню зуба ${toothNumber}`} onClick={(e) => e.stopPropagation()}
 				>
-					<ToothRadialHeader toothNumber={toothNumber} currentState={currentState} onClose={onClose} />
+					<ToothRadialHeader toothNumber={toothNumber} currentState={currentState} onClose={onClose} selectedTeethCount={selectedTeethCount} />
 					<ToothRadialSurfaceBar isPrimary={isPrimary} selectedSurfaces={selectedSurfaces} setSelectedSurfaces={setSelectedSurfaces} onSelectSurfaces={onSelectSurfaces} />
-					<ToothRadialPrimaryGrid primaryItems={primaryItems} currentState={currentState} selectedSurfaces={selectedSurfaces} surfaces={surfaces} onSelectWithHaptic={handleSelectStateWithHaptic} />
-					<ToothRadialSecondaryAccordion secondaryItems={secondaryItems} currentState={currentState} selectedSurfaces={selectedSurfaces} surfaces={surfaces} onSelectWithHaptic={handleSelectStateWithHaptic} isOpen={isMoreStatusesOpen} setIsOpen={setIsMoreStatusesOpen} />
+					<ToothRadialPrimaryGrid primaryItems={primaryItems} currentState={currentState} selectedSurfaces={selectedSurfaces} surfaces={surfaces} onSelectWithHaptic={handleSelectStateWithHaptic} selectedTeethCount={selectedTeethCount} />
+					<ToothRadialSecondaryAccordion secondaryItems={secondaryItems} currentState={currentState} selectedSurfaces={selectedSurfaces} surfaces={surfaces} onSelectWithHaptic={handleSelectStateWithHaptic} isOpen={isMoreStatusesOpen} setIsOpen={setIsMoreStatusesOpen} selectedTeethCount={selectedTeethCount} />
 					<ToothRadialResorptionBar isPrimary={isPrimary} iropz={iropz} currentState={currentState} onSelectState={onSelectState} onClose={onClose} />
 					<ToothRadialFooterActions toothNumber={toothNumber} toothScanThumbnail={toothScanThumbnail} onOpenRvg={() => handleOpenRvg(onClose)} onOpenTherapy={onOpenTherapy} onAddToInvoice={onAddToInvoice} onOpenEndo={onOpenEndo} onClose={onClose} />
 				</div>

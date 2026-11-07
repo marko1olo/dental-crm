@@ -40,6 +40,7 @@ export const OdontogramRadialMenuSlot: React.FC<
 			anchorRect={radialMenuData.anchorRect}
 			currentState={radialMenuData.currentState}
 			surfaces={radialMenuData.surfaces}
+			selectedTeeth={selectedTeeth}
 			onSelectState={(state, surfs) => {
 				const num = radialMenuData.toothNumber;
 				const targets =

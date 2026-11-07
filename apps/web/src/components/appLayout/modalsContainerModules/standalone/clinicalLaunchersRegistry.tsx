@@ -15,6 +15,7 @@ import { EmkComplaintsSection } from "../../../visit/emk/EmkComplaintsSection";
 import { StandaloneEmrMedicalRecordHost } from "./clinical/StandaloneEmrMedicalRecordHost";
 import { StandaloneClinicalTemplatesHost } from "./clinical/StandaloneClinicalTemplatesHost";
 import { DirectOdontogramLauncher } from "../../../odontogram/DirectOdontogramLauncher";
+import { DirectOdontogramModuleLauncher } from "../../../odontogram/DirectOdontogramModuleLauncher";
 import { Tooth46InspectionStand } from "../../../odontogram/gate0/Tooth46InspectionStand";
 import { DirectVisiographLauncher } from "../../../visiograph/DirectVisiographLauncher";
 import { DirectRvgCaptureModal } from "../../../radiology/DirectRvgCaptureModal";
@@ -115,6 +116,18 @@ export const CLINICAL_LAUNCHERS_REGISTRY: readonly LauncherRegistryEntry<Standal
 				],
 			},
 			render: () => <DirectOdontogramLauncher />,
+		},
+
+		// 5b. Живой интерактивный модуль зубной формулы OdontogramModule (SSOT)
+		{
+			id: "odontogram-module",
+			title: "Интерактивный модуль зубной формулы (OdontogramModule)",
+			criteria: {
+				tokens: ["odontogram-module", "stand=module", "stand=odontogram"],
+				searchIncludes: ["stand=module", "stand=odontogram", "odontogram-module=1"],
+				hashIncludes: ["#odontogram-module", "#stand-module"],
+			},
+			render: () => <DirectOdontogramModuleLauncher />,
 		},
 
 		// 7. Аппаратный захват визиографа Direct RVG (Мандат 8e & [RAD-03])

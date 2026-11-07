@@ -113,6 +113,11 @@ export const OdontogramViewContainer: React.FC<OdontogramViewContainerProps> =
 					isLiveInvoiceOpen={st.isLiveInvoiceOpen}
 					setIsLiveInvoiceOpen={st.setIsLiveInvoiceOpen}
 					teethData={props.teethData}
+					onSelectTeethGroup={props.onSelectTeethGroup}
+					onClearSelection={batch.handleClearSelection}
+					onInvertSelection={batch.handleInvertSelection}
+					isPediatric={dent.isPediatricEffective}
+					isMixed={dent.isMixedEffective}
 				/>
 				<OdontogramModalsBridge modalsProps={modalsProps} />
 			</div>

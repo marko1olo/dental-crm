@@ -2,6 +2,7 @@ import type { OdontogramViewMode } from "@dental/shared";
 import type React from "react";
 import { AnatomicalGate0FullArchView } from "./AnatomicalGate0FullArchView";
 import { ClassicGostOdontogram } from "./ClassicGostOdontogram";
+import { OdontogramBatchBar } from "./OdontogramBatchBar";
 import { OdontogramLiveInvoice } from "./OdontogramLiveInvoice";
 import { OdontogramQuickTextInput } from "./OdontogramQuickTextInput";
 import { OdontogramStampPalette } from "./OdontogramStampPalette";
@@ -27,6 +28,11 @@ export interface OdontogramActiveViewSlotProps {
 	readonly isLiveInvoiceOpen: boolean;
 	readonly setIsLiveInvoiceOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly teethData: readonly ToothData[];
+	readonly onSelectTeethGroup?: ((teeth: number[]) => void) | undefined;
+	readonly onClearSelection?: (() => void) | undefined;
+	readonly onInvertSelection?: (() => void) | undefined;
+	readonly isPediatric?: boolean | undefined;
+	readonly isMixed?: boolean | undefined;
 }
 
 export const OdontogramActiveViewSlot: React.FC<
@@ -43,6 +49,11 @@ export const OdontogramActiveViewSlot: React.FC<
 	isLiveInvoiceOpen,
 	setIsLiveInvoiceOpen,
 	teethData,
+	onSelectTeethGroup,
+	onClearSelection,
+	onInvertSelection,
+	isPediatric,
+	isMixed,
 }) => {
 	return (
 		<div className="flex flex-col lg:flex-row gap-3 w-full items-start">
@@ -71,6 +82,15 @@ export const OdontogramActiveViewSlot: React.FC<
 
 				{onQuickStateChange && (
 					<>
+						<OdontogramBatchBar
+							selectedTeeth={selectedTeeth}
+							onSelectTeethGroup={onSelectTeethGroup ?? (sharedViewProps?.onSelectTeethGroup as any)}
+							onClearSelection={onClearSelection ?? (sharedViewProps?.onClearSelection as any)}
+							onInvertSelection={onInvertSelection ?? (sharedViewProps?.onInvertSelection as any)}
+							onQuickStateChange={onQuickStateChange}
+							isPediatric={isPediatric ?? Boolean(sharedViewProps?.pediatricMode)}
+							isMixed={isMixed ?? Boolean(sharedViewProps?.mixedDentition)}
+						/>
 						<OdontogramStampPalette
 							activeStampTool={activeStampTool}
 							setActiveStampTool={setActiveStampTool}

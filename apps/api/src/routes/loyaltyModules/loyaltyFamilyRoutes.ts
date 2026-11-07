@@ -1,4 +1,4 @@
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, ilike, inArray, or, sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { requireOrganizationId } from "../../security/identity.js";
@@ -10,7 +10,7 @@ import { executeBonusRedeem } from "./bonusRedemptionService.js";
 
 const familyLinkSchema = z.object({
 	primaryPatientId: z.string().uuid(),
-	relativePatientId: z.string().uuid(),
+	relativePatientId: z.string().min(1),
 	relationRole: z.string().default("член семьи"),
 });
 
@@ -122,12 +122,36 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 				.limit(1);
 			if (!primary) return reply.status(404).send({ message: "Основной пациент не найден" });
 
-			const [relative] = await db
-				.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
-				.from(patients)
-				.where(and(eq(patients.organizationId, orgId), eq(patients.id, relativePatientId)))
-				.limit(1);
-			if (!relative) return reply.status(404).send({ message: "Родственник не найден" });
+			const cleanRelativeInput = relativePatientId.trim();
+			const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(cleanRelativeInput);
+
+			let relative: { id: string; fullName: string; familyGroupId: string | null } | undefined;
+
+			if (isUuid) {
+				const [found] = await db
+					.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), eq(patients.id, cleanRelativeInput)))
+					.limit(1);
+				relative = found;
+			}
+
+			if (!relative) {
+				const digits = cleanRelativeInput.replace(/\D/g, "");
+				const searchConditions = [ilike(patients.fullName, `%${cleanRelativeInput}%`)];
+				if (digits.length >= 4) {
+					searchConditions.push(ilike(patients.phone, `%${digits}%`));
+				}
+				const foundList = await db
+					.select({ id: patients.id, fullName: patients.fullName, familyGroupId: patients.familyGroupId })
+					.from(patients)
+					.where(and(eq(patients.organizationId, orgId), or(...searchConditions)))
+					.limit(2);
+				relative = foundList.find((p) => p.id !== primary.id) || foundList[0];
+			}
+
+			if (!relative) return reply.status(404).send({ message: "Родственник с указанным идентификатором, именем или телефоном не найден в картотеке клиники" });
+			if (primary.id === relative.id) return reply.status(400).send({ message: "Нельзя привязать пациента к самому себе в качестве родственника" });
 
 			let targetGroupId = primary.familyGroupId;
 			if (!targetGroupId) {
@@ -167,9 +191,21 @@ export async function registerLoyaltyFamilyRoutes(app: FastifyInstance) {
 					.onConflictDoNothing();
 			}
 
+			const [balance] = await db
+				.select()
+				.from(patientBonusBalances)
+				.where(and(eq(patientBonusBalances.organizationId, orgId), eq(patientBonusBalances.patientId, relative.id)))
+				.limit(1);
+			const individualPointsBalance = Number(balance?.activePoints ?? 0);
+
 			return reply.status(200).send({
 				success: true,
 				familyGroupId: targetGroupId,
+				relative: {
+					id: relative.id,
+					fullName: relative.fullName,
+					individualPointsBalance,
+				},
 				message: `Пациент ${relative.fullName} успешно привязан к семейному счету`,
 			});
 		});

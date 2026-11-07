@@ -26,6 +26,7 @@ const NAMESPACE = "loyaltyCertificatesTest";
 const ORG_ID = fixtureUuid(NAMESPACE, 1);
 const PATIENT_ID = fixtureUuid(NAMESPACE, 2);
 const INVOICE_ID = fixtureUuid(NAMESPACE, 3);
+const RELATIVE_ID = fixtureUuid(NAMESPACE, 4);
 
 const clinicToken = signToken(
 	{ organizationId: ORG_ID, role: "clinic" },
@@ -56,6 +57,14 @@ describe("Loyalty Gift Certificates — Statutory 54-FZ & Luhn Modulo-10 Integra
 					organizationId: ORG_ID,
 					fullName: "Соколова Марина Владимировна",
 					phone: "+79051234567",
+					status: "active",
+				});
+
+				await tx.insert(patients).values({
+					id: RELATIVE_ID,
+					organizationId: ORG_ID,
+					fullName: "Соколов Артем Сергеевич",
+					phone: "+79059876543",
 					status: "active",
 				});
 			});
@@ -241,5 +250,78 @@ describe("Loyalty Gift Certificates — Statutory 54-FZ & Luhn Modulo-10 Integra
 			},
 		});
 		assert.equal(depletedRes.statusCode, 400);
+	});
+
+	test("4. Валидация несуществующего сертификата через POST /api/loyalty/certificates/validate возвращает 404 (ноль мок-денег)", async () => {
+		if (!databaseAvailable) return;
+
+		// Сгенерируем валидный по Luhn номер, которого нет в базе
+		// Префикс 7701, 11 цифр, 1 контрольная
+		// 7701-0000-0000-0004
+		// Проверим: 7*2=14->5, 7, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 -> sum = 13. 10-(13%10)=7.
+		// 7701-0000-0000-0007:
+		const nonExistentSerial = "7701-0000-0000-0007";
+
+		const valRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/certificates/validate",
+			headers: ORG_HEADERS,
+			payload: { serialNumber: nonExistentSerial },
+		});
+
+		assert.equal(valRes.statusCode, 404);
+		const valBody = valRes.json();
+		assert.equal(valBody.exists, false);
+		assert.match(valBody.message, /не найден в базе данных клиники/);
+	});
+
+	test("5. Привязка родственника POST /api/loyalty/family/link по телефону / имени и защита от self-link", async () => {
+		if (!databaseAvailable) return;
+
+		// 1. Попытка привязать пациента к самому себе должна отклоняться (400)
+		const selfRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/family/link",
+			headers: ORG_HEADERS,
+			payload: {
+				primaryPatientId: PATIENT_ID,
+				relativePatientId: PATIENT_ID,
+				relationRole: "Ребенок",
+			},
+		});
+		assert.equal(selfRes.statusCode, 400);
+		assert.match(selfRes.json().message, /Нельзя привязать пациента к самому себе/);
+
+		// 2. Привязка по телефону родственника (+79059876543)
+		const linkByPhoneRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/family/link",
+			headers: ORG_HEADERS,
+			payload: {
+				primaryPatientId: PATIENT_ID,
+				relativePatientId: "+7 (905) 987-65-43",
+				relationRole: "Ребенок",
+			},
+		});
+		assert.equal(linkByPhoneRes.statusCode, 200);
+		const linkBody = linkByPhoneRes.json();
+		assert.equal(linkBody.success, true);
+		assert.equal(linkBody.relative.id, RELATIVE_ID);
+		assert.equal(linkBody.relative.fullName, "Соколов Артем Сергеевич");
+		assert.equal(typeof linkBody.relative.individualPointsBalance, "number");
+
+		// 3. Запрос неизвестного пациента по телефону должен возвращать 404
+		const unknownRes = await app.inject({
+			method: "POST",
+			url: "/api/loyalty/family/link",
+			headers: ORG_HEADERS,
+			payload: {
+				primaryPatientId: PATIENT_ID,
+				relativePatientId: "+7 (999) 999-99-99",
+				relationRole: "Супруг",
+			},
+		});
+		assert.equal(unknownRes.statusCode, 404);
+		assert.match(unknownRes.json().message, /не найден в картотеке клиники/);
 	});
 });

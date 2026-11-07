@@ -12,6 +12,7 @@ export interface ToothRadialSecondaryAccordionProps {
 	readonly isOpen: boolean;
 	readonly setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
 	readonly isMobile?: boolean | undefined;
+	readonly selectedTeethCount?: number | undefined;
 }
 
 export const ToothRadialSecondaryAccordion: React.FC<ToothRadialSecondaryAccordionProps> = ({
@@ -23,15 +24,17 @@ export const ToothRadialSecondaryAccordion: React.FC<ToothRadialSecondaryAccordi
 	isOpen,
 	setIsOpen,
 	isMobile = false,
+	selectedTeethCount,
 }) => {
 	const activeSurfaces = selectedSurfaces.length > 0 ? selectedSurfaces : surfaces;
+	const isBatch = Boolean(selectedTeethCount && selectedTeethCount > 1);
 
 	return (
 		<div className="flex flex-col gap-1">
 			<button
 				type="button"
 				onClick={() => setIsOpen((prev) => !prev)}
-				className="flex items-center justify-between px-2 py-1 rounded-lg text-[11px] font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer select-none border-0 bg-transparent"
+				className="flex items-center justify-between px-3 py-2 min-h-[44px] sm:min-h-[32px] rounded-lg text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] hover:bg-[var(--paper-soft)] transition-colors cursor-pointer select-none border-0 bg-transparent"
 			>
 				<span className="flex items-center gap-1">
 					<span>Другие клинические статусы</span>
@@ -58,12 +61,19 @@ export const ToothRadialSecondaryAccordion: React.FC<ToothRadialSecondaryAccordi
 										? "bg-[var(--paper)] border-teal-500 font-black ring-1 ring-teal-500/30 text-[var(--ink)]"
 										: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/40 text-[var(--ink)]"
 								}`}
-								title={item.label}
+								title={isBatch ? `${item.label} (применить к ${selectedTeethCount} зубам)` : item.label}
 								data-testid={`radial-btn-${item.id}`}
 							>
 								<div className="flex items-center gap-1.5 min-w-0">
 									<span className="shrink-0">{item.icon}</span>
-									<span className="text-[11px] truncate font-bold">{item.shortLabel}</span>
+									<span className="text-[11px] truncate font-bold">
+										{item.shortLabel}
+										{isBatch && (
+											<span className="ml-1 text-[9px] text-[var(--teal)] font-mono font-bold">
+												(×{selectedTeethCount})
+											</span>
+										)}
+									</span>
 								</div>
 								<span className="text-[9px] px-1 py-0.2 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono font-bold">
 									{item.hotkey}

@@ -9,6 +9,7 @@ export interface ToothRadialPrimaryGridProps {
 	readonly surfaces?: readonly string[] | undefined;
 	readonly onSelectWithHaptic: (state: ToothState, surfs?: readonly string[]) => void;
 	readonly isMobile?: boolean | undefined;
+	readonly selectedTeethCount?: number | undefined;
 }
 
 export const ToothRadialPrimaryGrid: React.FC<ToothRadialPrimaryGridProps> = ({
@@ -18,8 +19,10 @@ export const ToothRadialPrimaryGrid: React.FC<ToothRadialPrimaryGridProps> = ({
 	surfaces,
 	onSelectWithHaptic,
 	isMobile = false,
+	selectedTeethCount,
 }) => {
 	const activeSurfaces = selectedSurfaces.length > 0 ? selectedSurfaces : surfaces;
+	const isBatch = Boolean(selectedTeethCount && selectedTeethCount > 1);
 
 	return (
 		<div className="grid grid-cols-2 gap-1.5 sm:gap-2 w-full">
@@ -39,13 +42,18 @@ export const ToothRadialPrimaryGrid: React.FC<ToothRadialPrimaryGridProps> = ({
 								? "bg-[var(--paper-soft)] border-teal-500 ring-2 ring-teal-500/30 text-[var(--ink)] font-black shadow-xs"
 								: "bg-[var(--paper)] border-[var(--line)] hover:border-teal-500/50 hover:bg-[var(--paper-soft)] text-[var(--ink)]"
 						}`}
-						title={item.label}
+						title={isBatch ? `${item.label} (применить к ${selectedTeethCount} зубам)` : item.label}
 						data-testid={`radial-btn-${item.id}`}
 					>
-						<div className="flex items-center gap-2 min-w-0">
+						<div className="flex items-center gap-2 min-w-0 flex-1">
 							<span className="shrink-0 flex items-center justify-center">{item.icon}</span>
-							<span className={`${isMobile ? "text-sm" : "text-xs"} font-extrabold truncate`}>
+							<span className={`${isMobile ? "text-xs" : "text-xs"} font-extrabold leading-tight text-left break-words line-clamp-2`}>
 								{item.shortLabel}
+								{isBatch && (
+									<span className="ml-1 text-[10px] text-[var(--teal)] font-mono font-bold">
+										(×{selectedTeethCount})
+									</span>
+								)}
 							</span>
 						</div>
 						<span className="text-[10px] px-1.5 py-0.5 rounded bg-[var(--paper-soft)] text-[var(--muted)] font-mono font-bold shrink-0 border border-[var(--line-subtle)]">

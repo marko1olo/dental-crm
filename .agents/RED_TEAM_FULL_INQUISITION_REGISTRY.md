@@ -2025,6 +2025,27 @@
   2. Сегментация на категории: `VIP` (выручка > 150 000 ₽ или > 5 визитов), `Loyal` (2–4 визита, выручка > 30 000 ₽), `Sleeping` (давность > 180 дней), `Lost` (давность > 365 дней), `New` (1 визит).
   3. В `recallCandidates.ts` добавлены поля `frequencyPast12m`, `revenueKopecks`, `isVip`, `rfmSegment`. VIP-пациенты и крупные чеки получают наивысший приоритет в очереди звонков и уведомлений.
 
+### [LOY-12] [SEV-1] [ИСПРАВЛЕНО] Фальшивые 5 000 ₽ мок-сертификаты и симуляция родственников без PG18
+- **Файлы:**
+  - [`apps/web/src/components/loyalty/LoyaltyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/LoyaltyStudioModal.tsx)
+  - [`apps/api/src/routes/loyaltyModules/loyaltyFamilyRoutes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/loyaltyModules/loyaltyFamilyRoutes.ts)
+  - [`apps/api/src/tests/routes/loyaltyCertificates.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/loyaltyCertificates.test.ts)
+  - [`apps/web/src/components/loyalty/__tests__/loyaltySSOTSuite.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/loyalty/__tests__/loyaltySSOTSuite.test.tsx)
+- **Суть бага:**
+  1. В `LoyaltyStudioModal.tsx` при отсутствии сертификата в базе клиники или сетевом сбое создавался фейковый объект `mockCert` на 5 000 ₽ и через `redeemGiftCertificate` пациенту начислялись и зачитывались фейковые 5 000 ₽ («тихий грабёж клиники» в обход реального финансового контура).
+  2. В `handleLinkRelative` при вводе телефона или имени родственника строка отсылалась напрямую в API, где схема `familyLinkSchema` требовала строгий UUID (`z.string().uuid()`), завершаясь 400 Bad Request; в `.catch()` фронтенд добавлял фиктивного родственника с захардкоженными 500 баллами.
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. Полностью ликвидирован `mockCert` и начисление фейковых 5 000 ₽. Если сертификат отсутствует в базе данных клиники через `POST /api/loyalty/certificates/validate` (404 Not Found или ошибка), выводится честное предупреждение: «Сертификат не найден в базе клиники или аннулирован» без начисления денег. Корректно обработаны статусы `depleted` («Баланс сертификата полностью исчерпан»), `cancelled` («Сертификат аннулирован администрацией клиники») и `expired` («Срок действия сертификата истек»).
+  2. В `apps/api/src/routes/loyaltyModules/loyaltyFamilyRoutes.ts` схема `familyLinkSchema` обновлена (`relativePatientId: z.string().min(1)`), внедрен честный поиск по телефону и ФИО пациента в PostgreSQL 18, валидация от привязки пациента к самому себе (400 Bad Request), и отдача реального бонусного баланса родственника из `patientBonusBalances`.
+  3. Во фронтенде `LoyaltyStudioModal.tsx` связка родственников выполняет честный запрос к PG18, при ошибке или ненахождении пациента выводит предупреждение («Пациент не найден в картотеке клиники»), а при успешной привязке гидратирует реальный баланс родственника без мок-баллов.
+  4. Сохранен Mandate 8b: `LoyaltyStudioModal.tsx` ровно 477 строк (в пределах sweet spot 380–480 строк), ровно 1 Primary CTA `#0d9488`, Apple HIG мобильный адаптив (тач $\ge 44\times 44$px, 0px горизонтального скролла).
+  5. Сняты и верифицированы эталонные 4-state скриншоты в `docs/proofs/loyalty/`:
+     - ☀️ PC Light 1440×900: `01_loyalty_studio_pc_light_1440x900.png` (68 KB)
+     - 🌙 PC Dark 1440×900: `02_loyalty_studio_pc_dark_1440x900.png` (73 KB)
+     - 📱 Mobile Light 390×844: `03_loyalty_studio_mobile_light_390x844.png` (133 KB)
+     - 🌙 Mobile Dark 390×844: `04_loyalty_studio_mobile_dark_390x844.png` (139 KB)
+  6. Все тесты 100% PASS: `loyaltySSOTSuite.test.tsx` (23/23), `familyBalanceAndLoyaltyInquisition.test.ts` (13/13), `loyaltyAndMarketingAutonomyInquisition.test.ts` (12/12), `loyaltyCertificates.test.ts` (5/5).
+
 
 ## 22. 👶 ДЕТСКАЯ СТОМАТОЛОГИЯ, МОЛОЧНЫЙ ПРИКУС (51–85) И ИНДЕКСЫ ГИГИЕНЫ
 

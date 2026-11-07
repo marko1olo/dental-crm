@@ -100,4 +100,37 @@ describe("dentalFormulaTextParser SSOT Suite", () => {
 		assert.ok(FRONTAL_HYGIENE_SECTOR_ADULT.includes(43));
 		assert.ok(FRONTAL_HYGIENE_SECTOR_ADULT.includes(33));
 	});
+
+	it("8. Macro-anatomical groups parsing ('верх норма', 'низ о', 'все зд', 'восьмерки о', 'санирован')", () => {
+		// Test "верх норма" -> 16 teeth
+		const resUpper = parseDentalFormulaShorthand("верх норма");
+		assert.equal(resUpper.items.length, 16);
+		assert.ok(resUpper.items.every((i) => i.state === "Healthy"));
+		assert.ok(resUpper.items.some((i) => i.toothNumber === 18));
+		assert.ok(resUpper.items.some((i) => i.toothNumber === 28));
+
+		// Test "низ о" -> 16 teeth Missing
+		const resLower = parseDentalFormulaShorthand("низ о");
+		assert.equal(resLower.items.length, 16);
+		assert.ok(resLower.items.every((i) => i.state === "Missing"));
+		assert.ok(resLower.items.some((i) => i.toothNumber === 38));
+		assert.ok(resLower.items.some((i) => i.toothNumber === 48));
+
+		// Test "восьмерки о" -> 18, 28, 38, 48
+		const resThirdMolars = parseDentalFormulaShorthand("восьмерки о");
+		assert.equal(resThirdMolars.items.length, 4);
+		const teeth = resThirdMolars.items.map((i) => i.toothNumber).sort();
+		assert.deepEqual(teeth, [18, 28, 38, 48]);
+		assert.ok(resThirdMolars.items.every((i) => i.state === "Missing"));
+
+		// Test "фронт норма" -> 12 teeth
+		const resFront = parseDentalFormulaShorthand("фронт норма");
+		assert.equal(resFront.items.length, 12);
+		assert.ok(resFront.items.every((i) => i.state === "Healthy"));
+
+		// Test standalone "санирован" -> all 32 teeth Healthy
+		const resSanitized = parseDentalFormulaShorthand("санирован");
+		assert.equal(resSanitized.items.length, 32);
+		assert.ok(resSanitized.items.every((i) => i.state === "Healthy"));
+	});
 });

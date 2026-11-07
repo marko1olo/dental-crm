@@ -23,6 +23,7 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 	items,
 	selectedSurfaces,
 	surfaces,
+	selectedTeeth,
 	setSelectedSurfaces,
 	onSelectSurfaces,
 	handleSelectStateWithHaptic,
@@ -37,6 +38,7 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 }) => {
 	const isPrimary = isPrimaryTooth(toothNumber);
 	const [isSecondaryOpen, setIsSecondaryOpen] = useState(false);
+	const selectedTeethCount = selectedTeeth?.length;
 
 	const core6Ids = ["healthy", "caries", "filled", "pulpitis", "crown", "missing"];
 	const primaryItems = items.filter((it) => core6Ids.includes(it.id));
@@ -63,7 +65,13 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 				className="w-9 h-[5px] rounded-full bg-[var(--line-strong,rgba(150,150,150,0.4))] mx-auto mb-1 cursor-grab active:cursor-grabbing hover:opacity-100 transition-opacity"
 				title="Потяните вниз для закрытия"
 			/>
-			<ToothRadialHeader toothNumber={toothNumber} currentState={currentState} onClose={onClose} isMobile={true} />
+			<ToothRadialHeader
+				toothNumber={toothNumber}
+				currentState={currentState}
+				onClose={onClose}
+				isMobile={true}
+				selectedTeethCount={selectedTeethCount}
+			/>
 			<ToothRadialSurfaceBar
 				isPrimary={isPrimary}
 				selectedSurfaces={selectedSurfaces}
@@ -78,6 +86,7 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 				surfaces={surfaces}
 				onSelectWithHaptic={handleSelectStateWithHaptic}
 				isMobile={true}
+				selectedTeethCount={selectedTeethCount}
 			/>
 			<ToothRadialSecondaryAccordion
 				secondaryItems={secondaryItems}
@@ -88,6 +97,7 @@ export const ToothRadialMobileSheet: React.FC<ToothRadialMobileSheetProps> = ({
 				isOpen={isSecondaryOpen}
 				setIsOpen={setIsSecondaryOpen}
 				isMobile={true}
+				selectedTeethCount={selectedTeethCount}
 			/>
 			<ToothRadialResorptionBar isPrimary={isPrimary} iropz={iropz} currentState={currentState} onSelectState={onSelectState} onClose={onClose} />
 			<ToothRadialFooterActions

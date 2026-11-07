@@ -75,6 +75,45 @@ const SHORTHAND_PREFIX_SUFFIX_MAP: ReadonlyArray<{
 ];
 
 /**
+ * Macro anatomical tooth group mappings for batch shorthand dictation and quick text.
+ */
+const MACRO_ANATOMICAL_GROUPS: ReadonlyArray<{
+	readonly pattern: RegExp;
+	readonly getTeeth: () => readonly number[];
+}> = [
+	{
+		pattern: /^(все|вся|челюсти|формула|полость)$/i,
+		getTeeth: () => ALL_FDI_TEETH.filter((t) => t < 50),
+	},
+	{
+		pattern: /^(верх|верхняя|верхней|максилла|вч)$/i,
+		getTeeth: () => UPPER_ARCH_SEQUENCE,
+	},
+	{
+		pattern: /^(низ|нижняя|нижней|мандибула|нч)$/i,
+		getTeeth: () => LOWER_ARCH_SEQUENCE,
+	},
+	{
+		pattern: /^(фронт|фронтальный|фронтальная|фронта)$/i,
+		getTeeth: () => FRONTAL_HYGIENE_SECTOR_ADULT,
+	},
+	{
+		pattern: /^(восьмерки|8ки|8-ки|мудрости)$/i,
+		getTeeth: () => [18, 28, 38, 48],
+	},
+];
+
+function resolveMacroGroup(token: string): readonly number[] | null {
+	const clean = token.trim().toLowerCase().replace(/ё/g, "е");
+	for (const group of MACRO_ANATOMICAL_GROUPS) {
+		if (group.pattern.test(clean)) {
+			return group.getTeeth();
+		}
+	}
+	return null;
+}
+
+/**
  * Resolves code suffix to CanonicalToothState.
  */
 function resolveCodePart(code: string): CanonicalToothState | null {
@@ -338,6 +377,25 @@ export function parseDentalFormulaShorthand(input: string): ParseFormulaShorthan
 			continue;
 		}
 
+		// 2.5. Check for macro group token (e.g. "верх", "низ", "фронт", "все", "восьмерки")
+		const macroTeeth = resolveMacroGroup(current);
+		if (macroTeeth && macroTeeth.length > 0) {
+			if (prefixState) {
+				for (const tNum of macroTeeth) {
+					itemsMap.set(tNum, {
+						toothNumber: tNum,
+						state: prefixState,
+						surfaces: pendingSurfaces.length > 0 ? pendingSurfaces : undefined,
+						rawToken: current,
+					});
+				}
+			} else {
+				pendingTeeth.push(...macroTeeth);
+			}
+			i++;
+			continue;
+		}
+
 		// 3. Check for standalone 2-digit tooth number
 		if (/^\d{2}$/.test(current)) {
 			const tNum = Number.parseInt(current, 10);
@@ -406,6 +464,19 @@ export function parseDentalFormulaShorthand(input: string): ParseFormulaShorthan
 		// Not parsed token
 		unrecognized.push(current);
 		i++;
+	}
+
+	// Solitary status fallback: if a status like "санирован", "норма", "здоров" was typed alone without teeth
+	if (itemsMap.size === 0 && prefixState && unrecognized.length === 0) {
+		const allAdult = [...UPPER_ARCH_SEQUENCE, ...LOWER_ARCH_SEQUENCE];
+		for (const t of allAdult) {
+			itemsMap.set(t, {
+				toothNumber: t,
+				state: prefixState,
+				rawToken: normalizedInput,
+			});
+		}
+		prefixState = null;
 	}
 
 	// Flush any leftover unassigned teeth as unrecognized
