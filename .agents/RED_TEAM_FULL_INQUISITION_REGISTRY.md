@@ -481,6 +481,47 @@
      - 📱 Mobile Light 390×844 (`docs/proofs/odontogram/03_odontogram_mobile_light.png`)
      - 📱 Mobile Dark 390×844 (`docs/proofs/odontogram/04_odontogram_mobile_dark.png`)
 
+### [CLN-06] [ИСПРАВЛЕНО] Ликвидация процедурного онанизма поштучного выбора 32 зубов и внедрение макро-пакетной консоли (Мандаты 8ar, 8ba, 8e)
+- **Файлы:**
+  - [`packages/shared/src/clinical/dentalFormulaTextParser.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/dentalFormulaTextParser.ts)
+  - [`packages/shared/src/clinical/dentalFormulaTextParser.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/clinical/dentalFormulaTextParser.test.ts)
+  - [`apps/web/src/components/odontogram/OdontogramBatchBar.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramBatchBar.tsx)
+  - [`apps/web/src/components/odontogram/OdontogramActiveViewSlot.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramActiveViewSlot.tsx)
+  - [`apps/web/src/components/odontogram/OdontogramViewContainer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramViewContainer.tsx)
+  - [`apps/web/src/components/odontogram/useSharedViewProps.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/useSharedViewProps.ts)
+  - [`apps/web/src/components/odontogram/radialMenu/radialMenuTypes.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/radialMenuTypes.ts)
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialHeader.tsx)
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialPrimaryGrid.tsx)
+  - [`apps/web/src/components/odontogram/radialMenu/ToothRadialSecondaryAccordion.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/radialMenu/ToothRadialSecondaryAccordion.tsx)
+  - [`apps/web/src/components/odontogram/ToothRadialMenu.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothRadialMenu.tsx)
+  - [`apps/web/src/components/odontogram/ToothRadialMobileSheet.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/ToothRadialMobileSheet.tsx)
+  - [`apps/web/src/components/odontogram/OdontogramRadialMenuSlot.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/OdontogramRadialMenuSlot.tsx)
+  - [`apps/web/src/components/odontogram/DirectOdontogramModuleLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/DirectOdontogramModuleLauncher.tsx)
+  - [`apps/web/src/components/odontogram/__tests__/OdontogramBatchBar.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/odontogram/__tests__/OdontogramBatchBar.test.tsx)
+- **Суть бага:** Поштучное тыканье в 32 зуба с открытием модалки на каждый зуб парализовало приём врача. Отсутствовала возможность в 1 клик выделить анатомические группы (верхняя челюсть, нижняя челюсть, фронт, все зубы) и применить клинический статус сразу ко всей группе. Текстовый парсер не распознавал макро-токены («верх норма», «низ о», «фронт кариес», «восьмерки о», «санирован»).
+- **Статус ликвидации [ИСПРАВЛЕНО]:**
+  1. **Каноническая консоль макро-выбора `OdontogramBatchBar.tsx` (Мандат 8ar):**
+     - 1-клик кнопки макро-выделения: `[ ВЧ (16/10) ]`, `[ НЧ (16/10) ]`, `[ Фронт (12) ]`, `[ Все (32/20) ]`, `[ 8-ки (4) ]`.
+     - Инвертирование (`[ ⟲ Инверт ]`) и снятие выделения (`[ ✕ Снять ]`).
+     - Пакетное применение клинических статусов в 1 клик: `✓ Норма (Зд)`, `К Кариес`, `П Пломба`, `0 Удален`, `Пт Пульпит`, `Pt Периодонтит`, `Кр Коронка`, `Им Имплант`.
+     - Apple HIG: на мобильных устройствах touch targets $\ge 44\times 44$px (`min-h-[44px]`), на десктопе компактные `h-8..h-9`.
+  2. **Реактивная интеграция в контейнер одонтограммы:**
+     - `OdontogramBatchBar` смонтирован в `OdontogramActiveViewSlot.tsx` и `OdontogramViewContainer.tsx` с пробросом `onSelectTeethGroup`, `onClearSelection`, `onInvertSelection`.
+     - Создан автономный лончер `DirectOdontogramModuleLauncher.tsx` (`?stand=module`, `?stand=odontogram`, `?odontogram-module=1`).
+  3. **Пакетный режим радиального меню зуба (Desktop Popover & Mobile Sheet):**
+     - `ToothRadialHeader`, `ToothRadialPrimaryGrid`, `ToothRadialSecondaryAccordion` получили поддержку `selectedTeethCount`: вывод бейджа `Пакет: N зубов` и индикатора `(×N)` на кнопках. При клике статус применяется ко всем выделенным зубам разом.
+  4. **Расширение клинического текстового/голосового парсера:**
+     - В `packages/shared/src/clinical/dentalFormulaTextParser.ts` интегрированы макро-анатомические токены (`все`, `верх`, `вч`, `низ`, `нч`, `фронт`, `восьмерки`, `8ки`) и обработка одиночного статуса нормы («санирован», «норма»).
+  5. **Автоматизированная верификация и тесты:**
+     - `npm run check:encoding` -> 24137 файлов проверено, Exit Code 0.
+     - `npx vitest run apps/web/src/components/odontogram/__tests__/` -> 46 тест-файлов, 448 тестов PASS (100%).
+     - `npx vitest run packages/shared/src/clinical/dentalFormulaTextParser.test.ts` -> 8 тестов PASS (100%).
+  6. **4-State Visual Proofs (Личный осмотр через `read_file`):**
+     - ☀️ PC Light 1440×900: `docs/proofs/odontogram/01_odontogram_pc_light_1440x900.png` (197.8 KB)
+     - 🌙 PC Dark 1440×900: `docs/proofs/odontogram/02_odontogram_pc_dark_1440x900.png` (206.2 KB)
+     - 📱 Mobile Light 390×844: `docs/proofs/odontogram/03_odontogram_mobile_light_390x844.png` (251.4 KB)
+     - 🌙 Mobile Dark 390×844: `docs/proofs/odontogram/04_odontogram_mobile_dark_390x844.png` (258.2 KB)
+
 ---
 
 ## 5. 📅 РАСПИСАНИЕ И СЕТКА КРЕСЕЛ
