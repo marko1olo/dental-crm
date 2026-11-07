@@ -1438,6 +1438,37 @@
        * Машинные гейты `check:encoding` (24052 файлов), `check:stub-overrides`, `check:fetch-response` (14414 файлов), `check:dynamic-imports` (538 импортов) — Exit Code 0.
        * Личный мультимодальный осмотр скриншотов через `read_file`: Zero-Clipping, ровно 1 Primary CTA (`var(--teal)` / `#0d9488`), Apple HIG Bottom Sheet на мобильных (390×844), 0px паразитного горизонтального скролла, 100% WCAG AAA контраст. Статус: **[ПРОВЕРЕНО: ЧИСТО]**.
 
+### [COP-12] [SEV-1] [ИСПРАВЛЕНО] Интерактивные Workstation-диффы и логи исполнения инструментов Копайлота, DICOM dropzone путь в настройках и декомпозиция модалок студии
+- **Файлы:**
+  - [`apps/web/src/components/copilot/cards/ActiveDiffCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/ActiveDiffCard.tsx)
+  - [`apps/web/src/components/copilot/cards/CopilotToolLogsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/CopilotToolLogsView.tsx)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx)
+  - [`apps/web/src/components/copilot/CopilotDrawer.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotDrawer.tsx)
+  - [`apps/web/src/components/copilot/CopilotSettingsModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotSettingsModal.tsx)
+  - [`apps/web/src/components/copilot/settings/CopilotSettingsVoicePrivacyTab.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/settings/CopilotSettingsVoicePrivacyTab.tsx)
+  - [`scripts/take_copilot_studio_redteam_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/take_copilot_studio_redteam_proofs.cjs)
+  - [`scripts/capture_copilot_mobile_proofs.cjs`](file:///C:/Clinic_MVP/dental-crm/scripts/capture_copilot_mobile_proofs.cjs)
+- **Суть задачи Создателя и выявленных дефектов:**
+  1. **Интерактивные диффы для настольной рабочей станции:** Создатель потребовал возможность отслеживать модификацию локальных файлов, зубной формулы, прейскуранта и логов («...с файлами на пк, и редактирвоанеии логи и вызовы инструментов и диффы и тп»). В карточках подтверждения ранее отсутствовал специализированный диффер До/После с подсветкой изменений и защитой от потери контекста.
+  2. **Логи вызова инструментов с доменами и таймингами:** Отсутствовала категоризация логов исполнения (клинические тулы, утилиты рабочей станции ПК, финансовые операции) с фиксацией длительности в мс и инспекцией JSON-аргументов.
+  3. **Локальный путь папки сброса снимков (DICOM Dropzone Path):** В настройках Копайлота отсутствовала привязка локальной рабочей станции (`localDropzonePath`) для интеграции с рентген-программами клиники (Romexis, Ez3D-i, Sidexis).
+  4. **Сохранение жестких лимитов строк (Мандаты 8b / 8zi):** После добавления диффов и вкладок `CopilotStudioModal.tsx` превысил лимит в 450 строк (стал 511 строк) и `CopilotDrawer.tsx` превысил 500 строк. Требовалась хирургическая оптимизация для попадания в строгие диапазоны тестов ($380 \le \text{lines} \le 450$ для StudioModal и $\le 500$ для Drawer).
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. Разработан изолированный компонент [`ActiveDiffCard.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/ActiveDiffCard.tsx) (139 строк) с поддержкой унифицированных диффов и структурированных пар Before/After, ровно 1 Primary CTA, бейджем статуса и токенизацией тем.
+  2. Разработан компонент [`CopilotToolLogsView.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/cards/CopilotToolLogsView.tsx) (179 строк) с доменными фильтрами (Клинические / Система ПК / Финансы), таймингами в миллисекундах и раскрываемым JSON-инспектором.
+  3. В `CopilotStudioModal.tsx` интегрирован сегментированный переключатель Apple HIG в табе Действий `[ Быстрые действия | Логи и диффы (${count}) ]` и монтирование `ActiveDiffCard` в поток диалога.
+  4. В `CopilotSettingsModal.tsx` и `CopilotSettingsVoicePrivacyTab.tsx` подключено поле ввода пути к папке сброса КТ/рентгена рабочей станции с пресетами (`C:\Radiology\Export`, Romexis, Ez3D).
+  5. Проведена хирургическая декомпозиция: `CopilotStudioModal.tsx` сжат до 448 строк, `CopilotDrawer.tsx` до 487 строк. Все 27 тест-сьютов и 215 тестов Vitest — 100% PASS.
+  6. Сняты и лично проинспектированы через `read_file` 4-state скриншоты в `docs/proofs/copilot/`:
+     - ☀️ PC Light Studio: `01_copilot_studio_pc_light_1440x900.png` (59.3 KB)
+     - 🌙 PC Dark Studio: `02_copilot_studio_pc_dark_1440x900.png` (48.4 KB)
+     - 📱 Mobile Light Studio: `03_copilot_studio_mobile_light_390x844.png` (51.1 KB)
+     - 📱 Mobile Dark Studio: `04_copilot_studio_mobile_dark_390x844.png` (43.6 KB)
+     - ☀️ PC Light Dropzone Settings: `10_copilot_settings_dropzone_pc_light_1440x900.png` (75.6 KB)
+     - 🌙 PC Dark Tool Logs View: `11_copilot_actions_tool_logs_pc_dark_1440x900.png` (42.4 KB)
+     - 🌙 PC Dark Thinking CoT: `copilot_thinking_indicator_pc_dark_1440x900.png` (370 KB)
+  7. Машинные гейты `check:encoding` (24 117 файлов), `check:stub-overrides`, `check:fetch-response`, `check:dynamic-imports` — Exit Code 0. Вердикт: **[ПРОВЕРЕНО: ЧИСТО]**.
+
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
 ### [MOB-01] [SEV-1] [ИСПРАВЛЕНО] Каскадное отравление сенсорного минимума
