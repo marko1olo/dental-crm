@@ -63,7 +63,7 @@ export const DentalLabDrawerHeader: React.FC<DentalLabDrawerHeaderProps> = ({
 				<button
 					type="button"
 					onClick={onClose}
-					className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#cbd5e1)] bg-[var(--paper,#ffffff)] text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] hover:border-[var(--teal)] flex items-center justify-center cursor-pointer transition-colors shrink-0 shadow-2xs"
+					className="min-h-[44px] min-w-[44px] rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--muted,#64748b)] dark:text-slate-300 hover:text-[var(--ink,#0f172a)] dark:hover:text-white hover:border-[var(--teal)] flex items-center justify-center cursor-pointer transition-colors shrink-0 shadow-2xs"
 					data-testid="drawer-close-btn"
 					aria-label="Закрыть шторку"
 				>

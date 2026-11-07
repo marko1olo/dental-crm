@@ -228,25 +228,32 @@
 ### [LAB-06] [SEV-2] Визуальный Red Team аудит и эргономика мобильного и десктопного интерфейса ЗТЛ — [ЗАКРЫТО]
 - **Файлы:**
   - [`DentalLabOrderModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabOrderModal.tsx)
+  - [`DentalLabOrderHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/orderModalModules/DentalLabOrderHeader.tsx)
+  - [`DentalLabOrderModalBanners.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/orderModalModules/DentalLabOrderModalBanners.tsx)
+  - [`DentalLabFinancialGateModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/financialGateModules/DentalLabFinancialGateModal.tsx)
+  - [`DentalLabFinancialGateBanner.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/financialGateModules/DentalLabFinancialGateBanner.tsx)
+  - [`DentalLabDrawerHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/drawer/DentalLabDrawerHeader.tsx)
+  - [`DirectDentalLabLauncher.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DirectDentalLabLauncher.tsx)
   - [`DentalLabExpressConfigurator.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/DentalLabExpressConfigurator.tsx)
   - [`KanbanCardHeader.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/kanbanCardModules/KanbanCardHeader.tsx)
   - [`KanbanCardBody.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/kanbanCardModules/KanbanCardBody.tsx)
-  - [`FilterBarSegmentedChips.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/filterBarModules/FilterBarSegmentedChips.tsx)
-  - [`FilterBarSearchInput.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/filterBarModules/FilterBarSearchInput.tsx)
-  - [`dentalLabFilterBar.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/lab/styles/dentalLabFilterBar.css)
 - **Суть замечаний Red Team Инквизитора:**
-  1. Утечка дев-жаргона в оранжевом баннере модалки («Мандат 8e: Автономия врача» и кнопка «Клинический оверрайд врача»).
-  2. Обрезание текста на табе («[Расчет и]») и чипе («[PMMA CAD,]»).
-  3. Слипшийся текст в карточке пресетов («Цвет: A2+5 раб. дн.»).
-  4. Слипшийся текст в карточках канбана («ЗТЛ-1000Зубы: 11», «14 500 рубСебест: 7 000 руб», «Срок: 07.11.2026Примерка: —»).
-  5. Нестилизованный греческий символ дельты `Δ` перед счетчиком задержек.
+  1. Слепящее белое пятно в Dark Mode: кнопка закрытия `X` в `DentalLabOrderHeader` и студии ЗТЛ заливалась белым пятном `#ffffff`, скрывая крестик (нарушение WCAG AAA и Мандата 8al).
+  2. Обрезание текста на вкладке: `[Расчет и печать]` срезалось на границе контейнера (`Расчет и`).
+  3. Утечка дев-жаргона в оранжевом баннере и тултипах («Мандат 8e: Автономия врача» и «Клинический оверрайд врача»).
+  4. Слипшийся текст в пресетах («Цвет: A2+5 раб. дн.») и карточках канбана.
 - **Статус ликвидации [ЗАКРЫТО]:**
-  1. Текст баннера финансового шлюза переведен на строгий клинический язык: *«Аванс пациента менее 50%. Врач вправе направить наряд в лабораторию под клиническую ответственность.»*, кнопка переименована в *«Направить без аванса»*.
-  2. Табы и чипы защищены от клиппинга: таб *«Расчет и печать»* отображается полностью; чип *«PMMA CAD/CAM»* виден целиком; на мобильных 390px внедрены лаконичные подписи и скроллируемая полоса.
-  3. В карточках пресетов добавлен аккуратный разделитель *«Цвет: A2 • +5 раб. дн.»*.
-  4. В заголовке и теле карточки канбана внедрены явные буллит-разделители и flexbox: *«ЗТЛ-1000 • Зубы: 11»*, *«14 500 руб. • Себест: 7 000 руб.»*, *«Срок: 07.11.2026 • Примерка: —»*.
-  5. Дельта заменена на аккуратную векторную иконку Lucide `AlertCircle`.
-  6. Все 8 эталонных скриншотов (PC и Mobile Light/Dark для хаба и модалки наряда) обновлены в `docs/proofs/lab/` и лично проверены через `read_file`.
+  1. В `DentalLabOrderHeader.tsx`, `DentalLabStudioModal.tsx` и `DentalLabDrawerHeader.tsx` применены строгие тёмные токены `bg-transparent hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white`. Белое пятно в тёмной теме ликвидировано на 100%.
+  2. Вкладка переименована в лаконичный и ёмкий заголовок `[Печать и сметы]` с гарантированным `whitespace-nowrap`, исключающим клиппинг символов.
+  3. Текст баннера и модалки переведен на строгий клинический язык: *«Аванс пациента менее 50%. Врач вправе направить наряд в лабораторию под клиническую ответственность.»*, кнопка — *«Направить без аванса»*, из тултипов и логов вычищен дев-жаргон. Primary CTA [Отправить наряд в лабораторию] всегда разблокирован в 1 клик.
+  4. В карточках пресетов и канбана внедрены явные буллит-разделители ` · ` («Цвет: A2 · +5 раб. дн.»).
+  5. Маршрутизатор `DirectDentalLabLauncher.tsx` расширен для мгновенного монтирования `DentalLabOrderModal` по глубокой ссылке `?standalone=lab_order` или `#lab-order` в живой DOM без моков.
+  6. 4-State Visual Proofs зафиксированы в `docs/proofs/lab_ssot/` и `docs/proofs/lab/` и лично проверены через `read_file`:
+     * ☀️ PC Light: [`docs/proofs/lab_ssot/01_lab_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab_ssot/01_lab_pc_light_1440x900.png) (93.5 KB)
+     * 🌙 PC Dark: [`docs/proofs/lab_ssot/02_lab_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab_ssot/02_lab_pc_dark_1440x900.png) (92.2 KB)
+     * 📱 Mobile Light: [`docs/proofs/lab_ssot/03_lab_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab_ssot/03_lab_mobile_light_390x844.png) (132.0 KB)
+     * 🌙 Mobile Dark: [`docs/proofs/lab_ssot/04_lab_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/lab_ssot/04_lab_mobile_dark_390x844.png) (131.6 KB)
+  7. Все 73 тестовых сьюта ЗТЛ (254 теста) проходят со 100% успехом (Exit Code 0), `check:encoding` — 24 118 файлов чисто.
 
 ### [LAB-07] [SEV-1] Консолидация модалок ЗТЛ в единый канонический SSOT DentalLabStudioModal.tsx и Apple HIG 4-State Visual Proof — [ЗАКРЫТО]
 - **Файлы:**

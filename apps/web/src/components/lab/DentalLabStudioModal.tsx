@@ -235,7 +235,7 @@ export const DentalLabStudioModal: React.FC<DentalLabStudioModalProps> = ({
 							</div>
 						</div>
 						<button type="button" data-testid="lab-modal-close-button" onClick={handleCloseModal}
-							className="w-8 h-8 rounded-full border border-[var(--line)] bg-[var(--paper)] hover:bg-[var(--paper-soft)] text-[var(--ink)] flex items-center justify-center font-bold text-sm cursor-pointer shrink-0 ml-2" title="Закрыть (Esc)">&#215;</button>
+							className="w-8 h-8 rounded-full border border-[var(--line)] bg-transparent hover:bg-[var(--paper-soft)] text-slate-400 hover:text-slate-700 dark:hover:text-white dark:hover:bg-slate-800 flex items-center justify-center font-bold text-sm cursor-pointer shrink-0 ml-2" title="Закрыть (Esc)">&#215;</button>
 					</div>
 					<nav className="w-full sm:w-auto flex items-center gap-1 bg-[var(--paper-soft)] p-1 rounded-xl border border-[var(--line)] shrink-0" aria-label="Вкладки студии">
 						<button type="button" data-testid="tab-new-order" onClick={() => setActiveMainTab("new_order")}

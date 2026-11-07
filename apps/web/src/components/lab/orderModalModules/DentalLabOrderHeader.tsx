@@ -69,7 +69,7 @@ export function DentalLabOrderHeader({
 							onClick={onApplyDefaults}
 							data-testid="lab-order-apply-defaults-btn"
 							className="max-sm:!hidden hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 hover:bg-[var(--paper-soft,#f1f5f9)] dark:hover:bg-slate-700 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs shadow-2xs transition cursor-pointer"
-							title="Заполнить физиологическую норму (Мандат 8e: 1 клик)"
+							title="Заполнить физиологическую норму в 1 клик"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-[#0d9488]" />
 							<span>Норма в 1 клик</span>
@@ -89,7 +89,7 @@ export function DentalLabOrderHeader({
 					<button
 						type="button"
 						onClick={onClose}
-						className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-full flex items-center justify-center text-[var(--muted,#64748b)] hover:text-[var(--ink,#0f172a)] dark:hover:text-slate-100 hover:bg-[var(--line,#e2e8f0)] dark:hover:bg-slate-800 cursor-pointer transition-colors"
+						className="w-11 h-11 min-w-[44px] min-h-[44px] sm:w-9 sm:h-9 sm:min-w-[36px] sm:min-h-[36px] rounded-full flex items-center justify-center bg-transparent hover:bg-slate-200 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
 						aria-label="Закрыть"
 						data-testid="lab-order-modal-close-btn"
 					>
@@ -132,7 +132,7 @@ export function DentalLabOrderHeader({
 							type="button"
 							onClick={onApplyDefaults}
 							className="inline-flex sm:hidden items-center gap-1 px-3 py-1.5 min-h-[44px] rounded-lg border border-[var(--line,#cbd5e1)] dark:border-slate-700 bg-[var(--paper,#ffffff)] dark:bg-slate-800 text-[var(--ink,#0f172a)] dark:text-slate-100 font-bold text-xs shadow-2xs transition cursor-pointer"
-							title="Заполнить физиологическую норму (Мандат 8e: 1 клик)"
+							title="Заполнить физиологическую норму в 1 клик"
 						>
 							<Sparkles className="w-3.5 h-3.5 text-[#0d9488]" />
 							<span>Норма</span>

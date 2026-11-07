@@ -254,7 +254,7 @@ export function DentalLabOrderModal(props: ExtendedDentalLabOrderModalProps): Re
 						}`}
 					>
 						<FileText className="w-4 h-4 shrink-0" />
-						<span><span className="hidden sm:inline">Расчет и печать</span><span className="sm:hidden">Печать</span></span>
+						<span><span className="hidden sm:inline">Печать и сметы</span><span className="sm:hidden">Печать</span></span>
 					</button>
 				</nav>
 

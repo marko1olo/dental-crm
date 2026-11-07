@@ -8,6 +8,7 @@
 
 import React, { useState, useEffect, useCallback } from "react";
 import { DentalLabStudioModal } from "./DentalLabStudioModal";
+import { DentalLabOrderModal } from "./DentalLabOrderModal";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { useWorkspaceProfile } from "../../hooks/useWorkspaceProfile";
 
@@ -65,13 +66,14 @@ export const DirectDentalLabLauncher: React.FC = () => {
 	}, []);
 
 	if (!isActive || (!hasDentalLab && !isDemoShowcaseMode())) return null;
+	const isOrderModal = typeof window !== "undefined" && (window.location.search.includes("standalone=lab_order") || (window.location.hash || "").includes("lab-order"));
 	return (
 		<main data-testid="direct-dental-lab-launcher-root" className="dental-lab-studio-root min-h-screen flex flex-col items-center justify-center p-2 sm:p-4 relative">
-			<DentalLabStudioModal
-				isOpen={isOpen}
-				onClose={handleClose}
-				initialToothFdi={initialToothFdi}
-			/>
+			{isOrderModal ? (
+				<DentalLabOrderModal isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi} patientName="Ковалев Дмитрий Сергеевич" doctorName="Д-р Смирнова Е. В. (Ортопед)" stageNumber={2} stageTitle="Ортопедический этап" />
+			) : (
+				<DentalLabStudioModal isOpen={isOpen} onClose={handleClose} initialToothFdi={initialToothFdi} />
+			)}
 		</main>
 	);
 };
