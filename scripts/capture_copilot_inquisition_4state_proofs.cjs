@@ -2,7 +2,7 @@ const { chromium } = require("playwright");
 const fs = require("node:fs");
 const path = require("node:path");
 
-const CONV_ID = "87cc908f-6584-4a32-abd3-23efbd135d33";
+const CONV_ID = process.env.CONV_ID || "cda5f213-5e9a-4920-aa66-b96359358673";
 const OUT_DOCS = path.resolve(__dirname, "../docs/proofs/copilot");
 const OUT_BRAIN = path.resolve(`C:/Users/Admin/.gemini/antigravity/brain/${CONV_ID}`);
 
@@ -73,14 +73,16 @@ async function run() {
 
 		// 2. Настройки PC Dark & Light
 		await saveProof(pcPage, "copilot_settings_pc_dark_1440x900.png");
+		await saveProof(pcPage, "02_copilot_settings_pc_dark_1440x900.png");
 
 		await setTheme(pcPage, "light");
 		await saveProof(pcPage, "copilot_settings_pc_light_1440x900.png");
+		await saveProof(pcPage, "01_copilot_settings_pc_light_1440x900.png");
 
 		// Переключаемся на вкладку "Уровень доверия"
 		const trustTabBtn = pcPage.locator('button:has-text("Уровень доверия")').first();
 		if (await trustTabBtn.isVisible()) {
-			await trustTabBtn.click();
+			await trustTabBtn.click({ force: true });
 			await pcPage.waitForTimeout(400);
 			await saveProof(pcPage, "copilot_settings_trust_tab_pc_light_1440x900.png");
 		}
@@ -88,7 +90,7 @@ async function run() {
 		// Переключаемся на вкладку "Профиль врача"
 		const personaTabBtn = pcPage.locator('button:has-text("Профиль врача")').first();
 		if (await personaTabBtn.isVisible()) {
-			await personaTabBtn.click();
+			await personaTabBtn.click({ force: true });
 			await pcPage.waitForTimeout(400);
 			await saveProof(pcPage, "copilot_settings_persona_tab_pc_light_1440x900.png");
 		}
@@ -139,9 +141,11 @@ async function run() {
 			await mobPage.waitForTimeout(800);
 			await setTheme(mobPage, "light");
 			await saveProof(mobPage, "copilot_settings_mobile_light_390x844.png");
+			await saveProof(mobPage, "03_copilot_mobile_light_390x844.png");
 
 			await setTheme(mobPage, "dark");
 			await saveProof(mobPage, "copilot_settings_mobile_dark_390x844.png");
+			await saveProof(mobPage, "04_copilot_mobile_dark_390x844.png");
 		}
 
 		await mobileContext.close();

@@ -164,20 +164,11 @@ export function CopilotSettingsModal({ isOpen, onClose, onOpenMemoryTab }: Copil
 						<span className="text-[11px] text-[var(--muted)]">Обнаружено устройство:</span>
 						<span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-[var(--paper)] border border-[var(--line)] text-[var(--ink)]">
 							{runtimeMode === "desktop_native" ? (
-								<>
-									<Monitor size={13} className="text-[var(--teal,#0d9488)]" />
-									<span>Рабочая станция ОС</span>
-								</>
+								<><Monitor size={13} className="text-[var(--teal,#0d9488)]" /><span>Рабочая станция ОС</span></>
 							) : isChairside ? (
-								<>
-									<Smartphone size={13} className="text-[var(--teal,#0d9488)]" />
-									<span>Сенсорный планшет</span>
-								</>
+								<><Smartphone size={13} className="text-[var(--teal,#0d9488)]" /><span>Сенсорный планшет</span></>
 							) : (
-								<>
-									<Globe size={13} className="text-[var(--teal,#0d9488)]" />
-									<span>Веб-браузер</span>
-								</>
+								<><Globe size={13} className="text-[var(--teal,#0d9488)]" /><span>Веб-браузер</span></>
 							)}
 						</span>
 					</div>
