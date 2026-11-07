@@ -17,12 +17,12 @@ export function CryptoProSignerModal({ state, onPrintDraft }: CryptoProSignerMod
 
 	return createPortal(
 		<div
-			className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity"
+			className="crypto-signer-modal-overlay fixed inset-0 z-[10005] flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/60 backdrop-blur-sm transition-opacity"
 			role="dialog"
 			aria-modal="true"
 			aria-labelledby="crypto-signer-modal-title"
 		>
-			<div className="bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl w-full max-w-md p-5 sm:p-6 shadow-2xl relative max-h-[92vh] sm:max-h-none overflow-y-auto overflow-x-hidden text-[var(--ink)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
+			<div className="bg-[var(--paper)] border-t sm:border border-[var(--line)] rounded-t-[24px] sm:rounded-2xl w-full max-w-md p-5 sm:p-6 pb-[max(24px,env(safe-area-inset-bottom,24px))] sm:pb-6 shadow-2xl relative max-h-[92vh] sm:max-h-none overflow-y-auto overflow-x-hidden text-[var(--ink)] flex flex-col animate-in fade-in slide-in-from-bottom-4 duration-200">
 				{/* Apple HIG: Mobile Drag Handle for Bottom Sheet */}
 				<div className="sm:hidden w-9 h-1 bg-[var(--line)] rounded-full mx-auto mb-3 shrink-0" aria-hidden="true" />
 

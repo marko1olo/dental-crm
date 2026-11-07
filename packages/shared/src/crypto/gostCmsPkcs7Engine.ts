@@ -491,37 +491,24 @@ export function validateGostCmsPkcs7Signature(
 	}
 
 	// 5. Проверка целостности документа по хэшу (Tamper Resistance / Защита от модификации документа)
+	// [CRY-02]: Строгая сверка хэша документа. Исключен обход проверки через любой непустой 32-байтный messageDigest.
+	// embeddedDigest обязан строго совпадать с вычисленным хэшем (ГОСТ Р 34.11-2012 / SHA-256).
 	if (expectedDocumentHashHex) {
 		const cleanExpected = expectedDocumentHashHex.replace(/[^a-fA-F0-9]/g, "");
 		if (cleanExpected.length >= 32) {
 			const expectedBytes = Buffer.from(cleanExpected, "hex");
-			if (isDeterministicEnvelope) {
-				if (!buf.includes(expectedBytes)) {
-					return {
-						valid: false,
-						errorCode: "TamperDetected",
-						tamperDetected: true,
-						error:
-							"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
-					};
-				}
-			} else {
-				// В аппаратном контейнере КриптоПро CSP (HARDWARE_CADES_CSP) атрибут messageDigest
-				// вычисляется по ГОСТ Р 34.11-2012 (Стрибог-256), тогда как серверный снимок может быть SHA-256.
-				// Если контейнер не содержит ни expectedBytes, ни валидного непустого 32-байтного атрибута messageDigest — отклоняем.
-				const hasValidHardwareDigest =
-					embeddedDigest !== null &&
-					embeddedDigest.length === 32 &&
-					!embeddedDigest.equals(Buffer.alloc(32, 0x00));
-				if (!buf.includes(expectedBytes) && !hasValidHardwareDigest) {
-					return {
-						valid: false,
-						errorCode: "TamperDetected",
-						tamperDetected: true,
-						error:
-							"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
-					};
-				}
+			const digestMatches =
+				(embeddedDigest !== null && embeddedDigest.equals(expectedBytes)) ||
+				buf.includes(expectedBytes);
+
+			if (!digestMatches) {
+				return {
+					valid: false,
+					errorCode: "TamperDetected",
+					tamperDetected: true,
+					error:
+						"Хэш документа не совпадает с хэшем в электронной подписи (целостность нарушена: обнаружена модификация документа).",
+				};
 			}
 		}
 	}

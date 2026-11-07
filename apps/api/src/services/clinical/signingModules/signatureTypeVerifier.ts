@@ -7,6 +7,22 @@ export const SIMPLE_PIN_PREFIX = "PIN:";
 export const SIMPLE_PIN_EP_MARK = "SIMPLE_PIN_EP";
 export const SHIFT_SESSION_SIGNATURE = "SHIFT_SESSION";
 
+/**
+ * Проверка, является ли подпись настоящей сертифицированной УКЭП (PKCS#7 / ГОСТ),
+ * а не внутренней сессионной отметкой или ПИН-кодом (CRY-01).
+ */
+export function isCertifiedUkepSignature(stored: string | null | undefined): boolean {
+	if (typeof stored !== "string" || stored.trim().length === 0) return false;
+	if (
+		stored.startsWith(SIMPLE_PIN_EP_MARK) ||
+		stored.startsWith(SIMPLE_PIN_PREFIX) ||
+		stored === SHIFT_SESSION_SIGNATURE
+	) {
+		return false;
+	}
+	return true;
+}
+
 export const DIARY_PIN_USER_REQUIRED_MESSAGE =
 	"Простую подпись по ПИН-коду может поставить только сотрудник, вошедший в смену. Войдите в смену заново и повторите подписание.";
 export const DIARY_PIN_NOT_SET_MESSAGE =

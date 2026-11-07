@@ -1,8 +1,9 @@
-import { and, eq, isNull, or } from "drizzle-orm";
+import { and, eq, isNull, like, or } from "drizzle-orm";
 import { db } from "../../../db/client.js";
 import { visitDiaries } from "../../../db/schema.js";
 import {
 	computeDiaryHash,
+	isCertifiedUkepSignature,
 	resolveSignatureForStorage,
 } from "../../../services/clinical/DiarySigningCeremonyService.js";
 
@@ -36,7 +37,7 @@ export async function executeReattachCeremony(params: {
 		if (!row.isLocked) return { kind: "not_locked" as const };
 
 		const lockedAtIso = lockedAtIsoFrom(row.lockedAt);
-		const hasPkcs7 = typeof row.cryptoSignaturePkcs7 === "string" && row.cryptoSignaturePkcs7.length > 0;
+		const hasPkcs7 = isCertifiedUkepSignature(row.cryptoSignaturePkcs7);
 		if (hasPkcs7) {
 			return { kind: "already" as const, hash: row.diaryHash, lockedAt: lockedAtIso, hasPkcs7: true };
 		}
@@ -84,7 +85,13 @@ export async function executeReattachCeremony(params: {
 					eq(visitDiaries.id, id),
 					eq(visitDiaries.organizationId, orgId),
 					eq(visitDiaries.isLocked, true),
-					or(isNull(visitDiaries.cryptoSignaturePkcs7), eq(visitDiaries.cryptoSignaturePkcs7, "")),
+					or(
+						isNull(visitDiaries.cryptoSignaturePkcs7),
+						eq(visitDiaries.cryptoSignaturePkcs7, ""),
+						like(visitDiaries.cryptoSignaturePkcs7, "SIMPLE_PIN_EP%"),
+						like(visitDiaries.cryptoSignaturePkcs7, "PIN:%"),
+						eq(visitDiaries.cryptoSignaturePkcs7, "SHIFT_SESSION"),
+					),
 				),
 			)
 			.returning({ id: visitDiaries.id });
@@ -99,7 +106,7 @@ export async function executeReattachCeremony(params: {
 				.from(visitDiaries)
 				.where(and(eq(visitDiaries.id, id), eq(visitDiaries.organizationId, orgId)))
 				.limit(1);
-			const againHas = typeof again?.cryptoSignaturePkcs7 === "string" && again.cryptoSignaturePkcs7.length > 0;
+			const againHas = isCertifiedUkepSignature(again?.cryptoSignaturePkcs7);
 			return {
 				kind: "already" as const,
 				hash: again?.diaryHash ?? row.diaryHash,
@@ -112,7 +119,7 @@ export async function executeReattachCeremony(params: {
 			kind: "ok" as const,
 			hash: reattachHash,
 			lockedAt: lockedAtIso,
-			attached: Boolean(resolvedReattach.stored),
+			attached: isCertifiedUkepSignature(resolvedReattach.stored),
 		};
 	});
 }

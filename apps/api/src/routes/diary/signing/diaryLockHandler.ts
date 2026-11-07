@@ -4,6 +4,7 @@ import { requireClinicalMutationAccess, resolveOrganizationId } from "../../../a
 import { db } from "../../../db/client.js";
 import { visitDiaries } from "../../../db/schema.js";
 import {
+	isCertifiedUkepSignature,
 	resolveSignatureForStorage,
 	runDiarySigningCeremony,
 } from "../../../services/clinical/DiarySigningCeremonyService.js";
@@ -57,7 +58,7 @@ export async function handleDiaryLockPost(req: FastifyRequest, reply: FastifyRep
 	if (existing.isLocked) {
 		const incomingPkcs7 = typeof pkcs7Signature === "string" && pkcs7Signature.length > 0 ? pkcs7Signature : null;
 		if (!incomingPkcs7) {
-			const hasPkcs7 = typeof existing.cryptoSignaturePkcs7 === "string" && existing.cryptoSignaturePkcs7.length > 0;
+			const hasPkcs7 = isCertifiedUkepSignature(existing.cryptoSignaturePkcs7);
 			return reply.code(409).send({
 				error: "AlreadyLocked", hash: existing.diaryHash, lockedAt: lockedAtIsoFrom(existing.lockedAt),
 				cryptoSignatureAttached: hasPkcs7, message: DIARY_ALREADY_LOCKED_CANONICAL_MESSAGE,
@@ -91,7 +92,7 @@ export async function handleDiaryLockPost(req: FastifyRequest, reply: FastifyRep
 		);
 		return reply.send({
 			success: true, hash: signing.hash, lockedAt: signing.lockedAt.toISOString(),
-			cryptoSignatureAttached: Boolean(resolvedLock.stored && String(resolvedLock.stored).length > 0),
+			cryptoSignatureAttached: isCertifiedUkepSignature(resolvedLock.stored),
 		});
 	} catch (err) {
 		await handleDiarySigningError(err, id, orgId, reply);

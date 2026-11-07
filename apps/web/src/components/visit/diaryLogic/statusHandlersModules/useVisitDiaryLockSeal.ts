@@ -66,14 +66,19 @@ export function useVisitDiaryLockSeal({
 				setIsLocked(true);
 				setLockedAt(typeof json?.lockedAt === "string" && json.lockedAt ? json.lockedAt : new Date().toISOString());
 				setDiaryHash(typeof json?.hash === "string" ? json.hash : null);
-				setHasCryptoSignature(json?.cryptoSignatureAttached === true || Boolean(typeof pkcs7Signature === "string" && pkcs7Signature.length > 0));
+				setHasCryptoSignature(json?.cryptoSignatureAttached === true);
 				if (!json?.reattached && activeDoctor) {
 					const { name, specialty } = resolveDoctorNameAndSpecialty(activeDoctor);
 					if (name) setDiaryDoctorFullName(name);
 					if (specialty) setDiaryDoctorSpecialty(specialty);
 				}
 				try { safeLocalStorageRemoveItem(localDiaryStorageKey); } catch {}
-				showToast(json?.reattached ? "Оттиск УКЭП прикреплён к отредактированному дневнику." : "Дневник успешно подписан (ЭЦП врача).", "success");
+				const toastMsg = json?.reattached
+					? "Оттиск УКЭП прикреплён к дневнику."
+					: (json?.cryptoSignatureAttached
+						? "Дневник успешно подписан УКЭП (ГОСТ)."
+						: "Дневник сохранён и заверен врачом.");
+				showToast(toastMsg, "success");
 			} else if (res.status === 409) {
 				setIsLocked(true);
 				try { safeLocalStorageRemoveItem(localDiaryStorageKey); } catch {}

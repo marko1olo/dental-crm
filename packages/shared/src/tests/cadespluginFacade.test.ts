@@ -12,6 +12,7 @@ import {
 	extractGostCmsMetadata,
 	GOST_CRYPTO_OIDS,
 	injectVisualSignatureStampIntoHtml,
+	isDeterministicGostTestContainer,
 	renderDigitalSignatureStampHtml,
 	validateCertificateStatus,
 	validateDoctorSignatureStatutoryMode,
@@ -307,6 +308,50 @@ describe("cadesplugin Architecture Facade & GOST R 34.10-2012 CMS PKCS#7", () =>
 		assert.strictEqual(tamperedCheck.tamperDetected, true);
 		assert.ok(
 			tamperedCheck.error?.includes(
+				"Хэш документа не совпадает с хэшем в электронной подписи",
+			),
+		);
+	});
+
+	it("strictly eliminates [CRY-02] bypass: hardware container with arbitrary messageDigest is rejected with TamperDetected", () => {
+		const doc1Hash = "1111111111111111111111111111111111111111111111111111111111111111";
+		const doc2Hash = "2222222222222222222222222222222222222222222222222222222222222222";
+
+		const sig = createDemonstrationGostCmsSignature({
+			documentId: "doc-cry02-test",
+			documentKind: "test",
+			documentHashHex: doc1Hash,
+			doctorFullName: "Тестов Тест Тестович",
+		});
+		const rawBuf = Buffer.from(sig.signatureBase64, "base64");
+		// Стираем маркеры детерминированного тестового конверта, симулируя аппаратный контейнер HARDWARE_CADES_CSP
+		const hardwareSimulatedBuf = Buffer.from(rawBuf);
+		let pubkeyIdx = hardwareSimulatedBuf.indexOf(Buffer.alloc(32, 0xaa));
+		while (pubkeyIdx !== -1) {
+			hardwareSimulatedBuf.fill(0xcc, pubkeyIdx, pubkeyIdx + 32);
+			pubkeyIdx = hardwareSimulatedBuf.indexOf(Buffer.alloc(32, 0xaa));
+		}
+		let certsigIdx = hardwareSimulatedBuf.indexOf(Buffer.alloc(32, 0xbb));
+		while (certsigIdx !== -1) {
+			hardwareSimulatedBuf.fill(0xdd, certsigIdx, certsigIdx + 32);
+			certsigIdx = hardwareSimulatedBuf.indexOf(Buffer.alloc(32, 0xbb));
+		}
+
+		// Проверяем: контейнер теперь определяется как аппаратный HARDWARE_CADES_CSP
+		assert.strictEqual(isDeterministicGostTestContainer(hardwareSimulatedBuf), false);
+
+		// Валидация с оригинальным хэшем doc1Hash — проходит
+		const validRes = validateGostCmsPkcs7Signature(hardwareSimulatedBuf.toString("base64"), doc1Hash);
+		assert.strictEqual(validRes.valid, true);
+		assert.strictEqual(validRes.details?.containerOrigin, "HARDWARE_CADES_CSP");
+
+		// Валидация с чужим хэшем doc2Hash — ОБЯЗАНА ОТКЛОНЯТЬСЯ с TamperDetected (дефект [CRY-02] ликвидирован!)
+		const tamperedRes = validateGostCmsPkcs7Signature(hardwareSimulatedBuf.toString("base64"), doc2Hash);
+		assert.strictEqual(tamperedRes.valid, false);
+		assert.strictEqual(tamperedRes.errorCode, "TamperDetected");
+		assert.strictEqual(tamperedRes.tamperDetected, true);
+		assert.ok(
+			tamperedRes.error?.includes(
 				"Хэш документа не совпадает с хэшем в электронной подписи",
 			),
 		);

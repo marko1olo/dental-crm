@@ -21,22 +21,6 @@ export function CryptoProTypeSelector({
 				type="button"
 				disabled={lockInProgress}
 				onClick={() => {
-					setSignatureType("pin");
-					setFailureText(null);
-					setPinCode("");
-				}}
-				className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer min-h-[40px] ${
-					signatureType === "pin"
-						? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
-						: "text-[var(--muted)] hover:text-[var(--ink)]"
-				}`}
-			>
-				Подпись врача
-			</button>
-			<button
-				type="button"
-				disabled={lockInProgress}
-				onClick={() => {
 					setSignatureType("crypto");
 					setFailureText(null);
 					setPinCode("");
@@ -48,7 +32,23 @@ export function CryptoProTypeSelector({
 						: "text-[var(--muted)] hover:text-[var(--ink)]"
 				}`}
 			>
-				КриптоПро / Рутокен
+				КриптоПро / Рутокен (УКЭП)
+			</button>
+			<button
+				type="button"
+				disabled={lockInProgress}
+				onClick={() => {
+					setSignatureType("pin");
+					setFailureText(null);
+					setPinCode("");
+				}}
+				className={`flex-1 py-2 text-sm font-semibold rounded-lg transition-colors disabled:opacity-60 cursor-pointer min-h-[40px] ${
+					signatureType === "pin"
+						? "bg-[var(--paper)] text-[var(--ink)] border border-[var(--line)] shadow-xs"
+						: "text-[var(--muted)] hover:text-[var(--ink)]"
+				}`}
+			>
+				Внутренняя отметка (черновик)
 			</button>
 		</div>
 	);

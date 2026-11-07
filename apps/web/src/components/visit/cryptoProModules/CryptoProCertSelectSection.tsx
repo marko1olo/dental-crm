@@ -1,3 +1,4 @@
+import { AlertCircle, ExternalLink } from "lucide-react";
 import type { CertificateInfo } from "../../../lib/cryptopro";
 import { CRYPTO_SIGNING_UNAVAILABLE_TEXT } from "./cryptoProSigningTypes";
 
@@ -61,9 +62,29 @@ export function CryptoProCertSelectSection({
 					)}
 				</select>
 				{!isLoadingCerts && certificatesLoaded && certificates.length === 0 && (
-					<p className="mt-2 text-xs text-amber-800 dark:text-amber-300">
-						Ни одного сертификата не видно. Проверьте: носитель Рутокен вставлен, КриптоПро установлен, расширение браузера включено. Затем нажмите «Обновить список».
-					</p>
+					<div className="mt-3 p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 text-xs leading-relaxed space-y-2">
+						<div className="font-semibold text-amber-900 dark:text-amber-200 flex items-center gap-1.5">
+							<AlertCircle className="w-4 h-4 shrink-0 text-amber-600 dark:text-amber-400" />
+							<span>КриптоПро CSP плагин не обнаружен или сертификаты не найдены</span>
+						</div>
+						<p className="text-amber-800 dark:text-amber-300">
+							Для сертифицированного подписания УКЭП по ГОСТ Р 34.10-2012 установите плагин и вставьте носитель Рутокен.
+						</p>
+						<div className="pt-0.5">
+							<a
+								href="https://cryptopro.ru/products/cades/plugin"
+								target="_blank"
+								rel="noreferrer noopener"
+								className="inline-flex items-center gap-1 text-[var(--teal,var(--brand-primary))] font-semibold hover:underline"
+							>
+								<span>Установить плагин КриптоПро ЭЦП Browser plug-in</span>
+								<ExternalLink className="w-3.5 h-3.5" />
+							</a>
+						</div>
+						<p className="text-[var(--muted)] text-[11px] pt-1 border-t border-amber-500/20">
+							По Мандату 8e вы можете сохранить приём как подписанный врачом черновик или распечатать его для личной подписи на бумаге. Кнопки сохранения и печати никогда не блокируются.
+						</p>
+					</div>
 				)}
 				<button
 					type="button"

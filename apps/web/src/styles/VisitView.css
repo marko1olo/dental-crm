@@ -53,3 +53,8 @@
 	._ccm-tab-btn { min-height: 44px; }
 	._ccm-action-item { min-height: 48px; }
 }
+
+/* CryptoPro / UKEP Digital Signature Modal Overlay (Apple HIG Bottom Sheet & Desktop Modal) */
+.crypto-signer-modal-overlay {
+	z-index: 10050 !important;
+}

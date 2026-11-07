@@ -284,7 +284,10 @@ function resolveDefaultOrPrefilledDiary(prefill: Partial<DiaryState>): Partial<D
 				setDiaryHash(d.diaryHash ?? null);
 				setHasCryptoSignature(
 					typeof d.cryptoSignaturePkcs7 === "string" &&
-						d.cryptoSignaturePkcs7.length > 0,
+						d.cryptoSignaturePkcs7.length > 0 &&
+						!d.cryptoSignaturePkcs7.startsWith("SIMPLE_PIN_EP") &&
+						!d.cryptoSignaturePkcs7.startsWith("PIN:") &&
+						d.cryptoSignaturePkcs7 !== "SHIFT_SESSION",
 				);
 				setDiaryDoctorFullName(
 					typeof d.doctorFullName === "string" && d.doctorFullName.trim()

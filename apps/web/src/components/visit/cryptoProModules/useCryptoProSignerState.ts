@@ -11,7 +11,9 @@ export function useCryptoProSignerState(props: CryptoProSignerProps) {
 	const [isLoadingCerts, setIsLoadingCerts] = useState(false);
 	const [showPinDialog, setShowPinDialog] = useState(false);
 	const [pinCode, setPinCode] = useState("");
-	const [signatureType, setSignatureType] = useState<"crypto" | "pin">("pin");
+	// [CRY-01]: Дефолтом является сертифицированная подпись УКЭП ГОСТ Р 34.10-2012 (КриптоПро / Рутокен).
+	// Подмена УКЭП на ПИН-код по умолчанию устранена (ч. 1 ст. 14 323-ФЗ, Приказ Минздрава 947н).
+	const [signatureType, setSignatureType] = useState<"crypto" | "pin">("crypto");
 	const [isSigning, setIsSigning] = useState(false);
 	const [failureText, setFailureText] = useState<string | null>(null);
 	const [awaitingLockConfirmation, setAwaitingLockConfirmation] = useState(false);
@@ -54,6 +56,13 @@ export function useCryptoProSignerState(props: CryptoProSignerProps) {
 		setAwaitingLockConfirmation, setCertificates,
 		setCertificatesLoaded, setSelectedCert, setIsLoadingCerts,
 	});
+
+	// Автоматическая загрузка сертификатов при открытии диалога УКЭП
+	useEffect(() => {
+		if (showPinDialog && !certificatesLoaded && !isLoadingCerts && signatureType === "crypto") {
+			loadCertificates();
+		}
+	}, [showPinDialog, certificatesLoaded, isLoadingCerts, signatureType, loadCertificates]);
 
 	return {
 		certificates, certificatesLoaded, selectedCert, setSelectedCert,

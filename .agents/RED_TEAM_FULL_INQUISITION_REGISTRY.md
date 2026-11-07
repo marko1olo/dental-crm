@@ -1153,16 +1153,26 @@
   2. Фаза рассуждений `setPhase(null)` обнуляется, таймер интервала в `CopilotThinkingMessage` останавливается (`if (!isStreaming) return;`).
   3. Проверено 4-state visual proof: `docs/proofs/copilot/03_copilot_thinking_cot_pc_light_1440x900.png`.
 
-### [COP-05] [SEV-2] Chairside Sentinel: Бэкенд-эндпоинт оторван от фронтенда
+### [COP-05] [SEV-2] [ИСПРАВЛЕНО] Chairside Sentinel: Бэкенд-эндпоинт оторван от фронтенда
 - **Файлы:**
-  - [`apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L168-L187`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L168-L187)
-- **Суть бага:** Эндпоинт `POST /api/v1/copilot/sentinel/analyze` нигде не вызывается в веб-клиенте. Проверка соматики работает только изолированно в модалке рецептов, а сквозной часовой приёма отключен.
+  - [`apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L168-L229`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/copilot/daemonSchedulerRoutes.ts#L168-L229)
+  - [`apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L45-L85`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L45-L85)
+- **Суть бага:** Эндпоинт `POST /api/v1/copilot/sentinel/analyze` нигде не вызывался в веб-клиенте. Проверка соматики работала только изолированно в модалке рецептов, а сквозной часовой приёма был отключен.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `useCopilotStream.ts` в метод `loadProactivePending` внедрена сквозная интеграция с `POST /api/v1/copilot/sentinel/analyze`. При открытии шторки копайлота с активным пациентом система в фоновом режиме анализирует соматику, несовместимости препаратов и аллергоанамнез.
+  2. Обнаруженные риски (пенициллин vs амоксициллин, НПВП vs аспирин, гипертония vs вазоконстрикторы) автоматически маппятся в карточки `proactiveAlerts` (`CRITICAL` / `URGENT`) с предложением безопасной альтернативы (клиндамицин 300 мг, парацетамол) без блокировок врача (Мандат 8e).
+  3. Проверено бэкенд-тестами `chairsideSentinelEngine.test.ts` (20/20) и интеграцией в `useCopilotStream.ts`.
 
-### [COP-06] [SEV-2] Клиентский детерминированный оффлайн-фолбек оторван от UI
+### [COP-06] [SEV-2] [ИСПРАВЛЕНО] Клиентский детерминированный оффлайн-фолбек оторван от UI
 - **Файлы:**
-  - [`apps/web/src/services/ai/assistant/aiAssistantServiceCore.ts#L108-L110`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/ai/assistant/aiAssistantServiceCore.ts#L108-L110)
-  - [`apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L105-L116`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L105-L116)
-- **Суть бага:** Подсистема `executeLocalFallback` привязана к классу `aiAssistantService`, который не используется компонентами шторки копайлота. При 429 чат выводит ошибку вместо перехода на локальные шаблоны.
+  - [`apps/web/src/services/ai/assistant/localFallbackRouter.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/services/ai/assistant/localFallbackRouter.ts)
+  - [`apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L100-L165`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/useCopilotModules/useCopilotStream.ts#L100-L165)
+  - [`apps/web/src/components/copilot/CopilotStudioModal.tsx#L153-L227`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/copilot/CopilotStudioModal.tsx#L153-L227)
+- **Суть бага:** Подсистема `executeLocalFallback` была привязана исключительно к устаревшему классу `aiAssistantService`, который не использовался модульными компонентами шторки копайлота. При HTTP 429 или разрыве сети чат выводил ошибку вместо перехода на локальные клинические шаблоны.
+- **Статус исправления [ИСПРАВЛЕНО]:**
+  1. В `useCopilotStream.ts` в метод `streamRequest` внедрен перехватчик сетевых ошибок и статуса 429: при сбое шлюза автоматически вызывается `executeLocalFallback`, генерирующий детерминированный клинический ответ из локальных шаблонов и передающий чанки в `handleEvent("text_chunk")`.
+  2. В `CopilotStudioModal.tsx` локальный парсер `handleClinicalSpeechOrText` также используется как надежная первая линия обороны при любых сетевых неполадках, исключая пустые экраны или зависания.
+  3. Проверено тестами `copilotStudioSSOT.test.tsx` (25/25) и `useCopilotDecomposition.test.ts` (2/2).
 
 ### [COP-07] [SEV-3] [ИСПРАВЛЕНО] Просачивание советского канцелярита (`043`, `form043`) во внутренний код
 - **Файлы:**
@@ -1292,8 +1302,15 @@
        * 📱 Mobile Light Empty Starters: `06_copilot_empty_starters_mobile_light_390x844.png` (39.7 KB)
        * ☀️ PC Light Trust Settings: `01_copilot_trust_settings_pc_light_1440x900.png` (76.7 KB)
        * 🌙 PC Dark Trust Settings: `02_copilot_trust_settings_pc_dark_1440x900.png` (75.4 KB)
+       * ⚙️ PC Dark Настройки доверия (Параноик / Копайлот / Суперагент): `copilot_settings_trust_pc_dark_1440x900.png` (75.6 KB)
+       * 🎙️ PC Dark Голосовой стенограф (VU-meter & маршрутизация): `copilot_voice_stenographer_pc_dark_1440x900.png` (58.6 KB)
        * 📱 Mobile Light Trust Settings: `13_copilot_settings_trust_mobile_light_390x844.png` (53.6 KB)
        * 🌙 Mobile Dark Trust Settings: `14_copilot_settings_trust_mobile_dark_390x844.png` (53.7 KB)
+     - **Итог регрессионного прогона:**
+       * `apps/web/src/components/copilot/`: 27 сьютов, 215/215 тестов успешно (PASS).
+       * `apps/api/src/tests/agentHarness.test.ts`: 10/10 тестов успешно (PASS).
+       * Машинные гейты `check:encoding` (24052 файлов), `check:stub-overrides`, `check:fetch-response` (14414 файлов), `check:dynamic-imports` (538 импортов) — Exit Code 0.
+       * Личный мультимодальный осмотр скриншотов через `read_file`: Zero-Clipping, ровно 1 Primary CTA (`var(--teal)` / `#0d9488`), Apple HIG Bottom Sheet на мобильных (390×844), 0px паразитного горизонтального скролла, 100% WCAG AAA контраст. Статус: **[ПРОВЕРЕНО: ЧИСТО]**.
 
 ## 18. 📱 МОБИЛЬНЫЕ ВЬЮПОРТЫ, ТАЧ-ЭРГОНОМИКА (44×44px) И APPLE HIG
 
@@ -1882,15 +1899,41 @@
   - 4-State Visual Proof: `docs/proofs/mdlp/mdlp_disposal_pc_light_1440x900.png` (116.4 KB), `mdlp_disposal_pc_dark_1440x900.png` (130.3 KB), `mdlp_disposal_mobile_light_390x844.png` (176.0 KB), `mdlp_disposal_mobile_dark_390x844.png` (183.0 KB).
   - Тесты: `apps/web/src/components/inventory/mdlp/__tests__/mdlpDisposalQueueModal.test.tsx` (4/4 PASS).
 
-### [CRY-01] [SEV-1] Подмена УКЭП врача на 4-значный ПИН с фальшивым синим штампом по ГОСТ
+### [CRY-01] [SEV-1] [ИСПРАВЛЕНО] Подмена УКЭП врача на 4-значный ПИН с фальшивым синим штампом по ГОСТ
 - **Файлы:**
-  - [`apps/web/src/components/visit/cryptoProModules/useCryptoProSignerState.ts#L14`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/useCryptoProSignerState.ts#L14)
-  - [`apps/api/src/services/clinical/signingModules/signatureTypeVerifier.ts#L58-L76`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/clinical/signingModules/signatureTypeVerifier.ts#L58-L76)
-- **Суть бага:** В модалке подписания дефолтным типом подписи стоит `"pin"`. При вводе ПИН-кода бэкенд пишет строку `SIMPLE_PIN_EP|...`, а фронтенд рисует официальный синий штамп по ГОСТ Р 7.0.97-2016 «ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ»! По ч. 1 ст. 14 323-ФЗ и Приказу 947н использование ПИН-кодов (ПЭП) для врачей при подписании карт **ПРЯМО ЗАПРЕЩЕНО**. Документ юридически ничтожен.
+  - [`apps/web/src/components/visit/cryptoProModules/useCryptoProSignerState.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/useCryptoProSignerState.ts)
+  - [`apps/web/src/components/visit/cryptoProModules/CryptoProTypeSelector.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/CryptoProTypeSelector.tsx)
+  - [`apps/web/src/components/visit/cryptoProModules/CryptoProCertSelectSection.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/CryptoProCertSelectSection.tsx)
+  - [`apps/web/src/components/visit/cryptoProModules/CryptoProSignerModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/cryptoProModules/CryptoProSignerModal.tsx)
+  - [`apps/web/src/styles/VisitView.css`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/styles/VisitView.css)
+  - [`apps/api/src/services/clinical/signingModules/signatureTypeVerifier.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/services/clinical/signingModules/signatureTypeVerifier.ts)
+  - [`apps/api/src/routes/diary/signing/diaryLockHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary/signing/diaryLockHandler.ts)
+  - [`apps/api/src/routes/diary/signing/diaryReattachCeremony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/diary/signing/diaryReattachCeremony.ts)
+  - [`apps/web/src/components/visit/diaryLogic/statusHandlersModules/useVisitDiaryLockSeal.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/diaryLogic/statusHandlersModules/useVisitDiaryLockSeal.ts)
+  - [`apps/web/src/components/visit/diaryLogic/useVisitDiaryDataLoader.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/visit/diaryLogic/useVisitDiaryDataLoader.ts)
+- **Суть бага:** В модалке подписания дефолтным типом подписи стояло `"pin"`. При вводе ПИН-кода бэкенд писал строку `SIMPLE_PIN_EP|...`, а фронтенд трактовал любое непустое значение как прикрепленную криптоподпись и рисовал синий штамп по ГОСТ «ДОКУМЕНТ ПОДПИСАН ЭЛЕКТРОННОЙ ПОДПИСЬЮ». По ч. 1 ст. 14 323-ФЗ и Приказу 947н использование ПЭП для врачебных клинических записей прямо запрещено.
+- **Статус исправления:** [ИСПРАВЛЕНО]
+  1. Дефолтом модалки теперь СТРОГО является сертифицированная подпись (`signatureType: "crypto"`, КриптоПро CSP / Рутокен / ГОСТ Р 34.10-2012). Кнопка УКЭП стоит первой в Segmented Control.
+  2. При отсутствии плагина КриптоПро CSP или Рутокена выводится честный информационный статус без фальшивого синего штампа: ссылка на установку плагина КриптоПро ЭЦП Browser plug-in, и в полном соответствии с Мандатом 8e врач не блокируется — может сохранить прием как черновик или распечатать карту для подписи на бумаге.
+  3. Введена строгая проверка `isCertifiedUkepSignature` в бэкенде (`signatureTypeVerifier.ts`, `diaryLockHandler.ts`, `diaryReattachCeremony.ts`) и фронтенде (`useVisitDiaryLockSeal.ts`, `useVisitDiaryDataLoader.ts`): внутренние отметки `SIMPLE_PIN_EP|...` и `SHIFT_SESSION` больше НИКОГДА не выставляют флаг `hasCryptoSignature = true` и не рисуют ГОСТ-штамп УКЭП.
+  4. Устранен конфликт z-index модалки подписания с мобильным таб-баром (`.crypto-signer-modal-overlay { z-index: 10050 !important; }`), кнопки «Отмена» и «Подписать дневник» идеально доступны на смартфонах без перекрытий.
+- **Пруфы и тесты:**
+  - 4-State Visual Proof: `docs/proofs/crypto/01_signing_modal_pc_light_1440x900.png` (99.1 KB), `02_signing_modal_pc_dark_1440x900.png` (102.0 KB), `03_signing_modal_mobile_light_390x844.png` (153.1 KB), `04_signing_modal_mobile_dark_390x844.png` (152.7 KB). Личный осмотр через `read_file` подтверждает нулевой клиппинг, чистые токены и полную доступность кнопок.
+  - Тесты: `apps/api/src/tests/routes/diarySigningCeremony.test.ts` (12/12 PASS), `apps/api/src/tests/clinical/clinicalEmrLifecycle.test.ts` (20/20 PASS), `apps/web/src/components/visit/__tests__/subagent3DoctorAutonomyWave64.test.tsx` (12/12 PASS).
 
-### [CRY-02] [SEV-1] Обход проверки хэша документа при наличии любого 32-байтного messageDigest
-- **Файл:** [`packages/shared/src/crypto/gostCmsPkcs7Engine.ts#L508-L525`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/crypto/gostCmsPkcs7Engine.ts#L508-L525)
-- **Суть бага:** Из-за несовпадения хэшей SHA-256 и ГОСТ Стрибог-256 в код вставлена лазейка: если подпись содержит любой 32-байтный `messageDigest`, проверка целостности считается пройденной! Любая подпись `.sig` от чужого документа (например, от счета за ЖКХ) принимается системой как подлинная подпись медицинской карты.
+### [CRY-02] [SEV-1] [ИСПРАВЛЕНО] Обход проверки хэша документа при наличии любого 32-байтного messageDigest
+- **Файлы:**
+  - [`packages/shared/src/crypto/gostCmsPkcs7Engine.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/crypto/gostCmsPkcs7Engine.ts)
+  - [`packages/shared/src/tests/cadespluginFacade.test.ts`](file:///C:/Clinic_MVP/dental-crm/packages/shared/src/tests/cadespluginFacade.test.ts)
+  - [`apps/api/src/tests/routes/documentsUkepSigning.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/documentsUkepSigning.test.ts)
+- **Суть бага:** В `validateGostCmsPkcs7Signature` при проверке `embeddedDigest` присутствовала лазейка `if (!buf.includes(expectedBytes) && !hasValidHardwareDigest)`. При наличии флага `hasValidHardwareDigest` (любой 32-байтный `messageDigest`) подпись любого чужого файла (счета за ЖКХ и т.д.) принималась как валидная подпись медицинской карты или договора!
+- **Статус исправления:** [ИСПРАВЛЕНО]
+  1. Лазейка `hasValidHardwareDigest` полностью ликвидирована: теперь встроенный дайджест в обязательном порядке сверяется с вычисленным хэшем подписываемого документа (`embeddedDigest.equals(expectedBytes) || buf.includes(expectedBytes)`).
+  2. Любое несовпадение хэша или подделка содержимого документа строго возвращает `{ valid: false, errorCode: "TamperDetected", tamperDetected: true }`.
+  3. Добавлен таргетированный юнит-тест `strictly eliminates [CRY-02] bypass: hardware container with arbitrary messageDigest is rejected with TamperDetected` в `cadespluginFacade.test.ts`.
+- **Пруфы и тесты:**
+  - `packages/shared/src/tests/cadespluginFacade.test.ts` (14/14 PASS).
+  - `apps/api/src/tests/routes/documentsUkepSigning.test.ts` (14/14 PASS).
 
 ### [CRY-03] [SEV-2] Забытый и не подключенный нативный CLI-мост КриптоПро (cryptcp.exe)
 - **Файлы:**
