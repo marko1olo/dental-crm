@@ -214,11 +214,23 @@ async function main() {
     const mobileLightStat = statSync(mobileLightPath);
     console.log(`  [OK] Saved 03_telephony_mobile_light_390x844.png (${Math.round(mobileLightStat.size / 1024)} KB)`);
 
+    // Mobile Dialer Light
+    await mobilePage.click('button:has-text("Набор")').catch(() => {});
+    await sleep(400);
+    const mobileDialerLightPath = path.join(OUT_DIR, "05_telephony_mobile_dialer_light_390x844.png");
+    await mobilePage.screenshot({ path: mobileDialerLightPath, fullPage: false });
+
     // 04_telephony_mobile_dark_390x844.png
     console.log("[Capturing] 04_telephony_mobile_dark_390x844.png (390x844, dark)...");
     await setTheme(mobilePage, "dark");
     await suppressOverlays(mobilePage);
-    await sleep(600);
+    await sleep(400);
+    const mobileDialerDarkPath = path.join(OUT_DIR, "06_telephony_mobile_dialer_dark_390x844.png");
+    await mobilePage.screenshot({ path: mobileDialerDarkPath, fullPage: false });
+
+    // Switch back to Journal for 04_telephony_mobile_dark
+    await mobilePage.click('button:has-text("Журнал")').catch(() => {});
+    await sleep(400);
 
     const mobileDarkPath = path.join(OUT_DIR, "04_telephony_mobile_dark_390x844.png");
     await mobilePage.screenshot({ path: mobileDarkPath, fullPage: false });

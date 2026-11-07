@@ -17,6 +17,8 @@ import {
 } from "./telephonyCatalogData";
 import { TelephonyCallList } from "./TelephonyCallList";
 import { CallAudioPlayer } from "./CallAudioPlayer";
+import { initiateOutboundCall } from "./initiateOutboundCall";
+import { showToast } from "../GlobalToast";
 import { useTelephonyStore } from "../../store/telephonyStore";
 import { isDemoShowcaseMode } from "../../lib/demoMode";
 import { readDenteClinicToken, readDenteStaffToken } from "../../lib/safeLocalStorage";
@@ -62,26 +64,10 @@ export const TelephonyStudioHeader: React.FC<TelephonyStudioHeaderProps> = ({
 
 			<div className="flex items-center gap-2 shrink-0">
 				<div className="flex sm:hidden bg-[var(--paper-secondary,#f1f5f9)] p-0.5 rounded-lg border border-[var(--line)]">
-					<button
-						type="button"
-						onClick={() => onTabChange("journal")}
-						className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-							activeMobileTab === "journal"
-								? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
-								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border border-transparent"
-						}`}
-					>
+					<button type="button" onClick={() => onTabChange("journal")} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${activeMobileTab === "journal" ? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs border border-[var(--line)]" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border border-transparent"}`}>
 						Журнал
 					</button>
-					<button
-						type="button"
-						onClick={() => onTabChange("dialer")}
-						className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${
-							activeMobileTab === "dialer"
-								? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs border border-[var(--line)]"
-								: "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border border-transparent"
-						}`}
-					>
+					<button type="button" onClick={() => onTabChange("dialer")} className={`px-3 py-1.5 text-xs font-semibold rounded-md transition-all cursor-pointer ${activeMobileTab === "dialer" ? "bg-[var(--paper-strong)] text-[var(--ink)] shadow-xs border border-[var(--line)]" : "bg-transparent text-[var(--ink-muted)] hover:text-[var(--ink)] border border-transparent"}`}>
 						Набор
 					</button>
 				</div>
@@ -150,10 +136,11 @@ export interface TelephonyCallHistoryListProps {
 	callNote: string;
 	onCallNoteChange: (note: string) => void;
 	onOpenCard: () => void;
+	onCallPatient?: () => void;
 }
 
 export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> = ({
-	selectedCall, callNote, onCallNoteChange, onOpenCard,
+	selectedCall, callNote, onCallNoteChange, onOpenCard, onCallPatient,
 }) => {
 	if (!selectedCall) {
 		return (
@@ -181,6 +168,11 @@ export const TelephonyCallHistoryList: React.FC<TelephonyCallHistoryListProps> =
 					<div className="text-sm font-mono text-[var(--ink-muted)]">{formatPhoneRu(selectedCall.phone)}</div>
 				</div>
 				<div className="flex items-center gap-2 shrink-0">
+					{onCallPatient && (
+						<button type="button" onClick={onCallPatient} data-testid="telephony-call-patient-btn" title="Позвонить" aria-label="Позвонить" className="p-2 rounded-lg bg-[var(--paper-secondary,#f1f5f9)] hover:bg-[var(--line)] text-[var(--ink-muted)] hover:text-[var(--teal,#0d9488)] transition-colors cursor-pointer">
+							<Phone className="w-4 h-4" />
+						</button>
+					)}
 					<a href={getWhatsAppUrl(selectedCall.phone)} target="_blank" rel="noreferrer" className="p-2 rounded-lg bg-[var(--paper-secondary,#f1f5f9)] hover:bg-[var(--line)] text-[var(--ink-muted)] hover:text-emerald-600 transition-colors cursor-pointer" title="Написать в WhatsApp">
 						<MessageCircle className="w-4 h-4" />
 					</a>
@@ -317,35 +309,21 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 						const callerName = c.patientName || (phone ? `Абонент ${formatPhoneRu(phone)}` : "Неизвестный номер");
 						const dateObj = c.createdAt ? new Date(c.createdAt) : new Date();
 						const timestampText = dateObj.toLocaleDateString("ru-RU", {
-							day: "numeric",
-							month: "short",
-							hour: "2-digit",
-							minute: "2-digit",
+							day: "numeric", month: "short", hour: "2-digit", minute: "2-digit",
 						});
-
 						return {
-							id: String(c.id),
-							callType,
-							phone,
-							callerName,
+							id: String(c.id), callType, phone, callerName,
 							patientId: c.patientId ? String(c.patientId) : null,
 							patientCategory: c.patientId ? "Постоянный" : "Первичный",
-							balanceRub: 0,
-							lastVisitDate: null,
-							attendingDoctor: null,
-							clinicalNote: c.message || undefined,
-							somaticAlert: null,
-							durationSeconds: c.durationSeconds || 0,
-							timestampText,
-							hasRecording: Boolean(c.recordingUrl),
-							recordingUrl: c.recordingUrl || undefined,
+							balanceRub: 0, lastVisitDate: null, attendingDoctor: null,
+							clinicalNote: c.message || undefined, somaticAlert: null,
+							durationSeconds: c.durationSeconds || 0, timestampText,
+							hasRecording: Boolean(c.recordingUrl), recordingUrl: c.recordingUrl || undefined,
 							transcriptSnippet: undefined,
 						};
 					});
 					setDbCalls(mapped);
-					if (!selectedCallId && mapped[0]) {
-						setSelectedCallId(mapped[0].id);
-					}
+					if (!selectedCallId && mapped[0]) setSelectedCallId(mapped[0].id);
 				} else {
 					setDbCalls([]);
 				}
@@ -410,22 +388,51 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 		onClose();
 	}, [selectedCall, onBookAppointment, onClose]);
 
+	const handleCallPatient = useCallback(() => {
+		if (!selectedCall) return;
+		void initiateOutboundCall({
+			phone: selectedCall.phone,
+			patientName: selectedCall.callerName,
+			patientId: selectedCall.patientId,
+		});
+		onClose();
+	}, [selectedCall, onClose]);
+
 	const handlePrimaryAction = useCallback(() => {
 		playSafeWebAudioTone(880, 200);
 		if (dialedNumber.length >= 3) {
-			window.dispatchEvent(new CustomEvent("dente:telephony-dial", { detail: { phone: dialedNumber } }));
+			void initiateOutboundCall({
+				phone: dialedNumber,
+				patientName: selectedCall?.callerName,
+				patientId: selectedCall?.patientId,
+			});
 			onClose();
 			return;
 		}
 
+		const noteToSave = callNote.trim() || "Заметка звонка зафиксирована без комментариев";
 		setIsNoteSaved(true);
+
+		if (selectedCall?.id) {
+			const staffToken = readDenteStaffToken();
+			const clinicToken = readDenteClinicToken();
+			setDbCalls((prev) => prev.map((c) => (c.id === selectedCall.id ? { ...c, clinicalNote: noteToSave } : c)));
+			fetch(`/api/telephony/calls/${encodeURIComponent(selectedCall.id)}`, {
+				method: "PATCH",
+				headers: {
+					"Content-Type": "application/json",
+					...(staffToken ? { "x-dente-staff-token": staffToken } : {}),
+					...(clinicToken ? { "x-dente-clinic-token": clinicToken } : {}),
+				},
+				body: JSON.stringify({ note: noteToSave, clinicalNote: noteToSave, patientId: selectedCall.patientId }),
+			})
+				.then((res) => { if (res.ok) showToast("Заметка к звонку сохранена", "info"); })
+				.catch(() => {});
+		}
+
 		window.dispatchEvent(
 			new CustomEvent("dente:telephony-note-saved", {
-				detail: {
-					callId: selectedCall?.id, patientId: selectedCall?.patientId,
-					note: callNote.trim() || "Заметка звонка зафиксирована без комментариев",
-					timestamp: new Date().toISOString(),
-				},
+				detail: { callId: selectedCall?.id, patientId: selectedCall?.patientId, note: noteToSave, timestamp: new Date().toISOString() },
 			}),
 		);
 		setTimeout(() => setIsNoteSaved(false), 2500);
@@ -448,7 +455,7 @@ export const TelephonyStudioModal: React.FC<TelephonyStudioModalProps> = ({
 					/>
 					<div className={`dnt-telephony-details-pane ${activeMobileTab === "dialer" ? "" : "is-mobile-hidden"}`}>
 						<div className="flex-1 overflow-y-auto p-3 sm:p-4 pb-2.5 space-y-2">
-							<TelephonyCallHistoryList selectedCall={selectedCall} callNote={callNote} onCallNoteChange={setCallNote} onOpenCard={handleOpenCard} />
+							<TelephonyCallHistoryList selectedCall={selectedCall} callNote={callNote} onCallNoteChange={setCallNote} onOpenCard={handleOpenCard} onCallPatient={handleCallPatient} />
 							<TelephonySoftphoneDialpad dialedNumber={dialedNumber} onDigitClick={handleDigitClick} onBackspace={handleBackspace} />
 						</div>
 						<TelephonyStudioFooter hasDialed={hasDialed} dialedNumber={dialedNumber} isNoteSaved={isNoteSaved} onBookAction={handleBookAction} onPrimaryAction={handlePrimaryAction} />

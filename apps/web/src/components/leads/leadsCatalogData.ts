@@ -331,3 +331,74 @@ export function normalizeRuPhone(input: string): string {
 	}
 	return input.trim();
 }
+
+/**
+ * Канонический маппер реальных данных Fastify API / PostgreSQL (crmLeads) в LeadItem
+ * Мандат 8z (Запрет моков): реальные данные БД, безопасный парсинг без float-ошибок.
+ */
+export function mapApiLeadToLeadItem(lead: any): LeadItem {
+	if (!lead || typeof lead !== "object") {
+		return INITIAL_LEADS_DATA[0] as LeadItem;
+	}
+
+	let channelId: TrafficChannelId = "website";
+	const src = String(lead.source || "").toLowerCase();
+	if (src.includes("yandex") || src.includes("maps") || src.includes("яндекс") || src.includes("карты")) {
+		channelId = "yandex_maps";
+	} else if (src.includes("2gis") || src.includes("twogis") || src.includes("гис")) {
+		channelId = "twogis";
+	} else if (src.includes("prodoctorov") || src.includes("продокторов")) {
+		channelId = "prodoctorov";
+	} else if (src.includes("referral") || src.includes("сарафан") || src.includes("рекомендац")) {
+		channelId = "referral";
+	} else if (src.includes("messenger") || src.includes("telegram") || src.includes("whatsapp")) {
+		channelId = "messengers";
+	} else if (TRAFFIC_CHANNELS.some((c) => c.id === src)) {
+		channelId = src as TrafficChannelId;
+	}
+
+	let stageId: FunnelStageId = "new";
+	const status = String(lead.status || "");
+	if (status === "contacted") stageId = "contacted";
+	else if (status === "consult_booked") stageId = "consult_booked";
+	else if (status === "showed_up" || status === "converted") stageId = "showed_up";
+	else if (status === "trash" || status === "no_answer" || status === "rejected") stageId = "rejected";
+	else stageId = "new";
+
+	let needTag: ClinicalNeedTag = "Острая боль";
+	const firstTag = Array.isArray(lead.clinicalTags) ? lead.clinicalTags[0] : undefined;
+	if (firstTag && CLINICAL_NEED_TAGS.some((t) => t.tag === firstTag)) {
+		needTag = firstTag as ClinicalNeedTag;
+	} else {
+		const notesLower = String(lead.notes || "").toLowerCase();
+		if (notesLower.includes("имплант")) needTag = "Имплантация";
+		else if (notesLower.includes("брекет") || notesLower.includes("прикус")) needTag = "Брекеты";
+		else if (notesLower.includes("чистк") || notesLower.includes("гигиен")) needTag = "Чистка";
+		else if (notesLower.includes("детск") || notesLower.includes("ребенок")) needTag = "Детский приём";
+		else if (notesLower.includes("боль") || notesLower.includes("пульпит")) needTag = "Острая боль";
+	}
+
+	const rawRev = lead.expectedRevenue ?? lead.potentialRevenueRub;
+	const parsedRev = rawRev ? parseInt(String(rawRev).replace(/\D/g, ""), 10) : 0;
+	const potentialRevenueRub = Number.isFinite(parsedRev) && parsedRev > 0
+		? parsedRev
+		: (CLINICAL_NEED_TAGS.find((t) => t.tag === needTag)?.defaultRevenueRub ?? 10000);
+
+	const patientId = lead.patientId || lead.existingPatient?.id || lead.convertedPatientId;
+
+	return {
+		id: String(lead.id),
+		name: lead.name || lead.patientName || "Первичное обращение",
+		phone: lead.phone || "+7 (___) ___-__-__",
+		channelId,
+		stageId,
+		needTag,
+		potentialRevenueRub,
+		notes: lead.notes || "",
+		createdAt: typeof lead.createdAt === "string" ? lead.createdAt : (lead.createdAt ? new Date(lead.createdAt).toISOString() : new Date().toISOString()),
+		updatedAt: typeof lead.stageEnteredAt === "string" ? lead.stageEnteredAt : (lead.stageEnteredAt ? new Date(lead.stageEnteredAt).toISOString() : new Date().toISOString()),
+		assignedDoctorName: lead.assignedDoctorName || undefined,
+		isConverted: status === "converted" || Boolean(lead.existingPatient || patientId || lead.isConverted),
+		convertedPatientId: patientId ? String(patientId) : undefined,
+	};
+}

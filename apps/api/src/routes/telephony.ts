@@ -15,6 +15,7 @@ import { telephonySipRoutes } from "./telephonySipRoutes.js";
 import {
 	telephonyCallLifecycleRoutes,
 	telephonyCallsListHandler,
+	telephonyCallUpdateHandler,
 	telephonyMissedCallsHandler,
 	telephonyOutboundHandler,
 	telephonySmsHandler,
@@ -59,6 +60,10 @@ export const telephonyRoutes: FastifyPluginAsync = async (server) => {
 	// Telephony Calls List (GET /api/telephony/calls)
 	server.get<{ Params: { organizationId?: string } }>("/calls", telephonyCallsListHandler);
 	server.get<{ Params: { organizationId: string } }>("/:organizationId/calls", telephonyCallsListHandler);
+
+	// Update Call Note (PATCH /api/telephony/calls/:id)
+	server.patch<{ Params: { id: string; organizationId?: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/calls/:id", telephonyCallUpdateHandler);
+	server.patch<{ Params: { id: string; organizationId: string }; Body: { note?: string; clinicalNote?: string; message?: string; patientId?: string } }>("/:organizationId/calls/:id", telephonyCallUpdateHandler);
 
 	// 1-Click Outbound call (Mandate 8e: Doctor Autonomy)
 	server.post<{ Params: { organizationId: string }; Body: { phone: string; patientId?: string; patientName?: string } }>("/:organizationId/outbound-call", telephonyOutboundHandler);

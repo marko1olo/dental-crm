@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import { describe, test } from "node:test";
 import Fastify from "fastify";
 import { telephonyCallLifecycleRoutes } from "../../routes/telephony/telephonyCallLifecycleHandler.js";
+import { telephonyRoutes } from "../../routes/telephony.js";
 
 describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 	test("POST /calls/answer broadcasts event and returns answered status", async () => {
@@ -64,6 +65,31 @@ describe("Telephony Call Lifecycle: Answer & End Fastify Routes", () => {
 		assert.equal(json.callId, "test-call-2");
 		assert.equal(json.status, "ended");
 		assert.equal(json.durationSeconds, 42);
+		await app.close();
+	});
+
+	test("PATCH /calls/:id persists clinical note in communicationEvents", async () => {
+		const app = Fastify();
+		await app.register(telephonyRoutes);
+		await app.ready();
+
+		const res = await app.inject({
+			method: "PATCH",
+			url: "/calls/call-catalog-1",
+			headers: {
+				"x-dente-clinic-token": "demo-showcase-clinic-token",
+				"x-dente-staff-token": "demo-showcase-staff-token",
+			},
+			payload: {
+				note: "Пациент записан на консультацию к ортодонту в субботу",
+			},
+		});
+
+		assert.equal(res.statusCode, 200);
+		const json = res.json();
+		assert.equal(json.success, true);
+		assert.equal(json.callId, "call-catalog-1");
+		assert.equal(json.note, "Пациент записан на консультацию к ортодонту в субботу");
 		await app.close();
 	});
 });

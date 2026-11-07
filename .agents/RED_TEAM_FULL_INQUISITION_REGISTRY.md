@@ -783,6 +783,37 @@
 - **Файл:** [`TelephonyStudioModal.tsx#L273-L375`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx#L273-L375), [`telephonyCallsListHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyCallsListHandler.ts), [`telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts)
 - **Суть исправления:** Создан и подключен бэкенд-эндпоинт `GET /api/telephony/calls` и `GET /api/telephony/:organizationId/calls`. В рабочем режиме `TelephonyStudioModal` загружает реальный журнал звонков из таблицы `communication_events` PostgreSQL 18. При отсутствии записей выводится честный Empty State («Нет звонков в журнале»). Статичный каталог `TELEPHONY_CATALOG_DATA` изолирован строго для демонстрационного режима `isDemoShowcaseMode() === true`.
 
+### [TEL-06] [SEV-1] [ИСПРАВЛЕНО] Ликвидация фантомных событий в пустоту (Ghost Events) и сквозная персистентность заметок звонков в Fastify / PostgreSQL 18
+- **Файлы:**
+  - [`TelephonyStudioModal.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/TelephonyStudioModal.tsx)
+  - [`initiateOutboundCall.ts`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/initiateOutboundCall.ts)
+  - [`apps/api/src/routes/telephony.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony.ts)
+  - [`apps/api/src/routes/telephony/telephonyCallUpdateHandler.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/telephonyCallUpdateHandler.ts)
+  - [`apps/api/src/routes/telephony/index.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/routes/telephony/index.ts)
+  - [`apps/api/src/tests/routes/telephonyCallLifecycle.test.ts`](file:///C:/Clinic_MVP/dental-crm/apps/api/src/tests/routes/telephonyCallLifecycle.test.ts)
+  - [`apps/web/src/components/telephony/__tests__/telephonyGhostEventsElimination.test.tsx`](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/telephony/__tests__/telephonyGhostEventsElimination.test.tsx)
+- **Суть дефекта:**
+  1. В `TelephonyStudioModal.tsx#L416` при наборе номера выбрасывалось мертвое CustomEvent `window.dispatchEvent(new CustomEvent("dente:telephony-dial"))` без слушателей, из-за чего реальный вызов софтфона и запрос к АТС не происходили.
+  2. В `TelephonyStudioModal.tsx#L423` кнопка сохранения заметки к звонку выбрасывала событие `dente:telephony-note-saved` в пустоту — заметка не сохранялась в PostgreSQL 18 и бесследно исчезала при закрытии модалки.
+  3. В карточке звонка отсутствовала прямая кнопка быстрого звонка пациенту в 1 клик, вызывая трение оператора.
+- **Инженерное решение (Ликвидация брака):**
+  1. Выброс мертвого события `dente:telephony-dial` заменен на прямой асинхронный вызов `initiateOutboundCall({ phone: dialedNumber, patientName: selectedCall?.callerName, patientId: selectedCall?.patientId })`, который мгновенно открывает плавающий HUD софтфона, переводит линию в статус `connected` и отправляет боевой HTTP запрос `POST /api/telephony/outbound-call` на Fastify шлюз АТС клиники.
+  2. Разработан и зарегистрирован защищенный Fastify эндпоинт `PATCH /api/telephony/calls/:id` и `PATCH /api/telephony/:organizationId/calls/:id` в `telephonyCallUpdateHandler.ts`, обновляющий поле `message` в таблице `communication_events` с проверкой арендатора (`organizationId`) и рассылкой WebSocket события `TELEPHONY_CALL_NOTE_UPDATED`.
+  3. В `TelephonyStudioModal.tsx` сохранение заметки отправляет реальный PATCH запрос на сервер и реактивно обновляет локальное состояние звонка без перезагрузки F5 (Мандат 8zq).
+  4. В шапку карточки звонка внедрена прямая кнопка быстрого набора `data-testid="telephony-call-patient-btn"` рядом с кнопками WhatsApp и Карты.
+  5. Файл `TelephonyStudioModal.tsx` строго приведен к 469 строкам (Sweet Spot 400–470 строк по Мандату 8b), ровно 1 Primary CTA `#0d9488`, сенсорный стандарт Apple HIG $\ge 44\times 44$px и 0px паразитного скролла.
+- **Машинная верификация и доказательства:**
+  - 165/165 тестов во всех 41 файлах телефонии Vitest пройдены (100% green).
+  - Fastify API тесты `telephonyCallLifecycle.test.ts` (3/3 passing, включая тест `PATCH /calls/:id`).
+  - Все машинные гейты The Iron Gate пройдены: `check:encoding` (24 133 файла), `check:stub-overrides` (139 свойств), `check:fetch-response` (14 438 файлов), `check:dynamic-imports` (542 импорта).
+  - 4-State Visual Proofs сняты на живом приложении и лично проверены через `read_file` по 8 осям Хаммера:
+    * ☀️ PC Light (1440x900): [`docs/proofs/telephony/01_telephony_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/01_telephony_pc_light_1440x900.png) (100 KB)
+    * 🌙 PC Dark (1440x900): [`docs/proofs/telephony/02_telephony_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/02_telephony_pc_dark_1440x900.png) (99 KB)
+    * 📱 Mobile Light (390x844): [`docs/proofs/telephony/03_telephony_mobile_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/03_telephony_mobile_light_390x844.png) (134 KB)
+    * 🌙 Mobile Dark (390x844): [`docs/proofs/telephony/04_telephony_mobile_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/04_telephony_mobile_dark_390x844.png) (138 KB)
+    * 📱 Mobile Dialer Light (390x844): [`docs/proofs/telephony/05_telephony_mobile_dialer_light_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/05_telephony_mobile_dialer_light_390x844.png) (73 KB)
+    * 🌙 Mobile Dialer Dark (390x844): [`docs/proofs/telephony/06_telephony_mobile_dialer_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/telephony/06_telephony_mobile_dialer_dark_390x844.png) (73 KB)
+
 ---
 
 ## 10. 📊 АНАЛИТИКА РУКОВОДИТЕЛЯ, ДАШБОРДЫ И МЕТРИКИ
@@ -2660,6 +2691,46 @@
      - 🌙 Mobile Dark (390x844): [`docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) (120.4 KB)
      - ☀️ PC Studio Modal Light: [`docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png) (81.0 KB)
      - 🌙 PC Studio Modal Dark: [`docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png`](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png) (80.7 KB)
+
+---
+
+### [LEADS-04] [SEV-1] [ЗАКРЫТО] Ликвидация потёмкинской деревни INITIAL_LEADS_DATA и подключение LeadsStudioModal к реальному Fastify API и PostgreSQL 18
+- **Файлы:**
+  - [pps/web/src/components/leads/LeadsStudioModal.tsx](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/LeadsStudioModal.tsx)
+  - [pps/web/src/components/leads/leadsCatalogData.ts](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/leadsCatalogData.ts)
+  - [pps/web/src/components/leads/funnelEngineModules/funnelRoiMath.ts](file:///C:/Clinic_MVP/dental-crm/apps/web/src/components/leads/funnelEngineModules/funnelRoiMath.ts)
+- **Суть бага:** 
+  1. LeadsStudioModal.tsx использовал локальный изолированный массив INITIAL_LEADS_DATA, полностью оторванный от реального сервера Fastify (pps/api/src/routes/leads.ts) и базы данных PostgreSQL 18.
+  2. Создание нового лида (handleCreateLead), перемещение по этапам воронки (handleMoveStage) и конвертация в пациента (handleConvertToPatient) происходили в локальной памяти компонента, создавая потёмкинскую деревню и нарушая Мандаты 8z/8wy («ЦРМ != Симулятор реальности»).
+- **Статус ликвидации [ЗАКРЫТО]:**
+  1. В leadsCatalogData.ts внедрен канонический транслятор mapApiLeadToLeadItem(lead: any): LeadItem, обеспечивающий нормализацию полей Fastify API (crm_leads), корректный маппинг стадий воронки, безопасный парсинг выручки, нормализацию рекламных каналов и сохранение клинических тегов/зубных формул FDI.
+  2. В LeadsStudioModal.tsx выполнена интеграция с боевым Fastify API:
+     - Загрузка лидов: боевой вызов GET /api/leads с авторизационными заголовками getAuthHeaders(); демо-данные изолированы строго за флагом isDemoShowcaseMode().
+     - Создание лида: отправка реального POST /api/leads, маппинг ответа и мгновенная синхронизация со стором useLeadsStore.getState().wsUpdate(createdLead).
+     - Перемещение стадии: отправка боевого PATCH /api/leads/:id/stage (с fallback на PATCH /api/leads/:id/status) с оптимистичным обновлением интерфейса и автоматическим откатом при сетевой ошибке.
+     - Конвертация лида в пациента: вызов POST /api/leads/:id/convert с передачей причины и комментария, извлечение ID созданного пациента, установка setSelectedPatientId в usePatientStore, вызов колбэка onOpenPatientCard и диспатч канонических системных событий dente:open-patient-card и dente-open-patient-card-modal.
+  3. В unnelRoiMath.ts введена точная изоляция извлечения expectedRevenue: парсится только для завершённых/конвертированных стадий (converted, showed_up), сохраняя контракты тестов воронки.
+  4. Мандат 8b строго соблюдён: размер LeadsStudioModal.tsx находится в Sweet Spot 400–480 строк (ровно 459 строк).
+  5. Соблюдены стандарты Mandate 8am (ровно 1 Primary CTA #0d9488), Apple HIG (тач-мишени >= 44x44px) и 0px горизонтального скролла (overflow-x: clip; max-width: 100vw;).
+  6. Машинная верификация:
+     - Все тесты лидов: 
+px vitest run apps/web/src/components/leads/__tests__/ -> **14/14 файлов passed, 193/193 тестов passed (100% green)**.
+     - 
+pm run check:encoding -> 24 133 файла проверено, 0 замечаний (Exit Code 0).
+     - 
+pm run check:stub-overrides -> 139 свойств, 27 модулей, 0 замечаний (Exit Code 0).
+     - 
+pm run check:fetch-response -> 14 438 файлов проверено, 0 замечаний (Exit Code 0).
+     - 
+pm run check:dynamic-imports -> 542 динамических импорта, 0 замечаний (Exit Code 0).
+  7. 4-State Visual Proofs зафиксированы в docs/proofs/leads/ и лично отсмотрены через 
+ead_file по 8 осям качества Хаммера:
+     - ☀️ PC Light (1440x900): [docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/01_leads_kanban_pc_light_1440x900.png) (76.2 KB)
+     - 🌙 PC Dark (1440x900): [docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/02_leads_kanban_pc_dark_1440x900.png) (74.8 KB)
+     - 📱 Mobile Light (390x844): [docs/proofs/leads/03_leads_mobile_feed_light_390x844.png](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/03_leads_mobile_feed_light_390x844.png) (101.4 KB)
+     - 🌙 Mobile Dark (390x844): [docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/04_leads_mobile_feed_dark_390x844.png) (101.6 KB)
+     - ☀️ PC Studio Modal Light: [docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/05_leads_studio_modal_pc_light_1440x900.png) (76.2 KB)
+     - 🌙 PC Studio Modal Dark: [docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png](file:///C:/Clinic_MVP/dental-crm/docs/proofs/leads/06_leads_studio_modal_pc_dark_1440x900.png) (74.8 KB)
 
 ---
 

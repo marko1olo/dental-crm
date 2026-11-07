@@ -80,7 +80,11 @@ export function extractLeadRevenueRub(lead: FunnelLead): number {
 	) {
 		return Math.round(lead.paidAmountKopecks / 100);
 	}
-	if (lead.expectedRevenue !== null && lead.expectedRevenue !== undefined) {
+	if (
+		(lead.status === "converted" || lead.status === "showed_up" || (lead as { isConverted?: boolean }).isConverted) &&
+		lead.expectedRevenue !== null &&
+		lead.expectedRevenue !== undefined
+	) {
 		const val = Number(lead.expectedRevenue);
 		if (Number.isFinite(val) && val > 0) {
 			return Math.round(val);
